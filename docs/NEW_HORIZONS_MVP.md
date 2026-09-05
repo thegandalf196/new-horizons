@@ -18,6 +18,29 @@ Build and run the ordinary installed-asset journey: menu -> scenario selection -
 
 Before execution, record platform/build/source identity and asset location without committing proprietary content. Existing physical-desktop/graphical automation restrictions are not lifted by this implementation request; obtain a separate explicit bounded run authorization. Native Linux first; preserve Windows buildability.
 
+## Current testing authorization and continuation
+
+The user explicitly authorized as much testing as needed, fixing actual failures,
+and using the agents. This lifts the earlier new-project graphical-run hold.
+Use one designated Tester and private background Xvfb/XTest only: no host focus or
+pointer interaction, portal, visible fallback, or simultaneous original execution.
+Original assets remain external/read-only. No package installation is inferred.
+Keep individual runs bounded, retain concise results and a few useful screenshots,
+and stop/rebuild on a concrete defect rather than repeat unchanged failures.
+
+Current shared-tree roles: Content transitions to sole graphical Tester (no
+product edits while executing); Runtime owns runtime fixes; Frontend owns UI
+fixes; Build owns serialized builds. The integrator owns commits/pushes. Freeze
+candidate bytes during each run and communicate failures directly to the owner.
+Follow one failed run through fix, rebuild and retest; do not stop at reports.
+
+After the complete MVP gate passes, continue implementing evidenced original
+Heroes III features/behavior missing from this fork. Use current VCMI source,
+upstream issue/test evidence and independently corroborated original references.
+Distinguish an omission from an intentional difference or an already-fixed issue.
+Reconstruction is reference evidence, not automatically validated implementation.
+Record uncertainty and add focused regression tests before importing behavior.
+
 ## Delivery sequence
 
 1. Establish upstream build and dependency baseline; no new engine/framework.
