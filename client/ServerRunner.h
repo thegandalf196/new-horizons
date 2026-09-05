@@ -37,6 +37,8 @@ class ServerThreadRunner final : public IServerRunner, boost::noncopyable
 	bool lobbyMode = false;
 
 public:
+	/// Returns after preparation; preparation failures are rethrown after joining the failed thread.
+	/// Lifecycle calls belong to the owning client thread, not the simulation thread.
 	void start(bool listenForConnections, bool connectToLobby, std::shared_ptr<StartInfo> startingInfo) override;
 	void shutdown() override;
 	void wait() override;

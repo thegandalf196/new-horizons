@@ -88,6 +88,8 @@ public:
 	~CVCMIServer();
 
 	void run();
+	/// Thread-safe cancellation of the event loop; does not mutate gameplay state.
+	void stop();
 
 	bool wasStartedByClient() const;
 	bool prepareToStartGame();

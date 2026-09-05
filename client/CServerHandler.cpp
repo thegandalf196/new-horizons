@@ -208,7 +208,8 @@ void CServerHandler::startLocalServerAndConnect(bool connectToLobby)
 	// mobile apps can't spawn separate processes - only thread mode is available
 	serverRunner.reset(new ServerThreadRunner());
 #else
-	if (settings["server"]["useProcess"].Bool())
+	// Persisted process settings must not change single-player transport.
+	if(loadMode == ELoadMode::MULTI && settings["server"]["useProcess"].Bool())
 		serverRunner.reset(new ServerProcessRunner());
 	else
 		serverRunner.reset(new ServerThreadRunner());
@@ -220,9 +221,30 @@ void CServerHandler::startLocalServerAndConnect(bool connectToLobby)
 	si->difficulty = lastDifficulty.Integer();
 
 	logNetwork->trace("\tStarting local server");
-	serverRunner->start(loadMode == ELoadMode::MULTI, connectToLobby, si);
+	try
+	{
+		serverRunner->start(loadMode == ELoadMode::MULTI, connectToLobby, si);
+	}
+	catch(...)
+	{
+		// Failed preparation has already joined its worker; never fall back to TCP.
+		serverRunner.reset();
+		setState(EClientState::NONE);
+		throw;
+	}
 	logNetwork->trace("\tConnecting to local server");
-	connectToServer(getLocalHostname(), getLocalPort());
+	try
+	{
+		connectToServer(getLocalHostname(), getLocalPort());
+	}
+	catch(...)
+	{
+		// Preparation succeeded, but internal connection setup can still throw.
+		serverRunner->shutdown();
+		waitForServerShutdown();
+		setState(EClientState::NONE);
+		throw;
+	}
 	logNetwork->trace("\tWaiting for connection");
 }
 
@@ -250,11 +272,14 @@ void CServerHandler::connectToServer(const std::string & addr, const ui16 port)
 
 void CServerHandler::onConnectionFailed(const std::string & errorMessage)
 {
-	assert(getState() == EClientState::CONNECTING);
 	std::unique_lock<std::mutex> interfaceLock;
 	if(ENGINE)
 		interfaceLock = std::unique_lock<std::mutex>(ENGINE->interfaceMutex);
 
+	if(getState() == EClientState::CONNECTION_CANCELLED)
+		return;
+
+	assert(getState() == EClientState::CONNECTING);
 	if (isServerLocal())
 	{
 		// retry - local server might be still starting up
@@ -277,26 +302,46 @@ void CServerHandler::onTimer()
 
 	if(getState() == EClientState::CONNECTION_CANCELLED)
 	{
+		// Consume the already-posted internal readiness callback before allowing re-entry.
+		if(loadMode != ELoadMode::MULTI && !networkConnection)
+		{
+			networkHandler->createTimer(*this, std::chrono::milliseconds(1));
+			return;
+		}
+
 		logNetwork->info("Connection aborted by player!");
-		serverRunner->wait();
-		serverRunner.reset();
+		if(networkConnection)
+			networkConnection->close();
+		networkConnection.reset();
+		logicConnection.reset();
+		mapToStart.reset();
+		waitForServerShutdown();
 		if (ENGINE && ENGINE->windows().topWindow<CSimpleJoinScreen>() != nullptr)
 			ENGINE->windows().popWindows(1);
+		setState(EClientState::NONE);
 		return;
 	}
 
-	assert(isServerLocal());
-	serverRunner->connect(*networkHandler, *this);
+	// A retry timer may outlive a cancelled connection attempt.
+	if(getState() == EClientState::CONNECTING && isServerLocal())
+		serverRunner->connect(*networkHandler, *this);
 }
 
 void CServerHandler::onConnectionEstablished(const NetworkConnectionPtr & netConnection)
 {
-	assert(getState() == EClientState::CONNECTING);
-
 	std::unique_lock<std::mutex> interfaceLock;
 	if(ENGINE)
 		interfaceLock = std::unique_lock<std::mutex>(ENGINE->interfaceMutex);
 
+	// Cancel may win the race with the posted internal-connection callback.
+	if(getState() == EClientState::CONNECTION_CANCELLED)
+	{
+		networkConnection = netConnection;
+		netConnection->close();
+		return; // The cancellation timer owns joining and dismissing the progress window.
+	}
+
+	assert(getState() == EClientState::CONNECTING);
 	networkConnection = netConnection;
 
 	logNetwork->info("Connection established");
@@ -356,10 +401,16 @@ EClientState CServerHandler::getState() const
 
 void CServerHandler::setState(EClientState newState)
 {
-	if (newState == EClientState::CONNECTION_CANCELLED && serverRunner != nullptr)
-		serverRunner->shutdown();
-
+	const bool cancelLocal = newState == EClientState::CONNECTION_CANCELLED
+		&& state != EClientState::CONNECTION_CANCELLED && serverRunner != nullptr;
 	state = newState;
+
+	if(cancelLocal)
+	{
+		serverRunner->shutdown();
+		// Stopping an internal event loop does not emit a client disconnect callback.
+		networkHandler->createTimer(*this, std::chrono::milliseconds(0));
+	}
 }
 
 bool CServerHandler::isServerLocal() const
@@ -972,10 +1023,7 @@ void CServerHandler::debugStartTest(std::string filename, bool save)
 		resetStateForLobby(EStartMode::NEW_GAME, ESelectionScreen::newGame, EServerMode::LOCAL, {});
 		mapInfo->mapInit(filename);
 	}
-	if(settings["session"]["donotstartserver"].Bool())
-		connectToServer(getLocalHostname(), getLocalPort());
-	else
-		startLocalServerAndConnect(false);
+	startLocalServerAndConnect(false);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -1031,13 +1079,14 @@ public:
 	}
 };
 
-void CServerHandler::onPacketReceived(const std::shared_ptr<INetworkConnection> &, const std::vector<std::byte> & message)
+void CServerHandler::onPacketReceived(const std::shared_ptr<INetworkConnection> & connection, const std::vector<std::byte> & message)
 {
 	std::unique_lock<std::mutex> interfaceLock;
 	if(ENGINE)
 		interfaceLock = std::unique_lock<std::mutex>(ENGINE->interfaceMutex);
 
-	if(getState() == EClientState::DISCONNECTING)
+	if(connection != networkConnection || getState() == EClientState::DISCONNECTING
+		|| getState() == EClientState::CONNECTION_CANCELLED)
 		return;
 
 	auto pack = logicConnection->retrievePack(message);
@@ -1060,6 +1109,9 @@ void CServerHandler::onDisconnected(const std::shared_ptr<INetworkConnection> & 
 	}
 
 	waitForServerShutdown();
+
+	if(getState() == EClientState::CONNECTION_CANCELLED)
+		return; // Keep the connection identity until the cancellation timer finalizes cleanup.
 
 	if(getState() == EClientState::DISCONNECTING)
 	{

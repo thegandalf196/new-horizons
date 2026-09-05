@@ -85,9 +85,6 @@ CVCMIServer::CVCMIServer(uint16_t port, bool runByClient)
 	logNetwork->trace("CVCMIServer created! UUID: %s", uuid);
 
 	networkHandler = INetworkHandler::createHandler();
-
-	if(state == EServerState::LOBBY)
-		startDiscoveryListener();
 }
 
 CVCMIServer::~CVCMIServer()
@@ -117,6 +114,8 @@ uint16_t CVCMIServer::startAcceptingIncomingConnections(bool listenForConnection
 	if (listenForConnections)
 	{
 		auto srvport = networkServer->start(port);
+		// Internal single-player sessions must not open a UDP discovery socket.
+		startDiscoveryListener();
 		logNetwork->info("Listening for connections at port %d", srvport);
 		return srvport;
 	}
@@ -213,6 +212,14 @@ bool CVCMIServer::wasStartedByClient() const
 void CVCMIServer::run()
 {
 	networkHandler->run();
+	// External cancellation stops the loop; finalize state on its owning thread.
+	if(state != EServerState::SHUTDOWN)
+		setState(EServerState::SHUTDOWN);
+}
+
+void CVCMIServer::stop()
+{
+	networkHandler->stop();
 }
 
 void CVCMIServer::onTimer()

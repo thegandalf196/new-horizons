@@ -2,6 +2,42 @@
     "version": 2,
     "configurePresets": [
         {
+            "name": "new-horizons-linux",
+            "displayName": "New Horizons Linux client baseline",
+            "description": "Original-content client with internal simulation; system dependencies, no standalone server or Qt tools",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/new-horizons-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/new-horizons-linux/install",
+                "ENABLE_CLIENT": "ON",
+                "ENABLE_SERVER": "OFF",
+                "ENABLE_LAUNCHER": "OFF",
+                "ENABLE_EDITOR": "OFF",
+                "ENABLE_LOBBY": "OFF",
+                "ENABLE_TRANSLATIONS": "OFF",
+                "ENABLE_INNOEXTRACT": "OFF",
+                "ENABLE_SINGLE_APP_BUILD": "OFF",
+                "ENABLE_MINIMAL_LIB": "OFF",
+                "ENABLE_STATIC_LIBS": "OFF",
+                "ENABLE_SDL3": "OFF",
+                "ENABLE_VIDEO": "ON",
+                "ENABLE_NULLKILLER2_AI": "ON",
+                "ENABLE_BATTLE_AI": "ON",
+                "ENABLE_STUPID_AI": "ON",
+                "ENABLE_MMAI": "OFF",
+                "ENABLE_DISCORD": "OFF",
+                "ENABLE_TEST": "OFF",
+                "ENABLE_CCACHE": "OFF",
+                "ENABLE_PCH": "ON",
+                "ENABLE_STRICT_COMPILATION": "OFF",
+                "COPY_CONFIG_ON_BUILD": "ON"
+            }
+        },
+        {
             "name": "release-binary-dir",
             "hidden": true,
             "binaryDir": "${sourceDir}/out/build/${presetName}"
@@ -393,6 +429,12 @@
         }
     ],
     "buildPresets": [
+        {
+            "name": "new-horizons-linux",
+            "configurePreset": "new-horizons-linux",
+            "targets": ["vcmiclient"],
+            "jobs": 2
+        },
         {
             "name": "default-release",
             "hidden": true,

@@ -33,10 +33,17 @@
 #include <future>
 
 ServerThreadRunner::ServerThreadRunner() = default;
-ServerThreadRunner::~ServerThreadRunner() = default;
+ServerThreadRunner::~ServerThreadRunner()
+{
+	shutdown();
+	wait();
+}
 
 void ServerThreadRunner::start(bool listenForConnections, bool connectToLobby, std::shared_ptr<StartInfo> startingInfo)
 {
+	if(threadRunLocalServer.joinable())
+		throw std::logic_error("Server thread is already running");
+
 	// cfgport may be 0 -- the real port is returned after calling prepare()
 	uint16_t port = settings["server"]["localPort"].Integer();
 	server = std::make_unique<CVCMIServer>(port, true);
@@ -48,27 +55,48 @@ void ServerThreadRunner::start(bool listenForConnections, bool connectToLobby, s
 	}
 
 	std::promise<uint16_t> promise;
+	auto ready = promise.get_future();
 
-	threadRunLocalServer = std::thread([this, connectToLobby, listenForConnections, &promise]{
-		setThreadName("runServer");
-		uint16_t port = server->prepare(connectToLobby, listenForConnections);
-		promise.set_value(port);
+	threadRunLocalServer = std::thread([this, connectToLobby, listenForConnections, promise = std::move(promise)]() mutable
+	{
+		try
+		{
+			setThreadName("runServer");
+			uint16_t port = server->prepare(connectToLobby, listenForConnections);
+			promise.set_value(port);
+		}
+		catch(...)
+		{
+			promise.set_exception(std::current_exception());
+			return;
+		}
 		server->run();
 	});
 
 	logNetwork->trace("Waiting for server port...");
-	serverPort = promise.get_future().get();
+	try
+	{
+		serverPort = ready.get();
+	}
+	catch(...)
+	{
+		wait();
+		server.reset();
+		throw;
+	}
 	logNetwork->debug("Server port: %d", serverPort);
 }
 
 void ServerThreadRunner::shutdown()
 {
-	server->setState(EServerState::SHUTDOWN);
+	if(server)
+		server->stop();
 }
 
 void ServerThreadRunner::wait()
 {
-	threadRunLocalServer.join();
+	if(threadRunLocalServer.joinable())
+		threadRunLocalServer.join();
 }
 
 int ServerThreadRunner::exitCode()

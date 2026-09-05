@@ -48,6 +48,7 @@
 #include "../CMT.h"
 
 #include "../../lib/texts/CGeneralTextHandler.h"
+#include "../../lib/texts/MetaString.h"
 #include "../../lib/campaign/CampaignHandler.h"
 #include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/filesystem/CCompressedStream.h"
@@ -61,6 +62,8 @@
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/json/JsonUtils.h"
+
+#include <boost/algorithm/string.hpp>
 
 
 ISelectionScreenInfo * SEL = nullptr;
@@ -272,6 +275,13 @@ CMenuEntry::CMenuEntry(CMenuScreen * parent, const JsonNode & config)
 			(tokens == std::string::npos) ? "" : node["command"].String().substr(tokens + 1)
 		};
 
+		std::vector<std::string> commandTokens;
+		boost::split(commandTokens, boost::trim_copy(node["command"].String()),
+			boost::is_any_of("\t "), boost::token_compress_on);
+		if(commandTokens.size() >= 2 && (commandTokens[0] == "start" || commandTokens[0] == "load")
+			&& commandTokens[1] == "multi")
+			continue;
+
 		if (commandParts.first == "campaigns")
 		{
 			const auto& campaign = CMainMenuConfig::get().getCampaigns()[commandParts.second];
@@ -407,14 +417,37 @@ void CMainMenu::makeActiveInterface()
 	menu->switchToTab(menu->getActiveTab());
 }
 
+static void openLocalGameSetup()
+{
+	try
+	{
+		ENGINE->windows().createAndPushWindow<CSimpleJoinScreen>();
+	}
+	catch(const std::exception & error)
+	{
+		// Construction failed before the progress window was pushed.
+		logGlobal->error("Unable to prepare local game: %s", error.what());
+		MetaString message;
+		message.appendTextID("vcmi.lobby.system.unableStartMap");
+		message.appendRawString("\n");
+		message.appendTextID("vcmi.lobby.system.reason");
+		message.replaceRawString(error.what());
+		CInfoWindow::showInfoDialog(message.toString(&GAME->translator()), {});
+	}
+}
+
 void CMainMenu::openLobby(ESelectionScreen screenType, bool host, const std::vector<std::string> & names, ELoadMode loadMode, bool battleMode, bool hotseatMode, std::string server, ui16 port)
 {
+	// New Horizons exposes only local single-player setup.
+	if(!host || loadMode == ELoadMode::MULTI || hotseatMode || !server.empty() || port != 0)
+		return;
+
 	GAME->server().resetStateForLobby(screenType == ESelectionScreen::newGame ? EStartMode::NEW_GAME : EStartMode::LOAD_GAME, screenType, EServerMode::LOCAL, names);
 	GAME->server().loadMode = loadMode;
 	GAME->server().hotseatMode = hotseatMode;
 	GAME->server().battleMode = battleMode;
 
-	ENGINE->windows().createAndPushWindow<CSimpleJoinScreen>(host, server, port);
+	openLocalGameSetup();
 }
 
 void CMainMenu::openCampaignLobby(const std::string & campaignFileName, std::string campaignSet)
@@ -428,7 +461,7 @@ void CMainMenu::openCampaignLobby(std::shared_ptr<CampaignState> campaign)
 {
 	GAME->server().resetStateForLobby(EStartMode::CAMPAIGN, ESelectionScreen::campaignList, EServerMode::LOCAL, {});
 	GAME->server().campaignStateToSend = campaign;
-	ENGINE->windows().createAndPushWindow<CSimpleJoinScreen>();
+	openLocalGameSetup();
 }
 
 void CMainMenu::openCampaignScreen(std::string name)
@@ -714,6 +747,18 @@ void CMultiPlayers::enterSelectionScreen()
 CSimpleJoinScreen::CSimpleJoinScreen(bool host, const std::string & server, ui16 port)
 {
 	OBJECT_CONSTRUCTION;
+	if(host && server.empty() && GAME->server().loadMode != ELoadMode::MULTI)
+	{
+		// Keep the existing connection/cancel lifecycle without exposing a join dialog.
+		background = std::make_shared<CPicture>(ImagePath::builtin("loadbar"));
+		pos = background->center();
+		buttonCancel = std::make_shared<CButton>(Point(pos.w - 80, pos.h - 60),
+			AnimationPath::builtin("MUBCANC.DEF"), LIBRARY->generaltexth->zelp[561],
+			std::bind(&CSimpleJoinScreen::leaveScreen, this), EShortcut::GLOBAL_CANCEL);
+		startConnection();
+		return;
+	}
+
 	if(!ENGINE->isRoeData())
 	{
 		background = std::make_shared<CPicture>(ImagePath::builtin("MUDIALOG.bmp")); // address background
@@ -777,9 +822,14 @@ void CSimpleJoinScreen::connectToServer()
 
 void CSimpleJoinScreen::leaveScreen()
 {
-	textTitle->setText(LIBRARY->generaltexth->translate("vcmi.mainMenu.serverClosing"));
+	if(textTitle)
+		textTitle->setText(LIBRARY->generaltexth->translate("vcmi.mainMenu.serverClosing"));
+	const bool local = GAME->server().isServerLocal();
+	if(local && buttonCancel)
+		buttonCancel->block(true);
 	GAME->server().setState(EClientState::CONNECTION_CANCELLED);
-	close();
+	if(!local)
+		close(); // Local teardown dismisses this window after the worker has joined.
 }
 
 void CSimpleJoinScreen::onChange(const std::string & newText)
