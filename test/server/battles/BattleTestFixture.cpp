@@ -48,6 +48,12 @@ void RecordingGameServer::applyPack(CPackForClient & pack)
 /// belonging to the next attack closes the window again.
 void RecordingGameServer::record(CPackForClient & pack)
 {
+	if(const auto * activation = dynamic_cast<const BattleSetActiveStack *>(&pack))
+		stackActivations.push_back(*activation);
+
+	if(const auto * action = dynamic_cast<const StartAction *>(&pack))
+		startedActions.push_back(*action);
+
 	if(dynamic_cast<const BattleAttack *>(&pack))
 	{
 		recording = false;

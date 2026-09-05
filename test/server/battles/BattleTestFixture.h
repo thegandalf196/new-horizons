@@ -41,6 +41,9 @@ class RecordingGameServer : public IGameServer
 public:
 	std::shared_ptr<CGameState> gameState;
 	std::vector<RecordedCast> casts;
+	/// Authoritative turn routing and actions, recorded before applying each packet.
+	std::vector<BattleSetActiveStack> stackActivations;
+	std::vector<StartAction> startedActions;
 
 	void setState(EServerState value) override { state = value; }
 	EServerState getState() const override { return state; }
