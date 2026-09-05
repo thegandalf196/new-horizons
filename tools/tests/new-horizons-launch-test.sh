@@ -82,6 +82,41 @@ status=0
 STUB_EXIT=17 bash "$launcher" "${args[@]}" --resources "$engine" > "$tmp/output" || status=$?
 [[ $status == 17 ]]
 [[ -z $(find "$profile" -maxdepth 1 -name 'runtime.*' -print) ]]
+# A live profile contains runtime symlinks: diagnose its lock before scanning
+# those links, and do not truncate/write the lock even during verify-only.
+printf 'lock sentinel\n' > "$profile/.nh-lock"
+mkdir -- "$profile/runtime.synthetic"
+ln -s -- "$assets/dAtA" "$profile/runtime.synthetic/Data"
+exec 8< "$profile/.nh-lock"
+flock -n 8
+for mode in launch verify; do
+	if [[ $mode == verify ]]; then
+		expect_fail "${args[@]}" --verify-only
+	else
+		expect_fail "${args[@]}"
+	fi
+	grep -q 'This NH profile is already in use.' "$tmp/output"
+	[[ $(< "$profile/.nh-lock") == 'lock sentinel' ]]
+	[[ -L $profile/runtime.synthetic/Data ]]
+	[[ $(wc -l < "$STUB_RECEIPT") == 3 ]]
+done
+flock -u 8
+exec 8<&-
+# With no live owner, the same symlink must still be rejected, not allowlisted.
+expect_fail "${args[@]}" --verify-only
+grep -q 'Unexpected symlink in writable profile:' "$tmp/output"
+rm -- "$profile/runtime.synthetic/Data"
+rmdir -- "$profile/runtime.synthetic"
+bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
+[[ $(< "$profile/.nh-lock") == 'lock sentinel' ]]
+# Never follow a symlink when opening the lock for the early check.
+mv -- "$profile/.nh-lock" "$profile/lock-original"
+ln -s -- "$profile/lock-original" "$profile/.nh-lock"
+expect_fail "${args[@]}" --verify-only
+grep -q 'Unexpected non-regular or symlink profile lock.' "$tmp/output"
+[[ $(< "$profile/lock-original") == 'lock sentinel' ]]
+rm -- "$profile/.nh-lock"
+mv -- "$profile/lock-original" "$profile/.nh-lock"
 mkdir -- "$profile/data/vcmi/Mods"
 expect_fail "${args[@]}" --verify-only
 rmdir -- "$profile/data/vcmi/Mods"
@@ -90,4 +125,4 @@ ln -s -- "$profile/config-real" "$profile/config"
 expect_fail "${args[@]}" --verify-only
 [[ ! -e $assets/Saves && ! -e $engine/Saves ]]
 [[ -e $assets/Mods/unwanted && -e $engine/Mods/unwanted ]]
-printf '%s\n' 'PASS: verify-only, rejected inputs, isolated stub launch, reuse, cleanup; no game executed.'
+printf '%s\n' 'PASS: verify-only, rejected inputs, isolated stub launch, reuse, lock ordering, cleanup; no game executed.'

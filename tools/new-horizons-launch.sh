@@ -77,9 +77,19 @@ for name in h3bitmap.lod h3sprite.lod; do
 	$found || fail "Missing original archive: $name"
 done
 marker='New Horizons launcher profile v1'
+lockHeld=false
 if [[ -e $profile ]]; then
 	[[ -d $profile && -f $profile/.nh-profile && ! -L $profile/.nh-profile ]] || fail 'Refusing an existing unmanaged profile.'
 	[[ $(< "$profile/.nh-profile") == "$marker" ]] || fail 'Unrecognized profile marker.'
+	# A live run has intentional runtime symlinks. Report its lock first, without
+	# creating/truncating anything in read-only preflight. Keep the lock through
+	# validation and launch; never follow a redirected lock file.
+	if [[ -e $profile/.nh-lock || -L $profile/.nh-lock ]]; then
+		[[ -f $profile/.nh-lock && ! -L $profile/.nh-lock ]] || fail 'Unexpected non-regular or symlink profile lock.'
+		exec 9< "$profile/.nh-lock"
+		flock -n 9 || fail 'This NH profile is already in use.'
+		lockHeld=true
+	fi
 	# Refuse redirecting writable settings/saves outside this managed profile.
 	while IFS= read -r -d '' path; do
 		fail "Unexpected symlink in writable profile: $path"
@@ -97,8 +107,10 @@ if $verify; then
 	exit 0
 fi
 mkdir -p -- "$profile/data/vcmi/Saves" "$profile/config/vcmi" "$profile/cache"
-exec 9> "$profile/.nh-lock"
-flock -n 9 || fail 'This NH profile is already in use.'
+if ! $lockHeld; then
+	exec 9> "$profile/.nh-lock"
+	flock -n 9 || fail 'This NH profile is already in use.'
+fi
 printf '%s\n' "$marker" > "$profile/.nh-profile"
 # Fresh allowlisted root each run. argv[0] must remain this symlink path: EntryPoint
 # chdirs to its parent; VCMIDirs developmentMode then excludes ALL system roots.
