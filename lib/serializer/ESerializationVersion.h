@@ -58,11 +58,13 @@ enum class ESerializationVersion : int32_t
 	TOWN_NAME_TEXT_ID, // renaming a town registers the new name in the map text container instead of storing free-form text
 	RECORD_TEXTS_METASTRING, // highscore scenario name and statistics map name are stored unresolved, to be rendered by the reader
 
+	TOWN_CUSTOM_INITIAL_GARRISON, // preserve map-authored initial town armies, including explicit empty armies
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = RECORD_TEXTS_METASTRING,
+	CURRENT = TOWN_CUSTOM_INITIAL_GARRISON,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");

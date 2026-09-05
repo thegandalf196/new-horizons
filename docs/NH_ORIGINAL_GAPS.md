@@ -2,9 +2,11 @@
 
 Source inspected at `1a4b1184d31de06b6fa31717fa49f365f822ae25`; relevant
 source unchanged through launcher-only `ef2fcda77`. No original/game execution
-or gameplay edits performed for this review. **Implementation deferred until the
-complete MVP gate passes.** Source evidence verifies the current behavior, not
-independent original-game parity; corroborate original expectations before fixes.
+or gameplay edits performed for the initial review. The ordinary MVP journey
+subsequently completed (see `NH_TESTER_RESULTS.md`). Item1 now has a native-tested
+fix (see `NH_BUILD_HANDOFF.md`); focused GUI capture/full-save compatibility remains
+pending. Item2 remains deferred; item3 is not an established defect. Source evidence
+alone does not establish original-game parity.
 
 1. **Explicitly empty neutral-town garrisons lost — high confidence omission.**
    `lib/mapping/MapFormatH3M.cpp:2827–2829` consumes `hasGarrison` without retaining
@@ -62,6 +64,7 @@ claims antimagic garrison effects are missing, but `initObj` and
 `lib/battle/CBattleInfoCallback.cpp:173` checks that bonus. Already implemented;
 this inspection does not substitute for a runtime regression.
 
-No upstream issue tracker was queried. Proposed regression cases above were not
-implemented or executed. Keep ordinary AI and essential core/vcmi resources in
-the product; these observations justify no packaging removal.
+No upstream issue tracker was queried. Item1's native parser/initialization and
+JSON/binary object regressions were implemented and passed after a recorded red
+run; items2/3 remain unimplemented. Keep ordinary AI and essential core/vcmi
+resources in the product; these observations justify no packaging removal.

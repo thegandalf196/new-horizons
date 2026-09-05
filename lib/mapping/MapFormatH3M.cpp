@@ -2824,8 +2824,8 @@ std::shared_ptr<CGObjectInstance> CMapLoaderH3M::readTown(const int3 & position,
 	if(hasName)
 		object->setNameTextId(readLocalizedString(TextIdentifier("town", position.x, position.y, position.z, "name")));
 
-	bool hasGarrison = reader->readBool();
-	if(hasGarrison)
+	object->customInitialGarrison = reader->readBool();
+	if(object->customInitialGarrison)
 		readCreatureSet(object.get(), idToBeGiven, position);
 
 	object->formation = static_cast<EArmyFormation>(reader->readInt8Checked(0, 1));

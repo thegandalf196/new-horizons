@@ -124,8 +124,12 @@ public:
 	TinyH3MBuilder & town(const int3 & pos, FactionID faction, PlayerColor owner);
 
 	/// Append a Random Town object owned by `owner`. Builder auto-registers the
-	/// RANDOM_TOWN template on first call. No garrison, standard fort, no events.
+	/// RANDOM_TOWN template on first call. Unspecified army, standard fort, no events.
 	TinyH3MBuilder & randomTown(const int3 & pos, PlayerColor owner);
+
+	/// Customize the most recently added town's army (up to seven slots).
+	/// Calling with {} explicitly disables initial neutral guards; not calling uses defaults.
+	TinyH3MBuilder & townGarrison(std::vector<std::pair<CreatureID, uint16_t>> stacks);
 
 	// ---- heroes --------------------------------------------------------
 
@@ -284,6 +288,9 @@ private:
 		// The single-quest seerHut() populates one one-shot entry.
 		std::vector<std::pair<Quest, SeerReward>> seerOneShots;
 		std::vector<std::pair<Quest, SeerReward>> seerRepeatables;
+
+		// Presence matters: an empty custom army is distinct from an unspecified one.
+		std::optional<std::vector<std::pair<CreatureID, uint16_t>>> townGarrisonStacks;
 
 		// Hero customisation. Only consumed for HERO / RANDOM_HERO objects.
 		std::vector<std::pair<CreatureID, uint16_t>>           heroGarrisonStacks;

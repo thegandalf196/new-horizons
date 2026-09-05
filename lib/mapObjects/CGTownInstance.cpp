@@ -505,9 +505,8 @@ void CGTownInstance::initializeNeutralTownGarrison(vstd::RNG & rand)
 	if (getOwner().isValidPlayer())
 		return;
 
-	// Only towns with garrison not set in map editor may get initial garrison
-	// FIXME: H3 editor allow explicitly empty garrison, but vcmi loses this flag on load
-	if (stacksCount() > 0)
+	// An explicitly empty army is still a custom initial garrison.
+	if(customInitialGarrison || stacksCount() > 0)
 		return;
 
 	for (auto const & guard : randomGuards)
@@ -1048,6 +1047,7 @@ void CGTownInstance::serializeJsonOptions(JsonSerializeFormat & handler)
 	if(!handler.saving)
 		handler.serializeEnum("tightFormation", formation, NArmyFormation::names); //for old format
 	CArmedInstance::serializeJsonOptions(handler);
+	handler.serializeBool("customInitialGarrison", customInitialGarrison, false);
 	handler.serializeString("name", nameTextId);
 
 	{

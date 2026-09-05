@@ -73,6 +73,8 @@ public:
 	int32_t spellResearchAcceptedCounter;
 	std::vector<si32> spellResearchPendingRerollsCounters;
 	bool spellResearchAllowed;
+	/// Map author supplied the initial army, including an explicitly empty army.
+	bool customInitialGarrison = false;
 
 	//////////////////////////////////////////////////////////////////////////
 	template <typename Handler> void serialize(Handler &h)
@@ -108,6 +110,11 @@ public:
 
 		if(h.hasFeature(Handler::Version::SPELL_RESEARCH_IMPROVEMENTS))
 			h & spellResearchPendingRerollsCounters;
+
+		if(h.hasFeature(Handler::Version::TOWN_CUSTOM_INITIAL_GARRISON))
+			h & customInitialGarrison;
+		else if(!h.saving)
+			customInitialGarrison = false;
 
 		if(!h.saving)
 		{

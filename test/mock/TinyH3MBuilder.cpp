@@ -223,6 +223,14 @@ TinyH3MBuilder & TinyH3MBuilder::randomTown(const int3 & pos, PlayerColor owner)
 	return *this;
 }
 
+TinyH3MBuilder & TinyH3MBuilder::townGarrison(std::vector<std::pair<CreatureID, uint16_t>> stacks)
+{
+	auto & spec = lastObject();
+	assert(spec.id == Obj::TOWN || spec.id == Obj::RANDOM_TOWN);
+	spec.townGarrisonStacks = std::move(stacks);
+	return *this;
+}
+
 TinyH3MBuilder & TinyH3MBuilder::hero(const int3 & pos, HeroTypeID type, PlayerColor owner)
 {
 	ObjectSpec spec;
@@ -960,12 +968,14 @@ void TinyH3MBuilder::writeObjects(TinyH3MWriter & w) const
 		{
 			case Obj::RANDOM_TOWN:
 			case Obj::TOWN:
-				// No garrison, standard fort, no events, no custom buildings, neutral alignment.
+				// Optional custom garrison, standard fort, no events/custom buildings, neutral alignment.
 				if(features.levelAB)
 					w.writeUInt32(obj.wireIdentifier);                 // identifier
 				w.writePlayer(obj.owner);                              // owner
 				w.writeBool(false);                                    // hasName
-				w.writeBool(false);                                    // hasGarrison
+				w.writeBool(obj.townGarrisonStacks.has_value());        // hasGarrison
+				if(obj.townGarrisonStacks)
+					writeCreatureSet(w, *obj.townGarrisonStacks);
 				w.writeInt8(0);                                        // formation = LOOSE
 				w.writeBool(false);                                    // hasCustomBuildings
 				w.writeBool(true);                                     // hasFort
