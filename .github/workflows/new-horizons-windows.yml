@@ -8,7 +8,7 @@ on:
     branches: [definitive-mvp]
     paths:
       - .github/workflows/new-horizons-windows.yml
-      - CI/new-horizons-*.py
+      - tools/ci/package_new_horizons_windows.py
       - CMakePresets.json
       - tools/windows/**
 
@@ -23,7 +23,9 @@ jobs:
   build:
     if: github.repository == 'thegandalf196/vcmi' && github.ref == 'refs/heads/definitive-mvp'
     runs-on: windows-2025-vs2026
-    timeout-minutes: 120
+    timeout-minutes: 180
+    env:
+      VSLANG: '1033'
     defaults:
       run:
         shell: bash
@@ -72,6 +74,13 @@ jobs:
             -o '&:with_onnxruntime=False' -o '&:with_discord_presence=False' \
             --format=json > conan-generated-graph.json
 
+      - name: Windows PowerShell 5.1 launcher setup smoke (no game or GUI)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          powershell.exe -NoProfile -File tools/windows/tests/Setup-Smoke.ps1
+          if ($LASTEXITCODE -ne 0) { throw "Setup smoke failed: $LASTEXITCODE" }
+
       - name: Configure client and internal authority
         run: cmake --preset new-horizons-windows-x64
 
@@ -81,5 +90,31 @@ jobs:
       - name: Stage upstream runtime and resources
         run: cmake --install build/new-horizons-windows-x64
 
-      # Release publication is deliberately separate: actual archive, recursive
-      # PE imports, notices/source and privacy must pass independent audit first.
+      - name: Package client, recursive PE closure, licenses and corresponding sources
+        run: |
+          set -euo pipefail
+          python tools/ci/package_new_horizons_windows.py \
+            --install-dir build/new-horizons-windows-x64/install \
+            --conan-graph conan-generated-graph.json \
+            --output-dir build/new-horizons-windows-x64/artifact
+
+      - name: Upload downloadable Windows preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: New-Horizons-Windows-x64-${{ github.sha }}
+          path: build/new-horizons-windows-x64/artifact/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Summarize artifact scope
+        shell: pwsh
+        run: |
+          @'
+          ## New Horizons Windows x64 preview
+          Download the artifact above; extract the Windows ZIP and follow README-New-Horizons.txt.
+          Original Heroes III Complete assets are required, external and NOT redistributed.
+          Includes exact identity, SHA256 checksums, source archives and dependency license texts.
+          Compile/package/import validation is NOT Windows graphical or gameplay acceptance.
+          Unsigned preview. GitHub Release publication remains a separate integrator action.
+          '@ >> $env:GITHUB_STEP_SUMMARY
