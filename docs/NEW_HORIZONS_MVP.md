@@ -30,9 +30,13 @@ and stop/rebuild on a concrete defect rather than repeat unchanged failures.
 
 Current shared-tree roles: Content transitions to sole graphical Tester (no
 product edits while executing); Runtime owns runtime fixes; Frontend owns UI
-fixes; Build owns serialized builds. The integrator owns commits/pushes. Freeze
-candidate bytes during each run and communicate failures directly to the owner.
-Follow one failed run through fix, rebuild and retest; do not stop at reports.
+fixes; Build owns serialized builds and is delegated integration responsibility
+for subsequent test/fix checkpoints, including scoped reviewed commits/pushes.
+Dispatcher does not concurrently stage or commit while Build integrates. Other
+workers never commit. Apply the identity/privacy/validation rules below; preserve
+all unrelated dirty files. Freeze candidate bytes during each run and communicate
+failures directly to the owner. Follow one failed run through fix, rebuild and
+retest; do not stop at reports or wait for a chat status request to integrate.
 
 After the complete MVP gate passes, continue implementing evidenced original
 Heroes III features/behavior missing from this fork. Use current VCMI source,
