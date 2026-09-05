@@ -138,8 +138,6 @@ class CServerHandler final : public IServerAPI, public LobbyInfo, public INetwor
 	std::string serverHostname;
 	ui16 serverPort;
 
-	bool isServerLocal() const;
-
 public:
 	/// High-level connection overlay that is capable of (de)serializing network data
 	std::shared_ptr<GameConnection> logicConnection;
@@ -181,6 +179,8 @@ public:
 	EClientState getState() const;
 	void setState(EClientState newState);
 
+	/// True while this client owns an in-process or child-process simulation.
+	bool isServerLocal() const;
 	bool isHost() const;
 	bool isGuest() const;
 	bool hasRemoteClientInLobby() const;
