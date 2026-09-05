@@ -20,6 +20,7 @@ set(test_SRCS
  		CVcmiTestConfig.cpp
  		JsonComparer.cpp
 
+		battle/AutocombatPreferencesTest.cpp
  		battle/BattleHexTest.cpp
  		battle/CBattleInfoCallbackTest.cpp
  		battle/CHealthTest.cpp

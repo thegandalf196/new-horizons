@@ -9,14 +9,37 @@
  */
 #pragma once
 
+#include "Unit.h"
+
 struct AutocombatPreferences
 {
+	enum class Mode
+	{
+		SELECTIVE,
+		FULL_BATTLE
+	};
+
 	bool enableSpellsUsage = true;
 	bool enableTacticsUsage = true;
-	//TODO: below options exist in original H3, consider usefulness of mixed human-AI combat when enabling autocombat inside battle
-//	bool enableUnitsUsage = true;
-//	bool enableCatapultUsage = true;
-//	bool enableBallistaUsage = true;
-//	bool enableFirstAidTendUsage = true;
+	bool enableUnitsUsage = true;
+	bool enableCatapultUsage = true;
+	bool enableBallistaUsage = true;
+	bool enableFirstAidTentUsage = true;
+
+	/// Delegation policy only; does not grant eligibility for a manually controlled turn.
+	bool controlsUnit(const battle::Unit & unit, Mode mode) const
+	{
+		if(mode == Mode::FULL_BATTLE || unit.isTurret())
+			return true;
+
+		if(unit.isCatapult())
+			return enableCatapultUsage;
+		if(unit.isBallista())
+			return enableBallistaUsage;
+		if(unit.isFirstAidTent())
+			return enableFirstAidTentUsage;
+
+		return enableUnitsUsage;
+	}
 };
 
