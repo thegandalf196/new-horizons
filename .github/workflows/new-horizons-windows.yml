@@ -62,6 +62,17 @@ jobs:
           arch: x64
           toolset: '14.29'
 
+      - name: Cache compiler outputs for packaging retries
+        uses: step-security/ccache-action@v1
+        with:
+          variant: sccache
+          key: new-horizons-msvc-x64-v142
+          create-symlink: false
+          max-size: 5G
+
+      - name: Package audit regression tests (no PE execution)
+        run: python tools/tests/test_windows_pe_audit.py
+
       - name: Resolve upstream dependency profile
         run: |
           set -euo pipefail
@@ -82,7 +93,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Setup smoke failed: $LASTEXITCODE" }
 
       - name: Configure client and internal authority
-        run: cmake --preset new-horizons-windows-x64
+        run: >-
+          cmake --preset new-horizons-windows-x64
+          -DENABLE_CCACHE=ON
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
       - name: Compile Windows x64 client
         run: cmake --build build/new-horizons-windows-x64 --target vcmiclient --parallel 4

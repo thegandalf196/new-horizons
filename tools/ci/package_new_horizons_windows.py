@@ -20,11 +20,13 @@ import tempfile
 import zipfile
 
 
+# NCrypt is supplied by Windows, not FFmpeg or the application:
+# https://learn.microsoft.com/windows/win32/api/ncrypt/nf-ncrypt-ncryptopenstorageprovider
 SYSTEM_DLLS = set("""
 advapi32 avrt bcrypt bcryptprimitives cfgmgr32 combase comctl32 comdlg32
 crypt32 cryptbase cryptsp d3d9 d3d11 dbgeng dbghelp dinput8 dnsapi dsound dwmapi dxgi dxva2
 gdi32 glu32 hid imagehlp imm32 iphlpapi kernel32 kernelbase mf mfplat mfreadwrite
-mpr msacm32 msimg32 msvcrt mswsock netapi32 normaliz ntdll ntmarta ole32 oleaut32
+mpr msacm32 msimg32 msvcrt mswsock ncrypt netapi32 normaliz ntdll ntmarta ole32 oleaut32
 opengl32 powrprof propsys psapi rpcrt4 secur32 setupapi shell32 shlwapi strmiids
 ucrtbase urlmon user32 userenv usp10 uxtheme version winhttp wininet winmm
 wintrust wldap32 ws2_32 wtsapi32
