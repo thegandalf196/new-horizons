@@ -15,6 +15,7 @@
 #include "../mock/mock_Services.h"
 
 #include "../../lib/StartInfo.h"
+#include "../../lib/VCMIDirs.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -39,6 +40,9 @@
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/serializer/JsonDeserializer.h"
 #include "../../lib/serializer/JsonSerializer.h"
+
+#include <cstdlib>
+#include <zlib.h>
 
 namespace
 {
@@ -321,6 +325,38 @@ namespace
 {
 using TownArmy = std::vector<std::pair<CreatureID, uint16_t>>;
 
+std::unique_ptr<CGameState> initializeTinyMap(std::vector<uint8_t> bytes, ServicesMock & services, int seed)
+{
+	MapServiceTinyH3M mapService(std::move(bytes), nullptr);
+	StartInfo info;
+	info.mapname = "tiny";
+	info.mode = EStartMode::NEW_GAME;
+	info.difficulty = 0;
+	auto header = mapService.loadMapHeader(ResourcePath(info.mapname));
+	for(int i = 0; i < static_cast<int>(header->players.size()); ++i)
+	{
+		const auto & settings = header->players[i];
+		if(!settings.canHumanPlay && !settings.canComputerPlay)
+			continue;
+		auto & player = info.playerInfos[PlayerColor(i)];
+		player.color = PlayerColor(i);
+		if(i == 0)
+			player.connectedPlayerIDs.insert(static_cast<PlayerConnectionID>(0));
+		player.name = "Player";
+		player.bonus = PlayerStartingBonus::GOLD;
+		player.castle = settings.defaultCastle();
+		player.hero = settings.defaultHero();
+	}
+
+	auto state = std::make_unique<CGameState>();
+	state->preInit(&services);
+	GameRandomizer randomizer(*state);
+	randomizer.setSeed(seed);
+	Load::ProgressAccumulator progress;
+	state->init(&mapService, &info, randomizer, progress, false);
+	return state;
+}
+
 /// Exercises the H3M reader and the real new-game initialization, not editor-only loading.
 class TinyH3MTownGarrisonTest : public ::testing::TestWithParam<EMapFormat>
 {
@@ -353,27 +389,7 @@ protected:
 			builder.townGarrison(*army);
 		builder.hero({8, 8, 0}, HeroTypeID(0), PlayerColor(0));
 
-		MapServiceTinyH3M mapService(builder.build(), nullptr);
-		StartInfo info;
-		info.mapname = "tiny";
-		info.mode = EStartMode::NEW_GAME;
-		info.difficulty = 0;
-		auto header = mapService.loadMapHeader(ResourcePath(info.mapname));
-		auto & player = info.playerInfos[PlayerColor(0)];
-		player.color = PlayerColor(0);
-		player.connectedPlayerIDs.insert(static_cast<PlayerConnectionID>(0));
-		player.name = "Player";
-		player.bonus = PlayerStartingBonus::GOLD;
-		player.castle = header->players[0].defaultCastle();
-		player.hero = header->players[0].defaultHero();
-
-		auto state = std::make_unique<CGameState>();
-		state->preInit(&services);
-		GameRandomizer randomizer(*state);
-		randomizer.setSeed(seed);
-		Load::ProgressAccumulator progress;
-		state->init(&mapService, &info, randomizer, progress, false);
-		return state;
+		return initializeTinyMap(builder.build(), services, seed);
 	}
 
 	const CGTownInstance * targetTown(const CGameState & state) const
@@ -606,6 +622,139 @@ TEST_P(TinyH3MTownGarrisonTest, BinaryPreservesCurrentFlagAndDefaultsLegacyWitho
 				EXPECT_EQ(restored->stacksCount(), 0);
 			}
 		}
+	}
+}
+
+TEST(TinyH3MBuilderTest, ExportNeutralTownGarrisonFixtures)
+{
+	const char * optIn = std::getenv("NH_EXPORT_TOWN_GARRISON_FIXTURES");
+	if(!optIn || std::string(optIn) != "1")
+	{
+		GTEST_SKIP() << "Build-owned diagnostic export requires NH_EXPORT_TOWN_GARRISON_FIXTURES=1";
+	}
+
+	struct Fixture
+	{
+		std::string name;
+		std::optional<TownArmy> army;
+	};
+	const std::vector<Fixture> fixtures = {
+		{"NHGap1ExplicitEmptySOD", TownArmy{}},
+		{"NHGap1CustomSOD", TownArmy{{CreatureID(0), 17}}},
+		{"NHGap1UnspecifiedSOD", std::nullopt}
+	};
+	ServicesMock services;
+	std::vector<TinyH3M::TinyH3MBuilder> builders;
+	std::vector<std::vector<uint8_t>> validatedBytes;
+
+	// Validate all three authored maps before writing any fixture. These are not
+	// arbitrary states from the neutral-guard seed search or production savegames.
+	for(const auto & fixture : fixtures)
+	{
+		SCOPED_TRACE(fixture.name);
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36).name(fixture.name)
+			.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.town({8, 10, 0}, FactionID::CASTLE, PlayerColor(0))
+			.town({20, 10, 0}, FactionID::CASTLE, PlayerColor::NEUTRAL);
+		if(fixture.army)
+			builder.townGarrison(*fixture.army);
+		builder.town({30, 30, 0}, FactionID::CASTLE, PlayerColor(1))
+			.hero({17, 10, 0}, HeroTypeID(0), PlayerColor(0));
+		auto bytes = builder.build();
+		auto parsed = loadMap(bytes);
+		ASSERT_NE(parsed.map, nullptr);
+		ASSERT_TRUE(parsed.map->players[0].canHumanPlay);
+		ASSERT_TRUE(parsed.map->players[1].canComputerPlay);
+		ASSERT_EQ(parsed.map->objects.size(), 4u);
+		const auto * parsedTarget = dynamic_cast<const CGTownInstance *>(parsed.map->objects[1].get());
+		ASSERT_NE(parsedTarget, nullptr);
+		ASSERT_EQ(parsedTarget->customInitialGarrison, fixture.army.has_value());
+		ASSERT_EQ(parsedTarget->stacksCount(), fixture.army ? fixture.army->size() : 0u);
+
+		// Seed zero is a native control, not a promise of the GUI's random starting seed.
+		auto initialized = initializeTinyMap(bytes, services, 0);
+		auto repeated = initializeTinyMap(bytes, services, 0);
+		// initHeroes reserves additional object IDs for tavern-pool heroes. Those
+		// null slots are not authored map objects; validate the four stable IDs below.
+		ASSERT_GE(initialized->getMap().objects.size(), 4u);
+		ASSERT_GE(repeated->getMap().objects.size(), 4u);
+		const auto * target = dynamic_cast<const CGTownInstance *>(initialized->getMap().objects[1].get());
+		const auto * repeatTarget = dynamic_cast<const CGTownInstance *>(repeated->getMap().objects[1].get());
+		ASSERT_NE(target, nullptr);
+		ASSERT_NE(repeatTarget, nullptr);
+		ASSERT_EQ(target->customInitialGarrison, fixture.army.has_value());
+		ASSERT_EQ(target->getCreatureMap(), repeatTarget->getCreatureMap());
+		for(int slot = 0; slot < GameConstants::ARMY_SIZE; ++slot)
+		{
+			if(!target->slotEmpty(SlotID(slot)))
+			{
+				ASSERT_EQ(target->getStackCount(SlotID(slot)), repeatTarget->getStackCount(SlotID(slot)));
+			}
+		}
+		for(const CMap * map : {parsed.map.get(), &initialized->getMap(), &repeated->getMap()})
+		{
+			const std::array<int3, 4> positions = {
+				int3(8, 10, 0), int3(20, 10, 0), int3(30, 30, 0), int3(17, 10, 0)
+			};
+			const std::array<PlayerColor, 4> owners = {
+				PlayerColor(0), PlayerColor::NEUTRAL, PlayerColor(1), PlayerColor(0)
+			};
+			for(size_t i = 0; i < positions.size(); ++i)
+			{
+				ASSERT_NE(map->objects[i], nullptr);
+				ASSERT_EQ(map->objects[i]->id, ObjectInstanceID(static_cast<int>(i)));
+				ASSERT_EQ(map->objects[i]->ID, parsed.map->objects[i]->ID);
+				ASSERT_EQ(map->objects[i]->subID, parsed.map->objects[i]->subID);
+				ASSERT_EQ(map->objects[i]->anchorPos(), positions[i]);
+				ASSERT_EQ(map->objects[i]->getOwner(), owners[i]);
+			}
+		}
+		if(fixture.army)
+		{
+			ASSERT_EQ(target->stacksCount(), fixture.army->size());
+			if(!fixture.army->empty())
+			{
+				ASSERT_EQ(parsedTarget->getStack(SlotID(0)).getCreatureID(), CreatureID(0));
+				ASSERT_EQ(parsedTarget->getStackCount(SlotID(0)), 17);
+				ASSERT_EQ(target->getStack(SlotID(0)).getCreatureID(), CreatureID(0));
+				ASSERT_EQ(target->getStackCount(SlotID(0)), 17);
+			}
+		}
+		else
+		{
+			// Unspecified towns may roll zero guards; the paired regression above
+			// independently establishes a seeded nonempty control for the flag fix.
+			ASSERT_LE(target->stacksCount(), 4);
+		}
+		RecordProperty(fixture.name + "Seed", 0);
+		RecordProperty(fixture.name + "InitialStacks", target->stacksCount());
+		builders.push_back(std::move(builder));
+		validatedBytes.push_back(std::move(bytes));
+	}
+
+	for(size_t i = 0; i < fixtures.size(); ++i)
+	{
+		SCOPED_TRACE(fixtures[i].name);
+		const auto emitted = builders[i].buildAndDump(fixtures[i].name);
+		ASSERT_EQ(emitted, validatedBytes[i]);
+
+		const auto path = VCMIDirs::get().userCachePath() / "testMaps" / (fixtures[i].name + ".h3m");
+		std::unique_ptr<gzFile_s, decltype(&gzclose)> input(gzopen(path.string().c_str(), "rb"), &gzclose);
+		ASSERT_NE(input, nullptr) << path.string();
+		ASSERT_EQ(gzdirect(input.get()), 0) << "Export must be gzip, not a transparent raw stream";
+		std::vector<uint8_t> diskBytes;
+		std::array<uint8_t, 4096> buffer;
+		int count;
+		while((count = gzread(input.get(), buffer.data(), static_cast<unsigned>(buffer.size()))) > 0)
+			diskBytes.insert(diskBytes.end(), buffer.begin(), buffer.begin() + count);
+		int errorCode = Z_OK;
+		const char * error = gzerror(input.get(), &errorCode);
+		ASSERT_EQ(count, 0) << error;
+		ASSERT_TRUE(errorCode == Z_OK || errorCode == Z_STREAM_END) << error;
+		ASSERT_NE(gzeof(input.get()), 0);
+		ASSERT_EQ(gzclose(input.release()), Z_OK);
+		ASSERT_EQ(diskBytes, validatedBytes[i]) << "Exported gzip must contain the exact prevalidated map";
 	}
 }
 

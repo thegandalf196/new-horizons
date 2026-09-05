@@ -4,8 +4,8 @@ Source inspected at `1a4b1184d31de06b6fa31717fa49f365f822ae25`; relevant
 source unchanged through launcher-only `ef2fcda77`. No original/game execution
 or gameplay edits performed for the initial review. The ordinary MVP journey
 subsequently completed (see `NH_TESTER_RESULTS.md`). Item1 now has a native-tested
-fix (see `NH_BUILD_HANDOFF.md`); focused GUI capture/full-save compatibility remains
-pending. Item2 remains deferred; item3 is not an established defect. Source evidence
+fix (see `NH_BUILD_HANDOFF.md`) and an exercised old-save/new-save compatibility
+pass (see `NH_TESTER_RESULTS.md`); focused GUI capture remains pending. Item2 remains deferred; item3 is not an established defect. Source evidence
 alone does not establish original-game parity.
 
 1. **Explicitly empty neutral-town garrisons lost — high confidence omission.**
