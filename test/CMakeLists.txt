@@ -1,12 +1,16 @@
 include(GoogleTest)
 include(CheckCXXCompilerFlag)
 
-set(googleTest_Dir ${CMAKE_CURRENT_SOURCE_DIR}/googletest)
-if(EXISTS ${googleTest_Dir})
-	set(GTestSrc ${googleTest_Dir}/googletest)
-	set(GMockSrc ${googleTest_Dir}/googlemock)
+set(VCMI_GOOGLETEST_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/googletest" CACHE PATH
+	"GoogleTest source directory (bundled submodule or installed local sources)")
+set(googleTest_Dir "${VCMI_GOOGLETEST_SOURCE_DIR}")
+if(EXISTS "${googleTest_Dir}/CMakeLists.txt"
+	AND EXISTS "${googleTest_Dir}/googletest/include/gtest/gtest.h"
+	AND EXISTS "${googleTest_Dir}/googlemock/include/gmock/gmock.h")
+	set(GTestSrc "${googleTest_Dir}/googletest")
+	set(GMockSrc "${googleTest_Dir}/googlemock")
 else()
-	message(FATAL_ERROR "No googletest src dir found!")
+	message(FATAL_ERROR "No complete GoogleTest sources at ${googleTest_Dir}; set VCMI_GOOGLETEST_SOURCE_DIR to a local source directory.")
 endif()
 
 set(test_SRCS
@@ -239,7 +243,7 @@ check_cxx_compiler_flag(-Wvirtual-move-assign MOVE_ASSIGN)
 if(MOVE_ASSIGN)
 	add_compile_options(-Wno-error=virtual-move-assign) #GCC is too strict here
 endif()
-add_subdirectory_with_folder("3rdparty" googletest EXCLUDE_FROM_ALL)
+add_subdirectory_with_folder("3rdparty" "${googleTest_Dir}" "${CMAKE_CURRENT_BINARY_DIR}/googletest" EXCLUDE_FROM_ALL)
 
 add_executable(vcmitest ${test_SRCS} ${test_HEADERS} ${mock_HEADERS})
 if(ENABLE_NULLKILLER2_AI)
