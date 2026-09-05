@@ -45,6 +45,26 @@ Distinguish an omission from an intentional difference or an already-fixed issue
 Reconstruction is reference evidence, not automatically validated implementation.
 Record uncertainty and add focused regression tests before importing behavior.
 
+## Current delivery priority: Windows download from GitHub
+
+The user requests a ready-to-run Windows download from the existing GitHub fork,
+not instructions to compile and not the Linux-only preview. This takes priority
+over further post-MVP feature expansion. Deliver a Windows x64 preview package
+through GitHub Releases, with matching runtime dependencies and engine resources,
+source revision/checksums, required GPL/resource notices, and straightforward
+extract/select-installed-Complete-assets/play instructions. Do not include original
+assets, saves, personal workstation paths or credentials. Preserve repository
+visibility and branches; this request does not authorize changing visibility.
+
+Build/Integrator owns CI, packaging and publication; Frontend owns the bounded
+Windows asset/setup path under `tools/windows/`; Runtime owns Windows runtime
+compatibility fixes; Tester independently audits package contents/instructions.
+Reuse upstream Windows CMake/Conan/CI mechanisms where practical. Drive the actual
+build through failures to an artifact rather than stopping after workflow creation.
+A Windows compile/package pass is not Windows graphical gameplay acceptance; name
+any untested platform behavior explicitly in the preview release. Keep the frozen
+Linux manual preview and accepted save profiles intact.
+
 ## Delivery sequence
 
 1. Establish upstream build and dependency baseline; no new engine/framework.

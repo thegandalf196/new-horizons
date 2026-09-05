@@ -1,0 +1,85 @@
+name: New Horizons Windows x64 Preview
+
+on:
+  workflow_dispatch:
+  # Bootstrap this branch-only workflow without changing the preserved default
+  # branch. Subsequent build/package fixes use the same narrowly scoped trigger.
+  push:
+    branches: [definitive-mvp]
+    paths:
+      - .github/workflows/new-horizons-windows.yml
+      - CI/new-horizons-*.py
+      - CMakePresets.json
+      - tools/windows/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: new-horizons-windows-x64
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'thegandalf196/vcmi' && github.ref == 'refs/heads/definitive-mvp'
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Install upstream MSVC v142 toolset
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $version = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationVersion
+          "MSBUILD_VS_VERSION=$(($version -split '\.')[0])" >> $env:GITHUB_ENV
+          $installation = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+          $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
+          $process = Start-Process -FilePath $installer -ArgumentList @('modify', '--installPath', "`"$installation`"", '--add', 'Microsoft.VisualStudio.Component.VC.v142.x86.x64', '--quiet', '--norestart') -Wait -PassThru
+          if ($process.ExitCode -notin @(0, 3010)) { throw "VS installer failed: $($process.ExitCode)" }
+
+      - name: Restore upstream Conan binary cache
+        run: |
+          set -euo pipefail
+          python -m pip install 'conan>=2.25,<3'
+          archive="$RUNNER_TEMP/dependencies-windows-x64.txz"
+          curl --fail --location --retry 3 --output "$archive" https://github.com/vcmi/vcmi-dependencies/releases/download/2026-09-01/dependencies-windows-x64.txz
+          echo "6772d2e9f0a730329a195edce895a863d9115c4bba43101a9a6df3fefe6cfe43  $archive" | sha256sum --check
+          conan cache restore "$archive"
+
+      - uses: step-security/msvc-dev-cmd@main
+        with:
+          arch: x64
+          toolset: '14.29'
+
+      - name: Resolve upstream dependency profile
+        run: |
+          set -euo pipefail
+          conan profile detect
+          conan install . --output-folder=conan-generated --build=never \
+            --profile=dependencies/conan_profiles/msvc-x64 \
+            --conf='tools.cmake.cmaketoolchain:generator=Ninja' \
+            --conf="tools.microsoft.msbuild:vs_version=${MSBUILD_VS_VERSION}" \
+            -s '&:build_type=RelWithDebInfo' -o '&:target_pre_windows10=True' \
+            -o '&:with_onnxruntime=False' -o '&:with_discord_presence=False' \
+            --format=json > conan-generated-graph.json
+
+      - name: Configure client and internal authority
+        run: cmake --preset new-horizons-windows-x64
+
+      - name: Compile Windows x64 client
+        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient --parallel 4
+
+      - name: Stage upstream runtime and resources
+        run: cmake --install build/new-horizons-windows-x64
+
+      # Release publication is deliberately separate: actual archive, recursive
+      # PE imports, notices/source and privacy must pass independent audit first.
