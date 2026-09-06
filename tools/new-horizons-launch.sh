@@ -122,6 +122,16 @@ if ! $lockHeld; then
 	flock -n 9 || fail 'This NH profile is already in use.'
 fi
 printf '%s\n' "$marker" > "$profile/.nh-profile"
+# Root mods are not auto-enabled merely by mounting them. This managed profile
+# owns its fixed preset; discard cached validation/optional preset selections,
+# not game settings or saves. Saved games retain their own versioned rules.
+mods='["vcmi", "core"]'
+if $curatedCommands; then
+	mods='["vcmi", "core", "new-horizons"]'
+fi
+preset=$(mktemp -- "$profile/config/vcmi/.nh-modSettings.XXXXXXXX")
+printf '{\n  "activePreset": "default",\n  "presets": {"default": {"mods": %s, "settings": {}}}\n}\n' "$mods" > "$preset"
+mv -fT -- "$preset" "$profile/config/vcmi/modSettings.json"
 # Fresh allowlisted root each run. argv[0] must remain this symlink path: EntryPoint
 # chdirs to its parent; VCMIDirs developmentMode then excludes ALL system roots.
 runtime=$(mktemp -d -- "$profile/runtime.XXXXXXXX")

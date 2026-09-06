@@ -38,6 +38,16 @@ fi
 [[ -z ${LD_PRELOAD+x} && -z ${LD_AUDIT+x} ]]
 [[ ! -e $XDG_DATA_HOME/vcmi/Mods ]]
 [[ -d $XDG_DATA_HOME/vcmi/Saves ]]
+# Mounting a root mod does not activate it in VCMI's fresh default preset.
+preset="$XDG_CONFIG_HOME/vcmi/modSettings.json"
+[[ -f $preset ]]
+grep -q '"activePreset": "default"' "$preset"
+if [[ ${EXPECTED_COMMANDS:-0} == 1 ]]; then
+	grep -Fq '"mods": ["vcmi", "core", "new-horizons"]' "$preset"
+else
+	grep -Fq '"mods": ["vcmi", "core"]' "$preset"
+	! grep -q 'new-horizons' "$preset"
+fi
 printf 'stub only\n' >> "$STUB_RECEIPT"
 printf 'save placeholder\n' > "$XDG_DATA_HOME/vcmi/Saves/stub-save"
 exit "${STUB_EXIT:-0}"
@@ -99,8 +109,17 @@ mv -- "$engine/config/newHorizonsCombat.json" "$tmp/commands.json"
 expect_fail "${args[@]}" --verify-only
 mv -- "$tmp/commands.json" "$engine/config/newHorizonsCombat.json"
 export EXPECTED_COMMANDS=1
+printf '{"activePreset":"unwanted","presets":{"unwanted":{"mods":["unwanted"]}}}\n' > "$profile/config/vcmi/modSettings.json"
+printf 'settings sentinel\n' > "$profile/config/vcmi/settings.json"
+printf 'legacy save sentinel\n' > "$profile/data/vcmi/Saves/existing-save"
+presetBefore=$(cksum < "$profile/config/vcmi/modSettings.json")
+bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
+[[ $(cksum < "$profile/config/vcmi/modSettings.json") == "$presetBefore" ]]
 bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ $(wc -l < "$STUB_RECEIPT") == 4 ]]
+[[ $(< "$profile/config/vcmi/settings.json") == 'settings sentinel' ]]
+[[ $(< "$profile/data/vcmi/Saves/existing-save") == 'legacy save sentinel' ]]
+! grep -q 'unwanted' "$profile/config/vcmi/modSettings.json"
 # A live profile contains runtime symlinks: diagnose its lock before scanning
 # those links, and do not truncate/write the lock even during verify-only.
 printf 'lock sentinel\n' > "$profile/.nh-lock"

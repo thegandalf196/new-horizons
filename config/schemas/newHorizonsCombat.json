@@ -6,6 +6,7 @@
 	"oneOf": [
 		{ "maxProperties": 0 },
 		{
+			"minProperties": 3,
 			"required": [ "schemaVersion", "rulesetVersion", "commands" ],
 			"additionalProperties": false,
 			"properties": {
@@ -13,6 +14,7 @@
 				"rulesetVersion": { "type": "integer", "enum": [ 1 ] },
 				"commands": {
 					"type": "object",
+					"minProperties": 5,
 					"required": [ "charge", "holdTheLine", "advance", "aggressive", "defensive" ],
 					"additionalProperties": false,
 					"properties": {
@@ -29,6 +31,7 @@
 	"definitions": {
 		"coefficient": {
 			"type": "object",
+			"minProperties": 3,
 			"required": [ "base", "attack", "defense" ],
 			"additionalProperties": false,
 			"properties": {
@@ -39,6 +42,7 @@
 		},
 		"command": {
 			"type": "object",
+			"minProperties": 4,
 			"required": [ "kind", "coverage", "duration", "effects" ],
 			"additionalProperties": false,
 			"properties": {
