@@ -4,9 +4,15 @@
 #include "../entities/artifact/CArtHandler.h"
 #include "../callback/IGameInfoCallback.h"
 #include "../spells/CSpellHandler.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "../CSkillHandler.h"
 
 JsonKeyExtractor::JsonKeyExtractor(IGameInfoCallback * cb) : cb(cb) {}
+
+SecondarySkill JsonKeyExtractor::resolveSecondarySkill(SecondarySkill skill) const
+{
+	return cb ? newHorizonsMagic::replacementSkill(cb->getMagicRules(), skill) : skill;
+}
 
 si32 JsonKeyExtractor::loadVariable(const std::string & variableGroup, const std::string & value, const Variables & variables, si32 defaultValue)
 {
@@ -120,9 +126,9 @@ std::set<SpellID> JsonKeyExtractor::filterKeysTyped(const JsonNode & value, cons
 
 		vstd::erase_if(
 			result,
-			[=](const SpellID & spell)
+			[this, spellLevel](const SpellID & spell)
 			{
-				return LIBRARY->spellh->getById(spell)->getLevel() != spellLevel;
+				return (cb ? cb->getSpellLevel(spell) : spell.toSpell()->getLevel()) != spellLevel;
 			}
 		);
 	}
@@ -133,9 +139,11 @@ std::set<SpellID> JsonKeyExtractor::filterKeysTyped(const JsonNode & value, cons
 
 		vstd::erase_if(
 			result,
-			[=](const SpellID & spell)
+			[this, schoolID](const SpellID & spell)
 			{
-				return !LIBRARY->spellh->getById(spell)->hasSchool(SpellSchool(schoolID));
+				const SpellSchool school(schoolID);
+				return !spell.toSpell()->hasSchool(school)
+					&& !(cb && vstd::contains(cb->getSpellSchools(spell), school));
 			}
 		);
 	}

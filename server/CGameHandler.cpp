@@ -87,6 +87,7 @@
 #include "../lib/serializer/CLoadFile.h"
 
 #include "../lib/spells/CSpell.h"
+#include "../lib/spells/NewHorizonsMagic.h"
 
 #include <vstd/RNG.h>
 #include <vstd/CLoggerBase.h>
@@ -416,7 +417,7 @@ void CGameHandler::changeSecSkill(const CGHeroInstance * hero, SecondarySkill wh
 	}
 	SetSecSkill sss;
 	sss.id = hero->id;
-	sss.which = which;
+	sss.which = newHorizonsMagic::replacementSkill(hero->getMagicRules(), which);
 	sss.val = val;
 	sss.mode = mode;
 	sendAndApply(sss);

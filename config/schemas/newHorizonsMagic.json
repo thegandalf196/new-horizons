@@ -43,11 +43,9 @@
 				"spells": {
 					"type": "object",
 					"minProperties": 1,
-					"additionalProperties": false,
-					"patternProperties": {
-						"^[a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+$": {
-							"$ref": "#/definitions/spell"
-						}
+					"description": "Native validation supports typed additionalProperties, not patternProperties. Scoped identifiers are checked by validateRules.",
+					"additionalProperties": {
+						"$ref": "#/definitions/spell"
 					}
 				},
 				"schoolSkills": {
@@ -140,11 +138,9 @@
 				},
 				"factions": {
 					"type": "object",
-					"additionalProperties": false,
-					"patternProperties": {
-						"^[a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+$": {
-							"$ref": "#/definitions/faction"
-						}
+					"description": "Scoped faction identifiers are checked by validateRules.",
+					"additionalProperties": {
+						"$ref": "#/definitions/faction"
 					}
 				},
 				"factionWeights": {

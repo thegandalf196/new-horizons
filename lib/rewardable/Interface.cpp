@@ -19,6 +19,7 @@
 #include "../entities/hero/CHeroHandler.h"
 #include "../gameState/CGameState.h"
 #include "../spells/ISpellMechanics.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/MiscObjects.h"
 #include "../mapping/TerrainTile.h"
@@ -105,13 +106,14 @@ void Rewardable::Interface::grantRewardBeforeLevelup(IGameEventCallback & gameEv
 
 	for(const auto & entry : info.reward.secondary)
 	{
-		int currentLevel = hero->getSecSkillLevel(entry.first);
+		const auto skill = newHorizonsMagic::replacementSkill(hero->getMagicRules(), entry.first);
+		int currentLevel = hero->getSecSkillLevel(skill);
 		int newLevel = currentLevel + entry.second;
 		int newLevelClamped = std::clamp<int>(newLevel, MasteryLevel::NONE, MasteryLevel::EXPERT);
-		bool canLearn = hero->getSecSkillLevel(entry.first) != 0 || hero->canLearnSkill();
+		bool canLearn = currentLevel != 0 || hero->canLearnSkill();
 
 		if(currentLevel != newLevelClamped && canLearn)
-			gameEvents.changeSecSkill(hero, entry.first, newLevelClamped, ChangeValueMode::ABSOLUTE);
+			gameEvents.changeSecSkill(hero, skill, newLevelClamped, ChangeValueMode::ABSOLUTE);
 	}
 
 	for(int i=0; i< info.reward.primary.size(); i++)

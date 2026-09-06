@@ -8,9 +8,103 @@ AI participation, feedback, crash prevention and save integrity are gates.
 Repaired Windows archive publication continues independently; feature workers
 need not wait for these tests. Existing architecture investigation stays closed.
 
-## Current Tester handoff — corrected native gates green, GUI freeze pending
+## Pipeline checkpoint
 
-Independently parsed actual `magic-fixes-baseline.xml/.exit`: **109 tests,
+Read `NH_DELIVERY_PIPELINE.md`, `NH_AGENT_START.md` and the updated ownership/design
+links at the safe no-GUI checkpoint. Existing full-scope Tester goal continues.
+Retest defects in the declared frozen command/school increment before expanding
+its release scope; later growth/mastery/tier work stays separate without losing
+its full-design acceptance requirements. Build retains integration/publication;
+no fifth packaging owner or new goal is implicitly activated.
+
+## Current Tester handoff — immutable95 GUI: spell-AI proven, two actual defects
+
+Under Build's explicit ten-minute quiet GO, independently verified the immutable
+`magic-preview-95a7001e3` identity and full SHA256SUMS before and after the run.
+Fresh profile with copied user preferences only, new private boot/start/socket
+identity-guarded Xvfb:191, authored SpellAI map, visually confirmed **Gold both**.
+No original executable or original save was used or changed.
+
+Actual bounded journey (`testing/magic-gui95/`, screenshots01–12):
+
+- Actual hero-versus-hero battle. Human Grand Elves defended; blue Edric selected
+  **Implosion**, not a command. Expanded battle log explicitly says Edric casts
+  Implosion on Dendroid Guards,7525damage and136deaths; blue mana100→84. Blue
+  Grand Elves subsequently waited. This establishes the previously missing actual
+  spell-capable AI choice/action, not complete AI roster or isolated damage balance.
+- Fresh six-school spellbook rendered all six selectable tabs and matching headers.
+  Initial All showed Haste/Magic Arrow/Bloodlust with costs4/4/5. Individual schools
+  changed visible contents; Primal showed Bloodlust. Actual human Primal Bloodlust
+  targeted own Dendroids successfully: visible log and mana100→95. Retreated to
+  adventure afterward. No new-battle NONE or old-four-school continuation claim.
+- **Actual UI RED:** clicking the visible All button twice after selecting Primal
+  left its header/filter and sole Bloodlust unchanged, despite the correct All
+  Spells hover label. Screenshot11. Frontend immediately notified; owner traced
+  hoverable resetting PRESSED and reports a source-ready fix, **not retested**.
+- **Actual schema RED:** normal launcher startup emits `Data in new-horizons is
+  invalid`, with scoped factions/spells rejected under `/magic/newHorizons`.
+  Module nevertheless loads and saved six-school behavior is visible. Runtime/
+  Build immediately notified; engine validator lacks patternProperties. Their
+  portable schema repair remains unaccepted; do not bypass validation.
+
+**Forced exit124, not a clean run.** The480s supervisor deadline was reached after
+retreat, before ordinary desktop exit. Tester supervision had an identity bug:
+`/proc/exe` resolves the runtime symlink into the frozen candidate, not the profile.
+Its profile-parent condition therefore never acquired the client pidfd; the final
+owned-group SIGKILL fallback ran. Do not claim client-first cleanup for this run.
+Client/Xvfb were confirmed gone and the lease explicitly released within the
+Build quiet window;801 sampled observations found no client child or owned INET
+socket. Sampling began after independent client identity recovery, not at startup.
+
+Prepared supervisor now requires explicit `NH_TEST_CANDIDATE` and matches the exact
+resolved frozen executable plus owned launcher session. A real synthetic ELF/runtime
+symlink negative/positive control reproduces the old rejection, accepts the exact
+candidate and terminates its stable client pidfd. Syntax/control pass; **actual
+next-GUI integration is still required**. Evidence `commands-next/symlink-identity-control.json`.
+
+**Next:** repaired immutable schema/All candidate and quiet GO; verify client pidfd
+acquisition immediately, retest Primal→All/repeated All and navigation, then actual
+old-four-school save continuation and postbattle rehire with two visibly transferred
+hero stacks/new-battle NONE. Full growth/mastery/tier and Windows GUI gates remain
+open. Existing native and local Windows82 repair passes below are scoped evidence.
+
+## Fullbook fixture and reward-native checkpoint
+
+Independently parsed actual `magic-reward-green-baseline.*`:128 tests,
+126PASS/two opt-in export skips,exit0. Its required-NH compatibility property is
+now explicitly **DISABLED**, not an absent-installation proof. Curated39 has
+37PASS/one context skip/**one failure,exit1**: school reward-filter test throws
+`bad optional access`. The filename's green label is not an acceptance result.
+Runtime's source-only correction sets each filter's actual owning mod scope,
+asserts exact resolved school ID and preserves core→optional-NH denial; expected
+sets/nonempty checks remain intact. Reviewed source; corrected execution pending.
+
+The curated fullbook export itself actually **passes**. Log reports69 original
+spells/59combat and six school counts12/11/16/18/7/10 (not a disjoint partition).
+Independently audited actual666-byte gzip/raw10572 SOD36×36 export, SHA-256
+`56d9a86d084b33f0323f1866fad34f10b781f24e2771349e42dad48a5cc61e0c`.
+Preserved a byte-identical Tester copy as
+`testing/commands-assets/Maps/NHMagicFullBookRanks.h3m`; old two fixtures unchanged.
+Native initialization/rank/army/fullbook/parser assertions are separate from the
+independent bounded gzip/header/hash proof and the still-unrun fullbook GUI route.
+Prepared audit mode `--magic-fullbook` rejects cross-family substitution; synthetic
+controls and the actual old pair regression pass. Local evidence:
+`commands-static/{fullbook-fixture-manifest,magic-reward-independent}.json`.
+
+## Earlier native checkpoints
+
+Latest assembled native gates independently parsed: `magic-final-baseline.*`
+**113=112PASS/one fixture-export skip,exit0**; `magic-final-curated.*`
+**24=23PASS/one baseline-context skip,exit0**. Four actual original-Tome cases
+in each profile record activeSchools4/6 respectively, unknownSpellScore20000
+and allKnownSpellScore0, with real artifact grant/castability assertions. This
+is native AI valuation/affinity preservation, not rendered book acceptance or
+an AI adventure acquisition journey. Evidence `magic-final-independent.json`
+contains XML hashes, case identities and actual properties; source test reviewed.
+Build identifies foundation commit `2f51a93a0`; immutable Linux GUI candidate and
+quiet GO are still pending while the separate Windows cross compiler runs.
+
+Earlier corrected checkpoint: independently parsed actual `magic-fixes-baseline.xml/.exit`: **109 tests,
 108 passes,one expected fixture-export skip,zero failures,exit0**; curated XML/exit:
 **20 tests,19 passes,one baseline-only compatibility-control skip,zero failures,
 exit0**. `magic-fixes-build-20260906T212026Z.exit` is0. Local
@@ -30,8 +124,9 @@ establish the whole spell roster, GUI, growth, masteries, tiers or Windows gamep
 **Next executable task:** verify Build's new immutable source/binary/content
 identity and obtain explicit quiet GO; prioritize actual spell-AI, corrected
 postbattle two-stack/new-battle NONE route and old-four/new-six-school UI checks.
-No current GUI lease. Windows source overlay preparation is reported ready, but
-no replacement archive bytes have been independently accepted.
+No current GUI lease. Actual Windows82 local notice/source replacement593 now
+passes its independent archive-repair gates (`NH_WINDOWS_ACCEPTANCE.md`); this
+is not the later redesign Windows build or native Windows gameplay acceptance.
 
 ## Historical first six-school native build — two RED gates
 

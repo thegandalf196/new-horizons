@@ -16,7 +16,7 @@ EXPECTED_NAMES = {"NHCommandsBooklessAI", "NHCommandsSpellAI"}
 MAX_BYTES = 8 * 1024 * 1024
 
 
-def inspect(data):
+def inspect(data, expected_names=EXPECTED_NAMES):
     if len(data) > MAX_BYTES:
         raise ValueError("Compressed fixture exceeds bounded audit size")
     stream = zlib.decompressobj(16 + zlib.MAX_WBITS)
@@ -34,14 +34,16 @@ def inspect(data):
     offset = 10
     strings = []
     for _ in range(2):
+        if offset + 4 > len(raw):
+            raise ValueError("Truncated header string length")
         length, = struct.unpack_from("<I", raw, offset)
         offset += 4
         if length > 4096 or offset + length > len(raw):
             raise ValueError("Invalid bounded header string")
         strings.append(raw[offset:offset + length].decode("utf-8"))
         offset += length
-    if strings[0] not in EXPECTED_NAMES:
-        raise ValueError("Not an approved command hero-versus-hero fixture name")
+    if strings[0] not in expected_names:
+        raise ValueError("Not an approved authored fixture name")
     return {"name": strings[0], "format": "SOD", "map_size": 36, "levels": 1,
             "compressed_bytes": len(data), "raw_bytes": len(raw),
             "gzip_sha256": hashlib.sha256(data).hexdigest(),
@@ -62,7 +64,18 @@ def self_test():
         except (ValueError, zlib.error):
             continue
         raise AssertionError("Malformed gzip accepted")
-    print("PASS: header-only control accepted; truncated/concatenated/invalid gzip rejected")
+    magic_raw = struct.pack("<IBIB", 0x1c, 1, 36, 0) + field("NHMagicFullBookRanks") + field("header-only control")
+    encoder = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+    magic = encoder.compress(magic_raw) + encoder.flush()
+    magic_names = {"NHMagicFullBookRanks"}
+    assert inspect(magic, magic_names)["name"] == "NHMagicFullBookRanks"
+    for data, names in ((magic, EXPECTED_NAMES), (good, magic_names)):
+        try:
+            inspect(data, names)
+        except ValueError:
+            continue
+        raise AssertionError("Cross-family fixture substitution accepted")
+    print("PASS: header-only controls accepted; malformed gzip and cross-family substitution rejected")
 
 
 def main():
@@ -70,7 +83,10 @@ def main():
     parser.add_argument("maps", type=Path, nargs="*")
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--magic-fullbook", action="store_true",
+                        help="Audit the single NHMagicFullBookRanks export instead of the command pair")
     args = parser.parse_args()
+    expected = {"NHMagicFullBookRanks"} if args.magic_fullbook else EXPECTED_NAMES
     if args.self_test:
         self_test()
     if args.maps:
@@ -80,13 +96,13 @@ def main():
         for path in args.maps:
             if path.stat().st_size > MAX_BYTES:
                 raise ValueError("Fixture file exceeds audit bound")
-            records.append({"file": path.name, **inspect(path.read_bytes())})
-        if {record["name"] for record in records} != EXPECTED_NAMES or len(records) != 2:
-            raise ValueError("Both distinct authored hero-versus-hero fixtures required")
+            records.append({"file": path.name, **inspect(path.read_bytes(), expected)})
+        if {record["name"] for record in records} != expected or len(records) != len(expected):
+            raise ValueError("Exactly the requested distinct authored fixtures required")
         args.manifest.parent.mkdir(parents=True, exist_ok=True)
         args.manifest.write_text(json.dumps({"maps": records,
             "scope": "Gzip integrity/header/hash only; native semantic assertions and GUI acceptance separately required"}, indent=2) + "\n")
-        print("PASS: both actual fixture gzip streams, headers and hashes audited")
+        print("PASS: requested fixture gzip streams, headers and hashes audited")
     elif not args.self_test:
         parser.error("Supply both maps or --self-test")
 

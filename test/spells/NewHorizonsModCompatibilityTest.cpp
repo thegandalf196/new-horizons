@@ -64,7 +64,7 @@ TEST(NewHorizonsModCompatibilityTest, MissingRequiredGameplayModStillRejects)
 	EXPECT_THROW(readHeader(header), ModIncompatibility);
 }
 
-TEST(NewHorizonsModCompatibilityTest, RequiredCuratedModuleCannotBeMissingOrDisabled)
+TEST(NewHorizonsModCompatibilityTest, RequiredCuratedDependencyRejectsInBaselineConfiguration)
 {
 	if(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 		GTEST_SKIP() << "Run this negative control in the unchanged baseline native preset";
@@ -74,5 +74,11 @@ TEST(NewHorizonsModCompatibilityTest, RequiredCuratedModuleCannotBeMissingOrDisa
 	required.impactsGameplay = true;
 	required.name = "Required New Horizons rules";
 	header.emplace(GameConstants::NEW_HORIZONS_MOD_SCOPE, required);
+	const auto statuses = ModVerificationInfo::verifyListAgainstLocalMods(header);
+	const auto found = statuses.find(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	ASSERT_NE(found, statuses.end());
+	const bool installed = vstd::contains(LIBRARY->modh->getAllMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	ASSERT_EQ(found->second, installed ? ModVerificationStatus::DISABLED : ModVerificationStatus::NOT_INSTALLED);
+	RecordProperty("requiredNHVerificationStatus", found->second == ModVerificationStatus::DISABLED ? "DISABLED" : "NOT_INSTALLED");
 	EXPECT_THROW(readHeader(header), ModIncompatibility);
 }

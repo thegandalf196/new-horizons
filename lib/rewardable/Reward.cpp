@@ -12,6 +12,7 @@
 #include "Reward.h"
 
 #include "../mapObjects/CGHeroInstance.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "../serializer/JsonSerializeFormat.h"
 #include "../constants/StringConstants.h"
 #include "../CSkillHandler.h"
@@ -120,14 +121,14 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 
 	for(const auto & entry : secondary)
 	{
-		auto skillID = entry.first;
+		const auto skillID = h ? newHorizonsMagic::replacementSkill(h->getMagicRules(), entry.first) : entry.first;
 		int levelsGained = entry.second;
 		int currentLevel = h ? h->getSecSkillLevel(skillID) : 0;
 		int finalLevel = std::clamp<int>(currentLevel + levelsGained, MasteryLevel::NONE, MasteryLevel::EXPERT);
 		if (finalLevel == MasteryLevel::NONE)
-			comps.emplace_back(ComponentType::SEC_SKILL, entry.first);
+			comps.emplace_back(ComponentType::SEC_SKILL, skillID);
 		else
-			comps.emplace_back(ComponentType::SEC_SKILL, entry.first, finalLevel);
+			comps.emplace_back(ComponentType::SEC_SKILL, skillID, finalLevel);
 	}
 
 	for(const auto & entry : grantedArtifacts)

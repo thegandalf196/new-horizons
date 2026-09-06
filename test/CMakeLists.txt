@@ -77,6 +77,7 @@ set(test_SRCS
 		spells/AdventureSpellEffectTest.cpp
 		spells/CSpellTest.cpp
 		spells/NewHorizonsMagicTest.cpp
+	spells/NewHorizonsMagicSchemaTest.cpp
 		spells/NewHorizonsModCompatibilityTest.cpp
  		spells/TargetConditionTest.cpp
 
@@ -130,6 +131,11 @@ set(test_SRCS
 		server/battles/HeroCommandCloneTest.cpp
 		server/battles/HeroCommandTurnLifecycleTest.cpp
 		server/battles/NewHorizonsMagicStateTest.cpp
+		server/battles/NewHorizonsMagicFixtureExportTest.cpp
+		server/battles/NewHorizonsSkillRewardTest.cpp
+		server/battles/NewHorizonsSkillFeedbackTest.cpp
+		server/battles/NewHorizonsSpellRewardFilterTest.cpp
+		server/battles/NewHorizonsSkillRewardApplicationTest.cpp
 		server/queries/QueriesProcessorTest.cpp
 
 		texts/TextOperationsTest.cpp
@@ -190,6 +196,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroCommandAITest.cpp
 		battleAI/NewHorizonsMagicAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp
+		battleAI/NewHorizonsLevelGrantAITest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 	)
 endif()

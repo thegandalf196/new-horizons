@@ -261,7 +261,10 @@ CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _m
 		allSchoolsButton = std::make_shared<CToggleButton>(Point(534 + offR, 318), AnimationPath::builtin("NH_spells_button"),
 			CButton::tooltip(LIBRARY->generaltexth->zelp[458].first, LIBRARY->generaltexth->zelp[458].second),
 			[this](bool) { selectSchool(SpellSchool::ANY); });
-		allSchoolsButton->setHoverable(true);
+		// Toggle release refreshes hover before checking PRESSED. Enabling hover
+		// highlighting would erase that state and prevent the selection callback.
+		// Default hover still supplies tooltips; selected All cannot be deselected.
+		allSchoolsButton->setAllowDeselection(false);
 	}
 	const int customSchoolCount = customSpellSchools.size();
 	const int fullSizeCapacity = isBigSpellbook ? MAX_CUSTOM_SPELL_SCHOOLS_BIG : MAX_CUSTOM_SPELL_SCHOOLS;

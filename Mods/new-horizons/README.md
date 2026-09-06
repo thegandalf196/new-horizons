@@ -6,7 +6,7 @@ This is internal edition content, not a player-managed mod collection. Runtime
 artwork is original CC0 geometry; editable sources and provenance are in
 `assets/new-horizons/`. Referenced Heroes III resources remain purchaser-supplied.
 
-## Authored six-school increment — integration pending
+## Six-school foundation — native integration passed, GUI acceptance pending
 
 `tools/update-new-horizons-module.py` generates metadata from canonical
 `config/newHorizons{Combat,Magic,Schools,Skills}.json`. Do not edit the inline copy.
@@ -18,13 +18,15 @@ register fictional versions of the planned new spell roster. Titan's Bolt and
 creature-only abilities/triggers retain their special handling. Existing spells
 keep their real names/effects: Magic Arrow is not falsely labeled a completed new
 Magic Missile implementation. New spells/effects, qualitative masteries, growth,
-secondary attributes, remaining commands and creature tiers are subsequent work.
+secondary attributes and creature tiers are subsequent work.
 
 Six new school skills provide actual Basic/Advanced/Expert school bonuses, with
 provisional acquisition weights Might 2 / Magic 6. These ranks are not the later
 one-of-three post-Expert mastery choices. New-game starting skill migration is
 explicitly provisional: Air to Sorcery, Fire to Havoc, Water to Light and Earth to
-Nature. Saved legacy games must not receive that conversion or new eligibility.
+Nature. Authored school rewards/requirements and spell filters also use the
+saved game's mapping. Saved legacy games must not receive the conversion or
+new eligibility.
 
 Where the design explicitly gives an existing spell's tier, the snapshot supplies
 that tier and provisional costs by rank (none/basic/advanced/expert):

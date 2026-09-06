@@ -18,6 +18,7 @@
 #include "../constants/StringConstants.h"
 #include "../entities/artifact/ArtifactUtils.h"
 #include "../mapObjects/CGHeroInstance.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "../networkPacks/Component.h"
 #include "../serializer/JsonSerializeFormat.h"
 
@@ -145,7 +146,7 @@ bool Rewardable::Limiter::heroAllowed(const CGHeroInstance * hero) const
 
 	for(const auto & skill : secondary)
 	{
-		if (skill.second > hero->getSecSkillLevel(skill.first))
+		if (skill.second > hero->getSecSkillLevel(newHorizonsMagic::replacementSkill(hero->getMagicRules(), skill.first)))
 			return false;
 	}
 
@@ -290,7 +291,10 @@ void Rewardable::Limiter::loadComponents(std::vector<Component> & comps,
 	}
 
 	for(const auto & entry : secondary)
-		comps.emplace_back(ComponentType::SEC_SKILL, entry.first, entry.second);
+	{
+		const auto skill = h ? newHorizonsMagic::replacementSkill(h->getMagicRules(), entry.first) : entry.first;
+		comps.emplace_back(ComponentType::SEC_SKILL, skill, entry.second);
+	}
 
 	for(const auto & entry : artifacts)
 		comps.emplace_back(ComponentType::ARTIFACT, entry);

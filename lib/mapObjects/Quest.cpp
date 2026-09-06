@@ -26,6 +26,7 @@
 #include "../mapObjectConstructors/CObjectClassesHandler.h"
 #include "../serializer/JsonSerializeFormat.h"
 #include "../spells/CSpellHandler.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "../GameConstants.h"
 #include "../constants/StringConstants.h"
 #include "../CPlayerState.h"
@@ -162,7 +163,8 @@ void Quest::addTextReplacements(const IGameInfoCallback * cb, MetaString & text,
 		
 		for(auto & skill : mission.secondary)
 		{
-			loot.appendTextID(LIBRARY->skillh->getById(skill.first)->getNameTextID());
+			const auto effective = newHorizonsMagic::replacementSkill(cb->getMagicRules(), skill.first);
+			loot.appendTextID(LIBRARY->skillh->getById(effective)->getNameTextID());
 		}
 		
 		for(auto & spell : mission.spells)
@@ -242,7 +244,12 @@ void Quest::addTextReplacements(const IGameInfoCallback * cb, MetaString & text,
 void Quest::getVisitText(const IGameInfoCallback * cb, MetaString &iwText, std::vector<Component> &components, bool firstVisit, const CGHeroInstance * h) const
 {
 	bool failRequirements = (h ? !checkQuest(h) : true);
+	const auto firstComponent = components.size();
 	mission.loadComponents(components, h);
+	// Quest-log previews can have game context without a selected hero.
+	for(size_t i = firstComponent; i < components.size(); ++i)
+		if(components[i].type == ComponentType::SEC_SKILL)
+			components[i].subType = newHorizonsMagic::replacementSkill(cb->getMagicRules(), components[i].subType.as<SecondarySkill>());
 
 	if(firstVisit)
 		iwText.append(firstVisitText);

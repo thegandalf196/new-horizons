@@ -335,7 +335,7 @@ double getArtifactBonusRelevance(const CGHeroInstance * hero, const std::shared_
 			if (hero->getSpellLevel(spell) != level)
 				continue;
 
-			if (!hero->spellbookContainsSpell(spellID))
+			if (hero->spellbookContainsSpell(spellID))
 				knownWeight += 1;
 			totalWeight += 1;
 		}

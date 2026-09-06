@@ -24,6 +24,8 @@ public:
 	bool canOverwriteMapSettings(const JsonNode & value) const;
 
 private:
+	SecondarySkill resolveSecondarySkill(SecondarySkill skill) const;
+
 	template<typename IdentifierType>
 	IdentifierType decodeKey(const JsonNode & value, const Variables & variables);
 
@@ -98,6 +100,15 @@ IdentifierType JsonKeyExtractor::decodeKey(const std::string & modScope, const s
 }
 
 template<>
+inline SecondarySkill JsonKeyExtractor::decodeKey(const std::string & modScope, const std::string & value, const Variables & variables)
+{
+	const auto raw = value.empty() || value[0] != '@'
+		? SecondarySkill(LIBRARY->identifiers()->getIdentifier(modScope, SecondarySkill::entityType(), value).value_or(-1))
+		: SecondarySkill(loadVariable(SecondarySkill::entityType(), value, variables, SecondarySkill::NONE));
+	return resolveSecondarySkill(raw);
+}
+
+template<>
 inline PrimarySkill JsonKeyExtractor::decodeKey(const std::string & modScope, const std::string & value, const Variables & variables)
 {
 	if(value.empty() || value[0] != '@')
@@ -113,6 +124,12 @@ IdentifierType JsonKeyExtractor::decodeKey(const JsonNode & value, const Variabl
 		return IdentifierType(LIBRARY->identifiers()->getIdentifier(IdentifierType::entityType(), value).value_or(-1));
 	else
 		return loadVariable(IdentifierType::entityType(), value.String(), variables, IdentifierType::NONE);
+}
+
+template<>
+inline SecondarySkill JsonKeyExtractor::decodeKey(const JsonNode & value, const Variables & variables)
+{
+	return decodeKey<SecondarySkill>(value.getModScope(), value.String(), variables);
 }
 
 template<>
