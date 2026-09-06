@@ -306,6 +306,116 @@ Tester read the CSV and independently recalculated the causal clock bounds.
 Do **not** switch the shipping architecture based on these results. The benchmark
 establishes microsecond-scale small-packet overhead but synthetic large bursts can
 favor the existing pipeline; full-game AI work and rendering have different scopes.
-Direct re-entry is observably different. A narrowly validated experimental action
-could be measured next, retaining validation/ownership/callback scheduling, but no
-whole-game same-thread variant or default change has been accepted.
+Direct re-entry is observably different. The final narrowly validated formation comparison below completed that remaining
+bounded action. No whole-game same-thread variant or default change was accepted.
+
+## Final formation-only A/B — experiment CLOSED
+
+At the user's stop-loss decision, Tester completed **only** the already-in-progress
+formation comparison:2026-09-06 **01:58:39–02:05:56 UTC**, exclusive quiet lane,
+5 fresh alternating byte/typed pairs,2 real formation changes per trial.
+No AI-turn extension, cooperative scheduler or same-thread engine was introduced.
+
+Frozen source `187604d2daf2687850ca4fa603548d5e4e032b7d`, snapshot
+`perf-formation-preview-187604d2d`:
+
+- Client SHA-256:
+  `2e953f105d89b0f04182751cba78be8e20a7012089870691f2bb6fa6fec99036`.
+- Library:
+  `374610d8e207ef1e7e68f7f7193da534a7c5536ea7e476bd7aa9b40a3ba39d38`.
+- Test:
+  `6ab02dd8b20c5cc5f0656efd02b9a00d50787af691e65c4da08a67cff7130d7f`.
+
+Build reported post-commit build0,11/11 native proofs including12 real validation
+arms,66 broader regression passes, opt-in skips when unset. Graphical A/B used
+traceON **both** sides; `NH_PERF_QUEUED_SET_FORMATION` unset versus1. This is
+**queued typed request delivery**, preserving the authoritative executor and
+response-byte path—not a same-thread result.
+
+### Actual state and route proof
+
+Same frozen43461dd6 save and prior settings. Loaded Ash's hero window, clicked
+the other formation (tight), closed/reopened the window, then restored loose and
+closed/reopened again. Two distinct inspected hero-panel fingerprints established
+changed state and restoration to the exact initial panel in every trial. Day1,
+XP166,4 Imps/6 Gogs, mana5, movement319 and resources remained unchanged; no
+turn, movement or resource-spending action was added.
+
+Each of10 traces has exactly2 SetFormation submits,2 ChangeFormation state applies
+and2 successful ACKs, request IDs6/7 for player0. Every typed trial has exactly2
+**actual `formation_typed_queued` markers** matching those request/player IDs;
+every byte trial has zero. Variant classification is not inferred from environment
+alone. All traces are loss-free. **All10 exact bounded-launcher exit statuses are0**,
+not just PID disappearance, using the hardened supervisor. All starting saves,
+original accepted save and frozen binaries remained hash-identical. Owned Xvfb
+stopped and quiet lane released02:05:56Z.
+
+### Measured result — no substantial benefit surfaced
+
+20 total commands,10 per route, clustered as2 commands in each of5 independent
+processes per route. Runtime independently analyzed the raw traces. Medians
+**across the5 per-process means**, not20 independent samples:
+
+| Observable | Byte route | Queued typed route |
+|---|---:|---:|
+|Caller send-call scope|14.803us|5.766us|
+|Submit→client-state apply|597.716us|613.773us|
+|Submit→ACK|633.650us|641.014us|
+
+The5 paired caller-scope deltas are -9.403/-8.642/-9.429/-9.038/-7.655us,
+mean **-8.833us**: a repeatable narrow caller-side saving. This is not an isolated
+server/queue timer or a whole-operation win. Mean paired submit→state difference
+is **+12.538us**, and submit→ACK **+13.428us**, typed minus bytes. ACK is not state
+or visual proof by itself.
+
+Descriptive pooled external control-ROI median intervals are byte
+[10.450,20.826]ms versus typed[10.473,20.835]ms. Pooled command medians (retained
+in `tester-summary.json`) differ from the per-process summaries above; pooling
+must not inflate the independent sample count.
+
+Per-pair mean submit→client-state times, microseconds:
+
+| Pair/order | Byte | Typed | Typed minus byte |
+|---|---:|---:|---:|
+|1 byte/typed|651.494|672.002|+20.508|
+|2 typed/byte|597.716|661.963|+64.247|
+|3 byte/typed|576.461|586.250|+9.789|
+|4 typed/byte|592.763|613.773|+21.010|
+|5 byte/typed|632.893|580.029|-52.865|
+
+There is a narrow caller-side saving, but no consistent whole-operation improvement
+or substantial player-visible benefit. This small noisy comparison is not proof
+of an intrinsic typed whole-operation penalty either.
+No p95/p99 claim from5 pairs. Trace overhead is present in both arms; the first
+byte run had longer manual inspection delays than subsequent automated runs,
+retained rather than discarded. Initial/changed/restored screenshots establish
+fingerprint meaning; remaining checks used the same exact cropped-state hashes.
+
+The48×68 external ROI observes **optimistic formation-control selection**, not an
+independently attributed authoritative-result frame. Close/reopen readback plus
+ChangeFormation applies verifies eventual real state; ACK is not visual response.
+Submit→client-state includes scheduling/response dispatch and is not isolated
+request serialization/server validation. No new affected-render candidate exists
+for formation, and no exact input→authoritative-present latency is claimed.
+
+Independent Runtime analysis agrees: mean paired caller-scope saving8.8331us
+(60.4% of that tiny call), but client-state/ACK means are12.5379/13.4284us later
+for typed, with4/5 state pairs slower. This demonstrates only a narrow caller-side
+saving, **not end-to-end or visible benefit**. Return-path PackageReceived timing
+is not pure delivery; no authoritative queue/apply timestamps were measured.
+Derived `runtime-findings.md`, `runtime-formation-commands.csv`,
+`runtime-formation-analysis.json`, `runtime-formation-variation.json` and
+`runtime-formation-phases.csv` preserve independent matching, phases and ranges.
+
+Local evidence under `testing/perf-formation-187/` in the Linux build root:
+manifest/final hashes,20 external toggle probes,10 traces,10 exact exit-status
+files, per-trial correctness records, `tester-summary.json`, the Runtime files
+above, and3 named state screenshots. `tools/tests/nh-perf-formation-trial.py` reproduces this fixed bounded
+route with state/trace/variant/exit checks; no further run is authorized by the file.
+
+**CLOSED:** preserve VCMI's existing architecture and shipping defaults. No
+whole-game same-thread implementation, cooperative AI or further transport
+experiment is recommended/continued. No substantial measured benefit arose to
+escalate for a new architectural decision. Next priorities are the actual
+downloadable Windows artifact and concrete gameplay defects; existing previews,
+saves and unrelated MinGW work remain preserved.
