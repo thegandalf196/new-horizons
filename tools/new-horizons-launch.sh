@@ -50,6 +50,16 @@ done
 for item in config/filesystem.json Mods/vcmi/mod.json scripts/damage/damageCalculator.lua; do
 	[[ -r $resources/$item ]] || fail "Missing engine resource: $item"
 done
+# Old frozen previews remain usable. New command candidates must carry the whole
+# curated module; never silently launch them without their rules or artwork.
+curatedCommands=false
+if [[ -e $resources/config/newHorizonsCombat.json || -e $resources/Mods/new-horizons ]]; then
+	for item in config/newHorizonsCombat.json Mods/new-horizons/mod.json; do
+		[[ -f $resources/$item && -r $resources/$item ]] || fail "Missing curated resource: $item"
+	done
+	[[ -d $resources/Mods/new-horizons/Images ]] || fail 'Missing curated command artwork directory.'
+	curatedCommands=true
+fi
 [[ -r $(dirname -- "$client")/libvcmi.so ]] || fail 'Missing matching libvcmi.so beside client.'
 # Resolve only the three original directories, never the installation's Mods/config.
 asset_dir() {
@@ -122,6 +132,9 @@ ln -s -- "$(dirname -- "$client")/libvcmi.so" "$runtime/libvcmi.so"
 ln -s -- "$resources/config" "$runtime/config"
 ln -s -- "$resources/scripts" "$runtime/scripts"
 ln -s -- "$resources/Mods/vcmi" "$runtime/Mods/vcmi"
+if $curatedCommands; then
+	ln -s -- "$resources/Mods/new-horizons" "$runtime/Mods/new-horizons"
+fi
 ln -s -- "$data" "$runtime/Data"
 ln -s -- "$maps" "$runtime/Maps"
 ln -s -- "$mp3" "$runtime/Mp3"

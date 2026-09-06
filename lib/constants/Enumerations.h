@@ -145,6 +145,7 @@ enum class EActionType : int8_t
 	BAD_MORALE,
 	STACK_HEAL,
 	WALK_AND_CAST,
+	HERO_COMMAND,
 };
 
 enum class EDiggingStatus : int8_t

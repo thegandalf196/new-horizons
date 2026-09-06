@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../battle/HeroCommand.h"
+
 #include "../bonuses/CBonusSystemNode.h"
 #include "../callback/CNonConstInfoCallback.h"
 #include "../callback/GameCallbackHolder.h"
@@ -151,6 +153,7 @@ public:
 	//fills tgi with info about other players that is available at given level of thieves' guild
 	void obtainPlayersStats(SThievesGuildInfo & tgi, int level) const;
 	const IGameSettings & getSettings() const override;
+	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 
 	StartInfo * getStartInfo()
 	{
@@ -232,11 +235,23 @@ public:
 			h & replayLog;
 		}
 
+		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
+		{
+			h & heroCommandRules;
+			if(!h.saving)
+				heroCommands::validateRules(heroCommandRules);
+		}
+		else if(!h.saving)
+		{
+			heroCommandRules = JsonNode();
+		}
+
 		if(!h.saving && h.loadingGamestate)
 			restoreBonusSystemTree();
 	}
 
 private:
+	JsonNode heroCommandRules;
 	// ----- initialization -----
 	void initNewGame(const IMapService * mapService, vstd::RNG & randomGenerator, bool allowSavingRandomMap, Load::ProgressAccumulator & progressTracking);
 	void initGlobalBonuses();

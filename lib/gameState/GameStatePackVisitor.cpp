@@ -1408,6 +1408,16 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 
 void GameStatePackVisitor::visitStartAction(StartAction & pack)
 {
+	if(pack.ba.actionType == EActionType::HERO_COMMAND)
+	{
+		auto & side = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
+		side.heroCommandUsed = true;
+		if(heroCommands::isDoctrine(pack.ba.command))
+			side.activeDoctrine = pack.ba.command;
+		else
+			side.activeOrder = pack.ba.command;
+		return;
+	}
 	CStack *st = gs.getBattle(pack.battleID)->getStack(pack.ba.stackNumber);
 
 	if(pack.ba.actionType == EActionType::END_TACTIC_PHASE)

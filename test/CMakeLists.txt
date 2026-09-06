@@ -120,6 +120,10 @@ set(test_SRCS
 		server/battles/SummonGuardiansTest.cpp
 		server/battles/TransmutationTest.cpp
 		server/battles/WarMachineControlTest.cpp
+		server/battles/HeroCommandTest.cpp
+		server/battles/HeroCommandPersistenceTest.cpp
+		server/battles/HeroCommandFixtureExportTest.cpp
+		server/battles/HeroCommandRejectionTest.cpp
 		server/queries/QueriesProcessorTest.cpp
 
 		texts/TextOperationsTest.cpp
@@ -151,6 +155,7 @@ set(test_HEADERS
 		spells/targetConditions/TargetConditionItemFixture.h
 
 		server/battles/BattleTestFixture.h
+		server/battles/HeroCommandFixture.h
 
 		mock/BattleFake.h
 		mock/GameHandlerTestServer.h
@@ -176,6 +181,7 @@ if(ENABLE_BATTLE_AI)
 
 	list(APPEND test_SRCS
 		${BATTLE_AI_TEST_SRCS}
+		battleAI/HeroCommandAITest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 	)
 endif()

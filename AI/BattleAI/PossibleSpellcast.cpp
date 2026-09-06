@@ -10,6 +10,7 @@
 #include "StdInc.h"
 
 #include "PossibleSpellcast.h"
+#include "../../lib/spells/CSpellHandler.h"
 
 PossibleSpellcast::PossibleSpellcast()
 	: spell(nullptr),
@@ -19,3 +20,8 @@ PossibleSpellcast::PossibleSpellcast()
 }
 
 PossibleSpellcast::~PossibleSpellcast() = default;
+
+std::string PossibleSpellcast::name() const
+{
+	return command == HeroCommand::NONE ? spell->getNameTranslated() : heroCommands::key(command);
+}

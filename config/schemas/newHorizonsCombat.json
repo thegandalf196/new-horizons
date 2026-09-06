@@ -1,0 +1,72 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "New Horizons combat ruleset snapshot",
+	"description": "Empty object is legacy mode. Version 1 coefficients are provisional, not balanced ratings.",
+	"type": "object",
+	"oneOf": [
+		{ "maxProperties": 0 },
+		{
+			"required": [ "schemaVersion", "rulesetVersion", "commands" ],
+			"additionalProperties": false,
+			"properties": {
+				"schemaVersion": { "type": "integer", "enum": [ 1 ] },
+				"rulesetVersion": { "type": "integer", "enum": [ 1 ] },
+				"commands": {
+					"type": "object",
+					"required": [ "charge", "holdTheLine", "advance", "aggressive", "defensive" ],
+					"additionalProperties": false,
+					"properties": {
+						"charge": { "$ref": "#/definitions/order" },
+						"holdTheLine": { "$ref": "#/definitions/order" },
+						"advance": { "$ref": "#/definitions/order" },
+						"aggressive": { "$ref": "#/definitions/doctrine" },
+						"defensive": { "$ref": "#/definitions/doctrine" }
+					}
+				}
+			}
+		}
+	],
+	"definitions": {
+		"coefficient": {
+			"type": "object",
+			"required": [ "base", "attack", "defense" ],
+			"additionalProperties": false,
+			"properties": {
+				"base": { "type": "number" },
+				"attack": { "type": "number" },
+				"defense": { "type": "number" }
+			}
+		},
+		"command": {
+			"type": "object",
+			"required": [ "kind", "coverage", "duration", "effects" ],
+			"additionalProperties": false,
+			"properties": {
+				"kind": { "type": "string", "enum": [ "order", "doctrine" ] },
+				"coverage": { "type": "string", "enum": [ "ownLivingNonWarMachines" ] },
+				"duration": { "type": "string", "enum": [ "round", "battle" ] },
+				"effects": {
+					"type": "object", "minProperties": 1, "additionalProperties": false,
+					"properties": {
+						"meleeDamagePercent": { "$ref": "#/definitions/coefficient" },
+						"rangedDamagePercent": { "$ref": "#/definitions/coefficient" },
+						"damageReductionPercent": { "$ref": "#/definitions/coefficient" },
+						"speedPercent": { "$ref": "#/definitions/coefficient" }
+					}
+				}
+			}
+		},
+		"order": {
+			"allOf": [
+				{ "$ref": "#/definitions/command" },
+				{ "properties": { "kind": { "enum": [ "order" ] }, "duration": { "enum": [ "round" ] } } }
+			]
+		},
+		"doctrine": {
+			"allOf": [
+				{ "$ref": "#/definitions/command" },
+				{ "properties": { "kind": { "enum": [ "doctrine" ] }, "duration": { "enum": [ "battle" ] } } }
+			]
+		}
+	}
+}

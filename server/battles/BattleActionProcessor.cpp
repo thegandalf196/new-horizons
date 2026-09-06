@@ -714,6 +714,8 @@ bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & bat
 			return doSurrenderAction(battle, ba);
 		case EActionType::HERO_SPELL:
 			return doHeroSpellAction(battle, ba);
+		case EActionType::HERO_COMMAND:
+			return doHeroCommandAction(battle, ba);
 		case EActionType::WALK:
 			return doWalkAction(battle, ba);
 		case EActionType::WAIT:
@@ -737,8 +739,49 @@ bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & bat
 	return false;
 }
 
+bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)
+{
+	const auto * hero = battle.battleGetFightingHero(ba.side);
+	const auto effects = heroCommands::bonuses(battle.getBattle()->getHeroCommandRules(), ba.command, *hero);
+	SetStackEffect update;
+	update.battleID = battle.getBattle()->getBattleID();
+	for(const auto * unit : battle.battleGetAllStacks(true))
+	{
+		if(battle.battleGetOwner(unit) != battle.sideToPlayer(ba.side))
+			continue;
+		if(heroCommands::isDoctrine(ba.command))
+		{
+			std::vector<Bonus> previous;
+			for(const auto & bonus : *unit->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND)))
+			{
+				if(bonus->duration == BonusDuration::ONE_BATTLE)
+					previous.push_back(*bonus);
+			}
+			if(!previous.empty())
+				update.toRemove.emplace_back(unit->unitId(), previous);
+		}
+		if(unit->alive() && !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON))
+			update.toAdd.emplace_back(unit->unitId(), effects);
+	}
+	gameHandler->sendAndApply(update);
+	return true;
+}
+
 bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba)
 {
+	// Reject before StartAction can reserve the action budget or publish state.
+	if(ba.actionType == EActionType::HERO_SPELL && battle.battleUsesHeroCommands()
+		&& battle.battleCanCastSpell(battle.battleGetFightingHero(ba.side), spells::Mode::HERO) != ESpellCastProblem::OK)
+	{
+		gameHandler->complain("Hero spell unavailable under the shared round action budget");
+		return false;
+	}
+	if(ba.actionType == EActionType::HERO_COMMAND
+		&& (!ba.target.empty() || ba.spell.hasValue() || !battle.battleCanUseHeroCommand(ba.side, ba.command)))
+	{
+		gameHandler->complain("Hero command unavailable: ruleset, ownership, target, or round action budget");
+		return false;
+	}
 	logGlobal->trace("Making action: %s", ba.toString());
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
 

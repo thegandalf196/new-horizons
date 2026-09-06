@@ -21,6 +21,12 @@ set -euo pipefail
 cd -- "$(dirname -- "$0")"
 [[ -e vcmiclient && -e config && -d Mods && -e scripts ]]
 [[ -e Mods/vcmi/mod.json && ! -e Mods/unwanted && ! -e Mods/roe-demo ]]
+if [[ ${EXPECTED_COMMANDS:-0} == 1 ]]; then
+	[[ -e Mods/new-horizons/mod.json && -d Mods/new-horizons/Images ]]
+	[[ $(readlink -- Mods/new-horizons) == "$EXPECTED_ENGINE/Mods/new-horizons" ]]
+else
+	[[ ! -e Mods/new-horizons ]]
+fi
 [[ -e Data/H3BITMAP.LOD && -d Maps && -d Mp3 ]]
 [[ $(readlink -- config) == "$EXPECTED_ENGINE/config" ]]
 [[ $(readlink -- Data) == "$EXPECTED_ASSETS/dAtA" ]]
@@ -82,6 +88,19 @@ status=0
 STUB_EXIT=17 bash "$launcher" "${args[@]}" --resources "$engine" > "$tmp/output" || status=$?
 [[ $status == 17 ]]
 [[ -z $(find "$profile" -maxdepth 1 -name 'runtime.*' -print) ]]
+# New candidates must include their curated module, but no arbitrary extra mods.
+touch -- "$engine/config/newHorizonsCombat.json"
+expect_fail "${args[@]}" --verify-only
+mkdir -p -- "$engine/Mods/new-horizons"
+touch -- "$engine/Mods/new-horizons/mod.json"
+expect_fail "${args[@]}" --verify-only
+mkdir -- "$engine/Mods/new-horizons/Images"
+mv -- "$engine/config/newHorizonsCombat.json" "$tmp/commands.json"
+expect_fail "${args[@]}" --verify-only
+mv -- "$tmp/commands.json" "$engine/config/newHorizonsCombat.json"
+export EXPECTED_COMMANDS=1
+bash "$launcher" "${args[@]}" > "$tmp/output"
+[[ $(wc -l < "$STUB_RECEIPT") == 4 ]]
 # A live profile contains runtime symlinks: diagnose its lock before scanning
 # those links, and do not truncate/write the lock even during verify-only.
 printf 'lock sentinel\n' > "$profile/.nh-lock"
@@ -98,7 +117,7 @@ for mode in launch verify; do
 	grep -q 'This NH profile is already in use.' "$tmp/output"
 	[[ $(< "$profile/.nh-lock") == 'lock sentinel' ]]
 	[[ -L $profile/runtime.synthetic/Data ]]
-	[[ $(wc -l < "$STUB_RECEIPT") == 3 ]]
+	[[ $(wc -l < "$STUB_RECEIPT") == 4 ]]
 done
 flock -u 8
 exec 8<&-

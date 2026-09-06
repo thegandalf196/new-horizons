@@ -19,6 +19,7 @@ set(vcmiclientcommon_SRCS
 	battle/BattleEffectsController.cpp
 	battle/BattleFieldController.cpp
 	battle/BattleHero.cpp
+	battle/BattleHeroActionWindow.cpp
 	battle/BattleInterface.cpp
 	battle/BattleObstacleController.cpp
 	battle/BattleOverlayLogVisualizer.cpp
@@ -223,6 +224,7 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleEffectsController.h
 	battle/BattleFieldController.h
 	battle/BattleHero.h
+	battle/BattleHeroActionWindow.h
 	battle/BattleInterface.h
 	battle/BattleObstacleController.h
 	battle/BattleOverlayLogVisualizer.h

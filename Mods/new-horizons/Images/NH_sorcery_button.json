@@ -1,0 +1,24 @@
+{
+  "images": [
+    {
+      "group": 0,
+      "frame": 0,
+      "file": "NH_sorcery_normal.png"
+    },
+    {
+      "group": 0,
+      "frame": 1,
+      "file": "NH_sorcery_pressed.png"
+    },
+    {
+      "group": 0,
+      "frame": 2,
+      "file": "NH_sorcery_disabled.png"
+    },
+    {
+      "group": 0,
+      "frame": 3,
+      "file": "NH_sorcery_highlighted.png"
+    }
+  ]
+}

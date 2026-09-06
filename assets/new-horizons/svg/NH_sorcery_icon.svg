@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<!-- Original New Horizons provisional vector artwork. CC0-1.0. -->
+<circle cx="32" cy="32" r="30" fill="#302a25" stroke="#b49a62" stroke-width="2"/>
+<circle cx="32" cy="32" r="19.25" fill="none" stroke="#8fcefa" stroke-width="1.75"/>
+<polygon points="32,14.5 44.25,28.5 32,50.375 19.75,28.5" fill="#282527" stroke="#8fcefa" stroke-width="1.75" stroke-linejoin="round"/>
+<polyline points="19.75,28.5 44.25,28.5" fill="none" stroke="#8fcefa" stroke-width="2.625" stroke-linejoin="round"/>
+<polyline points="32,14.5 32,50.375" fill="none" stroke="#8fcefa" stroke-width="2.625" stroke-linejoin="round"/>
+</svg>

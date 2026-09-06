@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "Destination.h"
+#include "HeroCommand.h"
 #include "../GameConstants.h"
 
 class CBattleInfoCallback;
@@ -27,8 +28,10 @@ public:
 	EActionType actionType; //use ActionType enum for values
 
 	SpellID spell;
+	HeroCommand command = HeroCommand::NONE;
 
 	BattleAction();
+	static BattleAction makeHeroCommand(BattleSide side, HeroCommand command);
 
 	static BattleAction makeHeal(const battle::Unit * healer, const battle::Unit * healed);
 	static BattleAction makeDefend(const battle::Unit * stack);
@@ -62,6 +65,14 @@ public:
 		h & actionType;
 		h & spell;
 		h & target;
+		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
+		{
+			h & command;
+		}
+		else if(!h.saving)
+		{
+			command = HeroCommand::NONE;
+		}
 	}
 
 	struct DestinationInfo

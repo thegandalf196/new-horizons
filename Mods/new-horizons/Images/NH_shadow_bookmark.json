@@ -1,0 +1,14 @@
+{
+  "images": [
+    {
+      "group": 0,
+      "frame": 0,
+      "file": "NH_shadow_bookmark_selected.png"
+    },
+    {
+      "group": 0,
+      "frame": 1,
+      "file": "NH_shadow_bookmark_unselected.png"
+    }
+  ]
+}

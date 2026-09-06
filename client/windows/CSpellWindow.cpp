@@ -228,12 +228,29 @@ CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _m
 	rightCorner = std::make_shared<CPicture>(ImagePath::builtin("SpelTrnR.bmp"), 487 + offR, 72 + offT);
 
 	schoolTab = std::make_shared<CAnimImage>(AnimationPath::builtin("SpelTab"), getAnimFrameFromSchool(selectedTab), 0, 524 + offR, 88);
-	int customSchoolCount = customSpellSchools.size();
-	int yStart = 93;
-	int yEnd = yStart + (std::min(customSchoolCount, isBigSpellbook ? MAX_CUSTOM_SPELL_SCHOOLS_BIG : MAX_CUSTOM_SPELL_SCHOOLS) - 1) * 62;
-	int denom = std::max(customSchoolCount - 1, 1);
+	const int customSchoolCount = customSpellSchools.size();
+	const int fullSizeCapacity = isBigSpellbook ? MAX_CUSTOM_SPELL_SCHOOLS_BIG : MAX_CUSTOM_SPELL_SCHOOLS;
+	constexpr int bookmarkWidth = 80;
+	constexpr int bookmarkHeight = 60;
+	constexpr int bookmarkSpacing = 62;
+	constexpr int yStart = 93;
+	const bool compactBookmarks = customSchoolCount > fullSizeCapacity;
+	const int stripHeight = (fullSizeCapacity - 1) * bookmarkSpacing + bookmarkHeight;
+	const int step = compactBookmarks ? stripHeight / customSchoolCount : bookmarkSpacing;
+	const int scaledHeight = std::min(bookmarkHeight, step);
+	const int scaledWidth = bookmarkWidth * scaledHeight / bookmarkHeight;
 	for(int i = 0; i < customSchoolCount; i++)
-		schoolTabCustom.push_back(std::make_shared<CAnimImage>(LIBRARY->spellSchoolHandler->getById(customSpellSchools[i])->getSchoolBookmarkPath(), i == 0 ? 0 : 1, 0, isBigSpellbook ? 0 : 15, yStart + ((yEnd - yStart) * i) / denom));
+	{
+		const auto path = LIBRARY->spellSchoolHandler->getById(customSpellSchools[i])->getSchoolBookmarkPath();
+		const Point position(isBigSpellbook ? 0 : 15, yStart + step * i);
+		// Six schools must fit the small book without overlapping their glyphs.
+		// Keep ordinary layouts unchanged; use the existing aspect-preserving
+		// image constructor only when the reserved strip would otherwise overflow.
+		if(compactBookmarks)
+			schoolTabCustom.push_back(std::make_shared<CAnimImage>(path, 1, Rect(position, Point(scaledWidth, scaledHeight))));
+		else
+			schoolTabCustom.push_back(std::make_shared<CAnimImage>(path, 1, 0, position.x, position.y));
+	}
 	schoolPicture = std::make_shared<CAnimImage>(AnimationPath::builtin("Schools"), 0, 0, 117 + offL, 74 + offT);
 
 	mana = std::make_shared<CLabel>(435 + (isBigSpellbook ? 159 : 0), 426 + offB, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, std::to_string(myHero->mana));
@@ -253,9 +270,8 @@ CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _m
 	interactiveAreas.push_back(std::make_shared<InteractiveArea>( schoolRect + Point(0, 116), std::bind(&CSpellWindow::selectSchool,   this, SpellSchool::FIRE), 455, this));
 	interactiveAreas.push_back(std::make_shared<InteractiveArea>( schoolRect + Point(0, 176), std::bind(&CSpellWindow::selectSchool,   this, SpellSchool::WATER), 456, this));
 	interactiveAreas.push_back(std::make_shared<InteractiveArea>( schoolRect + Point(0, 236), std::bind(&CSpellWindow::selectSchool,   this, SpellSchool::ANY), 458, this));
-	int iaHeight = customSchoolCount > 1 ? std::min((yEnd - yStart) / denom, 60) : 60;
 	for(int i = 0; i < customSchoolCount; i++)
-		interactiveAreas.push_back(std::make_shared<InteractiveArea>(Rect(schoolTabCustom[i]->pos.topLeft(), Point(80, iaHeight)), std::bind(&CSpellWindow::selectSchool, this, customSpellSchools[i]), LIBRARY->spellSchoolHandler->getById(customSpellSchools[i])->getNameTextID(), this));
+		interactiveAreas.push_back(std::make_shared<InteractiveArea>(schoolTabCustom[i]->pos, std::bind(&CSpellWindow::selectSchool, this, customSpellSchools[i]), LIBRARY->spellSchoolHandler->getById(customSpellSchools[i])->getNameTextID(), this));
 
 	leftCornerArea = std::make_shared<InteractiveArea>( Rect(  97 + offL + pos.x, 77 + offT + pos.y, leftCorner->pos.h,  leftCorner->pos.w  ), std::bind(&CSpellWindow::fLcornerb, this), 450, this);
 	rightCornerArea = std::make_shared<InteractiveArea>( Rect( 487 + offR + pos.x, 72 + offT + pos.y, rightCorner->pos.h, rightCorner->pos.w ), std::bind(&CSpellWindow::fRcornerb, this), 451, this);

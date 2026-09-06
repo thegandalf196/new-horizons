@@ -98,6 +98,7 @@
 			"type" : "object",
 			"additionalProperties" : false,
 			"properties" : {
+				"heroCommands" :                 { "$ref" : "newHorizonsCombat.json" },
 				"abilityBias" :                   { "type" : "number" },
 				"goodMoraleChance" :              { "type" : "array" },
 				"badMoraleChance" :               { "type" : "array" },

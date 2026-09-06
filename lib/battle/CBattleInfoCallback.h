@@ -13,6 +13,7 @@
 
 #include "ReachabilityInfo.h"
 #include "BattleAttackInfo.h"
+#include "HeroCommand.h"
 
 class CGHeroInstance;
 class CStack;
@@ -67,6 +68,10 @@ class DLL_LINKAGE CBattleInfoCallback : public virtual CBattleInfoEssentials
 {
 public:
 
+	bool battleUsesHeroCommands() const;
+	bool battleCanUseHeroCommand(BattleSide side, HeroCommand command) const;
+	HeroCommand battleGetActiveDoctrine(BattleSide side) const;
+	HeroCommand battleGetActiveOrder(BattleSide side) const;
 	const scripting::Pool & getScriptContextPool() const override;
 	std::optional<BattleSide> battleIsFinished() const override; //return none if battle is ongoing; otherwise the victorious side (0/1) or 2 if it is a draw
 

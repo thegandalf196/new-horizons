@@ -144,6 +144,16 @@ BattleAction BattleAction::makeRetreat(BattleSide side)
 	return ba;
 }
 
+BattleAction BattleAction::makeHeroCommand(BattleSide side, HeroCommand command)
+{
+	BattleAction action;
+	action.side = side;
+	action.actionType = EActionType::HERO_COMMAND;
+	action.command = command;
+	action.stackNumber = side == BattleSide::ATTACKER ? -1 : -2;
+	return action;
+}
+
 std::string BattleAction::toString() const
 {
 	std::stringstream targetStream;

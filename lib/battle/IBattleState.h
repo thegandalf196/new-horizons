@@ -11,6 +11,7 @@
 #pragma once
 #include "CBattleInfoEssentials.h"
 #include "BattleUnitTurnReason.h"
+#include "HeroCommand.h"
 
 class ObstacleChanges;
 class UnitChanges;
@@ -62,6 +63,10 @@ public:
 	/// Returns list of all spells used by specified side (and that can be learned by opposite hero)
 	virtual std::vector<SpellID> getUsedSpells(BattleSide side) const = 0;
 
+	virtual const JsonNode & getHeroCommandRules() const;
+	virtual bool getHeroCommandUsed(BattleSide side) const { return false; }
+	virtual HeroCommand getActiveDoctrine(BattleSide side) const { return HeroCommand::NONE; }
+	virtual HeroCommand getActiveOrder(BattleSide side) const { return HeroCommand::NONE; }
 	virtual int32_t getCastSpells(BattleSide side) const = 0;
 	virtual int32_t getEnchanterCounter(BattleSide side) const = 0;
 

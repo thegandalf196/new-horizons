@@ -17,6 +17,7 @@
 #include "BattleStacksController.h"
 #include "HeroInfoWindow.h"
 #include "QuickSpellPanel.h"
+#include "BattleHeroActionWindow.h"
 #include "StackInfoBasicPanel.h"
 #include "StackQueue.h"
 #include "UnitActionPanel.h"
@@ -119,6 +120,13 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 			GAME->interface()->proposeQuickLoadingGame(); });
 
 	build(config);
+	if(owner.getBattle()->battleUsesHeroCommands())
+	{
+		auto actionButton = widget<CButton>("cast");
+		actionButton->setImage(AnimationPath::builtin("NH_hero_actions_entry"));
+		actionButton->setHelp(CButton::tooltip("Hero action: Spell / Order / Doctrine",
+			"Choose one hero action per round. Orders cost no mana. Doctrines persist in this battle until changed."));
+	}
 	
 	console = widget<BattleConsole>("console");
 
@@ -787,6 +795,20 @@ void BattleWindow::bAutofightf()
 
 void BattleWindow::bSpellf()
 {
+	if(!owner.getBattle()->battleUsesHeroCommands())
+	{
+		openSpellbook();
+		return;
+	}
+	if(owner.actionsController->heroSpellcastingModeActive() || !owner.makingTurn() || owner.isInTacticsMode() || !owner.currentHero())
+		return;
+	if(CPlayerInterface::battleInt.get() != &owner)
+		return;
+	ENGINE->windows().createAndPushWindow<BattleHeroActionWindow>(CPlayerInterface::battleInt);
+}
+
+void BattleWindow::openSpellbook()
+{
 	if (owner.actionsController->heroSpellcastingModeActive())
 		return;
 
@@ -897,6 +919,11 @@ void BattleWindow::blockUI(bool on)
 		//if magic is blocked, we leave button active, so the message can be displayed after button click
 		canCastSpells = spellcastingProblem == ESpellCastProblem::OK || spellcastingProblem == ESpellCastProblem::MAGIC_IS_BLOCKED;
 	}
+
+	// New-rules heroes may issue Orders without a spellbook or mana. Keep the
+	// chooser readable after spending the action; its individual choices revalidate.
+	if(owner.getBattle()->battleUsesHeroCommands())
+		canCastSpells = hero != nullptr;
 
 	bool canWait = owner.stacksController->getActiveStack() ? !owner.stacksController->getActiveStack()->waitedThisTurn : false;
 	bool tacticsMode = owner.isInTacticsMode();

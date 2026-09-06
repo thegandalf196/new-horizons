@@ -30,9 +30,14 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	BattleSideArray<SideInBattle> sides; //sides[0] - attacker, sides[1] - defender
 	std::unique_ptr<BattleLayout> layout;
 	si32 round;
+	JsonNode heroCommandRules;
 
 	void postDeserialize();
 public:
+	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
+	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
+	HeroCommand getActiveDoctrine(BattleSide side) const override { return sides.at(side).activeDoctrine; }
+	HeroCommand getActiveOrder(BattleSide side) const override { return sides.at(side).activeOrder; }
 	BattleID battleID = BattleID(0);
 
 	si32 activeStack;
@@ -66,6 +71,16 @@ public:
 		h & tacticDistance;
 		h & static_cast<CBonusSystemNode&>(*this);
 		h & replayAllowed;
+		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
+		{
+			h & heroCommandRules;
+			if(!h.saving)
+				heroCommands::validateRules(heroCommandRules);
+		}
+		else if(!h.saving)
+		{
+			heroCommandRules = JsonNode();
+		}
 
 		if(!h.saving)
 			postDeserialize();

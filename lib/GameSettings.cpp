@@ -60,6 +60,7 @@ const std::vector<GameSettings::SettingOption> GameSettings::settingProperties =
 		{EGameSettings::COMBAT_LUCK_DICE_SIZE,                            "combat",    "luckDiceSize"                         },
 		{EGameSettings::COMBAT_LUCK_BIAS,                                 "combat",    "luckBias"                             },
 		{EGameSettings::COMBAT_LUCKY_STRIKE_AFFECTS_ALL_TARGETS,          "combat",    "luckyStrikeAffectsAllTargets"         },
+		{EGameSettings::COMBAT_HERO_COMMANDS,                             "combat",    "heroCommands"                        },
 		{EGameSettings::COMBAT_LAYOUTS,                                   "combat",    "layouts"                              },
 		{EGameSettings::COMBAT_ONE_HEX_TRIGGERS_OBSTACLES,                "combat",    "oneHexTriggersObstacles"              },
 		{EGameSettings::COMBAT_NO_SPELL_HIT_AND_RUN_ROUNDS,               "combat",    "noSpellHitAndRunRounds"               },
@@ -146,6 +147,11 @@ const std::vector<GameSettings::SettingOption> GameSettings::settingProperties =
 
 void GameSettings::loadBase(const JsonNode & input)
 {
+	if(input.isVector())
+	{
+		loadBase(JsonUtils::assembleFromFiles(input));
+		return;
+	}
 	JsonUtils::validate(input, "vcmi:gameSettings", input.getModScope());
 
 	for(const auto & option : settingProperties)

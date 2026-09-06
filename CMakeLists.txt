@@ -799,6 +799,20 @@ endif()
 
 vcmi_install_conan_deps()
 
+# Curated settings are authored once; never build a silently stale module copy.
+if(EXISTS "${CMAKE_SOURCE_DIR}/config/newHorizonsCombat.json")
+	set(NH_RULES_FILE "${CMAKE_SOURCE_DIR}/config/newHorizonsCombat.json")
+	set(NH_MODULE_FILE "${CMAKE_SOURCE_DIR}/Mods/new-horizons/mod.json")
+	set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${NH_RULES_FILE}" "${NH_MODULE_FILE}")
+	file(READ "${NH_RULES_FILE}" NH_RULES_JSON)
+	file(READ "${NH_MODULE_FILE}" NH_MODULE_JSON)
+	string(JSON NH_INLINE_SETTINGS GET "${NH_MODULE_JSON}" settings)
+	string(JSON NH_SETTINGS_MATCH EQUAL "${NH_RULES_JSON}" "${NH_INLINE_SETTINGS}")
+	if(NOT NH_SETTINGS_MATCH)
+		message(FATAL_ERROR "Stale curated module settings: run python3 tools/update-new-horizons-module.py")
+	endif()
+endif()
+
 if(ANDROID)
 	string(REPLACE ";" "\n" ANDROID_GRADLE_PROPERTIES_MULTILINE "${ANDROID_GRADLE_PROPERTIES}")
 	file(WRITE "${androidPackageSourceDir}/vcmi-app/gradle.properties" "signingRoot=${CMAKE_SOURCE_DIR}/CI/android\n${ANDROID_GRADLE_PROPERTIES_MULTILINE}")

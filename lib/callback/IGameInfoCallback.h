@@ -30,6 +30,7 @@ struct TurnTimerInfo;
 struct ArtifactLocation;
 
 class IGameSettings;
+class JsonNode;
 class PlayerState;
 class UpgradeInfo;
 class CMapHeader;
@@ -95,6 +96,8 @@ public:
 
 	//// Returns game settings for current map
 	virtual const IGameSettings & getSettings() const = 0;
+	/// Saved ruleset snapshot, not the currently loaded mod defaults. Empty means legacy.
+	virtual const JsonNode & getHeroCommandRules() const;
 
 	/// Returns dimesions for current map. 'z' coordinate indicates number of level (2 for maps with underground layer)
 	virtual int3 getMapSize() const = 0;

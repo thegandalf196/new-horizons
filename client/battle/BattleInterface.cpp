@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "BattleHeroActionWindow.h"
 #include "BattleInterface.h"
 
 #include "BattleActionsController.h"
@@ -704,7 +705,7 @@ void BattleInterface::endAction(const BattleAction &action)
 	// it is possible that tactics mode ended while opening music is still playing
 	waitForAnimations();
 
-	const CStack *stack = getBattle()->battleGetStackByID(action.stackNumber);
+	const CStack * stack = action.isUnitAction() ? getBattle()->battleGetStackByID(action.stackNumber) : nullptr;
 
 	// Activate stack from stackToActivate because this might have been temporary disabled, e.g., during spell cast
 	activateStack();
@@ -717,8 +718,15 @@ void BattleInterface::endAction(const BattleAction &action)
 		tacticNextStack(stack);
 
 	//we have activated next stack after sending request that has been just realized -> blockmap due to movement has changed
-	if(action.actionType == EActionType::HERO_SPELL)
+	if(action.actionType == EActionType::HERO_SPELL || action.actionType == EActionType::HERO_COMMAND)
 		fieldController->redrawBackgroundWithHexes();
+
+	if(action.actionType == EActionType::HERO_COMMAND)
+	{
+		const bool doctrine = action.command == HeroCommand::AGGRESSIVE || action.command == HeroCommand::DEFENSIVE;
+		appendBattleLog(std::string(doctrine ? "Doctrine: " : "Order: ") + HeroCommandUI::name(action.command) +
+			(doctrine ? " (persists in this battle)." : " (this round)."));
+	}
 }
 
 void BattleInterface::appendBattleLog(const std::string & newEntry)

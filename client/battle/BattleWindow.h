@@ -100,6 +100,9 @@ class BattleWindow : public InterfaceObjectConfigurable
 public:
 	BattleWindow(BattleInterface & owner );
 
+	/// Opens the unchanged spellbook path, bypassing the NH hero-action chooser.
+	void openSpellbook();
+
 	/// Closes window once battle finished
 	void close();
 

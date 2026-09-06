@@ -13,6 +13,7 @@
 #include <vcmi/spells/Magic.h>
 
 #include "../../lib/battle/Destination.h"
+#include "../../lib/battle/HeroCommand.h"
 
 class CSpell;
 
@@ -21,6 +22,8 @@ class PossibleSpellcast
 public:
 	using ValueMap = std::map<uint32_t, int64_t>;
 
+	HeroCommand command = HeroCommand::NONE;
+	std::string name() const;
 	const CSpell * spell;
 	spells::Target dest;
 	float value;

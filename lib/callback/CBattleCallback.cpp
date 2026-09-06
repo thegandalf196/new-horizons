@@ -96,7 +96,7 @@ std::map<BattleID, std::shared_ptr<CPlayerBattleCallback>> CBattleCallback::getA
 
 void CBattleCallback::battleMakeSpellAction(const BattleID & battleID, const BattleAction & action)
 {
-	assert(action.actionType == EActionType::HERO_SPELL);
+	assert(action.actionType == EActionType::HERO_SPELL || action.actionType == EActionType::HERO_COMMAND);
 	MakeAction mca(action);
 	mca.battleID = battleID;
 	sendRequest(mca);

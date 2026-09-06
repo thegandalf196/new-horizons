@@ -59,12 +59,15 @@ enum class ESerializationVersion : int32_t
 	RECORD_TEXTS_METASTRING, // highscore scenario name and statistics map name are stored unresolved, to be rendered by the reader
 
 	TOWN_CUSTOM_INITIAL_GARRISON, // preserve map-authored initial town armies, including explicit empty armies
+	HERO_COMMANDS, // versioned per-game combat rules, action budget and battle Doctrines
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = TOWN_CUSTOM_INITIAL_GARRISON,
+	CURRENT = HERO_COMMANDS,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::HERO_COMMANDS > ESerializationVersion::TOWN_CUSTOM_INITIAL_GARRISON,
+	"Append new serialization features before release aliases; never regress existing feature gates");

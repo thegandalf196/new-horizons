@@ -106,6 +106,10 @@ required source/dependency notices and asset exclusion in distributions.
 
 ## Active ownership
 
+Use [NH_WORKER_PLAN.md](NH_WORKER_PLAN.md) for each active worker's objective,
+acceptance criteria, next checkpoint and existing durable handoff. It is a work
+plan, not formal `/goal`-mode activation.
+
 - Runtime: authoritative combat commands/Doctrine state and hero-action gating,
   packets/validation/save integration in lib/server plus AI/ logic and native tests.
   New common API and data schema must be sent to Frontend promptly. No UI edits.

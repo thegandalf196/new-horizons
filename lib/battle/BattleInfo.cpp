@@ -488,6 +488,8 @@ BattleInfo::BattleInfo(IGameInfoCallback *cb)
 	tacticsSide(BattleSide::NONE),
 	tacticDistance(0)
 {
+	if(cb)
+		heroCommandRules = cb->getHeroCommandRules();
 }
 
 BattleLayout BattleInfo::getLayout() const
@@ -664,6 +666,8 @@ void BattleInfo::nextRound()
 	for(auto i : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		sides.at(i).castSpellsCount = 0;
+		sides.at(i).heroCommandUsed = false;
+		sides.at(i).activeOrder = HeroCommand::NONE;
 		vstd::amax(--sides.at(i).enchanterCounter, 0);
 	}
 	// first round starts right after pre-battle effects (built-in enchants, OPENING_BATTLE_SPELL)

@@ -234,7 +234,8 @@ class JsonNode;
 	BONUS_SOURCE(STACK_EXPERIENCE)\
 	BONUS_SOURCE(COMMANDER) /*TODO: consider using simply STACK_INSTANCE */\
 	BONUS_SOURCE(GLOBAL) /*used for base bonuses which all heroes or all stacks should have*/\
-	BONUS_SOURCE(OTHER) /*used for defensive stance and default value of spell level limit*/
+	BONUS_SOURCE(OTHER) /*used for defensive stance and default value of spell level limit*/\
+	BONUS_SOURCE(HERO_COMMAND) /*New Horizons Orders and Doctrines; never dispellable spell effects*/
 
 #define BONUS_VALUE_LIST \
 	BONUS_VALUE(ADDITIVE_VALUE)\

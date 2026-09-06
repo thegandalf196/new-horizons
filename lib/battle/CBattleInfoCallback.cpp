@@ -123,6 +123,45 @@ static BattleHex WallPartToHex(EWallPart part)
 	return BattleHex::INVALID; //not found!
 }
 
+bool CBattleInfoCallback::battleUsesHeroCommands() const
+{
+	return getBattle() && getBattle()->getHeroCommandRules()["rulesetVersion"].Integer() == heroCommands::RULESET_VERSION;
+}
+
+HeroCommand CBattleInfoCallback::battleGetActiveDoctrine(BattleSide side) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return HeroCommand::NONE;
+	return getBattle()->getActiveDoctrine(side);
+}
+
+HeroCommand CBattleInfoCallback::battleGetActiveOrder(BattleSide side) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return HeroCommand::NONE;
+	return getBattle()->getActiveOrder(side);
+}
+
+bool CBattleInfoCallback::battleCanUseHeroCommand(BattleSide side, HeroCommand command) const
+{
+	if(!battleUsesHeroCommands() || !heroCommands::valid(command)
+		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| battleTacticDist() || !battleGetFightingHero(side)
+		|| getBattle()->getHeroCommandUsed(side) || battleCastSpells(side) != 0
+		|| battleGetActiveDoctrine(side) == command)
+		return false;
+	const auto * active = battleActiveUnit();
+	if(!active || battleGetOwner(active) != sideToPlayer(side))
+		return false;
+	for(const auto * unit : battleGetAllStacks())
+	{
+		if(unit->alive() && battleGetOwner(unit) == sideToPlayer(side)
+			&& !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON))
+			return true;
+	}
+	return false;
+}
+
 ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster * caster, spells::Mode mode) const
 {
 	RETURN_IF_NOT_BATTLE(ESpellCastProblem::INVALID);
@@ -152,6 +191,8 @@ ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster *
 
 		if(!hero)
 			return ESpellCastProblem::NO_HERO_TO_CAST_SPELL;
+		if(battleUsesHeroCommands() && (getBattle()->getHeroCommandUsed(side) || battleCastSpells(side) >= 1))
+			return ESpellCastProblem::CASTS_PER_TURN_LIMIT;
 		if(!hero->hasSpellbook())
 			return ESpellCastProblem::NO_SPELLBOOK;
 		if(battleCastSpells(side) >= hero->valOfBonuses(BonusType::HERO_SPELL_CASTS_PER_COMBAT_TURN))

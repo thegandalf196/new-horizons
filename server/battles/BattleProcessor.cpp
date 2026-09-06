@@ -359,6 +359,11 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 		return false;
 
 	bool result = actionsProcessor->makePlayerBattleAction(*battle, player, ba);
+	// Commands do not deactivate the client unit before submission. Rejection
+	// must not reactivate it here and expire STACK_GETS_TURN bonuses. Preserve
+	// the existing recovery path for failed unit actions, whose UI is deactivated.
+	if(!result && ba.actionType == EActionType::HERO_COMMAND)
+		return false;
 	if (gameHandler->gameState().getBattle(battleID) != nullptr && !resultProcessor->battleIsEnding(*battle))
 		flowProcessor->onActionMade(*battle, ba);
 	return result;

@@ -48,6 +48,10 @@ public:
 	EWallState getWallState(EWallPart partOfWall) const override;
 	EGateState getGateState() const override;
 
+	const JsonNode & getHeroCommandRules() const override { return subject->getBattle()->getHeroCommandRules(); }
+	bool getHeroCommandUsed(BattleSide side) const override { return subject->getBattle()->getHeroCommandUsed(side); }
+	HeroCommand getActiveDoctrine(BattleSide side) const override { return subject->getBattle()->getActiveDoctrine(side); }
+	HeroCommand getActiveOrder(BattleSide side) const override { return subject->getBattle()->getActiveOrder(side); }
 	int32_t getCastSpells(BattleSide side) const override;
 	int32_t getEnchanterCounter(BattleSide side) const override;
 

@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../GameConstants.h"
+#include "HeroCommand.h"
 #include "../callback/GameCallbackHolder.h"
 
 class CGHeroInstance;
@@ -24,6 +25,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	ObjectInstanceID heroID; //may be empty if army is not commanded by hero
 	ObjectInstanceID armyObjectID; //adv. map object with army that participates in battle; may be same as hero
 
+	bool heroCommandUsed = false;
+	HeroCommand activeDoctrine = HeroCommand::NONE;
+	HeroCommand activeOrder = HeroCommand::NONE;
 	uint32_t castSpellsCount = 0; //how many spells each side has been cast this turn
 	std::vector<SpellID> usedSpellsHistory; //every time hero casts spell, it's inserted here -> eagle eye skill
 	int32_t enchanterCounter = 0; //tends to pass through 0, so sign is needed
@@ -44,5 +48,17 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		h & enchanterCounter;
 		h & initialMana;
 		h & additionalMana;
+		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
+		{
+			h & heroCommandUsed;
+			h & activeDoctrine;
+			h & activeOrder;
+		}
+		else if(!h.saving)
+		{
+			heroCommandUsed = false;
+			activeDoctrine = HeroCommand::NONE;
+			activeOrder = HeroCommand::NONE;
+		}
 	}
 };

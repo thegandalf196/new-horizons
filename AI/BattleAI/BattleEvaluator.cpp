@@ -505,10 +505,18 @@ bool BattleEvaluator::canCastSpell()
 	if(!hero)
 		return false;
 
-	return cb->getBattle(battleID)->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK;
+	if(cb->getBattle(battleID)->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK)
+		return true;
+	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::ADVANCE,
+		HeroCommand::AGGRESSIVE, HeroCommand::DEFENSIVE})
+	{
+		if(cb->getBattle(battleID)->battleCanUseHeroCommand(side, command))
+			return true;
+	}
+	return false;
 }
 
-bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack)
+bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)
 {
 	auto hero = cb->getBattle(battleID)->battleGetMyHero();
 	if(!hero)
@@ -519,7 +527,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack)
 	std::vector<const CSpell*> possibleSpells;
 
 	for (auto const & s : LIBRARY->spellh->objects)
-		if (s->canBeCast(cb->getBattle(battleID).get(), spells::Mode::HERO, hero))
+		if (allowSpells && s->canBeCast(cb->getBattle(battleID).get(), spells::Mode::HERO, hero))
 			possibleSpells.push_back(s.get());
 
 	LOGFL("I can cast %d spells.", possibleSpells.size());
@@ -543,6 +551,17 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack)
 			ps.dest = target;
 			ps.spell = spell;
 			possibleCasts.push_back(ps);
+		}
+	}
+	// Commands compete in the same exchange evaluation as legal spell/target pairs.
+	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::ADVANCE,
+		HeroCommand::AGGRESSIVE, HeroCommand::DEFENSIVE})
+	{
+		if(cb->getBattle(battleID)->battleCanUseHeroCommand(side, command))
+		{
+			PossibleSpellcast candidate;
+			candidate.command = command;
+			possibleCasts.push_back(candidate);
 		}
 	}
 	LOGFL("Found %d spell-target combinations.", possibleCasts.size());
@@ -704,20 +723,44 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack)
 
 #if BATTLE_TRACE_LEVEL >= 1
 				if(ps.dest.empty())
-					logAi->trace("Evaluating %s", ps.spell->getNameTranslated());
+					logAi->trace("Evaluating %s", ps.name());
 				else
 				{
 					auto psFirst = ps.dest.front();
 					auto strWhere = psFirst.unitValue ? psFirst.unitValue->getDescription() : std::to_string(psFirst.hexValue.toInt());
 
-					logAi->trace("Evaluating %s at %s", ps.spell->getNameTranslated(), strWhere);
+					logAi->trace("Evaluating %s at %s", ps.name(), strWhere);
 				}
 #endif
 
 				auto state = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
 
-				spells::BattleCast cast(state.get(), hero, spells::Mode::HERO, ps.spell);
-				cast.castEval(state->getServerCallback(), ps.dest);
+				if(ps.command == HeroCommand::NONE)
+				{
+					spells::BattleCast cast(state.get(), hero, spells::Mode::HERO, ps.spell);
+					cast.castEval(state->getServerCallback(), ps.dest);
+				}
+				else
+				{
+					const auto effects = heroCommands::bonuses(state->getHeroCommandRules(), ps.command, *hero);
+					for(const auto * unit : state->battleGetAllStacks(true))
+					{
+						if(state->battleGetOwner(unit) != playerID)
+							continue;
+						if(heroCommands::isDoctrine(ps.command))
+						{
+							std::vector<Bonus> oldDoctrine;
+							for(const auto & bonus : *unit->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND)))
+							{
+								if(bonus->duration == BonusDuration::ONE_BATTLE)
+									oldDoctrine.push_back(*bonus);
+							}
+							state->removeUnitBonus(unit->unitId(), oldDoctrine);
+						}
+						if(unit->alive() && !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON))
+							state->addUnitBonus(unit->unitId(), effects);
+					}
+				}
 
 				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return u->isValidTarget(true); });
 
@@ -825,7 +868,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack)
 						{
 							logAi->trace(
 								"Spell %s to %d affects %s (%d), dps: %2f oldHealth: %d newHealth: %d",
-								ps.spell->getNameTranslated(),
+								ps.name(),
 								ps.dest.at(0).hexValue.toInt(),  // Safe to access .at(0) now
 								unit->creatureId().toCreature()->getNameSingularTranslated(),
 								unit->getCount(),
@@ -838,7 +881,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack)
 							// Handle the case where ps.dest is empty
 							logAi->trace(
 								"Spell %s has no destination, affects %s (%d), dps: %2f oldHealth: %d newHealth: %d",
-								ps.spell->getNameTranslated(),
+								ps.name(),
 								unit->creatureId().toCreature()->getNameSingularTranslated(),
 								unit->getCount(),
 								dpsReduce,
@@ -859,7 +902,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack)
 				}
 
 #if BATTLE_TRACE_LEVEL >= 1
-				logAi->trace("Total score for %s: %2f (action: %2f, friedly damage: %2f, hostile damage: %2f)", ps.spell->getJsonKey(), ps.value, stackActionScore, damageToFriendliesScore, damageToHostilesScore);
+				logAi->trace("Total score for %s: %2f (action: %2f, friedly damage: %2f, hostile damage: %2f)", ps.name(), ps.value, stackActionScore, damageToFriendliesScore, damageToHostilesScore);
 #endif
 			}
 #if BATTLE_TRACE_LEVEL == 0
@@ -875,7 +918,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack)
 
 	if(castToPerform.value > cachedAttack.score && !vstd::isAlmostEqual(castToPerform.value, cachedAttack.score))
 	{
-		LOGFL("Best spell is %s (value %d). Will cast.", castToPerform.spell->getNameTranslated() % castToPerform.value);
+		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);
+		if(castToPerform.command != HeroCommand::NONE)
+		{
+			cb->battleMakeSpellAction(battleID, BattleAction::makeHeroCommand(side, castToPerform.command));
+			activeActionMade = true;
+			return true;
+		}
 		BattleAction spellcast;
 		spellcast.actionType = EActionType::HERO_SPELL;
 		spellcast.spell = castToPerform.spell->id;
@@ -888,7 +937,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack)
 		return true;
 	}
 
-	LOGFL("Best spell is %s. But it is actually useless (value %d).", castToPerform.spell->getNameTranslated() % castToPerform.value);
+	LOGFL("Best hero action is %s. But it is actually useless (value %d).", castToPerform.name() % castToPerform.value);
 
 	return false;
 }

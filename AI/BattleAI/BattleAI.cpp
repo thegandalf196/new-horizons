@@ -167,9 +167,9 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 
 	result = evaluator.selectStackAction(stack);
 
-	if(autobattlePreferences.enableSpellsUsage && evaluator.canCastSpell())
+	if((autobattlePreferences.enableSpellsUsage || cb->getBattle(battleID)->battleUsesHeroCommands()) && evaluator.canCastSpell())
 	{
-		auto spelCasted = evaluator.attemptCastingSpell(stack);
+		auto spelCasted = evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage);
 
 		if(spelCasted)
 			return;
