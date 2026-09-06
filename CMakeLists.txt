@@ -64,6 +64,13 @@ option(ENABLE_DEBUG_CONSOLE "Enable debug console for Windows builds" ON)
 option(ENABLE_STRICT_COMPILATION "Treat all compiler warnings as errors" OFF)
 option(ENABLE_COLORIZED_COMPILER_OUTPUT "Colorize compilation output (Clang/GNU)." ON)
 option(ENABLE_CCACHE "Speed up recompilation by caching previous compilations" OFF)
+option(ENABLE_NH_PERF_EXPERIMENTS "Build opt-in New Horizons performance diagnostics and microbenchmarks" OFF)
+
+# Keep the definition consistent across core, authority, client, media backends
+# and tests. This does not select an alternative gameplay execution mode.
+if(ENABLE_NH_PERF_EXPERIMENTS)
+	add_compile_definitions(NH_PERF_EXPERIMENTS)
+endif()
 
 # Platform-specific options
 

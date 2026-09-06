@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "PerfTrace.h"
 #include "ClientNetPackVisitors.h"
 
 #include "Client.h"
@@ -929,6 +930,7 @@ void ApplyClientNetPackVisitor::visitEndAction(EndAction & pack)
 
 void ApplyClientNetPackVisitor::visitPackageApplied(PackageApplied & pack)
 {
+	PerfTrace::acknowledged(pack.requestID, pack.player.getNum(), pack.result);
 	callInterfaceIfPresent(cl, pack.player, &IGameEventsReceiver::requestRealized, &pack);
 	if(!cl.waitingRequest.tryRemovingElement(pack.requestID))
 		logNetwork->warn("Surprising server message! PackageApplied for unknown requestID!");
@@ -949,11 +951,13 @@ void ApplyClientNetPackVisitor::visitSystemMessage(SystemMessage & pack)
 
 void ApplyClientNetPackVisitor::visitPlayerBlocked(PlayerBlocked & pack)
 {
+	PerfTrace::emit("player_blocked", pack.player.getNum(), pack.startOrEnd);
 	callInterfaceIfPresent(cl, pack.player, &IGameEventsReceiver::playerBlocked, pack.reason, pack.startOrEnd == PlayerBlocked::BLOCKADE_STARTED);
 }
 
 void ApplyClientNetPackVisitor::visitPlayerStartsTurn(PlayerStartsTurn & pack)
 {
+	PerfTrace::emit("player_turn_start", pack.player.getNum());
 	logNetwork->debug("Server gives turn to %s", pack.player.toString());
 
 	callAllInterfaces(cl, &IGameEventsReceiver::playerStartsTurn, pack.player);
@@ -962,6 +966,7 @@ void ApplyClientNetPackVisitor::visitPlayerStartsTurn(PlayerStartsTurn & pack)
 
 void ApplyClientNetPackVisitor::visitPlayerEndsTurn(PlayerEndsTurn & pack)
 {
+	PerfTrace::emit("player_turn_end", pack.player.getNum());
 	logNetwork->debug("Server ends turn of %s", pack.player.toString());
 
 	callAllInterfaces(cl, &IGameEventsReceiver::playerEndsTurn, pack.player);

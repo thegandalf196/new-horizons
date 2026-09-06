@@ -9,6 +9,7 @@
 */
 
 #include "StdInc.h"
+#include "../../client/PerfTrace.h"
 #include "InputHandler.h"
 
 #include "NotificationHandler.h"
@@ -57,6 +58,7 @@ InputHandler::~InputHandler() = default;
 
 void InputHandler::handleCurrentEvent(const SDL_Event & current)
 {
+	PerfTrace::EventScope trace(current.type, current.common.timestamp, false);
 	switch (current.type)
 	{
 		case SDL_KEYDOWN:
@@ -237,6 +239,7 @@ void InputHandler::processEvents()
 
 bool InputHandler::ignoreEventsUntilInput()
 {
+	PerfTrace::emit("input_intentionally_drained");
 	bool inputFound = false;
 
 	std::unique_lock<std::mutex> lock(eventsMutex);
@@ -408,10 +411,12 @@ void InputHandler::preprocessEvent(const SDL_Event & ev)
 
 void InputHandler::fetchEvents()
 {
+	PerfTrace::emit("event_poll_sdl2_ms");
 	SDL_Event ev;
 
 	while(1 == SDL_PollEvent(&ev))
 	{
+		PerfTrace::EventScope trace(ev.type, ev.common.timestamp, true);
 		preprocessEvent(ev);
 	}
 }
@@ -498,6 +503,7 @@ void InputHandler::dispatchMainThread(const std::function<void()> & functor)
 
 void InputHandler::handleUserEvent(const SDL_UserEvent & current)
 {
+	PerfTrace::Activity trace("main_callback_enter", "main_callback_exit");
 	std::unique_ptr<std::function<void()>> task;
 
 	if (!dispatchedTasks.try_pop(task))

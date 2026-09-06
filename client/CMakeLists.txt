@@ -190,6 +190,7 @@ set(vcmiclientcommon_SRCS
 	PlayerLocalState.cpp
 	CServerHandler.cpp
 	Client.cpp
+	PerfTrace.cpp
 	ClientCommandManager.cpp
 	GameChatHandler.cpp
 	HeroMovementController.cpp
@@ -415,6 +416,7 @@ set(vcmiclientcommon_HEADERS
 	PlayerLocalState.h
 	CServerHandler.h
 	Client.h
+	PerfTrace.h
 	ClientCommandManager.h
 	ClientNetPackVisitors.h
 	HeroMovementController.h

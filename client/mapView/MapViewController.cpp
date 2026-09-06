@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../PerfTrace.h"
 #include "MapViewController.h"
 
 #include "MapRendererContext.h"
@@ -198,6 +199,8 @@ void MapViewController::tick(uint32_t timeDelta)
 		Point positionCurr = vstd::lerp(positionFrom, positionDest, movementContext->progress);
 
 		setViewCenter(positionCurr, movementContext->tileDest.z);
+		if(positionCurr != positionFrom)
+			PerfTrace::visualChanged(movementContext->target.getNum());
 	}
 
 	if(teleportContext)
@@ -588,6 +591,7 @@ void MapViewController::onHeroMoved(const CGHeroInstance * obj, const int3 & fro
 	{
 		addObject(movingObject);
 		setViewCenter(movingObject->visitablePos());
+		PerfTrace::visualChanged(movingObject->id.getNum());
 	}
 }
 

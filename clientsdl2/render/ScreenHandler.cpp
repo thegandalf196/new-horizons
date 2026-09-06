@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../../client/PerfTrace.h"
 #include "ScreenHandler.h"
 
 #include "SDL_Extensions.h"
@@ -693,6 +694,7 @@ void ScreenHandler::presentScreenTexture()
 	SDL_RenderCopy(mainRenderer, screenTexture, nullptr, nullptr);
 	ENGINE->cursor().render();
 	SDL_RenderPresent(mainRenderer);
+	PerfTrace::presented();
 }
 
 std::vector<Point> ScreenHandler::getSupportedResolutions() const

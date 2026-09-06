@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "PerfTrace.h"
 #include "Global.h"
 #include "Client.h"
 
@@ -341,6 +342,7 @@ void CClient::installNewBattleInterface(std::shared_ptr<CBattleGameInterface> ba
 
 void CClient::handlePack(CPackForClient & pack)
 {
+	PerfTrace::ApplyScope trace(pack);
 	ApplyClientNetPackVisitor afterVisitor(*this, gameState());
 	ApplyFirstClientNetPackVisitor beforeVisitor(*this, gameState());
 
@@ -350,6 +352,7 @@ void CClient::handlePack(CPackForClient & pack)
 		std::unique_lock lock(CGameState::mutex);
 		gameState().apply(pack);
 	}
+	trace.stateApplied();
 	logNetwork->trace("\tApplied on gs: %s", typeid(pack).name());
 	pack.visit(afterVisitor);
 	logNetwork->trace("\tMade second apply on cl: %s", typeid(pack).name());
@@ -383,6 +386,7 @@ std::optional<BattleAction> CClient::makeSurrenderRetreatDecision(PlayerColor pl
 
 int CClient::sendRequest(const CPackForServer & request, PlayerColor player, bool waitTillRealize)
 {
+	PerfTrace::Activity requestActivity("request_call_enter", "request_call_return");
 	if(observerMode)
 	{
 		logNetwork->trace("Dropped request \"%s\" - a replay is in progress", typeid(request).name());
@@ -395,7 +399,10 @@ int CClient::sendRequest(const CPackForServer & request, PlayerColor player, boo
 	waitingRequest.pushBack(requestID);
 	request.requestID = requestID;
 	request.player = player;
+	PerfTrace::submitted(request);
+	PerfTrace::emit("transport_submit_enter");
 	GAME->server().sendGamePack(request);
+	PerfTrace::emit("transport_submit_return");
 	if(vstd::contains(playerint, player))
 		playerint[player]->requestSent(&request, requestID);
 

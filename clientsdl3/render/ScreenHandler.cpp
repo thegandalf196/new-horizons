@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../../client/PerfTrace.h"
 #include "ScreenHandler.h"
 #include "GpuResources.h"
 
@@ -954,7 +955,10 @@ void ScreenHandler::presentScreenTexture()
 
 	SDL_RenderTexture(renderer, isGpuRenderingEnabled() ? screenTarget : screenTexture, nullptr, nullptr);
 	ENGINE->cursor().render();
-	SDL_RenderPresent(renderer);
+	if(SDL_RenderPresent(renderer))
+		PerfTrace::presented();
+	else
+		PerfTrace::emit("present_failed");
 }
 
 std::vector<Point> ScreenHandler::getSupportedResolutions() const

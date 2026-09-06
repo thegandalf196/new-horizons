@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "PerfTrace.h"
 #include "GameEngine.h"
 #include "GameLibrary.h"
 #include "Discord.h"
@@ -97,8 +98,12 @@ void GameEngine::handleEvents()
 
 	//player interface may want special event handling
 	if(engineUser->capturedAllEvents())
+	{
+		PerfTrace::emit("input_captured");
 		return;
+	}
 
+	PerfTrace::emit("input_service");
 	input().processEvents();
 }
 
@@ -137,7 +142,9 @@ void GameEngine::fakeMouseMove()
 
 void GameEngine::updateFrame()
 {
+	PerfTrace::emit("frame_lock_wait");
 	std::scoped_lock interfaceLock(ENGINE->interfaceMutex);
+	PerfTrace::frameBegin();
 
 	engineUser->onUpdate();
 
@@ -159,6 +166,7 @@ void GameEngine::updateFrame()
 
 GameEngine::~GameEngine()
 {
+	PerfTrace::flush();
 	// enforce deletion order on shutdown
 	// all UI elements including adventure map must be destroyed before Gui Handler
 	// proper solution would be removal of adventureInt global

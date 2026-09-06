@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../PerfTrace.h"
 #include "MapRenderer.h"
 
 #include "IMapRendererContext.h"
@@ -558,6 +559,8 @@ void MapRendererObjects::renderImage(IMapRendererContext & context, Canvas & tar
 	{
 		Point imagePos = image->dimensions() - offsetPixels - Point(32, 32);
 		target.draw(image, Point(0, 0), Rect(imagePos, Point(32,32)));
+		if(object->ID == Obj::HERO)
+			PerfTrace::objectDrawn(object->id.getNum());
 	}
 }
 
