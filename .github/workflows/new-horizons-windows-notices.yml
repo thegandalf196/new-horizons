@@ -1,0 +1,63 @@
+name: New Horizons Windows notice discovery
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [definitive-mvp]
+    paths: [.github/workflows/new-horizons-windows-notices.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  notices:
+    if: github.repository == 'thegandalf196/vcmi' && github.ref == 'refs/heads/definitive-mvp'
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 15
+    steps:
+      - uses: step-security/msvc-dev-cmd@main
+        with:
+          arch: x64
+      - name: Discover installed Microsoft terms (no compile or game execution)
+        shell: python
+        run: |
+          import hashlib, json, os, pathlib, shutil
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'nh-notice-discovery'
+          output.mkdir()
+          inventory = []
+          for variable in ('VSINSTALLDIR', 'WindowsSdkDir', 'VCToolsRedistDir'):
+              value = os.environ.get(variable)
+              if not value:
+                  print(variable + ': unavailable')
+                  continue
+              root = pathlib.Path(value)
+              for path in root.rglob('*'):
+                  if not path.is_file() or path.suffix.lower() not in {'.rtf', '.txt', '.html', '.htm'}:
+                      continue
+                  if not any(term in path.name.lower() for term in ('license', 'eula', 'redist')):
+                      continue
+                  relative = path.relative_to(root)
+                  name = variable + '/' + relative.as_posix()
+                  print(name)
+                  entry = {'path': name, 'size': path.stat().st_size}
+                  # Only candidate Microsoft installation terms, not arbitrary
+                  # bundled third-party notices. This is discovery, NOT a license verdict.
+                  parts = [part.lower() for part in relative.parts]
+                  candidate = (variable != 'VSINSTALLDIR' or
+                               parts[0] == 'licenses' or
+                               parts[:2] == ['common7', 'ide'] or
+                               parts[:2] == ['vc', 'redist'])
+                  if candidate and path.stat().st_size < 2_000_000:
+                      destination = output / name
+                      destination.parent.mkdir(parents=True, exist_ok=True)
+                      shutil.copyfile(path, destination)
+                      entry['sha256'] = hashlib.sha256(path.read_bytes()).hexdigest()
+                      entry['copied'] = True
+                  inventory.append(entry)
+          (output / 'inventory.json').write_text(json.dumps(inventory, indent=2), encoding='utf-8')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Microsoft-notice-discovery-${{ github.sha }}
+          path: ${{ runner.temp }}/nh-notice-discovery
+          if-no-files-found: error
+          retention-days: 7
