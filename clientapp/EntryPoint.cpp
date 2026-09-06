@@ -74,7 +74,7 @@
 #endif
 #endif
 
-#if __MINGW32__
+#if __MINGW32__ && !defined(VCMI_SDL3)
 #undef main
 #endif
 

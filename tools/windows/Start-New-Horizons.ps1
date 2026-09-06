@@ -114,6 +114,37 @@ function Assert-ReadyContent([string]$Root) {
     # not multi-gigabyte hashes on every play. Extra generated maps are allowed.
 }
 
+function Set-ManagedPreset([string]$PackageRoot, [string]$ProfileRoot) {
+    # Mounting a root module does not activate it. Own only the fixed preset;
+    # ordinary settings and saves remain untouched. Caller holds the profile lock.
+    $mods = @('vcmi', 'core')
+    if (Test-Path -LiteralPath (Join-Path $PackageRoot 'Mods/new-horizons/mod.json') -PathType Leaf) {
+        foreach ($required in @('config/newHorizonsCombat.json', 'config/schemas/newHorizonsCombat.json',
+                               'config/newHorizonsMagic.json', 'config/schemas/newHorizonsMagic.json')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $PackageRoot $required) -PathType Leaf)) {
+                throw "Incomplete curated package: missing $required. Re-extract the matching full ZIP."
+            }
+        }
+        $mods += 'new-horizons'
+    }
+    $directory = Join-Path $ProfileRoot 'config'
+    Assert-PlainPath $directory
+    $path = Join-Path $directory 'modSettings.json'
+    Assert-PlainPath $path
+    $temporary = Join-Path $directory ('.nh-mod-preset-' + [Guid]::NewGuid().ToString('N'))
+    $preset = [ordered]@{ activePreset = 'default'; presets = @{ default = @{ mods = $mods; settings = @{} } } }
+    try {
+        [IO.File]::WriteAllText($temporary, ($preset | ConvertTo-Json -Depth 6), (New-Object Text.UTF8Encoding $false))
+        if ([IO.File]::Exists($path)) {
+            [IO.File]::Replace($temporary, $path, [NullString]::Value)
+        } else {
+            [IO.File]::Move($temporary, $path)
+        }
+    } finally {
+        if ([IO.File]::Exists($temporary)) { [IO.File]::Delete($temporary) }
+    }
+}
+
 function Select-CompleteFolder {
     Add-Type -AssemblyName System.Windows.Forms
     $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
@@ -253,6 +284,7 @@ try {
         if ($backup) { Write-Host "Previous content retained at: $backup" }
     }
     Assert-ReadyContent $content
+    Set-ManagedPreset $packageRoot $profileRoot
     if ($SetupOnly) {
         Write-Host 'Verified private assets are ready. No game was started.'
         exit 0
