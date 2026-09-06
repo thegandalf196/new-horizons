@@ -108,17 +108,204 @@ Local-only evidence: `build/new-horizons-linux/testing/perf-off/manifest.json`,
 clock brackets, sample hashes/capture durations and proc counters; proprietary
 screenshots/logs/saves and machine-private profile paths are not committed.
 
-## Remaining experiment and recommendation
+## Frozen experimental checkpoint and actual microbenchmark
 
-Complete AI-turn/service-gap/frame-stall attribution, input receipt/submission/
-application stages and affected-present correlation require the opt-in instrumented
-candidate. Compare that **same binary envOFF versus envON**, with paired/interleaved
-fresh-save repetitions; the older shipping-off snapshot alone cannot isolate
-instrumentation overhead. Use the same ROI corroboration, and add a declared legal
-hero-move action for renderer-supported affected-present matching. During longer
-AI stress intervals only legal non-gameplay UI/cursor probes are appropriate.
+Tester executed the frozen snapshot `perf-preview-fd5abac02` on2026-09-06:
+source **fd5abac02a216e51b18a5a581f6e13bf978d39a0**, client SHA-256
+`1f001505a802d99de6c61970c2105836241e80263262a40e06108b82d003b1fe`, library
+`fdb3490eb91abbe13cff0923b01142729df9cbf6c960c9c49b7e137e13b73671`, vcmitest
+`469d6edfde1c158c685939caf64d8c803a60ca3d4591c73f8cc1f8013a73d46c`.
+Build reported post-commit build0,66 native PASS/5 expected SKIP and3 explicitly
+activated correctness tests PASS. Tester independently ran the actual sweep,
+not the mutable test binary, with its frozen library and private native XDG.
 
-Microbenchmark variants and full-game same-thread alternatives have not been run
-by Tester yet. No architectural default change is justified by this baseline.
-The present data establishes reproducible scoped observations and state continuity,
-not that transport is a bottleneck or that a direct-call engine is safe/faster.
+**00:39:50–00:40:23 UTC, timeout300s, EXIT0**, XML1 test/zero failures,
+31.961s test duration. Command filter:
+`NH_RUN_TRANSPORT_BENCHMARK=1 .../vcmitest --gtest_filter=InternalConnectionBenchmark.PayloadBurstSweep`.
+No GUI, concurrent benchmark or local build during this exclusive window.
+
+Exactly **960 records**,4 variants ×4 payloads ×3 bursts ×10 repetitions ×2
+trace modes,256 measured operations/32 warmups per session:245760 measured and
+30720 warmup operations. All recorded correctness flags true/dropped counts zero;
+480 ON records retain raw per-operation RTTs. Runtime independently analyzed the
+same raw records; its CSVs retain all repetitions and paired trace costs.
+
+Median OFF batch elapsed per completed command (**microseconds**, not RTT):
+
+| Payload/burst | Threaded bytes | Same-thread queued bytes | Direct bytes harness | Direct typed harness |
+|---|---:|---:|---:|---:|
+|64B/1|14.875|1.223|0.945|0.110|
+|4KiB/16|19.656|31.311|30.649|3.176|
+|64KiB/64|271.475|517.995|482.626|50.206|
+
+**Negative finding:** the existing threaded byte pipeline wins large-burst
+throughput here;64KiB/64 is1.91× faster than same-thread queued bytes. Small
+isolated requests benefit from handoff removal, but there is no universal
+same-thread win. Typed mode removes **both directions' serialization** in a
+synthetic validated operation, not full gameplay or a request-only optimization.
+
+For64B/1 threaded ON, pooled2560 RTTs p50/p95/p99/max:
+10.269/12.343/14.728/34.224us. Mean phases in us: encode0.521,
+request delivery4.678, decode0.339, validated work0.097, response encode0.179,
+response delivery4.757, response decode0.127. Delivery includes copy/post/wait/
+listener dispatch—**pure queue wait is not isolated**. OFF batch cost and ON RTT
+have different endpoints; do not interpret their difference as negative overhead.
+
+Ten-run OFF CV reaches15.9% threaded,29.1% queued and30% direct bytes across
+cells.64B/1 ON/OFF median batch-cost ratios are1.02/1.16/1.20/2.29 respectively;
+empty typed work reaches5.5×, showing instrumentation can dominate tiny operations.
+Per-variant OFF-before-ON ordering remains a microbenchmark limitation. Direct
+re-entry reaches depth2 versus queued depth1: matching synthetic state does **not**
+establish callback/re-entry equivalence. Queued-close cancellation was tested;
+no safe synchronous whole-game replacement is established.
+
+Local evidence: `testing/perf-micro-fd5/` below the Linux build root, including
+raw stdout/stderr, exit, XML, manifests/final hashes, Runtime's
+`runtime-findings.md`, `runtime-repetitions.csv` (960 rows),
+`runtime-variant-summary.csv` (96 ten-run cells), and `runtime-comparisons.csv`.
+
+## Same-binary paired graphical OFF/ON execution
+
+**00:43:30–00:52:09 UTC**, same enabled fd5 snapshot,5 fresh-save pairs in order
+OFF/ON, ON/OFF, OFF/ON, ON/OFF, OFF/ON. No local compilation or concurrent timing.
+Each launch had a600s safety bound. Options → Quit was requested and all10
+client PIDs disappeared; all5 ON traces flushed with **zero dropped records/
+metadata evictions**. Exact client/launcher exit statuses were **not captured**
+for these10 runs (nor the older5 graphical baseline runs). Historical
+`normal_exit_confirmed_ns` fields establish process disappearance after the quit
+request, not exit0; the ON trace additionally establishes shutdown flushing.
+Only the separate microbenchmark has an actual recorded EXIT0. Later helper
+hardening records the bounded launcher's real status via an argv-only supervisor
+and requires zero, including treating timeout124 as failure; that is not retroactive
+evidence for these completed graphical runs. Private Xvfb stopped,
+quiet lane released; frozen binaries, original save and10 input clones unchanged.
+This compares environment trace OFF/ON on the same build, not different binaries.
+
+Kept prior save/settings/renderer and UI/day probes. After Day2 human turn returned,
+selected one legal south tile and measured its execution click. Move ROI8×8 at
+(526,360), execution click(544,369), outside the path-marker/flag region. The
+camera follows movement: the changed scene can include camera motion, so this is
+**move-caused visible scene response**, not a guarantee the first changed pixel
+is exclusively the hero sprite. Initial path selection is outside the timed probe.
+Trial1 first selected a longer path without executing it, then replaced it with
+the verified single-step path; subsequent trials used the corrected coordinates.
+
+All30 stable-precondition ROI observations succeeded. Manual inspection of the
+first pair and final run, plus exact hero-panel/resource crop fingerprints for
+runs3–10, verified Day2/XP166/4 Imps6 Gogs/mana6/gold19950 and movement1460 after
+the one-tile step. Source saves were never overwritten. The first two launches
+included manual inspection delays; warmup was at least5s in every run, not an
+identical process-age interval. Later runs used the bounded repeatable launcher/
+action helpers. No failure was silently retried or excluded.
+
+Per-run externally observed intervals, milliseconds:
+
+| Run/mode | UI close | Day2 label | One-tile move scene |
+|---|---:|---:|---:|
+|1 OFF|[10.504,20.859]|[166.529,176.879]|[20.792,31.160]|
+|2 ON|[10.576,20.942]|[167.495,177.869]|[20.806,31.194]|
+|3 ON|[10.448,20.794]|[156.454,167.279]|[20.824,31.166]|
+|4 OFF|[10.474,20.834]|[155.233,165.661]|[20.763,31.095]|
+|5 OFF|[10.534,20.871]|[165.576,176.051]|[20.762,31.117]|
+|6 ON|[10.436,20.768]|[155.425,165.764]|[20.771,31.078]|
+|7 ON|[10.591,20.960]|[155.458,166.242]|[20.779,31.109]|
+|8 OFF|[0.196,10.544]|[155.321,165.705]|[20.894,31.261]|
+|9 OFF|[10.570,20.958]|[165.806,176.167]|[31.268,41.594]|
+|10 ON|[10.443,20.803]|[155.888,166.219]|[10.488,20.826]|
+
+Median intervals OFF versus ON: UI[10.504,20.859] vs[10.448,20.803];
+day[165.576,176.051] vs[155.888,166.242]; move[20.792,31.160] vs[20.779,31.109].
+These observations do **not** demonstrate that tracing accelerates gameplay or
+that overhead is zero. Most paired differences span zero; one UI pair is slower
+ON and the last move pair faster ON. Poll quantization, frame phase, short runs
+and only5 pairs prevent a reliable tail or small-overhead conclusion.
+
+Day-probe aggregate CPU samples: OFF340–350ms, ON330–350ms; scoped existing
+NK2 timers: OFF127–135ms, ON129–134ms. Post-move RSS samples:
+OFF311.746–312.738MiB, ON312.191–313.617MiB (not peaks/maximum trace-buffer cost).
+Do not attribute the older shipping snapshot's higher RSS to instrumentation:
+that comparison changes binaries and is not paired.
+
+Local evidence: `testing/perf-paired-fd5/` under the Linux build root,
+`manifest.json`, `external-summary.json`,30 ROI records,5 client traces,
+per-run correctness/identity records and logs, frozen hashes and two named
+move screenshots. `nh-perf-launch-trial.py` and `nh-perf-paired-trial.py` supply
+repeatable normal-input setup, bounds, state-fingerprint and trace-loss checks.
+
+### Actual AI/service trace findings
+
+Frontend independently analyzed the5 loss-free ON traces; these are
+**client-observed green-player notification intervals**, not isolated AI CPU time:
+
+| ON run | Green turn interval ms | Max interior poll gap ms | Max interior present gap ms | Max frame-lock wait ms |
+|---|---:|---:|---:|---:|
+|2|131.973|16.316|16.316|0.348|
+|3|131.496|16.909|16.908|0.083|
+|6|134.592|28.968|28.968|0.155|
+|7|135.809|28.469|28.469|0.231|
+|10|136.989|16.412|16.412|0.122|
+
+Each interval contains8 poll,8 presentation and8 input-service records,457
+client-state applies and81 command submits. These maxima cover consecutive
+records **inside** the interval, not edge-straddling gaps or entire-run maxima.
+No `input_captured`/`input_intentionally_drained` marker occurred in these intervals.
+No p95/p99 claim is made from these short five-turn observations. OFF has no
+comparable internal frame/poll trace; this is not an OFF/ON stall comparison.
+
+**Important negative finding:** small recorded frame-lock waits do not exclude
+GUI locking delays. In runs6/7, SDL user-event receipt to main-callback entry was
+27.061/26.360ms, while callback bodies were about1us. SDL_USEREVENT processing
+acquires `interfaceMutex` **before** the callback-enter marker. The observed delay
+therefore includes uninstrumented locking/scheduling; it is not a pure mutex-wait
+measurement or evidence the callback body/transport consumed27ms. Observed maximum
+apply/request/main-callback nesting depths were1/2/1, not proof of re-entry absence.
+
+### Actual move correlation and clock limits
+
+All5 ON trials have unique receipt/dispatch event543 (SDL button-down1025), real
+command request90, semantic move result apply547, and matching draw/present frame
+890/888/889/889/886 respectively. The `matched_request_id` is a semantic candidate,
+not an ID present in the result packet. State checkpoints and the move-caused ROI
+change corroborate the controlled single-step action; camera motion prevents
+claiming a uniquely identified first hero-sprite pixel.
+
+Same-C++-clock stage durations, milliseconds except receipt→dispatch:
+
+| ON run | Receipt→dispatch us | Receipt→submit | Submit→state | State→draw | Draw→present return | Receipt→present return | Submit→ACK |
+|---|---:|---:|---:|---:|---:|---:|---:|
+|2|10.530|0.984|0.790|14.941|14.447|31.162|161.219|
+|3|9.869|0.871|0.806|14.789|15.326|31.793|161.551|
+|6|9.638|0.864|0.782|15.809|14.468|31.923|160.601|
+|7|11.181|0.939|0.773|14.951|15.572|32.235|161.548|
+|10|16.471|0.937|0.777|14.871|13.597|30.182|160.172|
+
+The transport-submit call scope is only12.644–14.017us: **not end-to-end transport**.
+State-applied→after-visitor return159.343–160.724ms is consistent with declared
+150ms animation plus frame pacing, not proved entirely animation work. ACK arrives
+about130ms **after** the affected-present candidate. It is emphatically not the
+visual-response endpoint. Authoritative server application and pure queue-wait
+stages remain absent in these full-game traces; client apply is not a substitute.
+
+Python/C++ epoch equality was **not assumed**. For unique move receipt C and
+external injection/capture P, offset Csteady−Pmono is bounded by
+`[C_receipt−P_changed_capture_end, C_receipt−P_injection_begin]`:
+run2[-25.608,5.585],3[-21.841,9.326],6[-21.508,9.570],
+7[-26.078,5.031],10[-19.354,1.472]ms. Tester independently recomputed these from
+raw traces/probe files. A **conditional constant-offset** intersection across the
+five runs is[-19.354,1.472]ms; containing zero does not prove clock equality.
+No exact cross-clock input→present latency is derived from this broad anchor.
+The renderer draw→present-return span is CPU/API timing, not scanout. Root pixels
+may already have changed before the API returns; do not force capture intervals
+to intersect the return instant or invent a timing contradiction. Frontend's
+local `analysis-client.json` retains source hashes, raw joined records, all clock
+bounds/lock spans and limitations; `analysis-client.csv` has the5 concise rows.
+Tester read the CSV and independently recalculated the causal clock bounds.
+
+### Recommendation
+
+Do **not** switch the shipping architecture based on these results. The benchmark
+establishes microsecond-scale small-packet overhead but synthetic large bursts can
+favor the existing pipeline; full-game AI work and rendering have different scopes.
+Direct re-entry is observably different. A narrowly validated experimental action
+could be measured next, retaining validation/ownership/callback scheduling, but no
+whole-game same-thread variant or default change has been accepted.
