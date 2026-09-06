@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import tarfile
 import tempfile
 import zipfile
 
@@ -30,10 +31,24 @@ def main():
     parser.add_argument('--original-run-id', required=True)
     parser.add_argument('--preflight-dir', type=Path, required=True)
     parser.add_argument('--output-dir', type=Path, required=True)
+    parser.add_argument('--local-run-id', help='Explicit local evidence identity; never a GitHub run claim')
     args = parser.parse_args()
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-    if revision != os.environ['GITHUB_SHA']:
-        raise RuntimeError('Packaging checkout identity mismatch')
+    if args.local_run_id:
+        if os.environ.get('GITHUB_ACTIONS') == 'true':
+            raise RuntimeError('Local packaging mode is not a GitHub Actions run')
+        packaging_run_id = 'local:' + args.local_run_id
+        execution = 'local'
+    else:
+        if revision != os.environ['GITHUB_SHA']:
+            raise RuntimeError('Packaging checkout identity mismatch')
+        packaging_run_id = os.environ['GITHUB_RUN_ID']
+        execution = 'github-actions'
+    if subprocess.check_output(['git', 'diff', 'HEAD', '--',
+            'tools/ci/package_new_horizons_windows.py',
+            'tools/ci/repack_new_horizons_windows.py',
+            'tools/ci/prepare_frozen_windows_notice_overlay.py']):
+        raise RuntimeError('Packaging tools must match their committed source identity')
     archives = list(args.original_dir.rglob('New-Horizons-Windows-x64-*.zip'))
     if len(archives) != 1:
         raise RuntimeError('Expected exactly one original playable ZIP')
@@ -100,9 +115,22 @@ def main():
             if any(not name.startswith('licenses/dependencies/') or '..' in name.split('/') or not (package / name).is_file() for name in entry['notices']):
                 raise RuntimeError('Dependency notice file missing')
         packaging_source = 'New-Horizons-Packaging-' + revision[:12] + '-source.tar.gz'
+        essential = ['tools/ci/package_new_horizons_windows.py', 'tools/ci/repack_new_horizons_windows.py']
+        if (args.preflight_dir / 'NOTICE-OVERLAY-PROVENANCE.json').is_file():
+            essential.append('tools/ci/prepare_frozen_windows_notice_overlay.py')
+        with tarfile.open(args.preflight_dir / 'fork-source.tar.gz', 'r:gz') as sources:
+            members = sources.getmembers()
+            for name in essential:
+                matching = [entry for entry in members if entry.name.endswith('/' + name)]
+                expected = subprocess.check_output(['git', 'show', revision + ':' + name])
+                if (len(matching) != 1 or not matching[0].isfile()
+                        or matching[0].size != len(expected)
+                        or sources.extractfile(matching[0]).read() != expected):
+                    raise RuntimeError('Packaging source archive differs from committed tool: ' + name)
         shutil.copyfile(args.preflight_dir / 'fork-source.tar.gz', args.output_dir / packaging_source)
         identity.update(dependency_source_sha256=digest(args.output_dir / dependency_name),
-                        packaging_revision=revision, packaging_run_id=os.environ['GITHUB_RUN_ID'],
+                        packaging_revision=revision, packaging_run_id=packaging_run_id,
+                        packaging_execution=execution,
                         packaging_source_archive=packaging_source,
                         packaging_source_sha256=digest(args.output_dir / packaging_source))
         (package / 'BUILD-IDENTITY.json').write_text(json.dumps(identity, indent=2, sort_keys=True) + '\n', encoding='utf-8')
@@ -114,9 +142,15 @@ def main():
                  for p in package.rglob('*') if p.is_file() and not mutable(p.relative_to(package).as_posix())}
         if after != protected:
             raise RuntimeError('Repack changed executable/runtime/resource/launcher payload')
+        overlay_file = args.preflight_dir / 'NOTICE-OVERLAY-PROVENANCE.json'
+        overlay = json.loads(overlay_file.read_text()) if overlay_file.is_file() else None
+        if overlay is not None and (overlay['original_zip_sha256'] != digest(original)
+                or overlay['dependency_source_sha256'] != digest(args.output_dir / dependency_name)):
+            raise RuntimeError('Notice overlay provenance does not match supplied archives')
         (package / 'REPACK-PROVENANCE.json').write_text(json.dumps({
             'original_zip_sha256': digest(original), 'original_build_run': args.original_run_id,
-            'packaging_revision': revision, 'packaging_run_id': os.environ['GITHUB_RUN_ID'],
+            'packaging_revision': revision, 'packaging_run_id': packaging_run_id,
+            'packaging_execution': execution, 'notice_overlay': overlay,
             'unchanged_payload_sha256': protected,
             'scope': 'Dependency notices and corresponding sources only; no recompile or gameplay execution',
         }, indent=2, sort_keys=True) + '\n', encoding='utf-8')
