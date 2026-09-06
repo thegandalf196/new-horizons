@@ -4,7 +4,10 @@
 
 Read `docs/NEW_HORIZONS_MVP.md` before choosing work. It defines this fork's
 single-player, original-content MVP, ownership and validation contract. This is
-not the separate Reconstruction repository. Preserve VCMI licensing and existing
+not the separate Reconstruction repository. Current full-scale mod implementation
+is authorized by `docs/NEW_HORIZONS_DESIGN.md`: prioritize fun and working AI;
+defer numerical balance. Read it alongside the MVP baseline before new feature work.
+Preserve VCMI licensing and existing
 gameplay; use its internal connection and simulation thread instead of a separate
 single-player server process. Historical references below to the server describe
 the authoritative simulation role, not a requirement for a separate executable

@@ -1,5 +1,17 @@
 # Heroes III: New Horizons — MVP
 
+## Current phase: user-authorized redesign
+
+The original-content single-player MVP remains the compatibility baseline. The
+user has now authorized full implementation of their mod philosophy: fun first,
+numerical balance deferred, AI support mandatory, reuse external original art
+where appropriate and create original assets where needed. Follow
+[NEW_HORIZONS_DESIGN.md](NEW_HORIZONS_DESIGN.md) for current feature scope,
+ownership and playable increments. This supersedes earlier restrictions against
+intentional gameplay redesign; it does not erase saved-game/asset provenance,
+correctness, privacy or release obligations. Continue the repaired Windows preview
+publication alongside feature work, without replacing its frozen payload.
+
 ## Product contract
 
 Working title: Heroes III: New Horizons. This is a VCMI-derived, GPL-covered project, separate from the Reconstruction repository. Preserve upstream license notices and attribution. Naming/public distribution rights require separate review.
