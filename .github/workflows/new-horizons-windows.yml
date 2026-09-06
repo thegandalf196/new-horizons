@@ -2,6 +2,11 @@ name: New Horizons Windows x64 Preview
 
 on:
   workflow_dispatch:
+    inputs:
+      preflight_only:
+        description: Validate all dependency notices and corresponding sources without compiling
+        type: boolean
+        default: true
   # Initially registered by a scoped push. Manual branch dispatch is now
   # verified; run the cheap notice preflight before dispatching a full rebuild.
 
@@ -64,7 +69,9 @@ jobs:
           max-size: 5G
 
       - name: Package audit regression tests (no PE execution)
-        run: python tools/tests/test_windows_pe_audit.py
+        run: |
+          python tools/tests/test_windows_pe_audit.py
+          python tools/tests/test_windows_system_dependency.py
 
       - name: Preflight Microsoft notices before compiling
         shell: python
@@ -107,7 +114,30 @@ jobs:
           powershell.exe -NoProfile -File tools/windows/tests/Setup-Smoke.ps1
           if ($LASTEXITCODE -ne 0) { throw "Setup smoke failed: $LASTEXITCODE" }
 
+      - name: Preflight complete dependency graph and source archives
+        shell: python
+        run: |
+          import os, pathlib, runpy
+          module = runpy.run_path('tools/ci/package_new_horizons_windows.py')
+          root = pathlib.Path.cwd()
+          stage = root / 'build/new-horizons-windows-x64/preflight'
+          stage.mkdir(parents=True)
+          module['collect_notices'](root / 'conan-generated-graph.json', stage / 'notices', stage / 'dependency-sources.tar.gz')
+          exclusions = module['source_archive'](root, stage / 'fork-source.tar.gz', os.environ['GITHUB_SHA'])
+          print('All dependency notices, dependency sources and fork source archived; exclusions:', exclusions)
+
+      - name: Upload source-only preflight evidence (not a playable package)
+        if: inputs.preflight_only
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dependency-source-preflight-${{ github.sha }}
+          path: build/new-horizons-windows-x64/preflight
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Configure client and internal authority
+        if: ${{ !inputs.preflight_only }}
         run: >-
           cmake --preset new-horizons-windows-x64
           -DENABLE_CCACHE=ON
@@ -115,12 +145,15 @@ jobs:
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
       - name: Compile Windows x64 client
+        if: ${{ !inputs.preflight_only }}
         run: cmake --build build/new-horizons-windows-x64 --target vcmiclient --parallel 4
 
       - name: Stage upstream runtime and resources
+        if: ${{ !inputs.preflight_only }}
         run: cmake --install build/new-horizons-windows-x64
 
       - name: Package client, recursive PE closure, licenses and corresponding sources
+        if: ${{ !inputs.preflight_only }}
         run: |
           set -euo pipefail
           python tools/ci/package_new_horizons_windows.py \
@@ -129,6 +162,7 @@ jobs:
             --output-dir build/new-horizons-windows-x64/artifact
 
       - name: Upload downloadable Windows preview
+        if: ${{ !inputs.preflight_only }}
         uses: actions/upload-artifact@v4
         with:
           name: New-Horizons-Windows-x64-${{ github.sha }}
@@ -138,6 +172,7 @@ jobs:
           retention-days: 30
 
       - name: Summarize artifact scope
+        if: ${{ !inputs.preflight_only }}
         shell: pwsh
         run: |
           @'

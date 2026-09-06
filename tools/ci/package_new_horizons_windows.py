@@ -200,6 +200,32 @@ def build_provenance(build_directory):
     return {"cache_options": selected, "msvc_compiler_versions": sorted(set(compiler_versions))}
 
 
+def windows_system_dependency(node):
+    """Recognize only the audited Windows OpenGL provider, never arbitrary */system."""
+    # This exact Conan recipe has no package implementation and selects the
+    # Windows SDK system_libs=["opengl32"]. Its MIT field describes recipe
+    # metadata, not an OpenGL runtime that we distribute.
+    if (node.get("ref") != "opengl/system#cfcf523b9d2bad75cbf377f56562634c"
+            or node.get("settings", {}).get("os") != "Windows"):
+        return None
+    folder = Path(node["package_folder"])
+    if not folder.is_dir() or folder.is_symlink():
+        raise RuntimeError("Invalid Windows OpenGL system-package directory")
+    for path in folder.rglob("*"):
+        if path.is_symlink() or (not path.is_dir() and
+                path.relative_to(folder).as_posix() not in {"conaninfo.txt", "conanmanifest.txt"}):
+            raise RuntimeError("Unexpected payload in Windows OpenGL system package: " + path.name)
+    return {
+        "reference": node["ref"], "system_only": True,
+        "system_libraries": ["opengl32.dll"],
+        "distribution": "Provided by Windows; no implementation files bundled",
+        "recipe_license": node.get("license"), "homepage": node.get("homepage"),
+        "package_id": node.get("package_id"), "package_revision": node.get("prev"),
+        "settings": node.get("settings"), "options": node.get("options"),
+        "notices": [],
+    }
+
+
 def collect_notices(graph_path, package, source_output):
     graph = json.loads(graph_path.read_text(encoding="utf-8"))
     nodes = graph.get("graph", {}).get("nodes", {})
@@ -212,6 +238,10 @@ def collect_notices(graph_path, package, source_output):
     for node in nodes.values():
         reference = node.get("ref")
         if not reference or not node.get("package_folder") or node.get("context") == "build" or reference.startswith("qt/"):
+            continue
+        system = windows_system_dependency(node)
+        if system is not None:
+            dependencies.append(system)
             continue
         # Include notices for static dependencies too: their code can be inside VCMI_lib.dll.
         name = re.sub(r"[^a-zA-Z0-9_.-]", "_", reference.split("#")[0])
@@ -247,6 +277,8 @@ def collect_notices(graph_path, package, source_output):
     by_reference = {node.get("ref"): node for node in nodes.values()}
     with tarfile.open(source_output, "w:gz", format=tarfile.PAX_FORMAT) as archive:
         for dependency in dependencies:
+            if dependency.get("system_only"):
+                continue  # No implementation is distributed; retain provenance in DEPENDENCIES.json.
             reference = dependency["reference"]
             node = by_reference[reference]
             with tempfile.TemporaryDirectory(prefix="nh-dependency-source-") as temporary:
