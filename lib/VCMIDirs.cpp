@@ -106,7 +106,7 @@ VCMIDirsWIN32::VCMIDirsWIN32()
 	if (!bfs::exists(configPath))
 		return;
 
-	std::ifstream in(configPath.wstring(), std::ios::binary);
+	std::ifstream in(configPath.c_str(), std::ios::binary);
 	if (!in)
 		return;
 
