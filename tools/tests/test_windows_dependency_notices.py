@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Corresponding source/notices, including skipped static host recipes; no network."""
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -34,11 +35,20 @@ class DependencyNoticesTest(unittest.TestCase):
         }
         self.source_files = {"src/COPYING": b"Synthetic upstream BSD license text"}
         self.commands = []
+        self.exported = None
+        self.restore_exports = True
 
     def run_conan(self, command, **kwargs):
         self.commands.append(command)
         if command[1:3] == ["cache", "path"]:
+            if self.exported is not None:
+                return subprocess.CompletedProcess(command, 0, str(self.exported), "")
             return subprocess.CompletedProcess(command, 1, "", "export_source folder does not exist")
+        if command[1] == "download":
+            self.assertEqual(command[2:], [self.node["ref"], "--only-recipe", "-r", "conancenter"])
+            if self.restore_exports:
+                (self.exported / "fix.patch").write_bytes(b"exact exported patch")
+            return subprocess.CompletedProcess(command, 0)
         self.assertEqual(command[1], "source")
         for name, content in self.source_files.items():
             path = Path(command[2]) / name
@@ -111,6 +121,26 @@ class DependencyNoticesTest(unittest.TestCase):
         })
         self.assertEqual([item["reference"] for item in metadata], [self.node["ref"]])
         self.assertEqual(len(self.commands), 2)
+
+    def prepare_missing_export(self):
+        self.exported = self.root / "exports"
+        self.exported.mkdir()
+        checksum = hashlib.md5(b"exact exported patch", usedforsecurity=False).hexdigest()
+        (self.recipe / "conanmanifest.txt").write_text("1\nexport_source/fix.patch: " + checksum + "\n")
+
+    def test_missing_exported_patch_restored_at_exact_revision_before_source(self):
+        self.prepare_missing_export()
+        _, archive = self.collect()
+        self.assertEqual([command[1] for command in self.commands], ["cache", "download", "cache", "source"])
+        with tarfile.open(archive) as sources:
+            self.assertEqual(sources.extractfile("dav1d_1.5.4/fix.patch").read(), b"exact exported patch")
+
+    def test_unresolved_exported_patch_fails_before_source(self):
+        self.prepare_missing_export()
+        self.restore_exports = False
+        with self.assertRaisesRegex(RuntimeError, "Missing or mismatched exact exported sources"):
+            self.collect()
+        self.assertFalse(any(command[1] == "source" for command in self.commands))
 
     def test_missing_exact_recipe_fails_closed(self):
         self.node["recipe_folder"] = None

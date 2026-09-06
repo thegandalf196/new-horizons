@@ -296,7 +296,38 @@ def collect_notices(graph_path, package, source_output):
                     absent = re.search(r"(?i)(export.source|exported.source).*(not exist|not found|missing)", located.stderr)
                     if not absent:
                         raise RuntimeError(f"Cannot locate exported sources for {reference}: {located.stderr}")
-                else:
+                # Cache bundles can retain a recipe manifest but omit its exported
+                # patches (notably Skipped static nodes). Restore only the exact
+                # recipe revision, never a newer recipe or any binary package.
+                manifest = source / "conanmanifest.txt"
+                expected_exports = {}
+                if manifest.is_file():
+                    for line in manifest.read_text(encoding="utf-8").splitlines()[1:]:
+                        if line.startswith("export_source/"):
+                            filename, checksum = line.rsplit(": ", 1)
+                            relative = filename.removeprefix("export_source/")
+                            if relative.startswith("/") or ".." in relative.split("/") or "\\" in relative or ":" in relative:
+                                raise RuntimeError("Unsafe exported-source manifest path")
+                            expected_exports[relative] = checksum
+
+                def exports_complete(location):
+                    if location.returncode:
+                        return not expected_exports
+                    folder = Path(location.stdout.strip())
+                    return all((folder / filename).is_file() and
+                               hashlib.md5((folder / filename).read_bytes(), usedforsecurity=False).hexdigest() == checksum
+                               for filename, checksum in expected_exports.items())
+
+                if not exports_complete(located):
+                    # Conan skips downloading an already cached revision even when
+                    # individual export files are absent. Use a fresh recipe-only
+                    # cache; do not delete or mutate the staged binary cache.
+                    export_env = dict(os.environ, CONAN_HOME=str(source.parent / "export-cache"))
+                    subprocess.run(["conan", "download", reference, "--only-recipe", "-r", "conancenter"], check=True, env=export_env)
+                    located = subprocess.run(["conan", "cache", "path", reference, "--folder=export_source"], text=True, capture_output=True, env=export_env)
+                    if not exports_complete(located):
+                        raise RuntimeError("Missing or mismatched exact exported sources for " + reference)
+                if not located.returncode:
                     exported = Path(located.stdout.strip())
                     if exported.is_dir():
                         shutil.copytree(exported, source, dirs_exist_ok=True)
