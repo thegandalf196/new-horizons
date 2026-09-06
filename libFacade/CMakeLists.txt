@@ -56,8 +56,10 @@ endif()
 # runtime libraries vcmiMain depends on.
 target_include_directories(vcmi PUBLIC
 	$<TARGET_PROPERTY:vcmiMain,INTERFACE_INCLUDE_DIRECTORIES>)
+# PRIVATE Windows system dependencies appear here inside LINK_ONLY expressions.
+# Evaluate nested expressions instead of emitting literal $<...> into Ninja files.
 target_link_libraries(vcmi PUBLIC
-	$<TARGET_PROPERTY:vcmiMain,INTERFACE_LINK_LIBRARIES>)
+	"$<TARGET_GENEX_EVAL:vcmiMain,$<TARGET_PROPERTY:vcmiMain,INTERFACE_LINK_LIBRARIES>>")
 target_compile_definitions(vcmi PUBLIC
 	$<TARGET_PROPERTY:vcmiMain,INTERFACE_COMPILE_DEFINITIONS>)
 

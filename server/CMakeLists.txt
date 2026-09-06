@@ -66,7 +66,7 @@ add_library(vcmiservercommon STATIC ${vcmiservercommon_SRCS} ${vcmiservercommon_
 # Tests can embed AI object libraries directly, so server common must consume
 # the core library interface without also pulling the facade and its objects.
 set(vcmiservercommon_LIBS
-	$<TARGET_PROPERTY:vcmiMain,INTERFACE_LINK_LIBRARIES>
+	"$<TARGET_GENEX_EVAL:vcmiMain,$<TARGET_PROPERTY:vcmiMain,INTERFACE_LINK_LIBRARIES>>"
 )
 
 if(CMAKE_SYSTEM_NAME MATCHES FreeBSD OR HAIKU)
