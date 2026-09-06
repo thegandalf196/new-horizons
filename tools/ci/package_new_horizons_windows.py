@@ -208,6 +208,8 @@ def windows_system_dependency(node):
     if (node.get("ref") != "opengl/system#cfcf523b9d2bad75cbf377f56562634c"
             or node.get("settings", {}).get("os") != "Windows"):
         return None
+    if not node.get("package_folder"):
+        raise RuntimeError("Missing audited Windows OpenGL system-package directory")
     folder = Path(node["package_folder"])
     if not folder.is_dir() or folder.is_symlink():
         raise RuntimeError("Invalid Windows OpenGL system-package directory")
@@ -235,46 +237,38 @@ def collect_notices(graph_path, package, source_output):
     notices.mkdir(parents=True)
     dependencies = []
     missing = []
-    for node in nodes.values():
+    for node_id, node in nodes.items():
         reference = node.get("ref")
-        if not reference or not node.get("package_folder") or node.get("context") == "build" or reference.startswith("qt/"):
+        # Skipped static host dependencies can be embedded in a cached parent's
+        # DLL even though Conan supplies no package_folder for them.
+        if str(node_id) == "0" or node.get("recipe") == "Consumer" or not reference or node.get("context") == "build" or reference.startswith("qt/"):
             continue
         system = windows_system_dependency(node)
         if system is not None:
             dependencies.append(system)
             continue
-        # Include notices for static dependencies too: their code can be inside VCMI_lib.dll.
-        name = re.sub(r"[^a-zA-Z0-9_.-]", "_", reference.split("#")[0])
-        copied = []
-        for folder_key in ("package_folder", "recipe_folder"):
-            folder = Path(node.get(folder_key) or "__missing__")
-            candidates = list((folder / "licenses").rglob("*")) if (folder / "licenses").is_dir() else []
-            candidates += [p for p in folder.glob("*") if p.is_file() and p.name.lower().startswith(("license", "copying", "copyright", "notice"))]
-            for source in candidates:
-                if not source.is_file() or source.is_symlink():
-                    continue
-                relative = source.relative_to(folder)
-                destination = notices / name / folder_key / relative
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, destination)
-                copied.append(destination.relative_to(package).as_posix())
         metadata = {
             "reference": reference, "license": node.get("license"), "homepage": node.get("homepage"),
             "package_id": node.get("package_id"), "package_revision": node.get("prev"),
             "settings": node.get("settings"), "options": node.get("options"),
-            "notices": sorted(set(copied)),
+            "binary": node.get("binary"), "notices": [],
         }
         dependencies.append(metadata)
-        if not copied:
-            missing.append(reference)
     if not dependencies:
         raise RuntimeError("No Conan host dependency notices collected")
-    if missing:
-        raise RuntimeError("Missing dependency license texts (do not publish): " + ", ".join(missing))
     # Fetch through each exact cached recipe's source() implementation, retaining its
     # exported patches/build scripts as well as upstream source. A homepage is NOT
     # a substitute for corresponding source. Failure prevents binary publication.
-    by_reference = {node.get("ref"): node for node in nodes.values()}
+    by_reference = {node.get("ref"): node for node in nodes.values() if node.get("context") != "build"}
+    license_prefixes = ("license", "licence", "copying", "copyright", "notice", "unlicense")
+
+    def copy_notice(candidate, folder, destination_root, copied):
+        if not candidate.is_file() or candidate.is_symlink() or candidate.stat().st_size == 0:
+            return
+        destination = destination_root / candidate.relative_to(folder)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(candidate, destination)
+        copied.append(destination.relative_to(package).as_posix())
     with tarfile.open(source_output, "w:gz", format=tarfile.PAX_FORMAT) as archive:
         for dependency in dependencies:
             if dependency.get("system_only"):
@@ -283,7 +277,18 @@ def collect_notices(graph_path, package, source_output):
             node = by_reference[reference]
             with tempfile.TemporaryDirectory(prefix="nh-dependency-source-") as temporary:
                 source = Path(temporary) / "recipe"
+                if not node.get("recipe_folder") or not Path(node["recipe_folder"]).is_dir():
+                    raise RuntimeError("Missing exact cached recipe for dependency: " + reference)
                 shutil.copytree(node["recipe_folder"], source)
+                # A recipe's own MIT license is not the upstream implementation
+                # license. Exclude unchanged recipe files, but allow source() or
+                # export_source to supply/replace an actual upstream license.
+                recipe_files = {
+                    path.relative_to(source): path.read_bytes()
+                    for path in source.rglob("*")
+                    if path.is_file() and not path.is_symlink()
+                    and path.name.lower().startswith(license_prefixes)
+                }
                 located = subprocess.run(["conan", "cache", "path", reference, "--folder=export_source"], text=True, capture_output=True)
                 if located.returncode:
                     # Only a specifically absent export-source folder is optional. An
@@ -304,6 +309,30 @@ def collect_notices(graph_path, package, source_output):
                     command += ["--user", user, "--channel", channel]
                 subprocess.run(command, check=True)
                 archive_name = re.sub(r"[^a-zA-Z0-9_.-]", "_", name_version)
+                copied = []
+                notice_root = notices / re.sub(r"[^a-zA-Z0-9_.-]", "_", reference.split("#")[0])
+                if node.get("package_folder"):
+                    folder = Path(node["package_folder"])
+                    candidates = list((folder / "licenses").rglob("*")) if (folder / "licenses").is_dir() else []
+                    candidates += [path for path in folder.glob("*") if path.name.lower().startswith(license_prefixes)]
+                    for candidate in candidates:
+                        copy_notice(candidate, folder, notice_root / "package_folder", copied)
+                upstream_licenses = []
+                for path in sorted(source.rglob("*")):
+                    if (not path.is_file() or path.is_symlink() or ".git" in path.parts
+                            or not path.name.lower().startswith(license_prefixes) or path.stat().st_size == 0):
+                        continue
+                    if recipe_files.get(path.relative_to(source)) == path.read_bytes():
+                        continue
+                    upstream_licenses.append(path)
+                    copy_notice(path, source, notice_root / "source_folder", copied)
+                # FFmpeg LICENSE.md is an explanation referring to COPYING files,
+                # not a substitute for the actual LGPL terms shipped with source.
+                if name == "ffmpeg" and not any(path.name == "COPYING.LGPLv2.1" for path in upstream_licenses):
+                    raise RuntimeError("Missing FFmpeg source license text COPYING.LGPLv2.1 (do not publish)")
+                dependency["notices"] = sorted(set(copied))
+                if not copied:
+                    missing.append(reference)
                 for path in sorted(source.rglob("*")):
                     # Cache manifest files and .git metadata are not corresponding source.
                     if ".git" in path.parts or path.name in {"conanmanifest.txt", "conaninfo.txt"}:
@@ -318,6 +347,8 @@ def collect_notices(graph_path, package, source_output):
                     else:
                         archive.addfile(info)
                 dependency["source_archive_directory"] = archive_name
+    if missing:
+        raise RuntimeError("Missing dependency license texts (do not publish): " + ", ".join(missing))
     write_json(package / "DEPENDENCIES.json", dependencies)
 
 

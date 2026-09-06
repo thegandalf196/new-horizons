@@ -3,6 +3,7 @@
 """Windows system-provider classification; synthetic graph, no Conan/network/PE execution."""
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 import tarfile
 import tempfile
@@ -37,7 +38,15 @@ class SystemDependencyTest(unittest.TestCase):
         graph = self.root / "graph.json"
         graph.write_text(json.dumps({"graph": {"nodes": {"1": self.node}}}))
         archive = self.root / "sources.tar.gz"
-        with patch.object(packager.subprocess, "run", side_effect=AssertionError("No source fetch for OS implementation")):
+        def source_without_notices(command, **kwargs):
+            if (self.node["ref"] == "opengl/system#cfcf523b9d2bad75cbf377f56562634c"
+                    and self.node["settings"]["os"] == "Windows"):
+                raise AssertionError("No source fetch for OS implementation")
+            if command[1:3] == ["cache", "path"]:
+                return subprocess.CompletedProcess(command, 1, "", "export_source folder does not exist")
+            return subprocess.CompletedProcess(command, 0)
+
+        with patch.object(packager.subprocess, "run", side_effect=source_without_notices):
             packager.collect_notices(graph, self.package, archive)
         return archive
 
