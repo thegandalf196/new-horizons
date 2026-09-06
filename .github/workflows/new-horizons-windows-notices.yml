@@ -1,4 +1,4 @@
-name: New Horizons Windows notice discovery
+name: New Horizons Windows notice preflight
 
 on:
   workflow_dispatch:
@@ -15,49 +15,25 @@ jobs:
     runs-on: windows-2025-vs2026
     timeout-minutes: 15
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: step-security/msvc-dev-cmd@main
         with:
           arch: x64
-      - name: Discover installed Microsoft terms (no compile or game execution)
+      - name: Validate full matching Microsoft terms (no compile or game execution)
         shell: python
         run: |
-          import hashlib, json, os, pathlib, shutil
-          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'nh-notice-discovery'
-          output.mkdir()
-          inventory = []
-          for variable in ('VSINSTALLDIR', 'WindowsSdkDir', 'VCToolsRedistDir'):
-              value = os.environ.get(variable)
-              if not value:
-                  print(variable + ': unavailable')
-                  continue
-              root = pathlib.Path(value)
-              for path in root.rglob('*'):
-                  if not path.is_file() or path.suffix.lower() not in {'.rtf', '.txt', '.html', '.htm'}:
-                      continue
-                  if not any(term in path.name.lower() for term in ('license', 'eula', 'redist')):
-                      continue
-                  relative = path.relative_to(root)
-                  name = variable + '/' + relative.as_posix()
-                  print(name)
-                  entry = {'path': name, 'size': path.stat().st_size}
-                  # Only candidate Microsoft installation terms, not arbitrary
-                  # bundled third-party notices. This is discovery, NOT a license verdict.
-                  parts = [part.lower() for part in relative.parts]
-                  candidate = (variable != 'VSINSTALLDIR' or
-                               parts[0] == 'licenses' or
-                               parts[:2] == ['common7', 'ide'] or
-                               parts[:2] == ['vc', 'redist'])
-                  if candidate and path.stat().st_size < 2_000_000:
-                      destination = output / name
-                      destination.parent.mkdir(parents=True, exist_ok=True)
-                      shutil.copyfile(path, destination)
-                      entry['sha256'] = hashlib.sha256(path.read_bytes()).hexdigest()
-                      entry['copied'] = True
-                  inventory.append(entry)
-          (output / 'inventory.json').write_text(json.dumps(inventory, indent=2), encoding='utf-8')
+          import os, pathlib, runpy
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'nh-notice-preflight'
+          module = runpy.run_path('tools/ci/package_new_horizons_windows.py')
+          module['collect_microsoft_notices'](output)
+          for path in sorted(output.rglob('*')):
+              if path.is_file():
+                  print(path.relative_to(output).as_posix())
       - uses: actions/upload-artifact@v4
         with:
-          name: Microsoft-notice-discovery-${{ github.sha }}
-          path: ${{ runner.temp }}/nh-notice-discovery
+          name: Microsoft-notice-preflight-${{ github.sha }}
+          path: ${{ runner.temp }}/nh-notice-preflight
           if-no-files-found: error
           retention-days: 7

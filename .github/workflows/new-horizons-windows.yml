@@ -2,15 +2,8 @@ name: New Horizons Windows x64 Preview
 
 on:
   workflow_dispatch:
-  # Bootstrap this branch-only workflow without changing the preserved default
-  # branch. Subsequent build/package fixes use the same narrowly scoped trigger.
-  push:
-    branches: [definitive-mvp]
-    paths:
-      - .github/workflows/new-horizons-windows.yml
-      - tools/ci/package_new_horizons_windows.py
-      - CMakePresets.json
-      - tools/windows/**
+  # Initially registered by a scoped push. Manual branch dispatch is now
+  # verified; run the cheap notice preflight before dispatching a full rebuild.
 
 permissions:
   contents: read
@@ -72,6 +65,28 @@ jobs:
 
       - name: Package audit regression tests (no PE execution)
         run: python tools/tests/test_windows_pe_audit.py
+
+      - name: Preflight Microsoft notices before compiling
+        shell: python
+        run: |
+          import os, pathlib, runpy, tempfile
+          module = runpy.run_path('tools/ci/package_new_horizons_windows.py')
+          with tempfile.TemporaryDirectory() as temporary:
+              stage = pathlib.Path(temporary)
+              try:
+                  module['collect_microsoft_notices'](stage)
+              except RuntimeError:
+                  # Diagnostic filenames only; never upload proprietary tools or
+                  # substitute a DLL copied from the runner for a redistributable.
+                  for variable in ('VSINSTALLDIR', 'WindowsSdkDir'):
+                      root = pathlib.Path(os.environ[variable])
+                      for path in root.rglob('*'):
+                          if path.is_file() and path.suffix.lower() in {'.txt', '.rtf', '.html', '.htm'} and any(term in path.name.lower() for term in ('license', 'eula', 'redist')):
+                              print(variable + '/' + path.relative_to(root).as_posix())
+                  raise
+              for path in sorted(stage.rglob('*')):
+                  if path.is_file():
+                      print(path.relative_to(stage).as_posix())
 
       - name: Resolve upstream dependency profile
         run: |

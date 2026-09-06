@@ -17,6 +17,8 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import urllib.request
+import xml.etree.ElementTree as ET
 import zipfile
 
 
@@ -123,28 +125,59 @@ def audit_pe_tree(package, runtime_roots=()):
 
 
 def collect_microsoft_notices(package):
-    """Retain installed toolchain/SDK redistribution terms, not just a license label."""
-    candidates = []
-    for variable, subdirectories in (
-        ("VSINSTALLDIR", ("Licenses", "VC/Redist/MSVC")),
-        ("WindowsSdkDir", ("",)),
-    ):
-        root = Path(os.environ.get(variable) or "__missing__")
-        for subdirectory in subdirectories:
-            folder = root / subdirectory
-            if not folder.is_dir():
-                continue
-            # SDK's root EULA is sufficient; do not walk its entire include/library tree.
-            entries = folder.glob("*") if variable == "WindowsSdkDir" else folder.rglob("*")
-            for path in entries:
-                if path.is_file() and path.name.lower().startswith(("license", "eula", "redist")) and path.suffix.lower() in {".txt", ".rtf", ".htm", ".html"}:
-                    candidates.append((variable, root, path))
-    if not any(path.name.lower().startswith(("license", "eula")) for _, _, path in candidates):
-        raise RuntimeError("Microsoft toolchain/SDK license texts not found; do not publish CRT without notices")
-    for variable, root, path in candidates:
-        destination = package / "licenses" / "Microsoft" / variable / path.relative_to(root)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(path, destination)
+    """Retain exact full CRT AND redistribution terms; an SDK EULA is not a substitute."""
+    vs = Path(os.environ.get("VSINSTALLDIR", "__missing__"))
+    redist = Path(os.environ.get("VCToolsRedistDir", "__missing__"))
+    if vs.parent.name != "18" or vs.name not in {"Enterprise", "Professional"}:
+        raise RuntimeError("Microsoft notice applicability requires VS 2026 Enterprise/Professional")
+    if not re.fullmatch(r"14\.51\.\d+", redist.name):
+        raise RuntimeError("Review Microsoft runtime version and terms before publishing this toolchain")
+    destination = package / "licenses" / "Microsoft"
+    destination.mkdir(parents=True, exist_ok=True)
+    terms = [
+        ("Visual-C-V14-License-Redistributable_and_Runtime_ENU.docx",
+         "vs2026-ga-visualcpp-v14-redist-runtime",
+         "08651651a7602fc7c0e2763de0fde1ff9f868df2780597cd1775ee9d6441c783"),
+        ("Visual_Studio_2026-License-Enterprise_Professional_ENU.docx",
+         "vs2026-ga-pro-enterprise",
+         "dd2ab92a7c2bb90dd509e16572707a34b13bc0bc09b9199d115f25594ac39053"),
+    ]
+    provenance = []
+    for filename, landing, expected in terms:
+        url = "https://visualstudio.microsoft.com/wp-content/uploads/2025/10/" + filename + "?download=1"
+        page = "https://visualstudio.microsoft.com/license-terms/" + landing + "/"
+        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Referer": page})
+        with urllib.request.urlopen(request, timeout=60) as response:
+            data = response.read(256 * 1024 + 1)
+            resolved = response.url
+        if len(data) > 256 * 1024 or hashlib.sha256(data).hexdigest() != expected:
+            raise RuntimeError("Microsoft full license document hash mismatch: " + filename)
+        original = destination / filename
+        original.write_bytes(data)
+        with zipfile.ZipFile(original) as archive:
+            document = ET.fromstring(archive.read("word/document.xml"))
+        ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        paragraphs = ["".join(p.itertext()) for p in document.findall(".//w:p", ns)]
+        # Preserve the original DOCX. This plain-text companion is only for
+        # convenient inspection, not a substitute for the unmodified full terms.
+        original.with_suffix(".txt").write_text("\n".join(paragraphs) + "\n", encoding="utf-8")
+        provenance.append({"file": filename, "sha256": expected, "url": url,
+                           "resolved_url": resolved, "official_landing_page": page})
+    redist_list = vs / "Licenses" / "1033" / "Redist.txt"
+    if not redist_list.is_file():
+        raise RuntimeError("Installed Visual Studio redistribution-list notice missing")
+    shutil.copyfile(redist_list, destination / "VS2026-Redist.txt")
+    sdk = Path(os.environ.get("WindowsSdkDir", "__missing__"))
+    sdk_terms = sorted((sdk / "Licenses").glob("*/sdk_license.rtf"))
+    if not sdk_terms:
+        raise RuntimeError("Installed Windows SDK license missing")
+    for source in sdk_terms:
+        shutil.copyfile(source, destination / ("SDK-" + source.parent.name + "-license.rtf"))
+    write_json(destination / "PROVENANCE.json", {
+        "visual_studio_major": 18, "edition": vs.name, "crt_redist_directory_version": redist.name,
+        "terms": provenance, "redistribution_list": "https://aka.ms/vs/18/redistribution",
+        "scope": "Full runtime terms plus VS redistribution terms; SDK terms do not grant CRT redistribution",
+    })
 
 
 def build_provenance(build_directory):
