@@ -107,8 +107,11 @@ required source/dependency notices and asset exclusion in distributions.
 ## Active ownership
 
 Use [NH_WORKER_PLAN.md](NH_WORKER_PLAN.md) for each active worker's objective,
-acceptance criteria, next checkpoint and existing durable handoff. It is a work
-plan, not formal `/goal`-mode activation.
+acceptance criteria, next checkpoint and existing durable handoff. Follow
+[NH_DELIVERY_PIPELINE.md](NH_DELIVERY_PIPELINE.md) for separate feature/release
+lanes and early cross-platform/testing gates; [NH_AGENT_START.md](NH_AGENT_START.md)
+contains role-specific `/goal` startup prompts. Markdown alone does not activate
+a session's Goal mode; the harness contract is authoritative.
 
 - Runtime: authoritative combat commands/Doctrine state and hero-action gating,
   packets/validation/save integration in lib/server plus AI/ logic and native tests.
