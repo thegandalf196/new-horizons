@@ -675,6 +675,24 @@ std::string SpellSchool::entityType()
 	return "spellSchool";
 }
 
+std::string SpellSchool::serializationKey() const
+{
+	if(*this == ANY)
+		return ModScope::scopeBuiltin() + ":any";
+	const auto * school = toEntity(LIBRARY);
+	return school->getModScope() + ':' + school->getJsonKey();
+}
+
+SpellSchool SpellSchool::fromSerializationKey(const std::string & key)
+{
+	if(key.find(':') == std::string::npos)
+		throw std::runtime_error("Unscoped serialized spell school: " + key);
+	const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), entityType(), key);
+	if(!id)
+		throw std::runtime_error("Missing serialized spell school: " + key);
+	return SpellSchool(*id);
+}
+
 const spells::SpellSchoolType * SpellSchool::toEntity(const Services * services) const
 {
 	return services->spellSchools()->getByIndex(getNum());

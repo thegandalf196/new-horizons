@@ -60,14 +60,17 @@ enum class ESerializationVersion : int32_t
 
 	TOWN_CUSTOM_INITIAL_GARRISON, // preserve map-authored initial town armies, including explicit empty armies
 	HERO_COMMANDS, // versioned per-game combat rules, action budget and battle Doctrines
+	NEW_HORIZONS_MAGIC, // saved school/membership rules and stable school serialization
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = HERO_COMMANDS,
+	CURRENT = NEW_HORIZONS_MAGIC,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::CURRENT >= ESerializationVersion::NEW_HORIZONS_MAGIC);
+static_assert(ESerializationVersion::NEW_HORIZONS_MAGIC > ESerializationVersion::HERO_COMMANDS);
 static_assert(ESerializationVersion::HERO_COMMANDS > ESerializationVersion::TOWN_CUSTOM_INITIAL_GARRISON,
 	"Append new serialization features before release aliases; never regress existing feature gates");

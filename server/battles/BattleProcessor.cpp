@@ -189,7 +189,7 @@ void BattleProcessor::tryLearnEnemySpellsPreBattle(const BattleInfo * battle, Ba
 		if(!spell)
 			continue;
 
-		if(spell->getLevel() <= spellLevelLimit && !learner->spellbookContainsSpell(spell->getId()) && gameHandler->getRandomGenerator().nextInt(99) < eagleEyeChance)
+		if(learner->getSpellLevel(spell) <= spellLevelLimit && !learner->spellbookContainsSpell(spell->getId()) && gameHandler->getRandomGenerator().nextInt(99) < eagleEyeChance)
 			learnedSpells.spells.insert(spell->getId());
 	}
 

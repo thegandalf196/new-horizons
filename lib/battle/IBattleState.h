@@ -64,6 +64,7 @@ public:
 	virtual std::vector<SpellID> getUsedSpells(BattleSide side) const = 0;
 
 	virtual const JsonNode & getHeroCommandRules() const;
+	virtual const JsonNode & getMagicRules() const;
 	virtual bool getHeroCommandUsed(BattleSide side) const { return false; }
 	virtual HeroCommand getActiveDoctrine(BattleSide side) const { return HeroCommand::NONE; }
 	virtual HeroCommand getActiveOrder(BattleSide side) const { return HeroCommand::NONE; }

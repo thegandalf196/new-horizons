@@ -1,0 +1,374 @@
+{
+	"lightMagic": {
+		"name": "Light Magic",
+		"specialty": [],
+		"tags": {
+			"spellSchool": true
+		},
+		"gainChance": {
+			"might": 2,
+			"magic": 6
+		},
+		"basic": {
+			"description": "Basic Light Magic grants Basic mastery of Light spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:light",
+					"valueType": "BASE_NUMBER",
+					"val": 1
+				}
+			}
+		},
+		"advanced": {
+			"description": "Advanced Light Magic grants Advanced mastery of Light spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:light",
+					"valueType": "BASE_NUMBER",
+					"val": 2
+				}
+			}
+		},
+		"expert": {
+			"description": "Expert Light Magic grants Expert mastery of Light spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:light",
+					"valueType": "BASE_NUMBER",
+					"val": 3
+				}
+			}
+		}
+	},
+	"natureMagic": {
+		"name": "Nature Magic",
+		"specialty": [],
+		"tags": {
+			"spellSchool": true
+		},
+		"gainChance": {
+			"might": 2,
+			"magic": 6
+		},
+		"basic": {
+			"description": "Basic Nature Magic grants Basic mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_natureMagic_basic_small.png",
+				"medium": "NH_natureMagic_basic_medium.png",
+				"large": "NH_natureMagic_basic_large.png",
+				"scenarioBonus": "NH_natureMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:nature",
+					"valueType": "BASE_NUMBER",
+					"val": 1
+				}
+			}
+		},
+		"advanced": {
+			"description": "Advanced Nature Magic grants Advanced mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_natureMagic_advanced_small.png",
+				"medium": "NH_natureMagic_advanced_medium.png",
+				"large": "NH_natureMagic_advanced_large.png",
+				"scenarioBonus": "NH_natureMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:nature",
+					"valueType": "BASE_NUMBER",
+					"val": 2
+				}
+			}
+		},
+		"expert": {
+			"description": "Expert Nature Magic grants Expert mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_natureMagic_expert_small.png",
+				"medium": "NH_natureMagic_expert_medium.png",
+				"large": "NH_natureMagic_expert_large.png",
+				"scenarioBonus": "NH_natureMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:nature",
+					"valueType": "BASE_NUMBER",
+					"val": 3
+				}
+			}
+		}
+	},
+	"sorceryMagic": {
+		"name": "Sorcery Magic",
+		"specialty": [],
+		"tags": {
+			"spellSchool": true
+		},
+		"gainChance": {
+			"might": 2,
+			"magic": 6
+		},
+		"basic": {
+			"description": "Basic Sorcery Magic grants Basic mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_sorceryMagic_basic_small.png",
+				"medium": "NH_sorceryMagic_basic_medium.png",
+				"large": "NH_sorceryMagic_basic_large.png",
+				"scenarioBonus": "NH_sorceryMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:sorcery",
+					"valueType": "BASE_NUMBER",
+					"val": 1
+				}
+			}
+		},
+		"advanced": {
+			"description": "Advanced Sorcery Magic grants Advanced mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_sorceryMagic_advanced_small.png",
+				"medium": "NH_sorceryMagic_advanced_medium.png",
+				"large": "NH_sorceryMagic_advanced_large.png",
+				"scenarioBonus": "NH_sorceryMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:sorcery",
+					"valueType": "BASE_NUMBER",
+					"val": 2
+				}
+			}
+		},
+		"expert": {
+			"description": "Expert Sorcery Magic grants Expert mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_sorceryMagic_expert_small.png",
+				"medium": "NH_sorceryMagic_expert_medium.png",
+				"large": "NH_sorceryMagic_expert_large.png",
+				"scenarioBonus": "NH_sorceryMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:sorcery",
+					"valueType": "BASE_NUMBER",
+					"val": 3
+				}
+			}
+		}
+	},
+	"havocMagic": {
+		"name": "Havoc Magic",
+		"specialty": [],
+		"tags": {
+			"spellSchool": true
+		},
+		"gainChance": {
+			"might": 2,
+			"magic": 6
+		},
+		"basic": {
+			"description": "Basic Havoc Magic grants Basic mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_havocMagic_basic_small.png",
+				"medium": "NH_havocMagic_basic_medium.png",
+				"large": "NH_havocMagic_basic_large.png",
+				"scenarioBonus": "NH_havocMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:havoc",
+					"valueType": "BASE_NUMBER",
+					"val": 1
+				}
+			}
+		},
+		"advanced": {
+			"description": "Advanced Havoc Magic grants Advanced mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_havocMagic_advanced_small.png",
+				"medium": "NH_havocMagic_advanced_medium.png",
+				"large": "NH_havocMagic_advanced_large.png",
+				"scenarioBonus": "NH_havocMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:havoc",
+					"valueType": "BASE_NUMBER",
+					"val": 2
+				}
+			}
+		},
+		"expert": {
+			"description": "Expert Havoc Magic grants Expert mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_havocMagic_expert_small.png",
+				"medium": "NH_havocMagic_expert_medium.png",
+				"large": "NH_havocMagic_expert_large.png",
+				"scenarioBonus": "NH_havocMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:havoc",
+					"valueType": "BASE_NUMBER",
+					"val": 3
+				}
+			}
+		}
+	},
+	"shadowMagic": {
+		"name": "Shadow Magic",
+		"specialty": [],
+		"tags": {
+			"spellSchool": true
+		},
+		"gainChance": {
+			"might": 2,
+			"magic": 6
+		},
+		"basic": {
+			"description": "Basic Shadow Magic grants Basic mastery of Shadow spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_shadowMagic_basic_small.png",
+				"medium": "NH_shadowMagic_basic_medium.png",
+				"large": "NH_shadowMagic_basic_large.png",
+				"scenarioBonus": "NH_shadowMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:shadow",
+					"valueType": "BASE_NUMBER",
+					"val": 1
+				}
+			}
+		},
+		"advanced": {
+			"description": "Advanced Shadow Magic grants Advanced mastery of Shadow spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_shadowMagic_advanced_small.png",
+				"medium": "NH_shadowMagic_advanced_medium.png",
+				"large": "NH_shadowMagic_advanced_large.png",
+				"scenarioBonus": "NH_shadowMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:shadow",
+					"valueType": "BASE_NUMBER",
+					"val": 2
+				}
+			}
+		},
+		"expert": {
+			"description": "Expert Shadow Magic grants Expert mastery of Shadow spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_shadowMagic_expert_small.png",
+				"medium": "NH_shadowMagic_expert_medium.png",
+				"large": "NH_shadowMagic_expert_large.png",
+				"scenarioBonus": "NH_shadowMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:shadow",
+					"valueType": "BASE_NUMBER",
+					"val": 3
+				}
+			}
+		}
+	},
+	"chaosMagic": {
+		"name": "Chaos Magic",
+		"specialty": [],
+		"tags": {
+			"spellSchool": true
+		},
+		"gainChance": {
+			"might": 2,
+			"magic": 6
+		},
+		"basic": {
+			"description": "Basic Chaos Magic grants Basic mastery of Chaos spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_chaosMagic_basic_small.png",
+				"medium": "NH_chaosMagic_basic_medium.png",
+				"large": "NH_chaosMagic_basic_large.png",
+				"scenarioBonus": "NH_chaosMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:chaos",
+					"valueType": "BASE_NUMBER",
+					"val": 1
+				}
+			}
+		},
+		"advanced": {
+			"description": "Advanced Chaos Magic grants Advanced mastery of Chaos spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_chaosMagic_advanced_small.png",
+				"medium": "NH_chaosMagic_advanced_medium.png",
+				"large": "NH_chaosMagic_advanced_large.png",
+				"scenarioBonus": "NH_chaosMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:chaos",
+					"valueType": "BASE_NUMBER",
+					"val": 2
+				}
+			}
+		},
+		"expert": {
+			"description": "Expert Chaos Magic grants Expert mastery of Chaos spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_chaosMagic_expert_small.png",
+				"medium": "NH_chaosMagic_expert_medium.png",
+				"large": "NH_chaosMagic_expert_large.png",
+				"scenarioBonus": "NH_chaosMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:chaos",
+					"valueType": "BASE_NUMBER",
+					"val": 3
+				}
+			}
+		}
+	}
+}

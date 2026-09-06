@@ -94,6 +94,13 @@
 				"buildWithoutGrail" : { "type" : "boolean" }
 			}
 		},
+		"magic": {
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"newHorizons": { "$ref": "newHorizonsMagic.json" }
+			}
+		},
 		"combat": {
 			"type" : "object",
 			"additionalProperties" : false,

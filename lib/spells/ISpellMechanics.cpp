@@ -400,7 +400,7 @@ std::string BaseMechanics::getCasterNameTextID() const
 
 int32_t BaseMechanics::getSpellLevel() const
 {
-	return owner->getLevel();
+	return cb->battleGetSpellLevel(owner->getId());
 }
 
 bool BaseMechanics::isSmart() const

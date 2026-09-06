@@ -1,6 +1,6 @@
 # First Orders/Doctrines — independent acceptance plan
 
-Status: **PLANNED, not executed or accepted.** Tester owns this document and
+Status: **Activation repair passes first human/bookless-AI GUI journey; remaining integrated gates open.** Tester owns this document and
 normal-input journeys; no product code or art implementation. Authority:
 `NEW_HORIZONS_DESIGN.md` and updated `NEW_HORIZONS_MVP.md`, read with the user's
 external philosophy text. Fun first; numerical balance is not a gate. Correctness,
@@ -8,7 +8,198 @@ AI participation, feedback, crash prevention and save integrity are gates.
 Repaired Windows archive publication continues independently; feature workers
 need not wait for these tests. Existing architecture investigation stays closed.
 
-## Current Tester handoff — post-reboot local-first resumption
+## Current Tester handoff — corrected native gates green, GUI freeze pending
+
+Independently parsed actual `magic-fixes-baseline.xml/.exit`: **109 tests,
+108 passes,one expected fixture-export skip,zero failures,exit0**; curated XML/exit:
+**20 tests,19 passes,one baseline-only compatibility-control skip,zero failures,
+exit0**. `magic-fixes-build-20260906T212026Z.exit` is0. Local
+`testing/commands-static/magic-fixes-independent.json` records XML hashes, named
+cases and actual skip messages.
+
+Both prior RED cases now execute and pass: accepted Charge preserves its temporary
+unit-turn bonus; actual legacy header/world/new-game continuation works with the
+curated module still installed. Real hero-spell cleanup and packet UNIT_SPELLCAST/
+TURN_QUEUE preservation controls pass. Matching/other-excess/missing-other headers
+pass their expected acceptance/rejection assertions. Required-NH rejection passes
+in **one baseline installed-state configuration**, not both absent and disabled.
+Real installed Havoc-rank AI chooses/casts Implosion through server validation,
+charges the saved-context cost and excludes a further command. This does not
+establish the whole spell roster, GUI, growth, masteries, tiers or Windows gameplay.
+
+**Next executable task:** verify Build's new immutable source/binary/content
+identity and obtain explicit quiet GO; prioritize actual spell-AI, corrected
+postbattle two-stack/new-battle NONE route and old-four/new-six-school UI checks.
+No current GUI lease. Windows source overlay preparation is reported ready, but
+no replacement archive bytes have been independently accepted.
+
+## Historical first six-school native build — two RED gates
+
+Independently read actual `magic-first-build-20260906T204536Z.exit`:0, and native
+XML/exit files. `magic-first-baseline`103 tests:101 passes,one skip,one failure,
+exit1. Previously unresolved accepted-command characterization now **actually
+fails**: accepted Charge reduces temporary movement10→5 and empties UntilGetsTurn
+bonuses. This is a real rule-invariant defect, not disproved by earlier GUI cases
+without that temporary effect. `magic-first-curated`8 tests:7 passes,one failure,
+exit1; actual legacy save-header deserialization throws ModIncompatibility when
+curated NH is extra. Six-school ranks/cost/server cast, starting conversion,
+legacy skill exclusion and full-game/BattleStart rule snapshots pass at their
+native scope, not integrated graphical acceptance.
+
+Runtime's narrow fixes are source-ready, **not yet independently green**: dedicated
+HERO_COMMAND reactivation preserves turn bonuses while leaving legacy hero spells
+unchanged; save-only NH EXCESSIVE exception leaves other mod status checks intact.
+Requested native negative controls for those preserved behaviors. Subsequently
+read and confirmed registration of two lifecycle controls, four mod-header controls
+and real six-school Havoc AI/server-cast coverage. These remain unexecuted here.
+Lifecycle distinguishes actual hero Haste from packet-level UNIT_SPELLCAST/TURN_QUEUE;
+the required-NH baseline test exercises one installed-state configuration, not
+both missing and disabled merely because its name includes both. Runtime was asked
+to make the actual status explicit. Actual new
+`HeroCommandCloneTest` passed: real Clone does not copy the active Doctrine and
+receives a subsequent switch. This strengthens the older synthetic late-unit
+coverage; no graphical Clone claim. Frontend's animation-frame diagnostic is
+source-ready only and does not resolve the recurring unqualified0:2 log.
+
+**Superseded native next step:** inspect Build's actual corrected native outputs before
+accepting these invariants; run remaining spell-AI/new-battle and six-school GUI
+only on an explicitly frozen candidate with fresh quiet GO. Full redesign and
+Windows repaired-archive/native-runtime gates remain open.
+
+## Historical repair66 first graphical journey
+
+Immutable `commands-preview-54213f042-repair-66ddb01bd` explicitly combines engine
+`54213f0425500208fe259a6255914f05ad71d663` with launcher/schema repair
+`66ddb01bd98ecd2c0e748b7bebb26f46ec7d55ad`; no later school C++ is compiled.
+All frozen hashes passed before/after. Actual native probe logs/exits show old
+launcher2, old schema4, corrected0; final log verifies ordinary preset activation,
+five-command input and native schema acceptance/rejection. Actual GUI now loads
+core/vcmi/new-horizons without the previous heroCommands schema warnings.
+
+Fresh private profile and Xvfb:191 guard; screenshot confirms **Gold both**, red
+human/blue AI, authored bookless-AI map. Initial Tester-created marker typo was
+correctly refused before client startup (exit1 retained); corrected marker then
+launched normally. Three actual client processes subsequently exited0 through
+Quit to Desktop. Prebattle save and post-retreat save each survived a full process
+quit/restart/load. No stale failed542 profile/save was reused.
+
+Seven-round ordinary-input battle verified:
+
+- Chooser opens, Esc closes, spell targeting cancels without spending; following
+  valid commands/spell succeed. Initial None/None and available status is visible.
+- Round1 Charge, round2 Hold, round3 Advance: correct21/16/26 percent labels,
+  mana100 unchanged, all hero-action choices disabled after issue; next-round
+  Order None/action reset. Advance expanded visible range and a newly reachable
+  move executed; Grand Elf popup speed9 returned to8 at expiry (base creature7;
+  do not confuse base with this battle's effective speed).
+- Round4 Aggressive, round5 Bloodlust, round6 Defensive, round7 Hold: Doctrine
+  persists across rounds/spell, same-Doctrine button stays disabled, replacement
+  is shown, Defensive plus later Order coexist. Bloodlust actually applied to
+  own Dendroids, mana100→95, and blocked all other hero actions that round.
+  Defensive lowered the Grand Elf effective speed8→7 and its actual bonus appeared
+  in the stack popup. Three-line Aggressive readback and footer fit visibly.
+- Actual **bookless blue AI selected Aggressive**; battle log and continued AI
+  creature movement/shooting/melee through seven rounds were observed. Human
+  creature movement, shooting and defending continued after commands. This is
+  real AI gameplay, not an inference from native fixtures. Deterministic damage
+  attribution remains native evidence; randomized GUI casualties alone do not
+  isolate each damage coefficient or excluded attack kind.
+- Legitimate retreat after round7, separate postbattle save, full restart/load.
+  New-battle NONE and spell-capable AI fixture are **not yet exercised**. No
+  broad completed-command/full-redesign claim; accepted-command temporary-bonus
+  characterization also remains open. Missing frame0:2 logs recur around saved
+  game menus without resource attribution; no observed chooser art defect.
+
+Quiet lease released before20 minutes; client/Xvfb stopped.1865 half-second
+samples had no observed children/owned-INET positives (sampled scope only).
+Ignored `testing/commands-gui-repair-66/{summary,run-manifest}.json`, logs and
+numbered screenshots record identities, exact exits and evidence. Fresh saves:
+`NEWGAMEpre`363629 bytes SHA-256
+`3d8b1d65b934ce11f4c382d572fe9c7c46e7523823ccd9c884ea3a315377bfb7`;
+`NEWGAMEpost`384078 bytes SHA-256
+`972acb66fcfcfdcb1b8906605697e181fbe7a475b7062178ed495b51172b4475`.
+
+A subsequent10-minute lease used a fresh guard and cloned profile, with the same
+verified immutable candidate. **Continuation incomplete, supervisor exit124** at
+its540-second deadline, not a clean exit or inferred crash. The client stopped
+before the lease deadline; Tester's release acknowledgement/Xvfb cleanup was late.
+1032 samples had no child/owned-INET positives; frozen hashes remained unchanged.
+`testing/commands-gui-cont66/summary.json` retains this distinct failed completion.
+Timestamped fatal missing `./Data/H3sprite.lod` occurred17:42:33.046, three
+milliseconds after the17:42:33.043 supervisor group-TERM deadline: launcher cleanup
+removed the runtime while client teardown still ran. Do not label this an ordinary
+spell-AI startup crash. Future timeout cleanup must stop the identified client
+first, let its launcher clean up afterward, and still report124. The logged
+95763ms NK2 turn includes waiting for human battle input, not isolated AI compute.
+Rehiring the same Orrin from the postbattle save succeeded (mana95). Tester bought
+reinforcements but failed to transfer them out of town garrison: the actual hero
+entered with one Pikeman and died before human input. This proves neither new-battle
+NONE nor a product defect. Spell-AI map and both Gold labels were then visibly
+verified, but the deadline occurred before its battle was observed; no AI-spell
+pass is claimed. Original pre/post saves remain untouched.
+
+**Remaining prepared graphical route:** after Build's compiler lane is free, obtain fresh quiet
+GO. Run spell-AI first with a short per-phase deadline; then postbattle clone,
+rehire Orrin, recruit and **visibly transfer two troop stacks into his army**
+before leaving town/end-turn engagement. Confirm army before risking another
+unobservable one-stack defeat. New-battle NONE remains required. No immediate
+unchanged rerun or later-school feature launch without the appropriate freeze.
+Prepared ignored `testing/commands-next/supervise.py` uses a stable Linux client
+pidfd to terminate the client before launcher cleanup; old evidence scripts are
+unchanged. Syntax check passes. A non-GUI synthetic parent/child control reproduces
+missing resources with group TERM and preserves them with client-first TERM
+(`timeout-control.json`). This verifies teardown ordering only, not actual-client
+signal handling or full supervisor integration; forced runs still report124.
+
+## Historical frozen542 activation failure
+
+Build supplied quiet GO for immutable `commands-preview-54213f042`, source
+`54213f0425500208fe259a6255914f05ad71d663`. Tester verified every SHA256SUMS entry
+before/after the run. Fresh guarded private Xvfb:191, fresh managed profile,
+frozen launcher/client/resources and authored bookless-AI map were used. Sole
+client8422 exited normally through Quit to Desktop: supervisor **exit0**. Owned
+Xvfb8371 stopped; Build received explicit lease release. No GUI is now running.
+
+- Ordinary New Game, adventure save, leave-session/load and hero-versus-hero
+  engagement succeeded. This was an in-process reload, not a process-restart
+  save-continuation gate. Both battle heroes displayed A2/D2/P3/K10, mana100;
+  both armies displayed600 Dendroid Guards,80 Grand Elves and a Ballista.
+- **Tester setup correction:** `01-setup.png` actually shows **Random** starting
+  bonuses for both sides, not the intended Gold. Three clicks cycled back to
+  Random; the earlier tmux Gold claim was corrected to Build/Runtime. Red resolved
+  to20500 gold. Retest must verify actual Gold labels before Begin, not infer
+  selection from click counts. This run accepts no command/effect/AI behavior.
+- **Concrete activation failure:** battle cast entry remained the original book
+  and opened the original spellbook directly, not the hero-action chooser.
+  Actual private `modSettings.json` preset contains only `vcmi,core`; startup
+  loads only core/vcmi despite the mounted curated module. Runtime/Build confirmed
+  root mods are not activated merely by `keepDisabled=false`. The original book
+  is correct for this actual legacy rules snapshot; this is not evidence of a
+  command-window or save-reinterpretation bug. All three owners were notified
+  immediately; feature actions stopped. No Order, Doctrine or spell was issued.
+  Normal retreat was used solely to leave combat for orderly cleanup.
+- Actual startup also warns about `/combat/heroCommands` and
+  `/settings/combat/heroCommands` schema ambiguity. Build reports that core's
+  required-field exemption lets the empty object match both oneOf branches;
+  `minProperties:3` repair awaits independent native-validator evidence. A single
+  unavailable animation frame0:2 was logged without resource identity; no causal
+  attribution to new artwork or commands is made.
+- 918 half-second process samples had zero observed child/owned-INET positives;
+  sampled absence is not an exhaustive trace. Exact exit, samples, setup/reload/
+  defect screenshots, profile/log/save hashes and frozen-manifest identity are in
+  ignored `testing/commands-gui-542/{summary,run-manifest}.json` under the Linux
+  build root. `NEWGAMEpre.vsgm1` is preserved,361996 bytes, SHA-256
+  `83163289cea13f084b285528651dd35d3ba6f582ecbc34a1fc7416a8d87d0876`.
+  It is a **legacy-rules diagnostic save**, not a valid new-command retest input.
+
+**Superseded repair next step:** independently verify Build's launcher/preset/schema
+repair and new immutable identity, then obtain fresh quiet GO and run a fresh
+profile/**new game**. Do not silently reinterpret the failed save or include
+uncompiled later-school C++ in the542 binary authority. No GO for repair yet.
+Full redesign gates below remain open. Separately review the later school UI
+source offline; source review is not a compiled/frozen six-school acceptance.
+
+## Historical preparation — post-reboot local-first resumption
 
 Read current AGENTS, design/MVP, worker plan and Runtime/Frontend/Build handoffs.
 Shared dirty work is preserved; no product edits, build, commit or GUI launch.
@@ -45,6 +236,19 @@ credentials do not block these local checks; no cloud workflow was requested.
   All19 command/settings cases and66 baseline regressions pass. This is native
   evidence only; final UI rebuild, authored export and immutable GUI freeze are
   still pending. No GUI GO has been given.
+- Later rejection regression independently reproduced in recorded RED: rejected
+  Order reactivated the unit(3 activations versus2) and expired a temporary speed
+  bonus(10→5). Scoped false-HERO_COMMAND early return fixes this without changing
+  legacy failed-unit/spell UI recovery. `commands-rejection-green.xml`/`.exit`
+  now show **95 tests,94 passes,1 expected skip,0 failures, exit0**, including the
+  actual two-map export. No universal zero-side-effect claim for legacy rejection
+  paths is inferred. Additional eligibility/accepted-command characterization can
+  follow in a later batch; Tester adds no new hold to Build's current freeze.
+  In particular, Runtime authored an unregistered accepted-Charge test with a
+  preexisting STACK_GETS_TURN bonus: source predicts cleanup on HERO_SPELLCAST
+  reactivation, but it has not run. Commands must not count as a fresh creature
+  turn. Keep that unresolved characterization visible; do not infer its pass
+  from the95-case suite or from GUI cases without such a temporary effect.
 - Critical version regression: HERO_COMMANDS placed after MINIMAL's enum alias
   made CURRENT894 and disabled later feature gates. Runtime moved it before
   aliases and added a monotonic static assertion. Corrected persistence/baseline
@@ -73,7 +277,7 @@ credentials do not block these local checks; no cloud workflow was requested.
   compatibility route can be rerun unchanged. Persisted gap1 pre/post saves remain
   under ignored testing storage, preserved. Use fresh authored fixtures and clones.
 
-**Next executable task:** review corrected activation/tooltips and Runtime's native
+**Superseded pre-freeze next step:** review corrected activation/tooltips and Runtime's native
 results/hero-versus-hero fixture; then run only Build's fresh frozen integrated
 candidate under a new private guard and explicit quiet lease. Ordinary adventure
 save/reload and new-battle NONE are distinct from active-battle packet persistence.
@@ -86,12 +290,12 @@ this scope across candidate freezes; numerical balance is never the gate.
 
 | Increment | Required independent evidence | Current acceptance |
 |---|---|---|
-| Commands/Doctrines | Authoritative legality/shared action budget, real effects, situational AI, human UI, expiry/replacement, versioned save/state continuation; extend coverage to each later implemented command/Doctrine. | First-slice static checks and narrow native passes only; integrated persistence/GUI gate pending. |
+| Commands/Doctrines | Authoritative legality/shared action budget, real effects, situational AI, human UI, expiry/replacement, versioned save/state continuation; extend coverage to each later implemented command/Doctrine. | Activation repaired; first human/bookless-AI seven-round GUI and process save/reload pass at recorded scope. Spell-AI/new-battle and remaining invariant gates open. |
 | Six schools and spells | Exactly the intended registry, real school filtering/casts/costs/target legality/effects, AI valuation/targeting and expiry; school/page/bookmark UI, legacy-versus-new content identity, actual spell save continuation. New spell prerequisites (forced movement, sharing, revival timing, etc.) require executable tests, not descriptions alone. Unresolved faction/Blind classification stays explicit. | Original-art inventory and new-art static checks only; no six-school gameplay acceptance. |
 | Growth and secondary attributes | Declared class profiles sum to ten, support both authorized profile patterns, independent skill bonus rolls (including zero/multiple outcomes), coherent starting scale and coefficient formulas, Knowledge/mana, movement/morale/luck/leadership/siege derivations. Native deterministic oracles plus human/AI level-up/save continuation; no creature deletion at capacity changes. | Pending implemented candidate/data; no inferred pass from original rules. |
 | Masteries and hero UI | Every implemented Expert-skill mastery has a real legal choice and effect, distinct alternatives, persistence, AI selection/use where relevant, readable growth/derived-attribute/class/military/skill/mastery display and normal input. No inert icon accepted as a mastery. | Pending implementation/candidate; concept images are direction, not rights-cleared outputs. |
 | Creature tiers | Core/Elite/Champion classification matches the declared roster; proposed Pixie/Sprite independence, five elementals and Phoenix remain functional recruitable armies where implemented. Check upgrade/production/transfer/AI/save behavior, UI and original-mode compatibility. | Pending implemented data/candidate. |
-| Distribution and assets | Fresh Linux installed-content journey, exact candidate/source/content hashes; Windows actual archive/import/resource/source/license/provenance audit. Genuine Windows runtime gate only on authorized native Windows, never Wine/compile inference. Editable original art, truthful placeholders and no purchaser/private assets in distributed payload. | Linux command candidate pending. Prior Windows archive failed dav1d notice gate; no corrected archive accepted. |
+| Distribution and assets | Fresh Linux installed-content journey, exact candidate/source/content hashes; Windows actual archive/import/resource/source/license/provenance audit. Genuine Windows runtime gate only on authorized native Windows, never Wine/compile inference. Editable original art, truthful placeholders and no purchaser/private assets in distributed payload. | Corrected Linux candidate has partial GUI acceptance; remaining journeys pending. Prior Windows archive failed dav1d notice gate; no corrected archive accepted. |
 
 Use this existing handoff for material results and the next executable task; do
 not create competing product implementations or declare the full goal complete
@@ -146,6 +350,23 @@ gzip. This is tool validation, **not an actual exported map pass**. After export
 run it on both actual map files with a local manifest destination; it bounds
 input/decompression, checks SOD/name/dimensions and hashes both compressed/raw data.
 Native semantic and graphical gates remain additional requirements.
+
+Actual exporter then passed2/2, exit0 (`commands-fixture-export.xml`/`.exit`).
+Tester independently audited the exact copied files in `testing/commands-assets/Maps`:
+
+| Fixture | Gzip bytes | Gzip SHA-256 |
+|---|---:|---|
+|NHCommandsBooklessAI|517|`a9e0b31f5cc22a05210122b5df71e09e131651087114a9ba3716f22f1c221044`|
+|NHCommandsSpellAI|513|`99290adbba7b710a629195f7f006b772c88a810bade400bc3b2e97a1aea2d7fb`|
+
+Raw sizes10370/10367, header/gzip integrity and both names pass; own complete hashes
+are in `testing/commands-static/independent-fixture-manifest.json`. Actual export
+logs confirm visitable human(16,10,0), AI(19,10,0). Data/Mp3 are external directory
+links; no purchaser files were copied or changed. Independent numeric oracles are
+in `fixture-effect-oracles.json`, tied to the canonical rules hash. None of this
+is GUI acceptance. A separate normal-setup Blue-human/Red-AI run of the bookless
+fixture can check bookless human UI/non-red ownership if single-player setup
+permits that selection; do not mislabel it as the prescribed Red-human route.
 
 Bounded normal-input route after Build freeze/quiet GO:
 
@@ -253,6 +474,20 @@ bounds used by hit testing. Evidence: local
 `testing/commands-static/school-layout-independent.json`. This is not six-school
 registration, actual click/render acceptance or spell migration.
 
+Later post542 school-context source was reviewed separately from the activation
+repair. One saved game/battle callback view now supplies displayed levels,
+membership, counts, filtering, sorting and hover; declared API signatures match.
+New-school order stays stable, navigation always includes ANY, and stale saved
+school selection falls back to ANY/page0. Independent small/large six-bookmark
+arithmetic and the64×64 All button inside its83×294 plain panel pass; bookmarks
+stay above search controls. The earlier48×36 metric confused the hero-action
+entry with this button: all four actual `NH_spells_button` frames were subsequently
+decoded64×64, and its lower edge exactly meets the panel bottom. Local
+`school-context-review.json` records that correction, frame/source hashes and
+exact rectangles. This family is **not compiled/frozen or graphically
+accepted**. Actual registry/classification, costs/ranks/effects, legacy continuation
+and all normal-input school/page transitions remain required integrated gates.
+
 ### First new-art/UI static review
 
 Tester read `assets/new-horizons/README.md`, the full generator, chooser source and
@@ -288,6 +523,19 @@ no purchaser/concept inputs are read. `tools/tests/nh-new-art-audit.py --reprodu
 exited0 and now checks the15 hero glyph names/sizes too; local evidence is
 `testing/commands-static/hero-art-audit.json`. These are display assets only—not
 accepted hero UI, growth rules, mastery mechanics or creature reclassification.
+
+### Independent school-skill art increment
+
+Reviewed the72 new static skill SVG/PNG pairs and generator delta: original six
+motifs with Basic/Advanced/Expert one/two/three markers, not masteries. Actual
+contact pixels were inspected. Extended `tools/tests/nh-new-art-audit.py` to require
+all six schools × three ranks × four named sizes (32×32,44×44,82×93,58×64), and
+correct marker ordering. Full independent isolated reproduction exited0:
+**190 SVG,190 PNG,20 animations; all400 outputs byte-identical**. All256 previous
+hashes remain unchanged. Missing-family and wrong-rank negative controls reject;
+restored control passes. Local `skill-art-audit.json` and
+`skill-art-negative-controls.json` record results. This checks assets/provisional
+CC0 geometry only, not skill effects, progression, masteries or rendered game UI.
 
 ## Declared provisional first-slice rules
 

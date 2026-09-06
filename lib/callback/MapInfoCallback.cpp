@@ -16,10 +16,12 @@
 #include "../mapObjects/MiscObjects.h"
 #include "../StartInfo.h"
 #include "../mapping/CMap.h"
+#include "../spells/NewHorizonsMagic.h"
 
 #include <vcmi/spells/Spell.h>
 
 MapInfoCallback::~MapInfoCallback() = default;
+
 
 const CGObjectInstance * MapInfoCallback::getObj(const ObjectInstanceID objId, const bool verbose) const
 {
@@ -91,7 +93,7 @@ bool MapInfoCallback::isAllowed(ArtifactID id) const
 
 bool MapInfoCallback::isAllowed(SecondarySkill id) const
 {
-	return getMapConstPtr()->allowedAbilities.count(id) != 0;
+	return newHorizonsMagic::skillAllowed(getMagicRules(), id, getMapConstPtr()->allowedAbilities);
 }
 
 int3 MapInfoCallback::getMapSize() const
@@ -108,7 +110,7 @@ void MapInfoCallback::getAllowedSpells(std::vector<SpellID> & out, std::optional
 		if (!isAllowed(spellID))
 			continue;
 
-		if (level.has_value() && spell->getLevel() != level)
+		if (level.has_value() && getSpellLevel(spell->getId()) != level)
 			continue;
 
 		out.push_back(spellID);

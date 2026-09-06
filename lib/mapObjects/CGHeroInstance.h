@@ -179,6 +179,9 @@ public:
 	si32 manaRegain() const; //how many points of mana can hero regain "naturally" in one day
 	si32 getManaNewTurn() const; //calculate how much mana this hero is going to have the next day
 	int getCurrentLuck(int stack=-1, bool town=false) const;
+	const JsonNode & getMagicRules() const;
+	std::vector<SpellSchool> getSpellSchools(const spells::Spell * spell) const;
+	int getSpellLevel(const spells::Spell * spell) const;
 	int32_t getSpellCost(const spells::Spell * sp) const; //do not use during battles -> bonuses from army would be ignored
 
 	bool canLearnSpell(const spells::Spell * spell,  bool allowBanned = false) const;

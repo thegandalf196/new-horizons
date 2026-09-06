@@ -23,6 +23,7 @@ protected:
 	bool canGetFullInfo(const CGObjectInstance *obj) const; //true we player owns obj or ally owns obj or privileged mode
 
 public:
+	const JsonNode & getMagicRules() const override;
 	//various
 
 	Calendar getCalendar() const override;

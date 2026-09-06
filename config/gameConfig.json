@@ -581,6 +581,12 @@
 			"baseScoutingRange" : 5
 		},
 
+		"magic":
+		{
+			// Legacy baseline. New games may snapshot curated six-school rules.
+			"newHorizons": {}
+		},
+
 		"combat":
 		{
 			// Legacy baseline. The curated module supplies versioned rules for new-game snapshots only.

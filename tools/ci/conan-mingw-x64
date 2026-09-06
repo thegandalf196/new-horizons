@@ -1,0 +1,35 @@
+include(../../dependencies/conan_profiles/base/common)
+
+[settings]
+os=Windows
+arch=x86_64
+compiler=gcc
+compiler.version=13
+compiler.libcxx=libstdc++11
+compiler.cppstd=20
+build_type=Release
+
+[options]
+ffmpeg/*:shared=True
+# The pinned PlutoVG recipe only exports PLUTOVG_BUILD_STATIC for MSVC,
+# leaving MinGW static consumers with unresolved __imp_plutovg_* symbols.
+# Use its supported shared build instead; retain SVG/font functionality.
+plutovg/*:shared=True
+
+[buildenv]
+CC=x86_64-w64-mingw32-gcc-posix
+CXX=x86_64-w64-mingw32-g++-posix
+AR=x86_64-w64-mingw32-ar
+RANLIB=x86_64-w64-mingw32-ranlib
+STRIP=x86_64-w64-mingw32-strip
+RC=x86_64-w64-mingw32-windres
+WINDRES=x86_64-w64-mingw32-windres
+
+[conf]
+tools.build:compiler_executables={"c": "x86_64-w64-mingw32-gcc-posix", "cpp": "x86_64-w64-mingw32-g++-posix", "rc": "x86_64-w64-mingw32-windres"}
+tools.build:jobs=2
+tools.cmake.cmaketoolchain:generator=Ninja
+tools.gnu:host_triplet=x86_64-w64-mingw32
+# FFmpeg sets DLLTOOL from cross_prefix, independently of the explicit CC/AR flags.
+ffmpeg/*:tools.gnu:extra_configure_args=["--cross-prefix=x86_64-w64-mingw32-"]
+tools.system.package_manager:mode=check

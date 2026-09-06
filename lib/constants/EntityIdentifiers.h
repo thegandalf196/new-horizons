@@ -1059,6 +1059,23 @@ public:
 	static std::string entityType();
 
 	const spells::SpellSchoolType * toEntity(const Services * services) const;
+	std::string serializationKey() const;
+	static SpellSchool fromSerializationKey(const std::string & key);
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC))
+		{
+			std::string key;
+			if(h.saving)
+				key = serializationKey();
+			h & key;
+			if(!h.saving)
+				*this = fromSerializationKey(key);
+		}
+		else
+			StaticIdentifier<SpellSchool>::serialize(h);
+	}
 };
 
 /// Identifies a script of any kind - spell effect, combat event handler

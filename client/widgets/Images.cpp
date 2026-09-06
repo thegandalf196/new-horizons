@@ -322,7 +322,7 @@ void CAnimImage::setFrame(size_t Frame, size_t Group)
 		}
 	}
 	else
-		logGlobal->error("Error: accessing unavailable frame %d:%d in CAnimation!", Group, Frame);
+		logGlobal->error("Error: accessing unavailable frame %d:%d in animation %s (group size %d)!", Group, Frame, anim->getName().getOriginalName(), anim->size(Group));
 }
 
 void CAnimImage::setPlayerColor(PlayerColor currPlayer)

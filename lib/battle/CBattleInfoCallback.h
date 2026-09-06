@@ -68,6 +68,9 @@ class DLL_LINKAGE CBattleInfoCallback : public virtual CBattleInfoEssentials
 {
 public:
 
+	std::vector<SpellSchool> battleGetActiveSpellSchools() const;
+	std::vector<SpellSchool> battleGetSpellSchools(SpellID spell) const;
+	int battleGetSpellLevel(SpellID spell) const;
 	bool battleUsesHeroCommands() const;
 	bool battleCanUseHeroCommand(BattleSide side, HeroCommand command) const;
 	HeroCommand battleGetActiveDoctrine(BattleSide side) const;

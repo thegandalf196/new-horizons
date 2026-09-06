@@ -11,6 +11,7 @@
 #include "ActiveModsInSaveList.h"
 
 #include "../GameLibrary.h"
+#include "../constants/StringConstants.h"
 #include "ModDescription.h"
 #include "CModHandler.h"
 #include "ModIncompatibility.h"
@@ -47,7 +48,13 @@ void ActiveModsInSaveList::verifyActiveMods(const std::map<TModID, ModVerificati
 		if (compared.second == ModVerificationStatus::DISABLED)
 			missingMods.push_back(LIBRARY->modh->getModInfo(compared.first).getName());
 
-		if (compared.second == ModVerificationStatus::EXCESSIVE)
+		// The curated module adds save-scoped rules and new entities without
+		// replacing legacy definitions. Old games load empty rule snapshots and
+		// retain their original skills/spells; keep the module for later new games.
+		// This exception is save-only and only for an EXTRA curated module: a
+		// required missing/disabled NH module, or any other excess mod, still fails.
+		if (compared.second == ModVerificationStatus::EXCESSIVE
+			&& compared.first != GameConstants::NEW_HORIZONS_MOD_SCOPE)
 			excessiveMods.push_back(LIBRARY->modh->getModInfo(compared.first).getName());
 	}
 

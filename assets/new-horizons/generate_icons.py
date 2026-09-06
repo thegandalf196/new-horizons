@@ -133,4 +133,20 @@ for name in HERO_MOTIFS:
         art.motif(name, size/16, size/16, size*7/8)
         art.save(f'NH_hero_{name}_{size}')
 
+# Real secondary-skill image contract (config/schemas/skill.json). Rank markers
+# distinguish Basic/Advanced/Expert, not the later three-choice mastery system.
+SKILL_SIZES = {'small': (32,32), 'medium': (44,44), 'large': (82,93), 'scenarioBonus': (58,64)}
+for school in ('light','nature','sorcery','havoc','shadow','chaos'):
+    for rank, rank_name in enumerate(('basic','advanced','expert'), start=1):
+        for size_name, (width,height) in SKILL_SIZES.items():
+            art=Art(width,height)
+            art.polygon([(2,2),(width-3,2),(width-3,height-3),(2,height-3)],'#302a25','#b49a62',1 if width == 32 else 2)
+            motif_size=min(width-6,height-10)
+            art.motif(school,(width-motif_size)/2,(height-10-motif_size)/2,motif_size)
+            radius=min(2.5,max(1.5,width/28))
+            for mark in range(3):
+                lit=mark < rank
+                art.circle(width/2+(mark-1)*width/6,height-6,radius,'#f2d875' if lit else '#302a25','#f2d875' if lit else '#756040',0.75)
+            art.save(f'NH_{school}Magic_{rank_name}_{size_name}')
+
 print('Exported original SVG + RGBA PNG; provisional flat vector style, not final illustration.')

@@ -1,0 +1,646 @@
+{
+	"schemaVersion": 1,
+	"rulesetVersion": 1,
+	"schools": [
+		"new-horizons:light",
+		"new-horizons:nature",
+		"new-horizons:sorcery",
+		"new-horizons:havoc",
+		"new-horizons:shadow",
+		"new-horizons:chaos"
+	],
+	"spells": {
+		"core:airElemental": {
+			"schools": [
+				"new-horizons:nature",
+				"new-horizons:havoc"
+			]
+		},
+		"core:airShield": {
+			"schools": [
+				"new-horizons:light"
+			]
+		},
+		"core:animateDead": {
+			"schools": [
+				"new-horizons:shadow"
+			],
+			"level": 3,
+			"costs": [
+				12,
+				12,
+				10,
+				10
+			]
+		},
+		"core:antiMagic": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 4,
+			"costs": [
+				16,
+				16,
+				13,
+				13
+			]
+		},
+		"core:armageddon": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 5,
+			"costs": [
+				22,
+				22,
+				18,
+				18
+			]
+		},
+		"core:berserk": {
+			"schools": [
+				"new-horizons:chaos"
+			],
+			"level": 2,
+			"costs": [
+				8,
+				8,
+				6,
+				6
+			]
+		},
+		"core:bless": {
+			"schools": [
+				"new-horizons:light"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				3,
+				3
+			]
+		},
+		"core:blind": {
+			"schools": [
+				"new-horizons:shadow",
+				"new-horizons:chaos"
+			],
+			"level": 2,
+			"costs": [
+				8,
+				8,
+				6,
+				6
+			]
+		},
+		"core:bloodlust": {
+			"schools": [
+				"new-horizons:chaos"
+			]
+		},
+		"core:chainLightning": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 3,
+			"costs": [
+				12,
+				12,
+				10,
+				10
+			]
+		},
+		"core:clone": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 3,
+			"costs": [
+				12,
+				12,
+				10,
+				10
+			]
+		},
+		"core:counterstrike": {
+			"schools": [
+				"new-horizons:light"
+			]
+		},
+		"core:cure": {
+			"schools": [
+				"new-horizons:light"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				3,
+				3
+			]
+		},
+		"core:curse": {
+			"schools": [
+				"new-horizons:shadow"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				3,
+				3
+			]
+		},
+		"core:deathRipple": {
+			"schools": [
+				"new-horizons:shadow"
+			],
+			"level": 3,
+			"costs": [
+				12,
+				12,
+				10,
+				10
+			]
+		},
+		"core:destroyUndead": {
+			"schools": [
+				"new-horizons:light"
+			]
+		},
+		"core:dimensionDoor": {
+			"schools": [
+				"new-horizons:sorcery"
+			]
+		},
+		"core:disguise": {
+			"schools": [
+				"new-horizons:sorcery"
+			]
+		},
+		"core:dispel": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 2,
+			"costs": [
+				8,
+				8,
+				6,
+				6
+			]
+		},
+		"core:disruptingRay": {
+			"schools": [
+				"new-horizons:shadow"
+			]
+		},
+		"core:earthElemental": {
+			"schools": [
+				"new-horizons:nature",
+				"new-horizons:havoc"
+			]
+		},
+		"core:earthquake": {
+			"schools": [
+				"new-horizons:havoc"
+			]
+		},
+		"core:fireElemental": {
+			"schools": [
+				"new-horizons:nature",
+				"new-horizons:havoc"
+			]
+		},
+		"core:fireShield": {
+			"schools": [
+				"new-horizons:havoc"
+			]
+		},
+		"core:fireWall": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 4,
+			"costs": [
+				16,
+				16,
+				13,
+				13
+			]
+		},
+		"core:fireball": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				3,
+				3
+			]
+		},
+		"core:fly": {
+			"schools": [
+				"new-horizons:sorcery"
+			]
+		},
+		"core:forceField": {
+			"schools": [
+				"new-horizons:sorcery"
+			]
+		},
+		"core:forgetfulness": {
+			"schools": [
+				"new-horizons:chaos"
+			],
+			"level": 2,
+			"costs": [
+				8,
+				8,
+				6,
+				6
+			]
+		},
+		"core:fortune": {
+			"schools": [
+				"new-horizons:chaos"
+			]
+		},
+		"core:frenzy": {
+			"schools": [
+				"new-horizons:chaos"
+			]
+		},
+		"core:frostRing": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 2,
+			"costs": [
+				8,
+				8,
+				6,
+				6
+			]
+		},
+		"core:haste": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				3,
+				3
+			]
+		},
+		"core:hypnotize": {
+			"schools": [
+				"new-horizons:chaos"
+			],
+			"level": 3,
+			"costs": [
+				12,
+				12,
+				10,
+				10
+			]
+		},
+		"core:iceBolt": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				3,
+				3
+			]
+		},
+		"core:implosion": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 4,
+			"costs": [
+				16,
+				16,
+				13,
+				13
+			]
+		},
+		"core:inferno": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 2,
+			"costs": [
+				8,
+				8,
+				6,
+				6
+			]
+		},
+		"core:landMine": {
+			"schools": [
+				"new-horizons:havoc"
+			]
+		},
+		"core:lightningBolt": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				3,
+				3
+			]
+		},
+		"core:magicArrow": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				3,
+				3
+			]
+		},
+		"core:magicMirror": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 4,
+			"costs": [
+				16,
+				16,
+				13,
+				13
+			]
+		},
+		"core:meteorShower": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 3,
+			"costs": [
+				12,
+				12,
+				10,
+				10
+			]
+		},
+		"core:mirth": {
+			"schools": [
+				"new-horizons:chaos"
+			]
+		},
+		"core:misfortune": {
+			"schools": [
+				"new-horizons:chaos"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				3,
+				3
+			]
+		},
+		"core:prayer": {
+			"schools": [
+				"new-horizons:light"
+			]
+		},
+		"core:precision": {
+			"schools": [
+				"new-horizons:sorcery"
+			]
+		},
+		"core:protectAir": {
+			"schools": [
+				"new-horizons:light"
+			]
+		},
+		"core:protectEarth": {
+			"schools": [
+				"new-horizons:light"
+			]
+		},
+		"core:protectFire": {
+			"schools": [
+				"new-horizons:light"
+			]
+		},
+		"core:protectWater": {
+			"schools": [
+				"new-horizons:light"
+			]
+		},
+		"core:quicksand": {
+			"schools": [
+				"new-horizons:nature"
+			],
+			"level": 4,
+			"costs": [
+				16,
+				16,
+				13,
+				13
+			]
+		},
+		"core:removeObstacle": {
+			"schools": [
+				"new-horizons:nature"
+			]
+		},
+		"core:resurrection": {
+			"schools": [
+				"new-horizons:light"
+			],
+			"level": 3,
+			"costs": [
+				12,
+				12,
+				10,
+				10
+			]
+		},
+		"core:sacrifice": {
+			"schools": [
+				"new-horizons:shadow"
+			]
+		},
+		"core:scuttleBoat": {
+			"schools": [
+				"new-horizons:havoc"
+			]
+		},
+		"core:shield": {
+			"schools": [
+				"new-horizons:light"
+			]
+		},
+		"core:slayer": {
+			"schools": [
+				"new-horizons:nature"
+			]
+		},
+		"core:slow": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				3,
+				3
+			]
+		},
+		"core:sorrow": {
+			"schools": [
+				"new-horizons:chaos"
+			]
+		},
+		"core:stoneSkin": {
+			"schools": [
+				"new-horizons:nature"
+			]
+		},
+		"core:summonBoat": {
+			"schools": [
+				"new-horizons:sorcery"
+			]
+		},
+		"core:teleport": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 2,
+			"costs": [
+				8,
+				8,
+				6,
+				6
+			]
+		},
+		"core:townPortal": {
+			"schools": [
+				"new-horizons:sorcery"
+			]
+		},
+		"core:viewAir": {
+			"schools": [
+				"new-horizons:nature"
+			]
+		},
+		"core:viewEarth": {
+			"schools": [
+				"new-horizons:nature"
+			]
+		},
+		"core:visions": {
+			"schools": [
+				"new-horizons:sorcery"
+			]
+		},
+		"core:waterElemental": {
+			"schools": [
+				"new-horizons:nature",
+				"new-horizons:havoc"
+			]
+		},
+		"core:waterWalk": {
+			"schools": [
+				"new-horizons:nature"
+			]
+		},
+		"core:weakness": {
+			"schools": [
+				"new-horizons:shadow"
+			],
+			"level": 2,
+			"costs": [
+				8,
+				8,
+				6,
+				6
+			]
+		}
+	},
+	"factions": {
+		"core:castle": {
+			"major": "new-horizons:light",
+			"minor": "new-horizons:sorcery",
+			"provisional": false
+		},
+		"core:rampart": {
+			"major": "new-horizons:nature",
+			"minor": "new-horizons:light",
+			"provisional": false
+		},
+		"core:tower": {
+			"major": "new-horizons:sorcery",
+			"minor": "new-horizons:havoc",
+			"provisional": false
+		},
+		"core:inferno": {
+			"major": "new-horizons:chaos",
+			"minor": "new-horizons:havoc",
+			"provisional": false
+		},
+		"core:necropolis": {
+			"major": "new-horizons:shadow",
+			"minor": "new-horizons:chaos",
+			"provisional": true
+		},
+		"core:dungeon": {
+			"major": "new-horizons:havoc",
+			"minor": "new-horizons:shadow",
+			"provisional": false
+		},
+		"core:stronghold": {
+			"major": "new-horizons:chaos",
+			"minor": "new-horizons:nature",
+			"provisional": false
+		},
+		"core:fortress": {
+			"major": "new-horizons:nature",
+			"minor": "new-horizons:shadow",
+			"provisional": true
+		},
+		"core:conflux": {
+			"major": "new-horizons:havoc",
+			"minor": "new-horizons:nature",
+			"provisional": false
+		}
+	},
+	"factionWeights": {
+		"major": 3,
+		"minor": 1
+	},
+	"schoolSkills": {
+		"new-horizons:light": "new-horizons:lightMagic",
+		"new-horizons:nature": "new-horizons:natureMagic",
+		"new-horizons:sorcery": "new-horizons:sorceryMagic",
+		"new-horizons:havoc": "new-horizons:havocMagic",
+		"new-horizons:shadow": "new-horizons:shadowMagic",
+		"new-horizons:chaos": "new-horizons:chaosMagic"
+	},
+	"skillReplacements": {
+		"core:airMagic": "new-horizons:sorceryMagic",
+		"core:fireMagic": "new-horizons:havocMagic",
+		"core:waterMagic": "new-horizons:lightMagic",
+		"core:earthMagic": "new-horizons:natureMagic"
+	}
+}

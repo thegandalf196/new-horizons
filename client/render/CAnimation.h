@@ -52,6 +52,8 @@ public:
 	CAnimation(const AnimationPath & Name, std::map<size_t, std::vector <ImageLocator> > layout, EImageBlitMode mode);
 	~CAnimation();
 
+	const AnimationPath & getName() const { return name; }
+
 	//duplicates frame at [sourceGroup, sourceFrame] as last frame in targetGroup
 	//and loads it if animation is preloaded
 	void duplicateImage(const size_t sourceGroup, const size_t sourceFrame, const size_t targetGroup);

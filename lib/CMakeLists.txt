@@ -279,6 +279,7 @@ set(lib_MAIN_SRCS
 	spells/BonusCaster.cpp
 	spells/CSpell.cpp
 	spells/CSpellHandler.cpp
+	spells/NewHorizonsMagic.cpp
 	spells/ExternalCaster.cpp
 	spells/ISpellMechanics.cpp
 	spells/ObstacleCasterProxy.cpp
@@ -759,6 +760,7 @@ set(lib_MAIN_HEADERS
 	spells/BonusCaster.h
 	spells/CSpell.h
 	spells/CSpellHandler.h
+	spells/NewHorizonsMagic.h
 	spells/ExternalCaster.h
 	spells/ISpellMechanics.h
 	spells/ObstacleCasterProxy.h

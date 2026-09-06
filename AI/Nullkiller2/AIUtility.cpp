@@ -309,12 +309,12 @@ double getArtifactBonusRelevance(const CGHeroInstance * hero, const std::shared_
 		for (auto spellID : LIBRARY->spellh->getDefaultAllowed())
 		{
 			auto spell = spellID.toEntity(LIBRARY);
-			if (!spell->hasSchool(school))
+			if (!spell->hasSchool(school) && !vstd::contains(hero->getSpellSchools(spell), school))
 				continue;
 
-			uint64_t spellLevel = spell->getLevel();
+			uint64_t spellLevel = hero->getSpellLevel(spell);
 			uint64_t spellWeight = spellLevel * spellLevel;
-			if (!hero->spellbookContainsSpell(spellID))
+			if (hero->spellbookContainsSpell(spellID))
 				knownWeight += spellWeight;
 			totalWeight += spellWeight;
 		}
@@ -332,7 +332,7 @@ double getArtifactBonusRelevance(const CGHeroInstance * hero, const std::shared_
 		for (auto spellID : LIBRARY->spellh->getDefaultAllowed())
 		{
 			auto spell = spellID.toEntity(LIBRARY);
-			if (spell->getLevel() != level)
+			if (hero->getSpellLevel(spell) != level)
 				continue;
 
 			if (!hero->spellbookContainsSpell(spellID))
@@ -556,7 +556,7 @@ int64_t getArtifactScoreForHero(const CGHeroInstance * hero, const CArtifactInst
 		if (hero->getSpellsInSpellbook().count(spellID))
 			return 0;
 		else
-			return spell->getLevel() * 100;
+			return hero->getSpellLevel(spell) * 100;
 	}
 
 	const CArtifact * type = artifact->getType();

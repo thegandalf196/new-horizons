@@ -489,7 +489,10 @@ BattleInfo::BattleInfo(IGameInfoCallback *cb)
 	tacticDistance(0)
 {
 	if(cb)
+	{
 		heroCommandRules = cb->getHeroCommandRules();
+		magicRules = cb->getMagicRules();
+	}
 }
 
 BattleLayout BattleInfo::getLayout() const
@@ -694,7 +697,7 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 
 	CStack * st = getStack(activeStack);
 
-	if (reason != BattleUnitTurnReason::UNIT_SPELLCAST)
+	if (reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
 	{
 		//remove bonuses that last until when stack gets new turn
 		st->removeBonusesRecursive(Bonus::UntilGetsTurn);

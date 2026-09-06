@@ -18,6 +18,7 @@
 #include "../bonuses/Bonus.h"
 #include "../bonuses/CBonusSystemNode.h"
 #include "../int3.h"
+#include "../spells/NewHorizonsMagic.h"
 
 class CStack;
 class CStackInstance;
@@ -31,10 +32,12 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	std::unique_ptr<BattleLayout> layout;
 	si32 round;
 	JsonNode heroCommandRules;
+	JsonNode magicRules;
 
 	void postDeserialize();
 public:
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
+	const JsonNode & getMagicRules() const override { return magicRules; }
 	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
 	HeroCommand getActiveDoctrine(BattleSide side) const override { return sides.at(side).activeDoctrine; }
 	HeroCommand getActiveOrder(BattleSide side) const override { return sides.at(side).activeOrder; }
@@ -81,6 +84,15 @@ public:
 		{
 			heroCommandRules = JsonNode();
 		}
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC))
+		{
+			h & magicRules;
+			if(!h.saving)
+				newHorizonsMagic::validateRules(magicRules);
+		}
+		else if(!h.saving)
+			magicRules = JsonNode();
 
 		if(!h.saving)
 			postDeserialize();

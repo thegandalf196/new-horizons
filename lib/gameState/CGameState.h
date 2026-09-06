@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../battle/HeroCommand.h"
+#include "../spells/NewHorizonsMagic.h"
 
 #include "../bonuses/CBonusSystemNode.h"
 #include "../callback/CNonConstInfoCallback.h"
@@ -154,6 +155,7 @@ public:
 	void obtainPlayersStats(SThievesGuildInfo & tgi, int level) const;
 	const IGameSettings & getSettings() const override;
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
+	const JsonNode & getMagicRules() const override { return magicRules; }
 
 	StartInfo * getStartInfo()
 	{
@@ -246,12 +248,22 @@ public:
 			heroCommandRules = JsonNode();
 		}
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC))
+		{
+			h & magicRules;
+			if(!h.saving)
+				newHorizonsMagic::validateRules(magicRules);
+		}
+		else if(!h.saving)
+			magicRules = JsonNode();
+
 		if(!h.saving && h.loadingGamestate)
 			restoreBonusSystemTree();
 	}
 
 private:
 	JsonNode heroCommandRules;
+	JsonNode magicRules;
 	// ----- initialization -----
 	void initNewGame(const IMapService * mapService, vstd::RNG & randomGenerator, bool allowSavingRandomMap, Load::ProgressAccumulator & progressTracking);
 	void initGlobalBonuses();

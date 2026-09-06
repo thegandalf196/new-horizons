@@ -46,6 +46,15 @@ Outputs: `Mods/new-horizons/Images/NH_*`.
   branching development; it does not assert any particular mastery effects.
   Tier glyphs do not reclassify creatures. Pair glyphs with readable UI labels;
   neither color alone nor these symbols should be the only source of meaning.
+- Six real school secondary-skill image families:
+  `NH_<school>Magic_<rank>_<size>.png`, plus matching editable SVGs. Schools use
+  the six IDs above; rank is `basic`, `advanced` or `expert`. Sizes follow
+  `config/schemas/skill.json` and `CSkill::registerIcons`:
+  **small32x32**, **medium44x44**, **large82x93**, **scenarioBonus58x64**.
+  One/two/three lit markers distinguish these existing skill ranks, not future
+  three-choice masteries. These are static image files, not animation/button
+  states. Build owns skill definitions, rank effects and registration; reuse of
+  our original CC0 school geometry introduces no purchaser or concept pixels.
 - All new images use RGBA transparency, not the original indexed palette.
 
 The five command buttons and Spells/Cancel are wired to the real hero-action
@@ -56,11 +65,18 @@ and hero-screen wiring are not completed or claimed by this art delivery**.
 No fake spells/masteries or inert controls are added to pretend otherwise.
 Hero display glyphs are likewise prepared, **not yet wired or graphically accepted**.
 They are original geometry authored by the AI-assisted New Horizons frontend
-implementation, under the same CC0 dedication above. Current complete exports:
+implementation, under the same CC0 dedication above. Before the school-skill increment, exports contained
 118 SVGs, 118 PNGs and 20 animation JSONs. Adding the 30 hero glyph variants
 preserved all 196 previous outputs byte-for-byte; local static evidence resides
 under ignored `build/new-horizons-linux/research/hero-art/`. This checks outputs,
 not the future screen's rendering, readability or runtime attribute formulas.
+
+The subsequent72 school-skill PNGs/72 SVGs preserve all256 earlier outputs
+byte-for-byte. **Current complete exports:190 SVGs,190 PNGs,20 animation JSONs**.
+Local schema/dimension/hash evidence and generated contact sheet are under ignored
+`build/new-horizons-linux/research/skill-art/`. Actual skill registration, rank
+progression, rendered hero/level-up/campaign use and old-save semantics require
+integrated tests; these exports alone do not prove those mechanics.
 
 ## Actual installed artwork inspection (metadata only)
 

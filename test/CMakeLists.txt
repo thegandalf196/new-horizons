@@ -76,6 +76,8 @@ set(test_SRCS
 		spells/AbilityCasterTest.cpp
 		spells/AdventureSpellEffectTest.cpp
 		spells/CSpellTest.cpp
+		spells/NewHorizonsMagicTest.cpp
+		spells/NewHorizonsModCompatibilityTest.cpp
  		spells/TargetConditionTest.cpp
 
 		spells/effects/EffectFixture.cpp
@@ -124,6 +126,10 @@ set(test_SRCS
 		server/battles/HeroCommandPersistenceTest.cpp
 		server/battles/HeroCommandFixtureExportTest.cpp
 		server/battles/HeroCommandRejectionTest.cpp
+		server/battles/HeroCommandEligibilityTest.cpp
+		server/battles/HeroCommandCloneTest.cpp
+		server/battles/HeroCommandTurnLifecycleTest.cpp
+		server/battles/NewHorizonsMagicStateTest.cpp
 		server/queries/QueriesProcessorTest.cpp
 
 		texts/TextOperationsTest.cpp
@@ -182,6 +188,8 @@ if(ENABLE_BATTLE_AI)
 	list(APPEND test_SRCS
 		${BATTLE_AI_TEST_SRCS}
 		battleAI/HeroCommandAITest.cpp
+		battleAI/NewHorizonsMagicAITest.cpp
+		battleAI/NewHorizonsTomeAITest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 	)
 endif()

@@ -134,8 +134,7 @@ bool AdventureSpellMechanics::canBeCast(spells::Problem & problem, const IGameIn
 		if(heroCaster->isGarrisoned())
 			return false;
 
-		const auto level = heroCaster->getSpellSchoolLevel(owner);
-		const auto cost = owner->getCost(level);
+		const auto cost = heroCaster->getSpellCost(owner);
 
 		if(!heroCaster->canCastThisSpell(owner))
 			return false;
@@ -197,7 +196,8 @@ void AdventureSpellMechanics::giveBonuses(SpellCastEnvironment * env, const Adve
 void AdventureSpellMechanics::performCast(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const
 {
 	const auto level = parameters.caster->getSpellSchoolLevel(owner);
-	const auto cost = owner->getCost(level);
+	const auto * hero = parameters.caster->getHeroCaster();
+	const auto cost = hero ? hero->getSpellCost(owner) : owner->getCost(level);
 
 	AdvmapSpellCast asc;
 	asc.casterID = ObjectInstanceID(parameters.caster->getCasterUnitId());

@@ -140,7 +140,10 @@ namespace AIPathfinding
 
 	int32_t SummonBoatAction::getManaCost(const CGHeroInstance * hero) const
 	{
-		// FIXME: this should be hero->getSpellCost, however currently queries to bonus system are too slow
+		const auto & rules = hero->getMagicRules();
+		if(!rules.isNull() && !rules.Struct().empty())
+			return hero->getSpellCost(usedSpell.toSpell());
+		// Preserve the legacy approximation; saved redesigned costs need exact queries.
 		return usedSpell.toSpell()->getCost(0);
 	}
 }

@@ -220,6 +220,8 @@ void CGameState::init(const IMapService * mapService, StartInfo * si, IGameRando
 	mapEventDispatcher = LIBRARY->scripts()->createMapScriptDispatcher(*this, true);
 	heroCommandRules = getSettings().getValue(EGameSettings::COMBAT_HERO_COMMANDS);
 	heroCommands::validateRules(heroCommandRules);
+	magicRules = getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+	newHorizonsMagic::validateRules(magicRules);
 	initGlobalBonuses();
 	initPlayerStates();
 	if (campaign)
@@ -972,7 +974,7 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 		for(ui32 z=0; z<vti->obligatorySpells.size();z++)
 		{
 			const auto * s = vti->obligatorySpells[z].toSpell();
-			vti->spells[s->getLevel()-1].push_back(s->id);
+			vti->spells[getSpellLevel(s->id)-1].push_back(s->id);
 			vti->possibleSpells -= s->id;
 		}
 
@@ -980,7 +982,7 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 		{
 			const auto * spell = spellID.toSpell();
 
-			if (spell->getProbability(vti->getFactionID()) == 0)
+			if (newHorizonsMagic::factionSpellWeight(magicRules, vti->getFactionID(), spellID) == 0)
 				return true;
 
 			if (spell->isSpecial() || spell->isCreatureAbility())
@@ -994,7 +996,7 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 
 		std::vector<int> spellWeights;
 		for (auto & spellID : vti->possibleSpells)
-			spellWeights.push_back(spellID.toSpell()->getProbability(vti->getFactionID()));
+			spellWeights.push_back(newHorizonsMagic::factionSpellWeight(magicRules, vti->getFactionID(), spellID));
 
 
 		while(!vti->possibleSpells.empty())
@@ -1002,7 +1004,7 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 			size_t index = RandomGeneratorUtil::nextItemWeighted(spellWeights, randomGenerator);
 
 			const auto * s = vti->possibleSpells[index].toSpell();
-			vti->spells[s->getLevel()-1].push_back(s->id);
+			vti->spells[getSpellLevel(s->id)-1].push_back(s->id);
 
 			vti->possibleSpells.erase(vti->possibleSpells.begin() + index);
 			spellWeights.erase(spellWeights.begin() + index);

@@ -49,6 +49,7 @@ public:
 	EGateState getGateState() const override;
 
 	const JsonNode & getHeroCommandRules() const override { return subject->getBattle()->getHeroCommandRules(); }
+	const JsonNode & getMagicRules() const override { return subject->getBattle()->getMagicRules(); }
 	bool getHeroCommandUsed(BattleSide side) const override { return subject->getBattle()->getHeroCommandUsed(side); }
 	HeroCommand getActiveDoctrine(BattleSide side) const override { return subject->getBattle()->getActiveDoctrine(side); }
 	HeroCommand getActiveOrder(BattleSide side) const override { return subject->getBattle()->getActiveOrder(side); }

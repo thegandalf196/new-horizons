@@ -74,6 +74,8 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	std::shared_ptr<InteractiveArea> rightCornerArea;
 
 	std::shared_ptr<CAnimImage> schoolTab;
+	std::shared_ptr<TransparentFilledRectangle> schoolTabPanel;
+	std::shared_ptr<CToggleButton> allSchoolsButton;
 	std::vector<std::shared_ptr<CAnimImage>> schoolTabCustom;
 	std::shared_ptr<CPicture> schoolTabAnyDisabled;
 	std::shared_ptr<CAnimImage> schoolPicture;
@@ -101,6 +103,16 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	int offRM;
 	int offT;
 	int offB;
+
+	// One book-local view feeds sorting, filtering and page counts together.
+	// These classifications are presentation data, never gameplay mutations.
+	std::vector<SpellSchool> availableSchools;
+	std::map<SpellID, std::set<SpellSchool>> spellSchools;
+	std::map<SpellID, int> spellLevels;
+	std::vector<SpellSchool> schoolNavigation;
+	bool usesLegacyTabs = true;
+
+	void readSchoolContext();
 
 	std::map<SpellSchool, int> sitesPerTabAdv;
 	std::map<SpellSchool, int> sitesPerTabBattle;

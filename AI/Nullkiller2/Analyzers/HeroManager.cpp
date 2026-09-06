@@ -252,7 +252,7 @@ float HeroManager::getMagicStrength(const CGHeroInstance * hero) const
 		auto schoolLevel = hero->getSpellSchoolLevel(spell);
 		auto townPortalEffect = spell->getAdventureMechanics().getEffectAs<TownPortalEffect>(hero);
 
-		score += (spell->getLevel() + 1) * (schoolLevel + 1) * 0.05f;
+		score += (hero->getSpellLevel(spell) + 1) * (schoolLevel + 1) * 0.05f;
 
 		if (spell->getAdventureMechanics().givesBonus(hero, BonusType::FLYING_MOVEMENT))
 			score += 0.3;
@@ -388,16 +388,40 @@ const std::vector<SecondarySkill> AtLeastOneMagicRule::magicSchools = {
 
 void AtLeastOneMagicRule::evaluateScore(const CGHeroInstance * hero, SecondarySkill skill, float & score) const
 {
-	if(!vstd::contains(magicSchools, skill))
+	auto activeSkills = magicSchools;
+	std::optional<SpellSchool> selectedSchool;
+	const auto & rules = hero->getMagicRules();
+	if(!rules.isNull() && !rules.Struct().empty())
+	{
+		activeSkills.clear();
+		for(const auto & [school, skillName] : rules["schoolSkills"].Struct())
+		{
+			const SecondarySkill schoolSkill(SecondarySkill::decode(skillName.String()));
+			activeSkills.push_back(schoolSkill);
+			if(schoolSkill == skill)
+				selectedSchool = SpellSchool::fromSerializationKey(school);
+		}
+	}
+	if(!vstd::contains(activeSkills, skill))
 		return;
-	
-	bool heroHasAnyMagic = vstd::contains_if(magicSchools, [&](SecondarySkill skill) -> bool
+
+	bool heroHasAnyMagic = vstd::contains_if(activeSkills, [&](SecondarySkill skill) -> bool
 	{
 		return hero->getSecSkillLevel(skill) > MasteryLevel::NONE;
 	});
 
 	if(!heroHasAnyMagic)
 		score += 1;
+	if(selectedSchool)
+	{
+		// Value actual known spells in this saved school, not a fixed preference
+		// for one of the old four IDs. Numerical tuning is intentionally provisional.
+		float knownSpellValue = 0;
+		for(const auto spellID : hero->getSpellsInSpellbook())
+			if(vstd::contains(hero->getSpellSchools(spellID.toSpell()), *selectedSchool))
+				knownSpellValue += 0.5f;
+		score += std::min(knownSpellValue, 2.0f);
+	}
 }
 
 SecondarySkillEvaluator::SecondarySkillEvaluator(std::vector<std::shared_ptr<ISecondarySkillRule>> evaluationRules)

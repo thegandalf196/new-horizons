@@ -700,7 +700,9 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 			// keep current active stack for next action
 			if (!activeStackAffectedBySpell)
 			{
-				setActiveStack(battle, activeStack, BattleUnitTurnReason::HERO_SPELLCAST);
+				const auto reason = ba.actionType == EActionType::HERO_COMMAND
+					? BattleUnitTurnReason::HERO_COMMAND : BattleUnitTurnReason::HERO_SPELLCAST;
+				setActiveStack(battle, activeStack, reason);
 				return;
 			}
 		}

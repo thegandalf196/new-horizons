@@ -32,6 +32,11 @@
 #define ERROR_RET_IF(cond, txt) do {if(cond){logGlobal->error("%s: %s", BOOST_CURRENT_FUNCTION, txt); return;}} while(0)
 #define ERROR_RET_VAL_IF(cond, txt, retVal) do {if(cond){logGlobal->error("%s: %s", BOOST_CURRENT_FUNCTION, txt); return retVal;}} while(0)
 
+const JsonNode & CGameInfoCallback::getMagicRules() const
+{
+	return gameState().getMagicRules();
+}
+
 const IMarket * CGameInfoCallback::getMarket(ObjectInstanceID objid) const
 {
 	const CGObjectInstance * obj = getObj(objid, false);
@@ -925,7 +930,7 @@ void CGameInfoCallback::getAllowedSpells(std::vector<SpellID> & out, std::option
 		if (!isAllowed(spellID))
 			continue;
 
-		if (level.has_value() && spell->getLevel() != level)
+		if (level.has_value() && getSpellLevel(spell->getId()) != level)
 			continue;
 
 		out.push_back(spellID);

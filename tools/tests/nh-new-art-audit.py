@@ -21,6 +21,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ("light", "nature", "sorcery", "havoc", "shadow", "chaos")
 BUTTONS = ("charge", "holdTheLine", "advance", "aggressive", "defensive", "spells", "cancel")
+SKILL_SIZES = {"small": (32, 32), "medium": (44, 44), "large": (82, 93), "scenarioBonus": (58, 64)}
 HERO_GLYPHS = ("attack", "defense", "power", "knowledge", "mana", "leadership", "movement",
                "morale", "luck", "siege", "mastery", "core", "elite", "champion", "growth")
 
@@ -83,6 +84,20 @@ def audit(reproduce):
         for size in (32, 64):
             with Image.open(images / f"NH_hero_{glyph}_{size}.png") as image:
                 require(image.size == (size, size), f"Wrong hero display glyph size: {glyph}/{size}")
+    for school in SCHOOLS:
+        for rank, rank_name in enumerate(("basic", "advanced", "expert"), start=1):
+            for size_name, size in SKILL_SIZES.items():
+                name = f"NH_{school}Magic_{rank_name}_{size_name}"
+                require((source / (name + ".svg")).is_file(), f"Missing skill source: {name}")
+                with Image.open(images / (name + ".png")) as image:
+                    require(image.size == size, f"Wrong skill dimensions: {name}")
+                circles = [e for e in ET.parse(source / (name + ".svg")).getroot().iter()
+                           if e.tag.split("}")[-1] == "circle"]
+                markers = circles[-3:]
+                require(len(markers) == 3, f"Missing rank markers: {name}")
+                require([e.attrib.get("fill") for e in markers] ==
+                        ["#f2d875"] * rank + ["#302a25"] * (3 - rank),
+                        f"Wrong Basic/Advanced/Expert markers: {name}")
     files = svgs + pngs + animations
     hashes = {str(path.relative_to(ROOT)): digest(path) for path in files}
     if reproduce:

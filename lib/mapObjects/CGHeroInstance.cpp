@@ -45,6 +45,8 @@
 #include "../pathfinder/TurnInfo.h"
 #include "../serializer/JsonSerializeFormat.h"
 #include "../spells/CSpell.h"
+#include "../spells/NewHorizonsMagic.h"
+#include "../battle/BattleInfo.h"
 #include "../mapObjectConstructors/AObjectTypeHandler.h"
 #include "../mapObjectConstructors/CObjectClassesHandler.h"
 #include "MiscObjects.h"
@@ -423,6 +425,24 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	if(secSkills.size() == 1 && secSkills[0] == std::pair<SecondarySkill,ui8>(SecondarySkill::NONE, -1)) //set secondary skills to default
 		secSkills = getHeroType()->secSkillsInit;
 
+	// Only creation passes here; deserialized heroes retain their saved skill IDs.
+	// The saved magic profile defines the conversion, not installed defaults.
+	if(!getMagicRules().isNull() && !getMagicRules().Struct().empty())
+	{
+		std::vector<std::pair<SecondarySkill, ui8>> convertedSkills;
+		for(const auto & [skill, rank] : secSkills)
+		{
+			const auto converted = newHorizonsMagic::replacementSkill(getMagicRules(), skill);
+			auto existing = std::find_if(convertedSkills.begin(), convertedSkills.end(),
+				[converted](const auto & value) { return value.first == converted; });
+			if(existing == convertedSkills.end())
+				convertedSkills.emplace_back(converted, rank);
+			else
+				existing->second = std::max(existing->second, rank);
+		}
+		secSkills = std::move(convertedSkills);
+	}
+
 	setFormation(EArmyFormation::LOOSE);
 	if (!stacksCount()) //standard army//initial army
 	{
@@ -798,7 +818,7 @@ int32_t CGHeroInstance::getSpellSchoolLevel(const spells::Spell * spell, SpellSc
 {
 	int32_t skill = -1; //skill level
 
-	spell->forEachSchool([&, this](const SpellSchool & cnf, bool & stop)
+	for(const auto & cnf : getSpellSchools(spell))
 	{
 		int32_t thisSchool = magicSchoolMastery.getMastery(cnf); //FIXME: Bonus shouldn't be additive (Witchking Artifacts : Crown of Skies)
 		if(thisSchool > skill)
@@ -807,7 +827,7 @@ int32_t CGHeroInstance::getSpellSchoolLevel(const spells::Spell * spell, SpellSc
 			if(outSelectedSchool)
 				*outSelectedSchool = cnf;
 		}
-	});
+	}
 
 	vstd::amax(skill, magicSchoolMastery.getMastery(SpellSchool::ANY)); //any school bonus
 	vstd::amax(skill, valOfBonuses(BonusType::SPELL, BonusSubtypeID(spell->getId()))); //given by artifact or other effect
@@ -828,10 +848,16 @@ int64_t CGHeroInstance::getSpellBonus(const spells::Spell * spell, int64_t base,
 
 	int maxSchoolBonus = 0;
 
-	spell->forEachSchool([&maxSchoolBonus, this](const SpellSchool & cnf, bool & stop)
+	auto damageSchools = getSpellSchools(spell);
+	// Existing elemental artifacts retain their legacy affinity; new school
+	// bonuses can also apply, without stacking the two school multipliers.
+	spell->forEachSchool([&](const SpellSchool & school, bool & stop)
 	{
-		vstd::amax(maxSchoolBonus, valOfBonuses(BonusType::SPELL_DAMAGE, BonusSubtypeID(cnf)));
+		if(!vstd::contains(damageSchools, school))
+			damageSchools.push_back(school);
 	});
+	for(const auto & cnf : damageSchools)
+		vstd::amax(maxSchoolBonus, valOfBonuses(BonusType::SPELL_DAMAGE, BonusSubtypeID(cnf)));
 
 	base = static_cast<int64_t>(base * (100 + maxSchoolBonus) / 100.0);
 
@@ -957,7 +983,7 @@ bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned
 	if(!hasSpellbook())
 		return false;
 
-	if(spell->getLevel() > maxSpellLevel()) //not enough wisdom
+	if(getSpellLevel(spell) > maxSpellLevel()) //not enough wisdom
 		return false;
 
 	if(vstd::contains(spells, spell->getId()))//already known
@@ -1156,9 +1182,27 @@ const IObjectInterface * CGHeroInstance::getObject() const
 	return this;
 }
 
+const JsonNode & CGHeroInstance::getMagicRules() const
+{
+	static const JsonNode legacy;
+	if(battle)
+		return battle->getMagicRules();
+	return cb ? cb->getMagicRules() : legacy;
+}
+
+std::vector<SpellSchool> CGHeroInstance::getSpellSchools(const spells::Spell * spell) const
+{
+	return newHorizonsMagic::spellSchools(getMagicRules(), spell->getId());
+}
+
+int CGHeroInstance::getSpellLevel(const spells::Spell * spell) const
+{
+	return newHorizonsMagic::spellLevel(getMagicRules(), spell->getId());
+}
+
 int32_t CGHeroInstance::getSpellCost(const spells::Spell * sp) const
 {
-	return sp->getCost(getSpellSchoolLevel(sp));
+	return newHorizonsMagic::spellCost(getMagicRules(), sp->getId(), getSpellSchoolLevel(sp));
 }
 
 void CGHeroInstance::pushPrimSkill( PrimarySkill which, int val )
@@ -1286,13 +1330,20 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 	if (tomesGrantBannedSpells || cb->isAllowed(spellId))
 	{
 		const auto spell = spellId.toSpell();
-		spell->forEachSchool([this, &sources](const SpellSchool & cnf, bool & stop)
+		auto tomeSchools = getSpellSchools(spell);
+		// Original elemental tomes must not become inert in a six-school game.
+		spell->forEachSchool([&](const SpellSchool & school, bool & stop)
+		{
+			if(!vstd::contains(tomeSchools, school))
+				tomeSchools.push_back(school);
+		});
+		for(const auto & cnf : tomeSchools)
 		{
 			for(const auto & bonus : *getBonusesOfType(BonusType::SPELLS_OF_SCHOOL, cnf))
 				sources.emplace_back(bonus->sid);
-		});
+		}
 
-		for(const auto & bonus : *getBonusesOfType(BonusType::SPELLS_OF_LEVEL, BonusCustomSubtype::spellLevel(spell->getLevel())))
+		for(const auto & bonus : *getBonusesOfType(BonusType::SPELLS_OF_LEVEL, BonusCustomSubtype::spellLevel(getSpellLevel(spell))))
 			sources.emplace_back(bonus->sid);
 	}
 

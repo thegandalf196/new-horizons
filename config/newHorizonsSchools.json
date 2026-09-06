@@ -1,0 +1,38 @@
+{
+	"light": {
+		"name": "Light",
+		"schoolBorders": "SplevA",
+		"schoolHeader": "NH_light_header.png",
+		"schoolBookmark": "NH_light_bookmark.json"
+	},
+	"nature": {
+		"name": "Nature",
+		"schoolBorders": "SplevE",
+		"schoolHeader": "NH_nature_header.png",
+		"schoolBookmark": "NH_nature_bookmark.json"
+	},
+	"sorcery": {
+		"name": "Sorcery",
+		"schoolBorders": "SplevA",
+		"schoolHeader": "NH_sorcery_header.png",
+		"schoolBookmark": "NH_sorcery_bookmark.json"
+	},
+	"havoc": {
+		"name": "Havoc",
+		"schoolBorders": "SplevF",
+		"schoolHeader": "NH_havoc_header.png",
+		"schoolBookmark": "NH_havoc_bookmark.json"
+	},
+	"shadow": {
+		"name": "Shadow",
+		"schoolBorders": "SplevA",
+		"schoolHeader": "NH_shadow_header.png",
+		"schoolBookmark": "NH_shadow_bookmark.json"
+	},
+	"chaos": {
+		"name": "Chaos",
+		"schoolBorders": "SplevW",
+		"schoolHeader": "NH_chaos_header.png",
+		"schoolBookmark": "NH_chaos_bookmark.json"
+	}
+}
