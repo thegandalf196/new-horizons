@@ -209,7 +209,10 @@ if(ENABLE_NULLKILLER2_AI)
 endif()
 
 if(ENABLE_NH_PERF_EXPERIMENTS)
-	list(APPEND test_SRCS network/InternalConnectionBenchmark.cpp)
+	list(APPEND test_SRCS
+		network/InternalConnectionBenchmark.cpp
+		network/ExperimentalSetFormationTest.cpp
+	)
 endif()
 
 assign_source_group(${test_SRCS} ${test_HEADERS})

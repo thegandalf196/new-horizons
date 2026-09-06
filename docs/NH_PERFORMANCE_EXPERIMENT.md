@@ -9,6 +9,22 @@ changes are warranted. This authorizes bounded private-background product tests
 and isolated experiments, not shipping a speculative architectural rewrite.
 Keep the Windows download pipeline and frozen manual preview intact.
 
+## User-approved stopping point
+
+The user accepted the recommendation to finish only the in-progress bounded
+formation-command comparison and then close this architectural investigation.
+That experiment removes request serialization while retaining queued simulation-
+thread execution; it is NOT a same-thread whole-game comparison. Complete its
+native correctness checks and bounded graphical A/B measurement, document the
+result and limits, and retain existing shipping execution defaults. Do not start
+a cooperative-AI prototype, whole-game same-thread refactor or further expanding
+transport experiments. Any substantial measured benefit can be brought to the
+user for a separate decision, not treated as automatic expansion authority.
+
+After this checkpoint, prioritize the downloadable Windows game and concrete
+player-facing defects. The original broader experimental plan below is historical
+scope and is superseded by this stopping point wherever it calls for more work.
+
 ## Questions and measurements
 
 1. Transport: serialization, queue delay, dispatch/execution, response delay and

@@ -84,6 +84,16 @@ void GameConnection::sendPack(const CPack & pack)
 	serializer->clear();
 }
 
+#ifdef NH_PERF_EXPERIMENTS
+ExperimentalSetFormationResult GameConnection::trySendExperimentalSetFormation(const SetFormation & pack)
+{
+	// Serializes enqueue order against ordinary sendPack, but does not serialize
+	// this one flat request. sendPack/retrievePack clear pointer state per packet.
+	std::scoped_lock lock(writeMutex);
+	return queueExperimentalSetFormation(networkConnection.lock(), pack);
+}
+#endif
+
 std::unique_ptr<CPack> GameConnection::retrievePack(const std::vector<std::byte> & data)
 {
 	std::unique_ptr<CPack> result;

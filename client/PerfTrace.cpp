@@ -282,6 +282,18 @@ ApplyScope::~ApplyScope()
 	s.add(record);
 }
 
+void requestRoute(const char * stage, int64_t request, int64_t player)
+{
+	if(!enabled())
+		return;
+	auto & s = storage();
+	std::lock_guard lock(s.mutex);
+	auto record = s.record(stage);
+	record.common.request_id = request;
+	record.common.player = player;
+	s.add(record);
+}
+
 void acknowledged(int64_t request, int64_t player, int64_t result)
 {
 	if(!enabled())

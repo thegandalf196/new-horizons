@@ -15,6 +15,10 @@ NetworkServer::NetworkServer(INetworkServerListener & listener, NetworkContext &
 	: context(context)
 	, listener(listener)
 {
+#ifdef NH_PERF_EXPERIMENTS
+	if(auto * receiver = dynamic_cast<ExperimentalSetFormationReceiver *>(&listener))
+		experimentalReceiver = std::make_shared<ExperimentalSetFormationLease>(receiver);
+#endif
 }
 
 uint16_t NetworkServer::start(uint16_t port)
@@ -57,7 +61,11 @@ void NetworkServer::onDisconnected(const std::shared_ptr<INetworkConnection> & c
 
 void NetworkServer::receiveInternalConnection(std::shared_ptr<IInternalConnection> remoteConnection)
 {
-	auto localConnection = std::make_shared<InternalConnection>(*this, context);
+	auto localConnection = std::make_shared<InternalConnection>(*this, context
+#ifdef NH_PERF_EXPERIMENTS
+		, experimentalReceiver
+#endif
+	);
 
 	connections.insert(localConnection);
 

@@ -10,6 +10,14 @@
 #include "StdInc.h"
 #include "CServerHandler.h"
 
+#ifdef NH_PERF_EXPERIMENTS
+#include "PerfTrace.h"
+#include "../lib/networkPacks/PacksForServer.h"
+#include <cstdlib>
+#include <cstring>
+#include <stdexcept>
+#endif
+
 #include "CPlayerInterface.h"
 #include "Client.h"
 #include "GameChatHandler.h"
@@ -1241,6 +1249,36 @@ void CServerHandler::sendGamePack(const CPackForServer & pack) const
 {
 	if (networkLagCompensator)
 		networkLagCompensator->tryPredictReply(pack);
+
+#ifdef NH_PERF_EXPERIMENTS
+	static const bool queuedFormationEnabled = []
+	{
+		const char * value = std::getenv("NH_PERF_QUEUED_SET_FORMATION");
+		return value && std::strcmp(value, "1") == 0;
+	}();
+	if(queuedFormationEnabled)
+	{
+		if(const auto * formation = dynamic_cast<const SetFormation *>(&pack))
+		{
+			PerfTrace::requestRoute("formation_typed_attempt", pack.requestID, pack.player.getNum());
+			auto result = logicConnection->trySendExperimentalSetFormation(*formation);
+			switch(result)
+			{
+				case decltype(result)::NOT_ELIGIBLE:
+					PerfTrace::requestRoute("formation_typed_not_eligible", pack.requestID, pack.player.getNum());
+					break; // Only this outcome permits the original byte path.
+				case decltype(result)::QUEUED:
+					PerfTrace::requestRoute("formation_typed_queued", pack.requestID, pack.player.getNum());
+					return; // Irrevocable, including subsequent receiver-side cancellation.
+				case decltype(result)::CLOSED:
+					PerfTrace::requestRoute("formation_typed_closed", pack.requestID, pack.player.getNum());
+					throw std::runtime_error("Experimental SetFormation connection is closed");
+				default:
+					throw std::logic_error("Unexpected experimental SetFormation delivery result");
+			}
+		}
+	}
+#endif
 
 	logicConnection->sendPack(pack);
 }

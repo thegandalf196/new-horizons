@@ -15,6 +15,7 @@ namespace PerfTrace
 bool enabled();
 void emit(const char * stage, int64_t detail = -1, int64_t value = -1);
 void submitted(const CPackForServer & pack);
+void requestRoute(const char * stage, int64_t request, int64_t player);
 void acknowledged(int64_t request, int64_t player, int64_t result);
 void visualChanged(int64_t object);
 void objectDrawn(int64_t object);
@@ -51,6 +52,7 @@ public:
 inline bool enabled() { return false; }
 inline void emit(const char *, int64_t = -1, int64_t = -1) {}
 inline void submitted(const CPackForServer &) {}
+inline void requestRoute(const char *, int64_t, int64_t) {}
 inline void acknowledged(int64_t, int64_t, int64_t) {}
 inline void visualChanged(int64_t) {}
 inline void objectDrawn(int64_t) {}

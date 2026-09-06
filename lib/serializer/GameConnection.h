@@ -10,6 +10,7 @@
 #pragma once
 
 #include "GameConnectionID.h"
+#include "../network/ExperimentalSetFormation.h"
 
 enum class ESerializationVersion : int32_t;
 
@@ -47,6 +48,10 @@ public:
 	~GameConnection();
 
 	void sendPack(const CPack & pack);
+#ifdef NH_PERF_EXPERIMENTS
+	/// Named request-only experiment; only NOT_ELIGIBLE permits a byte fallback.
+	ExperimentalSetFormationResult trySendExperimentalSetFormation(const SetFormation & pack);
+#endif
 	std::unique_ptr<CPack> retrievePack(const std::vector<std::byte> & data);
 
 	void enterLobbyConnectionMode();

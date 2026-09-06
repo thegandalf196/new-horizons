@@ -10,6 +10,7 @@
 #pragma once
 
 #include "NetworkDefines.h"
+#include "ExperimentalSetFormation.h"
 
 class NetworkServer : public INetworkConnectionListener, public INetworkServer
 {
@@ -18,6 +19,9 @@ class NetworkServer : public INetworkConnectionListener, public INetworkServer
 	std::set<std::shared_ptr<INetworkConnection>> connections;
 
 	INetworkServerListener & listener;
+#ifdef NH_PERF_EXPERIMENTS
+	std::shared_ptr<ExperimentalSetFormationLease> experimentalReceiver;
+#endif
 
 	void connectionAccepted(std::shared_ptr<NetworkSocket>, const boost::system::error_code & ec);
 	uint16_t startAsyncAccept();

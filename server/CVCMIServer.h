@@ -12,6 +12,7 @@
 #include "IGameServer.h"
 
 #include "../lib/network/NetworkInterface.h"
+#include "../lib/network/ExperimentalSetFormation.h"
 #include "../lib/StartInfo.h"
 
 class CMapInfo;
@@ -31,6 +32,9 @@ class CBaseForGHApply;
 class GlobalLobbyProcessor;
 
 class CVCMIServer : public LobbyInfo, public INetworkServerListener, public INetworkTimerListener, public IServerDiscoveryAnnouncer, public IGameServer
+#ifdef NH_PERF_EXPERIMENTS
+	, public ExperimentalSetFormationReceiver
+#endif
 {
 	std::chrono::steady_clock::time_point gameplayStartTime;
 	std::chrono::steady_clock::time_point lastTimerUpdateTime;
@@ -79,6 +83,9 @@ public:
 	// INetworkListener impl
 	void onDisconnected(const std::shared_ptr<INetworkConnection> & connection, const std::string & errorMessage) override;
 	void onPacketReceived(const std::shared_ptr<INetworkConnection> & connection, const std::vector<std::byte> & message) override;
+#ifdef NH_PERF_EXPERIMENTS
+	void onExperimentalSetFormation(const std::shared_ptr<INetworkConnection> & connection, SetFormation & pack) override;
+#endif
 	void onNewConnection(const std::shared_ptr<INetworkConnection> &) override;
 	void onTimer() override;
 

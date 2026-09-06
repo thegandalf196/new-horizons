@@ -32,6 +32,9 @@
 #include "../lib/rmg/CMapGenOptions.h"
 #include "../lib/serializer/CMemorySerializer.h"
 #include "../lib/serializer/GameConnection.h"
+#ifdef NH_PERF_EXPERIMENTS
+#include "../lib/networkPacks/PacksForServer.h"
+#endif
 #include "../lib/texts/CGeneralTextHandler.h"
 
 // UUID generation
@@ -147,6 +150,24 @@ void CVCMIServer::onPacketReceived(const std::shared_ptr<INetworkConnection> & c
 	CVCMIServerPackVisitor visitor(*this, this->gh, c);
 	pack->visit(visitor);
 }
+
+#ifdef NH_PERF_EXPERIMENTS
+void CVCMIServer::onExperimentalSetFormation(const NetworkConnectionPtr & connection, SetFormation & pack)
+{
+	auto client = findConnection(connection);
+	if(!client)
+		throw std::out_of_range("Unknown connection in experimental SetFormation");
+	// This narrow lane is deliberately ineligible outside active gameplay. The
+	// ordinary byte visitor checks gh only; do not claim cross-phase equivalence.
+	if(getState() != EServerState::GAMEPLAY || !gh)
+	{
+		logNetwork->warn("Dropping experimental SetFormation outside gameplay");
+		return;
+	}
+	CVCMIServerPackVisitor visitor(*this, gh, client);
+	pack.visit(visitor); // Same query/owner/active-player validation and response path.
+}
+#endif
 
 void CVCMIServer::setState(EServerState value)
 {

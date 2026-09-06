@@ -9,6 +9,9 @@
  */
 #include "StdInc.h"
 #include "NetworkConnection.h"
+#ifdef NH_PERF_EXPERIMENTS
+#include "../networkPacks/PacksForServer.h"
+#endif
 
 NetworkConnection::NetworkConnection(INetworkConnectionListener & listener, const std::shared_ptr<NetworkSocket> & socket, NetworkContext & context)
 	: socket(socket)
@@ -206,11 +209,63 @@ void NetworkConnection::close()
 	//NOTE: ignoring error code, intended
 }
 
-InternalConnection::InternalConnection(INetworkConnectionListener & listener, NetworkContext & context)
+InternalConnection::InternalConnection(INetworkConnectionListener & listener, NetworkContext & context
+#ifdef NH_PERF_EXPERIMENTS
+	, const std::shared_ptr<ExperimentalSetFormationLease> & receiver
+#endif
+)
 	: context(context)
 	, listener(listener)
+#ifdef NH_PERF_EXPERIMENTS
+	, experimentalCapable(receiver != nullptr)
+	, experimentalReceiver(receiver)
+#endif
 {
 }
+
+#ifdef NH_PERF_EXPERIMENTS
+ExperimentalSetFormationResult queueExperimentalSetFormation(const NetworkConnectionPtr & connection, const SetFormation & pack)
+{
+	if(!connection)
+		return ExperimentalSetFormationResult::CLOSED;
+	auto internal = std::dynamic_pointer_cast<InternalConnection>(connection);
+	if(!internal)
+		return ExperimentalSetFormationResult::NOT_ELIGIBLE;
+	return internal->queueSetFormation(pack);
+}
+
+ExperimentalSetFormationResult InternalConnection::queueSetFormation(const SetFormation & pack)
+{
+	if(!experimentalOpen.load())
+		return ExperimentalSetFormationResult::CLOSED;
+	// This separate weak object is immutable after binding. Do not read the
+	// ordinary otherSideWeak here: disconnect/close can reset it concurrently.
+	auto other = experimentalPeer.lock();
+	if(!other)
+		return ExperimentalSetFormationResult::CLOSED;
+	auto peer = std::dynamic_pointer_cast<InternalConnection>(other);
+	if(!peer)
+		return ExperimentalSetFormationResult::NOT_ELIGIBLE;
+	if(!peer->experimentalOpen.load())
+		return ExperimentalSetFormationResult::CLOSED;
+	if(!peer->experimentalCapable)
+		return ExperimentalSetFormationResult::NOT_ELIGIBLE;
+	if(peer->experimentalReceiver.expired())
+		return ExperimentalSetFormationResult::CLOSED;
+
+	// Value copy of one flat request, not a callable or arbitrary typed packet.
+	// Once post succeeds there is no fallback, even if shutdown cancels delivery.
+	boost::asio::post(peer->context, [peer, request = pack]() mutable
+	{
+		if(!peer->connectionActive || !peer->experimentalOpen.load())
+			return;
+		auto receiver = peer->experimentalReceiver.lock();
+		if(receiver)
+			receiver->receiver->onExperimentalSetFormation(peer, request);
+	});
+	return ExperimentalSetFormationResult::QUEUED;
+}
+#endif
 
 void InternalConnection::receivePacket(const std::vector<std::byte> & message)
 {
@@ -226,11 +281,21 @@ void InternalConnection::disconnect()
 		self->listener.onDisconnected(self, "Internal connection has been terminated");
 		self->otherSideWeak.reset();
 		self->connectionActive = false;
+#ifdef NH_PERF_EXPERIMENTS
+		self->experimentalOpen.store(false);
+#endif
 	});
 }
 
 void InternalConnection::connectTo(std::shared_ptr<IInternalConnection> connection)
 {
+#ifdef NH_PERF_EXPERIMENTS
+	if(experimentalPeerBound)
+		throw std::logic_error("Experimental internal endpoint cannot be rebound");
+	experimentalPeer = connection;
+	experimentalPeerBound = true;
+	experimentalOpen.store(true);
+#endif
 	otherSideWeak = connection;
 	connectionActive = true;
 }
@@ -250,6 +315,9 @@ void InternalConnection::setAsyncWritesEnabled(bool on)
 
 void InternalConnection::close()
 {
+#ifdef NH_PERF_EXPERIMENTS
+	experimentalOpen.store(false);
+#endif
 	auto otherSide = otherSideWeak.lock();
 
 	if (otherSide)
