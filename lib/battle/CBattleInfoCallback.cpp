@@ -1174,6 +1174,10 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.unluckyStrike = info.unluckyStrike;
 	payload.deathBlow = info.deathBlow;
 	payload.doubleDamage = info.doubleDamage;
+	if(info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))
+		if(const auto * hero = battleGetOwnerHero(info.attacker))
+			if(const auto siege = hero->getSiegeCapabilities())
+				payload.siegeSkillMultiplier = siege->ballistaDamageMultiplier;
 	payload.attackFactorPerPoint = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_ATTACK_POINT_DAMAGE_FACTOR);
 	payload.attackFactorCap = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_ATTACK_POINT_DAMAGE_FACTOR_CAP);
 	payload.defenseFactorPerPoint = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_DEFENSE_POINT_DAMAGE_FACTOR);

@@ -1,0 +1,54 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "Saved New Horizons leadership and siege rules",
+	"description": "Unactivated capability schema. Empty retains legacy behavior. Runtime also validates scoped identifiers, complete new-game class coverage and untrained rank values. Soft capacity never deletes creatures or rejects recruitment/transfers.",
+	"type": "object",
+	"oneOf": [
+		{"maxProperties": 0},
+		{
+			"required": ["schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege"],
+			"additionalProperties": false,
+			"properties": {
+				"schemaVersion": {"type": "integer", "enum": [1]},
+				"rulesetVersion": {"type": "integer", "enum": [1]},
+				"classProfiles": {
+					"type": "object", "minProperties": 1,
+					"additionalProperties": {"$ref": "#/definitions/profile"}
+				},
+				"leadership": {
+					"type": "object",
+					"required": ["skillBonusPercent", "minimumMovementPercent"],
+					"additionalProperties": false,
+					"properties": {
+						"skillBonusPercent": {
+							"type": "array", "minItems": 4, "maxItems": 4,
+							"items": {"type": "integer", "minimum": 0, "maximum": 1000}
+						},
+						"minimumMovementPercent": {"type": "integer", "minimum": 1, "maximum": 100}
+					}
+				},
+				"siege": {
+					"type": "object",
+					"required": ["ballistaDamageMultiplier"],
+					"additionalProperties": false,
+					"properties": {
+						"ballistaDamageMultiplier": {
+							"type": "array", "minItems": 4, "maxItems": 4,
+							"items": {"type": "integer", "minimum": 1, "maximum": 100}
+						}
+					}
+				}
+			}
+		}
+	],
+	"definitions": {
+		"profile": {
+			"type": "object", "required": ["base", "perLevel"],
+			"additionalProperties": false,
+			"properties": {
+				"base": {"type": "integer", "minimum": 1, "maximum": 1000000},
+				"perLevel": {"type": "integer", "minimum": 0, "maximum": 1000000}
+			}
+		}
+	}
+}

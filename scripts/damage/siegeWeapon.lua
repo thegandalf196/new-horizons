@@ -5,6 +5,11 @@ Script.__index = Script
 --- Only bonuses from hero itself (base stats) and from equipped artifacts are included
 function Script:getBallistaDamageRange(info, minDamage, maxDamage)
 
+	local siegeSkillMultiplier = info.siegeSkillMultiplier or 0
+	if siegeSkillMultiplier > 0 then
+		return minDamage * siegeSkillMultiplier, maxDamage * siegeSkillMultiplier
+	end
+
 	local heroAttack = info.attacker:getBonusesValue({type = "PRIMARY_SKILL", subtype = "attack", sourceType = ENUM.BonusSource.artifact})
 		+ info.attacker:getBonusesValue({type = "PRIMARY_SKILL", subtype = "attack", sourceType = ENUM.BonusSource.heroBaseSkill})
 

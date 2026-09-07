@@ -204,6 +204,44 @@ void CGHeroInstance::setMovementPoints(int points)
 		movement = std::max(0, points);
 }
 
+std::optional<newHorizonsHeroes::SiegeCapabilities> CGHeroInstance::getSiegeCapabilities() const
+{
+	if(!newHorizonsHeroes::usesRules(capabilityRules))
+		return std::nullopt;
+	const int artillery = getSecSkillLevel(SecondarySkill::ARTILLERY);
+	const auto control = [this](CreatureID machine)
+	{
+		return std::clamp(valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(machine)), 0, 100);
+	};
+	return newHorizonsHeroes::SiegeCapabilities{artillery, getSecSkillLevel(SecondarySkill::BALLISTICS),
+		getSecSkillLevel(SecondarySkill::FIRST_AID),
+		newHorizonsHeroes::capabilityBallistaMultiplier(capabilityRules, artillery),
+		control(CreatureID::BALLISTA), control(CreatureID::CATAPULT), control(CreatureID::FIRST_AID_TENT)};
+}
+
+std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadershipCapacity() const
+{
+	return getLeadershipCapacity(*this);
+}
+
+std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadershipCapacity(const CCreatureSet & army) const
+{
+	if(!newHorizonsHeroes::usesRules(capabilityRules))
+		return std::nullopt;
+	uint64_t used = 0;
+	// Version 1 counts adventure army creatures, including undead, one per unit.
+	// Commanders and artifact machines are not roster slots; battle-only arrivals
+	// do not rewrite the adventure army. Splitting a stack cannot change usage.
+	for(const auto & [slot, stack] : army.Slots())
+	{
+		if(stack->getCount() < 0)
+			throw std::runtime_error("Leadership requires resolved adventure army counts");
+		used += static_cast<uint64_t>(stack->getCount());
+	}
+	return newHorizonsHeroes::capabilityLeadership(capabilityRules, level,
+		getSecSkillLevel(SecondarySkill::LEADERSHIP), used);
+}
+
 int CGHeroInstance::movementPointsLimit() const
 {
 	auto layer = inBoat() ? getBoat()->layer : EPathfindingLayer::LAND;
@@ -230,9 +268,9 @@ int CGHeroInstance::getLowestCreatureSpeed() const
 	return 10;
 }
 
-std::unique_ptr<TurnInfo> CGHeroInstance::getTurnInfo(int days) const
+std::unique_ptr<TurnInfo> CGHeroInstance::getTurnInfo(int days, const CCreatureSet * projectedArmy) const
 {
-	return std::make_unique<TurnInfo>(turnInfoCache.get(), this, days);
+	return std::make_unique<TurnInfo>(turnInfoCache.get(), this, days, projectedArmy);
 }
 
 int CGHeroInstance::movementPointsLimitCached(const EPathfindingLayer & layer, const TurnInfo * ti) const
@@ -379,6 +417,12 @@ void CGHeroInstance::updateAppearance()
 void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 {
 	assert(validTypes(true));
+	if(!isFake && !capabilityRulesCaptured)
+	{
+		capabilityRules = newHorizonsHeroes::resolveCapabilityRules(cb->getHeroCapabilityRules(), getHeroClass()->getId());
+		capabilityRulesCaptured = true;
+		nodeHasChanged();
+	}
 	if(!isFake && !primaryGrowthCaptured)
 	{
 		primaryGrowthRules = newHorizonsHeroes::resolveHeroRules(cb->getHeroDevelopmentRules(), getHeroClass()->getId());

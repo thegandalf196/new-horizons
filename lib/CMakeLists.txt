@@ -124,6 +124,8 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsPrimaryGrowth.cpp
 	entities/hero/NewHorizonsPrimaryScale.cpp
 	entities/hero/NewHorizonsHeroRules.cpp
+	entities/hero/NewHorizonsLeadership.cpp
+	entities/hero/NewHorizonsCapabilityRules.cpp
 	entities/ResourceTypeHandler.cpp
 
 	events/ApplyDamage.cpp
@@ -561,6 +563,8 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsPrimaryGrowth.h
 	entities/hero/NewHorizonsPrimaryScale.h
 	entities/hero/NewHorizonsHeroRules.h
+	entities/hero/NewHorizonsLeadership.h
+	entities/hero/NewHorizonsCapabilityRules.h
 	entities/ResourceTypeHandler.h
 
 	events/ApplyDamage.h

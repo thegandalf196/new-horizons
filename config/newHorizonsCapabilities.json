@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"rulesetVersion": 1,
+	"classProfiles": {
+		"core:knight": {"base": 750, "perLevel": 75},
+		"core:cleric": {"base": 500, "perLevel": 50},
+		"core:ranger": {"base": 750, "perLevel": 75},
+		"core:druid": {"base": 500, "perLevel": 50},
+		"core:alchemist": {"base": 750, "perLevel": 75},
+		"core:wizard": {"base": 500, "perLevel": 50},
+		"core:demoniac": {"base": 750, "perLevel": 75},
+		"core:heretic": {"base": 500, "perLevel": 50},
+		"core:deathknight": {"base": 750, "perLevel": 75},
+		"core:necromancer": {"base": 500, "perLevel": 50},
+		"core:overlord": {"base": 750, "perLevel": 75},
+		"core:warlock": {"base": 500, "perLevel": 50},
+		"core:barbarian": {"base": 750, "perLevel": 75},
+		"core:battlemage": {"base": 500, "perLevel": 50},
+		"core:beastmaster": {"base": 750, "perLevel": 75},
+		"core:witch": {"base": 500, "perLevel": 50},
+		"core:planeswalker": {"base": 750, "perLevel": 75},
+		"core:elementalist": {"base": 500, "perLevel": 50}
+	},
+	"leadership": {
+		"skillBonusPercent": [0, 25, 50, 100],
+		"minimumMovementPercent": 50
+	},
+	"siege": {
+		"ballistaDamageMultiplier": [1, 2, 3, 4]
+	}
+}

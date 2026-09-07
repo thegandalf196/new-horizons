@@ -14,6 +14,7 @@
 #include "../bonuses/BonusCache.h"
 
 class CGHeroInstance;
+class CCreatureSet;
 
 class TurnInfoBonusList
 {
@@ -79,7 +80,8 @@ public:
 	int getMovePointsLimitWater() const;
 	int getMovePointsLimitAir() const;
 
-	TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, int Turn);
+	TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, int Turn,
+		const CCreatureSet * projectedArmy = nullptr);
 	bool isLayerAvailable(const EPathfindingLayer & layer) const;
 	int getMaxMovePoints(const EPathfindingLayer & layer) const;
 };

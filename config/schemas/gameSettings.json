@@ -64,7 +64,8 @@
 				"baseScoutingRange" :             { "type" : "number" },
 				"levelupTotalSkillsAmount" :      { "type" : "number" },
 				"levelupUpgradedSkillsAmount" :   { "type" : "number" },
-				"newHorizons": { "$ref": "newHorizonsHeroes.json" }
+				"newHorizons": { "$ref": "newHorizonsHeroes.json" },
+				"newHorizonsCapabilities": { "$ref": "newHorizonsCapabilities.json" }
 			}
 		},
 		"towns" : {

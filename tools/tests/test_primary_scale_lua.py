@@ -7,7 +7,7 @@ import unittest
 
 
 class PrimaryScaleLuaTest(unittest.TestCase):
-    def execute(self, name, modern):
+    def execute(self, name, modern, fixture_name='primary-scale.lua'):
         library = ctypes.util.find_library(name)
         if not library:
             self.skipTest(name + ' is not installed')
@@ -21,7 +21,7 @@ class PrimaryScaleLuaTest(unittest.TestCase):
         self.assertTrue(state)
         try:
             lua.luaL_openlibs(state)
-            fixture = str(Path(__file__).parent / 'fixtures/primary-scale.lua').encode()
+            fixture = str(Path(__file__).parent / 'fixtures' / fixture_name).encode()
             if modern:
                 lua.luaL_loadfilex.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p]
                 lua.lua_pcallk.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_ssize_t, ctypes.c_void_p]
@@ -44,6 +44,12 @@ class PrimaryScaleLuaTest(unittest.TestCase):
 
     def test_lua54(self):
         self.execute('lua5.4', True)
+
+    def test_siege_luajit(self):
+        self.execute('luajit-5.1', False, 'siege-scale.lua')
+
+    def test_siege_lua54(self):
+        self.execute('lua5.4', True, 'siege-scale.lua')
 
 
 if __name__ == '__main__':

@@ -87,7 +87,8 @@ int TurnInfo::getMovePointsLimitAir() const
 	return movePointsLimitAir;
 }
 
-TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, int Turn)
+TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, int Turn,
+	const CCreatureSet * projectedArmy)
 	: target(target)
 	, noterrainPenalty(LIBRARY->terrainTypeHandler->size())
 {
@@ -167,6 +168,16 @@ TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, i
 	{
 		// A hero in an airship has 2000 movements. No modificators increasing the speed of moving either by land or water influence this quantity.
 		movePointsLimitAir = 2000;
+	}
+
+	// Apply the same saved-capability limit to actual daily refresh, future-turn
+	// pathfinding and embarkation. Do not grant/revoke already-held movement when
+	// armies change: retain the ordinary slowest-creature movement semantics.
+	if(const auto leadership = target->getLeadershipCapacity(projectedArmy ? *projectedArmy : *target))
+	{
+		movePointsLimitLand = newHorizonsHeroes::leadershipMovement(std::max(0, movePointsLimitLand), leadership->movementPercent);
+		movePointsLimitWater = newHorizonsHeroes::leadershipMovement(std::max(0, movePointsLimitWater), leadership->movementPercent);
+		movePointsLimitAir = newHorizonsHeroes::leadershipMovement(std::max(0, movePointsLimitAir), leadership->movementPercent);
 	}
 
 	{

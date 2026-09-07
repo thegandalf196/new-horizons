@@ -74,7 +74,9 @@ int ChainActor::maxMovePoints(CGPathNode::ELayer layer)
 		throw std::logic_error("Asking movement points for static actor");
 #endif
 
-	return hero->getTurnInfo(0)->getMaxMovePoints(layer);
+	// Capacity follows the evaluated exchanged army, not the carrier's old army.
+	// The projection is read-only and never grants actual movement or units.
+	return hero->getTurnInfo(0, creatureSet)->getMaxMovePoints(layer);
 }
 
 std::string ChainActor::toString() const

@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsCapabilityRules.h"
 
 #include <vcmi/spells/Caster.h>
 
@@ -203,6 +204,11 @@ public:
 	bool usesPrimaryGrowth() const;
 	std::optional<newHorizonsHeroes::PrimaryGrowthView> getPrimaryGrowthView() const;
 	const JsonNode & getPrimaryGrowthRules() const { return primaryGrowthRules; }
+	const JsonNode & getCapabilityRules() const { return capabilityRules; }
+	std::optional<newHorizonsHeroes::LeadershipCapacity> getLeadershipCapacity() const;
+	std::optional<newHorizonsHeroes::SiegeCapabilities> getSiegeCapabilities() const;
+	/// Read-only projection for AI army exchanges; does not attach or transfer units.
+	std::optional<newHorizonsHeroes::LeadershipCapacity> getLeadershipCapacity(const CCreatureSet & army) const;
 	bool isPrimaryRatingNode() const override { return usesPrimaryGrowth(); }
 
 	/// Returns true if hero has free secondary skill slot.
@@ -222,7 +228,7 @@ public:
 
 	int movementPointsAfterEmbark(int MPsBefore, int basicCost, bool disembark, const TurnInfo * ti) const;
 
-	std::unique_ptr<TurnInfo> getTurnInfo(int days) const;
+	std::unique_ptr<TurnInfo> getTurnInfo(int days, const CCreatureSet * projectedArmy = nullptr) const;
 
 	double getFightingStrength() const; // takes attack / defense skill into account
 	double getMagicStrength() const; // takes knowledge / spell power skill but also current mana, whether the hero owns a spell-book and whether that books contains anything into account
@@ -345,6 +351,8 @@ protected:
 	void serializeJsonOptions(JsonSerializeFormat & handler) override;
 
 private:
+	bool capabilityRulesCaptured = false;
+	JsonNode capabilityRules;
 	bool primaryGrowthCaptured = false;
 	JsonNode primaryGrowthRules;
 	std::array<int, GameConstants::PRIMARY_SKILLS> lastPrimaryGains{};
@@ -396,8 +404,20 @@ public:
 			lastPrimaryGains.fill(0);
 		}
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CAPABILITIES))
+		{
+			h & capabilityRules;
+			if(!h.saving)
+				newHorizonsHeroes::validateResolvedCapabilityRules(capabilityRules);
+		}
+		else if(!h.saving)
+			capabilityRules = JsonNode();
+
 		if(!h.saving)
+		{
 			primaryGrowthCaptured = true; // Includes old saves: absence is legacy, not a new-game request.
+			capabilityRulesCaptured = true;
+		}
 		if(!h.saving && h.loadingGamestate)
 			attachCommanderToArmy();
 	}

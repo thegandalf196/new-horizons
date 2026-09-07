@@ -39,6 +39,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	bool deathBlow = false;
 	bool doubleDamage = false;
 
+	/// Zero keeps the legacy base/artifact Attack formula. Positive values come
+	/// exclusively from the owning hero's saved capability rules and Artillery.
+	int siegeSkillMultiplier = 0;
+
 	/// Which of the bonus types the script declared an interest in each of the two carries
 	std::unordered_map<std::string, bool> attackerBonuses;
 	std::unordered_map<std::string, bool> defenderBonuses;
@@ -65,6 +69,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("unluckyStrike", unluckyStrike, "Whether bad luck struck.");
 		s("deathBlow", deathBlow, "Whether a death blow was rolled.");
 		s("doubleDamage", doubleDamage, "Whether the attack is a doubled one, as a ballista may roll.");
+		s("siegeSkillMultiplier", siegeSkillMultiplier, "Saved skill-only siege range multiplier; zero means legacy formula.");
 		s("attackFactorPerPoint", attackFactorPerPoint, "Damage added per point of attack over the target's defense.");
 		s("attackFactorCap", attackFactorCap, "Most that attack points alone may add.");
 		s("defenseFactorPerPoint", defenseFactorPerPoint, "Damage removed per point of defense over the attacker's attack.");

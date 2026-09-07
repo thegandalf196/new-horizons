@@ -9,8 +9,13 @@ from pathlib import Path
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
-    parser.add_argument('--hero-preview-output', type=Path,
-                        help='Write a separate hero-development preview only to a new path under build/; never overwrite the working module')
+    previews = parser.add_mutually_exclusive_group()
+    previews.add_argument('--hero-preview-output', type=Path,
+                          help='Write a separate hero-development preview only to a new path under build/; never overwrite the working module')
+    previews.add_argument('--capability-preview-output', type=Path,
+                          help='Write unactivated capability rules only into a separate new candidate under build/')
+    previews.add_argument('--capability-only-control-output', type=Path,
+                          help='Write a separate diagnostic with capabilities on and primary growth off; never mutate a live module')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     def canonical(name):
@@ -49,12 +54,23 @@ def main():
                                 'scaled hero formulas and skill-related extra growth. '
                                 'Not the frozen commands/schools release or full mastery/tier implementation.')
     destination = root / 'Mods/new-horizons/mod.json'
-    if args.hero_preview_output is not None:
-        destination = args.hero_preview_output.resolve()
+    preview_output = args.capability_only_control_output or args.capability_preview_output or args.hero_preview_output
+    if preview_output is not None:
+        destination = preview_output.resolve()
         if not destination.is_relative_to((root / 'build').resolve()):
             parser.error('Hero preview output must be under the ignored build/ tree')
         if destination.exists() and not args.check:
             parser.error('Refusing to replace an existing preview; preserve frozen candidates')
+    if args.capability_preview_output is not None or args.capability_only_control_output is not None:
+        settings['heroes']['newHorizonsCapabilities'] = canonical('newHorizonsCapabilities.json')
+        metadata['version'] = '0.4.0'
+        metadata['description'] += (' Separate capability candidate: non-destructive soft leadership capacity '
+                                    'and skill-trained ballista scaling. No mastery or creature-category implementation.')
+    if args.capability_only_control_output is not None:
+        settings['heroes']['newHorizons'] = {}
+        metadata['name'] = 'New Horizons (capability-only diagnostic)'
+        metadata['description'] += (' DIAGNOSTIC ONLY: primary growth is disabled; authored primary values remain. '
+                                    'This separate control is for ordinary saved-identity/UI testing, not a release preset.')
     expected = json.dumps(metadata, indent='\t', ensure_ascii=False) + '\n'
     if args.check:
         if not destination.is_file() or destination.read_text(encoding='utf-8') != expected:

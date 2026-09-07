@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsCapabilityRules.h"
 
 #include "../battle/HeroCommand.h"
 #include "../spells/NewHorizonsMagic.h"
@@ -159,6 +160,7 @@ public:
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
 	const JsonNode & getHeroDevelopmentRules() const override { return heroDevelopmentRules; }
+	const JsonNode & getHeroCapabilityRules() const override { return heroCapabilityRules; }
 
 	StartInfo * getStartInfo()
 	{
@@ -269,6 +271,15 @@ public:
 		else if(!h.saving)
 			heroDevelopmentRules = JsonNode();
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CAPABILITIES))
+		{
+			h & heroCapabilityRules;
+			if(!h.saving)
+				newHorizonsHeroes::validateCapabilityRules(heroCapabilityRules, false);
+		}
+		else if(!h.saving)
+			heroCapabilityRules = JsonNode();
+
 		if(!h.saving && h.loadingGamestate)
 			restoreBonusSystemTree();
 	}
@@ -277,6 +288,7 @@ private:
 	JsonNode heroCommandRules;
 	JsonNode magicRules;
 	JsonNode heroDevelopmentRules;
+	JsonNode heroCapabilityRules;
 	// ----- initialization -----
 	void initNewGame(const IMapService * mapService, vstd::RNG & randomGenerator, bool allowSavingRandomMap, Load::ProgressAccumulator & progressTracking);
 	void initGlobalBonuses();
