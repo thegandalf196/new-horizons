@@ -25,6 +25,8 @@ class GitSourceSnapshotTest(unittest.TestCase):
 
     def initialize(self, root):
         self.run_git(root, 'init', '-q')
+        self.run_git(root, 'config', 'core.symlinks', 'true')
+        self.run_git(root, 'config', 'core.autocrlf', 'false')
         self.run_git(root, 'config', 'user.name', 'thegandalf196')
         self.run_git(root, 'config', 'user.email', 'thegandalf196@users.noreply.github.com')
 

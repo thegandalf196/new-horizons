@@ -547,8 +547,8 @@ def main():
             "limitation": "Graph options/provenance and PE imports do not prove every dynamic codec or Windows media playback",
         })
         write_json(package / "PE-IMPORTS.json", audit_pe_tree(package, runtime_roots))
-        from binary_privacy import require_clean
-        require_clean(package)
+        from binary_privacy import require_clean, verified_github_ci_provenance
+        require_clean(package, verified_github_ci_provenance())
         collect_microsoft_notices(package)
         dependency_source_name = package_name + "-dependency-sources.tar.gz"
         collect_notices(args.conan_graph, package, args.output_dir / dependency_source_name)

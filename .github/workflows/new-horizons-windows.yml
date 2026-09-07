@@ -59,6 +59,7 @@ jobs:
           curl --fail --location --retry 3 --output "$archive" https://github.com/vcmi/vcmi-dependencies/releases/download/2026-09-01/dependencies-windows-x64.txz
           echo "6772d2e9f0a730329a195edce895a863d9115c4bba43101a9a6df3fefe6cfe43  $archive" | sha256sum --check
           conan cache restore "$archive"
+          echo 'NH_VERIFIED_CONAN_CACHE_SHA256=6772d2e9f0a730329a195edce895a863d9115c4bba43101a9a6df3fefe6cfe43' >> "$GITHUB_ENV"
 
       - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1, upstream; no private-repository subscription gate
         with:
@@ -75,10 +76,7 @@ jobs:
 
       - name: Package audit regression tests (no PE execution)
         run: |
-          python tools/tests/test_windows_pe_audit.py
-          python tools/tests/test_windows_system_dependency.py
-          python tools/tests/test_windows_dependency_notices.py
-          python tools/tests/test_windows_curated_resources.py
+          python tools/tests/run_windows_package_regressions.py --report build/new-horizons-windows-x64/PACKAGE-REGRESSIONS.json
 
       - name: Preflight Microsoft notices before compiling
         shell: python
@@ -125,15 +123,36 @@ jobs:
 
       - name: Preflight complete dependency graph and source archives
         shell: python
+        env:
+          ORIGINAL_REPACK_RUN_ID: ${{ inputs.repack_run_id }}
         run: |
-          import os, pathlib, runpy
-          module = runpy.run_path('tools/ci/package_new_horizons_windows.py')
+          import os, pathlib, runpy, sys
           root = pathlib.Path.cwd()
+          sys.path.insert(0, str(root / 'tools/ci'))
+          from preflight_dependency_sources import preflight
+          module = runpy.run_path('tools/ci/package_new_horizons_windows.py')
           stage = root / 'build/new-horizons-windows-x64/preflight'
           stage.mkdir(parents=True)
-          module['collect_notices'](root / 'conan-generated-graph.json', stage / 'notices', stage / 'dependency-sources.tar.gz')
+          if os.environ['ORIGINAL_REPACK_RUN_ID']:
+              # Preserve the historical notice-repack input format.
+              module['collect_notices'](root / 'conan-generated-graph.json', stage / 'notices', stage / 'dependency-sources.tar.gz')
+          else:
+              report = preflight(root / 'conan-generated-graph.json', stage / 'graph-check', root / 'CMakePresets.json')
+              if not report['pass']:
+                  raise RuntimeError('Full dependency preflight failed; see retained PREFLIGHT-REPORT.json. No client compile permitted.')
           exclusions = module['source_archive'](root, stage / 'fork-source.tar.gz', os.environ['GITHUB_SHA'])
           print('All dependency notices, dependency sources and fork source archived; exclusions:', exclusions)
+
+      - name: Retain structured regression and preflight reports, including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-preflight-reports-${{ github.sha }}
+          path: |
+            build/new-horizons-windows-x64/PACKAGE-REGRESSIONS.json
+            build/new-horizons-windows-x64/preflight/**/PREFLIGHT-REPORT.json
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Upload source-only preflight evidence (not a playable package)
         if: inputs.preflight_only
