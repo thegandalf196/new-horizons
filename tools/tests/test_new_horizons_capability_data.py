@@ -61,11 +61,12 @@ class CapabilityDataTest(unittest.TestCase):
         self.assertEqual(live.read_bytes(), before)
         self.assertNotEqual(subprocess.run([sys.executable, str(script), '--capability-only-control-output', str(live)], capture_output=True).returncode, 0)
 
-    def test_schema_registered_but_default_module_unactivated(self):
+    def test_schema_registered_and_default_module_matches_capabilities(self):
         schema = json.loads((ROOT / 'config/schemas/gameSettings.json').read_text())
         self.assertEqual(schema['properties']['heroes']['properties']['newHorizonsCapabilities']['$ref'], 'newHorizonsCapabilities.json')
         module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
-        self.assertNotIn('newHorizonsCapabilities', module['settings']['heroes'])
+        self.assertEqual(module['version'], '0.4.0')
+        self.assertEqual(module['settings']['heroes']['newHorizonsCapabilities'], self.rules)
 
 
 if __name__ == '__main__':

@@ -61,7 +61,7 @@ def main():
             parser.error('Hero preview output must be under the ignored build/ tree')
         if destination.exists() and not args.check:
             parser.error('Refusing to replace an existing preview; preserve frozen candidates')
-    if args.capability_preview_output is not None or args.capability_only_control_output is not None:
+    if args.hero_preview_output is None:
         settings['heroes']['newHorizonsCapabilities'] = canonical('newHorizonsCapabilities.json')
         metadata['version'] = '0.4.0'
         metadata['description'] += (' Separate capability candidate: non-destructive soft leadership capacity '

@@ -86,7 +86,8 @@ class NewHorizonsContentTest(unittest.TestCase):
         module = load('Mods/new-horizons/mod.json')
         settings = load('config/newHorizonsCombat.json')
         settings['magic'] = {'newHorizons': self.rules}
-        settings['heroes'] = {'newHorizons': load('config/newHorizonsHeroes.json')}
+        settings['heroes'] = {'newHorizons': load('config/newHorizonsHeroes.json'),
+                              'newHorizonsCapabilities': load('config/newHorizonsCapabilities.json')}
         self.assertEqual(module['settings'], settings)
         self.assertEqual(module['spellSchools'], load('config/newHorizonsSchools.json'))
         self.assertEqual(module['skills'], load('config/newHorizonsSkills.json'))

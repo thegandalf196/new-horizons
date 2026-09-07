@@ -34,6 +34,8 @@ class HeroDataTest(unittest.TestCase):
             subprocess.run(command, check=True, capture_output=True)
             generated = json.loads(output.read_text())
             self.assertEqual(generated['settings']['heroes']['newHorizons'], self.rules)
+            self.assertEqual(generated['version'], '0.3.0')
+            self.assertNotIn('newHorizonsCapabilities', generated['settings']['heroes'])
             subprocess.run(command + ['--check'], check=True, capture_output=True)
             self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
         self.assertNotEqual(subprocess.run([sys.executable, str(script), '--hero-preview-output', str(live)], capture_output=True).returncode, 0)
@@ -42,7 +44,7 @@ class HeroDataTest(unittest.TestCase):
         subprocess.run([sys.executable, str(script), '--check'], check=True, capture_output=True)
 
     @unittest.skipUnless(shutil.which('cmake'), 'CMake required for native module drift guard')
-    def test_cmake_guard_accepts_activation_and_rejects_hero_drift(self):
+    def test_cmake_guard_accepts_activation_and_rejects_rule_drift(self):
         source = (ROOT / 'CMakeLists.txt').read_text()
         block = source.split('# Curated settings are authored once;', 1)[1]
         block = block[block.index('if(EXISTS'):].split('\nif(ANDROID)', 1)[0]
@@ -50,19 +52,24 @@ class HeroDataTest(unittest.TestCase):
             root = Path(temporary)
             (root / 'config').mkdir()
             (root / 'Mods/new-horizons').mkdir(parents=True)
-            for name in ('Combat', 'Magic', 'Schools', 'Skills', 'Heroes'):
+            for name in ('Combat', 'Magic', 'Schools', 'Skills', 'Heroes', 'Capabilities'):
                 shutil.copyfile(ROOT / f'config/newHorizons{name}.json', root / f'config/newHorizons{name}.json')
             shutil.copyfile(ROOT / 'Mods/new-horizons/mod.json', root / 'Mods/new-horizons/mod.json')
             script = root / 'check.cmake'
             script.write_text(f'set(CMAKE_SOURCE_DIR "{root.as_posix()}")\n' + block)
             command = ['cmake', '-P', str(script)]
             subprocess.run(command, check=True, capture_output=True)
-            rules = json.loads((root / 'config/newHorizonsHeroes.json').read_text())
-            rules['maxPrimary'] += 1
-            (root / 'config/newHorizonsHeroes.json').write_text(json.dumps(rules))
-            result = subprocess.run(command, capture_output=True, text=True)
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn('Stale curated module settings', result.stderr)
+            for name, key in (('Heroes', 'maxPrimary'), ('Capabilities', 'rulesetVersion')):
+                with self.subTest(rules=name):
+                    path = root / f'config/newHorizons{name}.json'
+                    before = path.read_bytes()
+                    rules = json.loads(before)
+                    rules[key] += 1
+                    path.write_text(json.dumps(rules))
+                    result = subprocess.run(command, capture_output=True, text=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('Stale curated module settings', result.stderr)
+                    path.write_bytes(before)
 
     def test_scale_and_cap_are_explicit(self):
         self.assertEqual(self.rules['schemaVersion'], 1)

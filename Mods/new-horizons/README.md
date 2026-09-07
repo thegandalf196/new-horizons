@@ -18,13 +18,34 @@ base/total ratings, proposed class growth and actual last-level gains.
 Ordinary Linux testing verified equipment changes, quest XP, four-gain level-up,
 save/restart and a subsequent turn. Legacy saves retain their saved rules and
 omit the growth entry. These are not native Windows gameplay or full-redesign
-acceptance claims. Leadership/siege development, post-Expert masteries, the new
-spell roster and creature categories remain subsequent work.
+acceptance claims. Post-Expert masteries, the new spell roster and creature
+categories remain subsequent work.
+
+## Capability preview (0.4)
+
+New games additionally save soft leadership capacity and trained siege rules.
+Provisional Might/Magic capacities start at 750/500 and grow by 75/50 per level;
+owned Leadership ranks modify capacity. Raw creature counts consume it. Capacity
+alone never deletes or rejects creatures; normal army constraints remain. Excess
+armies instead have daily movement scaled down to a 50% floor. Transferring troops changes the limit, not an instant movement refund.
+Artillery supplies a saved 1/2/3/4 base-damage multiplier for an eligible owned
+ballista; this is not a universal final-damage guarantee or new mastery rank.
+
+The read-only panel supports primary-only, capability-only, both and neither saved
+identities without adopting absent rules from the installed module. Guarded Linux
+journeys verified these states, reversible transfers, actual save/reload and daily
+movement refresh, human ballista shots and actual combat-AI shots. They do not
+establish native Windows gameplay or all AI/formula/driver paths. The private test
+binaries are not distribution candidates. Published growth previews stay frozen.
+
+`--hero-preview-output` still produces a separate 0.3 primary-only module;
+`--capability-only-control-output` produces an explicitly labelled diagnostic with
+primary growth disabled. Neither flag overwrites a live or frozen module.
 
 ## Six-school foundation
 
 `tools/update-new-horizons-module.py` generates metadata from canonical
-`config/newHorizons{Combat,Magic,Schools,Skills,Heroes}.json`. Do not edit the inline copy.
+`config/newHorizons{Combat,Magic,Schools,Skills,Heroes,Capabilities}.json`. Do not edit the inline copy.
 The six-school increment requires its matching runtime, serialization and UI;
 source data or image generation alone is not a gameplay acceptance result.
 
