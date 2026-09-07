@@ -181,8 +181,13 @@ def main():
     identities['packaging_source'] = {'file': packaging_name, 'sha256': common.sha256(args.output_dir / packaging_name), **packaging_source}
     identities['gnu_runtime_sources'] = {'file': gnu_name, 'sha256': common.sha256(args.output_dir / gnu_name)}
     provenance = common.build_provenance(args.build_dir)
-    provenance['compiler_versions'] = provenance.pop('msvc_compiler_versions', [])
-    if provenance['compiler_versions'] != ['13.2.0'] or provenance['cache_options'].get('CMAKE_BUILD_TYPE') != 'Release':
+    provenance['cmake_reported_compiler_versions'] = provenance.pop('msvc_compiler_versions', [])
+    # Conan's compiler.version=13 toolchain declares 13.0.0 to CMake; that is
+    # not the actual distro driver version. Preserve both rather than relabel it.
+    provenance['actual_driver_version'] = common.run('x86_64-w64-mingw32-g++-posix', '-dumpfullversion', '-dumpversion')
+    if (provenance['cmake_reported_compiler_versions'] != ['13.0.0']
+            or provenance['actual_driver_version'] != '13.2.0'
+            or provenance['cache_options'].get('CMAKE_BUILD_TYPE') != 'Release'):
         raise RuntimeError('Compiler/configuration differs from the audited local lane')
     common.write_json(package / 'BUILD-IDENTITY.json', {
         'project': 'Heroes III: New Horizons', 'source_commit': revision,
