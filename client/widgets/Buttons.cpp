@@ -45,9 +45,15 @@ void ButtonBase::update()
 
 	if (image)
 	{
+		// Two-frame checkboxes have no disabled artwork. Keep their actual value
+		// visible while CButton::block disables input, instead of requesting frame2.
+		const auto * toggle = state == EButtonState::BLOCKED && image->size() == 2
+			? dynamic_cast<const CToggleBase *>(this) : nullptr;
+		if(toggle)
+			image->setFrame(toggle->isSelected() ? 1 : stateToIndex[0]);
 		// checkbox - has only have two frames: normal and pressed/highlighted
 		// hero movement speed buttons: only three frames: normal, pressed and blocked/highlighted
-		if (state == EButtonState::HIGHLIGHTED && image->size() < 4)
+		else if (state == EButtonState::HIGHLIGHTED && image->size() < 4)
 			image->setFrame(image->size()-1);
 		else
 			image->setFrame(stateToIndex[vstd::to_underlying(state)]);

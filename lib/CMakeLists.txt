@@ -120,6 +120,10 @@ set(lib_MAIN_SRCS
 	entities/hero/CHeroClass.cpp
 	entities/hero/CHeroClassHandler.cpp
 	entities/hero/CHeroHandler.cpp
+	entities/hero/NewHorizonsPrimaryProfile.cpp
+	entities/hero/NewHorizonsPrimaryGrowth.cpp
+	entities/hero/NewHorizonsPrimaryScale.cpp
+	entities/hero/NewHorizonsHeroRules.cpp
 	entities/ResourceTypeHandler.cpp
 
 	events/ApplyDamage.cpp
@@ -280,6 +284,7 @@ set(lib_MAIN_SRCS
 	spells/CSpell.cpp
 	spells/CSpellHandler.cpp
 	spells/NewHorizonsMagic.cpp
+	spells/NewHorizonsSpellAvailability.cpp
 	spells/ExternalCaster.cpp
 	spells/ISpellMechanics.cpp
 	spells/ObstacleCasterProxy.cpp
@@ -552,6 +557,10 @@ set(lib_MAIN_HEADERS
 	entities/hero/CHeroClassHandler.h
 	entities/hero/CHeroHandler.h
 	entities/hero/EHeroGender.h
+	entities/hero/NewHorizonsPrimaryProfile.h
+	entities/hero/NewHorizonsPrimaryGrowth.h
+	entities/hero/NewHorizonsPrimaryScale.h
+	entities/hero/NewHorizonsHeroRules.h
 	entities/ResourceTypeHandler.h
 
 	events/ApplyDamage.h
@@ -761,6 +770,7 @@ set(lib_MAIN_HEADERS
 	spells/CSpell.h
 	spells/CSpellHandler.h
 	spells/NewHorizonsMagic.h
+	spells/NewHorizonsSpellAvailability.h
 	spells/ExternalCaster.h
 	spells/ISpellMechanics.h
 	spells/ObstacleCasterProxy.h

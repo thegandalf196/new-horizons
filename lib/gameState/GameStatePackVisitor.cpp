@@ -1276,7 +1276,7 @@ void GameStatePackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	auto * hero = gs.getHero(pack.heroId);
 	assert(hero);
-	hero->levelUp();
+	hero->levelUp(pack.primaryGains);
 }
 
 void GameStatePackVisitor::visitCommanderLevelUp(CommanderLevelUp & pack)

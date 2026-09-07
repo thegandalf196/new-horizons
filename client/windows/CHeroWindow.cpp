@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CHeroWindow.h"
+#include "HeroGrowthWindow.h"
 #include "wiki/WikiWindow.h"
 
 #include "CCreatureWindow.h"
@@ -79,7 +80,21 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 
 	banner = std::make_shared<CAnimImage>(AnimationPath::builtin("CREST58"), GAME->interface()->playerID.getNum(), 0, 606, 8);
 	name = std::make_shared<CLabel>(190, 38, EFonts::FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW);
-	title = std::make_shared<CLabel>(190, 65, EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE);
+	const bool showsGrowth = hero->getPrimaryGrowthView().has_value();
+	title = std::make_shared<CLabel>(showsGrowth ? 175 : 190, 65, EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "", showsGrowth ? 180 : 0);
+	if(showsGrowth)
+	{
+		growthButton = std::make_shared<CButton>(Point(273, 53), AnimationPath::builtin("NH_hero_growth_entry"),
+			CButton::tooltip("Hero development", "View this hero's saved growth profile, actual ratings and last level gains. Class gains and extra points are proposals before the primary cap; last gains are actual. No choices or points are spent."),
+			[this]
+			{
+				// Re-read the actual current hero; opening a view never activates rules
+				// on an old hero or predicts the next independent skill rolls.
+				if(const auto growth = curHero->getPrimaryGrowthView())
+					ENGINE->windows().createAndPushWindow<HeroGrowthWindow>(*curHero, *growth);
+			});
+		growthButton->setHoverable(true);
+	}
 
 	statusbar = CGStatusBar::create(std::make_shared<CPicture>(background->getSurface(), Rect(7, 559, 660, 19), 7, 559));
 
@@ -268,11 +283,22 @@ void CHeroWindow::updateArtifacts()
 	}
 
 	//primary skills support
+	const auto growth = curHero->getPrimaryGrowthView();
 	for(size_t g=0; g<primSkillAreas.size(); ++g)
 	{
 		int value = curHero->getPrimSkillLevel(static_cast<PrimarySkill>(g));
 		primSkillAreas[g]->component.value = value;
 		primSkillValues[g]->setText(std::to_string(value));
+		if(growth)
+		{
+			const auto attribute = static_cast<PrimarySkill>(g);
+			if(attribute == PrimarySkill::ATTACK || attribute == PrimarySkill::DEFENSE)
+				primSkillAreas[g]->text = "This hero rating affects command strength. It is not added directly to creature Attack or Defense. Open Hero development for the saved growth profile.";
+			else if(attribute == PrimarySkill::SPELL_POWER)
+				primSkillAreas[g]->text = "Spell Power uses a scaling divisor of " + std::to_string(growth->powerDivisor) + ". Consult spell descriptions and costs in the spellbook.";
+			else if(attribute == PrimarySkill::KNOWLEDGE)
+				primSkillAreas[g]->text = "Knowledge supplies base mana directly. Skills and artifacts modify the final mana limit shown on this hero screen.";
+		}
 	}
 
 	//secondary skills support

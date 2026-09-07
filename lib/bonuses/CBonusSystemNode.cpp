@@ -50,14 +50,33 @@ void CBonusSystemNode::getDirectParents(TCNodes & out) const /*retrieves list of
 		out.insert(elem);
 }
 
-void CBonusSystemNode::getAllBonusesRec(BonusList &out) const
+void CBonusSystemNode::getAllBonusesRec(BonusList &out, bool inherited) const
 {
 	BonusList beforeUpdate;
 
 	for(const auto * parent : parentsToInherit)
-		parent->getAllBonusesRec(beforeUpdate);
+		parent->getAllBonusesRec(beforeUpdate, true);
 
 	bonuses.getAllBonuses(beforeUpdate);
+
+	if(inherited && isPrimaryRatingNode())
+	{
+		BonusList updated;
+		for(const auto & b : beforeUpdate)
+			updated.push_back(b->updater ? getUpdatedBonus(b, b->updater) : b);
+		BonusList heroApplicable;
+		limitBonuses(updated, heroApplicable);
+		for(const auto & b : updated)
+		{
+			const bool rating = b->type == BonusType::PRIMARY_SKILL
+				&& (b->subtype == BonusSubtypeID(PrimarySkill::ATTACK) || b->subtype == BonusSubtypeID(PrimarySkill::DEFENSE));
+			// Keep creature-specific specialties/bonuses which do NOT apply as
+			// hero ratings; filter only the hero's own effective A/D contribution.
+			if(!rating || !vstd::contains(heroApplicable, b))
+				out.push_back(b);
+		}
+		return;
+	}
 
 	for(const auto & b : beforeUpdate)
 	{

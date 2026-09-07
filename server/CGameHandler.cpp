@@ -150,19 +150,28 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 
 	// give primary skill
 	logGlobal->trace("%s got level %d", hero->getNameTextID(), hero->level);
-	auto primarySkill = randomizer->rollPrimarySkillForLevelup(hero);
-
-	SetPrimarySkill sps;
-	sps.id = hero->id;
-	sps.which = primarySkill;
-	sps.mode = ChangeValueMode::RELATIVE;
-	sps.val = 1;
-	sendAndApply(sps);
+	auto gains = randomizer->rollPrimarySkillsForLevelup(hero);
+	const auto primarySkill = PrimarySkill(std::distance(gains.begin(), std::max_element(gains.begin(), gains.end())));
+	for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
+	{
+		const auto before = hero->getBasePrimarySkillValue(PrimarySkill(i));
+		if(gains[i])
+		{
+			SetPrimarySkill sps;
+			sps.id = hero->id;
+			sps.which = PrimarySkill(i);
+			sps.mode = ChangeValueMode::RELATIVE;
+			sps.val = gains[i];
+			sendAndApply(sps);
+		}
+		gains[i] = hero->getBasePrimarySkillValue(PrimarySkill(i)) - before;
+	}
 
 	HeroLevelUp hlu;
 	hlu.player = hero->tempOwner;
 	hlu.heroId = hero->id;
 	hlu.primskill = primarySkill;
+	hlu.primaryGains = gains;
 	hlu.skills = randomizer->rollSecondarySkills(hero);
 
 	if (!hero->getOwner().isValidPlayer())

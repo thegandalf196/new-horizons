@@ -38,6 +38,11 @@ int64_t ObstacleCasterProxy::getSpellBonus(const Spell * spell, int64_t base, co
 	return std::max<int64_t>(base, obs.minimalDamage);
 }
 
+int32_t ObstacleCasterProxy::getEffectPowerDivisor(const Spell * spell) const
+{
+	return obs.casterPowerDivisor;
+}
+
 int32_t ObstacleCasterProxy::getEffectPower(const Spell * spell) const
 {
 	return obs.casterSpellPower;
@@ -45,7 +50,7 @@ int32_t ObstacleCasterProxy::getEffectPower(const Spell * spell) const
 
 int32_t ObstacleCasterProxy::getEnchantPower(const Spell * spell) const
 {
-	return obs.casterSpellPower;
+	return obs.casterSpellPower / obs.casterPowerDivisor;
 }
 
 int64_t ObstacleCasterProxy::getEffectValue(const Spell * spell) const

@@ -99,6 +99,7 @@ public:
 	/// Saved ruleset snapshot, not the currently loaded mod defaults. Empty means legacy.
 	virtual const JsonNode & getHeroCommandRules() const;
 	virtual const JsonNode & getMagicRules() const;
+	virtual const JsonNode & getHeroDevelopmentRules() const;
 	std::vector<SpellSchool> getActiveSpellSchools() const;
 	std::vector<SpellSchool> getSpellSchools(SpellID spell) const;
 	int getSpellLevel(SpellID spell) const;

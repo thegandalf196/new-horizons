@@ -37,6 +37,7 @@ public:
 	virtual CreatureID rollCreature(int tier) = 0;
 
 	virtual PrimarySkill rollPrimarySkillForLevelup(const CGHeroInstance * hero) = 0;
+	virtual std::array<int, GameConstants::PRIMARY_SKILLS> rollPrimarySkillsForLevelup(const CGHeroInstance * hero) = 0;
 	virtual SecondarySkill rollSecondarySkillForLevelup(const CGHeroInstance * hero, const std::set<SecondarySkill> & candidates) = 0;
 	virtual std::vector<SecondarySkill> rollSecondarySkills(const CGHeroInstance * hero) = 0;
 

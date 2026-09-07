@@ -5,7 +5,7 @@ Script.__index = Script
 function Script:summonedEffectValue(mechanics)
 	local effectPower = mechanics:getEffectPower()
 	local rawEffectPower = mechanics:calculateRawEffectValue(0, effectPower)
-	local finalEffectPower = mechanics:applySpecificSpellBonus(rawEffectPower)
+	local finalEffectPower = mechanics:applySpecificSpellBonus(math.floor(rawEffectPower / mechanics:getEffectPowerDivisor()))
 
 	return finalEffectPower
 end

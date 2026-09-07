@@ -237,7 +237,7 @@ float HeroManager::getFightingStrengthCached(const CGHeroInstance * hero) const
 float HeroManager::getMagicStrength(const CGHeroInstance * hero) const
 {
 	auto manaLimit = hero->manaLimit();
-	auto spellPower = hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+	auto spellPower = static_cast<float>(hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER)) / hero->getEffectPowerDivisor(nullptr);
 
 	auto score = 0.0f;
 

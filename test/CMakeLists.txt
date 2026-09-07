@@ -48,6 +48,11 @@ set(test_SRCS
 		game/BattleSpellCastTest.cpp
 		game/HeroRecruitmentTest.cpp
 		game/HeroSecondarySkillsTest.cpp
+		hero/NewHorizonsPrimaryProfileTest.cpp
+		hero/NewHorizonsPrimaryGrowthTest.cpp
+		hero/NewHorizonsPrimaryScaleTest.cpp
+		hero/NewHorizonsHeroRulesTest.cpp
+		hero/NewHorizonsHeroRulesFixture.h
 		game/MovementCostTest.cpp
 
 		json/JsonTests.cpp
@@ -77,7 +82,8 @@ set(test_SRCS
 		spells/AdventureSpellEffectTest.cpp
 		spells/CSpellTest.cpp
 		spells/NewHorizonsMagicTest.cpp
-	spells/NewHorizonsMagicSchemaTest.cpp
+		spells/NewHorizonsMagicSchemaTest.cpp
+		spells/NewHorizonsSpellAvailabilityTest.cpp
 		spells/NewHorizonsModCompatibilityTest.cpp
  		spells/TargetConditionTest.cpp
 
@@ -136,6 +142,8 @@ set(test_SRCS
 		server/battles/NewHorizonsSkillFeedbackTest.cpp
 		server/battles/NewHorizonsSpellRewardFilterTest.cpp
 		server/battles/NewHorizonsSkillRewardApplicationTest.cpp
+		server/battles/NewHorizonsHeroGrowthTest.cpp
+		server/battles/NewHorizonsHeroFixtureExportTest.cpp
 		server/queries/QueriesProcessorTest.cpp
 
 		texts/TextOperationsTest.cpp
@@ -196,6 +204,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroCommandAITest.cpp
 		battleAI/NewHorizonsMagicAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp
+		battleAI/NewHorizonsHeroGrowthAITest.cpp
 		battleAI/NewHorizonsLevelGrantAITest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 	)

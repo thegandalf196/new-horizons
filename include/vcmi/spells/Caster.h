@@ -52,6 +52,8 @@ public:
 
 	///default spell-power for damage/heal calculation
 	virtual int32_t getEffectPower(const Spell * spell) const = 0;
+	/// Scale only power-dependent effect terms. Legacy and non-hero casters use 1.
+	virtual int32_t getEffectPowerDivisor(const Spell * spell) const { return 1; }
 
 	///default spell-power for timed effects duration
 	virtual int32_t getEnchantPower(const Spell * spell) const = 0;

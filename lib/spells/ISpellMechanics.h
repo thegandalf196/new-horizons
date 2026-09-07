@@ -224,6 +224,7 @@ public:
 	virtual IBattleCast::Value getRangeLevel() const = 0;
 
 	virtual IBattleCast::Value getEffectPower() const = 0;
+	virtual int32_t getEffectPowerDivisor() const { return 1; }
 	virtual IBattleCast::Value getEffectDuration() const = 0;
 
 	virtual IBattleCast::Value64 getEffectValue() const = 0;
@@ -293,6 +294,7 @@ public:
 	IBattleCast::Value getEffectLevel() const override;
 	IBattleCast::Value getRangeLevel() const override;
 	IBattleCast::Value getEffectPower() const override;
+	int32_t getEffectPowerDivisor() const override;
 	IBattleCast::Value getEffectDuration() const override;
 	IBattleCast::Value64 getEffectValue() const override;
 

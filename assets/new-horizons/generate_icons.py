@@ -149,4 +149,16 @@ for school in ('light','nature','sorcery','havoc','shadow','chaos'):
                 art.circle(width/2+(mark-1)*width/6,height-6,radius,'#f2d875' if lit else '#302a25','#f2d875' if lit else '#756040',0.75)
             art.save(f'NH_{school}Magic_{rank_name}_{size_name}')
 
+growth_frames=[]
+for state in ('normal','pressed','disabled','highlighted'):
+    art=Art(24,24)
+    blocked=state == 'disabled'
+    rim='#726d60' if blocked else '#f4db90' if state == 'highlighted' else '#b49a62'
+    art.polygon([(1,1),(22,1),(22,22),(1,22)],'#211e20' if state == 'pressed' else '#39312b',rim,1)
+    shift=1 if state == 'pressed' else 0
+    art.motif('growth',2+shift,2+shift,19,blocked)
+    name='NH_hero_growth_entry_'+state
+    art.save(name);growth_frames.append(name+'.png')
+animation('NH_hero_growth_entry',growth_frames)
+
 print('Exported original SVG + RGBA PNG; provisional flat vector style, not final illustration.')

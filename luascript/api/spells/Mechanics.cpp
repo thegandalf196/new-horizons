@@ -68,6 +68,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the effective mastery level used for the spell's range.");
 	R.method<&Mechanics::getEffectPower>("getEffectPower", {},
 		"Returns the effective spell power applied to the magnitude calculation.");
+	R.method<&Mechanics::getEffectPowerDivisor>("getEffectPowerDivisor", {},
+		"Returns the saved caster power divisor; legacy and ordinary creature casts use one.");
 	R.method<&Mechanics::getEffectDuration>("getEffectDuration", {},
 		"Returns the effect duration in turns.");
 	R.method<&Mechanics::getEffectValue>("getEffectValue", {},

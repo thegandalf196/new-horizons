@@ -34,6 +34,10 @@ protected:
 			heroCommands::validateRules(rules);
 		}
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
+		// A legacy-command fixture must also retain legacy primary ratings.
+		// Expanded ratings without their required commands is invalid, not legacy.
+		if(!useCommands)
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
 	}
 
 	void prepareCommands(bool spellbook = false)

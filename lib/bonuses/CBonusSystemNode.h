@@ -64,7 +64,7 @@ private:
 	mutable RequestsMap cachedRequests;
 	mutable std::shared_mutex sync;
 
-	void getAllBonusesRec(BonusList &out) const;
+	void getAllBonusesRec(BonusList &out, bool inherited = false) const;
 	TConstBonusListPtr getAllBonusesWithoutCaching(const CSelector &selector) const;
 	std::shared_ptr<Bonus> getUpdatedBonus(const std::shared_ptr<Bonus> & b, const TUpdaterPtr & updater) const;
 	void limitBonuses(const BonusList &allBonuses, BonusList &out) const; //out will bo populed with bonuses that are not limited here
@@ -118,6 +118,8 @@ public:
 	void reduceBonusDurations(const CSelector &s);
 	virtual std::string bonusToString(const std::shared_ptr<Bonus>& bonus) const {return "";}; //description or bonus name
 	virtual std::string nodeName() const;
+	/// Expanded hero A/D ratings are not passive creature statistics.
+	virtual bool isPrimaryRatingNode() const { return false; }
 	bool isHypothetic() const { return isHypotheticNode; }
 
 	BonusList & getExportedBonusList();

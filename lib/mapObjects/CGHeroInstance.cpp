@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../battle/HeroCommand.h"
 #include "CGHeroInstance.h"
 
 #include <vcmi/ServerCallback.h>
@@ -378,6 +379,12 @@ void CGHeroInstance::updateAppearance()
 void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 {
 	assert(validTypes(true));
+	if(!isFake && !primaryGrowthCaptured)
+	{
+		primaryGrowthRules = newHorizonsHeroes::resolveHeroRules(cb->getHeroDevelopmentRules(), getHeroClass()->getId());
+		primaryGrowthCaptured = true;
+		nodeHasChanged();
+	}
 	
 	if (gender == EHeroGender::DEFAULT)
 		gender = getHeroType()->gender;
@@ -419,7 +426,10 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	{
 		for(int g=0; g<GameConstants::PRIMARY_SKILLS; ++g)
 		{
-			pushPrimSkill(static_cast<PrimarySkill>(g), getHeroClass()->primarySkillInitial[g]);
+			const auto initial = usesPrimaryGrowth()
+				? newHorizonsHeroes::parsePrimaryProfile(primaryGrowthRules["profile"]).starting[g]
+				: getHeroClass()->primarySkillInitial[g];
+			pushPrimSkill(static_cast<PrimarySkill>(g), initial);
 		}
 	}
 	if(secSkills.size() == 1 && secSkills[0] == std::pair<SecondarySkill,ui8>(SecondarySkill::NONE, -1)) //set secondary skills to default
@@ -714,13 +724,56 @@ void CGHeroInstance::setPropertyDer(ObjProperty what, ObjPropertyID identifier)
 		setStackCount(SlotID(0), identifier.getNum());
 }
 
+bool CGHeroInstance::usesPrimaryGrowth() const
+{
+	return newHorizonsHeroes::usesRules(primaryGrowthRules);
+}
+
+std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGrowthView() const
+{
+	if(!usesPrimaryGrowth())
+		return std::nullopt;
+	newHorizonsHeroes::PrimaryGrowthView result;
+	result.profile = newHorizonsHeroes::parsePrimaryProfile(primaryGrowthRules["profile"]);
+	for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
+	{
+		result.base[i] = getBasePrimarySkillValue(PrimarySkill(i));
+		result.modified[i] = getPrimSkillLevel(PrimarySkill(i));
+	}
+	result.extraGrowth = newHorizonsHeroes::skillGrowthChances(primaryGrowthRules,
+		[this](SecondarySkill skill) { return getSecSkillLevel(skill); });
+	result.lastGains = lastPrimaryGains;
+	result.powerDivisor = primaryGrowthRules["powerDivisor"].Integer();
+	result.maximumPrimary = primaryGrowthRules["maxPrimary"].Integer();
+	return result;
+}
+
 int CGHeroInstance::getPrimSkillLevel(PrimarySkill id) const
 {
+	if(usesPrimaryGrowth())
+		return std::clamp(valOfBonuses(BonusType::PRIMARY_SKILL, BonusSubtypeID(id)), 0,
+			static_cast<int>(primaryGrowthRules["maxPrimary"].Integer()));
 	return primarySkills.getSkill(id);
 }
 
 double CGHeroInstance::getFightingStrength() const
 {
+	if(usesPrimaryGrowth())
+	{
+		// Detached campaign previews have saved ratings but no world's command
+		// rules. Do not dereference a missing callback or invent a troop bonus.
+		if(!cb)
+			return 1.0;
+		const auto & commands = cb->getHeroCommandRules()["commands"];
+		const auto attack = getPrimSkillLevel(PrimarySkill::ATTACK);
+		const auto defense = getPrimSkillLevel(PrimarySkill::DEFENSE);
+		const auto damage = heroCommands::coefficient(commands["charge"]["effects"]["meleeDamagePercent"], attack, defense);
+		const auto reduction = std::min(90, heroCommands::coefficient(commands["holdTheLine"]["effects"]["damageReductionPercent"], attack, defense));
+		// Adventure estimate of one available action, not a passive raw-stat
+		// multiplier and not simultaneous Charge + Hold. Battle AI evaluates
+		// actual affected armies and the shared budget through its normal path.
+		return std::max(1.0 + damage / 100.0, 1.0 / (1.0 - reduction / 100.0));
+	}
 	const auto & skillValues = primarySkills.getSkills();
 	return sqrt((1.0 + 0.05*skillValues[PrimarySkill::ATTACK.getNum()]) * (1.0 + 0.05*skillValues[PrimarySkill::DEFENSE.getNum()]));
 }
@@ -739,13 +792,22 @@ double CGHeroInstance::getMagicStrength() const
 			break;
 		}
 	}
-	if (!atLeastOneCombatSpell)
+	if (!atLeastOneCombatSpell || manaLimit() <= 0)
 		return 1;
+	if(usesPrimaryGrowth())
+	{
+		const double fraction = static_cast<double>(mana) / manaLimit();
+		const double power = static_cast<double>(getPrimSkillLevel(PrimarySkill::SPELL_POWER)) / getEffectPowerDivisor(nullptr);
+		const double knowledge = getPrimSkillLevel(PrimarySkill::KNOWLEDGE) / 10.0;
+		return sqrt((1.0 + 0.05 * knowledge * fraction) * (1.0 + 0.05 * power * fraction));
+	}
 	return sqrt((1.0 + 0.05*skillValues[PrimarySkill::KNOWLEDGE.getNum()] * mana / manaLimit()) * (1.0 + 0.05*skillValues[PrimarySkill::SPELL_POWER.getNum()] * mana / manaLimit()));
 }
 
 double CGHeroInstance::getHeroStrength() const
 {
+	if(usesPrimaryGrowth())
+		return std::max(getFightingStrength(), getMagicStrength());
 	return getFightingStrength() * getMagicStrength();
 }
 
@@ -753,7 +815,7 @@ uint64_t CGHeroInstance::getValueForDiplomacy() const
 {
 	// H3 formula for hero strength when considering diplomacy skill
 	uint64_t armyStrength = getArmyStrengthPerceivedByOthers();
-	double heroStrength = sqrt(
+	double heroStrength = usesPrimaryGrowth() ? getFightingStrength() : sqrt(
 		(1.0 + 0.05 * getPrimSkillLevel(PrimarySkill::ATTACK)) *
 		(1.0 + 0.05 * getPrimSkillLevel(PrimarySkill::DEFENSE))
 		);
@@ -895,9 +957,14 @@ int32_t CGHeroInstance::getEffectPower(const spells::Spell * spell) const
 	return getPrimSkillLevel(PrimarySkill::SPELL_POWER);
 }
 
+int32_t CGHeroInstance::getEffectPowerDivisor(const spells::Spell * spell) const
+{
+	return usesPrimaryGrowth() ? primaryGrowthRules["powerDivisor"].Integer() : 1;
+}
+
 int32_t CGHeroInstance::getEnchantPower(const spells::Spell * spell) const
 {
-	int32_t spellpower = getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+	int32_t spellpower = std::max(1, getPrimSkillLevel(PrimarySkill::SPELL_POWER) / getEffectPowerDivisor(spell));
 	int32_t durationCommon = valOfBonuses(BonusType::SPELL_DURATION, BonusSubtypeID());
 	int32_t durationSpecific = valOfBonuses(BonusType::SPELL_DURATION, BonusSubtypeID(spell->getId()));
 
@@ -1231,7 +1298,11 @@ std::string CGHeroInstance::nodeName() const
 
 si32 CGHeroInstance::manaLimit() const
 {
-	return getPrimSkillLevel(PrimarySkill::KNOWLEDGE) * manaPerKnowledgeCached.getValue() / 100;
+	// Existing cache has a 1000% (ten mana/Knowledge) base. Normalize that
+	// base to one in the new scale, preserving Intelligence/artifact modifiers.
+	const int percentageBase = usesPrimaryGrowth() ? 1000 : 100;
+	const auto value = static_cast<int64_t>(getPrimSkillLevel(PrimarySkill::KNOWLEDGE)) * manaPerKnowledgeCached.getValue() / percentageBase;
+	return std::clamp<int64_t>(value, 0, std::numeric_limits<int32_t>::max());
 }
 
 HeroTypeID CGHeroInstance::getPortraitSource() const
@@ -1473,7 +1544,14 @@ void CGHeroInstance::setPrimarySkill(PrimarySkill primarySkill, si64 value, Chan
 		.And(Selector::sourceType()(BonusSource::HERO_BASE_SKILL)));
 	assert(skill);
 
-	if(mode == ChangeValueMode::ABSOLUTE)
+	if(usesPrimaryGrowth())
+	{
+		const int64_t maximum = primaryGrowthRules["maxPrimary"].Integer();
+		const auto next = mode == ChangeValueMode::ABSOLUTE ? value
+			: skill->val + std::clamp<int64_t>(value, -maximum, maximum);
+		skill->val = std::clamp<int64_t>(next, 0, maximum);
+	}
+	else if(mode == ChangeValueMode::ABSOLUTE)
 	{
 		skill->val = static_cast<si32>(value);
 	}
@@ -1501,8 +1579,9 @@ bool CGHeroInstance::gainsLevel() const
 	return level < LIBRARY->heroh->maxSupportedLevel() && exp >= static_cast<TExpType>(LIBRARY->heroh->reqExp(level+1));
 }
 
-void CGHeroInstance::levelUp()
+void CGHeroInstance::levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS> & gains)
 {
+	lastPrimaryGains = gains;
 	++level;
 	//update specialty and other bonuses that scale with level
 	nodeHasChanged();
@@ -1518,14 +1597,20 @@ void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
 {
 	while(gainsLevel())
 	{
-		const auto primarySkill = gameRandomizer.rollPrimarySkillForLevelup(this);
+		auto gains = gameRandomizer.rollPrimarySkillsForLevelup(this);
 		const auto proposedSecondarySkills = gameRandomizer.rollSecondarySkills(this);
 
-		setPrimarySkill(primarySkill, 1, ChangeValueMode::RELATIVE);
+		for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
+		{
+			const auto before = getBasePrimarySkillValue(PrimarySkill(i));
+			if(gains[i])
+				setPrimarySkill(PrimarySkill(i), gains[i], ChangeValueMode::RELATIVE);
+			gains[i] = getBasePrimarySkillValue(PrimarySkill(i)) - before;
+		}
 		if(!proposedSecondarySkills.empty())
 			setSecSkillLevel(proposedSecondarySkills.front(), 1, ChangeValueMode::RELATIVE);
 
-		levelUp();
+		levelUp(gains);
 	}
 }
 
@@ -1534,7 +1619,7 @@ bool CGHeroInstance::hasVisions(const CGObjectInstance * target, BonusSubtypeID 
 	//VISIONS spell support
 	const int visionsMultiplier = valOfBonuses(BonusType::VISIONS, subtype);
 
-	int visionsRange =  visionsMultiplier * getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+	int visionsRange = visionsMultiplier * getPrimSkillLevel(PrimarySkill::SPELL_POWER) / getEffectPowerDivisor(nullptr);
 
 	if (visionsMultiplier > 0)
 		vstd::amax(visionsRange, 3); //minimum range is 3 tiles, but only if VISIONS bonus present
@@ -1863,6 +1948,8 @@ int CGHeroInstance::getBasePrimarySkillValue(PrimarySkill which) const
 {
 	std::string cachingStr = "CGHeroInstance::getBasePrimarySkillValue" + std::to_string(which.getNum());
 	auto selector = Selector::typeSubtype(BonusType::PRIMARY_SKILL, BonusSubtypeID(which)).And(Selector::sourceType()(BonusSource::HERO_BASE_SKILL));
+	if(usesPrimaryGrowth())
+		return std::clamp(valOfBonuses(selector, cachingStr), 0, static_cast<int>(primaryGrowthRules["maxPrimary"].Integer()));
 	auto minSkillValue = LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MINIMAL_PRIMARY_SKILLS, which.getNum());
 	auto maxSkillValue = LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MAXIMAL_PRIMARY_SKILLS, which.getNum());
 	return std::clamp(valOfBonuses(selector, cachingStr), minSkillValue, std::max(minSkillValue, maxSkillValue));

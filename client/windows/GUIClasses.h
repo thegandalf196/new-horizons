@@ -11,6 +11,7 @@
 
 #include "CWindowObject.h"
 #include "../../lib/ResourceSet.h"
+#include "../../lib/constants/NumericConstants.h"
 #include "../widgets/Images.h"
 #include "../widgets/IVideoHolder.h"
 
@@ -141,6 +142,16 @@ public:
 /// Raised up level window where you can select one out of two skills
 class CLevelWindow : public CWindowObject
 {
+public:
+	struct PrimaryGainSnapshot
+	{
+		int level;
+		std::array<int, GameConstants::PRIMARY_SKILLS> gains;
+	};
+
+private:
+	std::optional<PrimaryGainSnapshot> primaryGains;
+	std::vector<std::shared_ptr<CIntObject>> primaryGainWidgets;
 	std::shared_ptr<CHeroArea> portrait;
 	std::shared_ptr<CButton> ok;
 	std::shared_ptr<CLabel> mainTitle;
@@ -160,14 +171,14 @@ class CLevelWindow : public CWindowObject
 	const CGHeroInstance * hero;
 
 	void selectionChanged(unsigned to);
-	void initLevelUpData(const CGHeroInstance * heroInstance, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback);
+	void initLevelUpData(const CGHeroInstance * heroInstance, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains);
 	void createLevelUpControls(PrimarySkill pskill);
 	void createSkillBox();
 	void submitSelection();
 
 public:
-	CLevelWindow(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills, std::function<void(ui32)> callback);
-	void updateLevelUpData(const CGHeroInstance * heroInstance, PrimarySkill pskill, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback);
+	CLevelWindow(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills, std::function<void(ui32)> callback, const std::optional<PrimaryGainSnapshot> & gains = std::nullopt);
+	void updateLevelUpData(const CGHeroInstance * heroInstance, PrimarySkill pskill, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains = std::nullopt);
 	void setCloseOnSelection(bool value);
 
 	void close() override;

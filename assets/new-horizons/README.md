@@ -55,6 +55,11 @@ Outputs: `Mods/new-horizons/Images/NH_*`.
   three-choice masteries. These are static image files, not animation/button
   states. Build owns skill definitions, rank effects and registration; reuse of
   our original CC0 school geometry introduces no purchaser or concept pixels.
+- Future live hero-growth entry: `NH_hero_growth_entry.json`, **24x24**,
+  four normal/pressed/disabled/highlighted frames and matching editable SVGs.
+  Uses our original growth motif. CHeroWindow shows it only for a real nonempty
+  saved-hero growth view, never for a legacy/template hero. Not yet graphically
+  accepted; independent of immutable command/school release candidates.
 - All new images use RGBA transparency, not the original indexed palette.
 
 The five command buttons and Spells/Cancel are wired to the real hero-action
@@ -72,11 +77,15 @@ under ignored `build/new-horizons-linux/research/hero-art/`. This checks outputs
 not the future screen's rendering, readability or runtime attribute formulas.
 
 The subsequent72 school-skill PNGs/72 SVGs preserve all256 earlier outputs
-byte-for-byte. **Current complete exports:190 SVGs,190 PNGs,20 animation JSONs**.
+byte-for-byte. That checkpoint contained190 SVGs,190 PNGs,20 animation JSONs.
 Local schema/dimension/hash evidence and generated contact sheet are under ignored
 `build/new-horizons-linux/research/skill-art/`. Actual skill registration, rank
 progression, rendered hero/level-up/campaign use and old-save semantics require
 integrated tests; these exports alone do not prove those mechanics.
+
+The later hero-growth entry adds4 PNGs/4 SVGs/1 JSON while preserving all400
+previous hashes. **Current complete exports:194 SVGs,194 PNGs,21 animation JSONs**.
+No new mastery/leadership/siege mechanics are implied by this display entry.
 
 ## Actual installed artwork inspection (metadata only)
 

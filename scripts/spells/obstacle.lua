@@ -145,6 +145,7 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 		obstacleType     = ENUM.ObstacleType.spellCreated,
 		spell            = spell,
 		casterSpellPower = mechanics:getEffectPower(),
+		casterPowerDivisor = mechanics:getEffectPowerDivisor(),
 		spellLevel       = mechanics:getEffectLevel(),
 		casterSide       = side,
 		turnsRemaining   = self.turnsRemaining or -1,

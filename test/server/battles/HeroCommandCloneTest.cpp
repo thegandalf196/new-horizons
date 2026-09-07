@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/battle/BattleInfo.h"
+#include "../../../lib/spells/CSpell.h"
 
 class HeroCommandCloneTest : public HeroCommandFixture {};
 
@@ -17,7 +18,10 @@ TEST_F(HeroCommandCloneTest, RealCloneDoesNotCopyDoctrineButReceivesSubsequentSw
 {
 	prepareCommands(true);
 	attackerSideHero->addSpellToSpellbook(SpellID::CLONE);
-	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 3, ChangeValueMode::ABSOLUTE);
+	const auto * cloneSpell = SpellID(SpellID::CLONE).toSpell();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER,
+		3 * attackerSideHero->getEffectPowerDivisor(cloneSpell), ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getEnchantPower(cloneSpell), 3);
 	const auto * original = battle()->battleGetStackByID(battle()->battleActiveUnit()->unitId());
 	ASSERT_TRUE(issue(HeroCommand::AGGRESSIVE));
 	advanceRound();

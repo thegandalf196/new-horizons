@@ -68,6 +68,8 @@ TEST_F(NewHorizonsMagicStateTest, LegacyHeaderDoesNotRequireDisablingCuratedModu
 	useCommands = false;
 	startSkilledHero();
 	const auto legacyWorld = gameState();
+	ASSERT_FALSE(newHorizonsHeroes::usesRules(legacyWorld->getHeroDevelopmentRules()));
+	ASSERT_FALSE(findHeroByOwner(PlayerColor(0))->getPrimaryGrowthView());
 	const auto legacyBytes = legacyWorld->saveToMemory();
 
 	// Exact ActiveModsInSaveList framing of a pre-NH save: all its existing
@@ -152,6 +154,7 @@ TEST_F(NewHorizonsMagicStateTest, LegacyWorldKeepsOriginalRankAndCannotOfferNewS
 	startSkilledHero();
 	const auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
+	EXPECT_FALSE(hero->getPrimaryGrowthView());
 	EXPECT_EQ(hero->getSecSkillLevel(SecondarySkill::AIR_MAGIC), 1);
 	EXPECT_EQ(hero->getSpellSchoolLevel(SpellID(SpellID::HASTE).toSpell()), 1);
 	EXPECT_EQ(gameState()->getActiveSpellSchools().size(), 4u);

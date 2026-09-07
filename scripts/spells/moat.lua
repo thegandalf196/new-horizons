@@ -32,6 +32,7 @@ function Script:apply(mechanics, server, target)
 			obstacleType     = obstacleType,
 			spell            = spell,
 			casterSpellPower = mechanics:getEffectPower(),
+			casterPowerDivisor = mechanics:getEffectPowerDivisor(),
 			spellLevel       = mechanics:getEffectLevel(),
 			casterSide       = ENUM.BattleSide.defender,
 			turnsRemaining   = -1,

@@ -182,6 +182,9 @@ void SpellCreatedObstacle::serializeJson(JsonSerializeFormat & handler)
 
 	handler.serializeInt("turnsRemaining", turnsRemaining);
 	handler.serializeInt("casterSpellPower", casterSpellPower);
+	handler.serializeInt("casterPowerDivisor", casterPowerDivisor, 1);
+	if(casterPowerDivisor <= 0)
+		throw std::runtime_error("Invalid obstacle power divisor");
 	handler.serializeInt("spellLevel", spellLevel);
 	handler.serializeInt("casterSide", casterSide);
 	handler.serializeInt("minimalDamage", minimalDamage);

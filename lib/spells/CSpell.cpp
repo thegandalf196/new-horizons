@@ -78,7 +78,7 @@ int64_t CSpell::calculateDamage(const spells::Caster * caster) const
 	//check if spell really does damage - if not, return 0
 	if(!isDamage())
 		return 0;
-	auto rawDamage = calculateRawEffectValue(caster->getEffectLevel(this), caster->getEffectPower(this), 1);
+	auto rawDamage = calculateRawEffectValue(caster->getEffectLevel(this), caster->getEffectPower(this), 1, caster->getEffectPowerDivisor(this));
 
 	return caster->getSpellBonus(this, rawDamage, nullptr);
 }
@@ -411,9 +411,12 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 	return ret;
 }
 
-int64_t CSpell::calculateRawEffectValue(int32_t effectLevel, int32_t basePowerMultiplier, int32_t levelPowerMultiplier) const
+int64_t CSpell::calculateRawEffectValue(int32_t effectLevel, int32_t basePowerMultiplier, int32_t levelPowerMultiplier, int32_t powerDivisor) const
 {
-	return static_cast<int64_t>(basePowerMultiplier) * getBasePower() + levelPowerMultiplier * getLevelPower(effectLevel);
+	if(powerDivisor <= 0)
+		throw std::runtime_error("Spell power divisor must be positive");
+	return static_cast<int64_t>(basePowerMultiplier) * getBasePower() / powerDivisor
+		+ static_cast<int64_t>(levelPowerMultiplier) * getLevelPower(effectLevel);
 }
 
 void CSpell::setIsOffensive(const bool val)

@@ -100,7 +100,16 @@ TEST_F(NewHorizonsMagicFixtureExportTest, ExportOrdinaryFullBookWithStartingRank
 	ASSERT_NE(computer, nullptr);
 	ASSERT_TRUE(human->hasSpellbook());
 	ASSERT_FALSE(computer->hasSpellbook());
-	ASSERT_EQ(human->mana, 200);
+	// Authored Knowledge is unchanged; only this hero's saved mana scale differs.
+	// Preserve the original 200-mana oracle for legacy primary rules.
+	ASSERT_EQ(human->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 20);
+	const int expectedHumanMana = human->usesPrimaryGrowth() ? 20 : 200;
+	ASSERT_EQ(human->mana, expectedHumanMana);
+	ASSERT_EQ(human->manaLimit(), expectedHumanMana);
+	ASSERT_EQ(computer->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 10);
+	const int expectedComputerMana = computer->usesPrimaryGrowth() ? 10 : 100;
+	ASSERT_EQ(computer->mana, expectedComputerMana);
+	ASSERT_EQ(computer->manaLimit(), expectedComputerMana);
 	ASSERT_EQ(human->getSpellsInSpellbook(), std::set<SpellID>(originalSpells.begin(), originalSpells.end()));
 	for(const auto & [oldSkill, rank] : authoredRanks)
 	{

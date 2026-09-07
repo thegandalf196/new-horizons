@@ -82,8 +82,8 @@ function Script:transformTarget(mechanics, aimPoint, spellTarget)
 end
 
 function Script:calculateHealValue(mechanics, victim)
-	return (mechanics:getEffectPower() + victim:getMaxHealth()
-		+ mechanics:calculateRawEffectValue(0, 1)) * victim:getCount()
+	return math.floor((mechanics:getEffectPower() / mechanics:getEffectPowerDivisor() + victim:getMaxHealth()
+		+ mechanics:calculateRawEffectValue(0, 1)) * victim:getCount())
 end
 
 --- Returns HP change preview.

@@ -19,12 +19,16 @@ namespace scripting::api
 
 SpellCreatedObstacle SpellObstacleDescriptor::toObstacle() const
 {
+	if(casterPowerDivisor <= 0)
+		throw std::runtime_error("Invalid spell obstacle power divisor");
+
 	SpellCreatedObstacle obstacle;
 	obstacle.pos              = pos;
 	obstacle.obstacleType     = obstacleType;
 	obstacle.ID               = spell ? spell->getId() : SpellID(SpellID::NONE);
 	obstacle.turnsRemaining   = turnsRemaining;
 	obstacle.casterSpellPower = casterSpellPower;
+	obstacle.casterPowerDivisor = casterPowerDivisor;
 	obstacle.spellLevel       = spellLevel;
 	obstacle.casterSide       = casterSide;
 	obstacle.minimalDamage    = minimalDamage;

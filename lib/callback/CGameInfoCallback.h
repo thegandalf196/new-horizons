@@ -24,6 +24,7 @@ protected:
 
 public:
 	const JsonNode & getMagicRules() const override;
+	const JsonNode & getHeroDevelopmentRules() const override;
 	//various
 
 	Calendar getCalendar() const override;

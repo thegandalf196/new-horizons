@@ -146,6 +146,7 @@ set(vcmiclientcommon_SRCS
 	windows/CExchangeWindow.cpp
 	windows/CHeroOverview.cpp
 	windows/CHeroWindow.cpp
+	windows/HeroGrowthWindow.cpp
 	windows/CKingdomInterface.cpp
 	windows/CMapOverview.cpp
 	windows/CMarketWindow.cpp
@@ -370,6 +371,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CExchangeWindow.h
 	windows/CHeroOverview.h
 	windows/CHeroWindow.h
+	windows/HeroGrowthWindow.h
 	windows/CKingdomInterface.h
 	windows/CMessage.h
 	windows/CMapOverview.h

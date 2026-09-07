@@ -78,6 +78,7 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 {
 	int32_t turnsRemaining;
 	int32_t casterSpellPower;
+	int32_t casterPowerDivisor = 1;
 	int32_t spellLevel;
 	int32_t minimalDamage; //How many damage should it do regardless of power and level of caster
 	BattleSide casterSide;
@@ -124,6 +125,12 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 		h & static_cast<CObstacleInstance&>(*this);
 		h & turnsRemaining;
 		h & casterSpellPower;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_GROWTH))
+			h & casterPowerDivisor;
+		else if(!h.saving)
+			casterPowerDivisor = 1;
+		if(!h.saving && casterPowerDivisor <= 0)
+			throw std::runtime_error("Invalid saved obstacle power divisor");
 		h & spellLevel;
 		h & casterSide;
 

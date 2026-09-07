@@ -479,20 +479,21 @@ void CSplitWindow::sliderMoved(int to)
 	setAmount(rightMin + to, false);
 }
 
-CLevelWindow::CLevelWindow(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, std::function<void(ui32)> callback)
+CLevelWindow::CLevelWindow(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, std::function<void(ui32)> callback, const std::optional<PrimaryGainSnapshot> & gains)
 	: CWindowObject(PLAYER_COLORED, ImagePath::builtin("LVLUPBKG")),
 	skillViewOffset(0)
 {
 	OBJECT_CONSTRUCTION;
 
-	initLevelUpData(hero, skills, callback);
+	initLevelUpData(hero, skills, callback, gains);
 	createLevelUpControls(pskill);
 	setRedrawParent(true);
 	redraw();
 }
 
-void CLevelWindow::initLevelUpData(const CGHeroInstance * heroInstance, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback)
+void CLevelWindow::initLevelUpData(const CGHeroInstance * heroInstance, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains)
 {
+	primaryGains = gains;
 	GAME->interface()->showingDialog->setBusy();
 	selectionSubmitted = false;
 	hero = heroInstance;
@@ -517,6 +518,7 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 	levelTitle.reset();
 	skillIcon.reset();
 	skillValue.reset();
+	primaryGainWidgets.clear();
 
 	createSkillBox();
 
@@ -554,23 +556,40 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 	MetaString levelTitleText;
 	levelTitleText.appendTextID("core.genrltxt.445");
 	levelTitleText.replaceTextID(hero->getNameTextID());
-	levelTitleText.replaceNumber(hero->level);
+	levelTitleText.replaceNumber(primaryGains ? primaryGains->level : hero->level);
 	levelTitleText.replaceTextID(hero->getClassNameTextID());
 
-	MetaString skillValueText;
-	skillValueText.appendTextID("core.priskill", pskill.getNum());
-	skillValueText.appendRawString(" +1");
-
 	levelTitle = std::make_shared<CLabel>(192, 162, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, levelTitleText.toString(&GAME->translator()));
-	skillIcon = std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL42"), pskill.getNum(), 0, 174, 190);
-	skillValue = std::make_shared<CLabel>(192, 253, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, skillValueText.toString(&GAME->translator()));
+	if(primaryGains)
+	{
+		const std::array<const char *, GameConstants::PRIMARY_SKILLS> images = {
+			"NH_hero_attack_32", "NH_hero_defense_32", "NH_hero_power_32", "NH_hero_knowledge_32"
+		};
+		primaryGainWidgets.push_back(std::make_shared<CLabel>(192, 187, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "Actual gains this level"));
+		for(size_t i = 0; i < images.size(); ++i)
+		{
+			const int x = 54 + static_cast<int>(i) * 80;
+			const int gained = primaryGains->gains[i];
+			primaryGainWidgets.push_back(std::make_shared<CPicture>(ImagePath::builtin(images[i]), x, 205));
+			primaryGainWidgets.push_back(std::make_shared<CLabel>(x + 16, 247, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, GAME->translator().translate("core.priskill", i), 72));
+			primaryGainWidgets.push_back(std::make_shared<CLabel>(x + 16, 269, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, std::string(gained > 0 ? "+" : "") + std::to_string(gained), 72));
+		}
+	}
+	else
+	{
+		MetaString skillValueText;
+		skillValueText.appendTextID("core.priskill", pskill.getNum());
+		skillValueText.appendRawString(" +1");
+		skillIcon = std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL42"), pskill.getNum(), 0, 174, 190);
+		skillValue = std::make_shared<CLabel>(192, 253, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, skillValueText.toString(&GAME->translator()));
+	}
 }
 
-void CLevelWindow::updateLevelUpData(const CGHeroInstance * heroInstance, PrimarySkill pskill, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback)
+void CLevelWindow::updateLevelUpData(const CGHeroInstance * heroInstance, PrimarySkill pskill, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains)
 {
 	OBJECT_CONSTRUCTION;
 
-	initLevelUpData(heroInstance, availableSkills, callback);
+	initLevelUpData(heroInstance, availableSkills, callback, gains);
 	createLevelUpControls(pskill);
 	setRedrawParent(true);
 	redraw();

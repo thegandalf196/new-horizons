@@ -298,7 +298,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	}
 	{
 		auto value = event->getEffectValue();
-		auto casterValue = caster->getEffectValue(owner) ? caster->getEffectValue(owner) : owner->calculateRawEffectValue(effectLevel, effectPower, 1);
+		auto casterValue = caster->getEffectValue(owner) ? caster->getEffectValue(owner) : owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
 		effectValue = value.value_or(casterValue);
 		vstd::amax(effectValue, 0);
 	}
@@ -466,7 +466,7 @@ int64_t BaseMechanics::applySpecificSpellBonus(int64_t value) const
 
 int64_t BaseMechanics::calculateRawEffectValue(int32_t basePowerMultiplier, int32_t levelPowerMultiplier) const
 {
-	return owner->calculateRawEffectValue(getEffectLevel(), basePowerMultiplier, levelPowerMultiplier);
+	return owner->calculateRawEffectValue(getEffectLevel(), basePowerMultiplier, levelPowerMultiplier, getEffectPowerDivisor());
 }
 
 Target BaseMechanics::canonicalizeTarget(const Target & aim) const
@@ -495,6 +495,11 @@ IBattleCast::Value BaseMechanics::getEffectLevel() const
 IBattleCast::Value BaseMechanics::getRangeLevel() const
 {
 	return rangeLevel;
+}
+
+int32_t BaseMechanics::getEffectPowerDivisor() const
+{
+	return caster->getEffectPowerDivisor(owner);
 }
 
 IBattleCast::Value BaseMechanics::getEffectPower() const

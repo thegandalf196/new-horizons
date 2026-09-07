@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../entities/hero/NewHorizonsHeroRules.h"
+
 #include <vcmi/spells/Caster.h>
 
 #include "IOwnableObject.h"
@@ -198,6 +200,10 @@ public:
 
 	ui8 getSecSkillLevel(const SecondarySkill & skill) const; //0 - no skill
 	int getPrimSkillLevel(PrimarySkill id) const;
+	bool usesPrimaryGrowth() const;
+	std::optional<newHorizonsHeroes::PrimaryGrowthView> getPrimaryGrowthView() const;
+	const JsonNode & getPrimaryGrowthRules() const { return primaryGrowthRules; }
+	bool isPrimaryRatingNode() const override { return usesPrimaryGrowth(); }
 
 	/// Returns true if hero has free secondary skill slot.
 	bool canLearnSkill() const;
@@ -206,7 +212,7 @@ public:
 	void setExperience(si64 value, ChangeValueMode mode);
 	void setPrimarySkill(PrimarySkill primarySkill, si64 value, ChangeValueMode mode);
 	void setSecSkillLevel(const SecondarySkill & which, int val, ChangeValueMode mode); // abs == 0 - changes by value; 1 - sets to value
-	void levelUp();
+	void levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS> & gains = {});
 
 	void setMovementPoints(int points);
 	int movementPointsRemaining() const;
@@ -296,6 +302,7 @@ public:
 
 	int32_t getEffectLevel(const spells::Spell * spell) const override;
 	int32_t getEffectPower(const spells::Spell * spell) const override;
+	int32_t getEffectPowerDivisor(const spells::Spell * spell) const override;
 	int32_t getEnchantPower(const spells::Spell * spell) const override;
 	int64_t getEffectValue(const spells::Spell * spell) const override;
 	int64_t getEffectRange(const spells::Spell * spell) const override;
@@ -338,6 +345,9 @@ protected:
 	void serializeJsonOptions(JsonSerializeFormat & handler) override;
 
 private:
+	bool primaryGrowthCaptured = false;
+	JsonNode primaryGrowthRules;
+	std::array<int, GameConstants::PRIMARY_SKILLS> lastPrimaryGains{};
 	void levelUpAutomatically(IGameRandomizer & gameRandomizer);
 	void attachCommanderToArmy();
 
@@ -373,6 +383,21 @@ public:
 		h & commander;
 		h & visitedObjects;
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_GROWTH))
+		{
+			h & primaryGrowthRules;
+			h & lastPrimaryGains;
+			if(!h.saving)
+				newHorizonsHeroes::validateResolvedHeroRules(primaryGrowthRules);
+		}
+		else if(!h.saving)
+		{
+			primaryGrowthRules = JsonNode();
+			lastPrimaryGains.fill(0);
+		}
+
+		if(!h.saving)
+			primaryGrowthCaptured = true; // Includes old saves: absence is legacy, not a new-game request.
 		if(!h.saving && h.loadingGamestate)
 			attachCommanderToArmy();
 	}

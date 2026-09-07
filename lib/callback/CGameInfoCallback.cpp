@@ -37,6 +37,11 @@ const JsonNode & CGameInfoCallback::getMagicRules() const
 	return gameState().getMagicRules();
 }
 
+const JsonNode & CGameInfoCallback::getHeroDevelopmentRules() const
+{
+	return gameState().getHeroDevelopmentRules();
+}
+
 const IMarket * CGameInfoCallback::getMarket(ObjectInstanceID objid) const
 {
 	const CGObjectInstance * obj = getObj(objid, false);

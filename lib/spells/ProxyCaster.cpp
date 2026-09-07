@@ -66,6 +66,11 @@ int64_t ProxyCaster::getSpecificSpellBonus(const Spell * spell, int64_t base) co
 	return base;
 }
 
+int32_t ProxyCaster::getEffectPowerDivisor(const Spell * spell) const
+{
+	return actualCaster ? actualCaster->getEffectPowerDivisor(spell) : 1;
+}
+
 int32_t ProxyCaster::getEffectPower(const Spell * spell) const
 {
 	if(actualCaster)

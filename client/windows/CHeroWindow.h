@@ -84,6 +84,7 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::shared_ptr<CTextBox> questlogLabel;
 	std::shared_ptr<CButton> questlogButton;
 	std::shared_ptr<CButton> commanderButton;
+	std::shared_ptr<CButton> growthButton;
 	std::shared_ptr<CButton> backpackButton;
 
 	std::shared_ptr<CToggleButton> tacticsButton;

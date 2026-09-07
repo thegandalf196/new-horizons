@@ -1,0 +1,56 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "Saved New Horizons hero growth and scale rules",
+	"description": "Unactivated future schema. Empty retains legacy heroes. Runtime additionally checks scoped identifiers, complete new-game class coverage, growth sum ten, first chance zero, profile bounds against maxPrimary and saved identity preservation.",
+	"type": "object",
+	"oneOf": [
+		{"maxProperties": 0},
+		{
+			"minProperties": 6,
+			"required": ["schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "extraGrowth"],
+			"additionalProperties": false,
+			"properties": {
+				"schemaVersion": {"type": "integer", "enum": [1]},
+				"rulesetVersion": {"type": "integer", "enum": [1]},
+				"powerDivisor": {"type": "integer", "minimum": 1, "maximum": 1000},
+				"maxPrimary": {"type": "integer", "minimum": 100, "maximum": 1000000},
+				"classProfiles": {
+					"type": "object",
+					"minProperties": 1,
+					"additionalProperties": {"$ref": "#/definitions/profile"}
+				},
+				"extraGrowth": {"type": "array", "items": {"$ref": "#/definitions/extra"}}
+			}
+		}
+	],
+	"definitions": {
+		"profile": {
+			"type": "object",
+			"required": ["starting", "growth"],
+			"additionalProperties": false,
+			"properties": {
+				"starting": {
+					"type": "array", "minItems": 4, "maxItems": 4,
+					"items": {"type": "integer", "minimum": 0, "maximum": 1000000}
+				},
+				"growth": {
+					"type": "array", "minItems": 4, "maxItems": 4,
+					"items": {"type": "integer", "minimum": 1, "maximum": 10}
+				}
+			}
+		},
+		"extra": {
+			"type": "object",
+			"required": ["skill", "primary", "chances"],
+			"additionalProperties": false,
+			"properties": {
+				"skill": {"type": "string", "minLength": 1},
+				"primary": {"type": "integer", "minimum": 0, "maximum": 3},
+				"chances": {
+					"type": "array", "minItems": 4, "maxItems": 4,
+					"items": {"type": "integer", "minimum": 0, "maximum": 100}
+				}
+			}
+		}
+	}
+}

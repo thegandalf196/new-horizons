@@ -246,6 +246,28 @@ void GameRandomizer::setSeed(int newSeed)
 	globalRandomNumberGenerator.setSeed(newSeed);
 }
 
+std::array<int, GameConstants::PRIMARY_SKILLS> GameRandomizer::rollPrimarySkillsForLevelup(const CGHeroInstance * hero)
+{
+	if(!hero->usesPrimaryGrowth())
+	{
+		std::array<int, GameConstants::PRIMARY_SKILLS> gains{};
+		++gains[rollPrimarySkillForLevelup(hero).getNum()];
+		return gains;
+	}
+	if(!heroSkillSeed.count(hero->getHeroTypeID()))
+		heroSkillSeed.try_emplace(hero->getHeroTypeID(), getDefault().nextInt());
+	auto & rng = heroSkillSeed.at(hero->getHeroTypeID()).seed;
+	const auto view = hero->getPrimaryGrowthView();
+	std::vector<newHorizonsHeroes::ExtraPrimaryRoll> opportunities;
+	std::vector<int> draws;
+	for(const auto & extra : view->extraGrowth)
+	{
+		opportunities.push_back({extra.attribute, extra.chancePercent});
+		draws.push_back(rng.nextInt(0, 99));
+	}
+	return newHorizonsHeroes::calculatePrimaryGrowth(view->profile, opportunities, draws);
+}
+
 PrimarySkill GameRandomizer::rollPrimarySkillForLevelup(const CGHeroInstance * hero)
 {
 	if(!heroSkillSeed.count(hero->getHeroTypeID()))

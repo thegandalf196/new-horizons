@@ -63,7 +63,8 @@
 				"specialtySpellScaling" :         { "type" : "number" },
 				"baseScoutingRange" :             { "type" : "number" },
 				"levelupTotalSkillsAmount" :      { "type" : "number" },
-				"levelupUpgradedSkillsAmount" :   { "type" : "number" }
+				"levelupUpgradedSkillsAmount" :   { "type" : "number" },
+				"newHorizons": { "$ref": "newHorizonsHeroes.json" }
 			}
 		},
 		"towns" : {

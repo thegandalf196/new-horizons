@@ -1349,6 +1349,7 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 	ObjectInstanceID heroId;
 
 	PrimarySkill primskill = PrimarySkill::ATTACK;
+	std::array<int, GameConstants::PRIMARY_SKILLS> primaryGains{};
 	std::vector<SecondarySkill> skills;
 
 	void visitTyped(ICPackVisitor & visitor) override;
@@ -1360,6 +1361,14 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 		h & heroId;
 		h & primskill;
 		h & skills;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_GROWTH))
+			h & primaryGains;
+		else if(!h.saving)
+		{
+			primaryGains.fill(0);
+			if(primskill.getNum() >= 0 && primskill.getNum() < GameConstants::PRIMARY_SKILLS)
+				primaryGains[primskill.getNum()] = 1;
+		}
 	}
 };
 

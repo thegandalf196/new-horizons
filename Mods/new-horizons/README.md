@@ -6,10 +6,25 @@ This is internal edition content, not a player-managed mod collection. Runtime
 artwork is original CC0 geometry; editable sources and provenance are in
 `assets/new-horizons/`. Referenced Heroes III resources remain purchaser-supplied.
 
-## Six-school foundation — native integration passed, GUI acceptance pending
+## Hero-development preview
+
+New games now snapshot provisional primary profiles for all 18 core classes:
+starting ratings use 20/15/10/5 and class growth totals ten points per level.
+Owned skills can grant independent extra growth. Knowledge supplies base mana;
+spell-power terms use the saved divisor. Expanded Attack/Defense ratings do not
+blindly increase creature statistics. The read-only growth panel distinguishes
+base/total ratings, proposed class growth and actual last-level gains.
+
+Ordinary Linux testing verified equipment changes, quest XP, four-gain level-up,
+save/restart and a subsequent turn. Legacy saves retain their saved rules and
+omit the growth entry. These are not native Windows gameplay or full-redesign
+acceptance claims. Leadership/siege development, post-Expert masteries, the new
+spell roster and creature categories remain subsequent work.
+
+## Six-school foundation
 
 `tools/update-new-horizons-module.py` generates metadata from canonical
-`config/newHorizons{Combat,Magic,Schools,Skills}.json`. Do not edit the inline copy.
+`config/newHorizons{Combat,Magic,Schools,Skills,Heroes}.json`. Do not edit the inline copy.
 The six-school increment requires its matching runtime, serialization and UI;
 source data or image generation alone is not a gameplay acceptance result.
 
@@ -17,8 +32,8 @@ The magic snapshot classifies all 69 existing common hero spells. It does **not*
 register fictional versions of the planned new spell roster. Titan's Bolt and
 creature-only abilities/triggers retain their special handling. Existing spells
 keep their real names/effects: Magic Arrow is not falsely labeled a completed new
-Magic Missile implementation. New spells/effects, qualitative masteries, growth,
-secondary attributes and creature tiers are subsequent work.
+Magic Missile implementation. New spells/effects, qualitative masteries,
+additional secondary-attribute development and creature tiers are subsequent work.
 
 Six new school skills provide actual Basic/Advanced/Expert school bonuses, with
 provisional acquisition weights Might 2 / Magic 6. These ranks are not the later

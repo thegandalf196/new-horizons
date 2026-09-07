@@ -500,8 +500,13 @@ void CPlayerInterface::heroGotLevel(const CGHeroInstance *hero, PrimarySkill psk
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;
 	auto availableSkills = skills;
+	std::optional<CLevelWindow::PrimaryGainSnapshot> primaryGains;
+	if(const auto growth = hero->getPrimaryGrowthView())
+		primaryGains = CLevelWindow::PrimaryGainSnapshot{hero->level, growth->lastGains};
 
-	auto showLevelUpDialog = [this, hero, pskill, availableSkills = std::move(availableSkills), queryID]() mutable
+	// Capture the already-applied level packet's values before queuing the UI;
+	// a later level-up must not replace this dialog's actual gain readback.
+	auto showLevelUpDialog = [this, hero, pskill, availableSkills = std::move(availableSkills), queryID, primaryGains]() mutable
 	{
 		ENGINE->sound().playSound(soundBase::heroNewLevel);
 		auto callback = [this, queryID](ui32 selection)
@@ -514,13 +519,13 @@ void CPlayerInterface::heroGotLevel(const CGHeroInstance *hero, PrimarySkill psk
 
 		if(auto levelWindow = ENGINE->windows().topWindow<CLevelWindow>())
 		{
-			levelWindow->updateLevelUpData(hero, pskill, availableSkills, callback);
+			levelWindow->updateLevelUpData(hero, pskill, availableSkills, callback, primaryGains);
 			return;
 		}
 
 		closeActiveLevelUpDialog();
 
-		auto levelWindow = std::make_shared<CLevelWindow>(hero, pskill, availableSkills, callback);
+		auto levelWindow = std::make_shared<CLevelWindow>(hero, pskill, availableSkills, callback, primaryGains);
 
 		// Free the visible-dialog gate as soon as the player makes a choice.
 		// The query-backed dialog queue still keeps manual input blocked until the

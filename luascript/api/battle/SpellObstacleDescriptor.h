@@ -40,6 +40,7 @@ struct SpellObstacleDescriptor final : ApiSerializable<SpellObstacleDescriptor>
 	const ::spells::Spell * spell = nullptr;
 	int32_t turnsRemaining = -1;
 	int32_t casterSpellPower = 0;
+	int32_t casterPowerDivisor = 1;
 	int32_t spellLevel = 0;
 	BattleSide casterSide = BattleSide::ATTACKER;
 	int32_t minimalDamage = 0;
@@ -69,6 +70,7 @@ struct SpellObstacleDescriptor final : ApiSerializable<SpellObstacleDescriptor>
 		s("spell",            spell,            "Spell that created the obstacle. Used for dispel and damage-source attribution. Only for spell-created obstacles");
 		s("turnsRemaining",   turnsRemaining,   "How many turns the obstacle persists. -1 means permanent for the battle.");
 		s("casterSpellPower", casterSpellPower, "Spell power of the caster at the moment of creation; feeds damage formulas.");
+		s("casterPowerDivisor", casterPowerDivisor, "Positive creation-time power scale divisor, retained independently of later caster changes. Defaults to one for legacy casters.");
 		s("spellLevel",       spellLevel,       "Spell skill level (0–3) the obstacle was cast at.");
 		s("casterSide",       casterSide,       "Which battle side cast it; relevant for native-visibility and friendly-fire rules.");
 		s("minimalDamage",    minimalDamage,    "Floor for the damage the obstacle inflicts on trigger.");

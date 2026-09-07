@@ -67,10 +67,12 @@ TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
 	gameHandler->sendAndApply(activate);
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
-	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 99, ChangeValueMode::ABSOLUTE);
+	const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER,
+		99 * attackerSideHero->getEffectPowerDivisor(spell), ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 3, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->mana = 1000;
-	const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
+	ASSERT_EQ(spell->calculateDamage(attackerSideHero), 7725);
 	SpellSchool best;
 	ASSERT_EQ(attackerSideHero->getSpellSchoolLevel(spell, &best), 3);
 	ASSERT_EQ(best, SpellSchool::fromSerializationKey("new-horizons:havoc"));
