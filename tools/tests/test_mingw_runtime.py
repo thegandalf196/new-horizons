@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
 import mingw_runtime as runtime
@@ -45,8 +45,14 @@ class MinGWRuntimeTest(unittest.TestCase):
 
     def test_case_collision_rejected(self):
         (self.root / 'VCMI_LIB.DLL').write_bytes(b'collision')
-        with self.assertRaisesRegex(RuntimeError, 'collision'):
-            runtime.audit_directory(self.root)
+        # Model an input listing from a case-sensitive build host even when
+        # this regression runs on NTFS, which cannot create both directory entries.
+        directory = Mock()
+        directory.iterdir.return_value = [self.root / 'VCMI_lib.dll', self.root / 'VCMI_LIB.DLL', self.root / 'VCMI_client.exe']
+        with patch.object(runtime, 'inspect_pe', side_effect=AssertionError('Collision must reject before PE parsing')) as inspect:
+            with self.assertRaisesRegex(RuntimeError, 'collision'):
+                runtime.audit_directory(directory)
+        inspect.assert_not_called()
 
     def test_ogg_alias_preserves_original_bytes(self):
         original = self.root / 'libogg.dll'

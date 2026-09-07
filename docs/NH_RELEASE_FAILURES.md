@@ -32,6 +32,28 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 | Local034 ZIP contained173 home-path strings in nine PE data sections | Binary `__FILE__` strings and FFmpeg configure-tool paths escaped a text-file-only privacy scan. | `test_binary_privacy.py`: whole-binary ASCII/UTF16 scan, data-section and alignment controls; exact9/173 RED reproduced. No publication, debug-only stripping or binary string patching. Rebuild/remap and re-audit required. |
 | Local remapped libiconv configure failed77 | Autotools split a space-bearing prefix flag; quote characters inside CFLAGS were not shell syntax. | Dependency remap must use space-free source roots, and real dependency compilation must verify it. A tiny compiler probe is not whole dependency acceptance. |
 
+## Cross-platform fixture lesson — case-collision regression
+
+A later Windows regression run passed 70 of 71 tests but errored in
+`test_mingw_runtime.MinGWRuntimeTest.test_case_collision_rejected` with missing
+`pefile`. The fixture tried to create `VCMI_lib.dll` and `VCMI_LIB.DLL` as separate
+files. On case-insensitive Windows storage this overwrote one entry, so the
+collision guard was never exercised and the test fell through into PE parsing.
+Installing the parser alone would not repair the missing collision condition.
+
+Build changed the test to provide an explicit case-colliding input listing on
+either host and assert that `inspect_pe` is never called. Dispatcher independently
+ran the then-current aggregate regression suite: 72 tests, exit0 (one additional
+case had been added since the failing 71-case CI). Evidence is
+`build/new-horizons-windows-cross/package-regressions-dispatcher-review.log/.json`.
+This local result is not the subsequent Windows CI result; Build records that
+separately. No production collision check was removed.
+
+**Prevention:** filesystem-case, symlink, path-separator, locale and shell-version
+assumptions in fixtures must be explicit. For a synthetic early-rejection test,
+model the impossible-on-this-host input and assert later parsing/execution is not
+reached. Keep real target-platform integration checks as separate evidence.
+
 ## Required prevention workflow
 
 Build owns implementation of these checks; documentation does not mean automation

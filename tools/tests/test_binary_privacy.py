@@ -38,6 +38,15 @@ class BinaryPrivacyTest(unittest.TestCase):
                         b'/home/synthetic-builder/.cache/source.cpp'):
             self.assertTrue(all(h['classification'] == 'unapproved-profile-path' for h in inspect_bytes(invalid, True)))
 
+    def test_ci_escape_after_whitespace_or_quote_is_not_truncated(self):
+        for component in ('cache with space', "cache'withquote", 'cache\twithtab'):
+            text = 'C:/Users/runneradmin/.conan2/p/' + component + '/../../../../Alice/private.cpp'
+            for encoding in ('ascii', 'utf-16-le'):
+                for prefix in (b'', b'x'):
+                    hits = inspect_bytes(prefix + text.encode(encoding), True)
+                    self.assertTrue(hits)
+                    self.assertTrue(all(h['classification'] == 'unapproved-profile-path' for h in hits))
+
     def test_ci_classification_retains_offsets_and_binary_hash_report(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

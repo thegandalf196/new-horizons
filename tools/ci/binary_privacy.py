@@ -37,7 +37,9 @@ def verified_github_ci_provenance():
 def ci_conan_reference(text, start):
     if not re.match(r'C:[\\/]Users[\\/]runneradmin[\\/]\.conan2[\\/]p[\\/]', text[start:], re.IGNORECASE):
         return False
-    tail = re.split(r'[\s\x00\r\n\"\']', text[start:], maxsplit=1)[0]
+    # Whitespace may belong to a Windows path: never truncate before checking
+    # traversal. A command string may extend this conservative lexical check.
+    tail = text[start:].split('\x00', 1)[0]
     depth = 0
     for part in re.split(r'[\\/]', tail)[5:]:
         if part == '..':
