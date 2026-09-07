@@ -828,7 +828,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			}
 
 			auto defender = exchangeBattle->getForUpdate(targetUnit->unitId());
-			const int totalAttacks = attacker->getTotalAttacks(shooting);
+			const int totalAttacks = AttackPossibility::getAttackCount(*attacker, shooting, *exchangeBattle);
 
 			if(canUseAp && activeUnit->unitId() == ap.attack.attacker->unitId()
 				&& targetUnit->unitId() == ap.attack.defender->unitId())

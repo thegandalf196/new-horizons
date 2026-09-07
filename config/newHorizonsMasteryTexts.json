@@ -1,0 +1,8 @@
+{
+	"new-horizons.mastery.artilleryVolley.name": "Volley",
+	"new-horizons.mastery.artilleryVolley.description": "Your ballista gains {magnitude} additional attack(s) during an eligible shooting action. Normal targeting and action restrictions still apply.",
+	"new-horizons.mastery.artilleryPrecision.name": "Precision",
+	"new-horizons.mastery.artilleryPrecision.description": "Your ballista's ranged attacks ignore distance and wall damage penalties. Other damage modifiers and targeting restrictions still apply.",
+	"new-horizons.mastery.artilleryRepair.name": "Field Repair",
+	"new-horizons.mastery.artilleryRepair.description": "At its normal pre-turn regeneration step, your surviving ballista restores up to {magnitude} health, capped at maximum health. This cannot revive a destroyed machine."
+}

@@ -11,6 +11,7 @@
 
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
+#include "../entities/hero/NewHorizonsMasteryState.h"
 
 #include <vcmi/spells/Caster.h>
 
@@ -205,6 +206,14 @@ public:
 	std::optional<newHorizonsHeroes::PrimaryGrowthView> getPrimaryGrowthView() const;
 	const JsonNode & getPrimaryGrowthRules() const { return primaryGrowthRules; }
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
+	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
+	std::optional<newHorizonsHeroes::MasteryView> getMasteryView() const;
+	void captureMasteryEligibility(uint32_t nextLevel);
+	void captureMasteryEligibility(uint32_t nextLevel, bool artilleryExpertBeforeGain);
+	std::optional<newHorizonsHeroes::MasteryOffer> prepareMasteryOffer() const;
+	void applyMasteryOffer(const newHorizonsHeroes::MasteryOffer & offer);
+	void applyMasteryChoice(uint64_t sequence, int choice);
+	void refreshMasteryBonuses();
 	std::optional<newHorizonsHeroes::LeadershipCapacity> getLeadershipCapacity() const;
 	std::optional<newHorizonsHeroes::SiegeCapabilities> getSiegeCapabilities() const;
 	/// Read-only projection for AI army exchanges; does not attach or transfer units.
@@ -353,6 +362,8 @@ protected:
 private:
 	bool capabilityRulesCaptured = false;
 	JsonNode capabilityRules;
+	bool masteryRulesCaptured = false;
+	newHorizonsHeroes::MasteryState masteryState;
 	bool primaryGrowthCaptured = false;
 	JsonNode primaryGrowthRules;
 	std::array<int, GameConstants::PRIMARY_SKILLS> lastPrimaryGains{};
@@ -413,8 +424,14 @@ public:
 		else if(!h.saving)
 			capabilityRules = JsonNode();
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MASTERIES))
+			h & masteryState;
+		else if(!h.saving)
+			masteryState = newHorizonsHeroes::MasteryState();
+
 		if(!h.saving)
 		{
+			masteryRulesCaptured = true;
 			primaryGrowthCaptured = true; // Includes old saves: absence is legacy, not a new-game request.
 			capabilityRulesCaptured = true;
 		}

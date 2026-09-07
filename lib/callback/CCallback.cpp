@@ -42,6 +42,20 @@ void CCallback::moveHero(const CGHeroInstance *h, const std::vector<int3> & path
 	sendRequest(pack);
 }
 
+int CCallback::chooseHeroMastery(ObjectInstanceID hero, QueryID queryID, uint64_t sequence, int choice)
+{
+	ASSERT_IF_CALLED_WITH_PLAYER
+	if(queryID == QueryID(-1) || hero.getNum() < 0 || sequence == 0 || choice < 0 || choice >= 3)
+		return -1;
+	HeroMasteryReply pack;
+	pack.qid = queryID;
+	pack.hero = hero;
+	pack.sequence = sequence;
+	pack.choice = choice;
+	pack.player = *getPlayerID();
+	return sendRequest(pack);
+}
+
 int CCallback::selectionMade(int selection, QueryID queryID)
 {
 	return sendQueryReply(selection, queryID);

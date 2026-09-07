@@ -5,6 +5,7 @@
 #pragma once
 
 #include "CWindowObject.h"
+#include "../../lib/constants/EntityIdentifiers.h"
 
 class CGHeroInstance;
 class CButton;
@@ -14,9 +15,11 @@ class CButton;
 /// or use this window to activate new rules on an old hero.
 class HeroGrowthWindow : public CWindowObject
 {
+	ObjectInstanceID heroID;
 	std::vector<std::shared_ptr<CIntObject>> elements;
 	std::shared_ptr<CButton> closeButton;
 
 public:
 	explicit HeroGrowthWindow(const CGHeroInstance & hero);
+	void refresh(const CGHeroInstance & hero);
 };

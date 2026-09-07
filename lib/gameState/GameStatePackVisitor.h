@@ -79,6 +79,8 @@ public:
 	void visitSetScriptVariable(SetScriptVariable & pack) override;
 	void visitSetQuestHint(SetQuestHint & pack) override;
 	void visitHeroLevelUp(HeroLevelUp & pack) override;
+	void visitHeroMasteryOffer(HeroMasteryOffer & pack) override;
+	void visitHeroMasteryChosen(HeroMasteryChosen & pack) override;
 	void visitCommanderLevelUp(CommanderLevelUp & pack) override;
 	void visitBattleStart(BattleStart & pack) override;
 	void visitBattleSetActiveStack(BattleSetActiveStack & pack) override;

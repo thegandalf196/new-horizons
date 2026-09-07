@@ -67,6 +67,7 @@
 #include "windows/CSpellWindow.h"
 #include "windows/CTutorialWindow.h"
 #include "windows/GUIClasses.h"
+#include "windows/HeroMasteryWindow.h"
 #include "windows/InfoWindows.h"
 #include "windows/settings/SettingsMainWindow.h"
 
@@ -535,6 +536,25 @@ void CPlayerInterface::heroGotLevel(const CGHeroInstance *hero, PrimarySkill psk
 	};
 
 	createAndQueueDialog(PendingDialog::Type::Blocking, std::move(showLevelUpDialog), queryID);
+	tryShowNextPendingDialog();
+}
+
+void CPlayerInterface::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID)
+{
+	EVENT_HANDLER_CALLED_BY_CLIENT;
+	// Copy the actual saved offer before queuing; never reconstruct it from
+	// current defaults or a later hero level. Preserve authoritative option order.
+	auto show = [this, offer, queryID]()
+	{
+		closeActiveLevelUpDialog();
+		auto submit = [this, hero = offer.hero, sequence = offer.sequence, queryID](int choice)
+		{
+			return cb->chooseHeroMastery(hero, queryID, sequence, choice);
+		};
+		showingDialog->setBusy();
+		ENGINE->windows().createAndPushWindow<HeroMasteryWindow>(offer, queryID, std::move(submit));
+	};
+	createAndQueueDialog(PendingDialog::Type::Blocking, std::move(show), queryID);
 	tryShowNextPendingDialog();
 }
 
@@ -1350,6 +1370,10 @@ void CPlayerInterface::showGarrisonDialog(const CArmedInstance * up, const CGHer
 
 void CPlayerInterface::requestRealized( PackageApplied *pa )
 {
+	if(pa->packType == CTypeList::getInstance().getTypeID<HeroMasteryReply>(nullptr))
+		for(const auto & window : ENGINE->windows().findWindows<HeroMasteryWindow>())
+			window->requestApplied(pa->requestID, pa->result);
+
 	if(pa->packType == CTypeList::getInstance().getTypeID<MoveHero>(nullptr))
 		movementController->onMoveHeroApplied();
 
@@ -1363,12 +1387,18 @@ void CPlayerInterface::closeActiveLevelUpDialog()
 {
 	if(auto levelWindow = ENGINE->windows().topWindow<CLevelWindow>())
 		levelWindow->close();
+	else if(auto masteryWindow = ENGINE->windows().topWindow<HeroMasteryWindow>())
+		masteryWindow->close(); // Refuses dismissal until its matching query resolves.
 	else if(auto commanderWindow = ENGINE->windows().topWindow<CStackWindow>(); commanderWindow && commanderWindow->isCommanderLevelUpDialog())
 		commanderWindow->close();
 }
 
 void CPlayerInterface::queryResolved(QueryID queryID)
 {
+	// Deliver even while a right-click help popup covers the mandatory window.
+	// The window matches its own query and defers closure until it is topmost.
+	for(const auto & window : ENGINE->windows().findWindows<HeroMasteryWindow>())
+		window->queryResolved(queryID);
 	auto dialog = findPendingDialog(queryID);
 	if(dialog == dialogs.end())
 		return;
@@ -1952,7 +1982,7 @@ void CPlayerInterface::createAndQueueDialog(PendingDialog::Type blockingPolicy, 
 	PendingDialog dialog;
 	dialog.queryID = queryID >= 0 ? queryID : QueryID::NONE;
 	dialog.blockingPolicy = blockingPolicy;
-	// Level-up dialogs currently mean hero/commander level-up prompts.
+	// Progression includes hero/commander levels and post-Expert mastery.
 	// Keep them alive across turn-end and keep the whole query-backed chain
 	// ahead of ordinary queued info/reward dialogs.
 	dialog.dropOnTurnEnd = !dialog.isLevelUpDialog();
@@ -1974,6 +2004,17 @@ std::list<CPlayerInterface::PendingDialog>::iterator CPlayerInterface::findQuery
 
 void CPlayerInterface::tryShowNextPendingDialog()
 {
+	// Do not bury a resolved-but-covered mastery window with another dialog.
+	// update() retries this after the user dismisses the covering popup. Never
+	// close from activate(), which would mutate WindowHandler during activation.
+	for(const auto & window : ENGINE->windows().findWindows<HeroMasteryWindow>())
+	{
+		if(!ENGINE->windows().isTopWindow(window.get()))
+			return;
+		window->close();
+		if(ENGINE->windows().isTopWindow(window.get()))
+			return; // Still waiting for authoritative resolution.
+	}
 	if(delayQueuedDialogsUntilInputSettles)
 		return;
 
@@ -1990,7 +2031,7 @@ void CPlayerInterface::tryShowNextPendingDialog()
 	while(!dialogs.empty() && !showingDialog->isBusy())
 	{
 		auto & dialog = dialogs.front();
-		// Level-up dialogs currently mean hero/commander level-up prompts.
+		// Progression includes hero/commander levels and post-Expert mastery.
 		// Keep showing those even after makingTurn becomes false, but stop normal queued dialogs.
 		if(!makingTurn && !dialog.isLevelUpDialog())
 			return;

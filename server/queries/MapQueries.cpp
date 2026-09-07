@@ -242,7 +242,7 @@ void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 	if(hlu.skills.empty())
 	{
 		logGlobal->trace("Completing hero level-up query. %s gains no secondary skill", hero->getNameTextID());
-		gh->levelUpHero(hero);
+		gh->heroLevelUpChoiceDone(hero);
 		return;
 	}
 
@@ -295,6 +295,52 @@ void CHeroLevelUpDialogQuery::onExposure(QueryPtr topQuery)
 void CHeroLevelUpDialogQuery::notifyObjectAboutRemoval(const CGObjectInstance * visitedObject, const CGHeroInstance * visitingHero) const
 {
 	visitedObject->heroLevelUpDone(*gh, visitingHero);
+}
+
+CHeroMasteryDialogQuery::CHeroMasteryDialogQuery(CGameHandler * owner, const CGHeroInstance * hero)
+	: CQuery(owner, TYPE), heroId(hero->id)
+{
+	addPlayer(hero->getOwner());
+}
+
+bool CHeroMasteryDialogQuery::blocksPack(const CPackForServer * pack) const
+{
+	const auto * reply = dynamic_cast<const HeroMasteryReply *>(pack);
+	return !reply || !vstd::contains(players, reply->player);
+}
+
+void CHeroMasteryDialogQuery::onAdded(PlayerColor color)
+{
+	if(prompted || accepted || owner->topQuery(color).get() != this || !gh->uiReadyForDialogs.contains(color))
+		return;
+	const auto * hero = gh->gameInfo().getHero(heroId);
+	if(!hero || !hero->getMasteryState().pending)
+		throw std::runtime_error("Mastery query without saved pending offer");
+	HeroMasteryDialog dialog;
+	dialog.queryID = queryID;
+	dialog.offer = *hero->getMasteryState().pending;
+	prompted = true;
+	gh->sendAndApply(dialog);
+}
+
+void CHeroMasteryDialogQuery::onExposure(QueryPtr topQuery)
+{
+	for(auto color : players)
+		onAdded(color);
+}
+
+void CHeroMasteryDialogQuery::onRemoval(PlayerColor color)
+{
+	if(!accepted)
+		throw std::runtime_error("Mastery query cannot be dismissed without an accepted choice");
+	gh->sendQueryResolved(queryID);
+	if(const auto * hero = gh->gameInfo().getHero(heroId))
+		gh->expGiven(hero);
+}
+
+void CHeroMasteryDialogQuery::notifyObjectAboutRemoval(const CGObjectInstance * object, const CGHeroInstance * hero) const
+{
+	object->heroLevelUpDone(*gh, hero);
 }
 
 CCommanderLevelUpDialogQuery::CCommanderLevelUpDialogQuery(CGameHandler * owner, const CommanderLevelUp & Clu, const CGHeroInstance * Hero)

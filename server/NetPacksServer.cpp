@@ -420,6 +420,12 @@ void ApplyGhNetPackVisitor::visitBuildBoat(BuildBoat & pack)
 	result = gh.buildBoat(pack.objid, pack.player);
 }
 
+void ApplyGhNetPackVisitor::visitHeroMasteryReply(HeroMasteryReply & pack)
+{
+	gh.throwIfWrongPlayer(connection, &pack);
+	result = gh.heroMasteryReply(pack.qid, pack.hero, pack.sequence, pack.choice, pack.player);
+}
+
 void ApplyGhNetPackVisitor::visitQueryReply(QueryReply & pack)
 {
 	gh.throwIfWrongPlayer(connection, &pack);

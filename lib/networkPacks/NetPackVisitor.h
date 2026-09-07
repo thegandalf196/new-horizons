@@ -96,6 +96,9 @@ public:
 	virtual void visitChangeObjectVisitors(ChangeObjectVisitors & pack) {}
 	virtual void visitChangeArtifactsCostume(ChangeArtifactsCostume & pack) {}
 	virtual void visitHeroLevelUp(HeroLevelUp & pack) {}
+	virtual void visitHeroMasteryOffer(HeroMasteryOffer & pack) {}
+	virtual void visitHeroMasteryDialog(HeroMasteryDialog & pack) {}
+	virtual void visitHeroMasteryChosen(HeroMasteryChosen & pack) {}
 	virtual void visitCommanderLevelUp(CommanderLevelUp & pack) {}
 	virtual void visitBlockingDialog(BlockingDialog & pack) {}
 	virtual void visitGarrisonDialog(GarrisonDialog & pack) {}
@@ -155,6 +158,7 @@ public:
 	virtual void visitHireHero(HireHero & pack) {}
 	virtual void visitBuildBoat(BuildBoat & pack) {}
 	virtual void visitQueryReply(QueryReply & pack) {}
+	virtual void visitHeroMasteryReply(HeroMasteryReply & pack) {}
 	virtual void visitMakeAction(MakeAction & pack) {}
 	virtual void visitDigWithHero(DigWithHero & pack) {}
 	virtual void visitCastAdvSpell(CastAdvSpell & pack) {}

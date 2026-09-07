@@ -19,14 +19,24 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 
 HeroGrowthWindow::HeroGrowthWindow(const CGHeroInstance & hero)
-	: CWindowObject(BORDERED)
+	: CWindowObject(BORDERED), heroID(hero.id)
 {
+	refresh(hero);
+}
+
+void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
+{
+	if(hero.id != heroID)
+		return;
 	OBJECT_CONSTRUCTION;
+	elements.clear();
+	closeButton.reset();
 	// These saved families are independent: primary growth does not opt an old
 	// hero into capacity rules, and capacity does not supply a growth profile.
 	const auto growth = hero.getPrimaryGrowthView();
 	const auto leadership = hero.getLeadershipCapacity();
 	const auto siege = hero.getSiegeCapabilities();
+	const auto masteries = hero.getMasteryView();
 	pos = Rect(0, 0, 700, 560);
 	const ColorRGBA panelColor(52, 46, 43);
 	const ColorRGBA rimColor(180, 154, 98);
@@ -34,7 +44,7 @@ HeroGrowthWindow::HeroGrowthWindow(const CGHeroInstance & hero)
 	elements.push_back(std::make_shared<CLabel>(350, 24, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Hero development"));
 	elements.push_back(std::make_shared<CMultiLineLabel>(Rect(22, 44, 656, 38), FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE,
 		GAME->translator().translate(hero.getNameTextID()) + " - " + GAME->translator().translate(hero.getClassNameTextID()) + " - Level " + std::to_string(hero.level)));
-	elements.push_back(std::make_shared<CLabel>(350, 91, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, growth ? "Saved hero profile; values at opening" : "Saved capability rules; values at opening"));
+	elements.push_back(std::make_shared<CLabel>(350, 91, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, growth ? "Saved hero profile; displayed snapshot" : "Saved development rules; displayed snapshot"));
 
 	const std::array<const char *, GameConstants::PRIMARY_SKILLS> primaryImages = {
 		"NH_hero_attack_32", "NH_hero_defense_32", "NH_hero_power_32", "NH_hero_knowledge_32"
@@ -103,7 +113,27 @@ HeroGrowthWindow::HeroGrowthWindow(const CGHeroInstance & hero)
 		capabilities += "Multiplier affects base damage range only, not total damage.\nControl chances do not guarantee an eligible action.\n\n";
 	}
 
-	addSmallLabel(22, 343, 656, !capabilities.empty() ? "Capabilities and skill growth - scroll for details" : growth ? "Additional skill growth - independent chances" : "Primary growth");
+	if(masteries)
+	{
+		capabilities += "Saved masteries - separate from skill ranks\n";
+		for(const auto & choice : masteries->choices)
+		{
+			const auto & option = choice.selection.option;
+			capabilities += GAME->translator().translate(option.nameTextId) + (choice.active ? " (active)" : " (inactive)") + ": "
+				+ newHorizonsHeroes::formatMasteryDescription(option, GAME->translator().translate(option.descriptionTextId)) + "\n";
+		}
+		if(masteries->choices.empty())
+			capabilities += "No mastery chosen.\n";
+		if(masteries->pending)
+			capabilities += "A saved mastery offer awaits its mandatory choice dialog.\n";
+		for(const auto & skill : masteries->awaitingChoice)
+			capabilities += skill.toEntity(LIBRARY)->getNameTranslated() + ": awaiting mastery choice.\n";
+		for(const auto & skill : masteries->eligibleNextLevel)
+			capabilities += skill.toEntity(LIBRARY)->getNameTranslated() + ": eligible on a future level gain.\n";
+		capabilities += '\n';
+	}
+
+	addSmallLabel(22, 343, 656, !capabilities.empty() ? "Development and skill growth - scroll for details" : growth ? "Additional skill growth - independent chances" : "Primary growth");
 	std::string chances;
 	if(growth)
 	{
@@ -124,7 +154,7 @@ HeroGrowthWindow::HeroGrowthWindow(const CGHeroInstance & hero)
 	elements.push_back(std::make_shared<CTextBox>(chances, Rect(22, 365, 656, 108), 0, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE));
 	const std::string footer = growth
 		? "Base includes level/quest gains; Total includes items/effects.\nClass start may differ from authored stats; growth proposals are before the cap.\nPrimary cap: " + std::to_string(growth->maximumPrimary) + "; Power scaling divisor: " + std::to_string(growth->powerDivisor) + "."
-		: "Totals are current hero attributes; no saved primary growth profile.\nCapabilities are read-only values from this hero's saved rules.\nScroll the details above for their scope and limitations.";
+		: "Totals are current hero attributes; no saved primary growth profile.\nDevelopment details are read-only values from this hero's saved rules.\nScroll the details above for their scope and limitations.";
 	elements.push_back(std::make_shared<CTextBox>(footer, Rect(22, 484, 560, 58), 0, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE));
 	closeButton = std::make_shared<CButton>(Point(614, 485), AnimationPath::builtin("NH_cancel_button"),
 		CButton::tooltip("Close", "Return to the hero screen without changing anything."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);

@@ -1,0 +1,34 @@
+{
+	"schemaVersion": 1,
+	"rulesetVersion": 1,
+	"skills": {
+		"core:artillery": {
+			"options": [
+				{
+					"id": "new-horizons:artilleryVolley",
+					"effect": "volley",
+					"magnitude": 1,
+					"nameTextId": "new-horizons.mastery.artilleryVolley.name",
+					"descriptionTextId": "new-horizons.mastery.artilleryVolley.description",
+					"iconKey": "NH_mastery_artilleryVolley"
+				},
+				{
+					"id": "new-horizons:artilleryPrecision",
+					"effect": "precision",
+					"magnitude": 1,
+					"nameTextId": "new-horizons.mastery.artilleryPrecision.name",
+					"descriptionTextId": "new-horizons.mastery.artilleryPrecision.description",
+					"iconKey": "NH_mastery_artilleryPrecision"
+				},
+				{
+					"id": "new-horizons:artilleryRepair",
+					"effect": "repair",
+					"magnitude": 50,
+					"nameTextId": "new-horizons.mastery.artilleryRepair.name",
+					"descriptionTextId": "new-horizons.mastery.artilleryRepair.description",
+					"iconKey": "NH_mastery_artilleryRepair"
+				}
+			]
+		}
+	}
+}

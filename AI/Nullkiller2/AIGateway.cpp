@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsMasteryEffects.h"
 
 #include "../../lib/AsyncRunner.h"
 #include "../../lib/UnlockGuard.h"
@@ -387,7 +388,8 @@ void AIGateway::requestRealized(PackageApplied * pa)
 		}
 	}
 
-	if(pa->packType == CTypeList::getInstance().getTypeID<QueryReply>(nullptr))
+	if(pa->packType == CTypeList::getInstance().getTypeID<QueryReply>(nullptr)
+		|| pa->packType == CTypeList::getInstance().getTypeID<HeroMasteryReply>(nullptr))
 	{
 		status.receivedAnswerConfirmation(pa->requestID, pa->result);
 	}
@@ -536,6 +538,23 @@ void AIGateway::yourTurn(QueryID queryID)
 		ScopedThreadName guard("NK2AI::AIGateway::makingTurn");
 		status.waitTillFree();
 		makeTurn();
+	});
+}
+
+void AIGateway::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID)
+{
+	status.addQuery(queryID, "Post-Expert mastery choice");
+	executeActionAsync("heroGotMastery", [this, offer, queryID]()
+	{
+		const auto * hero = cc->getHero(offer.hero);
+		if(!hero || hero->getOwner() != offer.player)
+		{
+			logAi->error("Cannot answer mastery query for a missing or transferred hero");
+			return;
+		}
+		const int choice = newHorizonsHeroes::chooseMasteryForArmy(offer, *hero);
+		logAi->debug("Mastery query %d: army valuation selects %s", queryID, offer.options[choice].id.value);
+		cc->chooseHeroMastery(offer.hero, queryID, offer.sequence, choice);
 	});
 }
 
@@ -1399,6 +1418,8 @@ void AIGateway::requestSent(const CPackForServer * pack, int requestID)
 	{
 		status.attemptedAnsweringQuery(reply->qid, requestID);
 	}
+	if(auto reply = dynamic_cast<const HeroMasteryReply *>(pack))
+		status.attemptedAnsweringQuery(reply->qid, requestID);
 }
 
 std::string AIGateway::getBattleAIName() const

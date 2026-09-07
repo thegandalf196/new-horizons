@@ -49,6 +49,15 @@ HERO_MOTIFS = {
     'growth': ('#b4d986', [('line', [(12,53),(12,38)]), ('line', [(26,53),(26,30)]), ('line', [(40,53),(40,22)]), ('line', [(54,53),(54,14)]), ('line', [(10,28),(50,8),(40,8)]), ('line', [(50,8),(49,18)])]),
 }
 
+# Saved post-Expert option icon keys supplied by Runtime, not fourth-rank badges.
+# Fan projectiles, a targeting sight and a mechanical wrench are original geometry.
+MASTERY_MOTIFS = {
+    'artilleryVolley': ('#efaa66', [('line', [(32,55),(13,18)]), ('line', [(32,55),(32,10)]), ('line', [(32,55),(51,18)]), ('polygon', [(9,13),(20,18),(12,23)]), ('polygon', [(32,7),(25,18),(39,18)]), ('polygon', [(55,13),(44,18),(52,23)]), ('line', [(14,48),(21,42),(32,39),(43,42),(50,48)])]),
+    'artilleryPrecision': ('#8fcefa', [('circle', (32,32,18)), ('circle', (32,32,6)), ('line', [(32,6),(32,20)]), ('line', [(32,44),(32,58)]), ('line', [(6,32),(20,32)]), ('line', [(44,32),(58,32)]), ('line', [(11,53),(45,19)]), ('polygon', [(37,18),(47,17),(46,27)])]),
+    'artilleryRepair': ('#98d57c', [('polygon', [(42,8),(39,20),(46,27),(57,24),(52,38),(40,39),(22,57),(10,45),(29,27),(29,15)]), ('circle', (19,46,3)), ('line', [(11,27),(11,12),(22,12)]), ('line', [(17,7),(22,12),(17,17)])]),
+}
+MOTIF_LIBRARY = {**MOTIFS, **HERO_MOTIFS, **MASTERY_MOTIFS}
+
 class Art:
     def __init__(self, width, height):
         self.w, self.h = width, height
@@ -69,7 +78,7 @@ class Art:
         self.draw.ellipse(tuple(round(v*SCALE) for v in (x-r,y-r,x+r,y+r)),fill=fill,outline=stroke,width=max(1,round(width*SCALE)))
         self.svg.append(f'<circle cx="{x:g}" cy="{y:g}" r="{r:g}" fill="{fill or "none"}" stroke="{stroke or "none"}" stroke-width="{width:g}"/>')
     def motif(self,name,x=0,y=0,size=64,disabled=False):
-        color,shapes=(MOTIFS[name] if name in MOTIFS else HERO_MOTIFS[name]);color='#85827b' if disabled else color
+        color,shapes=MOTIF_LIBRARY[name];color='#85827b' if disabled else color
         for kind,shape in shapes:
             if kind=='circle':
                 cx,cy,r=shape;self.circle(x+cx*size/64,y+cy*size/64,r*size/64,None,color,2*size/64)
@@ -160,5 +169,12 @@ for state in ('normal','pressed','disabled','highlighted'):
     name='NH_hero_growth_entry_'+state
     art.save(name);growth_frames.append(name+'.png')
 animation('NH_hero_growth_entry',growth_frames)
+
+for name in MASTERY_MOTIFS:
+    for size in (32, 64):
+        art=Art(size,size)
+        art.circle(size/2,size/2,size/2-2,'#302a25','#b49a62',1 if size == 32 else 2)
+        art.motif(name, size/16, size/16, size*7/8)
+        art.save(f'NH_mastery_{name}_{size}')
 
 print('Exported original SVG + RGBA PNG; provisional flat vector style, not final illustration.')

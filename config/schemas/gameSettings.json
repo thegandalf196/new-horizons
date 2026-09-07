@@ -65,7 +65,8 @@
 				"levelupTotalSkillsAmount" :      { "type" : "number" },
 				"levelupUpgradedSkillsAmount" :   { "type" : "number" },
 				"newHorizons": { "$ref": "newHorizonsHeroes.json" },
-				"newHorizonsCapabilities": { "$ref": "newHorizonsCapabilities.json" }
+				"newHorizonsCapabilities": { "$ref": "newHorizonsCapabilities.json" },
+				"newHorizonsMasteries": { "$ref": "newHorizonsMasteries.json" }
 			}
 		},
 		"towns" : {

@@ -14,6 +14,7 @@
 #include "Client.h"
 #include "CPlayerInterface.h"
 #include "windows/GUIClasses.h"
+#include "windows/HeroGrowthWindow.h"
 #include "windows/CCastleInterface.h"
 #include "mapView/mapHandler.h"
 #include "mainmenu/CMainMenu.h"
@@ -709,6 +710,27 @@ void ApplyClientNetPackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 	const CGHeroInstance * hero = cl.gameInfo().getHero(pack.heroId);
 	assert(hero);
 	callOnlyThatInterface(cl, pack.player, &CGameInterface::heroGotLevel, hero, pack.primskill, pack.skills, pack.queryID);
+}
+
+void ApplyClientNetPackVisitor::visitHeroMasteryOffer(HeroMasteryOffer & pack)
+{
+	if(const auto * hero = cl.gameInfo().getHero(pack.offer.hero))
+		for(const auto & window : ENGINE->windows().findWindows<HeroGrowthWindow>())
+			window->refresh(*hero);
+}
+
+void ApplyClientNetPackVisitor::visitHeroMasteryDialog(HeroMasteryDialog & pack)
+{
+	callOnlyThatInterface(cl, pack.offer.player, &CGameInterface::heroGotMastery, pack.offer, pack.queryID);
+}
+
+void ApplyClientNetPackVisitor::visitHeroMasteryChosen(HeroMasteryChosen & pack)
+{
+	// Saved selection and actual bonuses have already been applied by the state
+	// visitor. Refresh readback only; QueryResolved closes the mandatory dialog.
+	if(const auto * hero = cl.gameInfo().getHero(pack.hero))
+		for(const auto & window : ENGINE->windows().findWindows<HeroGrowthWindow>())
+			window->refresh(*hero);
 }
 
 void ApplyClientNetPackVisitor::visitCommanderLevelUp(CommanderLevelUp & pack)

@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "CEmptyAI.h"
+#include "../../lib/entities/hero/NewHorizonsMasteryEffects.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/CStack.h"
@@ -38,6 +40,12 @@ void CEmptyAI::activeStack(const BattleID & battleID, const CStack * stack)
 void CEmptyAI::yourTacticPhase(const BattleID & battleID, int distance)
 {
 	cb->battleMakeTacticAction(battleID, BattleAction::makeEndOFTacticPhase(cb->getBattle(battleID)->battleGetTacticsSide()));
+}
+
+void CEmptyAI::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID)
+{
+	if(const auto * hero = cb->getHero(offer.hero))
+		cb->chooseHeroMastery(offer.hero, queryID, offer.sequence, newHorizonsHeroes::chooseMasteryForArmy(offer, *hero));
 }
 
 void CEmptyAI::heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills, QueryID queryID)

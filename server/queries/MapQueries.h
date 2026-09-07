@@ -118,6 +118,22 @@ public:
 	bool prompted = false;
 };
 
+class CHeroMasteryDialogQuery : public CQuery
+{
+public:
+	static constexpr QueryType TYPE = QueryType::HeroMasteryDialog;
+	CHeroMasteryDialogQuery(CGameHandler * owner, const CGHeroInstance * hero);
+	bool blocksPack(const CPackForServer * pack) const override;
+	void onAdded(PlayerColor color) override;
+	void onExposure(QueryPtr topQuery) override;
+	void onRemoval(PlayerColor color) override;
+	void notifyObjectAboutRemoval(const CGObjectInstance * object, const CGHeroInstance * hero) const override;
+	ObjectInstanceID heroId;
+	bool accepted = false;
+private:
+	bool prompted = false;
+};
+
 class CCommanderLevelUpDialogQuery : public CDialogQuery
 {
 public:

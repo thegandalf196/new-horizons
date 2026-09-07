@@ -396,6 +396,11 @@ void ChangeArtifactsCostume::visitTyped(ICPackVisitor & visitor)
 	visitor.visitChangeArtifactsCostume(*this);
 }
 
+void HeroMasteryOffer::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMasteryOffer(*this); }
+void HeroMasteryDialog::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMasteryDialog(*this); }
+void HeroMasteryChosen::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMasteryChosen(*this); }
+void HeroMasteryReply::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMasteryReply(*this); }
+
 void HeroLevelUp::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitHeroLevelUp(*this);

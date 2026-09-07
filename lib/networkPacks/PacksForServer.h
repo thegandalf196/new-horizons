@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "../entities/hero/NewHorizonsMasteryRules.h"
 
 #include "ArtifactLocation.h"
 #include "NetPacksBase.h"
@@ -699,6 +700,24 @@ struct DLL_LINKAGE QueryReply : public CPackForServer
 		h & static_cast<CPackForServer &>(*this);
 		h & qid;
 		h & reply;
+	}
+};
+
+/// Dedicated mandatory mastery reply. Generic QueryReply cannot consume it.
+struct DLL_LINKAGE HeroMasteryReply : public CPackForServer
+{
+	QueryID qid;
+	ObjectInstanceID hero;
+	uint64_t sequence = 0;
+	int32_t choice = -1;
+	void visitTyped(ICPackVisitor & visitor) override;
+	template<typename Handler> void serialize(Handler & h)
+	{
+		h & static_cast<CPackForServer &>(*this);
+		h & qid;
+		h & hero;
+		newHorizonsHeroes::serializeMasterySequence(h, sequence);
+		h & choice;
 	}
 };
 

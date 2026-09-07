@@ -21,6 +21,7 @@
 
 VCMI_LIB_NAMESPACE_BEGIN
 class CGHeroInstance;
+class CGTownInstance;
 VCMI_LIB_NAMESPACE_END
 
 class CGameHandler;
@@ -44,6 +45,9 @@ public:
 	/// Authoritative turn routing and actions, recorded before applying each packet.
 	std::vector<BattleSetActiveStack> stackActivations;
 	std::vector<StartAction> startedActions;
+	std::vector<BattleAttack> attacks;
+	std::vector<std::string> progressionPackets;
+	std::vector<bool> masteryDialogSawPending;
 
 	void setState(EServerState value) override { state = value; }
 	EServerState getState() const override { return state; }
@@ -80,7 +84,9 @@ public:
 
 	/// Two heroes with a token army each, so that a battle between them is valid.
 	void startGame();
+	void startGame(bool fortifiedTown);
 	void startBattle();
+	void startBattle(const CGTownInstance * town);
 	/// Ends the tactics phase, which fires the battle-start triggers and activates the first
 	/// stack. Call once every unit a scenario needs is on the field.
 	void beginCombat();

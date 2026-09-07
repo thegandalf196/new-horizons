@@ -55,11 +55,20 @@ Outputs: `Mods/new-horizons/Images/NH_*`.
   three-choice masteries. These are static image files, not animation/button
   states. Build owns skill definitions, rank effects and registration; reuse of
   our original CC0 school geometry introduces no purchaser or concept pixels.
-- Future live hero-growth entry: `NH_hero_growth_entry.json`, **24x24**,
+- Live hero-development entry: `NH_hero_growth_entry.json`, **24x24**,
   four normal/pressed/disabled/highlighted frames and matching editable SVGs.
-  Uses our original growth motif. CHeroWindow shows it only for a real nonempty
-  saved-hero growth view, never for a legacy/template hero. Not yet graphically
-  accepted; independent of immutable command/school release candidates.
+  Uses our original growth motif. CHeroWindow gates it on actual saved development
+  views, never a hero-type template or installed defaults alone. Separate growth/
+  capability GUI evidence is recorded in `docs/NH_FRONTEND_HANDOFF.md`.
+- Future post-Expert Artillery mastery options: `NH_mastery_<option>_<size>.png`
+  with matching editable SVGs, **32x32** and **64x64**. Option keys supplied by
+  Runtime: `artilleryVolley`, `artilleryPrecision`, `artilleryRepair`; full IDs
+  have the `new-horizons:` scope. Explicit iconKey is `NH_mastery_<option>`.
+  Original fan-projectile, target-sight and mechanical-wrench geometry distinguishes
+  the choices without text, copied art or a fourth skill-rank badge. These are
+  static display icons, not button-state sheets. Selection/hover/keyboard feedback
+  must come from real UI controls; effects and eligibility remain authoritative.
+  This art is not mastery implementation, activation or rendered acceptance.
 - All new images use RGBA transparency, not the original indexed palette.
 
 The five command buttons and Spells/Cancel are wired to the real hero-action
@@ -68,7 +77,9 @@ resources remain by-reference. The six-school art is prepared for the existing
 custom-school registry/header/bookmark hooks; **a six-school casting migration
 and hero-screen wiring are not completed or claimed by this art delivery**.
 No fake spells/masteries or inert controls are added to pretend otherwise.
-Hero display glyphs are likewise prepared, **not yet wired or graphically accepted**.
+Some hero glyphs now appear in independently tested growth/development views;
+others, including creature-category glyphs, remain artwork only. The Frontend
+handoff records the exact integrated scope; artwork alone does not prove mechanics.
 They are original geometry authored by the AI-assisted New Horizons frontend
 implementation, under the same CC0 dedication above. Before the school-skill increment, exports contained
 118 SVGs, 118 PNGs and 20 animation JSONs. Adding the 30 hero glyph variants
@@ -84,8 +95,17 @@ progression, rendered hero/level-up/campaign use and old-save semantics require
 integrated tests; these exports alone do not prove those mechanics.
 
 The later hero-growth entry adds4 PNGs/4 SVGs/1 JSON while preserving all400
-previous hashes. **Current complete exports:194 SVGs,194 PNGs,21 animation JSONs**.
+previous hashes. That checkpoint contained194 SVGs,194 PNGs,21 animation JSONs.
 No new mastery/leadership/siege mechanics are implied by this display entry.
+
+The post-Expert Artillery option artwork adds6 PNGs/6 SVGs and preserves all409
+previous hashes. **Current complete exports:200 SVGs,200 PNGs,21 animation JSONs**.
+All421 outputs were reproduced byte-identically in an isolated temporary tree;
+blank/opaque/wrong-size PNG controls reject. SVGs contain only original geometric
+primitives, no embedded images, fonts or external links. Local audit/contact evidence
+is under ignored `build/new-horizons-linux/research/mastery-art/`. The three effects,
+post-Expert query lifecycle, AI, saved choices and Windows/UI acceptance require
+separate integrated work; fixed891 release files are not changed by this future art.
 
 ## Actual installed artwork inspection (metadata only)
 

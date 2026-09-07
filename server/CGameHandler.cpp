@@ -135,11 +135,51 @@ IGameServer & CGameHandler::gameServer() const
 void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill)
 {
 	changeSecSkill(hero, skill, 1, ChangeValueMode::RELATIVE);
-	expGiven(hero);
+	heroLevelUpChoiceDone(hero);
+}
+
+void CGameHandler::heroLevelUpChoiceDone(const CGHeroInstance * hero)
+{
+	if(!offerHeroMastery(hero))
+		expGiven(hero);
+}
+
+bool CGameHandler::offerHeroMastery(const CGHeroInstance * hero)
+{
+	if(!hero->getOwner().isValidPlayer() || hero->getSecSkillLevel(SecondarySkill::ARTILLERY) != MasteryLevel::EXPERT)
+		return false;
+	for(const auto & existing : queries->allQueries())
+		if(existing->getType() == CHeroMasteryDialogQuery::TYPE
+			&& static_cast<const CHeroMasteryDialogQuery &>(*existing).heroId == hero->id)
+			return true;
+	if(const auto offer = hero->prepareMasteryOffer())
+	{
+		HeroMasteryOffer pack;
+		pack.offer = *offer;
+		sendAndApply(pack);
+	}
+	if(!hero->getMasteryState().pending)
+		return false;
+	queries->addQuery(std::make_shared<CHeroMasteryDialogQuery>(this, hero));
+	return true;
+}
+
+void CGameHandler::resumeMasteryQueries(PlayerColor player)
+{
+	if(!player.isValidPlayer() || !uiReadyForDialogs.contains(player) || queries->topQuery(player))
+		return;
+	const auto * state = gameInfo().getPlayerState(player);
+	if(!state)
+		return;
+	for(const auto * hero : state->getHeroes())
+		if(offerHeroMastery(hero))
+			return;
 }
 
 void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 {
+	if(hero->getMasteryState().pending && offerHeroMastery(hero))
+		return;
 	// required exp for at least 1 lvl-up hasn't been reached
 	if (!hero->gainsLevel())
 	{
@@ -148,6 +188,7 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 		return;
 	}
 
+	const bool artilleryExpertBeforeGain = hero->getSecSkillLevel(SecondarySkill::ARTILLERY) == MasteryLevel::EXPERT;
 	// give primary skill
 	logGlobal->trace("%s got level %d", hero->getNameTextID(), hero->level);
 	auto gains = randomizer->rollPrimarySkillsForLevelup(hero);
@@ -172,6 +213,7 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 	hlu.heroId = hero->id;
 	hlu.primskill = primarySkill;
 	hlu.primaryGains = gains;
+	hlu.artilleryExpertBeforeGain = artilleryExpertBeforeGain;
 	hlu.skills = randomizer->rollSecondarySkills(hero);
 
 	if (!hero->getOwner().isValidPlayer())
@@ -666,6 +708,8 @@ void CGameHandler::onAdvInterfaceReady(PlayerColor player)
 	uiReadyForDialogs.insert(player);
 
 	logGlobal->trace("AdvInterfaceReady received for player %s", player);
+
+	resumeMasteryQueries(player);
 
 	// Kick top query for this player: if it's a dialog query waiting for UI, it should prompt now.
 	auto top = queries->topQuery(player);
@@ -3593,6 +3637,32 @@ bool CGameHandler::setTownName(ObjectInstanceID tid, std::string & name)
 	return true;
 }
 
+bool CGameHandler::heroMasteryReply(QueryID qid, ObjectInstanceID heroId, uint64_t sequence, int32_t choice, PlayerColor player)
+{
+	using namespace newHorizonsHeroes;
+	COMPLAIN_RET_FALSE_IF(!player.isValidPlayer(), "Invalid mastery reply player");
+	const auto top = queries->topQuery(player);
+	COMPLAIN_RET_FALSE_IF(!top || top->queryID != qid || top->getType() != CHeroMasteryDialogQuery::TYPE,
+		"Mastery reply does not match the current query");
+	auto & query = static_cast<CHeroMasteryDialogQuery &>(*top);
+	COMPLAIN_RET_FALSE_IF(query.accepted || query.heroId != heroId, "Stale or wrong hero mastery query");
+	const auto * hero = gameInfo().getHero(heroId);
+	COMPLAIN_RET_FALSE_IF(!hero || hero->getOwner() != player || !hero->getMasteryState().pending,
+		"Mastery reply does not belong to the pending hero");
+	const auto & offer = *hero->getMasteryState().pending;
+	const auto error = validateMasteryReply(offer, heroId, player, sequence, hero->level,
+		hero->getSecSkillLevel(offer.skill), hero->getMasteryState().hasChoice(offer.skill), choice);
+	COMPLAIN_RET_FALSE_IF(error != MasteryReplyError::NONE, "Invalid mastery selection");
+	HeroMasteryChosen chosen;
+	chosen.hero = heroId;
+	chosen.sequence = sequence;
+	chosen.choice = choice;
+	sendAndApply(chosen); // State and effects precede QueryResolved and the request ACK.
+	query.accepted = true;
+	queries->popQuery(top);
+	return true;
+}
+
 bool CGameHandler::queryReply(QueryID qid, std::optional<int32_t> answer, PlayerColor player)
 {
 	logGlobal->trace("Player %s attempts answering query %d with answer:", player, qid);
@@ -3607,11 +3677,12 @@ bool CGameHandler::queryReply(QueryID qid, std::optional<int32_t> answer, Player
 	{
 		auto currentQuery = queries->getQuery(qid);
 
-		if(currentQuery != nullptr && currentQuery->endsByPlayerAnswer())
+		if(currentQuery != nullptr && currentQuery->getType() != CHeroMasteryDialogQuery::TYPE && currentQuery->endsByPlayerAnswer())
 			currentQuery->setReply(answer);
 
 		COMPLAIN_RET("This player top query has different ID!"); //topQuery->queryID != qid
 	}
+	COMPLAIN_RET_FALSE_IF(topQuery->getType() == CHeroMasteryDialogQuery::TYPE, "Mastery requires a dedicated validated reply");
 	COMPLAIN_RET_FALSE_IF(!topQuery->endsByPlayerAnswer(), "This query cannot be ended by player's answer!");
 
 	topQuery->setReply(answer);

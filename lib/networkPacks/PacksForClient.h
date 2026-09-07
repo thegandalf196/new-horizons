@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "../entities/hero/NewHorizonsMasteryRules.h"
 
 #include "ArtifactLocation.h"
 #include "Component.h"
@@ -1351,6 +1352,7 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 	PrimarySkill primskill = PrimarySkill::ATTACK;
 	std::array<int, GameConstants::PRIMARY_SKILLS> primaryGains{};
 	std::vector<SecondarySkill> skills;
+	bool artilleryExpertBeforeGain = false;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -1369,6 +1371,43 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 			if(primskill.getNum() >= 0 && primskill.getNum() < GameConstants::PRIMARY_SKILLS)
 				primaryGains[primskill.getNum()] = 1;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MASTERIES))
+			h & artilleryExpertBeforeGain;
+		else if(!h.saving)
+			artilleryExpertBeforeGain = false;
+	}
+};
+
+/// State is applied before a separate HeroMasteryDialog notification is sent.
+struct DLL_LINKAGE HeroMasteryOffer : public CPackForClient
+{
+	newHorizonsHeroes::MasteryOffer offer;
+	void visitTyped(ICPackVisitor & visitor) override;
+	template<typename Handler> void serialize(Handler & h) { h & offer; }
+};
+
+struct DLL_LINKAGE HeroMasteryDialog : public Query
+{
+	newHorizonsHeroes::MasteryOffer offer;
+	void visitTyped(ICPackVisitor & visitor) override;
+	template<typename Handler> void serialize(Handler & h)
+	{
+		h & queryID;
+		h & offer;
+	}
+};
+
+struct DLL_LINKAGE HeroMasteryChosen : public CPackForClient
+{
+	ObjectInstanceID hero;
+	uint64_t sequence = 0;
+	int32_t choice = -1;
+	void visitTyped(ICPackVisitor & visitor) override;
+	template<typename Handler> void serialize(Handler & h)
+	{
+		h & hero;
+		newHorizonsHeroes::serializeMasterySequence(h, sequence);
+		h & choice;
 	}
 };
 

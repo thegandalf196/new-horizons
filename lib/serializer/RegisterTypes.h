@@ -308,4 +308,8 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetScriptVariable>(267);
 	s.template registerType<SetQuestHint>(268);
 	s.template registerType<BattleAnimationPlayed>(269);
+	s.template registerType<HeroMasteryOffer>(270);
+	s.template registerType<HeroMasteryDialog>(271);
+	s.template registerType<HeroMasteryChosen>(272);
+	s.template registerType<HeroMasteryReply>(273);
 }

@@ -101,6 +101,7 @@ public:
 	virtual const JsonNode & getMagicRules() const;
 	virtual const JsonNode & getHeroDevelopmentRules() const;
 	virtual const JsonNode & getHeroCapabilityRules() const;
+	virtual const JsonNode & getHeroMasteryRules() const;
 	std::vector<SpellSchool> getActiveSpellSchools() const;
 	std::vector<SpellSchool> getSpellSchools(SpellID spell) const;
 	int getSpellLevel(SpellID spell) const;

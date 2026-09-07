@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "AttackPossibility.h"
 #include "../../lib/CStack.h" // TODO: remove
+#include "../../lib/mapObjects/CGHeroInstance.h"
                               // Eventually only IBattleInfoCallback and battle::Unit should be used, 
                               // CUnitState should be private and CStack should be removed completely
 #include "../../lib/spells/ISpellMechanics.h"
@@ -316,6 +317,17 @@ int64_t AttackPossibility::evaluateBlockedShootersDmg(
 	return res;
 }
 
+int AttackPossibility::getAttackCount(const battle::Unit & attacker, bool shooting, const CBattleInfoCallback & state)
+{
+	int result = attacker.getTotalAttacks(shooting);
+	// BattleAction uses the unit's battle side, including when estimating an
+	// opponent's action. Do not use the AI player's hero or add this to unit state.
+	const auto * hero = state.battleGetFightingHero(attacker.unitSide());
+	if(hero)
+		result += hero->valOfBonuses(BonusType::HERO_GRANTS_ATTACKS, BonusSubtypeID(attacker.creatureId()));
+	return result;
+}
+
 AttackPossibility AttackPossibility::evaluate(
 	const BattleAttackInfo & attackInfo,
 	BattleHex hex,
@@ -346,7 +358,7 @@ AttackPossibility AttackPossibility::evaluate(
 		ap.attackerState = attacker->acquireState();
 		ap.shootersBlockedDmg = bestAp.shootersBlockedDmg;
 
-		const int totalAttacks = ap.attackerState->getTotalAttacks(attackInfo.shooting);
+		const int totalAttacks = getAttackCount(*ap.attackerState, attackInfo.shooting, *state);
 
 		if (!attackInfo.shooting)
 			ap.attackerState->setPosition(hex);

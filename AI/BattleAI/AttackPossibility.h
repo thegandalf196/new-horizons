@@ -60,6 +60,10 @@ public:
 	float attackValue() const;
 	float damageDiff(float positiveEffectMultiplier, float negativeEffectMultiplier) const;
 
+	/// Match the authoritative attack sequence without changing the unit's innate
+	/// count (the server separately adds the fighting hero's creature-specific grant).
+	static int getAttackCount(const battle::Unit & attacker, bool shooting, const CBattleInfoCallback & state);
+
 	static AttackPossibility evaluate(
 		const BattleAttackInfo & attackInfo,
 		BattleHex hex,

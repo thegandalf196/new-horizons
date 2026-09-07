@@ -39,6 +39,7 @@ enum class QueryType : uint8_t
 	TimerPause,
 	Generic,
 	LuaScript,
+	HeroMasteryDialog,
 	Unknown
 };
 

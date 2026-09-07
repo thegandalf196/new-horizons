@@ -126,6 +126,9 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsHeroRules.cpp
 	entities/hero/NewHorizonsLeadership.cpp
 	entities/hero/NewHorizonsCapabilityRules.cpp
+	entities/hero/NewHorizonsMasteryRules.cpp
+	entities/hero/NewHorizonsMasteryState.cpp
+	entities/hero/NewHorizonsMasteryEffects.cpp
 	entities/ResourceTypeHandler.cpp
 
 	events/ApplyDamage.cpp
@@ -565,6 +568,9 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsHeroRules.h
 	entities/hero/NewHorizonsLeadership.h
 	entities/hero/NewHorizonsCapabilityRules.h
+	entities/hero/NewHorizonsMasteryRules.h
+	entities/hero/NewHorizonsMasteryState.h
+	entities/hero/NewHorizonsMasteryEffects.h
 	entities/ResourceTypeHandler.h
 
 	events/ApplyDamage.h

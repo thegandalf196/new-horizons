@@ -203,6 +203,10 @@ public:
 	bool teleportHero(ObjectInstanceID hid, ObjectInstanceID dstid, ui8 source, PlayerColor asker = PlayerColor::NEUTRAL);
 	void visitCastleObjects(const CGTownInstance * obj, const CGHeroInstance * hero) override;
 	void visitCastleObjects(const CGTownInstance * obj, const std::vector<const CGHeroInstance * > & visitors);
+	void heroLevelUpChoiceDone(const CGHeroInstance * hero);
+	bool offerHeroMastery(const CGHeroInstance * hero);
+	void resumeMasteryQueries(PlayerColor player);
+	bool heroMasteryReply(QueryID qid, ObjectInstanceID hero, uint64_t sequence, int32_t choice, PlayerColor player);
 	void levelUpHero(const CGHeroInstance * hero, SecondarySkill skill);//handle client respond and send one more request if needed
 	void levelUpHero(const CGHeroInstance * hero);//initial call - check if hero have remaining levelups & handle them
 	void levelUpCommander (const CCommanderInstance * c, int skill); //secondary skill 1 to 6, special skill : skill - 100

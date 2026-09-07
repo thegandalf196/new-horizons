@@ -26,6 +26,7 @@ public:
 	const JsonNode & getMagicRules() const override;
 	const JsonNode & getHeroDevelopmentRules() const override;
 	const JsonNode & getHeroCapabilityRules() const override;
+	const JsonNode & getHeroMasteryRules() const override;
 	//various
 
 	Calendar getCalendar() const override;

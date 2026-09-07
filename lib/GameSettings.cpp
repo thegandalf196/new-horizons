@@ -64,6 +64,7 @@ const std::vector<GameSettings::SettingOption> GameSettings::settingProperties =
 		{EGameSettings::MAGIC_NEW_HORIZONS,                              "magic",     "newHorizons"                         },
 		{EGameSettings::HEROES_NEW_HORIZONS,                             "heroes",    "newHorizons"                         },
 		{EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,                "heroes",    "newHorizonsCapabilities"             },
+		{EGameSettings::HEROES_NEW_HORIZONS_MASTERIES,                   "heroes",    "newHorizonsMasteries"                },
 		{EGameSettings::COMBAT_LAYOUTS,                                   "combat",    "layouts"                              },
 		{EGameSettings::COMBAT_ONE_HEX_TRIGGERS_OBSTACLES,                "combat",    "oneHexTriggersObstacles"              },
 		{EGameSettings::COMBAT_NO_SPELL_HIT_AND_RUN_ROUNDS,               "combat",    "noSpellHitAndRunRounds"               },

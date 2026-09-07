@@ -47,6 +47,7 @@
 #include "../serializer/JsonSerializeFormat.h"
 #include "../spells/CSpell.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../entities/hero/NewHorizonsMasteryEffects.h"
 #include "../battle/BattleInfo.h"
 #include "../mapObjectConstructors/AObjectTypeHandler.h"
 #include "../mapObjectConstructors/CObjectClassesHandler.h"
@@ -154,6 +155,8 @@ void CGHeroInstance::setSecSkillLevel(const SecondarySkill & which, int val, Cha
 	}
 
 	updateSkillBonus(which, newLevelClamped);
+	if(which == SecondarySkill::ARTILLERY)
+		refreshMasteryBonuses();
 }
 
 int3 CGHeroInstance::convertToVisitablePos(const int3 & position) const
@@ -417,6 +420,12 @@ void CGHeroInstance::updateAppearance()
 void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 {
 	assert(validTypes(true));
+	if(!isFake && !masteryRulesCaptured)
+	{
+		masteryState.rules = cb->getHeroMasteryRules();
+		masteryState.validate();
+		masteryRulesCaptured = true;
+	}
 	if(!isFake && !capabilityRulesCaptured)
 	{
 		capabilityRules = newHorizonsHeroes::resolveCapabilityRules(cb->getHeroCapabilityRules(), getHeroClass()->getId());
@@ -1623,6 +1632,65 @@ bool CGHeroInstance::gainsLevel() const
 	return level < LIBRARY->heroh->maxSupportedLevel() && exp >= static_cast<TExpType>(LIBRARY->heroh->reqExp(level+1));
 }
 
+std::optional<newHorizonsHeroes::MasteryView> CGHeroInstance::getMasteryView() const
+{
+	if(!newHorizonsHeroes::usesRules(masteryState.rules))
+		return std::nullopt;
+	newHorizonsHeroes::MasteryView view;
+	view.pending = masteryState.pending;
+	for(const auto & selection : masteryState.selected)
+		view.choices.push_back({selection, getSecSkillLevel(selection.skill) == MasteryLevel::EXPERT});
+	if(!masteryState.hasChoice(SecondarySkill::ARTILLERY) && getSecSkillLevel(SecondarySkill::ARTILLERY) == MasteryLevel::EXPERT)
+	{
+		if(masteryState.artilleryEligible && masteryState.eligibilityLevel == level)
+			view.awaitingChoice.push_back(SecondarySkill::ARTILLERY);
+		else
+			view.eligibleNextLevel.push_back(SecondarySkill::ARTILLERY);
+	}
+	return view;
+}
+
+void CGHeroInstance::captureMasteryEligibility(uint32_t nextLevel)
+{
+	captureMasteryEligibility(nextLevel, getSecSkillLevel(SecondarySkill::ARTILLERY) == MasteryLevel::EXPERT);
+}
+
+void CGHeroInstance::captureMasteryEligibility(uint32_t nextLevel, bool artilleryExpertBeforeGain)
+{
+	masteryState.captureBeforeLevel(nextLevel, artilleryExpertBeforeGain ? MasteryLevel::EXPERT : MasteryLevel::NONE);
+}
+
+std::optional<newHorizonsHeroes::MasteryOffer> CGHeroInstance::prepareMasteryOffer() const
+{
+	return masteryState.prepareOffer(id, getOwner(), level);
+}
+
+void CGHeroInstance::applyMasteryOffer(const newHorizonsHeroes::MasteryOffer & offer)
+{
+	if(offer.hero != id || offer.player != getOwner() || offer.level != level
+		|| getSecSkillLevel(offer.skill) != MasteryLevel::EXPERT)
+		throw std::runtime_error("Mastery offer does not belong to current Expert hero");
+	masteryState.applyOffer(offer);
+}
+
+void CGHeroInstance::applyMasteryChoice(uint64_t sequence, int choice)
+{
+	const auto error = masteryState.accept(id, getOwner(), sequence, level,
+		getSecSkillLevel(SecondarySkill::ARTILLERY), choice);
+	if(error != newHorizonsHeroes::MasteryReplyError::NONE)
+		throw std::runtime_error("Invalid authoritative mastery choice");
+	refreshMasteryBonuses();
+}
+
+void CGHeroInstance::refreshMasteryBonuses()
+{
+	removeBonuses(Selector::sourceType()(BonusSource::HERO_MASTERY));
+	for(const auto & selection : masteryState.selected)
+		if(getSecSkillLevel(selection.skill) == MasteryLevel::EXPERT)
+			for(const auto & bonus : newHorizonsHeroes::masteryBonuses(selection.option))
+				addNewBonus(bonus);
+}
+
 void CGHeroInstance::levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS> & gains)
 {
 	lastPrimaryGains = gains;
@@ -1643,6 +1711,7 @@ void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
 	{
 		auto gains = gameRandomizer.rollPrimarySkillsForLevelup(this);
 		const auto proposedSecondarySkills = gameRandomizer.rollSecondarySkills(this);
+		captureMasteryEligibility(level + 1);
 
 		for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
 		{

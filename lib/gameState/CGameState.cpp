@@ -226,6 +226,8 @@ void CGameState::init(const IMapService * mapService, StartInfo * si, IGameRando
 	newHorizonsHeroes::validateHeroRules(heroDevelopmentRules, true);
 	heroCapabilityRules = getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES);
 	newHorizonsHeroes::validateCapabilityRules(heroCapabilityRules, true);
+	heroMasteryRules = getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_MASTERIES);
+	newHorizonsHeroes::validateMasteryRules(heroMasteryRules);
 	if(newHorizonsHeroes::usesRules(heroDevelopmentRules) && !newHorizonsHeroes::usesRules(heroCommandRules))
 		throw std::runtime_error("New Horizons hero ratings require enabled hero commands");
 	initGlobalBonuses();

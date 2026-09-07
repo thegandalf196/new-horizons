@@ -1,0 +1,55 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "Saved New Horizons post-Expert mastery rules",
+	"description": "Future opt-in rules. Empty preserves absence. Version 1 supports Artillery only; Runtime also requires distinct option IDs/effects and validates saved offers, eligibility and replies. This is not secondary rank four.",
+	"type": "object",
+	"oneOf": [
+		{"maxProperties": 0},
+		{
+			"required": ["schemaVersion", "rulesetVersion", "skills"],
+			"additionalProperties": false,
+			"properties": {
+				"schemaVersion": {"type": "integer", "enum": [1]},
+				"rulesetVersion": {"type": "integer", "enum": [1]},
+				"skills": {
+					"type": "object",
+					"required": ["core:artillery"],
+					"additionalProperties": false,
+					"properties": {
+						"core:artillery": {
+							"type": "object",
+							"required": ["options"],
+							"additionalProperties": false,
+							"properties": {
+								"options": {
+									"type": "array", "minItems": 3, "maxItems": 3,
+									"items": {"$ref": "#/definitions/option"}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	],
+	"definitions": {
+		"option": {
+			"type": "object",
+			"required": ["id", "effect", "magnitude", "nameTextId", "descriptionTextId", "iconKey"],
+			"additionalProperties": false,
+			"properties": {
+				"id": {"type": "string", "minLength": 1},
+				"effect": {"type": "string", "enum": ["volley", "precision", "repair"]},
+				"magnitude": {"type": "integer", "minimum": 1, "maximum": 1000000},
+				"nameTextId": {"type": "string", "minLength": 1},
+				"descriptionTextId": {"type": "string", "minLength": 1},
+				"iconKey": {"type": "string", "enum": ["NH_mastery_artilleryVolley", "NH_mastery_artilleryPrecision", "NH_mastery_artilleryRepair"]}
+			},
+			"oneOf": [
+				{"properties": {"effect": {"enum": ["volley"]}, "magnitude": {"maximum": 8}}},
+				{"properties": {"effect": {"enum": ["precision"]}, "magnitude": {"enum": [1]}}},
+				{"properties": {"effect": {"enum": ["repair"]}}}
+			]
+		}
+	}
+}

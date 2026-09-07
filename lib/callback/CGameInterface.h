@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "../entities/hero/NewHorizonsMasteryRules.h"
 
 #include "CBattleGameInterface.h"
 #include "IGameEventsReceiver.h"
@@ -31,6 +32,7 @@ public:
 	virtual void yourTurn(QueryID askID){}; //called AFTER playerStartsTurn(player)
 
 	//pskill is gained primary skill, interface has to choose one of given skills and call callback with selection id
+	virtual void heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID) {}
 	virtual void heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills, QueryID queryID)=0;
 	virtual void commanderGotLevel (const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID)=0;
 

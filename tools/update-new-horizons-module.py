@@ -16,6 +16,8 @@ def main():
                           help='Write unactivated capability rules only into a separate new candidate under build/')
     previews.add_argument('--capability-only-control-output', type=Path,
                           help='Write a separate diagnostic with capabilities on and primary growth off; never mutate a live module')
+    previews.add_argument('--mastery-preview-output', type=Path,
+                          help='Write future Artillery mastery rules/texts only to a new candidate under build/; no live activation')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     def canonical(name):
@@ -54,7 +56,7 @@ def main():
                                 'scaled hero formulas and skill-related extra growth. '
                                 'Not the frozen commands/schools release or full mastery/tier implementation.')
     destination = root / 'Mods/new-horizons/mod.json'
-    preview_output = args.capability_only_control_output or args.capability_preview_output or args.hero_preview_output
+    preview_output = args.mastery_preview_output or args.capability_only_control_output or args.capability_preview_output or args.hero_preview_output
     if preview_output is not None:
         destination = preview_output.resolve()
         if not destination.is_relative_to((root / 'build').resolve()):
@@ -71,6 +73,13 @@ def main():
         metadata['name'] = 'New Horizons (capability-only diagnostic)'
         metadata['description'] += (' DIAGNOSTIC ONLY: primary growth is disabled; authored primary values remain. '
                                     'This separate control is for ordinary saved-identity/UI testing, not a release preset.')
+    if args.mastery_preview_output is not None:
+        settings['heroes']['newHorizonsMasteries'] = canonical('newHorizonsMasteries.json')
+        metadata['translations'] = canonical('newHorizonsMasteryTexts.json')
+        metadata['version'] = '0.5.0'
+        metadata['description'] += (' Separate future Artillery mastery candidate: one permanent extra choice '
+                                    'after a level gained with prior Expert Artillery. Not secondary rank four '
+                                    'or completion of other mastery families, creature tiers or new spell effects.')
     expected = json.dumps(metadata, indent='\t', ensure_ascii=False) + '\n'
     if args.check:
         if not destination.is_file() or destination.read_text(encoding='utf-8') != expected:

@@ -1272,10 +1272,27 @@ void GameStatePackVisitor::visitSetObjectProperty(SetObjectProperty & pack)
 	}
 }
 
+void GameStatePackVisitor::visitHeroMasteryOffer(HeroMasteryOffer & pack)
+{
+	auto * hero = gs.getHero(pack.offer.hero);
+	if(!hero)
+		throw std::runtime_error("Mastery offer for a missing hero");
+	hero->applyMasteryOffer(pack.offer);
+}
+
+void GameStatePackVisitor::visitHeroMasteryChosen(HeroMasteryChosen & pack)
+{
+	auto * hero = gs.getHero(pack.hero);
+	if(!hero)
+		throw std::runtime_error("Mastery choice for a missing hero");
+	hero->applyMasteryChoice(pack.sequence, pack.choice);
+}
+
 void GameStatePackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	auto * hero = gs.getHero(pack.heroId);
 	assert(hero);
+	hero->captureMasteryEligibility(hero->level + 1, pack.artilleryExpertBeforeGain);
 	hero->levelUp(pack.primaryGains);
 }
 

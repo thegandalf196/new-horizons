@@ -54,8 +54,21 @@ void RecordingGameServer::record(CPackForClient & pack)
 	if(const auto * action = dynamic_cast<const StartAction *>(&pack))
 		startedActions.push_back(*action);
 
-	if(dynamic_cast<const BattleAttack *>(&pack))
+	if(dynamic_cast<const HeroLevelUp *>(&pack)) progressionPackets.push_back("level");
+	if(dynamic_cast<const HeroMasteryOffer *>(&pack)) progressionPackets.push_back("offer");
+	if(dynamic_cast<const HeroMasteryChosen *>(&pack)) progressionPackets.push_back("chosen");
+	if(dynamic_cast<const QueryResolved *>(&pack)) progressionPackets.push_back("resolved");
+	if(const auto * dialog = dynamic_cast<const HeroMasteryDialog *>(&pack))
 	{
+		progressionPackets.push_back("dialog");
+		const auto * hero = gameState->getHero(dialog->offer.hero);
+		masteryDialogSawPending.push_back(hero && hero->getMasteryState().pending
+			&& hero->getMasteryState().pending->sequence == dialog->offer.sequence);
+	}
+
+	if(const auto * attack = dynamic_cast<const BattleAttack *>(&pack))
+	{
+		attacks.push_back(*attack);
 		recording = false;
 		return;
 	}
@@ -117,6 +130,11 @@ void BattleTestFixture::configurePlayer(PlayerSettings & settings) const
 
 void BattleTestFixture::startGame()
 {
+	startGame(false);
+}
+
+void BattleTestFixture::startGame(bool fortifiedTown)
+{
 	const CreatureID token(0);
 
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -128,6 +146,8 @@ void BattleTestFixture::startGame()
 		.hero({5, 5, 0}, HeroTypeID(0), PlayerColor(0)).heroGarrison({{token, 1}})
 		.hero({7, 7, 0}, HeroTypeID(1), PlayerColor(1)).heroGarrison({{token, 1}});
 
+	if(fortifiedTown)
+		builder.town({12, 12, 0}, FactionID::CASTLE, PlayerColor(1)).townGarrison({});
 	startWithMap(std::move(builder));
 
 	server.gameState = gameState();
@@ -162,6 +182,11 @@ void BattleTestFixture::makeNeutral(CGHeroInstance * hero)
 
 void BattleTestFixture::startBattle()
 {
+	startBattle(nullptr);
+}
+
+void BattleTestFixture::startBattle(const CGTownInstance * town)
+{
 	BattleSideArray<const CGHeroInstance *> heroes = {attackerSideHero, defenderSideHero};
 	BattleSideArray<const CArmedInstance *> armies = {attackerSideHero, defenderSideHero};
 
@@ -176,7 +201,7 @@ void BattleTestFixture::startBattle()
 	BattleField battlefield(*LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "battlefield", battlefieldName));
 
 	BattleStart bs;
-	bs.info = BattleInfo::setupBattle(gameState().get(), tile, terrain, battlefield, armies, heroes, layout, nullptr);
+	bs.info = BattleInfo::setupBattle(gameState().get(), tile, terrain, battlefield, armies, heroes, layout, town);
 	bs.battleID = BattleID(0);
 	gameHandler->sendAndApply(bs);
 

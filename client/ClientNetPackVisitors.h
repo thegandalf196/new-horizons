@@ -67,6 +67,9 @@ public:
 	void visitInfoWindow(InfoWindow & pack) override;
 	void visitSetObjectProperty(SetObjectProperty & pack) override;
 	void visitHeroLevelUp(HeroLevelUp & pack) override;
+	void visitHeroMasteryOffer(HeroMasteryOffer & pack) override;
+	void visitHeroMasteryDialog(HeroMasteryDialog & pack) override;
+	void visitHeroMasteryChosen(HeroMasteryChosen & pack) override;
 	void visitCommanderLevelUp(CommanderLevelUp & pack) override;
 	void visitBlockingDialog(BlockingDialog & pack) override;
 	void visitGarrisonDialog(GarrisonDialog & pack) override;

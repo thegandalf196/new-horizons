@@ -82,19 +82,20 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	name = std::make_shared<CLabel>(190, 38, EFonts::FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW);
 	const bool showsGrowth = hero->getPrimaryGrowthView().has_value();
 	const bool showsCapabilities = hero->getLeadershipCapacity().has_value() || hero->getSiegeCapabilities().has_value();
-	const bool showsDevelopment = showsGrowth || showsCapabilities;
+	const bool showsMasteries = hero->getMasteryView().has_value();
+	const bool showsDevelopment = showsGrowth || showsCapabilities || showsMasteries;
 	title = std::make_shared<CLabel>(showsDevelopment ? 175 : 190, 65, EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "", showsDevelopment ? 180 : 0);
 	if(showsDevelopment)
 	{
 		growthButton = std::make_shared<CButton>(Point(273, 53), AnimationPath::builtin("NH_hero_growth_entry"),
-			CButton::tooltip("Hero development", showsCapabilities
-				? "View this hero's current attributes and saved capabilities. These read-only values do not spend points or change troops. See the development window for each effect's scope."
+			CButton::tooltip("Hero development", showsCapabilities || showsMasteries
+				? "View this hero's current attributes and saved development. These read-only values do not spend points or change troops. Mastery choices use their mandatory level-up dialog."
 				: "View this hero's saved growth profile, actual ratings and last level gains. Class gains and extra points are proposals before the primary cap; last gains are actual. No choices or points are spent."),
 			[this]
 			{
 				// Re-read the actual current hero; opening a view never activates rules
 				// on an old hero or predicts the next independent skill rolls.
-				if(curHero->getPrimaryGrowthView() || curHero->getLeadershipCapacity() || curHero->getSiegeCapabilities())
+				if(curHero->getPrimaryGrowthView() || curHero->getLeadershipCapacity() || curHero->getSiegeCapabilities() || curHero->getMasteryView())
 					ENGINE->windows().createAndPushWindow<HeroGrowthWindow>(*curHero);
 			});
 		growthButton->setHoverable(true);

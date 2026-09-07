@@ -50,6 +50,7 @@ void TurnStartVisitScheduler::processNext(PlayerColor player)
 
 void TurnStartVisitScheduler::onQueryStackChanged(PlayerColor player)
 {
+	gameHandler.resumeMasteryQueries(player);
 	processNext(player);
 }
 
