@@ -1,0 +1,54 @@
+LINUX COMBINATION AND DEPENDENCY SCOPE
+
+The combined Linux binary is distributed under GNU GPL version 3. VCMI component
+sources retain their GPL version 2-or-later notices; this uses their later-version
+option, not a replacement of their original notices. Compiled xBRZ code is GPLv3
+and the oneTBB headers use Apache-2.0 (not an assumed LLVM exception). Retain the
+full GPLv3 text and all applicable component notices alongside the original core
+license.txt. New Horizons-authored geometry/icons remain CC0. Purchaser-supplied
+Heroes III art/content is external and is not relicensed or redistributed.
+
+The package contains the project client and facade, not the 176 system shared
+ELFs observed on its build/test host. Those external platform dependencies and
+optional dlopen/audio/video/GPU-driver components are a separate boundary. The
+recorded graph does not establish compatibility with every driver or distro.
+Bundling any additional implementation requires a fresh source/license audit.
+
+The compiler/header/linker inventory explicitly records startup objects and
+libgcc.a, libc_nonshared.a and libdl.a. A linker search entry is not proof that all
+archive members were incorporated; the recorded libdl.a is empty. Exact glibc
+2.43-2ubuntu2.3 sources and Debian patches accompany the application source/build
+instructions for the nonshared/startup boundary and rebuilding/relinking.
+
+GCC runtime components and the 386 of 394 recorded GCC 15 headers carrying RLE
+text are assessed under the retained Runtime Library Exception 3.1, conditional
+on Eligible Compilation. The recorded build used ordinary GCC/G++ C++20 source
+compilation and no incompatible proprietary IR or compiler plugin. This is not
+a generic waiver for all GCC files or arbitrary static libraries.
+
+The other eight GCC headers are retained verbatim with per-file provenance:
+five pstl headers identify Apache-2.0 WITH LLVM-exception (unlike oneTBB);
+quadmath.h identifies GNU Library GPL version 2-or-later and contains three small
+inline bodies; stdint.h and syslimits.h are tiny generated/forwarding wrappers
+without file-level license markers. Their package and generation context is
+recorded rather than inventing an RLE marker. Full Apache/LLVM-exception and
+GNU Library GPL terms accompany these actual header sources.
+
+The 35 recorded Linux UAPI headers are also retained: 26 carry explicit GPL2(+)
+WITH Linux-syscall-note identifiers and nine are generated/forwarding headers.
+Their specific identifiers, source-package provenance and the full syscall note
+are separate from GCC's exception; no kernel implementation is bundled or
+relicensed by this assessment.
+
+Exact preferred Boost 1.90.0-6ubuntu1 and oneTBB 2022.3.0-2 sources/patches are
+provided. All 3649 used Boost headers and 64 oneTBB headers were byte-matched to
+those patched source trees; Boost's installed flat include tree is assembled
+from its modular source include directories. Exact source archives/patches for
+the eight remaining API-header source providers are also provided, with source
+versions, file hashes and acquisition URLs. Copyright files alone are not
+represented as preferred-source or generation proof.
+
+Source archive signatures are retained. Where dpkg-source reported unavailable
+public keys, OpenPGP validation is NOT claimed; source-file sizes/SHA256 checks
+and acquisition records are retained. See the accompanying source and dependency
+provenance for exact verification scope and any remaining acceptance limitations.
