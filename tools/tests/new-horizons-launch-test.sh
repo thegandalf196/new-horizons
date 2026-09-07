@@ -53,6 +53,11 @@ printf 'save placeholder\n' > "$XDG_DATA_HOME/vcmi/Saves/stub-save"
 exit "${STUB_EXIT:-0}"
 STUB
 chmod +x -- "$engine/vcmiclient"
+# A packaged entry point must not inherit the developer launcher's build path.
+cp -- "$launcher" "$engine/new-horizons-launch.sh"
+cp -- "$(dirname -- "$launcher")/Play-New-Horizons.sh" "$engine/Play-New-Horizons.sh"
+bash "$engine/Play-New-Horizons.sh" --assets "$assets" --profile "$tmp/packaged-profile" --verify-only
+[[ ! -e "$tmp/packaged-profile" ]]
 export EXPECTED_ENGINE="$engine" EXPECTED_ASSETS="$assets" EXPECTED_PROFILE="$profile"
 export STUB_RECEIPT="$tmp/stub-receipt"
 export XDG_DATA_HOME="$tmp/inherited" XDG_CONFIG_HOME="$tmp/inherited" XDG_CACHE_HOME="$tmp/inherited"
