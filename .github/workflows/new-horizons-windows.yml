@@ -172,6 +172,33 @@ jobs:
           -DCMAKE_C_COMPILER_LAUNCHER=sccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
+      - name: Verify CMake-selected CRT bytes before compiling
+        if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
+        shell: python
+        run: |
+          import json, os, pathlib, sys
+          sys.path.insert(0, 'tools/ci')
+          from windows_crt_provenance import preflight_runtime
+          root = pathlib.Path('build/new-horizons-windows-x64')
+          output = root / 'preflight' / 'selected-crt-runtime.json'
+          output.parent.mkdir(parents=True, exist_ok=True)
+          try:
+              report = preflight_runtime(root, pathlib.Path(os.environ['VSINSTALLDIR']))
+              report['pass'] = True
+          except Exception as error:
+              output.write_text(json.dumps({'pass': False, 'error_type': type(error).__name__}) + '\n', encoding='utf-8')
+              raise
+          output.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+
+      - name: Retain selected CRT precompile evidence
+        if: ${{ always() && !inputs.preflight_only && inputs.repack_run_id == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Selected-CRT-precompile-${{ github.sha }}
+          path: build/new-horizons-windows-x64/preflight/selected-crt-runtime.json
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Compile Windows x64 client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
         run: cmake --build build/new-horizons-windows-x64 --target vcmiclient --parallel 4

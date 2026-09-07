@@ -192,7 +192,8 @@ def collect_microsoft_notices(package):
     for source in sdk_terms:
         shutil.copyfile(source, destination / ("SDK-" + source.parent.name + "-license.rtf"))
     write_json(destination / "PROVENANCE.json", {
-        "visual_studio_major": 18, "edition": vs.name, "crt_redist_directory_version": redist.name,
+        "visual_studio_major": 18, "edition": vs.name, "notice_environment_redist_directory_version": redist.name,
+        "runtime_binding_status": "pending-final-package-byte-verification",
         "terms": provenance, "redistribution_list": "https://aka.ms/vs/18/redistribution",
         "scope": "Full runtime terms plus VS redistribution terms; SDK terms do not grant CRT redistribution",
     })
@@ -550,6 +551,8 @@ def main():
         from binary_privacy import require_clean, verified_github_ci_provenance
         require_clean(package, verified_github_ci_provenance())
         collect_microsoft_notices(package)
+        from windows_crt_provenance import bind_runtime
+        bind_runtime(package, install.parent, Path(os.environ["VSINSTALLDIR"]))
         dependency_source_name = package_name + "-dependency-sources.tar.gz"
         collect_notices(args.conan_graph, package, args.output_dir / dependency_source_name)
         source_name = package_name + "-source.tar.gz"
