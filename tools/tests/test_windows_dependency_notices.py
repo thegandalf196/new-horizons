@@ -113,6 +113,33 @@ class DependencyNoticesTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Missing FFmpeg source license text"):
             self.collect()
 
+    def test_sqlite_embedded_notice_without_license_file(self):
+        self.node['ref'] = 'sqlite3/3.53.4#89fcf5cda598966acb7f3e185b19c58d'
+        notice = (b'/*\n** The author disclaims copyright to this source code. In place of\n'
+                  b'** a legal notice, here is a blessing:\n'
+                  b'** May you do good and not evil.\n'
+                  b'** May you find forgiveness for yourself and forgive others.\n'
+                  b'** May you share freely, never taking more than you give.\n*/')
+        self.source_files = {'src/sqlite3.h': notice + b'\n/* untouched API declarations fixture */\n'}
+        metadata, archive = self.collect()
+        self.assertEqual((self.package / metadata[0]['notices'][0]).read_bytes(), notice)
+        self.assertEqual(metadata[0]['notice_provenance']['source_file_sha256'],
+                         hashlib.sha256(self.source_files['src/sqlite3.h']).hexdigest())
+        with tarfile.open(archive) as sources:
+            self.assertEqual(sources.extractfile('sqlite3_3.53.4/src/sqlite3.h').read(), self.source_files['src/sqlite3.h'])
+
+    def test_sqlite_missing_embedded_notice_does_not_accept_recipe_mit(self):
+        self.node['ref'] = 'sqlite3/3.53.4#synthetic'
+        self.source_files = {'src/sqlite3.h': b'/* API declarations, no dedication */'}
+        with self.assertRaisesRegex(RuntimeError, 'Missing verified SQLite'):
+            self.collect()
+
+    def test_sqlite_partial_blessing_is_not_a_verified_notice(self):
+        self.node['ref'] = 'sqlite3/3.53.4#synthetic'
+        self.source_files = {'src/sqlite3.h': b'/* The author disclaims copyright to this source code. */'}
+        with self.assertRaisesRegex(RuntimeError, 'Missing verified SQLite'):
+            self.collect()
+
     def test_root_build_and_qt_excluded_but_skipped_host_retained(self):
         metadata, _ = self.collect({
             "0": {**self.node, "ref": "consumer/1.0"},

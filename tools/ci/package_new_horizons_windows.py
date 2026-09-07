@@ -246,6 +246,32 @@ def windows_system_dependency(node):
     }
 
 
+def sqlite_embedded_notice(source):
+    """SQLite's amalgamation carries its public-domain dedication in sqlite3.h.
+
+    Preserve the complete original leading comment, not a recipe license or a
+    synthesized public-domain assertion. The original header stays in sources.
+    """
+    required = (
+        b'The author disclaims copyright to this source code.',
+        b'a legal notice, here is a blessing:',
+        b'May you do good and not evil.',
+        b'May you find forgiveness for yourself and forgive others.',
+        b'May you share freely, never taking more than you give.',
+    )
+    for path in sorted(source.rglob('sqlite3.h')):
+        if path.is_symlink() or not path.is_file():
+            continue
+        with path.open('rb') as stream:
+            prefix = stream.read(65536)
+        end = prefix.find(b'*/')
+        if prefix.startswith(b'/*') and end >= 0:
+            notice = prefix[:end + 2]
+            if all(phrase in notice for phrase in required):
+                return path, notice
+    raise RuntimeError('Missing verified SQLite upstream public-domain notice (do not publish)')
+
+
 def collect_notices(graph_path, package, source_output, cache_storage=None):
     # Optional local MinGW storage override. Never apply it to the isolated
     # recipe-recovery cache below: that must not mutate a binary cache.
@@ -382,6 +408,17 @@ def collect_notices(graph_path, package, source_output, cache_storage=None):
                 # not a substitute for the actual LGPL terms shipped with source.
                 if name == "ffmpeg" and not any(path.name == "COPYING.LGPLv2.1" for path in upstream_licenses):
                     raise RuntimeError("Missing FFmpeg source license text COPYING.LGPLv2.1 (do not publish)")
+                if name == 'sqlite3':
+                    header, notice = sqlite_embedded_notice(source)
+                    destination = notice_root / 'source_folder' / 'SQLITE-PUBLIC-DOMAIN.txt'
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_bytes(notice)
+                    copied.append(destination.relative_to(package).as_posix())
+                    dependency['notice_provenance'] = {
+                        'source_file': header.relative_to(source).as_posix(),
+                        'source_file_sha256': sha256(header),
+                        'extraction': 'Verbatim complete leading sqlite3.h comment; original header retained in source archive',
+                    }
                 dependency["notices"] = sorted(set(copied))
                 if not copied:
                     missing.append(reference)
