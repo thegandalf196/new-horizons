@@ -145,7 +145,7 @@ class CLevelWindow : public CWindowObject
 public:
 	struct PrimaryGainSnapshot
 	{
-		int level;
+		ui32 level;
 		std::array<int, GameConstants::PRIMARY_SKILLS> gains;
 	};
 
