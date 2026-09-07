@@ -69,10 +69,17 @@ def inspect_bytes(data, verified_ci=False):
 def audit_directory(directory, ci_provenance=None):
     report = {}
     for path in sorted(directory.rglob('*')):
-        if path.is_file() and path.suffix.lower() in {'.exe', '.dll'}:
-            hits = inspect_bytes(path.read_bytes(), verified_ci=ci_provenance is not None)
-            if hits:
-                report[path.relative_to(directory).as_posix()] = hits
+        if not path.is_file():
+            continue
+        with path.open('rb') as stream:
+            magic = stream.read(4)
+        # Linux executables and versioned shared libraries need the same gate;
+        # their filenames need not have any extension. Retain the PE suffix gate.
+        if path.suffix.lower() not in {'.exe', '.dll'} and magic != b'\x7fELF':
+            continue
+        hits = inspect_bytes(path.read_bytes(), verified_ci=ci_provenance is not None)
+        if hits:
+            report[path.relative_to(directory).as_posix()] = hits
     return report
 
 

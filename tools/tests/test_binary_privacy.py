@@ -7,7 +7,7 @@ import json
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
-from binary_privacy import inspect_bytes, require_clean, verified_github_ci_provenance
+from binary_privacy import inspect_bytes, require_clean, verified_github_ci_provenance, audit_directory
 
 
 class BinaryPrivacyTest(unittest.TestCase):
@@ -74,6 +74,19 @@ class BinaryPrivacyTest(unittest.TestCase):
             del partial[missing]
             with patch.dict('os.environ', partial, clear=True):
                 self.assertIsNone(verified_github_ci_provenance())
+
+    def test_elf_executable_and_versioned_library_are_not_skipped(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in ('vcmiclient', 'libvcmi.so.1'):
+                (root / name).write_bytes(b'\x7fELF\x00/home/synthetic-builder/install/bin\x00')
+            (root / 'source.cpp').write_bytes(b'/home/synthetic-builder/fixture-only')
+            self.assertEqual(set(audit_directory(root)), {'vcmiclient', 'libvcmi.so.1'})
+            with self.assertRaisesRegex(RuntimeError, 'do not publish'):
+                require_clean(root)
+            for name in ('vcmiclient', 'libvcmi.so.1'):
+                (root / name).write_bytes(b'\x7fELF\x00/usr/local/bin\x00')
+            self.assertEqual(audit_directory(root), {})
 
     def test_binary_gate_rejects_runtime_path(self):
         with tempfile.TemporaryDirectory() as temporary:
