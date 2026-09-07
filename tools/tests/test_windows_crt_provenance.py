@@ -74,6 +74,15 @@ class WindowsCRTProvenanceTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'terms do not match'):
                 bind_runtime(self.package, self.root, self.vs)
 
+    def test_workflow_installs_parser_before_real_crt_preflight(self):
+        workflow = (Path(__file__).resolve().parents[2] / '.github/workflows/new-horizons-windows.yml').read_text()
+        install = workflow.index("python -m pip install 'conan>=2.25,<3' 'pefile==2024.8.26'")
+        smoke = workflow.index('python -c "import pefile; assert pefile.__version__')
+        gate = workflow.index('- name: Verify CMake-selected CRT bytes before compiling')
+        self.assertLess(install, smoke)
+        self.assertLess(smoke, workflow.index('- name: Package audit regression tests'))
+        self.assertLess(smoke, gate)
+
     def test_missing_runtime_rejects(self):
         (self.package / self.source.name).unlink()
         with self.assertRaisesRegex(RuntimeError, 'No shipped'):

@@ -54,7 +54,8 @@ jobs:
       - name: Restore upstream Conan binary cache
         run: |
           set -euo pipefail
-          python -m pip install 'conan>=2.25,<3'
+          python -m pip install 'conan>=2.25,<3' 'pefile==2024.8.26'
+          python -c "import pefile; assert pefile.__version__ == '2024.8.26'"
           archive="$RUNNER_TEMP/dependencies-windows-x64.txz"
           curl --fail --location --retry 3 --output "$archive" https://github.com/vcmi/vcmi-dependencies/releases/download/2026-09-01/dependencies-windows-x64.txz
           echo "6772d2e9f0a730329a195edce895a863d9115c4bba43101a9a6df3fefe6cfe43  $archive" | sha256sum --check
