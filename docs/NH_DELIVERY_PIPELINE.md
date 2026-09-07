@@ -70,6 +70,15 @@ Do not weaken the package or first-increment gates merely to produce a link.
 
 ## Windows scheduling and fallback
 
+**Current user-directed exception:** deliver the current incremental mod preview
+through a fresh GitHub Windows/MSVC build while continuing the local cross-build
+and packaging route separately. Build owns workflow dispatch and records the real
+run URL/source SHA. This is a fresh feature build, not a repack of the older
+original-content preview. Do not wait for local packaging work to finish before
+starting that cloud build. Required dependency/source/notice checks still apply;
+cloud success alone is not launch or gameplay acceptance. This exception does not
+abandon local development or authorize broad unreviewed candidate scope changes.
+
 Build/Integrator currently owns Windows compilation and packaging, as well as
 Linux integration. Local assembly/test first remains preferred. The historical
 MSVC Windows Actions build and the local Linux-to-Windows MinGW build are distinct

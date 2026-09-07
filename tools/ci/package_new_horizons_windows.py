@@ -228,7 +228,10 @@ def windows_system_dependency(node):
     }
 
 
-def collect_notices(graph_path, package, source_output):
+def collect_notices(graph_path, package, source_output, cache_storage=None):
+    # Optional local MinGW storage override. Never apply it to the isolated
+    # recipe-recovery cache below: that must not mutate a binary cache.
+    cache_options = ['-cc', 'core.cache:storage_path=' + str(cache_storage)] if cache_storage is not None else []
     graph = json.loads(graph_path.read_text(encoding="utf-8"))
     nodes = graph.get("graph", {}).get("nodes", {})
     if not isinstance(nodes, dict) or not nodes:
@@ -289,7 +292,7 @@ def collect_notices(graph_path, package, source_output):
                     if path.is_file() and not path.is_symlink()
                     and path.name.lower().startswith(license_prefixes)
                 }
-                located = subprocess.run(["conan", "cache", "path", reference, "--folder=export_source"], text=True, capture_output=True)
+                located = subprocess.run(["conan", "cache", "path", reference, "--folder=export_source", *cache_options], text=True, capture_output=True)
                 if located.returncode:
                     # Only a specifically absent export-source folder is optional. An
                     # unknown recipe, broken cache, or any other Conan failure is fatal.
@@ -338,7 +341,7 @@ def collect_notices(graph_path, package, source_output):
                 if user_channel:
                     user, channel = user_channel.split("/", 1)
                     command += ["--user", user, "--channel", channel]
-                subprocess.run(command, check=True)
+                subprocess.run(command + cache_options, check=True)
                 archive_name = re.sub(r"[^a-zA-Z0-9_.-]", "_", name_version)
                 copied = []
                 notice_root = notices / re.sub(r"[^a-zA-Z0-9_.-]", "_", reference.split("#")[0])
@@ -419,6 +422,20 @@ def source_archive(root, output, revision):
     return excluded
 
 
+CURATED_RESOURCE_TREES = ('config', 'scripts', 'Mods/vcmi', 'Mods/new-horizons')
+
+
+def stage_engine_resources(install, package):
+    """Only the fixed curated resources; never demo/mod collections or user data."""
+    for directory in CURATED_RESOURCE_TREES:
+        source = install / directory
+        if not source.is_dir() or source.is_symlink():
+            raise RuntimeError(f'Required engine resources missing or linked: {directory}')
+        if any(path.is_symlink() for path in source.rglob('*')):
+            raise RuntimeError(f'Linked engine resource payload: {directory}')
+        shutil.copytree(source, package / directory)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--install-dir", type=Path, required=True)
@@ -452,11 +469,7 @@ def main():
         for filename in ("VCMI_client.exe", "VCMI_lib.dll"):
             if not (package / filename).is_file():
                 raise RuntimeError(f"Required installed binary missing: {filename}")
-        for directory in ("config", "scripts", "Mods/vcmi"):
-            source = install / directory
-            if not source.is_dir():
-                raise RuntimeError(f"Required engine resources missing: {directory}")
-            shutil.copytree(source, package / directory)
+        stage_engine_resources(install, package)
         # Never ship synthetic smoke tests or future development files alongside the launcher.
         for filename in ("Play-New-Horizons.cmd", "Start-New-Horizons.ps1", "README-New-Horizons.txt", "dirs.json"):
             source = helpers / filename
@@ -501,7 +514,7 @@ def main():
             "run_id": os.environ.get("GITHUB_RUN_ID"), "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
             "compiler": "MSVC v142; Conan msvc-x64", "transport": "authoritative in-process simulation",
             "preset": "new-horizons-windows-x64", "render_backend": "SDL3",
-            "engine_resource_scope": ["config", "scripts", "Mods/vcmi"],
+            "engine_resource_scope": list(CURATED_RESOURCE_TREES),
             "acceptance": "Compile/package/import audit only; Windows graphical gameplay unverified",
             "proprietary_assets_included": False, "signed": False,
         })
