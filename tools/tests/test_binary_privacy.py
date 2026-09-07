@@ -106,6 +106,24 @@ class BinaryPrivacyTest(unittest.TestCase):
                 self.assertNotIn(str(root), process.stdout + process.stderr)
                 self.assertEqual(process.stderr, '')
 
+    def test_msys_profiles_require_provenance_and_reject_escapes(self):
+        for text in ('/c/users/runneradmin/.conan2/p/b/package/source.cpp',
+                     '/C/Users/runneradmin/.conan2/p/b/package/source.cpp'):
+            for encoding in ('ascii', 'utf-16-le'):
+                data = b'x' + text.encode(encoding)
+                hits = inspect_bytes(data)
+                self.assertEqual(len(hits), 1)
+                self.assertEqual(hits[0]['classification'], 'unapproved-profile-path')
+                self.assertEqual(inspect_bytes(data, True)[0]['classification'], 'ci-service-build-path')
+        for text in ('/c/users/other/.conan2/p/a', '/d/users/runneradmin/.conan2/p/a',
+                     '/c/users/runneradmin/Documents/a',
+                     '/c/users/runneradmin/.conan2/p/cache with space/../../../../private',
+                     '/Users/runneradmin/.conan2/p/a'):
+            for encoding in ('ascii', 'utf-16-le'):
+                hits = inspect_bytes(b'x' + text.encode(encoding), True)
+                self.assertTrue(hits)
+                self.assertTrue(all(hit['classification'] == 'unapproved-profile-path' for hit in hits))
+
     def test_binary_gate_rejects_runtime_path(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

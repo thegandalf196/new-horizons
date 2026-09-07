@@ -15,6 +15,7 @@ import re
 PATTERNS = {
     'unix-home': re.compile(r'/(?:home|Users)/[^/\\\x00\r\n]{1,128}/'),
     'windows-profile': re.compile(r'[A-Za-z]:[\\/]Users[\\/][^\\/\x00\r\n]{1,128}[\\/]', re.IGNORECASE),
+    'msys-profile': re.compile(r'/[A-Za-z]/Users[\\/][^\\/\x00\r\n]{1,128}[\\/]', re.IGNORECASE),
 }
 
 
@@ -35,13 +36,14 @@ def verified_github_ci_provenance():
 
 
 def ci_conan_reference(text, start):
-    if not re.match(r'C:[\\/]Users[\\/]runneradmin[\\/]\.conan2[\\/]p[\\/]', text[start:], re.IGNORECASE):
+    prefix = re.match(r'(?:C:[\\/]|/c/)Users[\\/]runneradmin[\\/]\.conan2[\\/]p[\\/]', text[start:], re.IGNORECASE)
+    if prefix is None:
         return False
     # Whitespace may belong to a Windows path: never truncate before checking
     # traversal. A command string may extend this conservative lexical check.
-    tail = text[start:].split('\x00', 1)[0]
+    tail = text[start + prefix.end():].split('\x00', 1)[0]
     depth = 0
-    for part in re.split(r'[\\/]', tail)[5:]:
+    for part in re.split(r'[\\/]', tail):
         if part == '..':
             if depth == 0:
                 return False
@@ -58,11 +60,16 @@ def inspect_bytes(data, verified_ci=False):
         payload = data[offset:offset + ((len(data) - offset) // 2) * 2]
         views.append(('utf16le', payload.decode('utf-16-le', errors='surrogatepass'), 2, offset))
     for encoding, text, width, base in views:
-        for category, pattern in PATTERNS.items():
-            for match in pattern.finditer(text):
-                hits.append({'encoding': encoding, 'category': category,
-                             'classification': 'ci-service-build-path' if verified_ci and category == 'windows-profile' and ci_conan_reference(text, match.start()) else 'unapproved-profile-path',
-                             'offset': base + (match.start() if width == 1 else len(text[:match.start()].encode('utf-16-le', errors='surrogatepass')))})
+        matches = [(category, match) for category, pattern in PATTERNS.items() for match in pattern.finditer(text)]
+        drive_profiles = [match.span() for category, match in matches if category in ('windows-profile', 'msys-profile')]
+        for category, match in matches:
+            # /Users inside a drive-qualified path is the same finding, not a
+            # second macOS profile. Unqualified /Users paths remain unapproved.
+            if category == 'unix-home' and any(start < match.start() and match.end() <= end for start, end in drive_profiles):
+                continue
+            hits.append({'encoding': encoding, 'category': category,
+                         'classification': 'ci-service-build-path' if verified_ci and category in ('windows-profile', 'msys-profile') and ci_conan_reference(text, match.start()) else 'unapproved-profile-path',
+                         'offset': base + (match.start() if width == 1 else len(text[:match.start()].encode('utf-16-le', errors='surrogatepass')))})
     return sorted(hits, key=lambda hit: (hit['offset'], hit['category']))
 
 
