@@ -13,6 +13,31 @@ the same bug. They show incomplete end-to-end coverage and serial discovery of
 prerequisites. A successful fix proves only its tested scope. A regression test
 listed below is a coverage location, not a claim that the latest CI passed it.
 
+## Growth release follow-up
+
+- Full34087844032 atbc376 failed **before compilation** in the new CRT gate:
+  `ModuleNotFoundError: pefile`. The82 Windows package tests and complete source
+  preflight passed, but synthetic CRT tests mocked the parser and did not provision
+  the real CI dependency.322cbe025 pins `pefile==2024.8.26` alongside Conan, runs a
+  real import/version smoke before regressions, and adds an ordering control.
+  83 offline tests pass; corrected FULL34089398757 is separately monitored. Do not
+  report it successful until actual terminal evidence. The retained failure report
+  and logs remain authoritative; no compilation/game archive occurred in340878.
+- Actual a0 CRT versions14.29.30157.0 differed from the notice collector's available
+  redist directory14.51.36231. Future provenance now separates the environment from
+  byte-matched CMake-selected runtime sources and retained terms. An actual decoder
+  and synthetic VS-tree tests do not reconstruct a historical runner's copy origin.
+- Activating the exact GUI-tested growth metadata exposed two separate controls:
+  the CMake canonical comparator omitted Heroes, and the older full-book export
+  assumed legacy200mana for authored Knowledge20. Add Heroes to configure inputs/
+  equality; preserve explicit legacy200/new20 expectations and manaLimit checks.
+  Final11 data checks and36/128/39 native scopes pass; original REDs retained.
+- A clean-prefix Linux build can still lose build RPATH during ordinary install.
+  First staged ldd could not resolve adjacent libvcmi without launcher environment.
+  Explicit CMake install `$ORIGIN` and build-with-install-RPATH required only normal
+  relinks. Do not patch frozen ELF strings. The copied developer launcher also has
+  a development-tree default; packaged entry-point behavior needs its own test.
+
 ## Recorded failures
 
 | Failure / evidence | Cause or supported diagnosis | Guard and verification scope |
