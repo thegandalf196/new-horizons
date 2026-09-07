@@ -4,3 +4,7 @@
 
 *.bat text eol=crlf
 /android/gradlew text eol=lf
+
+# Match the reviewed corresponding-source snapshot's privacy exclusions.
+/CI/deploy_rsa.enc export-ignore
+/docs/NH_* export-ignore
