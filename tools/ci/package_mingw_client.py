@@ -182,11 +182,12 @@ def main():
     identities['gnu_runtime_sources'] = {'file': gnu_name, 'sha256': common.sha256(args.output_dir / gnu_name)}
     provenance = common.build_provenance(args.build_dir)
     provenance['cmake_reported_compiler_versions'] = provenance.pop('msvc_compiler_versions', [])
-    # Conan's compiler.version=13 toolchain declares 13.0.0 to CMake; that is
-    # not the actual distro driver version. Preserve both rather than relabel it.
+    # CMake reports 13.0.0 and this distro driver reports 13-posix. Preserve
+    # both verbatim; the exact 13.2.0-6ubuntu1+26.1 package/source identity is
+    # separately verified by the GNU runtime provenance, not inferred here.
     provenance['actual_driver_version'] = common.run('x86_64-w64-mingw32-g++-posix', '-dumpfullversion', '-dumpversion')
     if (provenance['cmake_reported_compiler_versions'] != ['13.0.0']
-            or provenance['actual_driver_version'] != '13.2.0'
+            or provenance['actual_driver_version'] != '13-posix'
             or provenance['cache_options'].get('CMAKE_BUILD_TYPE') != 'Release'):
         raise RuntimeError('Compiler/configuration differs from the audited local lane')
     common.write_json(package / 'BUILD-IDENTITY.json', {
