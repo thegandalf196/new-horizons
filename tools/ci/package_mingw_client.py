@@ -156,7 +156,7 @@ def main():
     runtimes = stage_gnu_runtime(package)
     alias = stage_ogg_loader_alias(package)
     images = audit_directory(package)
-    required_media, media = common.media_runtime_roots(args.conan_graph)
+    required_media, media = common.media_runtime_roots(args.conan_graph, allow_mingw_import_archive_links=True)
     if not required_media <= {p.name.lower() for p in package.iterdir()}:
         raise RuntimeError('Missing conservative dynamic-media DLL closure')
     common.write_json(package / 'PE-IMPORTS.json', images)

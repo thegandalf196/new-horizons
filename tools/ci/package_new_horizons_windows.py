@@ -53,7 +53,7 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def media_runtime_roots(graph_path):
+def media_runtime_roots(graph_path, allow_mingw_import_archive_links=False):
     """Conservatively retain codec DLLs that SDL/FFmpeg may load by name, not PE import."""
     nodes = json.loads(graph_path.read_text(encoding="utf-8"))["graph"]["nodes"]
     roots = [key for key, node in nodes.items() if (node.get("ref") or "").split("/")[0] in {
@@ -72,9 +72,27 @@ def media_runtime_roots(graph_path):
         if node.get("context") == "build":
             continue
         folder = Path(node.get("package_folder") or "__missing__")
-        dlls = sorted({p.name.lower() for p in folder.rglob("*.dll")}) if folder.is_dir() else []
+        candidates = list(folder.rglob('*.dll')) if folder.is_dir() else []
+        import_links = []
+        if allow_mingw_import_archive_links:
+            for candidate in list(candidates):
+                # libpng's lib/libpng.dll is a linker alias to a GNU import
+                # archive, not a runtime PE. Never suppress a regular DLL.
+                if candidate.is_symlink():
+                    target = candidate.resolve(strict=True)
+                    if target.name.endswith('.dll.a'):
+                        with target.open('rb') as stream:
+                            archive_magic = stream.read(8)
+                        if archive_magic == b'!<arch>\n':
+                            candidates.remove(candidate)
+                            import_links.append({'file': candidate.name, 'target': target.name,
+                                                 'reason': 'GNU ar import-library symlink, not a runtime PE'})
+        dlls = sorted({p.name.lower() for p in candidates})
         retained.update(dlls)
-        provenance.append({"reference": node.get("ref"), "options": node.get("options"), "retained_dlls": dlls})
+        record = {"reference": node.get("ref"), "options": node.get("options"), "retained_dlls": dlls}
+        if import_links:
+            record['link_only_import_archives'] = import_links
+        provenance.append(record)
         pending.extend(node.get("dependencies", {}).keys())
     return retained, provenance
 
