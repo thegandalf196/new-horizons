@@ -47,6 +47,17 @@ the prior architectural experiment is closed. Deferred smoothness research is in
   class and military identity clearly. Concept images are visual direction,
   not finished sprite sheets or authoritative numerical rules.
 
+## Curated usability additions
+
+User authorized visible quick-save/load buttons and creature ability/status icons
+(including Undead), matching the familiar conveniences supplied by VCMI Extras.
+Follow [NH_USER_FEEDBACK.md](NH_USER_FEEDBACK.md) for exact scope, ownership,
+acceptance and unresolved third-party art permissions. These are presentation
+additions, not changes to working F8/F9 or creature rules. Integrate directly into
+the curated edition; use independently authored artwork if Extras redistribution
+rights cannot be established. Do not delay useful equivalent implementation on
+optional unlicensed art, or claim that public availability grants reuse rights.
+
 ## Asset policy
 
 Inspect actual installed Heroes III spellbook/school artwork and VCMI lookups before
