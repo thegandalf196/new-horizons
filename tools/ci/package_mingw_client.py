@@ -13,6 +13,7 @@ import tarfile
 import zipfile
 
 import package_new_horizons_windows as common
+from binary_privacy import require_clean
 from collect_mingw_sources import CATALOG, source_entries, validate_runtime_provenance
 from git_source_snapshot import git, source_snapshot
 from mingw_runtime import audit_directory, stage_gnu_runtime, stage_ogg_loader_alias
@@ -113,7 +114,7 @@ def main():
     root = Path(common.run('git', 'rev-parse', '--show-toplevel'))
     packaging_commit = git(root, 'rev-parse', '--verify', '--end-of-options', args.packaging_commit + '^{commit}').decode().strip()
     for name in ('package_mingw_client.py', 'package_new_horizons_windows.py', 'mingw_runtime.py',
-                 'collect_mingw_sources.py', 'git_source_snapshot.py'):
+                 'collect_mingw_sources.py', 'git_source_snapshot.py', 'binary_privacy.py'):
         if (Path(__file__).parent / name).read_bytes() != committed_file(root, packaging_commit, 'tools/ci/' + name):
             raise RuntimeError('Executing packaging code is not its declared committed source: ' + name)
     build = json.loads(args.build_identity.read_text())
@@ -156,6 +157,7 @@ def main():
     runtimes = stage_gnu_runtime(package)
     alias = stage_ogg_loader_alias(package)
     images = audit_directory(package)
+    require_clean(package)
     required_media, media = common.media_runtime_roots(args.conan_graph, allow_mingw_import_archive_links=True)
     if not required_media <= {p.name.lower() for p in package.iterdir()}:
         raise RuntimeError('Missing conservative dynamic-media DLL closure')
