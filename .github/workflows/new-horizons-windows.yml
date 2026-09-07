@@ -60,13 +60,13 @@ jobs:
           echo "6772d2e9f0a730329a195edce895a863d9115c4bba43101a9a6df3fefe6cfe43  $archive" | sha256sum --check
           conan cache restore "$archive"
 
-      - uses: step-security/msvc-dev-cmd@main
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1, upstream; no private-repository subscription gate
         with:
           arch: x64
           toolset: '14.29'
 
       - name: Cache compiler outputs for packaging retries
-        uses: step-security/ccache-action@v1
+        uses: hendrikmuhs/ccache-action@5ebbd400eff9e74630f759d94ddd7b6c26299639 # v1, upstream
         with:
           variant: sccache
           key: new-horizons-msvc-x64-v142
@@ -78,6 +78,7 @@ jobs:
           python tools/tests/test_windows_pe_audit.py
           python tools/tests/test_windows_system_dependency.py
           python tools/tests/test_windows_dependency_notices.py
+          python tools/tests/test_windows_curated_resources.py
 
       - name: Preflight Microsoft notices before compiling
         shell: python
@@ -119,6 +120,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           powershell.exe -NoProfile -File tools/windows/tests/Setup-Smoke.ps1
           if ($LASTEXITCODE -ne 0) { throw "Setup smoke failed: $LASTEXITCODE" }
+          powershell.exe -NoProfile -File tools/windows/tests/Managed-Preset-Smoke.ps1
+          if ($LASTEXITCODE -ne 0) { throw "Managed preset smoke failed: $LASTEXITCODE" }
 
       - name: Preflight complete dependency graph and source archives
         shell: python
