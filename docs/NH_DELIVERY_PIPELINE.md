@@ -8,6 +8,8 @@ Read [NEW_HORIZONS_DESIGN.md](NEW_HORIZONS_DESIGN.md) for full product scope,
 [NH_WORKER_PLAN.md](NH_WORKER_PLAN.md) for ownership and acceptance, and
 [NH_AGENT_START.md](NH_AGENT_START.md) to start or resume role goals.
 This document changes scheduling, not product requirements or evidence standards.
+Read [NH_RELEASE_FAILURES.md](NH_RELEASE_FAILURES.md) for known release failures,
+regression coverage and the required full-graph preflight review before CI.
 
 ## Two lanes, one integrator
 
@@ -59,7 +61,8 @@ only after checking no active worker owns it. Never touch purchaser assets.
    setup/launch helper, licenses and matching corresponding sources. Test package
    contents independently. A linked EXE is not a self-contained download.
 7. **Deliver:** Build privacy-scans and commits/pushes coherent verified changes,
-   then uploads the checked incremental preview to the private GitHub repository.
+   then uploads the checked incremental preview to the user-designated GitHub
+   repository at its current user-selected visibility (now public).
    Confirm release asset presence and identity before reporting a download link.
    Do not conflate a draft, source commit, old preview or Actions run with a newly
    published feature package. Native Windows gameplay limits must be explicit.
