@@ -67,14 +67,17 @@ class MasteryDataTest(unittest.TestCase):
             'NH_mastery_artilleryRepair'})
         self.assertNotIn('../unsafe', icon['enum'])
 
-    def test_schema_registration_does_not_activate_live_module(self):
+    def test_schema_registration_and_default_mastery_identity(self):
         settings = load('config/schemas/gameSettings.json')
         self.assertEqual(settings['properties']['heroes']['properties']['newHorizonsMasteries']['$ref'],
                          'newHorizonsMasteries.json')
         schema = load('config/schemas/newHorizonsMasteries.json')
         self.assertEqual(schema['definitions']['option']['properties']['effect']['enum'],
                          ['volley', 'precision', 'repair'])
-        self.assertNotIn('newHorizonsMasteries', load('Mods/new-horizons/mod.json')['settings']['heroes'])
+        module = load('Mods/new-horizons/mod.json')
+        self.assertEqual(module['version'], '0.5.1')
+        self.assertEqual(module['settings']['heroes']['newHorizonsMasteries'], load('config/newHorizonsMasteries.json'))
+        self.assertEqual(module['translations'], load('config/newHorizonsMasteryTexts.json'))
 
 
 if __name__ == '__main__':

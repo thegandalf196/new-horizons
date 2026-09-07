@@ -73,13 +73,20 @@ def main():
         metadata['name'] = 'New Horizons (capability-only diagnostic)'
         metadata['description'] += (' DIAGNOSTIC ONLY: primary growth is disabled; authored primary values remain. '
                                     'This separate control is for ordinary saved-identity/UI testing, not a release preset.')
-    if args.mastery_preview_output is not None:
+    if args.mastery_preview_output is not None or preview_output is None:
         settings['heroes']['newHorizonsMasteries'] = canonical('newHorizonsMasteries.json')
         metadata['translations'] = canonical('newHorizonsMasteryTexts.json')
         metadata['version'] = '0.5.0'
         metadata['description'] += (' Separate future Artillery mastery candidate: one permanent extra choice '
                                     'after a level gained with prior Expert Artillery. Not secondary rank four '
                                     'or completion of other mastery families, creature tiers or new spell effects.')
+    if preview_output is None:
+        # Default edition matches the separately tested 0.5.1 composition.
+        # Explicit historical preview/control branches retain their own identities.
+        metadata['version'] = '0.5.1'
+        metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
+        metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
+        metadata['description'] += ' Includes independently authored quick-save/load buttons and creature ability icons; landscape presentation only.'
     expected = json.dumps(metadata, indent='\t', ensure_ascii=False) + '\n'
     if args.check:
         if not destination.is_file() or destination.read_text(encoding='utf-8') != expected:

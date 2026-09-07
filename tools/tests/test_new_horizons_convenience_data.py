@@ -71,6 +71,7 @@ class ConvenienceDataTest(unittest.TestCase):
             subprocess.run(command, check=True, capture_output=True)
             metadata = json.loads(output.read_text())
             self.assertEqual(metadata['version'], '0.5.1')
+            self.assertEqual(output.read_bytes(), before)  # Default matches the tested private composition exactly.
             self.assertEqual(metadata['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))
             self.assertEqual(metadata['filesystem'][''], [{'type': 'dir', 'path': '/Content'}])
             self.assertEqual(metadata['filesystem']['SPRITES/'], [{'type': 'dir', 'path': '/Images'}])

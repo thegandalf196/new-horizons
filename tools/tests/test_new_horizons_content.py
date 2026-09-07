@@ -87,11 +87,15 @@ class NewHorizonsContentTest(unittest.TestCase):
         settings = load('config/newHorizonsCombat.json')
         settings['magic'] = {'newHorizons': self.rules}
         settings['heroes'] = {'newHorizons': load('config/newHorizonsHeroes.json'),
-                              'newHorizonsCapabilities': load('config/newHorizonsCapabilities.json')}
+                              'newHorizonsCapabilities': load('config/newHorizonsCapabilities.json'),
+                              'newHorizonsMasteries': load('config/newHorizonsMasteries.json')}
         self.assertEqual(module['settings'], settings)
         self.assertEqual(module['spellSchools'], load('config/newHorizonsSchools.json'))
         self.assertEqual(module['skills'], load('config/newHorizonsSkills.json'))
         self.assertEqual(module['filesystem']['SPRITES/'], [{'type': 'dir', 'path': '/Images'}])
+        self.assertEqual(module['translations'], load('config/newHorizonsMasteryTexts.json'))
+        self.assertEqual(module['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))
+        self.assertEqual(module['filesystem'][''], [{'type': 'dir', 'path': '/Content'}])
         self.assertFalse(module['keepDisabled'])
         self.assertEqual(load('config/gameConfig.json')['settings']['magic']['newHorizons'], {})
 

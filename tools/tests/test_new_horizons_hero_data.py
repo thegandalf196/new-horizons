@@ -52,14 +52,14 @@ class HeroDataTest(unittest.TestCase):
             root = Path(temporary)
             (root / 'config').mkdir()
             (root / 'Mods/new-horizons').mkdir(parents=True)
-            for name in ('Combat', 'Magic', 'Schools', 'Skills', 'Heroes', 'Capabilities'):
+            for name in ('Combat', 'Magic', 'Schools', 'Skills', 'Heroes', 'Capabilities', 'Masteries', 'MasteryTexts', 'ConvenienceBonuses'):
                 shutil.copyfile(ROOT / f'config/newHorizons{name}.json', root / f'config/newHorizons{name}.json')
             shutil.copyfile(ROOT / 'Mods/new-horizons/mod.json', root / 'Mods/new-horizons/mod.json')
             script = root / 'check.cmake'
             script.write_text(f'set(CMAKE_SOURCE_DIR "{root.as_posix()}")\n' + block)
             command = ['cmake', '-P', str(script)]
             subprocess.run(command, check=True, capture_output=True)
-            for name, key in (('Heroes', 'maxPrimary'), ('Capabilities', 'rulesetVersion')):
+            for name, key in (('Heroes', 'maxPrimary'), ('Capabilities', 'rulesetVersion'), ('Masteries', 'rulesetVersion')):
                 with self.subTest(rules=name):
                     path = root / f'config/newHorizons{name}.json'
                     before = path.read_bytes()
@@ -70,6 +70,25 @@ class HeroDataTest(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn('Stale curated module settings', result.stderr)
                     path.write_bytes(before)
+            for name, field in (('MasteryTexts', 'translations'), ('ConvenienceBonuses', 'bonuses')):
+                with self.subTest(definitions=name):
+                    path = root / f'config/newHorizons{name}.json'
+                    before = path.read_bytes()
+                    data = json.loads(before)
+                    data.pop(next(iter(data)))
+                    path.write_text(json.dumps(data))
+                    result = subprocess.run(command, capture_output=True, text=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('Stale curated ' + field, result.stderr)
+                    path.write_bytes(before)
+
+            module_path = root / 'Mods/new-horizons/mod.json'
+            module = json.loads(module_path.read_bytes())
+            module['filesystem'][''][0]['path'] = '/WrongContent'
+            module_path.write_text(json.dumps(module))
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('Stale curated Content root mount', result.stderr)
 
     def test_scale_and_cap_are_explicit(self):
         self.assertEqual(self.rules['schemaVersion'], 1)
