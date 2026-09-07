@@ -2,9 +2,14 @@
 # Execute the real preset functions without importing assets or starting a client.
 # Runs on PowerShell 5.1/7; a Linux run is NOT Windows setup/GUI acceptance.
 [CmdletBinding()]
-param([string]$SourceRoot = (Join-Path $PSScriptRoot '../../..'))
+param([string]$SourceRoot)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+# Windows PowerShell 5.1 may not populate PSScriptRoot during parameter binding.
+# Resolve the default after entering the script; retain explicit caller overrides.
+if ([string]::IsNullOrWhiteSpace($SourceRoot)) {
+    $SourceRoot = Join-Path $PSScriptRoot '../../..'
+}
 $scriptPath = Join-Path $SourceRoot 'tools/windows/Start-New-Horizons.ps1'
 $tokens = $null
 $errors = $null
