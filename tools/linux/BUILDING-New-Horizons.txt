@@ -1,7 +1,7 @@
 LINUX SOURCE AND RELINKING
 
-The engine source companion contains the exact c5503cc3515a455084e387f260378f700b51ea3d
-Git blobs and all four pinned submodule contents. It excludes private build data,
+The engine source companion contains the exact Git revision recorded in
+BUILD-IDENTITY.json and all four pinned submodule contents. It excludes private build data,
 purchaser assets and profiles. No original game assets are needed to compile.
 A separate packaging/tooling source companion covers the package entry point and
 notices. Consult BUILD-IDENTITY.json for the actual binaries and companion hashes.
@@ -15,19 +15,22 @@ IR/plugin or LTO step was used in the recorded application build.
 
 For a functional source rebuild, extract the engine source and use paths without
 spaces for the following source/build aliases. Do not overwrite existing paths:
-  /tmp/nh-linux-c550-source
-  /tmp/nh-linux-c550-build
+  /tmp/nh-linux-source
+  /tmp/nh-linux-build
 
 Configure:
-  cmake -S /tmp/nh-linux-c550-source -B /tmp/nh-linux-c550-build --preset new-horizons-linux \
+  cmake -S /tmp/nh-linux-source -B /tmp/nh-linux-build --preset new-horizons-linux \
     -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON \
     '-DCMAKE_INSTALL_RPATH=$ORIGIN' -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
-    '-DCMAKE_C_FLAGS=-ffile-prefix-map=/tmp/nh-linux-c550-source=. -ffile-prefix-map=/tmp/nh-linux-c550-build=./build' \
-    '-DCMAKE_CXX_FLAGS=-ffile-prefix-map=/tmp/nh-linux-c550-source=. -ffile-prefix-map=/tmp/nh-linux-c550-build=./build'
-  cmake --build /tmp/nh-linux-c550-build --target vcmiclient --parallel 2
+    '-DCMAKE_C_FLAGS=-ffile-prefix-map=/tmp/nh-linux-source=. -ffile-prefix-map=/tmp/nh-linux-build=./build' \
+    '-DCMAKE_CXX_FLAGS=-ffile-prefix-map=/tmp/nh-linux-source=. -ffile-prefix-map=/tmp/nh-linux-build=./build'
+  cmake --build /tmp/nh-linux-build --target vcmiclient --parallel 2
 
 Stage to a NEW owned directory, not /usr:
-  cmake --install /tmp/nh-linux-c550-build --prefix /path/to/new/staging-directory
+  cmake --install /tmp/nh-linux-build --prefix /path/to/new/staging-directory
+
+These are generic rebuild aliases. BUILD-PROVENANCE.json retains the actual
+candidate's configure options, including its specific source/build prefix maps.
 
 For the curated flat package retain only vcmiclient, its matching libvcmi.so,
 config, scripts, Mods/vcmi and Mods/new-horizons, plus the launcher, notices and
