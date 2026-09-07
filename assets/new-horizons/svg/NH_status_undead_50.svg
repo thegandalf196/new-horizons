@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 64 64">
+<!-- Original New Horizons layered vector artwork; CC0-1.0. No external artwork or fonts. -->
+<polygon points="14,21 18,11 29,6 42,9 50,20 48,35 42,42 41,54 24,55 21,43 14,36" fill="#88734f" stroke="#232c32" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="16,21 20,13 29,8 40,11 47,21 44,37 37,43 27,43 19,37" fill="#d9c69a" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="20,15 29,9 40,12 44,19 33,16 24,20" fill="#fff0c6" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="37,21 46,22 44,36 38,41 35,36" fill="#ae9568" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="18,26 24,23 29,27 27,34 20,34" fill="#232c32" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="35,27 42,23 46,27 43,34 36,34" fill="#232c32" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="18,25 25,22 29,25" fill="none" stroke="#fff0c6" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="35,25 42,21 46,24" fill="none" stroke="#fff0c6" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="32,32 28,40 35,40" fill="#3b3b33" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="24,43 39,43 39,51 26,52" fill="#d9c69a" stroke="#232c32" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="27,44 27,50" fill="none" stroke="#88734f" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="31,44 31,50" fill="none" stroke="#88734f" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="35,44 35,50" fill="none" stroke="#88734f" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="25,53 39,52" fill="none" stroke="#fff0c6" stroke-width="1" stroke-linejoin="round"/>
+</svg>

@@ -149,6 +149,7 @@ set(test_SRCS
 		server/battles/NewHorizonsHeroGrowthTest.cpp
 		server/battles/NewHorizonsMasteryTest.cpp
 		server/battles/NewHorizonsMasteryFixtureExportTest.cpp
+		server/battles/NewHorizonsConvenienceFixtureExportTest.cpp
 		server/battles/NewHorizonsHeroFixtureExportTest.cpp
 		server/queries/QueriesProcessorTest.cpp
 

@@ -1,0 +1,12 @@
+{
+	"core:UNDEAD": {"graphics": {"icon": "NH_status_undead_50"}},
+	"core:FLYING": {"graphics": {"icon": "NH_status_flying_50"}},
+	"core:SHOOTER": {"graphics": {"icon": "NH_status_shooter_50"}},
+	"core:SIEGE_WEAPON": {"graphics": {"icon": "NH_status_siege_50"}, "description": "{Siege Weapon}\nThis unit has the siege-weapon trait."},
+	"core:BLOCKS_RETALIATION": {"graphics": {"icon": "NH_status_noRetaliation_50"}},
+	"core:UNLIMITED_RETALIATIONS": {"graphics": {"icon": "NH_status_unlimitedRetaliations_50"}},
+	"core:TWO_HEX_ATTACK_BREATH": {"graphics": {"icon": "NH_status_breath_50"}},
+	"core:ATTACKS_ALL_ADJACENT": {"graphics": {"icon": "NH_status_adjacent_50"}},
+	"core:MAGIC_RESISTANCE": {"graphics": {"icon": "NH_status_resistance_50"}},
+	"core:HP_REGENERATION": {"graphics": {"icon": "NH_status_regeneration_50"}}
+}

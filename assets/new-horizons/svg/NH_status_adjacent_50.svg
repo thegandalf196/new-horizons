@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 64 64">
+<!-- Original New Horizons layered vector artwork; CC0-1.0. No external artwork or fonts. -->
+<polyline points="32,22 32,8" fill="none" stroke="#232c32" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="32,22 32,8" fill="none" stroke="#c9d6d7" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="31,20 31,8" fill="none" stroke="#fff0c6" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="42,22 56,8" fill="none" stroke="#232c32" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="42,22 56,8" fill="none" stroke="#c9d6d7" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="42,20 54,8" fill="none" stroke="#fff0c6" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="42,32 56,32" fill="none" stroke="#232c32" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="42,32 56,32" fill="none" stroke="#c9d6d7" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="42,31 54,31" fill="none" stroke="#fff0c6" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="42,42 56,56" fill="none" stroke="#232c32" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="42,42 56,56" fill="none" stroke="#c9d6d7" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="42,42 54,54" fill="none" stroke="#fff0c6" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="32,42 32,56" fill="none" stroke="#232c32" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="32,42 32,56" fill="none" stroke="#c9d6d7" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="31,42 31,54" fill="none" stroke="#fff0c6" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="22,42 8,56" fill="none" stroke="#232c32" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="22,42 8,56" fill="none" stroke="#c9d6d7" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="20,42 8,54" fill="none" stroke="#fff0c6" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="22,32 8,32" fill="none" stroke="#232c32" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="22,32 8,32" fill="none" stroke="#c9d6d7" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="20,31 8,31" fill="none" stroke="#fff0c6" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="22,22 8,8" fill="none" stroke="#232c32" stroke-width="7" stroke-linejoin="round"/>
+<polyline points="22,22 8,8" fill="none" stroke="#c9d6d7" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="20,20 8,8" fill="none" stroke="#fff0c6" stroke-width="1" stroke-linejoin="round"/>
+<circle cx="32" cy="32" r="12" fill="#695338" stroke="#232c32" stroke-width="2"/>
+<circle cx="32" cy="32" r="8" fill="#bc9b5d" stroke="#ecd39b" stroke-width="2"/>
+<polygon points="32,25 37,32 32,39 27,32" fill="#e0d1aa" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+</svg>

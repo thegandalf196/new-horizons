@@ -36,6 +36,7 @@
 #include "../../lib/constants/StringConstants.h"
 #include "../../lib/mapping/CMapHeader.h"
 #include "../../lib/filesystem/ResourcePath.h"
+#include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
 #include "../../lib/MapLayerHandler.h"
 
@@ -64,12 +65,26 @@ AdventureMapWidget::AdventureMapWidget( std::shared_ptr<AdventureMapShortcuts> s
 	for (const auto & entry : shortcuts->getShortcuts())
 		addShortcut(entry.shortcut, entry.callback);
 
-	const JsonNode config(JsonPath::builtin(pos.w < pos.h && settings["video"]["allowPortrait"].Bool() ? "config/widgets/adventureMapPortrait.json" : "config/widgets/adventureMap.json"));
+	const bool portraitLayout = pos.w < pos.h && settings["video"]["allowPortrait"].Bool();
+	const JsonNode config(JsonPath::builtin(portraitLayout ? "config/widgets/adventureMapPortrait.json" : "config/widgets/adventureMap.json"));
 
 	for(const auto & entry : config["options"]["imagesPlayerColored"].Vector())
 		playerColoredImages.push_back(ImagePath::fromJson(entry));
 
 	build(config);
+	// Optional, presentation-only additions from the active curated module.
+	// Keep the winning base layout intact and make no resource demands when the
+	// module is disabled. Portrait placement requires its own reviewed layout.
+	const auto conveniencePath = JsonPath::builtin("config/widgets/nhConvenience.json");
+	if(!portraitLayout && CResourceHandler::get()->existsResource(conveniencePath))
+	{
+		const JsonNode convenience(conveniencePath);
+		// build() also reads object-level dimensions. Use a sanitized object,
+		// not a bare items array, without admitting addon dimensions/libraries.
+		JsonNode additions;
+		additions["items"] = convenience["items"];
+		build(additions);
+	}
 	addUsedEvents(KEYBOARD);
 
 	updateMapLayerButtonIcon();

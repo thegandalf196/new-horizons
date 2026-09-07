@@ -1,0 +1,30 @@
+{
+	"items": [
+		{
+			"type": "adventureMapContainer",
+			"name": "nhConvenienceControls",
+			"hideWhen": "worldViewMode",
+			"area": {"top": 171, "right": 69, "width": 56, "height": 24},
+			"items": [
+				{
+					"type": "adventureMapButton",
+					"name": "nhButtonQuickSave",
+					"image": "NH_qsave_24",
+					"help": "vcmi.adventureMap.quickSave",
+					"hotkey": "adventureQuickSave",
+					"playerColored": false,
+					"area": {"top": 0, "left": 0, "width": 24, "height": 24}
+				},
+				{
+					"type": "adventureMapButton",
+					"name": "nhButtonQuickLoad",
+					"image": "NH_qload_24",
+					"help": "vcmi.adventureMap.quickLoad",
+					"hotkey": "adventureQuickLoad",
+					"playerColored": false,
+					"area": {"top": 0, "left": 32, "width": 24, "height": 24}
+				}
+			]
+		}
+	]
+}

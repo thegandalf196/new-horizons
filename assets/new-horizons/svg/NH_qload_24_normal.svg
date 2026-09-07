@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 64 64">
+<!-- Original New Horizons layered vector artwork; CC0-1.0. No external artwork or fonts. -->
+<polygon points="3,1 60,1 63,4 63,60 60,63 3,63 1,60 1,4" fill="#342e27" stroke="#b39b6c" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="4,4 59,4 56,8 8,8 8,56 4,60" fill="#d5bd8b" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="59,4 60,60 4,60 8,56 56,56 56,8" fill="#161e23" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="9,9 55,9 55,55 9,55" fill="#493b2d" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="10,14 54,14" fill="none" stroke="#554634" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="10,21 54,21" fill="none" stroke="#554634" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="10,28 54,28" fill="none" stroke="#554634" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="10,35 54,35" fill="none" stroke="#554634" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="10,42 54,42" fill="none" stroke="#554634" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="10,49 54,49" fill="none" stroke="#554634" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="12,25 35,20 44,25 44,51 19,56 12,50" fill="#211e1c" stroke="#232c32" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="16,28 39,24 40,48 18,52" fill="#dfcf9c" stroke="#805e3c" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="18,44 38,40" fill="none" stroke="#a08859" stroke-width="1" stroke-linejoin="round"/>
+<polyline points="18,48 38,44" fill="none" stroke="#a08859" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="12,25 34,20 39,24 17,29" fill="#b57642" stroke="#fff0c6" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="39,8 26,24 34,24 34,39 44,39 44,24 52,24" fill="#8fc1c6" stroke="#232c32" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="37,13 37,35" fill="none" stroke="#e3f1d9" stroke-width="2" stroke-linejoin="round"/>
+</svg>
