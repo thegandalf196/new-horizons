@@ -15,6 +15,14 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+- Full34089398757 passed the real CRT gate, then MSVC rejected the level snapshot's
+  unsigned-to-int brace conversion (C2397). GCC's permissive build had not made it
+  fatal.35119d534 changes only that field to the actual hero level type, ui32.
+  `test_windows_level_snapshot.py` extracts the real declaration and compiles it
+  with MSVC or GCC -Werror=narrowing before the expensive client build. Local old
+  reproduction fails; fixed declaration/native client and85 package cases pass.
+  Corrected FULL34093695275 is monitored separately, not presumed successful.
+
 - Full34087844032 atbc376 failed **before compilation** in the new CRT gate:
   `ModuleNotFoundError: pefile`. The82 Windows package tests and complete source
   preflight passed, but synthetic CRT tests mocked the parser and did not provision
