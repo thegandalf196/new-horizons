@@ -67,6 +67,8 @@ def inspect_bytes(data, verified_ci=False):
 
 
 def audit_directory(directory, ci_provenance=None):
+    if not directory.is_dir():
+        raise RuntimeError('Binary audit root is missing or not a directory')
     report = {}
     for path in sorted(directory.rglob('*')):
         if not path.is_file():
@@ -99,7 +101,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--directory', type=Path, required=True)
     args = parser.parse_args()
-    report = audit_directory(args.directory)
+    try:
+        report = audit_directory(args.directory)
+    except (RuntimeError, OSError) as error:
+        print(json.dumps({'findings': {}, 'pass': False,
+                          'error': 'invalid-or-unreadable-audit-input',
+                          'exception': type(error).__name__}, indent=2))
+        raise SystemExit(1)
     print(json.dumps({'findings': report, 'pass': not report}, indent=2))
     raise SystemExit(1 if report else 0)
 

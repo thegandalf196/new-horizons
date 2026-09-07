@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 import json
+import subprocess
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
@@ -87,6 +88,23 @@ class BinaryPrivacyTest(unittest.TestCase):
             for name in ('vcmiclient', 'libvcmi.so.1'):
                 (root / name).write_bytes(b'\x7fELF\x00/usr/local/bin\x00')
             self.assertEqual(audit_directory(root), {})
+
+    def test_missing_or_non_directory_root_fails_closed_with_sanitized_json(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            regular_file = root / 'not-a-directory'
+            regular_file.write_bytes(b'fixture')
+            for invalid in (root / 'missing', regular_file):
+                with self.assertRaisesRegex(RuntimeError, 'audit root'):
+                    require_clean(invalid)
+                process = subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / 'ci/binary_privacy.py'),
+                                          '--directory', str(invalid)], capture_output=True, text=True)
+                self.assertEqual(process.returncode, 1)
+                report = json.loads(process.stdout)
+                self.assertFalse(report['pass'])
+                self.assertEqual(report['error'], 'invalid-or-unreadable-audit-input')
+                self.assertNotIn(str(root), process.stdout + process.stderr)
+                self.assertEqual(process.stderr, '')
 
     def test_binary_gate_rejects_runtime_path(self):
         with tempfile.TemporaryDirectory() as temporary:
