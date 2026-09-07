@@ -14,6 +14,7 @@
 #include "ReachabilityInfo.h"
 #include "BattleAttackInfo.h"
 #include "HeroCommand.h"
+#include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class CGHeroInstance;
 class CStack;
@@ -68,6 +69,8 @@ class DLL_LINKAGE CBattleInfoCallback : public virtual CBattleInfoEssentials
 {
 public:
 
+	/// Battle snapshot only; never falls back to world or installed settings.
+	std::optional<newHorizonsCreatures::CreatureCategoryView> battleGetCreatureCategory(CreatureID creature) const;
 	std::vector<SpellSchool> battleGetActiveSpellSchools() const;
 	std::vector<SpellSchool> battleGetSpellSchools(SpellID spell) const;
 	int battleGetSpellLevel(SpellID spell) const;

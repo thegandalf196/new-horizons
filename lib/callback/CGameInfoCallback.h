@@ -27,6 +27,7 @@ public:
 	const JsonNode & getHeroDevelopmentRules() const override;
 	const JsonNode & getHeroCapabilityRules() const override;
 	const JsonNode & getHeroMasteryRules() const override;
+	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override;
 	//various
 
 	Calendar getCalendar() const override;

@@ -492,6 +492,7 @@ BattleInfo::BattleInfo(IGameInfoCallback *cb)
 	{
 		heroCommandRules = cb->getHeroCommandRules();
 		magicRules = cb->getMagicRules();
+		creatureCategoryRules = cb->getCreatureCategoryRules();
 	}
 }
 

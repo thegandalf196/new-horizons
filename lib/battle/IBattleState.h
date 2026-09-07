@@ -12,6 +12,7 @@
 #include "CBattleInfoEssentials.h"
 #include "BattleUnitTurnReason.h"
 #include "HeroCommand.h"
+#include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class ObstacleChanges;
 class UnitChanges;
@@ -65,6 +66,7 @@ public:
 
 	virtual const JsonNode & getHeroCommandRules() const;
 	virtual const JsonNode & getMagicRules() const;
+	virtual const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const;
 	virtual bool getHeroCommandUsed(BattleSide side) const { return false; }
 	virtual HeroCommand getActiveDoctrine(BattleSide side) const { return HeroCommand::NONE; }
 	virtual HeroCommand getActiveOrder(BattleSide side) const { return HeroCommand::NONE; }

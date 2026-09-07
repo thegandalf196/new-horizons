@@ -12,6 +12,7 @@
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsMasteryRules.h"
+#include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 #include "../battle/HeroCommand.h"
 #include "../spells/NewHorizonsMagic.h"
@@ -163,6 +164,7 @@ public:
 	const JsonNode & getHeroDevelopmentRules() const override { return heroDevelopmentRules; }
 	const JsonNode & getHeroCapabilityRules() const override { return heroCapabilityRules; }
 	const JsonNode & getHeroMasteryRules() const override { return heroMasteryRules; }
+	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return creatureCategoryRules; }
 
 	StartInfo * getStartInfo()
 	{
@@ -291,6 +293,21 @@ public:
 		else if(!h.saving)
 			heroMasteryRules = JsonNode();
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_CATEGORIES))
+		{
+			if(h.saving)
+				h & creatureCategoryRules;
+			else
+			{
+				newHorizonsCreatures::CreatureCategoryRules candidate;
+				h & candidate;
+				newHorizonsCreatures::validateCreatureCategoryEntities(candidate);
+				creatureCategoryRules = std::move(candidate);
+			}
+		}
+		else if(!h.saving)
+			creatureCategoryRules = newHorizonsCreatures::CreatureCategoryRules();
+
 		if(!h.saving && h.loadingGamestate)
 			restoreBonusSystemTree();
 	}
@@ -301,6 +318,7 @@ private:
 	JsonNode heroDevelopmentRules;
 	JsonNode heroCapabilityRules;
 	JsonNode heroMasteryRules;
+	newHorizonsCreatures::CreatureCategoryRules creatureCategoryRules;
 	// ----- initialization -----
 	void initNewGame(const IMapService * mapService, vstd::RNG & randomGenerator, bool allowSavingRandomMap, Load::ProgressAccumulator & progressTracking);
 	void initGlobalBonuses();

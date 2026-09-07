@@ -123,6 +123,8 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsPrimaryProfile.cpp
 	entities/hero/NewHorizonsPrimaryGrowth.cpp
 	entities/hero/NewHorizonsPrimaryScale.cpp
+	entities/creature/NewHorizonsCreatureCategoryRules.cpp
+	entities/creature/NewHorizonsCreatureCategories.cpp
 	entities/hero/NewHorizonsHeroRules.cpp
 	entities/hero/NewHorizonsLeadership.cpp
 	entities/hero/NewHorizonsCapabilityRules.cpp
@@ -565,6 +567,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsPrimaryProfile.h
 	entities/hero/NewHorizonsPrimaryGrowth.h
 	entities/hero/NewHorizonsPrimaryScale.h
+	entities/creature/NewHorizonsCreatureCategoryRules.h
 	entities/hero/NewHorizonsHeroRules.h
 	entities/hero/NewHorizonsLeadership.h
 	entities/hero/NewHorizonsCapabilityRules.h

@@ -135,6 +135,7 @@
 			"type" : "object",
 			"additionalProperties" : false,
 			"properties" : {
+				"newHorizonsCategories" :            { "$ref" : "newHorizonsCreatureCategories.json" },
 				"weeklyGrowthPercent" :               { "type" : "number" },
 				"weeklyGrowthCap" :                   { "type" : "number" },
 				"additionalWeeklyGrowthSpecialWeek" : { "type" : "number" },

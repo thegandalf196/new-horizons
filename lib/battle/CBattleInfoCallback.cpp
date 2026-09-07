@@ -33,6 +33,14 @@
 #include "../Rect.h"
 #include "../spells/effects/Effect.h"
 
+std::optional<newHorizonsCreatures::CreatureCategoryView> CBattleInfoCallback::battleGetCreatureCategory(CreatureID creature) const
+{
+	const auto * battle = getBattle();
+	if(!battle)
+		return std::nullopt;
+	return newHorizonsCreatures::creatureCategoryView(battle->getCreatureCategoryRules(), creature);
+}
+
 static BattleHex lineToWallHex(int line) //returns hex with wall in given line (y coordinate)
 {
 	static const BattleHex lineToHex[] = {12, 29, 45, 62, 78, 96, 112, 130, 147, 165, 182};

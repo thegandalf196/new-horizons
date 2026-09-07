@@ -73,6 +73,14 @@ class CStackWindow : public CWindowObject
 		CWindowSection(CStackWindow * parent, const ImagePath & backgroundPath, int yOffset);
 	};
 
+	class CategorySection : public CWindowSection
+	{
+		std::shared_ptr<CLabel> label;
+		std::shared_ptr<LRClickableAreaWText> details;
+	public:
+		CategorySection(CStackWindow * owner, int yOffset);
+	};
+
 	class ActiveSpellsSection : public CWindowSection
 	{
 		std::vector<std::shared_ptr<CAnimImage>> spellIcons;
@@ -181,6 +189,7 @@ class CStackWindow : public CWindowObject
 	std::map<size_t, std::shared_ptr<CButton>> switchButtons;
 
 	std::shared_ptr<CWindowSection> mainSection;
+	std::shared_ptr<CWindowSection> categorySection;
 	std::shared_ptr<CWindowSection> activeSpellsSection;
 	std::shared_ptr<CWindowSection> commanderMainSection;
 	std::shared_ptr<CWindowSection> commanderBonusesSection;
@@ -195,6 +204,7 @@ class CStackWindow : public CWindowObject
 
 	void removeStackArtifact(ArtifactPosition pos);
 
+	void resolveCategory();
 	void initSections();
 	void initBonusesList();
 	void submitSelection();

@@ -1,0 +1,8 @@
+{
+	"new-horizons.category.core.name": "Core",
+	"new-horizons.category.core.description": "Core creature category. This classification does not change creature statistics, recruitment, upgrades or army capacity.",
+	"new-horizons.category.elite.name": "Elite",
+	"new-horizons.category.elite.description": "Elite creature category. This classification does not change creature statistics, recruitment, upgrades or army capacity.",
+	"new-horizons.category.champion.name": "Champion",
+	"new-horizons.category.champion.description": "Champion creature category. This classification does not change creature statistics, recruitment, upgrades or army capacity."
+}

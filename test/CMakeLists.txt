@@ -1,6 +1,10 @@
 include(GoogleTest)
 include(CheckCXXCompilerFlag)
 
+# Pure saved-view navigation state; no renderer or gameplay fixture implied.
+add_executable(nhHeroDevelopmentNavigationTest ../client/tests/HeroDevelopmentNavigationTest.cpp)
+add_test(NAME nhHeroDevelopmentNavigationTest COMMAND nhHeroDevelopmentNavigationTest)
+
 set(VCMI_GOOGLETEST_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/googletest" CACHE PATH
 	"GoogleTest source directory (bundled submodule or installed local sources)")
 set(googleTest_Dir "${VCMI_GOOGLETEST_SOURCE_DIR}")
@@ -48,6 +52,8 @@ set(test_SRCS
 		game/BattleSpellCastTest.cpp
 		game/HeroRecruitmentTest.cpp
 		game/HeroSecondarySkillsTest.cpp
+		creatures/NewHorizonsCreatureCategoryRulesTest.cpp
+		creatures/NewHorizonsCreatureCategorySchemaTest.cpp
 		hero/NewHorizonsPrimaryProfileTest.cpp
 		hero/NewHorizonsPrimaryGrowthTest.cpp
 		hero/NewHorizonsPrimaryScaleTest.cpp
@@ -147,6 +153,9 @@ set(test_SRCS
 		server/battles/NewHorizonsSpellRewardFilterTest.cpp
 		server/battles/NewHorizonsSkillRewardApplicationTest.cpp
 		server/battles/NewHorizonsHeroGrowthTest.cpp
+		server/battles/NewHorizonsCreatureCategoryStateTest.cpp
+		server/battles/NewHorizonsCreatureCategoryWireTest.cpp
+		server/battles/NewHorizonsCreatureCategoryFixtureExportTest.cpp
 		server/battles/NewHorizonsMasteryTest.cpp
 		server/battles/NewHorizonsMasteryFixtureExportTest.cpp
 		server/battles/NewHorizonsConvenienceFixtureExportTest.cpp

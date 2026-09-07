@@ -33,11 +33,13 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	si32 round;
 	JsonNode heroCommandRules;
 	JsonNode magicRules;
+	newHorizonsCreatures::CreatureCategoryRules creatureCategoryRules;
 
 	void postDeserialize();
 public:
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
+	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return creatureCategoryRules; }
 	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
 	HeroCommand getActiveDoctrine(BattleSide side) const override { return sides.at(side).activeDoctrine; }
 	HeroCommand getActiveOrder(BattleSide side) const override { return sides.at(side).activeOrder; }
@@ -93,6 +95,21 @@ public:
 		}
 		else if(!h.saving)
 			magicRules = JsonNode();
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_CATEGORIES))
+		{
+			if(h.saving)
+				h & creatureCategoryRules;
+			else
+			{
+				newHorizonsCreatures::CreatureCategoryRules candidate;
+				h & candidate;
+				newHorizonsCreatures::validateCreatureCategoryEntities(candidate);
+				creatureCategoryRules = std::move(candidate);
+			}
+		}
+		else if(!h.saving)
+			creatureCategoryRules = newHorizonsCreatures::CreatureCategoryRules();
 
 		if(!h.saving)
 			postDeserialize();

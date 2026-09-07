@@ -64,12 +64,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_HERO_GROWTH, // saved world/hero profiles, scaled ratings and primary gains
 	NEW_HORIZONS_CAPABILITIES, // independent saved leadership/siege world and hero identity
 	NEW_HORIZONS_MASTERIES, // saved post-Expert eligibility, pending offers and chosen effects
+	NEW_HORIZONS_CREATURE_CATEGORIES, // independent explicit world/battle category snapshots
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_MASTERIES,
+	CURRENT = NEW_HORIZONS_CREATURE_CATEGORIES,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");

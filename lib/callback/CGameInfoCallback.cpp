@@ -52,6 +52,11 @@ const JsonNode & CGameInfoCallback::getHeroMasteryRules() const
 	return gameState().getHeroMasteryRules();
 }
 
+const newHorizonsCreatures::CreatureCategoryRules & CGameInfoCallback::getCreatureCategoryRules() const
+{
+	return gameState().getCreatureCategoryRules();
+}
+
 const IMarket * CGameInfoCallback::getMarket(ObjectInstanceID objid) const
 {
 	const CGObjectInstance * obj = getObj(objid, false);

@@ -710,6 +710,8 @@
 
 		"creatures":
 		{
+			// Classification is absent unless an explicit future preview captures it.
+			"newHorizonsCategories" : {},
 			// creatures on map will grow by specified percentage each week
 			"weeklyGrowthPercent" : 10,
 			// creatures on map will not grow if their quantity is greater than this value

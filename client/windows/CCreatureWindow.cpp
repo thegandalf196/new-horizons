@@ -36,8 +36,11 @@
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/IGameSettings.h"
+#include "../../lib/battle/BattleInfo.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/callback/CCallback.h"
+#include "../../lib/callback/IGameInfoCallback.h"
+#include "../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../lib/entities/artifact/ArtifactUtils.h"
 #include "../../lib/entities/hero/CHeroHandler.h"
 #include "../../lib/gameState/CGameState.h"
@@ -83,6 +86,7 @@ public:
 	std::optional<CommanderLevelInfo> levelupInfo;
 	std::optional<StackDismissInfo> dismissInfo;
 	std::optional<StackUpgradeInfo> upgradeInfo;
+	std::optional<newHorizonsCreatures::CreatureCategoryView> category;
 
 	// misc fields
 	unsigned int creatureCount;
@@ -214,6 +218,23 @@ CStackWindow::CWindowSection::CWindowSection(CStackWindow * parent, const ImageP
 		pos.w = background->pos.w;
 		pos.h = background->pos.h;
 	}
+}
+
+CStackWindow::CategorySection::CategorySection(CStackWindow * owner, int yOffset)
+	: CWindowSection(owner, {}, yOffset)
+{
+	OBJECT_CONSTRUCTION;
+	pos.w = owner->pos.w;
+	pos.h = 28;
+
+	const auto & category = *owner->info->category;
+	const auto name = GAME->translator().translate(category.nameTextId);
+	const auto description = GAME->translator().translate(category.descriptionTextId);
+	const auto title = "Category: " + name;
+	label = std::make_shared<CLabel>(pos.w / 2, pos.h / 2, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, title, pos.w - 16);
+	details = std::make_shared<LRClickableAreaWText>(Rect(8, 0, pos.w - 16, pos.h), title,
+		"{" + name + "}\n\n" + description + "\n\nSaved rules: " + category.sourceRulesetId
+		+ " (version " + std::to_string(category.rulesetVersion) + ").");
 }
 
 CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset)
@@ -897,11 +918,13 @@ void CStackWindow::updateCommanderLevelUpData(const CCommanderInstance * command
 		return;
 	}
 
+	resolveCategory();
 	fakeNode.reset();
 	activeBonuses.clear();
 
 	switchButtons.clear();
 	mainSection.reset();
+	categorySection.reset();
 	activeSpellsSection.reset();
 	commanderMainSection.reset();
 	commanderBonusesSection.reset();
@@ -955,11 +978,35 @@ void CStackWindow::close()
 	CWindowObject::close();
 }
 
+void CStackWindow::resolveCategory()
+{
+	// Resolve only the originating saved context, before creating any preview
+	// node. BattleInfo implements the read-only battle callback: even an absent
+	// battle snapshot must never consult the base stack's world callback.
+	info->category.reset();
+	if(info->stack)
+	{
+		const auto * battleContext = info->stack->getBattle();
+		if(battleContext)
+			info->category = battleContext->battleGetCreatureCategory(info->creature->getId());
+	}
+	else if(info->stackNode)
+	{
+		// GameCallbackHolder exposes this stack's actual world context. The
+		// ACreature getCallback override on CStackInstance is private.
+		const auto * worldContext = info->stackNode->cb;
+		if(worldContext)
+			info->category = worldContext->getCreatureCategory(info->creature->getId());
+	}
+	// A bare creature / detached stack has no saved context and stays unlabelled.
+}
+
 void CStackWindow::init()
 {
 	OBJECT_CONSTRUCTION;
 
 	background = std::make_shared<CFilledTexture>(ImagePath::builtin("DIBOXBCK"), pos);
+	resolveCategory();
 
 	if(!info->stackNode)
 	{
@@ -1109,6 +1156,12 @@ void CStackWindow::initSections()
 
 	pos.w = mainSection->pos.w;
 	pos.h += mainSection->pos.h;
+
+	if(info->category)
+	{
+		categorySection = std::make_shared<CategorySection>(this, pos.h);
+		pos.h += categorySection->pos.h;
+	}
 
 	if(info->stack) // in battle
 	{

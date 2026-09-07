@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"rulesetVersion": 1,
+	"sourceRulesetId": "new-horizons:creatureCategories",
+	"categories": {
+		"core": {
+			"nameTextId": "new-horizons.category.core.name",
+			"descriptionTextId": "new-horizons.category.core.description"
+		},
+		"elite": {
+			"nameTextId": "new-horizons.category.elite.name",
+			"descriptionTextId": "new-horizons.category.elite.description"
+		},
+		"champion": {
+			"nameTextId": "new-horizons.category.champion.name",
+			"descriptionTextId": "new-horizons.category.champion.description"
+		}
+	},
+	"creatures": {
+		"core:pixie": "core",
+		"core:sprite": "core",
+		"core:airElemental": "elite",
+		"core:stormElemental": "elite",
+		"core:waterElemental": "elite",
+		"core:iceElemental": "elite",
+		"core:fireElemental": "elite",
+		"core:energyElemental": "elite",
+		"core:earthElemental": "elite",
+		"core:magmaElemental": "elite",
+		"core:psychicElemental": "elite",
+		"core:magicElemental": "elite",
+		"core:firebird": "champion",
+		"core:phoenix": "champion"
+	}
+}

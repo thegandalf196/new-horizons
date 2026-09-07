@@ -1,0 +1,44 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "Saved New Horizons creature classifications",
+	"anyOf": [
+		{"type": "null"},
+		{"type": "object", "maxProperties": 0},
+		{
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["schemaVersion", "rulesetVersion", "sourceRulesetId", "categories", "creatures"],
+			"properties": {
+				"schemaVersion": {"enum": [1]},
+				"rulesetVersion": {"enum": [1]},
+				"sourceRulesetId": {"type": "string", "minLength": 1},
+				"categories": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["core", "elite", "champion"],
+					"properties": {
+						"core": {"$ref": "#/definitions/category"},
+						"elite": {"$ref": "#/definitions/category"},
+						"champion": {"$ref": "#/definitions/category"}
+					}
+				},
+				"creatures": {
+					"type": "object",
+					"minProperties": 1,
+					"additionalProperties": {"enum": ["core", "elite", "champion"]}
+				}
+			}
+		}
+	],
+	"definitions": {
+		"category": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["nameTextId", "descriptionTextId"],
+			"properties": {
+				"nameTextId": {"type": "string", "minLength": 1},
+				"descriptionTextId": {"type": "string", "minLength": 1}
+			}
+		}
+	}
+}
