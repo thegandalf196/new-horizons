@@ -1,4 +1,4 @@
-NEW HORIZONS — Linux x86-64 capability preview
+NEW HORIZONS — Linux x86-64 Artillery mastery and convenience preview
 
 This build targets Ubuntu 26.04. It is system-library-dependent, not a universal
 Linux/AppImage bundle. Other distributions/releases are not verified. Keep the
@@ -25,8 +25,17 @@ alone never rejects or deletes creatures; normal army constraints remain. Army
 changes update the daily movement limit without instantly refunding current points.
 Expanded ratings do not blindly increase creature statistics.
 
-New spell effects, post-Expert masteries and creature categories are NOT completed
-features of this checkpoint. Values are provisional.
+This increment adds Artillery's post-Expert Volley, Precision and Field Repair
+choices. Newly Expert Artillery becomes eligible at a later level-up; ordinary
+secondary-skill choices come first. Saved mastery identities are authoritative;
+old saves without those rules do not silently adopt current defaults.
+Landscape adventure screens also have visible quick-save/load buttons and
+original ability/status artwork. F8/F9 remain supported; not every ability has
+an icon. Six-school artwork is provisional, not final commissioned illustration.
+Externally supplied art studies and proprietary reference images are not included.
+
+Other skill mastery families, new spell effects and creature categories are NOT
+completed features of this checkpoint. Values are provisional.
 Visible new-battle NONE and the broader GUI journeys remain unverified. Linux
 results are not native Windows gameplay acceptance.
 

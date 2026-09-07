@@ -106,7 +106,7 @@ def main():
         if source.name in sources:
             raise RuntimeError('Duplicate source archive name')
         sources[source.name] = {'bytes': source.stat().st_size, 'sha256': sha256(source)}
-    identity.update({'scope': 'Ubuntu26.04 system-dependent Linux growth preview; acceptance evidence is separate',
+    identity.update({'scope': 'Ubuntu26.04 system-dependent Linux preview; acceptance evidence is separate',
                      'packaging_commit': args.packaging_revision, 'source_archives': sources})
     (package / 'BUILD-IDENTITY.json').write_text(json.dumps(identity, indent=2) + '\n')
     sums = package / 'SHA256SUMS'
