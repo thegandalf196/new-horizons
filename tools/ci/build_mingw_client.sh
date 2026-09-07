@@ -23,9 +23,30 @@ if [[ "$stage" == deps || "$stage" == generate ]]; then
     if [[ ! -f "$CONAN_HOME/profiles/nh-linux-build" ]]; then
         conan profile detect --name=nh-linux-build
     fi
+    remap_args=()
+    if [[ "${NH_MINGW_REMAP_SOURCES:-0}" == 1 ]]; then
+        # A distinct package-ID configuration prevents reuse/overwrite of the
+        # original unremapped dependency payload. Preserve that frozen evidence.
+        # Dependencies are compiled in the enforced space-free cache, not
+        # the repository. Autotools does not reinterpret quotes inside CFLAGS.
+        remap_flags="$(python - "$package_storage" <<'PY'
+import json, sys
+print(json.dumps(['-ffile-prefix-map=' + sys.argv[1] + '=conan-source']))
+PY
+)"
+        remap_args+=( -c:h "tools.build:cflags=$remap_flags" -c:h "tools.build:cxxflags=$remap_flags"
+            -c:h 'tools.info.package_id:confs=["tools.build:cflags","tools.build:cxxflags","tools.build:compiler_executables","tools.gnu:pkg_config"]'
+            # FFmpeg embeds configure arguments. Its two observed personal paths
+            # are the assembler/pkgconf executables, not __FILE__. Keep tool
+            # selection via the exact Conan build environment PATH; do not embed
+            # mapping flags (which themselves contain private source prefixes).
+            -c:h 'ffmpeg/*:tools.build:cflags=[]' -c:h 'ffmpeg/*:tools.build:cxxflags=[]'
+            -c:h 'ffmpeg/*:tools.build:compiler_executables={"c":"x86_64-w64-mingw32-gcc-posix","cpp":"x86_64-w64-mingw32-g++-posix","rc":"x86_64-w64-mingw32-windres","asm":"nasm"}'
+            -c:h 'ffmpeg/*:tools.gnu:pkg_config=pkgconf' )
+    fi
     conan install tools/ci/conan_mingw_client.py \
         -pr:h "$repo/tools/ci/conan-mingw-x64" -pr:b nh-linux-build \
-        -s:b compiler.cppstd=20 --build="$build_policy" \
+        -s:b compiler.cppstd=20 --build="$build_policy" "${remap_args[@]}" \
         -cc "core.cache:storage_path=$package_storage" \
         -cc core.net.http:max_retries=0 -cc core.net.http:timeout=20 \
         -c:h tools.files.download:retry=0 -c:b tools.files.download:retry=0 \
