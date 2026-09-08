@@ -1,5 +1,12 @@
 # Template-first artwork pipeline
 
+**Current process:** [NH_APPROVED_ART_WORKFLOW.md](NH_APPROVED_ART_WORKFLOW.md)
+records the successful native-RGBA spindle experiment and explicit user approval
+of the automatic workflow. Preserve the inventory, composition and rights rules
+below, but treat the old foreground03 armillary extraction task as historical.
+No manual masking from the user, no new extraction loop, no final motif/import
+approval inferred from process acceptance.
+
 ## User decision
 
 User identified https://github.com/vcmi-mods/modder-tools-pack and explicitly

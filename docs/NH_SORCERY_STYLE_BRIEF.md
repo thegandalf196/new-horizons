@@ -2,6 +2,12 @@
 
 ## Status and authority
 
+**Workflow accepted:** see
+[NH_APPROVED_ART_WORKFLOW.md](NH_APPROVED_ART_WORKFLOW.md). Native RGBA generation
+and exact-template composition succeeded in the spindle experiment; user approved
+that automatic process, not the motif or every future asset. New requests need
+only art direction, not manual masking or a restart of old extraction attempts.
+
 **Current production correction:** use the template-first pipeline in
 [NH_TEMPLATE_ART_WORKFLOW.md](NH_TEMPLATE_ART_WORKFLOW.md). User identified actual
 blank skill/header templates; stop generating leather-background approximations.
