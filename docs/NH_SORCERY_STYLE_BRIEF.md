@@ -2,6 +2,13 @@
 
 ## Status and authority
 
+**Current production correction:** use the template-first pipeline in
+[NH_TEMPLATE_ART_WORKFLOW.md](NH_TEMPLATE_ART_WORKFLOW.md). User identified actual
+blank skill/header templates; stop generating leather-background approximations.
+Keep the image editor responsible for original foreground art, and composite onto
+pinned native templates separately for review. Existing background revisions remain
+history. Template rights/provenance and final visual approval are separate gates.
+
 User supplied a detailed description of Heroes III's visual language after
 rejecting both the glossy orb/shield concepts and the crude angular V2 studies.
 Adopt this as the current production brief. It is NOT approval of any existing
@@ -14,7 +21,35 @@ Renaissance studies, or finish a whole family before demonstrating rendering
 quality. Full asset dimensions, ownership and integration gates remain in
 [NH_ARTIST_SORCERY.md](NH_ARTIST_SORCERY.md).
 
-## Latest user review — V3 render is closer, but too photorealistic
+## Historical V4 feedback — superseded
+
+The instructions in this section are historical, not current tasks. The resulting
+V5 hand proof was explicitly rejected by the user. Do not repeat hand concepts or
+Blender generation; follow the current template-first armillary workflow above.
+
+User remains unsure about V4 and requests: "Make something more like sorcery."
+Do not convert this into final style or motif approval. Book/key reads primarily
+as knowledge/Wisdom; do not continue polishing that still life as the selected
+Sorcery identity. Preserve prior proofs for comparison.
+
+Next single subject experiment: a magician's expressive hand actively shaping a
+restrained silver-violet arc/thread of magic, with minor runic parchment context
+if it improves meaning. Hand plus magical act dominate; supporting props must not
+obscure the silhouette at44/32. Suggest bending space/arcane control rather than
+an elemental lightning bolt, fire attack, necromantic skull or another polished
+orb/jewel. No dense neon VFX ring or modern spell-card template. This is a proposed
+response to user direction, not an approved canonical Sorcery motif.
+
+Retain modeled forms, dramatic illustration-oriented lighting and distinct
+materials, but less literal photographic finish. Hand anatomy/gesture must read
+as intentional, not a crude polygon symbol. Do not claim painterly quality from
+shader noise. Produce one new master and native-size proof for user review under
+the same isolated ownership, provenance and Build rendering-slot constraints.
+No full family or live import before user approval.
+
+## Historical V3 feedback — superseded
+
+The following revision instructions record past work, not a new rendering task.
 
 After inspecting the first actual Blender book/key/cloth proof, user says it is
 undoubtedly a step in the right direction, but still too photorealistic. This
@@ -32,6 +67,29 @@ sketches, modern glossy jewels or crude pixel construction. Grain, posterization
 a generic painterly filter or lower render samples alone do not solve the issue.
 Artist must describe actual scene/material/compositing changes honestly and show
 one revised master plus44/32 reductions for user comparison before expansion.
+
+## Historical external master01 background correction — superseded
+
+These were past background-edit instructions. Do not generate another background
+or repeat this revision; native pinned templates now supply the reviewed field.
+
+The user inspected external master01 beside original secondary skills and
+identified the major mismatch: originals share a warm brown leather-like field,
+whereas the new art has a separate dark scene and blue cloth. User says the art
+itself is not bad but is clearly an outlier, and approved correcting presentation
+before redesigning the motif. This is directional authorization, not final approval.
+
+Keep the brass/ivory instrument; replace the dark scenic backdrop/cloth with an
+independently authored warm mottled brown field matching reference value/hue/
+texture character, not proprietary pixels. Modestly enlarge/brighten the subject
+for silhouette readability; retain material contrast and subtle core. Avoid heavy
+vignette, new props or wholesale recoloring. Produce one separate revision and
+native-size comparison, preserving input master/sidecar and all prior versions.
+The historical revision02 prompt remains in the private art workspace.
+A clean mask/composite is acceptable; rough threshold cutouts that destroy ring/
+magic details are not. If unavailable tools prevent a credible edit, hand off the
+exact image-edit prompt rather than claim a generated correction. No full family
+or live integration before actual user approval.
 
 ## Core distinction
 
@@ -68,6 +126,12 @@ be a composed illustration, not the skill icon enlarged onto empty space.
   symbols, glossy game-store icons or stylized blocky concept sketches.
 
 ## Production method and the next proof
+
+The general quality criteria below persist, but their original new-concept/master
+sequence is not the current task. Current work is the existing armillary's original
+alpha foreground03 plus native pinned-template composition under
+[NH_TEMPLATE_ART_WORKFLOW.md](NH_TEMPLATE_ART_WORKFLOW.md), not a fresh concept,
+Blender render or new high-resolution proof. Rights and user approval remain open.
 
 1. Inspect the legitimate installed original skill/header references at native
    size and, where legitimately available, larger artwork references privately.
