@@ -39,6 +39,24 @@ at32px as well as larger sizes. Use role-specific compositions: the selected-sch
 icon. Selected/unselected bookmark states are not generic button states. Original
 SPELTAB83x294 strips cannot be imported as independent custom bookmarks.
 
+## User-directed magic-skill rank grammar
+
+Magic-school secondary skills use **Basic = scroll; Advanced = book (open or
+closed); Expert = orb** as the shared physical rank progression. Schools retain
+distinct effects, palette and supporting materials. This default does not apply
+to every nonmagic skill, individual spell, bookmark or header. Preserve rank
+silhouettes at32px; do not obscure them with effects. Record this as the user's
+art direction, not an independently verified universal historical-image claim.
+
+For the next Sorcery/Arcane skill family, user accepted pure magic represented
+by blue aetheric flow: partly unfurled scroll with a small current; open book with
+a controlled arc; blue orb in restrained aged brass with circulating aether. Use
+pale highlights/subtle violet depth and warm parchment/brass; avoid neon cyan,
+lightning/weather imagery and confusion with Air Magic. This supersedes spindle/
+armillary motif exploration for this request, not the proven RGBA workflow.
+Concept direction is accepted; actual generated ranks and their12 native outputs
+still require user review. No live resource rename or import is authorized here.
+
 ## Spell graphics: separate role set
 
 Evidence: `config/schemas/spell.json` graphics fields and conditional required
