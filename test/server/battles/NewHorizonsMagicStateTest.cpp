@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../spells/NewHorizonsMagicProfileFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/modding/ActiveModsInSaveList.h"
@@ -27,12 +28,20 @@ class NewHorizonsMagicStateTest : public HeroCommandFixture
 {
 protected:
 	bool useMagic = true;
+	std::unique_ptr<newHorizonsTest::MagicV1Baseline> baseline;
 
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires separate native curated testModSettings preset; baseline profile remains legacy";
+		baseline = std::make_unique<newHorizonsTest::MagicV1Baseline>();
+	}
+
+	void TearDown() override
+	{
+		HeroCommandFixture::TearDown();
+		baseline.reset();
 	}
 
 	void mapLoaded(CMap * map) override

@@ -17,6 +17,7 @@
 namespace GameConstants
 {
 	inline const std::string NEW_HORIZONS_MOD_SCOPE = "new-horizons";
+	inline const std::string NEW_HORIZONS_MAGIC_MISSILE = "new-horizons:magicMissile";
 	const std::string RESOURCE_NAMES [RESOURCE_QUANTITY] = {
 		"wood", "mercury", "ore", "sulfur", "crystal", "gems", "gold"
 	};

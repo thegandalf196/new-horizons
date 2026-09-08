@@ -107,6 +107,8 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	// One book-local view feeds sorting, filtering and page counts together.
 	// These classifications are presentation data, never gameplay mutations.
 	std::vector<SpellSchool> availableSchools;
+	// Copied context admission, independent of possession/mana/map bans.
+	std::set<SpellID> rosterSpellIDs;
 	std::map<SpellID, std::set<SpellSchool>> spellSchools;
 	std::map<SpellID, int> spellLevels;
 	std::vector<SpellSchool> schoolNavigation;

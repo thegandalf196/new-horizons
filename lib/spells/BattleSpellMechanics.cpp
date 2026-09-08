@@ -13,6 +13,7 @@
 
 #include "Problem.h"
 #include "CSpell.h"
+#include "NewHorizonsSpellAvailability.h"
 
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -176,6 +177,8 @@ void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & 
 
 bool BattleSpellMechanics::canBeCast(Problem & problem) const
 {
+	if(!newHorizonsMagic::spellAllowedByBattleRoster(*battle(), owner->getId()))
+		return adaptGenericProblem(problem);
 	auto genProblem = battle()->battleCanCastSpell(caster, mode);
 	// Orb of Inhibition (BLOCK_ALL_MAGIC) must not block level-0 creature abilities (stone gaze, death stare, ...)
 	if(genProblem == ESpellCastProblem::MAGIC_IS_BLOCKED && getSpellLevel() <= 0)

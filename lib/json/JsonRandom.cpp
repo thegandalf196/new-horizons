@@ -10,6 +10,8 @@
 
 #include "StdInc.h"
 #include "JsonRandom.h"
+#include "../spells/NewHorizonsSpellAvailability.h"
+#include <stdexcept>
 
 #include <vcmi/HeroClassService.h>
 #include <vcmi/HeroTypeService.h>
@@ -235,10 +237,16 @@ SpellID JsonRandom::loadSpell(const JsonNode & value, const Variables & variable
 {
 	std::set<SpellID> defaultSpells;
 	for(const auto & spell : LIBRARY->spellh->objects)
-		if(cb->isAllowed(spell->getId()) && !spell->isSpecial())
+		if(spell && cb->isAllowed(spell->getId()) && !spell->isSpecial())
 			defaultSpells.insert(spell->getId());
 
 	std::set<SpellID> potentialPicks = jsonKeyExtractor.filterKeys(value, defaultSpells, variables);
+	// Named keys intentionally override map bans in the extractor. They cannot
+	// override saved-roster admission; do not intersect with the map-ban set.
+	vstd::erase_if(potentialPicks, [&](SpellID spell)
+	{
+		return !newHorizonsMagic::spellAllowedByWorldRoster(*cb, spell);
+	});
 
 	if(potentialPicks.empty())
 	{
@@ -253,7 +261,12 @@ std::vector<SpellID> JsonRandom::loadSpells(const JsonNode & value, const Variab
 	std::vector<SpellID> ret;
 	for(const JsonNode & entry : value.Vector())
 	{
-		ret.push_back(loadSpell(entry, variables));
+		const auto spell = loadSpell(entry, variables);
+		// This loader also supplies required limiter predicates. Dropping an
+		// unavailable member would weaken them; NONE must not reach scroll grants.
+		if(spell == SpellID::NONE)
+			throw std::runtime_error("Unable to resolve an admitted spell in spell array");
+		ret.push_back(spell);
 	}
 	return ret;
 }

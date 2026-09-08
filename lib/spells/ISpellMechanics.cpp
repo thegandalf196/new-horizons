@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "ISpellMechanics.h"
+#include "NewHorizonsMagic.h"
 
 #include "BattleSpellMechanics.h"
 #include "TargetCondition.h"
@@ -297,9 +298,22 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		vstd::amax(effectDuration, 0); //???
 	}
 	{
-		auto value = event->getEffectValue();
-		auto casterValue = caster->getEffectValue(owner) ? caster->getEffectValue(owner) : owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
-		effectValue = value.value_or(casterValue);
+		const auto value = event->getEffectValue();
+		if(value.has_value())
+			effectValue = *value; // Explicit zero is an override, not absence.
+		else if(const auto casterValue = caster->getEffectValue(owner); casterValue != 0)
+			effectValue = casterValue; // Legacy numeric caster zero means absence.
+		else
+		{
+			const auto * battle = cb->getBattle();
+			const auto savedValue = battle
+				? newHorizonsMagic::directDamageValue(battle->getMagicRules(), owner->getJsonKey(), effectPower, getEffectPowerDivisor())
+				: std::nullopt;
+			if(savedValue)
+				effectValue = *savedValue;
+			else
+				effectValue = owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
+		}
 		vstd::amax(effectValue, 0);
 	}
 }

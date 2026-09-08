@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsSpellAvailability.h"
 #include "CSpell.h"
 #include "CSpellHandler.h"
 #include "../constants/StringConstants.h"
@@ -119,7 +120,13 @@ void validateRules(const JsonNode & rules)
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
-	require(integer(rules["rulesetVersion"], RULESET_VERSION, RULESET_VERSION), "rulesetVersion");
+	require(integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION), "rulesetVersion");
+	const int version = rules["rulesetVersion"].Integer();
+	if(version == DIRECT_DAMAGE_RULESET_VERSION)
+	{
+		require(rules["schemaVersion"].getType() == JsonNode::JsonType::DATA_INTEGER, "integer schemaVersion");
+		require(rules["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER, "integer rulesetVersion");
+	}
 	require(rules["schools"].isVector() && rules["schools"].Vector().size() == 6, "six active schools required");
 	std::set<std::string> schools;
 	std::set<int> schoolIDs;
@@ -152,10 +159,22 @@ void validateRules(const JsonNode & rules)
 	std::set<int> mapped;
 	for(const auto & [name, data] : rules["spells"].Struct())
 	{
-		fields(data, {"schools", "level", "costs"});
+		if(version == RULESET_VERSION)
+			fields(data, {"schools", "level", "costs"});
+		else
+			fields(data, {"schools", "level", "costs", "directDamage"});
+		// Strict field/type/bounds checks, including rejection of present-null.
+		(void)directDamageFormula(data, version);
 		const auto id = resolve("spell", name);
 		require(id >= 0 && mapped.insert(id).second, "duplicate/invalid spell");
-		require(SpellID(id).toSpell()->isCommonHeroSpell(), "ability cannot be reclassified as hero spell");
+		require(static_cast<size_t>(id) < LIBRARY->spellh->objects.size() && LIBRARY->spellh->objects.at(id), "missing spell definition");
+		const auto * definition = SpellID(id).toSpell();
+		require(definition->getJsonKey() == name, "canonical spell identity required");
+		require(definition->isCommonHeroSpell(), "ability cannot be reclassified as hero spell");
+		if(name.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
+			require(version == DIRECT_DAMAGE_RULESET_VERSION, "NH common spells require ruleset version 2");
+		if(name == GameConstants::NEW_HORIZONS_MAGIC_MISSILE)
+			require(directDamageFormula(data, version).has_value(), "Magic Missile requires saved directDamage");
 		require(data["schools"].isVector() && !data["schools"].Vector().empty(), "spell school list");
 		std::set<std::string> membership;
 		for(const auto & school : data["schools"].Vector())
@@ -173,7 +192,8 @@ void validateRules(const JsonNode & rules)
 		}
 	}
 	for(const auto & spell : LIBRARY->spellh->objects)
-		if(spell && spell->isCommonHeroSpell())
+		if(spell && spell->isCommonHeroSpell()
+			&& !spell->getJsonKey().starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
 			require(mapped.count(spell->getId().getNum()) != 0, "unclassified hero spell " + spell->getJsonKey());
 	if(!rules["factionWeights"].isNull())
 	{
@@ -196,6 +216,36 @@ void validateRules(const JsonNode & rules)
 	}
 }
 
+std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, const std::string & scopedIdentity)
+{
+	if(legacy(rules))
+		return std::nullopt;
+	const auto separator = scopedIdentity.find(':');
+	require(separator != std::string::npos && separator > 0 && separator + 1 < scopedIdentity.size()
+		&& scopedIdentity.find(':', separator + 1) == std::string::npos, "canonical scoped spell identity required");
+	require(rules.isStruct() && rules["spells"].isStruct(), "saved spell roster required");
+	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
+	require(integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION), "rulesetVersion");
+	const int version = rules["rulesetVersion"].Integer();
+	if(version == DIRECT_DAMAGE_RULESET_VERSION)
+	{
+		require(rules["schemaVersion"].getType() == JsonNode::JsonType::DATA_INTEGER, "integer schemaVersion");
+		require(rules["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER, "integer rulesetVersion");
+	}
+	const auto found = rules["spells"].Struct().find(scopedIdentity);
+	if(found == rules["spells"].Struct().end())
+		return std::nullopt;
+	return directDamageFormula(found->second, version);
+}
+
+std::optional<int64_t> directDamageValue(const JsonNode & rules, const std::string & scopedIdentity, int32_t effectPower, int32_t divisor)
+{
+	const auto formula = spellDirectDamage(rules, scopedIdentity);
+	if(!formula)
+		return std::nullopt;
+	return formula->evaluate(effectPower, divisor);
+}
+
 std::vector<SpellSchool> activeSchools(const JsonNode & rules)
 {
 	if(legacy(rules))
@@ -208,6 +258,8 @@ std::vector<SpellSchool> activeSchools(const JsonNode & rules)
 
 std::vector<SpellSchool> spellSchools(const JsonNode & rules, SpellID spell)
 {
+	if(!spellAllowedBySavedRoster(rules, spell))
+		return {};
 	const auto * definition = spell.toSpell();
 	if(legacy(rules) || !definition->isCommonHeroSpell())
 		return {definition->schools.begin(), definition->schools.end()};
@@ -220,6 +272,8 @@ std::vector<SpellSchool> spellSchools(const JsonNode & rules, SpellID spell)
 
 int spellLevel(const JsonNode & rules, SpellID spell)
 {
+	if(!spellAllowedBySavedRoster(rules, spell))
+		return 0;
 	if(legacy(rules) || entry(rules, spell)["level"].isNull())
 		return spell.toSpell()->getLevel();
 	return entry(rules, spell)["level"].Integer();
@@ -251,6 +305,8 @@ bool skillAllowed(const JsonNode & rules, SecondarySkill skill, const std::set<S
 
 int factionSpellWeight(const JsonNode & rules, FactionID faction, SpellID spell)
 {
+	if(!spellAllowedBySavedRoster(rules, spell))
+		return 0;
 	const auto & identity = rules["factions"][FactionID::encode(faction.getNum())];
 	if(legacy(rules) || identity.isNull())
 		return spell.toSpell()->getProbability(faction);
@@ -271,6 +327,7 @@ int factionSpellWeight(const JsonNode & rules, FactionID faction, SpellID spell)
 
 int spellCost(const JsonNode & rules, SpellID spell, int mastery)
 {
+	require(spellAllowedBySavedRoster(rules, spell), "spell cost requested outside saved roster");
 	mastery = std::clamp(mastery, 0, 3);
 	if(legacy(rules) || entry(rules, spell)["costs"].isNull())
 		return spell.toSpell()->getCost(mastery);

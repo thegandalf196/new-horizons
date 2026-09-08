@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../server/battles/HeroCommandFixture.h"
+#include "../spells/NewHorizonsMagicProfileFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/modding/CModHandler.h"
@@ -57,7 +58,9 @@ TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 	// No magic-setting fixture override: actual curated module activation must
 	// supply these rules at ordinary new-game initialization.
 	prepareCommands(true);
-	ASSERT_EQ(gameState()->getMagicRules()["rulesetVersion"].Integer(), 1);
+	const bool managed = newHorizonsTest::managedMissileProfileRequested();
+	ASSERT_EQ(gameState()->getMagicRules()["rulesetVersion"].Integer(), managed ? 2 : 1);
+	ASSERT_EQ(gameState()->getMagicRules()["spells"].Struct().size(), managed ? 70u : 69u);
 	ASSERT_EQ(battle()->battleGetActiveSpellSchools().size(), 6u);
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);

@@ -942,6 +942,11 @@ const IGameSettings & CMap::getSettings() const
 	return *gameSettings;
 }
 
+std::optional<JsonNode> CMap::getMagicOverride() const
+{
+	return gameSettings->getMagicOverride();
+}
+
 void CMap::overrideGameSetting(EGameSettings option, const JsonNode & input)
 {
 	return gameSettings->addOverride(option, input);

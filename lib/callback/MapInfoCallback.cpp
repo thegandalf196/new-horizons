@@ -17,6 +17,7 @@
 #include "../StartInfo.h"
 #include "../mapping/CMap.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSpellAvailability.h"
 
 #include <vcmi/spells/Spell.h>
 
@@ -83,7 +84,8 @@ bool MapInfoCallback::isInTheMap(const int3 & pos) const
 
 bool MapInfoCallback::isAllowed(SpellID id) const
 {
-	return getMapConstPtr()->allowedSpells.count(id) != 0;
+	return newHorizonsMagic::spellAllowedByWorldRoster(*this, id)
+		&& getMapConstPtr()->allowedSpells.count(id) != 0;
 }
 
 bool MapInfoCallback::isAllowed(ArtifactID id) const

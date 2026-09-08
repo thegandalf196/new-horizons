@@ -10,12 +10,14 @@
 #pragma once
 
 #include "../gui/CIntObject.h"
+#include "../../lib/constants/EntityIdentifiers.h"
 
 class CFilledTexture;
 class TransparentFilledRectangle;
 class CButton;
 class CLabel;
 class BattleInterface;
+class CPlayerBattleCallback;
 
 class QuickSpellPanel : public CIntObject
 {
@@ -29,7 +31,7 @@ private:
 
 	BattleInterface & owner;
 
-	static void changeSelectedSpell(int index, SpellID newSpell);
+	static void changeSelectedSpell(int index, SpellID newSpell, std::weak_ptr<CPlayerBattleCallback> context, ObjectInstanceID heroID);
 
 public:
 	static constexpr int QUICKSPELL_SLOTS = 12;

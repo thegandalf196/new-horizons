@@ -25,6 +25,7 @@
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/spells/CSpellHandler.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 
 #include <vcmi/CreatureService.h>
 
@@ -551,6 +552,8 @@ int64_t getArtifactScoreForHero(const CGHeroInstance * hero, const CArtifactInst
 	if (artifact->isScroll())
 	{
 		auto spellID = artifact->getScrollSpellID();
+		if(!newHorizonsMagic::spellAllowedBySavedRoster(hero->getMagicRules(), spellID))
+			return 0;
 		auto spell = spellID.toEntity(LIBRARY);
 
 		if (hero->getSpellsInSpellbook().count(spellID))

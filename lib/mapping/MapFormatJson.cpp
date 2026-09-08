@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "MapFormatJson.h"
+#include "../IGameSettings.h"
 
 #include "../filesystem/CInputStream.h"
 #include "../filesystem/COutputStream.h"
@@ -239,7 +240,9 @@ namespace TerrainDetail
 }
 
 ///CMapFormatJson
-const int CMapFormatJson::VERSION_MAJOR = 3;
+const int CMapFormatJson::VERSION_MAJOR_WITH_MAGIC_OVERRIDE = 4;
+const int CMapFormatJson::VERSION_MAJOR = VERSION_MAJOR_WITH_MAGIC_OVERRIDE;
+const int CMapFormatJson::VERSION_MAJOR_WITHOUT_MAGIC_OVERRIDE = 3;
 const int CMapFormatJson::VERSION_MINOR = 0;
 
 const std::string CMapFormatJson::HEADER_FILE_NAME = "header.json";
@@ -913,6 +916,12 @@ void CMapLoaderJson::readHeader(const bool complete)
 		throw std::runtime_error("Unsupported map format version");
 	}
 
+	const bool hasMagicOverride = header.Struct().contains("newHorizonsMagic");
+	if(hasMagicOverride && fileVersionMajor < VERSION_MAJOR_WITH_MAGIC_OVERRIDE)
+		throw std::runtime_error("Authored New Horizons magic context requires map format version 4");
+	if(hasMagicOverride && !JsonUtils::validate(header["newHorizonsMagic"], "vcmi:newHorizonsMapMagicOverride", mapName))
+		throw std::runtime_error("Invalid authored New Horizons magic context shape");
+
 	fileVersionMinor = static_cast<int>(header["versionMinor"].Integer());
 
 	if(fileVersionMinor > VERSION_MINOR)
@@ -999,7 +1008,11 @@ void CMapLoaderJson::readHeader(const bool complete)
 	readDisposedHeroes(handler);
 
 	if(complete)
+	{
 		readOptions(handler);
+		if(hasMagicOverride)
+			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, header["newHorizonsMagic"]);
+	}
 }
 
 void CMapLoaderJson::readTerrainTile(const std::string & src, TerrainTile & tile)
@@ -1402,7 +1415,10 @@ void CMapSaverJson::writeHeader()
 	JsonNode header;
 	JsonSerializer handler(mapObjectResolver.get(), header);
 
-	header["versionMajor"].Float() = VERSION_MAJOR;
+	const auto magicOverride = map->getMagicOverride();
+	header["versionMajor"].Float() = magicOverride ? VERSION_MAJOR_WITH_MAGIC_OVERRIDE : VERSION_MAJOR_WITHOUT_MAGIC_OVERRIDE;
+	if(magicOverride)
+		header["newHorizonsMagic"] = *magicOverride;
 	header["versionMinor"].Float() = VERSION_MINOR;
 	
 	//write mods

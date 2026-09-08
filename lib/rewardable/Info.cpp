@@ -19,6 +19,8 @@
 #include "../GameLibrary.h"
 #include "../callback/IGameRandomizer.h"
 #include "../json/JsonRandom.h"
+#include "../spells/CSpellHandler.h"
+#include <stdexcept>
 #include "../mapObjects/IObjectInterface.h"
 #include "../modding/IdentifierStorage.h"
 #include "../texts/CGeneralTextHandler.h"
@@ -265,7 +267,12 @@ void Rewardable::Info::configureVariables(Rewardable::Configuration & object, IG
 				value = randomizer.loadCreatureType(input, object.variables.values).getNum();
 
 			if (category.first == "spell")
-				value = randomizer.loadSpell(input, object.variables.values).getNum();
+			{
+				const auto spell = randomizer.loadSpell(input, object.variables.values);
+				if(spell == SpellID::NONE)
+					throw std::runtime_error("Unable to resolve an admitted spell variable: " + entry.first);
+				value = spell.getNum();
+			}
 
 			if (category.first == "resource")
 				value = randomizer.loadResourceType(input, object.variables.values).getNum();
@@ -286,7 +293,15 @@ void Rewardable::Info::replaceTextPlaceholders(MetaString & target, const Variab
 	for (const auto & variable : variables.values )
 	{
 		if( boost::algorithm::starts_with(variable.first, "spell"))
-			target.replaceName(SpellID(variable.second));
+		{
+			// Defend against invalid values retained by older configuration data
+			// before MetaString dereferences the spell definition.
+			const auto id = variable.second;
+			if(id < 0 || static_cast<size_t>(id) >= LIBRARY->spellh->objects.size()
+				|| !LIBRARY->spellh->objects.at(id))
+				throw std::runtime_error("Unavailable spell variable in reward text: " + variable.first);
+			target.replaceName(SpellID(id));
+		}
 
 		if( boost::algorithm::starts_with(variable.first, "secondarySkill"))
 			target.replaceName(SecondarySkill(variable.second));

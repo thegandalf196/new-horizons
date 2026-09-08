@@ -177,7 +177,9 @@ void GameSettings::loadOverrides(const JsonNode & input)
 	for(const auto & option : settingProperties)
 	{
 		const JsonNode & optionValue = input[option.group][option.key];
-		if (!optionValue.isNull())
+		const bool explicitMagic = option.setting == EGameSettings::MAGIC_NEW_HORIZONS
+			&& input[option.group].Struct().contains(option.key);
+		if (!optionValue.isNull() || explicitMagic)
 			addOverride(option.setting, optionValue);
 	}
 }
@@ -187,17 +189,34 @@ void GameSettings::addOverride(EGameSettings option, const JsonNode & input)
 	size_t index = static_cast<size_t>(option);
 
 	overridenSettings[index] = input;
-	JsonNode newValue = baseSettings[index];
-	JsonUtils::mergeCopy(newValue, input);
-	actualSettings[index] = newValue;
+	if(option == EGameSettings::MAGIC_NEW_HORIZONS)
+	{
+		// Version, roster and formulas constitute one authored context. Merging
+		// a v1 map over an installed v2 roster would invent a mixed ruleset.
+		magicOverridePresent = true;
+		actualSettings[index] = input;
+	}
+	else
+	{
+		JsonNode newValue = baseSettings[index];
+		JsonUtils::mergeCopy(newValue, input);
+		actualSettings[index] = newValue;
+	}
 }
 
 const JsonNode & GameSettings::getValue(EGameSettings option) const
 {
 	auto index = static_cast<size_t>(option);
 
-	assert(!actualSettings.at(index).isNull());
+	assert(option == EGameSettings::MAGIC_NEW_HORIZONS || !actualSettings.at(index).isNull());
 	return actualSettings.at(index);
+}
+
+std::optional<JsonNode> GameSettings::getMagicOverride() const
+{
+	if(!magicOverridePresent)
+		return std::nullopt;
+	return overridenSettings[static_cast<size_t>(EGameSettings::MAGIC_NEW_HORIZONS)];
 }
 
 JsonNode GameSettings::getFullConfig() const
@@ -215,7 +234,7 @@ JsonNode GameSettings::getAllOverrides() const
 	for(const auto & option : settingProperties)
 	{
 		const JsonNode & value = overridenSettings[static_cast<int32_t>(option.setting)];
-		if (!value.isNull())
+		if (!value.isNull() || (option.setting == EGameSettings::MAGIC_NEW_HORIZONS && magicOverridePresent))
 			result[option.group][option.key] = value;
 	}
 

@@ -1,0 +1,10 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "Authored New Horizons map magic context",
+	"description": "Field-only schema for an explicitly present newHorizonsMagic map-header override. Null is an explicit legacy context; an absent field inherits installed settings. This schema does not validate a complete vmap, its format version, registered identifiers or complete runtime spell coverage.",
+	"anyOf": [
+		{"type": "null"},
+		{"$ref": "vcmi:newHorizonsMagic"},
+		{"$ref": "vcmi:newHorizonsMagicV2"}
+	]
+}

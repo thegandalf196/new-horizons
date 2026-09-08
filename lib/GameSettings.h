@@ -11,6 +11,7 @@
 
 #include "IGameSettings.h"
 #include "json/JsonNode.h"
+#include <optional>
 
 class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
 {
@@ -28,6 +29,8 @@ class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
 	std::array<JsonNode, OPTIONS_COUNT> baseSettings;
 	// contains settings that were overriden, in map or in random map template
 	std::array<JsonNode, OPTIONS_COUNT> overridenSettings;
+	// An explicit null magic context differs from an absent override.
+	bool magicOverridePresent = false;
 	// for convenience / performance, contains actual settings - combined version of base and override settings
 	std::array<JsonNode, OPTIONS_COUNT> actualSettings;
 
@@ -49,6 +52,7 @@ public:
 	// loads all overrides from provided json node, for deserialization
 	void loadOverrides(const JsonNode &);
 
+	std::optional<JsonNode> getMagicOverride() const;
 	JsonNode getFullConfig() const override;
 	const JsonNode & getValue(EGameSettings option) const override;
 

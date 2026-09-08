@@ -14,6 +14,7 @@
 #include "CMapHeader.h"
 #include "TerrainTile.h"
 #include "MapTilesStorage.h"
+#include <optional>
 
 #include "../mapObjects/CGObjectInstance.h"
 #include "../callback/GameCallbackHolder.h"
@@ -297,6 +298,8 @@ public:
 	void overrideGameSettings(const JsonNode & input);
 	void overrideGameSetting(EGameSettings option, const JsonNode & input);
 	const IGameSettings & getSettings() const;
+	/// Copied authored magic override: absent and explicit null are distinct.
+	std::optional<JsonNode> getMagicOverride() const;
 
 	void parseUidCounter();
 	static bool compareObjectBlitOrder(const CGObjectInstance * a, const CGObjectInstance * b);

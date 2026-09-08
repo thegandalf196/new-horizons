@@ -42,6 +42,7 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/spells/ISpellMechanics.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/adventure/AdventureSpellEffect.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/SpellSchoolHandler.h"
@@ -176,7 +177,8 @@ CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _m
 		std::ranges::sort(sortedSchools, [&](SpellSchool a, SpellSchool b) {
 			auto cnt = [&](SpellSchool s) {
 				return std::ranges::count_if(LIBRARY->spellh->objects, [&](auto const & sp) {
-					return myHero->canCastThisSpell(sp.get()) && spellSchools.at(sp->getId()).count(s);
+					return sp && rosterSpellIDs.contains(sp->getId())
+						&& myHero->canCastThisSpell(sp.get()) && spellSchools.at(sp->getId()).count(s);
 				});
 			};
 			return cnt(a) > cnt(b);
@@ -365,7 +367,30 @@ void CSpellWindow::readSchoolContext()
 {
 	// Read the saved game/battle context, never reinterpret old games from the
 	// currently installed module or mutate global CSpell definitions.
-	const auto battleCallback = myInt->battleInt ? myInt->battleInt->getBattle() : nullptr;
+	rosterSpellIDs.clear();
+	spellSchools.clear();
+	spellLevels.clear();
+	availableSchools.clear();
+	usesLegacyTabs = false;
+	const bool inBattleContext = myInt->battleInt != nullptr;
+	std::shared_ptr<CPlayerBattleCallback> battleCallback;
+	if(inBattleContext)
+	{
+		if(!myInt->battleInt->curInt || !myInt->battleInt->curInt->cb)
+			return;
+		try
+		{
+			battleCallback = myInt->battleInt->getBattle();
+		}
+		catch(const std::runtime_error &)
+		{
+			// Only the registry lookup is caught: an ended/missing battle must
+			// not fall through to the world or run spell metadata lookups.
+			return;
+		}
+		if(!battleCallback || !battleCallback->getBattle())
+			return;
+	}
 	availableSchools = battleCallback ? battleCallback->battleGetActiveSpellSchools() : myInt->cb->getActiveSpellSchools();
 	usesLegacyTabs = std::ranges::any_of(availableSchools, [](SpellSchool school)
 	{
@@ -373,10 +398,20 @@ void CSpellWindow::readSchoolContext()
 	});
 	for(const auto & spell : LIBRARY->spellh->objects)
 	{
+		if(!spell)
+			continue;
 		const auto id = spell->getId();
+		const bool admitted = battleCallback
+			? newHorizonsMagic::spellAllowedByBattleRoster(*battleCallback, id)
+			: newHorizonsMagic::spellAllowedByWorldRoster(*myInt->cb, id);
+		if(!admitted)
+			continue;
+		// Admission must precede school/level lookup for newly installed spells
+		// that did not exist in this saved roster. Cache the same set for all UI paths.
 		const auto schools = battleCallback ? battleCallback->battleGetSpellSchools(id) : myInt->cb->getSpellSchools(id);
 		spellSchools.emplace(id, std::set<SpellSchool>(schools.begin(), schools.end()));
 		spellLevels.emplace(id, battleCallback ? battleCallback->battleGetSpellLevel(id) : myInt->cb->getSpellLevel(id));
+		rosterSpellIDs.insert(id);
 	}
 }
 
@@ -404,6 +439,9 @@ void CSpellWindow::processSpells()
 	mySpells.reserve(LIBRARY->spellh->objects.size());
 	for(auto const & spell : LIBRARY->spellh->objects)
 	{
+		// Show-all can bypass possession, never the originating saved roster.
+		if(!spell || !rosterSpellIDs.contains(spell->getId()))
+			continue;
 		bool searchTextFound = !searchBox || TextOperations::isFuzzyMatch(searchBox->getText(), spell->getNameTranslated());
 
 		if(onSpellSelect)

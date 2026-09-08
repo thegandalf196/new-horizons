@@ -47,6 +47,7 @@
 #include "../serializer/JsonSerializeFormat.h"
 #include "../spells/CSpell.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSpellAvailability.h"
 #include "../entities/hero/NewHorizonsMasteryEffects.h"
 #include "../battle/BattleInfo.h"
 #include "../mapObjectConstructors/AObjectTypeHandler.h"
@@ -1076,6 +1077,8 @@ void CGHeroInstance::spendMana(ServerCallback * server, const int spellCost) con
 
 bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 {
+	if(!spell || !newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spell->getId()))
+		return false;
 	const bool inSpellBook = spellbookContainsSpell(spell->getId()) && hasSpellbook();
 
 	if(spell->isSpecial())
@@ -1100,6 +1103,8 @@ bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 
 bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned) const
 {
+	if(!spell || !newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spell->getId()))
+		return false;
 	if(!hasSpellbook())
 		return false;
 
@@ -1442,6 +1447,8 @@ bool CGHeroInstance::spellbookContainsSpell(const SpellID & spell) const
 std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & spellId) const
 {
 	std::vector<BonusSourceID> sources;
+	if(!newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spellId))
+		return sources;
 
 	if(hasSpellbook() && spellbookContainsSpell(spellId))
 		sources.emplace_back(getArt(ArtifactPosition::SPELLBOOK)->getId());

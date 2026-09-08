@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CGameState.h"
+#include "../spells/NewHorizonsSpellAvailability.h"
 
 #include "EVictoryLossCheckResult.h"
 #include "InfoAboutArmy.h"
@@ -982,13 +983,22 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 
 		for(ui32 z=0; z<vti->obligatorySpells.size();z++)
 		{
-			const auto * s = vti->obligatorySpells[z].toSpell();
-			vti->spells[getSpellLevel(s->id)-1].push_back(s->id);
-			vti->possibleSpells -= s->id;
+			const auto spellID = vti->obligatorySpells[z];
+			// Mandatory spells retain their original map-ban override, but cannot
+			// bypass saved-roster admission or index a level-zero/invalid bucket.
+			if(!newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spellID))
+				continue;
+			const auto level = getSpellLevel(spellID);
+			if(level < 1 || level > GameConstants::SPELL_LEVELS)
+				continue;
+			vti->spells.at(level - 1).push_back(spellID);
+			vti->possibleSpells -= spellID;
 		}
 
 		vstd::erase_if(vti->possibleSpells, [&](const SpellID & spellID)
 		{
+			if(!newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spellID))
+				return true;
 			const auto * spell = spellID.toSpell();
 
 			if (newHorizonsMagic::factionSpellWeight(magicRules, vti->getFactionID(), spellID) == 0)
@@ -1000,7 +1010,8 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 			if (!isAllowed(spellID))
 				return true;
 
-			return false;
+			const auto level = getSpellLevel(spellID);
+			return level < 1 || level > GameConstants::SPELL_LEVELS;
 		});
 
 		std::vector<int> spellWeights;

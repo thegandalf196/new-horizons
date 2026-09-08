@@ -1,6 +1,9 @@
 include(GoogleTest)
 include(CheckCXXCompilerFlag)
 
+option(ENABLE_NEW_HORIZONS_MANAGED_TESTS
+	"Compile opt-in tests requiring an isolated registered70 profile and NH_REQUIRE_MANAGED_MISSILE_PROFILE=1" OFF)
+
 # Pure saved-view navigation state; no renderer or gameplay fixture implied.
 add_executable(nhHeroDevelopmentNavigationTest ../client/tests/HeroDevelopmentNavigationTest.cpp)
 add_test(NAME nhHeroDevelopmentNavigationTest COMMAND nhHeroDevelopmentNavigationTest)
@@ -91,8 +94,11 @@ set(test_SRCS
 		spells/AbilityCasterTest.cpp
 		spells/AdventureSpellEffectTest.cpp
 		spells/CSpellTest.cpp
+		spells/NewHorizonsDirectDamageTest.cpp
 		spells/NewHorizonsMagicTest.cpp
 		spells/NewHorizonsMagicSchemaTest.cpp
+		spells/NewHorizonsMagicV2RulesTest.cpp
+		spells/NewHorizonsMagicV2SchemaTest.cpp
 		spells/NewHorizonsSpellAvailabilityTest.cpp
 		spells/NewHorizonsModCompatibilityTest.cpp
  		spells/TargetConditionTest.cpp
@@ -151,6 +157,10 @@ set(test_SRCS
 		server/battles/NewHorizonsSkillRewardTest.cpp
 		server/battles/NewHorizonsSkillFeedbackTest.cpp
 		server/battles/NewHorizonsSpellRewardFilterTest.cpp
+		server/battles/NewHorizonsDirectDamageMechanicsTest.cpp
+		server/battles/NewHorizonsSpellRosterContextTest.cpp
+		server/battles/NewHorizonsSpellRosterConsumerTest.cpp
+		server/battles/NewHorizonsSpellArraySafetyTest.cpp
 		server/battles/NewHorizonsSkillRewardApplicationTest.cpp
 		server/battles/NewHorizonsHeroGrowthTest.cpp
 		server/battles/NewHorizonsCreatureCategoryStateTest.cpp
@@ -259,6 +269,16 @@ if(ENABLE_NH_PERF_EXPERIMENTS)
 	list(APPEND test_SRCS
 		network/InternalConnectionBenchmark.cpp
 		network/ExperimentalSetFormationTest.cpp
+	)
+endif()
+
+# This switch only registers tests; it never installs or activates spell content.
+# Missing profile/sentinel is a test failure, not an accepted skip.
+if(ENABLE_NEW_HORIZONS_MANAGED_TESTS)
+	list(APPEND test_SRCS
+		server/battles/NewHorizonsManagedMissileTest.cpp
+		battleAI/NewHorizonsManagedMissileAITest.cpp
+		server/battles/NewHorizonsAuthoredMagicMapTest.cpp
 	)
 endif()
 

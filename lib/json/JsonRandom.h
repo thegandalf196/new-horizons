@@ -66,7 +66,11 @@ public:
 	std::vector<ArtifactID> loadArtifacts(const JsonNode & value, const Variables & variables);
 	std::vector<ArtifactPosition> loadArtifactSlots(const JsonNode & value, const Variables & variables);
 
+	/// Returns NONE when no candidate is admitted by the saved roster. Named keys
+	/// may still override map bans, but never roster admission.
 	SpellID loadSpell(const JsonNode & value, const Variables & variables);
+	/// Empty arrays are valid; any unresolved member throws instead of propagating
+	/// NONE or silently weakening a required reward/limiter predicate.
 	std::vector<SpellID> loadSpells(const JsonNode & value, const Variables & variables);
 
 	CreatureID loadCreatureType(const JsonNode & value, const Variables & variables);

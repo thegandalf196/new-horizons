@@ -15,6 +15,7 @@
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/adventure/TownPortalEffect.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../Engine/Nullkiller.h"
 #include "mapping/CMapHeader.h"
 
@@ -244,6 +245,8 @@ float HeroManager::getMagicStrength(const CGHeroInstance * hero) const
 	// FIXME: this will not cover spells give by scrolls / tomes. Intended?
 	for(auto spellId : hero->getSpellsInSpellbook())
 	{
+		if(!newHorizonsMagic::spellAllowedBySavedRoster(hero->getMagicRules(), spellId))
+			continue;
 		auto spell = spellId.toSpell();
 
 		if (!spell->isAdventure())
@@ -418,7 +421,8 @@ void AtLeastOneMagicRule::evaluateScore(const CGHeroInstance * hero, SecondarySk
 		// for one of the old four IDs. Numerical tuning is intentionally provisional.
 		float knownSpellValue = 0;
 		for(const auto spellID : hero->getSpellsInSpellbook())
-			if(vstd::contains(hero->getSpellSchools(spellID.toSpell()), *selectedSchool))
+			if(newHorizonsMagic::spellAllowedBySavedRoster(hero->getMagicRules(), spellID)
+				&& vstd::contains(hero->getSpellSchools(spellID.toSpell()), *selectedSchool))
 				knownSpellValue += 0.5f;
 		score += std::min(knownSpellValue, 2.0f);
 	}

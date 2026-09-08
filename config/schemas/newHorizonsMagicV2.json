@@ -1,0 +1,95 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "Saved New Horizons magic rules v2",
+	"description": "Future opt-in magic rules with saved direct-damage formulas. This named schema does not activate v2 or replace the strict v1 schema. Canonical identifiers, complete common-spell coverage and formula execution require runtime validation.",
+	"type": "object",
+	"required": ["schemaVersion", "rulesetVersion", "schools", "spells", "schoolSkills", "skillReplacements"],
+	"additionalProperties": false,
+	"properties": {
+		"schemaVersion": {"type": "integer", "enum": [1]},
+		"rulesetVersion": {"type": "integer", "enum": [2]},
+		"schools": {
+			"type": "array",
+			"minItems": 6,
+			"maxItems": 6,
+			"uniqueItems": true,
+			"items": {"$ref": "vcmi:newHorizonsMagic#/definitions/school"}
+		},
+		"spells": {
+			"type": "object",
+			"minProperties": 1,
+			"additionalProperties": {"$ref": "#/definitions/spell"}
+		},
+		"schoolSkills": {
+			"type": "object",
+			"required": ["new-horizons:light", "new-horizons:nature", "new-horizons:sorcery", "new-horizons:havoc", "new-horizons:shadow", "new-horizons:chaos"],
+			"additionalProperties": false,
+			"properties": {
+				"new-horizons:light": {"type": "string", "enum": ["new-horizons:lightMagic"]},
+				"new-horizons:nature": {"type": "string", "enum": ["new-horizons:natureMagic"]},
+				"new-horizons:sorcery": {"type": "string", "enum": ["new-horizons:sorceryMagic"]},
+				"new-horizons:havoc": {"type": "string", "enum": ["new-horizons:havocMagic"]},
+				"new-horizons:shadow": {"type": "string", "enum": ["new-horizons:shadowMagic"]},
+				"new-horizons:chaos": {"type": "string", "enum": ["new-horizons:chaosMagic"]}
+			}
+		},
+		"skillReplacements": {
+			"type": "object",
+			"required": ["core:airMagic", "core:fireMagic", "core:waterMagic", "core:earthMagic"],
+			"additionalProperties": false,
+			"properties": {
+				"core:airMagic": {"type": "string", "enum": ["new-horizons:sorceryMagic"]},
+				"core:fireMagic": {"type": "string", "enum": ["new-horizons:havocMagic"]},
+				"core:waterMagic": {"type": "string", "enum": ["new-horizons:lightMagic"]},
+				"core:earthMagic": {"type": "string", "enum": ["new-horizons:natureMagic"]}
+			}
+		},
+		"factions": {
+			"type": "object",
+			"additionalProperties": {"$ref": "vcmi:newHorizonsMagic#/definitions/faction"}
+		},
+		"factionWeights": {
+			"type": "object",
+			"required": ["major", "minor"],
+			"additionalProperties": false,
+			"properties": {
+				"major": {"type": "integer", "minimum": 1, "maximum": 1000},
+				"minor": {"type": "integer", "minimum": 1, "maximum": 1000}
+			}
+		}
+	},
+	"definitions": {
+		"spell": {
+			"type": "object",
+			"required": ["schools"],
+			"additionalProperties": false,
+			"properties": {
+				"schools": {
+					"type": "array",
+					"minItems": 1,
+					"maxItems": 6,
+					"uniqueItems": true,
+					"items": {"$ref": "vcmi:newHorizonsMagic#/definitions/school"}
+				},
+				"level": {"type": "integer", "minimum": 1, "maximum": 5},
+				"costs": {
+					"type": "array",
+					"minItems": 4,
+					"maxItems": 4,
+					"items": {"type": "integer", "not": {"type": "null"}, "minimum": 0, "maximum": 1000000}
+				},
+				"directDamage": {"$ref": "#/definitions/directDamage"}
+			}
+		},
+		"directDamage": {
+			"type": "object",
+			"not": {"type": "null"},
+			"required": ["base", "powerCoefficient"],
+			"additionalProperties": false,
+			"properties": {
+				"base": {"type": "integer", "not": {"type": "null"}, "minimum": 0, "maximum": 1000000},
+				"powerCoefficient": {"type": "integer", "not": {"type": "null"}, "minimum": 0, "maximum": 1000000}
+			}
+		}
+	}
+}

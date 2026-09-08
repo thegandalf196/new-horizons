@@ -10,6 +10,12 @@
 #include "StdInc.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "../constants/StringConstants.h"
+#include "../GameLibrary.h"
+#include "../callback/IGameInfoCallback.h"
+#include "../battle/CBattleInfoCallback.h"
+#include "../battle/IBattleState.h"
+#include "CSpell.h"
+#include "CSpellHandler.h"
 
 namespace newHorizonsMagic
 {
@@ -25,5 +31,25 @@ bool spellBelongsToRules(const JsonNode & rules, const std::string & scopedIdent
 	if(!rules.isStruct() || !rules["spells"].isStruct())
 		throw std::runtime_error("Spell availability requires a saved spell roster");
 	return rules["spells"].Struct().contains(scopedIdentity);
+}
+
+bool spellAllowedBySavedRoster(const JsonNode & rules, SpellID spell)
+{
+	const auto id = spell.getNum();
+	if(id < 0 || !LIBRARY || !LIBRARY->spellh || static_cast<size_t>(id) >= LIBRARY->spellh->objects.size())
+		return false;
+	const auto & definition = LIBRARY->spellh->objects.at(id);
+	return definition && spellBelongsToRules(rules, definition->getJsonKey(), definition->isCommonHeroSpell());
+}
+
+bool spellAllowedByWorldRoster(const IGameInfoCallback & world, SpellID spell)
+{
+	return spellAllowedBySavedRoster(world.getMagicRules(), spell);
+}
+
+bool spellAllowedByBattleRoster(const CBattleInfoCallback & battle, SpellID spell)
+{
+	const auto * state = battle.getBattle();
+	return state && spellAllowedBySavedRoster(state->getMagicRules(), spell);
 }
 }
