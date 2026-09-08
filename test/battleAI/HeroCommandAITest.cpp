@@ -14,6 +14,7 @@
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/spells/CSpell.h"
+#include <limits>
 
 namespace
 {
@@ -113,9 +114,22 @@ TEST_F(HeroCommandAITest, StrongOffensiveSpellCompetesWithOrdersAndServerAccepts
 	const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
 	ASSERT_EQ(attackerSideHero->getEffectPower(spell), 99);
 	ASSERT_TRUE(spell->canBeCast(callback->getBattle(BattleID(0)).get(), spells::Mode::HERO, attackerSideHero));
-	// Magic Arrow at the capped power did not dominate commands for 100 Angels.
-	// Establish this fixture's strength instead of assuming an unclamped 1000 power:
-	// substantial nonlethal direct damage, exceeding half an ordinary melee attack.
+	const auto divisor = attackerSideHero->getEffectPowerDivisor(spell);
+	ASSERT_GT(divisor, 0);
+	RecordProperty("raw99_power", attackerSideHero->getEffectPower(spell));
+	RecordProperty("raw99_divisor", divisor);
+	RecordProperty("raw99_effect_level", attackerSideHero->getEffectLevel(spell));
+	RecordProperty("raw99_damage", std::to_string(spell->calculateDamage(attackerSideHero)));
+	// Preserve both 100-Angel armies and the original strength oracle. The
+	// fixture means 99 legacy power units, not raw rating99 in every saved scale.
+	const auto rating = int64_t{99} * divisor;
+	ASSERT_LE(rating, std::numeric_limits<int32_t>::max());
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, static_cast<int32_t>(rating), ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getEffectPower(spell), rating) << "Detect a primary-rating clamp, do not weaken the strength assertion";
+	ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell), divisor);
+	ASSERT_EQ(attackerSideHero->getEffectPower(spell) / divisor, 99);
+	RecordProperty("effective99_rating", static_cast<int>(rating));
+	// Substantial nonlethal direct damage, exceeding half an ordinary melee attack.
 	const auto spellDamage = spell->calculateDamage(attackerSideHero);
 	const auto melee = battle()->calculateDmgRange(BattleAttackInfo(active, enemy, 0, false)).damage.max;
 	ASSERT_GT(spellDamage, melee / 2);
