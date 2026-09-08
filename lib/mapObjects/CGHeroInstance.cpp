@@ -156,7 +156,7 @@ void CGHeroInstance::setSecSkillLevel(const SecondarySkill & which, int val, Cha
 	}
 
 	updateSkillBonus(which, newLevelClamped);
-	if(which == SecondarySkill::ARTILLERY)
+	if(which == SecondarySkill::ARTILLERY || which == SecondarySkill::LOGISTICS)
 		refreshMasteryBonuses();
 }
 
@@ -1647,24 +1647,31 @@ std::optional<newHorizonsHeroes::MasteryView> CGHeroInstance::getMasteryView() c
 	view.pending = masteryState.pending;
 	for(const auto & selection : masteryState.selected)
 		view.choices.push_back({selection, getSecSkillLevel(selection.skill) == MasteryLevel::EXPERT});
-	if(!masteryState.hasChoice(SecondarySkill::ARTILLERY) && getSecSkillLevel(SecondarySkill::ARTILLERY) == MasteryLevel::EXPERT)
+	for(const SecondarySkill skill : {SecondarySkill(SecondarySkill::ARTILLERY), SecondarySkill(SecondarySkill::LOGISTICS)})
 	{
-		if(masteryState.artilleryEligible && masteryState.eligibilityLevel == level)
-			view.awaitingChoice.push_back(SecondarySkill::ARTILLERY);
+		if(!newHorizonsHeroes::masteryOptions(masteryState.rules, skill)
+			|| masteryState.hasChoice(skill) || getSecSkillLevel(skill) != MasteryLevel::EXPERT)
+			continue;
+		const bool eligible = skill == SecondarySkill::ARTILLERY ? masteryState.artilleryEligible : masteryState.logisticsEligible;
+		if(eligible && masteryState.eligibilityLevel == level)
+			view.awaitingChoice.push_back(skill);
 		else
-			view.eligibleNextLevel.push_back(SecondarySkill::ARTILLERY);
+			view.eligibleNextLevel.push_back(skill);
 	}
 	return view;
 }
 
 void CGHeroInstance::captureMasteryEligibility(uint32_t nextLevel)
 {
-	captureMasteryEligibility(nextLevel, getSecSkillLevel(SecondarySkill::ARTILLERY) == MasteryLevel::EXPERT);
+	captureMasteryEligibility(nextLevel, getSecSkillLevel(SecondarySkill::ARTILLERY) == MasteryLevel::EXPERT,
+		getSecSkillLevel(SecondarySkill::LOGISTICS) == MasteryLevel::EXPERT);
 }
 
-void CGHeroInstance::captureMasteryEligibility(uint32_t nextLevel, bool artilleryExpertBeforeGain)
+void CGHeroInstance::captureMasteryEligibility(uint32_t nextLevel, bool artilleryExpertBeforeGain, bool logisticsExpertBeforeGain)
 {
-	masteryState.captureBeforeLevel(nextLevel, artilleryExpertBeforeGain ? MasteryLevel::EXPERT : MasteryLevel::NONE);
+	masteryState.captureBeforeLevel(nextLevel,
+		artilleryExpertBeforeGain ? MasteryLevel::EXPERT : MasteryLevel::NONE,
+		logisticsExpertBeforeGain ? MasteryLevel::EXPERT : MasteryLevel::NONE);
 }
 
 std::optional<newHorizonsHeroes::MasteryOffer> CGHeroInstance::prepareMasteryOffer() const
@@ -1682,8 +1689,8 @@ void CGHeroInstance::applyMasteryOffer(const newHorizonsHeroes::MasteryOffer & o
 
 void CGHeroInstance::applyMasteryChoice(uint64_t sequence, int choice)
 {
-	const auto error = masteryState.accept(id, getOwner(), sequence, level,
-		getSecSkillLevel(SecondarySkill::ARTILLERY), choice);
+	const int rank = masteryState.pending ? getSecSkillLevel(masteryState.pending->skill) : MasteryLevel::NONE;
+	const auto error = masteryState.accept(id, getOwner(), sequence, level, rank, choice);
 	if(error != newHorizonsHeroes::MasteryReplyError::NONE)
 		throw std::runtime_error("Invalid authoritative mastery choice");
 	refreshMasteryBonuses();

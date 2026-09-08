@@ -146,7 +146,7 @@ void CGameHandler::heroLevelUpChoiceDone(const CGHeroInstance * hero)
 
 bool CGameHandler::offerHeroMastery(const CGHeroInstance * hero)
 {
-	if(!hero->getOwner().isValidPlayer() || hero->getSecSkillLevel(SecondarySkill::ARTILLERY) != MasteryLevel::EXPERT)
+	if(!hero->getOwner().isValidPlayer())
 		return false;
 	for(const auto & existing : queries->allQueries())
 		if(existing->getType() == CHeroMasteryDialogQuery::TYPE
@@ -154,11 +154,14 @@ bool CGameHandler::offerHeroMastery(const CGHeroInstance * hero)
 			return true;
 	if(const auto offer = hero->prepareMasteryOffer())
 	{
+		if(hero->getSecSkillLevel(offer->skill) != MasteryLevel::EXPERT)
+			return false;
 		HeroMasteryOffer pack;
 		pack.offer = *offer;
 		sendAndApply(pack);
 	}
-	if(!hero->getMasteryState().pending)
+	if(!hero->getMasteryState().pending
+		|| hero->getSecSkillLevel(hero->getMasteryState().pending->skill) != MasteryLevel::EXPERT)
 		return false;
 	queries->addQuery(std::make_shared<CHeroMasteryDialogQuery>(this, hero));
 	return true;
@@ -189,6 +192,8 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 	}
 
 	const bool artilleryExpertBeforeGain = hero->getSecSkillLevel(SecondarySkill::ARTILLERY) == MasteryLevel::EXPERT;
+	const bool logisticsExpertBeforeGain = hero->getSecSkillLevel(SecondarySkill::LOGISTICS) == MasteryLevel::EXPERT
+		&& newHorizonsHeroes::masteryOptions(hero->getMasteryState().rules, SecondarySkill::LOGISTICS).has_value();
 	// give primary skill
 	logGlobal->trace("%s got level %d", hero->getNameTextID(), hero->level);
 	auto gains = randomizer->rollPrimarySkillsForLevelup(hero);
@@ -214,6 +219,7 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 	hlu.primskill = primarySkill;
 	hlu.primaryGains = gains;
 	hlu.artilleryExpertBeforeGain = artilleryExpertBeforeGain;
+	hlu.logisticsExpertBeforeGain = logisticsExpertBeforeGain;
 	hlu.skills = randomizer->rollSecondarySkills(hero);
 
 	if (!hero->getOwner().isValidPlayer())

@@ -552,7 +552,7 @@ void AIGateway::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, Qu
 			logAi->error("Cannot answer mastery query for a missing or transferred hero");
 			return;
 		}
-		const int choice = newHorizonsHeroes::chooseMasteryForArmy(offer, *hero);
+		const int choice = newHorizonsHeroes::chooseMasteryForArmy(offer, *hero, cc.get());
 		logAi->debug("Mastery query %d: army valuation selects %s", queryID, offer.options[choice].id.value);
 		cc->chooseHeroMastery(offer.hero, queryID, offer.sequence, choice);
 	});

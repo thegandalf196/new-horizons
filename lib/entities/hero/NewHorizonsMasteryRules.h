@@ -40,9 +40,12 @@ template<typename Handler> void serializeMasterySequence(Handler & h, uint64_t &
 
 enum class MasteryEffect : uint8_t
 {
-	ARTILLERY_VOLLEY,
-	ARTILLERY_PRECISION,
-	ARTILLERY_REPAIR
+	ARTILLERY_VOLLEY = 0,
+	ARTILLERY_PRECISION = 1,
+	ARTILLERY_REPAIR = 2,
+	LOGISTICS_FORCED_MARCH = 3,
+	LOGISTICS_QUARTERMASTER = 4,
+	LOGISTICS_PATHFINDER = 5
 };
 
 struct DLL_LINKAGE MasteryID
@@ -108,8 +111,9 @@ enum class MasteryReplyError : uint8_t
 	ALREADY_CHOSEN
 };
 
-/// Empty rules retain legacy semantics. Version1 supports only the Artillery
-/// family; its three distinct effects are explicit, not a generic rank4.
+/// Empty rules retain legacy semantics. Version1 is Artillery-only; version2
+/// adds Logistics. These are explicit choices, never a generic rank4.
+DLL_LINKAGE SecondarySkill masteryParentSkill(MasteryEffect effect);
 DLL_LINKAGE void validateMasteryRules(const JsonNode & rules);
 DLL_LINKAGE std::optional<std::array<MasteryOption, 3>> masteryOptions(
 	const JsonNode & rules, SecondarySkill skill);

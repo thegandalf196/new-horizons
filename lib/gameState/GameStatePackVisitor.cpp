@@ -1292,7 +1292,7 @@ void GameStatePackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	auto * hero = gs.getHero(pack.heroId);
 	assert(hero);
-	hero->captureMasteryEligibility(hero->level + 1, pack.artilleryExpertBeforeGain);
+	hero->captureMasteryEligibility(hero->level + 1, pack.artilleryExpertBeforeGain, pack.logisticsExpertBeforeGain);
 	hero->levelUp(pack.primaryGains);
 }
 

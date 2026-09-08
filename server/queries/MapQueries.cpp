@@ -335,7 +335,7 @@ void CHeroMasteryDialogQuery::onRemoval(PlayerColor color)
 		throw std::runtime_error("Mastery query cannot be dismissed without an accepted choice");
 	gh->sendQueryResolved(queryID);
 	if(const auto * hero = gh->gameInfo().getHero(heroId))
-		gh->expGiven(hero);
+		gh->heroLevelUpChoiceDone(hero);
 }
 
 void CHeroMasteryDialogQuery::notifyObjectAboutRemoval(const CGObjectInstance * object, const CGHeroInstance * hero) const

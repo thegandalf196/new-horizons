@@ -209,7 +209,7 @@ public:
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	std::optional<newHorizonsHeroes::MasteryView> getMasteryView() const;
 	void captureMasteryEligibility(uint32_t nextLevel);
-	void captureMasteryEligibility(uint32_t nextLevel, bool artilleryExpertBeforeGain);
+	void captureMasteryEligibility(uint32_t nextLevel, bool artilleryExpertBeforeGain, bool logisticsExpertBeforeGain = false);
 	std::optional<newHorizonsHeroes::MasteryOffer> prepareMasteryOffer() const;
 	void applyMasteryOffer(const newHorizonsHeroes::MasteryOffer & offer);
 	void applyMasteryChoice(uint64_t sequence, int choice);

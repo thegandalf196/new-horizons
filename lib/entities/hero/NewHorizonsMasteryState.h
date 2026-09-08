@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "NewHorizonsMasteryRules.h"
+#include "../../serializer/ESerializationVersion.h"
 #include <vector>
 
 namespace newHorizonsHeroes
@@ -53,6 +54,7 @@ public:
 	uint64_t lastSequence = 0;
 	uint32_t eligibilityLevel = 0;
 	bool artilleryEligible = false;
+	bool logisticsEligible = false;
 	std::optional<MasteryOffer> pending;
 	std::vector<MasterySelection> selected;
 
@@ -60,7 +62,7 @@ public:
 	void validate() const;
 	JsonNode toJson() const;
 	static MasteryState fromJson(const JsonNode & node);
-	void captureBeforeLevel(uint32_t nextLevel, int artilleryRank);
+	void captureBeforeLevel(uint32_t nextLevel, int artilleryRank, int logisticsRank = 0);
 	std::optional<MasteryOffer> prepareOffer(ObjectInstanceID hero, PlayerColor player, uint32_t level) const;
 	void applyOffer(const MasteryOffer & offer);
 	MasteryReplyError accept(ObjectInstanceID hero, PlayerColor player, uint64_t sequence,
@@ -74,6 +76,16 @@ public:
 		h & artilleryEligible;
 		h & pending;
 		h & selected;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LOGISTICS_MASTERIES))
+			h & logisticsEligible;
+		else
+		{
+			const JsonNode & savedRules = rules;
+			if((h.saving && logisticsEligible) || savedRules["rulesetVersion"].Integer() > 1)
+				throw std::runtime_error("Logistics mastery state requires the new save format");
+			if(!h.saving)
+				logisticsEligible = false;
+		}
 		if(!h.saving)
 			validate();
 	}

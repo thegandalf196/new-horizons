@@ -45,7 +45,7 @@ void CEmptyAI::yourTacticPhase(const BattleID & battleID, int distance)
 void CEmptyAI::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID)
 {
 	if(const auto * hero = cb->getHero(offer.hero))
-		cb->chooseHeroMastery(offer.hero, queryID, offer.sequence, newHorizonsHeroes::chooseMasteryForArmy(offer, *hero));
+		cb->chooseHeroMastery(offer.hero, queryID, offer.sequence, newHorizonsHeroes::chooseMasteryForArmy(offer, *hero, cb.get()));
 }
 
 void CEmptyAI::heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills, QueryID queryID)

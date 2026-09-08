@@ -14,6 +14,7 @@
 
 struct Bonus;
 class CGHeroInstance;
+class CPlayerSpecificInfoCallback;
 
 namespace newHorizonsHeroes
 {
@@ -23,5 +24,8 @@ namespace newHorizonsHeroes
 DLL_LINKAGE std::vector<std::shared_ptr<Bonus>> masteryBonuses(const MasteryOption & choice);
 /// Contextual, provisional valuation shared by adventure controllers. Uses only
 /// the owning hero's visible army/equipment, not hidden enemy state or option order.
-DLL_LINKAGE int chooseMasteryForArmy(const MasteryOffer & offer, const CGHeroInstance & hero);
+/// Logistics requires the owning player's visibility-filtered callback; never
+/// substitute the hero's authoritative/omniscient callback for missing context.
+DLL_LINKAGE int chooseMasteryForArmy(const MasteryOffer & offer, const CGHeroInstance & hero,
+	const CPlayerSpecificInfoCallback * visible = nullptr);
 }

@@ -1353,6 +1353,7 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 	std::array<int, GameConstants::PRIMARY_SKILLS> primaryGains{};
 	std::vector<SecondarySkill> skills;
 	bool artilleryExpertBeforeGain = false;
+	bool logisticsExpertBeforeGain = false;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -1375,6 +1376,12 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 			h & artilleryExpertBeforeGain;
 		else if(!h.saving)
 			artilleryExpertBeforeGain = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LOGISTICS_MASTERIES))
+			h & logisticsExpertBeforeGain;
+		else if(!h.saving)
+			logisticsExpertBeforeGain = false;
+		else if(logisticsExpertBeforeGain)
+			throw std::runtime_error("Cannot write Logistics pre-gain snapshot to an older format");
 	}
 };
 

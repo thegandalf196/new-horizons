@@ -64,6 +64,8 @@ set(test_SRCS
 		hero/NewHorizonsCapabilityRulesTest.cpp
 		hero/NewHorizonsMasteryRulesTest.cpp
 		hero/NewHorizonsMasteryStateTest.cpp
+		hero/NewHorizonsLogisticsMasteryStateTest.cpp
+		hero/NewHorizonsLogisticsLevelWireTest.cpp
 		hero/NewHorizonsHeroRulesTest.cpp
 		hero/NewHorizonsHeroRulesFixture.h
 		game/MovementCostTest.cpp
@@ -167,6 +169,7 @@ set(test_SRCS
 		server/battles/NewHorizonsCreatureCategoryWireTest.cpp
 		server/battles/NewHorizonsCreatureCategoryFixtureExportTest.cpp
 		server/battles/NewHorizonsMasteryTest.cpp
+		server/battles/NewHorizonsLogisticsMasteryTest.cpp
 		server/battles/NewHorizonsMasteryFixtureExportTest.cpp
 		server/battles/NewHorizonsConvenienceFixtureExportTest.cpp
 		server/battles/NewHorizonsHeroFixtureExportTest.cpp

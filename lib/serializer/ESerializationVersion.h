@@ -66,11 +66,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_MASTERIES, // saved post-Expert eligibility, pending offers and chosen effects
 	NEW_HORIZONS_CREATURE_CATEGORIES, // independent explicit world/battle category snapshots
 
+	NEW_HORIZONS_LOGISTICS_MASTERIES, // two-family pre-gain eligibility and pending choices
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_CREATURE_CATEGORIES,
+	CURRENT = NEW_HORIZONS_LOGISTICS_MASTERIES,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
