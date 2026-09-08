@@ -1,0 +1,66 @@
+{
+	"magicMissile": {
+		"name": "Magic Missile",
+		"type": "combat",
+		"school": {"new-horizons:sorcery": true},
+		"level": 1,
+		"power": 20,
+		"defaultGainChance": 10,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"flags": {"offensive": true, "damage": true, "negative": true},
+		"targetCondition": {},
+		"graphics": {
+			"iconBook": "SPELLS.def:0:15",
+			"iconScroll": "SPELLSCR.def:0:15",
+			"iconEffect": "SPELLINT.def:0:16",
+			"iconImmune": "SPELLINT.def:0:16",
+			"iconScenarioBonus": "SPELLBON.def:0:15"
+		},
+		"animation": {
+			"projectile": [
+				{"minimumAngle": 0, "defName": "C20SPX4"},
+				{"minimumAngle": 0.60, "defName": "C20SPX3"},
+				{"minimumAngle": 0.90, "defName": "C20SPX2"},
+				{"minimumAngle": 1.20, "defName": "C20SPX1"},
+				{"minimumAngle": 1.50, "defName": "C20SPX0"}
+			],
+			"hit": ["C20SPX"]
+		},
+		"sounds": {"cast": "MAGICBLT"},
+		"levels": {
+			"none": {
+				"range": "0",
+				"description": "Launch a focused Sorcery missile at one enemy stack. Base damage follows the saved Magic Missile formula, before normal immunities, resistance and damage modifiers.",
+				"cost": 5,
+				"power": 20,
+				"battleEffects": {"directDamage": {"type": "damage"}},
+				"targetModifier": {"smart": true}
+			},
+			"basic": {
+				"range": "0",
+				"description": "Launch a focused Sorcery missile at one enemy stack. Base damage follows the saved Magic Missile formula, before normal immunities, resistance and damage modifiers.",
+				"cost": 5,
+				"power": 20,
+				"battleEffects": {"directDamage": {"type": "damage"}},
+				"targetModifier": {"smart": true}
+			},
+			"advanced": {
+				"range": "0",
+				"description": "Launch a focused Sorcery missile at one enemy stack. Base damage follows the saved Magic Missile formula, before normal immunities, resistance and damage modifiers.",
+				"cost": 5,
+				"power": 20,
+				"battleEffects": {"directDamage": {"type": "damage"}},
+				"targetModifier": {"smart": true}
+			},
+			"expert": {
+				"range": "0",
+				"description": "Launch a focused Sorcery missile at one enemy stack. Base damage follows the saved Magic Missile formula, before normal immunities, resistance and damage modifiers.",
+				"cost": 5,
+				"power": 20,
+				"battleEffects": {"directDamage": {"type": "damage"}},
+				"targetModifier": {"smart": true}
+			}
+		}
+	}
+}
