@@ -15,20 +15,25 @@ See [NH_APPROVED_ART_WORKFLOW.md](NH_APPROVED_ART_WORKFLOW.md) for generation/QA
 
 ## Verified current Sorcery skill/school slots
 
-Dimensions checked against the actual existing PNGs in
-`Mods/new-horizons/Images/` and the runtime notes in
-[NH_ARTIST_SORCERY.md](NH_ARTIST_SORCERY.md).
+Existing custom PNG dimensions were checked in `Mods/new-horizons/Images/`,
+with runtime notes in [NH_ARTIST_SORCERY.md](NH_ARTIST_SORCERY.md). The newly
+identified spell-border dimensions instead come from private original DEF-frame
+inventory and source bindings, not existing custom border PNGs; see
+[NH_SCHOOL_ART_COMPLETENESS.md](NH_SCHOOL_ART_COMPLETENESS.md).
 
 | Role | Family | Native contract |
 |---|---|---|
 | Secondary skill |Basic/Advanced/Expert x4 sizes =12|small32x32, medium44x44, large82x93, scenarioBonus58x64|
+| Spell mastery borders |none/basic/advanced/expert =4|78x65 RGBA, frames0..3; corner progression; currently reuses SplevA|
 | School bookmarks |selected/unselected =2|80x60 RGBA; also inspect actual compact68x51 render; frames0/1 respectively|
 | Selected-school header |1|160x96 RGBA, top28 transparent, visible160x68|
 | School emblem |1|64x64 RGBA|
 | School button states |normal/pressed/disabled/highlighted =4|64x64 RGBA, preserve descriptor bindings/order|
 
-Complete current school plus associated skill:20 images, excluding individual
-spells. Skill-only:12 images. Names remain NH_sorceryMagic_<rank>_<size>.png and
+Complete school plus associated skill:24 images, excluding individual spells.
+The earlier20 count omitted four spell mastery borders; see
+[NH_SCHOOL_ART_COMPLETENESS.md](NH_SCHOOL_ART_COMPLETENESS.md) for actual bindings,
+private original-frame evidence, corner ordering and remaining integration gates. Skill-only:12 images. Names remain NH_sorceryMagic_<rank>_<size>.png and
 NH_sorcery_<component>.png as currently configured. User terminology Arcane is not
 authorization to rename internal sorcery identifiers.
 
@@ -81,7 +86,7 @@ cursors/audio have separate contracts and are not completed by static icons.
 ## Request expansion, staging and manifest
 
 "Create Sorcery secondary skill" means12 skill outputs. "Create Sorcery school
-art" means the20-image school/skill set; individual spells are separate.
+art" means the corrected24-image school/skill set; individual spells are separate.
 "All school art including spells" adds the currently configured spell roster,
 not a guessed spell list. Specific bookmark/header requests remain component-only.
 Other orders/doctrines/creature-ability/menu/portrait roles require their own

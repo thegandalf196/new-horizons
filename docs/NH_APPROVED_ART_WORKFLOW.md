@@ -43,7 +43,8 @@ native templates. User artistic judgement remains separate from those checks.
 
 First read [NH_ART_ASSET_SPECIFICATIONS.md](NH_ART_ASSET_SPECIFICATIONS.md).
 Expand each request into its role-specific rank/state/size manifest: a skill-only
-family is12 images, the current complete school plus skill is20, and individual
+family is12 images, the complete school plus skill is24 (including four spell
+mastery borders omitted from the earlier20 count), and individual
 spells have their own graphics slots. A successful single concept is not delivery
 of the family. Known slot details should not become user technical chores.
 
