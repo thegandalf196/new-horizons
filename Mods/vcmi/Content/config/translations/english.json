@@ -587,6 +587,7 @@
 	"vcmi.keyBindings.keyBinding.battleAutocombat": "Battle autocombat",
 	"vcmi.keyBindings.keyBinding.battleAutocombatEnd": "Battle autocombat end",
 	"vcmi.keyBindings.keyBinding.battleCastSpell": "Battle cast spell",
+	"vcmi.keyBindings.keyBinding.battleOpenOrders": "Battle open Orders and Doctrines",
 	"vcmi.keyBindings.keyBinding.battleConsoleDown": "Battle console down",
 	"vcmi.keyBindings.keyBinding.battleConsoleUp": "Battle console up",
 	"vcmi.keyBindings.keyBinding.battleDefend": "Battle defend",

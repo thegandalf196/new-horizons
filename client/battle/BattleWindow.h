@@ -35,6 +35,7 @@ class BattleWindow : public InterfaceObjectConfigurable
 
 	std::shared_ptr<StackQueue> queue;
 	std::shared_ptr<BattleConsole> console;
+	std::shared_ptr<CButton> ordersButton;
 	std::shared_ptr<HeroInfoBasicPanel> attackerHeroWindow;
 	std::shared_ptr<HeroInfoBasicPanel> defenderHeroWindow;
 	std::shared_ptr<StackInfoBasicPanel> attackerStackWindow;
@@ -55,6 +56,7 @@ class BattleWindow : public InterfaceObjectConfigurable
 	bool ownHeroLossEndsScenario() const;
 	void bAutofightf();
 	void bSpellf();
+	void bOrdersf();
 	void bWaitf();
 	void bDefencef();
 	void bConsoleUpf();

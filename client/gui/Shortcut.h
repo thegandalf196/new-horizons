@@ -329,5 +329,8 @@ enum class EShortcut
 	LIST_TOWN_TOP,
 	LIST_TOWN_BOTTOM,
 
+	// Appended to preserve existing shortcut values.
+	BATTLE_OPEN_ORDERS,
+
 	AFTER_LAST
 };

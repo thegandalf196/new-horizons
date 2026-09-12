@@ -23,6 +23,7 @@ std::string name(HeroCommand command);
 class BattleHeroActionWindow final : public CWindowObject
 {
 	std::weak_ptr<BattleInterface> battle;
+	const bool ordersOnly;
 	std::vector<std::pair<HeroCommand, std::shared_ptr<CButton>>> commands;
 	std::shared_ptr<CButton> spellButton;
 	std::shared_ptr<CButton> cancel;
@@ -40,6 +41,7 @@ class BattleHeroActionWindow final : public CWindowObject
 	void chooseSpell();
 
 public:
-	explicit BattleHeroActionWindow(const std::shared_ptr<BattleInterface> & battle);
+	explicit BattleHeroActionWindow(const std::shared_ptr<BattleInterface> & battle, bool ordersOnlyMode = false);
 	void show(Canvas & canvas) override;
+	void showAll(Canvas & canvas) override;
 };

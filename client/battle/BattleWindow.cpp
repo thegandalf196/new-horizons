@@ -58,6 +58,11 @@
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
+namespace
+{
+constexpr int ordersControlPitch = 51;
+}
+
 BattleWindow::BattleWindow(BattleInterface & Owner)
 	: owner(Owner)
 {
@@ -122,10 +127,21 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 	build(config);
 	if(owner.getBattle()->battleUsesHeroCommands())
 	{
-		auto actionButton = widget<CButton>("cast");
-		actionButton->setImage(AnimationPath::builtin("NH_hero_actions_entry"));
-		actionButton->setHelp(CButton::tooltip("Hero action: Spell / Order / Doctrine",
-			"Choose one hero action per round. Orders cost no mana. Doctrines persist in this battle until changed."));
+		widget<CButton>("consoleUp")->moveBy(Point(-ordersControlPitch, 0));
+		widget<CButton>("consoleDown")->moveBy(Point(-ordersControlPitch, 0));
+		// Private functional prototype: replace this existing entry art with the
+		// separately approved pointing gauntlet before any visual acceptance.
+		addShortcut(EShortcut::BATTLE_OPEN_ORDERS, [this] { bOrdersf(); });
+		ordersButton = std::make_shared<CButton>(Point(595, 560), AnimationPath::builtin("NH_hero_actions_entry"),
+			CButton::tooltip("Orders and Doctrines", "Orders cost no mana or spellbook. Spells, Orders and Doctrine changes share one hero action per round."));
+		// Use the configurable interface's normal single-dispatch path: it defers
+		// to an active assigned button. loadButtonHotkey attaches the callback once.
+		JsonNode ordersHotkey;
+		ordersHotkey.String() = "battleOpenOrders";
+		loadButtonHotkey(ordersButton, ordersHotkey);
+		addWidget("nhOrders", ordersButton);
+		ordersButton->setHoverable(true);
+		setShortcutBlocked(EShortcut::BATTLE_OPEN_ORDERS, true);
 	}
 	
 	console = widget<BattleConsole>("console");
@@ -298,6 +314,8 @@ void BattleWindow::createTimerInfoWindows()
 std::shared_ptr<BattleConsole> BattleWindow::buildBattleConsole(const JsonNode & config) const
 {
 	auto rect = readRect(config["rect"]);
+	if(owner.getBattle()->battleUsesHeroCommands())
+		rect.w -= ordersControlPitch;
 	auto offset = readPosition(config["imagePosition"]);
 	auto background = widget<CPicture>("menuBattle");
 	return std::make_shared<BattleConsole>(owner, background, rect.topLeft(), offset, rect.dimensions() );
@@ -565,6 +583,12 @@ void BattleWindow::tacticPhaseStarted()
 
 	menuBattle->disable();
 	console->disable();
+	if(ordersButton)
+	{
+		ordersButton->block(true);
+		ordersButton->disable();
+		setShortcutBlocked(EShortcut::BATTLE_OPEN_ORDERS, true);
+	}
 
 	menuTactics->enable();
 	tacticNext->enable();
@@ -583,6 +607,12 @@ void BattleWindow::tacticPhaseEnded()
 
 	menuBattle->enable();
 	console->enable();
+	if(ordersButton)
+	{
+		ordersButton->block(true);
+		ordersButton->enable();
+		setShortcutBlocked(EShortcut::BATTLE_OPEN_ORDERS, true);
+	}
 
 	menuTactics->disable();
 	tacticNext->disable();
@@ -795,16 +825,19 @@ void BattleWindow::bAutofightf()
 
 void BattleWindow::bSpellf()
 {
-	if(!owner.getBattle()->battleUsesHeroCommands())
-	{
-		openSpellbook();
+	if(CPlayerInterface::battleInt.get() != &owner || !owner.curInt || owner.curInt->isAutoFightOn || owner.isInTacticsMode())
 		return;
-	}
-	if(owner.actionsController->heroSpellcastingModeActive() || !owner.makingTurn() || owner.isInTacticsMode() || !owner.currentHero())
+	openSpellbook();
+}
+
+void BattleWindow::bOrdersf()
+{
+	if(CPlayerInterface::battleInt.get() != &owner || !owner.curInt || owner.curInt->isAutoFightOn)
 		return;
-	if(CPlayerInterface::battleInt.get() != &owner)
+	if(!owner.getBattle()->battleUsesHeroCommands() || owner.actionsController->heroSpellcastingModeActive()
+		|| !owner.makingTurn() || owner.isInTacticsMode() || !owner.currentHero())
 		return;
-	ENGINE->windows().createAndPushWindow<BattleHeroActionWindow>(CPlayerInterface::battleInt);
+	ENGINE->windows().createAndPushWindow<BattleHeroActionWindow>(CPlayerInterface::battleInt, true);
 }
 
 void BattleWindow::openSpellbook()
@@ -920,10 +953,15 @@ void BattleWindow::blockUI(bool on)
 		canCastSpells = spellcastingProblem == ESpellCastProblem::OK || spellcastingProblem == ESpellCastProblem::MAGIC_IS_BLOCKED;
 	}
 
-	// New-rules heroes may issue Orders without a spellbook or mana. Keep the
-	// chooser readable after spending the action; its individual choices revalidate.
-	if(owner.getBattle()->battleUsesHeroCommands())
-		canCastSpells = hero != nullptr;
+	// Orders remain independently readable without a book/mana and after spending
+	// the shared action. Each actual command still revalidates before submission.
+	if(ordersButton)
+	{
+		const bool ordersBlocked = on || !owner.curInt || owner.curInt->isAutoFightOn
+			|| owner.isInTacticsMode() || !owner.currentHero() || owner.actionsController->heroSpellcastingModeActive();
+		ordersButton->block(ordersBlocked);
+		setShortcutBlocked(EShortcut::BATTLE_OPEN_ORDERS, ordersBlocked);
+	}
 
 	bool canWait = owner.stacksController->getActiveStack() ? !owner.stacksController->getActiveStack()->waitedThisTurn : false;
 	bool tacticsMode = owner.isInTacticsMode();

@@ -36,9 +36,20 @@ def verify(source):
     assert body.split(compact(denial), 1)[1] == 'close();owner->windowObject->openSpellbook();}'
 
 
+def verify_redraw(source):
+    source = re.sub(r'//[^\n]*|/\*.*?\*/', '', source, flags=re.S)
+    for name in ('show', 'showAll'):
+        expected = (
+            rf'void BattleHeroActionWindow::{name}\(Canvas & canvas\)\s*'
+            rf'\{{\s*refresh\(\);\s*CWindowObject::{name}\(canvas\);\s*\}}'
+        )
+        assert re.search(expected, source), f'{name} must refresh before its base render'
+
+
 def main():
     source = SOURCE.read_text()
     verify(source)
+    verify_redraw(source)
     method_start = source.index('void BattleHeroActionWindow::chooseSpell()')
     prefix, method = source[:method_start], source[method_start:]
     mutants = [method.replace(guard, 'false', 1) for guard in GUARDS]
@@ -57,6 +68,21 @@ def main():
             continue
         raise AssertionError(f'Source-contract mutant {index} survived')
     print(f'PASS: activation routing source contract; {len(mutants)} in-memory mutants rejected')
+    redraw_mutants = []
+    for name in ('show', 'showAll'):
+        body = f'refresh();\n\tCWindowObject::{name}(canvas);'
+        redraw_mutants += [
+            source.replace(body, f'CWindowObject::{name}(canvas);', 1),
+            source.replace(body, f'CWindowObject::{name}(canvas);\n\trefresh();', 1),
+        ]
+    for index, mutant in enumerate(redraw_mutants):
+        assert mutant != source
+        try:
+            verify_redraw(mutant)
+        except AssertionError:
+            continue
+        raise AssertionError(f'Redraw-contract mutant {index} survived')
+    print(f'PASS: both redraw paths; {len(redraw_mutants)} missing/late-refresh mutants rejected')
     print('NOT compiled, actual-widget, lifetime, graphical or command-validation evidence')
 
 

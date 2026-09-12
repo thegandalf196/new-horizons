@@ -77,6 +77,26 @@ class NewHorizonsContentTest(unittest.TestCase):
     def setUp(self):
         self.rules = load('config/newHorizonsMagic.json')
 
+    def test_orders_keyboard_binding(self):
+        bindings = load('config/keyBindingsConfig.json')
+        self.assertEqual(bindings['keyboard']['battleOpenOrders'], 'B')
+        self.assertEqual(bindings['keyboard']['battleCastSpell'], 'C')
+        for device, keys in bindings.items():
+            if device != 'keyboard':
+                self.assertNotIn('battleOpenOrders', keys)
+
+    def test_orders_binding_label(self):
+        texts = load('Mods/vcmi/Content/config/translations/english.json')
+        self.assertEqual(texts['vcmi.keyBindings.keyBinding.battleOpenOrders'],
+                         'Battle open Orders and Doctrines')
+
+    def test_orders_shortcut_registered_once(self):
+        handler = (ROOT / 'client/gui/ShortcutHandler.cpp').read_text()
+        self.assertEqual(handler.count('{"battleOpenOrders",'), 1)
+        shortcuts = (ROOT / 'client/gui/Shortcut.h').read_text()
+        self.assertRegex(shortcuts,
+                         r'LIST_TOWN_BOTTOM,[\s\S]*BATTLE_OPEN_ORDERS,\s*AFTER_LAST')
+
     def test_complete_existing_spell_inventory_and_legacy_schema(self):
         self.assertEqual(len(common_spells()), 69)
         validate_rules({})

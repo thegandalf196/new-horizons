@@ -62,6 +62,7 @@
 		"battleAutocombat":         "A",
 		"battleAutocombatEnd":      "Q",
 		"battleCastSpell":          "C",
+		"battleOpenOrders":         "B",
 		"battleConsoleDown":        "Down",
 		"battleConsoleUp":          "Up",
 		"battleDefend":             [ "D", "Space"],

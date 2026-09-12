@@ -54,21 +54,29 @@ std::string HeroCommandUI::name(HeroCommand command)
 	}
 }
 
-BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInterface> & owner)
-	: CWindowObject(0, ImagePath::builtin("NH_hero_actions_back")), battle(owner)
+BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInterface> & owner, bool ordersOnlyMode)
+	: CWindowObject(0, ImagePath::builtin("NH_hero_actions_back")), battle(owner), ordersOnly(ordersOnlyMode)
 {
 	OBJECT_CONSTRUCTION;
-	labels.push_back(std::make_shared<CLabel>(320, 29, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Hero action"));
+	labels.push_back(std::make_shared<CLabel>(320, 29, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, ordersOnly ? "Orders and Doctrines" : "Hero action"));
 	labels.push_back(std::make_shared<CLabel>(320, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "One per round: Spell, Order or Doctrine change"));
 	state = std::make_shared<CLabel>(320, 80, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
 
-	spellButton = std::make_shared<CButton>(Point(36, 110), AnimationPath::builtin("NH_spells_button"),
-		CButton::tooltip("Spells", "Open the existing spellbook. Casting shares the hero's action with Orders and Doctrine changes."),
-		[this] { chooseSpell(); });
-	spellButton->setHoverable(true);
-	labels.push_back(std::make_shared<CLabel>(120, 115, FONT_MEDIUM, ETextAlignment::TOPLEFT, Colors::WHITE, "Spells"));
-	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(120, 143, 470, 38), FONT_SMALL, ETextAlignment::TOPLEFT,
-		Colors::WHITE, "Your learned magic. Normal spellbook, mana and targeting requirements still apply."));
+	if(ordersOnly)
+	{
+		labels.push_back(std::make_shared<CMultiLineLabel>(Rect(36, 110, 568, 66), FONT_SMALL, ETextAlignment::TOPLEFT,
+			Colors::WHITE, "Orders require no mana or spellbook. Issuing one spends the same hero action as a spell or Doctrine change.\nUse the separate Spellbook control for magic. Reading this panel or cancelling spends nothing."));
+	}
+	else
+	{
+		spellButton = std::make_shared<CButton>(Point(36, 110), AnimationPath::builtin("NH_spells_button"),
+			CButton::tooltip("Spells", "Open the existing spellbook. Casting shares the hero's action with Orders and Doctrine changes."),
+			[this] { chooseSpell(); });
+		spellButton->setHoverable(true);
+		labels.push_back(std::make_shared<CLabel>(120, 115, FONT_MEDIUM, ETextAlignment::TOPLEFT, Colors::WHITE, "Spells"));
+		labels.push_back(std::make_shared<CMultiLineLabel>(Rect(120, 143, 470, 38), FONT_SMALL, ETextAlignment::TOPLEFT,
+			Colors::WHITE, "Your learned magic. Normal spellbook, mana and targeting requirements still apply."));
+	}
 
 	for(const auto & display : commandDisplays)
 	{
@@ -164,7 +172,8 @@ void BattleHeroActionWindow::refresh()
 	auto owner = currentBattle();
 	if(!owner)
 	{
-		spellButton->block(true);
+		if(spellButton)
+			spellButton->block(true);
 		for(auto & entry : commands)
 			entry.second->block(true);
 		setStateText("Battle no longer available. Close this window.");
@@ -176,8 +185,9 @@ void BattleHeroActionWindow::refresh()
 	const auto * hero = owner->currentHero();
 	if(hero)
 		refreshEffects(*hero, callback->getBattle()->getHeroCommandRules());
-	bool canSpell = hero && callback->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK;
-	spellButton->block(!canAct || !canSpell);
+	const bool canSpell = spellButton && hero && callback->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK;
+	if(spellButton)
+		spellButton->block(!canAct || !canSpell);
 	bool anyCommand = false;
 	for(auto & entry : commands)
 	{
@@ -188,7 +198,8 @@ void BattleHeroActionWindow::refresh()
 	const auto doctrine = callback->battleGetActiveDoctrine(side);
 	const auto order = callback->battleGetActiveOrder(side);
 	setStateText("Doctrine: " + HeroCommandUI::name(doctrine) + " | Order: " + HeroCommandUI::name(order) + " | " +
-		((anyCommand || (canAct && canSpell)) ? "Hero action available" : "Hero action spent or unavailable"));
+		(ordersOnly ? (anyCommand ? "Order available" : "No Order currently available")
+			: ((anyCommand || (canAct && canSpell)) ? "Hero action available" : "Hero action spent or unavailable")));
 }
 
 void BattleHeroActionWindow::chooseCommand(HeroCommand command)
@@ -218,6 +229,8 @@ void BattleHeroActionWindow::chooseCommand(HeroCommand command)
 
 void BattleHeroActionWindow::chooseSpell()
 {
+	if(ordersOnly)
+		return;
 	auto owner = currentBattle();
 	if(!owner)
 	{
@@ -242,4 +255,10 @@ void BattleHeroActionWindow::show(Canvas & canvas)
 {
 	refresh();
 	CWindowObject::show(canvas);
+}
+
+void BattleHeroActionWindow::showAll(Canvas & canvas)
+{
+	refresh();
+	CWindowObject::showAll(canvas);
 }
