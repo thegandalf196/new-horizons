@@ -417,6 +417,12 @@ void BattleActionsController::reorderPossibleActionsPriority(const CStack * stac
 
 void BattleActionsController::castThisSpell(SpellID spellID)
 {
+	if(!owner.curInt)
+		return;
+	const auto * castingHero = owner.currentHero();
+	if(!castingHero)
+		return;
+
 	heroSpellToCast = std::make_shared<BattleAction>();
 	heroSpellToCast->actionType = EActionType::HERO_SPELL;
 	heroSpellToCast->spell = spellID;
@@ -424,8 +430,6 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	heroSpellToCast->side = owner.curInt->cb->getBattle(owner.getBattleID())->battleGetMySide();
 
 	//choosing possible targets
-	const CGHeroInstance *castingHero = (owner.attackingHeroInstance->tempOwner == owner.curInt->playerID) ? owner.attackingHeroInstance : owner.defendingHeroInstance;
-	assert(castingHero); // code below assumes non-null hero
 	PossiblePlayerBattleAction spellSelMode = owner.getBattle()->getCasterAction(spellID.toSpell(), castingHero, spells::Mode::HERO);
 
 	if (spellSelMode.get() == PossiblePlayerBattleAction::NO_LOCATION) //user does not have to select location

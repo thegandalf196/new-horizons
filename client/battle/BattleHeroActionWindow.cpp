@@ -224,6 +224,16 @@ void BattleHeroActionWindow::chooseSpell()
 		close();
 		return;
 	}
+	// Button availability may have changed since the chooser was last drawn.
+	// Preserve the chooser on refusal, just as chooseCommand does.
+	auto callback = owner->getBattle();
+	const auto * hero = owner->currentHero();
+	if(!owner->makingTurn() || owner->curInt->isAutoFightOn || owner->isInTacticsMode() || owner->actionsController->heroSpellcastingModeActive() ||
+		!hero || callback->battleCanCastSpell(hero, spells::Mode::HERO) != ESpellCastProblem::OK)
+	{
+		refresh();
+		return;
+	}
 	close();
 	owner->windowObject->openSpellbook();
 }
