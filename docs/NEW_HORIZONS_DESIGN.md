@@ -1,5 +1,15 @@
 # New Horizons redesign — implementation contract
 
+## Version1.0 scope — latest user confirmation
+
+Read [NH_VERSION_1_0_SCOPE.md](NH_VERSION_1_0_SCOPE.md) for the user-confirmed
+release boundary: primary attributes, secondary skills with associated abilities
+(replacing old masteries), six magic schools, Core/Elite/Champion creature
+organization, Commands and Castellans/governors. The single-expeditionary-Hero
+restriction is NOT implicitly included. Older conflicting passages below remain
+historical pending reconciled implementation/migration; do not use them to undo
+this direction or infer unspecified castellan/Siege rules.
+
 ## Authority and intent
 
 The user supplied their philosophy document (Word content under a .pdf filename;
