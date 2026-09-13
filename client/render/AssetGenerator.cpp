@@ -1539,31 +1539,46 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() cons
 	canvas.draw(equipment, Point(434, 89), Rect(304, 15, 296, 390));
 
 	const ColorRGBA edge(128, 100, 75);
+	const auto recessed = [&canvas](const Rect & rect, bool section)
+	{
+		const ColorRGBA shade(45, 31, 20);
+		const ColorRGBA light = section ? ColorRGBA(174, 139, 82) : ColorRGBA(128, 100, 75);
+		const Point topLeft(rect.x, rect.y);
+		const Point topRight(rect.x + rect.w - 1, rect.y);
+		const Point bottomLeft(rect.x, rect.y + rect.h - 1);
+		const Point bottomRight(rect.x + rect.w - 1, rect.y + rect.h - 1);
+		canvas.drawLine(topLeft, topRight, shade, shade);
+		canvas.drawLine(topLeft, bottomLeft, shade, shade);
+		canvas.drawLine(bottomLeft, bottomRight, light, light);
+		canvas.drawLine(topRight, bottomRight, light, light);
+		if(section)
+			canvas.drawBorder(Rect(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2), ColorRGBA(99, 72, 43));
+	};
 	for(int row = 0; row < 8; ++row)
 	{
-		canvas.drawBorder(Rect(12, 192 + row * 44, 126, 44), edge);
+		recessed(Rect(12, 192 + row * 44, 126, 44), false);
 		for(int ability = 0; ability < 3; ++ability)
 		{
-			canvas.drawBorder(Rect(138 + ability * 98, 192 + row * 44, 98, 44), edge);
+			recessed(Rect(138 + ability * 98, 192 + row * 44, 98, 44), false);
 			const Rect placeholder(140 + ability * 98, 198 + row * 44, 32, 32);
 			canvas.drawColorBlended(placeholder, ColorRGBA(0, 0, 0, 36));
 			canvas.drawBorder(placeholder, edge);
 		}
 		const Rect portrait(739, 82 + row * 54, 48, 32);
 		canvas.drawColorBlended(portrait, ColorRGBA(0, 0, 0, 28));
-		canvas.drawBorder(portrait, edge);
+		recessed(portrait, false);
 	}
 	for(int slot = 0; slot < 7; ++slot)
 	{
 		const Rect army(12 + slot * 66, 544, 58, 64);
 		canvas.drawColorBlended(army, ColorRGBA(0, 0, 0, 36));
-		canvas.drawBorder(army, edge);
+		recessed(army, false);
 	}
 	for(int column = 0; column < 6; ++column)
-		canvas.drawBorder(Rect(236 + column * 82, 12, 82, 76), edge);
+		recessed(Rect(236 + column * 82, 12, 82, 76), false);
 	for(int field = 0; field < 6; ++field)
 	{
-		canvas.drawBorder(Rect(12 + field % 3 * 140, 88 + field / 3 * 44, 140, 44), edge);
+		recessed(Rect(12 + field % 3 * 140, 88 + field / 3 * 44, 140, 44), false);
 		if(field == 1 || field == 4 || field == 5)
 		{
 			const Rect placeholder(14 + field % 3 * 140, 88 + field / 3 * 44, 44, 44);
@@ -1571,7 +1586,14 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() cons
 			canvas.drawBorder(placeholder, edge);
 		}
 	}
-	canvas.drawBorder(Rect(12, 12, 216, 76), edge);
+	recessed(Rect(12, 12, 216, 76), false);
+	// Major boundaries are stronger than cell edges. Keep decoration outside
+	// the native equipment/tray controls; all consumer coordinates stay unchanged.
+	recessed(Rect(434, 89, 296, 430), true);
+	recessed(Rect(440, 426, 286, 53), true);
+	recessed(Rect(10, 190, 424, 354), true);
+	recessed(Rect(10, 542, 724, 66), true);
+	recessed(Rect(734, 12, 58, 596), true);
 	canvas.drawBorder(Rect(0, 608, 800, 16), edge);
 	return image;
 }
