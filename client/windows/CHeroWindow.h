@@ -105,6 +105,7 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::shared_ptr<LRClickableAreaWText> legacySiegeArea;
 	void configureNewHorizonsLayout();
 	void restoreLegacyLayout();
+	void refreshHero(bool refreshArtifactInteraction);
 
 public:
 	const CGHeroInstance * curHero;

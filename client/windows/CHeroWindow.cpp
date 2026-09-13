@@ -444,7 +444,7 @@ void CHeroWindow::onScreenResize()
 		restoreLegacyLayout();
 	CWindowObject::onScreenResize();
 	if(refresh)
-		updateArtifacts();
+		refreshHero(isActive());
 }
 
 void CHeroWindow::keyPressed(EShortcut key)
@@ -457,12 +457,20 @@ void CHeroWindow::keyPressed(EShortcut key)
 
 void CHeroWindow::updateArtifacts()
 {
+	refreshHero(true);
+}
+
+void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
+{
 	OBJECT_CONSTRUCTION;
 
 	assert(curHero);
 	if(newHorizonsLayout && !useNewHorizonsHeroLayout(curHero))
 		restoreLegacyLayout();
-	CWindowWithArtifacts::updateArtifacts();
+	// An inactive resize only changes presentation. The inherited refresh also
+	// writes the global drag cursor and hover text, which belong to the active modal.
+	if(refreshArtifactInteraction)
+		CWindowWithArtifacts::updateArtifacts();
 
 	name->setText(GAME->translator().translate(curHero->getNameTextID()));
 	MetaString titleText;
