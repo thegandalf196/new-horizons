@@ -233,6 +233,7 @@ if(ENABLE_BATTLE_AI)
 	list(APPEND test_SRCS
 		${BATTLE_AI_TEST_SRCS}
 		battleAI/HeroCommandAITest.cpp
+		battleAI/AttackResourceProjectionTest.cpp
 		battleAI/DamageReductionControlTest.cpp
 		battleAI/NewHorizonsMagicAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp

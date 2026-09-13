@@ -59,12 +59,16 @@ float BattleExchangeVariant::trackAttack(
 			unitToUpdate->damage(damageDealt);
 		}
 
+		// The preview may contain several strikes or consume only one of several
+		// retaliations. Copy consumption, not a boolean can-retaliate transition.
+		// CAmmo assignment keeps this unit's owner-bound bonus caches intact.
+		static_cast<battle::CAmmo &>(unitToUpdate->shots) = affectedUnit->shots;
+		static_cast<battle::CAmmo &>(unitToUpdate->counterAttacks) = affectedUnit->counterAttacks;
+
 		if(unitToUpdate->unitSide() == attacker->unitSide())
 		{
 			if(unitToUpdate->unitId() == attacker->unitId())
 			{
-				unitToUpdate->afterAttack(ap.attack.shooting, false);
-
 #if BATTLE_TRACE_LEVEL>=1
 				logAi->trace(
 					"%s -> %s, ap retaliation, %s, dps: %lld",
@@ -88,11 +92,6 @@ float BattleExchangeVariant::trackAttack(
 		{
 			if(unitToUpdate->unitId() == ap.attack.defender->unitId())
 			{
-				if(unitToUpdate->ableToRetaliate() && !affectedUnit->ableToRetaliate())
-				{
-					unitToUpdate->afterAttack(ap.attack.shooting, true);
-				}
-
 #if BATTLE_TRACE_LEVEL>=1
 				logAi->trace(
 					"%s -> %s, ap attack, %s, dps: %lld",
