@@ -13,6 +13,7 @@
 #include <vcmi/events/EventBus.h>
 
 #include "../../lib/battle/BattleLayout.h"
+#include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/CStack.h"
 #include "../../lib/gameState/GameStatePackVisitor.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
@@ -301,6 +302,14 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	auto activeUnit = realBattle->battleActiveUnit();
 	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
 	projectedRound = realBattle->battleGetRound();
+	// Use the subject's visible view, not its unfiltered authoritative obstacle list.
+	for(const auto & obstacle : BattleProxy::getAllObstacles())
+	{
+		if(const auto spell = std::dynamic_pointer_cast<const SpellCreatedObstacle>(obstacle))
+			projectedObstacles.push_back(std::make_shared<SpellCreatedObstacle>(*spell));
+		else
+			projectedObstacles.push_back(obstacle);
+	}
 
 	nextId = 0x00F00000;
 
@@ -375,6 +384,11 @@ int32_t HypotheticBattle::getRound() const
 	return projectedRound;
 }
 
+IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
+{
+	return projectedObstacles;
+}
+
 void HypotheticBattle::nextRound()
 {
 	// BattleInfo grants opening effects their full duration in round one.
@@ -394,7 +408,24 @@ void HypotheticBattle::nextRound()
 	// also releases originals whose clones lost their duration marker.
 	for(const auto id : pendingRemoval)
 		removeUnit(id);
-
+	// Unlike opening unit enchantments, obstacle timers tick on every round
+	// transition. Authoritative BattleFlowProcessor then removes zero timers.
+	for(auto & obstacle : projectedObstacles)
+	{
+		if(const auto spell = std::dynamic_pointer_cast<const SpellCreatedObstacle>(obstacle))
+		{
+			auto aged = std::make_shared<SpellCreatedObstacle>(*spell);
+			aged->battleTurnPassed();
+			obstacle = aged;
+		}
+	}
+	const auto previousSize = projectedObstacles.size();
+	vstd::erase_if(projectedObstacles, [](const auto & obstacle)
+	{
+		const auto spell = std::dynamic_pointer_cast<const SpellCreatedObstacle>(obstacle);
+		return spell && spell->turnsRemaining == 0;
+	});
+	obstacleChanges |= previousSize != projectedObstacles.size();
 }
 
 void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
@@ -499,17 +530,42 @@ void HypotheticBattle::setWallState(EWallPart partOfWall, EWallState state)
 
 void HypotheticBattle::addObstacle(const ObstacleChanges & changes)
 {
-	//TODO:HypotheticBattle::addObstacle
+	auto obstacle = std::make_shared<SpellCreatedObstacle>();
+	obstacle->fromInfo(changes);
+	projectedObstacles.push_back(obstacle);
+	obstacleChanges = true;
 }
 
 void HypotheticBattle::updateObstacle(const ObstacleChanges& changes)
 {
-	//TODO:HypotheticBattle::updateObstacle
+	auto changed = std::make_shared<SpellCreatedObstacle>();
+	changed->fromInfo(changes);
+	for(auto & obstacle : projectedObstacles)
+	{
+		if(obstacle->uniqueID != changes.id)
+			continue;
+		const auto spell = std::dynamic_pointer_cast<const SpellCreatedObstacle>(obstacle);
+		assert(spell);
+		if(!spell)
+			return;
+		auto replacement = std::make_shared<SpellCreatedObstacle>(*spell);
+		// Match BattleInfo: UPDATE currently changes revealed, not geometry/TTL.
+		replacement->revealed = changed->revealed;
+		obstacleChanges |= replacement->revealed != spell->revealed;
+		obstacle = replacement;
+		break;
+	}
 }
 
 void HypotheticBattle::removeObstacle(uint32_t id)
 {
-	//TODO:HypotheticBattle::removeObstacle
+	const auto found = std::find_if(projectedObstacles.begin(), projectedObstacles.end(),
+		[id](const auto & obstacle) { return obstacle->uniqueID == id; });
+	if(found != projectedObstacles.end())
+	{
+		projectedObstacles.erase(found);
+		obstacleChanges = true;
+	}
 }
 
 uint32_t HypotheticBattle::nextUnitId() const

@@ -135,6 +135,8 @@ public:
 	std::shared_ptr<StackWithBonuses> getForUpdate(uint32_t id);
 
 	BattleID getBattleID() const override;
+	ObstacleCList getAllObstacles() const override;
+	bool hasObstacleChanges() const { return obstacleChanges; }
 
 	int32_t getActiveStackID() const override;
 	int32_t getRound() const override;
@@ -222,6 +224,8 @@ private:
 	int32_t bonusTreeVersion;
 	int32_t activeUnitId;
 	int32_t projectedRound;
+	ObstacleCList projectedObstacles;
+	bool obstacleChanges = false;
 	mutable uint32_t nextId;
 
 	std::unique_ptr<HypotheticServerCallback> serverCallback;

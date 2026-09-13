@@ -240,6 +240,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/SpellTargetsEvaluatorTest.cpp
 		battleAI/HypotheticCloneTest.cpp
 		battleAI/HypotheticTimedSpellTest.cpp
+		battleAI/HypotheticObstacleTest.cpp
 	)
 endif()
 

@@ -55,6 +55,42 @@ protected:
 	}
 };
 
+TEST_F(NewHorizonsMagicAITest, ForceFieldCastEvaluationCreatesIsolatedBlockingObstacle)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	attackerSideHero->addSpellToSpellbook(SpellID::FORCE_FIELD);
+	attackerSideHero->mana = 1000;
+	const auto * spell = SpellID(SpellID::FORCE_FIELD).toSpell();
+	const BattleHex destination(8, 5);
+	const battle::Target target{battle::Destination(destination)};
+	spells::BattleCast liveCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	ASSERT_TRUE(spell->battleMechanics(&liveCast)->canBeCastAt(target));
+	ASSERT_EQ(battle()->getAccessibility()[destination.toInt()], EAccessibility::ACCESSIBLE);
+	ASSERT_TRUE(battle()->getAllObstacles().empty());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	HypotheticBattle model(environment.get(), callback->getBattle(BattleID(0)));
+	spells::BattleCast projected(&model, attackerSideHero, spells::Mode::HERO, spell);
+	projected.castEval(model.getServerCallback(), target);
+	EXPECT_FALSE(model.getAllObstacles().empty());
+	EXPECT_TRUE(model.hasObstacleChanges());
+	EXPECT_EQ(model.getAccessibility()[destination.toInt()], EAccessibility::OBSTACLE);
+	EXPECT_TRUE(battle()->getAllObstacles().empty());
+	EXPECT_EQ(attackerSideHero->mana, 1000);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::FORCE_FIELD;
+	action.setTarget(target);
+	const auto cost = attackerSideHero->getSpellCost(spell);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(battle()->getAccessibility()[destination.toInt()], EAccessibility::OBSTACLE);
+	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
+}
+
 TEST_F(NewHorizonsMagicAITest, SacrificeAccountsForRemovedVictimAndKeepsHypotheticChangesPrivate)
 {
 	useCommands = false;
