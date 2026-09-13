@@ -238,6 +238,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp
 		battleAI/NewHorizonsLevelGrantAITest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
+		battleAI/HypotheticCloneTest.cpp
 	)
 endif()
 

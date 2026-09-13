@@ -391,12 +391,16 @@ void HypotheticBattle::removeUnit(uint32_t id)
 				toRemove->cloneID = -1;
 			}
 
-			//TODO: cleanup remaining clone links if any
-//			for(auto s : stacks)
-//			{
-//				if(s->cloneID == toRemoveId)
-//					s->cloneID = -1;
-//			}
+			// Match BattleInfo::removeUnit: deleting a clone releases its original
+			// for another Clone cast. Change only this model, including retained
+			// dead/ghost descriptors and originals inherited from a parent model.
+			const auto remaining = getUnitsIf([](const battle::Unit *) { return true; });
+			for(const auto * unit : remaining)
+			{
+				auto linked = getForUpdate(unit->unitId());
+				if(linked->cloneID >= 0 && static_cast<uint32_t>(linked->cloneID) == toRemoveId)
+					linked->cloneID = -1;
+			}
 		}
 
 		ids.erase(toRemoveId);
