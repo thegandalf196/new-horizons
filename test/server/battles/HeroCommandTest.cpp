@@ -33,6 +33,37 @@
 
 class HeroCommandTest : public HeroCommandFixture {};
 
+TEST_F(HeroCommandTest, CreatureLocationSpellPacketPreservesUnitZeroAndLanding)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+	const auto * source = battle()->battleGetUnitByID(0);
+	ASSERT_NE(source, nullptr);
+	ASSERT_EQ(source->unitId(), 0u);
+	const BattleHex landing(71);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::TELEPORT;
+	action.aimToHex(BattleHex(88)); // setTarget must discard this stale destination.
+	action.setTarget(battle::Target{battle::Destination(source), battle::Destination(landing)});
+
+	CMemorySerializer memory;
+	memory.oser & action;
+	BattleAction decoded;
+	memory.iser & decoded;
+	EXPECT_EQ(decoded.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(decoded.side, BattleSide::ATTACKER);
+	EXPECT_EQ(decoded.spell, SpellID::TELEPORT);
+	const auto target = decoded.getTarget(battle());
+	ASSERT_EQ(target.size(), 2u);
+	EXPECT_EQ(target[0].unitValue, source);
+	EXPECT_EQ(target[0].hexValue, source->getPosition());
+	EXPECT_EQ(target[1].unitValue, nullptr);
+	EXPECT_EQ(target[1].hexValue, landing);
+	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
+}
+
 TEST_F(HeroCommandTest, LegacyGameHasNoCommands)
 {
 	useCommands = false;
