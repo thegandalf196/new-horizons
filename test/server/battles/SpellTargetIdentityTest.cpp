@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../mock/mock_battle_Unit.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 
@@ -105,6 +106,17 @@ TEST_F(SpellTargetIdentityTest, RejectedExplicitGhostNeverFallsBackToAnotherCorp
 	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
 	const auto mechanics = spell->battleMechanics(&cast);
 	ASSERT_TRUE(mechanics->canBeCastAt({spells::Destination(corpse)}));
+	::testing::NiceMock<UnitMock> missing;
+	const auto missingId = selected->unitId() + 1;
+	ASSERT_EQ(battle()->battleGetUnitByID(missingId), nullptr);
+	ON_CALL(missing, unitId()).WillByDefault(::testing::Return(missingId));
+	ON_CALL(missing, getPosition()).WillByDefault(::testing::Return(corpse->getPosition()));
+	const spells::Target missingAim{spells::Destination(&missing)};
+	const auto unresolved = mechanics->canonicalizeTarget(missingAim);
+	ASSERT_EQ(unresolved.size(), 1u);
+	EXPECT_EQ(unresolved.front().unitValue, nullptr);
+	EXPECT_EQ(unresolved.front().hexValue, BattleHex::INVALID);
+	EXPECT_FALSE(mechanics->canBeCastAt(missingAim));
 	EXPECT_FALSE(mechanics->canBeCastAt({spells::Destination(selected)}));
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), resurrect(selected)));
 	EXPECT_FALSE(corpse->alive());
