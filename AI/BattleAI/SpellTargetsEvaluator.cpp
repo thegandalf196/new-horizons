@@ -33,8 +33,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spe
 
 	switch(targetType)
 	{
-		case AimType::CREATURE://TODO: support for multi-destination spells
-			return allTargetableCreatures(spellMechanics);
+		case AimType::CREATURE:
+			return allTargetableCreatures(spellMechanics, true);
 		case AimType::LOCATION:
 		{
 			if(spellMechanics->isNeutralSpell())
@@ -104,7 +104,7 @@ std::vector<Target> SpellTargetEvaluator::creatureLocationTargets(const spells::
 
 std::vector<Target> SpellTargetEvaluator::defaultLocationSpellHeuristics(const spells::Mechanics * spellMechanics)
 {
-	std::vector<Target> result = allTargetableCreatures(spellMechanics);
+	std::vector<Target> result = allTargetableCreatures(spellMechanics, false);
 	auto units = spellMechanics->battle()->battleGetAllUnits(false);
 	for(const auto * unit : units) //insert a random surrounding hex
 	{
@@ -127,12 +127,17 @@ std::vector<Target> SpellTargetEvaluator::defaultLocationSpellHeuristics(const s
 	return result;
 }
 
-std::vector<Target> SpellTargetEvaluator::allTargetableCreatures(const spells::Mechanics * spellMechanics)
+std::vector<Target> SpellTargetEvaluator::allTargetableCreatures(const spells::Mechanics * spellMechanics, bool exactUnit)
 {
 	std::vector<Target> result;
-	auto units = spellMechanics->battle()->battleGetAllUnits(false);
+	const auto units = spellMechanics->battle()->battleGetAllUnits(false);
 	for(const auto * unit : units)
-		addIfCanBeCast(spellMechanics, unit->getPosition(), result);
+	{
+		Target target{exactUnit ? Destination(unit) : Destination(unit->getPosition())};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(target);
+	}
 	return result;
 }
 

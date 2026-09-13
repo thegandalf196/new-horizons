@@ -81,6 +81,10 @@ TEST_F(NewHorizonsMagicAITest, ResurrectionCanonicalTargetReacquiresProjectedSta
 	const auto canonical = mechanics->canonicalizeTarget(aim);
 	ASSERT_EQ(canonical.size(), 1u);
 	EXPECT_EQ(canonical.front().unitValue, projectedUnit.get());
+	const auto candidates = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_EQ(candidates.size(), 1u);
+	ASSERT_EQ(candidates.front().size(), 1u);
+	EXPECT_EQ(candidates.front().front().unitValue, projectedUnit.get());
 	ASSERT_TRUE(mechanics->canBeCastAt(aim));
 	cast.castEval(model.getServerCallback(), aim);
 	EXPECT_TRUE(projectedUnit->alive());

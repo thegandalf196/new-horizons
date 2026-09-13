@@ -29,7 +29,7 @@ private:
 	static std::vector<spells::Target> creaturePairTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> creatureLocationTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> defaultLocationSpellHeuristics(const spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> allTargetableCreatures(const spells::Mechanics * spellMechanics);
+	static std::vector<spells::Target> allTargetableCreatures(const spells::Mechanics * spellMechanics, bool exactUnit);
 	static std::vector<spells::Target> theBestLocationCasts(const spells::Mechanics * spellMechanics);
 	static Compare compareAffectedStacks(
 	const spells::Mechanics * spellMechanics, const std::set<const CStack *> & newCast, const std::set<const CStack *> & oldCast);

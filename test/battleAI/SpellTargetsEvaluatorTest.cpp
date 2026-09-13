@@ -117,8 +117,14 @@ public:
 
 	void basicCheck(std::vector<Target> & result)
 	{
+		const auto types = mechMock.getTargetTypes();
 		for(const Target & target : result)
-			EXPECT_EQ(target.size(), 1); //multi-destination spells are not handled by targetEvaluator
+		{
+			EXPECT_EQ(target.size(), 1); // This helper checks single-destination cases.
+			if(types == std::vector<AimType>{AimType::LOCATION})
+				for(const auto & destination : target)
+					EXPECT_EQ(destination.unitValue, nullptr);
+		}
 	}
 
 	template<typename T>
@@ -141,6 +147,26 @@ TEST_F(SpellTargetEvaluatorTest, ReturnsEmptyForUnsupportedMultiDestinationShape
 	spellTargetTypes({AimType::CREATURE, AimType::CREATURE, AimType::LOCATION});
 	std::vector<Target> result = SpellTargetEvaluator::getViableTargets(&mechMock);
 	EXPECT_TRUE(result.empty());
+}
+
+TEST_F(SpellTargetEvaluatorTest, SingleCreatureTargetsPreserveDistinctIdentitiesOnTheSameHex)
+{
+	spellTargetTypes({AimType::CREATURE});
+	addStack(BattleHex(90), casterSide);
+	addStack(BattleHex(90), casterSide);
+	addStack(BattleHex(71), enemySide);
+	ON_CALL(battleMock, battleGetAllUnits(false)).WillByDefault(Return(allUnits));
+	EXPECT_CALL(mechMock, canBeCastAt(_, _)).Times(3).WillRepeatedly(Invoke(
+		[&](const Target & target, Problem &) -> bool
+		{
+			EXPECT_EQ(target.size(), 1u);
+			return target.front().unitValue == allUnits[0] || target.front().unitValue == allUnits[1];
+		}));
+	const auto result = SpellTargetEvaluator::getViableTargets(&mechMock);
+	ASSERT_EQ(result.size(), 2u);
+	EXPECT_EQ(result[0].front().unitValue, allUnits[0]);
+	EXPECT_EQ(result[1].front().unitValue, allUnits[1]);
+	EXPECT_EQ(result[0].front().hexValue, result[1].front().hexValue);
 }
 
 TEST_F(SpellTargetEvaluatorTest, SacrificePreservesCorpseIdentityAndValidatesEachOrderedVictimPair)
