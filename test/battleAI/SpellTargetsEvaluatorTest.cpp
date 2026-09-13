@@ -86,6 +86,7 @@ public:
 		allStacks.push_back(stack);
 		auto * unit = new UnitMock();
 		ON_CALL(*unit, getPosition()).WillByDefault(Return(position));
+		ON_CALL(*unit, unitId()).WillByDefault(Return(static_cast<uint32_t>(allUnits.size())));
 		allUnits.push_back(unit);
 
 		if(!isSuspectible)
@@ -136,9 +137,60 @@ public:
 
 TEST_F(SpellTargetEvaluatorTest, ReturnsEmptyForUnsupportedMultiDestinationShape)
 {
-	spellTargetTypes({AimType::CREATURE, AimType::CREATURE});
+	spellTargetTypes({AimType::CREATURE, AimType::CREATURE, AimType::LOCATION});
 	std::vector<Target> result = SpellTargetEvaluator::getViableTargets(&mechMock);
 	EXPECT_TRUE(result.empty());
+}
+
+TEST_F(SpellTargetEvaluatorTest, SacrificePreservesCorpseIdentityAndValidatesEachOrderedVictimPair)
+{
+	spellTargetTypes({AimType::CREATURE, AimType::CREATURE});
+	addStack(BattleHex(90), casterSide);
+	addStack(BattleHex(90), casterSide); // Distinct corpse IDs on the same hex.
+	addStack(BattleHex(71), casterSide);
+	addStack(BattleHex(88), enemySide);
+	addStack(BattleHex(72), casterSide);
+	ON_CALL(battleMock, battleGetAllUnits(false)).WillByDefault(Return(allUnits));
+	int prefixChecks = 0;
+	int pairChecks = 0;
+	ON_CALL(mechMock, canBeCastAt(_, _)).WillByDefault(Invoke(
+		[&](const Target & target, Problem &) -> bool
+		{
+			const auto * source = target.front().unitValue;
+			if(target.size() == 1)
+			{
+				++prefixChecks;
+				return source == allUnits[0] || source == allUnits[1];
+			}
+			++pairChecks;
+			EXPECT_EQ(target.size(), 2u);
+			return (source == allUnits[0] && target[1].unitValue == allUnits[2])
+				|| (source == allUnits[1] && target[1].unitValue == allUnits[4]);
+		}));
+	const auto result = SpellTargetEvaluator::getViableTargets(&mechMock);
+	ASSERT_EQ(result.size(), 2u);
+	EXPECT_EQ(prefixChecks, 5);
+	EXPECT_EQ(pairChecks, 10);
+	ASSERT_EQ(result[0].size(), 2u);
+	ASSERT_EQ(result[1].size(), 2u);
+	EXPECT_EQ(result[0][0].unitValue, allUnits[0]);
+	EXPECT_EQ(result[0][0].unitValue->unitId(), 0u);
+	EXPECT_EQ(result[0][1].unitValue, allUnits[2]);
+	EXPECT_EQ(result[1][0].unitValue, allUnits[1]);
+	EXPECT_EQ(result[1][0].unitValue->unitId(), 1u);
+	EXPECT_EQ(result[1][1].unitValue, allUnits[4]);
+	EXPECT_EQ(result[0][0].hexValue, result[1][0].hexValue);
+}
+
+TEST_F(SpellTargetEvaluatorTest, SacrificeDoesNotReturnAnEligiblePrefixWithoutACompleteLegalPair)
+{
+	spellTargetTypes({AimType::CREATURE, AimType::CREATURE});
+	addStack(BattleHex(90), casterSide);
+	addStack(BattleHex(71), casterSide);
+	ON_CALL(battleMock, battleGetAllUnits(false)).WillByDefault(Return(allUnits));
+	ON_CALL(mechMock, canBeCastAt(_, _)).WillByDefault(Invoke(
+		[](const Target & target, Problem &) -> bool { return target.size() == 1; }));
+	EXPECT_TRUE(SpellTargetEvaluator::getViableTargets(&mechMock).empty());
 }
 
 TEST_F(SpellTargetEvaluatorTest, TeleportEnumeratesOnlyValidatedLandingsForAnEligibleExactUnit)

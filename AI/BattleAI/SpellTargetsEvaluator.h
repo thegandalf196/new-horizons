@@ -26,6 +26,7 @@ private:
 		WORSE
 	};
 
+	static std::vector<spells::Target> creaturePairTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> creatureLocationTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> defaultLocationSpellHeuristics(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> allTargetableCreatures(const spells::Mechanics * spellMechanics);

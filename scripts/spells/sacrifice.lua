@@ -68,6 +68,11 @@ end
 
 --- Filter the dead target via the base, then append a live victim from aimPoint.
 function Script:transformTarget(mechanics, aimPoint, spellTarget)
+	-- An explicit corpse must not alias another unit occupying the same hex.
+	-- Let the base reject it normally; only hex-only input uses the old lookup.
+	if #aimPoint >= 1 and aimPoint[1].unit then
+		spellTarget = { aimPoint[1] }
+	end
 	local filtered = Base.transformTarget(self, mechanics, aimPoint, spellTarget)
 	if #filtered == 0 then return {} end
 	local result = { filtered[1] }

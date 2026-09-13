@@ -762,13 +762,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					}
 				}
 
-				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return u->isValidTarget(true); });
+				// Removed sacrifice victims must remain in the health accounting below.
+				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return !u->isTurret(); });
 
 				auto needFullEval = vstd::contains_if(allUnits, [&](const battle::Unit * u) -> bool
 					{
 						auto original = cb->getBattle(battleID)->battleGetUnitByID(u->unitId());
 						return !original || u->getMovementRange() != original->getMovementRange()
-							|| u->getPosition() != original->getPosition();
+							|| u->getPosition() != original->getPosition()
+							|| u->alive() != original->alive() || u->isGhost() != original->isGhost();
 					});
 
 				DamageCache safeCopy = damageCache;
@@ -785,13 +787,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				float damageToHostilesScore = 0;
 				float damageToFriendliesScore = 0;
 
-				if(needFullEval || !cachedAttack.ap)
+				const auto modelActive = state->getForUpdate(activeStack->unitId());
+				if(modelActive->alive() && (needFullEval || !cachedAttack.ap))
 				{
 #if BATTLE_TRACE_LEVEL >= 1
 					logAi->trace("Full evaluation: movement range/position changed or no cached attack.");
 #endif
 
-					const auto modelActive = state->getForUpdate(activeStack->unitId());
 					PotentialTargets innerTargets(modelActive.get(), innerCache, state);
 					BattleExchangeEvaluator innerEvaluator(state, env, strengthRatio, simulationTurnsCount);
 
@@ -810,7 +812,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						stackActionScore = moveTarget.score;
 					}
 				}
-				else
+				else if(modelActive->alive())
 				{
 					auto updatedAttacker = state->getForUpdate(cachedAttack.ap->attack.attacker->unitId());
 					auto updatedDefender = state->getForUpdate(cachedAttack.ap->attack.defender->unitId());
@@ -828,7 +830,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				}
 				for(const auto & unit : allUnits)
 				{
-					if(!unit->isValidTarget(true))
+					if(!unit->isValidTarget(true) && !vstd::contains(healthOfStack, unit->unitId()))
 						continue;
 
 					auto newHealth = unit->getAvailableHealth();
@@ -846,7 +848,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							innerCache,
 							state);
 
-						auto ourUnit = unit->unitSide() == side ? 1 : -1;
+						auto ourUnit = state->battleGetOwner(unit) == playerID ? 1 : -1;
 						auto goodEffect = newHealth > oldHealth ? 1 : -1;
 
 						if(ourUnit * goodEffect == 1)

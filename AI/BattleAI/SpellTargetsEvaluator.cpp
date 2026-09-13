@@ -23,6 +23,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spe
 	std::vector<AimType> targetTypes = spellMechanics->getTargetTypes();
 	if(targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::LOCATION})
 		return creatureLocationTargets(spellMechanics);
+	if(targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::CREATURE})
+		return creaturePairTargets(spellMechanics);
 	if(targetTypes.size() != 1)
 		return result;
 
@@ -46,6 +48,30 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spe
 		default:
 			return result;
 	}
+}
+
+std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	// This query includes corpses. Sacrifice chooses a corpse BEFORE a living
+	// victim; do not replace it with an alive-only target list or reorder pairs.
+	const auto units = spellMechanics->battle()->battleGetAllUnits(false);
+	for(const auto * first : units)
+	{
+		Target target{Destination(first)};
+		detail::ProblemImpl prefixProblem;
+		if(!spellMechanics->canBeCastAt(target, prefixProblem))
+			continue;
+		for(const auto * second : units)
+		{
+			target.resize(1);
+			target.emplace_back(second);
+			detail::ProblemImpl pairProblem;
+			if(spellMechanics->canBeCastAt(target, pairProblem))
+				result.push_back(target);
+		}
+	}
+	return result;
 }
 
 std::vector<Target> SpellTargetEvaluator::creatureLocationTargets(const spells::Mechanics * spellMechanics)

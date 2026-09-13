@@ -47,6 +47,51 @@ protected:
 	}
 };
 
+TEST_F(SacrificeTest, HexTransformedPrimaryMustNotSubstituteAnotherCorpse)
+{
+	auto & first = unitsFake.add(BattleSide::ATTACKER);
+	auto & selected = unitsFake.add(BattleSide::ATTACKER);
+	ON_CALL(first, unitId()).WillByDefault(Return(1u));
+	ON_CALL(selected, unitId()).WillByDefault(Return(2u));
+	const BattleHex corpseHex(5, 5);
+	for(auto * corpse : {&first, &selected})
+	{
+		ON_CALL(*corpse, alive()).WillByDefault(Return(false));
+		EXPECT_CALL(*corpse, getPosition()).WillRepeatedly(Return(corpseHex));
+		EXPECT_CALL(*corpse, isValidTarget(Eq(false))).WillRepeatedly(Return(false));
+		EXPECT_CALL(*corpse, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+		ON_CALL(*corpse, getTotalHealth()).WillByDefault(Return(200));
+		ON_CALL(*corpse, getAvailableHealth()).WillByDefault(Return(0));
+	}
+	auto & victim = unitsFake.add(BattleSide::ATTACKER);
+	ON_CALL(victim, unitId()).WillByDefault(Return(3u));
+	victim.makeAlive();
+	EXPECT_CALL(victim, getPosition()).WillRepeatedly(Return(BattleHex(5, 10)));
+	EXPECT_CALL(victim, isValidTarget(_)).WillRepeatedly(Return(true));
+	ON_CALL(victim, getTotalHealth()).WillByDefault(Return(300));
+	ON_CALL(victim, getAvailableHealth()).WillByDefault(Return(300));
+	EXPECT_CALL(mechanicsMock, isSmart()).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, isMassive()).WillRepeatedly(Return(false));
+	EXPECT_CALL(mechanicsMock, isNegativeSpell()).WillRepeatedly(Return(false));
+	EXPECT_CALL(mechanicsMock, alwaysHitFirstTarget()).WillRepeatedly(Return(false));
+	ON_CALL(mechanicsMock, ownerMatches(_)).WillByDefault(Return(true));
+	ON_CALL(mechanicsMock, isReceptive(_)).WillByDefault(Return(true));
+
+	Target aimPoint{Destination(&selected, corpseHex), Destination(&victim, victim.getPosition())};
+	Target spellTarget{Destination(corpseHex)};
+	const auto transformed = subject->transformTarget(&mechanicsMock, aimPoint, spellTarget);
+	ASSERT_EQ(transformed.size(), 2u);
+	EXPECT_EQ(transformed[0].unitValue, &selected);
+	EXPECT_EQ(transformed[1].unitValue, &victim);
+
+	// An explicit rejected source must not fall back to its eligible neighbour.
+	ON_CALL(mechanicsMock, isReceptive(Eq(&selected))).WillByDefault(Return(false));
+	EXPECT_TRUE(subject->transformTarget(&mechanicsMock, aimPoint, spellTarget).empty());
+	ON_CALL(mechanicsMock, isReceptive(Eq(&selected))).WillByDefault(Return(true));
+	ON_CALL(mechanicsMock, ownerMatches(Eq(&selected))).WillByDefault(Return(false));
+	EXPECT_TRUE(subject->transformTarget(&mechanicsMock, aimPoint, spellTarget).empty());
+}
+
 TEST_F(SacrificeTest, ApplicableForTwoTargets)
 {
 	auto & unit = unitsFake.add(BattleSide::ATTACKER);

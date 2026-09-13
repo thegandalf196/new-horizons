@@ -11,6 +11,8 @@
 #include "../server/battles/HeroCommandFixture.h"
 #include "../spells/NewHorizonsMagicProfileFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/StackWithBonuses.h"
+#include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/constants/StringConstants.h"
@@ -52,6 +54,82 @@ protected:
 			GTEST_SKIP() << "Requires separate native curated preset";
 	}
 };
+
+TEST_F(NewHorizonsMagicAITest, SacrificeAccountsForRemovedVictimAndKeepsHypotheticChangesPrivate)
+{
+	useCommands = false;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::SACRIFICE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:shadowMagic")),
+		3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	auto * victim = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(2, 5), 300);
+	auto * corpse = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(3, 5), 1);
+	addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(14, 5), 500);
+	const auto victimHealth = victim->getAvailableHealth();
+
+	BattleUnitsChanged setup;
+	setup.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+	{
+		if(unit->unitSide() == BattleSide::ATTACKER && unit != victim && unit != corpse)
+			setup.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	}
+	auto deadState = corpse->acquireState();
+	auto damage = corpse->getAvailableHealth();
+	deadState->damage(damage);
+	setup.changedStacks.emplace_back(corpse->unitId(), UnitChanges::EOperation::UPDATE);
+	setup.changedStacks.back().data = deadState->save();
+	setup.changedStacks.back().healthDelta = -damage;
+	gameHandler->sendAndApply(setup);
+	ASSERT_FALSE(corpse->alive());
+	ASSERT_FALSE(corpse->isGhost());
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = victim->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto * spell = SpellID(SpellID::SACRIFICE).toSpell();
+	const battle::Target target{battle::Destination(corpse), battle::Destination(victim)};
+	spells::BattleCast liveCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	ASSERT_TRUE(spell->battleMechanics(&liveCast)->canBeCastAt(target));
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, victim, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(victim);
+	// Restoring one peasant is not worth losing the only large friendly army.
+	EXPECT_FALSE(evaluator.attemptCastingSpell(victim));
+	EXPECT_TRUE(callback->submitted.empty());
+
+	HypotheticBattle model(environment.get(), callback->getBattle(BattleID(0)));
+	spells::BattleCast simulated(&model, attackerSideHero, spells::Mode::HERO, spell);
+	simulated.castEval(model.getServerCallback(), target);
+	EXPECT_TRUE(model.battleGetUnitByID(corpse->unitId())->alive());
+	EXPECT_TRUE(model.battleGetUnitByID(victim->unitId())->isGhost());
+	EXPECT_EQ(model.battleGetUnitByID(victim->unitId())->getAvailableHealth(), 0);
+	EXPECT_FALSE(corpse->alive());
+	EXPECT_FALSE(victim->isGhost());
+	EXPECT_EQ(victim->getAvailableHealth(), victimHealth);
+	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::SACRIFICE;
+	action.setTarget(target);
+	const auto cost = attackerSideHero->getSpellCost(spell);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_TRUE(corpse->alive());
+	EXPECT_TRUE(victim->isGhost());
+	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
+}
 
 TEST_F(NewHorizonsMagicAITest, TeleportEvaluatorMovesSlowArmyToDistantThreatWithoutMutatingLivePreview)
 {
