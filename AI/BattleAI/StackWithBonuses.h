@@ -107,6 +107,7 @@ public:
 
 private:
 	// Value snapshots survive nested models whose bonus queries create fresh pointers.
+	// Include all spell/command durations for removal; only N_TURNS are aged.
 	std::optional<std::vector<Bonus>> originalTimedEffects;
 	void captureTimedEffects();
 	const IBonusBearer * origBearer;

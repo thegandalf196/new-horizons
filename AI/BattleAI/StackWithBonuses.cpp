@@ -21,10 +21,14 @@
 
 namespace
 {
+bool projectedEffect(const Bonus * bonus)
+{
+	return bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND;
+}
+
 bool timedProjectionEffect(const Bonus * bonus)
 {
-	return Bonus::NTurns(bonus)
-		&& (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND);
+	return Bonus::NTurns(bonus) && projectedEffect(bonus);
 }
 }
 
@@ -146,7 +150,7 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 	vstd::copy_if(*originalList, std::back_inserter(*ret), [this](const std::shared_ptr<Bonus> & b)
 	{
 		return !vstd::contains(bonusesToRemove, b)
-			&& !(originalTimedEffects && timedProjectionEffect(b.get()));
+			&& !(originalTimedEffects && projectedEffect(b.get()));
 	});
 
 	if(originalTimedEffects)
@@ -227,8 +231,8 @@ void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 {
-	// Parent models materialize fresh bonus pointers. Capture timed values before
-	// suppressing them, so a later query cannot resurrect a removed spell.
+	// Parent models materialize fresh bonus pointers. Capture effect values before
+	// suppressing them, including non-timed spells and battle-long Doctrines.
 	captureTimedEffects();
 	TConstBonusListPtr toRemove = origBearer->getBonuses(selector);
 
@@ -248,7 +252,7 @@ void StackWithBonuses::captureTimedEffects()
 	if(!originalTimedEffects)
 	{
 		originalTimedEffects.emplace();
-		const auto original = origBearer->getAllBonuses(CSelector(timedProjectionEffect));
+		const auto original = origBearer->getAllBonuses(CSelector(projectedEffect));
 		for(const auto & bonus : *original)
 			if(!vstd::contains(bonusesToRemove, bonus))
 				originalTimedEffects->push_back(*bonus);

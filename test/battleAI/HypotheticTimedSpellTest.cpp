@@ -58,6 +58,68 @@ protected:
 	}
 };
 
+TEST_F(HypotheticTimedSpellTest, NestedNonTimedSpellRemovalDoesNotReappearOrExpireInParent)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
+	const auto speed = unit->getMovementRange();
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	Bonus spell = haste();
+	spell.duration = BonusDuration::ONE_BATTLE;
+	Bonus doctrine = spell; // Synthetic speed sentinels, not new Doctrine rules.
+	doctrine.source = BonusSource::HERO_COMMAND;
+	doctrine.sid = BonusSourceID(static_cast<int32_t>(HeroCommand::AGGRESSIVE));
+	doctrine.val = 2;
+	parent->addUnitBonus(unit->unitId(), {spell, doctrine});
+	ASSERT_EQ(parent->battleGetUnitByID(unit->unitId())->getMovementRange(), speed + 5);
+	HypotheticBattle child(environment.get(), parent);
+	child.getForUpdate(unit->unitId())->removeUnitBonus(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	for(int query = 0; query < 3; ++query)
+	{
+		const auto * projected = child.battleGetUnitByID(unit->unitId());
+		EXPECT_TRUE(projected->getAllBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT))->empty());
+		EXPECT_EQ(projected->getMovementRange(), speed + 2);
+	}
+	child.nextRound();
+	parent->nextRound();
+	EXPECT_EQ(child.battleGetUnitByID(unit->unitId())->getMovementRange(), speed + 2);
+	EXPECT_EQ(parent->battleGetUnitByID(unit->unitId())->getMovementRange(), speed + 5);
+	child.addUnitBonus(unit->unitId(), {spell});
+	EXPECT_EQ(child.battleGetUnitByID(unit->unitId())->getMovementRange(), speed + 5);
+	EXPECT_EQ(child.battleGetUnitByID(unit->unitId())->getAllBonuses(
+		Selector::sourceTypeSel(BonusSource::SPELL_EFFECT))->size(), 1u);
+	EXPECT_EQ(unit->getMovementRange(), speed);
+}
+
+TEST_F(HypotheticTimedSpellTest, NestedDoctrineReplacementRemovesOnlyOldBattleLongEffect)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
+	const auto speed = unit->getMovementRange();
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	Bonus doctrine = haste();
+	doctrine.source = BonusSource::HERO_COMMAND;
+	doctrine.sid = BonusSourceID(static_cast<int32_t>(HeroCommand::AGGRESSIVE));
+	doctrine.duration = BonusDuration::ONE_BATTLE;
+	parent->updateUnitBonus(unit->unitId(), {doctrine});
+	HypotheticBattle child(environment.get(), parent);
+	child.getForUpdate(unit->unitId())->removeUnitBonus(std::vector<Bonus>{doctrine});
+	Bonus replacement = doctrine;
+	replacement.sid = BonusSourceID(static_cast<int32_t>(HeroCommand::DEFENSIVE));
+	replacement.val = 1;
+	child.addUnitBonus(unit->unitId(), {replacement});
+	for(int query = 0; query < 3; ++query)
+	{
+		const auto bonuses = child.battleGetUnitByID(unit->unitId())->getAllBonuses(
+			Selector::sourceTypeSel(BonusSource::HERO_COMMAND));
+		ASSERT_EQ(bonuses->size(), 1u);
+		EXPECT_EQ(bonuses->front()->val, 1);
+		EXPECT_EQ(child.battleGetUnitByID(unit->unitId())->getMovementRange(), speed + 1);
+	}
+	child.nextRound();
+	EXPECT_EQ(child.battleGetUnitByID(unit->unitId())->getMovementRange(), speed + 1);
+	EXPECT_EQ(parent->battleGetUnitByID(unit->unitId())->getMovementRange(), speed + 3);
+	EXPECT_EQ(unit->getMovementRange(), speed);
+}
+
 TEST_F(HypotheticTimedSpellTest, OriginalSpellExpiresInModelWithoutChangingLiveDurationOrPermanentBonus)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
