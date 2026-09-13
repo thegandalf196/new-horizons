@@ -234,7 +234,7 @@ float AttackPossibility::calculateDamageReduce(
 	{
 		auto ourUnits = state->battleGetUnitsIf([&](const battle::Unit * u) -> bool
 			{
-				return u->unitSide() != defender->unitSide()
+				return state->battleGetOwner(u) != state->battleGetOwner(defender)
 					&& !u->isTurret()
 					&& !u->isCatapult()
 					&& !u->isBallista()
