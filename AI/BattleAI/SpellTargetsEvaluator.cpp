@@ -136,7 +136,8 @@ bool SpellTargetEvaluator::isCastHarmful(const spells::Mechanics * spellMechanic
 
 	for(const CStack * affectedUnit : affectedStacks)
 	{
-		if(affectedUnit->unitSide() == spellMechanics->casterSide)
+		// Hypnotize changes control without changing the unit's original side.
+		if(spellMechanics->battle()->battleGetOwner(affectedUnit) == spellMechanics->getCasterColor())
 			isAffectedAlly = true;
 		else
 			isAffectedEnemy = true;
@@ -148,15 +149,15 @@ bool SpellTargetEvaluator::isCastHarmful(const spells::Mechanics * spellMechanic
 SpellTargetEvaluator::Compare SpellTargetEvaluator::compareAffectedStacks(
 	const spells::Mechanics * spellMechanics, const std::set<const CStack *> & newCast, const std::set<const CStack *> & oldCast)
 {
-	if(newCast.size() == oldCast.size())
-		return newCast == oldCast ? Compare::EQUAL : Compare::DIFFERENT;
+	if(newCast == oldCast)
+		return Compare::EQUAL;
 
 	auto getAlliedUnits = [&spellMechanics](const std::set<const CStack *> & allUnits) -> std::set<const CStack *>
 	{
 		std::set<const CStack *> alliedUnits;
 		for(auto stack : allUnits)
 		{
-			if(stack->unitSide() == spellMechanics->casterSide)
+			if(spellMechanics->battle()->battleGetOwner(stack) == spellMechanics->getCasterColor())
 				alliedUnits.insert(stack);
 		}
 		return alliedUnits;
@@ -167,7 +168,7 @@ SpellTargetEvaluator::Compare SpellTargetEvaluator::compareAffectedStacks(
 		std::set<const CStack *> enemyUnits;
 		for(auto stack : allUnits)
 		{
-			if(stack->unitSide() != spellMechanics->casterSide)
+			if(spellMechanics->battle()->battleGetOwner(stack) != spellMechanics->getCasterColor())
 				enemyUnits.insert(stack);
 		}
 		return enemyUnits;

@@ -38,6 +38,7 @@ class CStackMock : public CStack
 {
 public:
 	MOCK_CONST_METHOD0(unitSide, BattleSide());
+	MOCK_CONST_METHOD0(isHypnotized, bool());
 };
 
 class SpellTargetEvaluatorTest : public ::testing::Test
@@ -45,6 +46,7 @@ class SpellTargetEvaluatorTest : public ::testing::Test
 public:
 	MechanicsMock mechMock;
 	CBattleInfoCallbackMock battleMock;
+	NiceMock<BattleStateMock> battleState;
 	battle::Units allUnits;
 	TStacks allStacks;
 	BattleSide casterSide = BattleSide::ATTACKER;
@@ -54,6 +56,10 @@ public:
 	{
 		mechMock.casterSide = casterSide;
 		ON_CALL(mechMock, battle()).WillByDefault(Return(&battleMock));
+		ON_CALL(mechMock, getCasterColor()).WillByDefault(Return(PlayerColor(0)));
+		ON_CALL(battleMock, getBattle()).WillByDefault(Return(&battleState));
+		ON_CALL(battleState, getSidePlayer(BattleSide::ATTACKER)).WillByDefault(Return(PlayerColor(0)));
+		ON_CALL(battleState, getSidePlayer(BattleSide::DEFENDER)).WillByDefault(Return(PlayerColor(1)));
 		ON_CALL(mechMock, canBeCastAt(_, _)).WillByDefault(Return(true));
 	}
 
@@ -76,6 +82,7 @@ public:
 	{
 		auto * stack = new CStackMock();
 		ON_CALL(*stack, unitSide()).WillByDefault(Return(battleSide));
+		ON_CALL(*stack, isHypnotized()).WillByDefault(Return(false));
 		allStacks.push_back(stack);
 		auto * unit = new UnitMock();
 		ON_CALL(*unit, getPosition()).WillByDefault(Return(position));
@@ -171,6 +178,64 @@ TEST_F(SpellTargetEvaluatorTest, ReturnsSuspectibleCreaturePositionsAndSingleRan
 		 {BattleHex(23)},
 		 BattleHex(23).getAllNeighbouringTiles().toVector()}
 	);
+}
+
+TEST_F(SpellTargetEvaluatorTest, AreaSpellHarmFilterTracksControlRestorationAndCasterColor)
+{
+	spellTargetTypes({AimType::LOCATION});
+	ON_CALL(mechMock, isNegativeSpell()).WillByDefault(Return(true));
+	auto * originalAlly = addStack(BattleHex(90), casterSide);
+	auto * originalEnemy = addStack(BattleHex(106), enemySide);
+	setAffectedStacksForCast(BattleHex(71), {originalAlly});
+	setAffectedStacksForCast(BattleHex(88), {originalEnemy});
+
+	ON_CALL(*originalAlly, isHypnotized()).WillByDefault(Return(true));
+	ON_CALL(*originalEnemy, isHypnotized()).WillByDefault(Return(true));
+	confirmResults({{BattleHex(71)}});
+
+	ON_CALL(*originalAlly, isHypnotized()).WillByDefault(Return(false));
+	ON_CALL(*originalEnemy, isHypnotized()).WillByDefault(Return(false));
+	confirmResults({{BattleHex(88)}});
+
+	mechMock.casterSide = BattleSide::DEFENDER;
+	ON_CALL(mechMock, getCasterColor()).WillByDefault(Return(PlayerColor(1)));
+	confirmResults({{BattleHex(71)}});
+	ON_CALL(mechMock, isNegativeSpell()).WillByDefault(Return(false));
+	ON_CALL(mechMock, isPositiveSpell()).WillByDefault(Return(true));
+	confirmResults({{BattleHex(88)}});
+}
+
+TEST_F(SpellTargetEvaluatorTest, NegativeAreaSpellPrefersCurrentEnemiesWithoutCurrentAlliedCollateral)
+{
+	spellTargetTypes({AimType::LOCATION});
+	ON_CALL(mechMock, isNegativeSpell()).WillByDefault(Return(true));
+	auto * enemy = addStack(BattleHex(90), enemySide);
+	auto * controlledAlly = addStack(BattleHex(106), enemySide);
+	auto * controlledEnemy = addStack(BattleHex(107), casterSide);
+	ON_CALL(*controlledAlly, isHypnotized()).WillByDefault(Return(true));
+	ON_CALL(*controlledEnemy, isHypnotized()).WillByDefault(Return(true));
+
+	setAffectedStacksForCast(BattleHex(21), {enemy, controlledAlly});
+	setAffectedStacksForCast(BattleHex(22), {enemy, controlledEnemy});
+	setAffectedStacksForCast(BattleHex(23), {enemy, controlledEnemy, controlledAlly});
+	//21 and22 affect equally many stacks, but22 strictly improves BOTH partitions.
+	confirmResults({{BattleHex(22)}});
+}
+
+TEST_F(SpellTargetEvaluatorTest, PositiveAreaSpellPrefersCurrentAlliesWithoutHelpingCurrentEnemies)
+{
+	spellTargetTypes({AimType::LOCATION});
+	ON_CALL(mechMock, isPositiveSpell()).WillByDefault(Return(true));
+	auto * ally = addStack(BattleHex(90), casterSide);
+	auto * controlledAlly = addStack(BattleHex(106), enemySide);
+	auto * controlledEnemy = addStack(BattleHex(107), casterSide);
+	ON_CALL(*controlledAlly, isHypnotized()).WillByDefault(Return(true));
+	ON_CALL(*controlledEnemy, isHypnotized()).WillByDefault(Return(true));
+
+	setAffectedStacksForCast(BattleHex(21), {ally, controlledEnemy});
+	setAffectedStacksForCast(BattleHex(22), {ally, controlledAlly});
+	setAffectedStacksForCast(BattleHex(23), {ally, controlledAlly, controlledEnemy});
+	confirmResults({{BattleHex(22)}});
 }
 
 TEST_F(SpellTargetEvaluatorTest, ReturnsOneCaseOfEachOptimalCastIfNegativeLocationSpell)
