@@ -601,6 +601,13 @@ void HypotheticBattle::removeObstacle(uint32_t id)
 
 uint32_t HypotheticBattle::nextUnitId() const
 {
+	// Parent models can already own IDs in the projected allocation range.
+	// Retained ghosts also reserve their identities (clone links/target cohorts).
+	const auto maximum = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
+	while(nextId <= maximum && battleGetUnitByID(nextId))
+		++nextId;
+	if(nextId > maximum)
+		throw std::overflow_error("Hypothetical battle unit identities exhausted");
 	return nextId++;
 }
 

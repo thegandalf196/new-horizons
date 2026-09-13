@@ -65,6 +65,45 @@ protected:
 	}
 };
 
+TEST_F(HypotheticCloneTest, ChildAllocatorPreservesInheritedCloneAndGhostIdentities)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareClone());
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	parent->removeUnit(cloneId);
+	const auto * spell = SpellID(SpellID::CLONE).toSpell();
+	spells::BattleCast cast(parent.get(), attackerSideHero, spells::Mode::HERO, spell);
+	const battle::Target target{battle::Destination(parent->battleGetUnitByID(originalId))};
+	ASSERT_TRUE(spell->battleMechanics(&cast)->canBeCastAt(target));
+	cast.castEval(parent->getServerCallback(), target);
+	const auto original = parent->getForUpdate(originalId);
+	ASSERT_TRUE(original->hasClone());
+	const auto projectedId = static_cast<uint32_t>(original->cloneID);
+	ASSERT_TRUE(parent->battleGetUnitByID(projectedId)->alive());
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	const auto allocated = child->nextUnitId();
+	EXPECT_NE(allocated, projectedId);
+	EXPECT_EQ(child->battleGetUnitByID(allocated), nullptr);
+	child->removeUnit(projectedId);
+	spells::BattleCast recast(child.get(), attackerSideHero, spells::Mode::HERO, spell);
+	const battle::Target childTarget{battle::Destination(child->battleGetUnitByID(originalId))};
+	ASSERT_TRUE(spell->battleMechanics(&recast)->canBeCastAt(childTarget));
+	recast.castEval(child->getServerCallback(), childTarget);
+	const auto replacementId = static_cast<uint32_t>(child->getForUpdate(originalId)->cloneID);
+	EXPECT_NE(replacementId, projectedId);
+	EXPECT_NE(replacementId, allocated);
+	EXPECT_TRUE(child->battleGetUnitByID(projectedId)->isGhost());
+	ASSERT_NE(child->battleGetUnitByID(replacementId), nullptr);
+	EXPECT_TRUE(child->battleGetUnitByID(replacementId)->alive());
+	HypotheticBattle grandchild(environment.get(), child);
+	const auto next = grandchild.nextUnitId();
+	EXPECT_NE(next, projectedId); // A retained ghost is still an occupied identity.
+	EXPECT_NE(next, replacementId);
+	EXPECT_EQ(grandchild.battleGetUnitByID(next), nullptr);
+	EXPECT_TRUE(parent->battleGetUnitByID(projectedId)->alive());
+	EXPECT_EQ(original->cloneID, static_cast<int32_t>(projectedId));
+	EXPECT_TRUE(battle()->battleGetUnitByID(cloneId)->alive());
+}
+
 TEST_F(HypotheticCloneTest, TimedCloneExpiryReleasesOriginalBeforeNextNormalTurn)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareClone());
