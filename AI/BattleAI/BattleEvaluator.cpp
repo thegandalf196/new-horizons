@@ -984,7 +984,7 @@ void BattleEvaluator::evaluateCreatureSpellcast(const CStack * stack, PossibleSp
 
 		auto healthDiff = newHealthOfStack[unitId] - healthOfStack[unitId];
 
-		if(localUnit->unitOwner() != cb->getBattle(battleID)->getPlayerID())
+		if(state.battleGetOwner(localUnit) != playerID)
 			healthDiff = -healthDiff;
 
 		if(healthDiff < 0)
@@ -1004,7 +1004,8 @@ void BattleEvaluator::evaluateCreatureSpellcast(const CStack * stack, PossibleSp
 
 	for(auto unit : newUnits)
 	{
-		totalGain += unit->getAvailableHealth();
+		const auto health = unit->getAvailableHealth();
+		totalGain += state.battleGetOwner(unit) == playerID ? health : -health;
 	}
 
 	ps.value = totalGain;

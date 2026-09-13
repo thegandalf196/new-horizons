@@ -11,6 +11,7 @@
 #include "../server/battles/HeroCommandFixture.h"
 #include "../spells/NewHorizonsMagicProfileFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/PossibleSpellcast.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../AI/BattleAI/SpellTargetsEvaluator.h"
 #include "../../lib/battle/CObstacleInstance.h"
@@ -56,6 +57,52 @@ protected:
 			GTEST_SKIP() << "Requires separate native curated preset";
 	}
 };
+
+TEST_F(NewHorizonsMagicAITest, CreatureSpellPreviewUsesCurrentVictimControlAndTracksRestoration)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	auto * caster = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 2), 10);
+	auto * victim = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(8, 5), 100);
+	Bonus power;
+	power.type = BonusType::CREATURE_SPELL_POWER;
+	power.val = 100;
+	caster->addNewBonus(std::make_shared<Bonus>(power));
+	const auto * spell = SpellID(SpellID::FIREBALL).toSpell();
+	const spells::Target target{spells::Destination(victim->getPosition())};
+	spells::BattleCast cast(battle(), caster, spells::Mode::CREATURE_ACTIVE, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	ASSERT_TRUE(mechanics->canBeCastAt(target));
+	const auto health = victim->getAvailableHealth();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, caster, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	const auto evaluate = [&]()
+	{
+		PossibleSpellcast candidate;
+		candidate.spell = spell;
+		candidate.dest = target;
+		evaluator.evaluateCreatureSpellcast(caster, candidate);
+		return candidate.value;
+	};
+	const auto enemyDamage = evaluate();
+	ASSERT_GT(enemyDamage, 0);
+	auto hypnotized = std::make_shared<Bonus>();
+	hypnotized->type = BonusType::HYPNOTIZED;
+	hypnotized->duration = BonusDuration::ONE_BATTLE;
+	hypnotized->source = BonusSource::SPELL_EFFECT;
+	hypnotized->sid = BonusSourceID(SpellID(SpellID::HYPNOTIZE));
+	victim->addNewBonus(hypnotized);
+	ASSERT_EQ(battle()->battleGetOwner(victim), PlayerColor(0));
+	// Fireball is deliberately indiscriminate; legality does not prevent collateral.
+	ASSERT_TRUE(mechanics->canBeCastAt(target));
+	EXPECT_LT(evaluate(), 0);
+	victim->removeBonus(hypnotized);
+	ASSERT_EQ(battle()->battleGetOwner(victim), PlayerColor(1));
+	EXPECT_EQ(evaluate(), enemyDamage);
+	EXPECT_EQ(victim->getAvailableHealth(), health);
+	EXPECT_TRUE(callback->submitted.empty());
+}
 
 TEST_F(NewHorizonsMagicAITest, RemoveObstacleEnumeratesNormalizedLocationAndRemovesOnlyInProjectedBattle)
 {
