@@ -164,6 +164,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSpellRosterContextTest.cpp
 		server/battles/NewHorizonsSpellRosterConsumerTest.cpp
 		server/battles/NewHorizonsSpellArraySafetyTest.cpp
+		server/battles/SpellTargetIdentityTest.cpp
 		server/battles/NewHorizonsSkillRewardApplicationTest.cpp
 		server/battles/NewHorizonsHeroGrowthTest.cpp
 		server/battles/NewHorizonsCreatureCategoryStateTest.cpp

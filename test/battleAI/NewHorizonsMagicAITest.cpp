@@ -58,6 +58,36 @@ protected:
 	}
 };
 
+TEST_F(NewHorizonsMagicAITest, ResurrectionCanonicalTargetReacquiresProjectedStateFromLiveAimIdentity)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	attackerSideHero->addSpellToSpellbook(SpellID::RESURRECTION);
+	attackerSideHero->mana = 1000;
+	const auto * unit = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(8, 5), 1);
+	const auto health = unit->getAvailableHealth();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	HypotheticBattle model(environment.get(), callback->getBattle(BattleID(0)));
+	auto projectedUnit = model.getForUpdate(unit->unitId());
+	auto damage = health;
+	projectedUnit->damage(damage);
+	ASSERT_FALSE(projectedUnit->alive());
+	ASSERT_TRUE(unit->alive());
+	const auto * spell = SpellID(SpellID::RESURRECTION).toSpell();
+	spells::BattleCast cast(&model, attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	const spells::Target aim{spells::Destination(unit)};
+	const auto canonical = mechanics->canonicalizeTarget(aim);
+	ASSERT_EQ(canonical.size(), 1u);
+	EXPECT_EQ(canonical.front().unitValue, projectedUnit.get());
+	ASSERT_TRUE(mechanics->canBeCastAt(aim));
+	cast.castEval(model.getServerCallback(), aim);
+	EXPECT_TRUE(projectedUnit->alive());
+	EXPECT_EQ(unit->getAvailableHealth(), health);
+	EXPECT_EQ(attackerSideHero->mana, 1000);
+}
+
 TEST_F(NewHorizonsMagicAITest, CreatureSpellPreviewUsesCurrentVictimControlAndTracksRestoration)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));

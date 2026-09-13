@@ -295,7 +295,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 
 	if(spellTarget.front().unitValue)
 	{
-		mainTarget = target.front().unitValue;
+		mainTarget = spellTarget.front().unitValue;
 	}
 	else if(spellTarget.front().hexValue.isValid())
 	{
@@ -672,8 +672,20 @@ Target BattleSpellMechanics::transformSpellTarget(const Target & aimPoint) const
 		if(aimPointHex.isValid())
 		{
 			auto spellRange = spellRangeInHexes(aimPointHex);
-			for(const auto & hex : spellRange)
-				spellTarget.push_back(Destination(hex));
+			const auto targetTypes = getTargetTypes();
+			// A single-hex creature spell must retain an explicitly selected unit.
+			// Resolving it again by hex can redirect resurrection to another corpse.
+			if(primary.unitValue && !targetTypes.empty() && targetTypes.front() == AimType::CREATURE
+				&& spellRange.size() == 1 && spellRange.front() == aimPointHex)
+			{
+				const auto * selected = battle()->battleGetUnitByID(primary.unitValue->unitId());
+				// Resolve through this battle: an AI aim may reference the live unit,
+				// while its projected state has already changed. Never fall back by hex.
+				spellTarget.push_back(selected ? Destination(selected) : Destination(BattleHex::INVALID));
+			}
+			else
+				for(const auto & hex : spellRange)
+					spellTarget.push_back(Destination(hex));
 		}
 	}
 
