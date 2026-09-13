@@ -12,6 +12,7 @@
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CStack.h"
+#include "../../lib/bonuses/BonusSelector.h"
 #include <vcmi/Environment.h>
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
@@ -63,6 +64,35 @@ protected:
 		callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	}
 };
+
+TEST_F(HypotheticCloneTest, TimedCloneExpiryReleasesOriginalBeforeNextNormalTurn)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareClone());
+	HypotheticBattle model(environment.get(), callback);
+	const auto markerSelector = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::CLONE)));
+	const auto markers = model.battleGetUnitByID(cloneId)->getBonuses(markerSelector);
+	ASSERT_EQ(markers->size(), 1u);
+	const int remaining = markers->front()->turnsRemain;
+	ASSERT_GT(remaining, 0);
+	for(int round = 1; round < remaining; ++round)
+	{
+		model.nextRound();
+		EXPECT_TRUE(model.battleGetUnitByID(cloneId)->alive());
+		EXPECT_TRUE(model.battleGetUnitByID(originalId)->hasClone());
+	}
+	model.nextRound();
+	model.nextTurn(originalId, BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_TRUE(model.battleGetUnitByID(cloneId)->isGhost());
+	EXPECT_FALSE(model.battleGetUnitByID(originalId)->hasClone());
+	const auto * spell = SpellID(SpellID::CLONE).toSpell();
+	spells::BattleCast cast(&model, attackerSideHero, spells::Mode::HERO, spell);
+	EXPECT_TRUE(spell->battleMechanics(&cast)->canBeCastAt(
+		battle::Target{battle::Destination(model.battleGetUnitByID(originalId))}));
+	EXPECT_TRUE(battle()->battleGetUnitByID(originalId)->hasClone());
+	EXPECT_TRUE(battle()->battleGetUnitByID(cloneId)->alive());
+	EXPECT_EQ(battle()->battleGetUnitByID(cloneId)->getBonuses(markerSelector)->front()->turnsRemain, remaining);
+}
 
 TEST_F(HypotheticCloneTest, RemovingCloneReleasesOriginalForRecastWithoutChangingLiveBattle)
 {

@@ -10,6 +10,7 @@
 #pragma once
 
 #include <vstd/RNG.h>
+#include <optional>
 
 #include <vcmi/Environment.h>
 #include <vcmi/ServerCallback.h>
@@ -99,11 +100,15 @@ public:
 	void removeUnitBonus(const std::vector<Bonus> & bonus);
 
 	void removeUnitBonus(const CSelector & selector);
+	void advanceTimedRound();
 
 	void spendMana(ServerCallback * server, const int spellCost) const override;
 	std::string getDescription() const override;
 
 private:
+	// Value snapshots survive nested models whose bonus queries create fresh pointers.
+	std::optional<std::vector<Bonus>> originalTimedEffects;
+	void captureTimedEffects();
 	const IBonusBearer * origBearer;
 	const HypotheticBattle * owner;
 
@@ -132,6 +137,7 @@ public:
 	BattleID getBattleID() const override;
 
 	int32_t getActiveStackID() const override;
+	int32_t getRound() const override;
 
 	battle::Units getUnitsIf(const battle::UnitFilter & predicate) const override;
 
@@ -215,6 +221,7 @@ private:
 
 	int32_t bonusTreeVersion;
 	int32_t activeUnitId;
+	int32_t projectedRound;
 	mutable uint32_t nextId;
 
 	std::unique_ptr<HypotheticServerCallback> serverCallback;

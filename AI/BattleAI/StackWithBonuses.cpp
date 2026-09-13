@@ -18,6 +18,15 @@
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 
+namespace
+{
+bool timedProjectionEffect(const Bonus * bonus)
+{
+	return Bonus::NTurns(bonus)
+		&& (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND);
+}
+}
+
 void actualizeEffect(TBonusListPtr target, const Bonus & ef)
 {
 	for(auto & bonus : *target) //TODO: optimize
@@ -135,9 +144,14 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 
 	vstd::copy_if(*originalList, std::back_inserter(*ret), [this](const std::shared_ptr<Bonus> & b)
 	{
-		return !vstd::contains(bonusesToRemove, b);
+		return !vstd::contains(bonusesToRemove, b)
+			&& !(originalTimedEffects && timedProjectionEffect(b.get()));
 	});
 
+	if(originalTimedEffects)
+		for(const auto & bonus : *originalTimedEffects)
+			if(selector(&bonus))
+				ret->push_back(std::make_shared<Bonus>(bonus));
 
 	for(const Bonus & bonus : bonusesToUpdate)
 	{
@@ -169,7 +183,7 @@ int32_t StackWithBonuses::getTreeVersion() const
 {
 	auto result = owner->getTreeVersion();
 
-	if(bonusesToAdd.empty() && bonusesToUpdate.empty() && bonusesToRemove.empty())
+	if(bonusesToAdd.empty() && bonusesToUpdate.empty() && bonusesToRemove.empty() && !originalTimedEffects)
 		return result;
 	else
 		return result + treeVersionLocal;
@@ -212,6 +226,9 @@ void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 {
+	// Parent models materialize fresh bonus pointers. Capture timed values before
+	// suppressing them, so a later query cannot resurrect a removed spell.
+	captureTimedEffects();
 	TConstBonusListPtr toRemove = origBearer->getBonuses(selector);
 
 	for(auto b : *toRemove)
@@ -219,8 +236,41 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 
 	vstd::erase_if(bonusesToAdd, [&](const Bonus & b){return selector(&b);});
 	vstd::erase_if(bonusesToUpdate, [&](const Bonus & b){return selector(&b);});
+	if(originalTimedEffects)
+		vstd::erase_if(*originalTimedEffects, [&](const Bonus & b){return selector(&b);});
 
 	treeVersionLocal++;
+}
+
+void StackWithBonuses::captureTimedEffects()
+{
+	if(!originalTimedEffects)
+	{
+		originalTimedEffects.emplace();
+		const auto original = origBearer->getAllBonuses(CSelector(timedProjectionEffect));
+		for(const auto & bonus : *original)
+			if(!vstd::contains(bonusesToRemove, bonus))
+				originalTimedEffects->push_back(*bonus);
+	}
+}
+
+void StackWithBonuses::advanceTimedRound()
+{
+	captureTimedEffects();
+	const auto age = [](std::vector<Bonus> & bonuses)
+	{
+		for(auto & bonus : bonuses)
+			if(timedProjectionEffect(&bonus) && bonus.turnsRemain > 0)
+				--bonus.turnsRemain;
+		vstd::erase_if(bonuses, [](const Bonus & bonus)
+		{
+			return timedProjectionEffect(&bonus) && bonus.turnsRemain <= 0;
+		});
+	};
+	age(*originalTimedEffects);
+	age(bonusesToAdd);
+	age(bonusesToUpdate);
+	++treeVersionLocal;
 }
 
 std::string StackWithBonuses::getDescription() const
@@ -250,6 +300,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 {
 	auto activeUnit = realBattle->battleActiveUnit();
 	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
+	projectedRound = realBattle->battleGetRound();
 
 	nextId = 0x00F00000;
 
@@ -319,15 +370,31 @@ int32_t HypotheticBattle::getActiveStackID() const
 	return activeUnitId;
 }
 
+int32_t HypotheticBattle::getRound() const
+{
+	return projectedRound;
+}
+
 void HypotheticBattle::nextRound()
 {
-	//TODO:HypotheticBattle::nextRound
-	for(auto unit : battleAliveUnits())
+	// BattleInfo grants opening effects their full duration in round one.
+	const bool firstRound = projectedRound == 0;
+	++projectedRound;
+	std::vector<uint32_t> pendingRemoval;
+	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
 	{
 		auto forUpdate = getForUpdate(unit->unitId());
-		//TODO: update Bonus::NTurns effects
+		if(!firstRound)
+			forUpdate->advanceTimedRound();
 		forUpdate->afterNewRound();
+		if(forUpdate->ghostPending)
+			pendingRemoval.push_back(unit->unitId());
 	}
+	// The authoritative flow flushes pending ghosts after round updates. This
+	// also releases originals whose clones lost their duration marker.
+	for(const auto id : pendingRemoval)
+		removeUnit(id);
+
 }
 
 void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
