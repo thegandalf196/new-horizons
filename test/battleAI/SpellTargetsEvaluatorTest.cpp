@@ -134,11 +134,82 @@ public:
 	}
 };
 
-TEST_F(SpellTargetEvaluatorTest, ReturnsEmptyIfMultiDestinationSpell)
+TEST_F(SpellTargetEvaluatorTest, ReturnsEmptyForUnsupportedMultiDestinationShape)
 {
-	spellTargetTypes({AimType::CREATURE, AimType::LOCATION});
+	spellTargetTypes({AimType::CREATURE, AimType::CREATURE});
 	std::vector<Target> result = SpellTargetEvaluator::getViableTargets(&mechMock);
 	EXPECT_TRUE(result.empty());
+}
+
+TEST_F(SpellTargetEvaluatorTest, TeleportEnumeratesOnlyValidatedLandingsForAnEligibleExactUnit)
+{
+	spellTargetTypes({AimType::CREATURE, AimType::LOCATION});
+	addStack(BattleHex(90), casterSide);
+	addStack(BattleHex(106), enemySide);
+	ON_CALL(battleMock, battleGetAllUnits(false)).WillByDefault(Return(allUnits));
+	const auto * source = allUnits.front();
+	int sourceChecks = 0;
+	int landingChecks = 0;
+	EXPECT_CALL(mechMock, canBeCastAt(_, _)).WillRepeatedly(Invoke(
+		[&](const Target & target, Problem &) -> bool
+		{
+			if(target.size() == 1)
+			{
+				++sourceChecks;
+				return target.front().unitValue == source;
+			}
+			++landingChecks;
+			EXPECT_EQ(target.size(), 2u);
+			EXPECT_EQ(target.front().unitValue, source);
+			return target.back().hexValue == BattleHex(71) || target.back().hexValue == BattleHex(88);
+		}));
+	const auto result = SpellTargetEvaluator::getViableTargets(&mechMock);
+	ASSERT_EQ(result.size(), 2u);
+	EXPECT_EQ(sourceChecks, 2);
+	EXPECT_EQ(landingChecks, GameConstants::BFIELD_SIZE - 1);
+	for(size_t index = 0; index < result.size(); ++index)
+	{
+		ASSERT_EQ(result[index].size(), 2u);
+		EXPECT_EQ(result[index][0].unitValue, source);
+		EXPECT_EQ(result[index][0].hexValue, BattleHex(90));
+		EXPECT_EQ(result[index][1].unitValue, nullptr);
+		EXPECT_EQ(result[index][1].hexValue, index == 0 ? BattleHex(71) : BattleHex(88));
+	}
+}
+
+TEST_F(SpellTargetEvaluatorTest, TeleportValidatesEachSourceDestinationPairSeparately)
+{
+	spellTargetTypes({AimType::CREATURE, AimType::LOCATION});
+	addStack(BattleHex(90), casterSide);
+	addStack(BattleHex(106), casterSide);
+	ON_CALL(battleMock, battleGetAllUnits(false)).WillByDefault(Return(allUnits));
+	EXPECT_CALL(mechMock, canBeCastAt(_, _)).WillRepeatedly(Invoke(
+		[&](const Target & target, Problem &) -> bool
+		{
+			if(target.size() == 1)
+				return true;
+			return (target.front().unitValue == allUnits[0] && target.back().hexValue == BattleHex(71))
+				|| (target.front().unitValue == allUnits[1] && target.back().hexValue == BattleHex(88));
+		}));
+	const auto result = SpellTargetEvaluator::getViableTargets(&mechMock);
+	ASSERT_EQ(result.size(), 2u);
+	EXPECT_EQ(result[0][0].unitValue, allUnits[0]);
+	EXPECT_EQ(result[0][1].hexValue, BattleHex(71));
+	EXPECT_EQ(result[1][0].unitValue, allUnits[1]);
+	EXPECT_EQ(result[1][1].hexValue, BattleHex(88));
+}
+
+TEST_F(SpellTargetEvaluatorTest, TeleportDoesNotOfferPartialOrUnchangedDestinations)
+{
+	spellTargetTypes({AimType::CREATURE, AimType::LOCATION});
+	addStack(BattleHex(90), casterSide);
+	ON_CALL(battleMock, battleGetAllUnits(false)).WillByDefault(Return(allUnits));
+	EXPECT_CALL(mechMock, canBeCastAt(_, _)).WillRepeatedly(Invoke(
+		[](const Target & target, Problem &) -> bool
+		{
+			return target.size() == 1 || target.back().hexValue == BattleHex(90);
+		}));
+	EXPECT_TRUE(SpellTargetEvaluator::getViableTargets(&mechMock).empty());
 }
 
 TEST_F(SpellTargetEvaluatorTest, ReturnSingleEmptyDestinationIfTargetIsNone)

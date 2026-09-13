@@ -21,7 +21,9 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spe
 {
 	std::vector<Target> result;
 	std::vector<AimType> targetTypes = spellMechanics->getTargetTypes();
-	if(targetTypes.size() != 1) //TODO: support for multi-destination spells
+	if(targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::LOCATION})
+		return creatureLocationTargets(spellMechanics);
+	if(targetTypes.size() != 1)
 		return result;
 
 	auto targetType = targetTypes.front();
@@ -44,6 +46,33 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spe
 		default:
 			return result;
 	}
+}
+
+std::vector<Target> SpellTargetEvaluator::creatureLocationTargets(const spells::Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	{
+		Target target{Destination(unit)};
+		detail::ProblemImpl sourceProblem;
+		if(!spellMechanics->canBeCastAt(target, sourceProblem))
+			continue;
+
+		// Preserve the exact source unit. The spell validator decides occupancy,
+		// double-wide placement, walls/moats and rank restrictions for each pair.
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+		{
+			const BattleHex destination(index);
+			if(destination == unit->getPosition())
+				continue; // Moving nowhere cannot improve the hypothetical battle.
+			target.resize(1);
+			target.emplace_back(destination);
+			detail::ProblemImpl destinationProblem;
+			if(spellMechanics->canBeCastAt(target, destinationProblem))
+				result.push_back(target);
+		}
+	}
+	return result;
 }
 
 std::vector<Target> SpellTargetEvaluator::defaultLocationSpellHeuristics(const spells::Mechanics * spellMechanics)

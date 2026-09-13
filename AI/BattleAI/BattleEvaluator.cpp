@@ -767,7 +767,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				auto needFullEval = vstd::contains_if(allUnits, [&](const battle::Unit * u) -> bool
 					{
 						auto original = cb->getBattle(battleID)->battleGetUnitByID(u->unitId());
-						return  !original || u->getMovementRange() != original->getMovementRange();
+						return !original || u->getMovementRange() != original->getMovementRange()
+							|| u->getPosition() != original->getPosition();
 					});
 
 				DamageCache safeCopy = damageCache;
@@ -787,19 +788,20 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(needFullEval || !cachedAttack.ap)
 				{
 #if BATTLE_TRACE_LEVEL >= 1
-					logAi->trace("Full evaluation is started due to stack speed affected.");
+					logAi->trace("Full evaluation: movement range/position changed or no cached attack.");
 #endif
 
-					PotentialTargets innerTargets(activeStack, innerCache, state);
+					const auto modelActive = state->getForUpdate(activeStack->unitId());
+					PotentialTargets innerTargets(modelActive.get(), innerCache, state);
 					BattleExchangeEvaluator innerEvaluator(state, env, strengthRatio, simulationTurnsCount);
 
 					innerEvaluator.updateReachabilityMap(state);
 
-					auto moveTarget = innerEvaluator.findMoveTowardsUnreachable(activeStack, innerTargets, innerCache, state);
+					auto moveTarget = innerEvaluator.findMoveTowardsUnreachable(modelActive.get(), innerTargets, innerCache, state);
 
 					if(!innerTargets.possibleAttacks.empty())
 					{
-						auto newStackAction = innerEvaluator.findBestTarget(activeStack, innerTargets, innerCache, state);
+						auto newStackAction = innerEvaluator.findBestTarget(modelActive.get(), innerTargets, innerCache, state);
 
 						stackActionScore = std::max(moveTarget.score, newStackAction.score);
 					}

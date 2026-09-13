@@ -53,6 +53,54 @@ protected:
 	}
 };
 
+TEST_F(NewHorizonsMagicAITest, TeleportEvaluatorMovesSlowArmyToDistantThreatWithoutMutatingLivePreview)
+{
+	useCommands = false; // Isolate the already-authored spell, not a new command rule.
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::TELEPORT);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")),
+		3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+
+	const BattleHex origin(2, 5);
+	const BattleHex distantPosition(14, 5);
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:stoneGolem"), origin, 300);
+	addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(3, 5), 1);
+	auto * distant = addStack(BattleSide::DEFENDER, creatureByName("core:archer"), distantPosition, 150);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	ASSERT_LT(active->getMovementRange() * 2, BattleHex::getDistance(origin, distantPosition));
+	const auto * spell = SpellID(SpellID::TELEPORT).toSpell();
+	ASSERT_TRUE(spell->canBeCast(battle(), spells::Mode::HERO, attackerSideHero));
+	const auto cost = attackerSideHero->getSpellCost(spell);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	ASSERT_EQ(action.actionType, EActionType::HERO_SPELL);
+	ASSERT_EQ(action.spell, SpellID::TELEPORT);
+	EXPECT_EQ(active->getPosition(), origin);
+	EXPECT_EQ(distant->getPosition(), distantPosition);
+	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_NE(active->getPosition(), origin);
+	EXPECT_EQ(distant->getPosition(), distantPosition);
+	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
+}
+
 TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 {
 	// No magic-setting fixture override: actual curated module activation must
