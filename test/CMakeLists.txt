@@ -151,6 +151,7 @@ set(test_SRCS
 		server/battles/HeroCommandPersistenceTest.cpp
 		server/battles/HeroCommandFixtureExportTest.cpp
 		server/battles/HeroCommandRejectionTest.cpp
+		server/battles/HeroCommandRejectionAtomicityTest.cpp
 		server/battles/HeroCommandEligibilityTest.cpp
 		server/battles/HeroCommandCloneTest.cpp
 		server/battles/HeroCommandTurnLifecycleTest.cpp
