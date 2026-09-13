@@ -12,6 +12,7 @@
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
+#include "../../AI/BattleAI/PotentialTargets.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 
@@ -44,6 +45,71 @@ protected:
 		cache.buildDamageCache(model, BattleSide::ATTACKER);
 	}
 };
+
+TEST_F(AttackResourceProjectionTest, FutureProductionLoopRetaliatesOnlyOnFirstStrike)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * opening = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(7, 5), 1000);
+	auto * followup = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(8, 4), 1000);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(8, 5), 1000);
+	Bonus speed;
+	speed.type = BonusType::STACKS_SPEED;
+	speed.val = 20;
+	opening->addNewBonus(std::make_shared<Bonus>(speed));
+	speed.val = 10;
+	followup->addNewBonus(std::make_shared<Bonus>(speed));
+	Bonus extra;
+	extra.type = BonusType::ADDITIONAL_ATTACK;
+	extra.val = 1;
+	followup->addNewBonus(std::make_shared<Bonus>(extra));
+	extra.type = BonusType::ADDITIONAL_RETALIATION;
+	extra.val = 2;
+	defender->addNewBonus(std::make_shared<Bonus>(extra));
+	defender->movedThisRound = true;
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = opening->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	ASSERT_EQ(defender->counterAttacks.available(), 3);
+	ASSERT_EQ(followup->getTotalAttacks(false), 2);
+	prepareModel();
+	ASSERT_TRUE(model->isMeleeAttackPossible(opening, defender));
+	ASSERT_TRUE(model->isMeleeAttackPossible(followup, defender));
+	const auto attack = AttackPossibility::evaluate(BattleAttackInfo(opening, defender, 0, false),
+		opening->getPosition(), cache, model);
+	PotentialTargets targets(opening, cache, model);
+	BattleExchangeEvaluator evaluator(callback, environment, 1.0f, 1);
+	evaluator.updateReachabilityMap(model);
+	const auto units = evaluator.getExchangeUnits(attack, 0, targets, model);
+	ASSERT_EQ(units.units.size(), 2u);
+	ASSERT_EQ(units.units.at(0).size(), 2u);
+	ASSERT_EQ(units.units.at(0).at(0)->unitId(), opening->unitId());
+	ASSERT_EQ(units.units.at(0).at(1)->unitId(), followup->unitId());
+	const auto actual = evaluator.evaluateExchange(attack, 0, targets, cache, model);
+
+	const auto referenceScore = [&](bool repeatRetaliation)
+	{
+		auto reference = std::make_shared<HypotheticBattle>(environment.get(), callback);
+		BattleExchangeVariant expected;
+		expected.trackAttack(attack, reference, cache);
+		for(int index = 0; index < 2; ++index)
+			expected.trackAttack(reference->getForUpdate(followup->unitId()), reference->getForUpdate(defender->unitId()),
+				false, true, cache, reference, false, repeatRetaliation || index == 0);
+		// One simulated round is scaled over the two-round reachability horizon.
+		return (expected.getScore().enemyDamageReduce - expected.getScore().ourDamageReduce) / 2.0f;
+	};
+	const auto expected = referenceScore(false);
+	const auto repeated = referenceScore(true);
+	ASSERT_GT(expected, repeated);
+	EXPECT_FLOAT_EQ(actual, expected);
+	EXPECT_EQ(defender->counterAttacks.available(), 3);
+}
 
 TEST_F(AttackResourceProjectionTest, TwoStrikeSequenceAllowsOnlyOneRetaliationLikeAuthority)
 {
