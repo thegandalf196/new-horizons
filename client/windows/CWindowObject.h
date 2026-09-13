@@ -30,6 +30,8 @@ protected:
 	//To display border
 	void updateShadow();
 	void setBackground(const ImagePath & filename);
+	// Change presentation flags only; popup/input semantics remain unchanged.
+	void setBackgroundPresentation(const ImagePath & filename, int presentationOptions);
 	std::shared_ptr<CPicture> createBg(const ImagePath & imageName, int windowOptions);
 	std::shared_ptr<CPicture> createPlayerColoredBorderedStatusbar(const std::shared_ptr<CPicture> & image, PlayerColor playerColor);
 public:

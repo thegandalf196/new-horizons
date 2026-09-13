@@ -94,6 +94,17 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::shared_ptr<CArtifactsOfHeroMain> arts;
 
 	std::vector<std::shared_ptr<CLabel>> labels;
+	bool newHorizonsLayout = false;
+	std::vector<std::shared_ptr<LRClickableAreaWText>> provisionalAbilityAreas;
+	std::vector<std::shared_ptr<CLabel>> growthValues;
+	std::shared_ptr<CLabel> leadershipValue;
+	std::shared_ptr<CLabel> movementValue;
+	std::shared_ptr<CLabel> legacySiegeValue;
+	std::shared_ptr<LRClickableAreaWText> leadershipArea;
+	std::shared_ptr<LRClickableAreaWText> movementArea;
+	std::shared_ptr<LRClickableAreaWText> legacySiegeArea;
+	void configureNewHorizonsLayout();
+	void restoreLegacyLayout();
 
 public:
 	const CGHeroInstance * curHero;
@@ -102,6 +113,7 @@ public:
 
 	void updateArtifacts() override;
 	void keyPressed(EShortcut key) override;
+	void onScreenResize() override;
 
 	void dismissCurrent(); //dismissed currently displayed hero (curHero)
 	void commanderWindow();

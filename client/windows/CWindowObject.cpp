@@ -162,6 +162,18 @@ void CWindowObject::setBackground(const ImagePath & filename)
 	updateShadow();
 }
 
+void CWindowObject::setBackgroundPresentation(const ImagePath & filename, int presentationOptions)
+{
+	constexpr int presentationMask = PLAYER_COLORED | BORDERED | SHADOW_DISABLED | PLAYER_COLORED_BORDERED_STATUSBAR;
+	options = (options & ~presentationMask) | (presentationOptions & presentationMask);
+	setBackground(filename);
+	// Unlike construction-time setBackground calls, live replacement must stay
+	// behind the retained controls. createBg appends its new picture as a child.
+	const auto backgroundChild = std::find(children.begin(), children.end(), background.get());
+	if(backgroundChild != children.end())
+		std::rotate(children.begin(), backgroundChild, std::next(backgroundChild));
+}
+
 void CWindowObject::updateShadow()
 {
 	setShadow(false);

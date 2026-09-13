@@ -107,6 +107,7 @@ void AssetGenerator::initialize()
 	}
 
 	addBackpackBackground("heroBackpackDialog", Point(426, 465));
+	imageFiles[ImagePath::builtin("newHorizonsHeroBackground.png")] = [this](){ return createNewHorizonsHeroBackground(); };
 
 	imageFiles[ImagePath::builtin("questDialog.png")] = [this](){ return createQuestWindow();};
 	imageFiles[ImagePath::builtin("stackArtifactIndicatorSmall.png")] = [this](){ return createStackArtifactIndicator(Point(14, 14));};
@@ -1503,6 +1504,75 @@ AssetGenerator::CanvasPtr AssetGenerator::createDialogBackground(const Point & s
 		canvas.drawColorBlended(Rect(0, size.y - statusBarOverlayHeight, size.x, statusBarOverlayHeight), ColorRGBA(0, 0, 0, 88));
 	}
 
+	return image;
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() const
+{
+	// Resource composition only: never load the private, flattened design preview.
+	auto image = createDialogBackground(Point(800, 624));
+	Canvas canvas = image->getCanvas();
+	auto blue = ENGINE->renderHandler().loadImage(ImageLocator(ImagePath::builtin("DialogBoxBackground_blue"), EImageBlitMode::OPAQUE));
+
+	// Both regions share one texture origin. Cell shading must not restart its phase.
+	for(const Rect region : {Rect(12, 544, 720, 64), Rect(734, 12, 58, 596)})
+	{
+		for(int y = region.y; y < region.y + region.h;)
+		{
+			const int sourceY = y % blue->height();
+			const int height = std::min(blue->height() - sourceY, region.y + region.h - y);
+			for(int x = region.x; x < region.x + region.w;)
+			{
+				const int sourceX = x % blue->width();
+				const int width = std::min(blue->width() - sourceX, region.x + region.w - x);
+				canvas.draw(blue, Point(x, y), Rect(sourceX, sourceY, width, height));
+				x += width;
+			}
+			y += height;
+		}
+	}
+
+	// Translate the native equipment panel and slot silhouettes without scaling.
+	// Purchaser resource stays external; controls/artifacts are drawn by the consumer.
+	auto equipment = ENGINE->renderHandler().loadImage(ImageLocator(ImagePath::builtin("HeroScr3"), EImageBlitMode::OPAQUE));
+	equipment->playerColored(PlayerColor(1));
+	canvas.draw(equipment, Point(434, 89), Rect(304, 15, 296, 390));
+
+	const ColorRGBA edge(128, 100, 75);
+	for(int row = 0; row < 8; ++row)
+	{
+		canvas.drawBorder(Rect(12, 192 + row * 44, 126, 44), edge);
+		for(int ability = 0; ability < 3; ++ability)
+		{
+			canvas.drawBorder(Rect(138 + ability * 98, 192 + row * 44, 98, 44), edge);
+			const Rect placeholder(140 + ability * 98, 198 + row * 44, 32, 32);
+			canvas.drawColorBlended(placeholder, ColorRGBA(0, 0, 0, 36));
+			canvas.drawBorder(placeholder, edge);
+		}
+		const Rect portrait(739, 82 + row * 54, 48, 32);
+		canvas.drawColorBlended(portrait, ColorRGBA(0, 0, 0, 28));
+		canvas.drawBorder(portrait, edge);
+	}
+	for(int slot = 0; slot < 7; ++slot)
+	{
+		const Rect army(12 + slot * 66, 544, 58, 64);
+		canvas.drawColorBlended(army, ColorRGBA(0, 0, 0, 36));
+		canvas.drawBorder(army, edge);
+	}
+	for(int column = 0; column < 6; ++column)
+		canvas.drawBorder(Rect(236 + column * 82, 12, 82, 76), edge);
+	for(int field = 0; field < 6; ++field)
+	{
+		canvas.drawBorder(Rect(12 + field % 3 * 140, 88 + field / 3 * 44, 140, 44), edge);
+		if(field == 1 || field == 4 || field == 5)
+		{
+			const Rect placeholder(14 + field % 3 * 140, 88 + field / 3 * 44, 44, 44);
+			canvas.drawColorBlended(placeholder, ColorRGBA(0, 0, 0, 36));
+			canvas.drawBorder(placeholder, edge);
+		}
+	}
+	canvas.drawBorder(Rect(12, 12, 216, 76), edge);
+	canvas.drawBorder(Rect(0, 608, 800, 16), edge);
 	return image;
 }
 
