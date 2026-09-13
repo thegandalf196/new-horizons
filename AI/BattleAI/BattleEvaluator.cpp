@@ -765,7 +765,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				// Removed sacrifice victims must remain in the health accounting below.
 				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return !u->isTurret(); });
 
-				auto needFullEval = state->hasObstacleChanges()
+				auto needFullEval = state->hasObstacleChanges() || state->hasWallChanges()
 					|| vstd::contains_if(allUnits, [&](const battle::Unit * u) -> bool
 					{
 						auto original = cb->getBattle(battleID)->battleGetUnitByID(u->unitId());

@@ -241,6 +241,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HypotheticCloneTest.cpp
 		battleAI/HypotheticTimedSpellTest.cpp
 		battleAI/HypotheticObstacleTest.cpp
+		battleAI/HypotheticWallTest.cpp
 	)
 endif()
 

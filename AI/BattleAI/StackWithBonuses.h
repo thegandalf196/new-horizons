@@ -137,6 +137,9 @@ public:
 	BattleID getBattleID() const override;
 	ObstacleCList getAllObstacles() const override;
 	bool hasObstacleChanges() const { return obstacleChanges; }
+	bool hasWallChanges() const { return wallChanges; }
+	EWallState getWallState(EWallPart part) const override;
+	EGateState getGateState() const override;
 
 	int32_t getActiveStackID() const override;
 	int32_t getRound() const override;
@@ -226,6 +229,9 @@ private:
 	int32_t projectedRound;
 	ObstacleCList projectedObstacles;
 	bool obstacleChanges = false;
+	std::map<EWallPart, EWallState> projectedWalls;
+	EGateState initialGateState = EGateState::NONE;
+	bool wallChanges = false;
 	mutable uint32_t nextId;
 
 	std::unique_ptr<HypotheticServerCallback> serverCallback;

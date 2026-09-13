@@ -302,6 +302,12 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	auto activeUnit = realBattle->battleActiveUnit();
 	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
 	projectedRound = realBattle->battleGetRound();
+	for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
+	{
+		const auto part = static_cast<EWallPart>(index);
+		projectedWalls[part] = BattleProxy::getWallState(part);
+	}
+	initialGateState = BattleProxy::getGateState();
 	// Use the subject's visible view, not its unfiltered authoritative obstacle list.
 	for(const auto & obstacle : BattleProxy::getAllObstacles())
 	{
@@ -523,9 +529,23 @@ void HypotheticBattle::removeUnitBonus(uint32_t id, const std::vector<Bonus> & b
 	bonusTreeVersion++;
 }
 
+EWallState HypotheticBattle::getWallState(EWallPart part) const
+{
+	return projectedWalls.at(part);
+}
+
+EGateState HypotheticBattle::getGateState() const
+{
+	// The authoritative BattleProcessor derives this after catapult/earthquake
+	// damage. A destroyed gate must not remain closed in the projected pathfinder.
+	return getWallState(EWallPart::GATE) == EWallState::DESTROYED
+		? EGateState::DESTROYED : initialGateState;
+}
+
 void HypotheticBattle::setWallState(EWallPart partOfWall, EWallState state)
 {
-	//TODO:HypotheticBattle::setWallState
+	wallChanges |= projectedWalls[partOfWall] != state;
+	projectedWalls[partOfWall] = state;
 }
 
 void HypotheticBattle::addObstacle(const ObstacleChanges & changes)
