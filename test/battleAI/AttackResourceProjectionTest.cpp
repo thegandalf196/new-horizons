@@ -45,6 +45,52 @@ protected:
 	}
 };
 
+TEST_F(AttackResourceProjectionTest, TwoStrikeSequenceAllowsOnlyOneRetaliationLikeAuthority)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(7, 5), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(8, 5), 100);
+	Bonus extraAttack;
+	extraAttack.type = BonusType::ADDITIONAL_ATTACK;
+	extraAttack.val = 1;
+	attacker->addNewBonus(std::make_shared<Bonus>(extraAttack));
+	Bonus extraRetaliation;
+	extraRetaliation.type = BonusType::ADDITIONAL_RETALIATION;
+	extraRetaliation.val = 1;
+	defender->addNewBonus(std::make_shared<Bonus>(extraRetaliation));
+	ASSERT_EQ(attacker->getTotalAttacks(false), 2);
+	ASSERT_EQ(defender->counterAttacks.available(), 2);
+	prepareModel();
+	const auto attack = AttackPossibility::evaluate(BattleAttackInfo(attacker, defender, 0, false),
+		attacker->getPosition(), cache, model);
+	const auto affected = std::find_if(attack.affectedUnits.begin(), attack.affectedUnits.end(),
+		[&](const auto & unit){ return unit->unitId() == defender->unitId(); });
+	ASSERT_NE(affected, attack.affectedUnits.end());
+	ASSERT_TRUE((*affected)->alive());
+	EXPECT_EQ((*affected)->counterAttacks.available(), 1);
+	BattleExchangeVariant exchange;
+	exchange.trackAttack(attack, model, cache);
+	EXPECT_EQ(model->getForUpdate(defender->unitId())->counterAttacks.available(), 1);
+
+	auto direct = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	BattleExchangeVariant future;
+	for(int index = 0; index < 2; ++index)
+		future.trackAttack(direct->getForUpdate(attacker->unitId()), direct->getForUpdate(defender->unitId()),
+			false, true, cache, direct, false, index == 0);
+	EXPECT_EQ(direct->getForUpdate(defender->unitId())->counterAttacks.available(), 1);
+	EXPECT_EQ(defender->counterAttacks.available(), 2);
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = attacker->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeMeleeAttack(attacker, defender->getPosition(), attacker->getPosition())));
+	ASSERT_TRUE(defender->alive());
+	EXPECT_EQ(defender->counterAttacks.available(), 1);
+}
+
 TEST_F(AttackResourceProjectionTest, TrackingTwoShotPreviewConsumesBothShotsOnlyInModel)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareCommands());

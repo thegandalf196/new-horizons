@@ -132,7 +132,8 @@ float BattleExchangeVariant::trackAttack(
 	bool isOurAttack,
 	DamageCache & damageCache,
 	std::shared_ptr<HypotheticBattle> hb,
-	bool evaluateOnly)
+	bool evaluateOnly,
+	bool allowRetaliation)
 {
 	const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
 	static const auto selectorBlocksRetaliation = Selector::type()(BonusType::BLOCKS_RETALIATION);
@@ -166,7 +167,7 @@ float BattleExchangeVariant::trackAttack(
 		attacker->afterAttack(shooting, false);
 	}
 
-	if(!evaluateOnly && defender->alive() && defender->ableToRetaliate() && !counterAttacksBlocked && !shooting)
+	if(!evaluateOnly && allowRetaliation && defender->alive() && defender->ableToRetaliate() && !counterAttacksBlocked && !shooting)
 	{
 		auto retaliationDamage = damageCache.getDamage(defender.get(), attacker.get(), hb);
 		attackerDamageReduce = AttackPossibility::calculateDamageReduce(defender.get(), attacker.get(), retaliationDamage, damageCache, hb);
@@ -838,7 +839,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			{
 				for(int i = 0; i < totalAttacks; i++)
 				{
-					v.trackAttack(attacker, defender, shooting, isOur, damageCache, exchangeBattle);
+					v.trackAttack(attacker, defender, shooting, isOur, damageCache, exchangeBattle, false, i == 0);
 
 					if(!attacker->alive() || !defender->alive())
 						break;

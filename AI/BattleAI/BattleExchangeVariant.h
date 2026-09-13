@@ -100,7 +100,8 @@ public:
 		bool isOurAttack,
 		DamageCache & damageCache,
 		std::shared_ptr<HypotheticBattle> hb,
-		bool evaluateOnly = false);
+		bool evaluateOnly = false,
+		bool allowRetaliation = true);
 
 	const BattleScore & getScore() const { return dpsScore; }
 
