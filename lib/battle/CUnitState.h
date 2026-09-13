@@ -52,6 +52,7 @@ class DLL_LINKAGE CShots : public CAmmo
 {
 public:
 	explicit CShots(const battle::Unit * Owner);
+	CShots & operator=(const CShots & other);
 
 	bool isLimited() const override;
 	int32_t total() const override;
@@ -73,6 +74,7 @@ class DLL_LINKAGE CRetaliations : public CAmmo
 {
 public:
 	explicit CRetaliations(const battle::Unit * Owner);
+	CRetaliations & operator=(const CRetaliations & other);
 
 	bool isLimited() const override;
 	int32_t total() const override;

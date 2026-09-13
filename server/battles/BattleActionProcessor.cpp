@@ -741,6 +741,8 @@ bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & bat
 
 bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
+	if(ba.command == HeroCommand::FOCUS_FIRE)
+		return true; // Validated contextual state was published atomically by StartAction.
 	const auto * hero = battle.battleGetFightingHero(ba.side);
 	const auto effects = heroCommands::bonuses(battle.getBattle()->getHeroCommandRules(), ba.command, *hero);
 	SetStackEffect update;
@@ -776,11 +778,21 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		gameHandler->complain("Hero spell unavailable under the shared round action budget");
 		return false;
 	}
-	if(ba.actionType == EActionType::HERO_COMMAND
-		&& (!ba.target.empty() || ba.spell.hasValue() || !battle.battleCanUseHeroCommand(ba.side, ba.command)))
+	std::optional<FocusFireState> preparedFocusFire;
+	if(ba.actionType == EActionType::HERO_COMMAND)
 	{
-		gameHandler->complain("Hero command unavailable: ruleset, ownership, target, or round action budget");
-		return false;
+		const bool targeted = ba.command == HeroCommand::FOCUS_FIRE;
+		if(targeted && !ba.spell.hasValue() && ba.target.size() == 1
+			&& ba.target.front().unitValue >= 0 && ba.target.front().hexValue == BattleHex::INVALID
+			&& ba.stackNumber == static_cast<uint32_t>(ba.side == BattleSide::ATTACKER ? -1 : -2))
+			preparedFocusFire = battle.battlePrepareFocusFireState(ba.side, ba.target.front().unitValue);
+		const bool available = !ba.spell.hasValue() && (targeted ? preparedFocusFire.has_value()
+			: ba.target.empty() && battle.battleCanUseHeroCommand(ba.side, ba.command));
+		if(!available)
+		{
+			gameHandler->complain("Hero command unavailable: ruleset, ownership, target, or round action budget");
+			return false;
+		}
 	}
 	logGlobal->trace("Making action: %s", ba.toString());
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
@@ -790,6 +802,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	{
 		StartAction startAction(ba);
 		startAction.battleID = battle.getBattle()->getBattleID();
+		startAction.focusFire = preparedFocusFire;
 		gameHandler->sendAndApply(startAction);
 	}
 
@@ -1436,6 +1449,7 @@ void BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battl
 	bsa.stackAttacked = def->unitId();
 
 	BattleAttackInfo bai(attackerState.get(), def, distance, bat.shot());
+	bai.secondaryAttack = secondary;
 	bai.deathBlow = bat.deathBlow();
 	bai.doubleDamage = bat.ballistaDoubleDmg();
 	// SoD: lucky strike only affects creature that was directly attacked; HotA: affects every target of a multi-target attack

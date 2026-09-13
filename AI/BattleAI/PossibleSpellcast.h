@@ -14,6 +14,7 @@
 
 #include "../../lib/battle/Destination.h"
 #include "../../lib/battle/HeroCommand.h"
+#include "../../lib/battle/FocusFireState.h"
 
 class CSpell;
 
@@ -23,6 +24,7 @@ public:
 	using ValueMap = std::map<uint32_t, int64_t>;
 
 	HeroCommand command = HeroCommand::NONE;
+	std::optional<FocusFireState> focusFire;
 	std::string name() const;
 	const CSpell * spell;
 	spells::Target dest;

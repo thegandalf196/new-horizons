@@ -42,6 +42,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// Zero keeps the legacy base/artifact Attack formula. Positive values come
 	/// exclusively from the owning hero's saved capability rules and Artillery.
 	int siegeSkillMultiplier = 0;
+	/// Additive ranged premium for this exact primary target; zero is legacy/no mark.
+	int targetedRangedCommandPercent = 0;
 
 	/// Which of the bonus types the script declared an interest in each of the two carries
 	std::unordered_map<std::string, bool> attackerBonuses;
@@ -65,6 +67,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("defenderBonuses", defenderBonuses, "Bonus types the defender carries.");
 		s("chargeDistance", chargeDistance, "Hexes crossed to reach the target, which is what jousting scales with.");
 		s("shooting", shooting, "Whether the blow is a shot.");
+		s("targetedRangedCommandPercent", targetedRangedCommandPercent, "Target-specific additive ranged premium.");
 		s("luckyStrike", luckyStrike, "Whether luck struck.");
 		s("unluckyStrike", unluckyStrike, "Whether bad luck struck.");
 		s("deathBlow", deathBlow, "Whether a death blow was rolled.");

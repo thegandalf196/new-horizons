@@ -20,6 +20,7 @@
 #include "PossiblePlayerBattleAction.h"
 #include "../bonuses/BonusParameters.h"
 #include "../entities/building/TownFortifications.h"
+#include "../entities/artifact/CArtifactInstance.h"
 #include "../GameLibrary.h"
 #include "../combatScripts/IDamageCalculatorScript.h"
 #include "../scripting/ScriptService.h"
@@ -133,7 +134,7 @@ static BattleHex WallPartToHex(EWallPart part)
 
 bool CBattleInfoCallback::battleUsesHeroCommands() const
 {
-	return getBattle() && getBattle()->getHeroCommandRules()["rulesetVersion"].Integer() == heroCommands::RULESET_VERSION;
+	return getBattle() && heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE);
 }
 
 HeroCommand CBattleInfoCallback::battleGetActiveDoctrine(BattleSide side) const
@@ -150,16 +151,21 @@ HeroCommand CBattleInfoCallback::battleGetActiveOrder(BattleSide side) const
 	return getBattle()->getActiveOrder(side);
 }
 
-bool CBattleInfoCallback::battleCanUseHeroCommand(BattleSide side, HeroCommand command) const
+bool CBattleInfoCallback::battleHeroCommandCommonAvailable(BattleSide side, HeroCommand command) const
 {
-	if(!battleUsesHeroCommands() || !heroCommands::valid(command)
+	if(!getBattle() || !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), command)
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		|| battleTacticDist() || !battleGetFightingHero(side)
 		|| getBattle()->getHeroCommandUsed(side) || battleCastSpells(side) != 0
 		|| battleGetActiveDoctrine(side) == command)
 		return false;
 	const auto * active = battleActiveUnit();
-	if(!active || battleGetOwner(active) != sideToPlayer(side))
+	return active && battleGetOwner(active) == sideToPlayer(side);
+}
+
+bool CBattleInfoCallback::battleCanUseHeroCommand(BattleSide side, HeroCommand command) const
+{
+	if(command == HeroCommand::FOCUS_FIRE || !battleHeroCommandCommonAvailable(side, command))
 		return false;
 	for(const auto * unit : battleGetAllStacks())
 	{
@@ -168,6 +174,126 @@ bool CBattleInfoCallback::battleCanUseHeroCommand(BattleSide side, HeroCommand c
 			return true;
 	}
 	return false;
+}
+
+bool CBattleInfoCallback::battleUnitHasAmmoCart(const battle::Unit * unit) const
+{
+	if(!getBattle() || !unit)
+		return false;
+	const auto carts = battleGetUnitsIf([this, unit](const battle::Unit * candidate)
+	{
+		return candidate->isAmmoCart() && battleMatchOwner(candidate, unit, true);
+	});
+	// Preserve the original first-matching-cart policy, including a destroyed cart.
+	// Hypothetical enumeration must retain real battle order, not sort by ID.
+	if(!carts.empty())
+		return carts.front()->alive();
+	const auto * hero = battleGetOwnerHero(unit);
+	if(!hero)
+		return false;
+	const auto artifact = hero->artifactsWorn.find(ArtifactPosition::MACH2);
+	return artifact != hero->artifactsWorn.end()
+		&& artifact->second.getArt()->getTypeId() == ArtifactID::AMMO_CART;
+}
+
+bool CBattleInfoCallback::battleIsFocusFireRecipient(const battle::Unit * unit, BattleSide side) const
+{
+	return unit && unit->alive() && !unit->isGhost() && unit->isShooter()
+		&& battleGetOwner(unit) == sideToPlayer(side) && !unit->isTurret()
+		&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+}
+
+bool CBattleInfoCallback::battleCanConfirmHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId) const
+{
+	if(command != HeroCommand::FOCUS_FIRE || !battleHeroCommandCommonAvailable(side, command)
+		|| battleGetRound() < 1 || targetUnitId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
+		return false;
+	const auto * target = battleGetUnitByID(targetUnitId);
+	if(!target || target->isGhost() || !target->isValidTarget() || target->isInvincible()
+		|| battleGetOwner(target) == sideToPlayer(side))
+		return false;
+	for(const auto * unit : battleAliveUnits())
+	{
+		// Shot legality is static: already-acted units do not disable issuing.
+		if(battleIsFocusFireRecipient(unit, side) && battleCanShoot(unit, target->getPosition()))
+			return true;
+	}
+	return false;
+}
+
+std::vector<uint32_t> CBattleInfoCallback::battleGetHeroCommandTargets(BattleSide side, HeroCommand command) const
+{
+	std::vector<uint32_t> result;
+	if(command != HeroCommand::FOCUS_FIRE || !battleHeroCommandCommonAvailable(side, command))
+		return result;
+	for(const auto * unit : battleAliveUnits())
+	{
+		if(battleCanConfirmHeroCommand(side, command, unit->unitId()))
+			result.push_back(unit->unitId());
+	}
+	std::sort(result.begin(), result.end());
+	return result;
+}
+
+bool CBattleInfoCallback::battleCanBeginHeroCommand(BattleSide side, HeroCommand command) const
+{
+	if(command == HeroCommand::FOCUS_FIRE)
+		return !battleGetHeroCommandTargets(side, command).empty();
+	return battleCanUseHeroCommand(side, command);
+}
+
+std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(BattleSide side,
+	uint32_t targetUnitId) const
+{
+	if(!battleCanConfirmHeroCommand(side, HeroCommand::FOCUS_FIRE, targetUnitId))
+		return {};
+	FocusFireState result;
+	result.targetUnitId = targetUnitId;
+	result.issuedRound = battleGetRound();
+	const auto * hero = battleGetFightingHero(side);
+	const auto & formula = getBattle()->getHeroCommandRules()["commands"]["focusFire"]["effects"]["rangedDamagePercent"];
+	result.rangedDamagePercent = heroCommands::coefficient(formula,
+		hero->getPrimSkillLevel(PrimarySkill::ATTACK), hero->getPrimSkillLevel(PrimarySkill::DEFENSE));
+	const auto recipients = battleGetUnitsIf([this, side](const battle::Unit * unit)
+	{
+		return battleIsFocusFireRecipient(unit, side);
+	});
+	for(const auto * unit : recipients)
+		result.recipientUnitIds.push_back(unit->unitId());
+	std::sort(result.recipientUnitIds.begin(), result.recipientUnitIds.end());
+	result.validateShape();
+	return result;
+}
+
+std::optional<FocusFireState> CBattleInfoCallback::battleGetFocusFireState(BattleSide side) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return {};
+	return getBattle()->getFocusFireState(side);
+}
+
+bool CBattleInfoCallback::battleIsFocusFireTargetActive(BattleSide side) const
+{
+	const auto mark = battleGetFocusFireState(side);
+	if(!mark || mark->issuedRound != battleGetRound())
+		return false;
+	const auto * target = battleGetUnitByID(mark->targetUnitId);
+	return target && target->alive() && !target->isGhost() && battleGetOwner(target) != sideToPlayer(side);
+}
+
+int CBattleInfoCallback::battleTargetedRangedCommandPercent(const battle::Unit * attacker,
+	const battle::Unit * defender, bool shooting, bool secondaryAttack) const
+{
+	if(!shooting || secondaryAttack || !getBattle() || !attacker || !defender || !attacker->alive() || attacker->isGhost()
+		|| !defender->alive() || defender->isGhost() || battleGetOwner(attacker) == battleGetOwner(defender))
+		return 0;
+	const auto side = playerToSide(battleGetOwner(attacker));
+	const auto mark = battleGetFocusFireState(side);
+	if(!mark || mark->issuedRound != battleGetRound() || mark->targetUnitId != defender->unitId()
+		|| !std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), attacker->unitId()))
+		return 0;
+	return mark->rangedDamagePercent;
 }
 
 ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster * caster, spells::Mode mode) const
@@ -1178,6 +1304,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.defenderHex = info.defenderPos.isValid() ? info.defenderPos : info.defender->getPosition();
 	payload.chargeDistance = info.chargeDistance;
 	payload.shooting = info.shooting;
+	payload.targetedRangedCommandPercent = battleTargetedRangedCommandPercent(
+		info.attacker, info.defender, info.shooting, info.secondaryAttack);
 	payload.luckyStrike = info.luckyStrike;
 	payload.unluckyStrike = info.unluckyStrike;
 	payload.deathBlow = info.deathBlow;
@@ -1290,10 +1418,12 @@ DamageEstimation CBattleInfoCallback::estimateSpellLikeAttackDamage(const battle
 		return {};
 
 	DamageEstimation total {};
+	const auto * primary = battleGetUnitByPos(aimHex);
 
 	for(const battle::Unit * u : affected)
 	{
 		BattleAttackInfo bai(shooter, u, 0, true);
+		bai.secondaryAttack = !primary || primary->unitId() != u->unitId();
 		DamageEstimation de = calculateDmgRange(bai);
 
 		total.damage.min += de.damage.min;
@@ -2035,14 +2165,16 @@ battle::Units CBattleInfoCallback::getAttackedBattleUnits(
 	else
 		at = getPotentiallyAttackableHexes(attacker, defender, destinationTile, attackerPos, defenderPos);
 
-	units = battleGetUnitsIf([=](const battle::Unit * unit)
+	units = battleGetUnitsIf([this, at, attacker](const battle::Unit * unit)
 	{
 		if (unit->isGhost() || !unit->alive() || unit->isInvincible())
 			return false;
 
 		for (const BattleHex & hex : unit->getHexes())
 		{
-			if (at.hostileCreaturePositions.contains(hex))
+			// Match authoritative getAttackedCreatures: hostile-only splash must
+			// use current control, while friendly-fire tiles can hit either side.
+			if (at.hostileCreaturePositions.contains(hex) && battleGetOwner(attacker) != battleGetOwner(unit))
 				return true;
 			if (at.friendlyCreaturePositions.contains(hex))
 				return true;

@@ -226,6 +226,13 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+		{
+			heroCommands::validateRules(heroCommandRules);
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
+				&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
+				throw std::runtime_error("Cannot discard New Horizons targeted world rules");
+		}
 		h & scenarioOps;
 		h & initialOpts;
 		h & actingPlayers;
@@ -250,7 +257,12 @@ public:
 		{
 			h & heroCommandRules;
 			if(!h.saving)
+			{
 				heroCommands::validateRules(heroCommandRules);
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
+					&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
+					throw std::runtime_error("Targeted world rules require the new save format");
+			}
 		}
 		else if(!h.saving)
 		{

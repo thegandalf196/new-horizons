@@ -27,6 +27,7 @@ struct DLL_LINKAGE BattleAttackInfo
 
 	int chargeDistance = 0;
 	bool shooting      = false;
+	bool secondaryAttack = false; // Collateral cannot inherit a targeted primary-shot Order.
 	bool luckyStrike   = false;
 	bool unluckyStrike = false;
 	bool deathBlow     = false;

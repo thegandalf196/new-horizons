@@ -136,6 +136,8 @@ public:
 	std::shared_ptr<StackWithBonuses> getForUpdate(uint32_t id);
 
 	BattleID getBattleID() const override;
+	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override;
+	void setFocusFireState(BattleSide side, const FocusFireState & state);
 	ObstacleCList getAllObstacles() const override;
 	bool hasObstacleChanges() const { return obstacleChanges; }
 	bool hasWallChanges() const { return wallChanges; }
@@ -185,6 +187,7 @@ public:
 	const scripting::Pool & getScriptContextPool() const override;
 
 private:
+	std::map<BattleSide, std::optional<FocusFireState>> focusFireStates;
 
 	class HypotheticServerCallback : public ServerCallback
 	{

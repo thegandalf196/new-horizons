@@ -33,6 +33,8 @@ set(test_SRCS
  		battle/CHealthTest.cpp
 		battle/CUnitStateTest.cpp
 		battle/CUnitStateMagicTest.cpp
+		battle/FocusFireStateTest.cpp
+		battle/HeroCommandFocusFireRulesTest.cpp
 		battle/battle_UnitTest.cpp
 
 		bonus/BonusSystemTest.cpp
@@ -154,6 +156,9 @@ set(test_SRCS
 		server/battles/HeroCommandRejectionAtomicityTest.cpp
 		server/battles/HeroCommandEligibilityTest.cpp
 		server/battles/HeroCommandCloneTest.cpp
+		server/battles/FocusFireLifecycleTest.cpp
+		server/battles/FocusFirePersistenceTest.cpp
+		server/battles/FocusFireServerTest.cpp
 		server/battles/HeroCommandTurnLifecycleTest.cpp
 		server/battles/NewHorizonsMagicStateTest.cpp
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
@@ -207,6 +212,8 @@ set(test_HEADERS
 
 		server/battles/BattleTestFixture.h
 		server/battles/HeroCommandFixture.h
+		server/battles/FocusFireFixture.h
+		server/battles/BattleStartSnapshotFixture.h
 
 		mock/BattleFake.h
 		mock/GameHandlerTestServer.h
@@ -235,6 +242,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroCommandAITest.cpp
 		battleAI/AttackResourceProjectionTest.cpp
 		battleAI/DamageReductionControlTest.cpp
+		battleAI/FocusFireAITest.cpp
 		battleAI/NewHorizonsMagicAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp
 		battleAI/NewHorizonsHeroGrowthAITest.cpp

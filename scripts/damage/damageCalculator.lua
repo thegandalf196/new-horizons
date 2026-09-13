@@ -260,7 +260,8 @@ end
 function Script:getOffenseArcheryFactor(info)
 	local subtype = info.shooting and DAMAGE_TYPE_RANGED or DAMAGE_TYPE_MELEE
 
-	return getBonusValueOfSubtype(info.attacker, info.attackerBonuses, "PERCENTAGE_DAMAGE_BOOST", subtype) / 100
+	local targetedPremium = info.shooting and (info.targetedRangedCommandPercent or 0) or 0
+	return (getBonusValueOfSubtype(info.attacker, info.attackerBonuses, "PERCENTAGE_DAMAGE_BOOST", subtype) + targetedPremium) / 100
 end
 
 function Script:getBlessFactor(info)

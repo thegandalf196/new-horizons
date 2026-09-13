@@ -513,7 +513,7 @@ bool BattleEvaluator::canCastSpell()
 		if(cb->getBattle(battleID)->battleCanUseHeroCommand(side, command))
 			return true;
 	}
-	return false;
+	return cb->getBattle(battleID)->battleCanBeginHeroCommand(side, HeroCommand::FOCUS_FIRE);
 }
 
 bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)
@@ -564,6 +564,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			possibleCasts.push_back(candidate);
 		}
 	}
+	for(auto targetId : cb->getBattle(battleID)->battleGetHeroCommandTargets(side, HeroCommand::FOCUS_FIRE))
+	{
+		PossibleSpellcast candidate;
+		candidate.command = HeroCommand::FOCUS_FIRE;
+		candidate.focusFire = cb->getBattle(battleID)->battlePrepareFocusFireState(side, targetId);
+		if(candidate.focusFire)
+		{
+			const auto & recipients = candidate.focusFire->recipientUnitIds;
+			const bool hasRemainingShooter = std::any_of(recipients.begin(), recipients.end(), [&](uint32_t id)
+			{
+				const auto * unit = cb->getBattle(battleID)->battleGetUnitByID(id);
+				return unit && unit->willMove(0) && unit->canShoot();
+			});
+			if(hasRemainingShooter)
+				possibleCasts.push_back(candidate);
+		}
+	}
 	LOGFL("Found %d spell-target combinations.", possibleCasts.size());
 	if(possibleCasts.empty())
 		return false;
@@ -582,8 +599,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		{
 			if(!firstRound)
 				state->nextRound();
-			for(auto unit : round)
+			for(auto queuedUnit : round)
 			{
+				const auto * unit = state->battleGetUnitByID(queuedUnit->unitId());
+				if(!unit)
+					continue;
 				if(!vstd::contains(values, unit->unitId()))
 					values[unit->unitId()] = 0;
 
@@ -740,6 +760,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					spells::BattleCast cast(state.get(), hero, spells::Mode::HERO, ps.spell);
 					cast.castEval(state->getServerCallback(), ps.dest);
 				}
+				else if(ps.command == HeroCommand::FOCUS_FIRE)
+				{
+					state->setFocusFireState(side, ps.focusFire.value());
+				}
 				else
 				{
 					const auto effects = heroCommands::bonuses(state->getHeroCommandRules(), ps.command, *hero);
@@ -765,7 +789,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				// Removed sacrifice victims must remain in the health accounting below.
 				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return !u->isTurret(); });
 
-				auto needFullEval = state->hasObstacleChanges() || state->hasWallChanges()
+				auto needFullEval = ps.command == HeroCommand::FOCUS_FIRE
+					|| state->hasObstacleChanges() || state->hasWallChanges()
 					|| vstd::contains_if(allUnits, [&](const battle::Unit * u) -> bool
 					{
 						auto original = cb->getBattle(battleID)->battleGetUnitByID(u->unitId());
@@ -926,7 +951,16 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);
 		if(castToPerform.command != HeroCommand::NONE)
 		{
-			cb->battleMakeSpellAction(battleID, BattleAction::makeHeroCommand(side, castToPerform.command));
+			if(castToPerform.command == HeroCommand::FOCUS_FIRE)
+			{
+				const auto targetId = castToPerform.focusFire.value().targetUnitId;
+				if(!cb->getBattle(battleID)->battleCanConfirmHeroCommand(side, castToPerform.command, targetId))
+					return false;
+				cb->battleMakeSpellAction(battleID,
+					BattleAction::makeTargetedHeroCommand(side, castToPerform.command, targetId));
+			}
+			else
+				cb->battleMakeSpellAction(battleID, BattleAction::makeHeroCommand(side, castToPerform.command));
 			activeActionMade = true;
 			return true;
 		}

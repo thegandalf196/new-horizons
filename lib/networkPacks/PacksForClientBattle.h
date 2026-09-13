@@ -309,6 +309,7 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 
 	BattleID battleID = BattleID::NONE;
 	BattleAction ba;
+	std::optional<FocusFireState> focusFire;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -316,6 +317,18 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 	{
 		h & battleID;
 		h & ba;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
+		{
+			h & focusFire;
+		}
+		else if(h.saving && focusFire)
+		{
+			throw std::runtime_error("Cannot discard targeted StartAction state");
+		}
+		else if(!h.saving)
+		{
+			focusFire.reset();
+		}
 		assert(battleID != BattleID::NONE);
 	}
 };

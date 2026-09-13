@@ -32,6 +32,7 @@ public:
 
 	BattleAction();
 	static BattleAction makeHeroCommand(BattleSide side, HeroCommand command);
+	static BattleAction makeTargetedHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId);
 
 	static BattleAction makeHeal(const battle::Unit * healer, const battle::Unit * healed);
 	static BattleAction makeDefend(const battle::Unit * stack);
@@ -60,6 +61,9 @@ public:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && command == HeroCommand::FOCUS_FIRE
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
+			throw std::runtime_error("Cannot serialize targeted command to an older protocol");
 		h & side;
 		h & stackNumber;
 		h & actionType;
@@ -73,6 +77,9 @@ public:
 		{
 			command = HeroCommand::NONE;
 		}
+		if(!h.saving && command == HeroCommand::FOCUS_FIRE
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
+			throw std::runtime_error("Targeted command requires the new protocol");
 	}
 
 	struct DestinationInfo

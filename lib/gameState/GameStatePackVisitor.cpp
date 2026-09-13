@@ -1307,6 +1307,12 @@ void GameStatePackVisitor::visitCommanderLevelUp(CommanderLevelUp & pack)
 
 void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 {
+	if(!pack.info)
+		throw std::runtime_error("Missing BattleStart state");
+	// Internal connections can deliver packets without binary deserialization.
+	// Validate before localInit attaches armies or changes the canonical battle.
+	heroCommands::validateRules(pack.info->getHeroCommandRules());
+	pack.info->validateFocusFireStates();
 	assert(pack.battleID == gs.nextBattleID);
 
 	pack.info->battleID = gs.nextBattleID;
@@ -1425,10 +1431,31 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 
 void GameStatePackVisitor::visitStartAction(StartAction & pack)
 {
+	const bool targeted = pack.ba.actionType == EActionType::HERO_COMMAND
+		&& pack.ba.command == HeroCommand::FOCUS_FIRE;
+	if(pack.focusFire.has_value() != targeted)
+		throw std::runtime_error("Inconsistent targeted StartAction payload");
+	if(targeted)
+	{
+		if(pack.ba.spell.hasValue() || pack.ba.target.size() != 1 || pack.ba.target.front().unitValue < 0
+			|| pack.ba.target.front().hexValue != BattleHex::INVALID
+			|| pack.ba.stackNumber != static_cast<uint32_t>(pack.ba.side == BattleSide::ATTACKER ? -1 : -2))
+			throw std::runtime_error("Invalid targeted StartAction destination");
+		// Validate against the saved battle context before changing any budget/state.
+		const auto * battleContext = gs.getBattle(pack.battleID);
+		if(!battleContext)
+			throw std::runtime_error("Missing targeted StartAction battle context");
+		const auto expected = battleContext->battlePrepareFocusFireState(
+			pack.ba.side, pack.ba.target.front().unitValue);
+		if(!expected || expected != pack.focusFire)
+			throw std::runtime_error("Invalid targeted StartAction snapshot");
+	}
 	if(pack.ba.actionType == EActionType::HERO_COMMAND)
 	{
 		auto & side = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
 		side.heroCommandUsed = true;
+		if(targeted)
+			side.focusFire = pack.focusFire;
 		if(heroCommands::isDoctrine(pack.ba.command))
 			side.activeDoctrine = pack.ba.command;
 		else

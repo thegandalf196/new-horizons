@@ -264,23 +264,7 @@ const IBonusBearer* CStack::getBonusBearer() const
 
 bool CStack::unitHasAmmoCart(const battle::Unit * unit) const
 {
-	for(const auto & st : battle->stacks)
-	{
-		if(battle->battleMatchOwner(st.get(), unit, true) && st->isAmmoCart())
-		{
-			return st->alive();
-		}
-	}
-	//ammo cart works during creature bank battle while not on battlefield
-	const auto * ownerHero = battle->battleGetOwnerHero(unit);
-	if(ownerHero && ownerHero->artifactsWorn.find(ArtifactPosition::MACH2) != ownerHero->artifactsWorn.end())
-	{
-		if(battle->battleGetOwnerHero(unit)->artifactsWorn.at(ArtifactPosition::MACH2).getArt()->getTypeId() == ArtifactID::AMMO_CART)
-		{
-			return true;
-		}
-	}
-	return false; //will be always false if trying to examine enemy hero in "special battle"
+	return battle->battleUnitHasAmmoCart(unit);
 }
 
 PlayerColor CStack::unitEffectiveOwner(const battle::Unit * unit) const

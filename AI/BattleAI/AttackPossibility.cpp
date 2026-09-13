@@ -127,6 +127,14 @@ void DamageCache::buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleS
 
 int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
+	// IDs alone cannot key a target/controller/round-sensitive premium. Preserve
+	// original-damage snapshots for comparison, but recompute current v2 damage.
+	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE))
+	{
+		if(!attacker->alive())
+			return 0;
+		return averageDmg(hb->battleEstimateDamage(attacker, defender, 0).damage);
+	}
 	bool wasComputedBefore = damageCache[attacker->unitId()].count(defender->unitId());
 
 	if (!wasComputedBefore)
@@ -420,25 +428,36 @@ AttackPossibility AttackPossibility::evaluate(
 
 		for(int i = 0; i < totalAttacks; i++)
 		{
-			if(!ap.attackerState->alive() || !defenderStates[defender->unitId()]->alive())
+			if(!ap.attackerState->alive() || !defenderStates[defender->unitId()]->alive()
+				|| (attackInfo.shooting && !ap.attackerState->canShoot()))
 				break;
 
 			for(auto u : defenderUnits)
 			{
 				auto defenderState = defenderStates.at(u->unitId());
+				if(!defenderState->alive())
+					continue;
 
 				int64_t damageDealt;
 				float defenderDamageReduce;
 				float attackerDamageReduce;
 
 				DamageEstimation retaliation;
-				auto attackDmg = state->battleEstimateDamage(ap.attack, &retaliation);
+				auto victimAttack = ap.attack;
+				victimAttack.attacker = ap.attackerState.get();
+				victimAttack.defender = defenderState.get();
+				victimAttack.secondaryAttack = u->unitId() != defender->unitId();
+				if(victimAttack.secondaryAttack)
+					victimAttack.defenderPos = defenderState->getPosition();
+				auto attackDmg = state->battleEstimateDamage(victimAttack, &retaliation);
 
 				damageDealt = averageDmg(attackDmg.damage);
 				vstd::amin(damageDealt, defenderState->getAvailableHealth());
 
-				defenderDamageReduce = calculateDamageReduce(attacker, u, damageDealt, damageCache, state);
-				ap.attackerState->afterAttack(attackInfo.shooting, false);
+				// Later strikes must score casualties against the current copied health,
+				// not repeat the first strike's original-victim bounty.
+				defenderDamageReduce = calculateDamageReduce(ap.attackerState.get(), defenderState.get(),
+					damageDealt, damageCache, state);
 
 				//FIXME: use ranged retaliation
 				attackerDamageReduce = 0;
@@ -500,6 +519,8 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.defenderDead = !defenderState->alive();
 				}
 			}
+			// One attack spends ammunition once, not once for every collateral victim.
+			ap.attackerState->afterAttack(attackInfo.shooting, false);
 		}
 
 #if BATTLE_TRACE_LEVEL>=2

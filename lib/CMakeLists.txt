@@ -470,6 +470,7 @@ set(lib_MAIN_HEADERS
 	battle/BattleHex.h
 	battle/BattleHexArray.h
 	battle/HeroCommand.h
+	battle/FocusFireState.h
 	battle/BattleInfo.h
 	battle/BattleLayout.h
 	battle/BattleSide.h

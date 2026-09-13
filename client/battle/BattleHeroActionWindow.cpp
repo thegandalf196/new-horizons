@@ -4,6 +4,9 @@
  */
 #include "StdInc.h"
 #include "BattleHeroActionWindow.h"
+#include "FocusFireTargetWindow.h"
+#include "../../lib/CCreatureHandler.h"
+#include "../../lib/battle/Unit.h"
 #include "BattleInterface.h"
 #include "BattleWindow.h"
 #include "BattleActionsController.h"
@@ -12,6 +15,7 @@
 #include "../gui/WindowHandler.h"
 #include "../gui/Shortcut.h"
 #include "../widgets/Buttons.h"
+#include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../widgets/TextControls.h"
 #include "../render/Colors.h"
 #include "../../lib/battle/BattleAction.h"
@@ -50,33 +54,39 @@ std::string HeroCommandUI::name(HeroCommand command)
 		case HeroCommand::ADVANCE: return "Advance";
 		case HeroCommand::AGGRESSIVE: return "Aggressive";
 		case HeroCommand::DEFENSIVE: return "Defensive";
+		case HeroCommand::FOCUS_FIRE: return "Focus Fire";
 		default: return "None";
 	}
 }
 
 BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInterface> & owner, bool ordersOnlyMode)
-	: CWindowObject(0, ImagePath::builtin("NH_hero_actions_back")), battle(owner), ordersOnly(ordersOnlyMode)
+	: CWindowObject(ordersOnlyMode ? SHADOW_DISABLED : 0,
+		ordersOnlyMode ? ImagePath{} : ImagePath::builtin("NH_hero_actions_back")), battle(owner), ordersOnly(ordersOnlyMode)
 {
+	if(ordersOnly)
+	{
+		pos.w = 640;
+		pos.h = 500;
+		pos = center();
+	}
 	OBJECT_CONSTRUCTION;
-	labels.push_back(std::make_shared<CLabel>(320, 29, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, ordersOnly ? "Orders and Doctrines" : "Hero action"));
+	if(ordersOnly)
+	{
+		createOrdersLayout();
+		refresh();
+		return;
+	}
+	labels.push_back(std::make_shared<CLabel>(320, 29, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Hero action"));
 	labels.push_back(std::make_shared<CLabel>(320, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "One per round: Spell, Order or Doctrine change"));
 	state = std::make_shared<CLabel>(320, 80, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
 
-	if(ordersOnly)
-	{
-		labels.push_back(std::make_shared<CMultiLineLabel>(Rect(36, 110, 568, 66), FONT_SMALL, ETextAlignment::TOPLEFT,
-			Colors::WHITE, "Orders require no mana or spellbook. Issuing one spends the same hero action as a spell or Doctrine change.\nUse the separate Spellbook control for magic. Reading this panel or cancelling spends nothing."));
-	}
-	else
-	{
-		spellButton = std::make_shared<CButton>(Point(36, 110), AnimationPath::builtin("NH_spells_button"),
-			CButton::tooltip("Spells", "Open the existing spellbook. Casting shares the hero's action with Orders and Doctrine changes."),
-			[this] { chooseSpell(); });
-		spellButton->setHoverable(true);
-		labels.push_back(std::make_shared<CLabel>(120, 115, FONT_MEDIUM, ETextAlignment::TOPLEFT, Colors::WHITE, "Spells"));
-		labels.push_back(std::make_shared<CMultiLineLabel>(Rect(120, 143, 470, 38), FONT_SMALL, ETextAlignment::TOPLEFT,
-			Colors::WHITE, "Your learned magic. Normal spellbook, mana and targeting requirements still apply."));
-	}
+	spellButton = std::make_shared<CButton>(Point(36, 110), AnimationPath::builtin("NH_spells_button"),
+		CButton::tooltip("Spells", "Open the existing spellbook. Casting shares the hero's action with Orders and Doctrine changes."),
+		[this] { chooseSpell(); });
+	spellButton->setHoverable(true);
+	labels.push_back(std::make_shared<CLabel>(120, 115, FONT_MEDIUM, ETextAlignment::TOPLEFT, Colors::WHITE, "Spells"));
+	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(120, 143, 470, 38), FONT_SMALL, ETextAlignment::TOPLEFT,
+		Colors::WHITE, "Your learned magic. Normal spellbook, mana and targeting requirements still apply."));
 
 	for(const auto & display : commandDisplays)
 	{
@@ -105,6 +115,68 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 		CButton::tooltip("Cancel", "Return to battle without spending a hero action."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);
 	cancel->setHoverable(true);
 	refresh();
+}
+
+void BattleHeroActionWindow::createOrdersLayout()
+{
+	// Code-only layout prototype. Replace materials only after independent art
+	// review; no baked labels or use of the old 520px backdrop in this mode.
+	labels.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, 0, 640, 500), ColorRGBA(24, 30, 37, 255), ColorRGBA(156, 132, 85, 255)));
+	labels.push_back(std::make_shared<CLabel>(320, 27, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Orders and Doctrines"));
+	labels.push_back(std::make_shared<CLabel>(320, 53, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "One shared hero action: Spell, Order or Doctrine change"));
+	state = std::make_shared<CLabel>(320, 78, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
+	const auto owner = currentBattle();
+	const bool showFocus = owner && owner->getBattle()->getBattle()
+		&& heroCommands::supportedByRules(owner->getBattle()->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE);
+	const int orderWidth = showFocus ? 140 : 192;
+	const int orderStride = showFocus ? 156 : 208;
+	int orderIndex = 0;
+	int doctrineIndex = 0;
+	for(const auto & display : commandDisplays)
+	{
+		const auto command = display.command;
+		const bool doctrine = heroCommands::isDoctrine(command);
+		const int left = doctrine ? 16 + 310 * doctrineIndex++ : 16 + orderStride * orderIndex++;
+		const Rect card = doctrine ? Rect(left, 274, 298, 90) : Rect(left, 94, orderWidth, 150);
+		labels.push_back(std::make_shared<TransparentFilledRectangle>(card, ColorRGBA(35, 46, 56, 255), ColorRGBA(99, 111, 122, 255)));
+		const Point icon = doctrine ? Point(left + 8, 286) : Point(left + (orderWidth - 64) / 2, 122);
+		auto button = std::make_shared<CButton>(icon, AnimationPath::builtin(display.image),
+			CButton::tooltip(display.name, display.description), [this, command] { chooseCommand(command); });
+		button->setHoverable(true);
+		commands.emplace_back(command, button);
+		if(doctrine)
+		{
+			labels.push_back(std::make_shared<CLabel>(left + 80, 282, FONT_MEDIUM, ETextAlignment::TOPLEFT, Colors::WHITE, display.name));
+			effectLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(left + 80, 306, 210, 48), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, ""));
+		}
+		else
+		{
+			labels.push_back(std::make_shared<CLabel>(left + orderWidth / 2, 104, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, display.name));
+			effectLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(left + 8, 196, orderWidth - 16, 44), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, ""));
+		}
+	}
+	if(showFocus)
+	{
+		labels.push_back(std::make_shared<TransparentFilledRectangle>(Rect(484, 94, 140, 150), ColorRGBA(35, 46, 56, 255), ColorRGBA(99, 111, 122, 255)));
+		labels.push_back(std::make_shared<CLabel>(554, 104, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "Focus Fire"));
+		// Existing core generated button is a prototype control, NOT original final Focus artwork.
+		focusButton = std::make_shared<CButton>(Point(514, 138), AnimationPath::builtin("settingsWindow/button80"),
+			CButton::tooltip("Choose Focus Fire target", "Select an exact enemy unit, then confirm. Adds at the Archery stage for primary physical ranged hits this round, not as a final damage multiplier. The eligible current friendly ordinary shooter cohort is frozen at issue, including blocked, empty-ammo and already-acted shooters. Later arrivals do not join. At least one legal shot is required at issue; this grants no shot or activation. No mana or spellbook required."),
+			[this] { chooseFocusFire(); });
+		focusButton->setTextOverlay("Targets", FONT_SMALL, Colors::WHITE);
+		focusButton->setHoverable(true);
+		focusEffect = std::make_shared<CMultiLineLabel>(Rect(492, 196, 124, 44), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "");
+		focusReadback = std::make_shared<CMultiLineLabel>(Rect(16, 378, 516, 54), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "");
+		labels.push_back(std::make_shared<CMultiLineLabel>(Rect(16, 438, 516, 48), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
+			"Help/cancel and Focus target selection are free.\nOther command icons issue immediately; Focus requires Confirm.\nAccepted commands use the shared action, no mana/book. See help for coverage."));
+	}
+	else
+		labels.push_back(std::make_shared<CMultiLineLabel>(Rect(16, 378, 516, 102), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
+			"Orders need no mana or spellbook. Use the separate Spellbook control for magic.\n\nCommands affect living ordinary friendly troops present when issued, not war machines. Later summons and clones do not inherit effects. Reading or cancelling spends nothing."));
+	labels.push_back(std::make_shared<CLabel>(320, 257, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Doctrines persist until changed; Orders end with this round"));
+	cancel = std::make_shared<CButton>(Point(548, 416), AnimationPath::builtin("NH_cancel_button"),
+		CButton::tooltip("Cancel", "Return to battle without spending a hero action."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);
+	cancel->setHoverable(true);
 }
 
 std::shared_ptr<BattleInterface> BattleHeroActionWindow::currentBattle() const
@@ -174,8 +246,18 @@ void BattleHeroActionWindow::refresh()
 	{
 		if(spellButton)
 			spellButton->block(true);
+		if(focusButton)
+		{
+			focusButton->block(true);
+			focusButton->setBorderColor(std::nullopt);
+			if(focusReadback->getText() != "Battle no longer available")
+				focusReadback->setText("Battle no longer available");
+		}
 		for(auto & entry : commands)
+		{
 			entry.second->block(true);
+			entry.second->setBorderColor(std::nullopt);
+		}
 		setStateText("Battle no longer available. Close this window.");
 		return;
 	}
@@ -197,9 +279,82 @@ void BattleHeroActionWindow::refresh()
 	}
 	const auto doctrine = callback->battleGetActiveDoctrine(side);
 	const auto order = callback->battleGetActiveOrder(side);
-	setStateText("Doctrine: " + HeroCommandUI::name(doctrine) + " | Order: " + HeroCommandUI::name(order) + " | " +
-		(ordersOnly ? (anyCommand ? "Order available" : "No Order currently available")
-			: ((anyCommand || (canAct && canSpell)) ? "Hero action available" : "Hero action spent or unavailable")));
+	if(focusButton)
+	{
+		const bool available = canAct && hero && callback->battleCanBeginHeroCommand(side, HeroCommand::FOCUS_FIRE);
+		focusButton->block(!available);
+		anyCommand |= available;
+		if(order == HeroCommand::FOCUS_FIRE)
+			focusButton->setBorderColor(Colors::YELLOW);
+		else
+			focusButton->setBorderColor(std::nullopt);
+		std::string effect = "No hero available";
+		if(hero)
+		{
+			const auto & formula = callback->getBattle()->getHeroCommandRules()["commands"][heroCommands::key(HeroCommand::FOCUS_FIRE)]["effects"]["rangedDamagePercent"];
+			const int percent = heroCommands::coefficient(formula, hero->getPrimSkillLevel(PrimarySkill::ATTACK), hero->getPrimSkillLevel(PrimarySkill::DEFENSE));
+			effect = "Ranged " + std::string(percent >= 0 ? "+" : "") + std::to_string(percent) + "%\nArchery stage";
+		}
+		if(focusEffect->getText() != effect)
+			focusEffect->setText(effect);
+		std::string readback = "Focus Fire: no retained mark. Targets opens selection without spending.";
+		if(const auto mark = callback->battleGetFocusFireState(side))
+		{
+			const auto * target = callback->battleGetUnitByID(mark->targetUnitId);
+			const std::string name = target ? target->unitType()->getNamePluralTranslated() : "unavailable unit";
+			readback = "Focus Fire: ID " + std::to_string(mark->targetUnitId) + " " + name
+				+ " | round " + std::to_string(mark->issuedRound) + " | " + std::to_string(mark->rangedDamagePercent)
+				+ "% | cohort " + std::to_string(mark->recipientUnitIds.size()) + " at issue\n"
+				+ (callback->battleIsFocusFireTargetActive(side) ? "Target active; no promise of ammunition or remaining activations." : "Mark retained but target currently inactive; no target substitution.");
+		}
+		if(focusReadback->getText() != readback)
+			focusReadback->setText(readback);
+	}
+	std::string availability = (anyCommand || (canAct && canSpell))
+		? "Hero action available" : "Hero action spent or unavailable";
+	if(ordersOnly)
+	{
+		// These are observed UI phases and authoritative shared-budget fields,
+		// not reconstructed eligibility rules or a promise that issuance succeeds.
+		if(!callback->battleUsesHeroCommands())
+			availability = "Orders unavailable in this battle";
+		else if(!hero)
+			availability = "No hero available";
+		else if(owner->curInt->isAutoFightOn)
+			availability = "Autofight controls this battle";
+		else if(owner->isInTacticsMode())
+			availability = "Unavailable during tactics";
+		else if(owner->actionsController->heroSpellcastingModeActive())
+			availability = "Finish or cancel spell targeting";
+		else if(!owner->makingTurn())
+			availability = "Not your turn";
+		else if(callback->getBattle()->getHeroCommandUsed(side) || callback->battleCastSpells(side) != 0)
+			availability = "Shared hero action spent";
+		else
+			availability = anyCommand ? "Order available" : "No Order currently available";
+		for(auto & entry : commands)
+		{
+			if(entry.first == doctrine || entry.first == order)
+				entry.second->setBorderColor(Colors::YELLOW);
+			else
+				entry.second->setBorderColor(std::nullopt);
+		}
+	}
+	setStateText("Doctrine: " + HeroCommandUI::name(doctrine) + " | Order: " + HeroCommandUI::name(order) + " | " + availability);
+}
+
+void BattleHeroActionWindow::chooseFocusFire()
+{
+	auto owner = currentBattle();
+	if(!owner || !ordersOnly || !focusButton || !owner->makingTurn() || owner->curInt->isAutoFightOn
+		|| owner->isInTacticsMode() || owner->actionsController->heroSpellcastingModeActive() || !owner->currentHero()
+		|| !owner->getBattle()->battleCanBeginHeroCommand(owner->getBattle()->battleGetMySide(), HeroCommand::FOCUS_FIRE))
+	{
+		refresh();
+		return;
+	}
+	close();
+	ENGINE->windows().createAndPushWindow<FocusFireTargetWindow>(owner);
 }
 
 void BattleHeroActionWindow::chooseCommand(HeroCommand command)

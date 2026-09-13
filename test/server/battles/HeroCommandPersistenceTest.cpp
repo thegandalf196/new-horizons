@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "BattleStartSnapshotFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
@@ -90,7 +91,7 @@ TEST_F(HeroCommandPersistenceTest, FullBattleStartPacketRestoresEffectsBudgetAnd
 
 	BattleStart outgoing;
 	outgoing.battleID = BattleID(0);
-	outgoing.info = CMemorySerializer::deepCopy(*battle(), replica.get());
+	outgoing.info = battleStartFixture::snapshot(*battle(), replica.get());
 	CMemorySerializer wire;
 	wire.oser & outgoing;
 	wire.iser.cb = replica.get();

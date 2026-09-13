@@ -526,8 +526,8 @@ BattleInfo::~BattleInfo()
 	stacks.clear();
 
 	for(auto i : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		if(auto * _armyObj = battleGetArmyObject(i))
-			_armyObj->battle = nullptr;
+		if(auto * army = battleGetArmyObject(i); army && army->battle == this)
+			army->battle = nullptr;
 }
 
 int32_t BattleInfo::getActiveStackID() const
@@ -672,6 +672,7 @@ void BattleInfo::nextRound()
 		sides.at(i).castSpellsCount = 0;
 		sides.at(i).heroCommandUsed = false;
 		sides.at(i).activeOrder = HeroCommand::NONE;
+		sides.at(i).focusFire.reset();
 		vstd::amax(--sides.at(i).enchanterCounter, 0);
 	}
 	// first round starts right after pre-battle effects (built-in enchants, OPENING_BATTLE_SPELL)
@@ -709,6 +710,8 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 
 void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 {
+	if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE) && id != nextUnitId())
+		throw std::runtime_error("Invalid New Horizons targeted unit allocation");
 	battle::UnitInfo info;
 	info.load(id, data);
 	CStackBasicDescriptor base(info.type, info.count);
@@ -907,6 +910,9 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 uint32_t BattleInfo::nextUnitId() const
 {
+	if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE)
+		&& stacks.size() > static_cast<size_t>(std::numeric_limits<int32_t>::max()))
+		throw std::runtime_error("New Horizons targeted unit identities exhausted");
 	return static_cast<uint32_t>(stacks.size());
 }
 
@@ -985,6 +991,50 @@ CArmedInstance * BattleInfo::battleGetArmyObject(BattleSide side) const
 CGHeroInstance * BattleInfo::battleGetFightingHero(BattleSide side) const
 {
 	return const_cast<CGHeroInstance*>(CBattleInfoEssentials::battleGetFightingHero(side));
+}
+
+void BattleInfo::validateFocusFireStates() const
+{
+	std::set<uint32_t> unitIds;
+	const bool targetedRules = heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE);
+	for(const auto & unit : stacks)
+	{
+		if(!unit)
+			throw std::runtime_error("Invalid null battle unit reference");
+		// nextUnitId allocates by vector size. Unique IDs below size imply dense
+		// coverage even after sorting; removed units remain as retained descriptors.
+		if(targetedRules && (unit->unitId() > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())
+			|| unit->unitId() >= stacks.size() || !unitIds.insert(unit->unitId()).second))
+			throw std::runtime_error("Invalid New Horizons targeted battle unit identity");
+	}
+	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & state = sides.at(side);
+		if((state.activeDoctrine != HeroCommand::NONE
+				&& (!heroCommands::isDoctrine(state.activeDoctrine)
+					|| !heroCommands::supportedByRules(heroCommandRules, state.activeDoctrine)))
+			|| (state.activeOrder != HeroCommand::NONE
+				&& (heroCommands::isDoctrine(state.activeOrder)
+					|| !heroCommands::supportedByRules(heroCommandRules, state.activeOrder)
+					|| !state.heroCommandUsed || state.castSpellsCount != 0)))
+			throw std::runtime_error("Invalid New Horizons saved command state");
+		if(state.focusFire.has_value() != (state.activeOrder == HeroCommand::FOCUS_FIRE))
+			throw std::runtime_error("Inconsistent New Horizons Focus Fire order state");
+		if(!state.focusFire)
+			continue;
+		const auto & mark = *state.focusFire;
+		mark.validateShape();
+		if(!heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE)
+			|| !getSideHero(side) || !state.heroCommandUsed || state.castSpellsCount != 0 || mark.issuedRound != round
+			|| !battleGetUnitByID(mark.targetUnitId))
+			throw std::runtime_error("Invalid New Horizons Focus Fire battle context");
+		for(auto id : mark.recipientUnitIds)
+		{
+			// Ghosts and changed controllers are valid retained, possibly inactive references.
+			if(!battleGetUnitByID(id))
+				throw std::runtime_error("Invalid New Horizons Focus Fire recipient reference");
+		}
+	}
 }
 
 void BattleInfo::postDeserialize()

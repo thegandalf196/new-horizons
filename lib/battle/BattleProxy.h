@@ -54,6 +54,10 @@ public:
 	bool getHeroCommandUsed(BattleSide side) const override { return subject->getBattle()->getHeroCommandUsed(side); }
 	HeroCommand getActiveDoctrine(BattleSide side) const override { return subject->getBattle()->getActiveDoctrine(side); }
 	HeroCommand getActiveOrder(BattleSide side) const override { return subject->getBattle()->getActiveOrder(side); }
+	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override
+	{
+		return subject->getBattle()->getFocusFireState(side);
+	}
 	int32_t getCastSpells(BattleSide side) const override;
 	int32_t getEnchanterCounter(BattleSide side) const override;
 

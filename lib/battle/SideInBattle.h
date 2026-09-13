@@ -11,6 +11,7 @@
 
 #include "../GameConstants.h"
 #include "HeroCommand.h"
+#include "FocusFireState.h"
 #include "../callback/GameCallbackHolder.h"
 
 class CGHeroInstance;
@@ -28,6 +29,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	bool heroCommandUsed = false;
 	HeroCommand activeDoctrine = HeroCommand::NONE;
 	HeroCommand activeOrder = HeroCommand::NONE;
+	std::optional<FocusFireState> focusFire;
 	uint32_t castSpellsCount = 0; //how many spells each side has been cast this turn
 	std::vector<SpellID> usedSpellsHistory; //every time hero casts spell, it's inserted here -> eagle eye skill
 	int32_t enchanterCounter = 0; //tends to pass through 0, so sign is needed
@@ -40,6 +42,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
+			&& (focusFire || activeOrder == HeroCommand::FOCUS_FIRE))
+			throw std::runtime_error("Cannot discard New Horizons targeted command state");
 		h & color;
 		h & heroID;
 		h & armyObjectID;
@@ -59,6 +64,14 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			heroCommandUsed = false;
 			activeDoctrine = HeroCommand::NONE;
 			activeOrder = HeroCommand::NONE;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
+		{
+			h & focusFire;
+		}
+		else if(!h.saving)
+		{
+			focusFire.reset();
 		}
 	}
 };

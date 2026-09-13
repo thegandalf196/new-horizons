@@ -43,6 +43,8 @@ public:
 	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
 	HeroCommand getActiveDoctrine(BattleSide side) const override { return sides.at(side).activeDoctrine; }
 	HeroCommand getActiveOrder(BattleSide side) const override { return sides.at(side).activeOrder; }
+	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override { return sides.at(side).focusFire; }
+	void validateFocusFireStates() const;
 	BattleID battleID = BattleID(0);
 
 	si32 activeStack;
@@ -61,6 +63,14 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+		{
+			heroCommands::validateRules(heroCommandRules);
+			validateFocusFireStates();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
+				&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
+				throw std::runtime_error("Cannot discard New Horizons targeted combat rules");
+		}
 		h & battleID;
 		h & sides;
 		h & round;
@@ -80,7 +90,12 @@ public:
 		{
 			h & heroCommandRules;
 			if(!h.saving)
+			{
 				heroCommands::validateRules(heroCommandRules);
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
+					&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
+					throw std::runtime_error("Targeted battle rules require the new save format");
+			}
 		}
 		else if(!h.saving)
 		{
@@ -112,7 +127,12 @@ public:
 			creatureCategoryRules = newHorizonsCreatures::CreatureCategoryRules();
 
 		if(!h.saving)
+		{
+			// Reject null/ambiguous unit references before postDeserialize dereferences
+			// units and resolves their army bindings. Validation does not need those bindings.
+			validateFocusFireStates();
 			postDeserialize();
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////

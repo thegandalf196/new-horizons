@@ -68,11 +68,13 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_LOGISTICS_MASTERIES, // two-family pre-gain eligibility and pending choices
 
+	NEW_HORIZONS_TARGETED_COMMANDS, // exact target/cohort/premium and v2 combat rules
+
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_LOGISTICS_MASTERIES,
+	CURRENT = NEW_HORIZONS_TARGETED_COMMANDS,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");

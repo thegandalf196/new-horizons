@@ -329,6 +329,8 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	}
 
 	nextId = 0x00F00000;
+	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		focusFireStates[side] = realBattle->battleGetFocusFireState(side);
 
 	localEnvironment.reset(new HypotheticEnvironment(this, env));
 	serverCallback.reset(new HypotheticServerCallback(this));
@@ -336,8 +338,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 
 bool HypotheticBattle::unitHasAmmoCart(const battle::Unit * unit) const
 {
-	//FIXME: check ammocart alive state here
-	return false;
+	return battleUnitHasAmmoCart(unit);
 }
 
 PlayerColor HypotheticBattle::unitEffectiveOwner(const battle::Unit * unit) const
@@ -365,30 +366,49 @@ std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdate(uint32_t id)
 
 battle::Units HypotheticBattle::getUnitsIf(const battle::UnitFilter & predicate) const
 {
-	battle::Units proxyed = BattleProxy::getUnitsIf(predicate);
-
-	battle::Units ret;
-	ret.reserve(proxyed.size());
-
-	for(auto unit : proxyed)
+	const auto original = BattleProxy::getUnitsIf([](const battle::Unit *)
 	{
-		//unit was not changed, trust proxyed data
-		if(stackStates.find(unit->unitId()) == stackStates.end())
-			ret.push_back(unit);
-	}
-
-	for(auto id_unit : stackStates)
+		return true;
+	});
+	battle::Units result;
+	result.reserve(original.size() + stackStates.size());
+	std::set<uint32_t> originalIds;
+	for(const auto * unit : original)
 	{
-		if(predicate(id_unit.second.get()))
-			ret.push_back(id_unit.second.get());
+		originalIds.insert(unit->unitId());
+		const auto replacement = stackStates.find(unit->unitId());
+		const auto * current = replacement == stackStates.end() ? unit : replacement->second.get();
+		if(predicate(current))
+			result.push_back(current);
 	}
-
-	return ret;
+	// Preserve real battle order for replacements; append only newly projected units.
+	for(const auto & [id, unit] : stackStates)
+		if(!originalIds.contains(id) && predicate(unit.get()))
+			result.push_back(unit.get());
+	return result;
 }
 
 BattleID HypotheticBattle::getBattleID() const
 {
 	return subject->getBattle()->getBattleID();
+}
+
+std::optional<FocusFireState> HypotheticBattle::getFocusFireState(BattleSide side) const
+{
+	const auto found = focusFireStates.find(side);
+	return found == focusFireStates.end() ? std::optional<FocusFireState>() : found->second;
+}
+
+void HypotheticBattle::setFocusFireState(BattleSide side, const FocusFireState & state)
+{
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| !heroCommands::supportedByRules(getHeroCommandRules(), HeroCommand::FOCUS_FIRE))
+		throw std::invalid_argument("Invalid hypothetical Focus Fire context");
+	state.validateShape();
+	if(state.issuedRound != battleGetRound())
+		throw std::invalid_argument("Invalid hypothetical Focus Fire round");
+	focusFireStates[side] = state;
+	++bonusTreeVersion;
 }
 
 int32_t HypotheticBattle::getActiveStackID() const
@@ -408,6 +428,9 @@ IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 
 void HypotheticBattle::nextRound()
 {
+	for(auto & [side, state] : focusFireStates)
+		state.reset();
+	++bonusTreeVersion;
 	// BattleInfo grants opening effects their full duration in round one.
 	const bool firstRound = projectedRound == 0;
 	++projectedRound;

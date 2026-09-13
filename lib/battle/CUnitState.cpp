@@ -87,6 +87,13 @@ CShots::CShots(const battle::Unit * Owner)
 {
 }
 
+CShots & CShots::operator=(const CShots & other)
+{
+	// A state copy transfers usage, not its source unit's cache target or environment.
+	CAmmo::operator=(other);
+	return *this;
+}
+
 bool CShots::isLimited() const
 {
 	return !shooter.hasBonus() || !env->unitHasAmmoCart(owner);
@@ -134,6 +141,14 @@ int32_t CRetaliations::total() const
 	int32_t val = 1 + totalProxy.getValue();
 	vstd::amax(totalCache, val);
 	return totalCache;
+}
+
+CRetaliations & CRetaliations::operator=(const CRetaliations & other)
+{
+	CAmmo::operator=(other);
+	totalCache = other.totalCache;
+	// Keep the destination's no-retaliation/unlimited bonus cache bindings.
+	return *this;
 }
 
 void CRetaliations::reset()

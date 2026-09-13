@@ -14,6 +14,7 @@
 #include "ReachabilityInfo.h"
 #include "BattleAttackInfo.h"
 #include "HeroCommand.h"
+#include "FocusFireState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class CGHeroInstance;
@@ -76,6 +77,17 @@ public:
 	int battleGetSpellLevel(SpellID spell) const;
 	bool battleUsesHeroCommands() const;
 	bool battleCanUseHeroCommand(BattleSide side, HeroCommand command) const;
+	bool battleCanBeginHeroCommand(BattleSide side, HeroCommand command) const;
+	/// Shared real/hypothetical ammunition policy, including the off-field bank artifact.
+	bool battleUnitHasAmmoCart(const battle::Unit * unit) const;
+	bool battleCanConfirmHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId) const;
+	std::vector<uint32_t> battleGetHeroCommandTargets(BattleSide side, HeroCommand command) const;
+	std::optional<FocusFireState> battlePrepareFocusFireState(BattleSide side, uint32_t targetUnitId) const;
+	std::optional<FocusFireState> battleGetFocusFireState(BattleSide side) const;
+	/// Target liveness/hostility, not permission to issue again or a promise of available shots.
+	bool battleIsFocusFireTargetActive(BattleSide side) const;
+	int battleTargetedRangedCommandPercent(const battle::Unit * attacker, const battle::Unit * defender,
+		bool shooting, bool secondaryAttack = false) const;
 	HeroCommand battleGetActiveDoctrine(BattleSide side) const;
 	HeroCommand battleGetActiveOrder(BattleSide side) const;
 	const scripting::Pool & getScriptContextPool() const override;
@@ -220,6 +232,8 @@ public:
 	/// find free hex suitable to place new unit. If no initial position was provided, hex located on left size (attacker) or right side (defender) will be selected
 	BattleHex getAvailableHex(const Creature * creature, BattleSide side, BattleHex initialPos = {}) const override;
 protected:
+	bool battleHeroCommandCommonAvailable(BattleSide side, HeroCommand command) const;
+	bool battleIsFocusFireRecipient(const battle::Unit * unit, BattleSide side) const;
 	ReachabilityInfo getFlyingReachability(const ReachabilityInfo::Parameters & params) const;
 	ReachabilityInfo makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const;
 	bool isInObstacle(const BattleHex & hex, const BattleHexArray & obstacles, const ReachabilityInfo::Parameters & params) const;

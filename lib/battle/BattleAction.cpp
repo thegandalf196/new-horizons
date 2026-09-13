@@ -154,6 +154,17 @@ BattleAction BattleAction::makeHeroCommand(BattleSide side, HeroCommand command)
 	return action;
 }
 
+BattleAction BattleAction::makeTargetedHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId)
+{
+	if(command != HeroCommand::FOCUS_FIRE
+		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| targetUnitId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
+		throw std::invalid_argument("Invalid targeted hero command identity");
+	auto action = makeHeroCommand(side, command);
+	action.target.push_back({static_cast<int32_t>(targetUnitId), BattleHex::INVALID});
+	return action;
+}
+
 std::string BattleAction::toString() const
 {
 	std::stringstream targetStream;

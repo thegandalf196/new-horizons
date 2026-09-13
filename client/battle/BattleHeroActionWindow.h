@@ -26,6 +26,9 @@ class BattleHeroActionWindow final : public CWindowObject
 	const bool ordersOnly;
 	std::vector<std::pair<HeroCommand, std::shared_ptr<CButton>>> commands;
 	std::shared_ptr<CButton> spellButton;
+	std::shared_ptr<CButton> focusButton;
+	std::shared_ptr<CMultiLineLabel> focusEffect;
+	std::shared_ptr<CMultiLineLabel> focusReadback;
 	std::shared_ptr<CButton> cancel;
 	std::shared_ptr<CLabel> state;
 	std::vector<std::shared_ptr<CIntObject>> labels;
@@ -35,10 +38,12 @@ class BattleHeroActionWindow final : public CWindowObject
 
 	std::shared_ptr<BattleInterface> currentBattle() const;
 	void refresh();
+	void createOrdersLayout();
 	void refreshEffects(const CGHeroInstance & hero, const JsonNode & rules);
 	void setStateText(const std::string & text);
 	void chooseCommand(HeroCommand command);
 	void chooseSpell();
+	void chooseFocusFire();
 
 public:
 	explicit BattleHeroActionWindow(const std::shared_ptr<BattleInterface> & battle, bool ordersOnlyMode = false);

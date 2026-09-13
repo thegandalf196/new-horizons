@@ -12,6 +12,7 @@
 #include "CBattleInfoEssentials.h"
 #include "BattleUnitTurnReason.h"
 #include "HeroCommand.h"
+#include "FocusFireState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class ObstacleChanges;
@@ -70,6 +71,7 @@ public:
 	virtual bool getHeroCommandUsed(BattleSide side) const { return false; }
 	virtual HeroCommand getActiveDoctrine(BattleSide side) const { return HeroCommand::NONE; }
 	virtual HeroCommand getActiveOrder(BattleSide side) const { return HeroCommand::NONE; }
+	virtual std::optional<FocusFireState> getFocusFireState(BattleSide side) const { return {}; }
 	virtual int32_t getCastSpells(BattleSide side) const = 0;
 	virtual int32_t getEnchanterCounter(BattleSide side) const = 0;
 
