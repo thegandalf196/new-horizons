@@ -345,14 +345,18 @@ std::shared_ptr<BattleConsole> BattleWindow::buildBattleConsole(const JsonNode &
 
 void BattleWindow::useSpellIfPossible(int slot)
 {
-	SpellID id;
-	bool fromSettings;
-	std::tie(id, fromSettings) = quickSpellWindow->getSpells()[slot];
-
-	if(id == SpellID::NONE)
+	// Revalidate at activation, not only when the shortcut/button was last blocked.
+	if(CPlayerInterface::battleInt.get() != &owner || !owner.curInt || owner.curInt->isAutoFightOn
+		|| owner.isInTacticsMode() || !owner.makingTurn() || !quickSpellWindow)
 		return;
 
-	if(id.hasValue() && owner.getBattle()->battleGetMyHero() && id.toSpell()->canBeCast(owner.getBattle().get(), spells::Mode::HERO, owner.getBattle()->battleGetMyHero()))
+	const auto quickSpells = quickSpellWindow->getSpells();
+	if(slot < 0 || static_cast<size_t>(slot) >= quickSpells.size())
+		return;
+	const auto id = std::get<0>(quickSpells[slot]);
+	const auto * hero = owner.currentHero();
+
+	if(id.hasValue() && hero && id.toSpell()->canBeCast(owner.getBattle().get(), spells::Mode::HERO, hero))
 	{
 		owner.castThisSpell(id);
 	}
