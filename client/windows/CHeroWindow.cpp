@@ -368,8 +368,10 @@ void CHeroWindow::restoreLegacyLayout()
 		commanderButton = std::make_shared<CButton>(Point(317, 18), AnimationPath::builtin("heroCommander"), CButton::tooltipLocalized("vcmi.heroWindow.openCommander"), [this](){ commanderWindow(); }, EShortcut::HERO_COMMANDER);
 		commanderButton->setOverlay(std::make_shared<CPicture>(ImagePath::builtin("heroWindow/commanderButtonIcon")));
 	}
-	move(formations->buttons.at(0), Point(481, 483));
-	move(formations->buttons.at(1), Point(481, 519));
+	// Both entries are created as CToggleButton above; CToggleBase exposes state,
+	// not widget positioning. Recover the concrete button before moving it.
+	move(std::static_pointer_cast<CToggleButton>(formations->buttons.at(0)), Point(481, 483));
+	move(std::static_pointer_cast<CToggleButton>(formations->buttons.at(1)), Point(481, 519));
 	for(size_t i = 0; i < heroList.size(); ++i)
 		move(heroList[i], Point(612, 87 + static_cast<int>(i) * 54));
 	statusbar = CGStatusBar::create(std::make_shared<CPicture>(background->getSurface(), Rect(7, 559, 660, 19), 7, 559));
