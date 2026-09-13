@@ -210,6 +210,71 @@ TEST_F(HypotheticTimedSpellTest, RefreshMergesBeforeFilteringAndPreservesAuthori
 	EXPECT_TRUE(unit->getAllBonuses(incomingValue)->empty());
 }
 
+TEST_F(HypotheticTimedSpellTest, RefreshedOriginalKeepsItsValueUntilTheExtendedLifetimeEnds)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
+	unit->addNewBonus(std::make_shared<Bonus>(haste(1)));
+	HypotheticBattle model(environment.get(), callback);
+	auto refresh = haste(5);
+	refresh.val = 9;
+	model.updateUnitBonus(unit->unitId(), {refresh});
+	const CSelector oldDuration([](const Bonus * bonus)
+	{
+		return bonus->source == BonusSource::SPELL_EFFECT && bonus->turnsRemain == 1;
+	});
+	EXPECT_TRUE(model.battleGetUnitByID(unit->unitId())->getAllBonuses(oldDuration)->empty());
+	for(int remaining = 4; remaining > 0; --remaining)
+	{
+		model.nextRound();
+		const auto effects = model.battleGetUnitByID(unit->unitId())->getAllBonuses(
+			Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+		ASSERT_EQ(effects->size(), 1u);
+		EXPECT_EQ(effects->front()->val, 3);
+		EXPECT_EQ(effects->front()->turnsRemain, remaining);
+	}
+	model.nextRound();
+	EXPECT_TRUE(model.battleGetUnitByID(unit->unitId())->getAllBonuses(
+		Selector::sourceTypeSel(BonusSource::SPELL_EFFECT))->empty());
+	const auto live = unit->getAllBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	ASSERT_EQ(live->size(), 1u);
+	EXPECT_EQ(live->front()->turnsRemain, 1);
+	refresh.turnsRemain = 2;
+	model.updateUnitBonus(unit->unitId(), {refresh});
+	const auto nextGeneration = model.battleGetUnitByID(unit->unitId())->getAllBonuses(
+		Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	ASSERT_EQ(nextGeneration->size(), 1u);
+	EXPECT_EQ(nextGeneration->front()->val, 9);
+	EXPECT_EQ(nextGeneration->front()->turnsRemain, 2);
+	EXPECT_EQ(live->front()->val, 3);
+}
+
+TEST_F(HypotheticTimedSpellTest, LocalAddThenRefreshRetainsOneEffectAndNestedLifetime)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	parent->addUnitBonus(unit->unitId(), {haste(1)});
+	auto refresh = haste(5);
+	refresh.val = 9;
+	parent->updateUnitBonus(unit->unitId(), {refresh});
+	const auto effects = parent->battleGetUnitByID(unit->unitId())->getAllBonuses(
+		Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	ASSERT_EQ(effects->size(), 1u);
+	EXPECT_EQ(effects->front()->val, 3);
+	EXPECT_EQ(effects->front()->turnsRemain, 5);
+	HypotheticBattle child(environment.get(), parent);
+	child.nextRound();
+	const auto aged = child.battleGetUnitByID(unit->unitId())->getAllBonuses(
+		Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	ASSERT_EQ(aged->size(), 1u);
+	EXPECT_EQ(aged->front()->val, 3);
+	EXPECT_EQ(aged->front()->turnsRemain, 4);
+	const auto unchanged = parent->battleGetUnitByID(unit->unitId())->getAllBonuses(
+		Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	ASSERT_EQ(unchanged->size(), 1u);
+	EXPECT_EQ(unchanged->front()->turnsRemain, 5);
+	EXPECT_TRUE(unit->getAllBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT))->empty());
+}
+
 TEST_F(HypotheticTimedSpellTest, OriginalSpellExpiresInModelWithoutChangingLiveDurationOrPermanentBonus)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());

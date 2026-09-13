@@ -155,11 +155,11 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 	vstd::copy_if(*originalList, std::back_inserter(*ret), [this](const std::shared_ptr<Bonus> & b)
 	{
 		return !vstd::contains(bonusesToRemove, b)
-			&& !(originalTimedEffects && projectedEffect(b.get()));
+			&& !(projectedEffects && projectedEffect(b.get()));
 	});
 
-	if(originalTimedEffects)
-		for(const auto & bonus : *originalTimedEffects)
+	if(projectedEffects)
+		for(const auto & bonus : *projectedEffects)
 			if(mergeSelector(&bonus))
 				ret->push_back(std::make_shared<Bonus>(bonus));
 
@@ -195,7 +195,7 @@ int32_t StackWithBonuses::getTreeVersion() const
 {
 	auto result = owner->getTreeVersion();
 
-	if(bonusesToAdd.empty() && bonusesToUpdate.empty() && bonusesToRemove.empty() && !originalTimedEffects)
+	if(bonusesToAdd.empty() && bonusesToUpdate.empty() && bonusesToRemove.empty() && !projectedEffects)
 		return result;
 	else
 		return result + treeVersionLocal;
@@ -209,8 +209,8 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 {
-	//TODO: optimize, actualize to last value
-
+	// Preserve operation order: a preceding local ADD must be visible to refresh.
+	captureEffects();
 	vstd::concatenate(bonusesToUpdate, bonus);
 	treeVersionLocal++;
 }
@@ -240,7 +240,7 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 {
 	// Parent models materialize fresh bonus pointers. Capture effect values before
 	// suppressing them, including non-timed spells and battle-long Doctrines.
-	captureTimedEffects();
+	captureEffects();
 	TConstBonusListPtr toRemove = origBearer->getBonuses(selector);
 
 	for(auto b : *toRemove)
@@ -248,27 +248,27 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 
 	vstd::erase_if(bonusesToAdd, [&](const Bonus & b){return selector(&b);});
 	vstd::erase_if(bonusesToUpdate, [&](const Bonus & b){return selector(&b);});
-	if(originalTimedEffects)
-		vstd::erase_if(*originalTimedEffects, [&](const Bonus & b){return selector(&b);});
+	if(projectedEffects)
+		vstd::erase_if(*projectedEffects, [&](const Bonus & b){return selector(&b);});
 
 	treeVersionLocal++;
 }
 
-void StackWithBonuses::captureTimedEffects()
+void StackWithBonuses::captureEffects()
 {
-	if(!originalTimedEffects)
-	{
-		originalTimedEffects.emplace();
-		const auto original = origBearer->getAllBonuses(CSelector(projectedEffect));
-		for(const auto & bonus : *original)
-			if(!vstd::contains(bonusesToRemove, bonus))
-				originalTimedEffects->push_back(*bonus);
-	}
+	// Resolve refreshes before aging or another mutation. Their retained values
+	// and refreshed durations must survive together, not as independent vectors.
+	const auto effects = getAllBonuses(CSelector(projectedEffect));
+	projectedEffects.emplace();
+	for(const auto & bonus : *effects)
+		projectedEffects->push_back(*bonus);
+	vstd::erase_if(bonusesToAdd, [](const Bonus & bonus){ return projectedEffect(&bonus); });
+	vstd::erase_if(bonusesToUpdate, [](const Bonus & bonus){ return projectedEffect(&bonus); });
 }
 
 void StackWithBonuses::advanceTimedRound()
 {
-	captureTimedEffects();
+	captureEffects();
 	const auto age = [](std::vector<Bonus> & bonuses)
 	{
 		for(auto & bonus : bonuses)
@@ -279,7 +279,7 @@ void StackWithBonuses::advanceTimedRound()
 			return timedProjectionEffect(&bonus) && bonus.turnsRemain <= 0;
 		});
 	};
-	age(*originalTimedEffects);
+	age(*projectedEffects);
 	age(bonusesToAdd);
 	age(bonusesToUpdate);
 	++treeVersionLocal;
