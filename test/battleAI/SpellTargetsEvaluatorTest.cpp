@@ -15,6 +15,7 @@
 #include "AI/BattleAI/SpellTargetsEvaluator.h"
 #include "lib/CStack.h"
 #include "lib/battle/CBattleInfoCallback.h"
+#include "lib/battle/CObstacleInstance.h"
 
 namespace test
 {
@@ -301,6 +302,36 @@ TEST_F(SpellTargetEvaluatorTest, ReturnsSuspectibleCreaturePositionsAndSingleRan
 		 {BattleHex(23)},
 		 BattleHex(23).getAllNeighbouringTiles().toVector()}
 	);
+}
+
+TEST_F(SpellTargetEvaluatorTest, NeutralLocationSpellsEnumerateVisibleObstacleFootprintsWithoutUnitsOrDuplicates)
+{
+	spellTargetTypes({AimType::LOCATION});
+	ON_CALL(mechMock, isNeutralSpell()).WillByDefault(Return(true));
+	ON_CALL(battleMock, getPlayerID()).WillByDefault(Return(std::optional<PlayerColor>(PlayerColor(0))));
+	ON_CALL(battleMock, battleGetAllUnits(false)).WillByDefault(Return(battle::Units{}));
+	auto first = std::make_shared<SpellCreatedObstacle>();
+	first->casterSide = casterSide;
+	first->customSize.insert(BattleHex(70));
+	first->customSize.insert(BattleHex(71));
+	auto second = std::make_shared<SpellCreatedObstacle>();
+	second->casterSide = casterSide;
+	second->customSize.insert(BattleHex(71));
+	second->customSize.insert(BattleHex(72));
+	auto hidden = std::make_shared<SpellCreatedObstacle>();
+	hidden->casterSide = enemySide;
+	hidden->hidden = true;
+	hidden->nativeVisible = false;
+	hidden->customSize.insert(BattleHex(88));
+	ON_CALL(battleState, getAllObstacles()).WillByDefault(Return(IBattleInfo::ObstacleCList{first, second, hidden}));
+	EXPECT_CALL(mechMock, canBeCastAt(Contains(Field(&Destination::hexValue, BattleHex(71))), _))
+		.Times(1).WillOnce(Return(true));
+	EXPECT_CALL(mechMock, canBeCastAt(Contains(Field(&Destination::hexValue, BattleHex(70))), _))
+		.Times(1).WillOnce(Return(true));
+	EXPECT_CALL(mechMock, canBeCastAt(Contains(Field(&Destination::hexValue, BattleHex(72))), _))
+		.Times(1).WillOnce(Return(false));
+	EXPECT_CALL(mechMock, canBeCastAt(Contains(Field(&Destination::hexValue, BattleHex(88))), _)).Times(0);
+	confirmResults({{BattleHex(70)}, {BattleHex(71)}});
 }
 
 TEST_F(SpellTargetEvaluatorTest, AreaSpellHarmFilterTracksControlRestorationAndCasterColor)

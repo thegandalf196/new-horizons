@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
+#include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/CRandomGenerator.h"
 #include "SpellTargetsEvaluator.h"
@@ -114,6 +115,15 @@ std::vector<Target> SpellTargetEvaluator::defaultLocationSpellHeuristics(const s
 			addIfCanBeCast(spellMechanics, randomSurroundingHex, result);
 		}
 	}
+	// OBSTACLE spells (including Remove Obstacle) are normalized to LOCATION
+	// by BaseMechanics. Unit-neighbour sampling alone misses distant obstacles.
+	std::set<BattleHex> considered;
+	for(const auto & target : result)
+		considered.insert(target.front().hexValue);
+	for(const auto & obstacle : spellMechanics->battle()->battleGetAllObstacles())
+		for(const auto hex : obstacle->getAffectedTiles())
+			if(considered.insert(hex).second)
+				addIfCanBeCast(spellMechanics, hex, result);
 	return result;
 }
 

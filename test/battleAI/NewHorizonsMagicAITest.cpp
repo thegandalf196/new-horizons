@@ -12,6 +12,8 @@
 #include "../spells/NewHorizonsMagicProfileFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
+#include "../../AI/BattleAI/SpellTargetsEvaluator.h"
+#include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/modding/CModHandler.h"
@@ -54,6 +56,55 @@ protected:
 			GTEST_SKIP() << "Requires separate native curated preset";
 	}
 };
+
+TEST_F(NewHorizonsMagicAITest, RemoveObstacleEnumeratesNormalizedLocationAndRemovesOnlyInProjectedBattle)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	attackerSideHero->addSpellToSpellbook(SpellID::REMOVE_OBSTACLE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:natureMagic")),
+		3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	SpellCreatedObstacle obstacle;
+	obstacle.uniqueID = 0;
+	obstacle.ID = SpellID::FORCE_FIELD;
+	obstacle.trigger = SpellID::NONE;
+	obstacle.casterSide = BattleSide::DEFENDER;
+	obstacle.pos = BattleHex(8, 5);
+	obstacle.customSize.insert(obstacle.pos);
+	BattleObstaclesChanged add;
+	add.battleID = BattleID(0);
+	obstacle.toInfo(add.change);
+	gameHandler->sendAndApply(add);
+	const auto * spell = SpellID(SpellID::REMOVE_OBSTACLE).toSpell();
+	spells::BattleCast live(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&live);
+	ASSERT_EQ(mechanics->getTargetTypes(), std::vector<spells::AimType>{spells::AimType::LOCATION});
+	const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_EQ(targets.size(), 1u);
+	ASSERT_EQ(targets.front().size(), 1u);
+	EXPECT_EQ(targets.front().front().hexValue, obstacle.pos);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	HypotheticBattle model(environment.get(), callback->getBattle(BattleID(0)));
+	spells::BattleCast projected(&model, attackerSideHero, spells::Mode::HERO, spell);
+	projected.castEval(model.getServerCallback(), targets.front());
+	EXPECT_TRUE(model.getAllObstacles().empty());
+	EXPECT_TRUE(model.hasObstacleChanges());
+	EXPECT_EQ(battle()->getAllObstacles().size(), 1u);
+	EXPECT_EQ(battle()->getAccessibility()[obstacle.pos.toInt()], EAccessibility::OBSTACLE);
+	EXPECT_EQ(attackerSideHero->mana, 1000);
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::REMOVE_OBSTACLE;
+	action.setTarget(targets.front());
+	const auto cost = attackerSideHero->getSpellCost(spell);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_TRUE(battle()->getAllObstacles().empty());
+	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+}
 
 TEST_F(NewHorizonsMagicAITest, ForceFieldCastEvaluationCreatesIsolatedBlockingObstacle)
 {
