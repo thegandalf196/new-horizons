@@ -120,6 +120,63 @@ TEST_F(HypotheticTimedSpellTest, NestedDoctrineReplacementRemovesOnlyOldBattleLo
 	EXPECT_EQ(unit->getMovementRange(), speed);
 }
 
+TEST_F(HypotheticTimedSpellTest, RefreshingHasteDoesNotExtendCoexistingPrayer)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
+	auto prayer = haste(2);
+	prayer.sid = BonusSourceID(SpellID(SpellID::PRAYER));
+	prayer.val = 2;
+	unit->addNewBonus(std::make_shared<Bonus>(haste(1)));
+	unit->addNewBonus(std::make_shared<Bonus>(prayer));
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	parent->updateUnitBonus(unit->unitId(), {haste(5)});
+	const auto prayerSelector = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::PRAYER)));
+	const auto hasteSelector = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::HASTE)));
+	const auto * projected = parent->battleGetUnitByID(unit->unitId());
+	const auto broad = projected->getAllBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	const auto refreshed = broad->getFirst(hasteSelector);
+	const auto untouched = broad->getFirst(prayerSelector);
+	ASSERT_TRUE(refreshed);
+	ASSERT_TRUE(untouched);
+	EXPECT_EQ(refreshed->turnsRemain, 5);
+	EXPECT_EQ(untouched->turnsRemain, 2);
+	const auto narrow = projected->getAllBonuses(prayerSelector);
+	ASSERT_EQ(narrow->size(), 1u);
+	EXPECT_EQ(narrow->front()->turnsRemain, 2);
+
+	HypotheticBattle child(environment.get(), parent);
+	child.nextRound();
+	const auto aged = child.battleGetUnitByID(unit->unitId())->getAllBonuses(prayerSelector);
+	ASSERT_EQ(aged->size(), 1u);
+	EXPECT_EQ(aged->front()->turnsRemain, 1);
+	EXPECT_EQ(unit->getAllBonuses(prayerSelector)->front()->turnsRemain, 2);
+}
+
+TEST_F(HypotheticTimedSpellTest, DistinctValueTypesAreAddedRatherThanRefreshingAnUnrelatedEffect)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
+	unit->addNewBonus(std::make_shared<Bonus>(haste(1)));
+	HypotheticBattle model(environment.get(), callback);
+	auto percent = haste(5);
+	percent.valType = BonusValueType::PERCENT_TO_ALL;
+	model.updateUnitBonus(unit->unitId(), {percent});
+	const auto * projected = model.battleGetUnitByID(unit->unitId());
+	const auto bonuses = projected->getAllBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	ASSERT_EQ(bonuses->size(), 2u);
+	const auto base = bonuses->getFirst(Selector::typeSubtypeValueType(percent.type, percent.subtype, haste().valType));
+	const auto added = bonuses->getFirst(Selector::typeSubtypeValueType(percent.type, percent.subtype, percent.valType));
+	ASSERT_TRUE(base);
+	ASSERT_TRUE(added);
+	EXPECT_EQ(base->turnsRemain, 1);
+	EXPECT_EQ(added->turnsRemain, 5);
+	const auto narrow = projected->getAllBonuses(Selector::typeSubtypeValueType(percent.type, percent.subtype, percent.valType));
+	ASSERT_EQ(narrow->size(), 1u);
+	EXPECT_EQ(narrow->front()->turnsRemain, 5);
+	EXPECT_EQ(unit->getAllBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT))->size(), 1u);
+}
+
 TEST_F(HypotheticTimedSpellTest, OriginalSpellExpiresInModelWithoutChangingLiveDurationOrPermanentBonus)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());

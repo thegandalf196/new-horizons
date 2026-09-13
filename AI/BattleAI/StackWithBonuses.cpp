@@ -36,7 +36,8 @@ void actualizeEffect(TBonusListPtr target, const Bonus & ef)
 {
 	for(auto & bonus : *target) //TODO: optimize
 	{
-		if(bonus->source == BonusSource::SPELL_EFFECT && bonus->type == ef.type && bonus->subtype == ef.subtype)
+		if(bonus->source == ef.source && bonus->sid == ef.sid && bonus->type == ef.type
+			&& bonus->subtype == ef.subtype && bonus->valType == ef.valType)
 		{
 			if(bonus->turnsRemain < ef.turnsRemain)
 			{
@@ -162,7 +163,7 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 	{
 		if(selector(&bonus))
 		{
-			if(ret->getFirst(Selector::source(BonusSource::SPELL_EFFECT, bonus.sid).And(Selector::typeSubtype(bonus.type, bonus.subtype))))
+			if(ret->getFirst(Selector::source(BonusSource::SPELL_EFFECT, bonus.sid).And(Selector::typeSubtypeValueType(bonus.type, bonus.subtype, bonus.valType))))
 			{
 				actualizeEffect(ret, bonus);
 			}
