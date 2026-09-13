@@ -46,6 +46,17 @@ def verify_redraw(source):
         assert re.search(expected, source), f'{name} must refresh before its base render'
 
 
+def verify_orders_help(source):
+    popup = source.split('ordersButton->addPopupCallback([this]', 1)[1].split('\n\t\t});', 1)[0]
+    assert 'CPlayerInterface::battleInt.get() != &owner' in popup
+    assert '!owner.curInt || !owner.actionsController' in popup
+    assert 'CRClickPopup::createAndPush' in popup
+    for forbidden in ('bOrdersf(', 'battleMakeSpellAction', 'block(false)', 'setShortcutBlocked'):
+        assert forbidden not in popup
+    assert 'CButton::tooltip("Orders and Doctrines", "")' in source
+    assert re.search(r'ordersButton->block\(ordersBlocked\);\s*//[^\n]*\n\s*ordersButton->addUsedEvents\(SHOW_POPUP\);\s*setShortcutBlocked\(EShortcut::BATTLE_OPEN_ORDERS, ordersBlocked\);', source)
+
+
 def main():
     source = SOURCE.read_text()
     verify(source)
@@ -83,6 +94,21 @@ def main():
             continue
         raise AssertionError(f'Redraw-contract mutant {index} survived')
     print(f'PASS: both redraw paths; {len(redraw_mutants)} missing/late-refresh mutants rejected')
+    window = (SOURCE.parent / 'BattleWindow.cpp').read_text()
+    verify_orders_help(window)
+    help_mutants = [
+        window.replace('addUsedEvents(SHOW_POPUP)', 'addUsedEvents(SHOW_POPUP | LCLICK)', 1),
+        window.replace('addUsedEvents(SHOW_POPUP)', 'addUsedEvents(SHOW_POPUP | KEYBOARD)', 1),
+        window.replace('CRClickPopup::createAndPush(reason', 'bOrdersf(); CRClickPopup::createAndPush(reason', 1),
+    ]
+    for index, mutant in enumerate(help_mutants):
+        assert mutant != window
+        try:
+            verify_orders_help(mutant)
+        except AssertionError:
+            continue
+        raise AssertionError(f'Orders-help mutant {index} survived')
+    print('PASS: read-only disabled Orders help; 3 click/key/dispatch mutants rejected')
     print('NOT compiled, actual-widget, lifetime, graphical or command-validation evidence')
 
 

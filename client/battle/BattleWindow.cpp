@@ -39,6 +39,7 @@
 #include "../windows/CMarketWindow.h"
 #include "../windows/CMessage.h"
 #include "../windows/CSpellWindow.h"
+#include "../windows/InfoWindows.h"
 #include "../windows/settings/SettingsMainWindow.h"
 
 #include "../../lib/CConfigHandler.h"
@@ -133,7 +134,28 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		// separately approved pointing gauntlet before any visual acceptance.
 		addShortcut(EShortcut::BATTLE_OPEN_ORDERS, [this] { bOrdersf(); });
 		ordersButton = std::make_shared<CButton>(Point(595, 560), AnimationPath::builtin("NH_hero_actions_entry"),
-			CButton::tooltip("Orders and Doctrines", "Orders cost no mana or spellbook. Spells, Orders and Doctrine changes share one hero action per round."));
+			CButton::tooltip("Orders and Doctrines", ""));
+		ordersButton->addPopupCallback([this]
+		{
+			std::string reason;
+			if(CPlayerInterface::battleInt.get() != &owner || !owner.curInt || !owner.actionsController)
+				reason = "Battle context is no longer available.";
+			else if(owner.curInt->isAutoFightOn)
+				reason = "Autofight currently controls this battle.";
+			else if(owner.isInTacticsMode())
+				reason = "Orders are unavailable during tactics.";
+			else if(!owner.currentHero())
+				reason = "No commanding hero is available.";
+			else if(owner.actionsController->heroSpellcastingModeActive())
+				reason = "Finish or cancel spell targeting first.";
+			else if(!owner.makingTurn())
+				reason = "It is not your turn.";
+			else if(ordersButton->isBlocked())
+				reason = "Battle input is temporarily unavailable.";
+			else
+				reason = "Open Orders to inspect commands and their current availability.";
+			CRClickPopup::createAndPush(reason + "\n\nOrders require no mana or spellbook. Opening or reading the panel spends nothing. Spells, Orders and Doctrine changes share one hero action per round.");
+		});
 		// Use the configurable interface's normal single-dispatch path: it defers
 		// to an active assigned button. loadButtonHotkey attaches the callback once.
 		JsonNode ordersHotkey;
@@ -960,6 +982,8 @@ void BattleWindow::blockUI(bool on)
 		const bool ordersBlocked = on || !owner.curInt || owner.curInt->isAutoFightOn
 			|| owner.isInTacticsMode() || !owner.currentHero() || owner.actionsController->heroSpellcastingModeActive();
 		ordersButton->block(ordersBlocked);
+		// Disabled issuance must not hide read-only help. Do not restore click/key events.
+		ordersButton->addUsedEvents(SHOW_POPUP);
 		setShortcutBlocked(EShortcut::BATTLE_OPEN_ORDERS, ordersBlocked);
 	}
 
