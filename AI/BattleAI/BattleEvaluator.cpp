@@ -849,10 +849,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							innerCache,
 							state);
 
-						auto ourUnit = state->battleGetOwner(unit) == playerID ? 1 : -1;
-						auto goodEffect = newHealth > oldHealth ? 1 : -1;
+						const bool ourUnit = state->battleGetOwner(unit) == playerID;
+						const bool goodEffect = newHealth > oldHealth;
 
-						if(ourUnit * goodEffect == 1)
+						if(ourUnit == goodEffect)
 						{
 							auto isMagical = state->getForUpdate(unit->unitId())->summoned
 								|| unit->isClone()

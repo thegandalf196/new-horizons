@@ -12,6 +12,7 @@
 #include "../spells/NewHorizonsMagicProfileFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/PossibleSpellcast.h"
+#include "../../AI/BattleAI/PotentialTargets.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../AI/BattleAI/SpellTargetsEvaluator.h"
 #include "../../lib/battle/CObstacleInstance.h"
@@ -57,6 +58,98 @@ protected:
 			GTEST_SKIP() << "Requires separate native curated preset";
 	}
 };
+
+TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithoutFollowUpAttacks)
+{
+	useCommands = false;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto id : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(id);
+	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
+	const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER,
+		2 * attackerSideHero->getEffectPowerDivisor(spell), ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
+	auto * valuable = addStack(BattleSide::DEFENDER, creatureByName("core:airElemental"), BattleHex(12, 5), 100);
+	auto * weak = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 2), 1);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != valuable && unit != weak)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	ASSERT_EQ(active->getMovementRange(), 0);
+	ASSERT_FALSE(active->canShoot());
+	valuable->summoned = true; // Fixture state of an enemy summoned elemental.
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	const auto health = valuable->getAvailableHealth();
+	ASSERT_LT(spell->calculateDamage(attackerSideHero), health);
+	ASSERT_GT(spell->calculateDamage(attackerSideHero), weak->getAvailableHealth());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto baseline = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache originalCache;
+	originalCache.buildDamageCache(baseline, BattleSide::ATTACKER);
+	std::array<float, 2> reductions{};
+	const std::array<const CStack *, 2> victims{weak, valuable};
+	for(size_t index = 0; index < victims.size(); ++index)
+	{
+		auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+		spells::BattleCast cast(model.get(), attackerSideHero, spells::Mode::HERO, spell);
+		const spells::Target target{spells::Destination(victims[index])};
+		ASSERT_TRUE(spell->battleMechanics(&cast)->canBeCastAt(target));
+		cast.castEval(model->getServerCallback(), target);
+		EXPECT_FALSE(model->battleGetUnitByID(victims[index]->unitId())->isGhost());
+		EXPECT_EQ(model->getForUpdate(victims[index]->unitId())->summoned, index == 1);
+		DamageCache copy = originalCache;
+		DamageCache cache(&copy);
+		cache.buildDamageCache(model, BattleSide::ATTACKER);
+		const auto * projectedActive = model->battleGetUnitByID(active->unitId());
+		ASSERT_EQ(projectedActive->getMovementRange(), 0);
+		PotentialTargets targets(projectedActive, cache, model);
+		ASSERT_TRUE(targets.possibleAttacks.empty());
+		BattleExchangeEvaluator exchange(model, environment, 1.0f, 2);
+		EXPECT_EQ(exchange.findMoveTowardsUnreachable(projectedActive, targets, cache, model).score,
+			EvaluationResult::INEFFECTIVE_SCORE);
+		const auto lost = victims[index]->getAvailableHealth()
+			- model->battleGetUnitByID(victims[index]->unitId())->getAvailableHealth();
+		ASSERT_GT(lost, 0);
+		reductions[index] = AttackPossibility::calculateDamageReduce(nullptr, victims[index], lost, cache, model);
+	}
+	ASSERT_GT(reductions[1], reductions[0]);
+	ASSERT_GT(reductions[0], 0);
+	for(const bool summoned : {true, false})
+	{
+		valuable->summoned = summoned;
+		callback->submitted.clear();
+		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+		evaluator.selectStackAction(active);
+		ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+		ASSERT_EQ(callback->submitted.size(), 1u);
+		EXPECT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
+		const auto target = callback->submitted.front().getTarget(battle());
+		ASSERT_EQ(target.size(), 1u);
+		EXPECT_EQ(target.front().unitValue, valuable);
+		EXPECT_EQ(valuable->getAvailableHealth(), health);
+		EXPECT_TRUE(weak->alive());
+		EXPECT_EQ(attackerSideHero->mana, 1000);
+	}
+}
 
 TEST_F(NewHorizonsMagicAITest, ResurrectionCanonicalTargetReacquiresProjectedStateFromLiveAimIdentity)
 {
