@@ -305,9 +305,16 @@ void CHeroWindow::configureNewHorizonsLayout()
 			auto area = std::make_shared<LRClickableAreaWText>(Rect(x, y, 98, 44), "Provisional ability slot");
 			area->text = "This preview reserves space for three associated abilities. No ability roster, learned state or eligibility is bound here. Saved masteries remain separate in Hero development; no selection is converted.";
 			provisionalAbilityAreas.push_back(area);
-			labels.push_back(std::make_shared<CLabel>(x + 8, y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "?", 20));
-			labels.push_back(std::make_shared<CLabel>(x + 38, y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Unbound", 58));
-			labels.push_back(std::make_shared<CLabel>(x + 38, y + 22, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "slot", 58));
+			const std::array cellLabels = {
+				std::make_shared<CLabel>(x + 8, y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "?", 20),
+				std::make_shared<CLabel>(x + 38, y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Unbound", 58),
+				std::make_shared<CLabel>(x + 38, y + 22, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "slot", 58)
+			};
+			for(const auto & label : cellLabels)
+			{
+				labels.push_back(label);
+				provisionalAbilityLabels[i].push_back(label);
+			}
 		}
 	}
 	leadershipArea = std::make_shared<LRClickableAreaWText>(Rect(152, 88, 140, 44), "Leadership capacity");
@@ -558,6 +565,13 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	for(size_t g=0; g < secSkills.size(); ++g)
 	{
 		int offset = secSkillSlider ? secSkillSlider->getValue() * 2 : 0;
+		if(newHorizonsLayout)
+		{
+			// Keep all reserved cells visible, but do not imply abilities for an empty skill row.
+			const bool learnedSkill = g < curHero->secSkills.size();
+			for(const auto & label : provisionalAbilityLabels[g])
+				label->setEnabled(learnedSkill);
+		}
 		if(curHero->secSkills.size() < g + offset + 1)
 		{
 			secSkillNames[g]->setText("");

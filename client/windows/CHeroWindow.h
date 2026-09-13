@@ -96,6 +96,7 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::vector<std::shared_ptr<CLabel>> labels;
 	bool newHorizonsLayout = false;
 	std::vector<std::shared_ptr<LRClickableAreaWText>> provisionalAbilityAreas;
+	std::array<std::vector<std::shared_ptr<CLabel>>, 8> provisionalAbilityLabels;
 	std::vector<std::shared_ptr<CLabel>> growthValues;
 	std::shared_ptr<CLabel> leadershipValue;
 	std::shared_ptr<CLabel> movementValue;
