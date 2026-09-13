@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Execute the real shared MSVC resource staging helper against bounded fixtures."""
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -30,6 +31,35 @@ class CuratedResourceTest(unittest.TestCase):
         self.assertTrue((self.package / 'Mods/new-horizons/fixture.json').is_file())
         self.assertEqual({p.relative_to(self.package).as_posix() for p in self.package.rglob('*') if p.is_file()},
                          {name + '/fixture.json' for name in CURATED_RESOURCE_TREES})
+
+    def test_orders_binding_and_label_survive_resource_staging(self):
+        repository = Path(__file__).resolve().parents[2]
+        resources = (
+            'config/keyBindingsConfig.json',
+            'Mods/vcmi/Content/config/translations/english.json',
+        )
+        for name in resources:
+            target = self.install / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((repository / name).read_bytes())
+        stage_engine_resources(self.install, self.package)
+        for name in resources:
+            self.assertEqual((self.package / name).read_bytes(),
+                             (repository / name).read_bytes(), name)
+        self.assertIn(b'"battleOpenOrders"',
+                      (self.package / resources[0]).read_bytes())
+        self.assertIn(b'"vcmi.keyBindings.keyBinding.battleOpenOrders"',
+                      (self.package / resources[1]).read_bytes())
+
+    def test_committed_orders_activation_and_redraw_regressions(self):
+        repository = Path(__file__).resolve().parents[2]
+        result = subprocess.run(
+            [sys.executable, '-I', '-S', '-B',
+             str(repository / 'client/tests/check-hero-action-spell-routing.py')],
+            cwd=repository, capture_output=True, text=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('9 in-memory mutants rejected', result.stdout)
+        self.assertIn('4 missing/late-refresh mutants rejected', result.stdout)
 
     def test_missing_managed_module_is_fatal(self):
         (self.install / 'Mods/new-horizons/fixture.json').unlink()
