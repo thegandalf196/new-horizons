@@ -146,7 +146,11 @@ SlotID StackWithBonuses::unitSlot() const
 TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {
 	auto ret = std::make_shared<BonusList>();
-	TConstBonusListPtr originalList = origBearer->getAllBonuses(selector, cachingStr);
+	// Refresh changes duration, not value. Filtering before merging can hide the
+	// existing identity and incorrectly turn a refresh into a new effect.
+	const auto & mergeSelector = bonusesToUpdate.empty() ? selector : Selector::all;
+	TConstBonusListPtr originalList = origBearer->getAllBonuses(mergeSelector,
+		bonusesToUpdate.empty() ? cachingStr : std::string());
 
 	vstd::copy_if(*originalList, std::back_inserter(*ret), [this](const std::shared_ptr<Bonus> & b)
 	{
@@ -156,12 +160,12 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 
 	if(originalTimedEffects)
 		for(const auto & bonus : *originalTimedEffects)
-			if(selector(&bonus))
+			if(mergeSelector(&bonus))
 				ret->push_back(std::make_shared<Bonus>(bonus));
 
 	for(const Bonus & bonus : bonusesToUpdate)
 	{
-		if(selector(&bonus))
+		if(mergeSelector(&bonus))
 		{
 			if(ret->getFirst(Selector::source(BonusSource::SPELL_EFFECT, bonus.sid).And(Selector::typeSubtypeValueType(bonus.type, bonus.subtype, bonus.valType))))
 			{
@@ -178,9 +182,11 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 	for(auto & bonus : bonusesToAdd)
 	{
 		auto b = std::make_shared<Bonus>(bonus);
-		if(selector(b.get()))
+		if(mergeSelector(b.get()))
 			ret->push_back(b);
 	}
+	if(!bonusesToUpdate.empty())
+		ret->remove_if([&](const Bonus * bonus){ return !selector(bonus); });
 	//TODO limiters?
 	return ret;
 }

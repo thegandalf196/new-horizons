@@ -177,6 +177,39 @@ TEST_F(HypotheticTimedSpellTest, DistinctValueTypesAreAddedRatherThanRefreshingA
 	EXPECT_EQ(unit->getAllBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT))->size(), 1u);
 }
 
+TEST_F(HypotheticTimedSpellTest, RefreshMergesBeforeFilteringAndPreservesAuthoritativeValue)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
+	unit->addNewBonus(std::make_shared<Bonus>(haste(1)));
+	HypotheticBattle model(environment.get(), callback);
+	auto refresh = haste(5);
+	refresh.val = 9;
+	model.updateUnitBonus(unit->unitId(), {refresh});
+	const CSelector incomingValue([](const Bonus * bonus)
+	{
+		return bonus->source == BonusSource::SPELL_EFFECT && bonus->val == 9;
+	});
+	const CSelector retainedValue([](const Bonus * bonus)
+	{
+		return bonus->source == BonusSource::SPELL_EFFECT && bonus->val == 3;
+	});
+	const auto * projected = model.battleGetUnitByID(unit->unitId());
+	EXPECT_TRUE(projected->getAllBonuses(incomingValue)->empty());
+	const auto narrow = projected->getAllBonuses(retainedValue);
+	ASSERT_EQ(narrow->size(), 1u);
+	EXPECT_EQ(narrow->front()->turnsRemain, 5);
+	const auto broad = projected->getAllBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	ASSERT_EQ(broad->size(), 1u);
+	EXPECT_EQ(broad->front()->val, narrow->front()->val);
+	EXPECT_EQ(broad->front()->turnsRemain, narrow->front()->turnsRemain);
+	EXPECT_EQ(unit->getAllBonuses(retainedValue)->front()->turnsRemain, 1);
+	battle()->updateUnitBonus(unit->unitId(), {refresh});
+	const auto authoritative = unit->getAllBonuses(retainedValue);
+	ASSERT_EQ(authoritative->size(), 1u);
+	EXPECT_EQ(authoritative->front()->turnsRemain, narrow->front()->turnsRemain);
+	EXPECT_TRUE(unit->getAllBonuses(incomingValue)->empty());
+}
+
 TEST_F(HypotheticTimedSpellTest, OriginalSpellExpiresInModelWithoutChangingLiveDurationOrPermanentBonus)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
