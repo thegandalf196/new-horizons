@@ -260,13 +260,16 @@ CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _m
 		// Cover the original four-school strip with an original plain panel;
 		// inactive legacy emblems must not masquerade as selectable school tabs.
 		schoolTabPanel = std::make_shared<TransparentFilledRectangle>(Rect(524 + offR, 88, 83, 294), ColorRGBA(52, 46, 43), ColorRGBA(180, 154, 98));
-		allSchoolsButton = std::make_shared<CToggleButton>(Point(534 + offR, 318), AnimationPath::builtin("NH_spells_button"),
-			CButton::tooltip(LIBRARY->generaltexth->zelp[458].first, LIBRARY->generaltexth->zelp[458].second),
-			[this](bool) { selectSchool(SpellSchool::ANY); });
-		// Toggle release refreshes hover before checking PRESSED. Enabling hover
-		// highlighting would erase that state and prevent the selection callback.
-		// Default hover still supplies tooltips; selected All cannot be deselected.
-		allSchoolsButton->setAllowDeselection(false);
+		// SPELTAB is a five-bookmark strip: frame 4 selects All, while frame 0
+		// leaves All inactive. Crop only the yellow bookmark, at native size.
+		// Resolve purchaser resources at runtime; never ship extracted pixels.
+		auto tabs = ENGINE->renderHandler().loadAnimation(AnimationPath::builtin("SPELTAB"), EImageBlitMode::COLORKEY);
+		const Rect allBookmark(0, 236, 83, 57);
+		allSchoolsInactive = std::make_shared<CPicture>(tabs->getImage(0), allBookmark, 524 + offR, 324);
+		allSchoolsSelected = std::make_shared<CPicture>(tabs->getImage(4), allBookmark, 524 + offR, 324);
+		// Preserve the previous 64x64 All control's hit/help footprint.
+		interactiveAreas.push_back(std::make_shared<InteractiveArea>(Rect(534 + offR + pos.x, 318 + pos.y, 64, 64),
+			std::bind(&CSpellWindow::selectSchool, this, SpellSchool::ANY), 458, this));
 	}
 	const int customSchoolCount = customSpellSchools.size();
 	const int fullSizeCapacity = isBigSpellbook ? MAX_CUSTOM_SPELL_SCHOOLS_BIG : MAX_CUSTOM_SPELL_SCHOOLS;
@@ -587,8 +590,11 @@ void CSpellWindow::selectSchool(SpellSchool school)
 		setSchoolImages(selectedTab);
 		setCurrentPage(0);
 	}
-	if(allSchoolsButton)
-		allSchoolsButton->setSelectedSilent(selectedTab == SpellSchool::ANY);
+	if(allSchoolsSelected)
+	{
+		allSchoolsSelected->setEnabled(selectedTab == SpellSchool::ANY);
+		allSchoolsInactive->setEnabled(selectedTab != SpellSchool::ANY);
+	}
 	computeSpellsPerArea();
 }
 
@@ -710,8 +716,11 @@ void CSpellWindow::setSchoolImages(SpellSchool school)
 			schoolTab->visible = false;
 		}
 	}
-	if(allSchoolsButton)
-		allSchoolsButton->setSelectedSilent(school == SpellSchool::ANY);
+	if(allSchoolsSelected)
+	{
+		allSchoolsSelected->setEnabled(school == SpellSchool::ANY);
+		allSchoolsInactive->setEnabled(school != SpellSchool::ANY);
+	}
 
 	auto it = std::find(customSpellSchools.begin(), customSpellSchools.end(), school);
 	int pos = (it == customSpellSchools.end()) ? -1 : std::distance(customSpellSchools.begin(), it);
