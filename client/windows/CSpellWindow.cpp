@@ -267,6 +267,9 @@ CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _m
 		const Rect allBookmark(0, 236, 83, 57);
 		allSchoolsInactive = std::make_shared<CPicture>(tabs->getImage(0), allBookmark, 524 + offR, 324);
 		allSchoolsSelected = std::make_shared<CPicture>(tabs->getImage(4), allBookmark, 524 + offR, 324);
+		// Cropped CPicture registers input by default; these images are decoration.
+		allSchoolsInactive->removeUsedEvents(LCLICK | SHOW_POPUP);
+		allSchoolsSelected->removeUsedEvents(LCLICK | SHOW_POPUP);
 		// Preserve the previous 64x64 All control's hit/help footprint.
 		interactiveAreas.push_back(std::make_shared<InteractiveArea>(Rect(534 + offR + pos.x, 318 + pos.y, 64, 64),
 			std::bind(&CSpellWindow::selectSchool, this, SpellSchool::ANY), 458, this));
