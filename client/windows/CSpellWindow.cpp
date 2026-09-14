@@ -257,9 +257,12 @@ CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _m
 		schoolTab = std::make_shared<CAnimImage>(AnimationPath::builtin("SpelTab"), getAnimFrameFromSchool(selectedTab), 0, 524 + offR, 88);
 	else
 	{
-		// Cover the original four-school strip with an original plain panel;
-		// inactive legacy emblems must not masquerade as selectable school tabs.
-		schoolTabPanel = std::make_shared<TransparentFilledRectangle>(Rect(524 + offR, 88, 83, 294), ColorRGBA(52, 46, 43), ColorRGBA(180, 154, 98));
+		// Restore this region from the actual book background, including its edge.
+		// SpelBack and generated SpellBookLarge contain no school emblems: the
+		// legacy four-school strip is a separate SpelTab image, created only above.
+		// Reuse the already player-colored surface, at the same source coordinates.
+		schoolTabPanel = std::make_shared<CPicture>(background->getSurface(), Rect(524 + offR, 88, 83, 294), 524 + offR, 88);
+		schoolTabPanel->removeUsedEvents(LCLICK | SHOW_POPUP);
 		// SPELTAB is a five-bookmark strip: frame 4 selects All, while frame 0
 		// leaves All inactive. Crop only the yellow bookmark, at native size.
 		// Resolve purchaser resources at runtime; never ship extracted pixels.

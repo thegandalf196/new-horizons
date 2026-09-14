@@ -74,7 +74,7 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	std::shared_ptr<InteractiveArea> rightCornerArea;
 
 	std::shared_ptr<CAnimImage> schoolTab;
-	std::shared_ptr<TransparentFilledRectangle> schoolTabPanel;
+	std::shared_ptr<CPicture> schoolTabPanel;
 	std::shared_ptr<CPicture> allSchoolsInactive;
 	std::shared_ptr<CPicture> allSchoolsSelected;
 	std::vector<std::shared_ptr<CAnimImage>> schoolTabCustom;
