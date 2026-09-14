@@ -130,7 +130,9 @@ def package(engine, images, manifest, approved_digest, source, platform, output)
         'Fresh profile: ' + profile + '\n')
     (stage / 'README-New-Horizons.txt').write_text((stage / 'PRIVATE-PREVIEW.txt').read_text())
     identity.pop('proprietary_assets_included', None)
-    identity.update(private_preview_recipe=1, recipe_sha256=digest(Path(__file__)),
+    identity.update(engine_scope=identity.get('scope'),
+                    scope='CANONICAL PRIVATE PLAYER PREVIEW; not public or native acceptance',
+                    private_preview_recipe=1, recipe_sha256=digest(Path(__file__)),
                     art_manifest_sha256=approved_digest,
                     engine_identity_sha256=before['BUILD-IDENTITY.json'],
                     preview_platform=platform, preview_profile=profile,
