@@ -4,6 +4,7 @@ SPDX-License-Identifier: CC0-1.0
 Requires Pillow only. No purchaser assets or concept images are read.
 """
 from pathlib import Path
+import hashlib
 import json
 from PIL import Image, ImageDraw, ImageColor
 
@@ -11,6 +12,20 @@ HERE = Path(__file__).resolve().parent
 OUT = HERE.parent.parent / 'Mods/new-horizons/Images'
 SOURCE = HERE / 'svg'
 SCALE = 4
+APPROVED_MANIFEST = HERE / 'approved-six-school-assets.json'
+APPROVED_FILES = json.loads(APPROVED_MANIFEST.read_text())['files']
+
+
+def preserve_approved(path):
+    expected = APPROVED_FILES.get(path.name)
+    if expected is None:
+        return False
+    if not path.is_file():
+        raise RuntimeError(f'Missing approved artwork: {path}')
+    actual = hashlib.sha256(path.read_bytes()).hexdigest()
+    if actual != expected:
+        raise RuntimeError(f'Approved artwork differs from its manifest: {path}')
+    return True
 
 # Authored geometric motifs, not traced from Heroes artwork or concept images.
 MOTIFS = {
@@ -96,10 +111,14 @@ class Art:
             alpha = raster.getchannel('A')
             alpha.paste(0, (0, 0, self.w, 28))
             raster.putalpha(alpha)
-        raster.save(OUT/(name+'.png'))
+        output = OUT/(name+'.png')
+        if not preserve_approved(output):
+            raster.save(output)
 
 def animation(name,frames):
-    (OUT/(name+'.json')).write_text(json.dumps({'images':[{'group':0,'frame':i,'file':f} for i,f in enumerate(frames)]},indent=2)+'\n')
+    output = OUT/(name+'.json')
+    if not preserve_approved(output):
+        output.write_text(json.dumps({'images':[{'group':0,'frame':i,'file':f} for i,f in enumerate(frames)]},indent=2)+'\n')
 
 for name in MOTIFS:
     art=Art(64,64);art.circle(32,32,30,'#302a25','#b49a62',2);art.motif(name,4,4,56);art.save('NH_'+name+'_icon')

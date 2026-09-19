@@ -1,0 +1,24 @@
+{
+  "images": [
+    {
+      "group": 0,
+      "frame": 0,
+      "file": "NH_chaos_spellBorder_none.png"
+    },
+    {
+      "group": 0,
+      "frame": 1,
+      "file": "NH_chaos_spellBorder_basic.png"
+    },
+    {
+      "group": 0,
+      "frame": 2,
+      "file": "NH_chaos_spellBorder_advanced.png"
+    },
+    {
+      "group": 0,
+      "frame": 3,
+      "file": "NH_chaos_spellBorder_expert.png"
+    }
+  ]
+}
