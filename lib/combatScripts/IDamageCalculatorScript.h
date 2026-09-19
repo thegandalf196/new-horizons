@@ -44,6 +44,9 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int siegeSkillMultiplier = 0;
 	/// Additive ranged premium for this exact primary target; zero is legacy/no mark.
 	int targetedRangedCommandPercent = 0;
+	/// Percentage of the target's Creature Defense ignored by this exact attack.  This is
+	/// populated from authoritative saved perk state, not from installed content alone.
+	int luckyRangedDefenseIgnorePercent = 0;
 
 	/// Which of the bonus types the script declared an interest in each of the two carries
 	std::unordered_map<std::string, bool> attackerBonuses;
@@ -68,6 +71,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("chargeDistance", chargeDistance, "Hexes crossed to reach the target, which is what jousting scales with.");
 		s("shooting", shooting, "Whether the blow is a shot.");
 		s("targetedRangedCommandPercent", targetedRangedCommandPercent, "Target-specific additive ranged premium.");
+		s("luckyRangedDefenseIgnorePercent", luckyRangedDefenseIgnorePercent,
+			"Percentage of target Creature Defense ignored by this lucky ranged attack.");
 		s("luckyStrike", luckyStrike, "Whether luck struck.");
 		s("unluckyStrike", unluckyStrike, "Whether bad luck struck.");
 		s("deathBlow", deathBlow, "Whether a death blow was rolled.");

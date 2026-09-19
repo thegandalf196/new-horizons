@@ -20,9 +20,12 @@ ACTIVE_PERKS = {
     "new-horizons:sorceryMagic.temporalField",
     "new-horizons:sorceryMagic.temporalist",
     "new-horizons:sorceryMagic.teleporter",
+    "new-horizons:sorceryMagic.countermage",
+    "new-horizons:sylvanLuck.elvenPrecision",
 }
 ACTIVE_RANK_SKILLS = {
     "new-horizons:offense",
+    "new-horizons:sylvanLuck",
 }
 EXPECTED_SKILLS = (
     "new-horizons:offense",

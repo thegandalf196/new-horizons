@@ -4268,7 +4268,7 @@
 								"requires": "basic",
 								"description": "Lucky ranged attacks ignore 25% Creature Defense.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Lucky ranged attacks ignore 25% Creature Defense."
 								}
 							},

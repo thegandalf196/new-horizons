@@ -182,12 +182,22 @@ end
 -- ---- attack against defense ------------------------------------------------------------------
 
 --- Defense the reducer makes its opponent ignore, as a negative number.
-function Script:getDefenseIgnored(info, reducer, present, defense)
+function Script:getDefenseIgnored(info, reducer, present, defense, targetDefense)
 	local reduction = getBonusValueOfTypeAndRange(reducer, present, "ENEMY_DEFENCE_REDUCTION", info.shooting) / 100
+	local ignored = 0
 
-	if reduction <= 0 then return 0 end
+	if reduction > 0 then
+		ignored = math.floor(reduction * defense) + 1
+	end
 
-	return -math.min(math.floor(reduction * defense) + 1, defense)
+	-- Elven Precision is supplied as an explicit attack mechanic by the authoritative
+	-- battle callback. It only applies to the target's defense, never to the attacker's
+	-- defense while resolving Frenzy.
+	if targetDefense and info.shooting and info.luckyStrike then
+		ignored = ignored + math.floor((info.luckyRangedDefenseIgnorePercent or 0) * defense / 100)
+	end
+
+	return -math.min(ignored, defense)
 end
 
 --- Frenzy trades the defense of its bearer for attack. How much defense there is to trade is
@@ -199,7 +209,7 @@ function Script:getAttackFromFrenzy(info)
 
 	local defense = info.attacker:getDefense(info.shooting)
 
-	return idiv(frenzy * (defense + self:getDefenseIgnored(info, info.defender, info.defenderBonuses, defense)), 100)
+	return idiv(frenzy * (defense + self:getDefenseIgnored(info, info.defender, info.defenderBonuses, defense, false)), 100)
 end
 
 --- Slayer only reaches a king it is strong enough for.
@@ -236,7 +246,7 @@ function Script:getDefense(info)
 
 	local base = info.defender:getDefense(info.shooting)
 
-	return base + self:getDefenseIgnored(info, info.attacker, info.attackerBonuses, base)
+	return base + self:getDefenseIgnored(info, info.attacker, info.attackerBonuses, base, true)
 end
 
 -- ---- the factors -----------------------------------------------------------------------------

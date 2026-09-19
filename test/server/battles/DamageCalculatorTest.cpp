@@ -17,6 +17,7 @@
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusCustomTypes.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
+#include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/modding/IdentifierStorage.h"
 #include "../../../lib/modding/ModScope.h"
 
@@ -134,6 +135,24 @@ public:
 
 class DamageCalculatorTest : public DamageCalculatorTestBase
 {
+};
+
+class SylvanLuckPerkDamageTest : public DamageCalculatorTestBase
+{
+protected:
+	void SetUp() override
+	{
+		DamageCalculatorTestBase::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
 };
 
 // ---- no factors at all ------------------------------------------------------------------------
@@ -370,6 +389,46 @@ INSTANTIATE_TEST_SUITE_P(Scenarios, SylvanLuckDamageTest, ::testing::Values(
 	SylvanLuckCase{"expert", expert, 15000}
 ),
 	[](const ::testing::TestParamInfo<SylvanLuckCase> & info) { return info.param.name; });
+
+TEST_F(SylvanLuckPerkDamageTest, ElvenPrecisionAppliesToLuckyRangedDamage)
+{
+	setSkill(attackerSideHero, "new-horizons:sylvanLuck", basic);
+	attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"));
+
+	const auto * source = attacker(titan);
+	const auto * target = defender(angel);
+	BattleAttackInfo info(source, target, 0, true);
+	info.luckyStrike = true;
+
+	// The target has 20 defense, so Elven Precision removes exactly five points. The
+	// regular 5% attack/defense factor then rises from 20% to 45% before the 2.25x
+	// basic Sylvan Luck multiplier is applied: 4000 * (1 + .45 + 1.25) = 10800.
+	const auto result = battle()->calculateDmgRange(info);
+	EXPECT_EQ(result.damage.min, 10800);
+	EXPECT_EQ(result.damage.max, 16200);
+}
+
+TEST_F(SylvanLuckPerkDamageTest, ElvenPrecisionDoesNotAffectOrdinaryRangedOrLuckyMelee)
+{
+	setSkill(attackerSideHero, "new-horizons:sylvanLuck", basic);
+	const auto * source = attacker(titan);
+	const auto * target = defender(angel);
+
+	BattleAttackInfo ordinaryRanged(source, target, 0, true);
+	BattleAttackInfo luckyMelee(source, target, 0, false);
+	luckyMelee.luckyStrike = true;
+	const auto ordinaryBefore = battle()->calculateDmgRange(ordinaryRanged).damage;
+	const auto meleeBefore = battle()->calculateDmgRange(luckyMelee).damage;
+	attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"});
+	const auto ordinaryAfter = battle()->calculateDmgRange(ordinaryRanged).damage;
+	EXPECT_EQ(ordinaryAfter.min, ordinaryBefore.min);
+	EXPECT_EQ(ordinaryAfter.max, ordinaryBefore.max);
+
+	const auto meleeAfter = battle()->calculateDmgRange(luckyMelee).damage;
+	EXPECT_EQ(meleeAfter.min, meleeBefore.min);
+	EXPECT_EQ(meleeAfter.max, meleeBefore.max);
+}
 
 // ---- jousting ----------------------------------------------------------------------------------
 

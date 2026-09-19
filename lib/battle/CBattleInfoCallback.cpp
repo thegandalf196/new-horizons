@@ -34,6 +34,11 @@
 #include "../Rect.h"
 #include "../spells/effects/Effect.h"
 
+namespace
+{
+constexpr int ELVEN_PRECISION_DEFENSE_IGNORE_PERCENT = 25;
+}
+
 std::optional<newHorizonsCreatures::CreatureCategoryView> CBattleInfoCallback::battleGetCreatureCategory(CreatureID creature) const
 {
 	const auto * battle = getBattle();
@@ -1307,6 +1312,10 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.targetedRangedCommandPercent = battleTargetedRangedCommandPercent(
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
 	payload.luckyStrike = info.luckyStrike;
+	if(info.shooting && info.luckyStrike)
+		if(const auto * hero = battleGetOwnerHero(info.attacker))
+			if(hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"))
+				payload.luckyRangedDefenseIgnorePercent = ELVEN_PRECISION_DEFENSE_IGNORE_PERCENT;
 	payload.unluckyStrike = info.unluckyStrike;
 	payload.deathBlow = info.deathBlow;
 	payload.doubleDamage = info.doubleDamage;
