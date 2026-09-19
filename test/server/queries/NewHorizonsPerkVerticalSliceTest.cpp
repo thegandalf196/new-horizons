@@ -1,0 +1,169 @@
+/*
+ * NewHorizonsPerkVerticalSliceTest.cpp, part of VCMI engine
+ *
+ * License: GNU General Public License v2.0 or later
+ */
+#include "StdInc.h"
+
+#include "../../../lib/CRandomGenerator.h"
+#include "../../../lib/GameConstants.h"
+#include "../../../lib/entities/hero/CHeroHandler.h"
+#include "../../../lib/entities/hero/NewHorizonsPerkRules.h"
+#include "../../../lib/gameState/CGameState.h"
+#include "../../../lib/mapObjects/CGHeroInstance.h"
+#include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../server/CGameHandler.h"
+#include "../../../server/queries/QueriesProcessor.h"
+#include "../../../server/queries/MapQueries.h"
+#include "../../mock/GameHandlerTestServer.h"
+#include "../../mock/TinyH3MBuilder.h"
+#include "../../mock/TinyMapGameTest.h"
+
+namespace
+{
+constexpr auto rampartHeroId = HeroTypeID(16); // Mephala, a Rampart Ranger.
+constexpr auto sylvanLuckId = "new-horizons:sylvanLuck";
+constexpr auto sorceryMagicId = "new-horizons:sorceryMagic";
+constexpr auto overchargerId = "new-horizons:sorceryMagic.overcharger";
+
+class NewHorizonsPerkVerticalSliceTest : public TinyMapGameTest
+{
+protected:
+	void SetUp() override
+	{
+		TinyMapGameTest::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		const JsonNode combat(JsonPath::builtin("config/newHorizonsCombat"));
+		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS,
+			combat["combat"]["heroCommands"]);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+	}
+
+	void startGame()
+	{
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false)
+			.playerActive(PlayerColor(0))
+			.hero({5, 5, 0}, rampartHeroId, PlayerColor(0))
+			.heroGarrison({{CreatureID(0), 10}});
+		startWithMap(std::move(builder));
+	}
+
+	static SecondarySkill skill(const char * id)
+	{
+		const int decoded = SecondarySkill::decode(id);
+		EXPECT_GE(decoded, 0) << "unknown secondary skill " << id;
+		return SecondarySkill(decoded);
+	}
+
+	static bool offerContains(const std::vector<newHorizonsHeroes::PerkOfferCandidate> & offer,
+		const char * perkId)
+	{
+		return std::any_of(offer.begin(), offer.end(), [perkId](const auto & candidate)
+		{
+			return candidate.selection.perkId == perkId;
+		});
+	}
+};
+}
+
+TEST_F(NewHorizonsPerkVerticalSliceTest, ExperienceOfferChoiceActivatesEffectAndSurvivesSaveLoad)
+{
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	EXPECT_EQ(hero->getFactionID(), FactionID::RAMPART);
+
+	const auto sylvanLuck = skill(sylvanLuckId);
+	const auto sorceryMagic = skill(sorceryMagicId);
+	ASSERT_EQ(hero->getSecSkillLevel(sylvanLuck), MasteryLevel::BASIC);
+	EXPECT_EQ(hero->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
+
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameHandler.changeSecSkill(hero, sorceryMagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+
+	// CGameHandler consumes one global value for the hero-specific skill RNG and
+	// the next one for the server-authored offer seed. Find a reproducible seed
+	// whose real offer includes the active Overcharger candidate.
+	const auto rankLookup = [hero](const std::string & skillId)
+	{
+		return hero->getPerkSkillRank(skillId);
+	};
+	int rootSeed = 0;
+	for(int candidateSeed = 1; candidateSeed < 10000; ++candidateSeed)
+	{
+		CRandomGenerator probe(candidateSeed);
+		probe.nextInt();
+		const auto offerSeed = static_cast<uint64_t>(static_cast<uint32_t>(probe.nextInt()));
+		if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed), overchargerId))
+		{
+			rootSeed = candidateSeed;
+			break;
+		}
+	}
+	ASSERT_NE(rootSeed, 0);
+	gameHandler.randomizer->setSeed(rootSeed);
+	gameHandler.onAdvInterfaceReady(hero->getOwner());
+
+	const auto previousLevel = hero->level;
+	const auto nextLevelExperience = LIBRARY->heroh->reqExp(previousLevel + 1);
+	gameHandler.giveExperience(hero, nextLevelExperience - hero->exp);
+
+	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(
+		gameHandler.queries->topQuery(hero->getOwner()));
+	ASSERT_NE(query, nullptr);
+	const auto perk = std::find_if(query->hlu.perks.begin(), query->hlu.perks.end(), [](const auto & candidate)
+	{
+		return candidate.selection.perkId == overchargerId;
+	});
+	ASSERT_NE(perk, query->hlu.perks.end());
+	const auto perkChoice = static_cast<int>(query->hlu.skills.size()
+		+ std::distance(query->hlu.perks.begin(), perk));
+	ASSERT_TRUE(query->isValidReply(perkChoice));
+	ASSERT_TRUE(gameHandler.queryReply(query->queryID, perkChoice, hero->getOwner()));
+
+	EXPECT_EQ(hero->level, previousLevel + 1);
+	EXPECT_TRUE(hero->getPerkState().hasSelection(sorceryMagicId, overchargerId));
+	EXPECT_TRUE(hero->hasActivePerk(sorceryMagicId, overchargerId));
+	const auto definition = newHorizonsHeroes::perkDefinition(hero->getPerkState().rules,
+		sorceryMagicId, overchargerId);
+	ASSERT_TRUE(definition.has_value());
+	EXPECT_EQ(definition->effect["status"].String(), "active");
+
+	const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(hero);
+	EXPECT_EQ(modifiers.maximumBonus, 1);
+	EXPECT_EQ(modifiers.damagePercentTenths, 175);
+	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(gameState()->getMagicRules(),
+		SpellID(SpellID::MAGIC_ARROW), 150, modifiers), 6);
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(hero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_EQ(restoredHero->getFactionID(), FactionID::RAMPART);
+	EXPECT_EQ(restoredHero->getSecSkillLevel(sylvanLuck), MasteryLevel::BASIC);
+	EXPECT_EQ(restoredHero->getSecSkillLevel(sorceryMagic), MasteryLevel::BASIC);
+	EXPECT_TRUE(restoredHero->getPerkState().hasSelection(sorceryMagicId, overchargerId));
+	EXPECT_TRUE(restoredHero->hasActivePerk(sorceryMagicId, overchargerId));
+
+	const auto restoredModifiers = newHorizonsMagic::magicArrowOverchargeModifiers(restoredHero);
+	EXPECT_EQ(restoredModifiers.maximumBonus, 1);
+	EXPECT_EQ(restoredModifiers.damagePercentTenths, 175);
+	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(restored.getMagicRules(),
+		SpellID(SpellID::MAGIC_ARROW), 150, restoredModifiers), 6);
+}

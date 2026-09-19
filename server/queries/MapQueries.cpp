@@ -276,9 +276,12 @@ void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 	const size_t choice = static_cast<size_t>(*answer);
 	if(choice < hlu.skills.size())
 	{
-		gh->sendQueryResolved(queryID);
 		logGlobal->trace("Completing hero level-up query. %s gains skill %d", hero->getNameTextID(), answer.value());
-		gh->levelUpHero(hero, hlu.skills[choice]);
+		// Apply the authoritative choice before acknowledging the dialog. The client may
+		// refresh hero state as soon as QueryResolved arrives.
+		gh->levelUpHero(hero, hlu.skills[choice], false);
+		gh->sendQueryResolved(queryID);
+		gh->heroLevelUpChoiceDone(hero);
 		return;
 	}
 	const size_t perkChoice = choice - hlu.skills.size();
@@ -287,10 +290,15 @@ void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 	{
 		return hero->getPerkSkillRank(skillId);
 	}, hlu.perkOfferSeed);
-	gh->sendQueryResolved(queryID);
 	logGlobal->trace("Completing hero level-up query. %s gains perk %s", hero->getNameTextID(),
 		hlu.perks.at(perkChoice).selection.perkId);
-	gh->levelUpHero(hero, hlu.perks, perkChoice, hlu.perkOfferSeed);
+	// HeroPerkChosen is the authoritative state transition. It must precede the
+	// query acknowledgement so clients never observe a resolved choice against
+	// the old perk state. Progression chaining remains after the acknowledgement
+	// to preserve the existing level-up packet ordering.
+	gh->levelUpHero(hero, hlu.perks, perkChoice, hlu.perkOfferSeed, false);
+	gh->sendQueryResolved(queryID);
+	gh->heroLevelUpChoiceDone(hero);
 }
 
 void CHeroLevelUpDialogQuery::onAdded(PlayerColor color)

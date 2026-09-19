@@ -13,10 +13,29 @@
 #include "mock/TinyMapGameTest.h"
 
 #include "lib/battle/BattleInfo.h"
+#include "lib/GameConstants.h"
 #include "lib/gameState/CGameState.h"
 #include "lib/mapObjects/CGDwelling.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapping/CMap.h"
+#include "lib/networkPacks/PacksForClient.h"
+#include "lib/modding/CModHandler.h"
+
+#ifdef ENABLE_NULLKILLER2_AI
+#include "../../../lib/callback/AIFactory.h"
+#include "../../../lib/callback/CCallback.h"
+#include "../../../lib/callback/CGlobalAI.h"
+#include "../../../lib/callback/IClient.h"
+#include "../../../lib/CSkillHandler.h"
+#include "../../../lib/entities/hero/CHeroHandler.h"
+#include "../../../lib/entities/hero/NewHorizonsPerkState.h"
+#include "../../../lib/GameLibrary.h"
+#include "../../../lib/serializer/CTypeList.h"
+#include "../../../server/ServerNetPackVisitors.h"
+#include <chrono>
+#include <future>
+#include <mutex>
+#endif
 
 namespace
 {
@@ -30,6 +49,23 @@ enum class QueryEvent
 };
 
 class TestQuery;
+
+class RecordingQueryServer final : public GameHandlerTestServer
+{
+public:
+	using GameHandlerTestServer::GameHandlerTestServer;
+
+	std::vector<std::string> applied;
+
+	void applyPack(CPackForClient & pack) override
+	{
+		if(dynamic_cast<const HeroPerkChosen *>(&pack))
+			applied.push_back("perk");
+		if(dynamic_cast<const QueryResolved *>(&pack))
+			applied.push_back("resolved");
+		GameHandlerTestServer::applyPack(pack);
+	}
+};
 
 struct RecordedEvent
 {
@@ -129,6 +165,139 @@ protected:
 		startWithMap(std::move(builder));
 	}
 };
+
+#ifdef ENABLE_NULLKILLER2_AI
+class NewHorizonsPerkAITest : public TinyMapGameTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_MASTERIES, JsonNode());
+	}
+
+	void configurePlayer(PlayerSettings & settings) const override
+	{
+		if(settings.color == PlayerColor(1))
+			settings.connectedPlayerIDs.clear();
+	}
+
+	void startGame()
+	{
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder
+			.size(36, false)
+			.playerActive(PlayerColor(0))
+			.playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(0), PlayerColor(1))
+			.heroGarrison({{CreatureID(0), 10}});
+		startWithMap(std::move(builder));
+	}
+};
+
+class PerkLevelUpEnvironment final : public Environment
+{
+	std::shared_ptr<CGameState> state;
+
+public:
+	explicit PerkLevelUpEnvironment(std::shared_ptr<CGameState> state)
+		: state(std::move(state))
+	{
+	}
+
+	const Services * services() const override { return LIBRARY; }
+	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
+	const GameCb * game() const override { return state.get(); }
+};
+
+class PerkLevelUpLoopback final : public IClient
+{
+	CGameHandler & handler;
+	std::once_flag completion;
+
+public:
+	struct Result
+	{
+		int choice = -1;
+		bool accepted = false;
+		std::string error;
+	};
+
+	std::weak_ptr<CGlobalAI> ai;
+	std::promise<Result> completed;
+
+	explicit PerkLevelUpLoopback(CGameHandler & handler)
+		: handler(handler)
+	{
+	}
+
+	void complete(Result result) noexcept
+	{
+		try
+		{
+			std::call_once(completion, [this, result = std::move(result)]() mutable
+			{
+				try
+				{
+					completed.set_value(std::move(result));
+				}
+				catch(...)
+				{
+					// The test must never let a transport failure escape an AI task.
+				}
+			});
+		}
+		catch(...)
+		{
+			// The test must never let a transport failure escape an AI task.
+		}
+	}
+
+	std::optional<BattleAction> makeSurrenderRetreatDecision(PlayerColor, const BattleID &, const BattleStateInfoForRetreat &) override
+	{
+		return std::nullopt;
+	}
+
+	int sendRequest(const CPackForServer & outgoing, PlayerColor player, bool waitTillRealize) override
+	{
+		constexpr int request = 17;
+		try
+		{
+			const auto * reply = dynamic_cast<const QueryReply *>(&outgoing);
+			if(!reply || reply->player != player || !waitTillRealize)
+				throw std::runtime_error("Unexpected perk AI request");
+
+			QueryReply pack = *reply;
+			pack.requestID = request;
+			const auto controller = ai.lock();
+			if(!controller)
+				throw std::runtime_error("Missing perk AI controller");
+			controller->requestSent(&pack, request);
+
+			ApplyGhNetPackVisitor visitor(handler, GameConnectionID::FIRST_CONNECTION);
+			pack.visitTyped(visitor);
+			PackageApplied ack;
+			ack.player = player;
+			ack.requestID = request;
+			ack.packType = CTypeList::getInstance().getTypeID<QueryReply>(nullptr);
+			ack.result = visitor.getResult();
+			controller->requestRealized(&ack);
+			complete({pack.reply.value_or(-1), visitor.getResult(), {}});
+		}
+		catch(const std::exception & error)
+		{
+			complete({-1, false, error.what()});
+		}
+		catch(...)
+		{
+			complete({-1, false, "unknown perk AI transport failure"});
+		}
+		return request;
+	}
+};
+#endif
 
 }
 
@@ -248,6 +417,103 @@ TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpValidatesAndAppliesOnlyTheStor
 	EXPECT_EQ(hero->getPerkState().selected.size(), 1u);
 	EXPECT_EQ(hero->getPerkState().selected.front(), levelUp.perks.front().selection);
 }
+
+TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpReplicatesPerkChoiceBeforeResolvingQuery)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons module";
+	startGame();
+	const auto * found = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(found, nullptr);
+	auto * hero = gameState()->getHero(found->id);
+	ASSERT_NE(hero, nullptr);
+	RecordingQueryServer server(gameState());
+	CGameHandler gh(server, gameState());
+
+	const std::string skillId = "new-horizons:sorceryMagic";
+	const int decoded = SecondarySkill::decode(skillId);
+	ASSERT_GE(decoded, 0);
+	const SecondarySkill skill(decoded);
+	gh.changeSecSkill(hero, skill, 1, ChangeValueMode::ABSOLUTE);
+	auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	state.selected.clear();
+	state.validate();
+
+	HeroLevelUp levelUp;
+	levelUp.player = PlayerColor(0);
+	levelUp.heroId = hero->id;
+	levelUp.perkOfferSeed = 0;
+	levelUp.perks = state.prepareOffer([hero](const std::string & id)
+	{
+		return hero->getPerkSkillRank(id);
+	}, levelUp.perkOfferSeed);
+	ASSERT_FALSE(levelUp.perks.empty());
+	auto liveQuery = std::make_shared<CHeroLevelUpDialogQuery>(&gh, levelUp, hero);
+	gh.queries->addQuery(liveQuery);
+
+	ASSERT_TRUE(gh.queryReply(liveQuery->queryID, 0, PlayerColor(0)));
+	EXPECT_EQ(server.applied, (std::vector<std::string>{"perk", "resolved"}));
+	ASSERT_EQ(hero->getPerkState().selected.size(), 1u);
+	EXPECT_EQ(hero->getPerkState().selected.front(), levelUp.perks.front().selection);
+}
+
+#ifdef ENABLE_NULLKILLER2_AI
+TEST_F(NewHorizonsPerkAITest, computerPlayerChoosesPerkThroughAuthoritativeLevelUpQuery)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons module";
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(1));
+	ASSERT_NE(hero, nullptr);
+	const auto owner = hero->getOwner();
+	ASSERT_EQ(owner, PlayerColor(1));
+	GameHandlerTestServer server(gameState(), owner);
+	CGameHandler gh(server, gameState());
+
+	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	ASSERT_GE(sorcery.getNum(), 0);
+	gh.changeSecSkill(hero, sorcery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	auto & perkState = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	perkState.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	perkState.selected.clear();
+	perkState.validate();
+	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
+		gh.changeSecSkill(hero, SecondarySkill(index), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+
+	const auto initialLevel = hero->level;
+	hero->setExperience(LIBRARY->heroh->reqExp(initialLevel + 1), ChangeValueMode::ABSOLUTE);
+	gh.levelUpHero(hero);
+	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gh.queries->topQuery(owner));
+	ASSERT_NE(query, nullptr);
+	ASSERT_TRUE(query->hlu.skills.empty());
+	ASSERT_FALSE(query->hlu.perks.empty());
+	gh.onAdvInterfaceReady(owner);
+	ASSERT_TRUE(query->prompted);
+
+	const auto transport = std::make_shared<PerkLevelUpLoopback>(gh);
+	const auto callback = makeCallback(owner, transport.get());
+	const auto ai = AIFactory::createAdventureAI("Nullkiller2");
+	transport->ai = ai;
+	ai->initGameInterface(std::make_shared<PerkLevelUpEnvironment>(gameState()), callback);
+	auto result = transport->completed.get_future();
+	ai->heroGotLevel(hero, query->hlu.primskill, query->hlu.skills, query->hlu.perks, query->queryID);
+	const auto ready = result.wait_for(std::chrono::seconds(10));
+	ASSERT_EQ(ready, std::future_status::ready);
+	ai->finish();
+
+	const auto outcome = result.get();
+	const auto choice = outcome.choice;
+	ASSERT_TRUE(outcome.accepted) << outcome.error;
+	ASSERT_GE(choice, static_cast<int>(query->hlu.skills.size()));
+	ASSERT_LT(choice, static_cast<int>(query->hlu.skills.size() + query->hlu.perks.size()));
+	EXPECT_EQ(hero->level, initialLevel + 1);
+	ASSERT_EQ(hero->getPerkState().selected.size(), 1u);
+	EXPECT_EQ(hero->getPerkState().selected.front(),
+		query->hlu.perks.at(static_cast<size_t>(choice) - query->hlu.skills.size()).selection);
+	EXPECT_FALSE(gh.queries->topQuery(owner));
+}
+#endif
 
 TEST_F(QueriesProcessorTest, popIfTop_removesTopQuery)
 {

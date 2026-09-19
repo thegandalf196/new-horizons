@@ -193,6 +193,7 @@ set(test_SRCS
 		server/battles/NewHorizonsConvenienceFixtureExportTest.cpp
 		server/battles/NewHorizonsHeroFixtureExportTest.cpp
 		server/queries/QueriesProcessorTest.cpp
+		server/queries/NewHorizonsPerkVerticalSliceTest.cpp
 
 		texts/TextOperationsTest.cpp
 

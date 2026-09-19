@@ -132,14 +132,16 @@ IGameServer & CGameHandler::gameServer() const
 	return server;
 }
 
-void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill)
+void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill, bool continueProgression)
 {
 	changeSecSkill(hero, skill, 1, ChangeValueMode::RELATIVE);
-	heroLevelUpChoiceDone(hero);
+	if(continueProgression)
+		heroLevelUpChoiceDone(hero);
 }
 
 void CGameHandler::levelUpHero(const CGHeroInstance * hero,
-	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & offer, size_t choice, uint64_t seed)
+	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & offer, size_t choice, uint64_t seed,
+	bool continueProgression)
 {
 	if(!hero)
 		throw std::runtime_error("Cannot choose a perk for a missing hero");
@@ -156,7 +158,8 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero,
 	chosen.hero = hero->id;
 	chosen.selection = offer.at(choice).selection;
 	sendAndApply(chosen);
-	heroLevelUpChoiceDone(hero);
+	if(continueProgression)
+		heroLevelUpChoiceDone(hero);
 }
 
 void CGameHandler::heroLevelUpChoiceDone(const CGHeroInstance * hero)
