@@ -169,6 +169,11 @@ BattleCast::OptionalValue BattleCast::getEffectDuration() const
 	return effectDuration;
 }
 
+BattleCast::OptionalValue BattleCast::getOvercharge() const
+{
+	return overcharge;
+}
+
 BattleCast::OptionalValue64 BattleCast::getEffectValue() const
 {
 	return effectValue;
@@ -192,6 +197,11 @@ void BattleCast::setEffectPower(BattleCast::Value value)
 void BattleCast::setEffectDuration(BattleCast::Value value)
 {
 	effectDuration = std::make_optional(value);
+}
+
+void BattleCast::setOvercharge(BattleCast::Value value)
+{
+	overcharge = std::make_optional(value);
 }
 
 void BattleCast::setEffectValue(BattleCast::Value64 value)
@@ -297,6 +307,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		effectDuration = value.value_or(caster->getEnchantPower(owner));
 		vstd::amax(effectDuration, 0); //???
 	}
+	overcharge = event->getOvercharge().value_or(0);
 	{
 		const auto value = event->getEffectValue();
 		if(value.has_value())
@@ -306,10 +317,16 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		else
 		{
 			const auto * battle = cb->getBattle();
-			const auto savedValue = battle
+			const auto magicArrowValue = battle
+				? newHorizonsMagic::magicArrowDamage(battle->getMagicRules(), owner->getId(), effectPower,
+					getEffectPowerDivisor(), getOvercharge())
+				: std::nullopt;
+			const auto savedValue = battle && !magicArrowValue
 				? newHorizonsMagic::directDamageValue(battle->getMagicRules(), owner->getJsonKey(), effectPower, getEffectPowerDivisor())
 				: std::nullopt;
-			if(savedValue)
+			if(magicArrowValue)
+				effectValue = *magicArrowValue;
+			else if(savedValue)
 				effectValue = *savedValue;
 			else
 				effectValue = owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
@@ -529,6 +546,11 @@ IBattleCast::Value BaseMechanics::getEffectDuration() const
 IBattleCast::Value64 BaseMechanics::getEffectValue() const
 {
 	return effectValue;
+}
+
+IBattleCast::Value BaseMechanics::getOvercharge() const
+{
+	return overcharge;
 }
 
 PlayerColor BaseMechanics::getCasterColor() const

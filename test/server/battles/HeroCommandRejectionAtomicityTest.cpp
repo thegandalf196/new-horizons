@@ -99,7 +99,8 @@ TEST_P(HeroCommandRejectionAtomicityTest, FreshBudgetRejectionPreservesUnitAndAl
 	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
 	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeId);
 	EXPECT_EQ(battle()->battleActiveUnit()->getMovementRange(), speed);
-	EXPECT_EQ(server.stackActivations.size(), activations);
+	ASSERT_EQ(server.stackActivations.size(), activations + 1);
+	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::HERO_COMMAND);
 	EXPECT_EQ(attackerSideHero->mana, mana);
 	EXPECT_EQ(defenderSideHero->mana, defenderMana);
 	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::DEFENDER));

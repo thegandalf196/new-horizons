@@ -41,9 +41,16 @@ public:
 	const JsonNode & getMagicRules() const override { return magicRules; }
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return creatureCategoryRules; }
 	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
-	HeroCommand getActiveDoctrine(BattleSide side) const override { return sides.at(side).activeDoctrine; }
-	HeroCommand getActiveOrder(BattleSide side) const override { return sides.at(side).activeOrder; }
+	HeroCommand getActiveDoctrine(BattleSide side) const override { (void)side; return HeroCommand::NONE; }
+	HeroCommand getActiveOrder(BattleSide side) const override
+	{
+		const auto command = sides.at(side).activeOrder;
+		return heroCommands::isActive(command) ? command : HeroCommand::NONE;
+	}
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override { return sides.at(side).focusFire; }
+	/// Drop decode-only legacy Doctrine state and its battle-long bonuses.
+	/// Round Order bonuses are intentionally preserved.
+	void normalizeLegacyHeroCommandState();
 	void validateFocusFireStates() const;
 	BattleID battleID = BattleID(0);
 
@@ -130,6 +137,7 @@ public:
 		{
 			// Reject null/ambiguous unit references before postDeserialize dereferences
 			// units and resolves their army bindings. Validation does not need those bindings.
+			normalizeLegacyHeroCommandState();
 			validateFocusFireStates();
 			postDeserialize();
 		}

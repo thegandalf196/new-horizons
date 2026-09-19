@@ -20,6 +20,7 @@ set(vcmiclientcommon_SRCS
 	battle/BattleFieldController.cpp
 	battle/BattleHero.cpp
 	battle/BattleHeroActionWindow.cpp
+	battle/MagicArrowOverchargeWindow.cpp
 	battle/FocusFireTargetWindow.cpp
 	battle/BattleInterface.cpp
 	battle/BattleObstacleController.cpp
@@ -228,6 +229,7 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleFieldController.h
 	battle/BattleHero.h
 	battle/BattleHeroActionWindow.h
+	battle/MagicArrowOverchargeWindow.h
 	battle/FocusFireTargetWindow.h
 	battle/BattleInterface.h
 	battle/BattleObstacleController.h

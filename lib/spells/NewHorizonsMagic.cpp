@@ -112,6 +112,11 @@ const JsonNode & entry(const JsonNode & rules, SpellID spell)
 {
 	return rules["spells"][spell.toSpell()->getJsonKey()];
 }
+
+bool sorceryMember(const SpellSchool school)
+{
+	return school.serializationKey() == "new-horizons:sorcery";
+}
 }
 
 void validateRules(const JsonNode & rules)
@@ -173,8 +178,8 @@ void validateRules(const JsonNode & rules)
 		require(definition->isCommonHeroSpell(), "ability cannot be reclassified as hero spell");
 		if(name.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
 			require(version == DIRECT_DAMAGE_RULESET_VERSION, "NH common spells require ruleset version 2");
-		if(name == GameConstants::NEW_HORIZONS_MAGIC_MISSILE)
-			require(directDamageFormula(data, version).has_value(), "Magic Missile requires saved directDamage");
+		if(version == DIRECT_DAMAGE_RULESET_VERSION && name == "core:magicArrow")
+			require(directDamageFormula(data, version).has_value(), "Magic Arrow requires saved directDamage in ruleset version 2");
 		require(data["schools"].isVector() && !data["schools"].Vector().empty(), "spell school list");
 		std::set<std::string> membership;
 		for(const auto & school : data["schools"].Vector())
@@ -244,6 +249,61 @@ std::optional<int64_t> directDamageValue(const JsonNode & rules, const std::stri
 	if(!formula)
 		return std::nullopt;
 	return formula->evaluate(effectPower, divisor);
+}
+
+bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spell)
+{
+	if(spell != SpellID(SpellID::MAGIC_ARROW) || legacy(rules))
+		return false;
+	if(!rules.isStruct() || !integer(rules["rulesetVersion"], DIRECT_DAMAGE_RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION))
+		return false;
+
+	// Read the saved roster, rather than installed content.  This keeps old
+	// v1 saves on their old Magic Arrow semantics even when a newer module is
+	// installed.  The explicit v2 formula is the compatibility marker for the
+	// Sorcery overcharge contract; a v2 roster without it is not activated.
+	if(!spellAllowedBySavedRoster(rules, spell))
+		return false;
+	if(!spellDirectDamage(rules, spell.toSpell()->getJsonKey()))
+		return false;
+
+	return vstd::contains_if(spellSchools(rules, spell), sorceryMember);
+}
+
+int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spellPower)
+{
+	if(!magicArrowOverchargeEnabled(rules, spell))
+		return 0;
+	if(spellPower < 0)
+		throw std::runtime_error("Magic Arrow spell power cannot be negative");
+
+	// Max Overcharge = min(5, 2 + floor(SP / 50)).  Spell Power is the
+	// primary rating; the divisor is applied only to fixed-point coefficients
+	// when the damage value is evaluated.
+	return std::min(5, 2 + spellPower / 50);
+}
+
+std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
+	int32_t spellPower, int32_t divisor, int overcharge)
+{
+	if(!magicArrowOverchargeEnabled(rules, spell))
+		return std::nullopt;
+	if(spellPower < 0 || divisor <= 0)
+		return std::nullopt;
+
+	const int maxOvercharge = magicArrowMaxOvercharge(rules, spell, spellPower);
+	if(overcharge < 0 || overcharge > maxOvercharge)
+		return std::nullopt;
+
+	// Base Damage = 20 + 2 * SP.  The v2 saved directDamage row is explicit and
+	// authoritative (including a saved zero).  Both the authored coefficients
+	// and the fallback below use the same fixed-point scale, so hero rating
+	// divisors remain deterministic if this helper is reused by tooling.
+	const auto savedFormula = spellDirectDamage(rules, spell.toSpell()->getJsonKey());
+	const int64_t baseDamage = savedFormula
+		? savedFormula->evaluate(spellPower, divisor)
+		: DirectDamageFormula{20, 20}.evaluate(spellPower, divisor);
+	return baseDamage * (100 + 15 * overcharge) / 100;
 }
 
 std::vector<SpellSchool> activeSchools(const JsonNode & rules)

@@ -65,7 +65,7 @@ protected:
 		if(kind == 1)
 			return BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE);
 		if(kind == 2)
-			return BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::AGGRESSIVE);
+			return BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE);
 		BattleAction action;
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::ATTACKER;

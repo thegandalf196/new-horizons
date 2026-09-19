@@ -238,6 +238,104 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuth
 	EXPECT_EQ(before - target->getAvailableHealth(), 68) << "Rejected second hero action must not apply damage";
 }
 
+TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePredictionAndAuthoritativeManaPath)
+{
+	forceRealHeroScale = true;
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+
+	spells::Target destination;
+	destination.emplace_back(target);
+	spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	legal.setOvercharge(4);
+	auto mechanics = spell->battleMechanics(&legal);
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(mechanics->canBeCast(problem));
+	ASSERT_TRUE(mechanics->canBeCastAt(destination, problem));
+	EXPECT_EQ(mechanics->getEffectValue(), 352);
+
+	const auto before = target->getAvailableHealth();
+	const auto mana = attackerSideHero->mana;
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	DamageEnvironment environment(gameState(), nullptr);
+	HypotheticBattle predicted(&environment, callback);
+	spells::BattleCast prediction(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+	prediction.setOvercharge(4);
+	prediction.castEval(predicted.getServerCallback(), destination);
+	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 352);
+	EXPECT_EQ(target->getAvailableHealth(), before);
+	EXPECT_EQ(attackerSideHero->mana, mana);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.spellOvercharge = 4;
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(before - target->getAvailableHealth(), 352);
+	EXPECT_EQ(attackerSideHero->mana, mana - 8);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsOutOfRangeAndLegacyOverchargeAtomically)
+{
+	forceRealHeroScale = true;
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	const auto before = target->getAvailableHealth();
+	const auto mana = attackerSideHero->mana;
+
+	BattleAction tooMuch;
+	tooMuch.actionType = EActionType::HERO_SPELL;
+	tooMuch.side = BattleSide::ATTACKER;
+	tooMuch.spell = spell->getId();
+	tooMuch.spellOvercharge = 5; // SP 100 permits only four.
+	tooMuch.aimToUnit(target);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), tooMuch));
+	EXPECT_EQ(target->getAvailableHealth(), before);
+	EXPECT_EQ(attackerSideHero->mana, mana);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsMissingTargetBeforeSpendingManaOrAction)
+{
+	forceRealHeroScale = true;
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	const auto before = target->getAvailableHealth();
+	const auto mana = attackerSideHero->mana;
+
+	BattleAction missingTarget;
+	missingTarget.actionType = EActionType::HERO_SPELL;
+	missingTarget.side = BattleSide::ATTACKER;
+	missingTarget.spell = spell->getId();
+	missingTarget.spellOvercharge = 4;
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), missingTarget));
+	EXPECT_EQ(target->getAvailableHealth(), before);
+	EXPECT_EQ(attackerSideHero->mana, mana);
+
+	BattleAction valid = missingTarget;
+	valid.aimToUnit(target);
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), valid))
+		<< "Rejected target must leave the shared hero action available";
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, LegacyMagicArrowRejectsOverchargeWithoutMutation)
+{
+	savedEnabled = false;
+	prepare();
+	const auto legacyHealth = target->getAvailableHealth();
+	const auto legacyMana = attackerSideHero->mana;
+	BattleAction legacy;
+	legacy.actionType = EActionType::HERO_SPELL;
+	legacy.side = BattleSide::ATTACKER;
+	legacy.spell = spell->getId();
+	legacy.spellOvercharge = 1;
+	legacy.aimToUnit(target);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), legacy));
+	EXPECT_EQ(target->getAvailableHealth(), legacyHealth);
+	EXPECT_EQ(attackerSideHero->mana, legacyMana);
+}
+
 TEST_F(NewHorizonsDirectDamageMechanicsTest, ActualAiPredictionAndServerApplicationUseSavedFormula)
 {
 	prepare();

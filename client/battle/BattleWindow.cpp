@@ -134,7 +134,7 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		// separately approved pointing gauntlet before any visual acceptance.
 		addShortcut(EShortcut::BATTLE_OPEN_ORDERS, [this] { bOrdersf(); });
 		ordersButton = std::make_shared<CButton>(Point(595, 560), AnimationPath::builtin("NH_hero_actions_entry"),
-			CButton::tooltip("Orders and Doctrines", ""));
+			CButton::tooltip("Orders", ""));
 		ordersButton->addPopupCallback([this]
 		{
 			std::string reason;
@@ -154,7 +154,7 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 				reason = "Battle input is temporarily unavailable.";
 			else
 				reason = "Open Orders to inspect commands and their current availability.";
-			CRClickPopup::createAndPush(reason + "\n\nOrders require no mana or spellbook. Opening or reading the panel spends nothing. Spells, Orders and Doctrine changes share one hero action per round.");
+			CRClickPopup::createAndPush(reason + "\n\nOrders require no mana or spellbook. Opening or reading the panel spends nothing. Spells and Orders share one hero action per round.");
 		});
 		// Use the configurable interface's normal single-dispatch path: it defers
 		// to an active assigned button. loadButtonHotkey attaches the callback once.

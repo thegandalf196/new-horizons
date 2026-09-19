@@ -75,7 +75,7 @@ class MasteryDataTest(unittest.TestCase):
         self.assertEqual(schema['definitions']['option']['properties']['effect']['enum'],
                          ['volley', 'precision', 'repair'])
         module = load('Mods/new-horizons/mod.json')
-        self.assertEqual(module['version'], '0.5.1')
+        self.assertEqual(module['version'], '0.6.0')
         self.assertEqual(module['settings']['heroes']['newHorizonsMasteries'], load('config/newHorizonsMasteries.json'))
         self.assertEqual(module['translations'], load('config/newHorizonsMasteryTexts.json'))
 

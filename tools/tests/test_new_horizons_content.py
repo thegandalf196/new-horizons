@@ -13,6 +13,7 @@ import unittest
 import zlib
 
 from jsonschema import Draft4Validator
+from referencing import Registry, Resource
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
@@ -47,8 +48,28 @@ def common_spells():
     return result
 
 
+def legacy_rules(rules):
+    """Return the same snapshot in the saved-compatible v1 shape."""
+    result = copy.deepcopy(rules)
+    if result:
+        result['rulesetVersion'] = 1
+        result['spells']['core:magicArrow'].pop('directDamage', None)
+    return result
+
+
+def magic_validators():
+    v1 = load('config/schemas/newHorizonsMagic.json')
+    v2 = load('config/schemas/newHorizonsMagicV2.json')
+    registry = Registry().with_resources([
+        ('vcmi:newHorizonsMagic', Resource.from_contents(v1)),
+        ('vcmi:newHorizonsMagicV2', Resource.from_contents(v2)),
+    ])
+    return Draft4Validator(v1, registry=registry), Draft4Validator(v2, registry=registry)
+
+
 def validate_rules(rules):
-    Draft4Validator(load('config/schemas/newHorizonsMagic.json')).validate(rules)
+    v1, v2 = magic_validators()
+    (v2 if rules.get('rulesetVersion') == 2 else v1).validate(rules)
     if not rules:
         return
     if set(rules['spells']) != common_spells():
@@ -90,6 +111,15 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(texts['vcmi.keyBindings.keyBinding.battleOpenOrders'],
                          'Battle open Orders and Doctrines')
 
+    def test_new_horizons_combat_emits_orders_only(self):
+        combat = load('config/newHorizonsCombat.json')['combat']['heroCommands']
+        Draft4Validator(load('config/schemas/newHorizonsCombatV3.json')).validate(combat)
+        self.assertEqual(combat['rulesetVersion'], 3)
+        self.assertEqual(set(combat['commands']), {'charge', 'holdTheLine', 'focusFire'})
+        self.assertNotIn('advance', combat['commands'])
+        self.assertNotIn('aggressive', combat['commands'])
+        self.assertNotIn('defensive', combat['commands'])
+
     def test_orders_shortcut_registered_once(self):
         handler = (ROOT / 'client/gui/ShortcutHandler.cpp').read_text()
         self.assertEqual(handler.count('{"battleOpenOrders",'), 1)
@@ -100,7 +130,17 @@ class NewHorizonsContentTest(unittest.TestCase):
     def test_complete_existing_spell_inventory_and_legacy_schema(self):
         self.assertEqual(len(common_spells()), 69)
         validate_rules({})
+        validate_rules(legacy_rules(self.rules))
         validate_rules(self.rules)
+
+    def test_magic_arrow_overcharge_contract_is_the_only_active_v2_formula(self):
+        arrow = self.rules['spells']['core:magicArrow']
+        self.assertEqual(arrow['schools'], ['new-horizons:sorcery'])
+        self.assertEqual(arrow['level'], 1)
+        self.assertEqual(arrow['directDamage'], {'base': 20, 'powerCoefficient': 20})
+        self.assertEqual({name for name, spell in self.rules['spells'].items()
+                          if 'directDamage' in spell}, {'core:magicArrow'})
+        self.assertNotIn('new-horizons:magicMissile', self.rules['spells'])
 
     def test_generated_module_matches_all_canonical_data(self):
         module = load('Mods/new-horizons/mod.json')
@@ -110,6 +150,9 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'newHorizonsCapabilities': load('config/newHorizonsCapabilities.json'),
                               'newHorizonsMasteries': load('config/newHorizonsMasteries.json')}
         self.assertEqual(module['settings'], settings)
+        self.assertEqual(module['version'], '0.6.0')
+        self.assertIn('Magic Arrow', module['description'])
+        self.assertIn('Overcharge', module['description'])
         self.assertEqual(module['spellSchools'], load('config/newHorizonsSchools.json'))
         self.assertEqual(module['skills'], load('config/newHorizonsSkills.json'))
         self.assertEqual(module['filesystem']['SPRITES/'], [{'type': 'dir', 'path': '/Images'}])
@@ -117,6 +160,11 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(module['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))
         self.assertEqual(module['filesystem'][''], [{'type': 'dir', 'path': '/Content'}])
         self.assertFalse(module['keepDisabled'])
+        magic_schema = load('config/schemas/gameSettings.json')['properties']['magic']['properties']['newHorizons']
+        self.assertEqual(magic_schema['anyOf'], [
+            {'$ref': 'newHorizonsMagic.json'},
+            {'$ref': 'newHorizonsMagicV2.json'},
+        ])
         self.assertEqual(load('config/gameConfig.json')['settings']['magic']['newHorizons'], {})
 
     def test_registered_school_skill_graph_and_real_rank_images(self):

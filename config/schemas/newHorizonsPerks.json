@@ -1,0 +1,98 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "New Horizons generic Skills and perks",
+	"description": "Canonical data-only registry for the 31 New Horizons Skills and their ten-perk pools. Effect status is explicit: planned effects are source design records and must not be treated as active runtime behavior.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"schemaVersion",
+		"rulesetVersion",
+		"sourceDocument",
+		"sourceSha256",
+		"maxSkillChoices",
+		"maxPerkChoices",
+		"maxPerksPerSkill",
+		"skills"
+	],
+	"properties": {
+		"schemaVersion": {"type": "integer", "enum": [1]},
+		"rulesetVersion": {"type": "integer", "enum": [1]},
+		"sourceDocument": {"type": "string", "minLength": 1},
+		"sourceSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+		"maxSkillChoices": {"type": "integer", "enum": [2]},
+		"maxPerkChoices": {"type": "integer", "enum": [2]},
+		"maxPerksPerSkill": {"type": "integer", "enum": [3]},
+		"skills": {
+			"type": "object",
+			"minProperties": 31,
+			"maxProperties": 31,
+			"patternProperties": {
+				"^new-horizons:[a-z][A-Za-z0-9._-]*$": {"$ref": "#/definitions/skill"}
+			},
+			"additionalProperties": false
+		}
+	},
+	"definitions": {
+		"effect": {
+			"type": "object",
+			"required": ["status", "description"],
+			"additionalProperties": false,
+			"properties": {
+				"status": {"type": "string", "enum": ["active", "planned"]},
+				"description": {"type": "string", "minLength": 1}
+			}
+		},
+		"rank": {
+			"type": "object",
+			"required": ["description", "effect"],
+			"additionalProperties": false,
+			"properties": {
+				"description": {"type": "string", "minLength": 1},
+				"effect": {"$ref": "#/definitions/effect"}
+			}
+		},
+		"perk": {
+			"type": "object",
+			"required": ["id", "name", "requires", "description", "effect"],
+			"additionalProperties": false,
+			"properties": {
+				"id": {"type": "string", "pattern": "^new-horizons:[a-z][A-Za-z0-9._-]*$"},
+				"name": {"type": "string", "minLength": 1},
+				"requires": {"type": "string", "enum": ["basic", "advanced", "expert"]},
+				"description": {"type": "string", "minLength": 1},
+				"effect": {"$ref": "#/definitions/effect"}
+			}
+		},
+		"skill": {
+			"type": "object",
+			"required": ["id", "name", "domain", "availability", "description", "ranks", "perks"],
+			"additionalProperties": false,
+			"properties": {
+				"id": {"type": "string", "pattern": "^new-horizons:[a-z][A-Za-z0-9._-]*$"},
+				"name": {"type": "string", "minLength": 1},
+				"domain": {"type": "string", "enum": ["Martial", "Magic", "Hybrid", "Strategic", "Faction"]},
+				"availability": {
+					"type": "string",
+					"enum": ["All heroes", "Might-exclusive", "Magic-exclusive", "Castle heroes only", "Rampart heroes only", "Tower heroes only", "Dungeon heroes only", "Inferno heroes only", "Necropolis heroes only", "Stronghold heroes only", "Fortress heroes only", "Conflux heroes only"]
+				},
+				"description": {"type": "string", "minLength": 1},
+				"ranks": {
+					"type": "object",
+					"required": ["basic", "advanced", "expert"],
+					"additionalProperties": false,
+					"properties": {
+						"basic": {"$ref": "#/definitions/rank"},
+						"advanced": {"$ref": "#/definitions/rank"},
+						"expert": {"$ref": "#/definitions/rank"}
+					}
+				},
+				"perks": {
+					"type": "array",
+					"minItems": 10,
+					"maxItems": 10,
+					"items": {"$ref": "#/definitions/perk"}
+				}
+			}
+		}
+	}
+}

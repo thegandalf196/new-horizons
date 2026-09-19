@@ -140,6 +140,54 @@ void validateTargetedRules(const JsonNode & rules)
 		}
 	}
 }
+
+void validateOrdersOnlyRules(const JsonNode & rules)
+{
+	exactFields(rules, {"schemaVersion", "rulesetVersion", "commands"});
+	if(rules["schemaVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| rules["schemaVersion"].Integer() != 1
+		|| rules["rulesetVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| rules["rulesetVersion"].Integer() != ORDERS_ONLY_RULESET_VERSION)
+		throw std::runtime_error("Unsupported New Horizons Orders-only combat ruleset version");
+	exactFields(rules["commands"], {"charge", "holdTheLine", "focusFire"});
+	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
+		HeroCommand::FOCUS_FIRE})
+	{
+		const auto & definition = rules["commands"][key(command)];
+		const bool targeted = command == HeroCommand::FOCUS_FIRE;
+		if(targeted)
+			exactFields(definition, {"kind", "coverage", "duration", "target", "effects"});
+		else
+			exactFields(definition, {"kind", "coverage", "duration", "effects"});
+		if(!definition["kind"].isString() || !definition["duration"].isString()
+			|| !definition["coverage"].isString()
+			|| definition["kind"].String() != "order"
+			|| definition["duration"].String() != "round"
+			|| definition["coverage"].String()
+				!= (targeted ? "ownOrdinaryShootersAtIssue" : "ownLivingNonWarMachines"))
+			throw std::runtime_error("Invalid New Horizons Orders-only command definition: " + key(command));
+		if(targeted && (!definition["target"].isString() || definition["target"].String() != "enemyUnit"))
+			throw std::runtime_error("Invalid New Horizons Focus Fire target policy");
+		const auto & effects = definition["effects"];
+		if(targeted)
+			exactFields(effects, {"rangedDamagePercent"});
+		if(!effects.isStruct() || effects.Struct().empty())
+			throw std::runtime_error("Missing New Horizons Orders-only command effects");
+		for(const auto & [effect, formula] : effects.Struct())
+		{
+			if(effect != "meleeDamagePercent" && effect != "rangedDamagePercent"
+				&& effect != "damageReductionPercent" && effect != "speedPercent")
+				throw std::runtime_error("Unsupported New Horizons command effect: " + effect);
+			exactFields(formula, {"base", "attack", "defense"});
+			for(const auto * term : {"base", "attack", "defense"})
+			{
+				if(!formula[term].isNumber() || !std::isfinite(formula[term].Float())
+					|| std::abs(formula[term].Float()) > MAX_TARGETED_COEFFICIENT)
+					throw std::runtime_error("Invalid New Horizons Orders-only command coefficient");
+			}
+		}
+	}
+}
 }
 
 std::string key(HeroCommand command)
@@ -158,19 +206,29 @@ std::string key(HeroCommand command)
 
 bool valid(HeroCommand command)
 {
-	return command >= HeroCommand::CHARGE && command <= HeroCommand::FOCUS_FIRE;
+	return isActive(command);
+}
+
+bool isActive(HeroCommand command)
+{
+	return command == HeroCommand::CHARGE || command == HeroCommand::HOLD_THE_LINE
+		|| command == HeroCommand::FOCUS_FIRE;
 }
 
 bool supportedByRules(const JsonNode & rules, HeroCommand command)
 {
-	if(!valid(command) || !rules.isStruct() || rules.Struct().empty())
+	// Advance, Aggressive and Defensive are retained solely so old enum values
+	// and save slots can be decoded. They are never part of the active command
+	// surface, including when a legacy v1/v2 snapshot is loaded.
+	if(!isActive(command) || !rules.isStruct() || rules.Struct().empty())
 		return false;
 	const auto & version = rules["rulesetVersion"];
-	if(command == HeroCommand::FOCUS_FIRE)
-		return version.getType() == JsonNode::JsonType::DATA_INTEGER
-			&& version.Integer() == TARGETED_RULESET_VERSION;
-	return legacyVersionOne(version)
-		|| (version.getType() == JsonNode::JsonType::DATA_INTEGER && version.Integer() == TARGETED_RULESET_VERSION);
+	if(version.getType() != JsonNode::JsonType::DATA_INTEGER)
+		return legacyVersionOne(version) && command != HeroCommand::FOCUS_FIRE;
+	if(version.Integer() == RULESET_VERSION)
+		return command != HeroCommand::FOCUS_FIRE;
+	return version.Integer() == TARGETED_RULESET_VERSION
+		|| version.Integer() == ORDERS_ONLY_RULESET_VERSION;
 }
 
 bool isDoctrine(HeroCommand command)
@@ -185,6 +243,12 @@ void validateRules(const JsonNode & rules)
 	if(!rules.isStruct())
 		throw std::runtime_error("Invalid New Horizons combat ruleset shape");
 	const auto & version = rules["rulesetVersion"];
+	if(version.getType() == JsonNode::JsonType::DATA_INTEGER
+		&& version.Integer() == ORDERS_ONLY_RULESET_VERSION)
+	{
+		validateOrdersOnlyRules(rules);
+		return;
+	}
 	if(version.isNumber() && version.Float() == TARGETED_RULESET_VERSION)
 	{
 		validateTargetedRules(rules);
@@ -231,13 +295,13 @@ std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CG
 {
 	std::vector<Bonus> result;
 	// Focus Fire is contextual side state, never an unconditional unit bonus.
-	if(!valid(command) || command == HeroCommand::FOCUS_FIRE)
+	if(!isActive(command) || command == HeroCommand::FOCUS_FIRE)
 		return result;
 	for(const auto & [effect, formula] : rules["commands"][key(command)]["effects"].Struct())
 	{
 		Bonus bonus;
 		bonus.source = BonusSource::HERO_COMMAND;
-		bonus.duration = isDoctrine(command) ? BonusDuration::ONE_BATTLE : BonusDuration::N_TURNS;
+		bonus.duration = BonusDuration::N_TURNS;
 		bonus.turnsRemain = 1;
 		bonus.val = coefficient(formula, hero.getPrimSkillLevel(PrimarySkill::ATTACK),
 			hero.getPrimSkillLevel(PrimarySkill::DEFENSE));

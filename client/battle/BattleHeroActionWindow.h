@@ -19,7 +19,7 @@ namespace HeroCommandUI
 std::string name(HeroCommand command);
 }
 
-/// One authoritative hero action: an existing spell, an Order or a Doctrine change.
+/// One authoritative hero action: an existing spell or an Order.
 class BattleHeroActionWindow final : public CWindowObject
 {
 	std::weak_ptr<BattleInterface> battle;

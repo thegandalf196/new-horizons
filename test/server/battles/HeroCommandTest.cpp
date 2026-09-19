@@ -86,7 +86,7 @@ TEST_F(HeroCommandTest, ChargeChangesRealDamageWithoutManaOrCreatureTurn)
 	EXPECT_EQ(attackerSideHero->mana, mana);
 	EXPECT_EQ(battle()->getActiveStackID(), active);
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::CHARGE);
-	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::ADVANCE));
+	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
 	advanceRound();
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
 	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min, before);
@@ -104,33 +104,30 @@ TEST_F(HeroCommandTest, HoldTheLineReducesRealIncomingPhysicalDamage)
 	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, false)).damage.min, before);
 }
 
-TEST_F(HeroCommandTest, AdvanceChangesMovementRangeAndExpires)
+TEST_F(HeroCommandTest, ChargeExpiresAtTheRoundBoundary)
 {
 	prepareCommands();
-	const auto * active = battle()->battleActiveUnit();
-	const auto before = active->getMovementRange();
-	ASSERT_TRUE(issue(HeroCommand::ADVANCE));
-	EXPECT_GT(active->getMovementRange(), before);
+	auto * from = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * to = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	const auto before = battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min;
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_GT(battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min, before);
 	advanceRound();
-	EXPECT_EQ(active->getMovementRange(), before);
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min, before);
 }
 
-TEST_F(HeroCommandTest, DoctrinePersistsAcrossRoundsAndSwitchDoesNotStack)
+TEST_F(HeroCommandTest, LegacyDoctrineIdsAreNeverIssuableOrExposed)
 {
 	prepareCommands();
-	ASSERT_TRUE(issue(HeroCommand::AGGRESSIVE));
-	advanceRound();
-	EXPECT_EQ(battle()->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::AGGRESSIVE);
-	const auto starts = server.startedActions.size();
-	EXPECT_FALSE(issue(HeroCommand::AGGRESSIVE));
-	EXPECT_FALSE(issue(HeroCommand::NONE));
-	EXPECT_EQ(server.startedActions.size(), starts);
-	ASSERT_TRUE(issue(HeroCommand::DEFENSIVE));
-	EXPECT_EQ(battle()->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::DEFENSIVE);
-	const auto effects = battle()->battleActiveUnit()->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND));
-	ASSERT_EQ(effects->size(), 2u);
-	for(const auto & effect : *effects)
-		EXPECT_NE(effect->type, BonusType::PERCENTAGE_DAMAGE_BOOST);
+	for(const auto command : {HeroCommand::AGGRESSIVE, HeroCommand::DEFENSIVE})
+	{
+		EXPECT_FALSE(heroCommands::supportedByRules(battle()->getHeroCommandRules(), command));
+		EXPECT_FALSE(issue(command));
+	}
+	EXPECT_EQ(battle()->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::NONE);
+	EXPECT_TRUE(battle()->battleActiveUnit()->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+	EXPECT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_EQ(battle()->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::NONE);
 }
 
 TEST_F(HeroCommandTest, WrongSideTargetsAndInvalidIdentifierAreRejectedBeforeState)
@@ -150,7 +147,7 @@ TEST_F(HeroCommandTest, WrongSideTargetsAndInvalidIdentifierAreRejectedBeforeSta
 
 class HeroActionBudgetTest : public HeroCommandFixture, public ::testing::WithParamInterface<std::tuple<int, int>> {};
 
-TEST_P(HeroActionBudgetTest, EverySecondSpellOrderDoctrineCombinationIsRejected)
+TEST_P(HeroActionBudgetTest, EverySecondSpellOrderCombinationIsRejected)
 {
 	prepareCommands(true);
 	const auto [first, second] = GetParam();
@@ -161,7 +158,7 @@ TEST_P(HeroActionBudgetTest, EverySecondSpellOrderDoctrineCombinationIsRejected)
 	EXPECT_EQ(attackerSideHero->mana, mana);
 	EXPECT_EQ(server.startedActions.size(), starts);
 	advanceRound();
-	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::ADVANCE));
+	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
 }
 
 INSTANTIATE_TEST_SUITE_P(AllNine, HeroActionBudgetTest,
@@ -170,17 +167,20 @@ INSTANTIATE_TEST_SUITE_P(AllNine, HeroActionBudgetTest,
 TEST_F(HeroCommandTest, BattleSideAndActionRoundTripAndOldSideDefaults)
 {
 	prepareCommands();
-	ASSERT_TRUE(issue(HeroCommand::AGGRESSIVE));
 	CMemorySerializer memory;
+	SideInBattle source(gameState().get());
+	source = battle()->getSide(BattleSide::ATTACKER);
+	source.heroCommandUsed = true;
+	source.activeDoctrine = HeroCommand::AGGRESSIVE;
 	auto action = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::DEFENSIVE);
-	memory.oser & battle()->getSide(BattleSide::ATTACKER);
+	memory.oser & source;
 	memory.oser & action;
 	SideInBattle restored(gameState().get());
 	BattleAction decoded;
 	memory.iser & restored;
 	memory.iser & decoded;
 	EXPECT_TRUE(restored.heroCommandUsed);
-	EXPECT_EQ(restored.activeDoctrine, HeroCommand::AGGRESSIVE);
+	EXPECT_EQ(restored.activeDoctrine, HeroCommand::NONE);
 	EXPECT_EQ(decoded.command, HeroCommand::DEFENSIVE);
 	EXPECT_EQ(decoded.actionType, EActionType::HERO_COMMAND);
 
@@ -195,25 +195,40 @@ TEST_F(HeroCommandTest, BattleSideAndActionRoundTripAndOldSideDefaults)
 	EXPECT_EQ(restored.activeOrder, HeroCommand::NONE);
 }
 
-TEST_F(HeroCommandTest, PerGameRulesSnapshotRoundTripsAndOldMissingRulesStayLegacy)
+TEST_F(HeroCommandTest, LegacyAdvanceIdentitySurvivesSideDecodeUntilBattleNormalization)
+{
+	prepareCommands();
+	SideInBattle source(gameState().get());
+	source = battle()->getSide(BattleSide::ATTACKER);
+	source.heroCommandUsed = true;
+	source.activeOrder = HeroCommand::ADVANCE;
+
+	CMemorySerializer memory;
+	memory.oser.version = ESerializationVersion::HERO_COMMANDS;
+	memory.iser.version = ESerializationVersion::HERO_COMMANDS;
+	memory.oser & source;
+	SideInBattle restored(gameState().get());
+	memory.iser & restored;
+
+	EXPECT_TRUE(restored.heroCommandUsed);
+	EXPECT_EQ(restored.activeDoctrine, HeroCommand::NONE);
+	EXPECT_EQ(restored.activeOrder, HeroCommand::ADVANCE);
+}
+
+TEST_F(HeroCommandTest, PerGameRulesSnapshotRoundTripsAndRefuseLossyLegacyWrites)
 {
 	startGame();
-	ASSERT_EQ(gameState()->getHeroCommandRules()["rulesetVersion"].Integer(), 1);
-	for(auto version : {ESerializationVersion::CURRENT, ESerializationVersion::TOWN_CUSTOM_INITIAL_GARRISON})
-	{
-		SCOPED_TRACE(static_cast<int>(version));
-		CMemorySerializer memory;
-		memory.oser.version = version;
-		memory.iser.version = version;
-		ASSERT_NO_THROW(memory.oser & *gameState());
-		CGameState restored;
-		memory.iser.cb = &restored;
-		ASSERT_NO_THROW(memory.iser & restored);
-		if(version == ESerializationVersion::CURRENT)
-			EXPECT_EQ(restored.getHeroCommandRules(), gameState()->getHeroCommandRules());
-		else
-			EXPECT_TRUE(restored.getHeroCommandRules().isNull());
-	}
+	ASSERT_EQ(gameState()->getHeroCommandRules()["rulesetVersion"].Integer(), heroCommands::ORDERS_ONLY_RULESET_VERSION);
+	CMemorySerializer current;
+	ASSERT_NO_THROW(current.oser & *gameState());
+	CGameState restored;
+	current.iser.cb = &restored;
+	ASSERT_NO_THROW(current.iser & restored);
+	EXPECT_EQ(restored.getHeroCommandRules(), gameState()->getHeroCommandRules());
+
+	CMemorySerializer legacy;
+	legacy.oser.version = ESerializationVersion::TOWN_CUSTOM_INITIAL_GARRISON;
+	EXPECT_THROW(legacy.oser & *gameState(), std::runtime_error);
 }
 
 TEST(HeroCommandRulesTest, NamedSettingsArrayLoadsRealContent)
@@ -224,7 +239,7 @@ TEST(HeroCommandRulesTest, NamedSettingsArrayLoadsRealContent)
 	files.setModScope(ModScope::scopeBuiltin());
 	settings.loadBase(files);
 	const auto & rules = settings.getValue(EGameSettings::COMBAT_HERO_COMMANDS);
-	EXPECT_EQ(rules["rulesetVersion"].Integer(), 1);
+	EXPECT_EQ(rules["rulesetVersion"].Integer(), heroCommands::ORDERS_ONLY_RULESET_VERSION);
 	EXPECT_NO_THROW(heroCommands::validateRules(rules));
 }
 

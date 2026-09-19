@@ -1,0 +1,93 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "New Horizons Orders-only combat rules v3",
+	"description": "Strict schemaVersion1/rulesetVersion3. New games emit Orders only; legacy Doctrine definitions are accepted only by the v1/v2 compatibility schemas.",
+	"type": "object",
+	"minProperties": 3,
+	"required": [
+		"schemaVersion",
+		"rulesetVersion",
+		"commands"
+	],
+	"additionalProperties": false,
+	"properties": {
+		"schemaVersion": {
+			"type": "integer",
+			"enum": [1]
+		},
+		"rulesetVersion": {
+			"type": "integer",
+			"enum": [3]
+		},
+		"commands": {
+			"type": "object",
+			"minProperties": 3,
+			"required": ["charge", "holdTheLine", "focusFire"],
+			"additionalProperties": false,
+			"properties": {
+				"charge": {"$ref": "#/definitions/order"},
+				"holdTheLine": {"$ref": "#/definitions/order"},
+				"focusFire": {"$ref": "#/definitions/focusFire"}
+			}
+		}
+	},
+	"definitions": {
+		"coefficient": {
+			"type": "object",
+			"minProperties": 3,
+			"required": ["base", "attack", "defense"],
+			"additionalProperties": false,
+			"properties": {
+				"base": {"type": "number", "minimum": -1000000, "maximum": 1000000},
+				"attack": {"type": "number", "minimum": -1000000, "maximum": 1000000},
+				"defense": {"type": "number", "minimum": -1000000, "maximum": 1000000}
+			}
+		},
+		"command": {
+			"type": "object",
+			"minProperties": 4,
+			"required": ["kind", "coverage", "duration", "effects"],
+			"additionalProperties": false,
+			"properties": {
+				"kind": {"type": "string", "enum": ["order"]},
+				"coverage": {"type": "string", "enum": ["ownLivingNonWarMachines"]},
+				"duration": {"type": "string", "enum": ["round"]},
+				"effects": {
+					"type": "object",
+					"minProperties": 1,
+					"additionalProperties": false,
+					"properties": {
+						"meleeDamagePercent": {"$ref": "#/definitions/coefficient"},
+						"rangedDamagePercent": {"$ref": "#/definitions/coefficient"},
+						"damageReductionPercent": {"$ref": "#/definitions/coefficient"},
+						"speedPercent": {"$ref": "#/definitions/coefficient"}
+					}
+				}
+			}
+		},
+		"order": {
+			"$ref": "#/definitions/command"
+		},
+		"focusFire": {
+			"type": "object",
+			"minProperties": 5,
+			"required": ["kind", "coverage", "duration", "effects", "target"],
+			"additionalProperties": false,
+			"properties": {
+				"kind": {"type": "string", "enum": ["order"]},
+				"coverage": {"type": "string", "enum": ["ownOrdinaryShootersAtIssue"]},
+				"duration": {"type": "string", "enum": ["round"]},
+				"effects": {
+					"type": "object",
+					"minProperties": 1,
+					"required": ["rangedDamagePercent"],
+					"additionalProperties": false,
+					"properties": {
+						"rangedDamagePercent": {"$ref": "#/definitions/coefficient"}
+					}
+				},
+				"target": {"type": "string", "enum": ["enemyUnit"]}
+			}
+		}
+	}
+}

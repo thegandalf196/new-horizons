@@ -13,6 +13,7 @@
 #include "BattleFieldController.h"
 #include "BattleHero.h"
 #include "BattleInterface.h"
+#include "MagicArrowOverchargeWindow.h"
 #include "BattleSiegeController.h"
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
@@ -213,6 +214,11 @@ BattleActionsController::BattleActionsController(BattleInterface & owner):
 	selectedStack(nullptr),
 	heroSpellToCast(nullptr)
 {
+}
+
+void BattleActionsController::setMagicArrowOverchargeFactory(MagicArrowOverchargeFactory factory)
+{
+	magicArrowOverchargeFactory = std::move(factory);
 }
 
 void BattleActionsController::endCastingSpell()
@@ -1062,6 +1068,24 @@ void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, c
 		case PossiblePlayerBattleAction::OBSTACLE:
 		case PossiblePlayerBattleAction::FREE_LOCATION:
 		{
+			// Magic Arrow is the one New Horizons spell whose optional cost is
+			// chosen only after the generic target selector has accepted a legal
+			// enemy stack.  Runtime supplies the adapter only for the saved V2
+			// ruleset; all legacy games and every other spell follow the existing
+			// request path unchanged.
+			if(action.get() == PossiblePlayerBattleAction::AIMED_SPELL_CREATURE
+				&& heroSpellToCast
+				&& heroSpellToCast->spell == SpellID(SpellID::MAGIC_ARROW)
+				&& magicArrowOverchargeFactory)
+			{
+				const BattleAction pending = *heroSpellToCast;
+				if(const auto context = magicArrowOverchargeFactory(pending, targetHex, targetStack))
+				{
+					ENGINE->windows().createAndPushWindow<MagicArrowOverchargeWindow>(*context);
+					return;
+				}
+			}
+
 			if(action.get() == PossiblePlayerBattleAction::AIMED_SPELL_CREATURE)
 			{
 				monsterCaster = owner.stacksController->getActiveStack();

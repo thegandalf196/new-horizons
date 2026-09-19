@@ -67,7 +67,7 @@ TEST_F(HypotheticTimedSpellTest, NestedNonTimedSpellRemovalDoesNotReappearOrExpi
 	spell.duration = BonusDuration::ONE_BATTLE;
 	Bonus doctrine = spell; // Synthetic speed sentinels, not new Doctrine rules.
 	doctrine.source = BonusSource::HERO_COMMAND;
-	doctrine.sid = BonusSourceID(static_cast<int32_t>(HeroCommand::AGGRESSIVE));
+	doctrine.sid = BonusSourceID(BonusCustomSource(static_cast<int32_t>(HeroCommand::AGGRESSIVE)));
 	doctrine.val = 2;
 	parent->addUnitBonus(unit->unitId(), {spell, doctrine});
 	ASSERT_EQ(parent->battleGetUnitByID(unit->unitId())->getMovementRange(), speed + 5);
@@ -97,13 +97,13 @@ TEST_F(HypotheticTimedSpellTest, NestedDoctrineReplacementRemovesOnlyOldBattleLo
 	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
 	Bonus doctrine = haste();
 	doctrine.source = BonusSource::HERO_COMMAND;
-	doctrine.sid = BonusSourceID(static_cast<int32_t>(HeroCommand::AGGRESSIVE));
+	doctrine.sid = BonusSourceID(BonusCustomSource(static_cast<int32_t>(HeroCommand::AGGRESSIVE)));
 	doctrine.duration = BonusDuration::ONE_BATTLE;
 	parent->updateUnitBonus(unit->unitId(), {doctrine});
 	HypotheticBattle child(environment.get(), parent);
 	child.getForUpdate(unit->unitId())->removeUnitBonus(std::vector<Bonus>{doctrine});
 	Bonus replacement = doctrine;
-	replacement.sid = BonusSourceID(static_cast<int32_t>(HeroCommand::DEFENSIVE));
+	replacement.sid = BonusSourceID(BonusCustomSource(static_cast<int32_t>(HeroCommand::DEFENSIVE)));
 	replacement.val = 1;
 	child.addUnitBonus(unit->unitId(), {replacement});
 	for(int query = 0; query < 3; ++query)

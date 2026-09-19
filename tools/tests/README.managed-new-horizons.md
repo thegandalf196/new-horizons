@@ -2,7 +2,8 @@
 
 This is an opt-in **test-data** recipe, not a default activation or player package.
 It installs no executable, invokes no compiler/game, and never copies purchaser
-assets. The default module remains 0.5.1 with 69 common spells.
+assets. Its pinned historical input module remains 0.5.1 with 69 common spells;
+the live canonical module may advance independently.
 
 ## Inputs and rights
 

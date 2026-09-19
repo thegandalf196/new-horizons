@@ -51,6 +51,8 @@
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/ISpellMechanics.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
 BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *army1, const CCreatureSet *army2,
@@ -97,6 +99,7 @@ BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *
 	actionsController.reset( new BattleActionsController(*this));
 	effectsController.reset(new BattleEffectsController(*this));
 	obstacleController.reset(new BattleObstacleController(*this));
+	installMagicArrowOverchargeUI();
 
 	adventureInt->onAudioPaused();
 	ongoingAnimationsState.setBusy();
@@ -106,6 +109,113 @@ BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *
 	windowObject->updateQueue();
 
 	playIntroSoundAndUnlockInterface();
+}
+
+void BattleInterface::installMagicArrowOverchargeUI()
+{
+	if(!actionsController)
+		return;
+
+	actionsController->setMagicArrowOverchargeFactory(
+		[this](const BattleAction & pending, const BattleHex & targetHex, const CStack * initialTarget)
+			-> std::optional<MagicArrowOverchargeContext>
+		{
+			if(!curInt || !curInt->cb || !initialTarget)
+				return std::nullopt;
+
+			const auto callback = curInt->cb->getBattle(getBattleID());
+			if(!callback || !callback->getBattle())
+				return std::nullopt;
+
+			const auto * spell = pending.spell.toSpell();
+			const auto * hero = currentHero();
+			if(!spell || spell->id != SpellID(SpellID::MAGIC_ARROW) || !hero
+				|| !newHorizonsMagic::magicArrowOverchargeEnabled(callback->getBattle()->getMagicRules(), spell->id))
+				return std::nullopt;
+
+			const uint32_t targetUnitID = initialTarget->unitId();
+			const BattleID localBattleID = getBattleID();
+			const int32_t spellPower = hero->getEffectPower(spell);
+			const int formulaMaximumOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(
+				callback->getBattle()->getMagicRules(), spell->id, spellPower);
+			const int baseMana = callback->battleGetSpellCost(spell, hero);
+			const int maximumOvercharge = std::min(formulaMaximumOvercharge, std::max(0, hero->mana - baseMana));
+
+			// battleGetSpellCost is the authoritative ordinary cost.  Runtime owns
+			// Wisdom and other modifiers; the panel only labels this value as the
+			// Wisdom-adjusted base and adds the optional surcharge separately.
+			const auto evaluate = [this, localBattleID, targetUnitID, spell, maximumOvercharge]
+				(int overcharge)
+				-> MagicArrowOverchargeValues
+			{
+				MagicArrowOverchargeValues values;
+				values.maximumOvercharge = maximumOvercharge;
+				values.overcharge = std::clamp(overcharge, 0, maximumOvercharge);
+
+				if(!curInt || !curInt->cb || curInt->cb->getBattle(localBattleID) == nullptr)
+					return values;
+				const auto callback = curInt->cb->getBattle(localBattleID);
+				const auto * hero = currentHero();
+				const auto * target = callback->battleGetUnitByID(targetUnitID);
+				if(!callback || !callback->getBattle() || !hero || !target)
+					return values;
+
+				values.baseMana = callback->battleGetSpellCost(spell, hero);
+				values.additionalMana = values.overcharge;
+				values.totalMana = values.baseMana + values.additionalMana;
+				values.availableMana = hero->mana;
+				values.affordable = values.totalMana <= values.availableMana;
+				values.targetDescription = "Target: " + std::to_string(target->getCount()) + " "
+					+ target->unitType()->getNamePluralTranslated();
+
+				const auto previewDamage = [&](int selectedOvercharge)
+				{
+					spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
+					preview.setOvercharge(selectedOvercharge);
+					auto mechanics = spell->battleMechanics(&preview);
+					return static_cast<int>(mechanics->adjustEffectValue(target));
+				};
+				values.baseDamage = previewDamage(0);
+				values.projectedDamage = previewDamage(values.overcharge);
+				return values;
+			};
+
+			MagicArrowOverchargeContext context;
+			context.anchor = ENGINE->getCursorPosition();
+			context.initial = evaluate(0);
+			context.evaluate = evaluate;
+			context.confirm = [this, pending, localBattleID, targetUnitID, spell, formulaMaximumOvercharge](int overcharge)
+				-> bool
+			{
+				if(!curInt || !curInt->cb || curInt->cb->getBattle(localBattleID) == nullptr)
+					return false;
+				const auto callback = curInt->cb->getBattle(localBattleID);
+				const auto * hero = currentHero();
+				const auto * target = callback->battleGetUnitByID(targetUnitID);
+				if(!callback || !callback->getBattle() || !hero || !target || overcharge < 0 || overcharge > formulaMaximumOvercharge
+					|| !newHorizonsMagic::magicArrowOverchargeEnabled(callback->getBattle()->getMagicRules(), spell->id))
+					return false;
+
+				const int baseCost = callback->battleGetSpellCost(spell, hero);
+				if(baseCost < 0 || baseCost + overcharge > hero->mana)
+					return false;
+
+				BattleAction action = pending;
+				action.target.clear();
+				action.aimToUnit(target);
+				action.spellOvercharge = overcharge;
+				curInt->cb->battleMakeSpellAction(localBattleID, action);
+				if(actionsController)
+					actionsController->endCastingSpell();
+				return true;
+			};
+			context.cancel = [this]
+			{
+				if(actionsController)
+					actionsController->endCastingSpell();
+			};
+			return context;
+		});
 }
 
 bool BattleInterface::isInTacticsMode()
@@ -722,11 +832,7 @@ void BattleInterface::endAction(const BattleAction &action)
 		fieldController->redrawBackgroundWithHexes();
 
 	if(action.actionType == EActionType::HERO_COMMAND)
-	{
-		const bool doctrine = action.command == HeroCommand::AGGRESSIVE || action.command == HeroCommand::DEFENSIVE;
-		appendBattleLog(std::string(doctrine ? "Doctrine: " : "Order: ") + HeroCommandUI::name(action.command) +
-			(doctrine ? " (persists in this battle)." : " (this round)."));
-	}
+		appendBattleLog("Order: " + HeroCommandUI::name(action.command) + " (this round).");
 }
 
 void BattleInterface::appendBattleLog(const std::string & newEntry)

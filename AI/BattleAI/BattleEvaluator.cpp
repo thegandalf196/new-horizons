@@ -22,7 +22,9 @@
 #include "../../lib/entities/building/TownFortifications.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/ISpellMechanics.h"
+#include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpellHandler.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/BattleAction.h"
@@ -314,7 +316,7 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 
 			return goTowardsNearest(stack, moveTarget.positions, *targets);
 		}
-		else
+				else
 		{
 			cachedAttack.waited = true;
 
@@ -507,8 +509,7 @@ bool BattleEvaluator::canCastSpell()
 
 	if(cb->getBattle(battleID)->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK)
 		return true;
-	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::ADVANCE,
-		HeroCommand::AGGRESSIVE, HeroCommand::DEFENSIVE})
+	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE})
 	{
 		if(cb->getBattle(battleID)->battleCanUseHeroCommand(side, command))
 			return true;
@@ -544,18 +545,30 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	for(auto spell : possibleSpells)
 	{
 		spells::BattleCast temp(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
+		const int maxOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(
+			cb->getBattle(battleID)->getBattle()->getMagicRules(), spell->getId(), hero->getEffectPower(spell));
 
 		for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
 		{
-			PossibleSpellcast ps;
-			ps.dest = target;
-			ps.spell = spell;
-			possibleCasts.push_back(ps);
+			for(int overcharge = 0; overcharge <= maxOvercharge; ++overcharge)
+			{
+				spells::BattleCast candidateCast(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
+				candidateCast.setOvercharge(overcharge);
+				auto candidateMechanics = spell->battleMechanics(&candidateCast);
+				spells::detail::ProblemImpl problem;
+				if(!candidateMechanics->canBeCast(problem))
+					continue;
+
+				PossibleSpellcast ps;
+				ps.dest = target;
+				ps.spell = spell;
+				ps.spellOvercharge = overcharge;
+				possibleCasts.push_back(ps);
+			}
 		}
 	}
 	// Commands compete in the same exchange evaluation as legal spell/target pairs.
-	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::ADVANCE,
-		HeroCommand::AGGRESSIVE, HeroCommand::DEFENSIVE})
+	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE})
 	{
 		if(cb->getBattle(battleID)->battleCanUseHeroCommand(side, command))
 		{
@@ -758,6 +771,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(ps.command == HeroCommand::NONE)
 				{
 					spells::BattleCast cast(state.get(), hero, spells::Mode::HERO, ps.spell);
+					cast.setOvercharge(ps.spellOvercharge);
 					cast.castEval(state->getServerCallback(), ps.dest);
 				}
 				else if(ps.command == HeroCommand::FOCUS_FIRE)
@@ -771,16 +785,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					{
 						if(state->battleGetOwner(unit) != playerID)
 							continue;
-						if(heroCommands::isDoctrine(ps.command))
-						{
-							std::vector<Bonus> oldDoctrine;
-							for(const auto & bonus : *unit->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND)))
-							{
-								if(bonus->duration == BonusDuration::ONE_BATTLE)
-									oldDoctrine.push_back(*bonus);
-							}
-							state->removeUnitBonus(unit->unitId(), oldDoctrine);
-						}
 						if(unit->alive() && !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON))
 							state->addUnitBonus(unit->unitId(), effects);
 					}
@@ -967,6 +971,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		BattleAction spellcast;
 		spellcast.actionType = EActionType::HERO_SPELL;
 		spellcast.spell = castToPerform.spell->id;
+		spellcast.spellOvercharge = castToPerform.spellOvercharge;
 		spellcast.setTarget(castToPerform.dest);
 		spellcast.side = side;
 		spellcast.stackNumber = -1;

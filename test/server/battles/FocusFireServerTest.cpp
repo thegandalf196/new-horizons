@@ -287,14 +287,15 @@ TEST_F(FocusFireServerTest, NoLegalAmmunitionRefusesBeforeStartAction)
 	EXPECT_EQ(shooter->shots.available(), 0);
 }
 
-TEST_F(FocusFireServerTest, SharedBudgetAndRoundExpiryLeaveDoctrineUntouched)
+TEST_F(FocusFireServerTest, SharedBudgetAndRoundExpiryKeepLegacyDoctrinesInactive)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareFocus());
-	ASSERT_TRUE(issue(HeroCommand::AGGRESSIVE));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	EXPECT_FALSE(submit(focusAction(target->unitId())));
 	advanceRound();
 	ASSERT_TRUE(submit(focusAction(target->unitId())));
-	EXPECT_FALSE(issue(HeroCommand::CHARGE));
+	EXPECT_FALSE(issue(HeroCommand::HOLD_THE_LINE));
+	EXPECT_FALSE(issue(HeroCommand::AGGRESSIVE));
 	EXPECT_FALSE(issue(HeroCommand::DEFENSIVE));
 	EXPECT_FALSE(battle()->battleCanBeginHeroCommand(BattleSide::ATTACKER, HeroCommand::FOCUS_FIRE));
 	EXPECT_TRUE(battle()->battleIsFocusFireTargetActive(BattleSide::ATTACKER));
@@ -302,6 +303,6 @@ TEST_F(FocusFireServerTest, SharedBudgetAndRoundExpiryLeaveDoctrineUntouched)
 	EXPECT_FALSE(battle()->battleGetFocusFireState(BattleSide::ATTACKER));
 	EXPECT_FALSE(battle()->battleIsFocusFireTargetActive(BattleSide::ATTACKER));
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
-	EXPECT_EQ(battle()->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::AGGRESSIVE);
+	EXPECT_EQ(battle()->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::NONE);
 	EXPECT_EQ(battle()->battleTargetedRangedCommandPercent(shooter, target, true), 0);
 }

@@ -14,6 +14,7 @@
 #include "Problem.h"
 #include "CSpell.h"
 #include "NewHorizonsSpellAvailability.h"
+#include "NewHorizonsMagic.h"
 
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -179,6 +180,19 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 {
 	if(!newHorizonsMagic::spellAllowedByBattleRoster(*battle(), owner->getId()))
 		return adaptGenericProblem(problem);
+
+	// Overcharge is an action parameter, not a client-side damage hint.  Keep
+	// the legality gate in the authoritative mechanics path so malformed or
+	// stale requests cannot spend a hero action/mana with a different effect.
+	const int selectedOvercharge = getOvercharge();
+	const bool adjustableMagicArrow = newHorizonsMagic::magicArrowOverchargeEnabled(
+		battle()->getBattle()->getMagicRules(), owner->getId());
+	if(selectedOvercharge < 0
+		|| (!adjustableMagicArrow && selectedOvercharge != 0)
+		|| (adjustableMagicArrow && selectedOvercharge > newHorizonsMagic::magicArrowMaxOvercharge(
+			battle()->getBattle()->getMagicRules(), owner->getId(), getEffectPower())))
+		return adaptGenericProblem(problem);
+
 	auto genProblem = battle()->battleCanCastSpell(caster, mode);
 	// Orb of Inhibition (BLOCK_ALL_MAGIC) must not block level-0 creature abilities (stone gaze, death stare, ...)
 	if(genProblem == ESpellCastProblem::MAGIC_IS_BLOCKED && getSpellLevel() <= 0)
@@ -200,8 +214,14 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 				genProblem = ESpellCastProblem::NO_SPELLBOOK;
 			else if(!castingHero->canCastThisSpell(owner))
 				genProblem = ESpellCastProblem::HERO_DOESNT_KNOW_SPELL;
-			else if(castingHero->mana < battle()->battleGetSpellCost(owner, castingHero)) //not enough mana
-				genProblem = ESpellCastProblem::NOT_ENOUGH_MANA;
+			else
+			{
+				int requiredMana = battle()->battleGetSpellCost(owner, castingHero);
+				if(adjustableMagicArrow)
+					requiredMana += selectedOvercharge;
+				if(castingHero->mana < requiredMana) //not enough mana
+					genProblem = ESpellCastProblem::NOT_ENOUGH_MANA;
+			}
 		}
 		break;
 	}
@@ -383,6 +403,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	{
 		const auto * casterHero = dynamic_cast<const CGHeroInstance *>(caster);
 		spellCost = battle()->battleGetSpellCost(owner, casterHero);
+		if(newHorizonsMagic::magicArrowOverchargeEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
+			spellCost += getOvercharge();
 
 		if(nullptr != otherHero) //handle mana channel
 		{
@@ -761,4 +783,3 @@ const Spell * BattleSpellMechanics::getSpell() const
 
 
 }
-

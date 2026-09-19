@@ -27,7 +27,7 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		const JsonNode file(JsonPath::builtin("config/newHorizonsCombat"));
+		const JsonNode file(JsonPath::builtin("config/newHorizonsCombatV2"));
 		auto rules = file["combat"]["heroCommands"];
 		rules["rulesetVersion"].Integer() = heroCommands::TARGETED_RULESET_VERSION;
 		auto & focus = rules["commands"]["focusFire"];

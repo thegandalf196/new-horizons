@@ -14,7 +14,7 @@
 
 class HeroCommandCloneTest : public HeroCommandFixture {};
 
-TEST_F(HeroCommandCloneTest, RealCloneDoesNotCopyDoctrineButReceivesSubsequentSwitch)
+TEST_F(HeroCommandCloneTest, RealCloneDoesNotCopyExpiredOrderButReceivesSubsequentOrder)
 {
 	prepareCommands(true);
 	attackerSideHero->addSpellToSpellbook(SpellID::CLONE);
@@ -23,7 +23,7 @@ TEST_F(HeroCommandCloneTest, RealCloneDoesNotCopyDoctrineButReceivesSubsequentSw
 		3 * attackerSideHero->getEffectPowerDivisor(cloneSpell), ChangeValueMode::ABSOLUTE);
 	ASSERT_EQ(attackerSideHero->getEnchantPower(cloneSpell), 3);
 	const auto * original = battle()->battleGetStackByID(battle()->battleActiveUnit()->unitId());
-	ASSERT_TRUE(issue(HeroCommand::AGGRESSIVE));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	advanceRound();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -41,12 +41,12 @@ TEST_F(HeroCommandCloneTest, RealCloneDoesNotCopyDoctrineButReceivesSubsequentSw
 	ASSERT_NE(clone, nullptr);
 	ASSERT_TRUE(clone->alive());
 	EXPECT_TRUE(clone->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
-	EXPECT_FALSE(original->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
-	EXPECT_EQ(battle()->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::AGGRESSIVE);
+	EXPECT_TRUE(original->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
 
 	advanceRound();
 	ASSERT_TRUE(clone->alive());
-	ASSERT_TRUE(issue(HeroCommand::DEFENSIVE));
-	EXPECT_EQ(clone->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->size(), 2u);
-	EXPECT_EQ(original->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->size(), 2u);
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	EXPECT_EQ(clone->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->size(), 1u);
+	EXPECT_EQ(original->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->size(), 1u);
 }

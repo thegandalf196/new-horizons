@@ -18,7 +18,7 @@ base/total ratings, proposed class growth and actual last-level gains.
 Ordinary Linux testing verified equipment changes, quest XP, four-gain level-up,
 save/restart and a subsequent turn. Legacy saves retain their saved rules and
 omit the growth entry. These are not native Windows gameplay or full-redesign
-acceptance claims. Post-Expert masteries, the new spell roster and creature
+acceptance claims. Post-Expert masteries, the unimplemented new spell roster and creature
 categories remain subsequent work.
 
 ## Capability preview (0.4)
@@ -49,12 +49,16 @@ primary growth disabled. Neither flag overwrites a live or frozen module.
 The six-school increment requires its matching runtime, serialization and UI;
 source data or image generation alone is not a gameplay acceptance result.
 
-The magic snapshot classifies all 69 existing common hero spells. It does **not**
-register fictional versions of the planned new spell roster. Titan's Bolt and
-creature-only abilities/triggers retain their special handling. Existing spells
-keep their real names/effects: Magic Arrow is not falsely labeled a completed new
-Magic Missile implementation. New spells/effects, qualitative masteries,
-additional secondary-attribute development and creature tiers are subsequent work.
+The active magic snapshot (module 0.6.0, ruleset v2) classifies all 69 existing
+common hero spells. Titan's Bolt and creature-only abilities/triggers retain their
+special handling. Magic Arrow remains the real Sorcery level-1 spell and is the
+first enhanced spell: its saved direct-damage row is `{base: 20,
+powerCoefficient: 20}`, and the native cast path exposes the detailed
+Spell-Power-based Overcharge choice. The optional Overcharge Mana surcharge is
+deliberate investment and is not reduced by Wisdom. The planned fictional spell
+roster—including `new-horizons:magicMissile`—is not registered. New spells/effects,
+qualitative masteries, additional secondary-attribute development and creature
+tiers are subsequent work.
 
 Six new school skills provide actual Basic/Advanced/Expert school bonuses, with
 provisional acquisition weights Might 2 / Magic 6. These ranks are not the later

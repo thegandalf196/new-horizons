@@ -23,5 +23,9 @@ PossibleSpellcast::~PossibleSpellcast() = default;
 
 std::string PossibleSpellcast::name() const
 {
-	return command == HeroCommand::NONE ? spell->getNameTranslated() : heroCommands::key(command);
+	if(command != HeroCommand::NONE)
+		return heroCommands::key(command);
+	if(spellOvercharge == 0)
+		return spell->getNameTranslated();
+	return spell->getNameTranslated() + " (Overcharge +" + std::to_string(spellOvercharge) + ")";
 }

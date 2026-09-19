@@ -4,7 +4,7 @@
 import copy
 import unittest
 
-from test_new_horizons_content import load
+from test_new_horizons_content import legacy_rules, load
 
 try:
     from jsonschema import Draft4Validator
@@ -23,13 +23,9 @@ class MagicV2DataTest(unittest.TestCase):
         ])
         self.old_validator = Draft4Validator(self.v1, registry=registry)
         self.validator = Draft4Validator(self.v2, registry=registry)
-        self.old_rules = load('config/newHorizonsMagic.json')
-        self.rules = copy.deepcopy(self.old_rules)
-        self.rules['rulesetVersion'] = 2
-        self.rules['spells']['new-horizons:magicMissile'] = {
-            'schools': ['new-horizons:sorcery'], 'level': 1, 'costs': [5] * 4,
-            'directDamage': {'base': 20, 'powerCoefficient': 20},
-        }
+        self.rules = load('config/newHorizonsMagic.json')
+        self.old_rules = legacy_rules(self.rules)
+        self.formula_spell = 'core:magicArrow'
 
     def test_named_schemas_and_valid_v2_formula(self):
         Draft4Validator.check_schema(self.v1)
@@ -43,7 +39,7 @@ class MagicV2DataTest(unittest.TestCase):
         self.old_validator.validate({})
         self.assertFalse(self.validator.is_valid({}))
         changed = copy.deepcopy(self.old_rules)
-        changed['spells']['core:magicArrow']['directDamage'] = {'base': 20, 'powerCoefficient': 20}
+        changed['spells'][self.formula_spell]['directDamage'] = {'base': 20, 'powerCoefficient': 20}
         self.assertFalse(self.old_validator.is_valid(changed))
 
     def test_formula_fields_types_and_bounds(self):
@@ -51,28 +47,28 @@ class MagicV2DataTest(unittest.TestCase):
             for invalid in (-1, 1000001, 0.5, 20.0, '20', None, True):
                 with self.subTest(key=key, invalid=repr(invalid)):
                     changed = copy.deepcopy(self.rules)
-                    changed['spells']['new-horizons:magicMissile']['directDamage'][key] = invalid
+                    changed['spells'][self.formula_spell]['directDamage'][key] = invalid
                     self.assertFalse(self.validator.is_valid(changed))
             for valid in (0, 1000000):
                 changed = copy.deepcopy(self.rules)
-                changed['spells']['new-horizons:magicMissile']['directDamage'][key] = valid
+                changed['spells'][self.formula_spell]['directDamage'][key] = valid
                 self.validator.validate(changed)
 
     def test_missing_extra_and_null_formula(self):
         for invalid in (None, [], {}, {'base': 20}, {'base': 20, 'powerCoefficient': 20, 'divisor': 10}):
             with self.subTest(invalid=invalid):
                 changed = copy.deepcopy(self.rules)
-                changed['spells']['new-horizons:magicMissile']['directDamage'] = invalid
+                changed['spells'][self.formula_spell]['directDamage'] = invalid
                 self.assertFalse(self.validator.is_valid(changed))
         # V2 may retain legacy-effect rows without a direct-damage override.
-        del self.rules['spells']['new-horizons:magicMissile']['directDamage']
+        del self.rules['spells'][self.formula_spell]['directDamage']
         self.validator.validate(self.rules)
 
     def test_existing_school_rank_and_cost_constraints_remain(self):
         for key, value in (('schools', ['core:air']), ('level', 0), ('costs', [5] * 3), ('costs', [5, None, 5, 5])):
             with self.subTest(key=key, value=value):
                 changed = copy.deepcopy(self.rules)
-                changed['spells']['new-horizons:magicMissile'][key] = value
+                changed['spells'][self.formula_spell][key] = value
                 self.assertFalse(self.validator.is_valid(changed))
 
 

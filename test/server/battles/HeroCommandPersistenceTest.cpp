@@ -21,29 +21,52 @@
 
 class HeroCommandPersistenceTest : public HeroCommandFixture {};
 
+TEST_F(HeroCommandPersistenceTest, LegacyAdvanceNormalizationRemovesIdentityAndRoundBonus)
+{
+	prepareCommands();
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	side.heroCommandUsed = true;
+	side.activeOrder = HeroCommand::ADVANCE;
+	Bonus legacySpeed(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::HERO_COMMAND, 25, BonusSourceID());
+	legacySpeed.turnsRemain = 1;
+	auto * active = battle()->getStack(battle()->getActiveStackID());
+	ASSERT_NE(active, nullptr);
+	active->addNewBonus(std::make_shared<Bonus>(legacySpeed));
+	ASSERT_FALSE(battle()->battleActiveUnit()->getAllBonuses(
+		Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+
+	battle()->normalizeLegacyHeroCommandState();
+
+	EXPECT_TRUE(side.heroCommandUsed);
+	EXPECT_EQ(side.activeOrder, HeroCommand::NONE);
+	EXPECT_TRUE(battle()->battleActiveUnit()->getAllBonuses(
+		Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+}
+
 TEST_F(HeroCommandPersistenceTest, WarMachinesAndEnemiesAreNotRecipients)
 {
 	prepareCommands();
 	auto * machine = addStack(BattleSide::ATTACKER, creatureByName("ballista"), BattleHex(70), 1);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 10);
 	ASSERT_TRUE(machine->hasBonusOfType(BonusType::SIEGE_WEAPON));
-	ASSERT_TRUE(issue(HeroCommand::AGGRESSIVE));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	EXPECT_TRUE(machine->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
 	EXPECT_TRUE(enemy->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
 	EXPECT_FALSE(battle()->battleActiveUnit()->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
 }
 
-TEST_F(HeroCommandPersistenceTest, LateArrivalsRequireDoctrineSwitchToReceiveItsEffects)
+TEST_F(HeroCommandPersistenceTest, LateArrivalsReceiveOnlyTheNextRoundOrder)
 {
 	prepareCommands();
-	ASSERT_TRUE(issue(HeroCommand::AGGRESSIVE));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	auto * late = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 10);
 	EXPECT_TRUE(late->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
 	advanceRound();
-	EXPECT_EQ(battle()->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::AGGRESSIVE);
-	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::AGGRESSIVE));
-	ASSERT_TRUE(issue(HeroCommand::DEFENSIVE));
-	EXPECT_EQ(late->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->size(), 2u);
+	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
+	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	EXPECT_EQ(late->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->size(), 1u);
 }
 
 TEST_F(HeroCommandPersistenceTest, NoLivingOrdinaryRecipientMakesEveryCommandUnavailable)
@@ -78,9 +101,9 @@ TEST_F(HeroCommandPersistenceTest, FullBattleStartPacketRestoresEffectsBudgetAnd
 	const auto beforeBattle = gameState()->saveToMemory();
 	startBattle();
 	beginCombat();
-	ASSERT_TRUE(issue(HeroCommand::AGGRESSIVE));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	advanceRound();
-	ASSERT_TRUE(issue(HeroCommand::ADVANCE));
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
 	const auto activeID = battle()->getActiveStackID();
 	const auto speed = battle()->battleActiveUnit()->getMovementRange();
 	const auto round = battle()->getRound();
@@ -109,24 +132,28 @@ TEST_F(HeroCommandPersistenceTest, FullBattleStartPacketRestoresEffectsBudgetAnd
 	ASSERT_NE(restored, nullptr);
 	EXPECT_EQ(restored->getActiveStackID(), activeID);
 	EXPECT_EQ(restored->battleActiveUnit()->getMovementRange(), speed);
-	EXPECT_EQ(restored->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::ADVANCE);
-	EXPECT_EQ(restored->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::AGGRESSIVE);
+	EXPECT_EQ(restored->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::HOLD_THE_LINE);
+	EXPECT_EQ(restored->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::NONE);
 	EXPECT_TRUE(restored->getHeroCommandUsed(BattleSide::ATTACKER));
-	EXPECT_FALSE(restored->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::DEFENSIVE));
+	EXPECT_FALSE(restored->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
+	EXPECT_FALSE(restored->battleActiveUnit()->getAllBonuses(
+		Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
 
 	BattleNextRound next;
 	next.battleID = BattleID(0);
 	restoredHandler->sendAndApply(next);
 	EXPECT_EQ(restored->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
-	EXPECT_EQ(restored->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::AGGRESSIVE);
-	EXPECT_LT(restored->battleActiveUnit()->getMovementRange(), speed);
-	EXPECT_TRUE(restored->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::DEFENSIVE));
+	EXPECT_EQ(restored->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::NONE);
+	EXPECT_EQ(restored->battleActiveUnit()->getMovementRange(), speed);
+	EXPECT_TRUE(restored->battleActiveUnit()->getAllBonuses(
+		Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+	EXPECT_TRUE(restored->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 	EXPECT_TRUE(restoredHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
-		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::DEFENSIVE)));
-	EXPECT_EQ(restored->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::DEFENSIVE);
+		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE)));
+	EXPECT_EQ(restored->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::NONE);
 
 	// Continuing the replica did not mutate the original battle or its budget.
-	EXPECT_EQ(battle()->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::AGGRESSIVE);
+	EXPECT_EQ(battle()->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::NONE);
 	EXPECT_EQ(battle()->battleActiveUnit()->getMovementRange(), speed);
 	EXPECT_TRUE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
 }

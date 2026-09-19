@@ -119,6 +119,8 @@ TEST_F(HypotheticWallTest, RealEarthquakeCanDestroyTheLastGateInModelAndAuthorit
 	battle()->si.gateState = EGateState::CLOSED;
 	const auto * spell = SpellID(SpellID::EARTHQUAKE).toSpell();
 	ASSERT_TRUE(spell->canBeCast(battle(), spells::Mode::HERO, attackerSideHero));
+	spells::BattleCast live(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	ASSERT_TRUE(spell->battleMechanics(&live)->canBeCastAt({}));
 	HypotheticBattle model(environment.get(), callback);
 	spells::BattleCast projected(&model, attackerSideHero, spells::Mode::HERO, spell);
 	projected.castEval(model.getServerCallback(), {});

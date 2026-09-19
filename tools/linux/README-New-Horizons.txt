@@ -17,7 +17,7 @@ This preflight does not verify library compatibility, asset completeness or game
 Use Play-New-Horizons.sh: new-horizons-launch.sh is also a developer tool and its
 implicit client path is not the packaged default.
 
-The preview includes Orders/Doctrines, six schools for existing spells, saved hero
+The preview includes Orders, six schools for existing spells, saved hero
 primary growth, scaled spell-power/mana rules, soft leadership capacity and trained
 ballista siege capability. Read-only development views reflect saved identities;
 absent primary/capability rules are not adopted from the installed module. Capacity

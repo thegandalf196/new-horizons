@@ -62,7 +62,7 @@ struct MoveTarget
 
 struct EvaluationResult
 {
-	static const int64_t INEFFECTIVE_SCORE = -100000000;
+	static constexpr int64_t INEFFECTIVE_SCORE = -100000000;
 
 	AttackPossibility bestAttack;
 	MoveTarget bestMove;

@@ -69,12 +69,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_LOGISTICS_MASTERIES, // two-family pre-gain eligibility and pending choices
 
 	NEW_HORIZONS_TARGETED_COMMANDS, // exact target/cohort/premium and v2 combat rules
+	NEW_HORIZONS_MAGIC_ARROW_OVERCHARGE, // spell-specific Magic Arrow cast parameter
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_TARGETED_COMMANDS,
+	CURRENT = NEW_HORIZONS_MAGIC_ARROW_OVERCHARGE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -85,3 +86,5 @@ static_assert(ESerializationVersion::NEW_HORIZONS_HERO_GROWTH > ESerializationVe
 static_assert(ESerializationVersion::NEW_HORIZONS_MAGIC > ESerializationVersion::HERO_COMMANDS);
 static_assert(ESerializationVersion::HERO_COMMANDS > ESerializationVersion::TOWN_CUSTOM_INITIAL_GARRISON,
 	"Append new serialization features before release aliases; never regress existing feature gates");
+static_assert(ESerializationVersion::NEW_HORIZONS_MAGIC_ARROW_OVERCHARGE > ESerializationVersion::NEW_HORIZONS_TARGETED_COMMANDS,
+	"New spell action fields must remain absent from older targeted-command snapshots");

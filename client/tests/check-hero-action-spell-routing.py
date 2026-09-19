@@ -53,7 +53,7 @@ def verify_orders_help(source):
     assert 'CRClickPopup::createAndPush' in popup
     for forbidden in ('bOrdersf(', 'battleMakeSpellAction', 'block(false)', 'setShortcutBlocked'):
         assert forbidden not in popup
-    assert 'CButton::tooltip("Orders and Doctrines", "")' in source
+    assert 'CButton::tooltip("Orders", "")' in source
     assert re.search(r'ordersButton->block\(ordersBlocked\);\s*//[^\n]*\n\s*ordersButton->addUsedEvents\(SHOW_POPUP\);\s*setShortcutBlocked\(EShortcut::BATTLE_OPEN_ORDERS, ordersBlocked\);', source)
 
 

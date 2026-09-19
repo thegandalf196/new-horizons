@@ -1312,6 +1312,7 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	// Internal connections can deliver packets without binary deserialization.
 	// Validate before localInit attaches armies or changes the canonical battle.
 	heroCommands::validateRules(pack.info->getHeroCommandRules());
+	pack.info->normalizeLegacyHeroCommandState();
 	pack.info->validateFocusFireStates();
 	assert(pack.battleID == gs.nextBattleID);
 
@@ -1452,14 +1453,15 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	}
 	if(pack.ba.actionType == EActionType::HERO_COMMAND)
 	{
+		if(heroCommands::isDoctrine(pack.ba.command)
+			|| !heroCommands::supportedByRules(gs.getBattle(pack.battleID)->getHeroCommandRules(), pack.ba.command))
+			throw std::runtime_error("Legacy or unsupported Hero Doctrine cannot be applied");
 		auto & side = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
 		side.heroCommandUsed = true;
 		if(targeted)
 			side.focusFire = pack.focusFire;
-		if(heroCommands::isDoctrine(pack.ba.command))
-			side.activeDoctrine = pack.ba.command;
-		else
-			side.activeOrder = pack.ba.command;
+		side.activeDoctrine = HeroCommand::NONE;
+		side.activeOrder = pack.ba.command;
 		return;
 	}
 	CStack *st = gs.getBattle(pack.battleID)->getStack(pack.ba.stackNumber);

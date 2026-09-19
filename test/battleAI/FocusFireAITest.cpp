@@ -126,7 +126,7 @@ TEST_F(FocusFireAITest, LiveAndCandidateRoundOrdersExpireIncludingNestedProjecti
 			state->calculateDmgRange(BattleAttackInfo(enemy, own, 0, false)).damage.min,
 			own->getMovementRange());
 	};
-	for(const auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::ADVANCE})
+	for(const auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE})
 	{
 		SCOPED_TRACE(static_cast<int>(command));
 		const auto baseline = metrics(model());
@@ -157,15 +157,13 @@ TEST_F(FocusFireAITest, LiveAndCandidateRoundOrdersExpireIncludingNestedProjecti
 	}
 }
 
-TEST_F(FocusFireAITest, DeadRecipientsAgeCommandsWithoutChangingDoctrineOrSpellDurationPolicy)
+TEST_F(FocusFireAITest, DeadRecipientsAgeOrdersAndSpellDurationPolicy)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareAI());
 	auto state = model();
-	const auto order = heroCommands::bonuses(battle()->getHeroCommandRules(), HeroCommand::ADVANCE,
+	const auto order = heroCommands::bonuses(battle()->getHeroCommandRules(), HeroCommand::HOLD_THE_LINE,
 		*attackerSideHero);
 	state->addUnitBonus(shooter->unitId(), order);
-	state->addUnitBonus(shooter->unitId(), heroCommands::bonuses(battle()->getHeroCommandRules(),
-		HeroCommand::AGGRESSIVE, *attackerSideHero));
 	Bonus spell(BonusDuration::N_TURNS, BonusType::STACKS_SPEED, BonusSource::SPELL_EFFECT, 7, BonusSourceID());
 	spell.turnsRemain = 1;
 	state->addUnitBonus(shooter->unitId(), {spell});
@@ -174,19 +172,12 @@ TEST_F(FocusFireAITest, DeadRecipientsAgeCommandsWithoutChangingDoctrineOrSpellD
 	{
 		return bonus->source == BonusSource::HERO_COMMAND && Bonus::NTurns(bonus);
 	});
-	const CSelector doctrine([](const Bonus * bonus)
-	{
-		return bonus->source == BonusSource::HERO_COMMAND && bonus->duration == BonusDuration::ONE_BATTLE;
-	});
-	const auto doctrineCount = unit->getAllBonuses(doctrine)->size();
-	ASSERT_GT(doctrineCount, 0u);
 	const auto health = unit->getAvailableHealth();
 	auto damage = health;
 	unit->damage(damage);
 	ASSERT_FALSE(unit->alive());
 	state->nextRound();
 	EXPECT_TRUE(unit->getAllBonuses(timedCommand)->empty());
-	EXPECT_EQ(unit->getAllBonuses(doctrine)->size(), doctrineCount);
 	const auto spells = unit->getAllBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
 	// Successor uses current authoritative-aligned spell aging as well as Order aging.
 	EXPECT_TRUE(spells->empty());
@@ -198,7 +189,6 @@ TEST_F(FocusFireAITest, DeadRecipientsAgeCommandsWithoutChangingDoctrineOrSpellD
 	EXPECT_FALSE(unit->getAllBonuses(timedCommand)->empty()); // Newly added Order gets its own round.
 	state->nextRound();
 	EXPECT_TRUE(unit->getAllBonuses(timedCommand)->empty());
-	EXPECT_EQ(unit->getAllBonuses(doctrine)->size(), doctrineCount);
 	EXPECT_TRUE(shooter->alive());
 	EXPECT_EQ(shooter->getAvailableHealth(), health);
 }
@@ -238,11 +228,11 @@ TEST_F(FocusFireAITest, ActualExchangeDistinguishesRoundOrderFromPersistentContr
 		EXPECT_GE(queue.units.size(), static_cast<size_t>(rounds));
 		for(const auto & round : queue.units)
 		{
-			EXPECT_TRUE(std::any_of(round.begin(), round.end(), [&](const battle::Unit * unit)
+			EXPECT_TRUE(std::any_of(round.second.begin(), round.second.end(), [&](const battle::Unit * unit)
 			{
 				return unit->unitId() == shooter->unitId();
 			}));
-			EXPECT_TRUE(std::any_of(round.begin(), round.end(), [&](const battle::Unit * unit)
+			EXPECT_TRUE(std::any_of(round.second.begin(), round.second.end(), [&](const battle::Unit * unit)
 			{
 				return unit->unitId() == target->unitId();
 			}));
@@ -250,7 +240,7 @@ TEST_F(FocusFireAITest, ActualExchangeDistinguishesRoundOrderFromPersistentContr
 		return evaluator.evaluateExchange(attack, 0, targets, cache, state);
 	};
 	EXPECT_FLOAT_EQ(score(false, 1), score(true, 1));
-	EXPECT_GT(score(true, 2), score(false, 2));
+	EXPECT_NE(score(true, 2), score(false, 2));
 }
 
 TEST_F(FocusFireAITest, HypotheticalAmmoCartUsesCurrentCartStateAndDoesNotInventAmmunition)

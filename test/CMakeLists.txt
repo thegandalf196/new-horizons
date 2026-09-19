@@ -100,6 +100,7 @@ set(test_SRCS
 		spells/CSpellTest.cpp
 		spells/NewHorizonsDirectDamageTest.cpp
 		spells/NewHorizonsMagicTest.cpp
+		spells/NewHorizonsMagicArrowTest.cpp
 		spells/NewHorizonsMagicSchemaTest.cpp
 		spells/NewHorizonsMagicV2RulesTest.cpp
 		spells/NewHorizonsMagicV2SchemaTest.cpp
@@ -166,6 +167,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSkillFeedbackTest.cpp
 		server/battles/NewHorizonsSpellRewardFilterTest.cpp
 		server/battles/NewHorizonsDirectDamageMechanicsTest.cpp
+		battle/NewHorizonsMagicArrowActionTest.cpp
 		server/battles/NewHorizonsSpellRosterContextTest.cpp
 		server/battles/NewHorizonsSpellRosterConsumerTest.cpp
 		server/battles/NewHorizonsSpellArraySafetyTest.cpp

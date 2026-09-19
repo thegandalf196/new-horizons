@@ -27,6 +27,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	ObjectInstanceID armyObjectID; //adv. map object with army that participates in battle; may be same as hero
 
 	bool heroCommandUsed = false;
+	// Decode-only compatibility slot. New Horizons no longer emits or exposes
+	// doctrines; this member remains so old HERO_COMMANDS records retain their
+	// wire position while loading.
 	HeroCommand activeDoctrine = HeroCommand::NONE;
 	HeroCommand activeOrder = HeroCommand::NONE;
 	std::optional<FocusFireState> focusFire;
@@ -56,8 +59,18 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
 		{
 			h & heroCommandUsed;
-			h & activeDoctrine;
+			HeroCommand legacyDoctrine = HeroCommand::NONE;
+			h & legacyDoctrine;
 			h & activeOrder;
+			if(!h.saving)
+			{
+				// A legacy doctrine may have consumed the old round action, but it
+				// must not become current gameplay after a load. Keep that budget
+				// bit while dropping only the obsolete Doctrine identity. Preserve
+				// the raw Order temporarily so BattleInfo can remove any matching
+				// legacy round bonuses before clearing a decode-only Order ID.
+				activeDoctrine = HeroCommand::NONE;
+			}
 		}
 		else if(!h.saving)
 		{

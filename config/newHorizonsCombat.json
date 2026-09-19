@@ -2,7 +2,7 @@
 	"combat": {
 		"heroCommands": {
 			"schemaVersion": 1,
-			"rulesetVersion": 1,
+			"rulesetVersion": 3,
 			"commands": {
 				"charge": {
 					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
@@ -12,24 +12,10 @@
 					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
 					"effects": { "damageReductionPercent": { "base": 15, "attack": 0, "defense": 0.5 } }
 				},
-				"advance": {
-					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
-					"effects": { "speedPercent": { "base": 25, "attack": 0.25, "defense": 0 } }
-				},
-				"aggressive": {
-					"kind": "doctrine", "coverage": "ownLivingNonWarMachines", "duration": "battle",
-					"effects": {
-						"meleeDamagePercent": { "base": 15, "attack": 0.25, "defense": 0 },
-						"rangedDamagePercent": { "base": 15, "attack": 0.25, "defense": 0 },
-						"damageReductionPercent": { "base": -10, "attack": 0, "defense": 0 }
-					}
-				},
-				"defensive": {
-					"kind": "doctrine", "coverage": "ownLivingNonWarMachines", "duration": "battle",
-					"effects": {
-						"damageReductionPercent": { "base": 15, "attack": 0, "defense": 0.25 },
-						"speedPercent": { "base": -10, "attack": 0, "defense": 0 }
-					}
+				"focusFire": {
+					"kind": "order", "coverage": "ownOrdinaryShootersAtIssue", "duration": "round",
+					"target": "enemyUnit",
+					"effects": { "rangedDamagePercent": { "base": 5, "attack": 0.15, "defense": 0 } }
 				}
 			}
 		}

@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"rulesetVersion": 1,
+	"rulesetVersion": 2,
 	"schools": [
 		"new-horizons:light",
 		"new-horizons:nature",
@@ -371,9 +371,13 @@
 			"costs": [
 				4,
 				4,
-				3,
-				3
-			]
+				4,
+				4
+			],
+			"directDamage": {
+				"base": 20,
+				"powerCoefficient": 20
+			}
 		},
 		"core:magicMirror": {
 			"schools": [

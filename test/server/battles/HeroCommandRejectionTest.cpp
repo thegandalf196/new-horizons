@@ -31,7 +31,7 @@ TEST_F(HeroCommandRejectionTest, RejectedCommandDoesNotReactivateUnitOrExpireIts
 	const auto activations = server.stackActivations.size();
 	const auto starts = server.startedActions.size();
 
-	ASSERT_FALSE(issue(HeroCommand::ADVANCE));
+	ASSERT_FALSE(issue(HeroCommand::HOLD_THE_LINE));
 	EXPECT_EQ(server.startedActions.size(), starts);
 	EXPECT_EQ(server.stackActivations.size(), activations);
 	EXPECT_EQ(active->getMovementRange(), speed);

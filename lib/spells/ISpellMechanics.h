@@ -87,6 +87,9 @@ public:
 
 	virtual OptionalValue getEffectPower() const = 0;
 	virtual OptionalValue getEffectDuration() const = 0;
+	/// Additional mana selected for a spell-specific cast option.  The default
+	/// keeps old callers and non-Sorcery spells unchanged.
+	virtual OptionalValue getOvercharge() const { return std::nullopt; }
 
 	virtual OptionalValue64 getEffectValue() const = 0;
 
@@ -114,6 +117,7 @@ public:
 
 	OptionalValue getEffectPower() const override;
 	OptionalValue getEffectDuration() const override;
+	OptionalValue getOvercharge() const override;
 
 	OptionalValue64 getEffectValue() const override;
 
@@ -123,6 +127,7 @@ public:
 
 	void setEffectPower(Value value);
 	void setEffectDuration(Value value);
+	void setOvercharge(Value value);
 
 	void setEffectValue(Value64 value);
 
@@ -149,6 +154,8 @@ private:
 
 	///for Archangel-like casting
 	OptionalValue64 effectValue;
+	///Additional mana selected for a spell-specific cast option.
+	OptionalValue overcharge;
 
 	Mode mode;
 	const CSpell * spell;
@@ -297,6 +304,7 @@ public:
 	int32_t getEffectPowerDivisor() const override;
 	IBattleCast::Value getEffectDuration() const override;
 	IBattleCast::Value64 getEffectValue() const override;
+	IBattleCast::Value getOvercharge() const;
 
 	PlayerColor getCasterColor() const override;
 	const CGHeroInstance * getHeroCaster() const override;
@@ -347,6 +355,8 @@ private:
 
 	///raw damage/heal amount
 	IBattleCast::Value64 effectValue;
+	///Additional mana selected for a spell-specific cast option.
+	IBattleCast::Value overcharge = 0;
 
 	bool forceMassive = false;
 

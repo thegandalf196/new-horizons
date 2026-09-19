@@ -75,6 +75,17 @@ def self_test():
         except ValueError:
             continue
         raise AssertionError("Cross-family fixture substitution accepted")
+    hero_raw = struct.pack("<IBIB", 0x1c, 1, 36, 0) + field("NHHeroGrowthXP") + field("header-only control")
+    encoder = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+    hero = encoder.compress(hero_raw) + encoder.flush()
+    hero_names = {"NHHeroGrowthXP"}
+    assert inspect(hero, hero_names)["name"] == "NHHeroGrowthXP"
+    for data, names in ((hero, EXPECTED_NAMES), (hero, magic_names), (magic, hero_names), (good, hero_names)):
+        try:
+            inspect(data, names)
+        except ValueError:
+            continue
+        raise AssertionError("Hero fixture cross-family substitution accepted")
     print("PASS: header-only controls accepted; malformed gzip and cross-family substitution rejected")
 
 
@@ -83,10 +94,14 @@ def main():
     parser.add_argument("maps", type=Path, nargs="*")
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--self-test", action="store_true")
-    parser.add_argument("--magic-fullbook", action="store_true",
+    family = parser.add_mutually_exclusive_group()
+    family.add_argument("--magic-fullbook", action="store_true",
                         help="Audit the single NHMagicFullBookRanks export instead of the command pair")
+    family.add_argument("--hero-growth", action="store_true",
+                        help="Audit the single NHHeroGrowthXP export; native semantics remain separate")
     args = parser.parse_args()
-    expected = {"NHMagicFullBookRanks"} if args.magic_fullbook else EXPECTED_NAMES
+    expected = ({"NHHeroGrowthXP"} if args.hero_growth else
+                {"NHMagicFullBookRanks"} if args.magic_fullbook else EXPECTED_NAMES)
     if args.self_test:
         self_test()
     if args.maps:

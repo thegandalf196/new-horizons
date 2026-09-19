@@ -118,6 +118,7 @@ class BattleInterface
 
 	void playIntroSoundAndUnlockInterface();
 	void onIntroSoundPlayed();
+	void installMagicArrowOverchargeUI();
 public:
 	/// copy of initial armies (for result window)
 	const CCreatureSet *army1;

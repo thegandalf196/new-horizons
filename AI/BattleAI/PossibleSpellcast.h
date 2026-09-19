@@ -27,6 +27,7 @@ public:
 	std::optional<FocusFireState> focusFire;
 	std::string name() const;
 	const CSpell * spell;
+	int32_t spellOvercharge = 0;
 	spells::Target dest;
 	float value;
 

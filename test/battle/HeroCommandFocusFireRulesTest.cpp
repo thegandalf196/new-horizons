@@ -15,7 +15,7 @@ namespace
 {
 JsonNode legacyRules()
 {
-	const JsonNode config(JsonPath::builtin("config/newHorizonsCombat"));
+	const JsonNode config(JsonPath::builtin("config/newHorizonsCombatV2"));
 	auto rules = config["combat"]["heroCommands"];
 	// A paired private profile may install v2 at this path. Deliberately author
 	// the v1 fixture instead of silently testing whichever profile was mounted.
@@ -23,6 +23,12 @@ JsonNode legacyRules()
 	rules["rulesetVersion"].Integer() = 1;
 	rules["commands"].Struct().erase("focusFire");
 	return rules;
+}
+
+JsonNode ordersOnlyRules()
+{
+	const JsonNode config(JsonPath::builtin("config/newHorizonsCombat"));
+	return config["combat"]["heroCommands"];
 }
 
 JsonNode targetedRules()
@@ -49,6 +55,9 @@ TEST(HeroCommandFocusFireRules, ExistingIdsRemainStableAndNewIdIsNotADoctrine)
 	EXPECT_EQ(static_cast<int>(HeroCommand::FOCUS_FIRE), 6);
 	EXPECT_EQ(heroCommands::key(HeroCommand::FOCUS_FIRE), "focusFire");
 	EXPECT_FALSE(heroCommands::isDoctrine(HeroCommand::FOCUS_FIRE));
+	EXPECT_TRUE(heroCommands::valid(HeroCommand::CHARGE));
+	EXPECT_FALSE(heroCommands::valid(HeroCommand::ADVANCE));
+	EXPECT_FALSE(heroCommands::valid(HeroCommand::AGGRESSIVE));
 	EXPECT_FALSE(heroCommands::valid(static_cast<HeroCommand>(7)));
 }
 
@@ -61,7 +70,19 @@ TEST(HeroCommandFocusFireRules, LegacyExtraKeyCannotEnableTargetedOrder)
 	EXPECT_FALSE(heroCommands::supportedByRules(rules, HeroCommand::FOCUS_FIRE));
 	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::ADVANCE,
 		HeroCommand::AGGRESSIVE, HeroCommand::DEFENSIVE})
+		EXPECT_EQ(heroCommands::supportedByRules(rules, command),
+			command == HeroCommand::CHARGE || command == HeroCommand::HOLD_THE_LINE);
+}
+
+TEST(HeroCommandFocusFireRules, OrdersOnlyV3RejectsLegacyDoctrineCommands)
+{
+	const auto rules = ordersOnlyRules();
+	ASSERT_NO_THROW(heroCommands::validateRules(rules));
+	EXPECT_EQ(rules["rulesetVersion"].Integer(), heroCommands::ORDERS_ONLY_RULESET_VERSION);
+	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::FOCUS_FIRE})
 		EXPECT_TRUE(heroCommands::supportedByRules(rules, command));
+	EXPECT_FALSE(heroCommands::supportedByRules(rules, HeroCommand::AGGRESSIVE));
+	EXPECT_FALSE(heroCommands::supportedByRules(rules, HeroCommand::DEFENSIVE));
 }
 
 TEST(HeroCommandFocusFireRules, V2UsesExactTargetedDefinitionAndExistingCoefficient)

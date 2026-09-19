@@ -239,7 +239,7 @@ void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 {
 	// Parent models materialize fresh bonus pointers. Capture effect values before
-	// suppressing them, including non-timed spells and battle-long Doctrines.
+	// suppressing them, including non-timed spells and legacy battle-long effects.
 	captureEffects();
 	TConstBonusListPtr toRemove = origBearer->getBonuses(selector);
 

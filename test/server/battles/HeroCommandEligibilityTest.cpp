@@ -43,8 +43,8 @@ TEST_F(HeroCommandEligibilityTest, TacticsRejectionPreservesBudgetAndUnitActivat
 	battle()->tacticsSide = BattleSide::ATTACKER;
 	const auto starts = server.startedActions.size();
 	const auto activations = server.stackActivations.size();
-	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::ADVANCE,
-		HeroCommand::AGGRESSIVE, HeroCommand::DEFENSIVE})
+	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
+		HeroCommand::ADVANCE, HeroCommand::AGGRESSIVE, HeroCommand::DEFENSIVE})
 	{
 		EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, command));
 		EXPECT_FALSE(issue(command));
@@ -52,7 +52,7 @@ TEST_F(HeroCommandEligibilityTest, TacticsRejectionPreservesBudgetAndUnitActivat
 	EXPECT_EQ(server.startedActions.size(), starts);
 	EXPECT_EQ(server.stackActivations.size(), activations);
 	battle()->tacticDistance = 0;
-	ASSERT_TRUE(issue(HeroCommand::ADVANCE));
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
 }
 
 TEST_F(HeroCommandEligibilityTest, MissingCommanderRejectionPreservesBudget)
@@ -84,5 +84,5 @@ TEST_F(HeroCommandEligibilityTest, InvalidSideIsRejectedWithoutFlowOrBudgetChang
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), invalid));
 	EXPECT_EQ(server.startedActions.size(), starts);
 	EXPECT_EQ(server.stackActivations.size(), activations);
-	ASSERT_TRUE(issue(HeroCommand::AGGRESSIVE));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 }

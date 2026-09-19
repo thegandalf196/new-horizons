@@ -8,7 +8,6 @@
  *
  */
 #include "StdInc.h"
-#include "NewHorizonsMagicProfileFixture.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/constants/StringConstants.h"
@@ -18,26 +17,16 @@ namespace
 JsonNode v1Rules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["rulesetVersion"].Integer() = 1;
+	rules["spells"]["core:magicArrow"].Struct().erase("directDamage");
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;
 }
 
 JsonNode v2Rules()
 {
-	auto rules = v1Rules();
-	rules["rulesetVersion"].Integer() = 2;
-	// Synthetic schema row, not a registered/activated or castable spell.
-	auto & spell = rules["spells"]["new-horizons:magicMissile"];
-	spell["schools"].Vector().push_back(JsonNode("new-horizons:sorcery"));
-	spell["level"].Integer() = 1;
-	for(int rank = 0; rank < 4; ++rank)
-	{
-		JsonNode cost;
-		cost.Integer() = 5;
-		spell["costs"].Vector().push_back(cost);
-	}
-	spell["directDamage"]["base"].Integer() = 20;
-	spell["directDamage"]["powerCoefficient"].Integer() = 20;
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;
 }
 
@@ -64,8 +53,8 @@ TEST(NewHorizonsMagicV2SchemaTest, ActualNamedVersionsRemainSeparate)
 	forbidden["rulesetVersion"].Integer() = 1;
 	EXPECT_FALSE(named(forbidden, "vcmi:newHorizonsMagic")) << "V1 still rejects directDamage";
 	auto optional = current;
-	optional["spells"]["new-horizons:magicMissile"].Struct().erase("directDamage");
-	EXPECT_TRUE(v2(optional)) << "Required Missile formula belongs to future data/runtime contract";
+	optional["spells"]["core:magicArrow"].Struct().erase("directDamage");
+	EXPECT_TRUE(v2(optional)) << "The generic schema permits formulas only on spells that define them; runtime enforces the Magic Arrow contract";
 }
 
 TEST(NewHorizonsMagicV2SchemaTest, FormulaObjectRejectsNullMissingAndExtraFields)
@@ -73,14 +62,14 @@ TEST(NewHorizonsMagicV2SchemaTest, FormulaObjectRejectsNullMissingAndExtraFields
 	for(const std::string key : {"base", "powerCoefficient"})
 	{
 		auto rules = v2Rules();
-		rules["spells"]["new-horizons:magicMissile"]["directDamage"].Struct().erase(key);
+		rules["spells"]["core:magicArrow"]["directDamage"].Struct().erase(key);
 		EXPECT_FALSE(v2(rules));
 	}
 	auto rules = v2Rules();
-	rules["spells"]["new-horizons:magicMissile"]["directDamage"] = JsonNode();
+	rules["spells"]["core:magicArrow"]["directDamage"] = JsonNode();
 	EXPECT_FALSE(v2(rules)) << "Native type checking alone permits null; the explicit exclusion is required";
 	rules = v2Rules();
-	rules["spells"]["new-horizons:magicMissile"]["directDamage"]["divisor"].Integer() = 10;
+	rules["spells"]["core:magicArrow"]["directDamage"]["divisor"].Integer() = 10;
 	EXPECT_FALSE(v2(rules));
 }
 
@@ -91,25 +80,25 @@ TEST(NewHorizonsMagicV2SchemaTest, FormulaParametersRequireIntegerRepresentation
 		for(const int value : {0, 1000000})
 		{
 			auto rules = v2Rules();
-			rules["spells"]["new-horizons:magicMissile"]["directDamage"][key].Integer() = value;
+			rules["spells"]["core:magicArrow"]["directDamage"][key].Integer() = value;
 			EXPECT_TRUE(v2(rules));
 		}
 		for(const int value : {-1, 1000001})
 		{
 			auto rules = v2Rules();
-			rules["spells"]["new-horizons:magicMissile"]["directDamage"][key].Integer() = value;
+			rules["spells"]["core:magicArrow"]["directDamage"][key].Integer() = value;
 			EXPECT_FALSE(v2(rules));
 		}
 		for(const double value : {0.5, 20.0})
 		{
 			auto rules = v2Rules();
-			rules["spells"]["new-horizons:magicMissile"]["directDamage"][key].Float() = value;
+			rules["spells"]["core:magicArrow"]["directDamage"][key].Float() = value;
 			EXPECT_FALSE(v2(rules));
 		}
 		auto rules = v2Rules();
-		rules["spells"]["new-horizons:magicMissile"]["directDamage"][key] = JsonNode();
+		rules["spells"]["core:magicArrow"]["directDamage"][key] = JsonNode();
 		EXPECT_FALSE(v2(rules));
-		rules["spells"]["new-horizons:magicMissile"]["directDamage"][key].Bool() = true;
+		rules["spells"]["core:magicArrow"]["directDamage"][key].Bool() = true;
 		EXPECT_FALSE(v2(rules));
 	}
 }
@@ -117,7 +106,7 @@ TEST(NewHorizonsMagicV2SchemaTest, FormulaParametersRequireIntegerRepresentation
 TEST(NewHorizonsMagicV2SchemaTest, RealCrossSchemaSchoolAndFactionReferencesRejectInvalidValues)
 {
 	auto rules = v2Rules();
-	rules["spells"]["new-horizons:magicMissile"]["schools"].Vector().front().String() = "core:air";
+	rules["spells"]["core:magicArrow"]["schools"].Vector().front().String() = "core:air";
 	EXPECT_FALSE(v2(rules));
 	rules = v2Rules();
 	rules["schools"].Vector().front().String() = "core:air";
@@ -127,14 +116,12 @@ TEST(NewHorizonsMagicV2SchemaTest, RealCrossSchemaSchoolAndFactionReferencesReje
 	EXPECT_FALSE(v2(rules));
 }
 
-TEST(NewHorizonsMagicV2SchemaTest, CurrentRealSettingsWrapperHasNotBeenSilentlyUpgraded)
+TEST(NewHorizonsMagicV2SchemaTest, CurrentSettingsWrapperAcceptsBothSavedRulesVersions)
 {
 	JsonNode settings;
 	settings["magic"]["newHorizons"] = v1Rules();
 	settings.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	EXPECT_TRUE(named(settings, "vcmi:gameSettings"));
 	settings["magic"]["newHorizons"] = v2Rules();
-	// Only the explicitly opted-in private profile admits v2 through this
-	// wrapper. The ordinary/default wrapper must remain strictly v1.
-	EXPECT_EQ(named(settings, "vcmi:gameSettings"), newHorizonsTest::managedMissileProfileRequested());
+	EXPECT_TRUE(named(settings, "vcmi:gameSettings"));
 }

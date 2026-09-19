@@ -66,7 +66,8 @@
 				"levelupUpgradedSkillsAmount" :   { "type" : "number" },
 				"newHorizons": { "$ref": "newHorizonsHeroes.json" },
 				"newHorizonsCapabilities": { "$ref": "newHorizonsCapabilities.json" },
-				"newHorizonsMasteries": { "$ref": "newHorizonsMasteries.json" }
+				"newHorizonsMasteries": { "$ref": "newHorizonsMasteries.json" },
+				"newHorizonsPerks": { "$ref": "newHorizonsPerks.json" }
 			}
 		},
 		"towns" : {
@@ -101,7 +102,7 @@
 			"type": "object",
 			"additionalProperties": false,
 			"properties": {
-				"newHorizons": { "$ref": "newHorizonsMagic.json" }
+				"newHorizons": { "anyOf": [{ "$ref": "newHorizonsMagic.json" }, { "$ref": "newHorizonsMagicV2.json" }] }
 			}
 		},
 		"combat": {

@@ -72,7 +72,7 @@ class LegacyCommandAllocationTest : public HeroCommandFixture
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		const JsonNode config(JsonPath::builtin("config/newHorizonsCombat"));
+		const JsonNode config(JsonPath::builtin("config/newHorizonsCombatV2"));
 		auto rules = config["combat"]["heroCommands"];
 		rules["schemaVersion"].Integer() = 1;
 		rules["rulesetVersion"].Integer() = 1;

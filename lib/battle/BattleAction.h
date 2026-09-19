@@ -28,6 +28,9 @@ public:
 	EActionType actionType; //use ActionType enum for values
 
 	SpellID spell;
+	/// Additional mana selected for Sorcery Magic Arrow.  Zero preserves the
+	/// ordinary fixed-cost cast and all legacy action semantics.
+	si32 spellOvercharge = 0;
 	HeroCommand command = HeroCommand::NONE;
 
 	BattleAction();
@@ -64,11 +67,22 @@ public:
 		if(h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Cannot serialize targeted command to an older protocol");
+		if(h.saving && spellOvercharge != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC_ARROW_OVERCHARGE))
+			throw std::runtime_error("Cannot serialize Magic Arrow overcharge to an older protocol");
 		h & side;
 		h & stackNumber;
 		h & actionType;
 		h & spell;
 		h & target;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC_ARROW_OVERCHARGE))
+		{
+			h & spellOvercharge;
+		}
+		else if(!h.saving)
+		{
+			spellOvercharge = 0;
+		}
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
 		{
 			h & command;

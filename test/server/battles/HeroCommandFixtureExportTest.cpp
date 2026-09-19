@@ -80,7 +80,7 @@ TEST_P(HeroCommandFixtureExportTest, ExportValidatedOrdinaryHeroBattle)
 	// Standard initialization of authored intent, not mutation of a running GUI.
 	// startWithMap only changes its COPY's diagnostic name when dumping its test map.
 	startWithMap(builder);
-	ASSERT_EQ(gameState()->getHeroCommandRules()["rulesetVersion"].Integer(), 1);
+	ASSERT_EQ(gameState()->getHeroCommandRules()["rulesetVersion"].Integer(), heroCommands::ORDERS_ONLY_RULESET_VERSION);
 	ASSERT_TRUE(gameState()->getPlayerState(PlayerColor(0))->isHuman());
 	ASSERT_FALSE(gameState()->getPlayerState(PlayerColor(1))->isHuman());
 	const auto * human = findHeroByOwner(PlayerColor(0));

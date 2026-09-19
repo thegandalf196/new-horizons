@@ -12,6 +12,7 @@
 
 #include "BattleLayout.h"
 #include "CObstacleInstance.h"
+#include "../bonuses/BonusSelector.h"
 #include "bonuses/Limiters.h"
 #include "bonuses/Updaters.h"
 #include "../CStack.h"
@@ -1035,6 +1036,35 @@ void BattleInfo::validateFocusFireStates() const
 				throw std::runtime_error("Invalid New Horizons Focus Fire recipient reference");
 		}
 	}
+}
+
+void BattleInfo::normalizeLegacyHeroCommandState()
+{
+	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		sides.at(side).activeDoctrine = HeroCommand::NONE;
+		const bool invalidLegacyOrder = sides.at(side).activeOrder != HeroCommand::NONE
+			&& !heroCommands::isActive(sides.at(side).activeOrder);
+		if(invalidLegacyOrder)
+			sides.at(side).activeOrder = HeroCommand::NONE;
+		if(invalidLegacyOrder)
+		{
+			const auto legacyRoundOrder = Selector::sourceTypeSel(BonusSource::HERO_COMMAND)
+				.And(CSelector(Bonus::NTurns));
+			for(auto & unit : stacks)
+				if(unit && unit->unitSide() == side)
+					unit->removeBonusesRecursive(legacyRoundOrder);
+		}
+	}
+
+	// Doctrine effects were the only HERO_COMMAND bonuses with ONE_BATTLE
+	// duration. Remove those stale effects from decoded snapshots while leaving
+	// all round-scoped Order bonuses untouched.
+	const auto legacyDoctrine = Selector::sourceTypeSel(BonusSource::HERO_COMMAND)
+		.And(CSelector(Bonus::OneBattle));
+	for(auto & unit : stacks)
+		if(unit)
+			unit->removeBonusesRecursive(legacyDoctrine);
 }
 
 void BattleInfo::postDeserialize()

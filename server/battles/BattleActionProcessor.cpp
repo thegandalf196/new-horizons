@@ -123,12 +123,13 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 
 	const CSpell * s = ba.spell.toSpell();
 	spells::BattleCast parameters(&battle, h, spells::Mode::HERO, s);
+	parameters.setOvercharge(ba.spellOvercharge);
 
 	spells::detail::ProblemImpl problem;
 
 	auto m = s->battleMechanics(&parameters);
 
-	if(!m->canBeCast(problem))//todo: should we check aimed cast?
+	if(!m->canBeCast(problem))
 	{
 		logGlobal->warn("Spell cannot be cast!");
 		std::vector<std::string> texts;
@@ -138,7 +139,18 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		return false;
 	}
 
-	parameters.cast(gameHandler->spellcastEnvironment(), ba.getTarget(&battle));
+	const auto target = ba.getTarget(&battle);
+	if(target.empty() || !m->canBeCastAt(target, problem))
+	{
+		logGlobal->warn("Spell cannot be cast at the requested target!");
+		std::vector<std::string> texts;
+		problem.getAll(texts);
+		for(const auto & text : texts)
+			logGlobal->warn(text);
+		return false;
+	}
+
+	parameters.cast(gameHandler->spellcastEnvironment(), target);
 	gameHandler->useChargeBasedSpell(h->id, ba.spell);
 
 	return true;
@@ -744,6 +756,9 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 	if(ba.command == HeroCommand::FOCUS_FIRE)
 		return true; // Validated contextual state was published atomically by StartAction.
 	const auto * hero = battle.battleGetFightingHero(ba.side);
+	if(!hero || heroCommands::isDoctrine(ba.command)
+		|| !heroCommands::supportedByRules(battle.getBattle()->getHeroCommandRules(), ba.command))
+		return false;
 	const auto effects = heroCommands::bonuses(battle.getBattle()->getHeroCommandRules(), ba.command, *hero);
 	SetStackEffect update;
 	update.battleID = battle.getBattle()->getBattleID();
@@ -751,17 +766,6 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 	{
 		if(battle.battleGetOwner(unit) != battle.sideToPlayer(ba.side))
 			continue;
-		if(heroCommands::isDoctrine(ba.command))
-		{
-			std::vector<Bonus> previous;
-			for(const auto & bonus : *unit->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND)))
-			{
-				if(bonus->duration == BonusDuration::ONE_BATTLE)
-					previous.push_back(*bonus);
-			}
-			if(!previous.empty())
-				update.toRemove.emplace_back(unit->unitId(), previous);
-		}
 		if(unit->alive() && !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON))
 			update.toAdd.emplace_back(unit->unitId(), effects);
 	}

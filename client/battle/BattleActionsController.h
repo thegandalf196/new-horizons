@@ -10,14 +10,22 @@
 #pragma once
 
 #include "../../lib/battle/CBattleInfoCallback.h"
+#include "MagicArrowOverchargeWindow.h"
+
+#include <functional>
+#include <optional>
 
 class BattleAction;
+class CStack;
 namespace spells {
 class Caster;
 enum class Mode;
 }
 
 class BattleInterface;
+
+using MagicArrowOverchargeFactory = std::function<std::optional<MagicArrowOverchargeContext>(
+	const BattleAction &, const BattleHex &, const CStack *)>;
 
 /// Class that controls actions that can be performed by player, e.g. moving stacks, attacking, etc
 /// As well as all relevant feedback for these actions in user interface
@@ -30,6 +38,10 @@ class BattleActionsController
 
 	/// spell for which player's hero is choosing destination
 	std::shared_ptr<BattleAction> heroSpellToCast;
+
+	/// Optional New Horizons adapter.  Empty preserves the legacy generic cast
+	/// path; Runtime installs it only for an admitted V2 Magic Arrow battle.
+	MagicArrowOverchargeFactory magicArrowOverchargeFactory;
 
 	// targets of multi-target spells cast by monsters
 	std::vector<BattleHex> monsterSpellTargets;
@@ -105,6 +117,12 @@ public:
 
 	/// initialize hero spellcasting mode, e.g. on selecting spell in spellbook
 	void castThisSpell(SpellID spellID);
+
+	/// Install the authority-backed post-target Magic Arrow UI adapter.  The
+	/// adapter owns all formula, target identity, cost and request validation;
+	/// this controller only decides when the normal targeted cast may pause for
+	/// the compact overcharge window.
+	void setMagicArrowOverchargeFactory(MagicArrowOverchargeFactory factory);
 
 	/// ends casting spell (eg. when spell has been cast or canceled)
 	void endCastingSpell();
