@@ -200,6 +200,71 @@ std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules
 	return result;
 }
 
+std::optional<SecondarySkill> factionSkill(const JsonNode & resolvedRules, FactionID faction)
+{
+	if(!usesRules(resolvedRules) || !resolvedRules["startingSkills"].isStruct())
+		return std::nullopt;
+
+	const auto & factionSkills = resolvedRules["startingSkills"]["factionSkills"];
+	if(!factionSkills.isStruct())
+		return std::nullopt;
+
+	const auto skillName = factionSkills[FactionID::encode(faction.getNum())].String();
+	if(skillName.empty())
+		return std::nullopt;
+
+	const auto skillId = SecondarySkill::decode(skillName);
+	if(skillId < 0)
+		return std::nullopt;
+	return SecondarySkill(skillId);
+}
+
+namespace
+{
+std::optional<SecondarySkill> legacyFactionSkillAlias(const JsonNode & resolvedRules, FactionID faction)
+{
+	if(!usesRules(resolvedRules) || !resolvedRules["startingSkills"].isStruct())
+		return std::nullopt;
+
+	const auto & aliases = resolvedRules["startingSkills"]["legacyAliases"];
+	if(!aliases.isStruct())
+		return std::nullopt;
+
+	const auto aliasName = aliases[FactionID::encode(faction.getNum())].String();
+	if(aliasName.empty())
+		return std::nullopt;
+
+	const auto aliasId = SecondarySkill::decode(aliasName);
+	if(aliasId < 0)
+		return std::nullopt;
+	return SecondarySkill(aliasId);
+}
+}
+
+bool isFactionSkillForFaction(const JsonNode & resolvedRules, FactionID faction, SecondarySkill skill)
+{
+	if(const auto canonical = factionSkill(resolvedRules, faction); canonical && *canonical == skill)
+		return true;
+	if(const auto alias = legacyFactionSkillAlias(resolvedRules, faction); alias && *alias == skill)
+		return true;
+	return false;
+}
+
+bool isFactionSkill(const JsonNode & resolvedRules, SecondarySkill skill)
+{
+	if(!usesRules(resolvedRules) || !resolvedRules["startingSkills"].isStruct())
+		return false;
+
+	const auto & startingSkills = resolvedRules["startingSkills"];
+	const auto & factionSkills = startingSkills["factionSkills"];
+	if(factionSkills.isStruct())
+		for(const auto & [faction, ignored] : factionSkills.Struct())
+			if(isFactionSkillForFaction(resolvedRules,
+				FactionID(FactionID::decode(faction)), skill))
+				return true;
+	return false;
+}
+
 std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill(
 	const JsonNode & resolvedRules, bool magicHero, FactionID faction,
 	const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)
@@ -208,21 +273,18 @@ std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill(
 	if(!usesRules(resolvedRules) || !resolvedRules["startingSkills"].isStruct())
 		return result;
 
-	const auto & startingSkills = resolvedRules["startingSkills"];
-	const std::string factionKey = FactionID::encode(faction.getNum());
-	const std::string factionSkillName = startingSkills["factionSkills"][factionKey].String();
-	if(factionSkillName.empty())
+	const auto factionSkillId = factionSkill(resolvedRules, faction);
+	if(!factionSkillId)
 		return result;
-	const SecondarySkill factionSkill(SecondarySkill::decode(factionSkillName));
+	const auto & startingSkills = resolvedRules["startingSkills"];
+	const SecondarySkill factionSkill = *factionSkillId;
 
 	// Necromancy was already present in the legacy roster. Convert that legacy
 	// identity to the New Horizons faction Skill instead of leaving two parallel
 	// skills with the same player-facing name. If an authored roster already has
 	// both identities, keep the first one's position and the strongest mastery.
-	const std::string legacyAliasName = startingSkills["legacyAliases"][factionKey].String();
-	const SecondarySkill legacyAlias = legacyAliasName.empty()
-		? SecondarySkill::NONE
-		: SecondarySkill(SecondarySkill::decode(legacyAliasName));
+	const auto legacyAliasId = legacyFactionSkillAlias(resolvedRules, faction);
+	const SecondarySkill legacyAlias = legacyAliasId.value_or(SecondarySkill::NONE);
 	std::vector<std::pair<SecondarySkill, ui8>> normalized;
 	for(const auto & [skill, rank] : result)
 	{

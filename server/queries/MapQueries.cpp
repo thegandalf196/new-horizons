@@ -228,6 +228,45 @@ CTeleportDialogQuery::CTeleportDialogQuery(CGameHandler * owner, const TeleportD
 	addPlayer(gh->gameInfo().getHero(dialog.hero)->getOwner());
 }
 
+namespace
+{
+bool isValidHeroSkillChoice(CGameHandler & gameHandler, const CGHeroInstance * hero, SecondarySkill skill)
+{
+	if(!hero || skill == SecondarySkill::NONE)
+		return false;
+
+	const auto & rules = hero->getPrimaryGrowthRules();
+	const auto ownFactionSkill = newHorizonsHeroes::factionSkill(rules, hero->getFactionID());
+	if(newHorizonsHeroes::isFactionSkill(rules, skill)
+		&& (!ownFactionSkill || !newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), skill)))
+		return false;
+	if(ownFactionSkill && newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), skill))
+	{
+		const auto representative = std::find_if(hero->secSkills.begin(), hero->secSkills.end(), [&rules, hero](const auto & entry)
+		{
+			return newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), entry.first);
+		});
+		if(representative != hero->secSkills.end() && representative->first != skill)
+			return false;
+	}
+
+	const int currentRank = hero->getSecSkillLevel(skill);
+	if(currentRank >= MasteryLevel::EXPERT)
+		return false;
+	if(currentRank > MasteryLevel::NONE)
+		return true;
+	if(!hero->canLearnSkill())
+		return false;
+
+	// Own faction skills are intentionally absent from the legacy class
+	// probability table. They are still legal as a new skill when the active
+	// rules snapshot says so, subject to the map's allowed-skill roster.
+	if(ownFactionSkill && *ownFactionSkill == skill)
+		return gameHandler.gameInfo().isAllowed(skill);
+	return hero->canLearnSkill(skill);
+}
+}
+
 CHeroLevelUpDialogQuery::CHeroLevelUpDialogQuery(CGameHandler * owner, const HeroLevelUp & Hlu, const CGHeroInstance * Hero):
 	CDialogQuery(owner, TYPE), hero(Hero)
 {
@@ -246,7 +285,7 @@ bool CHeroLevelUpDialogQuery::isValidReply(std::optional<int32_t> reply) const
 	if(choice >= choiceCount)
 		return false;
 	if(choice < hlu.skills.size())
-		return true;
+		return isValidHeroSkillChoice(*gh, hero, hlu.skills[choice]);
 	try
 	{
 		auto validated = hero->getPerkState();

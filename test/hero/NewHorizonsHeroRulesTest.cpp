@@ -98,6 +98,41 @@ TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasCompleteProvisionalProfiles
 	}
 }
 
+TEST(NewHorizonsHeroRulesTest, CanonicalFactionSkillMappingCoversAllFactionsAndAliases)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	const auto resolved = resolveHeroRules(rules, HeroClassID(HeroClassID::decode("core:knight")));
+	const std::array<std::pair<const char *, const char *>, 9> expected = {{
+		{"core:castle", "new-horizons:divineMandate"},
+		{"core:rampart", "new-horizons:sylvanLuck"},
+		{"core:tower", "new-horizons:metamagic"},
+		{"core:inferno", "new-horizons:demonicGating"},
+		{"core:necropolis", "new-horizons:necromancy"},
+		{"core:dungeon", "new-horizons:shroudOfMalassa"},
+		{"core:stronghold", "new-horizons:bloodrage"},
+		{"core:fortress", "new-horizons:bulwarkOfTheMire"},
+		{"core:conflux", "new-horizons:elementalRebirth"},
+	}};
+
+	for(const auto & [factionId, skillId] : expected)
+	{
+		SCOPED_TRACE(factionId);
+		const FactionID faction(FactionID::decode(factionId));
+		const SecondarySkill skill(SecondarySkill::decode(skillId));
+		const auto mapped = factionSkill(resolved, faction);
+		ASSERT_TRUE(mapped.has_value());
+		EXPECT_EQ(*mapped, skill);
+		EXPECT_TRUE(isFactionSkill(resolved, skill));
+		EXPECT_TRUE(isFactionSkillForFaction(resolved, faction, skill));
+	}
+
+	const auto necropolis = FactionID(FactionID::decode("core:necropolis"));
+	EXPECT_TRUE(isFactionSkillForFaction(resolved, necropolis, SecondarySkill::NECROMANCY));
+	EXPECT_FALSE(factionSkill(JsonNode(), necropolis).has_value());
+	const std::vector<std::pair<SecondarySkill, ui8>> oldSaveSkills = {{SecondarySkill::NECROMANCY, MasteryLevel::BASIC}};
+	EXPECT_EQ(applyStartingFactionSkill(JsonNode(), false, necropolis, oldSaveSkills), oldSaveSkills);
+}
+
 TEST(NewHorizonsHeroRulesTest, FactionStartingSkillsReplaceWisdomOrOptionalMightSkill)
 {
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));

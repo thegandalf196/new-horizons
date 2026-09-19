@@ -20,6 +20,7 @@
 #include "../entities/artifact/CArtHandler.h"
 #include "../entities/artifact/EArtifactClass.h"
 #include "../entities/hero/CHeroClass.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "mapObjectConstructors/CObjectClassesHandler.h"
 
@@ -358,21 +359,55 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 
 	std::set<SecondarySkill> basicAndAdv;
 	std::set<SecondarySkill> none;
+	const auto ownFactionSkill = newHorizonsHeroes::factionSkill(hero->getPrimaryGrowthRules(), hero->getFactionID());
+	const auto isForeignFactionSkill = [hero, &ownFactionSkill](SecondarySkill skill)
+	{
+		return newHorizonsHeroes::isFactionSkill(hero->getPrimaryGrowthRules(), skill)
+			&& (!ownFactionSkill || !newHorizonsHeroes::isFactionSkillForFaction(
+				hero->getPrimaryGrowthRules(), hero->getFactionID(), skill));
+	};
+	const auto ownFactionSkillEntry = ownFactionSkill
+		? std::find_if(hero->secSkills.begin(), hero->secSkills.end(), [hero](const auto & entry)
+		{
+			return newHorizonsHeroes::isFactionSkillForFaction(
+				hero->getPrimaryGrowthRules(), hero->getFactionID(), entry.first);
+		})
+		: hero->secSkills.end();
+	const bool ownFactionSkillPresent = ownFactionSkillEntry != hero->secSkills.end();
 	std::vector<SecondarySkill>	skills;
 
 	if (hero->canLearnSkill())
 	{
 		for(int i = 0; i < LIBRARY->skillh->size(); i++)
-			if (hero->canLearnSkill(SecondarySkill(i)))
+			if(!isForeignFactionSkill(SecondarySkill(i)) && hero->canLearnSkill(SecondarySkill(i)))
 				none.insert(SecondarySkill(i));
 	}
 
 	for(const auto & elem : hero->secSkills)
 	{
 		if(elem.second < MasteryLevel::EXPERT)
-			basicAndAdv.insert(elem.first);
+		{
+			// New Horizons faction skills intentionally have zero legacy gain
+			// chance. Only the hero's own faction skill may still be offered for
+			// advancement; a foreign faction skill in an authored or old roster
+			// must not leak into the level-up choices.
+			const bool duplicateOwnIdentity = ownFactionSkillPresent
+				&& newHorizonsHeroes::isFactionSkillForFaction(
+					hero->getPrimaryGrowthRules(), hero->getFactionID(), elem.first)
+				&& elem.first != ownFactionSkillEntry->first;
+			if(!isForeignFactionSkill(elem.first) && !duplicateOwnIdentity)
+				basicAndAdv.insert(elem.first);
+		}
 		none.erase(elem.first);
 	}
+
+	// Creation normally gives every New Horizons hero this skill at Basic. Keep
+	// the rule authoritative for authored rosters that omitted it as well, but
+	// do not inject it into a saved hero whose rules snapshot predates the
+	// faction-skill system (the helper returns no mapping in that case).
+	if(ownFactionSkill && !ownFactionSkillPresent && hero->getSecSkillLevel(*ownFactionSkill) == MasteryLevel::NONE
+		&& hero->canLearnSkill() && gameInfo.isAllowed(*ownFactionSkill))
+		none.insert(*ownFactionSkill);
 
 	int maxUpgradedSkills = hero->cb->getSettings().getInteger(EGameSettings::LEVEL_UP_UPGRADED_SKILLS_AMOUNT);
 	int maxTotalSkills = hero->cb->getSettings().getInteger(EGameSettings::LEVEL_UP_TOTAL_SKILLS_AMOUNT);

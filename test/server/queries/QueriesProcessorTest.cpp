@@ -13,7 +13,10 @@
 #include "mock/TinyMapGameTest.h"
 
 #include "lib/battle/BattleInfo.h"
+#include "lib/callback/GameRandomizer.h"
 #include "lib/GameConstants.h"
+#include "lib/CSkillHandler.h"
+#include "lib/entities/hero/NewHorizonsHeroRules.h"
 #include "lib/gameState/CGameState.h"
 #include "lib/mapObjects/CGDwelling.h"
 #include "lib/mapObjects/CGHeroInstance.h"
@@ -26,7 +29,6 @@
 #include "../../../lib/callback/CCallback.h"
 #include "../../../lib/callback/CGlobalAI.h"
 #include "../../../lib/callback/IClient.h"
-#include "../../../lib/CSkillHandler.h"
 #include "../../../lib/entities/hero/CHeroHandler.h"
 #include "../../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../../lib/GameLibrary.h"
@@ -162,6 +164,35 @@ protected:
 			.heroGarrison({{CreatureID(0), 10}})
 			.dwelling({7, 5, 0}, MapObjectSubID(0), PlayerColor(1));
 
+		startWithMap(std::move(builder));
+	}
+};
+
+class NewHorizonsFactionSkillQueryTest : public TinyMapGameTest
+{
+protected:
+	void SetUp() override
+	{
+		TinyMapGameTest::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+	}
+
+	void startGame(HeroTypeID heroType = HeroTypeID(16))
+	{
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder
+			.size(36, false)
+			.playerActive(PlayerColor(0))
+			.hero({5, 5, 0}, heroType, PlayerColor(0))
+			.heroGarrison({{CreatureID(0), 10}});
 		startWithMap(std::move(builder));
 	}
 };
@@ -362,6 +393,79 @@ TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpRejectsForgedChoiceIndicesBefo
 	CHeroLevelUpDialogQuery emptyQuery(&gh, levelUp, hero);
 	EXPECT_TRUE(emptyQuery.isValidReply(0));
 	EXPECT_FALSE(emptyQuery.isValidReply(1));
+}
+
+TEST_F(NewHorizonsFactionSkillQueryTest, factionSkillRankUpIsAuthoritativeAndExcludesForeignSkills)
+{
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto ownFactionSkill = newHorizonsHeroes::factionSkill(
+		hero->getPrimaryGrowthRules(), hero->getFactionID());
+	const auto foreignFactionSkill = newHorizonsHeroes::factionSkill(
+		hero->getPrimaryGrowthRules(), FactionID::CASTLE);
+	ASSERT_TRUE(ownFactionSkill.has_value());
+	ASSERT_TRUE(foreignFactionSkill.has_value());
+	ASSERT_NE(*ownFactionSkill, *foreignFactionSkill);
+
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+
+	// Leave only the hero's own faction skill below Expert. The randomizer must
+	// still offer it even though its legacy class probability is zero.
+	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
+		hero->setSecSkillLevel(SecondarySkill(index), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	hero->setSecSkillLevel(*ownFactionSkill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	hero->setSecSkillLevel(*foreignFactionSkill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	(void)gameHandler.randomizer->rollPrimarySkillForLevelup(hero); // seed the hero-specific RNG
+	const auto choices = gameHandler.randomizer->rollSecondarySkills(hero);
+	ASSERT_LE(choices.size(), 2u);
+	EXPECT_EQ(std::count(choices.begin(), choices.end(), *ownFactionSkill), 1);
+	EXPECT_EQ(std::count(choices.begin(), choices.end(), *foreignFactionSkill), 0);
+
+	HeroLevelUp levelUp;
+	levelUp.player = PlayerColor(0);
+	levelUp.heroId = hero->id;
+	levelUp.skills = {*ownFactionSkill, *foreignFactionSkill};
+	CHeroLevelUpDialogQuery query(&gameHandler, levelUp, hero);
+	EXPECT_TRUE(query.isValidReply(0));
+	EXPECT_FALSE(query.isValidReply(1));
+
+	// A stale reply after another authoritative transition must be rejected.
+	hero->setSecSkillLevel(*ownFactionSkill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_FALSE(query.isValidReply(0));
+}
+
+TEST_F(NewHorizonsFactionSkillQueryTest, duplicateLegacyAliasUsesFirstSavedFactionSkillIdentity)
+{
+	startGame(HeroTypeID(64)); // Death Knight: Necropolis might hero.
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto canonical = newHorizonsHeroes::factionSkill(
+		hero->getPrimaryGrowthRules(), hero->getFactionID());
+	ASSERT_TRUE(canonical.has_value());
+	ASSERT_NE(*canonical, SecondarySkill::NECROMANCY);
+	hero->setSecSkillLevel(*canonical, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	hero->setSecSkillLevel(SecondarySkill::NECROMANCY, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
+		hero->setSecSkillLevel(SecondarySkill(index), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	hero->setSecSkillLevel(*canonical, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	hero->setSecSkillLevel(SecondarySkill::NECROMANCY, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	(void)gameHandler.randomizer->rollPrimarySkillForLevelup(hero);
+	const auto choices = gameHandler.randomizer->rollSecondarySkills(hero);
+	ASSERT_EQ(std::count(choices.begin(), choices.end(), *canonical), 1);
+	EXPECT_EQ(std::count(choices.begin(), choices.end(), SecondarySkill::NECROMANCY), 0);
+
+	HeroLevelUp levelUp;
+	levelUp.player = PlayerColor(0);
+	levelUp.heroId = hero->id;
+	levelUp.skills = {*canonical, SecondarySkill::NECROMANCY};
+	CHeroLevelUpDialogQuery query(&gameHandler, levelUp, hero);
+	EXPECT_TRUE(query.isValidReply(0));
+	EXPECT_FALSE(query.isValidReply(1));
 }
 
 TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpValidatesAndAppliesOnlyTheStoredPerkOffer)
