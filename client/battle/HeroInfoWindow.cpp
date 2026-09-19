@@ -17,8 +17,11 @@
 #include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
-HeroInfoBasicPanel::HeroInfoBasicPanel(const InfoAboutHero & hero, const Point * position, bool initializeBackground)
+HeroInfoBasicPanel::HeroInfoBasicPanel(const InfoAboutHero & hero, const Point * position, bool initializeBackground,
+	bool showCounterspellStatus_, bool counterspellArmed_)
 	: BattleSidePanel(0)
+	, showCounterspellStatus(showCounterspellStatus_)
+	, counterspellArmed(counterspellArmed_)
 {
 	OBJECT_CONSTRUCTION;
 	if(position != nullptr)
@@ -68,14 +71,37 @@ void HeroInfoBasicPanel::initializeData(const InfoAboutHero & hero)
 	//spell points
 	labels.push_back(std::make_shared<CLabel>(39, 174, EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[387]));
 	labels.push_back(std::make_shared<CLabel>(39, 186, EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, std::to_string(currentSpellPoints) + "/" + std::to_string(maxSpellPoints)));
+
+	if(showCounterspellStatus)
+	{
+		counterspellStatus = std::make_shared<CLabel>(39, 158, EFonts::FONT_TINY, ETextAlignment::CENTER,
+			counterspellArmed ? Colors::YELLOW : Colors::WHITE,
+			counterspellArmed ? "Ward: ARMED" : "Ward: none");
+	}
 }
 
-void HeroInfoBasicPanel::update(const InfoAboutHero & updatedInfo)
+void HeroInfoBasicPanel::update(const InfoAboutHero & updatedInfo, std::optional<bool> counterspellArmed_)
 {
 	icons.clear();
 	labels.clear();
+	counterspellStatus.reset();
+	if(counterspellArmed_.has_value())
+		counterspellArmed = *counterspellArmed_;
 
 	initializeData(updatedInfo);
+	redraw();
+}
+
+void HeroInfoBasicPanel::setCounterspellStatus(bool armed)
+{
+	if(!showCounterspellStatus || counterspellArmed == armed)
+		return;
+	counterspellArmed = armed;
+	if(counterspellStatus)
+	{
+		counterspellStatus->setText(counterspellArmed ? "Ward: ARMED" : "Ward: none");
+		counterspellStatus->setColor(counterspellArmed ? Colors::YELLOW : Colors::WHITE);
+	}
 	redraw();
 }
 

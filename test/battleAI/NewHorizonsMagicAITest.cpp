@@ -24,6 +24,7 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/Problem.h"
 
 namespace
@@ -64,6 +65,16 @@ SpellID transfigureMatterSpell()
 class NewHorizonsMagicAITest : public HeroCommandFixture
 {
 protected:
+	bool useCurrentMagicRules = false;
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		if(useCurrentMagicRules)
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+	}
+
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -162,6 +173,99 @@ TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithou
 		EXPECT_TRUE(weak->alive());
 		EXPECT_EQ(attackerSideHero->mana, 1000);
 	}
+}
+
+TEST_F(NewHorizonsMagicAITest, CounterspellAIArmsAThreatWardAndSkipsAnAlreadyArmedWard)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	const auto counterspell = SpellID(SpellID::decode("new-horizons:counterspell"));
+	ASSERT_TRUE(counterspell.hasValue());
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto attackerSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : attackerSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	const auto defenderSpells = defenderSideHero->getSpellsInSpellbook();
+	for(const auto spell : defenderSpells)
+		defenderSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(counterspell);
+	defenderSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
+	attackerSideHero->mana = 100;
+	defenderSideHero->mana = 100;
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
+	addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 1);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit->unitSide() == BattleSide::ATTACKER)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedByBattleRoster(
+		*callback->getBattle(BattleID(0)), counterspell));
+	ASSERT_TRUE(attackerSideHero->canCastThisSpell(counterspell.toSpell()));
+	ASSERT_EQ(callback->getBattle(BattleID(0))->battleCanCastSpell(
+		attackerSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
+	ASSERT_TRUE(counterspell.toSpell()->canBeCast(
+		callback->getBattle(BattleID(0)).get(), spells::Mode::HERO, attackerSideHero));
+	ASSERT_TRUE(defenderSideHero->canCastThisSpell(SpellID(SpellID::IMPLOSION).toSpell()));
+	const auto implosionLevel = battle()->battleGetSpellLevel(SpellID::IMPLOSION);
+	ASSERT_GT(implosionLevel, 0);
+	auto blockImplosion = std::make_shared<Bonus>();
+	blockImplosion->duration = BonusDuration::ONE_BATTLE;
+	blockImplosion->type = BonusType::BLOCK_MAGIC_ABOVE;
+	blockImplosion->val = implosionLevel - 1;
+	defenderSideHero->addNewBonus(blockImplosion);
+	BattleEvaluator blockedEvaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	blockedEvaluator.selectStackAction(active);
+	EXPECT_FALSE(blockedEvaluator.attemptCastingSpell(active));
+	EXPECT_TRUE(callback->submitted.empty());
+	defenderSideHero->removeBonus(blockImplosion);
+
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, counterspell);
+	ASSERT_EQ(callback->submitted.front().target.size(), 1u);
+	EXPECT_FALSE(callback->submitted.front().target.front().hexValue.isValid());
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), callback->submitted.front()));
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+
+	// The first cast consumed this turn's hero-spell budget. Reset only that
+	// budget in the fixture, preserving the authoritative armed ward, so this
+	// assertion exercises the redundant-ward guard rather than the turn limit.
+	auto & attackerState = battle()->getSide(BattleSide::ATTACKER);
+	attackerState.castSpellsCount = 0;
+	attackerState.heroCommandUsed = false;
+	ASSERT_TRUE(attackerState.counterspellArmed);
+
+	callback->submitted.clear();
+	BattleEvaluator armedEvaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	armedEvaluator.selectStackAction(active);
+	EXPECT_FALSE(armedEvaluator.attemptCastingSpell(active));
+	EXPECT_TRUE(callback->submitted.empty());
 }
 
 TEST_F(NewHorizonsMagicAITest, ResurrectionCanonicalTargetReacquiresProjectedStateFromLiveAimIdentity)

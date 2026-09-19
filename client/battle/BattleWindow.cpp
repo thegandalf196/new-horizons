@@ -35,6 +35,7 @@
 #include "render/IRenderHandler.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/Images.h"
+#include "../widgets/TextControls.h"
 #include "../windows/CCreatureWindow.h"
 #include "../windows/CMarketWindow.h"
 #include "../windows/CMessage.h"
@@ -222,14 +223,26 @@ void BattleWindow::createStickyHeroInfoWindows()
 	{
 		InfoAboutHero info;
 		info.initFromHero(owner.defendingHeroInstance, InfoAboutHero::EInfoLevel::INBATTLE);
-		defenderHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr);
+		defenderHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr, true, true,
+			owner.getBattle()->battleWasCounterspellArmed(BattleSide::DEFENDER));
 	}
 	if(owner.attackingHeroInstance)
 	{
 		InfoAboutHero info;
 		info.initFromHero(owner.attackingHeroInstance, InfoAboutHero::EInfoLevel::INBATTLE);
-		attackerHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr);
+		attackerHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr, true, true,
+			owner.getBattle()->battleWasCounterspellArmed(BattleSide::ATTACKER));
 	}
+	if(attackerHeroWindow)
+		attackerCounterspellStatus = std::make_shared<CLabel>(39, 353, EFonts::FONT_TINY,
+			ETextAlignment::CENTER,
+			owner.getBattle()->battleWasCounterspellArmed(BattleSide::ATTACKER) ? Colors::YELLOW : Colors::WHITE,
+			owner.getBattle()->battleWasCounterspellArmed(BattleSide::ATTACKER) ? "Ward: ARMED" : "Ward: none");
+	if(defenderHeroWindow)
+		defenderCounterspellStatus = std::make_shared<CLabel>(761, 353, EFonts::FONT_TINY,
+			ETextAlignment::CENTER,
+			owner.getBattle()->battleWasCounterspellArmed(BattleSide::DEFENDER) ? Colors::YELLOW : Colors::WHITE,
+			owner.getBattle()->battleWasCounterspellArmed(BattleSide::DEFENDER) ? "Ward: ARMED" : "Ward: none");
 
 	bool showInfoWindows = settings["battle"]["stickyHeroInfoWindows"].Bool();
 
@@ -240,6 +253,17 @@ void BattleWindow::createStickyHeroInfoWindows()
 
 		if(defenderHeroWindow)
 			defenderHeroWindow->disable();
+		if(attackerCounterspellStatus)
+			attackerCounterspellStatus->enable();
+		if(defenderCounterspellStatus)
+			defenderCounterspellStatus->enable();
+	}
+	else
+	{
+		if(attackerCounterspellStatus)
+			attackerCounterspellStatus->disable();
+		if(defenderCounterspellStatus)
+			defenderCounterspellStatus->disable();
 	}
 
 	setPositionInfoWindow();
@@ -448,6 +472,12 @@ void BattleWindow::hideStickyHeroWindows()
 	if(defenderHeroWindow)
 		defenderHeroWindow->disable();
 
+	if(attackerCounterspellStatus)
+		attackerCounterspellStatus->enable();
+
+	if(defenderCounterspellStatus)
+		defenderCounterspellStatus->enable();
+
 	ENGINE->windows().totalRedraw();
 }
 
@@ -515,7 +545,29 @@ void BattleWindow::setPositionInfoWindow()
 void BattleWindow::updateHeroInfoWindow(uint8_t side, const InfoAboutHero & hero)
 {
 	std::shared_ptr<HeroInfoBasicPanel> panelToUpdate = side == 0 ? attackerHeroWindow : defenderHeroWindow;
-	panelToUpdate->update(hero);
+	if(panelToUpdate)
+		panelToUpdate->update(hero, owner.getBattle()->battleWasCounterspellArmed(
+			side == 0 ? BattleSide::ATTACKER : BattleSide::DEFENDER));
+}
+
+void BattleWindow::updateCounterspellStatus()
+{
+	const bool attackerArmed = owner.getBattle()->battleWasCounterspellArmed(BattleSide::ATTACKER);
+	const bool defenderArmed = owner.getBattle()->battleWasCounterspellArmed(BattleSide::DEFENDER);
+	if(attackerHeroWindow)
+		attackerHeroWindow->setCounterspellStatus(attackerArmed);
+	if(defenderHeroWindow)
+		defenderHeroWindow->setCounterspellStatus(defenderArmed);
+	if(attackerCounterspellStatus)
+	{
+		attackerCounterspellStatus->setText(attackerArmed ? "Ward: ARMED" : "Ward: none");
+		attackerCounterspellStatus->setColor(attackerArmed ? Colors::YELLOW : Colors::WHITE);
+	}
+	if(defenderCounterspellStatus)
+	{
+		defenderCounterspellStatus->setText(defenderArmed ? "Ward: ARMED" : "Ward: none");
+		defenderCounterspellStatus->setColor(defenderArmed ? Colors::YELLOW : Colors::WHITE);
+	}
 }
 
 void BattleWindow::updateStackInfoWindow(const CStack * stack)

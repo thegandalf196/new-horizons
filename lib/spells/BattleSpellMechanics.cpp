@@ -269,6 +269,12 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	if(battle()->battleMaxSpellLevel(side) < getSpellLevel() || battle()->battleMinSpellLevel(side) > getSpellLevel())
 		return adaptProblem(ESpellCastProblem::SPELL_LEVEL_LIMIT_EXCEEDED, problem);
 
+	// Counterspell arms authoritative battle-side state and deliberately has no
+	// ordinary effect payload. Passing it through Effects::applicable would make
+	// the valid no-target action look unusable to both the server and BattleAI.
+	if(newHorizonsMagic::isCounterspell(owner))
+		return true;
+
 	return effects->applicable(problem, this);
 }
 
@@ -352,6 +358,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		if(!mainTarget || mainTarget != caster)
 			return false; // can't cast on others
 	}
+	if(newHorizonsMagic::isCounterspell(owner))
+		return true;
 
 	return effects->applicable(problem, this, target, spellTarget);
 }

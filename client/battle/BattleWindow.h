@@ -18,6 +18,7 @@ class CStack;
 class CGTownInstance;
 
 class CButton;
+class CLabel;
 class BattleInterface;
 class BattleConsole;
 class BattleRenderer;
@@ -38,6 +39,8 @@ class BattleWindow : public InterfaceObjectConfigurable
 	std::shared_ptr<CButton> ordersButton;
 	std::shared_ptr<HeroInfoBasicPanel> attackerHeroWindow;
 	std::shared_ptr<HeroInfoBasicPanel> defenderHeroWindow;
+	std::shared_ptr<CLabel> attackerCounterspellStatus;
+	std::shared_ptr<CLabel> defenderCounterspellStatus;
 	std::shared_ptr<StackInfoBasicPanel> attackerStackWindow;
 	std::shared_ptr<StackInfoBasicPanel> defenderStackWindow;
 
@@ -135,6 +138,9 @@ public:
 	/// Refresh sticky variant of hero info window after spellcast, side same as in BattleSpellCast::side
 	void updateHeroInfoWindow(uint8_t side, const InfoAboutHero & hero);
 
+	/// Refresh the read-only Counterspell ward indicator from the authoritative battle snapshot.
+	void updateCounterspellStatus();
+
 	/// Refresh sticky variant of hero info window after spellcast, side same as in BattleSpellCast::side
 	void updateStackInfoWindow(const CStack * stack);
 
@@ -162,4 +168,3 @@ public:
 	/// ends battle with autocombat
 	void endWithAutocombat();
 };
-

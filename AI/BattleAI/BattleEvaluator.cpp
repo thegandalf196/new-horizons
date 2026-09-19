@@ -60,6 +60,76 @@ bool isTransfigureMatter(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:transfigureMatter";
 }
 
+bool isCounterspell(const CSpell * spell)
+{
+	return newHorizonsMagic::isCounterspell(spell);
+}
+
+/// Estimate the deterministic value of arming Counterspell without mutating a
+/// battle preview.  The authoritative battle snapshot is used for the enemy
+/// hero, mana costs, and current ward state; the enemy spellbook is only used
+/// as a read-only threat list.  A ward is useful only when the AI can afford
+/// both the arming cast and at least one likely enemy spell's listed ward cost.
+float counterspellThreatValue(const CBattleInfoCallback & battle, BattleSide side,
+	const CGHeroInstance * caster, const CSpell * counterspell)
+{
+	if(!caster || !counterspell || battle.battleWasCounterspellArmed(side))
+		return 0.0f;
+
+	const auto enemySide = CBattleInfoEssentials::otherSide(side);
+	const auto * enemy = battle.getBattle()->getSideHero(enemySide);
+	if(!enemy || !enemy->hasSpellbook())
+		return 0.0f;
+
+	// Player callbacks intentionally hide enemy hero details.  Spell-level
+	// blockers must nevertheless be evaluated from the all-knowing authoritative
+	// battle callback, rather than from the caller's perspective-limited view.
+	const auto * authoritativeBattle = dynamic_cast<const CBattleInfoCallback *>(battle.getBattle());
+	if(!authoritativeBattle)
+		return 0.0f;
+	const auto minEnemySpellLevel = authoritativeBattle->battleMinSpellLevel(enemySide);
+	const auto maxEnemySpellLevel = authoritativeBattle->battleMaxSpellLevel(enemySide);
+
+	const int armCost = battle.battleGetSpellCost(counterspell, caster);
+	const int remainingMana = caster->mana - armCost;
+	if(remainingMana < 0)
+		return 0.0f;
+
+	const bool countermage = caster->hasActivePerk(
+		"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.countermage");
+	float bestValue = 0.0f;
+	for(const auto spellID : enemy->getSpellsInSpellbook())
+	{
+		const auto * spell = spellID.toSpell();
+		if(!spell || !spell->isCombat() || spell->isCreatureAbility() || isCounterspell(spell))
+			continue;
+		const int spellLevel = battle.battleGetSpellLevel(spell->getId());
+		if(spellLevel < minEnemySpellLevel || spellLevel > maxEnemySpellLevel)
+			continue;
+		if(!enemy->canCastThisSpell(spell))
+			continue;
+
+		const int listedCost = enemy->getSpellCost(spell);
+		const int enemyManaCost = battle.battleGetSpellCost(spell, enemy);
+		if(listedCost < 0 || enemy->mana < enemyManaCost)
+			continue;
+
+		const int wardCost = newHorizonsMagic::counterspellCost(listedCost, countermage);
+		if(remainingMana < wardCost)
+			continue;
+
+		// A high-cost offensive spell represents the largest deterministic
+		// threat.  The small non-offensive component still lets the ward cover
+		// decisive disables, buffs, and summons without making it automatic.
+		const float value = static_cast<float>(listedCost) * 100.0f
+			+ (spell->isOffensive() ? 250.0f : 0.0f)
+			- static_cast<float>(armCost) * 10.0f;
+		bestValue = std::max(bestValue, value);
+	}
+
+	return bestValue;
+}
+
 BattleEvaluator::BattleEvaluator(
 	std::shared_ptr<Environment> env,
 	std::shared_ptr<CBattleCallback> cb,
@@ -540,7 +610,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	vstd::erase_if(possibleSpells, [](const CSpell *s)
 	{
-		return spellType(s) != SpellTypes::BATTLE;
+		return spellType(s) != SpellTypes::BATTLE && !isCounterspell(s);
 	});
 
 	LOGFL("I know how %d of them works.", possibleSpells.size());
@@ -549,6 +619,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	std::vector<PossibleSpellcast> possibleCasts;
 	for(auto spell : possibleSpells)
 	{
+		if(isCounterspell(spell))
+		{
+			// Counterspell has a no-target cast and no ordinary spell effect to
+			// project.  Give it a dedicated threat score instead of allowing the
+			// generic effect evaluator to treat the ward as a zero-value cast.
+			const auto value = counterspellThreatValue(*cb->getBattle(battleID), side, hero, spell);
+			if(value <= 0.0f)
+				continue;
+
+			PossibleSpellcast ps;
+			ps.spell = spell;
+			ps.dest = {spells::Destination()};
+			ps.value = value;
+			possibleCasts.push_back(std::move(ps));
+			continue;
+		}
+
 		const int maxOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(
 			cb->getBattle(battleID)->getBattle()->getMagicRules(), spell->getId(), hero->getEffectPower(spell),
 			newHorizonsMagic::magicArrowOverchargeModifiers(hero));
@@ -788,6 +875,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			for(auto i = r.begin(); i != r.end(); i++)
 			{
 				auto & ps = possibleCasts[i];
+				if(isCounterspell(ps.spell))
+					continue;
 
 #if BATTLE_TRACE_LEVEL >= 1
 				if(ps.dest.empty())

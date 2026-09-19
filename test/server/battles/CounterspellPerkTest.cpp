@@ -154,7 +154,7 @@ TEST_F(CounterspellPerkTest, CanonicalSpellAndCountermageDataAreActive)
 		EXPECT_EQ(newHorizonsMagic::spellCost(rules, spell, mastery), newHorizonsMagic::COUNTERSPELL_LISTED_COST);
 
 	const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-	const auto & entries = perks["new-horizons:sorceryMagic"]["perks"].Vector();
+	const auto & entries = perks["skills"]["new-horizons:sorceryMagic"]["perks"].Vector();
 	const auto found = std::find_if(entries.begin(), entries.end(), [](const JsonNode & entry)
 	{
 		return entry["id"].String() == countermagePerk;
@@ -186,6 +186,14 @@ TEST_F(CounterspellPerkTest, ArmedWardNegatesEnemyHeroSpellAndChargesListedCost)
 	ASSERT_FALSE(casts.empty());
 	EXPECT_EQ(casts.back().announcement.counterspellSide, BattleSide::ATTACKER);
 	EXPECT_TRUE(casts.back().announcement.counterspellNegated);
+}
+
+TEST_F(CounterspellPerkTest, InsufficientArmingManaIsRejectedBeforeStateChanges)
+{
+	prepare(newHorizonsMagic::COUNTERSPELL_LISTED_COST - 1, false);
+	EXPECT_FALSE(castCounterspell());
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+	EXPECT_EQ(attackerSideHero->mana, newHorizonsMagic::COUNTERSPELL_LISTED_COST - 1);
 }
 
 TEST_F(CounterspellPerkTest, CountermageUsesCeiledOnePointSeventyFiveMultiplier)

@@ -712,6 +712,8 @@ void BattleInterface::battleFinished(const BattleResult& br, QueryID queryID)
 void BattleInterface::spellCast(const BattleSpellCast * sc)
 {
 	waitForAnimations();
+	if(windowObject)
+		windowObject->updateCounterspellStatus();
 
 	// Do not deactivate anything in tactics mode
 	// This is battlefield setup spells
@@ -1021,6 +1023,11 @@ void BattleInterface::endAction(const BattleAction &action)
 
 	stacksController->endAction(action);
 	windowObject->updateQueue();
+	// StartAction is delivered before its authoritative state packet is applied.
+	// Refresh after EndAction instead, so HERO_COMMAND can no longer leave a stale
+	// armed-ward indicator behind after the server clears the ward.
+	if(windowObject)
+		windowObject->updateCounterspellStatus();
 
 	//stack ended movement in tactics phase -> select the next one
 	if (isInTacticsMode())

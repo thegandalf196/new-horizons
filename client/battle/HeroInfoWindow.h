@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include <optional>
+
 #include "../windows/CWindowObject.h"
 
 #include "BattleSidePanel.h"
@@ -22,14 +24,19 @@ class HeroInfoBasicPanel : public BattleSidePanel //extracted from InfoWindow to
 {
 private:
 	std::shared_ptr<CPicture> background;
+	std::shared_ptr<CLabel> counterspellStatus;
 	std::vector<std::shared_ptr<CLabel>> labels;
 	std::vector<std::shared_ptr<CAnimImage>> icons;
+	bool showCounterspellStatus = false;
+	bool counterspellArmed = false;
 
 public:
-	HeroInfoBasicPanel(const InfoAboutHero & hero, const Point * position, bool initializeBackground = true);
+	HeroInfoBasicPanel(const InfoAboutHero & hero, const Point * position, bool initializeBackground = true,
+		bool showCounterspellStatus = false, bool counterspellArmed = false);
 
 	void initializeData(const InfoAboutHero & hero);
-	void update(const InfoAboutHero & updatedInfo);
+	void update(const InfoAboutHero & updatedInfo, std::optional<bool> counterspellArmed = std::nullopt);
+	void setCounterspellStatus(bool armed);
 };
 
 class HeroInfoWindow : public CWindowObject
