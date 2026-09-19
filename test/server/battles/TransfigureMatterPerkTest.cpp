@@ -12,6 +12,7 @@
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/effects/Effect.h"
 
 namespace
 {
@@ -205,12 +206,21 @@ TEST_F(TransfigureMatterPerkTest, HealthBonusesDoNotInflateCanonicalAggregatePoo
 	const auto obstacle = addPhysicalObstacle(20, BattleHex(8, 5));
 	const auto expectedHealth = 80LL + 2LL * spellPower
 		+ 50LL * static_cast<int64_t>(obstacle->getAffectedTiles().size());
+	const auto * spell = transfigureMatter().toSpell();
+	const auto preview = battle()->getSpellEffectValue(spell, attackerSideHero, spells::Mode::HERO,
+		obstacle->getAffectedTiles().front());
+	const auto effectiveMaxHealth = creatureByName("core:diamondGolem").toEntity(LIBRARY)->getMaxHealth() + 1;
+	const auto expectedCount = (expectedHealth + effectiveMaxHealth - 1) / effectiveMaxHealth;
+	ASSERT_NE(preview, nullptr);
+	EXPECT_EQ(preview->hpDelta, expectedHealth);
+	EXPECT_EQ(preview->unitsDelta, expectedCount);
 
 	ASSERT_TRUE(castAt(obstacle->getAffectedTiles().front()));
 
 	const auto golems = diamondGolems();
 	ASSERT_EQ(golems.size(), 1u);
 	EXPECT_GT(golems.front()->getMaxHealth(), creatureByName("core:diamondGolem").toEntity(LIBRARY)->getMaxHealth());
+	EXPECT_EQ(golems.front()->getCount(), expectedCount);
 	EXPECT_EQ(golems.front()->getAvailableHealth(), expectedHealth);
 }
 

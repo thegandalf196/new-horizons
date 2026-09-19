@@ -142,6 +142,15 @@ function Script:hpPool(mechanics, obstacle)
 	return pool
 end
 
+local function golemMaxHealth(mechanics, creature)
+	local health = creature:getMaxHealth()
+	local hero = mechanics:getHeroCaster()
+	if hero ~= nil then
+		health = health + hero:getBonusesValue({ type = "STACK_HEALTH" })
+	end
+	return math.max(1, health)
+end
+
 function Script:applicableGeneral(mechanics, problem)
 	local creature = LIBRARY:getCreatureByName(self.id)
 	local candidates = targetObstacles(mechanics, {}, true)
@@ -206,7 +215,7 @@ function Script:apply(mechanics, server, target)
 	-- is unquestionably live; its shared proxy remains valid after the pack, but
 	-- this ordering also keeps the operation easy to reason about atomically.
 	local hpPool = self:hpPool(mechanics, obstacle)
-	local maxHealth = creature:getMaxHealth()
+	local maxHealth = golemMaxHealth(mechanics, creature)
 	local count = math.ceil(hpPool / maxHealth)
 
 	-- Both operations are authoritative server callbacks. The obstacle is
@@ -246,7 +255,7 @@ function Script:getHealthChange(mechanics, spellTarget)
 	local hpPool = self:hpPool(mechanics, obstacle)
 	return {
 		hpDelta = hpPool,
-		unitsDelta = math.ceil(hpPool / creature:getMaxHealth()),
+		unitsDelta = math.ceil(hpPool / golemMaxHealth(mechanics, creature)),
 		unitType = creature
 	}
 end
