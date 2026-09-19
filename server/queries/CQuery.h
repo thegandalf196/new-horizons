@@ -84,6 +84,9 @@ public:
 	virtual void notifyObjectAboutRemoval(const CGObjectInstance * visitedObject, const CGHeroInstance * visitingHero) const;
 
 	virtual void setReply(std::optional<int32_t> reply);
+	/// Validate a reply before the query is removed. Specialized authoritative
+	/// queries override this to reject forged indices without consuming state.
+	virtual bool isValidReply(std::optional<int32_t> reply) const;
 	virtual std::string toString() const;
 
 	virtual ~CQuery();

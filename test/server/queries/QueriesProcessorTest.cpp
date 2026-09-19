@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "../../../server/queries/CQuery.h"
+#include "../../../server/queries/MapQueries.h"
 #include "../../../server/battles/BattleProcessor.h"
 #include "../../../server/queries/QueriesProcessor.h"
 #include "CGameHandler.h"
@@ -161,6 +162,37 @@ TEST_F(NeutralDwellingBattleQueryTest, ownedDwellingUsesNeutralBattleSideWithout
 	ASSERT_EQ(attackerQuery->players.size(), 1);
 	EXPECT_EQ(attackerQuery->players.front(), PlayerColor(0));
 	EXPECT_EQ(gh.queries->topQuery(PlayerColor(1)), nullptr);
+}
+
+TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpRejectsForgedChoiceIndicesBeforeRemoval)
+{
+	startGame();
+	const auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	GameHandlerTestServer server(gameState());
+	CGameHandler gh(server, gameState());
+	HeroLevelUp levelUp;
+	levelUp.player = PlayerColor(0);
+	levelUp.heroId = hero->id;
+	levelUp.skills = {SecondarySkill::ARCHERY, SecondarySkill::LOGISTICS};
+	CHeroLevelUpDialogQuery query(&gh, levelUp, hero);
+
+	EXPECT_FALSE(query.isValidReply(std::nullopt));
+	EXPECT_FALSE(query.isValidReply(-1));
+	EXPECT_TRUE(query.isValidReply(0));
+	EXPECT_TRUE(query.isValidReply(1));
+	EXPECT_FALSE(query.isValidReply(2));
+	const int archeryBefore = hero->getSecSkillLevel(SecondarySkill::ARCHERY);
+	auto liveQuery = std::make_shared<CHeroLevelUpDialogQuery>(&gh, levelUp, hero);
+	gh.queries->addQuery(liveQuery);
+	EXPECT_FALSE(gh.queryReply(liveQuery->queryID, 2, PlayerColor(0)));
+	EXPECT_EQ(gh.queries->topQuery(PlayerColor(0)), liveQuery);
+	EXPECT_EQ(hero->getSecSkillLevel(SecondarySkill::ARCHERY), archeryBefore);
+
+	levelUp.skills.clear();
+	CHeroLevelUpDialogQuery emptyQuery(&gh, levelUp, hero);
+	EXPECT_TRUE(emptyQuery.isValidReply(0));
+	EXPECT_FALSE(emptyQuery.isValidReply(1));
 }
 
 TEST_F(QueriesProcessorTest, popIfTop_removesTopQuery)

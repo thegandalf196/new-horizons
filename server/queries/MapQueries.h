@@ -109,6 +109,7 @@ public:
 	CHeroLevelUpDialogQuery(CGameHandler * owner, const HeroLevelUp &Hlu, const CGHeroInstance * Hero);
 
 	void onRemoval(PlayerColor color) override;
+	bool isValidReply(std::optional<int32_t> reply) const override;
 	void onAdded(PlayerColor color) override;
 	void onExposure(QueryPtr topQuery) override;
 	void notifyObjectAboutRemoval(const CGObjectInstance * visitedObject, const CGHeroInstance * visitingHero) const override;

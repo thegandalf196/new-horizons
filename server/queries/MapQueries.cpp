@@ -235,9 +235,18 @@ CHeroLevelUpDialogQuery::CHeroLevelUpDialogQuery(CGameHandler * owner, const Her
 	addPlayer(hero->tempOwner);
 }
 
+bool CHeroLevelUpDialogQuery::isValidReply(std::optional<int32_t> reply) const
+{
+	if(!reply || *reply < 0)
+		return false;
+	if(hlu.skills.empty())
+		return *reply == 0;
+	return static_cast<size_t>(*reply) < hlu.skills.size();
+}
+
 void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 {
-	assert(answer);
+	assert(answer && isValidReply(static_cast<int32_t>(*answer)));
 	gh->sendQueryResolved(queryID);
 	if(hlu.skills.empty())
 	{

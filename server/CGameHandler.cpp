@@ -3683,13 +3683,15 @@ bool CGameHandler::queryReply(QueryID qid, std::optional<int32_t> answer, Player
 	{
 		auto currentQuery = queries->getQuery(qid);
 
-		if(currentQuery != nullptr && currentQuery->getType() != CHeroMasteryDialogQuery::TYPE && currentQuery->endsByPlayerAnswer())
+		if(currentQuery != nullptr && currentQuery->getType() != CHeroMasteryDialogQuery::TYPE
+			&& currentQuery->endsByPlayerAnswer() && currentQuery->isValidReply(answer))
 			currentQuery->setReply(answer);
 
 		COMPLAIN_RET("This player top query has different ID!"); //topQuery->queryID != qid
 	}
 	COMPLAIN_RET_FALSE_IF(topQuery->getType() == CHeroMasteryDialogQuery::TYPE, "Mastery requires a dedicated validated reply");
 	COMPLAIN_RET_FALSE_IF(!topQuery->endsByPlayerAnswer(), "This query cannot be ended by player's answer!");
+	COMPLAIN_RET_FALSE_IF(!topQuery->isValidReply(answer), "Invalid query reply");
 
 	topQuery->setReply(answer);
 	queries->popQuery(topQuery);

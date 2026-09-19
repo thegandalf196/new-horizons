@@ -115,6 +115,11 @@ void CQuery::setReply(std::optional<int32_t> reply)
 
 }
 
+bool CQuery::isValidReply(std::optional<int32_t> reply) const
+{
+	return true;
+}
+
 bool CQuery::blockAllButReply(const CPackForServer * pack) const
 {
 	//We accept only query replies from correct player
