@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMagic.h"
+
+#include "../mapObjects/CGHeroInstance.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "CSpell.h"
 #include "CSpellHandler.h"
@@ -270,28 +272,40 @@ bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spell)
 	return vstd::contains_if(spellSchools(rules, spell), sorceryMember);
 }
 
-int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spellPower)
+MagicArrowOverchargeModifiers magicArrowOverchargeModifiers(const CGHeroInstance * hero)
+{
+	MagicArrowOverchargeModifiers result;
+	if(hero && hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.overcharger"))
+	{
+		result.maximumBonus = 1;
+		result.damagePercentTenths = 175;
+	}
+	return result;
+}
+
+int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spellPower,
+	MagicArrowOverchargeModifiers modifiers)
 {
 	if(!magicArrowOverchargeEnabled(rules, spell))
 		return 0;
 	if(spellPower < 0)
 		throw std::runtime_error("Magic Arrow spell power cannot be negative");
 
-	// Max Overcharge = min(5, 2 + floor(SP / 50)).  Spell Power is the
-	// primary rating; the divisor is applied only to fixed-point coefficients
-	// when the damage value is evaluated.
-	return std::min(5, 2 + spellPower / 50);
+	// Base maximum = min(5, 2 + floor(SP / 50)); active saved perks may
+	// extend it. Spell Power is the primary rating; the divisor is applied only
+	// to fixed-point coefficients when the damage value is evaluated.
+	return std::min(5, 2 + spellPower / 50) + modifiers.maximumBonus;
 }
 
 std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
-	int32_t spellPower, int32_t divisor, int overcharge)
+	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers)
 {
 	if(!magicArrowOverchargeEnabled(rules, spell))
 		return std::nullopt;
 	if(spellPower < 0 || divisor <= 0)
 		return std::nullopt;
 
-	const int maxOvercharge = magicArrowMaxOvercharge(rules, spell, spellPower);
+	const int maxOvercharge = magicArrowMaxOvercharge(rules, spell, spellPower, modifiers);
 	if(overcharge < 0 || overcharge > maxOvercharge)
 		return std::nullopt;
 
@@ -303,7 +317,7 @@ std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
 	const int64_t baseDamage = savedFormula
 		? savedFormula->evaluate(spellPower, divisor)
 		: DirectDamageFormula{20, 20}.evaluate(spellPower, divisor);
-	return baseDamage * (100 + 15 * overcharge) / 100;
+	return baseDamage * (1000 + modifiers.damagePercentTenths * overcharge) / 1000;
 }
 
 std::vector<SpellSchool> activeSchools(const JsonNode & rules)

@@ -546,7 +546,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	{
 		spells::BattleCast temp(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
 		const int maxOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(
-			cb->getBattle(battleID)->getBattle()->getMagicRules(), spell->getId(), hero->getEffectPower(spell));
+			cb->getBattle(battleID)->getBattle()->getMagicRules(), spell->getId(), hero->getEffectPower(spell),
+			newHorizonsMagic::magicArrowOverchargeModifiers(hero));
 
 		for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
 		{

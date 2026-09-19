@@ -1658,6 +1658,18 @@ int CGHeroInstance::getPerkSkillRank(const std::string & skillId) const
 	return getSecSkillLevel(skill);
 }
 
+bool CGHeroInstance::hasActivePerk(const std::string & skillId, const std::string & perkId) const
+{
+	const auto modifiers = perkState.project([this](const std::string & id)
+	{
+		return getPerkSkillRank(id);
+	});
+	return vstd::contains_if(modifiers, [&](const auto & modifier)
+	{
+		return modifier.enabled && modifier.skillId == skillId && modifier.perkId == perkId;
+	});
+}
+
 void CGHeroInstance::applyPerkSelection(const newHorizonsHeroes::PerkSelection & selection)
 {
 	perkState.select(selection.skillId, selection.perkId, getPerkSkillRank(selection.skillId));

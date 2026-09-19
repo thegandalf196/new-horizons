@@ -210,6 +210,7 @@ public:
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
 	int getPerkSkillRank(const std::string & skillId) const;
+	bool hasActivePerk(const std::string & skillId, const std::string & perkId) const;
 	void applyPerkSelection(const newHorizonsHeroes::PerkSelection & selection);
 	std::optional<newHorizonsHeroes::MasteryView> getMasteryView() const;
 	void captureMasteryEligibility(uint32_t nextLevel);

@@ -2769,7 +2769,7 @@
 								"requires": "basic",
 								"description": "Magic Arrow gains +1 maximum Overcharge and each Overcharge point increases base damage by 17.5% instead of 15%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Magic Arrow gains +1 maximum Overcharge and each Overcharge point increases base damage by 17.5% instead of 15%."
 								}
 							},

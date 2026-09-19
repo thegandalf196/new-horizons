@@ -44,6 +44,21 @@ TEST(NewHorizonsMagicArrowTest, DetailedSorceryFormulaAndCapAreDeterministic)
 	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 4), 352);
 }
 
+TEST(NewHorizonsMagicArrowTest, OverchargerRaisesCapAndUsesSeventeenPointFivePercentSteps)
+{
+	const auto rules = activeRules();
+	const SpellID arrow(SpellID::MAGIC_ARROW);
+	newHorizonsMagic::MagicArrowOverchargeModifiers modifiers;
+	modifiers.maximumBonus = 1;
+	modifiers.damagePercentTenths = 175;
+
+	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(rules, arrow, 0, modifiers), 3);
+	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(rules, arrow, 150, modifiers), 6);
+	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(rules, arrow, 1000, modifiers), 6);
+	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 1, modifiers), 258);
+	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 150, 10, 6, modifiers), 656);
+}
+
 TEST(NewHorizonsMagicArrowTest, LegacyAndWrongSpellDoNotGainOvercharge)
 {
 	const JsonNode legacy;

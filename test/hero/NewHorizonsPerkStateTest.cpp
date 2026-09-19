@@ -61,6 +61,28 @@ TEST(NewHorizonsPerkState, PlannedAndRankLockedEffectsNeverProjectAsEnabled)
 	EXPECT_TRUE(projected.front().enabled);
 }
 
+TEST(NewHorizonsPerkState, OverchargerActivationComesFromTheSavedRegistrySnapshot)
+{
+	auto active = state();
+	constexpr auto SKILL = "new-horizons:sorceryMagic";
+	constexpr auto PERK = "new-horizons:sorceryMagic.overcharger";
+	for(auto & perk : active.rules["skills"][SKILL]["perks"].Vector())
+		if(perk["id"].String() == PERK)
+			perk["effect"]["status"].String() = "active";
+	active.select(SKILL, PERK, 1);
+	const auto activeProjection = active.project([](const std::string &) { return 1; });
+	ASSERT_EQ(activeProjection.size(), 1u);
+	EXPECT_TRUE(activeProjection.front().enabled);
+
+	auto oldSave = active;
+	for(auto & perk : oldSave.rules["skills"][SKILL]["perks"].Vector())
+		if(perk["id"].String() == PERK)
+			perk["effect"]["status"].String() = "planned";
+	const auto oldProjection = oldSave.project([](const std::string &) { return 1; });
+	ASSERT_EQ(oldProjection.size(), 1u);
+	EXPECT_FALSE(oldProjection.front().enabled);
+}
+
 TEST(NewHorizonsPerkState, JsonAndBinaryRoundTripsPreserveSavedRegistrySnapshot)
 {
 	auto original = state();

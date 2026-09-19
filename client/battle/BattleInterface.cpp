@@ -137,7 +137,8 @@ void BattleInterface::installMagicArrowOverchargeUI()
 			const BattleID localBattleID = getBattleID();
 			const int32_t spellPower = hero->getEffectPower(spell);
 			const int formulaMaximumOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(
-				callback->getBattle()->getMagicRules(), spell->id, spellPower);
+				callback->getBattle()->getMagicRules(), spell->id, spellPower,
+				newHorizonsMagic::magicArrowOverchargeModifiers(hero));
 			const int baseMana = callback->battleGetSpellCost(spell, hero);
 			const int maximumOvercharge = std::min(formulaMaximumOvercharge, std::max(0, hero->mana - baseMana));
 

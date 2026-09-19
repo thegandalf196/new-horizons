@@ -19,6 +19,7 @@
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/Unit.h"
+#include "../mapObjects/CGHeroInstance.h"
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../networkPacks/SetStackEffect.h"
 #include "../CStack.h"
@@ -185,12 +186,14 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	// the legality gate in the authoritative mechanics path so malformed or
 	// stale requests cannot spend a hero action/mana with a different effect.
 	const int selectedOvercharge = getOvercharge();
+	const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(
+		dynamic_cast<const CGHeroInstance *>(caster));
 	const bool adjustableMagicArrow = newHorizonsMagic::magicArrowOverchargeEnabled(
 		battle()->getBattle()->getMagicRules(), owner->getId());
 	if(selectedOvercharge < 0
 		|| (!adjustableMagicArrow && selectedOvercharge != 0)
 		|| (adjustableMagicArrow && selectedOvercharge > newHorizonsMagic::magicArrowMaxOvercharge(
-			battle()->getBattle()->getMagicRules(), owner->getId(), getEffectPower())))
+			battle()->getBattle()->getMagicRules(), owner->getId(), getEffectPower(), modifiers)))
 		return adaptGenericProblem(problem);
 
 	auto genProblem = battle()->battleCanCastSpell(caster, mode);

@@ -13,6 +13,7 @@ from jsonschema import Draft4Validator
 
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
+ACTIVE_PERKS = {"new-horizons:sorceryMagic.overcharger"}
 EXPECTED_SKILLS = (
     "new-horizons:offense",
     "new-horizons:armorer",
@@ -99,7 +100,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 for perk in perks:
                     self.assertTrue(perk["id"].startswith(skill_id + "."))
                     self.assertEqual(perk["description"], perk["effect"]["description"])
-                    self.assertEqual(perk["effect"]["status"], "planned")
+                    expected_status = "active" if perk["id"] in ACTIVE_PERKS else "planned"
+                    self.assertEqual(perk["effect"]["status"], expected_status)
                     self.assertTrue(perk["name"])
                     self.assertTrue(perk["description"])
                     all_perk_ids.append(perk["id"])

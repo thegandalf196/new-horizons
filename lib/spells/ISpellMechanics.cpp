@@ -317,9 +317,11 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		else
 		{
 			const auto * battle = cb->getBattle();
+			const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(
+				dynamic_cast<const CGHeroInstance *>(caster));
 			const auto magicArrowValue = battle
 				? newHorizonsMagic::magicArrowDamage(battle->getMagicRules(), owner->getId(), effectPower,
-					getEffectPowerDivisor(), getOvercharge())
+					getEffectPowerDivisor(), getOvercharge(), modifiers)
 				: std::nullopt;
 			const auto savedValue = battle && !magicArrowValue
 				? newHorizonsMagic::directDamageValue(battle->getMagicRules(), owner->getJsonKey(), effectPower, getEffectPowerDivisor())

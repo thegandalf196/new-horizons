@@ -13,6 +13,8 @@
 #include "../constants/EntityIdentifiers.h"
 #include "NewHorizonsDirectDamage.h"
 
+class CGHeroInstance;
+
 namespace newHorizonsMagic
 {
 constexpr int RULESET_VERSION = 1;
@@ -32,11 +34,21 @@ DLL_LINKAGE std::optional<int64_t> directDamageValue(const JsonNode & rules, con
 /// for a saved roster which classifies the canonical core spell as Sorcery;
 /// legacy worlds therefore retain the original fixed-cost/fixed-effect cast.
 DLL_LINKAGE bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spell);
-DLL_LINKAGE int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spellPower);
+struct DLL_LINKAGE MagicArrowOverchargeModifiers
+{
+	int maximumBonus = 0;
+	/// Percentage in tenths: 175 means 17.5% per selected point.
+	int damagePercentTenths = 150;
+
+	bool operator==(const MagicArrowOverchargeModifiers &) const = default;
+};
+DLL_LINKAGE MagicArrowOverchargeModifiers magicArrowOverchargeModifiers(const CGHeroInstance * hero);
+DLL_LINKAGE int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spellPower,
+	MagicArrowOverchargeModifiers modifiers = {});
 /// Returns the raw pre-resistance damage for a legal overcharge selection.
 /// The divisor is the caster's New Horizons primary-rating coefficient scale.
 DLL_LINKAGE std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
-	int32_t spellPower, int32_t divisor, int overcharge);
+	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers = {});
 DLL_LINKAGE std::vector<SpellSchool> activeSchools(const JsonNode & rules);
 DLL_LINKAGE std::vector<SpellSchool> spellSchools(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE int spellLevel(const JsonNode & rules, SpellID spell);

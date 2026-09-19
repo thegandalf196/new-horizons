@@ -106,6 +106,7 @@ class NewHorizonsDirectDamageMechanicsTest : public HeroCommandFixture
 protected:
 	bool savedEnabled = true;
 	bool forceRealHeroScale = false;
+	bool usePerks = false;
 	JsonNode authoredRules = savedFormula();
 	CStack * target = nullptr;
 	const CSpell * spell = nullptr;
@@ -115,6 +116,9 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		if(forceRealHeroScale)
 			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
+		if(usePerks)
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, savedEnabled ? authoredRules : JsonNode());
 	}
 
@@ -275,6 +279,55 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(before - target->getAvailableHealth(), 352);
 	EXPECT_EQ(attackerSideHero->mana, mana - 8);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuthoritativeCastToSixPoints)
+{
+	forceRealHeroScale = true;
+	usePerks = true;
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 150, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(
+		SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 1, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection(
+		{"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.overcharger"});
+
+	spells::Target destination;
+	destination.emplace_back(target);
+	spells::BattleCast tooMuch(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	tooMuch.setOvercharge(7);
+	spells::detail::ProblemImpl excessProblem;
+	EXPECT_FALSE(spell->battleMechanics(&tooMuch)->canBeCast(excessProblem));
+
+	spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	legal.setOvercharge(6);
+	auto mechanics = spell->battleMechanics(&legal);
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(mechanics->canBeCast(problem));
+	ASSERT_TRUE(mechanics->canBeCastAt(destination, problem));
+	EXPECT_EQ(mechanics->getEffectValue(), 656);
+
+	const auto before = target->getAvailableHealth();
+	const auto mana = attackerSideHero->mana;
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	DamageEnvironment environment(gameState(), nullptr);
+	HypotheticBattle predicted(&environment, callback);
+	spells::BattleCast prediction(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+	prediction.setOvercharge(6);
+	prediction.castEval(predicted.getServerCallback(), destination);
+	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 656);
+	EXPECT_EQ(target->getAvailableHealth(), before);
+	EXPECT_EQ(attackerSideHero->mana, mana);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.spellOvercharge = 6;
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(before - target->getAvailableHealth(), 656);
+	EXPECT_EQ(attackerSideHero->mana, mana - 10);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsOutOfRangeAndLegacyOverchargeAtomically)
