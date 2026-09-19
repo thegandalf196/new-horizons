@@ -34,6 +34,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	HeroCommand activeOrder = HeroCommand::NONE;
 	std::optional<FocusFireState> focusFire;
 	uint32_t castSpellsCount = 0; //how many spells each side has been cast this turn
+	bool temporalFieldUsed = false; // saved once-per-combat Sorcery Mass Slow budget
 	std::vector<SpellID> usedSpellsHistory; //every time hero casts spell, it's inserted here -> eagle eye skill
 	int32_t enchanterCounter = 0; //tends to pass through 0, so sign is needed
 	int32_t initialMana = 0;
@@ -45,6 +46,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && temporalFieldUsed && !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
+			throw std::runtime_error("Cannot discard consumed Temporal Field battle state");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 			&& (focusFire || activeOrder == HeroCommand::FOCUS_FIRE))
 			throw std::runtime_error("Cannot discard New Horizons targeted command state");
@@ -56,6 +59,14 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		h & enchanterCounter;
 		h & initialMana;
 		h & additionalMana;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
+		{
+			h & temporalFieldUsed;
+		}
+		else if(!h.saving)
+		{
+			temporalFieldUsed = false;
+		}
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
 		{
 			h & heroCommandUsed;

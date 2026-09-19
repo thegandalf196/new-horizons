@@ -44,6 +44,12 @@ int32_t CBattleInfoEssentials::battleGetEnchanterCounter(BattleSide side) const
 	return getBattle()->getEnchanterCounter(side);
 }
 
+bool CBattleInfoEssentials::battleWasTemporalFieldUsed(BattleSide side) const
+{
+	RETURN_IF_NOT_BATTLE(false);
+	return getBattle()->getTemporalFieldUsed(side);
+}
+
 int32_t CBattleInfoEssentials::nextObstacleId() const
 {
 	int32_t maxId = -1;

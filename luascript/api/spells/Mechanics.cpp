@@ -79,6 +79,10 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the effect duration in turns.");
 	R.method<&Mechanics::isSelectiveDispel>("isSelectiveDispel", {},
 		"True when this authoritative cast selected the Sorcery Selective Dispel mode.");
+	R.method<&Mechanics::isMassSlow>("isMassSlow", {},
+		"True when this authoritative cast selected the Sorcery Temporal Field Mass Slow mode.");
+	R.method<&Mechanics::usesNewHorizonsMagic>("usesNewHorizonsMagic", {},
+		"True when the battle uses a saved New Horizons magic-rules snapshot.");
 	R.method<&Mechanics::getEffectValue>("getEffectValue", {},
 		"Returns the computed effect value (e.g. damage / health amount).");
 	R.method<&Mechanics::getCasterColor>("getCasterColor", {},

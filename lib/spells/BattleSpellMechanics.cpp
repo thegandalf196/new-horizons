@@ -197,9 +197,14 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 		return adaptGenericProblem(problem);
 
 	const bool selectiveDispel = isSelectiveDispel();
+	const bool massSlow = isMassSlow();
 	const auto * castingHero = dynamic_cast<const CGHeroInstance *>(caster);
 	if(selectiveDispel && (mode != Mode::HERO || owner->getId() != SpellID::DISPEL || !castingHero
 		|| !castingHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel")))
+		return adaptGenericProblem(problem);
+	if(massSlow && (mode != Mode::HERO || owner->getId() != SpellID::SLOW || !castingHero
+		|| !castingHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField")
+		|| casterSide == BattleSide::NONE || battle()->battleWasTemporalFieldUsed(casterSide)))
 		return adaptGenericProblem(problem);
 
 	auto genProblem = battle()->battleCanCastSpell(caster, mode);
@@ -225,7 +230,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 				genProblem = ESpellCastProblem::HERO_DOESNT_KNOW_SPELL;
 			else
 			{
-				int requiredMana = battle()->battleGetSpellCost(owner, castingHero);
+				int requiredMana = battle()->battleGetSpellCost(owner, castingHero, massSlow ? 3 : 1);
 				if(adjustableMagicArrow)
 					requiredMana += selectedOvercharge;
 				if(castingHero->mana < requiredMana) //not enough mana
@@ -396,6 +401,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	sc.manaGained = 0;
 
 	sc.activeCast = false;
+	sc.temporalFieldCast = isMassSlow();
 	affectedUnits.clear();
 
 	const CGHeroInstance * otherHero = nullptr;
@@ -411,7 +417,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if(mode == Mode::HERO)
 	{
 		const auto * casterHero = dynamic_cast<const CGHeroInstance *>(caster);
-		spellCost = battle()->battleGetSpellCost(owner, casterHero);
+		spellCost = battle()->battleGetSpellCost(owner, casterHero, isMassSlow() ? 3 : 1);
 		if(newHorizonsMagic::magicArrowOverchargeEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
 			spellCost += getOvercharge();
 

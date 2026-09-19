@@ -2404,12 +2404,14 @@ BattleHexArray CBattleInfoCallback::getAttackableWallParts() const
 	return attackableBattleHexes;
 }
 
-int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const CGHeroInstance * caster) const
+int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const CGHeroInstance * caster, int32_t listedCostMultiplier) const
 {
 	RETURN_IF_NOT_BATTLE(-1);
 	//TODO should be replaced using bonus system facilities (propagation onto battle node)
+	if(listedCostMultiplier < 1)
+		throw std::invalid_argument("Spell cost multiplier must be positive");
 
-	int32_t ret = caster->getSpellCost(sp);
+	int32_t ret = caster->getSpellCost(sp) * listedCostMultiplier;
 
 	//checking for friendly stacks reducing cost of the spell and
 	//enemy stacks increasing it

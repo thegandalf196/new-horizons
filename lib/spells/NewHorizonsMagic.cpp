@@ -121,6 +121,12 @@ bool sorceryMember(const SpellSchool school)
 }
 }
 
+bool rulesActive(const JsonNode & rules)
+{
+	return !legacy(rules) && rules.isStruct()
+		&& integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION);
+}
+
 void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))

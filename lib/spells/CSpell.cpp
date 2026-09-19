@@ -107,6 +107,15 @@ bool CSpell::canBeCast(spells::Problem & problem, const CBattleInfoCallback * cb
 	// Selective Dispel perk can make a cast legal even when ordinary smart
 	// targeting finds no valid stack (for example, only an enemy buff exists).
 	const auto * hero = mode == spells::Mode::HERO ? caster->getHeroCaster() : nullptr;
+	if(id == SpellID::SLOW && hero
+		&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"))
+	{
+		spells::BattleCast massEvent(cb, caster, mode, this);
+		massEvent.setMassSlow(true);
+		spells::detail::ProblemImpl massProblem;
+		if(battleMechanics(&massEvent)->canBeCast(massProblem))
+			return true;
+	}
 	if(id != SpellID::DISPEL || !hero
 		|| !hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel"))
 		return false;

@@ -1549,7 +1549,11 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
 	if(pack.castByHero && pack.side != BattleSide::NONE)
+	{
 		gs.getBattle(pack.battleID)->getSide(pack.side).castSpellsCount++;
+		if(pack.temporalFieldCast)
+			gs.getBattle(pack.battleID)->getSide(pack.side).temporalFieldUsed = true;
+	}
 }
 
 void GameStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)

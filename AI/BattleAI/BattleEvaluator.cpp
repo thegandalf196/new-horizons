@@ -549,31 +549,49 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			newHorizonsMagic::magicArrowOverchargeModifiers(hero));
 		const bool canUseSelectiveDispel = spell->getId() == SpellID::DISPEL
 			&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel");
+		const bool canUseTemporalField = spell->getId() == SpellID::SLOW
+			&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField")
+			&& !cb->getBattle(battleID)->battleWasTemporalFieldUsed(side);
 
-		for(const bool selectiveDispel : {false, true})
+		for(const bool massSlow : {false, true})
 		{
-			if(selectiveDispel && !canUseSelectiveDispel)
+			if(massSlow && !canUseTemporalField)
 				continue;
-			spells::BattleCast temp(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
-			temp.setSelectiveDispel(selectiveDispel);
-			for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
+			for(const bool selectiveDispel : {false, true})
 			{
-				for(int overcharge = 0; overcharge <= maxOvercharge; ++overcharge)
+				if(selectiveDispel && !canUseSelectiveDispel)
+					continue;
+				spells::BattleCast temp(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
+				temp.setMassSlow(massSlow);
+				temp.setSelectiveDispel(selectiveDispel);
+				for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
 				{
-					spells::BattleCast candidateCast(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
-					candidateCast.setOvercharge(overcharge);
-					candidateCast.setSelectiveDispel(selectiveDispel);
-					auto candidateMechanics = spell->battleMechanics(&candidateCast);
-					spells::detail::ProblemImpl problem;
-					if(!candidateMechanics->canBeCast(problem))
-						continue;
+					for(int overcharge = 0; overcharge <= maxOvercharge; ++overcharge)
+					{
+						spells::BattleCast candidateCast(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
+						candidateCast.setOvercharge(overcharge);
+						candidateCast.setMassSlow(massSlow);
+						candidateCast.setSelectiveDispel(selectiveDispel);
+						auto candidateMechanics = spell->battleMechanics(&candidateCast);
+						spells::detail::ProblemImpl problem;
+						if(!candidateMechanics->canBeCast(problem))
+							continue;
 
-					PossibleSpellcast ps;
-					ps.dest = target;
-					ps.spell = spell;
-					ps.spellOvercharge = overcharge;
-					ps.spellSelectiveDispel = selectiveDispel;
-					possibleCasts.push_back(ps);
+						PossibleSpellcast ps;
+						ps.dest = target;
+						// NO_LOCATION is represented on the wire by one invalid
+						// destination.  Keep a concrete sentinel in the hypothetical
+						// cast too: BattleSpellMechanics::castEval intentionally rejects
+						// an entirely empty aim, while mass effects use the invalid
+						// destination to collect every eligible unit.
+						if(massSlow && ps.dest.empty())
+							ps.dest.emplace_back(BattleHex::INVALID);
+						ps.spell = spell;
+						ps.spellOvercharge = overcharge;
+						ps.spellSelectiveDispel = selectiveDispel;
+						ps.spellMassSlow = massSlow;
+						possibleCasts.push_back(ps);
+					}
 				}
 			}
 		}
@@ -785,6 +803,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					spells::BattleCast cast(state.get(), hero, spells::Mode::HERO, ps.spell);
 					cast.setOvercharge(ps.spellOvercharge);
 					cast.setSelectiveDispel(ps.spellSelectiveDispel);
+					cast.setMassSlow(ps.spellMassSlow);
 					cast.castEval(state->getServerCallback(), ps.dest);
 				}
 				else if(ps.command == HeroCommand::FOCUS_FIRE)
@@ -812,6 +831,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					{
 						auto original = cb->getBattle(battleID)->battleGetUnitByID(u->unitId());
 						return !original || u->getMovementRange() != original->getMovementRange()
+							|| (ps.spell && ps.spell->getId() == SpellID::SLOW
+								&& u->getInitiative() != original->getInitiative())
 							|| u->getPosition() != original->getPosition()
 							|| u->alive() != original->alive() || u->isGhost() != original->isGhost();
 					});
@@ -829,6 +850,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				float stackActionScore = 0;
 				float damageToHostilesScore = 0;
 				float damageToFriendliesScore = 0;
+				float initiativeEffectScore = 0;
 
 				const auto modelActive = state->getForUpdate(activeStack->unitId());
 				if(modelActive->alive() && (needFullEval || !cachedAttack.ap))
@@ -878,11 +900,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 					auto newHealth = unit->getAvailableHealth();
 					auto oldHealth = vstd::find_or(healthOfStack, unit->unitId(), 0); // old health value may not exist for newly summoned units
+					auto original = cb->getBattle(battleID)->battleGetUnitByID(unit->unitId());
+					if(ps.spell && ps.spell->getId() == SpellID::SLOW
+						&& original && original->alive() && unit->alive())
+					{
+						const int oldInitiative = std::max(1, original->getInitiative());
+						const int initiativeDelta = unit->getInitiative() - original->getInitiative();
+						const int signedDelta = state->battleGetOwner(unit) == playerID
+							? initiativeDelta : -initiativeDelta;
+						const float stackValue = static_cast<float>(unit->getCount()) * unit->unitType()->getAIValue();
+						initiativeEffectScore += stackValue * static_cast<float>(signedDelta)
+							/ static_cast<float>(oldInitiative) * 0.01f;
+					}
 
 					if(oldHealth != newHealth)
 					{
 						auto damage = std::abs(oldHealth - newHealth);
-						auto originalDefender = cb->getBattle(battleID)->battleGetUnitByID(unit->unitId());
+						auto originalDefender = original;
 
 						auto dpsReduce = AttackPossibility::calculateDamageReduce(
 							nullptr,
@@ -941,11 +975,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 				if (vstd::isAlmostEqual(stackActionScore, static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE)))
 				{
-					ps.value = damageToFriendliesScore + damageToHostilesScore;
+					ps.value = damageToFriendliesScore + damageToHostilesScore + initiativeEffectScore;
 				}
 				else
 				{
-					ps.value = stackActionScore + damageToFriendliesScore + damageToHostilesScore;
+					ps.value = stackActionScore + damageToFriendliesScore + damageToHostilesScore + initiativeEffectScore;
 				}
 
 #if BATTLE_TRACE_LEVEL >= 1
@@ -986,6 +1020,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		spellcast.spell = castToPerform.spell->id;
 		spellcast.spellOvercharge = castToPerform.spellOvercharge;
 		spellcast.spellSelectiveDispel = castToPerform.spellSelectiveDispel;
+		spellcast.spellMassSlow = castToPerform.spellMassSlow;
 		spellcast.setTarget(castToPerform.dest);
 		spellcast.side = side;
 		spellcast.stackNumber = -1;

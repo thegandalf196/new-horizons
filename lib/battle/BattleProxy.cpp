@@ -118,8 +118,12 @@ int32_t BattleProxy::getEnchanterCounter(BattleSide side) const
 	return subject->battleGetEnchanterCounter(side);
 }
 
+bool BattleProxy::getTemporalFieldUsed(BattleSide side) const
+{
+	return subject->battleWasTemporalFieldUsed(side);
+}
+
 const IBonusBearer * BattleProxy::getBonusBearer() const
 {
 	return subject->getBonusBearer();
 }
-

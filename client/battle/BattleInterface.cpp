@@ -25,6 +25,7 @@
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
 #include "CreatureAnimation.h"
+#include "TemporalFieldWindow.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -102,6 +103,7 @@ BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *
 	obstacleController.reset(new BattleObstacleController(*this));
 	installMagicArrowOverchargeUI();
 	installSelectiveDispelUI();
+	installTemporalFieldUI();
 
 	adventureInt->onAudioPaused();
 	ongoingAnimationsState.setBusy();
@@ -280,6 +282,127 @@ void BattleInterface::installSelectiveDispelUI()
 				else
 					action.aimToHex(BattleHex::INVALID);
 				action.spellSelectiveDispel = selective;
+				curInt->cb->battleMakeSpellAction(localBattleID, action);
+				if(actionsController)
+					actionsController->endCastingSpell();
+				return true;
+			};
+			context.cancel = [this]
+			{
+				if(actionsController)
+					actionsController->endCastingSpell();
+			};
+			return context;
+		});
+}
+
+void BattleInterface::installTemporalFieldUI()
+{
+	if(!actionsController)
+		return;
+
+	actionsController->setTemporalFieldFactory(
+		[this](const BattleAction & pending)
+			-> std::optional<TemporalFieldContext>
+		{
+			if(!curInt || !curInt->cb || pending.spell != SpellID(SpellID::SLOW))
+				return std::nullopt;
+
+			const BattleID localBattleID = getBattleID();
+			const auto callback = curInt->cb->getBattle(localBattleID);
+			const auto * hero = currentHero();
+			const auto * spell = pending.spell.toSpell();
+			if(!callback || !callback->getBattle() || !hero || !spell
+				|| !hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"))
+				return std::nullopt;
+
+			const auto casterSide = callback->battleGetMySide();
+			if(casterSide == BattleSide::NONE)
+				return std::nullopt;
+
+			auto evaluate = [this, localBattleID, spell]() -> TemporalFieldValues
+			{
+				TemporalFieldValues values;
+				if(!curInt || !curInt->cb)
+					return values;
+
+				const auto callback = curInt->cb->getBattle(localBattleID);
+				const auto * hero = currentHero();
+				if(!callback || !callback->getBattle() || !hero || !spell)
+					return values;
+
+				values.ordinaryMana = callback->battleGetSpellCost(spell, hero);
+				values.massMana = callback->battleGetSpellCost(spell, hero, 3);
+				values.availableMana = hero->mana;
+				const auto side = callback->battleGetMySide();
+				values.remaining = side != BattleSide::NONE && !callback->battleWasTemporalFieldUsed(side);
+
+				spells::BattleCast massCast(callback.get(), hero, spells::Mode::HERO, spell);
+				massCast.setMassSlow(true);
+				auto mechanics = spell->battleMechanics(&massCast);
+				spells::Target noTarget;
+				noTarget.emplace_back(BattleHex::INVALID);
+				if(mechanics)
+				{
+					spells::detail::ProblemImpl problem;
+					values.massAffordable = values.remaining && mechanics->canBeCast(problem);
+					const auto affected = mechanics->getAffectedStacks(noTarget);
+					values.eligibleEnemyCount = static_cast<int>(affected.size());
+
+					std::string names;
+					constexpr size_t maxPreviewNames = 3;
+					for(size_t index = 0; index < affected.size() && index < maxPreviewNames; ++index)
+					{
+						if(!names.empty())
+							names += ", ";
+						names += affected[index]->unitType()->getNamePluralTranslated();
+					}
+					if(affected.size() > maxPreviewNames)
+						names += ", ...";
+					values.eligibleEnemyDescription = "Eligible enemies (" + std::to_string(values.eligibleEnemyCount) + "): " + names;
+				}
+				return values;
+			};
+
+			TemporalFieldContext context;
+			context.anchor = ENGINE->getCursorPosition();
+			context.initial = evaluate();
+			context.evaluate = evaluate;
+			context.confirmOrdinary = [this]
+			{
+				return actionsController && actionsController->continueOrdinarySpellcast();
+			};
+			context.confirmMass = [this, pending, localBattleID, spell]() -> bool
+			{
+				if(!curInt || !curInt->cb)
+					return false;
+				const auto callback = curInt->cb->getBattle(localBattleID);
+				const auto * hero = currentHero();
+				if(!callback || !callback->getBattle() || !hero || !spell
+					|| !hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"))
+					return false;
+
+				const auto side = callback->battleGetMySide();
+				if(side == BattleSide::NONE || callback->battleWasTemporalFieldUsed(side))
+					return false;
+
+				spells::BattleCast massCast(callback.get(), hero, spells::Mode::HERO, spell);
+				massCast.setMassSlow(true);
+				auto mechanics = spell->battleMechanics(&massCast);
+				if(!mechanics)
+					return false;
+				spells::detail::ProblemImpl problem;
+				if(!mechanics->canBeCast(problem))
+					return false;
+				spells::Target noTarget;
+				noTarget.emplace_back(BattleHex::INVALID);
+				if(mechanics->getAffectedStacks(noTarget).empty())
+					return false;
+
+				BattleAction action = pending;
+				action.target.clear();
+				action.aimToHex(BattleHex::INVALID);
+				action.spellMassSlow = true;
 				curInt->cb->battleMakeSpellAction(localBattleID, action);
 				if(actionsController)
 					actionsController->endCastingSpell();

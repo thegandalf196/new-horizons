@@ -29,6 +29,8 @@ public:
 	const CSpell * spell;
 	int32_t spellOvercharge = 0;
 	bool spellSelectiveDispel = false;
+	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
+	bool spellMassSlow = false;
 	spells::Target dest;
 	float value;
 

@@ -346,6 +346,7 @@ CUnitState::CUnitState():
 	counterAttacks(this),
 	health(this),
 	shots(this),
+	initiativePercentPerTurn(this, Selector::type()(BonusType::STACKS_INITIATIVE), BonusCacheMode::VALUE),
 	stackSpeedPerTurn(this, Selector::type()(BonusType::STACKS_SPEED), BonusCacheMode::VALUE),
 	immobilizedPerTurn(this, Selector::type()(BonusType::SIEGE_WEAPON).Or(Selector::type()(BonusType::BIND_EFFECT)), BonusCacheMode::PRESENCE),
 	bonusCache(this),
@@ -606,7 +607,9 @@ void CUnitState::setPosition(const BattleHex & hex)
 
 int32_t CUnitState::getInitiative(int turn) const
 {
-	return stackSpeedPerTurn.getValue(turn);
+	const int64_t speed = stackSpeedPerTurn.getValue(turn);
+	const int64_t percent = std::max<int64_t>(0, 100 + initiativePercentPerTurn.getValue(turn));
+	return static_cast<int32_t>(speed * percent / 100);
 }
 
 ui32 CUnitState::getMovementRange(int turn) const

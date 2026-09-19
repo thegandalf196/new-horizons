@@ -264,8 +264,9 @@ public:
 private:
 	const IUnitEnvironment * env;
 
-	BonusCachePerTurn immobilizedPerTurn;
+	BonusCachePerTurn initiativePercentPerTurn;
 	BonusCachePerTurn stackSpeedPerTurn;
+	BonusCachePerTurn immobilizedPerTurn;
 	UnitBonusValuesProxy bonusCache;
 
 	void reset();

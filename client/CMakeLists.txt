@@ -22,6 +22,7 @@ set(vcmiclientcommon_SRCS
 	battle/BattleHeroActionWindow.cpp
 	battle/MagicArrowOverchargeWindow.cpp
 	battle/SelectiveDispelWindow.cpp
+	battle/TemporalFieldWindow.cpp
 	battle/FocusFireTargetWindow.cpp
 	battle/BattleInterface.cpp
 	battle/BattleObstacleController.cpp
@@ -232,6 +233,7 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleHeroActionWindow.h
 	battle/MagicArrowOverchargeWindow.h
 	battle/SelectiveDispelWindow.h
+	battle/TemporalFieldWindow.h
 	battle/FocusFireTargetWindow.h
 	battle/BattleInterface.h
 	battle/BattleObstacleController.h

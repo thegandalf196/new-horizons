@@ -17,6 +17,7 @@
 #include "BattleSiegeController.h"
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
+#include "TemporalFieldWindow.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -224,6 +225,11 @@ void BattleActionsController::setMagicArrowOverchargeFactory(MagicArrowOvercharg
 void BattleActionsController::setSelectiveDispelFactory(SelectiveDispelFactory factory)
 {
 	selectiveDispelFactory = std::move(factory);
+}
+
+void BattleActionsController::setTemporalFieldFactory(TemporalFieldFactory factory)
+{
+	temporalFieldFactory = std::move(factory);
 }
 
 void BattleActionsController::endCastingSpell()
@@ -440,6 +446,19 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	heroSpellToCast->stackNumber = -1;
 	heroSpellToCast->side = owner.curInt->cb->getBattle(owner.getBattleID())->battleGetMySide();
 
+	// Temporal Field is an explicit pre-target choice. The ordinary branch is
+	// resumed through continueOrdinarySpellcast(), while Mass submits a single
+	// NO_LOCATION hero spell action from the installed BattleInterface adapter.
+	if(spellID == SpellID::SLOW && temporalFieldFactory)
+	{
+		if(const auto context = temporalFieldFactory(*heroSpellToCast))
+		{
+			ENGINE->windows().createAndPushWindow<TemporalFieldWindow>(*context);
+			owner.windowObject->blockUI(true);
+			return;
+		}
+	}
+
 	//choosing possible targets
 	PossiblePlayerBattleAction spellSelMode = owner.getBattle()->getCasterAction(spellID.toSpell(), castingHero, spells::Mode::HERO);
 
@@ -466,6 +485,35 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	}
 
 	owner.windowObject->blockUI(true);
+}
+
+bool BattleActionsController::continueOrdinarySpellcast()
+{
+	if(!owner.curInt || !heroSpellToCast)
+		return false;
+
+	const auto * castingHero = owner.currentHero();
+	const auto * spell = heroSpellToCast->spell.toSpell();
+	if(!castingHero || !spell)
+		return false;
+
+	const auto spellSelMode = owner.getBattle()->getCasterAction(spell, castingHero, spells::Mode::HERO);
+	if(spellSelMode.get() == PossiblePlayerBattleAction::INVALID)
+		return false;
+
+	if(spellSelMode.get() == PossiblePlayerBattleAction::NO_LOCATION)
+	{
+		heroSpellToCast->aimToHex(BattleHex::INVALID);
+		owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), *heroSpellToCast);
+		endCastingSpell();
+		return true;
+	}
+
+	possibleActions.clear();
+	possibleActions.push_back(spellSelMode);
+	ENGINE->fakeMouseMove();
+	owner.windowObject->blockUI(true);
+	return true;
 }
 
 const CSpell * BattleActionsController::getHeroSpellToCast( ) const

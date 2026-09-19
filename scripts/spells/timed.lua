@@ -17,7 +17,13 @@ function Script:convertBonuses(mechanics)
 
 	for name, b in pairs(self.bonus or {}) do
 		local nb = self:deepCopyBonus(b)
-
+		if spellKey == "core:slow" and mechanics:usesNewHorizonsMagic() then
+			-- New Horizons separates turn-order Initiative from movement Speed.
+			-- STACKS_INITIATIVE stores a direct percentage delta consumed only by
+			-- CUnitState::getInitiative; movement range remains unchanged.
+			nb.type = "STACKS_INITIATIVE"
+			nb.valueType = "ADDITIVE_VALUE"
+		end
 		if not nb.turns or nb.turns == 0 then
 			nb.turns = duration
 		end
@@ -29,6 +35,17 @@ function Script:convertBonuses(mechanics)
 	end
 
 	return converted
+end
+
+function Script:applyTemporalFieldScale(mechanics, buffer, spellKey)
+	if not mechanics:isMassSlow() or spellKey ~= "core:slow" then return end
+	for _, nb in pairs(buffer) do
+		-- Apply after every target-specific hero specialty so Temporal Field is
+		-- exactly 60% of the ordinary Slow magnitude that target would receive.
+		-- Slow values are negative; ceil preserves the sign while rounding the
+		-- reduced magnitude toward zero.
+		nb.val = math.ceil((nb.val or 0) * 60 / 100)
+	end
 end
 
 --- Shifts every buffered bonus value by a per-target-tier amount (weakness/slayer-style).
@@ -147,6 +164,7 @@ function Script:apply(mechanics, server, target)
 		end
 
 		self:applyHeroSpecialty(mechanics, buffer, unit)
+		self:applyTemporalFieldScale(mechanics, buffer, mechanics:getSpell():getJsonKey())
 
 		if describe then
 			self:describeEffect(server, battle, unit, buffer)

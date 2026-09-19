@@ -1697,7 +1697,7 @@
 					"requires": "advanced",
 					"description": "Once per combat, Slow may be cast as Mass Slow on every eligible enemy stack. The Mass cast counts as one Spell, uses 3x Slow's listed Mana cost before Wisdom, and applies 60% of Slow's normal Initiative-reduction magnitude to each target.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Once per combat, Slow may be cast as Mass Slow on every eligible enemy stack. The Mass cast counts as one Spell, uses 3x Slow's listed Mana cost before Wisdom, and applies 60% of Slow's normal Initiative-reduction magnitude to each target."
 					}
 				},

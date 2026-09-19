@@ -179,6 +179,11 @@ bool BattleCast::getSelectiveDispel() const
 	return selectiveDispel;
 }
 
+bool BattleCast::getMassSlow() const
+{
+	return massSlow;
+}
+
 BattleCast::OptionalValue64 BattleCast::getEffectValue() const
 {
 	return effectValue;
@@ -212,6 +217,11 @@ void BattleCast::setOvercharge(BattleCast::Value value)
 void BattleCast::setSelectiveDispel(bool value)
 {
 	selectiveDispel = value;
+}
+
+void BattleCast::setMassSlow(bool value)
+{
+	massSlow = value;
 }
 
 void BattleCast::setEffectValue(BattleCast::Value64 value)
@@ -326,6 +336,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	}
 	overcharge = event->getOvercharge().value_or(0);
 	selectiveDispel = event->getSelectiveDispel();
+	massSlow = event->getMassSlow();
 	{
 		const auto value = event->getEffectValue();
 		if(value.has_value())
@@ -468,7 +479,7 @@ bool BaseMechanics::isSmart() const
 
 bool BaseMechanics::isMassive() const
 {
-	if(forceMassive)
+	if(forceMassive || isMassSlow())
 		return true;
 
 	const CSpell::TargetInfo targetInfo(owner, getRangeLevel(), mode);
@@ -551,6 +562,16 @@ IBattleCast::Value BaseMechanics::getEffectLevel() const
 
 IBattleCast::Value BaseMechanics::getRangeLevel() const
 {
+	// Temporal Field owns Slow's mass mode explicitly. At Expert mastery the
+	// legacy spell data would otherwise make the "Ordinary" branch a full-power,
+	// single-cost mass cast and bypass the perk's saved budget and trade-off.
+	// Preserve Expert effect magnitude while using Advanced targeting unless
+	// this cast selected the authoritative Temporal Field mode.
+	if(!isMassSlow() && owner->getId() == SpellID::SLOW && cb->getBattle()
+		&& newHorizonsMagic::rulesActive(cb->getBattle()->getMagicRules()))
+	{
+		return std::min<IBattleCast::Value>(rangeLevel, 2);
+	}
 	return rangeLevel;
 }
 
@@ -582,6 +603,16 @@ IBattleCast::Value BaseMechanics::getOvercharge() const
 bool BaseMechanics::isSelectiveDispel() const
 {
 	return selectiveDispel;
+}
+
+bool BaseMechanics::isMassSlow() const
+{
+	return massSlow;
+}
+
+bool BaseMechanics::usesNewHorizonsMagic() const
+{
+	return cb->getBattle() && newHorizonsMagic::rulesActive(cb->getBattle()->getMagicRules());
 }
 
 PlayerColor BaseMechanics::getCasterColor() const

@@ -34,6 +34,9 @@ public:
 	/// Requests the target-aware Selective Dispel mode. The server validates
 	/// the spell, hero and saved perk before accepting this optional mode.
 	bool spellSelectiveDispel = false;
+	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
+	/// The server validates perk ownership, availability and cost.
+	bool spellMassSlow = false;
 	HeroCommand command = HeroCommand::NONE;
 
 	BattleAction();
@@ -76,6 +79,9 @@ public:
 		if(h.saving && spellSelectiveDispel
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SELECTIVE_DISPEL))
 			throw std::runtime_error("Cannot serialize Selective Dispel to an older protocol");
+		if(h.saving && spellMassSlow
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
+			throw std::runtime_error("Cannot serialize Temporal Field to an older protocol");
 		h & side;
 		h & stackNumber;
 		h & actionType;
@@ -96,6 +102,14 @@ public:
 		else if(!h.saving)
 		{
 			spellSelectiveDispel = false;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
+		{
+			h & spellMassSlow;
+		}
+		else if(!h.saving)
+		{
+			spellMassSlow = false;
 		}
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
 		{

@@ -453,7 +453,7 @@ TEST_F(NewHorizonsMagicAITest, SelectiveDispelPreservesBeneficialEffectWhenFullD
 	attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
 	const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
 	ASSERT_GE(sorcery, 0);
-	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 1, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 2, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->applyPerkSelection({
 		"new-horizons:sorceryMagic",
 		"new-horizons:sorceryMagic.selectiveDispel"});
@@ -539,6 +539,124 @@ TEST_F(NewHorizonsMagicAITest, SelectiveDispelPreservesBeneficialEffectWhenFullD
 	EXPECT_EQ(attackerSideHero->mana, 1000);
 	EXPECT_TRUE(active->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS)))));
 	EXPECT_TRUE(active->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::CURSE)))));
+}
+
+TEST_F(NewHorizonsMagicAITest, TemporalFieldAIChoosesMassSlowWithoutMutatingLiveBattle)
+{
+	useCommands = false;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::SLOW);
+	const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 2, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:sorceryMagic",
+		"new-horizons:sorceryMagic.temporalField"});
+	attackerSideHero->mana = 1000;
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 1);
+	auto * enemyA = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(10, 5), 1000);
+	auto * enemyB = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 1000);
+	auto * enemyC = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(14, 5), 1000);
+	auto * enemyD = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(10, 7), 1000);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemyA && unit != enemyB && unit != enemyC && unit != enemyD)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	ASSERT_EQ(active->getMovementRange(), 0);
+	ASSERT_FALSE(active->canShoot());
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto manaBefore = attackerSideHero->mana;
+	const auto enemyAHealthBefore = enemyA->getAvailableHealth();
+	const auto enemyBHealthBefore = enemyB->getAvailableHealth();
+	const bool temporalFieldBefore = battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed;
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(action.spell, SpellID::SLOW);
+	EXPECT_TRUE(action.spellMassSlow);
+	ASSERT_EQ(action.target.size(), 1u);
+	EXPECT_FALSE(action.target.front().hexValue.isValid());
+	EXPECT_LT(action.target.front().unitValue, 0);
+	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed, temporalFieldBefore);
+	EXPECT_EQ(enemyA->getAvailableHealth(), enemyAHealthBefore);
+	EXPECT_EQ(enemyB->getAvailableHealth(), enemyBHealthBefore);
+	const auto slowEffect = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SLOW)));
+	EXPECT_FALSE(enemyA->hasBonus(slowEffect));
+	EXPECT_FALSE(enemyB->hasBonus(slowEffect));
+	EXPECT_FALSE(enemyC->hasBonus(slowEffect));
+	EXPECT_FALSE(enemyD->hasBonus(slowEffect));
+}
+
+TEST_F(NewHorizonsMagicAITest, TemporalFieldAIRespectsConsumedBudget)
+{
+	useCommands = false;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::SLOW);
+	const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 2, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:sorceryMagic",
+		"new-horizons:sorceryMagic.temporalField"});
+	attackerSideHero->mana = 1000;
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(10, 5), 1000);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed = true;
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, SpellID::SLOW);
+	EXPECT_FALSE(callback->submitted.front().spellMassSlow);
 }
 
 TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)

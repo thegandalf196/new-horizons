@@ -12,6 +12,7 @@
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "MagicArrowOverchargeWindow.h"
 #include "SelectiveDispelWindow.h"
+#include "TemporalFieldWindow.h"
 
 #include <functional>
 #include <optional>
@@ -28,6 +29,7 @@ class BattleInterface;
 using MagicArrowOverchargeFactory = std::function<std::optional<MagicArrowOverchargeContext>(
 	const BattleAction &, const BattleHex &, const CStack *)>;
 using SelectiveDispelFactory = std::function<std::optional<SelectiveDispelContext>(const BattleAction &, const CStack *)>;
+using TemporalFieldFactory = std::function<std::optional<TemporalFieldContext>(const BattleAction &)>;
 
 /// Class that controls actions that can be performed by player, e.g. moving stacks, attacking, etc
 /// As well as all relevant feedback for these actions in user interface
@@ -46,6 +48,8 @@ class BattleActionsController
 	MagicArrowOverchargeFactory magicArrowOverchargeFactory;
 	/// Optional post-target Selective Dispel prompt.
 	SelectiveDispelFactory selectiveDispelFactory;
+	/// Optional pre-target Temporal Field choice for Sorcery Slow.
+	TemporalFieldFactory temporalFieldFactory;
 
 	// targets of multi-target spells cast by monsters
 	std::vector<BattleHex> monsterSpellTargets;
@@ -128,6 +132,11 @@ public:
 	/// the compact overcharge window.
 	void setMagicArrowOverchargeFactory(MagicArrowOverchargeFactory factory);
 	void setSelectiveDispelFactory(SelectiveDispelFactory factory);
+	void setTemporalFieldFactory(TemporalFieldFactory factory);
+
+	/// Continue the ordinary Slow path after the Temporal Field modal chose
+	/// Ordinary. This preserves the existing target-selection behavior.
+	bool continueOrdinarySpellcast();
 
 	/// ends casting spell (eg. when spell has been cast or canceled)
 	void endCastingSpell();

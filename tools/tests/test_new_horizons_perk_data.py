@@ -16,6 +16,7 @@ RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.selectiveDispel",
+    "new-horizons:sorceryMagic.temporalField",
     "new-horizons:sorceryMagic.temporalist",
     "new-horizons:sorceryMagic.teleporter",
 }

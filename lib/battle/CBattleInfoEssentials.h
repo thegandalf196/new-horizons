@@ -84,6 +84,7 @@ public:
 	TownFortifications battleGetFortifications() const;
 	bool battleHasHero(BattleSide side) const;
 	int32_t battleCastSpells(BattleSide side) const; //how many spells has given side cast
+	bool battleWasTemporalFieldUsed(BattleSide side) const;
 	const CGHeroInstance * battleGetFightingHero(BattleSide side) const; //deprecated for players callback, easy to get wrong
 	const CArmedInstance * battleGetArmyObject(BattleSide side) const;
 	InfoAboutHero battleGetHeroInfo(BattleSide side) const;

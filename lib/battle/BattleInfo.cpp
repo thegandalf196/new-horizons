@@ -632,6 +632,11 @@ int32_t BattleInfo::getEnchanterCounter(BattleSide side) const
 	return getSide(side).enchanterCounter;
 }
 
+bool BattleInfo::getTemporalFieldUsed(BattleSide side) const
+{
+	return getSide(side).temporalFieldUsed;
+}
+
 const IBonusBearer * BattleInfo::getBonusBearer() const
 {
 	return this;

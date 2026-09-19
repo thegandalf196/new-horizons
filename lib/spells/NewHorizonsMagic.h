@@ -23,6 +23,10 @@ constexpr int DIRECT_DAMAGE_RULESET_VERSION = 2;
 /// identity and requires non-NH common coverage. Present NH common rows require
 /// v2; absent newly installed NH content never invalidates an older roster.
 DLL_LINKAGE void validateRules(const JsonNode & rules);
+/// True when the supplied saved battle snapshot uses New Horizons magic.
+/// This is intentionally state-backed; installed content alone must not alter
+/// legacy saves.
+DLL_LINKAGE bool rulesActive(const JsonNode & rules);
 /// Read only the supplied saved roster using the spell's canonical scoped key.
 /// Absent snapshots/rows/formulas return null; no installed definition fallback.
 DLL_LINKAGE std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, const std::string & scopedIdentity);

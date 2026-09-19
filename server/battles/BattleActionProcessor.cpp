@@ -125,6 +125,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	spells::BattleCast parameters(&battle, h, spells::Mode::HERO, s);
 	parameters.setOvercharge(ba.spellOvercharge);
 	parameters.setSelectiveDispel(ba.spellSelectiveDispel);
+	parameters.setMassSlow(ba.spellMassSlow);
 
 	spells::detail::ProblemImpl problem;
 

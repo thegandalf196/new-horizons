@@ -358,11 +358,14 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 	std::set<ui32> reflectedCres; // creatures that reflected the spell (e.g. Magic Mirror spell)
 	si32 casterStack = -1; // -1 if not cated by creature, >=0 caster stack ID
 	bool castByHero = true; //if true - spell has been cast by hero, otherwise by a creature
+	bool temporalFieldCast = false; // consumes the saved once-per-combat Sorcery Mass Slow budget
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && temporalFieldCast && !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
+			throw std::runtime_error("Cannot serialize Temporal Field cast to an older protocol");
 		h & battleID;
 		h & side;
 		h & spellID;
@@ -374,6 +377,14 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 		h & casterStack;
 		h & castByHero;
 		h & activeCast;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
+		{
+			h & temporalFieldCast;
+		}
+		else if(!h.saving)
+		{
+			temporalFieldCast = false;
+		}
 		assert(battleID != BattleID::NONE);
 	}
 };
