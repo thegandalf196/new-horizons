@@ -60,7 +60,8 @@ void PerkState::select(const std::string & skillId, const std::string & perkId, 
 	if(currentRank < 0 || currentRank > 3)
 		throw std::runtime_error("Invalid New Horizons skill rank");
 	const auto definition = perkDefinition(rules, skillId, perkId);
-	if(!definition || currentRank < perkRequiredRank(definition->requiredRank) || hasSelection(skillId, perkId))
+	if(!definition || definition->effect["status"].String() != "active"
+		|| currentRank < perkRequiredRank(definition->requiredRank) || hasSelection(skillId, perkId))
 		throw std::runtime_error("Unavailable New Horizons perk selection");
 	const auto count = std::count_if(selected.begin(), selected.end(), [&](const auto & entry)
 	{
@@ -109,6 +110,11 @@ std::vector<PerkOfferCandidate> PerkState::prepareOffer(
 			continue;
 		for(const auto & perkNode : skillNode["perks"].Vector())
 		{
+			// Planned registry entries are deliberately retained in the saved rules
+			// snapshot for forward compatibility, but they are not mechanics. Do not
+			// present them as level-up choices before their server-side effect exists.
+			if(perkNode["effect"]["status"].String() != "active")
+				continue;
 			const auto & perkId = perkNode["id"].String();
 			if(hasSelection(skillId, perkId))
 				continue;
