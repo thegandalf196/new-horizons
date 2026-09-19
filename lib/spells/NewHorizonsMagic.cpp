@@ -283,6 +283,14 @@ MagicArrowOverchargeModifiers magicArrowOverchargeModifiers(const CGHeroInstance
 	return result;
 }
 
+int spellDurationBonus(const CGHeroInstance * hero, SpellID spell)
+{
+	if(spell == SpellID(SpellID::SLOW) && hero
+		&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalist"))
+		return 1;
+	return 0;
+}
+
 int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spellPower,
 	MagicArrowOverchargeModifiers modifiers)
 {

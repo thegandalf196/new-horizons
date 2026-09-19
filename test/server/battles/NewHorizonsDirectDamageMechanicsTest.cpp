@@ -330,6 +330,71 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuth
 	EXPECT_EQ(attackerSideHero->mana, mana - 10);
 }
 
+TEST_F(NewHorizonsDirectDamageMechanicsTest, TemporalistExtendsOnlyOrdinaryHeroSlowDuration)
+{
+	forceRealHeroScale = true;
+	usePerks = true;
+	prepare();
+	const auto * slow = SpellID(SpellID::SLOW).toSpell();
+	attackerSideHero->addSpellToSpellbook(slow->getId());
+	attackerSideHero->setSecSkillLevel(
+		SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 1, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection(
+		{"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalist"});
+	const int ordinaryDuration = attackerSideHero->getEnchantPower(slow);
+
+	spells::BattleCast ordinary(battle(), attackerSideHero, spells::Mode::HERO, slow);
+	EXPECT_EQ(slow->battleMechanics(&ordinary)->getEffectDuration(), ordinaryDuration + 1);
+
+	spells::BattleCast explicitDuration(battle(), attackerSideHero, spells::Mode::HERO, slow);
+	explicitDuration.setEffectDuration(ordinaryDuration + 7);
+	EXPECT_EQ(slow->battleMechanics(&explicitDuration)->getEffectDuration(), ordinaryDuration + 7);
+
+	ControlledCaster nonHero(attackerSideHero);
+	spells::BattleCast passive(battle(), &nonHero, spells::Mode::PASSIVE, slow);
+	EXPECT_EQ(slow->battleMechanics(&passive)->getEffectDuration(), ordinaryDuration);
+
+	attackerSideHero->setSecSkillLevel(
+		SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 0, ChangeValueMode::ABSOLUTE);
+	spells::BattleCast rankLost(battle(), attackerSideHero, spells::Mode::HERO, slow);
+	EXPECT_EQ(slow->battleMechanics(&rankLost)->getEffectDuration(), ordinaryDuration);
+	attackerSideHero->setSecSkillLevel(
+		SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 1, ChangeValueMode::ABSOLUTE);
+
+	spells::BattleCast otherSpell(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	EXPECT_EQ(spell->battleMechanics(&otherSpell)->getEffectDuration(), attackerSideHero->getEnchantPower(spell));
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = slow->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	const auto slowBonuses = target->getAllBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SLOW))));
+	ASSERT_FALSE(slowBonuses->empty());
+	EXPECT_EQ(slowBonuses->front()->turnsRemain, ordinaryDuration + 1);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, PlannedTemporalistInAnOlderSnapshotStaysInactive)
+{
+	forceRealHeroScale = true;
+	usePerks = true;
+	prepare();
+	const auto * slow = SpellID(SpellID::SLOW).toSpell();
+	attackerSideHero->setSecSkillLevel(
+		SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 1, ChangeValueMode::ABSOLUTE);
+	auto & saved = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+	for(auto & perk : saved.rules["skills"]["new-horizons:sorceryMagic"]["perks"].Vector())
+		if(perk["id"].String() == "new-horizons:sorceryMagic.temporalist")
+			perk["effect"]["status"].String() = "planned";
+	attackerSideHero->applyPerkSelection(
+		{"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalist"});
+
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, slow);
+	EXPECT_EQ(slow->battleMechanics(&cast)->getEffectDuration(), attackerSideHero->getEnchantPower(slow));
+}
+
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsOutOfRangeAndLegacyOverchargeAtomically)
 {
 	forceRealHeroScale = true;

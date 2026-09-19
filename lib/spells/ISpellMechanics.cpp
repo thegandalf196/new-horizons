@@ -306,6 +306,13 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		auto value = event->getEffectDuration();
 		effectDuration = value.value_or(caster->getEnchantPower(owner));
 		vstd::amax(effectDuration, 0); //???
+		if(!value.has_value())
+		{
+			const int bonus = newHorizonsMagic::spellDurationBonus(
+				dynamic_cast<const CGHeroInstance *>(caster), owner->getId());
+			if(effectDuration <= std::numeric_limits<decltype(effectDuration)>::max() - bonus)
+				effectDuration += bonus;
+		}
 	}
 	overcharge = event->getOvercharge().value_or(0);
 	{

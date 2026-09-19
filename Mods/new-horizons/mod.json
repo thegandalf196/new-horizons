@@ -2789,7 +2789,7 @@
 								"requires": "basic",
 								"description": "Slow lasts 1 additional round.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Slow lasts 1 additional round."
 								}
 							},

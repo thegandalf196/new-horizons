@@ -13,7 +13,10 @@ from jsonschema import Draft4Validator
 
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
-ACTIVE_PERKS = {"new-horizons:sorceryMagic.overcharger"}
+ACTIVE_PERKS = {
+    "new-horizons:sorceryMagic.overcharger",
+    "new-horizons:sorceryMagic.temporalist",
+}
 EXPECTED_SKILLS = (
     "new-horizons:offense",
     "new-horizons:armorer",

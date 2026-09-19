@@ -43,6 +43,10 @@ struct DLL_LINKAGE MagicArrowOverchargeModifiers
 	bool operator==(const MagicArrowOverchargeModifiers &) const = default;
 };
 DLL_LINKAGE MagicArrowOverchargeModifiers magicArrowOverchargeModifiers(const CGHeroInstance * hero);
+/// Returns a saved-perk duration adjustment for an ordinary hero cast.
+/// Explicit BattleCast duration overrides are handled by the caller and must
+/// not be modified by this helper.
+DLL_LINKAGE int spellDurationBonus(const CGHeroInstance * hero, SpellID spell);
 DLL_LINKAGE int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spellPower,
 	MagicArrowOverchargeModifiers modifiers = {});
 /// Returns the raw pre-resistance damage for a legal overcharge selection.
