@@ -95,3 +95,81 @@ TEST(NewHorizonsPerkState, CrossoverRejectsUnknownFieldsAndForgedSelections)
 	invalid["selected"].Vector()[0]["perkId"].String() = "new-horizons:offense.forged";
 	EXPECT_THROW(newHorizonsHeroes::PerkState::fromJson(invalid), std::runtime_error);
 }
+
+TEST(NewHorizonsPerkState, OfferIsDeterministicBoundedAndUsesOnlyLearnedEligibleSkills)
+{
+	auto saved = state();
+	const auto ranks = [](const std::string & skillId)
+	{
+		if(skillId == "new-horizons:offense")
+			return 1;
+		if(skillId == "new-horizons:armorer")
+			return 2;
+		return 0;
+	};
+	const auto first = saved.prepareOffer(ranks, 42);
+	const auto repeated = saved.prepareOffer(ranks, 42);
+	ASSERT_EQ(first, repeated);
+	ASSERT_EQ(first.size(), 2u);
+	for(const auto & candidate : first)
+	{
+		EXPECT_TRUE(candidate.selection.skillId == "new-horizons:offense"
+			|| candidate.selection.skillId == "new-horizons:armorer");
+		EXPECT_LE(candidate.requiredRank, ranks(candidate.selection.skillId));
+		EXPECT_FALSE(candidate.name.empty());
+		EXPECT_FALSE(candidate.description.empty());
+	}
+	for(uint64_t seed = 43; seed < 48; ++seed)
+	{
+		const auto varied = saved.prepareOffer(ranks, seed);
+		ASSERT_EQ(varied.size(), 2u);
+		for(const auto & candidate : varied)
+			EXPECT_LE(candidate.requiredRank, ranks(candidate.selection.skillId));
+	}
+	EXPECT_TRUE(saved.prepareOffer([](const std::string &) { return 0; }, 42).empty());
+}
+
+TEST(NewHorizonsPerkState, AcceptedOfferRevalidatesSnapshotRankDuplicateAndCap)
+{
+	auto saved = state();
+	const auto expert = [](const std::string & skillId)
+	{
+		return skillId == SKILL ? 3 : 0;
+	};
+	auto offer = saved.prepareOffer(expert, 9);
+	ASSERT_EQ(offer.size(), 2u);
+	auto forged = offer;
+	forged[0].description += " forged";
+	EXPECT_THROW(saved.acceptOffer(forged, 0, expert, 9), std::runtime_error);
+	auto duplicate = offer;
+	duplicate[1] = duplicate[0];
+	EXPECT_THROW(saved.acceptOffer(duplicate, 0, expert, 9), std::runtime_error);
+	auto oversized = offer;
+	oversized.push_back(offer[0]);
+	EXPECT_THROW(saved.acceptOffer(oversized, 0, expert, 9), std::runtime_error);
+	EXPECT_THROW(saved.acceptOffer(offer, 2, expert, 9), std::runtime_error);
+	EXPECT_THROW(saved.acceptOffer(offer, 0, [](const std::string &) { return 0; }, 9), std::runtime_error);
+	uint64_t differentSeed = 10;
+	while(differentSeed < 1000 && saved.prepareOffer(expert, differentSeed) == offer)
+		++differentSeed;
+	ASSERT_LT(differentSeed, 1000u);
+	EXPECT_THROW(saved.acceptOffer(offer, 0, expert, differentSeed), std::runtime_error);
+
+	saved.acceptOffer(offer, 0, expert, 9);
+	EXPECT_EQ(saved.selected.size(), 1u);
+	EXPECT_THROW(saved.acceptOffer(offer, 1, expert, 9), std::runtime_error);
+	for(uint64_t seed = 10; saved.selected.size() < 3; ++seed)
+	{
+		auto next = saved.prepareOffer(expert, seed);
+		ASSERT_FALSE(next.empty());
+		saved.acceptOffer(next, 0, expert, seed);
+	}
+	EXPECT_TRUE(saved.prepareOffer(expert, 99).empty());
+}
+
+TEST(NewHorizonsPerkState, LegacyRulesNeverInventAnOffer)
+{
+	newHorizonsHeroes::PerkState legacy;
+	EXPECT_TRUE(legacy.prepareOffer([](const std::string &) { return 3; }, 1).empty());
+	EXPECT_THROW(legacy.acceptOffer({}, 0, [](const std::string &) { return 3; }, 1), std::runtime_error);
+}

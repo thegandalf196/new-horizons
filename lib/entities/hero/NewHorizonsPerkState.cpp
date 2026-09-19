@@ -9,6 +9,7 @@
 #include <map>
 #include <set>
 #include <stdexcept>
+#include <tuple>
 
 namespace newHorizonsHeroes
 {
@@ -69,6 +70,79 @@ void PerkState::select(const std::string & skillId, const std::string & perkId, 
 		throw std::runtime_error("New Horizons perk cap reached for skill");
 	selected.push_back({skillId, perkId});
 	validate();
+}
+
+std::vector<PerkOfferCandidate> PerkState::prepareOffer(
+	const std::function<int(const std::string &)> & rankLookup, uint64_t seed) const
+{
+	validate();
+	if(!usesPerkRules(rules))
+		return {};
+
+	struct RankedCandidate
+	{
+		uint64_t order = 0;
+		PerkOfferCandidate candidate;
+	};
+	std::vector<RankedCandidate> eligible;
+	const auto mix = [seed](std::string_view skillId, std::string_view perkId)
+	{
+		uint64_t value = 1469598103934665603ULL ^ seed;
+		for(const unsigned char c : std::string(skillId) + "\n" + std::string(perkId))
+		{
+			value ^= c;
+			value *= 1099511628211ULL;
+		}
+		return value;
+	};
+
+	for(const auto & [skillId, skillNode] : rules["skills"].Struct())
+	{
+		const int rank = rankLookup(skillId);
+		if(rank <= 0 || rank > 3)
+			continue;
+		const auto selectedForSkill = std::count_if(selected.begin(), selected.end(), [&](const auto & entry)
+		{
+			return entry.skillId == skillId;
+		});
+		if(selectedForSkill >= rules["maxPerksPerSkill"].Integer())
+			continue;
+		for(const auto & perkNode : skillNode["perks"].Vector())
+		{
+			const auto & perkId = perkNode["id"].String();
+			if(hasSelection(skillId, perkId))
+				continue;
+			const int requiredRank = perkRequiredRank(perkNode["requires"].String());
+			if(rank < requiredRank)
+				continue;
+			PerkOfferCandidate candidate{{skillId, perkId}, perkNode["name"].String(),
+				perkNode["description"].String(), requiredRank};
+			eligible.push_back({mix(skillId, perkId), std::move(candidate)});
+		}
+	}
+	std::sort(eligible.begin(), eligible.end(), [](const auto & left, const auto & right)
+	{
+		return std::tie(left.order, left.candidate.selection.skillId, left.candidate.selection.perkId)
+			< std::tie(right.order, right.candidate.selection.skillId, right.candidate.selection.perkId);
+	});
+	std::vector<PerkOfferCandidate> result;
+	const size_t limit = std::min(eligible.size(), static_cast<size_t>(rules["maxPerkChoices"].Integer()));
+	for(size_t i = 0; i < limit; ++i)
+		result.push_back(std::move(eligible[i].candidate));
+	return result;
+}
+
+void PerkState::acceptOffer(const std::vector<PerkOfferCandidate> & offer, size_t choice,
+	const std::function<int(const std::string &)> & rankLookup, uint64_t seed)
+{
+	validate();
+	if(offer.empty() || offer.size() > static_cast<size_t>(PERK_MAX_PERK_CHOICES) || choice >= offer.size())
+		throw std::runtime_error("Invalid New Horizons perk offer selection");
+	if(offer != prepareOffer(rankLookup, seed))
+		throw std::runtime_error("Stale or forged New Horizons perk offer");
+	const auto & selectedCandidate = offer[choice];
+	select(selectedCandidate.selection.skillId, selectedCandidate.selection.perkId,
+		rankLookup(selectedCandidate.selection.skillId));
 }
 
 std::vector<PerkModifier> PerkState::project(
