@@ -112,6 +112,11 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         heroes = settings["properties"]["heroes"]["properties"]
         self.assertEqual(heroes["newHorizonsPerks"], {"$ref": "newHorizonsPerks.json"})
 
+    def test_default_module_carries_canonical_planned_registry(self):
+        module = load("Mods/new-horizons/mod.json")
+        self.assertEqual(module["version"], "0.7.0")
+        self.assertEqual(module["settings"]["heroes"]["newHorizonsPerks"], self.rules)
+
 
 if __name__ == "__main__":
     unittest.main()

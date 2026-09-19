@@ -12,6 +12,7 @@
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsMasteryState.h"
+#include "../entities/hero/NewHorizonsPerkState.h"
 
 #include <vcmi/spells/Caster.h>
 
@@ -207,6 +208,7 @@ public:
 	const JsonNode & getPrimaryGrowthRules() const { return primaryGrowthRules; }
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
+	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
 	std::optional<newHorizonsHeroes::MasteryView> getMasteryView() const;
 	void captureMasteryEligibility(uint32_t nextLevel);
 	void captureMasteryEligibility(uint32_t nextLevel, bool artilleryExpertBeforeGain, bool logisticsExpertBeforeGain = false);
@@ -364,6 +366,8 @@ private:
 	JsonNode capabilityRules;
 	bool masteryRulesCaptured = false;
 	newHorizonsHeroes::MasteryState masteryState;
+	bool perkRulesCaptured = false;
+	newHorizonsHeroes::PerkState perkState;
 	bool primaryGrowthCaptured = false;
 	JsonNode primaryGrowthRules;
 	std::array<int, GameConstants::PRIMARY_SKILLS> lastPrimaryGains{};
@@ -429,9 +433,20 @@ public:
 		else if(!h.saving)
 			masteryState = newHorizonsHeroes::MasteryState();
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PERKS))
+			h & perkState;
+		else
+		{
+			if(h.saving && (newHorizonsHeroes::usesPerkRules(perkState.rules) || !perkState.selected.empty()))
+				throw std::runtime_error("New Horizons perk state requires the new save format");
+			if(!h.saving)
+				perkState = newHorizonsHeroes::PerkState();
+		}
+
 		if(!h.saving)
 		{
 			masteryRulesCaptured = true;
+			perkRulesCaptured = true;
 			primaryGrowthCaptured = true; // Includes old saves: absence is legacy, not a new-game request.
 			capabilityRulesCaptured = true;
 		}

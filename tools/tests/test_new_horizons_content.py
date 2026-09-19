@@ -148,9 +148,10 @@ class NewHorizonsContentTest(unittest.TestCase):
         settings['magic'] = {'newHorizons': self.rules}
         settings['heroes'] = {'newHorizons': load('config/newHorizonsHeroes.json'),
                               'newHorizonsCapabilities': load('config/newHorizonsCapabilities.json'),
-                              'newHorizonsMasteries': load('config/newHorizonsMasteries.json')}
+                              'newHorizonsMasteries': load('config/newHorizonsMasteries.json'),
+                              'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
-        self.assertEqual(module['version'], '0.6.0')
+        self.assertEqual(module['version'], '0.7.0')
         self.assertIn('Magic Arrow', module['description'])
         self.assertIn('Overcharge', module['description'])
         self.assertEqual(module['spellSchools'], load('config/newHorizonsSchools.json'))
@@ -170,8 +171,9 @@ class NewHorizonsContentTest(unittest.TestCase):
     def test_registered_school_skill_graph_and_real_rank_images(self):
         schools = load('config/newHorizonsSchools.json')
         skills = load('config/newHorizonsSkills.json')
+        perk_skills = load('config/newHorizonsPerks.json')['skills']
         self.assertEqual(set(schools), set(SCHOOLS))
-        self.assertEqual(set(skills), {s + 'Magic' for s in SCHOOLS})
+        self.assertEqual({'new-horizons:' + key for key in skills}, set(perk_skills))
         self.assertEqual(self.rules['schools'], ['new-horizons:' + s for s in SCHOOLS])
         for name, school in schools.items():
             with self.subTest(school=name):

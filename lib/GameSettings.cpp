@@ -65,6 +65,7 @@ const std::vector<GameSettings::SettingOption> GameSettings::settingProperties =
 		{EGameSettings::HEROES_NEW_HORIZONS,                             "heroes",    "newHorizons"                         },
 		{EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,                "heroes",    "newHorizonsCapabilities"             },
 		{EGameSettings::HEROES_NEW_HORIZONS_MASTERIES,                   "heroes",    "newHorizonsMasteries"                },
+		{EGameSettings::HEROES_NEW_HORIZONS_PERKS,                       "heroes",    "newHorizonsPerks"                    },
 		{EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES,               "creatures", "newHorizonsCategories"               },
 		{EGameSettings::COMBAT_LAYOUTS,                                   "combat",    "layouts"                              },
 		{EGameSettings::COMBAT_ONE_HEX_TRIGGERS_OBSTACLES,                "combat",    "oneHexTriggersObstacles"              },
@@ -208,7 +209,9 @@ const JsonNode & GameSettings::getValue(EGameSettings option) const
 {
 	auto index = static_cast<size_t>(option);
 
-	assert(option == EGameSettings::MAGIC_NEW_HORIZONS || !actualSettings.at(index).isNull());
+	assert(option == EGameSettings::MAGIC_NEW_HORIZONS
+		|| option == EGameSettings::HEROES_NEW_HORIZONS_PERKS
+		|| !actualSettings.at(index).isNull());
 	return actualSettings.at(index);
 }
 

@@ -103,6 +103,7 @@ public:
 	virtual const JsonNode & getHeroDevelopmentRules() const;
 	virtual const JsonNode & getHeroCapabilityRules() const;
 	virtual const JsonNode & getHeroMasteryRules() const;
+	virtual const JsonNode & getHeroPerkRules() const;
 	virtual const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const;
 	/// Actual saved world only; absent/unmapped creatures have no category.
 	virtual std::optional<newHorizonsCreatures::CreatureCategoryView> getCreatureCategory(CreatureID creature) const;

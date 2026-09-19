@@ -336,6 +336,8 @@ JsonNode CampaignState::crossoverSerialize(CGHeroInstance * hero) const
 		node["capabilityRules"] = hero->capabilityRules;
 	if(newHorizonsHeroes::usesRules(hero->masteryState.rules))
 		node["masteryState"] = hero->masteryState.toJson();
+	if(newHorizonsHeroes::usesPerkRules(hero->perkState.rules))
+		node["perkState"] = hero->perkState.toJson();
 	node.setModScope(ModScope::scopeGame());
 	logGlobal->info(node.toString());
 	return node;
@@ -355,6 +357,8 @@ std::shared_ptr<CGHeroInstance> CampaignState::crossoverDeserialize(const JsonNo
 	hero->capabilityRulesCaptured = true;
 	hero->masteryState = newHorizonsHeroes::MasteryState::fromJson(node["masteryState"]);
 	hero->masteryRulesCaptured = true;
+	hero->perkState = newHorizonsHeroes::PerkState::fromJson(node["perkState"]);
+	hero->perkRulesCaptured = true;
 	hero->refreshMasteryBonuses();
 	hero->nodeHasChanged();
 	if (map)

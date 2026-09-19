@@ -1,4 +1,460 @@
 {
+	"offense": {
+		"name": "Offense",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Melee attacks and retaliations deal +10% physical damage. At subsequent level-ups, Offense has a 10% chance to grant +1 Attack.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Melee attacks and retaliations deal +20% physical damage. Attack-growth chance becomes 20%.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Melee attacks and retaliations deal +30% physical damage. Attack-growth chance becomes 30%.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"armorer": {
+		"name": "Armorer",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Physical creature attacks and retaliations against the hero's army deal 5% less damage. At subsequent level-ups, Armorer has a 10% chance to grant +1 Defense.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Physical creature-attack reduction increases to 10%. Defense-growth chance becomes 20%.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Physical creature-attack reduction increases to 15%. Defense-growth chance becomes 30%.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"archery": {
+		"name": "Archery",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Ranged creature attacks deal +10% physical damage. At subsequent level-ups, Archery has a 10% chance to grant +1 Attack.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Ranged creature attacks deal +20% physical damage. Attack-growth chance becomes 20%.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Ranged creature attacks deal +30% physical damage. Attack-growth chance becomes 30%.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"battlecraft": {
+		"name": "Battlecraft",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "After a friendly stack Waits, its next attack or retaliation before the end of the round deals +5% physical damage. A stack that Defends gains an additional 5% physical creature-damage reduction until its next activation.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "The conditional Wait damage bonus and Defend reduction become 10%.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "The conditional Wait damage bonus and Defend reduction become 15%.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"warMachines": {
+		"name": "War Machines",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "+20 Siege. Grants direct control over the hero's war machines.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "+40 Siege total.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "+60 Siege total.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"discipline": {
+		"name": "Discipline",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Friendly army receives +1 Morale.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Friendly army receives +2 Morale total.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Friendly army receives +3 Morale total.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"recruitment": {
+		"name": "Recruitment",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Muster once per week in a friendly town: add 2 Core creatures to one Core dwelling's recruitment pool.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Muster once per week: add either 4 Core creatures to one Core dwelling or 1 Elite creature to one Elite dwelling.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Muster once per week: add either 6 Core creatures, 2 Elite creatures, or 1 Champion creature to one corresponding dwelling pool.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"command": {
+		"name": "Command",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Attribute-derived components of Orders operate at 110% Command Efficiency.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Attribute-derived components operate at 120% Command Efficiency.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Attribute-derived components operate at 130% Command Efficiency.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
 	"lightMagic": {
 		"name": "Light Magic",
 		"specialty": [],
@@ -55,192 +511,6 @@
 				"schoolMastery": {
 					"type": "MAGIC_SCHOOL_SKILL",
 					"subtype": "new-horizons:light",
-					"valueType": "BASE_NUMBER",
-					"val": 3
-				}
-			}
-		}
-	},
-	"natureMagic": {
-		"name": "Nature Magic",
-		"specialty": [],
-		"tags": {
-			"spellSchool": true
-		},
-		"gainChance": {
-			"might": 2,
-			"magic": 6
-		},
-		"basic": {
-			"description": "Basic Nature Magic grants Basic mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
-			"images": {
-				"small": "NH_natureMagic_basic_small.png",
-				"medium": "NH_natureMagic_basic_medium.png",
-				"large": "NH_natureMagic_basic_large.png",
-				"scenarioBonus": "NH_natureMagic_basic_scenarioBonus.png"
-			},
-			"effects": {
-				"schoolMastery": {
-					"type": "MAGIC_SCHOOL_SKILL",
-					"subtype": "new-horizons:nature",
-					"valueType": "BASE_NUMBER",
-					"val": 1
-				}
-			}
-		},
-		"advanced": {
-			"description": "Advanced Nature Magic grants Advanced mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
-			"images": {
-				"small": "NH_natureMagic_advanced_small.png",
-				"medium": "NH_natureMagic_advanced_medium.png",
-				"large": "NH_natureMagic_advanced_large.png",
-				"scenarioBonus": "NH_natureMagic_advanced_scenarioBonus.png"
-			},
-			"effects": {
-				"schoolMastery": {
-					"type": "MAGIC_SCHOOL_SKILL",
-					"subtype": "new-horizons:nature",
-					"valueType": "BASE_NUMBER",
-					"val": 2
-				}
-			}
-		},
-		"expert": {
-			"description": "Expert Nature Magic grants Expert mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
-			"images": {
-				"small": "NH_natureMagic_expert_small.png",
-				"medium": "NH_natureMagic_expert_medium.png",
-				"large": "NH_natureMagic_expert_large.png",
-				"scenarioBonus": "NH_natureMagic_expert_scenarioBonus.png"
-			},
-			"effects": {
-				"schoolMastery": {
-					"type": "MAGIC_SCHOOL_SKILL",
-					"subtype": "new-horizons:nature",
-					"valueType": "BASE_NUMBER",
-					"val": 3
-				}
-			}
-		}
-	},
-	"sorceryMagic": {
-		"name": "Sorcery Magic",
-		"specialty": [],
-		"tags": {
-			"spellSchool": true
-		},
-		"gainChance": {
-			"might": 2,
-			"magic": 6
-		},
-		"basic": {
-			"description": "Basic Sorcery Magic grants Basic mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
-			"images": {
-				"small": "NH_sorceryMagic_basic_small.png",
-				"medium": "NH_sorceryMagic_basic_medium.png",
-				"large": "NH_sorceryMagic_basic_large.png",
-				"scenarioBonus": "NH_sorceryMagic_basic_scenarioBonus.png"
-			},
-			"effects": {
-				"schoolMastery": {
-					"type": "MAGIC_SCHOOL_SKILL",
-					"subtype": "new-horizons:sorcery",
-					"valueType": "BASE_NUMBER",
-					"val": 1
-				}
-			}
-		},
-		"advanced": {
-			"description": "Advanced Sorcery Magic grants Advanced mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
-			"images": {
-				"small": "NH_sorceryMagic_advanced_small.png",
-				"medium": "NH_sorceryMagic_advanced_medium.png",
-				"large": "NH_sorceryMagic_advanced_large.png",
-				"scenarioBonus": "NH_sorceryMagic_advanced_scenarioBonus.png"
-			},
-			"effects": {
-				"schoolMastery": {
-					"type": "MAGIC_SCHOOL_SKILL",
-					"subtype": "new-horizons:sorcery",
-					"valueType": "BASE_NUMBER",
-					"val": 2
-				}
-			}
-		},
-		"expert": {
-			"description": "Expert Sorcery Magic grants Expert mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
-			"images": {
-				"small": "NH_sorceryMagic_expert_small.png",
-				"medium": "NH_sorceryMagic_expert_medium.png",
-				"large": "NH_sorceryMagic_expert_large.png",
-				"scenarioBonus": "NH_sorceryMagic_expert_scenarioBonus.png"
-			},
-			"effects": {
-				"schoolMastery": {
-					"type": "MAGIC_SCHOOL_SKILL",
-					"subtype": "new-horizons:sorcery",
-					"valueType": "BASE_NUMBER",
-					"val": 3
-				}
-			}
-		}
-	},
-	"havocMagic": {
-		"name": "Havoc Magic",
-		"specialty": [],
-		"tags": {
-			"spellSchool": true
-		},
-		"gainChance": {
-			"might": 2,
-			"magic": 6
-		},
-		"basic": {
-			"description": "Basic Havoc Magic grants Basic mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
-			"images": {
-				"small": "NH_havocMagic_basic_small.png",
-				"medium": "NH_havocMagic_basic_medium.png",
-				"large": "NH_havocMagic_basic_large.png",
-				"scenarioBonus": "NH_havocMagic_basic_scenarioBonus.png"
-			},
-			"effects": {
-				"schoolMastery": {
-					"type": "MAGIC_SCHOOL_SKILL",
-					"subtype": "new-horizons:havoc",
-					"valueType": "BASE_NUMBER",
-					"val": 1
-				}
-			}
-		},
-		"advanced": {
-			"description": "Advanced Havoc Magic grants Advanced mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
-			"images": {
-				"small": "NH_havocMagic_advanced_small.png",
-				"medium": "NH_havocMagic_advanced_medium.png",
-				"large": "NH_havocMagic_advanced_large.png",
-				"scenarioBonus": "NH_havocMagic_advanced_scenarioBonus.png"
-			},
-			"effects": {
-				"schoolMastery": {
-					"type": "MAGIC_SCHOOL_SKILL",
-					"subtype": "new-horizons:havoc",
-					"valueType": "BASE_NUMBER",
-					"val": 2
-				}
-			}
-		},
-		"expert": {
-			"description": "Expert Havoc Magic grants Expert mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
-			"images": {
-				"small": "NH_havocMagic_expert_small.png",
-				"medium": "NH_havocMagic_expert_medium.png",
-				"large": "NH_havocMagic_expert_large.png",
-				"scenarioBonus": "NH_havocMagic_expert_scenarioBonus.png"
-			},
-			"effects": {
-				"schoolMastery": {
-					"type": "MAGIC_SCHOOL_SKILL",
-					"subtype": "new-horizons:havoc",
 					"valueType": "BASE_NUMBER",
 					"val": 3
 				}
@@ -309,6 +579,192 @@
 			}
 		}
 	},
+	"natureMagic": {
+		"name": "Nature Magic",
+		"specialty": [],
+		"tags": {
+			"spellSchool": true
+		},
+		"gainChance": {
+			"might": 2,
+			"magic": 6
+		},
+		"basic": {
+			"description": "Basic Nature Magic grants Basic mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_natureMagic_basic_small.png",
+				"medium": "NH_natureMagic_basic_medium.png",
+				"large": "NH_natureMagic_basic_large.png",
+				"scenarioBonus": "NH_natureMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:nature",
+					"valueType": "BASE_NUMBER",
+					"val": 1
+				}
+			}
+		},
+		"advanced": {
+			"description": "Advanced Nature Magic grants Advanced mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_natureMagic_advanced_small.png",
+				"medium": "NH_natureMagic_advanced_medium.png",
+				"large": "NH_natureMagic_advanced_large.png",
+				"scenarioBonus": "NH_natureMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:nature",
+					"valueType": "BASE_NUMBER",
+					"val": 2
+				}
+			}
+		},
+		"expert": {
+			"description": "Expert Nature Magic grants Expert mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_natureMagic_expert_small.png",
+				"medium": "NH_natureMagic_expert_medium.png",
+				"large": "NH_natureMagic_expert_large.png",
+				"scenarioBonus": "NH_natureMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:nature",
+					"valueType": "BASE_NUMBER",
+					"val": 3
+				}
+			}
+		}
+	},
+	"havocMagic": {
+		"name": "Havoc Magic",
+		"specialty": [],
+		"tags": {
+			"spellSchool": true
+		},
+		"gainChance": {
+			"might": 2,
+			"magic": 6
+		},
+		"basic": {
+			"description": "Basic Havoc Magic grants Basic mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_havocMagic_basic_small.png",
+				"medium": "NH_havocMagic_basic_medium.png",
+				"large": "NH_havocMagic_basic_large.png",
+				"scenarioBonus": "NH_havocMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:havoc",
+					"valueType": "BASE_NUMBER",
+					"val": 1
+				}
+			}
+		},
+		"advanced": {
+			"description": "Advanced Havoc Magic grants Advanced mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_havocMagic_advanced_small.png",
+				"medium": "NH_havocMagic_advanced_medium.png",
+				"large": "NH_havocMagic_advanced_large.png",
+				"scenarioBonus": "NH_havocMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:havoc",
+					"valueType": "BASE_NUMBER",
+					"val": 2
+				}
+			}
+		},
+		"expert": {
+			"description": "Expert Havoc Magic grants Expert mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_havocMagic_expert_small.png",
+				"medium": "NH_havocMagic_expert_medium.png",
+				"large": "NH_havocMagic_expert_large.png",
+				"scenarioBonus": "NH_havocMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:havoc",
+					"valueType": "BASE_NUMBER",
+					"val": 3
+				}
+			}
+		}
+	},
+	"sorceryMagic": {
+		"name": "Sorcery Magic",
+		"specialty": [],
+		"tags": {
+			"spellSchool": true
+		},
+		"gainChance": {
+			"might": 2,
+			"magic": 6
+		},
+		"basic": {
+			"description": "Basic Sorcery Magic grants Basic mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_sorceryMagic_basic_small.png",
+				"medium": "NH_sorceryMagic_basic_medium.png",
+				"large": "NH_sorceryMagic_basic_large.png",
+				"scenarioBonus": "NH_sorceryMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:sorcery",
+					"valueType": "BASE_NUMBER",
+					"val": 1
+				}
+			}
+		},
+		"advanced": {
+			"description": "Advanced Sorcery Magic grants Advanced mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_sorceryMagic_advanced_small.png",
+				"medium": "NH_sorceryMagic_advanced_medium.png",
+				"large": "NH_sorceryMagic_advanced_large.png",
+				"scenarioBonus": "NH_sorceryMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:sorcery",
+					"valueType": "BASE_NUMBER",
+					"val": 2
+				}
+			}
+		},
+		"expert": {
+			"description": "Expert Sorcery Magic grants Expert mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+			"images": {
+				"small": "NH_sorceryMagic_expert_small.png",
+				"medium": "NH_sorceryMagic_expert_medium.png",
+				"large": "NH_sorceryMagic_expert_large.png",
+				"scenarioBonus": "NH_sorceryMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"schoolMastery": {
+					"type": "MAGIC_SCHOOL_SKILL",
+					"subtype": "new-horizons:sorcery",
+					"valueType": "BASE_NUMBER",
+					"val": 3
+				}
+			}
+		}
+	},
 	"chaosMagic": {
 		"name": "Chaos Magic",
 		"specialty": [],
@@ -367,6 +823,975 @@
 					"subtype": "new-horizons:chaos",
 					"valueType": "BASE_NUMBER",
 					"val": 3
+				}
+			}
+		}
+	},
+	"spellcraft": {
+		"name": "Spellcraft",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency. At subsequent level-ups, Spellcraft has a 10% chance to grant +1 Spell Power.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Spell Power-derived components operate at 120%. Spell Power-growth chance becomes 20%.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Spell Power-derived components operate at 130%. Spell Power-growth chance becomes 30%.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"wisdom": {
+		"name": "Wisdom",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Listed spell Mana costs are reduced by 10%. At subsequent level-ups, Wisdom has a 10% chance to grant +1 Knowledge.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Listed spell Mana costs are reduced by 20%. Knowledge-growth chance becomes 20%.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Listed spell Mana costs are reduced by 30%. Knowledge-growth chance becomes 30%.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"warcasting": {
+		"name": "Warcasting",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "After using the Hero Action to cast a Spell, the next Order issued before the end of the next round gains +10 percentage points of efficiency on its attribute-derived components. After using the Hero Action to issue an Order, the next Spell cast before the end of the next round gains +10% to its Spell Power-derived numerical component.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Both alternating bonuses become 20% / +20 percentage points.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Both alternating bonuses become 30% / +30 percentage points.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"logistics": {
+		"name": "Logistics",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Adventure-map Movement increases by 10%.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Adventure-map Movement increases by 20%.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Adventure-map Movement increases by 30%.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"diplomacy": {
+		"name": "Diplomacy",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "An eligible neutral stack with Army Value no greater than 25% of the hero's current army may offer to join for its normal recruitment gold cost.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "The deterministic joining threshold becomes 50% of the hero's Army Value.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "The deterministic joining threshold becomes 75% of the hero's Army Value.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"estates": {
+		"name": "Estates",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "The kingdom receives +125 Gold per day while the hero is active.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Daily income from Estates increases to +250 Gold.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Daily income from Estates increases to +500 Gold.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"learning": {
+		"name": "Learning",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Experience gained by the hero increases by 10%.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Experience gained increases by 20%.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Experience gained increases by 30%.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"luck": {
+		"name": "Luck",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Friendly army receives +1 Luck.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Friendly army receives +2 Luck total.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Friendly army receives +3 Luck total.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"divineMandate": {
+		"name": "Divine Mandate",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Once per combat, when the hero uses the Hero Action to cast a Light Spell, immediately issue one Order; or after using the Hero Action to issue an Order, immediately cast one Light Spell.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Divine Mandate may be used twice per combat.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Divine Mandate may be used three times per combat.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"sylvanLuck": {
+		"name": "Sylvan Luck",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "+1 Luck. Lucky Strike damage multiplier becomes 2.25x.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "+2 Luck total. Lucky Strike multiplier becomes 2.60x.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "+3 Luck total. Lucky Strike multiplier becomes 3.00x.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"metamagic": {
+		"name": "Metamagic",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Once per combat, after using the Hero Action to cast a Spell, immediately cast one additional Spell.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Metamagic may be used twice per combat.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Metamagic may be used three times per combat.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"shroudOfMalassa": {
+		"name": "Shroud of Malassa",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Friendly stacks gain Ghost Walk: they may move through occupied creature hexes but may not end movement on an occupied hex. Flanking melee attacks deal +25% damage.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Ghost Walk remains active. Flanking melee bonus becomes +40%.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Ghost Walk remains active. Flanking melee bonus becomes +60%, and flanking melee attacks deny normal retaliation.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"demonicGating": {
+		"name": "Demonic Gating",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "A friendly Inferno stack may spend its Creature Activation to open a Gate on a legal empty hex within 3 hexes. At the start of the next round, one Core stack from the Demonic Reserve arrives there.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Gating may bring Core or Elite reserve stacks.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Gating may bring Core, Elite, or Champion reserve stacks.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"necromancy": {
+		"name": "Necromancy",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "After victory, raise Skeletons equal to 10% of eligible living enemy creature casualties, rounded down.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Raise Skeletons equal to 20% of eligible casualties.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Raise Skeletons equal to 30% of eligible casualties.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"bloodrage": {
+		"name": "Bloodrage",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Each non-summoned stack destroyed grants surviving friendly stacks +5% damage, cumulative to +20%.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Each destruction grants +8% damage, cumulative to +40%.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Each destruction grants +12% damage, cumulative to +60%.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"bulwarkOfTheMire": {
+		"name": "Bulwark of the Mire",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "While a friendly stack Defends, it gains additional physical damage reduction equal to 5% + 0.10% × Hero Defense until its next activation. The first melee attacker is struck pre-emptively for 50% normal damage.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Bulwark reduction becomes 7.5% + 0.15% × Hero Defense; pre-emptive damage becomes 75%; the stack reflects 25% of actual melee physical damage received after reductions.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Bulwark reduction becomes 10% + 0.20% × Hero Defense; pre-emptive damage becomes 100%; melee reflection becomes 50%.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"elementalRebirth": {
+		"name": "Elemental Rebirth",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "When a non-summoned allied stack is destroyed, summon a random Elite Elemental stack at that position with aggregate HP equal to 25% of the destroyed stack's maximum aggregate HP.",
+			"images": {
+				"small": "NH_lightMagic_basic_small.png",
+				"medium": "NH_lightMagic_basic_medium.png",
+				"large": "NH_lightMagic_basic_large.png",
+				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Reborn Elemental HP becomes 40% of the destroyed stack's maximum aggregate HP.",
+			"images": {
+				"small": "NH_lightMagic_advanced_small.png",
+				"medium": "NH_lightMagic_advanced_medium.png",
+				"large": "NH_lightMagic_advanced_large.png",
+				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Reborn Elemental HP becomes 50% of the destroyed stack's maximum aggregate HP.",
+			"images": {
+				"small": "NH_lightMagic_expert_small.png",
+				"medium": "NH_lightMagic_expert_medium.png",
+				"large": "NH_lightMagic_expert_large.png",
+				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
 				}
 			}
 		}

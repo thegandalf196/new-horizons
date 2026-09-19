@@ -12,6 +12,7 @@
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsMasteryRules.h"
+#include "../entities/hero/NewHorizonsPerkRules.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 #include "../battle/HeroCommand.h"
@@ -164,6 +165,7 @@ public:
 	const JsonNode & getHeroDevelopmentRules() const override { return heroDevelopmentRules; }
 	const JsonNode & getHeroCapabilityRules() const override { return heroCapabilityRules; }
 	const JsonNode & getHeroMasteryRules() const override { return heroMasteryRules; }
+	const JsonNode & getHeroPerkRules() const override { return heroPerkRules; }
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return creatureCategoryRules; }
 
 	StartInfo * getStartInfo()
@@ -305,6 +307,20 @@ public:
 		else if(!h.saving)
 			heroMasteryRules = JsonNode();
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PERKS))
+		{
+			h & heroPerkRules;
+			if(!h.saving)
+				newHorizonsHeroes::validatePerkRules(heroPerkRules);
+		}
+		else
+		{
+			if(h.saving && newHorizonsHeroes::usesPerkRules(heroPerkRules))
+				throw std::runtime_error("New Horizons perk world rules require the new save format");
+			if(!h.saving)
+				heroPerkRules = JsonNode();
+		}
+
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_CATEGORIES))
 		{
 			if(h.saving)
@@ -330,6 +346,7 @@ private:
 	JsonNode heroDevelopmentRules;
 	JsonNode heroCapabilityRules;
 	JsonNode heroMasteryRules;
+	JsonNode heroPerkRules;
 	newHorizonsCreatures::CreatureCategoryRules creatureCategoryRules;
 	// ----- initialization -----
 	void initNewGame(const IMapService * mapService, vstd::RNG & randomGenerator, bool allowSavingRandomMap, Load::ProgressAccumulator & progressTracking);

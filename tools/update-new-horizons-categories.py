@@ -32,6 +32,8 @@ def main():
         metadata = json.loads(base.read_text())
     if metadata['version'] != '0.5.1' or metadata['settings'].get('creatures'):
         parser.error('unexpected base; review category composition first')
+    metadata['settings']['heroes']['newHorizonsPerks'] = json.loads(
+        (ROOT / 'config/newHorizonsPerks.json').read_text())
     rules = json.loads((ROOT / 'config/newHorizonsCreatureCategories.json').read_text())
     texts = json.loads((ROOT / 'config/newHorizonsCreatureCategoryTexts.json').read_text())
     if metadata['translations'].keys() & texts.keys():

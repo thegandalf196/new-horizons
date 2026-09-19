@@ -84,17 +84,22 @@ def main():
                                     'after a level gained with prior Expert Artillery. Not secondary rank four '
                                     'or completion of other mastery families, creature tiers or new spell effects.')
     if preview_output is None:
-        # Default edition matches the active Magic Arrow v2 composition.
+        # Default edition matches the active Magic Arrow v2 composition and
+        # carries the canonical planned perk registry for saved runtime identity.
         # Explicit historical preview/control branches retain their own identities.
-        metadata['version'] = '0.6.0'
+        settings['heroes']['newHorizonsPerks'] = canonical('newHorizonsPerks.json')
+        metadata['version'] = '0.7.0'
         metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
         metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
-        metadata['description'] += ' Includes independently authored quick-save/load buttons and creature ability icons; landscape presentation only.'
+        metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry as planned data; '
+                                    'perk selection and effects require the corresponding runtime systems. '
+                                    'Includes independently authored quick-save/load buttons and creature ability '
+                                    'icons; landscape presentation only.')
     expected = json.dumps(metadata, indent='\t', ensure_ascii=False) + '\n'
     if args.check:
         if not destination.is_file() or destination.read_text(encoding='utf-8') != expected:
             parser.exit(1, 'Curated module metadata is stale; run tools/update-new-horizons-module.py\n')
-        print('PASS: module settings, six school/skill definitions, image mount and metadata match canonical data')
+        print('PASS: module settings, six schools, 31 Skill entities, planned perk registry, image mount and metadata match canonical data')
     else:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(expected, encoding='utf-8')

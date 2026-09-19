@@ -278,20 +278,13 @@ TEST_F(NewHorizonsMasteryTest, LoadedPendingChoiceIsExposedWithoutApplyingAnothe
 	EXPECT_EQ(hero->getMasteryView()->choices.front().selection.option.effect, MasteryEffect::ARTILLERY_PRECISION);
 }
 
-TEST_F(NewHorizonsMasteryTest, OldBinaryAndOldCrossoverRemainAbsentUnderMasteryEnabledWorld)
+TEST_F(NewHorizonsMasteryTest, PerkEnabledWorldRejectsOldBinaryWhileOldCrossoverRemainsAbsent)
 {
 	startGame();
 	ASSERT_FALSE(gameState()->getHeroMasteryRules().isNull());
 	CMemorySerializer memory;
 	memory.oser.version = ESerializationVersion::NEW_HORIZONS_CAPABILITIES;
-	memory.iser.version = ESerializationVersion::NEW_HORIZONS_CAPABILITIES;
-	memory.oser & *gameState();
-	CGameState restored;
-	memory.iser.cb = &restored;
-	memory.iser.loadingGamestate = true;
-	memory.iser & restored;
-	EXPECT_TRUE(restored.getHeroMasteryRules().isNull());
-	EXPECT_FALSE(restored.getHero(attackerSideHero->id)->getMasteryView());
+	EXPECT_THROW(memory.oser & *gameState(), std::runtime_error);
 	CampaignState campaign;
 	auto node = campaign.crossoverSerialize(attackerSideHero);
 	node.Struct().erase("masteryState");

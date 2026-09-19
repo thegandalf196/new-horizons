@@ -427,6 +427,12 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		masteryState.validate();
 		masteryRulesCaptured = true;
 	}
+	if(!isFake && !perkRulesCaptured)
+	{
+		perkState.rules = cb->getHeroPerkRules();
+		perkState.validate();
+		perkRulesCaptured = true;
+	}
 	if(!isFake && !capabilityRulesCaptured)
 	{
 		capabilityRules = newHorizonsHeroes::resolveCapabilityRules(cb->getHeroCapabilityRules(), getHeroClass()->getId());
@@ -2098,4 +2104,3 @@ ArtifactID CGHeroInstance::getReplacedWarMachine(ArtifactID artifactID) const
 	}
 	return replacedArtifact;
 }
-

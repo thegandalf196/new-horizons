@@ -45,11 +45,11 @@ primary growth disabled. Neither flag overwrites a live or frozen module.
 ## Six-school foundation
 
 `tools/update-new-horizons-module.py` generates metadata from canonical
-`config/newHorizons{Combat,Magic,Schools,Skills,Heroes,Capabilities}.json`. Do not edit the inline copy.
+`config/newHorizons{Combat,Magic,Schools,Skills,Heroes,Capabilities,Perks}.json`. Do not edit the inline copy.
 The six-school increment requires its matching runtime, serialization and UI;
 source data or image generation alone is not a gameplay acceptance result.
 
-The active magic snapshot (module 0.6.0, ruleset v2) classifies all 69 existing
+The active snapshot (module 0.7.0; magic ruleset v2) classifies all 69 existing
 common hero spells. Titan's Bolt and creature-only abilities/triggers retain their
 special handling. Magic Arrow remains the real Sorcery level-1 spell and is the
 first enhanced spell: its saved direct-damage row is `{base: 20,
@@ -59,6 +59,10 @@ deliberate investment and is not reduced by Wisdom. The planned fictional spell
 roster—including `new-horizons:magicMissile`—is not registered. New spells/effects,
 qualitative masteries, additional secondary-attribute development and creature
 tiers are subsequent work.
+
+The module also carries the complete planned registry of ten perks for each of
+the 31 canonical Skills. Registry presence establishes stable saved identity and
+validation data only; it does not claim that perk selection or effects are active.
 
 Six new school skills provide actual Basic/Advanced/Expert school bonuses, with
 provisional acquisition weights Might 2 / Magic 6. These ranks are not the later

@@ -52,6 +52,17 @@ const JsonNode & CGameInfoCallback::getHeroMasteryRules() const
 	return gameState().getHeroMasteryRules();
 }
 
+const JsonNode & IGameInfoCallback::getHeroPerkRules() const
+{
+	static const JsonNode legacy;
+	return legacy;
+}
+
+const JsonNode & CGameInfoCallback::getHeroPerkRules() const
+{
+	return gameState().getHeroPerkRules();
+}
+
 const newHorizonsCreatures::CreatureCategoryRules & CGameInfoCallback::getCreatureCategoryRules() const
 {
 	return gameState().getCreatureCategoryRules();

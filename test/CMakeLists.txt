@@ -66,6 +66,8 @@ set(test_SRCS
 		hero/NewHorizonsCapabilityRulesTest.cpp
 		hero/NewHorizonsMasteryRulesTest.cpp
 		hero/NewHorizonsMasteryStateTest.cpp
+		hero/NewHorizonsPerkRulesTest.cpp
+		hero/NewHorizonsPerkStateTest.cpp
 		hero/NewHorizonsLogisticsMasteryStateTest.cpp
 		hero/NewHorizonsLogisticsLevelWireTest.cpp
 		hero/NewHorizonsHeroRulesTest.cpp

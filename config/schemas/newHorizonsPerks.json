@@ -18,7 +18,7 @@
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [1]},
 		"sourceDocument": {"type": "string", "minLength": 1},
-		"sourceSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+		"sourceSha256": {"type": "string", "minLength": 64, "maxLength": 64},
 		"maxSkillChoices": {"type": "integer", "enum": [2]},
 		"maxPerkChoices": {"type": "integer", "enum": [2]},
 		"maxPerksPerSkill": {"type": "integer", "enum": [3]},
@@ -26,10 +26,7 @@
 			"type": "object",
 			"minProperties": 31,
 			"maxProperties": 31,
-			"patternProperties": {
-				"^new-horizons:[a-z][A-Za-z0-9._-]*$": {"$ref": "#/definitions/skill"}
-			},
-			"additionalProperties": false
+			"additionalProperties": {"$ref": "#/definitions/skill"}
 		}
 	},
 	"definitions": {
@@ -56,7 +53,7 @@
 			"required": ["id", "name", "requires", "description", "effect"],
 			"additionalProperties": false,
 			"properties": {
-				"id": {"type": "string", "pattern": "^new-horizons:[a-z][A-Za-z0-9._-]*$"},
+				"id": {"type": "string", "minLength": 1},
 				"name": {"type": "string", "minLength": 1},
 				"requires": {"type": "string", "enum": ["basic", "advanced", "expert"]},
 				"description": {"type": "string", "minLength": 1},
@@ -68,7 +65,7 @@
 			"required": ["id", "name", "domain", "availability", "description", "ranks", "perks"],
 			"additionalProperties": false,
 			"properties": {
-				"id": {"type": "string", "pattern": "^new-horizons:[a-z][A-Za-z0-9._-]*$"},
+				"id": {"type": "string", "minLength": 1},
 				"name": {"type": "string", "minLength": 1},
 				"domain": {"type": "string", "enum": ["Martial", "Magic", "Hybrid", "Strategic", "Faction"]},
 				"availability": {
