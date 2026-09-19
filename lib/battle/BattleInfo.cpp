@@ -637,6 +637,11 @@ bool BattleInfo::getTemporalFieldUsed(BattleSide side) const
 	return getSide(side).temporalFieldUsed;
 }
 
+bool BattleInfo::getCounterspellArmed(BattleSide side) const
+{
+	return getSide(side).counterspellArmed;
+}
+
 const IBonusBearer * BattleInfo::getBonusBearer() const
 {
 	return this;

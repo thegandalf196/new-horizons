@@ -330,6 +330,47 @@ INSTANTIATE_TEST_SUITE_P(Scenarios, AttackFlagDamageTest, ::testing::Values(
 ),
 	[](const ::testing::TestParamInfo<FlagCase> & info) { return info.param.name; });
 
+namespace
+{
+
+struct SylvanLuckCase
+{
+	const char * name;
+	int mastery;
+	int64_t expected;
+};
+
+}
+
+class SylvanLuckDamageTest : public DamageCalculatorTestBase, public ::testing::WithParamInterface<SylvanLuckCase>
+{
+};
+
+TEST_P(SylvanLuckDamageTest, scalesLuckyStrikeAtEveryRank)
+{
+	const auto & scenario = GetParam();
+	setSkill(attackerSideHero, "new-horizons:sylvanLuck", scenario.mastery);
+
+	BattleAttackInfo info(attacker(angel), defender(angel), 0, false);
+	info.luckyStrike = true;
+
+	EXPECT_EQ(battle()->calculateDmgRange(info).damage.min, scenario.expected) << scenario.name;
+}
+
+TEST_F(DamageCalculatorTest, SylvanLuckDoesNotIncreaseOrdinaryAttackDamage)
+{
+	setSkill(attackerSideHero, "new-horizons:sylvanLuck", expert);
+
+	EXPECT_EQ(estimate(attacker(angel), defender(angel)).damage.min, 5000);
+}
+
+INSTANTIATE_TEST_SUITE_P(Scenarios, SylvanLuckDamageTest, ::testing::Values(
+	SylvanLuckCase{"basic", basic, 11250},
+	SylvanLuckCase{"advanced", advanced, 13000},
+	SylvanLuckCase{"expert", expert, 15000}
+),
+	[](const ::testing::TestParamInfo<SylvanLuckCase> & info) { return info.param.name; });
+
 // ---- jousting ----------------------------------------------------------------------------------
 
 /// Champions gain 5% per hex charged, and black knights have exactly as much defense as a champion

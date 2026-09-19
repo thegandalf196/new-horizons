@@ -12,6 +12,7 @@
 #include "NewHorizonsPrimaryProfile.h"
 #include "NewHorizonsPrimaryGrowth.h"
 #include <functional>
+#include <utility>
 #include <vector>
 
 namespace newHorizonsHeroes
@@ -45,4 +46,11 @@ DLL_LINKAGE void validateResolvedHeroRules(const JsonNode & rules);
 DLL_LINKAGE JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass);
 DLL_LINKAGE std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,
 	const std::function<int(SecondarySkill)> & rank);
+
+/// Applies the faction skill promised by the active New Horizons rules to a
+/// newly-created hero's default skill list. Existing saved heroes are not
+/// passed here: their serialized skill identities remain authoritative.
+DLL_LINKAGE std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill(
+	const JsonNode & resolvedRules, bool magicHero, FactionID faction,
+	const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills);
 }

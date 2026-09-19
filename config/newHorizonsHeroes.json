@@ -28,5 +28,28 @@
 		{"skill": "core:armorer", "primary": 1, "chances": [0, 10, 20, 30]},
 		{"skill": "core:sorcery", "primary": 2, "chances": [0, 10, 20, 30]},
 		{"skill": "core:intelligence", "primary": 3, "chances": [0, 10, 20, 30]}
-	]
+	],
+	"startingSkills": {
+		"factionSkills": {
+			"core:castle": "new-horizons:divineMandate",
+			"core:rampart": "new-horizons:sylvanLuck",
+			"core:tower": "new-horizons:metamagic",
+			"core:inferno": "new-horizons:demonicGating",
+			"core:necropolis": "new-horizons:necromancy",
+			"core:dungeon": "new-horizons:shroudOfMalassa",
+			"core:stronghold": "new-horizons:bloodrage",
+			"core:fortress": "new-horizons:bulwarkOfTheMire",
+			"core:conflux": "new-horizons:elementalRebirth"
+		},
+		"legacyAliases": {
+			"core:necropolis": "core:necromancy"
+		},
+		"magic": {
+			"replace": "core:wisdom"
+		},
+		"might": {
+			"replacePosition": "second",
+			"singleSkillFallback": "append"
+		}
+	}
 }

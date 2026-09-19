@@ -75,6 +75,7 @@ public:
 	virtual int32_t getCastSpells(BattleSide side) const = 0;
 	virtual int32_t getEnchanterCounter(BattleSide side) const = 0;
 	virtual bool getTemporalFieldUsed(BattleSide side) const { return false; }
+	virtual bool getCounterspellArmed(BattleSide side) const { return false; }
 
 	virtual ui8 getTacticDist() const = 0;
 	virtual BattleSide getTacticsSide() const = 0;

@@ -189,6 +189,16 @@ BattleCast::OptionalValue64 BattleCast::getEffectValue() const
 	return effectValue;
 }
 
+BattleSide BattleCast::getCounterspellSide() const
+{
+	return counterspellSide;
+}
+
+bool BattleCast::isCounterspellNegated() const
+{
+	return counterspellNegated;
+}
+
 bool BattleCast::isForceMassive() const
 {
 	return forceMassive;
@@ -227,6 +237,12 @@ void BattleCast::setMassSlow(bool value)
 void BattleCast::setEffectValue(BattleCast::Value64 value)
 {
 	effectValue = std::make_optional(value);
+}
+
+void BattleCast::setCounterspell(BattleSide wardSide, bool negated)
+{
+	counterspellSide = wardSide;
+	counterspellNegated = negated;
 }
 
 void BattleCast::applyEffects(ServerCallback * server, const Target & target, bool indirect, bool ignoreImmunity) const
@@ -335,6 +351,8 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		}
 	}
 	overcharge = event->getOvercharge().value_or(0);
+	counterspellSide = event->getCounterspellSide();
+	counterspellNegated = event->isCounterspellNegated();
 	selectiveDispel = event->getSelectiveDispel();
 	massSlow = event->getMassSlow();
 	{
@@ -598,6 +616,16 @@ IBattleCast::Value64 BaseMechanics::getEffectValue() const
 IBattleCast::Value BaseMechanics::getOvercharge() const
 {
 	return overcharge;
+}
+
+BattleSide BaseMechanics::getCounterspellSide() const
+{
+	return counterspellSide;
+}
+
+bool BaseMechanics::isCounterspellNegated() const
+{
+	return counterspellNegated;
 }
 
 bool BaseMechanics::isSelectiveDispel() const

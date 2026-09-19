@@ -98,6 +98,71 @@ TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasCompleteProvisionalProfiles
 	}
 }
 
+TEST(NewHorizonsHeroRulesTest, FactionStartingSkillsReplaceWisdomOrOptionalMightSkill)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	const auto resolvedCleric = resolveHeroRules(rules, HeroClassID(HeroClassID::decode("core:cleric")));
+	const auto cleric = applyStartingFactionSkill(resolvedCleric, true,
+		FactionID(FactionID::decode("core:castle")),
+		{{SecondarySkill::WISDOM, MasteryLevel::BASIC}, {SecondarySkill::FIRST_AID, MasteryLevel::BASIC}});
+	ASSERT_EQ(cleric.size(), 2u);
+	EXPECT_EQ(cleric[0].first, SecondarySkill(SecondarySkill::decode("new-horizons:divineMandate")));
+	EXPECT_EQ(cleric[0].second, MasteryLevel::BASIC);
+	EXPECT_EQ(cleric[1].first, SecondarySkill::FIRST_AID);
+
+	const auto knight = applyStartingFactionSkill(resolvedCleric, false,
+		FactionID(FactionID::decode("core:castle")),
+		{{SecondarySkill::LEADERSHIP, MasteryLevel::BASIC}, {SecondarySkill::ARCHERY, MasteryLevel::BASIC}});
+	ASSERT_EQ(knight.size(), 2u);
+	EXPECT_EQ(knight[0].first, SecondarySkill::LEADERSHIP);
+	EXPECT_EQ(knight[1].first, SecondarySkill(SecondarySkill::decode("new-horizons:divineMandate")));
+
+	const auto oneSkill = applyStartingFactionSkill(resolvedCleric, false,
+		FactionID(FactionID::decode("core:rampart")),
+		{{SecondarySkill::ARCHERY, MasteryLevel::ADVANCED}});
+	ASSERT_EQ(oneSkill.size(), 2u);
+	EXPECT_EQ(oneSkill[0].first, SecondarySkill::ARCHERY);
+	EXPECT_EQ(oneSkill[0].second, MasteryLevel::ADVANCED);
+	EXPECT_EQ(oneSkill[1].first, SecondarySkill(SecondarySkill::decode("new-horizons:sylvanLuck")));
+	EXPECT_EQ(oneSkill[1].second, MasteryLevel::BASIC);
+
+	const auto reversedMagic = applyStartingFactionSkill(resolvedCleric, true,
+		FactionID(FactionID::decode("core:castle")),
+		{{SecondarySkill::FIRST_AID, MasteryLevel::BASIC}, {SecondarySkill::WISDOM, MasteryLevel::ADVANCED}});
+	ASSERT_EQ(reversedMagic.size(), 2u);
+	EXPECT_EQ(reversedMagic[0].first, SecondarySkill::FIRST_AID);
+	EXPECT_EQ(reversedMagic[1].first, SecondarySkill(SecondarySkill::decode("new-horizons:divineMandate")));
+	EXPECT_EQ(reversedMagic[1].second, MasteryLevel::ADVANCED);
+}
+
+TEST(NewHorizonsHeroRulesTest, NecropolisLegacySkillBecomesScopedFactionSkill)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	const auto resolved = resolveHeroRules(rules, HeroClassID(HeroClassID::decode("core:deathknight")));
+	const auto skills = applyStartingFactionSkill(resolved, false,
+		FactionID(FactionID::decode("core:necropolis")),
+		{{SecondarySkill::NECROMANCY, MasteryLevel::BASIC}, {SecondarySkill::RESISTANCE, MasteryLevel::BASIC}});
+	ASSERT_EQ(skills.size(), 2u);
+	EXPECT_EQ(skills[0].first, SecondarySkill(SecondarySkill::decode("new-horizons:necromancy")));
+	EXPECT_EQ(skills[1].first, SecondarySkill::RESISTANCE);
+
+	const auto aliasAndCanonical = applyStartingFactionSkill(resolved, false,
+		FactionID(FactionID::decode("core:necropolis")),
+		{{SecondarySkill::RESISTANCE, MasteryLevel::BASIC},
+		 {SecondarySkill::NECROMANCY, MasteryLevel::BASIC},
+		 {SecondarySkill(SecondarySkill::decode("new-horizons:necromancy")), MasteryLevel::EXPERT}});
+	ASSERT_EQ(aliasAndCanonical.size(), 2u);
+	EXPECT_EQ(aliasAndCanonical[0].first, SecondarySkill::RESISTANCE);
+	EXPECT_EQ(aliasAndCanonical[1].first, SecondarySkill(SecondarySkill::decode("new-horizons:necromancy")));
+	EXPECT_EQ(aliasAndCanonical[1].second, MasteryLevel::EXPERT);
+
+	const auto magicSkills = applyStartingFactionSkill(resolved, true,
+		FactionID(FactionID::decode("core:necropolis")),
+		{{SecondarySkill::NECROMANCY, MasteryLevel::BASIC}, {SecondarySkill::WISDOM, MasteryLevel::BASIC}});
+	ASSERT_EQ(magicSkills.size(), 1u);
+	EXPECT_EQ(magicSkills[0].first, SecondarySkill(SecondarySkill::decode("new-horizons:necromancy")));
+}
+
 TEST(NewHorizonsHeroRulesTest, RuntimeChecksSemanticsBeyondSchema)
 {
 	auto rules = testHeroRules();

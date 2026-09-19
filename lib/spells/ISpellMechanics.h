@@ -14,6 +14,7 @@
 #include <vcmi/ServerCallback.h>
 
 #include "../battle/Destination.h"
+#include "../battle/BattleSide.h"
 #include "../int3.h"
 #include "../GameConstants.h"
 #include "../bonuses/Bonus.h"
@@ -94,6 +95,10 @@ public:
 	virtual bool getMassSlow() const { return false; }
 
 	virtual OptionalValue64 getEffectValue() const = 0;
+	/// Ward side is set by the authoritative battle action processor when this
+	/// hero spell consumes or collapses an armed Counterspell.
+	virtual BattleSide getCounterspellSide() const { return BattleSide::NONE; }
+	virtual bool isCounterspellNegated() const { return false; }
 
 	virtual bool isForceMassive() const = 0;
 };
@@ -124,6 +129,8 @@ public:
 	bool getMassSlow() const override;
 
 	OptionalValue64 getEffectValue() const override;
+	BattleSide getCounterspellSide() const override;
+	bool isCounterspellNegated() const override;
 
 	bool isForceMassive() const override;
 
@@ -136,6 +143,7 @@ public:
 	void setMassSlow(bool value);
 
 	void setEffectValue(Value64 value);
+	void setCounterspell(BattleSide wardSide, bool negated);
 
 	///only apply effects to specified targets
 	void applyEffects(ServerCallback * server, const Target & target, bool indirect = false, bool ignoreImmunity = false) const;
@@ -164,6 +172,8 @@ private:
 	OptionalValue overcharge;
 	bool selectiveDispel = false;
 	bool massSlow = false;
+	BattleSide counterspellSide = BattleSide::NONE;
+	bool counterspellNegated = false;
 
 	Mode mode;
 	const CSpell * spell;
@@ -316,6 +326,8 @@ public:
 	IBattleCast::Value getEffectDuration() const override;
 	IBattleCast::Value64 getEffectValue() const override;
 	IBattleCast::Value getOvercharge() const;
+	BattleSide getCounterspellSide() const;
+	bool isCounterspellNegated() const;
 	bool isSelectiveDispel() const override;
 	bool isMassSlow() const override;
 	bool usesNewHorizonsMagic() const override;
@@ -371,6 +383,8 @@ private:
 	IBattleCast::Value64 effectValue;
 	///Additional mana selected for a spell-specific cast option.
 	IBattleCast::Value overcharge = 0;
+	BattleSide counterspellSide = BattleSide::NONE;
+	bool counterspellNegated = false;
 	bool selectiveDispel = false;
 	bool massSlow = false;
 

@@ -19,6 +19,7 @@
 #include "../entities/building/CBuilding.h"
 #include "../entities/hero/CHeroClass.h"
 #include "../entities/hero/CHero.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../mapping/CMapEditManager.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/CGTownInstance.h"
@@ -104,7 +105,10 @@ void CGameStateCampaign::trimCrossoverHeroesParameters(vstd::RNG & randomGenerat
 		//trimming sec skills
 		for(auto & hero : campaignHeroReplacements)
 		{
-			hero.hero->secSkills = hero.hero->getHeroType()->secSkillsInit;
+			hero.hero->secSkills = newHorizonsHeroes::applyStartingFactionSkill(
+				newHorizonsHeroes::resolveHeroRules(gameState->getHeroDevelopmentRules(), hero.hero->getHeroClassID()),
+				hero.hero->getHeroClass()->isMagicHero(), hero.hero->getFactionID(),
+				hero.hero->getHeroType()->secSkillsInit);
 			hero.hero->recreateSecondarySkillsBonuses();
 		}
 	}

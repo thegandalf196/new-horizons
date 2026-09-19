@@ -214,6 +214,7 @@ class JsonNode;
 	BONUS_NAME(BLOCK_CREATURE_MAGIC) /*blocks casting of magical spells and abilities by creatures, eg. Cursed Ground*/ \
 	BONUS_NAME(BLOCK_NATIVE_TERRAIN_BONUS) /*blocks bonuses of native terrain for creatures, eg. Cursed Ground*/ \
 	BONUS_NAME(STACKS_INITIATIVE) /*percentage modifier to battle turn order only; does not alter movement range*/ \
+	BONUS_NAME(LUCKY_STRIKE_DAMAGE_PERCENTAGE) /*additional percentage points applied to the ordinary +100% lucky-strike damage factor*/ \
 
 	/* end of list */
 

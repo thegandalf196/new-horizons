@@ -15,10 +15,16 @@
 
 class CGHeroInstance;
 
+namespace spells
+{
+class Spell;
+}
+
 namespace newHorizonsMagic
 {
 constexpr int RULESET_VERSION = 1;
 constexpr int DIRECT_DAMAGE_RULESET_VERSION = 2;
+constexpr int COUNTERSPELL_LISTED_COST = 11;
 /// Empty snapshots retain legacy rules. Validation resolves canonical content
 /// identity and requires non-NH common coverage. Present NH common rows require
 /// v2; absent newly installed NH content never invalidates an older roster.
@@ -61,6 +67,13 @@ DLL_LINKAGE std::vector<SpellSchool> activeSchools(const JsonNode & rules);
 DLL_LINKAGE std::vector<SpellSchool> spellSchools(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE int spellLevel(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE int spellCost(const JsonNode & rules, SpellID spell, int mastery);
+/// True only for the saved New Horizons Counterspell identity.  The identity
+/// check is deliberately content-based so installed spell indices remain
+/// irrelevant to saved battles.
+DLL_LINKAGE bool isCounterspell(const spells::Spell * spell);
+/// Counterspell's ward cost, using the enemy spell's listed/base cost rather
+/// than any battlefield discount. Countermage changes 2x to ceil(1.75x).
+DLL_LINKAGE int counterspellCost(int listedCost, bool countermage);
 DLL_LINKAGE int factionSpellWeight(const JsonNode & rules, FactionID faction, SpellID spell);
 DLL_LINKAGE SecondarySkill replacementSkill(const JsonNode & rules, SecondarySkill skill);
 DLL_LINKAGE bool skillAllowed(const JsonNode & rules, SecondarySkill skill, const std::set<SecondarySkill> & mapAllowed);

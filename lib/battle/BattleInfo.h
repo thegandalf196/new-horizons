@@ -183,6 +183,7 @@ public:
 	int32_t getCastSpells(BattleSide side) const override;
 	int32_t getEnchanterCounter(BattleSide side) const override;
 	bool getTemporalFieldUsed(BattleSide side) const override;
+	bool getCounterspellArmed(BattleSide side) const override;
 
 	const IBonusBearer * getBonusBearer() const override;
 

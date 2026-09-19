@@ -269,7 +269,8 @@ function Script:getBlessFactor(info)
 end
 
 function Script:getLuckFactor(info)
-	return info.luckyStrike and 1.0 or 0
+	if not info.luckyStrike then return 0 end
+	return 1.0 + getBonusValueOfType(info.attacker, info.attackerBonuses, "LUCKY_STRIKE_DAMAGE_PERCENTAGE") / 100
 end
 
 function Script:getJoustingFactor(info)
@@ -442,7 +443,7 @@ for _, type in ipairs({
 	"ALWAYS_MINIMUM_DAMAGE", "ALWAYS_MAXIMUM_DAMAGE", "IN_FRENZY", "KING", "SLAYER",
 	"ENEMY_DEFENCE_REDUCTION", "PERCENTAGE_DAMAGE_BOOST", "GENERAL_DAMAGE_PREMY", "JOUSTING",
 	"CHARGE_IMMUNITY", "BONUS_DAMAGE_PERCENTAGE", "HATE", "GENERAL_DAMAGE_REDUCTION",
-	"NO_MELEE_PENALTY", "GENERAL_ATTACK_REDUCTION", "FORGETFULL"
+	"NO_MELEE_PENALTY", "GENERAL_ATTACK_REDUCTION", "FORGETFULL", "LUCKY_STRIKE_DAMAGE_PERCENTAGE"
 }) do
 	Script:declareBonus(type)
 end

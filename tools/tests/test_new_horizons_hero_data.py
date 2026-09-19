@@ -15,6 +15,79 @@ class HeroDataTest(unittest.TestCase):
     def setUp(self):
         self.rules = json.loads((ROOT / 'config/newHorizonsHeroes.json').read_text())
 
+    def test_faction_starting_skill_policy_covers_every_core_faction_and_class(self):
+        starting = self.rules['startingSkills']
+        faction_skills = starting['factionSkills']
+        classes = json.loads((ROOT / 'config/heroClasses.json').read_text())
+        self.assertEqual(set(faction_skills), {
+            'core:castle', 'core:rampart', 'core:tower', 'core:inferno',
+            'core:necropolis', 'core:dungeon', 'core:stronghold',
+            'core:fortress', 'core:conflux'})
+        for class_id, hero_class in classes.items():
+            with self.subTest(hero_class=class_id):
+                self.assertIn('core:' + hero_class['faction'], faction_skills)
+        self.assertEqual(starting['legacyAliases'],
+                         {'core:necropolis': 'core:necromancy'})
+        self.assertEqual(starting['magic'], {'replace': 'core:wisdom'})
+        self.assertEqual(starting['might'], {
+            'replacePosition': 'second', 'singleSkillFallback': 'append'})
+
+    def test_every_faction_hero_gets_unique_skill_with_role_preserving_replacement(self):
+        classes = json.loads((ROOT / 'config/heroClasses.json').read_text())
+        starting = self.rules['startingSkills']
+        faction_skills = starting['factionSkills']
+        legacy_aliases = starting['legacyAliases']
+        hero_count = 0
+
+        def scoped(skill):
+            return skill if ':' in skill else 'core:' + skill
+
+        for faction in ('castle', 'rampart', 'tower', 'inferno', 'necropolis',
+                        'dungeon', 'stronghold', 'fortress', 'conflux'):
+            heroes = json.loads((ROOT / f'config/heroes/{faction}.json').read_text())
+            for hero_name, hero in heroes.items():
+                hero_count += 1
+                hero_class = classes[hero['class']]
+                self.assertEqual(hero_class['faction'], faction)
+                skills = [(scoped(item['skill']), item['level'])
+                          for item in hero.get('skills', [])]
+                unique = faction_skills['core:' + faction]
+                alias = legacy_aliases.get('core:' + faction)
+
+                # Migrate a legacy skill with the same faction identity first.
+                if alias and any(skill == alias for skill, _ in skills):
+                    alias_ranks = [level for skill, level in skills if skill == alias]
+                    converted = []
+                    inserted = False
+                    for skill, level in skills:
+                        if skill == alias:
+                            if not inserted:
+                                converted.append((unique, max(alias_ranks, key=('basic', 'advanced', 'expert').index)))
+                                inserted = True
+                        elif skill != unique:
+                            converted.append((skill, level))
+                    skills = converted
+
+                if hero_class['affinity'] == 'magic':
+                    wisdom = [level for skill, level in skills if skill == 'core:wisdom']
+                    skills = [(skill, level) for skill, level in skills
+                              if skill != 'core:wisdom']
+                    if not any(skill == unique for skill, _ in skills):
+                        rank = max(wisdom, key=('basic', 'advanced', 'expert').index) if wisdom else 'basic'
+                        skills.append((unique, rank))
+                    self.assertFalse(any(skill == 'core:wisdom' for skill, _ in skills))
+                elif not any(skill == unique for skill, _ in skills):
+                    if len(skills) > 1:
+                        skills[1] = (unique, skills[1][1])
+                    else:
+                        # A one-skill hero keeps the class/specialty signature;
+                        # the faction skill is appended as the explicit fallback.
+                        skills.append((unique, 'basic'))
+
+                with self.subTest(hero=hero_name):
+                    self.assertIn(unique, {skill for skill, _ in skills})
+        self.assertEqual(hero_count, 144)
+
     def test_all_core_classes_have_explicit_provisional_profiles(self):
         classes = json.loads((ROOT / 'config/heroClasses.json').read_text())
         self.assertEqual(set(self.rules['classProfiles']), {'core:' + name for name in classes})
@@ -52,7 +125,7 @@ class HeroDataTest(unittest.TestCase):
             root = Path(temporary)
             (root / 'config').mkdir()
             (root / 'Mods/new-horizons').mkdir(parents=True)
-            for name in ('Combat', 'Magic', 'Schools', 'Skills', 'Heroes', 'Capabilities', 'Masteries', 'MasteryTexts', 'ConvenienceBonuses'):
+            for name in ('Combat', 'Magic', 'Schools', 'Skills', 'Heroes', 'Capabilities', 'Masteries', 'Perks', 'MasteryTexts', 'ConvenienceBonuses'):
                 shutil.copyfile(ROOT / f'config/newHorizons{name}.json', root / f'config/newHorizons{name}.json')
             shutil.copyfile(ROOT / 'Mods/new-horizons/mod.json', root / 'Mods/new-horizons/mod.json')
             script = root / 'check.cmake'
@@ -99,7 +172,7 @@ class HeroDataTest(unittest.TestCase):
     def test_independent_extras_use_owned_skill_ranks_only(self):
         seen = set()
         for extra in self.rules['extraGrowth']:
-            self.assertTrue(extra['skill'].startswith('core:'))
+            self.assertTrue(extra['skill'].startswith(('core:', 'new-horizons:')))
             self.assertNotIn(extra['skill'], seen)
             seen.add(extra['skill'])
             self.assertIn(extra['primary'], range(4))

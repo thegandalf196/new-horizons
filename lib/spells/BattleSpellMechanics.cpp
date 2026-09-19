@@ -399,6 +399,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if (mode != Mode::HERO)
 		sc.casterStack = caster->getCasterUnitId();
 	sc.manaGained = 0;
+	sc.counterspellSide = getCounterspellSide();
+	sc.counterspellNegated = isCounterspellNegated();
 
 	sc.activeCast = false;
 	sc.temporalFieldCast = isMassSlow();
@@ -421,7 +423,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		if(newHorizonsMagic::magicArrowOverchargeEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
 			spellCost += getOvercharge();
 
-		if(nullptr != otherHero) //handle mana channel
+		if(nullptr != otherHero && !isCounterspellNegated()) //handle mana channel
 		{
 			int manaChannel = 0;
 			for(const auto * stack : battle()->battleGetAllStacks(true)) //TODO: shouldn't bonus system handle it somehow?
@@ -439,7 +441,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		sc.activeCast = true;
 	}
 
-	beforeCast(sc, *server->getRNG(), target);
+	if(!isCounterspellNegated())
+		beforeCast(sc, *server->getRNG(), target);
 
 	BattleLogMessage castDescription;
 	castDescription.battleID = battle()->getBattle()->getBattleID();
@@ -473,14 +476,17 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 
 	server->apply(sc);
 
-	for(auto & p : effectsToApply)
-		p.first->apply(server, this, p.second);
+	if(!isCounterspellNegated())
+	{
+		for(auto & p : effectsToApply)
+			p.first->apply(server, this, p.second);
+	}
 
 	if(sc.activeCast)
 	{
 		caster->spendMana(server, spellCost);
 
-		if(sc.manaGained > 0)
+		if(!isCounterspellNegated() && sc.manaGained > 0)
 		{
 			assert(otherHero);
 			otherHero->spendMana(server, -sc.manaGained);

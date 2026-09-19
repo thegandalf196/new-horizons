@@ -50,6 +50,12 @@ bool CBattleInfoEssentials::battleWasTemporalFieldUsed(BattleSide side) const
 	return getBattle()->getTemporalFieldUsed(side);
 }
 
+bool CBattleInfoEssentials::battleWasCounterspellArmed(BattleSide side) const
+{
+	RETURN_IF_NOT_BATTLE(false);
+	return getBattle()->getCounterspellArmed(side);
+}
+
 int32_t CBattleInfoEssentials::nextObstacleId() const
 {
 	int32_t maxId = -1;

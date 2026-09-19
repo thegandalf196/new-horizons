@@ -168,6 +168,7 @@ set(test_SRCS
 		server/battles/TeleporterPerkLifecycleTest.cpp
 		server/battles/SelectiveDispelPerkTest.cpp
 		server/battles/TemporalFieldPerkTest.cpp
+		server/battles/CounterspellPerkTest.cpp
 		server/battles/TransfigureMatterPerkTest.cpp
 		server/battles/NewHorizonsMagicStateTest.cpp
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
@@ -176,6 +177,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSpellRewardFilterTest.cpp
 		server/battles/NewHorizonsDirectDamageMechanicsTest.cpp
 		battle/NewHorizonsMagicArrowActionTest.cpp
+		battle/NewHorizonsCounterspellActionTest.cpp
 		server/battles/NewHorizonsSpellRosterContextTest.cpp
 		server/battles/NewHorizonsSpellRosterConsumerTest.cpp
 		server/battles/NewHorizonsSpellArraySafetyTest.cpp

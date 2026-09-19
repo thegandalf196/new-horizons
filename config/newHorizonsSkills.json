@@ -1359,10 +1359,15 @@
 				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"luck": {
+					"type": "LUCK",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 1
+				},
+				"luckyStrikeDamage": {
+					"type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
+					"valueType": "BASE_NUMBER",
+					"val": 25
 				}
 			}
 		},
@@ -1375,10 +1380,15 @@
 				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"luck": {
+					"type": "LUCK",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 2
+				},
+				"luckyStrikeDamage": {
+					"type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
+					"valueType": "BASE_NUMBER",
+					"val": 60
 				}
 			}
 		},
@@ -1391,10 +1401,15 @@
 				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"luck": {
+					"type": "LUCK",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 3
+				},
+				"luckyStrikeDamage": {
+					"type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
+					"valueType": "BASE_NUMBER",
+					"val": 100
 				}
 			}
 		}

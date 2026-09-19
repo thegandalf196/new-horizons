@@ -74,12 +74,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_PERK_OFFERS, // combined level-up perk candidates and replicated selections
 	NEW_HORIZONS_SELECTIVE_DISPEL, // optional Sorcery Dispel mode carried by battle actions
 	NEW_HORIZONS_TEMPORAL_FIELD, // optional once-per-combat Sorcery Mass Slow state and action data
+	NEW_HORIZONS_COUNTERSPELL, // optional reusable Sorcery Counterspell ward state and cast result
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_TEMPORAL_FIELD,
+	CURRENT = NEW_HORIZONS_COUNTERSPELL,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -100,3 +101,5 @@ static_assert(ESerializationVersion::NEW_HORIZONS_SELECTIVE_DISPEL > ESerializat
 	"New spell action fields must remain absent from older perk-offer snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_TEMPORAL_FIELD > ESerializationVersion::NEW_HORIZONS_SELECTIVE_DISPEL,
 	"Temporal Field state must remain absent from older Selective Dispel snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_COUNTERSPELL > ESerializationVersion::NEW_HORIZONS_TEMPORAL_FIELD,
+	"Counterspell state must remain absent from older Temporal Field snapshots");

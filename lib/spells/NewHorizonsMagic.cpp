@@ -421,4 +421,18 @@ int spellCost(const JsonNode & rules, SpellID spell, int mastery)
 		return spell.toSpell()->getCost(mastery);
 	return entry(rules, spell)["costs"].Vector().at(mastery).Integer();
 }
+
+bool isCounterspell(const spells::Spell * spell)
+{
+	return spell && spell->getJsonKey() == GameConstants::NEW_HORIZONS_COUNTERSPELL;
+}
+
+int counterspellCost(int listedCost, bool countermage)
+{
+	if(listedCost < 0)
+		throw std::invalid_argument("Counterspell requires a non-negative listed spell cost");
+	if(!countermage)
+		return listedCost * 2;
+	return (listedCost * 7 + 3) / 4;
+}
 }

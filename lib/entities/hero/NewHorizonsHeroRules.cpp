@@ -76,6 +76,49 @@ void validateCommon(const JsonNode & rules)
 	}
 }
 
+void validateStartingSkills(const JsonNode & startingSkills)
+{
+	if(startingSkills.isNull())
+		return;
+
+	fields(startingSkills, {"factionSkills", "legacyAliases", "magic", "might"});
+	const auto & factionSkills = startingSkills["factionSkills"];
+	require(factionSkills.isStruct() && !factionSkills.Struct().empty(), "faction starting skills");
+	std::set<int> uniqueFactionSkills;
+	for(const auto & [faction, skill] : factionSkills.Struct())
+	{
+		require(resolve(FactionID::entityType(), faction) >= 0, "unknown faction " + faction);
+		require(skill.isString() && !skill.String().empty(), "faction starting skill");
+		const auto skillId = resolve(SecondarySkill::entityType(), skill.String());
+		require(skillId >= 0,
+			"unknown faction starting skill " + skill.String());
+		require(uniqueFactionSkills.insert(skillId).second, "duplicate faction starting skill " + skill.String());
+	}
+
+	const auto & legacyAliases = startingSkills["legacyAliases"];
+	require(legacyAliases.isStruct(), "faction skill aliases");
+	for(const auto & [faction, skill] : legacyAliases.Struct())
+	{
+		require(factionSkills.Struct().count(faction), "alias for unmapped faction " + faction);
+		require(skill.isString() && !skill.String().empty(), "faction skill alias");
+		require(resolve(SecondarySkill::entityType(), skill.String()) >= 0,
+			"unknown faction skill alias " + skill.String());
+	}
+
+	const auto & magic = startingSkills["magic"];
+	fields(magic, {"replace"});
+	require(magic["replace"].isString() && !magic["replace"].String().empty(),
+			"magic starting skill replacement");
+	require(resolve(SecondarySkill::entityType(), magic["replace"].String()) >= 0,
+			"unknown magic starting skill replacement " + magic["replace"].String());
+
+	const auto & might = startingSkills["might"];
+	fields(might, {"replacePosition", "singleSkillFallback"});
+	require(might["replacePosition"].String() == "second", "might replacement position");
+	require(might["singleSkillFallback"].String() == "append"
+		|| might["singleSkillFallback"].String() == "replaceFirst", "might single-skill fallback");
+}
+
 void validateProfile(const JsonNode & profile, int maximum)
 {
 	const auto parsed = parsePrimaryProfile(profile);
@@ -93,8 +136,9 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "extraGrowth"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "extraGrowth", "startingSkills"});
 	validateCommon(rules);
+	validateStartingSkills(rules["startingSkills"]);
 	require(rules["classProfiles"].isStruct() && !rules["classProfiles"].Struct().empty(), "class profiles");
 	std::set<int> seen;
 	for(const auto & [key, profile] : rules["classProfiles"].Struct())
@@ -106,14 +150,23 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 		for(const auto & heroClass : LIBRARY->heroclassesh->objects)
 			if(heroClass)
 				require(seen.count(heroClass->getIndex()), "missing class " + heroClass->getJsonKey());
+	if(requireAllClasses && rules["startingSkills"].isStruct())
+	{
+		const auto & factionSkills = rules["startingSkills"]["factionSkills"];
+		for(const auto & heroClass : LIBRARY->heroclassesh->objects)
+			if(heroClass)
+				require(factionSkills.Struct().count(FactionID::encode(heroClass->faction.getNum())),
+					"missing faction starting skill for " + heroClass->getJsonKey());
+	}
 }
 
 void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "extraGrowth"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "extraGrowth", "startingSkills"});
 	validateCommon(rules);
+	validateStartingSkills(rules["startingSkills"]);
 	validateProfile(rules["profile"], rules["maxPrimary"].Integer());
 }
 
@@ -124,6 +177,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 	JsonNode result;
 	for(const auto * key : {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "extraGrowth"})
 		result[key] = rules[key];
+	if(rules["startingSkills"].isStruct())
+		result["startingSkills"] = rules["startingSkills"];
 	result["profile"] = rules["classProfiles"][HeroClassID::encode(heroClass.getNum())];
 	validateResolvedHeroRules(result);
 	return result;
@@ -142,6 +197,101 @@ std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules
 		if(level > 0)
 			result.push_back({skill, PrimarySkill(extra["primary"].Integer()), static_cast<int>(extra["chances"].Vector()[level].Integer())});
 	}
+	return result;
+}
+
+std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill(
+	const JsonNode & resolvedRules, bool magicHero, FactionID faction,
+	const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)
+{
+	std::vector<std::pair<SecondarySkill, ui8>> result = initialSkills;
+	if(!usesRules(resolvedRules) || !resolvedRules["startingSkills"].isStruct())
+		return result;
+
+	const auto & startingSkills = resolvedRules["startingSkills"];
+	const std::string factionKey = FactionID::encode(faction.getNum());
+	const std::string factionSkillName = startingSkills["factionSkills"][factionKey].String();
+	if(factionSkillName.empty())
+		return result;
+	const SecondarySkill factionSkill(SecondarySkill::decode(factionSkillName));
+
+	// Necromancy was already present in the legacy roster. Convert that legacy
+	// identity to the New Horizons faction Skill instead of leaving two parallel
+	// skills with the same player-facing name. If an authored roster already has
+	// both identities, keep the first one's position and the strongest mastery.
+	const std::string legacyAliasName = startingSkills["legacyAliases"][factionKey].String();
+	const SecondarySkill legacyAlias = legacyAliasName.empty()
+		? SecondarySkill::NONE
+		: SecondarySkill(SecondarySkill::decode(legacyAliasName));
+	std::vector<std::pair<SecondarySkill, ui8>> normalized;
+	for(const auto & [skill, rank] : result)
+	{
+		if(skill == factionSkill || (legacyAlias != SecondarySkill::NONE && skill == legacyAlias))
+		{
+			auto existing = std::find_if(normalized.begin(), normalized.end(),
+				[factionSkill](const auto & value) { return value.first == factionSkill; });
+			if(existing == normalized.end())
+			{
+				normalized.emplace_back(factionSkill, rank);
+			}
+			else
+				existing->second = std::max(existing->second, rank);
+		}
+		else
+			normalized.emplace_back(skill, rank);
+	}
+	result = std::move(normalized);
+
+	if(magicHero)
+	{
+		const SecondarySkill wisdom(SecondarySkill::decode(startingSkills["magic"]["replace"].String()));
+		const auto wisdomIt = std::find_if(result.begin(), result.end(),
+			[wisdom](const auto & value) { return value.first == wisdom; });
+		const auto factionIt = std::find_if(result.begin(), result.end(),
+			[factionSkill](const auto & value) { return value.first == factionSkill; });
+		if(wisdomIt != result.end())
+		{
+			const auto wisdomIndex = static_cast<size_t>(std::distance(result.begin(), wisdomIt));
+			const auto wisdomRank = wisdomIt->second;
+			if(factionIt == result.end())
+			{
+				// Wisdom is replaced in-place so authored skill ordering remains
+				// stable for both magic hero defaults and explicit map rosters.
+				result[wisdomIndex] = {factionSkill,
+					static_cast<ui8>(wisdomRank > 0 ? wisdomRank : static_cast<ui8>(MasteryLevel::BASIC))};
+			}
+			else
+			{
+				const auto factionIndex = static_cast<size_t>(std::distance(result.begin(), factionIt));
+				result[factionIndex].second = std::max(result[factionIndex].second, wisdomRank);
+				if(factionIndex > wisdomIndex)
+				{
+					result[wisdomIndex] = result[factionIndex];
+					result.erase(result.begin() + static_cast<std::ptrdiff_t>(factionIndex));
+				}
+				else
+				{
+					result.erase(result.begin() + static_cast<std::ptrdiff_t>(wisdomIndex));
+				}
+			}
+		}
+		else if(factionIt == result.end())
+			result.emplace_back(factionSkill, MasteryLevel::BASIC);
+		return result;
+	}
+
+	if(std::any_of(result.begin(), result.end(),
+		[factionSkill](const auto & value) { return value.first == factionSkill; }))
+		return result;
+
+	const auto & might = startingSkills["might"];
+	const ui8 replacementRank = result.size() > 1 ? result[1].second : static_cast<ui8>(MasteryLevel::BASIC);
+	if(might["replacePosition"].String() == "second" && result.size() > 1)
+		result[1] = {factionSkill, replacementRank};
+	else if(result.size() == 1 && might["singleSkillFallback"].String() == "replaceFirst")
+		result[0] = {factionSkill, result[0].second};
+	else
+		result.emplace_back(factionSkill, replacementRank);
 	return result;
 }
 }

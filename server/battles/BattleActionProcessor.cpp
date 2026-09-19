@@ -31,6 +31,7 @@
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/AbilityCaster.h"
 #include "../../lib/spells/ISpellMechanics.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
 
@@ -152,7 +153,26 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		return false;
 	}
 
+	// Counterspell is resolved after the enemy hero's ordinary cast checks. A
+	// valid hero spell therefore still consumes its action and listed mana even
+	// when the ward suppresses every effect. A costly spell that the warding
+	// hero cannot afford instead collapses the ward and is cast normally.
+	const auto counteringSide = battle.otherSide(ba.side);
+	const auto * counteringHero = battle.battleGetFightingHero(counteringSide);
+	int counterspellCost = 0;
+	bool counterspellNegated = false;
+	if(counteringHero && battle.battleWasCounterspellArmed(counteringSide))
+	{
+		const int listedCost = h->getSpellCost(s);
+		counterspellCost = newHorizonsMagic::counterspellCost(listedCost,
+			counteringHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.countermage"));
+		counterspellNegated = counteringHero->mana >= counterspellCost;
+		parameters.setCounterspell(counteringSide, counterspellNegated);
+	}
+
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
+	if(counterspellNegated)
+		counteringHero->spendMana(gameHandler->spellcastEnvironment(), counterspellCost);
 	gameHandler->useChargeBasedSpell(h->id, ba.spell);
 
 	return true;

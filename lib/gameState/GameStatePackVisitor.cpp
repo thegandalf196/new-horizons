@@ -31,6 +31,7 @@
 #include "../mapping/CMap.h"
 #include "../networkPacks/StackLocation.h"
 #include "../spells/CSpell.h"
+#include "../spells/NewHorizonsMagic.h"
 
 void GameStatePackVisitor::updateMoraleOnTroopMixingBonusChange(CBonusSystemNode * node, const Bonus & bonus)
 {
@@ -1480,6 +1481,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			|| !heroCommands::supportedByRules(gs.getBattle(pack.battleID)->getHeroCommandRules(), pack.ba.command))
 			throw std::runtime_error("Legacy or unsupported Hero Doctrine cannot be applied");
 		auto & side = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
+		side.counterspellArmed = false;
 		side.heroCommandUsed = true;
 		if(targeted)
 			side.focusFire = pack.focusFire;
@@ -1550,9 +1552,19 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
 	if(pack.castByHero && pack.side != BattleSide::NONE)
 	{
-		gs.getBattle(pack.battleID)->getSide(pack.side).castSpellsCount++;
+		auto * battle = gs.getBattle(pack.battleID);
+		auto & casterSide = battle->getSide(pack.side);
+		casterSide.castSpellsCount++;
+		// StartAction is published before full spell/target validation. Expire the
+		// caster's old ward only once the authoritative cast packet exists; an
+		// invalid hero action must leave its armed Counterspell intact.
+		casterSide.counterspellArmed = false;
 		if(pack.temporalFieldCast)
-			gs.getBattle(pack.battleID)->getSide(pack.side).temporalFieldUsed = true;
+			casterSide.temporalFieldUsed = true;
+		if(pack.counterspellSide == BattleSide::ATTACKER || pack.counterspellSide == BattleSide::DEFENDER)
+			battle->getSide(pack.counterspellSide).counterspellArmed = false;
+		if(!pack.counterspellNegated && newHorizonsMagic::isCounterspell(pack.spellID.toSpell()))
+			casterSide.counterspellArmed = true;
 	}
 }
 

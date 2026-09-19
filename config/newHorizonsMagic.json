@@ -123,6 +123,18 @@
 				10
 			]
 		},
+		"new-horizons:counterspell": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 3,
+			"costs": [
+				11,
+				11,
+				11,
+				11
+			]
+		},
 		"core:counterstrike": {
 			"schools": [
 				"new-horizons:light"

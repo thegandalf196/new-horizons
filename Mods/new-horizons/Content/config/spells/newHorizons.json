@@ -77,5 +77,60 @@
 			"indifferent" : true
 		},
 		"targetCondition" : {}
+	},
+	"counterspell" : {
+		"name" : "Counterspell",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:sorcery" : true
+		},
+		"level" : 3,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "NO_TARGET",
+		"graphics" : {
+			"iconBook" : "SPELLS.def:0:15",
+			"iconScroll" : "SPELLSCR.def:0:15",
+			"iconEffect" : "SPELLINT.def:0:16",
+			"iconImmune" : "SPELLINT.def:0:16",
+			"iconScenarioBonus" : "SPELLBON.def:0:15"
+		},
+		"animation" : {
+			"hit" : ["C18SPW0"]
+		},
+		"sounds" : {
+			"cast" : "DISPEL"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Arm a ward until the beginning of your next Hero Action or the next enemy hero spell. The ward pays twice the enemy spell's listed Mana cost to negate it, or collapses if you cannot pay.",
+				"cost" : 11,
+				"power" : 0
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Arm a ward until the beginning of your next Hero Action or the next enemy hero spell. The ward pays twice the enemy spell's listed Mana cost to negate it, or collapses if you cannot pay.",
+				"cost" : 11,
+				"power" : 0
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Arm a ward until the beginning of your next Hero Action or the next enemy hero spell. The ward pays twice the enemy spell's listed Mana cost to negate it, or collapses if you cannot pay.",
+				"cost" : 11,
+				"power" : 0
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Arm a ward until the beginning of your next Hero Action or the next enemy hero spell. The ward pays twice the enemy spell's listed Mana cost to negate it, or collapses if you cannot pay.",
+				"cost" : 11,
+				"power" : 0
+			}
+		},
+		"flags" : {
+			"indifferent" : true
+		},
+		"targetCondition" : {}
 	}
 }

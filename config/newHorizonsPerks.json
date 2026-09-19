@@ -1677,7 +1677,7 @@
 					"requires": "advanced",
 					"description": "Counterspell pays 1.75 times the enemy spell's listed Mana cost, rounded up, instead of 2 times.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Counterspell pays 1.75 times the enemy spell's listed Mana cost, rounded up, instead of 2 times."
 					}
 				},
@@ -3053,21 +3053,21 @@
 				"basic": {
 					"description": "+1 Luck. Lucky Strike damage multiplier becomes 2.25x.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "+1 Luck. Lucky Strike damage multiplier becomes 2.25x."
 					}
 				},
 				"advanced": {
 					"description": "+2 Luck total. Lucky Strike multiplier becomes 2.60x.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "+2 Luck total. Lucky Strike multiplier becomes 2.60x."
 					}
 				},
 				"expert": {
 					"description": "+3 Luck total. Lucky Strike multiplier becomes 3.00x.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "+3 Luck total. Lucky Strike multiplier becomes 3.00x."
 					}
 				}

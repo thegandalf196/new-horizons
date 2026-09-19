@@ -359,6 +359,8 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 	si32 casterStack = -1; // -1 if not cated by creature, >=0 caster stack ID
 	bool castByHero = true; //if true - spell has been cast by hero, otherwise by a creature
 	bool temporalFieldCast = false; // consumes the saved once-per-combat Sorcery Mass Slow budget
+	BattleSide counterspellSide = BattleSide::NONE; // ward side consumed or collapsed while this hero spell was attempted
+	bool counterspellNegated = false; // the ward had enough mana and suppressed this spell's effects
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -366,6 +368,9 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 	{
 		if(h.saving && temporalFieldCast && !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
 			throw std::runtime_error("Cannot serialize Temporal Field cast to an older protocol");
+		if(h.saving && (counterspellSide != BattleSide::NONE || counterspellNegated)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_COUNTERSPELL))
+			throw std::runtime_error("Cannot serialize Counterspell cast result to an older protocol");
 		h & battleID;
 		h & side;
 		h & spellID;
@@ -384,6 +389,16 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 		else if(!h.saving)
 		{
 			temporalFieldCast = false;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_COUNTERSPELL))
+		{
+			h & counterspellSide;
+			h & counterspellNegated;
+		}
+		else if(!h.saving)
+		{
+			counterspellSide = BattleSide::NONE;
+			counterspellNegated = false;
 		}
 		assert(battleID != BattleID::NONE);
 	}

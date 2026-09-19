@@ -492,8 +492,15 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 			pushPrimSkill(static_cast<PrimarySkill>(g), initial);
 		}
 	}
-	if(secSkills.size() == 1 && secSkills[0] == std::pair<SecondarySkill,ui8>(SecondarySkill::NONE, -1)) //set secondary skills to default
+	const bool defaultSecondarySkills = secSkills.size() == 1
+		&& secSkills[0] == std::pair<SecondarySkill,ui8>(SecondarySkill::NONE, -1);
+	if(defaultSecondarySkills) //set secondary skills to default
 		secSkills = getHeroType()->secSkillsInit;
+	// This is still creation-only initialization, but authored map skill vectors
+	// are creation inputs too. Apply the faction-start rule to both the engine
+	// defaults and explicit rosters; deserialized heroes do not pass through here.
+	secSkills = newHorizonsHeroes::applyStartingFactionSkill(primaryGrowthRules,
+		getHeroClass()->isMagicHero(), getFactionID(), secSkills);
 
 	// Only creation passes here; deserialized heroes retain their saved skill IDs.
 	// The saved magic profile defines the conversion, not installed defaults.
