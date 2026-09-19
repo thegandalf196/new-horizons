@@ -154,6 +154,7 @@ set(test_SRCS
 		server/battles/TransmutationTest.cpp
 		server/battles/WarMachineControlTest.cpp
 		server/battles/HeroCommandTest.cpp
+		server/battles/NewHorizonsOffenseRankTest.cpp
 		server/battles/HeroCommandPersistenceTest.cpp
 		server/battles/HeroCommandFixtureExportTest.cpp
 		server/battles/HeroCommandRejectionTest.cpp

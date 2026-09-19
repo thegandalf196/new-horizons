@@ -20,6 +20,9 @@ ACTIVE_PERKS = {
     "new-horizons:sorceryMagic.temporalist",
     "new-horizons:sorceryMagic.teleporter",
 }
+ACTIVE_RANK_SKILLS = {
+    "new-horizons:offense",
+}
 EXPECTED_SKILLS = (
     "new-horizons:offense",
     "new-horizons:armorer",
@@ -93,7 +96,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 self.assertEqual(set(skill["ranks"]), set(RANKS))
                 for rank in RANKS:
                     effect = skill["ranks"][rank]["effect"]
-                    self.assertEqual(effect["status"], "planned")
+                    expected_status = "active" if skill_id in ACTIVE_RANK_SKILLS else "planned"
+                    self.assertEqual(effect["status"], expected_status)
                     self.assertTrue(effect["description"])
                     self.assertEqual(skill["ranks"][rank]["description"], effect["description"])
 

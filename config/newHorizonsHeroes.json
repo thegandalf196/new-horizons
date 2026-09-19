@@ -24,7 +24,7 @@
 		"core:elementalist": {"starting": [5, 10, 20, 15], "growth": [1, 2, 4, 3]}
 	},
 	"extraGrowth": [
-		{"skill": "core:offence", "primary": 0, "chances": [0, 10, 20, 30]},
+		{"skill": "new-horizons:offense", "primary": 0, "chances": [0, 10, 20, 30]},
 		{"skill": "core:armorer", "primary": 1, "chances": [0, 10, 20, 30]},
 		{"skill": "core:sorcery", "primary": 2, "chances": [0, 10, 20, 30]},
 		{"skill": "core:intelligence", "primary": 3, "chances": [0, 10, 20, 30]}

@@ -17,21 +17,21 @@
 				"basic": {
 					"description": "Melee attacks and retaliations deal +10% physical damage. At subsequent level-ups, Offense has a 10% chance to grant +1 Attack.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Melee attacks and retaliations deal +10% physical damage. At subsequent level-ups, Offense has a 10% chance to grant +1 Attack."
 					}
 				},
 				"advanced": {
 					"description": "Melee attacks and retaliations deal +20% physical damage. Attack-growth chance becomes 20%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Melee attacks and retaliations deal +20% physical damage. Attack-growth chance becomes 20%."
 					}
 				},
 				"expert": {
 					"description": "Melee attacks and retaliations deal +30% physical damage. Attack-growth chance becomes 30%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Melee attacks and retaliations deal +30% physical damage. Attack-growth chance becomes 30%."
 					}
 				}

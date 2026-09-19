@@ -86,7 +86,9 @@ TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasCompleteProvisionalProfiles
 	EXPECT_TRUE(skillGrowthChances(resolved, [](SecondarySkill) { return 0; }).empty());
 	const auto opportunities = skillGrowthChances(resolved, [](SecondarySkill) { return 3; });
 	ASSERT_EQ(opportunities.size(), 4u);
-	const std::array<SecondarySkill, 4> skills = {SecondarySkill::OFFENCE, SecondarySkill::ARMORER,
+	const SecondarySkill offense(SecondarySkill::decode("new-horizons:offense"));
+	EXPECT_NE(offense, SecondarySkill::OFFENCE);
+	const std::array<SecondarySkill, 4> skills = {offense, SecondarySkill::ARMORER,
 		SecondarySkill::SORCERY, SecondarySkill::INTELLIGENCE};
 	for(int i = 0; i < 4; ++i)
 	{

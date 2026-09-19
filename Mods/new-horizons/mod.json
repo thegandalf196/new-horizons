@@ -970,7 +970,7 @@
 				},
 				"extraGrowth": [
 					{
-						"skill": "core:offence",
+						"skill": "new-horizons:offense",
 						"primary": 0,
 						"chances": [
 							0,
@@ -1159,21 +1159,21 @@
 							"basic": {
 								"description": "Melee attacks and retaliations deal +10% physical damage. At subsequent level-ups, Offense has a 10% chance to grant +1 Attack.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Melee attacks and retaliations deal +10% physical damage. At subsequent level-ups, Offense has a 10% chance to grant +1 Attack."
 								}
 							},
 							"advanced": {
 								"description": "Melee attacks and retaliations deal +20% physical damage. Attack-growth chance becomes 20%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Melee attacks and retaliations deal +20% physical damage. Attack-growth chance becomes 20%."
 								}
 							},
 							"expert": {
 								"description": "Melee attacks and retaliations deal +30% physical damage. Attack-growth chance becomes 30%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Melee attacks and retaliations deal +30% physical damage. Attack-growth chance becomes 30%."
 								}
 							}
@@ -5287,12 +5287,9 @@
 		"offense": {
 			"name": "Offense",
 			"specialty": [],
-			"tags": {
-				"special": true
-			},
 			"gainChance": {
-				"might": 0,
-				"magic": 0
+				"might": 6,
+				"magic": 2
 			},
 			"basic": {
 				"description": "Melee attacks and retaliations deal +10% physical damage. At subsequent level-ups, Offense has a 10% chance to grant +1 Attack.",
@@ -5303,10 +5300,11 @@
 					"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"meleeDamage": {
+						"type": "PERCENTAGE_DAMAGE_BOOST",
+						"subtype": "damageTypeMelee",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 10
 					}
 				}
 			},
@@ -5319,10 +5317,11 @@
 					"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"meleeDamage": {
+						"type": "PERCENTAGE_DAMAGE_BOOST",
+						"subtype": "damageTypeMelee",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 20
 					}
 				}
 			},
@@ -5335,10 +5334,11 @@
 					"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"meleeDamage": {
+						"type": "PERCENTAGE_DAMAGE_BOOST",
+						"subtype": "damageTypeMelee",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 30
 					}
 				}
 			}
