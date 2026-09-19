@@ -231,6 +231,7 @@ TEST_F(TeleportApplyTest, Apply_MovesUnit)
 	EXPECT_CALL(unit, isValidTarget(Eq(false))).WillRepeatedly(Return(true));
 
 	EXPECT_CALL(*battleFake, moveUnit(Eq(unitId), Eq(destination)));
+	EXPECT_CALL(mechanicsMock, getHeroCaster()).WillOnce(Return(nullptr));
 	EXPECT_CALL(mechanicsMock, getEffectLevel()).WillRepeatedly(Return(0));
 	EXPECT_CALL(serverMock, apply(Matcher<BattleStackMoved &>(_))).Times(1);
 

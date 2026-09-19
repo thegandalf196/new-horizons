@@ -1667,7 +1667,7 @@
 					"requires": "advanced",
 					"description": "A stack moved by Teleport gains +2 Speed during its next Creature Activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A stack moved by Teleport gains +2 Speed during its next Creature Activation."
 					}
 				},

@@ -56,6 +56,19 @@ function Script:apply(mechanics, server, target)
 	local unit    = target[1].unit
 	local destHex = target[2].hex
 	server:moveUnit(mechanics:getBattle(), unit, destHex, true)
+
+	local hero = mechanics:getHeroCaster()
+	if hero and hero:hasActivePerk(
+		"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.teleporter") then
+		server:addUnitBonus(mechanics:getBattle(), unit, {
+			type = "STACKS_SPEED",
+			val = 2,
+			duration = "STACK_ACTIVATION",
+			sourceType = "SPELL_EFFECT",
+			sourceID = "core:teleport",
+			stacking = "new-horizons:teleporter"
+		}, false)
+	end
 end
 
 return Script

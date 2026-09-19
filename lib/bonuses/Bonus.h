@@ -148,6 +148,11 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		auto set = hb->duration & BonusDuration::STACK_GETS_TURN;
 		return set != 0;
 	}
+	static bool UntilActivationEnds(const Bonus *hb)
+	{
+		auto set = hb->duration & BonusDuration::STACK_ACTIVATION;
+		return set != 0;
+	}
 	static bool UntilAttack(const Bonus *hb)
 	{
 		auto set = hb->duration & BonusDuration::UNTIL_ATTACK;

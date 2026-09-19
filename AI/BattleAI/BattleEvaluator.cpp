@@ -679,6 +679,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(state->battleGetOwner(unit) != playerID)
 					bav = -bav;
 				values[unit->unitId()] += bav;
+				state->getForUpdate(unit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
 			}
 
 			firstRound = false;

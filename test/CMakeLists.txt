@@ -164,6 +164,7 @@ set(test_SRCS
 		server/battles/FocusFirePersistenceTest.cpp
 		server/battles/FocusFireServerTest.cpp
 		server/battles/HeroCommandTurnLifecycleTest.cpp
+		server/battles/TeleporterPerkLifecycleTest.cpp
 		server/battles/NewHorizonsMagicStateTest.cpp
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
 		server/battles/NewHorizonsSkillRewardTest.cpp

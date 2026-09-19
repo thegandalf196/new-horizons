@@ -16,6 +16,7 @@ RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.temporalist",
+    "new-horizons:sorceryMagic.teleporter",
 }
 EXPECTED_SKILLS = (
     "new-horizons:offense",

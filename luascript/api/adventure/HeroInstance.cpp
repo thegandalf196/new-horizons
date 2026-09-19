@@ -51,6 +51,13 @@ void HeroInstanceProxy::registerMethods(MethodRegistrar & R)
 		{{"skill", "Secondary skill JSON key."}},
 		{"Mastery level (0 = none, 1 = basic, 2 = advanced, 3 = expert)."},
 		"Returns the hero's mastery of the given secondary skill.");
+	R.method<&CGHeroInstance::hasActivePerk>("hasActivePerk",
+		{
+			{"skill", "Canonical scoped New Horizons skill ID."},
+			{"perk", "Canonical scoped New Horizons perk ID."}
+		},
+		{"True when the hero selected the perk and its saved effect is active at the current skill rank."},
+		"Checks the hero's saved New Horizons perk snapshot without consulting newly installed defaults.");
 	R.function<&HeroInstanceProxy::hasArtifact>("hasArtifact",
 		{{"artifact", "Artifact JSON key."}},
 		{"True if the hero owns the artifact."},

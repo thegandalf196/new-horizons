@@ -36,6 +36,7 @@ const std::map<std::string, BonusDuration::Type> bonusDurationMap =
 	BONUS_ITEM(UNTIL_OWN_ATTACK)
 	BONUS_ITEM(UNTIL_TAKING_INDIRECT_DAMAGE)
 	BONUS_ITEM(UNTIL_AFTER_ATTACK_SEQUENCE)
+	BONUS_ITEM(STACK_ACTIVATION)
 	{ "UNITL_BEING_ATTACKED", BonusDuration::UNTIL_BEING_ATTACKED }//typo, but used in some mods
 };
 #undef BONUS_ITEM

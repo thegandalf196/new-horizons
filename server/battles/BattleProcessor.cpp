@@ -33,6 +33,7 @@
 #include "../../lib/modding/IdentifierStorage.h"
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/spells/CSpell.h"
 #include <vstd/RNG.h>
@@ -359,6 +360,8 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 		return false;
 
 	bool result = actionsProcessor->makePlayerBattleAction(*battle, player, ba);
+	if(result)
+		expireStackActivationBonuses(battleID, ba);
 	// Commands do not deactivate the client unit before submission. Rejection
 	// must not reactivate it here and expire STACK_GETS_TURN bonuses. Preserve
 	// the existing recovery path for failed unit actions, whose UI is deactivated.
@@ -411,7 +414,31 @@ void BattleProcessor::setBattleResult(const CBattleInfoCallback & battle, EBattl
 
 bool BattleProcessor::makeAutomaticBattleAction(const CBattleInfoCallback & battle, const BattleAction &ba)
 {
-	return actionsProcessor->makeAutomaticBattleAction(battle, ba);
+	const BattleID battleID = battle.getBattle()->getBattleID();
+	const bool result = actionsProcessor->makeAutomaticBattleAction(battle, ba);
+	if(result)
+		expireStackActivationBonuses(battleID, ba);
+	return result;
+}
+
+void BattleProcessor::expireStackActivationBonuses(const BattleID & battleID, const BattleAction & action)
+{
+	if(!action.isUnitAction())
+		return;
+
+	const auto * currentBattle = gameHandler->gameState().getBattle(battleID);
+	const auto * actedStack = currentBattle ? currentBattle->battleGetStackByID(action.stackNumber, false) : nullptr;
+	const auto expiring = actedStack ? actedStack->getAllBonuses(Bonus::UntilActivationEnds) : nullptr;
+	if(!expiring || expiring->empty())
+		return;
+
+	SetStackEffect remove;
+	remove.battleID = battleID;
+	std::vector<Bonus> bonuses;
+	for(const auto & bonus : *expiring)
+		bonuses.push_back(*bonus);
+	remove.toRemove.emplace_back(actedStack->unitId(), std::move(bonuses));
+	gameHandler->sendAndApply(remove);
 }
 
 void BattleProcessor::processBattleEventTriggers(const CBattleInfoCallback & battle, CombatEventType event, const battle::Unit * target, const battle::Unit * secondary)
