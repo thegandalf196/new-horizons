@@ -32,6 +32,8 @@ void ObstacleProxy::registerMethods(MethodRegistrar & R)
 		"Returns the obstacle category: usual, absolute, moat, or spell-created.");
 	R.function<&ObstacleProxy::getPosition>("getPosition", {},
 		"Returns the hex that serves as anchor of the obstacle, usually - located in bottom-left corner of the obstacle");
+	R.function<&ObstacleProxy::getHexes>("getHexes", {},
+		"Returns every battlefield hex occupied by the obstacle, including its complete physical footprint.");
 	R.function<&ObstacleProxy::getSpell>("getSpell", {},
 		"Returns the Spell that created this obstacle, or nil for non-spell obstacles.");
 }
@@ -44,6 +46,11 @@ CObstacleInstance::EObstacleType ObstacleProxy::getObstacleType(std::shared_ptr<
 BattleHex ObstacleProxy::getPosition(std::shared_ptr<const CObstacleInstance> obstacle)
 {
 	return obstacle->pos;
+}
+
+BattleHexArray ObstacleProxy::getHexes(std::shared_ptr<const CObstacleInstance> obstacle)
+{
+	return obstacle->getAffectedTiles();
 }
 
 const spells::Spell * ObstacleProxy::getSpell(std::shared_ptr<const CObstacleInstance> obstacle)

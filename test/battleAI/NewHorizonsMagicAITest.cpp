@@ -50,6 +50,17 @@ public:
 };
 }
 
+namespace
+{
+constexpr auto transfigureMatterKey = "new-horizons:transfigureMatter";
+constexpr auto matterShaperPerk = "new-horizons:sorceryMagic.matterShaper";
+
+SpellID transfigureMatterSpell()
+{
+	return SpellID(SpellID::decode(transfigureMatterKey));
+}
+}
+
 class NewHorizonsMagicAITest : public HeroCommandFixture
 {
 protected:
@@ -657,6 +668,118 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAIRespectsConsumedBudget)
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	EXPECT_EQ(callback->submitted.front().spell, SpellID::SLOW);
 	EXPECT_FALSE(callback->submitted.front().spellMassSlow);
+}
+
+TEST_F(NewHorizonsMagicAITest, TransfigureMatterAIChoosesPhysicalObstacleAndKeepsLiveBattleUntouched)
+{
+	useCommands = false;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+
+	const auto transfigure = transfigureMatterSpell();
+	ASSERT_GE(transfigure.getNum(), 0);
+	const auto * spell = transfigure.toSpell();
+	ASSERT_NE(spell, nullptr);
+	EXPECT_EQ(spell->getJsonKey(), transfigureMatterKey);
+	attackerSideHero->addSpellToSpellbook(transfigure);
+	const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:sorceryMagic", matterShaperPerk});
+	attackerSideHero->mana = 1000;
+
+	const BattleHex physicalPosition(8, 5);
+	auto physical = std::make_shared<CObstacleInstance>();
+	physical->uniqueID = 20;
+	physical->ID = 0;
+	physical->pos = physicalPosition;
+	physical->obstacleType = CObstacleInstance::USUAL;
+	battle()->obstacles.push_back(physical);
+
+	auto magical = std::make_shared<SpellCreatedObstacle>();
+	magical->uniqueID = 21;
+	magical->pos = BattleHex(10, 5);
+	magical->customSize.insert(magical->pos);
+	battle()->obstacles.push_back(magical);
+
+	auto moat = std::make_shared<CObstacleInstance>();
+	moat->uniqueID = 22;
+	moat->obstacleType = CObstacleInstance::MOAT;
+	moat->pos = BattleHex(12, 5);
+	battle()->obstacles.push_back(moat);
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(14, 5), 1);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	spells::BattleCast liveCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&liveCast);
+	const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_EQ(targets.size(), 1u);
+	ASSERT_EQ(targets.front().size(), 1u);
+	EXPECT_EQ(targets.front().front().hexValue, physicalPosition);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto manaBefore = attackerSideHero->mana;
+	const auto obstacleCountBefore = battle()->obstacles.size();
+	const auto unitCountBefore = battle()->battleGetAllUnits(false).size();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	{
+		// The exact same cast preview the evaluator consumes must contain the
+		// temporary Diamond Golems and remove only the selected physical obstacle.
+		auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+		spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, spell);
+		cast.castEval(projected->getServerCallback(), targets.front());
+		const auto golems = projected->getUnitsIf([](const battle::Unit * unit)
+		{
+			return unit->unitType() && unit->unitType()->getJsonKey() == "core:diamondGolem";
+		});
+		ASSERT_FALSE(golems.empty());
+		int64_t golemHealth = 0;
+		for(const auto * golem : golems)
+			golemHealth += golem->getAvailableHealth();
+		EXPECT_GT(golemHealth, 0);
+		const auto basePool = 80LL + 2LL * attackerSideHero->getEffectPower(spell)
+			+ 50LL * static_cast<int64_t>(physical->getAffectedTiles().size());
+		EXPECT_GE(golemHealth, basePool * 125 / 100);
+		EXPECT_EQ(projected->getAllObstacles().size(), obstacleCountBefore - 1);
+		EXPECT_EQ(battle()->obstacles.size(), obstacleCountBefore);
+		EXPECT_EQ(battle()->battleGetAllUnits(false).size(), unitCountBefore);
+	}
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.spell, transfigure);
+	ASSERT_EQ(action.target.size(), 1u);
+	EXPECT_EQ(action.target.front().hexValue, physicalPosition);
+
+	// castEval is a private hypothetical branch of the evaluator. Neither its
+	// temporary golems nor obstacle removal may leak to the authoritative battle.
+	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(battle()->obstacles.size(), obstacleCountBefore);
+	EXPECT_EQ(battle()->battleGetAllUnits(false).size(), unitCountBefore);
+	EXPECT_EQ(battle()->battleGetAllObstaclesOnPos(physicalPosition, false).size(), 1u);
 }
 
 TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)

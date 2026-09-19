@@ -463,6 +463,9 @@ BattleHexArray BattleFieldController::getHighlightedHexesForSpellRange()
 
 	if(caster && spell) //when casting spell
 	{
+		if(BattleActionsController::isTransfigureMatterSpell(spell))
+			return owner.actionsController->getTransfigureMatterTargetHexes(spell);
+
 		// printing shaded hex(es)
 		spells::BattleCast event(owner.getBattle().get(), caster, mode, spell);
 		auto shadedHexes = spell->battleMechanics(&event)->rangeInHexes(hoveredHex);

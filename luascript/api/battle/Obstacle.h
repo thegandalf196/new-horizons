@@ -33,6 +33,7 @@ public:
 
 	static CObstacleInstance::EObstacleType getObstacleType(std::shared_ptr<const CObstacleInstance> obstacle);
 	static BattleHex getPosition(std::shared_ptr<const CObstacleInstance> obstacle);
+	static BattleHexArray getHexes(std::shared_ptr<const CObstacleInstance> obstacle);
 	static const ::spells::Spell * getSpell(std::shared_ptr<const CObstacleInstance> obstacle);
 };
 

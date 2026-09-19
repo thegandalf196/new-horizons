@@ -230,6 +230,20 @@
 			"additionalProperties" : false
 		}
 	},
+	"transfigureMatter" : {
+		"implements" : "spellEffect",
+		"script" : "spells/transfigureMatter",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {},
+				"id" : { "type" : "string" }
+			},
+			"additionalProperties" : false
+		}
+	},
 	"teleport" : {
 		"implements" : "spellEffect",
 		"script" : "spells/teleport",

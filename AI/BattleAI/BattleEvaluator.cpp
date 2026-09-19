@@ -55,6 +55,11 @@ SpellTypes spellType(const CSpell * spell)
 	return SpellTypes::OTHER;
 }
 
+bool isTransfigureMatter(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:transfigureMatter";
+}
+
 BattleEvaluator::BattleEvaluator(
 	std::shared_ptr<Environment> env,
 	std::shared_ptr<CBattleCallback> cb,
@@ -824,6 +829,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 				// Removed sacrifice victims must remain in the health accounting below.
 				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return !u->isTurret(); });
+				const bool transfigureMatter = isTransfigureMatter(ps.spell);
 
 				auto needFullEval = ps.command == HeroCommand::FOCUS_FIRE
 					|| state->hasObstacleChanges() || state->hasWallChanges()
@@ -901,6 +907,18 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					auto newHealth = unit->getAvailableHealth();
 					auto oldHealth = vstd::find_or(healthOfStack, unit->unitId(), 0); // old health value may not exist for newly summoned units
 					auto original = cb->getBattle(battleID)->battleGetUnitByID(unit->unitId());
+					if(transfigureMatter && !original && unit->unitType()
+						&& unit->unitType()->getJsonKey() == "core:diamondGolem"
+						&& state->battleGetOwner(unit) == playerID && newHealth > 0)
+					{
+						// A Transfigure Matter cast creates temporary Diamond Golems. Use
+						// their projected partial-stack health and normal creature AI
+						// value, rather than dropping all magical summons from scoring.
+						const auto maxHealth = std::max<int64_t>(1, unit->getMaxHealth());
+						damageToHostilesScore += static_cast<float>(newHealth)
+							* static_cast<float>(unit->unitType()->getAIValue())
+							/ static_cast<float>(maxHealth);
+					}
 					if(ps.spell && ps.spell->getId() == SpellID::SLOW
 						&& original && original->alive() && unit->alive())
 					{

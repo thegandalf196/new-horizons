@@ -18,10 +18,63 @@
 
 using namespace spells;
 
+namespace
+{
+// Transfigure Matter is represented as a location-targeted spell by the
+// generic mechanics layer, but only physical battlefield obstacles are legal
+// aims.  Keep this identity check local to the AI until the curated spell
+// receives a public typed helper in the shared spell API.
+bool isTransfigureMatter(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return spell && spell->getJsonKey() == "new-horizons:transfigureMatter";
+}
+
+bool isPhysicalObstacle(const CObstacleInstance & obstacle)
+{
+	// The curated effect deliberately admits ordinary scenery only. Absolute
+	// obstacles cover siege/fortification-like scenery and are rejected by the
+	// authoritative Transfigure Matter script.
+	return obstacle.obstacleType == CObstacleInstance::USUAL;
+}
+
+std::vector<Target> physicalObstacleTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	std::set<BattleHex> seen;
+
+	for(const auto & obstacle : spellMechanics->battle()->battleGetAllObstacles())
+	{
+		if(!obstacle || !isPhysicalObstacle(*obstacle))
+			continue;
+
+		// Use an affected tile so the aim is a real battlefield hex and the
+		// authoritative validator can resolve the object by position.
+		const auto affectedTiles = obstacle->getAffectedTiles();
+		if(affectedTiles.empty())
+			continue;
+
+		const auto aimHex = affectedTiles.front();
+		if(!aimHex.isValid() || !seen.insert(aimHex).second)
+			continue;
+
+		Target target{Destination(aimHex)};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
+	}
+
+	return result;
+}
+}
+
 std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spellMechanics)
 {
 	std::vector<Target> result;
 	std::vector<AimType> targetTypes = spellMechanics->getTargetTypes();
+	if(isTransfigureMatter(spellMechanics))
+		return physicalObstacleTargets(spellMechanics);
+
 	if(targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::LOCATION})
 		return creatureLocationTargets(spellMechanics);
 	if(targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::CREATURE})

@@ -1,0 +1,81 @@
+{
+	"transfigureMatter" : {
+		"name" : "Transfigure Matter",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:sorcery" : true
+		},
+		"level" : 2,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "OBSTACLE",
+		"graphics" : {
+			"iconBook" : "SPELLS.def:0:15",
+			"iconScroll" : "SPELLSCR.def:0:15",
+			"iconEffect" : "SPELLINT.def:0:16",
+			"iconImmune" : "SPELLINT.def:0:16",
+			"iconScenarioBonus" : "SPELLBON.def:0:15"
+		},
+		"animation" : {
+			"hit" : ["C18SPW0"]
+		},
+		"sounds" : {
+			"cast" : "REMOVEOB"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Convert one ordinary physical obstacle into temporary Diamond Golems. The total health is 80 + 2 x Spell Power + 50 x obstacle footprint; walls, gates, moats, corpses, magical obstacles and artifacts are invalid.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {
+					"transfigureMatter" : {
+						"type" : "core:transfigureMatter",
+						"id" : "core:diamondGolem"
+					}
+				}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Convert one ordinary physical obstacle into temporary Diamond Golems. The total health is 80 + 2 x Spell Power + 50 x obstacle footprint; walls, gates, moats, corpses, magical obstacles and artifacts are invalid.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {
+					"transfigureMatter" : {
+						"type" : "core:transfigureMatter",
+						"id" : "core:diamondGolem"
+					}
+				}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Convert one ordinary physical obstacle into temporary Diamond Golems. The total health is 80 + 2 x Spell Power + 50 x obstacle footprint; walls, gates, moats, corpses, magical obstacles and artifacts are invalid.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {
+					"transfigureMatter" : {
+						"type" : "core:transfigureMatter",
+						"id" : "core:diamondGolem"
+					}
+				}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Convert one ordinary physical obstacle into temporary Diamond Golems. The total health is 80 + 2 x Spell Power + 50 x obstacle footprint; walls, gates, moats, corpses, magical obstacles and artifacts are invalid.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {
+					"transfigureMatter" : {
+						"type" : "core:transfigureMatter",
+						"id" : "core:diamondGolem"
+					}
+				}
+			}
+		},
+		"flags" : {
+			"indifferent" : true
+		},
+		"targetCondition" : {}
+	}
+}

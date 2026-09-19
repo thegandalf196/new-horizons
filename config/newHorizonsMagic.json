@@ -467,6 +467,18 @@
 				"new-horizons:nature"
 			]
 		},
+		"new-horizons:transfigureMatter": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 2,
+			"costs": [
+				8,
+				8,
+				8,
+				8
+			]
+		},
 		"core:resurrection": {
 			"schools": [
 				"new-horizons:light"

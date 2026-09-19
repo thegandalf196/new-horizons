@@ -168,6 +168,7 @@ set(test_SRCS
 		server/battles/TeleporterPerkLifecycleTest.cpp
 		server/battles/SelectiveDispelPerkTest.cpp
 		server/battles/TemporalFieldPerkTest.cpp
+		server/battles/TransfigureMatterPerkTest.cpp
 		server/battles/NewHorizonsMagicStateTest.cpp
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
 		server/battles/NewHorizonsSkillRewardTest.cpp

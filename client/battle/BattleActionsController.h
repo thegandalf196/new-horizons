@@ -157,6 +157,13 @@ public:
 	const CSpell * getCurrentSpell(const BattleHex & hoveredHex);
 	spells::Mode getCurrentCastMode() const;
 
+	/// New Horizons Transfigure Matter targets ordinary visible scenery only.
+	/// These helpers keep the client overlay and click-time legality check in
+	/// lockstep without changing the authoritative spell rules.
+	static bool isTransfigureMatterSpell(const CSpell * spell);
+	bool isValidTransfigureMatterTarget(const BattleHex & targetHex) const;
+	BattleHexArray getTransfigureMatterTargetHexes(const CSpell * spell);
+
 	/// methods to work with array of possible actions, needed to control special creatures abilities
 	const std::vector<PossiblePlayerBattleAction> & getPossibleActions() const;
 	

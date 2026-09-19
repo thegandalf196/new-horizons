@@ -1657,7 +1657,7 @@
 					"requires": "basic",
 					"description": "Transfigure Matter creates 25% more Diamond Golem HP.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Transfigure Matter creates 25% more Diamond Golem HP."
 					}
 				},

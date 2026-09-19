@@ -31,6 +31,7 @@
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/CStack.h"
+#include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/BattleAction.h"
@@ -49,6 +50,19 @@ struct TextReplacement
 };
 
 using TextReplacementList = std::vector<TextReplacement>;
+
+constexpr std::string_view transfigureMatterJsonKey = "new-horizons:transfigureMatter";
+
+bool isTransfigureMatterObstacle(const CObstacleInstance * obstacle)
+{
+	if(!obstacle || obstacle->obstacleType != CObstacleInstance::USUAL)
+		return false;
+
+	// The effect converts the whole ordinary scenery footprint. Reading the
+	// affected tiles also keeps malformed/empty obstacle entries out of the
+	// overlay and click path.
+	return !obstacle->getAffectedTiles().empty();
+}
 
 static std::string replacePlaceholders(const std::string & input, const TextReplacementList & format )
 {
@@ -189,6 +203,42 @@ static std::string prepareSpellEffectText(int gnrlTextID, const spells::effects:
 	return baseText +" ("+ outputString +")";
 }
 
+static std::string prepareTransfigureMatterText(const CSpell * spell, const spells::effects::SpellEffectValue & value)
+{
+	if(!spell)
+		return {};
+
+	auto templateText = MetaString::createFromTextID("core.genrltxt", 26);
+	templateText.replaceRawString(spell->getNameTranslated());
+	std::string result = templateText.toString(&GAME->translator());
+	std::vector<std::string> details;
+
+	if(value.unitsDelta > 0 && value.unitType)
+	{
+		const auto unitName = value.unitsDelta == 1
+			? value.unitType->getNameSingularTranslated()
+			: value.unitType->getNamePluralTranslated();
+		details.push_back("+ " + std::to_string(value.unitsDelta) + " " + unitName);
+	}
+
+	if(value.hpDelta > 0)
+		details.push_back("total HP: " + std::to_string(value.hpDelta));
+
+	if(!details.empty())
+	{
+		result += " (";
+		for(size_t index = 0; index < details.size(); ++index)
+		{
+			if(index != 0)
+				result += ", ";
+			result += details[index];
+		}
+		result += ")";
+	}
+
+	return result;
+}
+
 static BattleHex findAttackFromHex(const BattleInterface & owner, const CStack * attacker, const BattleHex & targetHex, bool allowLongWeapon)
 {
 	if(!attacker || !targetHex.isValid())
@@ -215,6 +265,58 @@ BattleActionsController::BattleActionsController(BattleInterface & owner):
 	selectedStack(nullptr),
 	heroSpellToCast(nullptr)
 {
+}
+
+bool BattleActionsController::isTransfigureMatterSpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == transfigureMatterJsonKey;
+}
+
+bool BattleActionsController::isValidTransfigureMatterTarget(const BattleHex & targetHex) const
+{
+	if(!targetHex.isValid())
+		return false;
+
+	const auto battle = owner.getBattle();
+	if(!battle)
+		return false;
+
+	// Do not use battleGetAllObstaclesOnPos here: moat instances have no
+	// affected-tile footprint and querying one would assert. Filter the category
+	// before asking an ordinary obstacle for its occupied tiles.
+	for(const auto & obstacle : battle->battleGetAllObstacles())
+		if(isTransfigureMatterObstacle(obstacle.get()) && obstacle->getAffectedTiles().contains(targetHex))
+			return true;
+
+	return false;
+}
+
+BattleHexArray BattleActionsController::getTransfigureMatterTargetHexes(const CSpell * spell)
+{
+	BattleHexArray result;
+	const auto battle = owner.getBattle();
+	if(!battle)
+		return result;
+
+	for(const auto & obstacle : battle->battleGetAllObstacles())
+	{
+		if(!isTransfigureMatterObstacle(obstacle.get()))
+			continue;
+
+		const auto footprint = obstacle->getAffectedTiles();
+		const auto legalTarget = std::ranges::find_if(footprint, [this, spell](const BattleHex & hex)
+		{
+			return hex.isValid() && isCastingPossibleHere(spell, nullptr, hex);
+		});
+		if(legalTarget == footprint.end())
+			continue;
+
+		for(const auto & hex : footprint)
+			if(hex.isValid())
+				result.insert(hex);
+	}
+
+	return result;
 }
 
 void BattleActionsController::setMagicArrowOverchargeFactory(MagicArrowOverchargeFactory factory)
@@ -777,6 +879,8 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 					owner.getBattle()->getSpellEffectValue(spell, getCurrentSpellcaster(), getCurrentCastMode(), targetHex);
 
 			// "Cast %s" plus dmg and kills info
+			if(isTransfigureMatterSpell(spell))
+				return prepareTransfigureMatterText(spell, *spellEffectValue);
 			return prepareSpellEffectText(26, *spellEffectValue, spell->getNameTranslated(), "");
 		}
 
@@ -809,7 +913,15 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 		}
 
 		case PossiblePlayerBattleAction::OBSTACLE:
+		{
+			const CSpell * spell = action.spell().toSpell();
+			if(isTransfigureMatterSpell(spell))
+			{
+				auto spellEffectValue = owner.getBattle()->getSpellEffectValue(spell, getCurrentSpellcaster(), getCurrentCastMode(), targetHex);
+				return prepareTransfigureMatterText(spell, *spellEffectValue);
+			}
 			return LIBRARY->generaltexth->allTexts[550];
+		}
 
 		case PossiblePlayerBattleAction::SACRIFICE:
 		{
@@ -958,6 +1070,8 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 			return false;
 
 		case PossiblePlayerBattleAction::ANY_LOCATION:
+			if(isTransfigureMatterSpell(action.spell().toSpell()) && !isValidTransfigureMatterTarget(targetHex))
+				return false;
 			return isCastingPossibleHere(action.spell().toSpell(), nullptr, targetHex);
 
 		case PossiblePlayerBattleAction::AIMED_SPELL_CREATURE:
@@ -991,6 +1105,8 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 
 		case PossiblePlayerBattleAction::OBSTACLE:
 		case PossiblePlayerBattleAction::FREE_LOCATION:
+			if(isTransfigureMatterSpell(action.spell().toSpell()) && !isValidTransfigureMatterTarget(targetHex))
+				return false;
 			return isCastingPossibleHere(action.spell().toSpell(), nullptr, targetHex);
 
 		case PossiblePlayerBattleAction::CATAPULT:

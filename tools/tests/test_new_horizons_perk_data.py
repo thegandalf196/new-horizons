@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:sorceryMagic.overcharger",
+    "new-horizons:sorceryMagic.matterShaper",
     "new-horizons:sorceryMagic.selectiveDispel",
     "new-horizons:sorceryMagic.temporalField",
     "new-horizons:sorceryMagic.temporalist",
