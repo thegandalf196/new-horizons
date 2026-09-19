@@ -46,6 +46,7 @@ public:
 	std::shared_ptr<CAnimImage> image;
 	Component data;
 	std::string customSubtitle;
+	std::string customDescription;
 	ESize size; //component size.
 	EFonts font; //Font size of label
 	bool newLine; //Line break after component
@@ -75,6 +76,8 @@ public:
 	void clickPressed(const Point & cursorPosition) override; //call-in
 	void clickDouble(const Point & cursorPosition) override; //call-in
 	CSelectableComponent(ComponentType Type, ComponentSubType Sub, int Val, ESize imageSize=large, std::function<void()> OnSelect = nullptr);
+	CSelectableComponent(ComponentType Type, ComponentSubType Sub, const std::string & subtitle,
+		ESize imageSize=large, std::function<void()> OnSelect = nullptr);
 	CSelectableComponent(const Component & c, std::function<void()> OnSelect = nullptr);
 };
 

@@ -48,9 +48,16 @@ void CEmptyAI::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, Que
 		cb->chooseHeroMastery(offer.hero, queryID, offer.sequence, newHorizonsHeroes::chooseMasteryForArmy(offer, *hero, cb.get()));
 }
 
-void CEmptyAI::heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills, QueryID queryID)
+void CEmptyAI::heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills,
+	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)
 {
-	cb->selectionMade(CRandomGenerator::getDefault().nextInt((int)skills.size() - 1), queryID);
+	if(perks.empty() && !skills.empty())
+	{
+		cb->selectionMade(CRandomGenerator::getDefault().nextInt(static_cast<int>(skills.size()) - 1), queryID);
+		return;
+	}
+	const int choiceCount = static_cast<int>(skills.size() + perks.size());
+	cb->selectionMade(choiceCount > 1 ? CRandomGenerator::getDefault().nextInt(choiceCount - 1) : 0, queryID);
 }
 
 void CEmptyAI::commanderGotLevel(const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID)

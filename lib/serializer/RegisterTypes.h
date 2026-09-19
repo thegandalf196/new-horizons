@@ -312,4 +312,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<HeroMasteryDialog>(271);
 	s.template registerType<HeroMasteryChosen>(272);
 	s.template registerType<HeroMasteryReply>(273);
+	s.template registerType<HeroPerkChosen>(274);
 }

@@ -96,6 +96,7 @@ public:
 	virtual void visitChangeObjectVisitors(ChangeObjectVisitors & pack) {}
 	virtual void visitChangeArtifactsCostume(ChangeArtifactsCostume & pack) {}
 	virtual void visitHeroLevelUp(HeroLevelUp & pack) {}
+	virtual void visitHeroPerkChosen(HeroPerkChosen & pack) {}
 	virtual void visitHeroMasteryOffer(HeroMasteryOffer & pack) {}
 	virtual void visitHeroMasteryDialog(HeroMasteryDialog & pack) {}
 	virtual void visitHeroMasteryChosen(HeroMasteryChosen & pack) {}

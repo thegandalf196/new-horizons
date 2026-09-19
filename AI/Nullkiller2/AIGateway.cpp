@@ -558,13 +558,14 @@ void AIGateway::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, Qu
 	});
 }
 
-void AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, QueryID queryID)
+void AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills,
+	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)
 {
 	LOG_TRACE_PARAMS(logAi, "queryID '%i'", queryID);
 	status.addQuery(queryID, boost::str(boost::format("Hero %s got level %d") % hero->getNameTextID() % hero->level));
 	HeroPtr heroPtr(hero, cc.get());
 
-	executeActionAsync("heroGotLevel", [this, heroPtr, skills, queryID]()
+	executeActionAsync("heroGotLevel", [this, heroPtr, skills, perks, queryID]()
 	{
 		int sel = 0;
 
@@ -572,7 +573,21 @@ void AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, s
 		{
 			std::unique_lock lockGuard(nullkiller->aiStateMutex);
 			nullkiller->heroManager->update();
-			sel = nullkiller->heroManager->selectBestSkillIndex(heroPtr, skills);
+			if(!skills.empty())
+				sel = nullkiller->heroManager->selectBestSkillIndex(heroPtr, skills);
+			if(!perks.empty())
+			{
+				const auto best = std::max_element(perks.begin(), perks.end(), [](const auto & left, const auto & right)
+				{
+					return std::tie(left.requiredRank, left.selection.perkId)
+						< std::tie(right.requiredRank, right.selection.perkId);
+				});
+				// Advanced/Expert perks are specialized enough to outrank another
+				// generic skill roll. Basic perks remain the fallback when no skill
+				// choice exists, preserving early-game skill development.
+				if(skills.empty() || best->requiredRank >= 2)
+					sel = static_cast<int>(skills.size() + std::distance(perks.begin(), best));
+			}
 		}
 
 		answerQuery(queryID, sel);

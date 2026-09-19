@@ -138,6 +138,27 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill
 	heroLevelUpChoiceDone(hero);
 }
 
+void CGameHandler::levelUpHero(const CGHeroInstance * hero,
+	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & offer, size_t choice, uint64_t seed)
+{
+	if(!hero)
+		throw std::runtime_error("Cannot choose a perk for a missing hero");
+	const auto rankLookup = [hero](const std::string & skillId)
+	{
+		return hero->getPerkSkillRank(skillId);
+	};
+	// Validate without mutating authoritative state. The replicated pack below is
+	// the sole state-change path for the server and every connected client.
+	auto validated = hero->getPerkState();
+	validated.acceptOffer(offer, choice, rankLookup, seed);
+
+	HeroPerkChosen chosen;
+	chosen.hero = hero->id;
+	chosen.selection = offer.at(choice).selection;
+	sendAndApply(chosen);
+	heroLevelUpChoiceDone(hero);
+}
+
 void CGameHandler::heroLevelUpChoiceDone(const CGHeroInstance * hero)
 {
 	if(!offerHeroMastery(hero))
@@ -221,14 +242,27 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 	hlu.artilleryExpertBeforeGain = artilleryExpertBeforeGain;
 	hlu.logisticsExpertBeforeGain = logisticsExpertBeforeGain;
 	hlu.skills = randomizer->rollSecondarySkills(hero);
+	if(newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+	{
+		const size_t maxSkillChoices = static_cast<size_t>(hero->getPerkState().rules["maxSkillChoices"].Integer());
+		if(hlu.skills.size() > maxSkillChoices)
+			hlu.skills.resize(maxSkillChoices);
+		hlu.perkOfferSeed = static_cast<uint32_t>(randomizer->getDefault().nextInt());
+		hlu.perks = hero->getPerkState().prepareOffer([hero](const std::string & skillId)
+		{
+			return hero->getPerkSkillRank(skillId);
+		}, hlu.perkOfferSeed);
+	}
 
 	if (!hero->getOwner().isValidPlayer())
 	{
 		sendAndApply(hlu);
-		if(hlu.skills.empty())
+		if(hlu.skills.empty() && hlu.perks.empty())
 			levelUpHero(hero);
-		else
+		else if(!hlu.skills.empty())
 			levelUpHero(hero, hlu.skills.front());
+		else
+			levelUpHero(hero, hlu.perks, 0, hlu.perkOfferSeed);
 	}
 	else
 	{
@@ -3683,7 +3717,8 @@ bool CGameHandler::queryReply(QueryID qid, std::optional<int32_t> answer, Player
 	{
 		auto currentQuery = queries->getQuery(qid);
 
-		if(currentQuery != nullptr && currentQuery->getType() != CHeroMasteryDialogQuery::TYPE
+		if(currentQuery != nullptr && vstd::contains(currentQuery->players, player)
+			&& currentQuery->getType() != CHeroMasteryDialogQuery::TYPE
 			&& currentQuery->endsByPlayerAnswer() && currentQuery->isValidReply(answer))
 			currentQuery->setReply(answer);
 

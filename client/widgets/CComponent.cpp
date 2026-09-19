@@ -226,6 +226,9 @@ size_t CComponent::getIndex() const
 
 std::string CComponent::getDescription() const
 {
+	if(!customDescription.empty())
+		return customDescription;
+
 	switch(data.type)
 	{
 		case ComponentType::PRIM_SKILL:
@@ -410,6 +413,15 @@ CSelectableComponent::CSelectableComponent(const Component &c, std::function<voi
 
 CSelectableComponent::CSelectableComponent(ComponentType Type, ComponentSubType Sub, int Val, ESize imageSize, std::function<void()> OnSelect):
 	CComponent(Type,Sub,Val, imageSize),onSelect(OnSelect)
+{
+	setRedrawParent(true);
+	addUsedEvents(LCLICK | DOUBLECLICK | KEYBOARD);
+	init();
+}
+
+CSelectableComponent::CSelectableComponent(ComponentType Type, ComponentSubType Sub, const std::string & subtitle,
+	ESize imageSize, std::function<void()> OnSelect):
+	CComponent(Type, Sub, subtitle, imageSize), onSelect(OnSelect)
 {
 	setRedrawParent(true);
 	addUsedEvents(LCLICK | DOUBLECLICK | KEYBOARD);

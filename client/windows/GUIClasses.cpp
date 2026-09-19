@@ -479,19 +479,24 @@ void CSplitWindow::sliderMoved(int to)
 	setAmount(rightMin + to, false);
 }
 
-CLevelWindow::CLevelWindow(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills, std::function<void(ui32)> callback, const std::optional<PrimaryGainSnapshot> & gains)
+CLevelWindow::CLevelWindow(const CGHeroInstance * hero, PrimarySkill pskill, const std::vector<SecondarySkill> & skills,
+	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, std::function<void(ui32)> callback,
+	const std::optional<PrimaryGainSnapshot> & gains)
 	: CWindowObject(PLAYER_COLORED, ImagePath::builtin("LVLUPBKG")),
 	skillViewOffset(0)
 {
 	OBJECT_CONSTRUCTION;
 
-	initLevelUpData(hero, skills, callback, gains);
+	initLevelUpData(hero, skills, perks, callback, gains);
 	createLevelUpControls(pskill);
 	setRedrawParent(true);
 	redraw();
 }
 
-void CLevelWindow::initLevelUpData(const CGHeroInstance * heroInstance, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains)
+void CLevelWindow::initLevelUpData(const CGHeroInstance * heroInstance,
+	const std::vector<SecondarySkill> & availableSkills,
+	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & availablePerks,
+	const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains)
 {
 	primaryGains = gains;
 	GAME->interface()->showingDialog->setBusy();
@@ -499,12 +504,15 @@ void CLevelWindow::initLevelUpData(const CGHeroInstance * heroInstance, const st
 	hero = heroInstance;
 	cb = callback;
 	skills = availableSkills;
+	perks = availablePerks;
 	skillViewOffset = 0;
-	sortedSkills = availableSkills;
-	std::sort(sortedSkills.begin(), sortedSkills.end(), [heroInstance](auto a, auto b) {
-		if(heroInstance->getSecSkillLevel(a) == heroInstance->getSecSkillLevel(b))
-			return LIBRARY->skillh->getById(a)->getNameTranslated() < LIBRARY->skillh->getById(b)->getNameTranslated();
-		return heroInstance->getSecSkillLevel(a) > heroInstance->getSecSkillLevel(b);
+	choiceOrder.resize(skills.size() + perks.size());
+	std::iota(choiceOrder.begin(), choiceOrder.end(), 0);
+	std::sort(choiceOrder.begin(), choiceOrder.begin() + skills.size(), [this, heroInstance](size_t left, size_t right) {
+		if(heroInstance->getSecSkillLevel(skills[left]) == heroInstance->getSecSkillLevel(skills[right]))
+			return LIBRARY->skillh->getById(skills[left])->getNameTranslated()
+				< LIBRARY->skillh->getById(skills[right])->getNameTranslated();
+		return heroInstance->getSecSkillLevel(skills[left]) > heroInstance->getSecSkillLevel(skills[right]);
 	});
 }
 
@@ -522,17 +530,17 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 
 	createSkillBox();
 
-	if(skills.size() > 3)
+	if(choiceOrder.size() > 4)
 	{
 		buttonLeft = std::make_shared<CButton>(Point(23, 309), AnimationPath::builtin("HSBTNS3"), CButton::tooltip(), [this](){
 			if(skillViewOffset > 0)
 				skillViewOffset--;
 			else
-				skillViewOffset = this->skills.size() - 1;
+				skillViewOffset = this->choiceOrder.size() - 1;
 			createSkillBox();
 		}, EShortcut::MOVE_LEFT);
 		buttonRight = std::make_shared<CButton>(Point(pos.w - 45, 309), AnimationPath::builtin("HSBTNS5"), CButton::tooltip(), [this](){
-			if(skillViewOffset < this->skills.size() - 1)
+			if(skillViewOffset < this->choiceOrder.size() - 1)
 				skillViewOffset++;
 			else
 				skillViewOffset = 0;
@@ -585,28 +593,31 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 	}
 }
 
-void CLevelWindow::updateLevelUpData(const CGHeroInstance * heroInstance, PrimarySkill pskill, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains)
+void CLevelWindow::updateLevelUpData(const CGHeroInstance * heroInstance, PrimarySkill pskill,
+	const std::vector<SecondarySkill> & availableSkills,
+	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & availablePerks,
+	const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains)
 {
 	OBJECT_CONSTRUCTION;
 
-	initLevelUpData(heroInstance, availableSkills, callback, gains);
+	initLevelUpData(heroInstance, availableSkills, availablePerks, callback, gains);
 	createLevelUpControls(pskill);
 	setRedrawParent(true);
 	redraw();
 }
 
-std::vector<SecondarySkill> getSkillsToShow(const std::vector<SecondarySkill>& skills, int offset, int count)
+std::vector<size_t> getChoicesToShow(const std::vector<size_t> & choices, int offset, int count)
 {
-	std::vector<SecondarySkill> result;
+	std::vector<size_t> result;
 
-	int size = skills.size();
+	int size = choices.size();
 	if (size == 0 || count <= 0) return result;
 
 	offset = offset % size; // ensure offset is within bounds
 	for (int i = 0; i < std::min(count, size); ++i)
 	{
 		int index = (offset + i) % size; // ring buffer like
-		result.push_back(skills[index]);
+		result.push_back(choices[index]);
 	}
 
 	return result;
@@ -618,13 +629,32 @@ void CLevelWindow::createSkillBox()
 
 	box.reset();
 
-	std::vector<SecondarySkill> skillsToShow = skills.size() > 3 ? getSkillsToShow(sortedSkills, skillViewOffset, 3) : sortedSkills;
-	if(!skillsToShow.empty())
+	const auto choicesToShow = choiceOrder.size() > 4 ? getChoicesToShow(choiceOrder, skillViewOffset, 4) : choiceOrder;
+	if(!choicesToShow.empty())
 	{
 		std::vector<std::shared_ptr<CSelectableComponent>> comps;
-		for(auto & skill : skillsToShow)
+		for(const size_t originalIndex : choicesToShow)
 		{
-			auto comp = std::make_shared<CSelectableComponent>(ComponentType::SEC_SKILL, skill, hero->getSecSkillLevel(SecondarySkill(skill))+1, CComponent::medium);
+			std::shared_ptr<CSelectableComponent> comp;
+			if(originalIndex < skills.size())
+			{
+				const auto skill = skills[originalIndex];
+				comp = std::make_shared<CSelectableComponent>(ComponentType::SEC_SKILL, skill,
+					hero->getSecSkillLevel(skill) + 1, CComponent::medium);
+			}
+			else
+			{
+				const auto & perk = perks.at(originalIndex - skills.size());
+				const int decoded = SecondarySkill::decode(perk.selection.skillId);
+				const SecondarySkill iconSkill = decoded >= 0 && SecondarySkill::encode(decoded) == perk.selection.skillId
+					? SecondarySkill(decoded)
+					: SecondarySkill(SecondarySkill::LEADERSHIP);
+				const auto subtitle = GAME->translator().translate("core.skilllev", perk.requiredRank - 1)
+					+ "\n" + perk.name;
+				comp = std::make_shared<CSelectableComponent>(ComponentType::SEC_SKILL, iconSkill,
+					subtitle, CComponent::medium);
+				comp->customDescription = perk.description;
+			}
 			comp->onChoose = std::bind(&CLevelWindow::submitSelection, this);
 			comps.push_back(comp);
 		}
@@ -652,7 +682,7 @@ void CLevelWindow::submitSelection()
 
 		// If there are skills available, we must not close without producing a valid choice
 		// For a single available option, auto-pick it
-		if(skills.empty())
+		if(choiceOrder.empty())
 		{
 			cb(0);
 		}
@@ -660,16 +690,13 @@ void CLevelWindow::submitSelection()
 		{
 			if(idx == -1)
 			{
-				if(skills.size() == 1)
+				if(choiceOrder.size() == 1)
 					idx = 0;
 				else
 					return; // require explicit selection
 			}
 
-			const auto & chosen = sortedSkills[(idx + skillViewOffset) % skills.size()];
-			auto it = std::find(skills.begin(), skills.end(), chosen);
-
-			cb(std::distance(skills.begin(), it));
+			cb(choiceOrder[(idx + skillViewOffset) % choiceOrder.size()]);
 		}
 
 		selectionSubmitted = true;
@@ -682,7 +709,7 @@ void CLevelWindow::submitSelection()
 
 void CLevelWindow::close()
 {
-	if(!selectionSubmitted && !skills.empty())
+	if(!selectionSubmitted && !choiceOrder.empty())
 		return;
 
 	CWindowObject::close();

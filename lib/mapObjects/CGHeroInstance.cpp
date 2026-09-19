@@ -1645,6 +1645,24 @@ bool CGHeroInstance::gainsLevel() const
 	return level < LIBRARY->heroh->maxSupportedLevel() && exp >= static_cast<TExpType>(LIBRARY->heroh->reqExp(level+1));
 }
 
+int CGHeroInstance::getPerkSkillRank(const std::string & skillId) const
+{
+	const int decoded = SecondarySkill::decode(skillId);
+	if(decoded < 0)
+		return 0;
+	const SecondarySkill skill(decoded);
+	// SecondarySkill::decode supports an unscoped suffix fallback for legacy
+	// content. Perk registries require the exact canonical scoped identity.
+	if(SecondarySkill::encode(skill.getNum()) != skillId)
+		return 0;
+	return getSecSkillLevel(skill);
+}
+
+void CGHeroInstance::applyPerkSelection(const newHorizonsHeroes::PerkSelection & selection)
+{
+	perkState.select(selection.skillId, selection.perkId, getPerkSkillRank(selection.skillId));
+}
+
 std::optional<newHorizonsHeroes::MasteryView> CGHeroInstance::getMasteryView() const
 {
 	if(!newHorizonsHeroes::usesRules(masteryState.rules))

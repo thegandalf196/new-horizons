@@ -195,6 +195,60 @@ TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpRejectsForgedChoiceIndicesBefo
 	EXPECT_FALSE(emptyQuery.isValidReply(1));
 }
 
+TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpValidatesAndAppliesOnlyTheStoredPerkOffer)
+{
+	startGame();
+	const auto * found = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(found, nullptr);
+	auto * hero = gameState()->getHero(found->id);
+	ASSERT_NE(hero, nullptr);
+	GameHandlerTestServer server(gameState());
+	CGameHandler gh(server, gameState());
+
+	const std::string skillId = "new-horizons:offense";
+	const int decoded = SecondarySkill::decode(skillId);
+	ASSERT_GE(decoded, 0);
+	const SecondarySkill skill(decoded);
+	ASSERT_EQ(SecondarySkill::encode(skill.getNum()), skillId);
+	gh.changeSecSkill(hero, skill, 1, ChangeValueMode::ABSOLUTE);
+	auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	state.selected.clear();
+	state.validate();
+
+	HeroLevelUp levelUp;
+	levelUp.player = PlayerColor(0);
+	levelUp.heroId = hero->id;
+	levelUp.skills = {SecondarySkill::ARCHERY};
+	levelUp.perkOfferSeed = 42;
+	levelUp.perks = state.prepareOffer([hero](const std::string & id)
+	{
+		return hero->getPerkSkillRank(id);
+	}, levelUp.perkOfferSeed);
+	ASSERT_FALSE(levelUp.perks.empty());
+
+	CHeroLevelUpDialogQuery query(&gh, levelUp, hero);
+	EXPECT_TRUE(query.isValidReply(0));
+	EXPECT_TRUE(query.isValidReply(1));
+	levelUp.perkOfferSeed++;
+	CHeroLevelUpDialogQuery wrongSeed(&gh, levelUp, hero);
+	EXPECT_FALSE(wrongSeed.isValidReply(1));
+	levelUp.perkOfferSeed--;
+	levelUp.perks.front().name += " forged";
+	CHeroLevelUpDialogQuery forged(&gh, levelUp, hero);
+	EXPECT_FALSE(forged.isValidReply(1));
+	levelUp.perks = state.prepareOffer([hero](const std::string & id)
+	{
+		return hero->getPerkSkillRank(id);
+	}, levelUp.perkOfferSeed);
+
+	auto liveQuery = std::make_shared<CHeroLevelUpDialogQuery>(&gh, levelUp, hero);
+	gh.queries->addQuery(liveQuery);
+	ASSERT_TRUE(gh.queryReply(liveQuery->queryID, 1, PlayerColor(0)));
+	EXPECT_EQ(hero->getPerkState().selected.size(), 1u);
+	EXPECT_EQ(hero->getPerkState().selected.front(), levelUp.perks.front().selection);
+}
+
 TEST_F(QueriesProcessorTest, popIfTop_removesTopQuery)
 {
 	auto query = std::make_shared<TestQuery>(&gh, PlayerColor(1), QueryType::HeroMovement);
@@ -584,4 +638,20 @@ TEST_F(QueriesProcessorTest, getQuery_returnsAddedQueryAndNullAfterRemoval)
 TEST_F(QueriesProcessorTest, countQuery_returnsZeroForNullptr)
 {
 	EXPECT_EQ(queries.countQuery(nullptr), 0);
+}
+
+TEST_F(QueriesProcessorTest, foreignPlayerCannotPreseedReplyOnAnotherPlayersNonTopQuery)
+{
+	std::optional<int32_t> captured;
+	auto ownTop = std::make_shared<CGenericQuery>(&gh, PlayerColor(0), [](std::optional<int32_t>) {});
+	auto foreign = std::make_shared<CGenericQuery>(&gh, PlayerColor(1), [&](std::optional<int32_t> reply)
+	{
+		captured = reply;
+	});
+	queries.addQuery(ownTop);
+	queries.addQuery(foreign);
+
+	EXPECT_FALSE(gh.queryReply(foreign->queryID, 7, PlayerColor(0)));
+	queries.popQuery(foreign);
+	EXPECT_FALSE(captured.has_value());
 }

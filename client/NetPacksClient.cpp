@@ -709,7 +709,7 @@ void ApplyClientNetPackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	const CGHeroInstance * hero = cl.gameInfo().getHero(pack.heroId);
 	assert(hero);
-	callOnlyThatInterface(cl, pack.player, &CGameInterface::heroGotLevel, hero, pack.primskill, pack.skills, pack.queryID);
+	callOnlyThatInterface(cl, pack.player, &CGameInterface::heroGotLevel, hero, pack.primskill, pack.skills, pack.perks, pack.queryID);
 }
 
 void ApplyClientNetPackVisitor::visitHeroMasteryOffer(HeroMasteryOffer & pack)

@@ -209,6 +209,8 @@ public:
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
+	int getPerkSkillRank(const std::string & skillId) const;
+	void applyPerkSelection(const newHorizonsHeroes::PerkSelection & selection);
 	std::optional<newHorizonsHeroes::MasteryView> getMasteryView() const;
 	void captureMasteryEligibility(uint32_t nextLevel);
 	void captureMasteryEligibility(uint32_t nextLevel, bool artilleryExpertBeforeGain, bool logisticsExpertBeforeGain = false);

@@ -125,7 +125,8 @@ protected: // Call-ins from server, should not be called directly, but only via 
 
 	void heroVisit(const CGHeroInstance * visitor, const CGObjectInstance * visitedObj, bool start) override;
 	void heroCreated(const CGHeroInstance* hero) override;
-	void heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills, QueryID queryID) override;
+	void heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills,
+		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID) override;
 	void heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID) override;
 	void commanderGotLevel (const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID) override;
 	void heroInGarrisonChange(const CGTownInstance *town) override;

@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "../entities/hero/NewHorizonsMasteryRules.h"
+#include "../entities/hero/NewHorizonsPerkState.h"
 
 #include "ArtifactLocation.h"
 #include "Component.h"
@@ -1352,6 +1353,8 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 	PrimarySkill primskill = PrimarySkill::ATTACK;
 	std::array<int, GameConstants::PRIMARY_SKILLS> primaryGains{};
 	std::vector<SecondarySkill> skills;
+	std::vector<newHorizonsHeroes::PerkOfferCandidate> perks;
+	int64_t perkOfferSeed = 0;
 	bool artilleryExpertBeforeGain = false;
 	bool logisticsExpertBeforeGain = false;
 
@@ -1364,6 +1367,18 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 		h & heroId;
 		h & primskill;
 		h & skills;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PERK_OFFERS))
+		{
+			h & perks;
+			h & perkOfferSeed;
+		}
+		else if(!h.saving)
+		{
+			perks.clear();
+			perkOfferSeed = 0;
+		}
+		else if(!perks.empty())
+			throw std::runtime_error("Cannot write New Horizons perk offer to an older format");
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_GROWTH))
 			h & primaryGains;
 		else if(!h.saving)
@@ -1382,6 +1397,21 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 			logisticsExpertBeforeGain = false;
 		else if(logisticsExpertBeforeGain)
 			throw std::runtime_error("Cannot write Logistics pre-gain snapshot to an older format");
+	}
+};
+
+/// Replicates one server-validated perk selection to every game-state copy.
+struct DLL_LINKAGE HeroPerkChosen : public CPackForClient
+{
+	ObjectInstanceID hero;
+	newHorizonsHeroes::PerkSelection selection;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template<typename Handler> void serialize(Handler & h)
+	{
+		h & hero;
+		h & selection;
 	}
 };
 

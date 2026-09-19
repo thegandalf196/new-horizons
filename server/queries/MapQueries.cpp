@@ -239,24 +239,58 @@ bool CHeroLevelUpDialogQuery::isValidReply(std::optional<int32_t> reply) const
 {
 	if(!reply || *reply < 0)
 		return false;
-	if(hlu.skills.empty())
+	const size_t choiceCount = hlu.skills.size() + hlu.perks.size();
+	if(choiceCount == 0)
 		return *reply == 0;
-	return static_cast<size_t>(*reply) < hlu.skills.size();
+	const size_t choice = static_cast<size_t>(*reply);
+	if(choice >= choiceCount)
+		return false;
+	if(choice < hlu.skills.size())
+		return true;
+	try
+	{
+		auto validated = hero->getPerkState();
+		validated.acceptOffer(hlu.perks, choice - hlu.skills.size(), [this](const std::string & skillId)
+		{
+			return hero->getPerkSkillRank(skillId);
+		}, hlu.perkOfferSeed);
+		return true;
+	}
+	catch(const std::exception &)
+	{
+		return false;
+	}
 }
 
 void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 {
 	assert(answer && isValidReply(static_cast<int32_t>(*answer)));
-	gh->sendQueryResolved(queryID);
-	if(hlu.skills.empty())
+	if(hlu.skills.empty() && hlu.perks.empty())
 	{
+		gh->sendQueryResolved(queryID);
 		logGlobal->trace("Completing hero level-up query. %s gains no secondary skill", hero->getNameTextID());
 		gh->heroLevelUpChoiceDone(hero);
 		return;
 	}
 
-	logGlobal->trace("Completing hero level-up query. %s gains skill %d", hero->getNameTextID(), answer.value());
-	gh->levelUpHero(hero, hlu.skills[*answer]);
+	const size_t choice = static_cast<size_t>(*answer);
+	if(choice < hlu.skills.size())
+	{
+		gh->sendQueryResolved(queryID);
+		logGlobal->trace("Completing hero level-up query. %s gains skill %d", hero->getNameTextID(), answer.value());
+		gh->levelUpHero(hero, hlu.skills[choice]);
+		return;
+	}
+	const size_t perkChoice = choice - hlu.skills.size();
+	auto validated = hero->getPerkState();
+	validated.acceptOffer(hlu.perks, perkChoice, [this](const std::string & skillId)
+	{
+		return hero->getPerkSkillRank(skillId);
+	}, hlu.perkOfferSeed);
+	gh->sendQueryResolved(queryID);
+	logGlobal->trace("Completing hero level-up query. %s gains perk %s", hero->getNameTextID(),
+		hlu.perks.at(perkChoice).selection.perkId);
+	gh->levelUpHero(hero, hlu.perks, perkChoice, hlu.perkOfferSeed);
 }
 
 void CHeroLevelUpDialogQuery::onAdded(PlayerColor color)

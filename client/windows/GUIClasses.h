@@ -12,6 +12,7 @@
 #include "CWindowObject.h"
 #include "../../lib/ResourceSet.h"
 #include "../../lib/constants/NumericConstants.h"
+#include "../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../widgets/Images.h"
 #include "../widgets/IVideoHolder.h"
 
@@ -167,18 +168,25 @@ private:
 	std::shared_ptr<CButton> buttonRight;
 
 	std::vector<SecondarySkill> skills;
-	std::vector<SecondarySkill> sortedSkills;
+	std::vector<newHorizonsHeroes::PerkOfferCandidate> perks;
+	std::vector<size_t> choiceOrder;
 	const CGHeroInstance * hero;
 
-	void selectionChanged(unsigned to);
-	void initLevelUpData(const CGHeroInstance * heroInstance, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains);
+	void initLevelUpData(const CGHeroInstance * heroInstance, const std::vector<SecondarySkill> & availableSkills,
+		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & availablePerks,
+		const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains);
 	void createLevelUpControls(PrimarySkill pskill);
 	void createSkillBox();
 	void submitSelection();
 
 public:
-	CLevelWindow(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills, std::function<void(ui32)> callback, const std::optional<PrimaryGainSnapshot> & gains = std::nullopt);
-	void updateLevelUpData(const CGHeroInstance * heroInstance, PrimarySkill pskill, const std::vector<SecondarySkill> & availableSkills, const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains = std::nullopt);
+	CLevelWindow(const CGHeroInstance *hero, PrimarySkill pskill, const std::vector<SecondarySkill> &skills,
+		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, std::function<void(ui32)> callback,
+		const std::optional<PrimaryGainSnapshot> & gains = std::nullopt);
+	void updateLevelUpData(const CGHeroInstance * heroInstance, PrimarySkill pskill,
+		const std::vector<SecondarySkill> & availableSkills,
+		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & availablePerks,
+		const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains = std::nullopt);
 	void setCloseOnSelection(bool value);
 
 	void close() override;

@@ -497,17 +497,20 @@ void CPlayerInterface::receivedResource()
 	ENGINE->windows().totalRedraw();
 }
 
-void CPlayerInterface::heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill>& skills, QueryID queryID)
+void CPlayerInterface::heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill>& skills,
+	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;
 	auto availableSkills = skills;
+	auto availablePerks = perks;
 	std::optional<CLevelWindow::PrimaryGainSnapshot> primaryGains;
 	if(const auto growth = hero->getPrimaryGrowthView())
 		primaryGains = CLevelWindow::PrimaryGainSnapshot{hero->level, growth->lastGains};
 
 	// Capture the already-applied level packet's values before queuing the UI;
 	// a later level-up must not replace this dialog's actual gain readback.
-	auto showLevelUpDialog = [this, hero, pskill, availableSkills = std::move(availableSkills), queryID, primaryGains]() mutable
+	auto showLevelUpDialog = [this, hero, pskill, availableSkills = std::move(availableSkills),
+		availablePerks = std::move(availablePerks), queryID, primaryGains]() mutable
 	{
 		ENGINE->sound().playSound(soundBase::heroNewLevel);
 		auto callback = [this, queryID](ui32 selection)
@@ -520,13 +523,13 @@ void CPlayerInterface::heroGotLevel(const CGHeroInstance *hero, PrimarySkill psk
 
 		if(auto levelWindow = ENGINE->windows().topWindow<CLevelWindow>())
 		{
-			levelWindow->updateLevelUpData(hero, pskill, availableSkills, callback, primaryGains);
+			levelWindow->updateLevelUpData(hero, pskill, availableSkills, availablePerks, callback, primaryGains);
 			return;
 		}
 
 		closeActiveLevelUpDialog();
 
-		auto levelWindow = std::make_shared<CLevelWindow>(hero, pskill, availableSkills, callback, primaryGains);
+		auto levelWindow = std::make_shared<CLevelWindow>(hero, pskill, availableSkills, availablePerks, callback, primaryGains);
 
 		// Free the visible-dialog gate as soon as the player makes a choice.
 		// The query-backed dialog queue still keeps manual input blocked until the

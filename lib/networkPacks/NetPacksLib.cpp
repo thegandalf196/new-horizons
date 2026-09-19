@@ -400,6 +400,7 @@ void HeroMasteryOffer::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMa
 void HeroMasteryDialog::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMasteryDialog(*this); }
 void HeroMasteryChosen::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMasteryChosen(*this); }
 void HeroMasteryReply::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMasteryReply(*this); }
+void HeroPerkChosen::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroPerkChosen(*this); }
 
 void HeroLevelUp::visitTyped(ICPackVisitor & visitor)
 {
