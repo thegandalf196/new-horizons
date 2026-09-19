@@ -53,6 +53,7 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/Problem.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
 BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *army1, const CCreatureSet *army2,
@@ -100,6 +101,7 @@ BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *
 	effectsController.reset(new BattleEffectsController(*this));
 	obstacleController.reset(new BattleObstacleController(*this));
 	installMagicArrowOverchargeUI();
+	installSelectiveDispelUI();
 
 	adventureInt->onAudioPaused();
 	ongoingAnimationsState.setBusy();
@@ -205,6 +207,79 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				action.target.clear();
 				action.aimToUnit(target);
 				action.spellOvercharge = overcharge;
+				curInt->cb->battleMakeSpellAction(localBattleID, action);
+				if(actionsController)
+					actionsController->endCastingSpell();
+				return true;
+			};
+			context.cancel = [this]
+			{
+				if(actionsController)
+					actionsController->endCastingSpell();
+			};
+			return context;
+		});
+}
+
+void BattleInterface::installSelectiveDispelUI()
+{
+	if(!actionsController)
+		return;
+
+	actionsController->setSelectiveDispelFactory(
+		[this](const BattleAction & pending, const CStack * initialTarget)
+			-> std::optional<SelectiveDispelContext>
+		{
+			if(!curInt || !curInt->cb)
+				return std::nullopt;
+			const BattleID localBattleID = getBattleID();
+			const auto callback = curInt->cb->getBattle(localBattleID);
+			const auto * hero = currentHero();
+			if(!callback || !callback->getBattle() || !hero || pending.spell != SpellID(SpellID::DISPEL)
+				|| !hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel"))
+				return std::nullopt;
+
+			const std::optional<uint32_t> targetUnitID = initialTarget
+				? std::make_optional(initialTarget->unitId()) : std::nullopt;
+			SelectiveDispelContext context;
+			context.anchor = ENGINE->getCursorPosition();
+			context.targetDescription = initialTarget
+				? "Target: " + std::to_string(initialTarget->getCount()) + " " + initialTarget->unitType()->getNamePluralTranslated()
+				: "Target: all affected stacks";
+			context.confirm = [this, pending, localBattleID, targetUnitID](bool selective)
+				-> bool
+			{
+				if(!curInt || !curInt->cb)
+					return false;
+				const auto callback = curInt->cb->getBattle(localBattleID);
+				const auto * hero = currentHero();
+				const auto * target = callback && targetUnitID ? callback->battleGetUnitByID(*targetUnitID) : nullptr;
+				const auto * spell = SpellID(SpellID::DISPEL).toSpell();
+				if(!callback || !callback->getBattle() || !hero || (targetUnitID && !target) || !spell
+					|| (selective && !hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel")))
+					return false;
+
+				spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
+				preview.setSelectiveDispel(selective);
+				auto mechanics = spell->battleMechanics(&preview);
+				spells::detail::ProblemImpl problem;
+				if(!mechanics->canBeCast(problem))
+					return false;
+				if(target)
+				{
+					battle::Target targetCheck;
+					targetCheck.emplace_back(target, target->getPosition());
+					if(!mechanics->canBeCastAt(targetCheck, problem))
+						return false;
+				}
+
+				BattleAction action = pending;
+				action.target.clear();
+				if(target)
+					action.aimToUnit(target);
+				else
+					action.aimToHex(BattleHex::INVALID);
+				action.spellSelectiveDispel = selective;
 				curInt->cb->battleMakeSpellAction(localBattleID, action);
 				if(actionsController)
 					actionsController->endCastingSpell();

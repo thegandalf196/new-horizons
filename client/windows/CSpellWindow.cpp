@@ -895,8 +895,14 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 			spells::detail::ProblemImpl problem;
 			if(mySpell->canBeCast(problem, owner->myInt->battleInt->getBattle().get(), spells::Mode::HERO, owner->myHero))
 			{
-				owner->myInt->battleInt->castThisSpell(mySpell->id);
+				// Close the spellbook before cast setup: a NO_LOCATION spell may
+				// synchronously open a post-selection modal (Selective Dispel), and
+				// only the topmost window may be closed.
+				auto battleInterface = owner->myInt->battleInt;
+				const SpellID selectedSpell = mySpell->id;
 				owner->fexitb();
+				battleInterface->castThisSpell(selectedSpell);
+				return;
 			}
 			else
 			{

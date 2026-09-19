@@ -45,6 +45,7 @@ public:
 	MOCK_CONST_METHOD0(getRangeLevel, IBattleCast::Value());
 	MOCK_CONST_METHOD0(getEffectPower, IBattleCast::Value());
 	MOCK_CONST_METHOD0(getEffectDuration, IBattleCast::Value());
+	MOCK_CONST_METHOD0(isSelectiveDispel, bool());
 	MOCK_CONST_METHOD0(getEffectValue, IBattleCast::Value64());
 
 	MOCK_CONST_METHOD0(getCasterColor, PlayerColor());
@@ -85,4 +86,3 @@ public:
 };
 
 }
-

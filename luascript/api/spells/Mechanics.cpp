@@ -40,6 +40,11 @@ bool MechanicsProxy::ownerMatchesUnit(const Mechanics & m, const battle::Unit & 
 	return m.ownerMatches(&unit);
 }
 
+bool MechanicsProxy::ownerIsSameAsUnit(const Mechanics & m, const battle::Unit & unit)
+{
+	return m.ownerMatches(&unit, true);
+}
+
 std::string MechanicsProxy::getPluralFormTextID(const spells::Mechanics & m, const std::string & baseTextID, int32_t count)
 {
 	std::string lang = LIBRARY->generaltexth->getPreferredLanguage();
@@ -72,6 +77,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the saved caster power divisor; legacy and ordinary creature casts use one.");
 	R.method<&Mechanics::getEffectDuration>("getEffectDuration", {},
 		"Returns the effect duration in turns.");
+	R.method<&Mechanics::isSelectiveDispel>("isSelectiveDispel", {},
+		"True when this authoritative cast selected the Sorcery Selective Dispel mode.");
 	R.method<&Mechanics::getEffectValue>("getEffectValue", {},
 		"Returns the computed effect value (e.g. damage / health amount).");
 	R.method<&Mechanics::getCasterColor>("getCasterColor", {},
@@ -106,7 +113,10 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True if the target is receptive (not immune) to the spell.");
 	R.function<&ownerMatchesUnit>("ownerMatches",
 		{{"unit", "Unit whose ownership is being compared against the caster's."}}, {},
-		"True if the given unit is owned by the same player as the caster.");
+		"Matches ownership using the spell's ordinary positive/negative/neutral targeting rules.");
+	R.function<&ownerIsSameAsUnit>("ownerIsSameAs",
+		{{"unit", "Unit whose ownership is being compared against the caster's."}}, {},
+		"True if the given unit is owned by the same player as the caster, independent of spell polarity.");
 	R.method<&Mechanics::getSpell>("getSpell", {},
 		"Returns the Spell being cast.");
 	R.method<&Mechanics::adjustEffectValue>("adjustEffectValue",

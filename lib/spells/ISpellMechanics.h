@@ -90,6 +90,7 @@ public:
 	/// Additional mana selected for a spell-specific cast option.  The default
 	/// keeps old callers and non-Sorcery spells unchanged.
 	virtual OptionalValue getOvercharge() const { return std::nullopt; }
+	virtual bool getSelectiveDispel() const { return false; }
 
 	virtual OptionalValue64 getEffectValue() const = 0;
 
@@ -118,6 +119,7 @@ public:
 	OptionalValue getEffectPower() const override;
 	OptionalValue getEffectDuration() const override;
 	OptionalValue getOvercharge() const override;
+	bool getSelectiveDispel() const override;
 
 	OptionalValue64 getEffectValue() const override;
 
@@ -128,6 +130,7 @@ public:
 	void setEffectPower(Value value);
 	void setEffectDuration(Value value);
 	void setOvercharge(Value value);
+	void setSelectiveDispel(bool value);
 
 	void setEffectValue(Value64 value);
 
@@ -156,6 +159,7 @@ private:
 	OptionalValue64 effectValue;
 	///Additional mana selected for a spell-specific cast option.
 	OptionalValue overcharge;
+	bool selectiveDispel = false;
 
 	Mode mode;
 	const CSpell * spell;
@@ -233,6 +237,7 @@ public:
 	virtual IBattleCast::Value getEffectPower() const = 0;
 	virtual int32_t getEffectPowerDivisor() const { return 1; }
 	virtual IBattleCast::Value getEffectDuration() const = 0;
+	virtual bool isSelectiveDispel() const { return false; }
 
 	virtual IBattleCast::Value64 getEffectValue() const = 0;
 
@@ -305,6 +310,7 @@ public:
 	IBattleCast::Value getEffectDuration() const override;
 	IBattleCast::Value64 getEffectValue() const override;
 	IBattleCast::Value getOvercharge() const;
+	bool isSelectiveDispel() const override;
 
 	PlayerColor getCasterColor() const override;
 	const CGHeroInstance * getHeroCaster() const override;
@@ -357,6 +363,7 @@ private:
 	IBattleCast::Value64 effectValue;
 	///Additional mana selected for a spell-specific cast option.
 	IBattleCast::Value overcharge = 0;
+	bool selectiveDispel = false;
 
 	bool forceMassive = false;
 

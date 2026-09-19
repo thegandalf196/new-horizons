@@ -28,6 +28,7 @@ public:
 	std::string name() const;
 	const CSpell * spell;
 	int32_t spellOvercharge = 0;
+	bool spellSelectiveDispel = false;
 	spells::Target dest;
 	float value;
 

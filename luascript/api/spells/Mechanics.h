@@ -28,6 +28,7 @@ namespace scripting::api
 		static void registerMethods(MethodRegistrar & R);
 
 		static bool ownerMatchesUnit(const ::spells::Mechanics & m, const battle::Unit & unit);
+		static bool ownerIsSameAsUnit(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static std::string getPluralFormTextID(const ::spells::Mechanics & m, const std::string & baseTextID, int32_t count);
 	};
 

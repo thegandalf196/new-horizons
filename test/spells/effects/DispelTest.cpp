@@ -83,6 +83,7 @@ protected:
 		EXPECT_CALL(mechanicsMock, getSpell()).Times(AnyNumber()).WillRepeatedly(Return(&currentSpell));
 		EXPECT_CALL(currentSpell, getJsonKey()).Times(AnyNumber())
 			.WillRepeatedly(Return(SpellID::encode(currentID.getNum())));
+		EXPECT_CALL(mechanicsMock, isSelectiveDispel()).Times(AnyNumber()).WillRepeatedly(Return(false));
 	}
 };
 
@@ -408,6 +409,80 @@ TEST_F(DispelApplyTest, RemovesEffects)
 
 	EXPECT_THAT(actualBonus[0], UnorderedElementsAreArray(expectedBonus[0]));
 	EXPECT_THAT(actualBonus[1], UnorderedElementsAreArray(expectedBonus[1]));
+}
+
+TEST_F(DispelApplyTest, SelectiveFriendlyDispelRemovesOnlyHostileEffects)
+{
+	JsonNode config;
+	config["dispelPositive"].Bool() = true;
+	config["dispelNegative"].Bool() = true;
+	config["dispelNeutral"].Bool() = true;
+	EffectFixture::setupEffect(config);
+
+	constexpr uint32_t unitId = 567;
+	auto & unit = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(unit, unitId()).Times(AtLeast(1)).WillRepeatedly(Return(unitId));
+	EXPECT_CALL(unit, isValidTarget(Eq(false))).WillRepeatedly(Return(true));
+	const auto positive = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::SPELL_EFFECT, 2, BonusSourceID(positiveID));
+	const auto negative = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::SPELL_EFFECT, -2, BonusSourceID(negativeID));
+	unit.addNewBonus(positive);
+	unit.addNewBonus(negative);
+
+	std::vector<Bonus> removed;
+	EXPECT_CALL(mechanicsMock, isSelectiveDispel()).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, ownerMatches(Eq(&unit), Eq(true))).WillRepeatedly(Return(true));
+	EXPECT_CALL(*battleFake, removeUnitBonus(Eq(unitId), _)).WillOnce(SaveArg<1>(&removed));
+	EXPECT_CALL(serverMock, apply(Matcher<SetStackEffect &>(_))).Times(1);
+	EXPECT_CALL(serverMock, describeChanges()).Times(AnyNumber()).WillRepeatedly(Return(false));
+	setDefaultExpectations();
+	unitsFake.setDefaultBonusExpectations();
+	setupDefaultRNG();
+
+	Target target;
+	target.emplace_back(&unit, BattleHex());
+	subject->apply(&serverMock, &mechanicsMock, target);
+
+	ASSERT_EQ(removed.size(), 1u);
+	EXPECT_EQ(removed.front(), *negative);
+}
+
+TEST_F(DispelApplyTest, SelectiveEnemyDispelRemovesOnlyBeneficialEffects)
+{
+	JsonNode config;
+	config["dispelPositive"].Bool() = true;
+	config["dispelNegative"].Bool() = true;
+	config["dispelNeutral"].Bool() = true;
+	EffectFixture::setupEffect(config);
+
+	constexpr uint32_t unitId = 765;
+	auto & unit = unitsFake.add(BattleSide::DEFENDER);
+	EXPECT_CALL(unit, unitId()).Times(AtLeast(1)).WillRepeatedly(Return(unitId));
+	EXPECT_CALL(unit, isValidTarget(Eq(false))).WillRepeatedly(Return(true));
+	const auto positive = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::SPELL_EFFECT, 2, BonusSourceID(positiveID));
+	const auto negative = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::SPELL_EFFECT, -2, BonusSourceID(negativeID));
+	unit.addNewBonus(positive);
+	unit.addNewBonus(negative);
+
+	std::vector<Bonus> removed;
+	EXPECT_CALL(mechanicsMock, isSelectiveDispel()).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, ownerMatches(Eq(&unit), Eq(true))).WillRepeatedly(Return(false));
+	EXPECT_CALL(*battleFake, removeUnitBonus(Eq(unitId), _)).WillOnce(SaveArg<1>(&removed));
+	EXPECT_CALL(serverMock, apply(Matcher<SetStackEffect &>(_))).Times(1);
+	EXPECT_CALL(serverMock, describeChanges()).Times(AnyNumber()).WillRepeatedly(Return(false));
+	setDefaultExpectations();
+	unitsFake.setDefaultBonusExpectations();
+	setupDefaultRNG();
+
+	Target target;
+	target.emplace_back(&unit, BattleHex());
+	subject->apply(&serverMock, &mechanicsMock, target);
+
+	ASSERT_EQ(removed.size(), 1u);
+	EXPECT_EQ(removed.front(), *positive);
 }
 
 }

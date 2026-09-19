@@ -196,6 +196,12 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 			battle()->getBattle()->getMagicRules(), owner->getId(), getEffectPower(), modifiers)))
 		return adaptGenericProblem(problem);
 
+	const bool selectiveDispel = isSelectiveDispel();
+	const auto * castingHero = dynamic_cast<const CGHeroInstance *>(caster);
+	if(selectiveDispel && (mode != Mode::HERO || owner->getId() != SpellID::DISPEL || !castingHero
+		|| !castingHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel")))
+		return adaptGenericProblem(problem);
+
 	auto genProblem = battle()->battleCanCastSpell(caster, mode);
 	// Orb of Inhibition (BLOCK_ALL_MAGIC) must not block level-0 creature abilities (stone gaze, death stare, ...)
 	if(genProblem == ESpellCastProblem::MAGIC_IS_BLOCKED && getSpellLevel() <= 0)
@@ -207,7 +213,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	{
 	case Mode::HERO:
 		{
-			const auto * castingHero = dynamic_cast<const CGHeroInstance *>(caster); //todo: unify hero|creature spell cost
+			//todo: unify hero|creature spell cost
 			if(!castingHero)
 			{
 				logGlobal->debug("CSpell::canBeCast: invalid caster");

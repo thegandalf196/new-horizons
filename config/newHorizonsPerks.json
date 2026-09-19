@@ -1637,7 +1637,7 @@
 					"requires": "basic",
 					"description": "When Dispel targets a friendly stack, it may remove only hostile temporary magical effects; when it targets an enemy, it may remove only beneficial temporary magical effects.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When Dispel targets a friendly stack, it may remove only hostile temporary magical effects; when it targets an enemy, it may remove only beneficial temporary magical effects."
 					}
 				},

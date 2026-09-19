@@ -221,6 +221,11 @@ void BattleActionsController::setMagicArrowOverchargeFactory(MagicArrowOvercharg
 	magicArrowOverchargeFactory = std::move(factory);
 }
 
+void BattleActionsController::setSelectiveDispelFactory(SelectiveDispelFactory factory)
+{
+	selectiveDispelFactory = std::move(factory);
+}
+
 void BattleActionsController::endCastingSpell()
 {
 	if(heroSpellToCast)
@@ -441,6 +446,15 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	if (spellSelMode.get() == PossiblePlayerBattleAction::NO_LOCATION) //user does not have to select location
 	{
 		heroSpellToCast->aimToHex(BattleHex::INVALID);
+		if(spellID == SpellID::DISPEL && selectiveDispelFactory)
+		{
+			if(const auto context = selectiveDispelFactory(*heroSpellToCast, nullptr))
+			{
+				ENGINE->windows().createAndPushWindow<SelectiveDispelWindow>(*context);
+				owner.windowObject->blockUI(true);
+				return;
+			}
+		}
 		owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), *heroSpellToCast);
 		endCastingSpell();
 	}
@@ -1068,6 +1082,22 @@ void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, c
 		case PossiblePlayerBattleAction::OBSTACLE:
 		case PossiblePlayerBattleAction::FREE_LOCATION:
 		{
+			if(action.get() == PossiblePlayerBattleAction::AIMED_SPELL_CREATURE
+				&& heroSpellToCast
+				&& heroSpellToCast->spell == SpellID(SpellID::DISPEL)
+				&& targetStack
+				&& selectiveDispelFactory)
+			{
+				BattleAction pending = *heroSpellToCast;
+				pending.target.clear();
+				pending.aimToUnit(targetStack);
+				if(const auto context = selectiveDispelFactory(pending, targetStack))
+				{
+					ENGINE->windows().createAndPushWindow<SelectiveDispelWindow>(*context);
+					return;
+				}
+			}
+
 			// Magic Arrow is the one New Horizons spell whose optional cost is
 			// chosen only after the generic target selector has accepted a legal
 			// enemy stack.  Runtime supplies the adapter only for the saved V2
@@ -1290,8 +1320,24 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 
 	auto m = currentSpell->battleMechanics(&cast);
 	spells::detail::ProblemImpl problem; //todo: display problem in status bar
+	if(m->canBeCastAt(target, problem))
+		return true;
 
-	return m->canBeCastAt(target, problem);
+	// The Selective Dispel perk expands the legal target set: basic ordinary
+	// Dispel is smart-targeted, while selective mode explicitly supports both
+	// friendly and enemy stacks. Accept either mode here so the post-target
+	// chooser remains reachable; the selected mode is validated again before
+	// the action is submitted and then authoritatively by the server.
+	const auto * hero = mode == spells::Mode::HERO ? owner.currentHero() : nullptr;
+	if(currentSpell->getId() != SpellID::DISPEL || !hero
+		|| !hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel"))
+		return false;
+
+	spells::BattleCast selectiveCast(owner.getBattle().get(), caster, mode, currentSpell);
+	selectiveCast.setSelectiveDispel(true);
+	auto selectiveMechanics = currentSpell->battleMechanics(&selectiveCast);
+	spells::detail::ProblemImpl selectiveProblem;
+	return selectiveMechanics->canBeCastAt(target, selectiveProblem);
 }
 
 void BattleActionsController::activateStack()

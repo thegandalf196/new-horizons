@@ -25,6 +25,8 @@ std::string PossibleSpellcast::name() const
 {
 	if(command != HeroCommand::NONE)
 		return heroCommands::key(command);
+	if(spellSelectiveDispel)
+		return spell->getNameTranslated() + " (Selective)";
 	if(spellOvercharge == 0)
 		return spell->getNameTranslated();
 	return spell->getNameTranslated() + " (Overcharge +" + std::to_string(spellOvercharge) + ")";

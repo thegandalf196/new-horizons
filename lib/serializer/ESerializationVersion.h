@@ -72,12 +72,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_MAGIC_ARROW_OVERCHARGE, // spell-specific Magic Arrow cast parameter
 	NEW_HORIZONS_PERKS, // saved generic New Horizons skill/perk registry and hero selections
 	NEW_HORIZONS_PERK_OFFERS, // combined level-up perk candidates and replicated selections
+	NEW_HORIZONS_SELECTIVE_DISPEL, // optional Sorcery Dispel mode carried by battle actions
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_PERK_OFFERS,
+	CURRENT = NEW_HORIZONS_SELECTIVE_DISPEL,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -94,3 +95,5 @@ static_assert(ESerializationVersion::NEW_HORIZONS_PERKS > ESerializationVersion:
 	"New Horizons perk state must remain absent from older Magic Arrow snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_PERK_OFFERS > ESerializationVersion::NEW_HORIZONS_PERKS,
 	"Combined perk offers must remain absent from older perk-state snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_SELECTIVE_DISPEL > ESerializationVersion::NEW_HORIZONS_PERK_OFFERS,
+	"New spell action fields must remain absent from older perk-offer snapshots");

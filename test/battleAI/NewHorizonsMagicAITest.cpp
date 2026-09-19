@@ -22,7 +22,9 @@
 #include "../../lib/constants/StringConstants.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/Problem.h"
 
 namespace
 {
@@ -438,6 +440,105 @@ TEST_F(NewHorizonsMagicAITest, TeleportEvaluatorMovesSlowArmyToDistantThreatWith
 	EXPECT_EQ(distant->getPosition(), distantPosition);
 	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
+}
+
+TEST_F(NewHorizonsMagicAITest, SelectiveDispelPreservesBeneficialEffectWhenFullDispelWouldLoseIt)
+{
+	useCommands = false;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
+	const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 1, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:sorceryMagic",
+		"new-horizons:sorceryMagic.selectiveDispel"});
+	attackerSideHero->mana = 1000;
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel"));
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1000);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(4, 5), 10000);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	Bonus blessed(BonusDuration::N_TURNS, BonusType::PRIMARY_SKILL,
+		BonusSource::SPELL_EFFECT, 50, BonusSourceID(SpellID(SpellID::BLESS)), BonusSubtypeID(PrimarySkill::ATTACK));
+	blessed.turnsRemain = 3;
+	Bonus cursed(BonusDuration::N_TURNS, BonusType::PRIMARY_SKILL,
+		BonusSource::SPELL_EFFECT, -50, BonusSourceID(SpellID(SpellID::CURSE)), BonusSubtypeID(PrimarySkill::ATTACK));
+	cursed.turnsRemain = 3;
+	Bonus blessedSpeed(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::SPELL_EFFECT, 1, BonusSourceID(SpellID(SpellID::BLESS)));
+	blessedSpeed.turnsRemain = 3;
+	Bonus cursedSpeed(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::SPELL_EFFECT, -1, BonusSourceID(SpellID(SpellID::CURSE)));
+	cursedSpeed.turnsRemain = 3;
+	SetStackEffect effects;
+	effects.battleID = BattleID(0);
+	effects.toAdd.emplace_back(active->unitId(), std::vector<Bonus>{blessed, cursed, blessedSpeed, cursedSpeed});
+	gameHandler->sendAndApply(effects);
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	ASSERT_TRUE(active->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS)))));
+	ASSERT_TRUE(active->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::CURSE)))));
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	const auto * dispel = SpellID(SpellID::DISPEL).toSpell();
+	for(const bool selective : {false, true})
+	{
+		SCOPED_TRACE(selective ? "selective" : "full");
+		auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+		const auto * projectedTarget = model->battleGetUnitByID(active->unitId());
+		ASSERT_NE(projectedTarget, nullptr);
+		ASSERT_TRUE(projectedTarget->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS)))));
+		ASSERT_TRUE(projectedTarget->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::CURSE)))));
+		const spells::Target aim{spells::Destination(projectedTarget)};
+		spells::BattleCast cast(model.get(), attackerSideHero, spells::Mode::HERO, dispel);
+		cast.setSelectiveDispel(selective);
+		if(selective)
+		{
+			spells::detail::ProblemImpl problem;
+			const bool legal = dispel->battleMechanics(&cast)->canBeCastAt(aim, problem);
+			std::vector<std::string> messages;
+			problem.getAll(messages);
+			ASSERT_TRUE(legal) << (messages.empty() ? "no diagnostic" : messages.front());
+		}
+		cast.castEval(model->getServerCallback(), aim);
+		const auto * projected = model->battleGetUnitByID(active->unitId());
+		ASSERT_NE(projected, nullptr);
+		EXPECT_EQ(projected->getAttack(false), selective ? active->getAttack(false) + 50 : active->getAttack(false));
+	}
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(action.spell, SpellID::DISPEL);
+	EXPECT_TRUE(action.spellSelectiveDispel);
+	const auto target = action.getTarget(battle());
+	ASSERT_EQ(target.size(), 1u);
+	EXPECT_EQ(target.front().unitValue, active);
+	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_TRUE(active->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS)))));
+	EXPECT_TRUE(active->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::CURSE)))));
 }
 
 TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)

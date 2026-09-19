@@ -42,3 +42,34 @@ TEST(NewHorizonsMagicArrowActionTest, OverchargeRoundTripsOnlyOnTheNewProtocol)
 	ASSERT_NO_THROW(oldZero.iser & oldDecoded);
 	EXPECT_EQ(oldDecoded.spellOvercharge, 0);
 }
+
+TEST(NewHorizonsMagicArrowActionTest, SelectiveDispelRoundTripsOnlyOnItsProtocol)
+{
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID(SpellID::DISPEL);
+	action.spellSelectiveDispel = true;
+
+	CMemorySerializer current;
+	current.oser.version = ESerializationVersion::CURRENT;
+	current.iser.version = ESerializationVersion::CURRENT;
+	ASSERT_NO_THROW(current.oser & action);
+	BattleAction restored;
+	ASSERT_NO_THROW(current.iser & restored);
+	EXPECT_TRUE(restored.spellSelectiveDispel);
+
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_PERK_OFFERS;
+	EXPECT_THROW(old.oser & action, std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+
+	action.spellSelectiveDispel = false;
+	CMemorySerializer oldDefault;
+	oldDefault.oser.version = ESerializationVersion::NEW_HORIZONS_PERK_OFFERS;
+	oldDefault.iser.version = ESerializationVersion::NEW_HORIZONS_PERK_OFFERS;
+	ASSERT_NO_THROW(oldDefault.oser & action);
+	BattleAction oldDecoded;
+	ASSERT_NO_THROW(oldDefault.iser & oldDecoded);
+	EXPECT_FALSE(oldDecoded.spellSelectiveDispel);
+}

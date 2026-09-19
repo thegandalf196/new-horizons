@@ -544,27 +544,37 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	std::vector<PossibleSpellcast> possibleCasts;
 	for(auto spell : possibleSpells)
 	{
-		spells::BattleCast temp(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
 		const int maxOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(
 			cb->getBattle(battleID)->getBattle()->getMagicRules(), spell->getId(), hero->getEffectPower(spell),
 			newHorizonsMagic::magicArrowOverchargeModifiers(hero));
+		const bool canUseSelectiveDispel = spell->getId() == SpellID::DISPEL
+			&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel");
 
-		for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
+		for(const bool selectiveDispel : {false, true})
 		{
-			for(int overcharge = 0; overcharge <= maxOvercharge; ++overcharge)
+			if(selectiveDispel && !canUseSelectiveDispel)
+				continue;
+			spells::BattleCast temp(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
+			temp.setSelectiveDispel(selectiveDispel);
+			for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
 			{
-				spells::BattleCast candidateCast(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
-				candidateCast.setOvercharge(overcharge);
-				auto candidateMechanics = spell->battleMechanics(&candidateCast);
-				spells::detail::ProblemImpl problem;
-				if(!candidateMechanics->canBeCast(problem))
-					continue;
+				for(int overcharge = 0; overcharge <= maxOvercharge; ++overcharge)
+				{
+					spells::BattleCast candidateCast(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
+					candidateCast.setOvercharge(overcharge);
+					candidateCast.setSelectiveDispel(selectiveDispel);
+					auto candidateMechanics = spell->battleMechanics(&candidateCast);
+					spells::detail::ProblemImpl problem;
+					if(!candidateMechanics->canBeCast(problem))
+						continue;
 
-				PossibleSpellcast ps;
-				ps.dest = target;
-				ps.spell = spell;
-				ps.spellOvercharge = overcharge;
-				possibleCasts.push_back(ps);
+					PossibleSpellcast ps;
+					ps.dest = target;
+					ps.spell = spell;
+					ps.spellOvercharge = overcharge;
+					ps.spellSelectiveDispel = selectiveDispel;
+					possibleCasts.push_back(ps);
+				}
 			}
 		}
 	}
@@ -774,6 +784,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				{
 					spells::BattleCast cast(state.get(), hero, spells::Mode::HERO, ps.spell);
 					cast.setOvercharge(ps.spellOvercharge);
+					cast.setSelectiveDispel(ps.spellSelectiveDispel);
 					cast.castEval(state->getServerCallback(), ps.dest);
 				}
 				else if(ps.command == HeroCommand::FOCUS_FIRE)
@@ -974,6 +985,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		spellcast.actionType = EActionType::HERO_SPELL;
 		spellcast.spell = castToPerform.spell->id;
 		spellcast.spellOvercharge = castToPerform.spellOvercharge;
+		spellcast.spellSelectiveDispel = castToPerform.spellSelectiveDispel;
 		spellcast.setTarget(castToPerform.dest);
 		spellcast.side = side;
 		spellcast.stackNumber = -1;

@@ -4,6 +4,8 @@ Script.__index = Script
 
 function Script:getDispelableBonuses(mechanics, unit)
 	local currentSpellKey = mechanics:getSpell():getJsonKey()
+	local selective = mechanics:isSelectiveDispel()
+	local friendly = selective and mechanics:ownerIsSameAs(unit)
 	-- no filter describes this: what makes a bonus dispelable is the spell that granted it
 	return unit:getBonuses({}):filter(function(bonus)
 		if bonus:getSource() ~= ENUM.BonusSource.spellEffect then return false end
@@ -12,6 +14,11 @@ function Script:getDispelableBonuses(mechanics, unit)
 		if not sourceSpell then return false end
 		if sourceSpell:isPersistent() then return false end
 		if sourceSpell:isAdventure()  then return false end
+		if selective then
+			if friendly and sourceSpell:isNegative() then return true end
+			if not friendly and sourceSpell:isPositive() then return true end
+			return false
+		end
 		if self.dispelPositive and sourceSpell:isPositive() then return true end
 		if self.dispelNegative and sourceSpell:isNegative() then return true end
 		if self.dispelNeutral  and sourceSpell:isNeutral()  then return true end

@@ -20,6 +20,7 @@
 #include "../bonuses/BonusSelector.h"
 #include "../GameLibrary.h"
 #include "../json/JsonBonus.h"
+#include "../mapObjects/CGHeroInstance.h"
 #include "../texts/CGeneralTextHandler.h"
 
 #include <vcmi/spells/Caster.h>
@@ -99,8 +100,21 @@ bool CSpell::canBeCast(spells::Problem & problem, const CBattleInfoCallback * cb
 {
 	spells::BattleCast event(cb, caster, mode, this);
 	auto mechanics = battleMechanics(&event);
+	if(mechanics->canBeCast(problem))
+		return true;
 
-	return mechanics->canBeCast(problem);
+	// Availability answers whether the spell has at least one legal mode. The
+	// Selective Dispel perk can make a cast legal even when ordinary smart
+	// targeting finds no valid stack (for example, only an enemy buff exists).
+	const auto * hero = mode == spells::Mode::HERO ? caster->getHeroCaster() : nullptr;
+	if(id != SpellID::DISPEL || !hero
+		|| !hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel"))
+		return false;
+
+	spells::BattleCast selectiveEvent(cb, caster, mode, this);
+	selectiveEvent.setSelectiveDispel(true);
+	spells::detail::ProblemImpl selectiveProblem;
+	return battleMechanics(&selectiveEvent)->canBeCast(selectiveProblem);
 }
 
 spells::AimType CSpell::getTargetType() const

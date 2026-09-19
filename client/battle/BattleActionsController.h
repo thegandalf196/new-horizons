@@ -11,6 +11,7 @@
 
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "MagicArrowOverchargeWindow.h"
+#include "SelectiveDispelWindow.h"
 
 #include <functional>
 #include <optional>
@@ -26,6 +27,7 @@ class BattleInterface;
 
 using MagicArrowOverchargeFactory = std::function<std::optional<MagicArrowOverchargeContext>(
 	const BattleAction &, const BattleHex &, const CStack *)>;
+using SelectiveDispelFactory = std::function<std::optional<SelectiveDispelContext>(const BattleAction &, const CStack *)>;
 
 /// Class that controls actions that can be performed by player, e.g. moving stacks, attacking, etc
 /// As well as all relevant feedback for these actions in user interface
@@ -42,6 +44,8 @@ class BattleActionsController
 	/// Optional New Horizons adapter.  Empty preserves the legacy generic cast
 	/// path; Runtime installs it only for an admitted V2 Magic Arrow battle.
 	MagicArrowOverchargeFactory magicArrowOverchargeFactory;
+	/// Optional post-target Selective Dispel prompt.
+	SelectiveDispelFactory selectiveDispelFactory;
 
 	// targets of multi-target spells cast by monsters
 	std::vector<BattleHex> monsterSpellTargets;
@@ -123,6 +127,7 @@ public:
 	/// this controller only decides when the normal targeted cast may pause for
 	/// the compact overcharge window.
 	void setMagicArrowOverchargeFactory(MagicArrowOverchargeFactory factory);
+	void setSelectiveDispelFactory(SelectiveDispelFactory factory);
 
 	/// ends casting spell (eg. when spell has been cast or canceled)
 	void endCastingSpell();

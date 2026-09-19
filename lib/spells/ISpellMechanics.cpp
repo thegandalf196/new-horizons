@@ -174,6 +174,11 @@ BattleCast::OptionalValue BattleCast::getOvercharge() const
 	return overcharge;
 }
 
+bool BattleCast::getSelectiveDispel() const
+{
+	return selectiveDispel;
+}
+
 BattleCast::OptionalValue64 BattleCast::getEffectValue() const
 {
 	return effectValue;
@@ -202,6 +207,11 @@ void BattleCast::setEffectDuration(BattleCast::Value value)
 void BattleCast::setOvercharge(BattleCast::Value value)
 {
 	overcharge = std::make_optional(value);
+}
+
+void BattleCast::setSelectiveDispel(bool value)
+{
+	selectiveDispel = value;
 }
 
 void BattleCast::setEffectValue(BattleCast::Value64 value)
@@ -315,6 +325,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		}
 	}
 	overcharge = event->getOvercharge().value_or(0);
+	selectiveDispel = event->getSelectiveDispel();
 	{
 		const auto value = event->getEffectValue();
 		if(value.has_value())
@@ -445,6 +456,12 @@ int32_t BaseMechanics::getSpellLevel() const
 
 bool BaseMechanics::isSmart() const
 {
+	// Selective Dispel explicitly lets the caster choose either a friendly or
+	// enemy stack.  The ordinary basic-level Dispel smart-target restriction
+	// would otherwise hide the enemy half of the perk.
+	if(isSelectiveDispel())
+		return false;
+
 	const CSpell::TargetInfo targetInfo(owner, getRangeLevel(), mode);
 	return targetInfo.smart;
 }
@@ -560,6 +577,11 @@ IBattleCast::Value64 BaseMechanics::getEffectValue() const
 IBattleCast::Value BaseMechanics::getOvercharge() const
 {
 	return overcharge;
+}
+
+bool BaseMechanics::isSelectiveDispel() const
+{
+	return selectiveDispel;
 }
 
 PlayerColor BaseMechanics::getCasterColor() const
