@@ -14,6 +14,7 @@ enum class HeroDevelopmentSection
 	LEADERSHIP,
 	SIEGE,
 	MASTERIES,
+	PERKS,
 	COUNT
 };
 

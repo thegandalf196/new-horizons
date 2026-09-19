@@ -17,7 +17,38 @@
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+
+namespace
+{
+std::string perkRankName(int rank)
+{
+	switch(rank)
+	{
+	case 1:
+		return "Basic";
+	case 2:
+		return "Advanced";
+	case 3:
+		return "Expert";
+	default:
+		return "Not learned";
+	}
+}
+
+std::string joinPerkNames(const std::vector<std::string> & names)
+{
+	std::string result;
+	for(size_t i = 0; i < names.size(); ++i)
+	{
+		if(i > 0)
+			result += ", ";
+		result += names[i];
+	}
+	return result;
+}
+}
 
 void HeroGrowthWindow::selectSection(HeroDevelopmentSection section)
 {
@@ -61,7 +92,9 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	const auto leadership = hero.getLeadershipCapacity();
 	const auto siege = hero.getSiegeCapabilities();
 	const auto masteries = hero.getMasteryView();
-	navigation.refresh({growth.has_value(), leadership.has_value(), siege.has_value(), masteries.has_value()});
+	const auto & perkState = hero.getPerkState();
+	const bool perks = newHorizonsHeroes::usesPerkRules(perkState.rules);
+	navigation.refresh({growth.has_value(), leadership.has_value(), siege.has_value(), masteries.has_value(), perks});
 	pos = Rect(0, 0, 700, 560);
 	const ColorRGBA panelColor(52, 46, 43);
 	const ColorRGBA rimColor(180, 154, 98);
@@ -120,12 +153,14 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 		"No saved primary growth profile for this hero.",
 		"No saved leadership capacity view for this hero.",
 		"No saved siege capability view for this hero.",
-		"No saved mastery rules for this hero."
+		"No saved mastery rules for this hero.",
+		"No saved New Horizons perk rules for this hero."
 	};
 	auto & growthText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::GROWTH)];
 	auto & leadershipText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::LEADERSHIP)];
 	auto & siegeText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::SIEGE)];
 	auto & masteryText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::MASTERIES)];
+	auto & perkText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::PERKS)];
 	if(growth)
 	{
 		growthText = "Additional skill growth - independent chances\n";
@@ -175,18 +210,129 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 		for(const auto & skill : masteries->eligibleNextLevel)
 			masteryText += skill.toEntity(LIBRARY)->getNameTranslated() + ": eligible on a future level gain.\n";
 	}
+	if(perks)
+	{
+		const int maxPerksPerSkill = perkState.rules["maxPerksPerSkill"].Integer();
+		const int maxPerkChoices = perkState.rules["maxPerkChoices"].Integer();
+		const size_t selectedCount = perkState.selected.size();
+		size_t capacity = 0;
+		size_t eligibleCount = 0;
+		size_t lockedCount = 0;
+		const auto projected = perkState.project([&hero](const std::string & skillId)
+		{
+			return hero.getPerkSkillRank(skillId);
+		});
+
+		std::string details = "New Horizons perks - read-only saved state\n";
+		details += "Selected: " + std::to_string(selectedCount);
+
+		std::vector<std::string> skillIds;
+		for(const auto & entry : perkState.rules["skills"].Struct())
+			skillIds.push_back(entry.first);
+		std::stable_sort(skillIds.begin(), skillIds.end(), [&hero, &perkState](const std::string & left, const std::string & right)
+		{
+			const auto selectedCountFor = [&perkState](const std::string & skillId)
+			{
+				return std::count_if(perkState.selected.begin(), perkState.selected.end(),
+					[&skillId](const auto & selection) { return selection.skillId == skillId; });
+			};
+			const bool leftLearned = hero.getPerkSkillRank(left) > 0 || selectedCountFor(left) > 0;
+			const bool rightLearned = hero.getPerkSkillRank(right) > 0 || selectedCountFor(right) > 0;
+			return leftLearned > rightLearned;
+		});
+
+		for(const auto & skillId : skillIds)
+		{
+			const auto skill = newHorizonsHeroes::perkSkill(perkState.rules, skillId);
+			if(!skill)
+				continue;
+
+			const int rank = hero.getPerkSkillRank(skillId);
+			const size_t selectedForSkill = std::count_if(perkState.selected.begin(), perkState.selected.end(),
+				[&skillId](const auto & selection) { return selection.skillId == skillId; });
+			if(rank > 0)
+				capacity += static_cast<size_t>(maxPerksPerSkill);
+
+			std::vector<std::string> learned;
+			std::vector<std::string> eligible;
+			std::array<size_t, 3> lockedByRank{};
+			size_t lockedByCapacity = 0;
+			for(const auto & perk : skill->perks)
+			{
+				if(perkState.hasSelection(skillId, perk.id))
+				{
+					const int requiredRank = newHorizonsHeroes::perkRequiredRank(perk.requiredRank);
+					const auto modifier = std::find_if(projected.begin(), projected.end(), [&](const auto & candidate)
+					{
+						return candidate.skillId == skillId && candidate.perkId == perk.id;
+					});
+					const bool active = modifier != projected.end() && modifier->enabled;
+					const bool planned = perk.effect["status"].String() != "active";
+					std::string status = planned ? "planned; inactive" : active ? "active" : "inactive";
+					if(!active && rank < requiredRank)
+						status += "; requires " + perkRankName(requiredRank);
+					learned.push_back(perk.name + " (" + status + ")");
+					continue;
+				}
+				if(rank <= 0)
+					continue;
+				if(selectedForSkill >= static_cast<size_t>(maxPerksPerSkill))
+				{
+					++lockedByCapacity;
+					continue;
+				}
+				const int requiredRank = newHorizonsHeroes::perkRequiredRank(perk.requiredRank);
+				if(rank < requiredRank)
+					++lockedByRank[static_cast<size_t>(requiredRank - 1)];
+				else
+					eligible.push_back(perk.name);
+			}
+			if(rank <= 0)
+			{
+				lockedCount += skill->perks.size() - selectedForSkill;
+				details += "\n" + skill->name + " - locked: skill not learned";
+				if(!learned.empty())
+					details += "\n  Selected: " + joinPerkNames(learned);
+				continue;
+			}
+
+			eligibleCount += eligible.size();
+			lockedCount += lockedByCapacity;
+			lockedCount += lockedByRank[0] + lockedByRank[1] + lockedByRank[2];
+			details += "\n" + skill->name + " (" + perkRankName(rank) + ") - "
+				+ std::to_string(selectedForSkill) + "/" + std::to_string(maxPerksPerSkill) + " selected, "
+				+ std::to_string(static_cast<size_t>(maxPerksPerSkill) - std::min(selectedForSkill, static_cast<size_t>(maxPerksPerSkill))) + " remaining";
+			if(!learned.empty())
+				details += "\n  Selected: " + joinPerkNames(learned);
+			if(!eligible.empty())
+				details += "\n  Eligible for future level-up offers: " + joinPerkNames(eligible);
+			if(lockedByCapacity > 0)
+				details += "\n  Locked: " + std::to_string(lockedByCapacity) + " (per-skill capacity reached)";
+			for(int requiredRank = rank + 1; requiredRank <= 3; ++requiredRank)
+				if(lockedByRank[static_cast<size_t>(requiredRank - 1)] > 0)
+					details += "\n  Locked: " + std::to_string(lockedByRank[static_cast<size_t>(requiredRank - 1)])
+						+ " (requires " + perkRankName(requiredRank) + ")";
+		}
+
+		perkText = "Selected: " + std::to_string(selectedCount) + " / " + std::to_string(capacity)
+			+ " capacity for learned skills; " + std::to_string(eligibleCount) + " eligible for future level-up offers; "
+			+ std::to_string(lockedCount) + " locked.\nEach learned skill can hold up to "
+			+ std::to_string(maxPerksPerSkill) + " perks; a level-up offers at most "
+			+ std::to_string(maxPerkChoices) + ".\n" + details;
+	}
 
 	const std::array<EShortcut, HeroDevelopmentNavigation::SECTION_COUNT> sectionShortcuts = {
-		EShortcut::SELECT_INDEX_1, EShortcut::SELECT_INDEX_2, EShortcut::SELECT_INDEX_3, EShortcut::SELECT_INDEX_4
+		EShortcut::SELECT_INDEX_1, EShortcut::SELECT_INDEX_2, EShortcut::SELECT_INDEX_3, EShortcut::SELECT_INDEX_4, EShortcut::SELECT_INDEX_5
 	};
-	const std::array<const char *, HeroDevelopmentNavigation::SECTION_COUNT> sectionNames = {"Growth", "Leadership", "Siege", "Masteries"};
+	const std::array<const char *, HeroDevelopmentNavigation::SECTION_COUNT> sectionNames = {"Growth", "Leadership", "Siege", "Masteries", "Perks"};
 	for(size_t i = 0; i < sectionButtons.size(); ++i)
 	{
 		const auto section = static_cast<HeroDevelopmentSection>(i);
 		const std::string hint = navigation.isAvailable(section)
 			? "View saved " + std::string(sectionNames[i]) + " details (" + std::to_string(i + 1) + "). Read-only; no choices or points are spent."
 			: sectionTexts[i];
-		sectionButtons[i] = std::make_shared<CButton>(Point(59 + static_cast<int>(i) * 167, 332), AnimationPath::builtin("settingsWindow/button80"),
+		const int buttonX = 20 + static_cast<int>(i) * ((pos.w - 40 - 80) / static_cast<int>(sectionButtons.size() - 1));
+		sectionButtons[i] = std::make_shared<CButton>(Point(buttonX, 332), AnimationPath::builtin("settingsWindow/button80"),
 			CButton::tooltip(sectionNames[i], hint), [this, section] { selectSection(section); }, sectionShortcuts[i]);
 		sectionButtons[i]->setTextOverlay(sectionNames[i], FONT_SMALL, Colors::WHITE);
 		sectionButtons[i]->setHoverable(true);
