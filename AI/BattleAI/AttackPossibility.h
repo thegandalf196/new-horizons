@@ -13,6 +13,19 @@
 
 #define BATTLE_TRACE_LEVEL 0
 
+/// One physical attack (or its retaliation) in the read-only attack preview.
+/// Keeping these deltas lets a committed preview replay Fortune aftermath at
+/// the same boundaries as the authoritative action instead of collapsing a
+/// multi-strike exchange into one post-hoc transition.
+struct FortuneStrikeProjection
+{
+	uint32_t attackerId = 0;
+	uint32_t defenderId = 0;
+	bool shooting = false;
+	bool retaliation = false;
+	std::vector<std::pair<uint32_t, int64_t>> hits;
+};
+
 class DamageCache
 {
 private:
@@ -47,6 +60,8 @@ public:
 	std::shared_ptr<battle::CUnitState> attackerState;
 
 	std::vector<std::shared_ptr<battle::CUnitState>> affectedUnits;
+	std::vector<FortuneStrikeProjection> fortuneStrikes;
+	int64_t preAttackDamage = 0;
 
 	float defenderDamageReduce = 0;
 	float attackerDamageReduce = 0; //usually by counter-attack

@@ -1496,6 +1496,13 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 		attacker->removeBonusesRecursive(Bonus::UntilOwnAttack);
 }
 
+void GameStatePackVisitor::visitEndAction(EndAction & pack)
+{
+	if(pack.endsFortuneActivation)
+		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			gs.getBattle(pack.battleID)->getSide(side).sylvanLuck.endActivation();
+}
+
 void GameStatePackVisitor::visitStartAction(StartAction & pack)
 {
 	const bool targeted = pack.ba.actionType == EActionType::HERO_COMMAND

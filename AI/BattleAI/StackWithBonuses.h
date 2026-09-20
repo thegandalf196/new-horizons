@@ -132,10 +132,13 @@ public:
 
 	bool unitHasAmmoCart(const battle::Unit * unit) const override;
 	PlayerColor unitEffectiveOwner(const battle::Unit * unit) const override;
+	int unitFortuneSpeed(const battle::Unit * unit) const override { return battleFortuneSpeed(unit); }
 
 	std::shared_ptr<StackWithBonuses> getForUpdate(uint32_t id);
 
 	BattleID getBattleID() const override;
+	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override;
+	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override;
 	void setFocusFireState(BattleSide side, const FocusFireState & state);
 	ObstacleCList getAllObstacles() const override;
@@ -148,7 +151,17 @@ public:
 	int32_t getRound() const override;
 	int32_t getBloodrageDamagePercent(BattleSide side) const override;
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return fortuneStates.at(side); }
+	void setSylvanLuckState(BattleSide side, const SylvanLuckState & state) { fortuneStates.at(side) = state; }
+	void endFortuneActivation() { for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER}) fortuneStates.at(side).endActivation(); }
 	LuckRollRules getLuckRollRules() const override { return fortuneRollRules; }
+
+	/// Apply a definitely lucky/unlucky strike to this model.  AI damage
+	/// evaluation is deliberately probabilistic and side-effect free; callers
+	/// invoke this only after committing a selected projected strike.
+	bool fortuneStrikeIsCertain(const BattleAttackInfo & attack) const;
+	void projectFortuneStrike(const BattleAttackInfo & attack,
+		const std::vector<std::pair<uint32_t, int64_t>> & hits,
+		battle::CUnitState * attackerState, bool enemyStackKilled);
 
 	battle::Units getUnitsIf(const battle::UnitFilter & predicate) const override;
 
@@ -191,6 +204,7 @@ public:
 	const scripting::Pool & getScriptContextPool() const override;
 
 private:
+	BattleSideArray<std::optional<HeroOrderState>> heroOrderStates;
 	std::map<BattleSide, std::optional<FocusFireState>> focusFireStates;
 	BattleSideArray<int32_t> bloodrageRanks;
 	BattleSideArray<int32_t> bloodrageDamagePercents;

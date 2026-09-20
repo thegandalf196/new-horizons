@@ -85,12 +85,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS, // replicated server-authored stopped-stack Hero Action pass
 	NEW_HORIZONS_BLOODRAGE, // battle-long per-side Bloodrage creature damage counter
 	NEW_HORIZONS_SYLVAN_LUCK, // authoritative per-stack fortune history and round protection
+	NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS, // activation-scoped fortune gifts and lucky recovery
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_SYLVAN_LUCK,
+	CURRENT = NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");

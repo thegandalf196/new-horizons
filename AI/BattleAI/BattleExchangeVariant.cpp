@@ -39,6 +39,9 @@ float BattleExchangeVariant::trackAttack(
 	}
 
 	auto attacker = hb->getForUpdate(ap.attack.attacker->unitId());
+	const auto originalPosition = attacker->getPosition();
+	if(!ap.attack.shooting && ap.from.isValid())
+		attacker->setPosition(ap.from);
 
 	float attackValue = ap.attackValue();
 	auto affectedUnits = ap.affectedUnits;
@@ -48,19 +51,96 @@ float BattleExchangeVariant::trackAttack(
 	attackerValue[attacker->unitId()].value = attackValue;
 
 	affectedUnits.push_back(ap.attackerState);
+	std::map<uint32_t, int64_t> finalDamage;
+	for(const auto & affectedUnit : affectedUnits)
+	{
+		auto unitToUpdate = hb->getForUpdate(affectedUnit->unitId());
+		finalDamage[unitToUpdate->unitId()] = std::max<int64_t>(0,
+			unitToUpdate->getAvailableHealth() - affectedUnit->getAvailableHealth());
+	}
+
+	// Reapply the selected preview strike-by-strike.  This is intentionally
+	// separate from the final-state snapshots: Fortune aftermath belongs
+	// between strikes (and between retaliation and the triggering strike).
+	if(!ap.fortuneStrikes.empty())
+	{
+		int64_t projectedAttackerDamage = 0;
+		for(const auto & strike : ap.fortuneStrikes)
+			for(const auto & [unitId, damage] : strike.hits)
+				if(unitId == attacker->unitId())
+					projectedAttackerDamage += std::max<int64_t>(0, damage);
+		const auto attackerDamage = finalDamage[attacker->unitId()];
+		if(ap.preAttackDamage > 0)
+		{
+			const bool wasAlive = attacker->alive();
+			auto preAttackDamage = ap.preAttackDamage;
+			attacker->damage(preAttackDamage);
+			hb->recordBloodrageTransition(attacker, wasAlive);
+		}
+
+		for(const auto & strike : ap.fortuneStrikes)
+		{
+			auto projectedAttacker = hb->getForUpdate(strike.attackerId);
+			auto projectedDefender = hb->getForUpdate(strike.defenderId);
+			std::vector<std::pair<uint32_t, int64_t>> actualHits;
+			actualHits.reserve(strike.hits.size());
+			bool enemyStackKilled = false;
+			for(const auto & [unitId, damage] : strike.hits)
+			{
+				auto target = hb->getForUpdate(unitId);
+				auto actualDamage = std::min<int64_t>(std::max<int64_t>(0, damage),
+					target->getAvailableHealth());
+				actualHits.emplace_back(unitId, actualDamage);
+				if(actualDamage > 0)
+				{
+					const bool wasAlive = target->alive();
+					target->damage(actualDamage);
+					hb->recordBloodrageTransition(target, wasAlive);
+					const bool luckAffectedTarget = unitId == strike.defenderId
+						|| hb->getLuckRollRules().affectsAllTargets;
+					if(wasAlive && !target->alive() && luckAffectedTarget
+						&& hb->battleMatchOwner(projectedAttacker.get(), target.get()))
+						enemyStackKilled = true;
+				}
+			}
+
+			BattleAttackInfo projectedAttack(projectedAttacker.get(), projectedDefender.get(), 0, strike.shooting);
+			projectedAttack.retaliation = strike.retaliation;
+			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled);
+		}
+
+		// A preview can contain damage sources which are not represented by a
+		// physical strike (for example, a reaction). Apply that residual only
+		// after replaying the known strikes so it cannot move a defender's
+		// Fortune activation boundary or kill a retaliation attacker early.
+		if(attackerDamage > projectedAttackerDamage + ap.preAttackDamage)
+		{
+			const bool wasAlive = attacker->alive();
+			auto residual = attackerDamage - projectedAttackerDamage - ap.preAttackDamage;
+			attacker->damage(residual);
+			hb->recordBloodrageTransition(attacker, wasAlive);
+		}
+	}
+	else
+	{
+		// Older/partial previews may not carry strike metadata. Preserve their
+		// health projection, but do not invent Fortune transitions for them.
+		for(const auto & affectedUnit : affectedUnits)
+		{
+			auto unitToUpdate = hb->getForUpdate(affectedUnit->unitId());
+			auto damageDealt = finalDamage[unitToUpdate->unitId()];
+			if(damageDealt > 0)
+			{
+				const bool wasAlive = unitToUpdate->alive();
+				unitToUpdate->damage(damageDealt);
+				hb->recordBloodrageTransition(unitToUpdate, wasAlive);
+			}
+		}
+	}
 
 	for(auto affectedUnit : affectedUnits)
 	{
 		auto unitToUpdate = hb->getForUpdate(affectedUnit->unitId());
-		auto damageDealt = unitToUpdate->getAvailableHealth() - affectedUnit->getAvailableHealth();
-
-		if(damageDealt > 0)
-		{
-			const bool wasAlive = unitToUpdate->alive();
-			unitToUpdate->damage(damageDealt);
-			hb->recordBloodrageTransition(unitToUpdate, wasAlive);
-		}
-
 		// The preview may contain several strikes or consume only one of several
 		// retaliations. Copy consumption, not a boolean can-retaliate transition.
 		// CAmmo assignment keeps this unit's owner-bound bonus caches intact.
@@ -114,6 +194,11 @@ float BattleExchangeVariant::trackAttack(
 			}
 		}
 	}
+	if(!ap.attack.shooting && ap.from.isValid() && attacker->alive()
+		&& attacker->hasBonusOfType(BonusType::RETURN_AFTER_STRIKE)
+		&& !attacker->hasBonusOfType(BonusType::NOT_ACTIVE)
+		&& !attacker->hasBonusOfType(BonusType::BIND_EFFECT))
+		attacker->setPosition(originalPosition);
 
 #if BATTLE_TRACE_LEVEL >= 1
 	logAi->trace(
@@ -165,9 +250,13 @@ float BattleExchangeVariant::trackAttack(
 		else
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
+		const int64_t actualDamage = std::min<int64_t>(attackDamage, defender->getAvailableHealth());
 		const bool defenderWasAlive = defender->alive();
 		defender->damage(attackDamage);
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
+		BattleAttackInfo projectedAttack(attacker.get(), defender.get(), 0, shooting);
+		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
+			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
 		attacker->afterAttack(shooting, false);
 	}
 
@@ -196,9 +285,14 @@ float BattleExchangeVariant::trackAttack(
 			attackerValue[defender->unitId()].value += attackerDamageReduce;
 		}
 
+		const int64_t actualDamage = std::min<int64_t>(retaliationDamage, attacker->getAvailableHealth());
 		const bool attackerWasAlive = attacker->alive();
 		attacker->damage(retaliationDamage);
 		hb->recordBloodrageTransition(attacker, attackerWasAlive);
+		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
+		retaliationAttack.retaliation = true;
+		hb->projectFortuneStrike(retaliationAttack, {{attacker->unitId(), actualDamage}}, defender.get(),
+			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()));
 		defender->afterAttack(false, true);
 	}
 
@@ -739,13 +833,31 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				continue;
 			}
 
+			// The first AP is the already-active unit's current action. Replaying
+			// nextTurn here would clear gifts that were armed before this exchange.
+			// Every later queue entry is a genuine activation and may consume a
+			// pending Cascade gift.
+			const bool initialChosenUnit = canUseAp
+				&& activeUnit->unitId() == ap.attack.attacker->unitId();
+			if(!initialChosenUnit)
+				exchangeBattle->nextTurn(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+			bool fortuneActivation = true;
+			auto finishFortuneActivation = [&]()
+			{
+				if(fortuneActivation)
+				{
+					exchangeBattle->endFortuneActivation();
+					fortuneActivation = false;
+				}
+			};
+
 			if(isMovingTurm && !shooting
 				&& !vstd::contains(exchangeUnits.enemyUnitsReachingAttacker, attacker->unitId()))
 			{
 #if BATTLE_TRACE_LEVEL>=1
 				logAi->trace("Attacker is moving");
 #endif
-
+				finishFortuneActivation();
 				continue;
 			}
 
@@ -827,7 +939,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 #if BATTLE_TRACE_LEVEL>=1
 						logAi->trace("Battle queue is empty and no reachable enemy.");
 #endif
-
+						finishFortuneActivation();
 						continue;
 					}
 				}
@@ -854,6 +966,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 
 			if(!shooting)
 				blockedShooters.insert(defender->unitId());
+			finishFortuneActivation();
 
 			canUseAp = false;
 

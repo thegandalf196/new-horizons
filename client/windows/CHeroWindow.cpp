@@ -333,8 +333,8 @@ void CHeroWindow::configureNewHorizonsLayout()
 	}
 	leadershipArea = std::make_shared<LRClickableAreaWText>(Rect(152, 88, 140, 44), "Leadership capacity");
 	movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44), "Movement points");
-	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44), "Legacy siege capability - not a spendable balance");
-	for(const auto & field : {std::make_pair(Point(152, 88), "Leadership"), std::make_pair(Point(152, 132), "Movement"), std::make_pair(Point(292, 132), "Legacy siege")})
+	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44), "Siege points available to this hero");
+	for(const auto & field : {std::make_pair(Point(152, 88), "Leadership"), std::make_pair(Point(152, 132), "Movement"), std::make_pair(Point(292, 132), "Siege points")})
 	{
 		if(std::string(field.second) == "Movement")
 			labels.push_back(std::make_shared<CLabel>(field.first.x + 4, field.first.y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "TBD", 36));

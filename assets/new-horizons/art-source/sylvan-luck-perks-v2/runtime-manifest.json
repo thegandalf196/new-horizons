@@ -1,0 +1,25 @@
+{
+  "method": "Generated atlas crop, contain/LANCZOS export, brightness/color state transforms",
+  "files": {
+    "NH_perk_forests_favor_normal.png": "4d42a15c8e8cbae68082e1545a6b7dbf7f3e288e2ab52f9a9af2209421f9bd25",
+    "NH_perk_forests_favor_pressed.png": "fdb075d8d2006e83eea557c3db0c7d28f7f158af2244af4d452c4fe3bc8ad072",
+    "NH_perk_forests_favor_disabled.png": "1803f1749eae407ec0d03e4b9b912e3eb628bc7440a513faac3b0c7faa8a06e4",
+    "NH_perk_forests_favor_highlighted.png": "83fa10433597ded5427a3a557d09f563209dcb0c8960e6236adea11ddc1b14fb",
+    "NH_perk_forests_favor.json": "e3701c1c6d75e5345fc223bd1c43e7e5625dab8d15beaf3f1f00f484e233ab48",
+    "NH_perk_lucky_recovery_normal.png": "f6b9a1c5ffa7674cfa22ad2be95d2610cf6fa293e5c3eae01c0fffc01132894b",
+    "NH_perk_lucky_recovery_pressed.png": "079bdc6da2f0fe339bc1e5cccc3a589480a4bfb20e77da0d4ebad76dd0943d97",
+    "NH_perk_lucky_recovery_disabled.png": "7e65244bc0a1cd5100fe388f0fcf53fb69dc0f0dc480d73b16077e8b38e71982",
+    "NH_perk_lucky_recovery_highlighted.png": "8329a1fb109440ccdaa191767a3fcddb17d7b98be4886d63c2120f38f058a6d5",
+    "NH_perk_lucky_recovery.json": "1c50328614625d69353d6c155a78d23e96286d678115cd22da75c672bafe825f",
+    "NH_perk_shared_fortune_normal.png": "cf5931a497d2107a9eae4dc34857f912f3d7cc0763f5959b89033e23ac4cfeed",
+    "NH_perk_shared_fortune_pressed.png": "c56cc3dd7e1078667f3b2e5c258be6380bcdb96dd2bd62b4d2f8c9c8a8417c15",
+    "NH_perk_shared_fortune_disabled.png": "a9676d9ff8a3466298c7b17818ad444cbf422a13b7745bad6039725c105102c1",
+    "NH_perk_shared_fortune_highlighted.png": "adebf7e3d28eaf00560ff81752e81a454003f64083e89b4a57053449edf79387",
+    "NH_perk_shared_fortune.json": "f8c412b74ef464d6edec2a372c3668ea667e8d188d1d011d8976967721fe3bd4",
+    "NH_perk_cascading_fortune_normal.png": "3d85dab947b79493c4c62776e197cc911010c8e1849b13765fc3be6ca47db576",
+    "NH_perk_cascading_fortune_pressed.png": "95b82cd56ebf31c90ea405a425a63fba2bf3af52e1135fb25a6070de69a15dfe",
+    "NH_perk_cascading_fortune_disabled.png": "4acb199317e8c952399c5e3e45d78f516b07fc0efb36a2fa20325e9c2faf60f5",
+    "NH_perk_cascading_fortune_highlighted.png": "c4997be9e27a5c376027fd406374a366bffe948f6862dcf7d4ff768ccc594e1e",
+    "NH_perk_cascading_fortune.json": "fcaf0f47a8cddd861d590efa22e915f9127749cc4836044109fbe406e24f86fc"
+  }
+}

@@ -355,6 +355,46 @@ std::optional<FocusFireState> CBattleInfoCallback::battleGetFocusFireState(Battl
 	return getBattle()->getFocusFireState(side);
 }
 
+int CBattleInfoCallback::battleFortuneSpeed(const battle::Unit * unit) const
+{
+	if(!unit || !getBattle())
+		return 0;
+	const auto side = playerToSide(battleGetOwner(unit));
+	return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER
+		? getBattle()->getSylvanLuckState(side).speedBonus(unit->unitId()) : 0;
+}
+
+bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const
+{
+	if(!unit || unit->isTimeStopped() || reason == BattleUnitTurnReason::ACTION_REJECTED
+		|| reason == BattleUnitTurnReason::HERO_SPELLCAST || reason == BattleUnitTurnReason::UNIT_SPELLCAST)
+		return false;
+	if(reason != BattleUnitTurnReason::HERO_COMMAND)
+		return true;
+	const auto order = battleGetHeroOrderState(unit->unitSide());
+	return order && order->command == HeroCommand::SECOND_WIND && order->secondWindActive
+		&& order->primaryTargetUnitId == unit->unitId();
+}
+
+std::vector<uint32_t> CBattleInfoCallback::battleFortuneAdjacentFriends(const battle::Unit * unit) const
+{
+	std::vector<uint32_t> result;
+	if(!unit)
+		return result;
+	for(const auto * candidate : battleGetUnitsIf([](const battle::Unit * candidate) { return candidate->alive(); }))
+	{
+		if(candidate->unitId() == unit->unitId() || !candidate->alive() || !battleMatchOwner(unit, candidate, true))
+			continue;
+		for(const auto & hex : unit->getSurroundingHexes())
+			if(candidate->coversPos(hex))
+			{
+				result.push_back(candidate->unitId());
+				break;
+			}
+	}
+	return result;
+}
+
 int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const
 {
 	if(!attacker || !getBattle())

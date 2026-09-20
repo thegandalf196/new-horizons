@@ -397,6 +397,7 @@ AttackPossibility AttackPossibility::evaluate(
 				ap.attackerDamageReduce += calculateDamageReduce(nullptr, attacker, obstacleDamage, damageCache, state);
 
 				ap.attackerState->damage(obstacleDamage);
+				ap.preAttackDamage += obstacleDamage;
 			}
 		}
 
@@ -432,6 +433,13 @@ AttackPossibility AttackPossibility::evaluate(
 				|| (attackInfo.shooting && !ap.attackerState->canShoot()))
 				break;
 
+			FortuneStrikeProjection strike;
+			strike.attackerId = ap.attackerState->unitId();
+			strike.defenderId = defender->unitId();
+			strike.shooting = attackInfo.shooting;
+			std::optional<FortuneStrikeProjection> retaliation;
+			std::vector<std::pair<std::shared_ptr<battle::CUnitState>, int64_t>> pendingRetaliationDamage;
+
 			for(auto u : defenderUnits)
 			{
 				auto defenderState = defenderStates.at(u->unitId());
@@ -466,6 +474,10 @@ AttackPossibility AttackPossibility::evaluate(
 					&& retaliatorState->alive() && retaliatorState->ableToRetaliate() && !counterAttacksBlocked
 					&& !ap.attackerState->isInvincible() && !state->isLongWeaponAttack(ap.attackerState.get(), defenderState.get()))
 				{
+					retaliation.emplace();
+					retaliation->attackerId = retaliatorState->unitId();
+					retaliation->defenderId = attacker->unitId();
+					retaliation->retaliation = true;
 					for(auto retaliated : retaliatedUnits)
 					{
 						auto retaliationAttack = victimAttack.reverse();
@@ -478,28 +490,32 @@ AttackPossibility AttackPossibility::evaluate(
 						if(retaliated->unitId() == attacker->unitId())
 						{
 							int64_t damageReceived = state->battleExpectedLuckDamage(retaliationAttack);
+							const auto uncappedDamage = damageReceived;
 
 							vstd::amin(damageReceived, ap.attackerState->getAvailableHealth());
+							retaliation->hits.emplace_back(retaliated->unitId(), uncappedDamage);
 
 							attackerDamageReduce = calculateDamageReduce(defender, retaliated, damageReceived, damageCache, state);
-							ap.attackerState->damage(damageReceived);
+							pendingRetaliationDamage.emplace_back(ap.attackerState, uncappedDamage);
 						}
 						else
 						{
 							int64_t damageReceived = state->battleExpectedLuckDamage(retaliationAttack);
+							const auto uncappedDamage = damageReceived;
 
 							vstd::amin(damageReceived, retaliated->getAvailableHealth());
+							retaliation->hits.emplace_back(retaliated->unitId(), uncappedDamage);
 
 							if(defender->unitSide() == retaliated->unitSide())
 								defenderDamageReduce += calculateDamageReduce(defender, retaliated, damageReceived, damageCache, state);
 							else
 								ap.collateralDamageReduce += calculateDamageReduce(defender, retaliated, damageReceived, damageCache, state);
 
-							defenderStates.at(retaliated->unitId())->damage(damageReceived);
+							pendingRetaliationDamage.emplace_back(
+								defenderStates.at(retaliated->unitId()), uncappedDamage);
 						}
 						
 					}
-
 					defenderState->afterAttack(attackInfo.shooting, true);
 				}
 
@@ -520,6 +536,7 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.attackerDamageReduce += attackerDamageReduce;
 				}
 
+				strike.hits.emplace_back(u->unitId(), damageDealt);
 				defenderState->damage(damageDealt);
 
 				if(u->unitId() == defender->unitId())
@@ -527,6 +544,72 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.defenderDead = !defenderState->alive();
 				}
 			}
+			// The preview state must observe the same primary-hit -> Recovery ->
+			// retaliation ordering as authority. Otherwise a wounded double-attacker
+			// can be considered dead before the heal which enables its second blow.
+			if(!attackInfo.shooting && !strike.hits.empty())
+			{
+				const auto side = state->playerToSide(state->battleGetOwner(attacker));
+				if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+				{
+					const auto fortune = state->getBattle()->getSylvanLuckState(side);
+					const auto rules = state->getBattle()->getLuckRollRules();
+					const int luck = state->battleGetAttackLuck(attacker, defender, false);
+					const auto chanceIndex = luck > 0 && !rules.goodChance.empty()
+						? std::min<size_t>(static_cast<size_t>(luck), rules.goodChance.size()) - 1
+						: 0;
+					const bool certainlyLucky = ap.attack.luckyStrike
+						|| (luck > 0 && rules.diceSize > 0 && !rules.goodChance.empty()
+							&& rules.goodChance[chanceIndex] >= rules.diceSize);
+					if(fortune.luckyRecovery && certainlyLucky && ap.attackerState->alive())
+					{
+						int64_t actualDamage = 0;
+						for(const auto & [unitId, damage] : strike.hits)
+							if(unitId == strike.defenderId || rules.affectsAllTargets)
+								actualDamage += std::max<int64_t>(0, damage);
+						auto healing = SylvanLuckState::recoveryAmount(actualDamage);
+						ap.attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+					}
+				}
+			}
+			int64_t retaliationActualDamage = 0;
+			for(auto & [targetState, rawDamage] : pendingRetaliationDamage)
+			{
+				auto actualDamage = std::min(rawDamage, targetState->getAvailableHealth());
+				targetState->damage(actualDamage);
+				if(retaliation && (targetState->unitId() == retaliation->defenderId
+					|| state->getBattle()->getLuckRollRules().affectsAllTargets))
+					retaliationActualDamage += actualDamage;
+			}
+			if(retaliation && retaliationActualDamage > 0)
+			{
+				auto retaliatorState = defenderStates.at(retaliation->attackerId);
+				const auto side = state->playerToSide(state->battleGetOwner(defender));
+				if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+				{
+					const auto fortune = state->getBattle()->getSylvanLuckState(side);
+					const auto rules = state->getBattle()->getLuckRollRules();
+					BattleAttackInfo retaliationAttack(retaliatorState.get(), ap.attackerState.get(), 0, false);
+					retaliationAttack.retaliation = true;
+					const int luck = state->battleGetAttackLuck(defender, attacker, false);
+					const auto chanceIndex = luck > 0 && !rules.goodChance.empty()
+						? std::min<size_t>(static_cast<size_t>(luck), rules.goodChance.size()) - 1
+						: 0;
+					const bool certainlyLucky = retaliationAttack.luckyStrike
+						|| (luck > 0 && rules.diceSize > 0 && !rules.goodChance.empty()
+							&& rules.goodChance[chanceIndex] >= rules.diceSize);
+					if(fortune.luckyRecovery && certainlyLucky && retaliatorState->alive())
+					{
+						auto healing = SylvanLuckState::recoveryAmount(retaliationActualDamage);
+						retaliatorState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+					}
+				}
+			}
+
+			if(!strike.hits.empty())
+				ap.fortuneStrikes.push_back(std::move(strike));
+			if(retaliation && !retaliation->hits.empty())
+				ap.fortuneStrikes.push_back(std::move(*retaliation));
 			// One attack spends ammunition once, not once for every collateral victim.
 			ap.attackerState->afterAttack(attackInfo.shooting, false);
 		}

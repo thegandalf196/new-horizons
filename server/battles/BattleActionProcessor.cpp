@@ -1197,6 +1197,10 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	{
 		EndAction endAction;
 		endAction.battleID = battle.getBattle()->getBattleID();
+		endAction.endsFortuneActivation = result && effectiveAction.isUnitAction() && !battle.battleTacticDist()
+			&& stack && !stack->isTimeStopped() && !effectiveAction.timeStopHeroActionPass
+			&& !(effectiveAction.actionType == EActionType::MONSTER_SPELL && effectiveAction.spell.hasValue()
+				&& effectiveAction.spell.toSpell()->canCastWithoutSkip());
 		gameHandler->sendAndApply(endAction);
 	}
 
@@ -1735,6 +1739,32 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	}
 
 	markSpellLikeAttack(attacker, bat);
+	if(bat.lucky() && bat.fortuneState)
+	{
+		int64_t actualDamage = 0;
+		bool enemyStackKilled = false;
+		auto adjacentFriends = battle.battleFortuneAdjacentFriends(attacker);
+		for(const auto & target : payload.targets)
+		{
+			const auto victim = std::find_if(bat.bsa.begin(), bat.bsa.end(), [&target](const auto & hit) { return hit.newState.id == target.unit->unitId(); });
+			const bool destroyed = victim != bat.bsa.end() && victim->killed() && !victim->willRebirth();
+			if(destroyed)
+				vstd::erase(adjacentFriends, target.unit->unitId());
+			// In classic single-target Luck mode, collateral victims did not
+			// receive a Lucky Strike and cannot fuel Recovery or Cascading.
+			if(target.unit != defender && !gameHandler->gameInfo().getSettings().getBoolean(EGameSettings::COMBAT_LUCKY_STRIKE_AFFECTS_ALL_TARGETS))
+				continue;
+			actualDamage += std::min(target.damage, target.healthBeforeAttack);
+			if(destroyed && battle.battleMatchOwner(attacker, target.unit))
+				enemyStackKilled = true;
+		}
+		bat.fortuneState->finishPositiveStrike(adjacentFriends, enemyStackKilled);
+		if(!attack.ranged && bat.fortuneState->luckyRecovery && attackerState->alive())
+		{
+			auto healing = SylvanLuckState::recoveryAmount(actualDamage);
+			attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+		}
+	}
 
 	attackerState->afterAttack(attack.ranged, normalCounter);
 

@@ -15,6 +15,7 @@
 #include "BattleAttackInfo.h"
 #include "HeroCommand.h"
 #include "FocusFireState.h"
+#include "BattleUnitTurnReason.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class CGHeroInstance;
@@ -86,6 +87,9 @@ public:
 	std::optional<FocusFireState> battleGetFocusFireState(BattleSide side) const;
 	/// Roll-only Luck; does not change the unit's displayed/static Luck bonuses.
 	int battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const;
+	int battleFortuneSpeed(const battle::Unit * unit) const;
+	bool battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const;
+	std::vector<uint32_t> battleFortuneAdjacentFriends(const battle::Unit * unit) const;
 	/// Expected luck damage used by the AI, without consuming RNG.
 	int64_t battleExpectedLuckDamage(const BattleAttackInfo & attack) const;
 	std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const;

@@ -286,6 +286,11 @@ PlayerColor CStack::unitEffectiveOwner(const battle::Unit * unit) const
 	return battle->battleGetOwner(unit);
 }
 
+int CStack::unitFortuneSpeed(const battle::Unit * unit) const
+{
+	return battle->battleFortuneSpeed(unit);
+}
+
 uint32_t CStack::unitId() const
 {
 	return ID;

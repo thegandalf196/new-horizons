@@ -341,6 +341,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	nextId = 0x00F00000;
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderState(side);
 		focusFireStates[side] = realBattle->battleGetFocusFireState(side);
 		fortuneStates[side] = realBattle->getBattle()->getSylvanLuckState(side);
 		bloodrageRanks[side] = realBattle->getBattle()->getBloodrageRank(side);
@@ -359,6 +360,74 @@ bool HypotheticBattle::unitHasAmmoCart(const battle::Unit * unit) const
 PlayerColor HypotheticBattle::unitEffectiveOwner(const battle::Unit * unit) const
 {
 	return battleGetOwner(unit);
+}
+
+bool HypotheticBattle::fortuneStrikeIsCertain(const BattleAttackInfo & attack) const
+{
+	if(attack.luckyStrike)
+		return true;
+
+	const int luck = battleGetAttackLuck(attack.attacker, attack.defender, attack.shooting);
+	if(luck == 0)
+		return false;
+
+	const auto rules = getLuckRollRules();
+	if(rules.diceSize <= 0)
+		return false;
+
+	const auto & chances = luck > 0 ? rules.goodChance : rules.badChance;
+	if(chances.empty())
+		return false;
+	const auto index = std::min<size_t>(static_cast<size_t>(std::abs(luck)), chances.size()) - 1;
+	return chances[index] >= rules.diceSize;
+}
+
+void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
+	const std::vector<std::pair<uint32_t, int64_t>> & hits,
+	battle::CUnitState * attackerState, bool enemyStackKilled)
+{
+	const auto side = playerToSide(battleGetOwner(attack.attacker));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return;
+
+	auto & fortune = fortuneStates.at(side);
+	if(!fortune.active())
+		return;
+
+	const int luck = battleGetAttackLuck(attack.attacker, attack.defender, attack.shooting);
+	const auto rules = getLuckRollRules();
+	const bool positive = attack.luckyStrike || (luck > 0 && fortuneStrikeIsCertain(attack));
+	const bool negative = attack.unluckyStrike || (luck < 0 && fortuneStrikeIsCertain(attack));
+	if(!positive && !negative)
+		return;
+
+	// Negative Providence history is committed as well, but it has no
+	// aftermath to project.  recordStrike returns true when that bad result was
+	// suppressed by Providence, exactly as it does in the authoritative path.
+	if(fortune.recordStrike(attack.attacker->unitId(), positive, negative))
+		return;
+	if(!positive)
+		return;
+
+	std::vector<uint32_t> adjacentFriends = battleFortuneAdjacentFriends(attack.attacker);
+	int64_t actualDamage = 0;
+	for(const auto & [unitId, damage] : hits)
+	{
+		const bool primary = unitId == attack.defender->unitId();
+		if(!primary && !rules.affectsAllTargets)
+			continue;
+		actualDamage += std::max<int64_t>(0, damage);
+		const auto * target = battleGetUnitByID(unitId);
+		if(target && !target->alive())
+			vstd::erase(adjacentFriends, unitId);
+	}
+
+	fortune.finishPositiveStrike(adjacentFriends, enemyStackKilled);
+	if(!attack.shooting && fortune.luckyRecovery && attackerState && attackerState->alive())
+	{
+		auto healing = SylvanLuckState::recoveryAmount(actualDamage);
+		attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+	}
 }
 
 std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdate(uint32_t id)
@@ -406,6 +475,21 @@ battle::Units HypotheticBattle::getUnitsIf(const battle::UnitFilter & predicate)
 BattleID HypotheticBattle::getBattleID() const
 {
 	return subject->getBattle()->getBattleID();
+}
+
+std::optional<HeroOrderState> HypotheticBattle::getHeroOrderState(BattleSide side) const
+{
+	return heroOrderStates.at(side);
+}
+
+void HypotheticBattle::setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid hypothetical Hero Order side");
+	if(state)
+		state->validateShape();
+	heroOrderStates.at(side) = state;
+	++bonusTreeVersion;
 }
 
 std::optional<FocusFireState> HypotheticBattle::getFocusFireState(BattleSide side) const
@@ -494,8 +578,16 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
 	activeUnitId = unitId;
 	auto unit = getForUpdate(unitId);
+	if(reason == BattleUnitTurnReason::ACTION_REJECTED)
+		return;
+	if(battleBeginsActivation(unit.get(), reason))
+	{
+		const auto side = playerToSide(battleGetOwner(unit.get()));
+		for(auto owner : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			fortuneStates.at(owner).beginActivation(unitId, side == owner);
+	}
 
-	if(!unit->isTimeStopped())
+	if(!unit->isTimeStopped() && reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
 		unit->removeUnitBonus(Bonus::UntilGetsTurn);
 
 	unit->afterGetsTurn(reason);

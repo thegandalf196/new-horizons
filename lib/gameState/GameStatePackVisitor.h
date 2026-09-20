@@ -113,6 +113,7 @@ public:
 	void visitPlayerCheated(PlayerCheated & pack) override;
 	void visitDaysWithoutTown(DaysWithoutTown & pack) override;
 	void visitStartAction(StartAction & pack) override;
+	void visitEndAction(EndAction & pack) override;
 	void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) override;
 	void visitSetRewardableConfiguration(SetRewardableConfiguration & pack) override;
 	void visitBattleSetStackProperty(BattleSetStackProperty & pack) override;

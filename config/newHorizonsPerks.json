@@ -3089,7 +3089,7 @@
 					"requires": "basic",
 					"description": "The first positive Luck trigger for each friendly stack in a combat grants +2 Speed for the remainder of that activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first positive Luck trigger for each friendly stack in a combat grants +2 Speed for the remainder of that activation."
 					}
 				},
@@ -3109,7 +3109,7 @@
 					"requires": "basic",
 					"description": "A melee Lucky Strike restores surviving creatures for 10% of actual damage dealt.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A melee Lucky Strike restores surviving creatures for 10% of actual damage dealt."
 					}
 				},
@@ -3119,7 +3119,7 @@
 					"requires": "advanced",
 					"description": "After a friendly stack triggers positive Luck, adjacent friendly stacks gain +1 Luck until their next activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After a friendly stack triggers positive Luck, adjacent friendly stacks gain +1 Luck until their next activation."
 					}
 				},
@@ -3169,7 +3169,7 @@
 					"requires": "expert",
 					"description": "When a Lucky Strike destroys an enemy stack, the next friendly stack to act gains +3 Luck for its activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When a Lucky Strike destroys an enemy stack, the next friendly stack to act gains +3 Luck for its activation."
 					}
 				}

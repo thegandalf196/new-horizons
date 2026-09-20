@@ -646,7 +646,7 @@ void CUnitState::setPosition(const BattleHex & hex)
 
 int32_t CUnitState::getInitiative(int turn) const
 {
-	const int64_t speed = stackSpeedPerTurn.getValue(turn);
+	const int64_t speed = stackSpeedPerTurn.getValue(turn) + (turn == 0 && env ? env->unitFortuneSpeed(this) : 0);
 	const int64_t percent = std::max<int64_t>(0, 100 + initiativePercentPerTurn.getValue(turn));
 	return static_cast<int32_t>(speed * percent / 100);
 }
@@ -659,7 +659,7 @@ ui32 CUnitState::getMovementRange(int turn) const
 	if (immobilizedPerTurn.getValue(0) != 0)
 		return 0;
 
-	return stackSpeedPerTurn.getValue(0);
+	return stackSpeedPerTurn.getValue(0) + (env ? env->unitFortuneSpeed(this) : 0);
 }
 
 ui32 CUnitState::getMovementRange() const

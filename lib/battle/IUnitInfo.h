@@ -26,6 +26,7 @@ public:
 	virtual bool unitHasAmmoCart(const Unit * unit) const = 0; //todo: handle ammo cart with bonus system
 
 	virtual PlayerColor unitEffectiveOwner(const Unit * unit) const = 0;
+	virtual int unitFortuneSpeed(const Unit *) const { return 0; }
 };
 
 class DLL_LINKAGE IUnitInfo

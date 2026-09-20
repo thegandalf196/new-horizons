@@ -347,6 +347,10 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 			fortune.serendipity = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.serendipity");
 			fortune.naturesProvidence = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.natureSProvidence");
 			fortune.fortunateAim = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.fortunateAim");
+			fortune.forestsFavor = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.forestSFavor");
+			fortune.luckyRecovery = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.luckyRecovery");
+			fortune.sharedFortune = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.sharedFortune");
+			fortune.cascadingFortune = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.cascadingFortune");
 		}
 		currentBattle->sides[i].bloodrageRank = newHorizonsBloodrage::rank(heroes[i]);
 		currentBattle->sides[i].bloodrageDamagePercent = newHorizonsBloodrage::initialDamagePercent(heroes[i]);
@@ -949,6 +953,12 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		return;
 
 	CStack * st = getStack(activeStack);
+	if(battleBeginsActivation(st, reason))
+	{
+		const auto owner = playerToSide(battleGetOwner(st));
+		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			sides.at(side).sylvanLuck.beginActivation(unitId, side == owner);
+	}
 	if(st->isTimeStopped() && reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
 	{
 		// A stopped unit receives a synthetic queue activation solely so the

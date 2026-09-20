@@ -1,0 +1,14 @@
+{
+  "generator": "OpenAI built-in image generator",
+  "generated": "2026-09-20",
+  "license": "CC0-1.0",
+  "atlas": "atlas.png",
+  "dimensions": [2172, 724],
+  "cells": [
+    {"key": "NH_perk_forests_favor", "box": [0, 90, 543, 633]},
+    {"key": "NH_perk_lucky_recovery", "box": [543, 90, 1086, 633]},
+    {"key": "NH_perk_shared_fortune", "box": [1086, 90, 1629, 633]},
+    {"key": "NH_perk_cascading_fortune", "box": [1629, 90, 2172, 633]}
+  ],
+  "promptSummary": "Four distinct forest-fortune still lifes: winged oak boot; clover-restored breastplate; paired horseshoes and clover; cascading star coins."
+}

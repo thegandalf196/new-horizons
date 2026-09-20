@@ -419,10 +419,15 @@ struct DLL_LINKAGE EndAction : public CPackForClient
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	BattleID battleID = BattleID::NONE;
+	bool endsFortuneActivation = false;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
 		h & battleID;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS))
+			h & endsFortuneActivation;
+		else if(!h.saving)
+			endsFortuneActivation = false;
 	}
 };
 

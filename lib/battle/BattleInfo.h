@@ -97,6 +97,10 @@ public:
 		{
 			heroCommands::validateRules(heroCommandRules);
 			validateFocusFireStates();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS)
+				&& (sides[BattleSide::ATTACKER].sylvanLuck.extendedActive()
+					|| sides[BattleSide::DEFENDER].sylvanLuck.extendedActive()))
+				throw std::runtime_error("Cannot discard extended Sylvan Luck battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK)
 				&& (sides[BattleSide::ATTACKER].sylvanLuck != SylvanLuckState{}
 					|| sides[BattleSide::DEFENDER].sylvanLuck != SylvanLuckState{}))
