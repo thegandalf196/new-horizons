@@ -161,6 +161,57 @@ TEST(NewHorizonsHavocDirectDamage, CanonicalFrostRingAndInfernoUseDetailedRoster
 	}
 }
 
+TEST(NewHorizonsHavocDirectDamage, CanonicalLandMineUsesDetailedRosterValues)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	const auto & record = rules["spells"]["core:landMine"];
+	EXPECT_EQ(record["level"].Integer(), 2);
+	ASSERT_EQ(record["costs"].Vector().size(), 4u);
+	for(const auto & cost : record["costs"].Vector())
+		EXPECT_EQ(cost.Integer(), 8);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(rules, "core:landMine", 0, 10), 60);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(rules, "core:landMine", 100, 10), 170);
+}
+
+TEST(NewHorizonsHavocDirectDamage, CanonicalFireWallUsesDetailedRosterValues)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	const auto & record = rules["spells"]["core:fireWall"];
+	EXPECT_EQ(record["level"].Integer(), 3);
+	ASSERT_EQ(record["costs"].Vector().size(), 4u);
+	for(const auto & cost : record["costs"].Vector())
+		EXPECT_EQ(cost.Integer(), 12);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(rules, "core:fireWall", 0, 10), 40);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(rules, "core:fireWall", 100, 10), 140);
+}
+
+TEST(NewHorizonsHavocDirectDamage, CanonicalHighLevelSpellsUseDetailedRosterValues)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	struct Expected
+	{
+		const char * id;
+		int64_t level;
+		int64_t cost;
+		int64_t powerZero;
+		int64_t powerHundred;
+	};
+	for(const Expected expected : {
+		Expected{"core:chainLightning", 4, 17, 130, 310},
+		Expected{"core:meteorShower", 4, 18, 110, 260},
+		Expected{"core:armageddon", 5, 24, 150, 330},
+	})
+	{
+		const auto & record = rules["spells"][expected.id];
+		EXPECT_EQ(record["level"].Integer(), expected.level);
+		ASSERT_EQ(record["costs"].Vector().size(), 4u);
+		for(const auto & cost : record["costs"].Vector())
+			EXPECT_EQ(cost.Integer(), expected.cost);
+		EXPECT_EQ(newHorizonsMagic::directDamageValue(rules, expected.id, 0, 10), expected.powerZero);
+		EXPECT_EQ(newHorizonsMagic::directDamageValue(rules, expected.id, 100, 10), expected.powerHundred);
+	}
+}
+
 class NewHorizonsDirectDamageMechanicsTest : public HeroCommandFixture
 {
 protected:

@@ -150,15 +150,22 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(arrow['directDamage'], {'base': 20, 'powerCoefficient': 20})
         self.assertEqual({name for name, spell in self.rules['spells'].items()
                           if 'directDamage' in spell}, {
+							  'core:armageddon',
+							  'core:chainLightning',
                               'core:magicArrow',
                               'core:fireball',
+							  'core:fireWall',
                               'core:frostRing',
                               'core:iceBolt',
                               'core:inferno',
+                              'core:landMine',
                               'core:lightningBolt',
+							  'core:meteorShower',
                           })
         self.assertEqual(self.rules['spells']['core:fireball']['directDamage'],
                          {'base': 25, 'powerCoefficient': 8})
+        self.assertEqual(self.rules['spells']['core:fireWall']['directDamage'],
+                         {'base': 40, 'powerCoefficient': 10})
         self.assertEqual(self.rules['spells']['core:iceBolt']['directDamage'],
                          {'base': 45, 'powerCoefficient': 10})
         self.assertEqual(self.rules['spells']['core:lightningBolt']['directDamage'],
@@ -167,6 +174,14 @@ class NewHorizonsContentTest(unittest.TestCase):
                          {'base': 55, 'powerCoefficient': 11})
         self.assertEqual(self.rules['spells']['core:inferno']['directDamage'],
                          {'base': 70, 'powerCoefficient': 12})
+        self.assertEqual(self.rules['spells']['core:landMine']['directDamage'],
+                         {'base': 60, 'powerCoefficient': 11})
+        self.assertEqual(self.rules['spells']['core:chainLightning']['directDamage'],
+                         {'base': 130, 'powerCoefficient': 18})
+        self.assertEqual(self.rules['spells']['core:meteorShower']['directDamage'],
+                         {'base': 110, 'powerCoefficient': 15})
+        self.assertEqual(self.rules['spells']['core:armageddon']['directDamage'],
+                         {'base': 150, 'powerCoefficient': 18})
         self.assertNotIn('new-horizons:magicMissile', self.rules['spells'])
 
     def test_generated_module_matches_all_canonical_data(self):

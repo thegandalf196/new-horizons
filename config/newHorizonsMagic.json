@@ -51,11 +51,15 @@
 			],
 			"level": 5,
 			"costs": [
-				22,
-				22,
-				18,
-				18
-			]
+				24,
+				24,
+				24,
+				24
+			],
+			"directDamage": {
+				"base": 150,
+				"powerCoefficient": 18
+			}
 		},
 		"core:berserk": {
 			"schools": [
@@ -103,13 +107,17 @@
 			"schools": [
 				"new-horizons:havoc"
 			],
-			"level": 3,
+			"level": 4,
 			"costs": [
-				12,
-				12,
-				10,
-				10
-			]
+				17,
+				17,
+				17,
+				17
+			],
+			"directDamage": {
+				"base": 130,
+				"powerCoefficient": 18
+			}
 		},
 		"core:clone": {
 			"schools": [
@@ -234,13 +242,17 @@
 			"schools": [
 				"new-horizons:havoc"
 			],
-			"level": 4,
+			"level": 3,
 			"costs": [
-				16,
-				16,
-				13,
-				13
-			]
+				12,
+				12,
+				12,
+				12
+			],
+			"directDamage": {
+				"base": 40,
+				"powerCoefficient": 10
+			}
 		},
 		"core:fireball": {
 			"schools": [
@@ -377,7 +389,18 @@
 		"core:landMine": {
 			"schools": [
 				"new-horizons:havoc"
-			]
+			],
+			"level": 2,
+			"costs": [
+				8,
+				8,
+				8,
+				8
+			],
+			"directDamage": {
+				"base": 60,
+				"powerCoefficient": 11
+			}
 		},
 		"core:lightningBolt": {
 			"schools": [
@@ -427,13 +450,17 @@
 			"schools": [
 				"new-horizons:havoc"
 			],
-			"level": 3,
+			"level": 4,
 			"costs": [
-				12,
-				12,
-				10,
-				10
-			]
+				18,
+				18,
+				18,
+				18
+			],
+			"directDamage": {
+				"base": 110,
+				"powerCoefficient": 15
+			}
 		},
 		"core:mirth": {
 			"schools": [
