@@ -64,6 +64,13 @@ fi
 # Resolve only the three original directories, never the installation's Mods/config.
 asset_dir() {
 	local name=$1 entry base found=''
+	# A source tree may sit beside VCMI's lowercase writable `data` directory.
+	# Prefer the canonical Complete-installation spelling before falling back to
+	# the case-insensitive search needed for installations copied from Windows.
+	if [[ -d $assets/$name ]]; then
+		printf '%s' "$assets/$name"
+		return
+	fi
 	for entry in "$assets"/*; do
 		base=${entry##*/}
 		if [[ ${base,,} == ${name,,} && -d $entry ]]; then
