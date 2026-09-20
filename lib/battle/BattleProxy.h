@@ -79,6 +79,11 @@ public:
 	{
 		return subject->getBattle()->getBloodrageRank(side);
 	}
+	SylvanLuckState getSylvanLuckState(BattleSide side) const override
+	{
+		return subject->getBattle()->getSylvanLuckState(side);
+	}
+	LuckRollRules getLuckRollRules() const override { return subject->getBattle()->getLuckRollRules(); }
 
 	const IBonusBearer * getBonusBearer() const override;
 protected:

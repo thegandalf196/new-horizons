@@ -19,6 +19,9 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:sorceryMagic.temporalField", "NH_perk_temporal_field"},
 		{"new-horizons:sorceryMagic.chronomancer", "NH_perk_chronomancer"},
 		{"new-horizons:sylvanLuck.elvenPrecision", "NH_perk_elven_precision"},
+		{"new-horizons:sylvanLuck.serendipity", "NH_perk_serendipity"},
+		{"new-horizons:sylvanLuck.natureSProvidence", "NH_perk_natures_providence"},
+		{"new-horizons:sylvanLuck.fortunateAim", "NH_perk_fortunate_aim"},
 		{"new-horizons:metamagic.spellSequencing", "NH_perk_spell_sequencing"},
 		{"new-horizons:metamagic.arcaneEconomy", "NH_perk_arcane_economy"},
 		{"new-horizons:metamagic.focusedPairing", "NH_perk_focused_pairing"},
@@ -38,4 +41,3 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 	const auto found = icons.find(perkId);
 	return found == icons.end() ? fallback : found->second;
 }
-

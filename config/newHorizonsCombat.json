@@ -1,5 +1,9 @@
 {
 	"combat": {
+		"goodLuckChance": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40],
+		"badLuckChance": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40],
+		"luckDiceSize": 100,
+		"luckBias": 0,
 		"heroCommands": {
 			"schemaVersion": 1,
 			"rulesetVersion": 3,

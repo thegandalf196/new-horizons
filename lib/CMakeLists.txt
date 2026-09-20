@@ -477,6 +477,7 @@ set(lib_MAIN_HEADERS
 	battle/BattleHexArray.h
 	battle/HeroCommand.h
 	battle/FocusFireState.h
+	battle/SylvanLuckState.h
 	battle/BattleInfo.h
 	battle/NewHorizonsBloodrage.h
 	battle/BattleLayout.h

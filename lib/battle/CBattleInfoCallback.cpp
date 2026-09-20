@@ -39,6 +39,20 @@ namespace
 {
 constexpr int ELVEN_PRECISION_DEFENSE_IGNORE_PERCENT = 25;
 
+LuckRollRules battleLuckRules(const IBattleInfo & battle)
+{
+	auto rules = battle.getLuckRollRules();
+	if(rules.diceSize == 0)
+	{
+		const auto & settings = *LIBRARY->engineSettings();
+		rules.goodChance = settings.getVector(EGameSettings::COMBAT_GOOD_LUCK_CHANCE);
+		rules.badChance = settings.getVector(EGameSettings::COMBAT_BAD_LUCK_CHANCE);
+		rules.diceSize = settings.getInteger(EGameSettings::COMBAT_LUCK_DICE_SIZE);
+		rules.affectsAllTargets = settings.getBoolean(EGameSettings::COMBAT_LUCKY_STRIKE_AFFECTS_ALL_TARGETS);
+	}
+	return rules;
+}
+
 /// Order targeting is based on occupied hexes, not a unit's primary position.
 /// This matters for double-wide stacks: their rear hex may be the one actually
 /// touching the ward or presenting a flank.
@@ -339,6 +353,52 @@ std::optional<FocusFireState> CBattleInfoCallback::battleGetFocusFireState(Battl
 	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
 		return {};
 	return getBattle()->getFocusFireState(side);
+}
+
+int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const
+{
+	if(!attacker || !getBattle())
+		return 0;
+	const auto rules = battleLuckRules(*getBattle());
+	const int maximum = static_cast<int>(rules.goodChance.size());
+	const int minimum = -static_cast<int>(rules.badChance.size());
+	if(attacker->hasBonusOfType(BonusType::MAX_LUCK))
+		return maximum;
+	if(attacker->hasBonusOfType(BonusType::NO_LUCK))
+		return 0;
+	const int baseLuck = std::clamp(attacker->valOfBonuses(BonusType::LUCK), minimum, maximum);
+	const auto side = playerToSide(battleGetOwner(attacker));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return baseLuck;
+	const auto mark = battleGetFocusFireState(side);
+	const bool focused = shooting && target && battleIsFocusFireRecipient(attacker, side)
+		&& battleIsFocusFireTargetActive(side) && mark && mark->targetUnitId == target->unitId();
+	return std::clamp(getBattle()->getSylvanLuckState(side).chanceLuck(baseLuck, attacker->unitId(), focused), minimum, maximum);
+}
+
+int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & attack) const
+{
+	const auto average = [](const DamageRange & range) { return range.min + (range.max - range.min) / 2; };
+	const auto normal = average(calculateDmgRange(attack).damage);
+	const auto side = playerToSide(battleGetOwner(attack.attacker));
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) || attack.luckyStrike || attack.unluckyStrike)
+		return normal;
+	const auto fortune = getBattle()->getSylvanLuckState(side);
+	const int luck = battleGetAttackLuck(attack.attacker, attack.defender, attack.shooting);
+	if(luck == 0 || (luck < 0 && fortune.naturesProvidence && !fortune.negativeLuckIgnored))
+		return normal;
+	const auto rules = battleLuckRules(*getBattle());
+	if(luck > 0 && attack.secondaryAttack && !rules.affectsAllTargets)
+		return normal;
+	const auto & chances = luck > 0 ? rules.goodChance : rules.badChance;
+	const auto dice = rules.diceSize;
+	if(chances.empty() || dice <= 0)
+		return normal;
+	const double chance = std::clamp(static_cast<double>(chances[std::min<size_t>(std::abs(luck), chances.size()) - 1]) / dice, 0.0, 1.0);
+	auto rolled = attack;
+	rolled.luckyStrike = luck > 0;
+	rolled.unluckyStrike = luck < 0;
+	return static_cast<int64_t>(normal * (1.0 - chance) + average(calculateDmgRange(rolled).damage) * chance);
 }
 
 std::optional<HeroOrderState> CBattleInfoCallback::battleGetHeroOrderState(BattleSide side) const

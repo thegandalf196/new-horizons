@@ -14,6 +14,7 @@
 #include "BattleUnitTurnReason.h"
 #include "HeroCommand.h"
 #include "FocusFireState.h"
+#include "SylvanLuckState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class ObstacleChanges;
@@ -93,6 +94,8 @@ public:
 	virtual bool getMetamagicFirstCounterspellNegated(BattleSide side) const { return false; }
 	virtual int32_t getBloodrageDamagePercent(BattleSide side) const { return 0; }
 	virtual int32_t getBloodrageRank(BattleSide side) const { return 0; }
+	virtual SylvanLuckState getSylvanLuckState(BattleSide side) const { return {}; }
+	virtual LuckRollRules getLuckRollRules() const { return {}; }
 
 	virtual ui8 getTacticDist() const = 0;
 	virtual BattleSide getTacticsSide() const = 0;

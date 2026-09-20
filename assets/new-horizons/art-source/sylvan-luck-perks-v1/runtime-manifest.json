@@ -1,0 +1,20 @@
+{
+  "method": "Generated atlas crop, contain/LANCZOS export, brightness/color state transforms",
+  "files": {
+    "NH_perk_serendipity_normal.png": "a299132b001084f343c1b95af5c0b74d872f6ed1f8375b1e80a4ccaeae59df46",
+    "NH_perk_serendipity_pressed.png": "ce288ebdf1d079f70491890cb296adf495ce18e949872efc9a534bf51d73e148",
+    "NH_perk_serendipity_disabled.png": "2bc57e34b6c69ba9de0ca50bd379a21468d2d77e39afa3147012269599b5161b",
+    "NH_perk_serendipity_highlighted.png": "96fd8d19671d5179735e86ac0618e6942d27e801530e346899e2743144d21671",
+    "NH_perk_serendipity.json": "9a212b665e3e53c335490e6b3976aa0d3985bf0a68f8b1cc4f2a9e12c0867956",
+    "NH_perk_natures_providence_normal.png": "06eaa195c8ec08fd78a51bc10ab7b225005d9754f0b6a731fc4fec8e16eaf1a3",
+    "NH_perk_natures_providence_pressed.png": "8a2f541cf3eba647a0adff290779dad26f8ee307e2b180e85184db4b6f6f40c9",
+    "NH_perk_natures_providence_disabled.png": "59c902d19b5284232a09c7276645d87bf71a5a567597c60fe6a0c2c4b860582d",
+    "NH_perk_natures_providence_highlighted.png": "a83541601304552a68b3402eee5de5f0c1e71a1732ffb8262f49a13f04018746",
+    "NH_perk_natures_providence.json": "69edd2bd2229ab7e59473e104f2b92aa8433ae6f53aa997bf61379f9a351c41d",
+    "NH_perk_fortunate_aim_normal.png": "8f2beaeba9e66c60725af3a46d30ed31d16023a69f01b96e43fc270df141167b",
+    "NH_perk_fortunate_aim_pressed.png": "c821b427bb1cea75bdf9a433dd8102a138652eb2edab423eb4b5636740c71355",
+    "NH_perk_fortunate_aim_disabled.png": "85331809d947dec0172cc813c2722f66e05d49624ac5a55ec7ac3a6fb9e8271d",
+    "NH_perk_fortunate_aim_highlighted.png": "0924071e91e218821abeb8c6da9a1bf57f342c7dc6be41208bfd10a34985278d",
+    "NH_perk_fortunate_aim.json": "8eb3ea1ee73d18f5708d9af87ecbdd87af94423a06d10de8e69630fcd9b2a2fd"
+  }
+}

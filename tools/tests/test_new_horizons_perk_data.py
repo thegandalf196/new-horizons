@@ -21,10 +21,15 @@ ACTIVE_PERKS = {
     "new-horizons:sorceryMagic.temporalist",
     "new-horizons:sorceryMagic.teleporter",
     "new-horizons:sorceryMagic.countermage",
+    "new-horizons:sorceryMagic.chronomancer",
     "new-horizons:sylvanLuck.elvenPrecision",
+    "new-horizons:sylvanLuck.serendipity",
+    "new-horizons:sylvanLuck.natureSProvidence",
+    "new-horizons:sylvanLuck.fortunateAim",
     "new-horizons:necromancy.boneCollector",
     "new-horizons:necromancy.darkConversion",
     "new-horizons:necromancy.blackHarvest",
+    "new-horizons:bloodrage.warDrums",
     "new-horizons:metamagic.spellSequencing",
     "new-horizons:metamagic.arcaneEconomy",
     "new-horizons:metamagic.focusedPairing",
@@ -38,8 +43,10 @@ ACTIVE_PERKS = {
 }
 ACTIVE_RANK_SKILLS = {
     "new-horizons:offense",
+    "new-horizons:logistics",
     "new-horizons:sylvanLuck",
     "new-horizons:necromancy",
+    "new-horizons:bloodrage",
     "new-horizons:metamagic",
 }
 EXPECTED_SKILLS = (

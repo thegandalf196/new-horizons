@@ -46,6 +46,8 @@ public:
 	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
 	int32_t getBloodrageDamagePercent(BattleSide side) const override { return sides.at(side).bloodrageDamagePercent; }
 	int32_t getBloodrageRank(BattleSide side) const override { return sides.at(side).bloodrageRank; }
+	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return sides.at(side).sylvanLuck; }
+	LuckRollRules getLuckRollRules() const override { return luckRollRules; }
 	HeroCommand getActiveDoctrine(BattleSide side) const override { (void)side; return HeroCommand::NONE; }
 	HeroCommand getActiveOrder(BattleSide side) const override
 	{
@@ -87,6 +89,7 @@ public:
 	// Keeping this at the end avoids shifting preceding offsets, but every facade
 	// and consumer still requires a synchronized rebuild when BattleInfo changes.
 	std::set<uint32_t> bloodrageDestroyedUnits;
+	LuckRollRules luckRollRules;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
@@ -94,6 +97,10 @@ public:
 		{
 			heroCommands::validateRules(heroCommandRules);
 			validateFocusFireStates();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK)
+				&& (sides[BattleSide::ATTACKER].sylvanLuck != SylvanLuckState{}
+					|| sides[BattleSide::DEFENDER].sylvanLuck != SylvanLuckState{}))
+				throw std::runtime_error("Cannot discard Sylvan Luck battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 				&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
 				throw std::runtime_error("Cannot discard New Horizons targeted combat rules");
@@ -107,6 +114,10 @@ public:
 		}
 		h & battleID;
 		h & sides;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
+			h & luckRollRules;
+		else if(!h.saving)
+			luckRollRules = {};
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE))
 		{
 			h & sides[BattleSide::ATTACKER].bloodrageDamagePercent;

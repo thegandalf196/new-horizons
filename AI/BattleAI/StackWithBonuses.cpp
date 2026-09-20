@@ -322,6 +322,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	auto activeUnit = realBattle->battleActiveUnit();
 	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
 	projectedRound = realBattle->battleGetRound();
+	fortuneRollRules = realBattle->getBattle()->getLuckRollRules();
 	for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
 	{
 		const auto part = static_cast<EWallPart>(index);
@@ -341,6 +342,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		focusFireStates[side] = realBattle->battleGetFocusFireState(side);
+		fortuneStates[side] = realBattle->getBattle()->getSylvanLuckState(side);
 		bloodrageRanks[side] = realBattle->getBattle()->getBloodrageRank(side);
 		bloodrageDamagePercents[side] = realBattle->getBattle()->getBloodrageDamagePercent(side);
 	}
@@ -446,6 +448,8 @@ IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 
 void HypotheticBattle::nextRound()
 {
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		fortuneStates[side].nextRound();
 	for(auto & [side, state] : focusFireStates)
 		state.reset();
 	++bonusTreeVersion;

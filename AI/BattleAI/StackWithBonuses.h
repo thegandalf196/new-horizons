@@ -147,6 +147,8 @@ public:
 	int32_t getActiveStackID() const override;
 	int32_t getRound() const override;
 	int32_t getBloodrageDamagePercent(BattleSide side) const override;
+	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return fortuneStates.at(side); }
+	LuckRollRules getLuckRollRules() const override { return fortuneRollRules; }
 
 	battle::Units getUnitsIf(const battle::UnitFilter & predicate) const override;
 
@@ -193,6 +195,8 @@ private:
 	BattleSideArray<int32_t> bloodrageRanks;
 	BattleSideArray<int32_t> bloodrageDamagePercents;
 	std::set<uint32_t> bloodrageDestroyedUnits;
+	BattleSideArray<SylvanLuckState> fortuneStates;
+	LuckRollRules fortuneRollRules;
 
 	class HypotheticServerCallback : public ServerCallback
 	{

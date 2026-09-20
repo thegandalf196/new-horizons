@@ -84,6 +84,10 @@ public:
 	std::vector<uint32_t> battleGetHeroCommandTargets(BattleSide side, HeroCommand command) const;
 	std::optional<FocusFireState> battlePrepareFocusFireState(BattleSide side, uint32_t targetUnitId) const;
 	std::optional<FocusFireState> battleGetFocusFireState(BattleSide side) const;
+	/// Roll-only Luck; does not change the unit's displayed/static Luck bonuses.
+	int battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const;
+	/// Expected luck damage used by the AI, without consuming RNG.
+	int64_t battleExpectedLuckDamage(const BattleAttackInfo & attack) const;
 	std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const;
 	/// Current cumulative physical creature damage percentage for the unit's side.
 	int battleGetBloodrageDamagePercent(const battle::Unit * unit) const;

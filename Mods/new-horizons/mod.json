@@ -12,6 +12,32 @@
 	"keepDisabled": false,
 	"settings": {
 		"combat": {
+			"goodLuckChance": [
+				4,
+				8,
+				12,
+				16,
+				20,
+				24,
+				28,
+				32,
+				36,
+				40
+			],
+			"badLuckChance": [
+				4,
+				8,
+				12,
+				16,
+				20,
+				24,
+				28,
+				32,
+				36,
+				40
+			],
+			"luckDiceSize": 100,
+			"luckBias": 0,
 			"heroCommands": {
 				"schemaVersion": 1,
 				"rulesetVersion": 3,
@@ -5160,7 +5186,7 @@
 								"requires": "basic",
 								"description": "Until a friendly stack has triggered positive Luck once in the current combat, it counts as having +1 additional Luck for trigger chance only.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Until a friendly stack has triggered positive Luck once in the current combat, it counts as having +1 additional Luck for trigger chance only."
 								}
 							},
@@ -5190,7 +5216,7 @@
 								"requires": "advanced",
 								"description": "The first negative Luck trigger against the army each round is ignored.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first negative Luck trigger against the army each round is ignored."
 								}
 							},
@@ -5200,7 +5226,7 @@
 								"requires": "advanced",
 								"description": "Friendly shooters gain +1 Luck when attacking the target designated by Focus Fire!.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Friendly shooters gain +1 Luck when attacking the target designated by Focus Fire!."
 								}
 							},

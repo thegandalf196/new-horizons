@@ -259,6 +259,9 @@ struct BattleStackAttacked
 struct DLL_LINKAGE BattleAttack : public CPackForClient
 {
 	BattleUnitsChanged attackerChanges;
+	/// Server-authored post-roll snapshot, shared by every target of the strike.
+	BattleSide fortuneSide = BattleSide::NONE;
+	std::optional<SylvanLuckState> fortuneState;
 
 	BattleID battleID = BattleID::NONE;
 	std::vector<BattleStackAttacked> bsa;
@@ -313,6 +316,20 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 		h & tile;
 		h & spellID;
 		h & attackerChanges;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
+		{
+			h & fortuneSide;
+			h & fortuneState;
+			if(fortuneState && fortuneSide != BattleSide::ATTACKER && fortuneSide != BattleSide::DEFENDER)
+				throw std::runtime_error("Invalid fortune packet side");
+		}
+		else if(h.saving && fortuneState)
+			throw std::runtime_error("Cannot discard Sylvan Luck strike state");
+		else if(!h.saving)
+		{
+			fortuneSide = BattleSide::NONE;
+			fortuneState.reset();
+		}
 		assert(battleID != BattleID::NONE);
 	}
 };

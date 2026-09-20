@@ -14,6 +14,7 @@
 #include "../GameConstants.h"
 #include "HeroCommand.h"
 #include "FocusFireState.h"
+#include "SylvanLuckState.h"
 #include "../callback/GameCallbackHolder.h"
 
 class CGHeroInstance;
@@ -60,6 +61,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// BattleInfo owns the versioned wire representation.
 	int32_t bloodrageDamagePercent = 0;
 	int32_t bloodrageRank = 0;
+	SylvanLuckState sylvanLuck;
 
 	void init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town);
 	const CArmedInstance * getArmy() const;
@@ -67,6 +69,12 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
+			h & sylvanLuck;
+		else if(!h.saving)
+			sylvanLuck = {};
+		else if(sylvanLuck != SylvanLuckState{})
+			throw std::runtime_error("Cannot discard Sylvan Luck battle state");
 		if(h.saving && temporalFieldUsed && !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
 			throw std::runtime_error("Cannot discard consumed Temporal Field battle state");
 		if(h.saving && counterspellArmed && !h.hasFeature(Handler::Version::NEW_HORIZONS_COUNTERSPELL))

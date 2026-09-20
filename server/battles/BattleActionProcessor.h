@@ -98,7 +98,7 @@ class BattleActionProcessor : boost::noncopyable
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack);
 
 	/// Rolls what is decided before any damage: luck, and the abilities that double it by chance.
-	void rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, BattleAttack & bat) const;
+	void rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat) const;
 	/// Fills in what a script reacting before the attack gets to see - who is about to be hit and how
 	/// much health each of them has left. Nothing about the damage, which has not been rolled yet.
 	void describeUpcomingAttack(CombatEventPayload & payload, const CStack * defender, const battle::Units & secondaryTargets) const;

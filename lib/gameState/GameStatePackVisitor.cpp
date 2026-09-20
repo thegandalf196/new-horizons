@@ -1476,6 +1476,8 @@ void GameStatePackVisitor::visitBattleStackMoved(BattleStackMoved & pack)
 void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
+	if(pack.fortuneState)
+		battle->getSide(pack.fortuneSide).sylvanLuck = *pack.fortuneState;
 	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.bsa);
 	CStack * attacker = battle->getStack(pack.stackAttacking);
 	assert(attacker);

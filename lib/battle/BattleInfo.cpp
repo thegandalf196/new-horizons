@@ -23,6 +23,7 @@
 #include "../entities/building/TownFortifications.h"
 #include "../filesystem/Filesystem.h"
 #include "../GameLibrary.h"
+#include "../IGameSettings.h"
 #include "../mapObjects/CGTownInstance.h"
 #include "../spells/CSpell.h"
 #include "../texts/CGeneralTextHandler.h"
@@ -332,10 +333,21 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 {
 	CMP_stack cmpst;
 	auto currentBattle = std::make_unique<BattleInfo>(cb, layout);
+	currentBattle->luckRollRules.goodChance = cb->getSettings().getVector(EGameSettings::COMBAT_GOOD_LUCK_CHANCE);
+	currentBattle->luckRollRules.badChance = cb->getSettings().getVector(EGameSettings::COMBAT_BAD_LUCK_CHANCE);
+	currentBattle->luckRollRules.diceSize = cb->getSettings().getInteger(EGameSettings::COMBAT_LUCK_DICE_SIZE);
+	currentBattle->luckRollRules.affectsAllTargets = cb->getSettings().getBoolean(EGameSettings::COMBAT_LUCKY_STRIKE_AFFECTS_ALL_TARGETS);
 
 	for(auto i : { BattleSide::LEFT_SIDE, BattleSide::RIGHT_SIDE})
 	{
 		currentBattle->sides[i].init(heroes[i], armies[i], i == BattleSide::RIGHT_SIDE ? town : nullptr);
+		if(heroes[i])
+		{
+			auto & fortune = currentBattle->sides[i].sylvanLuck;
+			fortune.serendipity = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.serendipity");
+			fortune.naturesProvidence = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.natureSProvidence");
+			fortune.fortunateAim = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.fortunateAim");
+		}
 		currentBattle->sides[i].bloodrageRank = newHorizonsBloodrage::rank(heroes[i]);
 		currentBattle->sides[i].bloodrageDamagePercent = newHorizonsBloodrage::initialDamagePercent(heroes[i]);
 	}
@@ -901,6 +913,7 @@ void BattleInfo::nextRound()
 {
 	for(auto i : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		sides.at(i).sylvanLuck.nextRound();
 		sides.at(i).castSpellsCount = 0;
 		sides.at(i).heroCommandUsed = false;
 		sides.at(i).activeOrder = HeroCommand::NONE;

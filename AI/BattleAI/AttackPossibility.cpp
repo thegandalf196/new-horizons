@@ -23,14 +23,9 @@
 #include <vcmi/spells/Spell.h>
 
 
-uint64_t averageDmg(const DamageRange & range)
-{
-	return (range.min + range.max) / 2;
-}
-
 void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
-	auto damage = averageDmg(hb->battleEstimateDamage(attacker, defender, 0).damage);
+	auto damage = hb->battleExpectedLuckDamage(BattleAttackInfo(attacker, defender, 0, hb->battleCanShoot(attacker, defender->getPosition())));
 
 	damageCache[attacker->unitId()][defender->unitId()] = static_cast<float>(damage) / attacker->getCount();
 }
@@ -135,7 +130,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	{
 		if(!attacker->alive())
 			return 0;
-		return averageDmg(hb->battleEstimateDamage(attacker, defender, 0).damage);
+		return hb->battleExpectedLuckDamage(BattleAttackInfo(attacker, defender, 0, hb->battleCanShoot(attacker, defender->getPosition())));
 	}
 	bool wasComputedBefore = damageCache[attacker->unitId()].count(defender->unitId());
 
@@ -316,12 +311,12 @@ int64_t AttackPossibility::evaluateBlockedShootersDmg(
 		BattleAttackInfo meleeAttackInfo(st, attacker, 0, false);
 		meleeAttackInfo.defenderPos = hex;
 
-		auto rangeDmg = state->battleEstimateDamage(rangeAttackInfo);
-		auto meleeDmg = state->battleEstimateDamage(meleeAttackInfo);
+		auto rangeDmg = state->battleExpectedLuckDamage(rangeAttackInfo);
+		auto meleeDmg = state->battleExpectedLuckDamage(meleeAttackInfo);
 		auto cachedDmg = damageCache.getOriginalDamage(st, attacker, state);
 
-		int64_t gain = averageDmg(rangeDmg.damage) - averageDmg(meleeDmg.damage) + 1;
-		res += gain * cachedDmg / std::max<uint64_t>(1, averageDmg(rangeDmg.damage));
+		int64_t gain = rangeDmg - meleeDmg + 1;
+		res += gain * cachedDmg / std::max<int64_t>(1, rangeDmg);
 	}
 
 	return res;
@@ -447,17 +442,17 @@ AttackPossibility AttackPossibility::evaluate(
 				float defenderDamageReduce;
 				float attackerDamageReduce;
 
-				DamageEstimation retaliation;
 				auto victimAttack = ap.attack;
 				victimAttack.attacker = ap.attackerState.get();
 				victimAttack.defender = defenderState.get();
 				victimAttack.secondaryAttack = u->unitId() != defender->unitId();
 				if(victimAttack.secondaryAttack)
 					victimAttack.defenderPos = defenderState->getPosition();
-				auto attackDmg = state->battleEstimateDamage(victimAttack, &retaliation);
-
-				damageDealt = averageDmg(attackDmg.damage);
+				damageDealt = state->battleExpectedLuckDamage(victimAttack);
 				vstd::amin(damageDealt, defenderState->getAvailableHealth());
+				auto retaliatorState = defenderState->acquireState();
+				int64_t projectedHit = damageDealt;
+				retaliatorState->damage(projectedHit);
 
 				// Later strikes must score casualties against the current copied health,
 				// not repeat the first strike's original-victim bounty.
@@ -467,13 +462,22 @@ AttackPossibility AttackPossibility::evaluate(
 				//FIXME: use ranged retaliation
 				attackerDamageReduce = 0;
 
-				if (i == 0 && !attackInfo.shooting && u->unitId() == defender->unitId() && defenderState->ableToRetaliate() && !counterAttacksBlocked)
+				if (i == 0 && !attackInfo.shooting && u->unitId() == defender->unitId()
+					&& retaliatorState->alive() && retaliatorState->ableToRetaliate() && !counterAttacksBlocked
+					&& !ap.attackerState->isInvincible() && !state->isLongWeaponAttack(ap.attackerState.get(), defenderState.get()))
 				{
 					for(auto retaliated : retaliatedUnits)
 					{
+						auto retaliationAttack = victimAttack.reverse();
+						retaliationAttack.attacker = retaliatorState.get();
+						retaliationAttack.defender = retaliated->unitId() == attacker->unitId()
+							? ap.attackerState.get() : defenderStates.at(retaliated->unitId()).get();
+						retaliationAttack.secondaryAttack = retaliated->unitId() != attacker->unitId();
+						if(retaliationAttack.secondaryAttack)
+							retaliationAttack.defenderPos = retaliationAttack.defender->getPosition();
 						if(retaliated->unitId() == attacker->unitId())
 						{
-							int64_t damageReceived = averageDmg(retaliation.damage);
+							int64_t damageReceived = state->battleExpectedLuckDamage(retaliationAttack);
 
 							vstd::amin(damageReceived, ap.attackerState->getAvailableHealth());
 
@@ -482,8 +486,7 @@ AttackPossibility AttackPossibility::evaluate(
 						}
 						else
 						{
-							auto retaliationCollateral = state->battleEstimateDamage(defender, retaliated, 0);
-							int64_t damageReceived = averageDmg(retaliationCollateral.damage);
+							int64_t damageReceived = state->battleExpectedLuckDamage(retaliationAttack);
 
 							vstd::amin(damageReceived, retaliated->getAvailableHealth());
 

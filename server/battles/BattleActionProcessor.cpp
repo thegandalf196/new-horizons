@@ -1502,9 +1502,9 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	return { static_cast<int16_t>(pathDistance), !movementSuccess, false };
 }
 
-void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, BattleAttack & bat) const
+void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat) const
 {
-	const int attackerLuck = attacker->luckVal();
+	const int attackerLuck = battle.battleGetAttackLuck(attacker, defender, bat.shot());
 	ObjectInstanceID ownerArmy = battle.getBattle()->getSideArmy(attacker->unitSide())->id;
 
 	if(attackerLuck > 0 && gameHandler->randomizer->rollGoodLuck(ownerArmy, attackerLuck))
@@ -1512,6 +1512,19 @@ void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, 
 
 	if(attackerLuck < 0 && gameHandler->randomizer->rollBadLuck(ownerArmy, -attackerLuck))
 		bat.flags |= BattleAttack::UNLUCKY;
+
+	const auto side = battle.playerToSide(battle.battleGetOwner(attacker));
+	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+	{
+		auto fortune = battle.getBattle()->getSylvanLuckState(side);
+		if(fortune.active())
+		{
+			if(fortune.recordStrike(attacker->unitId(), bat.lucky(), bat.unlucky()))
+				bat.flags &= ~BattleAttack::UNLUCKY;
+			bat.fortuneSide = side;
+			bat.fortuneState = std::move(fortune);
+		}
+	}
 
 	if (gameHandler->randomizer->rollCombatAbility(ownerArmy, attacker->valOfBonuses(BonusType::DOUBLE_DAMAGE_CHANCE)))
 		bat.flags |= BattleAttack::DEATH_BLOW;
@@ -1685,7 +1698,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	std::shared_ptr<battle::CUnitState> attackerState = attacker->acquireState();
 
-	rollAttackFlags(battle, attacker, bat);
+	rollAttackFlags(battle, attacker, defender, bat);
 
 	// only primary target
 	if(defender && defender->alive())
