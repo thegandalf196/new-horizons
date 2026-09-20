@@ -13,6 +13,7 @@
 
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/filesystem/ResourcePath.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 
 namespace scripting::api
 {
@@ -38,6 +39,15 @@ SpellCreatedObstacle SpellObstacleDescriptor::toObstacle() const
 	obstacle.trap            = trap;
 	obstacle.removeOnTrigger = removeOnTrigger;
 	obstacle.nativeVisible   = nativeVisible;
+	// The explicit script field is authoritative.  Also recognize the complete
+	// canonical NH Land Mine descriptor at this C++ boundary so older cached Lua
+	// registries cannot silently discard the marker while the engine and script
+	// are being upgraded together.  Legacy mines use divisor 1 and/or no exact
+	// damage value, so they retain floor semantics.
+	obstacle.damageSnapshot  = damageSnapshot
+		|| (obstacle.ID == SpellID(SpellID::LAND_MINE)
+			&& casterPowerDivisor == newHorizonsMagic::DIRECT_DAMAGE_POWER_DIVISOR
+			&& minimalDamage > 0 && hidden && !nativeVisible && removeOnTrigger);
 
 	obstacle.trigger = trigger.empty() ? SpellID(SpellID::NONE) : SpellID(SpellID::decode(trigger));
 

@@ -87,6 +87,9 @@ public:
 		if(h.saving && spellMassSlow
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
 			throw std::runtime_error("Cannot serialize Temporal Field to an older protocol");
+		if(h.saving && spell == SpellID(SpellID::LAND_MINE)
+			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE))
+			throw std::runtime_error("Cannot serialize multi-hex Land Mine action to an older protocol");
 		h & side;
 		h & stackNumber;
 		h & actionType;
@@ -127,6 +130,9 @@ public:
 		if(!h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Targeted command requires the new protocol");
+		if(!h.saving && spell == SpellID(SpellID::LAND_MINE)
+			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE))
+			throw std::runtime_error("Multi-hex Land Mine action requires the new protocol");
 		if(!h.saving && (command == HeroCommand::RIPOSTE || command == HeroCommand::BRACE
 			|| command == HeroCommand::PROTECT || command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS))

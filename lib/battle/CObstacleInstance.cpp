@@ -130,6 +130,7 @@ SpellCreatedObstacle::SpellCreatedObstacle()
 	removeOnTrigger(false),
 	revealed(false),
 	nativeVisible(true),
+	damageSnapshot(false),
 	minimalDamage(0)
 {
 	obstacleType = SPELL_CREATED;
@@ -197,6 +198,7 @@ void SpellCreatedObstacle::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("trap", trap);
 	handler.serializeBool("removeOnTrigger", removeOnTrigger);
 	handler.serializeBool("nativeVisible", nativeVisible);
+	handler.serializeBool("damageSnapshot", damageSnapshot, false);
 
 	handler.serializeStruct("appearSound", appearSound);
 	handler.serializeStruct("appearAnimation", appearAnimation);

@@ -11,6 +11,8 @@
 #include "StdInc.h"
 #include "ObstacleCasterProxy.h"
 
+#include "NewHorizonsMagic.h"
+
 namespace spells
 {
 
@@ -32,6 +34,16 @@ int32_t ObstacleCasterProxy::getEffectLevel(const Spell * spell) const
 
 int64_t ObstacleCasterProxy::getSpellBonus(const Spell * spell, int64_t base, const battle::Unit * affectedStack) const
 {
+	// Canonical New Horizons Land Mine stores its already-evaluated direct
+	// damage in the obstacle descriptor. getEffectValue() supplies that raw
+	// snapshot; preserve the base passed here so target reductions,
+	// vulnerabilities and invincibility already applied by adjustRawDamage()
+	// are not overwritten and the original hero bonus is not applied twice.
+	// The explicit serialized marker distinguishes this exact snapshot from the
+	// legacy minimal-damage floor, preserving ordinary Land Mine behavior.
+	if(newHorizonsMagic::isLandMine(SpellID(obs.ID)) && obs.damageSnapshot)
+		return base;
+
 	if(actualCaster)
 		return std::max<int64_t>(actualCaster->getSpellBonus(spell, base, affectedStack), obs.minimalDamage);
 
@@ -55,6 +67,9 @@ int32_t ObstacleCasterProxy::getEnchantPower(const Spell * spell) const
 
 int64_t ObstacleCasterProxy::getEffectValue(const Spell * spell) const
 {
+	if(newHorizonsMagic::isLandMine(SpellID(obs.ID)) && obs.damageSnapshot)
+		return obs.minimalDamage;
+
 	if(actualCaster)
 		return std::max(static_cast<int64_t>(obs.minimalDamage), actualCaster->getEffectValue(spell));
 	else

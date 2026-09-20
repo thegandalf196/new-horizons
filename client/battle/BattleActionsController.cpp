@@ -33,11 +33,13 @@
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/IBattleState.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/spells/ISpellMechanics.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/effects/Effect.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
@@ -52,6 +54,21 @@ struct TextReplacement
 using TextReplacementList = std::vector<TextReplacement>;
 
 constexpr std::string_view transfigureMatterJsonKey = "new-horizons:transfigureMatter";
+
+bool isCanonicalLandMine(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	return spell && newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::isLandMine(spell->id);
+}
+
+bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle, const BattleHex & hex)
+{
+	if(!hex.isAvailable()
+		|| battle.battleGetUnitByPos(hex, true)
+		|| !battle.battleGetAllObstaclesOnPos(hex, false).empty())
+		return false;
+	return battle.getAccessibility()[hex.toInt()] == EAccessibility::ACCESSIBLE;
+}
 
 bool isTransfigureMatterObstacle(const CObstacleInstance * obstacle)
 {
@@ -267,6 +284,224 @@ BattleActionsController::BattleActionsController(BattleInterface & owner):
 {
 }
 
+bool BattleActionsController::landMinePlacementModeActive() const
+{
+	if(!heroSpellToCast || !owner.getBattle() || !owner.currentHero())
+		return false;
+
+	return isCanonicalLandMine(*owner.getBattle(), heroSpellToCast->spell.toSpell());
+}
+
+int BattleActionsController::landMinePlacementRequiredHexes() const
+{
+	if(!landMinePlacementModeActive())
+		return 0;
+
+	const auto * spell = heroSpellToCast->spell.toSpell();
+	const auto hero = owner.currentHero();
+	spells::BattleCast cast(owner.getBattle().get(), hero, spells::Mode::HERO, spell);
+	auto mechanics = spell->battleMechanics(&cast);
+	if(!mechanics)
+		return 0;
+
+	return newHorizonsMagic::landMineHexCount(mechanics->getEffectPower());
+}
+
+bool BattleActionsController::landMinePlacementReady() const
+{
+	const int required = landMinePlacementRequiredHexes();
+	return required > 0 && static_cast<int>(landMineSelectedHexes.size()) == required;
+}
+
+const std::vector<BattleHex> & BattleActionsController::landMinePlacementSelectedHexes() const
+{
+	return landMineSelectedHexes;
+}
+
+bool BattleActionsController::landMinePlacementHexIsLegal(const BattleHex & hex) const
+{
+	if(!landMinePlacementModeActive() || !owner.getBattle())
+		return false;
+
+	return canonicalLandMineHexIsEmpty(*owner.getBattle(), hex);
+}
+
+bool BattleActionsController::landMinePlacementHexIsSelected(const BattleHex & hex) const
+{
+	return std::find(landMineSelectedHexes.begin(), landMineSelectedHexes.end(), hex)
+		!= landMineSelectedHexes.end();
+}
+
+BattleHexArray BattleActionsController::getLandMinePlacementLegalHexes() const
+{
+	BattleHexArray result;
+	if(!landMinePlacementModeActive())
+		return result;
+
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(landMinePlacementHexIsLegal(hex))
+			result.insert(hex);
+	}
+	return result;
+}
+
+void BattleActionsController::updateLandMinePlacementStatus(const BattleHex & hoveredHex)
+{
+	if(!landMinePlacementModeActive())
+		return;
+
+	const int required = landMinePlacementRequiredHexes();
+	std::string message = "Land Mine " + std::to_string(landMineSelectedHexes.size())
+		+ "/" + std::to_string(required) + ".";
+
+	if(!landMineSelectedHexes.empty())
+	{
+		message += " ";
+		for(size_t index = 0; index < landMineSelectedHexes.size(); ++index)
+		{
+			if(index != 0)
+				message += " ";
+			message += "#" + std::to_string(index + 1) + "="
+				+ std::to_string(landMineSelectedHexes[index].toInt());
+		}
+	}
+
+	if(hoveredHex.isValid())
+	{
+		const bool selected = std::find(landMineSelectedHexes.begin(), landMineSelectedHexes.end(), hoveredHex)
+			!= landMineSelectedHexes.end();
+		if(selected)
+		{
+			if(landMinePlacementHexIsLegal(hoveredHex))
+				message += " Click selected hex to undo.";
+			else
+				message += " Selection changed; undo it.";
+		}
+		else if(!landMinePlacementHexIsLegal(hoveredHex))
+		{
+			message += " Hex unavailable.";
+		}
+		else if(landMinePlacementReady())
+		{
+			message += " Click Place Mines or press Enter.";
+		}
+		else
+		{
+			message += " Click empty hex.";
+		}
+	}
+	else if(landMinePlacementReady())
+	{
+		message += " Click Place Mines or press Enter.";
+	}
+	else
+	{
+		message += " Select empty hexes. Backspace undo; Esc cancels.";
+	}
+
+	if(!currentConsoleMsg.empty())
+		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
+	ENGINE->statusbar()->write(message);
+	currentConsoleMsg = std::move(message);
+}
+
+void BattleActionsController::selectOrUndoLandMineHex(const BattleHex & clickedHex)
+{
+	if(!landMinePlacementModeActive())
+		return;
+
+	const auto selected = std::find(landMineSelectedHexes.begin(), landMineSelectedHexes.end(), clickedHex);
+	if(selected != landMineSelectedHexes.end())
+	{
+		landMineSelectedHexes.erase(selected);
+	}
+	else if(landMinePlacementHexIsLegal(clickedHex)
+		&& static_cast<int>(landMineSelectedHexes.size()) < landMinePlacementRequiredHexes())
+	{
+		landMineSelectedHexes.push_back(clickedHex);
+	}
+
+	if(owner.windowObject)
+		owner.windowObject->updateLandMinePlacementControls();
+	updateLandMinePlacementStatus(clickedHex);
+	ENGINE->windows().totalRedraw();
+}
+
+bool BattleActionsController::landMinePlacementTargetsValid() const
+{
+	if(!landMinePlacementReady() || !owner.getBattle() || !owner.currentHero())
+		return false;
+
+	std::set<int> selected;
+	for(const auto & hex : landMineSelectedHexes)
+	{
+		if(!selected.insert(hex.toInt()).second || !landMinePlacementHexIsLegal(hex))
+			return false;
+	}
+
+	const auto * spell = heroSpellToCast->spell.toSpell();
+	spells::BattleCast cast(owner.getBattle().get(), owner.currentHero(), spells::Mode::HERO, spell);
+	auto mechanics = spell->battleMechanics(&cast);
+	if(!mechanics)
+		return false;
+
+	spells::detail::ProblemImpl problem;
+	if(!mechanics->canBeCast(problem))
+		return false;
+
+	battle::Target target;
+	for(const auto & hex : landMineSelectedHexes)
+		target.emplace_back(hex);
+	return mechanics->canBeCastAt(target, problem);
+}
+
+void BattleActionsController::confirmLandMinePlacement()
+{
+	if(!landMinePlacementModeActive())
+		return;
+
+	if(!landMinePlacementReady())
+	{
+		updateLandMinePlacementStatus(BattleHex::INVALID);
+		return;
+	}
+
+	// The battlefield may have changed while the player was choosing.  Re-run
+	// the same live-snapshot checks as the generic mechanics before creating a
+	// request; the server remains the final authority on this packet.
+	if(!landMinePlacementTargetsValid())
+	{
+		updateLandMinePlacementStatus(BattleHex::INVALID);
+		currentConsoleMsg += ". Selection is no longer legal; undo or cancel.";
+		ENGINE->statusbar()->write(currentConsoleMsg);
+		return;
+	}
+
+	BattleAction action = *heroSpellToCast;
+	action.target.clear();
+	for(const auto & hex : landMineSelectedHexes)
+		action.aimToHex(hex);
+
+	if(!owner.curInt || !owner.curInt->cb)
+		return;
+	owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
+	endCastingSpell();
+}
+
+void BattleActionsController::undoLandMinePlacement()
+{
+	if(!landMinePlacementModeActive() || landMineSelectedHexes.empty())
+		return;
+
+	landMineSelectedHexes.pop_back();
+	if(owner.windowObject)
+		owner.windowObject->updateLandMinePlacementControls();
+	ENGINE->fakeMouseMove();
+	ENGINE->windows().totalRedraw();
+}
+
 bool BattleActionsController::isTransfigureMatterSpell(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == transfigureMatterJsonKey;
@@ -336,6 +571,7 @@ void BattleActionsController::setTemporalFieldFactory(TemporalFieldFactory facto
 
 void BattleActionsController::endCastingSpell()
 {
+	const bool wasLandMinePlacement = landMinePlacementModeActive();
 	if(heroSpellToCast)
 	{
 		heroSpellToCast.reset();
@@ -348,6 +584,12 @@ void BattleActionsController::endCastingSpell()
 		owner.stacksController->activateStack();
 	}
 	monsterSpellTargets.clear();
+	landMineSelectedHexes.clear();
+	if(wasLandMinePlacement && !currentConsoleMsg.empty())
+	{
+		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
+		currentConsoleMsg.clear();
+	}
 
 	if(owner.stacksController->getActiveStack())
 	{
@@ -547,6 +789,23 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	heroSpellToCast->spell = spellID;
 	heroSpellToCast->stackNumber = -1;
 	heroSpellToCast->side = owner.curInt->cb->getBattle(owner.getBattleID())->battleGetMySide();
+
+	// Canonical New Horizons Land Mine is an ordered multi-hex action.  It must
+	// not enter the generic NO_TARGET path, which would immediately submit the
+	// legacy/random obstacle action.  Leave all other spells on the existing
+	// selector unchanged.
+	if(landMinePlacementModeActive())
+	{
+		landMineSelectedHexes.clear();
+		possibleActions.clear();
+		owner.windowObject->blockUI(true);
+		if(owner.windowObject)
+			owner.windowObject->updateLandMinePlacementControls();
+		updateLandMinePlacementStatus(BattleHex::INVALID);
+		ENGINE->fakeMouseMove();
+		ENGINE->windows().totalRedraw();
+		return;
+	}
 
 	// Temporal Field is an explicit pre-target choice. The ordinary branch is
 	// resumed through continueOrdinarySpellcast(), while Mass submits a single
@@ -1356,6 +1615,19 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 		return;
 	}
 
+	if(landMinePlacementModeActive())
+	{
+		if(hoveredHex == BattleHex::INVALID)
+			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		else if(landMinePlacementHexIsLegal(hoveredHex))
+			ENGINE->cursor().set(Cursor::Spellcast::SPELL);
+		else
+			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+
+		updateLandMinePlacementStatus(hoveredHex);
+		return;
+	}
+
 	if (owner.stacksController->getActiveStack() == nullptr && monsterCaster == nullptr)
 		return;
 
@@ -1401,6 +1673,13 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 
 void BattleActionsController::onHoverEnded()
 {
+	if(landMinePlacementModeActive())
+	{
+		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		updateLandMinePlacementStatus(BattleHex::INVALID);
+		return;
+	}
+
 	ENGINE->cursor().set(Cursor::Combat::POINTER);
 
 	if (!currentConsoleMsg.empty())
@@ -1411,6 +1690,12 @@ void BattleActionsController::onHoverEnded()
 
 void BattleActionsController::onHexLeftClicked(const BattleHex & clickedHex)
 {
+	if(landMinePlacementModeActive())
+	{
+		selectOrUndoLandMineHex(clickedHex);
+		return;
+	}
+
 	if (owner.stacksController->getActiveStack() == nullptr && monsterCaster == nullptr)
 		return;
 
@@ -1518,6 +1803,13 @@ void BattleActionsController::activateStack()
 
 void BattleActionsController::onHexRightClicked(const BattleHex & clickedHex)
 {
+	if(landMinePlacementModeActive())
+	{
+		endCastingSpell();
+		CRClickPopup::createAndPush(LIBRARY->generaltexth->translate("core.genrltxt.731")); // spell cancelled
+		return;
+	}
+
 	bool isCurrentStackInSpellcastMode = creatureSpellcastingModeActive();
 
 	if (heroSpellcastingModeActive() || isCurrentStackInSpellcastMode)

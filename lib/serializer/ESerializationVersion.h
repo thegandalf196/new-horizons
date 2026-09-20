@@ -77,12 +77,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_COUNTERSPELL, // optional reusable Sorcery Counterspell ward state and cast result
 	NEW_HORIZONS_CANONICAL_ORDERS, // authoritative state for the eight canonical Orders
 	NEW_HORIZONS_NECROMANCY, // count-based faction conversion and post-battle result summary
+	NEW_HORIZONS_LAND_MINE, // player-selected canonical Land Mine action vectors
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_NECROMANCY,
+	CURRENT = NEW_HORIZONS_LAND_MINE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -109,3 +110,5 @@ static_assert(ESerializationVersion::NEW_HORIZONS_CANONICAL_ORDERS > ESerializat
 	"Canonical Order state must remain absent from older Counterspell snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY > ESerializationVersion::NEW_HORIZONS_CANONICAL_ORDERS,
 	"Necromancy state must remain absent from older canonical Order snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_LAND_MINE > ESerializationVersion::NEW_HORIZONS_NECROMANCY,
+	"Land Mine action vectors must remain absent from older New Horizons snapshots");

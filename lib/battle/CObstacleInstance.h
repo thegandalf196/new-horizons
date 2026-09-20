@@ -91,6 +91,7 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 	bool removeOnTrigger;
 	bool revealed;
 	bool nativeVisible; //Should native terrain creatures reveal obstacle
+	bool damageSnapshot; //minimalDamage is an exact cast-time raw value, not a legacy floor
 
 	AudioPath appearSound;
 	AnimationPath appearAnimation;
@@ -122,6 +123,10 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE)
+			&& (removeOnTrigger || revealed || damageSnapshot))
+			throw std::runtime_error("Cannot discard obstacle trigger state in an older protocol");
+
 		h & static_cast<CObstacleInstance&>(*this);
 		h & turnsRemaining;
 		h & casterSpellPower;
@@ -140,6 +145,18 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 		h & trigger;
 		h & minimalDamage;
 		h & trap;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE))
+		{
+			h & removeOnTrigger;
+			h & revealed;
+			h & damageSnapshot;
+		}
+		else if(!h.saving)
+		{
+			removeOnTrigger = false;
+			revealed = false;
+			damageSnapshot = false;
+		}
 
 		h & customSize;
 	}

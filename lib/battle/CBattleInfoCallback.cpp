@@ -25,6 +25,7 @@
 #include "../combatScripts/IDamageCalculatorScript.h"
 #include "../scripting/ScriptService.h"
 #include "../spells/ObstacleCasterProxy.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "../spells/ISpellMechanics.h"
 #include "../spells/Problem.h"
 #include "../spells/CSpell.h"
@@ -1850,6 +1851,16 @@ bool CBattleInfoCallback::handleObstacleTriggersForUnit(SpellCastEnvironment & s
 
 		if(spellObstacle)
 		{
+			// Canonical NH Land Mine is a hidden, hostile-ground-only trap.  Do
+			// this gate before visibility/reveal/removal so allied or airborne
+			// units neither consume the mine nor leak its position.
+			const bool canonicalLandMine = newHorizonsMagic::rulesActive(getBattle()->getMagicRules())
+				&& newHorizonsMagic::isLandMine(SpellID(spellObstacle->ID));
+			if(canonicalLandMine
+				&& (unit.hasBonusOfType(BonusType::FLYING)
+					|| battleGetOwner(&unit) == getBattle()->getSidePlayer(spellObstacle->casterSide)))
+				continue;
+
 			auto revealObstacles = [&](const SpellCreatedObstacle & spellObstacle) -> void
 			{
 				// For the hidden spell created obstacles, e.g. QuickSand, it should be revealed after taking damage

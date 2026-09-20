@@ -120,6 +120,7 @@
 					"obstacle" : {
 						"type":"obstacle",
 						"hidden" : true,
+						"hideNative" : true,
 						"passable" : true,
 						"trap" : false,
 						"triggerAbility" : "core:landMineTrigger",

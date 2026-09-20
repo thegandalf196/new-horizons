@@ -37,6 +37,7 @@ class BattleWindow : public InterfaceObjectConfigurable
 	std::shared_ptr<StackQueue> queue;
 	std::shared_ptr<BattleConsole> console;
 	std::shared_ptr<CButton> ordersButton;
+	std::shared_ptr<CButton> landMineConfirmButton;
 	std::shared_ptr<HeroInfoBasicPanel> attackerHeroWindow;
 	std::shared_ptr<HeroInfoBasicPanel> defenderHeroWindow;
 	std::shared_ptr<CLabel> attackerCounterspellStatus;
@@ -164,6 +165,10 @@ public:
 
 	/// Set possible alternative options to fill unit actions panel
 	void setPossibleActions(const std::vector<PossiblePlayerBattleAction> & allActions);
+
+	/// Keep the explicit Land Mine confirmation/undo shortcuts synchronized
+	/// with the controller's current ordered selection.
+	void updateLandMinePlacementControls();
 
 	/// ends battle with autocombat
 	void endWithAutocombat();

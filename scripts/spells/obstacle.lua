@@ -36,6 +36,22 @@ local function otherSide(side)
 	return ENUM.BattleSide.attacker
 end
 
+-- New Horizons Land Mine is the one obstacle whose placement is a player
+-- supplied vector rather than a random patch.  Keep this predicate scoped to
+-- the saved ruleset and canonical spell identity so legacy Land Mine and all
+-- other obstacle spells retain their existing behavior.
+local function isNewHorizonsLandMine(mechanics)
+	return mechanics:usesNewHorizonsMagic()
+		and mechanics:getSpell():getJsonKey() == "core:landMine"
+end
+
+local function newHorizonsLandMineCount(mechanics)
+	local power = mechanics:getEffectPower()
+	if power < 100 then return 2 end
+	if power < 200 then return 3 end
+	return 4
+end
+
 local function shapesFor(opts)
 	local shapes = opts.shape
 	if shapes == nil or #shapes == 0 then return { {} } end
@@ -71,7 +87,7 @@ local function isHexAvailable(battle, hex, mustBeClear)
 end
 
 function Script:applicableGeneral(mechanics, problem)
-	if self.hidden and self.hideNative then
+	if self.hidden and self.hideNative and not isNewHorizonsLandMine(mechanics) then
 		local battle = mechanics:getBattle()
 		if battle:hasNativeStack(otherSide(mechanics:getCasterSide())) then
 			problem:addStandard(mechanics, ENUM.SpellCastProblem.noAppropriateTarget)
@@ -87,6 +103,26 @@ local function noRoomToPlace(mechanics, problem)
 end
 
 function Script:applicableTarget(mechanics, problem, target)
+	if isNewHorizonsLandMine(mechanics) then
+		local required = newHorizonsLandMineCount(mechanics)
+		if #target ~= required then return noRoomToPlace(mechanics, problem) end
+
+		local battle = mechanics:getBattle()
+		local seen = {}
+		for _, dest in ipairs(target) do
+			local hex = dest.hex
+			if dest.unit ~= nil or not hex:isAvailable() then
+				return noRoomToPlace(mechanics, problem)
+			end
+			local key = hex:getY() * 17 + hex:getX()
+			if seen[key] or not isHexAvailable(battle, hex, true) then
+				return noRoomToPlace(mechanics, problem)
+			end
+			seen[key] = true
+		end
+		return true
+	end
+
 	if mechanics:isMassive() then return true end
 
 	if #target == 0 then return noRoomToPlace(mechanics, problem) end
@@ -107,6 +143,12 @@ function Script:applicableTarget(mechanics, problem, target)
 end
 
 function Script:transformTarget(mechanics, aimPoint, spellTarget)
+	if isNewHorizonsLandMine(mechanics) then
+		-- BattleSpellMechanics deliberately leaves a massive spell's normal
+		-- transformed target empty.  Land Mine opts into the original action
+		-- vector here so every selected hex reaches validation and apply().
+		return aimPoint
+	end
 	if mechanics:isMassive() then return {} end
 
 	local opts   = sideOptions(self, mechanics:getCasterSide())
@@ -140,6 +182,7 @@ end
 local function buildDescriptor(self, mechanics, side, hex, customSize)
 	local spell = mechanics:getSpell()
 	local opts  = sideOptions(self, side)
+	local newMine = isNewHorizonsLandMine(mechanics)
 	return {
 		pos              = hex,
 		obstacleType     = ENUM.ObstacleType.spellCreated,
@@ -148,10 +191,18 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 		casterPowerDivisor = mechanics:getEffectPowerDivisor(),
 		spellLevel       = mechanics:getEffectLevel(),
 		casterSide       = side,
+		-- Land Mine's direct-damage value is evaluated by the authoritative
+		-- cast mechanics and retained in the generic obstacle damage floor.  The
+		-- trigger proxy recognizes this canonical source and uses it exactly.
+		minimalDamage    = newMine and mechanics:getEffectValue() or (self.minimalDamage or 0),
+		damageSnapshot   = newMine,
 		turnsRemaining   = self.turnsRemaining or -1,
 		hidden           = self.hidden or false,
 		passable         = self.passable or false,
-		nativeVisible    = not (self.hideNative or false),
+		-- Avoid Lua's `a and false or b` pitfall: when `newMine` is true the
+		-- intermediate false would select `b` and accidentally reveal mines to
+		-- native enemy armies.
+		nativeVisible    = not (newMine or self.hideNative or false),
 		trap             = self.trap or false,
 		removeOnTrigger  = self.removeOnTrigger or false,
 		trigger          = self.triggerAbility or "",
@@ -187,10 +238,19 @@ function Script:apply(mechanics, server, target)
 	local opts      = sideOptions(self, side)
 	local shapes    = shapesFor(opts)
 	local patchCount = self.patchCount or 0
+	local newMine = isNewHorizonsLandMine(mechanics)
 
 	local destinations = {}
 
-	if patchCount > 0 then
+	if newMine then
+		-- The C++ action processor and this effect's applicability both enforce
+		-- exact count/unique/empty semantics.  Never randomize or silently place
+		-- fewer mines for an invalid NH action.
+		if #target ~= newHorizonsLandMineCount(mechanics) then return end
+		for _, dest in ipairs(target) do
+			destinations[#destinations+1] = dest.hex
+		end
+	elseif patchCount > 0 then
 		local candidates
 		if mechanics:isMassive() then
 			candidates = hexesFromArray(battle:getAllPossibleHexes())

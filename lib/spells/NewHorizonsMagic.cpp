@@ -422,6 +422,22 @@ int spellCost(const JsonNode & rules, SpellID spell, int mastery)
 	return entry(rules, spell)["costs"].Vector().at(mastery).Integer();
 }
 
+bool isLandMine(SpellID spell)
+{
+	return spell == SpellID(SpellID::LAND_MINE);
+}
+
+int landMineHexCount(int32_t spellPower)
+{
+	if(spellPower < 0)
+		throw std::invalid_argument("Land Mine spell power cannot be negative");
+	if(spellPower < LAND_MINE_THREE_HEX_POWER)
+		return 2;
+	if(spellPower < LAND_MINE_FOUR_HEX_POWER)
+		return 3;
+	return 4;
+}
+
 bool isCounterspell(const spells::Spell * spell)
 {
 	return spell && spell->getJsonKey() == GameConstants::NEW_HORIZONS_COUNTERSPELL;

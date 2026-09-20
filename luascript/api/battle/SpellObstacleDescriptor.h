@@ -50,6 +50,7 @@ struct SpellObstacleDescriptor final : ApiSerializable<SpellObstacleDescriptor>
 	bool trap = false;
 	bool removeOnTrigger = false;
 	bool nativeVisible = true;
+	bool damageSnapshot = false;
 
 	std::string trigger;
 	std::string appearSound;
@@ -79,6 +80,7 @@ struct SpellObstacleDescriptor final : ApiSerializable<SpellObstacleDescriptor>
 		s("trap",             trap,             "If true, behaves as a trap: triggers on enter rather than blocking movement.");
 		s("removeOnTrigger",  removeOnTrigger,  "If true, the obstacle disappears after being triggered once.");
 		s("nativeVisible",    nativeVisible,    "If true, the caster's side always sees the obstacle even when `hidden` is set.");
+		s("damageSnapshot",   damageSnapshot,   "If true, minimalDamage is an exact cast-time raw damage snapshot rather than a legacy floor.");
 		s("trigger",          trigger,          "Script-side identifier of the trigger spell (looked up by the spell mechanics).");
 		s("appearSound",      appearSound,      "Sound effect played when the obstacle appears.");
 		s("appearAnimation",  appearAnimation,  "Animation played when the obstacle appears.");

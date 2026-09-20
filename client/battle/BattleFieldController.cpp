@@ -642,6 +642,25 @@ void BattleFieldController::calculateRangeLimitAndHighlightImages(uint8_t distan
 
 void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 {
+	// Canonical New Horizons Land Mine uses a dedicated ordered placement
+	// selector.  Keep its candidates and selected cells visually distinct from
+	// movement/attack shadows, and keep rendering alive even when the pointer
+	// is outside the battlefield so the selection is never lost visually.
+	if(owner.actionsController->landMinePlacementModeActive())
+	{
+		for(const auto & hex : owner.actionsController->getLandMinePlacementLegalHexes())
+			showHighlightedHex(canvas, cellShade, hex, true);
+
+		const auto hoveredHex = getHoveredHex();
+		if(hoveredHex.isValid() && owner.actionsController->landMinePlacementHexIsLegal(hoveredHex)
+			&& !owner.actionsController->landMinePlacementHexIsSelected(hoveredHex))
+			showHighlightedHex(canvas, cellShade, hoveredHex, false);
+
+		for(const auto & hex : owner.actionsController->landMinePlacementSelectedHexes())
+			showHighlightedHex(canvas, cellUnitMovementHighlight, hex, false);
+		return;
+	}
+
 	BattleHexArray rangedFullDamageLimitHexes;
 	BattleHexArray shootingRangeLimitHexes;
 

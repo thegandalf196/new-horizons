@@ -16,6 +16,7 @@
 
 #include <functional>
 #include <optional>
+#include <vector>
 
 class BattleAction;
 class CStack;
@@ -66,6 +67,11 @@ class BattleActionsController
 	/// stack that has been selected as first target for multi-target spells (Teleport & Sacrifice)
 	const CStack * selectedStack;
 
+	/// Ordered player selection for the canonical New Horizons Land Mine.  The
+	/// order is preserved all the way into BattleAction::target; the server
+	/// still validates the complete request before applying it.
+	std::vector<BattleHex> landMineSelectedHexes;
+
 	bool isCastingPossibleHere (const CSpell * spell, const CStack *shere, const BattleHex & myNumber);
 	std::vector<PossiblePlayerBattleAction> getPossibleActionsForStack (const CStack *stack) const; //called when stack gets its turn
 	void reorderPossibleActionsPriority(const CStack * stack, const CStack * targetStack);
@@ -97,6 +103,10 @@ class BattleActionsController
 	/// returns true if current stack is a spellcaster
 	bool isActiveStackSpellcaster() const;
 
+	bool landMinePlacementTargetsValid() const;
+	void updateLandMinePlacementStatus(const BattleHex & hoveredHex);
+	void selectOrUndoLandMineHex(const BattleHex & clickedHex);
+
 public:
 	BattleActionsController(BattleInterface & owner);
 
@@ -105,6 +115,26 @@ public:
 
 	/// returns true if UI is currently in hero spell target selection mode
 	bool heroSpellcastingModeActive() const;
+	/// True only for the state-backed canonical New Horizons Land Mine.  Legacy
+	/// Land Mine continues to use the ordinary generic spell selector.
+	bool landMinePlacementModeActive() const;
+	/// Number of hexes required by the active canonical Land Mine cast.
+	int landMinePlacementRequiredHexes() const;
+	/// Number-only readiness gate for the explicit confirmation shortcut.
+	bool landMinePlacementReady() const;
+	/// Current ordered selection, for battlefield presentation and tests.
+	const std::vector<BattleHex> & landMinePlacementSelectedHexes() const;
+	/// Return whether a hex is currently an empty legal placement candidate.
+	bool landMinePlacementHexIsLegal(const BattleHex & hex) const;
+	/// Return whether a hex is already in the ordered selection.
+	bool landMinePlacementHexIsSelected(const BattleHex & hex) const;
+	/// Return all currently legal empty placement candidates.
+	BattleHexArray getLandMinePlacementLegalHexes() const;
+
+	/// Confirm the exact selection after revalidating the live battle snapshot.
+	void confirmLandMinePlacement();
+	/// Remove the most recently selected hex without spending the hero action.
+	void undoLandMinePlacement();
 	/// returns true if UI is currently in "F" hotkey creature spell target selection mode
 	bool creatureSpellcastingModeActive() const;
 

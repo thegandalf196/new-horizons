@@ -48,6 +48,50 @@ static AttackedTarget unitAboutToBeAttacked(const battle::Unit * unit)
 	return target;
 }
 
+static bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle,
+	const AccessibilityInfo & accessibility, const BattleHex & hex)
+{
+	if(!hex.isAvailable()
+		|| accessibility[hex.toInt()] != EAccessibility::ACCESSIBLE
+		|| battle.battleGetUnitByPos(hex, true)
+		|| !battle.battleGetAllObstaclesOnPos(hex, false).empty())
+		return false;
+
+	if(!battle.hasFortifications())
+		return true;
+
+	const auto wallPart = battle.battleHexToWallPart(hex);
+	if(wallPart == EWallPart::INVALID)
+		return true;
+	if(wallPart == EWallPart::INDESTRUCTIBLE_PART
+		|| wallPart == EWallPart::INDESTRUCTIBLE_PART_OF_GATE
+		|| wallPart == EWallPart::BOTTOM_TOWER
+		|| wallPart == EWallPart::UPPER_TOWER)
+		return false;
+
+	const auto wallState = battle.battleGetWallState(wallPart);
+	return wallState == EWallState::NONE || wallState == EWallState::DESTROYED;
+}
+
+static bool validateCanonicalLandMineTargets(const CBattleInfoCallback & battle,
+	const spells::Mechanics & mechanics, const battle::Target & target)
+{
+	const int required = newHorizonsMagic::landMineHexCount(mechanics.getEffectPower());
+	if(static_cast<int>(target.size()) != required)
+		return false;
+
+	const auto accessibility = battle.getAccessibility();
+	std::set<int> selected;
+	for(const auto & destination : target)
+	{
+		if(destination.unitValue != nullptr || !destination.hexValue.isValid()
+			|| !selected.insert(destination.hexValue.toInt()).second
+			|| !canonicalLandMineHexIsEmpty(battle, accessibility, destination.hexValue))
+			return false;
+	}
+	return true;
+}
+
 BattleActionProcessor::BattleActionProcessor(BattleProcessor * owner, CGameHandler * newGameHandler)
 	: owner(owner)
 	, gameHandler(newGameHandler)
@@ -144,6 +188,14 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	spells::detail::ProblemImpl problem;
 
 	auto m = s->battleMechanics(&parameters);
+	const auto target = ba.getTarget(&battle);
+	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::isLandMine(s->getId())
+		&& !validateCanonicalLandMineTargets(battle, *m, target))
+	{
+		gameHandler->complain("New Horizons Land Mine requires the exact number of unique empty hexes");
+		return false;
+	}
 
 	if(!m->canBeCast(problem))
 	{
@@ -155,7 +207,6 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		return false;
 	}
 
-	const auto target = ba.getTarget(&battle);
 	if(target.empty() || !m->canBeCastAt(target, problem))
 	{
 		logGlobal->warn("Spell cannot be cast at the requested target!");

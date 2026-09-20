@@ -120,13 +120,38 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 	addShortcut(EShortcut::BATTLE_TOGGLE_QUEUE, [this](){ this->toggleQueueVisibility();});
 	addShortcut(EShortcut::BATTLE_TOGGLE_HEROES_STATS, [this](){ this->toggleStickyHeroWindowsVisibility();});
 	addShortcut(EShortcut::BATTLE_USE_CREATURE_SPELL, [this](){ this->owner.actionsController->enterCreatureCastingMode(); });
+	addShortcut(EShortcut::GLOBAL_ACCEPT, [this](){
+		if(this->owner.actionsController)
+			this->owner.actionsController->confirmLandMinePlacement();
+	});
+	addShortcut(EShortcut::GLOBAL_BACKSPACE, [this](){
+		if(this->owner.actionsController)
+			this->owner.actionsController->undoLandMinePlacement();
+	});
 	addShortcut(EShortcut::GLOBAL_CANCEL, [this](){ this->owner.actionsController->endCastingSpell(); });
+	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, true);
+	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE, true);
 	addShortcut(EShortcut::ADVENTURE_QUICK_LOAD, [this](){
 		//allow quick load only on player turn while no animations are ongoing
 		if (!this->owner.hasAnimations() && this->owner.stacksController->getActiveStack())
 			GAME->interface()->proposeQuickLoadingGame(); });
 
 	build(config);
+	// Non-modal mouse/touch confirmation for ordered Land Mine placement.  The
+	// battlefield must remain clickable, so this is a lightweight child of the
+	// battle window rather than a dialog.  Existing artwork is an intentional
+	// placeholder until the dedicated placement controls are polished.
+	// Reuse the command-panel Wait slot while placement blocks normal unit
+	// actions.  This keeps the control outside the battlefield's event region
+	// and prevents one click from also selecting an underlying hex.
+	landMineConfirmButton = std::make_shared<CButton>(Point(697, 560), AnimationPath::builtin("icm005"),
+		CButton::tooltip("Place mines", "Confirm the selected Land Mine hexes."), [this]()
+		{
+			if(owner.actionsController)
+				owner.actionsController->confirmLandMinePlacement();
+		});
+	addWidget("nhLandMineConfirm", landMineConfirmButton);
+	landMineConfirmButton->setEnabled(false);
 	if(owner.getBattle()->battleUsesHeroCommands())
 	{
 		widget<CButton>("consoleUp")->moveBy(Point(-ordersControlPitch, 0));
@@ -1069,9 +1094,25 @@ void BattleWindow::blockUI(bool on)
 	setShortcutBlocked(EShortcut::BATTLE_TACTICS_NEXT, on || !tacticsMode);
 	setShortcutBlocked(EShortcut::BATTLE_CONSOLE_DOWN, on && !tacticsMode);
 	setShortcutBlocked(EShortcut::BATTLE_CONSOLE_UP, on && !tacticsMode);
+	updateLandMinePlacementControls();
 
 	quickSpellWindow->setInputEnabled(!on);
 	unitActionWindow->setInputEnabled(!on);
+}
+
+void BattleWindow::updateLandMinePlacementControls()
+{
+	const bool active = owner.actionsController && owner.actionsController->landMinePlacementModeActive();
+	const bool ready = active && owner.actionsController->landMinePlacementReady();
+	const bool canUndo = active && !owner.actionsController->landMinePlacementSelectedHexes().empty();
+	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, !ready);
+	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE, !canUndo);
+	if(landMineConfirmButton)
+	{
+		widget<CButton>("wait")->setEnabled(!active);
+		landMineConfirmButton->setEnabled(active);
+		landMineConfirmButton->block(!ready);
+	}
 }
 
 void BattleWindow::bOpenActiveUnit()
