@@ -174,6 +174,18 @@ class DependencyNoticesTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Missing exact cached recipe"):
             self.collect()
 
+    def test_verified_source_cache_is_forwarded_to_conan_source(self):
+        graph = self.root / "graph.json"
+        graph.write_text(json.dumps({"graph": {"nodes": {"1": self.node}}}))
+        archive = self.root / "sources.tar.gz"
+        source_cache = self.root / "verified-source-cache"
+        source_cache.mkdir()
+        with patch.object(packager.subprocess, "run", side_effect=self.run_conan):
+            packager.collect_notices(graph, self.package, archive, source_cache=source_cache)
+        source_command = next(command for command in self.commands if command[1] == "source")
+        self.assertEqual(source_command[-2:],
+                         ["-cc", "core.sources:download_cache=" + str(source_cache)])
+
 
 if __name__ == "__main__":
     unittest.main()

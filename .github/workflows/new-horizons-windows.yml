@@ -265,6 +265,7 @@ jobs:
           python tools/ci/package_new_horizons_windows.py \
             --install-dir build/new-horizons-windows-x64/install \
             --conan-graph conan-generated-graph.json \
+            --source-cache "$NH_CONAN_SOURCE_CACHE" \
             --output-dir build/new-horizons-windows-x64/artifact
 
       - name: Download original compiled artifact for notice-only repair

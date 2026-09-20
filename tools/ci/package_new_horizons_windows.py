@@ -508,6 +508,8 @@ def main():
     parser.add_argument("--install-dir", type=Path, required=True)
     parser.add_argument("--conan-graph", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--source-cache", type=Path,
+                        help="Absolute verified Conan source-download cache used by the preflight")
     args = parser.parse_args()
     root = Path(run("git", "rev-parse", "--show-toplevel"))
     revision = run("git", "rev-parse", "HEAD")
@@ -565,7 +567,8 @@ def main():
         from windows_crt_provenance import bind_runtime
         bind_runtime(package, install.parent, Path(os.environ["VSINSTALLDIR"]))
         dependency_source_name = package_name + "-dependency-sources.tar.gz"
-        collect_notices(args.conan_graph, package, args.output_dir / dependency_source_name)
+        collect_notices(args.conan_graph, package, args.output_dir / dependency_source_name,
+                        source_cache=args.source_cache)
         source_name = package_name + "-source.tar.gz"
         excluded = source_archive(root, args.output_dir / source_name, revision)
         write_json(package / "BUILD-IDENTITY.json", {
