@@ -11,11 +11,11 @@
 		"gainChance" : {},
 		"targetType" : "OBSTACLE",
 		"graphics" : {
-			"iconBook" : "SPELLS.def:0:15",
-			"iconScroll" : "SPELLSCR.def:0:15",
-			"iconEffect" : "SPELLINT.def:0:16",
-			"iconImmune" : "SPELLINT.def:0:16",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
+			"iconBook" : "SPELLS.def:0:64",
+			"iconScroll" : "SPELLSCR.def:0:64",
+			"iconEffect" : "SPELLINT.def:0:65",
+			"iconImmune" : "SPELLINT.def:0:65",
+			"iconScenarioBonus" : "SPELLBON.def:0:64"
 		},
 		"animation" : {
 			"hit" : ["C18SPW0"]

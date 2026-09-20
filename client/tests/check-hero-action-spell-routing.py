@@ -13,7 +13,7 @@ GUARDS = (
     'owner->isInTacticsMode()',
     'owner->actionsController->heroSpellcastingModeActive()',
     '!hero',
-    'callback->battleCanCastSpell(hero, spells::Mode::HERO) != ESpellCastProblem::OK',
+    '(spellProblem != ESpellCastProblem::OK && spellProblem != ESpellCastProblem::CASTS_PER_TURN_LIMIT)',
 )
 
 
@@ -26,6 +26,7 @@ def verify(source):
     assert 'if(!owner)' in method
     assert 'auto callback = owner->getBattle();' in method
     assert 'const auto * hero = owner->currentHero();' in method
+    assert 'const auto spellProblem = hero ? callback->battleCanCastSpell(hero, spells::Mode::HERO)' in method
     condition = 'if(' + ' || '.join(GUARDS) + ')'
     compact = lambda text: re.sub(r'\s+', '', text)
     denial = condition + '{ refresh(); return; }'
@@ -59,14 +60,22 @@ def verify_orders_help(source):
 
 def verify_spent_action_spell_feedback(source):
     open_spellbook = source.split('void BattleWindow::openSpellbook()', 1)[1].split('void BattleWindow::bWaitf()', 1)[0]
-    assert 'spellCastProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT' in open_spellbook
-    assert 'owner.getBattle()->battleUsesHeroCommands()' in open_spellbook
-    assert 'CRClickPopup::createAndPush("The shared hero action has already been spent this round.' in open_spellbook
+    assert 'spellCastProblem == ESpellCastProblem::OK || spellCastProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT' in open_spellbook
+    assert 'createAndPushWindow<CSpellWindow>' in open_spellbook
+    assert 'SpellArea revalidates the selected spell' in open_spellbook
+    assert 'CRClickPopup::createAndPush("The shared hero action has already been spent this round.' not in open_spellbook
 
     block_ui = source.split('void BattleWindow::blockUI(bool on)', 1)[1]
-    assert 'bool canExplainSpellShortcut = false;' in block_ui
-    assert 'canExplainSpellShortcut = spellcastingProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT' in block_ui
-    assert '(!canCastSpells && !canExplainSpellShortcut)' in block_ui
+    assert 'spellcastingProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT' in block_ui
+    assert 'on || tacticsMode || !canCastSpells' in block_ui
+
+    hero = (SOURCE.parent / 'BattleHero.cpp').read_text()
+    clicked = hero.split('void BattleHero::heroLeftClicked()', 1)[1].split('void BattleHero::heroRightClicked()', 1)[0]
+    assert 'castProblem == ESpellCastProblem::OK || castProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT' in clicked
+
+    spell_window = (SOURCE.parents[1] / 'windows/CSpellWindow.cpp').read_text()
+    selection = spell_window.split('void CSpellWindow::SpellArea::clickPressed', 1)[1]
+    assert 'mySpell->canBeCast(problem, battleCallback.get(), spells::Mode::HERO' in selection
 
 
 def main():

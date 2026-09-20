@@ -54,7 +54,9 @@ void DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb,
 		std::unique_ptr<spells::ObstacleCasterProxy> caster = nullptr;
 		if(spellObstacle->obstacleType == SpellCreatedObstacle::EObstacleType::SPELL_CREATED)
 		{
-			const auto * hero = hb->battleGetFightingHero(spellObstacle->casterSide);
+			const auto perspective = hb->battleGetMySide();
+			const bool casterKnown = perspective == BattleSide::ALL_KNOWING || perspective == spellObstacle->casterSide;
+			const auto * hero = casterKnown ? hb->battleGetFightingHero(spellObstacle->casterSide) : nullptr;
 			caster = std::make_unique<spells::ObstacleCasterProxy>(hb->getSidePlayer(spellObstacle->casterSide), hero, *spellObstacle);
 			cast = std::make_unique<spells::BattleCast>(spells::BattleCast(hb.get(), caster.get(), spells::Mode::PASSIVE, obst->getTrigger().toSpell()));
 		}
@@ -329,8 +331,11 @@ int AttackPossibility::getAttackCount(const battle::Unit & attacker, bool shooti
 {
 	int result = attacker.getTotalAttacks(shooting);
 	// BattleAction uses the unit's battle side, including when estimating an
-	// opponent's action. Do not use the AI player's hero or add this to unit state.
-	const auto * hero = state.battleGetFightingHero(attacker.unitSide());
+	// opponent's action. A player-scoped callback must not probe that opponent's
+	// private hero object; use only the attacks already exposed by the unit.
+	const auto perspective = state.battleGetMySide();
+	const bool attackerHeroKnown = perspective == BattleSide::ALL_KNOWING || perspective == attacker.unitSide();
+	const auto * hero = attackerHeroKnown ? state.battleGetFightingHero(attacker.unitSide()) : nullptr;
 	if(hero)
 		result += hero->valOfBonuses(BonusType::HERO_GRANTS_ATTACKS, BonusSubtypeID(attacker.creatureId()));
 	return result;

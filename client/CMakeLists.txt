@@ -151,6 +151,7 @@ set(vcmiclientcommon_SRCS
 	windows/CHeroOverview.cpp
 	windows/CHeroWindow.cpp
 	windows/HeroGrowthWindow.cpp
+	windows/HeroSkillOddsWindow.cpp
 	windows/HeroMasteryWindow.cpp
 	windows/CKingdomInterface.cpp
 	windows/CMapOverview.cpp
@@ -382,6 +383,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CHeroOverview.h
 	windows/CHeroWindow.h
 	windows/HeroGrowthWindow.h
+	windows/HeroSkillOddsWindow.h
 	windows/NewHorizonsPerkIcons.h
 	windows/HeroMasteryWindow.h
 	windows/HeroMasteryDialogState.h

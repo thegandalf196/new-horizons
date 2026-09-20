@@ -328,7 +328,9 @@ void BattleHeroActionWindow::refresh()
 	const auto * hero = owner->currentHero();
 	if(hero)
 		refreshEffects(*hero, callback->getBattle()->getHeroCommandRules());
-	const bool canSpell = spellButton && hero && callback->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK;
+	const auto spellProblem = hero ? callback->battleCanCastSpell(hero, spells::Mode::HERO) : ESpellCastProblem::INVALID;
+	const bool canSpell = spellButton && hero
+		&& (spellProblem == ESpellCastProblem::OK || spellProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT);
 	if(spellButton)
 		spellButton->block(!canAct || !canSpell);
 	bool anyCommand = false;
@@ -520,8 +522,9 @@ void BattleHeroActionWindow::chooseSpell()
 	// Preserve the chooser on refusal, just as chooseCommand does.
 	auto callback = owner->getBattle();
 	const auto * hero = owner->currentHero();
+	const auto spellProblem = hero ? callback->battleCanCastSpell(hero, spells::Mode::HERO) : ESpellCastProblem::INVALID;
 	if(!owner->makingTurn() || owner->curInt->isAutoFightOn || owner->isInTacticsMode() || owner->actionsController->heroSpellcastingModeActive() ||
-		!hero || callback->battleCanCastSpell(hero, spells::Mode::HERO) != ESpellCastProblem::OK)
+		!hero || (spellProblem != ESpellCastProblem::OK && spellProblem != ESpellCastProblem::CASTS_PER_TURN_LIMIT))
 	{
 		refresh();
 		return;

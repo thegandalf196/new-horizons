@@ -237,7 +237,13 @@ CHeroList::CHeroItem::CHeroItem(CHeroList *parent, const CGHeroInstance * Hero)
 
 void CHeroList::CHeroItem::update()
 {
-	movement->setFrame(std::min<size_t>(movement->size()-1, hero->movementPointsRemaining() / 100));
+	const auto movementFrames = movement->size();
+	const int movementLimit = hero->movementPointsLimit();
+	const int movementRemaining = std::clamp(hero->movementPointsRemaining(), 0, std::max(0, movementLimit));
+	const size_t movementFrame = movementFrames > 1 && movementLimit > 0
+		? static_cast<size_t>(static_cast<uint64_t>(movementRemaining) * (movementFrames - 1) / movementLimit)
+		: 0;
+	movement->setFrame(movementFrame);
 	mana->setFrame(std::min<size_t>(mana->size()-1, hero->mana / 5));
 	redraw();
 }

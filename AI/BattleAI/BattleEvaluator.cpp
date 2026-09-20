@@ -308,7 +308,9 @@ float averageOrderDamage(const DamageEstimation & damage)
 float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide side,
 	HeroCommand command, const std::vector<uint32_t> & targetIds)
 {
-	const auto * hero = battle.battleGetFightingHero(side);
+	const auto perspective = battle.battleGetMySide();
+	const bool heroKnown = perspective == BattleSide::ALL_KNOWING || perspective == side;
+	const auto * hero = heroKnown ? battle.battleGetFightingHero(side) : nullptr;
 	const auto units = battle.battleGetAllUnits(false);
 	const auto ownPlayer = battle.sideToPlayer(side);
 	std::vector<const battle::Unit *> ownUnits;

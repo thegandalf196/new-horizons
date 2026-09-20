@@ -107,6 +107,12 @@ def main() -> None:
     require(HERO, 'legacyLeadershipLabel->disable()', "classic hero capability icon gating")
     require(HERO, 'cellLabels.at(labelIndex)->setText("")', "non-overlapping perk marker")
     require(HERO, "area->hoverText", "learned perk description tooltip")
+    require(HERO, "if(learnedSkill && hasPerk)", "only learned perk slots show icons")
+    require(HERO, "setEnabled(learnedSkill && hasPerk)", "only learned perk slots show labels")
+    require(HERO, "if(!learnedSkill || !hasPerk)", "empty perk slot skips hit area activation")
+    require(HERO, 'cellLabels.at(labelIndex + label)->setText("")', "clear stale perk captions")
+    assert '"Unbound"' not in HERO and '"slot"' not in HERO
+    assert "No learned perk in this slot." not in HERO
     require(COMPONENT, 'SecondarySkill::NECROMANCY', "classic Necromancy component icon")
     require(COMPONENT, "setCustomIcon", "perk-specific component icon override")
     require(COMPONENT_HOLDER, 'SecondarySkill::NECROMANCY', "classic Necromancy hero icon")

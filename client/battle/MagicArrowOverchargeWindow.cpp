@@ -30,11 +30,10 @@ MagicArrowOverchargeWindow::MagicArrowOverchargeWindow(MagicArrowOverchargeConte
 	pos.w = WINDOW_WIDTH;
 	pos.h = WINDOW_HEIGHT;
 
-	// Place the panel beside the current target/card, then keep it on screen at
-	// small resolutions.  `anchor` is supplied by the targeting controller in
-	// screen coordinates; no battlefield geometry is reconstructed here.
-	moveTo(context.anchor + Point(18, 18));
-	fitToScreen(4);
+	// Keep the allocation decision in a predictable place. In particular, do
+	// not position it next to the selected stack: on crowded battlefields that
+	// made the modal look like a tooltip and could hide it near screen edges.
+	center();
 
 	OBJECT_CONSTRUCTION;
 	decoration.push_back(std::make_shared<TransparentFilledRectangle>(

@@ -25,6 +25,13 @@ def require(haystack: str, needle: str, label: str) -> None:
 
 
 def main() -> None:
+    require(WINDOW, "center();", "screen-centered overcharge window")
+    for forbidden in ("moveTo(context.anchor", "fitToScreen(4)"):
+        if forbidden in WINDOW:
+            raise AssertionError(
+                f"Magic Arrow window still uses target-relative placement: {forbidden}"
+            )
+
     for field in (
         "maximumOvercharge",
         "baseMana",

@@ -155,13 +155,23 @@ void CClient::finishGameplay()
 void CClient::endGame()
 {
 	logNetwork->info("Ending current game!");
+
+	// A scenario restart/quickload can replace the game state without receiving
+	// BattleEnded. Make the battle globally unreachable first, release animation
+	// waiters, and keep it alive only until its window has been removed. Otherwise
+	// the old BattleWindow can survive over the newly initialized adventure map.
+	auto endingBattleInterface = std::move(CPlayerInterface::battleInt);
+	if(endingBattleInterface)
+		endingBattleInterface->endNetwork();
+
 	removeGUI();
+	endingBattleInterface.reset();
+	assert(!CPlayerInterface::battleInt);
 
 	GAME->setMapInstance(nullptr);
 
 	logNetwork->info("Deleted mapHandler and gameState.");
 
-	CPlayerInterface::battleInt.reset();
 	playerint.clear();
 	battleints.clear();
 	battleCallbacks.clear();

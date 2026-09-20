@@ -913,6 +913,10 @@ void CServerHandler::quickLoadGame(const std::string & path)
 
 void CServerHandler::restartGameplay()
 {
+	// Restart and quickload do not pass through the ordinary BattleEnded path.
+	// Stop map/battle waiters before destroying interfaces, matching endGameplay
+	// so no old combat callback can outlive the state it references.
+	client->endNetwork();
 	client->finishGameplay();
 	client->endGame();
 	client.reset();

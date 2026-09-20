@@ -10,7 +10,7 @@
 #include "StdInc.h"
 #include "CHeroWindow.h"
 #include "NewHorizonsPerkIcons.h"
-#include "HeroGrowthWindow.h"
+#include "HeroSkillOddsWindow.h"
 #include "wiki/WikiWindow.h"
 
 #include "CCreatureWindow.h"
@@ -106,15 +106,10 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	if(showsDevelopment)
 	{
 		growthButton = std::make_shared<CButton>(Point(273, 53), AnimationPath::builtin("NH_hero_growth_entry"),
-			CButton::tooltip("Hero development", showsCapabilities || showsMasteries
-				? "View this hero's current attributes and saved development. These read-only values do not spend points or change troops. Mastery choices use their mandatory level-up dialog."
-				: "View this hero's saved growth profile, actual ratings and last level gains. Class gains and extra points are proposals before the primary cap; last gains are actual. No choices or points are spent."),
+			CButton::tooltip("Class skill odds", "View class weights for secondary-skill offers. Actual next-level probabilities depend on eligible choices."),
 			[this]
 			{
-				// Re-read the actual current hero; opening a view never activates rules
-				// on an old hero or predicts the next independent skill rolls.
-				if(curHero->getPrimaryGrowthView() || curHero->getLeadershipCapacity() || curHero->getSiegeCapabilities() || curHero->getMasteryView())
-					ENGINE->windows().createAndPushWindow<HeroGrowthWindow>(*curHero);
+				ENGINE->windows().createAndPushWindow<HeroSkillOddsWindow>(*curHero);
 			});
 		growthButton->setHoverable(true);
 	}
@@ -263,7 +258,7 @@ void CHeroWindow::configureNewHorizonsLayout()
 	name->setMaxWidth(114);
 	move(title, Point(152, 61));
 	title->setMaxWidth(140);
-	move(growthButton, Point(204, 14));
+	move(growthButton, Point(402, 166));
 	move(portraitImage, Point(16, 18));
 	move(portraitArea, Point(16, 18));
 	move(portraitWikiArea, Point(16, 18));
@@ -307,7 +302,7 @@ void CHeroWindow::configureNewHorizonsLayout()
 	manaValue = std::make_shared<CLabel>(342, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
 	labels.push_back(std::make_shared<CLabel>(568, 13, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Morale", 74));
 	labels.push_back(std::make_shared<CLabel>(650, 13, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Luck", 74));
-	labels.push_back(std::make_shared<CLabel>(16, 176, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Secondary skills / learned perks", 412));
+	labels.push_back(std::make_shared<CLabel>(16, 176, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Skills / learned perks", 376));
 	for(size_t i = 0; i < secSkills.size(); ++i)
 	{
 		const int y = 192 + static_cast<int>(i) * 44;
@@ -319,14 +314,15 @@ void CHeroWindow::configureNewHorizonsLayout()
 		for(int ability = 0; ability < 3; ++ability)
 		{
 			const int x = 138 + ability * 98;
-			auto area = std::make_shared<LRClickableAreaWText>(Rect(x, y, 98, 44), "Learned perk slot");
-			area->text = "No learned perk in this slot. Open Hero development for the saved perk registry.";
+			auto area = std::make_shared<LRClickableAreaWText>(Rect(x, y, 98, 44), "");
+			area->disable();
 			provisionalAbilityAreas.push_back(area);
 			provisionalAbilityIcons[i].push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_neutral"), 0, 0, x + 2, y));
+			provisionalAbilityIcons[i].back()->disable();
 			const std::array cellLabels = {
-				std::make_shared<CLabel>(x + 48, y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "?", 44),
-				std::make_shared<CLabel>(x + 48, y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Unbound", 46),
-				std::make_shared<CLabel>(x + 48, y + 22, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "slot", 46)
+				std::make_shared<CLabel>(x + 48, y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 44),
+				std::make_shared<CLabel>(x + 48, y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 46),
+				std::make_shared<CLabel>(x + 48, y + 22, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 46)
 			};
 			for(const auto & label : cellLabels)
 			{
@@ -583,7 +579,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		{
 			const auto attribute = static_cast<PrimarySkill>(g);
 			if(attribute == PrimarySkill::ATTACK || attribute == PrimarySkill::DEFENSE)
-				primSkillAreas[g]->text = "This hero rating affects command strength. It is not added directly to creature Attack or Defense. Open Hero development for the saved growth profile.";
+				primSkillAreas[g]->text = "This hero rating affects command strength. It is not added directly to creature Attack or Defense.";
 			else if(attribute == PrimarySkill::SPELL_POWER)
 				primSkillAreas[g]->text = "Spell Power uses a scaling divisor of " + std::to_string(growth->powerDivisor) + ". Consult spell descriptions and costs in the spellbook.";
 			else if(attribute == PrimarySkill::KNOWLEDGE)
@@ -631,16 +627,19 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				const bool hasPerk = ability < learnedPerks.size();
 				const auto iconKey = newHorizonsPerkIcon(hasPerk ? learnedPerks[ability]->id : std::string());
 				provisionalAbilityIcons[g][ability]->setAnimationPath(AnimationPath::builtin(iconKey), 0);
-				if(learnedSkill)
+				if(learnedSkill && hasPerk)
 					provisionalAbilityIcons[g][ability]->enable();
 				else
 					provisionalAbilityIcons[g][ability]->disable();
 				for(size_t label = 0; label < 3; ++label)
-					cellLabels.at(labelIndex + label)->setEnabled(learnedSkill);
+				{
+					cellLabels.at(labelIndex + label)->setText("");
+					cellLabels.at(labelIndex + label)->setEnabled(learnedSkill && hasPerk);
+				}
 				area->text.clear();
 				area->hoverText.clear();
 				area->disable();
-				if(!learnedSkill)
+				if(!learnedSkill || !hasPerk)
 					continue;
 				area->enable();
 
@@ -653,14 +652,6 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 					cellLabels.at(labelIndex)->setText("");
 					cellLabels.at(labelIndex + 1)->setText(perk->name);
 					cellLabels.at(labelIndex + 2)->setText("Learned");
-				}
-				else
-				{
-					area->text = "No learned perk in this slot.";
-					area->hoverText = skillId + " has no learned perk in this slot. Open Hero development for the saved perk registry.";
-					cellLabels.at(labelIndex)->setText("");
-					cellLabels.at(labelIndex + 1)->setText("Unbound");
-					cellLabels.at(labelIndex + 2)->setText("slot");
 				}
 			}
 		}

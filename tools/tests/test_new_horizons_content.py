@@ -199,6 +199,22 @@ class NewHorizonsContentTest(unittest.TestCase):
             self.assertEqual(level['battleEffects']['directDamage'],
                              {'type': 'damage', 'destroyRemains': True})
 
+    def test_transfigure_matter_reuses_remove_obstacle_icons(self):
+        content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        spell = content['transfigureMatter']
+        # Remove Obstacle is index 64; SPELLINT reserves frame zero, as in
+        # CSpell::registerIcons. Book, scroll and scenario frames are unshifted.
+        self.assertEqual(spell['graphics'], {
+            'iconBook': 'SPELLS.def:0:64',
+            'iconScroll': 'SPELLSCR.def:0:64',
+            'iconEffect': 'SPELLINT.def:0:65',
+            'iconImmune': 'SPELLINT.def:0:65',
+            'iconScenarioBonus': 'SPELLBON.def:0:64',
+        })
+        module = load('Mods/new-horizons/mod.json')
+        self.assertIn('config/spells/newHorizons.json', module['spells'])
+        self.assertIn({'type': 'dir', 'path': '/Content'}, module['filesystem'][''])
+
     def test_sorcery_spell_foundation_definitions_remain_deferred(self):
         """Deferred source definitions stay schema-shaped but out of the saved roster."""
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')

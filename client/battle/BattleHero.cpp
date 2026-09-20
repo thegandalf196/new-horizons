@@ -120,7 +120,8 @@ void BattleHero::heroLeftClicked()
 	if(!hero || !owner.makingTurn())
 		return;
 
-	if(owner.getBattle()->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK) //check conditions
+	const auto castProblem = owner.getBattle()->battleCanCastSpell(hero, spells::Mode::HERO);
+	if(castProblem == ESpellCastProblem::OK || castProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT)
 	{
 		ENGINE->cursor().set(Cursor::Map::POINTER);
 		ENGINE->windows().createAndPushWindow<CSpellWindow>(hero, owner.getCurrentPlayerInterface());

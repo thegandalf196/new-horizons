@@ -1003,8 +1003,11 @@ void BattleWindow::openSpellbook()
 
 	ESpellCastProblem spellCastProblem = owner.getBattle()->battleCanCastSpell(myHero, spells::Mode::HERO);
 
-	if(spellCastProblem == ESpellCastProblem::OK)
+	if(spellCastProblem == ESpellCastProblem::OK || spellCastProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT)
 	{
+		// The spellbook remains useful as a read-only reference after the hero has
+		// spent this round's cast. SpellArea revalidates the selected spell before
+		// entering target selection, so opening it never bypasses the cast limit.
 		ENGINE->windows().createAndPushWindow<CSpellWindow>(myHero, owner.curInt.get());
 	}
 	else if (spellCastProblem == ESpellCastProblem::MAGIC_IS_BLOCKED)
@@ -1036,12 +1039,6 @@ void BattleWindow::openSpellbook()
 			if(blockingBonus->sid.as<MapObjectID>() == Obj::GARRISON || blockingBonus->sid.as<MapObjectID>() == Obj::GARRISON2)
 				GAME->interface()->showInfoDialog(LIBRARY->generaltexth->allTexts[684]);
 		}
-	}
-	else if(spellCastProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT && owner.getBattle()->battleUsesHeroCommands())
-	{
-		// Keep the C shortcut active after the shared action is spent so the
-		// player gets an explicit reason instead of a silent blocked keypress.
-		CRClickPopup::createAndPush("The shared hero action has already been spent this round. Spells and Orders share one hero action.");
 	}
 	else
 	{
@@ -1120,7 +1117,6 @@ void BattleWindow::bTacticPhaseEnd()
 void BattleWindow::blockUI(bool on)
 {
 	bool canCastSpells = false;
-	bool canExplainSpellShortcut = false;
 	auto hero = owner.getBattle()->battleGetMyHero();
 
 	if(hero)
@@ -1128,9 +1124,9 @@ void BattleWindow::blockUI(bool on)
 		ESpellCastProblem spellcastingProblem = owner.getBattle()->battleCanCastSpell(hero, spells::Mode::HERO);
 
 		//if magic is blocked, we leave button active, so the message can be displayed after button click
-		canCastSpells = spellcastingProblem == ESpellCastProblem::OK || spellcastingProblem == ESpellCastProblem::MAGIC_IS_BLOCKED;
-		canExplainSpellShortcut = spellcastingProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT
-			&& owner.getBattle()->battleUsesHeroCommands();
+		canCastSpells = spellcastingProblem == ESpellCastProblem::OK
+			|| spellcastingProblem == ESpellCastProblem::MAGIC_IS_BLOCKED
+			|| spellcastingProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT;
 	}
 
 	// Orders remain independently readable without a book/mana and after spending
@@ -1153,7 +1149,7 @@ void BattleWindow::blockUI(bool on)
 	setShortcutBlocked(EShortcut::BATTLE_OPEN_HOVERED_UNIT, on);
 	setShortcutBlocked(EShortcut::BATTLE_RETREAT, on || !owner.getBattle()->battleCanFlee());
 	setShortcutBlocked(EShortcut::BATTLE_SURRENDER, on || owner.getBattle()->battleGetSurrenderCost() < 0);
-	setShortcutBlocked(EShortcut::BATTLE_CAST_SPELL, on || tacticsMode || (!canCastSpells && !canExplainSpellShortcut));
+	setShortcutBlocked(EShortcut::BATTLE_CAST_SPELL, on || tacticsMode || !canCastSpells);
 	setShortcutBlocked(EShortcut::BATTLE_WAIT, on || tacticsMode || !canWait);
 	setShortcutBlocked(EShortcut::BATTLE_DEFEND, on || tacticsMode);
 	setShortcutBlocked(EShortcut::BATTLE_AUTOCOMBAT, (settings["battle"]["endWithAutocombat"].Bool() && onlyOnePlayerHuman) ? on || tacticsMode || owner.actionsController->heroSpellcastingModeActive() : owner.actionsController->heroSpellcastingModeActive());
