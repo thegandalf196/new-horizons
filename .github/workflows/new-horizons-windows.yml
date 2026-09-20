@@ -62,6 +62,52 @@ jobs:
           conan cache restore "$archive"
           echo 'NH_VERIFIED_CONAN_CACHE_SHA256=6772d2e9f0a730329a195edce895a863d9115c4bba43101a9a6df3fefe6cfe43' >> "$GITHUB_ENV"
 
+      - name: Seed verified Conan source cache fallback for dav1d
+        env:
+          DAV1D_SOURCE_SHA256: 686616b7c69eb88d44459391ab25cac13b6647a3b288835c5784e71c1514a5c5
+        run: |
+          set -euo pipefail
+          source_cache="$RUNNER_TEMP/conan-source-cache"
+          archive="$RUNNER_TEMP/dav1d-1.5.4.tar.xz"
+          downloaded=
+          # The Conan recipe's canonical downloads.videolan.org endpoint has
+          # timed out on the hosted runner. These are public VideoLAN mirrors;
+          # only bytes matching the pinned upstream SHA-256 are accepted.
+          for url in \
+            https://videolan.c3sl.ufpr.br/dav1d/1.5.4/dav1d-1.5.4.tar.xz \
+            https://videolan.mirror.garr.it/videolan/dav1d/1.5.4/dav1d-1.5.4.tar.xz; do
+            echo "Fetching dav1d source mirror: $url"
+            if curl --fail --location --retry 3 --retry-all-errors --connect-timeout 20 --max-time 120 \
+                --output "$archive" "$url"; then
+              if python - "$archive" "$DAV1D_SOURCE_SHA256" <<'PY'
+          import hashlib
+          from pathlib import Path
+          import sys
+
+          path, expected = Path(sys.argv[1]), sys.argv[2]
+          actual = hashlib.sha256(path.read_bytes()).hexdigest()
+          if actual != expected:
+              raise SystemExit(f'dav1d mirror SHA-256 mismatch: {actual}')
+          PY
+              then
+                downloaded=1
+                break
+              fi
+            fi
+            rm -f "$archive"
+          done
+          test "$downloaded" = 1
+          python - "$source_cache" "$archive" "$DAV1D_SOURCE_SHA256" <<'PY'
+          from pathlib import Path
+          import sys
+
+          sys.path.insert(0, 'tools/ci')
+          from preflight_dependency_sources import seed_source_cache
+
+          print(seed_source_cache(Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]))
+          PY
+          echo "NH_CONAN_SOURCE_CACHE=$source_cache" >> "$GITHUB_ENV"
+
       - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1, upstream; no private-repository subscription gate
         with:
           arch: x64
@@ -136,9 +182,13 @@ jobs:
           stage.mkdir(parents=True)
           if os.environ['ORIGINAL_REPACK_RUN_ID']:
               # Preserve the historical notice-repack input format.
-              module['collect_notices'](root / 'conan-generated-graph.json', stage / 'notices', stage / 'dependency-sources.tar.gz')
+              module['collect_notices'](root / 'conan-generated-graph.json', stage / 'notices',
+                                        stage / 'dependency-sources.tar.gz',
+                                        source_cache=pathlib.Path(os.environ['NH_CONAN_SOURCE_CACHE']))
           else:
-              report = preflight(root / 'conan-generated-graph.json', stage / 'graph-check', root / 'CMakePresets.json')
+              report = preflight(root / 'conan-generated-graph.json', stage / 'graph-check',
+                                 root / 'CMakePresets.json',
+                                 pathlib.Path(os.environ['NH_CONAN_SOURCE_CACHE']))
               if not report['pass']:
                   raise RuntimeError('Full dependency preflight failed; see retained PREFLIGHT-REPORT.json. No client compile permitted.')
           exclusions = module['source_archive'](root, stage / 'fork-source.tar.gz', os.environ['GITHUB_SHA'])

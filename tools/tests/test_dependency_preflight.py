@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Independent safe errors aggregate; unsafe source work must stop immediately."""
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -20,10 +21,10 @@ class DependencyPreflightTest(unittest.TestCase):
         self.nodes = {str(i): {'ref': f'library{i}/1#pinned', 'context': 'host', 'binary': 'Skip', 'options': {'header_only': True}}
                       for i in range(1, 4)}
 
-    def execute(self, side_effect, client_preset=None):
+    def execute(self, side_effect, client_preset=None, source_cache=None):
         self.graph.write_text(json.dumps({'graph': {'nodes': self.nodes}}))
         with patch.object(gate, 'collect_notices', side_effect=side_effect) as collect:
-            report = gate.preflight(self.graph, self.root / 'result', client_preset)
+            report = gate.preflight(self.graph, self.root / 'result', client_preset, source_cache)
         return report, collect.call_count
 
     def test_all_safe_missing_notices_are_reported_in_one_run(self):
@@ -92,6 +93,55 @@ class DependencyPreflightTest(unittest.TestCase):
         report, count = self.execute(None)
         self.assertEqual(count, 0)
         self.assertFalse(report['pass'])
+
+    def test_seed_source_cache_verifies_and_is_idempotent(self):
+        archive = self.root / 'dav1d-1.5.4.tar.xz'
+        archive.write_bytes(b'verified source fixture')
+        expected = hashlib.sha256(archive.read_bytes()).hexdigest()
+        cache = self.root / 'source-cache'
+
+        first = gate.seed_source_cache(cache, archive, expected)
+        second = gate.seed_source_cache(cache, archive, expected)
+        entry = cache / 's' / expected
+        self.assertFalse(first['reused'])
+        self.assertTrue(second['reused'])
+        self.assertEqual(entry.read_bytes(), archive.read_bytes())
+
+    def test_seed_source_cache_rejects_mismatch_and_tampered_existing_entry(self):
+        archive = self.root / 'dav1d-1.5.4.tar.xz'
+        archive.write_bytes(b'verified source fixture')
+        expected = hashlib.sha256(archive.read_bytes()).hexdigest()
+        cache = self.root / 'source-cache'
+
+        with self.assertRaisesRegex(RuntimeError, 'SHA-256 mismatch'):
+            gate.seed_source_cache(cache, archive, '0' * 64)
+
+        gate.seed_source_cache(cache, archive, expected)
+        (cache / 's' / expected).write_bytes(b'tampered')
+        with self.assertRaisesRegex(RuntimeError, 'mismatched SHA-256'):
+            gate.seed_source_cache(cache, archive, expected)
+
+    def test_dav1d_preflight_requires_and_passes_verified_source_cache(self):
+        self.nodes = {'1': {'ref': gate.DAV1D_SOURCE_REFERENCE + '#pinned',
+                            'context': 'host', 'binary': 'Skip'}}
+        archive = self.root / 'dav1d-1.5.4.tar.xz'
+        archive.write_bytes(b'fixture matching pinned fallback')
+        # The real pinned hash is intentionally checked by the helper; use a
+        # direct cache fixture here so this unit test remains independent of
+        # the release archive bytes.
+        cache = self.root / 'source-cache'
+        (cache / 's').mkdir(parents=True)
+        (cache / 's' / gate.DAV1D_SOURCE_SHA256).write_bytes(b'wrong fixture')
+        with self.assertRaisesRegex(RuntimeError, 'Missing or mismatched verified'):
+            self.execute(None, source_cache=cache)
+
+        valid = b'locally verified dav1d source fixture'
+        expected = hashlib.sha256(valid).hexdigest()
+        (cache / 's' / expected).write_bytes(valid)
+        with patch.object(gate, 'DAV1D_SOURCE_SHA256', expected):
+            report, count = self.execute(None, source_cache=cache)
+        self.assertTrue(report['pass'])
+        self.assertEqual(count, 1)
 
 
 if __name__ == '__main__':

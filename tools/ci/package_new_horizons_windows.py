@@ -273,10 +273,21 @@ def sqlite_embedded_notice(source):
     raise RuntimeError('Missing verified SQLite upstream public-domain notice (do not publish)')
 
 
-def collect_notices(graph_path, package, source_output, cache_storage=None):
+def collect_notices(graph_path, package, source_output, cache_storage=None, source_cache=None):
     # Optional local MinGW storage override. Never apply it to the isolated
     # recipe-recovery cache below: that must not mutate a binary cache.
     cache_options = ['-cc', 'core.cache:storage_path=' + str(cache_storage)] if cache_storage is not None else []
+    # Conan's source backup cache is independent from its package cache.  The
+    # Windows preflight seeds this cache with a checksum-verified fallback for
+    # sources whose canonical host is temporarily unavailable.  Keep the
+    # option explicit so this collection cannot silently consume a developer's
+    # global Conan cache.
+    source_cache_options = []
+    if source_cache is not None:
+        source_cache = Path(source_cache)
+        if not source_cache.is_absolute():
+            raise RuntimeError("Conan source cache must be an absolute path")
+        source_cache_options = ['-cc', 'core.sources:download_cache=' + str(source_cache)]
     graph = json.loads(graph_path.read_text(encoding="utf-8"))
     nodes = graph.get("graph", {}).get("nodes", {})
     if not isinstance(nodes, dict) or not nodes:
@@ -386,7 +397,7 @@ def collect_notices(graph_path, package, source_output, cache_storage=None):
                 if user_channel:
                     user, channel = user_channel.split("/", 1)
                     command += ["--user", user, "--channel", channel]
-                subprocess.run(command + cache_options, check=True)
+                subprocess.run(command + cache_options + source_cache_options, check=True)
                 archive_name = re.sub(r"[^a-zA-Z0-9_.-]", "_", name_version)
                 copied = []
                 notice_root = notices / re.sub(r"[^a-zA-Z0-9_.-]", "_", reference.split("#")[0])
