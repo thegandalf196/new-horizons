@@ -197,7 +197,12 @@ size_t CComponent::getIndex() const
 		case ComponentType::MANA:
 			return 5; // for whatever reason, in H3 mana points icon is located in primary skills icons
 		case ComponentType::SEC_SKILL:
-			return data.subType.getNum() * 3 + 3 + data.value.value_or(1) - 1;
+		{
+			const auto skill = data.subType.as<SecondarySkill>();
+			const auto iconSkill = skill.toSkill()->getJsonKey() == "new-horizons:necromancy"
+				? SecondarySkill(SecondarySkill::NECROMANCY) : skill;
+			return iconSkill.getNum() * 3 + 3 + data.value.value_or(1) - 1;
+		}
 		case ComponentType::RESOURCE:
 		case ComponentType::RESOURCE_PER_DAY:
 			return data.subType.getNum();
@@ -273,6 +278,11 @@ std::string CComponent::getDescription() const
 			assert(0);
 			return "";
 	}
+}
+
+void CComponent::setCustomIcon(const AnimationPath & path)
+{
+	image->setAnimationPath(path, 0);
 }
 
 std::string CComponent::getSubtitle() const
@@ -467,6 +477,27 @@ int CComponentBox::selectedIndex()
 	if (selected)
 		return static_cast<int>(std::find(components.begin(), components.end(), selected) - components.begin());
 	return -1;
+}
+
+void CComponentBox::clearSelection()
+{
+	if(selected)
+		selected->select(false);
+	selected.reset();
+}
+
+void CComponentBox::selectFirst()
+{
+	if(!components.empty())
+		selectionChanged(std::dynamic_pointer_cast<CSelectableComponent>(components.front()));
+}
+
+void CComponentBox::setShortcuts(const std::vector<EShortcut> & shortcuts)
+{
+	const auto count = std::min(components.size(), shortcuts.size());
+	for(size_t i = 0; i < count; ++i)
+		if(const auto selectable = std::dynamic_pointer_cast<CSelectableComponent>(components[i]))
+			selectable->assignedKey = shortcuts[i];
 }
 
 Point CComponentBox::getOrTextPos(CComponent *left, CComponent *right)

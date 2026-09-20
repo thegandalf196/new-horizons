@@ -77,7 +77,9 @@ class MasteryDataTest(unittest.TestCase):
         module = load('Mods/new-horizons/mod.json')
         self.assertEqual(module['version'], '0.7.0')
         self.assertEqual(module['settings']['heroes']['newHorizonsMasteries'], load('config/newHorizonsMasteries.json'))
-        self.assertEqual(module['translations'], load('config/newHorizonsMasteryTexts.json'))
+        expected = load('config/newHorizonsMasteryTexts.json')
+        expected.update(load('config/newHorizonsHeroClassTexts.json'))
+        self.assertEqual(module['translations'], expected)
 
 
 if __name__ == '__main__':

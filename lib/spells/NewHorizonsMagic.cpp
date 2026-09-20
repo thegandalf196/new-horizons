@@ -19,6 +19,7 @@
 #include "../modding/IdentifierStorage.h"
 #include "../modding/ModScope.h"
 #include "../callback/IGameInfoCallback.h"
+#include "../bonuses/BonusEnum.h"
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
 #include <cmath>
@@ -448,12 +449,26 @@ bool isCounterspell(const spells::Spell * spell)
 	return spell && spell->getJsonKey() == GameConstants::NEW_HORIZONS_COUNTERSPELL;
 }
 
-int counterspellCost(int listedCost, bool countermage)
+int counterspellCost(int listedCost, bool countermage, bool countersequence)
 {
 	if(listedCost < 0)
 		throw std::invalid_argument("Counterspell requires a non-negative listed spell cost");
-	if(!countermage)
+	if(!countermage && !countersequence)
 		return listedCost * 2;
 	return (listedCost * 7 + 3) / 4;
+}
+
+int metamagicRank(const CGHeroInstance * hero)
+{
+	if(!hero)
+		return 0;
+	const int skillRank = hero->getPerkSkillRank(std::string(METAMAGIC_SKILL));
+	const int rankBonus = hero->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT);
+	return std::clamp(std::max(skillRank, rankBonus), 0, 3);
+}
+
+bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view perkId)
+{
+	return hero && hero->hasActivePerk(std::string(METAMAGIC_SKILL), std::string(perkId));
 }
 }

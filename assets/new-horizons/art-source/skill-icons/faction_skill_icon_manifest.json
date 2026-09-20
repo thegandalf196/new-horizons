@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "skills": {
+    "divineMandate": {
+      "source": "../NH_divineMandate_master.png",
+      "method": "host built-in image generation; deterministic Pillow rank/export derivatives",
+      "identity": "gold crown and ivory sun medallion on red velvet"
+    },
+    "sylvanLuck": {
+      "source": "../NH_sylvanLuck_master.png",
+      "method": "host built-in image generation; deterministic Pillow rank/export derivatives",
+      "identity": "silver antler branch, wet leaves, clover and amber berries"
+    },
+    "metamagic": {
+      "source": "../NH_metamagic_master.png",
+      "method": "host built-in image generation; deterministic Pillow rank/export derivatives",
+      "identity": "faceted crystal over a bronze occult ring with split spell rays"
+    },
+    "demonicGating": {
+      "source": "../NH_demonicGating_master.png",
+      "method": "host built-in image generation; deterministic Pillow rank/export derivatives",
+      "identity": "horned iron gate opening onto a red inferno"
+    },
+    "shroudOfMalassa": {
+      "source": "../NH_shroudOfMalassa_master.png",
+      "method": "host built-in image generation; deterministic Pillow rank/export derivatives",
+      "identity": "cracked black mask beneath a purple shadow veil"
+    },
+    "bloodrage": {
+      "source": "../NH_bloodrage_master.png",
+      "method": "host built-in image generation; deterministic Pillow rank/export derivatives",
+      "identity": "blood-wet battle axe embedded in crimson crystal"
+    },
+    "bulwarkOfTheMire": {
+      "source": "../NH_bulwarkOfTheMire_master.png",
+      "method": "host built-in image generation; deterministic Pillow rank/export derivatives",
+      "identity": "moss-grown iron shield rooted in swamp water"
+    },
+    "elementalRebirth": {
+      "source": "../NH_elementalRebirth_master.png",
+      "method": "host built-in image generation; deterministic Pillow rank/export derivatives",
+      "identity": "cracked elemental egg with fire, water, earth, crystal and wing"
+    },
+    "necromancy": {
+      "source": "purchaser-supplied SECSK32/SECSKILL/SECSK82 frames 39/40/41",
+      "method": "runtime frame references only; no original-game pixels redistributed",
+      "identity": "classic skulls and red necromantic flame"
+    }
+  },
+  "runtime_prefix": "NH_",
+  "ranks": ["basic", "advanced", "expert"],
+  "sizes": {
+    "small": [32, 32],
+    "medium": [44, 44],
+    "large": [82, 93],
+    "scenarioBonus": [58, 64]
+  }
+}

@@ -20,6 +20,7 @@
 #include "../PlayerLocalState.h"
 
 #include "../battle/BattleInterface.h"
+#include "../battle/BattleActionsController.h"
 #include "../GameEngine.h"
 #include "../GameInstance.h"
 #include "../gui/Shortcut.h"
@@ -42,6 +43,7 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/spells/ISpellMechanics.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/adventure/AdventureSpellEffect.h"
 #include "../../lib/spells/Problem.h"
@@ -303,6 +305,36 @@ CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _m
 	schoolPicture = std::make_shared<CAnimImage>(AnimationPath::builtin("Schools"), 0, 0, 117 + offL, 74 + offT);
 
 	mana = std::make_shared<CLabel>(435 + (isBigSpellbook ? 159 : 0), 426 + offB, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, std::to_string(myHero->mana));
+
+	// Metamagic's Grand variant is an explicit choice made before the selected
+	// spell is submitted.  Keep this toggle in the modal spellbook itself; the
+	// battle command strip is not interactive while this window is open.
+	if(myInt->battleInt && myInt->battleInt->curInt && myInt->battleInt->curInt->cb)
+	{
+		const auto battle = myInt->battleInt->getBattle();
+		const auto side = battle->battleGetMySide();
+		if(side != BattleSide::NONE && battle->battleMetamagicPendingCount(side) == 1
+			&& battle->battleMetamagicSequenceSpells(side).size() == 1
+			&& !battle->battleMetamagicGrandUsed(side)
+			&& newHorizonsMagic::metamagicRank(myHero) >= 3
+			&& newHorizonsMagic::hasMetamagicPerk(myHero, newHorizonsMagic::METAMAGIC_GRAND))
+		{
+			metamagicGrandToggle = std::make_shared<CButton>(
+				Point(300 + (isBigSpellbook ? 159 : 0), 475), AnimationPath::builtin("NH_hero_actions_entry"),
+				CButton::tooltip("Grand Metamagic", "Toggle the optional two-additional-spell sequence."), [this]()
+				{
+					myInt->battleInt->toggleMetamagicGrandFollowup();
+					if(metamagicGrandLabel && myInt->battleInt->actionsController)
+					{
+						const bool selected = myInt->battleInt->actionsController->metamagicGrandModeActive();
+						metamagicGrandLabel->setText(selected ? "Grand ON" : "Grand OFF");
+						metamagicGrandLabel->setColor(selected ? Colors::GREEN : Colors::YELLOW);
+					}
+				});
+			metamagicGrandLabel = std::make_shared<CLabel>(0, 0, FONT_TINY, ETextAlignment::CENTER, Colors::YELLOW, "Grand OFF");
+			metamagicGrandToggle->setOverlay(metamagicGrandLabel);
+		}
+	}
 
 	if(isBigSpellbook)
 		statusBar = CGStatusBar::create(400, 587);
@@ -862,8 +894,17 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 			return;
 		}
 
+		const auto battleInterface = owner->myInt->battleInt;
+		const auto battleCallback = battleInterface ? battleInterface->getBattle() : nullptr;
+		const auto metamagicSide = battleCallback ? battleCallback->battleGetMySide() : BattleSide::NONE;
+		const bool metamagicFollowup = battleCallback && metamagicSide != BattleSide::NONE
+			&& battleCallback->battleCanUseMetamagicFollowup(metamagicSide);
+		const bool metamagicGrand = metamagicFollowup && battleInterface->actionsController
+			&& battleInterface->actionsController->metamagicGrandModeActive();
 		auto spellCost = owner->myInt->cb->getSpellCost(mySpell, owner->myHero);
-		if(spellCost > owner->myHero->mana) //insufficient mana
+		if(metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(owner->myHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
+			spellCost = std::max(1, spellCost - 2);
+		if(spellCost > owner->myHero->mana && !metamagicFollowup) //insufficient mana; follow-ups use authoritative preview below
 		{
 			MetaString message = MetaString::createFromTextID("core.genrltxt.206"); // That spell costs %d spell points. Your hero only has %d spell points...
 			message.replaceNumber(spellCost);
@@ -881,7 +922,7 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 			return;
 		}
 
-		const bool inCombat = owner->myInt->battleInt != nullptr;
+		const bool inCombat = battleInterface != nullptr;
 		const bool inCastle = owner->myInt->castleInt != nullptr;
 
 		//battle spell on adv map or adventure map spell during combat => display infowindow, not cast
@@ -893,12 +934,13 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 		else if(combatSpell)
 		{
 			spells::detail::ProblemImpl problem;
-			if(mySpell->canBeCast(problem, owner->myInt->battleInt->getBattle().get(), spells::Mode::HERO, owner->myHero))
+			const bool canCast = mySpell->canBeCast(problem, battleCallback.get(), spells::Mode::HERO,
+				owner->myHero, metamagicGrand);
+				if(canCast)
 			{
 				// Close the spellbook before cast setup: a NO_LOCATION spell may
 				// synchronously open a post-selection modal (Selective Dispel), and
 				// only the topmost window may be closed.
-				auto battleInterface = owner->myInt->battleInt;
 				const SpellID selectedSpell = mySpell->id;
 				owner->fexitb();
 				battleInterface->castThisSpell(selectedSpell);
@@ -1002,6 +1044,14 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 		SpellSchool whichSchool;
 		schoolLevel = owner->myHero->getSpellSchoolLevel(mySpell, &whichSchool);
 		auto spellCost = owner->myInt->cb->getSpellCost(mySpell, owner->myHero);
+		if(owner->myInt->battleInt)
+		{
+			const auto battle = owner->myInt->battleInt->getBattle();
+			const auto side = battle->battleGetMySide();
+			if(side != BattleSide::NONE && battle->battleCanUseMetamagicFollowup(side)
+				&& newHorizonsMagic::hasMetamagicPerk(owner->myHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
+				spellCost = std::max(1, spellCost - 2);
+		}
 
 		image->setFrame(mySpell->id.getNum());
 		image->visible = true;

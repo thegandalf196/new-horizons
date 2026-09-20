@@ -38,6 +38,9 @@ class BattleWindow : public InterfaceObjectConfigurable
 	std::shared_ptr<BattleConsole> console;
 	std::shared_ptr<CButton> ordersButton;
 	std::shared_ptr<CButton> landMineConfirmButton;
+	std::shared_ptr<CButton> metamagicDeclineButton;
+	std::shared_ptr<CButton> metamagicGrandButton;
+	std::shared_ptr<CLabel> metamagicGrandLabel;
 	std::shared_ptr<HeroInfoBasicPanel> attackerHeroWindow;
 	std::shared_ptr<HeroInfoBasicPanel> defenderHeroWindow;
 	std::shared_ptr<CLabel> attackerCounterspellStatus;
@@ -108,6 +111,8 @@ public:
 
 	/// Opens the unchanged spellbook path, bypassing the NH hero-action chooser.
 	void openSpellbook();
+	/// Opens the same spellbook for an authoritative pending Metamagic follow-up.
+	void openMetamagicSpellbook();
 
 	/// Closes window once battle finished
 	void close();

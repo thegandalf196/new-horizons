@@ -1,19 +1,23 @@
-# New Horizons Version1.0 — user-confirmed scope
+# New Horizons Version 1.0 scope
 
 ## Authoritative scope clarification
 
-User explicitly defined Version1.0 and confirmed that replacing the seven-tier
-system means Core/Elite/Champion. User also confirmed that adding castellans does
-NOT automatically adopt the experimental single-expeditionary-Hero restriction.
+The current user-supplied gameplay authority is
+[New Horizons.docx](design-sources/New%20Horizons.docx). Detailed system sections
+in that document override earlier summary lists and older repository planning.
+Version 1.0 replaces the seven-tier organization with Core, Elite, and Champion.
+Governors, regional administration, and Caravans are explicitly future work, not
+Version 1.0 dependencies.
 
 ### Reworks
 
 1. **Primary attributes:** class-based deterministic development and coherent
    scaled formulas/readouts.
-2. **Secondary skills:** Basic/Advanced/Expert ranks with three associated abilities;
-   Heroes V-style skill/ability progression without a wheel. This replaces the
-   earlier post-Expert mastery design. Exact eligibility/offers/prerequisites and
-   existing-save migration still need an explicit source-backed specification.
+2. **Secondary skills:** Basic/Advanced/Expert ranks with a ten-perk pool for each
+   Skill and at most three learned perks from that pool. A level-up may offer up
+   to two Skill choices and two perk choices, from which the hero selects one.
+   The full source roster and prerequisites replace the older three-ability and
+   post-Expert mastery targets. Save migration remains explicit and versioned.
 3. **Magic schools:** Light, Nature, Sorcery/Arcane, Havoc, Shadow and Chaos, with
    coherent spell assignments, actual effects, AI support and school/spell UI art.
    School-family artwork alone does not complete the spell system.
@@ -24,21 +28,20 @@ NOT automatically adopt the experimental single-expeditionary-Hero restriction.
 
 ### Additions
 
-5. **Commands:** Orders and Doctrines, separate combat Orders/Spellbook entry
-   controls, preserving the established shared hero-action budget unless changed
-   explicitly by the user.
-6. **Castellans/governors:** regional administration and command. This is now a
-   Version1.0 feature, not merely an optional future consideration.
+5. **Commands:** Orders, with separate combat Orders/Spellbook entry controls and
+   the established shared hero-action budget. The superseded Doctrine experiment
+   is explicitly outside New Horizons and must not be exposed as active gameplay.
+6. **Adventure systems:** hero Movement is independent of creature combat Speed;
+   Speed and Initiative are separate combat statistics; five neutral Adventure
+   Spells use fixed Mage Guild I–V unlocks and a once-per-day casting limit; all
+   factions reach Mage Guild V.
 
 ## Boundaries and supporting requirements
 
-The experimental single-expeditionary-Hero restriction is NOT automatically in1.0.
-Nor does the castellan inclusion resolve every proposed rule in the experimental
-Hero/Castellans and Caravan documents. Office recruitment/replacement, mobility,
-commander presence, defense attribution and progression still need decisions.
-Do not merge historical autonomous-garrison capacity with castellan Leadership.
-Full caravan logistics is not separately committed to1.0 by this scope statement;
-identify actual dependencies or obtain a distinct decision before broadening it.
+The experimental single-expeditionary-Hero restriction is not part of Version 1.0.
+Governors, regional administration, anti-chaining rules, and Caravan logistics
+remain future systems until their open rules are resolved. Do not create UI or
+state that implies those unsettled mechanics merely to fill scope.
 
 Siege as a spendable resource remains exploratory, not an established economy.
 The user's revised Hero-screen layout and associated-ability presentation are the
@@ -52,6 +55,7 @@ Version1.0 completion. Keep current playable artifacts intact while developing
 versioned replacements. This document records scope, not active Goal tooling state,
 new ownership permissions, GUI execution authorization or final release approval.
 
-This confirmation supersedes conflicting old mastery/seven-tier wording for1.0.
+This source supersedes conflicting old mastery, three-ability, governor, and
+seven-tier wording for Version 1.0.
 Preserve old design/history and compiled save formats until deliberate migration;
 do not delete working code simply because the target design changed.

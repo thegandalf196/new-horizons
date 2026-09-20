@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Validate the New Horizons SecondarySkill entity composition.
 
-The six school skills, Offense, and Sylvan Luck are active rank data.  The
+The six school skills, Offense, Sylvan Luck, Necromancy, and Metamagic are
+active rank data.  The
 remaining canonical skills are registered with their canonical rank text but
 deliberately carry only a zero bonus until their runtime effect handlers exist.
 Faction skills remain specially assigned/progressed rather than appearing in
@@ -101,6 +102,29 @@ ACTIVE_RANK_EFFECTS = {
             },
         },
     },
+    "metamagic": {
+        "basic": {
+            "metamagicUses": {
+                "type": "METAMAGIC_USES_PER_COMBAT",
+                "valueType": "BASE_NUMBER",
+                "val": 1,
+            },
+        },
+        "advanced": {
+            "metamagicUses": {
+                "type": "METAMAGIC_USES_PER_COMBAT",
+                "valueType": "BASE_NUMBER",
+                "val": 2,
+            },
+        },
+        "expert": {
+            "metamagicUses": {
+                "type": "METAMAGIC_USES_PER_COMBAT",
+                "valueType": "BASE_NUMBER",
+                "val": 3,
+            },
+        },
+    },
 }
 ACTIVE_GENERAL_GAIN_SKILLS = set(SCHOOL_SKILLS) | {"offense"}
 NO_OP = {
@@ -110,6 +134,17 @@ NO_OP = {
         "val": 0,
     }
 }
+
+CORE_SKILL_IMAGE = re.compile(r"^(SECSK32|SECSKILL|SECSK82):0:[0-9]+$")
+
+
+def image_is_module_file_or_core_skill(image):
+    """Accept explicit core DEF frame references alongside module PNGs."""
+    if CORE_SKILL_IMAGE.fullmatch(image):
+        return True
+    return (ROOT / "Mods/new-horizons/Images" / image).is_file()
+
+
 def parse_jsonc(text):
     string = r'"(?:\\.|[^"\\])*"'
     text = re.sub(string + r'|//[^\n]*|/\*[\s\S]*?\*/',
@@ -169,6 +204,20 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                         },
                     )
 
+    def test_metamagic_rank_uses_are_bound_to_metamagic_skill(self):
+        """Guard the rank bonus against being copied onto another skill."""
+        expected = {"basic": 1, "advanced": 2, "expert": 3}
+        for rank, uses in expected.items():
+            with self.subTest(rank=rank):
+                metamagic_effect = self.skills["metamagic"][rank]["effects"]["metamagicUses"]
+                self.assertEqual(metamagic_effect["type"], "METAMAGIC_USES_PER_COMBAT")
+                self.assertEqual(metamagic_effect["valueType"], "BASE_NUMBER")
+                self.assertEqual(metamagic_effect["val"], uses)
+                self.assertNotIn(
+                    "METAMAGIC_USES_PER_COMBAT",
+                    json.dumps(self.skills["armorer"][rank]["effects"]),
+                )
+
     def test_gain_chances_expose_only_general_active_skills(self):
         for key, skill in self.skills.items():
             with self.subTest(skill=key):
@@ -204,7 +253,7 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                         )
                         self.assertEqual(skill[rank]["effects"], NO_OP)
                     for image in skill[rank]["images"].values():
-                        self.assertTrue((ROOT / "Mods/new-horizons/Images" / image).is_file())
+                        self.assertTrue(image_is_module_file_or_core_skill(image))
             if key == "necromancy":
                 # The New Horizons resolver always raises canonical Skeletons
                 # and optional Zombies.  The legacy bonus would select the

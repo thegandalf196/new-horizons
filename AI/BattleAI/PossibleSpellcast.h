@@ -41,6 +41,9 @@ public:
 	bool spellSelectiveDispel = false;
 	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
 	bool spellMassSlow = false;
+	/// The cast is an immediate, non-chaining Tower Metamagic follow-up.
+	bool metamagicFollowup = false;
+	bool metamagicGrand = false;
 	/// Delayed placement value for canonical New Horizons Land Mine.  Mines do
 	/// not change unit health during hypothetical cast evaluation, so the
 	/// targeting evaluator supplies this read-only pressure score explicitly.

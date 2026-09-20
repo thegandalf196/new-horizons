@@ -124,6 +124,22 @@ public:
 	}
 };
 
+static bool spellsShareSchool(const CSpell * first, const CSpell * second)
+{
+	if(!first || !second)
+		return false;
+	bool shared = false;
+	first->forEachSchool([&](const SpellSchool & school, bool & stop)
+	{
+		if(second->hasSchool(school))
+		{
+			shared = true;
+			stop = true;
+		}
+	});
+	return shared;
+}
+
 BattleCast::BattleCast(const CBattleInfoCallback * cb_, const Caster * caster_, const Mode mode_, const CSpell * spell_):
 	spell(spell_),
 	cb(cb_),
@@ -189,6 +205,26 @@ bool BattleCast::getMassSlow() const
 	return massSlow;
 }
 
+bool BattleCast::isMetamagicFollowup() const
+{
+	return metamagicFollowup;
+}
+
+bool BattleCast::isMetamagicGrand() const
+{
+	return metamagicGrand;
+}
+
+uint32_t BattleCast::getMetamagicTargetUnitId() const
+{
+	return metamagicTargetUnitId;
+}
+
+int32_t BattleCast::getMetamagicManaRefund() const
+{
+	return metamagicManaRefund;
+}
+
 BattleCast::OptionalValue64 BattleCast::getEffectValue() const
 {
 	return effectValue;
@@ -242,6 +278,26 @@ void BattleCast::setSelectiveDispel(bool value)
 void BattleCast::setMassSlow(bool value)
 {
 	massSlow = value;
+}
+
+void BattleCast::setMetamagicFollowup(bool value)
+{
+	metamagicFollowup = value;
+}
+
+void BattleCast::setMetamagicGrand(bool value)
+{
+	metamagicGrand = value;
+}
+
+void BattleCast::setMetamagicTargetUnitId(uint32_t value)
+{
+	metamagicTargetUnitId = value;
+}
+
+void BattleCast::setMetamagicManaRefund(int32_t value)
+{
+	metamagicManaRefund = value;
 }
 
 void BattleCast::setEffectValue(BattleCast::Value64 value)
@@ -365,7 +421,48 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	counterspellNegated = event->isCounterspellNegated();
 	selectiveDispel = event->getSelectiveDispel();
 	massSlow = event->getMassSlow();
+	metamagicFollowup = event->isMetamagicFollowup();
+	metamagicGrand = event->isMetamagicGrand();
+	metamagicTargetUnitId = event->getMetamagicTargetUnitId();
+	metamagicManaRefund = event->getMetamagicManaRefund();
 	forceNonSmartTargeting = event->getForceNonSmartTargeting();
+	if(metamagicFollowup && mode == Mode::HERO)
+	{
+		const auto * hero = dynamic_cast<const CGHeroInstance *>(caster);
+		const auto & sequence = cb->getBattle()->getMetamagicSequenceSpells(casterSide);
+		// BattleSpellCast is applied before the spell effects.  Applying the
+		// follow-up packet consumes the last pending leg and clears the live
+		// sequence, so retain the first target and Focused Pairing eligibility
+		// while the authoritative pre-cast state is still available.
+		metamagicFirstTargetUnitId = cb->getBattle()->getMetamagicFirstTargetUnitId(casterSide);
+		metamagicFocusedPairingEligible = newHorizonsMagic::hasMetamagicPerk(
+			hero, newHorizonsMagic::METAMAGIC_FOCUSED_PAIRING)
+			&& metamagicTargetUnitId != newHorizonsMagic::INVALID_METAMAGIC_TARGET
+			&& metamagicFirstTargetUnitId != newHorizonsMagic::INVALID_METAMAGIC_TARGET
+			&& metamagicTargetUnitId == metamagicFirstTargetUnitId;
+		int powerBonus = 0;
+		if(newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_SPELL_SEQUENCING)
+			&& !sequence.empty() && !spellsShareSchool(sequence.front().toSpell(), owner))
+			powerBonus += 15;
+		if(newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_SPLIT_FOCUS)
+			&& event->getMetamagicTargetUnitId() != newHorizonsMagic::INVALID_METAMAGIC_TARGET
+			&& cb->getBattle()->getMetamagicFirstTargetUnitId(casterSide) != newHorizonsMagic::INVALID_METAMAGIC_TARGET
+			&& event->getMetamagicTargetUnitId() != cb->getBattle()->getMetamagicFirstTargetUnitId(casterSide))
+			powerBonus += 10;
+		const bool distinctSequence = std::all_of(sequence.begin(), sequence.end(), [&sequence](const SpellID & spellId)
+		{
+			return std::count(sequence.begin(), sequence.end(), spellId) == 1;
+		});
+		if(newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_PERFECT_SEQUENCE)
+			&& distinctSequence
+			&& std::none_of(sequence.begin(), sequence.end(), [this](const SpellID & spellId)
+			{
+				return spellId == owner->getId();
+			}))
+			powerBonus += 20;
+		if(powerBonus > 0)
+			effectPower = effectPower * (100 + powerBonus) / 100;
+	}
 	{
 		const auto value = event->getEffectValue();
 		if(value.has_value())
@@ -392,6 +489,14 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				effectValue = owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
 		}
 		vstd::amax(effectValue, 0);
+	}
+	// Echoed Duration is intentionally applied only to the additional cast and
+	// only when the spell did not provide an explicit duration override.
+	if(!event->getEffectDuration().has_value() && event->isMetamagicFollowup()
+		&& newHorizonsMagic::hasMetamagicPerk(dynamic_cast<const CGHeroInstance *>(caster), newHorizonsMagic::METAMAGIC_ECHOED_DURATION))
+	{
+		if(effectDuration < std::numeric_limits<decltype(effectDuration)>::max())
+			++effectDuration;
 	}
 }
 
@@ -551,7 +656,10 @@ bool BaseMechanics::isMagicalEffect() const
 
 int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
 {
-	return owner->adjustRawDamage(caster, target, getEffectValue());
+	const int ignoreReduction = metamagicFollowup && isNegativeSpell() && target
+		&& metamagicFocusedPairingEligible && target->unitId() == metamagicFirstTargetUnitId
+		? 20 : 0;
+	return owner->adjustRawDamage(caster, target, getEffectValue(), ignoreReduction);
 }
 
 int64_t BaseMechanics::applySpellBonus(int64_t value, const battle::Unit * target) const
@@ -650,6 +758,26 @@ bool BaseMechanics::isSelectiveDispel() const
 bool BaseMechanics::isMassSlow() const
 {
 	return massSlow;
+}
+
+bool BaseMechanics::isMetamagicFollowup() const
+{
+	return metamagicFollowup;
+}
+
+bool BaseMechanics::isMetamagicGrand() const
+{
+	return metamagicGrand;
+}
+
+uint32_t BaseMechanics::getMetamagicTargetUnitId() const
+{
+	return metamagicTargetUnitId;
+}
+
+int32_t BaseMechanics::getMetamagicManaRefund() const
+{
+	return metamagicManaRefund;
 }
 
 bool BaseMechanics::usesNewHorizonsMagic() const

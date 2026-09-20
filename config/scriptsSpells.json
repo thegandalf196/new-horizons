@@ -298,5 +298,44 @@
 			},
 			"additionalProperties" : false
 		}
+	},
+	"phantomArmy" : {
+		"implements" : "spellEffect",
+		"script" : "spells/phantomArmy",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
+	"timeStop" : {
+		"implements" : "spellEffect",
+		"script" : "spells/timeStop",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
+	"spellLock" : {
+		"implements" : "spellEffect",
+		"script" : "spells/spellLock",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
 	}
 }

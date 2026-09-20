@@ -144,6 +144,18 @@ BattleAction BattleAction::makeRetreat(BattleSide side)
 	return ba;
 }
 
+BattleAction BattleAction::makeMetamagicDecline(BattleSide side)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid Metamagic decline side");
+	BattleAction action;
+	action.side = side;
+	action.actionType = EActionType::HERO_COMMAND;
+	action.stackNumber = side == BattleSide::ATTACKER ? -1 : -2;
+	action.metamagicDecline = true;
+	return action;
+}
+
 BattleAction BattleAction::makeHeroCommand(BattleSide side, HeroCommand command)
 {
 	BattleAction action;

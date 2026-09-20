@@ -76,12 +76,62 @@ void validateCommon(const JsonNode & rules)
 	}
 }
 
-void validateStartingSkills(const JsonNode & startingSkills)
+void validateExcludedSkills(const JsonNode & excludedSkills)
+{
+	if(excludedSkills.isNull())
+		return;
+
+	require(excludedSkills.isVector(), "excludedSkills array");
+	std::set<int> seen;
+	for(const auto & skill : excludedSkills.Vector())
+	{
+		require(skill.isString() && !skill.String().empty(), "excluded skill");
+		const auto skillId = resolve(SecondarySkill::entityType(), skill.String());
+		require(seen.insert(skillId).second, "duplicate excluded skill " + skill.String());
+	}
+}
+
+void validateSkillOfferWeightRow(const JsonNode & classWeights)
+{
+	require(classWeights.isStruct() && classWeights.Struct().size() == HERO_SKILL_OFFER_COUNT,
+		"canonical skill offer table must contain exactly 31 skills");
+
+	std::set<int> seenSkills;
+	for(const auto & [skill, weight] : classWeights.Struct())
+	{
+		const auto skillId = resolve(SecondarySkill::entityType(), skill);
+		require(seenSkills.insert(skillId).second, "duplicate skill offer skill");
+		require(integer(weight, 0, 100), "skill offer weight");
+	}
+}
+
+void validateSkillOfferWeights(const JsonNode & offerWeights, bool requireAllClasses)
+{
+	if(offerWeights.isNull())
+		return;
+
+	require(offerWeights.isStruct() && !offerWeights.Struct().empty(), "skill offer weights");
+	std::set<int> seenClasses;
+	for(const auto & [heroClass, classWeights] : offerWeights.Struct())
+	{
+		require(seenClasses.insert(resolve(HeroClassID::entityType(), heroClass)).second,
+			"duplicate skill offer class");
+		validateSkillOfferWeightRow(classWeights);
+	}
+
+	if(requireAllClasses)
+		for(const auto & heroClass : LIBRARY->heroclassesh->objects)
+			if(heroClass)
+				require(seenClasses.count(heroClass->getIndex()),
+					"missing skill offer table for " + heroClass->getJsonKey());
+}
+
+void validateStartingSkills(const JsonNode & startingSkills, bool requireMigrationTable)
 {
 	if(startingSkills.isNull())
 		return;
 
-	fields(startingSkills, {"factionSkills", "legacyAliases", "magic", "might"});
+	fields(startingSkills, {"factionSkills", "legacyAliases", "legacySkillMigrations", "magic", "might"});
 	const auto & factionSkills = startingSkills["factionSkills"];
 	require(factionSkills.isStruct() && !factionSkills.Struct().empty(), "faction starting skills");
 	std::set<int> uniqueFactionSkills;
@@ -103,6 +153,52 @@ void validateStartingSkills(const JsonNode & startingSkills)
 		require(skill.isString() && !skill.String().empty(), "faction skill alias");
 		require(resolve(SecondarySkill::entityType(), skill.String()) >= 0,
 			"unknown faction skill alias " + skill.String());
+	}
+
+	const auto & migrations = startingSkills["legacySkillMigrations"];
+	if(migrations.isNull())
+	{
+		// Resolved snapshots written before creation-only migration was added do
+		// not carry this table. They must remain loadable and retain their saved
+		// roster; a complete new-game profile still requires the canonical table.
+		require(!requireMigrationTable, "legacy starting-skill migrations");
+	}
+	else
+	{
+		require(migrations.isStruct() && !migrations.Struct().empty(), "legacy starting-skill migrations");
+		std::set<int> migratedSources;
+		for(const auto & [source, migration] : migrations.Struct())
+		{
+			require(migratedSources.insert(resolve(SecondarySkill::entityType(), source)).second,
+				"duplicate legacy starting-skill migration " + source);
+			fields(migration, {"kind", "target", "fallback"});
+			require(migration["kind"].isString(), "legacy starting-skill migration kind");
+			const auto kind = migration["kind"].String();
+			require(kind == "skill" || kind == "factionSkill" || kind == "perk",
+				"unknown legacy starting-skill migration kind " + kind);
+			require(migration["target"].isString() && !migration["target"].String().empty(),
+				"legacy starting-skill migration target");
+			const auto target = migration["target"].String();
+			const auto dot = target.find('.');
+			if(kind == "perk")
+			{
+				require(dot != std::string::npos && dot > 0 && dot + 1 < target.size()
+					&& target.find('.', dot + 1) == std::string::npos,
+					"legacy perk migration target");
+				require(resolve(SecondarySkill::entityType(), target.substr(0, dot)) >= 0,
+					"unknown legacy perk migration skill " + target);
+				require(migration["fallback"].String() == "remove",
+					"legacy perk migration must document remove fallback");
+			}
+			else
+			{
+				require(dot == std::string::npos, "legacy skill migration target must be a skill");
+				require(resolve(SecondarySkill::entityType(), target) >= 0,
+					"unknown legacy skill migration target " + target);
+				require(migration["fallback"].isNull(),
+					"legacy skill migration cannot use a perk fallback");
+			}
+		}
 	}
 
 	const auto & magic = startingSkills["magic"];
@@ -132,13 +228,46 @@ bool usesRules(const JsonNode & rules)
 	return !rules.isNull() && !(rules.isStruct() && rules.Struct().empty());
 }
 
+bool usesSkillOfferWeights(const JsonNode & resolvedRules)
+{
+	return usesRules(resolvedRules) && resolvedRules["skillOfferWeights"].isStruct()
+		&& !resolvedRules["skillOfferWeights"].Struct().empty();
+}
+
+std::optional<int> skillOfferWeight(const JsonNode & resolvedRules, SecondarySkill skill)
+{
+	if(!usesSkillOfferWeights(resolvedRules))
+		return std::nullopt;
+
+	const auto & weights = resolvedRules["skillOfferWeights"].Struct();
+	const auto it = weights.find(SecondarySkill::encode(skill.getNum()));
+	if(it == weights.end() || !integer(it->second, 0, 100))
+		return std::nullopt;
+	return static_cast<int>(it->second.Integer());
+}
+
+bool isExcludedSkill(const JsonNode & resolvedRules, SecondarySkill skill)
+{
+	const auto & excludedSkills = resolvedRules["excludedSkills"];
+	if(!excludedSkills.isVector())
+		return false;
+
+	return std::any_of(excludedSkills.Vector().begin(), excludedSkills.Vector().end(),
+		[skill](const JsonNode & entry)
+		{
+			return entry.isString() && SecondarySkill::decode(entry.String()) == skill.getNum();
+		});
+}
+
 void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "extraGrowth", "startingSkills"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills"});
 	validateCommon(rules);
-	validateStartingSkills(rules["startingSkills"]);
+	validateExcludedSkills(rules["excludedSkills"]);
+	validateSkillOfferWeights(rules["skillOfferWeights"], requireAllClasses);
+	validateStartingSkills(rules["startingSkills"], requireAllClasses);
 	require(rules["classProfiles"].isStruct() && !rules["classProfiles"].Struct().empty(), "class profiles");
 	std::set<int> seen;
 	for(const auto & [key, profile] : rules["classProfiles"].Struct())
@@ -164,9 +293,12 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "extraGrowth", "startingSkills"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills"});
 	validateCommon(rules);
-	validateStartingSkills(rules["startingSkills"]);
+	validateExcludedSkills(rules["excludedSkills"]);
+	if(!rules["skillOfferWeights"].isNull())
+		validateSkillOfferWeightRow(rules["skillOfferWeights"]);
+	validateStartingSkills(rules["startingSkills"], false);
 	validateProfile(rules["profile"], rules["maxPrimary"].Integer());
 }
 
@@ -177,6 +309,10 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 	JsonNode result;
 	for(const auto * key : {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "extraGrowth"})
 		result[key] = rules[key];
+	if(rules["skillOfferWeights"].isStruct())
+		result["skillOfferWeights"] = rules["skillOfferWeights"][HeroClassID::encode(heroClass.getNum())];
+	if(rules["excludedSkills"].isVector())
+		result["excludedSkills"] = rules["excludedSkills"];
 	if(rules["startingSkills"].isStruct())
 		result["startingSkills"] = rules["startingSkills"];
 	result["profile"] = rules["classProfiles"][HeroClassID::encode(heroClass.getNum())];
@@ -217,6 +353,97 @@ std::optional<SecondarySkill> factionSkill(const JsonNode & resolvedRules, Facti
 	if(skillId < 0)
 		return std::nullopt;
 	return SecondarySkill(skillId);
+}
+
+namespace
+{
+void appendMergedSkill(std::vector<std::pair<SecondarySkill, ui8>> & result,
+	SecondarySkill skill, ui8 rank)
+{
+	const auto existing = std::find_if(result.begin(), result.end(),
+		[skill](const auto & value) { return value.first == skill; });
+	if(existing == result.end())
+		result.emplace_back(skill, rank);
+	else
+		existing->second = std::max(existing->second, rank);
+}
+
+std::vector<std::pair<SecondarySkill, ui8>> mergeStartingSkills(
+	const std::vector<std::pair<SecondarySkill, ui8>> & skills)
+{
+	std::vector<std::pair<SecondarySkill, ui8>> result;
+	result.reserve(skills.size());
+	for(const auto & [skill, rank] : skills)
+		appendMergedSkill(result, skill, rank);
+	return result;
+}
+
+const JsonNode * findStartingSkillMigration(const JsonNode & resolvedRules, SecondarySkill skill)
+{
+	if(!usesRules(resolvedRules) || !resolvedRules["startingSkills"].isStruct())
+		return nullptr;
+	const auto & migrations = resolvedRules["startingSkills"]["legacySkillMigrations"];
+	if(!migrations.isStruct())
+		return nullptr;
+	const auto it = migrations.Struct().find(SecondarySkill::encode(skill.getNum()));
+	return it == migrations.Struct().end() ? nullptr : &it->second;
+}
+
+SecondarySkill migrationTarget(const JsonNode & migration)
+{
+	const auto target = migration["target"].String();
+	const auto dot = target.find('.');
+	const auto skillName = target.substr(0, dot);
+	const auto id = SecondarySkill::decode(skillName);
+	if(id < 0)
+		throw std::runtime_error("Invalid New Horizons starting-skill migration target " + target);
+	return SecondarySkill(id);
+}
+}
+
+std::vector<std::pair<SecondarySkill, ui8>> migrateStartingSkills(
+	const JsonNode & resolvedRules, FactionID faction,
+	const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)
+{
+	if(!usesRules(resolvedRules) || !resolvedRules["startingSkills"].isStruct())
+		return mergeStartingSkills(initialSkills);
+
+	std::vector<std::pair<SecondarySkill, ui8>> result;
+	result.reserve(initialSkills.size());
+	for(const auto & [skill, rank] : initialSkills)
+	{
+		const auto * migration = findStartingSkillMigration(resolvedRules, skill);
+		if(!migration)
+		{
+			appendMergedSkill(result, skill, rank);
+			continue;
+		}
+
+		const auto kind = (*migration)["kind"].String();
+		if(kind == "perk")
+		{
+			// Perk-at-start is not implemented. The authored target and explicit
+			// remove fallback keep this honest: do not grant its parent Skill as a
+			// proxy and do not retain a retired level-up identity.
+			continue;
+		}
+
+		const auto target = migrationTarget(*migration);
+		if(kind == "factionSkill")
+		{
+			// A faction target is meaningful only for the hero's own faction. A
+			// malformed/custom cross-faction roster remains readable instead of
+			// silently granting a foreign faction Skill.
+			const auto ownFactionSkill = factionSkill(resolvedRules, faction);
+			if(!ownFactionSkill || *ownFactionSkill != target)
+			{
+				appendMergedSkill(result, skill, rank);
+				continue;
+			}
+		}
+		appendMergedSkill(result, target, rank);
+	}
+	return result;
 }
 
 namespace
@@ -269,7 +496,7 @@ std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill(
 	const JsonNode & resolvedRules, bool magicHero, FactionID faction,
 	const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)
 {
-	std::vector<std::pair<SecondarySkill, ui8>> result = initialSkills;
+	std::vector<std::pair<SecondarySkill, ui8>> result = mergeStartingSkills(initialSkills);
 	if(!usesRules(resolvedRules) || !resolvedRules["startingSkills"].isStruct())
 		return result;
 
@@ -286,21 +513,15 @@ std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill(
 	const auto legacyAliasId = legacyFactionSkillAlias(resolvedRules, faction);
 	const SecondarySkill legacyAlias = legacyAliasId.value_or(SecondarySkill::NONE);
 	std::vector<std::pair<SecondarySkill, ui8>> normalized;
+	normalized.reserve(result.size());
 	for(const auto & [skill, rank] : result)
 	{
 		if(skill == factionSkill || (legacyAlias != SecondarySkill::NONE && skill == legacyAlias))
 		{
-			auto existing = std::find_if(normalized.begin(), normalized.end(),
-				[factionSkill](const auto & value) { return value.first == factionSkill; });
-			if(existing == normalized.end())
-			{
-				normalized.emplace_back(factionSkill, rank);
-			}
-			else
-				existing->second = std::max(existing->second, rank);
+			appendMergedSkill(normalized, factionSkill, rank);
 		}
 		else
-			normalized.emplace_back(skill, rank);
+			appendMergedSkill(normalized, skill, rank);
 	}
 	result = std::move(normalized);
 

@@ -33,6 +33,7 @@ struct MagicArrowOverchargeValues
 	int availableMana = 0;
 	int baseDamage = 0;
 	int projectedDamage = 0; ///< Raw projected damage before target resistance.
+	bool legal = true;       ///< The selected target still passes spell target validation.
 	bool affordable = false;
 	std::string targetDescription;
 };

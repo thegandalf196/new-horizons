@@ -20,6 +20,7 @@ SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
     'new-horizons:counterspell',
+    'new-horizons:disintegrate',
     'new-horizons:transfigureMatter',
 }
 SIZES = {'small': (32, 32), 'medium': (44, 44),
@@ -150,17 +151,18 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(arrow['directDamage'], {'base': 20, 'powerCoefficient': 20})
         self.assertEqual({name for name, spell in self.rules['spells'].items()
                           if 'directDamage' in spell}, {
-							  'core:armageddon',
-							  'core:chainLightning',
+                              'core:armageddon',
+                              'core:chainLightning',
                               'core:magicArrow',
                               'core:fireball',
-							  'core:fireWall',
+                              'core:fireWall',
                               'core:frostRing',
                               'core:iceBolt',
                               'core:inferno',
                               'core:landMine',
                               'core:lightningBolt',
-							  'core:meteorShower',
+                              'core:meteorShower',
+                              'new-horizons:disintegrate',
                           })
         self.assertEqual(self.rules['spells']['core:fireball']['directDamage'],
                          {'base': 25, 'powerCoefficient': 8})
@@ -182,7 +184,56 @@ class NewHorizonsContentTest(unittest.TestCase):
                          {'base': 110, 'powerCoefficient': 15})
         self.assertEqual(self.rules['spells']['core:armageddon']['directDamage'],
                          {'base': 150, 'powerCoefficient': 18})
+        self.assertEqual(self.rules['spells']['new-horizons:disintegrate']['directDamage'],
+                         {'base': 180, 'powerCoefficient': 25})
         self.assertNotIn('new-horizons:magicMissile', self.rules['spells'])
+
+    def test_disintegrate_content_uses_authoritative_destroy_remains_effect(self):
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['disintegrate']
+        self.assertEqual(spell['level'], 5)
+        self.assertEqual(spell['school'], {'new-horizons:havoc': True})
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            level = spell['levels'][rank]
+            self.assertEqual(level['cost'], 25)
+            self.assertEqual(level['battleEffects']['directDamage'],
+                             {'type': 'damage', 'destroyRemains': True})
+
+    def test_sorcery_spell_foundation_definitions_remain_deferred(self):
+        """Deferred source definitions stay schema-shaped but out of the saved roster."""
+        content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        expected = {
+            'phantomArmy': (4, 15, 'phantomArmy'),
+            'timeStop': (5, 23, 'timeStop'),
+            'spellLock': (5, 22, 'spellLock'),
+        }
+        for name, (level, cost, effect) in expected.items():
+            with self.subTest(spell=name):
+                spell = content[name]
+                self.assertEqual(spell['school'], {'new-horizons:sorcery': True})
+                self.assertEqual(spell['level'], level)
+                self.assertTrue(spell['flags']['special'])
+                self.assertNotIn('new-horizons:' + name, self.rules['spells'])
+                self.assertEqual(set(spell['levels']), {'none', 'basic', 'advanced', 'expert'})
+                for rank in ('none', 'basic', 'advanced', 'expert'):
+                    current = spell['levels'][rank]
+                    self.assertEqual(current['cost'], cost)
+                    self.assertEqual(current['battleEffects'][effect]['type'],
+                                     'core:' + effect)
+
+    def test_sorcery_effect_foundation_scripts_are_registered_without_clone_reuse(self):
+        """Registration is a schema/content check, not proof of authoritative runtime behavior."""
+        scripts = load('config/scriptsSpells.json')
+        content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        for name in ('phantomArmy', 'timeStop', 'spellLock'):
+            with self.subTest(effect=name):
+                self.assertEqual(scripts[name]['implements'], 'spellEffect')
+                self.assertEqual(scripts[name]['script'], 'spells/' + name)
+                self.assertTrue((ROOT / 'scripts/spells' / (name + '.lua')).is_file())
+        self.assertEqual(content['phantomArmy']['levels']['none']['battleEffects']
+                         ['phantomArmy']['type'], 'core:phantomArmy')
+        phantom_source = (ROOT / 'scripts/spells/phantomArmy.lua').read_text(encoding='utf-8')
+        self.assertNotIn('require("spells/clone")', phantom_source)
+        self.assertNotIn('setCloned(', phantom_source)
 
     def test_generated_module_matches_all_canonical_data(self):
         module = load('Mods/new-horizons/mod.json')
@@ -199,7 +250,9 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(module['spellSchools'], load('config/newHorizonsSchools.json'))
         self.assertEqual(module['skills'], load('config/newHorizonsSkills.json'))
         self.assertEqual(module['filesystem']['SPRITES/'], [{'type': 'dir', 'path': '/Images'}])
-        self.assertEqual(module['translations'], load('config/newHorizonsMasteryTexts.json'))
+        translations = load('config/newHorizonsMasteryTexts.json')
+        translations.update(load('config/newHorizonsHeroClassTexts.json'))
+        self.assertEqual(module['translations'], translations)
         self.assertEqual(module['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))
         self.assertEqual(module['filesystem'][''], [{'type': 'dir', 'path': '/Content'}])
         self.assertFalse(module['keepDisabled'])

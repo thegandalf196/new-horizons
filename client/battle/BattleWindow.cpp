@@ -57,6 +57,7 @@
 #include "../../lib/mapping/CMapHeader.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
@@ -152,14 +153,28 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		});
 	addWidget("nhLandMineConfirm", landMineConfirmButton);
 	landMineConfirmButton->setEnabled(false);
+	metamagicDeclineButton = std::make_shared<CButton>(Point(697, 560), AnimationPath::builtin("NH_hero_actions_entry"),
+		CButton::tooltip("Decline / End Metamagic", "End the pending Metamagic sequence without spending another Hero Action."), [this]()
+		{
+			owner.declineMetamagicFollowup();
+		});
+	addWidget("nhMetamagicDecline", metamagicDeclineButton);
+	metamagicDeclineButton->setEnabled(false);
+	metamagicGrandButton = std::make_shared<CButton>(Point(640, 560), AnimationPath::builtin("NH_hero_actions_entry"),
+		CButton::tooltip("Grand Metamagic", "Use this pending Metamagic sequence for two additional spells."), [this]()
+		{
+			owner.toggleMetamagicGrandFollowup();
+		});
+	addWidget("nhMetamagicGrand", metamagicGrandButton);
+	metamagicGrandButton->setEnabled(false);
+	metamagicGrandLabel = std::make_shared<CLabel>(0, 0, FONT_TINY, ETextAlignment::CENTER, Colors::YELLOW, "Grand OFF");
+	metamagicGrandButton->setOverlay(metamagicGrandLabel);
 	if(owner.getBattle()->battleUsesHeroCommands())
 	{
 		widget<CButton>("consoleUp")->moveBy(Point(-ordersControlPitch, 0));
 		widget<CButton>("consoleDown")->moveBy(Point(-ordersControlPitch, 0));
-		// Private functional prototype: replace this existing entry art with the
-		// separately approved pointing gauntlet before any visual acceptance.
 		addShortcut(EShortcut::BATTLE_OPEN_ORDERS, [this] { bOrdersf(); });
-		ordersButton = std::make_shared<CButton>(Point(595, 560), AnimationPath::builtin("NH_hero_actions_entry"),
+		ordersButton = std::make_shared<CButton>(Point(595, 560), AnimationPath::builtin("NH_orders_gauntlet"),
 			CButton::tooltip("Orders", ""));
 		ordersButton->addPopupCallback([this]
 		{
@@ -593,6 +608,33 @@ void BattleWindow::updateCounterspellStatus()
 		defenderCounterspellStatus->setText(defenderArmed ? "Ward: ARMED" : "Ward: none");
 		defenderCounterspellStatus->setColor(defenderArmed ? Colors::YELLOW : Colors::WHITE);
 	}
+	if(metamagicDeclineButton)
+	{
+		const auto side = owner.getBattle()->battleGetMySide();
+		const bool pending = side != BattleSide::NONE && owner.getBattle()->battleCanUseMetamagicFollowup(side);
+		metamagicDeclineButton->setEnabled(pending);
+		metamagicDeclineButton->block(!pending);
+	}
+	if(metamagicGrandButton)
+	{
+		const auto side = owner.getBattle()->battleGetMySide();
+		const auto * hero = owner.currentHero();
+		const bool available = side != BattleSide::NONE && hero
+			&& owner.getBattle()->battleMetamagicPendingCount(side) == 1
+			&& owner.getBattle()->battleMetamagicSequenceSpells(side).size() == 1
+			&& !owner.getBattle()->battleMetamagicGrandUsed(side)
+			&& newHorizonsMagic::metamagicRank(hero) >= 3
+			&& newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND);
+		const bool selected = available && owner.actionsController
+			&& owner.actionsController->metamagicGrandModeActive();
+		metamagicGrandButton->setEnabled(available);
+		metamagicGrandButton->block(!available);
+		if(metamagicGrandLabel)
+		{
+			metamagicGrandLabel->setText(selected ? "Grand ON" : "Grand OFF");
+			metamagicGrandLabel->setColor(selected ? Colors::GREEN : Colors::YELLOW);
+		}
+	}
 }
 
 void BattleWindow::updateStackInfoWindow(const CStack * stack)
@@ -954,6 +996,8 @@ void BattleWindow::openSpellbook()
 	auto myHero = owner.currentHero();
 	if(!myHero)
 		return;
+	if(owner.getBattle()->battleCanUseMetamagicFollowup(owner.getBattle()->battleGetMySide()))
+		owner.actionsController->beginMetamagicFollowup();
 
 	ENGINE->cursor().set(Cursor::Map::POINTER);
 
@@ -1002,6 +1046,30 @@ void BattleWindow::openSpellbook()
 	else
 	{
 		logGlobal->warn("Unexpected problem with readiness to cast spell");
+	}
+}
+
+void BattleWindow::openMetamagicSpellbook()
+{
+	if(!owner.actionsController)
+		return;
+	owner.actionsController->beginMetamagicFollowup();
+	if(owner.actionsController->metamagicFollowupModeActive())
+	{
+		const auto side = owner.getBattle()->battleGetMySide();
+		const int remaining = std::max(0,
+			newHorizonsMagic::metamagicRank(owner.currentHero())
+			- owner.getBattle()->battleMetamagicUsesConsumed(side));
+		const bool grandAvailable = owner.getBattle()->battleMetamagicPendingCount(side) == 1
+			&& owner.getBattle()->battleMetamagicSequenceSpells(side).size() == 1
+			&& !owner.getBattle()->battleMetamagicGrandUsed(side)
+			&& newHorizonsMagic::metamagicRank(owner.currentHero()) >= 3
+			&& newHorizonsMagic::hasMetamagicPerk(owner.currentHero(), newHorizonsMagic::METAMAGIC_GRAND);
+		owner.appendBattleLog("Metamagic: choose an immediate additional spell (remaining uses this combat: "
+			+ std::to_string(remaining) + ")."
+			+ (grandAvailable ? " Grand Metamagic is optional; use its button for two additional spells." : "")
+			+ " Decline / End is available beside Wait.");
+		openSpellbook();
 	}
 }
 

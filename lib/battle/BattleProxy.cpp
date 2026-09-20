@@ -123,6 +123,56 @@ bool BattleProxy::getTemporalFieldUsed(BattleSide side) const
 	return subject->battleWasTemporalFieldUsed(side);
 }
 
+bool BattleProxy::getCounterspellArmed(BattleSide side) const
+{
+	return subject->battleWasCounterspellArmed(side);
+}
+
+int32_t BattleProxy::getMetamagicPendingCount(BattleSide side) const
+{
+	return subject->getBattle()->getMetamagicPendingCount(side);
+}
+
+int32_t BattleProxy::getMetamagicUsesConsumed(BattleSide side) const
+{
+	return subject->getBattle()->getMetamagicUsesConsumed(side);
+}
+
+bool BattleProxy::getMetamagicGrandUsed(BattleSide side) const
+{
+	return subject->getBattle()->getMetamagicGrandUsed(side);
+}
+
+bool BattleProxy::getMetamagicFormulaReserveUsed(BattleSide side) const
+{
+	return subject->getBattle()->getMetamagicFormulaReserveUsed(side);
+}
+
+bool BattleProxy::getMetamagicCountersequenceArmed(BattleSide side) const
+{
+	return subject->getBattle()->getMetamagicCountersequenceArmed(side);
+}
+
+SpellID BattleProxy::getMetamagicFirstSpell(BattleSide side) const
+{
+	return subject->getBattle()->getMetamagicFirstSpell(side);
+}
+
+uint32_t BattleProxy::getMetamagicFirstTargetUnitId(BattleSide side) const
+{
+	return subject->getBattle()->getMetamagicFirstTargetUnitId(side);
+}
+
+const std::vector<SpellID> & BattleProxy::getMetamagicSequenceSpells(BattleSide side) const
+{
+	return subject->getBattle()->getMetamagicSequenceSpells(side);
+}
+
+bool BattleProxy::getMetamagicFirstCounterspellNegated(BattleSide side) const
+{
+	return subject->getBattle()->getMetamagicFirstCounterspellNegated(side);
+}
+
 const IBonusBearer * BattleProxy::getBonusBearer() const
 {
 	return subject->getBonusBearer();

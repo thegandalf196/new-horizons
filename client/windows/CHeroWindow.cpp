@@ -39,6 +39,7 @@
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/entities/artifact/ArtifactUtils.h"
 #include "../../lib/entities/hero/CHeroHandler.h"
+#include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/networkPacks/ArtifactLocation.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
@@ -229,8 +230,23 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	labels.push_back(std::make_shared<CLabel>(69, 232, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, LIBRARY->generaltexth->translate("core.jktext.6")));
 	labels.push_back(std::make_shared<CLabel>(213, 232, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, LIBRARY->generaltexth->translate("core.jktext.7")));
 
+	learnedPerksSummary = std::make_shared<CTextBox>("", Rect(342, 404, 65, 24), 0,
+		FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
+	legacyLeadershipLabel = std::make_shared<CLabel>(438, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Lead --", 65);
+	legacySiegeLabel = std::make_shared<CLabel>(534, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Siege --", 65);
+	legacyLeadershipImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_hero_leadership_32"), 0, Rect(410, 404, 24, 24));
+	legacySiegeImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_hero_siege_32"), 0, Rect(506, 404, 24, 24));
+	legacyBoneCollectorImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_bone_collector"), 0, Rect(314, 404, 24, 24));
 	if(newHorizonsLayout)
+	{
 		configureNewHorizonsLayout();
+		learnedPerksSummary->disable();
+		legacyLeadershipLabel->disable();
+		legacySiegeLabel->disable();
+		legacyLeadershipImage->disable();
+		legacySiegeImage->disable();
+		legacyBoneCollectorImage->disable();
+	}
 	addUsedEvents(KEYBOARD);
 	CHeroWindow::updateArtifacts();
 }
@@ -290,7 +306,7 @@ void CHeroWindow::configureNewHorizonsLayout()
 	manaValue = std::make_shared<CLabel>(342, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
 	labels.push_back(std::make_shared<CLabel>(568, 13, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Morale", 74));
 	labels.push_back(std::make_shared<CLabel>(650, 13, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Luck", 74));
-	labels.push_back(std::make_shared<CLabel>(16, 176, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Secondary skills / provisional ability slots", 412));
+	labels.push_back(std::make_shared<CLabel>(16, 176, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Secondary skills / learned perks", 412));
 	for(size_t i = 0; i < secSkills.size(); ++i)
 	{
 		const int y = 192 + static_cast<int>(i) * 44;
@@ -302,13 +318,14 @@ void CHeroWindow::configureNewHorizonsLayout()
 		for(int ability = 0; ability < 3; ++ability)
 		{
 			const int x = 138 + ability * 98;
-			auto area = std::make_shared<LRClickableAreaWText>(Rect(x, y, 98, 44), "Provisional ability slot");
-			area->text = "This preview reserves space for three associated abilities. No ability roster, learned state or eligibility is bound here. Saved masteries remain separate in Hero development; no selection is converted.";
+			auto area = std::make_shared<LRClickableAreaWText>(Rect(x, y, 98, 44), "Learned perk slot");
+			area->text = "No learned perk in this slot. Open Hero development for the saved perk registry.";
 			provisionalAbilityAreas.push_back(area);
+			provisionalAbilityIcons[i].push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_neutral"), 0, 0, x + 2, y));
 			const std::array cellLabels = {
-				std::make_shared<CLabel>(x + 8, y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "?", 20),
-				std::make_shared<CLabel>(x + 38, y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Unbound", 58),
-				std::make_shared<CLabel>(x + 38, y + 22, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "slot", 58)
+				std::make_shared<CLabel>(x + 48, y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "?", 44),
+				std::make_shared<CLabel>(x + 48, y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Unbound", 46),
+				std::make_shared<CLabel>(x + 48, y + 22, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "slot", 46)
 			};
 			for(const auto & label : cellLabels)
 			{
@@ -421,12 +438,22 @@ void CHeroWindow::restoreLegacyLayout()
 		value->disable();
 	for(const auto & area : provisionalAbilityAreas)
 		area->disable();
+	for(const auto & icons : provisionalAbilityIcons)
+		for(const auto & icon : icons)
+			icon->disable();
 	leadershipArea->disable();
 	movementArea->disable();
 	legacySiegeArea->disable();
 	leadershipValue->disable();
 	movementValue->disable();
 	legacySiegeValue->disable();
+	move(learnedPerksSummary, Point(342, 404));
+	learnedPerksSummary->enable();
+	move(legacyLeadershipLabel, Point(438, 408));
+	move(legacySiegeLabel, Point(534, 408));
+	move(legacyLeadershipImage, Point(410, 404));
+	move(legacySiegeImage, Point(506, 404));
+	move(legacyBoneCollectorImage, Point(314, 404));
 	if(curHero->secSkills.size() > 8)
 	{
 		const int lines = (curHero->secSkills.size() + 1) / 2;
@@ -567,10 +594,67 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		int offset = secSkillSlider ? secSkillSlider->getValue() * 2 : 0;
 		if(newHorizonsLayout)
 		{
-			// Keep all reserved cells visible, but do not imply abilities for an empty skill row.
-			const bool learnedSkill = g < curHero->secSkills.size();
-			for(const auto & label : provisionalAbilityLabels[g])
-				label->setEnabled(learnedSkill);
+			// Keep all reserved cells visible, but bind them to the hero's saved
+			// perk selections when a row has a New Horizons skill.  This is a
+			// presentation-only readback: selecting a cell never changes state.
+			const bool learnedSkill = g + offset < curHero->secSkills.size();
+			const auto & perkState = curHero->getPerkState();
+			const std::string skillId = learnedSkill
+				? curHero->secSkills[g + offset].first.toSkill()->getJsonKey() : std::string();
+			const auto skillDefinition = learnedSkill && newHorizonsHeroes::usesPerkRules(perkState.rules)
+				? newHorizonsHeroes::perkSkill(perkState.rules, skillId) : std::nullopt;
+			std::vector<const newHorizonsHeroes::PerkDefinition *> learnedPerks;
+			if(skillDefinition)
+				for(const auto & selection : perkState.selected)
+					if(selection.skillId == skillId)
+						for(const auto & perk : skillDefinition->perks)
+							if(perk.id == selection.perkId)
+							{
+								learnedPerks.push_back(&perk);
+								break;
+							}
+			for(size_t ability = 0; ability < 3; ++ability)
+			{
+				const auto areaIndex = g * 3 + ability;
+				const auto & area = provisionalAbilityAreas.at(areaIndex);
+				const auto & cellLabels = provisionalAbilityLabels[g];
+				const auto labelIndex = ability * 3;
+				const bool hasPerk = ability < learnedPerks.size();
+				const auto iconKey = hasPerk && learnedPerks[ability]->id == "new-horizons:necromancy.boneCollector"
+					? "NH_perk_bone_collector" : "NH_perk_neutral";
+				provisionalAbilityIcons[g][ability]->setAnimationPath(AnimationPath::builtin(iconKey), 0);
+				if(learnedSkill)
+					provisionalAbilityIcons[g][ability]->enable();
+				else
+					provisionalAbilityIcons[g][ability]->disable();
+				for(size_t label = 0; label < 3; ++label)
+					cellLabels.at(labelIndex + label)->setEnabled(learnedSkill);
+				area->text.clear();
+				area->hoverText.clear();
+				area->disable();
+				if(!learnedSkill)
+					continue;
+				area->enable();
+
+				if(hasPerk)
+				{
+					const auto * perk = learnedPerks[ability];
+					const auto description = skillId + " - " + perk->name + "\n" + perk->description;
+					area->text = description;
+					area->hoverText = description;
+					cellLabels.at(labelIndex)->setText("");
+					cellLabels.at(labelIndex + 1)->setText(perk->name);
+					cellLabels.at(labelIndex + 2)->setText("Learned");
+				}
+				else
+				{
+					area->text = "No learned perk in this slot.";
+					area->hoverText = skillId + " has no learned perk in this slot. Open Hero development for the saved perk registry.";
+					cellLabels.at(labelIndex)->setText("");
+					cellLabels.at(labelIndex + 1)->setText("Unbound");
+					cellLabels.at(labelIndex + 2)->setText("slot");
+				}
+			}
 		}
 		if(curHero->secSkills.size() < g + offset + 1)
 		{
@@ -603,19 +687,90 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		leadershipValue->setText(leadership ? std::to_string(leadership->used) + "/" + std::to_string(leadership->capacity) : "--");
 		leadershipArea->text = leadership ? "Leadership: " + std::to_string(leadership->used) + " / " + std::to_string(leadership->capacity)
 			+ " creatures / capacity, including undead. Movement limit: " + std::to_string(leadership->movementPercent)
-			+ "%. Exceeding capacity alone does not remove troops. Icon is provisional."
-			: "No saved leadership capacity rules for this hero. Icon is provisional.";
+			+ "%. Exceeding capacity alone does not remove troops. Display icon is illustrative."
+			: "No saved leadership capacity rules for this hero. Display icon is illustrative.";
 		movementValue->setText(std::to_string(curHero->movementPointsRemaining()) + "/" + std::to_string(curHero->movementPointsLimit()));
 		movementArea->text = "Movement points remaining / current limit: " + std::to_string(curHero->movementPointsRemaining())
-			+ " / " + std::to_string(curHero->movementPointsLimit()) + ". Icon is provisional.";
+			+ " / " + std::to_string(curHero->movementPointsLimit()) + ". Display icon is illustrative.";
 		const auto siege = curHero->getSiegeCapabilities();
 		legacySiegeValue->setText(siege ? "A" + std::to_string(siege->artilleryRank) + " B" + std::to_string(siege->ballisticsRank) + " F" + std::to_string(siege->firstAidRank) : "--");
-		legacySiegeArea->text = "Existing saved siege capabilities, not a spendable Siege balance. No cost, maximum or refill is implied. Icon is provisional.\n";
+		legacySiegeArea->text = "Existing saved siege capabilities, not a spendable Siege balance. No cost, maximum or refill is implied. Display icon is illustrative.\n";
 		if(siege)
 			legacySiegeArea->text += "Skill ranks: Artillery " + std::to_string(siege->artilleryRank) + ", Ballistics " + std::to_string(siege->ballisticsRank)
 				+ ", First Aid " + std::to_string(siege->firstAidRank) + ". Open Hero development for saved damage/control details.";
 		else
 			legacySiegeArea->text += "No saved siege capability rules for this hero.";
+	}
+
+	// Legacy-sized hero windows do not have the New Horizons ability grid.
+	// Keep learned perks visible there as a compact, read-only fallback so a
+	// perk never appears to vanish merely because the presentation changed.
+	if(learnedPerksSummary)
+	{
+		if(newHorizonsLayout)
+		{
+			learnedPerksSummary->disable();
+		}
+		else
+		{
+			const auto & perkState = curHero->getPerkState();
+			const bool hasPerkRules = newHorizonsHeroes::usesPerkRules(perkState.rules);
+			std::string summary;
+			bool hasBoneCollector = false;
+			if(hasPerkRules)
+			{
+				for(const auto & selection : perkState.selected)
+				{
+					const auto skill = newHorizonsHeroes::perkSkill(perkState.rules, selection.skillId);
+					const auto perk = newHorizonsHeroes::perkDefinition(perkState.rules, selection.skillId, selection.perkId);
+					if(skill && perk)
+					{
+						if(!summary.empty())
+							summary += ", ";
+						summary += perk->name;
+						hasBoneCollector = hasBoneCollector || perk->id == "new-horizons:necromancy.boneCollector";
+					}
+				}
+			}
+			if(const auto leadership = curHero->getLeadershipCapacity())
+			{
+				legacyLeadershipLabel->setText("Leadership " + std::to_string(leadership->used) + "/" + std::to_string(leadership->capacity));
+				legacyLeadershipLabel->enable();
+				legacyLeadershipImage->enable();
+			}
+			else
+			{
+				legacyLeadershipLabel->disable();
+				legacyLeadershipImage->disable();
+			}
+			if(const auto siege = curHero->getSiegeCapabilities())
+			{
+				legacySiegeLabel->setText("Siege A" + std::to_string(siege->artilleryRank) + " B" + std::to_string(siege->ballisticsRank)
+					+ " F" + std::to_string(siege->firstAidRank));
+				legacySiegeLabel->enable();
+				legacySiegeImage->enable();
+			}
+			else
+			{
+				legacySiegeLabel->disable();
+				legacySiegeImage->disable();
+			}
+			if(summary.empty())
+			{
+				learnedPerksSummary->setText("");
+				learnedPerksSummary->disable();
+				legacyBoneCollectorImage->disable();
+			}
+			else
+			{
+				learnedPerksSummary->setText(summary);
+				learnedPerksSummary->enable();
+				if(hasBoneCollector)
+					legacyBoneCollectorImage->enable();
+				else
+					legacyBoneCollectorImage->disable();
+			}
+		}
 	}
 
 	MetaString expText;

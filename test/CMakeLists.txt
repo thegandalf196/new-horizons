@@ -109,6 +109,7 @@ set(test_SRCS
 		spells/NewHorizonsMagicV2SchemaTest.cpp
 		spells/NewHorizonsSpellAvailabilityTest.cpp
 		spells/NewHorizonsModCompatibilityTest.cpp
+		spells/NewHorizonsSorceryTest.cpp
  		spells/TargetConditionTest.cpp
 
 		spells/effects/EffectFixture.cpp
@@ -172,6 +173,7 @@ set(test_SRCS
 		server/battles/TransfigureMatterPerkTest.cpp
 		server/battles/NewHorizonsMagicStateTest.cpp
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
+		server/battles/NewHorizonsMetamagicTest.cpp
 		server/battles/NewHorizonsSkillRewardTest.cpp
 		server/battles/NewHorizonsSkillFeedbackTest.cpp
 		server/battles/NewHorizonsSpellRewardFilterTest.cpp
@@ -184,6 +186,7 @@ set(test_SRCS
 		server/battles/SpellTargetIdentityTest.cpp
 		server/battles/NewHorizonsSkillRewardApplicationTest.cpp
 		server/battles/NewHorizonsHeroGrowthTest.cpp
+		server/battles/NewHorizonsStartingSkillMigrationTest.cpp
 		server/battles/NewHorizonsCreatureCategoryStateTest.cpp
 		server/battles/NewHorizonsCreatureCategoryWireTest.cpp
 		server/battles/NewHorizonsCreatureCategoryFixtureExportTest.cpp

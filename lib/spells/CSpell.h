@@ -212,8 +212,10 @@ public:
 	///internal interface (for callbacks)
 
 	///Checks general but spell-specific problems. Use only during battle.
-	bool canBeCast(const CBattleInfoCallback * cb, spells::Mode mode, const spells::Caster * caster) const;
-	bool canBeCast(spells::Problem & problem, const CBattleInfoCallback * cb, spells::Mode mode, const spells::Caster * caster) const;
+	bool canBeCast(const CBattleInfoCallback * cb, spells::Mode mode, const spells::Caster * caster,
+		bool metamagicGrand = false) const;
+	bool canBeCast(spells::Problem & problem, const CBattleInfoCallback * cb, spells::Mode mode,
+		const spells::Caster * caster, bool metamagicGrand = false) const;
 
 public:
 	///Server logic. Has write access to GameState via packets.
@@ -223,7 +225,8 @@ public:
 
 public://internal, for use only by Mechanics classes
 	///applies caster`s secondary skills and affectedCreature`s to raw damage
-	int64_t adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage) const;
+	int64_t adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage,
+		int ignoreSpellDamageReductionPercent = 0) const;
 
 	///returns raw damage or healed HP
 	int64_t calculateRawEffectValue(int32_t effectLevel, int32_t basePowerMultiplier, int32_t levelPowerMultiplier, int32_t powerDivisor = 1) const;

@@ -196,6 +196,26 @@ bool BattleActionProcessor::doSurrenderAction(const CBattleInfoCallback & battle
 
 bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
+	if(ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side))
+	{
+		gameHandler->complain("Metamagic follow-up is not available in the authoritative battle state");
+		return false;
+	}
+	if(ba.metamagicGrand)
+	{
+		const auto * grandHero = battle.battleGetFightingHero(ba.side);
+		const bool grandAvailable = grandHero
+			&& battle.battleMetamagicPendingCount(ba.side) == 1
+			&& battle.battleMetamagicSequenceSpells(ba.side).size() == 1
+			&& !battle.battleMetamagicGrandUsed(ba.side)
+			&& newHorizonsMagic::metamagicRank(grandHero) >= 3
+			&& newHorizonsMagic::hasMetamagicPerk(grandHero, newHorizonsMagic::METAMAGIC_GRAND);
+		if(!ba.metamagicFollowup || !grandAvailable)
+		{
+			gameHandler->complain("Grand Metamagic is not available for this follow-up");
+			return false;
+		}
+	}
 	const CGHeroInstance *h = battle.battleGetFightingHero(ba.side);
 	if (!h)
 	{
@@ -208,12 +228,20 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		logGlobal->error("Wrong spell id (%d)!", ba.spell.getNum());
 		return false;
 	}
-
 	const CSpell * s = ba.spell.toSpell();
 	spells::BattleCast parameters(&battle, h, spells::Mode::HERO, s);
 	parameters.setOvercharge(ba.spellOvercharge);
 	parameters.setSelectiveDispel(ba.spellSelectiveDispel);
 	parameters.setMassSlow(ba.spellMassSlow);
+	parameters.setMetamagicFollowup(ba.metamagicFollowup);
+	parameters.setMetamagicGrand(ba.metamagicGrand);
+	// BaseMechanics snapshots the cast metadata in its constructor.  Seed the
+	// first targeted unit before creating it so Split Focus and Focused Pairing
+	// see the authoritative first target during effect evaluation.  The target
+	// is validated and rebuilt below; this early value is only a read-only
+	// modifier input and never replaces server target validation.
+	if(ba.metamagicFollowup && !ba.target.empty() && ba.target.front().unitValue >= 0)
+		parameters.setMetamagicTargetUnitId(static_cast<uint32_t>(ba.target.front().unitValue));
 
 	spells::detail::ProblemImpl problem;
 
@@ -257,6 +285,13 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 			logGlobal->warn(text);
 		return false;
 	}
+	if(ba.metamagicFollowup && !target.empty() && target.front().unitValue)
+		parameters.setMetamagicTargetUnitId(target.front().unitValue->unitId());
+	if(ba.metamagicFollowup && !ba.metamagicGrand
+		&& battle.battleMetamagicPendingCount(ba.side) == 1
+		&& !battle.battleMetamagicFormulaReserveUsed(ba.side)
+		&& newHorizonsMagic::hasMetamagicPerk(h, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
+		parameters.setMetamagicManaRefund(3);
 
 	// Counterspell is resolved after the enemy hero's ordinary cast checks. A
 	// valid hero spell therefore still consumes its action and listed mana even
@@ -266,11 +301,15 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	const auto * counteringHero = battle.battleGetFightingHero(counteringSide);
 	int counterspellCost = 0;
 	bool counterspellNegated = false;
-	if(counteringHero && battle.battleWasCounterspellArmed(counteringSide))
+	const bool bufferedFollowup = ba.metamagicFollowup
+		&& battle.battleMetamagicFirstCounterspellNegated(ba.side)
+		&& newHorizonsMagic::hasMetamagicPerk(h, newHorizonsMagic::METAMAGIC_SPELL_BUFFER);
+	if(counteringHero && battle.battleWasCounterspellArmed(counteringSide) && !bufferedFollowup)
 	{
 		const int listedCost = h->getSpellCost(s);
 		counterspellCost = newHorizonsMagic::counterspellCost(listedCost,
-			counteringHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.countermage"));
+			counteringHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.countermage"),
+			battle.battleMetamagicCountersequenceArmed(counteringSide));
 		counterspellNegated = counteringHero->mana >= counterspellCost;
 		parameters.setCounterspell(counteringSide, counterspellNegated);
 	}
@@ -892,6 +931,18 @@ bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & bat
 
 bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
+	if(ba.metamagicDecline)
+	{
+		if(ba.metamagicManaRefund > 0)
+		{
+			const auto * hero = battle.battleGetFightingHero(ba.side);
+			if(!hero)
+				return false;
+			hero->spendMana(gameHandler->spellcastEnvironment(), -ba.metamagicManaRefund);
+		}
+		return true; // the authoritative StartAction visitor clears the sequence
+	}
+
 	// Canonical Orders are represented by an immutable StartAction snapshot and
 	// evaluated from that snapshot by the battle callback.  There is no broad
 	// SetStackEffect to emit here: doing so would turn conditional Orders into
@@ -920,16 +971,90 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 
 bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba)
 {
+	if((ba.metamagicFollowup || ba.metamagicGrand || ba.metamagicDecline)
+		&& ba.side != BattleSide::ATTACKER && ba.side != BattleSide::DEFENDER)
+	{
+		gameHandler->complain("Metamagic action has an invalid battle side");
+		return false;
+	}
+	// A hypnotized stack keeps its original BattleSide in the action packet,
+	// while its controlling player (and therefore any pending hero sequence)
+	// is the opposite side.  Pending-sequence authority follows the controller;
+	// otherwise an automatic or player action for that stack can bypass the
+	// immediate follow-up window simply by carrying the origin side.
+	BattleSide controllingSide = ba.side;
+	if(ba.isUnitAction())
+	{
+		const auto * actionUnit = battle.battleGetStackByID(ba.stackNumber, false);
+		if(actionUnit && actionUnit->isHypnotized())
+		{
+			const auto controlledSide = battle.playerToSide(battle.battleGetOwner(actionUnit));
+			if(controlledSide == BattleSide::ATTACKER || controlledSide == BattleSide::DEFENDER)
+				controllingSide = controlledSide;
+		}
+	}
+	if(battle.battleCanUseMetamagicFollowup(controllingSide)
+		&& !(ba.actionType == EActionType::HERO_SPELL || ba.metamagicDecline))
+	{
+		gameHandler->complain("An immediate Metamagic follow-up must resolve before another action");
+		return false;
+	}
+	if(ba.actionType == EActionType::HERO_SPELL
+		&& ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side))
+	{
+		gameHandler->complain("Forged or stale Metamagic follow-up request");
+		return false;
+	}
+	if(ba.actionType != EActionType::HERO_SPELL && ba.metamagicFollowup)
+	{
+		gameHandler->complain("Metamagic follow-up flag is only valid for Hero Spell actions");
+		return false;
+	}
+	if(ba.actionType != EActionType::HERO_SPELL && ba.metamagicGrand)
+	{
+		gameHandler->complain("Grand Metamagic flag is only valid for Hero Spell actions");
+		return false;
+	}
+	if(ba.actionType == EActionType::HERO_SPELL && !ba.metamagicFollowup && ba.metamagicGrand)
+	{
+		gameHandler->complain("Grand Metamagic requires an immediate follow-up spell");
+		return false;
+	}
+	if(ba.metamagicDecline)
+	{
+		const auto expectedHeroStack = static_cast<uint32_t>(ba.side == BattleSide::ATTACKER ? -1 : -2);
+		if(ba.actionType != EActionType::HERO_COMMAND || ba.command != HeroCommand::NONE
+			|| ba.stackNumber != expectedHeroStack || !ba.target.empty() || ba.spell.hasValue()
+			|| !battle.battleCanUseMetamagicFollowup(ba.side))
+		{
+			gameHandler->complain("Forged or malformed Metamagic decline request");
+			return false;
+		}
+	}
+	if(ba.metamagicManaRefund != 0)
+	{
+		gameHandler->complain("Metamagic mana refund is server-derived");
+		return false;
+	}
 	// Reject before StartAction can reserve the action budget or publish state.
-	if(ba.actionType == EActionType::HERO_SPELL && battle.battleUsesHeroCommands()
+	if(ba.actionType == EActionType::HERO_SPELL && !ba.metamagicFollowup && battle.battleUsesHeroCommands()
 		&& battle.battleCanCastSpell(battle.battleGetFightingHero(ba.side), spells::Mode::HERO) != ESpellCastProblem::OK)
 	{
 		gameHandler->complain("Hero spell unavailable under the shared round action budget");
 		return false;
 	}
+	BattleAction effectiveAction = ba;
+	if(ba.metamagicDecline)
+	{
+		const auto * hero = battle.battleGetFightingHero(ba.side);
+		if(hero && battle.battleMetamagicSequenceSpells(ba.side).size() > 1
+			&& !battle.battleMetamagicFormulaReserveUsed(ba.side)
+			&& newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
+			effectiveAction.metamagicManaRefund = 3;
+	}
 	std::optional<FocusFireState> preparedFocusFire;
 	std::optional<HeroOrderState> preparedOrderState;
-	if(ba.actionType == EActionType::HERO_COMMAND)
+	if(ba.actionType == EActionType::HERO_COMMAND && !ba.metamagicDecline)
 	{
 		const bool canonical = heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules());
 		if(canonical)
@@ -977,14 +1102,14 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	// for these events client does not expects StartAction/EndAction wrapper
 	if (!ba.isBattleEndAction())
 	{
-		StartAction startAction(ba);
+		StartAction startAction(effectiveAction);
 		startAction.battleID = battle.getBattle()->getBattleID();
 		startAction.focusFire = preparedFocusFire;
 		startAction.orderState = preparedOrderState;
 		gameHandler->sendAndApply(startAction);
 	}
 
-	bool result = dispatchBattleAction(battle, ba);
+	bool result = dispatchBattleAction(battle, effectiveAction);
 
 	if (!ba.isBattleEndAction())
 	{
@@ -1813,6 +1938,24 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 		if (ba.isUnitAction() && ba.stackNumber != active->unitId())
 		{
 			gameHandler->complain("Can not make actions - stack is not active!");
+			return false;
+		}
+
+		// The client-side player check authenticates the active unit's owner, but
+		// hero actions carry their side separately and therefore have no stack ID
+		// to bind that identity to.  Validate both forms before the Metamagic
+		// pending guard (and before StartAction) so a forged opposite-side action
+		// cannot consume or bypass the pending sequence.
+		if(ba.isUnitAction() && ba.side != active->unitSide())
+		{
+			gameHandler->complain("Can not make actions for the other battle side!");
+			return false;
+		}
+		if(!ba.isUnitAction()
+			&& ((ba.side != BattleSide::ATTACKER && ba.side != BattleSide::DEFENDER)
+				|| player != battle.sideToPlayer(ba.side)))
+		{
+			gameHandler->complain("Can not make hero actions for the other battle side!");
 			return false;
 		}
 

@@ -10,14 +10,32 @@ restriction is NOT implicitly included. Older conflicting passages below remain
 historical pending reconciled implementation/migration; do not use them to undo
 this direction or infer unspecified castellan/Siege rules.
 
+## Canonical gameplay source
+
+The user supplied the current gameplay specification as
+[New Horizons.docx](design-sources/New%20Horizons.docx). It is the newest
+authority for gameplay scope and mechanics. When its roadmap or summary tables
+conflict with a later detailed system section, the detailed section controls.
+This currently means that Version 1.0 uses the ten-perk, choose-at-most-three
+Skill model; Governors and Caravans remain future work; the detailed Sorcery
+roster's Magic Arrow with Overcharge controls over the earlier Magic Missile
+summary entry; and the superseded Doctrine experiment is not part of New
+Horizons. Orders remain in scope. Existing Doctrine code must not be exposed as
+active New Horizons gameplay; retain only narrowly required legacy-save reading
+until that compatibility path can be retired safely.
+
+The MVP and this contract remain authoritative where the source is silent:
+server-side command validation, working AI, save/version compatibility,
+single-process architecture, licensing, asset provenance, and validation gates.
+
 ## Authority and intent
 
-The user supplied their philosophy document (Word content under a .pdf filename;
-read together with both concept images) and now explicitly authorizes full-scale
+The user supplied their gameplay document and explicitly authorized full-scale
 implementation. This is an intentional gameplay redesign on VCMI, not a requirement
 to preserve every original rule. The stable original-content MVP is the foundation.
-The supplied document/images stay outside Git; this text is a distilled design
-contract, not a redistribution of embedded artwork or copied dialogue.
+The exact source is retained under `docs/design-sources/` at the user's direction.
+Its embedded illustration remains provenance-restricted reference material and
+must not be exported as runtime art without a separate rights review.
 
 FUN FIRST. Numerical balance is deferred until much later. Do not gate a working
 feature on balanced numbers, multiplayer fairness or exhaustive comparative tuning.
@@ -29,9 +47,8 @@ the prior architectural experiment is closed. Deferred smoothness research is in
 
 ## Full authorized scope
 
-- Orders and persistent Doctrines complement spells. Every hero can use both core
-  systems. One hero action per round chooses a spell, Order or Doctrine change;
-  an active Doctrine persists until changed. Orders have no mana-like currency.
+- Orders complement spells. Every hero can issue Orders, and an Order competes
+  with spellcasting for the shared hero action. Orders have no mana-like currency.
   Might Command and Magic Wisdom specialization distinguish effectiveness/access
   to advanced development, not faction-exclusive Order lists.
 - Hero Attack/Defense become inputs to command-specific formulas, rather than
@@ -94,7 +111,7 @@ provenance review. Scope later new creature animation sets explicitly.
   six-school registry/UI without making an irreversible faction assignment.
 - Early Orders grant raw hero stats; later scale discussion explicitly replaces
   these with coefficients. Use tunable coefficients for the first playable slice.
-- Command ranks, target coverage, Doctrine penalties and Leadership capacity need
+- Command ranks, target coverage and Leadership capacity need
   provisional declared rules. Army capacity must never silently delete creatures.
 - New spells/masteries imply additional mechanics (forced movement, flanking,
   damage sharing, resurrection timing). Implement their prerequisites explicitly;
@@ -102,9 +119,9 @@ provenance review. Scope later new creature animation sets explicitly.
 
 ## Delivery plan — full scope, incremental playable commits
 
-1. Combat command foundation: implement Charge, Hold the Line and Advance plus
-   Aggressive/Defensive Doctrines with provisional data-driven numbers, common
-   spell/Order/Doctrine hero-action budget, clear UI and original icons. Human and
+1. Combat command foundation: implement the eight canonical Orders—Charge,
+   Focus Fire, Riposte, Hold the Line, Brace, Protect, Flank and Second Wind—with
+   a common spell/Order hero-action budget, clear UI and original icons. Human and
    AI must both choose/execute legally. No default AI auto-picking a fixed Order
    irrespective of available spells. Provide deterministic tests, active effect
    feedback and save/load behavior. Unsupported combinations fail visibly rather
@@ -115,7 +132,7 @@ provenance review. Scope later new creature animation sets explicitly.
 3. Integrate primary profiles/scaled formulas and secondary attributes, followed
    by mastery progression and hero-screen implementation. Preserve separate content
    identity/version checks so old saves are not silently interpreted as new rules.
-4. Expand remaining Orders/Doctrines/masteries, spell roster and creature tiers.
+4. Expand remaining Orders, masteries, spell roster and creature tiers.
    Test real journeys across implemented systems; replace provisional assets where
    required. Balance tuning is later, not a reason to stop a functioning feature.
 
@@ -127,6 +144,13 @@ required source/dependency notices and asset exclusion in distributions.
 
 ## Active ownership
 
+User has additionally commissioned a fifth worker, **Artist (Sorcery)**, under
+[NH_ARTIST_SORCERY.md](NH_ARTIST_SORCERY.md). It owns isolated original-art drafts
+and exports only; Frontend/Build retain live asset/UI integration, Content retains
+graphical acceptance. This explicitly activates an art role, not the optional
+packaging worker. The full Sorcery family needs user visual approval before it
+is called definitive; preserve references as purchaser-only material.
+
 Use [NH_WORKER_PLAN.md](NH_WORKER_PLAN.md) for each active worker's objective,
 acceptance criteria, next checkpoint and existing durable handoff. Follow
 [NH_DELIVERY_PIPELINE.md](NH_DELIVERY_PIPELINE.md) for separate feature/release
@@ -134,7 +158,7 @@ lanes and early cross-platform/testing gates; [NH_AGENT_START.md](NH_AGENT_START
 contains role-specific `/goal` startup prompts. Markdown alone does not activate
 a session's Goal mode; the harness contract is authoritative.
 
-- Runtime: authoritative combat commands/Doctrine state and hero-action gating,
+- Runtime: authoritative combat commands and hero-action gating,
   packets/validation/save integration in lib/server plus AI/ logic and native tests.
   New common API and data schema must be sent to Frontend promptly. No UI edits.
 - Frontend: client/clientsdl UI and input, actual installed-resource inspection,

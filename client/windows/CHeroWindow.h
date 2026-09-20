@@ -97,6 +97,7 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	bool newHorizonsLayout = false;
 	std::vector<std::shared_ptr<LRClickableAreaWText>> provisionalAbilityAreas;
 	std::array<std::vector<std::shared_ptr<CLabel>>, 8> provisionalAbilityLabels;
+	std::array<std::vector<std::shared_ptr<CAnimImage>>, 8> provisionalAbilityIcons;
 	std::vector<std::shared_ptr<CLabel>> growthValues;
 	std::shared_ptr<CLabel> leadershipValue;
 	std::shared_ptr<CLabel> movementValue;
@@ -104,6 +105,12 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::shared_ptr<LRClickableAreaWText> leadershipArea;
 	std::shared_ptr<LRClickableAreaWText> movementArea;
 	std::shared_ptr<LRClickableAreaWText> legacySiegeArea;
+	std::shared_ptr<CTextBox> learnedPerksSummary;
+	std::shared_ptr<CLabel> legacyLeadershipLabel;
+	std::shared_ptr<CLabel> legacySiegeLabel;
+	std::shared_ptr<CAnimImage> legacyLeadershipImage;
+	std::shared_ptr<CAnimImage> legacySiegeImage;
+	std::shared_ptr<CAnimImage> legacyBoneCollectorImage;
 	void configureNewHorizonsLayout();
 	void restoreLegacyLayout();
 	void refreshHero(bool refreshArtifactInteraction);

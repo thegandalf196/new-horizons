@@ -105,10 +105,14 @@ void CGameStateCampaign::trimCrossoverHeroesParameters(vstd::RNG & randomGenerat
 		//trimming sec skills
 		for(auto & hero : campaignHeroReplacements)
 		{
-			hero.hero->secSkills = newHorizonsHeroes::applyStartingFactionSkill(
-				newHorizonsHeroes::resolveHeroRules(gameState->getHeroDevelopmentRules(), hero.hero->getHeroClassID()),
+			// A crossover hero carries the resolved profile it was created with.
+			// Reset its roster against that snapshot, rather than re-resolving the
+			// currently installed module and silently changing legacy identities.
+			const auto & rules = hero.hero->getPrimaryGrowthRules();
+			hero.hero->secSkills = newHorizonsHeroes::applyStartingFactionSkill(rules,
 				hero.hero->getHeroClass()->isMagicHero(), hero.hero->getFactionID(),
-				hero.hero->getHeroType()->secSkillsInit);
+				newHorizonsHeroes::migrateStartingSkills(rules, hero.hero->getFactionID(),
+					hero.hero->getHeroType()->secSkillsInit));
 			hero.hero->recreateSecondarySkillsBonuses();
 		}
 	}

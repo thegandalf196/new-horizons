@@ -143,13 +143,22 @@ void BattleInterface::installMagicArrowOverchargeUI()
 			const int formulaMaximumOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(
 				callback->getBattle()->getMagicRules(), spell->id, spellPower,
 				newHorizonsMagic::magicArrowOverchargeModifiers(hero));
-			const int baseMana = callback->battleGetSpellCost(spell, hero);
+			const bool metamagicFollowup = pending.metamagicFollowup;
+			const bool metamagicGrand = pending.metamagicGrand;
+			const auto metamagicBaseCost = [metamagicFollowup](const CGHeroInstance * currentHero, int listedCost)
+			{
+				if(metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(currentHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
+					return std::max(1, listedCost - 2);
+				return listedCost;
+			};
+			const int baseMana = metamagicBaseCost(hero, callback->battleGetSpellCost(spell, hero));
 			const int maximumOvercharge = std::min(formulaMaximumOvercharge, std::max(0, hero->mana - baseMana));
 
-			// battleGetSpellCost is the authoritative ordinary cost.  Runtime owns
-			// Wisdom and other modifiers; the panel only labels this value as the
-			// Wisdom-adjusted base and adds the optional surcharge separately.
-			const auto evaluate = [this, localBattleID, targetUnitID, spell, maximumOvercharge]
+			// battleGetSpellCost is the authoritative ordinary cost. Runtime owns
+			// Wisdom and other modifiers; apply the same Metamagic discount as the
+			// BattleSpellMechanics path before adding the optional surcharge.
+			const auto evaluate = [this, localBattleID, targetUnitID, spell, maximumOvercharge,
+				metamagicFollowup, metamagicGrand, metamagicBaseCost]
 				(int overcharge)
 				-> MagicArrowOverchargeValues
 			{
@@ -161,11 +170,13 @@ void BattleInterface::installMagicArrowOverchargeUI()
 					return values;
 				const auto callback = curInt->cb->getBattle(localBattleID);
 				const auto * hero = currentHero();
+				if(!callback || !callback->getBattle() || !hero)
+					return values;
 				const auto * target = callback->battleGetUnitByID(targetUnitID);
-				if(!callback || !callback->getBattle() || !hero || !target)
+				if(!target)
 					return values;
 
-				values.baseMana = callback->battleGetSpellCost(spell, hero);
+				values.baseMana = metamagicBaseCost(hero, callback->battleGetSpellCost(spell, hero));
 				values.additionalMana = values.overcharge;
 				values.totalMana = values.baseMana + values.additionalMana;
 				values.availableMana = hero->mana;
@@ -173,9 +184,22 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				values.targetDescription = "Target: " + std::to_string(target->getCount()) + " "
 					+ target->unitType()->getNamePluralTranslated();
 
+				spells::BattleCast legality(callback.get(), hero, spells::Mode::HERO, spell);
+				legality.setMetamagicFollowup(metamagicFollowup);
+				legality.setMetamagicGrand(metamagicGrand);
+				legality.setMetamagicTargetUnitId(targetUnitID);
+				legality.setOvercharge(values.overcharge);
+				spells::detail::ProblemImpl legalityProblem;
+				battle::Target targetCheck;
+				targetCheck.emplace_back(target, target->getPosition());
+				values.legal = spell->battleMechanics(&legality)->canBeCastAt(targetCheck, legalityProblem);
+
 				const auto previewDamage = [&](int selectedOvercharge)
 				{
 					spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
+					preview.setMetamagicFollowup(metamagicFollowup);
+					preview.setMetamagicGrand(metamagicGrand);
+					preview.setMetamagicTargetUnitId(targetUnitID);
 					preview.setOvercharge(selectedOvercharge);
 					auto mechanics = spell->battleMechanics(&preview);
 					return static_cast<int>(mechanics->adjustEffectValue(target));
@@ -189,19 +213,22 @@ void BattleInterface::installMagicArrowOverchargeUI()
 			context.anchor = ENGINE->getCursorPosition();
 			context.initial = evaluate(0);
 			context.evaluate = evaluate;
-			context.confirm = [this, pending, localBattleID, targetUnitID, spell, formulaMaximumOvercharge](int overcharge)
+			context.confirm = [this, pending, localBattleID, targetUnitID, spell, formulaMaximumOvercharge,
+				metamagicBaseCost](int overcharge)
 				-> bool
 			{
 				if(!curInt || !curInt->cb || curInt->cb->getBattle(localBattleID) == nullptr)
 					return false;
 				const auto callback = curInt->cb->getBattle(localBattleID);
 				const auto * hero = currentHero();
-				const auto * target = callback->battleGetUnitByID(targetUnitID);
-				if(!callback || !callback->getBattle() || !hero || !target || overcharge < 0 || overcharge > formulaMaximumOvercharge
+				if(!callback || !callback->getBattle() || !hero || overcharge < 0 || overcharge > formulaMaximumOvercharge
 					|| !newHorizonsMagic::magicArrowOverchargeEnabled(callback->getBattle()->getMagicRules(), spell->id))
 					return false;
+				const auto * target = callback->battleGetUnitByID(targetUnitID);
+				if(!target)
+					return false;
 
-				const int baseCost = callback->battleGetSpellCost(spell, hero);
+				const int baseCost = metamagicBaseCost(hero, callback->battleGetSpellCost(spell, hero));
 				if(baseCost < 0 || baseCost + overcharge > hero->mana)
 					return false;
 
@@ -262,6 +289,8 @@ void BattleInterface::installSelectiveDispelUI()
 					return false;
 
 				spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
+				preview.setMetamagicFollowup(pending.metamagicFollowup);
+				preview.setMetamagicGrand(pending.metamagicGrand);
 				preview.setSelectiveDispel(selective);
 				auto mechanics = spell->battleMechanics(&preview);
 				spells::detail::ProblemImpl problem;
@@ -320,7 +349,9 @@ void BattleInterface::installTemporalFieldUI()
 			if(casterSide == BattleSide::NONE)
 				return std::nullopt;
 
-			auto evaluate = [this, localBattleID, spell]() -> TemporalFieldValues
+			auto evaluate = [this, localBattleID, spell,
+				metamagicFollowup = pending.metamagicFollowup,
+				metamagicGrand = pending.metamagicGrand]() -> TemporalFieldValues
 			{
 				TemporalFieldValues values;
 				if(!curInt || !curInt->cb)
@@ -338,6 +369,8 @@ void BattleInterface::installTemporalFieldUI()
 				values.remaining = side != BattleSide::NONE && !callback->battleWasTemporalFieldUsed(side);
 
 				spells::BattleCast massCast(callback.get(), hero, spells::Mode::HERO, spell);
+				massCast.setMetamagicFollowup(metamagicFollowup);
+				massCast.setMetamagicGrand(metamagicGrand);
 				massCast.setMassSlow(true);
 				auto mechanics = spell->battleMechanics(&massCast);
 				spells::Target noTarget;
@@ -387,6 +420,8 @@ void BattleInterface::installTemporalFieldUI()
 					return false;
 
 				spells::BattleCast massCast(callback.get(), hero, spells::Mode::HERO, spell);
+				massCast.setMetamagicFollowup(pending.metamagicFollowup);
+				massCast.setMetamagicGrand(pending.metamagicGrand);
 				massCast.setMassSlow(true);
 				auto mechanics = spell->battleMechanics(&massCast);
 				if(!mechanics)
@@ -1037,8 +1072,12 @@ void BattleInterface::endAction(const BattleAction &action)
 	if(action.actionType == EActionType::HERO_SPELL || action.actionType == EActionType::HERO_COMMAND)
 		fieldController->redrawBackgroundWithHexes();
 
-	if(action.actionType == EActionType::HERO_COMMAND)
+	if(action.actionType == EActionType::HERO_COMMAND && !action.metamagicDecline)
 		appendBattleLog("Order: " + HeroCommandUI::name(action.command) + " (this round).");
+	if(action.actionType == EActionType::HERO_SPELL && windowObject && curInt
+		&& !curInt->isAutoFightOn && action.side == getBattle()->battleGetMySide()
+		&& getBattle()->battleCanUseMetamagicFollowup(action.side))
+		windowObject->openMetamagicSpellbook();
 }
 
 void BattleInterface::appendBattleLog(const std::string & newEntry)
@@ -1185,6 +1224,23 @@ void BattleInterface::requestAutofightingAIToTakeAction()
 void BattleInterface::castThisSpell(SpellID spellID)
 {
 	actionsController->castThisSpell(spellID);
+}
+
+void BattleInterface::declineMetamagicFollowup()
+{
+	if(!curInt || !actionsController || !getBattle())
+		return;
+	const auto side = getBattle()->battleGetMySide();
+	if(!getBattle()->battleCanUseMetamagicFollowup(side))
+		return;
+	curInt->cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
+	actionsController->endCastingSpell();
+}
+
+void BattleInterface::toggleMetamagicGrandFollowup()
+{
+	if(actionsController)
+		actionsController->toggleMetamagicGrandFollowup();
 }
 
 void BattleInterface::endNetwork()

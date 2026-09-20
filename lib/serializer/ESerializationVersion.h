@@ -79,12 +79,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_NECROMANCY, // count-based faction conversion and post-battle result summary
 	NEW_HORIZONS_LAND_MINE, // player-selected canonical Land Mine action vectors
 	NEW_HORIZONS_FIRE_WALL, // player-selected Fire Wall orientation and per-activation trigger state
+	NEW_HORIZONS_METAMAGIC, // authoritative Tower Metamagic sequence state and cast metadata
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_FIRE_WALL,
+	CURRENT = NEW_HORIZONS_METAMAGIC,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -115,3 +116,5 @@ static_assert(ESerializationVersion::NEW_HORIZONS_LAND_MINE > ESerializationVers
 	"Land Mine action vectors must remain absent from older New Horizons snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_FIRE_WALL > ESerializationVersion::NEW_HORIZONS_LAND_MINE,
 	"Fire Wall action metadata and trigger state must remain absent from older New Horizons snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_METAMAGIC > ESerializationVersion::NEW_HORIZONS_FIRE_WALL,
+	"Metamagic state and cast metadata must remain absent from older Fire Wall snapshots");

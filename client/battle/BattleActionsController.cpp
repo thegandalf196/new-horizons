@@ -334,6 +334,8 @@ int BattleActionsController::landMinePlacementRequiredHexes() const
 	const auto * spell = heroSpellToCast->spell.toSpell();
 	const auto hero = owner.currentHero();
 	spells::BattleCast cast(owner.getBattle().get(), hero, spells::Mode::HERO, spell);
+	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
+	cast.setMetamagicGrand(heroSpellToCast->metamagicGrand);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return 0;
@@ -418,6 +420,8 @@ bool BattleActionsController::fireWallPlacementLineIsLegal(const BattleHex & sta
 
 	const auto * spell = heroSpellToCast->spell.toSpell();
 	spells::BattleCast cast(owner.getBattle().get(), owner.currentHero(), spells::Mode::HERO, spell);
+	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
+	cast.setMetamagicGrand(heroSpellToCast->metamagicGrand);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return false;
@@ -781,10 +785,16 @@ void BattleActionsController::endCastingSpell()
 {
 	const bool wasLandMinePlacement = landMinePlacementModeActive();
 	const bool wasFireWallPlacement = fireWallPlacementModeActive();
+	const bool wasMetamagicFollowup = metamagicFollowupMode;
 	if(heroSpellToCast)
 	{
 		heroSpellToCast.reset();
 		owner.windowObject->blockUI(false);
+	}
+	if(wasMetamagicFollowup)
+	{
+		metamagicFollowupMode = false;
+		metamagicGrandMode = false;
 	}
 
 	if(monsterCaster)
@@ -999,6 +1009,8 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	heroSpellToCast->spell = spellID;
 	heroSpellToCast->stackNumber = -1;
 	heroSpellToCast->side = owner.curInt->cb->getBattle(owner.getBattleID())->battleGetMySide();
+	heroSpellToCast->metamagicFollowup = metamagicFollowupMode;
+	heroSpellToCast->metamagicGrand = metamagicGrandMode;
 
 	// Canonical New Horizons Land Mine is an ordered multi-hex action.  It must
 	// not enter the generic NO_TARGET path, which would immediately submit the
@@ -1070,6 +1082,45 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	}
 
 	owner.windowObject->blockUI(true);
+}
+
+void BattleActionsController::beginMetamagicFollowup()
+{
+	if(!owner.curInt || !owner.currentHero())
+		return;
+	const auto side = owner.getBattle()->battleGetMySide();
+	if(!owner.getBattle()->battleCanUseMetamagicFollowup(side))
+		return;
+	metamagicFollowupMode = true;
+	metamagicGrandMode = false;
+}
+
+bool BattleActionsController::metamagicFollowupModeActive() const
+{
+	return metamagicFollowupMode;
+}
+
+void BattleActionsController::toggleMetamagicGrandFollowup()
+{
+	if(!metamagicFollowupMode || !owner.curInt || !owner.currentHero())
+		return;
+	const auto side = owner.getBattle()->battleGetMySide();
+	const bool available = side != BattleSide::NONE
+		&& owner.getBattle()->battleMetamagicPendingCount(side) == 1
+		&& owner.getBattle()->battleMetamagicSequenceSpells(side).size() == 1
+		&& !owner.getBattle()->battleMetamagicGrandUsed(side)
+		&& newHorizonsMagic::metamagicRank(owner.currentHero()) >= 3
+		&& newHorizonsMagic::hasMetamagicPerk(owner.currentHero(), newHorizonsMagic::METAMAGIC_GRAND);
+	if(!available)
+		return;
+	metamagicGrandMode = !metamagicGrandMode;
+	if(owner.windowObject)
+		owner.windowObject->updateCounterspellStatus();
+}
+
+bool BattleActionsController::metamagicGrandModeActive() const
+{
+	return metamagicGrandMode;
 }
 
 bool BattleActionsController::continueOrdinarySpellcast()
@@ -2017,6 +2068,13 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 	target.emplace_back(targetHex);
 
 	spells::BattleCast cast(owner.getBattle().get(), caster, mode, currentSpell);
+	if(mode == spells::Mode::HERO)
+	{
+		const bool followup = metamagicFollowupMode
+			|| owner.getBattle()->battleCanUseMetamagicFollowup(owner.getBattle()->battleGetMySide());
+		cast.setMetamagicFollowup(followup);
+		cast.setMetamagicGrand(metamagicGrandMode);
+	}
 
 	auto m = currentSpell->battleMechanics(&cast);
 	spells::detail::ProblemImpl problem; //todo: display problem in status bar
@@ -2034,6 +2092,13 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 		return false;
 
 	spells::BattleCast selectiveCast(owner.getBattle().get(), caster, mode, currentSpell);
+	if(mode == spells::Mode::HERO)
+	{
+		const bool followup = metamagicFollowupMode
+			|| owner.getBattle()->battleCanUseMetamagicFollowup(owner.getBattle()->battleGetMySide());
+		selectiveCast.setMetamagicFollowup(followup);
+		selectiveCast.setMetamagicGrand(metamagicGrandMode);
+	}
 	selectiveCast.setSelectiveDispel(true);
 	auto selectiveMechanics = currentSpell->battleMechanics(&selectiveCast);
 	spells::detail::ProblemImpl selectiveProblem;

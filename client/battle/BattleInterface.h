@@ -216,6 +216,11 @@ public:
 	void spellCast(const BattleSpellCast *sc); //called when a hero casts a spell
 	void battleStacksEffectsSet(const SetStackEffect & sse); //called when a specific effect is set to stacks
 	void castThisSpell(SpellID spellID); //called when player has chosen a spell from spellbook
+	/// Submit the authoritative Decline/End action for a pending Metamagic
+	/// sequence without spending another hero action.
+	void declineMetamagicFollowup();
+	/// Toggle the explicit Expert Grand Metamagic choice in the follow-up UI.
+	void toggleMetamagicGrandFollowup();
 
 	void displayBattleLog(const std::vector<MetaString> & battleLog);
 

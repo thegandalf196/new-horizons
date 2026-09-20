@@ -9,10 +9,10 @@
 		"basic": {
 			"description": "Melee attacks and retaliations deal +10% physical damage. At subsequent level-ups, Offense has a 10% chance to grant +1 Attack.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:69",
+				"medium": "SECSKILL:0:69",
+				"large": "SECSK82:0:69",
+				"scenarioBonus": "SECSKILL:0:69"
 			},
 			"effects": {
 				"meleeDamage": {
@@ -26,10 +26,10 @@
 		"advanced": {
 			"description": "Melee attacks and retaliations deal +20% physical damage. Attack-growth chance becomes 20%.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:70",
+				"medium": "SECSKILL:0:70",
+				"large": "SECSK82:0:70",
+				"scenarioBonus": "SECSKILL:0:70"
 			},
 			"effects": {
 				"meleeDamage": {
@@ -43,10 +43,10 @@
 		"expert": {
 			"description": "Melee attacks and retaliations deal +30% physical damage. Attack-growth chance becomes 30%.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:71",
+				"medium": "SECSKILL:0:71",
+				"large": "SECSK82:0:71",
+				"scenarioBonus": "SECSKILL:0:71"
 			},
 			"effects": {
 				"meleeDamage": {
@@ -69,10 +69,10 @@
 		"basic": {
 			"description": "Physical creature attacks and retaliations against the hero's army deal 5% less damage. At subsequent level-ups, Armorer has a 10% chance to grant +1 Defense.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:72",
+				"medium": "SECSKILL:0:72",
+				"large": "SECSK82:0:72",
+				"scenarioBonus": "SECSKILL:0:72"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -85,10 +85,10 @@
 		"advanced": {
 			"description": "Physical creature-attack reduction increases to 10%. Defense-growth chance becomes 20%.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:73",
+				"medium": "SECSKILL:0:73",
+				"large": "SECSK82:0:73",
+				"scenarioBonus": "SECSKILL:0:73"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -101,10 +101,10 @@
 		"expert": {
 			"description": "Physical creature-attack reduction increases to 15%. Defense-growth chance becomes 30%.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:74",
+				"medium": "SECSKILL:0:74",
+				"large": "SECSK82:0:74",
+				"scenarioBonus": "SECSKILL:0:74"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -126,10 +126,10 @@
 		"basic": {
 			"description": "Ranged creature attacks deal +10% physical damage. At subsequent level-ups, Archery has a 10% chance to grant +1 Attack.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:6",
+				"medium": "SECSKILL:0:6",
+				"large": "SECSK82:0:6",
+				"scenarioBonus": "SECSKILL:0:6"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -142,10 +142,10 @@
 		"advanced": {
 			"description": "Ranged creature attacks deal +20% physical damage. Attack-growth chance becomes 20%.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:7",
+				"medium": "SECSKILL:0:7",
+				"large": "SECSK82:0:7",
+				"scenarioBonus": "SECSKILL:0:7"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -158,10 +158,10 @@
 		"expert": {
 			"description": "Ranged creature attacks deal +30% physical damage. Attack-growth chance becomes 30%.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:8",
+				"medium": "SECSKILL:0:8",
+				"large": "SECSK82:0:8",
+				"scenarioBonus": "SECSKILL:0:8"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -183,10 +183,10 @@
 		"basic": {
 			"description": "After a friendly stack Waits, its next attack or retaliation before the end of the round deals +5% physical damage. A stack that Defends gains an additional 5% physical creature-damage reduction until its next activation.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_battlecraft_basic_small.png",
+				"medium": "NH_battlecraft_basic_medium.png",
+				"large": "NH_battlecraft_basic_large.png",
+				"scenarioBonus": "NH_battlecraft_basic_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -199,10 +199,10 @@
 		"advanced": {
 			"description": "The conditional Wait damage bonus and Defend reduction become 10%.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_battlecraft_advanced_small.png",
+				"medium": "NH_battlecraft_advanced_medium.png",
+				"large": "NH_battlecraft_advanced_large.png",
+				"scenarioBonus": "NH_battlecraft_advanced_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -215,10 +215,10 @@
 		"expert": {
 			"description": "The conditional Wait damage bonus and Defend reduction become 15%.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_battlecraft_expert_small.png",
+				"medium": "NH_battlecraft_expert_medium.png",
+				"large": "NH_battlecraft_expert_large.png",
+				"scenarioBonus": "NH_battlecraft_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -240,10 +240,10 @@
 		"basic": {
 			"description": "+20 Siege. Grants direct control over the hero's war machines.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:33",
+				"medium": "SECSKILL:0:33",
+				"large": "SECSK82:0:33",
+				"scenarioBonus": "SECSKILL:0:33"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -256,10 +256,10 @@
 		"advanced": {
 			"description": "+40 Siege total.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:34",
+				"medium": "SECSKILL:0:34",
+				"large": "SECSK82:0:34",
+				"scenarioBonus": "SECSKILL:0:34"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -272,10 +272,10 @@
 		"expert": {
 			"description": "+60 Siege total.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:35",
+				"medium": "SECSKILL:0:35",
+				"large": "SECSK82:0:35",
+				"scenarioBonus": "SECSKILL:0:35"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -297,10 +297,10 @@
 		"basic": {
 			"description": "Friendly army receives +1 Morale.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:21",
+				"medium": "SECSKILL:0:21",
+				"large": "SECSK82:0:21",
+				"scenarioBonus": "SECSKILL:0:21"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -313,10 +313,10 @@
 		"advanced": {
 			"description": "Friendly army receives +2 Morale total.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:22",
+				"medium": "SECSKILL:0:22",
+				"large": "SECSK82:0:22",
+				"scenarioBonus": "SECSKILL:0:22"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -329,10 +329,10 @@
 		"expert": {
 			"description": "Friendly army receives +3 Morale total.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:23",
+				"medium": "SECSKILL:0:23",
+				"large": "SECSK82:0:23",
+				"scenarioBonus": "SECSKILL:0:23"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -354,10 +354,10 @@
 		"basic": {
 			"description": "Muster once per week in a friendly town: add 2 Core creatures to one Core dwelling's recruitment pool.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_recruitment_basic_small.png",
+				"medium": "NH_recruitment_basic_medium.png",
+				"large": "NH_recruitment_basic_large.png",
+				"scenarioBonus": "NH_recruitment_basic_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -370,10 +370,10 @@
 		"advanced": {
 			"description": "Muster once per week: add either 4 Core creatures to one Core dwelling or 1 Elite creature to one Elite dwelling.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_recruitment_advanced_small.png",
+				"medium": "NH_recruitment_advanced_medium.png",
+				"large": "NH_recruitment_advanced_large.png",
+				"scenarioBonus": "NH_recruitment_advanced_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -386,10 +386,10 @@
 		"expert": {
 			"description": "Muster once per week: add either 6 Core creatures, 2 Elite creatures, or 1 Champion creature to one corresponding dwelling pool.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_recruitment_expert_small.png",
+				"medium": "NH_recruitment_expert_medium.png",
+				"large": "NH_recruitment_expert_large.png",
+				"scenarioBonus": "NH_recruitment_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -411,10 +411,10 @@
 		"basic": {
 			"description": "Attribute-derived components of Orders operate at 110% Command Efficiency.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:60",
+				"medium": "SECSKILL:0:60",
+				"large": "SECSK82:0:60",
+				"scenarioBonus": "SECSKILL:0:60"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -427,10 +427,10 @@
 		"advanced": {
 			"description": "Attribute-derived components operate at 120% Command Efficiency.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:61",
+				"medium": "SECSKILL:0:61",
+				"large": "SECSK82:0:61",
+				"scenarioBonus": "SECSKILL:0:61"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -443,10 +443,10 @@
 		"expert": {
 			"description": "Attribute-derived components operate at 130% Command Efficiency.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:62",
+				"medium": "SECSKILL:0:62",
+				"large": "SECSK82:0:62",
+				"scenarioBonus": "SECSKILL:0:62"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -840,10 +840,10 @@
 		"basic": {
 			"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency. At subsequent level-ups, Spellcraft has a 10% chance to grant +1 Spell Power.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:78",
+				"medium": "SECSKILL:0:78",
+				"large": "SECSK82:0:78",
+				"scenarioBonus": "SECSKILL:0:78"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -856,10 +856,10 @@
 		"advanced": {
 			"description": "Spell Power-derived components operate at 120%. Spell Power-growth chance becomes 20%.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:79",
+				"medium": "SECSKILL:0:79",
+				"large": "SECSK82:0:79",
+				"scenarioBonus": "SECSKILL:0:79"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -872,10 +872,10 @@
 		"expert": {
 			"description": "Spell Power-derived components operate at 130%. Spell Power-growth chance becomes 30%.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:80",
+				"medium": "SECSKILL:0:80",
+				"large": "SECSK82:0:80",
+				"scenarioBonus": "SECSKILL:0:80"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -897,10 +897,10 @@
 		"basic": {
 			"description": "Listed spell Mana costs are reduced by 10%. At subsequent level-ups, Wisdom has a 10% chance to grant +1 Knowledge.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:24",
+				"medium": "SECSKILL:0:24",
+				"large": "SECSK82:0:24",
+				"scenarioBonus": "SECSKILL:0:24"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -913,10 +913,10 @@
 		"advanced": {
 			"description": "Listed spell Mana costs are reduced by 20%. Knowledge-growth chance becomes 20%.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:25",
+				"medium": "SECSKILL:0:25",
+				"large": "SECSK82:0:25",
+				"scenarioBonus": "SECSKILL:0:25"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -929,10 +929,10 @@
 		"expert": {
 			"description": "Listed spell Mana costs are reduced by 30%. Knowledge-growth chance becomes 30%.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:26",
+				"medium": "SECSKILL:0:26",
+				"large": "SECSK82:0:26",
+				"scenarioBonus": "SECSKILL:0:26"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -954,10 +954,10 @@
 		"basic": {
 			"description": "After using the Hero Action to cast a Spell, the next Order issued before the end of the next round gains +10 percentage points of efficiency on its attribute-derived components. After using the Hero Action to issue an Order, the next Spell cast before the end of the next round gains +10% to its Spell Power-derived numerical component.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_warcasting_basic_small.png",
+				"medium": "NH_warcasting_basic_medium.png",
+				"large": "NH_warcasting_basic_large.png",
+				"scenarioBonus": "NH_warcasting_basic_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -970,10 +970,10 @@
 		"advanced": {
 			"description": "Both alternating bonuses become 20% / +20 percentage points.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_warcasting_advanced_small.png",
+				"medium": "NH_warcasting_advanced_medium.png",
+				"large": "NH_warcasting_advanced_large.png",
+				"scenarioBonus": "NH_warcasting_advanced_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -986,10 +986,10 @@
 		"expert": {
 			"description": "Both alternating bonuses become 30% / +30 percentage points.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_warcasting_expert_small.png",
+				"medium": "NH_warcasting_expert_medium.png",
+				"large": "NH_warcasting_expert_large.png",
+				"scenarioBonus": "NH_warcasting_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1011,10 +1011,10 @@
 		"basic": {
 			"description": "Adventure-map Movement increases by 10%.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:9",
+				"medium": "SECSKILL:0:9",
+				"large": "SECSK82:0:9",
+				"scenarioBonus": "SECSKILL:0:9"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1027,10 +1027,10 @@
 		"advanced": {
 			"description": "Adventure-map Movement increases by 20%.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:10",
+				"medium": "SECSKILL:0:10",
+				"large": "SECSK82:0:10",
+				"scenarioBonus": "SECSKILL:0:10"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1043,10 +1043,10 @@
 		"expert": {
 			"description": "Adventure-map Movement increases by 30%.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:11",
+				"medium": "SECSKILL:0:11",
+				"large": "SECSK82:0:11",
+				"scenarioBonus": "SECSKILL:0:11"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1068,10 +1068,10 @@
 		"basic": {
 			"description": "An eligible neutral stack with Army Value no greater than 25% of the hero's current army may offer to join for its normal recruitment gold cost.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:15",
+				"medium": "SECSKILL:0:15",
+				"large": "SECSK82:0:15",
+				"scenarioBonus": "SECSKILL:0:15"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1084,10 +1084,10 @@
 		"advanced": {
 			"description": "The deterministic joining threshold becomes 50% of the hero's Army Value.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:16",
+				"medium": "SECSKILL:0:16",
+				"large": "SECSK82:0:16",
+				"scenarioBonus": "SECSKILL:0:16"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1100,10 +1100,10 @@
 		"expert": {
 			"description": "The deterministic joining threshold becomes 75% of the hero's Army Value.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:17",
+				"medium": "SECSKILL:0:17",
+				"large": "SECSK82:0:17",
+				"scenarioBonus": "SECSKILL:0:17"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1125,10 +1125,10 @@
 		"basic": {
 			"description": "The kingdom receives +125 Gold per day while the hero is active.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:42",
+				"medium": "SECSKILL:0:42",
+				"large": "SECSK82:0:42",
+				"scenarioBonus": "SECSKILL:0:42"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1141,10 +1141,10 @@
 		"advanced": {
 			"description": "Daily income from Estates increases to +250 Gold.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:43",
+				"medium": "SECSKILL:0:43",
+				"large": "SECSK82:0:43",
+				"scenarioBonus": "SECSKILL:0:43"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1157,10 +1157,10 @@
 		"expert": {
 			"description": "Daily income from Estates increases to +500 Gold.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:44",
+				"medium": "SECSKILL:0:44",
+				"large": "SECSK82:0:44",
+				"scenarioBonus": "SECSKILL:0:44"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1182,10 +1182,10 @@
 		"basic": {
 			"description": "Experience gained by the hero increases by 10%.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:66",
+				"medium": "SECSKILL:0:66",
+				"large": "SECSK82:0:66",
+				"scenarioBonus": "SECSKILL:0:66"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1198,10 +1198,10 @@
 		"advanced": {
 			"description": "Experience gained increases by 20%.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:67",
+				"medium": "SECSKILL:0:67",
+				"large": "SECSK82:0:67",
+				"scenarioBonus": "SECSKILL:0:67"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1214,10 +1214,10 @@
 		"expert": {
 			"description": "Experience gained increases by 30%.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:68",
+				"medium": "SECSKILL:0:68",
+				"large": "SECSK82:0:68",
+				"scenarioBonus": "SECSKILL:0:68"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1239,10 +1239,10 @@
 		"basic": {
 			"description": "Friendly army receives +1 Luck.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:30",
+				"medium": "SECSKILL:0:30",
+				"large": "SECSK82:0:30",
+				"scenarioBonus": "SECSKILL:0:30"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1255,10 +1255,10 @@
 		"advanced": {
 			"description": "Friendly army receives +2 Luck total.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:31",
+				"medium": "SECSKILL:0:31",
+				"large": "SECSK82:0:31",
+				"scenarioBonus": "SECSKILL:0:31"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1271,10 +1271,10 @@
 		"expert": {
 			"description": "Friendly army receives +3 Luck total.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:32",
+				"medium": "SECSKILL:0:32",
+				"large": "SECSK82:0:32",
+				"scenarioBonus": "SECSKILL:0:32"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1296,10 +1296,10 @@
 		"basic": {
 			"description": "Once per combat, when the hero uses the Hero Action to cast a Light Spell, immediately issue one Order; or after using the Hero Action to issue an Order, immediately cast one Light Spell.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_divineMandate_basic_small.png",
+				"medium": "NH_divineMandate_basic_medium.png",
+				"large": "NH_divineMandate_basic_large.png",
+				"scenarioBonus": "NH_divineMandate_basic_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1312,10 +1312,10 @@
 		"advanced": {
 			"description": "Divine Mandate may be used twice per combat.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_divineMandate_advanced_small.png",
+				"medium": "NH_divineMandate_advanced_medium.png",
+				"large": "NH_divineMandate_advanced_large.png",
+				"scenarioBonus": "NH_divineMandate_advanced_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1328,10 +1328,10 @@
 		"expert": {
 			"description": "Divine Mandate may be used three times per combat.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_divineMandate_expert_small.png",
+				"medium": "NH_divineMandate_expert_medium.png",
+				"large": "NH_divineMandate_expert_large.png",
+				"scenarioBonus": "NH_divineMandate_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1353,10 +1353,10 @@
 		"basic": {
 			"description": "+1 Luck. Lucky Strike damage multiplier becomes 2.25x.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_sylvanLuck_basic_small.png",
+				"medium": "NH_sylvanLuck_basic_medium.png",
+				"large": "NH_sylvanLuck_basic_large.png",
+				"scenarioBonus": "NH_sylvanLuck_basic_scenarioBonus.png"
 			},
 			"effects": {
 				"luck": {
@@ -1374,10 +1374,10 @@
 		"advanced": {
 			"description": "+2 Luck total. Lucky Strike multiplier becomes 2.60x.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_sylvanLuck_advanced_small.png",
+				"medium": "NH_sylvanLuck_advanced_medium.png",
+				"large": "NH_sylvanLuck_advanced_large.png",
+				"scenarioBonus": "NH_sylvanLuck_advanced_scenarioBonus.png"
 			},
 			"effects": {
 				"luck": {
@@ -1395,10 +1395,10 @@
 		"expert": {
 			"description": "+3 Luck total. Lucky Strike multiplier becomes 3.00x.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_sylvanLuck_expert_small.png",
+				"medium": "NH_sylvanLuck_expert_medium.png",
+				"large": "NH_sylvanLuck_expert_large.png",
+				"scenarioBonus": "NH_sylvanLuck_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"luck": {
@@ -1425,48 +1425,48 @@
 		"basic": {
 			"description": "Once per combat, after using the Hero Action to cast a Spell, immediately cast one additional Spell.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_metamagic_basic_small.png",
+				"medium": "NH_metamagic_basic_medium.png",
+				"large": "NH_metamagic_basic_large.png",
+				"scenarioBonus": "NH_metamagic_basic_scenarioBonus.png"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"metamagicUses": {
+					"type": "METAMAGIC_USES_PER_COMBAT",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 1
 				}
 			}
 		},
 		"advanced": {
 			"description": "Metamagic may be used twice per combat.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_metamagic_advanced_small.png",
+				"medium": "NH_metamagic_advanced_medium.png",
+				"large": "NH_metamagic_advanced_large.png",
+				"scenarioBonus": "NH_metamagic_advanced_scenarioBonus.png"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"metamagicUses": {
+					"type": "METAMAGIC_USES_PER_COMBAT",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 2
 				}
 			}
 		},
 		"expert": {
 			"description": "Metamagic may be used three times per combat.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_metamagic_expert_small.png",
+				"medium": "NH_metamagic_expert_medium.png",
+				"large": "NH_metamagic_expert_large.png",
+				"scenarioBonus": "NH_metamagic_expert_scenarioBonus.png"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"metamagicUses": {
+					"type": "METAMAGIC_USES_PER_COMBAT",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 3
 				}
 			}
 		}
@@ -1482,10 +1482,10 @@
 		"basic": {
 			"description": "Friendly stacks gain Ghost Walk: they may move through occupied creature hexes but may not end movement on an occupied hex. Flanking melee attacks deal +25% damage.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_shroudOfMalassa_basic_small.png",
+				"medium": "NH_shroudOfMalassa_basic_medium.png",
+				"large": "NH_shroudOfMalassa_basic_large.png",
+				"scenarioBonus": "NH_shroudOfMalassa_basic_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1498,10 +1498,10 @@
 		"advanced": {
 			"description": "Ghost Walk remains active. Flanking melee bonus becomes +40%.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_shroudOfMalassa_advanced_small.png",
+				"medium": "NH_shroudOfMalassa_advanced_medium.png",
+				"large": "NH_shroudOfMalassa_advanced_large.png",
+				"scenarioBonus": "NH_shroudOfMalassa_advanced_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1514,10 +1514,10 @@
 		"expert": {
 			"description": "Ghost Walk remains active. Flanking melee bonus becomes +60%, and flanking melee attacks deny normal retaliation.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_shroudOfMalassa_expert_small.png",
+				"medium": "NH_shroudOfMalassa_expert_medium.png",
+				"large": "NH_shroudOfMalassa_expert_large.png",
+				"scenarioBonus": "NH_shroudOfMalassa_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1539,10 +1539,10 @@
 		"basic": {
 			"description": "A friendly Inferno stack may spend its Creature Activation to open a Gate on a legal empty hex within 3 hexes. At the start of the next round, one Core stack from the Demonic Reserve arrives there.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_demonicGating_basic_small.png",
+				"medium": "NH_demonicGating_basic_medium.png",
+				"large": "NH_demonicGating_basic_large.png",
+				"scenarioBonus": "NH_demonicGating_basic_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1555,10 +1555,10 @@
 		"advanced": {
 			"description": "Gating may bring Core or Elite reserve stacks.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_demonicGating_advanced_small.png",
+				"medium": "NH_demonicGating_advanced_medium.png",
+				"large": "NH_demonicGating_advanced_large.png",
+				"scenarioBonus": "NH_demonicGating_advanced_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1571,10 +1571,10 @@
 		"expert": {
 			"description": "Gating may bring Core, Elite, or Champion reserve stacks.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_demonicGating_expert_small.png",
+				"medium": "NH_demonicGating_expert_medium.png",
+				"large": "NH_demonicGating_expert_large.png",
+				"scenarioBonus": "NH_demonicGating_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1596,10 +1596,10 @@
 		"basic": {
 			"description": "After victory, raise Skeletons equal to 10% of eligible living enemy creature casualties, rounded down.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "SECSK32:0:39",
+				"medium": "SECSKILL:0:39",
+				"large": "SECSK82:0:39",
+				"scenarioBonus": "SECSKILL:0:39"
 			},
 			"effects": {
 				"main": {
@@ -1612,10 +1612,10 @@
 		"advanced": {
 			"description": "Raise Skeletons equal to 20% of eligible casualties.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "SECSK32:0:40",
+				"medium": "SECSKILL:0:40",
+				"large": "SECSK82:0:40",
+				"scenarioBonus": "SECSKILL:0:40"
 			},
 			"effects": {
 				"main": {
@@ -1628,10 +1628,10 @@
 		"expert": {
 			"description": "Raise Skeletons equal to 30% of eligible casualties.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "SECSK32:0:41",
+				"medium": "SECSKILL:0:41",
+				"large": "SECSK82:0:41",
+				"scenarioBonus": "SECSKILL:0:41"
 			},
 			"effects": {
 				"main": {
@@ -1653,10 +1653,10 @@
 		"basic": {
 			"description": "Each non-summoned stack destroyed grants surviving friendly stacks +5% damage, cumulative to +20%.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_bloodrage_basic_small.png",
+				"medium": "NH_bloodrage_basic_medium.png",
+				"large": "NH_bloodrage_basic_large.png",
+				"scenarioBonus": "NH_bloodrage_basic_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1669,10 +1669,10 @@
 		"advanced": {
 			"description": "Each destruction grants +8% damage, cumulative to +40%.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_bloodrage_advanced_small.png",
+				"medium": "NH_bloodrage_advanced_medium.png",
+				"large": "NH_bloodrage_advanced_large.png",
+				"scenarioBonus": "NH_bloodrage_advanced_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1685,10 +1685,10 @@
 		"expert": {
 			"description": "Each destruction grants +12% damage, cumulative to +60%.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_bloodrage_expert_small.png",
+				"medium": "NH_bloodrage_expert_medium.png",
+				"large": "NH_bloodrage_expert_large.png",
+				"scenarioBonus": "NH_bloodrage_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1710,10 +1710,10 @@
 		"basic": {
 			"description": "While a friendly stack Defends, it gains additional physical damage reduction equal to 5% + 0.10% × Hero Defense until its next activation. The first melee attacker is struck pre-emptively for 50% normal damage.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_bulwarkOfTheMire_basic_small.png",
+				"medium": "NH_bulwarkOfTheMire_basic_medium.png",
+				"large": "NH_bulwarkOfTheMire_basic_large.png",
+				"scenarioBonus": "NH_bulwarkOfTheMire_basic_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1726,10 +1726,10 @@
 		"advanced": {
 			"description": "Bulwark reduction becomes 7.5% + 0.15% × Hero Defense; pre-emptive damage becomes 75%; the stack reflects 25% of actual melee physical damage received after reductions.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_bulwarkOfTheMire_advanced_small.png",
+				"medium": "NH_bulwarkOfTheMire_advanced_medium.png",
+				"large": "NH_bulwarkOfTheMire_advanced_large.png",
+				"scenarioBonus": "NH_bulwarkOfTheMire_advanced_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1742,10 +1742,10 @@
 		"expert": {
 			"description": "Bulwark reduction becomes 10% + 0.20% × Hero Defense; pre-emptive damage becomes 100%; melee reflection becomes 50%.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_bulwarkOfTheMire_expert_small.png",
+				"medium": "NH_bulwarkOfTheMire_expert_medium.png",
+				"large": "NH_bulwarkOfTheMire_expert_large.png",
+				"scenarioBonus": "NH_bulwarkOfTheMire_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1767,10 +1767,10 @@
 		"basic": {
 			"description": "When a non-summoned allied stack is destroyed, summon a random Elite Elemental stack at that position with aggregate HP equal to 25% of the destroyed stack's maximum aggregate HP.",
 			"images": {
-				"small": "NH_lightMagic_basic_small.png",
-				"medium": "NH_lightMagic_basic_medium.png",
-				"large": "NH_lightMagic_basic_large.png",
-				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
+				"small": "NH_elementalRebirth_basic_small.png",
+				"medium": "NH_elementalRebirth_basic_medium.png",
+				"large": "NH_elementalRebirth_basic_large.png",
+				"scenarioBonus": "NH_elementalRebirth_basic_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1783,10 +1783,10 @@
 		"advanced": {
 			"description": "Reborn Elemental HP becomes 40% of the destroyed stack's maximum aggregate HP.",
 			"images": {
-				"small": "NH_lightMagic_advanced_small.png",
-				"medium": "NH_lightMagic_advanced_medium.png",
-				"large": "NH_lightMagic_advanced_large.png",
-				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
+				"small": "NH_elementalRebirth_advanced_small.png",
+				"medium": "NH_elementalRebirth_advanced_medium.png",
+				"large": "NH_elementalRebirth_advanced_large.png",
+				"scenarioBonus": "NH_elementalRebirth_advanced_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {
@@ -1799,10 +1799,10 @@
 		"expert": {
 			"description": "Reborn Elemental HP becomes 50% of the destroyed stack's maximum aggregate HP.",
 			"images": {
-				"small": "NH_lightMagic_expert_small.png",
-				"medium": "NH_lightMagic_expert_medium.png",
-				"large": "NH_lightMagic_expert_large.png",
-				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
+				"small": "NH_elementalRebirth_expert_small.png",
+				"medium": "NH_elementalRebirth_expert_medium.png",
+				"large": "NH_elementalRebirth_expert_large.png",
+				"scenarioBonus": "NH_elementalRebirth_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {

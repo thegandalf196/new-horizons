@@ -9,6 +9,9 @@
  */
 #pragma once
 
+#include <limits>
+#include <string_view>
+
 #include "../json/JsonNode.h"
 #include "../constants/EntityIdentifiers.h"
 #include "NewHorizonsDirectDamage.h"
@@ -26,6 +29,18 @@ constexpr int RULESET_VERSION = 1;
 constexpr int DIRECT_DAMAGE_RULESET_VERSION = 2;
 constexpr int DIRECT_DAMAGE_POWER_DIVISOR = 10;
 constexpr int COUNTERSPELL_LISTED_COST = 11;
+inline constexpr std::string_view METAMAGIC_SKILL = "new-horizons:metamagic";
+inline constexpr std::string_view METAMAGIC_SPELL_SEQUENCING = "new-horizons:metamagic.spellSequencing";
+inline constexpr std::string_view METAMAGIC_ARCANE_ECONOMY = "new-horizons:metamagic.arcaneEconomy";
+inline constexpr std::string_view METAMAGIC_FOCUSED_PAIRING = "new-horizons:metamagic.focusedPairing";
+inline constexpr std::string_view METAMAGIC_COUNTERSEQUENCE = "new-horizons:metamagic.countersequence";
+inline constexpr std::string_view METAMAGIC_ECHOED_DURATION = "new-horizons:metamagic.echoedDuration";
+inline constexpr std::string_view METAMAGIC_SPLIT_FOCUS = "new-horizons:metamagic.splitFocus";
+inline constexpr std::string_view METAMAGIC_FORMULA_RESERVE = "new-horizons:metamagic.formulaReserve";
+inline constexpr std::string_view METAMAGIC_SPELL_BUFFER = "new-horizons:metamagic.spellBuffer";
+inline constexpr std::string_view METAMAGIC_GRAND = "new-horizons:metamagic.grandMetamagic";
+inline constexpr std::string_view METAMAGIC_PERFECT_SEQUENCE = "new-horizons:metamagic.perfectSequence";
+constexpr uint32_t INVALID_METAMAGIC_TARGET = std::numeric_limits<uint32_t>::max();
 /// Canonical New Horizons Land Mine thresholds.  The spell uses the caster's
 /// saved Spell Power (before applying the direct-damage divisor) to determine
 /// how many distinct battlefield hexes the action must contain.
@@ -89,8 +104,14 @@ DLL_LINKAGE int landMineHexCount(int32_t spellPower);
 /// irrelevant to saved battles.
 DLL_LINKAGE bool isCounterspell(const spells::Spell * spell);
 /// Counterspell's ward cost, using the enemy spell's listed/base cost rather
-/// than any battlefield discount. Countermage changes 2x to ceil(1.75x).
-DLL_LINKAGE int counterspellCost(int listedCost, bool countermage);
+/// than any battlefield discount. Countermage or Countersequence changes 2x
+/// to ceil(1.75x).
+DLL_LINKAGE int counterspellCost(int listedCost, bool countermage, bool countersequence = false);
+/// Saved-rules-backed Metamagic identity and perk helpers.  These are kept in
+/// the shared magic layer so server, client previews, and BattleAI use exactly
+/// the same rank/perk gates.
+DLL_LINKAGE int metamagicRank(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view perkId);
 DLL_LINKAGE int factionSpellWeight(const JsonNode & rules, FactionID faction, SpellID spell);
 DLL_LINKAGE SecondarySkill replacementSkill(const JsonNode & rules, SecondarySkill skill);
 DLL_LINKAGE bool skillAllowed(const JsonNode & rules, SecondarySkill skill, const std::set<SecondarySkill> & mapAllowed);

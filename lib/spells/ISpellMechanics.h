@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include <limits>
+
 #include <vcmi/spells/Magic.h>
 #include <vcmi/ServerCallback.h>
 
@@ -97,6 +99,12 @@ public:
 	virtual bool getForceNonSmartTargeting() const { return false; }
 	virtual bool getSelectiveDispel() const { return false; }
 	virtual bool getMassSlow() const { return false; }
+	/// An immediate additional cast granted by Tower Metamagic.  This is an
+	/// authoritative action flag, not a client-side effect hint.
+	virtual bool isMetamagicFollowup() const { return false; }
+	virtual bool isMetamagicGrand() const { return false; }
+	virtual uint32_t getMetamagicTargetUnitId() const { return std::numeric_limits<uint32_t>::max(); }
+	virtual int32_t getMetamagicManaRefund() const { return 0; }
 
 	virtual OptionalValue64 getEffectValue() const = 0;
 	/// Ward side is set by the authoritative battle action processor when this
@@ -132,6 +140,10 @@ public:
 	bool getForceNonSmartTargeting() const override;
 	bool getSelectiveDispel() const override;
 	bool getMassSlow() const override;
+	bool isMetamagicFollowup() const override;
+	bool isMetamagicGrand() const override;
+	uint32_t getMetamagicTargetUnitId() const override;
+	int32_t getMetamagicManaRefund() const override;
 
 	OptionalValue64 getEffectValue() const override;
 	BattleSide getCounterspellSide() const override;
@@ -147,6 +159,10 @@ public:
 	void setForceNonSmartTargeting(bool value);
 	void setSelectiveDispel(bool value);
 	void setMassSlow(bool value);
+	void setMetamagicFollowup(bool value);
+	void setMetamagicGrand(bool value);
+	void setMetamagicTargetUnitId(uint32_t value);
+	void setMetamagicManaRefund(int32_t value);
 
 	void setEffectValue(Value64 value);
 	void setCounterspell(BattleSide wardSide, bool negated);
@@ -179,6 +195,10 @@ private:
 	bool forceNonSmartTargeting = false;
 	bool selectiveDispel = false;
 	bool massSlow = false;
+	bool metamagicFollowup = false;
+	bool metamagicGrand = false;
+	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();
+	int32_t metamagicManaRefund = 0;
 	BattleSide counterspellSide = BattleSide::NONE;
 	bool counterspellNegated = false;
 
@@ -337,6 +357,10 @@ public:
 	bool isCounterspellNegated() const;
 	bool isSelectiveDispel() const override;
 	bool isMassSlow() const override;
+	bool isMetamagicFollowup() const;
+	bool isMetamagicGrand() const;
+	uint32_t getMetamagicTargetUnitId() const;
+	int32_t getMetamagicManaRefund() const;
 	bool usesNewHorizonsMagic() const override;
 
 	PlayerColor getCasterColor() const override;
@@ -395,6 +419,12 @@ private:
 	bool counterspellNegated = false;
 	bool selectiveDispel = false;
 	bool massSlow = false;
+	bool metamagicFollowup = false;
+	bool metamagicGrand = false;
+	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();
+	uint32_t metamagicFirstTargetUnitId = std::numeric_limits<uint32_t>::max();
+	bool metamagicFocusedPairingEligible = false;
+	int32_t metamagicManaRefund = 0;
 
 	bool forceMassive = false;
 

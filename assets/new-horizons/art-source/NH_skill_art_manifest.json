@@ -1,0 +1,1257 @@
+{
+  "schema_version": 1,
+  "license": "CC0-1.0",
+  "method": "Pillow LANCZOS reduction of generated square masters; rank color/material adjustment plus three rank pips",
+  "sizes": {
+    "small": [
+      32,
+      32
+    ],
+    "medium": [
+      44,
+      44
+    ],
+    "large": [
+      82,
+      93
+    ],
+    "scenarioBonus": [
+      58,
+      64
+    ]
+  },
+  "skills": {
+    "battlecraft": {
+      "master": "NH_battlecraft_master.png",
+      "master_sha256": "304d9baa4261d54168981e54a1ed726c00b008716a34df321d70b9c959e25863",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_battlecraft_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "7e35eefed29069e3183ffe24178525033ad1187bc61d9092aeee869e61bb53c0"
+          },
+          "medium": {
+            "file": "NH_battlecraft_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "0adc258b51b9e8dae29845649c2158743172f9c2f6bdae4e80bf08f3b4e928be"
+          },
+          "large": {
+            "file": "NH_battlecraft_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "594bf919ce52afe883bae35268aa61259396f1e23d9a85177c87798a54d81561"
+          },
+          "scenarioBonus": {
+            "file": "NH_battlecraft_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "3ac5a0397eac6b0a62d9d669b16705d69fe7cfc4a71c18d2213a86a58fcacf72"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_battlecraft_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "eeeb16032343147070e24256dd57289e8366aeea21fb169096ac916e535e954c"
+          },
+          "medium": {
+            "file": "NH_battlecraft_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "af07574c91be5c65bc5cc343e14e3750c5bfc8a14b4629d84ec14e4616213dfd"
+          },
+          "large": {
+            "file": "NH_battlecraft_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "c8cbfb157a60508ff684aed62e4ce07c0b792a596fcc3c675962ab5715c9e222"
+          },
+          "scenarioBonus": {
+            "file": "NH_battlecraft_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "25a0d2762444211f74047a60f94c089a83532537d49710047841257edaf27797"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_battlecraft_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "a02a7cb36f2e6022d85a878c0bb15ee8b5cc58b75942ea8b988da0a454f18919"
+          },
+          "medium": {
+            "file": "NH_battlecraft_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "27ae9512a2f43f621663fb35f883a79779a9fa0d50f10c9ff6a69e6c1e1d88ab"
+          },
+          "large": {
+            "file": "NH_battlecraft_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "e15b4316aa44db1e99bc0839ab892735a070ef6bc1096760d8e1ab1ffea5859d"
+          },
+          "scenarioBonus": {
+            "file": "NH_battlecraft_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "f02b8559dabe7504923f2eb782185d32066ad7e561570301b0d924a71c7a7af3"
+          }
+        }
+      }
+    },
+    "recruitment": {
+      "master": "NH_recruitment_master.png",
+      "master_sha256": "c5c9615a3de9238818f52eacda29a018e352d1a3ba0b144f7fbd3608eabde67a",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_recruitment_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "840c709168c24c010459d9b1c707b23e9a2ca3a0b8a5ecab853b66bcb9ec4e44"
+          },
+          "medium": {
+            "file": "NH_recruitment_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "6bb3b2a1b19cddafd4d68da9d721f8b4d8086bedbd7827e515e74613d5160aae"
+          },
+          "large": {
+            "file": "NH_recruitment_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "edfd908ead1a916e8fc195aa552a95f68306e45cdde705c036387a243708bea8"
+          },
+          "scenarioBonus": {
+            "file": "NH_recruitment_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "0a0ec8c918a2a8c24626f2c94121b14764b88bb80e6c92ff4079fac67f544acc"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_recruitment_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "6a3a3576d8418006cc6c034dd341be79b23dc541792418488daea8c789707f25"
+          },
+          "medium": {
+            "file": "NH_recruitment_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "4ddb12cf421eac31154c9d8afd2acfae750a2e21423f674d140254abbb17a045"
+          },
+          "large": {
+            "file": "NH_recruitment_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "35c3fb232ed4bd12f34d4c992450b15909b42cbacf49a9579d0fc936269519b7"
+          },
+          "scenarioBonus": {
+            "file": "NH_recruitment_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "f6d4f95f24ed12a06254e0bebe2da6a5c6bba0cb10a6c4bb19fb7c21c14cb1b4"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_recruitment_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "06bddeaea11b96862e1a417eacfea4e88d9414619ddda57d62c50a57ca14dccc"
+          },
+          "medium": {
+            "file": "NH_recruitment_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "46f81630a1b64ccc0d7bd5bd2a08ac722bcedf2a0d6037166457cf2597ec9f66"
+          },
+          "large": {
+            "file": "NH_recruitment_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "3e0629f300ee64a6a1bf51d3bf4892f10ffb97a9ddb43dfdca1f2cbe7ab36697"
+          },
+          "scenarioBonus": {
+            "file": "NH_recruitment_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "5fddb2853cdf1a4f0c7a60eed26d5668f0acabe573a9f99e522f7f1cc3a40b48"
+          }
+        }
+      }
+    },
+    "warcasting": {
+      "master": "NH_warcasting_master.png",
+      "master_sha256": "3dffd024f80ba24186ac898b92b68cbba4540190be68a0d148807a5220e6e38f",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_warcasting_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "898f8ce3d10818bf6e79402a0e07c367508489e2f1c60e9abe5b79fd061e1245"
+          },
+          "medium": {
+            "file": "NH_warcasting_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "ac6fc8b1d2af4bac2ea7a950b36377c3c007549739faa335d2e7d8274cb50086"
+          },
+          "large": {
+            "file": "NH_warcasting_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "2f7be82e11303f6ba88aee2c26f209060a35a12f8947f946a2b8ef1a34e3fe59"
+          },
+          "scenarioBonus": {
+            "file": "NH_warcasting_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "4da99f3d47a54bf39f760a3106489e3c10d3f62ebea6848e8773e8954e457711"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_warcasting_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "9c894be2863cac8789f594360f6df07ffb1b7dfc0fcbe5982d53090984f4f219"
+          },
+          "medium": {
+            "file": "NH_warcasting_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "ccc861dd3a788752cdc39eb39d643df13abf6b527c7b89a1a58f152ebcd439b0"
+          },
+          "large": {
+            "file": "NH_warcasting_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "7ed57b564f482659669f1d73ddb3d87fdad22059bd5a6f3c0fcd117dd138fb04"
+          },
+          "scenarioBonus": {
+            "file": "NH_warcasting_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "99ed1171f5a693cbe33a5096c53e7c68de76c2058efe7f8ace66cbd3d1ef8255"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_warcasting_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "0dee4aa082d99bfbe9ac6503af6cbba9ac5f493259762a0b36510d7f1b63c9bf"
+          },
+          "medium": {
+            "file": "NH_warcasting_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "184bda9d3558b81d4e8f59d921994c3f0075780d3d62c8f9ae59daffed5ce544"
+          },
+          "large": {
+            "file": "NH_warcasting_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "4ce9394dde7525c3c1861e050b8513bf5c3d6b4d996eac023d9bf085d308a228"
+          },
+          "scenarioBonus": {
+            "file": "NH_warcasting_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "8b20a04120dbccae295328215f488aba392b5ecaeee1a50854ef225c1d1546ce"
+          }
+        }
+      }
+    },
+    "divineMandate": {
+      "master": "NH_divineMandate_master.png",
+      "master_sha256": "92f7ef6b5a108894a2f8f512f285cbe43070d94ca9b3e329fb70ef2e8c54342f",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_divineMandate_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "85a48610241109192f13e482120823e4e74f34e6015eb97758ec45017f2145c4"
+          },
+          "medium": {
+            "file": "NH_divineMandate_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "4b80f0a93ceda073c5d1e36ca6016009b8b209b92bd7b2b8b2c24b087ce7688c"
+          },
+          "large": {
+            "file": "NH_divineMandate_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "7fd24b3acc7827e9863c55248ec5833536840a0e48139ac621e0cf8a549cd908"
+          },
+          "scenarioBonus": {
+            "file": "NH_divineMandate_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "5753e22c757bf492d376779514421a561f5da8baa8292bf64d659322192adc9c"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_divineMandate_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "0ed714c3d5eea80306950e808c298131a0d1b6fcbd0e64b54552983f05bc2fc2"
+          },
+          "medium": {
+            "file": "NH_divineMandate_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "79a96079ff29c0a82236360d63bc1879fc189fa0a7c05d82207dc8e580285cb6"
+          },
+          "large": {
+            "file": "NH_divineMandate_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "d0b5d79bfc84ba24ab08f0e9fa787d8788ef3bd066b5ca6b1f8c8511df51012f"
+          },
+          "scenarioBonus": {
+            "file": "NH_divineMandate_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "3c5ccfc63aa4d2548cd388a72c028fa615dce39d7a163416bcc4f62d92e4527b"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_divineMandate_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "ed4e03b2341c6a179710d004f6bd52472f4f7c92b930e06c276a555cf3d0b9cf"
+          },
+          "medium": {
+            "file": "NH_divineMandate_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "37ea32898b6936d90985d9126a743c70d8b293a10d223197480c4b2f48481395"
+          },
+          "large": {
+            "file": "NH_divineMandate_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "489b1a6560075b472c521918e150fe36b157ac95f317c9285dbefc293727dc3d"
+          },
+          "scenarioBonus": {
+            "file": "NH_divineMandate_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "e56fee38441324dba43d9187355e10835c55c755e531209cd276a5a1767134f3"
+          }
+        }
+      }
+    },
+    "sylvanLuck": {
+      "master": "NH_sylvanLuck_master.png",
+      "master_sha256": "68d2075dedd78e81c1e64aef925187992ec6cdc22a83874364449b877c5164f6",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_sylvanLuck_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "fdd9bd903fdb7bd48c656f25a14e438d808a2eff7512e66d0b1c173e76c6d324"
+          },
+          "medium": {
+            "file": "NH_sylvanLuck_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "ff1ef25e4eab0055b864a3e508486fc16c5f641cd6d035ee9aa924ecae6684d3"
+          },
+          "large": {
+            "file": "NH_sylvanLuck_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "5e5b65e578dc36dde6b66ae1b6d7705c52559a452351c5f800e8e9c5ff550855"
+          },
+          "scenarioBonus": {
+            "file": "NH_sylvanLuck_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "990d8afe926e5b5ee3d772f5ed4c347c60af915f0fc9a106ac4c1c75191c3bb6"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_sylvanLuck_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "d6084e447a9c93583ff31b0a63baa08b7bc563b28a831d87a70d1c4beece4d5f"
+          },
+          "medium": {
+            "file": "NH_sylvanLuck_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "2c5a1c645b8d72ccc80e4152891c2aa4a8d924f25cccd4f29f3cd4e6a98cf4d0"
+          },
+          "large": {
+            "file": "NH_sylvanLuck_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "5d679aee31173e060efe9182a4773715cb47cd18cd4b48cb2ed8f0312efb9fb1"
+          },
+          "scenarioBonus": {
+            "file": "NH_sylvanLuck_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "681b3cb76aa2561cce71abca8456b49a5460254d1f59a50a86419d07fda929b9"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_sylvanLuck_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "13ec978d0ae550ca0c0f1c4373f7d98e96a192387a7a5f3164ba486a051905b9"
+          },
+          "medium": {
+            "file": "NH_sylvanLuck_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "3c2ac77ea3d3f6b4199e0a6d890edb2d35f83b5912e162483204de3f563d6b88"
+          },
+          "large": {
+            "file": "NH_sylvanLuck_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "ee7d03934fc40a4589ec19c4dc424dfb03fe675251612c40f8007b4222316402"
+          },
+          "scenarioBonus": {
+            "file": "NH_sylvanLuck_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "fdd08e68d3a3c74258b3b45d7ebd7242df44004a01ff0fc2b2e4eefb91cc18c6"
+          }
+        }
+      }
+    },
+    "metamagic": {
+      "master": "NH_metamagic_master.png",
+      "master_sha256": "ee97f8e72c4052efcd3e5dc17436dd04b9fc09567238ab9aecbdcd1a36733f16",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_metamagic_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "0b6ee186e6fb33f09c8577e9ad234a5ce0bf0a3f76f53942db06ba2b1663f4e9"
+          },
+          "medium": {
+            "file": "NH_metamagic_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "40d4b72aa04f0f07fe584045a6f6457e5e523124be5b5e28c607323b501ff65e"
+          },
+          "large": {
+            "file": "NH_metamagic_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "a78dae6088baf21ccef47ae69f5997adcb8b145d648a346598ce63b945256c3f"
+          },
+          "scenarioBonus": {
+            "file": "NH_metamagic_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "67fe7d83ea55da09e4898817b180e1f61b576e8136df33235ff54bc9f7c2d5ed"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_metamagic_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "4d0eb1a3aafb2a47b240608d3ec5189703391798bc18fde41fa5481459f3f331"
+          },
+          "medium": {
+            "file": "NH_metamagic_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "5c1f9fcb29862dc0bb8aea036e5346ea9233933cd86fdc3ee0325a44f700a529"
+          },
+          "large": {
+            "file": "NH_metamagic_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "030fb82c62f474c3e02d85238fc45539b319aabae24849240ab4a805452f0552"
+          },
+          "scenarioBonus": {
+            "file": "NH_metamagic_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "ef60dc10b045586b683cd23227943bd23d1ed8e71db7468c5a09658471c0b473"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_metamagic_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "f7e810fcf7a09f55b2dbb51b2caf0ce8a18fe54c89484d324a17941cede7111e"
+          },
+          "medium": {
+            "file": "NH_metamagic_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "130e910e8a7bc0d860f642bc85a22ca213e22a25b1917c976b414d89fdf61b3f"
+          },
+          "large": {
+            "file": "NH_metamagic_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "a993d7e8c55f3350e461cf9c84371c52c126f96acd9241f07ee39a4b49654800"
+          },
+          "scenarioBonus": {
+            "file": "NH_metamagic_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "986035cc7b7e3449362dbc17aea5c4dceba79af7ed6bfa7d351ee6fdf083b651"
+          }
+        }
+      }
+    },
+    "shroudOfMalassa": {
+      "master": "NH_shroudOfMalassa_master.png",
+      "master_sha256": "74b0a1df27fe3668fee48315c12750f40723f4c4b18db68e3835ca7621dbde59",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_shroudOfMalassa_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "5fbfa60d8faa8b3040c9af28c2106cf54d7ae9ea6bd9e051adbb22c71b935236"
+          },
+          "medium": {
+            "file": "NH_shroudOfMalassa_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "d2bb7d01a6e861044e2828fde3559ae30b27368cbf38feca653a47e9df1baf9a"
+          },
+          "large": {
+            "file": "NH_shroudOfMalassa_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "e4f85aac8d37cb98e5276d99c1fbd2a8af16e9232a00a4c99effb4ac9c8eda31"
+          },
+          "scenarioBonus": {
+            "file": "NH_shroudOfMalassa_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "a8884ddffe42d577529e79e11d791d51cac65c4bb3a73a8faf8a71ca587da93e"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_shroudOfMalassa_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "c9c46f3bfcb311540172532825125837cecb08b22ab980da3b6b7dbc79c4718d"
+          },
+          "medium": {
+            "file": "NH_shroudOfMalassa_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "f324572a049264349b5ed294a5c6f55bf8989c2a369d36923fe1488a75443df9"
+          },
+          "large": {
+            "file": "NH_shroudOfMalassa_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "3325bc6d4042778e6406013bb206cb1839c5ea4b7c8c2c4aba69ba420529fed9"
+          },
+          "scenarioBonus": {
+            "file": "NH_shroudOfMalassa_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "8c77ec3e0dee73fa453444ea5857df1886f58c0b45930731766ca6df854d533e"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_shroudOfMalassa_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "73960f9ea69e05aae9f086405d98b2df903ec4fd692cdbffc055d6664b0c300e"
+          },
+          "medium": {
+            "file": "NH_shroudOfMalassa_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "41fc9861c1def6cba4690ac5b7003a8f4ac28aecd792bb0517a3119144fb88a7"
+          },
+          "large": {
+            "file": "NH_shroudOfMalassa_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "f8eb54014a5104afc210cf3c8d9a08c06633e128ab465f7b189107fe82f13514"
+          },
+          "scenarioBonus": {
+            "file": "NH_shroudOfMalassa_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "ec6df471c7d6641a80ef496b04cbc8c6eb665b167f0d7be4552d5fcf624dfdf0"
+          }
+        }
+      }
+    },
+    "demonicGating": {
+      "master": "NH_demonicGating_master.png",
+      "master_sha256": "a3c9d1659216a8847e1f9152096f73b2edff1f5efa4f4a0954220af148cd4d8c",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_demonicGating_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "0e5ac7dee478c4f5adb2a685f5ae629c7473fe2b542de66a1ab89e8dd9951733"
+          },
+          "medium": {
+            "file": "NH_demonicGating_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "6cc3139e15800968c1649c0ae963e0adec885e50a8bf3b58add791c0bf132f80"
+          },
+          "large": {
+            "file": "NH_demonicGating_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "3263494513a1d3e32e4ee58e1b0361b0ee270b4e257b25613fa7c128b1c413be"
+          },
+          "scenarioBonus": {
+            "file": "NH_demonicGating_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "712f18be0a08d63f751b469e8f0ca555759c6df352e942ceaeb2ba0796782e61"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_demonicGating_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "188f6bdaf0a41c17a0b37082d7dc24bb5c23648f4288afc179ef05bfea8f9224"
+          },
+          "medium": {
+            "file": "NH_demonicGating_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "477df92b9a45589a5f21413df0ab28cf74b07d3ee5944365d52129aeaf255a16"
+          },
+          "large": {
+            "file": "NH_demonicGating_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "485cdbdb13d66fd6d6446f0eb25e2cd619e43d49e79f41a05280c208d2999fe8"
+          },
+          "scenarioBonus": {
+            "file": "NH_demonicGating_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "03fe8b46d1f5ee94739766816db4b5ad8fde19318ba3c6445dc65693932ba628"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_demonicGating_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "47afe8512760e28f58718e60f4727ab8769149d0f70fb1141e627205dbccd497"
+          },
+          "medium": {
+            "file": "NH_demonicGating_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "40051d267b8dea1e22c585ed1613e0f3d3659764dd60e2f1e160c138bea4d284"
+          },
+          "large": {
+            "file": "NH_demonicGating_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "6f44e9cd1fea39157f22b68700337e545f14f4462df2536752121a706886aa65"
+          },
+          "scenarioBonus": {
+            "file": "NH_demonicGating_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "44f4c2e0d1500e4ef1a4e8d8b00e8880ed30b4513ce545ef8222d0f1d20c919b"
+          }
+        }
+      }
+    },
+    "bloodrage": {
+      "master": "NH_bloodrage_master.png",
+      "master_sha256": "cec2d77e7e0c94448b6413d288e91909b4437449fbae5cdce7cc47f58d760711",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_bloodrage_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "33512f5c47a4623c5c23788a9e44f3be6c9547e2ee0c905c14def15c25c22536"
+          },
+          "medium": {
+            "file": "NH_bloodrage_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "7c1a82e8ee03c3398b7fb291f62ea3b798259ee507f730e25b8adaa82e969424"
+          },
+          "large": {
+            "file": "NH_bloodrage_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "6cd35be44986d0377217ed436ae9b984c59d3d6122eb1706fdc684cf0318263f"
+          },
+          "scenarioBonus": {
+            "file": "NH_bloodrage_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "80f0f9cd2c2c85064ea434c38dba3abd8e57b3be0750e824db2e95d1ca0a9527"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_bloodrage_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "9698502490267f50c2e63ce256d6c8817aa82524fadfabdbf394596ed7bc96a2"
+          },
+          "medium": {
+            "file": "NH_bloodrage_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "d96376e3aabdd66f80129de251f3b18c3394e4ce4d1bbe053fb7399144a0ccdc"
+          },
+          "large": {
+            "file": "NH_bloodrage_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "f31c24dccee7e6f787fecee97ae14c5be89ef6ca9035c53e6e1b96583ddb8d60"
+          },
+          "scenarioBonus": {
+            "file": "NH_bloodrage_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "1a3cb951c22a9e9f90609f0e87fd1227334f945a32b5c795266086ea025bc620"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_bloodrage_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "5bace5b2b8b3057b2c793d3284ec5555aff59b8ba72d33e87f5a2bcd0dca7e5b"
+          },
+          "medium": {
+            "file": "NH_bloodrage_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "fd246f5f8bf1759f0db9a30f3004733b2c9cb78e6379a3c53d5dcd1ee6d1d891"
+          },
+          "large": {
+            "file": "NH_bloodrage_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "0b45da117bef5340fa342e13542a086521c5a8476a0d1af25d42ff8df8d177ea"
+          },
+          "scenarioBonus": {
+            "file": "NH_bloodrage_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "e00bcd12c5cf5b8914f2770008a5fb992268111c9564de73f5ad8ff35d434451"
+          }
+        }
+      }
+    },
+    "bulwarkOfTheMire": {
+      "master": "NH_bulwarkOfTheMire_master.png",
+      "master_sha256": "c982281300104bada0e8cb370b5e47a330a22cda2ba01e6b3a0837525313b41e",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_bulwarkOfTheMire_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "e75c7c391cb12e98fb06e4ceca1b1c0b5944f736a66c0e76621f426f9685ac2e"
+          },
+          "medium": {
+            "file": "NH_bulwarkOfTheMire_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "19906bc62f84e8edea9429f40d9bd9f1cf3263b01a1b4b47b1ad1728e54080d9"
+          },
+          "large": {
+            "file": "NH_bulwarkOfTheMire_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "aacb38d0f96115ce58862d8c95ad69cd2c9977129818a63d1c4b0372ddc19952"
+          },
+          "scenarioBonus": {
+            "file": "NH_bulwarkOfTheMire_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "ad543538017b04134a53b20dfed11df48399fcfa3fc621df1f69520b3a1268dc"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_bulwarkOfTheMire_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "2bc0ac4ea65e83fcd7b1f5fb77c3c3e53cc52f7ee334f9902efaaf196a05e392"
+          },
+          "medium": {
+            "file": "NH_bulwarkOfTheMire_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "9a046679304c4b99a9037a68055f9fc7f741ac1db459a0e49ce0a6357b21e22a"
+          },
+          "large": {
+            "file": "NH_bulwarkOfTheMire_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "35b3a8e024f3a778cdcef172b6a23c6124751226e202a80aec196a8f73d5d64e"
+          },
+          "scenarioBonus": {
+            "file": "NH_bulwarkOfTheMire_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "fecd47d0d2688b77b2aeb0c6c8b6d100bccf97a210720d10ca815f76c399e570"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_bulwarkOfTheMire_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "2b72c22a2ec1ec774ce7899d37f5b125140732ea964e6d9830d4d514512d1273"
+          },
+          "medium": {
+            "file": "NH_bulwarkOfTheMire_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "8edbdbfb881ae2669eec2f85872c0e0dbffdeaf27ebf83f424e3361fb7dc92f3"
+          },
+          "large": {
+            "file": "NH_bulwarkOfTheMire_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "95b5b5861941c59a31126ab03a747e86c61f53c0a1f2d89d7fe325e794844038"
+          },
+          "scenarioBonus": {
+            "file": "NH_bulwarkOfTheMire_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "ee0ed92c8fd2736eda84dccd895ca0f8c3dd2fd414ff0f7448912da4aa0f8a29"
+          }
+        }
+      }
+    },
+    "elementalRebirth": {
+      "master": "NH_elementalRebirth_master.png",
+      "master_sha256": "3d0506e46023a284636036e53ecca5ebe9382488b740c6725185ae0f450ceca8",
+      "master_dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "basic": {
+          "small": {
+            "file": "NH_elementalRebirth_basic_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "8f6ae2d9634fc68017a62aaff7737727e4e09925a956aeb397541694b4309aa0"
+          },
+          "medium": {
+            "file": "NH_elementalRebirth_basic_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "c8f5c9f7e8ef9718ecf95d9cb25b8ccb58bebd284835d48de8a3a89266cbd68b"
+          },
+          "large": {
+            "file": "NH_elementalRebirth_basic_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "c2bd26f9c04542a2932416b2242ab73a63b2f1f4e3888557978f2d58cf6aee9c"
+          },
+          "scenarioBonus": {
+            "file": "NH_elementalRebirth_basic_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "3ceed4b3c41fbb616b4979c4afd0a11d8633689492eff02a46183572ca52c1a5"
+          }
+        },
+        "advanced": {
+          "small": {
+            "file": "NH_elementalRebirth_advanced_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "88e8ced514d15e105f2168588cf175bb495157ce9201756aa45b4c44d24fa1c1"
+          },
+          "medium": {
+            "file": "NH_elementalRebirth_advanced_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "e4147adb55d426cf308367127c2dc69d7dd333086dfce129d5ff315b58c942a1"
+          },
+          "large": {
+            "file": "NH_elementalRebirth_advanced_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "0120e0806f1259d9aca98b6e6cff898378dbcae072bc86c6b12f1ae1a804109e"
+          },
+          "scenarioBonus": {
+            "file": "NH_elementalRebirth_advanced_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "2d65bee69b2b07d89b8ab599ce19ef7000fffd03c50b36fb62973b810e88076d"
+          }
+        },
+        "expert": {
+          "small": {
+            "file": "NH_elementalRebirth_expert_small.png",
+            "dimensions": [
+              32,
+              32
+            ],
+            "sha256": "0654e3b18d5cfc4babe04f73a4163ec89147f1858d9c9c27b1bbe726230ed676"
+          },
+          "medium": {
+            "file": "NH_elementalRebirth_expert_medium.png",
+            "dimensions": [
+              44,
+              44
+            ],
+            "sha256": "a28c39037aef20339c2227ffcf351552aa760a5b09d4878c6cd2ccf47247e133"
+          },
+          "large": {
+            "file": "NH_elementalRebirth_expert_large.png",
+            "dimensions": [
+              82,
+              93
+            ],
+            "sha256": "b7643dcd6ec701d65f42e4e2e303c7cfdb20e45c1a2b90836779ec3c6e619962"
+          },
+          "scenarioBonus": {
+            "file": "NH_elementalRebirth_expert_scenarioBonus.png",
+            "dimensions": [
+              58,
+              64
+            ],
+            "sha256": "d1d356a6061d9cf3732b7f721b0f0b182caebd6479c07a5e61968ee5d271f618"
+          }
+        }
+      }
+    }
+  }
+}

@@ -56,6 +56,79 @@ bool CBattleInfoEssentials::battleWasCounterspellArmed(BattleSide side) const
 	return getBattle()->getCounterspellArmed(side);
 }
 
+int32_t CBattleInfoEssentials::battleMetamagicPendingCount(BattleSide side) const
+{
+	RETURN_IF_NOT_BATTLE(0);
+	return getBattle()->getMetamagicPendingCount(side);
+}
+
+int32_t CBattleInfoEssentials::battleMetamagicUsesConsumed(BattleSide side) const
+{
+	RETURN_IF_NOT_BATTLE(0);
+	return getBattle()->getMetamagicUsesConsumed(side);
+}
+
+bool CBattleInfoEssentials::battleMetamagicGrandUsed(BattleSide side) const
+{
+	RETURN_IF_NOT_BATTLE(false);
+	return getBattle()->getMetamagicGrandUsed(side);
+}
+
+bool CBattleInfoEssentials::battleMetamagicFormulaReserveUsed(BattleSide side) const
+{
+	RETURN_IF_NOT_BATTLE(false);
+	return getBattle()->getMetamagicFormulaReserveUsed(side);
+}
+
+bool CBattleInfoEssentials::battleMetamagicCountersequenceArmed(BattleSide side) const
+{
+	RETURN_IF_NOT_BATTLE(false);
+	return getBattle()->getMetamagicCountersequenceArmed(side);
+}
+
+SpellID CBattleInfoEssentials::battleMetamagicFirstSpell(BattleSide side) const
+{
+	RETURN_IF_NOT_BATTLE(SpellID());
+	return getBattle()->getMetamagicFirstSpell(side);
+}
+
+uint32_t CBattleInfoEssentials::battleMetamagicFirstTargetUnitId(BattleSide side) const
+{
+	RETURN_IF_NOT_BATTLE(std::numeric_limits<uint32_t>::max());
+	return getBattle()->getMetamagicFirstTargetUnitId(side);
+}
+
+const std::vector<SpellID> & CBattleInfoEssentials::battleMetamagicSequenceSpells(BattleSide side) const
+{
+	static const std::vector<SpellID> empty;
+	if(!getBattle())
+		return empty;
+	return getBattle()->getMetamagicSequenceSpells(side);
+}
+
+bool CBattleInfoEssentials::battleMetamagicFirstCounterspellNegated(BattleSide side) const
+{
+	RETURN_IF_NOT_BATTLE(false);
+	return getBattle()->getMetamagicFirstCounterspellNegated(side);
+}
+
+bool CBattleInfoEssentials::battleCanUseMetamagicFollowup(BattleSide side) const
+{
+	return battleMetamagicPendingCount(side) > 0;
+}
+
+bool CBattleInfoEssentials::battleCanUseMetamagicSpell(BattleSide side, SpellID spell, bool grand) const
+{
+	// Grand changes the number of immediate follow-ups, not the spellbook
+	// legality of those follow-ups.  Repeated spells remain valid; Perfect
+	// Sequence is a power bonus evaluated by the spell mechanics, never a
+	// server-side legality filter.
+	(void)side;
+	(void)spell;
+	(void)grand;
+	return true;
+}
+
 int32_t CBattleInfoEssentials::nextObstacleId() const
 {
 	int32_t maxId = -1;

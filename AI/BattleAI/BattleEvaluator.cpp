@@ -948,26 +948,53 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		return false;
 
 	LOGL("Casting spells sounds like fun. Let's see...");
+	const bool metamagicFollowup = cb->getBattle(battleID)->battleCanUseMetamagicFollowup(side);
+	const bool metamagicGrandAvailable = metamagicFollowup
+		&& cb->getBattle(battleID)->battleMetamagicPendingCount(side) == 1
+		&& cb->getBattle(battleID)->battleMetamagicSequenceSpells(side).size() == 1
+		&& !cb->getBattle(battleID)->battleMetamagicGrandUsed(side)
+		&& newHorizonsMagic::metamagicRank(hero) >= 3
+		&& newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND);
+	// Grand is an optional variant of the immediate offer.  Keep both choices
+	// in the candidate set so the ordinary one-extra spell can win when it is
+	// better (and so a repeated first spell remains available as an ordinary
+	// cast even though the Grand version is rejected by Perfect Sequence).
+	const std::vector<bool> metamagicGrandChoices = metamagicGrandAvailable
+		? std::vector<bool>{false, true}
+		: std::vector<bool>{false};
+	// A pending sequence is an authoritative immediate window.  Do not let a
+	// player preference that disables ordinary spell use strand the AI in that
+	// window: it still has to search for a legal follow-up (or decline below).
+	if(metamagicFollowup)
+		allowSpells = true;
 	//Get all spells we can cast
-	std::vector<const CSpell*> possibleSpells;
+	struct SpellOption
+	{
+		const CSpell * spell = nullptr;
+		bool metamagicGrand = false;
+	};
+	std::vector<SpellOption> possibleSpells;
 
-	for (auto const & s : LIBRARY->spellh->objects)
-		if (allowSpells && s->canBeCast(cb->getBattle(battleID).get(), spells::Mode::HERO, hero))
-			possibleSpells.push_back(s.get());
+	for(const auto metamagicGrand : metamagicGrandChoices)
+		for(auto const & s : LIBRARY->spellh->objects)
+			if(allowSpells && s->canBeCast(cb->getBattle(battleID).get(), spells::Mode::HERO, hero, metamagicGrand))
+				possibleSpells.push_back({s.get(), metamagicGrand});
 
 	LOGFL("I can cast %d spells.", possibleSpells.size());
 
-	vstd::erase_if(possibleSpells, [](const CSpell *s)
+	vstd::erase_if(possibleSpells, [](const SpellOption & option)
 	{
-		return spellType(s) != SpellTypes::BATTLE && !isCounterspell(s);
+		return spellType(option.spell) != SpellTypes::BATTLE && !isCounterspell(option.spell);
 	});
 
 	LOGFL("I know how %d of them works.", possibleSpells.size());
 
 	//Get viable spell-target pairs
 	std::vector<PossibleSpellcast> possibleCasts;
-	for(auto spell : possibleSpells)
+	for(const auto & spellOption : possibleSpells)
 	{
+		const auto * spell = spellOption.spell;
+		const bool metamagicGrandChoice = spellOption.metamagicGrand;
 		if(isCounterspell(spell))
 		{
 			// Counterspell has a no-target cast and no ordinary spell effect to
@@ -980,6 +1007,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			PossibleSpellcast ps;
 			ps.spell = spell;
 			ps.dest = {spells::Destination()};
+			ps.metamagicFollowup = metamagicFollowup;
+			ps.metamagicGrand = metamagicGrandChoice;
 			ps.value = value;
 			possibleCasts.push_back(std::move(ps));
 			continue;
@@ -1003,6 +1032,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(selectiveDispel && !canUseSelectiveDispel)
 					continue;
 				spells::BattleCast temp(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
+				temp.setMetamagicFollowup(metamagicFollowup);
+				temp.setMetamagicGrand(metamagicGrandChoice);
 				temp.setMassSlow(massSlow);
 				temp.setSelectiveDispel(selectiveDispel);
 				for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
@@ -1010,6 +1041,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					for(int overcharge = 0; overcharge <= maxOvercharge; ++overcharge)
 					{
 						spells::BattleCast candidateCast(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
+						candidateCast.setMetamagicFollowup(metamagicFollowup);
+						candidateCast.setMetamagicGrand(metamagicGrandChoice);
+						if(!target.empty() && target.front().unitValue)
+							candidateCast.setMetamagicTargetUnitId(target.front().unitValue->unitId());
 						candidateCast.setOvercharge(overcharge);
 						candidateCast.setMassSlow(massSlow);
 						candidateCast.setSelectiveDispel(selectiveDispel);
@@ -1028,6 +1063,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						if(massSlow && ps.dest.empty())
 							ps.dest.emplace_back(BattleHex::INVALID);
 						ps.spell = spell;
+						ps.metamagicFollowup = metamagicFollowup;
+						ps.metamagicGrand = metamagicGrandChoice;
 						ps.spellOvercharge = overcharge;
 						ps.spellSelectiveDispel = selectiveDispel;
 						ps.spellMassSlow = massSlow;
@@ -1054,7 +1091,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			}
 		}
 	}
-	// Commands compete in the same exchange evaluation as legal spell/target pairs.
+	// Commands compete in the same exchange evaluation as legal spell/target pairs
+	// only for an ordinary hero action.  While a Metamagic sequence is pending,
+	// the server rejects every other action until a follow-up or explicit decline
+	// resolves it.
+	if(!metamagicFollowup)
+	{
 	// Side-wide Orders use the authoritative availability query.  Targeted Orders
 	// are enumerated through the callback's legal target-set query, with no local
 	// guess about action budget, ownership, or current-round state.
@@ -1115,9 +1157,19 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			possibleCasts.push_back(std::move(candidate));
 		}
 	}
+	}
 	LOGFL("Found %d spell-target combinations.", possibleCasts.size());
 	if(possibleCasts.empty())
+	{
+		if(metamagicFollowup)
+		{
+			LOGL("No legal Metamagic follow-up remains; declining the sequence.");
+			cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
+			activeActionMade = true;
+			return true;
+		}
 		return false;
+	}
 
 	using ValueMap = PossibleSpellcast::ValueMap;
 
@@ -1256,7 +1308,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		{
 			auto battleIsFinishedOpt = state->battleIsFinished();
 
-			if(battleIsFinishedOpt)
+			if(battleIsFinishedOpt && !metamagicFollowup)
 			{
 				print("No need to cast a spell. Battle will finish soon.");
 				return false;
@@ -1329,6 +1381,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(ps.command == HeroCommand::NONE)
 				{
 					spells::BattleCast cast(state.get(), hero, spells::Mode::HERO, ps.spell);
+					cast.setMetamagicFollowup(ps.metamagicFollowup);
+					cast.setMetamagicGrand(ps.metamagicGrand);
+					if(!ps.dest.empty() && ps.dest.front().unitValue)
+						cast.setMetamagicTargetUnitId(ps.dest.front().unitValue->unitId());
 					cast.setOvercharge(ps.spellOvercharge);
 					cast.setSelectiveDispel(ps.spellSelectiveDispel);
 					cast.setMassSlow(ps.spellMassSlow);
@@ -1531,14 +1587,62 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		});
 #endif
 
+	// Grand Metamagic buys a second follow-up, so its first-cast candidate must
+	// include the value of a legal second spell.  The ordinary hypothetical
+	// evaluation above already gives us the best current-state value for every
+	// spell/target pair; use the best positive marginal as a conservative
+	// continuation estimate.  Repeated spells remain legal here; Perfect
+	// Sequence changes their power, not their availability.  A distinct second
+	// spell is the opportunity signal for spending Grand: an ordinary repeat is
+	// already available without consuming that once-per-battle reserve.
+	if(metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND))
+	{
+		const auto & sequence = cb->getBattle(battleID)->battleMetamagicSequenceSpells(side);
+		const auto firstSpell = sequence.size() == 1 ? sequence.front() : SpellID();
+		for(auto & first : possibleCasts)
+		{
+			if(!first.metamagicGrand || !first.spell)
+				continue;
+
+			float bestContinuation = 0.0f;
+			for(const auto & second : possibleCasts)
+			{
+				if(second.metamagicGrand || !second.spell)
+					continue;
+				// Keep Grand in reserve when its only projected continuation is
+				// the same spell that ordinary Metamagic can already repeat.  A
+				// distinct legal continuation is the opportunity that makes
+				// spending the once-per-battle Grand charge worthwhile.
+				if(firstSpell.hasValue() && second.spell->getId() == firstSpell)
+					continue;
+				bestContinuation = std::max(bestContinuation, second.value - cachedAttack.score);
+			}
+			if(bestContinuation > 0.0f)
+				first.value += bestContinuation;
+		}
+	}
+
 	LOGFL("Evaluation took %d ms", timer.getDiff());
 
 	auto castToPerform = *vstd::maxElementByFun(possibleCasts, [](const PossibleSpellcast & ps) -> float
 		{
 			return ps.value;
 		});
+	if(metamagicFollowup
+		&& (castToPerform.value < cachedAttack.score
+			|| vstd::isAlmostEqual(castToPerform.value, cachedAttack.score)))
+	{
+		// Decline is the no-cast baseline, not literal score zero: hypothetical
+		// spell values include the active exchange's projected attack. A legal
+		// follow-up can therefore be positive in absolute terms while still
+		// being harmful relative to leaving the active exchange untouched.
+		LOGL("All Metamagic follow-ups are no better than declining; ending sequence.");
+		cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
+		activeActionMade = true;
+		return true;
+	}
 
-	if(castToPerform.value > cachedAttack.score && !vstd::isAlmostEqual(castToPerform.value, cachedAttack.score))
+	if(metamagicFollowup || (castToPerform.value > cachedAttack.score && !vstd::isAlmostEqual(castToPerform.value, cachedAttack.score)))
 	{
 		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);
 		if(castToPerform.command != HeroCommand::NONE)
@@ -1577,6 +1681,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		spellcast.spellOvercharge = castToPerform.spellOvercharge;
 		spellcast.spellSelectiveDispel = castToPerform.spellSelectiveDispel;
 		spellcast.spellMassSlow = castToPerform.spellMassSlow;
+		spellcast.metamagicFollowup = castToPerform.metamagicFollowup;
+		spellcast.metamagicGrand = castToPerform.metamagicGrand;
 		if(isCanonicalFireWall(*cb->getBattle(battleID), castToPerform.spell)
 			&& castToPerform.spellFireWallDirection != BattleHex::NONE
 			&& !castToPerform.dest.empty())

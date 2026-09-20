@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include <limits>
+
 #include "../GameConstants.h"
 #include "HeroCommand.h"
 #include "FocusFireState.h"
@@ -37,6 +39,18 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	uint32_t castSpellsCount = 0; //how many spells each side has been cast this turn
 	bool temporalFieldUsed = false; // saved once-per-combat Sorcery Mass Slow budget
 	bool counterspellArmed = false; // saved Sorcery Counterspell ward, until the next hero action or enemy hero spell
+	// Tower Metamagic is a battle-long budget.  The pending sequence is kept
+	// separately from the ordinary hero-action spell count: additional spells
+	// are immediate follow-ups and never buy another hero action.
+	uint8_t metamagicUsesConsumed = 0;
+	uint8_t metamagicPendingCount = 0;
+	bool metamagicGrandUsed = false;
+	bool metamagicFormulaReserveUsed = false;
+	bool metamagicCountersequenceArmed = false;
+	SpellID metamagicFirstSpell;
+	uint32_t metamagicFirstTargetUnitId = std::numeric_limits<uint32_t>::max();
+	std::vector<SpellID> metamagicSequenceSpells;
+	bool metamagicFirstCounterspellNegated = false;
 	std::vector<SpellID> usedSpellsHistory; //every time hero casts spell, it's inserted here -> eagle eye skill
 	int32_t enchanterCounter = 0; //tends to pass through 0, so sign is needed
 	int32_t initialMana = 0;
@@ -52,6 +66,12 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			throw std::runtime_error("Cannot discard consumed Temporal Field battle state");
 		if(h.saving && counterspellArmed && !h.hasFeature(Handler::Version::NEW_HORIZONS_COUNTERSPELL))
 			throw std::runtime_error("Cannot discard armed Counterspell battle state");
+		if(h.saving && (metamagicUsesConsumed != 0 || metamagicPendingCount != 0 || metamagicGrandUsed
+			|| metamagicFormulaReserveUsed || metamagicCountersequenceArmed || metamagicFirstSpell.hasValue()
+			|| metamagicFirstTargetUnitId != std::numeric_limits<uint32_t>::max()
+			|| !metamagicSequenceSpells.empty() || metamagicFirstCounterspellNegated)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
+			throw std::runtime_error("Cannot discard Metamagic battle state");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 			&& (focusFire || activeOrder == HeroCommand::FOCUS_FIRE))
 			throw std::runtime_error("Cannot discard New Horizons targeted command state");
@@ -80,6 +100,35 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		else if(!h.saving)
 		{
 			counterspellArmed = false;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
+		{
+			h & metamagicUsesConsumed;
+			h & metamagicPendingCount;
+			h & metamagicGrandUsed;
+			h & metamagicFormulaReserveUsed;
+			h & metamagicCountersequenceArmed;
+			h & metamagicFirstSpell;
+			h & metamagicFirstTargetUnitId;
+			h & metamagicSequenceSpells;
+			h & metamagicFirstCounterspellNegated;
+			if(!h.saving && (metamagicUsesConsumed > 3 || metamagicPendingCount > 2
+				|| metamagicSequenceSpells.size() > 3
+				|| (metamagicPendingCount != 0 && (!metamagicFirstSpell.hasValue() || metamagicSequenceSpells.empty()))
+				|| (metamagicPendingCount == 0 && (!metamagicSequenceSpells.empty() || metamagicFirstSpell.hasValue()))))
+				throw std::runtime_error("Invalid saved Metamagic battle state");
+		}
+		else if(!h.saving)
+		{
+			metamagicUsesConsumed = 0;
+			metamagicPendingCount = 0;
+			metamagicGrandUsed = false;
+			metamagicFormulaReserveUsed = false;
+			metamagicCountersequenceArmed = false;
+			metamagicFirstSpell = SpellID();
+			metamagicFirstTargetUnitId = std::numeric_limits<uint32_t>::max();
+			metamagicSequenceSpells.clear();
+			metamagicFirstCounterspellNegated = false;
 		}
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
 		{
@@ -119,5 +168,14 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		{
 			orderState.reset();
 		}
+	}
+
+	void clearMetamagicSequence()
+	{
+		metamagicPendingCount = 0;
+		metamagicFirstSpell = SpellID();
+		metamagicFirstTargetUnitId = std::numeric_limits<uint32_t>::max();
+		metamagicSequenceSpells.clear();
+		metamagicFirstCounterspellNegated = false;
 	}
 };

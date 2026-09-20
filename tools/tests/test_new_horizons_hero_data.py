@@ -10,10 +10,109 @@ import shutil
 
 ROOT = Path(__file__).resolve().parents[2]
 
+CANONICAL_PROFILES = {
+    'core:knight': ([15, 20, 5, 10], [3, 4, 1, 2]),
+    'core:cleric': ([5, 10, 15, 20], [1, 2, 3, 4]),
+    'core:ranger': ([15, 15, 10, 10], [3, 3, 2, 2]),
+    'core:druid': ([5, 5, 15, 25], [1, 1, 3, 5]),
+    'core:alchemist': ([15, 10, 10, 15], [3, 2, 2, 3]),
+    'core:wizard': ([5, 5, 20, 20], [1, 1, 4, 4]),
+    'core:demoniac': ([25, 10, 10, 5], [5, 2, 2, 1]),
+    'core:heretic': ([10, 5, 20, 15], [2, 1, 4, 3]),
+    'core:deathknight': ([20, 10, 15, 5], [4, 2, 3, 1]),
+    'core:necromancer': ([5, 10, 20, 15], [1, 2, 4, 3]),
+    'core:overlord': ([20, 15, 10, 5], [4, 3, 2, 1]),
+    'core:warlock': ([10, 5, 25, 10], [2, 1, 5, 2]),
+    'core:barbarian': ([25, 15, 5, 5], [5, 3, 1, 1]),
+    'core:battlemage': ([20, 5, 15, 10], [4, 1, 3, 2]),
+    'core:beastmaster': ([15, 25, 5, 5], [3, 5, 1, 1]),
+    'core:witch': ([5, 10, 10, 25], [1, 2, 2, 5]),
+    'core:planeswalker': ([15, 10, 15, 10], [3, 2, 3, 2]),
+    'core:elementalist': ([5, 5, 25, 15], [1, 1, 5, 3]),
+}
+
+CANONICAL_SKILLS = (
+    'new-horizons:offense', 'new-horizons:armorer', 'new-horizons:archery',
+    'new-horizons:battlecraft', 'new-horizons:warMachines', 'new-horizons:discipline',
+    'new-horizons:recruitment', 'new-horizons:command', 'new-horizons:warcasting',
+    'new-horizons:spellcraft', 'new-horizons:wisdom', 'new-horizons:lightMagic',
+    'new-horizons:shadowMagic', 'new-horizons:natureMagic', 'new-horizons:havocMagic',
+    'new-horizons:sorceryMagic', 'new-horizons:chaosMagic', 'new-horizons:logistics',
+    'new-horizons:diplomacy', 'new-horizons:estates', 'new-horizons:learning',
+    'new-horizons:luck', 'new-horizons:divineMandate', 'new-horizons:sylvanLuck',
+    'new-horizons:metamagic', 'new-horizons:demonicGating', 'new-horizons:necromancy',
+    'new-horizons:shroudOfMalassa', 'new-horizons:bloodrage',
+    'new-horizons:bulwarkOfTheMire', 'new-horizons:elementalRebirth',
+)
+
+CANONICAL_WEIGHT_ROWS = {
+    'core:knight': '4 6 3 5 3 5 4 5 4 2 0 5 1 1 1 4 1 6 8 7 3 5 10 0 0 0 0 0 0 0 0',
+    'core:cleric': '1 3 1 2 2 4 2 0 4 6 7 8 2 2 2 6 2 4 8 6 7 5 10 0 0 0 0 0 0 0 0',
+    'core:ranger': '4 4 6 5 2 3 2 4 7 3 0 5 1 7 2 1 1 9 5 3 4 8 0 10 0 0 0 0 0 0 0',
+    'core:druid': '1 1 2 1 1 2 2 0 1 7 8 7 2 10 2 2 2 5 5 3 8 10 0 10 0 0 0 0 0 0 0',
+    'core:alchemist': '3 2 3 4 5 2 1 5 10 7 0 1 1 1 7 7 1 5 4 6 7 3 0 0 10 0 0 0 0 0 0',
+    'core:wizard': '1 1 1 1 3 2 1 0 1 9 9 1 1 1 8 10 1 3 4 7 10 2 0 0 10 0 0 0 0 0 0',
+    'core:demoniac': '8 3 2 6 2 3 5 6 4 2 0 1 1 1 5 1 4 7 1 5 2 4 0 0 0 10 0 0 0 0 0',
+    'core:heretic': '3 1 2 3 2 2 2 0 4 6 7 1 2 1 8 2 8 4 2 4 7 4 0 0 0 10 0 0 0 0 0',
+    'core:deathknight': '6 4 2 5 2 4 2 5 7 4 0 1 6 1 2 3 3 6 2 4 4 2 0 0 0 0 10 0 0 0 0',
+    'core:necromancer': '1 3 1 2 3 2 3 0 4 6 7 1 9 1 2 6 3 4 1 6 9 1 0 0 0 0 10 0 0 0 0',
+    'core:overlord': '6 5 3 6 3 3 3 6 4 2 0 1 4 1 5 1 1 8 2 5 3 5 0 0 0 0 0 10 0 0 0',
+    'core:warlock': '3 1 2 3 2 1 3 0 4 7 7 1 7 1 10 1 1 5 1 5 8 4 0 0 0 0 0 10 0 0 0',
+    'core:barbarian': '8 4 5 8 2 3 5 5 1 1 0 1 1 2 1 1 3 9 1 2 2 6 0 0 0 0 0 0 10 0 0',
+    'core:battlemage': '6 1 4 6 1 3 4 0 10 4 5 1 1 6 1 1 6 7 3 2 6 8 0 0 0 0 0 0 10 0 0',
+    'core:beastmaster': '4 8 5 7 2 6 4 4 1 1 0 1 2 3 1 1 1 6 2 3 2 5 0 0 0 0 0 0 0 10 0',
+    'core:witch': '1 4 2 2 1 3 2 0 4 6 8 1 8 8 1 1 2 5 3 4 8 7 0 0 0 0 0 0 0 10 0',
+    'core:planeswalker': '4 2 4 6 2 2 1 4 10 7 0 1 1 7 7 1 1 10 4 3 6 9 0 0 0 0 0 0 0 0 10',
+    'core:elementalist': '1 1 1 1 2 2 2 0 1 9 9 1 1 8 10 1 1 5 4 4 9 8 0 0 0 0 0 0 0 0 10',
+}
+
+CANONICAL_CLASS_NAMES = {
+    'core:alchemist': 'Battle Mage',
+    'core:battlemage': 'Shaman',
+    'core:demoniac': 'Tyrant',
+    'core:heretic': 'Cultist',
+}
+
 
 class HeroDataTest(unittest.TestCase):
     def setUp(self):
         self.rules = json.loads((ROOT / 'config/newHorizonsHeroes.json').read_text())
+
+    def test_legacy_starting_skill_migration_table_is_canonical_and_honest(self):
+        self.assertEqual(self.rules['startingSkills']['legacySkillMigrations'], {
+            'core:archery': {'kind': 'skill', 'target': 'new-horizons:archery'},
+            'core:armorer': {'kind': 'skill', 'target': 'new-horizons:armorer'},
+            'core:artillery': {'kind': 'skill', 'target': 'new-horizons:warMachines'},
+            'core:ballistics': {'kind': 'skill', 'target': 'new-horizons:warMachines'},
+            'core:diplomacy': {'kind': 'skill', 'target': 'new-horizons:diplomacy'},
+            'core:eagleEye': {
+                'kind': 'perk', 'target': 'new-horizons:learning.eagleEye', 'fallback': 'remove'},
+            'core:estates': {'kind': 'skill', 'target': 'new-horizons:estates'},
+            'core:firstAid': {'kind': 'skill', 'target': 'new-horizons:warMachines'},
+            'core:intelligence': {
+                'kind': 'perk', 'target': 'new-horizons:wisdom.intelligence', 'fallback': 'remove'},
+            'core:leadership': {'kind': 'skill', 'target': 'new-horizons:discipline'},
+            'core:learning': {'kind': 'skill', 'target': 'new-horizons:learning'},
+            'core:logistics': {'kind': 'skill', 'target': 'new-horizons:logistics'},
+            'core:luck': {'kind': 'skill', 'target': 'new-horizons:luck'},
+            'core:mysticism': {
+                'kind': 'perk', 'target': 'new-horizons:wisdom.mysticism', 'fallback': 'remove'},
+            'core:navigation': {
+                'kind': 'perk', 'target': 'new-horizons:logistics.navigation', 'fallback': 'remove'},
+            'core:necromancy': {'kind': 'factionSkill', 'target': 'new-horizons:necromancy'},
+            'core:offence': {'kind': 'skill', 'target': 'new-horizons:offense'},
+            'core:pathfinding': {
+                'kind': 'perk', 'target': 'new-horizons:logistics.pathfinding', 'fallback': 'remove'},
+            'core:resistance': {
+                'kind': 'perk', 'target': 'new-horizons:warcasting.spellward', 'fallback': 'remove'},
+            'core:scholar': {
+                'kind': 'perk', 'target': 'new-horizons:learning.scholar', 'fallback': 'remove'},
+            'core:scouting': {
+                'kind': 'perk', 'target': 'new-horizons:logistics.scouting', 'fallback': 'remove'},
+            'core:sorcery': {'kind': 'skill', 'target': 'new-horizons:spellcraft'},
+            'core:tactics': {
+                'kind': 'perk', 'target': 'new-horizons:battlecraft.tactics', 'fallback': 'remove'},
+        })
 
     def test_faction_starting_skill_policy_covers_every_core_faction_and_class(self):
         starting = self.rules['startingSkills']
@@ -88,14 +187,46 @@ class HeroDataTest(unittest.TestCase):
                     self.assertIn(unique, {skill for skill, _ in skills})
         self.assertEqual(hero_count, 144)
 
-    def test_all_core_classes_have_explicit_provisional_profiles(self):
+    def test_all_core_classes_have_exact_canonical_profiles_and_names(self):
         classes = json.loads((ROOT / 'config/heroClasses.json').read_text())
-        self.assertEqual(set(self.rules['classProfiles']), {'core:' + name for name in classes})
-        for profile in self.rules['classProfiles'].values():
-            self.assertEqual(sorted(profile['starting']), [5, 10, 15, 20])
-            self.assertEqual(len(profile['growth']), 4)
-            self.assertTrue(all(isinstance(value, int) and value >= 1 for value in profile['growth']))
-            self.assertEqual(sum(profile['growth']), 10)
+        self.assertEqual(self.rules['classProfiles'], {
+            class_id: {'starting': starting, 'growth': growth}
+            for class_id, (starting, growth) in CANONICAL_PROFILES.items()
+        })
+        # Unchanged names continue to come from HCTRAITS; only the four
+        # canonical renames are authored as New Horizons translation
+        # overrides, so the core class JSON does not replace localization for
+        # the other fourteen classes.
+        self.assertTrue(all('name' not in hero for hero in classes.values()))
+        translations = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())['translations']
+        for class_id, expected_name in CANONICAL_CLASS_NAMES.items():
+            with self.subTest(hero_class=class_id):
+                self.assertEqual(translations['core.heroClass.' + class_id.split(':', 1)[1] + '.name'], expected_name)
+
+    def test_every_class_has_exact_canonical_skill_offer_weights(self):
+        self.assertEqual(set(self.rules['skillOfferWeights']), set(CANONICAL_WEIGHT_ROWS))
+        self.assertEqual(len(CANONICAL_SKILLS), 31)
+        for class_id, row in CANONICAL_WEIGHT_ROWS.items():
+            with self.subTest(hero_class=class_id):
+                values = [int(value) for value in row.split()]
+                self.assertEqual(len(values), len(CANONICAL_SKILLS))
+                self.assertEqual(self.rules['skillOfferWeights'][class_id],
+                                 dict(zip(CANONICAL_SKILLS, values)))
+
+    def test_retired_skills_are_excluded_and_extra_growth_uses_canonical_skills(self):
+        self.assertEqual(set(self.rules['excludedSkills']), {
+            'core:airMagic', 'core:earthMagic', 'core:fireMagic', 'core:waterMagic',
+            'core:artillery', 'core:ballistics', 'core:firstAid', 'core:eagleEye',
+            'core:intelligence', 'core:leadership', 'core:mysticism', 'core:navigation',
+            'core:necromancy', 'core:pathfinding', 'core:resistance', 'core:scholar',
+            'core:scouting', 'core:sorcery', 'core:tactics', 'core:wisdom',
+        })
+        self.assertEqual(self.rules['extraGrowth'], [
+            {'skill': 'new-horizons:offense', 'primary': 0, 'chances': [0, 10, 20, 30]},
+            {'skill': 'new-horizons:armorer', 'primary': 1, 'chances': [0, 10, 20, 30]},
+            {'skill': 'new-horizons:spellcraft', 'primary': 2, 'chances': [0, 10, 20, 30]},
+            {'skill': 'new-horizons:wisdom', 'primary': 3, 'chances': [0, 10, 20, 30]},
+        ])
 
     def test_preview_generation_is_separate_and_never_overwrites(self):
         live = ROOT / 'Mods/new-horizons/mod.json'
@@ -125,7 +256,7 @@ class HeroDataTest(unittest.TestCase):
             root = Path(temporary)
             (root / 'config').mkdir()
             (root / 'Mods/new-horizons').mkdir(parents=True)
-            for name in ('Combat', 'Magic', 'Schools', 'Skills', 'Heroes', 'Capabilities', 'Masteries', 'Perks', 'MasteryTexts', 'ConvenienceBonuses'):
+            for name in ('Combat', 'Magic', 'Schools', 'Skills', 'Heroes', 'Capabilities', 'Masteries', 'Perks', 'MasteryTexts', 'HeroClassTexts', 'ConvenienceBonuses'):
                 shutil.copyfile(ROOT / f'config/newHorizons{name}.json', root / f'config/newHorizons{name}.json')
             shutil.copyfile(ROOT / 'Mods/new-horizons/mod.json', root / 'Mods/new-horizons/mod.json')
             script = root / 'check.cmake'

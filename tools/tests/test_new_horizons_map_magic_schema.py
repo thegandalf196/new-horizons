@@ -4,7 +4,7 @@
 import copy
 import unittest
 
-from test_new_horizons_content import load
+from test_new_horizons_content import legacy_rules, load
 
 try:
     from jsonschema import Draft4Validator
@@ -21,13 +21,8 @@ class MapMagicSchemaTest(unittest.TestCase):
             for name in ('newHorizonsMagic', 'newHorizonsMagicV2')
         ])
         self.validator = Draft4Validator(self.schema, registry=registry)
-        self.v1 = load('config/newHorizonsMagic.json')
-        self.v2 = copy.deepcopy(self.v1)
-        self.v2['rulesetVersion'] = 2
-        self.v2['spells']['new-horizons:magicMissile'] = {
-            'schools': ['new-horizons:sorcery'], 'level': 1, 'costs': [5] * 4,
-            'directDamage': {'base': 20, 'powerCoefficient': 20},
-        }
+        self.v2 = load('config/newHorizonsMagic.json')
+        self.v1 = legacy_rules(self.v2)
 
     def test_schema_and_explicit_legacy_contexts(self):
         Draft4Validator.check_schema(self.schema)
@@ -55,7 +50,7 @@ class MapMagicSchemaTest(unittest.TestCase):
     def test_v2_formula_remains_strict(self):
         for formula in (None, {'base': 20}, {'base': -1, 'powerCoefficient': 20}):
             value = copy.deepcopy(self.v2)
-            value['spells']['new-horizons:magicMissile']['directDamage'] = formula
+            value['spells']['core:magicArrow']['directDamage'] = formula
             self.assertFalse(self.validator.is_valid(value))
 
 

@@ -41,6 +41,24 @@ public:
 	/// target contains the selected start hex; the server derives and validates
 	/// the remaining two line hexes from this direction before casting.
 	BattleHex::EDir spellFireWallDirection = BattleHex::NONE;
+	/// Requests the immediate additional spell granted by Tower Metamagic.  The
+	/// server accepts this only while its saved battle snapshot has a pending
+	/// sequence; it never buys another Hero Action or chains recursively.
+	bool metamagicFollowup = false;
+	/// Chooses the Expert Grand Metamagic variant for the first additional
+	/// spell in this offered sequence.  The choice is explicit: merely opening
+	/// the follow-up prompt never consumes a use or reserves Grand.
+	bool metamagicGrand = false;
+	/// Explicitly declines the currently pending Metamagic sequence.  This is
+	/// validated by the server and clears only the immediate sequence.  An
+	/// initial decline leaves the use available; declining the second leg of a
+	/// Grand sequence preserves the already-accepted use and may carry Formula
+	/// Reserve's server-derived refund below.
+	bool metamagicDecline = false;
+	/// Server-derived Formula Reserve refund attached to a Decline/End after
+	/// at least one additional spell of a Grand sequence resolved.  Clients may
+	/// never author this value; the action processor fills it from saved state.
+	si32 metamagicManaRefund = 0;
 	HeroCommand command = HeroCommand::NONE;
 
 	BattleAction();
@@ -60,6 +78,7 @@ public:
 	static BattleAction makeEndOFTacticPhase(BattleSide side);
 	static BattleAction makeRetreat(BattleSide side);
 	static BattleAction makeSurrender(BattleSide side);
+	static BattleAction makeMetamagicDecline(BattleSide side);
 
 	bool isTacticsAction() const;
 	bool isUnitAction() const;
@@ -94,6 +113,14 @@ public:
 		if(h.saving && spellFireWallDirection != BattleHex::NONE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))
 			throw std::runtime_error("Cannot serialize Fire Wall direction to an older protocol");
+		if(h.saving && metamagicFollowup && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
+			throw std::runtime_error("Cannot serialize Metamagic follow-up to an older protocol");
+		if(h.saving && metamagicGrand && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
+			throw std::runtime_error("Cannot serialize Metamagic Grand choice to an older protocol");
+		if(h.saving && metamagicDecline && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
+			throw std::runtime_error("Cannot serialize Metamagic decline to an older protocol");
+		if(h.saving && metamagicManaRefund != 0 && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
+			throw std::runtime_error("Cannot serialize Metamagic Formula Reserve refund to an older protocol");
 		if(h.saving && spell == SpellID(SpellID::LAND_MINE)
 			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE))
 			throw std::runtime_error("Cannot serialize multi-hex Land Mine action to an older protocol");
@@ -133,6 +160,26 @@ public:
 		else if(!h.saving)
 		{
 			spellFireWallDirection = BattleHex::NONE;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
+		{
+			h & metamagicFollowup;
+			h & metamagicGrand;
+		}
+		else if(!h.saving)
+		{
+			metamagicFollowup = false;
+			metamagicGrand = false;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
+		{
+			h & metamagicDecline;
+			h & metamagicManaRefund;
+		}
+		else if(!h.saving)
+		{
+			metamagicDecline = false;
+			metamagicManaRefund = 0;
 		}
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
 		{

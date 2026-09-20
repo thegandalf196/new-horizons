@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include <limits>
+
 #include "NetPacksBase.h"
 #include "BattleChanges.h"
 #include "PacksForClient.h"
@@ -423,6 +425,10 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 	bool temporalFieldCast = false; // consumes the saved once-per-combat Sorcery Mass Slow budget
 	BattleSide counterspellSide = BattleSide::NONE; // ward side consumed or collapsed while this hero spell was attempted
 	bool counterspellNegated = false; // the ward had enough mana and suppressed this spell's effects
+	bool metamagicFollowup = false; // this spell is an immediate non-chaining Metamagic additional cast
+	bool metamagicGrand = false; // first follow-up explicitly accepted the Expert two-spell variant
+	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max(); // primary target used by sequence perks
+	int32_t metamagicManaRefund = 0; // Formula Reserve refund published with the final additional cast
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -433,6 +439,9 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 		if(h.saving && (counterspellSide != BattleSide::NONE || counterspellNegated)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_COUNTERSPELL))
 			throw std::runtime_error("Cannot serialize Counterspell cast result to an older protocol");
+		if(h.saving && (metamagicFollowup || metamagicGrand || metamagicTargetUnitId != std::numeric_limits<uint32_t>::max()
+			|| metamagicManaRefund != 0) && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
+			throw std::runtime_error("Cannot serialize Metamagic cast metadata to an older protocol");
 		h & battleID;
 		h & side;
 		h & spellID;
@@ -461,6 +470,20 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 		{
 			counterspellSide = BattleSide::NONE;
 			counterspellNegated = false;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
+		{
+			h & metamagicFollowup;
+			h & metamagicGrand;
+			h & metamagicTargetUnitId;
+			h & metamagicManaRefund;
+		}
+		else if(!h.saving)
+		{
+			metamagicFollowup = false;
+			metamagicGrand = false;
+			metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();
+			metamagicManaRefund = 0;
 		}
 		assert(battleID != BattleID::NONE);
 	}

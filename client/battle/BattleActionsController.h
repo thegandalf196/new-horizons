@@ -63,6 +63,13 @@ class BattleActionsController
 
 	/// if true, active stack could possibly cast some target spell
 	std::vector<const CSpell *> creatureSpells;
+	/// The next Hero Spell selected from the spellbook is an authoritative
+	/// immediate Metamagic follow-up.  The pending sequence itself lives in the
+	/// battle snapshot; this flag only carries the user's current UI intent.
+	bool metamagicFollowupMode = false;
+	/// Explicit Expert Grand Metamagic choice for the first follow-up.  It is
+	/// reset whenever the prompt/cast ends and never mutates battle state.
+	bool metamagicGrandMode = false;
 
 	/// stack that has been selected as first target for multi-target spells (Teleport & Sacrifice)
 	const CStack * selectedStack;
@@ -173,6 +180,11 @@ public:
 
 	/// initialize hero spellcasting mode, e.g. on selecting spell in spellbook
 	void castThisSpell(SpellID spellID);
+	/// Enter the spellbook for a pending authoritative Metamagic follow-up.
+	void beginMetamagicFollowup();
+	bool metamagicFollowupModeActive() const;
+	void toggleMetamagicGrandFollowup();
+	bool metamagicGrandModeActive() const;
 
 	/// Install the authority-backed post-target Magic Arrow UI adapter.  The
 	/// adapter owns all formula, target identity, cost and request validation;

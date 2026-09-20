@@ -186,6 +186,19 @@ bool CGHeroInstance::canLearnSkill(const SecondarySkill & which) const
 	if (getSecSkillLevel(which) > 0)
 		return false;
 
+	// New Horizons stores an explicit allowlist/weight table in each hero's
+	// resolved rules snapshot.  A zero weight is an intentional ban, while an
+	// unknown skill must not fall through to legacy class probabilities once a
+	// canonical table is active.  This also keeps retired skills such as
+	// Mysticism from becoming ordinary level-up choices.
+	if(newHorizonsHeroes::isExcludedSkill(primaryGrowthRules, which))
+		return false;
+	if(newHorizonsHeroes::usesSkillOfferWeights(primaryGrowthRules))
+	{
+		const auto weight = newHorizonsHeroes::skillOfferWeight(primaryGrowthRules, which);
+		return weight.has_value() && *weight > 0;
+	}
+
 	if (getHeroClass()->secSkillProbability.count(which) == 0)
 		return false;
 
@@ -421,6 +434,7 @@ void CGHeroInstance::updateAppearance()
 void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 {
 	assert(validTypes(true));
+	const bool creationInitialization = !isFake && !primaryGrowthCaptured;
 	if(!isFake && !masteryRulesCaptured)
 	{
 		masteryState.rules = cb->getHeroMasteryRules();
@@ -439,7 +453,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		capabilityRulesCaptured = true;
 		nodeHasChanged();
 	}
-	if(!isFake && !primaryGrowthCaptured)
+	if(creationInitialization)
 	{
 		primaryGrowthRules = newHorizonsHeroes::resolveHeroRules(cb->getHeroDevelopmentRules(), getHeroClass()->getId());
 		primaryGrowthCaptured = true;
@@ -496,14 +510,19 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		&& secSkills[0] == std::pair<SecondarySkill,ui8>(SecondarySkill::NONE, -1);
 	if(defaultSecondarySkills) //set secondary skills to default
 		secSkills = getHeroType()->secSkillsInit;
-	// This is still creation-only initialization, but authored map skill vectors
-	// are creation inputs too. Apply the faction-start rule to both the engine
-	// defaults and explicit rosters; deserialized heroes do not pass through here.
-	secSkills = newHorizonsHeroes::applyStartingFactionSkill(primaryGrowthRules,
-		getHeroClass()->isMagicHero(), getFactionID(), secSkills);
+	// New Horizons starting migration is a creation rule. A binary/crossover
+	// snapshot marks its resolved rules as captured (or leaves them empty for a
+	// legacy hero); never reinterpret that saved roster against newly-installed
+	// module defaults when initHero is called again.
+	if(creationInitialization && newHorizonsHeroes::usesRules(primaryGrowthRules))
+	{
+		secSkills = newHorizonsHeroes::migrateStartingSkills(primaryGrowthRules, getFactionID(), secSkills);
+		secSkills = newHorizonsHeroes::applyStartingFactionSkill(primaryGrowthRules,
+			getHeroClass()->isMagicHero(), getFactionID(), secSkills);
+	}
 
-	// Only creation passes here; deserialized heroes retain their saved skill IDs.
-	// The saved magic profile defines the conversion, not installed defaults.
+	// Magic-school conversion is an independent saved magic-profile rule. Keep
+	// applying it even when an old hero has no primary-growth snapshot.
 	if(!getMagicRules().isNull() && !getMagicRules().Struct().empty())
 	{
 		std::vector<std::pair<SecondarySkill, ui8>> convertedSkills;

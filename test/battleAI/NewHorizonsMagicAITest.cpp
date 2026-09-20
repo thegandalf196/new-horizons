@@ -24,6 +24,7 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/Problem.h"
 
@@ -269,6 +270,184 @@ TEST_F(NewHorizonsMagicAITest, CounterspellAIArmsAThreatWardAndSkipsAnAlreadyArm
 	armedEvaluator.selectStackAction(active);
 	EXPECT_FALSE(armedEvaluator.attemptCastingSpell(active));
 	EXPECT_TRUE(callback->submitted.empty());
+}
+
+TEST_F(NewHorizonsMagicAITest, MetamagicAIDeclinesLegalButHarmfulFollowup)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+
+	const auto metamagic = SecondarySkill::decode("new-horizons:metamagic");
+	ASSERT_GE(metamagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 1, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	for(const auto spell : attackerSideHero->getSpellsInSpellbook())
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
+	attackerSideHero->mana = 1000;
+
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1000);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(4, 5), 10000);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	// Dispel is legal on this friendly Bless, but removing it lowers the
+	// active exchange's attack score. The absolute follow-up score remains
+	// positive; only comparison with the no-cast baseline can reject it.
+	active->addNewBonus(std::make_shared<Bonus>(BonusDuration::N_TURNS,
+		BonusType::PRIMARY_SKILL, BonusSource::SPELL_EFFECT, 50,
+		BonusSourceID(SpellID(SpellID::BLESS)), BonusSubtypeID(PrimarySkill::ATTACK)));
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	// This is the state after the ordinary triggering spell.  The follow-up is
+	// legal even though the ordinary hero-spell budget is already spent.
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	side.castSpellsCount = 1;
+	side.metamagicPendingCount = 1;
+	side.metamagicFirstSpell = SpellID::HASTE;
+	side.metamagicFirstTargetUnitId = newHorizonsMagic::INVALID_METAMAGIC_TARGET;
+	side.metamagicSequenceSpells = {SpellID::HASTE};
+
+	const auto * dispel = SpellID(SpellID::DISPEL).toSpell();
+	spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, dispel);
+	legal.setMetamagicFollowup(true);
+	legal.setMetamagicTargetUnitId(active->unitId());
+	ASSERT_TRUE(dispel->battleMechanics(&legal)->canBeCastAt({spells::Destination(active)}));
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_TRUE(callback->submitted.front().metamagicDecline);
+	EXPECT_FALSE(callback->submitted.front().metamagicFollowup);
+}
+
+TEST_F(NewHorizonsMagicAITest, MetamagicAIUsesOrdinaryRepeatedSpellAndLeavesGrandAvailable)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+
+	const auto metamagic = SecondarySkill::decode("new-horizons:metamagic");
+	ASSERT_GE(metamagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.grandMetamagic"});
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	for(const auto spell : attackerSideHero->getSpellsInSpellbook())
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
+	attackerSideHero->mana = 1000;
+
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1000);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 1000);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto & metamagicState = battle()->getSide(BattleSide::ATTACKER);
+	metamagicState.castSpellsCount = 1;
+	metamagicState.metamagicPendingCount = 1;
+	metamagicState.metamagicFirstSpell = SpellID::IMPLOSION;
+	metamagicState.metamagicFirstTargetUnitId = enemy->unitId();
+	metamagicState.metamagicSequenceSpells = {SpellID::IMPLOSION};
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
+	EXPECT_TRUE(callback->submitted.front().metamagicFollowup);
+	EXPECT_FALSE(callback->submitted.front().metamagicGrand);
+	EXPECT_EQ(metamagicState.metamagicPendingCount, 1);
+	EXPECT_FALSE(metamagicState.metamagicGrandUsed);
+}
+
+TEST_F(NewHorizonsMagicAITest, MetamagicAIChoosesGrandForAHighValueDistinctAlternative)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+
+	const auto metamagic = SecondarySkill::decode("new-horizons:metamagic");
+	ASSERT_GE(metamagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.grandMetamagic"});
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.perfectSequence"});
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	for(const auto spell : attackerSideHero->getSpellsInSpellbook())
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
+	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
+	attackerSideHero->addSpellToSpellbook(SpellID::FIREBALL);
+	attackerSideHero->mana = 1000;
+
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1000);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 10000);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto & metamagicState = battle()->getSide(BattleSide::ATTACKER);
+	metamagicState.castSpellsCount = 1;
+	metamagicState.metamagicPendingCount = 1;
+	metamagicState.metamagicFirstSpell = SpellID::HASTE;
+	metamagicState.metamagicFirstTargetUnitId = newHorizonsMagic::INVALID_METAMAGIC_TARGET;
+	metamagicState.metamagicSequenceSpells = {SpellID::HASTE};
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
+	EXPECT_TRUE(callback->submitted.front().metamagicFollowup);
+	EXPECT_TRUE(callback->submitted.front().metamagicGrand);
 }
 
 TEST_F(NewHorizonsMagicAITest, ResurrectionCanonicalTargetReacquiresProjectedStateFromLiveAimIdentity)

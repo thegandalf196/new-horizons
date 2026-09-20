@@ -10,8 +10,19 @@
 #include "StdInc.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/json/JsonUtils.h"
+#include "../../lib/GameConstants.h"
+#include "../../lib/constants/StringConstants.h"
+#include "../../lib/modding/CModHandler.h"
 
 using namespace newHorizonsHeroes;
+
+namespace
+{
+bool newHorizonsModuleActive()
+{
+	return vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE);
+}
+}
 
 TEST(NewHorizonsHeroRulesTest, NamedSchemaAcceptsFullAndEmptyAndRejectsMalformedFields)
 {
@@ -59,47 +70,105 @@ TEST(NewHorizonsHeroRulesTest, ResolvedSnapshotDoesNotFollowChangedInstalledProf
 	EXPECT_FALSE(usesRules(resolveHeroRules(JsonNode(), HeroClassID(0))));
 }
 
-TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasCompleteProvisionalProfilesAndSkillOpportunities)
+TEST(NewHorizonsHeroRulesTest, OldResolvedSnapshotWithoutMigrationTableRemainsLoadable)
 {
+	if(!newHorizonsModuleActive())
+		GTEST_SKIP() << "Requires the New Horizons module for scoped canonical skills";
+	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	ASSERT_NO_THROW(validateHeroRules(rules, true));
+
+	const auto resolved = resolveHeroRules(rules,
+		HeroClassID(HeroClassID::decode("core:knight")));
+	auto oldSnapshot = resolved;
+	oldSnapshot["startingSkills"].Struct().erase("legacySkillMigrations");
+	EXPECT_NO_THROW(validateResolvedHeroRules(oldSnapshot));
+
+	const std::vector<std::pair<SecondarySkill, ui8>> oldSkills = {
+		{SecondarySkill::ARCHERY, MasteryLevel::BASIC}};
+	EXPECT_EQ(migrateStartingSkills(oldSnapshot,
+		FactionID(FactionID::decode("core:castle")), oldSkills), oldSkills);
+
+	// The installed canonical profile is still required to carry the complete
+	// table; only an already-resolved saved snapshot may omit it.
+	rules["startingSkills"].Struct().erase("legacySkillMigrations");
+	EXPECT_THROW(validateHeroRules(rules, true), std::runtime_error);
+}
+
+TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasExactClassProfilesAndSkillOpportunities)
+{
+	if(!newHorizonsModuleActive())
+		GTEST_SKIP() << "Requires the New Horizons module for scoped canonical skills";
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "actual unactivated canonical hero data"));
 	ASSERT_NO_THROW(validateHeroRules(rules, true));
-	EXPECT_EQ(rules["classProfiles"].Struct().size(), 18u);
+	const std::map<std::string, std::pair<std::array<int, 4>, std::array<int, 4>>> expectedProfiles = {
+		{"core:knight", {{15, 20, 5, 10}, {3, 4, 1, 2}}},
+		{"core:cleric", {{5, 10, 15, 20}, {1, 2, 3, 4}}},
+		{"core:ranger", {{15, 15, 10, 10}, {3, 3, 2, 2}}},
+		{"core:druid", {{5, 5, 15, 25}, {1, 1, 3, 5}}},
+		{"core:alchemist", {{15, 10, 10, 15}, {3, 2, 2, 3}}},
+		{"core:wizard", {{5, 5, 20, 20}, {1, 1, 4, 4}}},
+		{"core:demoniac", {{25, 10, 10, 5}, {5, 2, 2, 1}}},
+		{"core:heretic", {{10, 5, 20, 15}, {2, 1, 4, 3}}},
+		{"core:deathknight", {{20, 10, 15, 5}, {4, 2, 3, 1}}},
+		{"core:necromancer", {{5, 10, 20, 15}, {1, 2, 4, 3}}},
+		{"core:overlord", {{20, 15, 10, 5}, {4, 3, 2, 1}}},
+		{"core:warlock", {{10, 5, 25, 10}, {2, 1, 5, 2}}},
+		{"core:barbarian", {{25, 15, 5, 5}, {5, 3, 1, 1}}},
+		{"core:battlemage", {{20, 5, 15, 10}, {4, 1, 3, 2}}},
+		{"core:beastmaster", {{15, 25, 5, 5}, {3, 5, 1, 1}}},
+		{"core:witch", {{5, 10, 10, 25}, {1, 2, 2, 5}}},
+		{"core:planeswalker", {{15, 10, 15, 10}, {3, 2, 3, 2}}},
+		{"core:elementalist", {{5, 5, 25, 15}, {1, 1, 5, 3}}}
+	};
+	EXPECT_EQ(rules["classProfiles"].Struct().size(), expectedProfiles.size());
 	EXPECT_EQ(rules["powerDivisor"].Integer(), 10);
 	EXPECT_EQ(rules["maxPrimary"].Integer(), 10000);
-	for(const auto & [key, data] : rules["classProfiles"].Struct())
+	for(const auto & [key, expected] : expectedProfiles)
 	{
 		SCOPED_TRACE(key);
-		const auto profile = parsePrimaryProfile(data);
-		auto start = profile.starting;
-		auto growth = profile.growth;
-		std::sort(start.begin(), start.end());
-		std::sort(growth.begin(), growth.end());
-		EXPECT_EQ(start, (std::array<int, 4>{5, 10, 15, 20}));
-		EXPECT_EQ(growth, (std::array<int, 4>{1, 2, 3, 4}));
-		for(int i = 0; i < 4; ++i)
-			EXPECT_EQ(profile.starting[i], 5 * profile.growth[i]);
+		const auto profile = parsePrimaryProfile(rules["classProfiles"][key]);
+		EXPECT_EQ(profile.starting, expected.first);
+		EXPECT_EQ(profile.growth, expected.second);
+	}
+	ASSERT_EQ(rules["skillOfferWeights"].Struct().size(), expectedProfiles.size());
+	for(const auto & [key, weights] : rules["skillOfferWeights"].Struct())
+	{
+		SCOPED_TRACE(key);
+		EXPECT_EQ(weights.Struct().size(), HERO_SKILL_OFFER_COUNT);
 	}
 	const auto knight = parsePrimaryProfile(rules["classProfiles"]["core:knight"]);
 	EXPECT_EQ(knight.baseAtLevel(20), (std::array<int64_t, 4>{72, 96, 24, 48}));
 	const auto resolved = resolveHeroRules(rules, HeroClassID(HeroClassID::decode("core:knight")));
+	ASSERT_NO_THROW(validateResolvedHeroRules(resolved));
+	ASSERT_TRUE(resolved["skillOfferWeights"].isStruct());
+	EXPECT_EQ(resolved["skillOfferWeights"].Struct().size(), HERO_SKILL_OFFER_COUNT);
 	EXPECT_TRUE(skillGrowthChances(resolved, [](SecondarySkill) { return 0; }).empty());
 	const auto opportunities = skillGrowthChances(resolved, [](SecondarySkill) { return 3; });
 	ASSERT_EQ(opportunities.size(), 4u);
 	const SecondarySkill offense(SecondarySkill::decode("new-horizons:offense"));
+	const SecondarySkill armorer(SecondarySkill::decode("new-horizons:armorer"));
+	const SecondarySkill spellcraft(SecondarySkill::decode("new-horizons:spellcraft"));
+	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
 	EXPECT_NE(offense, SecondarySkill::OFFENCE);
-	const std::array<SecondarySkill, 4> skills = {offense, SecondarySkill::ARMORER,
-		SecondarySkill::SORCERY, SecondarySkill::INTELLIGENCE};
+	const std::array<SecondarySkill, 4> skills = {offense, armorer, spellcraft, wisdom};
 	for(int i = 0; i < 4; ++i)
 	{
 		EXPECT_EQ(opportunities[i].skill, skills[i]);
 		EXPECT_EQ(opportunities[i].attribute, PrimarySkill(i));
 		EXPECT_EQ(opportunities[i].chancePercent, 30);
 	}
+	EXPECT_TRUE(usesSkillOfferWeights(resolved));
+	EXPECT_EQ(skillOfferWeight(resolved, offense), 4);
+	EXPECT_EQ(skillOfferWeight(resolved, wisdom), 0);
+	EXPECT_TRUE(isExcludedSkill(resolved, SecondarySkill::MYSTICISM));
+	EXPECT_FALSE(isExcludedSkill(resolved, offense));
 }
 
 TEST(NewHorizonsHeroRulesTest, CanonicalFactionSkillMappingCoversAllFactionsAndAliases)
 {
+	if(!newHorizonsModuleActive())
+		GTEST_SKIP() << "Requires the New Horizons module for scoped canonical skills";
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto resolved = resolveHeroRules(rules, HeroClassID(HeroClassID::decode("core:knight")));
 	const std::array<std::pair<const char *, const char *>, 9> expected = {{
@@ -135,6 +204,8 @@ TEST(NewHorizonsHeroRulesTest, CanonicalFactionSkillMappingCoversAllFactionsAndA
 
 TEST(NewHorizonsHeroRulesTest, FactionStartingSkillsReplaceWisdomOrOptionalMightSkill)
 {
+	if(!newHorizonsModuleActive())
+		GTEST_SKIP() << "Requires the New Horizons module for scoped canonical skills";
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto resolvedCleric = resolveHeroRules(rules, HeroClassID(HeroClassID::decode("core:cleric")));
 	const auto cleric = applyStartingFactionSkill(resolvedCleric, true,
@@ -172,6 +243,8 @@ TEST(NewHorizonsHeroRulesTest, FactionStartingSkillsReplaceWisdomOrOptionalMight
 
 TEST(NewHorizonsHeroRulesTest, NecropolisLegacySkillBecomesScopedFactionSkill)
 {
+	if(!newHorizonsModuleActive())
+		GTEST_SKIP() << "Requires the New Horizons module for scoped canonical skills";
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto resolved = resolveHeroRules(rules, HeroClassID(HeroClassID::decode("core:deathknight")));
 	const auto skills = applyStartingFactionSkill(resolved, false,

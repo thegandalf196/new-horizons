@@ -129,14 +129,15 @@ void MagicArrowOverchargeWindow::refresh()
 		+ "  total " + std::to_string(values.totalMana) + " / " + std::to_string(values.availableMana));
 	damageLabel->setText("Projected damage: " + std::to_string(values.baseDamage) + " -> " + std::to_string(values.projectedDamage));
 
-	const std::string state = values.affordable ? "Optional overcharge is affordable. Confirm to cast or Cancel to return."
+	const std::string state = !values.legal ? "Target is no longer legal for Magic Arrow. Cancel to return."
+		: values.affordable ? "Optional overcharge is affordable. Confirm to cast or Cancel to return."
 		: "Not enough Mana for this Overcharge value.";
 	if(stateLabel->getText() != state)
 		stateLabel->setText(state);
 
 	minus->block(values.overcharge <= 0);
 	plus->block(values.overcharge >= values.maximumOvercharge || !values.affordable);
-	confirmButton->block(!values.affordable);
+	confirmButton->block(!values.legal || !values.affordable);
 
 	// A context can become stale while this modal is open (for example when a
 	// battle ends or another request changes Mana).  The next redraw reevaluates
@@ -147,7 +148,7 @@ void MagicArrowOverchargeWindow::confirm()
 {
 	const int selected = slider ? slider->getValue() : context.initial.overcharge;
 	const auto values = valuesFor(selected);
-	if(!values.affordable)
+	if(!values.legal || !values.affordable)
 	{
 		refresh();
 		return;
@@ -173,12 +174,14 @@ void MagicArrowOverchargeWindow::cancel()
 
 void MagicArrowOverchargeWindow::show(Canvas & to)
 {
-	refresh();
+	// Painting must remain side-effect free.  CLabel::setText and CButton::block
+	// request a redraw, so refreshing from show/showAll would recurse through
+	// CIntObject::redraw -> showAll until the stack overflows.  State changes
+	// are refreshed by the constructor and input callbacks instead.
 	CWindowObject::show(to);
 }
 
 void MagicArrowOverchargeWindow::showAll(Canvas & to)
 {
-	refresh();
 	CWindowObject::showAll(to);
 }

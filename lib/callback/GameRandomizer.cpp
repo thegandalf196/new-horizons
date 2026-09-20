@@ -294,11 +294,14 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 
 	auto & heroRng = heroSkillSeed.at(hero->getHeroTypeID());
 
-	auto getObligatorySkills = [&options](bool magicSchools)
+	const bool canonicalSkillOffers = newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules());
+	const SecondarySkill canonicalWisdom(SecondarySkill::decode("new-horizons:wisdom"));
+	auto getObligatorySkills = [&options, canonicalWisdom](bool magicSchools)
 	{
 		std::set<SecondarySkill> obligatory;
 		for(const auto option : options)
-			if(magicSchools ? option.toSkill()->isSpellSchool() : option.toSkill()->isWisdom())
+			if(magicSchools ? option.toSkill()->isSpellSchool()
+				: (option.toSkill()->isWisdom() || (canonicalWisdom != SecondarySkill::NONE && option == canonicalWisdom)))
 				obligatory.insert(option); //Always return all obligatory skills
 
 		return obligatory;
@@ -307,19 +310,27 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 	std::set<SecondarySkill> wisdomList = getObligatorySkills(false);
 	std::set<SecondarySkill> schoolList = getObligatorySkills(true);
 
-	bool wantsWisdom = heroRng.wisdomCounter >= hero->maxlevelsToWisdom();
-	bool wantsSchool = heroRng.magicSchoolCounter >= hero->maxlevelsToMagicSchool();
-	bool selectWisdom = wantsWisdom && !wisdomList.empty();
-	bool selectSchool = !selectWisdom && wantsSchool && !schoolList.empty();
-
 	std::set<SecondarySkill> actualCandidates;
-
-	if(selectWisdom)
-		actualCandidates = wisdomList;
-	else if(selectSchool)
-		actualCandidates = schoolList;
-	else
+	if(canonicalSkillOffers)
+	{
+		// Canonical New Horizons rows are already the complete policy. Do not
+		// apply the legacy periodic Wisdom/school forcing on top of them.
 		actualCandidates = options;
+	}
+	else
+	{
+		bool wantsWisdom = heroRng.wisdomCounter >= hero->maxlevelsToWisdom();
+		bool wantsSchool = heroRng.magicSchoolCounter >= hero->maxlevelsToMagicSchool();
+		bool selectWisdom = wantsWisdom && !wisdomList.empty();
+		bool selectSchool = !selectWisdom && wantsSchool && !schoolList.empty();
+
+		if(selectWisdom)
+			actualCandidates = wisdomList;
+		else if(selectSchool)
+			actualCandidates = schoolList;
+		else
+			actualCandidates = options;
+	}
 
 	assert(!actualCandidates.empty());
 
@@ -329,7 +340,14 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 	for(const auto & possible : actualCandidates)
 	{
 		skills.push_back(possible);
-		if(hero->getHeroClass()->secSkillProbability.count(possible) != 0)
+		if(canonicalSkillOffers)
+		{
+			// Canonical tables are authoritative. A missing entry remains zero
+			// instead of reviving a retired skill through legacy probabilities.
+			weights.push_back(newHorizonsHeroes::skillOfferWeight(
+				hero->getPrimaryGrowthRules(), possible).value_or(0));
+		}
+		else if(hero->getHeroClass()->secSkillProbability.count(possible) != 0)
 		{
 			int weight = hero->getHeroClass()->secSkillProbability.at(possible);
 			weights.push_back(std::max(1, weight));
@@ -341,7 +359,8 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 	int selectedIndex = RandomGeneratorUtil::nextItemWeighted(weights, heroRng.seed);
 	SecondarySkill selectedSkill = skills.at(selectedIndex);
 
-	if((*LIBRARY->skillh)[selectedSkill]->isWisdom())
+	if((*LIBRARY->skillh)[selectedSkill]->isWisdom()
+		|| (canonicalWisdom != SecondarySkill::NONE && selectedSkill == canonicalWisdom))
 		heroRng.wisdomCounter = 0;
 	if((*LIBRARY->skillh)[selectedSkill]->isSpellSchool())
 		heroRng.magicSchoolCounter = 0;
@@ -352,10 +371,14 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInstance * hero)
 {
 	auto & heroRng = heroSkillSeed.at(hero->getHeroTypeID());
+	const bool canonicalSkillOffers = newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules());
 
 	//deterministic secondary skills
-	++heroRng.magicSchoolCounter;
-	++heroRng.wisdomCounter;
+	if(!canonicalSkillOffers)
+	{
+		++heroRng.magicSchoolCounter;
+		++heroRng.wisdomCounter;
+	}
 
 	std::set<SecondarySkill> basicAndAdv;
 	std::set<SecondarySkill> none;
@@ -365,6 +388,13 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 		return newHorizonsHeroes::isFactionSkill(hero->getPrimaryGrowthRules(), skill)
 			&& (!ownFactionSkill || !newHorizonsHeroes::isFactionSkillForFaction(
 				hero->getPrimaryGrowthRules(), hero->getFactionID(), skill));
+	};
+	const auto hasCanonicalOffer = [hero, canonicalSkillOffers](SecondarySkill skill)
+	{
+		if(!canonicalSkillOffers)
+			return true;
+		return !newHorizonsHeroes::isExcludedSkill(hero->getPrimaryGrowthRules(), skill)
+			&& newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), skill).value_or(0) > 0;
 	};
 	const auto ownFactionSkillEntry = ownFactionSkill
 		? std::find_if(hero->secSkills.begin(), hero->secSkills.end(), [hero](const auto & entry)
@@ -376,10 +406,47 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 	const bool ownFactionSkillPresent = ownFactionSkillEntry != hero->secSkills.end();
 	std::vector<SecondarySkill>	skills;
 
+	if(canonicalSkillOffers)
+	{
+		// The canonical table defines one combined pool. Existing skills below
+		// Expert compete directly with legal new skills; removing each draw from
+		// this set gives the required without-replacement offers.
+		std::set<SecondarySkill> eligible;
+		if(hero->canLearnSkill())
+			for(int i = 0; i < LIBRARY->skillh->size(); ++i)
+			{
+				const SecondarySkill skill(i);
+				if(hasCanonicalOffer(skill) && !isForeignFactionSkill(skill)
+					&& hero->canLearnSkill(skill))
+					eligible.insert(skill);
+			}
+
+		for(const auto & elem : hero->secSkills)
+			if(elem.second < MasteryLevel::EXPERT && hasCanonicalOffer(elem.first)
+				&& !isForeignFactionSkill(elem.first))
+			{
+				const bool duplicateOwnIdentity = ownFactionSkillPresent
+					&& newHorizonsHeroes::isFactionSkillForFaction(
+						hero->getPrimaryGrowthRules(), hero->getFactionID(), elem.first)
+					&& elem.first != ownFactionSkillEntry->first;
+				if(!duplicateOwnIdentity)
+					eligible.insert(elem.first);
+			}
+
+		const int maxTotalSkills = hero->cb->getSettings().getInteger(EGameSettings::LEVEL_UP_TOTAL_SKILLS_AMOUNT);
+		while(skills.size() < static_cast<size_t>(std::max(0, maxTotalSkills)) && !eligible.empty())
+		{
+			skills.push_back(rollSecondarySkillForLevelup(hero, eligible));
+			eligible.erase(skills.back());
+		}
+		return skills;
+	}
+
 	if (hero->canLearnSkill())
 	{
 		for(int i = 0; i < LIBRARY->skillh->size(); i++)
-			if(!isForeignFactionSkill(SecondarySkill(i)) && hero->canLearnSkill(SecondarySkill(i)))
+			if(hasCanonicalOffer(SecondarySkill(i)) && !isForeignFactionSkill(SecondarySkill(i))
+				&& hero->canLearnSkill(SecondarySkill(i)))
 				none.insert(SecondarySkill(i));
 	}
 
@@ -395,7 +462,7 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 				&& newHorizonsHeroes::isFactionSkillForFaction(
 					hero->getPrimaryGrowthRules(), hero->getFactionID(), elem.first)
 				&& elem.first != ownFactionSkillEntry->first;
-			if(!isForeignFactionSkill(elem.first) && !duplicateOwnIdentity)
+			if(hasCanonicalOffer(elem.first) && !isForeignFactionSkill(elem.first) && !duplicateOwnIdentity)
 				basicAndAdv.insert(elem.first);
 		}
 		none.erase(elem.first);
@@ -406,7 +473,7 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 	// do not inject it into a saved hero whose rules snapshot predates the
 	// faction-skill system (the helper returns no mapping in that case).
 	if(ownFactionSkill && !ownFactionSkillPresent && hero->getSecSkillLevel(*ownFactionSkill) == MasteryLevel::NONE
-		&& hero->canLearnSkill() && gameInfo.isAllowed(*ownFactionSkill))
+		&& hasCanonicalOffer(*ownFactionSkill) && hero->canLearnSkill() && gameInfo.isAllowed(*ownFactionSkill))
 		none.insert(*ownFactionSkill);
 
 	int maxUpgradedSkills = hero->cb->getSettings().getInteger(EGameSettings::LEVEL_UP_UPGRADED_SKILLS_AMOUNT);

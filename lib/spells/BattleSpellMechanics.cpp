@@ -179,6 +179,10 @@ void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & 
 
 bool BattleSpellMechanics::canBeCast(Problem & problem) const
 {
+	if(mode == Mode::HERO && isMetamagicFollowup()
+		&& !battle()->battleCanUseMetamagicSpell(casterSide, owner->getId(), isMetamagicGrand()))
+		return adaptGenericProblem(problem);
+
 	if(!newHorizonsMagic::spellAllowedByBattleRoster(*battle(), owner->getId()))
 		return adaptGenericProblem(problem);
 
@@ -231,6 +235,9 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 			else
 			{
 				int requiredMana = battle()->battleGetSpellCost(owner, castingHero, massSlow ? 3 : 1);
+				if(isMetamagicFollowup()
+					&& newHorizonsMagic::hasMetamagicPerk(castingHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
+					requiredMana = std::max(1, requiredMana - 2);
 				if(adjustableMagicArrow)
 					requiredMana += selectedOvercharge;
 				if(castingHero->mana < requiredMana) //not enough mana
@@ -409,6 +416,11 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	sc.manaGained = 0;
 	sc.counterspellSide = getCounterspellSide();
 	sc.counterspellNegated = isCounterspellNegated();
+	sc.metamagicFollowup = isMetamagicFollowup();
+	sc.metamagicGrand = isMetamagicGrand();
+	sc.metamagicTargetUnitId = (!target.empty() && target.front().unitValue)
+		? target.front().unitValue->unitId() : std::numeric_limits<uint32_t>::max();
+	sc.metamagicManaRefund = getMetamagicManaRefund();
 
 	sc.activeCast = false;
 	sc.temporalFieldCast = isMassSlow();
@@ -428,6 +440,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	{
 		const auto * casterHero = dynamic_cast<const CGHeroInstance *>(caster);
 		spellCost = battle()->battleGetSpellCost(owner, casterHero, isMassSlow() ? 3 : 1);
+		if(isMetamagicFollowup()
+			&& newHorizonsMagic::hasMetamagicPerk(casterHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
+			spellCost = std::max(1, spellCost - 2);
 		if(newHorizonsMagic::magicArrowOverchargeEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
 			spellCost += getOvercharge();
 
@@ -493,6 +508,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if(sc.activeCast)
 	{
 		caster->spendMana(server, spellCost);
+		if(getMetamagicManaRefund() > 0)
+			caster->spendMana(server, -getMetamagicManaRefund());
 
 		if(!isCounterspellNegated() && sc.manaGained > 0)
 		{

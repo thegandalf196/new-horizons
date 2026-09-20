@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Validate the canonical New Horizons Skill/perk registry shape only.
 
-This is deliberately a data-contract test.  It does not claim that a planned
-effect is implemented by the engine, AI, save format, or user interface.
+This is deliberately a data-contract test.  Active effects are expected to
+have matching runtime coverage; unimplemented registry entries remain planned.
 """
 import hashlib
 import json
@@ -25,11 +25,22 @@ ACTIVE_PERKS = {
     "new-horizons:necromancy.boneCollector",
     "new-horizons:necromancy.darkConversion",
     "new-horizons:necromancy.blackHarvest",
+    "new-horizons:metamagic.spellSequencing",
+    "new-horizons:metamagic.arcaneEconomy",
+    "new-horizons:metamagic.focusedPairing",
+    "new-horizons:metamagic.countersequence",
+    "new-horizons:metamagic.echoedDuration",
+    "new-horizons:metamagic.splitFocus",
+    "new-horizons:metamagic.formulaReserve",
+    "new-horizons:metamagic.spellBuffer",
+    "new-horizons:metamagic.grandMetamagic",
+    "new-horizons:metamagic.perfectSequence",
 }
 ACTIVE_RANK_SKILLS = {
     "new-horizons:offense",
     "new-horizons:sylvanLuck",
     "new-horizons:necromancy",
+    "new-horizons:metamagic",
 }
 EXPECTED_SKILLS = (
     "new-horizons:offense",
@@ -132,7 +143,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         heroes = settings["properties"]["heroes"]["properties"]
         self.assertEqual(heroes["newHorizonsPerks"], {"$ref": "newHorizonsPerks.json"})
 
-    def test_default_module_carries_canonical_planned_registry(self):
+    def test_default_module_carries_canonical_registry(self):
         module = load("Mods/new-horizons/mod.json")
         self.assertEqual(module["version"], "0.7.0")
         self.assertEqual(module["settings"]["heroes"]["newHorizonsPerks"], self.rules)

@@ -108,6 +108,7 @@ void AssetGenerator::initialize()
 
 	addBackpackBackground("heroBackpackDialog", Point(426, 465));
 	imageFiles[ImagePath::builtin("newHorizonsHeroBackground.png")] = [this](){ return createNewHorizonsHeroBackground(); };
+	imageFiles[ImagePath::builtin("newHorizonsLevelUpBackground.png")] = [this](){ return createNewHorizonsLevelUpBackground(); };
 
 	imageFiles[ImagePath::builtin("questDialog.png")] = [this](){ return createQuestWindow();};
 	imageFiles[ImagePath::builtin("stackArtifactIndicatorSmall.png")] = [this](){ return createStackArtifactIndicator(Point(14, 14));};
@@ -1595,6 +1596,33 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() cons
 	recessed(Rect(10, 542, 724, 66), true);
 	recessed(Rect(734, 12, 58, 596), true);
 	canvas.drawBorder(Rect(0, 608, 800, 16), edge);
+	return image;
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground() const
+{
+	// Keep the familiar LVLUPBKG frame and wood texture while adding enough
+	// vertical room for the separated skill/perk offer columns.  The source
+	// asset remains purchaser-provided; only its runtime canvas is extended.
+	auto source = ENGINE->renderHandler().loadImage(
+		ImageLocator(ImagePath::builtin("LVLUPBKG.bmp"), EImageBlitMode::COLORKEY));
+	constexpr int extraHeight = 64;
+	constexpr int topFrame = 64;
+	constexpr int bottomFrame = 20;
+	const Point size(source->width(), source->height() + extraHeight);
+	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);
+	Canvas canvas = image->getCanvas();
+	canvas.draw(source, Point(0, 0), Rect(0, 0, source->width(), topFrame));
+
+	const int sourceMiddleHeight = source->height() - topFrame - bottomFrame;
+	for(int y = topFrame; y < size.y - bottomFrame; )
+	{
+		const int height = std::min(sourceMiddleHeight, size.y - bottomFrame - y);
+		canvas.draw(source, Point(0, y), Rect(0, topFrame, source->width(), height));
+		y += height;
+	}
+	canvas.draw(source, Point(0, size.y - bottomFrame),
+		Rect(0, source->height() - bottomFrame, source->width(), bottomFrame));
 	return image;
 }
 

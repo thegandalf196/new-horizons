@@ -33,6 +33,7 @@ def main() -> None:
         "availableMana",
         "baseDamage",
         "projectedDamage",
+	        "legal",
     ):
         require(WINDOW_HEADER, field, f"preview field {field}")
 
@@ -63,8 +64,25 @@ def main() -> None:
     require(INTERFACE, "SpellID::MAGIC_ARROW", "core Magic Arrow identity")
     require(INTERFACE, "magicArrowOverchargeEnabled", "saved-roster gate")
     require(INTERFACE, "spellOvercharge", "generic BattleAction payload")
+    require(INTERFACE, "canBeCastAt", "stale target legality guard")
+    require((ROOT / "client/battle/BattleWindow.cpp").read_text(), "Grand ON", "persistent Grand selection label")
+    require((ROOT / "client/battle/BattleWindow.cpp").read_text(), "Grand OFF", "persistent Grand deselection label")
+    require((ROOT / "client/windows/CSpellWindow.cpp").read_text(), "metamagicGrandLabel", "spellbook Grand selection state")
     if "NEW_HORIZONS_MAGIC_MISSILE" in CONTROLLER + INTERFACE + WINDOW:
         raise AssertionError("frontend must not activate the abandoned Magic Missile draft")
+
+    # Rendering is a pure operation.  CLabel::setText and CButton::block both
+    # request a redraw; calling refresh() from show/showAll would synchronously
+    # re-enter showAll and recurse until the stack overflows.  The widget is
+    # refreshed only by construction and input callbacks.
+    for method in ("void MagicArrowOverchargeWindow::show(Canvas & to)",
+                   "void MagicArrowOverchargeWindow::showAll(Canvas & to)"):
+        start = WINDOW.index(method)
+        end = WINDOW.find("\n}", start)
+        if end < 0:
+            raise AssertionError(f"cannot locate {method}")
+        if "refresh()" in WINDOW[start:end]:
+            raise AssertionError(f"paint path must not refresh state: {method}")
 
     print("Magic Arrow Overcharge UI source checks passed")
 

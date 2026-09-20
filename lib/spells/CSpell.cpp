@@ -16,6 +16,7 @@
 #include "ISpellMechanics.h"
 
 #include "../CBonusTypeHandler.h"
+#include "../battle/CBattleInfoCallback.h"
 #include "../battle/Unit.h"
 #include "../bonuses/BonusSelector.h"
 #include "../GameLibrary.h"
@@ -89,16 +90,24 @@ bool CSpell::hasSchool(SpellSchool which) const
 	return schools.count(which);
 }
 
-bool CSpell::canBeCast(const CBattleInfoCallback * cb, spells::Mode mode, const spells::Caster * caster) const
+bool CSpell::canBeCast(const CBattleInfoCallback * cb, spells::Mode mode, const spells::Caster * caster,
+	bool metamagicGrand) const
 {
 	//if caller do not interested in description just discard it and do not pollute even debug log
 	spells::detail::ProblemImpl problem;
-	return canBeCast(problem, cb, mode, caster);
+	return canBeCast(problem, cb, mode, caster, metamagicGrand);
 }
 
-bool CSpell::canBeCast(spells::Problem & problem, const CBattleInfoCallback * cb, spells::Mode mode, const spells::Caster * caster) const
+bool CSpell::canBeCast(spells::Problem & problem, const CBattleInfoCallback * cb, spells::Mode mode,
+	const spells::Caster * caster, bool metamagicGrand) const
 {
-	spells::BattleCast event(cb, caster, mode, this);
+spells::BattleCast event(cb, caster, mode, this);
+	if(mode == spells::Mode::HERO)
+	{
+		const auto side = cb->playerToSide(caster->getCasterOwner());
+		event.setMetamagicFollowup(cb->battleCanUseMetamagicFollowup(side));
+		event.setMetamagicGrand(metamagicGrand);
+	}
 	auto mechanics = battleMechanics(&event);
 	if(mechanics->canBeCast(problem))
 		return true;
@@ -111,6 +120,11 @@ bool CSpell::canBeCast(spells::Problem & problem, const CBattleInfoCallback * cb
 		&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"))
 	{
 		spells::BattleCast massEvent(cb, caster, mode, this);
+		if(mode == spells::Mode::HERO)
+		{
+			massEvent.setMetamagicFollowup(cb->battleCanUseMetamagicFollowup(cb->playerToSide(caster->getCasterOwner())));
+			massEvent.setMetamagicGrand(metamagicGrand);
+		}
 		massEvent.setMassSlow(true);
 		spells::detail::ProblemImpl massProblem;
 		if(battleMechanics(&massEvent)->canBeCast(massProblem))
@@ -121,6 +135,11 @@ bool CSpell::canBeCast(spells::Problem & problem, const CBattleInfoCallback * cb
 		return false;
 
 	spells::BattleCast selectiveEvent(cb, caster, mode, this);
+	if(mode == spells::Mode::HERO)
+	{
+		selectiveEvent.setMetamagicFollowup(cb->battleCanUseMetamagicFollowup(cb->playerToSide(caster->getCasterOwner())));
+		selectiveEvent.setMetamagicGrand(metamagicGrand);
+	}
 	selectiveEvent.setSelectiveDispel(true);
 	spells::detail::ProblemImpl selectiveProblem;
 	return battleMechanics(&selectiveEvent)->canBeCast(selectiveProblem);
@@ -382,9 +401,11 @@ void CSpell::getEffects(std::vector<Bonus> & lst, const int schoolLevel, const b
 	}
 }
 
-int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage) const
+int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage,
+	int ignoreSpellDamageReductionPercent) const
 {
 	auto ret = rawDamage;
+	ignoreSpellDamageReductionPercent = std::clamp(ignoreSpellDamageReductionPercent, 0, 100);
 	//affected creature-specific part
 	if(nullptr != affectedCreature)
 	{
@@ -394,7 +415,9 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 		{
 			if(bearer->hasBonusOfType(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf)))
 			{
-				ret *= 100 - bearer->valOfBonuses(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf));
+				const int reduction = bearer->valOfBonuses(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf));
+				const int effectiveReduction = reduction * (100 - ignoreSpellDamageReductionPercent) / 100;
+				ret *= 100 - effectiveReduction;
 				ret /= 100;
 				stop = true; //only bonus from one school is used
 			}
@@ -406,7 +429,9 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 		//general spell dmg reduction, works only on magical effects
 		if(bearer->hasBonus(selector, cachingStr) && isMagical())
 		{
-			ret *= 100 - bearer->valOfBonuses(selector, cachingStr);
+			const int reduction = bearer->valOfBonuses(selector, cachingStr);
+			const int effectiveReduction = reduction * (100 - ignoreSpellDamageReductionPercent) / 100;
+			ret *= 100 - effectiveReduction;
 			ret /= 100;
 		}
 

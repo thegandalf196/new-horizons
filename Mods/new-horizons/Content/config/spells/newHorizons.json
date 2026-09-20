@@ -224,5 +224,237 @@
 			"negative" : true
 		},
 		"targetCondition" : {}
+	},
+	"phantomArmy" : {
+		"name" : "Phantom Army",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:sorcery" : true
+		},
+		"level" : 4,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "SPELLS.def:0:15",
+			"iconScroll" : "SPELLSCR.def:0:15",
+			"iconEffect" : "SPELLINT.def:0:16",
+			"iconImmune" : "SPELLINT.def:0:16",
+			"iconScenarioBonus" : "SPELLBON.def:0:15"
+		},
+		"animation" : {
+			"hit" : ["C18SPW0"]
+		},
+		"sounds" : {
+			"cast" : "CLONE"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {
+					"phantomArmy" : {
+						"type" : "core:phantomArmy"
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {
+					"phantomArmy" : {
+						"type" : "core:phantomArmy"
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {
+					"phantomArmy" : {
+						"type" : "core:phantomArmy"
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {
+					"phantomArmy" : {
+						"type" : "core:phantomArmy"
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {
+			"positive" : true,
+			"special" : true
+		},
+		"targetCondition" : {}
+	},
+	"timeStop" : {
+		"name" : "Time Stop",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:sorcery" : true
+		},
+		"level" : 5,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "LOCATION",
+		"graphics" : {
+			"iconBook" : "SPELLS.def:0:15",
+			"iconScroll" : "SPELLSCR.def:0:15",
+			"iconEffect" : "SPELLINT.def:0:16",
+			"iconImmune" : "SPELLINT.def:0:16",
+			"iconScenarioBonus" : "SPELLBON.def:0:15"
+		},
+		"animation" : {
+			"hit" : ["C18SPW0"]
+		},
+		"sounds" : {
+			"cast" : "DISPEL"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Radius is min(2, 1 + floor(Spell Power / 100)); creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
+				"cost" : 23,
+				"power" : 0,
+				"battleEffects" : {
+					"timeStop" : {
+						"type" : "core:timeStop"
+					}
+				}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Radius is min(2, 1 + floor(Spell Power / 100)); creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
+				"cost" : 23,
+				"power" : 0,
+				"battleEffects" : {
+					"timeStop" : {
+						"type" : "core:timeStop"
+					}
+				}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Radius is min(2, 1 + floor(Spell Power / 100)); creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
+				"cost" : 23,
+				"power" : 0,
+				"battleEffects" : {
+					"timeStop" : {
+						"type" : "core:timeStop"
+					}
+				}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Radius is min(2, 1 + floor(Spell Power / 100)); creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
+				"cost" : 23,
+				"power" : 0,
+				"battleEffects" : {
+					"timeStop" : {
+						"type" : "core:timeStop"
+					}
+				}
+			}
+		},
+		"flags" : {
+			"indifferent" : true,
+			"special" : true
+		},
+		"targetCondition" : {}
+	},
+	"spellLock" : {
+		"name" : "Spell Lock",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:sorcery" : true
+		},
+		"level" : 5,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "SPELLS.def:0:15",
+			"iconScroll" : "SPELLSCR.def:0:15",
+			"iconEffect" : "SPELLINT.def:0:16",
+			"iconImmune" : "SPELLINT.def:0:16",
+			"iconScenarioBonus" : "SPELLBON.def:0:15"
+		},
+		"animation" : {
+			"hit" : ["C18SPW0"]
+		},
+		"sounds" : {
+			"cast" : "DISPEL"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
+				"cost" : 22,
+				"power" : 0,
+				"battleEffects" : {
+					"spellLock" : {
+						"type" : "core:spellLock"
+					}
+				}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
+				"cost" : 22,
+				"power" : 0,
+				"battleEffects" : {
+					"spellLock" : {
+						"type" : "core:spellLock"
+					}
+				}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
+				"cost" : 22,
+				"power" : 0,
+				"battleEffects" : {
+					"spellLock" : {
+						"type" : "core:spellLock"
+					}
+				}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
+				"cost" : 22,
+				"power" : 0,
+				"battleEffects" : {
+					"spellLock" : {
+						"type" : "core:spellLock"
+					}
+				}
+			}
+		},
+		"flags" : {
+			"indifferent" : true,
+			"special" : true
+		},
+		"targetCondition" : {}
 	}
 }

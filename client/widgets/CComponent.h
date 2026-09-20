@@ -53,6 +53,9 @@ public:
 
 	std::string getDescription() const;
 	std::string getSubtitle() const;
+	/// Replace the presentation icon while retaining the component's rules identity.
+	/// New Horizons uses this for perk-specific art and neutral unknown-perk fallback art.
+	void setCustomIcon(const AnimationPath & path);
 
 	CComponent(ComponentType Type, ComponentSubType Subtype, std::optional<int32_t> Val = std::nullopt, ESize imageSize=large, EFonts font = FONT_SMALL);
 	CComponent(ComponentType Type, ComponentSubType Subtype, const std::string & Val, ESize imageSize=large, EFonts font = FONT_SMALL);
@@ -115,6 +118,12 @@ class CComponentBox : public CIntObject
 public:
 	/// return index of selected item
 	int selectedIndex();
+	/// Clear the selection without invoking the category callback.
+	void clearSelection();
+	/// Select the first component, if any.
+	void selectFirst();
+	/// Assign the displayed selection shortcuts in component order.
+	void setShortcuts(const std::vector<EShortcut> & shortcuts);
 
 	/// constructors for non-selectable components
 	CComponentBox(std::vector<std::shared_ptr<CComponent>> components, Rect position);

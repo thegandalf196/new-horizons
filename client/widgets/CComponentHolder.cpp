@@ -318,7 +318,13 @@ void CSecSkillPlace::setLevel(const uint8_t level)
 	if(skillId != SecondarySkill::NONE && level > 0)
 	{
 		const auto secSkill = skillId.toSkill();
-		image->setFrame(secSkill->getIconIndex(level - 1));
+		// New Horizons keeps Necromancy as a distinct rules identity, but its
+		// hero-facing icon is the classic Necromancy glyph.  Use the core skill's
+		// registered frame for presentation without changing the saved identity
+		// or the rules/tooltip source of the skill itself.
+		const auto iconSkill = secSkill->getJsonKey() == "new-horizons:necromancy"
+			? SecondarySkill(SecondarySkill::NECROMANCY) : skillId;
+		image->setFrame(iconSkill.toSkill()->getIconIndex(level - 1));
 		image->enable();
 		auto hoverText = MetaString::createFromTextID("core.heroscrn.21");
 		hoverText.replaceTextID("core.skilllev", level - 1);

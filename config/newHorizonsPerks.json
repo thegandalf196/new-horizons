@@ -3185,21 +3185,21 @@
 				"basic": {
 					"description": "Once per combat, after using the Hero Action to cast a Spell, immediately cast one additional Spell.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Once per combat, after using the Hero Action to cast a Spell, immediately cast one additional Spell."
 					}
 				},
 				"advanced": {
 					"description": "Metamagic may be used twice per combat.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Metamagic may be used twice per combat."
 					}
 				},
 				"expert": {
 					"description": "Metamagic may be used three times per combat.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Metamagic may be used three times per combat."
 					}
 				}
@@ -3211,7 +3211,7 @@
 					"requires": "basic",
 					"description": "If the additional Spell is from a different school than the first, it gains +15% to its Spell Power-derived numerical component.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "If the additional Spell is from a different school than the first, it gains +15% to its Spell Power-derived numerical component."
 					}
 				},
@@ -3221,7 +3221,7 @@
 					"requires": "basic",
 					"description": "The additional Spell costs 2 less Mana, to a minimum of 1.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The additional Spell costs 2 less Mana, to a minimum of 1."
 					}
 				},
@@ -3231,7 +3231,7 @@
 					"requires": "basic",
 					"description": "If both spells target the same stack, the additional hostile spell ignores 20% of that target's Magical Damage Reduction.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "If both spells target the same stack, the additional hostile spell ignores 20% of that target's Magical Damage Reduction."
 					}
 				},
@@ -3241,7 +3241,7 @@
 					"requires": "basic",
 					"description": "If the additional Spell is Counterspell, its eventual counter cost uses 1.75 times the enemy spell's listed Mana cost, rounded up.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "If the additional Spell is Counterspell, its eventual counter cost uses 1.75 times the enemy spell's listed Mana cost, rounded up."
 					}
 				},
@@ -3251,7 +3251,7 @@
 					"requires": "advanced",
 					"description": "A temporary effect created by the additional Spell lasts 1 additional round.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A temporary effect created by the additional Spell lasts 1 additional round."
 					}
 				},
@@ -3261,7 +3261,7 @@
 					"requires": "advanced",
 					"description": "If the additional Spell targets a different stack from the first, it gains +10% to its Spell Power-derived component.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "If the additional Spell targets a different stack from the first, it gains +10% to its Spell Power-derived component."
 					}
 				},
@@ -3271,7 +3271,7 @@
 					"requires": "advanced",
 					"description": "After the first Metamagic sequence each combat resolves, recover 3 Mana.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After the first Metamagic sequence each combat resolves, recover 3 Mana."
 					}
 				},
@@ -3281,7 +3281,7 @@
 					"requires": "advanced",
 					"description": "If the first spell in a Metamagic sequence is negated by Counterspell, the additional Spell cannot be Counterspelled by that same armed Counterspell.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "If the first spell in a Metamagic sequence is negated by Counterspell, the additional Spell cannot be Counterspelled by that same armed Counterspell."
 					}
 				},
@@ -3291,7 +3291,7 @@
 					"requires": "expert",
 					"description": "Once per combat, one Metamagic use permits two additional Spells instead of one. Neither additional Spell can trigger further additional casting.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Once per combat, one Metamagic use permits two additional Spells instead of one. Neither additional Spell can trigger further additional casting."
 					}
 				},
@@ -3301,7 +3301,7 @@
 					"requires": "expert",
 					"description": "If all spells in a Metamagic sequence are different spells, each additional Spell gains +20% to its Spell Power-derived numerical component.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "If all spells in a Metamagic sequence are different spells, each additional Spell gains +20% to its Spell Power-derived numerical component."
 					}
 				}

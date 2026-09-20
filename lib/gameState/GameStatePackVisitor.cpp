@@ -1461,7 +1461,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	const auto * battleContext = gs.getBattle(pack.battleID);
 	if(!battleContext)
 		throw std::runtime_error(targeted ? "Missing targeted StartAction battle context" : "Missing StartAction battle context");
-	const bool canonicalOrder = pack.ba.actionType == EActionType::HERO_COMMAND
+	const bool canonicalOrder = !pack.ba.metamagicDecline && pack.ba.actionType == EActionType::HERO_COMMAND
 		&& heroCommands::isCanonicalRules(battleContext->getHeroCommandRules());
 	if(pack.orderState.has_value() != canonicalOrder)
 		throw std::runtime_error("Inconsistent canonical Order StartAction payload");
@@ -1493,6 +1493,34 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			pack.ba.side, pack.ba.target.front().unitValue);
 		if(!expected || expected != pack.focusFire)
 			throw std::runtime_error("Invalid targeted StartAction snapshot");
+	}
+	if(pack.ba.side == BattleSide::ATTACKER || pack.ba.side == BattleSide::DEFENDER)
+	{
+		auto & metamagicSide = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
+		if(metamagicSide.metamagicPendingCount != 0
+			&& !(pack.ba.actionType == EActionType::HERO_SPELL && pack.ba.metamagicFollowup)
+			&& !pack.ba.metamagicDecline)
+			throw std::runtime_error("Pending Metamagic sequence must resolve before another battle action");
+		if(pack.ba.metamagicDecline)
+		{
+			if(pack.ba.actionType != EActionType::HERO_COMMAND || pack.ba.command != HeroCommand::NONE
+				|| metamagicSide.metamagicPendingCount == 0
+				|| pack.ba.stackNumber != static_cast<uint32_t>(pack.ba.side == BattleSide::ATTACKER ? -1 : -2))
+				throw std::runtime_error("Invalid Metamagic decline StartAction");
+			const auto * hero = gs.getBattle(pack.battleID)->battleGetFightingHero(pack.ba.side);
+			const int expectedRefund = metamagicSide.metamagicSequenceSpells.size() > 1
+				&& !metamagicSide.metamagicFormulaReserveUsed && hero
+				&& newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE)
+				? 3 : 0;
+			if(pack.ba.metamagicManaRefund != expectedRefund)
+				throw std::runtime_error("Invalid Metamagic Formula Reserve decline refund");
+			if(expectedRefund > 0)
+				metamagicSide.metamagicFormulaReserveUsed = true;
+			metamagicSide.clearMetamagicSequence();
+			return;
+		}
+		if(pack.ba.metamagicFollowup && metamagicSide.metamagicPendingCount == 0)
+			throw std::runtime_error("Metamagic follow-up StartAction without pending sequence");
 	}
 	if(pack.ba.actionType == EActionType::HERO_COMMAND)
 	{
@@ -1601,17 +1629,81 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 	{
 		auto * battle = gs.getBattle(pack.battleID);
 		auto & casterSide = battle->getSide(pack.side);
-		casterSide.castSpellsCount++;
+		if(!pack.metamagicFollowup)
+			casterSide.castSpellsCount++;
 		// StartAction is published before full spell/target validation. Expire the
 		// caster's old ward only once the authoritative cast packet exists; an
 		// invalid hero action must leave its armed Counterspell intact.
 		casterSide.counterspellArmed = false;
+		casterSide.metamagicCountersequenceArmed = false;
 		if(pack.temporalFieldCast)
 			casterSide.temporalFieldUsed = true;
 		if(pack.counterspellSide == BattleSide::ATTACKER || pack.counterspellSide == BattleSide::DEFENDER)
+		{
 			battle->getSide(pack.counterspellSide).counterspellArmed = false;
+			battle->getSide(pack.counterspellSide).metamagicCountersequenceArmed = false;
+		}
 		if(!pack.counterspellNegated && newHorizonsMagic::isCounterspell(pack.spellID.toSpell()))
+		{
 			casterSide.counterspellArmed = true;
+			if(pack.metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(
+				battle->battleGetFightingHero(pack.side), newHorizonsMagic::METAMAGIC_COUNTERSEQUENCE))
+				casterSide.metamagicCountersequenceArmed = true;
+		}
+
+		const auto * hero = battle->battleGetFightingHero(pack.side);
+		if(pack.metamagicGrand && !pack.metamagicFollowup)
+			throw std::runtime_error("Grand Metamagic metadata requires a follow-up cast");
+		if(pack.metamagicManaRefund > 0)
+		{
+			if(!pack.metamagicFollowup || pack.metamagicGrand || casterSide.metamagicPendingCount != 1
+				|| casterSide.metamagicFormulaReserveUsed || !hero
+				|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
+				throw std::runtime_error("Invalid Formula Reserve Metamagic refund");
+			casterSide.metamagicFormulaReserveUsed = true;
+		}
+		if(pack.metamagicFollowup)
+		{
+			if(casterSide.metamagicPendingCount == 0)
+				throw std::runtime_error("Metamagic follow-up cast without pending sequence");
+			if(pack.metamagicGrand)
+			{
+				const int rank = hero ? newHorizonsMagic::metamagicRank(hero) : 0;
+				if(!hero || casterSide.metamagicPendingCount != 1 || casterSide.metamagicSequenceSpells.size() != 1
+					|| casterSide.metamagicGrandUsed || rank < 3 || casterSide.metamagicUsesConsumed >= rank
+					|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND))
+					throw std::runtime_error("Invalid Grand Metamagic choice");
+				++casterSide.metamagicUsesConsumed;
+				casterSide.metamagicGrandUsed = true;
+				casterSide.metamagicPendingCount = 2;
+			}
+			else if(casterSide.metamagicSequenceSpells.size() == 1)
+			{
+				const int rank = hero ? newHorizonsMagic::metamagicRank(hero) : 0;
+				if(!hero || rank <= casterSide.metamagicUsesConsumed)
+					throw std::runtime_error("Metamagic use was not available when follow-up was accepted");
+				// The use is committed when the player accepts the offered follow-up,
+				// not when the ordinary triggering spell merely resolves.  Declining
+				// therefore leaves the per-combat budget untouched.
+				++casterSide.metamagicUsesConsumed;
+			}
+			--casterSide.metamagicPendingCount;
+			casterSide.metamagicSequenceSpells.push_back(pack.spellID);
+			if(casterSide.metamagicPendingCount == 0)
+				casterSide.clearMetamagicSequence();
+		}
+		else if(hero)
+		{
+			const int rank = newHorizonsMagic::metamagicRank(hero);
+			if(rank > casterSide.metamagicUsesConsumed && rank > 0)
+			{
+				casterSide.metamagicPendingCount = 1;
+				casterSide.metamagicFirstSpell = pack.spellID;
+				casterSide.metamagicFirstTargetUnitId = pack.metamagicTargetUnitId;
+				casterSide.metamagicSequenceSpells = {pack.spellID};
+				casterSide.metamagicFirstCounterspellNegated = pack.counterspellNegated;
+			}
+		}
 	}
 }
 

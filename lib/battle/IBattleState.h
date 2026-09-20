@@ -9,6 +9,7 @@
  */
 
 #pragma once
+#include <limits>
 #include "CBattleInfoEssentials.h"
 #include "BattleUnitTurnReason.h"
 #include "HeroCommand.h"
@@ -77,6 +78,19 @@ public:
 	virtual int32_t getEnchanterCounter(BattleSide side) const = 0;
 	virtual bool getTemporalFieldUsed(BattleSide side) const { return false; }
 	virtual bool getCounterspellArmed(BattleSide side) const { return false; }
+	virtual int32_t getMetamagicPendingCount(BattleSide side) const { return 0; }
+	virtual int32_t getMetamagicUsesConsumed(BattleSide side) const { return 0; }
+	virtual bool getMetamagicGrandUsed(BattleSide side) const { return false; }
+	virtual bool getMetamagicFormulaReserveUsed(BattleSide side) const { return false; }
+	virtual bool getMetamagicCountersequenceArmed(BattleSide side) const { return false; }
+	virtual SpellID getMetamagicFirstSpell(BattleSide side) const { return SpellID(); }
+	virtual uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const { return std::numeric_limits<uint32_t>::max(); }
+	virtual const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const
+	{
+		static const std::vector<SpellID> empty;
+		return empty;
+	}
+	virtual bool getMetamagicFirstCounterspellNegated(BattleSide side) const { return false; }
 
 	virtual ui8 getTacticDist() const = 0;
 	virtual BattleSide getTacticsSide() const = 0;

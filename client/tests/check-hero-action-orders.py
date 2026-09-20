@@ -48,6 +48,7 @@ assert "BattleHex::getDistance" not in target
 assert "adjacent(*" not in target
 assert "visibleCommandDisplays" in action
 assert "CRClickPopup::createAndPush" in action
+assert 'AnimationPath::builtin("NH_orders_gauntlet")' in (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
 assert "Protect unavailable. No legal Protector/Ward pair is available" in action
 assert "protectPairUnavailable" in action
 assert "entry.second->block(!available && !protectPairUnavailable)" in action

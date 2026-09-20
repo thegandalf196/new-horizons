@@ -192,6 +192,15 @@ public:
 	int32_t getEnchanterCounter(BattleSide side) const override;
 	bool getTemporalFieldUsed(BattleSide side) const override;
 	bool getCounterspellArmed(BattleSide side) const override;
+	int32_t getMetamagicPendingCount(BattleSide side) const override;
+	int32_t getMetamagicUsesConsumed(BattleSide side) const override;
+	bool getMetamagicGrandUsed(BattleSide side) const override;
+	bool getMetamagicFormulaReserveUsed(BattleSide side) const override;
+	bool getMetamagicCountersequenceArmed(BattleSide side) const override;
+	SpellID getMetamagicFirstSpell(BattleSide side) const override;
+	uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override;
+	const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override;
+	bool getMetamagicFirstCounterspellNegated(BattleSide side) const override;
 
 	const IBonusBearer * getBonusBearer() const override;
 

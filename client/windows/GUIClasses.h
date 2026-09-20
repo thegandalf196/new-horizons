@@ -32,6 +32,7 @@ class MoraleLuckBox;
 class CHeroArea;
 class CSlider;
 class CComponentBox;
+class CLabel;
 class CTextInput;
 class CListBox;
 class CLabelGroup;
@@ -153,6 +154,7 @@ public:
 private:
 	std::optional<PrimaryGainSnapshot> primaryGains;
 	std::vector<std::shared_ptr<CIntObject>> primaryGainWidgets;
+	std::vector<std::shared_ptr<CLabel>> choiceHeaders;
 	std::shared_ptr<CHeroArea> portrait;
 	std::shared_ptr<CButton> ok;
 	std::shared_ptr<CLabel> mainTitle;
@@ -161,7 +163,10 @@ private:
 	std::shared_ptr<CLabel> skillValue;
 
 	std::shared_ptr<CComponentBox> box; //skills to select
+	std::shared_ptr<CComponentBox> skillChoiceBox;
+	std::shared_ptr<CComponentBox> perkChoiceBox;
 	std::function<void(ui32)> cb;
+	bool perkChoiceActive = false;
 
 	int skillViewOffset = 0;
 	std::shared_ptr<CButton> buttonLeft;
@@ -170,6 +175,9 @@ private:
 	std::vector<SecondarySkill> skills;
 	std::vector<newHorizonsHeroes::PerkOfferCandidate> perks;
 	std::vector<size_t> choiceOrder;
+	/// The visible grid is arranged by category (skill/perk columns), so its
+	/// order is intentionally different from the paging order above.
+	std::vector<size_t> displayedChoiceOrder;
 	const CGHeroInstance * hero;
 
 	void initLevelUpData(const CGHeroInstance * heroInstance, const std::vector<SecondarySkill> & availableSkills,

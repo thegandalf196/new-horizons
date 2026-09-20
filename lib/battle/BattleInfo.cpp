@@ -748,6 +748,51 @@ bool BattleInfo::getCounterspellArmed(BattleSide side) const
 	return getSide(side).counterspellArmed;
 }
 
+int32_t BattleInfo::getMetamagicPendingCount(BattleSide side) const
+{
+	return getSide(side).metamagicPendingCount;
+}
+
+int32_t BattleInfo::getMetamagicUsesConsumed(BattleSide side) const
+{
+	return getSide(side).metamagicUsesConsumed;
+}
+
+bool BattleInfo::getMetamagicGrandUsed(BattleSide side) const
+{
+	return getSide(side).metamagicGrandUsed;
+}
+
+bool BattleInfo::getMetamagicFormulaReserveUsed(BattleSide side) const
+{
+	return getSide(side).metamagicFormulaReserveUsed;
+}
+
+bool BattleInfo::getMetamagicCountersequenceArmed(BattleSide side) const
+{
+	return getSide(side).metamagicCountersequenceArmed;
+}
+
+SpellID BattleInfo::getMetamagicFirstSpell(BattleSide side) const
+{
+	return getSide(side).metamagicFirstSpell;
+}
+
+uint32_t BattleInfo::getMetamagicFirstTargetUnitId(BattleSide side) const
+{
+	return getSide(side).metamagicFirstTargetUnitId;
+}
+
+const std::vector<SpellID> & BattleInfo::getMetamagicSequenceSpells(BattleSide side) const
+{
+	return getSide(side).metamagicSequenceSpells;
+}
+
+bool BattleInfo::getMetamagicFirstCounterspellNegated(BattleSide side) const
+{
+	return getSide(side).metamagicFirstCounterspellNegated;
+}
+
 const IBonusBearer * BattleInfo::getBonusBearer() const
 {
 	return this;
@@ -791,6 +836,9 @@ void BattleInfo::nextRound()
 		sides.at(i).activeOrder = HeroCommand::NONE;
 		sides.at(i).orderState.reset();
 		sides.at(i).focusFire.reset();
+		// A sequence is immediate: an unspent follow-up cannot survive into a
+		// later round.  The per-combat Metamagic and Grand/Formula budgets remain.
+		sides.at(i).clearMetamagicSequence();
 		vstd::amax(--sides.at(i).enchanterCounter, 0);
 	}
 	// first round starts right after pre-battle effects (built-in enchants, OPENING_BATTLE_SPELL)
