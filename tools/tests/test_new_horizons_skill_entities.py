@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Validate the New Horizons SecondarySkill entity composition.
 
-The six school skills are active data.  The remaining canonical skills are
-registered with their canonical rank text but deliberately carry only a zero
-bonus until their runtime effect handlers exist.
+The six school skills, Offense, and Sylvan Luck are active rank data.  The
+remaining canonical skills are registered with their canonical rank text but
+deliberately carry only a zero bonus until their runtime effect handlers exist.
+Faction skills remain specially assigned/progressed rather than appearing in
+the ordinary random gain table.
 """
 import json
 from pathlib import Path
@@ -23,6 +25,61 @@ SCHOOL_SKILLS = {
     "shadowMagic": "shadow",
     "chaosMagic": "chaos",
 }
+ACTIVE_RANK_EFFECTS = {
+    "offense": {
+        "basic": {
+            "meleeDamage": {
+                "type": "PERCENTAGE_DAMAGE_BOOST",
+                "subtype": "damageTypeMelee",
+                "valueType": "BASE_NUMBER",
+                "val": 10,
+            }
+        },
+        "advanced": {
+            "meleeDamage": {
+                "type": "PERCENTAGE_DAMAGE_BOOST",
+                "subtype": "damageTypeMelee",
+                "valueType": "BASE_NUMBER",
+                "val": 20,
+            }
+        },
+        "expert": {
+            "meleeDamage": {
+                "type": "PERCENTAGE_DAMAGE_BOOST",
+                "subtype": "damageTypeMelee",
+                "valueType": "BASE_NUMBER",
+                "val": 30,
+            }
+        },
+    },
+    "sylvanLuck": {
+        "basic": {
+            "luck": {"type": "LUCK", "valueType": "BASE_NUMBER", "val": 1},
+            "luckyStrikeDamage": {
+                "type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
+                "valueType": "BASE_NUMBER",
+                "val": 25,
+            },
+        },
+        "advanced": {
+            "luck": {"type": "LUCK", "valueType": "BASE_NUMBER", "val": 2},
+            "luckyStrikeDamage": {
+                "type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
+                "valueType": "BASE_NUMBER",
+                "val": 60,
+            },
+        },
+        "expert": {
+            "luck": {"type": "LUCK", "valueType": "BASE_NUMBER", "val": 3},
+            "luckyStrikeDamage": {
+                "type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
+                "valueType": "BASE_NUMBER",
+                "val": 100,
+            },
+        },
+    },
+}
+ACTIVE_GENERAL_GAIN_SKILLS = set(SCHOOL_SKILLS) | {"offense"}
 NO_OP = {
     "newHorizonsPlaceholder": {
         "type": "MORALE",
@@ -89,17 +146,18 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                         },
                     )
 
-    def test_gain_chances_fail_closed_until_specialized_availability_exists(self):
+    def test_gain_chances_expose_only_general_active_skills(self):
         for key, skill in self.skills.items():
             with self.subTest(skill=key):
-                if key in SCHOOL_SKILLS:
-                    self.assertEqual(skill["gainChance"], {"might": 2, "magic": 6})
-                    self.assertNotIn("special", skill["tags"])
+                if key in ACTIVE_GENERAL_GAIN_SKILLS:
+                    expected = {"might": 6, "magic": 2} if key == "offense" else {"might": 2, "magic": 6}
+                    self.assertEqual(skill["gainChance"], expected)
+                    self.assertNotIn("special", skill.get("tags", {}))
                 else:
                     self.assertEqual(skill["gainChance"], {"might": 0, "magic": 0})
                     self.assertTrue(skill["tags"].get("special"))
 
-    def test_non_school_skills_use_canonical_rank_text_and_inert_effects(self):
+    def test_non_school_skills_use_canonical_rank_text_and_declared_effects(self):
         school_keys = set(SCHOOL_SKILLS)
         for canonical_id, canonical in self.perks["skills"].items():
             key = canonical_id.removeprefix("new-horizons:")
@@ -112,7 +170,16 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                         skill[rank]["description"],
                         canonical["ranks"][rank]["description"],
                     )
-                    self.assertEqual(skill[rank]["effects"], NO_OP)
+                    if key in ACTIVE_RANK_EFFECTS:
+                        self.assertEqual(
+                            canonical["ranks"][rank]["effect"]["status"], "active"
+                        )
+                        self.assertEqual(skill[rank]["effects"], ACTIVE_RANK_EFFECTS[key][rank])
+                    else:
+                        self.assertEqual(
+                            canonical["ranks"][rank]["effect"]["status"], "planned"
+                        )
+                        self.assertEqual(skill[rank]["effects"], NO_OP)
                     for image in skill[rank]["images"].values():
                         self.assertTrue((ROOT / "Mods/new-horizons/Images" / image).is_file())
 

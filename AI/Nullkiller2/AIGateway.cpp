@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/entities/hero/NewHorizonsMasteryEffects.h"
 
 #include "../../lib/AsyncRunner.h"
@@ -577,16 +578,67 @@ void AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, s
 				sel = nullkiller->heroManager->selectBestSkillIndex(heroPtr, skills);
 			if(!perks.empty())
 			{
-				const auto best = std::max_element(perks.begin(), perks.end(), [](const auto & left, const auto & right)
+				const auto * observedHero = heroPtr.getUnverified();
+				std::vector<size_t> usablePerks;
+				if(observedHero)
 				{
-					return std::tie(left.requiredRank, left.selection.perkId)
-						< std::tie(right.requiredRank, right.selection.perkId);
-				});
+					for(size_t index = 0; index < perks.size(); ++index)
+					{
+						const auto & candidate = perks[index];
+						try
+						{
+							const auto definition = newHorizonsHeroes::perkDefinition(
+								observedHero->getPerkState().rules,
+								candidate.selection.skillId, candidate.selection.perkId);
+							// Level-up offers are server-authored, but retain this check at
+							// the AI boundary so a stale/legacy planned entry is never
+							// deliberately selected by Nullkiller.
+							if(definition
+								&& definition->effect["status"].String() == "active"
+								&& candidate.requiredRank == newHorizonsHeroes::perkRequiredRank(definition->requiredRank)
+								&& !observedHero->getPerkState().hasSelection(
+									candidate.selection.skillId, candidate.selection.perkId)
+								&& observedHero->getPerkSkillRank(candidate.selection.skillId)
+									>= newHorizonsHeroes::perkRequiredRank(definition->requiredRank))
+								usablePerks.push_back(index);
+						}
+						catch(const std::exception &)
+						{
+							// The authoritative query will reject malformed data. Do not
+							// turn an invalid candidate into an AI-selected answer.
+						}
+					}
+				}
+
+				if(usablePerks.empty())
+					return answerQuery(queryID, skills.empty() ? -1 : sel);
+
+				const auto ownFactionSkill = observedHero
+					? newHorizonsHeroes::factionSkill(observedHero->getPrimaryGrowthRules(), observedHero->getFactionID())
+					: std::nullopt;
+				const auto isFactionPerk = [observedHero, &ownFactionSkill, &perks](size_t index)
+				{
+					if(!observedHero || !ownFactionSkill)
+						return false;
+					const int decoded = SecondarySkill::decode(perks[index].selection.skillId);
+					return decoded >= 0 && newHorizonsHeroes::isFactionSkillForFaction(
+						observedHero->getPrimaryGrowthRules(), observedHero->getFactionID(), SecondarySkill(decoded));
+				};
+				const auto best = std::max_element(usablePerks.begin(), usablePerks.end(),
+					[&](size_t leftIndex, size_t rightIndex)
+					{
+						const auto & left = perks[leftIndex];
+						const auto & right = perks[rightIndex];
+						return std::tuple{isFactionPerk(leftIndex), left.requiredRank, left.selection.perkId}
+							< std::tuple{isFactionPerk(rightIndex), right.requiredRank, right.selection.perkId};
+					});
 				// Advanced/Expert perks are specialized enough to outrank another
 				// generic skill roll. Basic perks remain the fallback when no skill
-				// choice exists, preserving early-game skill development.
-				if(skills.empty() || best->requiredRank >= 2)
-					sel = static_cast<int>(skills.size() + std::distance(perks.begin(), best));
+				// choice exists, preserving early-game skill development. A valid
+				// faction perk is deliberately preferred even at Basic: it is the
+				// hero's faction identity and is the intended early-game path.
+				if(skills.empty() || isFactionPerk(*best) || perks[*best].requiredRank >= 2)
+					sel = static_cast<int>(skills.size() + *best);
 			}
 		}
 

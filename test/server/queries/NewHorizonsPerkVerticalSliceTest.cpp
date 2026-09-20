@@ -6,6 +6,7 @@
 #include "StdInc.h"
 
 #include "../../../lib/CRandomGenerator.h"
+#include "../../../lib/CSkillHandler.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/entities/hero/CHeroHandler.h"
 #include "../../../lib/entities/hero/NewHorizonsPerkRules.h"
@@ -166,4 +167,110 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ExperienceOfferChoiceActivatesEffectAnd
 	EXPECT_EQ(restoredModifiers.damagePercentTenths, 175);
 	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(restored.getMagicRules(),
 		SpellID(SpellID::MAGIC_ARROW), 150, restoredModifiers), 6);
+}
+
+TEST_F(NewHorizonsPerkVerticalSliceTest, RampartFactionSkillProgressionAndPerkChoiceSurviveSaveLoad)
+{
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	ASSERT_EQ(hero->getFactionID(), FactionID::RAMPART);
+
+	const auto sylvanLuck = skill(sylvanLuckId);
+	ASSERT_EQ(hero->getSecSkillLevel(sylvanLuck), MasteryLevel::BASIC);
+
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+
+	// Keep the level-up offer focused on the already-owned faction skill and on
+	// the one active Sylvan Luck perk. This still goes through the normal
+	// randomizer/query path; the other skills are only closed out so a test
+	// cannot accidentally depend on a random unrelated skill or perk.
+	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
+	{
+		const SecondarySkill candidate(index);
+		// Leave the two skills that can open their separate mastery dialog out of
+		// this focused perk journey.
+		if(candidate == SecondarySkill::ARTILLERY || candidate == SecondarySkill::LOGISTICS)
+			continue;
+		hero->setSecSkillLevel(candidate, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	}
+	hero->setSecSkillLevel(sylvanLuck, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+
+	const auto rankLookup = [hero](const std::string & skillId)
+	{
+		return hero->getPerkSkillRank(skillId);
+	};
+	int rootSeed = 0;
+	for(int candidateSeed = 1; candidateSeed < 10000; ++candidateSeed)
+	{
+		CRandomGenerator probe(candidateSeed);
+		probe.nextInt(); // hero-specific secondary/primary skill stream seed
+		const auto offerSeed = static_cast<uint64_t>(static_cast<uint32_t>(probe.nextInt()));
+		if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed),
+			"new-horizons:sylvanLuck.elvenPrecision"))
+		{
+			rootSeed = candidateSeed;
+			break;
+		}
+	}
+	ASSERT_NE(rootSeed, 0);
+	gameHandler.randomizer->setSeed(rootSeed);
+	gameHandler.onAdvInterfaceReady(hero->getOwner());
+
+	// The first real level-up presents the active faction perk. Select it via
+	// CHeroLevelUpDialogQuery so validation, HeroPerkChosen replication, and the
+	// query-resolution ordering are all exercised.
+	const auto firstLevel = hero->level;
+	hero->setExperience(LIBRARY->heroh->reqExp(firstLevel + 1), ChangeValueMode::ABSOLUTE);
+	gameHandler.levelUpHero(hero);
+	auto firstQuery = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(
+		gameHandler.queries->topQuery(hero->getOwner()));
+	ASSERT_NE(firstQuery, nullptr);
+	const auto firstPerk = std::find_if(firstQuery->hlu.perks.begin(), firstQuery->hlu.perks.end(), [](const auto & candidate)
+	{
+		return candidate.selection.perkId == "new-horizons:sylvanLuck.elvenPrecision";
+	});
+	ASSERT_NE(firstPerk, firstQuery->hlu.perks.end());
+	const auto firstPerkChoice = static_cast<int>(firstQuery->hlu.skills.size()
+		+ std::distance(firstQuery->hlu.perks.begin(), firstPerk));
+	ASSERT_TRUE(firstQuery->isValidReply(firstPerkChoice));
+	ASSERT_TRUE(gameHandler.queryReply(firstQuery->queryID, firstPerkChoice, hero->getOwner()));
+
+	EXPECT_EQ(hero->level, firstLevel + 1);
+	EXPECT_EQ(hero->getSecSkillLevel(sylvanLuck), MasteryLevel::BASIC);
+	EXPECT_TRUE(hero->hasActivePerk(sylvanLuckId, "new-horizons:sylvanLuck.elvenPrecision"));
+
+	// On the following level-up the faction skill is offered as an upgrade even
+	// though its legacy gain chance is zero. Selecting it proves progression is
+	// tied to the owning faction rather than to a legacy class table entry.
+	const auto secondLevel = hero->level;
+	hero->setExperience(LIBRARY->heroh->reqExp(secondLevel + 1), ChangeValueMode::ABSOLUTE);
+	gameHandler.levelUpHero(hero);
+	const auto topAfterSecondLevel = gameHandler.queries->topQuery(hero->getOwner());
+	ASSERT_NE(topAfterSecondLevel, nullptr) << "hero level=" << hero->level << " exp=" << hero->exp;
+	auto secondQuery = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(topAfterSecondLevel);
+	ASSERT_NE(secondQuery, nullptr);
+	const auto factionSkillChoice = std::find(secondQuery->hlu.skills.begin(), secondQuery->hlu.skills.end(), sylvanLuck);
+	ASSERT_NE(factionSkillChoice, secondQuery->hlu.skills.end());
+	const auto factionSkillIndex = static_cast<int>(std::distance(secondQuery->hlu.skills.begin(), factionSkillChoice));
+	ASSERT_TRUE(secondQuery->isValidReply(factionSkillIndex));
+	ASSERT_TRUE(gameHandler.queryReply(secondQuery->queryID, factionSkillIndex, hero->getOwner()));
+
+	EXPECT_EQ(hero->level, secondLevel + 1);
+	EXPECT_EQ(hero->getSecSkillLevel(sylvanLuck), MasteryLevel::ADVANCED);
+	EXPECT_TRUE(hero->hasActivePerk(sylvanLuckId, "new-horizons:sylvanLuck.elvenPrecision"));
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(hero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_EQ(restoredHero->getFactionID(), FactionID::RAMPART);
+	EXPECT_EQ(restoredHero->getSecSkillLevel(sylvanLuck), MasteryLevel::ADVANCED);
+	EXPECT_TRUE(restoredHero->getPerkState().hasSelection(
+		sylvanLuckId, "new-horizons:sylvanLuck.elvenPrecision"));
+	EXPECT_TRUE(restoredHero->hasActivePerk(
+		sylvanLuckId, "new-horizons:sylvanLuck.elvenPrecision"));
 }
