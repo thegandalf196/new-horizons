@@ -90,6 +90,8 @@ class BattleActionProcessor : boost::noncopyable
 		bool first = false;
 		bool ranged = false;
 		bool counter = false;
+		bool brace = false;
+		bool protectIntercepted = false;
 	};
 
 	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest); //returned value - travelled distance
@@ -113,7 +115,8 @@ class BattleActionProcessor : boost::noncopyable
 	std::set<SpellID> getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender);
 
 	/// Rolls the damage one attacked unit takes and appends what scripts need to know about it to the payload
-	void applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary) const;
+	void applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, bool protectIntercepted) const;
+	void publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const;
 
 	void addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const;
 	void addGenericDamageLog(BattleLogMessage& blm, const std::shared_ptr<battle::CUnitState> &attackerState, int64_t damageDealt) const;

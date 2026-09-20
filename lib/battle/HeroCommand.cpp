@@ -149,7 +149,84 @@ void validateOrdersOnlyRules(const JsonNode & rules)
 		|| rules["rulesetVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
 		|| rules["rulesetVersion"].Integer() != ORDERS_ONLY_RULESET_VERSION)
 		throw std::runtime_error("Unsupported New Horizons Orders-only combat ruleset version");
-	exactFields(rules["commands"], {"charge", "holdTheLine", "focusFire"});
+	const auto & commands = rules["commands"];
+	const bool canonical = commands.isStruct() && commands.Struct().size() == 8
+		&& commands.Struct().contains("riposte") && commands.Struct().contains("brace")
+		&& commands.Struct().contains("protect") && commands.Struct().contains("flank")
+		&& commands.Struct().contains("secondWind");
+	if(canonical)
+		exactFields(commands, {"charge", "holdTheLine", "focusFire", "riposte", "brace", "protect", "flank", "secondWind"});
+	else
+		exactFields(commands, {"charge", "holdTheLine", "focusFire"});
+	const auto validateFormula = [](const JsonNode & formula, const char * error)
+	{
+		exactFields(formula, {"base", "attack", "defense"});
+		for(const auto * term : {"base", "attack", "defense"})
+		{
+			if(!formula[term].isNumber() || !std::isfinite(formula[term].Float())
+				|| std::abs(formula[term].Float()) > MAX_TARGETED_COEFFICIENT)
+				throw std::runtime_error(error);
+		}
+	};
+	const auto validateEffects = [&](const JsonNode & effects, std::initializer_list<const char *> allowed, const char * error)
+	{
+		if(!effects.isStruct() || effects.Struct().empty())
+			throw std::runtime_error(error);
+		for(const auto & [effect, formula] : effects.Struct())
+		{
+			if(std::find(allowed.begin(), allowed.end(), effect) == allowed.end())
+				throw std::runtime_error(error);
+			validateFormula(formula, error);
+		}
+	};
+	const auto validateCommon = [&](const JsonNode & definition, const char * coverage,
+		const char * target, const char * trigger, const char * anchor,
+		std::initializer_list<const char *> effects)
+	{
+		std::vector<const char *> fields{"kind", "coverage", "duration", "effects"};
+		if(target)
+			fields.push_back("target");
+		if(trigger)
+			fields.push_back("trigger");
+		if(anchor)
+			fields.push_back("anchor");
+		if(!definition.isStruct() || definition.Struct().size() != fields.size())
+			throw std::runtime_error("Invalid New Horizons canonical Order fields");
+		for(const auto * field : fields)
+			if(!definition.Struct().contains(field))
+				throw std::runtime_error("Missing New Horizons canonical Order field: " + std::string(field));
+		if(!definition["kind"].isString() || definition["kind"].String() != "order"
+			|| !definition["duration"].isString() || definition["duration"].String() != "round"
+			|| !definition["coverage"].isString() || definition["coverage"].String() != coverage)
+			throw std::runtime_error("Invalid New Horizons canonical Order definition");
+		if(target && (!definition["target"].isString() || definition["target"].String() != target))
+			throw std::runtime_error("Invalid New Horizons canonical Order target policy");
+		if(trigger && (!definition["trigger"].isString() || definition["trigger"].String() != trigger))
+			throw std::runtime_error("Invalid New Horizons canonical Order trigger policy");
+		if(anchor && (!definition["anchor"].isString() || definition["anchor"].String() != anchor))
+			throw std::runtime_error("Invalid New Horizons canonical Order anchor policy");
+		validateEffects(definition["effects"], effects, "Invalid New Horizons canonical Order effects");
+	};
+	if(canonical)
+	{
+		validateCommon(commands["charge"], "ownLivingNonWarMachines", nullptr,
+			"firstMeleeAfterMovingAtLeast3", nullptr, {"meleeDamagePercent"});
+		validateCommon(commands["holdTheLine"], "ownLivingNonWarMachines", nullptr,
+			nullptr, "issuePosition", {"damageReductionPercent"});
+		validateCommon(commands["focusFire"], "ownOrdinaryShootersAtIssue", "enemyUnit",
+			nullptr, nullptr, {"rangedDamagePercent"});
+		validateCommon(commands["riposte"], "ownLivingNonWarMachines", nullptr,
+			nullptr, nullptr, {"meleeDamageReductionPercent", "retaliationDamagePercent"});
+		validateCommon(commands["brace"], "ownLivingNonWarMachines", nullptr,
+			"enemyMeleeMovedAtLeast3", nullptr, {"preemptiveDamagePercent"});
+		validateCommon(commands["protect"], "ownLivingNonWarMachines", "protectorAndWard",
+			nullptr, nullptr, {"interceptedDamageReductionPercent"});
+		validateCommon(commands["flank"], "ownLivingNonWarMachines", "enemyUnit",
+			nullptr, nullptr, {"meleeDamagePercent", "additionalSidePercent"});
+		validateCommon(commands["secondWind"], "ownLivingNonWarMachines", "friendlyCompletedActivation",
+			nullptr, nullptr, {"additionalActivationDamagePercent"});
+		return;
+	}
 	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
 		HeroCommand::FOCUS_FIRE})
 	{
@@ -200,6 +277,11 @@ std::string key(HeroCommand command)
 	case HeroCommand::AGGRESSIVE: return "aggressive";
 	case HeroCommand::DEFENSIVE: return "defensive";
 	case HeroCommand::FOCUS_FIRE: return "focusFire";
+	case HeroCommand::RIPOSTE: return "riposte";
+	case HeroCommand::BRACE: return "brace";
+	case HeroCommand::PROTECT: return "protect";
+	case HeroCommand::FLANK: return "flank";
+	case HeroCommand::SECOND_WIND: return "secondWind";
 	default: return {};
 	}
 }
@@ -212,7 +294,21 @@ bool valid(HeroCommand command)
 bool isActive(HeroCommand command)
 {
 	return command == HeroCommand::CHARGE || command == HeroCommand::HOLD_THE_LINE
-		|| command == HeroCommand::FOCUS_FIRE;
+		|| command == HeroCommand::FOCUS_FIRE || command == HeroCommand::RIPOSTE
+		|| command == HeroCommand::BRACE || command == HeroCommand::PROTECT
+		|| command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND;
+}
+
+bool isCanonicalRules(const JsonNode & rules)
+{
+	return rules.isStruct() && rules["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& rules["rulesetVersion"].Integer() == ORDERS_ONLY_RULESET_VERSION
+		&& rules["commands"].isStruct() && rules["commands"].Struct().size() == 8
+		&& rules["commands"].Struct().contains("riposte")
+		&& rules["commands"].Struct().contains("brace")
+		&& rules["commands"].Struct().contains("protect")
+		&& rules["commands"].Struct().contains("flank")
+		&& rules["commands"].Struct().contains("secondWind");
 }
 
 bool supportedByRules(const JsonNode & rules, HeroCommand command)
@@ -227,8 +323,12 @@ bool supportedByRules(const JsonNode & rules, HeroCommand command)
 		return legacyVersionOne(version) && command != HeroCommand::FOCUS_FIRE;
 	if(version.Integer() == RULESET_VERSION)
 		return command != HeroCommand::FOCUS_FIRE;
-	return version.Integer() == TARGETED_RULESET_VERSION
-		|| version.Integer() == ORDERS_ONLY_RULESET_VERSION;
+	if(version.Integer() == TARGETED_RULESET_VERSION)
+		return command == HeroCommand::CHARGE || command == HeroCommand::HOLD_THE_LINE
+			|| command == HeroCommand::FOCUS_FIRE;
+	if(version.Integer() == ORDERS_ONLY_RULESET_VERSION)
+		return rules["commands"].isStruct() && rules["commands"].Struct().contains(key(command));
+	return false;
 }
 
 bool isDoctrine(HeroCommand command)
@@ -294,6 +394,13 @@ int coefficient(const JsonNode & effect, int attack, int defense)
 std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero)
 {
 	std::vector<Bonus> result;
+	// The canonical eight Orders are evaluated from HeroOrderState at the exact
+	// attack/target moment.  Emitting broad unit bonuses here would make Charge
+	// unconditional, let Hold the Line follow moved stacks, and lose one-shot
+	// triggers.  Keep the old generic path solely for readable three-Order v3
+	// snapshots.
+	if(isCanonicalRules(rules))
+		return result;
 	// Focus Fire is contextual side state, never an unconditional unit bonus.
 	if(!isActive(command) || command == HeroCommand::FOCUS_FIRE)
 		return result;

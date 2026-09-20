@@ -20,14 +20,19 @@
 			"enum": [3]
 		},
 		"commands": {
-			"type": "object",
-			"minProperties": 3,
-			"required": ["charge", "holdTheLine", "focusFire"],
+		"type": "object",
+		"minProperties": 8,
+		"required": ["charge", "holdTheLine", "focusFire", "riposte", "brace", "protect", "flank", "secondWind"],
 			"additionalProperties": false,
 			"properties": {
-				"charge": {"$ref": "#/definitions/order"},
-				"holdTheLine": {"$ref": "#/definitions/order"},
-				"focusFire": {"$ref": "#/definitions/focusFire"}
+				"charge": {"$ref": "#/definitions/charge"},
+				"holdTheLine": {"$ref": "#/definitions/holdTheLine"},
+				"focusFire": {"$ref": "#/definitions/focusFire"},
+				"riposte": {"$ref": "#/definitions/riposte"},
+				"brace": {"$ref": "#/definitions/brace"},
+				"protect": {"$ref": "#/definitions/protect"},
+				"flank": {"$ref": "#/definitions/flank"},
+				"secondWind": {"$ref": "#/definitions/secondWind"}
 			}
 		}
 	},
@@ -50,8 +55,11 @@
 			"additionalProperties": false,
 			"properties": {
 				"kind": {"type": "string", "enum": ["order"]},
-				"coverage": {"type": "string", "enum": ["ownLivingNonWarMachines"]},
+				"coverage": {"type": "string", "enum": ["ownLivingNonWarMachines", "ownOrdinaryShootersAtIssue"]},
 				"duration": {"type": "string", "enum": ["round"]},
+				"trigger": {"type": "string"},
+				"anchor": {"type": "string"},
+				"target": {"type": "string"},
 				"effects": {
 					"type": "object",
 					"minProperties": 1,
@@ -59,8 +67,14 @@
 					"properties": {
 						"meleeDamagePercent": {"$ref": "#/definitions/coefficient"},
 						"rangedDamagePercent": {"$ref": "#/definitions/coefficient"},
+						"meleeDamageReductionPercent": {"$ref": "#/definitions/coefficient"},
+						"retaliationDamagePercent": {"$ref": "#/definitions/coefficient"},
 						"damageReductionPercent": {"$ref": "#/definitions/coefficient"},
-						"speedPercent": {"$ref": "#/definitions/coefficient"}
+						"speedPercent": {"$ref": "#/definitions/coefficient"},
+						"preemptiveDamagePercent": {"$ref": "#/definitions/coefficient"},
+						"interceptedDamageReductionPercent": {"$ref": "#/definitions/coefficient"},
+						"additionalSidePercent": {"$ref": "#/definitions/coefficient"},
+						"additionalActivationDamagePercent": {"$ref": "#/definitions/coefficient"}
 					}
 				}
 			}
@@ -88,6 +102,31 @@
 				},
 				"target": {"type": "string", "enum": ["enemyUnit"]}
 			}
+		},
+		"charge": {
+			"allOf": [{"$ref": "#/definitions/command"}, {"required": ["trigger"]},
+				{"properties": {"trigger": {"enum": ["firstMeleeAfterMovingAtLeast3"]}}}]
+		},
+		"holdTheLine": {
+			"allOf": [{"$ref": "#/definitions/command"}, {"required": ["anchor"]},
+				{"properties": {"anchor": {"enum": ["issuePosition"]}}}]
+		},
+		"riposte": {"$ref": "#/definitions/command"},
+		"brace": {
+			"allOf": [{"$ref": "#/definitions/command"}, {"required": ["trigger"]},
+				{"properties": {"trigger": {"enum": ["enemyMeleeMovedAtLeast3"]}}}]
+		},
+		"protect": {
+			"allOf": [{"$ref": "#/definitions/command"}, {"required": ["target"]},
+				{"properties": {"target": {"enum": ["protectorAndWard"]}}}]
+		},
+		"flank": {
+			"allOf": [{"$ref": "#/definitions/command"}, {"required": ["target"]},
+				{"properties": {"target": {"enum": ["enemyUnit"]}}}]
+		},
+		"secondWind": {
+			"allOf": [{"$ref": "#/definitions/command"}, {"required": ["target"]},
+				{"properties": {"target": {"enum": ["friendlyCompletedActivation"]}}}]
 		}
 	}
 }

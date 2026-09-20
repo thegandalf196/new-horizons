@@ -11,6 +11,7 @@
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/SideInBattle.h"
+#include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/bonuses/Bonus.h"
 // Full game-state roundtrips instantiate serializers for the complete object graph.
 #include "../../../lib/CPlayerState.h"
@@ -32,6 +33,29 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 
 class HeroCommandTest : public HeroCommandFixture {};
+
+TEST_F(HeroCommandTest, HeroOrderStatePacketRoundTripsThroughClientPackPointer)
+{
+	BattleHeroOrderStateChanged outgoing;
+	outgoing.battleID = BattleID(7);
+	outgoing.side = BattleSide::ATTACKER;
+	HeroOrderState state;
+	state.command = HeroCommand::PROTECT;
+	state.issuedRound = 3;
+	state.primaryTargetUnitId = 11;
+	state.secondaryTargetUnitId = 12;
+	state.protectIntercepted = true;
+	outgoing.state = state;
+
+	const CPackForClient & base = outgoing;
+	auto polymorphic = CMemorySerializer::deepCopy(base);
+	const auto * registered = dynamic_cast<const BattleHeroOrderStateChanged *>(polymorphic.get());
+	ASSERT_NE(registered, nullptr);
+	EXPECT_EQ(registered->battleID, outgoing.battleID);
+	EXPECT_EQ(registered->side, outgoing.side);
+	ASSERT_TRUE(registered->state);
+	EXPECT_EQ(*registered->state, *outgoing.state);
+}
 
 TEST_F(HeroCommandTest, CreatureLocationSpellPacketPreservesUnitZeroAndLanding)
 {
@@ -80,16 +104,16 @@ TEST_F(HeroCommandTest, ChargeChangesRealDamageWithoutManaOrCreatureTurn)
 	auto * to = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
 	const auto active = battle()->getActiveStackID();
 	const auto mana = attackerSideHero->mana;
-	const auto before = battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min;
+	const auto before = battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min;
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	EXPECT_GT(battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min, before);
+	EXPECT_GT(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, before);
 	EXPECT_EQ(attackerSideHero->mana, mana);
 	EXPECT_EQ(battle()->getActiveStackID(), active);
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::CHARGE);
 	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
 	advanceRound();
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
-	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min, before);
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, before);
 }
 
 TEST_F(HeroCommandTest, HoldTheLineReducesRealIncomingPhysicalDamage)
@@ -98,8 +122,11 @@ TEST_F(HeroCommandTest, HoldTheLineReducesRealIncomingPhysicalDamage)
 	auto * ours = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
 	const auto before = battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, false)).damage.min;
+	const auto shotBefore = battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, true)).damage.min;
 	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
 	EXPECT_LT(battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, false)).damage.min, before);
+	// Hold the Line covers all physical creature damage, including missiles.
+	EXPECT_LT(battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, true)).damage.min, shotBefore);
 	advanceRound();
 	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, false)).damage.min, before);
 }
@@ -109,11 +136,146 @@ TEST_F(HeroCommandTest, ChargeExpiresAtTheRoundBoundary)
 	prepareCommands();
 	auto * from = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
 	auto * to = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
-	const auto before = battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min;
+	const auto before = battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min;
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	EXPECT_GT(battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min, before);
+	EXPECT_GT(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, before);
 	advanceRound();
-	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min, before);
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, before);
+}
+
+TEST_F(HeroCommandTest, RiposteBoostsOnlyRetaliationDamage)
+{
+	prepareCommands();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	BattleAttackInfo ordinary(attacker, defender, 0, false);
+	const auto before = battle()->calculateDmgRange(ordinary).damage.min;
+	ASSERT_TRUE(issue(HeroCommand::RIPOSTE));
+	ordinary.retaliation = true;
+	EXPECT_GT(battle()->calculateDmgRange(ordinary).damage.min, before);
+}
+
+TEST_F(HeroCommandTest, BracePreemptiveStrikeUsesItsOwnDamageFormula)
+{
+	prepareCommands();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	BattleAttackInfo incoming(attacker, defender, 0, false);
+	const auto before = battle()->calculateDmgRange(incoming).damage.min;
+	ASSERT_TRUE(issue(HeroCommand::BRACE));
+	incoming.bracePreemptive = true;
+	// Brace is a final multiplier: with the fixture's zero hero defense it is
+	// exactly 50% of the ordinary blow, independent of additive Offense.
+	EXPECT_EQ(battle()->calculateDmgRange(incoming).damage.min, before / 2);
+	EXPECT_TRUE(battle()->battleCanTriggerHeroOrderBrace(defender, attacker, 3, false, false));
+	EXPECT_TRUE(battle()->battleCanTriggerHeroOrderBrace(defender, attacker, 3, false, false));
+	EXPECT_FALSE(battle()->battleCanTriggerHeroOrderBrace(defender, attacker, 2, false, false));
+}
+
+TEST_F(HeroCommandTest, ProtectRedirectsOneAdjacentWardAttack)
+{
+	prepareCommands();
+	auto * protector = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * ward = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(71), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(72), 100);
+	ASSERT_EQ(BattleHex::getDistance(protector->getPosition(), ward->getPosition()), 1);
+	ASSERT_EQ(battle()->battleResolveHeroOrderTarget(enemy, ward, false), ward);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
+			protector->unitId(), ward->unitId())));
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_EQ(state->primaryTargetUnitId, protector->unitId());
+	EXPECT_EQ(state->secondaryTargetUnitId, ward->unitId());
+	EXPECT_EQ(battle()->battleResolveHeroOrderTarget(enemy, ward, false), protector);
+	ASSERT_TRUE(battle()->interceptHeroOrderProtect(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->battleResolveHeroOrderTarget(enemy, ward, false), ward);
+}
+
+TEST_F(HeroCommandTest, ProtectReductionIsScopedToTheInterceptedBlowAndStateIsReplicated)
+{
+	prepareCommands();
+	auto * protector = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * ward = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(71), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(72), 100);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
+			protector->unitId(), ward->unitId())));
+	const auto normal = battle()->calculateDmgRange(BattleAttackInfo(enemy, protector, 0, false)).damage.min;
+	BattleAttackInfo intercepted(enemy, protector, 0, false);
+	intercepted.protectIntercepted = true;
+	const auto reduced = battle()->calculateDmgRange(intercepted).damage.min;
+	EXPECT_LT(reduced, normal);
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(enemy, protector, 0, false)).damage.min, normal);
+	blockRetaliation(protector);
+	blockRetaliation(ward);
+	const auto statePacketsBeforeAttack = server.orderStateUpdates.size();
+	ASSERT_TRUE(attack(enemy, ward->getPosition()));
+	ASSERT_GT(server.orderStateUpdates.size(), statePacketsBeforeAttack);
+	ASSERT_TRUE(server.orderStateUpdates.back().state);
+	EXPECT_TRUE(server.orderStateUpdates.back().state->protectIntercepted);
+}
+
+TEST_F(HeroCommandTest, ProtectExpiresPermanentlyAfterFullFootprintSeparation)
+{
+	prepareCommands();
+	auto * protector = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * ward = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(71), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(72), 100);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
+			protector->unitId(), ward->unitId())));
+	BattleStackMoved separated;
+	separated.battleID = BattleID(0);
+	separated.stack = ward->unitId();
+	separated.tilesToMove.insert(BattleHex(74));
+	gameHandler->sendAndApply(separated);
+	EXPECT_TRUE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->protectBroken);
+	BattleStackMoved reunited = separated;
+	reunited.tilesToMove.clear();
+	reunited.tilesToMove.insert(BattleHex(71));
+	gameHandler->sendAndApply(reunited);
+	EXPECT_EQ(battle()->battleResolveHeroOrderTarget(enemy, ward, false), ward);
+}
+
+TEST_F(HeroCommandTest, FlankRaisesTheFirstDistinctSideAttack)
+{
+	prepareCommands();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * secondAttacker = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(54), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	BattleAttackInfo attack(attacker, defender, 0, false);
+	const auto before = battle()->calculateDmgRange(attack).damage.min;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeTargetedHeroCommand(BattleSide::ATTACKER, HeroCommand::FLANK, defender->unitId())));
+	const auto side = battle()->battleHeroOrderFlankSide(attacker, defender);
+	ASSERT_NE(side, 0);
+	const auto firstSide = battle()->calculateDmgRange(attack).damage.min;
+	EXPECT_GT(firstSide, before);
+	ASSERT_TRUE(battle()->recordHeroOrderFlankSide(BattleSide::ATTACKER, defender->unitId(), side));
+	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->flankFor(defender->unitId())->sideMask, side);
+	BattleAttackInfo secondAttack(secondAttacker, defender, 0, false);
+	const auto secondSide = battle()->battleHeroOrderFlankSide(secondAttacker, defender);
+	ASSERT_NE(secondSide, 0);
+	ASSERT_NE(secondSide, side);
+	EXPECT_GT(battle()->calculateDmgRange(secondAttack).damage.min, firstSide);
+}
+
+TEST_F(HeroCommandTest, SecondWindActivatesMovedStackWithDirectDamagePenalty)
+{
+	prepareCommands();
+	auto * target = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	target->movedThisRound = true;
+	BattleAttackInfo attack(target, enemy, 0, false);
+	const auto before = battle()->calculateDmgRange(attack).damage.min;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeTargetedHeroCommand(BattleSide::ATTACKER, HeroCommand::SECOND_WIND, target->unitId())));
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_TRUE(state->secondWindActive);
+	EXPECT_EQ(battle()->getActiveStackID(), target->unitId());
+	EXPECT_LT(battle()->calculateDmgRange(attack).damage.min, before);
 }
 
 TEST_F(HeroCommandTest, LegacyDoctrineIdsAreNeverIssuableOrExposed)
@@ -247,7 +409,7 @@ TEST(HeroCommandRulesTest, FormulaIsCoefficientBasedAndUnknownRulesFailClosed)
 {
 	const JsonNode file(JsonPath::builtin("config/newHorizonsCombat"));
 	auto rules = file["combat"]["heroCommands"];
-	EXPECT_EQ(heroCommands::coefficient(rules["commands"]["charge"]["effects"]["meleeDamagePercent"], 20, 0), 30);
+	EXPECT_EQ(heroCommands::coefficient(rules["commands"]["charge"]["effects"]["meleeDamagePercent"], 20, 0), 14);
 	rules["rulesetVersion"].Integer() = 2;
 	EXPECT_THROW(heroCommands::validateRules(rules), std::runtime_error);
 }

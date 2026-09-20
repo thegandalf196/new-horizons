@@ -113,6 +113,7 @@ public:
 	void visitPlayerCheated(PlayerCheated & pack) override;
 	void visitDaysWithoutTown(DaysWithoutTown & pack) override;
 	void visitStartAction(StartAction & pack) override;
+	void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) override;
 	void visitSetRewardableConfiguration(SetRewardableConfiguration & pack) override;
 	void visitBattleSetStackProperty(BattleSetStackProperty & pack) override;
 	void visitBattleNextRound(BattleNextRound & pack) override;
@@ -137,4 +138,5 @@ public:
 	void visitBattleObstaclesChanged(BattleObstaclesChanged & pack) override;
 	void visitCatapultAttack(CatapultAttack & pack) override;
 	void visitBattleStackMoved(BattleStackMoved & pack) override;
+	void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) override;
 };

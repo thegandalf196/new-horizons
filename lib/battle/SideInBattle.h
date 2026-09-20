@@ -32,6 +32,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// wire position while loading.
 	HeroCommand activeDoctrine = HeroCommand::NONE;
 	HeroCommand activeOrder = HeroCommand::NONE;
+	std::optional<HeroOrderState> orderState;
 	std::optional<FocusFireState> focusFire;
 	uint32_t castSpellsCount = 0; //how many spells each side has been cast this turn
 	bool temporalFieldUsed = false; // saved once-per-combat Sorcery Mass Slow budget
@@ -54,6 +55,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 			&& (focusFire || activeOrder == HeroCommand::FOCUS_FIRE))
 			throw std::runtime_error("Cannot discard New Horizons targeted command state");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS) && orderState)
+			throw std::runtime_error("Cannot discard New Horizons canonical Order state");
 		h & color;
 		h & heroID;
 		h & armyObjectID;
@@ -107,6 +110,14 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		else if(!h.saving)
 		{
 			focusFire.reset();
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS))
+		{
+			h & orderState;
+		}
+		else if(!h.saving)
+		{
+			orderState.reset();
 		}
 	}
 };

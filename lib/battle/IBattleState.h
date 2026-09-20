@@ -71,6 +71,7 @@ public:
 	virtual bool getHeroCommandUsed(BattleSide side) const { return false; }
 	virtual HeroCommand getActiveDoctrine(BattleSide side) const { return HeroCommand::NONE; }
 	virtual HeroCommand getActiveOrder(BattleSide side) const { return HeroCommand::NONE; }
+	virtual std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const { return {}; }
 	virtual std::optional<FocusFireState> getFocusFireState(BattleSide side) const { return {}; }
 	virtual int32_t getCastSpells(BattleSide side) const = 0;
 	virtual int32_t getEnchanterCounter(BattleSide side) const = 0;
@@ -110,4 +111,9 @@ public:
 	virtual void addObstacle(const ObstacleChanges & changes) = 0;
 	virtual void updateObstacle(const ObstacleChanges & changes) = 0;
 	virtual void removeObstacle(uint32_t id) = 0;
+
+	/// Applies an authoritative snapshot of transient canonical Order state.
+	/// The default keeps lightweight callback proxies and test doubles source
+	/// compatible; concrete battle state stores it.
+	virtual void setHeroOrderState(BattleSide, const std::optional<HeroOrderState> &) {}
 };

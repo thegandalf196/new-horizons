@@ -29,6 +29,24 @@
 
 #include <vstd/RNG.h>
 
+namespace
+{
+bool orderUnitsAdjacent(const battle::Unit * first, const battle::Unit * second)
+{
+	if(!first || !second)
+		return false;
+	for(const auto & firstHex : first->getHexes())
+	{
+		if(!firstHex.isValid())
+			continue;
+		for(const auto & secondHex : second->getHexes())
+			if(secondHex.isValid() && BattleHex::getDistance(firstHex, secondHex) == 1)
+				return true;
+	}
+	return false;
+}
+}
+
 const SideInBattle & BattleInfo::getSide(BattleSide side) const
 {
 	return sides.at(side);
@@ -37,6 +55,94 @@ const SideInBattle & BattleInfo::getSide(BattleSide side) const
 SideInBattle & BattleInfo::getSide(BattleSide side)
 {
 	return sides.at(side);
+}
+
+bool BattleInfo::consumeHeroOrderUnit(BattleSide side, uint32_t unitId)
+{
+	auto & state = sides.at(side).orderState;
+	if(!state || state->command != HeroCommand::CHARGE || state->containsConsumed(unitId))
+		return false;
+	state->consumedUnitIds.insert(std::lower_bound(state->consumedUnitIds.begin(), state->consumedUnitIds.end(), unitId), unitId);
+	return true;
+}
+
+bool BattleInfo::triggerHeroOrderBrace(BattleSide side, uint32_t unitId)
+{
+	auto & state = sides.at(side).orderState;
+	// Brace is a reaction to every qualifying incoming melee attack, not a
+	// once-per-unit/round charge. Keep the old entry point for callers while
+	// making the trigger itself stateless and therefore deterministic on clients.
+	(void)unitId;
+	return state && state->command == HeroCommand::BRACE;
+}
+
+bool BattleInfo::breakHeroOrderHold(uint32_t unitId)
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		auto & state = sides.at(side).orderState;
+		if(!state || state->command != HeroCommand::HOLD_THE_LINE || state->containsHoldBroken(unitId))
+			continue;
+		const auto * anchor = state->anchorFor(unitId);
+		const auto * unit = battleGetUnitByID(unitId);
+		if(anchor && unit && anchor->position != unit->getPosition().toInt())
+		{
+			state->holdBrokenUnitIds.insert(std::lower_bound(state->holdBrokenUnitIds.begin(), state->holdBrokenUnitIds.end(), unitId), unitId);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool BattleInfo::interceptHeroOrderProtect(BattleSide side)
+{
+	auto & state = sides.at(side).orderState;
+	if(!state || state->command != HeroCommand::PROTECT || state->protectIntercepted || state->protectBroken)
+		return false;
+	state->protectIntercepted = true;
+	return true;
+}
+
+void BattleInfo::setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state)
+{
+	if(state)
+		state->validateShape();
+	sides.at(side).orderState = state;
+}
+
+void BattleInfo::expireSeparatedHeroOrderProtect()
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		auto & state = sides.at(side).orderState;
+		if(!state || state->command != HeroCommand::PROTECT || state->protectBroken)
+			continue;
+		const auto * protector = getStack(static_cast<int>(state->primaryTargetUnitId), false);
+		const auto * ward = getStack(static_cast<int>(state->secondaryTargetUnitId), false);
+		if(!protector || !ward || !protector->alive() || !ward->alive() || !orderUnitsAdjacent(protector, ward))
+			state->protectBroken = true;
+	}
+}
+
+bool BattleInfo::recordHeroOrderFlankSide(BattleSide side, uint32_t targetUnitId, uint8_t sideMask)
+{
+	auto & state = sides.at(side).orderState;
+	if(!state || state->command != HeroCommand::FLANK || sideMask == 0 || sideMask > 0x3f)
+		return false;
+	auto * target = state->flankFor(targetUnitId);
+	if(!target || (target->sideMask & sideMask) == sideMask)
+		return false;
+	target->sideMask |= sideMask;
+	return true;
+}
+
+bool BattleInfo::setHeroOrderSecondWindActive(BattleSide side, bool active)
+{
+	auto & state = sides.at(side).orderState;
+	if(!state || state->command != HeroCommand::SECOND_WIND)
+		return false;
+	state->secondWindActive = active;
+	return true;
 }
 
 ///BattleInfo
@@ -683,6 +789,7 @@ void BattleInfo::nextRound()
 		sides.at(i).castSpellsCount = 0;
 		sides.at(i).heroCommandUsed = false;
 		sides.at(i).activeOrder = HeroCommand::NONE;
+		sides.at(i).orderState.reset();
 		sides.at(i).focusFire.reset();
 		vstd::amax(--sides.at(i).enchanterCounter, 0);
 	}
@@ -744,8 +851,23 @@ void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
 		logGlobal->error("Cannot find stack %d", id);
 		return;
 	}
+	if(sta->getPosition() != destination)
+	{
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			auto & state = sides.at(side).orderState;
+			if(!state || state->command != HeroCommand::HOLD_THE_LINE || state->containsHoldBroken(id))
+				continue;
+			if(const auto * anchor = state->anchorFor(id); anchor && anchor->position != destination.toInt())
+			{
+				state->holdBrokenUnitIds.insert(std::lower_bound(state->holdBrokenUnitIds.begin(), state->holdBrokenUnitIds.end(), id), id);
+				break;
+			}
+		}
+	}
 	sta->position = destination;
-	//Bonuses can be limited by unit placement, so, change tree version 
+	expireSeparatedHeroOrderProtect();
+	//Bonuses can be limited by unit placement, so, change tree version
 	//to force updating a bonus. TODO: update version only when such bonuses are present
 	nodeHasChanged();
 }
@@ -774,6 +896,7 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 
 	//applying changes
 	changedStack->load(data);
+	expireSeparatedHeroOrderProtect();
 
 
 	if(healthDelta < 0)
@@ -861,6 +984,7 @@ void BattleInfo::removeUnit(uint32_t id)
 
 		ids.erase(toRemoveId);
 	}
+	expireSeparatedHeroOrderProtect();
 }
 
 void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
@@ -1029,6 +1153,24 @@ void BattleInfo::validateFocusFireStates() const
 					|| !heroCommands::supportedByRules(heroCommandRules, state.activeOrder)
 					|| !state.heroCommandUsed || state.castSpellsCount != 0)))
 			throw std::runtime_error("Invalid New Horizons saved command state");
+		if(state.orderState)
+		{
+			state.orderState->validateShape();
+			if(!heroCommands::isCanonicalRules(heroCommandRules)
+				|| state.orderState->command != state.activeOrder
+				|| state.orderState->issuedRound != round
+				|| !state.heroCommandUsed || state.castSpellsCount != 0
+				|| !heroCommands::supportedByRules(heroCommandRules, state.orderState->command))
+				throw std::runtime_error("Invalid New Horizons canonical Order context");
+			if(state.orderState->primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
+				&& !battleGetUnitByID(state.orderState->primaryTargetUnitId))
+				throw std::runtime_error("Invalid New Horizons canonical Order target");
+			if(state.orderState->secondaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
+				&& !battleGetUnitByID(state.orderState->secondaryTargetUnitId))
+				throw std::runtime_error("Invalid New Horizons canonical Order secondary target");
+		}
+		else if(heroCommands::isCanonicalRules(heroCommandRules) && state.activeOrder != HeroCommand::NONE)
+			throw std::runtime_error("Missing New Horizons canonical Order state");
 		if(state.focusFire.has_value() != (state.activeOrder == HeroCommand::FOCUS_FIRE))
 			throw std::runtime_error("Inconsistent New Horizons Focus Fire order state");
 		if(!state.focusFire)
@@ -1057,6 +1199,9 @@ void BattleInfo::normalizeLegacyHeroCommandState()
 			&& !heroCommands::isActive(sides.at(side).activeOrder);
 		if(invalidLegacyOrder)
 			sides.at(side).activeOrder = HeroCommand::NONE;
+		if(sides.at(side).orderState && (!heroCommands::isCanonicalRules(heroCommandRules)
+			|| sides.at(side).orderState->command != sides.at(side).activeOrder))
+			sides.at(side).orderState.reset();
 		if(invalidLegacyOrder)
 		{
 			const auto legacyRoundOrder = Selector::sourceTypeSel(BonusSource::HERO_COMMAND)

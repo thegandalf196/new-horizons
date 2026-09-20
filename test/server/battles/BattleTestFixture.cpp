@@ -54,6 +54,9 @@ void RecordingGameServer::record(CPackForClient & pack)
 	if(const auto * action = dynamic_cast<const StartAction *>(&pack))
 		startedActions.push_back(*action);
 
+	if(const auto * orderState = dynamic_cast<const BattleHeroOrderStateChanged *>(&pack))
+		orderStateUpdates.push_back(*orderState);
+
 	if(dynamic_cast<const HeroLevelUp *>(&pack)) progressionPackets.push_back("level");
 	if(dynamic_cast<const HeroMasteryOffer *>(&pack)) progressionPackets.push_back("offer");
 	if(dynamic_cast<const HeroMasteryChosen *>(&pack)) progressionPackets.push_back("chosen");

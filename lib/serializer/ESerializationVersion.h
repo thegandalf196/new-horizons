@@ -75,12 +75,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_SELECTIVE_DISPEL, // optional Sorcery Dispel mode carried by battle actions
 	NEW_HORIZONS_TEMPORAL_FIELD, // optional once-per-combat Sorcery Mass Slow state and action data
 	NEW_HORIZONS_COUNTERSPELL, // optional reusable Sorcery Counterspell ward state and cast result
+	NEW_HORIZONS_CANONICAL_ORDERS, // authoritative state for the eight canonical Orders
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_COUNTERSPELL,
+	CURRENT = NEW_HORIZONS_CANONICAL_ORDERS,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -103,3 +104,5 @@ static_assert(ESerializationVersion::NEW_HORIZONS_TEMPORAL_FIELD > ESerializatio
 	"Temporal Field state must remain absent from older Selective Dispel snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_COUNTERSPELL > ESerializationVersion::NEW_HORIZONS_TEMPORAL_FIELD,
 	"Counterspell state must remain absent from older Temporal Field snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_CANONICAL_ORDERS > ESerializationVersion::NEW_HORIZONS_COUNTERSPELL,
+	"Canonical Order state must remain absent from older Counterspell snapshots");

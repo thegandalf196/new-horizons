@@ -27,7 +27,14 @@ struct DLL_LINKAGE BattleAttackInfo
 
 	int chargeDistance = 0;
 	bool shooting      = false;
+	/// Whether this is physical creature damage. Spell-like attacks are marked
+	/// false by the authoritative attack path so physical-only Orders do not
+	/// reduce magical effects.
+	bool physicalDamage = true;
 	bool secondaryAttack = false; // Collateral cannot inherit a targeted primary-shot Order.
+	bool protectIntercepted = false; // This exact blow was redirected by Protect.
+	bool retaliation = false; // The blow is a normal creature retaliation/counterattack.
+	bool bracePreemptive = false; // The blow is Brace's one pre-emptive strike.
 	bool luckyStrike   = false;
 	bool unluckyStrike = false;
 	bool deathBlow     = false;

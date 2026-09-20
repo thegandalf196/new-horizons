@@ -16,6 +16,7 @@
 #include "../TurnTimerHandler.h"
 
 #include "../../lib/CStack.h"
+#include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -34,6 +35,18 @@ BattleFlowProcessor::BattleFlowProcessor(BattleProcessor * owner, CGameHandler *
 	: owner(owner)
 	, gameHandler(newGameHandler)
 {
+}
+
+void BattleFlowProcessor::publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const
+{
+	if(!heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
+		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return;
+	BattleHeroOrderStateChanged update;
+	update.battleID = battle.getBattle()->getBattleID();
+	update.side = side;
+	update.state = battle.battleGetHeroOrderState(side);
+	gameHandler->sendAndApply(update);
 }
 
 void BattleFlowProcessor::tryPlaceMoats(const CBattleInfoCallback & battle)
@@ -677,10 +690,40 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		}
 	}
 
+	// Second Wind grants one immediate extra activation to a stack that has
+	// already acted. Keep the transient state active while that activation is
+	// being processed so its direct-damage penalty is applied authoritatively.
+	if(ba.actionType == EActionType::HERO_COMMAND && ba.command == HeroCommand::SECOND_WIND)
+	{
+		const auto state = battle.battleGetHeroOrderState(ba.side);
+		const auto * target = state && state->primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
+			? battle.battleGetStackByID(state->primaryTargetUnitId, false) : nullptr;
+		if(const auto * stateInfo = dynamic_cast<const BattleInfo *>(battle.getBattle());
+			target && target->alive() && stateInfo
+			&& const_cast<BattleInfo *>(stateInfo)->setHeroOrderSecondWindActive(ba.side, true))
+		{
+			publishHeroOrderState(battle, ba.side);
+			setActiveStack(battle, target, BattleUnitTurnReason::HERO_COMMAND);
+			return;
+		}
+	}
+
 	if (ba.isUnitAction())
 	{
 		assert(activeStack != nullptr);
 		assert(actedStack != nullptr);
+
+		if(const auto state = battle.battleGetHeroOrderState(actedStack->unitSide());
+			state && state->command == HeroCommand::SECOND_WIND && state->secondWindActive
+			&& state->primaryTargetUnitId == actedStack->unitId())
+		{
+			if(const auto * stateInfo = dynamic_cast<const BattleInfo *>(battle.getBattle()))
+			{
+				const auto side = actedStack->unitSide();
+				if(const_cast<BattleInfo *>(stateInfo)->setHeroOrderSecondWindActive(side, false))
+					publishHeroOrderState(battle, side);
+			}
+		}
 
 		if (rollGoodMorale(battle, actedStack))
 		{

@@ -482,6 +482,11 @@ void StartAction::visitTyped(ICPackVisitor & visitor)
 	visitor.visitStartAction(*this);
 }
 
+void BattleHeroOrderStateChanged::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleHeroOrderStateChanged(*this);
+}
+
 void EndAction::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitEndAction(*this);

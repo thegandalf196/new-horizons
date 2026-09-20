@@ -53,7 +53,10 @@ TEST_F(HeroCommandPersistenceTest, WarMachinesAndEnemiesAreNotRecipients)
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	EXPECT_TRUE(machine->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
 	EXPECT_TRUE(enemy->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
-	EXPECT_FALSE(battle()->battleActiveUnit()->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+	EXPECT_TRUE(battle()->battleActiveUnit()->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_EQ(state->command, HeroCommand::CHARGE);
 }
 
 TEST_F(HeroCommandPersistenceTest, LateArrivalsReceiveOnlyTheNextRoundOrder)
@@ -66,7 +69,10 @@ TEST_F(HeroCommandPersistenceTest, LateArrivalsReceiveOnlyTheNextRoundOrder)
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
 	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
 	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
-	EXPECT_EQ(late->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->size(), 1u);
+	EXPECT_TRUE(late->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_NE(state->anchorFor(late->unitId()), nullptr);
 }
 
 TEST_F(HeroCommandPersistenceTest, NoLivingOrdinaryRecipientMakesEveryCommandUnavailable)
@@ -136,8 +142,9 @@ TEST_F(HeroCommandPersistenceTest, FullBattleStartPacketRestoresEffectsBudgetAnd
 	EXPECT_EQ(restored->battleGetActiveDoctrine(BattleSide::ATTACKER), HeroCommand::NONE);
 	EXPECT_TRUE(restored->getHeroCommandUsed(BattleSide::ATTACKER));
 	EXPECT_FALSE(restored->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
-	EXPECT_FALSE(restored->battleActiveUnit()->getAllBonuses(
+	EXPECT_TRUE(restored->battleActiveUnit()->getAllBonuses(
 		Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+	ASSERT_TRUE(restored->battleGetHeroOrderState(BattleSide::ATTACKER));
 
 	BattleNextRound next;
 	next.battleID = BattleID(0);

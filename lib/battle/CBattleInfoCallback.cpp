@@ -37,6 +37,45 @@
 namespace
 {
 constexpr int ELVEN_PRECISION_DEFENSE_IGNORE_PERCENT = 25;
+
+/// Order targeting is based on occupied hexes, not a unit's primary position.
+/// This matters for double-wide stacks: their rear hex may be the one actually
+/// touching the ward or presenting a flank.
+bool orderUnitsAdjacent(const battle::Unit * first, const battle::Unit * second)
+{
+	if(!first || !second)
+		return false;
+	for(const auto & firstHex : first->getHexes())
+	{
+		if(!firstHex.isValid())
+			continue;
+		for(const auto & secondHex : second->getHexes())
+			if(secondHex.isValid() && BattleHex::getDistance(firstHex, secondHex) == 1)
+				return true;
+	}
+	return false;
+}
+
+uint8_t orderContactingSideMask(const battle::Unit * attacker, const battle::Unit * defender)
+{
+	if(!attacker || !defender)
+		return 0;
+	uint8_t sideMask = 0;
+	for(const auto & attackerHex : attacker->getHexes())
+	{
+		if(!attackerHex.isValid())
+			continue;
+		for(const auto & defenderHex : defender->getHexes())
+		{
+			if(!defenderHex.isValid() || BattleHex::getDistance(defenderHex, attackerHex) != 1)
+				continue;
+			const auto direction = BattleHex::mutualPosition(defenderHex, attackerHex);
+			if(direction >= BattleHex::TOP_LEFT && direction <= BattleHex::LEFT)
+				sideMask |= static_cast<uint8_t>(1u << static_cast<unsigned>(direction));
+		}
+	}
+	return sideMask;
+}
 }
 
 std::optional<newHorizonsCreatures::CreatureCategoryView> CBattleInfoCallback::battleGetCreatureCategory(CreatureID creature) const
@@ -162,7 +201,7 @@ bool CBattleInfoCallback::battleHeroCommandCommonAvailable(BattleSide side, Hero
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		|| battleTacticDist() || !battleGetFightingHero(side)
 		|| getBattle()->getHeroCommandUsed(side) || battleCastSpells(side) != 0
-		|| battleGetActiveDoctrine(side) == command)
+		|| battleGetActiveDoctrine(side) == command || battleGetActiveOrder(side) != HeroCommand::NONE)
 		return false;
 	const auto * active = battleActiveUnit();
 	return active && battleGetOwner(active) == sideToPlayer(side);
@@ -170,7 +209,9 @@ bool CBattleInfoCallback::battleHeroCommandCommonAvailable(BattleSide side, Hero
 
 bool CBattleInfoCallback::battleCanUseHeroCommand(BattleSide side, HeroCommand command) const
 {
-	if(command == HeroCommand::FOCUS_FIRE || !battleHeroCommandCommonAvailable(side, command))
+	if(command == HeroCommand::FOCUS_FIRE || command == HeroCommand::PROTECT
+		|| command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND
+		|| !battleHeroCommandCommonAvailable(side, command))
 		return false;
 	for(const auto * unit : battleGetAllStacks())
 	{
@@ -230,11 +271,23 @@ bool CBattleInfoCallback::battleCanConfirmHeroCommand(BattleSide side, HeroComma
 std::vector<uint32_t> CBattleInfoCallback::battleGetHeroCommandTargets(BattleSide side, HeroCommand command) const
 {
 	std::vector<uint32_t> result;
-	if(command != HeroCommand::FOCUS_FIRE || !battleHeroCommandCommonAvailable(side, command))
+	if((command != HeroCommand::FOCUS_FIRE && command != HeroCommand::FLANK
+		&& command != HeroCommand::PROTECT && command != HeroCommand::SECOND_WIND)
+		|| !battleHeroCommandCommonAvailable(side, command))
 		return result;
 	for(const auto * unit : battleAliveUnits())
 	{
-		if(battleCanConfirmHeroCommand(side, command, unit->unitId()))
+		if(command == HeroCommand::PROTECT)
+		{
+			// This list is the legal candidate set for the two-step Protector -> Ward
+			// selector. Pair validation remains authoritative in battlePrepare...().
+			if(battleGetOwner(unit) == sideToPlayer(side) && !unit->isTurret()
+				&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON))
+				result.push_back(unit->unitId());
+		}
+		else if(command == HeroCommand::FOCUS_FIRE
+			? battleCanConfirmHeroCommand(side, command, unit->unitId())
+			: battlePrepareHeroOrderState(side, command, {unit->unitId()}).has_value())
 			result.push_back(unit->unitId());
 	}
 	std::sort(result.begin(), result.end());
@@ -243,8 +296,17 @@ std::vector<uint32_t> CBattleInfoCallback::battleGetHeroCommandTargets(BattleSid
 
 bool CBattleInfoCallback::battleCanBeginHeroCommand(BattleSide side, HeroCommand command) const
 {
-	if(command == HeroCommand::FOCUS_FIRE)
+	if(command == HeroCommand::FOCUS_FIRE || command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND)
 		return !battleGetHeroCommandTargets(side, command).empty();
+	if(command == HeroCommand::PROTECT)
+	{
+		const auto candidates = battleGetHeroCommandTargets(side, command);
+		for(const auto protector : candidates)
+			for(const auto ward : candidates)
+				if(protector != ward && battlePrepareHeroOrderState(side, command, {protector, ward}))
+					return true;
+		return false;
+	}
 	return battleCanUseHeroCommand(side, command);
 }
 
@@ -278,6 +340,147 @@ std::optional<FocusFireState> CBattleInfoCallback::battleGetFocusFireState(Battl
 	return getBattle()->getFocusFireState(side);
 }
 
+std::optional<HeroOrderState> CBattleInfoCallback::battleGetHeroOrderState(BattleSide side) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return {};
+	return getBattle()->getHeroOrderState(side);
+}
+
+std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(BattleSide side,
+	HeroCommand command, const std::vector<uint32_t> & targetUnitIds) const
+{
+	if(!getBattle() || !heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
+		|| !heroCommands::isActive(command) || !battleHeroCommandCommonAvailable(side, command))
+		return {};
+	const auto * hero = battleGetFightingHero(side);
+	if(!hero)
+		return {};
+	const auto owner = sideToPlayer(side);
+	const auto ownCombatUnit = [this, owner](const battle::Unit * unit)
+	{
+		return unit && unit->alive() && !unit->isGhost() && battleGetOwner(unit) == owner
+			&& !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+	};
+	const auto * rules = &getBattle()->getHeroCommandRules()["commands"][heroCommands::key(command)];
+	HeroOrderState result;
+	result.command = command;
+	result.issuedRound = battleGetRound();
+	if(result.issuedRound < 1)
+		return {};
+
+	if(command == HeroCommand::FOCUS_FIRE)
+	{
+		if(targetUnitIds.size() != 1 || !battleCanConfirmHeroCommand(side, command, targetUnitIds.front()))
+			return {};
+		result.primaryTargetUnitId = targetUnitIds.front();
+		return result;
+	}
+	if(command == HeroCommand::FLANK)
+	{
+		if(targetUnitIds.size() != 1)
+			return {};
+		const auto * target = battleGetUnitByID(targetUnitIds.front());
+		if(!target || !target->alive() || target->isGhost() || target->isTurret()
+			|| battleGetOwner(target) == owner)
+			return {};
+		bool hasMelee = false;
+		for(const auto * unit : battleAliveUnits())
+			if(ownCombatUnit(unit) && unit->isMeleeAttacker())
+				hasMelee = true;
+		if(!hasMelee)
+			return {};
+		result.primaryTargetUnitId = target->unitId();
+		result.flankTargets.push_back({target->unitId(), 0});
+		return result;
+	}
+	if(command == HeroCommand::PROTECT)
+	{
+		if(targetUnitIds.size() != 2 || targetUnitIds.front() == targetUnitIds.back())
+			return {};
+		const auto * protector = battleGetUnitByID(targetUnitIds.front());
+		const auto * ward = battleGetUnitByID(targetUnitIds.back());
+		if(!ownCombatUnit(protector) || !ownCombatUnit(ward)
+			|| !orderUnitsAdjacent(protector, ward))
+			return {};
+		result.primaryTargetUnitId = protector->unitId();
+		result.secondaryTargetUnitId = ward->unitId();
+		return result;
+	}
+	if(command == HeroCommand::SECOND_WIND)
+	{
+		if(targetUnitIds.size() != 1)
+			return {};
+		const auto * target = battleGetUnitByID(targetUnitIds.front());
+		if(!ownCombatUnit(target) || !target->moved())
+			return {};
+		result.primaryTargetUnitId = target->unitId();
+		return result;
+	}
+	if(!targetUnitIds.empty())
+		return {};
+	bool hasRecipient = false;
+	for(const auto * unit : battleAliveUnits())
+	{
+		if(!ownCombatUnit(unit))
+			continue;
+		hasRecipient = true;
+		if(command == HeroCommand::HOLD_THE_LINE)
+			result.anchors.push_back({unit->unitId(), unit->getPosition().toInt()});
+	}
+	if(!hasRecipient)
+		return {};
+	(void)rules;
+	result.validateShape();
+	return result;
+}
+
+const battle::Unit * CBattleInfoCallback::battleResolveHeroOrderTarget(const battle::Unit * attacker,
+	const battle::Unit * defender, bool shooting) const
+{
+	if(shooting || !getBattle() || !attacker || !defender || !defender->alive()
+		|| battleGetOwner(attacker) == battleGetOwner(defender))
+		return defender;
+	const auto side = playerToSide(battleGetOwner(defender));
+	const auto state = battleGetHeroOrderState(side);
+	if(!state || state->command != HeroCommand::PROTECT || state->issuedRound != battleGetRound()
+		|| state->protectIntercepted || state->protectBroken || state->secondaryTargetUnitId != defender->unitId())
+		return defender;
+	const auto * protector = battleGetUnitByID(state->primaryTargetUnitId);
+	if(!protector || !protector->alive() || protector->isGhost()
+		|| !orderUnitsAdjacent(protector, defender))
+		return defender;
+	return protector;
+}
+
+bool CBattleInfoCallback::battleCanTriggerHeroOrderBrace(const battle::Unit * attacker,
+	const battle::Unit * defender, int movementDistance, bool shooting, bool counter) const
+{
+	if(shooting || counter || movementDistance < 3 || !getBattle() || !attacker || !defender
+		|| !attacker->alive() || !defender->alive() || attacker->isGhost() || defender->isGhost()
+		|| attacker->isTurret() || defender->isTurret()
+		|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+		|| defender->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+		|| attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| defender->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| battleGetOwner(attacker) == battleGetOwner(defender))
+		return false;
+	const auto side = playerToSide(battleGetOwner(defender));
+	const auto state = battleGetHeroOrderState(side);
+	return state && state->command == HeroCommand::BRACE && state->issuedRound == battleGetRound()
+		&& !attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
+		&& !defender->isTurret() && !defender->hasBonusOfType(BonusType::SIEGE_WEAPON);
+}
+
+uint8_t CBattleInfoCallback::battleHeroOrderFlankSide(const battle::Unit * attacker,
+	const battle::Unit * defender) const
+{
+	if(!attacker || !defender || !attacker->getPosition().isValid() || !defender->getPosition().isValid())
+		return 0;
+	return orderContactingSideMask(attacker, defender);
+}
+
 bool CBattleInfoCallback::battleIsFocusFireTargetActive(BattleSide side) const
 {
 	const auto mark = battleGetFocusFireState(side);
@@ -287,17 +490,25 @@ bool CBattleInfoCallback::battleIsFocusFireTargetActive(BattleSide side) const
 	return target && target->alive() && !target->isGhost() && battleGetOwner(target) != sideToPlayer(side);
 }
 
-int CBattleInfoCallback::battleTargetedRangedCommandPercent(const battle::Unit * attacker,
+bool CBattleInfoCallback::battleIsTargetedRangedCommand(const battle::Unit * attacker,
 	const battle::Unit * defender, bool shooting, bool secondaryAttack) const
 {
 	if(!shooting || secondaryAttack || !getBattle() || !attacker || !defender || !attacker->alive() || attacker->isGhost()
 		|| !defender->alive() || defender->isGhost() || battleGetOwner(attacker) == battleGetOwner(defender))
+		return false;
+	const auto side = playerToSide(battleGetOwner(attacker));
+	const auto mark = battleGetFocusFireState(side);
+	return mark && mark->issuedRound == battleGetRound() && mark->targetUnitId == defender->unitId()
+		&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), attacker->unitId());
+}
+
+int CBattleInfoCallback::battleTargetedRangedCommandPercent(const battle::Unit * attacker,
+	const battle::Unit * defender, bool shooting, bool secondaryAttack) const
+{
+	if(!battleIsTargetedRangedCommand(attacker, defender, shooting, secondaryAttack))
 		return 0;
 	const auto side = playerToSide(battleGetOwner(attacker));
 	const auto mark = battleGetFocusFireState(side);
-	if(!mark || mark->issuedRound != battleGetRound() || mark->targetUnitId != defender->unitId()
-		|| !std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), attacker->unitId()))
-		return 0;
 	return mark->rangedDamagePercent;
 }
 
@@ -1309,8 +1520,105 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.defenderHex = info.defenderPos.isValid() ? info.defenderPos : info.defender->getPosition();
 	payload.chargeDistance = info.chargeDistance;
 	payload.shooting = info.shooting;
+	payload.targetedRangedCommand = battleIsTargetedRangedCommand(
+		info.attacker, info.defender, info.shooting, info.secondaryAttack);
 	payload.targetedRangedCommandPercent = battleTargetedRangedCommandPercent(
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
+	if(heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
+		&& info.attacker && info.defender && !info.attacker->isGhost() && !info.defender->isGhost())
+	{
+		const auto & rules = getBattle()->getHeroCommandRules()["commands"];
+		const auto attack = battleGetOwnerHero(info.attacker);
+		const auto defend = battleGetOwnerHero(info.defender);
+		const auto attackerSide = playerToSide(battleGetOwner(info.attacker));
+		const auto defenderSide = playerToSide(battleGetOwner(info.defender));
+		const auto attackerState = battleGetHeroOrderState(attackerSide);
+		const auto defenderState = battleGetHeroOrderState(defenderSide);
+		const auto coefficientFor = [](const JsonNode & formula, const CGHeroInstance * hero)
+		{
+			return hero ? heroCommands::coefficient(formula,
+				hero->getPrimSkillLevel(PrimarySkill::ATTACK), hero->getPrimSkillLevel(PrimarySkill::DEFENSE)) : 0;
+		};
+		const auto eligibleOrderUnit = [](const battle::Unit * unit)
+		{
+			return unit && unit->alive() && !unit->isGhost() && !unit->isTurret()
+				&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+				&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+		};
+		if(attackerState && attackerState->issuedRound == battleGetRound() && attack)
+		{
+			switch(attackerState->command)
+			{
+			case HeroCommand::CHARGE:
+				if(eligibleOrderUnit(info.attacker) && !info.shooting && info.chargeDistance >= 3
+					&& !attackerState->containsConsumed(info.attacker->unitId()))
+					payload.heroOrderDamagePercent = coefficientFor(rules["charge"]["effects"]["meleeDamagePercent"], attack)
+						+ 2 * (info.chargeDistance - 3);
+				break;
+			case HeroCommand::RIPOSTE:
+				if(eligibleOrderUnit(info.attacker) && info.retaliation && !info.shooting)
+					payload.heroOrderDamagePercent = coefficientFor(rules["riposte"]["effects"]["retaliationDamagePercent"], attack);
+				break;
+			case HeroCommand::BRACE:
+				if(eligibleOrderUnit(info.attacker) && info.bracePreemptive && !info.shooting)
+					payload.heroOrderFinalDamageMultiplier = coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"], attack);
+				break;
+			case HeroCommand::FLANK:
+				if(eligibleOrderUnit(info.attacker) && !info.shooting
+					&& attackerState->primaryTargetUnitId == info.defender->unitId())
+				{
+					const auto sideMask = battleHeroOrderFlankSide(info.attacker, info.defender);
+					if(const auto * flank = attackerState->flankFor(info.defender->unitId()))
+					{
+						int distinct = 0;
+						for(auto bits = flank->sideMask; bits; bits &= static_cast<uint8_t>(bits - 1))
+							++distinct;
+						for(auto bits = static_cast<uint8_t>(sideMask & ~flank->sideMask); bits; bits &= static_cast<uint8_t>(bits - 1))
+							++distinct; // each newly contacting side established by this blow counts once
+						const int additionalSides = std::max(0, distinct - 1);
+						payload.heroOrderDamagePercent = coefficientFor(rules["flank"]["effects"]["meleeDamagePercent"], attack)
+							+ additionalSides * coefficientFor(rules["flank"]["effects"]["additionalSidePercent"], attack);
+					}
+				}
+				break;
+			case HeroCommand::SECOND_WIND:
+				if(attackerState->secondWindActive && attackerState->primaryTargetUnitId == info.attacker->unitId())
+				{
+					int leadership = 0;
+					if(const auto capacity = attack->getLeadershipCapacity())
+						leadership = static_cast<int>(std::min<int64_t>(capacity->capacity, std::numeric_limits<int>::max()));
+					payload.heroOrderFinalDamageMultiplier = std::min(100, 50 + static_cast<int>(std::lround(0.015 * leadership)));
+				}
+				break;
+			default:
+				break;
+			}
+		}
+		if(defenderState && defenderState->issuedRound == battleGetRound() && defend
+			&& eligibleOrderUnit(info.defender) && info.physicalDamage)
+		{
+			switch(defenderState->command)
+			{
+			case HeroCommand::RIPOSTE:
+				if(!info.shooting)
+					payload.heroOrderDamageReductionPercent = coefficientFor(rules["riposte"]["effects"]["meleeDamageReductionPercent"], defend);
+				break;
+			case HeroCommand::HOLD_THE_LINE:
+				if(const auto * anchor = defenderState->anchorFor(info.defender->unitId());
+					anchor && !defenderState->containsHoldBroken(info.defender->unitId())
+					&& anchor->position == info.defender->getPosition().toInt())
+					payload.heroOrderDamageReductionPercent = coefficientFor(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend);
+				break;
+			case HeroCommand::PROTECT:
+				if(!info.shooting && info.protectIntercepted
+					&& defenderState->primaryTargetUnitId == info.defender->unitId())
+					payload.heroOrderDamageReductionPercent = coefficientFor(rules["protect"]["effects"]["interceptedDamageReductionPercent"], defend);
+				break;
+			default:
+				break;
+			}
+		}
+	}
 	payload.luckyStrike = info.luckyStrike;
 	if(info.shooting && info.luckyStrike)
 		if(const auto * hero = battleGetOwnerHero(info.attacker))

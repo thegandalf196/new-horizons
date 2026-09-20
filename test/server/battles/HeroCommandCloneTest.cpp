@@ -47,6 +47,10 @@ TEST_F(HeroCommandCloneTest, RealCloneDoesNotCopyExpiredOrderButReceivesSubseque
 	advanceRound();
 	ASSERT_TRUE(clone->alive());
 	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
-	EXPECT_EQ(clone->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->size(), 1u);
-	EXPECT_EQ(original->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->size(), 1u);
+	EXPECT_TRUE(clone->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+	EXPECT_TRUE(original->getAllBonuses(Selector::sourceTypeSel(BonusSource::HERO_COMMAND))->empty());
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_NE(state->anchorFor(clone->unitId()), nullptr);
+	EXPECT_NE(state->anchorFor(original->unitId()), nullptr);
 }

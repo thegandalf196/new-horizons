@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../windows/CWindowObject.h"
+#include "../../lib/battle/HeroCommand.h"
 
 class BattleInterface;
 class CButton;
@@ -13,7 +14,10 @@ class CListBox;
 class CMultiLineLabel;
 struct FocusFireSelectionContext;
 
-/// Private source4 prototype: modal value selection, never creature/hex targeting.
+/// Modal value selection for targeted Orders. It never mutates battle state;
+/// confirmation sends the same authoritative HERO_COMMAND packet as the
+/// untargeted Orders panel. Protect uses the same list twice (Protector then
+/// Ward) and preserves both IDs until the authority validates the request.
 class FocusFireTargetWindow : public CWindowObject
 {
 	std::shared_ptr<FocusFireSelectionContext> selection;
@@ -28,7 +32,8 @@ class FocusFireTargetWindow : public CWindowObject
 	void refresh();
 	void confirm();
 public:
-	explicit FocusFireTargetWindow(const std::shared_ptr<BattleInterface> & owner);
+	explicit FocusFireTargetWindow(const std::shared_ptr<BattleInterface> & owner,
+		HeroCommand command = HeroCommand::FOCUS_FIRE);
 	void show(Canvas & to) override;
 	void showAll(Canvas & to) override;
 };

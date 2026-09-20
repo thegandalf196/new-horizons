@@ -271,7 +271,8 @@ function Script:getOffenseArcheryFactor(info)
 	local subtype = info.shooting and DAMAGE_TYPE_RANGED or DAMAGE_TYPE_MELEE
 
 	local targetedPremium = info.shooting and (info.targetedRangedCommandPercent or 0) or 0
-	return (getBonusValueOfSubtype(info.attacker, info.attackerBonuses, "PERCENTAGE_DAMAGE_BOOST", subtype) + targetedPremium) / 100
+	return (getBonusValueOfSubtype(info.attacker, info.attackerBonuses, "PERCENTAGE_DAMAGE_BOOST", subtype)
+		+ targetedPremium + (info.heroOrderDamagePercent or 0)) / 100
 end
 
 function Script:getBlessFactor(info)
@@ -314,11 +315,13 @@ end
 
 --- Armorer and everything else that lessens every kind of blow, other than being petrified.
 function Script:getArmorerFactor(info)
-	if not hasBonusOfType(info.defenderBonuses, "GENERAL_DAMAGE_REDUCTION") then return 0 end
-
-	return -info.defender:getBonuses({type = "GENERAL_DAMAGE_REDUCTION", subtype = DAMAGE_TYPE_ALL}):filter(function(bonus)
-		return bonus:getSource() ~= ENUM.BonusSource.spellEffect
-	end):totalValue() / 100
+	local reduction = 0
+	if hasBonusOfType(info.defenderBonuses, "GENERAL_DAMAGE_REDUCTION") then
+		reduction = info.defender:getBonuses({type = "GENERAL_DAMAGE_REDUCTION", subtype = DAMAGE_TYPE_ALL}):filter(function(bonus)
+			return bonus:getSource() ~= ENUM.BonusSource.spellEffect
+		end):totalValue()
+	end
+	return -(reduction + (info.heroOrderDamageReductionPercent or 0)) / 100
 end
 
 --- Shield and air shield: each lessens one kind of blow and ignores the other.
@@ -331,7 +334,9 @@ end
 --- Shooting too far, or shooting at all with something meant for melee.
 function Script:getRangePenaltyFactor(info)
 	if info.shooting then
-		if info.battle:hasDistancePenalty(info.attacker, info.defender, info.attackerHex, info.defenderHex) then return -0.5 end
+		if info.battle:hasDistancePenalty(info.attacker, info.defender, info.attackerHex, info.defenderHex) then
+			return info.targetedRangedCommand and -0.25 or -0.5
+		end
 
 		return 0
 	end
@@ -343,7 +348,9 @@ end
 
 function Script:getObstacleFactor(info)
 	if not info.shooting then return 0 end
-	if info.battle:hasWallPenalty(info.attacker, info.defender, info.attackerHex, info.defenderHex) then return -0.5 end
+	if info.battle:hasWallPenalty(info.attacker, info.defender, info.attackerHex, info.defenderHex) then
+		return info.targetedRangedCommand and -0.25 or -0.5
+	end
 
 	return 0
 end
@@ -415,6 +422,10 @@ function Script:calculate(battle, info)
 
 	local raising = 1.0
 	local lowering = 1.0
+	-- Order-specific final multipliers are deliberately outside the additive
+	-- Offense/Archery factor. This keeps Brace and Second Wind penalties from
+	-- being cancelled by ordinary attack bonuses.
+	local heroOrderMultiplier = math.max(0, (info.heroOrderFinalDamageMultiplier or 100) / 100)
 
 	for _, method in ipairs(self:getFactors()) do
 		local factor = self[method](self, info)
@@ -433,8 +444,8 @@ function Script:calculate(battle, info)
 		return math.min(cap, math.max(1, math.floor(base * factor)))
 	end
 
-	local damageMin = apply(baseMin, raising * lowering)
-	local damageMax = apply(baseMax, raising * lowering)
+	local damageMin = apply(baseMin, raising * lowering * heroOrderMultiplier)
+	local damageMax = apply(baseMax, raising * lowering * heroOrderMultiplier)
 
 	local killsMin, killsMax = self:getCasualties(info, damageMin, damageMax)
 
@@ -443,7 +454,7 @@ function Script:calculate(battle, info)
 		kills = { min = killsMin, max = killsMax },
 		-- what the blow would have been worth had the target no defences at all, which is what an
 		-- ability reflecting a strike works from
-		damageBeforeDefense = { min = apply(baseMin, raising), max = apply(baseMax, raising) }
+		damageBeforeDefense = { min = apply(baseMin, raising * heroOrderMultiplier), max = apply(baseMax, raising * heroOrderMultiplier) }
 	}
 end
 

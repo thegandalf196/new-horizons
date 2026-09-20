@@ -18,6 +18,10 @@ from referencing import Registry, Resource
 ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
+NEW_HORIZONS_SPELLS = {
+    'new-horizons:counterspell',
+    'new-horizons:transfigureMatter',
+}
 SIZES = {'small': (32, 32), 'medium': (44, 44),
          'large': (82, 93), 'scenarioBonus': (58, 64)}
 STRING = r'"(?:\\.|[^"\\])*"'
@@ -72,8 +76,8 @@ def validate_rules(rules):
     (v2 if rules.get('rulesetVersion') == 2 else v1).validate(rules)
     if not rules:
         return
-    if set(rules['spells']) != common_spells():
-        raise ValueError('Common hero spell inventory does not match curated mappings')
+    if set(rules['spells']) != common_spells() | NEW_HORIZONS_SPELLS:
+        raise ValueError('Hero spell inventory does not match curated mappings')
     pairs = set()
     for entry in rules.get('factions', {}).values():
         pair = frozenset((entry['major'], entry['minor']))
@@ -115,7 +119,10 @@ class NewHorizonsContentTest(unittest.TestCase):
         combat = load('config/newHorizonsCombat.json')['combat']['heroCommands']
         Draft4Validator(load('config/schemas/newHorizonsCombatV3.json')).validate(combat)
         self.assertEqual(combat['rulesetVersion'], 3)
-        self.assertEqual(set(combat['commands']), {'charge', 'holdTheLine', 'focusFire'})
+        self.assertEqual(set(combat['commands']), {
+            'charge', 'holdTheLine', 'focusFire', 'riposte', 'brace',
+            'protect', 'flank', 'secondWind',
+        })
         self.assertNotIn('advance', combat['commands'])
         self.assertNotIn('aggressive', combat['commands'])
         self.assertNotIn('defensive', combat['commands'])
@@ -129,6 +136,8 @@ class NewHorizonsContentTest(unittest.TestCase):
 
     def test_complete_existing_spell_inventory_and_legacy_schema(self):
         self.assertEqual(len(common_spells()), 69)
+        self.assertEqual(set(self.rules['spells']) - common_spells(),
+                         NEW_HORIZONS_SPELLS)
         validate_rules({})
         validate_rules(legacy_rules(self.rules))
         validate_rules(self.rules)

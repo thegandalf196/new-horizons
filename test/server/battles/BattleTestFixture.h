@@ -45,6 +45,7 @@ public:
 	/// Authoritative turn routing and actions, recorded before applying each packet.
 	std::vector<BattleSetActiveStack> stackActivations;
 	std::vector<StartAction> startedActions;
+	std::vector<BattleHeroOrderStateChanged> orderStateUpdates;
 	std::vector<BattleAttack> attacks;
 	std::vector<std::string> progressionPackets;
 	std::vector<bool> masteryDialogSawPending;

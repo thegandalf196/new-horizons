@@ -6,16 +6,48 @@
 			"commands": {
 				"charge": {
 					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
-					"effects": { "meleeDamagePercent": { "base": 20, "attack": 0.5, "defense": 0 } }
+					"trigger": "firstMeleeAfterMovingAtLeast3",
+					"effects": { "meleeDamagePercent": { "base": 10, "attack": 0.20, "defense": 0 } }
 				},
 				"holdTheLine": {
 					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
-					"effects": { "damageReductionPercent": { "base": 15, "attack": 0, "defense": 0.5 } }
+					"anchor": "issuePosition",
+					"effects": { "damageReductionPercent": { "base": 10, "attack": 0, "defense": 0.20 } }
 				},
 				"focusFire": {
 					"kind": "order", "coverage": "ownOrdinaryShootersAtIssue", "duration": "round",
 					"target": "enemyUnit",
 					"effects": { "rangedDamagePercent": { "base": 5, "attack": 0.15, "defense": 0 } }
+				},
+				"riposte": {
+					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
+					"effects": {
+						"meleeDamageReductionPercent": { "base": 5, "attack": 0, "defense": 0.10 },
+						"retaliationDamagePercent": { "base": 5, "attack": 0.15, "defense": 0 }
+					}
+				},
+				"brace": {
+					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
+					"trigger": "enemyMeleeMovedAtLeast3",
+					"effects": { "preemptiveDamagePercent": { "base": 50, "attack": 0, "defense": 0.25 } }
+				},
+				"protect": {
+					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
+					"target": "protectorAndWard",
+					"effects": { "interceptedDamageReductionPercent": { "base": 5, "attack": 0, "defense": 0.15 } }
+				},
+				"flank": {
+					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
+					"target": "enemyUnit",
+					"effects": {
+						"meleeDamagePercent": { "base": 8, "attack": 0.12, "defense": 0 },
+						"additionalSidePercent": { "base": 4, "attack": 0, "defense": 0 }
+					}
+				},
+				"secondWind": {
+					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
+					"target": "friendlyCompletedActivation",
+					"effects": { "additionalActivationDamagePercent": { "base": 50, "attack": 0, "defense": 0 } }
 				}
 			}
 		}

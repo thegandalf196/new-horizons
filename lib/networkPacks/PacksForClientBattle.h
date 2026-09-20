@@ -310,6 +310,7 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 	BattleID battleID = BattleID::NONE;
 	BattleAction ba;
 	std::optional<FocusFireState> focusFire;
+	std::optional<HeroOrderState> orderState;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -329,7 +330,52 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 		{
 			focusFire.reset();
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS))
+		{
+			h & orderState;
+		}
+		else if(h.saving && orderState)
+		{
+			throw std::runtime_error("Cannot discard canonical Hero Order StartAction state");
+		}
+		else if(!h.saving)
+		{
+			orderState.reset();
+		}
 		assert(battleID != BattleID::NONE);
+	}
+};
+
+/// Authoritative replacement for a side's transient canonical Order state.
+/// Trigger consumption is server-owned; this packet lets every battle snapshot
+/// converge after Charge, Protect, Flank, and Second Wind transitions without
+/// smuggling state changes through client presentation effects.
+struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	std::optional<HeroOrderState> state;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		h & battleID;
+		h & side;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS))
+		{
+			h & state;
+		}
+		else if(h.saving && state)
+		{
+			throw std::runtime_error("Cannot discard canonical Hero Order state update");
+		}
+		else if(!h.saving)
+		{
+			state.reset();
+		}
+		assert(battleID != BattleID::NONE);
+		assert(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER);
 	}
 };
 

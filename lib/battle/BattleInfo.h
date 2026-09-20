@@ -36,6 +36,7 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	newHorizonsCreatures::CreatureCategoryRules creatureCategoryRules;
 
 	void postDeserialize();
+	void expireSeparatedHeroOrderProtect();
 public:
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
@@ -47,6 +48,7 @@ public:
 		const auto command = sides.at(side).activeOrder;
 		return heroCommands::isActive(command) ? command : HeroCommand::NONE;
 	}
+	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override { return sides.at(side).orderState; }
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override { return sides.at(side).focusFire; }
 	/// Drop decode-only legacy Doctrine state and its battle-long bonuses.
 	/// Round Order bonuses are intentionally preserved.
@@ -216,8 +218,19 @@ public:
 	void addObstacle(const ObstacleChanges & changes) override;
 	void updateObstacle(const ObstacleChanges& changes) override;
 	void removeObstacle(uint32_t id) override;
+	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
 
 	static void addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool forceAdd);
+
+	/// Server-side lifecycle updates for transient canonical Order triggers.  They
+	/// operate on the authoritative battle snapshot; presentation packets may
+	/// mirror the resulting state through the normal battle snapshot path.
+	bool consumeHeroOrderUnit(BattleSide side, uint32_t unitId);
+	bool triggerHeroOrderBrace(BattleSide side, uint32_t unitId);
+	bool breakHeroOrderHold(uint32_t unitId);
+	bool interceptHeroOrderProtect(BattleSide side);
+	bool recordHeroOrderFlankSide(BattleSide side, uint32_t targetUnitId, uint8_t sideBit);
+	bool setHeroOrderSecondWindActive(BattleSide side, bool active);
 
 	//////////////////////////////////////////////////////////////////////////
 	CStack * getStack(int stackID, bool onlyAlive = true);

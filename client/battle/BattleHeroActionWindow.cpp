@@ -33,12 +33,107 @@ struct CommandDisplay
 	const char * image;
 	const char * name;
 	const char * description;
-	Point position;
+	const char * overlay;
 };
-const std::array<CommandDisplay, 2> commandDisplays = {{
-	{HeroCommand::CHARGE, "NH_charge_button", "Charge", "Increase melee damage for this round. Costs one hero action, no mana.", Point(77, 216)},
-	{HeroCommand::HOLD_THE_LINE, "NH_holdTheLine_button", "Hold the Line", "Reduce physical damage this round. This preview does not require standing still.", Point(392, 216)}
+const std::array<CommandDisplay, 8> commandDisplays = {{
+	{HeroCommand::CHARGE, "NH_charge_button", "Charge", "The first melee attack after moving at least 3 hexes gains bonus damage; extra movement adds more.", "Charge"},
+	{HeroCommand::FOCUS_FIRE, "NH_hero_actions_entry", "Focus Fire", "Choose one enemy stack. Friendly shooters gain damage against it and reduce range and obstacle penalties.", "Focus"},
+	{HeroCommand::RIPOSTE, "NH_hero_actions_entry", "Riposte", "Friendly stacks take less melee damage and deal increased retaliation damage this round.", "Riposte"},
+	{HeroCommand::HOLD_THE_LINE, "NH_holdTheLine_button", "Hold the Line", "Friendly stacks take reduced physical damage while they remain in their issued positions.", "Hold"},
+	{HeroCommand::BRACE, "NH_hero_actions_entry", "Brace", "Friendly stacks pre-emptively attack enemies that moved at least 3 hexes before a melee attack.", "Brace"},
+	{HeroCommand::PROTECT, "NH_hero_actions_entry", "Protect", "Choose a Protector and adjacent Ward. The first melee attack against the Ward is redirected.", "Protect"},
+	{HeroCommand::FLANK, "NH_hero_actions_entry", "Flank", "Choose one enemy stack. Friendly melee damage increases from additional distinct attack sides.", "Flank"},
+	{HeroCommand::SECOND_WIND, "NH_hero_actions_entry", "Second Wind", "Choose a friendly stack that already completed its normal activation for an additional activation at reduced direct damage.", "Wind"}
 }};
+
+const CommandDisplay & commandDisplay(HeroCommand command)
+{
+	for(const auto & display : commandDisplays)
+		if(display.command == command)
+			return display;
+	return commandDisplays.front();
+}
+
+std::vector<CommandDisplay> visibleCommandDisplays(const JsonNode * rules)
+{
+	std::vector<CommandDisplay> result;
+	for(const auto & display : commandDisplays)
+	{
+		if(!rules || heroCommands::supportedByRules(*rules, display.command))
+			result.push_back(display);
+	}
+	return result;
+}
+
+bool isTargeted(HeroCommand command)
+{
+	return command == HeroCommand::FOCUS_FIRE || command == HeroCommand::PROTECT
+		|| command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND;
+}
+
+std::string percentText(int value)
+{
+	return (value > 0 ? "+" : "") + std::to_string(value) + "%";
+}
+
+std::string effectLabel(const std::string & key, int value)
+{
+	if(key == "meleeDamagePercent")
+		return "Melee " + percentText(value);
+	if(key == "rangedDamagePercent")
+		return "Ranged " + percentText(value);
+	if(key == "damageReductionPercent")
+		return "Taken " + percentText(-value);
+	if(key == "meleeDamageReductionPercent")
+		return "Melee taken " + percentText(-value);
+	if(key == "speedPercent")
+		return "Speed " + percentText(value);
+	if(key == "retaliationDamagePercent")
+		return "Retaliation " + percentText(value);
+	if(key == "preemptiveAttackPercent")
+		return "Pre-emptive " + std::to_string(value) + "%";
+	if(key == "preemptiveDamagePercent")
+		return "Pre-emptive " + std::to_string(value) + "%";
+	if(key == "interceptedDamageReductionPercent")
+		return "Intercepted taken " + percentText(-value);
+	if(key == "secondWindDamagePercent")
+		return "Extra activation " + std::to_string(value) + "%";
+	if(key == "additionalActivationDamagePercent")
+		return "Extra activation " + std::to_string(value) + "%";
+	if(key == "sideDamagePercent")
+		return "Each extra side " + percentText(value);
+	if(key == "additionalSidePercent")
+		return "Each extra side " + percentText(value);
+	return key + " " + percentText(value);
+}
+
+std::string commandEffects(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero)
+{
+	const auto & effects = rules["commands"][heroCommands::key(command)]["effects"];
+	if(!effects.isStruct())
+		return {};
+	std::string result;
+	for(const auto & [key, formula] : effects.Struct())
+	{
+		if(!formula.isStruct() || !formula["base"].isNumber() || !formula["attack"].isNumber() || !formula["defense"].isNumber())
+			continue;
+		try
+		{
+			const int value = heroCommands::coefficient(formula,
+				hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE));
+			const auto line = effectLabel(key, value);
+			if(!result.empty())
+				result += '\n';
+			result += line;
+		}
+		catch(const std::exception &)
+		{
+			// The battle snapshot has already been validated by the authority. A
+			// malformed optional preview must never make the client window fail.
+		}
+	}
+	return result;
+}
 
 }
 
@@ -49,6 +144,11 @@ std::string HeroCommandUI::name(HeroCommand command)
 		case HeroCommand::CHARGE: return "Charge";
 		case HeroCommand::HOLD_THE_LINE: return "Hold the Line";
 		case HeroCommand::FOCUS_FIRE: return "Focus Fire";
+		case HeroCommand::RIPOSTE: return "Riposte";
+		case HeroCommand::BRACE: return "Brace";
+		case HeroCommand::PROTECT: return "Protect";
+		case HeroCommand::FLANK: return "Flank";
+		case HeroCommand::SECOND_WIND: return "Second Wind";
 		default: return "None";
 	}
 }
@@ -82,15 +182,25 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(120, 143, 470, 38), FONT_SMALL, ETextAlignment::TOPLEFT,
 		Colors::WHITE, "Your learned magic. Normal spellbook, mana and targeting requirements still apply."));
 
-	for(const auto & display : commandDisplays)
+	const auto battleOwner = currentBattle();
+	const auto visible = visibleCommandDisplays(battleOwner ? &battleOwner->getBattle()->getBattle()->getHeroCommandRules() : nullptr);
+	for(size_t i = 0; i < visible.size(); ++i)
 	{
+		const auto & display = visible[i];
 		const auto command = display.command;
-		auto button = std::make_shared<CButton>(display.position, AnimationPath::builtin(display.image),
-			CButton::tooltip(display.name, display.description), [this, command] { chooseCommand(command); });
+		const Point position(30 + static_cast<int>(i % 4) * 150, 216 + static_cast<int>(i / 4) * 90);
+		auto button = std::make_shared<CButton>(position, AnimationPath::builtin(display.image),
+			CButton::tooltip(display.name, display.description), [this, command]
+			{
+				if(isTargeted(command))
+					chooseTargetedCommand(command);
+				else
+					chooseCommand(command);
+			});
 		button->setHoverable(true);
 		commands.emplace_back(command, button);
-		labels.push_back(std::make_shared<CLabel>(display.position.x + 32, 202, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, display.name));
-		effectLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(display.position.x - 54, 287, 172, 42), FONT_SMALL, ETextAlignment::TOPLEFT,
+		labels.push_back(std::make_shared<CLabel>(position.x + 32, position.y - 14, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, display.name));
+		effectLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(position.x - 34, position.y + 66, 140, 34), FONT_SMALL, ETextAlignment::TOPLEFT,
 			Colors::WHITE, ""));
 	}
 	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(28, 463, 472, 41), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
@@ -103,52 +213,50 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 
 void BattleHeroActionWindow::createOrdersLayout()
 {
-	// Code-only layout prototype. Replace materials only after independent art
-	// review; no baked labels or use of the old 520px backdrop in this mode.
+	// The six commands without approved art deliberately use the existing
+	// generic Hero Actions entry as placeholder art. Text overlays and complete
+	// tooltips keep the control discoverable until bespoke Order art is approved.
 	labels.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, 0, 640, 500), ColorRGBA(24, 30, 37, 255), ColorRGBA(156, 132, 85, 255)));
 	labels.push_back(std::make_shared<CLabel>(320, 27, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Orders"));
 	labels.push_back(std::make_shared<CLabel>(320, 53, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "One shared hero action: Spell or Order"));
 	state = std::make_shared<CLabel>(320, 78, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
-	const auto owner = currentBattle();
-	const bool showFocus = owner && owner->getBattle()->getBattle()
-		&& heroCommands::supportedByRules(owner->getBattle()->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE);
-	const int orderWidth = showFocus ? 140 : 192;
-	const int orderStride = showFocus ? 156 : 208;
-	int orderIndex = 0;
-	for(const auto & display : commandDisplays)
+	const int orderWidth = 148;
+	const int orderHeight = 126;
+	const int orderStride = 156;
+	const int orderTop = 93;
+	const auto battleOwner = currentBattle();
+	const auto visible = visibleCommandDisplays(battleOwner ? &battleOwner->getBattle()->getBattle()->getHeroCommandRules() : nullptr);
+	for(size_t i = 0; i < visible.size(); ++i)
 	{
+		const auto & display = visible[i];
 		const auto command = display.command;
-		const int left = 16 + orderStride * orderIndex++;
-		const Rect card(left, 94, orderWidth, 150);
+		const int left = 8 + orderStride * static_cast<int>(i % 4);
+		const int top = orderTop + 140 * static_cast<int>(i / 4);
+		const Rect card(left, top, orderWidth, orderHeight);
 		labels.push_back(std::make_shared<TransparentFilledRectangle>(card, ColorRGBA(35, 46, 56, 255), ColorRGBA(99, 111, 122, 255)));
-		const Point icon(left + (orderWidth - 64) / 2, 122);
+		labels.push_back(std::make_shared<CLabel>(left + orderWidth / 2, top + 10, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, display.name));
+		const Point icon(left + (orderWidth - 64) / 2, top + 27);
 		auto button = std::make_shared<CButton>(icon, AnimationPath::builtin(display.image),
-			CButton::tooltip(display.name, display.description), [this, command] { chooseCommand(command); });
+			CButton::tooltip(display.name, display.description), [this, command]
+			{
+				if(isTargeted(command))
+					chooseTargetedCommand(command);
+				else
+					chooseCommand(command);
+			});
+		if(std::string(display.image) == "NH_hero_actions_entry")
+			button->setTextOverlay(display.overlay, FONT_SMALL, Colors::WHITE);
 		button->setHoverable(true);
 		commands.emplace_back(command, button);
-		labels.push_back(std::make_shared<CLabel>(left + orderWidth / 2, 104, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, display.name));
-		effectLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(left + 8, 196, orderWidth - 16, 44), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, ""));
+		effectLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(left + 6, top + 92, orderWidth - 12, 28), FONT_SMALL,
+			ETextAlignment::TOPLEFT, Colors::WHITE, ""));
 	}
-	if(showFocus)
-	{
-		labels.push_back(std::make_shared<TransparentFilledRectangle>(Rect(484, 94, 140, 150), ColorRGBA(35, 46, 56, 255), ColorRGBA(99, 111, 122, 255)));
-		labels.push_back(std::make_shared<CLabel>(554, 104, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "Focus Fire"));
-		// Existing core generated button is a prototype control, NOT original final Focus artwork.
-		focusButton = std::make_shared<CButton>(Point(514, 138), AnimationPath::builtin("settingsWindow/button80"),
-			CButton::tooltip("Choose Focus Fire target", "Select an exact enemy unit, then confirm. Adds at the Archery stage for primary physical ranged hits this round, not as a final damage multiplier. The eligible current friendly ordinary shooter cohort is frozen at issue, including blocked, empty-ammo and already-acted shooters. Later arrivals do not join. At least one legal shot is required at issue; this grants no shot or activation. No mana or spellbook required."),
-			[this] { chooseFocusFire(); });
-		focusButton->setTextOverlay("Targets", FONT_SMALL, Colors::WHITE);
-		focusButton->setHoverable(true);
-		focusEffect = std::make_shared<CMultiLineLabel>(Rect(492, 196, 124, 44), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "");
-		focusReadback = std::make_shared<CMultiLineLabel>(Rect(16, 378, 516, 54), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "");
-		labels.push_back(std::make_shared<CMultiLineLabel>(Rect(16, 438, 516, 48), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
-			"Help/cancel and Focus target selection are free.\nOther command icons issue immediately; Focus requires Confirm.\nAccepted commands use the shared action, no mana/book. See help for coverage."));
-	}
-	else
-		labels.push_back(std::make_shared<CMultiLineLabel>(Rect(16, 378, 516, 102), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
-			"Orders need no mana or spellbook. Use the separate Spellbook control for magic.\n\nCommands affect living ordinary friendly troops present when issued, not war machines. Later summons and clones do not inherit effects. Reading or cancelling spends nothing."));
-	labels.push_back(std::make_shared<CLabel>(320, 257, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Orders end with this round"));
-	cancel = std::make_shared<CButton>(Point(548, 416), AnimationPath::builtin("NH_cancel_button"),
+	targetReadback = std::make_shared<CMultiLineLabel>(Rect(16, 378, 516, 30), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "");
+	labels.push_back(targetReadback);
+	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(16, 412, 516, 45), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
+		"Targeted Orders open a selector and require Confirm. Protect selects Protector then Ward.\nCancel/back and reading tooltips never spend the shared hero action."));
+	labels.push_back(std::make_shared<CLabel>(320, 463, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Orders end with this round"));
+	cancel = std::make_shared<CButton>(Point(548, 443), AnimationPath::builtin("NH_cancel_button"),
 		CButton::tooltip("Cancel", "Return to battle without spending a hero action."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);
 	cancel->setHoverable(true);
 }
@@ -177,36 +285,20 @@ void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const J
 	displayedRatings = ratings;
 	effectsInitialized = true;
 
-	const auto signedPercent = [](int value)
-	{
-		return (value > 0 ? "+" : "") + std::to_string(value) + "%";
-	};
 	for(size_t i = 0; i < commands.size(); ++i)
 	{
-		std::string effects;
-		// Use the authority's coefficient, rounding and safety-cap implementation
-		// against this battle's saved rules, never a second frontend formula.
-		for(const auto & bonus : heroCommands::bonuses(rules, commands[i].first, hero))
-		{
-			std::string line;
-			if(bonus.type == BonusType::PERCENTAGE_DAMAGE_BOOST)
-				line = std::string(bonus.subtype == BonusCustomSubtype::damageTypeRanged ? "Ranged damage " : "Melee damage ") + signedPercent(static_cast<int>(bonus.val));
-			else if(bonus.type == BonusType::GENERAL_DAMAGE_REDUCTION)
-				line = "Physical taken " + signedPercent(-static_cast<int>(bonus.val));
-			else if(bonus.type == BonusType::STACKS_SPEED)
-				line = "Base speed " + signedPercent(static_cast<int>(bonus.val));
-			if(!line.empty())
-			{
-				if(!effects.empty())
-					effects += '\n';
-				effects += line;
-			}
-		}
-		effectLabels[i]->setText(effects);
-		const std::string coverage = "\n\nAffects only living ordinary friendly troops present when issued; war machines are excluded. Later summons and clones do not inherit these effects.";
-		commands[i].second->setHelp(CButton::tooltip(commandDisplays[i].name,
-			std::string(commandDisplays[i].description) + "\n\n" + effects +
-			"\nCurrent hero values; one shared hero action, no mana." + coverage));
+		// The snapshot's coefficient helper is the single source of truth for
+		// the preview. The client only formats the returned numbers.
+		const auto effects = commandEffects(rules, commands[i].first, hero);
+		if(i < effectLabels.size())
+			effectLabels[i]->setText(effects);
+		const auto & display = commandDisplay(commands[i].first);
+		const std::string coverage = isTargeted(commands[i].first)
+			? "\n\nTarget selection is revalidated by the authority at Confirm."
+			: "\n\nThe authority applies the Order to eligible current troops; later summons and clones do not inherit it.";
+		commands[i].second->setHelp(CButton::tooltip(display.name,
+			std::string(display.description) + (effects.empty() ? "" : "\n\nCurrent effect: " + effects)
+			+ "\nOne shared hero action; no mana." + coverage));
 	}
 }
 
@@ -217,18 +309,15 @@ void BattleHeroActionWindow::refresh()
 	{
 		if(spellButton)
 			spellButton->block(true);
-		if(focusButton)
-		{
-			focusButton->block(true);
-			focusButton->setBorderColor(std::nullopt);
-			if(focusReadback->getText() != "Battle no longer available")
-				focusReadback->setText("Battle no longer available");
-		}
 		for(auto & entry : commands)
 		{
 			entry.second->block(true);
 			entry.second->setBorderColor(std::nullopt);
+			entry.second->setHelp(CButton::tooltip(HeroCommandUI::name(entry.first),
+				"Battle no longer available. Close this window."));
 		}
+		if(targetReadback)
+			targetReadback->setText("Battle no longer available");
 		setStateText("Battle no longer available. Close this window.");
 		return;
 	}
@@ -242,43 +331,85 @@ void BattleHeroActionWindow::refresh()
 	if(spellButton)
 		spellButton->block(!canAct || !canSpell);
 	bool anyCommand = false;
-	for(auto & entry : commands)
+	const auto & rules = callback->getBattle()->getHeroCommandRules();
+	const auto commonReason = [&]
 	{
-		const bool available = canAct && callback->battleCanUseHeroCommand(side, entry.first);
+		if(!callback->battleUsesHeroCommands())
+			return std::string("Orders are not enabled in this battle.");
+		if(!hero)
+			return std::string("No commanding hero is available.");
+		if(owner->curInt->isAutoFightOn)
+			return std::string("Autofight controls this battle.");
+		if(owner->isInTacticsMode())
+			return std::string("Orders are unavailable during tactics.");
+		if(owner->actionsController->heroSpellcastingModeActive())
+			return std::string("Finish or cancel spell targeting first.");
+		if(!owner->makingTurn())
+			return std::string("It is not your turn.");
+		if(callback->getBattle()->getHeroCommandUsed(side) || callback->battleCastSpells(side) != 0)
+			return std::string("The shared hero action has already been spent.");
+		return std::string();
+	};
+	for(size_t i = 0; i < commands.size(); ++i)
+	{
+		auto & entry = commands[i];
+		const bool supported = heroCommands::supportedByRules(rules, entry.first);
+		const bool targeted = isTargeted(entry.first);
+		const bool available = supported && canAct && hero
+			&& (targeted ? callback->battleCanBeginHeroCommand(side, entry.first)
+				: callback->battleCanUseHeroCommand(side, entry.first));
 		entry.second->block(!available);
 		anyCommand |= available;
+		std::string reason = commonReason();
+		if(reason.empty() && !supported)
+			reason = "This Order is not available in the battle's saved rules.";
+		if(reason.empty() && targeted && callback->battleGetHeroCommandTargets(side, entry.first).empty())
+			reason = "No legal targets are available right now.";
+		if(reason.empty() && !available)
+			reason = "The authority currently rejects this Order's requirements.";
+		const auto & display = commandDisplay(entry.first);
+		entry.second->setHelp(CButton::tooltip(display.name,
+			std::string(display.description) + (reason.empty() ? "\n\nReady: choose this Order." : "\n\nDisabled: " + reason)
+			+ "\nOne shared hero action; no mana."));
+		if(entry.first == callback->battleGetActiveOrder(side))
+			entry.second->setBorderColor(Colors::YELLOW);
+		else
+			entry.second->setBorderColor(std::nullopt);
 	}
 	const auto order = callback->battleGetActiveOrder(side);
-	if(focusButton)
+	if(targetReadback)
 	{
-		const bool available = canAct && hero && callback->battleCanBeginHeroCommand(side, HeroCommand::FOCUS_FIRE);
-		focusButton->block(!available);
-		anyCommand |= available;
-		if(order == HeroCommand::FOCUS_FIRE)
-			focusButton->setBorderColor(Colors::YELLOW);
-		else
-			focusButton->setBorderColor(std::nullopt);
-		std::string effect = "No hero available";
-		if(hero)
+		std::string readback = "Targeted Orders: Focus Fire/Flank choose an enemy; Protect chooses Protector then Ward; Second Wind chooses a spent friendly activation.";
+		if(const auto active = callback->battleGetHeroOrderState(side))
 		{
-			const auto & formula = callback->getBattle()->getHeroCommandRules()["commands"][heroCommands::key(HeroCommand::FOCUS_FIRE)]["effects"]["rangedDamagePercent"];
-			const int percent = heroCommands::coefficient(formula, hero->getPrimSkillLevel(PrimarySkill::ATTACK), hero->getPrimSkillLevel(PrimarySkill::DEFENSE));
-			effect = "Ranged " + std::string(percent >= 0 ? "+" : "") + std::to_string(percent) + "%\nArchery stage";
+			readback = "Active Order: " + HeroCommandUI::name(active->command) + " (round " + std::to_string(active->issuedRound) + ")";
+			if(active->command == HeroCommand::HOLD_THE_LINE)
+				readback += " | anchored stacks: " + std::to_string(active->anchors.size());
+			else if(active->command == HeroCommand::FOCUS_FIRE)
+				readback += " | target " + std::to_string(active->primaryTargetUnitId);
+			else if(active->command == HeroCommand::PROTECT)
+				readback += " | Protector " + std::to_string(active->primaryTargetUnitId) + " -> Ward " + std::to_string(active->secondaryTargetUnitId)
+					+ (active->protectIntercepted ? " | interception spent" : " | interception ready");
+			else if(active->command == HeroCommand::FLANK && !active->flankTargets.empty())
+			{
+				unsigned sides = active->flankTargets.front().sideMask;
+				int sideCount = 0;
+				while(sides)
+				{
+					sideCount += sides & 1u;
+					sides >>= 1;
+				}
+				readback += " | target " + std::to_string(active->flankTargets.front().unitId)
+					+ " | sides " + std::to_string(sideCount);
+			}
+			else if(active->command == HeroCommand::SECOND_WIND)
+				readback += " | stack " + std::to_string(active->primaryTargetUnitId)
+					+ (active->secondWindActive ? " | extra activation active" : " | pending activation");
 		}
-		if(focusEffect->getText() != effect)
-			focusEffect->setText(effect);
-		std::string readback = "Focus Fire: no retained mark. Targets opens selection without spending.";
-		if(const auto mark = callback->battleGetFocusFireState(side))
-		{
-			const auto * target = callback->battleGetUnitByID(mark->targetUnitId);
-			const std::string name = target ? target->unitType()->getNamePluralTranslated() : "unavailable unit";
-			readback = "Focus Fire: ID " + std::to_string(mark->targetUnitId) + " " + name
-				+ " | round " + std::to_string(mark->issuedRound) + " | " + std::to_string(mark->rangedDamagePercent)
-				+ "% | cohort " + std::to_string(mark->recipientUnitIds.size()) + " at issue\n"
-				+ (callback->battleIsFocusFireTargetActive(side) ? "Target active; no promise of ammunition or remaining activations." : "Mark retained but target currently inactive; no target substitution.");
-		}
-		if(focusReadback->getText() != readback)
-			focusReadback->setText(readback);
+		else if(order != HeroCommand::NONE)
+			readback = "Active Order: " + HeroCommandUI::name(order) + ". Targeted effects remain subject to current unit state.";
+		if(targetReadback->getText() != readback)
+			targetReadback->setText(readback);
 	}
 	std::string availability = (anyCommand || (canAct && canSpell))
 		? "Hero action available" : "Hero action spent or unavailable";
@@ -313,18 +444,18 @@ void BattleHeroActionWindow::refresh()
 	setStateText("Order: " + HeroCommandUI::name(order) + " | " + availability);
 }
 
-void BattleHeroActionWindow::chooseFocusFire()
+void BattleHeroActionWindow::chooseTargetedCommand(HeroCommand command)
 {
 	auto owner = currentBattle();
-	if(!owner || !ordersOnly || !focusButton || !owner->makingTurn() || owner->curInt->isAutoFightOn
+	if(!owner || !ordersOnly || !owner->makingTurn() || owner->curInt->isAutoFightOn
 		|| owner->isInTacticsMode() || owner->actionsController->heroSpellcastingModeActive() || !owner->currentHero()
-		|| !owner->getBattle()->battleCanBeginHeroCommand(owner->getBattle()->battleGetMySide(), HeroCommand::FOCUS_FIRE))
+		|| !owner->getBattle()->battleCanBeginHeroCommand(owner->getBattle()->battleGetMySide(), command))
 	{
 		refresh();
 		return;
 	}
 	close();
-	ENGINE->windows().createAndPushWindow<FocusFireTargetWindow>(owner);
+	ENGINE->windows().createAndPushWindow<FocusFireTargetWindow>(owner, command);
 }
 
 void BattleHeroActionWindow::chooseCommand(HeroCommand command)

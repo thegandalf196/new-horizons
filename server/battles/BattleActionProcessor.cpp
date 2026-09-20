@@ -17,6 +17,7 @@
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/IGameSettings.h"
+#include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/IBattleState.h"
@@ -51,6 +52,18 @@ BattleActionProcessor::BattleActionProcessor(BattleProcessor * owner, CGameHandl
 	: owner(owner)
 	, gameHandler(newGameHandler)
 {
+}
+
+void BattleActionProcessor::publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const
+{
+	if(!heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
+		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return;
+	BattleHeroOrderStateChanged update;
+	update.battleID = battle.getBattle()->getBattleID();
+	update.side = side;
+	update.state = battle.battleGetHeroOrderState(side);
+	gameHandler->sendAndApply(update);
 }
 
 bool BattleActionProcessor::doEmptyAction(const CBattleInfoCallback & battle, const BattleAction & ba)
@@ -333,27 +346,39 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		totalAttacks += attackingHero->valOfBonuses(BonusType::HERO_GRANTS_ATTACKS, BonusSubtypeID(stack->creatureId()));
 	}
 
-	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll).Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
-	const bool firstStrike = destinationStack->hasBonus(firstStrikeSelector) && !destinationStack->hasBonusOfType(BonusType::NOT_ACTIVE);
-
 	bool ferocityApplied = false;
 	int32_t defenderInitialQuantity = destinationStack->getCount();
 
 	BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);	//they need to be gathered here since bonuses with this duration added during attack (like blind) should not be removed
 	BonusList defenderBonusesToRemove = *destinationStack->getAllBonuses(Bonus::untilAfterAttackSequence);
+	const auto resolveAttackTarget = [&]() -> const CStack *
+	{
+		return dynamic_cast<const CStack *>(battle.battleResolveHeroOrderTarget(stack, destinationStack, false));
+	};
+	const CStack * openingAttackTarget = resolveAttackTarget();
+	if(!openingAttackTarget)
+		return false;
+	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll).Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
+	const bool firstStrike = openingAttackTarget->hasBonus(firstStrikeSelector) && !openingAttackTarget->hasBonusOfType(BonusType::NOT_ACTIVE);
 
 	for (int i = 0; i < totalAttacks; ++i)
 	{
+		const CStack * attackTarget = resolveAttackTarget();
+		if(!attackTarget)
+			return false;
 		//first strike
-		if(i == 0 && firstStrike && destinationStack->ableToRetaliate() && !stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION) && !stack->isInvincible() && !longWeaponAttack)
+		if(i == 0 && firstStrike && openingAttackTarget->ableToRetaliate() && !stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION) && !stack->isInvincible() && !longWeaponAttack)
 		{
-			makeAttack(battle, destinationStack, stack, {.targetHex = stack->getPosition(), .first = true, .counter = true});
+			makeAttack(battle, openingAttackTarget, stack, {.targetHex = stack->getPosition(), .first = true, .counter = true});
 		}
 
 		//move can cause death, eg. by walking into the moat, first strike can cause death or paralysis/petrification
-		if(stack->alive() && !stack->hasBonusOfType(BonusType::NOT_ACTIVE) && destinationStack->alive())
+		if(stack->alive() && !stack->hasBonusOfType(BonusType::NOT_ACTIVE) && attackTarget->alive())
 		{
 			//no distance travelled on second attack
+			// Pass the originally selected Ward to makeAttack so Protect can
+			// consume its first interception atomically; attackTarget is only the
+			// resolved recipient used for local retaliation checks below.
 			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0});
 
 			if(!ferocityApplied && stack->hasBonusOfType(BonusType::FEROCITY))
@@ -376,9 +401,9 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			&& !stack->isInvincible()
 			&& !longWeaponAttack
 			&& (i == 0 && !firstStrike)
-			&& destinationStack->ableToRetaliate())
+			&& attackTarget->ableToRetaliate())
 		{
-			makeAttack(battle, destinationStack, stack, {.targetHex = stack->getPosition(), .first = true, .counter = true});
+			makeAttack(battle, attackTarget, stack, {.targetHex = stack->getPosition(), .first = true, .counter = true});
 		}
 	}
 
@@ -775,6 +800,12 @@ bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & bat
 
 bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
+	// Canonical Orders are represented by an immutable StartAction snapshot and
+	// evaluated from that snapshot by the battle callback.  There is no broad
+	// SetStackEffect to emit here: doing so would turn conditional Orders into
+	// unconditional bonuses and would lose their one-shot trigger state.
+	if(heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules()))
+		return true;
 	if(ba.command == HeroCommand::FOCUS_FIRE)
 		return true; // Validated contextual state was published atomically by StartAction.
 	const auto * hero = battle.battleGetFightingHero(ba.side);
@@ -805,15 +836,43 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		return false;
 	}
 	std::optional<FocusFireState> preparedFocusFire;
+	std::optional<HeroOrderState> preparedOrderState;
 	if(ba.actionType == EActionType::HERO_COMMAND)
 	{
-		const bool targeted = ba.command == HeroCommand::FOCUS_FIRE;
-		if(targeted && !ba.spell.hasValue() && ba.target.size() == 1
-			&& ba.target.front().unitValue >= 0 && ba.target.front().hexValue == BattleHex::INVALID
-			&& ba.stackNumber == static_cast<uint32_t>(ba.side == BattleSide::ATTACKER ? -1 : -2))
-			preparedFocusFire = battle.battlePrepareFocusFireState(ba.side, ba.target.front().unitValue);
-		const bool available = !ba.spell.hasValue() && (targeted ? preparedFocusFire.has_value()
-			: ba.target.empty() && battle.battleCanUseHeroCommand(ba.side, ba.command));
+		const bool canonical = heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules());
+		if(canonical)
+		{
+			std::vector<uint32_t> targetUnitIds;
+			bool validTargetShape = ba.stackNumber == static_cast<uint32_t>(ba.side == BattleSide::ATTACKER ? -1 : -2);
+			for(const auto & target : ba.target)
+			{
+				if(target.unitValue < 0 || target.hexValue != BattleHex::INVALID)
+				{
+					validTargetShape = false;
+					break;
+				}
+				targetUnitIds.push_back(static_cast<uint32_t>(target.unitValue));
+			}
+			if(validTargetShape && !ba.spell.hasValue())
+				preparedOrderState = battle.battlePrepareHeroOrderState(ba.side, ba.command, targetUnitIds);
+			// Focus Fire keeps its dedicated snapshot for the ranged damage path;
+			// the canonical Order snapshot is additionally required for every
+			// command and is what makes the command state serializable.
+			if(preparedOrderState && ba.command == HeroCommand::FOCUS_FIRE)
+				preparedFocusFire = battle.battlePrepareFocusFireState(ba.side, preparedOrderState->primaryTargetUnitId);
+		}
+		else
+		{
+			const bool targeted = ba.command == HeroCommand::FOCUS_FIRE;
+			if(targeted && !ba.spell.hasValue() && ba.target.size() == 1
+				&& ba.target.front().unitValue >= 0 && ba.target.front().hexValue == BattleHex::INVALID
+				&& ba.stackNumber == static_cast<uint32_t>(ba.side == BattleSide::ATTACKER ? -1 : -2))
+				preparedFocusFire = battle.battlePrepareFocusFireState(ba.side, ba.target.front().unitValue);
+		}
+		const bool available = !ba.spell.hasValue()
+			&& (canonical ? preparedOrderState.has_value()
+				: (ba.command == HeroCommand::FOCUS_FIRE ? preparedFocusFire.has_value()
+					: ba.target.empty() && battle.battleCanUseHeroCommand(ba.side, ba.command)));
 		if(!available)
 		{
 			gameHandler->complain("Hero command unavailable: ruleset, ownership, target, or round action budget");
@@ -829,6 +888,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		StartAction startAction(ba);
 		startAction.battleID = battle.getBattle()->getBattleID();
 		startAction.focusFire = preparedFocusFire;
+		startAction.orderState = preparedOrderState;
 		gameHandler->sendAndApply(startAction);
 	}
 
@@ -863,6 +923,8 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	auto start = currentUnit->getPosition();
 	if (start == dest)
 		return { 0, false, false };
+	const auto orderStateBeforeAttacker = battle.battleGetHeroOrderState(BattleSide::ATTACKER);
+	const auto orderStateBeforeDefender = battle.battleGetHeroOrderState(BattleSide::DEFENDER);
 
 	//initing necessary tables
 	auto accessibility = battle.getAccessibility(currentUnit);
@@ -1132,6 +1194,10 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 		passed.clear();	//Just empty passed, obstacles will handled automatically
 	//handling obstacle on the final field (separate, because it affects both flying and walking stacks)
 	movementSuccess &= battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *currentUnit, passed);
+	if(orderStateBeforeAttacker != battle.battleGetHeroOrderState(BattleSide::ATTACKER))
+		publishHeroOrderState(battle, BattleSide::ATTACKER);
+	if(orderStateBeforeDefender != battle.battleGetHeroOrderState(BattleSide::DEFENDER))
+		publishHeroOrderState(battle, BattleSide::DEFENDER);
 
 	return { static_cast<int16_t>(pathDistance), !movementSuccess, false };
 }
@@ -1233,6 +1299,35 @@ void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleA
 
 void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack)
 {
+	std::optional<HeroOrderState> orderStateBeforeAttacker = battle.battleGetHeroOrderState(BattleSide::ATTACKER);
+	std::optional<HeroOrderState> orderStateBeforeDefender = battle.battleGetHeroOrderState(BattleSide::DEFENDER);
+	bool protectIntercepted = attack.protectIntercepted;
+	// Protect redirects only the first melee blow aimed at its Ward. Resolve the
+	// destination on the authoritative battle snapshot before any attack
+	// reactions or damage are calculated, so every observer sees the same target.
+	if(defender && !attack.ranged)
+	{
+		const auto * redirected = battle.battleResolveHeroOrderTarget(attacker, defender, false);
+		if(redirected != defender)
+		{
+			if(const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle()))
+			{
+				const auto side = battle.playerToSide(battle.battleGetOwner(defender));
+				protectIntercepted = const_cast<BattleInfo *>(state)->interceptHeroOrderProtect(side);
+				if(protectIntercepted)
+				{
+					publishHeroOrderState(battle, side);
+					if(side == BattleSide::ATTACKER)
+						orderStateBeforeAttacker = battle.battleGetHeroOrderState(side);
+					else
+						orderStateBeforeDefender = battle.battleGetHeroOrderState(side);
+				}
+			}
+			if(const auto * redirectedStack = dynamic_cast<const CStack *>(redirected))
+				defender = redirectedStack;
+		}
+	}
+
 	// spell-casting abilities keep their own rule - once per attack action and never on a counter.
 	// Combat event reactions are notified before every attack instead, further below
 	if(defender && attack.first && !attack.counter)
@@ -1242,8 +1337,23 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	if((!attacker->alive()) || (defender && !defender->alive()))
 		return;
 
+	// Brace answers every qualifying incoming melee attack after the enemy has
+	// voluntarily crossed three or more hexes. The recursive pre-emptive strike
+	// is marked as a counter so it cannot recursively trigger Brace itself.
+	if(defender && !attack.ranged && !attack.counter
+		&& battle.battleCanTriggerHeroOrderBrace(attacker, defender, attack.distance, false, false))
+	{
+		makeAttack(battle, defender, attacker, {.targetHex = attacker->getPosition(), .first = true, .counter = true, .brace = true});
+		if(!attacker->alive() || (defender && !defender->alive()))
+			return;
+	}
+
 	BattleAttack bat;
 	BattleLogMessage blm;
+	// Brace's pre-emptive strike is dispatched through the counterattack path so
+	// that it happens before the incoming blow, but it must not consume the
+	// defender's normal retaliation. Keep the two notions separate here.
+	const bool normalCounter = attack.counter && !attack.brace;
 	blm.battleID = battle.getBattle()->getBattleID();
 	bat.battleID = battle.getBattle()->getBattleID();
 	bat.attackerChanges.battleID = battle.getBattle()->getBattleID();
@@ -1252,7 +1362,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	if(attack.ranged)
 		bat.flags |= BattleAttack::SHOT;
-	if(attack.counter)
+	if(normalCounter)
 		bat.flags |= BattleAttack::COUNTER;
 
 	// the same units feed the notification below and the damage further down
@@ -1260,7 +1370,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	CombatEventPayload payload;
 	payload.ranged = attack.ranged;
-	payload.isCounter = attack.counter;
+	payload.isCounter = normalCounter;
 	payload.attackIndex = attack.attackIndex;
 
 	CombatEventPayload upcoming = payload;
@@ -1279,7 +1389,26 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	// only primary target
 	if(defender && defender->alive())
-		applyBattleEffects(battle, bat, attackerState, payload, defender, attack.distance, false);
+	{
+		applyBattleEffects(battle, bat, attackerState, payload, defender, attack.distance, false, attack.brace, protectIntercepted);
+		if(!attack.ranged && !attack.counter)
+		{
+			if(const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle()))
+			{
+				auto * mutableState = const_cast<BattleInfo *>(state);
+				const auto side = battle.playerToSide(battle.battleGetOwner(attacker));
+				const auto order = battle.battleGetHeroOrderState(side);
+				const bool eligibleOrderUnit = !attacker->isGhost() && !attacker->isTurret()
+					&& !attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+					&& attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+				if(order && order->command == HeroCommand::CHARGE && eligibleOrderUnit && attack.distance >= 3)
+					mutableState->consumeHeroOrderUnit(side, attacker->unitId());
+				if(order && order->command == HeroCommand::FLANK && eligibleOrderUnit
+					&& order->primaryTargetUnitId == defender->unitId())
+					mutableState->recordHeroOrderFlankSide(side, defender->unitId(), battle.battleHeroOrderFlankSide(attacker, defender));
+			}
+		}
+	}
 
 	for(const auto * unit : secondaryTargets)
 	{
@@ -1287,13 +1416,13 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		if(!unit->alive())
 			continue;
 
-		applyBattleEffects(battle, bat, attackerState, payload, unit, attack.distance, true);
+		applyBattleEffects(battle, bat, attackerState, payload, unit, attack.distance, true, attack.brace, false);
 		removeBonuses(battle, unit, *unit->getAllBonuses(Bonus::UntilTakingIndirectDamage));
 	}
 
 	markSpellLikeAttack(attacker, bat);
 
-	attackerState->afterAttack(attack.ranged, attack.counter);
+	attackerState->afterAttack(attack.ranged, normalCounter);
 
 	{
 		UnitChanges info(attackerState->unitId(), UnitChanges::EOperation::UPDATE);
@@ -1310,6 +1439,15 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		collectEventTriggers(battle, reactions, CombatEventType::AFTER_ATTACKED, target.unit, attacker);
 
 	gameHandler->sendAndApply(bat);
+
+	// A lethal BattleAttack can invalidate a Protect pair while the authoritative
+	// BattleStackAttacked updates are applied (for example, killing the protector).
+	// Publish every state transition made by the complete attack, including those
+	// updates, so remote battle snapshots cannot retain an armed pair.
+	if(orderStateBeforeAttacker != battle.battleGetHeroOrderState(BattleSide::ATTACKER))
+		publishHeroOrderState(battle, BattleSide::ATTACKER);
+	if(orderStateBeforeDefender != battle.battleGetHeroOrderState(BattleSide::DEFENDER))
+		publishHeroOrderState(battle, BattleSide::DEFENDER);
 
 	{
 		const bool multipleTargets = bat.bsa.size() > 1;
@@ -1465,7 +1603,7 @@ void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback &
 		attackCasting(battle, payload.ranged, BonusType::SPELL_AFTER_ATTACK, attacker, defender);
 }
 
-void BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary) const
+void BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, bool protectIntercepted) const
 {
 	BattleStackAttacked bsa;
 	if(secondary)
@@ -1476,6 +1614,13 @@ void BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battl
 
 	BattleAttackInfo bai(attackerState.get(), def, distance, bat.shot());
 	bai.secondaryAttack = secondary;
+	// Brace travels through the counterattack path for ordering, but its
+	// pre-emptive blow is not a normal retaliation for Riposte or retaliation
+	// consumption purposes.
+	bai.retaliation = bat.counter() && !bracePreemptive;
+	bai.bracePreemptive = bracePreemptive;
+	bai.protectIntercepted = protectIntercepted;
+	bai.physicalDamage = !bat.spellLike();
 	bai.deathBlow = bat.deathBlow();
 	bai.doubleDamage = bat.ballistaDoubleDmg();
 	// SoD: lucky strike only affects creature that was directly attacked; HotA: affects every target of a multi-target attack

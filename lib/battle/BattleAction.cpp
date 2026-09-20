@@ -156,12 +156,26 @@ BattleAction BattleAction::makeHeroCommand(BattleSide side, HeroCommand command)
 
 BattleAction BattleAction::makeTargetedHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId)
 {
-	if(command != HeroCommand::FOCUS_FIRE
+	if((command != HeroCommand::FOCUS_FIRE && command != HeroCommand::FLANK && command != HeroCommand::SECOND_WIND)
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		|| targetUnitId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
 		throw std::invalid_argument("Invalid targeted hero command identity");
 	auto action = makeHeroCommand(side, command);
 	action.target.push_back({static_cast<int32_t>(targetUnitId), BattleHex::INVALID});
+	return action;
+}
+
+BattleAction BattleAction::makePairedHeroCommand(BattleSide side, HeroCommand command,
+	uint32_t firstUnitId, uint32_t secondUnitId)
+{
+	if(command != HeroCommand::PROTECT
+		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| firstUnitId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())
+		|| secondUnitId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
+		throw std::invalid_argument("Invalid paired hero command identity");
+	auto action = makeHeroCommand(side, command);
+	action.target.push_back({static_cast<int32_t>(firstUnitId), BattleHex::INVALID});
+	action.target.push_back({static_cast<int32_t>(secondUnitId), BattleHex::INVALID});
 	return action;
 }
 

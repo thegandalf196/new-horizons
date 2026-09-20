@@ -313,4 +313,7 @@ void registerTypes(Serializer &s)
 	s.template registerType<HeroMasteryChosen>(272);
 	s.template registerType<HeroMasteryReply>(273);
 	s.template registerType<HeroPerkChosen>(274);
+	// Append new polymorphic netpack types only; these numeric IDs are part of
+	// the save/replay wire format and must never be reused or reordered.
+	s.template registerType<BattleHeroOrderStateChanged>(275);
 }

@@ -42,6 +42,7 @@ public:
 	BattleAction();
 	static BattleAction makeHeroCommand(BattleSide side, HeroCommand command);
 	static BattleAction makeTargetedHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId);
+	static BattleAction makePairedHeroCommand(BattleSide side, HeroCommand command, uint32_t firstUnitId, uint32_t secondUnitId);
 
 	static BattleAction makeHeal(const battle::Unit * healer, const battle::Unit * healed);
 	static BattleAction makeDefend(const battle::Unit * stack);
@@ -73,6 +74,10 @@ public:
 		if(h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Cannot serialize targeted command to an older protocol");
+		if(h.saving && (command == HeroCommand::RIPOSTE || command == HeroCommand::BRACE
+			|| command == HeroCommand::PROTECT || command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS))
+			throw std::runtime_error("Cannot serialize canonical Order to an older protocol");
 		if(h.saving && spellOvercharge != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC_ARROW_OVERCHARGE))
 			throw std::runtime_error("Cannot serialize Magic Arrow overcharge to an older protocol");
@@ -122,6 +127,10 @@ public:
 		if(!h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Targeted command requires the new protocol");
+		if(!h.saving && (command == HeroCommand::RIPOSTE || command == HeroCommand::BRACE
+			|| command == HeroCommand::PROTECT || command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS))
+			throw std::runtime_error("Canonical Order requires the new protocol");
 	}
 
 	struct DestinationInfo

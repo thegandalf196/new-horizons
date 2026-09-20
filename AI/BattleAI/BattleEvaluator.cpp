@@ -130,6 +130,325 @@ float counterspellThreatValue(const CBattleInfoCallback & battle, BattleSide sid
 	return bestValue;
 }
 
+namespace
+{
+constexpr HeroCommand riposteCommand()
+{
+	return HeroCommand::RIPOSTE;
+}
+
+constexpr HeroCommand braceCommand()
+{
+	return HeroCommand::BRACE;
+}
+
+constexpr HeroCommand protectCommand()
+{
+	return HeroCommand::PROTECT;
+}
+
+constexpr HeroCommand flankCommand()
+{
+	return HeroCommand::FLANK;
+}
+
+constexpr HeroCommand secondWindCommand()
+{
+	return HeroCommand::SECOND_WIND;
+}
+
+bool isEligibleOrderUnit(const CBattleInfoCallback & battle, BattleSide side,
+	const battle::Unit * unit)
+{
+	return unit && unit->alive() && !unit->isGhost() && unit->isValidTarget()
+		&& battle.battleGetOwner(unit) == battle.sideToPlayer(side)
+		&& !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
+}
+
+bool adjacentForProtect(const battle::Unit * first, const battle::Unit * second)
+{
+	if(!first || !second || !first->getPosition().isValid() || !second->getPosition().isValid())
+		return false;
+	for(const auto & firstHex : first->getHexes())
+		for(const auto & secondHex : second->getHexes())
+			if(BattleHex::getDistance(firstHex, secondHex) <= 1)
+				return true;
+	return false;
+}
+
+/// A value-only fallback for older snapshots and for runtime APIs that expose
+/// only the ordinary one-target query.  It is intentionally conservative: the
+/// authoritative callback remains the final arbiter before an action is sent.
+template <typename Battle>
+std::vector<std::vector<uint32_t>> orderTargetOptions(const Battle & battle,
+	BattleSide side, HeroCommand command)
+{
+	std::vector<std::vector<uint32_t>> result;
+
+	// Canonical runtime builds validate the complete target tuple (including the
+	// Protector/Ward ordering and round eligibility) through this snapshot API.
+	// Enumerate only the small candidate identity set exposed by the callback;
+	// never infer authority from local geometry or activation flags.
+	if constexpr(requires { battle.battlePrepareHeroOrderState(side, command, std::vector<uint32_t>{}); })
+	{
+		// The method is present on every current callback, including legacy
+		// targeted-command snapshots.  Only the canonical ruleset gives it
+		// authority; legacy Focus Fire still uses its scalar validator below.
+		const bool canonicalRules = battle.getBattle()
+			&& heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules());
+		if(canonicalRules)
+		{
+			const auto candidates = battle.battleGetHeroCommandTargets(side, command);
+			if(command == protectCommand())
+			{
+				for(const auto protector : candidates)
+					for(const auto ward : candidates)
+						if(protector != ward && battle.battlePrepareHeroOrderState(side, command, {protector, ward}))
+							result.push_back({protector, ward});
+			}
+			else
+			{
+				for(const auto targetId : candidates)
+					if(battle.battlePrepareHeroOrderState(side, command, {targetId}))
+						result.push_back({targetId});
+			}
+			return result;
+		}
+	}
+
+	if(command == protectCommand())
+	{
+		const auto units = battle.battleGetAllUnits(false);
+		for(size_t i = 0; i < units.size(); ++i)
+		{
+			if(!isEligibleOrderUnit(battle, side, units[i]))
+				continue;
+			for(size_t j = 0; j < units.size(); ++j)
+			{
+				if(i != j && isEligibleOrderUnit(battle, side, units[j]) && adjacentForProtect(units[i], units[j]))
+					result.push_back({units[i]->unitId(), units[j]->unitId()});
+			}
+		}
+		return result;
+	}
+
+	// The existing callback already returns authoritative Focus Fire targets;
+	// the runtime extension uses the same shape for Flank and Second Wind.
+	for(const auto targetId : battle.battleGetHeroCommandTargets(side, command))
+		result.push_back({targetId});
+	return result;
+}
+
+template <typename Battle>
+bool commandTargetIsLegal(const Battle & battle, BattleSide side, HeroCommand command,
+	const std::vector<uint32_t> & targetIds)
+{
+	if(targetIds.empty())
+		return battle.battleCanUseHeroCommand(side, command);
+
+	if constexpr(requires { battle.battlePrepareHeroOrderState(side, command, targetIds); })
+	{
+		if(battle.getBattle() && heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules()))
+			return battle.battlePrepareHeroOrderState(side, command, targetIds).has_value();
+	}
+	if constexpr(requires { battle.battleGetHeroCommandTargetOptions(side, command); })
+	{
+		for(const auto & option : battle.battleGetHeroCommandTargetOptions(side, command))
+			if(std::vector<uint32_t>(option.begin(), option.end()) == targetIds)
+				return true;
+		return false;
+	}
+	else if constexpr(requires { battle.battleCanConfirmHeroCommand(side, command, targetIds); })
+		return battle.battleCanConfirmHeroCommand(side, command, targetIds);
+	else if(targetIds.size() == 1)
+		return battle.battleCanConfirmHeroCommand(side, command, targetIds.front());
+	else
+		// Protect's pair legality is checked atomically by the new server API.
+		// No pair must be sent from a legacy callback that cannot validate it.
+		return false;
+}
+
+float averageOrderDamage(const DamageEstimation & damage)
+{
+	return static_cast<float>(std::max<int64_t>(0, damage.damage.min + damage.damage.max) / 2);
+}
+
+float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide side,
+	HeroCommand command, const std::vector<uint32_t> & targetIds)
+{
+	const auto * hero = battle.battleGetFightingHero(side);
+	const auto units = battle.battleGetAllUnits(false);
+	const auto ownPlayer = battle.sideToPlayer(side);
+	std::vector<const battle::Unit *> ownUnits;
+	std::vector<const battle::Unit *> enemyUnits;
+	for(const auto * unit : units)
+	{
+		if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret())
+			continue;
+		if(battle.battleGetOwner(unit) == ownPlayer)
+			ownUnits.push_back(unit);
+		else
+			enemyUnits.push_back(unit);
+	}
+
+	const auto & commandRules = battle.getBattle()->getHeroCommandRules()["commands"];
+	const auto coefficient = [&](const char * commandKey, const char * effectKey)
+	{
+		const auto & formula = commandRules[commandKey]["effects"][effectKey];
+		return static_cast<float>(heroCommands::coefficient(formula,
+			hero ? hero->getPrimSkillLevel(PrimarySkill::ATTACK) : 0,
+			hero ? hero->getPrimSkillLevel(PrimarySkill::DEFENSE) : 0));
+	};
+	const auto meleeDamage = [&](const battle::Unit * attackerUnit, const battle::Unit * defenderUnit)
+	{
+		if(!attackerUnit || !defenderUnit || !attackerUnit->isMeleeAttacker())
+			return 0.0f;
+		return averageOrderDamage(battle.battleEstimateDamage(
+			BattleAttackInfo(attackerUnit, defenderUnit, 0, false)));
+	};
+	const auto anyDamage = [&](const battle::Unit * attackerUnit, const battle::Unit * defenderUnit)
+	{
+		if(!attackerUnit || !defenderUnit)
+			return 0.0f;
+		const bool shooting = battle.battleCanShoot(attackerUnit, defenderUnit->getPosition());
+		return averageOrderDamage(battle.battleEstimateDamage(
+			BattleAttackInfo(attackerUnit, defenderUnit, 0, shooting)));
+	};
+	const auto bestOwnMeleeDamage = [&](const battle::Unit * defenderUnit)
+	{
+		float best = 0.0f;
+		for(const auto * unit : ownUnits)
+			best = std::max(best, meleeDamage(unit, defenderUnit));
+		return best;
+	};
+	const auto bestEnemyMeleeDamage = [&](const battle::Unit * defenderUnit)
+	{
+		float best = 0.0f;
+		for(const auto * unit : enemyUnits)
+			best = std::max(best, meleeDamage(unit, defenderUnit));
+		return best;
+	};
+	const auto sumOwnMeleeDamage = [&]
+	{
+		float total = 0.0f;
+		for(const auto * own : ownUnits)
+		{
+			float best = 0.0f;
+			for(const auto * enemy : enemyUnits)
+				best = std::max(best, meleeDamage(own, enemy));
+			total += best;
+		}
+		return total;
+	};
+	const auto ownMeleePotential = sumOwnMeleeDamage();
+	if(command == HeroCommand::FOCUS_FIRE && targetIds.size() == 1)
+	{
+		const auto * target = battle.battleGetUnitByID(targetIds.front());
+		if(!target || !target->alive() || battle.battleGetOwner(target) == battle.sideToPlayer(side))
+			return 0.0f;
+		const auto rangedPercent = coefficient("focusFire", "rangedDamagePercent");
+		float rangedPotential = 0.0f;
+		for(const auto * unit : ownUnits)
+		{
+			if(!unit->isShooter() || unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+				|| !unit->willMove(0) || !battle.battleCanShoot(unit, target->getPosition()))
+				continue;
+			rangedPotential += anyDamage(unit, target);
+		}
+		return rangedPotential * rangedPercent / 100.0f;
+	}
+	const auto chargePercent = coefficient("charge", "meleeDamagePercent");
+	const auto holdPercent = coefficient("holdTheLine", "damageReductionPercent");
+	const auto riposteReduction = coefficient("riposte", "meleeDamageReductionPercent");
+	const auto riposteDamage = coefficient("riposte", "retaliationDamagePercent");
+	const auto braceDamage = coefficient("brace", "preemptiveDamagePercent");
+	const auto protectReduction = coefficient("protect", "interceptedDamageReductionPercent");
+	const auto flankDamage = coefficient("flank", "meleeDamagePercent");
+
+	if(command == HeroCommand::CHARGE)
+	{
+		const bool canCharge = std::any_of(ownUnits.begin(), ownUnits.end(), [](const auto * unit)
+		{
+			return unit->isMeleeAttacker() && unit->getMovementRange(0) >= 3;
+		});
+		return canCharge ? ownMeleePotential * chargePercent / 100.0f : 0.0f;
+	}
+
+	if(command == HeroCommand::HOLD_THE_LINE)
+	{
+		float incoming = 0.0f;
+		for(const auto * own : ownUnits)
+			for(const auto * enemy : enemyUnits)
+				if(enemy->isMeleeAttacker())
+					incoming = std::max(incoming, meleeDamage(enemy, own));
+		return incoming * holdPercent / 100.0f;
+	}
+
+	if(command == riposteCommand())
+	{
+		float incoming = 0.0f;
+		float retaliation = 0.0f;
+		for(const auto * own : ownUnits)
+			for(const auto * enemy : enemyUnits)
+			{
+				if(!enemy->isMeleeAttacker())
+					continue;
+				DamageEstimation retaliationEstimate;
+				const auto incomingEstimate = battle.battleEstimateDamage(
+					BattleAttackInfo(enemy, own, 0, false), &retaliationEstimate);
+				incoming = std::max(incoming, averageOrderDamage(incomingEstimate));
+				retaliation = std::max(retaliation, averageOrderDamage(retaliationEstimate));
+			}
+		return incoming * riposteReduction / 100.0f + retaliation * riposteDamage / 100.0f;
+	}
+
+	if(command == braceCommand())
+	{
+		float advancingDamage = 0.0f;
+		for(const auto * enemy : enemyUnits)
+			if(enemy->isMeleeAttacker() && enemy->getMovementRange(0) >= 3)
+				for(const auto * own : ownUnits)
+					advancingDamage = std::max(advancingDamage, meleeDamage(enemy, own));
+		return advancingDamage * braceDamage / 100.0f;
+	}
+
+	if(command == protectCommand() && targetIds.size() == 2)
+	{
+		const auto * protector = battle.battleGetUnitByID(targetIds[0]);
+		const auto * ward = battle.battleGetUnitByID(targetIds[1]);
+		if(!isEligibleOrderUnit(battle, side, protector) || !isEligibleOrderUnit(battle, side, ward))
+			return 0.0f;
+		return bestEnemyMeleeDamage(ward) * protectReduction / 100.0f;
+	}
+
+	if(command == flankCommand() && targetIds.size() == 1)
+	{
+		const auto * target = battle.battleGetUnitByID(targetIds.front());
+		if(!target || !target->alive() || battle.battleGetOwner(target) == battle.sideToPlayer(side))
+			return 0.0f;
+		// The first distinct side gets the base bonus; additional side bonuses are
+		// earned only after the authoritative combat path records another approach.
+		return bestOwnMeleeDamage(target) * flankDamage / 100.0f;
+	}
+
+	if(command == secondWindCommand() && targetIds.size() == 1)
+	{
+		const auto * target = battle.battleGetUnitByID(targetIds.front());
+		if(!isEligibleOrderUnit(battle, side, target) || !target->moved(0))
+			return 0.0f;
+		float extraAttack = 0.0f;
+		for(const auto * enemy : enemyUnits)
+			extraAttack = std::max(extraAttack, anyDamage(target, enemy));
+		const auto leadership = hero && hero->getLeadershipCapacity()
+			? static_cast<float>(hero->getLeadershipCapacity()->capacity) : 0.0f;
+		const auto directDamagePercent = std::clamp(50.0f + 0.015f * leadership, 0.0f, 100.0f);
+		return extraAttack * directDamagePercent / 100.0f;
+	}
+
+	return 0.0f;
+}
+}
+
 BattleEvaluator::BattleEvaluator(
 	std::shared_ptr<Environment> env,
 	std::shared_ptr<CBattleCallback> cb,
@@ -584,12 +903,16 @@ bool BattleEvaluator::canCastSpell()
 
 	if(cb->getBattle(battleID)->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK)
 		return true;
-	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE})
+	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
+		riposteCommand(), braceCommand()})
 	{
 		if(cb->getBattle(battleID)->battleCanUseHeroCommand(side, command))
 			return true;
 	}
-	return cb->getBattle(battleID)->battleCanBeginHeroCommand(side, HeroCommand::FOCUS_FIRE);
+	for(auto command : {HeroCommand::FOCUS_FIRE, protectCommand(), flankCommand(), secondWindCommand()})
+		if(cb->getBattle(battleID)->battleCanBeginHeroCommand(side, command))
+			return true;
+	return false;
 }
 
 bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)
@@ -689,30 +1012,64 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		}
 	}
 	// Commands compete in the same exchange evaluation as legal spell/target pairs.
-	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE})
+	// Side-wide Orders use the authoritative availability query.  Targeted Orders
+	// are enumerated through the callback's legal target-set query, with no local
+	// guess about action budget, ownership, or current-round state.
+	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
+		riposteCommand(), braceCommand()})
 	{
 		if(cb->getBattle(battleID)->battleCanUseHeroCommand(side, command))
 		{
 			PossibleSpellcast candidate;
 			candidate.command = command;
+			if(heroCommands::isCanonicalRules(cb->getBattle(battleID)->getBattle()->getHeroCommandRules()))
+			{
+				candidate.commandHeuristicValue = canonicalOrderHeuristic(
+					*cb->getBattle(battleID), side, command, {});
+				if(candidate.commandHeuristicValue <= 0.0f)
+					continue;
+			}
 			possibleCasts.push_back(candidate);
 		}
 	}
-	for(auto targetId : cb->getBattle(battleID)->battleGetHeroCommandTargets(side, HeroCommand::FOCUS_FIRE))
+	for(auto command : {HeroCommand::FOCUS_FIRE, protectCommand(), flankCommand(), secondWindCommand()})
 	{
-		PossibleSpellcast candidate;
-		candidate.command = HeroCommand::FOCUS_FIRE;
-		candidate.focusFire = cb->getBattle(battleID)->battlePrepareFocusFireState(side, targetId);
-		if(candidate.focusFire)
+		for(const auto & targetIds : orderTargetOptions(*cb->getBattle(battleID), side, command))
 		{
-			const auto & recipients = candidate.focusFire->recipientUnitIds;
-			const bool hasRemainingShooter = std::any_of(recipients.begin(), recipients.end(), [&](uint32_t id)
+			if(!commandTargetIsLegal(*cb->getBattle(battleID), side, command, targetIds))
+				continue;
+
+			PossibleSpellcast candidate;
+			candidate.command = command;
+			candidate.commandTargets = targetIds;
+			if(command == HeroCommand::FOCUS_FIRE)
 			{
-				const auto * unit = cb->getBattle(battleID)->battleGetUnitByID(id);
-				return unit && unit->willMove(0) && unit->canShoot();
-			});
-			if(hasRemainingShooter)
-				possibleCasts.push_back(candidate);
+				if(targetIds.size() != 1)
+					continue;
+				candidate.focusFire = cb->getBattle(battleID)->battlePrepareFocusFireState(side, targetIds.front());
+				if(!candidate.focusFire)
+					continue;
+				const auto & recipients = candidate.focusFire->recipientUnitIds;
+				const bool hasRemainingShooter = std::any_of(recipients.begin(), recipients.end(), [&](uint32_t id)
+				{
+					const auto * unit = cb->getBattle(battleID)->battleGetUnitByID(id);
+					return unit && unit->willMove(0) && unit->canShoot();
+				});
+				if(!hasRemainingShooter)
+					continue;
+				candidate.commandHeuristicValue = canonicalOrderHeuristic(
+					*cb->getBattle(battleID), side, command, targetIds);
+				if(candidate.commandHeuristicValue <= 0.0f)
+					continue;
+			}
+			else
+			{
+				candidate.commandHeuristicValue = canonicalOrderHeuristic(
+					*cb->getBattle(battleID), side, command, targetIds);
+				if(candidate.commandHeuristicValue <= 0.0f)
+					continue;
+			}
+			possibleCasts.push_back(std::move(candidate));
 		}
 	}
 	LOGFL("Found %d spell-target combinations.", possibleCasts.size());
@@ -877,6 +1234,24 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				auto & ps = possibleCasts[i];
 				if(isCounterspell(ps.spell))
 					continue;
+				// Contextual Orders have no faithful projection in the old
+				// hypothetical-battle model: targeted Orders and trigger/relationship
+				// state carry more information than ordinary unit bonuses.  Their
+				// deterministic read-only value was computed while enumerating the
+				// authoritative legal target set.  Keep that score intact so they
+				// still compete with spells and normal attacks.
+				if(ps.command != HeroCommand::NONE && ps.commandHeuristicValue > 0.0f)
+				{
+					// An Order consumes the hero's exchange but does not replace the
+					// unit action that follows it.  Keep the normal best-action score
+					// in the candidate value so contextual Orders compete on the same
+					// scale as spells and ordinary attacks rather than being treated as
+					// a small, standalone bonus.
+					const auto baseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
+						? cachedAttack.score : 0.0f;
+					ps.value = baseline + ps.commandHeuristicValue;
+					continue;
+				}
 
 #if BATTLE_TRACE_LEVEL >= 1
 				if(ps.dest.empty())
@@ -1109,6 +1484,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);
 		if(castToPerform.command != HeroCommand::NONE)
 		{
+			if(!commandTargetIsLegal(*cb->getBattle(battleID), side, castToPerform.command,
+				castToPerform.commandTargets))
+				return false;
+
 			if(castToPerform.command == HeroCommand::FOCUS_FIRE)
 			{
 				const auto targetId = castToPerform.focusFire.value().targetUnitId;
@@ -1118,7 +1497,18 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					BattleAction::makeTargetedHeroCommand(side, castToPerform.command, targetId));
 			}
 			else
-				cb->battleMakeSpellAction(battleID, BattleAction::makeHeroCommand(side, castToPerform.command));
+			{
+				BattleAction action;
+				if(castToPerform.commandTargets.size() == 1)
+					action = BattleAction::makeTargetedHeroCommand(side, castToPerform.command,
+						castToPerform.commandTargets.front());
+				else if(castToPerform.commandTargets.size() == 2)
+					action = BattleAction::makePairedHeroCommand(side, castToPerform.command,
+						castToPerform.commandTargets.front(), castToPerform.commandTargets.back());
+				else
+					action = BattleAction::makeHeroCommand(side, castToPerform.command);
+				cb->battleMakeSpellAction(battleID, action);
+			}
 			activeActionMade = true;
 			return true;
 		}

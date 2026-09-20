@@ -84,8 +84,22 @@ public:
 	std::vector<uint32_t> battleGetHeroCommandTargets(BattleSide side, HeroCommand command) const;
 	std::optional<FocusFireState> battlePrepareFocusFireState(BattleSide side, uint32_t targetUnitId) const;
 	std::optional<FocusFireState> battleGetFocusFireState(BattleSide side) const;
+	std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const;
+	/// Validates target coverage and snapshots all transient state for a canonical Order.
+	std::optional<HeroOrderState> battlePrepareHeroOrderState(BattleSide side, HeroCommand command,
+		const std::vector<uint32_t> & targetUnitIds) const;
+	/// Returns the actual melee defender after a valid Protect interception, without consuming it.
+	const battle::Unit * battleResolveHeroOrderTarget(const battle::Unit * attacker,
+		const battle::Unit * defender, bool shooting) const;
+	/// Returns whether Brace is armed for this defender and this qualifying incoming attack.
+	bool battleCanTriggerHeroOrderBrace(const battle::Unit * attacker, const battle::Unit * defender,
+		int movementDistance, bool shooting, bool counter) const;
+	/// Distinct side used by a melee attack against a Flank target, or zero when not adjacent.
+	uint8_t battleHeroOrderFlankSide(const battle::Unit * attacker, const battle::Unit * defender) const;
 	/// Target liveness/hostility, not permission to issue again or a promise of available shots.
 	bool battleIsFocusFireTargetActive(BattleSide side) const;
+	bool battleIsTargetedRangedCommand(const battle::Unit * attacker, const battle::Unit * defender,
+		bool shooting, bool secondaryAttack = false) const;
 	int battleTargetedRangedCommandPercent(const battle::Unit * attacker, const battle::Unit * defender,
 		bool shooting, bool secondaryAttack = false) const;
 	HeroCommand battleGetActiveDoctrine(BattleSide side) const;

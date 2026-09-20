@@ -26,5 +26,7 @@ BattleAttackInfo BattleAttackInfo::reverse() const
 
 	ret.defenderPos = attackerPos;
 	ret.attackerPos = defenderPos;
+	ret.physicalDamage = physicalDamage;
+	ret.retaliation = true;
 	return ret;
 }

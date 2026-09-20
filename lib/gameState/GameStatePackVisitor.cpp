@@ -1458,6 +1458,28 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 {
 	const bool targeted = pack.ba.actionType == EActionType::HERO_COMMAND
 		&& pack.ba.command == HeroCommand::FOCUS_FIRE;
+	const auto * battleContext = gs.getBattle(pack.battleID);
+	if(!battleContext)
+		throw std::runtime_error(targeted ? "Missing targeted StartAction battle context" : "Missing StartAction battle context");
+	const bool canonicalOrder = pack.ba.actionType == EActionType::HERO_COMMAND
+		&& heroCommands::isCanonicalRules(battleContext->getHeroCommandRules());
+	if(pack.orderState.has_value() != canonicalOrder)
+		throw std::runtime_error("Inconsistent canonical Order StartAction payload");
+	if(canonicalOrder)
+	{
+		if(pack.ba.stackNumber != static_cast<uint32_t>(pack.ba.side == BattleSide::ATTACKER ? -1 : -2))
+			throw std::runtime_error("Invalid canonical Order StartAction issuer");
+		std::vector<uint32_t> targetUnitIds;
+		for(const auto & target : pack.ba.target)
+		{
+			if(target.unitValue < 0 || target.hexValue != BattleHex::INVALID)
+				throw std::runtime_error("Invalid canonical Order StartAction destination");
+			targetUnitIds.push_back(static_cast<uint32_t>(target.unitValue));
+		}
+		const auto expected = battleContext->battlePrepareHeroOrderState(pack.ba.side, pack.ba.command, targetUnitIds);
+		if(!expected || expected != pack.orderState)
+			throw std::runtime_error("Invalid canonical Order StartAction snapshot");
+	}
 	if(pack.focusFire.has_value() != targeted)
 		throw std::runtime_error("Inconsistent targeted StartAction payload");
 	if(targeted)
@@ -1467,9 +1489,6 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			|| pack.ba.stackNumber != static_cast<uint32_t>(pack.ba.side == BattleSide::ATTACKER ? -1 : -2))
 			throw std::runtime_error("Invalid targeted StartAction destination");
 		// Validate against the saved battle context before changing any budget/state.
-		const auto * battleContext = gs.getBattle(pack.battleID);
-		if(!battleContext)
-			throw std::runtime_error("Missing targeted StartAction battle context");
 		const auto expected = battleContext->battlePrepareFocusFireState(
 			pack.ba.side, pack.ba.target.front().unitValue);
 		if(!expected || expected != pack.focusFire)
@@ -1485,6 +1504,10 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		side.heroCommandUsed = true;
 		if(targeted)
 			side.focusFire = pack.focusFire;
+		if(canonicalOrder)
+			side.orderState = pack.orderState;
+		else
+			side.orderState.reset();
 		side.activeDoctrine = HeroCommand::NONE;
 		side.activeOrder = pack.ba.command;
 		return;
@@ -1546,6 +1569,30 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		if(pack.ba.actionType == EActionType::HERO_SPELL)
 			gs.getBattle(pack.battleID)->getSide(pack.ba.side).usedSpellsHistory.push_back(pack.ba.spell);
 	}
+}
+
+void GameStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Missing battle for canonical Hero Order state update");
+	if(!heroCommands::isCanonicalRules(battle->getHeroCommandRules()))
+		throw std::runtime_error("Canonical Hero Order state update in a legacy battle");
+	if(pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)
+		throw std::runtime_error("Invalid side in canonical Hero Order state update");
+	if(pack.state)
+	{
+		pack.state->validateShape();
+		if(pack.state->command != battle->getActiveOrder(pack.side)
+			|| pack.state->issuedRound != battle->getRound()
+			|| !heroCommands::supportedByRules(battle->getHeroCommandRules(), pack.state->command))
+			throw std::runtime_error("Canonical Hero Order state update does not match battle context");
+	}
+	else if(battle->getActiveOrder(pack.side) != HeroCommand::NONE)
+	{
+		throw std::runtime_error("Canonical Hero Order state update would clear an active Order");
+	}
+	battle->setHeroOrderState(pack.side, pack.state);
 }
 
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
@@ -1807,6 +1854,19 @@ void GameStatePackVisitor::visitSetRewardableConfiguration(SetRewardableConfigur
 void BattleStatePackVisitor::visitBattleStackMoved(BattleStackMoved & pack)
 {
 	battleState.moveUnit(pack.stack, pack.tilesToMove.back());
+}
+
+void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)
+{
+	if(pack.battleID != battleState.getBattleID())
+		throw std::runtime_error("Canonical Hero Order state update targets another battle");
+	if(pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)
+		throw std::runtime_error("Invalid side in canonical Hero Order state update");
+	if(pack.state)
+		pack.state->validateShape();
+	else if(battleState.getActiveOrder(pack.side) != HeroCommand::NONE)
+		throw std::runtime_error("Canonical Hero Order state update would clear an active Order");
+	battleState.setHeroOrderState(pack.side, pack.state);
 }
 
 void BattleStatePackVisitor::visitCatapultAttack(CatapultAttack & pack)

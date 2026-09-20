@@ -44,9 +44,19 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int siegeSkillMultiplier = 0;
 	/// Additive ranged premium for this exact primary target; zero is legacy/no mark.
 	int targetedRangedCommandPercent = 0;
+	/// Focus Fire's reduced range/obstacle penalty for this exact primary shot.
+	bool targetedRangedCommand = false;
 	/// Percentage of the target's Creature Defense ignored by this exact attack.  This is
 	/// populated from authoritative saved perk state, not from installed content alone.
 	int luckyRangedDefenseIgnorePercent = 0;
+	/// Additive direct damage component from a canonical New Horizons Order.
+	int heroOrderDamagePercent = 0;
+	/// Physical damage reduction supplied by the defending stack's canonical Order.
+	int heroOrderDamageReductionPercent = 0;
+	/// Final damage multiplier supplied by a canonical Order. This is applied
+	/// after normal additive attack/defense factors so a penalty cannot be
+	/// cancelled by Offense/Archery bonuses. 100 is neutral.
+	int heroOrderFinalDamageMultiplier = 100;
 
 	/// Which of the bonus types the script declared an interest in each of the two carries
 	std::unordered_map<std::string, bool> attackerBonuses;
@@ -71,8 +81,14 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("chargeDistance", chargeDistance, "Hexes crossed to reach the target, which is what jousting scales with.");
 		s("shooting", shooting, "Whether the blow is a shot.");
 		s("targetedRangedCommandPercent", targetedRangedCommandPercent, "Target-specific additive ranged premium.");
+		s("targetedRangedCommand", targetedRangedCommand, "Whether Focus Fire halves range and obstacle penalties for this primary shot.");
 		s("luckyRangedDefenseIgnorePercent", luckyRangedDefenseIgnorePercent,
 			"Percentage of target Creature Defense ignored by this lucky ranged attack.");
+		s("heroOrderDamagePercent", heroOrderDamagePercent, "Direct damage component from the active canonical Order.");
+		s("heroOrderDamageReductionPercent", heroOrderDamageReductionPercent,
+			"Physical damage reduction supplied by the defending canonical Order.");
+		s("heroOrderFinalDamageMultiplier", heroOrderFinalDamageMultiplier,
+			"Final multiplicative damage percentage supplied by the active canonical Order; 100 is neutral.");
 		s("luckyStrike", luckyStrike, "Whether luck struck.");
 		s("unluckyStrike", unluckyStrike, "Whether bad luck struck.");
 		s("deathBlow", deathBlow, "Whether a death blow was rolled.");

@@ -115,6 +115,7 @@ public:
 	virtual void visitBattleUnitsChanged(BattleUnitsChanged & pack) {}
 	virtual void visitBattleAttack(BattleAttack & pack) {}
 	virtual void visitStartAction(StartAction & pack) {}
+	virtual void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) {}
 	virtual void visitEndAction(EndAction & pack) {}
 	virtual void visitBattleSpellCast(BattleSpellCast & pack) {}
 	virtual void visitSetStackEffect(SetStackEffect & pack) {}
