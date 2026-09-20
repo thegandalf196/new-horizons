@@ -81,7 +81,8 @@ void ServerCallbackProxy::registerMethods(MethodRegistrar & R)
 		{
 			{"battle", "Battle",  "Battle in which damage is dealt."},
 			{"unit",   "Unit",    "Target unit."},
-			{"damage", "integer", "Damage points to deal (will be clamped to remaining health)."}
+			{"damage", "integer", "Damage points to deal (will be clamped to remaining health)."},
+			{"destroyRemains", "boolean?", "Optional: casualties killed by this hit leave no usable remains."}
 		},
 		{"integer, integer", "Damage actually dealt, and the count of killed creatures."},
 		"Damages the unit, returning the actual damage dealt and the number of killed creatures.");
@@ -486,13 +487,16 @@ int ServerCallbackProxy::damageUnit(lua_State * L)
 	S.getNonNull(2, battle);
 	S.getNonNull(3, unit);
 	S.get(4, damageAmount);
+	bool destroyRemains = false;
+	if(S.stackSize() >= 5)
+		S.get(5, destroyRemains);
 
 	BattleStackAttacked bsa;
 	bsa.damageAmount = damageAmount;
 	bsa.stackAttacked = unit->unitId();
 	bsa.attackerID = -1;
 	auto newState = unit->acquireState();
-	CStack::prepareAttacked(bsa, *object->getRNG(), newState);
+	CStack::prepareAttacked(bsa, *object->getRNG(), newState, destroyRemains);
 
 	StacksInjured si;
 	si.battleID = battle->getBattle()->getBattleID();

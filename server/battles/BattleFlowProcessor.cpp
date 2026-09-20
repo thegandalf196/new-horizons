@@ -26,10 +26,38 @@
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/spells/BonusCaster.h"
 #include "../../lib/spells/ISpellMechanics.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/ObstacleCasterProxy.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/battle/CObstacleInstance.h"
 
 #include <vstd/RNG.h>
+
+namespace
+{
+	// Legacy obstacle callbacks are movement-driven.  Canonical New Horizons
+	// Fire Wall additionally triggers at activation start, but dispatching the
+	// generic callback for every activation would alter legacy obstacle timing.
+	// Keep this check narrow so only a unit currently standing on a canonical
+	// Fire Wall receives the extra activation callback.
+	bool canonicalFireWallCoversUnit(const CBattleInfoCallback & battle, const battle::Unit & unit)
+	{
+		if(!newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules()))
+			return false;
+
+		for(const auto & hex : unit.getHexes())
+		{
+			for(const auto & obstacle : battle.battleGetAllObstaclesOnPos(hex, false))
+			{
+				const auto * spellObstacle = dynamic_cast<const SpellCreatedObstacle *>(obstacle.get());
+				if(spellObstacle && newHorizonsMagic::isFireWall(SpellID(spellObstacle->ID)))
+					return true;
+			}
+		}
+
+		return false;
+	}
+}
 
 BattleFlowProcessor::BattleFlowProcessor(BattleProcessor * owner, CGameHandler * newGameHandler)
 	: owner(owner)
@@ -238,7 +266,8 @@ void BattleFlowProcessor::activateNextStack(const CBattleInfoCallback & battle)
 		{
 			if(next->alive()) {
 				setActiveStack(battle, next, BattleUnitTurnReason::TURN_QUEUE);
-				break;
+				if(next->alive())
+					break;
 			}
 		}
 	}
@@ -704,6 +733,12 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		{
 			publishHeroOrderState(battle, ba.side);
 			setActiveStack(battle, target, BattleUnitTurnReason::HERO_COMMAND);
+			// Fire Wall is checked at the start of a genuine Second Wind
+			// activation. A lethal trigger must immediately hand flow back to
+			// the queue (or finish the battle), rather than leaving a dead stack
+			// as the active unit with no request outstanding.
+			if(!target->alive())
+				activateNextStack(battle);
 			return;
 		}
 	}
@@ -729,6 +764,11 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		{
 			// Good morale - same stack makes 2nd turn
 			setActiveStack(battle, actedStack, BattleUnitTurnReason::MORALE);
+			// A passable Fire Wall can kill the stack before the morale action
+			// starts. Continue normal battle flow in that case; otherwise the
+			// dead stack would remain active indefinitely.
+			if(!actedStack->alive())
+				activateNextStack(battle);
 			return;
 		}
 	}
@@ -771,6 +811,14 @@ bool BattleFlowProcessor::makeAutomaticAction(const CBattleInfoCallback & battle
 	bsa.stack = stack->unitId();
 	bsa.reason = BattleUnitTurnReason::AUTOMATIC_ACTION;
 	gameHandler->sendAndApply(bsa);
+	// Automatic actions still represent a fresh creature activation. Trigger
+	// passable Fire Wall footprints after the authoritative nextTurn packet so
+	// their activation serial is current and movement callbacks cannot repeat
+	// the same damage.
+	if(canonicalFireWallCoversUnit(battle, *stack))
+		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
+	if(!stack->alive())
+		return true;
 
 	bool ret = owner->makeAutomaticBattleAction(battle, ba);
 	return ret;
@@ -921,6 +969,18 @@ void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 	sas.stack = stack->unitId();
 	sas.reason = reason;
 	gameHandler->sendAndApply(sas);
+	bool secondWindActivation = false;
+	if(reason == BattleUnitTurnReason::HERO_COMMAND)
+	{
+		const auto state = battle.battleGetHeroOrderState(stack->unitSide());
+		secondWindActivation = state
+			&& state->command == HeroCommand::SECOND_WIND
+			&& state->secondWindActive
+			&& state->primaryTargetUnitId == stack->unitId();
+	}
+	if((reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::MORALE || secondWindActivation)
+		&& canonicalFireWallCoversUnit(battle, *stack))
+		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
 }
 
 double BattleFlowProcessor::calculateTowerAttackValue(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * target) const

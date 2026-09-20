@@ -1856,9 +1856,16 @@ bool CBattleInfoCallback::handleObstacleTriggersForUnit(SpellCastEnvironment & s
 			// units neither consume the mine nor leak its position.
 			const bool canonicalLandMine = newHorizonsMagic::rulesActive(getBattle()->getMagicRules())
 				&& newHorizonsMagic::isLandMine(SpellID(spellObstacle->ID));
+			const bool canonicalFireWall = newHorizonsMagic::rulesActive(getBattle()->getMagicRules())
+				&& newHorizonsMagic::isFireWall(SpellID(spellObstacle->ID));
+			const bool alreadyTriggeredThisActivation = canonicalFireWall
+				&& spellObstacle->lastTriggerUnit == static_cast<si32>(unit.unitId())
+				&& spellObstacle->lastTriggerActivation == getBattle()->getActivationSerial();
 			if(canonicalLandMine
 				&& (unit.hasBonusOfType(BonusType::FLYING)
 					|| battleGetOwner(&unit) == getBattle()->getSidePlayer(spellObstacle->casterSide)))
+				continue;
+			if(canonicalFireWall && (unit.hasBonusOfType(BonusType::FLYING) || alreadyTriggeredThisActivation))
 				continue;
 
 			auto revealObstacles = [&](const SpellCreatedObstacle & spellObstacle) -> void
@@ -1868,9 +1875,14 @@ bool CBattleInfoCallback::handleObstacleTriggersForUnit(SpellCastEnvironment & s
 				if (spellObstacle.removeOnTrigger)
 					operation = ObstacleChanges::EOperation::REMOVE;
 
-				SpellCreatedObstacle changedObstacle;
+				SpellCreatedObstacle changedObstacle = spellObstacle;
 				changedObstacle.uniqueID = spellObstacle.uniqueID;
 				changedObstacle.revealed = true;
+				if(canonicalFireWall)
+				{
+					changedObstacle.lastTriggerUnit = static_cast<si32>(unit.unitId());
+					changedObstacle.lastTriggerActivation = getBattle()->getActivationSerial();
+				}
 
 				BattleObstaclesChanged bocp;
 				bocp.battleID = getBattle()->getBattleID();
@@ -1891,6 +1903,8 @@ bool CBattleInfoCallback::handleObstacleTriggersForUnit(SpellCastEnvironment & s
 			{
 				const auto * sp = obstacle->getTrigger().toSpell();
 				auto cast = spells::BattleCast(this, &caster, spells::Mode::PASSIVE, sp);
+				if(canonicalFireWall)
+					cast.setForceNonSmartTargeting(true);
 				spells::detail::ProblemImpl ignored;
 				auto target = spells::Target(1, spells::Destination(&unit));
 				if(sp->battleMechanics(&cast)->canBeCastAt(target, ignored)) // Obstacles should not be revealed by immune creatures

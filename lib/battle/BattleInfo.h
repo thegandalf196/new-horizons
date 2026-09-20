@@ -31,6 +31,7 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	BattleSideArray<SideInBattle> sides; //sides[0] - attacker, sides[1] - defender
 	std::unique_ptr<BattleLayout> layout;
 	si32 round;
+	si32 activationSerial = 0;
 	JsonNode heroCommandRules;
 	JsonNode magicRules;
 	newHorizonsCreatures::CreatureCategoryRules creatureCategoryRules;
@@ -83,6 +84,10 @@ public:
 		h & battleID;
 		h & sides;
 		h & round;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))
+			h & activationSerial;
+		else if(!h.saving)
+			activationSerial = 0;
 		h & activeStack;
 		h & townID;
 		h & tile;
@@ -177,6 +182,7 @@ public:
 	ui8 getTacticDist() const override;
 	BattleSide getTacticsSide() const override;
 	int32_t getRound() const override;
+	int32_t getActivationSerial() const override { return activationSerial; }
 
 	const CGTownInstance * getDefendedTown() const override;
 	EWallState getWallState(EWallPart partOfWall) const override;

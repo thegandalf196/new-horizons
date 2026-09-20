@@ -75,6 +75,52 @@ TEST_F(HealTest, ApplicableToWoundedUnit)
 	EXPECT_TRUE(subject->applicableTarget(problemMock, &mechanicsMock, target));
 }
 
+TEST_F(HealTest, NotApplicableWhenAllCasualtiesHaveUnusableRemains)
+{
+	JsonNode config;
+	config["healLevel"].String() = "resurrect";
+	EffectFixture::setupEffect(config);
+
+	auto & unit = unitsFake.add(BattleSide::ATTACKER);
+	unit.addNewBonus(std::make_shared<Bonus>(
+		BonusDuration::PERMANENT, BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, 100, BonusSourceID()));
+	unitsFake.setDefaultBonusExpectations();
+
+	EXPECT_CALL(unit, isValidTarget(Eq(true))).WillOnce(Return(true));
+	EXPECT_CALL(unit, getTotalHealth()).WillOnce(Return(1000));
+	EXPECT_CALL(unit, getAvailableHealth()).WillOnce(Return(0));
+	EXPECT_CALL(unit, getUnusableRemains()).WillOnce(Return(10));
+	EXPECT_CALL(mechanicsMock, isSmart()).Times(AtMost(1)).WillRepeatedly(Return(false));
+
+	Target target;
+	target.emplace_back(&unit, BattleHex());
+
+	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, target));
+}
+
+TEST_F(HealTest, ApplicableWhenOrdinaryCasualtiesRemainAlongsideUnusableRemains)
+{
+	JsonNode config;
+	config["healLevel"].String() = "resurrect";
+	EffectFixture::setupEffect(config);
+
+	auto & unit = unitsFake.add(BattleSide::ATTACKER);
+	unit.addNewBonus(std::make_shared<Bonus>(
+		BonusDuration::PERMANENT, BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, 100, BonusSourceID()));
+	unitsFake.setDefaultBonusExpectations();
+
+	EXPECT_CALL(unit, isValidTarget(Eq(true))).WillOnce(Return(true));
+	EXPECT_CALL(unit, getTotalHealth()).WillOnce(Return(1000));
+	EXPECT_CALL(unit, getAvailableHealth()).WillOnce(Return(0));
+	EXPECT_CALL(unit, getUnusableRemains()).WillOnce(Return(2));
+	EXPECT_CALL(mechanicsMock, isSmart()).WillOnce(Return(false));
+
+	Target target;
+	target.emplace_back(&unit, BattleHex());
+
+	EXPECT_TRUE(subject->applicableTarget(problemMock, &mechanicsMock, target));
+}
+
 TEST_F(HealTest, ApplicableIfActuallyResurrects)
 {
 	{

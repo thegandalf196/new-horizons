@@ -160,18 +160,18 @@ std::string CStack::nodeName() const
 	return oss.str();
 }
 
-void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand) const
+void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, bool destroyRemains) const
 {
 	auto newState = acquireState();
-	prepareAttacked(bsa, rand, newState);
+	prepareAttacked(bsa, rand, newState, destroyRemains);
 }
 
-void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, const std::shared_ptr<battle::CUnitState> & customState)
+void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, const std::shared_ptr<battle::CUnitState> & customState, bool destroyRemains)
 {
 	auto initialCount = customState->getCount();
 
 	// compute damage and update bsa.damageAmount
-	customState->damage(bsa.damageAmount);
+	customState->damage(bsa.damageAmount, destroyRemains);
 
 	bsa.killedAmount = initialCount - customState->getCount();
 
@@ -211,15 +211,29 @@ void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, const 
 
 			if(resurrectedCount > 0)
 			{
-				customState->casts.use();
-				bsa.flags |= BattleStackAttacked::REBIRTH;
 				int64_t toHeal = customState->getMaxHealth() * resurrectedCount;
 				//TODO: add one-battle rebirth?
-				customState->heal(toHeal, EHealLevel::RESURRECT, EHealPower::PERMANENT);
-				customState->counterAttacks.use(customState->counterAttacks.available());
+				auto rebirth = customState->heal(toHeal, EHealLevel::RESURRECT, EHealPower::PERMANENT);
+				if(rebirth.resurrectedCount > 0)
+				{
+					customState->casts.use();
+					bsa.flags |= BattleStackAttacked::REBIRTH;
+					customState->counterAttacks.use(customState->counterAttacks.available());
+				}
 			}
 		}
 	}
+
+	// New Horizons' disintegration-style damage gets one chance to trigger
+	// rebirth above, then permanently removes a stack that still has no living
+	// remains.  This mirrors the legacy ghost path without changing ordinary
+	// weapon damage or the legacy DISINTEGRATE bonus.
+	// Remove the corpse only when every creature in the original stack has
+	// unusable remains. A lethal Disintegrate hit after ordinary casualties must
+	// leave those earlier bodies available to resurrection and Necromancy.
+	if(destroyRemains && !customState->alive()
+		&& customState->getUnusableRemains() >= customState->unitBaseAmount())
+		customState->ghostPending = true;
 
 	bsa.newState.data = customState->save();
 	bsa.newState.healthDelta = -bsa.damageAmount;

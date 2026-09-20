@@ -45,7 +45,7 @@ SpellCreatedObstacle SpellObstacleDescriptor::toObstacle() const
 	// are being upgraded together.  Legacy mines use divisor 1 and/or no exact
 	// damage value, so they retain floor semantics.
 	obstacle.damageSnapshot  = damageSnapshot
-		|| (obstacle.ID == SpellID(SpellID::LAND_MINE)
+		|| (SpellID(obstacle.ID) == SpellID::LAND_MINE
 			&& casterPowerDivisor == newHorizonsMagic::DIRECT_DAMAGE_POWER_DIVISOR
 			&& minimalDamage > 0 && hidden && !nativeVisible && removeOnTrigger);
 

@@ -48,6 +48,7 @@ UnitFake & UnitsFake::add(BattleSide side)
 {
 	auto * unit = new UnitFake();
 	ON_CALL(*unit, unitSide()).WillByDefault(Return(side));
+	ON_CALL(*unit, getUnusableRemains()).WillByDefault(Return(0));
 	unit->redirectBonusesToFake();
 
 	allUnits.emplace_back(unit);

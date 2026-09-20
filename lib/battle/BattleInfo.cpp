@@ -817,6 +817,25 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 
 	CStack * st = getStack(activeStack);
 
+	// A hero/creature spell that does not consume the active unit's turn is a
+	// continuation of the same activation.  Keep the Fire Wall activation token
+	// stable across those transitions, otherwise a repeated movement callback
+	// could deal the same wall damage twice.  HERO_COMMAND is normally another
+	// continuation, except for the explicit Second Wind activation whose state
+	// is armed before the transition is published.
+	bool newActivation = reason != BattleUnitTurnReason::HERO_SPELLCAST
+		&& reason != BattleUnitTurnReason::UNIT_SPELLCAST;
+	if(reason == BattleUnitTurnReason::HERO_COMMAND)
+	{
+		const auto & orderState = sides.at(st->unitSide()).orderState;
+		newActivation = orderState
+			&& orderState->command == HeroCommand::SECOND_WIND
+			&& orderState->secondWindActive
+			&& orderState->primaryTargetUnitId == unitId;
+	}
+	if(newActivation && activationSerial < std::numeric_limits<si32>::max())
+		++activationSerial;
+
 	if (reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
 	{
 		//remove bonuses that last until when stack gets new turn
@@ -1098,8 +1117,13 @@ void BattleInfo::updateObstacle(const ObstacleChanges& changes)
 			auto * spellObstacle = dynamic_cast<SpellCreatedObstacle *>(obstacle.get());
 			assert(spellObstacle);
 
-			// Currently we only support to update the "revealed" property
+			// Most legacy obstacle updates only change visibility.  Canonical
+			// New Horizons Fire Wall also publishes its per-activation trigger
+			// token, which must be retained on the authoritative obstacle or a
+			// repeated movement callback could deal damage twice.
 			spellObstacle->revealed = changedObstacle->revealed;
+			spellObstacle->lastTriggerUnit = changedObstacle->lastTriggerUnit;
+			spellObstacle->lastTriggerActivation = changedObstacle->lastTriggerActivation;
 
 			break;
 		}

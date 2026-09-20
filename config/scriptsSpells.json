@@ -48,7 +48,8 @@
 				"chainLength" : { "type" : "number" },
 				"chainFactor" : { "type" : "number" },
 				"killByPercentage" : { "type" : "boolean" },
-				"killByCount" : { "type" : "boolean" }
+				"killByCount" : { "type" : "boolean" },
+				"destroyRemains" : { "type" : "boolean" }
 			},
 			"additionalProperties" : false
 		}

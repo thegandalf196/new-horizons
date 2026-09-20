@@ -174,6 +174,11 @@ BattleCast::OptionalValue BattleCast::getOvercharge() const
 	return overcharge;
 }
 
+bool BattleCast::getForceNonSmartTargeting() const
+{
+	return forceNonSmartTargeting;
+}
+
 bool BattleCast::getSelectiveDispel() const
 {
 	return selectiveDispel;
@@ -222,6 +227,11 @@ void BattleCast::setEffectDuration(BattleCast::Value value)
 void BattleCast::setOvercharge(BattleCast::Value value)
 {
 	overcharge = std::make_optional(value);
+}
+
+void BattleCast::setForceNonSmartTargeting(bool value)
+{
+	forceNonSmartTargeting = value;
 }
 
 void BattleCast::setSelectiveDispel(bool value)
@@ -355,6 +365,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	counterspellNegated = event->isCounterspellNegated();
 	selectiveDispel = event->getSelectiveDispel();
 	massSlow = event->getMassSlow();
+	forceNonSmartTargeting = event->getForceNonSmartTargeting();
 	{
 		const auto value = event->getEffectValue();
 		if(value.has_value())
@@ -485,6 +496,9 @@ int32_t BaseMechanics::getSpellLevel() const
 
 bool BaseMechanics::isSmart() const
 {
+	if(forceNonSmartTargeting)
+		return false;
+
 	// Selective Dispel explicitly lets the caster choose either a friendly or
 	// enemy stack.  The ordinary basic-level Dispel smart-target restriction
 	// would otherwise hide the enemy half of the perk.

@@ -37,6 +37,10 @@ public:
 	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
 	/// The server validates perk ownership, availability and cost.
 	bool spellMassSlow = false;
+	/// Canonical New Horizons Fire Wall placement direction.  The action's
+	/// target contains the selected start hex; the server derives and validates
+	/// the remaining two line hexes from this direction before casting.
+	BattleHex::EDir spellFireWallDirection = BattleHex::NONE;
 	HeroCommand command = HeroCommand::NONE;
 
 	BattleAction();
@@ -87,6 +91,9 @@ public:
 		if(h.saving && spellMassSlow
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
 			throw std::runtime_error("Cannot serialize Temporal Field to an older protocol");
+		if(h.saving && spellFireWallDirection != BattleHex::NONE
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))
+			throw std::runtime_error("Cannot serialize Fire Wall direction to an older protocol");
 		if(h.saving && spell == SpellID(SpellID::LAND_MINE)
 			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE))
 			throw std::runtime_error("Cannot serialize multi-hex Land Mine action to an older protocol");
@@ -118,6 +125,14 @@ public:
 		else if(!h.saving)
 		{
 			spellMassSlow = false;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))
+		{
+			h & spellFireWallDirection;
+		}
+		else if(!h.saving)
+		{
+			spellFireWallDirection = BattleHex::NONE;
 		}
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
 		{

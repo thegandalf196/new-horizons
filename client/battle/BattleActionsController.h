@@ -72,6 +72,12 @@ class BattleActionsController
 	/// still validates the complete request before applying it.
 	std::vector<BattleHex> landMineSelectedHexes;
 
+	/// Two-click selector state for canonical New Horizons Fire Wall.  The
+	/// first click chooses the line's start; the second click chooses one of
+	/// its six adjacent directions.  Only the compact start+direction action is
+	/// sent to the server.
+	BattleHex fireWallSelectedStart = BattleHex::INVALID;
+
 	bool isCastingPossibleHere (const CSpell * spell, const CStack *shere, const BattleHex & myNumber);
 	std::vector<PossiblePlayerBattleAction> getPossibleActionsForStack (const CStack *stack) const; //called when stack gets its turn
 	void reorderPossibleActionsPriority(const CStack * stack, const CStack * targetStack);
@@ -106,6 +112,9 @@ class BattleActionsController
 	bool landMinePlacementTargetsValid() const;
 	void updateLandMinePlacementStatus(const BattleHex & hoveredHex);
 	void selectOrUndoLandMineHex(const BattleHex & clickedHex);
+	void updateFireWallPlacementStatus(const BattleHex & hoveredHex);
+	void selectFireWallStartOrDirection(const BattleHex & clickedHex);
+	bool fireWallPlacementLineIsLegal(const BattleHex & start, BattleHex::EDir direction) const;
 
 public:
 	BattleActionsController(BattleInterface & owner);
@@ -130,6 +139,15 @@ public:
 	bool landMinePlacementHexIsSelected(const BattleHex & hex) const;
 	/// Return all currently legal empty placement candidates.
 	BattleHexArray getLandMinePlacementLegalHexes() const;
+
+	/// True only for the saved-ruleset canonical Fire Wall selector.
+	bool fireWallPlacementModeActive() const;
+	bool fireWallPlacementStartSelected() const;
+	BattleHex fireWallPlacementStart() const;
+	bool fireWallPlacementStartIsLegal(const BattleHex & hex) const;
+	bool fireWallPlacementEndpointIsLegal(const BattleHex & hex) const;
+	BattleHexArray getFireWallPlacementLegalStartHexes() const;
+	BattleHexArray getFireWallPlacementLegalEndpoints() const;
 
 	/// Confirm the exact selection after revalidating the live battle snapshot.
 	void confirmLandMinePlacement();

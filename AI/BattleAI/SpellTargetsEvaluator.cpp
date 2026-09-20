@@ -11,7 +11,9 @@
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/CObstacleInstance.h"
+#include "AttackPossibility.h"
 #include "../../lib/spells/Problem.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/CRandomGenerator.h"
 #include "SpellTargetsEvaluator.h"
 #include <vcmi/spells/Spell.h>
@@ -36,6 +38,293 @@ bool isPhysicalObstacle(const CObstacleInstance & obstacle)
 	// obstacles cover siege/fortification-like scenery and are rejected by the
 	// authoritative Transfigure Matter script.
 	return obstacle.obstacleType == CObstacleInstance::USUAL;
+}
+
+bool isCanonicalLandMine(const Mechanics * spellMechanics)
+{
+	return spellMechanics
+		&& spellMechanics->usesNewHorizonsMagic()
+		&& newHorizonsMagic::isLandMine(spellMechanics->getSpellId());
+}
+
+bool isCanonicalFireWall(const Mechanics * spellMechanics)
+{
+	return spellMechanics
+		&& spellMechanics->usesNewHorizonsMagic()
+		&& newHorizonsMagic::isFireWall(spellMechanics->getSpellId());
+}
+
+bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle,
+	const AccessibilityInfo & accessibility, const BattleHex & hex)
+{
+	// Keep this predicate in lockstep with the authoritative action validator.
+	// In particular, ACCESSIBLE is intentionally stricter than merely
+	// passable: a gate, wall, side column, moat, or destructible wall is not a
+	// legal canonical mine tile.
+	if(!hex.isAvailable()
+		|| accessibility[hex.toInt()] != EAccessibility::ACCESSIBLE
+		|| battle.battleGetUnitByPos(hex, true)
+		|| !battle.battleGetAllObstaclesOnPos(hex, false).empty())
+		return false;
+
+	if(!battle.hasFortifications())
+		return true;
+
+	const auto wallPart = battle.battleHexToWallPart(hex);
+	if(wallPart == EWallPart::INVALID)
+		return true;
+	if(wallPart == EWallPart::INDESTRUCTIBLE_PART
+		|| wallPart == EWallPart::INDESTRUCTIBLE_PART_OF_GATE
+		|| wallPart == EWallPart::BOTTOM_TOWER
+		|| wallPart == EWallPart::UPPER_TOWER)
+		return false;
+
+	const auto wallState = battle.battleGetWallState(wallPart);
+	return wallState == EWallState::NONE || wallState == EWallState::DESTROYED;
+}
+
+struct LandMineHexScore
+{
+	BattleHex hex;
+	int64_t score = 0;
+	std::vector<uint32_t> adjacentEnemies;
+};
+
+bool isGroundHostile(const Mechanics * spellMechanics, const battle::Unit * unit)
+{
+	if(!unit || !unit->alive() || unit->isGhost() || !unit->isValidTarget() || unit->isTurret())
+		return false;
+	if(unit->hasBonusOfType(BonusType::FLYING))
+		return false;
+	return spellMechanics->battle()->battleGetOwner(unit) != spellMechanics->getCasterColor();
+}
+
+bool isGroundAlly(const Mechanics * spellMechanics, const battle::Unit * unit)
+{
+	if(!unit || !unit->alive() || unit->isGhost() || !unit->isValidTarget() || unit->isTurret())
+		return false;
+	if(unit->hasBonusOfType(BonusType::FLYING))
+		return false;
+	return spellMechanics->battle()->battleGetOwner(unit) == spellMechanics->getCasterColor();
+}
+
+uint64_t landMineDamagePotential(const Mechanics * spellMechanics, const battle::Unit * enemy)
+{
+	const auto adjustedDamage = std::max<int64_t>(0, spellMechanics->adjustEffectValue(enemy));
+	return std::min<uint64_t>(static_cast<uint64_t>(adjustedDamage), enemy->getAvailableHealth());
+}
+
+bool isLandMineAffectable(const Mechanics * spellMechanics, const battle::Unit * enemy)
+{
+	if(!isGroundHostile(spellMechanics, enemy)
+		|| !spellMechanics->isReceptive(enemy)
+		|| enemy->hasImmunity(spellMechanics->getSpellId())
+		|| enemy->hasAbsoluteImmunity(spellMechanics->getSpellId())
+		|| enemy->isInvincible())
+		return false;
+
+	const int resistance = std::clamp(enemy->magicResistance(), 0, 100);
+	return resistance < 100 && landMineDamagePotential(spellMechanics, enemy) > 0;
+}
+
+std::vector<const battle::Unit *> landMineEnemies(const Mechanics * spellMechanics)
+{
+	std::vector<const battle::Unit *> result;
+	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+		if(isLandMineAffectable(spellMechanics, unit))
+			result.push_back(unit);
+	return result;
+}
+
+std::vector<const battle::Unit *> landMineAllies(const Mechanics * spellMechanics)
+{
+	std::vector<const battle::Unit *> result;
+	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+		if(isGroundAlly(spellMechanics, unit))
+			result.push_back(unit);
+	return result;
+}
+
+int distanceToUnit(const BattleHex & hex, const battle::Unit * unit)
+{
+	int result = std::numeric_limits<int>::max();
+	for(const auto & occupied : unit->getHexes())
+		if(occupied.isValid())
+			result = std::min(result, static_cast<int>(BattleHex::getDistance(hex, occupied)));
+	return result;
+}
+
+int distanceToFootprint(const spells::Target & target, const battle::Unit * unit)
+{
+	int result = std::numeric_limits<int>::max();
+	for(const auto & destination : target)
+	{
+		if(destination.unitValue != nullptr || !destination.hexValue.isValid())
+			continue;
+		result = std::min(result, distanceToUnit(destination.hexValue, unit));
+	}
+	return result;
+}
+
+float fireWallTriggerLikelihood(const spells::Target & target, const battle::Unit * unit)
+{
+	const int distance = distanceToFootprint(target, unit);
+	if(distance == std::numeric_limits<int>::max())
+		return 0.0f;
+
+	const int movement = std::max(0, static_cast<int>(unit->getMovementRange(0)));
+	if(distance <= 1)
+		return 0.75f;
+	if(distance <= movement + 1)
+		return 0.45f;
+	if(distance <= movement + 3)
+		return 0.20f;
+	return 0.05f;
+}
+
+LandMineHexScore scoreLandMineHex(const Mechanics * spellMechanics, const BattleHex & hex,
+	const std::vector<const battle::Unit *> & enemies,
+	const std::vector<const battle::Unit *> & allies)
+{
+	LandMineHexScore result;
+	result.hex = hex;
+
+	// A mine directly adjacent to a ground enemy is the strongest pressure: it
+	// punishes the next step and blocks the most obvious melee approach.  The
+	// remaining terms keep mines useful when no adjacent tile is available by
+	// favouring reachable-looking ground paths toward our army.
+	for(const auto * enemy : enemies)
+	{
+		const int enemyDistance = distanceToUnit(hex, enemy);
+		if(enemyDistance == std::numeric_limits<int>::max())
+			continue;
+		// Placement must follow the value of the delayed damage, rather than the
+		// number of hostile stacks alone.  In particular, immune and fully
+		// resistant clusters are absent from `enemies` and cannot pull every mine
+		// away from a susceptible stack elsewhere on the battlefield.
+		const auto damageValue = landMineDamagePotential(spellMechanics, enemy);
+		if(damageValue == 0)
+			continue;
+
+		const bool adjacent = enemyDistance == 1;
+		const int movement = static_cast<int>(enemy->getMovementRange(0));
+		if(adjacent)
+			result.score += 100000 * static_cast<int64_t>(damageValue);
+		else if(enemyDistance <= movement + 1)
+			result.score += (25000 + (movement + 1 - enemyDistance) * 1000)
+				* static_cast<int64_t>(damageValue);
+		else
+			result.score += static_cast<int64_t>(std::max(0, 6000 - enemyDistance * 250))
+				* static_cast<int64_t>(damageValue);
+
+		if(adjacent)
+			result.adjacentEnemies.push_back(enemy->unitId());
+
+		// Prefer a hex on the geometric shortest corridor from an enemy to one of
+		// our ground units.  This is only a tie-breaker behind adjacency/range,
+		// but avoids putting every mine in an irrelevant corner of the field.
+		int closestAllyDistance = std::numeric_limits<int>::max();
+		for(const auto * ally : allies)
+			closestAllyDistance = std::min(closestAllyDistance, distanceToUnit(enemy->getPosition(), ally));
+		if(closestAllyDistance != std::numeric_limits<int>::max())
+		{
+			const int candidateToAlly = [&]()
+			{
+				int distance = std::numeric_limits<int>::max();
+				for(const auto * ally : allies)
+					distance = std::min(distance, distanceToUnit(hex, ally));
+				return distance;
+			}();
+			if(candidateToAlly < closestAllyDistance)
+				result.score += (closestAllyDistance - candidateToAlly) * 100;
+		}
+	}
+
+	return result;
+}
+
+float landMineTriggerLikelihood(const BattleHex & hex, const battle::Unit * enemy)
+{
+	const int distance = distanceToUnit(hex, enemy);
+	if(distance == std::numeric_limits<int>::max())
+		return 0.0f;
+
+	// A placed mine is a delayed threat, not an immediate attack.  Keep the
+	// expected trigger contribution on the same scale as a direct attack and
+	// deliberately discount tiles which are not on the enemy's next approach.
+	// The exact values are a stable ranking heuristic; the authoritative script
+	// still decides whether and when a unit actually enters a mine.
+	const int movement = std::max(0, static_cast<int>(enemy->getMovementRange(0)));
+	if(distance <= 1)
+		return 0.75f;
+	if(distance <= movement + 1)
+		return 0.45f;
+	if(distance <= movement + 3)
+		return 0.20f;
+	return 0.05f;
+}
+
+double maximumWeightLandMineAssignment(const std::vector<std::vector<double>> & enemyValues,
+	size_t mineCount)
+{
+	if(enemyValues.empty() || mineCount == 0)
+		return 0.0;
+
+	// Canonical Land Mine casts contain two to four mines.  A bitmask DP is
+	// therefore small enough to enumerate every one-enemy/one-mine assignment,
+	// while avoiding greedy collisions such as A:[.75,.75], B:[.75,.45].
+	const size_t assignmentCount = size_t{1} << mineCount;
+	std::vector<double> best(assignmentCount, 0.0);
+	for(const auto & enemy : enemyValues)
+	{
+		std::vector<double> next = best; // This enemy may remain unassigned.
+		for(size_t assignment = 0; assignment < assignmentCount; ++assignment)
+		{
+			for(size_t mine = 0; mine < mineCount; ++mine)
+			{
+				if(assignment & (size_t{1} << mine))
+					continue;
+				const size_t withMine = assignment | (size_t{1} << mine);
+				next[withMine] = std::max(next[withMine], best[assignment] + enemy[mine]);
+			}
+		}
+		best.swap(next);
+	}
+
+	return *std::max_element(best.begin(), best.end());
+}
+
+std::vector<LandMineHexScore> legalLandMineHexes(const Mechanics * spellMechanics)
+{
+	std::vector<LandMineHexScore> result;
+	const auto * battle = spellMechanics->battle();
+	const auto accessibility = battle->getAccessibility();
+	const auto enemies = landMineEnemies(spellMechanics);
+	const auto allies = landMineAllies(spellMechanics);
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(!canonicalLandMineHexIsEmpty(*battle, accessibility, hex))
+			continue;
+		result.push_back(scoreLandMineHex(spellMechanics, hex, enemies, allies));
+	}
+	return result;
+}
+
+bool targetUsesDistinctLegalLandMineHexes(const Mechanics * spellMechanics, const Target & target)
+{
+	const auto * battle = spellMechanics->battle();
+	const auto accessibility = battle->getAccessibility();
+	std::set<int> seen;
+	for(const auto & destination : target)
+	{
+		if(destination.unitValue != nullptr
+			|| !destination.hexValue.isValid()
+			|| !seen.insert(destination.hexValue.toInt()).second
+			|| !canonicalLandMineHexIsEmpty(*battle, accessibility, destination.hexValue))
+			return false;
+	}
+	return true;
 }
 
 std::vector<Target> physicalObstacleTargets(const Mechanics * spellMechanics)
@@ -70,6 +359,11 @@ std::vector<Target> physicalObstacleTargets(const Mechanics * spellMechanics)
 
 std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spellMechanics)
 {
+	if(isCanonicalFireWall(spellMechanics))
+		return canonicalFireWallTargets(spellMechanics);
+	if(isCanonicalLandMine(spellMechanics))
+		return canonicalLandMineTargets(spellMechanics);
+
 	std::vector<Target> result;
 	std::vector<AimType> targetTypes = spellMechanics->getTargetTypes();
 	if(isTransfigureMatter(spellMechanics))
@@ -102,6 +396,258 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spe
 		default:
 			return result;
 	}
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalFireWallTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	const auto * battle = spellMechanics->battle();
+	const auto accessibility = battle->getAccessibility();
+
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex start(index);
+		if(!canonicalLandMineHexIsEmpty(*battle, accessibility, start))
+			continue;
+
+		for(const auto direction : BattleHex::hexagonalDirections())
+		{
+			Target line;
+			BattleHex current = start;
+			bool legal = true;
+			for(int length = 0; length < 3; ++length)
+			{
+				if(!canonicalLandMineHexIsEmpty(*battle, accessibility, current))
+				{
+					legal = false;
+					break;
+				}
+				line.emplace_back(current);
+				if(length != 2)
+					current = current.cloneInDirection(direction, false);
+			}
+			if(!legal)
+				continue;
+
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(line, problem))
+				result.push_back(std::move(line));
+		}
+	}
+
+	return result;
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalLandMineTargets(const Mechanics * spellMechanics)
+{
+	const int required = newHorizonsMagic::landMineHexCount(spellMechanics->getEffectPower());
+	auto candidates = legalLandMineHexes(spellMechanics);
+	if(candidates.size() < static_cast<size_t>(required))
+		return {};
+
+	// Greedy coverage keeps the target vector useful against multiple hostile
+	// ground stacks instead of selecting four adjacent hexes around one stack
+	// solely because they happen to have the same local score.  Ties are broken
+	// by battlefield index, making replay/network output deterministic.
+	std::vector<LandMineHexScore> selected;
+	std::set<uint32_t> coveredEnemies;
+	for(int index = 0; index < required; ++index)
+	{
+		auto best = candidates.end();
+		int64_t bestScore = std::numeric_limits<int64_t>::min();
+		for(auto candidate = candidates.begin(); candidate != candidates.end(); ++candidate)
+		{
+			if(vstd::contains_if(selected, [&](const LandMineHexScore & previous)
+			{
+				return previous.hex == candidate->hex;
+			}))
+				continue;
+
+			int64_t score = candidate->score;
+			for(const auto enemy : candidate->adjacentEnemies)
+				if(!coveredEnemies.contains(enemy))
+					score += 5000;
+
+			if(best == candidates.end() || score > bestScore
+				|| (score == bestScore && candidate->hex.toInt() < best->hex.toInt()))
+			{
+				best = candidate;
+				bestScore = score;
+			}
+		}
+
+		if(best == candidates.end())
+			return {};
+		selected.push_back(*best);
+		coveredEnemies.insert(best->adjacentEnemies.begin(), best->adjacentEnemies.end());
+	}
+
+	Target result;
+	result.reserve(selected.size());
+	for(const auto & candidate : selected)
+		result.emplace_back(candidate.hex);
+
+	// The strict live-state predicate above mirrors the server's fast rejection
+	// path.  The spell script remains the final local check for any content-level
+	// applicability rule, and only a complete vector is ever returned.
+	detail::ProblemImpl problem;
+	if(!targetUsesDistinctLegalLandMineHexes(spellMechanics, result)
+		|| !spellMechanics->canBeCastAt(result, problem))
+		return {};
+
+	return {std::move(result)};
+}
+
+float SpellTargetEvaluator::landMinePlacementValue(const Mechanics * spellMechanics,
+	const Target & target, std::shared_ptr<CBattleInfoCallback> battleState)
+{
+	if(!isCanonicalLandMine(spellMechanics)
+		|| target.empty()
+		|| static_cast<int>(target.size()) != newHorizonsMagic::landMineHexCount(spellMechanics->getEffectPower())
+		|| !targetUsesDistinctLegalLandMineHexes(spellMechanics, target))
+		return 0.0f;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return 0.0f;
+
+	const auto enemies = landMineEnemies(spellMechanics);
+	if(enemies.empty())
+		return 0.0f;
+
+	// AttackPossibility is the BattleAI's common damage-reduction currency.  Use
+	// the live callback when the caller owns it (BattleEvaluator does), while
+	// retaining a non-owning fallback for small targeting-only callers/tests.
+	if(!battleState)
+	{
+		const auto * battle = spellMechanics->battle();
+		battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
+	}
+	DamageCache damageCache;
+	std::vector<size_t> mineOrder(target.size());
+	for(size_t index = 0; index < mineOrder.size(); ++index)
+		mineOrder[index] = index;
+	std::sort(mineOrder.begin(), mineOrder.end(), [&](size_t left, size_t right)
+	{
+		return target[left].hexValue.toInt() < target[right].hexValue.toInt();
+	});
+	std::vector<std::vector<double>> enemyValues;
+	enemyValues.reserve(enemies.size());
+
+	for(const auto * enemy : enemies)
+	{
+		// `landMineEnemies` has already removed permanent/absolute immunity,
+		// invincibility, zero damage, and 100% resistance.  Magic resistance below
+		// remains a probabilistic trigger discount for the surviving targets.
+		const int resistance = std::clamp(enemy->magicResistance(), 0, 100);
+		const float resistanceFactor = 1.0f - static_cast<float>(resistance) / 100.0f;
+		if(resistanceFactor <= 0.0f)
+			continue;
+
+		// Evaluate the target-specific damage before the health cap.  This keeps
+		// spell damage reduction, protections and caster bonuses consistent with
+		// the direct-damage path, then prevents overkill from making a tiny stack
+		// look more valuable than the health it can actually lose.
+		const auto damage = landMineDamagePotential(spellMechanics, enemy);
+		if(damage == 0)
+			continue;
+
+		const auto directScale = AttackPossibility::calculateDamageReduce(
+			nullptr, enemy, damage, damageCache, battleState);
+		const auto enemyValue = directScale * resistanceFactor;
+		std::vector<double> contributions;
+		contributions.reserve(mineOrder.size());
+		for(const auto index : mineOrder)
+		{
+			const auto triggerChance = landMineTriggerLikelihood(target[index].hexValue, enemy);
+			contributions.push_back(static_cast<double>(enemyValue) * triggerChance);
+		}
+		enemyValues.push_back(std::move(contributions));
+	}
+
+	// Normalize row order as well as mine order so equivalent live snapshots
+	// produce the same floating-point result even if their enumeration order
+	// differs.
+	std::sort(enemyValues.begin(), enemyValues.end(), [](const auto & left, const auto & right)
+	{
+		return std::lexicographical_compare(left.begin(), left.end(), right.begin(), right.end());
+	});
+	return static_cast<float>(maximumWeightLandMineAssignment(enemyValues, mineOrder.size()));
+}
+
+float SpellTargetEvaluator::fireWallPlacementValue(const Mechanics * spellMechanics,
+	const Target & target, std::shared_ptr<CBattleInfoCallback> battleState)
+{
+	if(!isCanonicalFireWall(spellMechanics) || target.size() != 3)
+		return 0.0f;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return 0.0f;
+
+	if(!battleState)
+	{
+		const auto * battle = spellMechanics->battle();
+		battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
+	}
+
+	const auto enemies = landMineEnemies(spellMechanics);
+	const auto allies = landMineAllies(spellMechanics);
+	if(enemies.empty())
+		return 0.0f;
+
+	DamageCache damageCache;
+	float hostileValue = 0.0f;
+	for(const auto * enemy : enemies)
+	{
+		if(!spellMechanics->isReceptive(enemy)
+			|| enemy->hasImmunity(spellMechanics->getSpellId())
+			|| enemy->hasAbsoluteImmunity(spellMechanics->getSpellId())
+			|| enemy->isInvincible())
+			continue;
+
+		const int resistance = std::clamp(enemy->magicResistance(), 0, 100);
+		const float resistanceFactor = 1.0f - static_cast<float>(resistance) / 100.0f;
+		const float triggerChance = fireWallTriggerLikelihood(target, enemy);
+		if(resistanceFactor <= 0.0f || triggerChance <= 0.0f)
+			continue;
+
+		const auto adjustedDamage = std::max<int64_t>(0, spellMechanics->adjustEffectValue(enemy));
+		const auto damage = std::min<uint64_t>(static_cast<uint64_t>(adjustedDamage), enemy->getAvailableHealth());
+		if(damage == 0)
+			continue;
+
+		const auto directScale = AttackPossibility::calculateDamageReduce(
+			nullptr, enemy, damage, damageCache, battleState);
+		hostileValue += directScale * triggerChance * resistanceFactor;
+	}
+
+	// Friendly units can also walk through a canonical wall.  Penalize an
+	// exposed line more strongly than a hostile line is rewarded so the AI
+	// chooses a safer orientation whenever one is available, and declines the
+	// spell entirely when every useful line would endanger our army.
+	float friendlyPenalty = 0.0f;
+	for(const auto * ally : allies)
+	{
+		if(ally->isInvincible() || !spellMechanics->isReceptive(ally))
+			continue;
+		const float triggerChance = fireWallTriggerLikelihood(target, ally);
+		if(triggerChance <= 0.0f)
+			continue;
+
+		const auto adjustedDamage = std::max<int64_t>(0, spellMechanics->adjustEffectValue(ally));
+		const auto damage = std::min<uint64_t>(static_cast<uint64_t>(adjustedDamage), ally->getAvailableHealth());
+		if(damage == 0)
+			continue;
+
+		const auto directScale = AttackPossibility::calculateDamageReduce(
+			nullptr, ally, damage, damageCache, battleState);
+		friendlyPenalty += directScale * triggerChance * 1.5f;
+	}
+
+	return std::max(0.0f, hostileValue - friendlyPenalty);
 }
 
 std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)

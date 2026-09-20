@@ -61,7 +61,7 @@ struct DLL_LINKAGE CObstacleInstance : public Serializeable, public scripting::A
 
 	virtual int getAnimationYOffset(int imageHeight) const;
 
-	void toInfo(ObstacleChanges & info, BattleChanges::EOperation operation = BattleChanges::EOperation::ADD);
+	virtual void toInfo(ObstacleChanges & info, BattleChanges::EOperation operation = BattleChanges::EOperation::ADD);
 	
 	virtual void serializeJson(JsonSerializeFormat & handler);
 
@@ -92,6 +92,12 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 	bool revealed;
 	bool nativeVisible; //Should native terrain creatures reveal obstacle
 	bool damageSnapshot; //minimalDamage is an exact cast-time raw value, not a legacy floor
+	/// Canonical New Horizons Fire Wall consumes a ground unit once per
+	/// activation, even when movement invokes the obstacle callback repeatedly.
+	/// These fields are authoritative battle state and are intentionally kept on
+	/// the obstacle rather than on CUnitState.
+	si32 lastTriggerUnit;
+	si32 lastTriggerActivation;
 
 	AudioPath appearSound;
 	AnimationPath appearAnimation;
@@ -118,6 +124,7 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 	int getAnimationYOffset(int imageHeight) const override;
 
 	void fromInfo(const ObstacleChanges & info);
+	void toInfo(ObstacleChanges & info, BattleChanges::EOperation operation = BattleChanges::EOperation::ADD) override;
 
 	void serializeJson(JsonSerializeFormat & handler) override;
 
@@ -126,6 +133,9 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE)
 			&& (removeOnTrigger || revealed || damageSnapshot))
 			throw std::runtime_error("Cannot discard obstacle trigger state in an older protocol");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL)
+			&& (lastTriggerUnit != -1 || lastTriggerActivation != -1))
+			throw std::runtime_error("Cannot discard Fire Wall activation state in an older protocol");
 
 		h & static_cast<CObstacleInstance&>(*this);
 		h & turnsRemaining;
@@ -156,6 +166,16 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 			removeOnTrigger = false;
 			revealed = false;
 			damageSnapshot = false;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))
+		{
+			h & lastTriggerUnit;
+			h & lastTriggerActivation;
+		}
+		else if(!h.saving)
+		{
+			lastTriggerUnit = -1;
+			lastTriggerActivation = -1;
 		}
 
 		h & customSize;

@@ -64,7 +64,7 @@ public:
 	static int rngBinomial(ServerCallback & object, int trials, double chance);
 	static int healUnit(lua_State * L);
 	static int changeUnit(lua_State * L); // args: battle, unitState, [healthDelta=0]
-	static int damageUnit(lua_State * L); // args: battle, unit, damageAmount; returns: actualDamage, killedAmount
+	static int damageUnit(lua_State * L); // args: battle, unit, damageAmount, optional destroyRemains; returns: actualDamage, killedAmount
 };
 
 }

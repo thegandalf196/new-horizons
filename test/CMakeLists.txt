@@ -191,6 +191,7 @@ set(test_SRCS
 		server/battles/NewHorizonsLogisticsMasteryTest.cpp
 		server/battles/NewHorizonsNecromancyTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp
+		server/battles/NewHorizonsFireWallTest.cpp
 		server/battles/NewHorizonsMasteryFixtureExportTest.cpp
 		server/battles/NewHorizonsConvenienceFixtureExportTest.cpp
 		server/battles/NewHorizonsHeroFixtureExportTest.cpp

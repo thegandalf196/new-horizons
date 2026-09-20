@@ -661,6 +661,26 @@ void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 		return;
 	}
 
+	// Canonical New Horizons Fire Wall uses a two-click start/orientation
+	// selector.  Show legal starts first, then legal adjacent endpoints once a
+	// start has been chosen; the selected start remains visible throughout.
+	if(owner.actionsController->fireWallPlacementModeActive())
+	{
+		if(!owner.actionsController->fireWallPlacementStartSelected())
+		{
+			for(const auto & hex : owner.actionsController->getFireWallPlacementLegalStartHexes())
+				showHighlightedHex(canvas, cellShade, hex, true);
+		}
+		else
+		{
+			showHighlightedHex(canvas, cellUnitMovementHighlight,
+				owner.actionsController->fireWallPlacementStart(), false);
+			for(const auto & hex : owner.actionsController->getFireWallPlacementLegalEndpoints())
+				showHighlightedHex(canvas, cellShade, hex, true);
+		}
+		return;
+	}
+
 	BattleHexArray rangedFullDamageLimitHexes;
 	BattleHexArray shootingRangeLimitHexes;
 

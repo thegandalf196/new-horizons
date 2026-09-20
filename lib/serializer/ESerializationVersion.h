@@ -78,12 +78,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_CANONICAL_ORDERS, // authoritative state for the eight canonical Orders
 	NEW_HORIZONS_NECROMANCY, // count-based faction conversion and post-battle result summary
 	NEW_HORIZONS_LAND_MINE, // player-selected canonical Land Mine action vectors
+	NEW_HORIZONS_FIRE_WALL, // player-selected Fire Wall orientation and per-activation trigger state
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_LAND_MINE,
+	CURRENT = NEW_HORIZONS_FIRE_WALL,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -112,3 +113,5 @@ static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY > ESerializationVer
 	"Necromancy state must remain absent from older canonical Order snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_LAND_MINE > ESerializationVersion::NEW_HORIZONS_NECROMANCY,
 	"Land Mine action vectors must remain absent from older New Horizons snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_FIRE_WALL > ESerializationVersion::NEW_HORIZONS_LAND_MINE,
+	"Fire Wall action metadata and trigger state must remain absent from older New Horizons snapshots");

@@ -77,6 +77,10 @@ DLL_LINKAGE int spellCost(const JsonNode & rules, SpellID spell, int mastery);
 /// stable in the saved protocol, but the identity check keeps this helper
 /// independent of installed mod ordering.
 DLL_LINKAGE bool isLandMine(SpellID spell);
+/// True only for the canonical core Fire Wall identity.  The saved roster
+/// still decides whether the New Horizons behavior is active; this helper is
+/// intentionally limited to stable spell identity checks.
+DLL_LINKAGE bool isFireWall(SpellID spell);
 /// Number of player-selected empty hexes required by canonical NH Land Mine.
 /// The caller must only use this while a saved NH magic roster is active.
 DLL_LINKAGE int landMineHexCount(int32_t spellPower);

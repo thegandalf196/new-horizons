@@ -66,11 +66,14 @@ class NewHorizonsMagicAITest : public HeroCommandFixture
 {
 protected:
 	bool useCurrentMagicRules = false;
+	bool useLegacyMagicRules = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		if(useCurrentMagicRules)
+		if(useLegacyMagicRules)
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		else if(useCurrentMagicRules)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
@@ -395,6 +398,668 @@ TEST_F(NewHorizonsMagicAITest, RemoveObstacleEnumeratesNormalizedLocationAndRemo
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_TRUE(battle()->getAllObstacles().empty());
 	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+}
+
+TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIProducesCompactOrientedActionServerAcceptsIt)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::FIRE_WALL);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -static_cast<int32_t>(active->getMovementRange());
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	const auto obstaclesBefore = battle()->obstacles.size();
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	ASSERT_EQ(action.actionType, EActionType::HERO_SPELL);
+	ASSERT_EQ(action.spell, SpellID::FIRE_WALL);
+	ASSERT_EQ(action.target.size(), 1u);
+	EXPECT_EQ(action.target.front().unitValue, -1000);
+	ASSERT_TRUE(action.target.front().hexValue.isAvailable());
+	EXPECT_NE(action.spellFireWallDirection, BattleHex::NONE);
+
+	// The AI's in-memory target is a complete line, but the wire action must
+	// carry only its start hex and direction. Reconstruct that same line here
+	// and prove each tile is empty before handing the compact action to the
+	// authoritative processor.
+	spells::Target footprint;
+	BattleHex current = action.target.front().hexValue;
+	for(int index = 0; index < 3; ++index)
+	{
+		ASSERT_TRUE(current.isAvailable());
+		EXPECT_EQ(battle()->battleGetUnitByPos(current, true), nullptr);
+		EXPECT_TRUE(battle()->battleGetAllObstaclesOnPos(current, false).empty());
+		footprint.emplace_back(current);
+		if(index != 2)
+			current = current.cloneInDirection(action.spellFireWallDirection, false);
+	}
+	ASSERT_EQ(footprint.size(), 3u);
+	EXPECT_TRUE(std::all_of(footprint.begin(), footprint.end(), [&](const auto & destination)
+	{
+		return destination.hexValue.isAvailable();
+	}));
+	EXPECT_TRUE(std::any_of(footprint.begin(), footprint.end(), [&](const auto & destination)
+	{
+		return BattleHex::getDistance(destination.hexValue, enemy->getPosition()) == 1;
+	}));
+
+	const auto * spell = SpellID(SpellID::FIRE_WALL).toSpell();
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	ASSERT_TRUE(mechanics->canBeCastAt(footprint));
+	EXPECT_GT(SpellTargetEvaluator::fireWallPlacementValue(mechanics.get(), footprint), 0.0f);
+
+	const auto manaBefore = attackerSideHero->mana;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	ASSERT_EQ(battle()->obstacles.size(), obstaclesBefore + 1);
+	const auto wallIt = std::find_if(battle()->obstacles.begin(), battle()->obstacles.end(), [](const auto & obstacle)
+	{
+		const auto * spellObstacle = dynamic_cast<const SpellCreatedObstacle *>(obstacle.get());
+		return spellObstacle && spellObstacle->ID == SpellID::FIRE_WALL;
+	});
+	ASSERT_NE(wallIt, battle()->obstacles.end());
+	const auto * wall = dynamic_cast<const SpellCreatedObstacle *>(wallIt->get());
+	ASSERT_NE(wall, nullptr);
+	EXPECT_EQ(wall->customSize.size(), 3u);
+	for(const auto & destination : footprint)
+		EXPECT_TRUE(wall->customSize.contains(destination.hexValue));
+	EXPECT_TRUE(wall->damageSnapshot);
+	EXPECT_TRUE(wall->passable);
+	EXPECT_EQ(attackerSideHero->mana, manaBefore - 12);
+}
+
+TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIAvoidsFriendlyGroundExposure)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::FIRE_WALL);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	// This ally sits on the most direct upper approach to the enemy. There are
+	// equally close empty lines on the opposite side, which should remain safe.
+	auto * ally = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(11, 4), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != ally && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -static_cast<int32_t>(active->getMovementRange());
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	ASSERT_EQ(action.spell, SpellID::FIRE_WALL);
+	ASSERT_EQ(action.target.size(), 1u);
+	EXPECT_NE(action.spellFireWallDirection, BattleHex::NONE);
+
+	BattleHex current = action.target.front().hexValue;
+	for(int index = 0; index < 3; ++index)
+	{
+		// A wall tile adjacent to the friendly ground stack is an exposed line:
+		// walking through it would trigger the same damage as for an enemy.
+		EXPECT_GT(BattleHex::getDistance(current, ally->getPosition()), 1);
+		if(index != 2)
+			current = current.cloneInDirection(action.spellFireWallDirection, false);
+	}
+}
+
+TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIRejectsZeroHostilePressure)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::FIRE_WALL);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -static_cast<int32_t>(active->getMovementRange());
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active));
+	EXPECT_TRUE(callback->submitted.empty());
+}
+
+TEST_F(NewHorizonsMagicAITest, LandMineAIUsesExactSpellPowerCountAndOnlyLiveLegalHexes)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	const auto * spell = SpellID(SpellID::LAND_MINE).toSpell();
+	ASSERT_NE(spell, nullptr);
+	const auto obstaclesBefore = battle()->obstacles.size();
+	for(const auto [power, required] : std::array<std::pair<int, int>, 5>{
+		std::pair{0, 2}, std::pair{99, 2}, std::pair{100, 3}, std::pair{199, 3}, std::pair{200, 4}})
+	{
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
+		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+		cast.setEffectPower(power);
+		const auto mechanics = spell->battleMechanics(&cast);
+		ASSERT_TRUE(newHorizonsMagic::rulesActive(battle()->getMagicRules()));
+		ASSERT_EQ(mechanics->getEffectPower(), power);
+		const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+		ASSERT_EQ(targets.size(), 1u);
+		ASSERT_EQ(targets.front().size(), static_cast<size_t>(required));
+		std::set<int> selected;
+		for(const auto & destination : targets.front())
+		{
+			ASSERT_EQ(destination.unitValue, nullptr);
+			ASSERT_TRUE(destination.hexValue.isValid());
+			EXPECT_TRUE(selected.insert(destination.hexValue.toInt()).second);
+		}
+		EXPECT_TRUE(mechanics->canBeCastAt(targets.front()));
+		EXPECT_EQ(attackerSideHero->mana, 1000);
+		EXPECT_EQ(battle()->obstacles.size(), obstaclesBefore);
+	}
+
+	// The ordered vector is a deterministic AI contract, not an unordered set.
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	spells::BattleCast firstCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	spells::BattleCast secondCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto first = SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&firstCast).get());
+	const auto second = SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&secondCast).get());
+	ASSERT_EQ(first.size(), 1u);
+	ASSERT_EQ(second.size(), 1u);
+	ASSERT_EQ(first.front().size(), second.front().size());
+	for(size_t index = 0; index < first.front().size(); ++index)
+		EXPECT_EQ(first.front()[index].hexValue, second.front()[index].hexValue);
+	(void)active;
+}
+
+TEST_F(NewHorizonsMagicAITest, LandMineAISelectsHostileGroundApproachPressureAndServerAcceptsAction)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -static_cast<int32_t>(active->getMovementRange());
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	// Use a callback owned by the evaluator so the submitted action is directly
+	// observable without mutating the authoritative battle during evaluation.
+	auto recordingCallback = std::make_shared<MagicCallback>();
+	recordingCallback->onBattleStarted(battle());
+	BattleEvaluator recordingEvaluator(environment, recordingCallback, active,
+		PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	recordingEvaluator.selectStackAction(active);
+	ASSERT_TRUE(recordingEvaluator.attemptCastingSpell(active));
+	ASSERT_EQ(recordingCallback->submitted.size(), 1u);
+	const auto & action = recordingCallback->submitted.front();
+	EXPECT_EQ(action.spell, SpellID::LAND_MINE);
+	ASSERT_EQ(action.target.size(), 2u);
+	std::set<int> selected;
+	for(const auto & destination : action.target)
+	{
+		EXPECT_EQ(destination.unitValue, -1000);
+		EXPECT_TRUE(selected.insert(destination.hexValue.toInt()).second);
+		EXPECT_EQ(battle()->battleGetUnitByPos(destination.hexValue, true), nullptr);
+		EXPECT_TRUE(battle()->battleGetAllObstaclesOnPos(destination.hexValue, false).empty());
+		EXPECT_EQ(battle()->getAccessibility()[destination.hexValue.toInt()], EAccessibility::ACCESSIBLE);
+	}
+	EXPECT_TRUE(std::any_of(action.target.begin(), action.target.end(), [&](const auto & destination)
+	{
+		return BattleHex::getDistance(destination.hexValue, enemy->getPosition()) == 1;
+	}));
+
+	const auto obstaclesBefore = battle()->obstacles.size();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_GE(battle()->obstacles.size(), obstaclesBefore + action.target.size());
+}
+
+TEST_F(NewHorizonsMagicAITest, LandMinePlacementIgnoresImmuneClusterForSusceptibleApproach)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * susceptible = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	std::vector<const CStack *> immuneCluster;
+	for(const auto position : {BattleHex(14, 2), BattleHex(14, 3), BattleHex(14, 4)})
+	{
+		auto * immune = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), position, 10);
+		immune->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::SPELL_IMMUNITY, BonusSource::OTHER, 1, BonusSourceID(),
+			BonusSubtypeID(SpellID(SpellID::LAND_MINE))));
+		immuneCluster.push_back(immune);
+	}
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != susceptible
+			&& std::find(immuneCluster.begin(), immuneCluster.end(), unit) == immuneCluster.end())
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	const auto * spell = SpellID(SpellID::LAND_MINE).toSpell();
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	cast.setEffectPower(43);
+	const auto mechanics = spell->battleMechanics(&cast);
+	const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_EQ(targets.size(), 1u);
+	ASSERT_EQ(targets.front().size(), 2u);
+	EXPECT_TRUE(std::any_of(targets.front().begin(), targets.front().end(), [&](const auto & destination)
+	{
+		return BattleHex::getDistance(destination.hexValue, susceptible->getPosition()) == 1;
+	}));
+	EXPECT_FALSE(std::any_of(targets.front().begin(), targets.front().end(), [&](const auto & destination)
+	{
+		return std::any_of(immuneCluster.begin(), immuneCluster.end(), [&](const auto * immune)
+		{
+			return BattleHex::getDistance(destination.hexValue, immune->getPosition()) == 1;
+		});
+	}));
+}
+
+TEST_F(NewHorizonsMagicAITest, LandMinePlacementUsesDamageScaleAndSkipsTinyOrImmuneTargets)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * tiny = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 1);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != tiny)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	const auto * spell = SpellID(SpellID::LAND_MINE).toSpell();
+	spells::BattleCast tinyCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	tinyCast.setEffectPower(43);
+	const auto tinyMechanics = spell->battleMechanics(&tinyCast);
+	const auto tinyTargets = SpellTargetEvaluator::getViableTargets(tinyMechanics.get());
+	ASSERT_EQ(tinyTargets.size(), 1u);
+	ASSERT_EQ(tinyTargets.front().size(), 2u);
+	const auto tinyValue = SpellTargetEvaluator::landMinePlacementValue(
+		tinyMechanics.get(), tinyTargets.front());
+	ASSERT_GT(tinyValue, 0.0f);
+
+	// Permanent spell immunity must remove the delayed contribution entirely,
+	// rather than allowing an immune stack to dominate placement ranking.
+	tiny->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_IMMUNITY, BonusSource::OTHER, 1, BonusSourceID(),
+		BonusSubtypeID(SpellID(SpellID::LAND_MINE))));
+	ASSERT_TRUE(tiny->hasImmunity(SpellID(SpellID::LAND_MINE)));
+	ASSERT_EQ(tinyMechanics->getSpellId(), SpellID(SpellID::LAND_MINE));
+	ASSERT_TRUE(battle()->battleGetUnitByID(tiny->unitId())->hasImmunity(SpellID(SpellID::LAND_MINE)));
+	EXPECT_EQ(SpellTargetEvaluator::landMinePlacementValue(tinyMechanics.get(), tinyTargets.front()), 0.0f);
+
+	// Replace the one-creature target with a healthy stack at the same approach
+	// point.  The common AttackPossibility reduction scale must account for the
+	// actual health/value at risk, not the mine's raw cast damage alone.
+	BattleUnitsChanged removeTiny;
+	removeTiny.battleID = BattleID(0);
+	removeTiny.changedStacks.emplace_back(tiny->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(removeTiny);
+	addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	spells::BattleCast largeCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	largeCast.setEffectPower(43);
+	const auto largeMechanics = spell->battleMechanics(&largeCast);
+	const auto largeTargets = SpellTargetEvaluator::getViableTargets(largeMechanics.get());
+	ASSERT_EQ(largeTargets.size(), 1u);
+	ASSERT_EQ(largeTargets.front().size(), 2u);
+	const auto largeValue = SpellTargetEvaluator::landMinePlacementValue(
+		largeMechanics.get(), largeTargets.front());
+	EXPECT_GT(largeValue, tinyValue);
+}
+
+TEST_F(NewHorizonsMagicAITest, LandMinePlacementCountsEachConsumableMineOnceAcrossEnemies)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * firstEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != firstEnemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	const auto * spell = SpellID(SpellID::LAND_MINE).toSpell();
+	const spells::Target target{
+		spells::Destination(BattleHex(11, 5)),
+		spells::Destination(BattleHex(11, 6))};
+	spells::BattleCast firstCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	firstCast.setEffectPower(43);
+	const auto firstMechanics = spell->battleMechanics(&firstCast);
+	ASSERT_TRUE(firstMechanics->canBeCastAt(target));
+	const auto oneEnemyValue = SpellTargetEvaluator::landMinePlacementValue(firstMechanics.get(), target);
+	ASSERT_GT(oneEnemyValue, 0.0f);
+
+	// Both mines are adjacent to the first stack.  The extra stacks can also
+	// reach one of the selected tiles, but they must not make either consumable
+	// mine worth three independent delayed hits.
+	addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 6), 10);
+	addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(13, 5), 10);
+	spells::BattleCast manyCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	manyCast.setEffectPower(43);
+	const auto manyMechanics = spell->battleMechanics(&manyCast);
+	const auto manyEnemyValue = SpellTargetEvaluator::landMinePlacementValue(manyMechanics.get(), target);
+	EXPECT_LE(manyEnemyValue, oneEnemyValue * 2.05f);
+}
+
+TEST_F(NewHorizonsMagicAITest, LandMinePlacementUsesMaximumWeightDistinctMineAssignment)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * firstEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != firstEnemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	const auto * spell = SpellID(SpellID::LAND_MINE).toSpell();
+	const spells::Target target{
+		spells::Destination(BattleHex(11, 6)),
+		spells::Destination(BattleHex(11, 5))};
+	spells::BattleCast firstCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	firstCast.setEffectPower(43);
+	const auto firstMechanics = spell->battleMechanics(&firstCast);
+	ASSERT_TRUE(firstMechanics->canBeCastAt(target));
+	const auto oneEnemyValue = SpellTargetEvaluator::landMinePlacementValue(firstMechanics.get(), target);
+	ASSERT_GT(oneEnemyValue, 0.0f);
+
+	// A is adjacent to both mines, while B is adjacent only to the first mine
+	// and can reach the second one at the lower approach likelihood.  The
+	// maximum matching must assign A to the second mine and B to the first,
+	// rather than letting A's first equal-valued choice collide with B.
+	addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 6), 10);
+	spells::BattleCast manyCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	manyCast.setEffectPower(43);
+	const auto manyMechanics = spell->battleMechanics(&manyCast);
+	const auto twoEnemyValue = SpellTargetEvaluator::landMinePlacementValue(manyMechanics.get(), target);
+	EXPECT_GT(twoEnemyValue, oneEnemyValue * 1.8f);
+}
+
+TEST_F(NewHorizonsMagicAITest, LandMinePlacementIsInvariantToTargetVectorPermutation)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * firstEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	auto * secondEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 6), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != firstEnemy && unit != secondEnemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	const auto * spell = SpellID(SpellID::LAND_MINE).toSpell();
+	const spells::Target target{
+		spells::Destination(BattleHex(11, 6)),
+		spells::Destination(BattleHex(11, 5))};
+	const spells::Target permutedTarget{
+		spells::Destination(BattleHex(11, 5)),
+		spells::Destination(BattleHex(11, 6))};
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	cast.setEffectPower(43);
+	const auto mechanics = spell->battleMechanics(&cast);
+	ASSERT_TRUE(mechanics->canBeCastAt(target));
+	ASSERT_TRUE(mechanics->canBeCastAt(permutedTarget));
+	const auto targetValue = SpellTargetEvaluator::landMinePlacementValue(mechanics.get(), target);
+	const auto permutedValue = SpellTargetEvaluator::landMinePlacementValue(mechanics.get(), permutedTarget);
+	EXPECT_FLOAT_EQ(targetValue, permutedValue);
+}
+
+TEST_F(NewHorizonsMagicAITest, LandMineDoesNotOutrankImmediateMagicArrowOnTheSameApproach)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+	attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -static_cast<int32_t>(active->getMovementRange());
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, SpellID::MAGIC_ARROW);
+}
+
+TEST_F(NewHorizonsMagicAITest, LandMineAILeavesLegacyNoTargetSelectionUntouched)
+{
+	useCommands = false;
+	useLegacyMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+	attackerSideHero->mana = 1000;
+
+	const auto * spell = SpellID(SpellID::LAND_MINE).toSpell();
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	ASSERT_FALSE(newHorizonsMagic::rulesActive(battle()->getMagicRules()));
+	EXPECT_EQ(mechanics->getTargetTypes(), std::vector<spells::AimType>{spells::AimType::NOTHING});
+	const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_EQ(targets.size(), 1u);
+	EXPECT_TRUE(targets.front().empty());
+	EXPECT_EQ(SpellTargetEvaluator::landMinePlacementValue(mechanics.get(), targets.front()), 0.0f);
 }
 
 TEST_F(NewHorizonsMagicAITest, ForceFieldCastEvaluationCreatesIsolatedBlockingObstacle)

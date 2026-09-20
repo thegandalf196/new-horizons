@@ -177,6 +177,7 @@ CHealth & CHealth::operator=(const CHealth & other)
 	firstHPleft = other.firstHPleft;
 	fullUnits = other.fullUnits;
 	resurrected = other.resurrected;
+	unusableRemains = other.unusableRemains;
 	return *this;
 }
 
@@ -191,6 +192,15 @@ void CHealth::addResurrected(int32_t amount)
 {
 	resurrected += amount;
 	vstd::amax(resurrected, 0);
+}
+
+void CHealth::addUnusableRemains(int32_t amount)
+{
+	if(amount <= 0)
+		return;
+
+	unusableRemains += amount;
+	vstd::abetween(unusableRemains, 0, owner->unitBaseAmount());
 }
 
 int64_t CHealth::available() const
@@ -233,6 +243,15 @@ void CHealth::damage(int64_t & amount)
 	addResurrected(getCount() - oldCount);
 }
 
+void CHealth::damage(int64_t & amount, bool destroyRemains)
+{
+	const int32_t oldCount = getCount();
+	damage(amount);
+
+	if(destroyRemains)
+		addUnusableRemains(oldCount - getCount());
+}
+
 HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 {
 	const int32_t unitHealth = owner->getMaxHealth();
@@ -247,6 +266,7 @@ HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 		break;
 	case EHealLevel::RESURRECT:
 		maxHeal = total() - available();
+		maxHeal -= static_cast<int64_t>(unusableRemains) * unitHealth;
 		break;
 	default:
 		assert(level == EHealLevel::OVERHEAL);
@@ -285,11 +305,13 @@ void CHealth::setFromTotal(const int64_t totalHealth)
 	}
 }
 
-void CHealth::reset()
+void CHealth::reset(bool clearUnusableRemains)
 {
 	fullUnits = 0;
 	firstHPleft = 0;
 	resurrected = 0;
+	if(clearUnusableRemains)
+		unusableRemains = 0;
 }
 
 int32_t CHealth::getCount() const
@@ -305,6 +327,11 @@ int32_t CHealth::getFirstHPleft() const
 int32_t CHealth::getResurrected() const
 {
 	return resurrected;
+}
+
+int32_t CHealth::getUnusableRemains() const
+{
+	return unusableRemains;
 }
 
 void CHealth::takeResurrected()
@@ -325,6 +352,7 @@ void CHealth::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("firstHPleft", firstHPleft, 0);
 	handler.serializeInt("fullUnits", fullUnits, 0);
 	handler.serializeInt("resurrected", resurrected, 0);
+	handler.serializeInt("unusableRemains", unusableRemains, 0);
 }
 
 ///CUnitState
@@ -578,6 +606,11 @@ int32_t CUnitState::getCount() const
 int32_t CUnitState::getFirstHPleft() const
 {
 	return health.getFirstHPleft();
+}
+
+int32_t CUnitState::getUnusableRemains() const
+{
+	return health.getUnusableRemains();
 }
 
 int64_t CUnitState::getAvailableHealth() const
@@ -869,6 +902,11 @@ void CUnitState::load(const JsonNode & data)
 
 void CUnitState::damage(int64_t & amount)
 {
+	damage(amount, false);
+}
+
+void CUnitState::damage(int64_t & amount, bool destroyRemains)
+{
 	if(cloned)
 	{
 		// block ability should not kill clone (0 damage)
@@ -880,7 +918,7 @@ void CUnitState::damage(int64_t & amount)
 	}
 	else
 	{
-		health.damage(amount);
+		health.damage(amount, destroyRemains);
 	}
 
 	bool disintegrate = hasBonusOfType(BonusType::DISINTEGRATE);
@@ -943,7 +981,11 @@ void CUnitState::makeGhost()
 
 void CUnitState::onRemoved()
 {
-	health.reset();
+	// Keep the remains ledger on a ghost until the battle result is captured.
+	// Ghost stacks can be removed from the battlefield before the final result
+	// is assembled; clearing the ledger here would make those direct-hit
+	// casualties look like ordinary Necromancy-eligible deaths.
+	health.reset(false);
 	ghostPending = false;
 	ghost = true;
 }

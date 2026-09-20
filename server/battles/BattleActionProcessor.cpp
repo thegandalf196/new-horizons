@@ -92,6 +92,36 @@ static bool validateCanonicalLandMineTargets(const CBattleInfoCallback & battle,
 	return true;
 }
 
+static bool canonicalFireWallDirection(BattleHex::EDir direction)
+{
+	return direction >= BattleHex::TOP_LEFT && direction <= BattleHex::LEFT;
+}
+
+static bool validateCanonicalFireWallAction(const CBattleInfoCallback & battle,
+	const BattleAction & action, battle::Target & expandedTarget)
+{
+	// The wire contract is deliberately compact: one empty start hex plus a
+	// direction. The server, rather than the client, derives the footprint.
+	constexpr int32_t INVALID_UNIT_ID = -1000;
+	if(action.target.size() != 1
+		|| action.target.front().unitValue != INVALID_UNIT_ID
+		|| !canonicalFireWallDirection(action.spellFireWallDirection))
+		return false;
+
+	const auto start = action.target.front().hexValue;
+	const auto accessibility = battle.getAccessibility();
+	BattleHex current = start;
+	for(int index = 0; index < 3; ++index)
+	{
+		if(!canonicalLandMineHexIsEmpty(battle, accessibility, current))
+			return false;
+		expandedTarget.emplace_back(current);
+		if(index != 2)
+			current = current.cloneInDirection(action.spellFireWallDirection, false);
+	}
+	return true;
+}
+
 BattleActionProcessor::BattleActionProcessor(BattleProcessor * owner, CGameHandler * newGameHandler)
 	: owner(owner)
 	, gameHandler(newGameHandler)
@@ -188,7 +218,18 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	spells::detail::ProblemImpl problem;
 
 	auto m = s->battleMechanics(&parameters);
-	const auto target = ba.getTarget(&battle);
+	auto target = ba.getTarget(&battle);
+	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::isFireWall(s->getId()))
+	{
+		battle::Target expandedTarget;
+		if(!validateCanonicalFireWallAction(battle, ba, expandedTarget))
+		{
+			gameHandler->complain("New Horizons Fire Wall requires one empty start hex and a valid direction");
+			return false;
+		}
+		target = std::move(expandedTarget);
+	}
 	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 		&& newHorizonsMagic::isLandMine(s->getId())
 		&& !validateCanonicalLandMineTargets(battle, *m, target))

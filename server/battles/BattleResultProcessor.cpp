@@ -981,17 +981,20 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 		{
 			battleResult->casualties[st->unitSide()][st->creatureId()] += killed;
 			// New Horizons uses an explicit provenance-compatible corpse snapshot.
-			// Temporary summons, clones, disintegrated remains, undead and other
-			// nonliving creatures never enter the living-casualty pool. Ordinary
-			// weapon and magical damage do, including when Corpse Preservation is
-			// selected; only an effect that actually invalidates the remains is
-			// excluded here.
-			if(!st->summoned && !st->isClone()
+			// Temporary summons, clones, legacy DISINTEGRATE stacks, undead and
+			// other nonliving creatures never enter the living-casualty pool.
+			// Ordinary weapon and magical damage do, while a New Horizons direct
+			// damage effect subtracts only the casualties recorded in its remains
+			// ledger.
+			const si32 unusableRemains = std::min(killed, st->getUnusableRemains());
+			const si32 eligibleCasualties = killed - unusableRemains;
+			if(eligibleCasualties > 0
+				&& !st->summoned && !st->isClone()
 				&& !st->hasBonusOfType(BonusType::DISINTEGRATE)
 				&& !st->unitType()->hasBonusOfType(BonusType::UNDEAD)
 				&& !st->unitType()->hasBonusOfType(BonusType::NON_LIVING)
 				&& !st->unitType()->hasBonusOfType(BonusType::MECHANICAL))
-				battleResult->necromancyEligibleCasualties[st->unitSide()][st->creatureId()] += killed;
+				battleResult->necromancyEligibleCasualties[st->unitSide()][st->creatureId()] += eligibleCasualties;
 		}
 	}
 	battleResult->necromancyEligibilityCaptured = true;

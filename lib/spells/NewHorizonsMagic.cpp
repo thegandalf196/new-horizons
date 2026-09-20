@@ -427,6 +427,11 @@ bool isLandMine(SpellID spell)
 	return spell == SpellID(SpellID::LAND_MINE);
 }
 
+bool isFireWall(SpellID spell)
+{
+	return spell == SpellID(SpellID::FIRE_WALL);
+}
+
 int landMineHexCount(int32_t spellPower)
 {
 	if(spellPower < 0)

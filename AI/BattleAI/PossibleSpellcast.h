@@ -41,6 +41,15 @@ public:
 	bool spellSelectiveDispel = false;
 	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
 	bool spellMassSlow = false;
+	/// Delayed placement value for canonical New Horizons Land Mine.  Mines do
+	/// not change unit health during hypothetical cast evaluation, so the
+	/// targeting evaluator supplies this read-only pressure score explicitly.
+	float spellPlacementHeuristicValue = 0.0f;
+	/// Canonical New Horizons Fire Wall placement direction.  The target vector
+	/// used during AI evaluation contains the complete three-hex footprint, but
+	/// the authoritative action protocol carries only its start hex and this
+	/// direction.
+	BattleHex::EDir spellFireWallDirection = BattleHex::NONE;
 	spells::Target dest;
 	float value;
 

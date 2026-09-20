@@ -61,6 +61,20 @@ bool isCanonicalLandMine(const CBattleInfoCallback & battle, const CSpell * spel
 		&& newHorizonsMagic::isLandMine(spell->id);
 }
 
+bool isCanonicalFireWall(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	return spell && newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::isFireWall(spell->id);
+}
+
+BattleHex::EDir fireWallDirectionBetween(const BattleHex & start, const BattleHex & endpoint)
+{
+	for(const auto direction : BattleHex::hexagonalDirections())
+		if(start.cloneInDirection(direction, false) == endpoint)
+			return direction;
+	return BattleHex::NONE;
+}
+
 bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle, const BattleHex & hex)
 {
 	if(!hex.isAvailable()
@@ -68,6 +82,26 @@ bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle, const Battl
 		|| !battle.battleGetAllObstaclesOnPos(hex, false).empty())
 		return false;
 	return battle.getAccessibility()[hex.toInt()] == EAccessibility::ACCESSIBLE;
+}
+
+bool canonicalFireWallHexIsEmpty(const CBattleInfoCallback & battle, const BattleHex & hex)
+{
+	if(!canonicalLandMineHexIsEmpty(battle, hex))
+		return false;
+	if(!battle.hasFortifications())
+		return true;
+
+	const auto wallPart = battle.battleHexToWallPart(hex);
+	if(wallPart == EWallPart::INVALID)
+		return true;
+	if(wallPart == EWallPart::INDESTRUCTIBLE_PART
+		|| wallPart == EWallPart::INDESTRUCTIBLE_PART_OF_GATE
+		|| wallPart == EWallPart::BOTTOM_TOWER
+		|| wallPart == EWallPart::UPPER_TOWER)
+		return false;
+
+	const auto wallState = battle.battleGetWallState(wallPart);
+	return wallState == EWallState::NONE || wallState == EWallState::DESTROYED;
 }
 
 bool isTransfigureMatterObstacle(const CObstacleInstance * obstacle)
@@ -347,6 +381,180 @@ BattleHexArray BattleActionsController::getLandMinePlacementLegalHexes() const
 	return result;
 }
 
+bool BattleActionsController::fireWallPlacementModeActive() const
+{
+	if(!heroSpellToCast || !owner.getBattle() || !owner.currentHero())
+		return false;
+
+	return isCanonicalFireWall(*owner.getBattle(), heroSpellToCast->spell.toSpell());
+}
+
+bool BattleActionsController::fireWallPlacementStartSelected() const
+{
+	return fireWallPlacementModeActive() && fireWallSelectedStart.isValid();
+}
+
+BattleHex BattleActionsController::fireWallPlacementStart() const
+{
+	return fireWallSelectedStart;
+}
+
+bool BattleActionsController::fireWallPlacementLineIsLegal(const BattleHex & start, BattleHex::EDir direction) const
+{
+	if(!fireWallPlacementModeActive()
+		|| direction < BattleHex::TOP_LEFT || direction > BattleHex::LEFT
+		|| !owner.getBattle() || !owner.currentHero())
+		return false;
+
+	BattleHex current = start;
+	const auto & battle = *owner.getBattle();
+	for(int index = 0; index < 3; ++index)
+	{
+		if(!canonicalFireWallHexIsEmpty(battle, current))
+			return false;
+		if(index != 2)
+			current = current.cloneInDirection(direction, false);
+	}
+
+	const auto * spell = heroSpellToCast->spell.toSpell();
+	spells::BattleCast cast(owner.getBattle().get(), owner.currentHero(), spells::Mode::HERO, spell);
+	auto mechanics = spell->battleMechanics(&cast);
+	if(!mechanics)
+		return false;
+
+	spells::detail::ProblemImpl problem;
+	if(!mechanics->canBeCast(problem))
+		return false;
+
+	battle::Target line;
+	current = start;
+	for(int index = 0; index < 3; ++index)
+	{
+		line.emplace_back(current);
+		if(index != 2)
+			current = current.cloneInDirection(direction, false);
+	}
+	return mechanics->canBeCastAt(line, problem);
+}
+
+bool BattleActionsController::fireWallPlacementStartIsLegal(const BattleHex & hex) const
+{
+	if(!fireWallPlacementModeActive() || !hex.isValid())
+		return false;
+
+	for(const auto direction : BattleHex::hexagonalDirections())
+		if(fireWallPlacementLineIsLegal(hex, direction))
+			return true;
+	return false;
+}
+
+bool BattleActionsController::fireWallPlacementEndpointIsLegal(const BattleHex & hex) const
+{
+	if(!fireWallPlacementStartSelected() || !hex.isValid())
+		return false;
+
+	const auto direction = fireWallDirectionBetween(fireWallSelectedStart, hex);
+	return direction != BattleHex::NONE && fireWallPlacementLineIsLegal(fireWallSelectedStart, direction);
+}
+
+BattleHexArray BattleActionsController::getFireWallPlacementLegalStartHexes() const
+{
+	BattleHexArray result;
+	if(!fireWallPlacementModeActive() || fireWallPlacementStartSelected())
+		return result;
+
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(fireWallPlacementStartIsLegal(hex))
+			result.insert(hex);
+	}
+	return result;
+}
+
+BattleHexArray BattleActionsController::getFireWallPlacementLegalEndpoints() const
+{
+	BattleHexArray result;
+	if(!fireWallPlacementStartSelected())
+		return result;
+
+	for(const auto direction : BattleHex::hexagonalDirections())
+	{
+		if(!fireWallPlacementLineIsLegal(fireWallSelectedStart, direction))
+			continue;
+		result.insert(fireWallSelectedStart.cloneInDirection(direction, false));
+	}
+	return result;
+}
+
+void BattleActionsController::updateFireWallPlacementStatus(const BattleHex & hoveredHex)
+{
+	if(!fireWallPlacementModeActive())
+		return;
+
+	std::string message;
+	if(!fireWallPlacementStartSelected())
+	{
+		message = "Fire Wall: select an empty start hex.";
+		if(hoveredHex.isValid() && !fireWallPlacementStartIsLegal(hoveredHex))
+			message += " This hex cannot fit a three-hex line.";
+	}
+	else
+	{
+		message = "Fire Wall: select an adjacent endpoint for the line from hex "
+			+ std::to_string(fireWallSelectedStart.toInt()) + ".";
+		if(hoveredHex.isValid() && fireWallPlacementEndpointIsLegal(hoveredHex))
+			message += " Click to cast.";
+		else if(hoveredHex.isValid())
+			message += " Choose a legal adjacent direction.";
+	}
+
+	if(!currentConsoleMsg.empty())
+		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
+	ENGINE->statusbar()->write(message);
+	currentConsoleMsg = std::move(message);
+}
+
+void BattleActionsController::selectFireWallStartOrDirection(const BattleHex & clickedHex)
+{
+	if(!fireWallPlacementModeActive())
+		return;
+
+	if(!fireWallPlacementStartSelected())
+	{
+		if(fireWallPlacementStartIsLegal(clickedHex))
+			fireWallSelectedStart = clickedHex;
+		updateFireWallPlacementStatus(clickedHex);
+		ENGINE->windows().totalRedraw();
+		return;
+	}
+
+	if(clickedHex == fireWallSelectedStart)
+	{
+		fireWallSelectedStart = BattleHex::INVALID;
+		updateFireWallPlacementStatus(clickedHex);
+		ENGINE->windows().totalRedraw();
+		return;
+	}
+
+	if(!fireWallPlacementEndpointIsLegal(clickedHex))
+	{
+		updateFireWallPlacementStatus(clickedHex);
+		return;
+	}
+
+	const auto direction = fireWallDirectionBetween(fireWallSelectedStart, clickedHex);
+	BattleAction action = *heroSpellToCast;
+	action.target.clear();
+	action.aimToHex(fireWallSelectedStart);
+	action.spellFireWallDirection = direction;
+	if(owner.curInt && owner.curInt->cb)
+	{
+		owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
+		endCastingSpell();
+	}
+}
+
 void BattleActionsController::updateLandMinePlacementStatus(const BattleHex & hoveredHex)
 {
 	if(!landMinePlacementModeActive())
@@ -572,6 +780,7 @@ void BattleActionsController::setTemporalFieldFactory(TemporalFieldFactory facto
 void BattleActionsController::endCastingSpell()
 {
 	const bool wasLandMinePlacement = landMinePlacementModeActive();
+	const bool wasFireWallPlacement = fireWallPlacementModeActive();
 	if(heroSpellToCast)
 	{
 		heroSpellToCast.reset();
@@ -585,7 +794,8 @@ void BattleActionsController::endCastingSpell()
 	}
 	monsterSpellTargets.clear();
 	landMineSelectedHexes.clear();
-	if(wasLandMinePlacement && !currentConsoleMsg.empty())
+	fireWallSelectedStart = BattleHex::INVALID;
+	if((wasLandMinePlacement || wasFireWallPlacement) && !currentConsoleMsg.empty())
 	{
 		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
 		currentConsoleMsg.clear();
@@ -802,6 +1012,20 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 		if(owner.windowObject)
 			owner.windowObject->updateLandMinePlacementControls();
 		updateLandMinePlacementStatus(BattleHex::INVALID);
+		ENGINE->fakeMouseMove();
+		ENGINE->windows().totalRedraw();
+		return;
+	}
+
+	// Canonical New Horizons Fire Wall is selected as a start hex followed by
+	// an adjacent endpoint. The second click is converted to the compact
+	// start+direction protocol only after the live three-hex line is checked.
+	if(fireWallPlacementModeActive())
+	{
+		fireWallSelectedStart = BattleHex::INVALID;
+		possibleActions.clear();
+		owner.windowObject->blockUI(true);
+		updateFireWallPlacementStatus(BattleHex::INVALID);
 		ENGINE->fakeMouseMove();
 		ENGINE->windows().totalRedraw();
 		return;
@@ -1628,6 +1852,20 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 		return;
 	}
 
+	if(fireWallPlacementModeActive())
+	{
+		if(hoveredHex == BattleHex::INVALID)
+			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		else if((!fireWallPlacementStartSelected() && fireWallPlacementStartIsLegal(hoveredHex))
+			|| (fireWallPlacementStartSelected() && fireWallPlacementEndpointIsLegal(hoveredHex)))
+			ENGINE->cursor().set(Cursor::Spellcast::SPELL);
+		else
+			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+
+		updateFireWallPlacementStatus(hoveredHex);
+		return;
+	}
+
 	if (owner.stacksController->getActiveStack() == nullptr && monsterCaster == nullptr)
 		return;
 
@@ -1680,6 +1918,13 @@ void BattleActionsController::onHoverEnded()
 		return;
 	}
 
+	if(fireWallPlacementModeActive())
+	{
+		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		updateFireWallPlacementStatus(BattleHex::INVALID);
+		return;
+	}
+
 	ENGINE->cursor().set(Cursor::Combat::POINTER);
 
 	if (!currentConsoleMsg.empty())
@@ -1693,6 +1938,12 @@ void BattleActionsController::onHexLeftClicked(const BattleHex & clickedHex)
 	if(landMinePlacementModeActive())
 	{
 		selectOrUndoLandMineHex(clickedHex);
+		return;
+	}
+
+	if(fireWallPlacementModeActive())
+	{
+		selectFireWallStartOrDirection(clickedHex);
 		return;
 	}
 
@@ -1804,6 +2055,13 @@ void BattleActionsController::activateStack()
 void BattleActionsController::onHexRightClicked(const BattleHex & clickedHex)
 {
 	if(landMinePlacementModeActive())
+	{
+		endCastingSpell();
+		CRClickPopup::createAndPush(LIBRARY->generaltexth->translate("core.genrltxt.731")); // spell cancelled
+		return;
+	}
+
+	if(fireWallPlacementModeActive())
 	{
 		endCastingSpell();
 		CRClickPopup::createAndPush(LIBRARY->generaltexth->translate("core.genrltxt.731")); // spell cancelled

@@ -65,6 +65,32 @@ bool isCounterspell(const CSpell * spell)
 	return newHorizonsMagic::isCounterspell(spell);
 }
 
+bool isCanonicalLandMine(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	return spell
+		&& newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::isLandMine(spell->getId());
+}
+
+bool isCanonicalFireWall(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	return spell
+		&& newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::isFireWall(spell->getId());
+}
+
+BattleHex::EDir fireWallDirection(const spells::Target & target)
+{
+	if(target.size() < 2 || target.front().unitValue != nullptr || target.at(1).unitValue != nullptr)
+		return BattleHex::NONE;
+
+	for(const auto direction : BattleHex::hexagonalDirections())
+		if(target.front().hexValue.cloneInDirection(direction, false) == target.at(1).hexValue)
+			return direction;
+
+	return BattleHex::NONE;
+}
+
 /// Estimate the deterministic value of arming Counterspell without mutating a
 /// battle preview.  The authoritative battle snapshot is used for the enemy
 /// hero, mana costs, and current ward state; the enemy spellbook is only used
@@ -1005,6 +1031,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.spellOvercharge = overcharge;
 						ps.spellSelectiveDispel = selectiveDispel;
 						ps.spellMassSlow = massSlow;
+						if(isCanonicalLandMine(*cb->getBattle(battleID), spell))
+							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::landMinePlacementValue(
+								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
+						if(isCanonicalFireWall(*cb->getBattle(battleID), spell))
+						{
+							ps.spellFireWallDirection = fireWallDirection(ps.dest);
+							if(ps.spellFireWallDirection == BattleHex::NONE)
+								continue;
+							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::fireWallPlacementValue(
+								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
+							// A zero-value line is either exposed to friendly ground or has no
+							// reachable hostile pressure. Do not let the generic hypothetical
+							// cast evaluator turn such a delayed placement into an accidental
+							// positive action.
+							if(ps.spellPlacementHeuristicValue <= 0.0f)
+								continue;
+						}
 						possibleCasts.push_back(ps);
 					}
 				}
@@ -1234,6 +1277,22 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				auto & ps = possibleCasts[i];
 				if(isCounterspell(ps.spell))
 					continue;
+				// Canonical Land Mine deliberately has no immediate unit-health delta:
+				// its value is the pressure it places on hostile ground approaches.
+				// Keep that deterministic live-snapshot score instead of allowing the
+				// generic hypothetical cast path to collapse every legal placement to
+				// zero merely because the mine has not triggered yet.
+				if(ps.command == HeroCommand::NONE && ps.spellPlacementHeuristicValue > 0.0f)
+				{
+					// A delayed mine still consumes the hero exchange; preserve the
+					// same valid best-attack baseline used by contextual Orders so a
+					// placement heuristic is compared against an ordinary action on
+					// the shared BattleAI scale.
+					const auto baseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
+						? cachedAttack.score : 0.0f;
+					ps.value = baseline + ps.spellPlacementHeuristicValue;
+					continue;
+				}
 				// Contextual Orders have no faithful projection in the old
 				// hypothetical-battle model: targeted Orders and trigger/relationship
 				// state carry more information than ordinary unit bonuses.  Their
@@ -1518,7 +1577,19 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		spellcast.spellOvercharge = castToPerform.spellOvercharge;
 		spellcast.spellSelectiveDispel = castToPerform.spellSelectiveDispel;
 		spellcast.spellMassSlow = castToPerform.spellMassSlow;
-		spellcast.setTarget(castToPerform.dest);
+		if(isCanonicalFireWall(*cb->getBattle(battleID), castToPerform.spell)
+			&& castToPerform.spellFireWallDirection != BattleHex::NONE
+			&& !castToPerform.dest.empty())
+		{
+			// Evaluation keeps the complete footprint so delayed damage and
+			// friendly exposure can be scored.  The wire action intentionally
+			// carries only the start hex plus the direction; the server expands
+			// and validates the line authoritatively.
+			spellcast.aimToHex(castToPerform.dest.front().hexValue);
+			spellcast.spellFireWallDirection = castToPerform.spellFireWallDirection;
+		}
+		else
+			spellcast.setTarget(castToPerform.dest);
 		spellcast.side = side;
 		spellcast.stackNumber = -1;
 		cb->battleMakeSpellAction(battleID, spellcast);

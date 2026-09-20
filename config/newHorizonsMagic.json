@@ -216,6 +216,22 @@
 				"new-horizons:shadow"
 			]
 		},
+		"new-horizons:disintegrate": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 5,
+			"costs": [
+				25,
+				25,
+				25,
+				25
+			],
+			"directDamage": {
+				"base": 180,
+				"powerCoefficient": 25
+			}
+		},
 		"core:earthElemental": {
 			"schools": [
 				"new-horizons:nature",

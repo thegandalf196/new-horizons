@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../../lib/spells/NewHorizonsDirectDamage.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include <limits>
 #include <stdexcept>
 
@@ -117,4 +118,22 @@ TEST(NewHorizonsDirectDamageTest, CapturedFormulaDoesNotFollowSourceMutations)
 	source["directDamage"]["base"].Integer() = 100;
 	EXPECT_EQ(captured->evaluate(5, 10), 30);
 	EXPECT_EQ(directDamageFormula(source, 2)->evaluate(5, 10), 110);
+}
+
+TEST(NewHorizonsDirectDamageTest, DisintegrateUsesTheSavedDamageFormula)
+{
+	// Keep this unit test independent of the test preset's optional resource
+	// mounts; the canonical JSON values are checked by the content test.
+	JsonNode rules;
+	rules["schemaVersion"].Integer() = 1;
+	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	rules["spells"]["new-horizons:disintegrate"]["directDamage"]["base"].Integer() = 180;
+	rules["spells"]["new-horizons:disintegrate"]["directDamage"]["powerCoefficient"].Integer() = 25;
+	const auto formula = directDamageFormula(rules["spells"]["new-horizons:disintegrate"], 2);
+	ASSERT_TRUE(formula);
+	EXPECT_EQ(formula->base, 180);
+	EXPECT_EQ(formula->powerCoefficient, 25);
+	EXPECT_EQ(formula->evaluate(0, 10), 180);
+	EXPECT_EQ(formula->evaluate(20, 10), 230);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(rules, "new-horizons:disintegrate", 24, 10), 240);
 }

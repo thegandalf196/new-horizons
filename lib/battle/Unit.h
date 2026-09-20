@@ -119,6 +119,9 @@ public:
 	/// returns total amount of killed in this unit
 	virtual int32_t getKilled() const = 0;
 
+	/// returns casualties whose remains cannot be restored or harvested
+	virtual int32_t getUnusableRemains() const { return 0; }
+
 	/// returns total health that unit still has
 	virtual int64_t getAvailableHealth() const = 0;
 

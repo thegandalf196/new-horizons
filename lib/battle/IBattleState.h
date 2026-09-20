@@ -89,6 +89,11 @@ public:
 	virtual BattleLayout getLayout() const = 0;
 
 	virtual int32_t getRound() const = 0;
+	/// Monotonic token for a creature activation. It changes on every
+	/// authoritative nextTurn transition, including a same-round morale
+	/// activation, so per-activation obstacle effects can be guarded without
+	/// touching unit state.
+	virtual int32_t getActivationSerial() const { return 0; }
 };
 
 class DLL_LINKAGE IBattleState : public IBattleInfo

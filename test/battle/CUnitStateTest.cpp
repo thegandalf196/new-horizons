@@ -14,6 +14,7 @@
 #include "mock/mock_UnitEnvironment.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/CCreatureHandler.h"
+#include "../../lib/json/JsonNode.h"
 
 namespace test
 {
@@ -101,6 +102,7 @@ TEST_F(UnitStateTest, initialRegular)
 	EXPECT_EQ(subject.getCount(), DEFAULT_AMOUNT);
 	EXPECT_EQ(subject.getFirstHPleft(), DEFAULT_HP);
 	EXPECT_EQ(subject.getKilled(), 0);
+	EXPECT_EQ(subject.getUnusableRemains(), 0);
 	EXPECT_EQ(subject.getAvailableHealth(), DEFAULT_HP * DEFAULT_AMOUNT);
 	EXPECT_EQ(subject.getTotalHealth(), subject.getAvailableHealth());
 
@@ -276,6 +278,57 @@ TEST_F(UnitStateTest, getMaxDamage)
 
 	EXPECT_EQ(subject.getMaxDamage(false), 20);
 	EXPECT_EQ(subject.getMaxDamage(true), 10);
+}
+
+TEST_F(UnitStateTest, destroyRemainsIsSerializedAndLegacyDamageDoesNotMarkIt)
+{
+	setDefaultExpectations();
+	initUnit();
+
+	int64_t damage = DEFAULT_HP * 2;
+	subject.damage(damage);
+	EXPECT_EQ(subject.getUnusableRemains(), 0);
+
+	damage = DEFAULT_HP * 2;
+	subject.damage(damage, true);
+	EXPECT_EQ(subject.getKilled(), 4);
+	EXPECT_EQ(subject.getUnusableRemains(), 2);
+
+	int64_t heal = DEFAULT_HP * 2;
+	EXPECT_EQ(subject.heal(heal, EHealLevel::RESURRECT, EHealPower::PERMANENT).resurrectedCount, 2);
+	EXPECT_EQ(heal, DEFAULT_HP * 2);
+	EXPECT_EQ(subject.getCount(), DEFAULT_AMOUNT - 2);
+	EXPECT_EQ(subject.getUnusableRemains(), 2);
+
+	const auto saved = subject.save();
+	ASSERT_EQ(saved["state"]["health"]["unusableRemains"].Integer(), 2);
+
+	battle::CUnitStateDetached restored(&infoMock, &bonusMock);
+	restored.localInit(&envMock);
+	restored.load(saved);
+	EXPECT_EQ(restored.getUnusableRemains(), 2);
+
+	// Saves produced before the ledger existed omit the optional field and
+	// therefore retain ordinary resurrection semantics.
+	auto legacySaved = saved;
+	legacySaved["state"]["health"].Struct().erase("unusableRemains");
+	restored.load(legacySaved);
+	EXPECT_EQ(restored.getUnusableRemains(), 0);
+}
+
+TEST_F(UnitStateTest, removedGhostRetainsDestroyedRemainsForBattleResult)
+{
+	setDefaultExpectations();
+	initUnit();
+
+	int64_t damage = DEFAULT_HP * DEFAULT_AMOUNT;
+	subject.damage(damage, true);
+	EXPECT_EQ(subject.getUnusableRemains(), DEFAULT_AMOUNT);
+
+	subject.onRemoved();
+	EXPECT_TRUE(subject.isGhost());
+	EXPECT_EQ(subject.getCount(), 0);
+	EXPECT_EQ(subject.getUnusableRemains(), DEFAULT_AMOUNT);
 }
 
 }

@@ -78,6 +78,8 @@ void UnitProxy::registerMethods(MethodRegistrar & R)
 		"Returns the total hit points across all creatures in the stack, including dead.");
 	R.method<&Unit::getAvailableHealth>("getAvailableHealth", {},
 		"Returns the current hit points of living creatures of this unit.");
+	R.method<&Unit::getUnusableRemains>("getUnusableRemains", {},
+		"Returns the number of casualties whose remains cannot be resurrected.");
 	R.method<&Unit::getCount>("getCount", {},
 		"Returns the number of creatures currently alive in the stack.");
 	R.method<&Unit::getFirstHPleft>("getFirstHPleft", {},

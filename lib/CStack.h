@@ -61,10 +61,11 @@ public:
 	std::vector<SpellID> activeSpells() const; //returns vector of active spell IDs sorted by time of cast
 	const CGHeroInstance * getMyHero() const; //if stack belongs to hero (directly or was by him summoned) returns hero, nullptr otherwise
 
-	void prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand) const; //requires bsa.damageAmount filled
+	void prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, bool destroyRemains = false) const; //requires bsa.damageAmount filled
 	static void prepareAttacked(BattleStackAttacked & bsa,
 								vstd::RNG & rand,
-								const std::shared_ptr<battle::CUnitState> & customState); //requires bsa.damageAmount filled
+								const std::shared_ptr<battle::CUnitState> & customState,
+								bool destroyRemains = false); //requires bsa.damageAmount filled
 
 	const CCreature * unitType() const override;
 	int32_t unitBaseAmount() const override;

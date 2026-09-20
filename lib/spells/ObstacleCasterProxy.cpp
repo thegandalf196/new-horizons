@@ -41,7 +41,8 @@ int64_t ObstacleCasterProxy::getSpellBonus(const Spell * spell, int64_t base, co
 	// are not overwritten and the original hero bonus is not applied twice.
 	// The explicit serialized marker distinguishes this exact snapshot from the
 	// legacy minimal-damage floor, preserving ordinary Land Mine behavior.
-	if(newHorizonsMagic::isLandMine(SpellID(obs.ID)) && obs.damageSnapshot)
+	if((newHorizonsMagic::isLandMine(SpellID(obs.ID))
+		|| newHorizonsMagic::isFireWall(SpellID(obs.ID))) && obs.damageSnapshot)
 		return base;
 
 	if(actualCaster)
@@ -67,7 +68,8 @@ int32_t ObstacleCasterProxy::getEnchantPower(const Spell * spell) const
 
 int64_t ObstacleCasterProxy::getEffectValue(const Spell * spell) const
 {
-	if(newHorizonsMagic::isLandMine(SpellID(obs.ID)) && obs.damageSnapshot)
+	if((newHorizonsMagic::isLandMine(SpellID(obs.ID))
+		|| newHorizonsMagic::isFireWall(SpellID(obs.ID))) && obs.damageSnapshot)
 		return obs.minimalDamage;
 
 	if(actualCaster)

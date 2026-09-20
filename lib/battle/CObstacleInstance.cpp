@@ -122,6 +122,7 @@ SpellCreatedObstacle::SpellCreatedObstacle()
 	: turnsRemaining(-1),
 	casterSpellPower(0),
 	spellLevel(0),
+	minimalDamage(0),
 	casterSide(BattleSide::NONE),
 	hidden(false),
 	passable(false),
@@ -131,7 +132,8 @@ SpellCreatedObstacle::SpellCreatedObstacle()
 	revealed(false),
 	nativeVisible(true),
 	damageSnapshot(false),
-	minimalDamage(0)
+	lastTriggerUnit(-1),
+	lastTriggerActivation(-1)
 {
 	obstacleType = SPELL_CREATED;
 }
@@ -161,6 +163,20 @@ bool SpellCreatedObstacle::stopsMovement() const
 SpellID SpellCreatedObstacle::getTrigger() const
 {
 	return trigger;
+}
+
+void SpellCreatedObstacle::toInfo(ObstacleChanges & info, BattleChanges::EOperation operation)
+{
+	// Keep the derived payload explicit.  Canonical Fire Wall activation state
+	// lives on SpellCreatedObstacle and must survive an UPDATE packet; relying
+	// on a base-typed helper here would make that state easy to omit when the
+	// obstacle is copied before publication.
+	info.id = uniqueID;
+	info.operation = operation;
+
+	info.data.clear();
+	JsonSerializer ser(nullptr, info.data);
+	ser.serializeStruct("obstacle", *this);
 }
 
 void SpellCreatedObstacle::fromInfo(const ObstacleChanges & info)
@@ -199,6 +215,8 @@ void SpellCreatedObstacle::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("removeOnTrigger", removeOnTrigger);
 	handler.serializeBool("nativeVisible", nativeVisible);
 	handler.serializeBool("damageSnapshot", damageSnapshot, false);
+	handler.serializeInt("lastTriggerUnit", lastTriggerUnit, -1);
+	handler.serializeInt("lastTriggerActivation", lastTriggerActivation, -1);
 
 	handler.serializeStruct("appearSound", appearSound);
 	handler.serializeStruct("appearAnimation", appearAnimation);

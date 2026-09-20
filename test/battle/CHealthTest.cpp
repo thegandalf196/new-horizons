@@ -50,6 +50,7 @@ static void checkEmptyHealth(const CHealth & health, const UnitMock  & mock)
 	EXPECT_EQ(health.getCount(), 0);
 	EXPECT_EQ(health.getFirstHPleft(), 0);
 	EXPECT_EQ(health.getResurrected(), 0);
+	EXPECT_EQ(health.getUnusableRemains(), 0);
 	EXPECT_EQ(health.available(), 0);
 }
 
@@ -59,6 +60,7 @@ static void checkFullHealth(const CHealth & health, const UnitMock  & mock)
 	EXPECT_EQ(health.getCount(), mock.unitBaseAmount());
 	EXPECT_EQ(health.getFirstHPleft(), mock.getMaxHealth());
 	EXPECT_EQ(health.getResurrected(), 0);
+	EXPECT_EQ(health.getUnusableRemains(), 0);
 	EXPECT_EQ(health.available(), mock.getMaxHealth() * mock.unitBaseAmount());
 }
 
@@ -251,3 +253,50 @@ TEST_F(HealthTest, singleUnitStack)
 	checkFullHealth(health, mock);
 }
 
+TEST_F(HealthTest, destroyRemainsOnlyMarksCasualtiesAndBlocksResurrection)
+{
+	setDefaultExpectations();
+	health.init();
+
+	int64_t damage = UNIT_HEALTH * 2;
+	health.damage(damage, true);
+	EXPECT_EQ(damage, UNIT_HEALTH * 2);
+	EXPECT_EQ(health.getCount(), UNIT_AMOUNT - 2);
+	EXPECT_EQ(health.getUnusableRemains(), 2);
+
+	// Damage to a surviving creature is not a destroyed remain.
+	damage = 1;
+	health.damage(damage, true);
+	EXPECT_EQ(health.getCount(), UNIT_AMOUNT - 2);
+	EXPECT_EQ(health.getUnusableRemains(), 2);
+
+	// Resurrection may repair the surviving creature's missing hit point, but
+	// cannot restore either casualty recorded by the special hit.
+	int64_t heal = UNIT_HEALTH * 2;
+	auto info = health.heal(heal, EHealLevel::RESURRECT, EHealPower::PERMANENT);
+	EXPECT_EQ(heal, 1);
+	EXPECT_EQ(info.resurrectedCount, 0);
+	EXPECT_EQ(health.getCount(), UNIT_AMOUNT - 2);
+	EXPECT_EQ(health.getUnusableRemains(), 2);
+}
+
+TEST_F(HealthTest, ordinaryCasualtiesRemainUsableAfterLethalDestroyRemainsDamage)
+{
+	setDefaultExpectations();
+	health.init();
+
+	int64_t ordinaryDamage = UNIT_HEALTH * (UNIT_AMOUNT - 2);
+	health.damage(ordinaryDamage);
+	ASSERT_EQ(health.getCount(), 2);
+
+	int64_t destroyingDamage = UNIT_HEALTH * 2;
+	health.damage(destroyingDamage, true);
+	ASSERT_EQ(health.getCount(), 0);
+	EXPECT_EQ(health.getUnusableRemains(), 2);
+
+	int64_t resurrection = UNIT_HEALTH * UNIT_AMOUNT;
+	const auto info = health.heal(resurrection, EHealLevel::RESURRECT, EHealPower::PERMANENT);
+	EXPECT_EQ(info.resurrectedCount, UNIT_AMOUNT - 2);
+	EXPECT_EQ(health.getCount(), UNIT_AMOUNT - 2);
+	EXPECT_EQ(health.getUnusableRemains(), 2);
+}

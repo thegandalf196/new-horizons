@@ -11,6 +11,7 @@
 #include "../../../server/queries/QueriesProcessor.h"
 #include "../../../lib/CPlayerState.h"
 #include "../../../lib/entities/hero/NewHorizonsNecromancy.h"
+#include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
@@ -108,6 +109,98 @@ protected:
 		startGame();
 	}
 };
+
+class NewHorizonsDisintegrateStackTest : public BattleTestFixture
+{
+protected:
+	void SetUp() override
+	{
+		BattleTestFixture::SetUp();
+		startGame();
+		startBattle();
+	}
+
+	CStack * addTenPikemen()
+	{
+		return addStack(BattleSide::ATTACKER, creature("core:pikeman"), BattleHex(leftHex), 10);
+	}
+
+	static void giveGuaranteedRebirth(CStack * stack)
+	{
+		stack->addNewBonus(std::make_shared<Bonus>(
+			BonusDuration::PERMANENT, BonusType::REBIRTH, BonusSource::OTHER, 100, BonusSourceID()));
+		stack->addNewBonus(std::make_shared<Bonus>(
+			BonusDuration::PERMANENT, BonusType::CASTS, BonusSource::OTHER, 1, BonusSourceID()));
+	}
+};
+
+TEST_F(NewHorizonsDisintegrateStackTest, LethalDestroyRemainsPreservesOrdinaryCasualties)
+{
+	CStack * target = addTenPikemen();
+	ASSERT_NE(target, nullptr);
+	const int64_t unitHealth = target->getMaxHealth();
+	auto state = target->acquireState();
+
+	int64_t ordinaryDamage = unitHealth * 8;
+	state->damage(ordinaryDamage);
+	ASSERT_EQ(state->getCount(), 2);
+
+	BattleStackAttacked attacked;
+	attacked.damageAmount = unitHealth * 2;
+	CStack::prepareAttacked(attacked, gameHandler->getRandomGenerator(), state, true);
+
+	EXPECT_EQ(attacked.killedAmount, 2);
+	EXPECT_FALSE(state->alive());
+	EXPECT_FALSE(state->ghostPending);
+	EXPECT_EQ(state->getUnusableRemains(), 2);
+
+	int64_t resurrection = unitHealth * 10;
+	const auto healed = state->heal(resurrection, EHealLevel::RESURRECT, EHealPower::PERMANENT);
+	EXPECT_EQ(healed.resurrectedCount, 8);
+	EXPECT_EQ(state->getCount(), 8);
+	EXPECT_EQ(state->getUnusableRemains(), 2);
+}
+
+TEST_F(NewHorizonsDisintegrateStackTest, LethalDestroyRemainsGhostsWhenEveryCasualtyIsDestroyed)
+{
+	CStack * target = addTenPikemen();
+	ASSERT_NE(target, nullptr);
+	const int64_t unitHealth = target->getMaxHealth();
+	auto state = target->acquireState();
+
+	BattleStackAttacked attacked;
+	attacked.damageAmount = unitHealth * 10;
+	CStack::prepareAttacked(attacked, gameHandler->getRandomGenerator(), state, true);
+
+	EXPECT_EQ(attacked.killedAmount, 10);
+	EXPECT_FALSE(state->alive());
+	EXPECT_TRUE(state->ghostPending);
+	EXPECT_EQ(state->getUnusableRemains(), 10);
+}
+
+TEST_F(NewHorizonsDisintegrateStackTest, RebirthRestoresOnlyOrdinaryCasualties)
+{
+	CStack * target = addTenPikemen();
+	ASSERT_NE(target, nullptr);
+	giveGuaranteedRebirth(target);
+	const int64_t unitHealth = target->getMaxHealth();
+	auto state = target->acquireState();
+
+	int64_t ordinaryDamage = unitHealth * 8;
+	state->damage(ordinaryDamage);
+	ASSERT_EQ(state->getCount(), 2);
+
+	BattleStackAttacked attacked;
+	attacked.damageAmount = unitHealth * 2;
+	CStack::prepareAttacked(attacked, gameHandler->getRandomGenerator(), state, true);
+
+	EXPECT_EQ(attacked.killedAmount, 2);
+	EXPECT_TRUE(attacked.willRebirth());
+	EXPECT_TRUE(state->alive());
+	EXPECT_FALSE(state->ghostPending);
+	EXPECT_EQ(state->getCount(), 8);
+	EXPECT_EQ(state->getUnusableRemains(), 2);
+}
 
 class NewHorizonsNecromancyAITest : public BattleTestFixture
 {
@@ -253,6 +346,100 @@ TEST_F(NewHorizonsNecromancyAITest, ComputerWinnerReceivesAndResumesAuthoritativ
 	ASSERT_TRUE(attackerSideHero->hasStackAtSlot(skeletonSlot));
 	EXPECT_NE(zombieSlot, skeletonSlot);
 	EXPECT_EQ(attackerSideHero->getStackCount(zombieSlot), 3);
+	EXPECT_EQ(attackerSideHero->getStackCount(skeletonSlot), 1);
+	EXPECT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+}
+
+TEST_F(NewHorizonsNecromancyAITest, BattleResultExcludesDestroyRemainsCasualtiesAfterGhostRemoval)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+
+	attackerSideHero->setHeroType(HeroTypeID(72)); // Septienna, Necropolis.
+	const auto necromancy = SecondarySkill::decode("new-horizons:necromancy");
+	ASSERT_GE(necromancy, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(necromancy), MasteryLevel::ADVANCED,
+		ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(attackerSideHero->usesNewHorizonsNecromancy());
+
+	const auto pikeman = creature("core:pikeman");
+	const auto skeleton = creature("core:skeleton");
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 10));
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), skeleton, 1));
+
+	// Keep the ghost in the battle's stack list, but remove it through the same
+	// BattleUnitsChanged path used by BattleFlowProcessor before finalization.
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+	CStack * target = nullptr;
+	for(const auto * stack : battle()->battleGetStacksIf([](const CStack *) { return true; }))
+	{
+		if(stack->unitSide() == BattleSide::DEFENDER && stack->creatureId() == pikeman)
+		{
+			target = const_cast<CStack *>(stack);
+			break;
+		}
+	}
+	ASSERT_NE(target, nullptr);
+
+	const auto applyDamage = [this](CStack * stack, int64_t amount, bool destroyRemains)
+	{
+		BattleStackAttacked attacked;
+		attacked.stackAttacked = stack->unitId();
+		attacked.damageAmount = amount;
+		stack->prepareAttacked(attacked, gameHandler->getRandomGenerator(), destroyRemains);
+		ASSERT_EQ(attacked.newState.id, stack->unitId());
+		ASSERT_EQ(attacked.newState.healthDelta, -amount);
+		if(destroyRemains)
+		{
+			ASSERT_EQ(attacked.killedAmount, 3);
+			ASSERT_EQ(attacked.newState.data["state"]["health"]["unusableRemains"].Integer(), 3);
+			ASSERT_EQ(attacked.newState.data["state"]["health"]["fullUnits"].Integer(), 0);
+			ASSERT_EQ(attacked.newState.data["state"]["health"]["firstHPleft"].Integer(), 0);
+		}
+
+		BattleUnitsChanged injured;
+		injured.battleID = BattleID(0);
+		injured.changedStacks.emplace_back(attacked.newState.id, UnitChanges::EOperation::UPDATE);
+		injured.changedStacks.back().data = std::move(attacked.newState.data);
+		injured.changedStacks.back().healthDelta = attacked.newState.healthDelta;
+		gameHandler->sendAndApply(injured);
+	};
+
+	const int64_t unitHealth = target->getMaxHealth();
+	applyDamage(target, unitHealth * 7, false);
+	ASSERT_EQ(target->getCount(), 3);
+	applyDamage(target, unitHealth * 3, true);
+	ASSERT_EQ(target->getCount(), 0);
+	ASSERT_EQ(target->getUnusableRemains(), 3);
+	ASSERT_EQ(target->getKilled(), 10);
+	ASSERT_FALSE(target->alive());
+	ASSERT_EQ(target->getUnusableRemains(), 3);
+
+	BattleUnitsChanged removeGhost;
+	removeGhost.battleID = BattleID(0);
+	removeGhost.changedStacks.emplace_back(target->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(removeGhost);
+	ASSERT_TRUE(target->isGhost());
+	ASSERT_EQ(target->getUnusableRemains(), 3);
+
+	// The remaining Skeleton keeps the battle alive long enough for the first
+	// stack to be removed.  It is ineligible itself, so only the seven ordinary
+	// Pikeman casualties should feed Advanced Necromancy (20% => one Skeleton).
+	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+	for(const auto player : {PlayerColor(0), PlayerColor(1)})
+	{
+		auto dialog = gameHandler->queries->topQuery(player);
+		if(dialog && dialog->getType() == QueryType::BattleDialog)
+		{
+			ASSERT_TRUE(gameHandler->queryReply(dialog->queryID, 0, player));
+		}
+	}
+
+	EXPECT_EQ(gameHandler->queries->topQuery(PlayerColor(0)), nullptr);
+	const auto skeletonSlot = attackerSideHero->getSlotFor(skeleton);
+	ASSERT_TRUE(skeletonSlot.validSlot());
+	ASSERT_TRUE(attackerSideHero->hasStackAtSlot(skeletonSlot));
 	EXPECT_EQ(attackerSideHero->getStackCount(skeletonSlot), 1);
 	EXPECT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
 }

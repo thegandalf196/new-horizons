@@ -91,6 +91,10 @@ public:
 	/// Additional mana selected for a spell-specific cast option.  The default
 	/// keeps old callers and non-Sorcery spells unchanged.
 	virtual OptionalValue getOvercharge() const { return std::nullopt; }
+	/// Server-side passive effects such as canonical Fire Wall may explicitly
+	/// target either side.  Ordinary casts retain their spell-defined smart
+	/// targeting when this remains false.
+	virtual bool getForceNonSmartTargeting() const { return false; }
 	virtual bool getSelectiveDispel() const { return false; }
 	virtual bool getMassSlow() const { return false; }
 
@@ -125,6 +129,7 @@ public:
 	OptionalValue getEffectPower() const override;
 	OptionalValue getEffectDuration() const override;
 	OptionalValue getOvercharge() const override;
+	bool getForceNonSmartTargeting() const override;
 	bool getSelectiveDispel() const override;
 	bool getMassSlow() const override;
 
@@ -139,6 +144,7 @@ public:
 	void setEffectPower(Value value);
 	void setEffectDuration(Value value);
 	void setOvercharge(Value value);
+	void setForceNonSmartTargeting(bool value);
 	void setSelectiveDispel(bool value);
 	void setMassSlow(bool value);
 
@@ -170,6 +176,7 @@ private:
 	OptionalValue64 effectValue;
 	///Additional mana selected for a spell-specific cast option.
 	OptionalValue overcharge;
+	bool forceNonSmartTargeting = false;
 	bool selectiveDispel = false;
 	bool massSlow = false;
 	BattleSide counterspellSide = BattleSide::NONE;
@@ -367,6 +374,7 @@ public:
 protected:
 	const CSpell * owner;
 	Mode mode;
+	bool forceNonSmartTargeting = false;
 
 	BaseMechanics(const IBattleCast * event);
 

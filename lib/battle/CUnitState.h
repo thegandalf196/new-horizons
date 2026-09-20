@@ -97,14 +97,20 @@ public:
 	CHealth & operator=(const CHealth & other);
 
 	void init();
-	void reset();
+	void reset(bool clearUnusableRemains = true);
 
 	void damage(int64_t & amount);
+	/// Deal damage while marking the creatures killed by this hit as leaving no
+	/// usable remains.  The default damage path intentionally keeps the legacy
+	/// behaviour and does not mark the new ledger.
+	void damage(int64_t & amount, bool destroyRemains);
 	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power);
 
 	int32_t getCount() const;
 	int32_t getFirstHPleft() const;
 	int32_t getResurrected() const;
+	/// Number of casualties whose remains cannot be restored or harvested.
+	int32_t getUnusableRemains() const;
 
 	/// returns total remaining health
 	int64_t available() const;
@@ -117,12 +123,14 @@ public:
 	void serializeJson(JsonSerializeFormat & handler);
 private:
 	void addResurrected(int32_t amount);
+	void addUnusableRemains(int32_t amount);
 	void setFromTotal(const int64_t totalHealth);
 	const battle::Unit * owner;
 
 	int32_t firstHPleft;
 	int32_t fullUnits;
 	int32_t resurrected;
+	int32_t unusableRemains;
 };
 
 class DLL_LINKAGE CUnitState : public Unit
@@ -208,6 +216,7 @@ public:
 	int32_t getKilled() const override;
 	int32_t getCount() const override;
 	int32_t getFirstHPleft() const override;
+	int32_t getUnusableRemains() const override;
 	int64_t getAvailableHealth() const override;
 	int64_t getTotalHealth() const override;
 	uint32_t getMaxHealth() const override;
@@ -244,6 +253,7 @@ public:
 	void load(const JsonNode & data) override;
 
 	void damage(int64_t & amount) override;
+	void damage(int64_t & amount, bool destroyRemains);
 	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power) override;
 
 	void localInit(const IUnitEnvironment * env_);

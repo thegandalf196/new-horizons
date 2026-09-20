@@ -132,5 +132,97 @@
 			"indifferent" : true
 		},
 		"targetCondition" : {}
+	},
+	"disintegrate" : {
+		"name" : "Disintegrate",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:havoc" : true
+		},
+		"level" : 5,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "SPELLS.def:0:15",
+			"iconScroll" : "SPELLSCR.def:0:15",
+			"iconEffect" : "SPELLINT.def:0:16",
+			"iconImmune" : "SPELLINT.def:0:16",
+			"iconScenarioBonus" : "SPELLBON.def:0:15"
+		},
+		"animation" : {
+			"projectile" : [
+				{"minimumAngle" : 0, "defName" : "C20SPX4"},
+				{"minimumAngle" : 0.60, "defName" : "C20SPX3"},
+				{"minimumAngle" : 0.90, "defName" : "C20SPX2"},
+				{"minimumAngle" : 1.20, "defName" : "C20SPX1"},
+				{"minimumAngle" : 1.50, "defName" : "C20SPX0"}
+			],
+			"hit" : ["C20SPX"]
+		},
+		"sounds" : {
+			"cast" : "MAGICBLT"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Disintegrate one enemy stack for 180 + 2.5 x Spell Power damage. Casualties destroyed by this cast leave no remains for resurrection, rebirth or Necromancy.",
+				"cost" : 25,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {
+						"type" : "damage",
+						"destroyRemains" : true
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Disintegrate one enemy stack for 180 + 2.5 x Spell Power damage. Casualties destroyed by this cast leave no remains for resurrection, rebirth or Necromancy.",
+				"cost" : 25,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {
+						"type" : "damage",
+						"destroyRemains" : true
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Disintegrate one enemy stack for 180 + 2.5 x Spell Power damage. Casualties destroyed by this cast leave no remains for resurrection, rebirth or Necromancy.",
+				"cost" : 25,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {
+						"type" : "damage",
+						"destroyRemains" : true
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Disintegrate one enemy stack for 180 + 2.5 x Spell Power damage. Casualties destroyed by this cast leave no remains for resurrection, rebirth or Necromancy.",
+				"cost" : 25,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {
+						"type" : "damage",
+						"destroyRemains" : true
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {
+			"offensive" : true,
+			"damage" : true,
+			"negative" : true
+		},
+		"targetCondition" : {}
 	}
 }

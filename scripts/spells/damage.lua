@@ -73,7 +73,7 @@ function Script:apply(mechanics, server, target)
 		local unit = dest.unit
 		if unit and unit:isAlive() then
 			local amount = self:damageForTarget(i - 1, mechanics, unit)
-			local dmg, killed = server:damageUnit(battle, unit, amount)
+			local dmg, killed = server:damageUnit(battle, unit, amount, self.destroyRemains == true)
 			if describe then
 				if firstUnit then multiple = true else firstUnit = unit end
 				totalDamage = totalDamage + dmg

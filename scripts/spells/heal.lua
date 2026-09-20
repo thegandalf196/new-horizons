@@ -29,6 +29,9 @@ function Script:isValidTarget(mechanics, unit)
 	if not unit:isValidTarget(allowDead) then return false end
 
 	local injuries = unit:getTotalHealth() - unit:getAvailableHealth()
+	if level == ENUM.HealLevel.resurrect then
+		injuries = injuries - unit:getUnusableRemains() * unit:getMaxHealth()
+	end
 	if injuries <= 0 then return false end
 
 	local mfu = self:getMinFullUnits()

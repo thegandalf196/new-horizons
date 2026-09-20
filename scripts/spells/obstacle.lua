@@ -45,6 +45,11 @@ local function isNewHorizonsLandMine(mechanics)
 		and mechanics:getSpell():getJsonKey() == "core:landMine"
 end
 
+local function isNewHorizonsFireWall(mechanics)
+	return mechanics:usesNewHorizonsMagic()
+		and mechanics:getSpell():getJsonKey() == "core:fireWall"
+end
+
 local function newHorizonsLandMineCount(mechanics)
 	local power = mechanics:getEffectPower()
 	if power < 100 then return 2 end
@@ -123,6 +128,25 @@ function Script:applicableTarget(mechanics, problem, target)
 		return true
 	end
 
+	if isNewHorizonsFireWall(mechanics) then
+		if #target ~= 3 then return noRoomToPlace(mechanics, problem) end
+
+		local battle = mechanics:getBattle()
+		local seen = {}
+		for index, dest in ipairs(target) do
+			local hex = dest.hex
+			if dest.unit ~= nil or not hex:isAvailable() then
+				return noRoomToPlace(mechanics, problem)
+			end
+			local key = hex:getY() * 17 + hex:getX()
+			if seen[key] or not isHexAvailable(battle, hex, true) then
+				return noRoomToPlace(mechanics, problem)
+			end
+			seen[key] = true
+		end
+		return true
+	end
+
 	if mechanics:isMassive() then return true end
 
 	if #target == 0 then return noRoomToPlace(mechanics, problem) end
@@ -147,6 +171,11 @@ function Script:transformTarget(mechanics, aimPoint, spellTarget)
 		-- BattleSpellMechanics deliberately leaves a massive spell's normal
 		-- transformed target empty.  Land Mine opts into the original action
 		-- vector here so every selected hex reaches validation and apply().
+		return aimPoint
+	end
+	if isNewHorizonsFireWall(mechanics) then
+		-- The authoritative action processor expands the selected start hex and
+		-- direction to exactly three contiguous hexes before the effect runs.
 		return aimPoint
 	end
 	if mechanics:isMassive() then return {} end
@@ -183,6 +212,8 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 	local spell = mechanics:getSpell()
 	local opts  = sideOptions(self, side)
 	local newMine = isNewHorizonsLandMine(mechanics)
+	local newFireWall = isNewHorizonsFireWall(mechanics)
+	local snapshotDamage = newMine or newFireWall
 	return {
 		pos              = hex,
 		obstacleType     = ENUM.ObstacleType.spellCreated,
@@ -191,18 +222,23 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 		casterPowerDivisor = mechanics:getEffectPowerDivisor(),
 		spellLevel       = mechanics:getEffectLevel(),
 		casterSide       = side,
-		-- Land Mine's direct-damage value is evaluated by the authoritative
-		-- cast mechanics and retained in the generic obstacle damage floor.  The
-		-- trigger proxy recognizes this canonical source and uses it exactly.
-		minimalDamage    = newMine and mechanics:getEffectValue() or (self.minimalDamage or 0),
-		damageSnapshot   = newMine,
-		turnsRemaining   = self.turnsRemaining or -1,
+		-- Canonical Land Mine and Fire Wall direct-damage values are evaluated by
+		-- the authoritative cast mechanics and retained in the generic obstacle
+		-- damage floor.  The trigger proxy recognizes these sources and uses the
+		-- snapshot exactly.
+		minimalDamage    = snapshotDamage and mechanics:getEffectValue() or (self.minimalDamage or 0),
+		damageSnapshot   = snapshotDamage,
+		-- The legacy Fire Wall descriptor stores two decrements, which gives
+		-- the original spell's duration.  Canonical New Horizons Fire Wall is
+		-- explicitly a three-round footprint, so preserve that duration in the
+		-- authoritative descriptor without changing legacy content semantics.
+		turnsRemaining   = newFireWall and 3 or (self.turnsRemaining or -1),
 		hidden           = self.hidden or false,
 		passable         = self.passable or false,
 		-- Avoid Lua's `a and false or b` pitfall: when `newMine` is true the
 		-- intermediate false would select `b` and accidentally reveal mines to
 		-- native enemy armies.
-		nativeVisible    = not (newMine or self.hideNative or false),
+		nativeVisible    = not (snapshotDamage or self.hideNative or false),
 		trap             = self.trap or false,
 		removeOnTrigger  = self.removeOnTrigger or false,
 		trigger          = self.triggerAbility or "",
@@ -239,6 +275,7 @@ function Script:apply(mechanics, server, target)
 	local shapes    = shapesFor(opts)
 	local patchCount = self.patchCount or 0
 	local newMine = isNewHorizonsLandMine(mechanics)
+	local newFireWall = isNewHorizonsFireWall(mechanics)
 
 	local destinations = {}
 
@@ -250,6 +287,17 @@ function Script:apply(mechanics, server, target)
 		for _, dest in ipairs(target) do
 			destinations[#destinations+1] = dest.hex
 		end
+	elseif newFireWall then
+		-- Fire Wall is one passable obstacle with a canonical three-hex
+		-- footprint.  Do not create one independent obstacle per selected tile.
+		if #target ~= 3 then return end
+		local customSize = {}
+		for _, dest in ipairs(target) do
+			customSize[#customSize + 1] = dest.hex
+		end
+		local descriptor = buildDescriptor(self, mechanics, side, target[1].hex, customSize)
+		server:addObstacle(battle, descriptor)
+		return
 	elseif patchCount > 0 then
 		local candidates
 		if mechanics:isMassive() then
