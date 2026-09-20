@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "GUIClasses.h"
+#include "NewHorizonsPerkIcons.h"
 
 #include "CCastleInterface.h"
 #include "CCreatureWindow.h"
@@ -534,14 +535,14 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 	const auto choicePageCount = std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
 	if(choicePageCount > 1)
 	{
-		buttonLeft = std::make_shared<CButton>(Point(23, 373), AnimationPath::builtin("HSBTNS3"), CButton::tooltip(), [this](){
+		buttonLeft = std::make_shared<CButton>(Point(23, 480), AnimationPath::builtin("HSBTNS3"), CButton::tooltip(), [this](){
 			if(skillViewOffset > 0)
 				skillViewOffset--;
 			else
 				skillViewOffset = static_cast<int>(std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2)) - 1;
 			createSkillBox();
 		}, EShortcut::MOVE_LEFT);
-		buttonRight = std::make_shared<CButton>(Point(pos.w - 45, 373), AnimationPath::builtin("HSBTNS5"), CButton::tooltip(), [this](){
+		buttonRight = std::make_shared<CButton>(Point(65, 480), AnimationPath::builtin("HSBTNS5"), CButton::tooltip(), [this](){
 			const auto pages = std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
 			if(skillViewOffset < static_cast<int>(pages) - 1)
 				skillViewOffset++;
@@ -647,8 +648,8 @@ void CLevelWindow::createSkillBox()
 			if(row < perkChoices.size())
 				displayedChoiceOrder.push_back(perkChoices[row]);
 		}
-		choiceHeaders.push_back(std::make_shared<CLabel>(120, 290, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Skill choices"));
-		choiceHeaders.push_back(std::make_shared<CLabel>(264, 290, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Perk choices"));
+		choiceHeaders.push_back(std::make_shared<CLabel>(115, 290, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Skill choices"));
+		choiceHeaders.push_back(std::make_shared<CLabel>(266, 290, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Perk choices"));
 
 		std::vector<std::shared_ptr<CSelectableComponent>> skillComps;
 		std::vector<std::shared_ptr<CSelectableComponent>> perkComps;
@@ -679,12 +680,12 @@ void CLevelWindow::createSkillBox()
 					? std::make_shared<CSelectableComponent>(ComponentType::SEC_SKILL, iconSkill, subtitle, CComponent::medium)
 					: std::make_shared<CSelectableComponent>(ComponentType::NONE, SecondarySkill(0), subtitle, CComponent::medium);
 				comp->customDescription = perk.description;
-				const auto iconKey = perk.selection.perkId == "new-horizons:necromancy.boneCollector"
-					? "NH_perk_bone_collector" : "NH_perk_neutral";
+				const auto & iconKey = newHorizonsPerkIcon(perk.selection.perkId);
 				comp->setCustomIcon(AnimationPath::builtin(iconKey));
 				perkComps.push_back(comp);
 			}
 			comp->onChoose = std::bind(&CLevelWindow::submitSelection, this);
+			comp->setHorizontalLayout(135, 70);
 		}
 
 		// Use one single-column box per category so an absent skill or perk
@@ -692,7 +693,7 @@ void CLevelWindow::createSkillBox()
 		// allows two entries per category, hence the fixed two-row rectangles.
 		if(!skillComps.empty())
 		{
-			skillChoiceBox = std::make_shared<CComponentBox>(skillComps, Rect(48, 308, 135, 168),
+			skillChoiceBox = std::make_shared<CComponentBox>(skillComps, Rect(48, 308, 135, 148),
 				[this](int){
 					perkChoiceActive = false;
 					if(perkChoiceBox)
@@ -701,7 +702,7 @@ void CLevelWindow::createSkillBox()
 		}
 		if(!perkComps.empty())
 		{
-			perkChoiceBox = std::make_shared<CComponentBox>(perkComps, Rect(199, 308, 135, 168),
+			perkChoiceBox = std::make_shared<CComponentBox>(perkComps, Rect(199, 308, 135, 148),
 				[this](int){
 					perkChoiceActive = true;
 					if(skillChoiceBox)

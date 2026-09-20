@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "status": "provisional; not final user-approved artwork",
+  "method": "Built-in image generation; original modeled fantasy still lifes. No input image references.",
+  "license": "CC0-1.0",
+  "atlases": [
+    {
+      "file": "atlas-A.png",
+      "prompt": "Create a production atlas of SIX original fantasy skill paintings, exactly 3 columns by 2 rows, equal square cells, total aspect ratio 3:2. No gutters, lines, borders, lettering or captions. Each cell independent with centered dominant object filling 85% of its square, narrow safe inset, dark umber textured background. Heroes of Might and Magic III inspired miniature modeled fantasy still-life paintings: theatrical warm/cool chiaroscuro, aged metal and crystal with realistic modeled volume, jewel colors, tiny concentrated magical highlights, late-1990s prerendered fantasy illustration character. Not pixel art, not flat symbols, no neon haze, no modern mobile gloss. Designed to reduce legibly to 44 and 32 pixels. Exact cell subjects, left to right then next row: TOP LEFT overcharger: one large blue crystal erupting with restrained white lightning; TOP CENTER selective dispel: antique silver shears cutting one violet magical thread; TOP RIGHT temporalist: brass hourglass with bright suspended sand; BOTTOM LEFT matter shaper: rough stone cube halfway transformed into faceted violet crystal; BOTTOM CENTER teleporter: ivory chess knight passing through paired bronze portals; BOTTOM RIGHT countermage: silver shield intercepting a single violet magical bolt. Separate subjects fully within their own cell, no text anywhere. Render a high resolution 1536x1024 atlas.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "cells": [
+        {
+          "id": "new-horizons:sorceryMagic.overcharger",
+          "key": "NH_perk_overcharger",
+          "box": [
+            0,
+            0,
+            512,
+            485
+          ]
+        },
+        {
+          "id": "new-horizons:sorceryMagic.selectiveDispel",
+          "key": "NH_perk_selective_dispel",
+          "box": [
+            512,
+            0,
+            1024,
+            485
+          ]
+        },
+        {
+          "id": "new-horizons:sorceryMagic.temporalist",
+          "key": "NH_perk_temporalist",
+          "box": [
+            1024,
+            0,
+            1536,
+            485
+          ]
+        },
+        {
+          "id": "new-horizons:sorceryMagic.matterShaper",
+          "key": "NH_perk_matter_shaper",
+          "box": [
+            0,
+            485,
+            512,
+            1024
+          ]
+        },
+        {
+          "id": "new-horizons:sorceryMagic.teleporter",
+          "key": "NH_perk_teleporter",
+          "box": [
+            512,
+            485,
+            1024,
+            1024
+          ]
+        },
+        {
+          "id": "new-horizons:sorceryMagic.countermage",
+          "key": "NH_perk_countermage",
+          "box": [
+            1024,
+            485,
+            1536,
+            1024
+          ]
+        }
+      ]
+    },
+    {
+      "file": "atlas-B.png",
+      "prompt": "Create a production atlas of SIX original fantasy skill paintings, exactly 3 columns by 2 rows, equal square cells, total aspect ratio 3:2. No gutters, lines, borders, lettering or captions. Each cell independent with centered dominant physical object filling 85% of its square, narrow safe inset, dark umber textured background. Heroes of Might and Magic III inspired miniature modeled fantasy still-life paintings: theatrical warm/cool chiaroscuro, aged bronze and crystal, realistic modeled volume, jewel colors, tiny concentrated magical highlights, late-1990s prerendered fantasy illustration character. Not pixel art, not flat symbols, no neon haze, no modern mobile gloss. Legible at 44 and 32 pixels. Exact cell subjects left to right then next row: TOP LEFT temporal field: brass hourglass fully enclosed by a clear glass sphere; TOP CENTER chronomancer: intricate solid bronze astrolabe with tiny hourglass mounted centrally; TOP RIGHT elven precision: feathered silver arrow passing through a large amber target ring, green velvet background; BOTTOM LEFT spell sequencing: three large blue crystal prisms connected by a short bronze chain, sequential bright highlights; BOTTOM CENTER arcane economy: blue mana flask balanced on one pan of an antique gold scale with small coins on the other pan; BOTTOM RIGHT focused pairing: two substantial violet crystals mounted together converging into one brilliant focus. Each composition clearly different, strong readable silhouette, no text anywhere. Render 1536x1024.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "cells": [
+        {
+          "id": "new-horizons:sorceryMagic.temporalField",
+          "key": "NH_perk_temporal_field",
+          "box": [
+            0,
+            0,
+            512,
+            512
+          ]
+        },
+        {
+          "id": "new-horizons:sorceryMagic.chronomancer",
+          "key": "NH_perk_chronomancer",
+          "box": [
+            512,
+            0,
+            1024,
+            512
+          ]
+        },
+        {
+          "id": "new-horizons:sylvanLuck.elvenPrecision",
+          "key": "NH_perk_elven_precision",
+          "box": [
+            1024,
+            0,
+            1536,
+            512
+          ]
+        },
+        {
+          "id": "new-horizons:metamagic.spellSequencing",
+          "key": "NH_perk_spell_sequencing",
+          "box": [
+            0,
+            512,
+            512,
+            1024
+          ]
+        },
+        {
+          "id": "new-horizons:metamagic.arcaneEconomy",
+          "key": "NH_perk_arcane_economy",
+          "box": [
+            512,
+            512,
+            1024,
+            1024
+          ]
+        },
+        {
+          "id": "new-horizons:metamagic.focusedPairing",
+          "key": "NH_perk_focused_pairing",
+          "box": [
+            1024,
+            512,
+            1536,
+            1024
+          ]
+        }
+      ]
+    },
+    {
+      "file": "atlas-C.png",
+      "prompt": "Create a production atlas of SIX original fantasy skill paintings, exactly 3 columns by 2 rows, equal square cells, total aspect ratio 3:2. No gutters, lines, borders, lettering or captions. Each cell independent with centered dominant object filling 85% of its square, narrow safe inset, dark umber textured background. Heroes of Might and Magic III inspired miniature modeled fantasy still-life paintings: theatrical warm/cool chiaroscuro, aged bronze and crystal, realistic modeled volume, jewel colors, tiny concentrated magical highlights, late-1990s prerendered fantasy illustration character. Not pixel art, not flat symbols, no neon haze, no modern mobile gloss. Legible when reduced to 44 and 32 pixels. Exact subjects left to right then next row: TOP LEFT countersequence: two opposing short chains of red and blue crystals meeting at one substantial steel seal; TOP CENTER echoed duration: two slightly overlapping antique hourglasses, one solid brass and one silvery spectral glass, sharing golden sand glow; TOP RIGHT split focus: one large forked crystal lens in aged bronze splitting a small bright beam into two distinct arms; BOTTOM LEFT formula reserve: richly modeled sealed parchment scroll case with a stored blue crystal, wax seal without lettering; BOTTOM CENTER spell buffer: one large blue crystal held inside concentric thick bronze protective rings; BOTTOM RIGHT grand metamagic: a grand upright multicolor prismatic crystal above a compact elaborate bronze apparatus with three legs. Each cell visibly different in silhouette and material arrangement, no lettering anywhere. Render 1536x1024.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "cells": [
+        {
+          "id": "new-horizons:metamagic.countersequence",
+          "key": "NH_perk_countersequence",
+          "box": [
+            0,
+            0,
+            512,
+            470
+          ]
+        },
+        {
+          "id": "new-horizons:metamagic.echoedDuration",
+          "key": "NH_perk_echoed_duration",
+          "box": [
+            512,
+            0,
+            1024,
+            470
+          ]
+        },
+        {
+          "id": "new-horizons:metamagic.splitFocus",
+          "key": "NH_perk_split_focus",
+          "box": [
+            1024,
+            0,
+            1536,
+            470
+          ]
+        },
+        {
+          "id": "new-horizons:metamagic.formulaReserve",
+          "key": "NH_perk_formula_reserve",
+          "box": [
+            0,
+            470,
+            512,
+            1024
+          ]
+        },
+        {
+          "id": "new-horizons:metamagic.spellBuffer",
+          "key": "NH_perk_spell_buffer",
+          "box": [
+            512,
+            470,
+            1024,
+            1024
+          ]
+        },
+        {
+          "id": "new-horizons:metamagic.grandMetamagic",
+          "key": "NH_perk_grand_metamagic",
+          "box": [
+            1024,
+            470,
+            1536,
+            1024
+          ]
+        }
+      ]
+    },
+    {
+      "file": "atlas-D.png",
+      "prompt": "Create a production atlas of SIX original fantasy skill paintings, exactly 3 columns by 2 rows, equal square cells, total aspect ratio 3:2. No gutters, lines, borders, lettering or captions. Each cell independent with centered dominant physical object filling 85% of its square, narrow safe inset, dark earthy umber textured background. Heroes of Might and Magic III inspired miniature modeled fantasy still-life paintings: theatrical warm/cool chiaroscuro, aged metal, leather, bone and wood with rich realistic modeled volume, saturated medieval jewel colors, localized highlights, late-1990s prerendered fantasy illustration character. Not pixel art, not flat symbols, no neon haze, no modern mobile gloss. Clear at 44 and 32 pixels. Exact subjects left to right then next row: TOP LEFT perfect sequence: three large ruby sapphire emerald crystals arranged into a closed triangular golden circuit; TOP CENTER dark conversion: one large ivory bone halfway transformed into black violet necromantic crystal, oxblood cloth; TOP RIGHT black harvest: aged dark steel sickle with a tight cluster of pale green soul motes caught beneath its curved blade; BOTTOM LEFT war drums: a large tribal leather war drum with two crossed bone beaters, red cloth and aged brass rivets; BOTTOM CENTER leadership capacity: a crimson command standard rising behind three closely clustered miniature steel soldier helmets; BOTTOM RIGHT siege capability: compact miniature wooden catapult with throwing arm raised beside three large stone ammunition balls. No buildings/scenery/people, just centered physical still lifes. Every object entirely within its own square cell; no text anywhere. Render 1536x1024.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "cells": [
+        {
+          "id": "new-horizons:metamagic.perfectSequence",
+          "key": "NH_perk_perfect_sequence",
+          "box": [
+            0,
+            0,
+            512,
+            480
+          ]
+        },
+        {
+          "id": "new-horizons:necromancy.darkConversion",
+          "key": "NH_perk_dark_conversion",
+          "box": [
+            512,
+            0,
+            1024,
+            480
+          ]
+        },
+        {
+          "id": "new-horizons:necromancy.blackHarvest",
+          "key": "NH_perk_black_harvest",
+          "box": [
+            1024,
+            0,
+            1536,
+            480
+          ]
+        },
+        {
+          "id": "new-horizons:bloodrage.warDrums",
+          "key": "NH_perk_war_drums",
+          "box": [
+            0,
+            480,
+            512,
+            1024
+          ]
+        },
+        {
+          "id": "leadership",
+          "key": "NH_capability_leadership",
+          "box": [
+            512,
+            480,
+            1024,
+            1024
+          ]
+        },
+        {
+          "id": "siege",
+          "key": "NH_capability_siege",
+          "box": [
+            1024,
+            480,
+            1536,
+            1024
+          ]
+        }
+      ]
+    }
+  ]
+}

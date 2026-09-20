@@ -56,6 +56,8 @@ public:
 	/// Replace the presentation icon while retaining the component's rules identity.
 	/// New Horizons uses this for perk-specific art and neutral unknown-perk fallback art.
 	void setCustomIcon(const AnimationPath & path);
+	/// Bound a choice card and place its wrapped caption beside the icon.
+	void setHorizontalLayout(int width, int height);
 
 	CComponent(ComponentType Type, ComponentSubType Subtype, std::optional<int32_t> Val = std::nullopt, ESize imageSize=large, EFonts font = FONT_SMALL);
 	CComponent(ComponentType Type, ComponentSubType Subtype, const std::string & Val, ESize imageSize=large, EFonts font = FONT_SMALL);

@@ -97,6 +97,7 @@ class BattleInterface
 
 	/// Conditional variables that are set depending on ongoing animations on the battlefield
 	ConditionalWait ongoingAnimationsState;
+	uint64_t animationStartGeneration = 0;
 
 	/// List of events that are waiting to be triggered
 	std::vector<AwaitingAnimationEvents> awaitingEvents;
@@ -115,6 +116,11 @@ class BattleInterface
 
 	/// ID of ongoing battle
 	BattleID battleID;
+
+	// Armed by the pre-apply StartAction callback, consumed only after acceptance.
+	std::unique_ptr<BattleAction> pendingHeroOrderPresentation;
+	int32_t pendingHeroOrderRound = -1;
+	void presentAcceptedHeroOrder(const BattleAction & action);
 
 	void playIntroSoundAndUnlockInterface();
 	void onIntroSoundPlayed();

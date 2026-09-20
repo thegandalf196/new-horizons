@@ -1051,6 +1051,9 @@ void BattleInterface::endAction(const BattleAction &action)
 	// it is possible that tactics mode ended while opening music is still playing
 	waitForAnimations();
 
+	presentAcceptedHeroOrder(action);
+	waitForAnimations();
+
 	const CStack * stack = action.isUnitAction() ? getBattle()->battleGetStackByID(action.stackNumber) : nullptr;
 
 	// Activate stack from stackToActivate because this might have been temporary disabled, e.g., during spell cast
@@ -1080,6 +1083,75 @@ void BattleInterface::endAction(const BattleAction &action)
 		windowObject->openMetamagicSpellbook();
 }
 
+void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
+{
+	// Consume before playback: both-side/hotseat callbacks and duplicate
+	// EndAction delivery must not replay the same presentation.
+	const auto pending = std::move(pendingHeroOrderPresentation);
+	if(!pending || action.actionType != EActionType::HERO_COMMAND || action.metamagicDecline
+		|| pending->side != action.side || pending->command != action.command
+		|| pendingHeroOrderRound != getBattle()->battleGetRound()
+		|| !getBattle()->getBattle()->getHeroCommandUsed(action.side)
+		|| getBattle()->getBattle()->getActiveOrder(action.side) != action.command)
+		return;
+
+	const auto state = getBattle()->battleGetHeroOrderState(action.side);
+	if(heroCommands::isCanonicalRules(getBattle()->getBattle()->getHeroCommandRules())
+		&& (!state || state->command != action.command || state->issuedRound != pendingHeroOrderRound))
+		return;
+
+	// Reuse presentation resources only, never spell definitions/mechanics.
+	// Each Order has a distinct troop effect; Second Wind uses retired Mirth.
+	const char * animation = nullptr;
+	const char * sound = nullptr;
+	float transparency = 1.f;
+	switch(action.command)
+	{
+		case HeroCommand::CHARGE: animation = "C15SPA0"; sound = "TAILWIND"; break; // Haste
+		case HeroCommand::HOLD_THE_LINE: animation = "C16SPE"; sound = "TUFFSKIN"; break; // Stone Skin
+		case HeroCommand::RIPOSTE: animation = "C04SPA0"; sound = "CNTRSTRK"; break;
+		case HeroCommand::BRACE: animation = "C13SPE0"; sound = "SHIELD"; break;
+		case HeroCommand::PROTECT: animation = "C01SPA0"; sound = "AIRSHELD"; break;
+		case HeroCommand::FOCUS_FIRE: animation = "C12SPA0"; sound = "PRECISON"; break;
+		case HeroCommand::FLANK: animation = "C07SPA1"; sound = "DISRUPTR"; transparency = 0.5f; break;
+		case HeroCommand::SECOND_WIND: animation = "C09SPW0"; sound = "MIRTH"; break;
+		default: return;
+	}
+
+	BattleHexArray targets;
+	const auto addTarget = [this, &targets](uint32_t unitId)
+	{
+		const auto * unit = getBattle()->battleGetUnitByID(unitId);
+		if(unit && unit->alive() && !unit->isGhost() && unit->getPosition().isValid())
+			targets.insert(unit->getPosition());
+	};
+	if(state && state->primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID)
+	{
+		addTarget(state->primaryTargetUnitId);
+		if(state->secondaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID)
+			addTarget(state->secondaryTargetUnitId);
+	}
+	else if(!action.target.empty())
+	{
+		for(const auto & target : action.target)
+			if(target.unitValue >= 0)
+				addTarget(static_cast<uint32_t>(target.unitValue));
+	}
+	else
+	{
+		for(const auto * unit : getBattle()->battleAliveUnits())
+			if(getBattle()->battleGetOwner(unit) == getBattle()->sideToPlayer(action.side)
+				&& !unit->isGhost() && !unit->isTurret()
+				&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+				&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER)
+				addTarget(unit->unitId());
+	}
+
+	setHeroAnimation(action.side, EHeroAnimType::VICTORY);
+	if(!targets.empty())
+		effectsController->displayAnimation(AnimationPath::builtin(animation), AudioPath::builtin(sound), targets, transparency);
+}
+
 void BattleInterface::appendBattleLog(const std::string & newEntry)
 {
 	console->addText(newEntry);
@@ -1087,6 +1159,18 @@ void BattleInterface::appendBattleLog(const std::string & newEntry)
 
 void BattleInterface::startAction(const BattleAction & action)
 {
+	// This callback precedes authoritative StartAction application. Merely
+	// clicking an Order, or receiving a rejected request, never reaches this
+	// transition. A replay of an already applied Order cannot arm it again.
+	pendingHeroOrderPresentation.reset();
+	if(action.actionType == EActionType::HERO_COMMAND && !action.metamagicDecline
+		&& (action.side == BattleSide::ATTACKER || action.side == BattleSide::DEFENDER)
+		&& !getBattle()->getBattle()->getHeroCommandUsed(action.side))
+	{
+		pendingHeroOrderPresentation = std::make_unique<BattleAction>(action);
+		pendingHeroOrderRound = getBattle()->battleGetRound();
+	}
+
 	if(action.actionType == EActionType::END_TACTIC_PHASE)
 	{
 		windowObject->tacticPhaseEnded();
@@ -1250,13 +1334,26 @@ void BattleInterface::endNetwork()
 
 void BattleInterface::executeStagedAnimations()
 {
-	EAnimationEvents earliestStage = EAnimationEvents::COUNT;
+	// A stage is allowed to contain presentation-only work (most notably the
+	// cast sound) and therefore need not create a BattleAnimation.  Keep
+	// advancing such stages synchronously until an actual animation takes over
+	// the pump or the action is completely drained.  Otherwise a projectile
+	// spell can leave HIT queued with no animation that could ever emit it.
+	while(true)
+	{
+		EAnimationEvents earliestStage = EAnimationEvents::COUNT;
 
-	for(const auto & event : awaitingEvents)
-		earliestStage = std::min(earliestStage, event.event);
+		for(const auto & event : awaitingEvents)
+			earliestStage = std::min(earliestStage, event.event);
 
-	if(earliestStage != EAnimationEvents::COUNT)
+		if(earliestStage == EAnimationEvents::COUNT)
+			return;
+
+		const auto startsBeforeStage = animationStartGeneration;
 		executeAnimationStage(earliestStage);
+		if(animationStartGeneration != startsBeforeStage)
+			return;
+	}
 }
 
 void BattleInterface::executeAnimationStage(EAnimationEvents event)
@@ -1279,6 +1376,7 @@ void BattleInterface::executeAnimationStage(EAnimationEvents event)
 
 void BattleInterface::onAnimationsStarted()
 {
+	++animationStartGeneration;
 	ongoingAnimationsState.setBusy();
 }
 
@@ -1289,19 +1387,24 @@ void BattleInterface::onAnimationsFinished()
 
 void BattleInterface::waitForAnimations()
 {
+	// The render thread may finish an animation whose completion callback only
+	// queued a presentation-only stage.  Pump it here before declaring the
+	// network action complete, so EndAction cannot discard a spell's pending
+	// HIT/AFTER_HIT work and leave the battle UI blocked.
+	while(hasAnimations() || !awaitingEvents.empty())
 	{
-		auto unlockInterface = vstd::makeUnlockGuard(ENGINE->interfaceMutex);
-		ongoingAnimationsState.waitWhileBusy();
+		if(!hasAnimations())
+			executeStagedAnimations();
+
+		if(hasAnimations())
+		{
+			auto unlockInterface = vstd::makeUnlockGuard(ENGINE->interfaceMutex);
+			ongoingAnimationsState.waitWhileBusy();
+		}
 	}
 
 	assert(!hasAnimations());
 	assert(awaitingEvents.empty());
-
-	if (!awaitingEvents.empty())
-	{
-		logGlobal->error("Wait for animations finished but we still have awaiting events!");
-		awaitingEvents.clear();
-	}
 }
 
 bool BattleInterface::hasAnimations()

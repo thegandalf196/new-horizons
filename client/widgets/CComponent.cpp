@@ -129,6 +129,22 @@ void CComponent::init(ComponentType Type, ComponentSubType Subtype, std::optiona
 	}
 }
 
+void CComponent::setHorizontalLayout(int width, int height)
+{
+	OBJECT_CONSTRUCTION;
+	lines.clear();
+	pos.w = width;
+	pos.h = height;
+	image->moveTo(pos.topLeft() + Point(2, (height - image->pos.h) / 2));
+	const Rect caption(image->pos.w + 10, 0, width - image->pos.w - 12, height);
+	auto label = std::make_shared<CMultiLineLabel>(caption, font, ETextAlignment::CENTERLEFT, Colors::WHITE, getSubtitle());
+	// Translated/extended names retain a bounded card; a smaller font is a
+	// better fallback than pushing the second offer into the confirmation row.
+	if(label->textSize.y > height)
+		label = std::make_shared<CMultiLineLabel>(caption, FONT_TINY, ETextAlignment::CENTERLEFT, Colors::WHITE, getSubtitle());
+	lines.push_back(label);
+}
+
 std::vector<AnimationPath> CComponent::getFileName() const
 {
 	static const std::array<std::string, 4>  primSkillsArr = {"PSKIL32",        "PSKIL32",        "PSKIL42",        "PSKILL"};

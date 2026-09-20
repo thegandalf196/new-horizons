@@ -132,6 +132,7 @@ void AssetGenerator::initialize()
 	
 	animationFiles[AnimationPath::builtin("SPRITES/GSPButtonClear")] = createGSPButtonClear();
 	animationFiles[AnimationPath::builtin("SPRITES/GSPButton2Arrow")] = createGSPButton2Arrow();
+	animationFiles[AnimationPath::builtin("SPRITES/NH_orders_gauntlet_framed")] = createNewHorizonsOrdersButton();
 
 	for (PlayerColor color(-1); color < PlayerColor::PLAYER_LIMIT; ++color)
 	{
@@ -1085,6 +1086,39 @@ AssetGenerator::CanvasPtr AssetGenerator::createQuestWindow() const
 	return image;
 }
 
+AssetGenerator::AnimationLayoutMap AssetGenerator::createNewHorizonsOrdersButton()
+{
+	AnimationLayoutMap layout;
+	const std::array<std::string, 4> states = {"normal", "pressed", "disabled", "highlighted"};
+	for(size_t state = 0; state < states.size(); ++state)
+	{
+		const auto spriteName = ImagePath::builtin("NH_orders_gauntlet_framed_" + states[state] + ".png");
+		imageFiles[spriteName] = [this, state, stateName = states[state]]()
+		{
+			// Match the 48x36 ICM controls on their existing 51px battle-bar
+			// pitch. Only runtime frame strips come from purchaser artwork.
+			constexpr int width = 48;
+			constexpr int height = 36;
+			constexpr int border = 3;
+			auto image = createDialogBackground(Point(width, height));
+			auto canvas = image->getCanvas();
+			auto gauntlet = ENGINE->renderHandler().loadImage(ImageLocator(
+				ImagePath::builtin("NH_orders_gauntlet_" + stateName + ".png"), EImageBlitMode::SIMPLE));
+			gauntlet->scaleTo(Point(40, 30), EScalingAlgorithm::BILINEAR);
+			canvas.draw(gauntlet, Point(4, 3));
+			auto classic = ENGINE->renderHandler().loadAnimation(AnimationPath::builtin("ICM005"), EImageBlitMode::OPAQUE);
+			auto frame = classic->getImage(state);
+			canvas.draw(frame, Point(0, 0), Rect(0, 0, width, border));
+			canvas.draw(frame, Point(0, height - border), Rect(0, height - border, width, border));
+			canvas.draw(frame, Point(0, border), Rect(0, border, border, height - 2 * border));
+			canvas.draw(frame, Point(width - border, border), Rect(width - border, border, border, height - 2 * border));
+			return image;
+		};
+		layout[0].push_back(ImageLocator(spriteName, EImageBlitMode::SIMPLE));
+	}
+	return layout;
+}
+
 AssetGenerator::AnimationLayoutMap AssetGenerator::createGSPButtonClear()
 {
 	auto baseImg = ENGINE->renderHandler().loadAnimation(AnimationPath::builtin("GSPBUTT"), EImageBlitMode::OPAQUE);
@@ -1601,16 +1635,17 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() cons
 
 AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground() const
 {
-	// Keep the familiar LVLUPBKG frame and wood texture while adding enough
-	// vertical room for the separated skill/perk offer columns.  The source
-	// asset remains purchaser-provided; only its runtime canvas is extended.
+	// Preserve the familiar title/portrait art and frame. Do not tile the
+	// decorated middle: it contains stars, portrait and button-shaped insets,
+	// which otherwise reappear behind the lower choices and confirmation.
 	auto source = ENGINE->renderHandler().loadImage(
 		ImageLocator(ImagePath::builtin("LVLUPBKG.bmp"), EImageBlitMode::COLORKEY));
 	constexpr int extraHeight = 64;
-	constexpr int topFrame = 64;
-	constexpr int bottomFrame = 20;
+	constexpr int topFrame = 184;
+	constexpr int bottomFrame = 12;
+	constexpr int sideFrame = 12;
 	const Point size(source->width(), source->height() + extraHeight);
-	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);
+	auto image = createDialogBackground(size);
 	Canvas canvas = image->getCanvas();
 	canvas.draw(source, Point(0, 0), Rect(0, 0, source->width(), topFrame));
 
@@ -1618,7 +1653,9 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground() c
 	for(int y = topFrame; y < size.y - bottomFrame; )
 	{
 		const int height = std::min(sourceMiddleHeight, size.y - bottomFrame - y);
-		canvas.draw(source, Point(0, y), Rect(0, topFrame, source->width(), height));
+		canvas.draw(source, Point(0, y), Rect(0, topFrame, sideFrame, height));
+		canvas.draw(source, Point(size.x - sideFrame, y),
+			Rect(source->width() - sideFrame, topFrame, sideFrame, height));
 		y += height;
 	}
 	canvas.draw(source, Point(0, size.y - bottomFrame),

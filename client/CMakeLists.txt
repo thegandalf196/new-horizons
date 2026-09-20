@@ -382,6 +382,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CHeroOverview.h
 	windows/CHeroWindow.h
 	windows/HeroGrowthWindow.h
+	windows/NewHorizonsPerkIcons.h
 	windows/HeroMasteryWindow.h
 	windows/HeroMasteryDialogState.h
 	windows/CKingdomInterface.h

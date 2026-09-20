@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CHeroWindow.h"
+#include "NewHorizonsPerkIcons.h"
 #include "HeroGrowthWindow.h"
 #include "wiki/WikiWindow.h"
 
@@ -234,8 +235,8 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 		FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
 	legacyLeadershipLabel = std::make_shared<CLabel>(438, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Lead --", 65);
 	legacySiegeLabel = std::make_shared<CLabel>(534, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Siege --", 65);
-	legacyLeadershipImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_hero_leadership_32"), 0, Rect(410, 404, 24, 24));
-	legacySiegeImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_hero_siege_32"), 0, Rect(506, 404, 24, 24));
+	legacyLeadershipImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_leadership_32"), 0, Rect(410, 404, 24, 24));
+	legacySiegeImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_siege_32"), 0, Rect(506, 404, 24, 24));
 	legacyBoneCollectorImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_bone_collector"), 0, Rect(314, 404, 24, 24));
 	if(newHorizonsLayout)
 	{
@@ -339,7 +340,13 @@ void CHeroWindow::configureNewHorizonsLayout()
 	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44), "Legacy siege capability - not a spendable balance");
 	for(const auto & field : {std::make_pair(Point(152, 88), "Leadership"), std::make_pair(Point(152, 132), "Movement"), std::make_pair(Point(292, 132), "Legacy siege")})
 	{
-		labels.push_back(std::make_shared<CLabel>(field.first.x + 4, field.first.y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "TBD", 36));
+		if(std::string(field.second) == "Movement")
+			labels.push_back(std::make_shared<CLabel>(field.first.x + 4, field.first.y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "TBD", 36));
+		else
+		{
+			const auto iconKey = std::string(field.second) == "Leadership" ? "NH_capability_leadership" : "NH_capability_siege";
+			capabilityIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin(iconKey), 0, 0, field.first.x, field.first.y));
+		}
 		labels.push_back(std::make_shared<CLabel>(field.first.x + 50, field.first.y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, field.second, 88));
 	}
 	leadershipValue = std::make_shared<CLabel>(202, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
@@ -442,6 +449,8 @@ void CHeroWindow::restoreLegacyLayout()
 		for(const auto & icon : icons)
 			icon->disable();
 	leadershipArea->disable();
+	for(const auto & icon : capabilityIcons)
+		icon->disable();
 	movementArea->disable();
 	legacySiegeArea->disable();
 	leadershipValue->disable();
@@ -620,8 +629,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				const auto & cellLabels = provisionalAbilityLabels[g];
 				const auto labelIndex = ability * 3;
 				const bool hasPerk = ability < learnedPerks.size();
-				const auto iconKey = hasPerk && learnedPerks[ability]->id == "new-horizons:necromancy.boneCollector"
-					? "NH_perk_bone_collector" : "NH_perk_neutral";
+				const auto iconKey = newHorizonsPerkIcon(hasPerk ? learnedPerks[ability]->id : std::string());
 				provisionalAbilityIcons[g][ability]->setAnimationPath(AnimationPath::builtin(iconKey), 0);
 				if(learnedSkill)
 					provisionalAbilityIcons[g][ability]->enable();

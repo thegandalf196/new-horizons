@@ -174,7 +174,7 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		widget<CButton>("consoleUp")->moveBy(Point(-ordersControlPitch, 0));
 		widget<CButton>("consoleDown")->moveBy(Point(-ordersControlPitch, 0));
 		addShortcut(EShortcut::BATTLE_OPEN_ORDERS, [this] { bOrdersf(); });
-		ordersButton = std::make_shared<CButton>(Point(595, 560), AnimationPath::builtin("NH_orders_gauntlet"),
+		ordersButton = std::make_shared<CButton>(Point(595, 560), AnimationPath::builtin("NH_orders_gauntlet_framed"),
 			CButton::tooltip("Orders", ""));
 		ordersButton->addPopupCallback([this]
 		{
