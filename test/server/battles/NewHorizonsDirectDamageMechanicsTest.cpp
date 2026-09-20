@@ -136,6 +136,31 @@ TEST(NewHorizonsHavocDirectDamage, CanonicalLevelOneRosterUsesSavedV2FormulasAnd
 		newHorizonsMagic::directDamageValue(rules, "core:iceBolt", 100, 10));
 }
 
+TEST(NewHorizonsHavocDirectDamage, CanonicalFrostRingAndInfernoUseDetailedRosterValues)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	struct Expected
+	{
+		const char * id;
+		int32_t level;
+		int32_t cost;
+		int32_t base;
+		int32_t coefficient;
+	};
+	for(const auto & expected : std::vector<Expected>{
+		{"core:frostRing", 2, 8, 55, 11},
+		{"core:inferno", 3, 13, 70, 12}})
+	{
+		const auto & record = rules["spells"][expected.id];
+		EXPECT_EQ(record["level"].Integer(), expected.level) << expected.id;
+		ASSERT_EQ(record["costs"].Vector().size(), 4u) << expected.id;
+		for(const auto & cost : record["costs"].Vector())
+			EXPECT_EQ(cost.Integer(), expected.cost) << expected.id;
+		EXPECT_EQ(newHorizonsMagic::directDamageValue(rules, expected.id, 20, 10),
+			expected.base + expected.coefficient * 2) << expected.id;
+	}
+}
+
 class NewHorizonsDirectDamageMechanicsTest : public HeroCommandFixture
 {
 protected:
@@ -337,7 +362,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, FireballAppliesCanonicalDamageToTar
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
 	auto * adjacent = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex - 1), 1000);
-	auto * distant = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex + 3), 1000);
+	auto * distant = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex + 2), 1000);
 	ASSERT_TRUE(vstd::contains(BattleHexArray::getNeighbouringTiles(target->getPosition()), adjacent->getPosition()));
 	ASSERT_FALSE(vstd::contains(BattleHexArray::getNeighbouringTiles(target->getPosition()), distant->getPosition()));
 	const auto targetBefore = target->getAvailableHealth();
@@ -354,6 +379,64 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, FireballAppliesCanonicalDamageToTar
 	EXPECT_EQ(adjacentBefore - adjacent->getAvailableHealth(), 41);
 	EXPECT_EQ(distant->getAvailableHealth(), distantBefore);
 	EXPECT_EQ(attackerSideHero->mana, manaBefore - 5);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, FrostRingLeavesCenterSafeAndDamagesOnlyTheSurroundingRing)
+{
+	forceRealHeroScale = true;
+	selectedSpellKey = "core:frostRing";
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
+	std::vector<CStack *> ring;
+	for(const auto hex : BattleHexArray::getNeighbouringTiles(target->getPosition()))
+		ring.push_back(addStack(ring.size() % 2 == 0 ? BattleSide::ATTACKER : BattleSide::DEFENDER,
+			creatureByName("core:pikeman"), hex, 1000));
+	ASSERT_EQ(ring.size(), 6u);
+	auto * distant = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex + 2), 1000);
+	const auto centerBefore = target->getAvailableHealth();
+	std::vector<int64_t> ringBefore;
+	for(const auto * stack : ring)
+		ringBefore.push_back(stack->getAvailableHealth());
+	const auto distantBefore = distant->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->mana;
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToHex(target->getPosition());
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(target->getAvailableHealth(), centerBefore);
+	for(size_t index = 0; index < ring.size(); ++index)
+		EXPECT_EQ(ringBefore[index] - ring[index]->getAvailableHealth(), 77) << "ring index " << index;
+	EXPECT_EQ(distant->getAvailableHealth(), distantBefore);
+	EXPECT_EQ(attackerSideHero->mana, manaBefore - 8);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, InfernoDamagesItsBroadRadiusWithCanonicalFormula)
+{
+	forceRealHeroScale = true;
+	selectedSpellKey = "core:inferno";
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
+	auto * inner = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(rightHex - 1), 1000);
+	auto * outer = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex - 2), 1000);
+	auto * distant = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex + 3), 1000);
+	const auto targetBefore = target->getAvailableHealth();
+	const auto innerBefore = inner->getAvailableHealth();
+	const auto outerBefore = outer->getAvailableHealth();
+	const auto distantBefore = distant->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->mana;
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToHex(target->getPosition());
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(targetBefore - target->getAvailableHealth(), 94);
+	EXPECT_EQ(innerBefore - inner->getAvailableHealth(), 94);
+	EXPECT_EQ(outerBefore - outer->getAvailableHealth(), 94);
+	EXPECT_EQ(distant->getAvailableHealth(), distantBefore);
+	EXPECT_EQ(attackerSideHero->mana, manaBefore - 13);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePredictionAndAuthoritativeManaPath)

@@ -1028,3 +1028,83 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireballIsPreferredForClusterWithoutMuta
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), castsBefore);
 	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 }
+
+TEST_F(NewHorizonsMagicAITest, CanonicalFrostRingUsesSafeFriendlyCenter)
+{
+	useCurrentMagicRules = true;
+	prepareCommands(true);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto id : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(id);
+	const SpellID frostRing(SpellID::FROST_RING);
+	attackerSideHero->addSpellToSpellbook(frostRing);
+	attackerSideHero->setSecSkillLevel(
+		SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 1, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 200, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 100;
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(75), 1);
+	auto * first = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(74), 1);
+	auto * second = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(76), 1);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	const auto centerHealth = center->getAvailableHealth();
+	const auto firstHealth = first->getAvailableHealth();
+	const auto secondHealth = second->getAvailableHealth();
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, frostRing);
+	ASSERT_EQ(callback->submitted.front().target.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().target.front().hexValue, center->getPosition());
+	EXPECT_EQ(center->getAvailableHealth(), centerHealth);
+	EXPECT_EQ(first->getAvailableHealth(), firstHealth);
+	EXPECT_EQ(second->getAvailableHealth(), secondHealth);
+}
+
+TEST_F(NewHorizonsMagicAITest, CanonicalInfernoIsPreferredForBroadEnemyCluster)
+{
+	useCurrentMagicRules = true;
+	prepareCommands(true);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto id : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(id);
+	const SpellID inferno(SpellID::INFERNO);
+	const SpellID iceBolt(SpellID::ICE_BOLT);
+	attackerSideHero->addSpellToSpellbook(inferno);
+	attackerSideHero->addSpellToSpellbook(iceBolt);
+	attackerSideHero->setSecSkillLevel(
+		SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 2, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 100;
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
+	auto * first = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(75), 100);
+	auto * second = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(76), 100);
+	auto * third = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(77), 100);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	const std::array healthBefore{first->getAvailableHealth(), second->getAvailableHealth(), third->getAvailableHealth()};
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, inferno);
+	EXPECT_EQ(first->getAvailableHealth(), healthBefore[0]);
+	EXPECT_EQ(second->getAvailableHealth(), healthBefore[1]);
+	EXPECT_EQ(third->getAvailableHealth(), healthBefore[2]);
+}

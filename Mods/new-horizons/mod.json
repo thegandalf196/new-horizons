@@ -433,9 +433,13 @@
 						"costs": [
 							8,
 							8,
-							6,
-							6
-						]
+							8,
+							8
+						],
+						"directDamage": {
+							"base": 55,
+							"powerCoefficient": 11
+						}
 					},
 					"core:haste": {
 						"schools": [
@@ -493,13 +497,17 @@
 						"schools": [
 							"new-horizons:havoc"
 						],
-						"level": 2,
+						"level": 3,
 						"costs": [
-							8,
-							8,
-							6,
-							6
-						]
+							13,
+							13,
+							13,
+							13
+						],
+						"directDamage": {
+							"base": 70,
+							"powerCoefficient": 12
+						}
 					},
 					"core:landMine": {
 						"schools": [

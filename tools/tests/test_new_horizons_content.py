@@ -152,7 +152,9 @@ class NewHorizonsContentTest(unittest.TestCase):
                           if 'directDamage' in spell}, {
                               'core:magicArrow',
                               'core:fireball',
+                              'core:frostRing',
                               'core:iceBolt',
+                              'core:inferno',
                               'core:lightningBolt',
                           })
         self.assertEqual(self.rules['spells']['core:fireball']['directDamage'],
@@ -161,6 +163,10 @@ class NewHorizonsContentTest(unittest.TestCase):
                          {'base': 45, 'powerCoefficient': 10})
         self.assertEqual(self.rules['spells']['core:lightningBolt']['directDamage'],
                          {'base': 20, 'powerCoefficient': 15})
+        self.assertEqual(self.rules['spells']['core:frostRing']['directDamage'],
+                         {'base': 55, 'powerCoefficient': 11})
+        self.assertEqual(self.rules['spells']['core:inferno']['directDamage'],
+                         {'base': 70, 'powerCoefficient': 12})
         self.assertNotIn('new-horizons:magicMissile', self.rules['spells'])
 
     def test_generated_module_matches_all_canonical_data(self):
