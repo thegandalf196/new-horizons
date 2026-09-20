@@ -57,6 +57,18 @@ def verify_orders_help(source):
     assert re.search(r'ordersButton->block\(ordersBlocked\);\s*//[^\n]*\n\s*ordersButton->addUsedEvents\(SHOW_POPUP\);\s*setShortcutBlocked\(EShortcut::BATTLE_OPEN_ORDERS, ordersBlocked\);', source)
 
 
+def verify_spent_action_spell_feedback(source):
+    open_spellbook = source.split('void BattleWindow::openSpellbook()', 1)[1].split('void BattleWindow::bWaitf()', 1)[0]
+    assert 'spellCastProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT' in open_spellbook
+    assert 'owner.getBattle()->battleUsesHeroCommands()' in open_spellbook
+    assert 'CRClickPopup::createAndPush("The shared hero action has already been spent this round.' in open_spellbook
+
+    block_ui = source.split('void BattleWindow::blockUI(bool on)', 1)[1]
+    assert 'bool canExplainSpellShortcut = false;' in block_ui
+    assert 'canExplainSpellShortcut = spellcastingProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT' in block_ui
+    assert '(!canCastSpells && !canExplainSpellShortcut)' in block_ui
+
+
 def main():
     source = SOURCE.read_text()
     verify(source)
@@ -96,6 +108,7 @@ def main():
     print(f'PASS: both redraw paths; {len(redraw_mutants)} missing/late-refresh mutants rejected')
     window = (SOURCE.parent / 'BattleWindow.cpp').read_text()
     verify_orders_help(window)
+    verify_spent_action_spell_feedback(window)
     help_mutants = [
         window.replace('addUsedEvents(SHOW_POPUP)', 'addUsedEvents(SHOW_POPUP | LCLICK)', 1),
         window.replace('addUsedEvents(SHOW_POPUP)', 'addUsedEvents(SHOW_POPUP | KEYBOARD)', 1),

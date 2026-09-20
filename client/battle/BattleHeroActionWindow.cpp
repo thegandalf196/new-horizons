@@ -17,6 +17,7 @@
 #include "../widgets/Buttons.h"
 #include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../widgets/TextControls.h"
+#include "../windows/InfoWindows.h"
 #include "../render/Colors.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
@@ -355,23 +356,37 @@ void BattleHeroActionWindow::refresh()
 		auto & entry = commands[i];
 		const bool supported = heroCommands::supportedByRules(rules, entry.first);
 		const bool targeted = isTargeted(entry.first);
+		const bool commonAvailable = commonReason().empty();
+		const bool targetReady = !targeted || !supported || !canAct || !hero
+			? false : callback->battleCanBeginHeroCommand(side, entry.first);
+		const bool hasTargets = targeted && supported && canAct && hero
+			&& !callback->battleGetHeroCommandTargets(side, entry.first).empty();
 		const bool available = supported && canAct && hero
-			&& (targeted ? callback->battleCanBeginHeroCommand(side, entry.first)
-				: callback->battleCanUseHeroCommand(side, entry.first));
-		entry.second->block(!available);
+			&& (targeted ? targetReady : callback->battleCanUseHeroCommand(side, entry.first));
+		const bool protectPairUnavailable = entry.first == HeroCommand::PROTECT && targeted && supported
+			&& commonAvailable && canAct && hero && !targetReady;
+		// Keep the Protect control clickable in this one disabled state so its
+		// activation-time recheck can explain that no legal footprint pair exists.
+		// It remains visibly marked unavailable and never submits a packet.
+		entry.second->block(!available && !protectPairUnavailable);
 		anyCommand |= available;
 		std::string reason = commonReason();
 		if(reason.empty() && !supported)
 			reason = "This Order is not available in the battle's saved rules.";
-		if(reason.empty() && targeted && callback->battleGetHeroCommandTargets(side, entry.first).empty())
-			reason = "No legal targets are available right now.";
+		if(reason.empty() && targeted && !targetReady)
+			reason = entry.first == HeroCommand::PROTECT
+			? "No legal Protector/Ward pair is available; the two friendly unit footprints must touch."
+			: (hasTargets ? "The authority currently rejects this target requirement."
+				: "No legal targets are available right now.");
 		if(reason.empty() && !available)
 			reason = "The authority currently rejects this Order's requirements.";
 		const auto & display = commandDisplay(entry.first);
 		entry.second->setHelp(CButton::tooltip(display.name,
 			std::string(display.description) + (reason.empty() ? "\n\nReady: choose this Order." : "\n\nDisabled: " + reason)
 			+ "\nOne shared hero action; no mana."));
-		if(entry.first == callback->battleGetActiveOrder(side))
+		if(protectPairUnavailable)
+			entry.second->setBorderColor(Colors::ORANGE);
+		else if(entry.first == callback->battleGetActiveOrder(side))
 			entry.second->setBorderColor(Colors::YELLOW);
 		else
 			entry.second->setBorderColor(std::nullopt);
@@ -433,13 +448,6 @@ void BattleHeroActionWindow::refresh()
 			availability = "Shared hero action spent";
 		else
 			availability = anyCommand ? "Order available" : "No Order currently available";
-		for(auto & entry : commands)
-		{
-			if(entry.first == order)
-				entry.second->setBorderColor(Colors::YELLOW);
-			else
-				entry.second->setBorderColor(std::nullopt);
-		}
 	}
 	setStateText("Order: " + HeroCommandUI::name(order) + " | " + availability);
 }
@@ -447,10 +455,25 @@ void BattleHeroActionWindow::refresh()
 void BattleHeroActionWindow::chooseTargetedCommand(HeroCommand command)
 {
 	auto owner = currentBattle();
-	if(!owner || !ordersOnly || !owner->makingTurn() || owner->curInt->isAutoFightOn
-		|| owner->isInTacticsMode() || owner->actionsController->heroSpellcastingModeActive() || !owner->currentHero()
-		|| !owner->getBattle()->battleCanBeginHeroCommand(owner->getBattle()->battleGetMySide(), command))
+	if(!owner || !ordersOnly)
 	{
+		refresh();
+		return;
+	}
+	if(!owner->makingTurn() || owner->curInt->isAutoFightOn || owner->isInTacticsMode()
+		|| owner->actionsController->heroSpellcastingModeActive() || !owner->currentHero())
+	{
+		refresh();
+		return;
+	}
+	const auto callback = owner->getBattle();
+	const auto side = callback->battleGetMySide();
+	if(!callback->battleCanBeginHeroCommand(side, command))
+	{
+		if(command == HeroCommand::PROTECT)
+			CRClickPopup::createAndPush("Protect unavailable. No legal Protector/Ward pair is available; the two friendly unit footprints must touch.");
+		else
+			CRClickPopup::createAndPush(HeroCommandUI::name(command) + " unavailable. No legal target is available right now.");
 		refresh();
 		return;
 	}

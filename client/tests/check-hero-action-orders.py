@@ -47,6 +47,10 @@ assert "prepared(*context, *owner, {*context->first, id})" in target
 assert "BattleHex::getDistance" not in target
 assert "adjacent(*" not in target
 assert "visibleCommandDisplays" in action
+assert "CRClickPopup::createAndPush" in action
+assert "Protect unavailable. No legal Protector/Ward pair is available" in action
+assert "protectPairUnavailable" in action
+assert "entry.second->block(!available && !protectPairUnavailable)" in action
 
 # Frontend must submit requests through the callback, not mutate the battle
 # snapshot or write the action budget/effects locally.
