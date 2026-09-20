@@ -13,10 +13,13 @@
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/CObstacleInstance.h"
+#include "../../../lib/battle/BattleHexArray.h"
 #include "../../../lib/battle/Destination.h"
 #include "../../../lib/callback/CGameInfoCallback.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/constants/StringConstants.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -101,15 +104,56 @@ public:
 };
 }
 
+TEST(NewHorizonsHavocDirectDamage, CanonicalLevelOneRosterUsesSavedV2FormulasAndFiveMana)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_EQ(rules["rulesetVersion"].Integer(), 2);
+	struct Expected
+	{
+		const char * id;
+		int32_t base;
+		int32_t coefficient;
+	};
+	for(const auto & expected : std::vector<Expected>{
+		{"core:fireball", 25, 8},
+		{"core:iceBolt", 45, 10},
+		{"core:lightningBolt", 20, 15}})
+	{
+		const auto & record = rules["spells"][expected.id];
+		ASSERT_EQ(record["level"].Integer(), 1) << expected.id;
+		ASSERT_EQ(record["schools"].Vector().size(), 1u) << expected.id;
+		EXPECT_EQ(record["schools"].Vector().front().String(), "new-horizons:havoc") << expected.id;
+		ASSERT_EQ(record["costs"].Vector().size(), 4u) << expected.id;
+		for(const auto & cost : record["costs"].Vector())
+			EXPECT_EQ(cost.Integer(), 5) << expected.id;
+		EXPECT_EQ(newHorizonsMagic::directDamageValue(rules, expected.id, 20, 10),
+			expected.base + expected.coefficient * 2) << expected.id;
+	}
+
+	EXPECT_GT(newHorizonsMagic::directDamageValue(rules, "core:iceBolt", 20, 10),
+		newHorizonsMagic::directDamageValue(rules, "core:lightningBolt", 20, 10));
+	EXPECT_GT(newHorizonsMagic::directDamageValue(rules, "core:lightningBolt", 100, 10),
+		newHorizonsMagic::directDamageValue(rules, "core:iceBolt", 100, 10));
+}
+
 class NewHorizonsDirectDamageMechanicsTest : public HeroCommandFixture
 {
 protected:
 	bool savedEnabled = true;
 	bool forceRealHeroScale = false;
 	bool usePerks = false;
-	JsonNode authoredRules = savedFormula();
+	JsonNode authoredRules;
+	std::string selectedSpellKey = arrowKey;
 	CStack * target = nullptr;
 	const CSpell * spell = nullptr;
+
+	void SetUp() override
+	{
+		HeroCommandFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires separate native curated preset";
+		authoredRules = savedFormula();
+	}
 
 	void mapLoaded(CMap * map) override
 	{
@@ -125,7 +169,7 @@ protected:
 	void prepare()
 	{
 		startGame();
-		spell = SpellID(SpellID::decode(arrowKey)).toSpell();
+		spell = SpellID(SpellID::decode(selectedSpellKey)).toSpell();
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(spell->getId());
 		attackerSideHero->mana = 100;
@@ -240,6 +284,76 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuth
 	EXPECT_LT(attackerSideHero->mana, mana);
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(before - target->getAvailableHealth(), 68) << "Rejected second hero action must not apply damage";
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, IceBoltUsesCanonicalDamageAndFiveManaInAuthoritativeCast)
+{
+	forceRealHeroScale = true;
+	selectedSpellKey = "core:iceBolt";
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getSpellCost(spell), 5);
+	auto * adjacent = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex - 1), 1000);
+	const auto healthBefore = target->getAvailableHealth();
+	const auto adjacentBefore = adjacent->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->mana;
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(healthBefore - target->getAvailableHealth(), 65);
+	EXPECT_EQ(adjacent->getAvailableHealth(), adjacentBefore);
+	EXPECT_EQ(attackerSideHero->mana, manaBefore - 5);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, LightningBoltUsesCanonicalHighPowerDamageAndFiveMana)
+{
+	forceRealHeroScale = true;
+	selectedSpellKey = "core:lightningBolt";
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getSpellCost(spell), 5);
+	auto * adjacent = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex - 1), 1000);
+	const auto healthBefore = target->getAvailableHealth();
+	const auto adjacentBefore = adjacent->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->mana;
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(healthBefore - target->getAvailableHealth(), 170);
+	EXPECT_EQ(adjacent->getAvailableHealth(), adjacentBefore);
+	EXPECT_EQ(attackerSideHero->mana, manaBefore - 5);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, FireballAppliesCanonicalDamageToTargetAndAdjacentOnly)
+{
+	forceRealHeroScale = true;
+	selectedSpellKey = "core:fireball";
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
+	auto * adjacent = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex - 1), 1000);
+	auto * distant = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex + 3), 1000);
+	ASSERT_TRUE(vstd::contains(BattleHexArray::getNeighbouringTiles(target->getPosition()), adjacent->getPosition()));
+	ASSERT_FALSE(vstd::contains(BattleHexArray::getNeighbouringTiles(target->getPosition()), distant->getPosition()));
+	const auto targetBefore = target->getAvailableHealth();
+	const auto adjacentBefore = adjacent->getAvailableHealth();
+	const auto distantBefore = distant->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->mana;
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(targetBefore - target->getAvailableHealth(), 41);
+	EXPECT_EQ(adjacentBefore - adjacent->getAvailableHealth(), 41);
+	EXPECT_EQ(distant->getAvailableHealth(), distantBefore);
+	EXPECT_EQ(attackerSideHero->mana, manaBefore - 5);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePredictionAndAuthoritativeManaPath)

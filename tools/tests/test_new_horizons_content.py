@@ -57,7 +57,8 @@ def legacy_rules(rules):
     result = copy.deepcopy(rules)
     if result:
         result['rulesetVersion'] = 1
-        result['spells']['core:magicArrow'].pop('directDamage', None)
+        for spell in result['spells'].values():
+            spell.pop('directDamage', None)
     return result
 
 
@@ -142,13 +143,24 @@ class NewHorizonsContentTest(unittest.TestCase):
         validate_rules(legacy_rules(self.rules))
         validate_rules(self.rules)
 
-    def test_magic_arrow_overcharge_contract_is_the_only_active_v2_formula(self):
+    def test_active_v2_direct_damage_formulas_match_canonical_spell_families(self):
         arrow = self.rules['spells']['core:magicArrow']
         self.assertEqual(arrow['schools'], ['new-horizons:sorcery'])
         self.assertEqual(arrow['level'], 1)
         self.assertEqual(arrow['directDamage'], {'base': 20, 'powerCoefficient': 20})
         self.assertEqual({name for name, spell in self.rules['spells'].items()
-                          if 'directDamage' in spell}, {'core:magicArrow'})
+                          if 'directDamage' in spell}, {
+                              'core:magicArrow',
+                              'core:fireball',
+                              'core:iceBolt',
+                              'core:lightningBolt',
+                          })
+        self.assertEqual(self.rules['spells']['core:fireball']['directDamage'],
+                         {'base': 25, 'powerCoefficient': 8})
+        self.assertEqual(self.rules['spells']['core:iceBolt']['directDamage'],
+                         {'base': 45, 'powerCoefficient': 10})
+        self.assertEqual(self.rules['spells']['core:lightningBolt']['directDamage'],
+                         {'base': 20, 'powerCoefficient': 15})
         self.assertNotIn('new-horizons:magicMissile', self.rules['spells'])
 
     def test_generated_module_matches_all_canonical_data(self):

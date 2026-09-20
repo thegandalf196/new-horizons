@@ -933,3 +933,98 @@ TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 }
+
+TEST_F(NewHorizonsMagicAITest, CanonicalLevelOneHavocRankingCrossesOverWithoutMutatingLiveBattle)
+{
+	useCurrentMagicRules = true;
+	prepareCommands(true);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto id : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(id);
+	const SpellID iceBolt(SpellID::ICE_BOLT);
+	const SpellID lightningBolt(SpellID::LIGHTNING_BOLT);
+	attackerSideHero->addSpellToSpellbook(iceBolt);
+	attackerSideHero->addSpellToSpellbook(lightningBolt);
+	attackerSideHero->setSecSkillLevel(
+		SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 1, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 100;
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(71), 100);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	const auto healthBefore = enemy->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->mana;
+	const auto castsBefore = battle()->battleCastSpells(BattleSide::ATTACKER);
+	ASSERT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
+	const auto chooseAtPower = [&](int32_t power)
+	{
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
+		callback->submitted.clear();
+		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+		evaluator.selectStackAction(active);
+		EXPECT_TRUE(evaluator.attemptCastingSpell(active));
+		EXPECT_EQ(callback->submitted.size(), 1u);
+		return callback->submitted.empty() ? SpellID::NONE : callback->submitted.front().spell;
+	};
+
+	EXPECT_EQ(chooseAtPower(20), iceBolt);
+	EXPECT_EQ(enemy->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(chooseAtPower(100), lightningBolt);
+	EXPECT_EQ(enemy->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), castsBefore);
+	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
+}
+
+TEST_F(NewHorizonsMagicAITest, CanonicalFireballIsPreferredForClusterWithoutMutatingLiveBattle)
+{
+	useCurrentMagicRules = true;
+	prepareCommands(true);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto id : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(id);
+	const SpellID fireball(SpellID::FIREBALL);
+	const SpellID iceBolt(SpellID::ICE_BOLT);
+	attackerSideHero->addSpellToSpellbook(fireball);
+	attackerSideHero->addSpellToSpellbook(iceBolt);
+	attackerSideHero->setSecSkillLevel(
+		SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 1, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 100;
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
+	auto * first = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(75), 100);
+	auto * second = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(76), 100);
+	ASSERT_TRUE(vstd::contains(BattleHexArray::getNeighbouringTiles(first->getPosition()), second->getPosition()));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	const auto firstHealth = first->getAvailableHealth();
+	const auto secondHealth = second->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->mana;
+	const auto castsBefore = battle()->battleCastSpells(BattleSide::ATTACKER);
+	ASSERT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, fireball);
+	EXPECT_EQ(first->getAvailableHealth(), firstHealth);
+	EXPECT_EQ(second->getAvailableHealth(), secondHealth);
+	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), castsBefore);
+	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
+}
