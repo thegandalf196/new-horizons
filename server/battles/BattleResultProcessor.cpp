@@ -29,6 +29,7 @@
 #include "../../lib/mapping/CMap.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../lib/entities/hero/NewHorizonsNecromancy.h"
 
 #include <vcmi/spells/Spell.h>
 
@@ -418,6 +419,161 @@ void BattleResultProcessor::endBattleConfirm(const CBattleInfoCallback & battle)
 	//--> continuation (battleFinalize) occurs on removing query
 }
 
+void BattleResultProcessor::askNecromancyChoice(const BattleID & battleID, const CGHeroInstance * hero,
+	const PendingNecromancy & pending)
+{
+	const auto player = hero->getOwner();
+	if(!player.isValidPlayer())
+		return;
+
+	// Query state is created before the packet is sent.  The callback resumes
+	// the exact finalization that was paused for this choice; no client-provided
+	// count, creature ID or mana value is trusted.
+	auto query = std::make_shared<CNecromancyQuery>(gameHandler, player, pending.choices,
+		[this, battleID](std::optional<CreatureID> chosen)
+		{
+			auto pendingIt = pendingNecromancy.find(battleID);
+			if(pendingIt == pendingNecromancy.end() || !chosen)
+				return;
+			pendingIt->second.selected = *chosen;
+			const auto resultIt = battleResults.find(battleID);
+			if(resultIt != battleResults.end())
+				battleFinalize(battleID, *resultIt->second);
+			});
+
+	BlockingDialog dialog(false, true);
+	dialog.queryID = query->queryID;
+	dialog.player = player;
+	dialog.text = MetaString::createFromRawString(
+		"Necromancy: choose whether to convert groups of three Skeletons into Zombies.");
+	for(const auto creature : pending.choices)
+	{
+		const auto amount = pending.offeredCounts.find(creature);
+		dialog.components.emplace_back(ComponentType::CREATURE, creature,
+			amount == pending.offeredCounts.end() ? 0 : amount->second);
+	}
+	gameHandler->queries->addQuery(query);
+	gameHandler->sendAndApply(dialog);
+}
+
+bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleID & battleID, const BattleResult & result,
+	int32_t initialMana, const CGHeroInstance * winnerHero,
+	BattleResultsApplied & resultsApplied, std::optional<CreatureID> selected)
+{
+	if(!winnerHero || !winnerHero->usesNewHorizonsNecromancy())
+		return false;
+
+	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
+	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
+	const auto losingSide = CBattleInfoEssentials::otherSide(result.winner);
+	const auto & eligible = result.necromancyEligibilityCaptured
+		? result.necromancyEligibleCasualties[losingSide]
+		: result.casualties[losingSide];
+	const auto eligibleCount = result.necromancyEligibilityCaptured
+		? newHorizonsNecromancy::countLivingEligibleCasualties(eligible)
+		: newHorizonsNecromancy::countLivingEligibleCasualties(result.casualties[losingSide]);
+
+	const bool boneCollector = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::BONE_COLLECTOR_ID);
+	const bool corpsePreservation = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
+	const bool darkConversion = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::DARK_CONVERSION_ID);
+	const bool blackHarvest = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::BLACK_HARVEST_ID);
+
+	const auto existingSlot = [winnerHero](CreatureID creature)
+	{
+		const auto slot = winnerHero->getSlotFor(creature);
+		return slot.validSlot() && winnerHero->hasStackAtSlot(slot)
+			&& winnerHero->getCreature(slot) == creature.toCreature() ? slot : SlotID();
+	};
+	const auto existingSkeletonSlot = existingSlot(skeleton);
+	const auto existingZombieSlot = existingSlot(zombie);
+	const auto freeSlots = winnerHero->getFreeSlots();
+	const bool skeletonAvailable = existingSkeletonSlot.validSlot() || !freeSlots.empty();
+	const bool zombieAvailable = existingZombieSlot.validSlot() || !freeSlots.empty();
+	const bool zombieChoice = selected && *selected == zombie;
+	const int32_t postBattleMana = std::min<int32_t>(winnerHero->mana, initialMana);
+	// Black Harvest is a separate perk gate.  The resolver's mana field is
+	// otherwise zero even when a large conversion is performed. Use the same
+	// post-battle clamp baseline as BattleResultsApplied so combat-only bonus
+	// mana cannot suppress a recovery that will fit after the clamp.
+	auto summary = newHorizonsNecromancy::resolve(winnerHero->getNewHorizonsNecromancyRank(), eligibleCount,
+		boneCollector, corpsePreservation, darkConversion, zombieChoice,
+		skeletonAvailable, zombieAvailable, postBattleMana,
+		blackHarvest ? winnerHero->manaLimit() : postBattleMana);
+	if(!summary.active)
+		return false;
+
+	// A dark-conversion answer is legal only if the exact output it produces
+	// still fits.  This is rechecked after the query, immediately before state
+	// mutation, to keep the operation atomic.
+	if(summary.blockedByArmyCapacity)
+	{
+		resultsApplied.necromancy = summary;
+		return true;
+	}
+
+	// Reserve every destination before emitting either mutation. getSlotFor()
+	// returns the same first empty slot for two absent creature types, so using
+	// it independently would reject a legal conversion even when more empty
+	// slots exist (or risk a partial result). Existing matching stacks do not
+	// consume an empty destination.
+	const auto destinations = newHorizonsNecromancy::reserveDestinations(
+		existingSkeletonSlot, existingZombieSlot, freeSlots,
+		summary.skeletonsRaised, summary.zombiesRaised);
+	if(!destinations.fits)
+	{
+		summary.applied = false;
+		summary.blockedByArmyCapacity = true;
+		summary.skeletonsRaised = 0;
+		summary.zombiesRaised = 0;
+		summary.manaRecovered = 0;
+		resultsApplied.necromancy = summary;
+		return true;
+	}
+
+	auto addRaised = [this, winnerHero](SlotID slot, CreatureID creature, int32_t count) -> bool
+	{
+		if(count <= 0)
+			return true;
+		if(!slot.validSlot())
+			return false;
+		const auto location = StackLocation(winnerHero->id, slot);
+		if(winnerHero->hasStackAtSlot(slot))
+			return gameHandler->changeStackCount(location, count, ChangeValueMode::RELATIVE);
+		return gameHandler->insertNewStack(location, creature.toCreature(), count);
+	};
+
+	if(!addRaised(destinations.skeleton, skeleton, summary.skeletonsRaised)
+		|| !addRaised(destinations.zombie, zombie, summary.zombiesRaised))
+	{
+		// The preflight above should make this unreachable on the authoritative
+		// simulation thread.  Keep the summary truthful if an invariant is ever
+		// violated rather than claiming creatures were raised.
+		summary.applied = false;
+		summary.blockedByArmyCapacity = true;
+		summary.skeletonsRaised = 0;
+		summary.zombiesRaised = 0;
+		summary.manaRecovered = 0;
+		resultsApplied.necromancy = summary;
+		return true;
+	}
+
+	// Keep the legacy descriptor useful for clients when there is one output
+	// stack.  A Dark Conversion result may contain two stacks; leaving the
+	// legacy single-stack field empty avoids showing a misleading partial popup
+	// while New Horizons clients consume the complete summary below.
+	if(summary.skeletonsRaised > 0 && summary.zombiesRaised == 0)
+		resultsApplied.raisedStack = CStackBasicDescriptor(skeleton, summary.skeletonsRaised);
+	else if(summary.zombiesRaised > 0 && summary.skeletonsRaised == 0)
+		resultsApplied.raisedStack = CStackBasicDescriptor(zombie, summary.zombiesRaised);
+	resultsApplied.necromancy = summary;
+	(void)battleID;
+	return true;
+}
+
 void BattleResultProcessor::battleFinalize(const BattleID & battleID, const BattleResult & result)
 {
 	LOG_TRACE(logGlobal);
@@ -428,10 +584,17 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 
 	auto & finishingBattle = finishingBattles[battleID];
 
-	finishingBattle->remainingBattleQueriesCount--;
-	logGlobal->trace("Decremented gameHandler->queries count to %d", finishingBattle->remainingBattleQueriesCount);
+	// A Dark Conversion prompt temporarily suspends finalization after all
+	// battle queries have already been removed.  The answer resumes this
+	// method, so it must not decrement the completed battle-query count again.
+	const bool resumingNecromancy = pendingNecromancy.contains(battleID);
+	if(!resumingNecromancy)
+	{
+		finishingBattle->remainingBattleQueriesCount--;
+		logGlobal->trace("Decremented gameHandler->queries count to %d", finishingBattle->remainingBattleQueriesCount);
+	}
 
-	if (finishingBattle->remainingBattleQueriesCount > 0)
+	if (!resumingNecromancy && finishingBattle->remainingBattleQueriesCount > 0)
 		//Battle results will be handled when all battle gameHandler->queries are closed
 		return;
 
@@ -485,6 +648,101 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 		}
 	};
 
+	// Resolve the only player choice before collecting any other post-battle
+	// consequences.  If a query is needed, finalization pauses here and the
+	// callback resumes it with the server-owned choice.  This keeps random
+	// Eagle Eye/artifact outcomes from being generated twice.
+	std::optional<CreatureID> newHorizonsNecromancyChoice;
+	if(winnerHero && winnerHasUnitsLeft && winnerHero->usesNewHorizonsNecromancy())
+	{
+		const auto pendingIt = pendingNecromancy.find(battleID);
+		if(pendingIt != pendingNecromancy.end())
+		{
+			newHorizonsNecromancyChoice = pendingIt->second.selected;
+		}
+		else
+		{
+			const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
+			const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
+			const auto losingSide = CBattleInfoEssentials::otherSide(result.winner);
+			const auto & eligible = result.necromancyEligibilityCaptured
+				? result.necromancyEligibleCasualties[losingSide]
+				: result.casualties[losingSide];
+			const auto eligibleCount = newHorizonsNecromancy::countLivingEligibleCasualties(eligible);
+			const bool boneCollector = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+				newHorizonsNecromancy::BONE_COLLECTOR_ID);
+			const bool corpsePreservation = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+				newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
+			const bool darkConversion = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+				newHorizonsNecromancy::DARK_CONVERSION_ID);
+			const bool blackHarvest = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+				newHorizonsNecromancy::BLACK_HARVEST_ID);
+
+			// A preview with both destinations enabled gives us the authoritative
+			// offered count without mutating the hero.  Actual destination capacity
+			// is checked again by applyNewHorizonsNecromancy immediately before the
+			// stack/mana packs are emitted.
+			const auto preview = newHorizonsNecromancy::resolve(winnerHero->getNewHorizonsNecromancyRank(),
+				eligibleCount, boneCollector, corpsePreservation, darkConversion, false,
+				true, true, winnerHero->mana, blackHarvest ? winnerHero->manaLimit() : winnerHero->mana);
+			std::vector<CreatureID> choices;
+			std::map<CreatureID, int32_t> offeredCounts;
+			if(preview.skeletonsOffered > 0)
+			{
+				const auto skeletonSlot = winnerHero->getSlotFor(skeleton);
+				const auto zombieSlot = winnerHero->getSlotFor(zombie);
+				const bool hasSkeletonStack = skeletonSlot.validSlot()
+					&& winnerHero->hasStackAtSlot(skeletonSlot)
+					&& winnerHero->getCreature(skeletonSlot) == skeleton.toCreature();
+				const bool hasZombieStack = zombieSlot.validSlot()
+					&& winnerHero->hasStackAtSlot(zombieSlot)
+					&& winnerHero->getCreature(zombieSlot) == zombie.toCreature();
+				const auto freeSlotCount = winnerHero->getFreeSlots().size();
+				const bool skeletonFits = hasSkeletonStack || freeSlotCount >= 1;
+				const int32_t zombies = preview.skeletonsOffered / 3;
+				const int32_t remainder = preview.skeletonsOffered % 3;
+				const size_t requiredFreeSlots = (hasZombieStack ? 0 : 1)
+					+ (remainder > 0 && !hasSkeletonStack ? 1 : 0);
+				const bool zombieFits = zombies > 0 && freeSlotCount >= requiredFreeSlots;
+
+				if(skeletonFits)
+				{
+					choices.push_back(skeleton);
+					offeredCounts.emplace(skeleton, preview.skeletonsOffered);
+				}
+				if(darkConversion && zombieFits)
+				{
+					choices.push_back(zombie);
+					offeredCounts.emplace(zombie, zombies);
+				}
+			}
+
+			const auto * winnerPlayer = gameHandler->gameInfo().getPlayerState(winnerHero->getOwner());
+			// The choice is authoritative and player-facing for every controlled
+			// winner.  Computer players receive the same BlockingDialog packet and
+			// answer through their normal AI query hook; bypassing the query here
+			// would make Dark Conversion behave differently for AI and would leave
+			// no exercised path for validating the AI's response.
+			if(choices.size() > 1 && winnerHero->getOwner().isValidPlayer() && winnerPlayer)
+			{
+				PendingNecromancy pending;
+				pending.hero = winnerHero->id;
+				pending.choices = choices;
+				pending.offeredCounts = offeredCounts;
+				pendingNecromancy.emplace(battleID, pending);
+				askNecromancyChoice(battleID, winnerHero, pending);
+				return;
+			}
+
+			// Single-option or uncontrolled cases use the only legal output. A
+			// controlled human or AI with both choices was queried above.
+			if(choices.size() == 1)
+				newHorizonsNecromancyChoice = choices.front();
+			else if(choices.size() > 1)
+				newHorizonsNecromancyChoice = skeleton;
+		}
+	}
+
 	if(winnerHero && winnerHasUnitsLeft)
 	{
 		// Eagle Eye handling
@@ -530,12 +788,20 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 		if(const auto commander = winnerHero->getCommander())
 			addArtifactToDischarging(commander->artifactsWorn, winnerHero->id, winnerHero->findStack(winnerHero->getCommander()));
 
-		// Necromancy handling
-		// Give raised units to winner, if any were raised, units will be given after casualties are taken
-		resultsApplied.raisedStack = winnerHero->calculateNecromancy(result);
-		const SlotID necroSlot = resultsApplied.raisedStack.getCreature() ? winnerHero->getSlotFor(resultsApplied.raisedStack.getCreature()) : SlotID();
-		if(necroSlot != SlotID() && !finishingBattle->isDraw())
-			gameHandler->addToSlot(StackLocation(finishingBattle->winnerId, necroSlot), resultsApplied.raisedStack.getCreature(), resultsApplied.raisedStack.getCount());
+		// Necromancy handling.  New Horizons uses a count-based, server-owned
+		// resolver; legacy heroes retain the original health-weighted path.
+		if(winnerHero->usesNewHorizonsNecromancy())
+			applyNewHorizonsNecromancy(battleID, result, (*battle)->getSide(result.winner).initialMana,
+				winnerHero, resultsApplied,
+				newHorizonsNecromancyChoice);
+		else
+		{
+			// Give raised units to winner, if any were raised, units will be given after casualties are taken
+			resultsApplied.raisedStack = winnerHero->calculateNecromancy(result);
+			const SlotID necroSlot = resultsApplied.raisedStack.getCreature() ? winnerHero->getSlotFor(resultsApplied.raisedStack.getCreature()) : SlotID();
+			if(necroSlot != SlotID() && !finishingBattle->isDraw())
+				gameHandler->addToSlot(StackLocation(finishingBattle->winnerId, necroSlot), resultsApplied.raisedStack.getCreature(), resultsApplied.raisedStack.getCount());
+		}
 	}
 
 	if(loserHero)
@@ -616,6 +882,8 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	resultsApplied.loser = finishingBattle->loser;
 	//BattleResultsApplied does not end the battle, it only applies most of its consequences
 	gameHandler->sendAndApply(resultsApplied);
+	if(resumingNecromancy)
+		pendingNecromancy.erase(battleID);
 
 	// Remove beaten hero
 	if(loserHero)
@@ -710,8 +978,23 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 	{
 		si32 killed = st->getKilled();
 		if(killed > 0)
+		{
 			battleResult->casualties[st->unitSide()][st->creatureId()] += killed;
+			// New Horizons uses an explicit provenance-compatible corpse snapshot.
+			// Temporary summons, clones, disintegrated remains, undead and other
+			// nonliving creatures never enter the living-casualty pool. Ordinary
+			// weapon and magical damage do, including when Corpse Preservation is
+			// selected; only an effect that actually invalidates the remains is
+			// excluded here.
+			if(!st->summoned && !st->isClone()
+				&& !st->hasBonusOfType(BonusType::DISINTEGRATE)
+				&& !st->unitType()->hasBonusOfType(BonusType::UNDEAD)
+				&& !st->unitType()->hasBonusOfType(BonusType::NON_LIVING)
+				&& !st->unitType()->hasBonusOfType(BonusType::MECHANICAL))
+				battleResult->necromancyEligibleCasualties[st->unitSide()][st->creatureId()] += killed;
+		}
 	}
+	battleResult->necromancyEligibilityCaptured = true;
 }
 
 bool BattleResultProcessor::battleIsEnding(const CBattleInfoCallback & battle) const

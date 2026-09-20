@@ -40,6 +40,7 @@ enum class QueryType : uint8_t
 	Generic,
 	LuaScript,
 	HeroMasteryDialog,
+	NecromancyChoice,
 	Unknown
 };
 

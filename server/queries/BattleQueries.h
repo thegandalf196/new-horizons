@@ -13,6 +13,9 @@
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/battle/BattleSide.h"
 
+#include <functional>
+#include <vector>
+
 class IBattleInfo;
 struct SideInBattle;
 
@@ -51,4 +54,27 @@ public:
 	CBattleDialogQuery(CGameHandler * owner, const IBattleInfo * Bi, const std::optional<BattleResult> & Br);
 	void onRemoval(PlayerColor color) override;
 	void onExposure(QueryPtr topQuery) override;
+};
+
+/// Server-owned, index-validated choice used by post-battle Necromancy.
+/// The visible prompt is a normal BlockingDialog packet so old clients can
+/// still render it, while this query prevents arbitrary QueryReply integers.
+class CNecromancyQuery : public CQuery
+{
+	std::vector<CreatureID> choices;
+	std::function<void(std::optional<CreatureID>)> callback;
+	std::optional<int32_t> answer;
+
+public:
+	static constexpr QueryType TYPE = QueryType::NecromancyChoice;
+
+	CNecromancyQuery(CGameHandler * owner, PlayerColor player,
+		std::vector<CreatureID> choices,
+		std::function<void(std::optional<CreatureID>)> callback);
+
+	bool blocksPack(const CPackForServer * pack) const override;
+	bool endsByPlayerAnswer() const override;
+	bool isValidReply(std::optional<int32_t> reply) const override;
+	void setReply(std::optional<int32_t> reply) override;
+	void onRemoval(PlayerColor color) override;
 };

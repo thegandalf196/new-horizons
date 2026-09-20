@@ -1602,10 +1602,10 @@
 				"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"main": {
+					"type": "UNDEAD_RAISE_PERCENTAGE",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 10
 				}
 			}
 		},
@@ -1618,10 +1618,10 @@
 				"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"main": {
+					"type": "UNDEAD_RAISE_PERCENTAGE",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 20
 				}
 			}
 		},
@@ -1634,10 +1634,10 @@
 				"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"main": {
+					"type": "UNDEAD_RAISE_PERCENTAGE",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 30
 				}
 			}
 		}

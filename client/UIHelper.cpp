@@ -14,6 +14,7 @@
 #include "widgets/CComponent.h"
 
 #include "../lib/mapObjects/CGHeroInstance.h"
+#include "../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../lib/networkPacks/ArtifactLocation.h"
 #include "../lib/CRandomGenerator.h"
 #include "GameInstance.h"
@@ -60,6 +61,95 @@ std::string UIHelper::getNecromancyInfoWindowText(const CStackBasicDescriptor & 
 		text.appendTextID("core.genrltxt.146");
 	}
 	text.replaceName(stack);
+	return text.toString(&GAME->translator());
+}
+
+std::vector<Component> UIHelper::getNewHorizonsNecromancyComponents(const newHorizonsNecromancy::NecromancyResult & result)
+{
+	std::vector<Component> components;
+	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
+	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
+	if(result.skeletonsRaised > 0)
+		components.emplace_back(ComponentType::CREATURE, skeleton, result.skeletonsRaised);
+	if(result.zombiesRaised > 0)
+		components.emplace_back(ComponentType::CREATURE, zombie, result.zombiesRaised);
+	return components;
+}
+
+std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNecromancy::NecromancyResult & result)
+{
+	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
+	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
+	MetaString text;
+	text.appendRawString("Necromancy\n");
+
+	if(result.eligibleCasualties > 0)
+	{
+		text.appendRawString("Eligible casualties: ");
+		text.appendNumber(result.eligibleCasualties);
+		text.appendRawString("\n");
+	}
+
+	if(result.skeletonsOffered > 0)
+	{
+		text.appendRawString("Generated: ");
+		text.appendNumber(result.skeletonsOffered);
+		text.appendRawString(" ");
+		text.appendName(skeleton, result.skeletonsOffered);
+		text.appendRawString("\n");
+	}
+
+	if(result.darkConversionChosen && result.zombiesRaised > 0)
+	{
+		text.appendRawString("Converted: ");
+		text.appendNumber(result.zombiesRaised);
+		text.appendRawString(" ");
+		text.appendName(zombie, result.zombiesRaised);
+		text.appendRawString(" from groups of three Skeletons\n");
+	}
+
+	if(result.skeletonsRaised > 0 || result.zombiesRaised > 0)
+	{
+		text.appendRawString("Delivered to army: ");
+		bool hasOutput = false;
+		if(result.skeletonsRaised > 0)
+		{
+			text.appendNumber(result.skeletonsRaised);
+			text.appendRawString(" ");
+			text.appendName(skeleton, result.skeletonsRaised);
+			hasOutput = true;
+		}
+		if(result.zombiesRaised > 0)
+		{
+			if(hasOutput)
+				text.appendRawString(" and ");
+			text.appendNumber(result.zombiesRaised);
+			text.appendRawString(" ");
+			text.appendName(zombie, result.zombiesRaised);
+		}
+		text.appendRawString("\n");
+	}
+
+	if(result.manaRecovered > 0)
+	{
+		text.appendRawString("Black Harvest recovered +");
+		text.appendNumber(result.manaRecovered);
+		text.appendRawString(" Mana.\n");
+	}
+
+	if(result.blockedByArmyCapacity)
+	{
+		text.appendRawString("No creatures were delivered: the hero has no legal army slot for the Necromancy result.");
+	}
+	else if(result.eligibleCasualties == 0)
+	{
+		text.appendRawString("No eligible casualties were available for raising.");
+	}
+	else if(result.skeletonsOffered == 0)
+	{
+		text.appendRawString("The eligible casualty count was below the current Necromancy raising threshold.");
+	}
+
 	return text.toString(&GAME->translator());
 }
 

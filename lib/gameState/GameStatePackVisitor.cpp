@@ -1710,6 +1710,14 @@ void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack
 		{
 			CGHeroInstance * hero = gs.getHero(currentBattle.getSideHero(i)->id);
 			hero->mana = std::min(hero->mana, currentBattle.getSide(i).initialMana);
+			// Battle casting uses SideInBattle's mana snapshot.  The normal
+			// post-battle clamp therefore restores the pre-battle value; apply the
+			// authoritative New Horizons Black Harvest recovery after that clamp so
+			// it is not lost on either the server or client game-state visitor.
+			if(pack.necromancy.active && pack.necromancy.applied
+				&& pack.necromancy.manaRecovered > 0
+				&& hero->getOwner() == pack.victor)
+				hero->mana = std::min<si32>(hero->mana + pack.necromancy.manaRecovered, hero->manaLimit());
 		}
 	}
 

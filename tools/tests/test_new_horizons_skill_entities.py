@@ -78,6 +78,29 @@ ACTIVE_RANK_EFFECTS = {
             },
         },
     },
+    "necromancy": {
+        "basic": {
+            "main": {
+                "type": "UNDEAD_RAISE_PERCENTAGE",
+                "valueType": "BASE_NUMBER",
+                "val": 10,
+            },
+        },
+        "advanced": {
+            "main": {
+                "type": "UNDEAD_RAISE_PERCENTAGE",
+                "valueType": "BASE_NUMBER",
+                "val": 20,
+            },
+        },
+        "expert": {
+            "main": {
+                "type": "UNDEAD_RAISE_PERCENTAGE",
+                "valueType": "BASE_NUMBER",
+                "val": 30,
+            },
+        },
+    },
 }
 ACTIVE_GENERAL_GAIN_SKILLS = set(SCHOOL_SKILLS) | {"offense"}
 NO_OP = {
@@ -182,6 +205,12 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                         self.assertEqual(skill[rank]["effects"], NO_OP)
                     for image in skill[rank]["images"].values():
                         self.assertTrue((ROOT / "Mods/new-horizons/Images" / image).is_file())
+            if key == "necromancy":
+                # The New Horizons resolver always raises canonical Skeletons
+                # and optional Zombies.  The legacy bonus would select the
+                # strongest eligible creature/upgrades and must not leak into
+                # this faction skill's active entity.
+                self.assertNotIn("IMPROVED_NECROMANCY", json.dumps(skill))
 
 
 if __name__ == "__main__":

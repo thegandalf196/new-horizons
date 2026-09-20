@@ -4846,21 +4846,21 @@
 							"basic": {
 								"description": "After victory, raise Skeletons equal to 10% of eligible living enemy creature casualties, rounded down.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After victory, raise Skeletons equal to 10% of eligible living enemy creature casualties, rounded down."
 								}
 							},
 							"advanced": {
 								"description": "Raise Skeletons equal to 20% of eligible casualties.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Raise Skeletons equal to 20% of eligible casualties."
 								}
 							},
 							"expert": {
 								"description": "Raise Skeletons equal to 30% of eligible casualties.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Raise Skeletons equal to 30% of eligible casualties."
 								}
 							}
@@ -4872,7 +4872,7 @@
 								"requires": "basic",
 								"description": "Necromancy raises an additional +5 percentage points of eligible casualties as Skeletons.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Necromancy raises an additional +5 percentage points of eligible casualties as Skeletons."
 								}
 							},
@@ -4892,7 +4892,7 @@
 								"requires": "basic",
 								"description": "When resolving Necromancy, the player may convert every 3 Skeletons that would be raised into 1 Zombie instead.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When resolving Necromancy, the player may convert every 3 Skeletons that would be raised into 1 Zombie instead."
 								}
 							},
@@ -4902,7 +4902,7 @@
 								"requires": "basic",
 								"description": "After Necromancy raises at least 10 creatures, recover 1 Mana per 10 creatures raised, up to 10 Mana.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After Necromancy raises at least 10 creatures, recover 1 Mana per 10 creatures raised, up to 10 Mana."
 								}
 							},
@@ -7055,10 +7055,10 @@
 					"scenarioBonus": "NH_lightMagic_basic_scenarioBonus.png"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"main": {
+						"type": "UNDEAD_RAISE_PERCENTAGE",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 10
 					}
 				}
 			},
@@ -7071,10 +7071,10 @@
 					"scenarioBonus": "NH_lightMagic_advanced_scenarioBonus.png"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"main": {
+						"type": "UNDEAD_RAISE_PERCENTAGE",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 20
 					}
 				}
 			},
@@ -7087,10 +7087,10 @@
 					"scenarioBonus": "NH_lightMagic_expert_scenarioBonus.png"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"main": {
+						"type": "UNDEAD_RAISE_PERCENTAGE",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 30
 					}
 				}
 			}

@@ -910,7 +910,14 @@ void ApplyClientNetPackVisitor::visitBattleResultsApplied(BattleResultsApplied &
 	for(auto & artPack : pack.movingArtifacts)
 		visitBulkMoveArtifacts(artPack);
 
-	if(pack.raisedStack.getCreature())
+	if(pack.necromancy.active)
+	{
+		callInterfaceIfPresent(cl, pack.victor, &CGameInterface::showInfoDialog, EInfoWindowMode::AUTO,
+			UIHelper::getNewHorizonsNecromancyInfoWindowText(pack.necromancy),
+			UIHelper::getNewHorizonsNecromancyComponents(pack.necromancy),
+			UIHelper::getNecromancyInfoWindowSound());
+	}
+	else if(pack.raisedStack.getCreature())
 		callInterfaceIfPresent(cl, pack.victor, &CGameInterface::showInfoDialog, EInfoWindowMode::AUTO,
 			UIHelper::getNecromancyInfoWindowText(pack.raisedStack), std::vector<Component>{Component(ComponentType::CREATURE, pack.raisedStack.getId(),
 			pack.raisedStack.getCount())}, UIHelper::getNecromancyInfoWindowSound());

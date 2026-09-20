@@ -76,12 +76,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_TEMPORAL_FIELD, // optional once-per-combat Sorcery Mass Slow state and action data
 	NEW_HORIZONS_COUNTERSPELL, // optional reusable Sorcery Counterspell ward state and cast result
 	NEW_HORIZONS_CANONICAL_ORDERS, // authoritative state for the eight canonical Orders
+	NEW_HORIZONS_NECROMANCY, // count-based faction conversion and post-battle result summary
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_CANONICAL_ORDERS,
+	CURRENT = NEW_HORIZONS_NECROMANCY,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -106,3 +107,5 @@ static_assert(ESerializationVersion::NEW_HORIZONS_COUNTERSPELL > ESerializationV
 	"Counterspell state must remain absent from older Temporal Field snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_CANONICAL_ORDERS > ESerializationVersion::NEW_HORIZONS_COUNTERSPELL,
 	"Canonical Order state must remain absent from older Counterspell snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY > ESerializationVersion::NEW_HORIZONS_CANONICAL_ORDERS,
+	"Necromancy state must remain absent from older canonical Order snapshots");

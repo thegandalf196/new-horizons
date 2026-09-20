@@ -211,6 +211,10 @@ public:
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
 	int getPerkSkillRank(const std::string & skillId) const;
 	bool hasActivePerk(const std::string & skillId, const std::string & perkId) const;
+	/// New Horizons Necromancy is a separate saved-rules path.  Legacy heroes
+	/// retaining core:necromancy continue through calculateNecromancy().
+	bool usesNewHorizonsNecromancy() const;
+	int getNewHorizonsNecromancyRank() const;
 	void applyPerkSelection(const newHorizonsHeroes::PerkSelection & selection);
 	std::optional<newHorizonsHeroes::MasteryView> getMasteryView() const;
 	void captureMasteryEligibility(uint32_t nextLevel);

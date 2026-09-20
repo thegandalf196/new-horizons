@@ -18,6 +18,7 @@
 #include "../battle/BattleUnitTurnReason.h"
 #include "../filesystem/ResourcePath.h"
 #include "../mapObjects/army/CStackBasicDescriptor.h"
+#include "../entities/hero/NewHorizonsNecromancy.h"
 #include "../texts/MetaString.h"
 
 class CClient;
@@ -124,6 +125,8 @@ struct DLL_LINKAGE BattleResult : public Query
 	PlayerColor attacker; //used in case of a draw
 	BattleSideArray<std::map<CreatureID, si32>> casualties; //first => casualties of attackers - map crid => number
 	BattleSideArray<TExpType> exp{0,0}; //exp for attacker and defender
+	BattleSideArray<std::map<CreatureID, si32>> necromancyEligibleCasualties;
+	bool necromancyEligibilityCaptured = false;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -135,6 +138,19 @@ struct DLL_LINKAGE BattleResult : public Query
 		h & winner;
 		h & casualties;
 		h & exp;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY))
+		{
+			h & necromancyEligibleCasualties;
+			h & necromancyEligibilityCaptured;
+		}
+		else if(!h.saving)
+		{
+			necromancyEligibleCasualties = {};
+			necromancyEligibilityCaptured = false;
+		}
+		else if(necromancyEligibilityCaptured || !necromancyEligibleCasualties[BattleSide::ATTACKER].empty()
+			|| !necromancyEligibleCasualties[BattleSide::DEFENDER].empty())
+			throw std::runtime_error("Cannot write New Horizons Necromancy result to an older format");
 		assert(battleID != BattleID::NONE);
 	}
 };
@@ -475,6 +491,7 @@ struct DLL_LINKAGE BattleResultsApplied : public CPackForClient
 	std::vector<GrowUpArtifact> growingArtifacts;
 	std::vector<DischargeArtifact> dischargingArtifacts;
 	CStackBasicDescriptor raisedStack;
+	newHorizonsNecromancy::NecromancyResult necromancy;
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
@@ -487,6 +504,12 @@ struct DLL_LINKAGE BattleResultsApplied : public CPackForClient
 		h & growingArtifacts;
 		h & dischargingArtifacts;
 		h & raisedStack;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY))
+			h & necromancy;
+		else if(!h.saving)
+			necromancy = {};
+		else if(!necromancy.empty())
+			throw std::runtime_error("Cannot write New Horizons Necromancy summary to an older format");
 		assert(battleID != BattleID::NONE);
 	}
 };

@@ -201,6 +201,13 @@ protected:
 class NewHorizonsPerkAITest : public TinyMapGameTest
 {
 protected:
+	void SetUp() override
+	{
+		TinyMapGameTest::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);

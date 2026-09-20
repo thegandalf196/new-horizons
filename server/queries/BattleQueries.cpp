@@ -134,6 +134,41 @@ CBattleDialogQuery::CBattleDialogQuery(CGameHandler * owner, const IBattleInfo *
 		addPlayer(defender);
 }
 
+CNecromancyQuery::CNecromancyQuery(CGameHandler * owner, PlayerColor player,
+	std::vector<CreatureID> choices_, std::function<void(std::optional<CreatureID>)> callback_)
+	: CQuery(owner, TYPE), choices(std::move(choices_)), callback(std::move(callback_))
+{
+	addPlayer(player);
+}
+
+bool CNecromancyQuery::blocksPack(const CPackForServer * pack) const
+{
+	return blockAllButReply(pack);
+}
+
+bool CNecromancyQuery::endsByPlayerAnswer() const
+{
+	return true;
+}
+
+bool CNecromancyQuery::isValidReply(std::optional<int32_t> reply) const
+{
+	return reply && *reply >= 1 && static_cast<size_t>(*reply) <= choices.size();
+}
+
+void CNecromancyQuery::setReply(std::optional<int32_t> reply)
+{
+	if(isValidReply(reply))
+		answer = reply;
+}
+
+void CNecromancyQuery::onRemoval(PlayerColor)
+{
+	if(!answer || !callback)
+		return;
+	callback(choices.at(static_cast<size_t>(*answer - 1)));
+}
+
 void CBattleDialogQuery::onRemoval(PlayerColor color)
 {
 	// answer to this query was already processed when handling 1st player

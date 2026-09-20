@@ -13,9 +13,15 @@
 #include "../../lib/networkPacks/StackLocation.h"
 #include "../../lib/networkPacks/ArtifactLocation.h"
 #include "../../lib/battle/BattleSide.h"
+#include "../../lib/entities/hero/NewHorizonsNecromancy.h"
+
+#include <optional>
+#include <map>
+#include <vector>
 
 struct SideInBattle;
 struct BattleResult;
+struct BattleResultsApplied;
 class CBattleInfoCallback;
 class CGHeroInstance;
 class CArmedInstance;
@@ -66,9 +72,23 @@ struct FinishingBattleHelper
 class BattleResultProcessor : boost::noncopyable
 {
 	CGameHandler * gameHandler;
+	struct PendingNecromancy
+	{
+		ObjectInstanceID hero;
+		std::vector<CreatureID> choices;
+		std::map<CreatureID, int32_t> offeredCounts;
+		std::optional<CreatureID> selected;
+	};
 
 	std::map<BattleID, std::unique_ptr<BattleResult>> battleResults;
 	std::map<BattleID, std::unique_ptr<FinishingBattleHelper>> finishingBattles;
+	std::map<BattleID, PendingNecromancy> pendingNecromancy;
+
+	void askNecromancyChoice(const BattleID & battleID, const CGHeroInstance * hero,
+		const PendingNecromancy & pending);
+	bool applyNewHorizonsNecromancy(const BattleID & battleID, const BattleResult & result,
+		int32_t initialMana, const CGHeroInstance * winnerHero,
+		BattleResultsApplied & resultsApplied, std::optional<CreatureID> selected);
 
 public:
 	explicit BattleResultProcessor(CGameHandler * gameHandler);

@@ -20,12 +20,22 @@ class CArtifactSet;
 class CGHeroInstance;
 class CStackBasicDescriptor;
 
+namespace newHorizonsNecromancy
+{
+struct NecromancyResult;
+}
+
 namespace UIHelper
 {
     std::vector<Component> getArtifactsComponents(const CArtifactSet & artSet, const std::vector<MoveArtifactInfo> & movedPack);
     std::vector<Component> getSpellsComponents(const std::set<SpellID> & spells);
     soundBase::soundID getNecromancyInfoWindowSound();
     std::string getNecromancyInfoWindowText(const CStackBasicDescriptor & stack);
+    /// Build the authoritative New Horizons post-battle Necromancy summary.
+    /// Counts and blocked state come from the server packet; the client does
+    /// not infer them from the current army after the result is applied.
+    std::vector<Component> getNewHorizonsNecromancyComponents(const newHorizonsNecromancy::NecromancyResult & result);
+    std::string getNewHorizonsNecromancyInfoWindowText(const newHorizonsNecromancy::NecromancyResult & result);
     std::string getArtifactsInfoWindowText();
     std::string getEagleEyeInfoWindowText(const CGHeroInstance & hero, const std::set<SpellID> & spells);
 }

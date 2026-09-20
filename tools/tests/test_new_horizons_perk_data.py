@@ -22,10 +22,14 @@ ACTIVE_PERKS = {
     "new-horizons:sorceryMagic.teleporter",
     "new-horizons:sorceryMagic.countermage",
     "new-horizons:sylvanLuck.elvenPrecision",
+    "new-horizons:necromancy.boneCollector",
+    "new-horizons:necromancy.darkConversion",
+    "new-horizons:necromancy.blackHarvest",
 }
 ACTIVE_RANK_SKILLS = {
     "new-horizons:offense",
     "new-horizons:sylvanLuck",
+    "new-horizons:necromancy",
 }
 EXPECTED_SKILLS = (
     "new-horizons:offense",
