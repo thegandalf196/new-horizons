@@ -91,6 +91,8 @@ public:
 		return empty;
 	}
 	virtual bool getMetamagicFirstCounterspellNegated(BattleSide side) const { return false; }
+	virtual int32_t getBloodrageDamagePercent(BattleSide side) const { return 0; }
+	virtual int32_t getBloodrageRank(BattleSide side) const { return 0; }
 
 	virtual ui8 getTacticDist() const = 0;
 	virtual BattleSide getTacticsSide() const = 0;

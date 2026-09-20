@@ -1240,7 +1240,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					AttackPossibility attackPossibility = potentialTargets.bestAction();
 
 					auto stackWithBonuses = state->getForUpdate(unit->unitId());
+					const bool attackerWasAlive = stackWithBonuses->alive();
 					*stackWithBonuses = *attackPossibility.attackerState;
+					state->recordBloodrageTransition(stackWithBonuses, attackerWasAlive);
 
 					if(attackPossibility.defenderDamageReduce > 0)
 					{
@@ -1253,7 +1255,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					for(auto affected : attackPossibility.affectedUnits)
 					{
 						stackWithBonuses = state->getForUpdate(affected->unitId());
+						const bool affectedWasAlive = stackWithBonuses->alive();
 						*stackWithBonuses = *affected;
+						state->recordBloodrageTransition(stackWithBonuses, affectedWasAlive);
 
 						if(attackPossibility.defenderDamageReduce > 0)
 							stackWithBonuses->removeUnitBonus(Bonus::UntilBeingAttacked);

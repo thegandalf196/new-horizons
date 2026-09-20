@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleInfo.h"
+#include "NewHorizonsBloodrage.h"
 
 #include "BattleLayout.h"
 #include "CObstacleInstance.h"
@@ -101,6 +102,25 @@ const SideInBattle & BattleInfo::getSide(BattleSide side) const
 SideInBattle & BattleInfo::getSide(BattleSide side)
 {
 	return sides.at(side);
+}
+
+void BattleInfo::recordBloodrageStackDeath(uint32_t unitId)
+{
+	if(sides[BattleSide::ATTACKER].bloodrageRank == 0 && sides[BattleSide::DEFENDER].bloodrageRank == 0)
+		return;
+	if(!bloodrageDestroyedUnits.insert(unitId).second)
+		return;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		auto & state = sides.at(side);
+		state.bloodrageDamagePercent = std::min(newHorizonsBloodrage::capForRank(state.bloodrageRank),
+			state.bloodrageDamagePercent + newHorizonsBloodrage::incrementForRank(state.bloodrageRank));
+	}
+}
+
+void BattleInfo::clearBloodrageStackDeath(uint32_t unitId)
+{
+	bloodrageDestroyedUnits.erase(unitId);
 }
 
 bool BattleInfo::consumeHeroOrderUnit(BattleSide side, uint32_t unitId)
@@ -314,7 +334,11 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 	auto currentBattle = std::make_unique<BattleInfo>(cb, layout);
 
 	for(auto i : { BattleSide::LEFT_SIDE, BattleSide::RIGHT_SIDE})
+	{
 		currentBattle->sides[i].init(heroes[i], armies[i], i == BattleSide::RIGHT_SIDE ? town : nullptr);
+		currentBattle->sides[i].bloodrageRank = newHorizonsBloodrage::rank(heroes[i]);
+		currentBattle->sides[i].bloodrageDamagePercent = newHorizonsBloodrage::initialDamagePercent(heroes[i]);
+	}
 
 	currentBattle->tile = tile;
 	currentBattle->terrainType = terrain;

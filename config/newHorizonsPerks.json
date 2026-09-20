@@ -3713,21 +3713,21 @@
 				"basic": {
 					"description": "Each non-summoned stack destroyed grants surviving friendly stacks +5% damage, cumulative to +20%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Each non-summoned stack destroyed grants surviving friendly stacks +5% damage, cumulative to +20%."
 					}
 				},
 				"advanced": {
 					"description": "Each destruction grants +8% damage, cumulative to +40%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Each destruction grants +8% damage, cumulative to +40%."
 					}
 				},
 				"expert": {
 					"description": "Each destruction grants +12% damage, cumulative to +60%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Each destruction grants +12% damage, cumulative to +60%."
 					}
 				}
@@ -3759,7 +3759,7 @@
 					"requires": "basic",
 					"description": "Begin each combat with one Bloodrage increment already active.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Begin each combat with one Bloodrage increment already active."
 					}
 				},

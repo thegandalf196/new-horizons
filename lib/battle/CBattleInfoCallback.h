@@ -85,6 +85,8 @@ public:
 	std::optional<FocusFireState> battlePrepareFocusFireState(BattleSide side, uint32_t targetUnitId) const;
 	std::optional<FocusFireState> battleGetFocusFireState(BattleSide side) const;
 	std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const;
+	/// Current cumulative physical creature damage percentage for the unit's side.
+	int battleGetBloodrageDamagePercent(const battle::Unit * unit) const;
 	/// Validates target coverage and snapshots all transient state for a canonical Order.
 	std::optional<HeroOrderState> battlePrepareHeroOrderState(BattleSide side, HeroCommand command,
 		const std::vector<uint32_t> & targetUnitIds) const;

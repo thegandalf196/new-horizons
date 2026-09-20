@@ -146,6 +146,7 @@ public:
 
 	int32_t getActiveStackID() const override;
 	int32_t getRound() const override;
+	int32_t getBloodrageDamagePercent(BattleSide side) const override;
 
 	battle::Units getUnitsIf(const battle::UnitFilter & predicate) const override;
 
@@ -156,6 +157,7 @@ public:
 	void updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta) override;
 	void moveUnit(uint32_t id, const BattleHex & destination) override;
 	void removeUnit(uint32_t id) override;
+	void recordBloodrageTransition(const std::shared_ptr<StackWithBonuses> & unit, bool wasAlive);
 
 	void addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
 	void updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
@@ -188,6 +190,9 @@ public:
 
 private:
 	std::map<BattleSide, std::optional<FocusFireState>> focusFireStates;
+	BattleSideArray<int32_t> bloodrageRanks;
+	BattleSideArray<int32_t> bloodrageDamagePercents;
+	std::set<uint32_t> bloodrageDestroyedUnits;
 
 	class HypotheticServerCallback : public ServerCallback
 	{

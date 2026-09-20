@@ -54,6 +54,7 @@ set(lib_MAIN_SRCS
 	battle/BattleHexArray.cpp
 	battle/HeroCommand.cpp
 	battle/BattleInfo.cpp
+	battle/NewHorizonsBloodrage.cpp
 	battle/BattleLayout.cpp
 	battle/BattleProxy.cpp
 	battle/BattleStateInfoForRetreat.cpp
@@ -477,6 +478,7 @@ set(lib_MAIN_HEADERS
 	battle/HeroCommand.h
 	battle/FocusFireState.h
 	battle/BattleInfo.h
+	battle/NewHorizonsBloodrage.h
 	battle/BattleLayout.h
 	battle/BattleSide.h
 	battle/BattleStateInfoForRetreat.h

@@ -56,7 +56,9 @@ float BattleExchangeVariant::trackAttack(
 
 		if(damageDealt > 0)
 		{
+			const bool wasAlive = unitToUpdate->alive();
 			unitToUpdate->damage(damageDealt);
+			hb->recordBloodrageTransition(unitToUpdate, wasAlive);
 		}
 
 		// The preview may contain several strikes or consume only one of several
@@ -163,7 +165,9 @@ float BattleExchangeVariant::trackAttack(
 		else
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
+		const bool defenderWasAlive = defender->alive();
 		defender->damage(attackDamage);
+		hb->recordBloodrageTransition(defender, defenderWasAlive);
 		attacker->afterAttack(shooting, false);
 	}
 
@@ -192,7 +196,9 @@ float BattleExchangeVariant::trackAttack(
 			attackerValue[defender->unitId()].value += attackerDamageReduce;
 		}
 
+		const bool attackerWasAlive = attacker->alive();
 		attacker->damage(retaliationDamage);
+		hb->recordBloodrageTransition(attacker, attackerWasAlive);
 		defender->afterAttack(false, true);
 	}
 

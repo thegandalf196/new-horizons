@@ -44,6 +44,8 @@ public:
 	const JsonNode & getMagicRules() const override { return magicRules; }
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return creatureCategoryRules; }
 	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
+	int32_t getBloodrageDamagePercent(BattleSide side) const override { return sides.at(side).bloodrageDamagePercent; }
+	int32_t getBloodrageRank(BattleSide side) const override { return sides.at(side).bloodrageRank; }
 	HeroCommand getActiveDoctrine(BattleSide side) const override { (void)side; return HeroCommand::NONE; }
 	HeroCommand getActiveOrder(BattleSide side) const override
 	{
@@ -82,6 +84,9 @@ public:
 
 	BattleSide tacticsSide; //which side is requested to play tactics phase
 	ui8 tacticDistance; //how many hexes we can go forward (1 = only hexes adjacent to margin line)
+	// Keeping this at the end avoids shifting preceding offsets, but every facade
+	// and consumer still requires a synchronized rebuild when BattleInfo changes.
+	std::set<uint32_t> bloodrageDestroyedUnits;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
@@ -92,9 +97,41 @@ public:
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 				&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
 				throw std::runtime_error("Cannot discard New Horizons targeted combat rules");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE)
+				&& (sides[BattleSide::ATTACKER].bloodrageDamagePercent != 0
+					|| sides[BattleSide::DEFENDER].bloodrageDamagePercent != 0
+					|| sides[BattleSide::ATTACKER].bloodrageRank != 0
+					|| sides[BattleSide::DEFENDER].bloodrageRank != 0
+					|| !bloodrageDestroyedUnits.empty()))
+				throw std::runtime_error("Cannot discard Bloodrage battle state");
 		}
 		h & battleID;
 		h & sides;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE))
+		{
+			h & sides[BattleSide::ATTACKER].bloodrageDamagePercent;
+			h & sides[BattleSide::DEFENDER].bloodrageDamagePercent;
+			h & sides[BattleSide::ATTACKER].bloodrageRank;
+			h & sides[BattleSide::DEFENDER].bloodrageRank;
+			h & bloodrageDestroyedUnits;
+			if(!h.saving && (sides[BattleSide::ATTACKER].bloodrageDamagePercent < 0
+				|| sides[BattleSide::ATTACKER].bloodrageDamagePercent > 60
+				|| sides[BattleSide::DEFENDER].bloodrageDamagePercent < 0
+				|| sides[BattleSide::DEFENDER].bloodrageDamagePercent > 60
+				|| sides[BattleSide::ATTACKER].bloodrageRank < 0
+				|| sides[BattleSide::ATTACKER].bloodrageRank > 3
+				|| sides[BattleSide::DEFENDER].bloodrageRank < 0
+				|| sides[BattleSide::DEFENDER].bloodrageRank > 3))
+				throw std::runtime_error("Invalid saved Bloodrage battle state");
+		}
+		else if(!h.saving)
+		{
+			sides[BattleSide::ATTACKER].bloodrageDamagePercent = 0;
+			sides[BattleSide::DEFENDER].bloodrageDamagePercent = 0;
+			sides[BattleSide::ATTACKER].bloodrageRank = 0;
+			sides[BattleSide::DEFENDER].bloodrageRank = 0;
+			bloodrageDestroyedUnits.clear();
+		}
 		h & round;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))
 			h & activationSerial;
@@ -280,6 +317,8 @@ public:
 	bool interceptHeroOrderProtect(BattleSide side);
 	bool recordHeroOrderFlankSide(BattleSide side, uint32_t targetUnitId, uint8_t sideBit);
 	bool setHeroOrderSecondWindActive(BattleSide side, bool active);
+	void recordBloodrageStackDeath(uint32_t unitId);
+	void clearBloodrageStackDeath(uint32_t unitId);
 
 	//////////////////////////////////////////////////////////////////////////
 	CStack * getStack(int stackID, bool onlyAlive = true);

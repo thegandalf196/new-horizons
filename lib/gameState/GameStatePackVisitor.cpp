@@ -33,6 +33,41 @@
 #include "../spells/CSpell.h"
 #include "../spells/NewHorizonsMagic.h"
 
+namespace
+{
+std::set<uint32_t> bloodrageDeathCandidates(BattleInfo & battle, const std::vector<BattleStackAttacked> & updates)
+{
+	std::set<uint32_t> result;
+	for(const auto & update : updates)
+	{
+		const auto * unit = battle.getStack(update.stackAttacked, false);
+		// BattleStackAttacked::KILLED is authored while preparing the transition;
+		// the stack state may already reflect that transition before this packet is
+		// applied, so it is the authoritative alive-to-dead marker here.
+		if(update.killed() && !update.willRebirth() && unit
+			&& !unit->acquireState()->summoned && !unit->isClone())
+			result.insert(update.stackAttacked);
+	}
+	return result;
+}
+
+void recordBloodrageDeaths(BattleInfo & battle, const std::set<uint32_t> & candidates)
+{
+	for(const auto unitId : candidates)
+		battle.recordBloodrageStackDeath(unitId);
+}
+
+void refreshBloodrageLivingUnits(BattleInfo & battle, const std::vector<BattleStackAttacked> & updates)
+{
+	for(const auto & update : updates)
+	{
+		const auto * unit = battle.getStack(update.stackAttacked, false);
+		if(unit && unit->alive())
+			battle.clearBloodrageStackDeath(update.stackAttacked);
+	}
+}
+}
+
 void GameStatePackVisitor::updateMoraleOnTroopMixingBonusChange(CBonusSystemNode * node, const Bonus & bonus)
 {
 	if(bonus.type != BonusType::ALIGNMENT_MIX && bonus.type != BonusType::NONEVIL_ALIGNMENT_MIX)
@@ -1440,13 +1475,17 @@ void GameStatePackVisitor::visitBattleStackMoved(BattleStackMoved & pack)
 
 void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 {
-	CStack * attacker = gs.getBattle(pack.battleID)->getStack(pack.stackAttacking);
+	auto * battle = gs.getBattle(pack.battleID);
+	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.bsa);
+	CStack * attacker = battle->getStack(pack.stackAttacking);
 	assert(attacker);
 
 	pack.attackerChanges.visit(*this);
 
 	for(BattleStackAttacked & stack : pack.bsa)
-		gs.getBattle(pack.battleID)->updateUnit(stack.newState.id, stack.newState.data, stack.newState.healthDelta);
+		battle->updateUnit(stack.newState.id, stack.newState.data, stack.newState.healthDelta);
+	recordBloodrageDeaths(*battle, bloodrageCandidates);
+	refreshBloodrageLivingUnits(*battle, pack.bsa);
 
 	if(!attacker->isTimeStopped())
 		attacker->removeBonusesRecursive(Bonus::UntilAttack);
@@ -1759,20 +1798,40 @@ void GameStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 
 void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 {
-	BattleStatePackVisitor battleVisitor(*gs.getBattle(pack.battleID));
+	auto * battle = gs.getBattle(pack.battleID);
+	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.stacks);
+	BattleStatePackVisitor battleVisitor(*battle);
 	for (auto attackInfo : pack.stacks)
 	{
-		auto injuredStack = gs.getBattle(pack.battleID)->getStack(attackInfo.stackAttacked);
-		if(!injuredStack->isTimeStopped())
+		auto injuredStack = battle->getStack(attackInfo.stackAttacked);
+		if(injuredStack && !injuredStack->isTimeStopped())
 			injuredStack->removeBonusesRecursive(Bonus::UntilTakingIndirectDamage);
 	}
 	pack.visitTyped(battleVisitor);
+	recordBloodrageDeaths(*battle, bloodrageCandidates);
+	refreshBloodrageLivingUnits(*battle, pack.stacks);
 }
 
 void GameStatePackVisitor::visitBattleUnitsChanged(BattleUnitsChanged & pack)
 {
-	BattleStatePackVisitor battleVisitor(*gs.getBattle(pack.battleID));
+	auto * battle = gs.getBattle(pack.battleID);
+	std::set<uint32_t> removed;
+	for(const auto & change : pack.changedStacks)
+	{
+		const auto * unit = battle->getStack(change.id, false);
+		if(change.operation == BattleChanges::EOperation::REMOVE && unit && unit->alive()
+			&& !unit->acquireState()->summoned && !unit->isClone())
+			removed.insert(change.id);
+	}
+	BattleStatePackVisitor battleVisitor(*battle);
 	pack.visitTyped(battleVisitor);
+	recordBloodrageDeaths(*battle, removed);
+	for(const auto & change : pack.changedStacks)
+	{
+		const auto * unit = battle->getStack(change.id, false);
+		if(unit && unit->alive())
+			battle->clearBloodrageStackDeath(change.id);
+	}
 }
 
 void GameStatePackVisitor::restorePreBattleState(BattleID battleID)

@@ -55,6 +55,11 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int32_t enchanterCounter = 0; //tends to pass through 0, so sign is needed
 	int32_t initialMana = 0;
 	int32_t additionalMana = 0;
+	// Keeping new runtime fields at the end avoids shifting preceding offsets.
+	// All consumers still require a synchronized rebuild when this struct changes.
+	// BattleInfo owns the versioned wire representation.
+	int32_t bloodrageDamagePercent = 0;
+	int32_t bloodrageRank = 0;
 
 	void init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town);
 	const CArmedInstance * getArmy() const;

@@ -71,6 +71,14 @@ public:
 	uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override;
 	const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override;
 	bool getMetamagicFirstCounterspellNegated(BattleSide side) const override;
+	int32_t getBloodrageDamagePercent(BattleSide side) const override
+	{
+		return subject->getBattle()->getBloodrageDamagePercent(side);
+	}
+	int32_t getBloodrageRank(BattleSide side) const override
+	{
+		return subject->getBattle()->getBloodrageRank(side);
+	}
 
 	const IBonusBearer * getBonusBearer() const override;
 protected:

@@ -348,6 +348,16 @@ std::optional<HeroOrderState> CBattleInfoCallback::battleGetHeroOrderState(Battl
 	return getBattle()->getHeroOrderState(side);
 }
 
+int CBattleInfoCallback::battleGetBloodrageDamagePercent(const battle::Unit * unit) const
+{
+	if(!getBattle() || !unit || !unit->alive() || unit->isGhost())
+		return 0;
+	const auto side = unit->unitSide();
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return 0;
+	return std::max(0, getBattle()->getBloodrageDamagePercent(side));
+}
+
 std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(BattleSide side,
 	HeroCommand command, const std::vector<uint32_t> & targetUnitIds) const
 {
@@ -1539,6 +1549,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
 	payload.targetedRangedCommandPercent = battleTargetedRangedCommandPercent(
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
+	if(info.physicalDamage)
+		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker);
 	if(heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		&& info.attacker && info.defender && !info.attacker->isGhost() && !info.defender->isGhost())
 	{

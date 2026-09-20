@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "StackWithBonuses.h"
+#include "../../lib/battle/NewHorizonsBloodrage.h"
 
 #include <vcmi/events/EventBus.h>
 
@@ -338,7 +339,11 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 
 	nextId = 0x00F00000;
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
 		focusFireStates[side] = realBattle->battleGetFocusFireState(side);
+		bloodrageRanks[side] = realBattle->getBattle()->getBloodrageRank(side);
+		bloodrageDamagePercents[side] = realBattle->getBattle()->getBloodrageDamagePercent(side);
+	}
 
 	localEnvironment.reset(new HypotheticEnvironment(this, env));
 	serverCallback.reset(new HypotheticServerCallback(this));
@@ -429,6 +434,11 @@ int32_t HypotheticBattle::getRound() const
 	return projectedRound;
 }
 
+int32_t HypotheticBattle::getBloodrageDamagePercent(BattleSide side) const
+{
+	return bloodrageDamagePercents.at(side);
+}
+
 IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 {
 	return projectedObstacles;
@@ -504,8 +514,10 @@ void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 void HypotheticBattle::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta)
 {
 	std::shared_ptr<StackWithBonuses> changed = getForUpdate(id);
+	const bool wasAlive = changed->alive();
 
 	changed->load(data);
+	recordBloodrageTransition(changed, wasAlive);
 
 	if(healthDelta < 0)
 	{
@@ -523,6 +535,7 @@ void HypotheticBattle::removeUnit(uint32_t id)
 		auto toRemoveId = *ids.begin();
 
 		auto toRemove = getForUpdate(toRemoveId);
+		const bool wasAlive = toRemove->alive();
 
 		if(!toRemove->ghost)
 		{
@@ -549,9 +562,26 @@ void HypotheticBattle::removeUnit(uint32_t id)
 					linked->cloneID = -1;
 			}
 		}
+		recordBloodrageTransition(toRemove, wasAlive);
 
 		ids.erase(toRemoveId);
 	}
+}
+
+void HypotheticBattle::recordBloodrageTransition(const std::shared_ptr<StackWithBonuses> & unit, bool wasAlive)
+{
+	if(bloodrageRanks[BattleSide::ATTACKER] == 0 && bloodrageRanks[BattleSide::DEFENDER] == 0)
+		return;
+	if(unit->alive())
+	{
+		bloodrageDestroyedUnits.erase(unit->unitId());
+		return;
+	}
+	if(!wasAlive || unit->summoned || unit->isClone() || !bloodrageDestroyedUnits.insert(unit->unitId()).second)
+		return;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		bloodrageDamagePercents[side] = std::min(newHorizonsBloodrage::capForRank(bloodrageRanks[side]),
+			bloodrageDamagePercents[side] + newHorizonsBloodrage::incrementForRank(bloodrageRanks[side]));
 }
 
 void HypotheticBattle::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)

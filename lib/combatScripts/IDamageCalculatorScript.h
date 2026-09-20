@@ -51,6 +51,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int luckyRangedDefenseIgnorePercent = 0;
 	/// Additive direct damage component from a canonical New Horizons Order.
 	int heroOrderDamagePercent = 0;
+	/// Battle-long additive creature attack/retaliation damage from Bloodrage.
+	int bloodrageDamagePercent = 0;
 	/// Physical damage reduction supplied by the defending stack's canonical Order.
 	int heroOrderDamageReductionPercent = 0;
 	/// Final damage multiplier supplied by a canonical Order. This is applied
@@ -85,6 +87,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("luckyRangedDefenseIgnorePercent", luckyRangedDefenseIgnorePercent,
 			"Percentage of target Creature Defense ignored by this lucky ranged attack.");
 		s("heroOrderDamagePercent", heroOrderDamagePercent, "Direct damage component from the active canonical Order.");
+		s("bloodrageDamagePercent", bloodrageDamagePercent,
+			"Battle-long additive creature attack and retaliation damage from Bloodrage.");
 		s("heroOrderDamageReductionPercent", heroOrderDamageReductionPercent,
 			"Physical damage reduction supplied by the defending canonical Order.");
 		s("heroOrderFinalDamageMultiplier", heroOrderFinalDamageMultiplier,
