@@ -28,11 +28,13 @@
 #include "../../lib/callback/IGameInfoCallback.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/entities/building/TownFortifications.h"
+#include "../../lib/gameState/CGameState.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/AbilityCaster.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
 
@@ -71,6 +73,14 @@ static bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle,
 
 	const auto wallState = battle.battleGetWallState(wallPart);
 	return wallState == EWallState::NONE || wallState == EWallState::DESTROYED;
+}
+
+static bool isTimeStopHeroAction(const BattleAction & action)
+{
+	if(action.actionType != EActionType::HERO_SPELL || !action.spell.hasValue())
+		return false;
+	const auto * spell = action.spell.toSpell();
+	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
 }
 
 static bool validateCanonicalLandMineTargets(const CBattleInfoCallback & battle,
@@ -192,6 +202,58 @@ bool BattleActionProcessor::doSurrenderAction(const CBattleInfoCallback & battle
 	gameHandler->giveResource(player, EGameResID::GOLD, -cost);
 	owner->setBattleResult(battle, EBattleResult::SURRENDER, battle.otherSide(ba.side));
 	return true;
+}
+
+bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
+{
+	if(ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side))
+		return false;
+	if(ba.metamagicGrand)
+	{
+		const auto * grandHero = battle.battleGetFightingHero(ba.side);
+		const bool grandAvailable = grandHero
+			&& battle.battleMetamagicPendingCount(ba.side) == 1
+			&& battle.battleMetamagicSequenceSpells(ba.side).size() == 1
+			&& !battle.battleMetamagicGrandUsed(ba.side)
+			&& newHorizonsMagic::metamagicRank(grandHero) >= 3
+			&& newHorizonsMagic::hasMetamagicPerk(grandHero, newHorizonsMagic::METAMAGIC_GRAND);
+		if(!ba.metamagicFollowup || !grandAvailable)
+			return false;
+	}
+
+	const auto * hero = battle.battleGetFightingHero(ba.side);
+	if(!hero || !ba.spell.hasValue())
+		return false;
+	const auto * spell = ba.spell.toSpell();
+	if(!spell)
+		return false;
+
+	spells::BattleCast parameters(&battle, hero, spells::Mode::HERO, spell);
+	parameters.setOvercharge(ba.spellOvercharge);
+	parameters.setSelectiveDispel(ba.spellSelectiveDispel);
+	parameters.setMassSlow(ba.spellMassSlow);
+	parameters.setMetamagicFollowup(ba.metamagicFollowup);
+	parameters.setMetamagicGrand(ba.metamagicGrand);
+	if(ba.metamagicFollowup && !ba.target.empty() && ba.target.front().unitValue >= 0)
+		parameters.setMetamagicTargetUnitId(static_cast<uint32_t>(ba.target.front().unitValue));
+
+	spells::detail::ProblemImpl problem;
+	auto mechanics = spell->battleMechanics(&parameters);
+	auto target = ba.getTarget(&battle);
+	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::isFireWall(spell->getId()))
+	{
+		battle::Target expandedTarget;
+		if(!validateCanonicalFireWallAction(battle, ba, expandedTarget))
+			return false;
+		target = std::move(expandedTarget);
+	}
+	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::isLandMine(spell->getId())
+		&& !validateCanonicalLandMineTargets(battle, *mechanics, target))
+		return false;
+
+	return mechanics->canBeCast(problem) && !target.empty() && mechanics->canBeCastAt(target, problem);
 }
 
 bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
@@ -869,6 +931,11 @@ bool BattleActionProcessor::canStackAct(const CBattleInfoCallback & battle, cons
 		gameHandler->complain("This stack is dead: " + stack->nodeName());
 		return false;
 	}
+	if(stack->isTimeStopped())
+	{
+		gameHandler->complain("This stack is in Time Stop stasis!");
+		return false;
+	}
 
 	if (battle.battleTacticDist())
 	{
@@ -1096,6 +1163,16 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 			return false;
 		}
 	}
+	// Hero spell mechanics validate their final target inside the dispatcher.
+	// Run the same pure validation before StartAction so an invalid request
+	// cannot release Time Stop (or advance the flow) merely by reaching the
+	// shared action visitor. The dispatcher repeats this check immediately
+	// before applying effects as the authoritative final guard.
+	if(ba.actionType == EActionType::HERO_SPELL && !validateHeroSpellAction(battle, ba))
+	{
+		gameHandler->complain("Hero spell unavailable under authoritative target validation");
+		return false;
+	}
 	logGlobal->trace("Making action: %s", ba.toString());
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
 
@@ -1110,6 +1187,11 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	}
 
 	bool result = dispatchBattleAction(battle, effectiveAction);
+	if(result && isTimeStopHeroAction(ba))
+	{
+		if(auto * state = gameHandler->gs->getBattle(battle.getBattle()->getBattleID()))
+			state->notePendingTimeStopHeroAction(ba.side);
+	}
 
 	if (!ba.isBattleEndAction())
 	{
@@ -1118,7 +1200,8 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		gameHandler->sendAndApply(endAction);
 	}
 
-	if(ba.actionType == EActionType::WAIT || ba.actionType == EActionType::DEFEND || ba.actionType == EActionType::SHOOT || ba.actionType == EActionType::MONSTER_SPELL)
+	if(effectiveAction.actionType == EActionType::WAIT || effectiveAction.actionType == EActionType::DEFEND
+		|| effectiveAction.actionType == EActionType::SHOOT || effectiveAction.actionType == EActionType::MONSTER_SPELL)
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
 
 	return result;
@@ -1634,7 +1717,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			continue;
 
 		applyBattleEffects(battle, bat, attackerState, payload, unit, attack.distance, true, attack.brace, false);
-		removeBonuses(battle, unit, *unit->getAllBonuses(Bonus::UntilTakingIndirectDamage));
+		if(!unit->isTimeStopped())
+			removeBonuses(battle, unit, *unit->getAllBonuses(Bonus::UntilTakingIndirectDamage));
 	}
 
 	markSpellLikeAttack(attacker, bat);
@@ -1907,8 +1991,14 @@ bool BattleActionProcessor::makeAutomaticBattleAction(const CBattleInfoCallback 
 	return makeBattleActionImpl(battle, ba);
 }
 
-bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player, const BattleAction &ba)
+bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player,
+	const BattleAction &ba, BattleAction * effectiveActionOut)
 {
+	if(ba.timeStopHeroActionPass)
+	{
+		gameHandler->complain("Time Stop Hero Action pass is server-derived");
+		return false;
+	}
 	if (ba.side != BattleSide::ATTACKER && ba.side != BattleSide::DEFENDER && gameHandler->complain("Can not make action - invalid battle side!"))
 		return false;
 
@@ -1946,7 +2036,11 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 		// to bind that identity to.  Validate both forms before the Metamagic
 		// pending guard (and before StartAction) so a forged opposite-side action
 		// cannot consume or bypass the pending sequence.
-		if(ba.isUnitAction() && ba.side != active->unitSide())
+		auto unitOwner = battle.battleGetOwner(active);
+		const auto controllingSide = battle.playerToSide(unitOwner);
+		const bool stoppedPassRequest = active->isTimeStopped()
+			&& (ba.actionType == EActionType::NO_ACTION || ba.actionType == EActionType::DEFEND);
+		if(ba.isUnitAction() && ba.side != (stoppedPassRequest ? controllingSide : active->unitSide()))
 		{
 			gameHandler->complain("Can not make actions for the other battle side!");
 			return false;
@@ -1959,15 +2053,42 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			return false;
 		}
 
-		auto unitOwner = battle.battleGetOwner(active);
-
 		if(player != unitOwner)
 		{
 			gameHandler->complain("Can not make actions in battles you are not part of!");
 			return false;
 		}
+
+		if(active->isTimeStopped() && ba.actionType == EActionType::NO_ACTION)
+		{
+			// This is the explicit pass for a control-visible stopped activation.
+			// The identity/side/owner checks above are deliberately completed before
+			// allowing it; no WAIT/DEFEND or other creature action can use this path.
+			BattleAction pass = BattleAction::makeNoAction(active);
+			pass.side = battle.playerToSide(unitOwner);
+			pass.timeStopHeroActionPass = true;
+			if(effectiveActionOut)
+				*effectiveActionOut = pass;
+			return makeBattleActionImpl(battle, pass);
+		}
+
+		if(active->isTimeStopped() && ba.actionType == EActionType::DEFEND)
+		{
+			// Existing human clients expose DEFEND as the visible close-turn
+			// control. Canonicalize only that owner-authenticated request to the
+			// explicit no-op pass so stasis never gains a defending bonus. WAIT and
+			// every other creature action remain rejected by canStackAct.
+			BattleAction pass = BattleAction::makeNoAction(active);
+			pass.side = battle.playerToSide(unitOwner);
+			pass.timeStopHeroActionPass = true;
+			if(effectiveActionOut)
+				*effectiveActionOut = pass;
+			return makeBattleActionImpl(battle, pass);
+		}
 	}
 
+	if(effectiveActionOut)
+		*effectiveActionOut = ba;
 	return makeBattleActionImpl(battle, ba);
 }
 

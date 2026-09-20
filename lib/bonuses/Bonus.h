@@ -16,6 +16,7 @@
 #include "../texts/MetaString.h"
 #include "../filesystem/ResourcePath.h"
 #include <vcmi/scripting/ApiTags.h>
+#include <stdexcept>
 
 class IBonusBearer;
 class IPropagator;
@@ -73,6 +74,13 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		// TIME_STOP is a new serialized bonus type.  Never emit it through an
+		// older handler: doing so would shift/interpret the enum differently in a
+		// legacy reader.  A battle without this marker remains fully loadable by
+		// older saves because no extra field is introduced in the containing node.
+		if(h.saving && type == BonusType::TIME_STOP
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP))
+			throw std::runtime_error("Cannot discard New Horizons Time Stop state");
 		h & duration;
 		h & type;
 		h & subtype;

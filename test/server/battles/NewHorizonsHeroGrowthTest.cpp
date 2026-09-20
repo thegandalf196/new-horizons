@@ -13,7 +13,10 @@
 #include "../../../lib/callback/CBattleCallback.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/pathfinder/CPathfinder.h"
+#include "../../../lib/pathfinder/PathfinderOptions.h"
 #include "../../../lib/pathfinder/TurnInfo.h"
+#include "../../../lib/mapping/TerrainTile.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/battle/Destination.h"
 #include "../../../server/ServerSpellCastEnvironment.h"
@@ -61,6 +64,15 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
+		// Real turn processing needs a usable Calendar.  Tiny maps do not carry
+		// the global calendar settings reliably, so pin the canonical Heroes III
+		// week/month lengths in this server-side fixture before state init.
+		JsonNode daysPerWeek;
+		daysPerWeek.Integer() = 7;
+		map->overrideGameSetting(EGameSettings::GENERAL_DAYS_PER_WEEK, daysPerWeek);
+		JsonNode weeksPerMonth;
+		weeksPerMonth.Integer() = 4;
+		map->overrideGameSetting(EGameSettings::GENERAL_WEEKS_PER_MONTH, weeksPerMonth);
 		auto rules = growthEnabled ? testHeroRules() : JsonNode();
 		if(growthEnabled)
 			for(auto & extra : rules["extraGrowth"].Vector())
@@ -123,7 +135,7 @@ TEST_F(NewHorizonsCapabilityStateTest, CapabilityOnlyHeroDoesNotFabricatePrimary
 	EXPECT_FALSE(attackerSideHero->getCapabilityRules().isNull());
 }
 
-TEST_F(NewHorizonsCapabilityStateTest, ArmyUsageScalesAllMovementLayersWithoutDeletingOrAwardingMovement)
+TEST_F(NewHorizonsCapabilityStateTest, ArmyUsageDoesNotScaleSharedMovementOrDeleteTroops)
 {
 	startGame();
 	attackerSideHero->setSecSkillLevel(SecondarySkill::LEADERSHIP, 0, ChangeValueMode::ABSOLUTE);
@@ -140,9 +152,9 @@ TEST_F(NewHorizonsCapabilityStateTest, ArmyUsageScalesAllMovementLayersWithoutDe
 	for(int day : {0, 1})
 	{
 		const auto overloaded = attackerSideHero->getTurnInfo(day);
-		EXPECT_EQ(overloaded->getMovePointsLimitLand(), normal->getMovePointsLimitLand() * 80 / 100);
-		EXPECT_EQ(overloaded->getMovePointsLimitWater(), normal->getMovePointsLimitWater() * 80 / 100);
-		EXPECT_EQ(overloaded->getMovePointsLimitAir(), normal->getMovePointsLimitAir() * 80 / 100);
+		EXPECT_EQ(overloaded->getMovePointsLimitLand(), normal->getMovePointsLimitLand());
+		EXPECT_EQ(overloaded->getMovePointsLimitWater(), normal->getMovePointsLimitWater());
+		EXPECT_EQ(overloaded->getMovePointsLimitAir(), normal->getMovePointsLimitAir());
 	}
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 2500);
 	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), remaining);
@@ -156,6 +168,175 @@ TEST_F(NewHorizonsCapabilityStateTest, ArmyUsageScalesAllMovementLayersWithoutDe
 	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), remaining);
 }
 
+TEST_F(NewHorizonsCapabilityStateTest, AdventureMovementIgnoresCreatureInitiative)
+{
+	startGame();
+	attackerSideHero->clearSlots();
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName("core:pikeman"), 1));
+	const auto slowStack = attackerSideHero->getTurnInfo(0);
+	const int slowInitiative = attackerSideHero->getLowestCreatureSpeed();
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName("core:angel"), 1));
+	const auto fastStack = attackerSideHero->getTurnInfo(0);
+	const int fastInitiative = attackerSideHero->getLowestCreatureSpeed();
+
+	EXPECT_NE(slowInitiative, fastInitiative);
+	EXPECT_TRUE(slowStack->usesNewHorizonsMovement());
+	EXPECT_EQ(slowStack->getMovePointsLimitLand(), 200);
+	EXPECT_EQ(fastStack->getMovePointsLimitLand(), 200);
+	EXPECT_EQ(slowStack->getMovePointsLimitWater(), fastStack->getMovePointsLimitWater());
+}
+
+TEST_F(NewHorizonsCapabilityStateTest, LegacyMovementRemainsSpeedDrivenWithoutCapabilityRules)
+{
+	capabilitiesEnabled = false;
+	startGame();
+	attackerSideHero->clearSlots();
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName("core:pikeman"), 1));
+	const auto slowStack = attackerSideHero->getTurnInfo(0);
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName("core:angel"), 1));
+	const auto fastStack = attackerSideHero->getTurnInfo(0);
+
+	EXPECT_FALSE(slowStack->usesNewHorizonsMovement());
+	EXPECT_NE(slowStack->getMovePointsLimitLand(), fastStack->getMovePointsLimitLand());
+}
+
+TEST_F(NewHorizonsCapabilityStateTest, LogisticsModifiesHeroMovementPercentNotArmySpeed)
+{
+	startGame();
+	attackerSideHero->setSecSkillLevel(SecondarySkill::LOGISTICS, 1, ChangeValueMode::ABSOLUTE);
+	const auto basic = attackerSideHero->getTurnInfo(0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill::LOGISTICS, 3, ChangeValueMode::ABSOLUTE);
+	const auto expert = attackerSideHero->getTurnInfo(0);
+
+	EXPECT_EQ(basic->getMovePointsLimitLand(), 220);
+	EXPECT_EQ(expert->getMovePointsLimitLand(), 260);
+	EXPECT_EQ(basic->getMovePointsLimitWater(), 220);
+	EXPECT_EQ(expert->getMovePointsLimitWater(), 260);
+}
+
+TEST_F(NewHorizonsCapabilityStateTest, MovementModifiersKeepBonusListSourceBoundsAndDaySemantics)
+{
+	startGame();
+	attackerSideHero->setSecSkillLevel(SecondarySkill::LOGISTICS, 0, ChangeValueMode::ABSOLUTE);
+	const auto landSubtype = BonusSubtypeID(BonusCustomSubtype::heroMovementLand);
+
+	// The source and target-type modifiers are part of BonusList's ordinary
+	// value pipeline: 10% * (1 + 50% + 10%) = 16%, then apply base/additive
+	// values before the final percentage-to-all stage.
+	auto sourcePercent = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+		BonusSource::OTHER, 10, BonusSourceID(), landSubtype, BonusValueType::PERCENT_TO_BASE);
+	attackerSideHero->addNewBonus(sourcePercent);
+	auto percentToSource = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+		BonusSource::OTHER, 50, BonusSourceID(), landSubtype, BonusValueType::PERCENT_TO_SOURCE);
+	attackerSideHero->addNewBonus(percentToSource);
+	auto percentToTarget = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+		BonusSource::HERO_COMMAND, 10, BonusSourceID(), landSubtype, BonusValueType::PERCENT_TO_TARGET_TYPE);
+	percentToTarget->targetSourceType = BonusSource::OTHER;
+	attackerSideHero->addNewBonus(percentToTarget);
+	auto flat = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+		BonusSource::HERO_BASE_SKILL, 3, BonusSourceID(), landSubtype, BonusValueType::ADDITIVE_VALUE);
+	attackerSideHero->addNewBonus(flat);
+	auto base = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+		BonusSource::HERO_BASE_SKILL, 5, BonusSourceID(), landSubtype, BonusValueType::BASE_NUMBER);
+	attackerSideHero->addNewBonus(base);
+	auto percentToAll = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+		BonusSource::HERO_BASE_SKILL, 10, BonusSourceID(), landSubtype, BonusValueType::PERCENT_TO_ALL);
+	attackerSideHero->addNewBonus(percentToAll);
+
+	// Independent bounds surround the additive percentage+flat result.  The
+	// values use a source not affected by the modifiers above, so the expected
+	// lower/upper bounds remain explicit and easy to audit.
+	auto minimum = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+		BonusSource::HERO_BASE_SKILL, 250, BonusSourceID(), landSubtype, BonusValueType::INDEPENDENT_MAX);
+	attackerSideHero->addNewBonus(minimum);
+	auto maximum = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+		BonusSource::HERO_BASE_SKILL, 270, BonusSourceID(), landSubtype, BonusValueType::INDEPENDENT_MIN);
+	attackerSideHero->addNewBonus(maximum);
+
+	EXPECT_EQ(attackerSideHero->getTurnInfo(0)->getMovePointsLimitLand(), 264);
+
+	// ONE_DAY is active for today's refresh but intentionally absent from a
+	// projected next-day TurnInfo selected with Selector::days(1).
+	auto todayOnly = std::make_shared<Bonus>(BonusDuration::ONE_DAY, BonusType::MOVEMENT,
+		BonusSource::HERO_BASE_SKILL, 30, BonusSourceID(), landSubtype, BonusValueType::PERCENT_TO_BASE);
+	attackerSideHero->addNewBonus(todayOnly);
+	EXPECT_EQ(attackerSideHero->getTurnInfo(0)->getMovePointsLimitLand(), 270);
+	EXPECT_EQ(attackerSideHero->getTurnInfo(1)->getMovePointsLimitLand(), 264);
+
+	// Remove the independent bounds to expose the timed bonus directly:
+	// today's pool is 332, while the next day retains the permanent 264 result.
+	attackerSideHero->removeBonus(minimum);
+	attackerSideHero->removeBonus(maximum);
+	EXPECT_EQ(attackerSideHero->getTurnInfo(0)->getMovePointsLimitLand(), 332);
+	EXPECT_EQ(attackerSideHero->getTurnInfo(1)->getMovePointsLimitLand(), 264);
+}
+
+TEST_F(NewHorizonsCapabilityStateTest, IndependentOnlyMovementBoundsUseBonusListFallback)
+{
+	startGame();
+	attackerSideHero->setSecSkillLevel(SecondarySkill::LOGISTICS, 0, ChangeValueMode::ABSOLUTE);
+	const auto landSubtype = BonusSubtypeID(BonusCustomSubtype::heroMovementLand);
+
+	auto upperOnly = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+		BonusSource::OTHER, 300, BonusSourceID(), landSubtype, BonusValueType::INDEPENDENT_MIN);
+	attackerSideHero->addNewBonus(upperOnly);
+	EXPECT_EQ(attackerSideHero->getTurnInfo(0)->getMovePointsLimitLand(), 300);
+	attackerSideHero->removeBonus(upperOnly);
+
+	auto lowerOnly = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+		BonusSource::OTHER, 100, BonusSourceID(), landSubtype, BonusValueType::INDEPENDENT_MAX);
+	attackerSideHero->addNewBonus(lowerOnly);
+	EXPECT_EQ(attackerSideHero->getTurnInfo(0)->getMovePointsLimitLand(), 100);
+}
+
+TEST_F(NewHorizonsCapabilityStateTest, PathfinderUsesNativeMixedDesertRoadAndDiagonalCosts)
+{
+	startGame();
+	attackerSideHero->clearSlots();
+
+	const auto source = attackerSideHero->visitablePos();
+	const auto orthogonal = source + int3(1, 0, 0);
+	const auto diagonal = source + int3(1, 1, 0);
+	const auto movementCost = [&](TerrainId sourceTerrain, TerrainId destinationTerrain,
+		bool road, bool diagonalStep)
+	{
+		TerrainTile sourceTile;
+		TerrainTile destinationTile;
+		sourceTile.terrainType = sourceTerrain;
+		destinationTile.terrainType = destinationTerrain;
+		if(road)
+		{
+			sourceTile.roadType = RoadId::DIRT_ROAD;
+			destinationTile.roadType = RoadId::DIRT_ROAD;
+		}
+		CPathfinderHelper helper(*gameState(), attackerSideHero, PathfinderOptions(*gameState()));
+		return helper.getMovementCost(source, diagonalStep ? diagonal : orthogonal,
+			sourceTerrain == ETerrainId::WATER ? EPathfindingLayer::SAIL : EPathfindingLayer::LAND,
+			1000, false, &sourceTile, &destinationTile);
+	};
+
+	// Castle is native to grass through the hero faction.
+	EXPECT_EQ(movementCost(ETerrainId::GRASS, ETerrainId::GRASS, false, false), 10);
+	EXPECT_EQ(movementCost(ETerrainId::GRASS, ETerrainId::GRASS, true, false), 7);
+	EXPECT_EQ(movementCost(ETerrainId::SAND, ETerrainId::SAND, false, false), 18);
+	EXPECT_EQ(movementCost(ETerrainId::SAND, ETerrainId::SAND, true, false), 13);
+	EXPECT_EQ(movementCost(ETerrainId::SAND, ETerrainId::SAND, true, true), 17);
+	EXPECT_EQ(movementCost(ETerrainId::WATER, ETerrainId::WATER, false, false), 10);
+
+	// CPathfinderHelper and the legacy executor convention use the source tile
+	// for terrain/road cost.  Keep that convention explicit when a route
+	// crosses a terrain boundary rather than silently switching to destination.
+	EXPECT_EQ(movementCost(ETerrainId::SAND, ETerrainId::GRASS, false, false), 18);
+	EXPECT_EQ(movementCost(ETerrainId::GRASS, ETerrainId::SAND, false, false), 10);
+
+	// Fortress gnolls make the whole army native to swamp; adding a Castle
+	// pikeman makes it mixed and restores the non-native multiplier.
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName("core:gnoll"), 1));
+	EXPECT_EQ(movementCost(ETerrainId::SWAMP, ETerrainId::SWAMP, false, false), 10);
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(1), creatureByName("core:pikeman"), 1));
+	EXPECT_EQ(movementCost(ETerrainId::SWAMP, ETerrainId::SWAMP, false, false), 14);
+}
+
 TEST_F(NewHorizonsCapabilityStateTest, AuthoritativeNewDayRefreshUsesCapacityAndSkillWithoutLosingTroops)
 {
 	// Independent post-freeze native control, not a GUI journey or candidate change.
@@ -166,16 +347,16 @@ TEST_F(NewHorizonsCapabilityStateTest, AuthoritativeNewDayRefreshUsesCapacityAnd
 	const auto day = gameState()->day;
 	gameHandler->onNewTurn();
 	EXPECT_EQ(gameState()->day, day + 1);
-	EXPECT_EQ(attackerSideHero->movementPointsLimit(), 780);
-	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), 780);
+	EXPECT_EQ(attackerSideHero->movementPointsLimit(), 200);
+	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), 200);
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 4000);
 	attackerSideHero->setSecSkillLevel(SecondarySkill::LEADERSHIP, 3, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(attackerSideHero->getLeadershipCapacity()->capacity, 2600);
-	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), 780);
+	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), 200);
 	gameHandler->onNewTurn();
 	EXPECT_EQ(gameState()->day, day + 2);
-	EXPECT_EQ(attackerSideHero->movementPointsLimit(), 1014);
-	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), 1014);
+	EXPECT_EQ(attackerSideHero->movementPointsLimit(), 200);
+	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), 200);
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 4000);
 }
 
@@ -190,8 +371,20 @@ TEST_F(NewHorizonsCapabilityStateTest, HypotheticalExchangeBudgetUsesProjectedAr
 	const int remaining = attackerSideHero->movementPointsRemaining();
 	const auto actual = attackerSideHero->getTurnInfo(0);
 	const auto projection = attackerSideHero->getTurnInfo(0, defenderSideHero);
-	EXPECT_EQ(projection->getMovePointsLimitLand(), actual->getMovePointsLimitLand() / 2);
+	EXPECT_EQ(projection->getMovePointsLimitLand(), actual->getMovePointsLimitLand());
 	EXPECT_EQ(attackerSideHero->getLeadershipCapacity(*defenderSideHero)->used, 4000);
+	EXPECT_FALSE(actual->hasNoTerrainPenalty(ETerrainId::SWAMP));
+	defenderSideHero->clearSlots();
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creatureByName("core:gnoll"), 1));
+	const auto projectedNative = attackerSideHero->getTurnInfo(0, defenderSideHero);
+	EXPECT_TRUE(projectedNative->hasNoTerrainPenalty(ETerrainId::SWAMP));
+	EXPECT_EQ(projectedNative->getMovePointsLimitLand(), actual->getMovePointsLimitLand());
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), creatureByName("core:pikeman"), 1));
+	const auto projectedMixed = attackerSideHero->getTurnInfo(0, defenderSideHero);
+	EXPECT_FALSE(projectedMixed->hasNoTerrainPenalty(ETerrainId::SWAMP));
+	EXPECT_EQ(projectedMixed->getMovePointsLimitLand(), actual->getMovePointsLimitLand());
+	defenderSideHero->clearSlots();
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creatureByName("core:pikeman"), 4000));
 	EXPECT_EQ(attackerSideHero->getLeadershipCapacity()->used, 100);
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 100);
 	EXPECT_EQ(defenderSideHero->getStackCount(SlotID(0)), 4000);

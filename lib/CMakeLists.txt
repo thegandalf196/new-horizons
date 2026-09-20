@@ -230,6 +230,7 @@ set(lib_MAIN_SRCS
 	pathfinder/PathfinderOptions.cpp
 	pathfinder/PathfindingRules.cpp
 	pathfinder/TurnInfo.cpp
+	pathfinder/NewHorizonsMovement.cpp
 
 	rewardable/Configuration.cpp
 	rewardable/Info.cpp
@@ -718,6 +719,7 @@ set(lib_MAIN_HEADERS
 	pathfinder/PathfinderUtil.h
 	pathfinder/PathfindingRules.h
 	pathfinder/TurnInfo.h
+	pathfinder/NewHorizonsMovement.h
 
 	rewardable/Configuration.h
 	rewardable/Info.h

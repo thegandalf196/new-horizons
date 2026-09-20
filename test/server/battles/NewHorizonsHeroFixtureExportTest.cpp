@@ -79,8 +79,8 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryOvercapacityArmyAndTraine
 	EXPECT_EQ(hero->getLeadershipCapacity()->movementPercent, 75);
 	EXPECT_TRUE(hero->getLeadershipCapacity()->overCapacity());
 	EXPECT_EQ(hero->getLowestCreatureSpeed(), 4);
-	EXPECT_EQ(hero->movementPointsLimit(), 1170); // Original speed4 base1560, scaled75%.
-	EXPECT_EQ(hero->movementPointsRemaining(), 1170);
+	EXPECT_EQ(hero->movementPointsLimit(), 200); // New Horizons uses a fixed base, independent of creature speed/capacity.
+	EXPECT_EQ(hero->movementPointsRemaining(), 200);
 	EXPECT_EQ(hero->getStackCount(SlotID(0)), 1000);
 	EXPECT_EQ(hero->getSecSkillLevel(SecondarySkill::LEADERSHIP), 0);
 	ASSERT_TRUE(hero->getSiegeCapabilities());
@@ -158,7 +158,7 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryCapabilityOnlyIdentityCon
 	EXPECT_EQ(hero->getLeadershipCapacity()->capacity, 750);
 	EXPECT_EQ(hero->getLeadershipCapacity()->used, 1000);
 	EXPECT_EQ(hero->getLeadershipCapacity()->movementPercent, 75);
-	EXPECT_EQ(hero->movementPointsRemaining(), 1170);
+	EXPECT_EQ(hero->movementPointsRemaining(), 200);
 	ASSERT_TRUE(hero->getSiegeCapabilities());
 	EXPECT_EQ(hero->getSiegeCapabilities()->ballistaDamageMultiplier, 4);
 	EXPECT_TRUE(hero->hasArt(ArtifactID::BALLISTA, true));

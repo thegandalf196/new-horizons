@@ -14,6 +14,7 @@
 #include "AttackPossibility.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/CRandomGenerator.h"
 #include "SpellTargetsEvaluator.h"
 #include <vcmi/spells/Spell.h>
@@ -52,6 +53,12 @@ bool isCanonicalFireWall(const Mechanics * spellMechanics)
 	return spellMechanics
 		&& spellMechanics->usesNewHorizonsMagic()
 		&& newHorizonsMagic::isFireWall(spellMechanics->getSpellId());
+}
+
+bool isCanonicalTimeStop(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
 }
 
 bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle,
@@ -359,6 +366,8 @@ std::vector<Target> physicalObstacleTargets(const Mechanics * spellMechanics)
 
 std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spellMechanics)
 {
+	if(isCanonicalTimeStop(spellMechanics))
+		return canonicalTimeStopTargets(spellMechanics);
 	if(isCanonicalFireWall(spellMechanics))
 		return canonicalFireWallTargets(spellMechanics);
 	if(isCanonicalLandMine(spellMechanics))
@@ -396,6 +405,23 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spe
 		default:
 			return result;
 	}
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalTimeStopTargets(const spells::Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(!hex.isValid())
+			continue;
+
+		Target target{Destination(hex)};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
+	}
+	return result;
 }
 
 std::vector<Target> SpellTargetEvaluator::canonicalFireWallTargets(const Mechanics * spellMechanics)
@@ -648,6 +674,45 @@ float SpellTargetEvaluator::fireWallPlacementValue(const Mechanics * spellMechan
 	}
 
 	return std::max(0.0f, hostileValue - friendlyPenalty);
+}
+
+float SpellTargetEvaluator::timeStopPlacementValue(const Mechanics * spellMechanics,
+	const Target & target)
+{
+	if(!isCanonicalTimeStop(spellMechanics) || target.size() != 1
+		|| target.front().unitValue != nullptr || !target.front().hexValue.isValid())
+		return 0.0f;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return 0.0f;
+
+	float value = 0.0f;
+	for(const auto * unit : spellMechanics->getAffectedStacks(target))
+	{
+		if(!unit || !unit->alive() || unit->isTimeStopped())
+			continue;
+
+		const float health = static_cast<float>(std::max<int64_t>(1, unit->getAvailableHealth()));
+		const float totalHealth = static_cast<float>(std::max<int64_t>(1, unit->getTotalHealth()));
+		const bool enemy = spellMechanics->battle()->battleGetOwner(unit) != spellMechanics->getCasterColor();
+		if(enemy)
+		{
+			// A unit that is ready to move is a more immediate tactical threat.
+			const float actionPressure = unit->willMove() ? 1.25f : 0.85f;
+			value += health * actionPressure;
+		}
+		else
+		{
+			// Stopping a healthy ally is usually a bad exchange.  An injured ally
+			// can still be protected from the next enemy action, so let that use
+			// become positive once enough health is missing.
+			const float missingHealth = std::clamp(1.0f - health / totalHealth, 0.0f, 1.0f);
+			value += health * (missingHealth * 1.8f - 0.65f);
+		}
+	}
+
+	return value;
 }
 
 std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)

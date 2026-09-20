@@ -15,6 +15,7 @@
 #include "../bonuses/BonusSelector.h"
 #include "bonuses/Limiters.h"
 #include "bonuses/Updaters.h"
+#include "../bonuses/BonusParameters.h"
 #include "../CStack.h"
 #include "../callback/IGameInfoCallback.h"
 #include "../entities/artifact/CArtifact.h"
@@ -31,6 +32,51 @@
 
 namespace
 {
+bool isTimeStopBonus(const Bonus & bonus)
+{
+	// The dedicated marker is authoritative even when a legacy/content-light
+	// loader cannot resolve the script's SpellID.  The source check below keeps
+	// the old NONE/NOT_ACTIVE/INVINCIBLE fallback markers recognizable.
+	if(bonus.type == BonusType::TIME_STOP)
+		return true;
+
+	if(bonus.source != BonusSource::SPELL_EFFECT || !bonus.sid.as<SpellID>().hasValue())
+		return false;
+
+	const auto * spell = bonus.sid.as<SpellID>().toSpell();
+	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
+}
+
+bool isTimeStopStateBonus(const Bonus & bonus)
+{
+	return isTimeStopBonus(bonus)
+		&& (bonus.type == BonusType::TIME_STOP
+			|| bonus.type == BonusType::NONE
+			|| bonus.type == BonusType::NOT_ACTIVE
+			|| bonus.type == BonusType::INVINCIBLE);
+}
+
+bool timeStopBelongsToSide(const Bonus & bonus, BattleSide side)
+{
+	if(!isTimeStopBonus(bonus))
+		return false;
+
+	// Early development snapshots did not carry the caster side in addInfo.
+	// They are safe to clean up on either hero action rather than leaving a
+	// permanent stale marker in a loaded battle.
+	if(!bonus.parameters)
+		return true;
+
+	try
+	{
+		return bonus.parameters->toNumber() == static_cast<int32_t>(side);
+	}
+	catch(const std::exception &)
+	{
+		return false;
+	}
+}
+
 bool orderUnitsAdjacent(const battle::Unit * first, const battle::Unit * second)
 {
 	if(!first || !second)
@@ -849,7 +895,7 @@ void BattleInfo::nextRound()
 	for(auto & s : stacks)
 	{
 		// new turn effects
-		if(!isFirstRound)
+		if(!isFirstRound && !s->isTimeStopped())
 			s->reduceBonusDurations(Bonus::NTurns);
 
 		s->afterNewRound();
@@ -862,8 +908,18 @@ void BattleInfo::nextRound()
 void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
 	activeStack = unitId;
+	if(reason == BattleUnitTurnReason::ACTION_REJECTED)
+		return;
 
 	CStack * st = getStack(activeStack);
+	if(st->isTimeStopped() && reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
+	{
+		// A stopped unit receives a synthetic queue activation solely so the
+		// authoritative flow can reach a Hero Action window. Mark that queue
+		// slot consumed without changing movement/action permission; the flag is
+		// reset by afterNewRound and is used only by turn ordering.
+		st->timeStopTurnConsumedFlag = true;
+	}
 
 	// A hero/creature spell that does not consume the active unit's turn is a
 	// continuation of the same activation.  Keep the Fire Wall activation token
@@ -887,7 +943,8 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	if (reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
 	{
 		//remove bonuses that last until when stack gets new turn
-		st->removeBonusesRecursive(Bonus::UntilGetsTurn);
+		if(!st->isTimeStopped())
+			st->removeBonusesRecursive(Bonus::UntilGetsTurn);
 	}
 
 	st->afterGetsTurn(reason);
@@ -918,6 +975,11 @@ void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
 		logGlobal->error("Cannot find stack %d", id);
 		return;
 	}
+	if(sta->isTimeStopped())
+	{
+		logNetwork->warn("Ignoring movement of Time Stop unit %d", id);
+		return;
+	}
 	if(sta->getPosition() != destination)
 	{
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -944,6 +1006,20 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 	CStack * changedStack = getStack(id, false);
 	if(!changedStack)
 		throw std::runtime_error("Invalid unit id in BattleInfo update");
+	if(changedStack->isTimeStopped() && healthDelta != 0)
+	{
+		logNetwork->warn("Ignoring health update of Time Stop unit %d", id);
+		return;
+	}
+	if(changedStack->isTimeStopped())
+	{
+		// UnitChanges also carries a serialized state.  A stopped unit cannot
+		// move, wait, defend, cast, or otherwise mutate activation state; the
+		// authoritative flow advances it with a no-op instead.  Reject all
+		// external state updates until the marker is released.
+		logNetwork->warn("Ignoring state update of Time Stop unit %d", id);
+		return;
+	}
 
 	if(!changedStack->alive() && healthDelta > 0)
 	{
@@ -1094,6 +1170,12 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 	for(const Bonus & one : bonus)
 	{
+		if(sta->isTimeStopped() && !isTimeStopStateBonus(one))
+		{
+			logNetwork->warn("Ignoring effect removal from Time Stop unit %d", id);
+			continue;
+		}
+
 		auto selector = [one](const Bonus * b)
 		{
 			//compare everything but turnsRemain, limiter and propagator
@@ -1110,6 +1192,88 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 	}
 }
 
+void BattleInfo::expireTimeStops(BattleSide casterSide)
+{
+	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		return;
+
+	for(auto & stack : stacks)
+	{
+		if(!stack)
+			continue;
+
+		stack->removeBonusesRecursive(CSelector([casterSide](const Bonus * bonus)
+		{
+			return bonus && isTimeStopStateBonus(*bonus)
+				&& timeStopBelongsToSide(*bonus, casterSide);
+		}));
+	}
+
+	clearPendingTimeStopHeroAction(casterSide);
+}
+
+namespace
+{
+ui8 timeStopSideBit(BattleSide side)
+{
+	if(side == BattleSide::ATTACKER)
+		return 1u;
+	if(side == BattleSide::DEFENDER)
+		return 2u;
+	return 0u;
+}
+}
+
+ui8 BattleInfo::getPendingTimeStopHeroActionSides() const
+{
+	ui8 result = pendingTimeStopHeroActionSides;
+	// Saves written with the first Time Stop format only have the scalar field.
+	// Treat that field as a one-origin mask until the battle reaches a new
+	// serialization boundary and can persist the complete set.
+	if(result == 0)
+		result = timeStopSideBit(pendingTimeStopHeroActionSide);
+	return result;
+}
+
+BattleSide BattleInfo::getPendingTimeStopHeroActionSide() const
+{
+	const auto pending = getPendingTimeStopHeroActionSides();
+	if(pending & timeStopSideBit(BattleSide::ATTACKER))
+		return BattleSide::ATTACKER;
+	if(pending & timeStopSideBit(BattleSide::DEFENDER))
+		return BattleSide::DEFENDER;
+	return BattleSide::NONE;
+}
+
+bool BattleInfo::hasPendingTimeStopHeroAction(BattleSide side) const
+{
+	return (getPendingTimeStopHeroActionSides() & timeStopSideBit(side)) != 0;
+}
+
+void BattleInfo::notePendingTimeStopHeroAction(BattleSide side)
+{
+	const auto bit = timeStopSideBit(side);
+	if(!bit)
+		return;
+
+	pendingTimeStopHeroActionSides = getPendingTimeStopHeroActionSides() | bit;
+	if(pendingTimeStopHeroActionSide == BattleSide::NONE)
+		pendingTimeStopHeroActionSide = side;
+}
+
+void BattleInfo::clearPendingTimeStopHeroAction(BattleSide side)
+{
+	const auto bit = timeStopSideBit(side);
+	if(!bit)
+		return;
+
+	pendingTimeStopHeroActionSides = getPendingTimeStopHeroActionSides() & static_cast<ui8>(~bit);
+	if(pendingTimeStopHeroActionSides == 0)
+		pendingTimeStopHeroActionSide = BattleSide::NONE;
+	else if(pendingTimeStopHeroActionSide == side)
+		pendingTimeStopHeroActionSide = getPendingTimeStopHeroActionSide();
+}
+
 uint32_t BattleInfo::nextUnitId() const
 {
 	if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE)
@@ -1120,6 +1284,12 @@ uint32_t BattleInfo::nextUnitId() const
 
 void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool forceAdd)
 {
+	if(sta->isTimeStopped() && !isTimeStopStateBonus(value))
+	{
+		logNetwork->warn("Ignoring new effect on Time Stop unit %d", sta->unitId());
+		return;
+	}
+
 	if(forceAdd || !sta->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, value.sid).And(Selector::typeSubtypeValueType(value.type, value.subtype, value.valType))))
 	{
 		//no such effect or cumulative - add new

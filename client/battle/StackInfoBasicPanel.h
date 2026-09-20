@@ -16,6 +16,7 @@ class CStack;
 class CLabel;
 class CMultiLineLabel;
 class CAnimImage;
+class LRClickableAreaWText;
 
 class StackInfoBasicPanel : public BattleSidePanel
 {
@@ -25,6 +26,7 @@ private:
 	std::vector<std::shared_ptr<CLabel>> labels;
 	std::vector<std::shared_ptr<CMultiLineLabel>> labelsMultiline;
 	std::vector<std::shared_ptr<CAnimImage>> icons;
+	std::vector<std::shared_ptr<LRClickableAreaWText>> statusTooltips;
 
 public:
 	StackInfoBasicPanel(const CStack * stack, bool initializeBackground);

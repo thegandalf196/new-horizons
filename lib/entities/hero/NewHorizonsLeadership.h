@@ -15,8 +15,9 @@
 namespace newHorizonsHeroes
 {
 /// Capacity arithmetic and the read-only result for a saved-capability hero.
-/// The primitive itself never mutates an army or movement budget; the shared
-/// TurnInfo integration applies its percentage to movement limits.
+/// The primitive never mutates an army or movement budget.  `movementPercent`
+/// is retained as an inspectable over-capacity diagnostic for saved views; it
+/// is not a shared New Horizons movement multiplier.
 struct DLL_LINKAGE LeadershipCapacity
 {
 	int64_t capacity;
@@ -30,13 +31,15 @@ struct DLL_LINKAGE LeadershipCapacity
 /// No primary rating, creature tier or random roll participates. Inputs are
 /// bounded to keep every intermediate representable. Used capacity is supplied
 /// by authoritative army accounting; this function never changes an army.
-/// Above capacity, movement is proportional to capacity/usage, bounded by the
-/// declared minimum. It neither refuses acquisition nor removes creatures.
+/// Above capacity, the result exposes the proportional diagnostic bounded by
+/// the declared minimum. It neither refuses acquisition nor removes creatures,
+/// and it does not alter the hero's daily movement pool.
 DLL_LINKAGE LeadershipCapacity leadershipCapacity(int classBase, int classPerLevel,
 	int level, int skillBonusPercent, uint64_t used, int minimumMovementPercent);
 
-/// Shared final movement scaling for simulation/pathfinding, not an adjustment
-/// to already-spent movement. Integration must retain the ordinary daily refresh
-/// and embarkation rules; changing armies must not award fresh movement points.
+/// Legacy arithmetic retained for compatibility with saved-view/unit tests.
+/// New Horizons authoritative TurnInfo/pathfinding deliberately does not call
+/// this helper: Leadership is per-stack capacity, never a shared movement
+/// budget. Changing armies must not award fresh movement points.
 DLL_LINKAGE int leadershipMovement(int unscaledMovement, int movementPercent);
 }

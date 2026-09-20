@@ -63,6 +63,7 @@ set(test_SRCS
 		hero/NewHorizonsPrimaryGrowthTest.cpp
 		hero/NewHorizonsPrimaryScaleTest.cpp
 		hero/NewHorizonsLeadershipTest.cpp
+		hero/NewHorizonsMovementRulesTest.cpp
 		hero/NewHorizonsCapabilityRulesTest.cpp
 		hero/NewHorizonsMasteryRulesTest.cpp
 		hero/NewHorizonsMasteryStateTest.cpp
@@ -195,6 +196,7 @@ set(test_SRCS
 		server/battles/NewHorizonsNecromancyTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp
 		server/battles/NewHorizonsFireWallTest.cpp
+		server/battles/NewHorizonsTimeStopTest.cpp
 		server/battles/NewHorizonsMasteryFixtureExportTest.cpp
 		server/battles/NewHorizonsConvenienceFixtureExportTest.cpp
 		server/battles/NewHorizonsHeroFixtureExportTest.cpp
@@ -267,6 +269,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsHeroGrowthAITest.cpp
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp
 		battleAI/NewHorizonsLevelGrantAITest.cpp
+		battleAI/NewHorizonsTimeStopAITest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 		battleAI/HypotheticCloneTest.cpp
 		battleAI/HypotheticTimedSpellTest.cpp

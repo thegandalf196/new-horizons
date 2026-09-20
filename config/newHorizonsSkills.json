@@ -1017,10 +1017,17 @@
 				"scenarioBonus": "SECSKILL:0:9"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
-					"valueType": "BASE_NUMBER",
-					"val": 0
+				"movementLand": {
+					"type": "MOVEMENT",
+					"subtype": "heroMovementLand",
+					"valueType": "PERCENT_TO_BASE",
+					"val": 10
+				},
+				"movementSea": {
+					"type": "MOVEMENT",
+					"subtype": "heroMovementSea",
+					"valueType": "PERCENT_TO_BASE",
+					"val": 10
 				}
 			}
 		},
@@ -1033,10 +1040,17 @@
 				"scenarioBonus": "SECSKILL:0:10"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
-					"valueType": "BASE_NUMBER",
-					"val": 0
+				"movementLand": {
+					"type": "MOVEMENT",
+					"subtype": "heroMovementLand",
+					"valueType": "PERCENT_TO_BASE",
+					"val": 20
+				},
+				"movementSea": {
+					"type": "MOVEMENT",
+					"subtype": "heroMovementSea",
+					"valueType": "PERCENT_TO_BASE",
+					"val": 20
 				}
 			}
 		},
@@ -1049,10 +1063,17 @@
 				"scenarioBonus": "SECSKILL:0:11"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
-					"valueType": "BASE_NUMBER",
-					"val": 0
+				"movementLand": {
+					"type": "MOVEMENT",
+					"subtype": "heroMovementLand",
+					"valueType": "PERCENT_TO_BASE",
+					"val": 30
+				},
+				"movementSea": {
+					"type": "MOVEMENT",
+					"subtype": "heroMovementSea",
+					"valueType": "PERCENT_TO_BASE",
+					"val": 30
 				}
 			}
 		}

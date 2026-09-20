@@ -30,6 +30,12 @@ public:
 	static float fireWallPlacementValue(const spells::Mechanics * spellMechanics,
 		const spells::Target & target,
 		std::shared_ptr<CBattleInfoCallback> battleState = {});
+	/// Returns the tactical value of a canonical Time Stop area.  Enemy units
+	/// are rewarded for losing their next action; healthy friendly units are
+	/// penalized because they lose their action too, while a threatened/injured
+	/// ally can make a defensive cast worthwhile.
+	static float timeStopPlacementValue(const spells::Mechanics * spellMechanics,
+		const spells::Target & target);
 
 private:
 	enum Compare
@@ -45,6 +51,7 @@ private:
 	static std::vector<spells::Target> defaultLocationSpellHeuristics(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalLandMineTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalFireWallTargets(const spells::Mechanics * spellMechanics);
+	static std::vector<spells::Target> canonicalTimeStopTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> allTargetableCreatures(const spells::Mechanics * spellMechanics, bool exactUnit);
 	static std::vector<spells::Target> theBestLocationCasts(const spells::Mechanics * spellMechanics);
 	static Compare compareAffectedStacks(

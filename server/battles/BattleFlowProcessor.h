@@ -55,7 +55,7 @@ class BattleFlowProcessor : boost::noncopyable
 	void publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const;
 	double calculateTowerAttackValue(const CBattleInfoCallback& battle, const CStack* attacker, const CStack* target) const;
 
-	void makeStackDoNothing(const CBattleInfoCallback & battle, const CStack * next);
+	bool makeStackDoNothing(const CBattleInfoCallback & battle, const CStack * next);
 	bool makeAutomaticAction(const CBattleInfoCallback & battle, const CStack * stack, const BattleAction & ba); //used when action is taken by stack without volition of player (eg. unguided catapult attack)
 
 public:

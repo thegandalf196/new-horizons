@@ -25,6 +25,7 @@
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpellHandler.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/BattleAction.h"
@@ -77,6 +78,11 @@ bool isCanonicalFireWall(const CBattleInfoCallback & battle, const CSpell * spel
 	return spell
 		&& newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 		&& newHorizonsMagic::isFireWall(spell->getId());
+}
+
+bool isCanonicalTimeStop(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
 }
 
 BattleHex::EDir fireWallDirection(const spells::Target & target)
@@ -1082,6 +1088,17 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							// reachable hostile pressure. Do not let the generic hypothetical
 							// cast evaluator turn such a delayed placement into an accidental
 							// positive action.
+							if(ps.spellPlacementHeuristicValue <= 0.0f)
+								continue;
+						}
+						if(isCanonicalTimeStop(spell))
+						{
+							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::timeStopPlacementValue(
+								candidateMechanics.get(), ps.dest);
+							// Time Stop is neutral by content definition, so the generic
+							// target comparer cannot tell a helpful enemy footprint from
+							// a harmful healthy-ally footprint.  Require a strictly
+							// beneficial placement before exposing it to action ranking.
 							if(ps.spellPlacementHeuristicValue <= 0.0f)
 								continue;
 						}

@@ -19,6 +19,7 @@
 #include "../bonuses/CBonusSystemNode.h"
 #include "../int3.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSorcery.h"
 
 class CStack;
 class CStackInstance;
@@ -67,6 +68,17 @@ public:
 
 	BattleField battlefieldType; //like !!BA:B
 	TerrainId terrainType; //used for some stack nativity checks (not the bonus limiters though that have their own copy)
+	// When a real Hero Action leaves every surviving stack in Time Stop, the
+	// normal creature queue still has to drain before the caster gets another
+	// Hero Action.  Keep the caster side in the authoritative battle snapshot so
+	// a round boundary (and a save/load in the middle of that boundary) cannot
+	// accidentally hand control to the side whose marker merely happens to be
+	// encountered last in the queue.
+	BattleSide pendingTimeStopHeroActionSide = BattleSide::NONE;
+	// A second side may cast Time Stop before the first origin reaches its next
+	// Hero Action. Keep both origins pending instead of collapsing them into the
+	// scalar compatibility field above.
+	ui8 pendingTimeStopHeroActionSides = 0;
 
 	BattleSide tacticsSide; //which side is requested to play tactics phase
 	ui8 tacticDistance; //how many hexes we can go forward (1 = only hexes adjacent to margin line)
@@ -98,6 +110,20 @@ public:
 		h & terrainType;
 		h & tacticsSide;
 		h & tacticDistance;
+		if(h.saving && (pendingTimeStopHeroActionSide != BattleSide::NONE || pendingTimeStopHeroActionSides != 0)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP))
+			throw std::runtime_error("Cannot discard pending Time Stop Hero Action state");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_ORIGINS)
+			&& (pendingTimeStopHeroActionSides & 3u) == 3u)
+			throw std::runtime_error("Cannot discard simultaneous Time Stop origin state");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP))
+			h & pendingTimeStopHeroActionSide;
+		else if(!h.saving)
+			pendingTimeStopHeroActionSide = BattleSide::NONE;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_ORIGINS))
+			h & pendingTimeStopHeroActionSides;
+		else if(!h.saving)
+			pendingTimeStopHeroActionSides = 0;
 		h & static_cast<CBonusSystemNode&>(*this);
 		h & replayAllowed;
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
@@ -218,6 +244,14 @@ public:
 
 	void nextRound() override;
 	void nextTurn(uint32_t unitId, BattleUnitTurnReason reason) override;
+	/// Remove Time Stop state created by the given hero side.  This is called at
+	/// the beginning of that side's next Hero Action, not at a round boundary.
+	void expireTimeStops(BattleSide casterSide);
+	BattleSide getPendingTimeStopHeroActionSide() const;
+	ui8 getPendingTimeStopHeroActionSides() const;
+	bool hasPendingTimeStopHeroAction(BattleSide side) const;
+	void notePendingTimeStopHeroAction(BattleSide side);
+	void clearPendingTimeStopHeroAction(BattleSide side);
 
 	void addUnit(uint32_t id, const JsonNode & data) override;
 	void moveUnit(uint32_t id, const BattleHex & destination) override;

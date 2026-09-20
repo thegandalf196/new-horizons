@@ -127,6 +127,7 @@ class BattleActionProcessor : boost::noncopyable
 	bool doEndTacticsAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doRetreatAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doSurrenderAction(const CBattleInfoCallback & battle, const BattleAction & ba);
+	bool validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doWalkAction(const CBattleInfoCallback & battle, const BattleAction & ba);
@@ -149,5 +150,6 @@ public:
 	void processBattleEventTriggers(const CBattleInfoCallback & battle, CombatEventType event, const battle::Unit * target, const battle::Unit * secondary, const CombatEventPayload & payload = CombatEventPayload());
 
 	bool makeAutomaticBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba);
-	bool makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player, const BattleAction & ba);
+	bool makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player, const BattleAction & ba,
+		BattleAction * effectiveActionOut = nullptr);
 };

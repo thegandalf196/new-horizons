@@ -54,6 +54,8 @@ void LuaUnitStateProxy::registerMethods(MethodRegistrar & R)
 		"True if the stack can be targeted.");
 	R.method<&LuaUnitState::isInvincible>("isInvincible", {},
 		"True if the stack has invincibility.");
+	R.method<&LuaUnitState::isTimeStopped>("isTimeStopped", {},
+		"True if the stack is in authoritative New Horizons Time Stop stasis.");
 	R.method<&LuaUnitState::isSummoned>("isSummoned", {},
 		"True if the stack was summoned during battle.");
 	R.method<&LuaUnitState::getOwner>("getOwner", {},
@@ -162,6 +164,7 @@ bool LuaUnitState::isDead()                     const { return state->isDead(); 
 bool LuaUnitState::isGhost()                    const { return state->isGhost(); }
 bool LuaUnitState::isValidTarget(bool allowDead) const { return state->isValidTarget(allowDead); }
 bool LuaUnitState::isInvincible()               const { return state->isInvincible(); }
+bool LuaUnitState::isTimeStopped()              const { return state->isTimeStopped(); }
 bool LuaUnitState::isSummoned()                 const { return state->summoned; }
 
 PlayerColor LuaUnitState::getOwner()     const { return state->unitOwner(); }

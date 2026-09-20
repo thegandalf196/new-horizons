@@ -31,6 +31,7 @@
 #include "../GameInstance.h"
 #include "../gui/Shortcut.h"
 #include "../battle/BattleInterface.h"
+#include "../battle/NewHorizonsBattleStatus.h"
 
 #include "../../lib/CBonusTypeHandler.h"
 #include "../../lib/CStack.h"
@@ -252,6 +253,12 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 	//spell effects
 	int printed=0; //how many effect pics have been printed
 	std::vector<SpellID> spells = battleStack->activeSpells();
+	// Keep Time Stop visible when the full stack window reaches its eight-icon
+	// display limit.  stable_partition preserves all other effect ordering.
+	std::stable_partition(spells.begin(), spells.end(), [](const SpellID effect)
+	{
+		return newHorizonsBattleStatus::isTimeStop(effect.toSpell()->getJsonKey());
+	});
 	for(SpellID effect : spells)
 	{
 		const spells::Spell * spell = LIBRARY->spells()->getById(effect);
@@ -267,17 +274,23 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 				throw std::runtime_error("Failed to find effects for spell " + effect.toSpell()->getJsonKey());
 
 			int duration = spellBonuses->front()->turnsRemain;
+			const bool timeStop = newHorizonsBattleStatus::isTimeStop(spell->getJsonKey());
 			std::string preferredLanguage = LIBRARY->generaltexth->getPreferredLanguage();
 
 			MetaString spellText;
 			spellText.appendTextID(spell->getDescriptionTextID(0)); // TODO: select correct mastery level?
 			spellText.appendRawString("\n");
-			spellText.appendTextID(Languages::getPluralFormTextID( preferredLanguage, duration, "vcmi.battleResultsWindow.spellDurationRemaining"));
-			spellText.replaceNumber(duration);
+			if(!timeStop)
+			{
+				spellText.appendTextID(Languages::getPluralFormTextID( preferredLanguage, duration, "vcmi.battleResultsWindow.spellDurationRemaining"));
+				spellText.replaceNumber(duration);
+			}
 			std::string spellDescription = spellText.toString(&GAME->translator());
+			if(timeStop)
+				spellDescription = newHorizonsBattleStatus::timeStopTooltip(spellDescription);
 
 			spellIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect + 1, 0, firstPos.x + offset.x * printed, firstPos.y + offset.y * printed));
-			labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(duration)));
+			labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, timeStop ? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE) : std::to_string(duration)));
 			clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(firstPos + offset * printed, Point(50, 38)), spellDescription, spellDescription));
 			if(++printed >= 8) // interface limit reached
 				break;

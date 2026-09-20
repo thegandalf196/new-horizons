@@ -22,6 +22,17 @@ BattleAction::BattleAction():
 {
 }
 
+BattleAction BattleAction::makeNoAction(const battle::Unit * stack)
+{
+	if(!stack)
+		throw std::invalid_argument("Can not create a no-op for a missing stack");
+	BattleAction action;
+	action.side = stack->unitSide();
+	action.stackNumber = stack->unitId();
+	action.actionType = EActionType::NO_ACTION;
+	return action;
+}
+
 BattleAction BattleAction::makeHeal(const battle::Unit * healer, const battle::Unit * healed)
 {
 	BattleAction ba;

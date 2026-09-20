@@ -95,7 +95,41 @@ const IBonusBearer* CGHeroInstance::getBonusBearer() const
 
 bool CGHeroInstance::isNativeTerrain(TerrainId terrain) const
 {
+	if(usesNewHorizonsMovement())
+		return hasNewHorizonsTerrainAffinity(terrain);
+
 	for(const auto & stack : stacks)
+		if(!stack.second->isNativeTerrain(terrain))
+			return false;
+	return true;
+}
+
+bool CGHeroInstance::usesNewHorizonsMovement() const
+{
+	return newHorizonsHeroes::usesRules(capabilityRules);
+}
+
+bool CGHeroInstance::hasNewHorizonsTerrainAffinity(TerrainId terrain,
+	const CCreatureSet * projectedArmy) const
+{
+	if(!usesNewHorizonsMovement())
+		return false;
+
+	// The hero's own faction/bonus affinity is sufficient.  Qualify the base
+	// implementation because CGHeroInstance::isNativeTerrain is the legacy
+	// army-wide override below.
+	if(AFactionMember::isNativeTerrain(terrain))
+		return true;
+
+	// An empty army is not an army composed of native creatures.  Without this
+	// guard the old all-of-empty-set behavior would remove every terrain cost.
+	// A projected roster is intentionally used only for this affinity decision;
+	// movement pools remain the hero's own independent values.
+	const CCreatureSet & army = projectedArmy ? *projectedArmy : *this;
+	if(army.Slots().empty())
+		return false;
+
+	for(const auto & stack : army.Slots())
 		if(!stack.second->isNativeTerrain(terrain))
 			return false;
 	return true;

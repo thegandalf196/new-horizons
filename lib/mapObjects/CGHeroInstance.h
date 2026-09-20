@@ -180,6 +180,14 @@ public:
 	//INativeTerrainProvider
 	FactionID getFactionID() const override;
 	bool isNativeTerrain(TerrainId terrain) const override;
+	/// Whether this hero uses the saved New Horizons adventure-movement rules.
+	/// Legacy heroes intentionally retain the ordinary speed/terrain path.
+	bool usesNewHorizonsMovement() const;
+	/// New Horizons movement affinity is granted by the hero's faction (or an
+	/// explicit native-terrain bonus) or by an army whose every roster stack is
+	/// native to the terrain.  This is separate from legacy battle affinity.
+	bool hasNewHorizonsTerrainAffinity(TerrainId terrain,
+		const CCreatureSet * projectedArmy = nullptr) const;
 	int getLowestCreatureSpeed() const;
 	si32 manaRegain() const; //how many points of mana can hero regain "naturally" in one day
 	si32 getManaNewTurn() const; //calculate how much mana this hero is going to have the next day

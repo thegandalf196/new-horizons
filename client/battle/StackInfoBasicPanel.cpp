@@ -11,7 +11,10 @@
 #include "StackInfoBasicPanel.h"
 
 #include "../widgets/Images.h"
+#include "../widgets/MiscWidgets.h"
 #include "../widgets/TextControls.h"
+
+#include "NewHorizonsBattleStatus.h"
 
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CStack.h"
@@ -99,6 +102,13 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 
 	int printed=0; //how many effect pics have been printed
 	std::vector<SpellID> spells = stack->activeSpells();
+	// Keep Time Stop visible when the compact panel reaches its two-effect
+	// display limit.  stable_partition preserves the existing order of all
+	// other effects, including the overflow/ellipsis semantics below.
+	std::stable_partition(spells.begin(), spells.end(), [](const SpellID effect)
+	{
+		return newHorizonsBattleStatus::isTimeStop(effect.toSpell()->getJsonKey());
+	});
 	for(SpellID effect : spells)
 	{
 		//not all effects have graphics (for eg. Acid Breath)
@@ -114,10 +124,18 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 				throw std::runtime_error("Failed to find effects for spell " + effect.toSpell()->getJsonKey());
 
 			int duration = spellBonuses->front()->turnsRemain;
+			const bool timeStop = newHorizonsBattleStatus::isTimeStop(effect.toSpell()->getJsonKey());
 
 			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, firstPos.x + offset.x * printed, firstPos.y + offset.y * printed));
-			if(settings["general"]["enableUiEnhancements"].Bool())
-				labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(duration)));
+			if(settings["general"]["enableUiEnhancements"].Bool() || timeStop)
+				labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, timeStop ? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE) : std::to_string(duration)));
+
+			if(timeStop)
+			{
+				const std::string tooltip = newHorizonsBattleStatus::timeStopTooltip(effect.toSpell()->getDescriptionTranslated(0));
+				statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(
+					Rect(firstPos.x + offset.x * printed, firstPos.y + offset.y * printed, 48, 36), tooltip, tooltip));
+			}
 
 			++printed;
 			if(printed >= 3 || (printed == 2 && spells.size() > 3)) // interface limit reached
@@ -136,6 +154,7 @@ void StackInfoBasicPanel::update(const CStack * updatedInfo)
 	icons.clear();
 	labels.clear();
 	labelsMultiline.clear();
+	statusTooltips.clear();
 
 	initializeData(updatedInfo);
 	redraw();

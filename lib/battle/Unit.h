@@ -96,6 +96,10 @@ public:
 
 	virtual bool isHypnotized() const = 0;
 	virtual bool isInvincible() const = 0;
+	/// True while the unit carries the authoritative New Horizons Time Stop
+	/// stasis marker.  This is intentionally exposed on the shared unit view so
+	/// battle rules, spell targeting, Lua and BattleAI all observe one state.
+	virtual bool isTimeStopped() const { return false; }
 
 	virtual bool isClone() const = 0;
 	virtual bool hasClone() const = 0;
@@ -136,6 +140,9 @@ public:
 	virtual bool canMove(int turn = 0) const = 0; //if stack can move
 	virtual bool defended(int turn = 0) const = 0;
 	virtual bool moved(int turn = 0) const = 0; //if stack was already moved this turn
+	/// True after the synthetic queue activation used to advance a stopped unit.
+	/// This is scheduling state, not permission to move or act.
+	virtual bool timeStopTurnConsumed() const { return false; }
 	virtual bool willMove(int turn = 0) const = 0; //if stack has remaining move this turn
 	virtual bool waited(int turn = 0) const = 0;
 

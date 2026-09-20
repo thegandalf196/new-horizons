@@ -359,16 +359,35 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 	if (!battle)
 		return false;
 
-	bool result = actionsProcessor->makePlayerBattleAction(*battle, player, ba);
-	if(result)
-		expireStackActivationBonuses(battleID, ba);
-	// Commands do not deactivate the client unit before submission. Rejection
-	// must not reactivate it here and expire STACK_GETS_TURN bonuses. Preserve
-	// the existing recovery path for failed unit actions, whose UI is deactivated.
-	if(!result && ba.actionType == EActionType::HERO_COMMAND)
+	const auto activeStackID = battle->getActiveStackID();
+	BattleAction effectiveAction = ba;
+	bool result = actionsProcessor->makePlayerBattleAction(*battle, player, ba, &effectiveAction);
+	if(!result)
+	{
+		// A rejected action never crossed the authoritative action boundary. In
+		// particular, do not let a failed hero spell release Time Stop or let a
+		// failed stopped-stack request advance the queue a second time.
+		// BattleInterface relinquishes its local active stack before sending the
+		// request. Return control explicitly, without advancing the queue or
+		// replaying any activation lifecycle on server or clients.
+		const auto * currentBattle = gameHandler->gameState().getBattle(battleID);
+		const auto * recoveryStack = currentBattle && activeStackID >= 0
+			? currentBattle->battleGetStackByID(static_cast<uint32_t>(activeStackID), false) : nullptr;
+		if(currentBattle && !resultProcessor->battleIsEnding(*currentBattle)
+			&& recoveryStack && recoveryStack->alive()
+			&& currentBattle->getActiveStackID() == activeStackID)
+		{
+			BattleSetActiveStack recovery;
+			recovery.battleID = battleID;
+			recovery.stack = static_cast<uint32_t>(activeStackID);
+			recovery.reason = BattleUnitTurnReason::ACTION_REJECTED;
+			gameHandler->sendAndApply(recovery);
+		}
 		return false;
+	}
+	expireStackActivationBonuses(battleID, effectiveAction);
 	if (gameHandler->gameState().getBattle(battleID) != nullptr && !resultProcessor->battleIsEnding(*battle))
-		flowProcessor->onActionMade(*battle, ba);
+		flowProcessor->onActionMade(*battle, effectiveAction);
 	return result;
 }
 
@@ -428,6 +447,13 @@ void BattleProcessor::expireStackActivationBonuses(const BattleID & battleID, co
 
 	const auto * currentBattle = gameHandler->gameState().getBattle(battleID);
 	const auto * actedStack = currentBattle ? currentBattle->battleGetStackByID(action.stackNumber, false) : nullptr;
+	if(actedStack && actedStack->isTimeStopped())
+	{
+		// The automatic no-op used to advance a stopped stack is outside the
+		// unit's activation clock.  In particular, do not expire effects whose
+		// lifetime is tied to activation completion.
+		return;
+	}
 	const auto expiring = actedStack ? actedStack->getAllBonuses(Bonus::UntilActivationEnds) : nullptr;
 	if(!expiring || expiring->empty())
 		return;

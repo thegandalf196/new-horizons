@@ -1448,9 +1448,10 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	for(BattleStackAttacked & stack : pack.bsa)
 		gs.getBattle(pack.battleID)->updateUnit(stack.newState.id, stack.newState.data, stack.newState.healthDelta);
 
-	attacker->removeBonusesRecursive(Bonus::UntilAttack);
+	if(!attacker->isTimeStopped())
+		attacker->removeBonusesRecursive(Bonus::UntilAttack);
 
-	if(!pack.counter())
+	if(!pack.counter() && !attacker->isTimeStopped())
 		attacker->removeBonusesRecursive(Bonus::UntilOwnAttack);
 }
 
@@ -1496,7 +1497,27 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	}
 	if(pack.ba.side == BattleSide::ATTACKER || pack.ba.side == BattleSide::DEFENDER)
 	{
-		auto & metamagicSide = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
+		auto * battle = gs.getBattle(pack.battleID);
+		if(pack.ba.timeStopHeroActionPass)
+		{
+			const auto * active = battle->battleActiveUnit();
+			if(pack.ba.actionType != EActionType::NO_ACTION || !active || !active->isTimeStopped()
+				|| active->unitId() != pack.ba.stackNumber
+				|| battle->playerToSide(battle->battleGetOwner(active)) != pack.ba.side)
+				throw std::runtime_error("Invalid Time Stop Hero Action pass StartAction");
+			battle->expireTimeStops(pack.ba.side);
+		}
+		// Time Stop lasts until the beginning of the caster's next Hero Action.
+		// A Metamagic follow-up is an immediate continuation of the same action,
+		// so it must not release the stasis early.  The authoritative StartAction
+		// packet is shared with clients, making this lifecycle transition converge
+		// without a client-side mutation path.
+		if(!pack.ba.metamagicFollowup && !pack.ba.metamagicDecline
+			&& (pack.ba.actionType == EActionType::HERO_SPELL
+				|| pack.ba.actionType == EActionType::HERO_COMMAND))
+			battle->expireTimeStops(pack.ba.side);
+
+		auto & metamagicSide = battle->getSide(pack.ba.side);
 		if(metamagicSide.metamagicPendingCount != 0
 			&& !(pack.ba.actionType == EActionType::HERO_SPELL && pack.ba.metamagicFollowup)
 			&& !pack.ba.metamagicDecline)
@@ -1585,6 +1606,29 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				break;
 			}
 			case EActionType::HERO_SPELL: //no change in current stack state
+				break;
+			case EActionType::NO_ACTION:
+				// Automatic no-op is how the turn queue advances a stopped stack.
+				// It must not count as movement/action state while the stack is
+				// outside time (ordinary NO_ACTION keeps the legacy bookkeeping).
+				// If the controlling side has no fighting hero, there is no future
+				// Hero Action boundary that could release its origin. Treat this
+				// authenticated pass as the safe terminal boundary instead of
+				// scheduling the same stopped anchor forever.
+				if(pack.ba.timeStopHeroActionPass)
+					break;
+				if(st->isTimeStopped())
+				{
+					auto * battleState = gs.getBattle(pack.battleID);
+					const auto controlSide = battleState->playerToSide(battleState->battleGetOwner(st));
+					if(!battleState->battleGetFightingHero(controlSide))
+						battleState->expireTimeStops(controlSide);
+				}
+				if(!st->isTimeStopped())
+				{
+					st->waiting = false;
+					st->movedThisRound = true;
+				}
 				break;
 			default: //any active stack action - attack, catapult, heal, spell...
 				st->waiting = false;
@@ -1719,7 +1763,8 @@ void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 	for (auto attackInfo : pack.stacks)
 	{
 		auto injuredStack = gs.getBattle(pack.battleID)->getStack(attackInfo.stackAttacked);
-		injuredStack->removeBonusesRecursive(Bonus::UntilTakingIndirectDamage);
+		if(!injuredStack->isTimeStopped())
+			injuredStack->removeBonusesRecursive(Bonus::UntilTakingIndirectDamage);
 	}
 	pack.visitTyped(battleVisitor);
 }
@@ -1848,6 +1893,13 @@ void GameStatePackVisitor::visitCatapultAttack(CatapultAttack & pack)
 void GameStatePackVisitor::visitBattleSetStackProperty(BattleSetStackProperty & pack)
 {
 	CStack * stack = gs.getBattle(pack.battleID)->getStack(pack.stackID, false);
+	if(stack && stack->isTimeStopped())
+	{
+		// Resource/state packets are activation mutations too.  Time Stop keeps
+		// the unit present and blocking, but rejects forged or stale property
+		// changes until the authoritative expiry hook releases it.
+		return;
+	}
 	switch(pack.which)
 	{
 		case BattleSetStackProperty::CASTS:

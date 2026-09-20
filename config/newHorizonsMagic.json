@@ -625,6 +625,18 @@
 				6
 			]
 		},
+		"new-horizons:timeStop": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 5,
+			"costs": [
+				23,
+				23,
+				23,
+				23
+			]
+		},
 		"core:townPortal": {
 			"schools": [
 				"new-horizons:sorcery"

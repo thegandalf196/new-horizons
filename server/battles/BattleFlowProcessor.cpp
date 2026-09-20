@@ -19,9 +19,11 @@
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/entities/building/TownFortifications.h"
+#include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/spells/BonusCaster.h"
@@ -35,6 +37,130 @@
 
 namespace
 {
+	bool allSurvivingStacksTimeStopped(const CBattleInfoCallback & battle)
+	{
+		bool foundAlive = false;
+		for(const auto * stack : battle.battleGetAllStacks(true))
+		{
+			if(!stack || !stack->alive())
+				continue;
+			foundAlive = true;
+			if(!stack->isTimeStopped())
+				return false;
+		}
+		return foundAlive;
+	}
+
+	std::optional<BattleSide> timeStopMarkerSide(const battle::Unit & unit)
+	{
+		for(const auto & marker : *unit.getBonuses(Selector::type()(BonusType::TIME_STOP)))
+		{
+			if(!marker || !marker->parameters)
+				continue;
+			try
+			{
+				const auto side = static_cast<BattleSide>(marker->parameters->toNumber());
+				if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+					return side;
+			}
+			catch(const std::exception &)
+			{
+				// A malformed/legacy marker has no reliable caster side. The
+				// caller will fall back to the ordinary queue order.
+			}
+		}
+		return std::nullopt;
+	}
+
+	const CStack * stoppedHeroActionAnchor(const CBattleInfoCallback & battle, BattleSide requiredSide = BattleSide::NONE)
+	{
+		const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle());
+		const auto stacks = battle.battleGetAllStacks(true);
+		const auto ownerSide = [&battle](const CStack * stack)
+		{
+			return stack ? battle.playerToSide(battle.battleGetOwner(stack)) : BattleSide::NONE;
+		};
+		const auto findControllable = [&stacks, &ownerSide, &battle](BattleSide side, bool requireHero)
+			-> const CStack *
+		{
+			if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+				return nullptr;
+			if(requireHero && !battle.battleGetFightingHero(side))
+				return nullptr;
+			for(const auto * stack : stacks)
+				if(stack && stack->alive() && stack->isTimeStopped() && ownerSide(stack) == side)
+					return stack;
+			return nullptr;
+		};
+		if(requiredSide == BattleSide::ATTACKER || requiredSide == BattleSide::DEFENDER)
+		{
+			if(const auto * candidate = findControllable(requiredSide, true))
+				return candidate;
+			return findControllable(requiredSide, false);
+		}
+
+		// Prefer a stopped stack owned by the side whose pending origin is due,
+		// and prefer a side with a fighting hero so the resulting TURN_QUEUE
+		// activation can submit a legal Hero Action.  The owner check deliberately
+		// uses battleGetOwner(), which accounts for hypnotized stacks.
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			if(state && state->hasPendingTimeStopHeroAction(side))
+				if(const auto * candidate = findControllable(side, true))
+					return candidate;
+		}
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			if(state && state->hasPendingTimeStopHeroAction(side))
+				if(const auto * candidate = findControllable(side, false))
+					return candidate;
+		}
+
+		for(const auto * stack : stacks)
+		{
+			if(!stack || !stack->alive() || !stack->isTimeStopped())
+				continue;
+			const auto markerSide = timeStopMarkerSide(*stack);
+			if(!markerSide)
+				continue;
+			for(const auto * candidate : stacks)
+				if(candidate && candidate->alive() && candidate->isTimeStopped() && ownerSide(candidate) == *markerSide)
+					return candidate;
+		}
+
+		for(const auto * stack : stacks)
+			if(stack && stack->alive() && stack->isTimeStopped())
+				return stack;
+		return nullptr;
+	}
+
+	std::optional<BattleSide> pendingStoppedSideAtRoundBoundary(const CBattleInfoCallback & battle)
+	{
+		const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle());
+		if(!state)
+			return std::nullopt;
+
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			if(!state->hasPendingTimeStopHeroAction(side))
+				continue;
+
+			bool foundControlledStack = false;
+			bool everyControlledStackStopped = true;
+			for(const auto * stack : battle.battleGetAllStacks(true))
+			{
+				if(!stack || !stack->alive() || battle.playerToSide(battle.battleGetOwner(stack)) != side)
+					continue;
+				foundControlledStack = true;
+				everyControlledStackStopped = everyControlledStackStopped && stack->isTimeStopped();
+			}
+
+			if(foundControlledStack && everyControlledStackStopped && stoppedHeroActionAnchor(battle, side))
+				return side;
+		}
+		return std::nullopt;
+	}
+
 	// Legacy obstacle callbacks are movement-driven.  Canonical New Horizons
 	// Fire Wall additionally triggers at activation start, but dispatching the
 	// generic callback for every activation would alter legacy obstacle timing.
@@ -185,7 +311,7 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 	if(!isFirstRound)
 	{
 		for(const auto * stack : battle.battleGetAllStacks(true))
-			if(stack->alive())
+			if(stack->alive() && !stack->isTimeStopped())
 				owner->processBattleEventTriggers(battle, CombatEventType::ROUND_START, stack, nullptr);
 	}
 }
@@ -206,7 +332,7 @@ const CStack * BattleFlowProcessor::getNextStack(const CBattleInfoCallback & bat
 
 	// regeneration takes place before everything else but only during first turn attempt in each round
 	// also works under blind and similar effects
-	if(stack && stack->alive() && !stack->waiting)
+	if(stack && stack->alive() && !stack->waiting && !stack->isTimeStopped())
 	{
 		BattleTriggerEffect bte;
 		bte.battleID = battle.getBattle()->getBattleID();
@@ -221,7 +347,7 @@ const CStack * BattleFlowProcessor::getNextStack(const CBattleInfoCallback & bat
 			gameHandler->sendAndApply(bte);
 	}
 
-	if(!next || !next->willMove())
+	if(!next || (!next->willMove() && !(next->isTimeStopped() && !next->timeStopTurnConsumed())))
 		return nullptr;
 
 	return stack;
@@ -240,8 +366,37 @@ void BattleFlowProcessor::activateNextStack(const CBattleInfoCallback & battle)
 
 		if (!next)
 		{
-			// No stacks to move - start next round
+			// No creature stacks remain in this round. A battle in which every
+			// survivor is stopped must still cross the round boundary once, then
+			// expose a normal (non-automatic) activation so the caster's player or
+			// AI can submit a Hero Action. AUTOMATIC_ACTION is intentionally not
+			// used here: clients ignore it as a control request.
+			const bool allStopped = allSurvivingStacksTimeStopped(battle);
 			startNextRound(battle, false);
+			if(owner->checkBattleStateChanges(battle))
+				return;
+			// An origin can remain pending after another side's Time Stop has
+			// expired. If every stack controlled by that origin is still stopped,
+			// do not let ordinary opponent-side queue entries run indefinitely;
+			// expose this side's Hero Action at the new round boundary first.
+			if(const auto pendingSide = pendingStoppedSideAtRoundBoundary(battle))
+			{
+				const auto * anchor = stoppedHeroActionAnchor(battle, *pendingSide);
+				if(!anchor)
+					throw std::runtime_error("Failed to find a pending Time Stop origin anchor");
+				gameHandler->turnTimerHandler->onBattleNextStack(battle.getBattle()->getBattleID(), *anchor);
+				setActiveStack(battle, anchor, BattleUnitTurnReason::TURN_QUEUE);
+				return;
+			}
+			if(allStopped)
+			{
+				const auto * anchor = stoppedHeroActionAnchor(battle);
+				if(!anchor)
+					throw std::runtime_error("Failed to find a stopped stack for the next Hero Action");
+				gameHandler->turnTimerHandler->onBattleNextStack(battle.getBattle()->getBattleID(), *anchor);
+				setActiveStack(battle, anchor, BattleUnitTurnReason::TURN_QUEUE);
+				return;
+			}
 			next = getNextStack(battle);
 			if (!next)
 				throw std::runtime_error("Failed to find valid stack to act!");
@@ -275,6 +430,14 @@ void BattleFlowProcessor::activateNextStack(const CBattleInfoCallback & battle)
 
 bool BattleFlowProcessor::tryMakeAutomaticAction(const CBattleInfoCallback & battle, const CStack * next)
 {
+	// A stopped stack still needs an automatic no-op so the turn queue can
+	// advance, but it must not run morale/berserk/poison/enchanter triggers or
+	// any other activation-side effect while outside time.
+	if(next->isTimeStopped())
+	{
+		return makeStackDoNothing(battle, next);
+	}
+
 	if(tryActivateMoralePenalty(battle, next))
 		return true;
 
@@ -705,6 +868,18 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	if(battle.battleGetTacticDist() != 0)
 		return;
 
+	if(ba.timeStopHeroActionPass)
+	{
+		// This pass consumes only the due Hero Action boundary. If removing that
+		// origin released the anchor, return creature control as a continuation;
+		// otherwise drain/schedule the remaining Time Stop origins normally.
+		if(activeStack && activeStack->alive() && !activeStack->isTimeStopped())
+			setActiveStack(battle, activeStack, BattleUnitTurnReason::HERO_COMMAND);
+		else
+			activateNextStack(battle);
+		return;
+	}
+
 	// creature will not skip the turn after casting a spell if spell uses canCastWithoutSkip
 	if(ba.actionType == EActionType::MONSTER_SPELL)
 	{
@@ -748,6 +923,14 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		assert(activeStack != nullptr);
 		assert(actedStack != nullptr);
 
+		if(actedStack->isTimeStopped())
+		{
+			// The automatic no-op only advances the queue.  Do not grant morale,
+			// Orders, or any other second activation to a stopped stack.
+			activateNextStack(battle);
+			return;
+		}
+
 		if(const auto state = battle.battleGetHeroOrderState(actedStack->unitSide());
 			state && state->command == HeroCommand::SECOND_WIND && state->secondWindActive
 			&& state->primaryTargetUnitId == actedStack->unitId())
@@ -774,6 +957,26 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	}
 	else
 	{
+		// A real Hero Action can be the action that creates the all-stopped
+		// situation. Remember its side before draining synthetic queue slots;
+		// opponent-side Hero Actions while the marker remains active must not
+		// retarget the boundary to the wrong player.
+		if(activeStack && activeStack->isTimeStopped()
+			&& (ba.actionType == EActionType::HERO_SPELL || ba.actionType == EActionType::HERO_COMMAND)
+			&& !ba.metamagicDecline)
+		{
+			if(auto * state = gameHandler->gs->getBattle(battle.getBattle()->getBattleID()))
+			{
+				const auto markerSide = timeStopMarkerSide(*activeStack);
+				const bool isTimeStopCast = ba.actionType == EActionType::HERO_SPELL
+					&& ba.spell.hasValue() && ba.spell.toSpell()
+					&& ba.spell.toSpell()->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
+				const auto side = markerSide.value_or(isTimeStopCast ? ba.side : BattleSide::NONE);
+				if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+					state->notePendingTimeStopHeroAction(side);
+			}
+		}
+
 		if (activeStack && activeStack->alive())
 		{
 			bool activeStackAffectedBySpell = !activeStack->canMove() ||
@@ -794,14 +997,9 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	activateNextStack(battle);
 }
 
-void BattleFlowProcessor::makeStackDoNothing(const CBattleInfoCallback & battle, const CStack * next)
+bool BattleFlowProcessor::makeStackDoNothing(const CBattleInfoCallback & battle, const CStack * next)
 {
-	BattleAction doNothing;
-	doNothing.actionType = EActionType::NO_ACTION;
-	doNothing.side = next->unitSide();
-	doNothing.stackNumber = next->unitId();
-
-	makeAutomaticAction(battle, next, doNothing);
+	return makeAutomaticAction(battle, next, BattleAction::makeNoAction(next));
 }
 
 bool BattleFlowProcessor::makeAutomaticAction(const CBattleInfoCallback & battle, const CStack *stack, const BattleAction &ba)
@@ -815,7 +1013,7 @@ bool BattleFlowProcessor::makeAutomaticAction(const CBattleInfoCallback & battle
 	// passable Fire Wall footprints after the authoritative nextTurn packet so
 	// their activation serial is current and movement callbacks cannot repeat
 	// the same damage.
-	if(canonicalFireWallCoversUnit(battle, *stack))
+	if(!stack->isTimeStopped() && canonicalFireWallCoversUnit(battle, *stack))
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
 	if(!stack->alive())
 		return true;
@@ -978,7 +1176,8 @@ void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 			&& state->secondWindActive
 			&& state->primaryTargetUnitId == stack->unitId();
 	}
-	if((reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::MORALE || secondWindActivation)
+	if(!stack->isTimeStopped()
+		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::MORALE || secondWindActivation)
 		&& canonicalFireWallCoversUnit(battle, *stack))
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
 }

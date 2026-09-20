@@ -21,6 +21,7 @@ RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
     'new-horizons:counterspell',
     'new-horizons:disintegrate',
+    'new-horizons:timeStop',
     'new-horizons:transfigureMatter',
 }
 SIZES = {'small': (32, 32), 'medium': (44, 44),
@@ -203,7 +204,6 @@ class NewHorizonsContentTest(unittest.TestCase):
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
         expected = {
             'phantomArmy': (4, 15, 'phantomArmy'),
-            'timeStop': (5, 23, 'timeStop'),
             'spellLock': (5, 22, 'spellLock'),
         }
         for name, (level, cost, effect) in expected.items():
@@ -219,6 +219,23 @@ class NewHorizonsContentTest(unittest.TestCase):
                     self.assertEqual(current['cost'], cost)
                     self.assertEqual(current['battleEffects'][effect]['type'],
                                      'core:' + effect)
+
+    def test_time_stop_is_an_active_sorcery_spell(self):
+        content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        spell = content['timeStop']
+        self.assertEqual(spell['school'], {'new-horizons:sorcery': True})
+        self.assertEqual(spell['level'], 5)
+        self.assertFalse(spell['flags'].get('special', False))
+        self.assertEqual(self.rules['spells']['new-horizons:timeStop'], {
+            'schools': ['new-horizons:sorcery'],
+            'level': 5,
+            'costs': [23, 23, 23, 23],
+        })
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            current = spell['levels'][rank]
+            self.assertEqual(current['cost'], 23)
+            self.assertEqual(current['battleEffects']['timeStop']['type'],
+                             'core:timeStop')
 
     def test_sorcery_effect_foundation_scripts_are_registered_without_clone_reuse(self):
         """Registration is a schema/content check, not proof of authoritative runtime behavior."""
@@ -299,7 +316,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                          {'new-horizons:shadow', 'new-horizons:chaos'})
         self.assertNotIn('core:titanBolt', self.rules['spells'])
         self.assertNotIn('core:poison', self.rules['spells'])
-        self.assertNotIn('new-horizons:timeStop', self.rules['spells'])
+        self.assertIn('new-horizons:timeStop', self.rules['spells'])
 
     def test_negative_controls(self):
         corruptions = [

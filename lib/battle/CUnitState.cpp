@@ -14,8 +14,10 @@
 #include <vcmi/spells/Spell.h>
 
 #include "../CCreatureHandler.h"
+#include "../spells/CSpell.h"
 
 #include "../bonuses/BonusParameters.h"
+#include "../spells/NewHorizonsSorcery.h"
 #include "../serializer/JsonDeserializer.h"
 #include "../serializer/JsonSerializer.h"
 
@@ -367,6 +369,7 @@ CUnitState::CUnitState():
 	ghost(false),
 	ghostPending(false),
 	movedThisRound(false),
+	timeStopTurnConsumedFlag(false),
 	summoned(false),
 	waiting(false),
 	waitedThisTurn(false),
@@ -396,6 +399,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	ghost = other.ghost;
 	ghostPending = other.ghostPending;
 	movedThisRound = other.movedThisRound;
+	timeStopTurnConsumedFlag = other.timeStopTurnConsumedFlag;
 	summoned = other.summoned;
 	waiting = other.waiting;
 	waitedThisTurn = other.waitedThisTurn;
@@ -531,6 +535,7 @@ int32_t CUnitState::manaLimit() const
 bool CUnitState::ableToRetaliate() const
 {
 	return alive()
+		&& !isTimeStopped()
 		&& counterAttacks.canUse();
 }
 
@@ -551,7 +556,8 @@ bool CUnitState::isFrozen() const
 
 bool CUnitState::isValidTarget(bool allowDead) const
 {
-	return (alive() || (allowDead && isDead())) && getPosition().isValid() && !isTurret();
+	return !isTimeStopped()
+		&& (alive() || (allowDead && isDead())) && getPosition().isValid() && !isTurret();
 }
 
 bool CUnitState::isClone() const
@@ -647,6 +653,9 @@ int32_t CUnitState::getInitiative(int turn) const
 
 ui32 CUnitState::getMovementRange(int turn) const
 {
+	if(isTimeStopped())
+		return 0;
+
 	if (immobilizedPerTurn.getValue(0) != 0)
 		return 0;
 
@@ -699,6 +708,8 @@ bool CUnitState::canMove(int turn) const
 {
 	if (!alive())
 		return false;
+	if(isTimeStopped())
+		return false;
 
 	if (turn == 0)
 		return !hasBonusOfType(BonusType::NOT_ACTIVE);
@@ -718,6 +729,11 @@ bool CUnitState::moved(int turn) const
 		return movedThisRound;
 	else
 		return false;
+}
+
+bool CUnitState::timeStopTurnConsumed() const
+{
+	return timeStopTurnConsumedFlag;
 }
 
 bool CUnitState::willMove(int turn) const
@@ -762,6 +778,24 @@ bool CUnitState::isHypnotized() const
 bool CUnitState::isInvincible() const
 {
 	return bonusCache.hasBonus(UnitBonusValuesProxy::INVINCIBLE);
+}
+
+bool CUnitState::isTimeStopped() const
+{
+	if(hasBonusOfType(BonusType::TIME_STOP))
+		return true;
+
+	// Compatibility with the original data-only fallback marker.  New saves
+	// use the dedicated TIME_STOP bonus, but an in-flight legacy battle may
+	// still carry a hidden NONE marker from the Lua implementation.
+	const auto effects = getBonuses(Selector::sourceType()(BonusSource::SPELL_EFFECT));
+	return vstd::contains_if(*effects, [](const std::shared_ptr<Bonus> & bonus)
+	{
+		if(!bonus || bonus->type != BonusType::NONE || !bonus->sid.as<SpellID>().hasValue())
+			return false;
+		const auto * spell = bonus->sid.as<SpellID>().toSpell();
+		return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
+	});
 }
 
 int CUnitState::getTotalAttacks(bool ranged) const
@@ -833,6 +867,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("ghost", ghost);
 	handler.serializeBool("ghostPending", ghostPending);
 	handler.serializeBool("moved", movedThisRound);
+	handler.serializeBool("timeStopTurnConsumed", timeStopTurnConsumedFlag);
 	handler.serializeBool("summoned", summoned);
 	handler.serializeBool("waiting", waiting);
 	handler.serializeBool("waitedThisTurn", waitedThisTurn);
@@ -869,6 +904,7 @@ void CUnitState::reset()
 	ghost = false;
 	ghostPending = false;
 	movedThisRound = false;
+	timeStopTurnConsumedFlag = false;
 	summoned = false;
 	waiting = false;
 	waitedThisTurn = false;
@@ -907,6 +943,12 @@ void CUnitState::damage(int64_t & amount)
 
 void CUnitState::damage(int64_t & amount, bool destroyRemains)
 {
+	if(isTimeStopped())
+	{
+		amount = 0;
+		return;
+	}
+
 	if(cloned)
 	{
 		// block ability should not kill clone (0 damage)
@@ -928,6 +970,12 @@ void CUnitState::damage(int64_t & amount, bool destroyRemains)
 
 HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)
 {
+	if(isTimeStopped())
+	{
+		amount = 0;
+		return {};
+	}
+
 	if(level == EHealLevel::HEAL && power == EHealPower::ONE_BATTLE)
 		logGlobal->error("Heal for one battle does not make sense");
 	else if(cloned)
@@ -952,6 +1000,7 @@ void CUnitState::afterNewRound()
 	defending = false;
 	waiting = false;
 	waitedThisTurn = false;
+	timeStopTurnConsumedFlag = false;
 	movedThisRound = false;
 	hadMorale = false;
 	castSpellThisTurn = false;

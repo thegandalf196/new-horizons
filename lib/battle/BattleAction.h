@@ -55,6 +55,11 @@ public:
 	/// Grand sequence preserves the already-accepted use and may carry Formula
 	/// Reserve's server-derived refund below.
 	bool metamagicDecline = false;
+	/// Server-authored marker for an owner-authenticated pass at a visible Time
+	/// Stop Hero Action boundary. Incoming clients may never set this flag. It is
+	/// replicated in StartAction so every game-state copy expires the same origin,
+	/// while synthetic AUTOMATIC_ACTION no-ops remain ordinary NO_ACTION actions.
+	bool timeStopHeroActionPass = false;
 	/// Server-derived Formula Reserve refund attached to a Decline/End after
 	/// at least one additional spell of a Grand sequence resolved.  Clients may
 	/// never author this value; the action processor fills it from saved state.
@@ -62,6 +67,10 @@ public:
 	HeroCommand command = HeroCommand::NONE;
 
 	BattleAction();
+	/// Explicitly closes a control-visible Time Stop activation without
+	/// changing the stack. The server accepts this only for the active stopped
+	/// stack; it is not a creature action or a way around stasis.
+	static BattleAction makeNoAction(const battle::Unit * stack);
 	static BattleAction makeHeroCommand(BattleSide side, HeroCommand command);
 	static BattleAction makeTargetedHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId);
 	static BattleAction makePairedHeroCommand(BattleSide side, HeroCommand command, uint32_t firstUnitId, uint32_t secondUnitId);
@@ -121,6 +130,9 @@ public:
 			throw std::runtime_error("Cannot serialize Metamagic decline to an older protocol");
 		if(h.saving && metamagicManaRefund != 0 && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
 			throw std::runtime_error("Cannot serialize Metamagic Formula Reserve refund to an older protocol");
+		if(h.saving && timeStopHeroActionPass
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS))
+			throw std::runtime_error("Cannot serialize Time Stop Hero Action pass to an older protocol");
 		if(h.saving && spell == SpellID(SpellID::LAND_MINE)
 			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE))
 			throw std::runtime_error("Cannot serialize multi-hex Land Mine action to an older protocol");
@@ -180,6 +192,14 @@ public:
 		{
 			metamagicDecline = false;
 			metamagicManaRefund = 0;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS))
+		{
+			h & timeStopHeroActionPass;
+		}
+		else if(!h.saving)
+		{
+			timeStopHeroActionPass = false;
 		}
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
 		{

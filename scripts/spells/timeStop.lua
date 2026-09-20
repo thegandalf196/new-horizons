@@ -83,10 +83,9 @@ function Script:transformTarget(mechanics, aimPoint, spellTarget)
 end
 
 function Script:applicableTarget(mechanics, problem, target)
-	if #target == 0 then
-		problem:addStandard(mechanics, ENUM.SpellCastProblem.noAppropriateTarget)
-		return false
-	end
+	-- The aim is a battlefield hex, not a creature.  An empty footprint is a
+	-- legal (if usually unhelpful) cast; the authoritative server still applies
+	-- the exact occupied-hex intersection when units are present.
 	return true
 end
 
@@ -101,40 +100,42 @@ end
 
 function Script:apply(mechanics, server, target)
 	local battle = mechanics:getBattle()
-	local duration = 1
+	local casterSide = mechanics:getCasterSide()
+	local radiusValue = radius(mechanics)
 	for _, destination in ipairs(target) do
 		local unit = destination.unit
 		if unit ~= nil and unit:isAlive() then
-			-- These two standard state bonuses make a stack immediately inactive
-			-- and immune to damage/targeting.  The authoritative battle hook still
-			-- has to bind expiry to the caster's next Hero Action and pause existing
-			-- timed effects; a normal N_TURNS bonus is only the safe fallback.
+			-- Time Stop state is battle-long and is released by the authoritative
+			-- BattleInfo hook at the beginning of this caster side's next Hero
+			-- Action.  It must not use N_TURNS: round duration is paused while the
+			-- unit is stopped, and hero actions can occur between rounds.
 			server:addUnitBonus(battle, unit, {
 				type = "NOT_ACTIVE",
 				val = 1,
-				duration = ENUM.BonusDuration.nTurns,
-				turns = duration,
+				duration = ENUM.BonusDuration.oneBattle,
 				sourceType = ENUM.BonusSource.spellEffect,
-				sourceID = SPELL_KEY
-			}, false)
+				sourceID = SPELL_KEY,
+				addInfo = casterSide,
+				hidden = true
+			}, true)
 			server:addUnitBonus(battle, unit, {
 				type = "INVINCIBLE",
 				val = 1,
-				duration = ENUM.BonusDuration.nTurns,
-				turns = duration,
-				sourceType = ENUM.BonusSource.spellEffect,
-				sourceID = SPELL_KEY
-			}, false)
-			server:addUnitBonus(battle, unit, {
-				type = "NONE",
-				val = radius(mechanics),
-				duration = ENUM.BonusDuration.nTurns,
-				turns = duration,
+				duration = ENUM.BonusDuration.oneBattle,
 				sourceType = ENUM.BonusSource.spellEffect,
 				sourceID = SPELL_KEY,
-				hidden = true,
+				addInfo = casterSide,
+				hidden = true
+			}, true)
+			server:addUnitBonus(battle, unit, {
+				type = "TIME_STOP",
+				val = radiusValue,
+				duration = ENUM.BonusDuration.oneBattle,
+				sourceType = ENUM.BonusSource.spellEffect,
+				sourceID = SPELL_KEY,
+				addInfo = casterSide,
 				description = "Time Stop stasis"
-			}, false)
+			}, true)
 		end
 	end
 end

@@ -22,5 +22,8 @@ enum class BattleUnitTurnReason : int8_t
 	/// Unit gained turn for automatic action, player can not select action for this unit
 	AUTOMATIC_ACTION,
 	/// Hero issued a command; control returns without beginning a new creature turn
-	HERO_COMMAND
+	HERO_COMMAND,
+	/// Server rejected a submitted action and is returning UI control to the
+	/// already-active unit. This is not a new activation and has no lifecycle.
+	ACTION_REJECTED
 };

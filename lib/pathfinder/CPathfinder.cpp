@@ -14,6 +14,7 @@
 #include "PathfinderOptions.h"
 #include "PathfindingRules.h"
 #include "TurnInfo.h"
+#include "NewHorizonsMovement.h"
 
 #include "../IGameSettings.h"
 #include "../CPlayerState.h"
@@ -674,7 +675,19 @@ int CPathfinderHelper::getMovementCost(
 
 	bool isAviateLayer = hero->inBoat() && hero->getBoat()->layer == EPathfindingLayer::AVIATE;
 
-	int movementCost = getTileMovementCost(*dstTile, *srcTile, ti);
+	const bool usesNewHorizonsMovement = ti->usesNewHorizonsMovement();
+	const bool diagonal = src.x != dst.x && src.y != dst.y;
+	// Water is an ordinary travel surface for both boats and Water Walk.  The
+	// faction/army terrain-affinity table governs land terrain; applying the
+	// non-native multiplier to every sea tile would make the fixed 200-point
+	// sea Movement system diverge from the canonical ordinary-water cost.
+	const bool ordinaryWater = isSailLayer || isWaterLayer;
+	int movementCost = usesNewHorizonsMovement
+		? newHorizonsMovement::stepCost(diagonal,
+			ordinaryWater || ti->hasNoTerrainPenalty(srcTile->getTerrainID()),
+			!ordinaryWater && srcTile->getTerrainID() == ETerrainId::SAND,
+			!ordinaryWater && srcTile->hasRoad() && dstTile->hasRoad())
+		: getTileMovementCost(*dstTile, *srcTile, ti);
 	if(isSailLayer)
 	{
 		if(srcTile->hasFavorableWinds())
@@ -692,7 +705,7 @@ int CPathfinderHelper::getMovementCost(
 		int baseCost = gameInfo.getSettings().getInteger(EGameSettings::HEROES_MOVEMENT_COST_BASE);
 		movementCost = baseCost;
 	}
-	if(src.x != dst.x && src.y != dst.y) //it's diagonal move
+	if(diagonal && !usesNewHorizonsMovement) // legacy diagonal movement
 	{
 		int old = movementCost;
 		movementCost = static_cast<int>(movementCost * M_SQRT2);
@@ -706,9 +719,15 @@ int CPathfinderHelper::getMovementCost(
 
 	//it might be the last tile - if no further move possible we take all move points
 	const int pointsLeft = remainingMovePoints - movementCost;
-	if(checkLast && pointsLeft > 0)
+	// New Horizons movement costs are authoritative integer step costs.  The
+	// legacy last-tile exception deliberately consumes all remaining points;
+	// retaining it here would replace a canonical ceil-rounded cost with an
+	// unrelated remainder whenever the next tile does not fit.
+	if(checkLast && !usesNewHorizonsMovement && pointsLeft > 0)
 	{
-		int minimalNextMoveCost = isAirLayer ? gameInfo.getSettings().getInteger(EGameSettings::HEROES_MOVEMENT_COST_BASE) : getTileMovementCost(*dstTile, *srcTile, ti);
+		const int minimalNextMoveCost = isAirLayer
+			? gameInfo.getSettings().getInteger(EGameSettings::HEROES_MOVEMENT_COST_BASE)
+			: getTileMovementCost(*dstTile, *srcTile, ti);
 
 		if (pointsLeft < minimalNextMoveCost)
 			return remainingMovePoints;

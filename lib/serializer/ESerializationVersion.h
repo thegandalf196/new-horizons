@@ -80,12 +80,15 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_LAND_MINE, // player-selected canonical Land Mine action vectors
 	NEW_HORIZONS_FIRE_WALL, // player-selected Fire Wall orientation and per-activation trigger state
 	NEW_HORIZONS_METAMAGIC, // authoritative Tower Metamagic sequence state and cast metadata
+	NEW_HORIZONS_TIME_STOP, // authoritative Time Stop stasis marker and expiry semantics
+	NEW_HORIZONS_TIME_STOP_ORIGINS, // simultaneous caster-side Time Stop expiry state
+	NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS, // replicated server-authored stopped-stack Hero Action pass
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_METAMAGIC,
+	CURRENT = NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -118,3 +121,9 @@ static_assert(ESerializationVersion::NEW_HORIZONS_FIRE_WALL > ESerializationVers
 	"Fire Wall action metadata and trigger state must remain absent from older New Horizons snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_METAMAGIC > ESerializationVersion::NEW_HORIZONS_FIRE_WALL,
 	"Metamagic state and cast metadata must remain absent from older Fire Wall snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_TIME_STOP > ESerializationVersion::NEW_HORIZONS_METAMAGIC,
+	"Time Stop stasis state must remain absent from older Metamagic snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_TIME_STOP_ORIGINS > ESerializationVersion::NEW_HORIZONS_TIME_STOP,
+	"Multiple Time Stop origin state must remain absent from older Time Stop snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS > ESerializationVersion::NEW_HORIZONS_TIME_STOP_ORIGINS,
+	"Time Stop Hero Action pass metadata must remain absent from older Time Stop snapshots");

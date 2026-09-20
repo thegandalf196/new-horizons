@@ -79,6 +79,7 @@ public:
 	int getMovePointsLimitLand() const;
 	int getMovePointsLimitWater() const;
 	int getMovePointsLimitAir() const;
+	bool usesNewHorizonsMovement() const;
 
 	TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, int Turn,
 		const CCreatureSet * projectedArmy = nullptr);

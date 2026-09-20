@@ -145,6 +145,7 @@ public:
 	bool ghost;
 	bool ghostPending;
 	bool movedThisRound;
+	bool timeStopTurnConsumedFlag;
 	bool summoned;
 	bool waiting;
 	bool waitedThisTurn; //"waited()" that stays true for full turn after wait - needed as UI button hackfix
@@ -203,6 +204,7 @@ public:
 
 	bool isHypnotized() const override;
 	bool isInvincible() const override;
+	bool isTimeStopped() const override;
 
 	bool isClone() const override;
 	bool hasClone() const override;
@@ -233,6 +235,7 @@ public:
 	bool canMove(int turn = 0) const override;
 	bool defended(int turn = 0) const override;
 	bool moved(int turn = 0) const override;
+	bool timeStopTurnConsumed() const override;
 	bool willMove(int turn = 0) const override;
 	bool waited(int turn = 0) const override;
 

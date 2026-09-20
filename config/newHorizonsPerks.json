@@ -1707,7 +1707,7 @@
 					"requires": "expert",
 					"description": "Time Stop's maximum radius increases by 1.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Time Stop's maximum radius increases by 1."
 					}
 				},
@@ -2261,21 +2261,21 @@
 				"basic": {
 					"description": "Adventure-map Movement increases by 10%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Adventure-map Movement increases by 10%."
 					}
 				},
 				"advanced": {
 					"description": "Adventure-map Movement increases by 20%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Adventure-map Movement increases by 20%."
 					}
 				},
 				"expert": {
 					"description": "Adventure-map Movement increases by 30%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Adventure-map Movement increases by 30%."
 					}
 				}

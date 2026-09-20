@@ -269,6 +269,14 @@ void StackWithBonuses::captureEffects()
 void StackWithBonuses::advanceTimedRound()
 {
 	captureEffects();
+	if(isTimeStopped())
+	{
+		// Time Stop takes the projected unit outside the round clock.  Keep the
+		// captured effect identities (so later hypothetical removals still see
+		// them), but do not age or expire any N_TURNS effect.
+		++treeVersionLocal;
+		return;
+	}
 	const auto age = [](std::vector<Bonus> & bonuses)
 	{
 		for(auto & bonus : bonuses)
@@ -438,7 +446,7 @@ void HypotheticBattle::nextRound()
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
 	{
 		auto forUpdate = getForUpdate(unit->unitId());
-		if(!firstRound)
+		if(!firstRound && !forUpdate->isTimeStopped())
 			forUpdate->advanceTimedRound();
 		forUpdate->afterNewRound();
 		if(forUpdate->ghostPending)
@@ -473,7 +481,8 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	activeUnitId = unitId;
 	auto unit = getForUpdate(unitId);
 
-	unit->removeUnitBonus(Bonus::UntilGetsTurn);
+	if(!unit->isTimeStopped())
+		unit->removeUnitBonus(Bonus::UntilGetsTurn);
 
 	unit->afterGetsTurn(reason);
 }

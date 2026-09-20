@@ -145,6 +145,53 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 
 	auto start = std::chrono::high_resolution_clock::now();
 
+	// Time Stop deliberately keeps a physical stack in the queue while making
+	// every creature action illegal.  An AI still receives the same
+	// non-automatic activation packet as a human, so it must use that window for
+	// a legal Hero Action when one is available, or submit the authoritative
+	// no-op pass.  Falling through to the ordinary stack evaluator would submit
+	// DEFEND/WAIT and leave the battle waiting forever on a stopped stack.
+	if(stack->isTimeStopped())
+	{
+		const auto battleCallback = cb->getBattle(battleID);
+		const bool metamagicFollowup = battleCallback->battleCanUseMetamagicFollowup(side);
+		if(metamagicFollowup && battleCallback->battleGetMyHero())
+		{
+			BattleEvaluator evaluator(
+				env, cb, stack, playerID, battleID, side,
+				getStrengthRatio(battleCallback, side),
+				getSimulationTurnsCount(env->game()->getStartInfo()));
+			if(evaluator.attemptCastingSpell(stack, true))
+				return;
+			cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
+			return;
+		}
+		if(metamagicFollowup)
+		{
+			cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
+			return;
+		}
+
+		if(battleCallback->battleGetMyHero()
+			&& (autobattlePreferences.enableSpellsUsage || battleCallback->battleUsesHeroCommands()))
+		{
+			BattleEvaluator evaluator(
+				env, cb, stack, playerID, battleID, side,
+				getStrengthRatio(battleCallback, side),
+				getSimulationTurnsCount(env->game()->getStartInfo()));
+			if(evaluator.canCastSpell() && evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage))
+				return;
+		}
+
+		BattleAction pass = BattleAction::makeNoAction(stack);
+		// A hypnotized stack retains its original unitSide(), but this AI instance
+		// represents the controlling side.  Time Stop pass authorization follows
+		// that controller, just like the available Hero Action above.
+		pass.side = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
+		cb->battleMakeUnitAction(battleID, pass);
+		return;
+	}
+
 	if(stack->isCatapult())
 	{
 		cb->battleMakeUnitAction(battleID, useCatapult(battleID, stack));
@@ -298,6 +345,3 @@ std::optional<BattleAction> CBattleAI::considerFleeingOrSurrendering(const Battl
 
 	return result;
 }
-
-
-

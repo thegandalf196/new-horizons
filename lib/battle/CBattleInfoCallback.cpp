@@ -962,11 +962,20 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 	std::array<battle::Units, BattlePhases::NUMBER_OF_PHASES> phases; // Access using BattlePhases enum
 
 	const battle::Unit * activeUnit = battleActiveUnit();
+	// Time Stop removes a unit from every ordinary action path, but it must
+	// still consume one queue slot so that a battle containing only stopped
+	// units can advance to the next hero-action window.  BattleInfo marks that
+	// synthetic activation as moved for this round; this is scheduling state,
+	// not permission to move or perform an action.
+	const auto stoppedTurnReady = [](const battle::Unit * unit)
+	{
+		return unit && unit->alive() && unit->isTimeStopped() && !unit->timeStopTurnConsumed();
+	};
 
 	if(activeUnit)
 	{
 		//its first turn and active unit hasn't taken any action yet - must be placed at the beginning of queue, no matter what
-		if(turn == 0 && activeUnit->willMove())
+		if(turn == 0 && (activeUnit->willMove() || stoppedTurnReady(activeUnit)))
 		{
 			turns.back().push_back(activeUnit);
 			if(turnsIsFull())
@@ -985,7 +994,10 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 	});
 
 	// If no unit will be EVER! able to move, battle is over.
-	if(!vstd::contains_if(allUnits, [](const battle::Unit * unit) { return unit->willMove(100000); })) //little evil, but 100000 should be enough for all effects to disappear
+	if(!vstd::contains_if(allUnits, [&stoppedTurnReady](const battle::Unit * unit)
+	{
+		return unit->willMove(100000) || stoppedTurnReady(unit);
+	})) //little evil, but 100000 should be enough for all effects to disappear
 	{
 		turns.clear();
 		return;
@@ -993,7 +1005,7 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 
 	for(const auto * unit : allUnits)
 	{
-		if((actualTurn == 0 && !unit->willMove()) //we are considering current round and unit won't move
+		if((actualTurn == 0 && !unit->willMove() && !stoppedTurnReady(unit)) //we are considering current round and unit won't move
 		|| (actualTurn > 0 && !unit->canMove(turn)) //unit won't be able to move in later rounds
 		|| (actualTurn == 0 && unit == activeUnit && !turns.at(0).empty() && unit == turns.front().front())) //it's active unit already added at the beginning of queue
 		{
@@ -1843,7 +1855,7 @@ std::vector<std::shared_ptr<const CObstacleInstance>> CBattleInfoCallback::getAl
 
 bool CBattleInfoCallback::handleObstacleTriggersForUnit(SpellCastEnvironment & spellEnv, const battle::Unit & unit, const BattleHexArray & passed) const
 {
-	if(!unit.alive())
+	if(!unit.alive() || unit.isTimeStopped())
 		return false;
 	bool movementStopped = false;
 	for(auto & obstacle : getAllAffectedObstaclesByStack(&unit, passed))

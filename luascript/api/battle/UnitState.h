@@ -43,6 +43,7 @@ public:
 	bool isGhost() const;
 	bool isValidTarget(bool allowDead) const;
 	bool isInvincible() const;
+	bool isTimeStopped() const;
 	bool isSummoned() const; // reads serialized field, not slot/bonus
 	PlayerColor getOwner() const;
 	SlotID getSlot() const;

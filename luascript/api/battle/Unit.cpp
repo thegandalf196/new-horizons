@@ -59,6 +59,8 @@ void UnitProxy::registerMethods(MethodRegistrar & R)
 		"True if the stack can be targeted by spells / attacks.");
 	R.method<&Unit::isInvincible>("isInvincible", {},
 		"True if the stack has invincibility (cannot be damaged or killed).");
+	R.method<&Unit::isTimeStopped>("isTimeStopped", {},
+		"True if the stack is in authoritative New Horizons Time Stop stasis.");
 	R.function<&UnitProxy::hasAbsoluteImmunity>("hasAbsoluteImmunity",
 		{{"spell", "Spell to test absolute immunity against."}}, {},
 		"True if the unit is absolutely immune to the given spell.");
