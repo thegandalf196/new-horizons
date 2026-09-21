@@ -134,6 +134,7 @@ RUNTIME_ACTIVE_RANKS = {
     "armorer",
     "archery",
     "battlecraft",
+    "command",
     "warMachines",
     "discipline",
     "logistics",

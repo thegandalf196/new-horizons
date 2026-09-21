@@ -118,8 +118,9 @@ std::string commandEffects(const JsonNode & rules, HeroCommand command, const CG
 			continue;
 		try
 		{
-			const int value = heroCommands::coefficient(formula,
-				hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE));
+			const int value = command == HeroCommand::SECOND_WIND && key == "additionalActivationDamagePercent"
+				? heroCommands::secondWindPercent(hero)
+				: heroCommands::coefficient(formula, hero);
 			const auto line = effectLabel(key, value);
 			if(!result.empty())
 				result += '\n';

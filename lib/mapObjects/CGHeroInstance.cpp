@@ -947,10 +947,8 @@ double CGHeroInstance::getFightingStrength() const
 		if(!cb)
 			return 1.0;
 		const auto & commands = cb->getHeroCommandRules()["commands"];
-		const auto attack = getPrimSkillLevel(PrimarySkill::ATTACK);
-		const auto defense = getPrimSkillLevel(PrimarySkill::DEFENSE);
-		const auto damage = heroCommands::coefficient(commands["charge"]["effects"]["meleeDamagePercent"], attack, defense);
-		const auto reduction = std::min(90, heroCommands::coefficient(commands["holdTheLine"]["effects"]["damageReductionPercent"], attack, defense));
+		const auto damage = heroCommands::coefficient(commands["charge"]["effects"]["meleeDamagePercent"], *this);
+		const auto reduction = std::min(90, heroCommands::coefficient(commands["holdTheLine"]["effects"]["damageReductionPercent"], *this));
 		// Adventure estimate of one available action, not a passive raw-stat
 		// multiplier and not simultaneous Charge + Hold. Battle AI evaluates
 		// actual affected armies and the shared budget through its normal path.

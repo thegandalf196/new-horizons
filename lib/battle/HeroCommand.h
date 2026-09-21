@@ -220,5 +220,10 @@ DLL_LINKAGE bool isCanonicalRules(const JsonNode & rules);
 /// Empty rules mean legacy gameplay. Unsupported or malformed nonempty rules fail closed.
 DLL_LINKAGE void validateRules(const JsonNode & rules);
 DLL_LINKAGE int coefficient(const JsonNode & effect, int attack, int defense);
+/// Evaluate an Order formula for a hero, scaling only its Attack/Defense-derived
+/// terms by the hero's New Horizons Command rank (100/110/120/130%).
+DLL_LINKAGE int coefficient(const JsonNode & effect, const CGHeroInstance & hero);
+DLL_LINKAGE int efficiencyPercent(const CGHeroInstance & hero);
+DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero);
 DLL_LINKAGE std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero);
 }

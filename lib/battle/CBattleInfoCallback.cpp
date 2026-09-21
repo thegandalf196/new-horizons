@@ -343,8 +343,7 @@ std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(B
 	result.issuedRound = battleGetRound();
 	const auto * hero = battleGetFightingHero(side);
 	const auto & formula = getBattle()->getHeroCommandRules()["commands"]["focusFire"]["effects"]["rangedDamagePercent"];
-	result.rangedDamagePercent = heroCommands::coefficient(formula,
-		hero->getPrimSkillLevel(PrimarySkill::ATTACK), hero->getPrimSkillLevel(PrimarySkill::DEFENSE));
+	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero);
 	const auto recipients = battleGetUnitsIf([this, side](const battle::Unit * unit)
 	{
 		return battleIsFocusFireRecipient(unit, side);
@@ -1771,8 +1770,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		const auto defenderState = battleGetHeroOrderState(defenderSide);
 		const auto coefficientFor = [](const JsonNode & formula, const CGHeroInstance * hero)
 		{
-			return hero ? heroCommands::coefficient(formula,
-				hero->getPrimSkillLevel(PrimarySkill::ATTACK), hero->getPrimSkillLevel(PrimarySkill::DEFENSE)) : 0;
+			return hero ? heroCommands::coefficient(formula, *hero) : 0;
 		};
 		const auto eligibleOrderUnit = [](const battle::Unit * unit)
 		{
@@ -1824,10 +1822,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			case HeroCommand::SECOND_WIND:
 				if(attackerState->secondWindActive && attackerState->primaryTargetUnitId == info.attacker->unitId())
 				{
-					int leadership = 0;
-					if(const auto capacity = attack->getLeadershipCapacity())
-						leadership = static_cast<int>(std::min<int64_t>(capacity->capacity, std::numeric_limits<int>::max()));
-					payload.heroOrderFinalDamageMultiplier = std::min(100, 50 + static_cast<int>(std::lround(0.015 * leadership)));
+					payload.heroOrderFinalDamageMultiplier = heroCommands::secondWindPercent(*attack);
 				}
 				break;
 			default:

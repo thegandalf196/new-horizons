@@ -60,6 +60,7 @@ ACTIVE_RANK_SKILLS = {
     "new-horizons:armorer",
     "new-horizons:archery",
     "new-horizons:battlecraft",
+    "new-horizons:command",
     "new-horizons:warMachines",
     "new-horizons:discipline",
     "new-horizons:logistics",

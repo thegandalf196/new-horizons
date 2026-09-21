@@ -329,9 +329,8 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	const auto coefficient = [&](const char * commandKey, const char * effectKey)
 	{
 		const auto & formula = commandRules[commandKey]["effects"][effectKey];
-		return static_cast<float>(heroCommands::coefficient(formula,
-			hero ? hero->getPrimSkillLevel(PrimarySkill::ATTACK) : 0,
-			hero ? hero->getPrimSkillLevel(PrimarySkill::DEFENSE) : 0));
+		return static_cast<float>(hero ? heroCommands::coefficient(formula, *hero)
+			: heroCommands::coefficient(formula, 0, 0));
 	};
 	const auto meleeDamage = [&](const battle::Unit * attackerUnit, const battle::Unit * defenderUnit)
 	{
@@ -442,7 +441,9 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 		for(const auto * enemy : enemyUnits)
 			if(enemy->isMeleeAttacker() && enemy->getMovementRange(0) >= 3)
 				for(const auto * own : ownUnits)
-					advancingDamage = std::max(advancingDamage, meleeDamage(enemy, own));
+					// Brace is a pre-emptive blow by the defending friendly stack,
+					// not a multiplier on the advancing enemy's own attack.
+					advancingDamage = std::max(advancingDamage, meleeDamage(own, enemy));
 		return advancingDamage * braceDamage / 100.0f;
 	}
 
@@ -473,9 +474,7 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 		float extraAttack = 0.0f;
 		for(const auto * enemy : enemyUnits)
 			extraAttack = std::max(extraAttack, anyDamage(target, enemy));
-		const auto leadership = hero && hero->getLeadershipCapacity()
-			? static_cast<float>(hero->getLeadershipCapacity()->capacity) : 0.0f;
-		const auto directDamagePercent = std::clamp(50.0f + 0.015f * leadership, 0.0f, 100.0f);
+		const auto directDamagePercent = hero ? static_cast<float>(heroCommands::secondWindPercent(*hero)) : 50.0f;
 		return extraAttack * directDamagePercent / 100.0f;
 	}
 

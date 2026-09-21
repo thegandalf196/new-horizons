@@ -74,6 +74,15 @@ int exactBoundedCoefficient(const std::array<double, 3> & terms, const std::arra
 	return rounded.convert_to<int>();
 }
 
+int boundedCoefficient(const std::array<double, 3> & terms, const std::array<int, 3> & factors)
+{
+	const double value = terms[0] * factors[0] + terms[1] * factors[1] + terms[2] * factors[2];
+	if(!std::isfinite(value))
+		return exactBoundedCoefficient(terms, factors);
+	return static_cast<int>(std::lround(std::clamp(value,
+		static_cast<double>(MIN_EFFECT_PERCENT), static_cast<double>(MAX_EFFECT_PERCENT))));
+}
+
 bool legacyVersionOne(const JsonNode & value)
 {
 	// Preserve the legacy const Integer() interpretation without unsafe conversion
@@ -381,14 +390,30 @@ void validateRules(const JsonNode & rules)
 
 int coefficient(const JsonNode & effect, int attack, int defense)
 {
-	const double value = effect["base"].Float() + effect["attack"].Float() * attack
-		+ effect["defense"].Float() * defense;
-	if(!std::isfinite(value))
-		return exactBoundedCoefficient({effect["base"].Float(), effect["attack"].Float(), effect["defense"].Float()},
-			{1, attack, defense});
-	// Safety bounds avoid overflow and negative speed/damage; these are not balance targets.
-	return static_cast<int>(std::lround(std::clamp(value,
-		static_cast<double>(MIN_EFFECT_PERCENT), static_cast<double>(MAX_EFFECT_PERCENT))));
+	return boundedCoefficient({effect["base"].Float(), effect["attack"].Float(), effect["defense"].Float()},
+		{1, attack, defense});
+}
+
+int coefficient(const JsonNode & effect, const CGHeroInstance & hero)
+{
+	const int efficiency = efficiencyPercent(hero);
+	return boundedCoefficient({effect["base"].Float(), effect["attack"].Float() * efficiency / 100.0,
+		effect["defense"].Float() * efficiency / 100.0},
+		{1, hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE)});
+}
+
+int efficiencyPercent(const CGHeroInstance & hero)
+{
+	return 100 + std::clamp(hero.getPerkSkillRank("new-horizons:command"), 0, 3) * 10;
+}
+
+int secondWindPercent(const CGHeroInstance & hero)
+{
+	int64_t leadership = 0;
+	if(const auto capacity = hero.getLeadershipCapacity())
+		leadership = capacity->capacity;
+	const double leadershipComponent = 0.015 * static_cast<double>(leadership) * efficiencyPercent(hero) / 100.0;
+	return std::clamp(50 + static_cast<int>(std::lround(leadershipComponent)), 0, 100);
 }
 
 std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero)
@@ -410,8 +435,7 @@ std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CG
 		bonus.source = BonusSource::HERO_COMMAND;
 		bonus.duration = BonusDuration::N_TURNS;
 		bonus.turnsRemain = 1;
-		bonus.val = coefficient(formula, hero.getPrimSkillLevel(PrimarySkill::ATTACK),
-			hero.getPrimSkillLevel(PrimarySkill::DEFENSE));
+		bonus.val = coefficient(formula, hero);
 		bonus.description.appendRawString("New Horizons: " + key(command));
 		if(effect == "speedPercent")
 		{

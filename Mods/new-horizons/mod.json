@@ -3080,21 +3080,21 @@
 							"basic": {
 								"description": "Attribute-derived components of Orders operate at 110% Command Efficiency.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Attribute-derived components of Orders operate at 110% Command Efficiency."
 								}
 							},
 							"advanced": {
 								"description": "Attribute-derived components operate at 120% Command Efficiency.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Attribute-derived components operate at 120% Command Efficiency."
 								}
 							},
 							"expert": {
 								"description": "Attribute-derived components operate at 130% Command Efficiency.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Attribute-derived components operate at 130% Command Efficiency."
 								}
 							}
