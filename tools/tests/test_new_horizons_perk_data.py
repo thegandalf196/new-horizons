@@ -64,6 +64,8 @@ ACTIVE_RANK_SKILLS = {
     "new-horizons:warMachines",
     "new-horizons:discipline",
     "new-horizons:logistics",
+    "new-horizons:estates",
+    "new-horizons:learning",
     "new-horizons:sylvanLuck",
     "new-horizons:necromancy",
     "new-horizons:bloodrage",

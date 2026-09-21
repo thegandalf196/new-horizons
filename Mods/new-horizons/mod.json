@@ -4664,21 +4664,21 @@
 							"basic": {
 								"description": "The kingdom receives +125 Gold per day while the hero is active.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The kingdom receives +125 Gold per day while the hero is active."
 								}
 							},
 							"advanced": {
 								"description": "Daily income from Estates increases to +250 Gold.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Daily income from Estates increases to +250 Gold."
 								}
 							},
 							"expert": {
 								"description": "Daily income from Estates increases to +500 Gold.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Daily income from Estates increases to +500 Gold."
 								}
 							}
@@ -4796,21 +4796,21 @@
 							"basic": {
 								"description": "Experience gained by the hero increases by 10%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Experience gained by the hero increases by 10%."
 								}
 							},
 							"advanced": {
 								"description": "Experience gained increases by 20%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Experience gained increases by 20%."
 								}
 							},
 							"expert": {
 								"description": "Experience gained increases by 30%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Experience gained increases by 30%."
 								}
 							}
@@ -7469,10 +7469,11 @@
 					"scenarioBonus": "SECSKILL:0:42"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"dailyGold": {
+						"type": "GENERATE_RESOURCE",
+						"subtype": "gold",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 125
 					}
 				}
 			},
@@ -7485,10 +7486,11 @@
 					"scenarioBonus": "SECSKILL:0:43"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"dailyGold": {
+						"type": "GENERATE_RESOURCE",
+						"subtype": "gold",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 250
 					}
 				}
 			},
@@ -7501,10 +7503,11 @@
 					"scenarioBonus": "SECSKILL:0:44"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"dailyGold": {
+						"type": "GENERATE_RESOURCE",
+						"subtype": "gold",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 500
 					}
 				}
 			}
@@ -7528,10 +7531,10 @@
 					"scenarioBonus": "SECSKILL:0:66"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
-						"valueType": "BASE_NUMBER",
-						"val": 0
+					"experience": {
+						"type": "HERO_EXPERIENCE_GAIN_PERCENT",
+						"valueType": "PERCENT_TO_BASE",
+						"val": 10
 					}
 				}
 			},
@@ -7544,10 +7547,10 @@
 					"scenarioBonus": "SECSKILL:0:67"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
-						"valueType": "BASE_NUMBER",
-						"val": 0
+					"experience": {
+						"type": "HERO_EXPERIENCE_GAIN_PERCENT",
+						"valueType": "PERCENT_TO_BASE",
+						"val": 20
 					}
 				}
 			},
@@ -7560,10 +7563,10 @@
 					"scenarioBonus": "SECSKILL:0:68"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
-						"valueType": "BASE_NUMBER",
-						"val": 0
+					"experience": {
+						"type": "HERO_EXPERIENCE_GAIN_PERCENT",
+						"valueType": "PERCENT_TO_BASE",
+						"val": 30
 					}
 				}
 			}

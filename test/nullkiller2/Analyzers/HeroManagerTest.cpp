@@ -29,3 +29,15 @@ TEST(Nullkiller2_Analyzers_HeroManager, heroProfileBreaksSimilarArmyTies)
 		NK2AI::evaluateMainHeroRoleScore(20.0f, strongestArmy, strongestArmy))
 		<< "normal hero profile scoring should still decide between comparable army carriers";
 }
+
+TEST(Nullkiller2_Analyzers_HeroManager, canonicalStrategicSkillsReceiveRoleAwareScores)
+{
+	using NK2AI::evaluateNewHorizonsStrategicSkillRoleScore;
+	using NK2AI::HeroRole;
+
+	EXPECT_EQ(evaluateNewHorizonsStrategicSkillRoleScore("new-horizons:estates", HeroRole::MAIN), 0.5f);
+	EXPECT_EQ(evaluateNewHorizonsStrategicSkillRoleScore("new-horizons:estates", HeroRole::SCOUT), 2.0f);
+	EXPECT_EQ(evaluateNewHorizonsStrategicSkillRoleScore("new-horizons:learning", HeroRole::MAIN), 1.0f);
+	EXPECT_EQ(evaluateNewHorizonsStrategicSkillRoleScore("new-horizons:learning", HeroRole::SCOUT), 0.5f);
+	EXPECT_FALSE(evaluateNewHorizonsStrategicSkillRoleScore("core:estates", HeroRole::MAIN));
+}

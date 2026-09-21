@@ -1152,10 +1152,11 @@
 				"scenarioBonus": "SECSKILL:0:42"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"dailyGold": {
+					"type": "GENERATE_RESOURCE",
+					"subtype": "gold",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 125
 				}
 			}
 		},
@@ -1168,10 +1169,11 @@
 				"scenarioBonus": "SECSKILL:0:43"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"dailyGold": {
+					"type": "GENERATE_RESOURCE",
+					"subtype": "gold",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 250
 				}
 			}
 		},
@@ -1184,10 +1186,11 @@
 				"scenarioBonus": "SECSKILL:0:44"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"dailyGold": {
+					"type": "GENERATE_RESOURCE",
+					"subtype": "gold",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 500
 				}
 			}
 		}
@@ -1209,10 +1212,10 @@
 				"scenarioBonus": "SECSKILL:0:66"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
-					"valueType": "BASE_NUMBER",
-					"val": 0
+				"experience": {
+					"type": "HERO_EXPERIENCE_GAIN_PERCENT",
+					"valueType": "PERCENT_TO_BASE",
+					"val": 10
 				}
 			}
 		},
@@ -1225,10 +1228,10 @@
 				"scenarioBonus": "SECSKILL:0:67"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
-					"valueType": "BASE_NUMBER",
-					"val": 0
+				"experience": {
+					"type": "HERO_EXPERIENCE_GAIN_PERCENT",
+					"valueType": "PERCENT_TO_BASE",
+					"val": 20
 				}
 			}
 		},
@@ -1241,10 +1244,10 @@
 				"scenarioBonus": "SECSKILL:0:68"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
-					"valueType": "BASE_NUMBER",
-					"val": 0
+				"experience": {
+					"type": "HERO_EXPERIENCE_GAIN_PERCENT",
+					"valueType": "PERCENT_TO_BASE",
+					"val": 30
 				}
 			}
 		}

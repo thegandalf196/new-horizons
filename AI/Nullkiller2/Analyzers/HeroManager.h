@@ -19,6 +19,7 @@ namespace NK2AI
 {
 
 float evaluateMainHeroRoleScore(float heroProfileScore, uint64_t heroTotalStrength, uint64_t strongestHeroTotalStrength);
+std::optional<float> evaluateNewHorizonsStrategicSkillRoleScore(const std::string & skillId, HeroRole role);
 
 class DLL_EXPORT ISecondarySkillRule
 {

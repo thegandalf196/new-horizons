@@ -1409,3 +1409,41 @@ TEST_F(NewHorizonsHeroGrowthTest, ObstacleKeepsCreationScaleNotCurrentSideHeroSc
 	spells::ObstacleCasterProxy creature(PlayerColor(0), attackerSideHero, creatureObstacle);
 	EXPECT_EQ(creature.getEffectPowerDivisor(nullptr), 1);
 }
+
+TEST_F(NewHorizonsHeroGrowthTest, EstatesRanksGenerateCanonicalDailyGold)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	startGame();
+	const int decoded = SecondarySkill::decode("new-horizons:estates");
+	ASSERT_GE(decoded, 0);
+	const SecondarySkill estates(decoded);
+	attackerSideHero->setSecSkillLevel(estates, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	const int baseline = attackerSideHero->dailyIncome()[EGameResID::GOLD];
+	const std::array expected = {0, 125, 250, 500};
+	for(int rank = MasteryLevel::BASIC; rank <= MasteryLevel::EXPERT; ++rank)
+	{
+		SCOPED_TRACE(rank);
+		attackerSideHero->setSecSkillLevel(estates, rank, ChangeValueMode::ABSOLUTE);
+		EXPECT_EQ(attackerSideHero->dailyIncome()[EGameResID::GOLD] - baseline, expected[rank]);
+	}
+}
+
+TEST_F(NewHorizonsHeroGrowthTest, LearningRanksApplyCanonicalExperienceGain)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	startGame();
+	const int decoded = SecondarySkill::decode("new-horizons:learning");
+	ASSERT_GE(decoded, 0);
+	const SecondarySkill learning(decoded);
+	attackerSideHero->setSecSkillLevel(learning, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	const auto baseline = attackerSideHero->calculateXp(1000);
+	const std::array expected = {0, 100, 200, 300};
+	for(int rank = MasteryLevel::BASIC; rank <= MasteryLevel::EXPERT; ++rank)
+	{
+		SCOPED_TRACE(rank);
+		attackerSideHero->setSecSkillLevel(learning, rank, ChangeValueMode::ABSOLUTE);
+		EXPECT_EQ(attackerSideHero->calculateXp(1000) - baseline, expected[rank]);
+	}
+}

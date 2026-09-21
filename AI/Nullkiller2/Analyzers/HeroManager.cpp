@@ -32,6 +32,15 @@ float evaluateMainHeroRoleScore(float heroProfileScore, uint64_t heroTotalStreng
 	return heroProfileScore + 50.0f * armyShare;
 }
 
+std::optional<float> evaluateNewHorizonsStrategicSkillRoleScore(const std::string & skillId, HeroRole role)
+{
+	if(skillId == "new-horizons:estates")
+		return role == HeroRole::MAIN ? 0.5f : 2.0f;
+	if(skillId == "new-horizons:learning")
+		return role == HeroRole::MAIN ? 1.0f : 0.5f;
+	return std::nullopt;
+}
+
 const SecondarySkillEvaluator HeroManager::mainSkillsEvaluator = SecondarySkillEvaluator(
 	{
 		std::make_shared<SecondarySkillScoreMap>(
@@ -77,6 +86,13 @@ const SecondarySkillEvaluator HeroManager::scoutSkillsEvaluator = SecondarySkill
 float HeroManager::evaluateSecSkill(SecondarySkill skill, const CGHeroInstance * hero) const
 {
 	auto role = getHeroRoleOrDefaultInefficient(hero);
+	if(const auto strategicScore = evaluateNewHorizonsStrategicSkillRoleScore(
+		SecondarySkill::encode(skill.getNum()), role))
+	{
+		float score = *strategicScore;
+		ExistingSkillRule().evaluateScore(hero, skill, score);
+		return score;
+	}
 
 	if(role == HeroRole::MAIN)
 	{

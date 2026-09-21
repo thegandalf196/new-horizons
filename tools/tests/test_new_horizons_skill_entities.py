@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Validate the New Horizons SecondarySkill entity composition.
 
-The six school skills, Offense, Sylvan Luck, Necromancy, and Metamagic are
-active rank data.  The
+The six school skills, Offense, Estates, Learning, Sylvan Luck, Necromancy,
+and Metamagic are active rank data.  The
 remaining canonical skills are registered with their canonical rank text but
 deliberately carry only a zero bonus until their runtime effect handlers exist.
 Faction skills remain specially assigned/progressed rather than appearing in
@@ -27,7 +27,47 @@ SCHOOL_SKILLS = {
     "chaosMagic": "chaos",
 }
 ACTIVE_RANK_EFFECTS = {
-    "offense": {
+    "estates": {
+        "basic": {
+            "dailyGold": {
+                "type": "GENERATE_RESOURCE", "subtype": "gold",
+                "valueType": "BASE_NUMBER", "val": 125,
+            },
+        },
+        "advanced": {
+            "dailyGold": {
+                "type": "GENERATE_RESOURCE", "subtype": "gold",
+                "valueType": "BASE_NUMBER", "val": 250,
+            },
+        },
+        "expert": {
+            "dailyGold": {
+                "type": "GENERATE_RESOURCE", "subtype": "gold",
+                "valueType": "BASE_NUMBER", "val": 500,
+            },
+        },
+    },
+    "learning": {
+        "basic": {
+            "experience": {
+                "type": "HERO_EXPERIENCE_GAIN_PERCENT",
+                "valueType": "PERCENT_TO_BASE", "val": 10,
+            },
+        },
+        "advanced": {
+            "experience": {
+                "type": "HERO_EXPERIENCE_GAIN_PERCENT",
+                "valueType": "PERCENT_TO_BASE", "val": 20,
+            },
+        },
+        "expert": {
+            "experience": {
+                "type": "HERO_EXPERIENCE_GAIN_PERCENT",
+                "valueType": "PERCENT_TO_BASE", "val": 30,
+            },
+        },
+    },
+	"offense": {
         "basic": {
             "meleeDamage": {
                 "type": "PERCENTAGE_DAMAGE_BOOST",

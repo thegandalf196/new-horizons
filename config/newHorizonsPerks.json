@@ -2525,21 +2525,21 @@
 				"basic": {
 					"description": "The kingdom receives +125 Gold per day while the hero is active.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The kingdom receives +125 Gold per day while the hero is active."
 					}
 				},
 				"advanced": {
 					"description": "Daily income from Estates increases to +250 Gold.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Daily income from Estates increases to +250 Gold."
 					}
 				},
 				"expert": {
 					"description": "Daily income from Estates increases to +500 Gold.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Daily income from Estates increases to +500 Gold."
 					}
 				}
@@ -2657,21 +2657,21 @@
 				"basic": {
 					"description": "Experience gained by the hero increases by 10%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Experience gained by the hero increases by 10%."
 					}
 				},
 				"advanced": {
 					"description": "Experience gained increases by 20%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Experience gained increases by 20%."
 					}
 				},
 				"expert": {
 					"description": "Experience gained increases by 30%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Experience gained increases by 30%."
 					}
 				}

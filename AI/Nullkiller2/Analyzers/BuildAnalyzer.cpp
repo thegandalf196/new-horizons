@@ -13,6 +13,7 @@
 #include "../Engine/Nullkiller.h"
 #include "../../../lib/entities/building/CBuilding.h"
 #include "../../../lib/IGameSettings.h"
+#include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../AIUtility.h"
 
 namespace NK2AI
@@ -226,6 +227,8 @@ TResources BuildAnalyzer::calculateDailyIncome(const std::vector<const CGObjectI
 	{
 		if(const auto * mine = dynamic_cast<const CGMine *>(obj))
 			result += mine->dailyIncome();
+		else if(const auto * hero = dynamic_cast<const CGHeroInstance *>(obj))
+			result += hero->dailyIncome();
 	}
 
 	for(const CGTownInstance * town : townInfos)
