@@ -66,6 +66,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int bloodrageDamagePercent = 0;
 	/// Additive melee premium from a positional Shroud of Malassa flank.
 	int shroudFlankingDamagePercent = 0;
+	/// Canonical New Horizons Archery premium for this physical ranged blow.
+	int newHorizonsArcheryDamagePercent = 0;
+	/// Canonical New Horizons Armorer reduction for this physical creature blow.
+	int newHorizonsArmorerReductionPercent = 0;
 	/// Physical damage reduction supplied by the defending stack's canonical Order.
 	int heroOrderDamageReductionPercent = 0;
 	/// Bulwark reduction in basis points (one hundredth of one percentage point).
@@ -118,6 +122,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Battle-long additive creature attack and retaliation damage from Bloodrage.");
 		s("shroudFlankingDamagePercent", shroudFlankingDamagePercent,
 			"Positional melee damage premium supplied by Shroud of Malassa.");
+		s("newHorizonsArcheryDamagePercent", newHorizonsArcheryDamagePercent,
+			"Canonical New Horizons Archery ranged damage premium.");
+		s("newHorizonsArmorerReductionPercent", newHorizonsArmorerReductionPercent,
+			"Canonical New Horizons Armorer physical creature damage reduction.");
 		s("heroOrderDamageReductionPercent", heroOrderDamageReductionPercent,
 			"Physical damage reduction supplied by the defending canonical Order.");
 		s("bulwarkDamageReductionBasisPoints", bulwarkDamageReductionBasisPoints,

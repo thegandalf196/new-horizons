@@ -17,6 +17,7 @@
 #include "BattleInfo.h"
 #include "CObstacleInstance.h"
 #include "NewHorizonsBulwark.h"
+#include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsShroud.h"
 #include "IGameSettings.h"
 #include "PossiblePlayerBattleAction.h"
@@ -1726,6 +1727,15 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	if(info.physicalDamage)
 	{
 		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker);
+		const bool ordinaryCreatureAttack = info.attacker && !info.attacker->isTurret()
+			&& !info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& info.attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+		if(info.shooting && ordinaryCreatureAttack)
+			payload.newHorizonsArcheryDamagePercent = newHorizonsCombatSkills::archeryDamagePercent(
+				newHorizonsCombatSkills::archeryRank(battleGetOwnerHero(info.attacker)));
+		if(ordinaryCreatureAttack)
+			payload.newHorizonsArmorerReductionPercent = newHorizonsCombatSkills::armorerReductionPercent(
+				newHorizonsCombatSkills::armorerRank(battleGetOwnerHero(info.defender)));
 		if(battleIsShroudFlankingAttack(info))
 			payload.shroudFlankingDamagePercent = newHorizonsShroud::flankingDamagePercent(
 				newHorizonsShroud::rank(battleGetOwnerHero(info.attacker)));
@@ -1978,6 +1988,7 @@ DamageEstimation CBattleInfoCallback::estimateSpellLikeAttackDamage(const battle
 	for(const battle::Unit * u : affected)
 	{
 		BattleAttackInfo bai(shooter, u, 0, true);
+		bai.physicalDamage = false;
 		bai.secondaryAttack = !primary || primary->unitId() != u->unitId();
 		DamageEstimation de = calculateDmgRange(bai);
 

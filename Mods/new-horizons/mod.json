@@ -2288,21 +2288,21 @@
 							"basic": {
 								"description": "Physical creature attacks and retaliations against the hero's army deal 5% less damage.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Physical creature attacks and retaliations against the hero's army deal 5% less damage."
 								}
 							},
 							"advanced": {
 								"description": "Physical creature-attack reduction increases to 10%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Physical creature-attack reduction increases to 10%."
 								}
 							},
 							"expert": {
 								"description": "Physical creature-attack reduction increases to 15%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Physical creature-attack reduction increases to 15%."
 								}
 							}
@@ -2420,21 +2420,21 @@
 							"basic": {
 								"description": "Ranged creature attacks deal +10% physical damage.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Ranged creature attacks deal +10% physical damage."
 								}
 							},
 							"advanced": {
 								"description": "Ranged creature attacks deal +20% physical damage.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Ranged creature attacks deal +20% physical damage."
 								}
 							},
 							"expert": {
 								"description": "Ranged creature attacks deal +30% physical damage.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Ranged creature attacks deal +30% physical damage."
 								}
 							}

@@ -56,6 +56,8 @@ ACTIVE_PERKS = {
 }
 ACTIVE_RANK_SKILLS = {
     "new-horizons:offense",
+    "new-horizons:armorer",
+    "new-horizons:archery",
     "new-horizons:warMachines",
     "new-horizons:discipline",
     "new-horizons:logistics",
@@ -64,6 +66,7 @@ ACTIVE_RANK_SKILLS = {
     "new-horizons:bloodrage",
     "new-horizons:metamagic",
     "new-horizons:bulwarkOfTheMire",
+    "new-horizons:shroudOfMalassa",
 }
 EXPECTED_SKILLS = (
     "new-horizons:offense",

@@ -286,7 +286,8 @@ function Script:getOffenseArcheryFactor(info)
 	local targetedPremium = info.shooting and (info.targetedRangedCommandPercent or 0) or 0
 	return (getBonusValueOfSubtype(info.attacker, info.attackerBonuses, "PERCENTAGE_DAMAGE_BOOST", subtype)
 		+ targetedPremium + (info.executionerDamagePercent or 0) + (info.heroOrderDamagePercent or 0)
-		+ (info.bloodrageDamagePercent or 0) + (info.shroudFlankingDamagePercent or 0)) / 100
+		+ (info.bloodrageDamagePercent or 0) + (info.shroudFlankingDamagePercent or 0)
+		+ (info.newHorizonsArcheryDamagePercent or 0)) / 100
 end
 
 function Script:getBlessFactor(info)
@@ -340,6 +341,11 @@ function Script:getArmorerFactor(info)
 	-- any other general damage reduction represented here.
 	return -(reduction + (info.heroOrderDamageReductionPercent or 0)) / 100
 		- ((info.bulwarkDamageReductionBasisPoints or 0) / 10000)
+end
+
+--- New Horizons Armorer is an independent post-Defense reduction source.
+function Script:getNewHorizonsArmorerFactor(info)
+	return -(info.newHorizonsArmorerReductionPercent or 0) / 100
 end
 
 --- Shield and air shield: each lessens one kind of blow and ignores the other.
@@ -489,7 +495,7 @@ end
 for _, factor in ipairs({
 	"getAttackDefenseFactor", "getOffenseArcheryFactor", "getBlessFactor", "getLuckFactor",
 	"getJoustingFactor", "getDeathBlowFactor", "getDoubleDamageFactor", "getHateCreatureFactor",
-	"getArmorerFactor", "getMagicShieldFactor", "getRangePenaltyFactor", "getObstacleFactor",
+	"getArmorerFactor", "getNewHorizonsArmorerFactor", "getMagicShieldFactor", "getRangePenaltyFactor", "getObstacleFactor",
 	"getBlindParalysisFactor", "getUnluckyFactor", "getForgetfulnessFactor", "getPetrificationFactor"
 }) do
 	Script:addDamageFactor(factor)

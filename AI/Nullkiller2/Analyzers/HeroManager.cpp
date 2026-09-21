@@ -79,7 +79,18 @@ float HeroManager::evaluateSecSkill(SecondarySkill skill, const CGHeroInstance *
 	auto role = getHeroRoleOrDefaultInefficient(hero);
 
 	if(role == HeroRole::MAIN)
-		return mainSkillsEvaluator.evaluateSecSkill(hero, skill);
+	{
+		float score = mainSkillsEvaluator.evaluateSecSkill(hero, skill);
+		const int armorer = SecondarySkill::decode("new-horizons:armorer");
+		const int archery = SecondarySkill::decode("new-horizons:archery");
+		if((armorer >= 0 && skill == SecondarySkill(armorer))
+			|| (archery >= 0 && skill == SecondarySkill(archery)))
+		{
+			score = 2.0f;
+			ExistingSkillRule().evaluateScore(hero, skill, score);
+		}
+		return score;
+	}
 
 	return scoutSkillsEvaluator.evaluateSecSkill(hero, skill);
 }

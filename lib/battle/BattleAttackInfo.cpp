@@ -18,7 +18,12 @@ BattleAttackInfo::BattleAttackInfo(const battle::Unit * Attacker, const battle::
 	attackerPos(BattleHex::INVALID),
 	defenderPos(BattleHex::INVALID),
 	chargeDistance(chargeDistance)
-{}
+{
+	// Spell-like creature shots (Liches, Magogs, and modded equivalents) are
+	// magical attacks even when AI and preview callers construct the attack
+	// directly rather than going through the authoritative packet path.
+	physicalDamage = !(shooting && attacker && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+}
 
 BattleAttackInfo BattleAttackInfo::reverse() const
 {
@@ -26,7 +31,6 @@ BattleAttackInfo BattleAttackInfo::reverse() const
 
 	ret.defenderPos = attackerPos;
 	ret.attackerPos = defenderPos;
-	ret.physicalDamage = physicalDamage;
 	ret.retaliation = true;
 	return ret;
 }

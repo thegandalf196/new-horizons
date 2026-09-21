@@ -126,6 +126,20 @@ ACTIVE_RANK_EFFECTS = {
         },
     },
 }
+
+# These ranks are implemented by authoritative engine state rather than a
+# generic bonus entity, so their JSON skill effect deliberately remains the
+# zero-valued placeholder while the canonical registry marks them active.
+RUNTIME_ACTIVE_RANKS = {
+    "armorer",
+    "archery",
+    "warMachines",
+    "discipline",
+    "logistics",
+    "shroudOfMalassa",
+    "bloodrage",
+    "bulwarkOfTheMire",
+}
 ACTIVE_GENERAL_GAIN_SKILLS = set(SCHOOL_SKILLS) | {"offense"}
 NO_OP = {
     "newHorizonsPlaceholder": {
@@ -247,6 +261,11 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                             canonical["ranks"][rank]["effect"]["status"], "active"
                         )
                         self.assertEqual(skill[rank]["effects"], ACTIVE_RANK_EFFECTS[key][rank])
+                    elif key in RUNTIME_ACTIVE_RANKS:
+                        self.assertEqual(
+                            canonical["ranks"][rank]["effect"]["status"], "active"
+                        )
+                        self.assertTrue(skill[rank]["effects"])
                     else:
                         self.assertEqual(
                             canonical["ranks"][rank]["effect"]["status"], "planned"
