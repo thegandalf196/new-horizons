@@ -371,8 +371,12 @@ CUnitState::CUnitState():
 	movedThisRound(false),
 	timeStopTurnConsumedFlag(false),
 	summoned(false),
+	natureSummoned(false),
 	waiting(false),
 	waitedThisTurn(false),
+	defensiveStanceMeleeBonus(0),
+	defensiveStanceRangedBonus(0),
+	bulwarkPreemptiveUsed(false),
 	casts(this),
 	counterAttacks(this),
 	health(this),
@@ -401,8 +405,12 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	movedThisRound = other.movedThisRound;
 	timeStopTurnConsumedFlag = other.timeStopTurnConsumedFlag;
 	summoned = other.summoned;
+	natureSummoned = other.natureSummoned;
 	waiting = other.waiting;
 	waitedThisTurn = other.waitedThisTurn;
+	defensiveStanceMeleeBonus = other.defensiveStanceMeleeBonus;
+	defensiveStanceRangedBonus = other.defensiveStanceRangedBonus;
+	bulwarkPreemptiveUsed = other.bulwarkPreemptiveUsed;
 	casts = other.casts;
 	counterAttacks = other.counterAttacks;
 	shots = other.shots;
@@ -840,6 +848,12 @@ int CUnitState::getDefense(bool ranged) const
 	return defence;
 }
 
+int CUnitState::getDefenseIgnoringDefensiveStance(bool ranged) const
+{
+	const int stanceBonus = ranged ? defensiveStanceRangedBonus : defensiveStanceMeleeBonus;
+	return std::max(0, getDefense(ranged) - (defending ? stanceBonus : 0));
+}
+
 std::shared_ptr<Unit> CUnitState::acquire() const
 {
 	auto ret = std::make_shared<CUnitStateDetached>(this, this);
@@ -869,8 +883,12 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("moved", movedThisRound);
 	handler.serializeBool("timeStopTurnConsumed", timeStopTurnConsumedFlag);
 	handler.serializeBool("summoned", summoned);
+	handler.serializeBool("natureSummoned", natureSummoned);
 	handler.serializeBool("waiting", waiting);
 	handler.serializeBool("waitedThisTurn", waitedThisTurn);
+	handler.serializeInt("defensiveStanceMeleeBonus", defensiveStanceMeleeBonus, 0);
+	handler.serializeInt("defensiveStanceRangedBonus", defensiveStanceRangedBonus, 0);
+	handler.serializeBool("bulwarkPreemptiveUsed", bulwarkPreemptiveUsed);
 
 	handler.serializeStruct("casts", casts);
 	handler.serializeStruct("counterAttacks", counterAttacks);
@@ -906,8 +924,12 @@ void CUnitState::reset()
 	movedThisRound = false;
 	timeStopTurnConsumedFlag = false;
 	summoned = false;
+	natureSummoned = false;
 	waiting = false;
 	waitedThisTurn = false;
+	defensiveStanceMeleeBonus = 0;
+	defensiveStanceRangedBonus = 0;
+	bulwarkPreemptiveUsed = false;
 
 	casts.reset();
 	counterAttacks.reset();
@@ -998,6 +1020,9 @@ void CUnitState::afterAttack(bool ranged, bool counter)
 void CUnitState::afterNewRound()
 {
 	defending = false;
+	defensiveStanceMeleeBonus = 0;
+	defensiveStanceRangedBonus = 0;
+	bulwarkPreemptiveUsed = false;
 	waiting = false;
 	waitedThisTurn = false;
 	timeStopTurnConsumedFlag = false;
@@ -1014,6 +1039,12 @@ void CUnitState::afterNewRound()
 
 void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 {
+	// The corresponding STACK_GETS_TURN bonuses are removed by BattleInfo just
+	// before this hook.  Clear the explicit provenance alongside them; it must
+	// never survive merely because another temporary bonus used the same
+	// duration.
+	defensiveStanceMeleeBonus = 0;
+	defensiveStanceRangedBonus = 0;
 	if(reason == BattleUnitTurnReason::MORALE)
 	{
 		hadMorale = true;

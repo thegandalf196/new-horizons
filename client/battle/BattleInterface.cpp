@@ -542,6 +542,7 @@ void BattleInterface::openingEnd()
 
 BattleInterface::~BattleInterface()
 {
+	clearPerfectMoment();
 	CPlayerInterface::battleInt = nullptr;
 
 	if (adventureInt)
@@ -569,6 +570,8 @@ void BattleInterface::stackAdded(const CStack * stack)
 
 void BattleInterface::stackRemoved(uint32_t stackID)
 {
+	if(perfectMomentStack == stackID)
+		clearPerfectMoment();
 	stacksController->stackRemoved(stackID);
 	fieldController->redrawBackgroundWithHexes();
 	windowObject->updateQueue();
@@ -576,6 +579,8 @@ void BattleInterface::stackRemoved(uint32_t stackID)
 
 void BattleInterface::stackActivated(const CStack *stack)
 {
+	// Even reactivation of the same stack starts a fresh local declaration.
+	clearPerfectMoment();
 	stacksController->stackActivated(stack);
 }
 
@@ -626,6 +631,8 @@ void BattleInterface::newRound()
 
 void BattleInterface::giveCommand(EActionType action, const BattleHex & tile, SpellID spell)
 {
+	if(actionsController)
+		actionsController->cancelHeroOrderTargeting();
 	std::vector<BattleHex> tiles = {tile};
 	giveCommand(action, tiles, spell);
 }
@@ -656,9 +663,43 @@ void BattleInterface::giveCommand(EActionType action, const std::vector<BattleHe
 	sendCommand(ba, actor);
 }
 
+bool BattleInterface::canArmPerfectMoment()
+{
+	const auto * active = stacksController->getActiveStack();
+	return active && curInt && !curInt->isAutoFightOn && !isInTacticsMode()
+		&& !actionsController->heroSpellcastingModeActive()
+		&& !actionsController->creatureSpellcastingModeActive()
+		&& getBattle()->battleCanUsePerfectMoment(active);
+}
+
+bool BattleInterface::isPerfectMomentArmed()
+{
+	const auto * active = stacksController->getActiveStack();
+	return active && perfectMomentStack == active->unitId() && canArmPerfectMoment();
+}
+
+void BattleInterface::setPerfectMomentArmed(bool armed)
+{
+	clearPerfectMoment();
+	if(armed && canArmPerfectMoment())
+		perfectMomentStack = stacksController->getActiveStack()->unitId();
+}
+
+void BattleInterface::clearPerfectMoment()
+{
+	perfectMomentStack.reset();
+}
+
 void BattleInterface::sendCommand(BattleAction command, const CStack * actor)
 {
+	if(actionsController)
+		actionsController->cancelHeroOrderTargeting();
 	command.stackNumber = actor ? actor->unitId() : ((command.side == BattleSide::ATTACKER) ? -1 : -2);
+	command.perfectMoment = actor && perfectMomentStack == actor->unitId() && isPerfectMomentArmed()
+		&& (command.actionType == EActionType::WALK_AND_ATTACK || command.actionType == EActionType::SHOOT);
+	// Clear before asynchronous submission, including non-attacks and requests
+	// later rejected by the authority. Never silently re-arm on rejection.
+	clearPerfectMoment();
 
 	if(!isInTacticsMode())
 	{
@@ -1017,6 +1058,8 @@ void BattleInterface::activateStack()
 	stacksController->activateStack();
 
 	const CStack * s = stacksController->getActiveStack();
+	if(!s || perfectMomentStack != s->unitId())
+		clearPerfectMoment();
 	if(!s)
 		return;
 
@@ -1024,6 +1067,13 @@ void BattleInterface::activateStack()
 	windowObject->blockUI(false);
 	fieldController->redrawBackgroundWithHexes();
 	actionsController->activateStack();
+	if(metamagicPromptPending && windowObject && curInt && !curInt->isAutoFightOn)
+	{
+		const auto side = getBattle()->battleGetMySide();
+		metamagicPromptPending = false;
+		if(side != BattleSide::NONE && getBattle()->battleCanUseMetamagicFollowup(side))
+			windowObject->openMetamagicSpellbook();
+	}
 	ENGINE->fakeMouseMove();
 }
 
@@ -1080,7 +1130,7 @@ void BattleInterface::endAction(const BattleAction &action)
 	if(action.actionType == EActionType::HERO_SPELL && windowObject && curInt
 		&& !curInt->isAutoFightOn && action.side == getBattle()->battleGetMySide()
 		&& getBattle()->battleCanUseMetamagicFollowup(action.side))
-		windowObject->openMetamagicSpellbook();
+		metamagicPromptPending = true;
 }
 
 void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
@@ -1312,12 +1362,18 @@ void BattleInterface::castThisSpell(SpellID spellID)
 
 void BattleInterface::declineMetamagicFollowup()
 {
-	if(!curInt || !actionsController || !getBattle())
+	if(!actionsController || !actionsController->metamagicFollowupModeActive())
 		return;
-	const auto side = getBattle()->battleGetMySide();
-	if(!getBattle()->battleCanUseMetamagicFollowup(side))
-		return;
-	curInt->cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
+
+	// Clear the local selector even when the authoritative offer has already
+	// disappeared.  Doing this immediately also makes repeated UI clicks
+	// idempotent while the server response is in flight.
+	if(curInt && getBattle())
+	{
+		const auto side = getBattle()->battleGetMySide();
+		if(getBattle()->battleCanUseMetamagicFollowup(side))
+			curInt->cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
+	}
 	actionsController->endCastingSpell();
 }
 

@@ -20,14 +20,17 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/battle/Destination.h"
 #include "../../../server/ServerSpellCastEnvironment.h"
+#include "../../../server/battles/BattleProcessor.h"
 #include "../../../server/queries/MapQueries.h"
 #include "../../../server/queries/QueriesProcessor.h"
 #include "../../../lib/spells/ProxyCaster.h"
 #include "../../../lib/spells/ObstacleCasterProxy.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/networkPacks/PacksForClient.h"
+#include "../../../lib/networkPacks/StackLocation.h"
 #include "../../../lib/entities/hero/CHeroHandler.h"
 #include "../../../lib/CPlayerState.h"
+#include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/bonuses/Limiters.h"
@@ -42,6 +45,7 @@
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/mapObjects/TownBuildingInstance.h"
 #include "../../../lib/mapping/CCastleEvent.h"
+#include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/rmg/CMapGenOptions.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 
@@ -111,6 +115,444 @@ protected:
 			capabilitiesEnabled ? capabilityWorldRules() : JsonNode());
 	}
 };
+
+class NewHorizonsPerSlotLeadershipTest : public NewHorizonsCapabilityStateTest
+{
+protected:
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsCapabilityStateTest::mapLoaded(map);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
+			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+	}
+};
+
+class NewHorizonsWarMachinesTest : public NewHorizonsPerSlotLeadershipTest
+{
+protected:
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsPerSlotLeadershipTest::mapLoaded(map);
+		// Keep this fixture independent of the build tree's copied config files:
+		// extend the known-good per-slot v2 fixture with the canonical v3 tables.
+		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsCapabilities"));
+		rules["rulesetVersion"].Integer() = 3;
+		rules["siege"]["siegeRating"].Vector().clear();
+		rules["siege"]["directControlChance"].Vector().clear();
+		for(int value : {0, 20, 40, 60})
+			rules["siege"]["siegeRating"].Vector().emplace_back(value);
+		for(int value : {0, 100, 100, 100})
+			rules["siege"]["directControlChance"].Vector().emplace_back(value);
+		for(const auto & [output, base, coefficientHalf] : {
+			std::tuple{"ballistaDamage", 50, 4}, std::tuple{"catapultStructuralDamage", 100, 6},
+			std::tuple{"firstAidHealing", 75, 6}, std::tuple{"defensiveTowerDamage", 60, 3}})
+		{
+			rules["siege"]["outputs"][output]["base"].Integer() = base;
+			rules["siege"]["outputs"][output]["siegeCoefficientHalf"].Integer() = coefficientHalf;
+		}
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, rules);
+	}
+
+	void SetUp() override
+	{
+		NewHorizonsPerSlotLeadershipTest::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
+	SecondarySkill warMachines() const
+	{
+		const int decoded = SecondarySkill::decode("new-horizons:warMachines");
+		EXPECT_GE(decoded, 0);
+		return SecondarySkill(decoded);
+	}
+};
+
+TEST_F(NewHorizonsWarMachinesTest, CanonicalRanksProvideExactSiegeOutputAndControl)
+{
+	prepareCommands();
+	ASSERT_EQ(attackerSideHero->getCapabilityRules()["rulesetVersion"].Integer(), 3);
+	ASSERT_EQ(SecondarySkill::encode(warMachines().getNum()), "new-horizons:warMachines");
+	auto * ours = addStack(BattleSide::ATTACKER, CreatureID::BALLISTA, BattleHex(70), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(77), 10000);
+	const auto damage = [&]
+	{
+		return battle()->calculateDmgRange(BattleAttackInfo(ours, enemy, 0, true));
+	};
+	const auto * battleHero = battle()->battleGetOwnerHero(ours);
+	ASSERT_EQ(battleHero, attackerSideHero);
+	ASSERT_EQ(battleHero->getCapabilityRules()["rulesetVersion"].Integer(), 3);
+	ASSERT_TRUE(ours->hasBonusOfType(BonusType::SIEGE_WEAPON));
+
+	attackerSideHero->setSecSkillLevel(SecondarySkill::ARTILLERY, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 0, ChangeValueMode::ABSOLUTE);
+	for(const auto & [rank, siege, ballista, catapult, healing, tower, control] : {
+		std::tuple{0, 0, 50, 100, 75, 60, 0}, std::tuple{1, 20, 90, 160, 135, 90, 100},
+		std::tuple{2, 40, 130, 220, 195, 120, 100}, std::tuple{3, 60, 170, 280, 255, 150, 100}})
+	{
+		SCOPED_TRACE(rank);
+		attackerSideHero->setSecSkillLevel(warMachines(), rank, ChangeValueMode::ABSOLUTE);
+		const auto capabilities = attackerSideHero->getSiegeCapabilities();
+		ASSERT_TRUE(capabilities);
+		EXPECT_EQ(capabilities->warMachinesRank, rank);
+		EXPECT_EQ(capabilities->siegeRating, siege);
+		EXPECT_EQ(capabilities->ballistaDamage, ballista);
+		EXPECT_EQ(capabilities->catapultStructuralDamage, catapult);
+		EXPECT_EQ(capabilities->firstAidHealing, healing);
+		EXPECT_EQ(capabilities->defensiveTowerDamage, tower);
+		EXPECT_EQ(capabilities->ballistaControlChance, control);
+		EXPECT_EQ(capabilities->catapultControlChance, control);
+		EXPECT_EQ(capabilities->firstAidControlChance, control);
+		const auto currentDamage = damage();
+		// This fixture's Ballista has a fixed +25% ordinary Attack advantage;
+		// the canonical formula supplies its exact base before that combat rule.
+		const int expectedAfterAttack = ballista * 125 / 100;
+		EXPECT_EQ(currentDamage.damageBeforeDefense.min, expectedAfterAttack);
+		EXPECT_EQ(currentDamage.damageBeforeDefense.max, expectedAfterAttack);
+	}
+}
+
+TEST_F(NewHorizonsWarMachinesTest, CanonicalBallistaShotMatchesPreviewRange)
+{
+	startGame();
+	attackerSideHero->setSecSkillLevel(warMachines(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	giveArtifact(attackerSideHero, ArtifactID::BALLISTA, ArtifactPosition::MACH1);
+	startBattle();
+	const auto machines = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSide() == BattleSide::ATTACKER && stack->isBallista();
+	});
+	ASSERT_EQ(machines.size(), 1u);
+	const auto * ballista = machines.front();
+	const auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
+	ASSERT_NE(target, nullptr);
+	ASSERT_TRUE(battle()->battleCanShoot(ballista, target->getPosition()));
+
+	beginCombat();
+	const auto firstRound = battle()->getRound();
+	const auto maximumTurns = battle()->stacks.size() * 2;
+	for(size_t turn = 0; turn < maximumTurns && battle()->battleActiveUnit() != ballista; ++turn)
+	{
+		ASSERT_EQ(battle()->getRound(), firstRound);
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(active->unitId(), ballista->unitId());
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+			battle()->sideToPlayer(active->unitSide()), BattleAction::makeDefend(active)));
+	}
+	ASSERT_EQ(battle()->battleActiveUnit(), ballista);
+
+	const auto preview = battle()->calculateDmgRange(BattleAttackInfo(ballista, target, 0, true)).damage;
+	const auto healthBefore = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+		battle()->sideToPlayer(ballista->unitSide()), BattleAction::makeShotAttack(ballista, target)));
+	const auto actual = healthBefore - target->getAvailableHealth();
+	EXPECT_GE(actual, preview.min);
+	EXPECT_LE(actual, preview.max);
+}
+
+TEST_F(NewHorizonsWarMachinesTest, SavedRankAndCapabilitySnapshotRoundTrip)
+{
+	startGame();
+	ASSERT_EQ(attackerSideHero->getCapabilityRules()["rulesetVersion"].Integer(), 3);
+	ASSERT_EQ(SecondarySkill::encode(warMachines().getNum()), "new-horizons:warMachines");
+	attackerSideHero->setSecSkillLevel(warMachines(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	CMemorySerializer memory;
+	memory.oser & *gameState();
+	CGameState restored;
+	memory.iser.cb = &restored;
+	memory.iser.loadingGamestate = true;
+	memory.iser & restored;
+	const auto * hero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(hero, nullptr);
+	const auto capabilities = hero->getSiegeCapabilities();
+	ASSERT_TRUE(capabilities);
+	EXPECT_EQ(capabilities->warMachinesRank, MasteryLevel::ADVANCED);
+	EXPECT_EQ(capabilities->siegeRating, 40);
+	EXPECT_EQ(capabilities->ballistaDamage, 130);
+	EXPECT_EQ(capabilities->catapultStructuralDamage, 220);
+	EXPECT_EQ(capabilities->firstAidHealing, 195);
+	EXPECT_EQ(capabilities->defensiveTowerDamage, 120);
+	EXPECT_EQ(hero->getCapabilityRules(), attackerSideHero->getCapabilityRules());
+}
+
+TEST_F(NewHorizonsWarMachinesTest, FirstAidPreviewUsesExactSiegeFormula)
+{
+	prepareCommands();
+	auto * target = addStack(BattleSide::ATTACKER, creatureByName("core:azureDragon"), BattleHex(leftHex), 1);
+	StacksInjured injury;
+	injury.battleID = BattleID(0);
+	auto & attacked = injury.stacks.emplace_back();
+	attacked.stackAttacked = target->unitId();
+	attacked.damageAmount = 500;
+	target->prepareAttacked(attacked, gameHandler->getRandomGenerator());
+	ASSERT_LT(attacked.killedAmount, target->getCount());
+	gameHandler->sendAndApply(injury);
+	ASSERT_TRUE(target->canBeHealed());
+
+	for(const auto & [rank, expected] : {std::pair{0, 75}, std::pair{1, 135}, std::pair{2, 195}, std::pair{3, 255}})
+	{
+		SCOPED_TRACE(rank);
+		attackerSideHero->setSecSkillLevel(warMachines(), rank, ChangeValueMode::ABSOLUTE);
+		EXPECT_EQ(battle()->getFirstAidHealValue(attackerSideHero, target), expected);
+	}
+}
+
+TEST_F(NewHorizonsWarMachinesTest, ExpertFirstAidActionHealsExactSiegeAmount)
+{
+	startGame();
+	attackerSideHero->setSecSkillLevel(warMachines(), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	giveArtifact(attackerSideHero, ArtifactID::FIRST_AID_TENT, ArtifactPosition::MACH3);
+	startBattle();
+	const auto tents = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSide() == BattleSide::ATTACKER && stack->isFirstAidTent();
+	});
+	ASSERT_EQ(tents.size(), 1u);
+	const auto * tent = tents.front();
+	const auto * target = addStack(BattleSide::ATTACKER, creatureByName("core:azureDragon"), BattleHex(leftHex), 1);
+	StacksInjured injury;
+	injury.battleID = BattleID(0);
+	auto & attacked = injury.stacks.emplace_back();
+	attacked.stackAttacked = target->unitId();
+	attacked.damageAmount = 500;
+	target->prepareAttacked(attacked, gameHandler->getRandomGenerator());
+	gameHandler->sendAndApply(injury);
+	ASSERT_TRUE(target->canBeHealed());
+	const auto healthBefore = target->getAvailableHealth();
+
+	beginCombat();
+	const auto firstRound = battle()->getRound();
+	for(size_t turn = 0; turn < battle()->stacks.size() * 2 && battle()->battleActiveUnit() != tent; ++turn)
+	{
+		ASSERT_EQ(battle()->getRound(), firstRound);
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), battle()->sideToPlayer(active->unitSide()), BattleAction::makeDefend(active)));
+	}
+	ASSERT_EQ(battle()->battleActiveUnit(), tent);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), battle()->sideToPlayer(tent->unitSide()), BattleAction::makeHeal(tent, target)));
+	EXPECT_EQ(target->getAvailableHealth() - healthBefore, 255);
+}
+
+TEST_F(NewHorizonsWarMachinesTest, DefensiveTowerUsesDefendingHeroSiegeFormula)
+{
+	prepareCommands();
+	auto * tower = addStack(BattleSide::DEFENDER, CreatureID::ARROW_TOWERS, BattleHex(rightHex), 1);
+	auto * target = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 1000);
+	ASSERT_TRUE(tower->isTurret());
+	ASSERT_EQ(battle()->battleGetOwnerHero(tower), defenderSideHero);
+	for(const auto & [rank, expected] : {std::pair{0, 60}, std::pair{1, 90}, std::pair{2, 120}, std::pair{3, 150}})
+	{
+		SCOPED_TRACE(rank);
+		defenderSideHero->setSecSkillLevel(warMachines(), rank, ChangeValueMode::ABSOLUTE);
+		const auto result = battle()->calculateDmgRange(BattleAttackInfo(tower, target, 0, true));
+		EXPECT_EQ(result.damageBeforeDefense.min, expected);
+		EXPECT_EQ(result.damageBeforeDefense.max, expected);
+	}
+}
+
+TEST_F(NewHorizonsWarMachinesTest, CanonicalCatapultPacketConsumesStructuralHP)
+{
+	startGame(true);
+	const auto towns = gameState()->getPlayerState(PlayerColor(1))->getTowns();
+	ASSERT_EQ(towns.size(), 1u);
+	ASSERT_GT(towns.front()->fortificationsLevel().wallsHealth, 0);
+	giveArtifact(attackerSideHero, ArtifactID::CATAPULT, ArtifactPosition::MACH4);
+	startBattle(towns.front());
+
+	ASSERT_TRUE(battle()->getWallStructuralHP(EWallPart::BOTTOM_WALL) == 300);
+	ASSERT_TRUE(battle()->getWallStructuralHP(EWallPart::GATE) == 450);
+	EXPECT_EQ(SiegeInfo::maximumStructuralHP(EWallPart::BOTTOM_TOWER), 350);
+	if(battle()->getWallState(EWallPart::BOTTOM_TOWER) != EWallState::NONE)
+		EXPECT_EQ(battle()->getWallStructuralHP(EWallPart::BOTTOM_TOWER), 350);
+	EXPECT_EQ(battle()->getWallState(EWallPart::BOTTOM_WALL), EWallState::INTACT);
+
+	CatapultAttack hit;
+	hit.battleID = BattleID(0);
+	hit.attackedPart = EWallPart::BOTTOM_WALL;
+	hit.damageDealt = 1;
+	hit.structuralDamage = 160; // Basic canonical output: 100 + 3 * 20.
+	gameHandler->sendAndApply(hit);
+	EXPECT_EQ(battle()->getWallStructuralHP(EWallPart::BOTTOM_WALL), 140);
+	EXPECT_EQ(battle()->getWallState(EWallPart::BOTTOM_WALL), EWallState::DAMAGED);
+
+	hit.structuralDamage = 160;
+	gameHandler->sendAndApply(hit);
+	EXPECT_EQ(battle()->getWallStructuralHP(EWallPart::BOTTOM_WALL), 0);
+	EXPECT_EQ(battle()->getWallState(EWallPart::BOTTOM_WALL), EWallState::DESTROYED);
+}
+
+TEST_F(NewHorizonsWarMachinesTest, BasicRankRoutesBallistaTurnToThePlayer)
+{
+	startGame();
+	// The canonical skill is authoritative even if stale legacy Artillery data is present.
+	attackerSideHero->setSecSkillLevel(SecondarySkill::ARTILLERY, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(warMachines(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	giveArtifact(attackerSideHero, ArtifactID::BALLISTA, ArtifactPosition::MACH1);
+	startBattle();
+
+	const auto machines = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSide() == BattleSide::ATTACKER && stack->isBallista();
+	});
+	ASSERT_EQ(machines.size(), 1u);
+	const auto * ballista = machines.front();
+	const auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
+	ASSERT_NE(target, nullptr);
+	ASSERT_TRUE(battle()->battleCanShoot(ballista, target->getPosition()));
+
+	const auto ballistaActivated = [&]
+	{
+		return std::any_of(server.stackActivations.begin(), server.stackActivations.end(), [&](const auto & activation)
+		{
+			return activation.battleID == BattleID(0) && activation.stack == ballista->unitId();
+		});
+	};
+
+	beginCombat();
+	const auto firstRound = battle()->getRound();
+	const auto maximumTurns = battle()->stacks.size() * 2;
+	for(size_t turn = 0; turn < maximumTurns && !ballistaActivated(); ++turn)
+	{
+		ASSERT_EQ(battle()->getRound(), firstRound);
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(active->unitId(), ballista->unitId());
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), battle()->sideToPlayer(active->unitSide()), BattleAction::makeDefend(active)));
+	}
+	ASSERT_TRUE(ballistaActivated());
+
+	const auto activation = std::find_if(server.stackActivations.begin(), server.stackActivations.end(), [&](const auto & candidate)
+	{
+		return candidate.battleID == BattleID(0) && candidate.stack == ballista->unitId();
+	});
+	ASSERT_NE(activation, server.stackActivations.end());
+	EXPECT_EQ(activation->reason, BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), ballista->unitId());
+	EXPECT_TRUE(std::none_of(server.startedActions.begin(), server.startedActions.end(), [&](const auto & action)
+	{
+		return action.battleID == BattleID(0) && action.ba.isUnitAction() && action.ba.stackNumber == ballista->unitId();
+	}));
+}
+
+TEST_F(NewHorizonsWarMachinesTest, RankZeroSuppressesStaleArtilleryManualControl)
+{
+	startGame();
+	attackerSideHero->setSecSkillLevel(SecondarySkill::ARTILLERY, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(warMachines(), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	giveArtifact(attackerSideHero, ArtifactID::BALLISTA, ArtifactPosition::MACH1);
+	startBattle();
+
+	const auto machines = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSide() == BattleSide::ATTACKER && stack->isBallista();
+	});
+	ASSERT_EQ(machines.size(), 1u);
+	const auto * ballista = machines.front();
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
+
+	const auto ballistaActivated = [&]
+	{
+		return std::any_of(server.stackActivations.begin(), server.stackActivations.end(), [&](const auto & activation)
+		{
+			return activation.battleID == BattleID(0) && activation.stack == ballista->unitId();
+		});
+	};
+	beginCombat();
+	const auto firstRound = battle()->getRound();
+	for(size_t turn = 0; turn < battle()->stacks.size() * 2 && !ballistaActivated(); ++turn)
+	{
+		ASSERT_EQ(battle()->getRound(), firstRound);
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(active->unitId(), ballista->unitId());
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), battle()->sideToPlayer(active->unitSide()), BattleAction::makeDefend(active)));
+	}
+	ASSERT_TRUE(ballistaActivated());
+	const auto activation = std::find_if(server.stackActivations.begin(), server.stackActivations.end(), [&](const auto & candidate)
+	{
+		return candidate.battleID == BattleID(0) && candidate.stack == ballista->unitId();
+	});
+	ASSERT_NE(activation, server.stackActivations.end());
+	EXPECT_EQ(activation->reason, BattleUnitTurnReason::AUTOMATIC_ACTION);
+	EXPECT_TRUE(std::any_of(server.startedActions.begin(), server.startedActions.end(), [&](const auto & action)
+	{
+		return action.battleID == BattleID(0) && action.ba.actionType == EActionType::SHOOT
+			&& action.ba.stackNumber == ballista->unitId();
+	}));
+}
+
+TEST_F(NewHorizonsPerSlotLeadershipTest, AuthoritativeStackMutationsRejectOversizedResultsAtomically)
+{
+	startGame();
+	attackerSideHero->clearSlots();
+	const CreatureID pikeman = creatureByName("core:pikeman");
+	const CreatureID halberdier = creatureByName("core:halberdier");
+	const auto capacity = attackerSideHero->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
+	ASSERT_EQ(capacity->maximum, 17);
+
+	EXPECT_FALSE(gameHandler->insertNewStack(StackLocation(attackerSideHero->id, SlotID(0)), pikeman.toCreature(), 18));
+	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(SlotID(0)));
+	ASSERT_TRUE(gameHandler->insertNewStack(StackLocation(attackerSideHero->id, SlotID(0)), pikeman.toCreature(), 17));
+	EXPECT_FALSE(gameHandler->changeStackCount(StackLocation(attackerSideHero->id, SlotID(0)),
+		1, ChangeValueMode::RELATIVE));
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 17);
+
+	// The upgraded requirement is 60 * 120% = 72, rounded to 70; 1025 / 70 = 14.
+	EXPECT_FALSE(gameHandler->changeStackType(StackLocation(attackerSideHero->id, SlotID(0)), halberdier.toCreature()));
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(0)), pikeman.toCreature());
+}
+
+TEST_F(NewHorizonsPerSlotLeadershipTest, WholeArmyPreflightCannotLoopOrPartiallyTransfer)
+{
+	startGame();
+	const CreatureID pikeman = creatureByName("core:pikeman");
+	const CreatureID archer = creatureByName("core:archer");
+	attackerSideHero->clearSlots();
+	defenderSideHero->clearSlots();
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 18));
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), archer, 1));
+
+	EXPECT_FALSE(gameHandler->moveArmy(defenderSideHero, attackerSideHero, true));
+	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(SlotID(0)));
+	EXPECT_EQ(defenderSideHero->getStackCount(SlotID(0)), 18);
+	EXPECT_EQ(defenderSideHero->getStackCount(SlotID(1)), 1);
+}
+
+TEST_F(NewHorizonsPerSlotLeadershipTest, SeparateSlotsNeverShareOneLeadershipBudget)
+{
+	startGame();
+	const CreatureID pikeman = creatureByName("core:pikeman");
+	const CreatureID archer = creatureByName("core:archer");
+	attackerSideHero->clearSlots();
+	defenderSideHero->clearSlots();
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), pikeman, 8));
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(1), pikeman, 8));
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 2));
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), archer, 1));
+
+	EXPECT_TRUE(gameHandler->moveStack(StackLocation(defenderSideHero->id, SlotID(0)),
+		StackLocation(attackerSideHero->id, SlotID(0))));
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 10);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 8);
+}
+
+TEST_F(NewHorizonsPerSlotLeadershipTest, DuplicateCreatureRewardIsRejectedBeforeAnyPartialGrant)
+{
+	startGame();
+	const CreatureID pikeman = creatureByName("core:pikeman");
+	attackerSideHero->clearSlots();
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), pikeman, 2));
+	CCreatureSet reward;
+	ASSERT_TRUE(reward.setCreature(SlotID(0), pikeman, 8));
+	ASSERT_TRUE(reward.setCreature(SlotID(1), pikeman, 8));
+
+	gameHandler->giveCreatures(attackerSideHero, reward);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 2);
+	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(SlotID(1)));
+}
 
 TEST_F(NewHorizonsCapabilityStateTest, InitializationCapturesIndependentWorldAndResolvedClass)
 {
@@ -628,23 +1070,22 @@ TEST_F(NewHorizonsHeroGrowthTest, LegacyInstanceHasNoGrowthViewAndOriginalScale)
 	EXPECT_EQ(attackerSideHero->getEffectPowerDivisor(nullptr), 1);
 }
 
-TEST_F(NewHorizonsHeroGrowthTest, RealSeededGrowthAddsIndependentExtrasToAllFourBaseGains)
+TEST_F(NewHorizonsHeroGrowthTest, SkillRanksDoNotAlterDeterministicClassGrowth)
 {
 	startGame();
 	attackerSideHero->setSecSkillLevel(SecondarySkill::OFFENCE, 3, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill::ARMORER, 3, ChangeValueMode::ABSOLUTE);
 	const auto view = attackerSideHero->getPrimaryGrowthView();
 	ASSERT_TRUE(view);
-	ASSERT_EQ(view->extraGrowth.size(), 2);
-	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero), (std::array<int, 4>{5, 5, 1, 1}));
+	EXPECT_TRUE(view->extraGrowth.empty());
+	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero), (std::array<int, 4>{4, 4, 1, 1}));
 	attackerSideHero->setSecSkillLevel(SecondarySkill::OFFENCE, 0, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill::ARMORER, 0, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero), (std::array<int, 4>{4, 4, 1, 1}));
 }
 
-TEST_F(NewHorizonsHeroGrowthTest, SerializedHeroRandomizerContinuesIndependentPercentileSequence)
+TEST_F(NewHorizonsHeroGrowthTest, SerializedHeroRandomizerKeepsDeterministicClassVector)
 {
-	extraChance = 50;
 	startGame();
 	attackerSideHero->setSecSkillLevel(SecondarySkill::OFFENCE, 3, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill::ARMORER, 3, ChangeValueMode::ABSOLUTE);
@@ -653,14 +1094,12 @@ TEST_F(NewHorizonsHeroGrowthTest, SerializedHeroRandomizerContinuesIndependentPe
 	memory.oser & *gameHandler->randomizer;
 	GameRandomizer restored(*gameState());
 	memory.iser & restored;
-	std::set<std::array<int, 4>> outcomes;
 	for(int i = 0; i < 32; ++i)
 	{
 		const auto expected = gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero);
 		EXPECT_EQ(restored.rollPrimarySkillsForLevelup(attackerSideHero), expected);
-		outcomes.insert(expected);
+		EXPECT_EQ(expected, (std::array<int, 4>{4, 4, 1, 1}));
 	}
-	EXPECT_GT(outcomes.size(), 1); // Not a vacuous 0%/100% continuation check.
 }
 
 TEST_F(NewHorizonsHeroGrowthTest, AuthorityAppliesAndReportsAllFourActualLevelGains)

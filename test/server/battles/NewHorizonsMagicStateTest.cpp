@@ -15,6 +15,7 @@
 #include "../../../lib/modding/ActiveModsInSaveList.h"
 #include "../../../lib/modding/ModDescription.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/constants/StringConstants.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
@@ -144,6 +145,10 @@ TEST_F(NewHorizonsMagicStateTest, ActualSchoolRankCostAndServerCastUseSavedClass
 
 TEST_F(NewHorizonsMagicStateTest, StartingRanksConvertAndNewSkillsCanBeOffered)
 {
+	const auto schoolSkills = newHorizonsMagic::schoolSkills(gameState()->getMagicRules());
+	EXPECT_EQ(schoolSkills.size(), 6u);
+	EXPECT_EQ(std::set<SecondarySkill>(schoolSkills.begin(), schoolSkills.end()).size(), 6u);
+
 	startSkilledHero();
 	const auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
@@ -219,4 +224,64 @@ TEST_F(NewHorizonsMagicStateTest, ActualGameAndBattlePacketRetainSavedRules)
 	ASSERT_TRUE(handler.battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(hero->mana, 100 - cost);
 	EXPECT_EQ(attackerSideHero->mana, 100);
+}
+
+TEST_F(NewHorizonsMagicStateTest, AdventureSpellUsesOneSharedDailyOpportunityAndRoundTrips)
+{
+	startGame();
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const SpellID fly(SpellID::FLY);
+	const SpellID waterWalk(SpellID::WATER_WALK);
+	const SpellID townPortal(SpellID::TOWN_PORTAL);
+	attackerSideHero->addSpellToSpellbook(fly);
+	attackerSideHero->addSpellToSpellbook(waterWalk);
+	attackerSideHero->addSpellToSpellbook(townPortal);
+	attackerSideHero->mana = 200;
+
+	auto cast = [&](SpellID spell) {
+		AdventureSpellCastParameters parameters;
+		parameters.caster = attackerSideHero;
+		parameters.pos = int3();
+		auto * environment = dynamic_cast<SpellCastEnvironment *>(gameHandler->spellcastEnvironment());
+		EXPECT_NE(environment, nullptr);
+		return spell.toSpell()->adventureCast(environment, parameters);
+	};
+
+	// No controlled town exists on this map, so Town Portal cancels before
+	// applying effects. A cancellation must not consume the shared opportunity.
+	const auto manaBeforeCancel = attackerSideHero->mana;
+	EXPECT_TRUE(cast(townPortal));
+	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeCancel);
+
+	ASSERT_TRUE(cast(fly));
+	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeCancel - 60);
+
+	// A different neutral Adventure Spell is rejected by the shared gate, so it
+	// cannot spend mana or apply its ordinary adventure effect.
+	const auto manaBeforeSecondCast = attackerSideHero->mana;
+	EXPECT_FALSE(cast(waterWalk));
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeSecondCast);
+	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+
+	const auto bytes = gameState()->saveToMemory();
+	auto restored = std::make_shared<CGameState>();
+	restored->preInit(LIBRARY);
+	restored->loadFromMemory(bytes);
+	const auto * restoredHero = restored->getHero(attackerSideHero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_TRUE(restoredHero->hasNewHorizonsAdventureSpellCastToday());
+
+	NewTurn nextDay;
+	nextDay.day = restored->day + 1;
+	restored->apply(nextDay);
+	EXPECT_FALSE(restoredHero->hasNewHorizonsAdventureSpellCastToday());
+
+	NewTurn originalNextDay;
+	originalNextDay.day = gameState()->day + 1;
+	gameState()->apply(originalNextDay);
+	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_TRUE(cast(waterWalk));
+	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
 }

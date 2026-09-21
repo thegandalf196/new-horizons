@@ -87,6 +87,7 @@ public:
 	std::optional<FocusFireState> battleGetFocusFireState(BattleSide side) const;
 	/// Roll-only Luck; does not change the unit's displayed/static Luck bonuses.
 	int battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const;
+	bool battleCanUsePerfectMoment(const battle::Unit * attacker) const;
 	int battleFortuneSpeed(const battle::Unit * unit) const;
 	bool battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const;
 	std::vector<uint32_t> battleFortuneAdjacentFriends(const battle::Unit * unit) const;

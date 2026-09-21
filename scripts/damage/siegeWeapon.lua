@@ -4,6 +4,11 @@ Script.__index = Script
 --- Ballista deals additional damage based on hero attack
 --- Only bonuses from hero itself (base stats) and from equipped artifacts are included
 function Script:getBallistaDamageRange(info, minDamage, maxDamage)
+	-- Canonical rules defer their absolute output until the whole-stack hook
+	-- below and never inherit the retired hero-Attack multiplier.
+	if (info.machineBaseDamage or 0) > 0 then
+		return minDamage, maxDamage
+	end
 
 	local siegeSkillMultiplier = info.siegeSkillMultiplier or 0
 	if siegeSkillMultiplier > 0 then
@@ -23,6 +28,18 @@ function Script:getBaseDamageSingle(info)
 	if info.attacker:isTurret() then return minDamage, maxDamage end
 
 	return self:getBallistaDamageRange(info, minDamage, maxDamage)
+end
+
+--- Canonical Siege output is absolute per machine activation.
+function Script:getBaseDamage(info)
+	local minDamage, maxDamage = Base.getBaseDamage(self, info)
+
+	if not self:hasBonusOfType(info.attackerBonuses, "SIEGE_WEAPON") then return minDamage, maxDamage end
+
+	local machineBaseDamage = info.machineBaseDamage or 0
+	if machineBaseDamage <= 0 then return minDamage, maxDamage end
+
+	return machineBaseDamage, machineBaseDamage
 end
 
 Script:declareBonus("PRIMARY_SKILL")

@@ -431,7 +431,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		//check it there is opponent hero
 		const BattleSide otherSide = battle()->otherSide(casterSide);
 
-		if(battle()->battleHasHero(otherSide))
+		const auto visibleSide = battle()->battleGetMySide();
+		if((visibleSide == BattleSide::ALL_KNOWING || visibleSide == otherSide)
+			&& battle()->battleHasHero(otherSide))
 			otherHero = battle()->battleGetFightingHero(otherSide);
 	}
 

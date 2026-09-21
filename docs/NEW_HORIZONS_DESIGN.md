@@ -57,9 +57,10 @@ the prior architectural experiment is closed. Deferred smoothness research is in
 - Six magic schools: Light, Nature, Sorcery, Havoc, Shadow, Chaos. Towns receive
   distinct major/minor identities. Existing and new spells need real effects,
   AI valuation/targeting, costs, school UI and descriptions.
-- Deterministic primary growth totaling ten points per level, with class identity
-  and independent skill-related extra rolls. Starting ratings use 20/15/10/5
-  arranged by priority as the initial proposal. Knowledge directly supplies base
+- Deterministic primary growth totaling ten points per level, with each hero
+  class granting its fixed four-attribute vector on every level. There are no
+  skill-based extra rolls or level-10 transition. Starting ratings use
+  20/15/10/5 arranged by priority as the initial proposal. Knowledge directly supplies base
   mana; all relevant formulas/tooltips must use the new scale coherently.
 - Secondary attributes include mana, leadership capacity, movement, morale, luck
   and siege capability. Skills modify capabilities; leadership capacity and siege

@@ -1,0 +1,18 @@
+{
+  "status": "ONE unapproved original rendered still-life quality proof; not final family; raw master/blend/settings PRIVATE pending review",
+  "reduction": "Pillow Lanczos on premultiplied RGBa, convert to straight RGBA; no stretch/sharpen",
+  "slot": "82x82 aspect-preserving render centred vertically in82x93 transparent canvas",
+  "files": {
+    "scene.py": "c978dfce42023ba3bba88cad18a245f395316ba78db1c026a4efb9b25c86f924",
+    "reduce.py": "cada05be00f910235bc1bdabf8602b4cab0de98f700393522d9ff097f76e8b4a",
+    "output/master-review.png": "d7a906a3a1df91fcbc9169071b9d54fefad122c6009b31f1d94a494aedc7ae30",
+    "output/master.png": "dbdb94b388d2f9cb8f2839716eead613a4ebf0973d54bded15cc116226974950",
+    "output/native-32.png": "54ef17222eb85a77a9da349ef702b00d6f82ae29a4c3a564d385fabc74c736b2",
+    "output/native-44.png": "006ed079e804ea11145eab8074f594bd2fa305838f2fc94cdceed92b829dc0af",
+    "output/native-comparison.png": "118c1ce7287a7fe495144f15444be2dfceb2e22b55d3bef5bdaa77eb3d191910",
+    "output/native-review.png": "a6843653099c5b345e683ea14f75bc1075b01483df6e82994e236eba8a55872e",
+    "output/render-settings.txt": "f046879e69f641933a5c656b2d7d9dad5296ead7a225512838e32fd7d167e8ff",
+    "output/slot-82x93.png": "2a259ea291cc7fed179471acd733935b324837a59036062a2cf4a2026e0386bf",
+    "output/sorcery-conjuring-hand.blend": "a09bd243ce15ab4a9fc3164c619826d4d2653ab3a2efb12d9680aeb2a85a986a"
+  }
+}

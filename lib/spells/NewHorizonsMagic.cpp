@@ -116,6 +116,26 @@ const JsonNode & entry(const JsonNode & rules, SpellID spell)
 	return rules["spells"][spell.toSpell()->getJsonKey()];
 }
 
+const JsonNode & adventureEntry(const JsonNode & rules, SpellID spell)
+{
+	return rules["adventureSpells"][spell.toSpell()->getJsonKey()];
+}
+
+struct AdventureSpellDefinition
+{
+	std::string_view identity;
+	int guildLevel;
+	int cost;
+};
+
+constexpr std::array ADVENTURE_SPELLS = {
+	AdventureSpellDefinition{"core:summonBoat", 1, 20},
+	AdventureSpellDefinition{"core:waterWalk", 2, 30},
+	AdventureSpellDefinition{"core:townPortal", 3, 50},
+	AdventureSpellDefinition{"core:fly", 4, 60},
+	AdventureSpellDefinition{"core:dimensionDoor", 5, 80},
+};
+
 bool sorceryMember(const SpellSchool school)
 {
 	return school.serializationKey() == "new-horizons:sorcery";
@@ -132,7 +152,7 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
@@ -169,6 +189,28 @@ void validateRules(const JsonNode & rules)
 			require(oldID >= 0 && skillIDs.count(newID) && !skillIDs.count(oldID), "replace legacy skills with school skills only");
 		}
 	}
+	std::set<int> adventureMapped;
+	if(!rules["adventureSpells"].isNull())
+	{
+		require(rules["adventureSpells"].isStruct() && rules["adventureSpells"].Struct().size() == ADVENTURE_SPELLS.size(), "five adventure spells required");
+		for(const auto & expected : ADVENTURE_SPELLS)
+		{
+			const auto found = rules["adventureSpells"].Struct().find(std::string(expected.identity));
+			require(found != rules["adventureSpells"].Struct().end(), "missing adventure spell " + std::string(expected.identity));
+			fields(found->second, {"guildLevel", "cost"});
+			require(integer(found->second["guildLevel"], 1, 5) && found->second["guildLevel"].Integer() == expected.guildLevel, "adventure guild level");
+			require(integer(found->second["cost"], 0, 1000000) && found->second["cost"].Integer() == expected.cost, "adventure spell cost");
+			const auto id = resolve("spell", std::string(expected.identity));
+			require(id >= 0 && adventureMapped.insert(id).second, "duplicate/invalid adventure spell");
+			const auto * definition = SpellID(id).toSpell();
+			require(definition && definition->getJsonKey() == expected.identity && definition->isCommonHeroSpell() && definition->isAdventure(), "adventure spell identity/type");
+		}
+		for(const auto & [name, data] : rules["adventureSpells"].Struct())
+		{
+			(void)data;
+			require(std::any_of(ADVENTURE_SPELLS.begin(), ADVENTURE_SPELLS.end(), [&](const auto & expected) { return name == expected.identity; }), "unknown adventure spell");
+		}
+	}
 	require(rules["spells"].isStruct(), "spell mappings required");
 	std::set<int> mapped;
 	for(const auto & [name, data] : rules["spells"].Struct())
@@ -181,6 +223,7 @@ void validateRules(const JsonNode & rules)
 		(void)directDamageFormula(data, version);
 		const auto id = resolve("spell", name);
 		require(id >= 0 && mapped.insert(id).second, "duplicate/invalid spell");
+		require(adventureMapped.count(id) == 0, "adventure spell cannot be an ordinary school spell");
 		require(static_cast<size_t>(id) < LIBRARY->spellh->objects.size() && LIBRARY->spellh->objects.at(id), "missing spell definition");
 		const auto * definition = SpellID(id).toSpell();
 		require(definition->getJsonKey() == name, "canonical spell identity required");
@@ -207,7 +250,8 @@ void validateRules(const JsonNode & rules)
 	}
 	for(const auto & spell : LIBRARY->spellh->objects)
 		if(spell && spell->isCommonHeroSpell()
-			&& !spell->getJsonKey().starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
+			&& !spell->getJsonKey().starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':')
+			&& adventureMapped.count(spell->getId().getNum()) == 0)
 			require(mapped.count(spell->getId().getNum()) != 0, "unclassified hero spell " + spell->getJsonKey());
 	if(!rules["factionWeights"].isNull())
 	{
@@ -350,6 +394,8 @@ std::vector<SpellSchool> spellSchools(const JsonNode & rules, SpellID spell)
 	if(!spellAllowedBySavedRoster(rules, spell))
 		return {};
 	const auto * definition = spell.toSpell();
+	if(isAdventureSpell(rules, spell))
+		return {};
 	if(legacy(rules) || !definition->isCommonHeroSpell())
 		return {definition->schools.begin(), definition->schools.end()};
 	std::vector<SpellSchool> result;
@@ -359,9 +405,26 @@ std::vector<SpellSchool> spellSchools(const JsonNode & rules, SpellID spell)
 	return result;
 }
 
+std::vector<SecondarySkill> schoolSkills(const JsonNode & rules)
+{
+	if(legacy(rules))
+		return {};
+
+	std::vector<SecondarySkill> result;
+	result.reserve(rules["schoolSkills"].Struct().size());
+	for(const auto & [school, skill] : rules["schoolSkills"].Struct())
+	{
+		(void)school;
+		result.emplace_back(resolve(SecondarySkill::entityType(), skill.String()));
+	}
+	return result;
+}
+
 int spellLevel(const JsonNode & rules, SpellID spell)
 {
 	if(!spellAllowedBySavedRoster(rules, spell))
+		return 0;
+	if(isAdventureSpell(rules, spell))
 		return 0;
 	if(legacy(rules) || entry(rules, spell)["level"].isNull())
 		return spell.toSpell()->getLevel();
@@ -396,6 +459,8 @@ int factionSpellWeight(const JsonNode & rules, FactionID faction, SpellID spell)
 {
 	if(!spellAllowedBySavedRoster(rules, spell))
 		return 0;
+	if(isAdventureSpell(rules, spell))
+		return 0;
 	const auto & identity = rules["factions"][FactionID::encode(faction.getNum())];
 	if(legacy(rules) || identity.isNull())
 		return spell.toSpell()->getProbability(faction);
@@ -417,10 +482,32 @@ int factionSpellWeight(const JsonNode & rules, FactionID faction, SpellID spell)
 int spellCost(const JsonNode & rules, SpellID spell, int mastery)
 {
 	require(spellAllowedBySavedRoster(rules, spell), "spell cost requested outside saved roster");
+	if(isAdventureSpell(rules, spell))
+		return adventureSpellCost(rules, spell);
 	mastery = std::clamp(mastery, 0, 3);
 	if(legacy(rules) || entry(rules, spell)["costs"].isNull())
 		return spell.toSpell()->getCost(mastery);
 	return entry(rules, spell)["costs"].Vector().at(mastery).Integer();
+}
+
+bool isAdventureSpell(const JsonNode & rules, SpellID spell)
+{
+	if(legacy(rules) || !spell.hasValue() || !spell.toSpell() || !rules["adventureSpells"].isStruct())
+		return false;
+	return rules["adventureSpells"].Struct().contains(spell.toSpell()->getJsonKey());
+}
+
+int adventureSpellCost(const JsonNode & rules, SpellID spell)
+{
+	require(isAdventureSpell(rules, spell), "adventure spell cost requested outside saved roster");
+	const auto & cost = adventureEntry(rules, spell)["cost"];
+	require(integer(cost, 0, 1000000), "adventure spell cost");
+	return cost.Integer();
+}
+
+bool adventureSpellRulesActive(const JsonNode & rules)
+{
+	return rulesActive(rules) && rules["adventureSpells"].isStruct();
 }
 
 bool isLandMine(SpellID spell)

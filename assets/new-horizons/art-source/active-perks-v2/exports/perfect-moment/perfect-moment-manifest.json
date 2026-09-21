@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "perfect-moment",
+  "source": {
+    "path": "$HOME/Documents/Projects/gandalf/HoMM 3 Complete/HeroesIII-Definitive/assets/new-horizons/art-source/active-perks-v2/perfect-moment-master.png",
+    "filename": "perfect-moment-master.png",
+    "byte_size": 2825572,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "0a7eaecfba661c8fd0b7c301f9019c8d7d9ea11ac1dac854f6db553f4fd2ca10"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "0a7eaecfba661c8fd0b7c301f9019c8d7d9ea11ac1dac854f6db553f4fd2ca10"
+    },
+    {
+      "file": "perfect-moment-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "94facf33be32f821de169c9a050c8b7ea61c1201495fad77941439672f749668"
+    },
+    {
+      "file": "perfect-moment-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "40883a00e76e839e4f3818120002138f590713632bdbbd43d03946a4de005cdf"
+    },
+    {
+      "file": "perfect-moment-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "6f9d8f69987e40cd909b1263ae011f5cf741d82b25f51e408dca4ab4b5297b5c"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "perfect-moment-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "perfect-moment-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "perfect-moment-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "perfect-moment-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

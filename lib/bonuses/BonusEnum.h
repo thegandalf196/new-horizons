@@ -217,6 +217,7 @@ class JsonNode;
 	BONUS_NAME(LUCKY_STRIKE_DAMAGE_PERCENTAGE) /*additional percentage points applied to the ordinary +100% lucky-strike damage factor*/ \
 	BONUS_NAME(METAMAGIC_USES_PER_COMBAT) /*rank-derived Tower Metamagic uses; consumed by the battle authority*/ \
 	BONUS_NAME(TIME_STOP) /*unit is in canonical New Horizons Time Stop stasis*/ \
+	BONUS_NAME(LEADERSHIP) /*permanent New Horizons hero Leadership training*/ \
 
 	/* end of list */
 

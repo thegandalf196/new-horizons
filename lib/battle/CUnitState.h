@@ -147,8 +147,16 @@ public:
 	bool movedThisRound;
 	bool timeStopTurnConsumedFlag;
 	bool summoned;
+	bool natureSummoned;
 	bool waiting;
 	bool waitedThisTurn; //"waited()" that stays true for full turn after wait - needed as UI button hackfix
+	/// Creature Defense supplied by the authoritative Defend action.  This is
+	/// recorded explicitly because duration alone is not provenance: another
+	/// temporary effect may also use STACK_GETS_TURN.
+	int32_t defensiveStanceMeleeBonus;
+	int32_t defensiveStanceRangedBonus;
+	/// Whether this Defend stance has already spent Bulwark's first-melee-attack reaction.
+	bool bulwarkPreemptiveUsed;
 
 	CCasts casts;
 	CRetaliations counterAttacks;
@@ -251,6 +259,7 @@ public:
 
 	int getAttack(bool ranged) const override;
 	int getDefense(bool ranged) const override;
+	int getDefenseIgnoringDefensiveStance(bool ranged) const override;
 
 	JsonNode save() override;
 	void load(const JsonNode & data) override;

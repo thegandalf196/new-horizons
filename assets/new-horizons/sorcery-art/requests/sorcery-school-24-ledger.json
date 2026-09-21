@@ -1,0 +1,157 @@
+{
+  "status": "scope-correction-only",
+  "historical_records_preserved": [
+    "sorcery-blue-aether-skill-01.json",
+    "sorcery-blue-aether-skill-01-review02.json"
+  ],
+  "supersedes": "Earlier20-total/8-remaining counts only: four school mastery border frames were omitted. Historical skill request and revision02 feedback remain valid.",
+  "full_school_image_count": 24,
+  "school_images_outside_current_skill_request": 12,
+  "remaining_school_assets": [
+    {
+      "resource": "NH_sorcery_spellBorder_none.png",
+      "size": [
+        78,
+        65
+      ],
+      "group": 0,
+      "frame": 0,
+      "corners": [
+        "bottom-left"
+      ],
+      "binding": "proposed, not installed"
+    },
+    {
+      "resource": "NH_sorcery_spellBorder_basic.png",
+      "size": [
+        78,
+        65
+      ],
+      "group": 0,
+      "frame": 1,
+      "corners": [
+        "bottom-left",
+        "top-left"
+      ],
+      "binding": "proposed, not installed"
+    },
+    {
+      "resource": "NH_sorcery_spellBorder_advanced.png",
+      "size": [
+        78,
+        65
+      ],
+      "group": 0,
+      "frame": 2,
+      "corners": [
+        "bottom-left",
+        "top-left",
+        "top-right"
+      ],
+      "binding": "proposed, not installed"
+    },
+    {
+      "resource": "NH_sorcery_spellBorder_expert.png",
+      "size": [
+        78,
+        65
+      ],
+      "group": 0,
+      "frame": 3,
+      "corners": [
+        "bottom-left",
+        "top-left",
+        "top-right",
+        "bottom-right"
+      ],
+      "binding": "proposed, not installed"
+    },
+    {
+      "resource": "NH_sorcery_bookmark_selected.png",
+      "size": [
+        80,
+        60
+      ],
+      "frame": 0,
+      "review_size": [
+        68,
+        51
+      ]
+    },
+    {
+      "resource": "NH_sorcery_bookmark_unselected.png",
+      "size": [
+        80,
+        60
+      ],
+      "frame": 1,
+      "review_size": [
+        68,
+        51
+      ]
+    },
+    {
+      "resource": "NH_sorcery_header.png",
+      "size": [
+        160,
+        96
+      ],
+      "clear_top_rows": 28,
+      "placement": "native page0 only; absent on later pages, not full-screen or rank-variant"
+    },
+    {
+      "resource": "NH_sorcery_icon.png",
+      "size": [
+        64,
+        64
+      ]
+    },
+    {
+      "resource": "NH_sorcery_normal.png",
+      "size": [
+        64,
+        64
+      ],
+      "frame": 0
+    },
+    {
+      "resource": "NH_sorcery_pressed.png",
+      "size": [
+        64,
+        64
+      ],
+      "frame": 1
+    },
+    {
+      "resource": "NH_sorcery_disabled.png",
+      "size": [
+        64,
+        64
+      ],
+      "frame": 2
+    },
+    {
+      "resource": "NH_sorcery_highlighted.png",
+      "size": [
+        64,
+        64
+      ],
+      "frame": 3
+    }
+  ],
+  "border_contract": {
+    "current_resource": "SplevA inherited Air",
+    "future_descriptor": "NH_sorcery_spellBorders.json, proposed group0 frames0..3",
+    "integration": "Frontend/Build must review descriptor and non-Image schoolBorders config binding; PNGs alone cannot replace SplevA",
+    "frame_selection": "Effective getSpellSchoolLevel(mySpell, &whichSchool), including multischool behavior",
+    "family_selection": "All tab uses returned whichSchool; specific tab chooses that tab's border family, NOT a separately computed selected-school-only proficiency",
+    "art": "Four transparent overlays with unobstructed spell center and preserved corner regions/offsets. Original shared corner set may be assembled deterministically; four states do not require four independent concepts or simple mirroring.",
+    "reference_evidence": "78x65/corner progression documented by offline private extraction in completeness doc; Artist does not claim fresh extraction or renderer proof",
+    "rights": "No copying original Air/reference pixels; no template or output redistribution clearance inferred"
+  },
+  "descriptors_counted_as_images": false,
+  "individual_spell_art_included": false,
+  "new_asset_generation_or_import": false,
+  "full_goal_complete": false,
+  "historical_context": "Technical correction of historical20-image accounting to24 including4proficiency overlays. Historical Air fallback/proposed bindings remain historical values, not current configuration or authorization."
+}

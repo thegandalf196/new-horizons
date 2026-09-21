@@ -164,7 +164,18 @@
 			"additionalProperties" : false,
 			"properties" : {
 				"blackMarketRestockPeriod" : { "type" : "number" },
-				"universityGoldCost" : { "type" : "number" }
+				"universityGoldCost" : { "type" : "number" },
+				"newHorizonsUniversityCost" : {
+					"type" : "object",
+					"additionalProperties" : false,
+					"properties" : {
+						"gold" : { "type" : "number" },
+						"mercury" : { "type" : "number" },
+						"sulfur" : { "type" : "number" },
+						"crystal" : { "type" : "number" },
+						"gems" : { "type" : "number" }
+					}
+				}
 			}
 		},
 		"mapObjects": {

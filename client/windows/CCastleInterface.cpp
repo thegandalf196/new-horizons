@@ -62,6 +62,7 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/TownBuildingInstance.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/CSpell.h"
 #include "wiki/WikiWindow.h"
 
@@ -1180,16 +1181,44 @@ void CCastleBuildings::enterFountain(const BuildingID & building, BuildingSubID:
 		descr.appendTextID(town->getTown()->buildings.at(BuildingID(upgrades))->getDescriptionTextID());
 	}
 
-	if(isMysticPondOrItsUpgrade) //for vanila Rampart like towns
+	if(isMysticPondOrItsUpgrade) //for vanilla Rampart-like towns
 	{
-		descr.appendRawString("\n\n");
-		if(town->bonusValue.first == 0) //Mystic Pond produced nothing;
-			descr.appendTextID("core.genrltxt.677");
-		else //Mystic Pond produced something;
+		const bool usesNewHorizonsPond = newHorizonsMagic::rulesActive(GAME->interface()->cb->getMagicRules());
+		if(usesNewHorizonsPond)
 		{
-			descr.appendTextID("core.genrltxt.678");
-			descr.replaceName(GameResID(town->bonusValue.first));
-			descr.replaceNumber(town->bonusValue.second);
+			descr.appendRawString("\n\n");
+			if(town->newHorizonsMysticPondResources.empty())
+				descr.appendTextID("core.genrltxt.677");
+			else
+			{
+				std::map<GameResID, int> resourceCounts;
+				for(const auto resource : town->newHorizonsMysticPondResources)
+					++resourceCounts[resource];
+
+				bool firstResource = true;
+				for(const auto [resource, count] : resourceCounts)
+				{
+					if(!firstResource)
+						descr.appendRawString("\n");
+					firstResource = false;
+					descr.appendTextID("core.genrltxt.678");
+					descr.replaceName(resource);
+					descr.replaceNumber(count);
+					comps.push_back(std::make_shared<CComponent>(ComponentType::RESOURCE, resource, count));
+				}
+			}
+		}
+		else
+		{
+			descr.appendRawString("\n\n");
+			if(town->bonusValue.first == 0) //Mystic Pond produced nothing;
+				descr.appendTextID("core.genrltxt.677");
+			else //Mystic Pond produced something;
+			{
+				descr.appendTextID("core.genrltxt.678");
+				descr.replaceName(GameResID(town->bonusValue.first));
+				descr.replaceNumber(town->bonusValue.second);
+			}
 		}
 	}
 	GAME->interface()->showInfoDialog(descr.toString(&GAME->translator()), comps);

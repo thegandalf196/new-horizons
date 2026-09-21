@@ -23,6 +23,7 @@ struct FortuneStrikeProjection
 	uint32_t defenderId = 0;
 	bool shooting = false;
 	bool retaliation = false;
+	bool perfectMoment = false;
 	std::vector<std::pair<uint32_t, int64_t>> hits;
 };
 
@@ -56,6 +57,7 @@ public:
 	BattleHex from; //tile from which we attack
 	BattleHex dest; //tile which we attack
 	BattleAttackInfo attack;
+	bool perfectMoment = false;
 
 	std::shared_ptr<battle::CUnitState> attackerState;
 
@@ -83,7 +85,7 @@ public:
 		const BattleAttackInfo & attackInfo,
 		BattleHex hex,
 		DamageCache & damageCache,
-		std::shared_ptr<CBattleInfoCallback> state);
+		std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment = false);
 
 	static float calculateDamageReduce(
 		const battle::Unit * attacker,

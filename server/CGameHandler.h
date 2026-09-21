@@ -275,7 +275,7 @@ public:
 	void objectVisited( const CGObjectInstance * obj, const CGHeroInstance * h );
 	void objectVisitEnded(const ObjectInstanceID & heroObjectID, PlayerColor player);
 	bool dig(const CGHeroInstance *h);
-	void moveArmy(const CArmedInstance *src, const CArmedInstance *dst, bool allowMerging);
+	bool moveArmy(const CArmedInstance *src, const CArmedInstance *dst, bool allowMerging);
 
 	template <typename Handler> void serialize(Handler &h)
 	{
@@ -328,6 +328,8 @@ public:
 	friend class CVCMIServer;
 private:
 	void getVictoryLossMessage(PlayerColor player, const EVictoryLossCheckResult & victoryLossCheckResult, InfoWindow & out) const;
+	bool validateLeadershipStack(const CArmedInstance * destination, CreatureID creature, int resultingCount);
+	bool validateLeadershipArmyAddition(const CGHeroInstance * destination, const CCreatureSet & incoming);
 
 	const std::string complainNoCreatures;
 	const std::string complainNotEnoughCreatures;

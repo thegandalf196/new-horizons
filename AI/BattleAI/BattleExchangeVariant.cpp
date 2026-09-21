@@ -106,6 +106,13 @@ float BattleExchangeVariant::trackAttack(
 
 			BattleAttackInfo projectedAttack(projectedAttacker.get(), projectedDefender.get(), 0, strike.shooting);
 			projectedAttack.retaliation = strike.retaliation;
+			if(strike.perfectMoment && !strike.retaliation)
+			{
+				const auto side = hb->playerToSide(hb->battleGetOwner(projectedAttacker.get()));
+				auto fortune = hb->getSylvanLuckState(side);
+				projectedAttack.luckyStrike = fortune.consumePerfectMoment();
+				hb->setSylvanLuckState(side, fortune);
+			}
 			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled);
 		}
 

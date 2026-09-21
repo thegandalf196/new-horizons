@@ -133,6 +133,10 @@ public:
 	virtual int64_t getTotalHealth() const = 0;
 
 	virtual int getTotalAttacks(bool ranged) const = 0;
+	/// Creature Defense with the temporary bonus granted by the Defend action removed.
+	/// Damage rules that pierce mundane defensive stances use this so they do not
+	/// accidentally bypass the stack's ordinary Creature Defense as well.
+	virtual int getDefenseIgnoringDefensiveStance(bool ranged) const { return getDefense(ranged); }
 
 	virtual BattleHex getPosition() const = 0;
 	virtual void setPosition(const BattleHex & hex) = 0;
@@ -201,6 +205,8 @@ public:
 	BattleSide side = BattleSide::NONE;
 	BattleHex position;
 	bool summoned = false;
+	/// True only for a temporary stack created by a Nature spell.
+	bool natureSummoned = false;
 
 	void serializeJson(JsonSerializeFormat & handler);
 
@@ -215,6 +221,7 @@ public:
 		s("side",     side,     "Battle side the stack belongs to (attacker or defender).");
 		s("position", position, "Position of the stack on the battlefield. For double-wide units this is their front hex");
 		s("summoned", summoned, "True if the stack was summoned mid-battle and was not part of the initial army.");
+		s("natureSummoned", natureSummoned, "True if this temporary stack was created by a Nature spell.");
 	}
 };
 

@@ -90,6 +90,86 @@ TEST_F(HypotheticWallTest, ChangedWallInvalidatesOnlyLocalProjectionAndNestedCop
 	EXPECT_EQ(battle()->battleGetWallState(EWallPart::BOTTOM_WALL), original);
 }
 
+TEST_F(HypotheticWallTest, CanonicalStructuralHPIsForwardedAndCopiedIntoNestedProjection)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSiege());
+
+	// This fixture normally exercises legacy fortifications. Install the
+	// canonical New Horizons snapshot explicitly so this test remains focused
+	// on callback/projection plumbing rather than capability fixture setup.
+	battle()->si.canonicalStructuralHP = true;
+	battle()->si.structuralHP[EWallPart::BOTTOM_WALL] = 300;
+	battle()->si.structuralHP[EWallPart::GATE] = 450;
+	battle()->si.structuralHP[EWallPart::BOTTOM_TOWER] = 350;
+	battle()->si.wallState[EWallPart::BOTTOM_WALL] = EWallState::INTACT;
+	battle()->si.wallState[EWallPart::GATE] = EWallState::INTACT;
+	battle()->si.wallState[EWallPart::BOTTOM_TOWER] = EWallState::INTACT;
+
+	EXPECT_EQ(callback->getWallStructuralHP(EWallPart::BOTTOM_WALL), 300);
+	EXPECT_EQ(callback->getWallStructuralHP(EWallPart::GATE), 450);
+	EXPECT_EQ(callback->getWallStructuralHP(EWallPart::BOTTOM_TOWER), 350);
+
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	EXPECT_EQ(parent->getWallStructuralHP(EWallPart::BOTTOM_WALL), 300);
+	EXPECT_EQ(parent->getWallStructuralHP(EWallPart::GATE), 450);
+	EXPECT_EQ(parent->getWallStructuralHP(EWallPart::BOTTOM_TOWER), 350);
+
+	parent->setWallStructuralHP(EWallPart::BOTTOM_WALL, 140);
+	EXPECT_EQ(parent->getWallStructuralHP(EWallPart::BOTTOM_WALL), 140);
+	EXPECT_EQ(parent->getWallState(EWallPart::BOTTOM_WALL), EWallState::DAMAGED);
+
+	HypotheticBattle child(environment.get(), parent);
+	EXPECT_EQ(child.getWallStructuralHP(EWallPart::BOTTOM_WALL), 140);
+	EXPECT_EQ(child.getWallState(EWallPart::BOTTOM_WALL), EWallState::DAMAGED);
+	EXPECT_EQ(child.getWallStructuralHP(EWallPart::GATE), 450);
+	EXPECT_EQ(child.getWallStructuralHP(EWallPart::BOTTOM_TOWER), 350);
+	EXPECT_EQ(battle()->getWallStructuralHP(EWallPart::BOTTOM_WALL), 300);
+}
+
+TEST_F(HypotheticWallTest, CanonicalCatapultProjectionConsumesWallGateAndTowerHPSuccessively)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSiege());
+	battle()->si.canonicalStructuralHP = true;
+	for(const auto part : {EWallPart::BOTTOM_WALL, EWallPart::GATE, EWallPart::BOTTOM_TOWER})
+	{
+		battle()->si.structuralHP[part] = SiegeInfo::maximumStructuralHP(part);
+		battle()->si.wallState[part] = EWallState::INTACT;
+	}
+
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	const auto apply = [&](EWallPart part, int damage)
+	{
+		CatapultAttack hit;
+		hit.battleID = BattleID(0);
+		hit.attackedPart = part;
+		hit.damageDealt = 1; // legacy hit quality must not replace canonical HP
+		hit.structuralDamage = damage;
+		model->getServerCallback()->apply(hit);
+	};
+
+	apply(EWallPart::BOTTOM_WALL, 160);
+	EXPECT_EQ(model->getWallStructuralHP(EWallPart::BOTTOM_WALL), 140);
+	EXPECT_EQ(model->getWallState(EWallPart::BOTTOM_WALL), EWallState::DAMAGED);
+	apply(EWallPart::BOTTOM_WALL, 160);
+	EXPECT_EQ(model->getWallStructuralHP(EWallPart::BOTTOM_WALL), 0);
+	EXPECT_EQ(model->getWallState(EWallPart::BOTTOM_WALL), EWallState::DESTROYED);
+
+	apply(EWallPart::GATE, 225);
+	EXPECT_EQ(model->getWallStructuralHP(EWallPart::GATE), 225);
+	EXPECT_EQ(model->getWallState(EWallPart::GATE), EWallState::DAMAGED);
+	apply(EWallPart::GATE, 230);
+	EXPECT_EQ(model->getWallStructuralHP(EWallPart::GATE), 0);
+	EXPECT_EQ(model->getWallState(EWallPart::GATE), EWallState::DESTROYED);
+
+	apply(EWallPart::BOTTOM_TOWER, 175);
+	EXPECT_EQ(model->getWallStructuralHP(EWallPart::BOTTOM_TOWER), 175);
+	EXPECT_EQ(model->getWallState(EWallPart::BOTTOM_TOWER), EWallState::DAMAGED);
+	apply(EWallPart::BOTTOM_TOWER, 175);
+	EXPECT_EQ(model->getWallStructuralHP(EWallPart::BOTTOM_TOWER), 0);
+	EXPECT_EQ(model->getWallState(EWallPart::BOTTOM_TOWER), EWallState::DESTROYED);
+	EXPECT_EQ(battle()->getWallStructuralHP(EWallPart::BOTTOM_WALL), 300);
+}
+
 TEST_F(HypotheticWallTest, DestroyedGateBecomesPassableWithoutChangingParentOrLiveGate)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareSiege());

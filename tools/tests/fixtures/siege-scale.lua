@@ -2,7 +2,8 @@
 Base = {
     declareBonus = function() end,
     hasBonusOfType = function(_, bonuses) return bonuses.siege end,
-    getBaseDamageSingle = function() return 2, 3 end
+    getBaseDamageSingle = function() return 2, 3 end,
+    getBaseDamage = function() return 200, 300 end
 }
 ENUM = {BonusSource = {artifact = 1, heroBaseSkill = 2}}
 local script = dofile('scripts/damage/siegeWeapon.lua')
@@ -33,4 +34,21 @@ check(info, 2, 3, 0)
 info.attackerBonuses.siege = true
 attacker.isTurret = function() return true end
 check(info, 2, 3, 0)
+
+-- New Horizons supplies an absolute per-machine output. It must not consult
+-- the legacy hero-Attack path or approximate the formula as a percentage.
+attacker.isTurret = function() return false end
+info.siegeSkillMultiplier = 100
+for _, siege in ipairs({0, 20, 40, 60}) do
+    info.machineBaseDamage = 50 + 2 * siege
+    local low, high = script:getBaseDamage(info)
+    assert(low == info.machineBaseDamage and high == info.machineBaseDamage)
+end
+
+-- Without the Siege weapon marker, the canonical payload is ignored and the
+-- ordinary damage-calculator base remains authoritative.
+info.attackerBonuses.siege = false
+info.machineBaseDamage = 170
+local low, high = script:getBaseDamage(info)
+assert(low == 200 and high == 300)
 print('PASS: trained siege multiplier, legacy attack, non-siege and turret boundaries')

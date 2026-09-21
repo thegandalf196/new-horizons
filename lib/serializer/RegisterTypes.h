@@ -316,4 +316,5 @@ void registerTypes(Serializer &s)
 	// Append new polymorphic netpack types only; these numeric IDs are part of
 	// the save/replay wire format and must never be reused or reordered.
 	s.template registerType<BattleHeroOrderStateChanged>(275);
+	s.template registerType<SetNewHorizonsAdventureSpellState>(276);
 }

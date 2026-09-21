@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "status": "provisional; not final user-approved artwork",
+  "generated": "2026-09-21",
+  "generator": "OpenAI built-in image generator",
+  "method": "Original miniature modeled fantasy battle still life; no source pixels were copied",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "assets": [
+    {
+      "id": "new-horizons:offense.shockAssault",
+      "name": "Shock Assault",
+      "requires": "basic",
+      "key": "NH_perk_shock_assault",
+      "master": "shock-assault-master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "7094e60810b96bdcdebe6bf8f7c854c308be6807bddb441cfc3399eae13ec56c",
+      "style_reference": null,
+      "prompt_file": "prompt-shock-assault.txt",
+      "concept": "An armored cavalry lance breaks a shield, representing Charge penetration of Creature Defense."
+    }
+  ]
+}

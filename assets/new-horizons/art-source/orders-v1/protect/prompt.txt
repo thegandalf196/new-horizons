@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Heroes III-style Order icon, square high-resolution master
+Primary request: Create an original miniature fantasy still-life icon for the Order “Protect”. Show a large polished kite shield interposed in front of a smaller blue-bannered ward marker, with a leather-bound armored arm physically reaching across to shelter it; communicate a guardian redirecting an attack.
+Scene/backdrop: dark umber stone and leather battlefield backdrop, tightly cropped
+Subject: one dominant guardian shield and smaller ward marker, physically overlapping
+Style/medium: late-1990s Western PC fantasy illustration, modeled painterly miniature still life
+Composition/framing: square icon, large shield in foreground left, protected blue marker behind right, narrow safe inset, readable at 44x44
+Lighting/mood: theatrical chiaroscuro, warm gold rim on guardian shield, cool light on protected marker, deep protective shadow
+Color palette: steel, royal blue cloth, muted gold, dark brown and slate
+Materials/textures: scratched steel, stitched leather, rivets, coarse banner fabric, worn stone
+Constraints: no lettering, no readable runes, no ornamental border, no interface chrome, transparent background if supported, exactly one main shield and one smaller ward marker
+Avoid: modern glossy mobile-game style, neon bloom, vector outlines, flat shapes, intentional pixel art, dithering, watermark, people or extra shields

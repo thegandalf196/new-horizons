@@ -64,6 +64,9 @@ struct DLL_LINKAGE PerkOfferCandidate
 /// exposes data-only projections; effect handlers live in later runtime layers.
 class DLL_LINKAGE PerkState
 {
+private:
+	void normalizeLegacyTierConflicts();
+
 public:
 	JsonNode rules;
 	std::vector<PerkSelection> selected;
@@ -86,7 +89,10 @@ public:
 		h & rules;
 		h & selected;
 		if(!h.saving)
+		{
+			normalizeLegacyTierConflicts();
 			validate();
+		}
 	}
 };
 }

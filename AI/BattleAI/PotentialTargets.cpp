@@ -43,7 +43,17 @@ PotentialTargets::PotentialTargets(
 			int distance = hex.isValid() ? reachability.distances[hex.toInt()] : 0;
 			auto bai = BattleAttackInfo(attackerInfo, defender, distance, shooting);
 
-			return AttackPossibility::evaluate(bai, hex, damageCache, state);
+			auto ordinary = AttackPossibility::evaluate(bai, hex, damageCache, state);
+			if(!isBerserk && state->battleCanUsePerfectMoment(attackerInfo))
+			{
+				auto declared = AttackPossibility::evaluate(bai, hex, damageCache, state, true);
+				// Save the single use when it changes no material outcome. This
+				// modest opportunity-cost heuristic is not a new combat rule.
+				const float reserve = std::max(1.0f, std::abs(ordinary.damageDiff()) * 0.1f);
+				if(declared.damageDiff() > ordinary.damageDiff() + reserve)
+					return declared;
+			}
+			return ordinary;
 		};
 
 		if(isBerserk)

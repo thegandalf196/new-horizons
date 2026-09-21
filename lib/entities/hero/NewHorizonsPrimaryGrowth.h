@@ -15,18 +15,16 @@
 
 namespace newHorizonsHeroes
 {
-/// One independent extra-point opportunity, resolved from saved skill rules by
-/// the authoritative caller. This primitive neither offers nor grants skills.
+/// Legacy compatibility shape for old callers. New Horizons no longer
+/// evaluates primary-stat chance rows.
 struct DLL_LINKAGE ExtraPrimaryRoll
 {
 	PrimarySkill attribute;
 	int chancePercent = 0;
 };
 
-/// Base growth remains ten. Every opportunity has its OWN uniform [0,99] draw;
-/// successes add points instead of replacing or competing with base growth.
-/// The simulation supplies draws from its existing saved RNG. No RNG, state
-/// mutation or new-game activation is hidden inside this pure calculation.
+/// Returns the authored class vector. The opportunity/draw spans are retained
+/// only for source compatibility and are ignored.
 DLL_LINKAGE std::array<int, GameConstants::PRIMARY_SKILLS> calculatePrimaryGrowth(
 	const PrimaryProfile & profile,
 	std::span<const ExtraPrimaryRoll> opportunities,

@@ -4,7 +4,6 @@
  */
 #include "StdInc.h"
 #include "BattleHeroActionWindow.h"
-#include "FocusFireTargetWindow.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/battle/Unit.h"
 #include "BattleInterface.h"
@@ -34,17 +33,16 @@ struct CommandDisplay
 	const char * image;
 	const char * name;
 	const char * description;
-	const char * overlay;
 };
 const std::array<CommandDisplay, 8> commandDisplays = {{
-	{HeroCommand::CHARGE, "NH_charge_button", "Charge", "The first melee attack after moving at least 3 hexes gains bonus damage; extra movement adds more.", "Charge"},
-	{HeroCommand::FOCUS_FIRE, "NH_hero_actions_entry", "Focus Fire", "Choose one enemy stack. Friendly shooters gain damage against it and reduce range and obstacle penalties.", "Focus"},
-	{HeroCommand::RIPOSTE, "NH_hero_actions_entry", "Riposte", "Friendly stacks take less melee damage and deal increased retaliation damage this round.", "Riposte"},
-	{HeroCommand::HOLD_THE_LINE, "NH_holdTheLine_button", "Hold the Line", "Friendly stacks take reduced physical damage while they remain in their issued positions.", "Hold"},
-	{HeroCommand::BRACE, "NH_hero_actions_entry", "Brace", "Friendly stacks pre-emptively attack enemies that moved at least 3 hexes before a melee attack.", "Brace"},
-	{HeroCommand::PROTECT, "NH_hero_actions_entry", "Protect", "Choose a Protector and adjacent Ward. The first melee attack against the Ward is redirected.", "Protect"},
-	{HeroCommand::FLANK, "NH_hero_actions_entry", "Flank", "Choose one enemy stack. Friendly melee damage increases from additional distinct attack sides.", "Flank"},
-	{HeroCommand::SECOND_WIND, "NH_hero_actions_entry", "Second Wind", "Choose a friendly stack that already completed its normal activation for an additional activation at reduced direct damage.", "Wind"}
+	{HeroCommand::CHARGE, "NH_charge_button", "Charge", "The first melee attack after moving at least 3 hexes gains bonus damage; extra movement adds more."},
+	{HeroCommand::FOCUS_FIRE, "NH_focusFire_button", "Focus Fire", "Choose one enemy stack. Friendly shooters gain damage against it and reduce range and obstacle penalties."},
+	{HeroCommand::RIPOSTE, "NH_riposte_button", "Riposte", "Friendly stacks take less melee damage and deal increased retaliation damage this round."},
+	{HeroCommand::HOLD_THE_LINE, "NH_holdTheLine_button", "Hold the Line", "Friendly stacks take reduced physical damage while they remain in their issued positions."},
+	{HeroCommand::BRACE, "NH_brace_button", "Brace", "Friendly stacks pre-emptively attack enemies that moved at least 3 hexes before a melee attack."},
+	{HeroCommand::PROTECT, "NH_protect_button", "Protect", "Choose a Protector and adjacent Ward. The first melee attack against the Ward is redirected."},
+	{HeroCommand::FLANK, "NH_flank_button", "Flank", "Choose one enemy stack. Friendly melee damage increases from additional distinct attack sides."},
+	{HeroCommand::SECOND_WIND, "NH_secondWind_button", "Second Wind", "Choose a friendly stack that already completed its normal activation for an additional activation at reduced direct damage."}
 }};
 
 const CommandDisplay & commandDisplay(HeroCommand command)
@@ -207,16 +205,16 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(28, 463, 472, 41), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
 		"Commands affect current troops only; no war machines.\nLater summons and clones do not inherit effects."));
 	cancel = std::make_shared<CButton>(Point(548, 445), AnimationPath::builtin("NH_cancel_button"),
-		CButton::tooltip("Cancel", "Return to battle without spending a hero action."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);
+		CButton::tooltip("Cancel", "Return to battle and clear any Perfect Moment declaration without spending an action."), [this] { cancelSelection(); }, EShortcut::GLOBAL_CANCEL);
 	cancel->setHoverable(true);
+	createPerfectMomentControl();
 	refresh();
 }
 
 void BattleHeroActionWindow::createOrdersLayout()
 {
-	// The six commands without approved art deliberately use the existing
-	// generic Hero Actions entry as placeholder art. Text overlays and complete
-	// tooltips keep the control discoverable until bespoke Order art is approved.
+	// Every Order has a distinct provisional painted icon. The golden gauntlet
+	// remains the shared Orders entry button in the battle bar.
 	labels.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, 0, 640, 500), ColorRGBA(24, 30, 37, 255), ColorRGBA(156, 132, 85, 255)));
 	labels.push_back(std::make_shared<CLabel>(320, 27, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Orders"));
 	labels.push_back(std::make_shared<CLabel>(320, 53, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "One shared hero action: Spell or Order"));
@@ -245,8 +243,6 @@ void BattleHeroActionWindow::createOrdersLayout()
 				else
 					chooseCommand(command);
 			});
-		if(std::string(display.image) == "NH_hero_actions_entry")
-			button->setTextOverlay(display.overlay, FONT_SMALL, Colors::WHITE);
 		button->setHoverable(true);
 		commands.emplace_back(command, button);
 		effectLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(left + 6, top + 92, orderWidth - 12, 28), FONT_SMALL,
@@ -254,12 +250,43 @@ void BattleHeroActionWindow::createOrdersLayout()
 	}
 	targetReadback = std::make_shared<CMultiLineLabel>(Rect(16, 378, 516, 30), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "");
 	labels.push_back(targetReadback);
-	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(16, 412, 516, 45), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
-		"Targeted Orders open a selector and require Confirm. Protect selects Protector then Ward.\nCancel/back and reading tooltips never spend the shared hero action."));
+	orderInstructions = std::make_shared<CMultiLineLabel>(Rect(16, 412, 516, 45), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
+		"Targeted Orders select stacks directly on the battlefield. Protect uses two clicks: Protector, then adjacent Ward.\nRight-click/Escape cancels without spending the shared hero action.");
 	labels.push_back(std::make_shared<CLabel>(320, 463, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Orders end with this round"));
 	cancel = std::make_shared<CButton>(Point(548, 443), AnimationPath::builtin("NH_cancel_button"),
-		CButton::tooltip("Cancel", "Return to battle without spending a hero action."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);
+		CButton::tooltip("Cancel", "Return to battle and clear any Perfect Moment declaration without spending an action."), [this] { cancelSelection(); }, EShortcut::GLOBAL_CANCEL);
 	cancel->setHoverable(true);
+	createPerfectMomentControl();
+}
+
+void BattleHeroActionWindow::createPerfectMomentControl()
+{
+	// Reuse the standard checkbox in the existing footer slot. This is a troop
+	// attack declaration, independent of the shared Spell/Order action budget.
+	perfectMomentToggle = std::make_shared<CToggleButton>(Point(16, 414), AnimationPath::builtin("sysopchk.def"),
+		CButton::tooltip("Perfect Moment — next attack",
+			"Once per combat, declare your next eligible melee or ranged attack a Lucky Strike. Select to return to battle armed; select again to disarm. No Hero Action is spent. Escape, right-click, another action or a stack change cancels the declaration. The authority consumes the use only when the declared strike happens."),
+		[this](bool selected)
+		{
+			auto owner = currentBattle();
+			if(!owner || !owner->canArmPerfectMoment())
+			{
+				refresh();
+				return;
+			}
+			owner->setPerfectMomentArmed(selected);
+			close(); // selecting is not Cancel: retain the local declaration
+		});
+	perfectMomentToggle->setHoverable(true);
+	perfectMomentLabel = std::make_shared<CMultiLineLabel>(Rect(48, 414, 480, 32), FONT_SMALL, ETextAlignment::TOPLEFT,
+		Colors::YELLOW, "Perfect Moment — next attack\nOnce per combat; no Hero Action.");
+}
+
+void BattleHeroActionWindow::cancelSelection()
+{
+	if(auto owner = currentBattle())
+		owner->clearPerfectMoment();
+	close();
 }
 
 std::shared_ptr<BattleInterface> BattleHeroActionWindow::currentBattle() const
@@ -306,6 +333,17 @@ void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const J
 void BattleHeroActionWindow::refresh()
 {
 	auto owner = currentBattle();
+	const bool perfectMomentAvailable = owner && owner->canArmPerfectMoment();
+	if(perfectMomentToggle->isDisabled() == perfectMomentAvailable)
+		perfectMomentToggle->CIntObject::setEnabled(perfectMomentAvailable);
+	if(perfectMomentLabel->isDisabled() == perfectMomentAvailable)
+		perfectMomentLabel->setEnabled(perfectMomentAvailable);
+	const bool selected = perfectMomentAvailable && owner->isPerfectMomentArmed();
+	if(perfectMomentToggle->isSelected() != selected)
+		perfectMomentToggle->setSelectedSilent(selected);
+	perfectMomentToggle->block(!perfectMomentAvailable);
+	if(orderInstructions && orderInstructions->isDisabled() != perfectMomentAvailable)
+		orderInstructions->setEnabled(!perfectMomentAvailable);
 	if(!owner)
 	{
 		if(spellButton)
@@ -457,6 +495,8 @@ void BattleHeroActionWindow::refresh()
 void BattleHeroActionWindow::chooseTargetedCommand(HeroCommand command)
 {
 	auto owner = currentBattle();
+	if(owner)
+		owner->clearPerfectMoment();
 	if(!owner || !ordersOnly)
 	{
 		refresh();
@@ -479,13 +519,20 @@ void BattleHeroActionWindow::chooseTargetedCommand(HeroCommand command)
 		refresh();
 		return;
 	}
+	if(!owner->actionsController->beginHeroOrderTargeting(command))
+	{
+		CRClickPopup::createAndPush(HeroCommandUI::name(command) + " unavailable. Reopen Orders and try again.");
+		refresh();
+		return;
+	}
 	close();
-	ENGINE->windows().createAndPushWindow<FocusFireTargetWindow>(owner, command);
 }
 
 void BattleHeroActionWindow::chooseCommand(HeroCommand command)
 {
 	auto owner = currentBattle();
+	if(owner)
+		owner->clearPerfectMoment();
 	if(!owner)
 	{
 		close();
@@ -513,6 +560,8 @@ void BattleHeroActionWindow::chooseSpell()
 	if(ordersOnly)
 		return;
 	auto owner = currentBattle();
+	if(owner)
+		owner->clearPerfectMoment();
 	if(!owner)
 	{
 		close();

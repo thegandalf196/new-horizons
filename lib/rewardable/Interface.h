@@ -27,6 +27,12 @@ private:
 	
 	/// caster to cast adveture spells, no serialize
 	mutable spells::ExternalCaster caster;
+
+	/// Reward indices represented by the currently exposed blocking dialog.
+	/// The query callback only carries the selected ordinal, so keep the
+	/// server-side mapping until the answer arrives. This is deliberately not
+	/// serialized: a blocking query cannot outlive its in-memory object.
+	mutable std::vector<ui32> pendingRewardIndices;
 	
 protected:
 	
@@ -41,6 +47,7 @@ protected:
 	void selectRewardWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * contextHero, const std::vector<ui32> & rewardIndices, const MetaString & dialog) const;
 	void grantAllRewardsWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * contextHero, const std::vector<ui32>& rewardIndices, bool markAsVisit) const;
 	std::vector<Component> loadComponents(const CGHeroInstance * contextHero, const std::vector<ui32> & rewardIndices) const;
+	bool rewardTeachesSecondarySkill(const Rewardable::VisitInfo & info, const CGHeroInstance * contextHero) const;
 
 	void doHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstance *h) const;
 

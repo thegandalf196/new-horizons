@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/SideInBattle.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
@@ -28,11 +29,43 @@
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/mapObjects/TownBuildingInstance.h"
 #include "../../../lib/mapping/CCastleEvent.h"
+#include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/rmg/CMapGenOptions.h"
 #include "../../../lib/modding/ModScope.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 
 class HeroCommandTest : public HeroCommandFixture {};
+
+class ShockAssaultTest : public HeroCommandFixture
+{
+protected:
+	void SetUp() override
+	{
+		HeroCommandFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
+
+	void prepareShockAssault(bool selectPerk)
+	{
+		prepareCommands();
+		const auto decoded = SecondarySkill::decode("new-horizons:offense");
+		ASSERT_GE(decoded, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		if(selectPerk)
+			attackerSideHero->applyPerkSelection({
+				"new-horizons:offense", "new-horizons:offense.shockAssault"});
+		ASSERT_EQ(attackerSideHero->hasActivePerk(
+			"new-horizons:offense", "new-horizons:offense.shockAssault"), selectPerk);
+	}
+};
 
 TEST_F(HeroCommandTest, HeroOrderStatePacketRoundTripsThroughClientPackPointer)
 {
@@ -141,6 +174,78 @@ TEST_F(HeroCommandTest, ChargeExpiresAtTheRoundBoundary)
 	EXPECT_GT(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, before);
 	advanceRound();
 	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, before);
+}
+
+TEST_F(ShockAssaultTest, ChargeWithShockAssaultIgnoresExactlyQuarterTargetDefense)
+{
+	prepareShockAssault(true);
+	auto * from = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * to = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+
+	const auto ordinary = battle()->calculateDmgRange(BattleAttackInfo(from, to, 0, false)).damage.min;
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	// Basic Offense already contributes 10%. Shock Assault leaves 15 Defense,
+	// giving a further 25% attack/defense factor; Charge adds its ordinary 10%.
+	EXPECT_EQ(ordinary, 5500);
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, 7250);
+}
+
+TEST_F(ShockAssaultTest, ShockAssaultNeedsTheChargeOrderAndThreeHexThreshold)
+{
+	prepareShockAssault(true);
+	auto * from = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * to = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, 5500);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 2, false)).damage.min, 5500);
+	// Charge is side-owned: issuing it for the attacker does not empower an
+	// otherwise identical melee blow made by the defender.
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(to, from, 3, false)).damage.min, 5000);
+}
+
+TEST_F(ShockAssaultTest, ShockAssaultDoesNotChangeUnselectedOrRangedOrNonPhysicalDamage)
+{
+	prepareShockAssault(false);
+	auto * from = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * to = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, 6000);
+}
+
+TEST_F(ShockAssaultTest, ShockAssaultDoesNotApplyToRangedOrNonPhysicalDamage)
+{
+	prepareShockAssault(true);
+	auto * from = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(72), 100);
+	auto * to = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(73), 100);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	BattleAttackInfo ranged(from, to, 3, true);
+	BattleAttackInfo rangedWithoutCharge(from, to, 0, true);
+	EXPECT_EQ(battle()->calculateDmgRange(ranged).damage.min,
+		battle()->calculateDmgRange(rangedWithoutCharge).damage.min);
+	BattleAttackInfo nonPhysical(from, to, 3, false);
+	nonPhysical.physicalDamage = false;
+	// The Charge bonus itself is not a physical-only rule; only Shock Assault's
+	// defense penetration is suppressed for this synthetic non-physical blow.
+	EXPECT_EQ(battle()->calculateDmgRange(nonPhysical).damage.min, 6000);
+}
+
+TEST_F(ShockAssaultTest, ChargeAndShockAssaultApplyOnlyToTheFirstPrimaryBlow)
+{
+	prepareShockAssault(true);
+	auto * from = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * to = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+
+	BattleAttackInfo collateral(from, to, 3, false);
+	collateral.secondaryAttack = true;
+	EXPECT_EQ(battle()->calculateDmgRange(collateral).damage.min, 5500);
+
+	auto * mutableBattle = const_cast<BattleInfo *>(dynamic_cast<const BattleInfo *>(battle()->getBattle()));
+	ASSERT_NE(mutableBattle, nullptr);
+	ASSERT_TRUE(mutableBattle->consumeHeroOrderUnit(BattleSide::ATTACKER, from->unitId()));
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, 5500);
 }
 
 TEST_F(HeroCommandTest, RiposteBoostsOnlyRetaliationDamage)

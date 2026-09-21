@@ -92,6 +92,7 @@ class CRecruitmentWindow : public CStatusbarWindow
 	std::shared_ptr<CLabel> toRecruitValue;
 	std::shared_ptr<CLabel> availableTitle;
 	std::shared_ptr<CLabel> toRecruitTitle;
+	std::shared_ptr<CLabel> leadershipLimit;
 	std::shared_ptr<CreatureCostBox> costPerTroopValue;
 	std::shared_ptr<CreatureCostBox> totalCostValue;
 
@@ -453,13 +454,13 @@ class CUnivConfirmWindow final : public CStatusbarWindow
 	std::shared_ptr<CButton> confirm;
 	std::shared_ptr<CButton> cancel;
 
-	std::shared_ptr<CAnimImage> costIcon;
-	std::shared_ptr<CLabel> cost;
+	std::shared_ptr<CComponentBox> costComponents;
+	TResources tuition;
 
 	void makeDeal(SecondarySkill skill);
 
 public:
-	CUnivConfirmWindow(CUniversityWindow * PARENT, SecondarySkill SKILL, bool available);
+	CUnivConfirmWindow(CUniversityWindow * PARENT, SecondarySkill SKILL, TResources tuition, bool available);
 };
 
 /// Garrison window where you can take creatures out of the hero to place it on the garrison

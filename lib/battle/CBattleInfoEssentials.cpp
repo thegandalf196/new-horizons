@@ -354,7 +354,9 @@ const CGHeroInstance * CBattleInfoEssentials::battleGetFightingHero(BattleSide s
 
 	if(!battleDoWeKnowAbout(side))
 	{
-		logGlobal->error("FIXME: %s access check ", __FUNCTION__);
+		// A player-scoped callback is expected to query hidden sides while
+		// evaluating battle state. Keep the visibility check, but do not turn
+		// every denied query into an error-level log entry.
 		return nullptr;
 	}
 
@@ -529,6 +531,15 @@ EWallState CBattleInfoEssentials::battleGetWallState(EWallPart partOfWall) const
 		return EWallState::NONE;
 
 	return getBattle()->getWallState(partOfWall);
+}
+
+int32_t CBattleInfoEssentials::getWallStructuralHP(EWallPart partOfWall) const
+{
+	RETURN_IF_NOT_BATTLE(0);
+	if(battleGetFortifications().wallsHealth == 0)
+		return 0;
+
+	return getBattle()->getWallStructuralHP(partOfWall);
 }
 
 EGateState CBattleInfoEssentials::battleGetGateState() const

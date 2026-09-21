@@ -46,6 +46,7 @@ public:
 
 	const CGTownInstance * getDefendedTown() const override;
 	EWallState getWallState(EWallPart partOfWall) const override;
+	int32_t getWallStructuralHP(EWallPart partOfWall) const override;
 	EGateState getGateState() const override;
 
 	const JsonNode & getHeroCommandRules() const override { return subject->getBattle()->getHeroCommandRules(); }

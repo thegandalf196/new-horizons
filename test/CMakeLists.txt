@@ -73,6 +73,7 @@ set(test_SRCS
 		hero/NewHorizonsLogisticsMasteryStateTest.cpp
 		hero/NewHorizonsLogisticsLevelWireTest.cpp
 		hero/NewHorizonsHeroRulesTest.cpp
+		hero/NewHorizonsHalonInitializationTest.cpp
 		hero/NewHorizonsHeroRulesFixture.h
 		game/MovementCostTest.cpp
 
@@ -103,6 +104,7 @@ set(test_SRCS
 		spells/AdventureSpellEffectTest.cpp
 		spells/CSpellTest.cpp
 		spells/NewHorizonsDirectDamageTest.cpp
+		spells/NewHorizonsAdventureMagicTest.cpp
 		spells/NewHorizonsMagicTest.cpp
 		spells/NewHorizonsMagicArrowTest.cpp
 		spells/NewHorizonsMagicSchemaTest.cpp
@@ -157,6 +159,7 @@ set(test_SRCS
 		server/battles/WarMachineControlTest.cpp
 		server/battles/HeroCommandTest.cpp
 		server/battles/NewHorizonsOffenseRankTest.cpp
+		server/battles/NewHorizonsDisciplineTest.cpp
 		server/battles/HeroCommandPersistenceTest.cpp
 		server/battles/HeroCommandFixtureExportTest.cpp
 		server/battles/HeroCommandRejectionTest.cpp
@@ -176,6 +179,7 @@ set(test_SRCS
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
 		server/battles/NewHorizonsMetamagicTest.cpp
 		server/battles/NewHorizonsSkillRewardTest.cpp
+		server/battles/NewHorizonsRewardSkillFilterTest.cpp
 		server/battles/NewHorizonsSkillFeedbackTest.cpp
 		server/battles/NewHorizonsSpellRewardFilterTest.cpp
 		server/battles/NewHorizonsDirectDamageMechanicsTest.cpp
@@ -195,6 +199,8 @@ set(test_SRCS
 		server/battles/NewHorizonsLogisticsMasteryTest.cpp
 		server/battles/NewHorizonsNecromancyTest.cpp
 		server/battles/NewHorizonsBloodrageTest.cpp
+		server/battles/NewHorizonsBulwarkRulesTest.cpp
+		server/battles/NewHorizonsBulwarkRuntimeTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp
 		server/battles/NewHorizonsFireWallTest.cpp
@@ -204,6 +210,10 @@ set(test_SRCS
 		server/battles/NewHorizonsHeroFixtureExportTest.cpp
 		server/queries/QueriesProcessorTest.cpp
 		server/queries/NewHorizonsPerkVerticalSliceTest.cpp
+		server/queries/NewHorizonsUniqueBuildingTrainingTest.cpp
+		server/queries/NewHorizonsMagicUniversityTest.cpp
+		server/NewHorizonsEconomyTest.cpp
+		server/NewHorizonsLeadershipAdmissionTest.cpp
 
 		texts/TextOperationsTest.cpp
 
@@ -296,6 +306,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Goals/BuyArmyTest.cpp
 		nullkiller2/Goals/CompositionTest.cpp
 		nullkiller2/Goals/ExploreNeighbourTileTest.cpp
+		nullkiller2/ArmyFormationLeadershipTest.cpp
 		nullkiller2/Helpers/ExplorationHelperTest.cpp
 		nullkiller2/Helpers/TinyH3MDimensionDoorExplorationTest.cpp
 		nullkiller2/Pathfinding/AIPathNodePoolTest.cpp

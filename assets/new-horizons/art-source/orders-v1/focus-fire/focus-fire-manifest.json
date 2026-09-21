@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "focus-fire",
+  "source": {
+    "path": "$HOME/.codex/generated_images/01a0c154-b44d-7f93-83f6-daf465b4a4b0/exec-c4dba2e8-a55b-49f5-b2b5-091d6b991680.png",
+    "filename": "exec-c4dba2e8-a55b-49f5-b2b5-091d6b991680.png",
+    "byte_size": 2492996,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "19a05268a09d6eb7437cd934e719e0002a01f56d8d10d9485c4a4ade0d302033"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "19a05268a09d6eb7437cd934e719e0002a01f56d8d10d9485c4a4ade0d302033"
+    },
+    {
+      "file": "focus-fire-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "32fed2302ce44bcdcf5c1086f64c4283534739372ecc1fc1c813b362b1d92a06"
+    },
+    {
+      "file": "focus-fire-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "1f064fc5c8fb8b3df02b45a8bfa85214cb5feb8703dd962f697ca96d377c9e5e"
+    },
+    {
+      "file": "focus-fire-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "389cf2f046e6134e9e75a4d817a2d52eb688083e99b29b91fbf372966e7ffe19"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "focus-fire-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "focus-fire-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "focus-fire-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "focus-fire-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

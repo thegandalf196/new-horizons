@@ -685,7 +685,9 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 				else if(bestAttack.attack.shooting)
 				{
 					activeActionMade = true;
-					return BattleAction::makeShotAttack(stack, bestAttack.attack.defender);
+					auto action = BattleAction::makeShotAttack(stack, bestAttack.attack.defender);
+					action.perfectMoment = bestAttack.perfectMoment;
+					return action;
 				}
 				else
 				{
@@ -719,7 +721,9 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 					}
 					
 					activeActionMade = true;
-					return BattleAction::makeMeleeAttack(stack, bestAttack.attack.defenderPos, bestAttack.from);
+					auto action = BattleAction::makeMeleeAttack(stack, bestAttack.attack.defenderPos, bestAttack.from);
+					action.perfectMoment = bestAttack.perfectMoment;
+					return action;
 				}
 			}
 		}
@@ -798,7 +802,9 @@ BattleAction BattleEvaluator::moveOrAttack(const CStack * stack, const BattleHex
 	if(attackOnTheWay)
 	{
 		activeActionMade = true;
-		return BattleAction::makeMeleeAttack(stack, attackOnTheWay->attack.defender->getPosition(), attackOnTheWay->from);
+		auto action = BattleAction::makeMeleeAttack(stack, attackOnTheWay->attack.defender->getPosition(), attackOnTheWay->from);
+		action.perfectMoment = attackOnTheWay->perfectMoment;
+		return action;
 	}
 	else
 	{
@@ -1495,7 +1501,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						cachedAttack.ap->attack.chargeDistance,
 						cachedAttack.ap->attack.shooting);
 
-					auto updatedAttack = AttackPossibility::evaluate(updatedBai, cachedAttack.ap->from, innerCache, state);
+					auto updatedAttack = AttackPossibility::evaluate(updatedBai, cachedAttack.ap->from, innerCache, state, cachedAttack.ap->perfectMoment);
 
 					BattleExchangeEvaluator innerEvaluator(scoreEvaluator);
 

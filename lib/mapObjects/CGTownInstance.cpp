@@ -41,6 +41,7 @@
 #include "../networkPacks/PacksForClient.h"
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../serializer/JsonSerializeFormat.h"
+#include "../spells/NewHorizonsMagic.h"
 
 #include <vstd/RNG.h>
 
@@ -669,6 +670,14 @@ std::vector<TradeItemBuy> CGTownInstance::availableItemsIds(EMarketMode mode) co
 	}
 	else if ( mode == EMarketMode::RESOURCE_SKILL )
 	{
+		if(newHorizonsMagic::rulesActive(cb->getMagicRules()))
+		{
+			std::vector<TradeItemBuy> result;
+			for(const auto skill : newHorizonsMagic::schoolSkills(cb->getMagicRules()))
+				result.emplace_back(skill);
+			return result;
+		}
+
 		for (const auto & buildingID : builtBuildings)
 		{
 			const auto * buildingPtr = getTown()->buildings.at(buildingID).get();

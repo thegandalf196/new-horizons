@@ -323,17 +323,12 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,
 	const std::function<int(SecondarySkill)> & rank)
 {
-	std::vector<SkillGrowthChance> result;
-	if(!usesRules(resolvedRules))
-		return result;
-	for(const auto & extra : resolvedRules["extraGrowth"].Vector())
-	{
-		const SecondarySkill skill(resolve(SecondarySkill::entityType(), extra["skill"].String()));
-		const int level = std::clamp(rank(skill), 0, 3);
-		if(level > 0)
-			result.push_back({skill, PrimarySkill(extra["primary"].Integer()), static_cast<int>(extra["chances"].Vector()[level].Integer())});
-	}
-	return result;
+	// Keep the field accepted for saved-rules compatibility, but never turn
+	// legacy extraGrowth rows into live primary-stat rolls. New Horizons grants
+	// exactly the authored class vector on every level.
+	(void)resolvedRules;
+	(void)rank;
+	return {};
 }
 
 std::optional<SecondarySkill> factionSkill(const JsonNode & resolvedRules, FactionID faction)
@@ -399,6 +394,32 @@ SecondarySkill migrationTarget(const JsonNode & migration)
 		throw std::runtime_error("Invalid New Horizons starting-skill migration target " + target);
 	return SecondarySkill(id);
 }
+}
+
+std::optional<SecondarySkill> normalizeRewardSkill(const JsonNode & resolvedRules, SecondarySkill skill)
+{
+	if(skill == SecondarySkill::NONE || skill.getNum() < 0)
+		return std::nullopt;
+
+	if(!usesRules(resolvedRules))
+		return skill;
+
+	if(const auto * migration = findStartingSkillMigration(resolvedRules, skill))
+	{
+		const auto kind = (*migration)["kind"].String();
+		if(kind == "skill")
+			skill = migrationTarget(*migration);
+		else
+			// Faction skills need a hero-faction context and perk migrations are
+			// not secondary skills. Reward loading has no such context, so fail
+			// closed instead of leaking a retired core identity.
+			return std::nullopt;
+	}
+
+	if(isExcludedSkill(resolvedRules, skill))
+		return std::nullopt;
+
+	return skill;
 }
 
 std::vector<std::pair<SecondarySkill, ui8>> migrateStartingSkills(
@@ -505,6 +526,9 @@ std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill(
 		return result;
 	const auto & startingSkills = resolvedRules["startingSkills"];
 	const SecondarySkill factionSkill = *factionSkillId;
+	const SecondarySkill wisdomReplacement(SecondarySkill::decode(
+		startingSkills["magic"]["replace"].String()));
+	const SecondarySkill legacyWisdom = SecondarySkill::WISDOM;
 
 	// Necromancy was already present in the legacy roster. Convert that legacy
 	// identity to the New Horizons faction Skill instead of leaving two parallel
@@ -527,9 +551,14 @@ std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill(
 
 	if(magicHero)
 	{
-		const SecondarySkill wisdom(SecondarySkill::decode(startingSkills["magic"]["replace"].String()));
 		const auto wisdomIt = std::find_if(result.begin(), result.end(),
-			[wisdom](const auto & value) { return value.first == wisdom; });
+			[wisdomReplacement, legacyWisdom](const auto & value)
+			{
+				// Accept the legacy identity as well as the canonical target. This
+				// keeps direct callers and old resolved snapshots readable while
+				// creation migration uses the scoped New Horizons identity.
+				return value.first == wisdomReplacement || value.first == legacyWisdom;
+			});
 		const auto factionIt = std::find_if(result.begin(), result.end(),
 			[factionSkill](const auto & value) { return value.first == factionSkill; });
 		if(wisdomIt != result.end())
@@ -562,6 +591,23 @@ std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill(
 			result.emplace_back(factionSkill, MasteryLevel::BASIC);
 		return result;
 	}
+
+	// Wisdom is a Magic-only New Horizons Skill. A legacy Might hero can still
+	// carry core:wisdom in its authored starting roster (Rashka is the shipped
+	// example), but it must not leak that identity into a fresh hero. Spellcraft
+	// is the generic, non-retired replacement for a Might hero's old magical
+	// training; the faction Skill then occupies the authored second position.
+	const SecondarySkill spellcraft(SecondarySkill::decode("new-horizons:spellcraft"));
+	std::vector<std::pair<SecondarySkill, ui8>> mightNormalized;
+	mightNormalized.reserve(result.size());
+	for(const auto & [skill, rank] : result)
+	{
+		if(skill == wisdomReplacement || skill == legacyWisdom)
+			appendMergedSkill(mightNormalized, spellcraft, rank);
+		else
+			appendMergedSkill(mightNormalized, skill, rank);
+	}
+	result = std::move(mightNormalized);
 
 	if(std::any_of(result.begin(), result.end(),
 		[factionSkill](const auto & value) { return value.first == factionSkill; }))

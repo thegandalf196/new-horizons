@@ -50,12 +50,7 @@
 		"core:necromancy", "core:pathfinding", "core:resistance", "core:scholar",
 		"core:scouting", "core:sorcery", "core:tactics", "core:wisdom"
 	],
-	"extraGrowth": [
-		{"skill": "new-horizons:offense", "primary": 0, "chances": [0, 10, 20, 30]},
-		{"skill": "new-horizons:armorer", "primary": 1, "chances": [0, 10, 20, 30]},
-		{"skill": "new-horizons:spellcraft", "primary": 2, "chances": [0, 10, 20, 30]},
-		{"skill": "new-horizons:wisdom", "primary": 3, "chances": [0, 10, 20, 30]}
-	],
+	"extraGrowth": [],
 	"startingSkills": {
 		"factionSkills": {
 			"core:castle": "new-horizons:divineMandate",
@@ -94,10 +89,11 @@
 			"core:scholar": {"kind": "perk", "target": "new-horizons:learning.scholar", "fallback": "remove"},
 			"core:scouting": {"kind": "perk", "target": "new-horizons:logistics.scouting", "fallback": "remove"},
 			"core:sorcery": {"kind": "skill", "target": "new-horizons:spellcraft"},
-			"core:tactics": {"kind": "perk", "target": "new-horizons:battlecraft.tactics", "fallback": "remove"}
+			"core:tactics": {"kind": "perk", "target": "new-horizons:battlecraft.tactics", "fallback": "remove"},
+			"core:wisdom": {"kind": "skill", "target": "new-horizons:wisdom"}
 		},
 		"magic": {
-			"replace": "core:wisdom"
+			"replace": "new-horizons:wisdom"
 		},
 		"might": {
 			"replacePosition": "second",

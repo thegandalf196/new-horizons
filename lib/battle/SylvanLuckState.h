@@ -47,8 +47,18 @@ struct DLL_LINKAGE SylvanLuckState
 	std::set<uint32_t> sharedUnits;
 	std::set<uint32_t> cascadingUnits;
 	bool cascadingPending = false;
+	bool perfectMoment = false;
+	bool perfectMomentUsed = false;
 
-	bool active() const { return serendipity || naturesProvidence || fortunateAim || extendedActive(); }
+	bool active() const { return serendipity || naturesProvidence || fortunateAim || extendedActive() || perfectMoment; }
+	bool canUsePerfectMoment() const { return perfectMoment && !perfectMomentUsed; }
+	bool consumePerfectMoment()
+	{
+		if(!canUsePerfectMoment())
+			return false;
+		perfectMomentUsed = true;
+		return true;
+	}
 	bool extendedActive() const { return forestsFavor || luckyRecovery || sharedFortune || cascadingFortune; }
 	int speedBonus(uint32_t unitId) const { return speedUnits.contains(unitId) ? 2 : 0; }
 	int temporaryLuck(uint32_t unitId) const
@@ -110,6 +120,8 @@ struct DLL_LINKAGE SylvanLuckState
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_PERFECT_MOMENT) && (perfectMoment || perfectMomentUsed))
+			throw std::runtime_error("Cannot downgrade Perfect Moment state");
 		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS) && extendedActive())
 			throw std::runtime_error("Cannot downgrade extended Sylvan Luck state");
 		h & serendipity;
@@ -135,6 +147,15 @@ struct DLL_LINKAGE SylvanLuckState
 			sharedUnits.clear();
 			cascadingUnits.clear();
 		}
+		if(h.hasFeature(ESerializationVersion::NEW_HORIZONS_PERFECT_MOMENT))
+		{
+			h & perfectMoment;
+			h & perfectMomentUsed;
+		}
+		else if(!h.saving)
+			perfectMoment = perfectMomentUsed = false;
+		if(!h.saving && perfectMomentUsed && !perfectMoment)
+			throw std::runtime_error("Perfect Moment expenditure without perk");
 		if(!h.saving && ((!forestsFavor && !speedUnits.empty()) || (!sharedFortune && !sharedUnits.empty())
 			|| (!cascadingFortune && (cascadingPending || !cascadingUnits.empty())) || cascadingUnits.size() > 1))
 			throw std::runtime_error("Invalid Sylvan Luck activation state");

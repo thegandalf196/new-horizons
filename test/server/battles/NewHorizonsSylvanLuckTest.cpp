@@ -101,6 +101,169 @@ TEST(SylvanLuckRulesTest, ChanceOnlyHistoryAndRoundProtection)
 	EXPECT_EQ(state.positiveLuckUnits.size(), 1u);
 }
 
+TEST(SylvanLuckRulesTest, PerfectMomentWireStateAndLegacyDefaults)
+{
+	SylvanLuckState fortune;
+	fortune.perfectMoment = true;
+	EXPECT_TRUE(fortune.consumePerfectMoment());
+	EXPECT_FALSE(fortune.consumePerfectMoment());
+	fortune.nextRound();
+	EXPECT_TRUE(fortune.perfectMomentUsed);
+	CMemorySerializer saved;
+	saved.oser & fortune;
+	SylvanLuckState restored;
+	saved.iser & restored;
+	EXPECT_EQ(restored, fortune);
+	CMemorySerializer rejected;
+	rejected.oser.version = ESerializationVersion::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS;
+	EXPECT_THROW(rejected.oser & fortune, std::runtime_error);
+	EXPECT_TRUE(rejected.extractBuffer().empty());
+	SylvanLuckState legacy;
+	legacy.serendipity = true;
+	CMemorySerializer old;
+	old.oser.version = old.iser.version = ESerializationVersion::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS;
+	old.oser & legacy;
+	old.iser & restored;
+	EXPECT_EQ(restored, legacy);
+	BattleAction declaration;
+	declaration.actionType = EActionType::SHOOT;
+	declaration.perfectMoment = true;
+	CMemorySerializer wire;
+	wire.oser & declaration;
+	BattleAction decoded;
+	wire.iser & decoded;
+	EXPECT_TRUE(decoded.perfectMoment);
+	CMemorySerializer oldAction;
+	oldAction.oser.version = ESerializationVersion::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS;
+	EXPECT_THROW(oldAction.oser & declaration, std::runtime_error);
+	EXPECT_TRUE(oldAction.extractBuffer().empty());
+}
+
+TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentForcesNegativeLuckAndReplicatesOnlyAcceptedStrike)
+{
+	startBattle();
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 3);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
+	blockRetaliation(source);
+	luck(source, -1);
+	battle()->activeStack = source->unitId();
+	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
+	fortune.perfectMoment = true;
+	EXPECT_TRUE(battle()->battleCanUsePerfectMoment(source));
+	auto action = BattleAction::makeMeleeAttack(source, target, source->getPosition());
+	action.perfectMoment = true;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	ASSERT_FALSE(server.attacks.empty());
+	EXPECT_TRUE(server.attacks.front().lucky());
+	EXPECT_FALSE(server.attacks.front().unlucky());
+	ASSERT_TRUE(server.attacks.front().fortuneState);
+	EXPECT_TRUE(server.attacks.front().fortuneState->perfectMomentUsed);
+	EXPECT_TRUE(fortune.perfectMomentUsed);
+	EXPECT_TRUE(fortune.positiveLuckUnits.contains(source->unitId()));
+	const auto attackCount = server.attacks.size();
+	battle()->activeStack = source->unitId();
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(server.attacks.size(), attackCount);
+	const auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	EXPECT_TRUE(restored->getSylvanLuckState(BattleSide::ATTACKER).perfectMomentUsed);
+}
+
+TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentRejectsForgedActionsBeforeStartWithoutSpending)
+{
+	startBattle();
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 3);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
+	battle()->activeStack = source->unitId();
+	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
+	auto action = BattleAction::makeMeleeAttack(source, target, source->getPosition());
+	action.perfectMoment = true;
+	const auto starts = server.startedActions.size();
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	fortune.perfectMoment = true;
+	auto noLuck = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::NO_LUCK, BonusSource::OTHER, 1, BonusSourceID());
+	source->addNewBonus(noLuck);
+	EXPECT_FALSE(battle()->battleCanUsePerfectMoment(source));
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	source->removeBonus(noLuck);
+	action = BattleAction::makeDefend(source);
+	action.perfectMoment = true;
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	action = BattleAction::makeMeleeAttack(source, target, BattleHex(1));
+	action.perfectMoment = true;
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_FALSE(fortune.perfectMomentUsed);
+	EXPECT_EQ(server.startedActions.size(), starts);
+	EXPECT_TRUE(server.attacks.empty());
+}
+
+TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentForcesOnlyFirstArrowOfDoubleShot)
+{
+	startBattle();
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(leftHex), 10);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex + 5), 100);
+	luck(source, -1);
+	battle()->activeStack = source->unitId();
+	battle()->getSide(BattleSide::ATTACKER).sylvanLuck.perfectMoment = true;
+	auto action = BattleAction::makeShotAttack(source, target);
+	action.perfectMoment = true;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	ASSERT_EQ(server.attacks.size(), 2u);
+	EXPECT_TRUE(server.attacks[0].lucky());
+	EXPECT_FALSE(server.attacks[1].lucky());
+	EXPECT_TRUE(server.attacks[1].unlucky());
+}
+
+TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentRetainsUseWhenEnemyFirstStrikeKillsDeclarer)
+{
+	startBattle();
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(leftHex), 1);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::FIRST_STRIKE, BonusSource::OTHER, 1,
+		BonusSourceID(), BonusSubtypeID(BonusCustomSubtype::damageTypeAll)));
+	battle()->activeStack = source->unitId();
+	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
+	fortune.perfectMoment = true;
+	auto action = BattleAction::makeMeleeAttack(source, target, source->getPosition());
+	action.perfectMoment = true;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	ASSERT_FALSE(source->alive());
+	EXPECT_FALSE(fortune.perfectMomentUsed);
+	ASSERT_EQ(server.attacks.size(), 1u);
+	EXPECT_TRUE(server.attacks.front().counter());
+	EXPECT_FALSE(server.attacks.front().lucky());
+}
+
+TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentMultiTargetStrikePreservesClassicNeutralCollateral)
+{
+	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_LUCKY_STRIKE_AFFECTS_ALL_TARGETS, JsonNode(false));
+	startBattle();
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
+	auto * collateral = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(leftHex - 17), 100);
+	luck(source, -1);
+	forceMaximumDamage(source);
+	battle()->activeStack = source->unitId();
+	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
+	fortune.perfectMoment = true;
+	BattleAttackInfo expected(source, collateral, 0, false);
+	expected.secondaryAttack = true;
+	const auto neutralDamage = battle()->calculateDmgRange(expected).damage.max;
+	auto action = BattleAction::makeMeleeAttack(source, target, source->getPosition());
+	action.perfectMoment = true;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	ASSERT_EQ(server.attacks.size(), 1u);
+	ASSERT_EQ(server.attacks.front().bsa.size(), 2u);
+	for(const auto & victim : server.attacks.front().bsa)
+	{
+		if(victim.newState.id == collateral->unitId())
+		{
+			EXPECT_EQ(victim.damageAmount, neutralDamage);
+		}
+	}
+	EXPECT_TRUE(fortune.perfectMomentUsed);
+	EXPECT_EQ(fortune.positiveLuckUnits, std::set<uint32_t>{source->unitId()});
+}
+
 TEST(SylvanLuckRulesTest, GiftsAreOncePerStackNonStackingAndActivationScoped)
 {
 	SylvanLuckState state;
@@ -414,6 +577,56 @@ TEST_F(NewHorizonsSylvanLuckTest, CurrentSaveAndHypotheticalCopyPreserveIsolated
 	EXPECT_FALSE(model->getSylvanLuckState(BattleSide::ATTACKER).negativeLuckIgnored);
 	EXPECT_TRUE(state.negativeLuckIgnored);
 	EXPECT_EQ(model->getSylvanLuckState(BattleSide::ATTACKER).positiveLuckUnits, state.positiveLuckUnits);
+}
+
+TEST_F(NewHorizonsSylvanLuckTest, WildChanceScopesSylvanLuckToNatureSummons)
+{
+	const SecondarySkill skill(SecondarySkill::decode("new-horizons:sylvanLuck"));
+	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	startBattle();
+
+	const auto addTemporary = [this](bool nature) {
+		battle::UnitInfo info;
+		info.id = battle()->battleNextUnitId();
+		info.count = 2;
+		info.type = creatureByName("core:angel");
+		info.side = BattleSide::ATTACKER;
+		info.position = BattleHex(leftHex + static_cast<int>(info.id) + 1);
+		info.summoned = true;
+		info.natureSummoned = nature;
+
+		BattleUnitsChanged pack;
+		pack.battleID = BattleID(0);
+		pack.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+		info.save(pack.changedStacks.back().data);
+		gameHandler->sendAndApply(pack);
+		return battle()->getStack(info.id);
+	};
+
+	auto * ordinary = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 2);
+	auto * nonNature = addTemporary(false);
+	auto * nature = addTemporary(true);
+	ASSERT_NE(ordinary, nullptr);
+	ASSERT_NE(nonNature, nullptr);
+	ASSERT_NE(nature, nullptr);
+
+	// Native Luck is local to the summoned stack and must not be filtered.
+	luck(nonNature, 1);
+	EXPECT_EQ(nonNature->valOfBonuses(BonusType::LUCK), 1);
+	EXPECT_EQ(nonNature->valOfBonuses(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE), 0);
+	EXPECT_EQ(nonNature->natureSummoned, false);
+	EXPECT_EQ(nature->valOfBonuses(BonusType::LUCK), 0);
+
+	// The regular army still receives the skill rank, proving the filter is
+	// scoped to temporary summoned stacks rather than removing the hero bonus.
+	EXPECT_EQ(ordinary->valOfBonuses(BonusType::LUCK), 2);
+	EXPECT_EQ(ordinary->valOfBonuses(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE), 60);
+
+	attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck.wildChance"});
+	nature->nodeHasChanged();
+	EXPECT_EQ(nature->valOfBonuses(BonusType::LUCK), 2);
+	EXPECT_EQ(nature->valOfBonuses(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE), 60);
+	EXPECT_EQ(nonNature->valOfBonuses(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE), 0);
 }
 
 TEST_F(NewHorizonsSylvanLuckTest, LegacySaveIsInertAndCannotDiscardLiveHistory)

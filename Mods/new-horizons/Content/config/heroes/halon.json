@@ -1,0 +1,161 @@
+{
+	"core:halon": {
+		"skills": [
+			{ "skill": "new-horizons:metamagic", "level": "basic" },
+			{ "skill": "new-horizons:spellcraft", "level": "basic" }
+		],
+		"images": {
+			"large": "HPL041WZ.bmp",
+			"small": "HPS041WZ.bmp",
+			"specialtyLarge": "NH_metamagic_basic_large.png",
+			"specialtySmall": "NH_metamagic_basic_small.png"
+		},
+		"texts": {
+			"specialty": {
+				"name": "Metamagic Adept",
+				"tooltip": "Metamagic: +1 use per combat",
+				"description": "Halon can use Metamagic one additional time per combat."
+			}
+		},
+		"specialty": {
+			"secondary": null,
+			"bonuses": {
+				"mysticismExtra": null,
+				"metamagicUses": {
+					"type": "METAMAGIC_USES_PER_COMBAT",
+					"valueType": "BASE_NUMBER",
+					"val": 1
+				}
+			}
+		}
+	},
+	"core:sanya": {
+		"images": {"large": "HPL013CL.bmp", "small": "HPS013CL.bmp", "specialtyLarge": "NH_divineMandate_basic_large.png", "specialtySmall": "NH_divineMandate_basic_small.png"},
+		"texts": {"specialty": {"name": "Divine Mandate", "tooltip": "Faction skill: Divine Mandate", "description": "Castle heroes begin with Divine Mandate. Once per combat, cast a Light Spell after issuing an Order, or issue an Order after casting a Light Spell."}},
+		"specialty": {"secondary": null}
+	},
+	"core:geon": {
+		"images": {"large": "HPL092WL.bmp", "small": "HPS092WL.bmp", "specialtyLarge": "NH_shroudOfMalassa_basic_large.png", "specialtySmall": "NH_shroudOfMalassa_basic_small.png"},
+		"texts": {"specialty": {"name": "Shroud of Malassa", "tooltip": "Faction skill: Shroud of Malassa", "description": "Dungeon heroes begin with the Shroud of Malassa. Friendly stacks may move through occupied creature hexes, and flanking melee attacks deal increased damage."}},
+		"specialty": {"secondary": null}
+	},
+	"core:tiva": {
+		"images": {"large": "HPL127WH.bmp", "small": "HPS127WH.bmp", "specialtyLarge": "NH_bulwarkOfTheMire_basic_large.png", "specialtySmall": "NH_bulwarkOfTheMire_basic_small.png"},
+		"texts": {"specialty": {"name": "Bulwark of the Mire", "tooltip": "Faction skill: Bulwark of the Mire", "description": "Fortress heroes begin with Bulwark of the Mire. A defending friendly stack gains additional physical protection and a pre-emptive strike against its first melee attacker."}},
+		"specialty": {"secondary": null}
+	},
+	"core:nimbus": {
+		"images": {"large": "HPL075NC.bmp", "small": "HPS075NC.bmp", "specialtyLarge": "SECSK82:0:39", "specialtySmall": "SECSK32:0:39"},
+		"texts": {"specialty": {"name": "Necromancy", "tooltip": "Faction skill: Necromancy", "description": "Necropolis heroes begin with Necromancy. After victory, eligible living enemy casualties can be raised as Skeletons."}},
+		"specialty": {"secondary": null}
+	},
+	"core:malcom": {
+		"images": {"large": "HPL028DR.bmp", "small": "HPS028DR.bmp", "specialtyLarge": "NH_sylvanLuck_basic_large.png", "specialtySmall": "NH_sylvanLuck_basic_small.png"},
+		"texts": {"specialty": {"name": "Sylvan Luck", "tooltip": "Faction skill: Sylvan Luck", "description": "Rampart heroes begin with Sylvan Luck. It improves Luck and increases the payoff of a Lucky Strike."}},
+		"specialty": {"secondary": null}
+	},
+	"core:oris": {
+		"images": {"large": "HPL110BM.bmp", "small": "HPS110BM.bmp", "specialtyLarge": "NH_bloodrage_basic_large.png", "specialtySmall": "NH_bloodrage_basic_small.png"},
+		"texts": {"specialty": {"name": "Bloodrage", "tooltip": "Faction skill: Bloodrage", "description": "Stronghold heroes begin with Bloodrage. Each non-summoned stack destroyed increases the damage dealt by surviving friendly stacks."}},
+		"specialty": {"secondary": null}
+	},
+	"core:serena": {
+		"images": {"large": "HPL042WZ.bmp", "small": "HPS042WZ.bmp", "specialtyLarge": "NH_metamagic_basic_large.png", "specialtySmall": "NH_metamagic_basic_small.png"},
+		"texts": {"specialty": {"name": "Metamagic", "tooltip": "Faction skill: Metamagic", "description": "Tower heroes begin with Metamagic. Once per combat, casting a Spell with the Hero Action permits one additional Spell."}},
+		"specialty": {"secondary": null}
+	},
+	"core:rion": {
+		"images": {"large": "HPL008CL.bmp", "small": "HPS008CL.bmp", "specialtyLarge": "NH_divineMandate_basic_large.png", "specialtySmall": "NH_divineMandate_basic_small.png"},
+		"texts": {"specialty": {"name": "Divine Mandate", "tooltip": "Faction skill: Divine Mandate", "description": "Castle heroes begin with Divine Mandate. Once per combat, cast a Light Spell after issuing an Order, or issue an Order after casting a Light Spell."}},
+		"specialty": {"secondary": null}
+	},
+	"core:verdish": {
+		"images": {"large": "HPL123WH.bmp", "small": "HPS123WH.bmp", "specialtyLarge": "NH_bulwarkOfTheMire_basic_large.png", "specialtySmall": "NH_bulwarkOfTheMire_basic_small.png"},
+		"texts": {"specialty": {"name": "Bulwark of the Mire", "tooltip": "Faction skill: Bulwark of the Mire", "description": "Fortress heroes begin with Bulwark of the Mire. A defending friendly stack gains additional physical protection and a pre-emptive strike against its first melee attacker."}},
+		"specialty": {"secondary": null}
+	},
+	"core:gem": {
+		"images": {"large": "HPL027DR.bmp", "small": "HPS027DR.bmp", "specialtyLarge": "NH_sylvanLuck_basic_large.png", "specialtySmall": "NH_sylvanLuck_basic_small.png"},
+		"texts": {"specialty": {"name": "Sylvan Luck", "tooltip": "Faction skill: Sylvan Luck", "description": "Rampart heroes begin with Sylvan Luck. It improves Luck and increases the payoff of a Lucky Strike."}},
+		"specialty": {"secondary": null}
+	},
+	"core:andra": {
+		"images": {"large": "HPL126WH.bmp", "small": "HPS126WH.bmp", "specialtyLarge": "NH_bulwarkOfTheMire_basic_large.png", "specialtySmall": "NH_bulwarkOfTheMire_basic_small.png"},
+		"texts": {"specialty": {"name": "Bulwark of the Mire", "tooltip": "Faction skill: Bulwark of the Mire", "description": "Fortress heroes begin with Bulwark of the Mire. A defending friendly stack gains additional physical protection and a pre-emptive strike against its first melee attacker."}},
+		"specialty": {"secondary": null}
+	},
+	"core:ayden": {
+		"images": {"large": "HPL056DM.bmp", "small": "HPS056DM.bmp", "specialtyLarge": "NH_demonicGating_basic_large.png", "specialtySmall": "NH_demonicGating_basic_small.png"},
+		"texts": {"specialty": {"name": "Demonic Gating", "tooltip": "Faction skill: Demonic Gating", "description": "Inferno heroes begin with Demonic Gating. A friendly Inferno stack can open a Gate so a reserve stack arrives at the start of the next round."}},
+		"specialty": {"secondary": null}
+	},
+	"core:elleshar": {
+		"images": {"large": "HPL026DR.bmp", "small": "HPS026DR.bmp", "specialtyLarge": "NH_sylvanLuck_basic_large.png", "specialtySmall": "NH_sylvanLuck_basic_small.png"},
+		"texts": {"specialty": {"name": "Sylvan Luck", "tooltip": "Faction skill: Sylvan Luck", "description": "Rampart heroes begin with Sylvan Luck. It improves Luck and increases the payoff of a Lucky Strike."}},
+		"specialty": {"secondary": null}
+	},
+	"core:jaegar": {
+		"images": {"large": "HPL089WL.bmp", "small": "HPS089WL.bmp", "specialtyLarge": "NH_shroudOfMalassa_basic_large.png", "specialtySmall": "NH_shroudOfMalassa_basic_small.png"},
+		"texts": {"specialty": {"name": "Shroud of Malassa", "tooltip": "Faction skill: Shroud of Malassa", "description": "Dungeon heroes begin with the Shroud of Malassa. Friendly stacks may move through occupied creature hexes, and flanking melee attacks deal increased damage."}},
+		"specialty": {
+			"secondary": null,
+			"bonuses": {"mysticismExtra": null}
+		}
+	},
+	"core:rosic": {
+		"images": {"large": "HPL121WH.bmp", "small": "HPS121WH.bmp", "specialtyLarge": "NH_bulwarkOfTheMire_basic_large.png", "specialtySmall": "NH_bulwarkOfTheMire_basic_small.png"},
+		"texts": {"specialty": {"name": "Bulwark of the Mire", "tooltip": "Faction skill: Bulwark of the Mire", "description": "Fortress heroes begin with Bulwark of the Mire. A defending friendly stack gains additional physical protection and a pre-emptive strike against its first melee attacker."}},
+		"specialty": {
+			"secondary": null,
+			"bonuses": {"mysticismExtra": null}
+		}
+	},
+	"core:axsis": {
+		"images": {"large": "HPL058DM.bmp", "small": "HPS058DM.bmp", "specialtyLarge": "NH_demonicGating_basic_large.png", "specialtySmall": "NH_demonicGating_basic_small.png"},
+		"texts": {"specialty": {"name": "Demonic Gating", "tooltip": "Faction skill: Demonic Gating", "description": "Inferno heroes begin with Demonic Gating. A friendly Inferno stack can open a Gate so a reserve stack arrives at the start of the next round."}},
+		"specialty": {
+			"secondary": null,
+			"bonuses": {"mysticismExtra": null}
+		}
+	},
+	"core:isra": {
+		"images": {"large": "HPL069DK.bmp", "small": "HPS069DK.bmp", "specialtyLarge": "SECSK82:0:39", "specialtySmall": "SECSK32:0:39"},
+		"texts": {"specialty": {"name": "Necromancy", "tooltip": "Faction skill: Necromancy", "description": "Necropolis heroes begin with Necromancy. After victory, eligible living enemy casualties can be raised as Skeletons."}},
+		"specialty": {"secondary": null}
+	},
+	"core:vidomina": {
+		"images": {"large": "HPL078NC.bmp", "small": "HPS078NC.bmp", "specialtyLarge": "SECSK82:0:39", "specialtySmall": "SECSK32:0:39"},
+		"texts": {"specialty": {"name": "Necromancy", "tooltip": "Faction skill: Necromancy", "description": "Necropolis heroes begin with Necromancy. After victory, eligible living enemy casualties can be raised as Skeletons."}},
+		"specialty": {"secondary": null}
+	},
+	"core:thorgrim": {
+		"images": {"large": "HPL020RN.bmp", "small": "HPS020RN.bmp", "specialtyLarge": "NH_sylvanLuck_basic_large.png", "specialtySmall": "NH_sylvanLuck_basic_small.png"},
+		"texts": {"specialty": {"name": "Sylvan Luck", "tooltip": "Faction skill: Sylvan Luck", "description": "Rampart heroes begin with Sylvan Luck. It improves Luck and increases the payoff of a Lucky Strike."}},
+		"specialty": {"secondary": null}
+	},
+	"core:malekith": {
+		"images": {"large": "HPL090WL.bmp", "small": "HPS090WL.bmp", "specialtyLarge": "NH_shroudOfMalassa_basic_large.png", "specialtySmall": "NH_shroudOfMalassa_basic_small.png"},
+		"texts": {"specialty": {"name": "Shroud of Malassa", "tooltip": "Faction skill: Shroud of Malassa", "description": "Dungeon heroes begin with the Shroud of Malassa. Friendly stacks may move through occupied creature hexes, and flanking melee attacks deal increased damage."}},
+		"specialty": {"secondary": null}
+	},
+	"core:styg": {
+		"images": {"large": "HPL125WH.bmp", "small": "HPS125WH.bmp", "specialtyLarge": "NH_bulwarkOfTheMire_basic_large.png", "specialtySmall": "NH_bulwarkOfTheMire_basic_small.png"},
+		"texts": {"specialty": {"name": "Bulwark of the Mire", "tooltip": "Faction skill: Bulwark of the Mire", "description": "Fortress heroes begin with Bulwark of the Mire. A defending friendly stack gains additional physical protection and a pre-emptive strike against its first melee attacker."}},
+		"specialty": {"secondary": null}
+	},
+	"core:zydar": {
+		"images": {"large": "HPL062DM.bmp", "small": "HPS062DM.bmp", "specialtyLarge": "NH_demonicGating_basic_large.png", "specialtySmall": "NH_demonicGating_basic_small.png"},
+		"texts": {"specialty": {"name": "Demonic Gating", "tooltip": "Faction skill: Demonic Gating", "description": "Inferno heroes begin with Demonic Gating. A friendly Inferno stack can open a Gate so a reserve stack arrives at the start of the next round."}},
+		"specialty": {"secondary": null}
+	},
+	"core:sandro": {
+		"images": {"large": "HPL074NC.bmp", "small": "HPS074NC.bmp", "specialtyLarge": "SECSK82:0:39", "specialtySmall": "SECSK32:0:39"},
+		"texts": {"specialty": {"name": "Necromancy", "tooltip": "Faction skill: Necromancy", "description": "Necropolis heroes begin with Necromancy. After victory, eligible living enemy casualties can be raised as Skeletons."}},
+		"specialty": {"secondary": null}
+	},
+	"core:gird": {
+		"images": {"large": "HPL104BM.bmp", "small": "HPS104BM.bmp", "specialtyLarge": "NH_bloodrage_basic_large.png", "specialtySmall": "NH_bloodrage_basic_small.png"},
+		"texts": {"specialty": {"name": "Bloodrage", "tooltip": "Faction skill: Bloodrage", "description": "Stronghold heroes begin with Bloodrage. Each non-summoned stack destroyed increases the damage dealt by surviving friendly stacks."}},
+		"specialty": {"secondary": null}
+	}
+}

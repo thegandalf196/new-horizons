@@ -340,7 +340,7 @@ AttackPossibility AttackPossibility::evaluate(
 	const BattleAttackInfo & attackInfo,
 	BattleHex hex,
 	DamageCache & damageCache,
-	std::shared_ptr<CBattleInfoCallback> state)
+	std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)
 {
 	auto attacker = attackInfo.attacker;
 	auto defender = attackInfo.defender;
@@ -363,6 +363,14 @@ AttackPossibility AttackPossibility::evaluate(
 			continue;
 
 		AttackPossibility ap(hex, defHex, attackInfo);
+		ap.perfectMoment = perfectMoment && state->battleCanUsePerfectMoment(attacker)
+			&& !attackInfo.retaliation && state->battleMatchOwner(attacker, defender);
+		std::shared_ptr<HypotheticBattle> fortunePreview;
+		if(ap.perfectMoment)
+			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
+				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
+		const CBattleInfoCallback & luckState = fortunePreview
+			? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
 		ap.attackerState = attacker->acquireState();
 		ap.shootersBlockedDmg = bestAp.shootersBlockedDmg;
 
@@ -437,6 +445,7 @@ AttackPossibility AttackPossibility::evaluate(
 			strike.attackerId = ap.attackerState->unitId();
 			strike.defenderId = defender->unitId();
 			strike.shooting = attackInfo.shooting;
+			strike.perfectMoment = ap.perfectMoment && i == 0;
 			std::optional<FortuneStrikeProjection> retaliation;
 			std::vector<std::pair<std::shared_ptr<battle::CUnitState>, int64_t>> pendingRetaliationDamage;
 
@@ -454,9 +463,28 @@ AttackPossibility AttackPossibility::evaluate(
 				victimAttack.attacker = ap.attackerState.get();
 				victimAttack.defender = defenderState.get();
 				victimAttack.secondaryAttack = u->unitId() != defender->unitId();
+				// The authoritative path spends movement on the first strike and
+				// consumes Charge before collateral. Later attacks therefore have no
+				// charge distance; collateral retains distance for ordinary jousting,
+				// while secondaryAttack prevents it from inheriting the Order.
+				if(i > 0)
+					victimAttack.chargeDistance = 0;
+				if(strike.perfectMoment)
+				{
+					victimAttack.luckyStrike = !victimAttack.secondaryAttack || state->getBattle()->getLuckRollRules().affectsAllTargets;
+					victimAttack.unluckyStrike = false;
+				}
 				if(victimAttack.secondaryAttack)
 					victimAttack.defenderPos = defenderState->getPosition();
-				damageDealt = state->battleExpectedLuckDamage(victimAttack);
+				if(strike.perfectMoment)
+				{
+					// Non-lucky collateral of a forced positive strike is neutral,
+					// not another ordinary (possibly negative) Luck roll.
+					const auto range = state->calculateDmgRange(victimAttack).damage;
+					damageDealt = range.min + (range.max - range.min) / 2;
+				}
+				else
+					damageDealt = luckState.battleExpectedLuckDamage(victimAttack);
 				vstd::amin(damageDealt, defenderState->getAvailableHealth());
 				auto retaliatorState = defenderState->acquireState();
 				int64_t projectedHit = damageDealt;
@@ -554,11 +582,11 @@ AttackPossibility AttackPossibility::evaluate(
 				{
 					const auto fortune = state->getBattle()->getSylvanLuckState(side);
 					const auto rules = state->getBattle()->getLuckRollRules();
-					const int luck = state->battleGetAttackLuck(attacker, defender, false);
+					const int luck = luckState.battleGetAttackLuck(attacker, defender, false);
 					const auto chanceIndex = luck > 0 && !rules.goodChance.empty()
 						? std::min<size_t>(static_cast<size_t>(luck), rules.goodChance.size()) - 1
 						: 0;
-					const bool certainlyLucky = ap.attack.luckyStrike
+					const bool certainlyLucky = strike.perfectMoment || ap.attack.luckyStrike
 						|| (luck > 0 && rules.diceSize > 0 && !rules.goodChance.empty()
 							&& rules.goodChance[chanceIndex] >= rules.diceSize);
 					if(fortune.luckyRecovery && certainlyLucky && ap.attackerState->alive())
@@ -610,6 +638,16 @@ AttackPossibility AttackPossibility::evaluate(
 				ap.fortuneStrikes.push_back(std::move(strike));
 			if(retaliation && !retaliation->hits.empty())
 				ap.fortuneStrikes.push_back(std::move(*retaliation));
+			if(ap.perfectMoment && i == 0 && fortunePreview && !ap.fortuneStrikes.empty())
+			{
+				// A guaranteed first trigger also ends Serendipity before the
+				// second strike. Keep that deterministic history local to this
+				// candidate; merely comparing candidates cannot spend a real use.
+				auto fortune = fortunePreview->getSylvanLuckState(attackerSide);
+				fortune.consumePerfectMoment();
+				fortune.recordStrike(attacker->unitId(), true, false);
+				fortunePreview->setSylvanLuckState(attackerSide, fortune);
+			}
 			// One attack spends ammunition once, not once for every collateral victim.
 			ap.attackerState->afterAttack(attackInfo.shooting, false);
 		}

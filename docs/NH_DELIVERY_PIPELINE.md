@@ -99,6 +99,28 @@ Git uses the configured github-gandalf SSH alias. GitHub API/release operations
 need separate `gh` authentication; verify it when needed rather than assuming an
 old authentication failure persists. Never expose tokens or change account identity.
 
+## Build owns CI monitoring and repair-to-retry
+
+Dispatch is the start of the task, not its completion. For each run, Build records
+URL, attempt, source SHA and mode, then arranges a bounded monitor/wake through
+terminal success/failure. Use an external completion signal or a sensible safety
+deadline under the Goal contract, not rapid polling or dependence on user prompts.
+On failure inspect the actual failed step/log, reproduce where practical, fix
+within ownership or coordinate the owner, execute regressions, commit/push the
+smallest reviewed repair and dispatch the corrected full build. Evidence of a
+transient infrastructure failure may justify an unchanged retry; repeated source
+failures do not. The optional packaging role does not inherit this responsibility
+without explicit transfer.
+
+After success, verify the game-producing steps and actual artifact identities;
+a source-only preflight is not a game build. Continue package acceptance and
+publication without waiting for another user status request. Report failures and
+cancellations promptly with the concrete next action. Never leave a known-doomed
+run cancelled without follow-through; preserve previous run evidence. No duplicate
+runs, silent mode/scope changes, endless blind retries or overriding safety limits.
+Authentication, external service and provider blockers remain explicit and must
+not be misrepresented as success.
+
 ## Optional fifth role: Windows Packaging
 
 Not automatically created or activated by this document. Dispatcher may assign it

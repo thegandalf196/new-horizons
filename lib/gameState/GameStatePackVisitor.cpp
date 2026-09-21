@@ -11,6 +11,7 @@
 #include "GameStatePackVisitor.h"
 
 #include "CGameState.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "TavernHeroesPool.h"
 
 #include "../CPlayerState.h"
@@ -274,6 +275,12 @@ void GameStatePackVisitor::visitSetMana(SetMana & pack)
 		hero->mana += pack.val;
 
 	vstd::amax(hero->mana, 0); //not less than 0
+}
+
+void GameStatePackVisitor::visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack)
+{
+	if(auto * hero = gs.getHero(pack.hid))
+		hero->setNewHorizonsAdventureSpellCastToday(pack.castToday);
 }
 
 void GameStatePackVisitor::visitSetMovePoints(SetMovePoints & pack)
@@ -1197,6 +1204,11 @@ void GameStatePackVisitor::visitSetAvailableArtifacts(SetAvailableArtifacts & pa
 void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 {
 	gs.day = pack.day;
+	if(newHorizonsMagic::adventureSpellRulesActive(gs.getMagicRules()))
+	{
+		for(auto * hero : gs.getMap().getObjects<CGHeroInstance>())
+			hero->resetNewHorizonsAdventureSpellCastToday();
+	}
 
 	// Troop-mixing bonuses (e.g. Temple of Loyalty) may expire now, so army morale of their owners must be recomputed afterwards
 	std::vector<CArmedInstance *> troopMixingArmies;
@@ -1225,6 +1237,15 @@ void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 	{
 		gs.getPlayerState(entry.first)->resources += entry.second;
 		gs.getPlayerState(entry.first)->resources.amin(GameConstants::PLAYER_RESOURCES_CAP);
+	}
+
+	// New Horizons Mystic Pond picks are authored by the server as part of the
+	// week-start packet.  Apply them to the town before any client opens its
+	// building dialog; the town field is serialized with the rest of gamestate.
+	for(const auto & [townID, resources] : pack.newHorizonsMysticPondResults)
+	{
+		if(auto * town = gs.getTown(townID))
+			town->newHorizonsMysticPondResources = resources;
 	}
 
 	for(auto & creatureSet : pack.availableCreatures) //set available creatures in towns
@@ -1632,6 +1653,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		{
 			case EActionType::DEFEND:
 				st->defending = true;
+				st->bulwarkPreemptiveUsed = false;
 				st->waiting = false;
 				break;
 			case EActionType::WAIT:
@@ -2098,8 +2120,14 @@ void BattleStatePackVisitor::visitCatapultAttack(CatapultAttack & pack)
 	if(town->fortificationsLevel().wallsHealth == 0)
 		throw std::runtime_error("CatapultAttack without walls!");
 
-	auto newWallState = SiegeInfo::applyDamage(battleState.getWallState(pack.attackedPart), pack.damageDealt);
-	battleState.setWallState(pack.attackedPart, newWallState);
+	const auto damage = pack.structuralDamage > 0 ? pack.structuralDamage : pack.damageDealt;
+	if(const auto hp = battleState.getWallStructuralHP(pack.attackedPart); hp > 0)
+		battleState.setWallStructuralHP(pack.attackedPart, hp - damage);
+	else
+	{
+		auto newWallState = SiegeInfo::applyDamage(battleState.getWallState(pack.attackedPart), damage);
+		battleState.setWallState(pack.attackedPart, newWallState);
+	}
 
 	if(pack.killedTowerShooter != -1)
 		battleState.removeUnit(pack.killedTowerShooter);

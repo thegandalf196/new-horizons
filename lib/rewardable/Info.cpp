@@ -281,7 +281,15 @@ void Rewardable::Info::configureVariables(Rewardable::Configuration & object, IG
 				value = randomizer.loadPrimary(input, object.variables.values).getNum();
 
 			if (category.first == "secondarySkill")
-				value = randomizer.loadSecondary(input, object.variables.values).getNum();
+			{
+				const auto skill = randomizer.loadSecondary(input, object.variables.values);
+				if(skill == SecondarySkill::NONE)
+				{
+					logMod->warn("Skipping retired or unavailable secondary skill variable '%s'", entry.first);
+					continue;
+				}
+				value = skill.getNum();
+			}
 
 			object.initVariable(category.first, entry.first, value);
 		}
@@ -303,7 +311,7 @@ void Rewardable::Info::replaceTextPlaceholders(MetaString & target, const Variab
 			target.replaceName(SpellID(id));
 		}
 
-		if( boost::algorithm::starts_with(variable.first, "secondarySkill"))
+		if( boost::algorithm::starts_with(variable.first, "secondarySkill") && variable.second >= 0)
 			target.replaceName(SecondarySkill(variable.second));
 	}
 }

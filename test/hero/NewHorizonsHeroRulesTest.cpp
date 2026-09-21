@@ -144,20 +144,11 @@ TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasExactClassProfilesAndSkillO
 	ASSERT_TRUE(resolved["skillOfferWeights"].isStruct());
 	EXPECT_EQ(resolved["skillOfferWeights"].Struct().size(), HERO_SKILL_OFFER_COUNT);
 	EXPECT_TRUE(skillGrowthChances(resolved, [](SecondarySkill) { return 0; }).empty());
-	const auto opportunities = skillGrowthChances(resolved, [](SecondarySkill) { return 3; });
-	ASSERT_EQ(opportunities.size(), 4u);
+	// The canonical data keeps extraGrowth empty.  The accessor remains for
+	// loading old snapshots but never exposes skill-based primary rolls.
+	EXPECT_TRUE(skillGrowthChances(resolved, [](SecondarySkill) { return 3; }).empty());
 	const SecondarySkill offense(SecondarySkill::decode("new-horizons:offense"));
-	const SecondarySkill armorer(SecondarySkill::decode("new-horizons:armorer"));
-	const SecondarySkill spellcraft(SecondarySkill::decode("new-horizons:spellcraft"));
 	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
-	EXPECT_NE(offense, SecondarySkill::OFFENCE);
-	const std::array<SecondarySkill, 4> skills = {offense, armorer, spellcraft, wisdom};
-	for(int i = 0; i < 4; ++i)
-	{
-		EXPECT_EQ(opportunities[i].skill, skills[i]);
-		EXPECT_EQ(opportunities[i].attribute, PrimarySkill(i));
-		EXPECT_EQ(opportunities[i].chancePercent, 30);
-	}
 	EXPECT_TRUE(usesSkillOfferWeights(resolved));
 	EXPECT_EQ(skillOfferWeight(resolved, offense), 4);
 	EXPECT_EQ(skillOfferWeight(resolved, wisdom), 0);
@@ -239,6 +230,32 @@ TEST(NewHorizonsHeroRulesTest, FactionStartingSkillsReplaceWisdomOrOptionalMight
 	EXPECT_EQ(reversedMagic[0].first, SecondarySkill::FIRST_AID);
 	EXPECT_EQ(reversedMagic[1].first, SecondarySkill(SecondarySkill::decode("new-horizons:divineMandate")));
 	EXPECT_EQ(reversedMagic[1].second, MasteryLevel::ADVANCED);
+}
+
+TEST(NewHorizonsHeroRulesTest, MightMigrationReplacesLegacyWisdomWithSpellcraft)
+{
+	if(!newHorizonsModuleActive())
+		GTEST_SKIP() << "Requires the New Horizons module for scoped canonical skills";
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	const auto resolved = resolveHeroRules(rules, HeroClassID(HeroClassID::decode("core:demoniac")));
+	const auto inferno = FactionID(FactionID::decode("core:inferno"));
+	const auto migrated = migrateStartingSkills(resolved, inferno,
+		{{SecondarySkill::WISDOM, MasteryLevel::BASIC},
+		 {SecondarySkill::SCHOLAR, MasteryLevel::BASIC}});
+	ASSERT_EQ(migrated.size(), 1u);
+	EXPECT_EQ(migrated.front().first,
+		SecondarySkill(SecondarySkill::decode("new-horizons:wisdom")));
+
+	const auto fresh = applyStartingFactionSkill(resolved, false, inferno, migrated);
+	ASSERT_EQ(fresh.size(), 2u);
+	EXPECT_EQ(fresh[0].first,
+		SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft")));
+	EXPECT_EQ(fresh[1].first,
+		SecondarySkill(SecondarySkill::decode("new-horizons:demonicGating")));
+	EXPECT_EQ(fresh[0].second, MasteryLevel::BASIC);
+	EXPECT_EQ(fresh[1].second, MasteryLevel::BASIC);
+	EXPECT_FALSE(std::any_of(fresh.begin(), fresh.end(),
+		[](const auto & entry) { return entry.first == SecondarySkill::WISDOM; }));
 }
 
 TEST(NewHorizonsHeroRulesTest, NecropolisLegacySkillBecomesScopedFactionSkill)

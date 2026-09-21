@@ -28,6 +28,7 @@
 #include "../constants/StringConstants.h"
 #include "../entities/ResourceTypeHandler.h"
 #include "../entities/artifact/CArtHandler.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/CHeroClass.h"
 #include "../gameState/CGameState.h"
@@ -159,10 +160,23 @@ SecondarySkill JsonRandom::loadSecondary(const JsonNode & value, const Variables
 {
 	std::set<SecondarySkill> defaultSkills;
 	for(const auto & skill : LIBRARY->skillh->objects)
-		if(cb->isAllowed(skill->getId()) && !skill->isSpecial())
-			defaultSkills.insert(skill->getId());
+	{
+		if(!cb->isAllowed(skill->getId()) || skill->isSpecial())
+			continue;
+
+		const auto normalized = newHorizonsHeroes::normalizeRewardSkill(
+			cb->getHeroDevelopmentRules(), skill->getId());
+		if(normalized && cb->isAllowed(*normalized))
+			defaultSkills.insert(*normalized);
+	}
 
 	std::set<SecondarySkill> potentialPicks = jsonKeyExtractor.filterKeys(value, defaultSkills, variables);
+	potentialPicks.erase(SecondarySkill::NONE);
+	if(potentialPicks.empty())
+	{
+		logMod->warn("Failed to select suitable random secondary skill; the authored choices were retired or unavailable");
+		return SecondarySkill::NONE;
+	}
 	return *RandomGeneratorUtil::nextItem(potentialPicks, rng);
 }
 
@@ -174,6 +188,11 @@ std::map<SecondarySkill, si32> JsonRandom::loadSecondaries(const JsonNode & valu
 		for(const auto & pair : value.Struct())
 		{
 			SecondarySkill id = jsonKeyExtractor.decodeKey<SecondarySkill>(pair.second.getModScope(), pair.first, variables);
+			if(id == SecondarySkill::NONE)
+			{
+				logMod->warn("Skipping retired or unavailable authored secondary skill '%s'", pair.first);
+				continue;
+			}
 			ret[id] = loadValue(pair.second, variables);
 		}
 	}
@@ -181,12 +200,25 @@ std::map<SecondarySkill, si32> JsonRandom::loadSecondaries(const JsonNode & valu
 	{
 		std::set<SecondarySkill> defaultSkills;
 		for(const auto & skill : LIBRARY->skillh->objects)
-			if(cb->isAllowed(skill->getId()) && !skill->isSpecial())
-				defaultSkills.insert(skill->getId());
+		{
+			if(!cb->isAllowed(skill->getId()) || skill->isSpecial())
+				continue;
+
+			const auto normalized = newHorizonsHeroes::normalizeRewardSkill(
+				cb->getHeroDevelopmentRules(), skill->getId());
+			if(normalized && cb->isAllowed(*normalized))
+				defaultSkills.insert(*normalized);
+		}
 
 		for(const auto & element : value.Vector())
 		{
 			std::set<SecondarySkill> potentialPicks = jsonKeyExtractor.filterKeys(element, defaultSkills, variables);
+			potentialPicks.erase(SecondarySkill::NONE);
+			if(potentialPicks.empty())
+			{
+				logMod->warn("Skipping retired or unavailable random secondary skill reward");
+				continue;
+			}
 			SecondarySkill skillID = *RandomGeneratorUtil::nextItem(potentialPicks, rng);
 
 			defaultSkills.erase(skillID); //avoid dupicates

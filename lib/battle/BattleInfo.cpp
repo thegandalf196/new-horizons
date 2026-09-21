@@ -347,6 +347,7 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 			fortune.serendipity = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.serendipity");
 			fortune.naturesProvidence = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.natureSProvidence");
 			fortune.fortunateAim = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.fortunateAim");
+			fortune.perfectMoment = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.perfectMoment");
 			fortune.forestsFavor = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.forestSFavor");
 			fortune.luckyRecovery = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.luckyRecovery");
 			fortune.sharedFortune = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.sharedFortune");
@@ -369,6 +370,11 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 	if (town && town->fortificationsLevel().wallsHealth != 0)
 	{
 		auto fortification = town->fortificationsLevel();
+		// Fortification HP belongs to the authoritative world snapshot, not to
+		// whichever side happens to field a hero. This covers town garrisons and
+		// prevents importing a v3 hero into a legacy world from changing durability.
+		const auto canonicalSiege = cb->getHeroCapabilityRules()["rulesetVersion"].Integer() >= 3;
+		currentBattle->si.canonicalStructuralHP = canonicalSiege;
 
 		currentBattle->si.gateState = EGateState::CLOSED;
 
@@ -385,6 +391,11 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 
 		if (fortification.lowerTowerHealth != 0)
 			currentBattle->si.wallState[EWallPart::BOTTOM_TOWER] = static_cast<EWallState>(fortification.lowerTowerHealth);
+
+		if(canonicalSiege)
+			for(const auto & [part, state] : currentBattle->si.wallState)
+				if(state != EWallState::NONE)
+					currentBattle->si.structuralHP[part] = SiegeInfo::maximumStructuralHP(part);
 	}
 
 	//randomize obstacles
@@ -806,7 +817,23 @@ const CGTownInstance * BattleInfo::getDefendedTown() const
 
 EWallState BattleInfo::getWallState(EWallPart partOfWall) const
 {
+	if(si.canonicalStructuralHP)
+		if(const auto it = si.structuralHP.find(partOfWall); it != si.structuralHP.end())
+		{
+			if(it->second == SiegeInfo::maximumStructuralHP(partOfWall))
+				return si.wallState.at(partOfWall); // preserve full-strength REINFORCED visuals
+			return SiegeInfo::stateFromStructuralHP(partOfWall, it->second);
+		}
 	return si.wallState.at(partOfWall);
+}
+
+int32_t BattleInfo::getWallStructuralHP(EWallPart partOfWall) const
+{
+	if(!si.canonicalStructuralHP)
+		return 0;
+	if(const auto it = si.structuralHP.find(partOfWall); it != si.structuralHP.end())
+		return it->second;
+	return 0;
 }
 
 EGateState BattleInfo::getGateState() const
@@ -1009,9 +1036,12 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 
 	auto ret = std::make_unique<CStack>(&base, owner, info.id, info.side, SlotID::SUMMONED_SLOT_PLACEHOLDER);
 	ret->initialPosition = info.position;
+	// Summon provenance affects inherited-bonus acceptance, so it must be set
+	// before localInit attaches the stack to the bonus graph and fills caches.
+	ret->summoned = info.summoned;
+	ret->natureSummoned = info.natureSummoned;
 	stacks.push_back(std::move(ret));
 	stacks.back()->localInit(this);
-	stacks.back()->summoned = info.summoned;
 }
 
 void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
@@ -1361,6 +1391,16 @@ void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool fo
 void BattleInfo::setWallState(EWallPart partOfWall, EWallState state)
 {
 	si.wallState[partOfWall] = state;
+	if(si.canonicalStructuralHP && state == EWallState::DESTROYED)
+		si.structuralHP[partOfWall] = 0;
+}
+
+void BattleInfo::setWallStructuralHP(EWallPart partOfWall, int32_t hp)
+{
+	if(!si.canonicalStructuralHP)
+		return;
+	si.structuralHP[partOfWall] = std::clamp(hp, 0, SiegeInfo::maximumStructuralHP(partOfWall));
+	si.wallState[partOfWall] = SiegeInfo::stateFromStructuralHP(partOfWall, si.structuralHP[partOfWall]);
 }
 
 void BattleInfo::addObstacle(const ObstacleChanges & changes)

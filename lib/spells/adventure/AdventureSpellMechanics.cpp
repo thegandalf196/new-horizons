@@ -26,6 +26,7 @@
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../networkPacks/PacksForClient.h"
 #include "../../callback/IGameInfoCallback.h"
+#include "../NewHorizonsMagic.h"
 
 std::unique_ptr<IAdventureSpellEffect> AdventureSpellMechanics::createAdventureEffect(const CSpell * s, const JsonNode & node)
 {
@@ -142,6 +143,15 @@ bool AdventureSpellMechanics::canBeCast(spells::Problem & problem, const IGameIn
 		if(heroCaster->mana < cost)
 			return false;
 
+		if(newHorizonsMagic::isAdventureSpell(heroCaster->getMagicRules(), owner->id)
+			&& heroCaster->hasNewHorizonsAdventureSpellCastToday())
+		{
+			MetaString message = MetaString::createFromTextID("core.genrltxt.338");
+			message.replaceTextID(caster->getCasterNameTextID());
+			problem.add(std::move(message));
+			return false;
+		}
+
 		int castsAlreadyPerformedThisTurn = getCastsAlreadyPerformed(caster);
 		int castsLimit = getCastsLimit(caster, cb->getMapSize());
 
@@ -197,6 +207,9 @@ void AdventureSpellMechanics::performCast(SpellCastEnvironment * env, const Adve
 {
 	const auto level = parameters.caster->getSpellSchoolLevel(owner);
 	const auto * hero = parameters.caster->getHeroCaster();
+	if(hero && newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), owner->id)
+		&& hero->hasNewHorizonsAdventureSpellCastToday())
+		return;
 	const auto cost = hero ? hero->getSpellCost(owner) : owner->getCost(level);
 
 	AdvmapSpellCast asc;
@@ -211,5 +224,12 @@ void AdventureSpellMechanics::performCast(SpellCastEnvironment * env, const Adve
 		giveBonuses(env, parameters);
 		parameters.caster->spendMana(env, cost);
 		getLevel(parameters.caster).effect->endCast(env, parameters);
+		if(hero && newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), owner->id))
+		{
+			SetNewHorizonsAdventureSpellState state;
+			state.hid = ObjectInstanceID(hero->id);
+			state.castToday = true;
+			env->apply(state);
+		}
 	}
 }

@@ -18,7 +18,9 @@ newHorizonsHeroes::PerkState state()
 }
 
 const std::string SKILL = "new-horizons:sorceryMagic";
-const std::string PLANNED_SKILL = "new-horizons:offense";
+// Keep this fixture pointed at a skill whose entire perk pool is still planned.
+// Offense now has the active Shock Assault vertical slice.
+const std::string PLANNED_SKILL = "new-horizons:armorer";
 }
 
 TEST(NewHorizonsPerkState, LegacyStateRemainsEmptyAndCannotSelect)
@@ -29,7 +31,7 @@ TEST(NewHorizonsPerkState, LegacyStateRemainsEmptyAndCannotSelect)
 	EXPECT_THROW(legacy.select(SKILL, "new-horizons:offense.shockAssault", 3), std::runtime_error);
 }
 
-TEST(NewHorizonsPerkState, SelectionEnforcesRankDuplicateAndThreePerSkillCap)
+TEST(NewHorizonsPerkState, SelectionEnforcesExactlyOnePerTierAndThreePerSkillCap)
 {
 	auto saved = state();
 	const auto options = newHorizonsHeroes::perkOptions(saved.rules, SKILL);
@@ -39,11 +41,45 @@ TEST(NewHorizonsPerkState, SelectionEnforcesRankDuplicateAndThreePerSkillCap)
 	EXPECT_THROW(saved.select(SKILL, options[4].id, 1), std::runtime_error);
 	saved.select(SKILL, options[0].id, 3);
 	EXPECT_THROW(saved.select(SKILL, options[0].id, 3), std::runtime_error);
-	saved.select(SKILL, options[1].id, 3);
-	saved.select(SKILL, options[2].id, 3);
-	EXPECT_THROW(saved.select(SKILL, options[3].id, 3), std::runtime_error);
+	EXPECT_THROW(saved.select(SKILL, options[1].id, 3), std::runtime_error);
+	saved.select(SKILL, options[4].id, 3);
+	EXPECT_THROW(saved.select(SKILL, options[5].id, 3), std::runtime_error);
+	saved.select(SKILL, options[8].id, 3);
+	EXPECT_THROW(saved.select(SKILL, options[9].id, 3), std::runtime_error);
 	EXPECT_THROW(saved.select(SKILL, "new-horizons:offense.unknown", 3), std::runtime_error);
 	EXPECT_EQ(saved.selected.size(), 3u);
+}
+
+TEST(NewHorizonsPerkState, OccupiedTierOnlyBlocksAlternativesFromTheSameSkill)
+{
+	auto saved = state();
+	const auto sorceryOptions = newHorizonsHeroes::perkOptions(saved.rules, SKILL);
+	const std::string otherSkill = "new-horizons:discipline";
+	ASSERT_GE(sorceryOptions.size(), 2u);
+	const std::string disciplinePerk = "new-horizons:discipline.inspirationalLeader";
+
+	saved.select(SKILL, sorceryOptions[0].id, 1);
+	EXPECT_THROW(saved.select(SKILL, sorceryOptions[1].id, 1), std::runtime_error);
+	EXPECT_NO_THROW(saved.select(otherSkill, disciplinePerk, 1));
+	EXPECT_TRUE(saved.hasSelection(SKILL, sorceryOptions[0].id));
+	EXPECT_TRUE(saved.hasSelection(otherSkill, disciplinePerk));
+}
+
+TEST(NewHorizonsPerkState, OfferKeepsSameTierPerksFromOtherSkillsEligible)
+{
+	auto saved = state();
+	const auto sorceryOptions = newHorizonsHeroes::perkOptions(saved.rules, SKILL);
+	ASSERT_GE(sorceryOptions.size(), 2u);
+	saved.select(SKILL, sorceryOptions[0].id, 1);
+
+	const auto offer = saved.prepareOffer([](const std::string & skillId)
+	{
+		return skillId == SKILL || skillId == "new-horizons:discipline" ? 1 : 0;
+	}, 17);
+	ASSERT_EQ(offer.size(), 1u);
+	EXPECT_EQ(offer.front().selection.skillId, "new-horizons:discipline");
+	EXPECT_EQ(offer.front().selection.perkId, "new-horizons:discipline.inspirationalLeader");
+	EXPECT_EQ(offer.front().requiredRank, 1);
 }
 
 TEST(NewHorizonsPerkState, PlannedAndRankLockedEffectsNeverProjectAsEnabled)
@@ -128,6 +164,31 @@ TEST(NewHorizonsPerkState, CrossoverRejectsUnknownFieldsAndForgedSelections)
 	invalid = original.toJson();
 	invalid["selected"].Vector()[0]["perkId"].String() = "new-horizons:offense.forged";
 	EXPECT_THROW(newHorizonsHeroes::PerkState::fromJson(invalid), std::runtime_error);
+}
+
+TEST(NewHorizonsPerkState, LegacySameTierSelectionsKeepTheEarliestChoiceOnLoad)
+{
+	auto original = state();
+	const auto options = newHorizonsHeroes::perkOptions(original.rules, SKILL);
+	JsonNode legacy;
+	legacy["stateVersion"].Integer() = 1;
+	legacy["rules"] = original.rules;
+	legacy["selected"].Vector();
+	for(const auto index : {0, 1, 4, 5, 8})
+	{
+		JsonNode selection;
+		selection["skillId"].String() = SKILL;
+		selection["perkId"].String() = options[index].id;
+		legacy["selected"].Vector().push_back(std::move(selection));
+	}
+
+	const auto restored = newHorizonsHeroes::PerkState::fromJson(legacy);
+	ASSERT_EQ(restored.selected.size(), 3u);
+	EXPECT_TRUE(restored.hasSelection(SKILL, options[0].id));
+	EXPECT_TRUE(restored.hasSelection(SKILL, options[4].id));
+	EXPECT_TRUE(restored.hasSelection(SKILL, options[8].id));
+	EXPECT_FALSE(restored.hasSelection(SKILL, options[1].id));
+	EXPECT_FALSE(restored.hasSelection(SKILL, options[5].id));
 }
 
 TEST(NewHorizonsPerkState, OfferIsDeterministicBoundedAndUsesOnlyLearnedEligibleSkills)
@@ -222,6 +283,23 @@ TEST(NewHorizonsPerkState, AcceptedOfferRevalidatesSnapshotRankDuplicateAndCap)
 		saved.acceptOffer(next, 0, expert, seed);
 	}
 	EXPECT_TRUE(saved.prepareOffer(expert, 99).empty());
+}
+
+TEST(NewHorizonsPerkState, OfferNeverRepeatsAnOccupiedTierForTheSameSkill)
+{
+	auto saved = state();
+	const auto options = newHorizonsHeroes::perkOptions(saved.rules, SKILL);
+	saved.select(SKILL, options[0].id, 3);
+	const auto offer = saved.prepareOffer([](const std::string & skillId)
+	{
+		return skillId == SKILL ? 3 : 0;
+	}, 42);
+	ASSERT_FALSE(offer.empty());
+	for(const auto & candidate : offer)
+	{
+		EXPECT_EQ(candidate.selection.skillId, SKILL);
+		EXPECT_NE(candidate.requiredRank, 1);
+	}
 }
 
 TEST(NewHorizonsPerkState, LegacyRulesNeverInventAnOffer)

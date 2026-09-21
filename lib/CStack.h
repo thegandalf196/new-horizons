@@ -50,6 +50,7 @@ public:
 	std::string nodeName() const override;
 
 	void localInit(BattleInfo * battleInfo);
+	bool acceptsBonus(const Bonus & bonus) const override;
 	std::string getName() const; //plural or singular
 
 	bool canBeHealed() const; //for first aid tent - only harmed stacks that are not war machines

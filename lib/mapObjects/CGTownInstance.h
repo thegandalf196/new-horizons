@@ -73,6 +73,9 @@ public:
 	int32_t spellResearchAcceptedCounter;
 	std::vector<si32> spellResearchPendingRerollsCounters;
 	bool spellResearchAllowed;
+	/// New Horizons' most recent weekly Mystic Pond picks, kept on the town so
+	/// the result remains visible after the week-start packet and after saves.
+	std::vector<GameResID> newHorizonsMysticPondResources;
 	/// Map author supplied the initial army, including an explicitly empty army.
 	bool customInitialGarrison = false;
 
@@ -115,6 +118,13 @@ public:
 			h & customInitialGarrison;
 		else if(!h.saving)
 			customInitialGarrison = false;
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MYSTIC_POND_RESULTS))
+			h & newHorizonsMysticPondResources;
+		else if(h.saving && !newHorizonsMysticPondResources.empty())
+			throw std::runtime_error("Cannot discard New Horizons Mystic Pond result");
+		else if(!h.saving)
+			newHorizonsMysticPondResources.clear();
 
 		if(!h.saving)
 		{

@@ -35,6 +35,7 @@
 #include "../lib/filesystem/Filesystem.h"
 #include "../lib/filesystem/FileInfo.h"
 #include "../lib/texts/CGeneralTextHandler.h"
+#include "../lib/entities/building/CBuilding.h"
 #include "../lib/GameLibrary.h"
 #include "../lib/mapping/CMap.h"
 #include "../lib/VCMIDirs.h"
@@ -366,6 +367,38 @@ void ApplyClientNetPackVisitor::visitNewTurn(NewTurn & pack)
 
 		std::string str = newWeek.text.toString(&GAME->translator());
 		callAllInterfaces(cl, &CGameInterface::showInfoDialog, newWeek.type, str, newWeek.components,(soundBase::soundID)newWeek.soundID);
+	}
+
+	// New Horizons reveals each Mystic Pond's two weekly picks immediately,
+	// rather than requiring the player to open the town screen and click the
+	// building. The authoritative result has already been applied to town state
+	// by GameStatePackVisitor; this is only the owning player's presentation.
+	for(const auto & [townID, resources] : pack.newHorizonsMysticPondResults)
+	{
+		const auto * town = cl.gameState().getTown(townID);
+		if(!town || resources.empty())
+			continue;
+
+		std::map<GameResID, int> resourceCounts;
+		for(const auto resource : resources)
+			++resourceCounts[resource];
+
+		const auto * pond = town->getTown()->getSpecialBuilding(BuildingSubID::MYSTIC_POND);
+		const auto pondName = pond ? pond->getNameTranslated() : std::string("Mystic Pond");
+		const auto townName = GAME->translator().translate(town->getNameTextID());
+		MetaString text = MetaString::createFromRawString(pondName + " - " + townName);
+		std::vector<Component> components;
+		for(const auto [resource, count] : resourceCounts)
+		{
+			text.appendRawString("\n");
+			text.appendTextID("core.genrltxt.678");
+			text.replaceName(resource);
+			text.replaceNumber(count);
+			components.emplace_back(ComponentType::RESOURCE, resource, count);
+		}
+
+		callInterfaceIfPresent(cl, town->getOwner(), &CGameInterface::showInfoDialog,
+			EInfoWindowMode::MODAL, text.toString(&GAME->translator()), components, soundBase::soundID(0));
 	}
 }
 

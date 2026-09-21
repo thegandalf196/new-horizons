@@ -103,6 +103,11 @@ EWallState BattleProxy::getWallState(EWallPart partOfWall) const
 	return subject->battleGetWallState(partOfWall);
 }
 
+int32_t BattleProxy::getWallStructuralHP(EWallPart partOfWall) const
+{
+	return subject->getWallStructuralHP(partOfWall);
+}
+
 EGateState BattleProxy::getGateState() const
 {
 	return subject->battleGetGateState();

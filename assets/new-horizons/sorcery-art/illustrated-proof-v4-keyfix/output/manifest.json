@@ -1,0 +1,18 @@
+{
+  "status": "ONE unapproved original rendered still-life quality proof; not final family; raw master/blend/settings PRIVATE pending review",
+  "reduction": "Pillow Lanczos on premultiplied RGBa, convert to straight RGBA; no stretch/sharpen",
+  "slot": "82x82 aspect-preserving render centred vertically in82x93 transparent canvas",
+  "files": {
+    "scene.py": "da808e2d52f3c2809ad23111fccba9d90c31fd24d49404fd858c4122bb7d64a8",
+    "reduce.py": "f7f934664793fe7a576e12cac91c422446c905ef2a01588dd4d4ff3df9db544c",
+    "output/master-review.png": "3d9aa573ddab127df63bc23f268913c6f23e44e327388dd83304c77cf1ab63e0",
+    "output/master.png": "01066bda4375ee181a939e4a01aeb93ea2c68d648a60339381e218d3ea151261",
+    "output/native-32.png": "36604b785c0af9b4a09fa6c010798ebff7ff2e094343fdbcdc94bcbda49965e3",
+    "output/native-44.png": "761e5cebadf84490f4cdc7a4e99cef3b58438895b18fa9560e63797c9d4c7fe1",
+    "output/native-comparison.png": "b73962242af65e500d319f4fa4682a834f99c46e26fe6d4cb743dfd5423bb10d",
+    "output/native-review.png": "95848fcbaac64eee879db7ea7915d978fb76c662dda1deda2ced73449eb15b3c",
+    "output/render-settings.txt": "1408066caacb433f5fcfe99cffe2570089c6abed8b2e70a347551c293ee15ff9",
+    "output/slot-82x93.png": "f0b3222712e82e42813e3efba011e7a1c2408a8dbbe391c0fb798daf89f4da5f",
+    "output/sorcery-still-life.blend": "dd77ae7b3a3ee36d49fc834e422cd8df425f5a7c9eb677eb0ca85178f4de35fc"
+  }
+}

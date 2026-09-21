@@ -32,7 +32,8 @@ struct DLL_LINKAGE SkillGrowthChance
 };
 
 /// Read-only live-hero presentation. No secondary attributes or masteries are
-/// fabricated here. Guaranteed growth excludes the independent chance outcomes.
+/// fabricated here. Primary growth is the fixed class vector; extraGrowth is
+/// retained only as an empty compatibility field.
 struct DLL_LINKAGE PrimaryGrowthView
 {
 	PrimaryProfile profile;
@@ -55,10 +56,19 @@ DLL_LINKAGE std::optional<int> skillOfferWeight(const JsonNode & resolvedRules, 
 /// Returns whether a skill is explicitly retired from ordinary level-up
 /// offers (for example Mysticism, which is now a perk).
 DLL_LINKAGE bool isExcludedSkill(const JsonNode & resolvedRules, SecondarySkill skill);
+/// Normalizes a skill authored by an adventure-map reward. In a New Horizons
+/// world, legacy skills with a kind=skill migration resolve to their canonical
+/// replacement; perk-only and otherwise retired skills are rejected. An empty
+/// result means that the reward must not publish or grant that skill. Empty
+/// rules retain legacy behaviour and return the authored identity unchanged.
+DLL_LINKAGE std::optional<SecondarySkill> normalizeRewardSkill(const JsonNode & resolvedRules, SecondarySkill skill);
 /// New-game completeness differs from validation of an existing saved roster.
 DLL_LINKAGE void validateHeroRules(const JsonNode & rules, bool requireAllClasses);
 DLL_LINKAGE void validateResolvedHeroRules(const JsonNode & rules);
 DLL_LINKAGE JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass);
+/// Legacy compatibility accessor. New Horizons primary growth is deterministic
+/// and this always returns an empty list; old extraGrowth rows remain accepted
+/// only so saved rules can be loaded without changing their shape.
 DLL_LINKAGE std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,
 	const std::function<int(SecondarySkill)> & rank);
 

@@ -547,6 +547,11 @@ void AdvmapSpellCast::visitTyped(ICPackVisitor & visitor)
 	visitor.visitAdvmapSpellCast(*this);
 }
 
+void SetNewHorizonsAdventureSpellState::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetNewHorizonsAdventureSpellState(*this);
+}
+
 void ShowWorldViewEx::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitShowWorldViewEx(*this);

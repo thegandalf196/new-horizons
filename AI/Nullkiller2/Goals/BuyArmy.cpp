@@ -9,6 +9,7 @@
 */
 #include "../StdInc.h"
 #include "BuyArmy.h"
+#include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../AIGateway.h"
 #include "../Engine/Nullkiller.h"
@@ -55,6 +56,15 @@ void BuyArmy::accept(AIGateway * aiGw)
 			continue;
 
 		vstd::amin(ci.count, res / ci.creID.toCreature()->getFullRecruitCost());
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(town->getUpperArmy()))
+		{
+			if(const auto capacity = hero->getLeadershipSlotCapacity(ci.creID))
+			{
+				const auto slot = hero->getSlotFor(ci.creID);
+				const int alreadyPresent = slot.validSlot() ? hero->getStackCount(slot) : 0;
+				vstd::amin(ci.count, std::max(0, capacity->maximum - alreadyPresent));
+			}
+		}
 
 		if(ci.count)
 		{

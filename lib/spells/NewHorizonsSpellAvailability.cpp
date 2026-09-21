@@ -30,7 +30,8 @@ bool spellBelongsToRules(const JsonNode & rules, const std::string & scopedIdent
 		return !scopedIdentity.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':');
 	if(!rules.isStruct() || !rules["spells"].isStruct())
 		throw std::runtime_error("Spell availability requires a saved spell roster");
-	return rules["spells"].Struct().contains(scopedIdentity);
+	return rules["spells"].Struct().contains(scopedIdentity)
+		|| (rules["adventureSpells"].isStruct() && rules["adventureSpells"].Struct().contains(scopedIdentity));
 }
 
 bool spellAllowedBySavedRoster(const JsonNode & rules, SpellID spell)

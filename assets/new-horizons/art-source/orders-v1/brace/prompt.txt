@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Heroes III-style Order icon, square high-resolution master
+Primary request: Create an original miniature fantasy still-life icon for the Order “Brace”. Show a closed steel war helm wedged behind a planted spear and a taut leather shield strap, with the spear butt locked against a small stone; communicate readiness for an incoming charge and a prepared counterblow.
+Scene/backdrop: dark brown battlefield soil and worn leather, tightly cropped
+Subject: one braced spear, helm and strap as a compact physical group
+Style/medium: late-1990s Western PC fantasy illustration, modeled painterly miniature still life
+Composition/framing: square icon, diagonal spear from lower-left to upper-right, helm anchoring lower-right, narrow safe inset, readable at 44x44
+Lighting/mood: theatrical chiaroscuro, cool steel highlight on spear edge, warm rim on helm, deep shadows
+Color palette: gunmetal, muted teal cloth, burnished brass, earthy umber
+Materials/textures: scratched steel, riveted helm, rough leather, splintered spear wood, gritty stone
+Constraints: no lettering, no readable runes, no ornamental border, no interface chrome, transparent background if supported
+Avoid: modern glossy mobile-game style, neon bloom, vector outlines, flat shapes, intentional pixel art, dithering, watermark, extra characters or multiple spears

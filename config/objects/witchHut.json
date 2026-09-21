@@ -36,14 +36,23 @@
 				},
 				"visitLimiter" : {
 					"secondary" : {
-						"@gainedSkill" : 1
+						"@gainedSkill" : 3
 					}
 				},
 				"rewards" : [
 					{
 						"limiter" : {
-							"canLearnSkills" : true,
 							"noneOf" : [
+								{
+									"secondary" : {
+										"@gainedSkill" : 3
+									}
+								}
+							],
+							"anyOf" : [
+								{
+									"canLearnSkills" : true
+								},
 								{
 									"secondary" : {
 										"@gainedSkill" : 1

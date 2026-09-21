@@ -17,6 +17,13 @@ touch -- "$engine/config/filesystem.json" "$engine/scripts/damage/damageCalculat
 cat > "$engine/vcmiclient" <<'STUB'
 #!/usr/bin/env bash
 set -euo pipefail
+[[ $# -ge 1 && $1 == --nointro ]]
+shift
+if [[ -n ${EXPECTED_TESTMAP:-} ]]; then
+	[[ $# == 3 && $1 == --testmap && $2 == "$EXPECTED_TESTMAP" && $3 == --disable-video ]]
+else
+	[[ $# == 0 ]]
+fi
 # Mimic EntryPoint's argv[0]-based chdir without running VCMI.
 cd -- "$(dirname -- "$0")"
 [[ -e vcmiclient && -e config && -d Mods && -e scripts ]]
@@ -90,6 +97,10 @@ expect_fail "${args[@]}" --resources "$tmp/missing resources" --verify-only
 mv -- "$engine/libvcmi.so" "$tmp/library"
 expect_fail "${args[@]}" --verify-only
 mv -- "$tmp/library" "$engine/libvcmi.so"
+# Re-copying unchanged data after the binary must not be mistaken for a schema
+# mismatch. Compatibility is carried by schema/ruleset versions, not mtimes.
+touch -- "$engine/config/newHorizonsCapabilities.json"
+bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
 # Exercise the launch plumbing exclusively with the synthetic shell stub above.
 bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ $(wc -l < "$STUB_RECEIPT") == 1 ]]
@@ -100,7 +111,8 @@ bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
 bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ $(wc -l < "$STUB_RECEIPT") == 2 ]]
 status=0
-STUB_EXIT=17 bash "$launcher" "${args[@]}" --resources "$engine" > "$tmp/output" || status=$?
+expectedMap="$tmp/Smoke Map.h3m"
+EXPECTED_TESTMAP="$expectedMap" STUB_EXIT=17 bash "$launcher" "${args[@]}" --resources "$engine" -- --testmap "$expectedMap" --disable-video > "$tmp/output" || status=$?
 [[ $status == 17 ]]
 [[ -z $(find "$profile" -maxdepth 1 -name 'runtime.*' -print) ]]
 # New candidates must include their curated module, but no arbitrary extra mods.
@@ -125,6 +137,22 @@ bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ $(< "$profile/config/vcmi/settings.json") == 'settings sentinel' ]]
 [[ $(< "$profile/data/vcmi/Saves/existing-save") == 'legacy save sentinel' ]]
 ! grep -q 'unwanted' "$profile/config/vcmi/modSettings.json"
+# Simulate a hard-killed previous launch.  An exact launcher-owned runtime is
+# reclaimed after locking; a lookalike with unexpected contents is still refused.
+stale=$profile/runtime.A1b2C3d4
+mkdir -- "$stale" "$stale/Mods"
+ln -s -- "$engine/vcmiclient" "$stale/vcmiclient"
+ln -s -- "$engine/libvcmi.so" "$stale/libvcmi.so"
+ln -s -- "$engine/config" "$stale/config"
+ln -s -- "$engine/scripts" "$stale/scripts"
+ln -s -- "$engine/Mods/vcmi" "$stale/Mods/vcmi"
+ln -s -- "$engine/Mods/new-horizons" "$stale/Mods/new-horizons"
+ln -s -- "$assets/dAtA" "$stale/Data"
+ln -s -- "$assets/MAPS" "$stale/Maps"
+ln -s -- "$assets/mp3" "$stale/Mp3"
+bash "$launcher" "${args[@]}" > "$tmp/output"
+[[ $(wc -l < "$STUB_RECEIPT") == 5 ]]
+[[ ! -e $stale ]]
 # A live profile contains runtime symlinks: diagnose its lock before scanning
 # those links, and do not truncate/write the lock even during verify-only.
 printf 'lock sentinel\n' > "$profile/.nh-lock"
@@ -141,7 +169,7 @@ for mode in launch verify; do
 	grep -q 'This NH profile is already in use.' "$tmp/output"
 	[[ $(< "$profile/.nh-lock") == 'lock sentinel' ]]
 	[[ -L $profile/runtime.synthetic/Data ]]
-	[[ $(wc -l < "$STUB_RECEIPT") == 4 ]]
+	[[ $(wc -l < "$STUB_RECEIPT") == 5 ]]
 done
 flock -u 8
 exec 8<&-

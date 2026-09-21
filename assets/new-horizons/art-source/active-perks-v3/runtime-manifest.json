@@ -1,0 +1,15 @@
+{
+  "method": "homm3-art export_art.py square reduction; brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_shock_assault"
+  ],
+  "files": {
+    "NH_perk_shock_assault_normal.png": "249dd2a7cd5897c6a858a5b419f747f75582fa742edca679ac0b57aff60bc912",
+    "NH_perk_shock_assault_pressed.png": "ba7bb4de4b149bec0106bc1b0147f295c2ffc57a37982b3a1b39f1fef968a338",
+    "NH_perk_shock_assault_disabled.png": "5d69f22358992c030f951c6a3b45f849e9c7cd9314ce99cee2330533786cf281",
+    "NH_perk_shock_assault_highlighted.png": "c7a050fa50e8fdd893216a66de640b8e8f9eec6c37244f7357613faba84604dd",
+    "NH_perk_shock_assault.json": "79753f7b2ea650ac221ef84cd5ff34168e30bc96ab45589090b4388b3a59a54a",
+    "native-review.png": "52ec216400b2461bccc3a5bd9494abdf9943df21117f33629a0c5508b88f31ce"
+  }
+}

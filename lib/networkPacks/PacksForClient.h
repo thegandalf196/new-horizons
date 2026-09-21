@@ -1238,6 +1238,10 @@ struct DLL_LINKAGE NewTurn : public CPackForClient
 	std::map<PlayerColor, ResourceSet> playerIncome;
 	std::optional<RumorState> newRumor; // only on new weeks
 	std::optional<InfoWindow> newWeekNotification; // only on new week
+	/// Server-authored weekly picks, keyed by town.  The town keeps the same
+	/// picks in its serialized state so the result remains visible after the
+	/// NewTurn packet has been applied and after a save/load.
+	std::map<ObjectInstanceID, std::vector<GameResID>> newHorizonsMysticPondResults;
 
 	NewTurn() = default;
 
@@ -1252,6 +1256,12 @@ struct DLL_LINKAGE NewTurn : public CPackForClient
 		h & playerIncome;
 		h & newRumor;
 		h & newWeekNotification;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MYSTIC_POND_RESULTS))
+			h & newHorizonsMysticPondResults;
+		else if(h.saving && !newHorizonsMysticPondResults.empty())
+			throw std::runtime_error("Cannot write New Horizons Mystic Pond result to an older format");
+		else if(!h.saving)
+			newHorizonsMysticPondResults.clear();
 	}
 };
 
@@ -1609,6 +1619,22 @@ struct DLL_LINKAGE AdvmapSpellCast : public CPackForClient
 
 protected:
 	void visitTyped(ICPackVisitor & visitor) override;
+};
+
+/// Authoritative New Horizons state for the shared daily Adventure Spell
+/// opportunity. The pack is emitted only after the adventure effect succeeds.
+struct DLL_LINKAGE SetNewHorizonsAdventureSpellState : public CPackForClient
+{
+	ObjectInstanceID hid;
+	bool castToday = false;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		h & hid;
+		h & castToday;
+	}
 };
 
 struct DLL_LINKAGE ShowWorldViewEx : public CPackForClient

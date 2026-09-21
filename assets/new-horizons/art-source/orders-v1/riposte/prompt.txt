@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Heroes III-style Order icon, square high-resolution master
+Primary request: Create an original miniature fantasy still-life icon for the Order “Riposte”. Show a polished round steel buckler catching a sword slash and turning it aside, with a second short sword emerging in a quick counter-thrust; make the crossed defensive-and-returning motion instantly legible.
+Scene/backdrop: dark oxblood leather battlefield backdrop, tightly cropped
+Subject: one integrated buckler, deflected blade and counter blade, dominant shield silhouette
+Style/medium: late-1990s Western PC fantasy illustration, modeled painterly miniature still life
+Composition/framing: square icon, narrow safe inset, shield large on left, counter-thrust diagonally toward upper right, readable at 44x44
+Lighting/mood: theatrical chiaroscuro, bright steel flash at the deflection point, deep shadow behind the shield
+Color palette: silver steel, muted cobalt leather, oxblood background, small warm gold rivets
+Materials/textures: hammered shield boss, scratched blades, stitched leather grip, aged metal
+Constraints: no lettering, no readable runes, no ornamental border, no interface chrome, transparent background if supported
+Avoid: modern glossy mobile-game style, neon bloom, vector outlines, flat shapes, intentional pixel art, dithering, watermark, extra weapons beyond the two blades

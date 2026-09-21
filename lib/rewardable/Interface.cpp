@@ -17,6 +17,7 @@
 #include "../callback/IGameInfoCallback.h"
 #include "../callback/IGameEventCallback.h"
 #include "../entities/hero/CHeroHandler.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../gameState/CGameState.h"
 #include "../spells/ISpellMechanics.h"
 #include "../spells/NewHorizonsMagic.h"
@@ -27,6 +28,23 @@
 #include "../networkPacks/PacksForClient.h"
 
 #include <vstd/RNG.h>
+
+bool Rewardable::Interface::rewardTeachesSecondarySkill(const Rewardable::VisitInfo & info, const CGHeroInstance * contextHero) const
+{
+	if(!contextHero)
+		return false;
+
+	for(const auto & [authoredSkill, levels] : info.reward.secondary)
+	{
+		if(levels <= 0)
+			continue;
+
+		const auto replaced = newHorizonsMagic::replacementSkill(contextHero->getMagicRules(), authoredSkill);
+		if(newHorizonsHeroes::normalizeRewardSkill(contextHero->getPrimaryGrowthRules(), replaced))
+			return true;
+	}
+	return false;
+}
 
 std::vector<ui32> Rewardable::Interface::getAvailableRewards(const CGHeroInstance * hero, Rewardable::EEventType event) const
 {
@@ -106,14 +124,34 @@ void Rewardable::Interface::grantRewardBeforeLevelup(IGameEventCallback & gameEv
 
 	for(const auto & entry : info.reward.secondary)
 	{
-		const auto skill = newHorizonsMagic::replacementSkill(hero->getMagicRules(), entry.first);
-		int currentLevel = hero->getSecSkillLevel(skill);
+		const auto replaced = newHorizonsMagic::replacementSkill(hero->getMagicRules(), entry.first);
+		const auto skill = newHorizonsHeroes::normalizeRewardSkill(hero->getPrimaryGrowthRules(), replaced);
+		if(!skill)
+		{
+			logMod->warn("Skipping retired or unavailable secondary skill reward");
+			continue;
+		}
+		int currentLevel = hero->getSecSkillLevel(*skill);
 		int newLevel = currentLevel + entry.second;
 		int newLevelClamped = std::clamp<int>(newLevel, MasteryLevel::NONE, MasteryLevel::EXPERT);
+		if(currentLevel == MasteryLevel::EXPERT && entry.second > 0)
+		{
+			// Keep the existing teaching flow explicit even when a randomized or
+			// scripted reward selected a skill the hero has already mastered.
+			// The rank remains unchanged, and the player receives the same kind of
+			// explanatory feedback as the built-in teacher objects.
+			InfoWindow cannotImprove;
+			cannotImprove.player = hero->tempOwner;
+			cannotImprove.text = MetaString::createFromRawString("%s is already an Expert in %s and cannot improve it.");
+			cannotImprove.text.replaceTextID(hero->getNameTextID());
+			cannotImprove.text.replaceName(*skill);
+			gameEvents.showInfoDialog(&cannotImprove);
+			continue;
+		}
 		bool canLearn = currentLevel != 0 || hero->canLearnSkill();
 
 		if(currentLevel != newLevelClamped && canLearn)
-			gameEvents.changeSecSkill(hero, skill, newLevelClamped, ChangeValueMode::ABSOLUTE);
+			gameEvents.changeSecSkill(hero, *skill, newLevelClamped, ChangeValueMode::ABSOLUTE);
 	}
 
 	for(int i=0; i< info.reward.primary.size(); i++)
@@ -293,7 +331,12 @@ void Rewardable::Interface::configureInfoWindow(InfoWindow &, const CGHeroInstan
 
 void Rewardable::Interface::selectRewardWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * contextHero, const std::vector<ui32> & rewardIndices, const MetaString & dialog) const
 {
-	BlockingDialog sd(configuration.canRefuse, rewardIndices.size() > 1);
+	pendingRewardIndices = rewardIndices;
+	const bool teachesSkill = std::any_of(rewardIndices.begin(), rewardIndices.end(), [this, contextHero](ui32 index)
+	{
+		return rewardTeachesSecondarySkill(configuration.info.at(index), contextHero);
+	});
+	BlockingDialog sd(configuration.canRefuse || teachesSkill, rewardIndices.size() > 1);
 	sd.player = contextHero->tempOwner;
 	sd.text = dialog;
 	sd.components = loadComponents(contextHero, rewardIndices);
@@ -361,7 +404,7 @@ void Rewardable::Interface::doHeroVisit(IGameEventCallback & gameEvents, const C
 			}
 			case 1: // one reward. Just give it with message
 			{
-				if (configuration.canRefuse)
+				if (configuration.canRefuse || rewardTeachesSecondarySkill(configuration.info.at(rewards.front()), h))
 					selectRewardWithMessage(gameEvents, h, rewards, configuration.info.at(rewards.front()).message);
 				else
 					grantRewardWithMessage(gameEvents, h, rewards.front(), true);
@@ -374,7 +417,7 @@ void Rewardable::Interface::doHeroVisit(IGameEventCallback & gameEvents, const C
 						selectRewardWithMessage(gameEvents, h, rewards, configuration.onSelect);
 						break;
 					case Rewardable::SELECT_FIRST: // give first available
-						if (configuration.canRefuse)
+						if (configuration.canRefuse || rewardTeachesSecondarySkill(configuration.info.at(rewards.front()), h))
 							selectRewardWithMessage(gameEvents, h, { rewards.front() }, configuration.info.at(rewards.front()).message);
 						else
 							grantRewardWithMessage(gameEvents, h, rewards.front(), true);
@@ -382,7 +425,7 @@ void Rewardable::Interface::doHeroVisit(IGameEventCallback & gameEvents, const C
 					case Rewardable::SELECT_RANDOM: // give random
 					{
 						ui32 rewardIndex = *RandomGeneratorUtil::nextItem(rewards, gameEvents.getRandomGenerator());
-						if (configuration.canRefuse)
+						if (configuration.canRefuse || rewardTeachesSecondarySkill(configuration.info.at(rewardIndex), h))
 							selectRewardWithMessage(gameEvents, h, { rewardIndex }, configuration.info.at(rewardIndex).message);
 						else
 							grantRewardWithMessage(gameEvents, h, rewardIndex, true);
@@ -416,14 +459,18 @@ void Rewardable::Interface::doHeroVisit(IGameEventCallback & gameEvents, const C
 
 void Rewardable::Interface::onBlockingDialogAnswered(IGameEventCallback & gameEvents, const CGHeroInstance * hero, int32_t answer) const
 {
+	const auto selectedRewards = pendingRewardIndices.empty()
+		? getAvailableRewards(hero, Rewardable::EEventType::EVENT_FIRST_VISIT)
+		: pendingRewardIndices;
+	pendingRewardIndices.clear();
+
 	if (answer == 0)
 		return; //Player refused
 
-	if(answer > 0 && answer - 1 < configuration.info.size())
+	if(answer > 0 && static_cast<size_t>(answer - 1) < selectedRewards.size())
 	{
-		auto list = getAvailableRewards(hero, Rewardable::EEventType::EVENT_FIRST_VISIT);
 		markAsVisited(gameEvents, hero);
-		grantReward(gameEvents, list[answer - 1], hero);
+		grantReward(gameEvents, selectedRewards[answer - 1], hero);
 	}
 	else
 	{

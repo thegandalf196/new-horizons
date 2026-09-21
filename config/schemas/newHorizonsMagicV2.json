@@ -15,6 +15,20 @@
 			"uniqueItems": true,
 			"items": {"$ref": "vcmi:newHorizonsMagic#/definitions/school"}
 		},
+		"adventureSpells": {
+			"type": "object",
+			"minProperties": 5,
+			"maxProperties": 5,
+			"additionalProperties": false,
+			"required": ["core:summonBoat", "core:waterWalk", "core:townPortal", "core:fly", "core:dimensionDoor"],
+			"properties": {
+				"core:summonBoat": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
+				"core:waterWalk": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
+				"core:townPortal": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
+				"core:fly": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
+				"core:dimensionDoor": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"}
+			}
+		},
 		"spells": {
 			"type": "object",
 			"minProperties": 1,

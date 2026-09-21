@@ -1,0 +1,94 @@
+{
+	"core:castle": {
+		"town": {
+			"buildings": {
+				"special3": {
+					"name": "Brotherhood of the Sword",
+					"description": "The Brotherhood of the Sword trains each visiting hero in Leadership.",
+					"configuration": {
+						"visitMode": "hero",
+						"notVisitedTooltip": "Training available for this hero.",
+						"visitedTooltip": "This hero has already trained here.",
+						"onVisitedMessage": "This hero has already received training from the Brotherhood of the Sword.",
+						"rewards": [
+							{
+								"message": "The Brotherhood of the Sword permanently increases this hero's Leadership by 100.",
+								"bonuses": [ { "type": "LEADERSHIP", "val": 100 } ]
+							}
+						]
+					}
+				}
+			}
+		}
+	},
+	"core:inferno": {
+		"town": {
+			"buildings": {
+				"special4": {
+					"name": "Order of Fire",
+					"description": "The Order of Fire sharpens each visiting hero's Spell Power.",
+					"configuration": {
+						"visitMode": "hero",
+						"notVisitedTooltip": "Training available for this hero.",
+						"visitedTooltip": "This hero has already trained here.",
+						"onVisitedMessage": "This hero has already received training from the Order of Fire.",
+						"rewards": [
+							{
+								"message": "The Order of Fire permanently increases this hero's Spell Power by 5.",
+								"primary": { "spellpower": 5 }
+							}
+						]
+					}
+				}
+			}
+		}
+	},
+	"core:dungeon": {
+		"town": {
+			"buildings": {
+				"special2": {
+					"name": "Astral Nexus",
+					"description": "The Astral Nexus permanently expands each visiting hero's Knowledge.",
+					"configuration": {
+						"resetParameters": {
+							"weeks": 0,
+							"visitors": false
+						},
+						"visitMode": "hero",
+						"notVisitedTooltip": "Training available for this hero.",
+						"visitedTooltip": "This hero has already trained here.",
+						"onVisitedMessage": "This hero has already received training from the Astral Nexus.",
+						"rewards": [
+							{
+								"message": "The Astral Nexus permanently increases this hero's Knowledge by 5.",
+								"primary": { "knowledge": 5 }
+							}
+						]
+					}
+				}
+			}
+		}
+	},
+	"core:stronghold": {
+		"town": {
+			"buildings": {
+				"special4": {
+					"name": "Hall of Valhalla",
+					"description": "The Hall of Valhalla permanently strengthens each visiting hero's Attack.",
+					"configuration": {
+						"visitMode": "hero",
+						"notVisitedTooltip": "Training available for this hero.",
+						"visitedTooltip": "This hero has already trained here.",
+						"onVisitedMessage": "This hero has already received training from the Hall of Valhalla.",
+						"rewards": [
+							{
+								"message": "The Hall of Valhalla permanently increases this hero's Attack by 5.",
+								"primary": { "attack": 5 }
+							}
+						]
+					}
+				}
+			}
+		}
+	}
+}

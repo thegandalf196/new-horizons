@@ -92,6 +92,8 @@ public:
 	virtual bool hasFortifications() const = 0;
 	virtual bool hasMoat() const = 0;
 	virtual EWallState battleGetWallState(EWallPart partOfWall) const = 0;
+	/// Canonical New Horizons fortification HP; zero for legacy/proxy battles.
+	virtual int32_t getWallStructuralHP(EWallPart partOfWall) const { (void)partOfWall; return 0; }
 	virtual bool isWallPartAttackable(EWallPart wallPart) const = 0;
 	virtual BattleHex wallPartToBattleHex(EWallPart part) const = 0;
 	virtual EWallPart battleHexToWallPart(const BattleHex & hex) const = 0;

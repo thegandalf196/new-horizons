@@ -18,6 +18,7 @@
 #include "../CPlayerState.h"
 //#include "../CSkillHandler.h"
 #include "../IGameSettings.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "../callback/IGameEventCallback.h"
 #include "../callback/IGameInfoCallback.h"
 #include "../callback/IGameRandomizer.h"
@@ -182,4 +183,49 @@ std::vector<Component> CGUniversity::getPopupComponents(PlayerColor player) cons
 		result.emplace_back(ComponentType::SEC_SKILL, skill.as<SecondarySkill>());
 
 	return result;
+}
+
+namespace newHorizonsUniversity
+{
+namespace
+{
+int configuredAmount(const JsonNode & config, const char * key, int fallback)
+{
+	const auto & value = config[key];
+	if(!value.isNumber() || value.Float() < 0 || std::floor(value.Float()) != value.Float())
+		return fallback;
+	return value.Integer();
+}
+}
+
+bool usesNewHorizonsTuition(const IMarket * market, const JsonNode & magicRules)
+{
+	const auto * town = dynamic_cast<const CGTownInstance *>(market);
+	return town
+		&& town->getFactionID() == FactionID::CONFLUX
+		&& town->hasBuilt(BuildingID::SPECIAL_2)
+		&& town->allowsTrade(EMarketMode::RESOURCE_SKILL)
+		&& newHorizonsMagic::rulesActive(magicRules);
+}
+
+TResources tuition(const IMarket * market, const JsonNode & magicRules, const IGameSettings & settings)
+{
+	TResources result;
+	if(!usesNewHorizonsTuition(market, magicRules))
+	{
+		result[EGameResID::GOLD] = settings.getInteger(EGameSettings::MARKETS_UNIVERSITY_GOLD_COST);
+		return result;
+	}
+
+	// Keep the fixed design values as a compatibility fallback for an older
+	// settings snapshot which predates the new setting. New Horizons worlds
+	// still receive the exact canonical tuition rather than a zero price.
+	const auto & config = settings.getValue(EGameSettings::MARKETS_NEW_HORIZONS_UNIVERSITY_COST);
+	result[EGameResID::GOLD] = configuredAmount(config, "gold", 5000);
+	result[EGameResID::MERCURY] = configuredAmount(config, "mercury", 2);
+	result[EGameResID::SULFUR] = configuredAmount(config, "sulfur", 2);
+	result[EGameResID::CRYSTAL] = configuredAmount(config, "crystal", 2);
+	result[EGameResID::GEMS] = configuredAmount(config, "gems", 2);
+	return result;
+}
 }

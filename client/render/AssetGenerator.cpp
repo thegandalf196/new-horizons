@@ -79,6 +79,7 @@ void AssetGenerator::initialize()
 	imageFiles[ImagePath::builtin("stackWindow/info-panel-2.png")] = [this](){ return createCreatureInfoPanel(4);};
 	imageFiles[ImagePath::builtin("stackWindow/bonus-effects.png")] = [this](){ return createCreatureInfoPanelElement(BONUS_EFFECTS);};
 	imageFiles[ImagePath::builtin("stackWindow/spell-effects.png")] = [this](){ return createCreatureInfoPanelElement(SPELL_EFFECTS);};
+	imageFiles[ImagePath::builtin("stackWindow/leadership.png")] = [this](){ return createCreatureInfoPanelElement(LEADERSHIP);};
 	imageFiles[ImagePath::builtin("stackWindow/button-panel.png")] = [this](){ return createCreatureInfoPanelElement(BUTTON_PANEL);};
 	imageFiles[ImagePath::builtin("stackWindow/commander-bg.png")] = [this](){ return createCreatureInfoPanelElement(COMMANDER_BACKGROUND);};
 	imageFiles[ImagePath::builtin("stackWindow/commander-abilities.png")] = [this](){ return createCreatureInfoPanelElement(COMMANDER_ABILITIES);};
@@ -974,6 +975,7 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanelElement(Creatur
 	std::map<CreatureInfoPanelElement, Point> size {
 		{BONUS_EFFECTS, Point(438, 59)},
 		{SPELL_EFFECTS, Point(438, 42)},
+		{LEADERSHIP, Point(438, 42)},
 		{BUTTON_PANEL, Point(438, 43)},
 		{COMMANDER_BACKGROUND, Point(438, 177)},
 		{COMMANDER_ABILITIES, Point(438, 59)}
@@ -1007,6 +1009,16 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanelElement(Creatur
 			canvas.drawBorder(r, borderColor);
 		}
 		break;
+	case LEADERSHIP:
+	{
+		Rect iconFrame(8, 3, 36, 36);
+		canvas.drawColorBlended(iconFrame, rectangleColorRed);
+		canvas.drawBorder(iconFrame, borderColor);
+		Rect textFrame(48, 3, 382, 36);
+		canvas.drawColorBlended(textFrame, rectangleColor);
+		canvas.drawBorder(textFrame, borderColor);
+		break;
+	}
 	case BUTTON_PANEL:
 		canvas.drawColorBlended(Rect(382, 5, 52, 36), Colors::BLACK);
 		break;

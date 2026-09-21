@@ -7,7 +7,7 @@
 			"magic": 2
 		},
 		"basic": {
-			"description": "Melee attacks and retaliations deal +10% physical damage. At subsequent level-ups, Offense has a 10% chance to grant +1 Attack.",
+			"description": "Melee attacks and retaliations deal +10% physical damage.",
 			"images": {
 				"small": "SECSK32:0:69",
 				"medium": "SECSKILL:0:69",
@@ -24,7 +24,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Melee attacks and retaliations deal +20% physical damage. Attack-growth chance becomes 20%.",
+			"description": "Melee attacks and retaliations deal +20% physical damage.",
 			"images": {
 				"small": "SECSK32:0:70",
 				"medium": "SECSKILL:0:70",
@@ -41,7 +41,7 @@
 			}
 		},
 		"expert": {
-			"description": "Melee attacks and retaliations deal +30% physical damage. Attack-growth chance becomes 30%.",
+			"description": "Melee attacks and retaliations deal +30% physical damage.",
 			"images": {
 				"small": "SECSK32:0:71",
 				"medium": "SECSKILL:0:71",
@@ -67,7 +67,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "Physical creature attacks and retaliations against the hero's army deal 5% less damage. At subsequent level-ups, Armorer has a 10% chance to grant +1 Defense.",
+			"description": "Physical creature attacks and retaliations against the hero's army deal 5% less damage.",
 			"images": {
 				"small": "SECSK32:0:72",
 				"medium": "SECSKILL:0:72",
@@ -83,7 +83,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Physical creature-attack reduction increases to 10%. Defense-growth chance becomes 20%.",
+			"description": "Physical creature-attack reduction increases to 10%.",
 			"images": {
 				"small": "SECSK32:0:73",
 				"medium": "SECSKILL:0:73",
@@ -99,7 +99,7 @@
 			}
 		},
 		"expert": {
-			"description": "Physical creature-attack reduction increases to 15%. Defense-growth chance becomes 30%.",
+			"description": "Physical creature-attack reduction increases to 15%.",
 			"images": {
 				"small": "SECSK32:0:74",
 				"medium": "SECSKILL:0:74",
@@ -124,7 +124,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "Ranged creature attacks deal +10% physical damage. At subsequent level-ups, Archery has a 10% chance to grant +1 Attack.",
+			"description": "Ranged creature attacks deal +10% physical damage.",
 			"images": {
 				"small": "SECSK32:0:6",
 				"medium": "SECSKILL:0:6",
@@ -140,7 +140,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Ranged creature attacks deal +20% physical damage. Attack-growth chance becomes 20%.",
+			"description": "Ranged creature attacks deal +20% physical damage.",
 			"images": {
 				"small": "SECSK32:0:7",
 				"medium": "SECSKILL:0:7",
@@ -156,7 +156,7 @@
 			}
 		},
 		"expert": {
-			"description": "Ranged creature attacks deal +30% physical damage. Attack-growth chance becomes 30%.",
+			"description": "Ranged creature attacks deal +30% physical damage.",
 			"images": {
 				"small": "SECSK32:0:8",
 				"medium": "SECSKILL:0:8",
@@ -306,7 +306,7 @@
 				"newHorizonsPlaceholder": {
 					"type": "MORALE",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 1
 				}
 			}
 		},
@@ -322,7 +322,7 @@
 				"newHorizonsPlaceholder": {
 					"type": "MORALE",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 2
 				}
 			}
 		},
@@ -338,7 +338,7 @@
 				"newHorizonsPlaceholder": {
 					"type": "MORALE",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 3
 				}
 			}
 		}
@@ -838,7 +838,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency. At subsequent level-ups, Spellcraft has a 10% chance to grant +1 Spell Power.",
+			"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency.",
 			"images": {
 				"small": "SECSK32:0:78",
 				"medium": "SECSKILL:0:78",
@@ -854,7 +854,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Spell Power-derived components operate at 120%. Spell Power-growth chance becomes 20%.",
+			"description": "Spell Power-derived components operate at 120%.",
 			"images": {
 				"small": "SECSK32:0:79",
 				"medium": "SECSKILL:0:79",
@@ -870,7 +870,7 @@
 			}
 		},
 		"expert": {
-			"description": "Spell Power-derived components operate at 130%. Spell Power-growth chance becomes 30%.",
+			"description": "Spell Power-derived components operate at 130%.",
 			"images": {
 				"small": "SECSK32:0:80",
 				"medium": "SECSKILL:0:80",
@@ -895,7 +895,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "Listed spell Mana costs are reduced by 10%. At subsequent level-ups, Wisdom has a 10% chance to grant +1 Knowledge.",
+			"description": "Listed spell Mana costs are reduced by 10%.",
 			"images": {
 				"small": "SECSK32:0:24",
 				"medium": "SECSKILL:0:24",
@@ -911,7 +911,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Listed spell Mana costs are reduced by 20%. Knowledge-growth chance becomes 20%.",
+			"description": "Listed spell Mana costs are reduced by 20%.",
 			"images": {
 				"small": "SECSK32:0:25",
 				"medium": "SECSKILL:0:25",
@@ -927,7 +927,7 @@
 			}
 		},
 		"expert": {
-			"description": "Listed spell Mana costs are reduced by 30%. Knowledge-growth chance becomes 30%.",
+			"description": "Listed spell Mana costs are reduced by 30%.",
 			"images": {
 				"small": "SECSK32:0:26",
 				"medium": "SECSKILL:0:26",

@@ -13,6 +13,7 @@
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsMasteryState.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
+#include "../spells/NewHorizonsMagic.h"
 
 #include <vcmi/spells/Caster.h>
 
@@ -217,6 +218,9 @@ public:
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
+	bool hasNewHorizonsAdventureSpellCastToday() const { return newHorizonsAdventureSpellState.castToday; }
+	void setNewHorizonsAdventureSpellCastToday(bool value) { newHorizonsAdventureSpellState.castToday = value; }
+	void resetNewHorizonsAdventureSpellCastToday() { newHorizonsAdventureSpellState.castToday = false; }
 	int getPerkSkillRank(const std::string & skillId) const;
 	bool hasActivePerk(const std::string & skillId, const std::string & perkId) const;
 	/// New Horizons Necromancy is a separate saved-rules path.  Legacy heroes
@@ -235,6 +239,7 @@ public:
 	std::optional<newHorizonsHeroes::SiegeCapabilities> getSiegeCapabilities() const;
 	/// Read-only projection for AI army exchanges; does not attach or transfer units.
 	std::optional<newHorizonsHeroes::LeadershipCapacity> getLeadershipCapacity(const CCreatureSet & army) const;
+	std::optional<newHorizonsHeroes::LeadershipSlotCapacity> getLeadershipSlotCapacity(CreatureID creature) const;
 	bool isPrimaryRatingNode() const override { return usesPrimaryGrowth(); }
 
 	/// Returns true if hero has free secondary skill slot.
@@ -385,6 +390,7 @@ private:
 	newHorizonsHeroes::PerkState perkState;
 	bool primaryGrowthCaptured = false;
 	JsonNode primaryGrowthRules;
+	newHorizonsMagic::AdventureSpellState newHorizonsAdventureSpellState;
 	std::array<int, GameConstants::PRIMARY_SKILLS> lastPrimaryGains{};
 	void levelUpAutomatically(IGameRandomizer & gameRandomizer);
 	void attachCommanderToArmy();
@@ -442,6 +448,11 @@ public:
 		}
 		else if(!h.saving)
 			capabilityRules = JsonNode();
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ADVENTURE_MAGIC))
+			h & newHorizonsAdventureSpellState;
+		else if(!h.saving)
+			newHorizonsAdventureSpellState = newHorizonsMagic::AdventureSpellState();
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MASTERIES))
 			h & masteryState;

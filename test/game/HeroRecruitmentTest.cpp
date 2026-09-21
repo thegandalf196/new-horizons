@@ -25,6 +25,21 @@ class HeroRecruitmentTest : public GameStateTest
 {
 };
 
+TEST_F(HeroRecruitmentTest, NewDayResetsAdventureSpellOpportunityForPooledHeroes)
+{
+	startTestGame();
+
+	const auto heroesInPool = map->getHeroesInPool();
+	ASSERT_FALSE(heroesInPool.empty());
+	auto * pooledHero = map->tryGetFromHeroPool(heroesInPool.front());
+	ASSERT_NE(pooledHero, nullptr);
+	pooledHero->setNewHorizonsAdventureSpellCastToday(true);
+	ASSERT_TRUE(pooledHero->hasNewHorizonsAdventureSpellCastToday());
+
+	gameState->heroesPool->onNewDay();
+	EXPECT_FALSE(pooledHero->hasNewHorizonsAdventureSpellCastToday());
+}
+
 // Test that hero recruitment properly assigns an ID to the recruited hero
 TEST_F(HeroRecruitmentTest, DISABLED_recruitedHeroGetsId)
 {

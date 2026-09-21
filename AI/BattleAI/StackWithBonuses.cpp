@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "StackWithBonuses.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
+#include "../../lib/battle/SiegeInfo.h"
 
 #include <vcmi/events/EventBus.h>
 
@@ -327,6 +328,8 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	{
 		const auto part = static_cast<EWallPart>(index);
 		projectedWalls[part] = BattleProxy::getWallState(part);
+		projectedStructuralHP[part] = BattleProxy::getWallStructuralHP(part);
+		canonicalStructuralHP |= projectedStructuralHP[part] > 0;
 	}
 	initialGateState = BattleProxy::getGateState();
 	// Use the subject's visible view, not its unfiltered authoritative obstacle list.
@@ -703,6 +706,15 @@ EWallState HypotheticBattle::getWallState(EWallPart part) const
 	return projectedWalls.at(part);
 }
 
+int32_t HypotheticBattle::getWallStructuralHP(EWallPart part) const
+{
+	if(!canonicalStructuralHP)
+		return 0;
+	if(const auto it = projectedStructuralHP.find(part); it != projectedStructuralHP.end())
+		return it->second;
+	return 0;
+}
+
 EGateState HypotheticBattle::getGateState() const
 {
 	// The authoritative BattleProcessor derives this after catapult/earthquake
@@ -715,6 +727,23 @@ void HypotheticBattle::setWallState(EWallPart partOfWall, EWallState state)
 {
 	wallChanges |= projectedWalls[partOfWall] != state;
 	projectedWalls[partOfWall] = state;
+	if(canonicalStructuralHP && state == EWallState::DESTROYED)
+		projectedStructuralHP[partOfWall] = 0;
+}
+
+void HypotheticBattle::setWallStructuralHP(EWallPart partOfWall, int32_t hp)
+{
+	if(!canonicalStructuralHP)
+		return;
+
+	const auto maximum = SiegeInfo::maximumStructuralHP(partOfWall);
+	if(maximum <= 0)
+		return;
+
+	const auto bounded = std::clamp(hp, 0, maximum);
+	wallChanges |= getWallStructuralHP(partOfWall) != bounded;
+	projectedStructuralHP[partOfWall] = bounded;
+	setWallState(partOfWall, SiegeInfo::stateFromStructuralHP(partOfWall, bounded));
 }
 
 void HypotheticBattle::addObstacle(const ObstacleChanges & changes)

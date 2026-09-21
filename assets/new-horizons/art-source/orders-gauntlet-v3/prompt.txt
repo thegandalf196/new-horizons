@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Heroes III-inspired combat UI button glyph, reduced to 48x36 pixels
+Primary request: create a clean monochromatic golden-yellow armored gauntlet icon representing military Orders
+Subject: one compact medieval plate gauntlet in crisp three-quarter side profile, cuff at left; unmistakable silhouette at tiny size
+Style: original hand-painted late-1990s fantasy strategy game UI artwork; restrained miniature painted object
+Composition: transparent canvas; dominant object with a safe inset; no border or button chrome
+Palette: near-monochrome gold, yellow and ochre with dark-brown shadow only
+Constraints: transparent background; no text, runes, watermark, frame, badge, glow, sparks, weapon, arm or extra objects
+
+Generated with the built-in image tool on 2026-09-20. The previous in-game
+gauntlet was supplied only as a content/silhouette reference. Runtime states are
+mechanical reductions and tonal variants of the generated master.

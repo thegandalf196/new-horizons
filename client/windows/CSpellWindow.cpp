@@ -559,6 +559,16 @@ void CSpellWindow::processSpells()
 
 void CSpellWindow::fexitb()
 {
+	closeSpellbook(true);
+}
+
+void CSpellWindow::closeForSpellSelection()
+{
+	closeSpellbook(false);
+}
+
+void CSpellWindow::closeSpellbook(bool declineMetamagic)
+{
 	auto spellBookState = myInt->localState->getSpellbookSettings();
 	if(myInt->battleInt)
 	{
@@ -571,6 +581,10 @@ void CSpellWindow::fexitb()
 		spellBookState.spellbookLastPageAdvmap = currentPage;
 	}
 	myInt->localState->setSpellbookSettings(spellBookState);
+
+	if(declineMetamagic && myInt->battleInt && myInt->battleInt->actionsController
+		&& myInt->battleInt->actionsController->metamagicFollowupModeActive())
+		myInt->battleInt->declineMetamagicFollowup();
 
 	if(onSpellSelect)
 		onSpellSelect(SpellID::NONE);
@@ -942,7 +956,7 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 				// synchronously open a post-selection modal (Selective Dispel), and
 				// only the topmost window may be closed.
 				const SpellID selectedSpell = mySpell->id;
-				owner->fexitb();
+				owner->closeForSpellSelection();
 				battleInterface->castThisSpell(selectedSpell);
 				return;
 			}

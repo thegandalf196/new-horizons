@@ -16,6 +16,7 @@
 #include "../CStack.h"
 #include "BattleInfo.h"
 #include "CObstacleInstance.h"
+#include "NewHorizonsBulwark.h"
 #include "IGameSettings.h"
 #include "PossiblePlayerBattleAction.h"
 #include "../bonuses/BonusParameters.h"
@@ -38,6 +39,10 @@
 namespace
 {
 constexpr int ELVEN_PRECISION_DEFENSE_IGNORE_PERCENT = 25;
+constexpr int SHOCK_ASSAULT_DEFENSE_IGNORE_PERCENT = 25;
+constexpr int EXECUTIONER_DAMAGE_PERCENT = 20;
+constexpr int ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT = 20;
+constexpr int BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT = 50;
 
 LuckRollRules battleLuckRules(const IBattleInfo & battle)
 {
@@ -393,6 +398,19 @@ std::vector<uint32_t> CBattleInfoCallback::battleFortuneAdjacentFriends(const ba
 			}
 	}
 	return result;
+}
+
+bool CBattleInfoCallback::battleCanUsePerfectMoment(const battle::Unit * attacker) const
+{
+	if(!attacker || !getBattle() || battleTacticDist() || !attacker->alive() || attacker->isGhost()
+		|| attacker->isTimeStopped() || attacker->isTurret() || attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| attacker->hasBonusOfType(BonusType::NO_LUCK) || attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
+		|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+		|| getBattle()->getActiveStackID() != attacker->unitId())
+		return false;
+	const auto side = playerToSide(battleGetOwner(attacker));
+	return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		&& getBattle()->getSylvanLuckState(side).canUsePerfectMoment();
 }
 
 int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const
@@ -1649,8 +1667,44 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
 	payload.targetedRangedCommandPercent = battleTargetedRangedCommandPercent(
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
+	if(info.physicalDamage && !info.shooting && info.attacker && info.defender
+		&& battleGetOwner(info.attacker) != battleGetOwner(info.defender))
+	{
+		if(const auto * hero = battleGetOwnerHero(info.attacker))
+		{
+			const auto hasOffensePerk = [hero](const char * perk)
+			{
+				return hero->hasActivePerk("new-horizons:offense", perk);
+			};
+			if(hasOffensePerk("new-horizons:offense.executioner")
+				&& info.defender->getAvailableHealth() * 100 < info.defender->getTotalHealth() * 40)
+				payload.executionerDamagePercent = EXECUTIONER_DAMAGE_PERCENT;
+			if(hasOffensePerk("new-horizons:offense.armorPiercer"))
+				payload.meleeDefenseIgnorePercent = ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT;
+			if(hasOffensePerk("new-horizons:offense.breakthrough") && info.defender->defended())
+			{
+				payload.defensiveStanceDamageReductionIgnorePercent = BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT;
+				payload.defensiveStanceDefenseBonus = std::max(0, info.defender->getDefense(false)
+					- info.defender->getDefenseIgnoringDefensiveStance(false));
+			}
+		}
+	}
 	if(info.physicalDamage)
+	{
 		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker);
+		if(info.defender && info.defender->defended())
+		{
+			const auto * hero = battleGetOwnerHero(info.defender);
+			const int bulwarkRank = newHorizonsBulwark::rank(hero);
+			const auto terrain = getBattle()->getTerrainType();
+			const bool mireTerrain = newHorizonsBulwark::hasMireborn(hero)
+				&& (terrain == TerrainId::SWAMP || terrain == TerrainId::ROUGH);
+			payload.bulwarkDamageReductionBasisPoints = newHorizonsBulwark::reductionBasisPoints(
+				bulwarkRank, hero ? hero->getPrimSkillLevel(PrimarySkill::DEFENSE) : 0, mireTerrain);
+		}
+	}
+	if(info.preemptiveDamagePercent > 0)
+		payload.heroOrderFinalDamageMultiplier = info.preemptiveDamagePercent;
 	if(heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		&& info.attacker && info.defender && !info.attacker->isGhost() && !info.defender->isGhost())
 	{
@@ -1677,10 +1731,15 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			switch(attackerState->command)
 			{
 			case HeroCommand::CHARGE:
-				if(eligibleOrderUnit(info.attacker) && !info.shooting && info.chargeDistance >= 3
+				if(eligibleOrderUnit(info.attacker) && !info.shooting && !info.secondaryAttack && info.chargeDistance >= 3
 					&& !attackerState->containsConsumed(info.attacker->unitId()))
+				{
 					payload.heroOrderDamagePercent = coefficientFor(rules["charge"]["effects"]["meleeDamagePercent"], attack)
 						+ 2 * (info.chargeDistance - 3);
+					if(info.physicalDamage && battleGetOwner(info.attacker) != battleGetOwner(info.defender)
+						&& attack->hasActivePerk("new-horizons:offense", "new-horizons:offense.shockAssault"))
+						payload.chargeDefenseIgnorePercent = SHOCK_ASSAULT_DEFENSE_IGNORE_PERCENT;
+				}
 				break;
 			case HeroCommand::RIPOSTE:
 				if(eligibleOrderUnit(info.attacker) && info.retaliation && !info.shooting)
@@ -1757,7 +1816,17 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	if(info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))
 		if(const auto * hero = battleGetOwnerHero(info.attacker))
 			if(const auto siege = hero->getSiegeCapabilities())
-				payload.siegeSkillMultiplier = siege->ballistaDamageMultiplier;
+			{
+				if(hero->getCapabilityRules()["rulesetVersion"].Integer() >= 3)
+				{
+					if(info.attacker->isBallista())
+						payload.machineBaseDamage = siege->ballistaDamage;
+					else if(info.attacker->isTurret())
+						payload.machineBaseDamage = siege->defensiveTowerDamage;
+				}
+				else
+					payload.siegeSkillMultiplier = siege->ballistaDamageMultiplier;
+			}
 	payload.attackFactorPerPoint = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_ATTACK_POINT_DAMAGE_FACTOR);
 	payload.attackFactorCap = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_ATTACK_POINT_DAMAGE_FACTOR_CAP);
 	payload.defenseFactorPerPoint = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_DEFENSE_POINT_DAMAGE_FACTOR);
@@ -1788,7 +1857,12 @@ int64_t CBattleInfoCallback::getFirstAidHealValue(const CGHeroInstance * owner, 
 	if(!owner || !target)
 		return 0;
 
-	int64_t base = owner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(CreatureID(CreatureID::FIRST_AID_TENT)));
+	int64_t base = 0;
+	if(const auto siege = owner->getSiegeCapabilities();
+		siege && owner->getCapabilityRules()["rulesetVersion"].Integer() >= 3)
+		base = siege->firstAidHealing;
+	else
+		base = owner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(CreatureID(CreatureID::FIRST_AID_TENT)));
 
 	if(base <= 0)
 		return 0;

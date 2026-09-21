@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "CHeroWindow.h"
 #include "NewHorizonsPerkIcons.h"
+#include "NewHorizonsPerkHelp.h"
 #include "HeroSkillOddsWindow.h"
 #include "wiki/WikiWindow.h"
 
@@ -606,8 +607,8 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 			const auto & perkState = curHero->getPerkState();
 			const std::string skillId = learnedSkill
 				? curHero->secSkills[g + offset].first.toSkill()->getJsonKey() : std::string();
-			const auto skillDefinition = learnedSkill && newHorizonsHeroes::usesPerkRules(perkState.rules)
-				? newHorizonsHeroes::perkSkill(perkState.rules, skillId) : std::nullopt;
+			const auto skillDefinition = learnedSkill
+				? newHorizonsPerkHelp::skillDefinition(curHero, skillId) : std::nullopt;
 			std::vector<const newHorizonsHeroes::PerkDefinition *> learnedPerks;
 			if(skillDefinition)
 				for(const auto & selection : perkState.selected)
@@ -646,7 +647,8 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				if(hasPerk)
 				{
 					const auto * perk = learnedPerks[ability];
-					const auto description = skillId + " - " + perk->name + "\n" + perk->description;
+					const auto description = newHorizonsPerkHelp::format(curHero, skillId,
+						perk->name, newHorizonsPerkHelp::tierName(perk->requiredRank), perk->description);
 					area->text = description;
 					area->hoverText = description;
 					cellLabels.at(labelIndex)->setText("");
@@ -683,11 +685,13 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	if(newHorizonsLayout)
 	{
 		const auto leadership = curHero->getLeadershipCapacity();
-		leadershipValue->setText(leadership ? std::to_string(leadership->used) + "/" + std::to_string(leadership->capacity) : "--");
-		leadershipArea->text = leadership ? "Leadership: " + std::to_string(leadership->used) + " / " + std::to_string(leadership->capacity)
-			+ " creatures / capacity, including undead. Movement limit: " + std::to_string(leadership->movementPercent)
-			+ "%. Exceeding capacity alone does not remove troops. Display icon is illustrative."
-			: "No saved leadership capacity rules for this hero. Display icon is illustrative.";
+		const bool perSlotLeadership = leadership && curHero->getCapabilityRules()["rulesetVersion"].Integer() >= 2;
+		leadershipValue->setText(leadership ? std::to_string(leadership->capacity) : "--");
+		leadershipArea->text = !leadership ? "No saved Leadership rules for this hero. Display icon is illustrative."
+			: perSlotLeadership ? "Leadership: " + std::to_string(leadership->capacity)
+				+ ". Each army slot is limited independently: maximum stack size = floor(Leadership / that creature's Leadership Requirement)."
+			: "Legacy Leadership preview: " + std::to_string(leadership->used) + " / " + std::to_string(leadership->capacity)
+				+ " aggregate creatures. Display icon is illustrative.";
 		movementValue->setText(std::to_string(curHero->movementPointsRemaining()) + "/" + std::to_string(curHero->movementPointsLimit()));
 		movementArea->text = "Movement points remaining / current limit: " + std::to_string(curHero->movementPointsRemaining())
 			+ " / " + std::to_string(curHero->movementPointsLimit()) + ". Display icon is illustrative.";
@@ -720,8 +724,8 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 			{
 				for(const auto & selection : perkState.selected)
 				{
-					const auto skill = newHorizonsHeroes::perkSkill(perkState.rules, selection.skillId);
-					const auto perk = newHorizonsHeroes::perkDefinition(perkState.rules, selection.skillId, selection.perkId);
+					const auto skill = newHorizonsPerkHelp::skillDefinition(curHero, selection.skillId);
+					const auto perk = newHorizonsPerkHelp::perkDefinition(curHero, selection.skillId, selection.perkId);
 					if(skill && perk)
 					{
 						if(!summary.empty())
@@ -733,7 +737,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 			}
 			if(const auto leadership = curHero->getLeadershipCapacity())
 			{
-				legacyLeadershipLabel->setText("Leadership " + std::to_string(leadership->used) + "/" + std::to_string(leadership->capacity));
+				legacyLeadershipLabel->setText("Leadership " + std::to_string(leadership->capacity));
 				legacyLeadershipLabel->enable();
 				legacyLeadershipImage->enable();
 			}

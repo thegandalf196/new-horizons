@@ -24,6 +24,39 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:timeStop',
     'new-horizons:transfigureMatter',
 }
+ADVENTURE_SPELLS = {
+    'core:summonBoat': (1, 20),
+    'core:waterWalk': (2, 30),
+    'core:townPortal': (3, 50),
+    'core:fly': (4, 60),
+    'core:dimensionDoor': (5, 80),
+}
+NH_FACTION_SPECIALTY_PRESENTATIONS = {
+    'core:sanya': ('Divine Mandate', 'divineMandate'),
+    'core:geon': ('Shroud of Malassa', 'shroudOfMalassa'),
+    'core:tiva': ('Bulwark of the Mire', 'bulwarkOfTheMire'),
+    'core:nimbus': ('Necromancy', 'necromancy'),
+    'core:malcom': ('Sylvan Luck', 'sylvanLuck'),
+    'core:oris': ('Bloodrage', 'bloodrage'),
+    'core:serena': ('Metamagic', 'metamagic'),
+    'core:rion': ('Divine Mandate', 'divineMandate'),
+    'core:verdish': ('Bulwark of the Mire', 'bulwarkOfTheMire'),
+    'core:gem': ('Sylvan Luck', 'sylvanLuck'),
+    'core:andra': ('Bulwark of the Mire', 'bulwarkOfTheMire'),
+    'core:ayden': ('Demonic Gating', 'demonicGating'),
+    'core:elleshar': ('Sylvan Luck', 'sylvanLuck'),
+    'core:jaegar': ('Shroud of Malassa', 'shroudOfMalassa'),
+    'core:rosic': ('Bulwark of the Mire', 'bulwarkOfTheMire'),
+    'core:axsis': ('Demonic Gating', 'demonicGating'),
+    'core:isra': ('Necromancy', 'necromancy'),
+    'core:vidomina': ('Necromancy', 'necromancy'),
+    'core:thorgrim': ('Sylvan Luck', 'sylvanLuck'),
+    'core:malekith': ('Shroud of Malassa', 'shroudOfMalassa'),
+    'core:styg': ('Bulwark of the Mire', 'bulwarkOfTheMire'),
+    'core:zydar': ('Demonic Gating', 'demonicGating'),
+    'core:sandro': ('Necromancy', 'necromancy'),
+    'core:gird': ('Bloodrage', 'bloodrage'),
+}
 SIZES = {'small': (32, 32), 'medium': (44, 44),
          'large': (82, 93), 'scenarioBonus': (58, 64)}
 STRING = r'"(?:\\.|[^"\\])*"'
@@ -79,7 +112,8 @@ def validate_rules(rules):
     (v2 if rules.get('rulesetVersion') == 2 else v1).validate(rules)
     if not rules:
         return
-    if set(rules['spells']) != common_spells() | NEW_HORIZONS_SPELLS:
+    if (set(rules['spells']) | set(rules.get('adventureSpells', {}))
+            != common_spells() | NEW_HORIZONS_SPELLS):
         raise ValueError('Hero spell inventory does not match curated mappings')
     pairs = set()
     for entry in rules.get('factions', {}).values():
@@ -141,6 +175,11 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(len(common_spells()), 69)
         self.assertEqual(set(self.rules['spells']) - common_spells(),
                          NEW_HORIZONS_SPELLS)
+        self.assertEqual(set(self.rules['adventureSpells']), set(ADVENTURE_SPELLS))
+        self.assertEqual({name: (entry['guildLevel'], entry['cost'])
+                          for name, entry in self.rules['adventureSpells'].items()},
+                         ADVENTURE_SPELLS)
+        self.assertTrue(set(self.rules['spells']).isdisjoint(ADVENTURE_SPELLS))
         validate_rules({})
         validate_rules(legacy_rules(self.rules))
         validate_rules(self.rules)
@@ -215,6 +254,66 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertIn('config/spells/newHorizons.json', module['spells'])
         self.assertIn({'type': 'dir', 'path': '/Content'}, module['filesystem'][''])
 
+    def test_halon_patch_replaces_retired_mysticism_with_canonical_tower_skills(self):
+        patch = load('Mods/new-horizons/Content/config/heroes/halon.json')['core:halon']
+        self.assertEqual(patch['skills'], [
+            {'skill': 'new-horizons:metamagic', 'level': 'basic'},
+            {'skill': 'new-horizons:spellcraft', 'level': 'basic'},
+        ])
+        self.assertEqual(patch['images']['specialtySmall'], 'NH_metamagic_basic_small.png')
+        self.assertEqual(patch['images']['specialtyLarge'], 'NH_metamagic_basic_large.png')
+        self.assertEqual(patch['images']['small'], 'HPS041WZ.bmp')
+        self.assertEqual(patch['images']['large'], 'HPL041WZ.bmp')
+        self.assertIsNone(patch['specialty']['secondary'])
+        self.assertIsNone(patch['specialty']['bonuses']['mysticismExtra'])
+        self.assertEqual(patch['specialty']['bonuses']['metamagicUses'], {
+            'type': 'METAMAGIC_USES_PER_COMBAT',
+            'valueType': 'BASE_NUMBER',
+            'val': 1,
+        })
+        self.assertEqual(patch['texts']['specialty'], {
+            'name': 'Metamagic Adept',
+            'tooltip': 'Metamagic: +1 use per combat',
+            'description': 'Halon can use Metamagic one additional time per combat.',
+        })
+        module = load('Mods/new-horizons/mod.json')
+        self.assertEqual(module['heroes'], ['config/heroes/halon.json'])
+
+    def test_legacy_secondary_specialties_are_neutralized_without_erasing_other_bonuses(self):
+        patches = load('Mods/new-horizons/Content/config/heroes/halon.json')
+        self.assertTrue(set(NH_FACTION_SPECIALTY_PRESENTATIONS) <= set(patches))
+        for hero, (name, icon_stem) in NH_FACTION_SPECIALTY_PRESENTATIONS.items():
+            with self.subTest(hero=hero):
+                patch = patches[hero]
+                self.assertIsNone(patch['specialty']['secondary'])
+                self.assertEqual(patch['texts']['specialty']['name'], name)
+                self.assertEqual(patch['texts']['specialty']['tooltip'],
+                                 'Faction skill: ' + name)
+                self.assertNotIn('Eagle Eye', patch['texts']['specialty']['description'])
+                self.assertNotIn('First Aid', patch['texts']['specialty']['description'])
+                self.assertNotIn('Intelligence', patch['texts']['specialty']['description'])
+                self.assertNotIn('Mysticism', patch['texts']['specialty']['description'])
+                self.assertNotIn('Resistance', patch['texts']['specialty']['description'])
+                self.assertNotIn('Sorcery', patch['texts']['specialty']['description'])
+                if icon_stem == 'necromancy':
+                    expected_small, expected_large = 'SECSK32:0:39', 'SECSK82:0:39'
+                else:
+                    expected_small = 'NH_' + icon_stem + '_basic_small.png'
+                    expected_large = 'NH_' + icon_stem + '_basic_large.png'
+                    self.assertTrue((ROOT / 'Mods/new-horizons/Images' /
+                                     expected_small).is_file())
+                    self.assertTrue((ROOT / 'Mods/new-horizons/Images' /
+                                     expected_large).is_file())
+                self.assertEqual(patch['images']['specialtySmall'], expected_small)
+                self.assertEqual(patch['images']['specialtyLarge'], expected_large)
+        for hero in ('jaegar', 'rosic', 'axsis'):
+            with self.subTest(mysticism_bonus=hero):
+                self.assertIsNone(
+                    patches['core:' + hero]['specialty']['bonuses']['mysticismExtra'])
+        # The explicit Metamagic specialty remains intact; only its retired
+        # Mysticism hook is cleared.
+        self.assertEqual(patches['core:halon']['specialty']['bonuses']['metamagicUses']['val'], 1)
+
     def test_sorcery_spell_foundation_definitions_remain_deferred(self):
         """Deferred source definitions stay schema-shaped but out of the saved roster."""
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
@@ -278,6 +377,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
         self.assertEqual(module['version'], '0.7.0')
+        self.assertEqual(module['heroes'], ['config/heroes/halon.json'])
         self.assertIn('Magic Arrow', module['description'])
         self.assertIn('Overcharge', module['description'])
         self.assertEqual(module['spellSchools'], load('config/newHorizonsSchools.json'))

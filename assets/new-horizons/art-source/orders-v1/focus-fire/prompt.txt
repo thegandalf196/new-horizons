@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Heroes III-style Order icon, square high-resolution master
+Primary request: Create an original miniature fantasy still-life icon for the Order “Focus Fire”. Show a taut recurved war bow resting across a dark leather target board, with three bright steel arrows converging on one single red bullseye; make the converging arrows and one target unmistakable.
+Scene/backdrop: dark umber leather-and-wood battlefield backdrop, tightly cropped
+Subject: one integrated bow, three arrows and a single target, filling most of the square
+Style/medium: late-1990s Western PC fantasy illustration, modeled painterly miniature still life, rich physical materials
+Composition/framing: square icon, narrow safe inset, arrows converge toward the same center, bold silhouette readable at 44x44
+Lighting/mood: theatrical chiaroscuro, cold steel highlights on the arrows and a warm red focal point, deep shadow edges
+Color palette: worn steel, dark walnut, oxblood red, small gold accents
+Materials/textures: polished bow wood, taut cord, aged leather, hammered arrowheads, tactile target fibers
+Constraints: no lettering, no readable runes, no ornamental border, no interface chrome, no repeated targets, transparent background if supported
+Avoid: modern glossy mobile-game style, neon bloom, vector outlines, flat shapes, intentional pixel art, dithering, watermark, people or extra targets

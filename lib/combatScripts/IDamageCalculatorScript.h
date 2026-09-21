@@ -42,6 +42,9 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// Zero keeps the legacy base/artifact Attack formula. Positive values come
 	/// exclusively from the owning hero's saved capability rules and Artillery.
 	int siegeSkillMultiplier = 0;
+	/// Positive values replace ordinary creature base damage with the canonical
+	/// absolute Siege output for this Ballista or defensive tower attack.
+	int machineBaseDamage = 0;
 	/// Additive ranged premium for this exact primary target; zero is legacy/no mark.
 	int targetedRangedCommandPercent = 0;
 	/// Focus Fire's reduced range/obstacle penalty for this exact primary shot.
@@ -49,12 +52,28 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// Percentage of the target's Creature Defense ignored by this exact attack.  This is
 	/// populated from authoritative saved perk state, not from installed content alone.
 	int luckyRangedDefenseIgnorePercent = 0;
+	/// Percentage of the target's Creature Defense ignored by this exact Charge attack.
+	/// This is populated from the authoritative active Order and saved perk state.
+	int chargeDefenseIgnorePercent = 0;
+	/// Percentage of the target's Creature Defense ignored by this melee attack.
+	/// This is populated from the authoritative Armor Piercer perk state.
+	int meleeDefenseIgnorePercent = 0;
+	/// Additive melee damage premium against a target below the Executioner threshold.
+	int executionerDamagePercent = 0;
 	/// Additive direct damage component from a canonical New Horizons Order.
 	int heroOrderDamagePercent = 0;
 	/// Battle-long additive creature attack/retaliation damage from Bloodrage.
 	int bloodrageDamagePercent = 0;
 	/// Physical damage reduction supplied by the defending stack's canonical Order.
 	int heroOrderDamageReductionPercent = 0;
+	/// Bulwark reduction in basis points (one hundredth of one percentage point).
+	/// This preserves Advanced's half-percent base and 0.15% Defense coefficient.
+	int bulwarkDamageReductionBasisPoints = 0;
+	/// Fraction of the explicit Defend-state defense contribution ignored by a melee blow.
+	int defensiveStanceDamageReductionIgnorePercent = 0;
+	/// Defend's temporary Creature Defense contribution, before Breakthrough applies its
+	/// mundane reduction bypass. This is kept separate from ordinary Creature Defense.
+	int defensiveStanceDefenseBonus = 0;
 	/// Final damage multiplier supplied by a canonical Order. This is applied
 	/// after normal additive attack/defense factors so a penalty cannot be
 	/// cancelled by Offense/Archery bonuses. 100 is neutral.
@@ -86,11 +105,23 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("targetedRangedCommand", targetedRangedCommand, "Whether Focus Fire halves range and obstacle penalties for this primary shot.");
 		s("luckyRangedDefenseIgnorePercent", luckyRangedDefenseIgnorePercent,
 			"Percentage of target Creature Defense ignored by this lucky ranged attack.");
+		s("chargeDefenseIgnorePercent", chargeDefenseIgnorePercent,
+			"Percentage of target Creature Defense ignored by this Shock Assault Charge attack.");
+		s("meleeDefenseIgnorePercent", meleeDefenseIgnorePercent,
+			"Percentage of target Creature Defense ignored by this Armor Piercer melee attack.");
+		s("executionerDamagePercent", executionerDamagePercent,
+			"Conditional melee damage premium supplied by the active Executioner perk.");
 		s("heroOrderDamagePercent", heroOrderDamagePercent, "Direct damage component from the active canonical Order.");
 		s("bloodrageDamagePercent", bloodrageDamagePercent,
 			"Battle-long additive creature attack and retaliation damage from Bloodrage.");
 		s("heroOrderDamageReductionPercent", heroOrderDamageReductionPercent,
 			"Physical damage reduction supplied by the defending canonical Order.");
+		s("bulwarkDamageReductionBasisPoints", bulwarkDamageReductionBasisPoints,
+			"Bulwark physical damage reduction in basis points.");
+		s("defensiveStanceDamageReductionIgnorePercent", defensiveStanceDamageReductionIgnorePercent,
+			"Percentage of the explicit Defend-state defense contribution ignored by this melee attack.");
+		s("defensiveStanceDefenseBonus", defensiveStanceDefenseBonus,
+			"Defend's temporary Creature Defense contribution available to Breakthrough.");
 		s("heroOrderFinalDamageMultiplier", heroOrderFinalDamageMultiplier,
 			"Final multiplicative damage percentage supplied by the active canonical Order; 100 is neutral.");
 		s("luckyStrike", luckyStrike, "Whether luck struck.");
@@ -98,6 +129,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("deathBlow", deathBlow, "Whether a death blow was rolled.");
 		s("doubleDamage", doubleDamage, "Whether the attack is a doubled one, as a ballista may roll.");
 		s("siegeSkillMultiplier", siegeSkillMultiplier, "Saved skill-only siege range multiplier; zero means legacy formula.");
+		s("machineBaseDamage", machineBaseDamage,
+			"Saved ruleset-v3 absolute Siege output for this machine attack; zero means legacy formula.");
 		s("attackFactorPerPoint", attackFactorPerPoint, "Damage added per point of attack over the target's defense.");
 		s("attackFactorCap", attackFactorCap, "Most that attack points alone may add.");
 		s("defenseFactorPerPoint", defenseFactorPerPoint, "Damage removed per point of defense over the attacker's attack.");

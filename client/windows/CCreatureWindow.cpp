@@ -44,6 +44,7 @@
 #include "../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../lib/entities/artifact/ArtifactUtils.h"
 #include "../../lib/entities/hero/CHeroHandler.h"
+#include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/gameState/UpgradeInfo.h"
 #include "../../lib/networkPacks/ArtifactLocation.h"
@@ -234,8 +235,44 @@ CStackWindow::CategorySection::CategorySection(CStackWindow * owner, int yOffset
 	const auto title = "Category: " + name;
 	label = std::make_shared<CLabel>(pos.w / 2, pos.h / 2, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, title, pos.w - 16);
 	details = std::make_shared<LRClickableAreaWText>(Rect(8, 0, pos.w - 16, pos.h), title,
-		"{" + name + "}\n\n" + description + "\n\nSaved rules: " + category.sourceRulesetId
-		+ " (version " + std::to_string(category.rulesetVersion) + ").");
+		"{" + name + "}\n\n" + description);
+}
+
+CStackWindow::LeadershipSection::LeadershipSection(CStackWindow * owner, int yOffset)
+	: CWindowSection(owner, ImagePath::builtin("stackWindow/leadership"), yOffset)
+{
+	OBJECT_CONSTRUCTION;
+
+	const auto leadershipCount = parent->info->stack
+		? parent->info->creatureCount
+		: (parent->info->stackNode ? parent->info->stackNode->getCount() : 1);
+	int leadershipRequirement = 0;
+	std::optional<newHorizonsHeroes::LeadershipSlotCapacity> leadershipCapacity;
+	if(parent->info->owner)
+	{
+		leadershipCapacity = parent->info->owner->getLeadershipSlotCapacity(parent->info->creature->getId());
+		if(leadershipCapacity)
+			leadershipRequirement = leadershipCapacity->requirement;
+	}
+	else
+	{
+		const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
+		if(newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2)
+			leadershipRequirement = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(
+				capabilityRules, parent->info->creature->getId());
+	}
+
+	const auto totalRequirement = static_cast<int64_t>(leadershipRequirement) * leadershipCount;
+	const auto valueText = leadershipRequirement > 0
+		? std::to_string(leadershipRequirement) + " each (" + std::to_string(totalRequirement) + " total)"
+			+ (leadershipCapacity ? "   Maximum: " + std::to_string(leadershipCapacity->maximum) : "")
+		: "No Leadership cost";
+	const auto helpText = std::string("Leadership\n") + valueText;
+
+	icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_leadership_32"), 0, 0, 10, 5);
+	value = std::make_shared<CLabel>(239, 21, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW,
+		valueText, 372);
+	details = std::make_shared<LRClickableAreaWText>(Rect(8, 3, 422, 36), helpText, helpText);
 }
 
 CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset)
@@ -295,6 +332,139 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 			if(++printed >= 8) // interface limit reached
 				break;
 		}
+	}
+}
+
+namespace
+{
+struct OrderIndicator
+{
+	HeroCommand command = HeroCommand::NONE;
+	std::string label;
+	std::string description;
+};
+
+bool ordinaryOrderStack(const CStack * stack)
+{
+	return stack && stack->alive() && !stack->isGhost() && !stack->isTurret()
+		&& !stack->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		&& stack->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+}
+
+std::string orderName(HeroCommand command)
+{
+	switch(command)
+	{
+	case HeroCommand::CHARGE: return "Charge";
+	case HeroCommand::HOLD_THE_LINE: return "Hold the Line";
+	case HeroCommand::FOCUS_FIRE: return "Focus Fire";
+	case HeroCommand::RIPOSTE: return "Riposte";
+	case HeroCommand::BRACE: return "Brace";
+	case HeroCommand::PROTECT: return "Protect";
+	case HeroCommand::FLANK: return "Flank";
+	case HeroCommand::SECOND_WIND: return "Second Wind";
+	default: return "Order";
+	}
+}
+
+std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
+{
+	std::vector<OrderIndicator> result;
+	if(!ordinaryOrderStack(stack) || !stack->getBattle())
+		return result;
+
+	const auto * battle = stack->getBattle();
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto state = battle->battleGetHeroOrderState(side);
+		if(!state || state->issuedRound != battle->battleGetRound())
+			continue;
+
+		const bool own = battle->playerToSide(battle->battleGetOwner(stack)) == side;
+		bool applies = false;
+		std::string suffix;
+		switch(state->command)
+		{
+		case HeroCommand::CHARGE:
+			applies = own && !state->containsConsumed(stack->unitId());
+			break;
+		case HeroCommand::HOLD_THE_LINE:
+			if(own)
+			{
+				const auto * anchor = state->anchorFor(stack->unitId());
+				applies = anchor && !state->containsHoldBroken(stack->unitId())
+					&& anchor->position == stack->getPosition().toInt();
+			}
+			break;
+		case HeroCommand::FOCUS_FIRE:
+			applies = !own && state->primaryTargetUnitId == stack->unitId();
+			suffix = "marked target";
+			break;
+		case HeroCommand::RIPOSTE:
+			applies = own;
+			break;
+		case HeroCommand::BRACE:
+			applies = own && !state->containsBraceTrigger(stack->unitId());
+			break;
+		case HeroCommand::PROTECT:
+			if(own && !state->protectBroken)
+			{
+				if(state->primaryTargetUnitId == stack->unitId())
+				{
+					applies = true;
+					suffix = "protector";
+				}
+				else if(state->secondaryTargetUnitId == stack->unitId())
+				{
+					applies = true;
+					suffix = state->protectIntercepted ? "ward (interception spent)" : "ward";
+				}
+			}
+			break;
+		case HeroCommand::FLANK:
+			applies = !own && state->primaryTargetUnitId == stack->unitId();
+			suffix = "marked target";
+			break;
+		case HeroCommand::SECOND_WIND:
+			applies = own && state->primaryTargetUnitId == stack->unitId()
+				&& !state->containsConsumed(stack->unitId());
+			suffix = state->secondWindActive ? "extra activation" : "ready";
+			break;
+		default:
+			break;
+		}
+
+		if(applies)
+		{
+			const auto name = orderName(state->command);
+			result.push_back({state->command, suffix.empty() ? name : name + ": " + suffix,
+				name + (suffix.empty() ? "" : " — " + suffix)
+				+ "\nTactical Order: presentation only; not a spell and cannot be dispelled."});
+		}
+	}
+	return result;
+}
+}
+
+CStackWindow::OrderIndicatorsSection::OrderIndicatorsSection(CStackWindow * owner, int yOffset)
+	: CWindowSection(owner, {}, yOffset)
+{
+	OBJECT_CONSTRUCTION;
+	const auto indicators = activeOrderIndicators(owner->info->stack);
+	if(indicators.empty())
+		return;
+
+	pos.w = owner->pos.w;
+	pos.h = 53;
+	for(size_t index = 0; index < indicators.size(); ++index)
+	{
+		const int x = 6 + static_cast<int>(index) * 58;
+		const auto & indicator = indicators[index];
+		orderIcons.push_back(std::make_shared<CPicture>(ImagePath::builtin("NH_orders_gauntlet_normal.png"), x, 0));
+		clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(x, 0, 48, 36),
+			indicator.description, indicator.description));
+		labels.push_back(std::make_shared<CLabel>(x + 24, 47, FONT_TINY, ETextAlignment::BOTTOMCENTER,
+			Colors::YELLOW, indicator.label));
 	}
 }
 
@@ -1170,6 +1340,16 @@ void CStackWindow::initSections()
 	pos.w = mainSection->pos.w;
 	pos.h += mainSection->pos.h;
 
+	const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
+	const bool showLeadership = info->owner
+		? info->owner->getLeadershipSlotCapacity(info->creature->getId()).has_value()
+		: newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2;
+	if(showLeadership)
+	{
+		leadershipSection = std::make_shared<LeadershipSection>(this, pos.h);
+		pos.h += leadershipSection->pos.h;
+	}
+
 	if(info->category)
 	{
 		categorySection = std::make_shared<CategorySection>(this, pos.h);
@@ -1180,6 +1360,11 @@ void CStackWindow::initSections()
 	{
 		activeSpellsSection = std::make_shared<ActiveSpellsSection>(this, pos.h);
 		pos.h += activeSpellsSection->pos.h;
+		if(!activeOrderIndicators(info->stack).empty())
+		{
+			orderIndicatorsSection = std::make_shared<OrderIndicatorsSection>(this, pos.h);
+			pos.h += orderIndicatorsSection->pos.h;
+		}
 	}
 
 	if(info->commander)

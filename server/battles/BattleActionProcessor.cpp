@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleActionProcessor.h"
+#include "../../lib/battle/NewHorizonsBulwark.h"
 
 #include "BattleProcessor.h"
 
@@ -433,8 +434,9 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 	defence.push_back(std::make_shared<Bonus>(bonus2));
 
 	int difference = defence.totalValue() - oldDefenceValue;
+	const bool weakCreatureFallback = difference == 0;
 	std::vector<Bonus> buffer;
-	if(difference == 0) //give replacement bonus for creatures not reaching 5 defense points (20% of def becomes 0)
+	if(weakCreatureFallback) //give replacement bonus for creatures not reaching 5 defense points (20% of def becomes 0)
 	{
 		difference = 1;
 		buffer.push_back(alternativeWeakCreatureBonus);
@@ -444,11 +446,48 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 		buffer.push_back(defenseBonusToAdd);
 	}
 
+	// Keep the provenance of this exact Defend contribution in battle state.
+	// STACK_GETS_TURN is a lifetime, not an identity: treating every bonus with
+	// that duration as Defend would let Breakthrough pierce unrelated temporary
+	// effects.  Calculate both combat ranges before publishing the effect so the
+	// damage callback can use the authoritative state instead.
+	const auto stanceBonus = [&](bool ranged)
+	{
+		const auto range = ranged
+			? Selector::effectRange()(BonusLimitEffect::NO_LIMIT)
+				.Or(Selector::effectRange()(BonusLimitEffect::ONLY_DISTANCE_FIGHT))
+			: Selector::effectRange()(BonusLimitEffect::NO_LIMIT)
+				.Or(Selector::effectRange()(BonusLimitEffect::ONLY_MELEE_FIGHT));
+		BonusList projected = *stack->getBonuses(
+			Selector::typeSubtype(BonusType::PRIMARY_SKILL, BonusSubtypeID(PrimarySkill::DEFENSE)).And(range));
+		const int oldValue = projected.totalValue();
+		projected.push_back(std::make_shared<Bonus>(defenseBonusToAdd));
+		projected.push_back(std::make_shared<Bonus>(bonus2));
+		if(weakCreatureFallback)
+			projected.push_back(std::make_shared<Bonus>(alternativeWeakCreatureBonus));
+		return std::max(0, projected.totalValue() - oldValue);
+	};
+	const int stanceMeleeBonus = stanceBonus(false);
+	const int stanceRangedBonus = stanceBonus(true);
+
 	buffer.push_back(bonus2);
 	buffer.push_back(tagBonus);
 
 	sse.toUpdate.emplace_back(ba.stackNumber, buffer);
 	gameHandler->sendAndApply(sse);
+
+	// Publish the explicit provenance alongside the bonuses.  This is a state
+	// update, not a client-side mutation, and therefore survives save/load and
+	// hypothetical battle copies just like the rest of CUnitState.
+	auto state = stack->acquireState();
+	state->defensiveStanceMeleeBonus = stanceMeleeBonus;
+	state->defensiveStanceRangedBonus = stanceRangedBonus;
+	BattleUnitsChanged stateChanged;
+	stateChanged.battleID = battle.getBattle()->getBattleID();
+	UnitChanges stateUpdate(stack->unitId(), UnitChanges::EOperation::UPDATE);
+	stateUpdate.data = state->save();
+	stateChanged.changedStacks.push_back(std::move(stateUpdate));
+	gameHandler->sendAndApply(stateChanged);
 
 	BattleLogMessage message;
 	message.battleID = battle.getBattle()->getBattleID();
@@ -469,6 +508,7 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
+	const auto perfectMomentSide = ba.perfectMoment ? battle.playerToSide(battle.battleGetOwner(stack)) : BattleSide::NONE;
 	battle::Target target = ba.getTarget(&battle);
 
 	if (!canStackAct(battle, stack))
@@ -572,7 +612,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			// Pass the originally selected Ward to makeAttack so Protect can
 			// consume its first interception atomically; attackTarget is only the
 			// resolved recipient used for local retaliation checks below.
-			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0});
+			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE});
 
 			if(!ferocityApplied && stack->hasBonusOfType(BonusType::FEROCITY))
 			{
@@ -652,6 +692,7 @@ void BattleActionProcessor::removeBonuses(const CBattleInfoCallback & battle, co
 bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
+	const auto perfectMomentSide = ba.perfectMoment ? battle.playerToSide(battle.battleGetOwner(stack)) : BattleSide::NONE;
 	battle::Target target = ba.getTarget(&battle);
 
 	if (!canStackAct(battle, stack))
@@ -689,7 +730,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 	}
 
 	if (!firstStrike)
-		makeAttack(battle, stack, destinationStack, {.targetHex = destination, .first = true, .ranged = true});
+		makeAttack(battle, stack, destinationStack, {.targetHex = destination, .first = true, .ranged = true, .perfectMomentSide = perfectMomentSide});
 
 	BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);	//they need to be gathered here since bonuses with this duration added during attack (like blind) should not be removed
 	BonusList defenderBonusesToRemove;
@@ -725,7 +766,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		{
 			// when the defender strikes first the opening shot above is skipped and this loop makes
 			// it instead, so the shot that abilities fire on is the first one this loop makes
-			makeAttack(battle, stack, destinationStack, {.targetHex = destination, .attackIndex = i, .first = i == 0, .ranged = true});
+			makeAttack(battle, stack, destinationStack, {.targetHex = destination, .attackIndex = i, .first = i == 0, .ranged = true, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE});
 		}
 	}
 
@@ -842,6 +883,7 @@ bool BattleActionProcessor::doHealAction(const CBattleInfoCallback & battle, con
 		destStack = target.at(0).unitValue;
 	else
 		destStack = battle.battleGetUnitByPos(target.at(0).hexValue);
+	const auto * destCreatureStack = dynamic_cast<const CStack *>(destStack);
 
 	if(stack == nullptr || destStack == nullptr || !healerAbility || !healerAbility->subtype.hasValue())
 	{
@@ -851,6 +893,15 @@ bool BattleActionProcessor::doHealAction(const CBattleInfoCallback & battle, con
 	{
 		const CSpell * spell = healerAbility->subtype.as<SpellID>().toSpell();
 		spells::BattleCast parameters(&battle, stack, spells::Mode::SPELL_LIKE_ATTACK, spell); //We can heal infinitely by first aid tent
+		if(stack->isFirstAidTent())
+		{
+			const auto * owner = battle.battleGetOwnerHero(stack);
+			if(owner && owner->getCapabilityRules()["rulesetVersion"].Integer() >= 3
+				&& battle.battleMatchOwner(stack, destStack, true)
+				&& destCreatureStack && destCreatureStack->canBeHealed())
+				if(const auto siege = owner->getSiegeCapabilities())
+					parameters.setEffectValue(siege->firstAidHealing);
+		}
 		auto dest = battle::Destination(destStack, target.at(0).hexValue);
 		parameters.setSpellLevel(0);
 		parameters.cast(gameHandler->spellcastEnvironment(), {dest});
@@ -1038,6 +1089,32 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 
 bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba)
 {
+	if(ba.perfectMoment)
+	{
+		const auto * unit = battle.battleGetStackByID(ba.stackNumber, false);
+		const bool melee = ba.actionType == EActionType::WALK_AND_ATTACK;
+		const bool shooting = ba.actionType == EActionType::SHOOT;
+		const auto targets = ba.getTarget(&battle);
+		const auto * target = targets.size() == (melee ? 2u : 1u)
+			? battle.battleGetStackByPos(targets.back().hexValue) : nullptr;
+		bool legal = (melee || shooting) && battle.battleCanUsePerfectMoment(unit)
+			&& target && target->alive() && battle.battleMatchOwner(unit, target);
+		if(legal && shooting)
+			legal = battle.battleCanShoot(unit, target->getPosition());
+		if(legal && melee)
+		{
+			const auto position = targets.front().hexValue;
+			auto moved = unit->acquireState();
+			moved->setPosition(position);
+			legal = (position == unit->getPosition() || battle.battleGetAvailableHexes(unit, false).contains(position))
+				&& (battle.isMeleeAttackPossible(moved.get(), target) || battle.isLongWeaponAttack(moved.get(), target));
+		}
+		if(!legal)
+		{
+			gameHandler->complain("Perfect Moment declaration is unavailable or not an eligible attack");
+			return false;
+		}
+	}
 	if((ba.metamagicFollowup || ba.metamagicGrand || ba.metamagicDecline)
 		&& ba.side != BattleSide::ATTACKER && ba.side != BattleSide::DEFENDER)
 	{
@@ -1506,15 +1583,15 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	return { static_cast<int16_t>(pathDistance), !movementSuccess, false };
 }
 
-void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat) const
+void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const
 {
 	const int attackerLuck = battle.battleGetAttackLuck(attacker, defender, bat.shot());
 	ObjectInstanceID ownerArmy = battle.getBattle()->getSideArmy(attacker->unitSide())->id;
 
-	if(attackerLuck > 0 && gameHandler->randomizer->rollGoodLuck(ownerArmy, attackerLuck))
+	if(perfectMoment || (attackerLuck > 0 && gameHandler->randomizer->rollGoodLuck(ownerArmy, attackerLuck)))
 		bat.flags |= BattleAttack::LUCKY;
 
-	if(attackerLuck < 0 && gameHandler->randomizer->rollBadLuck(ownerArmy, -attackerLuck))
+	if(!perfectMoment && attackerLuck < 0 && gameHandler->randomizer->rollBadLuck(ownerArmy, -attackerLuck))
 		bat.flags |= BattleAttack::UNLUCKY;
 
 	const auto side = battle.playerToSide(battle.battleGetOwner(attacker));
@@ -1523,6 +1600,8 @@ void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, 
 		auto fortune = battle.getBattle()->getSylvanLuckState(side);
 		if(fortune.active())
 		{
+			if(perfectMoment)
+				fortune.consumePerfectMoment();
 			if(fortune.recordStrike(attacker->unitId(), bat.lucky(), bat.unlucky()))
 				bat.flags &= ~BattleAttack::UNLUCKY;
 			bat.fortuneSide = side;
@@ -1616,6 +1695,9 @@ void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleA
 
 void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack)
 {
+	const int bulwarkReflectionPercent = defender && !attack.ranged && defender->defended()
+		? newHorizonsBulwark::reflectionPercent(newHorizonsBulwark::rank(battle.battleGetOwnerHero(defender)))
+		: 0;
 	std::optional<HeroOrderState> orderStateBeforeAttacker = battle.battleGetHeroOrderState(BattleSide::ATTACKER);
 	std::optional<HeroOrderState> orderStateBeforeDefender = battle.battleGetHeroOrderState(BattleSide::DEFENDER);
 	bool protectIntercepted = attack.protectIntercepted;
@@ -1665,12 +1747,34 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			return;
 	}
 
+	if(defender && !attack.ranged && !attack.counter && defender->defended()
+		&& !defender->acquireState()->bulwarkPreemptiveUsed)
+	{
+		const int percent = newHorizonsBulwark::preemptivePercent(
+			newHorizonsBulwark::rank(battle.battleGetOwnerHero(defender)));
+		if(percent > 0)
+		{
+			auto state = defender->acquireState();
+			state->bulwarkPreemptiveUsed = true;
+			BattleUnitsChanged changed;
+			changed.battleID = battle.getBattle()->getBattleID();
+			UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+			update.data = state->save();
+			changed.changedStacks.push_back(std::move(update));
+			gameHandler->sendAndApply(changed);
+			makeAttack(battle, defender, attacker, {.targetHex = attacker->getPosition(), .first = true,
+				.counter = true, .preemptiveDamagePercent = percent});
+			if(!attacker->alive() || !defender->alive())
+				return;
+		}
+	}
+
 	BattleAttack bat;
 	BattleLogMessage blm;
 	// Brace's pre-emptive strike is dispatched through the counterattack path so
 	// that it happens before the incoming blow, but it must not consume the
 	// defender's normal retaliation. Keep the two notions separate here.
-	const bool normalCounter = attack.counter && !attack.brace;
+	const bool normalCounter = attack.counter && !attack.brace && attack.preemptiveDamagePercent <= 0;
 	blm.battleID = battle.getBattle()->getBattleID();
 	bat.battleID = battle.getBattle()->getBattleID();
 	bat.attackerChanges.battleID = battle.getBattle()->getBattleID();
@@ -1702,12 +1806,15 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	std::shared_ptr<battle::CUnitState> attackerState = attacker->acquireState();
 
-	rollAttackFlags(battle, attacker, defender, bat);
+	const bool perfectMoment = attack.perfectMomentSide != BattleSide::NONE && !attack.counter && !attack.brace
+		&& attack.attackIndex == 0 && battle.playerToSide(battle.battleGetOwner(attacker)) == attack.perfectMomentSide
+		&& defender && battle.battleMatchOwner(attacker, defender) && battle.battleCanUsePerfectMoment(attacker);
+	rollAttackFlags(battle, attacker, defender, bat, perfectMoment);
 
 	// only primary target
 	if(defender && defender->alive())
 	{
-		applyBattleEffects(battle, bat, attackerState, payload, defender, attack.distance, false, attack.brace, protectIntercepted);
+		applyBattleEffects(battle, bat, attackerState, payload, defender, attack.distance, false, attack.brace, attack.preemptiveDamagePercent, protectIntercepted);
 		if(!attack.ranged && !attack.counter)
 		{
 			if(const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle()))
@@ -1733,7 +1840,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		if(!unit->alive())
 			continue;
 
-		applyBattleEffects(battle, bat, attackerState, payload, unit, attack.distance, true, attack.brace, false);
+		applyBattleEffects(battle, bat, attackerState, payload, unit, attack.distance, true, attack.brace, attack.preemptiveDamagePercent, false);
 		if(!unit->isTimeStopped())
 			removeBonuses(battle, unit, *unit->getAllBonuses(Bonus::UntilTakingIndirectDamage));
 	}
@@ -1783,6 +1890,34 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		collectEventTriggers(battle, reactions, CombatEventType::AFTER_ATTACKED, target.unit, attacker);
 
 	gameHandler->sendAndApply(bat);
+
+	// Bulwark reflects a share of the physical health loss that actually landed,
+	// after all reductions. It is direct retaliation damage, not another attack,
+	// so it cannot recursively trigger attack reactions or consume retaliation.
+	if(bulwarkReflectionPercent > 0 && !bat.spellLike() && attacker->alive() && defender)
+	{
+		const auto reflectedFrom = std::find_if(payload.targets.begin(), payload.targets.end(), [&](const auto & target)
+		{
+			return target.unit == defender;
+		});
+		if(reflectedFrom != payload.targets.end())
+		{
+			const int64_t received = std::min(reflectedFrom->damage, reflectedFrom->healthBeforeAttack);
+			const int64_t reflected = received * bulwarkReflectionPercent / 100;
+			if(reflected > 0)
+			{
+				StacksInjured injury;
+				injury.battleID = battle.getBattle()->getBattleID();
+				BattleStackAttacked hit;
+				hit.attackerID = defender->unitId();
+				hit.stackAttacked = attacker->unitId();
+				hit.damageAmount = reflected;
+				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), attacker->acquireState());
+				injury.stacks.push_back(hit);
+				gameHandler->sendAndApply(injury);
+			}
+		}
+	}
 
 	// A lethal BattleAttack can invalidate a Protect pair while the authoritative
 	// BattleStackAttacked updates are applied (for example, killing the protector).
@@ -1947,7 +2082,7 @@ void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback &
 		attackCasting(battle, payload.ranged, BonusType::SPELL_AFTER_ATTACK, attacker, defender);
 }
 
-void BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, bool protectIntercepted) const
+void BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, bool protectIntercepted) const
 {
 	BattleStackAttacked bsa;
 	if(secondary)
@@ -1963,6 +2098,7 @@ void BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battl
 	// consumption purposes.
 	bai.retaliation = bat.counter() && !bracePreemptive;
 	bai.bracePreemptive = bracePreemptive;
+	bai.preemptiveDamagePercent = preemptiveDamagePercent;
 	bai.protectIntercepted = protectIntercepted;
 	bai.physicalDamage = !bat.spellLike();
 	bai.deathBlow = bat.deathBlow();

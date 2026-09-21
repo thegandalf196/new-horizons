@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "riposte",
+  "source": {
+    "path": "$HOME/.codex/generated_images/01a0c154-b44d-7f93-83f6-daf465b4a4b0/exec-70585260-031b-4854-996e-9db77448da77.png",
+    "filename": "exec-70585260-031b-4854-996e-9db77448da77.png",
+    "byte_size": 1602763,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "da4a3547a5b4f25682e17a6f630936facb9ef0035dd1b1d44f68a7ea4f927969"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "da4a3547a5b4f25682e17a6f630936facb9ef0035dd1b1d44f68a7ea4f927969"
+    },
+    {
+      "file": "riposte-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "ef00c96adb640fa6449912b47ad95ca8bf6b2811acb03bb9653dba2e18c4116f"
+    },
+    {
+      "file": "riposte-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "827f23baa9a4844bf8673e4e2bebb0ffe95c073f10d13b0eb3b14f3233e6aecc"
+    },
+    {
+      "file": "riposte-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "b42c2344d01ae8b9f52bff7e58a5a72cd9ae3dcc7ade7ac1731acd4b125f8b96"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "riposte-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "riposte-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "riposte-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "riposte-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

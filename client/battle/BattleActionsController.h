@@ -85,6 +85,13 @@ class BattleActionsController
 	/// sent to the server.
 	BattleHex fireWallSelectedStart = BattleHex::INVALID;
 
+	/// Battlefield selector for a targeted New Horizons Order.  This is a
+	/// presentation-only request mode: the authoritative callback is queried
+	/// again for every hover/click and the submitted action contains only the
+	/// selected unit identities.
+	std::optional<HeroCommand> selectedHeroOrderCommand;
+	std::optional<uint32_t> heroOrderTargetingFirst;
+
 	bool isCastingPossibleHere (const CSpell * spell, const CStack *shere, const BattleHex & myNumber);
 	std::vector<PossiblePlayerBattleAction> getPossibleActionsForStack (const CStack *stack) const; //called when stack gets its turn
 	void reorderPossibleActionsPriority(const CStack * stack, const CStack * targetStack);
@@ -122,6 +129,11 @@ class BattleActionsController
 	void updateFireWallPlacementStatus(const BattleHex & hoveredHex);
 	void selectFireWallStartOrDirection(const BattleHex & clickedHex);
 	bool fireWallPlacementLineIsLegal(const BattleHex & start, BattleHex::EDir direction) const;
+	bool heroOrderTargetingContextIsCurrent() const;
+	std::vector<uint32_t> heroOrderTargetIds() const;
+	bool heroOrderTargetIdIsLegal(uint32_t unitId) const;
+	void updateHeroOrderTargetingStatus(const BattleHex & hoveredHex);
+	void selectHeroOrderTarget(const BattleHex & clickedHex);
 
 public:
 	BattleActionsController(BattleInterface & owner);
@@ -155,6 +167,17 @@ public:
 	bool fireWallPlacementEndpointIsLegal(const BattleHex & hex) const;
 	BattleHexArray getFireWallPlacementLegalStartHexes() const;
 	BattleHexArray getFireWallPlacementLegalEndpoints() const;
+
+	/// Start/cancel the direct battlefield selector used by targeted Orders.
+	/// No battle state is changed until the callback receives the final action.
+	bool beginHeroOrderTargeting(HeroCommand command);
+	bool heroOrderTargetingModeActive() const;
+	HeroCommand heroOrderTargetingCommand() const;
+	bool heroOrderTargetingFirstSelected() const;
+	BattleHexArray getHeroOrderTargetingLegalHexes() const;
+	BattleHexArray getHeroOrderTargetingSelectedHexes() const;
+	bool heroOrderTargetingHexIsLegal(const BattleHex & hex) const;
+	void cancelHeroOrderTargeting();
 
 	/// Confirm the exact selection after revalidating the live battle snapshot.
 	void confirmLandMinePlacement();

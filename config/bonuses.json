@@ -650,6 +650,10 @@
 	"HERO_GRANTS_ATTACKS" : {},
 	"HYPNOTIZED" : {},
 	"IN_FRENZY" : {},
+	"LEADERSHIP" : {
+		"hidden" : true,
+		"blockDescriptionPropagation" : true
+	},
 	"MANA_REGENERATION" : {},
 	"MANUAL_CONTROL" : {},
 	"MAX_LUCK" : {},

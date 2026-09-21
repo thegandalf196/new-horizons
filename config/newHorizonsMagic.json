@@ -9,6 +9,28 @@
 		"new-horizons:shadow",
 		"new-horizons:chaos"
 	],
+	"adventureSpells": {
+		"core:summonBoat": {
+			"guildLevel": 1,
+			"cost": 20
+		},
+		"core:waterWalk": {
+			"guildLevel": 2,
+			"cost": 30
+		},
+		"core:townPortal": {
+			"guildLevel": 3,
+			"cost": 50
+		},
+		"core:fly": {
+			"guildLevel": 4,
+			"cost": 60
+		},
+		"core:dimensionDoor": {
+			"guildLevel": 5,
+			"cost": 80
+		}
+	},
 	"spells": {
 		"core:airElemental": {
 			"schools": [
@@ -189,11 +211,6 @@
 				"new-horizons:light"
 			]
 		},
-		"core:dimensionDoor": {
-			"schools": [
-				"new-horizons:sorcery"
-			]
-		},
 		"core:disguise": {
 			"schools": [
 				"new-horizons:sorcery"
@@ -285,11 +302,6 @@
 				"base": 25,
 				"powerCoefficient": 8
 			}
-		},
-		"core:fly": {
-			"schools": [
-				"new-horizons:sorcery"
-			]
 		},
 		"core:forceField": {
 			"schools": [
@@ -608,11 +620,6 @@
 				"new-horizons:nature"
 			]
 		},
-		"core:summonBoat": {
-			"schools": [
-				"new-horizons:sorcery"
-			]
-		},
 		"core:teleport": {
 			"schools": [
 				"new-horizons:sorcery"
@@ -637,11 +644,6 @@
 				23
 			]
 		},
-		"core:townPortal": {
-			"schools": [
-				"new-horizons:sorcery"
-			]
-		},
 		"core:viewAir": {
 			"schools": [
 				"new-horizons:nature"
@@ -661,11 +663,6 @@
 			"schools": [
 				"new-horizons:nature",
 				"new-horizons:havoc"
-			]
-		},
-		"core:waterWalk": {
-			"schools": [
-				"new-horizons:nature"
 			]
 		},
 		"core:weakness": {

@@ -53,7 +53,7 @@ public:
 class HeroCommandAITest : public HeroCommandFixture
 {
 protected:
-	const CStack * active = nullptr;
+	CStack * active = nullptr;
 	const CStack * enemy = nullptr;
 	std::shared_ptr<RecordingCommandCallback> callback;
 	std::shared_ptr<CommandEnvironment> environment;
@@ -86,6 +86,70 @@ protected:
 		ASSERT_EQ(callback->submitted.size(), 1u);
 		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 			callback->submitted.front()));
+	}
+};
+
+/// Isolate one canonical Order while still running the real evaluator and
+/// authoritative action path.  The ordinary rules remain canonical (all eight
+/// commands are present), but every non-selected command has a zero-valued
+/// effect so it cannot win the evaluator's contextual heuristic.
+class CanonicalOrderAITest : public HeroCommandAITest
+{
+protected:
+	HeroCommand selectedCommand = HeroCommand::NONE;
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		if(selectedCommand == HeroCommand::NONE)
+			return;
+
+		const JsonNode file(JsonPath::builtin("config/newHorizonsCombat"));
+		auto rules = file["combat"]["heroCommands"];
+		const auto commands = {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
+			HeroCommand::FOCUS_FIRE, HeroCommand::RIPOSTE, HeroCommand::BRACE,
+			HeroCommand::PROTECT, HeroCommand::FLANK, HeroCommand::SECOND_WIND};
+		for(const auto command : commands)
+		{
+			auto & effects = rules["commands"][heroCommands::key(command)]["effects"];
+			for(auto & [name, formula] : effects.Struct())
+			{
+				(void)name;
+				formula["base"].Integer() = 0;
+				formula["attack"].Float() = 0;
+				formula["defense"].Float() = 0;
+			}
+		}
+
+		// Keep a modest positive coefficient for the selected Order.  Second Wind
+		// has a fixed direct-damage heuristic, but retaining a positive authored
+		// formula keeps this fixture valid for every canonical command uniformly.
+		auto & selectedEffects = rules["commands"][heroCommands::key(selectedCommand)]["effects"];
+		for(auto & [name, formula] : selectedEffects.Struct())
+		{
+			(void)name;
+			formula["base"].Integer() = 50;
+		}
+		heroCommands::validateRules(rules);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
+	}
+
+	void prepareOrder(HeroCommand command)
+	{
+		selectedCommand = command;
+		prepareEvaluation(false);
+	}
+
+	void assertChosenOrder(HeroCommand command)
+	{
+		ASSERT_TRUE(choose());
+		ASSERT_EQ(callback->submitted.size(), 1u);
+		EXPECT_EQ(callback->submitted.front().actionType, EActionType::HERO_COMMAND);
+		EXPECT_EQ(callback->submitted.front().command, command);
+		executeChosen();
+		const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+		ASSERT_TRUE(state);
+		EXPECT_EQ(state->command, command);
 	}
 };
 
@@ -143,4 +207,95 @@ TEST_F(HeroCommandAITest, StrongOffensiveSpellCompetesWithOrdersAndServerAccepts
 	EXPECT_LT(attackerSideHero->mana, mana);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
+}
+
+TEST_F(CanonicalOrderAITest, EvaluatorChoosesRiposteAndRoundLifecycleIsAuthoritative)
+{
+	prepareOrder(HeroCommand::RIPOSTE);
+	BattleAttackInfo retaliation(active, enemy, 0, false);
+	retaliation.retaliation = true;
+	const auto before = battle()->calculateDmgRange(retaliation).damage.min;
+
+	assertChosenOrder(HeroCommand::RIPOSTE);
+	EXPECT_GT(battle()->calculateDmgRange(retaliation).damage.min, before);
+	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::RIPOSTE);
+	advanceRound();
+	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
+}
+
+TEST_F(CanonicalOrderAITest, EvaluatorChoosesBraceAndAuthoritativeTriggerIsLegal)
+{
+	prepareOrder(HeroCommand::BRACE);
+	assertChosenOrder(HeroCommand::BRACE);
+	EXPECT_TRUE(battle()->battleCanTriggerHeroOrderBrace(enemy, active, 3, false, false));
+	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::BRACE);
+}
+
+TEST_F(CanonicalOrderAITest, EvaluatorChoosesProtectWithAnAuthoritativePair)
+{
+	prepareOrder(HeroCommand::PROTECT);
+	const auto * ward = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(69), 100);
+	ASSERT_EQ(BattleHex::getDistance(active->getPosition(), ward->getPosition()), 1);
+
+	assertChosenOrder(HeroCommand::PROTECT);
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	ASSERT_NE(state->primaryTargetUnitId, state->secondaryTargetUnitId);
+	const auto * protector = battle()->battleGetUnitByID(state->primaryTargetUnitId);
+	const auto * protectedUnit = battle()->battleGetUnitByID(state->secondaryTargetUnitId);
+	ASSERT_NE(protector, nullptr);
+	ASSERT_NE(protectedUnit, nullptr);
+	EXPECT_EQ(BattleHex::getDistance(protector->getPosition(), protectedUnit->getPosition()), 1);
+	EXPECT_EQ(battle()->battleResolveHeroOrderTarget(enemy, protectedUnit, false), protector);
+}
+
+TEST_F(CanonicalOrderAITest, EvaluatorChoosesFlankAndAuthoritativeSideBonusIsRecorded)
+{
+	prepareOrder(HeroCommand::FLANK);
+	// Keep the target deterministic and reachable.  The battle fixture starts
+	// with one token stack per hero; remove only the defender token so the
+	// evaluator cannot tie-break onto a distant default footprint.
+	std::vector<uint32_t> defenderTokens;
+	for(const auto * stack : battle()->battleGetAllStacks(false))
+		if(battle()->battleGetOwner(stack) == PlayerColor(1) && stack != enemy)
+			defenderTokens.push_back(stack->unitId());
+	for(const auto unitId : defenderTokens)
+	{
+		BattleUnitsChanged removed;
+		removed.battleID = BattleID(0);
+		removed.changedStacks.emplace_back(unitId, UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(removed);
+	}
+
+	assertChosenOrder(HeroCommand::FLANK);
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	const auto * target = battle()->battleGetUnitByID(state->primaryTargetUnitId);
+	ASSERT_NE(target, nullptr);
+	EXPECT_EQ(battle()->battleGetOwner(target), PlayerColor(1));
+	EXPECT_EQ(target->unitId(), enemy->unitId());
+
+	const auto healthBefore = enemy->getAvailableHealth();
+	ASSERT_TRUE(attack(active, enemy->getPosition()));
+	EXPECT_LT(enemy->getAvailableHealth(), healthBefore);
+	const auto afterAttack = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(afterAttack);
+	const auto * flank = afterAttack->flankFor(enemy->unitId());
+	ASSERT_NE(flank, nullptr);
+	EXPECT_NE(flank->sideMask, 0);
+}
+
+TEST_F(CanonicalOrderAITest, EvaluatorChoosesSecondWindForMovedStackAndActivatesIt)
+{
+	prepareOrder(HeroCommand::SECOND_WIND);
+	const auto issuerId = active->unitId();
+	CStack * completed = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(69), 100);
+	completed->movedThisRound = true;
+	assertChosenOrder(HeroCommand::SECOND_WIND);
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_EQ(state->primaryTargetUnitId, completed->unitId());
+	EXPECT_NE(state->primaryTargetUnitId, issuerId);
+	EXPECT_TRUE(state->secondWindActive);
+	EXPECT_EQ(battle()->getActiveStackID(), completed->unitId());
 }

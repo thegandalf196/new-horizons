@@ -1,0 +1,43 @@
+{
+  "status": "PRIVATE TECHNICAL DEFAULTS; not user-approved placement or redistribution clearance",
+  "repository": "vcmi-mods/modder-tools-pack",
+  "revision": "e21c90192cb2faf2c4d41347141248e19283a5ce",
+  "slots": [
+    {
+      "id": "small",
+      "template": "secondarySkillSmallBlank.png",
+      "size": [32, 32],
+      "mode": "RGBA",
+      "sha256": "eed48ae89b037457aa783baa5e9dd3ed820a95b6a7a991a7840ce34c3d49d197",
+      "git_blob": "94056fc1179951bcb8888d3120b4b44404027823",
+      "safe_rect": [2, 2, 30, 30],
+      "alignment": "center"
+    },
+    {
+      "id": "medium",
+      "template": "secondarySkillBlank.png",
+      "size": [44, 44],
+      "mode": "RGBA",
+      "sha256": "77203d8fcc0258dd0919ded950414c31cd34f04d78ade1bf15a5d06f67644333",
+      "git_blob": "3c7f5b7d2d2de7dfcb3a616612aa950ac38acdf0",
+      "safe_rect": [2, 2, 42, 42],
+      "alignment": "center"
+    },
+    {
+      "id": "large",
+      "template": "secondarySkillLargeBlank.png",
+      "size": [82, 93],
+      "mode": "RGB",
+      "sha256": "4fe1e46fbfae83eb327ecfab0e9c33c623b439ef0d862a9a1c60031f567d114b",
+      "git_blob": "08a92adfadcde36242265faf95b59848ebc17c6f",
+      "safe_rect": [3, 3, 79, 90],
+      "alignment": "center"
+    }
+  ],
+  "notes": [
+    "Rectangles are conservative inset hypotheses from actual template pixel inspection, not a licensed or visually approved family.",
+    "Resize only complete foreground canvas with aspect preservation; no bbox crop, threshold, background removal, color change or template resizing.",
+    "Header160x96 and bonus58x64 need separate reviewed placement contracts;67x48 book template is NOT80x60 bookmark.",
+    "Collection mod.json declares CC BY-SA4.0; mixed underlying origins require per-file Content/Build review. Private output only."
+  ]
+}

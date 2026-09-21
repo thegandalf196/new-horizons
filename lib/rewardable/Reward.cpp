@@ -12,6 +12,7 @@
 #include "Reward.h"
 
 #include "../mapObjects/CGHeroInstance.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../serializer/JsonSerializeFormat.h"
 #include "../constants/StringConstants.h"
@@ -121,14 +122,19 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 
 	for(const auto & entry : secondary)
 	{
-		const auto skillID = h ? newHorizonsMagic::replacementSkill(h->getMagicRules(), entry.first) : entry.first;
+		const auto replaced = h ? newHorizonsMagic::replacementSkill(h->getMagicRules(), entry.first) : entry.first;
+		const auto skillID = h
+			? newHorizonsHeroes::normalizeRewardSkill(h->getPrimaryGrowthRules(), replaced)
+			: std::optional<SecondarySkill>(replaced);
+		if(!skillID)
+			continue;
 		int levelsGained = entry.second;
-		int currentLevel = h ? h->getSecSkillLevel(skillID) : 0;
+		int currentLevel = h ? h->getSecSkillLevel(*skillID) : 0;
 		int finalLevel = std::clamp<int>(currentLevel + levelsGained, MasteryLevel::NONE, MasteryLevel::EXPERT);
 		if (finalLevel == MasteryLevel::NONE)
-			comps.emplace_back(ComponentType::SEC_SKILL, skillID);
+			comps.emplace_back(ComponentType::SEC_SKILL, *skillID);
 		else
-			comps.emplace_back(ComponentType::SEC_SKILL, skillID, finalLevel);
+			comps.emplace_back(ComponentType::SEC_SKILL, *skillID, finalLevel);
 	}
 
 	for(const auto & entry : grantedArtifacts)

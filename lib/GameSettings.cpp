@@ -115,6 +115,7 @@ const std::vector<GameSettings::SettingOption> GameSettings::settingProperties =
 		{EGameSettings::MAP_OBJECTS_H3_BUG_QUEST_TAKES_ENTIRE_ARMY,       "mapObjects","h3BugQuestTakesEntireArmy"            },
 		{EGameSettings::MARKETS_BLACK_MARKET_RESTOCK_PERIOD,              "markets",   "blackMarketRestockPeriod"             },
 		{EGameSettings::MARKETS_UNIVERSITY_GOLD_COST,                     "markets",   "universityGoldCost"                   },
+		{EGameSettings::MARKETS_NEW_HORIZONS_UNIVERSITY_COST,             "markets",   "newHorizonsUniversityCost"            },
 		{EGameSettings::MODULE_COMMANDERS,                                "modules",   "commanders"                           },
 		{EGameSettings::MODULE_STACK_ARTIFACT,                            "modules",   "stackArtifact"                        },
 		{EGameSettings::MODULE_STACK_ARTIFACT_INDICATION,                 "modules",   "stackArtifactIndication"              },

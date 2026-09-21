@@ -5,9 +5,10 @@ set -euo pipefail
 umask 077
 fail() { printf 'New Horizons: %s\n' "$*" >&2; exit 1; }
 usage() {
-	printf '%s\n' 'Usage: new-horizons-launch.sh --assets DIR --profile DIR [--client FILE] [--resources DIR] [--verify-only]' \
+	printf '%s\n' 'Usage: new-horizons-launch.sh --assets DIR --profile DIR [--client FILE] [--resources DIR] [--verify-only] [-- CLIENT_ARG ...]' \
 		'Purchaser Complete installation: Data, Maps, Mp3 (case-insensitive names).' \
 		'Profile must be new or previously created by this script; do not use a VCMI profile.' \
+		'Arguments after -- are forwarded verbatim to vcmiclient after the mandatory --nointro.' \
 		'--verify-only checks paths without creating a profile or executing the client.' \
 		'Without --verify-only this manually invoked command launches the game.'
 }
@@ -17,6 +18,7 @@ resources=''
 assets=''
 profile=''
 verify=false
+client_args=()
 while (($#)); do
 	case $1 in
 		--assets|--profile|--client|--resources)
@@ -27,6 +29,10 @@ while (($#)); do
 			esac
 			shift 2;;
 		--verify-only) verify=true; shift;;
+		--)
+			shift
+			client_args+=("$@")
+			break;;
 		--help|-h) usage; exit 0;;
 		*) fail "Unknown argument: $1";;
 	esac
@@ -61,6 +67,10 @@ if [[ -e $resources/config/newHorizonsCombat.json || -e $resources/Mods/new-hori
 	curatedCommands=true
 fi
 [[ -r $(dirname -- "$client")/libvcmi.so ]] || fail 'Missing matching libvcmi.so beside client.'
+# Capability snapshots are validated by libvcmi against their explicit schema
+# and ruleset versions. File mtimes are deliberately not used as compatibility
+# metadata: packaging or copying identical JSON after a build must not make a
+# valid client permanently unlaunchable.
 # Resolve only the three original directories, never the installation's Mods/config.
 asset_dir() {
 	local name=$1 entry base found=''
@@ -106,6 +116,54 @@ if [[ -e $profile ]]; then
 		exec 9< "$profile/.nh-lock"
 		flock -n 9 || fail 'This NH profile is already in use.'
 		lockHeld=true
+	fi
+	# A power loss or SIGKILL cannot run the EXIT trap and may leave one of this
+	# launcher's temporary runtime trees behind.  After taking the profile lock,
+	# remove only an exact runtime layout whose links still resolve to the inputs
+	# selected above.  Anything else remains subject to the generic symlink
+	# rejection below.  Read-only verification never mutates the profile.
+	if ! $verify; then
+		for staleRuntime in "$profile"/runtime.????????; do
+			[[ -d $staleRuntime && ! -L $staleRuntime ]] || continue
+			managedRuntime=true
+			for entry in "$staleRuntime"/*; do
+				case ${entry##*/} in
+					vcmiclient) expected=$client;;
+					libvcmi.so) expected=$(dirname -- "$client")/libvcmi.so;;
+					config) expected=$resources/config;;
+					scripts) expected=$resources/scripts;;
+					Data) expected=$data;;
+					Maps) expected=$maps;;
+					Mp3) expected=$mp3;;
+					Mods)
+						[[ -d $entry && ! -L $entry ]] || { managedRuntime=false; break; }
+						continue;;
+					*) managedRuntime=false; break;;
+				esac
+				[[ -L $entry && $(realpath -e -- "$entry") == $(realpath -e -- "$expected") ]] \
+					|| { managedRuntime=false; break; }
+			done
+			for name in vcmiclient libvcmi.so config scripts Data Maps Mp3 Mods; do
+				[[ -e $staleRuntime/$name || -L $staleRuntime/$name ]] || managedRuntime=false
+			done
+			if $managedRuntime; then
+				for entry in "$staleRuntime/Mods"/*; do
+					case ${entry##*/} in
+						vcmi) expected=$resources/Mods/vcmi;;
+						new-horizons)
+							$curatedCommands || { managedRuntime=false; break; }
+							expected=$resources/Mods/new-horizons;;
+						*) managedRuntime=false; break;;
+					esac
+					[[ -L $entry && $(realpath -e -- "$entry") == $(realpath -e -- "$expected") ]] \
+						|| { managedRuntime=false; break; }
+				done
+				[[ -L $staleRuntime/Mods/vcmi ]] || managedRuntime=false
+				$curatedCommands && [[ -L $staleRuntime/Mods/new-horizons ]] || ! $curatedCommands \
+					|| managedRuntime=false
+			fi
+			$managedRuntime && rm -r -- "$staleRuntime"
+		done
 	fi
 	# Refuse redirecting writable settings/saves outside this managed profile.
 	while IFS= read -r -d '' path; do
@@ -161,4 +219,4 @@ env -u LD_PRELOAD -u LD_AUDIT \
 	LD_LIBRARY_PATH="$(dirname -- "$client")" \
 	XDG_DATA_HOME="$profile/data" XDG_CONFIG_HOME="$profile/config" \
 	XDG_CACHE_HOME="$profile/cache" XDG_DATA_DIRS="$runtime" \
-	"$runtime/vcmiclient"
+	"$runtime/vcmiclient" --nointro "${client_args[@]}"

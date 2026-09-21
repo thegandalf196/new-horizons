@@ -123,6 +123,22 @@ void CGarrisonSlot::hover (bool on)
 				temp.appendTextID("core.tcommand.11"); //Empty
 			}
 		}
+		if(const auto * source = owner->getSelection(); source && source != this
+			&& source->creature && source->getObj() != getObj())
+		{
+			if(const auto * receivingHero = dynamic_cast<const CGHeroInstance *>(getObj()))
+			{
+				if(const auto capacity = receivingHero->getLeadershipSlotCapacity(source->creature->getId()))
+				{
+					int incoming = source->myStack->getCount();
+					if(source->getObj()->needsLastStack() && source->getObj()->stacksCount() == 1 && !creature)
+						incoming--;
+					const int resulting = creature == source->creature ? incoming + myStack->getCount() : incoming;
+					temp.appendRawString(" | Leadership: " + std::to_string(resulting) + "/"
+						+ std::to_string(capacity->maximum) + " max");
+				}
+			}
+		}
 		ENGINE->statusbar()->write(temp.toString(&GAME->translator()));
 	}
 	else

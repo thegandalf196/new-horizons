@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "wild-chance",
+  "source": {
+    "path": "$HOME/Documents/Projects/gandalf/HoMM 3 Complete/HeroesIII-Definitive/assets/new-horizons/art-source/active-perks-v2/wild-chance-master.png",
+    "filename": "wild-chance-master.png",
+    "byte_size": 3352688,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "94aecc46b1b04d5908e8d65d35e000ddce41275e19113d9d34c207406c9dd121"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "94aecc46b1b04d5908e8d65d35e000ddce41275e19113d9d34c207406c9dd121"
+    },
+    {
+      "file": "wild-chance-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "db4f58ca8d3d0ed5a2129f56b11bc21baa0a40d4d1e5457cab3ca59e0ac9178b"
+    },
+    {
+      "file": "wild-chance-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "b25d3367b3759c3bb6f86e6fc2bc7332708c7632e81d123ff82c4ecb6c5509b0"
+    },
+    {
+      "file": "wild-chance-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "de0ab767b7cca61affca4412ec4cf6c56ceb9ccb0b9ec46839f4cafae5f83179"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "wild-chance-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "wild-chance-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "wild-chance-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "wild-chance-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

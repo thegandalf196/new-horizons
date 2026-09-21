@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "status": "provisional; not final user-approved artwork",
+  "generated": "2026-09-20",
+  "generator": "OpenAI built-in image generator",
+  "method": "Original miniature modeled fantasy still-life paintings; no source pixels were copied",
+  "license": "CC0-1.0",
+  "style_references": [
+    "../active-perks-v1/atlas-D.png",
+    "../sylvan-luck-perks-v2/atlas.png"
+  ],
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "assets": [
+    {
+      "id": "new-horizons:discipline.inspirationalLeader",
+      "name": "Inspirational Leader",
+      "requires": "basic",
+      "key": "NH_perk_inspirational_leader",
+      "master": "inspirational-leader-master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "f8e5587f18d37306507f705c147e8b6ef6f4fc8e1db05d0bef0b1f43fd1e0331",
+      "style_reference": "../active-perks-v1/atlas-D.png",
+      "prompt_file": "prompt-inspirational-leader.txt",
+      "concept": "A raised golden command standard and bronze baton inspire three steel helmets."
+    },
+    {
+      "id": "new-horizons:sylvanLuck.wildChance",
+      "name": "Wild Chance",
+      "requires": "advanced",
+      "key": "NH_perk_wild_chance",
+      "master": "wild-chance-master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "94aecc46b1b04d5908e8d65d35e000ddce41275e19113d9d34c207406c9dd121",
+      "style_reference": "../sylvan-luck-perks-v2/atlas.png",
+      "prompt_file": "prompt-wild-chance.txt",
+      "concept": "A faceted emerald summoning seed emerges from soil inside a flowering oak vine and clover."
+    },
+    {
+      "id": "new-horizons:sylvanLuck.perfectMoment",
+      "name": "Perfect Moment",
+      "requires": "expert",
+      "key": "NH_perk_perfect_moment",
+      "master": "perfect-moment-master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "0a7eaecfba661c8fd0b7c301f9019c8d7d9ea11ac1dac854f6db553f4fd2ca10",
+      "style_reference": "../sylvan-luck-perks-v2/atlas.png",
+      "prompt_file": "prompt-perfect-moment.txt",
+      "concept": "A gold arrow is poised at the exact center of a bronze celestial clock target."
+    }
+  ]
+}

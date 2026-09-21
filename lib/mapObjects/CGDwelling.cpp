@@ -453,8 +453,15 @@ void CGDwelling::heroAcceptsCreatures(IGameEventCallback & gameEvents, const CGH
 					std::pair<SlotID, SlotID> toMerge;
 					if (h->mergeableStacks(toMerge))
 					{
-						gameEvents.moveStack(StackLocation(h->id, toMerge.first), StackLocation(h->id, toMerge.second), -1); //merge toMerge.first into toMerge.second
-						assert(!h->hasStackAtSlot(toMerge.first)); //we have now a new free slot
+						const auto creature = h->getCreature(toMerge.first)->getId();
+						const auto mergedCount = h->getStackCount(toMerge.first) + h->getStackCount(toMerge.second);
+						const auto capacity = h->getLeadershipSlotCapacity(creature);
+						if(!capacity || capacity->accepts(mergedCount))
+						{
+							if(gameEvents.moveStack(
+								StackLocation(h->id, toMerge.first), StackLocation(h->id, toMerge.second), -1))
+								assert(!h->hasStackAtSlot(toMerge.first));
+						}
 					}
 				}
 			}
@@ -471,22 +478,41 @@ void CGDwelling::heroAcceptsCreatures(IGameEventCallback & gameEvents, const CGH
 			}
 			else //give creatures
 			{
+				TQuantity acceptedCount = count;
+				if(const auto capacity = h->getLeadershipSlotCapacity(crid))
+				{
+					const TQuantity alreadyPresent = h->hasStackAtSlot(slot) ? h->getStackCount(slot) : 0;
+					acceptedCount = std::max<TQuantity>(0,
+						std::min<TQuantity>(count, capacity->maximum - alreadyPresent));
+				}
+
+				if(acceptedCount == 0)
+				{
+					InfoWindow iw;
+					iw.type = EInfoWindowMode::AUTO;
+					iw.player = h->tempOwner;
+					iw.text.appendTextID("core.genrltxt.425");
+					iw.text.replaceNamePlural(crid);
+					gameEvents.showInfoDialog(&iw);
+					return;
+				}
+
 				SetAvailableCreatures sac;
 				sac.tid = id;
 				sac.creatures = creatures;
-				sac.creatures[0].first = 0;
+				sac.creatures[0].first -= acceptedCount;
 
 
 				InfoWindow iw;
 				iw.type = EInfoWindowMode::AUTO;
 				iw.player = h->tempOwner;
 				iw.text.appendTextID("core.genrltxt.423"); //%d %s join your army.
-				iw.text.replaceNumber(count);
+				iw.text.replaceNumber(acceptedCount);
 				iw.text.replaceNamePlural(crid);
 
 				gameEvents.showInfoDialog(&iw);
 				gameEvents.sendAndApply(sac);
-				gameEvents.addToSlot(StackLocation(h->id, slot), crs, count);
+				gameEvents.addToSlot(StackLocation(h->id, slot), crs, acceptedCount);
 			}
 		}
 		else //there no creatures

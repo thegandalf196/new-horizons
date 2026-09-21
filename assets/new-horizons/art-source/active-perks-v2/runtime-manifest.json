@@ -1,0 +1,27 @@
+{
+  "method": "homm3-art export_art.py square reduction; brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_inspirational_leader",
+    "NH_perk_wild_chance",
+    "NH_perk_perfect_moment"
+  ],
+  "files": {
+    "NH_perk_inspirational_leader_normal.png": "562216726be1a13a28f292e32ef164c7ee92cd9e6e803467672bb0d16add532a",
+    "NH_perk_inspirational_leader_pressed.png": "2ea6da7be27a43e9644c4e34c9e760e0907a8be1b886aacb0e85ef9638e63c1b",
+    "NH_perk_inspirational_leader_disabled.png": "5c71b129e8edf96e54c983c112b45e7081ab5e7eed88feca8f5181f938fc5b99",
+    "NH_perk_inspirational_leader_highlighted.png": "5c53d0af770d3208106eb3d1bbeb003da7559badb1b5ac4f901a4a323fa32e38",
+    "NH_perk_inspirational_leader.json": "05029e237d0f785f56dc3bb6b1e506d18812534037a886d3fe2af04bf0380031",
+    "NH_perk_wild_chance_normal.png": "db4f58ca8d3d0ed5a2129f56b11bc21baa0a40d4d1e5457cab3ca59e0ac9178b",
+    "NH_perk_wild_chance_pressed.png": "b4be466445810203c2932de08f8381a4d316d4e3c279dfcdc7f851798d36ae14",
+    "NH_perk_wild_chance_disabled.png": "4ade86ba30aa571786ccd792425b97bf4c97e43d030917c9f83a6f997fdfab88",
+    "NH_perk_wild_chance_highlighted.png": "5f7be566164dac5554a57adac59a536c7f126d93af869eb28284c1cf5adc910e",
+    "NH_perk_wild_chance.json": "ddbeb641f12f0ec8edf55b8302515d546c8b74ab5d86bf6d9408d42634e4d96e",
+    "NH_perk_perfect_moment_normal.png": "68b9efa25c0a841fd07569a0235c89832a422db907f0b14d1a2e8d2e68a9a8a8",
+    "NH_perk_perfect_moment_pressed.png": "1fd83bab261e90b6ed0e6e2b7f6ca6c492ddbe2555ea39c0f0e6e6324f08e8e7",
+    "NH_perk_perfect_moment_disabled.png": "bd49efcaa38c41e97c160138e375021436e3856b741ba32dd498cdb057b032ee",
+    "NH_perk_perfect_moment_highlighted.png": "7880a8db8cdafcc818068499adffc1ce8b141ebe8e4ec7204d4f82073e761cd5",
+    "NH_perk_perfect_moment.json": "ec88cd5c0da4216bec59c8ee1ee9065df4e127725630d2db860b13c44568915b",
+    "native-review.png": "c37a4d631ff5880f247bcb74a1dcdafc7e3160c114f0241dec22dd4a925a01ac"
+  }
+}

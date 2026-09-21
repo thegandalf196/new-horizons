@@ -29,6 +29,13 @@ def main():
     schools = canonical('newHorizonsSchools.json')
     skills = canonical('newHorizonsSkills.json')
     hero_class_translations = canonical('newHorizonsHeroClassTexts.json')
+    # This single patch file contains the explicit Halon override plus the
+    # creation-only neutralization and faction-skill presentation replacement
+    # for legacy secondary-skill specialties. Keep it in the generated
+    # manifest so the curated module cannot silently omit the retired-skill
+    # audit fixes.
+    hero_patch_files = ['config/heroes/halon.json']
+    faction_patch_files = ['config/factions/uniqueBuildings.json']
     metadata = {
         'name': 'New Horizons',
         'description': 'Curated rules: three Orders (including targeted Focus Fire) and '
@@ -55,16 +62,24 @@ def main():
         # Inline generated settings preserve one authoring source without changing
         # that isolation or relying on an unmounted core file reference.
         'settings': settings,
+        'heroes': hero_patch_files,
+        'factions': faction_patch_files,
         'spells': ['config/spells/newHorizons.json'],
         'spellSchools': schools,
         'skills': skills,
         'filesystem': {'SPRITES/': [{'type': 'dir', 'path': '/Images'}]},
     }
-    metadata['description'] += (' Separate future development candidate: provisional class primary profiles, '
-                                'scaled hero formulas and skill-related extra growth. '
+    metadata['description'] += (' Deterministic primary growth uses each class profile vector on every level; '
+                                'the deprecated extraGrowth field is retained only for old-save compatibility. '
                                 'Not the frozen commands/schools release or full mastery/tier implementation.')
     destination = root / 'Mods/new-horizons/mod.json'
     preview_output = args.mastery_preview_output or args.capability_only_control_output or args.capability_preview_output or args.hero_preview_output
+    # Keep the class identity override in every non-mastery diagnostic module
+    # too.  These candidates still render ordinary hero windows; omitting the
+    # translation here makes a freshly generated preview regress to Alchemist
+    # even though the live curated module is correctly localized.
+    if preview_output is not None and args.mastery_preview_output is None:
+        metadata['translations'] = dict(hero_class_translations)
     if preview_output is not None:
         destination = preview_output.resolve()
         if not destination.is_relative_to((root / 'build').resolve()):
@@ -74,8 +89,8 @@ def main():
     if args.hero_preview_output is None:
         settings['heroes']['newHorizonsCapabilities'] = canonical('newHorizonsCapabilities.json')
         metadata['version'] = '0.4.0'
-        metadata['description'] += (' Separate capability candidate: non-destructive soft leadership capacity '
-                                    'and skill-trained ballista scaling. No mastery or creature-category implementation.')
+        metadata['description'] += (' Leadership uses the canonical independent per-slot creature limit; '
+                                    'upgraded creatures require 120% rounded to the nearest 10. Siege retains skill-trained ballista scaling.')
     if args.capability_only_control_output is not None:
         settings['heroes']['newHorizons'] = {}
         metadata['name'] = 'New Horizons (capability-only diagnostic)'

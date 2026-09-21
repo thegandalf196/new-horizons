@@ -40,6 +40,17 @@ inline constexpr std::string_view METAMAGIC_FORMULA_RESERVE = "new-horizons:meta
 inline constexpr std::string_view METAMAGIC_SPELL_BUFFER = "new-horizons:metamagic.spellBuffer";
 inline constexpr std::string_view METAMAGIC_GRAND = "new-horizons:metamagic.grandMetamagic";
 inline constexpr std::string_view METAMAGIC_PERFECT_SEQUENCE = "new-horizons:metamagic.perfectSequence";
+
+struct DLL_LINKAGE AdventureSpellState
+{
+	bool castToday = false;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		h & castToday;
+	}
+};
+
 constexpr uint32_t INVALID_METAMAGIC_TARGET = std::numeric_limits<uint32_t>::max();
 /// Canonical New Horizons Land Mine thresholds.  The spell uses the caster's
 /// saved Spell Power (before applying the direct-damage divisor) to determine
@@ -85,9 +96,22 @@ DLL_LINKAGE int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, i
 DLL_LINKAGE std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
 	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers = {});
 DLL_LINKAGE std::vector<SpellSchool> activeSchools(const JsonNode & rules);
+/// Returns the six canonical Magic School Skills captured by the saved rules.
+/// Legacy worlds have no New Horizons school-skill catalogue.
+DLL_LINKAGE std::vector<SecondarySkill> schoolSkills(const JsonNode & rules);
 DLL_LINKAGE std::vector<SpellSchool> spellSchools(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE int spellLevel(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE int spellCost(const JsonNode & rules, SpellID spell, int mastery);
+/// True when the saved New Horizons roster treats the spell as one of the
+/// neutral, adventure-map spells. These entries deliberately have no school
+/// membership and are not subject to school mastery or Wisdom discounts.
+DLL_LINKAGE bool isAdventureSpell(const JsonNode & rules, SpellID spell);
+/// Return the canonical fixed cost for a saved neutral adventure spell.
+/// Calling this for a non-adventure spell is an invalid rules query.
+DLL_LINKAGE int adventureSpellCost(const JsonNode & rules, SpellID spell);
+/// True when the saved snapshot contains the New Horizons Adventure Magic
+/// roster. Empty/legacy snapshots retain the original adventure-spell rules.
+DLL_LINKAGE bool adventureSpellRulesActive(const JsonNode & rules);
 /// True only for the canonical core Land Mine identity.  Spell indices remain
 /// stable in the saved protocol, but the identity check keeps this helper
 /// independent of installed mod ordering.

@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Heroes III-style Order icon, square high-resolution master
+Primary request: Create an original miniature fantasy still-life icon for the Order “Flank”. Show a hooked cavalry saber and a winged pair of leather boot spurs sweeping around the side of a small enemy shield, with the saber clearly arriving from an oblique rear angle; communicate circling around a foe, not a frontal strike.
+Scene/backdrop: dark umber leather and stone battlefield backdrop, tightly cropped
+Subject: one integrated curved saber, spur and small shield group, strong sideways arc
+Style/medium: late-1990s Western PC fantasy illustration, modeled painterly miniature still life
+Composition/framing: square icon, curved blade wraps from lower-left around the shield toward upper-right, narrow safe inset, readable at 44x44
+Lighting/mood: theatrical chiaroscuro, warm brass edge highlights and cool steel glint, deep shadow on the shield face
+Color palette: steel, dark leather, muted brass, small emerald cloth accent, oxblood background
+Materials/textures: worn saber steel, stitched boot leather, hammered shield, scratched stone
+Constraints: no lettering, no readable runes, no ornamental border, no interface chrome, no repeated shields, transparent background if supported
+Avoid: modern glossy mobile-game style, neon bloom, vector outlines, flat shapes, intentional pixel art, dithering, watermark, people or frontal sword pose

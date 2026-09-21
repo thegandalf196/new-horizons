@@ -15,24 +15,24 @@
 			"description": "Offense represents learned expertise in physical melee combat. It improves melee attacks and retaliations without turning the Attack Primary Attribute into a passive army-wide damage bonus.",
 			"ranks": {
 				"basic": {
-					"description": "Melee attacks and retaliations deal +10% physical damage. At subsequent level-ups, Offense has a 10% chance to grant +1 Attack.",
+					"description": "Melee attacks and retaliations deal +10% physical damage.",
 					"effect": {
 						"status": "active",
-						"description": "Melee attacks and retaliations deal +10% physical damage. At subsequent level-ups, Offense has a 10% chance to grant +1 Attack."
+						"description": "Melee attacks and retaliations deal +10% physical damage."
 					}
 				},
 				"advanced": {
-					"description": "Melee attacks and retaliations deal +20% physical damage. Attack-growth chance becomes 20%.",
+					"description": "Melee attacks and retaliations deal +20% physical damage.",
 					"effect": {
 						"status": "active",
-						"description": "Melee attacks and retaliations deal +20% physical damage. Attack-growth chance becomes 20%."
+						"description": "Melee attacks and retaliations deal +20% physical damage."
 					}
 				},
 				"expert": {
-					"description": "Melee attacks and retaliations deal +30% physical damage. Attack-growth chance becomes 30%.",
+					"description": "Melee attacks and retaliations deal +30% physical damage.",
 					"effect": {
 						"status": "active",
-						"description": "Melee attacks and retaliations deal +30% physical damage. Attack-growth chance becomes 30%."
+						"description": "Melee attacks and retaliations deal +30% physical damage."
 					}
 				}
 			},
@@ -43,7 +43,7 @@
 					"requires": "basic",
 					"description": "Attacks benefiting from Charge! ignore 25% of the target's Creature Defense.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Attacks benefiting from Charge! ignore 25% of the target's Creature Defense."
 					}
 				},
@@ -73,7 +73,7 @@
 					"requires": "basic",
 					"description": "Melee attacks deal +20% damage against stacks below 40% of maximum HP.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Melee attacks deal +20% damage against stacks below 40% of maximum HP."
 					}
 				},
@@ -83,7 +83,7 @@
 					"requires": "advanced",
 					"description": "All melee attacks ignore 20% of the target's Creature Defense.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "All melee attacks ignore 20% of the target's Creature Defense."
 					}
 				},
@@ -93,7 +93,7 @@
 					"requires": "advanced",
 					"description": "Melee attacks ignore 50% of damage reduction granted by Defend and other explicitly mundane defensive states.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Melee attacks ignore 50% of damage reduction granted by Defend and other explicitly mundane defensive states."
 					}
 				},
@@ -147,24 +147,24 @@
 			"description": "Armorer is learned expertise in surviving physical creature combat. Defense remains a Primary Attribute projected through explicit formulas; Armorer is the army's trained protection discipline.",
 			"ranks": {
 				"basic": {
-					"description": "Physical creature attacks and retaliations against the hero's army deal 5% less damage. At subsequent level-ups, Armorer has a 10% chance to grant +1 Defense.",
+					"description": "Physical creature attacks and retaliations against the hero's army deal 5% less damage.",
 					"effect": {
 						"status": "planned",
-						"description": "Physical creature attacks and retaliations against the hero's army deal 5% less damage. At subsequent level-ups, Armorer has a 10% chance to grant +1 Defense."
+						"description": "Physical creature attacks and retaliations against the hero's army deal 5% less damage."
 					}
 				},
 				"advanced": {
-					"description": "Physical creature-attack reduction increases to 10%. Defense-growth chance becomes 20%.",
+					"description": "Physical creature-attack reduction increases to 10%.",
 					"effect": {
 						"status": "planned",
-						"description": "Physical creature-attack reduction increases to 10%. Defense-growth chance becomes 20%."
+						"description": "Physical creature-attack reduction increases to 10%."
 					}
 				},
 				"expert": {
-					"description": "Physical creature-attack reduction increases to 15%. Defense-growth chance becomes 30%.",
+					"description": "Physical creature-attack reduction increases to 15%.",
 					"effect": {
 						"status": "planned",
-						"description": "Physical creature-attack reduction increases to 15%. Defense-growth chance becomes 30%."
+						"description": "Physical creature-attack reduction increases to 15%."
 					}
 				}
 			},
@@ -279,24 +279,24 @@
 			"description": "Archery is the ranged counterpart to Offense: marksmanship, firing discipline, target coordination, and the ability to keep missile troops effective under pressure.",
 			"ranks": {
 				"basic": {
-					"description": "Ranged creature attacks deal +10% physical damage. At subsequent level-ups, Archery has a 10% chance to grant +1 Attack.",
+					"description": "Ranged creature attacks deal +10% physical damage.",
 					"effect": {
 						"status": "planned",
-						"description": "Ranged creature attacks deal +10% physical damage. At subsequent level-ups, Archery has a 10% chance to grant +1 Attack."
+						"description": "Ranged creature attacks deal +10% physical damage."
 					}
 				},
 				"advanced": {
-					"description": "Ranged creature attacks deal +20% physical damage. Attack-growth chance becomes 20%.",
+					"description": "Ranged creature attacks deal +20% physical damage.",
 					"effect": {
 						"status": "planned",
-						"description": "Ranged creature attacks deal +20% physical damage. Attack-growth chance becomes 20%."
+						"description": "Ranged creature attacks deal +20% physical damage."
 					}
 				},
 				"expert": {
-					"description": "Ranged creature attacks deal +30% physical damage. Attack-growth chance becomes 30%.",
+					"description": "Ranged creature attacks deal +30% physical damage.",
 					"effect": {
 						"status": "planned",
-						"description": "Ranged creature attacks deal +30% physical damage. Attack-growth chance becomes 30%."
+						"description": "Ranged creature attacks deal +30% physical damage."
 					}
 				}
 			},
@@ -545,21 +545,21 @@
 				"basic": {
 					"description": "+20 Siege. Grants direct control over the hero's war machines.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "+20 Siege. Grants direct control over the hero's war machines."
 					}
 				},
 				"advanced": {
 					"description": "+40 Siege total.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "+40 Siege total."
 					}
 				},
 				"expert": {
 					"description": "+60 Siege total.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "+60 Siege total."
 					}
 				}
@@ -677,21 +677,21 @@
 				"basic": {
 					"description": "Friendly army receives +1 Morale.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly army receives +1 Morale."
 					}
 				},
 				"advanced": {
 					"description": "Friendly army receives +2 Morale total.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly army receives +2 Morale total."
 					}
 				},
 				"expert": {
 					"description": "Friendly army receives +3 Morale total.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly army receives +3 Morale total."
 					}
 				}
@@ -703,7 +703,7 @@
 					"requires": "basic",
 					"description": "When positive Morale triggers for a friendly stack, that stack deals +10% damage until the end of its activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When positive Morale triggers for a friendly stack, that stack deals +10% damage until the end of its activation."
 					}
 				},
@@ -1863,24 +1863,24 @@
 			"description": "Spellcraft is general magical execution independent of school. It is the successor to the old generic Sorcery secondary skill; Sorcery itself remains one of the six magic schools.",
 			"ranks": {
 				"basic": {
-					"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency. At subsequent level-ups, Spellcraft has a 10% chance to grant +1 Spell Power.",
+					"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency.",
 					"effect": {
 						"status": "planned",
-						"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency. At subsequent level-ups, Spellcraft has a 10% chance to grant +1 Spell Power."
+						"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency."
 					}
 				},
 				"advanced": {
-					"description": "Spell Power-derived components operate at 120%. Spell Power-growth chance becomes 20%.",
+					"description": "Spell Power-derived components operate at 120%.",
 					"effect": {
 						"status": "planned",
-						"description": "Spell Power-derived components operate at 120%. Spell Power-growth chance becomes 20%."
+						"description": "Spell Power-derived components operate at 120%."
 					}
 				},
 				"expert": {
-					"description": "Spell Power-derived components operate at 130%. Spell Power-growth chance becomes 30%.",
+					"description": "Spell Power-derived components operate at 130%.",
 					"effect": {
 						"status": "planned",
-						"description": "Spell Power-derived components operate at 130%. Spell Power-growth chance becomes 30%."
+						"description": "Spell Power-derived components operate at 130%."
 					}
 				}
 			},
@@ -1995,24 +1995,24 @@
 			"description": "Magic-exclusive Skill. Wisdom is the Magic hero's general spell-efficiency discipline. It reduces the Mana cost of spells and develops Knowledge; access to Levels 3-5 belongs to the corresponding Magic School Skill, not to Wisdom.",
 			"ranks": {
 				"basic": {
-					"description": "Listed spell Mana costs are reduced by 10%. At subsequent level-ups, Wisdom has a 10% chance to grant +1 Knowledge.",
+					"description": "Listed spell Mana costs are reduced by 10%.",
 					"effect": {
 						"status": "planned",
-						"description": "Listed spell Mana costs are reduced by 10%. At subsequent level-ups, Wisdom has a 10% chance to grant +1 Knowledge."
+						"description": "Listed spell Mana costs are reduced by 10%."
 					}
 				},
 				"advanced": {
-					"description": "Listed spell Mana costs are reduced by 20%. Knowledge-growth chance becomes 20%.",
+					"description": "Listed spell Mana costs are reduced by 20%.",
 					"effect": {
 						"status": "planned",
-						"description": "Listed spell Mana costs are reduced by 20%. Knowledge-growth chance becomes 20%."
+						"description": "Listed spell Mana costs are reduced by 20%."
 					}
 				},
 				"expert": {
-					"description": "Listed spell Mana costs are reduced by 30%. Knowledge-growth chance becomes 30%.",
+					"description": "Listed spell Mana costs are reduced by 30%.",
 					"effect": {
 						"status": "planned",
-						"description": "Listed spell Mana costs are reduced by 30%. Knowledge-growth chance becomes 30%."
+						"description": "Listed spell Mana costs are reduced by 30%."
 					}
 				}
 			},
@@ -2091,10 +2091,10 @@
 					"id": "new-horizons:wisdom.deepKnowledge",
 					"name": "Deep Knowledge",
 					"requires": "advanced",
-					"description": "Wisdom's chance to grant +1 Knowledge at level-up increases by 10 percentage points.",
+					"description": "Wisdom's Mana discount remains effective when other percentage-based Mana modifiers are active.",
 					"effect": {
 						"status": "planned",
-						"description": "Wisdom's chance to grant +1 Knowledge at level-up increases by 10 percentage points."
+						"description": "Wisdom's Mana discount remains effective when other percentage-based Mana modifiers are active."
 					}
 				},
 				{
@@ -3149,7 +3149,7 @@
 					"requires": "advanced",
 					"description": "Temporary creatures summoned by Nature spells inherit the hero's Sylvan Luck bonus and Lucky Strike multiplier.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Temporary creatures summoned by Nature spells inherit the hero's Sylvan Luck bonus and Lucky Strike multiplier."
 					}
 				},
@@ -3159,7 +3159,7 @@
 					"requires": "expert",
 					"description": "Once per combat, declare one eligible attack to trigger positive Luck automatically.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Once per combat, declare one eligible attack to trigger positive Luck automatically."
 					}
 				},
@@ -3845,21 +3845,21 @@
 				"basic": {
 					"description": "While a friendly stack Defends, it gains additional physical damage reduction equal to 5% + 0.10% × Hero Defense until its next activation. The first melee attacker is struck pre-emptively for 50% normal damage.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "While a friendly stack Defends, it gains additional physical damage reduction equal to 5% + 0.10% × Hero Defense until its next activation. The first melee attacker is struck pre-emptively for 50% normal damage."
 					}
 				},
 				"advanced": {
 					"description": "Bulwark reduction becomes 7.5% + 0.15% × Hero Defense; pre-emptive damage becomes 75%; the stack reflects 25% of actual melee physical damage received after reductions.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Bulwark reduction becomes 7.5% + 0.15% × Hero Defense; pre-emptive damage becomes 75%; the stack reflects 25% of actual melee physical damage received after reductions."
 					}
 				},
 				"expert": {
 					"description": "Bulwark reduction becomes 10% + 0.20% × Hero Defense; pre-emptive damage becomes 100%; melee reflection becomes 50%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Bulwark reduction becomes 10% + 0.20% × Hero Defense; pre-emptive damage becomes 100%; melee reflection becomes 50%."
 					}
 				}

@@ -10,7 +10,9 @@ artwork is original CC0 geometry; editable sources and provenance are in
 
 New games now snapshot provisional primary profiles for all 18 core classes:
 starting ratings use 20/15/10/5 and class growth totals ten points per level.
-Owned skills can grant independent extra growth. Knowledge supplies base mana;
+Primary growth is deterministic: every level grants the hero class's fixed
+four-attribute vector. Skills do not add probabilistic primary-stat points, and
+there is no level-10 growth transition. Knowledge supplies base mana;
 spell-power terms use the saved divisor. Expanded Attack/Defense ratings do not
 blindly increase creature statistics. The read-only growth panel distinguishes
 base/total ratings, proposed class growth and actual last-level gains.
@@ -23,11 +25,12 @@ categories remain subsequent work.
 
 ## Capability preview (0.4)
 
-New games additionally save soft leadership capacity and trained siege rules.
-Provisional Might/Magic capacities start at 750/500 and grow by 75/50 per level;
-owned Leadership ranks modify capacity. Raw creature counts consume it. Capacity
-alone never deletes or rejects creatures; normal army constraints remain. Excess
-armies instead have daily movement scaled down to a 50% floor. Transferring troops changes the limit, not an instant movement refund.
+New games save canonical Leadership and trained Siege rules. Each class has its
+own starting Leadership and fixed per-level growth. Every army slot is checked
+independently: maximum stack size is the hero's Leadership divided by that
+creature's requirement, rounded down. There is no shared army-wide budget and no
+Leadership movement penalty. Upgrades use 120% of the base creature requirement,
+rounded to the nearest 10; oversized recruitment and transfers are rejected.
 Artillery supplies a saved 1/2/3/4 base-damage multiplier for an eligible owned
 ballista; this is not a universal final-damage guarantee or new mastery rank.
 

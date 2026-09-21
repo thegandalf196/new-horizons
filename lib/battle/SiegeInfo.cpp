@@ -20,6 +20,34 @@ SiegeInfo::SiegeInfo()
 	gateState = EGateState::NONE;
 }
 
+int32_t SiegeInfo::maximumStructuralHP(EWallPart part)
+{
+	switch(part)
+	{
+		case EWallPart::BOTTOM_WALL:
+		case EWallPart::BELOW_GATE:
+		case EWallPart::OVER_GATE:
+		case EWallPart::UPPER_WALL:
+			return 300;
+		case EWallPart::GATE:
+			return 450;
+		case EWallPart::KEEP:
+		case EWallPart::BOTTOM_TOWER:
+		case EWallPart::UPPER_TOWER:
+			return 350;
+		default:
+			return 0;
+	}
+}
+
+EWallState SiegeInfo::stateFromStructuralHP(EWallPart part, int32_t hp)
+{
+	const int32_t maximum = maximumStructuralHP(part);
+	if(maximum <= 0 || hp <= 0)
+		return EWallState::DESTROYED;
+	return hp * 2 <= maximum ? EWallState::DAMAGED : EWallState::INTACT;
+}
+
 EWallState SiegeInfo::applyDamage(EWallState state, unsigned int value)
 {
 	if(state == EWallState::NONE)

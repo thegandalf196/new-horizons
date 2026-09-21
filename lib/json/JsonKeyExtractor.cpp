@@ -5,13 +5,19 @@
 #include "../callback/IGameInfoCallback.h"
 #include "../spells/CSpellHandler.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../CSkillHandler.h"
 
 JsonKeyExtractor::JsonKeyExtractor(IGameInfoCallback * cb) : cb(cb) {}
 
 SecondarySkill JsonKeyExtractor::resolveSecondarySkill(SecondarySkill skill) const
 {
-	return cb ? newHorizonsMagic::replacementSkill(cb->getMagicRules(), skill) : skill;
+	if(!cb)
+		return skill;
+
+	skill = newHorizonsMagic::replacementSkill(cb->getMagicRules(), skill);
+	return newHorizonsHeroes::normalizeRewardSkill(cb->getHeroDevelopmentRules(), skill)
+		.value_or(SecondarySkill::NONE);
 }
 
 si32 JsonKeyExtractor::loadVariable(const std::string & variableGroup, const std::string & value, const Variables & variables, si32 defaultValue)

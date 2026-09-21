@@ -36,6 +36,7 @@
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/networkPacks/StackLocation.h"
 #include "../../lib/pathfinder/TurnInfo.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../TurnStartVisitScheduler.h"
 
@@ -217,21 +218,30 @@ void NewTurnProcessor::onPlayerTurnEnded(PlayerColor which)
 		gameHandler->heroPool->onNewWeek(which);
 }
 
-ResourceSet NewTurnProcessor::generatePlayerIncome(PlayerColor playerID, bool newWeek)
+ResourceSet NewTurnProcessor::generatePlayerIncome(PlayerColor playerID, bool newWeek,
+	std::map<ObjectInstanceID, std::vector<GameResID>> & mysticPondResults)
 {
 	const auto & playerSettings = gameHandler->gameInfo().getPlayerSettings(playerID);
 	const PlayerState & state = gameHandler->gameState().players.at(playerID);
 	ResourceSet income;
+	const bool usesNewHorizonsEconomy = newHorizonsMagic::rulesActive(gameHandler->gameState().getMagicRules());
 
 	for (const auto & town : state.getTowns())
 	{
 		if (newWeek && town->hasBuilt(BuildingSubID::TREASURY))
 		{
-			//give 10% of starting gold
-			income[EGameResID::GOLD] += state.resources[EGameResID::GOLD] / 10;
+			// Legacy Treasury interest is intentionally unchanged. New Horizons
+			// applies its cap per physical Treasury, using the balance at week start.
+			const int treasuryIncome = usesNewHorizonsEconomy
+				? newHorizonsEconomy::treasuryWeeklyIncome(state.resources[EGameResID::GOLD])
+				: state.resources[EGameResID::GOLD] / 10;
+			income[EGameResID::GOLD] += treasuryIncome;
 		}
 
-		//give resources if there's a Mystic Pond
+		// Give resources if there's a Mystic Pond. Legacy worlds keep the
+		// original one-resource, 1..4 output and town reveal properties. New
+		// Horizons emits two one-unit picks into the authoritative weekly income
+		// pack; duplicate picks aggregate naturally in ResourceSet.
 		if (newWeek && town->hasBuilt(BuildingSubID::MYSTIC_POND))
 		{
 			static constexpr std::array rareResources = {
@@ -241,13 +251,27 @@ ResourceSet NewTurnProcessor::generatePlayerIncome(PlayerColor playerID, bool ne
 				GameResID::GEMS
 			};
 
-			auto resID = *RandomGeneratorUtil::nextItem(rareResources, gameHandler->getRandomGenerator());
-			int resVal = gameHandler->getRandomGenerator().nextInt(1, 4);
+			if (usesNewHorizonsEconomy)
+			{
+				auto & result = mysticPondResults[town->id];
+				result.clear();
+				result.reserve(newHorizonsEconomy::MYSTIC_POND_WEEKLY_RESOURCE_COUNT);
+				for (int pick = 0; pick < newHorizonsEconomy::MYSTIC_POND_WEEKLY_RESOURCE_COUNT; ++pick)
+				{
+					const auto resID = *RandomGeneratorUtil::nextItem(rareResources, gameHandler->getRandomGenerator());
+					result.push_back(resID);
+					income[resID] += 1;
+				}
+			}
+			else
+			{
+				auto resID = *RandomGeneratorUtil::nextItem(rareResources, gameHandler->getRandomGenerator());
+				int resVal = gameHandler->getRandomGenerator().nextInt(1, 4);
+				income[resID] += resVal;
 
-			income[resID] += resVal;
-
-			gameHandler->setObjPropertyValue(town->id, ObjProperty::BONUS_VALUE_FIRST, resID);
-			gameHandler->setObjPropertyValue(town->id, ObjProperty::BONUS_VALUE_SECOND, resVal);
+				gameHandler->setObjPropertyValue(town->id, ObjProperty::BONUS_VALUE_FIRST, resID);
+				gameHandler->setObjPropertyValue(town->id, ObjProperty::BONUS_VALUE_SECOND, resVal);
+			}
 		}
 	}
 
@@ -720,7 +744,7 @@ NewTurn NewTurnProcessor::generateNewTurnPack()
 	if (!firstTurn)
 	{
 		for (const auto & player : gameHandler->gameState().players)
-			n.playerIncome[player.first] = generatePlayerIncome(player.first, newWeek);
+			n.playerIncome[player.first] = generatePlayerIncome(player.first, newWeek, n.newHorizonsMysticPondResults);
 	}
 
 	if (newWeek && !firstTurn)

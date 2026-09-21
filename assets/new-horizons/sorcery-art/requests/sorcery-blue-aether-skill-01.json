@@ -1,0 +1,362 @@
+{
+  "request_id": "sorcery-blue-aether-skill-01",
+  "status": "planned",
+  "scope": "12 secondary-skill rank/size images; NOT the full20 school family or spell artwork",
+  "entity": "new-horizons:sorceryMagic",
+  "school": "new-horizons:sorcery",
+  "identifiers_unchanged": true,
+  "templates": {
+    "repository": "vcmi-mods/modder-tools-pack",
+    "revision": "e21c90192cb2faf2c4d41347141248e19283a5ce",
+    "small": {
+      "file": "secondarySkillSmallBlank.png",
+      "size": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "sha256": "eed48ae89b037457aa783baa5e9dd3ed820a95b6a7a991a7840ce34c3d49d197",
+      "provisional_safe_rect": [
+        2,
+        2,
+        30,
+        30
+      ]
+    },
+    "medium": {
+      "file": "secondarySkillBlank.png",
+      "size": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "sha256": "77203d8fcc0258dd0919ded950414c31cd34f04d78ade1bf15a5d06f67644333",
+      "provisional_safe_rect": [
+        2,
+        2,
+        42,
+        42
+      ]
+    },
+    "large": {
+      "file": "secondarySkillLargeBlank.png",
+      "size": [
+        82,
+        93
+      ],
+      "mode": "RGB",
+      "sha256": "4fe1e46fbfae83eb327ecfab0e9c33c623b439ef0d862a9a1c60031f567d114b",
+      "provisional_safe_rect": [
+        3,
+        3,
+        79,
+        90
+      ]
+    },
+    "scenarioBonus": {
+      "file": "bonusBlank.png",
+      "size": [
+        58,
+        64
+      ],
+      "mode": "RGBA",
+      "sha256": "12b3f4bb28b71fd0a72eecbf1bf4d3fd3388371aa15c95b4bc04fa4249eb0ce5",
+      "provisional_safe_rect": [
+        2,
+        2,
+        56,
+        62
+      ],
+      "selection_status": "Generic bonus candidate actually inspected; not bonusSpellBlank; final native fit and selected-file rights pending"
+    },
+    "rights": "Private review only. Collection CC BY-SA4 declaration/Various author and mixed game-derived origins require selected-file Content/Build classification; neither template composites nor external raster auto-CC0. No template pixels bundled in this manifest."
+  },
+  "assets": [
+    {
+      "rank": "basic",
+      "rank_value": 1,
+      "role": "small",
+      "size": [
+        32,
+        32
+      ],
+      "resource": "NH_sorceryMagic_basic_small.png",
+      "template": "small",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "basic",
+      "rank_value": 1,
+      "role": "medium",
+      "size": [
+        44,
+        44
+      ],
+      "resource": "NH_sorceryMagic_basic_medium.png",
+      "template": "medium",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "basic",
+      "rank_value": 1,
+      "role": "large",
+      "size": [
+        82,
+        93
+      ],
+      "resource": "NH_sorceryMagic_basic_large.png",
+      "template": "large",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "basic",
+      "rank_value": 1,
+      "role": "scenarioBonus",
+      "size": [
+        58,
+        64
+      ],
+      "resource": "NH_sorceryMagic_basic_scenarioBonus.png",
+      "template": "scenarioBonus",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "advanced",
+      "rank_value": 2,
+      "role": "small",
+      "size": [
+        32,
+        32
+      ],
+      "resource": "NH_sorceryMagic_advanced_small.png",
+      "template": "small",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "advanced",
+      "rank_value": 2,
+      "role": "medium",
+      "size": [
+        44,
+        44
+      ],
+      "resource": "NH_sorceryMagic_advanced_medium.png",
+      "template": "medium",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "advanced",
+      "rank_value": 2,
+      "role": "large",
+      "size": [
+        82,
+        93
+      ],
+      "resource": "NH_sorceryMagic_advanced_large.png",
+      "template": "large",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "advanced",
+      "rank_value": 2,
+      "role": "scenarioBonus",
+      "size": [
+        58,
+        64
+      ],
+      "resource": "NH_sorceryMagic_advanced_scenarioBonus.png",
+      "template": "scenarioBonus",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "expert",
+      "rank_value": 3,
+      "role": "small",
+      "size": [
+        32,
+        32
+      ],
+      "resource": "NH_sorceryMagic_expert_small.png",
+      "template": "small",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "expert",
+      "rank_value": 3,
+      "role": "medium",
+      "size": [
+        44,
+        44
+      ],
+      "resource": "NH_sorceryMagic_expert_medium.png",
+      "template": "medium",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "expert",
+      "rank_value": 3,
+      "role": "large",
+      "size": [
+        82,
+        93
+      ],
+      "resource": "NH_sorceryMagic_expert_large.png",
+      "template": "large",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    },
+    {
+      "rank": "expert",
+      "rank_value": 3,
+      "role": "scenarioBonus",
+      "size": [
+        58,
+        64
+      ],
+      "resource": "NH_sorceryMagic_expert_scenarioBonus.png",
+      "template": "scenarioBonus",
+      "foreground": null,
+      "source_sha256": null,
+      "output_sha256": null,
+      "placement": null,
+      "status": "planned"
+    }
+  ],
+  "alpha_and_borders": "Generated sources genuineRGBA; composite outputRGBA with native template alpha/border values preserved outside foreground. RGB large template explicitly normalizes toRGBA. No global color-mode-preservation claim.",
+  "remaining_active_school_goal_outside_this_request": [
+    {
+      "resource": "NH_sorcery_bookmark_selected.png",
+      "size": [
+        80,
+        60
+      ],
+      "frame": 0,
+      "status": "pending separate school-UI production; compact68x51 review required"
+    },
+    {
+      "resource": "NH_sorcery_bookmark_unselected.png",
+      "size": [
+        80,
+        60
+      ],
+      "frame": 1,
+      "status": "pending separate school-UI production; compact68x51 review required"
+    },
+    {
+      "resource": "NH_sorcery_header.png",
+      "size": [
+        160,
+        96
+      ],
+      "alpha_rule": "top28 clear",
+      "status": "pending distinct wide composition"
+    },
+    {
+      "resource": "NH_sorcery_icon.png",
+      "size": [
+        64,
+        64
+      ],
+      "status": "pending"
+    },
+    {
+      "resource": "NH_sorcery_normal.png",
+      "size": [
+        64,
+        64
+      ],
+      "frame": 0,
+      "status": "pending"
+    },
+    {
+      "resource": "NH_sorcery_pressed.png",
+      "size": [
+        64,
+        64
+      ],
+      "frame": 1,
+      "status": "pending"
+    },
+    {
+      "resource": "NH_sorcery_disabled.png",
+      "size": [
+        64,
+        64
+      ],
+      "frame": 2,
+      "status": "pending"
+    },
+    {
+      "resource": "NH_sorcery_highlighted.png",
+      "size": [
+        64,
+        64
+      ],
+      "frame": 3,
+      "status": "pending"
+    }
+  ],
+  "full_goal_complete": false,
+  "historical_context": "Original planned12-Skill request, with its historical20-image scope; this is not a current completeness authority or image/import approval.",
+  "consumers": {
+    "small": "CSkill::registerIcons -> SECSK32, group0, frame2+rank+3*skillID; CComponent small roles",
+    "medium": "CSkill::registerIcons -> SECSKILL, group0, frame2+rank+3*skillID; CComponent medium role",
+    "large": "CSkill::registerIcons -> SECSK82, group0, frame2+rank+3*skillID; CComponent large role",
+    "scenarioBonus": "CSkillHandler loads per-rank images.scenarioBonus; client/lobby/CBonusSelection.cpp CampaignBonusType::SECONDARY_SKILL selects that image",
+    "configuration": "config/newHorizonsSkills.json per-rank images; exact runtime names retained"
+  },
+  "method": {
+    "qa": "Real alpha histogram plus black/white/brown and native review; do not globally force252/253alpha to255 or threshold missing details",
+    "composition": "Each exact native template unchanged outside foreground coverage; crop to true alpha bounds where appropriate, premultiplied-alpha Lanczos foreground only, explicit per-rank/size placement",
+    "actual_placements": null
+  },
+  "approval": {
+    "actual_generated_images": false,
+    "full_family_visual_approval": false,
+    "live_import": false,
+    "rights_clearance": false
+  }
+}

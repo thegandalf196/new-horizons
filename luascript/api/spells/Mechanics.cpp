@@ -22,6 +22,7 @@
 
 #include "../../../lib/battle/CBattleInfoCallback.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/battle/Unit.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -43,6 +44,17 @@ bool MechanicsProxy::ownerMatchesUnit(const Mechanics & m, const battle::Unit & 
 bool MechanicsProxy::ownerIsSameAsUnit(const Mechanics & m, const battle::Unit & unit)
 {
 	return m.ownerMatches(&unit, true);
+}
+
+bool MechanicsProxy::isNatureSpell(const Mechanics & m)
+{
+	const auto * battle = m.battle();
+	if(!battle)
+		return false;
+	for(const auto school : battle->battleGetSpellSchools(m.getSpellId()))
+		if(school.serializationKey() == "new-horizons:nature")
+			return true;
+	return false;
 }
 
 std::string MechanicsProxy::getPluralFormTextID(const spells::Mechanics & m, const std::string & baseTextID, int32_t count)
@@ -83,6 +95,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True when this authoritative cast selected the Sorcery Temporal Field Mass Slow mode.");
 	R.method<&Mechanics::usesNewHorizonsMagic>("usesNewHorizonsMagic", {},
 		"True when the battle uses a saved New Horizons magic-rules snapshot.");
+	R.function<&MechanicsProxy::isNatureSpell>("isNatureSpell", {},
+		"True when the authoritative saved spell-school mapping classifies this cast as Nature.");
 	R.method<&Mechanics::getEffectValue>("getEffectValue", {},
 		"Returns the computed effect value (e.g. damage / health amount).");
 	R.method<&Mechanics::getCasterColor>("getCasterColor", {},

@@ -197,6 +197,14 @@ function Script:getDefenseIgnored(info, reducer, present, defense, targetDefense
 		ignored = ignored + math.floor((info.luckyRangedDefenseIgnorePercent or 0) * defense / 100)
 	end
 
+	-- Shock Assault is carried by the exact Charge attack selected by the
+	-- authoritative battle callback. It only changes the defender's Creature
+	-- Defense for that melee blow; it must not alter Frenzy's traded defense.
+	if targetDefense and not info.shooting then
+		ignored = ignored + math.floor((info.chargeDefenseIgnorePercent or 0) * defense / 100)
+		ignored = ignored + math.floor((info.meleeDefenseIgnorePercent or 0) * defense / 100)
+	end
+
 	return -math.min(ignored, defense)
 end
 
@@ -245,6 +253,11 @@ function Script:getDefense(info)
 	if hasBonusOfType(info.defenderBonuses, "IN_FRENZY") then return 0 end
 
 	local base = info.defender:getDefense(info.shooting)
+	if not info.shooting then
+		local ignoredStance = math.floor((info.defensiveStanceDefenseBonus or 0)
+			* math.max(0, math.min(100, info.defensiveStanceDamageReductionIgnorePercent or 0)) / 100)
+		base = math.max(0, base - ignoredStance)
+	end
 
 	return base + self:getDefenseIgnored(info, info.attacker, info.attackerBonuses, base, true)
 end
@@ -272,7 +285,8 @@ function Script:getOffenseArcheryFactor(info)
 
 	local targetedPremium = info.shooting and (info.targetedRangedCommandPercent or 0) or 0
 	return (getBonusValueOfSubtype(info.attacker, info.attackerBonuses, "PERCENTAGE_DAMAGE_BOOST", subtype)
-		+ targetedPremium + (info.heroOrderDamagePercent or 0) + (info.bloodrageDamagePercent or 0)) / 100
+		+ targetedPremium + (info.executionerDamagePercent or 0) + (info.heroOrderDamagePercent or 0)
+		+ (info.bloodrageDamagePercent or 0)) / 100
 end
 
 function Script:getBlessFactor(info)
@@ -321,13 +335,16 @@ function Script:getArmorerFactor(info)
 			return bonus:getSource() ~= ENUM.BonusSource.spellEffect
 		end):totalValue()
 	end
+	-- Breakthrough applies to the Defense contribution of the explicit Defend
+	-- state in getDefense(), not to passive Armorer, creature abilities, or
+	-- any other general damage reduction represented here.
 	return -(reduction + (info.heroOrderDamageReductionPercent or 0)) / 100
+		- ((info.bulwarkDamageReductionBasisPoints or 0) / 10000)
 end
 
 --- Shield and air shield: each lessens one kind of blow and ignores the other.
 function Script:getMagicShieldFactor(info)
 	local subtype = info.shooting and DAMAGE_TYPE_RANGED or DAMAGE_TYPE_MELEE
-
 	return -getBonusValueOfSubtype(info.defender, info.defenderBonuses, "GENERAL_DAMAGE_REDUCTION", subtype) / 100
 end
 

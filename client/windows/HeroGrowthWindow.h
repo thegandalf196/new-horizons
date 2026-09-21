@@ -10,6 +10,7 @@
 
 class CGHeroInstance;
 class CButton;
+class CLabel;
 class CTextBox;
 
 /// Read-only display of an actual hero's independent saved development views.
@@ -24,8 +25,19 @@ class HeroGrowthWindow : public CWindowObject
 	std::array<std::string, HeroDevelopmentNavigation::SECTION_COUNT> sectionTexts;
 	std::array<std::shared_ptr<CButton>, HeroDevelopmentNavigation::SECTION_COUNT> sectionButtons;
 	std::shared_ptr<CTextBox> sectionText;
+	std::string selectedPerkSkill;
+	std::size_t perkSkillPage = 0;
+	std::vector<std::string> perkSkillIds;
+	std::vector<std::string> perkSkillNames;
+	std::vector<int> perkSkillRanks;
+	std::vector<std::shared_ptr<CButton>> perkSkillButtons;
+	std::vector<std::vector<std::shared_ptr<CIntObject>>> perkSkillPanels;
+	std::shared_ptr<CLabel> perkSkillHeader;
+	std::shared_ptr<CButton> perkSkillPrevious;
+	std::shared_ptr<CButton> perkSkillNext;
 
 	void selectSection(HeroDevelopmentSection section);
+	void selectPerkSkill(const std::string & skillId);
 	void updateSectionButtons();
 
 public:

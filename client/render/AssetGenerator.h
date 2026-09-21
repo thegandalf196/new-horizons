@@ -77,7 +77,7 @@ private:
 	CanvasPtr createUniversityConfirmDialogBackground(const Point & size, int costElements) const;
 	enum CreateResourceWindowType{ ARTIFACTS_BUYING, ARTIFACTS_SELLING, MARKET_RESOURCES, FREELANCERS_GUILD, TRANSFER_RESOURCES };
 	CanvasPtr createResourceWindow(CreateResourceWindowType type, int count, PlayerColor color) const;
-	enum CreatureInfoPanelElement{ BONUS_EFFECTS, SPELL_EFFECTS, BUTTON_PANEL, COMMANDER_BACKGROUND, COMMANDER_ABILITIES };
+	enum CreatureInfoPanelElement{ BONUS_EFFECTS, SPELL_EFFECTS, LEADERSHIP, BUTTON_PANEL, COMMANDER_BACKGROUND, COMMANDER_ABILITIES };
 	CanvasPtr createCreatureInfoPanelElement(CreatureInfoPanelElement element) const;
 	CanvasPtr createQuestWindow() const;
 	AnimationLayoutMap createGSPButtonClear();

@@ -1,0 +1,103 @@
+/*
+ * NewHorizonsHalonInitializationTest.cpp, part of VCMI
+ *
+ * Authors: listed in file AUTHORS in main folder
+ *
+ * License: GNU General Public License v2.0 or later
+ * Full text of license available in license.txt file, in main folder
+ *
+ */
+#include "StdInc.h"
+
+#include "../mock/TinyH3MBuilder.h"
+#include "../mock/TinyMapGameTest.h"
+
+#include "../../lib/GameConstants.h"
+#include "../../lib/bonuses/BonusEnum.h"
+#include "../../lib/callback/GameRandomizer.h"
+#include "../../lib/entities/hero/CHero.h"
+#include "../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/modding/CModHandler.h"
+
+namespace
+{
+SecondarySkill scopedSkill(const char * identifier)
+{
+	return SecondarySkill(SecondarySkill::decode(identifier));
+}
+}
+
+class NewHorizonsHalonInitializationTest : public TinyMapGameTest
+{
+protected:
+	void SetUp() override
+	{
+		TinyMapGameTest::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
+			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+	}
+};
+
+TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesMetamagicAndSpellcraft)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:halon")), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto * halon = findHeroAt({5, 5, 0});
+	ASSERT_NE(halon, nullptr);
+
+	const auto metamagic = scopedSkill("new-horizons:metamagic");
+	const auto spellcraft = scopedSkill("new-horizons:spellcraft");
+	ASSERT_EQ(halon->secSkills.size(), 2u);
+	EXPECT_EQ(halon->getSecSkillLevel(metamagic), MasteryLevel::BASIC);
+	EXPECT_EQ(halon->getSecSkillLevel(spellcraft), MasteryLevel::BASIC);
+	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
+	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::MYSTICISM), MasteryLevel::NONE);
+
+	// Basic Metamagic supplies one use and Halon's converted specialty supplies
+	// the additional use described by the hero text. Basic Spellcraft also owns
+	// the former Mysticism regeneration role.
+	EXPECT_EQ(halon->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT), 2);
+	EXPECT_EQ(halon->valOfBonuses(BonusType::MANA_REGENERATION), 1);
+	EXPECT_EQ(halon->getHeroType()->getSpecialtyNameTranslated(), "Metamagic Adept");
+	EXPECT_EQ(halon->getHeroType()->getSpecialtyDescriptionTranslated(),
+		"Halon can use Metamagic one additional time per combat.");
+}
+
+TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaKeepsHasteAndStartsWithinLeadershipLimits)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:brissa")), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto * brissa = findHeroAt({5, 5, 0});
+	ASSERT_NE(brissa, nullptr);
+	EXPECT_TRUE(brissa->spellbookContainsSpell(SpellID(SpellID::HASTE)));
+	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:elementalRebirth")), MasteryLevel::BASIC);
+	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:sorceryMagic")), MasteryLevel::BASIC);
+	EXPECT_EQ(brissa->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
+	EXPECT_EQ(brissa->getSecSkillLevel(SecondarySkill::AIR_MAGIC), MasteryLevel::NONE);
+
+	for(const auto & [slot, stack] : brissa->Slots())
+	{
+		(void)slot;
+		const auto capacity = brissa->getLeadershipSlotCapacity(stack->getCreatureID());
+		ASSERT_TRUE(capacity) << stack->getType()->getJsonKey();
+		EXPECT_LE(stack->getCount(), capacity->maximum) << stack->getType()->getJsonKey();
+	}
+}

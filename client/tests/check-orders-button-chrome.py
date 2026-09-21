@@ -26,10 +26,10 @@ window = (ROOT / "client/battle/BattleWindow.cpp").read_text()
 assert 'Point(595, 560), AnimationPath::builtin("NH_orders_gauntlet_framed")' in window
 assert 595 + 48 <= 646, "Orders overlaps Cast slot"
 hashes = {
-    "normal": "29701781c0dfd49293165b5b6bfd1fb9d50634c03f771d010799e169e7c8b5a5",
-    "pressed": "0d3131908ae346e3226f96dcfa3589f6b7ea5b1eced95b933563bd6f147fb076",
-    "disabled": "bbc6e68e48f3c2e03573cc86e404a5fe15355f2e4a95c428b79350a0d81122ce",
-    "highlighted": "648a96a7ec8a2a42bb914a9e3a79b602dd84ed4795cea34eacc3b1bbeac89e3c",
+    "normal": "a9ed0582db60d25900d29e4fe247b48e0b7bea10e3cb27716c48ca05d5a2461e",
+    "pressed": "107e776dc2a6c29c99dc40bc5ab8dc6b4bc59f90ea865bf7f551c1be1417cea9",
+    "disabled": "b8bc12ad08a1823621d21ecbbd113de2f19936f4657deb69cb9aa6395661aeb2",
+    "highlighted": "256aa4ee0858e373c5ec16f20503863da34717f2e8d7b218729df443ab9d6c71",
 }
 for state, digest in hashes.items():
     path = ROOT / "Mods/new-horizons/Images" / f"NH_orders_gauntlet_{state}.png"

@@ -128,6 +128,7 @@ public:
 	virtual void visitBattleAnimationPlayed(BattleAnimationPlayed & pack) {}
 	virtual void visitBattleUpdateGateState(BattleUpdateGateState & pack) {}
 	virtual void visitAdvmapSpellCast(AdvmapSpellCast & pack) {}
+	virtual void visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack) {}
 	virtual void visitShowWorldViewEx(ShowWorldViewEx & pack) {}
 	virtual void visitEndTurn(EndTurn & pack) {}
 	virtual void visitDismissHero(DismissHero & pack) {}

@@ -255,18 +255,15 @@ std::array<int, GameConstants::PRIMARY_SKILLS> GameRandomizer::rollPrimarySkills
 		++gains[rollPrimarySkillForLevelup(hero).getNum()];
 		return gains;
 	}
-	if(!heroSkillSeed.count(hero->getHeroTypeID()))
-		heroSkillSeed.try_emplace(hero->getHeroTypeID(), getDefault().nextInt());
-	auto & rng = heroSkillSeed.at(hero->getHeroTypeID()).seed;
 	const auto view = hero->getPrimaryGrowthView();
-	std::vector<newHorizonsHeroes::ExtraPrimaryRoll> opportunities;
-	std::vector<int> draws;
-	for(const auto & extra : view->extraGrowth)
-	{
-		opportunities.push_back({extra.attribute, extra.chancePercent});
-		draws.push_back(rng.nextInt(0, 99));
-	}
-	return newHorizonsHeroes::calculatePrimaryGrowth(view->profile, opportunities, draws);
+	if(!view)
+		return {};
+
+	// New Horizons primary growth is the class vector itself.  Every level,
+	// including levels beyond ten, grants this exact A/D/Spell Power/Knowledge
+	// vector; the old low/high probability rows and skill-related extra rolls
+	// are legacy mechanics and must not alter it.
+	return view->profile.growth;
 }
 
 PrimarySkill GameRandomizer::rollPrimarySkillForLevelup(const CGHeroInstance * hero)
@@ -316,6 +313,14 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 		// Canonical New Horizons rows are already the complete policy. Do not
 		// apply the legacy periodic Wisdom/school forcing on top of them.
 		actualCandidates = options;
+		// Keep this boundary defensive as well as the caller-side filtering:
+		// level-up offer generation must never be able to reintroduce a retired
+		// skill (or a zero-weight table entry) through a hand-built option set.
+		vstd::erase_if(actualCandidates, [hero](SecondarySkill skill)
+		{
+			return newHorizonsHeroes::isExcludedSkill(hero->getPrimaryGrowthRules(), skill)
+				|| newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), skill).value_or(0) <= 0;
+		});
 	}
 	else
 	{
@@ -332,7 +337,8 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 			actualCandidates = options;
 	}
 
-	assert(!actualCandidates.empty());
+	if(actualCandidates.empty())
+		return SecondarySkill::NONE;
 
 	std::vector<int> weights;
 	std::vector<SecondarySkill> skills;
@@ -370,6 +376,11 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 
 std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInstance * hero)
 {
+	// New Horizons primary growth is deterministic and therefore no longer
+	// initializes this per-hero RNG as a side effect. Secondary-skill offers
+	// still need their own stable stream regardless of which primary system ran.
+	if(!heroSkillSeed.count(hero->getHeroTypeID()))
+		heroSkillSeed.try_emplace(hero->getHeroTypeID(), getDefault().nextInt());
 	auto & heroRng = heroSkillSeed.at(hero->getHeroTypeID());
 	const bool canonicalSkillOffers = newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules());
 

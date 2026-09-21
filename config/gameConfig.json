@@ -762,7 +762,17 @@
 			"blackMarketRestockPeriod" : 0,
 
 			// Cost in gold of buying skill in on-map University or in University of Magic in Conflux
-			"universityGoldCost" : 2000
+			"universityGoldCost" : 2000,
+
+			// New Horizons Conflux Magic University tuition for one Basic Magic School Skill.
+			// This remains separate from the legacy on-map University price.
+			"newHorizonsUniversityCost" : {
+				"gold" : 5000,
+				"mercury" : 2,
+				"sulfur" : 2,
+				"crystal" : 2,
+				"gems" : 2
+			}
 		},
 
 		"banks" :

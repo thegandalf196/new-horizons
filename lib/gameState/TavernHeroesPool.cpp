@@ -126,6 +126,11 @@ void TavernHeroesPool::onNewDay()
 	{
 		auto heroPtr = owner->getMap().tryGetFromHeroPool(heroID);
 		assert(heroPtr);
+		// Pooled heroes are not part of CMap::objects and therefore do not see
+		// GameStatePackVisitor's on-map daily reset. The flag is inert for legacy
+		// rules, so clearing it unconditionally is safe and prevents a dismissed
+		// New Horizons hero from carrying yesterday's cast into a later hire.
+		heroPtr->resetNewHorizonsAdventureSpellCastToday();
 
 		heroPtr->removeBonusesRecursive(Bonus::OneDay);
 		heroPtr->reduceBonusDurations(Bonus::NDays);

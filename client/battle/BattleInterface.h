@@ -16,6 +16,7 @@
 #include "../../lib/battle/BattleHex.h"
 #include "../../lib/spells/SpellAnimationItem.h"
 #include "../../lib/ConditionalWait.h"
+#include <optional>
 
 class CCreatureSet;
 class CGHeroInstance;
@@ -101,6 +102,13 @@ class BattleInterface
 
 	/// List of events that are waiting to be triggered
 	std::vector<AwaitingAnimationEvents> awaitingEvents;
+	/// Presentation-only declaration, bound to one active stack. The server owns
+	/// eligibility and the once-per-combat expenditure.
+	std::optional<uint32_t> perfectMomentStack;
+	/// Set after a spell's EndAction when the authoritative battle state offers
+	/// an immediate Metamagic continuation.  The active-stack packet arrives
+	/// later, so opening the spellbook directly from EndAction races makingTurn().
+	bool metamagicPromptPending = false;
 
 	/// used during tactics mode, points to the interface of player with higher tactics (can be either attacker or defender in hot-seat), valid onloy for human players
 	std::shared_ptr<CPlayerInterface> tacticianInterface;
@@ -173,6 +181,10 @@ public:
 	void giveCommand(EActionType action, const std::vector<BattleHex> & tiles, SpellID spell = SpellID::NONE);
 
 	void sendCommand(BattleAction command, const CStack * actor = nullptr);
+	bool canArmPerfectMoment();
+	bool isPerfectMomentArmed();
+	void setPerfectMomentArmed(bool armed);
+	void clearPerfectMoment();
 
 	const CGHeroInstance *getActiveHero(); //returns hero that can currently cast a spell
 

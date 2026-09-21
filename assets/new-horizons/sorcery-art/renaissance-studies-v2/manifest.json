@@ -1,0 +1,172 @@
+{
+  "status": "three unapproved studies; not full family or import authorization",
+  "tool": "Pillow native-pixel polygons/brush lines; editable SVG equivalents",
+  "exporter_sha256": "c0f91db22d951bcebe73b617ae3231650a92d6ce695e701339879bbc0a10c047",
+  "assets": [
+    {
+      "study": "study",
+      "asset": "header",
+      "size": [
+        160,
+        96
+      ],
+      "png_sha256": "9c705b3e6ad93af42325cb9c53f7050ffdace3b186e3d0c9d045b2555433c782",
+      "svg_sha256": "051f6b9e6bd06b400b78af7c7306ffa5b3191b1aaf33bb8153b94d7feebb18fe",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "study",
+      "asset": "bookmark_selected",
+      "size": [
+        80,
+        60
+      ],
+      "png_sha256": "e9b876066c34542e6f1baace682224191b80f01f8885cb3ccc88424b539fca57",
+      "svg_sha256": "81fa127268219d73fa3ae961a4589a5596dd85e963375639cb20b80cd8418986",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "study",
+      "asset": "bookmark_unselected",
+      "size": [
+        80,
+        60
+      ],
+      "png_sha256": "dbcb85314340f071ea627a7950f512c384549f1d0f72ac564909a4398fbf119e",
+      "svg_sha256": "6fba3e59d2edc642d26b152a1a3155ca28028af968c949e596a7bd570629e045",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "study",
+      "asset": "skill_small",
+      "size": [
+        32,
+        32
+      ],
+      "png_sha256": "4d01b590d6dcd798ed20bc9e00ca002117f272d2a2c1acfb400d4856c52aed27",
+      "svg_sha256": "8bba048c7d49cc2363af00671899d191bbd2c4717a0e42688a67945204a8e8c0",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "study",
+      "asset": "skill_large",
+      "size": [
+        82,
+        93
+      ],
+      "png_sha256": "6a7e30df0456c3e8a59ff292ba19cc1f9c873222dd5a77acd6153a5cc1a792ab",
+      "svg_sha256": "f02144688714bd439dd71b7ec39457b05bcc80b3ed97182dd44bcbc3b208ab0f",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "conjurer",
+      "asset": "header",
+      "size": [
+        160,
+        96
+      ],
+      "png_sha256": "955562c72dcc32d76d039998028a3e242498d4e74165b265ab65804e5a47fea3",
+      "svg_sha256": "5b9be0edacb26d6b0c6ed2bc8739acf8606b73923419922baece69b9b2013144",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "conjurer",
+      "asset": "bookmark_selected",
+      "size": [
+        80,
+        60
+      ],
+      "png_sha256": "4277d229931b8a1ceb9aacc90cb50622ecb8bd00653ff2650c9ec1ef25ee3b2d",
+      "svg_sha256": "ea63ab674e48a9c5d5deaee08acb9400322e2633abfb7a7c16503cbc6ec46d57",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "conjurer",
+      "asset": "bookmark_unselected",
+      "size": [
+        80,
+        60
+      ],
+      "png_sha256": "3d6e703e0eb94520f1e688848705824891b6f3596f35c64375fe91b04a9ef474",
+      "svg_sha256": "86413f36a50136cbb774612e89d5a725ec744065c2a9430030715c92abb09669",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "conjurer",
+      "asset": "skill_small",
+      "size": [
+        32,
+        32
+      ],
+      "png_sha256": "ef80d071ff7e02cb88b535a8b5a72ca9453d193ae8f49a98e27e219c8325db13",
+      "svg_sha256": "90d2acc318ad0f0a04b51e1ac78d01e5b2e9c05eb12d83bcef179ffd7c10cd6d",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "conjurer",
+      "asset": "skill_large",
+      "size": [
+        82,
+        93
+      ],
+      "png_sha256": "561673de5fc644255478de53f9ce5abc8c3c260983e7e0b682936342a8329aa2",
+      "svg_sha256": "5e45a6e33b0de6e82b0643a148156150888ed720d28f9ebd86df4fb0c2a84195",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "manuscript",
+      "asset": "header",
+      "size": [
+        160,
+        96
+      ],
+      "png_sha256": "65b7bcb2c075d583076188a79b261aa3ed4244bd40d44cf4adf601d403e48515",
+      "svg_sha256": "d0d8a41b010729914cf62cd150ad14c2d1fd7e179cd39cb947ae67380e03e0ee",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "manuscript",
+      "asset": "bookmark_selected",
+      "size": [
+        80,
+        60
+      ],
+      "png_sha256": "c9f29bc668c65121c841df214fe78824370efcc467036c49e51df6ea74a641a9",
+      "svg_sha256": "c43584132b184f8a24f2bbfc7ad6ae3f419ff647ac87d010bf9d5d3586973251",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "manuscript",
+      "asset": "bookmark_unselected",
+      "size": [
+        80,
+        60
+      ],
+      "png_sha256": "f3a68c37129f5c29457b44a674480d7a2bcb34e6c586d33d9789da5a14bd2b54",
+      "svg_sha256": "65bfb7e53c192b6d33952ee71b1c067b8bc60dc3d6847d79434af7f48c6bce46",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "manuscript",
+      "asset": "skill_small",
+      "size": [
+        32,
+        32
+      ],
+      "png_sha256": "1186caefa02fab8452276884078d12ee9cb767f66feb8f9baf1ed523b67d8722",
+      "svg_sha256": "d2c24dd9ceac5a1991795929a299b3c7183bed8588ae98abd8d0053eeae73303",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    },
+    {
+      "study": "manuscript",
+      "asset": "skill_large",
+      "size": [
+        82,
+        93
+      ],
+      "png_sha256": "f1e25ddc66b64ff79684bba0a3e7ceba13769b042d562d38b0808dc8ca370b56",
+      "svg_sha256": "76bb5531702bdd0acc1e5393c057edee48c2de99df041cd12a7e7ef05beaac95",
+      "status": "unapproved concept sample; skill rank not yet assigned"
+    }
+  ]
+}

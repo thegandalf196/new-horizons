@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "inspirational-leader",
+  "source": {
+    "path": "$HOME/Documents/Projects/gandalf/HoMM 3 Complete/HeroesIII-Definitive/assets/new-horizons/art-source/active-perks-v2/inspirational-leader-master.png",
+    "filename": "inspirational-leader-master.png",
+    "byte_size": 2814088,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "f8e5587f18d37306507f705c147e8b6ef6f4fc8e1db05d0bef0b1f43fd1e0331"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "f8e5587f18d37306507f705c147e8b6ef6f4fc8e1db05d0bef0b1f43fd1e0331"
+    },
+    {
+      "file": "inspirational-leader-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "f3226f6a63e4e7d4f1fa0bed626b652ab190bfeffebf5d825cf80a86bc911110"
+    },
+    {
+      "file": "inspirational-leader-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "bdf1675c2676845f2f47b4163cd81a92eef1f608ccf29d943143503396ecc762"
+    },
+    {
+      "file": "inspirational-leader-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "ec8c6bd7c8c3daaf17cde996f99931c8c384ee2bd62a41912630afd25f814c08"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "inspirational-leader-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "inspirational-leader-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "inspirational-leader-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "inspirational-leader-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

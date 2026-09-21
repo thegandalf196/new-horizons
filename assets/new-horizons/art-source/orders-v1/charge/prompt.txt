@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Heroes III-style Order icon, square high-resolution master
+Primary request: Create an original miniature fantasy still-life icon for the Order “Charge”. Show a compact medieval cavalry lance thrusting forward from a raised steel stirrup, with a small crimson pennant snapping behind it and a heavy iron horseshoe at the base, clearly communicating a committed mounted assault and momentum.
+Scene/backdrop: dark umber leather-and-wood battlefield backdrop, tightly cropped
+Subject: one dominant forward-pointing lance and horseshoe integrated as a single emblematic object group
+Style/medium: late-1990s Western PC fantasy illustration, modeled painterly miniature still life, rich physical materials
+Composition/framing: square icon, object fills most of the canvas with narrow safe inset, strong diagonal from lower-left to upper-right, unmistakable silhouette at 44x44
+Lighting/mood: theatrical chiaroscuro, warm gold rim on the thrusting metal, deep shadow on the rear, small concentrated highlights
+Color palette: worn steel, burnished gold, oxblood red pennant, dark brown background
+Materials/textures: scratched steel, aged leather, woven cloth, hammered iron, tactile and slightly exaggerated
+Constraints: no lettering, no readable runes, no ornamental border, no interface chrome, no repeated symbols, transparent background if supported while retaining subtle dark vignette inside the square
+Avoid: modern glossy mobile-game style, neon bloom, vector outlines, flat shapes, intentional pixel art, dithering, watermark, extra characters or text

@@ -320,7 +320,13 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 	}
 
 	for(const auto & keyValue : specialtyNode["bonuses"].Struct())
-		hero->specialty.push_back(prepSpec(JsonUtils::parseBonus(keyValue.second)));
+	{
+		// A mod patch uses null to erase an inherited named specialty bonus.
+		// The merge keeps the key so downstream patches can still address it;
+		// it is not a bonus definition and must never be sent to parseBonus().
+		if(!keyValue.second.isNull())
+			hero->specialty.push_back(prepSpec(JsonUtils::parseBonus(keyValue.second)));
+	}
 }
 
 void CHeroHandler::loadExperience()

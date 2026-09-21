@@ -681,6 +681,21 @@ void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 		return;
 	}
 
+	// Targeted Orders use the same battlefield as creature actions.  Their
+	// candidates are presentation-only highlights; the callback is queried
+	// again on click and remains authoritative for the submitted unit IDs.
+	if(owner.actionsController->heroOrderTargetingModeActive())
+	{
+		for(const auto & hex : owner.actionsController->getHeroOrderTargetingLegalHexes())
+			showHighlightedHex(canvas, cellShade, hex, true);
+		for(const auto & hex : owner.actionsController->getHeroOrderTargetingSelectedHexes())
+			showHighlightedHex(canvas, cellUnitMovementHighlight, hex, false);
+		const auto hovered = getHoveredHex();
+		if(hovered.isValid() && owner.actionsController->heroOrderTargetingHexIsLegal(hovered))
+			showHighlightedHex(canvas, cellUnitMovementHighlight, hovered, false);
+		return;
+	}
+
 	BattleHexArray rangedFullDamageLimitHexes;
 	BattleHexArray shootingRangeLimitHexes;
 

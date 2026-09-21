@@ -97,6 +97,9 @@ public:
 		{
 			heroCommands::validateRules(heroCommandRules);
 			validateFocusFireStates();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_MOMENT)
+				&& (sides[BattleSide::ATTACKER].sylvanLuck.perfectMoment || sides[BattleSide::DEFENDER].sylvanLuck.perfectMoment))
+				throw std::runtime_error("Cannot discard Perfect Moment battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS)
 				&& (sides[BattleSide::ATTACKER].sylvanLuck.extendedActive()
 					|| sides[BattleSide::DEFENDER].sylvanLuck.extendedActive()))
@@ -264,6 +267,7 @@ public:
 
 	const CGTownInstance * getDefendedTown() const override;
 	EWallState getWallState(EWallPart partOfWall) const override;
+	int32_t getWallStructuralHP(EWallPart partOfWall) const override;
 	EGateState getGateState() const override;
 
 	int32_t getCastSpells(BattleSide side) const override;
@@ -315,6 +319,7 @@ public:
 	void removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
 
 	void setWallState(EWallPart partOfWall, EWallState state) override;
+	void setWallStructuralHP(EWallPart partOfWall, int32_t hp) override;
 
 	void addObstacle(const ObstacleChanges & changes) override;
 	void updateObstacle(const ObstacleChanges& changes) override;

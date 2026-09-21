@@ -24,8 +24,10 @@
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/entities/building/TownFortifications.h"
 #include "../../lib/gameState/CGameState.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/BonusCaster.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
@@ -37,6 +39,23 @@
 
 namespace
 {
+	std::optional<bool> canonicalWarMachineControl(const CGHeroInstance * hero, CreatureID machine)
+	{
+		if(!hero || !newHorizonsHeroes::usesRules(hero->getCapabilityRules())
+			|| hero->getCapabilityRules()["rulesetVersion"].Integer() < 3)
+			return std::nullopt;
+		const auto siege = hero->getSiegeCapabilities();
+		if(!siege)
+			return std::nullopt;
+		if(machine == CreatureID::BALLISTA)
+			return siege->ballistaControlChance >= 100;
+		if(machine == CreatureID::CATAPULT)
+			return siege->catapultControlChance >= 100;
+		if(machine == CreatureID::FIRST_AID_TENT)
+			return siege->firstAidControlChance >= 100;
+		return std::nullopt;
+	}
+
 	bool allSurvivingStacksTimeStopped(const CBattleInfoCallback & battle)
 	{
 		bool foundAlive = false;
@@ -542,8 +561,13 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfRangedUnit(const CBattleInfoCa
 	const CGHeroInstance * curOwner = battle.battleGetOwnerHero(next);
 	const CreatureID stackCreatureId = next->unitType()->getId();
 
+	const auto canonicalControl = canonicalWarMachineControl(curOwner, stackCreatureId);
+	const bool manualControl = curOwner && (canonicalControl
+		? *canonicalControl
+		: gameHandler->randomizer->rollCombatAbility(curOwner->id,
+			curOwner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(stackCreatureId))));
 	if (next->hasBonusOfType(BonusType::CPU_CONTROLLED) && (battle.battleCanShoot(next) || !next->isMeleeAttacker())
-		&& (!curOwner || !gameHandler->randomizer->rollCombatAbility(curOwner->id, curOwner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(stackCreatureId)))))
+		&& !manualControl)
 	{
 		BattleAction attack;
 		attack.actionType = EActionType::SHOOT;
@@ -771,7 +795,12 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfCatapult(const CBattleInfoCall
 			return true;
 		}
 
-		if (!curOwner || !gameHandler->randomizer->rollCombatAbility(curOwner->id, curOwner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(CreatureID(CreatureID::CATAPULT)))))
+		const auto canonicalControl = canonicalWarMachineControl(curOwner, CreatureID::CATAPULT);
+		const bool manualControl = curOwner && (canonicalControl
+			? *canonicalControl
+			: gameHandler->randomizer->rollCombatAbility(curOwner->id,
+				curOwner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(CreatureID(CreatureID::CATAPULT)))));
+		if (!manualControl)
 		{
 			BattleAction attack;
 			attack.actionType = EActionType::CATAPULT;
@@ -801,7 +830,12 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfFirstAidTent(const CBattleInfo
 			return true;
 		}
 
-		if (!curOwner || !gameHandler->randomizer->rollCombatAbility(curOwner->id, curOwner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(CreatureID(CreatureID::FIRST_AID_TENT)))))
+		const auto canonicalControl = canonicalWarMachineControl(curOwner, CreatureID::FIRST_AID_TENT);
+		const bool manualControl = curOwner && (canonicalControl
+			? *canonicalControl
+			: gameHandler->randomizer->rollCombatAbility(curOwner->id,
+				curOwner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(CreatureID(CreatureID::FIRST_AID_TENT)))));
+		if (!manualControl)
 		{
 			RandomGeneratorUtil::randomShuffle(possibleStacks, gameHandler->getRandomGenerator());
 			const CStack * toBeHealed = possibleStacks.front();
@@ -841,6 +875,29 @@ bool BattleFlowProcessor::rollGoodMorale(const CBattleInfoCallback & battle, con
 			bte.val = 1;
 			bte.additionalInfo = 0;
 			gameHandler->sendAndApply(bte); //play animation
+
+			if(const auto * hero = battle.battleGetOwnerHero(next);
+				hero && hero->hasActivePerk(
+					"new-horizons:discipline",
+					"new-horizons:discipline.inspirationalLeader"))
+			{
+				// The damage script reads melee and ranged percentage boosts
+				// separately, so publish both subtypes. STACK_ACTIVATION keeps
+				// the bonus through the morale follow-up activation and the
+				// normal action-expiry path removes it afterwards.
+				Bonus meleeDamage(BonusDuration::STACK_ACTIVATION,
+					BonusType::PERCENTAGE_DAMAGE_BOOST, BonusSource::HERO_SPECIAL, 10,
+					BonusSourceID(hero->id), BonusSubtypeID(BonusCustomSubtype::damageTypeMelee));
+				meleeDamage.description.appendRawString("New Horizons: Inspirational Leader");
+				Bonus rangedDamage(meleeDamage);
+				rangedDamage.subtype = BonusCustomSubtype::damageTypeRanged;
+
+				SetStackEffect effect;
+				effect.battleID = battle.getBattle()->getBattleID();
+				effect.toAdd.emplace_back(next->unitId(), std::vector<Bonus>{
+					std::move(meleeDamage), std::move(rangedDamage)});
+				gameHandler->sendAndApply(effect);
+			}
 			return true;
 		}
 	}

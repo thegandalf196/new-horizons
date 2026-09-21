@@ -17,6 +17,7 @@
 #include "../callback/IGameInfoCallback.h"
 #include "../constants/StringConstants.h"
 #include "../entities/artifact/ArtifactUtils.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../networkPacks/Component.h"
@@ -146,7 +147,11 @@ bool Rewardable::Limiter::heroAllowed(const CGHeroInstance * hero) const
 
 	for(const auto & skill : secondary)
 	{
-		if (skill.second > hero->getSecSkillLevel(newHorizonsMagic::replacementSkill(hero->getMagicRules(), skill.first)))
+		const auto replaced = newHorizonsMagic::replacementSkill(hero->getMagicRules(), skill.first);
+		const auto effective = newHorizonsHeroes::normalizeRewardSkill(hero->getPrimaryGrowthRules(), replaced);
+		if(!effective)
+			return false;
+		if (skill.second > hero->getSecSkillLevel(*effective))
 			return false;
 	}
 
@@ -292,8 +297,12 @@ void Rewardable::Limiter::loadComponents(std::vector<Component> & comps,
 
 	for(const auto & entry : secondary)
 	{
-		const auto skill = h ? newHorizonsMagic::replacementSkill(h->getMagicRules(), entry.first) : entry.first;
-		comps.emplace_back(ComponentType::SEC_SKILL, skill, entry.second);
+		const auto replaced = h ? newHorizonsMagic::replacementSkill(h->getMagicRules(), entry.first) : entry.first;
+		const auto skill = h
+			? newHorizonsHeroes::normalizeRewardSkill(h->getPrimaryGrowthRules(), replaced)
+			: std::optional<SecondarySkill>(replaced);
+		if(skill)
+			comps.emplace_back(ComponentType::SEC_SKILL, *skill, entry.second);
 	}
 
 	for(const auto & entry : artifacts)

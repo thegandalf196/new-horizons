@@ -7,21 +7,28 @@
 
 #include "../GameEngine.h"
 #include "../GameInstance.h"
+#include "../CPlayerInterface.h"
 #include "../gui/Shortcut.h"
 #include "../render/Colors.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../widgets/Images.h"
+#include "../widgets/MiscWidgets.h"
 #include "../widgets/Slider.h"
 #include "../widgets/TextControls.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/callback/CCallback.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "NewHorizonsPerkHelp.h"
+#include "NewHorizonsPerkIcons.h"
 
 namespace
 {
+constexpr size_t PERK_SKILLS_PER_PAGE = 6;
+
 std::string perkRankName(int rank)
 {
 	switch(rank)
@@ -48,11 +55,53 @@ std::string joinPerkNames(const std::vector<std::string> & names)
 	}
 	return result;
 }
+
+size_t selectedPerksForSkill(const newHorizonsHeroes::PerkState & state, const std::string & skillId)
+{
+	return std::count_if(state.selected.begin(), state.selected.end(), [&skillId](const auto & selection)
+	{
+		return selection.skillId == skillId;
+	});
+}
+}
+
+void HeroGrowthWindow::selectPerkSkill(const std::string & skillId)
+{
+	const auto selected = std::find(perkSkillIds.begin(), perkSkillIds.end(), skillId);
+	if(selected == perkSkillIds.end())
+		return;
+
+	selectedPerkSkill = skillId;
+	const auto index = static_cast<size_t>(std::distance(perkSkillIds.begin(), selected));
+	if(perkSkillHeader && index < perkSkillNames.size() && index < perkSkillRanks.size())
+	{
+		const size_t page = index / PERK_SKILLS_PER_PAGE + 1;
+		const size_t pageCount = (perkSkillIds.size() + PERK_SKILLS_PER_PAGE - 1) / PERK_SKILLS_PER_PAGE;
+		perkSkillHeader->setText("Skill: " + perkSkillNames[index] + " (" + perkRankName(perkSkillRanks[index])
+			+ ") | Ten-perk pool | Page " + std::to_string(page) + "/" + std::to_string(pageCount) + " (select below)");
+	}
+
+	for(size_t i = 0; i < perkSkillPanels.size(); ++i)
+		for(const auto & element : perkSkillPanels[i])
+			element->setEnabled(i == index);
+	for(size_t i = 0; i < perkSkillButtons.size(); ++i)
+		if(perkSkillButtons[i])
+			perkSkillButtons[i]->setBorderColor(i == index ? std::make_optional(Colors::YELLOW) : std::nullopt);
+	redraw();
 }
 
 void HeroGrowthWindow::selectSection(HeroDevelopmentSection section)
 {
-	if(!sectionText || !navigation.select(section))
+	const bool wasPerkPool = navigation.selected() == HeroDevelopmentSection::PERKS;
+	if(!navigation.select(section))
+		return;
+	if(wasPerkPool || section == HeroDevelopmentSection::PERKS)
+	{
+		if(const auto * currentHero = GAME->interface()->cb->getHero(heroID))
+			refresh(*currentHero);
+		return;
+	}
+	if(!sectionText)
 		return;
 
 	sectionText->setText(sectionTexts[static_cast<size_t>(section)]);
@@ -84,6 +133,14 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	OBJECT_CONSTRUCTION;
 	sectionText.reset();
 	sectionButtons.fill(nullptr);
+	perkSkillHeader.reset();
+	perkSkillPrevious.reset();
+	perkSkillNext.reset();
+	perkSkillIds.clear();
+	perkSkillNames.clear();
+	perkSkillRanks.clear();
+	perkSkillButtons.clear();
+	perkSkillPanels.clear();
 	elements.clear();
 	closeButton.reset();
 	// These saved families are independent: primary growth does not opt an old
@@ -94,8 +151,30 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	const auto masteries = hero.getMasteryView();
 	const auto & perkState = hero.getPerkState();
 	const bool perks = newHorizonsHeroes::usesPerkRules(perkState.rules);
+	if(perks)
+	{
+		for(const auto & entry : perkState.rules["skills"].Struct())
+		{
+			const auto & skillId = entry.first;
+			if(hero.getPerkSkillRank(skillId) > 0 || selectedPerksForSkill(perkState, skillId) > 0)
+				perkSkillIds.push_back(skillId);
+		}
+		std::stable_sort(perkSkillIds.begin(), perkSkillIds.end(), [&hero](const std::string & left, const std::string & right)
+		{
+			return hero.getPerkSkillRank(left) > hero.getPerkSkillRank(right);
+		});
+	}
 	navigation.refresh({growth.has_value(), leadership.has_value(), siege.has_value(), masteries.has_value(), perks});
-	pos = Rect(0, 0, 700, 560);
+	const bool showPerkPool = navigation.selected() == HeroDevelopmentSection::PERKS && !perkSkillIds.empty();
+	// The pool is deliberately compact: all ten entries remain visible in a
+	// two-column grid, while the learned-Skill selector pages independently.
+	// Keep the complete window inside the 800x600 logical UI baseline.
+	constexpr int perkCardTop = 421;
+	constexpr int perkCardHeight = 26;
+	constexpr int perkCardGap = 1;
+	constexpr int perkCardRows = 5;
+	constexpr int perkCloseTop = perkCardTop + perkCardRows * (perkCardHeight + perkCardGap) + 10;
+	pos = Rect(0, 0, 700, showPerkPool ? 600 : 560);
 	const ColorRGBA panelColor(52, 46, 43);
 	const ColorRGBA rimColor(180, 154, 98);
 	elements.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, 0, pos.w, pos.h), ColorRGBA(39, 35, 41), rimColor, 2));
@@ -154,7 +233,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 		"No saved leadership capacity view for this hero.",
 		"No saved siege capability view for this hero.",
 		"No saved mastery rules for this hero.",
-		"No saved New Horizons perk rules for this hero."
+		"This hero has no perks available."
 	};
 	auto & growthText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::GROWTH)];
 	auto & leadershipText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::LEADERSHIP)];
@@ -163,18 +242,22 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	auto & perkText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::PERKS)];
 	if(growth)
 	{
-		growthText = "Additional skill growth - independent chances\n";
-		for(const auto & chance : growth->extraGrowth)
-			growthText += chance.skill.toEntity(LIBRARY)->getNameTranslated() + ": " + std::to_string(chance.chancePercent)
-				+ "% chance of +1 " + GAME->translator().translate("core.priskill", chance.attribute.getNum()) + " per level\n";
-		if(growth->extraGrowth.empty())
-			growthText += "No additional skill growth chances at current skill ranks.";
+		growthText = "Primary growth is deterministic.\n"
+			"Every level grants the class vector shown above: no skill-based extra points "
+			"and no level-based probability transition.";
 	}
 	if(leadership)
 	{
-		leadershipText = "Leadership: " + std::to_string(leadership->used) + " / " + std::to_string(leadership->capacity) + " adventure creatures / capacity (includes undead).\n";
-		leadershipText += "Movement limit: " + std::to_string(leadership->movementPercent) + "%; " + (leadership->overCapacity() ? "over capacity." : "within capacity.");
-		leadershipText += "\nExceeding capacity alone does not remove or reject troops.\nCurrent remaining movement points are unchanged.";
+		if(hero.getCapabilityRules()["rulesetVersion"].Integer() >= 2)
+		{
+			leadershipText = "Leadership: " + std::to_string(leadership->capacity) + ".\n";
+			leadershipText += "Every army slot is checked independently. Maximum creatures in a stack = floor(Hero Leadership / Creature Leadership Requirement).\n";
+			leadershipText += "Command and Recruitment do not increase this capacity or discount requirements.";
+		}
+		else
+		{
+			leadershipText = "Legacy aggregate Leadership preview: " + std::to_string(leadership->used) + " / " + std::to_string(leadership->capacity) + ".";
+		}
 	}
 	if(siege)
 	{
@@ -223,7 +306,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 			return hero.getPerkSkillRank(skillId);
 		});
 
-		std::string details = "New Horizons perks - read-only saved state\n";
+		std::string details = "Perks\n";
 		details += "Selected: " + std::to_string(selectedCount);
 
 		std::vector<std::string> skillIds;
@@ -256,7 +339,18 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 			std::vector<std::string> learned;
 			std::vector<std::string> eligible;
 			std::array<size_t, 3> lockedByRank{};
+			std::array<size_t, 3> lockedByTier{};
+			std::array<bool, 3> occupiedTiers{};
 			size_t lockedByCapacity = 0;
+			for(const auto & selection : perkState.selected)
+			{
+				if(selection.skillId != skillId)
+					continue;
+				const auto selectedPerk = newHorizonsHeroes::perkDefinition(perkState.rules,
+					selection.skillId, selection.perkId);
+				if(selectedPerk)
+					occupiedTiers[static_cast<size_t>(newHorizonsHeroes::perkRequiredRank(selectedPerk->requiredRank) - 1)] = true;
+			}
 			for(const auto & perk : skill->perks)
 			{
 				if(perkState.hasSelection(skillId, perk.id))
@@ -284,6 +378,8 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 				const int requiredRank = newHorizonsHeroes::perkRequiredRank(perk.requiredRank);
 				if(rank < requiredRank)
 					++lockedByRank[static_cast<size_t>(requiredRank - 1)];
+				else if(occupiedTiers[static_cast<size_t>(requiredRank - 1)])
+					++lockedByTier[static_cast<size_t>(requiredRank - 1)];
 				else
 					eligible.push_back(perk.name);
 			}
@@ -299,6 +395,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 			eligibleCount += eligible.size();
 			lockedCount += lockedByCapacity;
 			lockedCount += lockedByRank[0] + lockedByRank[1] + lockedByRank[2];
+			lockedCount += lockedByTier[0] + lockedByTier[1] + lockedByTier[2];
 			details += "\n" + skill->name + " (" + perkRankName(rank) + ") - "
 				+ std::to_string(selectedForSkill) + "/" + std::to_string(maxPerksPerSkill) + " selected, "
 				+ std::to_string(static_cast<size_t>(maxPerksPerSkill) - std::min(selectedForSkill, static_cast<size_t>(maxPerksPerSkill))) + " remaining";
@@ -312,13 +409,179 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 				if(lockedByRank[static_cast<size_t>(requiredRank - 1)] > 0)
 					details += "\n  Locked: " + std::to_string(lockedByRank[static_cast<size_t>(requiredRank - 1)])
 						+ " (requires " + perkRankName(requiredRank) + ")";
-		}
+			for(int requiredRank = 1; requiredRank <= 3; ++requiredRank)
+				if(lockedByTier[static_cast<size_t>(requiredRank - 1)] > 0)
+					details += "\n  Locked: " + std::to_string(lockedByTier[static_cast<size_t>(requiredRank - 1)])
+						+ " (" + perkRankName(requiredRank) + " tier already selected)";
+			}
 
 		perkText = "Selected: " + std::to_string(selectedCount) + " / " + std::to_string(capacity)
 			+ " capacity for learned skills; " + std::to_string(eligibleCount) + " eligible for future level-up offers; "
 			+ std::to_string(lockedCount) + " locked.\nEach learned skill can hold up to "
 			+ std::to_string(maxPerksPerSkill) + " perks; a level-up offers at most "
 			+ std::to_string(maxPerkChoices) + ".\n" + details;
+
+		if(showPerkPool)
+		{
+			const size_t pageCount = (perkSkillIds.size() + PERK_SKILLS_PER_PAGE - 1) / PERK_SKILLS_PER_PAGE;
+			perkSkillPage = std::min(perkSkillPage, pageCount - 1);
+			const size_t pageStart = perkSkillPage * PERK_SKILLS_PER_PAGE;
+			const size_t pageEnd = std::min(perkSkillIds.size(), pageStart + PERK_SKILLS_PER_PAGE);
+			const auto selectedSkill = std::find(perkSkillIds.begin() + static_cast<std::ptrdiff_t>(pageStart),
+				perkSkillIds.begin() + static_cast<std::ptrdiff_t>(pageEnd), selectedPerkSkill);
+			if(selectedSkill == perkSkillIds.begin() + static_cast<std::ptrdiff_t>(pageEnd))
+				selectedPerkSkill = perkSkillIds[pageStart];
+
+			const int selectorTop = 365;
+			const int cardWidth = 322;
+			const int cardHeight = perkCardHeight;
+			const int cardGap = perkCardGap;
+			const int cardLeft = 22;
+			const int cardTop = perkCardTop;
+			perkSkillHeader = std::make_shared<CLabel>(22, selectorTop, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW,
+				"Learned Skills (select one; page " + std::to_string(perkSkillPage + 1) + "/" + std::to_string(pageCount) + ")", 480);
+			elements.push_back(perkSkillHeader);
+
+			perkSkillButtons.resize(perkSkillIds.size());
+			perkSkillPanels.resize(perkSkillIds.size());
+			perkSkillNames.resize(perkSkillIds.size());
+			perkSkillRanks.resize(perkSkillIds.size());
+			perkSkillPrevious = std::make_shared<CButton>(Point(516, selectorTop + 17), AnimationPath::builtin("settingsWindow/button80"),
+				CButton::tooltip("Previous Skills", "Show the previous page of learned Skills."), [this]
+				{
+					if(perkSkillPage == 0)
+						return;
+					--perkSkillPage;
+					if(const auto * currentHero = GAME->interface()->cb->getHero(heroID))
+						refresh(*currentHero);
+				});
+			perkSkillPrevious->setTextOverlay("Prev", FONT_TINY, Colors::WHITE);
+			perkSkillPrevious->setHoverable(true);
+			perkSkillPrevious->block(perkSkillPage == 0);
+			elements.push_back(perkSkillPrevious);
+			perkSkillNext = std::make_shared<CButton>(Point(598, selectorTop + 17), AnimationPath::builtin("settingsWindow/button80"),
+				CButton::tooltip("Next Skills", "Show the next page of learned Skills."), [this, pageCount]
+				{
+					if(perkSkillPage + 1 >= pageCount)
+						return;
+					++perkSkillPage;
+					if(const auto * currentHero = GAME->interface()->cb->getHero(heroID))
+						refresh(*currentHero);
+				});
+			perkSkillNext->setTextOverlay("Next", FONT_TINY, Colors::WHITE);
+			perkSkillNext->setHoverable(true);
+			perkSkillNext->block(perkSkillPage + 1 >= pageCount);
+			elements.push_back(perkSkillNext);
+
+			for(size_t skillIndex = 0; skillIndex < perkSkillIds.size(); ++skillIndex)
+			{
+				const auto & skillId = perkSkillIds[skillIndex];
+				const auto skill = newHorizonsPerkHelp::skillDefinition(&hero, skillId);
+				if(!skill)
+					continue;
+				const int rank = hero.getPerkSkillRank(skillId);
+				perkSkillNames[skillIndex] = skill->name;
+				perkSkillRanks[skillIndex] = rank;
+				if(skillIndex >= pageStart && skillIndex < pageEnd)
+				{
+					const int buttonX = 20 + static_cast<int>(skillIndex - pageStart) * 82;
+					const auto button = std::make_shared<CButton>(Point(buttonX, selectorTop + 17), AnimationPath::builtin("settingsWindow/button80"),
+						CButton::tooltip(skill->name, "Show the ten-perk pool for " + skill->name + ". This is read-only."),
+						[this, skillId] { selectPerkSkill(skillId); });
+					button->setTextOverlay(skill->name, FONT_TINY, Colors::WHITE);
+					button->setHoverable(true);
+					perkSkillButtons[skillIndex] = button;
+					elements.push_back(button);
+				}
+
+				std::vector<std::shared_ptr<CIntObject>> panel;
+				for(size_t perkIndex = 0; perkIndex < skill->perks.size(); ++perkIndex)
+				{
+					const auto & perk = skill->perks[perkIndex];
+					const int requiredRank = newHorizonsHeroes::perkRequiredRank(perk.requiredRank);
+					const size_t selectedForSkill = selectedPerksForSkill(perkState, skillId);
+					std::array<bool, 3> occupiedTiers{};
+					for(const auto & selection : perkState.selected)
+					{
+						if(selection.skillId != skillId)
+							continue;
+						if(const auto selectedPerk = newHorizonsPerkHelp::perkDefinition(&hero, selection.skillId, selection.perkId))
+						{
+							const int selectedRank = newHorizonsHeroes::perkRequiredRank(selectedPerk->requiredRank);
+							if(selectedRank >= 1 && selectedRank <= 3)
+								occupiedTiers[static_cast<size_t>(selectedRank - 1)] = true;
+						}
+					}
+
+					std::string status;
+					std::string reason;
+					ColorRGBA borderColor = Colors::WHITE;
+					if(perkState.hasSelection(skillId, perk.id))
+					{
+						status = "Acquired";
+						borderColor = Colors::GREEN;
+					}
+					else if(hero.getPerkSkillRank(skillId) <= 0)
+					{
+						status = "Locked";
+						reason = "requires learning " + skill->name;
+						borderColor = Colors::RED;
+					}
+					else if(selectedForSkill >= static_cast<size_t>(std::max(0, maxPerksPerSkill)))
+					{
+						status = "Locked";
+						reason = "per-Skill limit reached (maximum " + std::to_string(maxPerksPerSkill) + ")";
+						borderColor = Colors::RED;
+					}
+					else if(hero.getPerkSkillRank(skillId) < requiredRank)
+					{
+						status = "Locked";
+						reason = "requires " + newHorizonsPerkHelp::tierName(requiredRank) + " " + skill->name;
+						borderColor = Colors::RED;
+					}
+					else if(requiredRank >= 1 && requiredRank <= 3 && occupiedTiers[static_cast<size_t>(requiredRank - 1)])
+					{
+						status = "Locked";
+						reason = newHorizonsPerkHelp::tierName(requiredRank) + " tier already selected";
+						borderColor = Colors::RED;
+					}
+					else
+					{
+						status = "Available";
+						reason = "eligible on a future level-up offer";
+						borderColor = Colors::YELLOW;
+					}
+
+					const int column = static_cast<int>(perkIndex % 2);
+					const int row = static_cast<int>(perkIndex / 2);
+					const int x = cardLeft + column * (cardWidth + 12);
+					const int y = cardTop + row * (cardHeight + cardGap);
+					const auto background = std::make_shared<TransparentFilledRectangle>(Rect(x, y, cardWidth, cardHeight), panelColor, borderColor);
+					panel.push_back(background);
+					elements.push_back(background);
+					const auto icon = std::make_shared<CPicture>(ImagePath::builtin(newHorizonsPerkIcon(perk.id)), x + 4, y + 3);
+					icon->scaleTo(Point(20, 20));
+					panel.push_back(icon);
+					elements.push_back(icon);
+					const std::string cardText = status + ": " + perk.name + "\n"
+						+ "Tier: " + newHorizonsPerkHelp::tierName(requiredRank) + " | Skill: " + skill->name;
+					const auto caption = std::make_shared<CMultiLineLabel>(Rect(x + 28, y + 1, cardWidth - 32, cardHeight - 2),
+						FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, cardText);
+					panel.push_back(caption);
+					elements.push_back(caption);
+					const auto help = newHorizonsPerkHelp::format(&hero, skillId, perk.name,
+						newHorizonsPerkHelp::tierName(requiredRank), perk.description)
+						+ "\n\nStatus: " + status + (reason.empty() ? std::string() : "\nReason: " + reason);
+					const auto area = std::make_shared<LRClickableAreaWText>(Rect(x, y, cardWidth, cardHeight),
+						status + ": " + perk.name, help);
+					panel.push_back(area);
+					elements.push_back(area);
+				}
+				perkSkillPanels[skillIndex] = std::move(panel);
+			}
+
+			selectPerkSkill(selectedPerkSkill);
+		}
 	}
 
 	const std::array<EShortcut, HeroDevelopmentNavigation::SECTION_COUNT> sectionShortcuts = {
@@ -339,14 +602,18 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 		sectionButtons[i]->block(!navigation.isAvailable(section));
 	}
 	const auto selected = navigation.selected();
-	sectionText = std::make_shared<CTextBox>(selected ? sectionTexts[static_cast<size_t>(*selected)] : "No saved development details.",
-		Rect(22, 365, 656, 108), 0, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
+	if(!showPerkPool)
+		sectionText = std::make_shared<CTextBox>(selected ? sectionTexts[static_cast<size_t>(*selected)] : "No saved development details.",
+			Rect(22, 365, 656, 108), 0, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
 	updateSectionButtons();
-	const std::string footer = growth
-		? "Base includes level/quest gains; Total includes items/effects.\nClass start may differ from authored stats; growth proposals are before the cap.\nPrimary cap: " + std::to_string(growth->maximumPrimary) + "; Power scaling divisor: " + std::to_string(growth->powerDivisor) + "."
-		: "Totals are current hero attributes; no saved primary growth profile.\nDevelopment details are read-only values from this hero's saved rules.\nSelect a section above for its scope and limitations.";
-	elements.push_back(std::make_shared<CTextBox>(footer, Rect(22, 484, 560, 58), 0, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE));
-	closeButton = std::make_shared<CButton>(Point(614, 485), AnimationPath::builtin("NH_cancel_button"),
+	if(!showPerkPool)
+	{
+		const std::string footer = growth
+			? "Base includes level/quest gains; Total includes items/effects.\nClass start may differ from authored stats; growth proposals are before the cap.\nPrimary cap: " + std::to_string(growth->maximumPrimary) + "; Power scaling divisor: " + std::to_string(growth->powerDivisor) + "."
+			: "Totals are current hero attributes; no saved primary growth profile.\nDevelopment details are read-only values from this hero's saved rules.\nSelect a section above for its scope and limitations.";
+		elements.push_back(std::make_shared<CTextBox>(footer, Rect(22, 484, 560, 58), 0, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE));
+	}
+	closeButton = std::make_shared<CButton>(Point(614, showPerkPool ? perkCloseTop : 485), AnimationPath::builtin("NH_cancel_button"),
 		CButton::tooltip("Close", "Return to the hero screen without changing anything."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);
 	closeButton->setHoverable(true);
 	updateShadow();

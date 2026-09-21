@@ -624,20 +624,40 @@ void AIGateway::heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, s
 					return decoded >= 0 && newHorizonsHeroes::isFactionSkillForFaction(
 						observedHero->getPrimaryGrowthRules(), observedHero->getFactionID(), SecondarySkill(decoded));
 				};
+				const auto inspirationalLeaderScore = [observedHero, &perks](size_t index)
+				{
+					if(!observedHero
+						|| perks[index].selection.perkId
+							!= "new-horizons:discipline.inspirationalLeader")
+						return 0;
+
+					// Inspirational Leader scales with the number of friendly
+					// activations that can benefit from a morale trigger. Use the
+					// currently visible positive morale and army size as a stable
+					// valuation signal instead of selecting every basic perk blindly.
+					const int positiveMorale = std::max(0, observedHero->moraleVal());
+					const int armyStacks = std::max(1, static_cast<int>(observedHero->Slots().size()));
+					return positiveMorale * armyStacks;
+				};
 				const auto best = std::max_element(usablePerks.begin(), usablePerks.end(),
 					[&](size_t leftIndex, size_t rightIndex)
 					{
 						const auto & left = perks[leftIndex];
 						const auto & right = perks[rightIndex];
-						return std::tuple{isFactionPerk(leftIndex), left.requiredRank, left.selection.perkId}
-							< std::tuple{isFactionPerk(rightIndex), right.requiredRank, right.selection.perkId};
+						return std::tuple{
+							isFactionPerk(leftIndex), inspirationalLeaderScore(leftIndex),
+							left.requiredRank, left.selection.perkId}
+							< std::tuple{
+								isFactionPerk(rightIndex), inspirationalLeaderScore(rightIndex),
+								right.requiredRank, right.selection.perkId};
 					});
 				// Advanced/Expert perks are specialized enough to outrank another
 				// generic skill roll. Basic perks remain the fallback when no skill
 				// choice exists, preserving early-game skill development. A valid
 				// faction perk is deliberately preferred even at Basic: it is the
 				// hero's faction identity and is the intended early-game path.
-				if(skills.empty() || isFactionPerk(*best) || perks[*best].requiredRank >= 2)
+				if(skills.empty() || isFactionPerk(*best)
+					|| perks[*best].requiredRank >= 2 || inspirationalLeaderScore(*best) > 0)
 					sel = static_cast<int>(skills.size() + *best);
 			}
 		}
@@ -664,9 +684,31 @@ void AIGateway::showBlockingDialog(const std::string & text, const std::vector<C
 
 	if(!selection && cancel)
 	{
-		executeActionAsync("showBlockingDialog", [this, heroPtr, target, askID]()
+		executeActionAsync("showBlockingDialog", [this, heroPtr, target, components, askID]()
 		{
-			//yes&no -> always answer yes, we are a brave AI :)
+			// Skill-teaching dialogs are decisions, not generic adventure
+			// confirmations.  Accept an upgrade when it advances a known skill,
+			// or when the hero has a legal slot for a new one; decline an Expert
+			// skill (or an unavailable/retired skill) explicitly.
+			if(heroPtr.isVerified())
+			{
+				for(const auto & component : components)
+				{
+					if(component.type != ComponentType::SEC_SKILL)
+						continue;
+
+					const auto skill = component.subType.as<SecondarySkill>();
+					const int currentRank = heroPtr->getSecSkillLevel(skill);
+					const bool accept = currentRank > MasteryLevel::NONE
+						? currentRank < MasteryLevel::EXPERT
+						: heroPtr->canLearnSkill(skill);
+					answerQuery(askID, accept ? 1 : 0);
+					return;
+				}
+			}
+
+			// yes&no for non-teaching dialogs: retain the existing danger-aware
+			// adventure decision.
 			bool answer = true;
 			auto objects = cc->getVisitableObjs(target);
 
@@ -822,8 +864,18 @@ bool AIGateway::makePossibleUpgrades(const CArmedInstance * obj)
 
 				if(upgradeInfo.hasUpgrades())
 				{
+					std::vector<CreatureID> viableUpgrades;
+					for(const auto upgrade : upgradeInfo.getAvailableUpgrades())
+					{
+						const auto * hero = dynamic_cast<const CGHeroInstance *>(obj);
+						const auto capacity = hero ? hero->getLeadershipSlotCapacity(upgrade) : std::nullopt;
+						if(!capacity || capacity->accepts(s->getCount()))
+							viableUpgrades.push_back(upgrade);
+					}
+					if(viableUpgrades.empty())
+						break;
 					// creature at given slot might have alternative upgrades, pick best one
-					CreatureID upgID = *vstd::maxElementByFun(upgradeInfo.getAvailableUpgrades(), [](const CreatureID & id)
+					CreatureID upgID = *vstd::maxElementByFun(viableUpgrades, [](const CreatureID & id)
 						{
 							return id.toCreature()->getAIValue();
 						});
@@ -930,6 +982,38 @@ void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const 
 		return;
 
 	const CArmedInstance * armies[] = {destinationArmy, source};
+	auto arrangeStack = [this](const CArmedInstance * sourceArmy, const CArmedInstance * destinationArmy,
+		SlotID sourceSlot, SlotID destinationSlot)
+	{
+		const auto * sourceStack = sourceArmy->getStackPtr(sourceSlot);
+		if(!sourceStack)
+			return;
+
+		const int transferCount = armyFormation::maxLegalTransferCount(
+			sourceArmy, destinationArmy, sourceSlot, destinationSlot);
+		if(transferCount <= 0)
+			return;
+
+		const auto * destinationStack = destinationArmy->getStackPtr(destinationSlot);
+		const int existingCount = destinationStack ? destinationStack->getCount() : 0;
+		if(transferCount == sourceStack->getCount())
+		{
+			if(armyFormation::canMergeOrSwapStacks(sourceArmy, destinationArmy, sourceSlot, destinationSlot))
+				cc->mergeOrSwapStacks(sourceArmy, destinationArmy, sourceSlot, destinationSlot);
+			return;
+		}
+
+		// A partial transfer is legal only into an empty slot or a stack of the
+		// same creature.  Different occupied stacks require a whole-stack swap;
+		// leave that excess in place when the destination cap is smaller.
+		if(destinationStack && destinationStack->getCreatureID() != sourceStack->getCreatureID())
+			return;
+
+		const int resultingDestinationCount = existingCount + transferCount;
+		if(armyFormation::canSplitStack(
+			sourceArmy, destinationArmy, sourceSlot, destinationSlot, resultingDestinationCount))
+			cc->splitStack(sourceArmy, destinationArmy, sourceSlot, destinationSlot, resultingDestinationCount);
+	};
 
 	auto bestArmy = nullkiller->armyManager->getBestArmy(destinationArmy, destinationArmy, source, cc->getTile(source->visitablePos())->getTerrainID());
 
@@ -938,11 +1022,8 @@ void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const 
 		// move first stack at first slot if empty to avoid can not take away last creature
 		if(!army->hasStackAtSlot(SlotID(0)) && army->stacksCount() > 0)
 		{
-			cc->mergeOrSwapStacks(
-				army,
-				army,
-				SlotID(0),
-				army->Slots().begin()->first);
+			const auto sourceSlot = army->Slots().begin()->first;
+			arrangeStack(army, army, sourceSlot, SlotID(0));
 		}
 	}
 
@@ -959,7 +1040,7 @@ void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const 
 				if(targetSlot.validSlot())
 				{
 					// remove unwanted creatures
-					cc->mergeOrSwapStacks(destinationArmy, source, i, targetSlot);
+					arrangeStack(destinationArmy, source, i, targetSlot);
 				}
 				else if(destinationArmy->getStack(i).getPower() < destinationArmy->getArmyStrength() / 100)
 				{
@@ -979,42 +1060,7 @@ void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const 
 			{
 				if(armyPtr->getCreature(j) == targetCreature && (i != j || armyPtr != destinationArmy)) //it's a searched creature not in dst SLOT
 				{
-					//can't take away last creature without split. generate a new stack with 1 creature which is weak but fast
-					if(armyPtr == source
-						&& source->needsLastStack()
-						&& source->stacksCount() == 1
-						&& (!destinationArmy->hasStackAtSlot(i) || destinationArmy->getCreature(i) == targetCreature))
-					{
-						auto weakest = nullkiller->armyManager->getBestUnitForScout(bestArmy, cc->getTile(source->visitablePos())->getTerrainID());
-
-						if(weakest->creature == targetCreature)
-						{
-							if(1 == source->getStackCount(j))
-								break;
-
-							// move all except 1 of weakest creature from source to destination
-							cc->splitStack(
-								source,
-								destinationArmy,
-								j,
-								destinationArmy->getSlotFor(targetCreature),
-								destinationArmy->getStackCount(i) + source->getStackCount(j) - 1);
-
-							break;
-						}
-						else
-						{
-							// Source last stack is not weakest. Move 1 of weakest creature from destination to source
-							cc->splitStack(
-								destinationArmy,
-								source,
-								destinationArmy->getSlotFor(weakest->creature),
-								source->getFreeSlot(),
-								1);
-						}
-					}
-
-					cc->mergeOrSwapStacks(armyPtr, destinationArmy, j, i);
+					arrangeStack(armyPtr, destinationArmy, j, i);
 				}
 			}
 		}
@@ -1036,6 +1082,7 @@ void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * re
 
 		if(!recruiter->getSlotFor(creID).validSlot())
 		{
+			bool freedSlot = false;
 			for(const auto & stack : recruiter->Slots())
 			{
 				if(!stack.second->getType())
@@ -1043,20 +1090,31 @@ void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * re
 
 				auto duplicatingSlot = recruiter->getSlotFor(stack.second->getCreature());
 
-				if(duplicatingSlot != stack.first)
+				if(duplicatingSlot != stack.first
+					&& armyFormation::canMergeOrSwapStacks(recruiter, recruiter, stack.first, duplicatingSlot))
 				{
 					cc->mergeStacks(recruiter, recruiter, stack.first, duplicatingSlot);
+					freedSlot = true;
 					break;
 				}
 			}
 
-			if(!recruiter->getSlotFor(creID).validSlot())
+			if(!freedSlot || !recruiter->getSlotFor(creID).validSlot())
 			{
 				continue;
 			}
 		}
 
 		vstd::amin(count, cc->getResourceAmount() / creID.toCreature()->getFullRecruitCost());
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(recruiter))
+		{
+			if(const auto capacity = hero->getLeadershipSlotCapacity(creID))
+			{
+				const auto slot = recruiter->getSlotFor(creID);
+				const int alreadyPresent = slot.validSlot() ? recruiter->getStackCount(slot) : 0;
+				vstd::amin(count, std::max(0, capacity->maximum - alreadyPresent));
+			}
+		}
 		if(count > 0)
 			cc->recruitCreatures(d, recruiter, creID, count, i);
 	}

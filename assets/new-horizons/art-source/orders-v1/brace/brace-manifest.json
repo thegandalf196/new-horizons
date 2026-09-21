@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "brace",
+  "source": {
+    "path": "$HOME/.codex/generated_images/01a0c154-b44d-7f93-83f6-daf465b4a4b0/exec-cbafb322-23ab-4f31-b484-41c6fe90b5ed.png",
+    "filename": "exec-cbafb322-23ab-4f31-b484-41c6fe90b5ed.png",
+    "byte_size": 2042277,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "f2fec729e068906444989dd2bffe0d228f8b7d0a0d60d37dbaab3dfecf83b4b0"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "f2fec729e068906444989dd2bffe0d228f8b7d0a0d60d37dbaab3dfecf83b4b0"
+    },
+    {
+      "file": "brace-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "e2107814c57a45b4309d55d16994cf32a82792a18e3bc7f090638a4060544b08"
+    },
+    {
+      "file": "brace-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "4c6e30cebb83c937ea5ec424fb6cb0cdc212ac894404527cd40a73bcdf914910"
+    },
+    {
+      "file": "brace-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "e3ef927525847f4dba75690a1cfca5f81df4d46ed18f474a3641fcd820365079"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "brace-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "brace-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "brace-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "brace-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

@@ -38,32 +38,82 @@ TEST(NewHorizonsCapabilityRules, ActualCanonicalDataHasFullDeclaredMightAndMagic
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsCapabilities", "canonical capability data"));
 	ASSERT_NO_THROW(newHorizonsHeroes::validateCapabilityRules(rules, true));
 	ASSERT_EQ(rules["classProfiles"].Struct().size(), 18u);
-	for(const auto * name : {"knight", "ranger", "alchemist", "demoniac", "deathknight",
-		"overlord", "barbarian", "beastmaster", "planeswalker"})
+	struct ExpectedProfile
 	{
-		SCOPED_TRACE(name);
-		const auto saved = newHorizonsHeroes::resolveCapabilityRules(rules,
-			HeroClassID(HeroClassID::decode(std::string("core:") + name)));
-		EXPECT_EQ(saved["profile"]["base"].Integer(), 750);
-		EXPECT_EQ(saved["profile"]["perLevel"].Integer(), 75);
-		EXPECT_EQ(newHorizonsHeroes::capabilityLeadership(saved, 4, 3, 0).capacity, 1950);
-	}
-	for(const auto * name : {"cleric", "druid", "wizard", "heretic", "necromancer",
-		"warlock", "battlemage", "witch", "elementalist"})
+		const char * name;
+		int base;
+		int perLevel;
+	};
+	const std::array<ExpectedProfile, 18> profiles{{
+		{"barbarian", 1100, 60}, {"beastmaster", 1100, 60},
+		{"knight", 1025, 55}, {"demoniac", 1025, 55}, {"overlord", 1025, 55},
+		{"ranger", 950, 50}, {"deathknight", 950, 50},
+		{"alchemist", 875, 45}, {"battlemage", 875, 45}, {"planeswalker", 875, 45},
+		{"cleric", 725, 35}, {"heretic", 725, 35}, {"necromancer", 725, 35},
+		{"warlock", 725, 35}, {"witch", 725, 35},
+		{"druid", 650, 30}, {"wizard", 650, 30}, {"elementalist", 650, 30}}};
+	for(const auto & expected : profiles)
 	{
-		SCOPED_TRACE(name);
+		SCOPED_TRACE(expected.name);
 		const auto saved = newHorizonsHeroes::resolveCapabilityRules(rules,
-			HeroClassID(HeroClassID::decode(std::string("core:") + name)));
-		EXPECT_EQ(saved["profile"]["base"].Integer(), 500);
-		EXPECT_EQ(saved["profile"]["perLevel"].Integer(), 50);
-		EXPECT_EQ(newHorizonsHeroes::capabilityLeadership(saved, 4, 3, 0).capacity, 1300);
+			HeroClassID(HeroClassID::decode(std::string("core:") + expected.name)));
+		EXPECT_EQ(saved["profile"]["base"].Integer(), expected.base);
+		EXPECT_EQ(saved["profile"]["perLevel"].Integer(), expected.perLevel);
+		EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipRating(saved, 4),
+			expected.base + 3 * expected.perLevel);
 	}
 	const auto knight = newHorizonsHeroes::resolveCapabilityRules(rules,
 		HeroClassID(HeroClassID::decode("core:knight")));
-	EXPECT_EQ(newHorizonsHeroes::capabilityLeadership(knight, 2, 1, 0).capacity, 1031);
-	EXPECT_EQ(newHorizonsHeroes::capabilityLeadership(knight, 1, 0, 1500).movementPercent, 50);
+	EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipRating(knight, 2), 1080);
 	for(int rank = 0; rank < 4; ++rank)
 		EXPECT_EQ(newHorizonsHeroes::capabilityBallistaMultiplier(knight, rank), rank + 1);
+}
+
+TEST(NewHorizonsCapabilityRules, CanonicalLeadershipUsesIndependentPerSlotLimits)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const auto knight = newHorizonsHeroes::resolveCapabilityRules(rules,
+		HeroClassID(HeroClassID::decode("core:knight")));
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const CreatureID halberdier(CreatureID::decode("core:halberdier"));
+	EXPECT_EQ(newHorizonsHeroes::capabilityCreatureLeadershipRequirement(knight, pikeman), 60);
+	EXPECT_EQ(newHorizonsHeroes::capabilityCreatureLeadershipRequirement(knight, halberdier), 70);
+
+	const auto pikemanSlot = newHorizonsHeroes::capabilityLeadershipSlot(knight, 1, pikeman);
+	const auto halberdierSlot = newHorizonsHeroes::capabilityLeadershipSlot(knight, 1, halberdier);
+	ASSERT_TRUE(pikemanSlot);
+	ASSERT_TRUE(halberdierSlot);
+	EXPECT_EQ(pikemanSlot->leadership, 1025);
+	EXPECT_EQ(pikemanSlot->maximum, 17);
+	EXPECT_TRUE(pikemanSlot->accepts(17));
+	EXPECT_FALSE(pikemanSlot->accepts(18));
+	EXPECT_EQ(halberdierSlot->maximum, 14);
+	// A second slot is evaluated from the full hero rating again; there is no shared budget.
+	EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipSlot(knight, 1, pikeman)->maximum, 17);
+}
+
+TEST(NewHorizonsCapabilityRules, CanonicalSiegeOutputsUseExactRatingFormulas)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const auto resolved = newHorizonsHeroes::resolveCapabilityRules(rules,
+		HeroClassID(HeroClassID::decode("core:knight")));
+
+	for(const auto & [siege, ballista, firstAid] : {
+		std::tuple{0, 50, 75}, std::tuple{20, 90, 135},
+		std::tuple{40, 130, 195}, std::tuple{60, 170, 255}})
+	{
+		SCOPED_TRACE(siege);
+		EXPECT_EQ(newHorizonsHeroes::capabilitySiegeOutput(resolved, siege, "ballistaDamage"), ballista);
+		EXPECT_EQ(newHorizonsHeroes::capabilitySiegeOutput(resolved, siege, "firstAidHealing"), firstAid);
+	}
+}
+
+TEST(NewHorizonsCapabilityRules, LegacySnapshotsCannotAcquireCanonicalSiegeOutputs)
+{
+	const auto legacy = resolvedCapabilities();
+	EXPECT_THROW(newHorizonsHeroes::capabilitySiegeRating(legacy, 0), std::runtime_error);
+	EXPECT_THROW(newHorizonsHeroes::capabilitySiegeOutput(legacy, 0, "ballistaDamage"), std::runtime_error);
+	EXPECT_THROW(newHorizonsHeroes::capabilitySiegeOutput(legacy, 20, "firstAidHealing"), std::runtime_error);
 }
 
 TEST(NewHorizonsCapabilityRules, NamedSchemaAndRealSettingsWrapperAcceptFullAndEmptyRejectMalformed)
@@ -83,13 +133,14 @@ TEST(NewHorizonsCapabilityRules, NamedSchemaAndRealSettingsWrapperAcceptFullAndE
 	EXPECT_TRUE(wrapped(original));
 	EXPECT_TRUE(valid(JsonNode(JsonMap{})));
 	EXPECT_TRUE(wrapped(JsonNode(JsonMap{})));
-	std::vector<JsonNode> invalid(6, original);
+	std::vector<JsonNode> invalid(7, original);
 	invalid[0]["schemaVersion"].Integer() = 2;
 	invalid[1]["classProfiles"].Struct().begin()->second["base"].Integer() = 0;
 	invalid[2]["classProfiles"].Struct().begin()->second["perLevel"].Float() = 2.5;
-	invalid[3]["leadership"]["minimumMovementPercent"].Integer() = 0;
-	invalid[4]["leadership"]["skillBonusPercent"].Vector().pop_back();
-	invalid[5]["siege"]["ballistaDamageMultiplier"].Vector()[3].Integer() = 101;
+	invalid[3]["leadership"]["globalScalePercent"].Integer() = 0;
+	invalid[4]["leadership"]["upgradeMultiplierPercent"].Integer() = 0;
+	invalid[5]["leadership"]["creatureRequirements"].Struct().begin()->second.Integer() = 0;
+	invalid[6]["siege"]["ballistaDamageMultiplier"].Vector()[3].Integer() = 101;
 	for(const auto & bad : invalid)
 	{
 		EXPECT_FALSE(valid(bad));
@@ -113,7 +164,7 @@ TEST(NewHorizonsCapabilityRules, WorldCoverageAndResolvedSnapshotsDoNotFollowNew
 		HeroClassID(HeroClassID::decode("core:knight")));
 	mutableDefaults["classProfiles"].Struct().clear();
 	mutableDefaults["siege"]["ballistaDamageMultiplier"].Vector()[3].Integer() = 99;
-	EXPECT_EQ(newHorizonsHeroes::capabilityLeadership(saved, 1, 0, 0).capacity, 750);
+	EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipRating(saved, 1), 1025);
 	EXPECT_EQ(newHorizonsHeroes::capabilityBallistaMultiplier(saved, 3), 4);
 	EXPECT_NO_THROW(newHorizonsHeroes::validateResolvedCapabilityRules(saved));
 }

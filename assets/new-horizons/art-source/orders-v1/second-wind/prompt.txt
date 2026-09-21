@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Heroes III-style Order icon, square high-resolution master
+Primary request: Create an original miniature fantasy still-life icon for the Order “Second Wind”. Show a weathered horn of war beside a spring-green feather and a glowing breath-like ribbon curling upward from a small leather waterskin, communicating renewed stamina and a fresh surge.
+Scene/backdrop: dark umber leather and stone battlefield backdrop, tightly cropped
+Subject: one integrated war horn, feather and waterskin group, upward swirling motion
+Style/medium: late-1990s Western PC fantasy illustration, modeled painterly miniature still life
+Composition/framing: square icon, horn anchored lower-left, feather and luminous breath rising toward upper-right, narrow safe inset, readable at 44x44
+Lighting/mood: theatrical chiaroscuro, warm gold on horn, cool green-white glint on feather and breath, deep shadow behind
+Color palette: aged brass, forest green, ivory, brown leather, restrained pale cyan light
+Materials/textures: dented horn, barbed feather, stitched waterskin, worn stone, subtle mist
+Constraints: no lettering, no readable runes, no ornamental border, no interface chrome, transparent background if supported
+Avoid: modern glossy mobile-game style, neon bloom, vector outlines, flat shapes, intentional pixel art, dithering, watermark, people or extra horns

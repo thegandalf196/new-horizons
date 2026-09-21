@@ -90,6 +90,27 @@ class CStackWindow : public CWindowObject
 		ActiveSpellsSection(CStackWindow * owner, int yOffset);
 	};
 
+	class LeadershipSection : public CWindowSection
+	{
+		std::shared_ptr<CAnimImage> icon;
+		std::shared_ptr<CLabel> value;
+		std::shared_ptr<LRClickableAreaWText> details;
+	public:
+		LeadershipSection(CStackWindow * owner, int yOffset);
+	};
+
+	/// Presentation-only indicators for the authoritative New Horizons Order
+	/// snapshot. These are deliberately separate from active spell bonuses:
+	/// Orders have no duration counters and cannot be dispelled.
+	class OrderIndicatorsSection : public CWindowSection
+	{
+		std::vector<std::shared_ptr<CPicture>> orderIcons;
+		std::vector<std::shared_ptr<LRClickableAreaWText>> clickableAreas;
+		std::vector<std::shared_ptr<CLabel>> labels;
+	public:
+		OrderIndicatorsSection(CStackWindow * owner, int yOffset);
+	};
+
 	class BonusLineSection : public CWindowSection
 	{
 		std::array<std::shared_ptr<CPicture>, 2> icon;
@@ -190,7 +211,9 @@ class CStackWindow : public CWindowObject
 
 	std::shared_ptr<CWindowSection> mainSection;
 	std::shared_ptr<CWindowSection> categorySection;
+	std::shared_ptr<CWindowSection> leadershipSection;
 	std::shared_ptr<CWindowSection> activeSpellsSection;
+	std::shared_ptr<CWindowSection> orderIndicatorsSection;
 	std::shared_ptr<CWindowSection> commanderMainSection;
 	std::shared_ptr<CWindowSection> commanderBonusesSection;
 	std::shared_ptr<CWindowSection> bonusesSection;

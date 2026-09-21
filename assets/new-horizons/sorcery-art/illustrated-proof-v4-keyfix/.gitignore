@@ -1,0 +1,6 @@
+# Private Blender outputs contain machine-specific metadata. Do not stage until
+# independently sanitized/reviewed. Clean review PNGs are separate originals.
+/output/master.png
+/output/*.blend
+/output/*.blend1
+/output/render-settings.txt

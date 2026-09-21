@@ -33,6 +33,21 @@ bool PerkState::hasSelection(const std::string & skillId, const std::string & pe
 	});
 }
 
+void PerkState::normalizeLegacyTierConflicts()
+{
+	if(!usesPerkRules(rules))
+		return;
+
+	std::set<std::pair<std::string, int>> occupiedTiers;
+	std::erase_if(selected, [&](const auto & entry)
+	{
+		const auto definition = perkDefinition(rules, entry.skillId, entry.perkId);
+		if(!definition)
+			return false;
+		return !occupiedTiers.emplace(entry.skillId, perkRequiredRank(definition->requiredRank)).second;
+	});
+}
+
 void PerkState::validate() const
 {
 	validatePerkRules(rules);
@@ -44,11 +59,13 @@ void PerkState::validate() const
 	}
 	const auto cap = static_cast<size_t>(rules["maxPerksPerSkill"].Integer());
 	std::set<std::pair<std::string, std::string>> identities;
+	std::set<std::pair<std::string, int>> occupiedTiers;
 	std::map<std::string, size_t> perSkill;
 	for(const auto & entry : selected)
 	{
 		const auto definition = perkDefinition(rules, entry.skillId, entry.perkId);
 		if(!definition || !identities.emplace(entry.skillId, entry.perkId).second
+			|| !occupiedTiers.emplace(entry.skillId, perkRequiredRank(definition->requiredRank)).second
 			|| ++perSkill[entry.skillId] > cap)
 			throw std::runtime_error("Invalid saved New Horizons perk selection");
 	}
@@ -63,6 +80,14 @@ void PerkState::select(const std::string & skillId, const std::string & perkId, 
 	if(!definition || definition->effect["status"].String() != "active"
 		|| currentRank < perkRequiredRank(definition->requiredRank) || hasSelection(skillId, perkId))
 		throw std::runtime_error("Unavailable New Horizons perk selection");
+	const int selectedTier = perkRequiredRank(definition->requiredRank);
+	if(std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
+	{
+		const auto existing = perkDefinition(rules, entry.skillId, entry.perkId);
+		return entry.skillId == skillId && existing
+			&& perkRequiredRank(existing->requiredRank) == selectedTier;
+	}))
+		throw std::runtime_error("New Horizons perk tier already occupied for skill");
 	const auto count = std::count_if(selected.begin(), selected.end(), [&](const auto & entry)
 	{
 		return entry.skillId == skillId;
@@ -120,6 +145,14 @@ std::vector<PerkOfferCandidate> PerkState::prepareOffer(
 				continue;
 			const int requiredRank = perkRequiredRank(perkNode["requires"].String());
 			if(rank < requiredRank)
+				continue;
+			const bool tierOccupied = std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
+			{
+				const auto existing = perkDefinition(rules, entry.skillId, entry.perkId);
+				return entry.skillId == skillId && existing
+					&& perkRequiredRank(existing->requiredRank) == requiredRank;
+			});
+			if(tierOccupied)
 				continue;
 			PerkOfferCandidate candidate{{skillId, perkId}, perkNode["name"].String(),
 				perkNode["description"].String(), requiredRank};
@@ -204,6 +237,7 @@ PerkState PerkState::fromJson(const JsonNode & node)
 			throw std::runtime_error("Invalid New Horizons perk selection identity");
 		result.selected.push_back({saved["skillId"].String(), saved["perkId"].String()});
 	}
+	result.normalizeLegacyTierConflicts();
 	result.validate();
 	return result;
 }

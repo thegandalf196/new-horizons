@@ -35,6 +35,7 @@ struct DLL_LINKAGE BattleAttackInfo
 	bool protectIntercepted = false; // This exact blow was redirected by Protect.
 	bool retaliation = false; // The blow is a normal creature retaliation/counterattack.
 	bool bracePreemptive = false; // The blow is Brace's one pre-emptive strike.
+	int preemptiveDamagePercent = 0; // Explicit final multiplier for a pre-emptive reaction.
 	bool luckyStrike   = false;
 	bool unluckyStrike = false;
 	bool deathBlow     = false;

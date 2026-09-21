@@ -103,7 +103,8 @@ function Script:apply(mechanics, server, target)
 					type = creature,
 					side = mechanics:getCasterSide(),
 					position = dest.hex,
-					summoned = not self.permanent
+					summoned = not self.permanent,
+					natureSummoned = not self.permanent and mechanics:isNatureSpell()
 				}
 			)
 		end

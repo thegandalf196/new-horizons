@@ -32,7 +32,31 @@ rejected because the Linux library search path uses that separator.
 invoke the same command without `--verify-only`. No automatic launch or launch
 acceptance is implied by these instructions. The helper waits for the client,
 returns its status and removes its temporary link directory on ordinary exit.
+To use a VCMI diagnostic entry point without bypassing this managed profile,
+place a conventional `--` after the launcher's options; every following argv is
+passed verbatim to `vcmiclient` after the mandatory `--nointro`, for example:
+
+```sh
+tools/new-horizons-launch.sh --assets '/path/to/purchased Heroes III Complete' \
+  --profile '/path/to/new NH profile' -- \
+  --testmap 'Maps/Arrogance Allied.h3m' --disable-video
+```
+
+`--testmap` is VCMI's built-in debug scenario route: it starts the selected map
+through the normal in-process server and avoids fragile main-menu coordinates.
+It is a diagnostic route, not a replacement for ordinary-input acceptance.
 Do not launch the original binary directly and assume this profile is applied.
+
+Run the bounded gameplay smoke test with:
+
+```sh
+bash tools/tests/new-horizons-scenario-smoke.sh
+```
+
+It must load a real map, advance AI turns, and emit no server rejection,
+capability-rule failure, or battle hero access-check spam. Set
+`NH_SMOKE_SECONDS`, `NH_SMOKE_MAP`, `NH_SMOKE_MINIMUM_TURNS`, or
+`NH_KEEP_SMOKE_LOG=1` to override its defaults.
 
 ## Why these paths isolate inherited content
 

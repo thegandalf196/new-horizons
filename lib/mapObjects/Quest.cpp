@@ -22,6 +22,7 @@
 #include "../callback/IGameRandomizer.h"
 #include "../entities/artifact/CArtifact.h"
 #include "../entities/hero/CHeroHandler.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/ResourceTypeHandler.h"
 #include "../mapObjectConstructors/CObjectClassesHandler.h"
 #include "../serializer/JsonSerializeFormat.h"
@@ -247,9 +248,21 @@ void Quest::getVisitText(const IGameInfoCallback * cb, MetaString &iwText, std::
 	const auto firstComponent = components.size();
 	mission.loadComponents(components, h);
 	// Quest-log previews can have game context without a selected hero.
-	for(size_t i = firstComponent; i < components.size(); ++i)
+	for(size_t i = firstComponent; i < components.size();)
+	{
 		if(components[i].type == ComponentType::SEC_SKILL)
-			components[i].subType = newHorizonsMagic::replacementSkill(cb->getMagicRules(), components[i].subType.as<SecondarySkill>());
+		{
+			const auto replaced = newHorizonsMagic::replacementSkill(cb->getMagicRules(), components[i].subType.as<SecondarySkill>());
+			const auto normalized = newHorizonsHeroes::normalizeRewardSkill(cb->getHeroDevelopmentRules(), replaced);
+			if(!normalized)
+			{
+				components.erase(components.begin() + i);
+				continue;
+			}
+			components[i].subType = *normalized;
+		}
+		++i;
+	}
 
 	if(firstVisit)
 		iwText.append(firstVisitText);

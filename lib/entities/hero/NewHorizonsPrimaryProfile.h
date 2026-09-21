@@ -22,7 +22,7 @@ struct DLL_LINKAGE PrimaryProfile
 	std::array<int, GameConstants::PRIMARY_SKILLS> starting{};
 	std::array<int, GameConstants::PRIMARY_SKILLS> growth{};
 
-	/// Deterministic base ratings, before independent skill bonuses/artifacts.
+	/// Deterministic base ratings before equipment and other explicit bonuses.
 	std::array<int64_t, GameConstants::PRIMARY_SKILLS> baseAtLevel(int level) const;
 };
 

@@ -445,6 +445,67 @@ TEST_F(NewHorizonsFactionSkillQueryTest, factionSkillRankUpIsAuthoritativeAndExc
 	EXPECT_FALSE(query.isValidReply(0));
 }
 
+TEST_F(NewHorizonsFactionSkillQueryTest, canonicalSkillOfferWeightsDriveSelectionAndRejectZeroWeights)
+{
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+
+	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
+	const SecondarySkill offense(SecondarySkill::decode("new-horizons:offense"));
+	const SecondarySkill logistics(SecondarySkill::decode("new-horizons:logistics"));
+	const SecondarySkill spellcraft(SecondarySkill::decode("new-horizons:spellcraft"));
+	ASSERT_GE(wisdom.getNum(), 0);
+	ASSERT_GE(offense.getNum(), 0);
+	ASSERT_GE(logistics.getNum(), 0);
+	ASSERT_GE(spellcraft.getNum(), 0);
+	ASSERT_TRUE(newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()));
+	EXPECT_EQ(newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), wisdom), 0);
+	EXPECT_EQ(newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), logistics), 9);
+	EXPECT_EQ(newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), spellcraft), 3);
+
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	GameRandomizer & randomizer = *gameHandler.randomizer;
+	randomizer.setSeed(17);
+	const std::set<SecondarySkill> zeroAndPositive = {wisdom, offense};
+	for(int i = 0; i < 32; ++i)
+		EXPECT_EQ(randomizer.rollSecondarySkillForLevelup(hero, zeroAndPositive), offense);
+
+	int logisticsDraws = 0;
+	int spellcraftDraws = 0;
+	randomizer.setSeed(31);
+	const std::set<SecondarySkill> weighted = {logistics, spellcraft};
+	for(int i = 0; i < 64; ++i)
+	{
+		const auto selected = randomizer.rollSecondarySkillForLevelup(hero, weighted);
+		if(selected == logistics)
+			++logisticsDraws;
+		else if(selected == spellcraft)
+			++spellcraftDraws;
+		else
+			FAIL() << "canonical selection returned an unexpected skill";
+	}
+	EXPECT_GT(logisticsDraws, spellcraftDraws);
+
+	// A canonical level-up offer is one weighted pool: an owned skill that can
+	// advance competes directly with a learnable new skill, and the second draw
+	// cannot repeat the first one.
+	auto & rules = const_cast<JsonNode &>(hero->getPrimaryGrowthRules());
+	for(auto & [skill, weight] : rules["skillOfferWeights"].Struct())
+		weight.Integer() = 0;
+	rules["skillOfferWeights"][SecondarySkill::encode(offense.getNum())].Integer() = 4;
+	rules["skillOfferWeights"][SecondarySkill::encode(spellcraft.getNum())].Integer() = 3;
+	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
+		hero->setSecSkillLevel(SecondarySkill(index), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	hero->setSecSkillLevel(offense, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	(void)randomizer.rollPrimarySkillForLevelup(hero); // seed the hero-specific RNG
+	const auto combined = randomizer.rollSecondarySkills(hero);
+	ASSERT_EQ(combined.size(), 2u);
+	EXPECT_EQ(std::set<SecondarySkill>(combined.begin(), combined.end()),
+		(std::set<SecondarySkill>{offense, spellcraft}));
+}
+
 TEST_F(NewHorizonsFactionSkillQueryTest, duplicateLegacyAliasUsesFirstSavedFactionSkillIdentity)
 {
 	startGame(HeroTypeID(64)); // Death Knight: Necropolis might hero.
@@ -638,7 +699,6 @@ TEST_F(NewHorizonsPerkAITest, rampartAIChoosesActiveFactionPerkThenFactionSkillR
 
 	const SecondarySkill sylvanLuck(SecondarySkill::decode("new-horizons:sylvanLuck"));
 	ASSERT_GE(sylvanLuck.getNum(), 0);
-	constexpr auto elvenPrecision = "new-horizons:sylvanLuck.elvenPrecision";
 	GameHandlerTestServer server(gameState(), owner);
 	CGameHandler gh(server, gameState());
 
@@ -675,11 +735,7 @@ TEST_F(NewHorizonsPerkAITest, rampartAIChoosesActiveFactionPerkThenFactionSkillR
 	gh.levelUpHero(hero);
 	auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gh.queries->topQuery(owner));
 	ASSERT_NE(query, nullptr);
-	const auto perk = std::find_if(query->hlu.perks.begin(), query->hlu.perks.end(), [](const auto & candidate)
-	{
-		return candidate.selection.perkId == elvenPrecision;
-	});
-	ASSERT_NE(perk, query->hlu.perks.end());
+	ASSERT_FALSE(query->hlu.perks.empty());
 	for(const auto & candidate : query->hlu.perks)
 	{
 		const auto definition = newHorizonsHeroes::perkDefinition(hero->getPerkState().rules,
@@ -690,11 +746,15 @@ TEST_F(NewHorizonsPerkAITest, rampartAIChoosesActiveFactionPerkThenFactionSkillR
 	gh.onAdvInterfaceReady(owner);
 	const auto firstOutcome = answerWithAI(query);
 	ASSERT_TRUE(firstOutcome.accepted) << firstOutcome.error;
-	ASSERT_EQ(firstOutcome.choice, static_cast<int>(query->hlu.skills.size()
-		+ std::distance(query->hlu.perks.begin(), perk)));
+	ASSERT_GE(firstOutcome.choice, static_cast<int>(query->hlu.skills.size()));
+	const auto chosenPerkIndex = static_cast<size_t>(firstOutcome.choice) - query->hlu.skills.size();
+	ASSERT_LT(chosenPerkIndex, query->hlu.perks.size());
+	const auto & chosenPerk = query->hlu.perks[chosenPerkIndex];
+	EXPECT_EQ(chosenPerk.selection.skillId, "new-horizons:sylvanLuck");
+	EXPECT_EQ(chosenPerk.requiredRank, 1);
 	ASSERT_EQ(hero->getPerkState().selected.size(), 1u);
-	EXPECT_EQ(hero->getPerkState().selected.front().perkId, elvenPrecision);
-	EXPECT_TRUE(hero->hasActivePerk("new-horizons:sylvanLuck", elvenPrecision));
+	EXPECT_EQ(hero->getPerkState().selected.front(), chosenPerk.selection);
+	EXPECT_TRUE(hero->hasActivePerk(chosenPerk.selection.skillId, chosenPerk.selection.perkId));
 
 	// Second level-up: after the sole active faction perk is selected, the AI
 	// must advance the faction Skill itself instead of falling back to a foreign

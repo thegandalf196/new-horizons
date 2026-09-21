@@ -18,24 +18,11 @@ std::array<int, GameConstants::PRIMARY_SKILLS> calculatePrimaryGrowth(
 	std::span<const int> draws)
 {
 	profile.baseAtLevel(1); // Validate the supplied profile before calculating.
-	if(opportunities.size() != draws.size())
-		throw std::runtime_error("Each primary growth opportunity requires its own draw");
-	auto gains = profile.growth;
-	for(size_t i = 0; i < opportunities.size(); ++i)
-	{
-		const auto & opportunity = opportunities[i];
-		const auto index = opportunity.attribute.getNum();
-		if(index < 0 || index >= GameConstants::PRIMARY_SKILLS
-			|| opportunity.chancePercent < 0 || opportunity.chancePercent > 100
-			|| draws[i] < 0 || draws[i] >= 100)
-			throw std::runtime_error("Invalid primary growth opportunity or draw");
-		if(draws[i] < opportunity.chancePercent)
-		{
-			if(gains[index] == std::numeric_limits<int>::max())
-				throw std::runtime_error("Primary growth overflow");
-			++gains[index];
-		}
-	}
-	return gains;
+	// Keep the old pure-function signature so source and saved-state consumers
+	// remain compatible, but New Horizons no longer evaluates chance rows.
+	// Every level grants exactly the authored class vector.
+	(void)opportunities;
+	(void)draws;
+	return profile.growth;
 }
 }

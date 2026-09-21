@@ -10,7 +10,9 @@
 #include "StdInc.h"
 
 #include "../../lib/battle/CBattleInfoCallback.h"
+#include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 
 #include <vstd/RNG.h>
 
@@ -203,6 +205,20 @@ public:
 		ON_CALL(battleMock, getUnitsIf(_)).WillByDefault(Invoke(&unitsFake, &UnitsFake::getUnitsIf));
 	}
 };
+
+TEST_F(CBattleInfoCallbackTest, playerCallbackCannotAccessEnemyHero)
+{
+	CGHeroInstance attacker(nullptr);
+	CGHeroInstance defender(nullptr);
+	EXPECT_CALL(battleMock, getSidePlayer(BattleSide::ATTACKER)).WillRepeatedly(Return(PlayerColor(0)));
+	EXPECT_CALL(battleMock, getSidePlayer(BattleSide::DEFENDER)).WillRepeatedly(Return(PlayerColor(1)));
+	EXPECT_CALL(battleMock, getSideHero(BattleSide::ATTACKER)).WillRepeatedly(Return(&attacker));
+
+	CPlayerBattleCallback callback(&battleMock, PlayerColor(0));
+
+	EXPECT_EQ(callback.battleGetFightingHero(BattleSide::ATTACKER), &attacker);
+	EXPECT_EQ(callback.battleGetFightingHero(BattleSide::DEFENDER), nullptr);
+}
 
 class AttackableHexesTest : public CBattleInfoCallbackTest
 {

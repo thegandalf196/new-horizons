@@ -1,0 +1,28 @@
+{
+  "request_id": "sorcery-blue-aether-skill-01",
+  "status": "draft-revision-requested",
+  "base_manifest": "sorcery-blue-aether-skill-01.json",
+  "base_manifest_sha256": "4a73526a3f739b049e593b97b29da45dbc0814c95cf88405dac07b4313e9aecb",
+  "inherited_assets": "All12 exact resource/rank/size/template/consumer entries remain required; remaining8schoolUI goal items remain outside this external request",
+  "observed_returned_filenames": [
+    "NH_sorceryMagic_basic_small.png",
+    "NH_sorceryMagic_basic_medium.png",
+    "NH_sorceryMagic_basic_large.png",
+    "NH_sorceryMagic_basic_scenarioBonus.png",
+    "NH_sorceryMagic_advanced_small.png",
+    "NH_sorceryMagic_advanced_medium.png",
+    "NH_sorceryMagic_advanced_large.png",
+    "NH_sorceryMagic_advanced_scenarioBonus.png",
+    "NH_sorceryMagic_expert_small.png",
+    "NH_sorceryMagic_expert_medium.png",
+    "NH_sorceryMagic_expert_large.png",
+    "NH_sorceryMagic_expert_scenarioBonus.png"
+  ],
+  "technical_scope": "Read-only visual/status checkpoint; directory filenames observed, no independent full12 hash/dimension/alpha/provenance audit or new export claimed",
+  "technical_pass": false,
+  "rights_clearance": false,
+  "integrated": false,
+  "in_game_verified": false,
+  "full_goal_complete": false,
+  "historical_context": "Filename observation only; no independent complete12-file audit. Base hash identifies the preserved ORIGINAL request bytes, not any sanitized projection. No user-feedback transcript or production instructions retained."
+}

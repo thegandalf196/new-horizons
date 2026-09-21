@@ -91,14 +91,16 @@ class BattleActionProcessor : boost::noncopyable
 		bool ranged = false;
 		bool counter = false;
 		bool brace = false;
+		int preemptiveDamagePercent = 0;
 		bool protectIntercepted = false;
+		BattleSide perfectMomentSide = BattleSide::NONE;
 	};
 
 	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest); //returned value - travelled distance
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack);
 
 	/// Rolls what is decided before any damage: luck, and the abilities that double it by chance.
-	void rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat) const;
+	void rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const;
 	/// Fills in what a script reacting before the attack gets to see - who is about to be hit and how
 	/// much health each of them has left. Nothing about the damage, which has not been rolled yet.
 	void describeUpcomingAttack(CombatEventPayload & payload, const CStack * defender, const battle::Units & secondaryTargets) const;
@@ -115,7 +117,7 @@ class BattleActionProcessor : boost::noncopyable
 	std::set<SpellID> getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender);
 
 	/// Rolls the damage one attacked unit takes and appends what scripts need to know about it to the payload
-	void applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, bool protectIntercepted) const;
+	void applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, bool protectIntercepted) const;
 	void publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const;
 
 	void addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const;

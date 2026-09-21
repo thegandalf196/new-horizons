@@ -110,6 +110,7 @@ class HeroDataTest(unittest.TestCase):
             'core:scouting': {
                 'kind': 'perk', 'target': 'new-horizons:logistics.scouting', 'fallback': 'remove'},
             'core:sorcery': {'kind': 'skill', 'target': 'new-horizons:spellcraft'},
+            'core:wisdom': {'kind': 'skill', 'target': 'new-horizons:wisdom'},
             'core:tactics': {
                 'kind': 'perk', 'target': 'new-horizons:battlecraft.tactics', 'fallback': 'remove'},
         })
@@ -127,7 +128,7 @@ class HeroDataTest(unittest.TestCase):
                 self.assertIn('core:' + hero_class['faction'], faction_skills)
         self.assertEqual(starting['legacyAliases'],
                          {'core:necropolis': 'core:necromancy'})
-        self.assertEqual(starting['magic'], {'replace': 'core:wisdom'})
+        self.assertEqual(starting['magic'], {'replace': 'new-horizons:wisdom'})
         self.assertEqual(starting['might'], {
             'replacePosition': 'second', 'singleSkillFallback': 'append'})
 
@@ -175,13 +176,20 @@ class HeroDataTest(unittest.TestCase):
                         rank = max(wisdom, key=('basic', 'advanced', 'expert').index) if wisdom else 'basic'
                         skills.append((unique, rank))
                     self.assertFalse(any(skill == 'core:wisdom' for skill, _ in skills))
-                elif not any(skill == unique for skill, _ in skills):
-                    if len(skills) > 1:
-                        skills[1] = (unique, skills[1][1])
-                    else:
-                        # A one-skill hero keeps the class/specialty signature;
-                        # the faction skill is appended as the explicit fallback.
-                        skills.append((unique, 'basic'))
+                else:
+                    # Wisdom is a Magic-only New Horizons Skill. Rashka and
+                    # any future might hero authored with legacy Wisdom keep
+                    # the useful generic magical identity as Spellcraft
+                    # before their faction Skill occupies the second slot.
+                    skills = [('new-horizons:spellcraft' if skill == 'core:wisdom' else skill,
+                               level) for skill, level in skills]
+                    if not any(skill == unique for skill, _ in skills):
+                        if len(skills) > 1:
+                            skills[1] = (unique, skills[1][1])
+                        else:
+                            # A one-skill hero keeps the class/specialty signature;
+                            # the faction skill is appended as the explicit fallback.
+                            skills.append((unique, 'basic'))
 
                 with self.subTest(hero=hero_name):
                     self.assertIn(unique, {skill for skill, _ in skills})
@@ -203,6 +211,16 @@ class HeroDataTest(unittest.TestCase):
             with self.subTest(hero_class=class_id):
                 self.assertEqual(translations['core.heroClass.' + class_id.split(':', 1)[1] + '.name'], expected_name)
 
+    def test_non_mastery_preview_preserves_battle_mage_translation(self):
+        script = ROOT / 'tools/update-new-horizons-module.py'
+        with tempfile.TemporaryDirectory(dir=ROOT / 'build') as temporary:
+            output = Path(temporary) / 'mod.json'
+            subprocess.run([sys.executable, str(script), '--hero-preview-output', str(output)],
+                           check=True, capture_output=True)
+            translations = json.loads(output.read_text())['translations']
+            self.assertEqual(translations['core.heroClass.alchemist.name'], 'Battle Mage')
+            self.assertNotIn('Alchemist', translations.values())
+
     def test_every_class_has_exact_canonical_skill_offer_weights(self):
         self.assertEqual(set(self.rules['skillOfferWeights']), set(CANONICAL_WEIGHT_ROWS))
         self.assertEqual(len(CANONICAL_SKILLS), 31)
@@ -213,7 +231,7 @@ class HeroDataTest(unittest.TestCase):
                 self.assertEqual(self.rules['skillOfferWeights'][class_id],
                                  dict(zip(CANONICAL_SKILLS, values)))
 
-    def test_retired_skills_are_excluded_and_extra_growth_uses_canonical_skills(self):
+    def test_retired_skills_are_excluded_and_extra_growth_is_disabled(self):
         self.assertEqual(set(self.rules['excludedSkills']), {
             'core:airMagic', 'core:earthMagic', 'core:fireMagic', 'core:waterMagic',
             'core:artillery', 'core:ballistics', 'core:firstAid', 'core:eagleEye',
@@ -221,12 +239,18 @@ class HeroDataTest(unittest.TestCase):
             'core:necromancy', 'core:pathfinding', 'core:resistance', 'core:scholar',
             'core:scouting', 'core:sorcery', 'core:tactics', 'core:wisdom',
         })
-        self.assertEqual(self.rules['extraGrowth'], [
-            {'skill': 'new-horizons:offense', 'primary': 0, 'chances': [0, 10, 20, 30]},
-            {'skill': 'new-horizons:armorer', 'primary': 1, 'chances': [0, 10, 20, 30]},
-            {'skill': 'new-horizons:spellcraft', 'primary': 2, 'chances': [0, 10, 20, 30]},
-            {'skill': 'new-horizons:wisdom', 'primary': 3, 'chances': [0, 10, 20, 30]},
-        ])
+        self.assertEqual(self.rules['extraGrowth'], [])
+
+    def test_rashka_fresh_roster_has_demonic_gating_and_no_legacy_wisdom(self):
+        heroes = json.loads((ROOT / 'config/heroes/inferno.json').read_text())
+        rashka = heroes['rashka']
+        skills = [('new-horizons:spellcraft' if entry['skill'] == 'wisdom'
+                   else entry['skill'], entry['level'])
+                  for entry in rashka['skills'] if entry['skill'] != 'scholar']
+        skills.append(('new-horizons:demonicGating', 'basic'))
+        self.assertEqual([skill for skill, _ in skills],
+                         ['new-horizons:spellcraft', 'new-horizons:demonicGating'])
+        self.assertNotIn('wisdom', [skill for skill, _ in skills])
 
     def test_preview_generation_is_separate_and_never_overwrites(self):
         live = ROOT / 'Mods/new-horizons/mod.json'
@@ -300,16 +324,8 @@ class HeroDataTest(unittest.TestCase):
         self.assertTrue(1 <= self.rules['powerDivisor'] <= 1000)
         self.assertTrue(100 <= self.rules['maxPrimary'] <= 1000000)
 
-    def test_independent_extras_use_owned_skill_ranks_only(self):
-        seen = set()
-        for extra in self.rules['extraGrowth']:
-            self.assertTrue(extra['skill'].startswith(('core:', 'new-horizons:')))
-            self.assertNotIn(extra['skill'], seen)
-            seen.add(extra['skill'])
-            self.assertIn(extra['primary'], range(4))
-            self.assertEqual(len(extra['chances']), 4)
-            self.assertEqual(extra['chances'][0], 0)
-            self.assertTrue(all(isinstance(value, int) and 0 <= value <= 100 for value in extra['chances']))
+    def test_extra_growth_is_an_empty_legacy_compatibility_field(self):
+        self.assertEqual(self.rules['extraGrowth'], [])
 
 
 if __name__ == '__main__':

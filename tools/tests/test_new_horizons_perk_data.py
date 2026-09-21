@@ -8,12 +8,19 @@ import hashlib
 import json
 from pathlib import Path
 import unittest
+from xml.etree import ElementTree
+from zipfile import ZipFile
 
 from jsonschema import Draft4Validator
 
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:offense.shockAssault",
+    "new-horizons:offense.executioner",
+    "new-horizons:offense.armorPiercer",
+    "new-horizons:offense.breakthrough",
+    "new-horizons:discipline.inspirationalLeader",
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.matterShaper",
     "new-horizons:sorceryMagic.selectiveDispel",
@@ -23,9 +30,15 @@ ACTIVE_PERKS = {
     "new-horizons:sorceryMagic.countermage",
     "new-horizons:sorceryMagic.chronomancer",
     "new-horizons:sylvanLuck.elvenPrecision",
+    "new-horizons:sylvanLuck.forestSFavor",
     "new-horizons:sylvanLuck.serendipity",
+    "new-horizons:sylvanLuck.luckyRecovery",
+    "new-horizons:sylvanLuck.sharedFortune",
     "new-horizons:sylvanLuck.natureSProvidence",
     "new-horizons:sylvanLuck.fortunateAim",
+    "new-horizons:sylvanLuck.wildChance",
+    "new-horizons:sylvanLuck.perfectMoment",
+    "new-horizons:sylvanLuck.cascadingFortune",
     "new-horizons:necromancy.boneCollector",
     "new-horizons:necromancy.darkConversion",
     "new-horizons:necromancy.blackHarvest",
@@ -43,11 +56,14 @@ ACTIVE_PERKS = {
 }
 ACTIVE_RANK_SKILLS = {
     "new-horizons:offense",
+    "new-horizons:warMachines",
+    "new-horizons:discipline",
     "new-horizons:logistics",
     "new-horizons:sylvanLuck",
     "new-horizons:necromancy",
     "new-horizons:bloodrage",
     "new-horizons:metamagic",
+    "new-horizons:bulwarkOfTheMire",
 }
 EXPECTED_SKILLS = (
     "new-horizons:offense",
@@ -88,6 +104,38 @@ def load(path):
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
+def source_perk_tables(path):
+    """Return the authored perk rows from the source document's perk tables."""
+    namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    with ZipFile(path) as archive:
+        document = ElementTree.fromstring(archive.read("word/document.xml"))
+
+    tables = []
+    for table in document.findall(".//w:body/w:tbl", namespace):
+        rows = []
+        for row in table.findall("./w:tr", namespace):
+            rows.append([
+                "".join(text.text or "" for text in cell.findall(".//w:t", namespace)).strip()
+                for cell in row.findall("./w:tc", namespace)
+            ])
+        if rows and rows[0] == ["Perk", "Requires", "Effect"]:
+            tables.append(rows[1:])
+    return tables
+
+
+def source_description_for_current_rules(description):
+    """Apply the deterministic-growth wording migration to frozen source prose.
+
+    The supplied design document predates the fixed class-vector rule. Keep its
+    hash and table layout as provenance checks while allowing the live registry
+    to remove the retired primary-growth chance promise.
+    """
+    return description.replace(
+        "Wisdom's chance to grant +1 Knowledge at level-up increases by 10 percentage points.",
+        "Wisdom's Mana discount remains effective when other percentage-based Mana modifiers are active.",
+    )
+
+
 class NewHorizonsPerkDataTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -113,6 +161,23 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
     def test_canonical_31_skill_roster(self):
         self.assertEqual(tuple(self.rules["skills"]), EXPECTED_SKILLS)
         self.assertEqual(len(self.rules["skills"]), 31)
+
+    def test_perk_definitions_match_source_document(self):
+        source_tables = source_perk_tables(ROOT / self.rules["sourceDocument"])
+        self.assertEqual(len(source_tables), len(self.rules["skills"]))
+        for (skill_id, skill), source_rows in zip(self.rules["skills"].items(), source_tables):
+            with self.subTest(skill=skill_id):
+                self.assertEqual(len(source_rows), len(skill["perks"]))
+                self.assertEqual(
+                    [
+                        (perk["name"], perk["requires"].title(), perk["description"])
+                        for perk in skill["perks"]
+                    ],
+                    [
+                        (row[0], row[1], source_description_for_current_rules(row[2]))
+                        for row in source_rows
+                    ],
+                )
 
     def test_each_skill_has_ranked_effects_and_4_4_2_perks(self):
         all_perk_ids = []

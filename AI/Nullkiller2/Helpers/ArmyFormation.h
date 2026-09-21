@@ -17,6 +17,24 @@
 namespace NK2AI
 {
 
+/// Read-only preflight for army-arrangement requests.  New Horizons applies a
+/// per-stack Leadership limit on heroes, so an AI transfer must be checked for
+/// the stack that will exist after the request.  The server remains the final
+/// authority; these helpers only prevent Nullkiller from knowingly submitting
+/// requests that the server must reject.
+namespace armyFormation
+{
+bool canReceiveStack(const CArmedInstance * destination, CreatureID creature, int resultingCount);
+bool canSwapStacks(const CArmedInstance * first, const CArmedInstance * second,
+	SlotID firstSlot, SlotID secondSlot);
+bool canMergeOrSwapStacks(const CArmedInstance * source, const CArmedInstance * destination,
+	SlotID sourceSlot, SlotID destinationSlot);
+bool canSplitStack(const CArmedInstance * source, const CArmedInstance * destination,
+	SlotID sourceSlot, SlotID destinationSlot, int resultingDestinationCount);
+int maxLegalTransferCount(const CArmedInstance * source, const CArmedInstance * destination,
+	SlotID sourceSlot, SlotID destinationSlot);
+}
+
 struct HeroPtr;
 class AIGateway;
 class FuzzyHelper;

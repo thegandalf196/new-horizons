@@ -37,6 +37,8 @@ public:
 	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
 	/// The server validates perk ownership, availability and cost.
 	bool spellMassSlow = false;
+	/// Request only: spent by the authority when the first declared strike occurs.
+	bool perfectMoment = false;
 	/// Canonical New Horizons Fire Wall placement direction.  The action's
 	/// target contains the selected start hex; the server derives and validates
 	/// the remaining two line hexes from this direction before casting.
@@ -103,6 +105,8 @@ public:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && perfectMoment && !h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_MOMENT))
+			throw std::runtime_error("Cannot serialize Perfect Moment to an older protocol");
 		if(h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Cannot serialize targeted command to an older protocol");
@@ -141,6 +145,10 @@ public:
 		h & actionType;
 		h & spell;
 		h & target;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_MOMENT))
+			h & perfectMoment;
+		else if(!h.saving)
+			perfectMoment = false;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC_ARROW_OVERCHARGE))
 		{
 			h & spellOvercharge;

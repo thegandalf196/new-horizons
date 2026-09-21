@@ -264,10 +264,39 @@ std::optional<newHorizonsHeroes::SiegeCapabilities> CGHeroInstance::getSiegeCapa
 	{
 		return std::clamp(valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(machine)), 0, 100);
 	};
-	return newHorizonsHeroes::SiegeCapabilities{artillery, getSecSkillLevel(SecondarySkill::BALLISTICS),
-		getSecSkillLevel(SecondarySkill::FIRST_AID),
-		newHorizonsHeroes::capabilityBallistaMultiplier(capabilityRules, artillery),
-		control(CreatureID::BALLISTA), control(CreatureID::CATAPULT), control(CreatureID::FIRST_AID_TENT)};
+	newHorizonsHeroes::SiegeCapabilities result;
+	result.artilleryRank = artillery;
+	result.ballisticsRank = getSecSkillLevel(SecondarySkill::BALLISTICS);
+	result.firstAidRank = getSecSkillLevel(SecondarySkill::FIRST_AID);
+	result.ballistaDamageMultiplier = newHorizonsHeroes::capabilityBallistaMultiplier(capabilityRules, artillery);
+	result.ballistaControlChance = control(CreatureID::BALLISTA);
+	result.catapultControlChance = control(CreatureID::CATAPULT);
+	result.firstAidControlChance = control(CreatureID::FIRST_AID_TENT);
+
+	// Ruleset v3 deliberately switches identity at this boundary. A saved
+	// canonical War Machines rank controls both the derived Siege values and
+	// deterministic machine control; legacy Artillery/Ballistics/First Aid
+	// skills and their MANUAL_CONTROL bonuses remain a read-only projection.
+	if(capabilityRules["rulesetVersion"].Integer() >= 3)
+	{
+		const int canonicalId = SecondarySkill::decode("new-horizons:warMachines");
+		const bool canonicalIdentity = canonicalId >= 0
+			&& SecondarySkill::encode(canonicalId) == "new-horizons:warMachines";
+		const int rank = canonicalIdentity
+			? std::clamp<int>(getSecSkillLevel(SecondarySkill(canonicalId)), 0, 3)
+			: 0;
+		result.warMachinesRank = rank;
+		result.siegeRating = newHorizonsHeroes::capabilitySiegeRating(capabilityRules, rank);
+		result.ballistaDamage = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "ballistaDamage");
+		result.catapultStructuralDamage = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "catapultStructuralDamage");
+		result.firstAidHealing = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "firstAidHealing");
+		result.defensiveTowerDamage = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "defensiveTowerDamage");
+		const int directControl = newHorizonsHeroes::capabilityDirectControlChance(capabilityRules, rank);
+		result.ballistaControlChance = directControl;
+		result.catapultControlChance = directControl;
+		result.firstAidControlChance = directControl;
+	}
+	return result;
 }
 
 std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadershipCapacity() const
@@ -279,6 +308,10 @@ std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadersh
 {
 	if(!newHorizonsHeroes::usesRules(capabilityRules))
 		return std::nullopt;
+	const int trainedLeadership = std::max(0, valOfBonuses(BonusType::LEADERSHIP));
+	if(capabilityRules["rulesetVersion"].Integer() >= 2)
+		return newHorizonsHeroes::LeadershipCapacity{
+			static_cast<int64_t>(newHorizonsHeroes::capabilityLeadershipRating(capabilityRules, level)) + trainedLeadership, 0, 100};
 	uint64_t used = 0;
 	// Version 1 counts adventure army creatures, including undead, one per unit.
 	// Commanders and artifact machines are not roster slots; battle-only arrivals
@@ -289,8 +322,23 @@ std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadersh
 			throw std::runtime_error("Leadership requires resolved adventure army counts");
 		used += static_cast<uint64_t>(stack->getCount());
 	}
-	return newHorizonsHeroes::capabilityLeadership(capabilityRules, level,
+	auto result = newHorizonsHeroes::capabilityLeadership(capabilityRules, level,
 		getSecSkillLevel(SecondarySkill::LEADERSHIP), used);
+	result.capacity += trainedLeadership;
+	return result;
+}
+
+std::optional<newHorizonsHeroes::LeadershipSlotCapacity> CGHeroInstance::getLeadershipSlotCapacity(CreatureID creature) const
+{
+	if(!newHorizonsHeroes::usesRules(capabilityRules) || capabilityRules["rulesetVersion"].Integer() < 2)
+		return std::nullopt;
+	auto result = newHorizonsHeroes::capabilityLeadershipSlot(capabilityRules, level, creature);
+	if(result)
+	{
+		result->leadership += std::max(0, valOfBonuses(BonusType::LEADERSHIP));
+		result->maximum = result->leadership / result->requirement;
+	}
+	return result;
 }
 
 int CGHeroInstance::movementPointsLimit() const
@@ -532,10 +580,13 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 
 	if(!hasBonusFrom(BonusSource::HERO_BASE_SKILL))
 	{
+		const auto primaryProfile = usesPrimaryGrowth()
+			? std::optional<newHorizonsHeroes::PrimaryProfile>(newHorizonsHeroes::parsePrimaryProfile(primaryGrowthRules["profile"]))
+			: std::nullopt;
 		for(int g=0; g<GameConstants::PRIMARY_SKILLS; ++g)
 		{
-			const auto initial = usesPrimaryGrowth()
-				? newHorizonsHeroes::parsePrimaryProfile(primaryGrowthRules["profile"]).starting[g]
+			const auto initial = primaryProfile
+				? primaryProfile->baseAtLevel(1)[g]
 				: getHeroClass()->primarySkillInitial[g];
 			pushPrimSkill(static_cast<PrimarySkill>(g), initial);
 		}
@@ -683,6 +734,15 @@ void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
 		}
 		else
 		{
+			if(const auto capacity = getLeadershipSlotCapacity(stack.creature))
+			{
+				if(count > capacity->maximum)
+				{
+					logGlobal->debug("Clamping starting army of hero %s from %d to %d %s for Leadership %d",
+						getNameTextID(), count, capacity->maximum, creature->getJsonKey(), capacity->leadership);
+					count = capacity->maximum;
+				}
+			}
 			dst->setCreature(SlotID(stackNo-warMachinesGiven), stack.creature, count);
 		}
 	}
@@ -860,8 +920,10 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 		result.base[i] = getBasePrimarySkillValue(PrimarySkill(i));
 		result.modified[i] = getPrimSkillLevel(PrimarySkill(i));
 	}
-	result.extraGrowth = newHorizonsHeroes::skillGrowthChances(primaryGrowthRules,
-		[this](SecondarySkill skill) { return getSecSkillLevel(skill); });
+	// Primary growth is fully deterministic in New Horizons. Keep the saved
+	// rules available for compatibility, but do not expose obsolete skill-based
+	// probability opportunities as live growth data.
+	result.extraGrowth.clear();
 	result.lastGains = lastPrimaryGains;
 	result.powerDivisor = primaryGrowthRules["powerDivisor"].Integer();
 	result.maximumPrimary = primaryGrowthRules["maxPrimary"].Integer();

@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Heroes III-style Order icon, square high-resolution master
+Primary request: Create an original miniature fantasy still-life icon for the Order “Hold the Line”. Show a broad tower shield planted firmly in cracked earth, braced by two crossed iron stakes and a thick leather strap, with a small unmoving stone at its foot; communicate an anchored defensive wall and steadfast refusal to yield.
+Scene/backdrop: dark umber battlefield soil and leather backdrop, tightly cropped
+Subject: one dominant broad tower shield with crossed stakes, integrated physical group
+Style/medium: late-1990s Western PC fantasy illustration, modeled painterly miniature still life
+Composition/framing: square icon, shield fills most of frame, near-symmetrical stable silhouette, readable at 44x44
+Lighting/mood: theatrical chiaroscuro, warm gold along shield rim, cool deep shadow in center, grounded and immovable mood
+Color palette: worn steel, deep navy enamel, muted gold, earth brown
+Materials/textures: dents and scratches on metal, rough soil, stitched leather, hammered stakes
+Constraints: no lettering, no readable runes, no ornamental border, no interface chrome, transparent background if supported
+Avoid: modern glossy mobile-game style, neon bloom, vector outlines, flat shapes, intentional pixel art, dithering, watermark, characters or extra shields

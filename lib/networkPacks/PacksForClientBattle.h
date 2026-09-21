@@ -595,7 +595,11 @@ struct DLL_LINKAGE CatapultAttack : public CPackForClient
 	BattleID battleID = BattleID::NONE;
 	EWallPart attackedPart = EWallPart::INVALID;
 	si16 destinationTile = 0;
+	// Legacy hit-quality/animation value (0 = miss, 1 = normal, 2 = critical).
 	ui8 damageDealt = 0;
+	// Canonical New Horizons ruleset-v3 absolute structural damage. Zero means
+	// legacy behavior and preserves the old packet semantics.
+	ui16 structuralDamage = 0;
 	int32_t killedTowerShooter = -1; //unit ID of tower shooter killed by this attack, or -1 if none
 	int attacker = -1; //if -1, then a spell caused this
 
@@ -607,6 +611,10 @@ struct DLL_LINKAGE CatapultAttack : public CPackForClient
 		h & attackedPart;
 		h & destinationTile;
 		h & damageDealt;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CATAPULT_STRUCTURAL_DAMAGE))
+			h & structuralDamage;
+		else if(!h.saving)
+			structuralDamage = 0;
 		h & killedTowerShooter;
 		h & attacker;
 		assert(battleID != BattleID::NONE);

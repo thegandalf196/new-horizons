@@ -10,6 +10,8 @@
 inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 {
 	static const std::map<std::string, std::string> icons = {
+		{"new-horizons:offense.shockAssault", "NH_perk_shock_assault"},
+		{"new-horizons:discipline.inspirationalLeader", "NH_perk_inspirational_leader"},
 		{"new-horizons:sorceryMagic.overcharger", "NH_perk_overcharger"},
 		{"new-horizons:sorceryMagic.selectiveDispel", "NH_perk_selective_dispel"},
 		{"new-horizons:sorceryMagic.temporalist", "NH_perk_temporalist"},
@@ -25,6 +27,8 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:sylvanLuck.sharedFortune", "NH_perk_shared_fortune"},
 		{"new-horizons:sylvanLuck.natureSProvidence", "NH_perk_natures_providence"},
 		{"new-horizons:sylvanLuck.fortunateAim", "NH_perk_fortunate_aim"},
+		{"new-horizons:sylvanLuck.wildChance", "NH_perk_wild_chance"},
+		{"new-horizons:sylvanLuck.perfectMoment", "NH_perk_perfect_moment"},
 		{"new-horizons:sylvanLuck.cascadingFortune", "NH_perk_cascading_fortune"},
 		{"new-horizons:metamagic.spellSequencing", "NH_perk_spell_sequencing"},
 		{"new-horizons:metamagic.arcaneEconomy", "NH_perk_arcane_economy"},

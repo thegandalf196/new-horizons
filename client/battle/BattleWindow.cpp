@@ -129,7 +129,13 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		if(this->owner.actionsController)
 			this->owner.actionsController->undoLandMinePlacement();
 	});
-	addShortcut(EShortcut::GLOBAL_CANCEL, [this](){ this->owner.actionsController->endCastingSpell(); });
+	addShortcut(EShortcut::GLOBAL_CANCEL, [this]()
+	{
+		if(this->owner.actionsController->metamagicFollowupModeActive())
+			this->owner.declineMetamagicFollowup();
+		else
+			this->owner.actionsController->endCastingSpell();
+	});
 	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, true);
 	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE, true);
 	addShortcut(EShortcut::ADVENTURE_QUICK_LOAD, [this](){
@@ -982,11 +988,14 @@ void BattleWindow::bOrdersf()
 	if(!owner.getBattle()->battleUsesHeroCommands() || owner.actionsController->heroSpellcastingModeActive()
 		|| !owner.makingTurn() || owner.isInTacticsMode() || !owner.currentHero())
 		return;
+	owner.actionsController->cancelHeroOrderTargeting();
 	ENGINE->windows().createAndPushWindow<BattleHeroActionWindow>(CPlayerInterface::battleInt, true);
 }
 
 void BattleWindow::openSpellbook()
 {
+	if(owner.actionsController->heroOrderTargetingModeActive())
+		owner.actionsController->cancelHeroOrderTargeting();
 	if (owner.actionsController->heroSpellcastingModeActive())
 		return;
 

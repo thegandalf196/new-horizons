@@ -8,6 +8,9 @@ the small RGBA PNGs under `Mods/new-horizons/Images/`:
 - `NH_orders_gauntlet_sprite_master.png` supplies the four 48x36 Orders button states.
 - `NH_perk_bone_collector_master.png` supplies the Bone Collector 44x44 icon.
 - `NH_perk_neutral_master.png` supplies the neutral unknown-perk fallback icon.
+- `active-perks-v2/` contains the three newly active provisional perk paintings
+  (Inspirational Leader, Wild Chance, and Perfect Moment), their exact prompts,
+  44x44/32x32 reductions, comparisons, and reproducible runtime export.
 
 Prompts:
 

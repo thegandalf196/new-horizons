@@ -24,9 +24,12 @@
 namespace
 {
 constexpr auto rampartHeroId = HeroTypeID(16); // Mephala, a Rampart Ranger.
+constexpr auto christianHeroId = HeroTypeID(6); // Christian, a Castle Knight.
 constexpr auto sylvanLuckId = "new-horizons:sylvanLuck";
 constexpr auto sorceryMagicId = "new-horizons:sorceryMagic";
 constexpr auto overchargerId = "new-horizons:sorceryMagic.overcharger";
+constexpr auto disciplineId = "new-horizons:discipline";
+constexpr auto inspirationalLeaderId = "new-horizons:discipline.inspirationalLeader";
 
 class NewHorizonsPerkVerticalSliceTest : public TinyMapGameTest
 {
@@ -52,12 +55,12 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
 
-	void startGame()
+	void startGame(HeroTypeID heroType = rampartHeroId)
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false)
 			.playerActive(PlayerColor(0))
-			.hero({5, 5, 0}, rampartHeroId, PlayerColor(0))
+			.hero({5, 5, 0}, heroType, PlayerColor(0))
 			.heroGarrison({{CreatureID(0), 10}});
 		startWithMap(std::move(builder));
 	}
@@ -273,4 +276,76 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, RampartFactionSkillProgressionAndPerkCh
 		sylvanLuckId, "new-horizons:sylvanLuck.elvenPrecision"));
 	EXPECT_TRUE(restoredHero->hasActivePerk(
 		sylvanLuckId, "new-horizons:sylvanLuck.elvenPrecision"));
+}
+
+TEST_F(NewHorizonsPerkVerticalSliceTest, ChristianCanChooseInspirationalLeaderAndKeepDisciplineMorale)
+{
+	startGame(christianHeroId);
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	ASSERT_EQ(hero->getFactionID(), FactionID::CASTLE);
+
+	const auto discipline = skill(disciplineId);
+	ASSERT_EQ(hero->getSecSkillLevel(discipline), MasteryLevel::BASIC);
+	const auto moraleWithDiscipline = hero->moraleVal();
+	EXPECT_GE(moraleWithDiscipline, 1);
+
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	const auto rankLookup = [hero](const std::string & skillId)
+	{
+		return hero->getPerkSkillRank(skillId);
+	};
+
+	// Find a deterministic ordinary level-up seed whose server-authored
+	// candidate list contains the one active Discipline perk.
+	int rootSeed = 0;
+	for(int candidateSeed = 1; candidateSeed < 10000; ++candidateSeed)
+	{
+		CRandomGenerator probe(candidateSeed);
+		probe.nextInt();
+		const auto offerSeed = static_cast<uint64_t>(static_cast<uint32_t>(probe.nextInt()));
+		if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed),
+			inspirationalLeaderId))
+		{
+			rootSeed = candidateSeed;
+			break;
+		}
+	}
+	ASSERT_NE(rootSeed, 0);
+	gameHandler.randomizer->setSeed(rootSeed);
+	gameHandler.onAdvInterfaceReady(hero->getOwner());
+
+	const auto previousLevel = hero->level;
+	hero->setExperience(LIBRARY->heroh->reqExp(previousLevel + 1), ChangeValueMode::ABSOLUTE);
+	gameHandler.levelUpHero(hero);
+	auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(
+		gameHandler.queries->topQuery(hero->getOwner()));
+	ASSERT_NE(query, nullptr);
+	const auto perk = std::find_if(query->hlu.perks.begin(), query->hlu.perks.end(),
+		[](const auto & candidate)
+	{
+		return candidate.selection.perkId == inspirationalLeaderId;
+	});
+	ASSERT_NE(perk, query->hlu.perks.end());
+	const auto perkChoice = static_cast<int>(query->hlu.skills.size()
+		+ std::distance(query->hlu.perks.begin(), perk));
+	ASSERT_TRUE(query->isValidReply(perkChoice));
+	ASSERT_TRUE(gameHandler.queryReply(query->queryID, perkChoice, hero->getOwner()));
+
+	EXPECT_EQ(hero->level, previousLevel + 1);
+	EXPECT_TRUE(hero->getPerkState().hasSelection(disciplineId, inspirationalLeaderId));
+	EXPECT_TRUE(hero->hasActivePerk(disciplineId, inspirationalLeaderId));
+	EXPECT_EQ(hero->moraleVal(), moraleWithDiscipline);
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(hero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_EQ(restoredHero->getSecSkillLevel(discipline), MasteryLevel::BASIC);
+	EXPECT_TRUE(restoredHero->getPerkState().hasSelection(disciplineId, inspirationalLeaderId));
+	EXPECT_TRUE(restoredHero->hasActivePerk(disciplineId, inspirationalLeaderId));
+	EXPECT_EQ(restoredHero->moraleVal(), moraleWithDiscipline);
 }

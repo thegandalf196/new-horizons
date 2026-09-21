@@ -40,6 +40,8 @@
 #include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/battle/CBattleInfoCallback.h"
 #include "../../../lib/battle/Destination.h"
+#include "../../../lib/entities/hero/NewHorizonsCapabilityRules.h"
+#include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/spells/CSpellHandler.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/texts/MetaString.h"
@@ -392,17 +394,42 @@ void ServerCallbackProxy::removeObstacle(ServerCallback & object, const IBattleI
 
 void ServerCallbackProxy::catapultAttack(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit * attacker, EWallPart attackedPart, int32_t damageDealt)
 {
+	// Legacy catapult scripts report hit quality (0 = miss, 1 = normal, 2 =
+	// critical). Canonical New Horizons ruleset v3 turns a successful quality
+	// result into the absolute structural-damage formula owned by Siege. Keep
+	// this in the authoritative callback so Lua cannot forge a fortification
+	// update and old rulesets retain their original 0/1/2 behavior.
+	ui16 structuralDamage = 0;
+	// This callback is already the Catapult effect boundary. Lightweight unit
+	// proxies used by legacy effects may not carry a Creature instance, so do
+	// not dereference unitType() merely to rediscover that fact here.
+	if(damageDealt > 0 && attacker && battle.getWallStructuralHP(attackedPart) > 0)
+	{
+		const auto * concreteBattle = dynamic_cast<const CBattleInfoCallback *>(&battle);
+		if(const auto * hero = concreteBattle ? concreteBattle->battleGetOwnerHero(attacker) : nullptr;
+			hero && hero->getCapabilityRules()["rulesetVersion"].Integer() >= 3)
+		{
+			if(const auto siege = hero->getSiegeCapabilities())
+				structuralDamage = static_cast<ui16>(std::clamp<int32_t>(damageDealt * siege->catapultStructuralDamage, 0, 65535));
+		}
+	}
+
 	CatapultAttack ca;
 	ca.battleID = battle.getBattle()->getBattleID();
 	ca.attacker = attacker ? attacker->unitId() : -1;
 	ca.attackedPart = attackedPart;
 	ca.destinationTile = battle.wallPartToBattleHex(attackedPart).toInt();
 	ca.damageDealt = static_cast<ui8>(std::clamp(damageDealt, 0, 255));
+	ca.structuralDamage = structuralDamage;
 
 	ca.killedTowerShooter = -1;
 	if(attackedPart == EWallPart::KEEP || attackedPart == EWallPart::BOTTOM_TOWER || attackedPart == EWallPart::UPPER_TOWER)
 	{
-		EWallState stateAfter = SiegeInfo::applyDamage(battle.battleGetWallState(attackedPart), ca.damageDealt);
+		const auto structuralHP = battle.getWallStructuralHP(attackedPart);
+		const auto damage = ca.structuralDamage > 0 ? ca.structuralDamage : ca.damageDealt;
+		const EWallState stateAfter = structuralHP > 0
+			? SiegeInfo::stateFromStructuralHP(attackedPart, structuralHP - damage)
+			: SiegeInfo::applyDamage(battle.battleGetWallState(attackedPart), damage);
 		if(stateAfter == EWallState::DESTROYED)
 		{
 			BattleHex towerHex = battle.getTowerShooterHex(attackedPart);

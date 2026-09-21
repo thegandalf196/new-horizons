@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "GUIClasses.h"
 #include "NewHorizonsPerkIcons.h"
+#include "NewHorizonsPerkHelp.h"
 
 #include "CCastleInterface.h"
 #include "CCreatureWindow.h"
@@ -171,6 +172,21 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 		si32 maxAmount = card->creature->maxAmount(GAME->interface()->cb->getResourceAmount());
 
 		vstd::amin(maxAmount, card->amount);
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(dst))
+		{
+			if(const auto capacity = hero->getLeadershipSlotCapacity(card->creature->getId()))
+			{
+				const auto slot = dst->getSlotFor(card->creature->getId());
+				const int alreadyPresent = slot.validSlot() ? dst->getStackCount(slot) : 0;
+				vstd::amin(maxAmount, std::max(0, capacity->maximum - alreadyPresent));
+				leadershipLimit->setText("Leadership: " + std::to_string(capacity->maximum)
+					+ " max in slot (" + std::to_string(capacity->requirement) + " each)");
+			}
+			else
+				leadershipLimit->setText("");
+		}
+		else
+			leadershipLimit->setText("");
 
 		slider->setAmount(maxAmount);
 
@@ -208,6 +224,21 @@ void CRecruitmentWindow::buy()
 	CreatureID crid =  selected->creature->getId();
 	SlotID dstslot = dst->getSlotFor(crid);
 	const CGHeroInstance * hero = dynamic_cast<const CGHeroInstance *>(dst);
+	if(hero)
+	{
+		if(const auto capacity = hero->getLeadershipSlotCapacity(crid))
+		{
+			const int alreadyPresent = dstslot.validSlot() ? dst->getStackCount(dstslot) : 0;
+			if(slider->getValue() + alreadyPresent > capacity->maximum)
+			{
+				GAME->interface()->showInfoDialog("Leadership limit exceeded: this hero can command at most "
+					+ std::to_string(capacity->maximum) + " creatures of this type ("
+					+ std::to_string(capacity->requirement) + " Leadership each; hero Leadership "
+					+ std::to_string(capacity->leadership) + ").");
+				return;
+			}
+		}
+	}
 
 	if (selected->creature->warMachine.hasValue() && hero)
 	{
@@ -313,6 +344,8 @@ CRecruitmentWindow::CRecruitmentWindow(const CGDwelling * Dwelling, int Level, c
 
 	availableTitle = std::make_shared<CLabel>(204 + layoutOffsetX, 233, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[465]);
 	toRecruitTitle = std::make_shared<CLabel>(279 + layoutOffsetX, 233, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[16]);
+	leadershipLimit = std::make_shared<CLabel>(243 + layoutOffsetX, 205, FONT_SMALL,
+		ETextAlignment::CENTER, Colors::YELLOW, "", 360);
 
 	availableCreaturesChanged();
 }
@@ -679,7 +712,8 @@ void CLevelWindow::createSkillBox()
 				comp = hasCanonicalSkillIcon
 					? std::make_shared<CSelectableComponent>(ComponentType::SEC_SKILL, iconSkill, subtitle, CComponent::medium)
 					: std::make_shared<CSelectableComponent>(ComponentType::NONE, SecondarySkill(0), subtitle, CComponent::medium);
-				comp->customDescription = perk.description;
+				comp->customDescription = newHorizonsPerkHelp::format(hero, perk.selection.skillId,
+					perk.name, newHorizonsPerkHelp::tierName(perk.requiredRank), perk.description);
 				const auto & iconKey = newHorizonsPerkIcon(perk.selection.perkId);
 				comp->setCustomIcon(AnimationPath::builtin(iconKey));
 				perkComps.push_back(comp);
@@ -1264,9 +1298,10 @@ CUniversityWindow::CItem::CItem(CUniversityWindow * _parent, int _ID, int X, int
 
 			if(!skillKnown && canLearn)
 			{
-				int goldAmount = GAME->interface()->cb->getResourceAmount(EGameResID::GOLD);
-				int goldNeeded = GAME->interface()->cb->getSettings().getInteger(EGameSettings::MARKETS_UNIVERSITY_GOLD_COST);
-				ENGINE->windows().createAndPushWindow<CUnivConfirmWindow>(parent, ID, goldAmount >= goldNeeded);
+				const auto tuition = newHorizonsUniversity::tuition(parent->market,
+					GAME->interface()->cb->getMagicRules(), GAME->interface()->cb->getSettings());
+				const bool canAfford = GAME->interface()->cb->getResourceAmount().canAfford(tuition);
+				ENGINE->windows().createAndPushWindow<CUnivConfirmWindow>(parent, ID, tuition, canAfford);
 			}
 		});
 	update();
@@ -1372,18 +1407,36 @@ void CUniversityWindow::makeDeal(SecondarySkill skill)
 	GAME->interface()->cb->trade(market->getObjInstanceID(), EMarketMode::RESOURCE_SKILL, GameResID(GameResID::GOLD), skill, 1, hero);
 }
 
-CUnivConfirmWindow::CUnivConfirmWindow(CUniversityWindow * owner_, SecondarySkill SKILL, bool available)
+CUnivConfirmWindow::CUnivConfirmWindow(CUniversityWindow * owner_, SecondarySkill SKILL, TResources tuition_, bool available)
 	: CWindowObject(PLAYER_COLORED_BORDERED_STATUSBAR, CUniversityWindow::getUniversityConfirmBackground(1)),
-	owner(owner_)
+	owner(owner_),
+	tuition(std::move(tuition_))
 {
 	OBJECT_CONSTRUCTION;
 
-	int goldNeeded = GAME->interface()->cb->getSettings().getInteger(EGameSettings::MARKETS_UNIVERSITY_GOLD_COST);
+	const int goldNeeded = tuition[EGameResID::GOLD];
+	const bool hasMixedTuition = tuition[EGameResID::MERCURY]
+		|| tuition[EGameResID::SULFUR]
+		|| tuition[EGameResID::CRYSTAL]
+		|| tuition[EGameResID::GEMS];
+	std::string tuitionText;
+	for(TResources::nziterator i(tuition); i.valid(); i++)
+	{
+		if(!tuitionText.empty())
+			tuitionText += " + ";
+		tuitionText += std::to_string(i->resVal) + " " + i->resType.toResource()->getNameTranslated();
+	}
+
 	MetaString speechText;
 	speechText.appendTextID("core.genrltxt.608");
 	speechText.replaceTextID("core.skilllev.0");
 	speechText.replaceName(SKILL);
 	speechText.replaceNumber(goldNeeded);
+	if(hasMixedTuition)
+	{
+		speechText.appendRawString("\n");
+		speechText.appendRawString(tuitionText);
+	}
 	std::string text = speechText.toString(&GAME->translator());
 
 	const int centerX = pos.w / 2;
@@ -1400,9 +1453,10 @@ CUnivConfirmWindow::CUnivConfirmWindow(CUniversityWindow * owner_, SecondarySkil
 	icon->center(Point(pos.x + centerX, pos.y + 71));
 	level = std::make_shared<CLabel>(centerX, 105, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->translate("core.skilllev.1"));
 
-	costIcon = std::make_shared<CAnimImage>(AnimationPath::builtin("RESOURCE"), GameResID(EGameResID::GOLD));
-	costIcon->center(Point(pos.x + centerX, pos.y + 234));
-	cost = std::make_shared<CLabel>(centerX, 267, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, std::to_string(goldNeeded));
+	std::vector<std::shared_ptr<CComponent>> tuitionComponents;
+	for(TResources::nziterator i(tuition); i.valid(); i++)
+		tuitionComponents.push_back(std::make_shared<CComponent>(ComponentType::RESOURCE, i->resType, i->resVal, CComponent::ESize::small));
+	costComponents = std::make_shared<CComponentBox>(std::move(tuitionComponents), Rect(24, 204, pos.w - 48, 52), 4, 4, 2, 5);
 
 	MetaString skillName;
 	skillName.appendTextID("core.skilllev.0");
@@ -1420,6 +1474,8 @@ CUnivConfirmWindow::CUnivConfirmWindow(CUniversityWindow * owner_, SecondarySkil
 	helpText.replaceName(SKILL);
 	helpText.replaceNumber(goldNeeded);
 	text = helpText.toString(&GAME->translator());
+	if(hasMixedTuition)
+		text += "\n" + tuitionText;
 
 	confirm = std::make_shared<CButton>(Point(centerX - 84, 299), AnimationPath::builtin("IBY6432.DEF"), CButton::tooltip(hoverText, text), [this, SKILL](){makeDeal(SKILL);}, EShortcut::GLOBAL_ACCEPT);
 	confirm->block(!available);

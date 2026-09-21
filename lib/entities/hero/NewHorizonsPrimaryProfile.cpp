@@ -58,7 +58,9 @@ std::array<int64_t, GameConstants::PRIMARY_SKILLS> PrimaryProfile::baseAtLevel(i
 		throw std::runtime_error("Invalid primary profile");
 	std::array<int64_t, GameConstants::PRIMARY_SKILLS> result;
 	for(size_t i = 0; i < result.size(); ++i)
-		result[i] = static_cast<int64_t>(starting[i]) + static_cast<int64_t>(growth[i]) * (level - 1);
+		// New Horizons rates are the class identity: level L has accumulated
+		// exactly g * (L + 4), with no Heroes III low/high transition.
+		result[i] = static_cast<int64_t>(growth[i]) * (static_cast<int64_t>(level) + 4);
 	return result;
 }
 }

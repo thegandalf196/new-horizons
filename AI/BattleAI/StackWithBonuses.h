@@ -145,6 +145,7 @@ public:
 	bool hasObstacleChanges() const { return obstacleChanges; }
 	bool hasWallChanges() const { return wallChanges; }
 	EWallState getWallState(EWallPart part) const override;
+	int32_t getWallStructuralHP(EWallPart part) const override;
 	EGateState getGateState() const override;
 
 	int32_t getActiveStackID() const override;
@@ -179,6 +180,7 @@ public:
 	void removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
 
 	void setWallState(EWallPart partOfWall, EWallState state) override;
+	void setWallStructuralHP(EWallPart partOfWall, int32_t hp) override;
 
 	void addObstacle(const ObstacleChanges & changes) override;
 	void updateObstacle(const ObstacleChanges& changes) override;
@@ -257,6 +259,8 @@ private:
 	ObstacleCList projectedObstacles;
 	bool obstacleChanges = false;
 	std::map<EWallPart, EWallState> projectedWalls;
+	std::map<EWallPart, int32_t> projectedStructuralHP;
+	bool canonicalStructuralHP = false;
 	EGateState initialGateState = EGateState::NONE;
 	bool wallChanges = false;
 	mutable uint32_t nextId;

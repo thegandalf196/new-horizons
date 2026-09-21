@@ -59,6 +59,7 @@ public:
 
 	virtual const CGTownInstance * getDefendedTown() const = 0;
 	virtual EWallState getWallState(EWallPart partOfWall) const = 0;
+	virtual int32_t getWallStructuralHP(EWallPart partOfWall) const { return 0; }
 	virtual EGateState getGateState() const = 0;
 
 	virtual PlayerColor getSidePlayer(BattleSide side) const = 0;
@@ -131,6 +132,7 @@ public:
 	virtual void removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) = 0;
 
 	virtual void setWallState(EWallPart partOfWall, EWallState state) = 0;
+	virtual void setWallStructuralHP(EWallPart partOfWall, int32_t hp) { (void)partOfWall; (void)hp; }
 
 	virtual void addObstacle(const ObstacleChanges & changes) = 0;
 	virtual void updateObstacle(const ObstacleChanges & changes) = 0;

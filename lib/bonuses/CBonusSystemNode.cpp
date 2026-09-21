@@ -590,6 +590,11 @@ void CBonusSystemNode::limitBonuses(const BonusList &allBonuses, BonusList &out)
 		for(int i = 0; i < undecided.size(); i++)
 		{
 			auto b = undecided[i];
+			if(!acceptsBonus(*b))
+			{
+				undecided.erase(i);
+				i--; continue;
+			}
 			BonusLimitationContext context = {*b, *this, out, undecided};
 			auto decision = b->limiter ? b->limiter->limit(context) : ILimiter::EDecision::ACCEPT; //bonuses without limiters will be accepted by default
 			if(decision == ILimiter::EDecision::DISCARD || decision == ILimiter::EDecision::NOT_APPLICABLE)

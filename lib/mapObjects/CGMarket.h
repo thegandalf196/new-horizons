@@ -11,8 +11,11 @@
 
 #include "CGObjectInstance.h"
 #include "IMarket.h"
+#include "../ResourceSet.h"
 
 class MarketInstanceConstructor;
+class JsonNode;
+class IGameSettings;
 
 class DLL_LINKAGE CGMarket : public CGObjectInstance, public IMarket
 {
@@ -74,3 +77,16 @@ public:
 		h & skills;
 	}
 };
+
+namespace newHorizonsUniversity
+{
+/// True only for the Conflux town Magic University while the saved world uses
+/// New Horizons magic rules. Adventure-map Universities and legacy towns keep
+/// the original gold-only price.
+DLL_LINKAGE bool usesNewHorizonsTuition(const IMarket * market, const JsonNode & magicRules);
+
+/// Return the authoritative price for one Basic Magic School Skill. The same
+/// helper is used by the server and the confirmation dialog so the UI cannot
+/// drift from the transaction validator.
+DLL_LINKAGE TResources tuition(const IMarket * market, const JsonNode & magicRules, const IGameSettings & settings);
+}

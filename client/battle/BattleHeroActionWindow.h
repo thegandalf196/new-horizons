@@ -9,6 +9,7 @@
 
 class BattleInterface;
 class CButton;
+class CToggleButton;
 class CLabel;
 class CMultiLineLabel;
 class CGHeroInstance;
@@ -28,6 +29,9 @@ class BattleHeroActionWindow final : public CWindowObject
 	std::shared_ptr<CButton> spellButton;
 	std::shared_ptr<CMultiLineLabel> targetReadback;
 	std::shared_ptr<CButton> cancel;
+	std::shared_ptr<CToggleButton> perfectMomentToggle;
+	std::shared_ptr<CMultiLineLabel> perfectMomentLabel;
+	std::shared_ptr<CMultiLineLabel> orderInstructions;
 	std::shared_ptr<CLabel> state;
 	std::vector<std::shared_ptr<CIntObject>> labels;
 	std::vector<std::shared_ptr<CMultiLineLabel>> effectLabels;
@@ -37,6 +41,8 @@ class BattleHeroActionWindow final : public CWindowObject
 	std::shared_ptr<BattleInterface> currentBattle() const;
 	void refresh();
 	void createOrdersLayout();
+	void createPerfectMomentControl();
+	void cancelSelection();
 	void refreshEffects(const CGHeroInstance & hero, const JsonNode & rules);
 	void setStateText(const std::string & text);
 	void chooseCommand(HeroCommand command);

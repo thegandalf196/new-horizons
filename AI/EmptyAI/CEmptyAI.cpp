@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CEmptyAI.h"
+#include "../../lib/networkPacks/Component.h"
 #include "../../lib/entities/hero/NewHorizonsMasteryEffects.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 
@@ -67,6 +68,21 @@ void CEmptyAI::commanderGotLevel(const CCommanderInstance * commander, std::vect
 
 void CEmptyAI::showBlockingDialog(const std::string &text, const std::vector<Component> &components, QueryID askID, const int soundID, bool selection, bool cancel, bool safeToAutoaccept)
 {
+	if(!selection && cancel)
+	{
+		// Keep the stub AI deterministic while still respecting the teaching
+		// contract: an Expert skill cannot be advanced, so decline it; a skill
+		// that can still gain a rank is accepted.
+		for(const auto & component : components)
+			if(component.type == ComponentType::SEC_SKILL && component.value && *component.value >= MasteryLevel::EXPERT)
+			{
+				cb->selectionMade(0, askID);
+				return;
+			}
+		cb->selectionMade(1, askID);
+		return;
+	}
+
 	cb->selectionMade(0, askID);
 }
 

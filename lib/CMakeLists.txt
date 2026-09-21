@@ -55,6 +55,7 @@ set(lib_MAIN_SRCS
 	battle/HeroCommand.cpp
 	battle/BattleInfo.cpp
 	battle/NewHorizonsBloodrage.cpp
+	battle/NewHorizonsBulwark.cpp
 	battle/BattleLayout.cpp
 	battle/BattleProxy.cpp
 	battle/BattleStateInfoForRetreat.cpp
@@ -480,6 +481,7 @@ set(lib_MAIN_HEADERS
 	battle/SylvanLuckState.h
 	battle/BattleInfo.h
 	battle/NewHorizonsBloodrage.h
+	battle/NewHorizonsBulwark.h
 	battle/BattleLayout.h
 	battle/BattleSide.h
 	battle/BattleStateInfoForRetreat.h

@@ -70,6 +70,9 @@ private:
 	void limitBonuses(const BonusList &allBonuses, BonusList &out) const; //out will bo populed with bonuses that are not limited here
 
 	void getRedParents(TCNodes &out) const;  //retrieves list of red parent nodes (nodes bonuses propagate from)
+	/// Allows specialized nodes to reject propagated bonuses while retaining
+	/// the rest of their bonus graph.
+	virtual bool acceptsBonus(const Bonus & bonus) const { return true; }
 	void getRedAncestors(TCNodes &out) const;
 	void getRedChildren(TNodes &out);
 
