@@ -71,8 +71,9 @@ assert "OrderIndicatorsSection" in creature_window
 assert "battleGetHeroOrderState" in creature_window
 assert "cannot be dispelled" in creature_window
 assert '"Leadership Cost"' in creature_window
-assert 'const auto usageText = std::to_string(leadershipCount) + "/"' in creature_window
+assert 'const auto usageText = std::to_string(leadershipCount) + " / "' in creature_window
 assert 'leadershipCapacity->maximum' in creature_window
+assert '"\\nCurrent stack / maximum allowed: " + usageText' in creature_window
 assert 'battle->battleGetOwnerHero(stack)' in creature_window
 assert 'std::to_string(siege->siegeRating)' in hero_window
 assert 'capabilityLeadershipPerLevel(curHero->getCapabilityRules())' in hero_window

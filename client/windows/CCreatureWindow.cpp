@@ -263,9 +263,10 @@ CStackWindow::LeadershipSection::LeadershipSection(CStackWindow * owner, int yOf
 	}
 
 	const auto costText = leadershipRequirement > 0 ? std::to_string(leadershipRequirement) : "--";
-	const auto usageText = std::to_string(leadershipCount) + "/"
+	const auto usageText = std::to_string(leadershipCount) + " / "
 		+ (leadershipCapacity ? std::to_string(leadershipCapacity->maximum) : "--");
-	const auto helpText = std::string("Leadership Cost: ") + costText + "\nStack: " + usageText;
+	const auto helpText = std::string("Leadership Cost: ") + costText
+		+ "\nCurrent stack / maximum allowed: " + usageText;
 
 	icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_leadership_32"), 0, 0, 10, 12);
 	title = std::make_shared<CLabel>(56, 10, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
