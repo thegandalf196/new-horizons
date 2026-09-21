@@ -13,10 +13,12 @@ ROOT = Path(__file__).resolve().parents[2]
 ACTION = ROOT / "client/battle/BattleHeroActionWindow.cpp"
 CONTROLLER = ROOT / "client/battle/BattleActionsController.cpp"
 CREATURE_WINDOW = ROOT / "client/windows/CCreatureWindow.cpp"
+HERO_WINDOW = ROOT / "client/windows/CHeroWindow.cpp"
 
 action = ACTION.read_text(encoding="utf-8")
 controller = CONTROLLER.read_text(encoding="utf-8")
 creature_window = CREATURE_WINDOW.read_text(encoding="utf-8")
+hero_window = HERO_WINDOW.read_text(encoding="utf-8")
 
 orders = {
     "CHARGE": "Charge",
@@ -66,8 +68,12 @@ assert "entry.second->block(!available && !protectPairUnavailable)" in action
 assert "OrderIndicatorsSection" in creature_window
 assert "battleGetHeroOrderState" in creature_window
 assert "cannot be dispelled" in creature_window
-assert '"Leadership: " + std::to_string(leadershipRequirement) + " each | Stack: "' in creature_window
-assert '"Leadership: --"' in creature_window
+assert '"Leadership Cost"' in creature_window
+assert 'const auto usageText = std::to_string(leadershipCount) + "/"' in creature_window
+assert 'leadershipCapacity->maximum' in creature_window
+assert 'battle->battleGetOwnerHero(stack)' in creature_window
+assert 'std::to_string(siege->siegeRating)' in hero_window
+assert 'capabilityLeadershipPerLevel(curHero->getCapabilityRules())' in hero_window
 
 # Frontend must submit requests through the callback, not mutate the battle
 # snapshot or write the action budget/effects locally.

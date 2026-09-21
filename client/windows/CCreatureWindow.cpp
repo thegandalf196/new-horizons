@@ -262,17 +262,19 @@ CStackWindow::LeadershipSection::LeadershipSection(CStackWindow * owner, int yOf
 				capabilityRules, parent->info->creature->getId());
 	}
 
-	const auto totalRequirement = static_cast<int64_t>(leadershipRequirement) * leadershipCount;
-	const auto valueText = leadershipRequirement > 0
-		? std::to_string(leadershipRequirement) + " each (" + std::to_string(totalRequirement) + " total)"
-			+ (leadershipCapacity ? "   Maximum: " + std::to_string(leadershipCapacity->maximum) : "")
-		: "No Leadership cost";
-	const auto helpText = std::string("Leadership\n") + valueText;
+	const auto costText = leadershipRequirement > 0 ? std::to_string(leadershipRequirement) : "--";
+	const auto usageText = std::to_string(leadershipCount) + "/"
+		+ (leadershipCapacity ? std::to_string(leadershipCapacity->maximum) : "--");
+	const auto helpText = std::string("Leadership Cost: ") + costText + "\nStack: " + usageText;
 
-	icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_leadership_32"), 0, 0, 10, 5);
-	value = std::make_shared<CLabel>(239, 21, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW,
-		valueText, 372);
-	details = std::make_shared<LRClickableAreaWText>(Rect(8, 3, 422, 36), helpText, helpText);
+	icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_leadership_32"), 0, 0, 10, 12);
+	title = std::make_shared<CLabel>(56, 10, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
+		"Leadership Cost", 280);
+	cost = std::make_shared<CLabel>(420, 10, FONT_SMALL, ETextAlignment::TOPRIGHT, Colors::YELLOW,
+		costText, 80);
+	usage = std::make_shared<CLabel>(239, 33, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE,
+		usageText, 180);
+	details = std::make_shared<LRClickableAreaWText>(Rect(8, 3, 422, 53), helpText, helpText);
 }
 
 CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset)
@@ -1007,6 +1009,8 @@ CStackWindow::CStackWindow(const CStack * stack, bool popup)
 	info->creature = stack->unitType();
 	info->creatureCount = stack->getCount();
 	info->popupWindow = popup;
+	if(const auto * battle = stack->getBattle())
+		info->owner = battle->battleGetOwnerHero(stack);
 	init();
 }
 

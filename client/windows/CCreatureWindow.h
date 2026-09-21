@@ -93,7 +93,9 @@ class CStackWindow : public CWindowObject
 	class LeadershipSection : public CWindowSection
 	{
 		std::shared_ptr<CAnimImage> icon;
-		std::shared_ptr<CLabel> value;
+		std::shared_ptr<CLabel> title;
+		std::shared_ptr<CLabel> cost;
+		std::shared_ptr<CLabel> usage;
 		std::shared_ptr<LRClickableAreaWText> details;
 	public:
 		LeadershipSection(CStackWindow * owner, int yOffset);

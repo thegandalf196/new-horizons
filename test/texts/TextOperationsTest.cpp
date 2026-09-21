@@ -68,4 +68,10 @@ TEST_F(TextOperationsTest, ToUnicodeReusesDescriptor)
 	ASSERT_EQ(failures, 0);
 }
 
+TEST_F(TextOperationsTest, LegacyFontProbeSkipsUndefinedCodepointWithoutPoisoningDescriptor)
+{
+	EXPECT_EQ(TextOperations::getUnicodeCodepoint(static_cast<char>(0x81), "CP1252"), 0);
+	EXPECT_EQ(TextOperations::getUnicodeCodepoint(static_cast<char>(0xC4), "CP1252"), 0x00C4);
+}
+
 }

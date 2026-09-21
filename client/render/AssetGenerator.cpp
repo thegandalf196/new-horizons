@@ -975,7 +975,7 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanelElement(Creatur
 	std::map<CreatureInfoPanelElement, Point> size {
 		{BONUS_EFFECTS, Point(438, 59)},
 		{SPELL_EFFECTS, Point(438, 42)},
-		{LEADERSHIP, Point(438, 42)},
+		{LEADERSHIP, Point(438, 59)},
 		{BUTTON_PANEL, Point(438, 43)},
 		{COMMANDER_BACKGROUND, Point(438, 177)},
 		{COMMANDER_ABILITIES, Point(438, 59)}
@@ -1011,10 +1011,10 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanelElement(Creatur
 		break;
 	case LEADERSHIP:
 	{
-		Rect iconFrame(8, 3, 36, 36);
+		Rect iconFrame(8, 10, 36, 36);
 		canvas.drawColorBlended(iconFrame, rectangleColorRed);
 		canvas.drawBorder(iconFrame, borderColor);
-		Rect textFrame(48, 3, 382, 36);
+		Rect textFrame(48, 3, 382, 53);
 		canvas.drawColorBlended(textFrame, rectangleColor);
 		canvas.drawBorder(textFrame, borderColor);
 		break;

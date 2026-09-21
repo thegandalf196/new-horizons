@@ -191,7 +191,7 @@ void BattleStacksController::stackAdded(const CStack * stack, bool instant)
 
 	Point coords = getStackPositionAtHex(stack->getPosition(), stack);
 
-	if(stack->initialPosition < 0) //turret
+	if(stack->initialPosition.isTower() && stack->isTurret())
 	{
 		assert(owner.siegeController);
 
@@ -825,7 +825,7 @@ bool BattleStacksController::facingRight(const CStack * stack) const
 Point BattleStacksController::getStackPositionAtHex(const BattleHex & hexNum, const CStack * stack) const
 {
 	Point ret(-500, -500); //returned value
-	if(stack && stack->initialPosition < 0) //creatures in turrets
+	if(stack && stack->initialPosition.isTower() && stack->isTurret())
 		return owner.siegeController->getTurretCreaturePosition(stack->initialPosition);
 
 	static const Point basePos(-189, -139); // position of creature in topleft corner

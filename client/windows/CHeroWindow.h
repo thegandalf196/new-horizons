@@ -100,6 +100,7 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::array<std::vector<std::shared_ptr<CAnimImage>>, 8> provisionalAbilityIcons;
 	std::vector<std::shared_ptr<CLabel>> growthValues;
 	std::shared_ptr<CLabel> leadershipValue;
+	std::shared_ptr<CLabel> leadershipGrowthValue;
 	std::vector<std::shared_ptr<CAnimImage>> capabilityIcons;
 	std::shared_ptr<CLabel> movementValue;
 	std::shared_ptr<CLabel> legacySiegeValue;

@@ -51,7 +51,7 @@ static iconv_t getConversionDescriptor(const std::string & fromEncoding, const s
 }
 
 template<typename FromString, typename DestString>
-FromString convertTextEncoding(const DestString & fromString, const std::string & fromEncoding, const std::string & destEncoding)
+FromString convertTextEncoding(const DestString & fromString, const std::string & fromEncoding, const std::string & destEncoding, bool logConversionFailure = true)
 {
 	constexpr auto fromCharSize = sizeof(typename DestString::value_type);
 	constexpr auto destCharSize = sizeof(typename FromString::value_type);
@@ -59,7 +59,7 @@ FromString convertTextEncoding(const DestString & fromString, const std::string 
 	iconv_t cd = getConversionDescriptor(fromEncoding, destEncoding);
 	if(cd == reinterpret_cast<iconv_t>(-1))
 	{
-		logGlobal->error("Encoding coversion failure. Invalid encoding %s -> %s", fromEncoding, destEncoding);
+		logGlobal->error("Encoding conversion failure. Invalid encoding %s -> %s", fromEncoding, destEncoding);
 		return {};
 	}
 
@@ -82,10 +82,13 @@ FromString convertTextEncoding(const DestString & fromString, const std::string 
 
 	if(ret == static_cast<size_t>(-1))
 	{
-		if constexpr (fromCharSize == 1)
-			logGlobal->error("Encoding coversion failure. Failed to convert text: %s", fromString);
-		else
-			logGlobal->error("Encoding coversion failure. Failed to convert text.");
+		if(logConversionFailure)
+		{
+			if constexpr (fromCharSize == 1)
+				logGlobal->error("Encoding conversion failure. Failed to convert text: %s", fromString);
+			else
+				logGlobal->error("Encoding conversion failure. Failed to convert text.");
+		}
 		return {};
 	}
 
@@ -224,7 +227,11 @@ uint32_t TextOperations::getUnicodeCodepoint(const char * data, size_t maxSize)
 uint32_t TextOperations::getUnicodeCodepoint(char data, const std::string & encoding )
 {
 	std::string stringNative(1, data);
-	std::string stringUnicode = toUnicode(stringNative, encoding);
+	// Bitmap fonts probe every byte slot in their legacy code page. Some code
+	// pages intentionally leave byte values undefined (for example five slots in
+	// Windows-1252), so an absent glyph here is expected rather than malformed
+	// user content. Keep diagnostics enabled for ordinary string conversion.
+	std::string stringUnicode = convertTextEncoding<std::string>(stringNative, encoding, "UTF-8", false);
 
 	if (stringUnicode.empty())
 		return 0;

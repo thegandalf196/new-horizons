@@ -45,6 +45,10 @@ for pattern in \
 	"Leadership limit exceeded" \
 	"Got false in applying" \
 	"FIXME: battleGetFightingHero access check" \
+	"Encoding conversion failure" \
+	"Encoding coversion failure" \
+	"Unable to select shooter for tower" \
+	"Disaster happened" \
 	"Failed to launch game" \
 	"Invalid New Horizons capability rules"; do
 	if grep -Fq "$pattern" "$run_log"; then

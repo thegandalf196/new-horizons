@@ -346,7 +346,8 @@ void CHeroWindow::configureNewHorizonsLayout()
 		}
 		labels.push_back(std::make_shared<CLabel>(field.first.x + 50, field.first.y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, field.second, 88));
 	}
-	leadershipValue = std::make_shared<CLabel>(202, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
+	leadershipValue = std::make_shared<CLabel>(202, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 48);
+	leadershipGrowthValue = std::make_shared<CLabel>(250, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "", 40);
 	movementValue = std::make_shared<CLabel>(202, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
 	legacySiegeValue = std::make_shared<CLabel>(342, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
 }
@@ -451,6 +452,7 @@ void CHeroWindow::restoreLegacyLayout()
 	movementArea->disable();
 	legacySiegeArea->disable();
 	leadershipValue->disable();
+	leadershipGrowthValue->disable();
 	movementValue->disable();
 	legacySiegeValue->disable();
 	move(learnedPerksSummary, Point(342, 404));
@@ -687,6 +689,9 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		const auto leadership = curHero->getLeadershipCapacity();
 		const bool perSlotLeadership = leadership && curHero->getCapabilityRules()["rulesetVersion"].Integer() >= 2;
 		leadershipValue->setText(leadership ? std::to_string(leadership->capacity) : "--");
+		leadershipGrowthValue->setText(perSlotLeadership
+			? "+" + std::to_string(newHorizonsHeroes::capabilityLeadershipPerLevel(curHero->getCapabilityRules()))
+			: "");
 		leadershipArea->text = !leadership ? "No saved Leadership rules for this hero. Display icon is illustrative."
 			: perSlotLeadership ? "Leadership: " + std::to_string(leadership->capacity)
 				+ ". Each army slot is limited independently: maximum stack size = floor(Leadership / that creature's Leadership Requirement)."
@@ -696,11 +701,13 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		movementArea->text = "Movement points remaining / current limit: " + std::to_string(curHero->movementPointsRemaining())
 			+ " / " + std::to_string(curHero->movementPointsLimit()) + ". Display icon is illustrative.";
 		const auto siege = curHero->getSiegeCapabilities();
-		legacySiegeValue->setText(siege ? "A" + std::to_string(siege->artilleryRank) + " B" + std::to_string(siege->ballisticsRank) + " F" + std::to_string(siege->firstAidRank) : "--");
-		legacySiegeArea->text = "Existing saved siege capabilities, not a spendable Siege balance. No cost, maximum or refill is implied. Display icon is illustrative.\n";
+		legacySiegeValue->setText(siege ? std::to_string(siege->siegeRating) : "--");
+		legacySiegeArea->text = "Siege points used by Ballista, Catapult, First Aid Tent and defensive tower formulas.\n";
 		if(siege)
-			legacySiegeArea->text += "Skill ranks: Artillery " + std::to_string(siege->artilleryRank) + ", Ballistics " + std::to_string(siege->ballisticsRank)
-				+ ", First Aid " + std::to_string(siege->firstAidRank) + ". Open Hero development for saved damage/control details.";
+			legacySiegeArea->text += (curHero->getCapabilityRules()["rulesetVersion"].Integer() >= 3
+				? "War Machines rank: " + std::to_string(siege->warMachinesRank) + ". Open Hero development for saved damage/control details."
+				: "Skill ranks: Artillery " + std::to_string(siege->artilleryRank) + ", Ballistics " + std::to_string(siege->ballisticsRank)
+					+ ", First Aid " + std::to_string(siege->firstAidRank) + ". Open Hero development for saved damage/control details.");
 		else
 			legacySiegeArea->text += "No saved siege capability rules for this hero.";
 	}

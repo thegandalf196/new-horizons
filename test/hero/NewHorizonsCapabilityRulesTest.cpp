@@ -61,6 +61,7 @@ TEST(NewHorizonsCapabilityRules, ActualCanonicalDataHasFullDeclaredMightAndMagic
 		EXPECT_EQ(saved["profile"]["perLevel"].Integer(), expected.perLevel);
 		EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipRating(saved, 4),
 			expected.base + 3 * expected.perLevel);
+		EXPECT_EQ(newHorizonsHeroes::capabilityLeadershipPerLevel(saved), expected.perLevel);
 	}
 	const auto knight = newHorizonsHeroes::resolveCapabilityRules(rules,
 		HeroClassID(HeroClassID::decode("core:knight")));

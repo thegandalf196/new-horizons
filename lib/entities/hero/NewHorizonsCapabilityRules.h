@@ -61,6 +61,7 @@ DLL_LINKAGE LeadershipCapacity capabilityLeadership(const JsonNode & resolvedRul
 /// Canonical v2 Leadership is a per-slot limit. A zero requirement means the
 /// creature is outside this saved original-content table and is not restricted.
 DLL_LINKAGE int capabilityLeadershipRating(const JsonNode & resolvedRules, int level);
+DLL_LINKAGE int capabilityLeadershipPerLevel(const JsonNode & resolvedRules);
 DLL_LINKAGE int capabilityCreatureLeadershipRequirement(const JsonNode & resolvedRules, CreatureID creature);
 DLL_LINKAGE std::optional<LeadershipSlotCapacity> capabilityLeadershipSlot(
 	const JsonNode & resolvedRules, int level, CreatureID creature);

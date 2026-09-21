@@ -203,6 +203,16 @@ int capabilityLeadershipRating(const JsonNode & rules, int level)
 	return static_cast<int>(std::min<int64_t>(scaled, std::numeric_limits<int>::max()));
 }
 
+int capabilityLeadershipPerLevel(const JsonNode & rules)
+{
+	require(usesRules(rules), "resolved snapshot required for capability arithmetic");
+	validateResolvedCapabilityRules(rules);
+	require(rules["rulesetVersion"].Integer() >= 2, "per-slot Leadership requires ruleset v2+");
+	const int64_t scaled = static_cast<int64_t>(rules["profile"]["perLevel"].Integer())
+		* rules["leadership"]["globalScalePercent"].Integer() / 100;
+	return static_cast<int>(std::min<int64_t>(scaled, std::numeric_limits<int>::max()));
+}
+
 int capabilityCreatureLeadershipRequirement(const JsonNode & rules, CreatureID creature)
 {
 	require(usesRules(rules), "resolved snapshot required for capability arithmetic");
