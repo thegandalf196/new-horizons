@@ -1,0 +1,32 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_entrench",
+    "NH_perk_executioner",
+    "NH_perk_armor_piercer",
+    "NH_perk_breakthrough"
+  ],
+  "files": {
+    "NH_perk_entrench_normal.png": "705189a16deb9cd145915cd390b4fc9bab7b6049a73df49292ed6d5551e8734e",
+    "NH_perk_entrench_pressed.png": "0ea3f788ed8cdfc9ec2c8c9717b25379c0b23be68f6e10d3600f631cfcc68de9",
+    "NH_perk_entrench_disabled.png": "559ffe69e05fc57c44b773ee4f36f3d1985a1ea21a1fbe05f8a53038bfcf58c4",
+    "NH_perk_entrench_highlighted.png": "58ec737a21bd755dede7660d6077400aca4d787c74a479f03623c874902d0c80",
+    "NH_perk_entrench.json": "85433a1f3370dd0ac5c36598e118a2b85e2620071f509888d6695d45e28f56d9",
+    "NH_perk_executioner_normal.png": "31407329c5a63e9b719111415a5f262f5f1c38145712e5452acce6f1198f9d69",
+    "NH_perk_executioner_pressed.png": "54b473b16bc83aed526c88b332502932d7bb2bb399f96e1629433d8bb7e76f08",
+    "NH_perk_executioner_disabled.png": "92a2ffdff0944e6a47d8aa437d240a20b891888d8d2ef38c43ddbfa9a632d571",
+    "NH_perk_executioner_highlighted.png": "a6e17832bc4791b335c3381d2f3cbd554ba9c05299e5d7792ce6b132c7afcdc0",
+    "NH_perk_executioner.json": "f7a9d73e3d18adb64c202843beec8ad77e8d55a67b07cfdcd0d411ab55fb5125",
+    "NH_perk_armor_piercer_normal.png": "37a307067ad57e7bd0f6f156d11461a728026c6b30cb19eabe8a112a84457db4",
+    "NH_perk_armor_piercer_pressed.png": "3ed1e63501ed688293fa8bdc5f4756df9453e163772a23129352d811be0f70d3",
+    "NH_perk_armor_piercer_disabled.png": "22389aa065e61115fee4581014f663eb0f376a2742bf1d98c4f48524bcc164a9",
+    "NH_perk_armor_piercer_highlighted.png": "56e84b0afa6ed049ffb37ff76d4b97ebaed79566c3e64e7a4817f5b84f3cb7f9",
+    "NH_perk_armor_piercer.json": "6ca18409921c051552ad7f711b3e279f3324826a8d0a6cec550455003d192c5d",
+    "NH_perk_breakthrough_normal.png": "13ffbbe4584951ba2f4b17fa79017532b2e3a49c07733c16c9bef773d5a650f0",
+    "NH_perk_breakthrough_pressed.png": "5bd630f801e80be50d3df5d113c384777da784af0784c55dcbf0dcf6a95380c2",
+    "NH_perk_breakthrough_disabled.png": "1b80914e672436bc1b016e1e170e86f91fbe01de32389fe463d71a0287125154",
+    "NH_perk_breakthrough_highlighted.png": "4386219311d3e58e915d78fb58b15f6827f5e686ac5301637a8eefead573c8f5",
+    "NH_perk_breakthrough.json": "fb6623d928394bd5105c7941b0dcc140f3a136305c9ddbaa898a0616f0e8b841"
+  }
+}

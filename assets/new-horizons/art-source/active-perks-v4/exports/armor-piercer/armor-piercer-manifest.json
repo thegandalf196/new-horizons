@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "armor-piercer",
+  "source": {
+    "path": "$HOME/.codex/generated_images/01a0b955-f4cb-7e13-bf57-deb7ff85e2db/exec-55ee7de4-0d17-4c9d-84de-7ff88f714afa.png",
+    "filename": "exec-55ee7de4-0d17-4c9d-84de-7ff88f714afa.png",
+    "byte_size": 2540716,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "b65b4a2589e7c3847f184958d7b8846d818ca92907be32de6e7e0640d2f7088f"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "b65b4a2589e7c3847f184958d7b8846d818ca92907be32de6e7e0640d2f7088f"
+    },
+    {
+      "file": "armor-piercer-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "c60940b1491884f61916b143e8af0c52b485e37b00c44c4950ebeca7e277b962"
+    },
+    {
+      "file": "armor-piercer-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "29e3b7aea20cb7b43fde342c883561e80b3458cb62e5b57d6f185aa278647586"
+    },
+    {
+      "file": "armor-piercer-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "937376cd3632af99f35478e07f0f60cf64d01bbc53e7140fd537f0053353d308"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "armor-piercer-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "armor-piercer-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "armor-piercer-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "armor-piercer-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

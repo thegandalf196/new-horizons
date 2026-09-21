@@ -269,11 +269,27 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 				return GAME->translator().translate("core.skilllev", rank - 1);
 			return "Rank " + std::to_string(rank);
 		};
-		siegeText = "Siege capabilities - no automatic hero-level growth.\n";
-		siegeText += "Artillery: " + rankName(siege->artilleryRank) + "; Ballista base damage range: x" + std::to_string(siege->ballistaDamageMultiplier) + ".\n";
-		siegeText += "Ballistics: " + rankName(siege->ballisticsRank) + "; First Aid: " + rankName(siege->firstAidRank) + ".\n";
-		siegeText += "Control chances: Ballista " + std::to_string(siege->ballistaControlChance) + "%, Catapult " + std::to_string(siege->catapultControlChance) + "%, First Aid " + std::to_string(siege->firstAidControlChance) + "%.\n";
-		siegeText += "Multiplier affects base damage range only, not total damage.\nControl chances do not guarantee an eligible action.";
+		if(hero.getCapabilityRules()["rulesetVersion"].Integer() >= 3)
+		{
+			siegeText = "War Machines: " + rankName(siege->warMachinesRank)
+				+ "; Siege rating: " + std::to_string(siege->siegeRating) + ".\n";
+			siegeText += "Ballista base damage: " + std::to_string(siege->ballistaDamage)
+				+ "; Catapult structural damage: " + std::to_string(siege->catapultStructuralDamage) + ".\n";
+			siegeText += "First Aid healing: " + std::to_string(siege->firstAidHealing)
+				+ "; Defensive tower base damage: " + std::to_string(siege->defensiveTowerDamage) + ".\n";
+			siegeText += "Direct control: Ballista " + std::to_string(siege->ballistaControlChance)
+				+ "%, Catapult " + std::to_string(siege->catapultControlChance)
+				+ "%, First Aid Tent " + std::to_string(siege->firstAidControlChance) + "%.\n";
+			siegeText += "Siege is a rating, not a spendable resource. Control still requires an eligible machine action.";
+		}
+		else
+		{
+			siegeText = "Legacy siege capabilities - no automatic hero-level growth.\n";
+			siegeText += "Artillery: " + rankName(siege->artilleryRank) + "; Ballista base damage range: x" + std::to_string(siege->ballistaDamageMultiplier) + ".\n";
+			siegeText += "Ballistics: " + rankName(siege->ballisticsRank) + "; First Aid: " + rankName(siege->firstAidRank) + ".\n";
+			siegeText += "Control chances: Ballista " + std::to_string(siege->ballistaControlChance) + "%, Catapult " + std::to_string(siege->catapultControlChance) + "%, First Aid " + std::to_string(siege->firstAidControlChance) + "%.\n";
+			siegeText += "Multiplier affects base damage range only, not total damage.\nControl chances do not guarantee an eligible action.";
+		}
 	}
 	if(masteries)
 	{

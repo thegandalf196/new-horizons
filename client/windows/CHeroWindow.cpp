@@ -53,7 +53,10 @@ bool useNewHorizonsHeroLayout(const CGHeroInstance * hero)
 	// Centered body plus native 14px frame and 8px shadow on each side.
 	// Never force a global resolution or hide skills/optional Commander mechanics.
 	const auto viewport = ENGINE->screenDimensions();
-	return hero && hero->getPrimaryGrowthView().has_value() && !ENGINE->isRoeData()
+	const bool hasNewHorizonsView = hero && (hero->getPrimaryGrowthView().has_value()
+		|| hero->getLeadershipCapacity().has_value() || hero->getSiegeCapabilities().has_value()
+		|| newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules));
+	return hasNewHorizonsView && !ENGINE->isRoeData()
 		&& settings["general"]["enableUiEnhancements"].Bool()
 		&& !hero->getCommander() && hero->secSkills.size() <= 8
 		&& viewport.x >= 844 && viewport.y >= 668;
@@ -102,7 +105,8 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	const bool showsGrowth = hero->getPrimaryGrowthView().has_value();
 	const bool showsCapabilities = hero->getLeadershipCapacity().has_value() || hero->getSiegeCapabilities().has_value();
 	const bool showsMasteries = hero->getMasteryView().has_value();
-	const bool showsDevelopment = showsGrowth || showsCapabilities || showsMasteries;
+	const bool showsPerks = newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules);
+	const bool showsDevelopment = showsGrowth || showsCapabilities || showsMasteries || showsPerks;
 	title = std::make_shared<CLabel>(showsDevelopment ? 175 : 190, 65, EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "", showsDevelopment ? 180 : 0);
 	if(showsDevelopment)
 	{
@@ -334,8 +338,8 @@ void CHeroWindow::configureNewHorizonsLayout()
 	}
 	leadershipArea = std::make_shared<LRClickableAreaWText>(Rect(152, 88, 140, 44), "Leadership capacity");
 	movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44), "Movement points");
-	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44), "Siege points available to this hero");
-	for(const auto & field : {std::make_pair(Point(152, 88), "Leadership"), std::make_pair(Point(152, 132), "Movement"), std::make_pair(Point(292, 132), "Siege points")})
+	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44), "Siege rating available to this hero");
+	for(const auto & field : {std::make_pair(Point(152, 88), "Leadership"), std::make_pair(Point(152, 132), "Movement"), std::make_pair(Point(292, 132), "Siege")})
 	{
 		if(std::string(field.second) == "Movement")
 			labels.push_back(std::make_shared<CLabel>(field.first.x + 4, field.first.y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "TBD", 36));
@@ -706,7 +710,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 			+ " / " + std::to_string(curHero->movementPointsLimit()) + ". Display icon is illustrative.";
 		const auto siege = curHero->getSiegeCapabilities();
 		legacySiegeValue->setText(siege ? std::to_string(siege->siegeRating) : "--");
-		legacySiegeArea->text = "Siege points used by Ballista, Catapult, First Aid Tent and defensive tower formulas.\n";
+		legacySiegeArea->text = "Siege rating used by Ballista, Catapult, First Aid Tent and defensive tower formulas. It is not spent.\n";
 		if(siege)
 			legacySiegeArea->text += (curHero->getCapabilityRules()["rulesetVersion"].Integer() >= 3
 				? "War Machines rank: " + std::to_string(siege->warMachinesRank) + ". Open Hero development for saved damage/control details."
@@ -759,8 +763,10 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 			}
 			if(const auto siege = curHero->getSiegeCapabilities())
 			{
-				legacySiegeLabel->setText("Siege A" + std::to_string(siege->artilleryRank) + " B" + std::to_string(siege->ballisticsRank)
-					+ " F" + std::to_string(siege->firstAidRank));
+				legacySiegeLabel->setText(curHero->getCapabilityRules()["rulesetVersion"].Integer() >= 3
+					? "Siege " + std::to_string(siege->siegeRating) + " (War Machines " + std::to_string(siege->warMachinesRank) + ")"
+					: "Siege A" + std::to_string(siege->artilleryRank) + " B" + std::to_string(siege->ballisticsRank)
+						+ " F" + std::to_string(siege->firstAidRank));
 				legacySiegeLabel->enable();
 				legacySiegeImage->enable();
 			}

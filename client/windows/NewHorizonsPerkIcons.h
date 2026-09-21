@@ -11,6 +11,10 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 {
 	static const std::map<std::string, std::string> icons = {
 		{"new-horizons:offense.shockAssault", "NH_perk_shock_assault"},
+		{"new-horizons:offense.executioner", "NH_perk_executioner"},
+		{"new-horizons:offense.armorPiercer", "NH_perk_armor_piercer"},
+		{"new-horizons:offense.breakthrough", "NH_perk_breakthrough"},
+		{"new-horizons:battlecraft.entrench", "NH_perk_entrench"},
 		{"new-horizons:discipline.inspirationalLeader", "NH_perk_inspirational_leader"},
 		{"new-horizons:sorceryMagic.overcharger", "NH_perk_overcharger"},
 		{"new-horizons:sorceryMagic.selectiveDispel", "NH_perk_selective_dispel"},

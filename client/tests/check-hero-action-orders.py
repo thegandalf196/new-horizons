@@ -14,11 +14,13 @@ ACTION = ROOT / "client/battle/BattleHeroActionWindow.cpp"
 CONTROLLER = ROOT / "client/battle/BattleActionsController.cpp"
 CREATURE_WINDOW = ROOT / "client/windows/CCreatureWindow.cpp"
 HERO_WINDOW = ROOT / "client/windows/CHeroWindow.cpp"
+DEVELOPMENT_WINDOW = ROOT / "client/windows/HeroGrowthWindow.cpp"
 
 action = ACTION.read_text(encoding="utf-8")
 controller = CONTROLLER.read_text(encoding="utf-8")
 creature_window = CREATURE_WINDOW.read_text(encoding="utf-8")
 hero_window = HERO_WINDOW.read_text(encoding="utf-8")
+development_window = DEVELOPMENT_WINDOW.read_text(encoding="utf-8")
 
 orders = {
     "CHARGE": "Charge",
@@ -76,6 +78,19 @@ assert 'std::to_string(siege->siegeRating)' in hero_window
 assert 'capabilityLeadershipPerLevel(curHero->getCapabilityRules())' in hero_window
 assert 'std::to_string(leadership->capacity) + " (+"' in hero_window
 assert '" total, including artifacts and other modifiers.' in hero_window
+assert '"Siege rating available to this hero"' in hero_window
+assert '"Siege rating used by Ballista, Catapult, First Aid Tent and defensive tower formulas. It is not spent.' in hero_window
+assert '"Siege " + std::to_string(siege->siegeRating) + " (War Machines "' in hero_window
+assert 'hero->getSiegeCapabilities().has_value()' in hero_window
+assert 'showsDevelopment = showsGrowth || showsCapabilities || showsMasteries || showsPerks' in hero_window
+assert '"War Machines: " + rankName(siege->warMachinesRank)' in development_window
+for canonical_output in (
+    "siege->ballistaDamage", "siege->catapultStructuralDamage",
+    "siege->firstAidHealing", "siege->defensiveTowerDamage",
+):
+    assert canonical_output in development_window
+assert '"Siege is a rating, not a spendable resource.' in development_window
+assert '"Legacy siege capabilities' in development_window
 
 # Frontend must submit requests through the callback, not mutate the battle
 # snapshot or write the action budget/effects locally.

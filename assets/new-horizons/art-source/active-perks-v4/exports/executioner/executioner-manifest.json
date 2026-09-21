@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "executioner",
+  "source": {
+    "path": "$HOME/.codex/generated_images/01a0b955-f4cb-7e13-bf57-deb7ff85e2db/exec-73e425f9-3d4a-48b9-b464-1c6c5a34e7b9.png",
+    "filename": "exec-73e425f9-3d4a-48b9-b464-1c6c5a34e7b9.png",
+    "byte_size": 2623658,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "7067757614f30d4fe9dc7a0ccbbe4abd79d182bed088a4dda5938c8c1c3c4296"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "7067757614f30d4fe9dc7a0ccbbe4abd79d182bed088a4dda5938c8c1c3c4296"
+    },
+    {
+      "file": "executioner-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "876114a3356be36c2d93739a50f1b5b520a09626970d41c6598724faf82d9cff"
+    },
+    {
+      "file": "executioner-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "08f81a9fba2b223db86b8d3f19aa4a683c7209045107e682769187bf0aeea567"
+    },
+    {
+      "file": "executioner-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "8a3f9342813fb8d74bdb92b03937aa0d4eafa41803709c3a7a20fae0141b2fa0"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "executioner-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "executioner-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "executioner-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "executioner-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

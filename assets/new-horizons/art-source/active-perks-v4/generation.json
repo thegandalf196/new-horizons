@@ -1,0 +1,18 @@
+{
+  "generator": "OpenAI built-in image generation via homm3-art skill",
+  "date": "2026-09-21",
+  "styleReference": "homm3-art/references/style-guide.md",
+  "status": "provisional",
+  "subjects": {
+    "entrench": "Shovel driven into a timber-reinforced earthwork with a sheltered shield",
+    "executioner": "Massive execution axe resting above a broken crown",
+    "armor-piercer": "Bodkin arrow punched through dark plate armor",
+    "breakthrough": "Heavy warhammer smashing through a stone battlement"
+  },
+  "constraints": [
+    "square high-resolution master",
+    "late-1990s modeled fantasy still life",
+    "readable at 44x44 and 32x32",
+    "no text, border, interface chrome, or intentional pixel art"
+  ]
+}
