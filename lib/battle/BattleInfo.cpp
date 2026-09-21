@@ -1042,6 +1042,11 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 	ret->natureSummoned = info.natureSummoned;
 	stacks.push_back(std::move(ret));
 	stacks.back()->localInit(this);
+	// CUnitState::localInit resets transient state, including summon provenance.
+	// Restore the authoritative packet values before any subsequent bonus query.
+	stacks.back()->summoned = info.summoned;
+	stacks.back()->natureSummoned = info.natureSummoned;
+	stacks.back()->nodeHasChanged();
 }
 
 void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)

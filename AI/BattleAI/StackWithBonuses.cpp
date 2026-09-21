@@ -105,6 +105,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 
 	position = info.position;
 	summoned = info.summoned;
+	natureSummoned = info.natureSummoned;
 }
 
 StackWithBonuses::~StackWithBonuses() = default;

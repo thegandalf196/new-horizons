@@ -67,12 +67,12 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::COMBAT_BAD_LUCK_CHANCE, certainLuck());
 		loaded->overrideGameSetting(EGameSettings::COMBAT_LUCK_DICE_SIZE, JsonNode(100));
 	}
-	void perks()
+	void perks(std::initializer_list<const char *> ids)
 	{
 		const SecondarySkill skill(SecondarySkill::decode("new-horizons:sylvanLuck"));
 		ASSERT_GE(skill.getNum(), 0);
 		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-		for(const auto * id : {"serendipity", "natureSProvidence", "fortunateAim"})
+		for(const auto * id : ids)
 			attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", std::string("new-horizons:sylvanLuck.") + id});
 	}
 	static void luck(CStack * unit, int value)
@@ -477,7 +477,7 @@ TEST_F(NewHorizonsSylvanLuckTest, ExtendedStateRoundTripAndPreviousVersionDefaul
 
 TEST_F(NewHorizonsSylvanLuckTest, FocusTargetAndChanceOnlyQuery)
 {
-	perks();
+	perks({"serendipity", "fortunateAim"});
 	startBattle();
 	battle()->nextRound();
 	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:monk"), BattleHex(leftHex), 10);
@@ -515,7 +515,7 @@ TEST_F(NewHorizonsSylvanLuckTest, FocusTargetAndChanceOnlyQuery)
 
 TEST_F(NewHorizonsSylvanLuckTest, AuthoritativeMultiTargetStrikeRecordsOnce)
 {
-	perks();
+	perks({"natureSProvidence"});
 	startBattle();
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
@@ -538,7 +538,7 @@ TEST_F(NewHorizonsSylvanLuckTest, AuthoritativeMultiTargetStrikeRecordsOnce)
 
 TEST_F(NewHorizonsSylvanLuckTest, ProvidenceSuppressesOnlyFirstBadStrikePerRound)
 {
-	perks();
+	perks({"natureSProvidence"});
 	startBattle();
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
@@ -558,7 +558,7 @@ TEST_F(NewHorizonsSylvanLuckTest, ProvidenceSuppressesOnlyFirstBadStrikePerRound
 
 TEST_F(NewHorizonsSylvanLuckTest, CurrentSaveAndHypotheticalCopyPreserveIsolatedHistory)
 {
-	perks();
+	perks({"natureSProvidence"});
 	startBattle();
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 10);
 	auto & state = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
@@ -609,6 +609,8 @@ TEST_F(NewHorizonsSylvanLuckTest, WildChanceScopesSylvanLuckToNatureSummons)
 	ASSERT_NE(ordinary, nullptr);
 	ASSERT_NE(nonNature, nullptr);
 	ASSERT_NE(nature, nullptr);
+	EXPECT_TRUE(nonNature->summoned);
+	EXPECT_TRUE(nature->summoned);
 
 	// Native Luck is local to the summoned stack and must not be filtered.
 	luck(nonNature, 1);
