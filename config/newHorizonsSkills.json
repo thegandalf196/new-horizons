@@ -1269,10 +1269,10 @@
 				"scenarioBonus": "SECSKILL:0:30"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"luck": {
+					"type": "LUCK",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 1
 				}
 			}
 		},
@@ -1285,10 +1285,10 @@
 				"scenarioBonus": "SECSKILL:0:31"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"luck": {
+					"type": "LUCK",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 2
 				}
 			}
 		},
@@ -1301,10 +1301,10 @@
 				"scenarioBonus": "SECSKILL:0:32"
 			},
 			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
+				"luck": {
+					"type": "LUCK",
 					"valueType": "BASE_NUMBER",
-					"val": 0
+					"val": 3
 				}
 			}
 		}

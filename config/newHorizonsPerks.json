@@ -2789,21 +2789,21 @@
 				"basic": {
 					"description": "Friendly army receives +1 Luck.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly army receives +1 Luck."
 					}
 				},
 				"advanced": {
 					"description": "Friendly army receives +2 Luck total.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly army receives +2 Luck total."
 					}
 				},
 				"expert": {
 					"description": "Friendly army receives +3 Luck total.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly army receives +3 Luck total."
 					}
 				}

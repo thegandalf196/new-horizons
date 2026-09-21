@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Validate the New Horizons SecondarySkill entity composition.
 
-The six school skills, Offense, Estates, Learning, Sylvan Luck, Necromancy,
+The six school skills, Offense, Estates, Learning, Luck, Sylvan Luck, Necromancy,
 and Metamagic are active rank data.  The
 remaining canonical skills are registered with their canonical rank text but
 deliberately carry only a zero bonus until their runtime effect handlers exist.
@@ -27,6 +27,17 @@ SCHOOL_SKILLS = {
     "chaosMagic": "chaos",
 }
 ACTIVE_RANK_EFFECTS = {
+    "luck": {
+        "basic": {
+            "luck": {"type": "LUCK", "valueType": "BASE_NUMBER", "val": 1},
+        },
+        "advanced": {
+            "luck": {"type": "LUCK", "valueType": "BASE_NUMBER", "val": 2},
+        },
+        "expert": {
+            "luck": {"type": "LUCK", "valueType": "BASE_NUMBER", "val": 3},
+        },
+    },
     "estates": {
         "basic": {
             "dailyGold": {

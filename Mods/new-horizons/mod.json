@@ -4928,21 +4928,21 @@
 							"basic": {
 								"description": "Friendly army receives +1 Luck.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Friendly army receives +1 Luck."
 								}
 							},
 							"advanced": {
 								"description": "Friendly army receives +2 Luck total.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Friendly army receives +2 Luck total."
 								}
 							},
 							"expert": {
 								"description": "Friendly army receives +3 Luck total.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Friendly army receives +3 Luck total."
 								}
 							}
@@ -7590,10 +7590,10 @@
 					"scenarioBonus": "SECSKILL:0:30"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"luck": {
+						"type": "LUCK",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 1
 					}
 				}
 			},
@@ -7606,10 +7606,10 @@
 					"scenarioBonus": "SECSKILL:0:31"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"luck": {
+						"type": "LUCK",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 2
 					}
 				}
 			},
@@ -7622,10 +7622,10 @@
 					"scenarioBonus": "SECSKILL:0:32"
 				},
 				"effects": {
-					"newHorizonsPlaceholder": {
-						"type": "MORALE",
+					"luck": {
+						"type": "LUCK",
 						"valueType": "BASE_NUMBER",
-						"val": 0
+						"val": 3
 					}
 				}
 			}

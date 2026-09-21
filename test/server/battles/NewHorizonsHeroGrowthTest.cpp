@@ -1447,3 +1447,24 @@ TEST_F(NewHorizonsHeroGrowthTest, LearningRanksApplyCanonicalExperienceGain)
 		EXPECT_EQ(attackerSideHero->calculateXp(1000) - baseline, expected[rank]);
 	}
 }
+
+TEST_F(NewHorizonsHeroGrowthTest, LuckRanksProvideOrdinaryLuckWithoutSylvanStrikeDamage)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	startGame();
+	const int decoded = SecondarySkill::decode("new-horizons:luck");
+	ASSERT_GE(decoded, 0);
+	const SecondarySkill luck(decoded);
+	attackerSideHero->setSecSkillLevel(luck, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	const int baselineLuck = attackerSideHero->valOfBonuses(BonusType::LUCK);
+	const int baselineStrikeDamage = attackerSideHero->valOfBonuses(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE);
+	const std::array expected = {0, 1, 2, 3};
+	for(int rank = MasteryLevel::BASIC; rank <= MasteryLevel::EXPERT; ++rank)
+	{
+		SCOPED_TRACE(rank);
+		attackerSideHero->setSecSkillLevel(luck, rank, ChangeValueMode::ABSOLUTE);
+		EXPECT_EQ(attackerSideHero->valOfBonuses(BonusType::LUCK) - baselineLuck, expected[rank]);
+		EXPECT_EQ(attackerSideHero->valOfBonuses(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE), baselineStrikeDamage);
+	}
+}
