@@ -265,8 +265,9 @@ CStackWindow::LeadershipSection::LeadershipSection(CStackWindow * owner, int yOf
 	const auto costText = leadershipRequirement > 0 ? std::to_string(leadershipRequirement) : "--";
 	const auto usageText = std::to_string(leadershipCount) + " / "
 		+ (leadershipCapacity ? std::to_string(leadershipCapacity->maximum) : "--");
-	const auto helpText = std::string("Leadership Cost: ") + costText
-		+ "\nCurrent stack / maximum allowed: " + usageText;
+	const auto usageLabel = "Stack Capacity: " + usageText;
+	const auto usageHelp = "Creatures currently in this stack / maximum this hero can command: " + usageText;
+	const auto helpText = std::string("Leadership Cost: ") + costText + "\n" + usageHelp;
 
 	icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_leadership_32"), 0, 0, 10, 12);
 	title = std::make_shared<CLabel>(56, 10, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
@@ -274,7 +275,7 @@ CStackWindow::LeadershipSection::LeadershipSection(CStackWindow * owner, int yOf
 	cost = std::make_shared<CLabel>(420, 10, FONT_SMALL, ETextAlignment::TOPRIGHT, Colors::YELLOW,
 		costText, 80);
 	usage = std::make_shared<CLabel>(239, 33, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE,
-		usageText, 180);
+		usageLabel, 180);
 	details = std::make_shared<LRClickableAreaWText>(Rect(8, 3, 422, 53), helpText, helpText);
 }
 

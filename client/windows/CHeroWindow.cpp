@@ -350,7 +350,10 @@ void CHeroWindow::configureNewHorizonsLayout()
 		}
 		labels.push_back(std::make_shared<CLabel>(field.first.x + 50, field.first.y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, field.second, 88));
 	}
-	leadershipValue = std::make_shared<CLabel>(202, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
+	// Keep the current total and class growth in separate fields, matching the
+	// primary-attribute readout. The total includes Leadership bonuses from
+	// artifacts and other sources; the adjacent growth value is class-only.
+	leadershipValue = std::make_shared<CLabel>(202, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 48);
 	leadershipGrowthValue = std::make_shared<CLabel>(250, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "", 40);
 	movementValue = std::make_shared<CLabel>(202, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
 	legacySiegeValue = std::make_shared<CLabel>(342, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
@@ -695,10 +698,8 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		const int leadershipPerLevel = perSlotLeadership
 			? newHorizonsHeroes::capabilityLeadershipPerLevel(curHero->getCapabilityRules())
 			: 0;
-		leadershipValue->setText(!leadership ? "--"
-			: perSlotLeadership ? std::to_string(leadership->capacity) + " (+" + std::to_string(leadershipPerLevel) + ")"
-			: std::to_string(leadership->capacity));
-		leadershipGrowthValue->setText("");
+		leadershipValue->setText(leadership ? std::to_string(leadership->capacity) : "--");
+		leadershipGrowthValue->setText(perSlotLeadership ? "+" + std::to_string(leadershipPerLevel) : "");
 		leadershipArea->text = !leadership ? "No saved Leadership rules for this hero. Display icon is illustrative."
 			: perSlotLeadership ? "Leadership: " + std::to_string(leadership->capacity)
 				+ " total, including artifacts and other modifiers. Growth per hero level: +" + std::to_string(leadershipPerLevel)

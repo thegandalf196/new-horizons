@@ -73,11 +73,12 @@ assert "cannot be dispelled" in creature_window
 assert '"Leadership Cost"' in creature_window
 assert 'const auto usageText = std::to_string(leadershipCount) + " / "' in creature_window
 assert 'leadershipCapacity->maximum' in creature_window
-assert '"\\nCurrent stack / maximum allowed: " + usageText' in creature_window
+assert 'const auto usageLabel = "Stack Capacity: " + usageText' in creature_window
+assert 'const auto usageHelp = "Creatures currently in this stack / maximum this hero can command: " + usageText' in creature_window
 assert 'battle->battleGetOwnerHero(stack)' in creature_window
 assert 'std::to_string(siege->siegeRating)' in hero_window
 assert 'capabilityLeadershipPerLevel(curHero->getCapabilityRules())' in hero_window
-assert 'std::to_string(leadership->capacity) + " (+"' in hero_window
+assert 'leadershipGrowthValue->setText(perSlotLeadership ? "+' in hero_window
 assert '" total, including artifacts and other modifiers.' in hero_window
 assert '"Siege rating available to this hero"' in hero_window
 assert '"Siege rating used by Ballista, Catapult, First Aid Tent and defensive tower formulas. It is not spent.' in hero_window
