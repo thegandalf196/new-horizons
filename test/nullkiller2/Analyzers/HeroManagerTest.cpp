@@ -41,6 +41,8 @@ TEST(Nullkiller2_Analyzers_HeroManager, canonicalStrategicSkillsReceiveRoleAware
 	EXPECT_EQ(evaluateNewHorizonsStrategicSkillRoleScore("new-horizons:learning", HeroRole::SCOUT), 0.5f);
 	EXPECT_EQ(evaluateNewHorizonsStrategicSkillRoleScore("new-horizons:luck", HeroRole::MAIN), 1.5f);
 	EXPECT_EQ(evaluateNewHorizonsStrategicSkillRoleScore("new-horizons:luck", HeroRole::SCOUT), 0.5f);
+	EXPECT_EQ(evaluateNewHorizonsStrategicSkillRoleScore("new-horizons:wisdom", HeroRole::MAIN), 1.5f);
+	EXPECT_EQ(evaluateNewHorizonsStrategicSkillRoleScore("new-horizons:wisdom", HeroRole::SCOUT), 0.25f);
 	EXPECT_FALSE(evaluateNewHorizonsStrategicSkillRoleScore("new-horizons:sylvanLuck", HeroRole::MAIN));
 	EXPECT_FALSE(evaluateNewHorizonsStrategicSkillRoleScore("core:estates", HeroRole::MAIN));
 }

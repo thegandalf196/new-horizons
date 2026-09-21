@@ -370,7 +370,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		&& newHorizonsMagic::hasMetamagicPerk(h, newHorizonsMagic::METAMAGIC_SPELL_BUFFER);
 	if(counteringHero && battle.battleWasCounterspellArmed(counteringSide) && !bufferedFollowup)
 	{
-		const int listedCost = h->getSpellCost(s);
+		const int listedCost = h->getListedSpellCost(s);
 		counterspellCost = newHorizonsMagic::counterspellCost(listedCost,
 			counteringHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.countermage"),
 			battle.battleMetamagicCountersequenceArmed(counteringSide));

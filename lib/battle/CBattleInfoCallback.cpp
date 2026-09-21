@@ -3019,7 +3019,11 @@ int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const 
 	if(listedCostMultiplier < 1)
 		throw std::invalid_argument("Spell cost multiplier must be positive");
 
-	int32_t ret = caster->getSpellCost(sp) * listedCostMultiplier;
+	const int32_t listedCost = caster->getListedSpellCost(sp);
+	const int wisdom = newHorizonsMagic::isAdventureSpell(caster->getMagicRules(), sp->getId())
+		? MasteryLevel::NONE : newHorizonsMagic::wisdomRank(caster);
+	int32_t ret = wisdom == MasteryLevel::NONE ? listedCost * listedCostMultiplier
+		: newHorizonsMagic::wisdomAdjustedCost(listedCost, listedCostMultiplier, wisdom);
 
 	//checking for friendly stacks reducing cost of the spell and
 	//enemy stacks increasing it

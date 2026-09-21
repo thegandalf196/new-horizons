@@ -1451,9 +1451,19 @@ int CGHeroInstance::getSpellLevel(const spells::Spell * spell) const
 	return newHorizonsMagic::spellLevel(getMagicRules(), spell->getId());
 }
 
-int32_t CGHeroInstance::getSpellCost(const spells::Spell * sp) const
+int32_t CGHeroInstance::getListedSpellCost(const spells::Spell * sp) const
 {
 	return newHorizonsMagic::spellCost(getMagicRules(), sp->getId(), getSpellSchoolLevel(sp));
+}
+
+int32_t CGHeroInstance::getSpellCost(const spells::Spell * sp) const
+{
+	const int listedCost = getListedSpellCost(sp);
+	if(newHorizonsMagic::isAdventureSpell(getMagicRules(), sp->getId()))
+		return listedCost;
+	const int rank = newHorizonsMagic::wisdomRank(this);
+	return rank == MasteryLevel::NONE ? listedCost
+		: newHorizonsMagic::wisdomAdjustedCost(listedCost, 1, rank);
 }
 
 void CGHeroInstance::pushPrimSkill( PrimarySkill which, int val )

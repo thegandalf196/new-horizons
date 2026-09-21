@@ -188,6 +188,31 @@ TEST_F(CounterspellPerkTest, ArmedWardNegatesEnemyHeroSpellAndChargesListedCost)
 	EXPECT_TRUE(casts.back().announcement.counterspellNegated);
 }
 
+TEST_F(CounterspellPerkTest, CounterspellUsesEnemyListedCostBeforeWisdomDiscount)
+{
+	prepare(100, false);
+	const int wisdomId = SecondarySkill::decode("new-horizons:wisdom");
+	ASSERT_GE(wisdomId, 0);
+	defenderSideHero->setSecSkillLevel(SecondarySkill(wisdomId), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+
+	const auto listedCost = defenderSideHero->getListedSpellCost(SpellID(SpellID::HASTE).toSpell());
+	const auto discountedCost = defenderSideHero->getSpellCost(SpellID(SpellID::HASTE).toSpell());
+	ASSERT_EQ(listedCost, 4);
+	ASSERT_EQ(discountedCost, 3);
+	const auto counterManaBefore = attackerSideHero->mana;
+	const auto enemyManaBefore = defenderSideHero->mana;
+
+	ASSERT_TRUE(castCounterspell());
+	ASSERT_TRUE(castEnemyHaste());
+
+	// The enemy pays discounted Wisdom mana, but Counterspell prices the ward
+	// from the enemy spell's raw listed cost: ceil(4 * 2) = 8.
+	EXPECT_EQ(attackerSideHero->mana, counterManaBefore - newHorizonsMagic::COUNTERSPELL_LISTED_COST
+		- newHorizonsMagic::counterspellCost(listedCost, false));
+	EXPECT_EQ(defenderSideHero->mana, enemyManaBefore - discountedCost);
+	EXPECT_FALSE(hasHaste());
+}
+
 TEST_F(CounterspellPerkTest, InsufficientArmingManaIsRejectedBeforeStateChanges)
 {
 	prepare(newHorizonsMagic::COUNTERSPELL_LISTED_COST - 1, false);

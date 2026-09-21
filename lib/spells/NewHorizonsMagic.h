@@ -102,6 +102,13 @@ DLL_LINKAGE std::vector<SecondarySkill> schoolSkills(const JsonNode & rules);
 DLL_LINKAGE std::vector<SpellSchool> spellSchools(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE int spellLevel(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE int spellCost(const JsonNode & rules, SpellID spell, int mastery);
+/// Applies canonical Wisdom to an ordinary spell's listed cost. Multipliers
+/// (for example a Mass variant) are applied before the percentage discount.
+/// Optional paid additions such as Overcharge are deliberately not passed here.
+DLL_LINKAGE int wisdomAdjustedCost(int listedCost, int listedCostMultiplier, int wisdomRank);
+/// Returns the canonical Wisdom rank only for a saved New Horizons ruleset.
+/// Legacy Wisdom never acquires New Horizons cost semantics.
+DLL_LINKAGE int wisdomRank(const CGHeroInstance * hero);
 /// True when the saved New Horizons roster treats the spell as one of the
 /// neutral, adventure-map spells. These entries deliberately have no school
 /// membership and are not subject to school mastery or Wisdom discounts.

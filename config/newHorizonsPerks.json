@@ -1997,21 +1997,21 @@
 				"basic": {
 					"description": "Listed spell Mana costs are reduced by 10%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Listed spell Mana costs are reduced by 10%."
 					}
 				},
 				"advanced": {
 					"description": "Listed spell Mana costs are reduced by 20%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Listed spell Mana costs are reduced by 20%."
 					}
 				},
 				"expert": {
 					"description": "Listed spell Mana costs are reduced by 30%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Listed spell Mana costs are reduced by 30%."
 					}
 				}

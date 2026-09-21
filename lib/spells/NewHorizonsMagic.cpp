@@ -490,6 +490,27 @@ int spellCost(const JsonNode & rules, SpellID spell, int mastery)
 	return entry(rules, spell)["costs"].Vector().at(mastery).Integer();
 }
 
+int wisdomAdjustedCost(int listedCost, int listedCostMultiplier, int rank)
+{
+	require(listedCost >= 0, "negative listed spell cost");
+	require(listedCostMultiplier >= 1, "spell cost multiplier must be positive");
+	require(rank >= MasteryLevel::NONE && rank <= MasteryLevel::EXPERT, "invalid Wisdom rank");
+	const int64_t multiplied = static_cast<int64_t>(listedCost) * listedCostMultiplier;
+	const int discountPercent = 10 * rank;
+	return static_cast<int>(std::max<int64_t>(1, (multiplied * (100 - discountPercent) + 99) / 100));
+}
+
+int wisdomRank(const CGHeroInstance * hero)
+{
+	if(!hero || !rulesActive(hero->getMagicRules()))
+		return MasteryLevel::NONE;
+	const int decoded = SecondarySkill::decode("new-horizons:wisdom");
+	if(decoded < 0)
+		return MasteryLevel::NONE;
+	return std::clamp(static_cast<int>(hero->getSecSkillLevel(SecondarySkill(decoded))),
+		static_cast<int>(MasteryLevel::NONE), static_cast<int>(MasteryLevel::EXPERT));
+}
+
 bool isAdventureSpell(const JsonNode & rules, SpellID spell)
 {
 	if(legacy(rules) || !spell.hasValue() || !spell.toSpell() || !rules["adventureSpells"].isStruct())

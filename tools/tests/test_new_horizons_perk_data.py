@@ -67,6 +67,7 @@ ACTIVE_RANK_SKILLS = {
     "new-horizons:estates",
     "new-horizons:learning",
     "new-horizons:luck",
+    "new-horizons:wisdom",
     "new-horizons:sylvanLuck",
     "new-horizons:necromancy",
     "new-horizons:bloodrage",

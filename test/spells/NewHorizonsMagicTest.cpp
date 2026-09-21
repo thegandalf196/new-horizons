@@ -26,6 +26,18 @@ TEST(NewHorizonsMagicTest, LegacySchoolsCostsAndLevelsRemainOriginal)
 		EXPECT_EQ(newHorizonsMagic::spellCost(legacy, arrow, mastery), definition->getCost(mastery));
 }
 
+TEST(NewHorizonsMagicTest, WisdomDiscountRoundsUpAfterListedMultiplier)
+{
+	EXPECT_EQ(newHorizonsMagic::wisdomAdjustedCost(5, 1, MasteryLevel::NONE), 5);
+	EXPECT_EQ(newHorizonsMagic::wisdomAdjustedCost(5, 1, MasteryLevel::BASIC), 5);
+	EXPECT_EQ(newHorizonsMagic::wisdomAdjustedCost(5, 3, MasteryLevel::BASIC), 14);
+	EXPECT_EQ(newHorizonsMagic::wisdomAdjustedCost(10, 1, MasteryLevel::ADVANCED), 8);
+	EXPECT_EQ(newHorizonsMagic::wisdomAdjustedCost(10, 1, MasteryLevel::EXPERT), 7);
+	EXPECT_EQ(newHorizonsMagic::wisdomAdjustedCost(1, 1, MasteryLevel::EXPERT), 1);
+	EXPECT_EQ(newHorizonsMagic::wisdomAdjustedCost(0, 1, MasteryLevel::EXPERT), 1);
+	EXPECT_THROW(newHorizonsMagic::wisdomAdjustedCost(5, 0, MasteryLevel::BASIC), std::runtime_error);
+}
+
 TEST(NewHorizonsMagicTest, UnsupportedSnapshotShapeAndVersionFailClosed)
 {
 	JsonNode rules(JsonMap{});

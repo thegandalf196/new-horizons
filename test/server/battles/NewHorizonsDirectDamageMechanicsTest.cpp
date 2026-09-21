@@ -529,6 +529,32 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	EXPECT_EQ(attackerSideHero->mana, mana - 8);
 }
 
+TEST_F(NewHorizonsDirectDamageMechanicsTest, WisdomDiscountsMagicArrowBaseButNotOverchargeSurcharge)
+{
+	forceRealHeroScale = true;
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	const int wisdomId = SecondarySkill::decode("new-horizons:wisdom");
+	ASSERT_GE(wisdomId, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(wisdomId), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+
+	// Magic Arrow is listed at four mana. Expert Wisdom discounts the base to
+	// ceil(4 * .70) = 3; four selected overcharge points are then added in full.
+	ASSERT_EQ(attackerSideHero->getListedSpellCost(spell), 4);
+	ASSERT_EQ(attackerSideHero->getSpellCost(spell), 3);
+	ASSERT_EQ(battle()->battleGetSpellCost(spell, attackerSideHero), 3);
+
+	const auto mana = attackerSideHero->mana;
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.spellOvercharge = 4;
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->mana, mana - 7);
+}
+
 TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuthoritativeCastToSixPoints)
 {
 	forceRealHeroScale = true;
@@ -700,6 +726,29 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, LegacyMagicArrowRejectsOverchargeWi
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), legacy));
 	EXPECT_EQ(target->getAvailableHealth(), legacyHealth);
 	EXPECT_EQ(attackerSideHero->mana, legacyMana);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, LegacyWisdomDoesNotDiscountMagicArrow)
+{
+	savedEnabled = false;
+	prepare();
+	const int wisdomId = SecondarySkill::decode("new-horizons:wisdom");
+	ASSERT_GE(wisdomId, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(wisdomId), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+
+	// The installed Wisdom skill must not retrofit New Horizons semantics into
+	// a legacy saved world. Legacy Magic Arrow remains its original listed cost.
+	const auto legacyListed = spell->getCost(attackerSideHero->getSpellSchoolLevel(spell));
+	ASSERT_EQ(attackerSideHero->getListedSpellCost(spell), legacyListed);
+	ASSERT_EQ(attackerSideHero->getSpellCost(spell), legacyListed);
+	const auto mana = attackerSideHero->mana;
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->mana, mana - legacyListed);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, ActualAiPredictionAndServerApplicationUseSavedFormula)

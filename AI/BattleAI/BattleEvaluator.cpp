@@ -141,7 +141,7 @@ float counterspellThreatValue(const CBattleInfoCallback & battle, BattleSide sid
 		if(!enemy->canCastThisSpell(spell))
 			continue;
 
-		const int listedCost = enemy->getSpellCost(spell);
+		const int listedCost = enemy->getListedSpellCost(spell);
 		const int enemyManaCost = battle.battleGetSpellCost(spell, enemy);
 		if(listedCost < 0 || enemy->mana < enemyManaCost)
 			continue;

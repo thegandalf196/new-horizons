@@ -1468,3 +1468,33 @@ TEST_F(NewHorizonsHeroGrowthTest, LuckRanksProvideOrdinaryLuckWithoutSylvanStrik
 		EXPECT_EQ(attackerSideHero->valOfBonuses(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE), baselineStrikeDamage);
 	}
 }
+
+TEST_F(NewHorizonsHeroGrowthTest, WisdomDiscountsOrdinaryListedCostAfterMassMultiplierOnly)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	prepareCommands();
+	const int decoded = SecondarySkill::decode("new-horizons:wisdom");
+	ASSERT_GE(decoded, 0);
+	const SecondarySkill wisdom(decoded);
+	const auto * ordinary = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	const auto * adventure = SpellID(SpellID::DIMENSION_DOOR).toSpell();
+	ASSERT_NE(ordinary, nullptr);
+	ASSERT_NE(adventure, nullptr);
+	ASSERT_FALSE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), ordinary->getId()));
+	ASSERT_TRUE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), adventure->getId()));
+	const int listed = attackerSideHero->getListedSpellCost(ordinary);
+	const int adventureListed = attackerSideHero->getListedSpellCost(adventure);
+	for(int rank = MasteryLevel::NONE; rank <= MasteryLevel::EXPERT; ++rank)
+	{
+		SCOPED_TRACE(rank);
+		attackerSideHero->setSecSkillLevel(wisdom, rank, ChangeValueMode::ABSOLUTE);
+		const int expected = rank == MasteryLevel::NONE ? listed
+			: newHorizonsMagic::wisdomAdjustedCost(listed, 1, rank);
+		EXPECT_EQ(attackerSideHero->getSpellCost(ordinary), expected);
+		EXPECT_EQ(attackerSideHero->getSpellCost(adventure), adventureListed);
+		const int expectedMass = rank == MasteryLevel::NONE ? listed * 3
+			: newHorizonsMagic::wisdomAdjustedCost(listed, 3, rank);
+		EXPECT_EQ(battle()->battleGetSpellCost(ordinary, attackerSideHero, 3), expectedMass);
+	}
+}

@@ -196,6 +196,7 @@ public:
 	const JsonNode & getMagicRules() const;
 	std::vector<SpellSchool> getSpellSchools(const spells::Spell * spell) const;
 	int getSpellLevel(const spells::Spell * spell) const;
+	int32_t getListedSpellCost(const spells::Spell * sp) const;
 	int32_t getSpellCost(const spells::Spell * sp) const; //do not use during battles -> bonuses from army would be ignored
 
 	bool canLearnSpell(const spells::Spell * spell,  bool allowBanned = false) const;

@@ -40,6 +40,8 @@ std::optional<float> evaluateNewHorizonsStrategicSkillRoleScore(const std::strin
 		return role == HeroRole::MAIN ? 1.0f : 0.5f;
 	if(skillId == "new-horizons:luck")
 		return role == HeroRole::MAIN ? 1.5f : 0.5f;
+	if(skillId == "new-horizons:wisdom")
+		return role == HeroRole::MAIN ? 1.5f : 0.25f;
 	return std::nullopt;
 }
 
