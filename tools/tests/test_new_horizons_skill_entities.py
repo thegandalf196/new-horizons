@@ -133,6 +133,7 @@ ACTIVE_RANK_EFFECTS = {
 RUNTIME_ACTIVE_RANKS = {
     "armorer",
     "archery",
+    "battlecraft",
     "warMachines",
     "discipline",
     "logistics",

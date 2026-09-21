@@ -1252,8 +1252,16 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		gameHandler->complain("Hero spell unavailable under authoritative target validation");
 		return false;
 	}
-	logGlobal->trace("Making action: %s", ba.toString());
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
+	// WAIT provenance is published by StartAction. Validate a repeated request
+	// against the pre-action snapshot, before that packet marks the first legal
+	// Wait as completed.
+	if(ba.actionType == EActionType::WAIT && stack && stack->waitedThisTurn)
+	{
+		gameHandler->complain("This stack has already waited this round!");
+		return false;
+	}
+	logGlobal->trace("Making action: %s", ba.toString());
 
 	// for these events client does not expects StartAction/EndAction wrapper
 	if (!ba.isBattleEndAction())
@@ -1882,7 +1890,11 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		}
 	}
 
-	attackerState->afterAttack(attack.ranged, normalCounter);
+	// The one-shot Battlecraft Wait bonus is consumed only by a physical blow;
+	// spell-like attacks still spend ordinary attack resources but do not spend
+	// this physical-damage state.  Retaliations use this same path, so their
+	// consumption is authoritative and is included in attackerChanges below.
+	attackerState->afterAttack(attack.ranged, normalCounter, !bat.spellLike());
 
 	{
 		UnitChanges info(attackerState->unitId(), UnitChanges::EOperation::UPDATE);

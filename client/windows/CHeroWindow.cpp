@@ -346,7 +346,7 @@ void CHeroWindow::configureNewHorizonsLayout()
 		}
 		labels.push_back(std::make_shared<CLabel>(field.first.x + 50, field.first.y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, field.second, 88));
 	}
-	leadershipValue = std::make_shared<CLabel>(202, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 48);
+	leadershipValue = std::make_shared<CLabel>(202, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
 	leadershipGrowthValue = std::make_shared<CLabel>(250, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "", 40);
 	movementValue = std::make_shared<CLabel>(202, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
 	legacySiegeValue = std::make_shared<CLabel>(342, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
@@ -688,12 +688,16 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	{
 		const auto leadership = curHero->getLeadershipCapacity();
 		const bool perSlotLeadership = leadership && curHero->getCapabilityRules()["rulesetVersion"].Integer() >= 2;
-		leadershipValue->setText(leadership ? std::to_string(leadership->capacity) : "--");
-		leadershipGrowthValue->setText(perSlotLeadership
-			? "+" + std::to_string(newHorizonsHeroes::capabilityLeadershipPerLevel(curHero->getCapabilityRules()))
-			: "");
+		const int leadershipPerLevel = perSlotLeadership
+			? newHorizonsHeroes::capabilityLeadershipPerLevel(curHero->getCapabilityRules())
+			: 0;
+		leadershipValue->setText(!leadership ? "--"
+			: perSlotLeadership ? std::to_string(leadership->capacity) + " (+" + std::to_string(leadershipPerLevel) + ")"
+			: std::to_string(leadership->capacity));
+		leadershipGrowthValue->setText("");
 		leadershipArea->text = !leadership ? "No saved Leadership rules for this hero. Display icon is illustrative."
 			: perSlotLeadership ? "Leadership: " + std::to_string(leadership->capacity)
+				+ " total, including artifacts and other modifiers. Growth per hero level: +" + std::to_string(leadershipPerLevel)
 				+ ". Each army slot is limited independently: maximum stack size = floor(Leadership / that creature's Leadership Requirement)."
 			: "Legacy Leadership preview: " + std::to_string(leadership->used) + " / " + std::to_string(leadership->capacity)
 				+ " aggregate creatures. Display icon is illustrative.";

@@ -287,7 +287,7 @@ function Script:getOffenseArcheryFactor(info)
 	return (getBonusValueOfSubtype(info.attacker, info.attackerBonuses, "PERCENTAGE_DAMAGE_BOOST", subtype)
 		+ targetedPremium + (info.executionerDamagePercent or 0) + (info.heroOrderDamagePercent or 0)
 		+ (info.bloodrageDamagePercent or 0) + (info.shroudFlankingDamagePercent or 0)
-		+ (info.newHorizonsArcheryDamagePercent or 0)) / 100
+		+ (info.newHorizonsArcheryDamagePercent or 0) + (info.battlecraftWaitDamagePercent or 0)) / 100
 end
 
 function Script:getBlessFactor(info)
@@ -346,6 +346,11 @@ end
 --- New Horizons Armorer is an independent post-Defense reduction source.
 function Script:getNewHorizonsArmorerFactor(info)
 	return -(info.newHorizonsArmorerReductionPercent or 0) / 100
+end
+
+--- Battlecraft's Defend training is independent from Armorer and Orders.
+function Script:getBattlecraftDefendFactor(info)
+	return -(info.battlecraftDefendReductionPercent or 0) / 100
 end
 
 --- Shield and air shield: each lessens one kind of blow and ignores the other.
@@ -495,7 +500,7 @@ end
 for _, factor in ipairs({
 	"getAttackDefenseFactor", "getOffenseArcheryFactor", "getBlessFactor", "getLuckFactor",
 	"getJoustingFactor", "getDeathBlowFactor", "getDoubleDamageFactor", "getHateCreatureFactor",
-	"getArmorerFactor", "getNewHorizonsArmorerFactor", "getMagicShieldFactor", "getRangePenaltyFactor", "getObstacleFactor",
+	"getArmorerFactor", "getNewHorizonsArmorerFactor", "getBattlecraftDefendFactor", "getMagicShieldFactor", "getRangePenaltyFactor", "getObstacleFactor",
 	"getBlindParalysisFactor", "getUnluckyFactor", "getForgetfulnessFactor", "getPetrificationFactor"
 }) do
 	Script:addDamageFactor(factor)

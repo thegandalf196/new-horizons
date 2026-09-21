@@ -16,6 +16,7 @@
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/ObstacleCasterProxy.h"
 #include "../../lib/battle/CObstacleInstance.h"
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
 
 #include "../../lib/GameLibrary.h"
 
@@ -126,7 +127,8 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 {
 	// IDs alone cannot key a target/controller/round-sensitive premium. Preserve
 	// original-damage snapshots for comparison, but recompute current v2 damage.
-	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE))
+	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE)
+		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0)
 	{
 		if(!attacker->alive())
 			return 0;
@@ -547,7 +549,7 @@ AttackPossibility AttackPossibility::evaluate(
 						}
 						
 					}
-					defenderState->afterAttack(attackInfo.shooting, true);
+					defenderState->afterAttack(attackInfo.shooting, true, victimAttack.physicalDamage);
 				}
 
 				bool isEnemy = state->battleMatchOwner(attacker, u);
@@ -652,7 +654,7 @@ AttackPossibility AttackPossibility::evaluate(
 				fortunePreview->setSylvanLuckState(attackerSide, fortune);
 			}
 			// One attack spends ammunition once, not once for every collateral victim.
-			ap.attackerState->afterAttack(attackInfo.shooting, false);
+			ap.attackerState->afterAttack(attackInfo.shooting, false, attackInfo.physicalDamage);
 		}
 
 #if BATTLE_TRACE_LEVEL>=2

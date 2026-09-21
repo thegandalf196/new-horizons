@@ -149,6 +149,8 @@ public:
 	virtual bool timeStopTurnConsumed() const { return false; }
 	virtual bool willMove(int turn = 0) const = 0; //if stack has remaining move this turn
 	virtual bool waited(int turn = 0) const = 0;
+	/// True while a stack's one-shot Battlecraft bonus from Waiting is armed.
+	virtual bool battlecraftWaitBonusAvailable() const { return false; }
 
 	virtual std::shared_ptr<Unit> acquire() const = 0;
 	virtual std::shared_ptr<CUnitState> acquireState() const = 0;

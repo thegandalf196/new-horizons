@@ -154,6 +154,7 @@ float BattleExchangeVariant::trackAttack(
 		// CAmmo assignment keeps this unit's owner-bound bonus caches intact.
 		static_cast<battle::CAmmo &>(unitToUpdate->shots) = affectedUnit->shots;
 		static_cast<battle::CAmmo &>(unitToUpdate->counterAttacks) = affectedUnit->counterAttacks;
+		unitToUpdate->battlecraftWaitBonusUsed = affectedUnit->battlecraftWaitBonusUsed;
 
 		if(unitToUpdate->unitSide() == attacker->unitSide())
 		{
@@ -267,7 +268,7 @@ float BattleExchangeVariant::trackAttack(
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
-		attacker->afterAttack(shooting, false);
+		attacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
 	}
 
 	if(!evaluateOnly && allowRetaliation && defender->alive() && defender->ableToRetaliate() && !counterAttacksBlocked && !shooting
@@ -304,7 +305,7 @@ float BattleExchangeVariant::trackAttack(
 		retaliationAttack.retaliation = true;
 		hb->projectFortuneStrike(retaliationAttack, {{attacker->unitId(), actualDamage}}, defender.get(),
 			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()));
-		defender->afterAttack(false, true);
+		defender->afterAttack(false, true, retaliationAttack.physicalDamage);
 	}
 
 	auto score = defenderDamageReduce - attackerDamageReduce;
@@ -333,7 +334,7 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 {
 	EvaluationResult result(targets.bestAction());
 
-	if(!activeStack->waited() && !activeStack->acquireState()->hadMorale)
+	if(!activeStack->acquireState()->waitedThisTurn && !activeStack->acquireState()->hadMorale)
 	{
 #if BATTLE_TRACE_LEVEL>=1
 		logAi->trace("Evaluating waited attack for %s", activeStack->getDescription());
@@ -373,7 +374,7 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 
 	if(result.bestAttack.attack.shooting
 		&& !result.bestAttack.defenderDead
-		&& !activeStack->waited()
+		&& !activeStack->acquireState()->waitedThisTurn
 		&& hb->battleHasShootingPenalty(activeStack, result.bestAttack.dest))
 	{
 		if(!canBeHitThisTurn(result.bestAttack))

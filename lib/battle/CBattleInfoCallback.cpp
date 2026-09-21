@@ -17,6 +17,7 @@
 #include "BattleInfo.h"
 #include "CObstacleInstance.h"
 #include "NewHorizonsBulwark.h"
+#include "NewHorizonsBattlecraft.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsShroud.h"
 #include "IGameSettings.h"
@@ -1733,9 +1734,15 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		if(info.shooting && ordinaryCreatureAttack)
 			payload.newHorizonsArcheryDamagePercent = newHorizonsCombatSkills::archeryDamagePercent(
 				newHorizonsCombatSkills::archeryRank(battleGetOwnerHero(info.attacker)));
+		if(ordinaryCreatureAttack && info.attacker->battlecraftWaitBonusAvailable())
+			payload.battlecraftWaitDamagePercent = newHorizonsBattlecraft::rankPercent(
+				newHorizonsBattlecraft::rank(battleGetOwnerHero(info.attacker)));
 		if(ordinaryCreatureAttack)
 			payload.newHorizonsArmorerReductionPercent = newHorizonsCombatSkills::armorerReductionPercent(
 				newHorizonsCombatSkills::armorerRank(battleGetOwnerHero(info.defender)));
+		if(ordinaryCreatureAttack && info.defender && info.defender->defended())
+			payload.battlecraftDefendReductionPercent = newHorizonsBattlecraft::defendReductionPercent(
+				battleGetOwnerHero(info.defender));
 		if(battleIsShroudFlankingAttack(info))
 			payload.shroudFlankingDamagePercent = newHorizonsShroud::flankingDamagePercent(
 				newHorizonsShroud::rank(battleGetOwnerHero(info.attacker)));

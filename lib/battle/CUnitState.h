@@ -150,6 +150,9 @@ public:
 	bool natureSummoned;
 	bool waiting;
 	bool waitedThisTurn; //"waited()" that stays true for full turn after wait - needed as UI button hackfix
+	/// Whether the one-shot Battlecraft Wait damage bonus has already been spent this round.
+	/// The availability is the conjunction of waitedThisTurn and !battlecraftWaitBonusUsed.
+	bool battlecraftWaitBonusUsed;
 	/// Creature Defense supplied by the authoritative Defend action.  This is
 	/// recorded explicitly because duration alone is not provenance: another
 	/// temporary effect may also use STACK_GETS_TURN.
@@ -246,6 +249,7 @@ public:
 	bool timeStopTurnConsumed() const override;
 	bool willMove(int turn = 0) const override;
 	bool waited(int turn = 0) const override;
+	bool battlecraftWaitBonusAvailable() const override;
 
 	std::shared_ptr<Unit> acquire() const override;
 	std::shared_ptr<CUnitState> acquireState() const override;
@@ -273,7 +277,12 @@ public:
 
 	FactionID getFactionID() const override;
 
-	void afterAttack(bool ranged, bool counter);
+	/// Finalize ammunition/retaliation use after an attack.  Physical attacks also
+	/// spend the one-shot Battlecraft Wait bonus, if this stack earned it.
+	void afterAttack(bool ranged, bool counter, bool physical = true);
+
+	/// Record the authoritative Wait action and arm Battlecraft's one-shot bonus.
+	void afterWait();
 
 	void afterNewRound();
 

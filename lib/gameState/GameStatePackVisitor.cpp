@@ -1657,8 +1657,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				st->waiting = false;
 				break;
 			case EActionType::WAIT:
-				st->waiting = true;
-				st->waitedThisTurn = true;
+				st->afterWait();
 				break;
 			case EActionType::MONSTER_SPELL:
 			{

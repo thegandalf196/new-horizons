@@ -74,6 +74,8 @@ assert 'leadershipCapacity->maximum' in creature_window
 assert 'battle->battleGetOwnerHero(stack)' in creature_window
 assert 'std::to_string(siege->siegeRating)' in hero_window
 assert 'capabilityLeadershipPerLevel(curHero->getCapabilityRules())' in hero_window
+assert 'std::to_string(leadership->capacity) + " (+"' in hero_window
+assert '" total, including artifacts and other modifiers.' in hero_window
 
 # Frontend must submit requests through the callback, not mutate the battle
 # snapshot or write the action budget/effects locally.

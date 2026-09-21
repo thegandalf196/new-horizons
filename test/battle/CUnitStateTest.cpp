@@ -161,6 +161,46 @@ TEST_F(UnitStateTest, canShootWithAmmoCart)
 	EXPECT_TRUE(subject.isShooter());
 }
 
+TEST_F(UnitStateTest, battlecraftWaitBonusIsCopiedSerializedConsumedAndResetPerRound)
+{
+	setDefaultExpectations();
+	initUnit();
+
+	subject.afterWait();
+	EXPECT_TRUE(subject.waiting);
+	EXPECT_TRUE(subject.waitedThisTurn);
+	EXPECT_FALSE(subject.battlecraftWaitBonusUsed);
+
+	const auto saved = subject.save();
+	battle::CUnitStateDetached restored(&infoMock, &bonusMock);
+	restored.localInit(&envMock);
+	restored.load(saved);
+	EXPECT_TRUE(restored.waitedThisTurn);
+	EXPECT_FALSE(restored.battlecraftWaitBonusUsed);
+
+	// Spell-like effects do not consume a physical-only Wait bonus.
+	restored.afterAttack(false, false, false);
+	EXPECT_FALSE(restored.battlecraftWaitBonusUsed);
+
+	// The first physical attack or retaliation spends it exactly once.
+	restored.afterAttack(false, false, true);
+	EXPECT_TRUE(restored.battlecraftWaitBonusUsed);
+	restored.afterAttack(false, true, true);
+	EXPECT_TRUE(restored.battlecraftWaitBonusUsed);
+	restored.afterWait();
+	EXPECT_TRUE(restored.battlecraftWaitBonusUsed);
+
+	// A detached/hypothetical copy carries the spent state, and the round
+	// boundary clears both the wait provenance and its one-shot consumption.
+	battle::CUnitStateDetached copy(&infoMock, &bonusMock);
+	copy.localInit(&envMock);
+	copy = restored;
+	EXPECT_TRUE(copy.battlecraftWaitBonusUsed);
+	copy.afterNewRound();
+	EXPECT_FALSE(copy.waitedThisTurn);
+	EXPECT_FALSE(copy.battlecraftWaitBonusUsed);
+}
+
 TEST_F(UnitStateTest, getAttack)
 {
 	setDefaultExpectations();

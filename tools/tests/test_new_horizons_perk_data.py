@@ -53,11 +53,13 @@ ACTIVE_PERKS = {
     "new-horizons:metamagic.spellBuffer",
     "new-horizons:metamagic.grandMetamagic",
     "new-horizons:metamagic.perfectSequence",
+    "new-horizons:battlecraft.entrench",
 }
 ACTIVE_RANK_SKILLS = {
     "new-horizons:offense",
     "new-horizons:armorer",
     "new-horizons:archery",
+    "new-horizons:battlecraft",
     "new-horizons:warMachines",
     "new-horizons:discipline",
     "new-horizons:logistics",

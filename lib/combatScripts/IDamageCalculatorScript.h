@@ -70,6 +70,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int newHorizonsArcheryDamagePercent = 0;
 	/// Canonical New Horizons Armorer reduction for this physical creature blow.
 	int newHorizonsArmorerReductionPercent = 0;
+	/// One-shot physical premium earned by Waiting under Battlecraft.
+	int battlecraftWaitDamagePercent = 0;
+	/// Independent physical reduction while Defending under Battlecraft.
+	int battlecraftDefendReductionPercent = 0;
 	/// Physical damage reduction supplied by the defending stack's canonical Order.
 	int heroOrderDamageReductionPercent = 0;
 	/// Bulwark reduction in basis points (one hundredth of one percentage point).
@@ -126,6 +130,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Canonical New Horizons Archery ranged damage premium.");
 		s("newHorizonsArmorerReductionPercent", newHorizonsArmorerReductionPercent,
 			"Canonical New Horizons Armorer physical creature damage reduction.");
+		s("battlecraftWaitDamagePercent", battlecraftWaitDamagePercent,
+			"One-shot physical damage premium earned by Waiting under Battlecraft.");
+		s("battlecraftDefendReductionPercent", battlecraftDefendReductionPercent,
+			"Independent physical reduction while Defending under Battlecraft.");
 		s("heroOrderDamageReductionPercent", heroOrderDamageReductionPercent,
 			"Physical damage reduction supplied by the defending canonical Order.");
 		s("bulwarkDamageReductionBasisPoints", bulwarkDamageReductionBasisPoints,

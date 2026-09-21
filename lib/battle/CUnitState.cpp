@@ -374,6 +374,7 @@ CUnitState::CUnitState():
 	natureSummoned(false),
 	waiting(false),
 	waitedThisTurn(false),
+	battlecraftWaitBonusUsed(false),
 	defensiveStanceMeleeBonus(0),
 	defensiveStanceRangedBonus(0),
 	bulwarkPreemptiveUsed(false),
@@ -408,6 +409,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	natureSummoned = other.natureSummoned;
 	waiting = other.waiting;
 	waitedThisTurn = other.waitedThisTurn;
+	battlecraftWaitBonusUsed = other.battlecraftWaitBonusUsed;
 	defensiveStanceMeleeBonus = other.defensiveStanceMeleeBonus;
 	defensiveStanceRangedBonus = other.defensiveStanceRangedBonus;
 	bulwarkPreemptiveUsed = other.bulwarkPreemptiveUsed;
@@ -759,6 +761,11 @@ bool CUnitState::waited(int turn) const
 		return false;
 }
 
+bool CUnitState::battlecraftWaitBonusAvailable() const
+{
+	return waitedThisTurn && !battlecraftWaitBonusUsed;
+}
+
 BattlePhases::Type CUnitState::battleQueuePhase(int turn) const
 {
 	if(turn <= 0 && waited()) //consider waiting state only for ongoing round
@@ -886,6 +893,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("natureSummoned", natureSummoned);
 	handler.serializeBool("waiting", waiting);
 	handler.serializeBool("waitedThisTurn", waitedThisTurn);
+	handler.serializeBool("battlecraftWaitBonusUsed", battlecraftWaitBonusUsed);
 	handler.serializeInt("defensiveStanceMeleeBonus", defensiveStanceMeleeBonus, 0);
 	handler.serializeInt("defensiveStanceRangedBonus", defensiveStanceRangedBonus, 0);
 	handler.serializeBool("bulwarkPreemptiveUsed", bulwarkPreemptiveUsed);
@@ -927,6 +935,7 @@ void CUnitState::reset()
 	natureSummoned = false;
 	waiting = false;
 	waitedThisTurn = false;
+	battlecraftWaitBonusUsed = false;
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
 	bulwarkPreemptiveUsed = false;
@@ -1008,13 +1017,28 @@ HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)
 	return {};
 }
 
-void CUnitState::afterAttack(bool ranged, bool counter)
+void CUnitState::afterAttack(bool ranged, bool counter, bool physical)
 {
 	if(counter)
 		counterAttacks.use();
 
 	if(ranged)
 		shots.use();
+
+	if(physical && waitedThisTurn)
+		battlecraftWaitBonusUsed = true;
+}
+
+void CUnitState::afterWait()
+{
+	// Waiting is a once-per-round action.  Keep an already-spent bonus spent if
+	// a malformed/repeated request reaches the state visitor during the same
+	// round; the authoritative action validator remains responsible for rejecting
+	// that request, but state application must not re-arm the effect.
+	if(!waitedThisTurn)
+		battlecraftWaitBonusUsed = false;
+	waiting = true;
+	waitedThisTurn = true;
 }
 
 void CUnitState::afterNewRound()
@@ -1025,6 +1049,7 @@ void CUnitState::afterNewRound()
 	bulwarkPreemptiveUsed = false;
 	waiting = false;
 	waitedThisTurn = false;
+	battlecraftWaitBonusUsed = false;
 	timeStopTurnConsumedFlag = false;
 	movedThisRound = false;
 	hadMorale = false;
@@ -1043,6 +1068,7 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 	// before this hook.  Clear the explicit provenance alongside them; it must
 	// never survive merely because another temporary bonus used the same
 	// duration.
+	defending = false;
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
 	if(reason == BattleUnitTurnReason::MORALE)

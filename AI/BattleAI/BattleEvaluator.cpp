@@ -678,7 +678,7 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 
 			if (moveTarget.score <= score)
 			{
-				if(evaluationResult.wait)
+				if(evaluationResult.wait && !stack->acquireState()->waitedThisTurn)
 				{
 					return BattleAction::makeWait(stack);
 				}
@@ -737,7 +737,7 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 		cachedAttack.score = score;
 		cachedAttack.turn = moveTarget.turnsToReach;
 
-		if(stack->waited())
+		if(stack->acquireState()->waitedThisTurn)
 		{
 			logAi->debug(
 				"Moving %s towards hex %s[%d], score: %2f",
@@ -775,7 +775,7 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 		}
 	}
 
-	return stack->waited() ?  BattleAction::makeDefend(stack) : BattleAction::makeWait(stack);
+	return stack->acquireState()->waitedThisTurn ? BattleAction::makeDefend(stack) : BattleAction::makeWait(stack);
 }
 
 uint64_t timeElapsed(std::chrono::time_point<std::chrono::steady_clock> start)

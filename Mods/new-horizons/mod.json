@@ -2552,21 +2552,21 @@
 							"basic": {
 								"description": "After a friendly stack Waits, its next attack or retaliation before the end of the round deals +5% physical damage. A stack that Defends gains an additional 5% physical creature-damage reduction until its next activation.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After a friendly stack Waits, its next attack or retaliation before the end of the round deals +5% physical damage. A stack that Defends gains an additional 5% physical creature-damage reduction until its next activation."
 								}
 							},
 							"advanced": {
 								"description": "The conditional Wait damage bonus and Defend reduction become 10%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The conditional Wait damage bonus and Defend reduction become 10%."
 								}
 							},
 							"expert": {
 								"description": "The conditional Wait damage bonus and Defend reduction become 15%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The conditional Wait damage bonus and Defend reduction become 15%."
 								}
 							}
@@ -2598,7 +2598,7 @@
 								"requires": "basic",
 								"description": "The additional physical damage reduction granted by Battlecraft when Defending increases by +5 percentage points.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The additional physical damage reduction granted by Battlecraft when Defending increases by +5 percentage points."
 								}
 							},
