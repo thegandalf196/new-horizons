@@ -16,6 +16,10 @@ The user supplied the current gameplay specification as
 [New Horizons.docx](design-sources/New%20Horizons.docx). It is the newest
 authority for gameplay scope and mechanics. When its roadmap or summary tables
 conflict with a later detailed system section, the detailed section controls.
+Read [NEW_HORIZONS_OVERRIDES.md](NEW_HORIZONS_OVERRIDES.md) immediately after
+the source document. Accepted entries there are later, narrowly scoped user
+instructions and override only the exact scripture rules they name; all other
+scripture rules remain authoritative.
 This currently means that Version 1.0 uses the ten-perk, choose-at-most-three
 Skill model; Governors and Caravans remain future work; the detailed Sorcery
 roster's Magic Arrow with Overcharge controls over the earlier Magic Missile
