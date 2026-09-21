@@ -11,6 +11,7 @@
 #include "CSpellWindow.h"
 
 #include "../../lib/ScopeGuard.h"
+#include "../../lib/CSkillHandler.h"
 
 #include "GUIClasses.h"
 #include "InfoWindows.h"
@@ -499,7 +500,8 @@ void CSpellWindow::processSpells()
 			continue;
 		}
 
-		if(!spell->isCreatureAbility() && myHero->canCastThisSpell(spell.get()) && searchTextFound)
+		const bool ownedOrGranted = !myHero->getSourcesForSpell(spell->getId()).empty();
+		if(!spell->isCreatureAbility() && (myHero->canCastThisSpell(spell.get()) || ownedOrGranted) && searchTextFound)
 			mySpells.push_back(spell.get());
 	}
 
@@ -878,6 +880,7 @@ CSpellWindow::SpellArea::SpellArea(Rect pos, CSpellWindow * owner)
 	addUsedEvents(LCLICK | SHOW_POPUP | HOVER);
 
 	schoolLevel = -1;
+	schoolLocked = false;
 	mySpell = nullptr;
 
 	OBJECT_CONSTRUCTION;
@@ -900,6 +903,11 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 	if(mySpell)
 	{
 		ENGINE->input().hapticFeedback();
+		if(schoolLocked)
+		{
+			GAME->interface()->showInfoDialog(schoolRequirementText);
+			return;
+		}
 
 		if(owner->onSpellSelect)
 		{
@@ -1021,7 +1029,9 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 			dmgInfo = dmgText.toString(&GAME->translator());
 		}
 
-		CRClickPopup::createAndPush(mySpell->getDescriptionTranslated(schoolLevel) + dmgInfo, std::make_shared<CComponent>(ComponentType::SPELL, mySpell->id));
+		const auto requirement = schoolLocked ? "\n\n" + schoolRequirementText : std::string();
+		CRClickPopup::createAndPush(mySpell->getDescriptionTranslated(schoolLevel) + dmgInfo + requirement,
+			std::make_shared<CComponent>(ComponentType::SPELL, mySpell->id));
 	}
 }
 
@@ -1048,6 +1058,9 @@ void CSpellWindow::SpellArea::hover(bool on)
 void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 {
 	schoolBorder.reset();
+	schoolLocked = false;
+	schoolRequirementLabel.clear();
+	schoolRequirementText.clear();
 	image->visible = false;
 	name->setText("");
 	level->setText("");
@@ -1055,6 +1068,21 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 	mySpell = spell;
 	if(mySpell)
 	{
+		const int requiredRank = newHorizonsMagic::requiredSchoolRank(owner->myHero->getMagicRules(), mySpell->getId());
+		schoolLocked = requiredRank > 0 && !newHorizonsMagic::hasSchoolProficiency(owner->myHero, mySpell->getId());
+		if(schoolLocked)
+		{
+			const auto rankName = GAME->translator().translate(TextIdentifier("core.skilllev", requiredRank - 1).get());
+			schoolRequirementLabel = "Locked: " + rankName;
+			std::string schools;
+			for(const auto skill : newHorizonsMagic::spellSchoolSkills(owner->myHero->getMagicRules(), mySpell->getId()))
+			{
+				if(!schools.empty())
+					schools += " or ";
+				schools += skill.toEntity(LIBRARY)->getNameTranslated();
+			}
+			schoolRequirementText = "Requires " + rankName + " " + schools + ".";
+		}
 		SpellSchool whichSchool;
 		schoolLevel = owner->myHero->getSpellSchoolLevel(mySpell, &whichSchool);
 		auto spellCost = owner->myInt->cb->getSpellCost(mySpell, owner->myHero);
@@ -1084,7 +1112,7 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 		}
 
 		ColorRGBA firstLineColor, secondLineColor;
-		if(spellCost > owner->myHero->mana && !owner->onSpellSelect) //hero cannot cast this spell
+		if((spellCost > owner->myHero->mana || schoolLocked) && !owner->onSpellSelect) //hero cannot cast this spell
 		{
 			firstLineColor = Colors::WHITE;
 			secondLineColor = Colors::ORANGE;
@@ -1114,9 +1142,14 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 			level->setText(GAME->translator().translate(levelTextID));
 
 		cost->color = secondLineColor;
-		MetaString costText = MetaString::createFromRawString("%s: %d");
-		costText.replaceTextID("core.genrltxt.387"); // Spell Points
-		costText.replaceNumber(spellCost);
-		cost->setText(costText.toString(&GAME->translator()));
+		if(schoolLocked)
+			cost->setText(schoolRequirementLabel);
+		else
+		{
+			MetaString costText = MetaString::createFromRawString("%s: %d");
+			costText.replaceTextID("core.genrltxt.387"); // Spell Points
+			costText.replaceNumber(spellCost);
+			cost->setText(costText.toString(&GAME->translator()));
+		}
 	}
 }

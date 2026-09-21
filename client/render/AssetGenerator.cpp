@@ -850,7 +850,10 @@ AssetGenerator::AnimationLayoutMap AssetGenerator::createSliderBar(bool brown, b
 
 AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanel(int boxesAmount) const
 {
-	Point size(438, 187);
+	// The ninth stat row is New Horizons Leadership Cost.  Keep it in the
+	// same generated panel as the ordinary creature statistics instead of
+	// appending a separate capability panel below the creature card.
+	Point size(438, 206);
 
 	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);
 	Canvas canvas = image->getCanvas();
@@ -867,7 +870,7 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanel(int boxesAmoun
 	canvas.drawColorBlended(r, rectangleColor);
 	canvas.drawBorder(r, borderColor);
 
-	for(int i = 0; i < 8; i++)
+	for(int i = 0; i < 9; i++)
 	{
 		Rect r(114, 30 + i * 19, 24, 20);
 		canvas.drawColorBlended(r, rectangleColor);
@@ -1116,8 +1119,9 @@ AssetGenerator::AnimationLayoutMap AssetGenerator::createNewHorizonsOrdersButton
 			auto canvas = image->getCanvas();
 			auto gauntlet = ENGINE->renderHandler().loadImage(ImageLocator(
 				ImagePath::builtin("NH_orders_gauntlet_" + stateName + ".png"), EImageBlitMode::SIMPLE));
-			gauntlet->scaleTo(Point(40, 30), EScalingAlgorithm::BILINEAR);
-			canvas.draw(gauntlet, Point(4, 3));
+			// Runtime art is already authored as a border-safe 48x36 state. A
+			// second reduction made the previous glyph read as a clipped fragment.
+			canvas.draw(gauntlet, Point(0, 0));
 			auto classic = ENGINE->renderHandler().loadAnimation(AnimationPath::builtin("ICM005"), EImageBlitMode::OPAQUE);
 			auto frame = classic->getImage(state);
 			canvas.draw(frame, Point(0, 0), Rect(0, 0, width, border));

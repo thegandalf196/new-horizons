@@ -35,6 +35,9 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	{
 		const CSpell * mySpell;
 		int schoolLevel; //range: 0 none, 3 - expert
+		bool schoolLocked;
+		std::string schoolRequirementLabel;
+		std::string schoolRequirementText;
 		CSpellWindow * owner;
 		std::shared_ptr<CAnimImage> image;
 		std::shared_ptr<CAnimImage> schoolBorder;

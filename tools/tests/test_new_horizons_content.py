@@ -277,7 +277,49 @@ class NewHorizonsContentTest(unittest.TestCase):
             'description': 'Halon can use Metamagic one additional time per combat.',
         })
         module = load('Mods/new-horizons/mod.json')
-        self.assertEqual(module['heroes'], ['config/heroes/halon.json'])
+        self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json'])
+
+    def test_fafner_patch_keeps_a_valid_non_faction_skill_with_metamagic(self):
+        patch = load('Mods/new-horizons/Content/config/heroes/fafner.json')['core:fafner']
+        self.assertEqual(patch['skills'], [
+            {'skill': 'new-horizons:learning', 'level': 'basic'},
+            {'skill': 'new-horizons:metamagic', 'level': 'basic'},
+        ])
+
+    def test_tower_unique_buildings_use_new_horizons_identity_and_effects(self):
+        patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:tower']['town']['buildings']
+        self.assertEqual(patch['special2']['name'], 'Astronomy Tower')
+        self.assertEqual(patch['special2']['bonuses'], [])
+        self.assertEqual(patch['special3']['name'], 'Library')
+        self.assertEqual(patch['special3']['type'], 'library')
+        self.assertEqual(patch['special3']['requires'],
+            ['allOf', ['dwellingLvl4'], ['mageGuild4']])
+        self.assertEqual(patch['special3']['cost'], {
+            'gold': 15000, 'wood': 10, 'ore': 10, 'mercury': 5,
+            'sulfur': 5, 'crystal': 5, 'gems': 5,
+        })
+        self.assertEqual(patch['special3']['bonuses'], [
+            {'type': 'CREATURE_GROWTH', 'subtype': 'creatureLevel4', 'val': 1},
+        ])
+        self.assertEqual(patch['special4']['name'], 'Arcane Reservoir')
+        self.assertNotIn('type', patch['special4'])
+        self.assertTrue(patch['special4']['manualHeroVisit'])
+        self.assertEqual(patch['special4']['configuration']['resetParameters'],
+            {'weeks': 1, 'visitors': True})
+        self.assertEqual(patch['special4']['configuration']['visitMode'], 'once')
+
+    def test_dungeon_astral_nexus_replenishes_mana_to_normal_maximum(self):
+        patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:dungeon']['town']['buildings']['special2']
+        self.assertEqual(patch['name'], 'Astral Nexus')
+        self.assertIn('replenishes', patch['description'])
+        configuration = patch['configuration']
+        self.assertEqual(configuration['visitMode'], 'unlimited')
+        self.assertNotIn('resetParameters', configuration)
+        self.assertEqual(len(configuration['rewards']), 1)
+        reward = configuration['rewards'][0]
+        self.assertEqual(reward['manaPercentage'], 100)
+        self.assertIn('spell points', reward['message'].lower())
+        self.assertNotIn('primary', reward)
 
     def test_legacy_secondary_specialties_are_neutralized_without_erasing_other_bonuses(self):
         patches = load('Mods/new-horizons/Content/config/heroes/halon.json')
@@ -377,7 +419,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
         self.assertEqual(module['version'], '0.7.0')
-        self.assertEqual(module['heroes'], ['config/heroes/halon.json'])
+        self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json'])
         self.assertIn('Magic Arrow', module['description'])
         self.assertIn('Overcharge', module['description'])
         self.assertEqual(module['spellSchools'], load('config/newHorizonsSchools.json'))

@@ -52,6 +52,8 @@
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/GameConstants.h"
+#include "../../lib/gameState/CGameState.h"
+#include "../../lib/gameState/NewHorizonsAstrology.h"
 #include "../../lib/gameState/UpgradeInfo.h"
 #include "../../lib/StartInfo.h"
 #include "../../lib/callback/CCallback.h"
@@ -74,6 +76,55 @@ static bool useCompactCreatureBox()
 static bool useAvailableAmountAsCreatureLabel()
 {
 	return settings["gameTweaks"]["availableCreaturesAsDwellingLabel"].Bool();
+}
+
+static std::string getAstrologyWeekPreview(const CGTownInstance * town)
+{
+	if(!town || town->getOwner() != GAME->interface()->playerID
+		|| town->getFactionID() != FactionID::TOWER
+		|| !town->hasBuilt(BuildingID::SPECIAL_2))
+		return {};
+
+	const auto & callback = static_cast<const IGameInfoCallback &>(*GAME->interface()->cb);
+	if(!newHorizonsMagic::rulesActive(callback.getMagicRules()))
+		return {};
+
+	const auto & week = callback.gameState().nextAstrologyWeek;
+	if(!week.known())
+		return {};
+
+	std::string result = "Next Astrology Week: ";
+	auto creatureName = [&week]()
+	{
+		const auto * creature = week.creature.toCreature();
+		return creature ? creature->getNamePluralTranslated() : std::string("unknown creature");
+	};
+
+	switch(week.type)
+	{
+	case EWeekType::NORMAL:
+		result += "Normal growth";
+		break;
+	case EWeekType::DOUBLE_GROWTH:
+		result += "Double growth for " + creatureName();
+		break;
+	case EWeekType::BONUS_GROWTH:
+		result += "Bonus growth for " + creatureName();
+		if(week.additionalGrowth > 0)
+			result += " (+" + std::to_string(week.additionalGrowth) + ")";
+		break;
+	case EWeekType::DEITYOFFIRE:
+		result += "Deity of Fire for " + creatureName();
+		if(week.additionalGrowth > 0)
+			result += " (+" + std::to_string(week.additionalGrowth) + ")";
+		break;
+	case EWeekType::PLAGUE:
+		result += "Plague (available creatures halved; no growth)";
+		break;
+	case EWeekType::FIRST_WEEK:
+		return {};
+	}
+	return result;
 }
 
 struct UpgradableSlotsResult
@@ -296,7 +347,15 @@ void CBuildingRect::showPopupWindow(const Point & cursorPosition)
 	const CBuilding *bld = town->getTown()->buildings.at(bid).get();
 	if (!bid.isDwelling())
 	{
-		CRClickPopup::createAndPush(CInfoWindow::genText(bld->getNameTranslated(), bld->getDescriptionTranslated()),
+		std::string description = bld->getDescriptionTranslated();
+		if(town->getFactionID() == FactionID::TOWER && bld->bid == BuildingID::SPECIAL_2
+			&& newHorizonsMagic::rulesActive(static_cast<const IGameInfoCallback &>(*GAME->interface()->cb).getMagicRules()))
+		{
+			const auto preview = getAstrologyWeekPreview(town);
+			if(!preview.empty())
+				description += "\n\n" + preview;
+		}
+		CRClickPopup::createAndPush(CInfoWindow::genText(bld->getNameTranslated(), description),
 									std::make_shared<CComponent>(ComponentType::BUILDING, BuildingTypeUniqueID(bld->town->faction->getId(), bld->bid)));
 	}
 	else
@@ -374,7 +433,17 @@ std::string CBuildingRect::getSubtitle()//hover text for building
 	auto bid = getBuilding()->bid;
 
 	if (!bid.isDwelling())//non-dwellings - only building name
-		return town->getTown()->buildings.at(getBuilding()->bid)->getNameTranslated();
+	{
+		std::string result = town->getTown()->buildings.at(getBuilding()->bid)->getNameTranslated();
+		if(town->getFactionID() == FactionID::TOWER && getBuilding()->bid == BuildingID::SPECIAL_2
+			&& newHorizonsMagic::rulesActive(static_cast<const IGameInfoCallback &>(*GAME->interface()->cb).getMagicRules()))
+		{
+			const auto preview = getAstrologyWeekPreview(town);
+			if(!preview.empty())
+				result += " - " + preview;
+		}
+		return result;
+	}
 	else//dwellings - recruit %creature%
 	{
 		int level = BuildingID::getLevelIndexFromDwelling(getBuilding()->bid);

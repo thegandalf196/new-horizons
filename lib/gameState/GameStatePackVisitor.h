@@ -97,6 +97,7 @@ public:
 	void visitPlayerStartsTurn(PlayerStartsTurn & pack) override;
 	void visitNewObject(NewObject & pack) override;
 	void visitSetAvailableArtifacts(SetAvailableArtifacts & pack) override;
+	void visitSetHouseOfWisdomScrolls(SetHouseOfWisdomScrolls & pack) override;
 	void visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack) override;
 	void visitEntitiesChanged(EntitiesChanged & pack) override;
 	void visitSetCommanderProperty(SetCommanderProperty & pack) override;

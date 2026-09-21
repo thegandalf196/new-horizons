@@ -19,6 +19,7 @@
 //#include "../CSkillHandler.h"
 #include "../IGameSettings.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/CSpell.h"
 #include "../callback/IGameEventCallback.h"
 #include "../callback/IGameInfoCallback.h"
 #include "../callback/IGameRandomizer.h"
@@ -226,6 +227,39 @@ TResources tuition(const IMarket * market, const JsonNode & magicRules, const IG
 	result[EGameResID::SULFUR] = configuredAmount(config, "sulfur", 2);
 	result[EGameResID::CRYSTAL] = configuredAmount(config, "crystal", 2);
 	result[EGameResID::GEMS] = configuredAmount(config, "gems", 2);
+	return result;
+}
+}
+
+namespace newHorizonsHouseOfWisdom
+{
+bool eligible(const IMarket * market, const JsonNode & magicRules)
+{
+	const auto * town = dynamic_cast<const CGTownInstance *>(market);
+	return town
+		&& town->getFactionID() == FactionID::CONFLUX
+		&& newHorizonsMagic::rulesActive(magicRules);
+}
+
+bool active(const IMarket * market, const JsonNode & magicRules)
+{
+	const auto * town = dynamic_cast<const CGTownInstance *>(market);
+	return eligible(market, magicRules)
+		&& town->hasBuilt(BuildingID::SPECIAL_2)
+		&& town->allowsTrade(EMarketMode::RESOURCE_SKILL);
+}
+
+TResources price(const SpellID & spell)
+{
+	TResources result;
+	const auto * definition = spell.toSpell();
+	if(!definition)
+		return result;
+
+	// Level-one scrolls cost 1,000 gold; higher-level scrolls scale linearly.
+	// This keeps the storefront useful early while making rare high-level
+	// effects a meaningful purchase without introducing a second currency.
+	result[EGameResID::GOLD] = 1000 * std::max(1, definition->getLevel());
 	return result;
 }
 }

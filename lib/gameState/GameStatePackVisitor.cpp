@@ -1201,9 +1201,18 @@ void GameStatePackVisitor::visitSetAvailableArtifacts(SetAvailableArtifacts & pa
 	}
 }
 
+void GameStatePackVisitor::visitSetHouseOfWisdomScrolls(SetHouseOfWisdomScrolls & pack)
+{
+	if(auto * town = gs.getTown(pack.townId))
+		town->setHouseOfWisdomScrolls(pack.scrolls);
+	else
+		logNetwork->error("Wrong House of Wisdom town id!");
+}
+
 void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 {
 	gs.day = pack.day;
+	gs.nextAstrologyWeek = pack.nextAstrologyWeek;
 	if(newHorizonsMagic::adventureSpellRulesActive(gs.getMagicRules()))
 	{
 		for(auto * hero : gs.getMap().getObjects<CGHeroInstance>())

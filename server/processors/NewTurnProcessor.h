@@ -11,6 +11,7 @@
 
 #include "../../lib/constants/EntityIdentifiers.h"
 #include "../../lib/constants/Enumerations.h"
+#include "../../lib/gameState/NewHorizonsAstrology.h"
 #include "../../lib/gameState/RumorState.h"
 
 class CGTownInstance;
@@ -51,6 +52,8 @@ class NewTurnProcessor : boost::noncopyable
 	RumorState pickNewRumor();
 	InfoWindow createInfoWindow(EWeekType weekType, CreatureID creatureWeek, bool newMonth, int additionalGrowth);
 	std::tuple<EWeekType, CreatureID, int> pickWeekType(bool newMonth);
+	AstrologyWeek pickAstrologyWeek(bool newMonth);
+	bool hasAstronomyTowerDefinition() const;
 
 	NewTurn generateNewTurnPack();
 	void handleTimeEvents(PlayerColor player);

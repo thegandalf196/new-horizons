@@ -90,12 +90,14 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_MYSTIC_POND_RESULTS, // authoritative weekly Mystic Pond resource results
 	NEW_HORIZONS_ADVENTURE_MAGIC, // saved neutral adventure-spell roster usage state
 	NEW_HORIZONS_CATAPULT_STRUCTURAL_DAMAGE, // absolute Siege-scaled Catapult packet damage
+	NEW_HORIZONS_ASTROLOGY_PREVIEW, // server-authored next Astrology Week result
+	NEW_HORIZONS_HOUSE_OF_WISDOM, // deterministic per-town New Horizons scroll storefront stock
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_CATAPULT_STRUCTURAL_DAMAGE,
+	CURRENT = NEW_HORIZONS_HOUSE_OF_WISDOM,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");

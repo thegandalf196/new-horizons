@@ -281,6 +281,11 @@ void SetAvailableArtifacts::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetAvailableArtifacts(*this);
 }
 
+void SetHouseOfWisdomScrolls::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetHouseOfWisdomScrolls(*this);
+}
+
 void NewArtifact::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitNewArtifact(*this);

@@ -1205,6 +1205,8 @@ bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 {
 	if(!spell || !newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spell->getId()))
 		return false;
+	if(!newHorizonsMagic::hasSchoolProficiency(this, spell->getId()))
+		return false;
 	const bool inSpellBook = spellbookContainsSpell(spell->getId()) && hasSpellbook();
 
 	if(spell->isSpecial())
@@ -1234,7 +1236,12 @@ bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned
 	if(!hasSpellbook())
 		return false;
 
-	if(getSpellLevel(spell) > maxSpellLevel()) //not enough wisdom
+	if(newHorizonsMagic::rulesActive(getMagicRules()))
+	{
+		if(!newHorizonsMagic::hasSchoolProficiency(this, spell->getId()))
+			return false;
+	}
+	else if(getSpellLevel(spell) > maxSpellLevel()) // legacy Wisdom gate
 		return false;
 
 	if(vstd::contains(spells, spell->getId()))//already known

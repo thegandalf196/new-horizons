@@ -13,4 +13,7 @@
 #include "../constants/EntityIdentifiers.h"
 
 using TradeItemSell = VariantIdentifier<GameResID, SlotID, ArtifactInstanceID>;
-using TradeItemBuy = VariantIdentifier<GameResID, PlayerColor, ArtifactID, SecondarySkill>;
+// SpellID is appended to preserve the wire/save indices of all legacy trade
+// item alternatives.  New Horizons' House of Wisdom reuses RESOURCE_SKILL,
+// but carries a spell scroll instead of a secondary skill.
+using TradeItemBuy = VariantIdentifier<GameResID, PlayerColor, ArtifactID, SecondarySkill, SpellID>;

@@ -217,6 +217,7 @@ set(test_SRCS
 		server/queries/NewHorizonsUniqueBuildingTrainingTest.cpp
 		server/queries/NewHorizonsMagicUniversityTest.cpp
 		server/NewHorizonsEconomyTest.cpp
+		server/NewHorizonsAstrologyTest.cpp
 		server/NewHorizonsLeadershipAdmissionTest.cpp
 
 		texts/TextOperationsTest.cpp

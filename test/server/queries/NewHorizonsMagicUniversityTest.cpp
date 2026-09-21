@@ -15,6 +15,7 @@
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../server/CGameHandler.h"
 #include "../../mock/GameHandlerTestServer.h"
 #include "../../mock/TinyMapGameTest.h"
@@ -54,6 +55,10 @@ protected:
 		hero = findHeroByOwner(PlayerColor(0));
 		ASSERT_NE(town, nullptr);
 		ASSERT_NE(hero, nullptr);
+		// The simulation authors stock during town initialization, before the
+		// building exists. Constructing it later must only expose that stock;
+		// client and AI reads must never generate gameplay state.
+		ASSERT_EQ(town->getHouseOfWisdomScrolls().size(), 6u);
 		town->addBuilding(BuildingID::SPECIAL_2);
 	}
 
@@ -70,81 +75,69 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsMagicUniversityTest, OffersAllSchoolsAndRetainsOfferAfterEachPurchase)
+TEST_F(NewHorizonsMagicUniversityTest, HouseOfWisdomOffersSpellScrollsAndNoSecondarySkills)
 {
 	startGame();
-	const auto schools = newHorizonsMagic::schoolSkills(gameState()->getMagicRules());
-	ASSERT_EQ(schools.size(), 6u);
-
 	const auto offers = town->availableItemsIds(EMarketMode::RESOURCE_SKILL);
-	ASSERT_EQ(offers.size(), schools.size());
-	for(const auto skill : schools)
-		EXPECT_TRUE(vstd::contains(offers, skill));
+	ASSERT_EQ(offers.size(), 6u);
+	for(const auto & offer : offers)
+	{
+		const auto spell = offer.as<SpellID>();
+		EXPECT_TRUE(spell.hasValue());
+		EXPECT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(gameState()->getMagicRules(), spell));
+		EXPECT_FALSE(offer.as<SecondarySkill>().hasValue());
+	}
+	for(const auto school : newHorizonsMagic::schoolSkills(gameState()->getMagicRules()))
+		EXPECT_FALSE(vstd::contains(offers, school));
+}
 
-	const auto tuition = newHorizonsUniversity::tuition(town, gameState()->getMagicRules(), gameState()->getSettings());
-	EXPECT_TRUE(newHorizonsUniversity::usesNewHorizonsTuition(town, gameState()->getMagicRules()));
-	EXPECT_EQ(tuition[EGameResID::GOLD], 5000);
-	EXPECT_EQ(tuition[EGameResID::MERCURY], 2);
-	EXPECT_EQ(tuition[EGameResID::SULFUR], 2);
-	EXPECT_EQ(tuition[EGameResID::CRYSTAL], 2);
-	EXPECT_EQ(tuition[EGameResID::GEMS], 2);
-
-	grant(tuition * 2);
+TEST_F(NewHorizonsMagicUniversityTest, PurchaseDeductsGoldGrantsScrollAndRemovesOffer)
+{
+	startGame();
+	const auto spell = town->availableItemsIds(EMarketMode::RESOURCE_SKILL).front().as<SpellID>();
+	const auto price = newHorizonsHouseOfWisdom::price(spell);
+	grant(price * 2);
 	const auto resourcesBefore = gameState()->getPlayerState(PlayerColor(0))->resources;
 	GameHandlerTestServer server(gameState());
 	CGameHandler handler(server, gameState());
-	ASSERT_TRUE(handler.buySecSkill(town, hero, schools[0]));
-	EXPECT_EQ(hero->getSecSkillLevel(schools[0]), MasteryLevel::BASIC);
-	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, resourcesBefore - tuition);
-	EXPECT_EQ(town->availableItemsIds(EMarketMode::RESOURCE_SKILL).size(), 6u);
-	ASSERT_TRUE(handler.buySecSkill(town, hero, schools[1]));
-	EXPECT_EQ(hero->getSecSkillLevel(schools[1]), MasteryLevel::BASIC);
-	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, resourcesBefore - tuition * 2);
-	EXPECT_EQ(town->availableItemsIds(EMarketMode::RESOURCE_SKILL).size(), 6u);
+	ASSERT_TRUE(handler.buyHouseOfWisdomScroll(town, hero, spell));
+	EXPECT_TRUE(hero->hasScroll(spell, false));
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, resourcesBefore - price);
+	EXPECT_EQ(town->availableItemsIds(EMarketMode::RESOURCE_SKILL).size(), 5u);
+	for(const auto school : newHorizonsMagic::schoolSkills(gameState()->getMagicRules()))
+		EXPECT_EQ(hero->getSecSkillLevel(school), MasteryLevel::NONE);
 }
 
-TEST_F(NewHorizonsMagicUniversityTest, InsufficientRareResourceDoesNotPartiallyCharge)
+TEST_F(NewHorizonsMagicUniversityTest, InsufficientGoldDoesNotPartiallyCharge)
 {
 	startGame();
-	const auto school = newHorizonsMagic::schoolSkills(gameState()->getMagicRules()).front();
-	const auto tuition = newHorizonsUniversity::tuition(town, gameState()->getMagicRules(), gameState()->getSettings());
-	TResources available = tuition;
-	available[EGameResID::MERCURY]--;
+	const auto spell = town->availableItemsIds(EMarketMode::RESOURCE_SKILL).front().as<SpellID>();
+	const auto price = newHorizonsHouseOfWisdom::price(spell);
+	TResources available = price;
+	available[EGameResID::GOLD]--;
 	grant(-gameState()->getPlayerState(PlayerColor(0))->resources);
 	grant(available);
 	const auto before = gameState()->getPlayerState(PlayerColor(0))->resources;
 
 	GameHandlerTestServer server(gameState());
 	CGameHandler handler(server, gameState());
-	EXPECT_FALSE(handler.buySecSkill(town, hero, school));
+	EXPECT_FALSE(handler.buyHouseOfWisdomScroll(town, hero, spell));
 	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, before);
-	EXPECT_EQ(hero->getSecSkillLevel(school), MasteryLevel::NONE);
+	EXPECT_FALSE(hero->hasScroll(spell, false));
 }
 
-TEST_F(NewHorizonsMagicUniversityTest, FullSecondarySkillRosterBlocksPurchaseWithoutCharging)
+TEST_F(NewHorizonsMagicUniversityTest, StockPersistsAcrossSaveAndLoad)
 {
 	startGame();
-	const auto school = newHorizonsMagic::schoolSkills(gameState()->getMagicRules()).front();
-	const int skillLimit = gameState()->getSettings().getInteger(EGameSettings::HEROES_SKILL_PER_HERO);
-	int added = 0;
-	for(int index = 0; index < LIBRARY->skillh->size() && added < skillLimit; ++index)
-	{
-		const SecondarySkill candidate(index);
-		if(candidate == school)
-			continue;
-		hero->setSecSkillLevel(candidate, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		++added;
-	}
-	ASSERT_EQ(hero->getSecSkillLevel(school), MasteryLevel::NONE);
-	ASSERT_FALSE(hero->canLearnSkill());
+	const auto before = town->availableItemsIds(EMarketMode::RESOURCE_SKILL);
+	const auto saved = gameState()->saveToMemory();
 
-	const auto tuition = newHorizonsUniversity::tuition(town, gameState()->getMagicRules(), gameState()->getSettings());
-	grant(tuition);
-	const auto before = gameState()->getPlayerState(PlayerColor(0))->resources;
-	GameHandlerTestServer server(gameState());
-	CGameHandler handler(server, gameState());
-	EXPECT_FALSE(handler.buySecSkill(town, hero, school));
-	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, before);
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredTown = restored.getTown(town->id);
+	ASSERT_NE(restoredTown, nullptr);
+	EXPECT_EQ(restoredTown->availableItemsIds(EMarketMode::RESOURCE_SKILL), before);
 }
 
 TEST(NewHorizonsMagicUniversityPriceTest, LegacyUniversityRemainsGoldOnly)

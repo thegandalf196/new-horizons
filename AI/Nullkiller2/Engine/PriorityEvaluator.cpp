@@ -13,6 +13,7 @@
 #include "Nullkiller.h"
 #include "../../../lib/entities/artifact/CArtifact.h"
 #include "../../../lib/entities/ResourceTypeHandler.h"
+#include "../../../lib/mapObjects/CGMarket.h"
 #include "../../../lib/mapObjects/CGResource.h"
 #include "../../../lib/mapping/TerrainTile.h"
 #include "../../../lib/CPlayerState.h"
@@ -364,6 +365,13 @@ int RewardEvaluator::getGoldCost(const CGObjectInstance * target, const CGHeroIn
 
 	if(auto * m = dynamic_cast<const IMarket *>(target))
 	{
+		if(newHorizonsHouseOfWisdom::active(m, aiNk->cc->getMagicRules()))
+		{
+			for(const auto & offer : m->availableItemsIds(EMarketMode::RESOURCE_SKILL))
+				if(const auto spell = offer.as<SpellID>(); spell.hasValue())
+					return newHorizonsHouseOfWisdom::price(spell)[EGameResID::GOLD];
+			return 0;
+		}
 		if(m->allowsTrade(EMarketMode::RESOURCE_SKILL))
 			return aiNk->cc->getSettings().getInteger(EGameSettings::MARKETS_UNIVERSITY_GOLD_COST);
 	}

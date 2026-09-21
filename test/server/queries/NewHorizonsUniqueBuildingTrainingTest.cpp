@@ -52,7 +52,7 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsUniqueBuildingTrainingTest, FourBuildingsTrainOncePerHeroPerTownAndPersist)
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, TrainingPersistsAndAstralNexusAlwaysRefillsToNormalMaximum)
 {
 	const auto castle = faction("core:castle");
 	const auto inferno = faction("core:inferno");
@@ -100,8 +100,6 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, FourBuildingsTrainOncePerHeroPerTo
 	ASSERT_NE(dungeonTown, nullptr);
 	ASSERT_NE(strongholdTown, nullptr);
 	ASSERT_TRUE(dungeonTown->rewardableBuildings.contains(BuildingID::SPECIAL_2));
-	EXPECT_EQ(dungeonTown->rewardableBuildings.at(BuildingID::SPECIAL_2)->configuration.getResetDuration(
-		gameState()->getCalendar()), 0u);
 
 	const int leadershipBefore = hero->valOfBonuses(BonusType::LEADERSHIP);
 	const auto leadershipCapacityBefore = hero->getLeadershipCapacity()->capacity;
@@ -110,7 +108,6 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, FourBuildingsTrainOncePerHeroPerTo
 	ASSERT_TRUE(pikemanCapacityBefore);
 	const int attackBefore = hero->getPrimSkillLevel(PrimarySkill::ATTACK);
 	const int spellPowerBefore = hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
-	const int knowledgeBefore = hero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
 	GameHandlerTestServer server(gameState(), PlayerColor(0));
 	CGameHandler gameHandler(server, gameState());
 	CGTownInstance * activeTown = nullptr;
@@ -123,7 +120,10 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, FourBuildingsTrainOncePerHeroPerTo
 			activeTown->setVisitingHero(nullptr);
 		town->setVisitingHero(hero);
 		gameHandler.heroVisitCastle(town, hero);
-		EXPECT_TRUE(town->rewardableBuildings.at(building)->wasVisited(hero));
+		if(town->getFactionID() == dungeon && building == BuildingID::SPECIAL_2)
+			EXPECT_FALSE(town->rewardableBuildings.at(building)->wasVisited(hero));
+		else
+			EXPECT_TRUE(town->rewardableBuildings.at(building)->wasVisited(hero));
 		activeTown = town;
 	};
 
@@ -145,8 +145,22 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, FourBuildingsTrainOncePerHeroPerTo
 
 	visit(infernoTown, BuildingID::SPECIAL_4);
 	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), spellPowerBefore + 5);
+	const int manaLimitBeforeVisit = hero->manaLimit();
+	ASSERT_GT(manaLimitBeforeVisit, 7);
+	gameHandler.setManaPoints(hero->id, manaLimitBeforeVisit - 7);
+	ASSERT_EQ(hero->mana, manaLimitBeforeVisit - 7);
 	visit(dungeonTown, BuildingID::SPECIAL_2);
-	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), knowledgeBefore + 5);
+	EXPECT_EQ(hero->mana, hero->manaLimit());
+	EXPECT_EQ(hero->mana, manaLimitBeforeVisit);
+	gameHandler.setManaPoints(hero->id, manaLimitBeforeVisit - 3);
+	ASSERT_EQ(hero->mana, manaLimitBeforeVisit - 3);
+	visit(dungeonTown, BuildingID::SPECIAL_2);
+	EXPECT_EQ(hero->mana, hero->manaLimit());
+	gameHandler.setManaPoints(hero->id, manaLimitBeforeVisit + 11);
+	ASSERT_EQ(hero->mana, manaLimitBeforeVisit + 11);
+	visit(dungeonTown, BuildingID::SPECIAL_2);
+	EXPECT_EQ(hero->mana, hero->manaLimit());
+	EXPECT_EQ(hero->mana, manaLimitBeforeVisit);
 	visit(strongholdTown, BuildingID::SPECIAL_4);
 	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::ATTACK), attackBefore + 5);
 
@@ -167,12 +181,75 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, FourBuildingsTrainOncePerHeroPerTo
 	ASSERT_NE(restoredHero, nullptr);
 	EXPECT_EQ(restoredHero->valOfBonuses(BonusType::LEADERSHIP), leadershipBefore + 200);
 	EXPECT_EQ(restoredHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), spellPowerBefore + 5);
-	EXPECT_EQ(restoredHero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), knowledgeBefore + 5);
+	EXPECT_EQ(restoredHero->mana, restoredHero->manaLimit());
 	EXPECT_EQ(restoredHero->getPrimSkillLevel(PrimarySkill::ATTACK), attackBefore + 5);
 
 	EXPECT_TRUE(restored.getTown(castleOneID)->rewardableBuildings.at(BuildingID::SPECIAL_3)->wasVisited(restoredHero));
 	EXPECT_TRUE(restored.getTown(castleTwoID)->rewardableBuildings.at(BuildingID::SPECIAL_3)->wasVisited(restoredHero));
 	EXPECT_TRUE(restored.getTown(infernoID)->rewardableBuildings.at(BuildingID::SPECIAL_4)->wasVisited(restoredHero));
-	EXPECT_TRUE(restored.getTown(dungeonID)->rewardableBuildings.at(BuildingID::SPECIAL_2)->wasVisited(restoredHero));
+	EXPECT_FALSE(restored.getTown(dungeonID)->rewardableBuildings.at(BuildingID::SPECIAL_2)->wasVisited(restoredHero));
 	EXPECT_TRUE(restored.getTown(strongholdID)->rewardableBuildings.at(BuildingID::SPECIAL_4)->wasVisited(restoredHero));
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHeroPerWeek)
+{
+	const auto tower = faction("core:tower");
+
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(48, false).playerActive(PlayerColor(0))
+		.town({20, 20, 0}, tower, PlayerColor(0))
+		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0))
+		.hero({7, 5, 0}, heroType("core:tyris"), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	auto * town = towns.front();
+	town->addBuilding(BuildingID::SPECIAL_4);
+	ASSERT_TRUE(town->rewardableBuildings.contains(BuildingID::SPECIAL_4));
+	auto * reservoir = town->rewardableBuildings.at(BuildingID::SPECIAL_4).get();
+	ASSERT_EQ(reservoir->configuration.visitMode, Rewardable::VISIT_ONCE);
+	ASSERT_TRUE(reservoir->configuration.resetParameters.visitors);
+	ASSERT_EQ(reservoir->configuration.getResetDuration(gameState()->getCalendar()), 7u);
+
+	auto * firstHero = findHeroAt({5, 5, 0});
+	auto * secondHero = findHeroAt({7, 5, 0});
+	ASSERT_NE(firstHero, nullptr);
+	ASSERT_NE(secondHero, nullptr);
+	ASSERT_NE(firstHero, secondHero);
+
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+
+	const int firstManaLimit = firstHero->manaLimit();
+	ASSERT_GT(firstManaLimit, 3);
+	town->setVisitingHero(firstHero);
+	gameHandler.setManaPoints(firstHero->id, firstManaLimit - 3);
+	ASSERT_TRUE(gameHandler.visitTownBuilding(town->id, BuildingID::SPECIAL_4));
+	EXPECT_EQ(firstHero->mana, firstManaLimit * 2);
+	EXPECT_TRUE(reservoir->wasVisited(firstHero));
+
+	// VISIT_ONCE is shared by the physical building, so a different hero is
+	// refused until the weekly visitor set is cleared.
+	town->setVisitingHero(nullptr);
+	town->setVisitingHero(secondHero);
+	const int secondManaLimit = secondHero->manaLimit();
+	ASSERT_GT(secondManaLimit, 4);
+	gameHandler.setManaPoints(secondHero->id, secondManaLimit - 4);
+	ASSERT_TRUE(gameHandler.visitTownBuilding(town->id, BuildingID::SPECIAL_4));
+	EXPECT_EQ(secondHero->mana, secondManaLimit - 4);
+
+	// The reset fires when the authoritative NewTurn packet advances the map
+	// from day 7 to day 8, i.e. at the start of the next week.
+	for(int day = 0; day < 8; ++day)
+		gameHandler.onNewTurn();
+	EXPECT_EQ(gameState()->day, 8u);
+	EXPECT_FALSE(reservoir->wasVisited(firstHero));
+
+	town->setVisitingHero(nullptr);
+	town->setVisitingHero(secondHero);
+	gameHandler.setManaPoints(secondHero->id, secondManaLimit - 2);
+	ASSERT_TRUE(gameHandler.visitTownBuilding(town->id, BuildingID::SPECIAL_4));
+	EXPECT_EQ(secondHero->mana, secondManaLimit * 2);
+	EXPECT_TRUE(reservoir->wasVisited(secondHero));
 }

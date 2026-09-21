@@ -21,6 +21,7 @@
 #include "../../lib/mapObjects/MapObjects.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/mapObjects/CGMarket.h"
 #include "../../lib/mapping/TerrainTile.h"
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/IGameSettings.h"
@@ -959,6 +960,27 @@ void AIGateway::performObjectInteraction(const CGObjectInstance * obj, HeroPtr h
 			{
 				if(heroPtr->getVisitedTown()->hasBuilt(BuildingID::MAGES_GUILD_1))
 					cc->buyArtifact(heroPtr.get(), ArtifactID::SPELLBOOK);
+			}
+
+			const auto * visitedTown = heroPtr->getVisitedTown();
+			if(visitedTown && newHorizonsHouseOfWisdom::active(visitedTown, cc->getMagicRules()))
+			{
+				for(const auto & offer : visitedTown->availableItemsIds(EMarketMode::RESOURCE_SKILL))
+				{
+					const auto spell = offer.as<SpellID>();
+					if(!spell.hasValue())
+						continue;
+					if(!cc->getResourceAmount().canAfford(newHorizonsHouseOfWisdom::price(spell)))
+						continue;
+					if(ArtifactUtils::getArtAnyPosition(heroPtr.get(), ArtifactID::SPELL_SCROLL) == ArtifactPosition::PRE_FIRST)
+						break;
+
+					// The regular trade request goes through the server validator,
+					// just like a human player's House of Wisdom purchase.
+					cc->trade(visitedTown->getObjInstanceID(), EMarketMode::RESOURCE_SKILL,
+						GameResID(GameResID::GOLD), spell, 1, heroPtr.get());
+					break;
+				}
 			}
 		}
 		break;

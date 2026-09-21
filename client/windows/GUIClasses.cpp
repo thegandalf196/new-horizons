@@ -30,6 +30,7 @@
 #include "media/ISoundPlayer.h"
 
 #include "../widgets/CComponent.h"
+#include "../widgets/CComponentHolder.h"
 #include "../widgets/CGarrisonInt.h"
 #include "../widgets/CreatureCostBox.h"
 #include "../widgets/ControllerActionButton.h"
@@ -53,6 +54,7 @@
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/CHeroClass.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
+#include "../../lib/spells/CSpell.h"
 #include "../../lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "../../lib/mapObjectConstructors/CommonConstructors.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -1281,7 +1283,7 @@ void CTransformerWindow::close()
 	CStatusbarWindow::close();
 }
 
-CUniversityWindow::CItem::CItem(CUniversityWindow * _parent, int _ID, int X, int Y)
+CUniversityWindow::CItem::CItem(CUniversityWindow * _parent, SecondarySkill _ID, int X, int Y)
 	: CIntObject(LCLICK | SHOW_POPUP | HOVER),
 	ID(_ID),
 	parent(_parent)
@@ -1307,8 +1309,52 @@ CUniversityWindow::CItem::CItem(CUniversityWindow * _parent, int _ID, int X, int
 	update();
 }
 
+CUniversityWindow::CItem::CItem(CUniversityWindow * _parent, SpellID _ID, int X, int Y)
+	: CIntObject(LCLICK | SHOW_POPUP | HOVER),
+	parent(_parent),
+	scrollID(_ID),
+	scrollMode(true)
+{
+	OBJECT_CONSTRUCTION;
+	pos.x += X;
+	pos.y += Y;
+
+	scroll = std::make_shared<CArtPlace>(Point(), ArtifactID::SPELL_SCROLL, scrollID);
+	scroll->setClickPressedCallback([this](CComponentHolder&, const Point&)
+		{
+			const auto goods = parent->market->availableItemsIds(EMarketMode::RESOURCE_SKILL);
+			if(!vstd::contains(goods, TradeItemBuy(scrollID)))
+				return;
+			const auto cost = newHorizonsHouseOfWisdom::price(scrollID);
+			if(GAME->interface()->cb->getResourceAmount().canAfford(cost))
+				parent->makeDeal(scrollID);
+		});
+	update();
+}
+
 void CUniversityWindow::CItem::update()
 {
+	if(scrollMode)
+	{
+		const auto goods = parent->market->availableItemsIds(EMarketMode::RESOURCE_SKILL);
+		const bool available = vstd::contains(goods, TradeItemBuy(scrollID));
+		const auto cost = newHorizonsHouseOfWisdom::price(scrollID);
+		const bool canAfford = available && GAME->interface()->cb->getResourceAmount().canAfford(cost);
+		const auto image = canAfford ? ImagePath::builtin("UNIVGREN") : ImagePath::builtin("UNIVRED");
+
+		OBJECT_CONSTRUCTION;
+		if(available)
+			scroll->setArtifact(ArtifactID::SPELL_SCROLL, scrollID);
+		else
+			scroll->setArtifact(ArtifactID(ArtifactID::NONE));
+		topBar = std::make_shared<CPicture>(image, Point(-28, -22));
+		bottomBar = std::make_shared<CPicture>(image, Point(-28, 48));
+		name = std::make_shared<CLabel>(22, -13, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, scrollID.toSpell()->getNameTranslated());
+		level = std::make_shared<CLabel>(22, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE,
+			std::to_string(cost[EGameResID::GOLD]) + " " + GameResID(EGameResID::GOLD).toResource()->getNameTranslated());
+		return;
+	}
+
 	bool skillKnown = parent->hero->getSecSkillLevel(ID);
 	bool canLearn =	parent->hero->canLearnSkill(ID);
 
@@ -1334,7 +1380,8 @@ CUniversityWindow::CUniversityWindow(const CGHeroInstance * _hero, BuildingID bu
 	: CWindowObject(PLAYER_COLORED_BORDERED_STATUSBAR, getUniversityBackground(_market->availableItemsIds(EMarketMode::RESOURCE_SKILL).size())),
 	hero(_hero),
 	onWindowClosed(onWindowClosed),
-	market(_market)
+	market(_market),
+	houseOfWisdom(newHorizonsHouseOfWisdom::active(_market, GAME->interface()->cb->getMagicRules()))
 {
 	OBJECT_CONSTRUCTION;
 
@@ -1347,6 +1394,12 @@ CUniversityWindow::CUniversityWindow(const CGHeroInstance * _hero, BuildingID bu
 	{
 		auto faction = town->getTown()->faction->getId();
 		titlePic = std::make_shared<CAnimImage>(faction.toFaction()->town->clientInfo.buildingsIcons, building.getNum());
+		if(houseOfWisdom && building.hasValue())
+		{
+			const auto & buildingInfo = town->getTown()->buildings.at(building);
+			titleStr = buildingInfo->getNameTranslated();
+			speechStr = buildingInfo->getDescriptionTranslated();
+		}
 	}
 	else if(auto uni = dynamic_cast<const CGUniversity *>(_market); uni->appearance)
 	{
@@ -1377,7 +1430,13 @@ CUniversityWindow::CUniversityWindow(const CGHeroInstance * _hero, BuildingID bu
 	std::vector<TradeItemBuy> goods = market->availableItemsIds(EMarketMode::RESOURCE_SKILL);
 
 	for(int i=0; i<goods.size(); i++)//prepare clickable items
-		items.push_back(std::make_shared<CItem>(this, goods[i].as<SecondarySkill>().getNum(), getUniversityItemPosX(i, goods.size(), pos.w), 234));
+	{
+		const auto x = getUniversityItemPosX(i, goods.size(), pos.w);
+		if(houseOfWisdom)
+			items.push_back(std::make_shared<CItem>(this, goods[i].as<SpellID>(), x, 234));
+		else
+			items.push_back(std::make_shared<CItem>(this, goods[i].as<SecondarySkill>(), x, 234));
+	}
 
 	cancel = std::make_shared<CButton>(Point(centerX - 32, 313), AnimationPath::builtin("IOKAY.DEF"), LIBRARY->generaltexth->zelp[632], [&](){ close(); }, EShortcut::GLOBAL_ACCEPT);
 	statusbar = CGStatusBar::create(std::make_shared<CPicture>(background->getSurface(), Rect(8, pos.h - 26, pos.w - 16, 19), 8, pos.h - 26));
@@ -1405,6 +1464,11 @@ void CUniversityWindow::updateSecondarySkills()
 void CUniversityWindow::makeDeal(SecondarySkill skill)
 {
 	GAME->interface()->cb->trade(market->getObjInstanceID(), EMarketMode::RESOURCE_SKILL, GameResID(GameResID::GOLD), skill, 1, hero);
+}
+
+void CUniversityWindow::makeDeal(SpellID spell)
+{
+	GAME->interface()->cb->trade(market->getObjInstanceID(), EMarketMode::RESOURCE_SKILL, GameResID(GameResID::GOLD), spell, 1, hero);
 }
 
 CUnivConfirmWindow::CUnivConfirmWindow(CUniversityWindow * owner_, SecondarySkill SKILL, TResources tuition_, bool available)

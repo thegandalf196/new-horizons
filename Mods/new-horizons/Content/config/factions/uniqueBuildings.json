@@ -43,25 +43,28 @@
 			}
 		}
 	},
+	"core:conflux": {
+		"town": {
+			"buildings": {
+				"special2": {
+					"name": "House of Wisdom",
+					"description": "The House of Wisdom sells a randomly generated selection of spell scrolls to visiting heroes."
+				}
+			}
+		}
+	},
 	"core:dungeon": {
 		"town": {
 			"buildings": {
 				"special2": {
 					"name": "Astral Nexus",
-					"description": "The Astral Nexus permanently expands each visiting hero's Knowledge.",
+					"description": "The Astral Nexus immediately replenishes each visiting hero's spell points to their normal maximum.",
 					"configuration": {
-						"resetParameters": {
-							"weeks": 0,
-							"visitors": false
-						},
-						"visitMode": "hero",
-						"notVisitedTooltip": "Training available for this hero.",
-						"visitedTooltip": "This hero has already trained here.",
-						"onVisitedMessage": "This hero has already received training from the Astral Nexus.",
+						"visitMode": "unlimited",
 						"rewards": [
 							{
-								"message": "The Astral Nexus permanently increases this hero's Knowledge by 5.",
-								"primary": { "knowledge": 5 }
+								"message": "The Astral Nexus replenishes this hero's spell points to their normal maximum.",
+								"manaPercentage": 100
 							}
 						]
 					}
@@ -84,6 +87,56 @@
 							{
 								"message": "The Hall of Valhalla permanently increases this hero's Attack by 5.",
 								"primary": { "attack": 5 }
+							}
+						]
+					}
+				}
+			}
+		}
+	},
+	"core:tower": {
+		"town": {
+			"buildings": {
+				"special2": {
+					"name": "Astronomy Tower",
+					"description": "The Astronomy Tower reveals the next Astrology Week one week before it begins.",
+					"bonuses": []
+				},
+				"special3": {
+					"type": "library",
+					"name": "Library",
+					"description": "The Library increases weekly Mage and Arch Mage growth by 1. It no longer adds Mage Guild spells.",
+					"requires": [ "allOf", [ "dwellingLvl4" ], [ "mageGuild4" ] ],
+					"cost": {
+						"gold": 15000,
+						"wood": 10,
+						"ore": 10,
+						"mercury": 5,
+						"sulfur": 5,
+						"crystal": 5,
+						"gems": 5
+					},
+					"bonuses": [
+						{ "type": "CREATURE_GROWTH", "subtype": "creatureLevel4", "val": 1 }
+					]
+				},
+				"special4": {
+					"name": "Arcane Reservoir",
+					"description": "Once per week, the Arcane Reservoir can raise one visiting hero's current Mana to twice that hero's normal maximum.",
+					"manualHeroVisit": true,
+					"configuration": {
+						"resetParameters": {
+							"weeks": 1,
+							"visitors": true
+						},
+						"visitMode": "once",
+						"rewards": [
+							{
+								"limiter": {
+									"noneOf": [ { "manaPercentage": 200 } ]
+								},
+								"message": "The Arcane Reservoir doubles this hero's current Mana for the week.",
+								"manaPercentage": 200
 							}
 						]
 					}

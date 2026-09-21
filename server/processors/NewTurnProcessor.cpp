@@ -640,6 +640,30 @@ std::tuple<EWeekType, CreatureID, int> NewTurnProcessor::pickWeekType(bool newMo
 	}
 }
 
+AstrologyWeek NewTurnProcessor::pickAstrologyWeek(bool newMonth)
+{
+	const auto [weekType, creature, additionalGrowth] = pickWeekType(newMonth);
+	return {weekType, creature, additionalGrowth};
+}
+
+bool NewTurnProcessor::hasAstronomyTowerDefinition() const
+{
+	// New Horizons replaces Tower's legacy Lookout Tower (SPECIAL_2) without
+	// adding a schema-only building subtype.  The saved rules snapshot keeps
+	// this opt-in isolated from legacy Tower towns and old save formats.
+	if(!newHorizonsMagic::rulesActive(gameHandler->gameState().getMagicRules()))
+		return false;
+
+	for(const auto townID : gameHandler->gameState().getMap().getAllTowns())
+	{
+		const auto * town = gameHandler->gameState().getTown(townID);
+		if(town && town->getFactionID() == FactionID::TOWER
+			&& town->getTown()->buildings.contains(BuildingID::SPECIAL_2))
+			return true;
+	}
+	return false;
+}
+
 std::vector<SetMana> NewTurnProcessor::updateHeroesManaPoints()
 {
 	std::vector<SetMana> result;
@@ -733,11 +757,16 @@ NewTurn NewTurnProcessor::generateNewTurnPack()
 	n.specialWeek = EWeekType::FIRST_WEEK;
 	n.creatureid = CreatureID::NONE;
 	n.day = gameHandler->gameState().day + 1;
+	n.nextAstrologyWeek = gameHandler->gameState().nextAstrologyWeek;
 
 	auto calendar = gameHandler->gameInfo().getCalendar();
 	bool firstTurn = !calendar.getCurrentDay();
 	bool newWeek = calendar.nextDay().getDayOfWeek() == 1; //day numbers are confusing, as day was not yet switched
 	bool newMonth = calendar.nextDay().getDayOfMonth() == 1;
+	const bool astrologyEnabled = hasAstronomyTowerDefinition();
+
+	if(!astrologyEnabled)
+		n.nextAstrologyWeek = AstrologyWeek();
 
 	int additionalGrowth = 0;
 
@@ -749,10 +778,38 @@ NewTurn NewTurnProcessor::generateNewTurnPack()
 
 	if (newWeek && !firstTurn)
 	{
-		auto [specialWeek, creatureID, addGrowth] = pickWeekType(newMonth);
-		n.specialWeek = specialWeek;
-		n.creatureid = creatureID;
-		additionalGrowth = addGrowth;
+		AstrologyWeek currentWeek;
+		if(astrologyEnabled && gameHandler->gameState().nextAstrologyWeek.known())
+			currentWeek = gameHandler->gameState().nextAstrologyWeek;
+		else
+			currentWeek = pickAstrologyWeek(newMonth);
+
+		n.specialWeek = currentWeek.type;
+		n.creatureid = currentWeek.creature;
+		additionalGrowth = currentWeek.additionalGrowth;
+	}
+
+	if(astrologyEnabled)
+	{
+		// At a week boundary the current day is the last day of the old week,
+		// so the next result is for the week after the one about to begin.  On a
+		// mid-week load with an older save, author the upcoming week immediately
+		// instead of leaving the preview unavailable until the next boundary.
+		if(newWeek)
+		{
+			const Calendar futureWeekStart(gameHandler->gameInfo().getSettings(),
+				calendar.getCurrentDay() + calendar.getDaysInWeek() + 1);
+			n.nextAstrologyWeek = pickAstrologyWeek(futureWeekStart.getDayOfMonth() == 1);
+		}
+		else if(!n.nextAstrologyWeek.known())
+		{
+			const int daysUntilNextWeek = firstTurn
+				? calendar.getDaysInWeek() + 1
+				: calendar.getDaysInWeek() - calendar.getDayOfWeek() + 1;
+			const Calendar nextWeekStart(gameHandler->gameInfo().getSettings(),
+				calendar.getCurrentDay() + daysUntilNextWeek);
+			n.nextAstrologyWeek = pickAstrologyWeek(nextWeekStart.getDayOfMonth() == 1);
+		}
 	}
 
 	n.heroesMana = updateHeroesManaPoints();

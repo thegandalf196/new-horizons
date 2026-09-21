@@ -420,6 +420,51 @@ std::vector<SecondarySkill> schoolSkills(const JsonNode & rules)
 	return result;
 }
 
+int requiredSchoolRank(const JsonNode & rules, SpellID spell)
+{
+	if(legacy(rules) || !spellAllowedBySavedRoster(rules, spell) || isAdventureSpell(rules, spell))
+		return 0;
+	return std::clamp(spellLevel(rules, spell) - 2, 0, 3);
+}
+
+std::vector<SecondarySkill> spellSchoolSkills(const JsonNode & rules, SpellID spell)
+{
+	if(legacy(rules) || !spellAllowedBySavedRoster(rules, spell) || isAdventureSpell(rules, spell))
+		return {};
+	std::vector<SecondarySkill> result;
+	for(const auto school : spellSchools(rules, spell))
+	{
+		for(const auto & [schoolName, skillNode] : rules["schoolSkills"].Struct())
+		{
+			if(resolve("spellSchool", schoolName) == school.getNum())
+			{
+				result.emplace_back(resolve(SecondarySkill::entityType(), skillNode.String()));
+				break;
+			}
+		}
+	}
+	return result;
+}
+
+bool hasSchoolProficiency(const CGHeroInstance * hero, SpellID spell)
+{
+	if(!hero)
+		return false;
+	const auto & rules = hero->getMagicRules();
+	if(!legacy(rules) && !spellAllowedBySavedRoster(rules, spell))
+		return false;
+	const int required = requiredSchoolRank(rules, spell);
+	if(required == 0)
+		return true;
+
+	for(const auto skill : spellSchoolSkills(rules, spell))
+	{
+		if(static_cast<int>(hero->getSecSkillLevel(skill)) >= required)
+			return true;
+	}
+	return false;
+}
+
 int spellLevel(const JsonNode & rules, SpellID spell)
 {
 	if(!spellAllowedBySavedRoster(rules, spell))

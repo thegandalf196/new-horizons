@@ -17,6 +17,7 @@
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/callback/CGameInfoCallback.h"
+#include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/battle/CObstacleInstance.h"
@@ -49,6 +50,17 @@ public:
 	const CGameState & gameState() const override { return state; }
 	const JsonNode & getMagicRules() const override { return rules; }
 	const IGameSettings & getSettings() const override { return settings; }
+};
+
+class LegacyMagicWorld final : public CGameInfoCallback
+{
+	CGameState & state;
+	JsonNode rules;
+public:
+	explicit LegacyMagicWorld(CGameState & state) : state(state) {}
+	CGameState & gameState() override { return state; }
+	const CGameState & gameState() const override { return state; }
+	const JsonNode & getMagicRules() const override { return rules; }
 };
 
 class ScopedHeroCallback
@@ -175,6 +187,147 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, AllowBannedCannotLearnAnExcludedUnkno
 	ScopedHeroCallback context(*attackerSideHero, &excluded);
 	EXPECT_FALSE(attackerSideHero->canLearnSpell(arrow.toSpell(), false));
 	EXPECT_FALSE(attackerSideHero->canLearnSpell(arrow.toSpell(), true));
+}
+
+TEST_F(NewHorizonsSpellRosterConsumerTest, SixSchoolRanksGateLearningAndCastingWithoutHidingSources)
+{
+	prepareHero();
+	const auto animateDead = spellNamed("core:animateDead");
+	const auto antiMagic = spellNamed("core:antiMagic");
+	const auto armageddon = spellNamed("core:armageddon");
+	const auto airElemental = spellNamed("core:airElemental");
+	const auto summonBoat = spellNamed("core:summonBoat");
+	const SecondarySkill shadow(SecondarySkill::decode("new-horizons:shadowMagic"));
+	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	const SecondarySkill havoc(SecondarySkill::decode("new-horizons:havocMagic"));
+	const SecondarySkill nature(SecondarySkill::decode("new-horizons:natureMagic"));
+
+	for(const auto skill : {shadow, sorcery, havoc, nature})
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+
+	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), animateDead), MasteryLevel::BASIC);
+	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), antiMagic), MasteryLevel::ADVANCED);
+	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), armageddon), MasteryLevel::EXPERT);
+	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), summonBoat), MasteryLevel::NONE);
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(animateDead.toSpell(), true));
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(antiMagic.toSpell(), true));
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(armageddon.toSpell(), true));
+	EXPECT_TRUE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, summonBoat));
+
+	attackerSideHero->addSpellToSpellbook(armageddon);
+	ASSERT_FALSE(attackerSideHero->getSourcesForSpell(armageddon).empty());
+	EXPECT_FALSE(attackerSideHero->canCastThisSpell(armageddon.toSpell()));
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getSecSkillLevel(havoc), MasteryLevel::EXPERT);
+	ASSERT_EQ(newHorizonsMagic::spellSchoolSkills(gameState()->getMagicRules(), armageddon), (std::vector<SecondarySkill>{havoc}));
+	EXPECT_TRUE(attackerSideHero->canCastThisSpell(armageddon.toSpell()));
+
+	attackerSideHero->setSecSkillLevel(nature, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	const auto requiredMulti = newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), airElemental);
+	ASSERT_GT(requiredMulti, MasteryLevel::NONE);
+	EXPECT_FALSE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, airElemental));
+	attackerSideHero->setSecSkillLevel(nature, requiredMulti, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getSecSkillLevel(nature), requiredMulti);
+	EXPECT_TRUE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, airElemental));
+
+	LegacyMagicWorld legacy(*gameState());
+	ScopedHeroCallback legacyContext(*attackerSideHero, &legacy);
+	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(legacy.getMagicRules(), armageddon), MasteryLevel::NONE);
+	EXPECT_TRUE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, armageddon));
+}
+
+TEST_F(NewHorizonsSpellRosterConsumerTest, CanLearnSpellAcceptsEachRequiredSchoolRank)
+{
+	prepareHero();
+	const auto rules = gameState()->getMagicRules();
+	struct SchoolCase
+	{
+		SpellID spell;
+		SecondarySkill school;
+		int required;
+	};
+	const std::array cases{
+		SchoolCase{spellNamed("core:animateDead"), SecondarySkill(SecondarySkill::decode("new-horizons:shadowMagic")), MasteryLevel::BASIC},
+		SchoolCase{spellNamed("core:antiMagic"), SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), MasteryLevel::ADVANCED},
+		SchoolCase{spellNamed("core:armageddon"), SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), MasteryLevel::EXPERT},
+	};
+
+	for(const auto & test : cases)
+	{
+		SCOPED_TRACE(test.spell.toSpell()->getJsonKey());
+		ASSERT_EQ(newHorizonsMagic::requiredSchoolRank(rules, test.spell), test.required);
+		attackerSideHero->setSecSkillLevel(test.school, test.required - 1, ChangeValueMode::ABSOLUTE);
+		EXPECT_FALSE(attackerSideHero->canLearnSpell(test.spell.toSpell(), true));
+		attackerSideHero->setSecSkillLevel(test.school, test.required, ChangeValueMode::ABSOLUTE);
+		EXPECT_TRUE(attackerSideHero->canLearnSpell(test.spell.toSpell(), true));
+	}
+}
+
+TEST_F(NewHorizonsSpellRosterConsumerTest, MageGuildGrantUsesSchoolProficiencyBeforeApplyingChangeSpells)
+{
+	startGame(true);
+	attackerSideHero->removeAllSpells();
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(town, nullptr);
+	town->addBuilding(BuildingID::MAGES_GUILD_5);
+	ASSERT_EQ(town->mageGuildLevel(), 5);
+
+	const auto animateDead = spellNamed("core:animateDead");
+	const auto antiMagic = spellNamed("core:antiMagic");
+	const auto armageddon = spellNamed("core:armageddon");
+	town->spells.assign(GameConstants::SPELL_LEVELS, {});
+	town->spells[2] = {animateDead};
+	town->spells[3] = {antiMagic};
+	town->spells[4] = {armageddon};
+
+	const SecondarySkill shadow(SecondarySkill::decode("new-horizons:shadowMagic"));
+	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	const SecondarySkill havoc(SecondarySkill::decode("new-horizons:havocMagic"));
+	for(const auto skill : {shadow, sorcery, havoc})
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+
+	// This is the authoritative guild path, which emits and applies ChangeSpells;
+	// none of the three rows may bypass its school-rank gate.
+	gameHandler->giveSpells(town, attackerSideHero);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(animateDead));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(antiMagic));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(armageddon));
+
+	attackerSideHero->setSecSkillLevel(shadow, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	gameHandler->giveSpells(town, attackerSideHero);
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(animateDead));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(antiMagic));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(armageddon));
+}
+
+TEST_F(NewHorizonsSpellRosterConsumerTest, ScholarGrantUsesSchoolProficiencyBeforeApplyingChangeSpells)
+{
+	prepareHero();
+	defenderSideHero->removeAllSpells();
+	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+
+	const auto animateDead = spellNamed("core:animateDead");
+	defenderSideHero->addSpellToSpellbook(animateDead);
+	// New Horizons migrates the legacy Scholar skill to a Learning perk. Inject
+	// the server bonus directly so this still exercises the authoritative,
+	// legacy-compatible exchange path without changing the canonical roster.
+	defenderSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::LEARN_MEETING_SPELL_LIMIT, BonusSource::OTHER, MasteryLevel::EXPERT,
+		BonusSourceID()));
+
+	const SecondarySkill shadow(SecondarySkill::decode("new-horizons:shadowMagic"));
+	attackerSideHero->setSecSkillLevel(shadow, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	gameHandler->useScholarSkill(defenderSideHero->id, attackerSideHero->id);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(animateDead));
+
+	attackerSideHero->setSecSkillLevel(shadow, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	gameHandler->useScholarSkill(defenderSideHero->id, attackerSideHero->id);
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(animateDead));
 }
 
 TEST_F(NewHorizonsSpellRosterConsumerTest, BothAllowedSpellEnumeratorsFilterBeforeLevelLookup)

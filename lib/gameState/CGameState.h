@@ -25,6 +25,7 @@
 #include "../LoadProgress.h"
 
 #include "GameStatistics.h"
+#include "NewHorizonsAstrology.h"
 #include "ReplayLog.h"
 #include "RumorState.h"
 #include "mapObjects/CGObjectInstance.h"
@@ -108,6 +109,10 @@ public:
 	void updateOnLoad(const StartInfo & si);
 
 	ui32 day; //total number of days in game
+	/// Server-authored result for the next Astrology Week.  The result is
+	/// replicated with NewTurn and persisted so a preview can never reroll at
+	/// the week boundary or after save/load.
+	AstrologyWeek nextAstrologyWeek;
 	std::map<PlayerColor, PlayerState> players;
 	std::map<TeamID, TeamState> teams;
 	CBonusSystemNode globalEffects;
@@ -239,6 +244,12 @@ public:
 		h & initialOpts;
 		h & actingPlayers;
 		h & day;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ASTROLOGY_PREVIEW))
+			h & nextAstrologyWeek;
+		else if(h.saving && nextAstrologyWeek.known())
+			throw std::runtime_error("Cannot write New Horizons Astrology preview to an older format");
+		else if(!h.saving)
+			nextAstrologyWeek = AstrologyWeek();
 		h & map;
 		h & players;
 		h & teams;

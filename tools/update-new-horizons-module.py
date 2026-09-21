@@ -29,12 +29,12 @@ def main():
     schools = canonical('newHorizonsSchools.json')
     skills = canonical('newHorizonsSkills.json')
     hero_class_translations = canonical('newHorizonsHeroClassTexts.json')
-    # This single patch file contains the explicit Halon override plus the
+    # These patch files contain explicit hero overrides plus the
     # creation-only neutralization and faction-skill presentation replacement
     # for legacy secondary-skill specialties. Keep it in the generated
     # manifest so the curated module cannot silently omit the retired-skill
     # audit fixes.
-    hero_patch_files = ['config/heroes/halon.json']
+    hero_patch_files = ['config/heroes/fafner.json', 'config/heroes/halon.json']
     faction_patch_files = ['config/factions/uniqueBuildings.json']
     metadata = {
         'name': 'New Horizons',

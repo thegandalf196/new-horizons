@@ -351,7 +351,13 @@ void ApplyGhNetPackVisitor::visitTradeOnMarketplace(TradeOnMarketplace & pack)
 		break;
 	case EMarketMode::RESOURCE_SKILL:
 		for(int i = 0; i < pack.r2.size(); ++i)
-			result &= gh.buySecSkill(market, hero, pack.r2[i].as<SecondarySkill>());
+		{
+			const auto spell = pack.r2[i].as<SpellID>();
+			if(spell.hasValue())
+				result &= gh.buyHouseOfWisdomScroll(market, hero, spell);
+			else
+				result &= gh.buySecSkill(market, hero, pack.r2[i].as<SecondarySkill>());
+		}
 		break;
 	case EMarketMode::CREATURE_EXP:
 	{

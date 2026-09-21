@@ -42,8 +42,33 @@
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../serializer/JsonSerializeFormat.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSpellAvailability.h"
+#include "../spells/CSpell.h"
+#include "../spells/CSpellHandler.h"
+#include "CGMarket.h"
 
 #include <vstd/RNG.h>
+
+namespace
+{
+constexpr size_t HOUSE_OF_WISDOM_STOCK_SIZE = 6;
+
+std::vector<SpellID> houseOfWisdomCandidates(const JsonNode & magicRules)
+{
+	std::vector<SpellID> result;
+	if(!newHorizonsMagic::rulesActive(magicRules))
+		return result;
+
+	for(const auto & spell : LIBRARY->spellh->objects)
+	{
+		if(!spell || !spell->isCommonHeroSpell() || spell->isAdventure() || spell->getLevel() <= 0
+			|| !newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spell->getId()))
+			continue;
+		result.push_back(spell->getId());
+	}
+	return result;
+}
+}
 
 int CGTownInstance::getSightRadius() const
 {
@@ -283,13 +308,42 @@ CGTownInstance::CGTownInstance(IGameInfoCallback *cb):
 
 CGTownInstance::~CGTownInstance() = default;
 
+const std::vector<SpellID> & CGTownInstance::getHouseOfWisdomScrolls() const
+{
+	return newHorizonsHouseOfWisdomScrolls;
+}
+
+void CGTownInstance::initializeHouseOfWisdomScrolls(IGameRandomizer & gameRandomizer)
+{
+	if(newHorizonsHouseOfWisdomInitialized
+		|| !newHorizonsHouseOfWisdom::eligible(this, cb->getMagicRules()))
+		return;
+
+	std::vector<SpellID> remaining = houseOfWisdomCandidates(cb->getMagicRules());
+	while(!remaining.empty() && newHorizonsHouseOfWisdomScrolls.size() < HOUSE_OF_WISDOM_STOCK_SIZE)
+	{
+		const auto selected = gameRandomizer.getDefault().nextInt(0, static_cast<int>(remaining.size()) - 1);
+		newHorizonsHouseOfWisdomScrolls.push_back(remaining[selected]);
+		remaining.erase(remaining.begin() + selected);
+	}
+	newHorizonsHouseOfWisdomInitialized = true;
+}
+
+void CGTownInstance::setHouseOfWisdomScrolls(std::vector<SpellID> scrolls)
+{
+	newHorizonsHouseOfWisdomScrolls = std::move(scrolls);
+	newHorizonsHouseOfWisdomInitialized = true;
+}
+
 int CGTownInstance::spellsAtLevel(int level, bool checkGuild) const
 {
 	if(checkGuild && mageGuildLevel() < level)
 		return 0;
 	int ret = 6 - level; //how many spells are available at this level
 
-	if (hasBuilt(BuildingSubID::LIBRARY))
+	const bool newHorizonsTowerLibrary = newHorizonsMagic::rulesActive(cb->getMagicRules())
+		&& getFactionID() == FactionID::TOWER;
+	if(hasBuilt(BuildingSubID::LIBRARY) && !newHorizonsTowerLibrary)
 		ret++;
 
 	return ret;
@@ -481,6 +535,7 @@ void CGTownInstance::initObj(IGameRandomizer & gameRandomizer) ///initialize tow
 		}
 	}
 	initializeConfigurableBuildings(gameRandomizer);
+	initializeHouseOfWisdomScrolls(gameRandomizer);
 	initializeNeutralTownGarrison(gameRandomizer.getDefault());
 	recreateBuildingsBonuses();
 	updateAppearance();
@@ -670,6 +725,14 @@ std::vector<TradeItemBuy> CGTownInstance::availableItemsIds(EMarketMode mode) co
 	}
 	else if ( mode == EMarketMode::RESOURCE_SKILL )
 	{
+		if(newHorizonsHouseOfWisdom::active(this, cb->getMagicRules()))
+		{
+			std::vector<TradeItemBuy> result;
+			for(const auto spell : getHouseOfWisdomScrolls())
+				result.emplace_back(spell);
+			return result;
+		}
+
 		if(newHorizonsMagic::rulesActive(cb->getMagicRules()))
 		{
 			std::vector<TradeItemBuy> result;

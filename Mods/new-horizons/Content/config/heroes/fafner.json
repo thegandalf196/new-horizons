@@ -1,0 +1,8 @@
+{
+	"core:fafner": {
+		"skills": [
+			{ "skill": "new-horizons:learning", "level": "basic" },
+			{ "skill": "new-horizons:metamagic", "level": "basic" }
+		]
+	}
+}

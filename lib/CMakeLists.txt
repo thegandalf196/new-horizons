@@ -612,6 +612,7 @@ set(lib_MAIN_HEADERS
 	gameState/CGameStateCampaign.h
 	gameState/EVictoryLossCheckResult.h
 	gameState/GameStatePackVisitor.h
+	gameState/NewHorizonsAstrology.h
 	gameState/HighScore.h
 	gameState/InfoAboutArmy.h
 	gameState/ReplayLog.h

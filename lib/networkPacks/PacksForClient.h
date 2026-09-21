@@ -23,6 +23,7 @@
 #include "../TurnTimerInfo.h"
 #include "../bonuses/Bonus.h"
 #include "../gameState/EVictoryLossCheckResult.h"
+#include "../gameState/NewHorizonsAstrology.h"
 #include "../gameState/RumorState.h"
 #include "../gameState/QuestInfo.h"
 #include "../gameState/ScenarioEventJournalEntry.h"
@@ -889,6 +890,20 @@ struct DLL_LINKAGE SetAvailableArtifacts : public CPackForClient
 	}
 };
 
+struct DLL_LINKAGE SetHouseOfWisdomScrolls : public CPackForClient
+{
+	ObjectInstanceID townId;
+	std::vector<SpellID> scrolls;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		h & townId;
+		h & scrolls;
+	}
+};
+
 struct DLL_LINKAGE CGarrisonOperationPack : CPackForClient
 {
 };
@@ -1242,6 +1257,10 @@ struct DLL_LINKAGE NewTurn : public CPackForClient
 	/// picks in its serialized state so the result remains visible after the
 	/// NewTurn packet has been applied and after a save/load.
 	std::map<ObjectInstanceID, std::vector<GameResID>> newHorizonsMysticPondResults;
+	/// Server-authored next Astrology Week.  It becomes the actual special week
+	/// at the following week boundary; clients use it only for an owned
+	/// Astronomy Tower preview.
+	AstrologyWeek nextAstrologyWeek;
 
 	NewTurn() = default;
 
@@ -1262,6 +1281,12 @@ struct DLL_LINKAGE NewTurn : public CPackForClient
 			throw std::runtime_error("Cannot write New Horizons Mystic Pond result to an older format");
 		else if(!h.saving)
 			newHorizonsMysticPondResults.clear();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ASTROLOGY_PREVIEW))
+			h & nextAstrologyWeek;
+		else if(h.saving && nextAstrologyWeek.known())
+			throw std::runtime_error("Cannot write New Horizons Astrology preview to an older format");
+		else if(!h.saving)
+			nextAstrologyWeek = AstrologyWeek();
 	}
 };
 

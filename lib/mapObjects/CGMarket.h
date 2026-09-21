@@ -90,3 +90,21 @@ DLL_LINKAGE bool usesNewHorizonsTuition(const IMarket * market, const JsonNode &
 /// drift from the transaction validator.
 DLL_LINKAGE TResources tuition(const IMarket * market, const JsonNode & magicRules, const IGameSettings & settings);
 }
+
+namespace newHorizonsHouseOfWisdom
+{
+/// True for every Conflux town whose saved world uses New Horizons magic
+/// rules, regardless of whether the building has been constructed yet. This
+/// is used to author the town-owned stock during authoritative map setup.
+DLL_LINKAGE bool eligible(const IMarket * market, const JsonNode & magicRules);
+
+/// True only for the Conflux special building in a saved New Horizons world.
+/// Legacy Conflux towns and adventure-map Universities continue to expose
+/// secondary skills through the ordinary RESOURCE_SKILL market mode.
+DLL_LINKAGE bool active(const IMarket * market, const JsonNode & magicRules);
+
+/// The provisional House of Wisdom price is deliberately a gold-only price,
+/// scaled by the saved spell level.  Keeping this helper shared makes the
+/// storefront preview and the server-side validator agree exactly.
+DLL_LINKAGE TResources price(const SpellID & spell);
+}

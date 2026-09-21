@@ -492,7 +492,10 @@ void CPlayerInterface::receivedResource()
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;
 	for (auto mw : ENGINE->windows().findWindows<IMarketHolder>())
+	{
 		mw->updateResources();
+		mw->updateSecondarySkills();
+	}
 
 	ENGINE->windows().totalRedraw();
 }

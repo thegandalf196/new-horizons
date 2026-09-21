@@ -238,47 +238,6 @@ CStackWindow::CategorySection::CategorySection(CStackWindow * owner, int yOffset
 		"{" + name + "}\n\n" + description);
 }
 
-CStackWindow::LeadershipSection::LeadershipSection(CStackWindow * owner, int yOffset)
-	: CWindowSection(owner, ImagePath::builtin("stackWindow/leadership"), yOffset)
-{
-	OBJECT_CONSTRUCTION;
-
-	const auto leadershipCount = parent->info->stack
-		? parent->info->creatureCount
-		: (parent->info->stackNode ? parent->info->stackNode->getCount() : 1);
-	int leadershipRequirement = 0;
-	std::optional<newHorizonsHeroes::LeadershipSlotCapacity> leadershipCapacity;
-	if(parent->info->owner)
-	{
-		leadershipCapacity = parent->info->owner->getLeadershipSlotCapacity(parent->info->creature->getId());
-		if(leadershipCapacity)
-			leadershipRequirement = leadershipCapacity->requirement;
-	}
-	else
-	{
-		const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
-		if(newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2)
-			leadershipRequirement = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(
-				capabilityRules, parent->info->creature->getId());
-	}
-
-	const auto costText = leadershipRequirement > 0 ? std::to_string(leadershipRequirement) : "--";
-	const auto usageText = std::to_string(leadershipCount) + " / "
-		+ (leadershipCapacity ? std::to_string(leadershipCapacity->maximum) : "--");
-	const auto usageLabel = "Stack Capacity: " + usageText;
-	const auto usageHelp = "Creatures currently in this stack / maximum this hero can command: " + usageText;
-	const auto helpText = std::string("Leadership Cost: ") + costText + "\n" + usageHelp;
-
-	icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_leadership_32"), 0, 0, 10, 12);
-	title = std::make_shared<CLabel>(56, 10, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
-		"Leadership Cost", 280);
-	cost = std::make_shared<CLabel>(420, 10, FONT_SMALL, ETextAlignment::TOPRIGHT, Colors::YELLOW,
-		costText, 80);
-	usage = std::make_shared<CLabel>(239, 33, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE,
-		usageLabel, 180);
-	details = std::make_shared<LRClickableAreaWText>(Rect(8, 3, 422, 53), helpText, helpText);
-}
-
 CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset)
 	: CWindowSection(owner, ImagePath::builtin("stackWindow/spell-effects"), yOffset)
 {
@@ -779,7 +738,7 @@ CStackWindow::CommanderMainSection::CommanderMainSection(CStackWindow * owner, i
 	}
 }
 
-CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt)
+CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showLeadership)
 	: CWindowSection(owner, getBackgroundName(showExp, showArt), yOffset)
 {
 	OBJECT_CONSTRUCTION;
@@ -794,7 +753,8 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		LIBRARY->generaltexth->allTexts[388],//HEALTH
 		LIBRARY->generaltexth->allTexts[200],//HEALTH_LEFT
 		LIBRARY->generaltexth->zelp[441].first,//SPEED
-		LIBRARY->generaltexth->allTexts[399]//MANA
+		LIBRARY->generaltexth->allTexts[399],//MANA
+		"Leadership Cost"
 	};
 
 	statFormats =
@@ -807,7 +767,8 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		"%d (%d)",
 		"%d (%d)",
 		"%d (%d)",
-		"%d (%d)"
+		"%d (%d)",
+		"%s"
 	};
 
 	animation = std::make_shared<CCreaturePic>(5, 41, parent->info->creature);
@@ -865,6 +826,11 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 	for(int i = 0; i < 8; i++)
 		statIcons[i] = std::make_shared<CPicture>(ImagePath::builtin(iconNames[i]), 117, iconY[i]);
 
+	if(showLeadership)
+		statIcons[static_cast<size_t>(EStat::LEADERSHIP)] = std::make_shared<CAnimImage>(
+			AnimationPath::builtin("NH_capability_leadership_32"), 0,
+			Rect(116, iconY[7] + 19, 20, 20));
+
 	morale = std::make_shared<MoraleLuckBox>(true, Rect(Point(321, 32), Point(42, 42) ));
 	luck = std::make_shared<MoraleLuckBox>(false,  Rect(Point(375, 32), Point(42, 42) ));
 
@@ -903,6 +869,34 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 
 		morale->set(parent->info->stackNode);
 		luck->set(parent->info->stackNode);
+	}
+
+	if(showLeadership)
+	{
+		const auto leadershipCount = parent->info->stack
+			? parent->info->creatureCount
+			: (parent->info->stackNode ? parent->info->stackNode->getCount() : 1);
+		int leadershipRequirement = 0;
+		std::optional<newHorizonsHeroes::LeadershipSlotCapacity> leadershipCapacity;
+		if(parent->info->owner)
+		{
+			leadershipCapacity = parent->info->owner->getLeadershipSlotCapacity(parent->info->creature->getId());
+			if(leadershipCapacity)
+				leadershipRequirement = leadershipCapacity->requirement;
+		}
+		else
+		{
+			const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
+			if(newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2)
+				leadershipRequirement = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(
+					capabilityRules, parent->info->creature->getId());
+		}
+
+		const auto costText = leadershipRequirement > 0 ? std::to_string(leadershipRequirement) : "--";
+		const auto capacityText = leadershipCapacity
+			? " (" + std::to_string(leadershipCount) + "/" + std::to_string(leadershipCapacity->maximum) + ")"
+			: "";
+		addStatLabel(EStat::LEADERSHIP, costText + capacityText);
 	}
 
 	if(showExp)
@@ -999,6 +993,15 @@ void CStackWindow::MainSection::addStatLabel(EStat index, int64_t value1, int64_
 void CStackWindow::MainSection::addStatLabel(EStat index, int64_t value)
 {
 	addStatLabel(index, value, value);
+}
+
+void CStackWindow::MainSection::addStatLabel(EStat index, const std::string & value)
+{
+	const auto title = statNames.at(static_cast<size_t>(index));
+	stats.push_back(std::make_shared<CLabel>(145, 32 + (int)index * 19, FONT_SMALL,
+		ETextAlignment::TOPLEFT, Colors::WHITE, title));
+	stats.push_back(std::make_shared<CLabel>(307, 48 + (int)index * 19, FONT_SMALL,
+		ETextAlignment::BOTTOMRIGHT, Colors::WHITE, value));
 }
 
 CStackWindow::CStackWindow(const CStack * stack, bool popup)
@@ -1341,20 +1344,15 @@ void CStackWindow::initSections()
 	bool showArt = GAME->interface() && GAME->interface()->cb->getSettings().getBoolean(EGameSettings::MODULE_STACK_ARTIFACT) && info->commander == nullptr && info->stackNode;
 	bool showExp = ((GAME->interface() && GAME->interface()->cb->getSettings().getBoolean(EGameSettings::MODULE_STACK_EXPERIENCE)) || info->commander != nullptr) && info->stackNode;
 
-	mainSection = std::make_shared<MainSection>(this, pos.h, showExp, showArt);
-
-	pos.w = mainSection->pos.w;
-	pos.h += mainSection->pos.h;
-
 	const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
 	const bool showLeadership = info->owner
 		? info->owner->getLeadershipSlotCapacity(info->creature->getId()).has_value()
 		: newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2;
-	if(showLeadership)
-	{
-		leadershipSection = std::make_shared<LeadershipSection>(this, pos.h);
-		pos.h += leadershipSection->pos.h;
-	}
+
+	mainSection = std::make_shared<MainSection>(this, pos.h, showExp, showArt, showLeadership);
+
+	pos.w = mainSection->pos.w;
+	pos.h += mainSection->pos.h;
 
 	if(info->category)
 	{

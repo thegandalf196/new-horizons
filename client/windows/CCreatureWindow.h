@@ -90,17 +90,6 @@ class CStackWindow : public CWindowObject
 		ActiveSpellsSection(CStackWindow * owner, int yOffset);
 	};
 
-	class LeadershipSection : public CWindowSection
-	{
-		std::shared_ptr<CAnimImage> icon;
-		std::shared_ptr<CLabel> title;
-		std::shared_ptr<CLabel> cost;
-		std::shared_ptr<CLabel> usage;
-		std::shared_ptr<LRClickableAreaWText> details;
-	public:
-		LeadershipSection(CStackWindow * owner, int yOffset);
-	};
-
 	/// Presentation-only indicators for the authoritative New Horizons Order
 	/// snapshot. These are deliberately separate from active spell bonuses:
 	/// Orders have no duration counters and cannot be dispelled.
@@ -165,6 +154,7 @@ class CStackWindow : public CWindowObject
 			HEALTH_LEFT,
 			SPEED,
 			MANA,
+			LEADERSHIP,
 			AFTER_LAST
 		};
 
@@ -172,7 +162,7 @@ class CStackWindow : public CWindowObject
 		std::shared_ptr<CPicture> deadCommanderOverlay;
 		std::shared_ptr<LRClickableArea> animationArea;
 		std::shared_ptr<CLabel> name;
-		std::array<std::shared_ptr<CPicture>, 8> statIcons;
+		std::array<std::shared_ptr<CIntObject>, 9> statIcons;
 		std::shared_ptr<CPicture> icons;
 		std::shared_ptr<MoraleLuckBox> morale;
 		std::shared_ptr<MoraleLuckBox> luck;
@@ -185,13 +175,14 @@ class CStackWindow : public CWindowObject
 
 		void addStatLabel(EStat index, int64_t value1, int64_t value2);
 		void addStatLabel(EStat index, int64_t value);
+		void addStatLabel(EStat index, const std::string & value);
 
 		static ImagePath getBackgroundName(bool showExp, bool showArt);
 
-		std::array<std::string, 8> statNames;
-		std::array<std::string, 8> statFormats;
+		std::array<std::string, 9> statNames;
+		std::array<std::string, 9> statFormats;
 	public:
-		MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt);
+		MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showLeadership);
 	};
 
 	class StackExperienceDetailsWindow;
@@ -213,7 +204,6 @@ class CStackWindow : public CWindowObject
 
 	std::shared_ptr<CWindowSection> mainSection;
 	std::shared_ptr<CWindowSection> categorySection;
-	std::shared_ptr<CWindowSection> leadershipSection;
 	std::shared_ptr<CWindowSection> activeSpellsSection;
 	std::shared_ptr<CWindowSection> orderIndicatorsSection;
 	std::shared_ptr<CWindowSection> commanderMainSection;

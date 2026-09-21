@@ -76,6 +76,12 @@ def verify_spent_action_spell_feedback(source):
     spell_window = (SOURCE.parents[1] / 'windows/CSpellWindow.cpp').read_text()
     selection = spell_window.split('void CSpellWindow::SpellArea::clickPressed', 1)[1]
     assert 'mySpell->canBeCast(problem, battleCallback.get(), spells::Mode::HERO' in selection
+    assert 'if(schoolLocked)' in selection
+    assert 'showInfoDialog(schoolRequirementText)' in selection
+    assert 'const bool ownedOrGranted = !myHero->getSourcesForSpell' in spell_window
+    assert 'newHorizonsMagic::requiredSchoolRank' in spell_window
+    assert 'newHorizonsMagic::hasSchoolProficiency' in spell_window
+    assert 'schoolRequirementLabel = "Locked: " + rankName' in spell_window
 
 
 def main():

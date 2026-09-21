@@ -748,9 +748,6 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 		// Eagle Eye handling
 		if(auto eagleEyeLevel = winnerHero->valOfBonuses(BonusType::LEARN_BATTLE_SPELL_LEVEL_LIMIT))
 		{
-			// hero also needs corresponding level of Wisdom to learn a spell
-			const int spellLevelLimit = std::min(eagleEyeLevel, winnerHero->maxSpellLevel());
-
 			resultsApplied.learnedSpells.eagleEyeBonus = true;
 			resultsApplied.learnedSpells.learn = 1;
 			resultsApplied.learnedSpells.hid = finishingBattle->winnerId;
@@ -758,8 +755,8 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 			{
 				const auto spell = spellId.toEntity(LIBRARY->spells());
 				if(spell
-					&& winnerHero->getSpellLevel(spell) <= spellLevelLimit
-					&& !winnerHero->spellbookContainsSpell(spell->getId())
+					&& winnerHero->getSpellLevel(spell) <= eagleEyeLevel
+					&& winnerHero->canLearnSpell(spell)
 					&& gameHandler->getRandomGenerator().nextInt(99) < winnerHero->valOfBonuses(BonusType::LEARN_BATTLE_SPELL_CHANCE))
 				{
 					resultsApplied.learnedSpells.spells.insert(spell->getId());

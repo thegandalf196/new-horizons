@@ -72,6 +72,7 @@ public:
 	virtual void visitOpenWindow(OpenWindow & pack) {}
 	virtual void visitNewObject(NewObject & pack) {}
 	virtual void visitSetAvailableArtifacts(SetAvailableArtifacts & pack) {}
+	virtual void visitSetHouseOfWisdomScrolls(SetHouseOfWisdomScrolls & pack) {}
 	virtual void visitNewArtifact(NewArtifact & pack) {}
 	virtual void visitChangeStackCount(ChangeStackCount & pack) {}
 	virtual void visitSetStackType(SetStackType & pack) {}

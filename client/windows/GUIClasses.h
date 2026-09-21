@@ -49,6 +49,7 @@ class VideoWidgetOnce;
 class GraphicalPrimitiveCanvas;
 class TransparentFilledRectangle;
 class CSecSkillPlace;
+class CArtPlace;
 
 enum class EUserEvent;
 
@@ -404,20 +405,25 @@ class CUniversityWindow final : public CStatusbarWindow, public IMarketHolder
 	class CItem final : public CIntObject
 	{
 		std::shared_ptr<CSecSkillPlace> skill;
+		std::shared_ptr<CArtPlace> scroll;
 		std::shared_ptr<CPicture> topBar;
 		std::shared_ptr<CPicture> bottomBar;
 		std::shared_ptr<CLabel> name;
 		std::shared_ptr<CLabel> level;
+		SpellID scrollID;
+		bool scrollMode = false;
 	public:
 		SecondarySkill ID;//id of selected skill
 		CUniversityWindow * parent;
 
 		void update();
-		CItem(CUniversityWindow * _parent, int _ID, int X, int Y);
+		CItem(CUniversityWindow * _parent, SecondarySkill _ID, int X, int Y);
+		CItem(CUniversityWindow * _parent, SpellID _ID, int X, int Y);
 	};
 
 	const CGHeroInstance * hero;
 	const IMarket * market;
+	bool houseOfWisdom = false;
 
 	std::vector<std::shared_ptr<CItem>> items;
 
@@ -436,6 +442,7 @@ public:
 	const CGHeroInstance * getHero() const;
 
 	void makeDeal(SecondarySkill skill);
+	void makeDeal(SpellID spell);
 	void close() override;
 
 	// IMarketHolder impl

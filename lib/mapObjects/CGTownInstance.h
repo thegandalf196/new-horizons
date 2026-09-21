@@ -76,6 +76,11 @@ public:
 	/// New Horizons' most recent weekly Mystic Pond picks, kept on the town so
 	/// the result remains visible after the week-start packet and after saves.
 	std::vector<GameResID> newHorizonsMysticPondResources;
+	/// House of Wisdom storefront.  The generated stock belongs to the town,
+	/// rather than to a client window, so purchases and saves remain
+	/// authoritative and deterministic.
+	std::vector<SpellID> newHorizonsHouseOfWisdomScrolls;
+	bool newHorizonsHouseOfWisdomInitialized = false;
 	/// Map author supplied the initial army, including an explicitly empty army.
 	bool customInitialGarrison = false;
 
@@ -126,6 +131,19 @@ public:
 		else if(!h.saving)
 			newHorizonsMysticPondResources.clear();
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HOUSE_OF_WISDOM))
+		{
+			h & newHorizonsHouseOfWisdomScrolls;
+			h & newHorizonsHouseOfWisdomInitialized;
+		}
+		else if(h.saving && (newHorizonsHouseOfWisdomInitialized || !newHorizonsHouseOfWisdomScrolls.empty()))
+			throw std::runtime_error("Cannot discard New Horizons House of Wisdom stock");
+		else if(!h.saving)
+		{
+			newHorizonsHouseOfWisdomScrolls.clear();
+			newHorizonsHouseOfWisdomInitialized = false;
+		}
+
 		if(!h.saving)
 		{
 			postDeserialize();
@@ -169,6 +187,9 @@ public:
 	int getMarketEfficiency() const override; //=market count
 	std::set<EMarketMode> availableModes() const override;
 	std::vector<TradeItemBuy> availableItemsIds(EMarketMode mode) const override;
+	const std::vector<SpellID> & getHouseOfWisdomScrolls() const;
+	void initializeHouseOfWisdomScrolls(IGameRandomizer & gameRandomizer);
+	void setHouseOfWisdomScrolls(std::vector<SpellID> scrolls);
 	ObjectInstanceID getObjInstanceID() const override;
 	void updateAppearance();
 

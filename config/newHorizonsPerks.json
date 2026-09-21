@@ -1073,21 +1073,21 @@
 				"basic": {
 					"description": "The hero may learn and cast Level 3 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 3 spells from this school."
 					}
 				},
 				"advanced": {
 					"description": "The hero may learn and cast Level 4 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 4 spells from this school."
 					}
 				},
 				"expert": {
 					"description": "The hero may learn and cast Level 5 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 5 spells from this school."
 					}
 				}
@@ -1205,21 +1205,21 @@
 				"basic": {
 					"description": "The hero may learn and cast Level 3 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 3 spells from this school."
 					}
 				},
 				"advanced": {
 					"description": "The hero may learn and cast Level 4 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 4 spells from this school."
 					}
 				},
 				"expert": {
 					"description": "The hero may learn and cast Level 5 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 5 spells from this school."
 					}
 				}
@@ -1337,21 +1337,21 @@
 				"basic": {
 					"description": "The hero may learn and cast Level 3 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 3 spells from this school."
 					}
 				},
 				"advanced": {
 					"description": "The hero may learn and cast Level 4 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 4 spells from this school."
 					}
 				},
 				"expert": {
 					"description": "The hero may learn and cast Level 5 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 5 spells from this school."
 					}
 				}
@@ -1469,21 +1469,21 @@
 				"basic": {
 					"description": "The hero may learn and cast Level 3 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 3 spells from this school."
 					}
 				},
 				"advanced": {
 					"description": "The hero may learn and cast Level 4 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 4 spells from this school."
 					}
 				},
 				"expert": {
 					"description": "The hero may learn and cast Level 5 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 5 spells from this school."
 					}
 				}
@@ -1601,21 +1601,21 @@
 				"basic": {
 					"description": "The hero may learn and cast Level 3 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 3 spells from this school."
 					}
 				},
 				"advanced": {
 					"description": "The hero may learn and cast Level 4 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 4 spells from this school."
 					}
 				},
 				"expert": {
 					"description": "The hero may learn and cast Level 5 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 5 spells from this school."
 					}
 				}
@@ -1733,21 +1733,21 @@
 				"basic": {
 					"description": "The hero may learn and cast Level 3 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 3 spells from this school."
 					}
 				},
 				"advanced": {
 					"description": "The hero may learn and cast Level 4 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 4 spells from this school."
 					}
 				},
 				"expert": {
 					"description": "The hero may learn and cast Level 5 spells from this school.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may learn and cast Level 5 spells from this school."
 					}
 				}

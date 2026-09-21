@@ -99,6 +99,17 @@ DLL_LINKAGE std::vector<SpellSchool> activeSchools(const JsonNode & rules);
 /// Returns the six canonical Magic School Skills captured by the saved rules.
 /// Legacy worlds have no New Horizons school-skill catalogue.
 DLL_LINKAGE std::vector<SecondarySkill> schoolSkills(const JsonNode & rules);
+/// Required canonical school rank for an ordinary spell: none for levels 1-2,
+/// Basic/Advanced/Expert for levels 3/4/5. Adventure and legacy spells have no
+/// New Horizons school-proficiency requirement.
+DLL_LINKAGE int requiredSchoolRank(const JsonNode & rules, SpellID spell);
+/// Canonical school Skill identities associated with this saved spell entry.
+/// Empty for legacy, excluded, or neutral Adventure spells.
+DLL_LINKAGE std::vector<SecondarySkill> spellSchoolSkills(const JsonNode & rules, SpellID spell);
+/// True when the hero may learn or cast this spell under the saved six-school
+/// rules. A multi-school spell is accessible through any one qualifying school.
+/// This deliberately does not decide whether the hero owns a spell source.
+DLL_LINKAGE bool hasSchoolProficiency(const CGHeroInstance * hero, SpellID spell);
 DLL_LINKAGE std::vector<SpellSchool> spellSchools(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE int spellLevel(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE int spellCost(const JsonNode & rules, SpellID spell, int mastery);

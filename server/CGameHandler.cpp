@@ -912,21 +912,22 @@ void CGameHandler::giveSpells(const CGTownInstance *t, const CGHeroInstance *h)
 	if (t->hasBuilt(BuildingSubID::AURORA_BOREALIS) && t->hasBuilt(BuildingID::MAGES_GUILD_1))
 	{
 		// Aurora Borealis give spells of all levels even if only level 1 mages guild built
-		for (int i = 0; i < h->maxSpellLevel(); i++)
+		for (int i = 0; i < GameConstants::SPELL_LEVELS; i++)
 		{
 			std::vector<SpellID> spells;
 			gameState().getAllowedSpells(spells, i+1);
 			for (const auto & spell : spells)
-				cs.spells.insert(spell);
+				if(h->canLearnSpell(spell.toSpell()))
+					cs.spells.insert(spell);
 		}
 	}
 	else
 	{
-		for (int i = 0; i < std::min(t->mageGuildLevel(), h->maxSpellLevel()); i++)
+		for (int i = 0; i < t->mageGuildLevel(); i++)
 		{
 			for (int j = 0; j < t->spellsAtLevel(i+1, true) && j < t->spells.at(i).size(); j++)
 			{
-				if (!h->spellbookContainsSpell(t->spells.at(i).at(j)))
+				if(h->canLearnSpell(t->spells.at(i).at(j).toSpell()))
 					cs.spells.insert(t->spells.at(i).at(j));
 			}
 		}
@@ -1650,14 +1651,11 @@ void CGameHandler::useScholarSkill(ObjectInstanceID fromHero, ObjectInstanceID t
 	if (!ScholarSpellLevel || !h1->hasSpellbook() || !h2->hasSpellbook())
 		return;//no scholar skill or no spellbook
 
-	int h1Lvl = std::min(ScholarSpellLevel, h1->maxSpellLevel());//heroes can receive these levels
-	int h2Lvl = std::min(ScholarSpellLevel, h2->maxSpellLevel());
-
 	ChangeSpells cs1;
 	cs1.learn = true;
 	cs1.hid = toHero;//giving spells to first hero
 	for (auto it : h1->getSpellsInSpellbook())
-		if (h2Lvl >= h2->getSpellLevel(it.toSpell()) && !h2->spellbookContainsSpell(it))//hero can learn it and don't have it yet
+		if(ScholarSpellLevel >= h2->getSpellLevel(it.toSpell()) && h2->canLearnSpell(it.toSpell()))
 			cs1.spells.insert(it);//spell to learn
 
 	ChangeSpells cs2;
@@ -1665,7 +1663,7 @@ void CGameHandler::useScholarSkill(ObjectInstanceID fromHero, ObjectInstanceID t
 	cs2.hid = fromHero;
 
 	for (auto it : h2->getSpellsInSpellbook())
-		if (h1Lvl >= h1->getSpellLevel(it.toSpell()) && !h1->spellbookContainsSpell(it))
+		if(ScholarSpellLevel >= h1->getSpellLevel(it.toSpell()) && h1->canLearnSpell(it.toSpell()))
 			cs2.spells.insert(it);
 
 	if (!cs1.spells.empty() || !cs2.spells.empty())//create a message
@@ -3618,6 +3616,43 @@ bool CGameHandler::buySecSkill(const IMarket *m, const CGHeroInstance *h, Second
 
 	changeSecSkill(h, skill, 1, ChangeValueMode::ABSOLUTE);
 	return true;
+}
+
+bool CGameHandler::buyHouseOfWisdomScroll(const IMarket *m, const CGHeroInstance *h, SpellID spell)
+{
+	COMPLAIN_RET_FALSE_IF(!h, "You need a hero to buy a spell scroll!");
+	COMPLAIN_RET_FALSE_IF(!newHorizonsHouseOfWisdom::active(m, gameInfo().getMagicRules()), "This market does not sell spell scrolls!");
+
+	const auto * town = dynamic_cast<const CGTownInstance *>(m);
+	COMPLAIN_RET_FALSE_IF(!town, "Wrong House of Wisdom market!");
+	COMPLAIN_RET_FALSE_IF(!vstd::contains(m->availableItemsIds(EMarketMode::RESOURCE_SKILL), spell), "That spell scroll is unavailable!");
+
+	const auto * definition = spell.toSpell();
+	COMPLAIN_RET_FALSE_IF(!definition || !definition->isCommonHeroSpell() || definition->isAdventure(), "That spell cannot be sold as a scroll!");
+
+	const auto price = newHorizonsHouseOfWisdom::price(spell);
+	const auto & resources = gameInfo().getPlayerState(h->tempOwner)->resources;
+	COMPLAIN_RET_FALSE_IF(!resources.canAfford(price), "You can't afford to buy this spell scroll!");
+
+	const auto * scroll = ArtifactID(ArtifactID::SPELL_SCROLL).toArtifact();
+	const auto scrollPosition = ArtifactUtils::getArtAnyPosition(h, scroll->getId());
+	COMPLAIN_RET_FALSE_IF(!scroll->canBePutAt(h, scrollPosition), "The hero has no room for this spell scroll!");
+
+	// Remove exactly the purchased offer from the authoritative town stock.
+	// The packet is applied on the server and replicated to clients, so a
+	// client cannot refill or otherwise alter the storefront locally.
+	auto remaining = town->getHouseOfWisdomScrolls();
+	std::vector<SpellID> updatedStock(remaining.begin(), remaining.end());
+	const auto it = std::find(updatedStock.begin(), updatedStock.end(), spell);
+	COMPLAIN_RET_FALSE_IF(it == updatedStock.end(), "That spell scroll is unavailable!");
+	updatedStock.erase(it);
+
+	SetHouseOfWisdomScrolls stock;
+	stock.townId = town->id;
+	stock.scrolls = std::move(updatedStock);
+	sendAndApply(stock);
+	giveResources(h->tempOwner, -price);
+	return giveHeroNewScroll(h, spell, ArtifactPosition::FIRST_AVAILABLE);
 }
 
 bool CGameHandler::tradeResources(const IMarket *market, ui32 amountToSell, PlayerColor player, GameResID toSell, GameResID toBuy)

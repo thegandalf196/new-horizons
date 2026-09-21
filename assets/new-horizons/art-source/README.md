@@ -5,7 +5,7 @@ generator and are retained as editable provenance references. They are original
 artwork, not extracted or traced from Heroes III assets. The runtime exports are
 the small RGBA PNGs under `Mods/new-horizons/Images/`:
 
-- `NH_orders_gauntlet_sprite_master.png` supplies the four 48x36 Orders button states.
+- `orders-gauntlet-v4/master.png` supplies the current four 48x36 Orders button states.
 - `NH_perk_bone_collector_master.png` supplies the Bone Collector 44x44 icon.
 - `NH_perk_neutral_master.png` supplies the neutral unknown-perk fallback icon.
 - `active-perks-v2/` contains the three newly active provisional perk paintings

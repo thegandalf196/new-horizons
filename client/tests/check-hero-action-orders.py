@@ -70,11 +70,12 @@ assert "entry.second->block(!available && !protectPairUnavailable)" in action
 assert "OrderIndicatorsSection" in creature_window
 assert "battleGetHeroOrderState" in creature_window
 assert "cannot be dispelled" in creature_window
+assert 'LEADERSHIP,' in creature_window
 assert '"Leadership Cost"' in creature_window
-assert 'const auto usageText = std::to_string(leadershipCount) + " / "' in creature_window
-assert 'leadershipCapacity->maximum' in creature_window
-assert 'const auto usageLabel = "Stack Capacity: " + usageText' in creature_window
-assert 'const auto usageHelp = "Creatures currently in this stack / maximum this hero can command: " + usageText' in creature_window
+assert 'const auto capacityText = leadershipCapacity' in creature_window
+assert 'std::to_string(leadershipCount) + "/" + std::to_string(leadershipCapacity->maximum)' in creature_window
+assert 'addStatLabel(EStat::LEADERSHIP, costText + capacityText)' in creature_window
+assert 'class LeadershipSection' not in (ROOT / "client/windows/CCreatureWindow.h").read_text(encoding="utf-8")
 assert 'battle->battleGetOwnerHero(stack)' in creature_window
 assert 'std::to_string(siege->siegeRating)' in hero_window
 assert 'capabilityLeadershipPerLevel(curHero->getCapabilityRules())' in hero_window

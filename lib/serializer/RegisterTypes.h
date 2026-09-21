@@ -317,4 +317,5 @@ void registerTypes(Serializer &s)
 	// the save/replay wire format and must never be reused or reordered.
 	s.template registerType<BattleHeroOrderStateChanged>(275);
 	s.template registerType<SetNewHorizonsAdventureSpellState>(276);
+	s.template registerType<SetHouseOfWisdomScrolls>(277);
 }
