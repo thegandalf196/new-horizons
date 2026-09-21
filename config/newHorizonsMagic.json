@@ -12,23 +12,58 @@
 	"adventureSpells": {
 		"core:summonBoat": {
 			"guildLevel": 1,
-			"cost": 20
+			"cost": 20,
+			"unlockCost": {
+				"gold": 2500,
+				"mercury": 1,
+				"sulfur": 1,
+				"crystal": 1,
+				"gems": 1
+			}
 		},
 		"core:waterWalk": {
 			"guildLevel": 2,
-			"cost": 30
+			"cost": 30,
+			"unlockCost": {
+				"gold": 5000,
+				"mercury": 2,
+				"sulfur": 2,
+				"crystal": 2,
+				"gems": 2
+			}
 		},
 		"core:townPortal": {
 			"guildLevel": 3,
-			"cost": 50
+			"cost": 50,
+			"unlockCost": {
+				"gold": 10000,
+				"mercury": 4,
+				"sulfur": 4,
+				"crystal": 4,
+				"gems": 4
+			}
 		},
 		"core:fly": {
 			"guildLevel": 4,
-			"cost": 60
+			"cost": 60,
+			"unlockCost": {
+				"gold": 15000,
+				"mercury": 6,
+				"sulfur": 6,
+				"crystal": 6,
+				"gems": 6
+			}
 		},
 		"core:dimensionDoor": {
 			"guildLevel": 5,
-			"cost": 80
+			"cost": 80,
+			"unlockCost": {
+				"gold": 25000,
+				"mercury": 10,
+				"sulfur": 10,
+				"crystal": 10,
+				"gems": 10
+			}
 		}
 	},
 	"spells": {

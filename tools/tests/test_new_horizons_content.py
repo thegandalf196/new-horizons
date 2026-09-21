@@ -308,6 +308,109 @@ class NewHorizonsContentTest(unittest.TestCase):
             {'weeks': 1, 'visitors': True})
         self.assertEqual(patch['special4']['configuration']['visitMode'], 'once')
 
+    def test_universal_mage_guild_overlay_reaches_level_five(self):
+        overlay = load('Mods/new-horizons/Content/config/factions/universalMageGuilds.json')
+        module = load('Mods/new-horizons/mod.json')
+        self.assertIn('config/factions/universalMageGuilds.json', module['factions'])
+
+        building_validator = Draft4Validator(load('config/schemas/townBuilding.json'))
+        structure_validator = Draft4Validator(load('config/schemas/townStructure.json'))
+        expected_factions = {
+            'castle': ('mageGuild5',),
+            'rampart': (),
+            'tower': (),
+            'inferno': (),
+            'necropolis': (),
+            'dungeon': (),
+            'stronghold': ('mageGuild4', 'mageGuild5'),
+            'fortress': ('mageGuild4', 'mageGuild5'),
+            'conflux': (),
+        }
+        expected_original_maximum = {
+            'castle': 4,
+            'rampart': 5,
+            'tower': 5,
+            'inferno': 5,
+            'necropolis': 5,
+            'dungeon': 5,
+            'stronghold': 3,
+            'fortress': 3,
+            'conflux': 5,
+        }
+        expected_costs = {
+            'mageGuild4': {
+                'gold': 5000, 'mercury': 5, 'sulfur': 5,
+                'crystal': 5, 'gems': 5,
+            },
+            'mageGuild5': {
+                'gold': 10000, 'mercury': 10, 'sulfur': 10,
+                'crystal': 10, 'gems': 10,
+            },
+        }
+        expected_predecessor = {
+            'mageGuild4': 'mageGuild3',
+            'mageGuild5': 'mageGuild4',
+        }
+        for faction, missing_levels in expected_factions.items():
+            with self.subTest(faction=faction):
+                patch = overlay['core:' + faction]['town']
+                if faction in ('castle', 'stronghold', 'fortress'):
+                    self.assertEqual(patch['mageGuild'], 5)
+                    self.assertEqual(patch['hallSlots'][1][1], [
+                        'mageGuild1', 'mageGuild2', 'mageGuild3',
+                        'mageGuild4', 'mageGuild5'])
+                    self.assertEqual(len(patch['guildSpellPositions']), 5)
+                    self.assertEqual(len(patch['guildSpellPositions'][-1]), 2)
+
+                for level, expected_cost in expected_costs.items():
+                    building = patch['buildings'][level]
+                    self.assertIsNotNone(building)
+                    # #override replaces the legacy wood/ore and faction
+                    # resource costs instead of merely adding to them.
+                    self.assertEqual(building.get('cost#override'), expected_cost)
+                    normalized = copy.deepcopy(building)
+                    normalized['cost'] = normalized.pop('cost#override')
+                    building_validator.validate(normalized)
+                    if level in missing_levels:
+                        self.assertEqual(building['upgrades'], expected_predecessor[level])
+                    else:
+                        # Existing factions retain their core/library
+                        # prerequisites and upgrade links untouched.
+                        self.assertNotIn('upgrades', building)
+                        self.assertNotIn('requires', building)
+
+                    if level in missing_levels:
+                        structure = patch['structures'][level]
+                        self.assertIsNotNone(structure)
+                        structure_validator.validate(structure)
+                        self.assertTrue(structure['animation'])
+
+                # Applying this partial patch to the core record leaves all
+                # original fields in place while adding the missing guild
+                # records and replacing town metadata as intended.
+                base = load('config/factions/' + faction + '.json')[faction]
+                merged = copy.deepcopy(base)
+                for key, value in patch.items():
+                    if isinstance(value, dict):
+                        merged['town'][key].update(copy.deepcopy(value))
+                    else:
+                        merged['town'][key] = copy.deepcopy(value)
+                self.assertEqual(merged['town']['mageGuild'], 5)
+                for level in range(1, 6):
+                    self.assertIn('mageGuild' + str(level),
+                                  merged['town']['hallSlots'][1][1])
+                    self.assertIsNotNone(merged['town']['buildings'].get(
+                        'mageGuild' + str(level)))
+
+                # The original mode remains untouched: the core still carries
+                # its historical maximums and null placeholders.
+                self.assertEqual(base['town']['mageGuild'],
+                                 expected_original_maximum[faction])
+                if missing_levels:
+                    self.assertIsNone(base['town']['buildings'].get('mageGuild5'))
+                else:
+                    self.assertIsInstance(base['town']['buildings'].get('mageGuild5'), dict)
+
     def test_dungeon_astral_nexus_replenishes_mana_to_normal_maximum(self):
         patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:dungeon']['town']['buildings']['special2']
         self.assertEqual(patch['name'], 'Astral Nexus')

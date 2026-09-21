@@ -40,7 +40,8 @@ requiring the complete source document to be replaced.
 - **Overrides:** The unique-building function assigned to Dungeon's Astral Nexus.
 - **Rule:** Visiting heroes immediately replenish their spell points to their
   normal maximum.
-- **Implementation evidence:** Pending.
+- **Implementation evidence:** Commit `b8bd9ff28`; behavioral coverage in
+  `NewHorizonsUniqueBuildingTrainingTest.TrainingPersistsAndAstralNexusAlwaysRefillsToNormalMaximum`.
 
 ### 2026-09-21 — House of Wisdom replaces Magic University
 
@@ -48,4 +49,32 @@ requiring the complete source document to be replaced.
 - **Overrides:** Conflux's Magic University name and function.
 - **Rule:** The building is named **House of Wisdom** and sells randomly
   generated spell scrolls instead of teaching secondary skills.
+- **Implementation evidence:** Commit `b8bd9ff28`; authoritative purchase,
+  insufficient-funds and save/load coverage in `NewHorizonsMagicUniversityTest`.
+
+### 2026-09-21 — Solmyr Tower-versus-Inferno playtest profile
+
+- **Status:** Accepted
+- **Overrides:** Solmyr's New Horizons starting development and Chain Lightning
+  specialty for the immediate Tower-versus-Inferno playtest milestone.
+- **Rule:** New Horizons Solmyr starts with Metamagic, Havoc Magic, and the
+  Stormcaller perk. He knows **Master Chain Lightning** instead of ordinary
+  Chain Lightning and cannot learn the ordinary version. Master Chain Lightning
+  has the same Mana cost and first-target damage as ordinary Chain Lightning,
+  loses less damage on later jumps, and improves that jump retention as Solmyr
+  gains levels. Legacy-mode Solmyr remains unchanged. This is the first hero in
+  the new three-starting-development direction; do not silently assign arbitrary
+  third choices to every other hero before their intended choices are authored.
+- **Implementation evidence:** Pending.
+
+### 2026-09-21 — exhaustive meaningful battle logging
+
+- **Status:** Accepted
+- **Overrides:** Battle-log coverage and implementation priority after the
+  Solmyr Tower-versus-Inferno milestone.
+- **Rule:** Record meaningful combat interactions with actors, causes, targets,
+  effects and results. Metamagic follow-ups must explicitly identify the hero,
+  ordinal follow-up spell, triggering Metamagic effect, spell name, and resulting
+  damage or other outcome. Extend the same causal standard across other combat
+  mechanics rather than emitting generic New Horizons prefixes.
 - **Implementation evidence:** Pending.

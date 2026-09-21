@@ -266,7 +266,20 @@
 			"additionalProperties": false,
 			"properties": {
 				"guildLevel": {"type": "integer", "minimum": 1, "maximum": 5},
-				"cost": {"type": "integer", "minimum": 0, "maximum": 1000000}
+				"cost": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"unlockCost": {"$ref": "#/definitions/adventureSpellUnlockCost"}
+			}
+		},
+		"adventureSpellUnlockCost": {
+			"type": "object",
+			"required": ["gold", "mercury", "sulfur", "crystal", "gems"],
+			"additionalProperties": false,
+			"properties": {
+				"gold": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"mercury": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"sulfur": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"crystal": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"gems": {"type": "integer", "minimum": 0, "maximum": 1000000}
 			}
 		},
 		"faction": {
