@@ -12,6 +12,7 @@
 #include "BattleEvaluator.h"
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/battle/NewHorizonsShroud.h"
 
 #include <tbb/parallel_for.h>
 
@@ -231,7 +232,10 @@ float BattleExchangeVariant::trackAttack(
 {
 	const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
 	static const auto selectorBlocksRetaliation = Selector::type()(BonusType::BLOCKS_RETALIATION);
+	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
+		.Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
 	const bool counterAttacksBlocked = attacker->hasBonus(selectorBlocksRetaliation, cachingStringBlocksRetaliation);
+	BattleAttackInfo projectedAttack(attacker.get(), defender.get(), 0, shooting);
 
 	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
 	float defenderDamageReduce = AttackPossibility::calculateDamageReduce(attacker.get(), defender.get(), attackDamage, damageCache, hb);
@@ -261,13 +265,13 @@ float BattleExchangeVariant::trackAttack(
 		const bool defenderWasAlive = defender->alive();
 		defender->damage(attackDamage);
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
-		BattleAttackInfo projectedAttack(attacker.get(), defender.get(), 0, shooting);
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
 		attacker->afterAttack(shooting, false);
 	}
 
-	if(!evaluateOnly && allowRetaliation && defender->alive() && defender->ableToRetaliate() && !counterAttacksBlocked && !shooting)
+	if(!evaluateOnly && allowRetaliation && defender->alive() && defender->ableToRetaliate() && !counterAttacksBlocked && !shooting
+		&& (!hb->battleShroudDeniesRetaliation(projectedAttack) || defender->hasBonus(firstStrikeSelector)))
 	{
 		auto retaliationDamage = damageCache.getDamage(defender.get(), attacker.get(), hb);
 		attackerDamageReduce = AttackPossibility::calculateDamageReduce(defender.get(), attacker.get(), retaliationDamage, damageCache, hb);
@@ -405,8 +409,12 @@ ReachabilityInfo getReachabilityWithEnemyBypass(
 	std::shared_ptr<HypotheticBattle> state)
 {
 	ReachabilityInfo::Parameters params(activeStack, activeStack->getPosition());
+	// This path constructs Parameters directly (to account for destructible
+	// enemy stacks), so preserve the same Shroud rank gate as the normal
+	// callback-created reachability cache.
+	params.ghostWalk = newHorizonsShroud::rank(state->battleGetOwnerHero(activeStack)) > 0;
 
-	if(!params.flying)
+	if(!params.flying && !params.ghostWalk)
 	{
 		for(const auto * unit : state->battleAliveUnits())
 		{

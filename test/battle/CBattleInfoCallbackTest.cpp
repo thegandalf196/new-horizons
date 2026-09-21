@@ -206,6 +206,36 @@ public:
 	}
 };
 
+TEST(ReachabilityInfoTest, GhostWalkNeverTreatsAnOccupiedHexAsAnEndpoint)
+{
+	ReachabilityInfo reachability;
+	reachability.params.ghostWalk = true;
+	reachability.accessibility.fill(EAccessibility::ACCESSIBLE);
+
+	const BattleHex occupied(60);
+	reachability.accessibility[occupied.toInt()] = EAccessibility::ALIVE_STACK;
+	reachability.distances[occupied.toInt()] = 1;
+
+	EXPECT_FALSE(reachability.isReachable(occupied));
+}
+
+TEST(ReachabilityInfoTest, GhostWalkChecksTheWholeDoubleWideEndpointFootprint)
+{
+	ReachabilityInfo reachability;
+	reachability.params.ghostWalk = true;
+	reachability.params.doubleWide = true;
+	reachability.params.side = BattleSide::ATTACKER;
+	reachability.accessibility.fill(EAccessibility::ACCESSIBLE);
+
+	const BattleHex destination(60);
+	const auto footprint = battle::Unit::getHexes(destination, true, BattleSide::ATTACKER);
+	ASSERT_EQ(2, footprint.size());
+	reachability.accessibility[footprint[1].toInt()] = EAccessibility::ALIVE_STACK;
+	reachability.distances[destination.toInt()] = 1;
+
+	EXPECT_FALSE(reachability.isReachable(destination));
+}
+
 TEST_F(CBattleInfoCallbackTest, playerCallbackCannotAccessEnemyHero)
 {
 	CGHeroInstance attacker(nullptr);

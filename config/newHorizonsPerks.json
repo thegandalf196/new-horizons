@@ -3317,21 +3317,21 @@
 				"basic": {
 					"description": "Friendly stacks gain Ghost Walk: they may move through occupied creature hexes but may not end movement on an occupied hex. Flanking melee attacks deal +25% damage.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly stacks gain Ghost Walk: they may move through occupied creature hexes but may not end movement on an occupied hex. Flanking melee attacks deal +25% damage."
 					}
 				},
 				"advanced": {
 					"description": "Ghost Walk remains active. Flanking melee bonus becomes +40%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Ghost Walk remains active. Flanking melee bonus becomes +40%."
 					}
 				},
 				"expert": {
 					"description": "Ghost Walk remains active. Flanking melee bonus becomes +60%, and flanking melee attacks deny normal retaliation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Ghost Walk remains active. Flanking melee bonus becomes +60%, and flanking melee attacks deny normal retaliation."
 					}
 				}

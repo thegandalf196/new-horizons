@@ -31,6 +31,22 @@ ReachabilityInfo::ReachabilityInfo()
 
 bool ReachabilityInfo::isReachable(const BattleHex & hex) const
 {
+	if(!hex.isValid())
+		return false;
+
+	// Occupied nodes stay in the BFS cache so a path can continue through
+	// them, but they are not legal movement endpoints.
+	if(params.ghostWalk)
+	{
+		const auto occupiedHexes = battle::Unit::getHexes(hex, params.doubleWide, params.side);
+		if(std::ranges::any_of(occupiedHexes, [this](const BattleHex & occupiedHex)
+			{
+				return occupiedHex.isValid()
+					&& accessibility[occupiedHex.toInt()] == EAccessibility::ALIVE_STACK;
+			}))
+			return false;
+	}
+
 	return distances[hex.toInt()] < INFINITE_DIST;
 }
 

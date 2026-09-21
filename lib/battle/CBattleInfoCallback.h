@@ -96,6 +96,10 @@ public:
 	std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const;
 	/// Current cumulative physical creature damage percentage for the unit's side.
 	int battleGetBloodrageDamagePercent(const battle::Unit * unit) const;
+	/// True for an ordinary hostile melee blow delivered from behind the defender.
+	bool battleIsShroudFlankingAttack(const BattleAttackInfo & attack) const;
+	/// Expert Shroud flanks deny the defender's normal retaliation.
+	bool battleShroudDeniesRetaliation(const BattleAttackInfo & attack) const;
 	/// Validates target coverage and snapshots all transient state for a canonical Order.
 	std::optional<HeroOrderState> battlePrepareHeroOrderState(BattleSide side, HeroCommand command,
 		const std::vector<uint32_t> & targetUnitIds) const;

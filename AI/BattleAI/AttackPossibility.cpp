@@ -348,6 +348,8 @@ AttackPossibility AttackPossibility::evaluate(
 	static const auto selectorBlocksRetaliation = Selector::type()(BonusType::BLOCKS_RETALIATION);
 	const auto attackerSide = state->playerToSide(state->battleGetOwner(attacker));
 	const bool counterAttacksBlocked = attacker->hasBonus(selectorBlocksRetaliation, cachingStringBlocksRetaliation);
+	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
+		.Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
 
 	AttackPossibility bestAp(hex, BattleHex::INVALID, attackInfo);
 
@@ -500,6 +502,7 @@ AttackPossibility AttackPossibility::evaluate(
 
 				if (i == 0 && !attackInfo.shooting && u->unitId() == defender->unitId()
 					&& retaliatorState->alive() && retaliatorState->ableToRetaliate() && !counterAttacksBlocked
+					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector))
 					&& !ap.attackerState->isInvincible() && !state->isLongWeaponAttack(ap.attackerState.get(), defenderState.get()))
 				{
 					retaliation.emplace();

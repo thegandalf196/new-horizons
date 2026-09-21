@@ -201,6 +201,7 @@ set(test_SRCS
 		server/battles/NewHorizonsBloodrageTest.cpp
 		server/battles/NewHorizonsBulwarkRulesTest.cpp
 		server/battles/NewHorizonsBulwarkRuntimeTest.cpp
+		server/battles/NewHorizonsShroudTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp
 		server/battles/NewHorizonsFireWallTest.cpp

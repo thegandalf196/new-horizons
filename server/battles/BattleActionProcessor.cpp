@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleActionProcessor.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsShroud.h"
 
 #include "BattleProcessor.h"
 
@@ -634,6 +635,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			&& !stack->isInvincible()
 			&& !longWeaponAttack
 			&& (i == 0 && !firstStrike)
+			&& !battle.battleShroudDeniesRetaliation(BattleAttackInfo(stack, attackTarget, movementResult.distance, false))
 			&& attackTarget->ableToRetaliate())
 		{
 			makeAttack(battle, attackTarget, stack, {.targetHex = stack->getPosition(), .first = true, .counter = true});
@@ -1309,6 +1311,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 
 	//initing necessary tables
 	auto accessibility = battle.getAccessibility(currentUnit);
+	const bool ghostWalk = newHorizonsShroud::rank(battle.battleGetOwnerHero(currentUnit)) > 0;
 	BattleHexArray passed;
 	//Ignore obstacles on starting position
 	passed.insert(currentUnit->getPosition());
@@ -1489,6 +1492,12 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 				{
 					BattleHex hex = unitPath[movementsLeft];
 					tiles.insert(hex);
+					const auto footprint = currentUnit->getHexes(hex);
+					const bool crossingOccupiedStack = ghostWalk && std::ranges::any_of(footprint, [&](const BattleHex & occupiedHex)
+					{
+						return occupiedHex.isValid()
+							&& accessibility[occupiedHex.toInt()] == EAccessibility::ALIVE_STACK;
+					});
 
 					if ((openGateAtHex.isValid() && openGateAtHex == hex) ||
 						(gateMayCloseAtHex.isValid() && gateMayCloseAtHex == hex))
@@ -1497,7 +1506,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 					}
 
 					//if we walked onto something, finalize this portion of stack movement check into obstacle
-					if(!battle.battleGetAllObstaclesOnPos(hex, false).empty())
+					if(!crossingOccupiedStack && !battle.battleGetAllObstaclesOnPos(hex, false).empty())
 						obstacleHit = true;
 
 					if (currentUnit->doubleWide())
@@ -1505,7 +1514,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 						BattleHex otherHex = currentUnit->occupiedHex(hex);
 						//two hex creature hit obstacle by backside
 						auto obstacle2 = battle.battleGetAllObstaclesOnPos(otherHex, false);
-						if(otherHex.isValid() && !obstacle2.empty())
+						if(!crossingOccupiedStack && otherHex.isValid() && !obstacle2.empty())
 							obstacleHit = true;
 					}
 					if(!obstacleHit)

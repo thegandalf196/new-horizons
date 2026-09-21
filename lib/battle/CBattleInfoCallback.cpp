@@ -17,6 +17,7 @@
 #include "BattleInfo.h"
 #include "CObstacleInstance.h"
 #include "NewHorizonsBulwark.h"
+#include "NewHorizonsShroud.h"
 #include "IGameSettings.h"
 #include "PossiblePlayerBattleAction.h"
 #include "../bonuses/BonusParameters.h"
@@ -476,6 +477,38 @@ int CBattleInfoCallback::battleGetBloodrageDamagePercent(const battle::Unit * un
 	return std::max(0, getBattle()->getBloodrageDamagePercent(side));
 }
 
+bool CBattleInfoCallback::battleIsShroudFlankingAttack(const BattleAttackInfo & attack) const
+{
+	if(!getBattle() || !attack.attacker || !attack.defender || attack.shooting || !attack.physicalDamage
+		|| attack.secondaryAttack || !attack.attacker->alive() || !attack.defender->alive()
+		|| attack.attacker->isGhost() || attack.defender->isGhost()
+		|| attack.attacker->isTurret() || attack.defender->isTurret()
+		|| attack.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| attack.defender->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| attack.attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+		|| attack.defender->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+		|| battleGetOwner(attack.attacker) == battleGetOwner(attack.defender))
+		return false;
+	const auto attackerHex = attack.attackerPos.isValid() ? attack.attackerPos : attack.attacker->getPosition();
+	const auto defenderHex = attack.defenderPos.isValid() ? attack.defenderPos : attack.defender->getPosition();
+	const auto adjacent = std::ranges::any_of(attack.attacker->getHexes(attackerHex), [&](const BattleHex & first)
+	{
+		return first.isValid() && std::ranges::any_of(attack.defender->getHexes(defenderHex), [&](const BattleHex & second)
+		{
+			return second.isValid() && BattleHex::getDistance(first, second) == 1;
+		});
+	});
+	if(!adjacent)
+		return false;
+	return isToReverse(attack.attacker, attack.defender, attackerHex, defenderHex);
+}
+
+bool CBattleInfoCallback::battleShroudDeniesRetaliation(const BattleAttackInfo & attack) const
+{
+	return battleIsShroudFlankingAttack(attack)
+		&& newHorizonsShroud::deniesRetaliation(newHorizonsShroud::rank(battleGetOwnerHero(attack.attacker)));
+}
+
 std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(BattleSide side,
 	HeroCommand command, const std::vector<uint32_t> & targetUnitIds) const
 {
@@ -703,7 +736,8 @@ std::pair< BattleHexArray, int > CBattleInfoCallback::getPath(const BattleHex & 
 {
 	auto reachability = getReachability(stack);
 
-	if(reachability.predecessors[dest.toInt()] == -1) //cannot reach destination
+	if(!dest.isValid() || !reachability.isReachable(dest)
+		|| reachability.predecessors[dest.toInt()] == -1) //cannot reach destination
 	{
 		return std::make_pair(BattleHexArray(), 0);
 	}
@@ -1692,6 +1726,9 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	if(info.physicalDamage)
 	{
 		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker);
+		if(battleIsShroudFlankingAttack(info))
+			payload.shroudFlankingDamagePercent = newHorizonsShroud::flankingDamagePercent(
+				newHorizonsShroud::rank(battleGetOwnerHero(info.attacker)));
 		if(info.defender && info.defender->defended())
 		{
 			const auto * hero = battleGetOwnerHero(info.defender);
@@ -1973,6 +2010,11 @@ DamageEstimation CBattleInfoCallback::battleEstimateDamage(const BattleAttackInf
 	if (bai.attacker->hasBonusOfType(BonusType::BLOCKS_RETALIATION) || bai.attacker->isInvincible() || isLongWeaponAttack(bai.attacker, bai.defender))
 		return ret;
 
+	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
+		.Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
+	if(battleShroudDeniesRetaliation(bai) && !bai.defender->hasBonus(firstStrikeSelector))
+		return ret;
+
 	//TODO: rewire once more using interval-based fuzzy arithmetic
 
 	const auto & estimateRetaliation = [&](int64_t damage)
@@ -2247,8 +2289,17 @@ ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessib
 	ret.distances[params.startPosition.toInt()] = 0;
 
 	std::array<bool, GameConstants::BFIELD_SIZE> accessibleCache{};
+	auto traversalAccessibility = accessibility;
+	if(params.ghostWalk)
+	{
+		// Keep the original accessibility below for endpoint validation, while
+		// letting the BFS treat every occupied creature tile as ordinary floor.
+		for(auto & tile : traversalAccessibility)
+			if(tile == EAccessibility::ALIVE_STACK)
+				tile = EAccessibility::ACCESSIBLE;
+	}
 	for(int hex = 0; hex < GameConstants::BFIELD_SIZE; hex++)
-		accessibleCache[hex] = accessibility.accessible(hex, params.doubleWide, params.side);
+		accessibleCache[hex] = traversalAccessibility.accessible(hex, params.doubleWide, params.side);
 
 	while(!hexq.empty()) //bfs loop
 	{
@@ -2514,6 +2565,7 @@ bool CBattleInfoCallback::isInTacticRange(const BattleHex & dest) const
 ReachabilityInfo CBattleInfoCallback::getReachability(const battle::Unit * unit) const
 {
 	ReachabilityInfo::Parameters params(unit, unit->getPosition());
+	params.ghostWalk = newHorizonsShroud::rank(battleGetOwnerHero(unit)) > 0;
 
 	if(!battleDoWeKnowAbout(unit->unitSide()))
 	{
@@ -2546,6 +2598,7 @@ ReachabilityInfo CBattleInfoCallback::getFlyingReachability(const ReachabilityIn
 {
 	ReachabilityInfo ret;
 	ret.accessibility = getAccessibility(* params.knownAccessible);
+	ret.params = params;
 
 	for(int i = 0; i < GameConstants::BFIELD_SIZE; i++)
 	{

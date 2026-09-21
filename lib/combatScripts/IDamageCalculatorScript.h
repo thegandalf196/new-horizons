@@ -64,6 +64,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int heroOrderDamagePercent = 0;
 	/// Battle-long additive creature attack/retaliation damage from Bloodrage.
 	int bloodrageDamagePercent = 0;
+	/// Additive melee premium from a positional Shroud of Malassa flank.
+	int shroudFlankingDamagePercent = 0;
 	/// Physical damage reduction supplied by the defending stack's canonical Order.
 	int heroOrderDamageReductionPercent = 0;
 	/// Bulwark reduction in basis points (one hundredth of one percentage point).
@@ -114,6 +116,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("heroOrderDamagePercent", heroOrderDamagePercent, "Direct damage component from the active canonical Order.");
 		s("bloodrageDamagePercent", bloodrageDamagePercent,
 			"Battle-long additive creature attack and retaliation damage from Bloodrage.");
+		s("shroudFlankingDamagePercent", shroudFlankingDamagePercent,
+			"Positional melee damage premium supplied by Shroud of Malassa.");
 		s("heroOrderDamageReductionPercent", heroOrderDamageReductionPercent,
 			"Physical damage reduction supplied by the defending canonical Order.");
 		s("bulwarkDamageReductionBasisPoints", bulwarkDamageReductionBasisPoints,
