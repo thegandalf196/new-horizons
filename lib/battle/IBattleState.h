@@ -97,6 +97,11 @@ public:
 	virtual int32_t getBloodrageRank(BattleSide side) const { return 0; }
 	virtual SylvanLuckState getSylvanLuckState(BattleSide side) const { return {}; }
 	virtual LuckRollRules getLuckRollRules() const { return {}; }
+	virtual const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const
+	{
+		static const std::map<CreatureID, TQuantity> empty;
+		return empty;
+	}
 
 	virtual ui8 getTacticDist() const = 0;
 	virtual BattleSide getTacticsSide() const = 0;

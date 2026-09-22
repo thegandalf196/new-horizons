@@ -58,6 +58,28 @@ struct DLL_LINKAGE BattleNextRound : public CPackForClient
 	}
 };
 
+/// Replicates the complete authoritative Demonic Reserve battle snapshot after
+/// a pending gate resolves. Opening a gate itself is carried by StartAction.
+struct DLL_LINKAGE BattleDemonicGatingStateChanged : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	std::map<CreatureID, TQuantity> reserve;
+	std::vector<SideInBattle::PendingDemonicGate> pending;
+	std::vector<SideInBattle::GatedDemonicStack> gated;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		h & battleID;
+		h & side;
+		h & reserve;
+		h & pending;
+		h & gated;
+	}
+};
+
 struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 {
 	BattleID battleID = BattleID::NONE;

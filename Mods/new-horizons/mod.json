@@ -5788,21 +5788,21 @@
 							"basic": {
 								"description": "A friendly Inferno stack may spend its Creature Activation to open a Gate on a legal empty hex within 3 hexes. At the start of the next round, one Core stack from the Demonic Reserve arrives there.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "A friendly Inferno stack may spend its Creature Activation to open a Gate on a legal empty hex within 3 hexes. At the start of the next round, one Core stack from the Demonic Reserve arrives there."
 								}
 							},
 							"advanced": {
 								"description": "Gating may bring Core or Elite reserve stacks.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Gating may bring Core or Elite reserve stacks."
 								}
 							},
 							"expert": {
 								"description": "Gating may bring Core, Elite, or Champion reserve stacks.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Gating may bring Core, Elite, or Champion reserve stacks."
 								}
 							}

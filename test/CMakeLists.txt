@@ -199,6 +199,7 @@ set(test_SRCS
 		server/battles/NewHorizonsLogisticsMasteryTest.cpp
 		server/battles/NewHorizonsNecromancyTest.cpp
 		server/battles/NewHorizonsBloodrageTest.cpp
+		server/battles/NewHorizonsDemonicGatingTest.cpp
 		server/battles/NewHorizonsBulwarkRulesTest.cpp
 		server/battles/NewHorizonsBulwarkRuntimeTest.cpp
 		server/battles/NewHorizonsBattlecraftTest.cpp

@@ -273,7 +273,7 @@ void BattleAction::setTarget(const battle::Target & target_)
 
 bool BattleAction::isUnitAction() const
 {
-	static const std::array<EActionType, 109> actions = {
+	static const std::array actions = {
 		EActionType::NO_ACTION,
 		EActionType::WALK,
 		EActionType::WAIT,
@@ -284,7 +284,8 @@ bool BattleAction::isUnitAction() const
 		EActionType::MONSTER_SPELL,
 		EActionType::BAD_MORALE,
 		EActionType::STACK_HEAL,
-		EActionType::WALK_AND_CAST
+		EActionType::WALK_AND_CAST,
+		EActionType::DEMONIC_GATING
 	};
 	return vstd::contains(actions, actionType);
 }

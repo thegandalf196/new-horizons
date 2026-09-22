@@ -29,6 +29,7 @@ public:
 		SHOOT,
 		CATAPULT,
 		HEAL,
+		DEMONIC_GATE,
 		WALK_AND_SPELLCAST,
 
 		RANDOM_GENIE_SPELL,   // random spell on a friendly creature

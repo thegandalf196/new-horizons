@@ -91,6 +91,8 @@ class BattleActionsController
 	/// selected unit identities.
 	std::optional<HeroCommand> selectedHeroOrderCommand;
 	std::optional<uint32_t> heroOrderTargetingFirst;
+	/// Presentation-only reserve choice for the next Demonic Gate placement.
+	CreatureID demonicGatingCreature;
 
 	bool isCastingPossibleHere (const CSpell * spell, const CStack *shere, const BattleHex & myNumber);
 	std::vector<PossiblePlayerBattleAction> getPossibleActionsForStack (const CStack *stack) const; //called when stack gets its turn
@@ -252,6 +254,7 @@ public:
 	
 	/// sets list of high-priority actions that should be selected before any other actions
 	void setPriorityActions(const std::vector<PossiblePlayerBattleAction> &);
+	void selectDemonicGatingCreature(CreatureID creature);
 
 	/// resets possible actions to original state
 	void resetCurrentStackPossibleActions();

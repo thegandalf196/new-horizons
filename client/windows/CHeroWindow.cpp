@@ -18,6 +18,7 @@
 #include "CHeroBackpackWindow.h"
 #include "CKingdomInterface.h"
 #include "CExchangeWindow.h"
+#include "GUIClasses.h"
 
 #include "../CPlayerInterface.h"
 
@@ -142,6 +143,13 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	formations = std::make_shared<CToggleGroup>(0);
 	formations->addToggle(0, std::make_shared<CToggleButton>(newHorizonsLayout ? Point(484, 544) : Point(481, 483), AnimationPath::builtin("hsbtns6.def"), std::make_pair(LIBRARY->generaltexth->translate("core.heroscrn.23"), LIBRARY->generaltexth->translate("core.heroscrn.29")), 0, EShortcut::HERO_TIGHT_FORMATION));
 	formations->addToggle(1, std::make_shared<CToggleButton>(newHorizonsLayout ? Point(484, 576) : Point(481, 519), AnimationPath::builtin("hsbtns7.def"), std::make_pair(LIBRARY->generaltexth->translate("core.heroscrn.24"), LIBRARY->generaltexth->translate("core.heroscrn.30")), 0, EShortcut::HERO_LOOSE_FORMATION));
+	if(newHorizonsLayout)
+	{
+		demonicReserveButton = std::make_shared<CButton>(Point(604, 544), AnimationPath::builtin("battleUnitAction"),
+			CButton::tooltip("Demonic Reserve", "Select an Inferno army stack to store it, or clear the selection to withdraw reserve troops."),
+			[this](){ demonicReserveClicked(); });
+		demonicReserveButton->setOverlay(std::make_shared<CPicture>(ImagePath::builtin("NH_demonicGating_basic_small")));
+	}
 
 	if(hero->getCommander())
 	{
@@ -490,6 +498,67 @@ void CHeroWindow::restoreLegacyLayout()
 	}
 }
 
+void CHeroWindow::demonicReserveClicked()
+{
+	if(!curHero || curHero->getPerkSkillRank("new-horizons:demonicGating") <= 0
+		|| curHero->getOwner() != GAME->interface()->playerID)
+		return;
+
+	const auto * selected = garr ? garr->getSelection() : nullptr;
+	if(selected && selected->getObj() == curHero && curHero->hasStackAtSlot(selected->getSlot()))
+	{
+		const SlotID slot = selected->getSlot();
+		const CreatureID creature = curHero->getCreature(slot)->getId();
+		const TQuantity count = curHero->getStackCount(slot);
+		if(creature.toCreature()->getFactionID() != FactionID::INFERNO)
+		{
+			GAME->interface()->showInfoDialog("Only Inferno creatures may enter the Demonic Reserve.");
+			return;
+		}
+		const int minimumActive = curHero->stacksCount() == 1 ? 1 : 0;
+		ENGINE->windows().createAndPushWindow<CSplitWindow>(creature.toCreature(),
+			[this, slot, creature](int, int reserveAmount)
+			{
+				if(reserveAmount > 0)
+					GAME->interface()->cb->arrangeDemonicReserve(curHero, slot, creature, reserveAmount, true);
+			}, minimumActive, 0, count, 0);
+		return;
+	}
+
+	std::vector<CreatureID> creatures;
+	std::vector<std::string> entries;
+	for(const auto & [creature, count] : curHero->getDemonicReserve())
+	{
+		if(count <= 0)
+			continue;
+		creatures.push_back(creature);
+		entries.push_back((count == 1 ? creature.toCreature()->getNameSingularTranslated()
+			: creature.toCreature()->getNamePluralTranslated()) + "  " + std::to_string(count));
+	}
+	if(entries.empty())
+	{
+		GAME->interface()->showInfoDialog("The Demonic Reserve is empty. Select an Inferno stack first.");
+		return;
+	}
+	ENGINE->windows().pushWindow(std::make_shared<CObjectListWindow>(entries, nullptr,
+		"Demonic Reserve", "Choose creatures to return to the active army.",
+		[this, creatures](const int index)
+		{
+			if(index < 0 || static_cast<size_t>(index) >= creatures.size())
+				return;
+			const CreatureID creature = creatures[index];
+			const TQuantity count = curHero->getDemonicReserveCount(creature);
+			if(count <= 0)
+				return;
+			ENGINE->windows().createAndPushWindow<CSplitWindow>(creature.toCreature(),
+				[this, creature](int, int activeAmount)
+				{
+					if(activeAmount > 0)
+						GAME->interface()->cb->arrangeDemonicReserve(curHero, SlotID(), creature, activeAmount, false);
+				}, 0, 0, count, 0);
+		}));
+}
+
 void CHeroWindow::onScreenResize()
 {
 	const bool refresh = newHorizonsLayout;
@@ -518,6 +587,15 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	OBJECT_CONSTRUCTION;
 
 	assert(curHero);
+	if(demonicReserveButton)
+	{
+		const bool hasGating = curHero->getPerkSkillRank("new-horizons:demonicGating") > 0;
+		if(hasGating)
+			demonicReserveButton->enable();
+		else
+			demonicReserveButton->disable();
+		demonicReserveButton->block(hasGating && curHero->getOwner() != GAME->interface()->playerID);
+	}
 	if(newHorizonsLayout && !useNewHorizonsHeroLayout(curHero))
 		restoreLegacyLayout();
 	// An inactive resize only changes presentation. The inherited refresh also

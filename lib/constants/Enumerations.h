@@ -146,6 +146,7 @@ enum class EActionType : int8_t
 	STACK_HEAL,
 	WALK_AND_CAST,
 	HERO_COMMAND,
+	DEMONIC_GATING,
 };
 
 enum class EDiggingStatus : int8_t

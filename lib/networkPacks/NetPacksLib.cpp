@@ -492,6 +492,11 @@ void BattleHeroOrderStateChanged::visitTyped(ICPackVisitor & visitor)
 	visitor.visitBattleHeroOrderStateChanged(*this);
 }
 
+void BattleDemonicGatingStateChanged::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleDemonicGatingStateChanged(*this);
+}
+
 void EndAction::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitEndAction(*this);

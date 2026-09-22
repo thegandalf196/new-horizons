@@ -12,6 +12,7 @@
 #include <limits>
 
 #include "../GameConstants.h"
+#include "BattleHex.h"
 #include "HeroCommand.h"
 #include "FocusFireState.h"
 #include "SylvanLuckState.h"
@@ -23,6 +24,41 @@ class CArmedInstance;
 
 struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 {
+	struct PendingDemonicGate
+	{
+		CreatureID creature;
+		TQuantity count = 0;
+		BattleHex position;
+		int32_t arrivalRound = 0;
+		uint32_t sourceUnitId = std::numeric_limits<uint32_t>::max();
+
+		auto operator<=>(const PendingDemonicGate &) const = default;
+
+		template <typename Handler> void serialize(Handler & h)
+		{
+			h & creature;
+			h & count;
+			h & position;
+			h & arrivalRound;
+			h & sourceUnitId;
+		}
+	};
+	struct GatedDemonicStack
+	{
+		uint32_t unitId = std::numeric_limits<uint32_t>::max();
+		CreatureID creature;
+		TQuantity initialCount = 0;
+
+		auto operator<=>(const GatedDemonicStack &) const = default;
+
+		template <typename Handler> void serialize(Handler & h)
+		{
+			h & unitId;
+			h & creature;
+			h & initialCount;
+		}
+	};
+
 	using GameCallbackHolder::GameCallbackHolder;
 
 	PlayerColor color = PlayerColor::CANNOT_DETERMINE;
@@ -62,6 +98,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int32_t bloodrageDamagePercent = 0;
 	int32_t bloodrageRank = 0;
 	SylvanLuckState sylvanLuck;
+	std::map<CreatureID, TQuantity> demonicReserve;
+	std::vector<PendingDemonicGate> pendingDemonicGates;
+	std::vector<GatedDemonicStack> gatedDemonicStacks;
 
 	void init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town);
 	const CArmedInstance * getArmy() const;
@@ -181,6 +220,20 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		{
 			orderState.reset();
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DEMONIC_RESERVE))
+		{
+			h & demonicReserve;
+			h & pendingDemonicGates;
+			h & gatedDemonicStacks;
+		}
+		else if(!h.saving)
+		{
+			demonicReserve.clear();
+			pendingDemonicGates.clear();
+			gatedDemonicStacks.clear();
+		}
+		else if(!demonicReserve.empty() || !pendingDemonicGates.empty() || !gatedDemonicStacks.empty())
+			throw std::runtime_error("Cannot discard Demonic Gating battle state");
 	}
 
 	void clearMetamagicSequence()

@@ -23,6 +23,7 @@ void SideInBattle::init(const CGHeroInstance * Hero, const CArmedInstance * Army
 		initialMana = Hero->mana;
 		// NOTE: hero is not attached to town directly at this point, only indirectly via townAndVis
 		additionalMana = Hero->valOfBonuses(BonusType::COMBAT_MANA_BONUS);
+		demonicReserve = Hero->getDemonicReserve();
 		if (town)
 			additionalMana += town->valOfBonuses(BonusType::COMBAT_MANA_BONUS);
 	}

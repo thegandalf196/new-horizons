@@ -67,6 +67,9 @@ public:
 	/// never author this value; the action processor fills it from saved state.
 	si32 metamagicManaRefund = 0;
 	HeroCommand command = HeroCommand::NONE;
+	/// Real Inferno reserve stack selected for Demonic Gating. The entire
+	/// currently available stack is committed; no creatures are created.
+	CreatureID gatingCreature;
 
 	BattleAction();
 	/// Explicitly closes a control-visible Time Stop activation without
@@ -217,6 +220,12 @@ public:
 		{
 			command = HeroCommand::NONE;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DEMONIC_RESERVE))
+			h & gatingCreature;
+		else if(!h.saving)
+			gatingCreature = CreatureID();
+		else if(gatingCreature.hasValue())
+			throw std::runtime_error("Cannot serialize Demonic Gating to an older protocol");
 		if(!h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Targeted command requires the new protocol");

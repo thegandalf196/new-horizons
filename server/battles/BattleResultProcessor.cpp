@@ -42,10 +42,17 @@ CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle,
 	army(battle.battleGetArmyObject(sideInBattle))
 {
 	heroWithDeadCommander = ObjectInstanceID();
+	std::set<uint32_t> gatedUnitIds;
+	if(const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle()))
+		for(const auto & gated : concrete->getSide(sideInBattle).gatedDemonicStacks)
+			gatedUnitIds.insert(gated.unitId);
 
 	PlayerColor color = battle.sideToPlayer(sideInBattle);
 
-	auto allStacks = battle.battleGetStacksIf([color](const CStack * stack){
+	auto allStacks = battle.battleGetStacksIf([color, &gatedUnitIds](const CStack * stack){
+
+		if(gatedUnitIds.contains(stack->unitId()))
+			return false;
 
 		if (stack->summoned)//don't take into account temporary summoned stacks
 			return false;
@@ -344,6 +351,36 @@ void BattleResultProcessor::endBattleConfirm(const CBattleInfoCallback & battle)
 
 	const auto attackerHero = battle.battleGetFightingHero(BattleSide::ATTACKER);
 	const auto defenderHero = battle.battleGetFightingHero(BattleSide::DEFENDER);
+
+	// Demonic Reserve is a real owned army pool. Replace the strategic snapshot
+	// with the uncommitted reserve plus every surviving gated stack (and every
+	// still-pending gate) before the battle object is removed.
+	if(const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle()))
+	{
+		for(const auto sideId : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			const auto * hero = battle.battleGetFightingHero(sideId);
+			if(!hero)
+				continue;
+			const auto & side = concrete->getSide(sideId);
+			if(side.demonicReserve.empty() && side.pendingDemonicGates.empty()
+				&& side.gatedDemonicStacks.empty() && hero->getDemonicReserve().empty())
+				continue;
+			auto reserve = side.demonicReserve;
+			for(const auto & pending : side.pendingDemonicGates)
+				reserve[pending.creature] += pending.count;
+			for(const auto & gated : side.gatedDemonicStacks)
+			{
+				const auto * stack = battle.battleGetStackByID(gated.unitId, false);
+				if(stack && stack->alive() && stack->getCount() > 0)
+					reserve[gated.creature] += stack->getCount();
+			}
+			SetNewHorizonsDemonicReserve update;
+			update.heroId = hero->id;
+			update.reserve = std::move(reserve);
+			gameHandler->sendAndApply(update);
+		}
+	}
 
 
 	//give exp

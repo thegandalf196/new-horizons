@@ -12,6 +12,7 @@
 
 #include "BattleInterface.h"
 #include "BattleActionsController.h"
+#include "BattleStacksController.h"
 
 #include "../GameEngine.h"
 #include "events/InputHandler.h"
@@ -21,10 +22,13 @@
 #include "../widgets/Images.h"
 #include "../widgets/TextControls.h"
 #include "../windows/CSpellWindow.h"
+#include "../windows/GUIClasses.h"
 
 #include "../../lib/CConfigHandler.h"
+#include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/IBattleState.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpell.h"
@@ -54,6 +58,35 @@ void UnitActionPanel::setActions(int buttonIndex, const std::vector<PossiblePlay
 		if (button != buttons.at(buttonIndex))
 			button->setSelectedSilent(false);
 
+	if(filteredActions.front().get() == PossiblePlayerBattleAction::DEMONIC_GATE)
+	{
+		const auto * active = owner.stacksController->getActiveStack();
+		const auto * hero = active ? owner.getBattle()->battleGetFightingHero(active->unitSide()) : nullptr;
+		if(!active || !hero)
+			return;
+		const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
+		std::vector<CreatureID> creatures;
+		std::vector<std::string> entries;
+		for(const auto & [creature, count] : owner.getBattle()->getBattle()->getDemonicReserve(active->unitSide()))
+		{
+			const auto category = owner.getBattle()->battleGetCreatureCategory(creature);
+			if(count <= 0 || !category || static_cast<int>(category->category) >= rank)
+				continue;
+			creatures.push_back(creature);
+			entries.push_back((count == 1 ? creature.toCreature()->getNameSingularTranslated()
+				: creature.toCreature()->getNamePluralTranslated()) + "  " + std::to_string(count));
+		}
+		if(entries.empty())
+			return;
+		ENGINE->windows().pushWindow(std::make_shared<CObjectListWindow>(entries, nullptr,
+			"Demonic Reserve", "Choose the stack that will enter through the Gate.",
+			[this, creatures](const int index)
+			{
+				if(index >= 0 && static_cast<size_t>(index) < creatures.size())
+					owner.actionsController->selectDemonicGatingCreature(creatures[index]);
+			}));
+		return;
+	}
 	owner.actionsController->setPriorityActions(filteredActions);
 	if (filteredActions.front().spellcast())
 		owner.actionsController->enterCreatureCastingMode();
@@ -126,6 +159,7 @@ void UnitActionPanel::setPossibleActions(const std::vector<PossiblePlayerBattleA
 	static const std::vector actionsAttack = { PossiblePlayerBattleAction::ATTACK, PossiblePlayerBattleAction::WALK_AND_ATTACK };
 	static const std::vector actionsReturn = { PossiblePlayerBattleAction::ATTACK_AND_RETURN };
 	static const std::vector actionsAttackLongWeapon = { PossiblePlayerBattleAction::LONG_WEAPON_ATTACK };
+	static const std::vector actionsGate = { PossiblePlayerBattleAction::DEMONIC_GATE };
 
 	testAndAddAction(newActions, actionsMove, ImagePath::builtin("battle/actionMove"), "vcmi.battle.action.move");
 	testAndAddAction(newActions, actionsReturn, ImagePath::builtin("battle/actionReturn"), "vcmi.battle.action.return");
@@ -133,6 +167,7 @@ void UnitActionPanel::setPossibleActions(const std::vector<PossiblePlayerBattleA
 	testAndAddAction(newActions, actionsShoot, ImagePath::builtin("battle/actionShoot"), "vcmi.battle.action.shoot");
 	testAndAddAction(newActions, actionsGenie, ImagePath::builtin("battle/actionGenie"), "vcmi.battle.action.genie");
 	testAndAddAction(newActions, actionsAttackLongWeapon, ImagePath::builtin("battle/actionLongWeapon"), "vcmi.battle.action.attackLongWeapon");
+	testAndAddAction(newActions, actionsGate, ImagePath::builtin("NH_demonicGating_basic_small"), "new-horizons.skill.demonicGating.name");
 
 	std::vector<SpellID> spells;
 

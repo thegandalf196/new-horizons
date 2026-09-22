@@ -109,6 +109,34 @@ static bool canonicalFireWallDirection(BattleHex::EDir direction)
 	return direction >= BattleHex::TOP_LEFT && direction <= BattleHex::LEFT;
 }
 
+static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)
+{
+	if(action.actionType != EActionType::DEMONIC_GATING || !action.gatingCreature.hasValue()
+		|| action.target.size() != 1 || action.target.front().unitValue != -1000)
+		return false;
+	const auto * source = battle.battleGetStackByID(action.stackNumber, false);
+	const auto * hero = battle.battleGetFightingHero(action.side);
+	const auto * creature = action.gatingCreature.toCreature();
+	if(!source || !source->alive() || !hero || !creature
+		|| source->unitSide() != action.side || source->creatureId().toCreature()->getFactionID() != FactionID::INFERNO
+		|| creature->getFactionID() != FactionID::INFERNO)
+		return false;
+	const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
+	const auto category = battle.battleGetCreatureCategory(action.gatingCreature);
+	if(rank <= 0 || !category || static_cast<int>(category->category) >= rank)
+		return false;
+	const auto & demonicReserve = battle.getBattle()->getDemonicReserve(action.side);
+	const auto reserve = demonicReserve.find(action.gatingCreature);
+	if(reserve == demonicReserve.end() || reserve->second <= 0)
+		return false;
+	const BattleHex target = action.target.front().hexValue;
+	if(!target.isAvailable() || BattleHex::getDistance(source->getPosition(), target) > 3
+		|| battle.battleGetUnitByPos(target, true) || !battle.battleGetAllObstaclesOnPos(target, false).empty())
+		return false;
+	const auto accessibility = battle.getAccessibility();
+	return accessibility.accessible(target, creature->isDoubleWide(), action.side);
+}
+
 static bool validateCanonicalFireWallAction(const CBattleInfoCallback & battle,
 	const BattleAction & action, battle::Target & expandedTarget)
 {
@@ -1041,9 +1069,35 @@ bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & bat
 			return doUnitSpellAction(battle, ba);
 		case EActionType::STACK_HEAL:
 			return doHealAction(battle, ba);
+		case EActionType::DEMONIC_GATING:
+			return doDemonicGatingAction(battle, ba);
 	}
 	gameHandler->complain("Unrecognized action type received!!");
 	return false;
+}
+
+bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)
+{
+	const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle());
+	if(!concrete)
+		return false;
+	const auto & gates = concrete->getSide(ba.side).pendingDemonicGates;
+	const auto found = std::ranges::find_if(gates, [&ba](const auto & gate)
+	{
+		return gate.sourceUnitId == ba.stackNumber && gate.creature == ba.gatingCreature;
+	});
+	if(found == gates.end())
+		return false;
+	BattleLogMessage message;
+	message.battleID = concrete->getBattleID();
+	MetaString line = MetaString::createFromRawString("A Gate opens for ");
+	line.appendNumber(found->count);
+	line.appendRawString(" ");
+	line.appendName(found->creature, found->count);
+	line.appendRawString(".");
+	message.lines.push_back(std::move(line));
+	gameHandler->sendAndApply(message);
+	return true;
 }
 
 bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)
@@ -1247,6 +1301,11 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	if(ba.actionType == EActionType::HERO_SPELL && !validateHeroSpellAction(battle, ba))
 	{
 		gameHandler->complain("Hero spell unavailable under authoritative target validation");
+		return false;
+	}
+	if(ba.actionType == EActionType::DEMONIC_GATING && !validateDemonicGatingAction(battle, ba))
+	{
+		gameHandler->complain("Demonic Gate placement or reserve selection is invalid");
 		return false;
 	}
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);

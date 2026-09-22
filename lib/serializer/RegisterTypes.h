@@ -323,4 +323,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<MusterCreatures>(280);
 	s.template registerType<SetNewHorizonsDemonicReserve>(281);
 	s.template registerType<ArrangeDemonicReserve>(282);
+	s.template registerType<BattleDemonicGatingStateChanged>(283);
 }

@@ -171,3 +171,21 @@ requiring the complete source document to be replaced.
   `STACKS_INITIATIVE`. Mage and Arch Mage share Speed 5, with Initiative 5 and
   7 respectively. `CStackWindow` renders distinct Speed, Initiative, and
   Leadership Cost rows in the taller New Horizons creature panel.
+
+### 2026-09-22 — Demonic Reserve and Gating interaction
+
+- **Status:** Accepted
+- **Overrides:** Any interpretation of Gating as a free summon or passive proc.
+- **Rule:** Inferno heroes own a persistent Demonic Reserve outside the seven
+  active army slots. From the hero screen, selected Inferno troops can be moved
+  into that reserve and withdrawn later. In battle, an active friendly Inferno
+  stack may spend its Creature Activation to choose an eligible reserve stack
+  and a legal empty Gate hex. The whole selected reserve stack arrives at the
+  next round boundary. Its casualties are permanent; survivors return to the
+  reserve after combat. Basic permits Core, Advanced adds Elite, and Expert adds
+  Champion. The server owns all validation and state transitions, and BattleAI
+  must understand the action.
+- **Implementation evidence:** Persistent reserve and transfer foundation in
+  commit `9b0ba2f3b`; full battle action, delayed arrival, survivor reconciliation,
+  hero/battle controls, battle log, BattleAI choice, and behavioral coverage are
+  implemented in the following Demonic Gating checkpoint.

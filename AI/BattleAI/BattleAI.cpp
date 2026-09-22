@@ -20,6 +20,7 @@
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/callback/IGameInfoCallback.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
@@ -130,6 +131,66 @@ int getSimulationTurnsCount(const StartInfo * startInfo)
 	return startInfo->difficulty < 4 ? 2 : 10;
 }
 
+std::optional<BattleAction> chooseDemonicGate(const std::shared_ptr<CBattleInfoCallback> & battle,
+	const CStack * source, BattleSide side)
+{
+	if(!battle || !source || source->unitSide() != side
+		|| source->creatureId().toCreature()->getFactionID() != FactionID::INFERNO)
+		return std::nullopt;
+	const auto * hero = battle->battleGetFightingHero(side);
+	if(!hero)
+		return std::nullopt;
+	const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
+	if(rank <= 0)
+		return std::nullopt;
+
+	CreatureID chosen;
+	uint64_t chosenValue = 0;
+	for(const auto & [creature, count] : battle->getBattle()->getDemonicReserve(side))
+	{
+		const auto category = battle->battleGetCreatureCategory(creature);
+		if(count <= 0 || !category || static_cast<int>(category->category) >= rank)
+			continue;
+		const uint64_t value = static_cast<uint64_t>(count) * creature.toCreature()->getAIValue();
+		if(!chosen.hasValue() || value > chosenValue)
+		{
+			chosen = creature;
+			chosenValue = value;
+		}
+	}
+	if(!chosen.hasValue())
+		return std::nullopt;
+
+	const auto accessibility = battle->getAccessibility();
+	BattleHex best;
+	int bestEnemyDistance = std::numeric_limits<int>::max();
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		BattleHex candidate(index);
+		if(!candidate.isAvailable() || BattleHex::getDistance(source->getPosition(), candidate) > 3
+			|| !accessibility.accessible(candidate, chosen.toCreature()->isDoubleWide(), side))
+			continue;
+		int nearestEnemy = std::numeric_limits<int>::max();
+		for(const auto * enemy : battle->battleAliveUnits(CBattleInfoEssentials::otherSide(side)))
+			nearestEnemy = std::min(nearestEnemy, static_cast<int>(BattleHex::getDistance(candidate, enemy->getPosition())));
+		if(nearestEnemy < bestEnemyDistance)
+		{
+			best = candidate;
+			bestEnemyDistance = nearestEnemy;
+		}
+	}
+	if(!best.isAvailable())
+		return std::nullopt;
+
+	BattleAction result;
+	result.actionType = EActionType::DEMONIC_GATING;
+	result.side = side;
+	result.stackNumber = source->unitId();
+	result.gatingCreature = chosen;
+	result.aimToHex(best);
+	return result;
+}
+
 void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 {
 	LOG_TRACE_PARAMS(logAi, "stack: %s", stack->nodeName());
@@ -195,6 +256,11 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 	if(stack->isCatapult())
 	{
 		cb->battleMakeUnitAction(battleID, useCatapult(battleID, stack));
+		return;
+	}
+	if(auto gating = chooseDemonicGate(cb->getBattle(battleID), stack, side))
+	{
+		cb->battleMakeUnitAction(battleID, *gating);
 		return;
 	}
 	if(stack->hasBonusOfType(BonusType::SIEGE_WEAPON) && stack->hasBonusOfType(BonusType::HEALER))

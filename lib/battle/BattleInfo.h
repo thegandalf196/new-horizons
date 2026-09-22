@@ -48,6 +48,10 @@ public:
 	int32_t getBloodrageRank(BattleSide side) const override { return sides.at(side).bloodrageRank; }
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return sides.at(side).sylvanLuck; }
 	LuckRollRules getLuckRollRules() const override { return luckRollRules; }
+	const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const override
+	{
+		return sides.at(side).demonicReserve;
+	}
 	HeroCommand getActiveDoctrine(BattleSide side) const override { (void)side; return HeroCommand::NONE; }
 	HeroCommand getActiveOrder(BattleSide side) const override
 	{

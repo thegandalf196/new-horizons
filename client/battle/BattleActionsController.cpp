@@ -1234,6 +1234,9 @@ void BattleActionsController::reorderPossibleActionsPriority(const CStack * stac
 			case PossiblePlayerBattleAction::MOVE_STACK:
 				return 10;
 				break;
+			case PossiblePlayerBattleAction::DEMONIC_GATE:
+				return 10;
+				break;
 			case PossiblePlayerBattleAction::CATAPULT:
 				return 11;
 				break;
@@ -1522,6 +1525,10 @@ void BattleActionsController::actionSetCursor(PossiblePlayerBattleAction action,
 				ENGINE->cursor().set(Cursor::Combat::SHOOT);
 			return;
 
+		case PossiblePlayerBattleAction::DEMONIC_GATE:
+			ENGINE->cursor().set(Cursor::Spellcast::SPELL);
+			return;
+
 		case PossiblePlayerBattleAction::AIMED_SPELL_CREATURE:
 		case PossiblePlayerBattleAction::ANY_LOCATION:
 		case PossiblePlayerBattleAction::WALK_AND_SPELLCAST:
@@ -1765,6 +1772,18 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 
 		case PossiblePlayerBattleAction::HERO_INFO:
 			return  LIBRARY->generaltexth->translate("core.genrltxt.417"); // "View Hero Stats"
+
+		case PossiblePlayerBattleAction::DEMONIC_GATE:
+		{
+			const auto & reserve = owner.getBattle()->getBattle()->getDemonicReserve(
+				owner.stacksController->getActiveStack()->unitSide());
+			const auto found = reserve.find(demonicGatingCreature);
+			if(found == reserve.end())
+				return "Open Gate";
+			return "Open Gate for " + std::to_string(found->second) + " "
+				+ (found->second == 1 ? demonicGatingCreature.toCreature()->getNameSingularTranslated()
+					: demonicGatingCreature.toCreature()->getNamePluralTranslated());
+		}
 	}
 	assert(0);
 	return "";
@@ -1794,6 +1813,8 @@ std::string BattleActionsController::actionGetStatusMessageBlocked(PossiblePlaye
 			text.replaceName(action.spell());
 			return text.toString(&GAME->translator());
 		}
+		case PossiblePlayerBattleAction::DEMONIC_GATE:
+			return "A Gate must be opened on an empty hex within range.";
 		default:
 			return "";
 	}
@@ -1829,6 +1850,21 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 				return currentStack && owner.getBattle()->toWhichHexMove(currentStack, targetHex).isValid();
 			}
 			return false;
+
+		case PossiblePlayerBattleAction::DEMONIC_GATE:
+		{
+			const auto * source = owner.stacksController->getActiveStack();
+			const auto * creature = demonicGatingCreature.toCreature();
+			if(!source || !creature || !targetHex.isAvailable()
+				|| BattleHex::getDistance(source->getPosition(), targetHex) > 3
+				|| owner.getBattle()->battleGetUnitByPos(targetHex, true)
+				|| !owner.getBattle()->battleGetAllObstaclesOnPos(targetHex, false).empty())
+				return false;
+			const auto & reserve = owner.getBattle()->getBattle()->getDemonicReserve(source->unitSide());
+			const auto found = reserve.find(demonicGatingCreature);
+			return found != reserve.end() && found->second > 0
+				&& owner.getBattle()->getAccessibility().accessible(targetHex, creature->isDoubleWide(), source->unitSide());
+		}
 
 		case PossiblePlayerBattleAction::ATTACK:
 		case PossiblePlayerBattleAction::LONG_WEAPON_ATTACK:
@@ -1932,6 +1968,19 @@ void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, c
 		case PossiblePlayerBattleAction::CHOOSE_TACTICS_STACK:
 		{
 			owner.stackActivated(targetStack);
+			return;
+		}
+
+		case PossiblePlayerBattleAction::DEMONIC_GATE:
+		{
+			const auto * active = owner.stacksController->getActiveStack();
+			BattleAction command;
+			command.actionType = EActionType::DEMONIC_GATING;
+			command.side = active->unitSide();
+			command.stackNumber = active->unitId();
+			command.gatingCreature = demonicGatingCreature;
+			command.aimToHex(targetHex);
+			owner.sendCommand(command, active);
 			return;
 		}
 
@@ -2404,6 +2453,7 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 void BattleActionsController::activateStack()
 {
 	cancelHeroOrderTargeting();
+	demonicGatingCreature = CreatureID();
 	const CStack * s = owner.stacksController->getActiveStack();
 	if(s)
 	{
@@ -2526,7 +2576,15 @@ void BattleActionsController::setPriorityActions(const std::vector<PossiblePlaye
 	possibleActions = actions;
 }
 
+void BattleActionsController::selectDemonicGatingCreature(CreatureID creature)
+{
+	demonicGatingCreature = creature;
+	possibleActions = {PossiblePlayerBattleAction::DEMONIC_GATE};
+	ENGINE->fakeMouseMove();
+}
+
 void BattleActionsController::resetCurrentStackPossibleActions()
 {
+	demonicGatingCreature = CreatureID();
 	possibleActions = getPossibleActionsForStack(owner.stacksController->getActiveStack());
 }

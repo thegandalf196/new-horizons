@@ -1677,6 +1677,21 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	if (pack.ba.isUnitAction())
 	{
 		assert(st); // stack must exists for all non-hero actions
+		if(pack.ba.actionType == EActionType::DEMONIC_GATING)
+		{
+			auto & side = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
+			const auto found = side.demonicReserve.find(pack.ba.gatingCreature);
+			if(found == side.demonicReserve.end() || found->second <= 0 || pack.ba.target.size() != 1)
+				throw std::runtime_error("Invalid Demonic Gating StartAction snapshot");
+			SideInBattle::PendingDemonicGate gate;
+			gate.creature = found->first;
+			gate.count = found->second;
+			gate.position = pack.ba.target.front().hexValue;
+			gate.arrivalRound = gs.getBattle(pack.battleID)->getRound() + 1;
+			gate.sourceUnitId = pack.ba.stackNumber;
+			side.demonicReserve.erase(found);
+			side.pendingDemonicGates.push_back(gate);
+		}
 
 		switch(pack.ba.actionType)
 		{
@@ -1763,6 +1778,17 @@ void GameStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderState
 		throw std::runtime_error("Canonical Hero Order state update would clear an active Order");
 	}
 	battle->setHeroOrderState(pack.side, pack.state);
+}
+
+void GameStatePackVisitor::visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle || (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER))
+		throw std::runtime_error("Invalid Demonic Gating battle state update");
+	auto & side = battle->getSide(pack.side);
+	side.demonicReserve = std::move(pack.reserve);
+	side.pendingDemonicGates = std::move(pack.pending);
+	side.gatedDemonicStacks = std::move(pack.gated);
 }
 
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)

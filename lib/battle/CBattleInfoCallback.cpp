@@ -900,6 +900,19 @@ std::vector<PossiblePlayerBattleAction> CBattleInfoCallback::getClientActionsFor
 			allowedActionList.push_back(PossiblePlayerBattleAction::CATAPULT);
 		if(stack->hasBonusOfType(BonusType::HEALER))
 			allowedActionList.push_back(PossiblePlayerBattleAction::HEAL);
+		const auto * hero = battleGetFightingHero(stack->unitSide());
+		if(hero && stack->creatureId().toCreature()->getFactionID() == FactionID::INFERNO)
+		{
+			const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
+			const auto & reserve = getBattle()->getDemonicReserve(stack->unitSide());
+			const bool eligible = rank > 0 && std::ranges::any_of(reserve, [this, rank](const auto & entry)
+			{
+				const auto category = battleGetCreatureCategory(entry.first);
+				return entry.second > 0 && category && static_cast<int>(category->category) < rank;
+			});
+			if(eligible)
+				allowedActionList.push_back(PossiblePlayerBattleAction::DEMONIC_GATE);
+		}
 		if(stack->hasBonusOfType(BonusType::ADJACENT_SPELLCASTER))
 		{
 			SpellID spellID = stack->getBonus(Selector::type()(BonusType::ADJACENT_SPELLCASTER))->subtype.as<SpellID>();

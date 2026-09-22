@@ -316,6 +316,7 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 	bnr.battleID = battle.getBattle()->getBattleID();
 	logGlobal->debug("Next round starts");
 	gameHandler->sendAndApply(bnr);
+	resolveDemonicGates(battle);
 
 	// operate on copy - removing obstacles will invalidate iterator on 'battle' container
 	auto obstacles = battle.battleGetAllObstacles();
@@ -332,6 +333,90 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 		for(const auto * stack : battle.battleGetAllStacks(true))
 			if(stack->alive() && !stack->isTimeStopped())
 				owner->processBattleEventTriggers(battle, CombatEventType::ROUND_START, stack, nullptr);
+	}
+}
+
+void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle)
+{
+	for(const auto sideId : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle());
+		if(!concrete)
+			continue;
+		const auto snapshot = concrete->getSide(sideId);
+		if(snapshot.pendingDemonicGates.empty())
+			continue;
+
+		BattleDemonicGatingStateChanged update;
+		update.battleID = concrete->getBattleID();
+		update.side = sideId;
+		update.reserve = snapshot.demonicReserve;
+		update.gated = snapshot.gatedDemonicStacks;
+
+		for(const auto & gate : snapshot.pendingDemonicGates)
+		{
+			if(gate.arrivalRound > concrete->getRound())
+			{
+				update.pending.push_back(gate);
+				continue;
+			}
+
+			const auto * creature = gate.creature.toCreature();
+			if(!creature || gate.count <= 0)
+				continue;
+			auto accessibility = battle.getAccessibility();
+			BattleHex arrival = gate.position;
+			if(!accessibility.accessible(arrival, creature->isDoubleWide(), sideId))
+			{
+				BattleHex best;
+				uint8_t bestDistance = std::numeric_limits<uint8_t>::max();
+				for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+				{
+					BattleHex candidate(index);
+					if(!candidate.isAvailable() || !accessibility.accessible(candidate, creature->isDoubleWide(), sideId))
+						continue;
+					const auto distance = BattleHex::getDistance(gate.position, candidate);
+					if(distance < bestDistance)
+					{
+						best = candidate;
+						bestDistance = distance;
+					}
+				}
+				arrival = best;
+			}
+			if(!arrival.isAvailable())
+			{
+				update.pending.push_back(gate);
+				continue;
+			}
+
+			battle::UnitInfo info;
+			info.id = concrete->battleNextUnitId();
+			info.count = gate.count;
+			info.type = gate.creature;
+			info.side = sideId;
+			info.position = arrival;
+			// These are real owned troops and must inherit ordinary hero bonuses.
+			// Their unit IDs are tracked separately so post-battle reserve
+			// reconciliation, rather than the summoned-creature path, owns them.
+			info.summoned = false;
+			BattleUnitsChanged add;
+			add.battleID = concrete->getBattleID();
+			add.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+			info.save(add.changedStacks.back().data);
+			gameHandler->sendAndApply(add);
+			update.gated.push_back({info.id, gate.creature, gate.count});
+			BattleLogMessage message;
+			message.battleID = concrete->getBattleID();
+			MetaString line = MetaString::createFromRawString("The Gate brings forth ");
+			line.appendNumber(gate.count);
+			line.appendRawString(" ");
+			line.appendName(gate.creature, gate.count);
+			line.appendRawString(".");
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+		}
+		gameHandler->sendAndApply(update);
 	}
 }
 

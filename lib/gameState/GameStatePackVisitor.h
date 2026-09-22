@@ -120,6 +120,7 @@ public:
 	void visitStartAction(StartAction & pack) override;
 	void visitEndAction(EndAction & pack) override;
 	void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) override;
+	void visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack) override;
 	void visitSetRewardableConfiguration(SetRewardableConfiguration & pack) override;
 	void visitBattleSetStackProperty(BattleSetStackProperty & pack) override;
 	void visitBattleNextRound(BattleNextRound & pack) override;
