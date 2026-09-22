@@ -28,8 +28,6 @@ namespace newHorizonsMusterUI
 {
 namespace
 {
-constexpr std::string_view RECRUITMENT_SKILL = "new-horizons:recruitment";
-
 std::string translate(std::string_view key, std::string fallback)
 {
 	if(!GAME)
@@ -54,35 +52,7 @@ int currentWeek()
 	const auto calendar = GAME->interface()->cb->getCalendar();
 	// The serialized marker is an absolute week, unlike Calendar::getWeek(),
 	// which is the week within the current month.
-	return std::max(0, (calendar.getCurrentDay() - 1) / calendar.getDaysInWeek());
-}
-
-std::optional<int> amountForCategory(const int rank, const newHorizonsCreatures::CreatureCategory category)
-{
-	if(rank < 1 || rank > 3)
-		return std::nullopt;
-
-	switch(rank)
-	{
-	case 1:
-		return category == newHorizonsCreatures::CreatureCategory::CORE ? std::optional<int>(2) : std::nullopt;
-	case 2:
-		if(category == newHorizonsCreatures::CreatureCategory::CORE)
-			return 4;
-		if(category == newHorizonsCreatures::CreatureCategory::ELITE)
-			return 1;
-		return std::nullopt;
-	case 3:
-		if(category == newHorizonsCreatures::CreatureCategory::CORE)
-			return 6;
-		if(category == newHorizonsCreatures::CreatureCategory::ELITE)
-			return 2;
-		if(category == newHorizonsCreatures::CreatureCategory::CHAMPION)
-			return 1;
-		return std::nullopt;
-	default:
-		return std::nullopt;
-	}
+	return ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
 }
 
 std::string categoryName(const std::optional<newHorizonsCreatures::CreatureCategoryView> & category,
@@ -103,16 +73,25 @@ std::string categoryName(const std::optional<newHorizonsCreatures::CreatureCateg
 	return {};
 }
 
-std::string rankSummary(const int rank)
+std::string rankSummary(const int rank, const ::newHorizonsMuster::PerkModifiers & modifiers)
 {
+	const auto amount = [rank, &modifiers](const newHorizonsCreatures::CreatureCategory category)
+	{
+		const auto value = ::newHorizonsMuster::amountForCategory(rank, category, modifiers);
+		return value ? std::to_string(*value) : std::string("-");
+	};
+
 	switch(rank)
 	{
 	case 1:
-		return "+2 Core";
+		return "+" + amount(newHorizonsCreatures::CreatureCategory::CORE) + " Core";
 	case 2:
-		return "+4 Core / +1 Elite";
+		return "+" + amount(newHorizonsCreatures::CreatureCategory::CORE) + " Core / +"
+			+ amount(newHorizonsCreatures::CreatureCategory::ELITE) + " Elite";
 	case 3:
-		return "+6 Core / +2 Elite / +1 Champion";
+		return "+" + amount(newHorizonsCreatures::CreatureCategory::CORE) + " Core / +"
+			+ amount(newHorizonsCreatures::CreatureCategory::ELITE) + " Elite / +"
+			+ amount(newHorizonsCreatures::CreatureCategory::CHAMPION) + " Champion";
 	default:
 		return {};
 	}
@@ -129,7 +108,7 @@ std::optional<Offer> offerFor(const CGTownInstance * town)
 	if(!hero || !newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
 		return std::nullopt;
 
-	const int rank = hero->getPerkSkillRank(std::string(RECRUITMENT_SKILL));
+	const int rank = hero->getPerkSkillRank(std::string(::newHorizonsMuster::RECRUITMENT_SKILL));
 	if(rank < 1 || rank > 3)
 		return std::nullopt;
 
@@ -137,8 +116,20 @@ std::optional<Offer> offerFor(const CGTownInstance * town)
 		return std::nullopt;
 
 	const int week = currentWeek();
+	::newHorizonsMuster::PerkModifiers modifiers;
+	modifiers.volunteerNetwork = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::VOLUNTEER_NETWORK_PERK));
+	modifiers.eliteDraft = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::ELITE_DRAFT_PERK));
+	modifiers.championsCall = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::CHAMPIONS_CALL_PERK));
+	modifiers.masterRecruiter = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::MASTER_RECRUITER_PERK));
+	const int usesThisWeek = hero->getNewHorizonsMusterUsesThisWeek(week);
+	const int maximumUses = ::newHorizonsMuster::maximumUsesPerWeek(modifiers);
+	const bool targetUsedThisWeek = town->getNewHorizonsMusterLastWeek() == week;
 	return Offer{town, hero, rank, week,
-		hero->hasUsedNewHorizonsMuster(week) || town->getNewHorizonsMusterLastWeek() == week};
+		usesThisWeek >= maximumUses || targetUsedThisWeek, targetUsedThisWeek, usesThisWeek, maximumUses, modifiers};
 }
 
 std::vector<Target> targetsFor(const Offer & offer)
@@ -161,7 +152,8 @@ std::vector<Target> targetsFor(const Offer & offer)
 		if(!category)
 			continue;
 
-		const auto amount = amountForCategory(offer.recruitmentRank, category->category);
+		const auto amount = ::newHorizonsMuster::amountForCategory(offer.recruitmentRank, category->category,
+			offer.modifiers);
 		if(!amount)
 			continue;
 
@@ -182,8 +174,13 @@ bool isEligible(const CGTownInstance * town)
 
 std::string status(const Offer & offer)
 {
-	if(offer.usedThisWeek)
+	if(offer.usesThisWeek >= offer.maximumUses)
 		return translate("new-horizons.muster.used", "Muster used this week");
+	if(offer.targetUsedThisWeek)
+		return translate("new-horizons.muster.targetUsed", "Muster already used in this town");
+	if(offer.maximumUses > 1)
+		return translate("new-horizons.muster.masterAvailable", "Muster available this week")
+			+ " (" + std::to_string(offer.usesThisWeek) + "/" + std::to_string(offer.maximumUses) + ")";
 	return translate("new-horizons.muster.available", "Muster available this week");
 }
 
@@ -221,7 +218,7 @@ void open(const CGTownInstance * town)
 			+ "  +" + std::to_string(target.amount));
 	}
 
-	const std::string description = status(*offer) + ": " + rankSummary(offer->recruitmentRank)
+	const std::string description = status(*offer) + ": " + rankSummary(offer->recruitmentRank, offer->modifiers)
 		+ ". " + translate("new-horizons.muster.chooseRow", "Choose a dwelling row.")
 		+ "\n" + unavailableNote;
 	ENGINE->windows().pushWindow(std::make_shared<CObjectListWindow>(entries, nullptr, heading, description,

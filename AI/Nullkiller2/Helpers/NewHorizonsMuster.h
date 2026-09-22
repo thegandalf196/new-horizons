@@ -8,6 +8,7 @@
 #pragma once
 
 #include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../../../lib/entities/creature/NewHorizonsMusterRules.h"
 
 #include <cstdint>
 #include <optional>
@@ -18,13 +19,14 @@ class IGameInfoCallback;
 namespace NK2AI::newHorizonsMuster
 {
 
-/// The rank-only amount granted by Muster for a creature category.
+/// The amount granted by Muster for a creature category, including any active
+/// Recruitment perk modifiers supplied by the caller.
 ///
 /// The returned value is deliberately not a percentage.  It is the exact
 /// number of normal recruits created by one town Muster request.  A missing
 /// value means that the category is not legal at that Recruitment rank.
 std::optional<int> amountMultiplier(int recruitmentRank,
-	newHorizonsCreatures::CreatureCategory category);
+	newHorizonsCreatures::CreatureCategory category, const ::newHorizonsMuster::PerkModifiers & modifiers = {});
 
 struct Candidate
 {
@@ -46,6 +48,7 @@ struct Candidate
 /// is creature AI value multiplied by the exact rank/category amount.
 std::optional<Candidate> chooseTownCandidate(const CGDwelling & town,
 	const IGameInfoCallback & callback,
-	int recruitmentRank);
+	int recruitmentRank,
+	const ::newHorizonsMuster::PerkModifiers & modifiers = {});
 
 } // namespace NK2AI::newHorizonsMuster

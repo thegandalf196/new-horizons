@@ -12,39 +12,16 @@ namespace NK2AI::newHorizonsMuster
 {
 
 std::optional<int> amountMultiplier(const int recruitmentRank,
-	const newHorizonsCreatures::CreatureCategory category)
+	const newHorizonsCreatures::CreatureCategory category,
+	const ::newHorizonsMuster::PerkModifiers & modifiers)
 {
-	if(recruitmentRank < 1 || recruitmentRank > 3)
-		return std::nullopt;
-
-	switch(recruitmentRank)
-	{
-	case 1:
-		return category == newHorizonsCreatures::CreatureCategory::CORE
-			? std::optional<int>(2)
-			: std::nullopt;
-	case 2:
-		if(category == newHorizonsCreatures::CreatureCategory::CORE)
-			return 4;
-		if(category == newHorizonsCreatures::CreatureCategory::ELITE)
-			return 1;
-		return std::nullopt;
-	case 3:
-		if(category == newHorizonsCreatures::CreatureCategory::CORE)
-			return 6;
-		if(category == newHorizonsCreatures::CreatureCategory::ELITE)
-			return 2;
-		if(category == newHorizonsCreatures::CreatureCategory::CHAMPION)
-			return 1;
-		return std::nullopt;
-	default:
-		return std::nullopt;
-	}
+	return ::newHorizonsMuster::amountForCategory(recruitmentRank, category, modifiers);
 }
 
 std::optional<Candidate> chooseTownCandidate(const CGDwelling & town,
 	const IGameInfoCallback & callback,
-	const int recruitmentRank)
+	const int recruitmentRank,
+	const ::newHorizonsMuster::PerkModifiers & modifiers)
 {
 	std::optional<Candidate> best;
 
@@ -63,7 +40,7 @@ std::optional<Candidate> chooseTownCandidate(const CGDwelling & town,
 		if(!category)
 			continue; // legacy/no-category worlds are never New Horizons targets
 
-		const auto amount = amountMultiplier(recruitmentRank, category->category);
+		const auto amount = amountMultiplier(recruitmentRank, category->category, modifiers);
 		if(!amount)
 			continue;
 

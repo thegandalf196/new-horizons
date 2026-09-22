@@ -3174,7 +3174,7 @@
 								"requires": "basic",
 								"description": "When Muster targets a Core dwelling, add 2 additional Core recruits.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When Muster targets a Core dwelling, add 2 additional Core recruits."
 								}
 							},
@@ -3214,7 +3214,7 @@
 								"requires": "advanced",
 								"description": "When Muster targets an Elite dwelling, add 1 additional Elite recruit.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When Muster targets an Elite dwelling, add 1 additional Elite recruit."
 								}
 							},
@@ -3254,7 +3254,7 @@
 								"requires": "expert",
 								"description": "When Expert Muster targets a Champion dwelling, add 2 Champions instead of 1.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When Expert Muster targets a Champion dwelling, add 2 Champions instead of 1."
 								}
 							},
@@ -3264,7 +3264,7 @@
 								"requires": "expert",
 								"description": "The hero may use Muster twice per week, but never twice in the same town or external dwelling. A town or dwelling may still benefit from Muster only once per week.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The hero may use Muster twice per week, but never twice in the same town or external dwelling. A town or dwelling may still benefit from Muster only once per week."
 								}
 							}
@@ -8415,6 +8415,8 @@
 		"new-horizons.muster.title": "Muster",
 		"new-horizons.muster.available": "Muster available this week",
 		"new-horizons.muster.used": "Muster used this week",
+		"new-horizons.muster.targetUsed": "Muster already used in this town",
+		"new-horizons.muster.masterAvailable": "Muster available this week",
 		"new-horizons.muster.chooseRow": "Choose a dwelling row.",
 		"new-horizons.muster.noTargets": "No legal Core, Elite, or Champion dwelling row is available in this town.",
 		"new-horizons.muster.rankOnlyNote": "Choose one town dwelling to reinforce.",

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Static guard for the human New Horizons Recruitment/Muster entry points.
 
-This guard checks the client wiring only.  Authority, weekly markers, and the
+This guard checks the client wiring only. Authority, weekly markers, and the
 Muster packet are validated by the server-side tests; this file ensures that
-the human flows expose the same rank-only contract without mutating state.
+the human flows expose the same perk-aware contract without mutating state.
 """
 from pathlib import Path
 
@@ -23,21 +23,21 @@ QUICK = (ROOT / "client/windows/QuickRecruitmentWindow.cpp").read_text(encoding=
 CMAKE = (ROOT / "client/CMakeLists.txt").read_text(encoding="utf-8")
 TEXTS = (ROOT / "config/newHorizonsMusterTexts.json").read_text(encoding="utf-8")
 
-require(UI, 'getPerkSkillRank(std::string(RECRUITMENT_SKILL))',
+require(UI, 'getPerkSkillRank(std::string(::newHorizonsMuster::RECRUITMENT_SKILL))',
         "Muster is gated by the saved Recruitment skill rank")
 require(UI, 'newHorizonsHeroes::usesPerkRules',
         "legacy worlds do not expose the New Horizons action")
 require(UI, 'getNewHorizonsMusterLastWeek() == week',
         "settlement weekly-use marker is read from authoritative state")
-require(UI, 'hasUsedNewHorizonsMuster(week)',
-        "hero weekly-use marker is read from authoritative state")
-require(UI, '(calendar.getCurrentDay() - 1) / calendar.getDaysInWeek()',
+require(UI, 'absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek())',
         "client uses the same zero-based absolute week as server and AI")
-require(UI, 'hero->hasUsedNewHorizonsMuster(week) ||',
-        "week zero is treated as a valid used-this-week marker")
+require(UI, 'getNewHorizonsMusterUsesThisWeek(week)',
+        "client uses the authoritative per-week Muster use count")
+require(UI, 'maximumUsesPerWeek(modifiers)',
+        "client exposes Master Recruiter availability")
 require(UI, 'getCreatureCategory(creature)',
         "targets use the saved Core/Elite/Champion mapping")
-require(UI, 'amountForCategory', "rank-only amount table is explicit")
+require(UI, 'amountForCategory', "rank and active Recruitment perk amounts are explicit")
 require(UI, 'musterCreatures(hero, targetTown, targets[index].creature)',
         "confirmed row selection sends the authoritative callback")
 require(UI, 'Choose one town dwelling to reinforce.',
@@ -58,6 +58,8 @@ for key in (
     'new-horizons.muster.title',
     'new-horizons.muster.available',
     'new-horizons.muster.used',
+    'new-horizons.muster.targetUsed',
+    'new-horizons.muster.masterAvailable',
     'new-horizons.muster.chooseRow',
     'new-horizons.muster.noTargets',
     'new-horizons.muster.rankOnlyNote',

@@ -835,7 +835,7 @@
 					"requires": "basic",
 					"description": "When Muster targets a Core dwelling, add 2 additional Core recruits.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When Muster targets a Core dwelling, add 2 additional Core recruits."
 					}
 				},
@@ -875,7 +875,7 @@
 					"requires": "advanced",
 					"description": "When Muster targets an Elite dwelling, add 1 additional Elite recruit.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When Muster targets an Elite dwelling, add 1 additional Elite recruit."
 					}
 				},
@@ -915,7 +915,7 @@
 					"requires": "expert",
 					"description": "When Expert Muster targets a Champion dwelling, add 2 Champions instead of 1.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When Expert Muster targets a Champion dwelling, add 2 Champions instead of 1."
 					}
 				},
@@ -925,7 +925,7 @@
 					"requires": "expert",
 					"description": "The hero may use Muster twice per week, but never twice in the same town or external dwelling. A town or dwelling may still benefit from Muster only once per week.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may use Muster twice per week, but never twice in the same town or external dwelling. A town or dwelling may still benefit from Muster only once per week."
 					}
 				}

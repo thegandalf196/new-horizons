@@ -35,6 +35,8 @@
 
 #include <vcmi/scripting/ApiTags.h>
 
+#include <stdexcept>
+
 class CClient;
 class CGameHandler;
 
@@ -1688,6 +1690,7 @@ struct DLL_LINKAGE SetNewHorizonsMusterState : public CPackForClient
 	ObjectInstanceID heroId;
 	ObjectInstanceID targetId;
 	int32_t lastUseWeek = -1;
+	int32_t usesThisWeek = 0;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -1696,6 +1699,12 @@ struct DLL_LINKAGE SetNewHorizonsMusterState : public CPackForClient
 		h & heroId;
 		h & targetId;
 		h & lastUseWeek;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MUSTER_PERKS))
+			h & usesThisWeek;
+		else if(h.saving && usesThisWeek != 0 && usesThisWeek != 1)
+			throw std::runtime_error("New Horizons Muster perk state requires the new wire format");
+		else if(!h.saving)
+			usesThisWeek = lastUseWeek < 0 ? 0 : 1;
 	}
 };
 

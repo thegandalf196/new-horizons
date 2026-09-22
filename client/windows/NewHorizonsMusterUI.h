@@ -6,6 +6,7 @@
 #pragma once
 
 #include "../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 
 #include <optional>
 #include <string>
@@ -17,9 +18,9 @@ class CGHeroInstance;
 
 namespace newHorizonsMusterUI
 {
-/// The rank-only town Muster offer.  Perk modifiers and external dwellings are
-/// intentionally outside this first playable UI contract; the server remains
-/// authoritative for the final amount and legality check.
+/// The town Muster offer, including the four active Recruitment perk
+/// modifiers. External dwellings remain outside this UI contract; the server
+/// remains authoritative for the final amount and legality check.
 struct Offer
 {
 	const CGTownInstance * town = nullptr;
@@ -27,6 +28,10 @@ struct Offer
 	int recruitmentRank = 0;
 	int currentWeek = 0;
 	bool usedThisWeek = false;
+	bool targetUsedThisWeek = false;
+	int usesThisWeek = 0;
+	int maximumUses = 1;
+	::newHorizonsMuster::PerkModifiers modifiers;
 };
 
 struct Target
@@ -38,8 +43,8 @@ struct Target
 	const CCreature * creatureType = nullptr;
 };
 
-/// Returns the rank-only offer if the active New Horizons Recruitment skill is
-/// present on the hero serving the town.  Legacy worlds and external dwellings
+/// Returns the offer if the active New Horizons Recruitment skill is present
+/// on the hero serving the town. Legacy worlds and external dwellings
 /// intentionally return no offer.
 std::optional<Offer> offerFor(const CGTownInstance * town);
 

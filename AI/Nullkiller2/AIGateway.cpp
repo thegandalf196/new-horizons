@@ -1016,7 +1016,7 @@ bool AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGTownInstan
 	const_cast<AIGateway *>(this)->clearReplicatedMusters();
 
 	const auto & calendar = cc->getCalendar();
-	const int currentWeek = (calendar.getCurrentDay() - 1) / calendar.getDaysInWeek();
+	const int currentWeek = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
 	std::lock_guard lock(musterMutex);
 
 	// A failed or delayed request must not permanently suppress the hero after
@@ -1040,7 +1040,7 @@ bool AIGateway::hasPendingMuster(const CGTownInstance * town) const
 
 	const_cast<AIGateway *>(this)->clearReplicatedMusters();
 	const auto & calendar = cc->getCalendar();
-	const int currentWeek = (calendar.getCurrentDay() - 1) / calendar.getDaysInWeek();
+	const int currentWeek = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
 	std::lock_guard lock(musterMutex);
 	return std::any_of(pendingMusters.begin(), pendingMusters.end(), [&](const PendingMuster & pending)
 	{
@@ -1051,7 +1051,7 @@ bool AIGateway::hasPendingMuster(const CGTownInstance * town) const
 void AIGateway::clearReplicatedMusters()
 {
 	const auto & calendar = cc->getCalendar();
-	const int currentWeek = (calendar.getCurrentDay() - 1) / calendar.getDaysInWeek();
+	const int currentWeek = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
 	std::lock_guard lock(musterMutex);
 	std::erase_if(pendingMusters, [&](const PendingMuster & pending)
 	{
@@ -1070,15 +1070,24 @@ void AIGateway::tryMusterCreatures(const CGHeroInstance * hero, const CGTownInst
 	if(!hero || !town || hero->tempOwner != playerID || town->tempOwner != playerID)
 		return;
 
-	const int recruitmentRank = hero->getPerkSkillRank("new-horizons:recruitment");
+	const int recruitmentRank = hero->getPerkSkillRank(std::string(::newHorizonsMuster::RECRUITMENT_SKILL));
 	const auto & calendar = cc->getCalendar();
-	const int currentWeek = (calendar.getCurrentDay() - 1) / calendar.getDaysInWeek();
+	const int currentWeek = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	::newHorizonsMuster::PerkModifiers modifiers;
+	modifiers.volunteerNetwork = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::VOLUNTEER_NETWORK_PERK));
+	modifiers.eliteDraft = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::ELITE_DRAFT_PERK));
+	modifiers.championsCall = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::CHAMPIONS_CALL_PERK));
+	modifiers.masterRecruiter = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::MASTER_RECRUITER_PERK));
 	if(recruitmentRank <= 0 || hasPendingMuster(hero, town)
-		|| hero->hasUsedNewHorizonsMuster(currentWeek)
+		|| hero->getNewHorizonsMusterUsesThisWeek(currentWeek) >= ::newHorizonsMuster::maximumUsesPerWeek(modifiers)
 		|| town->getNewHorizonsMusterLastWeek() == currentWeek)
 		return;
 
-	const auto candidate = newHorizonsMuster::chooseTownCandidate(*town, *cc, recruitmentRank);
+	const auto candidate = newHorizonsMuster::chooseTownCandidate(*town, *cc, recruitmentRank, modifiers);
 	if(!candidate)
 		return; // No category snapshot means legacy/no-category; do not Muster.
 

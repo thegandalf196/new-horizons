@@ -25,6 +25,8 @@
 #include "../bonuses/BonusCache.h"
 #include "../entities/hero/EHeroGender.h"
 
+#include <algorithm>
+
 class CHero;
 class CGBoat;
 class CGTownInstance;
@@ -224,9 +226,23 @@ public:
 	void resetNewHorizonsAdventureSpellCastToday() { newHorizonsAdventureSpellState.castToday = false; }
 	bool hasUsedNewHorizonsCastleGateToday(int32_t day) const { return newHorizonsCastleGateLastUseDay == day; }
 	void markNewHorizonsCastleGateUsed(int32_t day) { newHorizonsCastleGateLastUseDay = day; }
-	bool hasUsedNewHorizonsMuster(int32_t week) const { return newHorizonsMusterLastWeek == week; }
+	bool hasUsedNewHorizonsMuster(int32_t week) const { return getNewHorizonsMusterUsesThisWeek(week) > 0; }
 	int32_t getNewHorizonsMusterLastWeek() const { return newHorizonsMusterLastWeek; }
-	void markNewHorizonsMusterUsed(int32_t week) { newHorizonsMusterLastWeek = week; }
+	int32_t getNewHorizonsMusterUsesThisWeek(int32_t week) const
+	{
+		return newHorizonsMusterLastWeek == week ? newHorizonsMusterUsesThisWeek : 0;
+	}
+	void markNewHorizonsMusterUsed(int32_t week, int32_t usesThisWeek = 1)
+	{
+		if(week < 0)
+		{
+			newHorizonsMusterLastWeek = -1;
+			newHorizonsMusterUsesThisWeek = 0;
+			return;
+		}
+		newHorizonsMusterLastWeek = week;
+		newHorizonsMusterUsesThisWeek = std::clamp<int32_t>(usesThisWeek, 0, 2);
+	}
 	int getPerkSkillRank(const std::string & skillId) const;
 	bool hasActivePerk(const std::string & skillId, const std::string & perkId) const;
 	/// New Horizons Necromancy is a separate saved-rules path.  Legacy heroes
@@ -399,6 +415,7 @@ private:
 	newHorizonsMagic::AdventureSpellState newHorizonsAdventureSpellState;
 	int32_t newHorizonsCastleGateLastUseDay = -1;
 	int32_t newHorizonsMusterLastWeek = -1;
+	int32_t newHorizonsMusterUsesThisWeek = 0;
 	std::array<int, GameConstants::PRIMARY_SKILLS> lastPrimaryGains{};
 	void levelUpAutomatically(IGameRandomizer & gameRandomizer);
 	void attachCommanderToArmy();
@@ -476,6 +493,16 @@ public:
 			throw std::runtime_error("New Horizons Muster state requires the new save format");
 		else if(!h.saving)
 			newHorizonsMusterLastWeek = -1;
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MUSTER_PERKS))
+			h & newHorizonsMusterUsesThisWeek;
+		else if(h.saving && newHorizonsMusterUsesThisWeek != 0)
+			throw std::runtime_error("New Horizons Muster perk state requires the new save format");
+		else if(!h.saving)
+			// Saves made by the rank-only vertical slice had only a boolean
+			// weekly marker. Treat an authored marker as one use when loading
+			// those saves; this cannot create a second use retroactively.
+			newHorizonsMusterUsesThisWeek = newHorizonsMusterLastWeek == -1 ? 0 : 1;
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MASTERIES))
 			h & masteryState;
