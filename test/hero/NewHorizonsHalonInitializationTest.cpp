@@ -16,6 +16,7 @@
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/entities/hero/CHero.h"
+#include "../../lib/entities/hero/CHeroClass.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
@@ -113,6 +114,7 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshSolmyrUsesMasterChainLightningAn
 
 	const auto * solmyr = findHeroAt({5, 5, 0});
 	ASSERT_NE(solmyr, nullptr);
+	EXPECT_EQ(solmyr->getHeroClass()->getJsonKey(), "core:wizard");
 
 	const auto metamagic = scopedSkill("new-horizons:metamagic");
 	const auto havoc = scopedSkill("new-horizons:havocMagic");
@@ -153,6 +155,19 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshSolmyrUsesMasterChainLightningAn
 	ASSERT_TRUE(masterFormula);
 	ASSERT_TRUE(regularFormula);
 	EXPECT_EQ(*masterFormula, *regularFormula);
+}
+
+TEST_F(NewHorizonsHalonInitializationTest, FormerAlchemistClassIsPresentedAsBattleMage)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:fafner")), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto * fafner = findHeroAt({5, 5, 0});
+	ASSERT_NE(fafner, nullptr);
+	EXPECT_EQ(fafner->getHeroClass()->getJsonKey(), "core:alchemist");
+	EXPECT_EQ(fafner->getHeroClass()->getNameTranslated(), "Battle Mage");
 }
 
 TEST_F(NewHorizonsHalonInitializationTest, MasterChainLightningDescriptionTracksCurrentHeroLevel)

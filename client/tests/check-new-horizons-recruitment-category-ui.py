@@ -91,6 +91,13 @@ require(CASTLE, "rankedFortStatRowCount(compactStatGrid) * rankedFortStatRowHeig
 require(CASTLE, "compactStatGrid", "multi-row authored rosters use compact stat geometry")
 require(CASTLE, "NH_FORT_COMPACT_STAT_COLUMNS", "compact cards use a two-column stat grid")
 require(CASTLE, "rankedStatRect", "compact cards place all eight stat rows in the grid")
+require(CASTLE, "rankedStatIcons", "ranked cards own familiar creature-stat icons")
+require(CASTLE, "std::min(rankedStatIconWidth, rect.h - 1)", "ranked stat icons fit the actual responsive row")
+require(CASTLE, "icon->scaleTo(Point(iconSize, iconSize))", "bitmap stat icons scale with compact rows")
+for icon in ("iconAttack", "iconDefense", "iconDamage", "iconHealth", "iconSpeed", "iconInitiative", "iconGrowth"):
+    require(CASTLE, f'"stackWindow/{icon}"', f"ranked cards reuse creature UI {icon}")
+require(CASTLE, '"NH_capability_leadership_32"', "ranked cards show the Leadership Cost icon")
+require(CASTLE, "if(!rankedLayout)", "ranked cards omit obsolete dwelling art and names")
 require(CASTLE, "RankedFortCreatureViewport", "compact cards clip the portrait to its utility band")
 require(CASTLE, "cardsBottom", "ranked code computes the final band bottom")
 require(CASTLE, "assert(cardsBottom <= footerTop)", "ranked code keeps every band above the footer")

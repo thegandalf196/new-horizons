@@ -1,0 +1,14 @@
+{
+	"core:alchemist": {
+		"name": "Battle Mage"
+	},
+	"core:battlemage": {
+		"name": "Shaman"
+	},
+	"core:demoniac": {
+		"name": "Tyrant"
+	},
+	"core:heretic": {
+		"name": "Cultist"
+	}
+}

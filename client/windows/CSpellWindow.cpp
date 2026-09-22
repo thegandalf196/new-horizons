@@ -1069,7 +1069,13 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 	if(mySpell)
 	{
 		const int requiredRank = newHorizonsMagic::requiredSchoolRank(owner->myHero->getMagicRules(), mySpell->getId());
-		schoolLocked = requiredRank > 0 && !newHorizonsMagic::hasSchoolProficiency(owner->myHero, mySpell->getId());
+		const bool inscribedInSpellbook = owner->myHero->hasSpellbook()
+			&& owner->myHero->spellbookContainsSpell(mySpell->getId());
+		// Authored and previously learned spells remain usable. School ranks gate
+		// learning and external spell sources, never an entry already inscribed in
+		// this hero's spellbook (the same contract enforced by canCastThisSpell()).
+		schoolLocked = requiredRank > 0 && !inscribedInSpellbook
+			&& !newHorizonsMagic::hasSchoolProficiency(owner->myHero, mySpell->getId());
 		if(schoolLocked)
 		{
 			const auto rankName = GAME->translator().translate(TextIdentifier("core.skilllev", requiredRank - 1).get());

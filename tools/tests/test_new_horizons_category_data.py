@@ -79,7 +79,7 @@ class CreatureCategoryDataTest(unittest.TestCase):
             subprocess.run(command + ['--check'], check=True, capture_output=True)
             preview = json.loads(output.read_text())
             baseline = json.loads(before)
-            self.assertEqual(preview['version'], '0.9.1')
+            self.assertEqual(preview['version'], '0.10.1')
             self.assertEqual(preview['settings']['creatures'], {'newHorizonsCategories': self.rules})
             self.assertIn('private category diagnostic', preview['description'])
             for key in baseline['settings']:
@@ -102,7 +102,7 @@ class CreatureCategoryDataTest(unittest.TestCase):
                     self.assertFalse(missing.exists())
         self.assertNotEqual(subprocess.run([sys.executable, str(script), '--output', str(live)], capture_output=True).returncode, 0)
         self.assertEqual(live.read_bytes(), before)
-        self.assertEqual(json.loads(before)['version'], '0.9.0')
+        self.assertEqual(json.loads(before)['version'], '0.10.0')
         self.assertEqual(json.loads(before)['settings']['creatures'],
                          {'newHorizonsCategories': self.rules})
 

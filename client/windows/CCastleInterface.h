@@ -351,6 +351,7 @@ class CFortScreen : public CStatusbarWindow
 		std::shared_ptr<CLabel> availableCount;
 
 		std::vector<std::shared_ptr<LabeledValue>> values;
+		std::vector<std::shared_ptr<CIntObject>> rankedStatIcons;
 		std::shared_ptr<CPicture> icons;
 		std::shared_ptr<CAnimImage> buildingIcon;
 		std::shared_ptr<CLabel> buildingName;

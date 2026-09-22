@@ -207,9 +207,13 @@ class HeroDataTest(unittest.TestCase):
         # the other fourteen classes.
         self.assertTrue(all('name' not in hero for hero in classes.values()))
         translations = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())['translations']
+        class_patch = json.loads((ROOT / 'Mods/new-horizons/Content/config/heroClasses/names.json').read_text())
+        manifest = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
+        self.assertIn('config/heroClasses/names.json', manifest['heroClasses'])
         for class_id, expected_name in CANONICAL_CLASS_NAMES.items():
             with self.subTest(hero_class=class_id):
                 self.assertEqual(translations['core.heroClass.' + class_id.split(':', 1)[1] + '.name'], expected_name)
+                self.assertEqual(class_patch[class_id]['name'], expected_name)
 
     def test_non_mastery_preview_preserves_battle_mage_translation(self):
         script = ROOT / 'tools/update-new-horizons-module.py'
@@ -280,7 +284,9 @@ class HeroDataTest(unittest.TestCase):
             root = Path(temporary)
             (root / 'config').mkdir()
             (root / 'Mods/new-horizons').mkdir(parents=True)
-            for name in ('Combat', 'Magic', 'Schools', 'Skills', 'Heroes', 'Capabilities', 'Masteries', 'Perks', 'MasteryTexts', 'HeroClassTexts', 'ConvenienceBonuses'):
+            for name in ('Combat', 'Magic', 'CreatureCategories', 'Schools', 'Skills', 'Heroes', 'Capabilities',
+                         'Masteries', 'Perks', 'MasteryTexts', 'CreatureCategoryTexts', 'FortTexts', 'MusterTexts',
+                         'HeroClassTexts', 'ConvenienceBonuses'):
                 shutil.copyfile(ROOT / f'config/newHorizons{name}.json', root / f'config/newHorizons{name}.json')
             shutil.copyfile(ROOT / 'Mods/new-horizons/mod.json', root / 'Mods/new-horizons/mod.json')
             script = root / 'check.cmake'

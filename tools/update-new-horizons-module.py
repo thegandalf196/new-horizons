@@ -51,6 +51,9 @@ def main():
     creature_patch_files = [
         'config/creatures/tower.json',
     ]
+    hero_class_patch_files = [
+        'config/heroClasses/names.json',
+    ]
     metadata = {
         'name': 'New Horizons',
         'description': 'Curated rules: three Orders (including targeted Focus Fire) and '
@@ -81,6 +84,7 @@ def main():
         # that isolation or relying on an unmounted core file reference.
         'settings': settings,
         'creatures': creature_patch_files,
+        'heroClasses': hero_class_patch_files,
         'heroes': hero_patch_files,
         'factions': faction_patch_files,
         'spells': [
@@ -135,10 +139,10 @@ def main():
         # carries the canonical perk registry for saved runtime identity.
         # Explicit historical preview/control branches retain their own identities.
         settings['heroes']['newHorizonsPerks'] = canonical('newHorizonsPerks.json')
-        # The Tower Mage/Genie identity swap changes which creature occupies
-        # an existing dwelling slot.  Bump the live module identity so old
-        # saves cannot silently reinterpret that roster.
-        metadata['version'] = '0.9.0'
+        # Tower's Mage/Genie identity swap and the direct class-name object
+        # patches alter saved/live content presentation. Bump the live module
+        # identity so managed profiles cannot silently retain the older data.
+        metadata['version'] = '0.10.0'
         metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
         metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
         metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry; active entries '
