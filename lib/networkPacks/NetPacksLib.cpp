@@ -562,6 +562,11 @@ void SetNewHorizonsCastleGateState::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetNewHorizonsCastleGateState(*this);
 }
 
+void SetNewHorizonsMusterState::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetNewHorizonsMusterState(*this);
+}
+
 void ShowWorldViewEx::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitShowWorldViewEx(*this);
@@ -645,6 +650,11 @@ void SpellResearch::visitTyped(ICPackVisitor & visitor)
 void RecruitCreatures::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitRecruitCreatures(*this);
+}
+
+void MusterCreatures::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitMusterCreatures(*this);
 }
 
 void UpgradeCreature::visitTyped(ICPackVisitor & visitor)

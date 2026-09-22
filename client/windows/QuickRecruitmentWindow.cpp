@@ -24,6 +24,7 @@
 #include "../../lib/CCreatureHandler.h"
 #include "CreaturePurchaseCard.h"
 #include "NewHorizonsCreatureCategoryUI.h"
+#include "NewHorizonsMusterUI.h"
 
 namespace
 {
@@ -46,6 +47,7 @@ void QuickRecruitmentWindow::setButtons()
 	setCancelButton();
 	setBuyButton();
 	setMaxButton();
+	setMusterButton();
 }
 
 void QuickRecruitmentWindow::setCancelButton()
@@ -64,6 +66,22 @@ void QuickRecruitmentWindow::setMaxButton()
 {
 	maxButton = std::make_shared<CButton>(Point((pos.w/2)-112, 418), AnimationPath::builtin("IRCBTNS.DEF"), CButton::tooltip(), [&](){ maxAllCards(cards); }, EShortcut::RECRUITMENT_MAX);
 	maxButton->setImageOrder(0, 1, 2, 3);
+}
+
+void QuickRecruitmentWindow::setMusterButton()
+{
+	if(!newHorizonsMusterUI::isEligible(town))
+		return;
+
+	musterButton = std::make_shared<CButton>(Point((pos.w / 2) + 92, 418), AnimationPath::builtin("IRCBTNS.DEF"),
+		CButton::tooltip("Muster", "Reinforce one town dwelling."),
+		[this](){ newHorizonsMusterUI::open(town); });
+	musterButton->setTextOverlay("M", FONT_SMALL, Colors::WHITE);
+	if(const auto offer = newHorizonsMusterUI::offerFor(town))
+	{
+		musterButton->addHoverText(EButtonState::NORMAL, newHorizonsMusterUI::status(*offer));
+		musterButton->block(!GAME->interface()->makingTurn || offer->usedThisWeek || newHorizonsMusterUI::targetsFor(*offer).empty());
+	}
 }
 
 void QuickRecruitmentWindow::setCreaturePurchaseCards()

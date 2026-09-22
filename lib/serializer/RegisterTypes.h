@@ -319,4 +319,6 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetNewHorizonsAdventureSpellState>(276);
 	s.template registerType<SetHouseOfWisdomScrolls>(277);
 	s.template registerType<SetNewHorizonsCastleGateState>(278);
+	s.template registerType<SetNewHorizonsMusterState>(279);
+	s.template registerType<MusterCreatures>(280);
 }

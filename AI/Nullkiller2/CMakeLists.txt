@@ -66,6 +66,7 @@ set(Nullkiller2_SRCS
 		Behaviors/StayAtTownBehavior.cpp
 		Behaviors/ExplorationBehavior.cpp
 		Helpers/ArmyFormation.cpp
+		Helpers/NewHorizonsMuster.cpp
 		Helpers/ExplorationHelper.cpp
 		AIGateway.cpp
 )
@@ -147,6 +148,7 @@ set(Nullkiller2_HEADERS
 		Behaviors/StayAtTownBehavior.h
 		Behaviors/ExplorationBehavior.h
 		Helpers/ArmyFormation.h
+		Helpers/NewHorizonsMuster.h
 		Helpers/ExplorationHelper.h
 		AIGateway.h
 )

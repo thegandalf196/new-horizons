@@ -289,6 +289,14 @@ void GameStatePackVisitor::visitSetNewHorizonsCastleGateState(SetNewHorizonsCast
 		hero->markNewHorizonsCastleGateUsed(pack.lastUseDay);
 }
 
+void GameStatePackVisitor::visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack)
+{
+	if(auto * hero = gs.getHero(pack.heroId))
+		hero->markNewHorizonsMusterUsed(pack.lastUseWeek);
+	if(auto * target = dynamic_cast<CGDwelling *>(gs.getObjInstance(pack.targetId)))
+		target->markNewHorizonsMusterUsed(pack.lastUseWeek);
+}
+
 void GameStatePackVisitor::visitSetMovePoints(SetMovePoints & pack)
 {
 	CGHeroInstance *hero = gs.getHero(pack.hid);

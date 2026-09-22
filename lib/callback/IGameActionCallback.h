@@ -41,6 +41,9 @@ public:
 	virtual bool buildBuilding(const CGTownInstance *town, BuildingID buildingID)=0;
 	virtual bool visitTownBuilding(const CGTownInstance *town, BuildingID buildingID)=0;
 	virtual void recruitCreatures(const CGDwelling *obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level=-1)=0;
+	/// Requests one New Horizons Recruitment Muster operation.  The server
+	/// derives amount/category eligibility and validates weekly use markers.
+	virtual void musterCreatures(const CGHeroInstance *hero, const CGTownInstance *town, CreatureID creature) {}
 	virtual bool upgradeCreature(const CArmedInstance *obj, SlotID stackPos, CreatureID newID=CreatureID::NONE)=0; //if newID==-1 then best possible upgrade will be made
 	virtual void spellResearch(const CGTownInstance *town, SpellID spellAtSlot, bool accepted)=0;
 	virtual void swapGarrisonHero(const CGTownInstance *town)=0;

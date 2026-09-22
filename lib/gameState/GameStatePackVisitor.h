@@ -100,6 +100,7 @@ public:
 	void visitSetHouseOfWisdomScrolls(SetHouseOfWisdomScrolls & pack) override;
 	void visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack) override;
 	void visitSetNewHorizonsCastleGateState(SetNewHorizonsCastleGateState & pack) override;
+	void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) override;
 	void visitEntitiesChanged(EntitiesChanged & pack) override;
 	void visitSetCommanderProperty(SetCommanderProperty & pack) override;
 	void visitAddQuest(AddQuest & pack) override;

@@ -103,6 +103,40 @@
 #define COMPLAIN_RET(txt) {complain(txt); return false;}
 #define COMPLAIN_RETF(txt, FORMAT) {complain(boost::str(boost::format(txt) % FORMAT)); return false;}
 
+namespace
+{
+std::optional<ui32> newHorizonsMusterAmount(int rank, newHorizonsCreatures::CreatureCategory category)
+{
+	using newHorizonsCreatures::CreatureCategory;
+	switch(rank)
+	{
+		case 1:
+			return category == CreatureCategory::CORE ? std::optional<ui32>(2u) : std::nullopt;
+		case 2:
+			if(category == CreatureCategory::CORE)
+				return 4u;
+			if(category == CreatureCategory::ELITE)
+				return 1u;
+			return std::nullopt;
+		case 3:
+			if(category == CreatureCategory::CORE)
+				return 6u;
+			if(category == CreatureCategory::ELITE)
+				return 2u;
+			if(category == CreatureCategory::CHAMPION)
+				return 1u;
+			return std::nullopt;
+		default:
+			return std::nullopt;
+	}
+}
+
+int newHorizonsAbsoluteWeek(const Calendar & calendar)
+{
+	return std::max(0, (calendar.getCurrentDay() - 1) / calendar.getDaysInWeek());
+}
+}
+
 template <typename T>
 void callWith(std::vector<T> args, std::function<void(T)> fun, ui32 which)
 {
@@ -2864,6 +2898,68 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	{
 		addToSlot(StackLocation(army->id, slot), c, cram);
 	}
+	return true;
+}
+
+bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID targetId, CreatureID creatureId, PlayerColor player)
+{
+	const auto * hero = gameInfo().getHero(heroId);
+	const auto * town = gameInfo().getTown(targetId);
+
+	COMPLAIN_RET_FALSE_IF(!hero || !town, "Cannot Muster: invalid hero or town!");
+	COMPLAIN_RET_FALSE_IF(hero->getOwner() != player || town->getOwner() != player,
+		"Cannot Muster: hero and town must belong to the requesting player!");
+	COMPLAIN_RET_FALSE_IF(hero != town->getVisitingHero() && hero != town->getGarrisonHero(),
+		"Cannot Muster: hero must be visiting or garrisoned in the town!");
+
+	const int rank = hero->getPerkSkillRank("new-horizons:recruitment");
+	COMPLAIN_RET_FALSE_IF(rank <= 0, "Cannot Muster: hero does not have Recruitment!");
+
+	const auto category = gameInfo().getCreatureCategory(creatureId);
+	COMPLAIN_RET_FALSE_IF(!category, "Cannot Muster: creature has no saved New Horizons category!");
+	const auto amount = newHorizonsMusterAmount(rank, category->category);
+	COMPLAIN_RET_FALSE_IF(!amount, "Cannot Muster: Recruitment rank cannot Muster this creature category!");
+
+	const int week = newHorizonsAbsoluteWeek(gameInfo().getCalendar());
+	COMPLAIN_RET_FALSE_IF(hero->hasUsedNewHorizonsMuster(week),
+		"Cannot Muster: this hero has already used Muster this week!");
+	COMPLAIN_RET_FALSE_IF(town->getNewHorizonsMusterLastWeek() == week,
+		"Cannot Muster: this town has already received Muster this week!");
+
+	int row = -1;
+	for(size_t index = 0; index < town->creatures.size(); ++index)
+	{
+		const auto & entry = town->creatures[index];
+		if(vstd::contains(entry.second, creatureId))
+		{
+			row = static_cast<int>(index);
+			break;
+		}
+	}
+	COMPLAIN_RET_FALSE_IF(row < 0, "Cannot Muster: creature is not available from this town!");
+
+	// All checks are complete before either authoritative mutation is emitted.
+	// SetAvailableCreatures carries the actual stock change, while the marker
+	// packet mirrors the once-per-week use on both hero and target dwelling.
+	SetAvailableCreatures stock;
+	stock.tid = town->id;
+	stock.creatures = town->creatures;
+	if(std::numeric_limits<ui32>::max() - stock.creatures.at(row).first < *amount)
+	{
+		complain("Cannot Muster: dwelling recruitment stock overflow!");
+		return false;
+	}
+	SetNewHorizonsMusterState state;
+	state.heroId = hero->id;
+	state.targetId = town->id;
+	state.lastUseWeek = week;
+	sendAndApply(state);
+
+	// Replicate the marker before the stock event. Client recruitment windows
+	// refresh in response to SetAvailableCreatures and must observe the final
+	// used-this-week state when they update the action button.
+	stock.creatures.at(row).first += *amount;
+	sendAndApply(stock);
 	return true;
 }
 

@@ -32,6 +32,15 @@ std::string BuyArmy::toString() const
 
 void BuyArmy::accept(AIGateway * aiGw)
 {
+	// Muster consumes the town's weekly recruitment action.  Wait for the
+	// authoritative stock/marker packets before planning ordinary purchases;
+	// otherwise this same goal can buy the pre-Muster pool in the same turn.
+	if(aiGw->hasPendingMuster(town))
+	{
+		logAi->debug("Deferring BuyArmy at town %s until its Muster result is replicated", town->getNameTextID());
+		return;
+	}
+
 	ui64 valueBought = 0;
 	//buy the stacks with largest AI value
 

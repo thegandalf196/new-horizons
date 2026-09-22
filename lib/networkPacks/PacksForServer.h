@@ -350,6 +350,34 @@ struct DLL_LINKAGE RecruitCreatures : public CPackForServer
 	}
 };
 
+/// Request one authoritative Recruitment Muster operation.  The server derives
+/// the amount, allowed category and source dwelling row from the hero's saved
+/// Recruitment rank and the saved world category mapping.
+struct DLL_LINKAGE MusterCreatures : public CPackForServer
+{
+	MusterCreatures() = default;
+	MusterCreatures(const ObjectInstanceID & hero, const ObjectInstanceID & target, const CreatureID & creature)
+		: heroId(hero)
+		, targetId(target)
+		, creatureId(creature)
+	{
+	}
+
+	ObjectInstanceID heroId;
+	ObjectInstanceID targetId;
+	CreatureID creatureId;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		h & static_cast<CPackForServer &>(*this);
+		h & heroId;
+		h & targetId;
+		h & creatureId;
+	}
+};
+
 struct DLL_LINKAGE UpgradeCreature : public CPackForServer
 {
 	UpgradeCreature() = default;

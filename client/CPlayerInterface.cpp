@@ -69,6 +69,7 @@
 #include "windows/GUIClasses.h"
 #include "windows/HeroMasteryWindow.h"
 #include "windows/InfoWindows.h"
+#include "windows/QuickRecruitmentWindow.h"
 #include "windows/settings/SettingsMainWindow.h"
 
 #include "../lib/callback/AIFactory.h"
@@ -1301,6 +1302,18 @@ void CPlayerInterface::availableCreaturesChanged( const CGDwelling *town )
 	EVENT_HANDLER_CALLED_BY_CLIENT;
 	if (const CGTownInstance * townObj = dynamic_cast<const CGTownInstance*>(town))
 	{
+		for(auto recruitmentWindow : ENGINE->windows().findWindows<CRecruitmentWindow>())
+			if(recruitmentWindow->dwelling == town)
+				recruitmentWindow->availableCreaturesChanged();
+
+		// Quick recruitment lays out cards according to the set of non-empty
+		// dwelling rows. Muster can make an empty row appear, changing the window
+		// width and grouping, so close the cached view and let the next open rebuild
+		// it from authoritative stock.
+		for(auto quickWindow : ENGINE->windows().findWindows<QuickRecruitmentWindow>())
+			if(quickWindow->isForTown(townObj))
+				quickWindow->close();
+
 		for (auto fortScreen : ENGINE->windows().findWindows<CFortScreen>())
 			fortScreen->creaturesChangedEventHandler();
 

@@ -177,6 +177,7 @@ set(vcmiclientcommon_SRCS
 	windows/CWindowObject.cpp
 	windows/CreaturePurchaseCard.cpp
 	windows/GUIClasses.cpp
+	windows/NewHorizonsMusterUI.cpp
 	windows/InfoWindows.cpp
 	windows/QuickRecruitmentWindow.cpp
 	windows/CHeroBackpackWindow.cpp
@@ -412,6 +413,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CWindowObject.h
 	windows/CreaturePurchaseCard.h
 	windows/GUIClasses.h
+	windows/NewHorizonsMusterUI.h
 	windows/InfoWindows.h
 	windows/QuickRecruitmentWindow.h
 	windows/CHeroBackpackWindow.h

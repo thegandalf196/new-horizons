@@ -20,6 +20,8 @@
 #include "Pathfinding/AIPathfinder.h"
 #include "Engine/Nullkiller.h"
 
+#include <mutex>
+
 class AsyncRunner;
 
 namespace NK2AI
@@ -78,6 +80,15 @@ public:
 	ObjectInstanceID selectedObject;
 
 	std::unique_ptr<Nullkiller> nullkiller;
+
+	struct PendingMuster
+	{
+		ObjectInstanceID hero;
+		ObjectInstanceID target;
+		int week = -1;
+	};
+	mutable std::mutex musterMutex;
+	mutable std::vector<PendingMuster> pendingMusters;
 
 	AIGateway();
 	~AIGateway();
@@ -162,6 +173,13 @@ public:
 
 	// TODO: all the routines like recruiting hero or building army should be removed from here and extracted to elementar goals or whatever
 	void recruitCreatures(const CGDwelling * d, const CArmedInstance * recruiter);
+	/// Try one rank-only New Horizons Muster request for an eligible town hero.  This
+	/// only reads the town roster and sends the authoritative callback request;
+	/// it never edits the replicated recruitment pool locally.
+	void tryMusterCreatures(const CGHeroInstance * hero, const CGTownInstance * town);
+	bool hasPendingMuster(const CGHeroInstance * hero, const CGTownInstance * town) const;
+	bool hasPendingMuster(const CGTownInstance * town) const;
+	void clearReplicatedMusters();
 	void pickBestCreatures(const CArmedInstance * army, const CArmedInstance * source); //called when we can't find a slot for new stack
 
 	void moveCreaturesToHero(const CGTownInstance * t);

@@ -89,6 +89,7 @@ class CRecruitmentWindow : public CStatusbarWindow
 
 	std::shared_ptr<CSlider> slider;
 	std::shared_ptr<CButton> maxButton;
+	std::shared_ptr<CButton> musterButton;
 	std::shared_ptr<CButton> buyButton;
 	std::shared_ptr<CButton> cancelButton;
 	std::shared_ptr<CLabel> title;

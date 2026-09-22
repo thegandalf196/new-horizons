@@ -27,6 +27,7 @@ class QuickRecruitmentWindow : public CWindowObject
 public:
 	int getAvailableCreatures();
 	void updateAllSliders();
+	bool isForTown(const CGTownInstance * value) const { return town == value; }
 	QuickRecruitmentWindow(const CGTownInstance * townd, Rect startupPosition);
 	void showAll(Canvas & to) override;
 
@@ -37,6 +38,7 @@ private:
 	void setCancelButton();
 	void setBuyButton();
 	void setMaxButton();
+	void setMusterButton();
 
 	void setCreaturePurchaseCards();
 
@@ -46,6 +48,7 @@ private:
 
 	const CGTownInstance * town;
 	std::shared_ptr<CButton> maxButton;
+	std::shared_ptr<CButton> musterButton;
 	std::shared_ptr<CButton> buyButton;
 	std::shared_ptr<CButton> cancelButton;
 	std::shared_ptr<CreatureCostBox> totalCost;

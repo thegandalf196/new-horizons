@@ -47,6 +47,7 @@ public:
 	void visitSpellResearch(SpellResearch & pack) override;
 	void visitVisitTownBuilding(VisitTownBuilding & pack) override;
 	void visitRecruitCreatures(RecruitCreatures & pack) override;
+	void visitMusterCreatures(MusterCreatures & pack) override;
 	void visitUpgradeCreature(UpgradeCreature & pack) override;
 	void visitGarrisonHeroSwap(GarrisonHeroSwap & pack) override;
 	void visitExchangeArtifacts(ExchangeArtifacts & pack) override;

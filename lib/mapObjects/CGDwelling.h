@@ -37,6 +37,11 @@ public:
 
 	std::optional<CGDwellingRandomizationInfo> randomizationInfo; //random dwelling options; not serialized
 	TCreaturesSet creatures; //creatures[level] -> <vector of alternative ids (base creature and upgrades, creatures amount>
+	/// Absolute week in which New Horizons Recruitment Muster last affected this
+	/// dwelling.  The marker lives on every CGDwelling so the serialized object
+	/// model remains ready for future external-dwelling Muster rules; the current
+	/// playable slice authorizes only town targets.
+	int32_t newHorizonsMusterLastWeek = -1;
 
 	CGDwelling(IGameInfoCallback *cb, BonusNodeType nodeType);
 	CGDwelling(IGameInfoCallback *cb);
@@ -45,6 +50,8 @@ public:
 	const IOwnableObject * asOwnable() const final;
 	ResourceSet dailyIncome() const override;
 	std::vector<CreatureID> providedCreatures() const override;
+	int32_t getNewHorizonsMusterLastWeek() const { return newHorizonsMusterLastWeek; }
+	void markNewHorizonsMusterUsed(int32_t week) { newHorizonsMusterLastWeek = week; }
 	AnimationPath getKingdomOverviewImage() const;
 
 protected:
@@ -72,6 +79,11 @@ public:
 	{
 		h & static_cast<CArmedInstance&>(*this);
 		h & creatures;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MUSTER))
+			h & newHorizonsMusterLastWeek;
+		else if(h.saving && newHorizonsMusterLastWeek != -1)
+			throw std::runtime_error("New Horizons Muster state requires the new save format");
+		else if(!h.saving)
+			newHorizonsMusterLastWeek = -1;
 	}
 };
-

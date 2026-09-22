@@ -1679,6 +1679,26 @@ struct DLL_LINKAGE SetNewHorizonsCastleGateState : public CPackForClient
 	}
 };
 
+/// Authoritative weekly Recruitment Muster markers.  The stock mutation is
+/// carried separately by SetAvailableCreatures; this packet mirrors the
+/// server-authored hero and dwelling uses to every client so save/load and UI
+/// availability agree with the simulation.
+struct DLL_LINKAGE SetNewHorizonsMusterState : public CPackForClient
+{
+	ObjectInstanceID heroId;
+	ObjectInstanceID targetId;
+	int32_t lastUseWeek = -1;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		h & heroId;
+		h & targetId;
+		h & lastUseWeek;
+	}
+};
+
 struct DLL_LINKAGE ShowWorldViewEx : public CPackForClient
 {
 	PlayerColor player;

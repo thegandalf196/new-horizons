@@ -38,6 +38,7 @@
 
 #include "AIGateway.h"
 #include "Goals/Goals.h"
+#include "Helpers/NewHorizonsMuster.h"
 
 namespace NK2AI
 {
@@ -62,6 +63,8 @@ AIGateway::~AIGateway()
 void AIGateway::availableCreaturesChanged(const CGDwelling * town)
 {
 	LOG_TRACE(logAi);
+	static_cast<void>(town);
+	clearReplicatedMusters();
 }
 
 void AIGateway::heroMoved(const TryMoveHero & details, bool verbose)
@@ -381,6 +384,10 @@ void AIGateway::showInfoDialog(EInfoWindowMode type, const std::string & text, c
 void AIGateway::requestRealized(PackageApplied * pa)
 {
 	LOG_TRACE(logAi);
+	// Muster produces two ordered client packets (stock, then weekly markers).
+	// Only release the AI-side pending guard after those authoritative markers
+	// are visible, so a same-turn BuyArmy action cannot race the request.
+	clearReplicatedMusters();
 	if(status.haveTurn())
 	{
 		if(pa->packType == CTypeList::getInstance().getTypeID<EndTurn>(nullptr))
@@ -998,6 +1005,104 @@ void AIGateway::moveCreaturesToHero(const CGTownInstance * t)
 	}
 }
 
+bool AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGTownInstance * town) const
+{
+	if(!hero || !town)
+		return false;
+
+	// The marker packets can arrive after requestRealized.  Reconcile before
+	// inspecting the guard so a completed Muster never blocks the next town
+	// action indefinitely.
+	const_cast<AIGateway *>(this)->clearReplicatedMusters();
+
+	const auto & calendar = cc->getCalendar();
+	const int currentWeek = (calendar.getCurrentDay() - 1) / calendar.getDaysInWeek();
+	std::lock_guard lock(musterMutex);
+
+	// A failed or delayed request must not permanently suppress the hero after
+	// the weekly reset.  Stale entries are harmless, but pruning here also keeps
+	// the guard bounded during long AI games.
+	std::erase_if(pendingMusters, [currentWeek](const PendingMuster & pending)
+	{
+		return pending.week != currentWeek;
+	});
+
+	return std::any_of(pendingMusters.begin(), pendingMusters.end(), [&](const PendingMuster & pending)
+	{
+		return pending.hero == hero->id && pending.target == town->id && pending.week == currentWeek;
+	});
+}
+
+bool AIGateway::hasPendingMuster(const CGTownInstance * town) const
+{
+	if(!town)
+		return false;
+
+	const_cast<AIGateway *>(this)->clearReplicatedMusters();
+	const auto & calendar = cc->getCalendar();
+	const int currentWeek = (calendar.getCurrentDay() - 1) / calendar.getDaysInWeek();
+	std::lock_guard lock(musterMutex);
+	return std::any_of(pendingMusters.begin(), pendingMusters.end(), [&](const PendingMuster & pending)
+	{
+		return pending.target == town->id && pending.week == currentWeek;
+	});
+}
+
+void AIGateway::clearReplicatedMusters()
+{
+	const auto & calendar = cc->getCalendar();
+	const int currentWeek = (calendar.getCurrentDay() - 1) / calendar.getDaysInWeek();
+	std::lock_guard lock(musterMutex);
+	std::erase_if(pendingMusters, [&](const PendingMuster & pending)
+	{
+		if(pending.week != currentWeek)
+			return true;
+
+		const auto * hero = cc->getHero(pending.hero);
+		const auto * target = dynamic_cast<const CGDwelling *>(cc->getObj(pending.target));
+		return hero && target && hero->hasUsedNewHorizonsMuster(currentWeek)
+			&& target->getNewHorizonsMusterLastWeek() == currentWeek;
+	});
+}
+
+void AIGateway::tryMusterCreatures(const CGHeroInstance * hero, const CGTownInstance * town)
+{
+	if(!hero || !town || hero->tempOwner != playerID || town->tempOwner != playerID)
+		return;
+
+	const int recruitmentRank = hero->getPerkSkillRank("new-horizons:recruitment");
+	const auto & calendar = cc->getCalendar();
+	const int currentWeek = (calendar.getCurrentDay() - 1) / calendar.getDaysInWeek();
+	if(recruitmentRank <= 0 || hasPendingMuster(hero, town)
+		|| hero->hasUsedNewHorizonsMuster(currentWeek)
+		|| town->getNewHorizonsMusterLastWeek() == currentWeek)
+		return;
+
+	const auto candidate = newHorizonsMuster::chooseTownCandidate(*town, *cc, recruitmentRank);
+	if(!candidate)
+		return; // No category snapshot means legacy/no-category; do not Muster.
+
+	{
+		std::lock_guard lock(musterMutex);
+		const auto duplicate = std::any_of(pendingMusters.begin(), pendingMusters.end(), [&](const PendingMuster & pending)
+		{
+			return pending.hero == hero->id && pending.target == town->id && pending.week == currentWeek;
+		});
+		if(duplicate)
+			return;
+		pendingMusters.push_back({hero->id, town->id, currentWeek});
+	}
+
+	logAi->debug("Hero %s musters %d %s from town %s (rank %d, category amount %d, weighted army value %lld)",
+		hero->getNameTextID(), candidate->amount, candidate->creature.toCreature()->getNamePluralTranslated(),
+		town->getNameTextID(), recruitmentRank, candidate->amount, static_cast<long long>(candidate->armyValue));
+
+	// The callback is the only legal mutation path.  The server validates both
+	// weekly uses and the target row; this AI-side pending guard prevents a
+	// second request before the resulting pool update is replicated.
+	cc->musterCreatures(hero, town, candidate->creature);
+}
+
 void AIGateway::swapGarrisonHero(const CGTownInstance * town)
 {
 	if(!armyFormation::canSwapGarrisonHero(town))
@@ -1101,6 +1206,14 @@ void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const 
 void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * recruiter)
 {
 	//now used only for visited dwellings / towns, not BuyArmy goal
+	if(const auto * town = dynamic_cast<const CGTownInstance *>(d))
+	{
+		if(hasPendingMuster(town))
+		{
+			logAi->debug("Deferring recruitment from town %s until its Muster result is replicated", town->getNameTextID());
+			return;
+		}
+	}
 	for(int i = 0; i < d->creatures.size(); i++)
 	{
 		if(!d->creatures[i].second.size())
@@ -1508,6 +1621,10 @@ void AIGateway::endTurn()
 
 void AIGateway::buildArmyIn(const CGTownInstance * t)
 {
+	const auto * recruitmentHero = t
+		? (t->getVisitingHero() ? t->getVisitingHero() : t->getGarrisonHero())
+		: nullptr;
+	tryMusterCreatures(recruitmentHero, t);
 	makePossibleUpgrades(t->getVisitingHero());
 	makePossibleUpgrades(t);
 	recruitCreatures(t, t->getUpperArmy());

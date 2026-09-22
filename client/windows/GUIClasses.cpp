@@ -12,6 +12,7 @@
 #include "NewHorizonsPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
 #include "NewHorizonsCreatureCategoryUI.h"
+#include "NewHorizonsMusterUI.h"
 
 #include "CCastleInterface.h"
 #include "CCreatureWindow.h"
@@ -332,6 +333,8 @@ void CRecruitmentWindow::showAll(Canvas & to)
 	to.drawBorder(Rect(133 + layoutOffsetX, 312, 66, 34) + pos.topLeft(), Colors::METALLIC_GOLD);
 	to.drawBorder(Rect(211 + layoutOffsetX, 312, 66, 34) + pos.topLeft(), Colors::METALLIC_GOLD);
 	to.drawBorder(Rect(289 + layoutOffsetX, 312, 66, 34) + pos.topLeft(), Colors::METALLIC_GOLD);
+	if(musterButton)
+		to.drawBorder(Rect(367 + layoutOffsetX, 312, 66, 34) + pos.topLeft(), Colors::METALLIC_GOLD);
 }
 
 CRecruitmentWindow::CRecruitmentWindow(const CGDwelling * Dwelling, int Level, const CArmedInstance * Dst, const std::function<void(CreatureID,int)> & Recruit, const std::function<void()> & onClose, int y_offset):
@@ -353,6 +356,18 @@ CRecruitmentWindow::CRecruitmentWindow(const CGDwelling * Dwelling, int Level, c
 	slider = std::make_shared<CSlider>(Point(173 + layoutOffsetX, 280), 138, std::bind(&CRecruitmentWindow::sliderMoved, this, _1), 0, 0, 0, Orientation::HORIZONTAL);
 
 	maxButton = std::make_shared<CButton>(Point(134 + layoutOffsetX, 313), AnimationPath::builtin("IRCBTNS.DEF"), LIBRARY->generaltexth->zelp[553], std::bind(&CSlider::scrollToMax, slider), EShortcut::RECRUITMENT_MAX);
+	if(const auto * town = dynamic_cast<const CGTownInstance *>(Dwelling); newHorizonsMusterUI::isEligible(town))
+	{
+		musterButton = std::make_shared<CButton>(Point(368 + layoutOffsetX, 313), AnimationPath::builtin("IRCBTNS.DEF"),
+			CButton::tooltip("Muster", "Reinforce one town dwelling."),
+			[town](){ newHorizonsMusterUI::open(town); });
+		musterButton->setTextOverlay("M", FONT_SMALL, Colors::WHITE);
+		if(const auto offer = newHorizonsMusterUI::offerFor(town))
+		{
+			musterButton->addHoverText(EButtonState::NORMAL, newHorizonsMusterUI::status(*offer));
+			musterButton->block(!GAME->interface()->makingTurn || offer->usedThisWeek || newHorizonsMusterUI::targetsFor(*offer).empty());
+		}
+	}
 	buyButton = std::make_shared<CButton>(Point(212 + layoutOffsetX, 313), AnimationPath::builtin("IBY6432.DEF"), LIBRARY->generaltexth->zelp[554], std::bind(&CRecruitmentWindow::buy, this), EShortcut::GLOBAL_ACCEPT);
 	cancelButton = std::make_shared<CButton>(Point(290 + layoutOffsetX, 313), AnimationPath::builtin("ICN6432.DEF"), LIBRARY->generaltexth->zelp[555], std::bind(&CRecruitmentWindow::close, this), EShortcut::GLOBAL_CANCEL);
 
@@ -375,6 +390,15 @@ void CRecruitmentWindow::availableCreaturesChanged()
 {
 	OBJECT_CONSTRUCTION;
 	categoryHeaders.fill(nullptr);
+	if(musterButton)
+	{
+		if(const auto offer = newHorizonsMusterUI::offerFor(dynamic_cast<const CGTownInstance *>(dwelling)))
+		{
+			musterButton->addHoverText(EButtonState::NORMAL, newHorizonsMusterUI::status(*offer));
+			musterButton->block(!GAME->interface()->makingTurn || offer->usedThisWeek
+				|| newHorizonsMusterUI::targetsFor(*offer).empty());
+		}
+	}
 
 	size_t selectedIndex = 0;
 
