@@ -77,6 +77,10 @@ void AssetGenerator::initialize()
 	imageFiles[ImagePath::builtin("stackWindow/info-panel-0.png")] = [this](){ return createCreatureInfoPanel(2);};
 	imageFiles[ImagePath::builtin("stackWindow/info-panel-1.png")] = [this](){ return createCreatureInfoPanel(3);};
 	imageFiles[ImagePath::builtin("stackWindow/info-panel-2.png")] = [this](){ return createCreatureInfoPanel(4);};
+	imageFiles[ImagePath::builtin("stackWindow/info-panel-nh-0.png")] = [this](){ return createCreatureInfoPanel(2, true);};
+	imageFiles[ImagePath::builtin("stackWindow/info-panel-nh-1.png")] = [this](){ return createCreatureInfoPanel(3, true);};
+	imageFiles[ImagePath::builtin("stackWindow/info-panel-nh-2.png")] = [this](){ return createCreatureInfoPanel(4, true);};
+	imageFiles[ImagePath::builtin("stackWindow/iconInitiative.png")] = [this](){ return createCreatureInitiativeIcon(); };
 	imageFiles[ImagePath::builtin("stackWindow/bonus-effects.png")] = [this](){ return createCreatureInfoPanelElement(BONUS_EFFECTS);};
 	imageFiles[ImagePath::builtin("stackWindow/spell-effects.png")] = [this](){ return createCreatureInfoPanelElement(SPELL_EFFECTS);};
 	imageFiles[ImagePath::builtin("stackWindow/leadership.png")] = [this](){ return createCreatureInfoPanelElement(LEADERSHIP);};
@@ -849,12 +853,13 @@ AssetGenerator::AnimationLayoutMap AssetGenerator::createSliderBar(bool brown, b
 	return layout;
 }
 
-AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanel(int boxesAmount) const
+AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanel(int boxesAmount, bool showNewHorizonsStats) const
 {
-	// The ninth stat row is New Horizons Leadership Cost.  Keep it in the
-	// same generated panel as the ordinary creature statistics instead of
-	// appending a separate capability panel below the creature card.
-	Point size(438, 206);
+	// The ordinary panel keeps the legacy nine-row footprint.  New Horizons
+	// adds Initiative beside Speed and retains Leadership Cost as a normal
+	// tenth row, so give that presentation its own taller generated panel.
+	const int statRows = showNewHorizonsStats ? 10 : 9;
+	Point size(438, 30 + statRows * 19 + 5);
 
 	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);
 	Canvas canvas = image->getCanvas();
@@ -871,7 +876,7 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanel(int boxesAmoun
 	canvas.drawColorBlended(r, rectangleColor);
 	canvas.drawBorder(r, borderColor);
 
-	for(int i = 0; i < 9; i++)
+	for(int i = 0; i < statRows; i++)
 	{
 		Rect r(114, 30 + i * 19, 24, 20);
 		canvas.drawColorBlended(r, rectangleColor);
@@ -911,6 +916,37 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanel(int boxesAmoun
 		canvas.drawColorBlended(rect, rectangleColorRed);
 		canvas.drawBorder(rect, borderColor);
 	}
+
+	return image;
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::createCreatureInitiativeIcon() const
+{
+	// Small, deliberately monochromatic placeholder art for the new stat.  A
+	// compact hourglass reads as turn timing at the same scale as the existing
+	// creature-stat glyphs and keeps this UI self-contained until definitive
+	// artwork is commissioned.
+	const Point size(17, 19);
+	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);
+	Canvas canvas = image->getCanvas();
+	canvas.drawColor(Rect(Point(0, 0), size), Colors::TRANSPARENCY);
+
+	const ColorRGBA frame(210, 186, 116, ColorRGBA::ALPHA_OPAQUE);
+	const ColorRGBA highlight(255, 240, 168, ColorRGBA::ALPHA_OPAQUE);
+	const ColorRGBA sand(176, 130, 56, ColorRGBA::ALPHA_OPAQUE);
+
+	canvas.drawLine(Point(2, 1), Point(14, 1), frame, frame);
+	canvas.drawLine(Point(2, 17), Point(14, 17), frame, frame);
+	canvas.drawLine(Point(3, 2), Point(13, 2), highlight, highlight);
+	canvas.drawLine(Point(3, 16), Point(13, 16), highlight, highlight);
+	canvas.drawLine(Point(3, 3), Point(8, 9), frame, frame);
+	canvas.drawLine(Point(13, 3), Point(8, 9), frame, frame);
+	canvas.drawLine(Point(3, 15), Point(8, 9), frame, frame);
+	canvas.drawLine(Point(13, 15), Point(8, 9), frame, frame);
+	canvas.drawColor(Rect(6, 7, 5, 3), sand);
+	canvas.drawColor(Rect(7, 11, 3, 3), sand);
+	canvas.drawPoint(Point(5, 5), highlight);
+	canvas.drawPoint(Point(11, 13), highlight);
 
 	return image;
 }

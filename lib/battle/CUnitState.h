@@ -295,8 +295,11 @@ public:
 private:
 	const IUnitEnvironment * env;
 
+	BonusCachePerTurn initiativeBasePerTurn;
+	BonusCachePerTurn initiativeBasePresencePerTurn;
 	BonusCachePerTurn initiativePercentPerTurn;
 	BonusCachePerTurn stackSpeedPerTurn;
+	BonusCachePerTurn movementRangePerTurn;
 	BonusCachePerTurn immobilizedPerTurn;
 	UnitBonusValuesProxy bonusCache;
 

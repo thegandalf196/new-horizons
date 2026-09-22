@@ -11,6 +11,7 @@
 
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/json/JsonNode.h"
+#include "../../lib/bonuses/Bonus.h"
 
 namespace test
 {
@@ -45,6 +46,21 @@ TEST_F(CCreatureTest, RegistersIcons)
 	EXPECT_CALL(*this, registarCb(Eq(4242), Eq(0), "TWCRPORT", "Test2"));
 
 	subject->registerIcons(cb);
+}
+
+TEST_F(CCreatureTest, BaseInitiativeFallsBackToBaseSpeed)
+{
+	subject->addBonus(9, BonusType::STACKS_SPEED);
+	EXPECT_EQ(subject->getBaseSpeed(), 9);
+	EXPECT_EQ(subject->getBaseInitiative(), 9);
+}
+
+TEST_F(CCreatureTest, BaseInitiativeCanDifferFromBaseSpeed)
+{
+	subject->addBonus(9, BonusType::STACKS_SPEED);
+	subject->addBonus(13, BonusType::STACKS_INITIATIVE_BASE);
+	EXPECT_EQ(subject->getBaseSpeed(), 9);
+	EXPECT_EQ(subject->getBaseInitiative(), 13);
 }
 
 }

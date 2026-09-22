@@ -1,0 +1,18 @@
+{
+	"core:mage": {
+		"level": 5,
+		"speed": 5,
+		"initiative": 5
+	},
+	"core:archMage": {
+		"level": 5,
+		"speed": 5,
+		"initiative": 7
+	},
+	"core:genie": {
+		"level": 4
+	},
+	"core:masterGenie": {
+		"level": 4
+	}
+}

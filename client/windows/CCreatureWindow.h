@@ -153,6 +153,7 @@ class CStackWindow : public CWindowObject
 			HEALTH,
 			HEALTH_LEFT,
 			SPEED,
+			INITIATIVE,
 			MANA,
 			LEADERSHIP,
 			AFTER_LAST
@@ -162,7 +163,7 @@ class CStackWindow : public CWindowObject
 		std::shared_ptr<CPicture> deadCommanderOverlay;
 		std::shared_ptr<LRClickableArea> animationArea;
 		std::shared_ptr<CLabel> name;
-		std::array<std::shared_ptr<CIntObject>, 9> statIcons;
+		std::array<std::shared_ptr<CIntObject>, 10> statIcons;
 		std::shared_ptr<CPicture> icons;
 		std::shared_ptr<MoraleLuckBox> morale;
 		std::shared_ptr<MoraleLuckBox> luck;
@@ -172,17 +173,19 @@ class CStackWindow : public CWindowObject
 		std::shared_ptr<CAnimImage> expRankIcon;
 		std::shared_ptr<CIntObject> expArea;
 		std::shared_ptr<CLabel> expLabel;
+		bool showNewHorizonsStats = false;
 
 		void addStatLabel(EStat index, int64_t value1, int64_t value2);
 		void addStatLabel(EStat index, int64_t value);
 		void addStatLabel(EStat index, const std::string & value);
+		size_t statRow(EStat index) const;
 
-		static ImagePath getBackgroundName(bool showExp, bool showArt);
+		static ImagePath getBackgroundName(bool showExp, bool showArt, bool showNewHorizonsStats);
 
-		std::array<std::string, 9> statNames;
-		std::array<std::string, 9> statFormats;
+		std::array<std::string, 10> statNames;
+		std::array<std::string, 10> statFormats;
 	public:
-		MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showLeadership);
+		MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showLeadership, bool showNewHorizonsStats);
 	};
 
 	class StackExperienceDetailsWindow;

@@ -104,7 +104,7 @@ class CreatureCategoryDataTest(unittest.TestCase):
                     self.assertFalse(missing.exists())
         self.assertNotEqual(subprocess.run([sys.executable, str(script), '--output', str(live)], capture_output=True).returncode, 0)
         self.assertEqual(live.read_bytes(), before)
-        self.assertEqual(json.loads(before)['version'], '0.7.0')
+        self.assertEqual(json.loads(before)['version'], '0.8.0')
         self.assertNotIn('creatures', json.loads(before)['settings'])
 
 

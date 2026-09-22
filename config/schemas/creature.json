@@ -113,6 +113,11 @@
 			"description" : "Cost to resurrect this creature when used as commander; falls back to config/commanders.json when omitted"
 		},
 		"speed" :     { "type" : "number" },
+		"initiative" : {
+			"type" : "number",
+			"minimum" : 0,
+			"description" : "Base battle initiative. If omitted, initiative defaults to speed for legacy-compatible creatures."
+		},
 		"hitPoints" : { "type" : "number" },
 		"attack" :    { "type" : "number" },
 		"defense" :   { "type" : "number" },

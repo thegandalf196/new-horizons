@@ -218,6 +218,8 @@ class JsonNode;
 	BONUS_NAME(METAMAGIC_USES_PER_COMBAT) /*rank-derived Tower Metamagic uses; consumed by the battle authority*/ \
 	BONUS_NAME(TIME_STOP) /*unit is in canonical New Horizons Time Stop stasis*/ \
 	BONUS_NAME(LEADERSHIP) /*permanent New Horizons hero Leadership training*/ \
+	BONUS_NAME(STACKS_INITIATIVE_BASE) /*base battle initiative; falls back to STACKS_SPEED when absent*/ \
+	BONUS_NAME(STACKS_MOVEMENT_RANGE) /*additive movement range; never contributes to battle initiative*/ \
 
 	/* end of list */
 

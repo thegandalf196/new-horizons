@@ -1,0 +1,20 @@
+{
+	"core:iceBolt": {
+		"levels": {
+			"base": {
+				"battleEffects": {
+					"speedDebuff": {
+						"type": "timed",
+						"bonus": {
+							"stacksMovementRange": {
+								"type": "STACKS_MOVEMENT_RANGE",
+								"val": -2,
+								"duration": "N_TURNS"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

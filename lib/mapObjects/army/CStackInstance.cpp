@@ -32,7 +32,8 @@ CStackInstance::CStackInstance(IGameInfoCallback * cb, BonusNodeType nodeType, b
 	, CArtifactSet(cb)
 	, GameCallbackHolder(cb)
 	, nativeTerrain(this, Selector::type()(BonusType::TERRAIN_NATIVE))
-	, initiative(this, Selector::type()(BonusType::STACKS_SPEED))
+	, initiative(this, Selector::type()(BonusType::STACKS_INITIATIVE_BASE))
+	, initiativePresence(this, Selector::type()(BonusType::STACKS_INITIATIVE_BASE))
 	, totalExperience(0)
 {
 }
@@ -242,7 +243,7 @@ PlayerColor CStackInstance::getOwner() const
 int32_t CStackInstance::getInitiative(int turn) const
 {
 	if(turn == 0)
-		return initiative.getValue();
+		return initiativePresence.hasBonus() ? initiative.getValue() : ACreature::getInitiative();
 
 	return ACreature::getInitiative(turn);
 }

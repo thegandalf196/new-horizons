@@ -144,17 +144,27 @@ ui32 ACreature::getMovementRange() const
 	if (getBonusBearer()->hasBonusOfType(BonusType::BIND_EFFECT))
 		return 0;
 
-	return std::max(0, getBonusBearer()->valOfBonuses(BonusType::STACKS_SPEED));
+	return std::max(0, getBonusBearer()->valOfBonuses(BonusType::STACKS_SPEED)
+		+ getBonusBearer()->valOfBonuses(BonusType::STACKS_MOVEMENT_RANGE));
 }
 
 int32_t ACreature::getInitiative(int turn) const
 {
 	if (turn == 0)
 	{
+		static const auto initiativeSelector = Selector::type()(BonusType::STACKS_INITIATIVE_BASE);
+		if(getBonusBearer()->hasBonus(initiativeSelector))
+			return getBonusBearer()->valOfBonuses(initiativeSelector);
+
 		return getBonusBearer()->valOfBonuses(BonusType::STACKS_SPEED);
 	}
 	else
 	{
+		const std::string cachingStrSI = "type_STACKS_INITIATIVE_BASE_turns_" + std::to_string(turn);
+		const auto initiativeSelector = Selector::type()(BonusType::STACKS_INITIATIVE_BASE).And(Selector::turns(turn));
+		if(getBonusBearer()->hasBonus(initiativeSelector, cachingStrSI + "_presence"))
+			return getBonusBearer()->valOfBonuses(initiativeSelector, cachingStrSI);
+
 		const std::string cachingStrSS = "type_STACKS_SPEED_turns_" + std::to_string(turn);
 		return getBonusBearer()->valOfBonuses(Selector::type()(BonusType::STACKS_SPEED).And(Selector::turns(turn)), cachingStrSS);
 	}
@@ -168,6 +178,7 @@ ui32 ACreature::getMovementRange(int turn) const
 	const std::string cachingStrSW = "type_SIEGE_WEAPON_turns_" + std::to_string(turn);
 	const std::string cachingStrBE = "type_BIND_EFFECT_turns_" + std::to_string(turn);
 	const std::string cachingStrSS = "type_STACKS_SPEED_turns_" + std::to_string(turn);
+	const std::string cachingStrSMR = "type_STACKS_MOVEMENT_RANGE_turns_" + std::to_string(turn);
 
 	//war machines cannot move
 	if(getBonusBearer()->hasBonus(Selector::type()(BonusType::SIEGE_WEAPON).And(Selector::turns(turn)), cachingStrSW))
@@ -176,11 +187,12 @@ ui32 ACreature::getMovementRange(int turn) const
 	if(getBonusBearer()->hasBonus(Selector::type()(BonusType::BIND_EFFECT).And(Selector::turns(turn)), cachingStrBE))
 		return 0;
 
-	return std::max(0, getBonusBearer()->valOfBonuses(Selector::type()(BonusType::STACKS_SPEED).And(Selector::turns(turn)), cachingStrSS));
+	return std::max(0,
+		getBonusBearer()->valOfBonuses(Selector::type()(BonusType::STACKS_SPEED).And(Selector::turns(turn)), cachingStrSS)
+		+ getBonusBearer()->valOfBonuses(Selector::type()(BonusType::STACKS_MOVEMENT_RANGE).And(Selector::turns(turn)), cachingStrSMR));
 }
 
 bool ACreature::isLiving() const
 {
 	return getBonusBearer()->hasBonusOfType(BonusType::LIVING);
 }
-

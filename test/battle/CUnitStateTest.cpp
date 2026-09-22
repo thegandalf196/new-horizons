@@ -13,6 +13,7 @@
 #include "mock/mock_UnitInfo.h"
 #include "mock/mock_UnitEnvironment.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/BattleInfo.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/json/JsonNode.h"
 
@@ -124,6 +125,98 @@ TEST_F(UnitStateTest, initialRegular)
 
 	EXPECT_EQ(subject.getTotalAttacks(true), 1);
 	EXPECT_EQ(subject.getTotalAttacks(false), 1);
+}
+
+TEST_F(UnitStateTest, explicitInitiativeIsIndependentFromMovementSpeed)
+{
+	setDefaultExpectations();
+	bonusMock.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_INITIATIVE_BASE, BonusSource::CREATURE_ABILITY, 17, BonusSourceID()));
+	initUnit();
+
+	EXPECT_EQ(subject.getMovementRange(), DEFAULT_SPEED);
+	EXPECT_EQ(subject.getInitiative(), 17);
+	EXPECT_EQ(subject.getInitiative(123456), 17);
+}
+
+TEST_F(UnitStateTest, sameSpeedDifferentInitiativeChangesBattleQueueOnly)
+{
+	UnitInfoMock slowInfo;
+	UnitInfoMock fastInfo;
+	BonusBearerMock slowBonuses;
+	BonusBearerMock fastBonuses;
+
+	for(auto * bonuses : {&slowBonuses, &fastBonuses})
+	{
+		bonuses->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_SPEED, BonusSource::CREATURE_ABILITY, DEFAULT_SPEED, BonusSourceID()));
+	}
+	slowBonuses.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_INITIATIVE_BASE, BonusSource::CREATURE_ABILITY, 8, BonusSourceID()));
+	fastBonuses.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_INITIATIVE_BASE, BonusSource::CREATURE_ABILITY, 12, BonusSourceID()));
+
+	battle::CUnitStateDetached slow(&slowInfo, &slowBonuses);
+	battle::CUnitStateDetached fast(&fastInfo, &fastBonuses);
+
+	EXPECT_EQ(slow.getMovementRange(), fast.getMovementRange());
+	EXPECT_LT(slow.getInitiative(), fast.getInitiative());
+	EXPECT_TRUE(CMP_stack{}(&fast, &slow));
+	EXPECT_FALSE(CMP_stack{}(&slow, &fast));
+}
+
+TEST_F(UnitStateTest, missingInitiativeFallsBackToSpeed)
+{
+	setDefaultExpectations();
+	initUnit();
+
+	EXPECT_EQ(subject.getMovementRange(), DEFAULT_SPEED);
+	EXPECT_EQ(subject.getInitiative(), DEFAULT_SPEED);
+	EXPECT_EQ(subject.getInitiative(123456), DEFAULT_SPEED);
+}
+
+TEST_F(UnitStateTest, explicitInitiativeIgnoresTemporarySpeedModifier)
+{
+	setDefaultExpectations();
+	bonusMock.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_INITIATIVE_BASE, BonusSource::CREATURE_ABILITY, DEFAULT_SPEED, BonusSourceID()));
+	auto frost = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED, BonusSource::SPELL_EFFECT, -2, BonusSourceID());
+	frost->turnsRemain = 2;
+	bonusMock.addNewBonus(frost);
+	initUnit();
+
+	EXPECT_EQ(subject.getMovementRange(), DEFAULT_SPEED - 2);
+	EXPECT_EQ(subject.getInitiative(), DEFAULT_SPEED);
+	EXPECT_EQ(subject.getInitiative(1), DEFAULT_SPEED);
+}
+
+TEST_F(UnitStateTest, legacyInitiativeTracksTemporarySpeedModifier)
+{
+	setDefaultExpectations();
+	auto frost = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED, BonusSource::SPELL_EFFECT, -2, BonusSourceID());
+	frost->turnsRemain = 2;
+	bonusMock.addNewBonus(frost);
+	initUnit();
+
+	EXPECT_EQ(subject.getMovementRange(), DEFAULT_SPEED - 2);
+	EXPECT_EQ(subject.getInitiative(), DEFAULT_SPEED - 2);
+	EXPECT_EQ(subject.getInitiative(1), DEFAULT_SPEED - 2);
+}
+
+TEST_F(UnitStateTest, movementRangeBonusDoesNotAffectLegacyInitiative)
+{
+	setDefaultExpectations();
+	bonusMock.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_MOVEMENT_RANGE, BonusSource::SPELL_EFFECT, 3, BonusSourceID()));
+	initUnit();
+
+	EXPECT_EQ(subject.getMovementRange(), DEFAULT_SPEED + 3);
+	EXPECT_EQ(subject.getInitiative(), DEFAULT_SPEED);
+	EXPECT_EQ(subject.getInitiative(1), DEFAULT_SPEED);
+}
+
+TEST_F(UnitStateTest, movementRangeBonusCannotUnderflow)
+{
+	setDefaultExpectations();
+	bonusMock.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_MOVEMENT_RANGE, BonusSource::SPELL_EFFECT, -DEFAULT_SPEED - 1, BonusSourceID()));
+	initUnit();
+
+	EXPECT_EQ(subject.getMovementRange(), 0u);
+	EXPECT_EQ(subject.getInitiative(), DEFAULT_SPEED);
 }
 
 TEST_F(UnitStateTest, canShoot)

@@ -1,0 +1,55 @@
+{
+	"core:tower": {
+		"town": {
+			"creatures": {
+				"modify@3": [ "genie", "masterGenie" ],
+				"modify@4": [ "mage", "archMage" ]
+			},
+			"structures": {
+				"dwellingLvl4": {
+					"animation": "TBTWDW_4.def",
+					"x": 613,
+					"y": 95,
+					"campaignBonus": "BoTGen1.pcx",
+					"border": "TOTGEN1.bmp",
+					"area": "TZTGEN1.bmp"
+				},
+				"dwellingLvl5": {
+					"animation": "TBTWDW_3.def",
+					"x": 511,
+					"y": 75,
+					"campaignBonus": "BoTMag1.pcx",
+					"border": "TOTMAG1.bmp",
+					"area": "TZTMAG1.bmp"
+				},
+				"dwellingUpLvl4": {
+					"animation": "TBTWUP_4.def",
+					"x": 613,
+					"y": 74,
+					"campaignBonus": "BoTGen2.pcx",
+					"border": "TOTGEN2.bmp",
+					"area": "TZTGEN2.bmp"
+				},
+				"dwellingUpLvl5": {
+					"animation": "TBTWUP_3.def",
+					"x": 511,
+					"y": 8,
+					"campaignBonus": "BoTMag2.pcx",
+					"border": "TOTMAG2.bmp",
+					"area": "TZTMAG2.bmp"
+				}
+			},
+			"buildings": {
+				"special3": {
+					"requires": [ "allOf", [ "dwellingLvl5" ], [ "mageGuild4" ] ]
+				},
+				"dwellingUpLvl4": {
+					"requires": null
+				},
+				"dwellingUpLvl5": {
+					"requires": [ "special3" ]
+				}
+			}
+		}
+	}
+}

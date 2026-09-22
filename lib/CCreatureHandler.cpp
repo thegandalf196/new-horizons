@@ -166,6 +166,19 @@ int32_t CCreature::getBaseSpeed() const
 	return getExportedBonusList().valOfBonuses(SELECTOR);
 }
 
+int32_t CCreature::getBaseInitiative() const
+{
+	static const auto SELECTOR = Selector::type()(BonusType::STACKS_INITIATIVE_BASE).And(Selector::sourceTypeSel(BonusSource::CREATURE_ABILITY));
+	const auto & exported = getExportedBonusList();
+	if(exported.getFirst(SELECTOR))
+		return exported.valOfBonuses(SELECTOR);
+
+	// The initiative field is optional by design.  This keeps existing creature
+	// content and saves speed-compatible while allowing new content to opt into
+	// an independent turn-order value.
+	return getBaseSpeed();
+}
+
 int32_t CCreature::getBaseShots() const
 {
 	static const auto SELECTOR = Selector::type()(BonusType::SHOTS).And(Selector::sourceTypeSel(BonusSource::CREATURE_ABILITY));
@@ -607,6 +620,8 @@ std::shared_ptr<CCreature> CCreatureHandler::loadFromJson(const std::string & sc
 
 	cre->addBonus(node["hitPoints"].Integer(), BonusType::STACK_HEALTH);
 	cre->addBonus(node["speed"].Integer(), BonusType::STACKS_SPEED);
+	if(!node["initiative"].isNull())
+		cre->addBonus(node["initiative"].Integer(), BonusType::STACKS_INITIATIVE_BASE);
 	cre->addBonus(node["attack"].Integer(), BonusType::PRIMARY_SKILL, BonusSubtypeID(PrimarySkill::ATTACK));
 	cre->addBonus(node["defense"].Integer(), BonusType::PRIMARY_SKILL, BonusSubtypeID(PrimarySkill::DEFENSE));
 

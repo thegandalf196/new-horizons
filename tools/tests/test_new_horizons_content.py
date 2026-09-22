@@ -577,7 +577,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'newHorizonsMasteries': load('config/newHorizonsMasteries.json'),
                               'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
-        self.assertEqual(module['version'], '0.7.0')
+        self.assertEqual(module['version'], '0.8.0')
         self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json', 'config/heroes/solmyr.json'])
         self.assertIn('Magic Arrow', module['description'])
         self.assertIn('Overcharge', module['description'])

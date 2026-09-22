@@ -382,8 +382,11 @@ CUnitState::CUnitState():
 	counterAttacks(this),
 	health(this),
 	shots(this),
+	initiativeBasePerTurn(this, Selector::type()(BonusType::STACKS_INITIATIVE_BASE), BonusCacheMode::VALUE),
+	initiativeBasePresencePerTurn(this, Selector::type()(BonusType::STACKS_INITIATIVE_BASE), BonusCacheMode::PRESENCE),
 	initiativePercentPerTurn(this, Selector::type()(BonusType::STACKS_INITIATIVE), BonusCacheMode::VALUE),
 	stackSpeedPerTurn(this, Selector::type()(BonusType::STACKS_SPEED), BonusCacheMode::VALUE),
+	movementRangePerTurn(this, Selector::type()(BonusType::STACKS_MOVEMENT_RANGE), BonusCacheMode::VALUE),
 	immobilizedPerTurn(this, Selector::type()(BonusType::SIEGE_WEAPON).Or(Selector::type()(BonusType::BIND_EFFECT)), BonusCacheMode::PRESENCE),
 	bonusCache(this),
 	cloneID(-1)
@@ -657,8 +660,11 @@ void CUnitState::setPosition(const BattleHex & hex)
 int32_t CUnitState::getInitiative(int turn) const
 {
 	const int64_t speed = stackSpeedPerTurn.getValue(turn) + (turn == 0 && env ? env->unitFortuneSpeed(this) : 0);
+	const int64_t baseInitiative = initiativeBasePresencePerTurn.getValue(turn)
+		? initiativeBasePerTurn.getValue(turn)
+		: speed;
 	const int64_t percent = std::max<int64_t>(0, 100 + initiativePercentPerTurn.getValue(turn));
-	return static_cast<int32_t>(speed * percent / 100);
+	return static_cast<int32_t>(baseInitiative * percent / 100);
 }
 
 ui32 CUnitState::getMovementRange(int turn) const
@@ -669,7 +675,8 @@ ui32 CUnitState::getMovementRange(int turn) const
 	if (immobilizedPerTurn.getValue(0) != 0)
 		return 0;
 
-	return stackSpeedPerTurn.getValue(0) + (env ? env->unitFortuneSpeed(this) : 0);
+	const int64_t movementRange = stackSpeedPerTurn.getValue(0) + movementRangePerTurn.getValue(0) + (env ? env->unitFortuneSpeed(this) : 0);
+	return static_cast<ui32>(std::max<int64_t>(0, movementRange));
 }
 
 ui32 CUnitState::getMovementRange() const

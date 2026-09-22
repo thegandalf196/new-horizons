@@ -354,14 +354,14 @@ int CGHeroInstance::getLowestCreatureSpeed() const
 		int minimalSpeed = std::numeric_limits<int>::max();
 		//TODO? should speed modifiers (eg from artifacts) affect hero movement?
 		for(const auto & slot : Slots())
-			minimalSpeed = std::min(minimalSpeed, slot.second->getInitiative());
+			minimalSpeed = std::min(minimalSpeed, static_cast<int>(slot.second->getMovementRange()));
 
 		return minimalSpeed;
 	}
 	else
 	{
 		if(commander && commander->alive)
-			return commander->getInitiative();
+			return static_cast<int>(commander->getMovementRange());
 	}
 
 	return 10;

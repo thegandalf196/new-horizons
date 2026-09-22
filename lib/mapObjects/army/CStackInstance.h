@@ -31,6 +31,7 @@ class DLL_LINKAGE CStackInstance : public CBonusSystemNode, public CStackBasicDe
 {
 	BonusValueCache nativeTerrain;
 	BonusValueCache initiative;
+	BonusValueCache initiativePresence;
 
 	CArmedInstance * armyInstance = nullptr;
 

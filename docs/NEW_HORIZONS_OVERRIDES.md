@@ -90,7 +90,12 @@ requiring the complete source document to be replaced.
   and Genie dwelling levels before replacing tier presentation with the
   Core/Elite/Champion grouping; both Mage and Genie belong to Elite in that
   final grouping.
-- **Implementation evidence:** Pending.
+- **Implementation evidence:** `Mods/new-horizons/Content/config/creatures/tower.json`
+  swaps Mage/Genie creature levels, while
+  `Mods/new-horizons/Content/config/factions/towerCreatureRanks.json` swaps the
+  recruitment rows, dwelling presentation, and Library prerequisites as one
+  coherent town definition. The live module version is `0.8.0` so the roster
+  change is not silently accepted by older New Horizons saves.
 
 ### 2026-09-21 — skill-development and action-help presentation
 
@@ -115,4 +120,10 @@ requiring the complete source document to be replaced.
   turn order. Slow reduces Initiative only, while Frost Bolt reduces Speed only.
   Creature data may therefore give upgrades such as Arch Magi higher Initiative
   without increasing their Speed. Creature UI must show both statistics.
-- **Implementation evidence:** Pending.
+- **Implementation evidence:** Creature JSON accepts an optional independent
+  `initiative`; battle units use it for turn order and otherwise retain the
+  legacy Speed fallback. `STACKS_MOVEMENT_RANGE` lets Frost Bolt alter movement
+  without altering Initiative, while New Horizons Slow uses
+  `STACKS_INITIATIVE`. Mage and Arch Mage share Speed 5, with Initiative 5 and
+  7 respectively. `CStackWindow` renders distinct Speed, Initiative, and
+  Leadership Cost rows in the taller New Horizons creature panel.

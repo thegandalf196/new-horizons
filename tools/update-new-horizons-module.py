@@ -42,6 +42,10 @@ def main():
     faction_patch_files = [
         'config/factions/uniqueBuildings.json',
         'config/factions/universalMageGuilds.json',
+        'config/factions/towerCreatureRanks.json',
+    ]
+    creature_patch_files = [
+        'config/creatures/tower.json',
     ]
     metadata = {
         'name': 'New Horizons',
@@ -72,9 +76,13 @@ def main():
         # Inline generated settings preserve one authoring source without changing
         # that isolation or relying on an unmounted core file reference.
         'settings': settings,
+        'creatures': creature_patch_files,
         'heroes': hero_patch_files,
         'factions': faction_patch_files,
-        'spells': ['config/spells/newHorizons.json'],
+        'spells': [
+            'config/spells/newHorizons.json',
+            'config/spells/iceBolt.json',
+        ],
         'spellSchools': schools,
         'skills': skills,
         'filesystem': {'SPRITES/': [{'type': 'dir', 'path': '/Images'}]},
@@ -120,7 +128,10 @@ def main():
         # carries the canonical perk registry for saved runtime identity.
         # Explicit historical preview/control branches retain their own identities.
         settings['heroes']['newHorizonsPerks'] = canonical('newHorizonsPerks.json')
-        metadata['version'] = '0.7.0'
+        # The Tower Mage/Genie identity swap changes which creature occupies
+        # an existing dwelling slot.  Bump the live module identity so old
+        # saves cannot silently reinterpret that roster.
+        metadata['version'] = '0.8.0'
         metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
         metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
         metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry; active entries '

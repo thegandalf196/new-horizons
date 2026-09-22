@@ -738,8 +738,9 @@ CStackWindow::CommanderMainSection::CommanderMainSection(CStackWindow * owner, i
 	}
 }
 
-CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showLeadership)
-	: CWindowSection(owner, getBackgroundName(showExp, showArt), yOffset)
+CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showLeadership, bool showNewHorizonsStats)
+	: CWindowSection(owner, getBackgroundName(showExp, showArt, showNewHorizonsStats), yOffset),
+	  showNewHorizonsStats(showNewHorizonsStats)
 {
 	OBJECT_CONSTRUCTION;
 
@@ -753,6 +754,7 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		LIBRARY->generaltexth->allTexts[388],//HEALTH
 		LIBRARY->generaltexth->allTexts[200],//HEALTH_LEFT
 		LIBRARY->generaltexth->zelp[441].first,//SPEED
+		"Initiative",
 		LIBRARY->generaltexth->allTexts[399],//MANA
 		"Leadership Cost"
 	};
@@ -764,6 +766,7 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		"%d (%d)",
 		"%d - %d",
 
+		"%d (%d)",
 		"%d (%d)",
 		"%d (%d)",
 		"%d (%d)",
@@ -816,20 +819,33 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		dmgMultiply += battleStack->valOfBonuses(bonusSelector);
 	}
 
-	static const std::array<std::string, 8> iconNames = {
+	static const std::array<std::string, 7> baseIconNames = {
 		"stackWindow/iconAttack", "stackWindow/iconDefense", "stackWindow/iconShots", "stackWindow/iconDamage",
-		"stackWindow/iconHealth", "stackWindow/iconHealthLeft", "stackWindow/iconSpeed", "stackWindow/iconMana"
+		"stackWindow/iconHealth", "stackWindow/iconHealthLeft", "stackWindow/iconSpeed"
 	};
-	static const std::array<int, 8> iconY = {
-		31, 49, 69, 88, 107, 126, 144, 164
+	static const std::array<int, 10> iconY = {
+		31, 49, 69, 88, 107, 126, 144, 164, 183, 202
 	};
-	for(int i = 0; i < 8; i++)
-		statIcons[i] = std::make_shared<CPicture>(ImagePath::builtin(iconNames[i]), 117, iconY[i]);
+	for(size_t i = 0; i < baseIconNames.size(); i++)
+		statIcons[i] = std::make_shared<CPicture>(ImagePath::builtin(baseIconNames[i]), 117, iconY[i]);
+
+	if(showNewHorizonsStats)
+	{
+		statIcons[static_cast<size_t>(EStat::INITIATIVE)] = std::make_shared<CPicture>(
+			ImagePath::builtin("stackWindow/iconInitiative"), 117, iconY[static_cast<size_t>(EStat::INITIATIVE)]);
+		statIcons[static_cast<size_t>(EStat::MANA)] = std::make_shared<CPicture>(
+			ImagePath::builtin("stackWindow/iconMana"), 117, iconY[static_cast<size_t>(EStat::MANA)]);
+	}
+	else
+	{
+		statIcons[static_cast<size_t>(EStat::MANA)] = std::make_shared<CPicture>(
+			ImagePath::builtin("stackWindow/iconMana"), 117, iconY[static_cast<size_t>(EStat::MANA) - 1]);
+	}
 
 	if(showLeadership)
 		statIcons[static_cast<size_t>(EStat::LEADERSHIP)] = std::make_shared<CAnimImage>(
 			AnimationPath::builtin("NH_capability_leadership_32"), 0,
-			Rect(116, iconY[7] + 19, 20, 20));
+			Rect(116, iconY[static_cast<size_t>(EStat::LEADERSHIP)], 20, 20));
 
 	morale = std::make_shared<MoraleLuckBox>(true, Rect(Point(321, 32), Point(42, 42) ));
 	luck = std::make_shared<MoraleLuckBox>(false,  Rect(Point(375, 32), Point(42, 42) ));
@@ -841,6 +857,8 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		addStatLabel(EStat::DAMAGE, parent->info->stackNode->getMinDamage(battleStack->isShooter()) * dmgMultiply, battleStack->getMaxDamage(battleStack->isShooter()) * dmgMultiply);
 		addStatLabel(EStat::HEALTH, parent->info->creature->getMaxHealth(), battleStack->getMaxHealth());
 		addStatLabel(EStat::SPEED, parent->info->creature->getMovementRange(), battleStack->getMovementRange());
+		if(showNewHorizonsStats)
+			addStatLabel(EStat::INITIATIVE, parent->info->creature->getBaseInitiative(), battleStack->getInitiative());
 
 		if(battleStack->isShooter())
 			addStatLabel(EStat::SHOTS, battleStack->shots.total(), battleStack->shots.available());
@@ -861,6 +879,8 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		addStatLabel(EStat::DAMAGE, parent->info->stackNode->getMinDamage(shooter), parent->info->stackNode->getMaxDamage(shooter));
 		addStatLabel(EStat::HEALTH, parent->info->creature->getMaxHealth(), parent->info->stackNode->getMaxHealth());
 		addStatLabel(EStat::SPEED, parent->info->creature->getMovementRange(), parent->info->stackNode->getMovementRange());
+		if(showNewHorizonsStats)
+			addStatLabel(EStat::INITIATIVE, parent->info->creature->getBaseInitiative(), parent->info->stackNode->getInitiative());
 
 		if(shooter)
 			addStatLabel(EStat::SHOTS, parent->info->stackNode->valOfBonuses(BonusType::SHOTS));
@@ -965,20 +985,22 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 }
 
 
-ImagePath CStackWindow::MainSection::getBackgroundName(bool showExp, bool showArt)
+ImagePath CStackWindow::MainSection::getBackgroundName(bool showExp, bool showArt, bool showNewHorizonsStats)
 {
+	const std::string prefix = showNewHorizonsStats ? "stackWindow/info-panel-nh-" : "stackWindow/info-panel-";
 	if(showExp && showArt)
-		return ImagePath::builtin("stackWindow/info-panel-2");
+		return ImagePath::builtin(prefix + "2");
 	else if(showExp || showArt)
-		return ImagePath::builtin("stackWindow/info-panel-1");
+		return ImagePath::builtin(prefix + "1");
 	else
-		return ImagePath::builtin("stackWindow/info-panel-0");
+		return ImagePath::builtin(prefix + "0");
 }
 
 void CStackWindow::MainSection::addStatLabel(EStat index, int64_t value1, int64_t value2)
 {
 	const auto title = statNames.at(static_cast<size_t>(index));
-	stats.push_back(std::make_shared<CLabel>(145, 32 + (int)index*19, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, title));
+	const auto row = statRow(index);
+	stats.push_back(std::make_shared<CLabel>(145, 32 + static_cast<int>(row) * 19, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, title));
 
 	const bool useRange = value1 != value2;
 
@@ -987,7 +1009,7 @@ void CStackWindow::MainSection::addStatLabel(EStat index, int64_t value1, int64_
 	if(useRange)
 		value.replaceNumber(value2);
 
-	stats.push_back(std::make_shared<CLabel>(307, 48 + (int)index*19, FONT_SMALL, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, value.toString(&GAME->translator())));
+	stats.push_back(std::make_shared<CLabel>(307, 48 + static_cast<int>(row) * 19, FONT_SMALL, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, value.toString(&GAME->translator())));
 }
 
 void CStackWindow::MainSection::addStatLabel(EStat index, int64_t value)
@@ -998,10 +1020,22 @@ void CStackWindow::MainSection::addStatLabel(EStat index, int64_t value)
 void CStackWindow::MainSection::addStatLabel(EStat index, const std::string & value)
 {
 	const auto title = statNames.at(static_cast<size_t>(index));
-	stats.push_back(std::make_shared<CLabel>(145, 32 + (int)index * 19, FONT_SMALL,
+	const auto row = statRow(index);
+	stats.push_back(std::make_shared<CLabel>(145, 32 + static_cast<int>(row) * 19, FONT_SMALL,
 		ETextAlignment::TOPLEFT, Colors::WHITE, title));
-	stats.push_back(std::make_shared<CLabel>(307, 48 + (int)index * 19, FONT_SMALL,
+	stats.push_back(std::make_shared<CLabel>(307, 48 + static_cast<int>(row) * 19, FONT_SMALL,
 		ETextAlignment::BOTTOMRIGHT, Colors::WHITE, value));
+}
+
+size_t CStackWindow::MainSection::statRow(EStat index) const
+{
+	const auto rawIndex = static_cast<size_t>(index);
+	// Initiative is an NH-only row inserted before Mana and Leadership. Keep
+	// the legacy eight-row layout compact when the saved game has no NH
+	// capability snapshot.
+	if(!showNewHorizonsStats && rawIndex >= static_cast<size_t>(EStat::INITIATIVE))
+		return rawIndex - 1;
+	return rawIndex;
 }
 
 CStackWindow::CStackWindow(const CStack * stack, bool popup)
@@ -1345,11 +1379,13 @@ void CStackWindow::initSections()
 	bool showExp = ((GAME->interface() && GAME->interface()->cb->getSettings().getBoolean(EGameSettings::MODULE_STACK_EXPERIENCE)) || info->commander != nullptr) && info->stackNode;
 
 	const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
+	const bool showNewHorizonsStats = newHorizonsHeroes::usesRules(capabilityRules)
+		&& capabilityRules["rulesetVersion"].Integer() >= 2;
 	const bool showLeadership = info->owner
 		? info->owner->getLeadershipSlotCapacity(info->creature->getId()).has_value()
-		: newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2;
+		: showNewHorizonsStats;
 
-	mainSection = std::make_shared<MainSection>(this, pos.h, showExp, showArt, showLeadership);
+	mainSection = std::make_shared<MainSection>(this, pos.h, showExp, showArt, showLeadership, showNewHorizonsStats);
 
 	pos.w = mainSection->pos.w;
 	pos.h += mainSection->pos.h;

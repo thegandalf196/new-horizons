@@ -52,7 +52,7 @@ primary growth disabled. Neither flag overwrites a live or frozen module.
 The six-school increment requires its matching runtime, serialization and UI;
 source data or image generation alone is not a gameplay acceptance result.
 
-The active snapshot (module 0.7.0; magic ruleset v2) classifies all 69 existing
+The active snapshot (module 0.8.0; magic ruleset v2) classifies all 69 existing
 common hero spells. Titan's Bolt and creature-only abilities/triggers retain their
 special handling. Magic Arrow remains the real Sorcery level-1 spell and is the
 first enhanced spell: its saved direct-damage row is `{base: 20,
