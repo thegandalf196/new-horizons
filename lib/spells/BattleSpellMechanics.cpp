@@ -58,6 +58,15 @@ public:
 		std::optional<int32_t> turns;
 	};
 
+	struct HealingChange
+	{
+		uint32_t unitId;
+		CreatureID creature;
+		int32_t countBefore = 0;
+		int32_t countAfter = 0;
+		int64_t healthRestored = 0;
+	};
+
 	EffectPacketRecorder(ServerCallback & delegate, const IBattleInfoCallback & battle)
 		: delegate(delegate)
 		, battle(battle)
@@ -79,13 +88,18 @@ public:
 			record(*effects);
 			return;
 		}
+		if(auto * units = dynamic_cast<BattleUnitsChanged *>(&pack))
+		{
+			record(*units);
+			return;
+		}
 		if(const auto * injured = dynamic_cast<const StacksInjured *>(&pack))
 			record(*injured);
 		delegate.apply(pack);
 	}
 	void apply(BattleLogMessage & pack) override { delegate.apply(pack); }
 	void apply(BattleStackMoved & pack) override { delegate.apply(pack); }
-	void apply(BattleUnitsChanged & pack) override { delegate.apply(pack); }
+	void apply(BattleUnitsChanged & pack) override { record(pack); }
 	void apply(SetStackEffect & pack) override { record(pack); }
 	void apply(StacksInjured & pack) override
 	{
@@ -96,6 +110,7 @@ public:
 	void apply(CatapultAttack & pack) override { delegate.apply(pack); }
 
 	const std::vector<BattleStackAttacked> & injuries() const { return recordedInjuries; }
+	const std::vector<HealingChange> & healingChanges() const { return recordedHealingChanges; }
 	bool touchedStackEffects() const { return stackEffectsTouched; }
 	const std::vector<EffectChange> & effectChanges()
 	{
@@ -139,6 +154,7 @@ private:
 	ServerCallback & delegate;
 	const IBattleInfoCallback & battle;
 	std::vector<BattleStackAttacked> recordedInjuries;
+	std::vector<HealingChange> recordedHealingChanges;
 	std::vector<EffectChange> recordedEffectChanges;
 	std::vector<std::pair<uint32_t, std::vector<EffectState>>> initialEffectStates;
 	bool effectChangesFinalized = false;
@@ -147,6 +163,58 @@ private:
 	void record(const StacksInjured & pack)
 	{
 		recordedInjuries.insert(recordedInjuries.end(), pack.stacks.begin(), pack.stacks.end());
+	}
+
+	void record(BattleUnitsChanged & pack)
+	{
+		struct UnitState
+		{
+			uint32_t unitId;
+			CreatureID creature;
+			int32_t count;
+			int64_t health;
+		};
+		std::vector<UnitState> before;
+		before.reserve(pack.changedStacks.size());
+		std::vector<uint32_t> updatedUnits;
+		for(const auto & change : pack.changedStacks)
+		{
+			if(change.operation != UnitChanges::EOperation::UPDATE || change.healthDelta <= 0
+				|| vstd::contains(updatedUnits, change.id))
+				continue;
+			updatedUnits.push_back(change.id);
+			const auto * unit = battle.battleGetUnitByID(change.id);
+			if(unit)
+				before.push_back({change.id, unit->creatureId(), unit->getCount(), unit->getAvailableHealth()});
+		}
+
+		// The wrapped callback remains the sole authority that applies the packet.
+		// Outcomes below are derived from the resulting battle state, never from a
+		// speculative copy of the spell effect.
+		delegate.apply(pack);
+
+		for(const auto unitId : updatedUnits)
+		{
+			const auto * unit = battle.battleGetUnitByID(unitId);
+			if(!unit)
+				continue;
+			const auto previous = std::ranges::find(before, unitId, &UnitState::unitId);
+			if(previous == before.end())
+				continue;
+			const auto restored = std::max<int64_t>(0, unit->getAvailableHealth() - previous->health);
+			if(restored <= 0)
+				continue;
+
+			const auto existing = std::ranges::find(recordedHealingChanges, unitId, &HealingChange::unitId);
+			if(existing == recordedHealingChanges.end())
+				recordedHealingChanges.push_back({unitId, previous->creature,
+					previous->count, unit->getCount(), restored});
+			else
+			{
+				existing->countAfter = unit->getCount();
+				existing->healthRestored += restored;
+			}
+		}
 	}
 
 	static bool sameBonusState(const Bonus & left, const Bonus & right)
@@ -846,6 +914,29 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 				line.appendRawString(", raising a counterspell ward");
 				wroteOutcome = true;
 			}
+
+			bool wroteHealing = false;
+			for(const auto & change : effectRecorder.healingChanges())
+			{
+				if(!wroteHealing)
+					line.appendRawString(wroteOutcome ? ", and " : ", ");
+				else
+					line.appendRawString("; ");
+				line.appendRawString("restoring ");
+				line.appendNumber(change.healthRestored);
+				line.appendRawString(" health to ");
+				line.appendName(change.creature, change.countAfter);
+				const auto resurrected = std::max(0, change.countAfter - change.countBefore);
+				if(resurrected > 0)
+				{
+					line.appendRawString(" (");
+					line.appendNumber(resurrected);
+					line.appendRawString(" resurrected)");
+				}
+				wroteHealing = true;
+			}
+			if(wroteHealing)
+				wroteOutcome = true;
 
 			bool wroteStatusChange = false;
 			for(const auto & change : effectRecorder.effectChanges())

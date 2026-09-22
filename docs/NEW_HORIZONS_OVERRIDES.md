@@ -130,7 +130,9 @@ requiring the complete source document to be replaced.
   casualties in packet order. Timed effects and Dispels compare authoritative
   whole-cast bonus state, reporting applications, refreshes, removals, durations,
   mixed damage/status results, or an actual no-op; counterspelled effects cannot
-  mutate the target. Behavioral coverage is in
+  mutate the target. Healing and Resurrection report realized restored health and
+  resurrected creature counts from authoritative unit-state updates, including
+  capped healing, partial casualties, and Counterspell suppression. Behavioral coverage is in
   `NewHorizonsMetamagicTest.FollowupLogNamesSecondAndThirdMagicArrowDamage`,
   `NewHorizonsMetamagicTest.FollowupLogReportsAffectedNonDamageOutcome`, and
   `NewHorizonsMetamagicTest.FollowupLogDoesNotCallSuccessfulObstacleSpellNoEffect`.

@@ -61,6 +61,8 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID::FIREBALL);
 		attackerSideHero->addSpellToSpellbook(SpellID::CHAIN_LIGHTNING);
 		attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+		attackerSideHero->addSpellToSpellbook(SpellID::CURE);
+		attackerSideHero->addSpellToSpellbook(SpellID::RESURRECTION);
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("core:iceBolt")));
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("new-horizons:counterspell")));
 		attackerSideHero->mana = 1000;
@@ -153,6 +155,18 @@ protected:
 		event.setMetamagicFollowup(true);
 		event.setMetamagicTargetUnitId(target->unitId());
 		return spell.toSpell()->battleMechanics(&event)->getEffectDuration();
+	}
+
+	void damage(CStack * target, int64_t amount)
+	{
+		auto state = target->acquireState();
+		state->damage(amount);
+		BattleUnitsChanged change;
+		change.battleID = BattleID(0);
+		change.changedStacks.emplace_back(target->unitId(), UnitChanges::EOperation::UPDATE);
+		change.changedStacks.back().data = state->save();
+		change.changedStacks.back().healthDelta = -amount;
+		gameHandler->sendAndApply(change);
 	}
 
 	CStack * attacker = nullptr;
@@ -388,6 +402,95 @@ TEST_F(NewHorizonsMetamagicTest, FollowupDamageLogUsesAuthoritativePacketValuesA
 		const auto packetOutcome = std::to_string(casts.front().damage) + " damage to Pikemen ("
 			+ std::to_string(casts.front().killed) + " killed)";
 		return line.find(packetOutcome) != std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupHealingLogUsesCappedAuthoritativeHealthDelta)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	damage(attacker, 1);
+	ASSERT_EQ(attacker->getAvailableHealth(), attacker->getTotalHealth() - 1);
+	ASSERT_TRUE(cast(SpellID::CURE, attacker, true));
+
+	const auto casts = server.castsOf(SpellID::CURE);
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("casts a second Cure through Metamagic, restoring 1 health to Pikemen.")
+			!= std::string::npos;
+	})) << ::testing::PrintToString(casts.front().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupResurrectionLogUsesAuthoritativeCountAndHealth)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto healthBefore = attacker->getAvailableHealth();
+	damage(attacker, healthBefore);
+	ASSERT_FALSE(attacker->alive());
+	ASSERT_TRUE(cast(SpellID::RESURRECTION, attacker, true));
+	const auto restored = attacker->getAvailableHealth();
+	const auto resurrected = attacker->getCount();
+	ASSERT_GT(restored, 0);
+	ASSERT_GT(resurrected, 0);
+
+	const auto casts = server.castsOf(SpellID::RESURRECTION);
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [&](const std::string & line)
+	{
+		return line.find("casts a second Resurrection through Metamagic, restoring "
+			+ std::to_string(restored) + " health to Pikemen (" + std::to_string(resurrected)
+			+ " resurrected).") != std::string::npos;
+	})) << ::testing::PrintToString(casts.front().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupResurrectionAggregatesPartialCasualtiesPerTarget)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto countBeforeDamage = attacker->getCount();
+	damage(attacker, attacker->getMaxHealth() * 5);
+	const auto countBeforeHealing = attacker->getCount();
+	const auto healthBeforeHealing = attacker->getAvailableHealth();
+	ASSERT_LT(countBeforeHealing, countBeforeDamage);
+	ASSERT_TRUE(cast(SpellID::RESURRECTION, attacker, true));
+	const auto restored = attacker->getAvailableHealth() - healthBeforeHealing;
+	const auto resurrected = attacker->getCount() - countBeforeHealing;
+	ASSERT_GT(restored, 0);
+	ASSERT_GT(resurrected, 0);
+
+	const auto casts = server.castsOf(SpellID::RESURRECTION);
+	ASSERT_EQ(casts.size(), 1u);
+	const auto causalLines = std::ranges::count_if(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("casts a second Resurrection through Metamagic") != std::string::npos;
+	});
+	EXPECT_EQ(causalLines, 1);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [&](const std::string & line)
+	{
+		return line.find("restoring " + std::to_string(restored) + " health to Pikemen ("
+			+ std::to_string(resurrected) + " resurrected)") != std::string::npos;
+	})) << ::testing::PrintToString(casts.front().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, CounterspelledHealingFollowupRecordsNoHealingOutcome)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	damage(attacker, 1);
+	const auto healthBefore = attacker->getAvailableHealth();
+	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
+	defenderSideHero->mana = 1000;
+	ASSERT_TRUE(cast(SpellID::CURE, attacker, true));
+	EXPECT_EQ(attacker->getAvailableHealth(), healthBefore);
+
+	const auto casts = server.castsOf(SpellID::CURE);
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("casts a second Cure through Metamagic, but the spell was counterspelled.")
+			!= std::string::npos;
 	}));
 }
 
