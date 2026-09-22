@@ -82,6 +82,97 @@ class NewHorizonsInitiativeContentTest(unittest.TestCase):
         self.assertEqual(patch["core:genie"]["level"], 4)
         self.assertEqual(patch["core:masterGenie"]["level"], 4)
 
+    def test_tower_mage_and_genie_prototype_stats_and_abilities(self):
+        patch = load("Mods/new-horizons/Content/config/creatures/tower.json")
+        expected = {
+            "mage": {
+                "level": 5,
+                "attack": 13,
+                "defense": 9,
+                "damage": {"min": 11, "max": 14},
+                "hitPoints": 30,
+                "shots": 16,
+                "growth": 3,
+                "cost": {"gold": 600},
+            },
+            "archMage": {
+                "level": 5,
+                "attack": 15,
+                "defense": 10,
+                "damage": {"min": 13, "max": 17},
+                "hitPoints": 35,
+                "shots": 20,
+                "growth": 3,
+                "cost": {"gold": 800},
+            },
+            "genie": {
+                "level": 4,
+                "attack": 10,
+                "defense": 10,
+                "damage": {"min": 8, "max": 11},
+                "hitPoints": 35,
+                "growth": 4,
+                "cost": {"gold": 450},
+            },
+            "masterGenie": {
+                "level": 4,
+                "attack": 11,
+                "defense": 11,
+                "damage": {"min": 9, "max": 12},
+                "hitPoints": 40,
+                "growth": 4,
+                "cost": {"gold": 550},
+            },
+        }
+        for creature, values in expected.items():
+            with self.subTest(creature=creature):
+                self.assertEqual(
+                    {key: patch[f"core:{creature}"][key] for key in values},
+                    values,
+                )
+
+        base = load("config/creatures/tower.json")
+        mage = copy.deepcopy(base["mage"])
+        merge_objects(mage, patch["core:mage"])
+        arch_mage = copy.deepcopy(base["archMage"])
+        merge_objects(arch_mage, patch["core:archMage"])
+        genie = copy.deepcopy(base["genie"])
+        merge_objects(genie, patch["core:genie"])
+        master_genie = copy.deepcopy(base["masterGenie"])
+        merge_objects(master_genie, patch["core:masterGenie"])
+
+        self.assertEqual(
+            {name: ability["type"] for name, ability in mage["abilities"].items()},
+            {
+                "shooter": "SHOOTER",
+                "noMeleePenalty": "NO_MELEE_PENALTY",
+                "reduceSpellCost": "CHANGES_SPELL_COST_FOR_ALLY",
+                "noDistancePenalty": "NO_DISTANCE_PENALTY",
+            },
+        )
+        self.assertEqual(mage["abilities"]["reduceSpellCost"]["val"], 2)
+        self.assertEqual(
+            {name: ability["type"] for name, ability in arch_mage["abilities"].items()},
+            {
+                "shooter": "SHOOTER",
+                "noMeleePenalty": "NO_MELEE_PENALTY",
+                "noWallPenalty": "NO_WALL_PENALTY",
+                "reduceSpellCost": "CHANGES_SPELL_COST_FOR_ALLY",
+                "noDistancePenalty": "NO_DISTANCE_PENALTY",
+            },
+        )
+        self.assertEqual(arch_mage["abilities"]["reduceSpellCost"]["val"], 2)
+        for creature, required in {
+            "genie": {"canFly", "hateEfreet", "hateEfreetSultans"},
+            "masterGenie": {
+                "canFly", "casts", "spellsLength", "randomSpellcaster",
+                "hateEfreet", "hateEfreetSultans",
+            },
+        }.items():
+            with self.subTest(abilities=creature):
+                effective = genie if creature == "genie" else master_genie
+                self.assertTrue(required <= set(effective["abilities"]))
+
     def test_tower_town_swaps_genies_and_magi_before_rank_presentation(self):
         patch = load("Mods/new-horizons/Content/config/factions/towerCreatureRanks.json")
         creatures = patch["core:tower"]["town"]["creatures"]

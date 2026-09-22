@@ -146,7 +146,8 @@ requiring the complete source document to be replaced.
   Core/Elite/Champion grouping; both Mage and Genie belong to Elite in that
   final grouping.
 - **Implementation evidence:** `Mods/new-horizons/Content/config/creatures/tower.json`
-  swaps Mage/Genie creature levels, while
+  swaps Mage/Genie creature levels and applies the scripture's prototype combat,
+  growth, shooting, and recruitment-cost profiles, while
   `Mods/new-horizons/Content/config/factions/towerCreatureRanks.json` swaps the
   recruitment rows, dwelling presentation, and Library prerequisites as one
   coherent town definition. The live module version is `0.8.0` so the roster

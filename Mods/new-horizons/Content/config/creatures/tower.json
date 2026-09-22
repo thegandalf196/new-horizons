@@ -1,18 +1,74 @@
 {
 	"core:mage": {
 		"level": 5,
+		"attack": 13,
+		"defense": 9,
+		"damage": {
+			"min": 11,
+			"max": 14
+		},
+		"hitPoints": 30,
+		"shots": 16,
+		"growth": 3,
+		"cost": {
+			"gold": 600
+		},
 		"speed": 5,
-		"initiative": 5
+		"initiative": 5,
+		"abilities": {
+			"noDistancePenalty": {
+				"type": "NO_DISTANCE_PENALTY"
+			}
+		}
 	},
 	"core:archMage": {
 		"level": 5,
+		"attack": 15,
+		"defense": 10,
+		"damage": {
+			"min": 13,
+			"max": 17
+		},
+		"hitPoints": 35,
+		"shots": 20,
+		"growth": 3,
+		"cost": {
+			"gold": 800
+		},
 		"speed": 5,
-		"initiative": 7
+		"initiative": 7,
+		"abilities": {
+			"noDistancePenalty": {
+				"type": "NO_DISTANCE_PENALTY"
+			}
+		}
 	},
 	"core:genie": {
-		"level": 4
+		"level": 4,
+		"attack": 10,
+		"defense": 10,
+		"damage": {
+			"min": 8,
+			"max": 11
+		},
+		"hitPoints": 35,
+		"growth": 4,
+		"cost": {
+			"gold": 450
+		}
 	},
 	"core:masterGenie": {
-		"level": 4
+		"level": 4,
+		"attack": 11,
+		"defense": 11,
+		"damage": {
+			"min": 9,
+			"max": 12
+		},
+		"hitPoints": 40,
+		"growth": 4,
+		"cost": {
+			"gold": 550
+		}
 	}
 }
