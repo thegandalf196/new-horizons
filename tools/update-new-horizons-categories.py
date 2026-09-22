@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Compose a private partial-Conflux category preview; never activate defaults."""
+"""Compose a private full-roster category diagnostic; never replace the live module."""
 import argparse
 import json
 from pathlib import Path
-import subprocess
-import sys
-import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -25,27 +22,19 @@ def main():
     if args.output.is_symlink() or (output.exists() and not args.check):
         parser.error('refusing existing output or symlink')
     build.mkdir(exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix='nh-categories-', dir=build) as temporary:
-        base = Path(temporary) / 'mod.json'
-        subprocess.run([sys.executable, str(ROOT / 'tools/update-new-horizons-convenience.py'),
-                        '--output', str(base)], check=True, capture_output=True)
-        metadata = json.loads(base.read_text())
-    if metadata['version'] != '0.5.1' or metadata['settings'].get('creatures'):
-        parser.error('unexpected base; review category composition first')
-    metadata['settings']['heroes']['newHorizonsPerks'] = json.loads(
-        (ROOT / 'config/newHorizonsPerks.json').read_text())
+    metadata = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
     rules = json.loads((ROOT / 'config/newHorizonsCreatureCategories.json').read_text())
     texts = json.loads((ROOT / 'config/newHorizonsCreatureCategoryTexts.json').read_text())
-    if metadata['translations'].keys() & texts.keys():
-        parser.error('category text IDs collide with existing translations')
-    metadata['version'] = '0.6.0'
-    metadata['settings']['creatures'] = {'newHorizonsCategories': rules}
-    metadata['translations'].update(texts)
+    if metadata['version'] != '0.9.0' or metadata['settings'].get('creatures') != {'newHorizonsCategories': rules}:
+        parser.error('unexpected live category composition; regenerate the active module first')
+    if any(metadata['translations'].get(key) != value for key, value in texts.items()):
+        parser.error('live category translations are missing or stale')
+    metadata['name'] = 'New Horizons (category diagnostic)'
+    metadata['version'] = '0.9.1'
     metadata['description'] += (
-        ' Private partial-Conflux creature classification preview: Pixies/Sprites Core,'
-        ' five elemental pairs Elite, Phoenix and provisionally Firebird Champion.'
-        ' Existing recruitment, upgrades, statistics, capacity and AI values are unchanged;'
-        ' other creatures are deliberately unmapped. Not a complete roster redesign.')
+        ' This private category diagnostic mirrors the complete active standard-faction'
+        ' Core/Elite/Champion table. Recruitment row identity, upgrades, statistics,'
+        ' capacity and AI values remain unchanged.')
     text = json.dumps(metadata, indent='\t', ensure_ascii=False) + '\n'
     if args.check:
         if not output.is_file() or output.read_text() != text:

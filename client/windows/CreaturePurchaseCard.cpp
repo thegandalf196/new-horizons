@@ -13,8 +13,12 @@
 #include "CHeroWindow.h"
 #include "QuickRecruitmentWindow.h"
 #include "CCreatureWindow.h"
+#include "NewHorizonsCreatureCategoryUI.h"
 
+#include "../CPlayerInterface.h"
 #include "../GameEngine.h"
+#include "../GameInstance.h"
+#include "../../lib/callback/CCallback.h"
 #include "../gui/Shortcut.h"
 #include "../gui/TextAlignment.h"
 #include "../gui/WindowHandler.h"
@@ -24,6 +28,13 @@
 #include "../widgets/CreatureCostBox.h"
 
 #include "../../lib/CCreatureHandler.h"
+
+static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
+{
+	if(!creature || !GAME || !GAME->interface() || !GAME->interface()->cb)
+		return std::nullopt;
+	return GAME->interface()->cb->getCreatureCategory(creature->getId());
+}
 
 void CreaturePurchaseCard::initButtons()
 {
@@ -55,6 +66,9 @@ void CreaturePurchaseCard::switchCreatureLevel()
 	creatureOnTheCard = nextCreatureId.toCreature();
 	picture = std::make_shared<CCreaturePic>(picture->pos.x - pos.x, picture->pos.y - pos.y, creatureOnTheCard);
 	creatureClickArea = std::make_shared<CCreatureClickArea>(Point(picture->pos.x - pos.x, picture->pos.y - pos.y), picture, creatureOnTheCard);
+	if(categoryLabel)
+		categoryLabel->setText(newHorizonsCreatureCategoryUI::name(currentCreatureCategory(creatureOnTheCard),
+			GAME ? &GAME->translator() : nullptr));
 	parent->updateAllSliders();
 	cost->set(creatureOnTheCard->getFullRecruitCost() * slider->getValue());
 }
@@ -105,6 +119,11 @@ void CreaturePurchaseCard::initView()
 	picture = std::make_shared<CCreaturePic>(pos.x, pos.y, creatureOnTheCard);
 	background = std::make_shared<CPicture>(ImagePath::builtin("QuickRecruitmentWindow/CreaturePurchaseCard.png"), pos.x-4, pos.y-50);
 	creatureClickArea = std::make_shared<CCreatureClickArea>(Point(pos.x, pos.y), picture, creatureOnTheCard);
+	const auto category = currentCreatureCategory(creatureOnTheCard);
+	const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
+	if(!categoryName.empty())
+		categoryLabel = std::make_shared<CLabel>(pos.x + 51, pos.y + 132, FONT_TINY,
+			ETextAlignment::TOPCENTER, Colors::YELLOW, categoryName, 100);
 
 	initAmountInfo();
 	initSlider();

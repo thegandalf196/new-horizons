@@ -24,11 +24,15 @@
 #include "render/IImage.h"
 
 #include "../../GameEngine.h"
+#include "../../GameInstance.h"
 #include "../../gui/WindowHandler.h"
 #include "../InfoWindows.h"
 #include "../CCreatureWindow.h"
+#include "../NewHorizonsCreatureCategoryUI.h"
 
+#include "../../CPlayerInterface.h"
 #include "../../../lib/CStack.h"
+#include "../../../lib/callback/CCallback.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/entities/faction/CFaction.h"
 #include "../../../lib/entities/faction/CTown.h"
@@ -378,9 +382,13 @@ static void addCreaturesTable(
 			row.creature->getIconIndex(), 0,
 			TABLE_MARGIN + 2, curY + 2));
 
-		const std::string tierStr = row.isUpgrade
-			? "  +  "
-			: ("T" + std::to_string(row.creature->getLevel()) + ": ");
+		std::optional<newHorizonsCreatures::CreatureCategoryView> category;
+		if(GAME && GAME->interface() && GAME->interface()->cb)
+			category = GAME->interface()->cb->getCreatureCategory(row.creature->getId());
+		const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
+		const std::string tierStr = categoryName.empty()
+			? (row.isUpgrade ? "  +  " : ("T" + std::to_string(row.creature->getLevel()) + ": "))
+			: ("[" + categoryName + "] ");
 		widgets.push_back(std::make_shared<CLabel>(
 			TABLE_MARGIN + colIcon + CELL_PAD_L, curY + CELL_PAD_T,
 			FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,

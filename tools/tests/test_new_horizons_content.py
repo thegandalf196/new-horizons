@@ -571,13 +571,15 @@ class NewHorizonsContentTest(unittest.TestCase):
     def test_generated_module_matches_all_canonical_data(self):
         module = load('Mods/new-horizons/mod.json')
         settings = load('config/newHorizonsCombat.json')
+        settings['creatures'] = {
+            'newHorizonsCategories': load('config/newHorizonsCreatureCategories.json')}
         settings['magic'] = {'newHorizons': self.rules}
         settings['heroes'] = {'newHorizons': load('config/newHorizonsHeroes.json'),
                               'newHorizonsCapabilities': load('config/newHorizonsCapabilities.json'),
                               'newHorizonsMasteries': load('config/newHorizonsMasteries.json'),
                               'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
-        self.assertEqual(module['version'], '0.8.0')
+        self.assertEqual(module['version'], '0.9.0')
         self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json', 'config/heroes/solmyr.json'])
         self.assertIn('Magic Arrow', module['description'])
         self.assertIn('Overcharge', module['description'])
@@ -585,6 +587,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(module['skills'], load('config/newHorizonsSkills.json'))
         self.assertEqual(module['filesystem']['SPRITES/'], [{'type': 'dir', 'path': '/Images'}])
         translations = load('config/newHorizonsMasteryTexts.json')
+        translations.update(load('config/newHorizonsCreatureCategoryTexts.json'))
         translations.update(load('config/newHorizonsHeroClassTexts.json'))
         self.assertEqual(module['translations'], translations)
         self.assertEqual(module['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))

@@ -63,6 +63,7 @@ private:
 	std::shared_ptr<CButton> creatureSwitcher;
 	std::shared_ptr<CLabel> availableAmount;
 	std::shared_ptr<CLabel> purchaseAmount;
+	std::shared_ptr<CLabel> categoryLabel;
 	std::shared_ptr<CCreaturePic> picture;
 	std::shared_ptr<CreatureCostBox> cost;
 	std::vector<CreatureID> upgradesID;

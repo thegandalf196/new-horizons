@@ -20,8 +20,10 @@ base/total ratings, proposed class growth and actual last-level gains.
 Ordinary Linux testing verified equipment changes, quest XP, four-gain level-up,
 save/restart and a subsequent turn. Legacy saves retain their saved rules and
 omit the growth entry. These are not native Windows gameplay or full-redesign
-acceptance claims. Post-Expert masteries, the unimplemented new spell roster and creature
-categories remain subsequent work.
+acceptance claims. Post-Expert masteries and the unimplemented new spell roster
+remain subsequent work. New games snapshot the complete standard-faction
+Core/Elite/Champion classification and expose it in recruitment presentation;
+individual mechanics that consume those categories are tracked separately.
 
 ## Capability preview (0.4)
 
@@ -52,7 +54,7 @@ primary growth disabled. Neither flag overwrites a live or frozen module.
 The six-school increment requires its matching runtime, serialization and UI;
 source data or image generation alone is not a gameplay acceptance result.
 
-The active snapshot (module 0.8.0; magic ruleset v2) classifies all 69 existing
+The active snapshot (module 0.9.0; magic ruleset v2) classifies all 69 existing
 common hero spells. Titan's Bolt and creature-only abilities/triggers retain their
 special handling. Magic Arrow remains the real Sorcery level-1 spell and is the
 first enhanced spell: its saved direct-damage row is `{base: 20,
@@ -60,8 +62,10 @@ powerCoefficient: 20}`, and the native cast path exposes the detailed
 Spell-Power-based Overcharge choice. The optional Overcharge Mana surcharge is
 deliberate investment and is not reduced by Wisdom. The planned fictional spell
 roster—including `new-horizons:magicMissile`—is not registered. New spells/effects,
-qualitative masteries, additional secondary-attribute development and creature
-tiers are subsequent work.
+qualitative masteries and additional secondary-attribute development are
+subsequent work. Creature tiers are replaced in New Horizons presentation by
+the saved Core/Elite/Champion classification while legacy games retain their
+ordinary tier labels.
 
 The module also carries the complete planned registry of ten perks for each of
 the 31 canonical Skills. Registry presence establishes stable saved identity and

@@ -12,6 +12,7 @@
 #include "nullkiller2/NullkillerTest.h"
 
 #include "lib/mapObjects/CGHeroInstance.h"
+#include "lib/networkPacks/PacksForClient.h"
 
 namespace
 {
@@ -79,6 +80,45 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, WholeArmyMergePreflightRejectsAnO
 
 	source.clearSlots();
 	EXPECT_TRUE(NK2AI::armyFormation::canMergeArmies(&source, destination));
+}
+
+TEST_F(NewHorizonsArmyFormationLeadershipTest, GarrisonSwapPreflightChecksTheActualTownArmy)
+{
+	const CreatureID gog(CreatureID::decode("core:gog"));
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder
+		.size(36, false)
+		.playerActive(PLAYER)
+		.town({9, 5, 0}, FactionID::INFERNO, PLAYER)
+		.townGarrison({{gog, 1}})
+		.hero({5, 5, 0}, HeroTypeID(0), PLAYER)
+		.heroGarrison({});
+	startWithMap(std::move(builder));
+
+	auto * town = findFirst<CGTownInstance>();
+	auto * visitingHero = findHeroByOwner(PLAYER);
+	ASSERT_NE(town, nullptr);
+	ASSERT_NE(visitingHero, nullptr);
+
+	// Reproduce the state used by GarrisonHeroSwap: the visiting hero is
+	// empty, while the town's army contains more than the hero can command.
+	ChangeObjPos moveHero;
+	moveHero.objid = visitingHero->id;
+	moveHero.nPos = town->visitablePos();
+	moveHero.initiator = PLAYER;
+	gameState()->apply(moveHero);
+	SetHeroesInTown setHeroes;
+	setHeroes.tid = town->id;
+	setHeroes.visiting = visitingHero->id;
+	setHeroes.garrison = ObjectInstanceID::NONE;
+	gameState()->apply(setHeroes);
+
+	const auto capacity = visitingHero->getLeadershipSlotCapacity(gog);
+	ASSERT_TRUE(capacity);
+	town->setStackCount(SlotID(0), capacity->maximum + 1);
+
+	EXPECT_FALSE(NK2AI::armyFormation::canSwapGarrisonHero(town));
+	EXPECT_FALSE(NK2AI::armyFormation::canMergeArmies(town, visitingHero));
 }
 
 TEST_F(NewHorizonsArmyFormationLeadershipTest, SplitPreflightAllowsOnlyTheLegalFinalDestinationCount)

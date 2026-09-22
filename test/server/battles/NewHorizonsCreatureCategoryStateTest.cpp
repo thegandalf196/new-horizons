@@ -80,10 +80,12 @@ class InstalledCategoryOverride
 {
 	std::unique_ptr<GameSettings> previous;
 public:
-	explicit InstalledCategoryOverride(const JsonNode & rules)
+	explicit InstalledCategoryOverride(const JsonNode & rules, bool clearPerks = false)
 	{
 		auto config = LIBRARY->settingsHandler->getFullConfig();
 		config["creatures"]["newHorizonsCategories"] = rules;
+		if(clearPerks)
+			config["heroes"]["newHorizonsPerks"] = JsonNode();
 		auto replacement = std::make_unique<GameSettings>();
 		replacement->loadBase(config);
 		previous = std::move(LIBRARY->settingsHandler);
@@ -220,6 +222,7 @@ TEST_F(NewHorizonsCreatureCategoryStateTest, ActualWorldSaveRetainsNamedCopiedVi
 
 TEST_F(NewHorizonsCreatureCategoryStateTest, OldWorldIsAbsentButCurrentBattlePacketRetainsOwnSnapshot)
 {
+	InstalledCategoryOverride installed(authoredRules, true);
 	startGame();
 	CMemorySerializer old;
 	old.oser.version = ESerializationVersion::NEW_HORIZONS_MASTERIES;

@@ -16,6 +16,7 @@
 #include "GUIClasses.h"
 #include "QuickRecruitmentWindow.h"
 #include "CCreatureWindow.h"
+#include "NewHorizonsCreatureCategoryUI.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -67,6 +68,13 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/CSpell.h"
 #include "wiki/WikiWindow.h"
+
+static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
+{
+	if(!creature || !GAME || !GAME->interface() || !GAME->interface()->cb)
+		return std::nullopt;
+	return GAME->interface()->cb->getCreatureCategory(creature->getId());
+}
 
 static bool useCompactCreatureBox()
 {
@@ -451,7 +459,10 @@ std::string CBuildingRect::getSubtitle()//hover text for building
 		if(availableCreatures.size())
 		{
 			int creaID = availableCreatures.back();//taking last of available creatures
-			return LIBRARY->generaltexth->allTexts[16] + " " + LIBRARY->creh->objects.at(creaID)->getNamePluralTranslated();
+			const auto * creature = LIBRARY->creh->objects.at(creaID).get();
+			const auto category = currentCreatureCategory(creature);
+			return newHorizonsCreatureCategoryUI::prefix(category, GAME ? &GAME->translator() : nullptr,
+				LIBRARY->generaltexth->allTexts[16] + " " + creature->getNamePluralTranslated());
 		}
 		else
 		{
@@ -485,7 +496,8 @@ CDwellingInfoBox::CDwellingInfoBox(int centerX, int centerY, const CGTownInstanc
 
 	const CCreature * creature = Town->creatures.at(level).second.back().toCreature();
 
-	title = std::make_shared<CLabel>(80, 30, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, creature->getNamePluralTranslated());
+	title = std::make_shared<CLabel>(80, 30, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE,
+		newHorizonsCreatureCategoryUI::prefix(currentCreatureCategory(creature), GAME ? &GAME->translator() : nullptr, creature->getNamePluralTranslated()));
 	animation = std::make_shared<CCreaturePic>(30, 44, creature, true, true);
 
 	std::string text = std::to_string(Town->creatures.at(level).first);
@@ -2344,6 +2356,10 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 		hoverText = hoverTextMessage.toString(&GAME->translator());
 		new CCreaturePic(159, 4, getMyCreature(), false);
 		new CLabel(78,  11, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, getMyCreature()->getNamePluralTranslated(), 152);
+		const auto categoryName = newHorizonsCreatureCategoryUI::name(currentCreatureCategory(getMyCreature()),
+			GAME ? &GAME->translator() : nullptr);
+		if(!categoryName.empty())
+			categoryLabel = std::make_shared<CLabel>(78, 28, FONT_TINY, ETextAlignment::CENTER, Colors::YELLOW, categoryName, 152);
 
 		Rect sizes(287, 4, 96, 18);
 		values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[190], LIBRARY->generaltexth->translate("core.castinfo.0"), getMyCreature()->getAttack(false)));

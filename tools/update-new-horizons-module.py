@@ -24,11 +24,13 @@ def main():
         return json.loads((root / 'config' / name).read_text(encoding='utf-8'))
 
     settings = canonical('newHorizonsCombat.json')
+    settings['creatures'] = {'newHorizonsCategories': canonical('newHorizonsCreatureCategories.json')}
     settings['magic'] = {'newHorizons': canonical('newHorizonsMagic.json')}
     settings['heroes'] = {'newHorizons': canonical('newHorizonsHeroes.json')}
     schools = canonical('newHorizonsSchools.json')
     skills = canonical('newHorizonsSkills.json')
     hero_class_translations = canonical('newHorizonsHeroClassTexts.json')
+    category_translations = canonical('newHorizonsCreatureCategoryTexts.json')
     # These patch files contain explicit hero overrides plus the
     # creation-only neutralization and faction-skill presentation replacement
     # for legacy secondary-skill specialties. Keep it in the generated
@@ -117,6 +119,7 @@ def main():
     if args.mastery_preview_output is not None or preview_output is None:
         settings['heroes']['newHorizonsMasteries'] = canonical('newHorizonsMasteries.json')
         metadata['translations'] = canonical('newHorizonsMasteryTexts.json')
+        metadata['translations'].update(category_translations)
         if preview_output is None:
             metadata['translations'].update(hero_class_translations)
         metadata['version'] = '0.5.0'
@@ -131,7 +134,7 @@ def main():
         # The Tower Mage/Genie identity swap changes which creature occupies
         # an existing dwelling slot.  Bump the live module identity so old
         # saves cannot silently reinterpret that roster.
-        metadata['version'] = '0.8.0'
+        metadata['version'] = '0.9.0'
         metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
         metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
         metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry; active entries '

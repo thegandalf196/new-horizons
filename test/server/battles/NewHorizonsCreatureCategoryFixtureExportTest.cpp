@@ -53,14 +53,13 @@ TEST_F(NewHorizonsCreatureCategoryFixtureExportTest, ExportOrdinaryFourSlotArmyW
 	Builder builder(EMapFormat::SOD);
 	builder.size(36, false).name(name)
 		.description("Ordinary creature-category diagnostic, not a balanced scenario. Red human Orrin starts "
-			"with20Pixies,20AirElementals,2Phoenixes and100Pikemen. Under the explicitly activated partial "
-			"Conflux classification they show Core, Elite, Champion and no category respectively. "
+			"with20Pixies,20AirElementals,2Phoenixes and100Pikemen. Under the explicitly activated canonical "
+			"classification they show Core, Elite, Champion and Core respectively. "
 			"The map supplies no category override, custom bonuses, Commander or XP quest. "
 			"Eight savage Pikemen at19,10 cannot join but may flee: choose ordinary pursuit if combat "
 			"is authorized in a separate lease. Labels do not prove combat effects. No contradictory "
-			"world/battle contexts or scripted AI are manufactured. This same ordinary map may later "
-			"create a NEW category-absent normal save for a mapped-Pixie legacy control; do not overwrite "
-			"existing controls or infer legacy absence from the unmapped Pikeman.")
+			"world/battle contexts or scripted AI are manufactured. Category coverage is asserted against "
+			"the complete canonical faction roster by the native schema test.")
 		.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
 		.town({8, 10, 0}, FactionID::CASTLE, PlayerColor(0)).townGarrison({})
 		.town({30, 30, 0}, FactionID::CASTLE, PlayerColor(1)).townGarrison({})
@@ -97,9 +96,9 @@ TEST_F(NewHorizonsCreatureCategoryFixtureExportTest, ExportOrdinaryFourSlotArmyW
 	// actual resolved text, not merely absence of an untranslated identifier.
 	ASSERT_EQ(CGeneralTextHandler::getPreferredLanguage(), "english");
 	const JsonNode englishTexts(JsonPath::builtin("config/newHorizonsCreatureCategoryTexts"));
-	const std::array<newHorizonsCreatures::CreatureCategory, 3> categories = {
+	const std::array<newHorizonsCreatures::CreatureCategory, 4> categories = {
 		newHorizonsCreatures::CreatureCategory::CORE, newHorizonsCreatures::CreatureCategory::ELITE,
-		newHorizonsCreatures::CreatureCategory::CHAMPION};
+		newHorizonsCreatures::CreatureCategory::CHAMPION, newHorizonsCreatures::CreatureCategory::CORE};
 	for(size_t slot = 0; slot < categories.size(); ++slot)
 	{
 		const auto view = gameState()->getCreatureCategory(types[slot]);
@@ -114,7 +113,8 @@ TEST_F(NewHorizonsCreatureCategoryFixtureExportTest, ExportOrdinaryFourSlotArmyW
 			EXPECT_EQ(translated, englishTexts[text].String()) << "Requires the actual private English context";
 		}
 	}
-	EXPECT_FALSE(gameState()->getCreatureCategory(pikeman));
+	ASSERT_TRUE(gameState()->getCreatureCategory(pikeman));
+	EXPECT_EQ(gameState()->getCreatureCategory(pikeman)->category, newHorizonsCreatures::CreatureCategory::CORE);
 	const auto * neutral = dynamic_cast<const CGCreature *>(findObjectAt({19, 10, 0}));
 	ASSERT_NE(neutral, nullptr);
 	EXPECT_EQ(neutral->initialCharacter, CGCreature::Character::SAVAGE);

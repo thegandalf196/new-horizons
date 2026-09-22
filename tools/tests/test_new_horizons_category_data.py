@@ -28,20 +28,18 @@ class CreatureCategoryDataTest(unittest.TestCase):
         self.assertEqual(properties['newHorizonsCategories']['$ref'], 'newHorizonsCreatureCategories.json')
         self.assertEqual(load('config/gameConfig.json')['settings']['creatures']['newHorizonsCategories'], {})
 
-    def test_partial_roster_is_explicit_not_level_inference(self):
-        expected = {
-            'core:pixie': 'core', 'core:sprite': 'core',
-            'core:airElemental': 'elite', 'core:stormElemental': 'elite',
-            'core:waterElemental': 'elite', 'core:iceElemental': 'elite',
-            'core:fireElemental': 'elite', 'core:energyElemental': 'elite',
-            'core:earthElemental': 'elite', 'core:magmaElemental': 'elite',
-            'core:psychicElemental': 'elite', 'core:magicElemental': 'elite',
-            'core:firebird': 'champion', 'core:phoenix': 'champion'}
-        self.assertEqual(self.rules['creatures'], expected)
-        definitions = load('config/creatures/conflux.json')
-        for key in expected:
-            self.assertIn(key.removeprefix('core:'), definitions)
-        self.assertNotIn('core:pikeman', self.rules['creatures'])
+    def test_complete_roster_is_explicit_not_level_inference(self):
+        assignments = self.rules['creatures']
+        self.assertEqual(len(assignments), 126)
+        self.assertEqual(sum(value == 'core' for value in assignments.values()), 50)
+        self.assertEqual(sum(value == 'elite' for value in assignments.values()), 58)
+        self.assertEqual(sum(value == 'champion' for value in assignments.values()), 18)
+        self.assertEqual(assignments['core:swordsman'], 'core')
+        self.assertEqual(assignments['core:griffin'], 'elite')
+        self.assertEqual(assignments['core:mage'], 'elite')
+        self.assertEqual(assignments['core:genie'], 'elite')
+        self.assertEqual(assignments['core:pikeman'], 'core')
+        self.assertEqual(assignments['core:phoenix'], 'champion')
         self.assertEqual(set(self.rules['categories']), {'core', 'elite', 'champion'})
 
     def test_texts_are_complete_and_separate(self):
@@ -81,9 +79,9 @@ class CreatureCategoryDataTest(unittest.TestCase):
             subprocess.run(command + ['--check'], check=True, capture_output=True)
             preview = json.loads(output.read_text())
             baseline = json.loads(before)
-            self.assertEqual(preview['version'], '0.6.0')
+            self.assertEqual(preview['version'], '0.9.1')
             self.assertEqual(preview['settings']['creatures'], {'newHorizonsCategories': self.rules})
-            self.assertIn('provisionally Firebird', preview['description'])
+            self.assertIn('private category diagnostic', preview['description'])
             for key in baseline['settings']:
                 self.assertEqual(preview['settings'][key], baseline['settings'][key])
             self.assertEqual(preview['bonuses'], baseline['bonuses'])
@@ -104,8 +102,9 @@ class CreatureCategoryDataTest(unittest.TestCase):
                     self.assertFalse(missing.exists())
         self.assertNotEqual(subprocess.run([sys.executable, str(script), '--output', str(live)], capture_output=True).returncode, 0)
         self.assertEqual(live.read_bytes(), before)
-        self.assertEqual(json.loads(before)['version'], '0.8.0')
-        self.assertNotIn('creatures', json.loads(before)['settings'])
+        self.assertEqual(json.loads(before)['version'], '0.9.0')
+        self.assertEqual(json.loads(before)['settings']['creatures'],
+                         {'newHorizonsCategories': self.rules})
 
 
 if __name__ == '__main__':

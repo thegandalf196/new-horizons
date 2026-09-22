@@ -72,7 +72,7 @@ class ConvenienceDataTest(unittest.TestCase):
             metadata = json.loads(output.read_text())
             self.assertEqual(metadata['version'], '0.5.1')
             # The presentation preview keeps its historical identity while
-            # inheriting the active canonical settings (currently module 0.8.0).
+            # inheriting the active canonical settings (currently module 0.9.0).
             self.assertEqual(metadata['settings'], json.loads(before)['settings'])
             self.assertNotEqual(output.read_bytes(), before)
             self.assertEqual(metadata['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))

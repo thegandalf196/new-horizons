@@ -350,6 +350,7 @@ class CFortScreen : public CStatusbarWindow
 		std::shared_ptr<CPicture> icons;
 		std::shared_ptr<CAnimImage> buildingIcon;
 		std::shared_ptr<CLabel> buildingName;
+		std::shared_ptr<CLabel> categoryLabel;
 
 		const CCreature * getMyCreature();
 		const CBuilding * getMyBuilding();

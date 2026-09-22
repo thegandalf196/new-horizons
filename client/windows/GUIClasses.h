@@ -60,6 +60,7 @@ class CRecruitmentWindow : public CStatusbarWindow
 	{
 		CRecruitmentWindow * parent;
 		std::shared_ptr<CCreaturePic> animation;
+		std::shared_ptr<CLabel> categoryLabel;
 		bool selected;
 
 	public:

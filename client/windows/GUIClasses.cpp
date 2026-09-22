@@ -11,6 +11,7 @@
 #include "GUIClasses.h"
 #include "NewHorizonsPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
+#include "NewHorizonsCreatureCategoryUI.h"
 
 #include "CCastleInterface.h"
 #include "CCreatureWindow.h"
@@ -76,6 +77,13 @@
 #include "../../lib/CSoundBase.h"
 #include "../../lib/constants/EntityIdentifiers.h"
 
+static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
+{
+	if(!creature || !GAME || !GAME->interface() || !GAME->interface()->cb)
+		return std::nullopt;
+	return GAME->interface()->cb->getCreatureCategory(creature->getId());
+}
+
 
 ImagePath CRecruitmentWindow::getRecruitmentBackground(const CGDwelling * dwelling, int level)
 {
@@ -129,6 +137,15 @@ CRecruitmentWindow::CCreatureCard::CCreatureCard(CRecruitmentWindow * window, co
 	// 1 + 1 px for borders
 	pos.w = animation->pos.w + 2;
 	pos.h = animation->pos.h + 2;
+
+	const auto category = currentCreatureCategory(creature);
+	const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
+	if(!categoryName.empty())
+	{
+		categoryLabel = std::make_shared<CLabel>(pos.w / 2, pos.h + 1, FONT_TINY,
+			ETextAlignment::TOPCENTER, Colors::YELLOW, categoryName, pos.w);
+		pos.h += 14;
+	}
 }
 
 void CRecruitmentWindow::CCreatureCard::select(bool on)
@@ -207,7 +224,9 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 		MetaString recruitText;
 		recruitText.appendTextID("core.tcommand.21");
 		recruitText.replaceNamePlural(card->creature->getId());
-		title->setText(recruitText.toString(&GAME->translator()));
+		const auto category = currentCreatureCategory(card->creature);
+		title->setText(newHorizonsCreatureCategoryUI::prefix(category, GAME ? &GAME->translator() : nullptr,
+			recruitText.toString(&GAME->translator())));
 
 		maxButton->block(maxAmount == 0);
 		slider->block(maxAmount == 0);
@@ -346,7 +365,7 @@ CRecruitmentWindow::CRecruitmentWindow(const CGDwelling * Dwelling, int Level, c
 
 	availableTitle = std::make_shared<CLabel>(204 + layoutOffsetX, 233, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[465]);
 	toRecruitTitle = std::make_shared<CLabel>(279 + layoutOffsetX, 233, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[16]);
-	leadershipLimit = std::make_shared<CLabel>(243 + layoutOffsetX, 205, FONT_SMALL,
+	leadershipLimit = std::make_shared<CLabel>(243 + layoutOffsetX, 214, FONT_SMALL,
 		ETextAlignment::CENTER, Colors::YELLOW, "", 360);
 
 	availableCreaturesChanged();
