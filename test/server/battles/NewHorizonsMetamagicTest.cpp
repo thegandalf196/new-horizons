@@ -56,10 +56,12 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID::SLOW);
 		attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
 		attackerSideHero->addSpellToSpellbook(SpellID::BLESS);
+		attackerSideHero->addSpellToSpellbook(SpellID::PRAYER);
 		attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
 		attackerSideHero->addSpellToSpellbook(SpellID::FIREBALL);
 		attackerSideHero->addSpellToSpellbook(SpellID::CHAIN_LIGHTNING);
 		attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("core:iceBolt")));
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("new-horizons:counterspell")));
 		attackerSideHero->mana = 1000;
 
@@ -143,6 +145,14 @@ protected:
 		event.setMetamagicTargetUnitId(target->unitId());
 		const auto mechanics = spell.toSpell()->battleMechanics(&event);
 		return mechanics->getEffectPower();
+	}
+
+	int followupDuration(SpellID spell, const CStack * target)
+	{
+		spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+		event.setMetamagicFollowup(true);
+		event.setMetamagicTargetUnitId(target->unitId());
+		return spell.toSpell()->battleMechanics(&event)->getEffectDuration();
 	}
 
 	CStack * attacker = nullptr;
@@ -474,19 +484,133 @@ TEST_F(NewHorizonsMetamagicTest, FollowupAreaDamageLogNamesEveryDamagedStack)
 	EXPECT_EQ(damagedStacks, 4);
 }
 
-TEST_F(NewHorizonsMetamagicTest, FollowupLogReportsAffectedNonDamageOutcome)
+TEST_F(NewHorizonsMetamagicTest, FollowupTimedEffectLogNamesSpellTargetAndAuthoritativeDuration)
 {
 	prepare(1);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto expectedDuration = followupDuration(SpellID(SpellID::SLOW), defender);
 	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
 
 	const auto slows = server.castsOf(SpellID::SLOW);
 	ASSERT_EQ(slows.size(), 1u);
 	EXPECT_EQ(slows.front().damage, 0);
 	EXPECT_EQ(slows.front().killed, 0u);
-	EXPECT_TRUE(std::any_of(slows.front().logLines.begin(), slows.front().logLines.end(), [](const std::string & line)
+	EXPECT_TRUE(std::any_of(slows.front().logLines.begin(), slows.front().logLines.end(), [&](const std::string & line)
 	{
-		return line.find("casts a second Slow through Metamagic, affecting 1 target.") != std::string::npos;
+		return line.find("casts a second Slow through Metamagic, applying Slow to Pikemen for "
+			+ std::to_string(expectedDuration) + (expectedDuration == 1 ? " turn." : " turns.")) != std::string::npos;
+	})) << ::testing::PrintToString(slows.front().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupDispelLogNamesRemovedSpellTargetAndRemainingDuration)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto haste = attacker->getBonus(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::HASTE))));
+	ASSERT_NE(haste, nullptr);
+	ASSERT_TRUE(Bonus::NTurns(haste.get()));
+	const auto remainingDuration = haste->turnsRemain;
+
+	ASSERT_TRUE(cast(SpellID::DISPEL, attacker, true));
+	const auto dispels = server.castsOf(SpellID::DISPEL);
+	ASSERT_EQ(dispels.size(), 1u);
+	EXPECT_FALSE(attacker->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::HASTE)))));
+	EXPECT_TRUE(std::ranges::any_of(dispels.front().logLines, [&](const std::string & line)
+	{
+		return line.find("casts a second Dispel through Metamagic, removing Haste from Pikemen with "
+			+ std::to_string(remainingDuration)
+			+ (remainingDuration == 1 ? " turn remaining." : " turns remaining.")) != std::string::npos;
+	})) << ::testing::PrintToString(dispels.front().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupMultiBonusSpellProducesOneCausalEffectOutcome)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto expectedDuration = followupDuration(SpellID(SpellID::PRAYER), attacker);
+	ASSERT_TRUE(cast(SpellID::PRAYER, attacker, true));
+
+	const auto prayers = server.castsOf(SpellID::PRAYER);
+	ASSERT_EQ(prayers.size(), 1u);
+	const auto line = std::ranges::find_if(prayers.front().logLines, [](const std::string & candidate)
+	{
+		return candidate.find("casts a second Prayer through Metamagic") != std::string::npos;
+	});
+	ASSERT_NE(line, prayers.front().logLines.end()) << ::testing::PrintToString(prayers.front().logLines);
+	const auto outcome = "applying Prayer to Pikemen for " + std::to_string(expectedDuration)
+		+ (expectedDuration == 1 ? " turn" : " turns");
+	const auto first = line->find(outcome);
+	ASSERT_NE(first, std::string::npos) << *line;
+	EXPECT_EQ(line->find(outcome, first + outcome.size()), std::string::npos) << *line;
+	EXPECT_EQ(line->find("refreshing Prayer"), std::string::npos) << *line;
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupMixedDamageAndStatusLogReportsBothOutcomes)
+{
+	prepare(1);
+	const SpellID iceBolt(SpellID::decode("core:iceBolt"));
+	ASSERT_NE(iceBolt, SpellID::NONE);
+	const auto * target = addStack(BattleSide::DEFENDER,
+		creatureByName("core:pikeman"), BattleHex(rightHex + 2), 100);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(iceBolt, target, true));
+
+	const auto casts = server.castsOf(iceBolt);
+	ASSERT_EQ(casts.size(), 1u);
+	ASSERT_GT(casts.front().damage, 0);
+	const auto line = std::ranges::find_if(casts.front().logLines, [](const std::string & candidate)
+	{
+		return candidate.find("casts a second Ice Bolt through Metamagic") != std::string::npos;
+	});
+	ASSERT_NE(line, casts.front().logLines.end()) << ::testing::PrintToString(casts.front().logLines);
+	EXPECT_NE(line->find("dealing " + std::to_string(casts.front().damage) + " damage to Pikemen"),
+		std::string::npos) << *line;
+	EXPECT_NE(line->find("and applying Ice Bolt to Pikemen"), std::string::npos) << *line;
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupLongerDurationRefreshIsReportedAsUpdate)
+{
+	prepare(2, {newHorizonsMagic::METAMAGIC_ECHOED_DURATION.data()});
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto expectedDuration = followupDuration(SpellID(SpellID::HASTE), attacker);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker, true));
+
+	const auto casts = server.castsOf(SpellID::HASTE);
+	ASSERT_EQ(casts.size(), 2u);
+	EXPECT_TRUE(std::ranges::any_of(casts.back().logLines, [&](const std::string & line)
+	{
+		return line.find("casts a second Haste through Metamagic, refreshing Haste on Pikemen for "
+			+ std::to_string(expectedDuration)
+			+ (expectedDuration == 1 ? " turn." : " turns.")) != std::string::npos;
+	})) << ::testing::PrintToString(casts.back().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, CounterspelledStatusCounterPreservesExistingEffect)
+{
+	prepare(1);
+	auto haste = std::make_shared<Bonus>(BonusDuration::N_TURNS,
+		BonusType::STACKS_SPEED, BonusSource::SPELL_EFFECT, 3,
+		BonusSourceID(SpellID(SpellID::HASTE)));
+	haste->turnsRemain = 3;
+	defender->addNewBonus(haste);
+	ASSERT_TRUE(defender->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::HASTE)))));
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
+	defenderSideHero->mana = 1000;
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+
+	EXPECT_TRUE(defender->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::HASTE)))));
+	const auto slows = server.castsOf(SpellID::SLOW);
+	ASSERT_EQ(slows.size(), 1u);
+	EXPECT_TRUE(std::ranges::any_of(slows.front().logLines, [](const std::string & line)
+	{
+		return line.find("casts a second Slow through Metamagic, but the spell was counterspelled.")
+			!= std::string::npos;
 	}));
 }
 
@@ -703,6 +827,13 @@ TEST_F(NewHorizonsMetamagicTest, SpellEchoBoostsAdditionalRepeatedSpell)
 	// so Spell Echo adds its 25% Spell Power-derived component.
 	EXPECT_EQ(followupPower(SpellID::HASTE, attacker), 12);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker, true));
+	const auto casts = server.castsOf(SpellID::HASTE);
+	ASSERT_EQ(casts.size(), 2u);
+	EXPECT_TRUE(std::ranges::any_of(casts.back().logLines, [](const std::string & line)
+	{
+		return line.find("casts a second Haste through Metamagic, causing no status change.")
+			!= std::string::npos;
+	})) << ::testing::PrintToString(casts.back().logLines);
 }
 
 TEST_F(NewHorizonsMetamagicTest, SpellEchoDoesNotBoostADifferentAdditionalSpell)

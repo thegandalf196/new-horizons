@@ -127,7 +127,10 @@ requiring the complete source document to be replaced.
   damage, kills, resistance, affected-target count, ward creation, or successful
   non-unit resolution as applicable. Direct and area damage use the authoritative
   injury packets to name every affected stack with exact damage and pre-Rebirth
-  casualties in packet order. Behavioral coverage is in
+  casualties in packet order. Timed effects and Dispels compare authoritative
+  whole-cast bonus state, reporting applications, refreshes, removals, durations,
+  mixed damage/status results, or an actual no-op; counterspelled effects cannot
+  mutate the target. Behavioral coverage is in
   `NewHorizonsMetamagicTest.FollowupLogNamesSecondAndThirdMagicArrowDamage`,
   `NewHorizonsMetamagicTest.FollowupLogReportsAffectedNonDamageOutcome`, and
   `NewHorizonsMetamagicTest.FollowupLogDoesNotCallSuccessfulObstacleSpellNoEffect`.

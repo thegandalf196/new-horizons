@@ -19,6 +19,7 @@
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/Unit.h"
+#include "../bonuses/Updaters.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../networkPacks/SetStackEffect.h"
@@ -34,9 +35,32 @@ namespace
 
 class EffectPacketRecorder final : public ServerCallback
 {
+private:
+	struct EffectState
+	{
+		SpellID spell;
+		std::vector<Bonus> bonuses;
+	};
+
 public:
-	explicit EffectPacketRecorder(ServerCallback & delegate)
+	enum class ChangeKind
+	{
+		ADDED,
+		UPDATED,
+		REMOVED
+	};
+
+	struct EffectChange
+	{
+		uint32_t unitId;
+		SpellID spell;
+		ChangeKind kind;
+		std::optional<int32_t> turns;
+	};
+
+	EffectPacketRecorder(ServerCallback & delegate, const IBattleInfoCallback & battle)
 		: delegate(delegate)
+		, battle(battle)
 	{
 	}
 
@@ -50,6 +74,11 @@ public:
 
 	void apply(CPackForClient & pack) override
 	{
+		if(auto * effects = dynamic_cast<SetStackEffect *>(&pack))
+		{
+			record(*effects);
+			return;
+		}
 		if(const auto * injured = dynamic_cast<const StacksInjured *>(&pack))
 			record(*injured);
 		delegate.apply(pack);
@@ -57,7 +86,7 @@ public:
 	void apply(BattleLogMessage & pack) override { delegate.apply(pack); }
 	void apply(BattleStackMoved & pack) override { delegate.apply(pack); }
 	void apply(BattleUnitsChanged & pack) override { delegate.apply(pack); }
-	void apply(SetStackEffect & pack) override { delegate.apply(pack); }
+	void apply(SetStackEffect & pack) override { record(pack); }
 	void apply(StacksInjured & pack) override
 	{
 		record(pack);
@@ -67,14 +96,161 @@ public:
 	void apply(CatapultAttack & pack) override { delegate.apply(pack); }
 
 	const std::vector<BattleStackAttacked> & injuries() const { return recordedInjuries; }
+	bool touchedStackEffects() const { return stackEffectsTouched; }
+	const std::vector<EffectChange> & effectChanges()
+	{
+		if(effectChangesFinalized)
+			return recordedEffectChanges;
+
+		recordedEffectChanges.clear();
+		for(const auto & [unitId, oldStates] : initialEffectStates)
+		{
+			const auto newStates = snapshot(unitId);
+			std::vector<SpellID> spells;
+			for(const auto & state : oldStates)
+				spells.push_back(state.spell);
+			for(const auto & state : newStates)
+				if(!vstd::contains(spells, state.spell))
+					spells.push_back(state.spell);
+
+			for(const auto spell : spells)
+			{
+				const auto oldState = std::ranges::find(oldStates, spell, &EffectState::spell);
+				const auto newState = std::ranges::find(newStates, spell, &EffectState::spell);
+				const auto * oldEffect = oldState == oldStates.end() ? nullptr : &*oldState;
+				const auto * newEffect = newState == newStates.end() ? nullptr : &*newState;
+				if(oldEffect && newEffect && sameEffectState(*oldEffect, *newEffect))
+					continue;
+
+				ChangeKind kind = ChangeKind::UPDATED;
+				if(!oldEffect)
+					kind = ChangeKind::ADDED;
+				else if(!newEffect)
+					kind = ChangeKind::REMOVED;
+				recordedEffectChanges.push_back({unitId, spell, kind,
+					kind == ChangeKind::REMOVED ? duration(oldEffect) : duration(newEffect)});
+			}
+		}
+		effectChangesFinalized = true;
+		return recordedEffectChanges;
+	}
 
 private:
 	ServerCallback & delegate;
+	const IBattleInfoCallback & battle;
 	std::vector<BattleStackAttacked> recordedInjuries;
+	std::vector<EffectChange> recordedEffectChanges;
+	std::vector<std::pair<uint32_t, std::vector<EffectState>>> initialEffectStates;
+	bool effectChangesFinalized = false;
+	bool stackEffectsTouched = false;
 
 	void record(const StacksInjured & pack)
 	{
 		recordedInjuries.insert(recordedInjuries.end(), pack.stacks.begin(), pack.stacks.end());
+	}
+
+	static bool sameBonusState(const Bonus & left, const Bonus & right)
+	{
+		const auto samePropagationUpdater = [&]()
+		{
+			if(static_cast<bool>(left.propagationUpdater) != static_cast<bool>(right.propagationUpdater))
+				return false;
+			return !left.propagationUpdater
+				|| left.propagationUpdater->toJsonNode() == right.propagationUpdater->toJsonNode();
+		};
+		// Bonus::toJsonNode covers every gameplay field exposed by content (including
+		// parameters, limiter, updater and propagator).  The remaining serialized
+		// state is compared explicitly so a packet-only refresh is never mistaken for
+		// a no-op merely because its visible value stayed the same.
+		return left.toJsonNode() == right.toJsonNode()
+			&& samePropagationUpdater()
+			&& left.customIconPath == right.customIconPath
+			&& left.bonusOwner == right.bonusOwner;
+	}
+
+	static bool sameEffectState(const EffectState & left, const EffectState & right)
+	{
+		if(left.bonuses.size() != right.bonuses.size())
+			return false;
+
+		std::vector<bool> matched(right.bonuses.size(), false);
+		for(const auto & leftBonus : left.bonuses)
+		{
+			size_t found = right.bonuses.size();
+			for(size_t index = 0; index < right.bonuses.size(); ++index)
+			{
+				if(!matched[index] && sameBonusState(leftBonus, right.bonuses[index]))
+				{
+					found = index;
+					break;
+				}
+			}
+			if(found == right.bonuses.size())
+				return false;
+			matched[found] = true;
+		}
+		return true;
+	}
+
+	std::vector<EffectState> snapshot(uint32_t unitId) const
+	{
+		std::vector<EffectState> result;
+		const auto * unit = battle.battleGetUnitByID(unitId);
+		if(!unit)
+			return result;
+
+		for(const auto & bonus : *unit->getBonuses(Selector::sourceType()(BonusSource::SPELL_EFFECT)))
+		{
+			if(!bonus->sid.as<SpellID>().hasValue())
+				continue;
+			const SpellID spell = bonus->sid.as<SpellID>();
+			auto state = std::ranges::find(result, spell, &EffectState::spell);
+			if(state == result.end())
+				state = result.emplace(result.end(), EffectState{spell, {}});
+			state->bonuses.push_back(*bonus);
+		}
+		return result;
+	}
+
+	static std::optional<int32_t> duration(const EffectState * state)
+	{
+		if(!state)
+			return std::nullopt;
+		std::optional<int32_t> result;
+		for(const auto & bonus : state->bonuses)
+		{
+			if(!Bonus::NTurns(&bonus))
+				continue;
+			result = std::max(result.value_or(bonus.turnsRemain), static_cast<int32_t>(bonus.turnsRemain));
+		}
+		return result;
+	}
+
+	void record(SetStackEffect & pack)
+	{
+		stackEffectsTouched = true;
+		std::vector<uint32_t> touched;
+		const auto collect = [&touched](const auto & changes)
+		{
+			for(const auto & [unitId, bonuses] : changes)
+				if(!vstd::contains(touched, unitId))
+					touched.push_back(unitId);
+		};
+		collect(pack.toAdd);
+		collect(pack.toUpdate);
+		collect(pack.toRemove);
+
+		for(const auto unitId : touched)
+		{
+			if(std::ranges::none_of(initialEffectStates, [unitId](const auto & entry)
+			{
+				return entry.first == unitId;
+			}))
+				initialEffectStates.emplace_back(unitId, snapshot(unitId));
+		}
+
+		delegate.apply(pack);
+		effectChangesFinalized = false;
 	}
 };
 
@@ -571,7 +747,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		break;
 	}
 
-	doRemoveEffects(server, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
+	EffectPacketRecorder effectRecorder(*server, *battle());
+	if(!isCounterspellNegated())
+		doRemoveEffects(&effectRecorder, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
 
 	for(auto & unit : affectedUnits)
 		sc.affectedCres.push_back(unit->unitId());
@@ -581,7 +759,6 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 
 	server->apply(sc);
 
-	EffectPacketRecorder effectRecorder(*server);
 	if(!isCounterspellNegated())
 	{
 		for(auto & p : effectsToApply)
@@ -644,55 +821,104 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		{
 			line.appendRawString(", but the spell was counterspelled");
 		}
-		else if(!damagedTargets.empty())
-		{
-			line.appendRawString(", dealing ");
-			for(size_t index = 0; index < damagedTargets.size(); ++index)
-			{
-				const auto & outcome = damagedTargets[index];
-				if(index > 0)
-					line.appendRawString("; ");
-				line.appendNumber(outcome.damage);
-				line.appendRawString(" damage to ");
-				line.appendName(outcome.snapshot->creature, outcome.snapshot->count);
-				line.appendRawString(" (");
-				line.appendNumber(outcome.killed);
-				line.appendRawString(" killed)");
-			}
-			if(!sc.resistedCres.empty())
-			{
-				line.appendRawString(", ");
-				line.appendNumber(sc.resistedCres.size());
-				line.appendRawString(" resisted");
-			}
-		}
-		else if(newHorizonsMagic::isCounterspell(owner))
-		{
-			line.appendRawString(", raising a counterspell ward");
-		}
-		else if(!affectedUnits.empty())
-		{
-			line.appendRawString(", affecting ");
-			line.appendNumber(affectedUnits.size());
-			line.appendRawString(affectedUnits.size() == 1 ? " target" : " targets");
-			if(!sc.resistedCres.empty())
-			{
-				line.appendRawString(", ");
-				line.appendNumber(sc.resistedCres.size());
-				line.appendRawString(" resisted");
-			}
-		}
-		else if(!sc.resistedCres.empty())
-		{
-			line.appendRawString(", resisted by ");
-			line.appendNumber(sc.resistedCres.size());
-			line.appendRawString(sc.resistedCres.size() == 1 ? " target" : " targets");
-		}
 		else
 		{
-			// Location, obstacle and summon spells can resolve successfully without
-			// populating affectedUnits.  Do not misreport those casts as failures.
-			line.appendRawString(", resolving successfully");
+			bool wroteOutcome = false;
+			if(!damagedTargets.empty())
+			{
+				line.appendRawString(", dealing ");
+				for(size_t index = 0; index < damagedTargets.size(); ++index)
+				{
+					const auto & outcome = damagedTargets[index];
+					if(index > 0)
+						line.appendRawString("; ");
+					line.appendNumber(outcome.damage);
+					line.appendRawString(" damage to ");
+					line.appendName(outcome.snapshot->creature, outcome.snapshot->count);
+					line.appendRawString(" (");
+					line.appendNumber(outcome.killed);
+					line.appendRawString(" killed)");
+				}
+				wroteOutcome = true;
+			}
+			else if(newHorizonsMagic::isCounterspell(owner))
+			{
+				line.appendRawString(", raising a counterspell ward");
+				wroteOutcome = true;
+			}
+
+			bool wroteStatusChange = false;
+			for(const auto & change : effectRecorder.effectChanges())
+			{
+				const auto targetSnapshot = std::ranges::find(followupTargets, change.unitId,
+					&FollowupTargetSnapshot::unitId);
+				const auto * effectSpell = change.spell.toSpell();
+				if(targetSnapshot == followupTargets.end() || !effectSpell)
+					continue;
+
+				if(!wroteStatusChange)
+					line.appendRawString(wroteOutcome ? ", and " : ", ");
+				else
+					line.appendRawString("; ");
+				switch(change.kind)
+				{
+				case EffectPacketRecorder::ChangeKind::ADDED:
+					line.appendRawString("applying ");
+					break;
+				case EffectPacketRecorder::ChangeKind::UPDATED:
+					line.appendRawString("refreshing ");
+					break;
+				case EffectPacketRecorder::ChangeKind::REMOVED:
+					line.appendRawString("removing ");
+					break;
+				}
+				line.appendTextID(effectSpell->getNameTextID());
+				if(change.kind == EffectPacketRecorder::ChangeKind::REMOVED)
+					line.appendRawString(" from ");
+				else if(change.kind == EffectPacketRecorder::ChangeKind::UPDATED)
+					line.appendRawString(" on ");
+				else
+					line.appendRawString(" to ");
+				line.appendName(targetSnapshot->creature, targetSnapshot->count);
+				if(change.turns)
+				{
+					line.appendRawString(change.kind == EffectPacketRecorder::ChangeKind::REMOVED ? " with " : " for ");
+					line.appendNumber(*change.turns);
+					line.appendRawString(*change.turns == 1 ? " turn" : " turns");
+					if(change.kind == EffectPacketRecorder::ChangeKind::REMOVED)
+						line.appendRawString(" remaining");
+				}
+				wroteStatusChange = true;
+			}
+			if(wroteStatusChange)
+				wroteOutcome = true;
+			else if(effectRecorder.touchedStackEffects())
+			{
+				line.appendRawString(wroteOutcome ? ", and causing no status change" : ", causing no status change");
+				wroteOutcome = true;
+			}
+
+			if(!sc.resistedCres.empty())
+			{
+				line.appendRawString(wroteOutcome ? ", " : ", resisted by ");
+				line.appendNumber(sc.resistedCres.size());
+				line.appendRawString(wroteOutcome ? " resisted" :
+					(sc.resistedCres.size() == 1 ? " target" : " targets"));
+				wroteOutcome = true;
+			}
+			if(!wroteOutcome && !affectedUnits.empty())
+			{
+				line.appendRawString(", affecting ");
+				line.appendNumber(affectedUnits.size());
+				line.appendRawString(affectedUnits.size() == 1 ? " target" : " targets");
+				wroteOutcome = true;
+			}
+			if(!wroteOutcome)
+			{
+				// Location, obstacle and summon spells can resolve successfully without
+				// populating affectedUnits.  Do not misreport those casts as failures.
+				line.appendRawString(", resolving successfully");
+			}
 		}
 		line.appendRawString(".");
 		metamagicDescription.lines.push_back(std::move(line));
