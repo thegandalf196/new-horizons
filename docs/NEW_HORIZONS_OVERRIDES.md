@@ -221,3 +221,16 @@ requiring the complete source document to be replaced.
   each gated stack's authoritative initial and surviving counts and the saved
   creature category. Live-content integration tests cover Beacon and Reserve
   Discipline; exact Endless Legion rounding has direct rules coverage.
+
+### 2026-09-22 — Reinforced Gate temporary health
+
+- **Status:** Accepted
+- **Rule:** Reinforced Gate grants the arriving reserve stack battle-only hit
+  points equal to 20% of its aggregate health at arrival, rounded down. These
+  points are consumed before creature health, never create creatures, cannot be
+  healed or resurrected, survive battle-state serialization, and disappear with
+  the battle.
+- **Implementation evidence:** The battle health ledger carries an explicit
+  temporary-hit-point pool. Authoritative arrival state grants and publishes the
+  pool through `BattleUnitsChanged`; ordinary damage consumes it first while the
+  creature count and post-battle reserve reconciliation remain unchanged.

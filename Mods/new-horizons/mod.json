@@ -5844,7 +5844,7 @@
 								"requires": "basic",
 								"description": "A gated stack gains temporary HP equal to 20% of its current aggregate HP until combat ends.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "A gated stack gains temporary HP equal to 20% of its current aggregate HP until combat ends."
 								}
 							},

@@ -180,6 +180,7 @@ CHealth & CHealth::operator=(const CHealth & other)
 	fullUnits = other.fullUnits;
 	resurrected = other.resurrected;
 	unusableRemains = other.unusableRemains;
+	temporaryHitPoints = other.temporaryHitPoints;
 	return *this;
 }
 
@@ -207,6 +208,11 @@ void CHealth::addUnusableRemains(int32_t amount)
 
 int64_t CHealth::available() const
 {
+	return creatureHealthAvailable() + temporaryHitPoints;
+}
+
+int64_t CHealth::creatureHealthAvailable() const
+{
 	return static_cast<int64_t>(firstHPleft) + owner->getMaxHealth() * fullUnits;
 }
 
@@ -218,15 +224,14 @@ int64_t CHealth::total() const
 void CHealth::damage(int64_t & amount)
 {
 	const int32_t oldCount = getCount();
+	amount = std::clamp<int64_t>(amount, 0, available());
+	const int64_t absorbed = std::min(amount, temporaryHitPoints);
+	temporaryHitPoints -= absorbed;
+	int64_t creatureDamage = amount - absorbed;
 
-	const bool withKills = amount >= firstHPleft;
-
-	if(withKills)
+	if(creatureDamage >= firstHPleft && creatureDamage > 0)
 	{
-		int64_t totalHealth = available();
-		if(amount > totalHealth)
-			amount = totalHealth;
-		totalHealth -= amount;
+		int64_t totalHealth = creatureHealthAvailable() - creatureDamage;
 		if(totalHealth <= 0)
 		{
 			fullUnits = 0;
@@ -237,9 +242,9 @@ void CHealth::damage(int64_t & amount)
 			setFromTotal(totalHealth);
 		}
 	}
-	else
+	else if(creatureDamage > 0)
 	{
-		firstHPleft -= static_cast<int32_t>(amount);
+		firstHPleft -= static_cast<int32_t>(creatureDamage);
 	}
 
 	addResurrected(getCount() - oldCount);
@@ -267,7 +272,7 @@ HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 		maxHeal = std::max(0, unitHealth - firstHPleft);
 		break;
 	case EHealLevel::RESURRECT:
-		maxHeal = total() - available();
+		maxHeal = total() - creatureHealthAvailable();
 		maxHeal -= static_cast<int64_t>(unusableRemains) * unitHealth;
 		break;
 	default:
@@ -281,7 +286,7 @@ HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 	if(amount == 0)
 		return {};
 
-	int64_t availableHealth = available();
+	int64_t availableHealth = creatureHealthAvailable();
 
 	availableHealth	+= amount;
 	setFromTotal(availableHealth);
@@ -312,6 +317,7 @@ void CHealth::reset(bool clearUnusableRemains)
 	fullUnits = 0;
 	firstHPleft = 0;
 	resurrected = 0;
+	temporaryHitPoints = 0;
 	if(clearUnusableRemains)
 		unusableRemains = 0;
 }
@@ -336,11 +342,22 @@ int32_t CHealth::getUnusableRemains() const
 	return unusableRemains;
 }
 
+int64_t CHealth::getTemporaryHitPoints() const
+{
+	return temporaryHitPoints;
+}
+
+void CHealth::addTemporaryHitPoints(int64_t amount)
+{
+	if(amount > 0)
+		temporaryHitPoints += amount;
+}
+
 void CHealth::takeResurrected()
 {
 	if(resurrected != 0)
 	{
-		int64_t totalHealth = available();
+		int64_t totalHealth = creatureHealthAvailable();
 
 		totalHealth -= resurrected * owner->getMaxHealth();
 		vstd::amax(totalHealth, 0);
@@ -355,6 +372,7 @@ void CHealth::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("fullUnits", fullUnits, 0);
 	handler.serializeInt("resurrected", resurrected, 0);
 	handler.serializeInt("unusableRemains", unusableRemains, 0);
+	handler.serializeInt("temporaryHitPoints", temporaryHitPoints, 0);
 }
 
 ///CUnitState

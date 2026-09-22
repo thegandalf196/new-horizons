@@ -66,7 +66,9 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	auto luck = stack->luckVal();
 
 	auto killed = stack->getKilled();
-	auto healthRemaining = TextOperations::formatMetric(std::max<int64_t>(stack->getAvailableHealth() - static_cast<int64_t>(stack->getCount() - 1) * health, 0), 4);
+	auto healthRemaining = TextOperations::formatMetric(stack->getFirstHPleft(), 4);
+	if(stack->health.getTemporaryHitPoints() > 0)
+		healthRemaining += "+" + TextOperations::formatMetric(stack->health.getTemporaryHitPoints(), 4);
 
 	//primary stats*/
 	labels.push_back(std::make_shared<CLabel>(9, 75, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, LIBRARY->generaltexth->allTexts[380] + ":"));

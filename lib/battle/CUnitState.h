@@ -111,6 +111,9 @@ public:
 	int32_t getResurrected() const;
 	/// Number of casualties whose remains cannot be restored or harvested.
 	int32_t getUnusableRemains() const;
+	/// Battle-only hit points consumed before the stack's creature health.
+	int64_t getTemporaryHitPoints() const;
+	void addTemporaryHitPoints(int64_t amount);
 
 	/// returns total remaining health
 	int64_t available() const;
@@ -124,6 +127,7 @@ public:
 private:
 	void addResurrected(int32_t amount);
 	void addUnusableRemains(int32_t amount);
+	int64_t creatureHealthAvailable() const;
 	void setFromTotal(const int64_t totalHealth);
 	const battle::Unit * owner;
 
@@ -131,6 +135,7 @@ private:
 	int32_t fullUnits;
 	int32_t resurrected;
 	int32_t unusableRemains;
+	int64_t temporaryHitPoints;
 };
 
 class DLL_LINKAGE CUnitState : public Unit

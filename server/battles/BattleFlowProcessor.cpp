@@ -354,6 +354,8 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			"new-horizons:demonicGating", "new-horizons:demonicGating.swiftGate");
 		const bool hellfireArrival = hero && hero->hasActivePerk(
 			"new-horizons:demonicGating", "new-horizons:demonicGating.hellfireArrival");
+		const bool reinforcedGate = hero && hero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.reinforcedGate");
 		const bool infernalBeacon = hero && hero->hasActivePerk(
 			"new-horizons:demonicGating", "new-horizons:demonicGating.infernalBeacon");
 		const bool reserveDiscipline = hero && hero->hasActivePerk(
@@ -422,6 +424,18 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			gameHandler->sendAndApply(add);
 			update.gated.push_back({info.id, gate.creature, gate.count});
 			const auto * gated = battle.battleGetStackByID(info.id, false);
+			if(reinforcedGate && gated)
+			{
+				auto state = gated->acquireState();
+				state->health.addTemporaryHitPoints(state->getAvailableHealth() * 20 / 100);
+				BattleUnitsChanged reinforce;
+				reinforce.battleID = concrete->getBattleID();
+				UnitChanges changed(info.id, UnitChanges::EOperation::UPDATE);
+				changed.data = state->save();
+				reinforce.changedStacks.push_back(std::move(changed));
+				gameHandler->sendAndApply(reinforce);
+				gated = battle.battleGetStackByID(info.id, false);
+			}
 
 			std::vector<Bonus> arrivalBonuses;
 			if(infernalBeacon && gated)

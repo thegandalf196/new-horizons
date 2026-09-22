@@ -236,6 +236,43 @@ TEST_F(NewHorizonsDemonicGatingTest, HellfireArrivalDealsFifteenPercentAggregate
 	EXPECT_EQ(server.injuries.front().stacks.front().damageAmount, expected);
 }
 
+TEST_F(NewHorizonsDemonicGatingTest, ReinforcedGateAddsTwentyPercentTemporaryHealthConsumedFirst)
+{
+	grantGatingPerk("new-horizons:demonicGating.reinforcedGate");
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const BattleHex destination = legalGateHex(active);
+	ASSERT_TRUE(destination.isAvailable());
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(destination);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	endRound();
+
+	const auto gated = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSlot() == SlotID::SUMMONED_SLOT_PLACEHOLDER
+			&& stack->unitSide() == BattleSide::ATTACKER;
+	});
+	ASSERT_EQ(gated.size(), 1u);
+	const int64_t creatureHealth = gated.front()->getTotalHealth();
+	const int64_t temporaryHealth = creatureHealth * 20 / 100;
+	EXPECT_EQ(gated.front()->health.getTemporaryHitPoints(), temporaryHealth);
+	EXPECT_EQ(gated.front()->getAvailableHealth(), creatureHealth + temporaryHealth);
+
+	auto state = gated.front()->acquireState();
+	int64_t damage = temporaryHealth;
+	state->damage(damage);
+	EXPECT_EQ(damage, temporaryHealth);
+	EXPECT_EQ(state->health.getTemporaryHitPoints(), 0);
+	EXPECT_EQ(state->getAvailableHealth(), creatureHealth);
+	EXPECT_EQ(state->getCount(), gated.front()->getCount());
+}
+
 TEST_F(NewHorizonsDemonicGatingTest, InfernalBeaconAddsTwoFlatInitiativeBesideInfernoAlly)
 {
 	grantGatingPerk("new-horizons:demonicGating.infernalBeacon", MasteryLevel::ADVANCED);
