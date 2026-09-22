@@ -1,0 +1,26 @@
+{
+	"core:solmyr": {
+		"spellbook": [ "new-horizons:masterChainLightning" ],
+		"skills": [
+			{ "skill": "new-horizons:metamagic", "level": "basic" },
+			{ "skill": "new-horizons:havocMagic", "level": "basic" }
+		],
+		"startingPerks": [
+			{
+				"skill": "new-horizons:havocMagic",
+				"perk": "new-horizons:havocMagic.stormcaller"
+			}
+		],
+		"excludedSpells": [ "core:chainLightning" ],
+		"texts": {
+			"specialty": {
+				"name": "Master Chain Lightning",
+				"tooltip": "Master Chain Lightning",
+				"description": "Solmyr's Master Chain Lightning deals the same initial damage as Chain Lightning, but loses less damage with each jump and improves as he gains levels."
+			}
+		},
+		"specialty": {
+			"spellScalingPercentage": null
+		}
+	}
+}

@@ -51,3 +51,20 @@ TEST(NewHorizonsAstrologyState, FirstWeekIsOnlyTheUnknownSentinel)
 	preview.type = EWeekType::NORMAL;
 	EXPECT_TRUE(preview.known());
 }
+
+TEST(NewHorizonsCastleGateWire, DailyUsageRoundTripsToTheClientMirror)
+{
+	SetNewHorizonsCastleGateState outgoing;
+	outgoing.hid = ObjectInstanceID(42);
+	outgoing.lastUseDay = 17;
+
+	CMemorySerializer wire;
+	wire.oser.version = ESerializationVersion::CURRENT;
+	wire.iser.version = ESerializationVersion::CURRENT;
+	wire.oser & outgoing;
+
+	SetNewHorizonsCastleGateState incoming;
+	wire.iser & incoming;
+	EXPECT_EQ(incoming.hid, outgoing.hid);
+	EXPECT_EQ(incoming.lastUseDay, outgoing.lastUseDay);
+}

@@ -318,4 +318,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<BattleHeroOrderStateChanged>(275);
 	s.template registerType<SetNewHorizonsAdventureSpellState>(276);
 	s.template registerType<SetHouseOfWisdomScrolls>(277);
+	s.template registerType<SetNewHorizonsCastleGateState>(278);
 }

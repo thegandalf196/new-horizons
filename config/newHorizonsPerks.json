@@ -1513,10 +1513,10 @@
 					"id": "new-horizons:havocMagic.stormcaller",
 					"name": "Stormcaller",
 					"requires": "basic",
-					"description": "Lightning Bolt and Chain Lightning receive +15% to their Spell Power-derived damage components.",
+					"description": "Lightning Bolt, Chain Lightning, and Master Chain Lightning receive +15% to their Spell Power-derived damage components.",
 					"effect": {
-						"status": "planned",
-						"description": "Lightning Bolt and Chain Lightning receive +15% to their Spell Power-derived damage components."
+						"status": "active",
+						"description": "Lightning Bolt, Chain Lightning, and Master Chain Lightning receive +15% to their Spell Power-derived damage components."
 					}
 				},
 				{

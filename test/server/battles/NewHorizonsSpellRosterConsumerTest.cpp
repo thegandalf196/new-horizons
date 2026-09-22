@@ -189,7 +189,7 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, AllowBannedCannotLearnAnExcludedUnkno
 	EXPECT_FALSE(attackerSideHero->canLearnSpell(arrow.toSpell(), true));
 }
 
-TEST_F(NewHorizonsSpellRosterConsumerTest, SixSchoolRanksGateLearningAndCastingWithoutHidingSources)
+TEST_F(NewHorizonsSpellRosterConsumerTest, SixSchoolRanksGateLearningButNotInscribedSpells)
 {
 	prepareHero();
 	const auto animateDead = spellNamed("core:animateDead");
@@ -216,7 +216,7 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, SixSchoolRanksGateLearningAndCastingW
 
 	attackerSideHero->addSpellToSpellbook(armageddon);
 	ASSERT_FALSE(attackerSideHero->getSourcesForSpell(armageddon).empty());
-	EXPECT_FALSE(attackerSideHero->canCastThisSpell(armageddon.toSpell()));
+	EXPECT_TRUE(attackerSideHero->canCastThisSpell(armageddon.toSpell()));
 	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	ASSERT_EQ(attackerSideHero->getSecSkillLevel(havoc), MasteryLevel::EXPERT);
 	ASSERT_EQ(newHorizonsMagic::spellSchoolSkills(gameState()->getMagicRules(), armageddon), (std::vector<SecondarySkill>{havoc}));

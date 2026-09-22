@@ -77,6 +77,7 @@
 #include "../lib/modding/ModIncompatibility.h"
 
 #include "../lib/networkPacks/StackLocation.h"
+#include "../lib/networkPacks/PacksForClient.h"
 
 #include "../lib/pathfinder/CPathfinder.h"
 #include "../lib/pathfinder/PathfinderOptions.h"
@@ -1203,6 +1204,13 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 
 	if (movementMode != EMovementMode::STANDARD)
 	{
+		// New Horizons Castle Gate travel consumes the hero's remaining
+		// Movement for the day.  Set this before the blocking-visit path as
+		// well, because a destination town can still go through that branch.
+		if(movementMode == EMovementMode::CASTLE_GATE
+			&& newHorizonsMagic::rulesActive(gameState().getMagicRules()))
+			tmh.movePoints = 0;
+
 		if (blockingVisit()) // e.g. hero on the other side of teleporter
 			return true;
 
@@ -1256,17 +1264,26 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 
 bool CGameHandler::teleportHero(ObjectInstanceID hid, ObjectInstanceID dstid, ui8 source, PlayerColor asker)
 {
-	const CGHeroInstance *h = gameInfo().getHero(hid);
+	const CGHeroInstance *h = gameState().getHero(hid);
 	const CGTownInstance *t = gameInfo().getTown(dstid);
 
 	if (!h || !t)
 		COMPLAIN_RET("Invalid call to teleportHero!");
 
 	const CGTownInstance *from = h->getVisitedTown();
+	const bool newHorizonsCastleGate = newHorizonsMagic::rulesActive(gameState().getMagicRules());
 	if (((h->getOwner() != t->getOwner())
 		&& complain("Cannot teleport hero to another player"))
 
-	|| (from->getFactionID() != t->getFactionID()
+	|| (!from
+		&& complain("Hero must be in town with Castle gate for teleporting"))
+
+	|| (newHorizonsCastleGate
+		&& (from == nullptr || from->getFactionID() != FactionID::INFERNO
+			|| t->getFactionID() != FactionID::INFERNO)
+		&& complain("New Horizons Castle Gates connect Inferno towns only"))
+
+	|| (from && from->getFactionID() != t->getFactionID()
 		&& complain("Source town and destination town should belong to the same faction"))
 
 	|| ((!from || !from->hasBuilt(BuildingSubID::CASTLE_GATE))
@@ -1276,8 +1293,20 @@ bool CGameHandler::teleportHero(ObjectInstanceID hid, ObjectInstanceID dstid, ui
 		&& complain("Cannot teleport hero to town without Castle gate in it")))
 			return false;
 
+	if(newHorizonsCastleGate && h->hasUsedNewHorizonsCastleGateToday(gameState().getCalendar().getCurrentDay()))
+		COMPLAIN_RET("This hero has already used a Castle Gate today");
+
 	int3 pos = h->convertFromVisitablePos(t->visitablePos());
-	moveHero(hid,pos,EMovementMode::CASTLE_GATE);
+	if(!moveHero(hid,pos,EMovementMode::CASTLE_GATE))
+		return false;
+
+	if(newHorizonsCastleGate)
+	{
+		SetNewHorizonsCastleGateState state;
+		state.hid = hid;
+		state.lastUseDay = gameState().getCalendar().getCurrentDay();
+		sendAndApply(state);
+	}
 	return true;
 }
 

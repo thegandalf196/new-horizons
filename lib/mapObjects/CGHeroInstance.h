@@ -222,6 +222,8 @@ public:
 	bool hasNewHorizonsAdventureSpellCastToday() const { return newHorizonsAdventureSpellState.castToday; }
 	void setNewHorizonsAdventureSpellCastToday(bool value) { newHorizonsAdventureSpellState.castToday = value; }
 	void resetNewHorizonsAdventureSpellCastToday() { newHorizonsAdventureSpellState.castToday = false; }
+	bool hasUsedNewHorizonsCastleGateToday(int32_t day) const { return newHorizonsCastleGateLastUseDay == day; }
+	void markNewHorizonsCastleGateUsed(int32_t day) { newHorizonsCastleGateLastUseDay = day; }
 	int getPerkSkillRank(const std::string & skillId) const;
 	bool hasActivePerk(const std::string & skillId, const std::string & perkId) const;
 	/// New Horizons Necromancy is a separate saved-rules path.  Legacy heroes
@@ -392,9 +394,11 @@ private:
 	bool primaryGrowthCaptured = false;
 	JsonNode primaryGrowthRules;
 	newHorizonsMagic::AdventureSpellState newHorizonsAdventureSpellState;
+	int32_t newHorizonsCastleGateLastUseDay = -1;
 	std::array<int, GameConstants::PRIMARY_SKILLS> lastPrimaryGains{};
 	void levelUpAutomatically(IGameRandomizer & gameRandomizer);
 	void attachCommanderToArmy();
+	bool isNewHorizonsSpellExcluded(const SpellID & spell) const;
 
 public:
 	std::string getHeroTypeName() const;
@@ -454,6 +458,13 @@ public:
 			h & newHorizonsAdventureSpellState;
 		else if(!h.saving)
 			newHorizonsAdventureSpellState = newHorizonsMagic::AdventureSpellState();
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CASTLE_GATE))
+			h & newHorizonsCastleGateLastUseDay;
+		else if(h.saving && newHorizonsCastleGateLastUseDay != -1)
+			throw std::runtime_error("New Horizons Castle Gate state requires the new save format");
+		else if(!h.saving)
+			newHorizonsCastleGateLastUseDay = -1;
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MASTERIES))
 			h & masteryState;

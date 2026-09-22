@@ -19,6 +19,7 @@
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
+#include "../../lib/spells/CSpell.h"
 
 namespace
 {
@@ -100,4 +101,55 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaKeepsHasteAndStartsWithinL
 		ASSERT_TRUE(capacity) << stack->getType()->getJsonKey();
 		EXPECT_LE(stack->getCount(), capacity->maximum) << stack->getType()->getJsonKey();
 	}
+}
+
+TEST_F(NewHorizonsHalonInitializationTest, FreshSolmyrUsesMasterChainLightningAndStormcaller)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:solmyr")), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto * solmyr = findHeroAt({5, 5, 0});
+	ASSERT_NE(solmyr, nullptr);
+
+	const auto metamagic = scopedSkill("new-horizons:metamagic");
+	const auto havoc = scopedSkill("new-horizons:havocMagic");
+	ASSERT_EQ(solmyr->secSkills.size(), 2u);
+	EXPECT_EQ(solmyr->getSecSkillLevel(metamagic), MasteryLevel::BASIC);
+	EXPECT_EQ(solmyr->getSecSkillLevel(havoc), MasteryLevel::BASIC);
+	EXPECT_EQ(solmyr->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
+	EXPECT_EQ(solmyr->getSecSkillLevel(SecondarySkill::SORCERY), MasteryLevel::NONE);
+
+	const SpellID masterChainLightning = SpellID::decode("new-horizons:masterChainLightning");
+	const SpellID regularChainLightning(SpellID::CHAIN_LIGHTNING);
+	ASSERT_TRUE(masterChainLightning.hasValue());
+	EXPECT_TRUE(solmyr->spellbookContainsSpell(masterChainLightning));
+	EXPECT_FALSE(solmyr->spellbookContainsSpell(regularChainLightning));
+	EXPECT_TRUE(solmyr->canCastThisSpell(masterChainLightning.toSpell()));
+	EXPECT_FALSE(solmyr->canCastThisSpell(regularChainLightning.toSpell()));
+	EXPECT_TRUE(solmyr->getSourcesForSpell(masterChainLightning).size() > 0);
+	EXPECT_TRUE(solmyr->getSourcesForSpell(regularChainLightning).empty());
+	EXPECT_FALSE(solmyr->canLearnSpell(regularChainLightning.toSpell(), true));
+
+	EXPECT_TRUE(solmyr->hasActivePerk("new-horizons:havocMagic",
+		"new-horizons:havocMagic.stormcaller"));
+	EXPECT_EQ(solmyr->valOfBonuses(BonusType::SPECIAL_SPELL_SCALING,
+		BonusSubtypeID(masterChainLightning)), 0);
+	ASSERT_EQ(solmyr->getPerkState().selected.size(), 1u);
+	EXPECT_EQ(solmyr->getPerkState().selected.front().perkId,
+		"new-horizons:havocMagic.stormcaller");
+	EXPECT_EQ(solmyr->getHeroType()->getSpecialtyNameTranslated(), "Master Chain Lightning");
+	EXPECT_EQ(solmyr->getHeroType()->getSpecialtyTooltipTranslated(), "Master Chain Lightning");
+
+	const auto & rules = solmyr->getMagicRules();
+	EXPECT_EQ(newHorizonsMagic::spellCost(rules, masterChainLightning, 0),
+		newHorizonsMagic::spellCost(rules, regularChainLightning, 0));
+	const auto masterFormula = newHorizonsMagic::spellDirectDamage(
+		rules, masterChainLightning.toSpell()->getJsonKey());
+	const auto regularFormula = newHorizonsMagic::spellDirectDamage(
+		rules, regularChainLightning.toSpell()->getJsonKey());
+	ASSERT_TRUE(masterFormula);
+	ASSERT_TRUE(regularFormula);
+	EXPECT_EQ(*masterFormula, *regularFormula);
 }

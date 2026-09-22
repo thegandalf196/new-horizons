@@ -658,7 +658,7 @@ bool NewTurnProcessor::hasAstronomyTowerDefinition() const
 	{
 		const auto * town = gameHandler->gameState().getTown(townID);
 		if(town && town->getFactionID() == FactionID::TOWER
-			&& town->getTown()->buildings.contains(BuildingID::SPECIAL_2))
+			&& town->hasBuilt(BuildingID::SPECIAL_2))
 			return true;
 	}
 	return false;

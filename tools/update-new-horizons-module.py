@@ -34,7 +34,11 @@ def main():
     # for legacy secondary-skill specialties. Keep it in the generated
     # manifest so the curated module cannot silently omit the retired-skill
     # audit fixes.
-    hero_patch_files = ['config/heroes/fafner.json', 'config/heroes/halon.json']
+    hero_patch_files = [
+        'config/heroes/fafner.json',
+        'config/heroes/halon.json',
+        'config/heroes/solmyr.json',
+    ]
     faction_patch_files = [
         'config/factions/uniqueBuildings.json',
         'config/factions/universalMageGuilds.json',

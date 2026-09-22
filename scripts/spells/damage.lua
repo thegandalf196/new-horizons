@@ -42,7 +42,17 @@ function Script:damageForTarget(targetIndex, mechanics, unit)
 	end
 	local chainLength = self.chainLength or 0
 	if chainLength > 1 and targetIndex > 0 then
-		base = math.floor((self.chainFactor ^ targetIndex) * base)
+		local chainFactor = self.chainFactor or 0
+		local factorPerHeroLevel = self.chainFactorPerHeroLevel or 0
+		if factorPerHeroLevel ~= 0 then
+			local hero = mechanics:getHeroCaster()
+			local heroLevel = hero and hero:getLevel() or 1
+			chainFactor = chainFactor + factorPerHeroLevel * math.max(0, heroLevel)
+			if self.chainFactorMaximum then
+				chainFactor = math.min(chainFactor, self.chainFactorMaximum)
+			end
+		end
+		base = math.floor((chainFactor ^ targetIndex) * base)
 	end
 	return base
 end

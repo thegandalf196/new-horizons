@@ -27,6 +27,7 @@
 #include "../mapping/CMap.h"
 #include "../spells/CSpellHandler.h"
 #include "../spells/ISpellMechanics.h"
+#include "../spells/NewHorizonsMagic.h"
 
 bool CPathfinderHelper::canMoveFromNode(const PathNodeInfo & source) const
 {
@@ -205,6 +206,10 @@ void CPathfinder::calculatePaths()
 			continue;
 
 		auto teleportationNodes = config->nodeStorage->calculateTeleportations(source, config.get(), hlp);
+		const auto * sourceTown = dynamic_cast<const CGTownInstance *>(source.nodeObject);
+		const bool newHorizonsCastleGate = newHorizonsMagic::rulesActive(gameInfo.getMagicRules())
+			&& sourceTown && sourceTown->getFactionID() == FactionID::INFERNO
+			&& sourceTown->hasBuilt(BuildingSubID::CASTLE_GATE);
 		for(CGPathNode * teleportNode : teleportationNodes)
 		{
 			if(teleportNode->locked)
@@ -219,8 +224,10 @@ void CPathfinder::calculatePaths()
 
 			destination.setNode(gameInfo, teleportNode);
 			destination.turn = turn;
-			destination.movementLeft = movement;
+			destination.movementLeft = newHorizonsCastleGate ? 0 : movement;
 			destination.cost = cost;
+			if(newHorizonsCastleGate)
+				destination.cost += static_cast<float>(movement) / hlp->getMaxMovePoints(source.node->layer);
 
 			if(destination.isBetterWay())
 			{
@@ -264,6 +271,13 @@ TeleporterTilesVector CPathfinderHelper::getCastleGates(const PathNodeInfo & sou
 {
 	TeleporterTilesVector allowedExits;
 
+	// Do not offer an already-spent New Horizons Inferno gate to AI or
+	// adventure-map path planning.  The server remains authoritative, but
+	// filtering here avoids planning a route that is guaranteed to be rejected.
+	if(newHorizonsMagic::rulesActive(gameInfo.getMagicRules()) && source.node->turns == 0
+		&& hero->hasUsedNewHorizonsCastleGateToday(gameInfo.getCalendar().getCurrentDay()))
+		return allowedExits;
+
 	for(const auto & town : gameInfo.getPlayerState(hero->tempOwner)->getTowns())
 	{
 		if(town->id != source.nodeObject->id && town->getVisitingHero() == nullptr
@@ -292,7 +306,8 @@ TeleporterTilesVector CPathfinderHelper::getTeleportExits(const PathNodeInfo & s
 	{
 		auto * town = dynamic_cast<const CGTownInstance *>(source.nodeObject);
 		assert(town);
-		if (town && town->getFactionID() == FactionID::INFERNO)
+		if (town && town->getFactionID() == FactionID::INFERNO
+			&& town->hasBuilt(BuildingSubID::CASTLE_GATE))
 		{
 			/// TODO: Find way to reuse CPlayerSpecificInfoCallback::getTownsInfo
 			/// This may be handy if we allow to use teleportation to friendly towns

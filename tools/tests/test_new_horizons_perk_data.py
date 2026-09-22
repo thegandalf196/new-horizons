@@ -54,6 +54,7 @@ ACTIVE_PERKS = {
     "new-horizons:metamagic.grandMetamagic",
     "new-horizons:metamagic.perfectSequence",
     "new-horizons:battlecraft.entrench",
+    "new-horizons:havocMagic.stormcaller",
 }
 ACTIVE_RANK_SKILLS = {
     "new-horizons:offense",
@@ -149,6 +150,9 @@ def source_description_for_current_rules(description):
     return description.replace(
         "Wisdom's chance to grant +1 Knowledge at level-up increases by 10 percentage points.",
         "Wisdom's Mana discount remains effective when other percentage-based Mana modifiers are active.",
+    ).replace(
+        "Lightning Bolt and Chain Lightning receive +15% to their Spell Power-derived damage components.",
+        "Lightning Bolt, Chain Lightning, and Master Chain Lightning receive +15% to their Spell Power-derived damage components.",
     )
 
 

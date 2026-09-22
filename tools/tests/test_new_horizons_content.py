@@ -21,6 +21,7 @@ RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
     'new-horizons:counterspell',
     'new-horizons:disintegrate',
+    'new-horizons:masterChainLightning',
     'new-horizons:timeStop',
     'new-horizons:transfigureMatter',
 }
@@ -202,6 +203,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'core:landMine',
                               'core:lightningBolt',
                               'core:meteorShower',
+                              'new-horizons:masterChainLightning',
                               'new-horizons:disintegrate',
                           })
         self.assertEqual(self.rules['spells']['core:fireball']['directDamage'],
@@ -226,6 +228,8 @@ class NewHorizonsContentTest(unittest.TestCase):
                          {'base': 150, 'powerCoefficient': 18})
         self.assertEqual(self.rules['spells']['new-horizons:disintegrate']['directDamage'],
                          {'base': 180, 'powerCoefficient': 25})
+        self.assertEqual(self.rules['spells']['new-horizons:masterChainLightning']['directDamage'],
+                         {'base': 130, 'powerCoefficient': 18})
         self.assertNotIn('new-horizons:magicMissile', self.rules['spells'])
 
     def test_disintegrate_content_uses_authoritative_destroy_remains_effect(self):
@@ -277,7 +281,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             'description': 'Halon can use Metamagic one additional time per combat.',
         })
         module = load('Mods/new-horizons/mod.json')
-        self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json'])
+        self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json', 'config/heroes/solmyr.json'])
 
     def test_fafner_patch_keeps_a_valid_non_faction_skill_with_metamagic(self):
         patch = load('Mods/new-horizons/Content/config/heroes/fafner.json')['core:fafner']
@@ -285,6 +289,52 @@ class NewHorizonsContentTest(unittest.TestCase):
             {'skill': 'new-horizons:learning', 'level': 'basic'},
             {'skill': 'new-horizons:metamagic', 'level': 'basic'},
         ])
+
+    def test_solmyr_uses_master_chain_lightning_loadout_and_excludes_legacy_spell(self):
+        patch = load('Mods/new-horizons/Content/config/heroes/solmyr.json')['core:solmyr']
+        self.assertEqual(patch['spellbook'], ['new-horizons:masterChainLightning'])
+        self.assertEqual(patch['skills'], [
+            {'skill': 'new-horizons:metamagic', 'level': 'basic'},
+            {'skill': 'new-horizons:havocMagic', 'level': 'basic'},
+        ])
+        self.assertEqual(patch['startingPerks'], [{
+            'skill': 'new-horizons:havocMagic',
+            'perk': 'new-horizons:havocMagic.stormcaller',
+        }])
+        self.assertEqual(patch['excludedSpells'], ['core:chainLightning'])
+        self.assertEqual(patch['texts']['specialty'], {
+            'name': 'Master Chain Lightning',
+            'tooltip': 'Master Chain Lightning',
+            'description': "Solmyr's Master Chain Lightning deals the same initial damage as Chain Lightning, but loses less damage with each jump and improves as he gains levels.",
+        })
+        # The patch deliberately leaves the base Solmyr specialty art in place.
+        self.assertNotIn('images', patch)
+        self.assertIsNone(patch['specialty']['spellScalingPercentage'])
+
+        regular = self.rules['spells']['core:chainLightning']
+        master = self.rules['spells']['new-horizons:masterChainLightning']
+        self.assertEqual(master['costs'], regular['costs'])
+        self.assertEqual(master['directDamage'], regular['directDamage'])
+
+        content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        master_levels = content['masterChainLightning']['levels']
+        self.assertEqual(master_levels['none']['battleEffects']['directDamage']['chainFactor'], 0.75)
+        self.assertEqual(master_levels['none']['battleEffects']['directDamage']['chainFactorPerHeroLevel'], 0.01)
+        self.assertEqual(master_levels['none']['battleEffects']['directDamage']['chainFactorMaximum'], 0.9)
+        self.assertEqual(master_levels['none']['battleEffects']['directDamage']['chainLength'], 4)
+        self.assertEqual(master_levels['advanced']['battleEffects']['directDamage']['chainLength'], 5)
+        self.assertGreater(master_levels['none']['battleEffects']['directDamage']['chainFactor'],
+                           0.5)
+        self.assertEqual(0.75 + 0.01 * 1, 0.76)
+        # The saved direct-damage formula is identical at every hero level;
+        # only target indices after the first use the level-scaled retention.
+        base, coefficient, power, divisor = 130, 18, 40, 10
+        first_target = base + coefficient * power // divisor
+        self.assertEqual(first_target, 130 + 18 * power // divisor)
+        retention = lambda level: min(0.9, 0.75 + 0.01 * level)
+        self.assertGreater(retention(1), 0.5)
+        self.assertGreater(retention(10), retention(1))
+        self.assertEqual(first_target, base + coefficient * power // divisor)
 
     def test_tower_unique_buildings_use_new_horizons_identity_and_effects(self):
         patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:tower']['town']['buildings']
@@ -298,15 +348,21 @@ class NewHorizonsContentTest(unittest.TestCase):
             'gold': 15000, 'wood': 10, 'ore': 10, 'mercury': 5,
             'sulfur': 5, 'crystal': 5, 'gems': 5,
         })
-        self.assertEqual(patch['special3']['bonuses'], [
-            {'type': 'CREATURE_GROWTH', 'subtype': 'creatureLevel4', 'val': 1},
-        ])
+        # The +1 is applied by the authoritative town-growth path so it can
+        # distinguish Mage / Arch Mage from Tower's other level-4 dwelling.
+        self.assertEqual(patch['special3']['bonuses'], [])
         self.assertEqual(patch['special4']['name'], 'Arcane Reservoir')
         self.assertNotIn('type', patch['special4'])
         self.assertTrue(patch['special4']['manualHeroVisit'])
         self.assertEqual(patch['special4']['configuration']['resetParameters'],
             {'weeks': 1, 'visitors': True})
         self.assertEqual(patch['special4']['configuration']['visitMode'], 'once')
+
+    def test_inferno_brimstone_stormclouds_produce_sulfur_and_remove_legacy_bonus(self):
+        patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:inferno']['town']['buildings']['special2']
+        self.assertEqual(patch['name'], 'Brimstone Stormclouds')
+        self.assertEqual(patch['produce'], {'sulfur': 1})
+        self.assertEqual(patch['bonuses'], [])
 
     def test_universal_mage_guild_overlay_reaches_level_five(self):
         overlay = load('Mods/new-horizons/Content/config/factions/universalMageGuilds.json')
@@ -522,7 +578,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
         self.assertEqual(module['version'], '0.7.0')
-        self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json'])
+        self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json', 'config/heroes/solmyr.json'])
         self.assertIn('Magic Arrow', module['description'])
         self.assertIn('Overcharge', module['description'])
         self.assertEqual(module['spellSchools'], load('config/newHorizonsSchools.json'))

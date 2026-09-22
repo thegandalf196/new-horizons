@@ -197,9 +197,16 @@ void validateRules(const JsonNode & rules)
 		{
 			const auto found = rules["adventureSpells"].Struct().find(std::string(expected.identity));
 			require(found != rules["adventureSpells"].Struct().end(), "missing adventure spell " + std::string(expected.identity));
-			fields(found->second, {"guildLevel", "cost"});
+			fields(found->second, {"guildLevel", "cost", "unlockCost"});
 			require(integer(found->second["guildLevel"], 1, 5) && found->second["guildLevel"].Integer() == expected.guildLevel, "adventure guild level");
 			require(integer(found->second["cost"], 0, 1000000) && found->second["cost"].Integer() == expected.cost, "adventure spell cost");
+			if(!found->second["unlockCost"].isNull())
+			{
+				const auto & unlockCost = found->second["unlockCost"];
+				fields(unlockCost, {"gold", "mercury", "sulfur", "crystal", "gems"});
+				for(const auto * resource : {"gold", "mercury", "sulfur", "crystal", "gems"})
+					require(integer(unlockCost[resource], 0, 1000000), "adventure spell unlock cost");
+			}
 			const auto id = resolve("spell", std::string(expected.identity));
 			require(id >= 0 && adventureMapped.insert(id).second, "duplicate/invalid adventure spell");
 			const auto * definition = SpellID(id).toSpell();
@@ -623,5 +630,16 @@ int metamagicRank(const CGHeroInstance * hero)
 bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view perkId)
 {
 	return hero && hero->hasActivePerk(std::string(METAMAGIC_SKILL), std::string(perkId));
+}
+
+bool hasStormcallerPerk(const CGHeroInstance * hero, const spells::Spell * spell)
+{
+	if(!hero || !spell || !rulesActive(hero->getMagicRules())
+		|| !hero->hasActivePerk("new-horizons:havocMagic", std::string(HAVOC_STORMCALLER)))
+		return false;
+	const auto & key = spell->getJsonKey();
+	return key == "core:lightningBolt"
+		|| key == "core:chainLightning"
+		|| key == "new-horizons:masterChainLightning";
 }
 }

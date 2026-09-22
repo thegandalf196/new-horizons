@@ -253,3 +253,52 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	EXPECT_EQ(secondHero->mana, secondManaLimit * 2);
 	EXPECT_TRUE(reservoir->wasVisited(secondHero));
 }
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, TowerLibraryOnlyAddsMageGrowthAndBrimstoneProducesSulfur)
+{
+	const auto tower = faction("core:tower");
+	const auto inferno = faction("core:inferno");
+
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(48, false).playerActive(PlayerColor(0))
+		.town({20, 20, 0}, tower, PlayerColor(0))
+		.town({30, 20, 0}, inferno, PlayerColor(0))
+		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	CGTownInstance * towerTown = nullptr;
+	CGTownInstance * infernoTown = nullptr;
+	for(auto * town : findAll<CGTownInstance>())
+	{
+		if(town->getFactionID() == tower)
+			towerTown = town;
+		else if(town->getFactionID() == inferno)
+			infernoTown = town;
+	}
+	ASSERT_NE(towerTown, nullptr);
+	ASSERT_NE(infernoTown, nullptr);
+
+	towerTown->addBuilding(BuildingID::DWELL_LVL_4);
+	towerTown->addBuilding(BuildingID::DWELL_LVL_4_UP);
+	towerTown->addBuilding(BuildingID::DWELL_LVL_5);
+	towerTown->addBuilding(BuildingID::DWELL_LVL_5_UP);
+	// addBuilding is intentionally a bare fixture helper; populate the
+	// dwelling's offered creature list as the real build packet would.
+	towerTown->creatures[3].second = towerTown->getTown()->creatures[3];
+	towerTown->creatures[4].second = towerTown->getTown()->creatures[4];
+
+	const auto archMage = CreatureID(CreatureID::decode("core:archMage"));
+	const auto masterGenie = CreatureID(CreatureID::decode("core:masterGenie"));
+	ASSERT_EQ(towerTown->getTown()->creatures[3].back(), archMage);
+	ASSERT_EQ(towerTown->getTown()->creatures[4].back(), masterGenie);
+
+	const int mageGrowthBefore = towerTown->getGrowthInfo(3).totalGrowth();
+	const int genieGrowthBefore = towerTown->getGrowthInfo(4).totalGrowth();
+	towerTown->addBuilding(BuildingID::SPECIAL_3);
+	EXPECT_EQ(towerTown->getGrowthInfo(3).totalGrowth(), mageGrowthBefore + 1);
+	EXPECT_EQ(towerTown->getGrowthInfo(4).totalGrowth(), genieGrowthBefore);
+
+	const auto sulfurBefore = infernoTown->dailyIncome()[EGameResID::SULFUR];
+	infernoTown->addBuilding(BuildingID::SPECIAL_2);
+	EXPECT_EQ(infernoTown->dailyIncome()[EGameResID::SULFUR], sulfurBefore + 1);
+}

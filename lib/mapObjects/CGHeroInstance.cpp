@@ -624,6 +624,20 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		secSkills = std::move(convertedSkills);
 	}
 
+	// Authored New Horizons hero prototypes may select active perks at
+	// creation. The selection is stored in the hero state, so it is not
+	// repeated when loading a saved hero or when legacy rules are active.
+	if(creationInitialization && newHorizonsHeroes::usesPerkRules(perkState.rules))
+	{
+		for(const auto & selection : getHeroType()->startingPerks)
+		{
+			const int rank = getPerkSkillRank(selection.skillId);
+			if(rank <= 0)
+				throw std::runtime_error("New Horizons hero starting perk requires missing skill " + selection.skillId);
+			perkState.select(selection.skillId, selection.perkId, rank);
+		}
+	}
+
 	setFormation(EArmyFormation::LOOSE);
 	if (!stacksCount()) //standard army//initial army
 	{
@@ -1205,9 +1219,14 @@ bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 {
 	if(!spell || !newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spell->getId()))
 		return false;
-	if(!newHorizonsMagic::hasSchoolProficiency(this, spell->getId()))
+	if(isNewHorizonsSpellExcluded(spell->getId()))
 		return false;
 	const bool inSpellBook = spellbookContainsSpell(spell->getId()) && hasSpellbook();
+	// A spell already inscribed in the hero's spellbook is known and castable.
+	// School proficiency governs learning new spells and non-inscribed sources;
+	// it must never invalidate an authored or previously learned spellbook entry.
+	if(!inSpellBook && !newHorizonsMagic::hasSchoolProficiency(this, spell->getId()))
+		return false;
 
 	if(spell->isSpecial())
 	{
@@ -1232,6 +1251,8 @@ bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned) const
 {
 	if(!spell || !newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spell->getId()))
+		return false;
+	if(isNewHorizonsSpellExcluded(spell->getId()))
 		return false;
 	if(!hasSpellbook())
 		return false;
@@ -1592,6 +1613,8 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 	std::vector<BonusSourceID> sources;
 	if(!newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spellId))
 		return sources;
+	if(isNewHorizonsSpellExcluded(spellId))
+		return sources;
 
 	if(hasSpellbook() && spellbookContainsSpell(spellId))
 		sources.emplace_back(getArt(ArtifactPosition::SPELLBOOK)->getId());
@@ -1622,6 +1645,13 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 	}
 
 	return sources;
+}
+
+bool CGHeroInstance::isNewHorizonsSpellExcluded(const SpellID & spell) const
+{
+	if(!newHorizonsMagic::rulesActive(getMagicRules()) || !getHeroType())
+		return false;
+	return vstd::contains(getHeroType()->excludedSpells, spell);
 }
 
 void CGHeroInstance::removeSpellbook()

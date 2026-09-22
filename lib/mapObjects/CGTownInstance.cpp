@@ -200,6 +200,21 @@ GrowthInfo CGTownInstance::getGrowthInfo(int level) const
 	for(const auto & b : *bonuses)
 		ret.entries.emplace_back(b->val, b->Description(cb));
 
+	// New Horizons' Tower Library is intentionally narrower than the legacy
+	// library bonus: it affects only Mage and Arch Mage growth.  A generic
+	// CREATURE_GROWTH bonus cannot express that distinction here because this
+	// query runs on the town node (not a creature node), so apply the authored
+	// effect at the authoritative town-growth boundary.
+	if(newHorizonsMagic::rulesActive(cb->getMagicRules())
+		&& getFactionID() == FactionID::TOWER
+		&& hasBuilt(BuildingID::SPECIAL_3))
+	{
+		const auto mage = CreatureID(CreatureID::decode("core:mage"));
+		const auto archMage = CreatureID(CreatureID::decode("core:archMage"));
+		if(creature->getId() == mage || creature->getId() == archMage)
+			ret.entries.emplace_back(subID, BuildingID::SPECIAL_3, 1);
+	}
+
 	int dwellingBonus = 0;
 	if(const PlayerState *p = cb->getPlayerState(tempOwner, false))
 	{

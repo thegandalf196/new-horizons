@@ -137,6 +137,18 @@ void CHeroHandler::loadHeroSkills(CHero * hero, const JsonNode & node) const
 			hero->spells.insert(SpellID(spellID));
 		});
 	}
+
+	for(const JsonNode & perk : node["startingPerks"].Vector())
+		hero->startingPerks.push_back({perk["skill"].String(), perk["perk"].String()});
+
+	for(const JsonNode & spell : node["excludedSpells"].Vector())
+	{
+		LIBRARY->identifiers()->requestIdentifier("spell", spell,
+		[=](si32 spellID)
+		{
+			hero->excludedSpells.insert(SpellID(spellID));
+		});
+	}
 }
 
 std::vector<std::shared_ptr<Bonus>> CHeroHandler::createCreatureSpecialty(CreatureID cid, int fixedLevel, int growthPerStep) const

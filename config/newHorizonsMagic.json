@@ -176,6 +176,22 @@
 				"powerCoefficient": 18
 			}
 		},
+		"new-horizons:masterChainLightning": {
+			"schools": [
+				"new-horizons:havoc"
+			],
+			"level": 4,
+			"costs": [
+				17,
+				17,
+				17,
+				17
+			],
+			"directDamage": {
+				"base": 130,
+				"powerCoefficient": 18
+			}
+		},
 		"core:clone": {
 			"schools": [
 				"new-horizons:sorcery"

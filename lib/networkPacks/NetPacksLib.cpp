@@ -557,6 +557,11 @@ void SetNewHorizonsAdventureSpellState::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetNewHorizonsAdventureSpellState(*this);
 }
 
+void SetNewHorizonsCastleGateState::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetNewHorizonsCastleGateState(*this);
+}
+
 void ShowWorldViewEx::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitShowWorldViewEx(*this);

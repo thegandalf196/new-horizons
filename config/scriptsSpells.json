@@ -47,6 +47,8 @@
 				"ignoreImmunity" : { "type" : "boolean" },
 				"chainLength" : { "type" : "number" },
 				"chainFactor" : { "type" : "number" },
+				"chainFactorPerHeroLevel" : { "type" : "number" },
+				"chainFactorMaximum" : { "type" : "number" },
 				"killByPercentage" : { "type" : "boolean" },
 				"killByCount" : { "type" : "boolean" },
 				"destroyRemains" : { "type" : "boolean" }

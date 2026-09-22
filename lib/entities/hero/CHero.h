@@ -15,6 +15,7 @@
 
 #include "../../bonuses/BonusList.h"
 #include "../../constants/EntityIdentifiers.h"
+#include "NewHorizonsPerkState.h"
 #include "../../filesystem/ResourcePath.h"
 
 class DLL_LINKAGE CHero : public HeroType
@@ -46,6 +47,11 @@ public:
 
 	BonusList specialty;
 	std::set<SpellID> spells;
+	/// New Horizons-only perk selections authored on a hero prototype. These
+	/// are applied once when a fresh hero instance is created.
+	std::vector<newHorizonsHeroes::PerkSelection> startingPerks;
+	/// Spells unavailable to this hero from normal sources under New Horizons.
+	std::set<SpellID> excludedSpells;
 	bool haveSpellBook = false;
 	bool special = false; // hero is special and won't be placed in game (unless preset on map), e.g. campaign heroes
 	bool onlyOnWaterMap; // hero will be placed only if the map contains water

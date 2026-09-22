@@ -164,6 +164,26 @@
 			"description" : "List of starting spells, if available. This entry (even empty) will also grant spellbook",
 			"items" : { "type" : "string" }
 		},
+		"startingPerks" : {
+			"type" : "array",
+			"description" : "New Horizons perk selections applied when a fresh hero is created",
+			"maxItems" : 3,
+			"items" : {
+				"type" : "object",
+				"additionalProperties" : false,
+				"required" : [ "skill", "perk" ],
+				"properties" : {
+					"skill" : { "type" : "string" },
+					"perk" : { "type" : "string" }
+				}
+			}
+		},
+		"excludedSpells" : {
+			"type" : "array",
+			"description" : "Spells unavailable to this hero from normal learning sources under New Horizons",
+			"items" : { "type" : "string" },
+			"uniqueItems" : true
+		},
 		"texts" : {
 			"type" : "object",
 			"additionalProperties" : false,
@@ -214,4 +234,3 @@
 		}
 	}
 }
-

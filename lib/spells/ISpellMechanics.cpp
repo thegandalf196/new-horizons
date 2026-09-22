@@ -21,6 +21,7 @@
 #include "effects/Effects.h"
 
 #include "../GameLibrary.h"
+#include "../mapObjects/CGTownInstance.h"
 #include "../bonuses/Bonus.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
@@ -403,6 +404,18 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		auto value = event->getEffectPower();
 		effectPower = value.value_or(caster->getEffectPower(owner));
 		vstd::amax(effectPower, 0);
+
+		// Inferno's New Horizons Brimstone Stormclouds are a siege-only
+		// Spell Power bonus for the defending hero.  Keep it in the battle
+		// mechanics boundary so it affects every ordinary spell effect while
+		// never leaking onto an adventure-map hero or an attacking hero.
+		const auto *heroCaster = caster->getHeroCaster();
+		const auto *defendedTown = cb->battleGetDefendedTown();
+		if(heroCaster && newHorizonsMagic::rulesActive(heroCaster->getMagicRules()) && defendedTown
+			&& defendedTown->getFactionID() == FactionID::INFERNO
+			&& defendedTown->hasBuilt(BuildingID::SPECIAL_2)
+			&& cb->battleGetFightingHero(BattleSide::DEFENDER) == heroCaster)
+			effectPower += 20;
 	}
 	{
 		auto value = event->getEffectDuration();
@@ -410,6 +423,15 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		vstd::amax(effectDuration, 0); //???
 		if(!value.has_value())
 		{
+			const auto * heroCaster = caster->getHeroCaster();
+			const auto * defendedTown = cb->battleGetDefendedTown();
+			if(heroCaster && newHorizonsMagic::rulesActive(heroCaster->getMagicRules()) && defendedTown
+				&& defendedTown->getFactionID() == FactionID::INFERNO
+				&& defendedTown->hasBuilt(BuildingID::SPECIAL_2)
+				&& cb->battleGetFightingHero(BattleSide::DEFENDER) == heroCaster
+				&& effectDuration <= std::numeric_limits<decltype(effectDuration)>::max() - 20)
+				effectDuration += 20;
+
 			const int bonus = newHorizonsMagic::spellDurationBonus(
 				dynamic_cast<const CGHeroInstance *>(caster), owner->getId());
 			if(effectDuration <= std::numeric_limits<decltype(effectDuration)>::max() - bonus)
@@ -463,6 +485,8 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		if(powerBonus > 0)
 			effectPower = effectPower * (100 + powerBonus) / 100;
 	}
+	if(newHorizonsMagic::hasStormcallerPerk(dynamic_cast<const CGHeroInstance *>(caster), owner))
+		effectPower = effectPower * 115 / 100;
 	{
 		const auto value = event->getEffectValue();
 		if(value.has_value())

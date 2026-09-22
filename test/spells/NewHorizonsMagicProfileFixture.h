@@ -18,7 +18,7 @@ inline bool managedMissileProfileRequested()
 	return value && std::string(value) == "1";
 }
 
-// Replace, rather than deep-merge over installed70, before initializing a world.
+// Replace, rather than deep-merge over the installed profile, before initializing a world.
 // Registry definitions and module identity remain installed and unchanged.
 class MagicV1Baseline
 {
@@ -27,8 +27,8 @@ public:
 	MagicV1Baseline()
 	{
 		const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-		if(rules["rulesetVersion"].Integer() != 1 || rules["spells"].Struct().size() != 69)
-			throw std::runtime_error("Fixture requires unchanged canonical v1/69 magic baseline");
+		if(rules["rulesetVersion"].Integer() != 2 || rules["spells"].Struct().size() != 69)
+			throw std::runtime_error("Fixture requires unchanged canonical v2/69 magic baseline");
 		auto full = LIBRARY->settingsHandler->getFullConfig();
 		full["magic"]["newHorizons"] = rules;
 		auto replacement = std::make_unique<GameSettings>();

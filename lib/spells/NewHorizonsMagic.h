@@ -40,6 +40,7 @@ inline constexpr std::string_view METAMAGIC_FORMULA_RESERVE = "new-horizons:meta
 inline constexpr std::string_view METAMAGIC_SPELL_BUFFER = "new-horizons:metamagic.spellBuffer";
 inline constexpr std::string_view METAMAGIC_GRAND = "new-horizons:metamagic.grandMetamagic";
 inline constexpr std::string_view METAMAGIC_PERFECT_SEQUENCE = "new-horizons:metamagic.perfectSequence";
+inline constexpr std::string_view HAVOC_STORMCALLER = "new-horizons:havocMagic.stormcaller";
 
 struct DLL_LINKAGE AdventureSpellState
 {
@@ -154,6 +155,10 @@ DLL_LINKAGE int counterspellCost(int listedCost, bool countermage, bool counters
 /// the same rank/perk gates.
 DLL_LINKAGE int metamagicRank(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view perkId);
+/// Stormcaller enhances only the Spell Power-derived part of Lightning Bolt,
+/// Chain Lightning, and Master Chain Lightning. The saved-rules/perk check
+/// keeps legacy Solmyr and legacy spell damage unchanged.
+DLL_LINKAGE bool hasStormcallerPerk(const CGHeroInstance * hero, const spells::Spell * spell);
 DLL_LINKAGE int factionSpellWeight(const JsonNode & rules, FactionID faction, SpellID spell);
 DLL_LINKAGE SecondarySkill replacementSkill(const JsonNode & rules, SecondarySkill skill);
 DLL_LINKAGE bool skillAllowed(const JsonNode & rules, SecondarySkill skill, const std::set<SecondarySkill> & mapAllowed);

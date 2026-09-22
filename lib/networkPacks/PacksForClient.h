@@ -1662,6 +1662,23 @@ struct DLL_LINKAGE SetNewHorizonsAdventureSpellState : public CPackForClient
 	}
 };
 
+/// Authoritative New Horizons state for a hero's daily Inferno Castle Gate
+/// opportunity.  The server emits this after a successful teleport so the
+/// client mirror and save snapshots retain the same daily usage state.
+struct DLL_LINKAGE SetNewHorizonsCastleGateState : public CPackForClient
+{
+	ObjectInstanceID hid;
+	int32_t lastUseDay = -1;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		h & hid;
+		h & lastUseDay;
+	}
+};
+
 struct DLL_LINKAGE ShowWorldViewEx : public CPackForClient
 {
 	PlayerColor player;

@@ -337,6 +337,22 @@
 							"powerCoefficient": 18
 						}
 					},
+					"new-horizons:masterChainLightning": {
+						"schools": [
+							"new-horizons:havoc"
+						],
+						"level": 4,
+						"costs": [
+							17,
+							17,
+							17,
+							17
+						],
+						"directDamage": {
+							"base": 130,
+							"powerCoefficient": 18
+						}
+					},
 					"core:clone": {
 						"schools": [
 							"new-horizons:sorcery"
@@ -3687,10 +3703,10 @@
 								"id": "new-horizons:havocMagic.stormcaller",
 								"name": "Stormcaller",
 								"requires": "basic",
-								"description": "Lightning Bolt and Chain Lightning receive +15% to their Spell Power-derived damage components.",
+								"description": "Lightning Bolt, Chain Lightning, and Master Chain Lightning receive +15% to their Spell Power-derived damage components.",
 								"effect": {
-									"status": "planned",
-									"description": "Lightning Bolt and Chain Lightning receive +15% to their Spell Power-derived damage components."
+									"status": "active",
+									"description": "Lightning Bolt, Chain Lightning, and Master Chain Lightning receive +15% to their Spell Power-derived damage components."
 								}
 							},
 							{
@@ -6279,7 +6295,8 @@
 	},
 	"heroes": [
 		"config/heroes/fafner.json",
-		"config/heroes/halon.json"
+		"config/heroes/halon.json",
+		"config/heroes/solmyr.json"
 	],
 	"factions": [
 		"config/factions/uniqueBuildings.json",

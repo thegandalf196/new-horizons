@@ -380,6 +380,110 @@
 		},
 		"targetCondition" : {}
 	},
+	"masterChainLightning" : {
+		"name" : "Master Chain Lightning",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:havoc" : true
+		},
+		"level" : 4,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "SPELLS.def:0:19",
+			"iconScroll" : "SPELLSCR.def:0:19",
+			"iconEffect" : "SPELLINT.def:0:16",
+			"iconImmune" : "SPELLINT.def:0:16",
+			"iconScenarioBonus" : "SPELLBON.def:0:19"
+		},
+		"animation" : {
+			"affect" : [{"defName" : "C11SPA0", "verticalPosition" : "bottom"}, "C11SPA1"],
+			"ray" : {
+				"jaggedness" : 0.2,
+				"hopDelay" : 50,
+				"width" : 16,
+				"colors" : [
+					{"start" : [100, 140, 255, 96], "end" : [100, 140, 255, 48]},
+					{"start" : [255, 255, 255, 255], "end" : [255, 255, 255, 224]}
+				]
+			}
+		},
+		"sounds" : {
+			"cast" : "CHAINLTE"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Master Chain Lightning strikes up to four enemy stacks. It deals the same initial damage as Chain Lightning, retains 76% of its damage per jump at hero level 1, and gains 1 percentage point of retention per level up to 90%.",
+				"cost" : 17,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {
+						"type" : "damage",
+						"chainFactor" : 0.75,
+						"chainFactorPerHeroLevel" : 0.01,
+						"chainFactorMaximum" : 0.9,
+						"chainLength" : 4
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Master Chain Lightning strikes up to four enemy stacks. It deals the same initial damage as Chain Lightning, retains 76% of its damage per jump at hero level 1, and gains 1 percentage point of retention per level up to 90%.",
+				"cost" : 17,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {
+						"type" : "damage",
+						"chainFactor" : 0.75,
+						"chainFactorPerHeroLevel" : 0.01,
+						"chainFactorMaximum" : 0.9,
+						"chainLength" : 4
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Master Chain Lightning strikes up to five enemy stacks. It deals the same initial damage as Chain Lightning, retains 76% of its damage per jump at hero level 1, and gains 1 percentage point of retention per level up to 90%.",
+				"cost" : 17,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {
+						"type" : "damage",
+						"chainFactor" : 0.75,
+						"chainFactorPerHeroLevel" : 0.01,
+						"chainFactorMaximum" : 0.9,
+						"chainLength" : 5
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Master Chain Lightning strikes up to five enemy stacks. It deals the same initial damage as Chain Lightning, retains 76% of its damage per jump at hero level 1, and gains 1 percentage point of retention per level up to 90%.",
+				"cost" : 17,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {
+						"type" : "damage",
+						"chainFactor" : 0.75,
+						"chainFactorPerHeroLevel" : 0.01,
+						"chainFactorMaximum" : 0.9,
+						"chainLength" : 5
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {
+			"damage" : true,
+			"negative" : true
+		}
+	},
 	"spellLock" : {
 		"name" : "Spell Lock",
 		"type" : "combat",

@@ -24,6 +24,12 @@
 	"core:inferno": {
 		"town": {
 			"buildings": {
+				"special2": {
+					"name": "Brimstone Stormclouds",
+					"description": "The Brimstone Stormclouds grant the defending hero +20 Spell Power during a siege and produce 1 Sulfur per day.",
+					"produce": { "sulfur": 1 },
+					"bonuses": []
+				},
 				"special4": {
 					"name": "Order of Fire",
 					"description": "The Order of Fire sharpens each visiting hero's Spell Power.",
@@ -116,9 +122,7 @@
 						"crystal": 5,
 						"gems": 5
 					},
-					"bonuses": [
-						{ "type": "CREATURE_GROWTH", "subtype": "creatureLevel4", "val": 1 }
-					]
+					"bonuses": []
 				},
 				"special4": {
 					"name": "Arcane Reservoir",

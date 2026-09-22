@@ -283,6 +283,12 @@ void GameStatePackVisitor::visitSetNewHorizonsAdventureSpellState(SetNewHorizons
 		hero->setNewHorizonsAdventureSpellCastToday(pack.castToday);
 }
 
+void GameStatePackVisitor::visitSetNewHorizonsCastleGateState(SetNewHorizonsCastleGateState & pack)
+{
+	if(auto * hero = gs.getHero(pack.hid))
+		hero->markNewHorizonsCastleGateUsed(pack.lastUseDay);
+}
+
 void GameStatePackVisitor::visitSetMovePoints(SetMovePoints & pack)
 {
 	CGHeroInstance *hero = gs.getHero(pack.hid);
