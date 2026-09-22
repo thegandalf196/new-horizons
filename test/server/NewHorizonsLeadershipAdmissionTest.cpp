@@ -13,13 +13,52 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/modding/CModHandler.h"
+#include "../../lib/networkPacks/PacksForClient.h"
 #include "../../server/CGameHandler.h"
+#include "../../server/IGameServer.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../mock/TinyH3MBuilder.h"
 #include "../mock/TinyMapGameTest.h"
 
 namespace
 {
+class LeadershipRecordingServer final : public IGameServer
+{
+public:
+	explicit LeadershipRecordingServer(std::shared_ptr<CGameState> state)
+		: state(std::move(state))
+	{}
+
+	void setState(EServerState value) override { serverState = value; }
+	EServerState getState() const override { return serverState; }
+	bool isPlayerHost(const PlayerColor &) const override { return true; }
+	bool hasPlayerAt(PlayerColor player, GameConnectionID connection) const override
+	{
+		return player == PlayerColor(0) && connection == GameConnectionID::FIRST_CONNECTION;
+	}
+	bool hasBothPlayersAtSameConnection(PlayerColor, PlayerColor) const override { return false; }
+
+	void applyPack(CPackForClient & pack) override
+	{
+		if(dynamic_cast<SystemMessage *>(&pack))
+			++systemMessages;
+		state->apply(pack);
+	}
+
+	void sendPack(CPackForClient & pack, GameConnectionID) override
+	{
+		if(const auto * applied = dynamic_cast<const PackageApplied *>(&pack))
+			responses.push_back(*applied);
+	}
+
+	std::vector<PackageApplied> responses;
+	int systemMessages = 0;
+
+private:
+	EServerState serverState = EServerState::GAMEPLAY;
+	std::shared_ptr<CGameState> state;
+};
+
 class NewHorizonsLeadershipAdmissionTest : public TinyMapGameTest
 {
 protected:
@@ -135,4 +174,55 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, FreeTierOneDwellingKeepsUnitsAboveRem
 
     EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
     EXPECT_EQ(dwelling->creatures.front().first, 2u);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, ArrangeStacksRejectsOverCapacityAtomicallyAndAcknowledgesFailure)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0))
+		.heroGarrison({{pikeman, 17}, {pikeman, 2}});
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
+	ASSERT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	ASSERT_EQ(hero->getStackCount(SlotID(1)), 2);
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(PlayerColor(0));
+
+	ArrangeStacks rejected(2, SlotID(1), SlotID(0), hero->id, hero->id, 0);
+	rejected.player = PlayerColor(0);
+	rejected.requestID = 41;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, rejected);
+
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 2);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	EXPECT_EQ(server.systemMessages, 1);
+
+	// A legal merge remains a normal authoritative mutation after the rejected
+	// request; this guards against a client-side rollback that would block valid
+	// transfers or discard the source stack.
+	hero->setStackCount(SlotID(0), capacity->maximum - 2);
+	server.responses.clear();
+	server.systemMessages = 0;
+
+	ArrangeStacks accepted(2, SlotID(1), SlotID(0), hero->id, hero->id, 0);
+	accepted.player = PlayerColor(0);
+	accepted.requestID = 42;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, accepted);
+
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_FALSE(hero->hasStackAtSlot(SlotID(1)));
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.systemMessages, 0);
 }

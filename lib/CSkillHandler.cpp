@@ -345,7 +345,12 @@ std::set<SecondarySkill> CSkillHandler::getDefaultAllowed() const
 	std::set<SecondarySkill> result;
 
 	for (auto const & skill : objects)
-		if (!skill->isSpecial())
+		// New Horizons uses the special tag to keep its data-driven skills out
+		// of the legacy class-probability path.  They are nevertheless ordinary
+		// map-allowed skills for the New Horizons weighted level-up table.  Keep
+		// the historical exclusion for every other special skill so legacy maps
+		// and hero rules retain their original behaviour.
+		if (!skill->isSpecial() || skill->getModScope() == GameConstants::NEW_HORIZONS_MOD_SCOPE)
 			result.insert(skill->getId());
 
 	return result;

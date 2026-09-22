@@ -148,6 +148,31 @@ bool rulesActive(const JsonNode & rules)
 		&& integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION);
 }
 
+int masterChainLightningRetentionPercent(int heroLevel)
+{
+	return std::min(90, 75 + std::max(0, heroLevel));
+}
+
+std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::Spell * spell, int schoolLevel)
+{
+	if(!spell)
+		return {};
+
+	const auto description = [&spell, schoolLevel]()
+	{
+		return spell->getDescriptionTranslated(schoolLevel);
+	};
+
+	if(!hero || !rulesActive(hero->getMagicRules())
+		|| spell->getJsonKey() != "new-horizons:masterChainLightning")
+		return description();
+
+	// Keep the translated base description complete for hero-independent help
+	// surfaces, then add the live value only where a hero context exists.
+	return description() + "\n\nCurrent retention: "
+		+ std::to_string(masterChainLightningRetentionPercent(hero->level)) + "%.";
+}
+
 void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
@@ -641,5 +666,12 @@ bool hasStormcallerPerk(const CGHeroInstance * hero, const spells::Spell * spell
 	return key == "core:lightningBolt"
 		|| key == "core:chainLightning"
 		|| key == "new-horizons:masterChainLightning";
+}
+
+bool hasAnnihilatorPerk(const CGHeroInstance * hero, const spells::Spell * spell)
+{
+	return hero && spell && rulesActive(hero->getMagicRules())
+		&& hero->hasActivePerk("new-horizons:havocMagic", std::string(HAVOC_ANNIHILATOR))
+		&& spell->getJsonKey() == "new-horizons:disintegrate";
 }
 }

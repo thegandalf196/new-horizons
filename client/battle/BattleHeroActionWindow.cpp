@@ -155,7 +155,7 @@ std::string HeroCommandUI::name(HeroCommand command)
 
 BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInterface> & owner, bool ordersOnlyMode)
 	: CWindowObject(ordersOnlyMode ? SHADOW_DISABLED : 0,
-		ordersOnlyMode ? ImagePath{} : ImagePath::builtin("NH_hero_actions_back")), battle(owner), ordersOnly(ordersOnlyMode)
+		ordersOnlyMode ? ImagePath::builtin("newHorizonsOrdersBackground.png") : ImagePath::builtin("NH_hero_actions_back")), battle(owner), ordersOnly(ordersOnlyMode)
 {
 	if(ordersOnly)
 	{
@@ -215,8 +215,9 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 void BattleHeroActionWindow::createOrdersLayout()
 {
 	// Every Order has a distinct provisional painted icon. The golden gauntlet
-	// remains the shared Orders entry button in the battle bar.
-	labels.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, 0, 640, 500), ColorRGBA(24, 30, 37, 255), ColorRGBA(156, 132, 85, 255)));
+	// remains the shared Orders entry button in the battle bar. The window's
+	// generated H3 dialog texture supplies the frame and parchment-like depth;
+	// do not cover it with the old flat grey rectangle.
 	labels.push_back(std::make_shared<CLabel>(320, 27, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Orders"));
 	labels.push_back(std::make_shared<CLabel>(320, 53, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "One shared hero action: Spell or Order"));
 	state = std::make_shared<CLabel>(320, 78, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
@@ -410,6 +411,10 @@ void BattleHeroActionWindow::refresh()
 		// activation-time recheck can explain that no legal footprint pair exists.
 		// It remains visibly marked unavailable and never submits a packet.
 		entry.second->block(!available && !protectPairUnavailable);
+		// CButton::block removes SHOW_POPUP along with left-click/key input.
+		// Restore only right-click help so unavailable Orders remain inspectable
+		// without making a disabled command issuable.
+		entry.second->addUsedEvents(SHOW_POPUP);
 		anyCommand |= available;
 		std::string reason = commonReason();
 		if(reason.empty() && !supported)

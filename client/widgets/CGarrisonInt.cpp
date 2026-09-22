@@ -17,6 +17,7 @@
 
 #include "../GameEngine.h"
 #include "../GameInstance.h"
+#include "../UIHelper.h"
 #include "../gui/WindowHandler.h"
 #include "render/IImage.h"
 #include "../windows/CCreatureWindow.h"
@@ -37,6 +38,105 @@
 #include "../../lib/networkPacks/ArtifactLocation.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/gameState/UpgradeInfo.h"
+
+bool CGarrisonInt::checkLeadershipResult(const CArmedInstance * destination, CreatureID creature, TQuantity resultingCount) const
+{
+	return UIHelper::checkLeadershipResult(destination, creature, resultingCount);
+}
+
+bool CGarrisonInt::checkLeadershipTransfer(const CArmedInstance * source, const CArmedInstance * destination,
+	SlotID sourceSlot, SlotID destinationSlot, TQuantity amount) const
+{
+	return UIHelper::checkLeadershipTransfer(source, destination, sourceSlot, destinationSlot, amount);
+}
+
+bool CGarrisonInt::checkLeadershipSwap(const CArmedInstance * leftArmy, const CArmedInstance * rightArmy,
+	SlotID leftSlot, SlotID rightSlot) const
+{
+	const auto * leftCreature = leftArmy ? leftArmy->getCreature(leftSlot) : nullptr;
+	const auto * rightCreature = rightArmy ? rightArmy->getCreature(rightSlot) : nullptr;
+	if(!leftCreature || !rightCreature)
+		return checkLeadershipTransfer(leftArmy, rightArmy, leftSlot, rightSlot,
+			leftCreature ? leftArmy->getStackCount(leftSlot) : 0)
+			&& checkLeadershipTransfer(rightArmy, leftArmy, rightSlot, leftSlot,
+				rightCreature ? rightArmy->getStackCount(rightSlot) : 0);
+
+	// A true swap replaces each stack; it does not merge equal creature types.
+	return checkLeadershipResult(rightArmy, leftCreature->getId(), leftArmy->getStackCount(leftSlot))
+		&& checkLeadershipResult(leftArmy, rightCreature->getId(), rightArmy->getStackCount(rightSlot));
+}
+
+bool CGarrisonInt::checkLeadershipBulkMove(const CArmedInstance * source, const CArmedInstance * destination,
+	SlotID protectedSourceSlot) const
+{
+	const auto * destinationHero = dynamic_cast<const CGHeroInstance *>(destination);
+	if(!source || !destinationHero)
+		return true;
+
+	struct PlannedMove
+	{
+		SlotID source;
+		SlotID destination;
+		TQuantity count;
+	};
+
+	auto freeSlots = destination->getFreeSlots();
+	bool allTroopsMoved = true;
+	std::map<SlotID, TQuantity> plannedDestinationCounts;
+	for(const auto & slot : destination->Slots())
+		plannedDestinationCounts[slot.first] = slot.second->getCount();
+
+	std::vector<PlannedMove> moves;
+	for(const auto & slot : source->Slots())
+	{
+		auto targetSlot = destination->getSlotFor(slot.second->getCreature());
+		if(destination->slotEmpty(targetSlot))
+		{
+			if(freeSlots.empty())
+			{
+				allTroopsMoved = false;
+				continue;
+			}
+			targetSlot = freeSlots.front();
+			freeSlots.erase(freeSlots.begin());
+		}
+
+		moves.push_back({slot.first, targetSlot, slot.second->getCount()});
+	}
+
+	// Keep one unit in the source when this operation would otherwise empty it,
+	// matching CGameHandler::bulkMoveArmy exactly.
+	if(allTroopsMoved)
+	{
+		const auto sourceStack = source->getStackPtr(protectedSourceSlot);
+		if(sourceStack && sourceStack->getCount() == 1)
+		{
+			vstd::erase_if(moves, [protectedSourceSlot](const PlannedMove & move)
+			{
+				return move.source == protectedSourceSlot;
+			});
+		}
+		else
+		{
+			for(auto & move : moves)
+				if(move.source == protectedSourceSlot)
+					--move.count;
+		}
+	}
+
+	for(const auto & move : moves)
+	{
+		if(move.count <= 0)
+			continue;
+		const auto * creature = source->getCreature(move.source);
+		if(!creature)
+			continue;
+		plannedDestinationCounts[move.destination] += move.count;
+		if(!checkLeadershipResult(destination, creature->getId(), plannedDestinationCounts[move.destination]))
+			return false;
+	}
+	return true;
+}
 
 void CGarrisonSlot::setHighlight(bool on)
 {
@@ -362,13 +462,24 @@ void CGarrisonSlot::clickPressed(const Point & cursorPosition)
 				refr = split();
 			}
 			else if(!creature && lastHeroStackSelected) // split all except last creature
-				GAME->interface()->cb->splitStack(selectedObj, owner->army(upg), selection->ID, ID, selection->myStack->getCount() - 1);
+			{
+				const auto amount = selection->myStack->getCount() - 1;
+				if(owner->checkLeadershipTransfer(selectedObj, owner->army(upg), selection->ID, ID, amount))
+					GAME->interface()->cb->splitStack(selectedObj, owner->army(upg), selection->ID, ID, amount);
+			}
 			else if(creature != selection->creature) // swap
-				GAME->interface()->cb->swapCreatures(owner->army(upg), selectedObj, ID, selection->ID);
+			{
+				if(owner->checkLeadershipSwap(owner->army(upg), selectedObj, ID, selection->ID))
+					GAME->interface()->cb->swapCreatures(owner->army(upg), selectedObj, ID, selection->ID);
+			}
 			else if(lastHeroStackSelected) // merge last stack to other hero stack
 				refr = split();
 			else // merge
-				GAME->interface()->cb->mergeStacks(selectedObj, owner->army(upg), selection->ID, ID);
+			{
+				if(owner->checkLeadershipTransfer(selectedObj, owner->army(upg), selection->ID, ID,
+					selection->myStack->getCount()))
+					GAME->interface()->cb->mergeStacks(selectedObj, owner->army(upg), selection->ID, ID);
+			}
 		}
 		if(refr)
 		{
@@ -645,6 +756,9 @@ void CGarrisonInt::splitStacks(const CGarrisonSlot * from, const CArmedInstance 
 {
 	if(showStackTransferError(from))
 		return;
+	if(!checkLeadershipTransfer(armedObjs[from->upg], armyDest, from->ID, slotDest,
+		amount - (armyDest->getStackCount(slotDest))))
+		return;
 
 	GAME->interface()->cb->splitStack(armedObjs[from->upg], armyDest, from->ID, slotDest, amount);
 }
@@ -703,6 +817,9 @@ void CGarrisonInt::moveStackToAnotherArmy(const CGarrisonSlot * selected)
 
 	if(!srcAmount)
 		return;
+	if(!checkLeadershipTransfer(srcArmy, destArmy, srcSlot, destSlot,
+		srcAmount))
+		return;
 
 	if(!isDestSlotEmpty || isLastStack)
 	{
@@ -735,6 +852,8 @@ void CGarrisonInt::bulkMoveArmy(const CGarrisonSlot * selected)
 		return;
 
 	const auto srcSlot = selected->ID;
+	if(!checkLeadershipBulkMove(srcArmy, destArmy, srcSlot))
+		return;
 	GAME->interface()->cb->bulkMoveArmy(srcArmy->id, destArmy->id, srcSlot);
 }
 
@@ -746,6 +865,13 @@ void CGarrisonInt::bulkMergeStacks(const CGarrisonSlot * selected)
 	const auto type = selected->upg;
 
 	if(!armedObjs[type]->hasCreatureSlots(selected->creature, selected->ID))
+		return;
+
+	TQuantity resultingCount = selected->myStack->getCount();
+	for(const auto & slot : armedObjs[type]->Slots())
+		if(slot.first != selected->ID && slot.second->getCreatureID() == selected->creature->getId())
+			resultingCount += slot.second->getCount();
+	if(!checkLeadershipResult(armedObjs[type], selected->creature->getId(), resultingCount))
 		return;
 
 	GAME->interface()->cb->bulkMergeStacks(armedObjs[type]->id, selected->ID);

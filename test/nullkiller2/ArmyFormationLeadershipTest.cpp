@@ -61,6 +61,26 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, MergePreflightRejectsAnOversizedI
 	EXPECT_FALSE(NK2AI::armyFormation::canReceiveStack(destination, pikeman, capacity->maximum + 1));
 }
 
+TEST_F(NewHorizonsArmyFormationLeadershipTest, WholeArmyMergePreflightRejectsAnOversizedGarrisonSwap)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	startGame({{pikeman, 17}});
+
+	const auto * destination = findHeroAt(HERO_POS);
+	ASSERT_NE(destination, nullptr);
+	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
+	ASSERT_EQ(capacity->maximum, 17);
+
+	CGHeroInstance source(nullptr);
+	ASSERT_TRUE(source.setCreature(SlotID(0), pikeman, 1));
+
+	EXPECT_FALSE(NK2AI::armyFormation::canMergeArmies(&source, destination));
+
+	source.clearSlots();
+	EXPECT_TRUE(NK2AI::armyFormation::canMergeArmies(&source, destination));
+}
+
 TEST_F(NewHorizonsArmyFormationLeadershipTest, SplitPreflightAllowsOnlyTheLegalFinalDestinationCount)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));

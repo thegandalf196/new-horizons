@@ -12,6 +12,7 @@
 #include "UIHelper.h"
 
 #include "widgets/CComponent.h"
+#include "CPlayerInterface.h"
 
 #include "../lib/mapObjects/CGHeroInstance.h"
 #include "../lib/entities/hero/NewHorizonsNecromancy.h"
@@ -178,4 +179,42 @@ std::string UIHelper::getEagleEyeInfoWindowText(const CGHeroInstance & hero, con
 	}
 	text.appendRawString(".");
 	return text.toString(&GAME->translator());
+}
+
+bool UIHelper::checkLeadershipResult(const CArmedInstance * destination, CreatureID creature, TQuantity resultingCount)
+{
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(destination);
+	if(!hero)
+		return true;
+
+	const auto capacity = hero->getLeadershipSlotCapacity(creature);
+	if(!capacity || capacity->accepts(resultingCount))
+		return true;
+
+	GAME->interface()->showInfoDialog(
+		"Leadership limit exceeded: this hero can command at most "
+		+ std::to_string(capacity->maximum) + " creatures of this type ("
+		+ std::to_string(capacity->requirement) + " Leadership each; hero Leadership "
+		+ std::to_string(capacity->leadership) + ").");
+	return false;
+}
+
+bool UIHelper::checkLeadershipTransfer(const CArmedInstance * source, const CArmedInstance * destination,
+	SlotID sourceSlot, SlotID destinationSlot, TQuantity amount)
+{
+	if(!source || !destination || amount <= 0)
+		return true;
+
+	const auto * sourceCreature = source->getCreature(sourceSlot);
+	if(!sourceCreature)
+		return true;
+
+	const auto * destinationCreature = destination->getCreature(destinationSlot);
+	if(destinationCreature && destinationCreature != sourceCreature)
+		return true; // The server's normal type validation reports this case.
+
+	const TQuantity existing = destinationCreature
+		? destination->getStackCount(destinationSlot)
+		: 0;
+	return checkLeadershipResult(destination, sourceCreature->getId(), existing + amount);
 }

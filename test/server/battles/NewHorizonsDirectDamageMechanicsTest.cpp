@@ -604,6 +604,128 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuth
 	EXPECT_EQ(attackerSideHero->mana, mana - 10);
 }
 
+TEST_F(NewHorizonsDirectDamageMechanicsTest, ConductorUsesAuthoredPerJumpMultipliersInPredictionAndCast)
+{
+	forceRealHeroScale = true;
+	usePerks = true;
+	selectedSpellKey = "core:chainLightning";
+	prepare();
+
+	const auto havoc = SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"));
+	ASSERT_TRUE(havoc.hasValue());
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:havocMagic", "new-horizons:havocMagic.conductor"});
+
+	std::vector<CStack *> chained{target};
+	for(const auto hex : target->getSurroundingHexes())
+	{
+		if(chained.size() == 4)
+			break;
+		chained.push_back(addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), hex, 1000));
+	}
+	ASSERT_EQ(chained.size(), 4u);
+	std::vector<int64_t> healthBefore;
+	for(const auto * stack : chained)
+		healthBefore.push_back(stack->getAvailableHealth());
+
+	ControlledCaster caster(attackerSideHero);
+	const auto firstPredicted = predict(caster);
+	const auto firstActual = apply(caster);
+	EXPECT_EQ(firstActual, firstPredicted);
+
+	std::vector<int64_t> damages;
+	for(size_t index = 0; index < chained.size(); ++index)
+	{
+		const auto damage = healthBefore[index] - chained[index]->getAvailableHealth();
+		if(damage > 0)
+			damages.push_back(damage);
+	}
+	ASSERT_EQ(damages.size(), 4u);
+	std::sort(damages.begin(), damages.end(), std::greater<int64_t>());
+	const auto initial = damages.front();
+	EXPECT_EQ(damages[1], initial * 75 / 100);
+	EXPECT_EQ(damages[2], initial * 55 / 100);
+	EXPECT_EQ(damages[3], initial * 40 / 100);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, ConductorNeverReplacesBetterLevelScaledMasterChainRetention)
+{
+	forceRealHeroScale = true;
+	usePerks = true;
+	selectedSpellKey = "new-horizons:masterChainLightning";
+	prepare();
+
+	const auto havoc = SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"));
+	ASSERT_TRUE(havoc.hasValue());
+	attackerSideHero->level = 12;
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:havocMagic", "new-horizons:havocMagic.conductor"});
+
+	std::vector<CStack *> chained{target};
+	for(const auto hex : target->getSurroundingHexes())
+	{
+		if(chained.size() == 4)
+			break;
+		chained.push_back(addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), hex, 1000));
+	}
+	ASSERT_EQ(chained.size(), 4u);
+	std::vector<int64_t> healthBefore;
+	for(const auto * stack : chained)
+		healthBefore.push_back(stack->getAvailableHealth());
+
+	ControlledCaster caster(attackerSideHero);
+	EXPECT_EQ(apply(caster), predict(caster));
+
+	std::vector<int64_t> damages;
+	for(size_t index = 0; index < chained.size(); ++index)
+	{
+		const auto damage = healthBefore[index] - chained[index]->getAvailableHealth();
+		if(damage > 0)
+			damages.push_back(damage);
+	}
+	ASSERT_EQ(damages.size(), 4u);
+	std::sort(damages.begin(), damages.end(), std::greater<int64_t>());
+	const auto initial = damages.front();
+	EXPECT_EQ(damages[1], initial * 87 / 100);
+	EXPECT_EQ(damages[2], initial * 7569 / 10000);
+	EXPECT_EQ(damages[3], initial * 658503 / 1000000);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, AnnihilatorIgnoresTwentyPercentMagicalReductionAndMatchesPrediction)
+{
+	forceRealHeroScale = true;
+	usePerks = true;
+	selectedSpellKey = "new-horizons:disintegrate";
+	prepare();
+
+	const auto havoc = SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"));
+	ASSERT_TRUE(havoc.hasValue());
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+
+	const auto reduction = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::CREATURE_ABILITY, 50,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY));
+	target->addNewBonus(reduction);
+
+	ControlledCaster caster(attackerSideHero);
+	const auto baseline = apply(caster);
+	EXPECT_EQ(baseline, 120);
+
+	auto * annihilatorTarget = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"),
+		BattleHex(rightHex - 1), 1000);
+	annihilatorTarget->addNewBonus(std::make_shared<Bonus>(*reduction));
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:havocMagic", "new-horizons:havocMagic.annihilator"});
+	target = annihilatorTarget;
+
+	const auto predicted = predict(caster);
+	const auto actual = apply(caster);
+	EXPECT_EQ(predicted, actual);
+	EXPECT_EQ(actual, 144);
+}
+
 TEST_F(NewHorizonsDirectDamageMechanicsTest, TemporalistExtendsOnlyOrdinaryHeroSlowDuration)
 {
 	forceRealHeroScale = true;

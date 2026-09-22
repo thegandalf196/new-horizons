@@ -3,6 +3,29 @@ local BattleLog = require("battleLog")
 local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
+local HAVOC_CONDUCTOR_SKILL = "new-horizons:havocMagic"
+local HAVOC_CONDUCTOR_PERK = "new-horizons:havocMagic.conductor"
+
+local function conductorMultiplier(mechanics, targetIndex)
+	if targetIndex <= 0 then return nil end
+	local hero = mechanics:getHeroCaster()
+	local spell = mechanics:getSpell()
+	if not hero or not spell or not hero:hasActivePerk(HAVOC_CONDUCTOR_SKILL, HAVOC_CONDUCTOR_PERK) then
+		return nil
+	end
+	local key = spell:getJsonKey()
+	if key ~= "core:chainLightning" and key ~= "new-horizons:masterChainLightning" then
+		return nil
+	end
+	-- Conductor's values are multipliers from the initial hit, rather than
+	-- another geometric per-hop factor.  The final entry also covers the
+	-- fifth target of Master Chain Lightning.
+	local multipliers = { 1.00, 0.75, 0.55, 0.40, 0.30 }
+	-- targetIndex zero is the initial target, so Lua's one-based table index is
+	-- the battle target index plus one: 100% / 75% / 55% / 40% / 30%.
+	return multipliers[targetIndex + 1]
+end
+
 function Script:isReceptive(mechanics, unit)
 	local spell = mechanics:getSpell()
 	if spell:isMagical() then
@@ -52,7 +75,15 @@ function Script:damageForTarget(targetIndex, mechanics, unit)
 				chainFactor = math.min(chainFactor, self.chainFactorMaximum)
 			end
 		end
-		base = math.floor((chainFactor ^ targetIndex) * base)
+		local multiplier = chainFactor ^ targetIndex
+		local conductor = conductorMultiplier(mechanics, targetIndex)
+		-- Conductor replaces ordinary Chain Lightning's worse falloff, but it
+		-- must never erase Master Chain Lightning's level-scaled specialty.
+		-- When both apply, retain the better multiplier for this jump.
+		if conductor then
+			multiplier = math.max(multiplier, conductor)
+		end
+		base = math.floor(multiplier * base)
 	end
 	return base
 end

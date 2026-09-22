@@ -12,11 +12,13 @@
 #include "StdInc.h"
 
 #include "../lib/CSoundBase.h"
+#include "../lib/constants/EntityIdentifiers.h"
 #include "../lib/texts/MetaString.h"
 
 struct MoveArtifactInfo;
 struct Component;
 class CArtifactSet;
+class CArmedInstance;
 class CGHeroInstance;
 class CStackBasicDescriptor;
 
@@ -38,4 +40,10 @@ namespace UIHelper
     std::string getNewHorizonsNecromancyInfoWindowText(const newHorizonsNecromancy::NecromancyResult & result);
     std::string getArtifactsInfoWindowText();
     std::string getEagleEyeInfoWindowText(const CGHeroInstance & hero, const std::set<SpellID> & spells);
+    /// Client-side fast path for the authoritative per-stack Leadership rule.
+    /// A false result only suppresses this UI request; the server validates it
+    /// again against current state.
+    bool checkLeadershipResult(const CArmedInstance * destination, CreatureID creature, TQuantity resultingCount);
+    bool checkLeadershipTransfer(const CArmedInstance * source, const CArmedInstance * destination,
+        SlotID sourceSlot, SlotID destinationSlot, TQuantity amount);
 }

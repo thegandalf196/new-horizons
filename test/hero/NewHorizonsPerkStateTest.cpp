@@ -225,6 +225,36 @@ TEST(NewHorizonsPerkState, OfferIsDeterministicBoundedAndUsesOnlyLearnedEligible
 	EXPECT_TRUE(saved.prepareOffer([](const std::string &) { return 0; }, 42).empty());
 }
 
+TEST(NewHorizonsPerkState, ExpertHavocWithBasicStormcallerOffersLaterTiers)
+{
+	auto saved = state();
+	constexpr auto havoc = "new-horizons:havocMagic";
+	constexpr auto stormcaller = "new-horizons:havocMagic.stormcaller";
+	constexpr auto conductor = "new-horizons:havocMagic.conductor";
+	constexpr auto annihilator = "new-horizons:havocMagic.annihilator";
+	saved.select(havoc, stormcaller, 1);
+
+	const auto offer = saved.prepareOffer([](const std::string & skillId)
+	{
+		return skillId == "new-horizons:havocMagic" ? 3 : 0;
+	}, 0xC0D0C7u);
+	ASSERT_EQ(offer.size(), 2u);
+	for(const auto & candidate : offer)
+	{
+		EXPECT_EQ(candidate.selection.skillId, havoc);
+		EXPECT_GE(candidate.requiredRank, 2);
+		EXPECT_LE(candidate.requiredRank, 3);
+	}
+	EXPECT_TRUE(std::any_of(offer.begin(), offer.end(), [conductor](const auto & candidate)
+	{
+		return candidate.selection.perkId == conductor;
+	}));
+	EXPECT_TRUE(std::any_of(offer.begin(), offer.end(), [annihilator](const auto & candidate)
+	{
+		return candidate.selection.perkId == annihilator;
+	}));
+}
+
 TEST(NewHorizonsPerkState, OfferExcludesPlannedPerksAndCanBeEmpty)
 {
 	auto saved = state();

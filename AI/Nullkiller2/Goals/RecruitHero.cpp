@@ -59,7 +59,7 @@ void RecruitHero::accept(AIGateway * aiGw)
 
 	if(t->getVisitingHero())
 	{
-		aiGw->cc->swapGarrisonHero(t);
+		aiGw->swapGarrisonHero(t);
 	}
 
 	if(t->getVisitingHero())

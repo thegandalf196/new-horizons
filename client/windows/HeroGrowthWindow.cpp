@@ -579,17 +579,47 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 					icon->scaleTo(Point(20, 20));
 					panel.push_back(icon);
 					elements.push_back(icon);
+					// Keep the owning Skill visible beside the perk art.  The text
+					// identifies it, while this native icon makes the relationship
+					// immediately recognizable in a dense ten-perk pool.
+					if(const auto parentSkill = newHorizonsPerkHelp::skillEntity(skillId))
+					{
+						try
+						{
+							const int iconFrame = parentSkill->toSkill()->getIconIndex(
+								static_cast<uint8_t>(std::clamp(hero.getPerkSkillRank(skillId), 1, 3)));
+							const auto skillIcon = std::make_shared<CAnimImage>(AnimationPath::builtin("SECSKILL"), iconFrame,
+								Rect(x + 25, y + 5, 16, 16));
+							panel.push_back(skillIcon);
+							elements.push_back(skillIcon);
+						}
+						catch(const std::exception &)
+						{
+							// Unknown saved skill art must not make the read-only pool fail.
+						}
+					}
 					const std::string cardText = status + ": " + perk.name + "\n"
 						+ "Tier: " + newHorizonsPerkHelp::tierName(requiredRank) + " | Skill: " + skill->name;
-					const auto caption = std::make_shared<CMultiLineLabel>(Rect(x + 28, y + 1, cardWidth - 32, cardHeight - 2),
+					const auto caption = std::make_shared<CMultiLineLabel>(Rect(x + 44, y + 1, cardWidth - 48, cardHeight - 2),
 						FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, cardText);
 					panel.push_back(caption);
 					elements.push_back(caption);
 					const auto help = newHorizonsPerkHelp::format(&hero, skillId, perk.name,
 						newHorizonsPerkHelp::tierName(requiredRank), perk.description)
 						+ "\n\nStatus: " + status + (reason.empty() ? std::string() : "\nReason: " + reason);
-					const auto area = std::make_shared<LRClickableAreaWText>(Rect(x, y, cardWidth, cardHeight),
-						status + ": " + perk.name, help);
+					std::shared_ptr<LRClickableAreaWText> area;
+					if(const auto parentSkill = newHorizonsPerkHelp::skillEntity(skillId))
+					{
+						const auto componentArea = std::make_shared<LRClickableAreaWTextComp>(Rect(x, y, cardWidth, cardHeight),
+							ComponentType::SEC_SKILL);
+						componentArea->component.subType = *parentSkill;
+						componentArea->component.value = std::clamp(hero.getPerkSkillRank(skillId), 1, 3);
+						componentArea->text = help;
+						area = componentArea;
+					}
+					else
+						area = std::make_shared<LRClickableAreaWText>(Rect(x, y, cardWidth, cardHeight),
+							status + ": " + perk.name, help);
 					panel.push_back(area);
 					elements.push_back(area);
 				}

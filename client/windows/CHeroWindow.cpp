@@ -263,7 +263,9 @@ void CHeroWindow::configureNewHorizonsLayout()
 	name->setMaxWidth(114);
 	move(title, Point(152, 61));
 	title->setMaxWidth(140);
-	move(growthButton, Point(402, 166));
+	// The compact growth glyph sits just after the Skills / learned perks
+	// heading; keep the existing 24px art readable without a wide dead gap.
+	move(growthButton, Point(396, 166));
 	move(portraitImage, Point(16, 18));
 	move(portraitArea, Point(16, 18));
 	move(portraitWikiArea, Point(16, 18));
@@ -341,13 +343,13 @@ void CHeroWindow::configureNewHorizonsLayout()
 	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44), "Siege rating available to this hero");
 	for(const auto & field : {std::make_pair(Point(152, 88), "Leadership"), std::make_pair(Point(152, 132), "Movement"), std::make_pair(Point(292, 132), "Siege")})
 	{
-		if(std::string(field.second) == "Movement")
-			labels.push_back(std::make_shared<CLabel>(field.first.x + 4, field.first.y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "TBD", 36));
-		else
-		{
-			const auto iconKey = std::string(field.second) == "Leadership" ? "NH_capability_leadership" : "NH_capability_siege";
-			capabilityIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin(iconKey), 0, 0, field.first.x, field.first.y));
-		}
+		const std::string fieldName = field.second;
+		// Movement is a first-class New Horizons derived attribute just like
+		// Leadership and Siege.  Keep its glyph in the same visual slot so the
+		// value is not presented as an unexplained text-only exception.
+		const auto iconKey = fieldName == "Leadership" ? "NH_capability_leadership"
+			: fieldName == "Movement" ? "NH_hero_movement_32" : "NH_capability_siege";
+		capabilityIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin(iconKey), 0, 0, field.first.x, field.first.y));
 		labels.push_back(std::make_shared<CLabel>(field.first.x + 50, field.first.y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, field.second, 88));
 	}
 	// Keep the current total and class growth in separate fields, matching the

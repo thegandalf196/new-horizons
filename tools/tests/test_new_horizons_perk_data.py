@@ -55,6 +55,8 @@ ACTIVE_PERKS = {
     "new-horizons:metamagic.perfectSequence",
     "new-horizons:battlecraft.entrench",
     "new-horizons:havocMagic.stormcaller",
+    "new-horizons:havocMagic.conductor",
+    "new-horizons:havocMagic.annihilator",
 }
 ACTIVE_RANK_SKILLS = {
     "new-horizons:offense",

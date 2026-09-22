@@ -640,10 +640,19 @@ void CGameHandler::handleReceivedPack(GameConnectionID connection, CPackForServe
 		if(result)
 			logGlobal->trace("Message %s successfully applied!", typeid(pack).name());
 		else
-			complain((boost::format("Got false in applying %s... that request must have been fishy!")
-				% typeid(pack).name()).str());
+		{
+			// A rejected request is normally an expected result of authoritative
+			// validation (for example, an ArrangeStacks request that would exceed
+			// Leadership).  The validator has already sent the actionable reason
+			// to the player.  Do not turn that ordinary user error into a second
+			// broadcast claiming that the request was "fishy".
+			logGlobal->debug("Message %s was rejected by authoritative validation.", typeid(pack).name());
+		}
 
-		sendPackageResponse(true);
+		// The client uses this acknowledgement to retire/predict requests.  A
+		// rejected mutation must be reported as rejected so it cannot be treated
+		// as a successful transfer or leave a prediction applied locally.
+		sendPackageResponse(result);
 	}
 }
 

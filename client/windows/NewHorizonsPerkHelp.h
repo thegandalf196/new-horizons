@@ -54,6 +54,25 @@ inline std::optional<newHorizonsHeroes::PerkDefinition> perkDefinition(const CGH
 	}
 }
 
+/// Resolve the owning Skill to the engine's canonical identifier so callers
+/// can reuse the native secondary-skill icon/component presentation.  Keep the
+/// exact round-trip check: an unscoped legacy suffix must not be mistaken for
+/// a different New Horizons skill with the same display name.
+inline std::optional<SecondarySkill> skillEntity(std::string_view skillId)
+{
+	try
+	{
+		const int decoded = SecondarySkill::decode(std::string(skillId));
+		if(decoded >= 0 && SecondarySkill::encode(decoded) == skillId)
+			return SecondarySkill(decoded);
+	}
+	catch(const std::exception &)
+	{
+		// Unknown/legacy IDs retain the text-only fallback.
+	}
+	return std::nullopt;
+}
+
 inline std::string skillName(const CGHeroInstance * hero, std::string_view skillId)
 {
 	if(const auto definition = skillDefinition(hero, skillId); definition && !definition->name.empty())

@@ -65,7 +65,10 @@ requiring the complete source document to be replaced.
   gains levels. Legacy-mode Solmyr remains unchanged. This is the first hero in
   the new three-starting-development direction; do not silently assign arbitrary
   third choices to every other hero before their intended choices are authored.
-- **Implementation evidence:** Pending.
+- **Implementation evidence:** Commit `4452c273b`; Solmyr initialization and
+  castability coverage in
+  `NewHorizonsHalonInitializationTest.FreshSolmyrUsesMasterChainLightningAndStormcaller`,
+  plus the private Linux scenario smoke recorded on 2026-09-21.
 
 ### 2026-09-21 — exhaustive meaningful battle logging
 
@@ -77,4 +80,39 @@ requiring the complete source document to be replaced.
   ordinal follow-up spell, triggering Metamagic effect, spell name, and resulting
   damage or other outcome. Extend the same causal standard across other combat
   mechanics rather than emitting generic New Horizons prefixes.
+- **Implementation evidence:** Pending.
+
+### 2026-09-21 — Tower class and creature presentation
+
+- **Status:** Accepted
+- **Overrides:** Tower hero-class naming and the transitional Mage/Genie dwelling order.
+- **Rule:** New Horizons renames **Alchemist** to **Battle Mage**. Swap the Mage
+  and Genie dwelling levels before replacing tier presentation with the
+  Core/Elite/Champion grouping; both Mage and Genie belong to Elite in that
+  final grouping.
+- **Implementation evidence:** Pending.
+
+### 2026-09-21 — skill-development and action-help presentation
+
+- **Status:** Accepted
+- **Overrides:** The hero class skill-odds pane, perk ownership help, and Orders
+  chooser interaction.
+- **Rule:** A class's skill-odds pane never lists another faction's unique Skill,
+  displays Skill icons rather than a names-only list, and uses a smaller polished
+  button placed close to the Skills/Learned Perks heading. Perk help also shows
+  the owning Skill's icon. Stormcaller and the Movement derived attribute each
+  have an appropriate visible icon. Disabled Orders remain inspectable with
+  right-click; the Orders chooser uses a Heroes III-style background rather than
+  a flat grey rectangle.
+- **Implementation evidence:** Pending.
+
+### 2026-09-21 — separate creature Speed and Initiative
+
+- **Status:** Accepted
+- **Overrides:** Creature turn-order and battlefield-movement use of the original
+  shared Speed statistic.
+- **Rule:** Speed controls battlefield movement distance; Initiative controls
+  turn order. Slow reduces Initiative only, while Frost Bolt reduces Speed only.
+  Creature data may therefore give upgrades such as Arch Magi higher Initiative
+  without increasing their Speed. Creature UI must show both statistics.
 - **Implementation evidence:** Pending.

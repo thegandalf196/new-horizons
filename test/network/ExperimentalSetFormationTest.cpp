@@ -264,8 +264,9 @@ TEST_F(ExperimentalSetFormationTest, RealValidationAndResponseEquivalence)
 			ASSERT_FALSE(responses.empty());
 			EXPECT_EQ(responses.front().kind, "received");
 			EXPECT_EQ(responses.back().kind, "applied");
-			// Existing behavior: visitor rejection still yields ACK true; query blocking false.
-			EXPECT_EQ(responses.back().result, scenario != "query");
+			// The acknowledgement reflects the authoritative result.  A rejected
+			// request must not be reported as a successful mutation.
+			EXPECT_EQ(responses.back().result, scenario == "accepted");
 			if(typed) EXPECT_EQ(responses, baseline);
 			else baseline = responses;
 		}

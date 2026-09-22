@@ -951,7 +951,7 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 		if((combatSpell != inCombat) || inCastle || (!combatSpell && !GAME->interface()->makingTurn))
 		{
 			std::vector<std::shared_ptr<CComponent>> hlp(1, std::make_shared<CComponent>(ComponentType::SPELL, mySpell->id));
-			GAME->interface()->showInfoDialog(mySpell->getDescriptionTranslated(schoolLevel), hlp);
+			GAME->interface()->showInfoDialog(newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel), hlp);
 		}
 		else if(combatSpell)
 		{
@@ -1030,7 +1030,7 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 		}
 
 		const auto requirement = schoolLocked ? "\n\n" + schoolRequirementText : std::string();
-		CRClickPopup::createAndPush(mySpell->getDescriptionTranslated(schoolLevel) + dmgInfo + requirement,
+		CRClickPopup::createAndPush(newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel) + dmgInfo + requirement,
 			std::make_shared<CComponent>(ComponentType::SPELL, mySpell->id));
 	}
 }

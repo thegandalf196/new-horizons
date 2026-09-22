@@ -100,6 +100,7 @@ def main() -> None:
     require(HERO, "area->disable()", "stale empty-row hit-area clearing")
     require(HERO, '"NH_capability_leadership_32"', "painted legacy Leadership icon")
     require(HERO, '"NH_capability_siege_32"', "painted legacy Siege icon")
+    require(HERO, '"NH_hero_movement_32"', "painted Movement icon")
     require(HERO, 'newHorizonsPerkIcon(hasPerk ?', "shared learned-perk icon lookup")
     require(HERO, 'capabilityIcons.push_back', "new-layout capability art")
     require(HERO, 'Rect(342, 404, 65, 24)', "bounded legacy perk summary")
@@ -128,6 +129,9 @@ def main() -> None:
     require(GROWTH, "Ten-perk pool", "ten-perk pool presentation")
     require(GROWTH, 'newHorizonsPerkHelp::format(&hero, skillId', "perk-pool owning-Skill help")
     require(GROWTH, 'newHorizonsPerkIcon(perk.id)', "perk-pool icon fallback lookup")
+    require(GROWTH, "newHorizonsPerkHelp::skillEntity(skillId)", "owning-Skill icon resolution")
+    require(GROWTH, 'AnimationPath::builtin("SECSKILL")', "owning-Skill icon art")
+    require(GROWTH, "LRClickableAreaWTextComp", "owning-Skill component popup")
     require(GROWTH, "LRClickableAreaWText", "perk-pool help popup area")
     require(GROWTH, "PERK_SKILLS_PER_PAGE", "learned-Skill pagination")
     require(GROWTH, "perkSkillPrevious", "previous learned-Skill page control")
@@ -160,6 +164,7 @@ def main() -> None:
     require(PERK_HELP, '"Skill: "', "concise owning-skill help label")
     require(PERK_HELP, 'Tier: ', "concise perk-tier help label")
     require(PERK_HELP, 'return "Unknown"', "safe unknown/legacy skill fallback")
+    require(PERK_HELP, "skillEntity(std::string_view skillId)", "canonical owning-Skill component identity")
     require(ASSETS, 'createNewHorizonsLevelUpBackground', "generated tall background registration")
     for stem, size in {
         "NH_orders_gauntlet": (48, 36),
@@ -197,6 +202,10 @@ def main() -> None:
         for suffix, size in (("_normal", 44), ("_32", 32)):
             with Image.open(images / f"NH_capability_{capability}{suffix}.png") as image:
                 assert image.size == (size, size)
+    movement = json.loads((images / "NH_hero_movement_32.json").read_text())
+    assert movement["images"] == [{"group": 0, "frame": 0, "file": "NH_hero_movement_32.png"}]
+    with Image.open(images / "NH_hero_movement_32.png") as image:
+        assert image.size == (32, 32)
     print(f"New Horizons level-up layout and {len(active)} distinct active perk icons passed")
 
 

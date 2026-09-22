@@ -15,12 +15,14 @@ CONTROLLER = ROOT / "client/battle/BattleActionsController.cpp"
 CREATURE_WINDOW = ROOT / "client/windows/CCreatureWindow.cpp"
 HERO_WINDOW = ROOT / "client/windows/CHeroWindow.cpp"
 DEVELOPMENT_WINDOW = ROOT / "client/windows/HeroGrowthWindow.cpp"
+ASSET_GENERATOR = ROOT / "client/render/AssetGenerator.cpp"
 
 action = ACTION.read_text(encoding="utf-8")
 controller = CONTROLLER.read_text(encoding="utf-8")
 creature_window = CREATURE_WINDOW.read_text(encoding="utf-8")
 hero_window = HERO_WINDOW.read_text(encoding="utf-8")
 development_window = DEVELOPMENT_WINDOW.read_text(encoding="utf-8")
+asset_generator = ASSET_GENERATOR.read_text(encoding="utf-8")
 
 orders = {
     "CHARGE": "Charge",
@@ -67,6 +69,10 @@ assert 'AnimationPath::builtin("NH_orders_gauntlet_framed")' in (ROOT / "client/
 assert "Protect unavailable. No legal Protector/Ward pair is available" in action
 assert "protectPairUnavailable" in action
 assert "entry.second->block(!available && !protectPairUnavailable)" in action
+assert "entry.second->addUsedEvents(SHOW_POPUP)" in action
+assert 'newHorizonsOrdersBackground.png' in action
+assert 'addDialogBackground("newHorizonsOrdersBackground.png", Point(640, 500))' in asset_generator
+assert 'TransparentFilledRectangle>(Rect(0, 0, 640, 500)' not in action
 assert "OrderIndicatorsSection" in creature_window
 assert "battleGetHeroOrderState" in creature_window
 assert "cannot be dispelled" in creature_window

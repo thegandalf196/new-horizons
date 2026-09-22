@@ -10,6 +10,7 @@
 #pragma once
 
 #include <limits>
+#include <string>
 #include <string_view>
 
 #include "../json/JsonNode.h"
@@ -41,6 +42,8 @@ inline constexpr std::string_view METAMAGIC_SPELL_BUFFER = "new-horizons:metamag
 inline constexpr std::string_view METAMAGIC_GRAND = "new-horizons:metamagic.grandMetamagic";
 inline constexpr std::string_view METAMAGIC_PERFECT_SEQUENCE = "new-horizons:metamagic.perfectSequence";
 inline constexpr std::string_view HAVOC_STORMCALLER = "new-horizons:havocMagic.stormcaller";
+inline constexpr std::string_view HAVOC_CONDUCTOR = "new-horizons:havocMagic.conductor";
+inline constexpr std::string_view HAVOC_ANNIHILATOR = "new-horizons:havocMagic.annihilator";
 
 struct DLL_LINKAGE AdventureSpellState
 {
@@ -66,6 +69,14 @@ DLL_LINKAGE void validateRules(const JsonNode & rules);
 /// This is intentionally state-backed; installed content alone must not alter
 /// legacy saves.
 DLL_LINKAGE bool rulesActive(const JsonNode & rules);
+/// Master Chain Lightning retains 75% of the previous hop at level zero and
+/// gains one percentage point per hero level, capped at 90%.  The helper keeps
+/// the displayed value aligned with the authoritative Lua effect.
+DLL_LINKAGE int masterChainLightningRetentionPercent(int heroLevel);
+/// Returns a hero-contextual spell description for presentation surfaces.
+/// Legacy saves and all other spells retain the ordinary static description.
+DLL_LINKAGE std::string spellDescriptionForHero(const CGHeroInstance * hero,
+	const spells::Spell * spell, int schoolLevel);
 /// Read only the supplied saved roster using the spell's canonical scoped key.
 /// Absent snapshots/rows/formulas return null; no installed definition fallback.
 DLL_LINKAGE std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, const std::string & scopedIdentity);
@@ -159,6 +170,9 @@ DLL_LINKAGE bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view 
 /// Chain Lightning, and Master Chain Lightning. The saved-rules/perk check
 /// keeps legacy Solmyr and legacy spell damage unchanged.
 DLL_LINKAGE bool hasStormcallerPerk(const CGHeroInstance * hero, const spells::Spell * spell);
+/// Annihilator makes Disintegrate ignore 20% of the target's magical damage
+/// reduction.  The saved rules/perk check keeps legacy worlds unchanged.
+DLL_LINKAGE bool hasAnnihilatorPerk(const CGHeroInstance * hero, const spells::Spell * spell);
 DLL_LINKAGE int factionSpellWeight(const JsonNode & rules, FactionID faction, SpellID spell);
 DLL_LINKAGE SecondarySkill replacementSkill(const JsonNode & rules, SecondarySkill skill);
 DLL_LINKAGE bool skillAllowed(const JsonNode & rules, SecondarySkill skill, const std::set<SecondarySkill> & mapAllowed);

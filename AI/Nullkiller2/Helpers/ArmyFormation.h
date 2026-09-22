@@ -29,6 +29,13 @@ bool canSwapStacks(const CArmedInstance * first, const CArmedInstance * second,
 	SlotID firstSlot, SlotID secondSlot);
 bool canMergeOrSwapStacks(const CArmedInstance * source, const CArmedInstance * destination,
 	SlotID sourceSlot, SlotID destinationSlot);
+/// Mirrors the server's whole-army merge plan used when a visiting hero is
+/// moved into an empty town garrison. This is a read-only AI preflight; the
+/// authoritative move remains on the server.
+bool canMergeArmies(const CArmedInstance * source, const CArmedInstance * destination);
+/// Returns whether a garrison-hero swap is admissible, including the
+/// town-army merge performed when the town has no garrison hero.
+bool canSwapGarrisonHero(const CGTownInstance * town);
 bool canSplitStack(const CArmedInstance * source, const CArmedInstance * destination,
 	SlotID sourceSlot, SlotID destinationSlot, int resultingDestinationCount);
 int maxLegalTransferCount(const CArmedInstance * source, const CArmedInstance * destination,

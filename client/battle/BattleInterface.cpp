@@ -1071,8 +1071,12 @@ void BattleInterface::activateStack()
 	{
 		const auto side = getBattle()->battleGetMySide();
 		metamagicPromptPending = false;
+		// Keep the follow-up offer on the battle screen.  The player must
+		// explicitly open the spellbook to choose the extra spell (or use the
+		// visible Decline / End control); opening a modal spellbook here used to
+		// interrupt every active stack automatically after the first cast.
 		if(side != BattleSide::NONE && getBattle()->battleCanUseMetamagicFollowup(side))
-			windowObject->openMetamagicSpellbook();
+			windowObject->updateCounterspellStatus();
 	}
 	ENGINE->fakeMouseMove();
 }
@@ -1130,7 +1134,12 @@ void BattleInterface::endAction(const BattleAction &action)
 	if(action.actionType == EActionType::HERO_SPELL && windowObject && curInt
 		&& !curInt->isAutoFightOn && action.side == getBattle()->battleGetMySide()
 		&& getBattle()->battleCanUseMetamagicFollowup(action.side))
+	{
 		metamagicPromptPending = true;
+		// The offer is intentionally non-modal.  Refresh the battle-bar affordance
+		// immediately so the player can either open the spellbook or decline it.
+		windowObject->updateCounterspellStatus();
+	}
 }
 
 void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)

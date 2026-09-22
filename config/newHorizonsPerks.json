@@ -1545,7 +1545,7 @@
 					"requires": "advanced",
 					"description": "Chain Lightning jump multipliers become 100% / 75% / 55% / 40% / 30%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Chain Lightning jump multipliers become 100% / 75% / 55% / 40% / 30%."
 					}
 				},
@@ -1585,7 +1585,7 @@
 					"requires": "expert",
 					"description": "Disintegrate ignores 20% of the target's Magical Damage Reduction; casualties it destroys remain unusable remains as normal.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Disintegrate ignores 20% of the target's Magical Damage Reduction; casualties it destroys remain unusable remains as normal."
 					}
 				}

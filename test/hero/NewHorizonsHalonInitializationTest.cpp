@@ -20,6 +20,7 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 
 namespace
 {
@@ -152,4 +153,37 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshSolmyrUsesMasterChainLightningAn
 	ASSERT_TRUE(masterFormula);
 	ASSERT_TRUE(regularFormula);
 	EXPECT_EQ(*masterFormula, *regularFormula);
+}
+
+TEST_F(NewHorizonsHalonInitializationTest, MasterChainLightningDescriptionTracksCurrentHeroLevel)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:solmyr")), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	auto * solmyr = findHeroAt({5, 5, 0});
+	ASSERT_NE(solmyr, nullptr);
+	const SpellID masterChainLightning = SpellID::decode("new-horizons:masterChainLightning");
+	ASSERT_TRUE(masterChainLightning.hasValue());
+
+	solmyr->level = 1;
+	EXPECT_EQ(newHorizonsMagic::masterChainLightningRetentionPercent(solmyr->level), 76);
+	const auto levelOne = newHorizonsMagic::spellDescriptionForHero(
+		solmyr, masterChainLightning.toSpell(), 0);
+	EXPECT_NE(levelOne.find("Current retention: 76%"), std::string::npos);
+
+	solmyr->level = 12;
+	EXPECT_EQ(newHorizonsMagic::masterChainLightningRetentionPercent(solmyr->level), 87);
+	const auto levelTwelve = newHorizonsMagic::spellDescriptionForHero(
+		solmyr, masterChainLightning.toSpell(), 0);
+	EXPECT_NE(levelTwelve.find("Current retention: 87%"), std::string::npos);
+	EXPECT_EQ(levelTwelve.find("Current retention: 76%"), std::string::npos);
+
+	solmyr->level = 99;
+	EXPECT_EQ(newHorizonsMagic::masterChainLightningRetentionPercent(solmyr->level), 90);
+	const auto capped = newHorizonsMagic::spellDescriptionForHero(
+		solmyr, masterChainLightning.toSpell(), 0);
+	EXPECT_NE(capped.find("Current retention: 90%"), std::string::npos);
+	EXPECT_EQ(capped.find("Current retention: 176%"), std::string::npos);
 }

@@ -998,6 +998,13 @@ void AIGateway::moveCreaturesToHero(const CGTownInstance * t)
 	}
 }
 
+void AIGateway::swapGarrisonHero(const CGTownInstance * town)
+{
+	if(!armyFormation::canSwapGarrisonHero(town))
+		throw cannotFulfillGoalException("Cannot swap garrison hero: the destination army would exceed its Leadership limits.");
+	cc->swapGarrisonHero(town);
+}
+
 void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const CArmedInstance * source)
 {
 	if(source->stacksCount() == 0)
@@ -1198,7 +1205,7 @@ bool AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)
 
 	if(heroPtr->isGarrisoned() && heroPtr->getVisitedTown())
 	{
-		cc->swapGarrisonHero(heroPtr->getVisitedTown());
+		swapGarrisonHero(heroPtr->getVisitedTown());
 		moveCreaturesToHero(heroPtr->getVisitedTown());
 	}
 

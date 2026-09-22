@@ -1541,7 +1541,10 @@ void CPlayerInterface::waitWhileDialog()
 {
 	if (ENGINE->amIGuiThread())
 	{
-		logGlobal->warn("Cannot wait for dialogs in gui thread (deadlock risk)!");
+		// Network/event callbacks can arrive while the GUI owns the interface
+		// mutex.  Blocking here would deadlock the frame that is responsible for
+		// closing the current dialog; the normal dialog pump will make progress
+		// after this callback returns.
 		return;
 	}
 
@@ -1974,6 +1977,8 @@ void CPlayerInterface::waitForAllDialogs()
 {
 	if (!makingTurn)
 		return;
+	if (ENGINE->amIGuiThread())
+		return; // The GUI event loop must remain free to drain the dialog queue.
 
 	while(!dialogs.empty())
 	{

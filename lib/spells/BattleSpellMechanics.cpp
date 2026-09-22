@@ -403,6 +403,24 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {
 	BattleSpellCast sc;
 
+	// The authoritative battle state still contains the sequence that led to a
+	// follow-up when this method starts.  BattleSpellCast is applied before the
+	// effects below, and applying the final leg clears that sequence, so retain
+	// the ordinal and target snapshots while they are still available.  These
+	// snapshots are used only for the causal battle-log line; ordinary casts do
+	// not take this path.
+	const bool logMetamagicFollowup = isMetamagicFollowup() && mode == Mode::HERO;
+	const int metamagicOrdinal = logMetamagicFollowup
+		? static_cast<int>(battle()->getBattle()->getMetamagicSequenceSpells(casterSide).size()) + 1
+		: 0;
+	struct FollowupTargetSnapshot
+	{
+		const battle::Unit * unit = nullptr;
+		int64_t availableHealth = 0;
+		int32_t count = 0;
+	};
+	std::vector<FollowupTargetSnapshot> followupTargets;
+
 	int spellCost = 0;
 
 	sc.side = casterSide;
@@ -469,6 +487,17 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if(!isCounterspellNegated())
 		beforeCast(sc, *server->getRNG(), target);
 
+	if(logMetamagicFollowup)
+	{
+		followupTargets.reserve(affectedUnits.size());
+		for(const auto * unit : affectedUnits)
+		{
+			if(!unit)
+				continue;
+			followupTargets.push_back({unit, unit->getAvailableHealth(), unit->getCount()});
+		}
+	}
+
 	BattleLogMessage castDescription;
 	castDescription.battleID = battle()->getBattle()->getBattleID();
 
@@ -505,6 +534,91 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	{
 		for(auto & p : effectsToApply)
 			p.first->apply(server, this, p.second);
+	}
+
+	if(logMetamagicFollowup)
+	{
+		int64_t totalDamage = 0;
+		int32_t totalKilled = 0;
+		for(const auto & snapshot : followupTargets)
+		{
+			if(!snapshot.unit)
+				continue;
+			totalDamage += std::max<int64_t>(0, snapshot.availableHealth - snapshot.unit->getAvailableHealth());
+			totalKilled += std::max<int32_t>(0, snapshot.count - snapshot.unit->getCount());
+		}
+
+		BattleLogMessage metamagicDescription;
+		metamagicDescription.battleID = battle()->getBattle()->getBattleID();
+		MetaString line;
+		line.appendTextID(caster->getCasterNameTextID());
+		line.appendRawString(" casts a ");
+		if(metamagicOrdinal == 2)
+			line.appendRawString("second");
+		else if(metamagicOrdinal == 3)
+			line.appendRawString("third");
+		else
+		{
+			line.appendRawString("#");
+			line.appendNumber(metamagicOrdinal);
+		}
+		line.appendRawString(" ");
+		line.appendTextID(owner->getNameTextID());
+		line.appendRawString(" through Metamagic");
+
+		if(isCounterspellNegated())
+		{
+			line.appendRawString(", but the spell was counterspelled");
+		}
+		else if(totalDamage > 0)
+		{
+			line.appendRawString(", dealing ");
+			line.appendNumber(totalDamage);
+			line.appendRawString(" damage");
+			if(totalKilled > 0)
+			{
+				line.appendRawString(" and killing ");
+				line.appendNumber(totalKilled);
+				line.appendRawString(totalKilled == 1 ? " creature" : " creatures");
+			}
+			if(!sc.resistedCres.empty())
+			{
+				line.appendRawString(", ");
+				line.appendNumber(sc.resistedCres.size());
+				line.appendRawString(" resisted");
+			}
+		}
+		else if(newHorizonsMagic::isCounterspell(owner))
+		{
+			line.appendRawString(", raising a counterspell ward");
+		}
+		else if(!affectedUnits.empty())
+		{
+			line.appendRawString(", affecting ");
+			line.appendNumber(affectedUnits.size());
+			line.appendRawString(affectedUnits.size() == 1 ? " target" : " targets");
+			if(!sc.resistedCres.empty())
+			{
+				line.appendRawString(", ");
+				line.appendNumber(sc.resistedCres.size());
+				line.appendRawString(" resisted");
+			}
+		}
+		else if(!sc.resistedCres.empty())
+		{
+			line.appendRawString(", resisted by ");
+			line.appendNumber(sc.resistedCres.size());
+			line.appendRawString(sc.resistedCres.size() == 1 ? " target" : " targets");
+		}
+		else
+		{
+			// Location, obstacle and summon spells can resolve successfully without
+			// populating affectedUnits.  Do not misreport those casts as failures.
+			line.appendRawString(", resolving successfully");
+		}
+		line.appendRawString(".");
+		metamagicDescription.lines.push_back(std::move(line));
+		server->apply(metamagicDescription);
 	}
 
 	if(sc.activeCast)

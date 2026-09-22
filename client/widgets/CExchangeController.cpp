@@ -12,11 +12,32 @@
 
 #include "../CPlayerInterface.h"
 #include "../GameInstance.h"
+#include "../UIHelper.h"
 
 #include "CGarrisonInt.h"
 
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+
+namespace
+{
+bool checkLeadershipSwap(const CArmedInstance * leftArmy, const CArmedInstance * rightArmy,
+	SlotID leftSlot, SlotID rightSlot)
+{
+	const auto * leftCreature = leftArmy ? leftArmy->getCreature(leftSlot) : nullptr;
+	const auto * rightCreature = rightArmy ? rightArmy->getCreature(rightSlot) : nullptr;
+	if(!leftCreature || !rightCreature)
+		return UIHelper::checkLeadershipTransfer(leftArmy, rightArmy, leftSlot, rightSlot,
+			leftCreature ? leftArmy->getStackCount(leftSlot) : 0)
+			&& UIHelper::checkLeadershipTransfer(rightArmy, leftArmy, rightSlot, leftSlot,
+				rightCreature ? rightArmy->getStackCount(rightSlot) : 0);
+
+	// A swap replaces each stack; equal types are merged through the normal
+	// garrison path instead and are not sent here.
+	return UIHelper::checkLeadershipResult(rightArmy, leftCreature->getId(), leftArmy->getStackCount(leftSlot))
+		&& UIHelper::checkLeadershipResult(leftArmy, rightCreature->getId(), rightArmy->getStackCount(rightSlot));
+}
+}
 
 CExchangeController::CExchangeController(ObjectInstanceID hero1, ObjectInstanceID hero2)
 	: left(GAME->interface()->cb->getHero(hero1))
@@ -37,7 +58,11 @@ void CExchangeController::swapArmy()
 	for (SlotID slotID(0); slotID < GameConstants::ARMY_SIZE; ++slotID)
 	{
 		if (left->hasStackAtSlot(slotID) && right->hasStackAtSlot(slotID))
+		{
+			if(!checkLeadershipSwap(left, right, slotID, slotID))
+				return;
 			GAME->interface()->cb->swapCreatures(left, right, slotID, slotID);
+		}
 	}
 
 	// Swap pairs of stacks in different slots and correct their positions
@@ -55,6 +80,8 @@ void CExchangeController::swapArmy()
 		if (leftIt == leftSlots.end() || rightIt == rightSlots.end())
 			break;
 
+		if(!checkLeadershipSwap(left, right, leftIt->first, rightIt->first))
+			return;
 		GAME->interface()->cb->swapCreatures(left, right, leftIt->first, rightIt->first);
 
 		GAME->interface()->cb->swapCreatures(left, left, leftIt->first, rightIt->first);
@@ -68,11 +95,21 @@ void CExchangeController::swapArmy()
 	// [A] [ ] => [ ] [A]
 	for(; leftIt != leftSlots.end(); leftIt++)
 		if (!right->hasStackAtSlot(leftIt->first))
+		{
+			if(!UIHelper::checkLeadershipTransfer(left, right, leftIt->first, leftIt->first,
+				left->getStackCount(leftIt->first)))
+				return;
 			GAME->interface()->cb->swapCreatures(left, right, leftIt->first, leftIt->first);
+		}
 
 	for(; rightIt != rightSlots.end(); rightIt++)
 		if (!left->hasStackAtSlot(rightIt->first))
+		{
+			if(!UIHelper::checkLeadershipTransfer(right, left, rightIt->first, rightIt->first,
+				right->getStackCount(rightIt->first)))
+				return;
 			GAME->interface()->cb->swapCreatures(left, right, rightIt->first, rightIt->first);
+		}
 }
 
 void CExchangeController::moveArmy(bool leftToRight, std::optional<SlotID> heldSlot)
@@ -110,11 +147,17 @@ void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
 	{
 		if(source->stacksCount() == 1 && source->needsLastStack())
 		{
+			if(!UIHelper::checkLeadershipTransfer(source, target, sourceSlot, targetSlot,
+				source->getStackCount(sourceSlot) - 1))
+				return;
 			GAME->interface()->cb->splitStack(source, target, sourceSlot, targetSlot,
 				target->getStackCount(targetSlot) + source->getStackCount(sourceSlot) - 1);
 		}
 		else
 		{
+			if(!UIHelper::checkLeadershipTransfer(source, target, sourceSlot, targetSlot,
+				source->getStackCount(sourceSlot)))
+				return;
 			GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
 		}
 	}
@@ -132,6 +175,8 @@ void CExchangeController::moveSingleStackCreature(bool leftToRight, SlotID sourc
 	SlotID targetSlot = forceEmptySlotTarget ? target->getFreeSlot() : target->getSlotFor(creature);
 	if(targetSlot.validSlot())
 	{
+		if(!UIHelper::checkLeadershipTransfer(source, target, sourceSlot, targetSlot, 1))
+			return;
 		GAME->interface()->cb->splitStack(source, target, sourceSlot, targetSlot, target->getStackCount(targetSlot) + 1);
 	}
 }

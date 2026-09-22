@@ -165,6 +165,9 @@ public:
 	void pickBestCreatures(const CArmedInstance * army, const CArmedInstance * source); //called when we can't find a slot for new stack
 
 	void moveCreaturesToHero(const CGTownInstance * t);
+	/// Submit a garrison swap only after the AI-side whole-army Leadership
+	/// preflight. The server remains authoritative and validates the request.
+	void swapGarrisonHero(const CGTownInstance * town);
 	void performObjectInteraction(const CGObjectInstance * obj, HeroPtr heroPtr);
 	bool makePossibleUpgrades(const CArmedInstance * obj);
 

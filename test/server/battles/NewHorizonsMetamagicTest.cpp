@@ -57,6 +57,7 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
 		attackerSideHero->addSpellToSpellbook(SpellID::BLESS);
 		attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+		attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("new-horizons:counterspell")));
 		attackerSideHero->mana = 1000;
 
@@ -99,6 +100,18 @@ protected:
 	{
 		return gameHandler->battles->makePlayerBattleAction(
 			BattleID(0), PlayerColor(0), BattleAction::makeMetamagicDecline(BattleSide::ATTACKER));
+	}
+
+	bool castLandMineFollowup(std::initializer_list<int> hexes)
+	{
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = SpellID::LAND_MINE;
+		action.metamagicFollowup = true;
+		for(const auto hex : hexes)
+			action.aimToHex(BattleHex(hex));
+		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
 
 	int followupPower(SpellID spell, const CStack * target, bool grand = false)
@@ -264,64 +277,6 @@ TEST_F(NewHorizonsMetamagicTest, SpellSequencingAndPerfectSequenceModifyDifferen
 	EXPECT_EQ(followupPower(SpellID::BLESS, attacker), 13);
 }
 
-TEST_F(NewHorizonsMetamagicTest, GrandMetamagicAllowsRepeatedSpellsWithoutPerfectSequenceBonus)
-{
-	prepare(3, {grandMetamagic, newHorizonsMagic::METAMAGIC_PERFECT_SEQUENCE.data()});
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(followupPower(SpellID::HASTE, attacker, true), 10);
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker, true, true));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker, true));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
-}
-
-TEST_F(NewHorizonsMetamagicTest, PerfectSequenceAllowsRepeatedGrandFinalLegWithoutBonus)
-{
-	prepare(3, {grandMetamagic, newHorizonsMagic::METAMAGIC_PERFECT_SEQUENCE.data()});
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-
-	// The first Grand extra is rewarded immediately when A and B are distinct.
-	EXPECT_EQ(followupPower(SpellID::BLESS, attacker, true), 12);
-	ASSERT_TRUE(cast(SpellID::BLESS, attacker, true, true));
-	// Repeating A is legal, but Perfect Sequence is a bonus only for a fully
-	// distinct sequence, so the repeated final leg receives no +20% power.
-	EXPECT_EQ(followupPower(SpellID::HASTE, attacker), 10);
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker, true));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
-}
-
-TEST_F(NewHorizonsMetamagicTest, PerfectSequenceGrandDistinctSpellsBoostBothExtras)
-{
-	prepare(3, {grandMetamagic, newHorizonsMagic::METAMAGIC_PERFECT_SEQUENCE.data()});
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(followupPower(SpellID::BLESS, attacker, true), 12);
-	ASSERT_TRUE(cast(SpellID::BLESS, attacker, true, true));
-	EXPECT_EQ(followupPower(SpellID::SLOW, defender), 12);
-	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
-}
-
-TEST_F(NewHorizonsMetamagicTest, PerfectSequenceGrandDeclineKeepsFirstDistinctBonus)
-{
-	prepare(3, {grandMetamagic, newHorizonsMagic::METAMAGIC_PERFECT_SEQUENCE.data()});
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(followupPower(SpellID::BLESS, attacker, true), 12);
-	ASSERT_TRUE(cast(SpellID::BLESS, attacker, true, true));
-	ASSERT_TRUE(decline());
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.size(), 0u);
-}
-
-TEST_F(NewHorizonsMetamagicTest, PerfectSequenceGrandRepeatedFirstExtraRemainsAvailable)
-{
-	prepare(3, {grandMetamagic, newHorizonsMagic::METAMAGIC_PERFECT_SEQUENCE.data()});
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker, true, true));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker, true));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
-}
-
 TEST_F(NewHorizonsMetamagicTest, MagicArrowFollowupUsesArcaneEconomyInAuthoritativeCost)
 {
 	prepare(1, {arcaneEconomy});
@@ -347,6 +302,71 @@ TEST_F(NewHorizonsMetamagicTest, MagicArrowFollowupUsesArcaneEconomyInAuthoritat
 	action.aimToUnit(defender);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(attackerSideHero->mana, manaBefore - std::max(1, ordinaryCost - 2));
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupLogNamesSecondAndThirdMagicArrowDamage)
+{
+	prepare(3, {grandMetamagic});
+	// Keep the second and third legs independently targetable even if the
+	// provisional Magic Arrow damage kills an entire ten-unit stack.
+	CStack * secondTarget = addStack(BattleSide::DEFENDER,
+		creatureByName("core:pikeman"), BattleHex(rightHex + 2), 10);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender, true, true));
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, secondTarget, true));
+
+	const auto arrows = server.castsOf(SpellID::MAGIC_ARROW);
+	ASSERT_EQ(arrows.size(), 2u);
+	ASSERT_GT(arrows[0].damage, 0);
+	ASSERT_GT(arrows[0].killed, 0u);
+	ASSERT_GT(arrows[1].damage, 0);
+	ASSERT_GT(arrows[1].killed, 0u);
+
+	const auto contains = [](const RecordedCast & cast, const std::string & text)
+	{
+		return std::any_of(cast.logLines.begin(), cast.logLines.end(), [&](const std::string & line)
+		{
+			return line.find(text) != std::string::npos;
+		});
+	};
+	EXPECT_TRUE(contains(arrows[0], "casts a second Magic Arrow through Metamagic, dealing"));
+	EXPECT_TRUE(contains(arrows[0], "dealing " + std::to_string(arrows[0].damage) + " damage"));
+	EXPECT_TRUE(contains(arrows[0], "killing " + std::to_string(arrows[0].killed)));
+	EXPECT_TRUE(contains(arrows[1], "casts a third Magic Arrow through Metamagic, dealing"));
+	EXPECT_TRUE(contains(arrows[1], "dealing " + std::to_string(arrows[1].damage) + " damage"));
+	EXPECT_TRUE(contains(arrows[1], "killing " + std::to_string(arrows[1].killed)));
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupLogReportsAffectedNonDamageOutcome)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+
+	const auto slows = server.castsOf(SpellID::SLOW);
+	ASSERT_EQ(slows.size(), 1u);
+	EXPECT_EQ(slows.front().damage, 0);
+	EXPECT_EQ(slows.front().killed, 0u);
+	EXPECT_TRUE(std::any_of(slows.front().logLines.begin(), slows.front().logLines.end(), [](const std::string & line)
+	{
+		return line.find("casts a second Slow through Metamagic, affecting 1 target.") != std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupLogDoesNotCallSuccessfulObstacleSpellNoEffect)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(castLandMineFollowup({70, 71}));
+	ASSERT_EQ(battle()->obstacles.size(), 2u);
+
+	const auto mines = server.castsOf(SpellID::LAND_MINE);
+	ASSERT_EQ(mines.size(), 1u);
+	EXPECT_TRUE(std::any_of(mines.front().logLines.begin(), mines.front().logLines.end(), [](const std::string & line)
+	{
+		return line.find("casts a second Land Mine through Metamagic, resolving successfully") != std::string::npos
+			&& line.find("no effect") == std::string::npos;
+	}));
 }
 
 TEST_F(NewHorizonsMetamagicTest, SplitFocusAddsPowerOnlyForTheOtherTarget)

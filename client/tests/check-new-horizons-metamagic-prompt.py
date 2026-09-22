@@ -27,7 +27,8 @@ assert activate.index("actionsController->activateStack();") < activate.index(
 )
 assert "metamagicPromptPending = false;" in activate
 assert "battleCanUseMetamagicFollowup(side)" in activate
-assert "windowObject->openMetamagicSpellbook();" in activate
+assert "windowObject->updateCounterspellStatus();" in activate
+assert "windowObject->openMetamagicSpellbook();" not in activate
 
 cancel = window.split("addShortcut(EShortcut::GLOBAL_CANCEL", 1)[1].split(
     "setShortcutBlocked(EShortcut::GLOBAL_ACCEPT", 1
@@ -68,4 +69,4 @@ assert "owner.declineMetamagicFollowup();" in right_click
 
 assert "visibleSide == BattleSide::ALL_KNOWING || visibleSide == otherSide" in mechanics
 assert "battle()->battleHasHero(otherSide)" in mechanics
-print("PASS: Metamagic waits for active-stack authority, cancel declines, hidden hero access is guarded")
+print("PASS: Metamagic waits for active-stack authority, stays non-modal, cancel declines, hidden hero access is guarded")

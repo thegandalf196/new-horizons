@@ -54,7 +54,7 @@ void AdventureSpellCast::accept(AIGateway * aiGw)
 
 		if(town->getVisitingHero() && town->tempOwner == aiGw->playerID && !town->getUpperArmy()->stacksCount())
 		{
-			aiGw->cc->swapGarrisonHero(town);
+			aiGw->swapGarrisonHero(town);
 		}
 
 		if(town->getVisitingHero())
@@ -62,7 +62,7 @@ void AdventureSpellCast::accept(AIGateway * aiGw)
 	}
 
 	if (hero->isGarrisoned())
-		aiGw->cc->swapGarrisonHero(hero->getVisitedTown());
+		aiGw->swapGarrisonHero(hero->getVisitedTown());
 
 	if(aiGw->cc->isInTheMap(tile))
 	{

@@ -506,6 +506,28 @@ TEST_F(NewHorizonsFactionSkillQueryTest, canonicalSkillOfferWeightsDriveSelectio
 		(std::set<SecondarySkill>{offense, spellcraft}));
 }
 
+TEST_F(NewHorizonsFactionSkillQueryTest, wizardWisdomRemainsEligibleThroughCanonicalPositiveWeight)
+{
+	startGame(HeroTypeID(HeroTypeID::decode("core:solmyr")));
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+
+	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
+	ASSERT_GE(wisdom.getNum(), 0);
+	ASSERT_TRUE(newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()));
+	EXPECT_EQ(newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), wisdom), 9);
+
+	// The map/default-skill filter must not discard a canonical New Horizons
+	// skill merely because its data definition is tagged "special" for the
+	// legacy class-probability loader.  Solmyr's Wizard table makes Wisdom a
+	// legal weighted offer; this is intentionally an eligibility/selection
+	// check, not a guarantee that every level-up chooses it.
+	EXPECT_TRUE(hero->canLearnSkill(wisdom));
+	GameRandomizer randomizer(*gameState());
+	randomizer.setSeed(17);
+	EXPECT_EQ(randomizer.rollSecondarySkillForLevelup(hero, {wisdom}), wisdom);
+}
+
 TEST_F(NewHorizonsFactionSkillQueryTest, duplicateLegacyAliasUsesFirstSavedFactionSkillIdentity)
 {
 	startGame(HeroTypeID(64)); // Death Knight: Necropolis might hero.

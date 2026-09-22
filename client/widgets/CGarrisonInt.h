@@ -92,6 +92,16 @@ class CGarrisonInt :public CIntObject
 	bool checkSelected(const CGarrisonSlot * selected, TQuantity min = 0) const;
 	bool isStackTransferLocked(const CGarrisonSlot * selected) const;
 	bool showStackTransferError(const CGarrisonSlot * selected) const;
+	/// Check the same per-stack Leadership rule as the authoritative server
+	/// before sending a user initiated transfer.  This is only a UI fast path;
+	/// the server repeats the validation for stale or malicious requests.
+	bool checkLeadershipTransfer(const CArmedInstance * source, const CArmedInstance * destination,
+		SlotID sourceSlot, SlotID destinationSlot, TQuantity amount) const;
+	bool checkLeadershipSwap(const CArmedInstance * leftArmy, const CArmedInstance * rightArmy,
+		SlotID leftSlot, SlotID rightSlot) const;
+	bool checkLeadershipBulkMove(const CArmedInstance * source, const CArmedInstance * destination,
+		SlotID protectedSourceSlot) const;
+	bool checkLeadershipResult(const CArmedInstance * destination, CreatureID creature, TQuantity resultingCount) const;
 
 	std::map<EGarrisonType, const CArmedInstance*> armedObjs;
 

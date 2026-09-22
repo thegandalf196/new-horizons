@@ -680,9 +680,12 @@ bool BaseMechanics::isMagicalEffect() const
 
 int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
 {
-	const int ignoreReduction = metamagicFollowup && isNegativeSpell() && target
+	const auto * hero = caster ? caster->getHeroCaster() : nullptr;
+	const int ignoreReduction = std::max(
+		metamagicFollowup && isNegativeSpell() && target
 		&& metamagicFocusedPairingEligible && target->unitId() == metamagicFirstTargetUnitId
-		? 20 : 0;
+		? 20 : 0,
+		newHorizonsMagic::hasAnnihilatorPerk(hero, owner) ? 20 : 0);
 	return owner->adjustRawDamage(caster, target, getEffectValue(), ignoreReduction);
 }
 

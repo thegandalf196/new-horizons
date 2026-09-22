@@ -24,6 +24,15 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:sorceryMagic.countermage", "NH_perk_countermage"},
 		{"new-horizons:sorceryMagic.temporalField", "NH_perk_temporal_field"},
 		{"new-horizons:sorceryMagic.chronomancer", "NH_perk_chronomancer"},
+		// Stormcaller is active in the authored perk registry.  Reuse the
+		// school glyph until a dedicated lightning painting is available rather
+		// than silently falling back to the neutral placeholder.
+		{"new-horizons:havocMagic.stormcaller", "NH_perk_stormcaller"},
+		// Provisional but distinct bindings for the newly playable higher-rank
+		// Havoc perks.  Dedicated Havoc paintings can replace these asset keys
+		// later without falling back to the neutral placeholder meanwhile.
+		{"new-horizons:havocMagic.conductor", "NH_perk_conductor"},
+		{"new-horizons:havocMagic.annihilator", "NH_perk_annihilator"},
 		{"new-horizons:sylvanLuck.elvenPrecision", "NH_perk_elven_precision"},
 		{"new-horizons:sylvanLuck.forestSFavor", "NH_perk_forests_favor"},
 		{"new-horizons:sylvanLuck.serendipity", "NH_perk_serendipity"},

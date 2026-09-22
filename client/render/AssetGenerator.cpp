@@ -110,6 +110,7 @@ void AssetGenerator::initialize()
 	addBackpackBackground("heroBackpackDialog", Point(426, 465));
 	imageFiles[ImagePath::builtin("newHorizonsHeroBackground.png")] = [this](){ return createNewHorizonsHeroBackground(); };
 	imageFiles[ImagePath::builtin("newHorizonsLevelUpBackground.png")] = [this](){ return createNewHorizonsLevelUpBackground(); };
+	addDialogBackground("newHorizonsOrdersBackground.png", Point(640, 500));
 
 	imageFiles[ImagePath::builtin("questDialog.png")] = [this](){ return createQuestWindow();};
 	imageFiles[ImagePath::builtin("stackArtifactIndicatorSmall.png")] = [this](){ return createStackArtifactIndicator(Point(14, 14));};
