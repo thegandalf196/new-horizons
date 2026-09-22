@@ -86,6 +86,16 @@ protected:
 	}
 };
 
+class LegacySpellCostTest : public HeroCommandFixture
+{
+protected:
+	void mapLoaded(CMap * map) override
+	{
+		HeroCommandFixture::mapLoaded(map);
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+	}
+};
+
 class NewHorizonsCapabilityStateTest : public NewHorizonsHeroGrowthTest
 {
 protected:
@@ -1497,4 +1507,86 @@ TEST_F(NewHorizonsHeroGrowthTest, WisdomDiscountsOrdinaryListedCostAfterMassMult
 			: newHorizonsMagic::wisdomAdjustedCost(listed, 3, rank);
 		EXPECT_EQ(battle()->battleGetSpellCost(ordinary, attackerSideHero, 3), expectedMass);
 	}
+}
+
+TEST_F(NewHorizonsHeroGrowthTest, WisdomAndAlliedMageReductionApplyInBattleOrder)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	prepareCommands();
+	const int wisdomID = SecondarySkill::decode("new-horizons:wisdom");
+	ASSERT_GE(wisdomID, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(wisdomID), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	const auto * ordinary = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	auto * mage = addStack(BattleSide::ATTACKER, CreatureID(CreatureID::decode("core:mage")), BattleHex(70), 1);
+	ASSERT_NE(ordinary, nullptr);
+	ASSERT_NE(mage, nullptr);
+	const int listed = attackerSideHero->getListedSpellCost(ordinary);
+	const int reduction = mage->valOfBonuses(BonusType::CHANGES_SPELL_COST_FOR_ALLY);
+	ASSERT_GT(reduction, 0);
+	const int wisdomCost = newHorizonsMagic::wisdomAdjustedCost(listed, 3, MasteryLevel::EXPERT);
+	EXPECT_EQ(battle()->battleGetSpellCost(ordinary, attackerSideHero, 3), wisdomCost - reduction);
+}
+
+TEST_F(NewHorizonsHeroGrowthTest, AlliedMageReductionsUseTheStrongestUnitOnly)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	prepareCommands();
+	const auto * ordinary = SpellID(SpellID::CHAIN_LIGHTNING).toSpell();
+	auto * mage = addStack(BattleSide::ATTACKER, CreatureID(CreatureID::decode("core:mage")), BattleHex(70), 1);
+	auto * archMage = addStack(BattleSide::ATTACKER, CreatureID(CreatureID::decode("core:archMage")), BattleHex(80), 1);
+	ASSERT_NE(ordinary, nullptr);
+	ASSERT_NE(mage, nullptr);
+	ASSERT_NE(archMage, nullptr);
+	archMage->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::CHANGES_SPELL_COST_FOR_ALLY, BonusSource::OTHER, 3, BonusSourceID()));
+	const int mageReduction = mage->valOfBonuses(BonusType::CHANGES_SPELL_COST_FOR_ALLY);
+	const int archMageReduction = archMage->valOfBonuses(BonusType::CHANGES_SPELL_COST_FOR_ALLY);
+	ASSERT_GT(mageReduction, 0);
+	ASSERT_GT(archMageReduction, mageReduction);
+	const int listed = attackerSideHero->getListedSpellCost(ordinary);
+	EXPECT_EQ(battle()->battleGetSpellCost(ordinary, attackerSideHero), listed - archMageReduction);
+}
+
+TEST_F(NewHorizonsHeroGrowthTest, OrdinarySpellCostNeverFallsBelowOneMana)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	prepareCommands();
+	const auto * ordinary = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	auto * mage = addStack(BattleSide::ATTACKER, CreatureID(CreatureID::decode("core:mage")), BattleHex(70), 1);
+	ASSERT_NE(ordinary, nullptr);
+	ASSERT_NE(mage, nullptr);
+	mage->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::CHANGES_SPELL_COST_FOR_ALLY, BonusSource::OTHER, 100, BonusSourceID()));
+	EXPECT_EQ(battle()->battleGetSpellCost(ordinary, attackerSideHero), 1);
+}
+
+TEST_F(NewHorizonsHeroGrowthTest, FreeCreatureAbilityRetainsZeroManaCost)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	prepareCommands();
+	const auto * ability = SpellID(SpellID::STONE_GAZE).toSpell();
+	auto * mage = addStack(BattleSide::ATTACKER, CreatureID(CreatureID::decode("core:mage")), BattleHex(70), 1);
+	ASSERT_NE(ability, nullptr);
+	ASSERT_NE(mage, nullptr);
+	ASSERT_FALSE(ability->isCommonHeroSpell());
+	mage->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::CHANGES_SPELL_COST_FOR_ALLY, BonusSource::OTHER, 100, BonusSourceID()));
+	EXPECT_EQ(battle()->battleGetSpellCost(ability, attackerSideHero), 0);
+}
+
+TEST_F(LegacySpellCostTest, OrdinarySpellCostCanStillReachZero)
+{
+	prepareCommands();
+	const auto * ordinary = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	auto * mage = addStack(BattleSide::ATTACKER, CreatureID(CreatureID::decode("core:mage")), BattleHex(70), 1);
+	ASSERT_NE(ordinary, nullptr);
+	ASSERT_NE(mage, nullptr);
+	mage->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::CHANGES_SPELL_COST_FOR_ALLY, BonusSource::OTHER, 100, BonusSourceID()));
+	EXPECT_FALSE(newHorizonsMagic::rulesActive(attackerSideHero->getMagicRules()));
+	EXPECT_EQ(battle()->battleGetSpellCost(ordinary, attackerSideHero), 0);
 }

@@ -3037,6 +3037,8 @@ int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const 
 		? MasteryLevel::NONE : newHorizonsMagic::wisdomRank(caster);
 	int32_t ret = wisdom == MasteryLevel::NONE ? listedCost * listedCostMultiplier
 		: newHorizonsMagic::wisdomAdjustedCost(listedCost, listedCostMultiplier, wisdom);
+	const bool newHorizonsOrdinarySpell = newHorizonsMagic::rulesActive(caster->getMagicRules())
+		&& sp->isCommonHeroSpell() && !sp->isAdventure();
 
 	//checking for friendly stacks reducing cost of the spell and
 	//enemy stacks increasing it
@@ -3055,7 +3057,7 @@ int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const 
 		}
 	}
 
-	return std::max(0, ret - manaReduction + manaIncrease);
+	return std::max(newHorizonsOrdinarySpell ? 1 : 0, ret - manaReduction + manaIncrease);
 }
 
 bool CBattleInfoCallback::battleHasShootingPenalty(const battle::Unit * shooter, const BattleHex & destHex) const
