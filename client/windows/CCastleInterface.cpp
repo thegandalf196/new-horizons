@@ -90,7 +90,10 @@ constexpr int NH_FORT_CARDS_PER_ROW = 3;
 std::shared_ptr<CPicture> createNewHorizonsFortBackground(int height)
 {
 	const Point size(NH_FORT_WIDTH, height);
-	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);
+	// This image participates in the regular GUI coordinate system.  IGNORE
+	// leaves it at physical pixels while every child control is UI-scaled,
+	// causing the cards to overflow the window at non-100% scaling.
+	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::AUTO);
 	Canvas canvas = image->getCanvas();
 	auto texture = ENGINE->renderHandler().loadImage(
 		ImageLocator(ImagePath::builtin("DiBoxBck"), EImageBlitMode::OPAQUE));
@@ -112,7 +115,7 @@ std::shared_ptr<CPicture> createNewHorizonsFortBackground(int height)
 
 std::shared_ptr<CPicture> createNewHorizonsFortCardBackground(const Point & size)
 {
-	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);
+	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::AUTO);
 	Canvas canvas = image->getCanvas();
 	auto texture = ENGINE->renderHandler().loadImage(
 		ImageLocator(ImagePath::builtin("DiBoxBck"), EImageBlitMode::OPAQUE));

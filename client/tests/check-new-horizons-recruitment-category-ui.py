@@ -55,6 +55,8 @@ require(CASTLE_HEADER, "std::array<std::shared_ptr<CLabel>, 3> categoryHeaders",
 require(CASTLE, "categoryLevels", "fort screen groups active New Horizons ranks")
 require(CASTLE, "hasCompleteCreatureCategoryContext", "legacy/custom towns retain stock fort order")
 require(CASTLE, "createNewHorizonsFortBackground", "fort screen uses a taller H3-style background")
+if CASTLE.count("createImage(size, CanvasScalingPolicy::AUTO)") < 2:
+    raise AssertionError("ranked fort and card canvases must follow UI scaling")
 require(CASTLE, "NH_FORT_CARD_HEIGHT", "fort cards have room for expanded statistics")
 for stat in ("Attack", "Defense", "Damage", "Health", "Speed", "Initiative", "Leadership Cost", "Growth"):
     require(CASTLE, f'"{stat}"', f"fort cards show {stat}")
