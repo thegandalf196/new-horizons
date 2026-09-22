@@ -471,6 +471,9 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			&& cb->getBattle()->getMetamagicFirstTargetUnitId(casterSide) != newHorizonsMagic::INVALID_METAMAGIC_TARGET
 			&& event->getMetamagicTargetUnitId() != cb->getBattle()->getMetamagicFirstTargetUnitId(casterSide))
 			powerBonus += 10;
+		if(newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_SPELL_ECHO)
+			&& !sequence.empty() && owner->getId() == sequence.front())
+			powerBonus += 25;
 		const bool distinctSequence = std::all_of(sequence.begin(), sequence.end(), [&sequence](const SpellID & spellId)
 		{
 			return std::count(sequence.begin(), sequence.end(), spellId) == 1;

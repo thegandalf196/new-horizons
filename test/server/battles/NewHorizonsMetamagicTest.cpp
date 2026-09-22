@@ -497,28 +497,43 @@ TEST_F(NewHorizonsMetamagicTest, CountersequenceUsesTheCeiledOnePointSevenFiveMu
 		BonusSourceID(SpellID(SpellID::HASTE)))));
 }
 
-TEST_F(NewHorizonsMetamagicTest, SpellBufferPreservesTheAdditionalCastAfterFirstSpellIsNegated)
+TEST_F(NewHorizonsMetamagicTest, SpellEchoDataReplacesRetiredSpellBufferAtAdvancedRank)
 {
-	prepare(2, {newHorizonsMagic::METAMAGIC_SPELL_BUFFER.data()});
-	const auto counterspell = SpellID(SpellID::decode("new-horizons:counterspell"));
-	ASSERT_NE(counterspell, SpellID::NONE);
-	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-	defenderSideHero->addSpellToSpellbook(counterspell);
-	defenderSideHero->mana = 1000;
-	activate(defender);
-	BattleAction ward;
-	ward.actionType = EActionType::HERO_SPELL;
-	ward.side = BattleSide::DEFENDER;
-	ward.spell = counterspell;
-	ward.aimToHex(BattleHex::INVALID);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), ward));
-	EXPECT_TRUE(battle()->getSide(BattleSide::DEFENDER).counterspellArmed);
+	const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+	const auto & entries = perks["skills"][metamagicSkill]["perks"].Vector();
+	const auto found = std::find_if(entries.begin(), entries.end(), [](const JsonNode & entry)
+	{
+		return entry["id"].String() == "new-horizons:metamagic.spellEcho";
+	});
+	ASSERT_NE(found, entries.end());
+	EXPECT_EQ((*found)["name"].String(), "Spell Echo");
+	EXPECT_EQ((*found)["requires"].String(), "advanced");
+	EXPECT_EQ((*found)["effect"]["status"].String(), "active");
+	EXPECT_NE((*found)["description"].String().find("repeats the first Spell"), std::string::npos);
+	EXPECT_NE((*found)["description"].String().find("+25%"), std::string::npos);
+	EXPECT_EQ(std::find_if(entries.begin(), entries.end(), [](const JsonNode & entry)
+	{
+		return entry["id"].String() == "new-horizons:metamagic.spellBuffer";
+	}), entries.end());
+}
 
-	activate(attacker);
+TEST_F(NewHorizonsMetamagicTest, SpellEchoBoostsAdditionalRepeatedSpell)
+{
+	prepare(2, {newHorizonsMagic::METAMAGIC_SPELL_ECHO.data()});
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicFirstCounterspellNegated);
-	EXPECT_FALSE(attacker->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(SpellID(SpellID::HASTE)))));
+
+	// This shared BattleCast preview is also the path used by BattleAI's
+	// hypothetical spell evaluation.  The follow-up repeats the first spell,
+	// so Spell Echo adds its 25% Spell Power-derived component.
+	EXPECT_EQ(followupPower(SpellID::HASTE, attacker), 12);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker, true));
+}
+
+TEST_F(NewHorizonsMetamagicTest, SpellEchoDoesNotBoostADifferentAdditionalSpell)
+{
+	prepare(2, {newHorizonsMagic::METAMAGIC_SPELL_ECHO.data()});
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(followupPower(SpellID::SLOW, defender), 10);
 	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
 	EXPECT_TRUE(defender->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
 		BonusSourceID(SpellID(SpellID::SLOW)))));

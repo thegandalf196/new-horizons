@@ -65,6 +65,7 @@ struct DLL_LINKAGE PerkOfferCandidate
 class DLL_LINKAGE PerkState
 {
 private:
+	void migrateRetiredPerks();
 	void normalizeLegacyTierConflicts();
 
 public:
@@ -90,6 +91,7 @@ public:
 		h & selected;
 		if(!h.saving)
 		{
+			migrateRetiredPerks();
 			normalizeLegacyTierConflicts();
 			validate();
 		}

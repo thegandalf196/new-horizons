@@ -153,6 +153,45 @@ TEST(NewHorizonsPerkState, JsonAndBinaryRoundTripsPreserveSavedRegistrySnapshot)
 	EXPECT_TRUE(fromBinary.hasSelection(PLANNED_SKILL, legacyPlanned.id));
 }
 
+TEST(NewHorizonsPerkState, RetiredSpellBufferMigratesToSpellEchoAcrossJsonAndBinaryLoads)
+{
+	auto legacy = state();
+	constexpr auto skill = "new-horizons:metamagic";
+	constexpr auto retired = "new-horizons:metamagic.spellBuffer";
+	constexpr auto replacement = "new-horizons:metamagic.spellEcho";
+	for(auto & perk : legacy.rules["skills"][skill]["perks"].Vector())
+	{
+		if(perk["id"].String() != replacement)
+			continue;
+		perk["id"].String() = retired;
+		perk["name"].String() = "Spell Buffer";
+		perk["description"].String() = "Retired countered-spell rule.";
+		perk["effect"]["description"].String() = "Retired countered-spell rule.";
+	}
+	legacy.selected.push_back({skill, retired});
+	legacy.validate();
+
+	const auto restoredJson = newHorizonsHeroes::PerkState::fromJson(legacy.toJson());
+	EXPECT_TRUE(restoredJson.hasSelection(skill, replacement));
+	EXPECT_FALSE(restoredJson.hasSelection(skill, retired));
+	const auto jsonDefinition = newHorizonsHeroes::perkDefinition(
+		restoredJson.rules, skill, replacement);
+	ASSERT_TRUE(jsonDefinition);
+	EXPECT_EQ(jsonDefinition->name, "Spell Echo");
+	EXPECT_NE(jsonDefinition->description.find("repeats the first Spell"), std::string::npos);
+
+	CMemorySerializer memory;
+	memory.oser & legacy;
+	newHorizonsHeroes::PerkState restoredBinary;
+	memory.iser & restoredBinary;
+	EXPECT_TRUE(restoredBinary.hasSelection(skill, replacement));
+	EXPECT_FALSE(restoredBinary.hasSelection(skill, retired));
+	const auto binaryDefinition = newHorizonsHeroes::perkDefinition(
+		restoredBinary.rules, skill, replacement);
+	ASSERT_TRUE(binaryDefinition);
+	EXPECT_EQ(binaryDefinition->name, "Spell Echo");
+}
+
 TEST(NewHorizonsPerkState, CrossoverRejectsUnknownFieldsAndForgedSelections)
 {
 	auto original = state();

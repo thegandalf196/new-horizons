@@ -15,6 +15,12 @@ namespace newHorizonsHeroes
 {
 namespace
 {
+constexpr std::string_view METAMAGIC_SKILL = "new-horizons:metamagic";
+constexpr std::string_view RETIRED_SPELL_BUFFER = "new-horizons:metamagic.spellBuffer";
+constexpr std::string_view SPELL_ECHO = "new-horizons:metamagic.spellEcho";
+constexpr std::string_view SPELL_ECHO_DESCRIPTION =
+	"If the additional Spell repeats the first Spell in the Metamagic sequence, it gains +25% to its Spell Power-derived component.";
+
 void savedFields(const JsonNode & node, std::initializer_list<std::string_view> keys)
 {
 	if(!node.isStruct())
@@ -23,6 +29,32 @@ void savedFields(const JsonNode & node, std::initializer_list<std::string_view> 
 		if(std::find(keys.begin(), keys.end(), key) == keys.end())
 			throw std::runtime_error("Unknown New Horizons perk state field " + key);
 }
+}
+
+void PerkState::migrateRetiredPerks()
+{
+	if(!usesPerkRules(rules))
+		return;
+
+	auto & skills = rules["skills"].Struct();
+	const auto skillIt = skills.find(std::string(METAMAGIC_SKILL));
+	if(skillIt != skills.end())
+	{
+		for(auto & perk : skillIt->second["perks"].Vector())
+		{
+			if(perk["id"].String() != RETIRED_SPELL_BUFFER)
+				continue;
+			perk["id"].String() = SPELL_ECHO;
+			perk["name"].String() = "Spell Echo";
+			perk["description"].String() = SPELL_ECHO_DESCRIPTION;
+			perk["effect"]["status"].String() = "active";
+			perk["effect"]["description"].String() = SPELL_ECHO_DESCRIPTION;
+		}
+	}
+
+	for(auto & selection : selected)
+		if(selection.skillId == METAMAGIC_SKILL && selection.perkId == RETIRED_SPELL_BUFFER)
+			selection.perkId = SPELL_ECHO;
 }
 
 bool PerkState::hasSelection(const std::string & skillId, const std::string & perkId) const
@@ -237,6 +269,7 @@ PerkState PerkState::fromJson(const JsonNode & node)
 			throw std::runtime_error("Invalid New Horizons perk selection identity");
 		result.selected.push_back({saved["skillId"].String(), saved["perkId"].String()});
 	}
+	result.migrateRetiredPerks();
 	result.normalizeLegacyTierConflicts();
 	result.validate();
 	return result;

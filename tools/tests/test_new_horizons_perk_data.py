@@ -50,7 +50,7 @@ ACTIVE_PERKS = {
     "new-horizons:metamagic.echoedDuration",
     "new-horizons:metamagic.splitFocus",
     "new-horizons:metamagic.formulaReserve",
-    "new-horizons:metamagic.spellBuffer",
+    "new-horizons:metamagic.spellEcho",
     "new-horizons:metamagic.grandMetamagic",
     "new-horizons:metamagic.perfectSequence",
     "new-horizons:battlecraft.entrench",
@@ -163,6 +163,22 @@ def source_description_for_current_rules(description):
     )
 
 
+def source_perk_row_for_current_rules(row):
+    """Apply the user-authorized replacement of the retired Metamagic perk.
+
+    The canonical document predates the playable replacement, so preserve its
+    hash/provenance while comparing the live registry against the current
+    rules contract.
+    """
+    if row[0] == "Spell Buffer":
+        return [
+            "Spell Echo",
+            row[1],
+            "If the additional Spell repeats the first Spell in the Metamagic sequence, it gains +25% to its Spell Power-derived component.",
+        ]
+    return row
+
+
 class NewHorizonsPerkDataTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -201,8 +217,13 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                         for perk in skill["perks"]
                     ],
                     [
-                        (row[0], row[1], source_description_for_current_rules(row[2]))
+                        (
+                            current_row[0],
+                            current_row[1],
+                            source_description_for_current_rules(current_row[2]),
+                        )
                         for row in source_rows
+                        for current_row in [source_perk_row_for_current_rules(row)]
                     ],
                 )
 

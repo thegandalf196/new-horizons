@@ -50,7 +50,9 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:metamagic.echoedDuration", "NH_perk_echoed_duration"},
 		{"new-horizons:metamagic.splitFocus", "NH_perk_split_focus"},
 		{"new-horizons:metamagic.formulaReserve", "NH_perk_formula_reserve"},
-		{"new-horizons:metamagic.spellBuffer", "NH_perk_spell_buffer"},
+		// Spell Echo has no dedicated painting yet; use the neutral placeholder
+		// rather than exposing the retired Spell Buffer artwork for a new rule.
+		{"new-horizons:metamagic.spellEcho", "NH_perk_neutral"},
 		{"new-horizons:metamagic.grandMetamagic", "NH_perk_grand_metamagic"},
 		{"new-horizons:metamagic.perfectSequence", "NH_perk_perfect_sequence"},
 		{"new-horizons:necromancy.darkConversion", "NH_perk_dark_conversion"},

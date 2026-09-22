@@ -365,10 +365,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	const auto * counteringHero = battle.battleGetFightingHero(counteringSide);
 	int counterspellCost = 0;
 	bool counterspellNegated = false;
-	const bool bufferedFollowup = ba.metamagicFollowup
-		&& battle.battleMetamagicFirstCounterspellNegated(ba.side)
-		&& newHorizonsMagic::hasMetamagicPerk(h, newHorizonsMagic::METAMAGIC_SPELL_BUFFER);
-	if(counteringHero && battle.battleWasCounterspellArmed(counteringSide) && !bufferedFollowup)
+	if(counteringHero && battle.battleWasCounterspellArmed(counteringSide))
 	{
 		const int listedCost = h->getListedSpellCost(s);
 		counterspellCost = newHorizonsMagic::counterspellCost(listedCost,

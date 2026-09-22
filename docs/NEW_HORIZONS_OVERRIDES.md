@@ -34,6 +34,44 @@ requiring the complete source document to be replaced.
 
 ## Accepted overrides
 
+### 2026-09-22 — Replace Metamagic's countered-spell perk
+
+- **Status:** Accepted
+- **Overrides:** Metamagic's Advanced **Spell Buffer** perk.
+- **Rule:** Replace Spell Buffer and its Counterspell-dependent trigger with
+  **Spell Echo**. When the additional Spell repeats the first Spell in its
+  Metamagic sequence, that additional Spell gains +25% to its Spell
+  Power-derived numerical component. This creates a deliberate repeat-casting
+  path and does not depend on an enemy knowing, arming, or successfully using
+  Counterspell.
+- **Implementation evidence:** The live perk registry and shared spell-mechanics
+  path implement Spell Echo, with data/runtime coverage in
+  NewHorizonsMetamagicTest.SpellEcho*. JSON and binary save migration is covered
+  by NewHorizonsPerkState.RetiredSpellBufferMigratesToSpellEchoAcrossJsonAndBinaryLoads.
+
+### 2026-09-22 — Core, Elite, and Champion recruitment layout
+
+- **Status:** Accepted
+- **Overrides:** The town creature-recruitment screen's original seven-tier
+  presentation and any tabbed rank-selection proposal.
+- **Rule:** Present the complete town roster in three simultaneously visible
+  horizontal rank bands: **Core**, **Elite**, and **Champion**. The supplied Fort
+  reference uses three equal Core cards, three equal Elite cards, and one
+  Champion card centered in its own lower band. Other factions retain every
+  authored creature row in its assigned band; the UI must adapt the row layout
+  rather than dropping, merging, or duplicating creatures to force a universal
+  3/3/1 count.
+  Each card combines creature name, dwelling preview, creature portrait,
+  available count, weekly growth, and a compact statistic column. The statistic
+  column must include Attack, Defense, Damage, Health, Speed, Initiative,
+  Leadership Cost, and Growth. Increase the window and card height enough to
+  give Initiative and Leadership Cost their own readable rows; do not compress,
+  overlap, or abbreviate those statistics merely to retain the old dimensions.
+  Rank is communicated by the band heading rather than repeated as text over
+  individual dwelling images. Retain the town's Heroes III visual identity,
+  resource bar, date, and confirmation control.
+- **Implementation evidence:** Pending.
+
 ### 2026-09-21 — Astral Nexus function
 
 - **Status:** Accepted

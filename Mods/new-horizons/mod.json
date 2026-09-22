@@ -5615,13 +5615,13 @@
 								}
 							},
 							{
-								"id": "new-horizons:metamagic.spellBuffer",
-								"name": "Spell Buffer",
+								"id": "new-horizons:metamagic.spellEcho",
+								"name": "Spell Echo",
 								"requires": "advanced",
-								"description": "If the first spell in a Metamagic sequence is negated by Counterspell, the additional Spell cannot be Counterspelled by that same armed Counterspell.",
+								"description": "If the additional Spell repeats the first Spell in the Metamagic sequence, it gains +25% to its Spell Power-derived component.",
 								"effect": {
 									"status": "active",
-									"description": "If the first spell in a Metamagic sequence is negated by Counterspell, the additional Spell cannot be Counterspelled by that same armed Counterspell."
+									"description": "If the additional Spell repeats the first Spell in the Metamagic sequence, it gains +25% to its Spell Power-derived component."
 								}
 							},
 							{

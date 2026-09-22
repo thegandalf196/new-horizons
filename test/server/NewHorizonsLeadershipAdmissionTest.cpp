@@ -14,6 +14,7 @@
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForClient.h"
+#include "../../lib/networkPacks/PacksForServer.h"
 #include "../../server/CGameHandler.h"
 #include "../../server/IGameServer.h"
 #include "../mock/GameHandlerTestServer.h"
@@ -225,4 +226,60 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, ArrangeStacksRejectsOverCapacityAtomi
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.systemMessages, 0);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, GarrisonSwapRejectsAnOversizedTownStackAtomically)
+{
+	const CreatureID imp(CreatureID::decode("core:imp"));
+	const CreatureID gog(CreatureID::decode("core:gog"));
+	const PlayerColor player(0);
+	const int3 townPosition(12, 12, 0);
+
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.town(townPosition, faction("core:inferno"), player)
+		.townGarrison({{imp, 1}, {gog, 1}})
+		.hero({5, 5, 0}, heroType("core:christian"), player)
+		.heroGarrison({});
+	startWithMap(std::move(builder));
+
+	auto * town = findFirst<CGTownInstance>();
+	auto * hero = findHeroByOwner(player);
+	ASSERT_NE(town, nullptr);
+	ASSERT_NE(hero, nullptr);
+
+	// This is the state that makes Nullkiller consider moving the visiting hero
+	// into the empty garrison.  Keep the town army above the hero's per-stack
+	// Leadership limit so the authoritative moveArmy preflight must reject it.
+	ChangeObjPos moveHero;
+	moveHero.objid = hero->id;
+	moveHero.nPos = town->visitablePos();
+	moveHero.initiator = player;
+	gameState()->apply(moveHero);
+	SetHeroesInTown setHeroes;
+	setHeroes.tid = town->id;
+	setHeroes.visiting = hero->id;
+	setHeroes.garrison = ObjectInstanceID::NONE;
+	gameState()->apply(setHeroes);
+
+	const auto capacity = hero->getLeadershipSlotCapacity(gog);
+	ASSERT_TRUE(capacity);
+	town->setStackCount(SlotID(1), capacity->maximum + 1);
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+
+	GarrisonHeroSwap request(town->id);
+	request.player = player;
+	request.requestID = 43;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
+
+	EXPECT_EQ(town->getStackCount(SlotID(0)), 1);
+	EXPECT_EQ(town->getStackCount(SlotID(1)), capacity->maximum + 1);
+	EXPECT_EQ(hero->stacksCount(), 0);
+	EXPECT_EQ(town->getVisitingHero(), hero);
+	EXPECT_EQ(town->getGarrisonHero(), nullptr);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	EXPECT_EQ(server.systemMessages, 1);
 }
