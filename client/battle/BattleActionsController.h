@@ -93,6 +93,9 @@ class BattleActionsController
 	std::optional<uint32_t> heroOrderTargetingFirst;
 	/// Presentation-only reserve choice for the next Demonic Gate placement.
 	CreatureID demonicGatingCreature;
+	/// Mobile Gate's first battlefield click. INVALID means the player is still
+	/// choosing where the acting stack moves before placing the Gate.
+	BattleHex demonicGatingMovement = BattleHex::INVALID;
 
 	bool isCastingPossibleHere (const CSpell * spell, const CStack *shere, const BattleHex & myNumber);
 	std::vector<PossiblePlayerBattleAction> getPossibleActionsForStack (const CStack *stack) const; //called when stack gets its turn

@@ -9,6 +9,8 @@
 #include "../../../server/battles/BattleProcessor.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/networkPacks/StackLocation.h"
 
 namespace
@@ -68,6 +70,35 @@ protected:
 				return candidate;
 		}
 		return BattleHex();
+	}
+
+	std::pair<BattleHex, BattleHex> mobileMoveAndGate(const battle::Unit * source,
+		int minimumPath, int maximumPath, bool requireBeyondOriginalRange = false) const
+	{
+		const auto movementAccessibility = battle()->getAccessibility(source);
+		const auto gateAccessibility = battle()->getAccessibility();
+		for(int moveIndex = 0; moveIndex < GameConstants::BFIELD_SIZE; ++moveIndex)
+		{
+			const BattleHex movement(moveIndex);
+			if(!movement.isAvailable() || !movementAccessibility.accessible(movement, source))
+				continue;
+			const auto [path, distance] = battle()->getPath(source->getPosition(), movement, source);
+			if(path.empty() || distance < minimumPath || distance > maximumPath)
+				continue;
+			for(int gateIndex = 0; gateIndex < GameConstants::BFIELD_SIZE; ++gateIndex)
+			{
+				const BattleHex gate(gateIndex);
+				if(!gate.isAvailable() || gate == movement || gate == source->getPosition()
+					|| BattleHex::getDistance(movement, gate) > 3
+					|| (requireBeyondOriginalRange && BattleHex::getDistance(source->getPosition(), gate) <= 3)
+					|| !gateAccessibility.accessible(gate, false, source->unitSide())
+					|| battle()->battleGetUnitByPos(gate, true)
+					|| !battle()->battleGetAllObstaclesOnPos(gate, false).empty())
+					continue;
+				return {movement, gate};
+			}
+		}
+		return {};
 	}
 
 	std::pair<BattleHex, BattleHex> adjacentGateAndEnemyHexes(const battle::Unit * source) const
@@ -333,6 +364,173 @@ TEST_F(NewHorizonsDemonicGatingTest, ReserveDisciplineFloorsNegativeArrivalMoral
 	const auto floor = gatedStack->getFirstBonus(Selector::type()(BonusType::MINIMUM_MORALE));
 	ASSERT_NE(floor, nullptr);
 	EXPECT_EQ(floor->turnsRemain, 1);
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, MobileGateMovesWithinHalfSpeedThenCommitsFromNewPosition)
+{
+	grantGatingPerk("new-horizons:demonicGating.mobileGate", MasteryLevel::ADVANCED);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	ASSERT_EQ(active->getMovementRange(0) % 2, 1u);
+	const int movementLimit = static_cast<int>(active->getMovementRange(0) / 2);
+	ASSERT_GT(movementLimit, 0);
+	const auto [movement, gate] = mobileMoveAndGate(active, 1, movementLimit, true);
+	ASSERT_TRUE(movement.isAvailable());
+	ASSERT_TRUE(gate.isAvailable());
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(movement);
+	action.aimToHex(gate);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	const auto * moved = battle()->battleGetStackByID(active->unitId(), false);
+	ASSERT_NE(moved, nullptr);
+	EXPECT_EQ(moved->getPosition(), movement);
+	const auto & side = battle()->getSide(BattleSide::ATTACKER);
+	EXPECT_TRUE(side.demonicReserve.empty());
+	ASSERT_EQ(side.pendingDemonicGates.size(), 1u);
+	EXPECT_EQ(side.pendingDemonicGates.front().position, gate);
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, MobileGateRejectsMovementBeyondFlooredHalfSpeedAtomically)
+{
+	grantGatingPerk("new-horizons:demonicGating.mobileGate", MasteryLevel::ADVANCED);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto originalPosition = active->getPosition();
+	const int movementLimit = static_cast<int>(active->getMovementRange(0) / 2);
+	const auto [movement, gate] = mobileMoveAndGate(active, movementLimit + 1,
+		static_cast<int>(active->getMovementRange(0)));
+	ASSERT_TRUE(movement.isAvailable());
+	ASSERT_TRUE(gate.isAvailable());
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(movement);
+	action.aimToHex(gate);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	const auto * unchanged = battle()->battleGetStackByID(active->unitId(), false);
+	ASSERT_NE(unchanged, nullptr);
+	EXPECT_EQ(unchanged->getPosition(), originalPosition);
+	const auto & side = battle()->getSide(BattleSide::ATTACKER);
+	EXPECT_EQ(side.demonicReserve.at(creatureByName("core:imp")), 12);
+	EXPECT_TRUE(side.pendingDemonicGates.empty());
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, MobileGateUsesExactlyHalfOfEvenMovementRange)
+{
+	grantGatingPerk("new-horizons:demonicGating.mobileGate", MasteryLevel::ADVANCED);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	if(active->getMovementRange(0) % 2 != 0)
+	{
+		Bonus movement;
+		movement.type = BonusType::STACKS_MOVEMENT_RANGE;
+		movement.val = 1;
+		movement.duration = BonusDuration::ONE_BATTLE;
+		SetStackEffect effect;
+		effect.battleID = BattleID(0);
+		effect.toAdd.emplace_back(active->unitId(), std::vector<Bonus>{movement});
+		gameHandler->sendAndApply(effect);
+	}
+	ASSERT_EQ(active->getMovementRange(0) % 2, 0u);
+	const int movementLimit = static_cast<int>(active->getMovementRange(0) / 2);
+	const auto [movement, gate] = mobileMoveAndGate(active, movementLimit, movementLimit);
+	ASSERT_TRUE(movement.isAvailable());
+	ASSERT_TRUE(gate.isAvailable());
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(movement);
+	action.aimToHex(gate);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(battle()->battleGetStackByID(active->unitId(), false)->getPosition(), movement);
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, MobileGateRejectsGateOnTheMovementHexAtomically)
+{
+	grantGatingPerk("new-horizons:demonicGating.mobileGate", MasteryLevel::ADVANCED);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto originalPosition = active->getPosition();
+	const int movementLimit = static_cast<int>(active->getMovementRange(0) / 2);
+	const auto selection = mobileMoveAndGate(active, 1, movementLimit);
+	const auto movement = selection.first;
+	ASSERT_TRUE(movement.isAvailable());
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(movement);
+	action.aimToHex(movement);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	EXPECT_EQ(battle()->battleGetStackByID(active->unitId(), false)->getPosition(), originalPosition);
+	const auto & side = battle()->getSide(BattleSide::ATTACKER);
+	EXPECT_EQ(side.demonicReserve.at(creatureByName("core:imp")), 12);
+	EXPECT_TRUE(side.pendingDemonicGates.empty());
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, MobileGateRejectsDoubleWideTailOverlappingFutureSourceAtomically)
+{
+	grantGatingPerk("new-horizons:demonicGating.mobileGate", MasteryLevel::ADVANCED);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto originalPosition = active->getPosition();
+	const auto hellHound = creatureByName("core:hellHound");
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	side.demonicReserve = {{hellHound, 4}};
+
+	const auto movementAccessibility = battle()->getAccessibility(active);
+	const auto gateAccessibility = battle()->getAccessibility();
+	const int movementLimit = static_cast<int>(active->getMovementRange(0) / 2);
+	BattleHex movement;
+	BattleHex gate;
+	for(int index = 0; index < GameConstants::BFIELD_SIZE && !gate.isAvailable(); ++index)
+	{
+		const BattleHex candidate(index);
+		const BattleHex candidateGate(candidate.toInt() + 1);
+		if(!candidate.isAvailable() || !candidateGate.isAvailable()
+			|| BattleHex::getDistance(candidate, candidateGate) != 1
+			|| !movementAccessibility.accessible(candidate, active)
+			|| !gateAccessibility.accessible(candidateGate, true, BattleSide::ATTACKER))
+			continue;
+		const auto [path, distance] = battle()->getPath(originalPosition, candidate, active);
+		if(!path.empty() && distance > 0 && distance <= movementLimit)
+		{
+			movement = candidate;
+			gate = candidateGate;
+		}
+	}
+	ASSERT_TRUE(movement.isAvailable());
+	ASSERT_TRUE(gate.isAvailable());
+	ASSERT_EQ(battle::Unit::occupiedHex(gate, true, BattleSide::ATTACKER), movement);
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = hellHound;
+	action.aimToHex(movement);
+	action.aimToHex(gate);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	EXPECT_EQ(battle()->battleGetStackByID(active->unitId(), false)->getPosition(), originalPosition);
+	EXPECT_EQ(side.demonicReserve.at(hellHound), 4);
+	EXPECT_TRUE(side.pendingDemonicGates.empty());
 }
 
 TEST(NewHorizonsDemonicGatingRules, EndlessLegionRestoresHalfOfGatedCasualtiesRoundedDown)

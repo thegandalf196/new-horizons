@@ -234,3 +234,19 @@ requiring the complete source document to be replaced.
   temporary-hit-point pool. Authoritative arrival state grants and publishes the
   pool through `BattleUnitsChanged`; ordinary damage consumes it first while the
   creature count and post-battle reserve reconciliation remain unchanged.
+
+### 2026-09-22 — Mobile Gate combined action
+
+- **Status:** Accepted
+- **Rule:** Mobile Gate uses one combined Creature Activation. The player first
+  chooses a legal movement destination at a path distance no greater than half
+  the stack's current Movement Range, rounded down, and then places the Gate from
+  that destination. Choosing the current hex performs an ordinary stationary
+  Gate. The action never grants a second activation.
+- **Implementation evidence:** The submitted action carries the movement hex and
+  Gate hex as two ordered targets. The server validates the complete request,
+  moves the stack authoritatively, revalidates placement from its actual ending
+  hex, and only then transfers the selected reserve stack into the pending Gate.
+  An invalid request changes neither position, reserve, nor activation state;
+  an in-path battlefield interruption may consume movement/activation but never
+  consumes reserve troops unless the Gate remains legal from the actual endpoint.

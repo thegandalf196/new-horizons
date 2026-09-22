@@ -1679,18 +1679,23 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		assert(st); // stack must exists for all non-hero actions
 		if(pack.ba.actionType == EActionType::DEMONIC_GATING)
 		{
-			auto & side = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
-			const auto found = side.demonicReserve.find(pack.ba.gatingCreature);
-			if(found == side.demonicReserve.end() || found->second <= 0 || pack.ba.target.size() != 1)
-				throw std::runtime_error("Invalid Demonic Gating StartAction snapshot");
-			SideInBattle::PendingDemonicGate gate;
-			gate.creature = found->first;
-			gate.count = found->second;
-			gate.position = pack.ba.target.front().hexValue;
-			gate.arrivalRound = gs.getBattle(pack.battleID)->getRound() + 1;
-			gate.sourceUnitId = pack.ba.stackNumber;
-			side.demonicReserve.erase(found);
-			side.pendingDemonicGates.push_back(gate);
+			// Mobile Gate commits its reserve stack only after the authoritative
+			// movement has completed and the destination is revalidated.
+			if(pack.ba.target.size() != 2)
+			{
+				auto & side = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
+				const auto found = side.demonicReserve.find(pack.ba.gatingCreature);
+				if(found == side.demonicReserve.end() || found->second <= 0 || pack.ba.target.size() != 1)
+					throw std::runtime_error("Invalid Demonic Gating StartAction snapshot");
+				SideInBattle::PendingDemonicGate gate;
+				gate.creature = found->first;
+				gate.count = found->second;
+				gate.position = pack.ba.target.front().hexValue;
+				gate.arrivalRound = gs.getBattle(pack.battleID)->getRound() + 1;
+				gate.sourceUnitId = pack.ba.stackNumber;
+				side.demonicReserve.erase(found);
+				side.pendingDemonicGates.push_back(gate);
+			}
 		}
 
 		switch(pack.ba.actionType)

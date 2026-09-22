@@ -3515,7 +3515,7 @@
 					"requires": "advanced",
 					"description": "A stack may move up to half its Speed before using its activation to Gate.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A stack may move up to half its Speed before using its activation to Gate."
 					}
 				},

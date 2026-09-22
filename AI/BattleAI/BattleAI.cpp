@@ -163,22 +163,53 @@ std::optional<BattleAction> chooseDemonicGate(const std::shared_ptr<CBattleInfoC
 
 	const int placementRange = hero->hasActivePerk(
 		"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate") ? 5 : 3;
+	const bool mobileGate = hero->hasActivePerk(
+		"new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate");
 	const auto accessibility = battle->getAccessibility();
-	BattleHex best;
-	int bestEnemyDistance = std::numeric_limits<int>::max();
-	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	std::vector<BattleHex> movementCandidates{source->getPosition()};
+	if(mobileGate)
 	{
-		BattleHex candidate(index);
-		if(!candidate.isAvailable() || BattleHex::getDistance(source->getPosition(), candidate) > placementRange
-			|| !accessibility.accessible(candidate, chosen.toCreature()->isDoubleWide(), side))
-			continue;
-		int nearestEnemy = std::numeric_limits<int>::max();
-		for(const auto * enemy : battle->battleAliveUnits(CBattleInfoEssentials::otherSide(side)))
-			nearestEnemy = std::min(nearestEnemy, static_cast<int>(BattleHex::getDistance(candidate, enemy->getPosition())));
-		if(nearestEnemy < bestEnemyDistance)
+		const auto movementAccessibility = battle->getAccessibility(source);
+		const int movementLimit = static_cast<int>(source->getMovementRange(0) / 2);
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 		{
-			best = candidate;
-			bestEnemyDistance = nearestEnemy;
+			BattleHex candidate(index);
+			if(!candidate.isAvailable() || candidate == source->getPosition()
+				|| !movementAccessibility.accessible(candidate, source))
+				continue;
+			const auto [path, distance] = battle->getPath(source->getPosition(), candidate, source);
+			if(!path.empty() && distance >= 0 && distance <= movementLimit)
+				movementCandidates.push_back(candidate);
+		}
+	}
+	BattleHex best;
+	BattleHex bestMovement = source->getPosition();
+	int bestEnemyDistance = std::numeric_limits<int>::max();
+	for(const auto movement : movementCandidates)
+	{
+		const BattleHex occupiedTail = source->doubleWide()
+			? source->occupiedHex(movement) : BattleHex::INVALID;
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+		{
+			BattleHex candidate(index);
+			const BattleHex gatedTail = battle::Unit::occupiedHex(
+				candidate, chosen.toCreature()->isDoubleWide(), side);
+			if(!candidate.isAvailable() || candidate == movement || candidate == occupiedTail
+				|| (gatedTail.isValid() && (gatedTail == movement || gatedTail == occupiedTail))
+				|| BattleHex::getDistance(movement, candidate) > placementRange
+				|| battle->battleGetUnitByPos(candidate, true)
+				|| !battle->battleGetAllObstaclesOnPos(candidate, false).empty()
+				|| !accessibility.accessible(candidate, chosen.toCreature()->isDoubleWide(), side))
+				continue;
+			int nearestEnemy = std::numeric_limits<int>::max();
+			for(const auto * enemy : battle->battleAliveUnits(CBattleInfoEssentials::otherSide(side)))
+				nearestEnemy = std::min(nearestEnemy, static_cast<int>(BattleHex::getDistance(candidate, enemy->getPosition())));
+			if(nearestEnemy < bestEnemyDistance)
+			{
+				best = candidate;
+				bestMovement = movement;
+				bestEnemyDistance = nearestEnemy;
+			}
 		}
 	}
 	if(!best.isAvailable())
@@ -189,6 +220,8 @@ std::optional<BattleAction> chooseDemonicGate(const std::shared_ptr<CBattleInfoC
 	result.side = side;
 	result.stackNumber = source->unitId();
 	result.gatingCreature = chosen;
+	if(bestMovement != source->getPosition())
+		result.aimToHex(bestMovement);
 	result.aimToHex(best);
 	return result;
 }

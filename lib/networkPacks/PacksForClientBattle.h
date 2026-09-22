@@ -59,7 +59,7 @@ struct DLL_LINKAGE BattleNextRound : public CPackForClient
 };
 
 /// Replicates the complete authoritative Demonic Reserve battle snapshot after
-/// a pending gate resolves. Opening a gate itself is carried by StartAction.
+/// server-side changes that are not fully represented by StartAction.
 struct DLL_LINKAGE BattleDemonicGatingStateChanged : public CPackForClient
 {
 	BattleID battleID = BattleID::NONE;

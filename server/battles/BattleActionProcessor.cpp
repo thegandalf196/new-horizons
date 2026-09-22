@@ -112,7 +112,11 @@ static bool canonicalFireWallDirection(BattleHex::EDir direction)
 static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)
 {
 	if(action.actionType != EActionType::DEMONIC_GATING || !action.gatingCreature.hasValue()
-		|| action.target.size() != 1 || action.target.front().unitValue != -1000)
+		|| (action.target.size() != 1 && action.target.size() != 2)
+		|| std::ranges::any_of(action.target, [](const auto & destination)
+		{
+			return destination.unitValue != -1000 || !destination.hexValue.isValid();
+		}))
 		return false;
 	const auto * source = battle.battleGetStackByID(action.stackNumber, false);
 	const auto * hero = battle.battleGetFightingHero(action.side);
@@ -129,10 +133,28 @@ static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, cons
 	const auto reserve = demonicReserve.find(action.gatingCreature);
 	if(reserve == demonicReserve.end() || reserve->second <= 0)
 		return false;
+	BattleHex sourcePosition = source->getPosition();
+	if(action.target.size() == 2)
+	{
+		if(!hero->hasActivePerk("new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate")
+			|| source != battle.battleActiveUnit())
+			return false;
+		const BattleHex movementDestination = action.target.front().hexValue;
+		const auto [path, distance] = battle.getPath(sourcePosition, movementDestination, source);
+		const int movementLimit = static_cast<int>(source->getMovementRange(0) / 2);
+		if(path.empty() || distance < 0 || distance > movementLimit)
+			return false;
+		sourcePosition = movementDestination;
+	}
 	const int placementRange = hero->hasActivePerk(
 		"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate") ? 5 : 3;
-	const BattleHex target = action.target.front().hexValue;
-	if(!target.isAvailable() || BattleHex::getDistance(source->getPosition(), target) > placementRange
+	const BattleHex target = action.target.back().hexValue;
+	const BattleHex occupiedTail = source->doubleWide()
+		? source->occupiedHex(sourcePosition) : BattleHex::INVALID;
+	const BattleHex gatedTail = battle::Unit::occupiedHex(target, creature->isDoubleWide(), action.side);
+	if(!target.isAvailable() || target == sourcePosition || target == occupiedTail
+		|| (gatedTail.isValid() && (gatedTail == sourcePosition || gatedTail == occupiedTail))
+		|| BattleHex::getDistance(sourcePosition, target) > placementRange
 		|| battle.battleGetUnitByPos(target, true) || !battle.battleGetAllObstaclesOnPos(target, false).empty())
 		return false;
 	const auto accessibility = battle.getAccessibility();
@@ -1083,6 +1105,53 @@ bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & ba
 	const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle());
 	if(!concrete)
 		return false;
+	const auto * actingStack = battle.battleGetStackByID(ba.stackNumber, false);
+	if(!canStackAct(battle, actingStack))
+		return false;
+	if(ba.target.size() == 2)
+	{
+		processBattleEventTriggers(battle, CombatEventType::BEFORE_MOVE, actingStack, nullptr);
+		const auto movement = moveStack(battle, ba.stackNumber, ba.target.front().hexValue);
+		if(movement.invalidRequest)
+			return false;
+		const auto * source = battle.battleGetStackByID(ba.stackNumber, false);
+		if(source && source->alive())
+			processBattleEventTriggers(battle, CombatEventType::AFTER_MOVE, source, nullptr);
+
+		const auto * hero = battle.battleGetFightingHero(ba.side);
+		const auto * creature = ba.gatingCreature.toCreature();
+		const BattleHex gateHex = ba.target.back().hexValue;
+		const int placementRange = hero && hero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate") ? 5 : 3;
+		const auto accessibility = battle.getAccessibility();
+		const bool gateStillLegal = source && source->alive() && hero && creature
+			&& BattleHex::getDistance(source->getPosition(), gateHex) <= placementRange
+			&& !battle.battleGetUnitByPos(gateHex, true)
+			&& battle.battleGetAllObstaclesOnPos(gateHex, false).empty()
+			&& accessibility.accessible(gateHex, creature->isDoubleWide(), ba.side);
+		if(!gateStillLegal)
+			return true; // authoritative movement or an obstacle may still have consumed the activation
+
+		const auto & side = concrete->getSide(ba.side);
+		const auto reserve = side.demonicReserve.find(ba.gatingCreature);
+		if(reserve == side.demonicReserve.end() || reserve->second <= 0)
+			return true;
+		BattleDemonicGatingStateChanged update;
+		update.battleID = concrete->getBattleID();
+		update.side = ba.side;
+		update.reserve = side.demonicReserve;
+		update.pending = side.pendingDemonicGates;
+		update.gated = side.gatedDemonicStacks;
+		SideInBattle::PendingDemonicGate gate;
+		gate.creature = reserve->first;
+		gate.count = reserve->second;
+		gate.position = gateHex;
+		gate.arrivalRound = concrete->getRound() + 1;
+		gate.sourceUnitId = ba.stackNumber;
+		update.reserve.erase(gate.creature);
+		update.pending.push_back(gate);
+		gameHandler->sendAndApply(update);
+	}
 	const auto & gates = concrete->getSide(ba.side).pendingDemonicGates;
 	const auto found = std::ranges::find_if(gates, [&ba](const auto & gate)
 	{
