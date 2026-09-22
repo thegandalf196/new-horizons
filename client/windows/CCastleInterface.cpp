@@ -76,6 +76,56 @@ static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreature
 	return GAME->interface()->cb->getCreatureCategory(creature->getId());
 }
 
+namespace
+{
+const CCreature * creatureAtDwellingLevel(const CGTownInstance * town, int level)
+{
+	if(!town || level < 0 || static_cast<size_t>(level) >= town->creatures.size())
+		return nullptr;
+
+	if(!town->creatures[level].second.empty())
+		return town->creatures[level].second.back().toCreature();
+
+	if(static_cast<size_t>(level) < town->getTown()->creatures.size() && !town->getTown()->creatures[level].empty())
+		return town->getTown()->creatures[level].front().toCreature();
+
+	return nullptr;
+}
+
+int creatureCategoryRank(const std::optional<newHorizonsCreatures::CreatureCategoryView> & category)
+{
+	if(!category)
+		return -1;
+
+	switch(category->category)
+	{
+	case newHorizonsCreatures::CreatureCategory::CORE:
+		return 0;
+	case newHorizonsCreatures::CreatureCategory::ELITE:
+		return 1;
+	case newHorizonsCreatures::CreatureCategory::CHAMPION:
+		return 2;
+	}
+
+	return -1;
+}
+
+ColorRGBA creatureCategoryColor(const newHorizonsCreatures::CreatureCategory category)
+{
+	switch(category)
+	{
+	case newHorizonsCreatures::CreatureCategory::CORE:
+		return Colors::YELLOW;
+	case newHorizonsCreatures::CreatureCategory::ELITE:
+		return Colors::CYAN;
+	case newHorizonsCreatures::CreatureCategory::CHAMPION:
+		return Colors::ORANGE;
+	}
+
+	return Colors::WHITE;
+}
+}
+
 static bool useCompactCreatureBox()
 {
 	return settings["gameTweaks"]["compactTownCreatureInfo"].Bool();
@@ -2267,12 +2317,35 @@ CFortScreen::CFortScreen(const CGTownInstance * town):
 		positions.push_back(Point(206,421));
 	}
 
-	for(ui32 i=0; i<fortSize; i++)
+	std::vector<int> displayLevels(fortSize);
+	std::iota(displayLevels.begin(), displayLevels.end(), 0);
+
+	// New Horizons presents the same independent dwelling rows in rank groups.
+	// The level remains the model identity passed to RecruitArea, so availability,
+	// upgrades, and click requests still target the original dwelling row. If a
+	// custom/legacy town has no complete category context, retain the stock order
+	// and layout exactly.
+	const bool hasCompleteCategoryContext = std::all_of(displayLevels.begin(), displayLevels.end(), [town](int level)
 	{
+		return currentCreatureCategory(creatureAtDwellingLevel(town, level)).has_value();
+	});
+	if(hasCompleteCategoryContext)
+	{
+		std::stable_sort(displayLevels.begin(), displayLevels.end(), [town](int lhs, int rhs)
+		{
+			const int lhsRank = creatureCategoryRank(currentCreatureCategory(creatureAtDwellingLevel(town, lhs)));
+			const int rhsRank = creatureCategoryRank(currentCreatureCategory(creatureAtDwellingLevel(town, rhs)));
+			return lhsRank == rhsRank ? lhs < rhs : lhsRank < rhsRank;
+		});
+	}
+
+	for(ui32 displayIndex=0; displayIndex<fortSize; displayIndex++)
+	{
+		const int level = displayLevels[displayIndex];
 		BuildingID buildingID;
 		if(fortSize == town->getTown()->creatures.size())
 		{
-			BuildingID buildID = BuildingID(BuildingID::getDwellingFromLevel(i, 0));
+			BuildingID buildID = BuildingID(BuildingID::getDwellingFromLevel(level, 0));
 
 			for(; town->getBuildings().count(buildID); BuildingID::advanceDwelling(buildID))
 			{
@@ -2285,7 +2358,7 @@ CFortScreen::CFortScreen(const CGTownInstance * town):
 			buildingID = BuildingID::SPECIAL_3;
 		}
 
-		recAreas.push_back(std::make_shared<RecruitArea>(positions[i].x, positions[i].y, town, i));
+		recAreas.push_back(std::make_shared<RecruitArea>(positions[displayIndex].x, positions[displayIndex].y, town, level));
 	}
 
 	resdatabar = std::make_shared<CMinorResDataBar>();
@@ -2356,10 +2429,11 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 		hoverText = hoverTextMessage.toString(&GAME->translator());
 		new CCreaturePic(159, 4, getMyCreature(), false);
 		new CLabel(78,  11, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, getMyCreature()->getNamePluralTranslated(), 152);
-		const auto categoryName = newHorizonsCreatureCategoryUI::name(currentCreatureCategory(getMyCreature()),
-			GAME ? &GAME->translator() : nullptr);
-		if(!categoryName.empty())
-			categoryLabel = std::make_shared<CLabel>(78, 28, FONT_TINY, ETextAlignment::CENTER, Colors::YELLOW, categoryName, 152);
+		const auto category = currentCreatureCategory(getMyCreature());
+		const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
+		if(category && !categoryName.empty())
+			categoryLabel = std::make_shared<CLabel>(78, 28, FONT_TINY, ETextAlignment::CENTER,
+				creatureCategoryColor(category->category), categoryName, 152);
 
 		Rect sizes(287, 4, 96, 18);
 		values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[190], LIBRARY->generaltexth->translate("core.castinfo.0"), getMyCreature()->getAttack(false)));

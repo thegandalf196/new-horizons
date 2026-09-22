@@ -14,13 +14,31 @@
 #include "../widgets/Buttons.h"
 #include "../widgets/CreatureCostBox.h"
 #include "../widgets/Slider.h"
+#include "../widgets/TextControls.h"
 #include "../GameEngine.h"
 #include "../GameInstance.h"
 #include "../gui/Shortcut.h"
+#include "render/Canvas.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/ResourceSet.h"
 #include "../../lib/CCreatureHandler.h"
 #include "CreaturePurchaseCard.h"
+#include "NewHorizonsCreatureCategoryUI.h"
+
+namespace
+{
+std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
+{
+	if(!creature || !GAME || !GAME->interface() || !GAME->interface()->cb)
+		return std::nullopt;
+	return GAME->interface()->cb->getCreatureCategory(creature->getId());
+}
+
+size_t categoryIndex(const newHorizonsCreatures::CreatureCategoryView & category)
+{
+	return static_cast<size_t>(category.category);
+}
+}
 
 
 void QuickRecruitmentWindow::setButtons()
@@ -50,16 +68,72 @@ void QuickRecruitmentWindow::setMaxButton()
 
 void QuickRecruitmentWindow::setCreaturePurchaseCards()
 {
+	categoryHeaders.fill(nullptr);
+	categoryGroupRects.fill(std::nullopt);
+
 	int availableAmount = getAvailableCreatures();
 	Point position = Point((pos.w - 100*availableAmount - 8*(availableAmount-1))/2,64);
+	std::vector<int> availableLevels;
+	std::array<std::vector<int>, 3> categoryLevels;
+	std::vector<int> uncategorizedLevels;
 	for (int i = 0; i < town->getTown()->creatures.size(); i++)
 	{
 		if(!town->getTown()->creatures.at(i).empty() && !town->creatures.at(i).second.empty() && town->creatures[i].first)
 		{
-			cards.push_back(std::make_shared<CreaturePurchaseCard>(town->creatures[i].second, position, town->creatures[i].first, this));
-			position.x += 108;
+			availableLevels.push_back(i);
+			if(const auto category = currentCreatureCategory(town->creatures[i].second.back().toCreature()))
+				categoryLevels[categoryIndex(*category)].push_back(i);
+			else
+				uncategorizedLevels.push_back(i);
 		}
 	}
+
+	const bool grouped = uncategorizedLevels.empty()
+		&& std::ranges::any_of(categoryLevels, [](const auto & group){ return !group.empty(); });
+	auto createCard = [this, &position](int level)
+	{
+		cards.push_back(std::make_shared<CreaturePurchaseCard>(town->creatures[level].second, position,
+			town->creatures[level].first, level, this));
+		position.x += 108;
+	};
+	if(grouped)
+	{
+		for(size_t index = 0; index < categoryLevels.size(); ++index)
+		{
+			const auto & group = categoryLevels[index];
+			if(group.empty())
+				continue;
+
+			const int groupStart = position.x;
+			for(const int level : group)
+				createCard(level);
+
+			const int groupWidth = static_cast<int>(group.size()) * 100 + static_cast<int>(group.size() - 1) * 8;
+			const auto category = currentCreatureCategory(town->creatures[group.front()].second.back().toCreature());
+			if(category)
+			{
+				const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
+				if(!categoryName.empty())
+				{
+					categoryHeaders[index] = std::make_shared<CLabel>(groupStart + groupWidth / 2, 7, FONT_SMALL,
+						ETextAlignment::TOPCENTER, Colors::YELLOW, categoryName, groupWidth + 12);
+					categoryGroupRects[index] = Rect(groupStart - 6, 2, groupWidth + 12, 331);
+				}
+			}
+		}
+	}
+	else
+	{
+		// No or incomplete saved category view means a legacy/custom game: retain
+		// the original row order and construct every widget at its final position.
+		for(const int level : availableLevels)
+			createCard(level);
+	}
+	std::stable_sort(cards.begin(), cards.end(), [](const auto & lhs, const auto & rhs)
+	{
+		return lhs->recruitmentLevel < rhs->recruitmentLevel;
+	});
+
 	totalCost = std::make_shared<CreatureCostBox>(Rect((this->pos.w/2)-45, position.y+260, 97, 74), "");
 }
 
@@ -110,15 +184,7 @@ void QuickRecruitmentWindow::purchaseUnits()
 		if(selected->slider->getValue() == 0)
 			continue;
 
-		int level = 0;
-		int i = 0;
-		for(auto c : town->getTown()->creatures)
-		{
-			for(auto c2 : c)
-				if(c2 == selected->creatureOnTheCard->getId())
-					level = i;
-			i++;
-		}
+		const int level = selected->recruitmentLevel;
 
 		CreatureID crid = selected->creatureOnTheCard->getId();
 		SlotID dstslot = town->getUpperArmy()->getSlotFor(crid);
@@ -178,4 +244,14 @@ QuickRecruitmentWindow::QuickRecruitmentWindow(const CGTownInstance * townd, Rec
 	maxAllCards(cards);
 
 	center();
+}
+
+void QuickRecruitmentWindow::showAll(Canvas & to)
+{
+	CWindowObject::showAll(to);
+	for(const auto & group : categoryGroupRects)
+	{
+		if(group)
+			to.drawBorder(*group + pos.topLeft(), Colors::METALLIC_GOLD);
+	}
 }

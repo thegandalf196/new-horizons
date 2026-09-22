@@ -13,6 +13,7 @@
 #include "CCastleInterface.h"
 #include "CPlayerState.h"
 #include "InfoWindows.h"
+#include "NewHorizonsCreatureCategoryUI.h"
 
 #include "../CPlayerInterface.h"
 #include "../PlayerLocalState.h"
@@ -47,6 +48,53 @@
 #include "../../lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "texts/CGeneralTextHandler.h"
 #include "../../lib/GameSettings.h"
+
+namespace
+{
+std::string creatureCategoryBadge(const std::optional<newHorizonsCreatures::CreatureCategoryView> & category)
+{
+	if(!category)
+		return {};
+
+	switch(category->category)
+	{
+	case newHorizonsCreatures::CreatureCategory::CORE:
+		return "C";
+	case newHorizonsCreatures::CreatureCategory::ELITE:
+		return "E";
+	case newHorizonsCreatures::CreatureCategory::CHAMPION:
+		return "Ch";
+	}
+
+	return {};
+}
+
+ColorRGBA creatureCategoryColor(const newHorizonsCreatures::CreatureCategory category)
+{
+	switch(category)
+	{
+	case newHorizonsCreatures::CreatureCategory::CORE:
+		return Colors::YELLOW;
+	case newHorizonsCreatures::CreatureCategory::ELITE:
+		return Colors::CYAN;
+	case newHorizonsCreatures::CreatureCategory::CHAMPION:
+		return Colors::ORANGE;
+	}
+
+	return Colors::WHITE;
+}
+
+const CCreature * townCreatureAtLevel(const CGTownInstance * town, size_t level)
+{
+	if(level >= town->creatures.size())
+		return nullptr;
+	if(!town->creatures[level].second.empty())
+		return town->creatures[level].second.back().toCreature();
+	if(level < town->getTown()->creatures.size() && !town->getTown()->creatures[level].empty())
+		return town->getTown()->creatures[level].front().toCreature();
+	return nullptr;
+}
+}
 
 static const std::string OVERVIEW_BACKGROUND = "OvCast.pcx";
 static const size_t OVERVIEW_SIZE = 4;
@@ -894,6 +942,22 @@ CTownItem::CTownItem(const CGTownInstance * Town)
 	{
 		growth.push_back(std::make_shared<CCreaInfo>(Point(401+37*(int)i, 78), town, (int)i, true, true));
 		available.push_back(std::make_shared<CCreaInfo>(Point(48+37*(int)i, 78), town, (int)i, true, false));
+
+		if(const auto * creature = townCreatureAtLevel(town, i))
+		{
+			const auto category = GAME->interface()->cb->getCreatureCategory(creature->getId());
+			const auto badge = creatureCategoryBadge(category);
+			if(category && !badge.empty())
+			{
+				const auto color = creatureCategoryColor(category->category);
+				// Deliberately overlay the badge inside the compact creature icon;
+				// the surrounding Kingdom row has no spare vertical text band.
+				availableCategory.push_back(std::make_shared<CLabel>(48+37*(int)i+12, 80, FONT_TINY,
+					ETextAlignment::CENTER, color, badge));
+				growthCategory.push_back(std::make_shared<CLabel>(401+37*(int)i+12, 80, FONT_TINY,
+					ETextAlignment::CENTER, color, badge));
+			}
+		}
 	}
 
 	fastTownHall = std::make_shared<CButton>(Point(69, 31), AnimationPath::builtin("castleInterfaceQuickAccess"), CButton::tooltip(), [this]() { std::make_shared<CCastleBuildings>(town)->enterTownHall(); });

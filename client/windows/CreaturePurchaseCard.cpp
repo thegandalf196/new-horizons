@@ -104,10 +104,11 @@ void CreaturePurchaseCard::sliderMoved(int to)
 	parent->updateAllSliders();
 }
 
-CreaturePurchaseCard::CreaturePurchaseCard(const std::vector<CreatureID> & creaturesID, Point position, int creaturesMaxAmount, QuickRecruitmentWindow * parents)
-	: upgradesID(creaturesID),
-	parent(parents),
-	maxAmount(creaturesMaxAmount)
+CreaturePurchaseCard::CreaturePurchaseCard(const std::vector<CreatureID> & creaturesID, Point position, int creaturesMaxAmount, int RecruitmentLevel, QuickRecruitmentWindow * parents)
+	: parent(parents),
+	recruitmentLevel(RecruitmentLevel),
+	maxAmount(creaturesMaxAmount),
+	upgradesID(creaturesID)
 {
 	creatureOnTheCard = upgradesID.back().toCreature();
 	moveTo(Point(position.x, position.y));

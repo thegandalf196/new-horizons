@@ -16,6 +16,8 @@
 #include "../widgets/Images.h"
 #include "../widgets/IVideoHolder.h"
 
+#include <array>
+
 class CGHeroInstance;
 class CGObjectInstance;
 class CGDwelling;
@@ -95,6 +97,7 @@ class CRecruitmentWindow : public CStatusbarWindow
 	std::shared_ptr<CLabel> availableTitle;
 	std::shared_ptr<CLabel> toRecruitTitle;
 	std::shared_ptr<CLabel> leadershipLimit;
+	std::array<std::shared_ptr<CLabel>, 3> categoryHeaders;
 	std::shared_ptr<CreatureCostBox> costPerTroopValue;
 	std::shared_ptr<CreatureCostBox> totalCostValue;
 

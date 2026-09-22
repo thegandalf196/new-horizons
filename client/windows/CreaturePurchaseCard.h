@@ -23,10 +23,11 @@ public:
 	const CCreature * creatureOnTheCard;
 	std::shared_ptr<CSlider> slider;
 	QuickRecruitmentWindow * parent;
+	const int recruitmentLevel;
 	int maxAmount;
 	void sliderMoved(int to);
 
-	CreaturePurchaseCard(const std::vector<CreatureID> & creaturesID, Point position, int creaturesMaxAmount, QuickRecruitmentWindow * parents);
+	CreaturePurchaseCard(const std::vector<CreatureID> & creaturesID, Point position, int creaturesMaxAmount, int recruitmentLevel, QuickRecruitmentWindow * parents);
 private:
 	void initView();
 

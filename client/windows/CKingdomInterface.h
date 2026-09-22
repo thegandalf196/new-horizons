@@ -277,6 +277,8 @@ class CTownItem : public CIntObject, public IGarrisonHolder
 
 	std::vector<std::shared_ptr<CCreaInfo>> available;
 	std::vector<std::shared_ptr<CCreaInfo>> growth;
+	std::vector<std::shared_ptr<CLabel>> availableCategory;
+	std::vector<std::shared_ptr<CLabel>> growthCategory;
 
 	std::shared_ptr<CMultiLineLabel> labelCreatureAvailable;
 	std::shared_ptr<CMultiLineLabel> labelCreatureGrowth;

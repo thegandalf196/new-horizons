@@ -374,6 +374,7 @@ CRecruitmentWindow::CRecruitmentWindow(const CGDwelling * Dwelling, int Level, c
 void CRecruitmentWindow::availableCreaturesChanged()
 {
 	OBJECT_CONSTRUCTION;
+	categoryHeaders.fill(nullptr);
 
 	size_t selectedIndex = 0;
 
@@ -414,12 +415,62 @@ void CRecruitmentWindow::availableCreaturesChanged()
 	const int spaceBetween = std::min(requiredSpace, availableSpace);
 	const int totalCreatureWidth = spaceBetween + creatureWidth;
 
-	//now we know total amount of cards and can move them to correct position
+	// Now we know total amount of cards and can move them to correct position.
+	// New Horizons presents independent dwelling choices in Core, Elite,
+	// Champion order. Keep the cards vector in historical order so selection,
+	// callbacks, and legacy recruitment semantics remain unchanged.
 	int curx = pos.w / 2 - (creatureWidth*(int)cards.size()/2) - (spaceBetween*((int)cards.size()-1)/2);
-	for(auto & card : cards)
+	std::array<std::vector<std::shared_ptr<CCreatureCard>>, 3> categoryCards;
+	std::vector<std::shared_ptr<CCreatureCard>> uncategorizedCards;
+	for(const auto & card : cards)
 	{
-		card->moveBy(Point(curx, 64));
-		curx += totalCreatureWidth;
+		if(const auto category = currentCreatureCategory(card->creature))
+			categoryCards[static_cast<size_t>(category->category)].push_back(card);
+		else
+			uncategorizedCards.push_back(card);
+	}
+
+	const bool grouped = uncategorizedCards.empty()
+		&& std::ranges::any_of(categoryCards, [](const auto & group){ return !group.empty(); });
+	if(grouped)
+	{
+		for(size_t index = 0; index < categoryCards.size(); ++index)
+		{
+			const auto & group = categoryCards[index];
+			if(group.empty())
+				continue;
+
+			const int groupStart = curx;
+			for(const auto & card : group)
+			{
+				card->moveBy(Point(curx, 64));
+				curx += totalCreatureWidth;
+			}
+
+			const int groupWidth = creatureWidth * static_cast<int>(group.size()) + spaceBetween * static_cast<int>(group.size() - 1);
+			const auto category = currentCreatureCategory(group.front()->creature);
+			if(category)
+			{
+				const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
+				if(!categoryName.empty())
+					categoryHeaders[index] = std::make_shared<CLabel>(groupStart + groupWidth / 2, 47, FONT_SMALL,
+						ETextAlignment::TOPCENTER, Colors::YELLOW, categoryName, groupWidth + 12);
+			}
+		}
+
+		for(const auto & card : uncategorizedCards)
+		{
+			card->moveBy(Point(curx, 64));
+			curx += totalCreatureWidth;
+		}
+	}
+	else
+	{
+		for(auto & card : cards)
+		{
+			card->moveBy(Point(curx, 64));
+			curx += totalCreatureWidth;
+		}
 	}
 
 	//restore selection

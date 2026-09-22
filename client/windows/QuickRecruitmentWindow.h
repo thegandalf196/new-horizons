@@ -11,12 +11,16 @@
 
 #include "CWindowObject.h"
 
+#include <array>
+#include <optional>
+
 class CGTownInstance;
 
 class CButton;
 class CreatureCostBox;
 class CreaturePurchaseCard;
 class CFilledTexture;
+class CLabel;
 
 class QuickRecruitmentWindow : public CWindowObject
 {
@@ -24,6 +28,7 @@ public:
 	int getAvailableCreatures();
 	void updateAllSliders();
 	QuickRecruitmentWindow(const CGTownInstance * townd, Rect startupPosition);
+	void showAll(Canvas & to) override;
 
 private:
 	void initWindow(Rect startupPosition);
@@ -47,4 +52,6 @@ private:
 	std::vector<std::shared_ptr<CreaturePurchaseCard>> cards;
 	std::shared_ptr<CFilledTexture> backgroundTexture;
 	std::shared_ptr<CPicture> costBackground;
+	std::array<std::shared_ptr<CLabel>, 3> categoryHeaders;
+	std::array<std::optional<Rect>, 3> categoryGroupRects;
 };
