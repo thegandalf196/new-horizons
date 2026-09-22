@@ -427,10 +427,12 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			gameHandler->sendAndApply(add);
 			update.gated.push_back({info.id, gate.creature, gate.count});
 			const auto * gated = battle.battleGetStackByID(info.id, false);
+			int64_t reinforcedHealth = 0;
 			if(reinforcedGate && gated)
 			{
 				auto state = gated->acquireState();
-				state->health.addTemporaryHitPoints(state->getAvailableHealth() * 20 / 100);
+				reinforcedHealth = state->getAvailableHealth() * 20 / 100;
+				state->health.addTemporaryHitPoints(reinforcedHealth);
 				BattleUnitsChanged reinforce;
 				reinforce.battleID = concrete->getBattleID();
 				UnitChanges changed(info.id, UnitChanges::EOperation::UPDATE);
@@ -441,6 +443,8 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			}
 
 			std::vector<Bonus> arrivalBonuses;
+			bool infernalBeaconActivated = false;
+			bool reserveDisciplineActivated = false;
 			if(infernalBeacon && gated)
 			{
 				const bool adjacentInfernoAlly = std::ranges::any_of(battle.battleAdjacentUnits(gated), [&battle, sideId, info](const auto * adjacent)
@@ -451,6 +455,7 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 				});
 				if(adjacentInfernoAlly)
 				{
+					infernalBeaconActivated = true;
 					Bonus initiative(BonusDuration::N_TURNS, BonusType::STACKS_INITIATIVE_FLAT,
 						BonusSource::HERO_SPECIAL, 2, BonusSourceID(hero->id));
 					initiative.turnsRemain = endOfRoundPhase ? 2 : 1;
@@ -460,6 +465,7 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			}
 			if(reserveDiscipline && gated)
 			{
+				reserveDisciplineActivated = true;
 				Bonus moraleFloor(BonusDuration::N_TURNS, BonusType::MINIMUM_MORALE,
 					BonusSource::HERO_SPECIAL, 0, BonusSourceID(hero->id));
 				moraleFloor.turnsRemain = endOfRoundPhase ? 2 : 1;
@@ -478,11 +484,25 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 				hellfireSources.push_back(info.id);
 			BattleLogMessage message;
 			message.battleID = concrete->getBattleID();
-			MetaString line = MetaString::createFromRawString("The Gate brings forth ");
+			const char * gateName = gate.chainGateAccelerated
+				? "Chain Gate"
+				: endOfRoundPhase ? "Swift Gate" : "Ordinary Gate";
+			MetaString line = MetaString::createFromRawString(gateName);
+			line.appendRawString(" brings forth ");
 			line.appendNumber(gate.count);
 			line.appendRawString(" ");
 			line.appendName(gate.creature, gate.count);
 			line.appendRawString(".");
+			if(reinforcedHealth > 0)
+			{
+				line.appendRawString(" Reinforced Gate grants ");
+				line.appendNumber(reinforcedHealth);
+				line.appendRawString(" temporary Health.");
+			}
+			if(infernalBeaconActivated)
+				line.appendRawString(" Infernal Beacon grants +2 Initiative.");
+			if(reserveDisciplineActivated)
+				line.appendRawString(" Reserve Discipline prevents negative Morale.");
 			message.lines.push_back(std::move(line));
 			gameHandler->sendAndApply(message);
 		}
@@ -508,7 +528,8 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 
 			StacksInjured injury;
 			injury.battleID = concrete->getBattleID();
-			int64_t appliedDamage = 0;
+			BattleLogMessage hellfireLog;
+			hellfireLog.battleID = concrete->getBattleID();
 			for(const auto * enemy : enemies)
 			{
 				BattleStackAttacked hit;
@@ -517,16 +538,23 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 				hit.damageAmount = damagePerEnemy;
 				hit.flags |= BattleStackAttacked::SPELL_EFFECT;
 				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), enemy->acquireState());
-				appliedDamage += hit.damageAmount;
+				MetaString hellfireLine = MetaString::createFromRawString("Hellfire from ");
+				hellfireLine.appendNumber(gated->getCount());
+				hellfireLine.appendRawString(" ");
+				hellfireLine.appendName(gated->creatureId(), gated->getCount());
+				hellfireLine.appendRawString(" hits ");
+				hellfireLine.appendNumber(enemy->getCount());
+				hellfireLine.appendRawString(" ");
+				hellfireLine.appendName(enemy->creatureId(), enemy->getCount());
+				hellfireLine.appendRawString(" for ");
+				hellfireLine.appendNumber(hit.damageAmount);
+				hellfireLine.appendRawString(" damage, killing ");
+				hellfireLine.appendNumber(hit.killedAmount);
+				hellfireLine.appendRawString(".");
+				hellfireLog.lines.push_back(std::move(hellfireLine));
 				injury.stacks.push_back(hit);
 			}
 			gameHandler->sendAndApply(injury);
-			BattleLogMessage hellfireLog;
-			hellfireLog.battleID = concrete->getBattleID();
-			MetaString hellfireLine = MetaString::createFromRawString("Hellfire deals ");
-			hellfireLine.appendNumber(appliedDamage);
-			hellfireLine.appendRawString(" damage.");
-			hellfireLog.lines.push_back(std::move(hellfireLine));
 			gameHandler->sendAndApply(hellfireLog);
 		}
 	}

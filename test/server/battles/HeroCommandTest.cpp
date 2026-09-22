@@ -157,6 +157,9 @@ TEST_F(HeroCommandTest, HoldTheLineReducesRealIncomingPhysicalDamage)
 	const auto before = battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, false)).damage.min;
 	const auto shotBefore = battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, true)).damage.min;
 	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Hold the Line!"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("hold position"));
 	EXPECT_LT(battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, false)).damage.min, before);
 	// Hold the Line covers all physical creature damage, including missiles.
 	EXPECT_LT(battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, true)).damage.min, shotBefore);
@@ -256,6 +259,10 @@ TEST_F(HeroCommandTest, RiposteBoostsOnlyRetaliationDamage)
 	BattleAttackInfo ordinary(attacker, defender, 0, false);
 	const auto before = battle()->calculateDmgRange(ordinary).damage.min;
 	ASSERT_TRUE(issue(HeroCommand::RIPOSTE));
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Riposte!"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("take less melee damage"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("retaliate more fiercely"));
 	ordinary.retaliation = true;
 	EXPECT_GT(battle()->calculateDmgRange(ordinary).damage.min, before);
 }
@@ -268,6 +275,10 @@ TEST_F(HeroCommandTest, BracePreemptiveStrikeUsesItsOwnDamageFormula)
 	BattleAttackInfo incoming(attacker, defender, 0, false);
 	const auto before = battle()->calculateDmgRange(incoming).damage.min;
 	ASSERT_TRUE(issue(HeroCommand::BRACE));
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Brace!"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("moves at least 3 hexes"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("before a melee attack"));
 	incoming.bracePreemptive = true;
 	// Brace is a final multiplier: with the fixture's zero hero defense it is
 	// exactly 50% of the ordinary blow, independent of additive Offense.
@@ -288,6 +299,9 @@ TEST_F(HeroCommandTest, ProtectRedirectsOneAdjacentWardAttack)
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
 			protector->unitId(), ward->unitId())));
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Protect! Protector: Angels. Ward: Angels."));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("first qualifying melee attack"));
 	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(state);
 	EXPECT_EQ(state->primaryTargetUnitId, protector->unitId());
@@ -353,6 +367,9 @@ TEST_F(HeroCommandTest, FlankRaisesTheFirstDistinctSideAttack)
 	const auto before = battle()->calculateDmgRange(attack).damage.min;
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		BattleAction::makeTargetedHeroCommand(BattleSide::ATTACKER, HeroCommand::FLANK, defender->unitId())));
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Flank! Target: Angels"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("exploit new sides this round"));
 	const auto side = battle()->battleHeroOrderFlankSide(attacker, defender);
 	ASSERT_NE(side, 0);
 	const auto firstSide = battle()->calculateDmgRange(attack).damage.min;
@@ -376,6 +393,9 @@ TEST_F(HeroCommandTest, SecondWindActivatesMovedStackWithDirectDamagePenalty)
 	const auto before = battle()->calculateDmgRange(attack).damage.min;
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		BattleAction::makeTargetedHeroCommand(BattleSide::ATTACKER, HeroCommand::SECOND_WIND, target->unitId())));
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Second Wind! Target: Angels"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("One reduced-strength activation"));
 	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(state);
 	EXPECT_TRUE(state->secondWindActive);

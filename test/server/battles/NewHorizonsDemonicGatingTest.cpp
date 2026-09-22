@@ -162,6 +162,14 @@ protected:
 		}
 		return BattleHex();
 	}
+
+	bool hasBattleLogFragment(const std::string & fragment) const
+	{
+		return std::ranges::any_of(server.battleLogLines, [&fragment](const auto & line)
+		{
+			return line.find(fragment) != std::string::npos;
+		});
+	}
 };
 }
 
@@ -193,6 +201,10 @@ TEST_F(NewHorizonsDemonicGatingTest, CommitsOwnedReserveAndArrivesAtNextRound)
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.empty());
 	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).gatedDemonicStacks.size(), 1u);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).gatedDemonicStacks.front().unitId, gated.front()->unitId());
+	EXPECT_TRUE(hasBattleLogFragment("Ordinary Gate brings forth 12"));
+	EXPECT_FALSE(hasBattleLogFragment("Reinforced Gate grants"));
+	EXPECT_FALSE(hasBattleLogFragment("Infernal Beacon grants"));
+	EXPECT_FALSE(hasBattleLogFragment("Reserve Discipline prevents"));
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, RejectsUnavailableAndOutOfRangeSelectionsWithoutSpendingTurn)
@@ -208,6 +220,7 @@ TEST_F(NewHorizonsDemonicGatingTest, RejectsUnavailableAndOutOfRangeSelectionsWi
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_FALSE(active->moved());
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).demonicReserve.at(creatureByName("core:imp")), 12);
+	EXPECT_FALSE(hasBattleLogFragment("Gate brings forth"));
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, WideGateAuthoritativelyExtendsPlacementRangeToFive)
@@ -267,6 +280,7 @@ TEST_F(NewHorizonsDemonicGatingTest, SwiftGateArrivesBeforeTheRoundCounterAdvanc
 	ASSERT_EQ(server.unitAdditionRounds.size(), 1u);
 	EXPECT_EQ(server.unitAdditionRounds.front(), openingRound);
 	EXPECT_EQ(battle()->getRound(), openingRound + 1);
+	EXPECT_TRUE(hasBattleLogFragment("Swift Gate brings forth 12"));
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, HellfireArrivalDealsFifteenPercentAggregateHealthToAdjacentEnemies)
@@ -277,10 +291,26 @@ TEST_F(NewHorizonsDemonicGatingTest, HellfireArrivalDealsFifteenPercentAggregate
 	const auto [destination, enemyHex] = adjacentGateAndEnemyHexes(active);
 	ASSERT_TRUE(destination.isAvailable());
 	ASSERT_TRUE(enemyHex.isAvailable());
-	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:imp"), enemyHex, 100);
-	ASSERT_NE(enemy, nullptr);
-	const uint32_t enemyId = enemy->unitId();
-	const int64_t healthBefore = enemy->getAvailableHealth();
+	BattleHex secondEnemyHex;
+	const auto accessibility = battle()->getAccessibility();
+	for(const auto candidate : destination.getNeighbouringTiles())
+	{
+		if(candidate != enemyHex && accessibility.accessible(candidate, false, BattleSide::DEFENDER)
+			&& !battle()->battleGetUnitByPos(candidate, true))
+		{
+			secondEnemyHex = candidate;
+			break;
+		}
+	}
+	ASSERT_TRUE(secondEnemyHex.isAvailable());
+	auto * firstEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:imp"), enemyHex, 100);
+	auto * secondEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:imp"), secondEnemyHex, 100);
+	ASSERT_NE(firstEnemy, nullptr);
+	ASSERT_NE(secondEnemy, nullptr);
+	const uint32_t firstEnemyId = firstEnemy->unitId();
+	const uint32_t secondEnemyId = secondEnemy->unitId();
+	const int64_t firstHealthBefore = firstEnemy->getAvailableHealth();
+	const int64_t secondHealthBefore = secondEnemy->getAvailableHealth();
 	server.injuries.clear();
 	active = battle()->battleActiveUnit();
 	ASSERT_NE(active, nullptr);
@@ -300,13 +330,26 @@ TEST_F(NewHorizonsDemonicGatingTest, HellfireArrivalDealsFifteenPercentAggregate
 			&& stack->unitSide() == BattleSide::ATTACKER;
 	});
 	ASSERT_EQ(gated.size(), 1u);
-	const auto * damagedEnemy = battle()->battleGetStackByID(enemyId, false);
-	ASSERT_NE(damagedEnemy, nullptr);
-	const int64_t expected = gated.front()->getAvailableHealth() * 15 / 100;
-	EXPECT_EQ(healthBefore - damagedEnemy->getAvailableHealth(), expected);
+	const auto * damagedFirst = battle()->battleGetStackByID(firstEnemyId, false);
+	const auto * damagedSecond = battle()->battleGetStackByID(secondEnemyId, false);
+	ASSERT_NE(damagedFirst, nullptr);
+	ASSERT_NE(damagedSecond, nullptr);
+	const int64_t expectedPerEnemy = (gated.front()->getAvailableHealth() * 15 / 100) / 2;
+	EXPECT_EQ(firstHealthBefore - damagedFirst->getAvailableHealth(), expectedPerEnemy);
+	EXPECT_EQ(secondHealthBefore - damagedSecond->getAvailableHealth(), expectedPerEnemy);
 	ASSERT_EQ(server.injuries.size(), 1u);
-	ASSERT_EQ(server.injuries.front().stacks.size(), 1u);
-	EXPECT_EQ(server.injuries.front().stacks.front().damageAmount, expected);
+	ASSERT_EQ(server.injuries.front().stacks.size(), 2u);
+	EXPECT_EQ(server.injuries.front().stacks.front().damageAmount, expectedPerEnemy);
+	EXPECT_EQ(server.injuries.front().stacks.back().damageAmount, expectedPerEnemy);
+	const auto & hit = server.injuries.front().stacks.front();
+	EXPECT_TRUE(hasBattleLogFragment("Hellfire from 12"));
+	EXPECT_TRUE(hasBattleLogFragment("hits 100"));
+	EXPECT_TRUE(hasBattleLogFragment("for " + std::to_string(hit.damageAmount) + " damage, killing "
+		+ std::to_string(hit.killedAmount)));
+	EXPECT_EQ(std::ranges::count_if(server.battleLogLines, [](const auto & line)
+	{
+		return line.starts_with("Hellfire from ");
+	}), 2);
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, HellfireLethalKillByGatedUnitArmsChainGate)
@@ -376,6 +419,10 @@ TEST_F(NewHorizonsDemonicGatingTest, ReinforcedGateAddsTwentyPercentTemporaryHea
 	const int64_t temporaryHealth = creatureHealth * 20 / 100;
 	EXPECT_EQ(gated.front()->health.getTemporaryHitPoints(), temporaryHealth);
 	EXPECT_EQ(gated.front()->getAvailableHealth(), creatureHealth + temporaryHealth);
+	EXPECT_TRUE(hasBattleLogFragment("Reinforced Gate grants " + std::to_string(temporaryHealth)
+		+ " temporary Health"));
+	EXPECT_FALSE(hasBattleLogFragment("Infernal Beacon grants"));
+	EXPECT_FALSE(hasBattleLogFragment("Reserve Discipline prevents"));
 
 	auto state = gated.front()->acquireState();
 	int64_t damage = temporaryHealth;
@@ -414,6 +461,28 @@ TEST_F(NewHorizonsDemonicGatingTest, InfernalBeaconAddsTwoFlatInitiativeBesideIn
 	const auto bonus = gated.front()->getFirstBonus(Selector::type()(BonusType::STACKS_INITIATIVE_FLAT));
 	ASSERT_NE(bonus, nullptr);
 	EXPECT_EQ(bonus->turnsRemain, 1);
+	EXPECT_TRUE(hasBattleLogFragment("Infernal Beacon grants +2 Initiative"));
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, InfernalBeaconIsNotClaimedWithoutAdjacentInfernoAlly)
+{
+	grantGatingPerk("new-horizons:demonicGating.infernalBeacon", MasteryLevel::ADVANCED);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const BattleHex destination = gateHexAtDistance(active, 3, 3);
+	ASSERT_TRUE(destination.isAvailable());
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(destination);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	endRound();
+
+	EXPECT_TRUE(hasBattleLogFragment("Ordinary Gate brings forth 12"));
+	EXPECT_FALSE(hasBattleLogFragment("Infernal Beacon grants"));
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, ReserveDisciplineFloorsNegativeArrivalMoraleAtZero)
@@ -446,6 +515,7 @@ TEST_F(NewHorizonsDemonicGatingTest, ReserveDisciplineFloorsNegativeArrivalMoral
 	const auto floor = gatedStack->getFirstBonus(Selector::type()(BonusType::MINIMUM_MORALE));
 	ASSERT_NE(floor, nullptr);
 	EXPECT_EQ(floor->turnsRemain, 1);
+	EXPECT_TRUE(hasBattleLogFragment("Reserve Discipline prevents negative Morale"));
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, MobileGateMovesWithinHalfSpeedThenCommitsFromNewPosition)
@@ -673,6 +743,7 @@ TEST_F(NewHorizonsDemonicGatingTest, AcceptedChainGateConsumesTokenAndArrivesAtC
 	ASSERT_EQ(server.unitAdditionRounds.size(), 1u);
 	EXPECT_EQ(server.unitAdditionRounds.front(), openingRound);
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.empty());
+	EXPECT_TRUE(hasBattleLogFragment("Chain Gate brings forth 12"));
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, SwiftChainGateConsumesTokenWithoutEarlierTiming)

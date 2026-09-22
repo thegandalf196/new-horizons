@@ -70,6 +70,11 @@ void RecordingGameServer::record(CPackForClient & pack)
 	}
 	if(const auto * injured = dynamic_cast<const StacksInjured *>(&pack))
 		injuries.push_back(*injured);
+	if(const auto * log = dynamic_cast<const BattleLogMessage *>(&pack))
+	{
+		for(const auto & line : log->lines)
+			battleLogLines.push_back(line.toString(LIBRARY->staticTexts()));
+	}
 
 	if(dynamic_cast<const HeroLevelUp *>(&pack)) progressionPackets.push_back("level");
 	if(dynamic_cast<const HeroMasteryOffer *>(&pack)) progressionPackets.push_back("offer");

@@ -84,6 +84,39 @@ TEST_P(NewHorizonsCommandTest, AuthoritativeFocusFireStateUsesTheRankedCoefficie
 	const auto state = battle()->battleGetFocusFireState(BattleSide::ATTACKER);
 	ASSERT_TRUE(state);
 	EXPECT_EQ(state->rangedDamagePercent, GetParam().focusFirePercent);
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Focus Fire! Target: Angels"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Allied shooters concentrate fire this round."));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::Not(::testing::HasSubstr("New Horizons:")));
+}
+
+TEST_F(NewHorizonsCommandTest, AcceptedOrderWritesOneAuthoritativeHeroAndScopeLine)
+{
+	prepareRank(MasteryLevel::BASIC, 50);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::StartsWith("Orrin: Charge!"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Each allied stack's first melee attack"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("at least 3 hexes"));
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("this round."));
+}
+
+TEST_F(NewHorizonsCommandTest, RejectedAndStaleOrderClicksWriteNoAuthoritativeLine)
+{
+	prepareRank(MasteryLevel::BASIC, 50);
+	const auto invalid = BattleAction::makeHeroCommand(BattleSide::ATTACKER,
+		static_cast<HeroCommand>(127));
+	ASSERT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), invalid));
+	EXPECT_TRUE(server.battleLogLines.empty());
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	// This stale second click is rejected by the round action budget and must not
+	// forge another accepted-Order line on any client.
+	ASSERT_FALSE(issue(HeroCommand::HOLD_THE_LINE));
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Charge!"));
 }
 
 TEST_F(NewHorizonsCommandTest, RanksNeverIncreaseLeadershipOrLeadershipCapacity)

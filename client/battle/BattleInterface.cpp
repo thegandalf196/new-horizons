@@ -1129,8 +1129,6 @@ void BattleInterface::endAction(const BattleAction &action)
 	if(action.actionType == EActionType::HERO_SPELL || action.actionType == EActionType::HERO_COMMAND)
 		fieldController->redrawBackgroundWithHexes();
 
-	if(action.actionType == EActionType::HERO_COMMAND && !action.metamagicDecline)
-		appendBattleLog("Order: " + HeroCommandUI::name(action.command) + " (this round).");
 	if(action.actionType == EActionType::HERO_SPELL && windowObject && curInt
 		&& !curInt->isAutoFightOn && action.side == getBattle()->battleGetMySide()
 		&& getBattle()->battleCanUseMetamagicFollowup(action.side))

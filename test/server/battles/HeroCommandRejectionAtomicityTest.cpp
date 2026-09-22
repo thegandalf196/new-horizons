@@ -80,7 +80,12 @@ TEST_P(HeroCommandRejectionAtomicityTest, FreshBudgetRejectionPreservesUnitAndAl
 	}
 	ASSERT_FALSE(gameHandler->battles->makePlayerBattleAction(battleId, sender, action));
 	EXPECT_EQ(server.startedActions.size(), starts);
-	EXPECT_EQ(server.stackActivations.size(), activations);
+	const bool battleExists = GetParam() != RejectionCase::MISSING_BATTLE;
+	ASSERT_EQ(server.stackActivations.size(), activations + (battleExists ? 1 : 0));
+	if(battleExists)
+	{
+		EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::ACTION_REJECTED);
+	}
 	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
 	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeId);
 	EXPECT_EQ(battle()->battleActiveUnit()->getMovementRange(), speed);
@@ -99,7 +104,7 @@ TEST_P(HeroCommandRejectionAtomicityTest, FreshBudgetRejectionPreservesUnitAndAl
 	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
 	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeId);
 	EXPECT_EQ(battle()->battleActiveUnit()->getMovementRange(), speed);
-	ASSERT_EQ(server.stackActivations.size(), activations + 1);
+	ASSERT_EQ(server.stackActivations.size(), activations + (battleExists ? 2 : 1));
 	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::HERO_COMMAND);
 	EXPECT_EQ(attackerSideHero->mana, mana);
 	EXPECT_EQ(defenderSideHero->mana, defenderMana);

@@ -70,7 +70,10 @@ requiring the complete source document to be replaced.
   Rank is communicated by the band heading rather than repeated as text over
   individual dwelling images. Retain the town's Heroes III visual identity,
   resource bar, date, and confirmation control.
-- **Implementation evidence:** Pending.
+- **Implementation evidence:** Commit `704f5e98d` implements the adaptive
+  simultaneous rank bands, full authored-roster preservation, eight-stat cards,
+  localized headings and compact geometry for both 3/3/1 and 4/3/1 rosters.
+  `check-new-horizons-recruitment-category-ui.py` covers the data/UI contract.
 
 ### 2026-09-21 — Astral Nexus function
 
@@ -118,7 +121,14 @@ requiring the complete source document to be replaced.
   ordinal follow-up spell, triggering Metamagic effect, spell name, and resulting
   damage or other outcome. Extend the same causal standard across other combat
   mechanics rather than emitting generic New Horizons prefixes.
-- **Implementation evidence:** Pending.
+- **Implementation evidence:** Partial. Metamagic follow-up casts are described by the
+  authoritative spell-mechanics path after their effects resolve. The log names
+  the casting hero, second/third sequence position, spell, Metamagic cause, and
+  damage, kills, resistance, affected-target count, ward creation, or successful
+  non-unit resolution as applicable. Behavioral coverage is in
+  `NewHorizonsMetamagicTest.FollowupLogNamesSecondAndThirdMagicArrowDamage`,
+  `NewHorizonsMetamagicTest.FollowupLogReportsAffectedNonDamageOutcome`, and
+  `NewHorizonsMetamagicTest.FollowupLogDoesNotCallSuccessfulObstacleSpellNoEffect`.
 
 ### 2026-09-21 — Tower class and creature presentation
 

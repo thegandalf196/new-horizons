@@ -85,6 +85,84 @@ static bool isTimeStopHeroAction(const BattleAction & action)
 	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
 }
 
+static const char * heroOrderDisplayName(HeroCommand command)
+{
+	switch(command)
+	{
+		case HeroCommand::CHARGE: return "Charge";
+		case HeroCommand::HOLD_THE_LINE: return "Hold the Line";
+		case HeroCommand::FOCUS_FIRE: return "Focus Fire";
+		case HeroCommand::RIPOSTE: return "Riposte";
+		case HeroCommand::BRACE: return "Brace";
+		case HeroCommand::PROTECT: return "Protect";
+		case HeroCommand::FLANK: return "Flank";
+		case HeroCommand::SECOND_WIND: return "Second Wind";
+		default: return "Order";
+	}
+}
+
+static void appendHeroOrderTarget(MetaString & line, const CBattleInfoCallback & battle, uint32_t unitId)
+{
+	const auto * target = battle.battleGetUnitByID(unitId);
+	if(!target)
+		return;
+	line.appendRawString(" %s");
+	target->addNameReplacement(line);
+}
+
+static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSide side,
+	const HeroOrderState & state)
+{
+	const auto * hero = battle.battleGetFightingHero(side);
+	MetaString line = hero
+		? MetaString::createFromTextID(hero->getNameTextID())
+		: MetaString::createFromRawString("Hero");
+	line.appendRawString(": ");
+	line.appendRawString(heroOrderDisplayName(state.command));
+	line.appendRawString("!");
+
+	switch(state.command)
+	{
+		case HeroCommand::CHARGE:
+			line.appendRawString(" Each allied stack's first melee attack after moving at least 3 hexes gains damage this round.");
+			break;
+		case HeroCommand::HOLD_THE_LINE:
+			line.appendRawString(" Allied stacks that hold position resist physical damage this round.");
+			break;
+		case HeroCommand::FOCUS_FIRE:
+			line.appendRawString(" Target:");
+			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
+			line.appendRawString(". Allied shooters concentrate fire this round.");
+			break;
+		case HeroCommand::RIPOSTE:
+			line.appendRawString(" Allied stacks take less melee damage and retaliate more fiercely this round.");
+			break;
+		case HeroCommand::BRACE:
+			line.appendRawString(" Allied stacks strike first when an enemy moves at least 3 hexes before a melee attack this round.");
+			break;
+		case HeroCommand::PROTECT:
+			line.appendRawString(" Protector:");
+			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
+			line.appendRawString(". Ward:");
+			appendHeroOrderTarget(line, battle, state.secondaryTargetUnitId);
+			line.appendRawString(". The first qualifying melee attack is intercepted this round.");
+			break;
+		case HeroCommand::FLANK:
+			line.appendRawString(" Target:");
+			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
+			line.appendRawString(". Allied melee attackers exploit new sides this round.");
+			break;
+		case HeroCommand::SECOND_WIND:
+			line.appendRawString(" Target:");
+			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
+			line.appendRawString(". One reduced-strength activation is granted this round.");
+			break;
+		default:
+			break;
+	}
+	return line;
+}
+
 static bool validateCanonicalLandMineTargets(const CBattleInfoCallback & battle,
 	const spells::Mechanics & mechanics, const battle::Target & target)
 {
@@ -1251,7 +1329,16 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 	// SetStackEffect to emit here: doing so would turn conditional Orders into
 	// unconditional bonuses and would lose their one-shot trigger state.
 	if(heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules()))
+	{
+		const auto state = battle.battleGetHeroOrderState(ba.side);
+		if(!state || state->command != ba.command)
+			return false;
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		message.lines.push_back(heroOrderLogLine(battle, ba.side, *state));
+		gameHandler->sendAndApply(message);
 		return true;
+	}
 	if(ba.command == HeroCommand::FOCUS_FIRE)
 		return true; // Validated contextual state was published atomically by StartAction.
 	const auto * hero = battle.battleGetFightingHero(ba.side);
