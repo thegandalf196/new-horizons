@@ -312,11 +312,14 @@ void BattleFlowProcessor::onTacticsEnded(const CBattleInfoCallback & battle)
 
 void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, bool isFirstRound)
 {
+	// Swift Gate resolves while the current round still exists. Ordinary Gates
+	// resolve only after BattleNextRound advances the authoritative round.
+	resolveDemonicGates(battle, true);
 	BattleNextRound bnr;
 	bnr.battleID = battle.getBattle()->getBattleID();
 	logGlobal->debug("Next round starts");
 	gameHandler->sendAndApply(bnr);
-	resolveDemonicGates(battle);
+	resolveDemonicGates(battle, false);
 
 	// operate on copy - removing obstacles will invalidate iterator on 'battle' container
 	auto obstacles = battle.battleGetAllObstacles();
@@ -336,7 +339,7 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 	}
 }
 
-void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle)
+void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle, bool endOfRoundPhase)
 {
 	for(const auto sideId : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
@@ -346,6 +349,11 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 		const auto snapshot = concrete->getSide(sideId);
 		if(snapshot.pendingDemonicGates.empty())
 			continue;
+		const auto * hero = battle.battleGetFightingHero(sideId);
+		const bool swiftGate = hero && hero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.swiftGate");
+		const bool hellfireArrival = hero && hero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.hellfireArrival");
 
 		BattleDemonicGatingStateChanged update;
 		update.battleID = concrete->getBattleID();
@@ -355,7 +363,10 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 
 		for(const auto & gate : snapshot.pendingDemonicGates)
 		{
-			if(gate.arrivalRound > concrete->getRound())
+			const bool due = endOfRoundPhase
+				? swiftGate && gate.arrivalRound <= concrete->getRound() + 1
+				: gate.arrivalRound <= concrete->getRound();
+			if(!due)
 			{
 				update.pending.push_back(gate);
 				continue;
@@ -406,6 +417,43 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			info.save(add.changedStacks.back().data);
 			gameHandler->sendAndApply(add);
 			update.gated.push_back({info.id, gate.creature, gate.count});
+
+			if(hellfireArrival)
+			{
+				const auto * gated = battle.battleGetStackByID(info.id, false);
+				std::vector<const battle::Unit *> enemies;
+				if(gated)
+					for(const auto * adjacent : battle.battleAdjacentUnits(gated))
+						if(adjacent && adjacent->alive() && adjacent->unitSide() != sideId)
+							enemies.push_back(adjacent);
+				const int64_t totalFireDamage = gated ? gated->getAvailableHealth() * 15 / 100 : 0;
+				const int64_t damagePerEnemy = enemies.empty() ? 0 : totalFireDamage / enemies.size();
+				if(damagePerEnemy > 0)
+				{
+					StacksInjured injury;
+					injury.battleID = concrete->getBattleID();
+					int64_t appliedDamage = 0;
+					for(const auto * enemy : enemies)
+					{
+						BattleStackAttacked hit;
+						hit.attackerID = info.id;
+						hit.stackAttacked = enemy->unitId();
+						hit.damageAmount = damagePerEnemy;
+						hit.flags |= BattleStackAttacked::SPELL_EFFECT;
+						CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), enemy->acquireState());
+						appliedDamage += hit.damageAmount;
+						injury.stacks.push_back(hit);
+					}
+					gameHandler->sendAndApply(injury);
+					BattleLogMessage hellfireLog;
+					hellfireLog.battleID = concrete->getBattleID();
+					MetaString hellfireLine = MetaString::createFromRawString("Hellfire deals ");
+					hellfireLine.appendNumber(appliedDamage);
+					hellfireLine.appendRawString(" damage.");
+					hellfireLog.lines.push_back(std::move(hellfireLine));
+					gameHandler->sendAndApply(hellfireLog);
+				}
+			}
 			BattleLogMessage message;
 			message.battleID = concrete->getBattleID();
 			MetaString line = MetaString::createFromRawString("The Gate brings forth ");

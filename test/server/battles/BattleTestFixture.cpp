@@ -56,6 +56,20 @@ void RecordingGameServer::record(CPackForClient & pack)
 
 	if(const auto * orderState = dynamic_cast<const BattleHeroOrderStateChanged *>(&pack))
 		orderStateUpdates.push_back(*orderState);
+	if(const auto * units = dynamic_cast<const BattleUnitsChanged *>(&pack))
+	{
+		const bool addsUnit = std::ranges::any_of(units->changedStacks, [](const auto & change)
+		{
+			return change.operation == UnitChanges::EOperation::ADD;
+		});
+		if(addsUnit)
+		{
+			const auto * battle = gameState->getBattle(units->battleID);
+			unitAdditionRounds.push_back(battle ? battle->getRound() : -1);
+		}
+	}
+	if(const auto * injured = dynamic_cast<const StacksInjured *>(&pack))
+		injuries.push_back(*injured);
 
 	if(dynamic_cast<const HeroLevelUp *>(&pack)) progressionPackets.push_back("level");
 	if(dynamic_cast<const HeroMasteryOffer *>(&pack)) progressionPackets.push_back("offer");

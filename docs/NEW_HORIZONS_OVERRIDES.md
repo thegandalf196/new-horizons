@@ -189,3 +189,18 @@ requiring the complete source document to be replaced.
   commit `9b0ba2f3b`; full battle action, delayed arrival, survivor reconciliation,
   hero/battle controls, battle log, BattleAI choice, and behavioral coverage are
   implemented in the following Demonic Gating checkpoint.
+
+### 2026-09-22 — First Demonic Gating perk tranche
+
+- **Status:** Accepted
+- **Rule:** Swift Gate resolves a pending Gate at the end of the current round,
+  before the authoritative round counter advances. Wide Gate changes the legal
+  placement radius from three to five hexes for the player, server validator,
+  and Battle AI. Hellfire Arrival deals Fire damage equal to 15% of the arriving
+  stack's current aggregate HP, divided evenly among adjacent enemy stacks.
+- **Implementation evidence:** The authoritative round-boundary resolver now has
+  distinct end-of-round and start-of-round phases; placement range is perk-aware
+  in all three consumers; arrival publishes direct injury and battle-log packets.
+  Focused live-content tests cover both sides of Wide Gate authority, Swift timing,
+  exact Hellfire damage, base arrival, invalid-action atomicity, reserve transfers,
+  and wire compatibility.

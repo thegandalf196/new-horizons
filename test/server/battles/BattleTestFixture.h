@@ -47,6 +47,9 @@ public:
 	std::vector<StartAction> startedActions;
 	std::vector<BattleHeroOrderStateChanged> orderStateUpdates;
 	std::vector<BattleAttack> attacks;
+	/// Round observed immediately before each authoritative unit-addition packet.
+	std::vector<int32_t> unitAdditionRounds;
+	std::vector<StacksInjured> injuries;
 	std::vector<std::string> progressionPackets;
 	std::vector<bool> masteryDialogSawPending;
 

@@ -129,8 +129,10 @@ static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, cons
 	const auto reserve = demonicReserve.find(action.gatingCreature);
 	if(reserve == demonicReserve.end() || reserve->second <= 0)
 		return false;
+	const int placementRange = hero->hasActivePerk(
+		"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate") ? 5 : 3;
 	const BattleHex target = action.target.front().hexValue;
-	if(!target.isAvailable() || BattleHex::getDistance(source->getPosition(), target) > 3
+	if(!target.isAvailable() || BattleHex::getDistance(source->getPosition(), target) > placementRange
 		|| battle.battleGetUnitByPos(target, true) || !battle.battleGetAllObstaclesOnPos(target, false).empty())
 		return false;
 	const auto accessibility = battle.getAccessibility();

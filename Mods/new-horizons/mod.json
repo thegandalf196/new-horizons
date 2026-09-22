@@ -5814,7 +5814,7 @@
 								"requires": "basic",
 								"description": "A gated stack arrives at the end of the current round instead of the start of the next round.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "A gated stack arrives at the end of the current round instead of the start of the next round."
 								}
 							},
@@ -5824,7 +5824,7 @@
 								"requires": "basic",
 								"description": "Gate placement range increases from 3 to 5 hexes from the gating stack.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Gate placement range increases from 3 to 5 hexes from the gating stack."
 								}
 							},
@@ -5834,7 +5834,7 @@
 								"requires": "basic",
 								"description": "When a gated stack arrives, adjacent enemy stacks suffer Fire damage equal to 15% of the gated stack's current aggregate HP, divided evenly among them.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When a gated stack arrives, adjacent enemy stacks suffer Fire damage equal to 15% of the gated stack's current aggregate HP, divided evenly among them."
 								}
 							},

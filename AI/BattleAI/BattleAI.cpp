@@ -161,13 +161,15 @@ std::optional<BattleAction> chooseDemonicGate(const std::shared_ptr<CBattleInfoC
 	if(!chosen.hasValue())
 		return std::nullopt;
 
+	const int placementRange = hero->hasActivePerk(
+		"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate") ? 5 : 3;
 	const auto accessibility = battle->getAccessibility();
 	BattleHex best;
 	int bestEnemyDistance = std::numeric_limits<int>::max();
 	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 	{
 		BattleHex candidate(index);
-		if(!candidate.isAvailable() || BattleHex::getDistance(source->getPosition(), candidate) > 3
+		if(!candidate.isAvailable() || BattleHex::getDistance(source->getPosition(), candidate) > placementRange
 			|| !accessibility.accessible(candidate, chosen.toCreature()->isDoubleWide(), side))
 			continue;
 		int nearestEnemy = std::numeric_limits<int>::max();

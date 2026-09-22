@@ -1855,8 +1855,11 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 		{
 			const auto * source = owner.stacksController->getActiveStack();
 			const auto * creature = demonicGatingCreature.toCreature();
+			const auto * hero = source ? owner.getBattle()->battleGetFightingHero(source->unitSide()) : nullptr;
+			const int placementRange = hero && hero->hasActivePerk(
+				"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate") ? 5 : 3;
 			if(!source || !creature || !targetHex.isAvailable()
-				|| BattleHex::getDistance(source->getPosition(), targetHex) > 3
+				|| BattleHex::getDistance(source->getPosition(), targetHex) > placementRange
 				|| owner.getBattle()->battleGetUnitByPos(targetHex, true)
 				|| !owner.getBattle()->battleGetAllObstaclesOnPos(targetHex, false).empty())
 				return false;
