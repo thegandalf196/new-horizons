@@ -61,6 +61,8 @@ public:
 	bool visitTownBuilding(const CGTownInstance *town, BuildingID buildingID) override;
 	void recruitCreatures(const CGDwelling * obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level=-1) override;
 	void musterCreatures(const CGHeroInstance *hero, const CGTownInstance *town, CreatureID creature) override;
+	void arrangeDemonicReserve(const CGHeroInstance * hero, SlotID activeSlot,
+		CreatureID creature, int32_t amount, bool toReserve) override;
 	bool dismissCreature(const CArmedInstance *obj, SlotID stackPos) override;
 	bool upgradeCreature(const CArmedInstance *obj, SlotID stackPos, CreatureID newID=CreatureID::NONE) override;
 	void saveLocalState(const JsonNode & data) override;

@@ -221,6 +221,14 @@ public:
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
+	using DemonicReserve = std::map<CreatureID, TQuantity>;
+	const DemonicReserve & getDemonicReserve() const { return demonicReserve; }
+	TQuantity getDemonicReserveCount(CreatureID creature) const
+	{
+		const auto found = demonicReserve.find(creature);
+		return found == demonicReserve.end() ? 0 : found->second;
+	}
+	void setDemonicReserve(DemonicReserve value) { demonicReserve = std::move(value); }
 	bool hasNewHorizonsAdventureSpellCastToday() const { return newHorizonsAdventureSpellState.castToday; }
 	void setNewHorizonsAdventureSpellCastToday(bool value) { newHorizonsAdventureSpellState.castToday = value; }
 	void resetNewHorizonsAdventureSpellCastToday() { newHorizonsAdventureSpellState.castToday = false; }
@@ -416,6 +424,7 @@ private:
 	int32_t newHorizonsCastleGateLastUseDay = -1;
 	int32_t newHorizonsMusterLastWeek = -1;
 	int32_t newHorizonsMusterUsesThisWeek = 0;
+	DemonicReserve demonicReserve;
 	std::array<int, GameConstants::PRIMARY_SKILLS> lastPrimaryGains{};
 	void levelUpAutomatically(IGameRandomizer & gameRandomizer);
 	void attachCommanderToArmy();
@@ -503,6 +512,16 @@ public:
 			// weekly marker. Treat an authored marker as one use when loading
 			// those saves; this cannot create a second use retroactively.
 			newHorizonsMusterUsesThisWeek = newHorizonsMusterLastWeek == -1 ? 0 : 1;
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DEMONIC_RESERVE))
+			h & demonicReserve;
+		else
+		{
+			if(h.saving && !demonicReserve.empty())
+				throw std::runtime_error("New Horizons Demonic Reserve requires the new save format");
+			if(!h.saving)
+				demonicReserve.clear();
+		}
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MASTERIES))
 			h & masteryState;

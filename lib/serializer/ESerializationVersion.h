@@ -95,12 +95,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_CASTLE_GATE, // per-hero daily Castle Gate usage state
 	NEW_HORIZONS_MUSTER, // per-hero and per-dwelling weekly Recruitment Muster state
 	NEW_HORIZONS_MUSTER_PERKS, // per-hero weekly Muster use count for Recruitment perks
+	NEW_HORIZONS_DEMONIC_RESERVE, // persistent owned Inferno troops outside the seven active army slots
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_MUSTER_PERKS,
+	CURRENT = NEW_HORIZONS_DEMONIC_RESERVE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -108,6 +109,7 @@ static_assert(ESerializationVersion::CURRENT >= ESerializationVersion::NEW_HORIZ
 static_assert(ESerializationVersion::NEW_HORIZONS_CASTLE_GATE > ESerializationVersion::NEW_HORIZONS_HOUSE_OF_WISDOM);
 static_assert(ESerializationVersion::NEW_HORIZONS_MUSTER > ESerializationVersion::NEW_HORIZONS_CASTLE_GATE);
 static_assert(ESerializationVersion::NEW_HORIZONS_MUSTER_PERKS > ESerializationVersion::NEW_HORIZONS_MUSTER);
+static_assert(ESerializationVersion::NEW_HORIZONS_DEMONIC_RESERVE > ESerializationVersion::NEW_HORIZONS_MUSTER_PERKS);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTERIES > ESerializationVersion::NEW_HORIZONS_CAPABILITIES);
 static_assert(ESerializationVersion::NEW_HORIZONS_CAPABILITIES > ESerializationVersion::NEW_HORIZONS_HERO_GROWTH);
 static_assert(ESerializationVersion::NEW_HORIZONS_HERO_GROWTH > ESerializationVersion::NEW_HORIZONS_MAGIC);

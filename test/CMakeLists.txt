@@ -220,6 +220,7 @@ set(test_SRCS
 		server/NewHorizonsAstrologyTest.cpp
 		server/NewHorizonsLeadershipAdmissionTest.cpp
 		server/NewHorizonsRecruitmentMusterTest.cpp
+		server/NewHorizonsDemonicReserveTest.cpp
 
 		texts/TextOperationsTest.cpp
 

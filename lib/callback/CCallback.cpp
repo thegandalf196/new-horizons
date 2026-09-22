@@ -94,6 +94,21 @@ void CCallback::musterCreatures(const CGHeroInstance * hero, const CGTownInstanc
 	sendRequest(pack);
 }
 
+void CCallback::arrangeDemonicReserve(const CGHeroInstance * hero, SlotID activeSlot,
+	CreatureID creature, int32_t amount, bool toReserve)
+{
+	if(!hero || !getPlayerID() || *getPlayerID() != hero->getOwner() || amount <= 0)
+		return;
+
+	ArrangeDemonicReserve pack;
+	pack.heroId = hero->id;
+	pack.activeSlot = activeSlot;
+	pack.creatureId = creature;
+	pack.amount = amount;
+	pack.toReserve = toReserve;
+	sendRequest(pack);
+}
+
 bool CCallback::dismissCreature(const CArmedInstance *obj, SlotID stackPos)
 {
 	if((getPlayerID() && obj->tempOwner != getPlayerID()) || (obj->stacksCount()<2  && obj->needsLastStack()))

@@ -1708,6 +1708,28 @@ struct DLL_LINKAGE SetNewHorizonsMusterState : public CPackForClient
 	}
 };
 
+/// Complete authoritative Demonic Reserve snapshot for one Inferno hero.
+/// Active-army mutations use the ordinary stack packets; this packet keeps the
+/// off-army owned troop pool identical on the server and every client.
+struct DLL_LINKAGE SetNewHorizonsDemonicReserve : public CPackForClient
+{
+	ObjectInstanceID heroId;
+	std::map<CreatureID, TQuantity> reserve;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DEMONIC_RESERVE))
+			throw std::runtime_error("New Horizons Demonic Reserve requires the new wire format");
+		h & heroId;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DEMONIC_RESERVE))
+			h & reserve;
+		else if(!h.saving)
+			reserve.clear();
+	}
+};
+
 struct DLL_LINKAGE ShowWorldViewEx : public CPackForClient
 {
 	PlayerColor player;

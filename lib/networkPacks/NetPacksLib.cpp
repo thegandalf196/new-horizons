@@ -567,6 +567,11 @@ void SetNewHorizonsMusterState::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetNewHorizonsMusterState(*this);
 }
 
+void SetNewHorizonsDemonicReserve::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetNewHorizonsDemonicReserve(*this);
+}
+
 void ShowWorldViewEx::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitShowWorldViewEx(*this);
@@ -655,6 +660,11 @@ void RecruitCreatures::visitTyped(ICPackVisitor & visitor)
 void MusterCreatures::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitMusterCreatures(*this);
+}
+
+void ArrangeDemonicReserve::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitArrangeDemonicReserve(*this);
 }
 
 void UpgradeCreature::visitTyped(ICPackVisitor & visitor)

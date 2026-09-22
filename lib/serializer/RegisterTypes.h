@@ -321,4 +321,6 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetNewHorizonsCastleGateState>(278);
 	s.template registerType<SetNewHorizonsMusterState>(279);
 	s.template registerType<MusterCreatures>(280);
+	s.template registerType<SetNewHorizonsDemonicReserve>(281);
+	s.template registerType<ArrangeDemonicReserve>(282);
 }

@@ -132,6 +132,7 @@ public:
 	virtual void visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack) {}
 	virtual void visitSetNewHorizonsCastleGateState(SetNewHorizonsCastleGateState & pack) {}
 	virtual void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) {}
+	virtual void visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack) {}
 	virtual void visitShowWorldViewEx(ShowWorldViewEx & pack) {}
 	virtual void visitEndTurn(EndTurn & pack) {}
 	virtual void visitDismissHero(DismissHero & pack) {}
@@ -149,6 +150,7 @@ public:
 	virtual void visitSpellResearch(SpellResearch & pack) {}
 	virtual void visitRecruitCreatures(RecruitCreatures & pack) {}
 	virtual void visitMusterCreatures(MusterCreatures & pack) {}
+	virtual void visitArrangeDemonicReserve(ArrangeDemonicReserve & pack) {}
 	virtual void visitUpgradeCreature(UpgradeCreature & pack) {}
 	virtual void visitGarrisonHeroSwap(GarrisonHeroSwap & pack) {}
 	virtual void visitExchangeArtifacts(ExchangeArtifacts & pack) {}

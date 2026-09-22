@@ -378,6 +378,32 @@ struct DLL_LINKAGE MusterCreatures : public CPackForServer
 	}
 };
 
+/// Move a real creature count between an Inferno hero's active army and
+/// persistent Demonic Reserve. The server validates ownership, faction,
+/// leadership, last-stack rules and available counts before either mutation.
+struct DLL_LINKAGE ArrangeDemonicReserve : public CPackForServer
+{
+	ObjectInstanceID heroId;
+	SlotID activeSlot;
+	CreatureID creatureId;
+	TQuantity amount = 0;
+	bool toReserve = true;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DEMONIC_RESERVE))
+			throw std::runtime_error("New Horizons Demonic Reserve requires the new wire format");
+		h & static_cast<CPackForServer &>(*this);
+		h & heroId;
+		h & activeSlot;
+		h & creatureId;
+		h & amount;
+		h & toReserve;
+	}
+};
+
 struct DLL_LINKAGE UpgradeCreature : public CPackForServer
 {
 	UpgradeCreature() = default;

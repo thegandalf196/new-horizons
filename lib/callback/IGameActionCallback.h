@@ -44,6 +44,8 @@ public:
 	/// Requests one New Horizons Recruitment Muster operation.  The server
 	/// derives amount/category eligibility and validates weekly use markers.
 	virtual void musterCreatures(const CGHeroInstance *hero, const CGTownInstance *town, CreatureID creature) {}
+	virtual void arrangeDemonicReserve(const CGHeroInstance * hero, SlotID activeSlot,
+		CreatureID creature, int32_t amount, bool toReserve) {}
 	virtual bool upgradeCreature(const CArmedInstance *obj, SlotID stackPos, CreatureID newID=CreatureID::NONE)=0; //if newID==-1 then best possible upgrade will be made
 	virtual void spellResearch(const CGTownInstance *town, SpellID spellAtSlot, bool accepted)=0;
 	virtual void swapGarrisonHero(const CGTownInstance *town)=0;

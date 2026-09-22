@@ -2942,6 +2942,69 @@ bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID tar
 	return true;
 }
 
+bool CGameHandler::arrangeDemonicReserve(ObjectInstanceID heroId, SlotID activeSlot,
+	CreatureID creatureId, TQuantity amount, bool toReserve, PlayerColor player)
+{
+	const auto * hero = gameInfo().getHero(heroId);
+	const auto * creature = creatureId.toCreature();
+	COMPLAIN_RET_FALSE_IF(!hero || !creature, "Cannot arrange Demonic Reserve: invalid hero or creature!");
+	COMPLAIN_RET_FALSE_IF(hero->getOwner() != player,
+		"Cannot arrange Demonic Reserve: hero does not belong to the requesting player!");
+	COMPLAIN_RET_FALSE_IF(hero->getPerkSkillRank("new-horizons:demonicGating") <= 0,
+		"Cannot arrange Demonic Reserve: hero does not have Demonic Gating!");
+	COMPLAIN_RET_FALSE_IF(creature->getFactionID() != FactionID::INFERNO,
+		"Cannot arrange Demonic Reserve: only Inferno creatures are eligible!");
+	COMPLAIN_RET_FALSE_IF(amount <= 0, "Cannot arrange Demonic Reserve: amount must be positive!");
+
+	auto reserve = hero->getDemonicReserve();
+	if(toReserve)
+	{
+		COMPLAIN_RET_FALSE_IF(!hero->hasStackAtSlot(activeSlot),
+			"Cannot arrange Demonic Reserve: active source slot is empty!");
+		COMPLAIN_RET_FALSE_IF(hero->getCreature(activeSlot)->getId() != creatureId,
+			"Cannot arrange Demonic Reserve: source creature does not match the request!");
+		const TQuantity sourceCount = hero->getStackCount(activeSlot);
+		COMPLAIN_RET_FALSE_IF(amount > sourceCount,
+			"Cannot arrange Demonic Reserve: requested more creatures than the source stack contains!");
+		COMPLAIN_RET_FALSE_IF(amount == sourceCount && hero->stacksCount() == 1 && hero->needsLastStack(),
+			"Cannot arrange Demonic Reserve: a hero must retain one active stack!");
+		COMPLAIN_RET_FALSE_IF(reserve[creatureId] > std::numeric_limits<TQuantity>::max() - amount,
+			"Cannot arrange Demonic Reserve: creature count overflow!");
+
+		reserve[creatureId] += amount;
+		if(!changeStackCount(StackLocation(heroId, activeSlot), -amount, ChangeValueMode::RELATIVE))
+			return false;
+	}
+	else
+	{
+		const auto found = reserve.find(creatureId);
+		COMPLAIN_RET_FALSE_IF(found == reserve.end() || found->second < amount,
+			"Cannot arrange Demonic Reserve: reserve does not contain the requested creatures!");
+		const SlotID destination = hero->getSlotFor(creatureId);
+		COMPLAIN_RET_FALSE_IF(destination == SlotID(),
+			"Cannot arrange Demonic Reserve: active army has no compatible slot!");
+		const TQuantity destinationCount = hero->hasStackAtSlot(destination)
+			? hero->getStackCount(destination)
+			: 0;
+		COMPLAIN_RET_FALSE_IF(destinationCount > std::numeric_limits<TQuantity>::max() - amount,
+			"Cannot arrange Demonic Reserve: active stack count overflow!");
+		if(!validateLeadershipStack(hero, creatureId, destinationCount + amount))
+			return false;
+
+		found->second -= amount;
+		if(found->second == 0)
+			reserve.erase(found);
+		if(!addToSlot(StackLocation(heroId, destination), creature, amount))
+			return false;
+	}
+
+	SetNewHorizonsDemonicReserve update;
+	update.heroId = heroId;
+	update.reserve = std::move(reserve);
+	sendAndApply(update);
+	return true;
+}
+
 bool CGameHandler::upgradeCreature(ObjectInstanceID objid, SlotID pos, CreatureID upgID)
 {
 	const auto * obj = dynamic_cast<const CArmedInstance *>(gameInfo().getObjInstance(objid));

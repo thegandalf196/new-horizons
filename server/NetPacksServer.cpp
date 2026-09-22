@@ -179,6 +179,14 @@ void ApplyGhNetPackVisitor::visitMusterCreatures(MusterCreatures & pack)
 	result = gh.musterCreatures(pack.heroId, pack.targetId, pack.creatureId, pack.player);
 }
 
+void ApplyGhNetPackVisitor::visitArrangeDemonicReserve(ArrangeDemonicReserve & pack)
+{
+	gh.throwIfWrongOwner(connection, &pack, pack.heroId);
+	gh.throwIfPlayerNotActive(connection, &pack);
+	result = gh.arrangeDemonicReserve(pack.heroId, pack.activeSlot, pack.creatureId,
+		pack.amount, pack.toReserve, pack.player);
+}
+
 void ApplyGhNetPackVisitor::visitUpgradeCreature(UpgradeCreature & pack)
 {
 	gh.throwIfWrongOwner(connection, &pack, pack.id);
