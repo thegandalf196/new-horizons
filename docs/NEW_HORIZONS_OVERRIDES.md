@@ -70,13 +70,7 @@ requiring the complete source document to be replaced.
   Rank is communicated by the band heading rather than repeated as text over
   individual dwelling images. Retain the town's Heroes III visual identity,
   resource bar, date, and confirmation control.
-- **Implementation evidence:** `CFortScreen` now renders simultaneous Core,
-  Elite, and Champion bands with the complete eight-stat card, preserves each
-  card's original dwelling level for authoritative recruitment, and wraps
-  oversized bands such as Conflux's five Elite rows without shrinking or
-  dropping them. Covered by
-  `client/tests/check-new-horizons-recruitment-category-ui.py` and a direct
-  compilation of `CCastleInterface.cpp`.
+- **Implementation evidence:** Pending.
 
 ### 2026-09-21 — Astral Nexus function
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Static guard for New Horizons Core/Elite/Champion recruitment presentation.
 
-The ranked fort is a complete overview: every authored dwelling row remains
-clickable through its original model level, while the active New Horizons
-screen presents rank headings and the full creature statistic set.
+The category view is optional and comes from the saved game callback.  This
+keeps the ordinary seven-tier UI byte-for-byte in legacy contexts while making
+the active New Horizons classification visible in town and recruitment views.
 """
 
 from pathlib import Path
@@ -50,21 +50,11 @@ require(QUICK, "uncategorizedLevels.empty()", "partial custom category contexts 
 require(QUICK_HEADER, "void showAll(Canvas & to) override", "quick recruitment draws group boundaries")
 require(CASTLE, "getCreatureCategory", "town dwelling presentation reads saved category")
 require(CASTLE, "newHorizonsCreatureCategoryUI::prefix", "town dwelling text is category-aware")
-require(CASTLE, "categoryHeaders", "fort screen owns the three rank headings")
-require(CASTLE_HEADER, "std::array<std::shared_ptr<CLabel>, 3> categoryHeaders", "fort screen owns the three rank headings")
-require(CASTLE, "categoryLevels", "fort screen groups active New Horizons ranks")
-require(CASTLE, "hasCompleteCreatureCategoryContext", "legacy/custom towns retain stock fort order")
-require(CASTLE, "createNewHorizonsFortBackground", "fort screen uses a taller H3-style background")
-if CASTLE.count("createImage(size, CanvasScalingPolicy::AUTO)") < 2:
-    raise AssertionError("ranked fort and card canvases must follow UI scaling")
-require(CASTLE, "NH_FORT_CARD_HEIGHT", "fort cards have room for expanded statistics")
-for stat in ("Attack", "Defense", "Damage", "Health", "Speed", "Initiative", "Leadership Cost", "Growth"):
-    require(CASTLE, f'"{stat}"', f"fort cards show {stat}")
-require(CASTLE_HEADER, "cardBackground", "fort cards own their ranked presentation background")
-require(CASTLE, "RecruitArea>(x, bandTop, town, levels[rowBegin + column], cardWidth", "fort cards preserve their model dwelling level")
-require(CASTLE, "NH_FORT_CARDS_PER_ROW", "oversized rank bands wrap without dropping dwelling rows")
-require(CASTLE, "capabilityCreatureLeadershipRequirement", "fort cards show authoritative Leadership Cost")
-require(CASTLE, "getBaseInitiative()", "fort cards show creature Initiative")
+require(CASTLE, "categoryLabel", "fort recruitment area shows category")
+require(CASTLE_HEADER, "std::shared_ptr<CLabel> categoryLabel", "fort recruitment area owns category label")
+require(CASTLE, "displayLevels", "fort screen keeps model dwelling levels independent from visual order")
+require(CASTLE, "std::stable_sort", "fort screen groups active New Horizons ranks")
+require(CASTLE, "hasCompleteCategoryContext", "legacy/custom towns retain stock fort order")
 require(KINGDOM, "getCreatureCategory", "kingdom town overview reads saved category")
 require(KINGDOM, "creatureCategoryBadge", "kingdom town overview marks rank groups")
 require(KINGDOM, "townCreatureAtLevel", "kingdom rank badges also cover unbuilt template dwellings")
