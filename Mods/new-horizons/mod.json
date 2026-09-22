@@ -3148,21 +3148,21 @@
 							"basic": {
 								"description": "Muster once per week in a friendly town: add 2 Core creatures to one Core dwelling's recruitment pool.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Muster once per week in a friendly town: add 2 Core creatures to one Core dwelling's recruitment pool."
 								}
 							},
 							"advanced": {
 								"description": "Muster once per week: add either 4 Core creatures to one Core dwelling or 1 Elite creature to one Elite dwelling.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Muster once per week: add either 4 Core creatures to one Core dwelling or 1 Elite creature to one Elite dwelling."
 								}
 							},
 							"expert": {
 								"description": "Muster once per week: add either 6 Core creatures, 2 Elite creatures, or 1 Champion creature to one corresponding dwelling pool.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Muster once per week: add either 6 Core creatures, 2 Elite creatures, or 1 Champion creature to one corresponding dwelling pool."
 								}
 							}
