@@ -10,9 +10,11 @@
 #include "StdInc.h"
 
 #include "BattleTestFixture.h"
+#include "../../../server/CGameHandler.h"
 
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/CCreatureHandler.h"
+#include "../../../lib/spells/NewHorizonsSorcery.h"
 
 namespace
 {
@@ -28,12 +30,45 @@ constexpr int32_t transmuterCount = 1;
 class TransmutationTest : public BattleTestFixture
 {
 public:
+	CStack * addPhantomVictim()
+	{
+		battle::UnitInfo info;
+		info.id = battle()->battleNextUnitId();
+		info.count = victimCount;
+		info.type = creatureByName("core:blackDragon");
+		info.side = BattleSide::ATTACKER;
+		info.position = BattleHex(leftHex);
+		info.summoned = true;
+		info.phantomIntegrity = 1'000'000;
+		info.phantomDuration = newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS;
+
+		BattleUnitsChanged pack;
+		pack.battleID = BattleID(0);
+		pack.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+		info.save(pack.changedStacks.back().data);
+		gameHandler->sendAndApply(pack);
+		return battle()->getStack(info.id);
+	}
+
 	void setUpBattle(const std::string & transmuter, const std::string & victimCreature = "core:blackDragon")
 	{
 		startGame();
 		startBattle();
 
 		victim = addStack(BattleSide::ATTACKER, creatureByName(victimCreature), BattleHex(leftHex), victimCount);
+		attacker = addStack(BattleSide::DEFENDER, creatureByName(transmuter), BattleHex(rightHex), transmuterCount);
+		ASSERT_NE(victim, nullptr);
+		ASSERT_NE(attacker, nullptr);
+
+		blockRetaliation(attacker);
+	}
+
+	void setUpPhantomBattle(const std::string & transmuter)
+	{
+		startGame();
+		startBattle();
+
+		victim = addPhantomVictim();
 		attacker = addStack(BattleSide::DEFENDER, creatureByName(transmuter), BattleHex(rightHex), transmuterCount);
 		ASSERT_NE(victim, nullptr);
 		ASSERT_NE(attacker, nullptr);
@@ -103,4 +138,31 @@ TEST_F(TransmutationTest, NonLivingVictimIsLeftAlone)
 	const CStack * survivor = unitOnVictimHex();
 	ASSERT_NE(survivor, nullptr);
 	EXPECT_EQ(survivor->unitType()->getId(), creatureByName("core:ironGolem"));
+}
+
+TEST_F(TransmutationTest, PhantomVictimIsLeftAlone)
+{
+	setUpPhantomBattle("vcmi-test:testTransmuterCount");
+
+	ASSERT_TRUE(attack(attacker, BattleHex(leftHex)));
+
+	const CStack * survivor = unitOnVictimHex();
+	ASSERT_NE(survivor, nullptr);
+	EXPECT_EQ(survivor, victim);
+	EXPECT_EQ(survivor->unitType()->getId(), creatureByName("core:blackDragon"));
+	EXPECT_EQ(survivor->getCount(), victimCount);
+	EXPECT_EQ(survivor->getPhantomInitialIntegrity(), 1'000'000);
+}
+
+TEST_F(TransmutationTest, PhantomAttackerCannotCreatePermanentReplacement)
+{
+	setUpBattle("vcmi-test:testTransmuterCount");
+	attacker->summoned = true;
+	attacker->initializePhantomProfile(1'000'000, newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS);
+
+	ASSERT_TRUE(attack(attacker, BattleHex(leftHex)));
+	const auto * survivor = unitOnVictimHex();
+	ASSERT_NE(survivor, nullptr);
+	EXPECT_EQ(survivor, victim);
+	EXPECT_EQ(survivor->unitType()->getId(), creatureByName("core:blackDragon"));
 }

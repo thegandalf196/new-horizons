@@ -12,6 +12,7 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/spells/Problem.h"
 
 namespace
@@ -20,11 +21,18 @@ constexpr auto metamagicSkill = "new-horizons:metamagic";
 constexpr auto arcaneEconomy = "new-horizons:metamagic.arcaneEconomy";
 constexpr auto formulaReserve = "new-horizons:metamagic.formulaReserve";
 constexpr auto grandMetamagic = "new-horizons:metamagic.grandMetamagic";
+
+SpellID phantomArmySpell()
+{
+	return SpellID(SpellID::decode(newHorizonsSorcery::PHANTOM_ARMY_SPELL));
+}
 }
 
 class NewHorizonsMetamagicTest : public HeroCommandFixture
 {
 protected:
+	bool legacyCloneRoster = false;
+
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -35,14 +43,19 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		// Old saved rulesets treated a spell with no `active` marker as enabled.
+		// Keep that compatibility path narrowly scoped to the legacy Clone test.
+		if(legacyCloneRoster)
+			magicRules["spells"]["core:clone"].Struct().erase("active");
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
-	void prepare(int rank, std::initializer_list<const char *> perks = {})
+	void prepare(int rank, std::initializer_list<const char *> perks = {}, bool useLegacyCloneRoster = false)
 	{
+		legacyCloneRoster = useLegacyCloneRoster;
 		startGame();
 		const auto decoded = SecondarySkill::decode(metamagicSkill);
 		ASSERT_GE(decoded, 0);
@@ -64,6 +77,7 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID::CURE);
 		attackerSideHero->addSpellToSpellbook(SpellID::RESURRECTION);
 		attackerSideHero->addSpellToSpellbook(SpellID::CLONE);
+		attackerSideHero->addSpellToSpellbook(phantomArmySpell());
 		attackerSideHero->addSpellToSpellbook(SpellID::SUMMON_AIR_ELEMENTAL);
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("core:iceBolt")));
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("new-horizons:counterspell")));
@@ -536,9 +550,9 @@ TEST_F(NewHorizonsMetamagicTest, FollowupSummonLogUsesFinalAuthoritativeIdentity
 	})) << ::testing::PrintToString(casts.front().logLines);
 }
 
-TEST_F(NewHorizonsMetamagicTest, FollowupCloneLogUsesFinalCloneIdentityAndCountOnce)
+TEST_F(NewHorizonsMetamagicTest, LegacySavedCloneRosterFollowupLogUsesFinalIdentityAndCountOnce)
 {
-	prepare(1);
+	prepare(1, {}, true);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	ASSERT_TRUE(cast(SpellID::CLONE, attacker, true));
 
@@ -562,6 +576,61 @@ TEST_F(NewHorizonsMetamagicTest, FollowupCloneLogUsesFinalCloneIdentityAndCountO
 	{
 		return line.find(expected) != std::string::npos;
 	})) << ::testing::PrintToString(casts.front().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupPhantomArmyLogReportsResolvedStackIntegrityAndDurationOnce)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(phantomArmySpell(), attacker, true));
+
+	const battle::Unit * phantom = nullptr;
+	for(const auto * unit : battle()->battleGetAllStacks())
+		if(unit->unitSide() == BattleSide::ATTACKER && unit->getPhantomInitialIntegrity() > 0)
+			phantom = unit;
+	ASSERT_NE(phantom, nullptr);
+	ASSERT_EQ(phantom->getCount(), attacker->getCount());
+	ASSERT_GT(phantom->getPhantomIntegrity(), 0);
+	EXPECT_EQ(phantom->getPhantomIntegrity(), phantom->getPhantomInitialIntegrity());
+
+	const auto casts = server.castsOf(phantomArmySpell());
+	ASSERT_EQ(casts.size(), 1u);
+	const auto expected = "casts a second Phantom Army through Metamagic, creating a phantom stack of "
+		+ std::to_string(phantom->getCount()) + " " + creatureName(dynamic_cast<const CStack *>(phantom), phantom->getCount())
+		+ " with " + std::to_string(phantom->getPhantomIntegrity()) + "/"
+		+ std::to_string(phantom->getPhantomInitialIntegrity()) + " integrity for "
+		+ std::to_string(newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS) + " rounds.";
+	EXPECT_EQ(std::ranges::count_if(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("through Metamagic, creating a phantom stack of") != std::string::npos;
+	}), 1);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [&](const std::string & line)
+	{
+		return line.find(expected) != std::string::npos;
+	})) << ::testing::PrintToString(casts.front().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, CounterspelledPhantomArmyFollowupLogsNoCreationOutcome)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto stackCountBefore = battle()->battleGetAllStacks().size();
+	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
+	defenderSideHero->mana = 1000;
+	ASSERT_TRUE(cast(phantomArmySpell(), attacker, true));
+	EXPECT_EQ(battle()->battleGetAllStacks().size(), stackCountBefore);
+
+	const auto casts = server.castsOf(phantomArmySpell());
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("casts a second Phantom Army through Metamagic, but the spell was counterspelled.")
+			!= std::string::npos;
+	}));
+	EXPECT_TRUE(std::ranges::none_of(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("phantom stack") != std::string::npos || line.find("integrity for") != std::string::npos;
+	}));
 }
 
 TEST_F(NewHorizonsMetamagicTest, CounterspelledSummonFollowupAddsNoUnitOrSummonOutcome)

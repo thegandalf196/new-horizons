@@ -2189,6 +2189,34 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// on the same capped token without inferring gameplay state from animation
 	// or client-side damage estimates.
 	bat.chainGateTriggered = chainGateKillQualifies(battle, attacker, bat.bsa);
+	MetaString braceLogLine;
+	if(attack.brace)
+	{
+		bool wroteTarget = false;
+		for(const BattleStackAttacked & hit : bat.bsa)
+		{
+			const auto * target = battle.battleGetUnitByID(hit.stackAttacked);
+			if(!target)
+				continue;
+			if(!wroteTarget)
+				braceLogLine.appendRawString("Brace preemptive strike: ");
+			else
+				braceLogLine.appendRawString("; ");
+			braceLogLine.appendRawString("%s hit ");
+			attacker->addNameReplacement(braceLogLine, attacker->getCount());
+			braceLogLine.appendRawString("%s for ");
+			target->addNameReplacement(braceLogLine, target->getCount());
+			braceLogLine.appendNumber(hit.damageAmount);
+			braceLogLine.appendRawString(" damage (");
+			braceLogLine.appendNumber(hit.killedAmount);
+			braceLogLine.appendRawString(" killed)");
+			wroteTarget = true;
+		}
+		if(wroteTarget)
+			braceLogLine.appendRawString(" before the incoming melee attack.");
+		else
+			braceLogLine = MetaString::createFromRawString("Brace triggers, but its preemptive strike deals no damage.");
+	}
 	gameHandler->sendAndApply(bat);
 
 	// Bulwark reflects a share of the physical health loss that actually landed,
@@ -2240,10 +2268,15 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			totalKills += bsa.killedAmount;
 		}
 
-		addGenericDamageLog(blm, attackerState, totalDamage);
+		if(attack.brace)
+			blm.lines.push_back(std::move(braceLogLine));
+		else
+		{
+			addGenericDamageLog(blm, attackerState, totalDamage);
 
-		if(defender)
-			addGenericKilledLog(blm, defender, totalKills, multipleTargets);
+			if(defender)
+				addGenericKilledLog(blm, defender, totalKills, multipleTargets);
+		}
 	}
 
 	// sent before the triggers below so that anything they log lands after the attack description

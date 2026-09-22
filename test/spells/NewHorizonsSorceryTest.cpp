@@ -23,6 +23,9 @@ TEST(NewHorizonsSorceryTest, PhantomIntegrityUsesTheCanonicalCapAndPerkMultiplie
 	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrity(1000, 100), 350);
 	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrity(1234, 100), 431);
 	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrity(1000, 100, true), 437);
+	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrity(1234, 100, true), 539);
+	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrity(1292, 0, true), 323);
+	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrity(1000000, 1, true), 251875);
 	EXPECT_THROW(newHorizonsSorcery::phantomArmyIntegrityBasisPoints(-1), std::invalid_argument);
 	EXPECT_THROW(newHorizonsSorcery::phantomArmyIntegrity(-1, 0), std::invalid_argument);
 }

@@ -203,7 +203,8 @@ void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, const 
 
 		auto resurrectValue = customState->valOfBonuses(BonusType::REBIRTH);
 
-		if(resurrectValue > 0 && customState->canCast()) //there must be casts left
+		if(resurrectValue > 0 && customState->canCast()
+			&& customState->getPhantomInitialIntegrity() == 0) //phantoms cannot be rebirthed
 		{
 			double resurrectFactor = resurrectValue / 100.0;
 

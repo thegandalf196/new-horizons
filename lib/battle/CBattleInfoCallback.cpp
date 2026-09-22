@@ -1711,6 +1711,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.defenderHex = info.defenderPos.isValid() ? info.defenderPos : info.defender->getPosition();
 	payload.chargeDistance = info.chargeDistance;
 	payload.shooting = info.shooting;
+	payload.physicalDamage = info.physicalDamage;
 	payload.targetedRangedCommand = battleIsTargetedRangedCommand(
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
 	payload.targetedRangedCommandPercent = battleTargetedRangedCommandPercent(

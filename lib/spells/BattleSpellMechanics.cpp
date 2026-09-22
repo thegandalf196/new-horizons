@@ -15,6 +15,7 @@
 #include "CSpell.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsSorcery.h"
 
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -73,6 +74,8 @@ public:
 		CreatureID creature;
 		int32_t count;
 		bool clone;
+		int64_t phantomInitialIntegrity;
+		int64_t phantomIntegrity;
 	};
 
 	EffectPacketRecorder(ServerCallback & delegate, const IBattleInfoCallback & battle)
@@ -128,7 +131,8 @@ public:
 			const auto * unit = battle.battleGetUnitByID(unitId);
 			if(!unit || !unit->alive() || unit->isGhost())
 				continue;
-			result.push_back({unitId, unit->creatureId(), unit->getCount(), unit->isClone()});
+			result.push_back({unitId, unit->creatureId(), unit->getCount(), unit->isClone(),
+				unit->getPhantomInitialIntegrity(), unit->getPhantomIntegrity()});
 		}
 		return result;
 	}
@@ -919,25 +923,41 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			bool wroteOutcome = false;
 			bool wroteCreation = false;
 			const auto addedUnits = effectRecorder.addedUnits();
+			const bool phantomArmy = owner->getJsonKey() == newHorizonsSorcery::PHANTOM_ARMY_SPELL;
 			const bool ordinarySummon = getSpellId() == SpellID::SUMMON_FIRE_ELEMENTAL
 				|| getSpellId() == SpellID::SUMMON_EARTH_ELEMENTAL
 				|| getSpellId() == SpellID::SUMMON_WATER_ELEMENTAL
 				|| getSpellId() == SpellID::SUMMON_AIR_ELEMENTAL;
-			if(ordinarySummon || getSpellId() == SpellID::CLONE)
+			if(ordinarySummon || getSpellId() == SpellID::CLONE || phantomArmy)
 			{
 				bool wroteAddedUnit = false;
 				for(const auto & added : addedUnits)
 				{
 					if(getSpellId() == SpellID::CLONE && !added.clone)
 						continue;
+					if(phantomArmy && added.phantomInitialIntegrity <= 0)
+						continue;
 					if(wroteAddedUnit)
 						line.appendRawString("; ");
 					else
 						line.appendRawString(", ");
-					line.appendRawString(getSpellId() == SpellID::CLONE ? "creating a clone of " : "summoning ");
+					if(phantomArmy)
+						line.appendRawString("creating a phantom stack of ");
+					else
+						line.appendRawString(getSpellId() == SpellID::CLONE ? "creating a clone of " : "summoning ");
 					line.appendNumber(added.count);
 					line.appendRawString(" ");
 					line.appendName(added.creature, added.count);
+					if(phantomArmy)
+					{
+						line.appendRawString(" with ");
+						line.appendNumber(added.phantomIntegrity);
+						line.appendRawString("/");
+						line.appendNumber(added.phantomInitialIntegrity);
+						line.appendRawString(" integrity for ");
+						line.appendNumber(newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS);
+						line.appendRawString(" rounds");
+					}
 					wroteAddedUnit = true;
 				}
 				if(wroteAddedUnit)

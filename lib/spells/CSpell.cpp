@@ -14,6 +14,7 @@
 #include "Problem.h"
 #include "SpellSchoolHandler.h"
 #include "ISpellMechanics.h"
+#include "NewHorizonsSorcery.h"
 
 #include "../CBonusTypeHandler.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -447,6 +448,12 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 			ret = 0;
 	}
 	ret = caster->getSpellBonus(this, ret, affectedCreature);
+	// Some magical damage sources (for example Fire Shield reflection) are
+	// represented by positive timed spells and do not carry the DAMAGE flag.
+	if(affectedCreature != nullptr && isMagical() && affectedCreature->getPhantomIntegrity() > 0)
+	{
+		ret = ret * newHorizonsSorcery::phantomArmyDamageTakenPercent(true) / 100;
+	}
 
 	//cap damage received per single creature (e.g. HotA war machines), same rule as melee/ranged damage
 	if(affectedCreature != nullptr)

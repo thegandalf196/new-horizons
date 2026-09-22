@@ -47,12 +47,14 @@ int64_t phantomArmyIntegrity(int64_t sourceCurrentHealth, int32_t spellPower, bo
 	if(sourceCurrentHealth < 0)
 		throw std::invalid_argument("Phantom Army source health cannot be negative");
 
-	const int32_t basisPoints = phantomArmyIntegrityBasisPoints(spellPower, illusionist);
+	const int32_t basisPoints = phantomArmyIntegrityBasisPoints(spellPower, false);
+	const int64_t numerator = basisPoints * (illusionist ? 100 + PHANTOM_ARMY_ILLUSIONIST_BONUS_PERCENT : 100);
+	constexpr int64_t denominator = 1000000;
 	// Divide before multiplying to avoid an unnecessary wide intermediate while
 	// retaining exact integer floor semantics for ordinary game-sized stacks.
-	const int64_t whole = sourceCurrentHealth / 10000;
-	const int64_t remainder = sourceCurrentHealth % 10000;
-	return whole * basisPoints + remainder * basisPoints / 10000;
+	const int64_t whole = sourceCurrentHealth / denominator;
+	const int64_t remainder = sourceCurrentHealth % denominator;
+	return whole * numerator + remainder * numerator / denominator;
 }
 
 int phantomArmyDamageTakenPercent(bool magical)

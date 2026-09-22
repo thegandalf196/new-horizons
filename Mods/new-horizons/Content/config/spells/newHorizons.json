@@ -301,7 +301,7 @@
 		},
 		"flags" : {
 			"positive" : true,
-			"special" : true
+			"special" : false
 		},
 		"targetCondition" : {}
 	},

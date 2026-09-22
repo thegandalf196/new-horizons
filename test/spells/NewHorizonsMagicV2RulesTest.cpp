@@ -82,16 +82,29 @@ TEST(NewHorizonsMagicV2RulesTest, V2RejectsMalformedFormulaBeforeUse)
 	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
 }
 
+TEST(NewHorizonsMagicV2RulesTest, ActiveSpellMarkerMustBeBooleanAndOldRowsStayValid)
+{
+	auto rules = formulaRules();
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	rules["spells"]["core:clone"].Struct().erase("active");
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	rules["spells"]["core:clone"]["active"].String() = "false";
+	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+}
+
 TEST(NewHorizonsMagicV2RulesTest, AbsentSnapshotRowAndOptionalFormulaNeverUseInstalledDamage)
 {
 	EXPECT_FALSE(newHorizonsMagic::spellDirectDamage(JsonNode(), arrowKey));
 	EXPECT_FALSE(newHorizonsMagic::spellDirectDamage(JsonNode(JsonMap{}), arrowKey));
-	EXPECT_FALSE(newHorizonsMagic::spellDirectDamage(originalRules(), arrowKey));
+	EXPECT_TRUE(newHorizonsMagic::spellDirectDamage(originalRules(), arrowKey));
 	auto rules = formulaRules();
 	EXPECT_FALSE(newHorizonsMagic::spellDirectDamage(rules, "new-horizons:magicMissile"));
-	rules["spells"][arrowKey].Struct().erase("directDamage");
+	constexpr auto optionalFormulaKey = "core:armageddon";
+	ASSERT_TRUE(newHorizonsMagic::spellDirectDamage(rules, optionalFormulaKey));
+	rules["spells"][optionalFormulaKey].Struct().erase("directDamage");
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
-	EXPECT_FALSE(newHorizonsMagic::directDamageValue(rules, arrowKey, 24, 10));
+	EXPECT_FALSE(newHorizonsMagic::spellDirectDamage(rules, optionalFormulaKey));
+	EXPECT_FALSE(newHorizonsMagic::directDamageValue(rules, optionalFormulaKey, 24, 10));
 	EXPECT_THROW(newHorizonsMagic::spellDirectDamage(rules, "magicArrow"), std::runtime_error);
 }
 

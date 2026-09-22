@@ -16,6 +16,15 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:demonicGating.swiftGate",
+    "new-horizons:demonicGating.wideGate",
+    "new-horizons:demonicGating.hellfireArrival",
+    "new-horizons:demonicGating.reinforcedGate",
+    "new-horizons:demonicGating.mobileGate",
+    "new-horizons:demonicGating.infernalBeacon",
+    "new-horizons:demonicGating.chainGate",
+    "new-horizons:demonicGating.reserveDiscipline",
+    "new-horizons:demonicGating.endlessLegion",
     "new-horizons:offense.shockAssault",
     "new-horizons:offense.executioner",
     "new-horizons:offense.armorPiercer",
@@ -28,6 +37,7 @@ ACTIVE_PERKS = {
     "new-horizons:sorceryMagic.temporalist",
     "new-horizons:sorceryMagic.teleporter",
     "new-horizons:sorceryMagic.countermage",
+    "new-horizons:sorceryMagic.illusionist",
     "new-horizons:sorceryMagic.chronomancer",
     "new-horizons:sylvanLuck.elvenPrecision",
     "new-horizons:sylvanLuck.forestSFavor",
@@ -63,6 +73,7 @@ ACTIVE_PERKS = {
     "new-horizons:havocMagic.annihilator",
 }
 ACTIVE_RANK_SKILLS = {
+    "new-horizons:demonicGating",
     "new-horizons:offense",
     "new-horizons:armorer",
     "new-horizons:archery",
@@ -265,7 +276,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
 
     def test_default_module_carries_canonical_registry(self):
         module = load("Mods/new-horizons/mod.json")
-        self.assertEqual(module["version"], "0.10.0")
+        self.assertEqual(module["version"], "0.11.0")
         self.assertEqual(module["settings"]["heroes"]["newHorizonsPerks"], self.rules)
 
 

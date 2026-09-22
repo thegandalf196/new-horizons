@@ -25,6 +25,20 @@ using namespace ::spells;
 using namespace ::spells::effects;
 using namespace ::testing;
 
+class PhantomUnitFake final : public battle::UnitFake
+{
+public:
+	int64_t getPhantomInitialIntegrity() const override
+	{
+		return 1;
+	}
+};
+
+void expectHeroCasterByDefault(EffectFixture & fixture)
+{
+	EXPECT_CALL(fixture.mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(nullptr));
+}
+
 class SacrificeTest : public Test, public EffectFixture
 {
 public:
@@ -38,6 +52,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		expectHeroCasterByDefault(*this);
 
 		{
 			JsonNode config;
@@ -65,7 +80,8 @@ TEST_F(SacrificeTest, HexTransformedPrimaryMustNotSubstituteAnotherCorpse)
 	}
 	auto & victim = unitsFake.add(BattleSide::ATTACKER);
 	ON_CALL(victim, unitId()).WillByDefault(Return(3u));
-	victim.makeAlive();
+	ON_CALL(victim, alive()).WillByDefault(Return(true));
+	EXPECT_CALL(victim, alive()).Times(0);
 	EXPECT_CALL(victim, getPosition()).WillRepeatedly(Return(BattleHex(5, 10)));
 	EXPECT_CALL(victim, isValidTarget(_)).WillRepeatedly(Return(true));
 	ON_CALL(victim, getTotalHealth()).WillByDefault(Return(300));
@@ -74,9 +90,13 @@ TEST_F(SacrificeTest, HexTransformedPrimaryMustNotSubstituteAnotherCorpse)
 	EXPECT_CALL(mechanicsMock, isMassive()).WillRepeatedly(Return(false));
 	EXPECT_CALL(mechanicsMock, isNegativeSpell()).WillRepeatedly(Return(false));
 	EXPECT_CALL(mechanicsMock, alwaysHitFirstTarget()).WillRepeatedly(Return(false));
-	ON_CALL(mechanicsMock, ownerMatches(_)).WillByDefault(Return(true));
-	ON_CALL(mechanicsMock, isReceptive(_)).WillByDefault(Return(true));
-
+	EXPECT_CALL(mechanicsMock, isReceptive(Eq(&selected)))
+		.WillOnce(Return(true))
+		.WillOnce(Return(false))
+		.WillOnce(Return(true));
+	EXPECT_CALL(mechanicsMock, ownerMatches(Eq(&selected)))
+		.WillOnce(Return(true))
+		.WillOnce(Return(false));
 	Target aimPoint{Destination(&selected, corpseHex), Destination(&victim, victim.getPosition())};
 	Target spellTarget{Destination(corpseHex)};
 	const auto transformed = subject->transformTarget(&mechanicsMock, aimPoint, spellTarget);
@@ -134,6 +154,40 @@ TEST_F(SacrificeTest, ApplicableForTwoTargets)
 	Target transformed = subject->transformTarget(&mechanicsMock, aimPoint, spellTarget);
 
 	EXPECT_TRUE(subject->applicableTarget(problemMock, &mechanicsMock, transformed));
+}
+
+TEST_F(SacrificeTest, TransformTargetPreservesPhantomVictimForPairRejection)
+{
+	auto & deadUnit = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(deadUnit, alive()).WillRepeatedly(Return(false));
+	EXPECT_CALL(deadUnit, unitId()).WillRepeatedly(Return(1u));
+	EXPECT_CALL(deadUnit, getPosition()).WillRepeatedly(Return(BattleHex(5, 5)));
+	EXPECT_CALL(deadUnit, isValidTarget(Eq(false))).WillRepeatedly(Return(false));
+	EXPECT_CALL(deadUnit, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+	EXPECT_CALL(deadUnit, getTotalHealth()).WillRepeatedly(Return(200));
+	EXPECT_CALL(deadUnit, getAvailableHealth()).WillRepeatedly(Return(0));
+
+	auto phantomVictim = std::make_shared<PhantomUnitFake>();
+	phantomVictim->makeAlive();
+	phantomVictim->redirectBonusesToFake();
+	EXPECT_CALL(*phantomVictim, getPosition()).WillRepeatedly(Return(BattleHex(5, 10)));
+	unitsFake.allUnits.emplace_back(phantomVictim);
+
+	EXPECT_CALL(mechanicsMock, isSmart()).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, isMassive()).WillRepeatedly(Return(false));
+	EXPECT_CALL(mechanicsMock, isNegativeSpell()).WillRepeatedly(Return(false));
+	EXPECT_CALL(mechanicsMock, alwaysHitFirstTarget()).WillRepeatedly(Return(false));
+	EXPECT_CALL(mechanicsMock, ownerMatches(_)).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, isReceptive(_)).WillRepeatedly(Return(true));
+
+	Target aimPoint{Destination(&deadUnit, BattleHex(5, 5)), Destination(phantomVictim.get(), BattleHex(5, 10))};
+	Target spellTarget{Destination(&deadUnit, BattleHex(5, 5))};
+	const auto transformed = subject->transformTarget(&mechanicsMock, aimPoint, spellTarget);
+
+	ASSERT_EQ(transformed.size(), 2u);
+	EXPECT_EQ(transformed.front().unitValue, &deadUnit);
+	EXPECT_EQ(transformed.back().unitValue, phantomVictim.get());
+	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, transformed));
 }
 
 #if 0
@@ -221,6 +275,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		expectHeroCasterByDefault(*this);
 		JsonNode config;
 		config["healLevel"].String() = "resurrect";
 		EffectFixture::setupEffect(config);
@@ -266,6 +321,38 @@ TEST_F(SacrificeApplicableGeneralTest, ReturnsTrueWithDeadAndAliveUnits)
 	EXPECT_TRUE(subject->applicableGeneral(problemMock, &mechanicsMock));
 }
 
+TEST_F(SacrificeApplicableGeneralTest, PhantomCorpseDoesNotMakeTheSpellApplicable)
+{
+	auto phantomCorpse = std::make_shared<PhantomUnitFake>();
+	phantomCorpse->redirectBonusesToFake();
+	unitsFake.allUnits.emplace_back(phantomCorpse);
+
+	auto & aliveUnit = unitsFake.add(BattleSide::ATTACKER);
+	aliveUnit.makeAlive();
+	EXPECT_CALL(aliveUnit, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, isReceptive(Eq(&aliveUnit))).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, ownerMatches(Eq(&aliveUnit))).WillRepeatedly(Return(true));
+
+	EXPECT_CALL(mechanicsMock, adaptProblem(_, _)).WillOnce(Return(false));
+	EXPECT_FALSE(subject->applicableGeneral(problemMock, &mechanicsMock));
+}
+
+TEST_F(SacrificeApplicableGeneralTest, PhantomUnitCasterCannotMakeSacrificeApplicable)
+{
+	auto phantomCaster = std::make_shared<PhantomUnitFake>();
+	EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AtLeast(1)).WillRepeatedly(Return(phantomCaster.get()));
+	EXPECT_CALL(mechanicsMock, adaptProblem(_, _)).WillOnce(Return(false));
+	EXPECT_CALL(*battleFake, getUnitsIf(_)).Times(0);
+
+	EXPECT_FALSE(subject->applicableGeneral(problemMock, &mechanicsMock));
+
+	auto & corpse = unitsFake.add(BattleSide::ATTACKER);
+	auto & victim = unitsFake.add(BattleSide::ATTACKER);
+	Target pair{Destination(&corpse, BattleHex()), Destination(&victim, BattleHex())};
+	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, pair));
+	EXPECT_TRUE(subject->transformTarget(&mechanicsMock, pair, {pair.front()}).empty());
+}
+
 class SacrificeApplicableTargetNegativeTest : public Test, public EffectFixture
 {
 public:
@@ -275,6 +362,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		expectHeroCasterByDefault(*this);
 		JsonNode config;
 		config["healLevel"].String() = "resurrect";
 		EffectFixture::setupEffect(config);
@@ -311,6 +399,19 @@ TEST_F(SacrificeApplicableTargetNegativeTest, ReturnsFalseWhenVictimIsDead)
 	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, target));
 }
 
+TEST_F(SacrificeApplicableTargetNegativeTest, ReturnsFalseWhenCorpseIsAlsoSelectedAsVictim)
+{
+	auto & corpse = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(corpse, alive()).WillRepeatedly(Return(false));
+	EXPECT_CALL(corpse, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+
+	Target target;
+	target.emplace_back(&corpse, BattleHex());
+	target.emplace_back(&corpse, BattleHex());
+
+	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, target));
+}
+
 TEST_F(SacrificeApplicableTargetNegativeTest, ReturnsFalseWhenVictimNotReceptive)
 {
 	auto & deadTarget = unitsFake.add(BattleSide::ATTACKER);
@@ -330,6 +431,76 @@ TEST_F(SacrificeApplicableTargetNegativeTest, ReturnsFalseWhenVictimNotReceptive
 	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, target));
 }
 
+TEST_F(SacrificeApplicableTargetNegativeTest, ReturnsFalseWhenVictimIsHostile)
+{
+	auto & deadTarget = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(deadTarget, alive()).WillRepeatedly(Return(false));
+	EXPECT_CALL(deadTarget, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+
+	auto & victim = unitsFake.add(BattleSide::DEFENDER);
+	victim.makeAlive();
+	EXPECT_CALL(victim, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, isSmart()).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, isReceptive(Eq(&victim))).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, ownerMatches(Eq(&victim))).WillRepeatedly(Return(false));
+
+	Target target;
+	target.emplace_back(&deadTarget, BattleHex());
+	target.emplace_back(&victim, BattleHex());
+
+	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, target));
+}
+
+TEST_F(SacrificeApplicableTargetNegativeTest, ReturnsFalseWhenVictimIsRemovedOrGhosted)
+{
+	auto & deadTarget = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(deadTarget, alive()).WillRepeatedly(Return(false));
+	EXPECT_CALL(deadTarget, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+
+	auto & removedVictim = unitsFake.add(BattleSide::ATTACKER);
+	removedVictim.makeAlive();
+	EXPECT_CALL(removedVictim, isValidTarget(Eq(true))).WillRepeatedly(Return(false));
+	EXPECT_CALL(mechanicsMock, isSmart()).WillRepeatedly(Return(false));
+
+	Target target;
+	target.emplace_back(&deadTarget, BattleHex());
+	target.emplace_back(&removedVictim, BattleHex());
+
+	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, target));
+}
+
+TEST_F(SacrificeApplicableTargetNegativeTest, ReturnsFalseWhenCorpseTargetIsPhantom)
+{
+	auto phantomCorpse = std::make_shared<PhantomUnitFake>();
+	EXPECT_CALL(*phantomCorpse, alive()).WillRepeatedly(Return(false));
+	auto & victim = unitsFake.add(BattleSide::ATTACKER);
+	ON_CALL(victim, alive()).WillByDefault(Return(true));
+	EXPECT_CALL(victim, alive()).Times(0);
+
+	Target target;
+	target.emplace_back(phantomCorpse.get(), BattleHex());
+	target.emplace_back(&victim, BattleHex());
+
+	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, target));
+}
+
+TEST_F(SacrificeApplicableTargetNegativeTest, ReturnsFalseWhenSacrificeVictimIsPhantom)
+{
+	auto & deadTarget = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(deadTarget, alive()).WillRepeatedly(Return(false));
+	EXPECT_CALL(deadTarget, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+
+	auto phantomVictim = std::make_shared<PhantomUnitFake>();
+	phantomVictim->makeAlive();
+
+	Target target;
+	target.emplace_back(&deadTarget, BattleHex());
+	target.emplace_back(phantomVictim.get(), BattleHex());
+
+	EXPECT_CALL(mechanicsMock, isSmart()).WillRepeatedly(Return(false));
+	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, target));
+}
+
 class SacrificeGetHealthChangeTest : public Test, public EffectFixture
 {
 public:
@@ -341,6 +512,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		expectHeroCasterByDefault(*this);
 		JsonNode config;
 		config["healLevel"].String() = "resurrect";
 		config["healPower"].String() = "permanent";
@@ -352,6 +524,35 @@ TEST_F(SacrificeGetHealthChangeTest, EmptyTargetReturnsZero)
 {
 	Target target;
 	auto result = subject->getHealthChange(&mechanicsMock, target);
+
+	EXPECT_EQ(result.hpDelta, 0);
+	EXPECT_EQ(result.unitsDelta, 0);
+	EXPECT_EQ(result.unitType, nullptr);
+}
+
+TEST_F(SacrificeGetHealthChangeTest, PhantomTargetHasNoResurrectionPreview)
+{
+	auto phantom = std::make_shared<PhantomUnitFake>();
+	Target target;
+	target.emplace_back(phantom.get(), BattleHex());
+
+	const auto result = subject->getHealthChange(&mechanicsMock, target);
+
+	EXPECT_EQ(result.hpDelta, 0);
+	EXPECT_EQ(result.unitsDelta, 0);
+	EXPECT_EQ(result.unitType, nullptr);
+}
+
+TEST_F(SacrificeGetHealthChangeTest, PhantomUnitCasterHasNoResurrectionPreview)
+{
+	auto phantomCaster = std::make_shared<PhantomUnitFake>();
+	EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(1).WillOnce(Return(phantomCaster.get()));
+
+	auto & corpse = unitsFake.add(BattleSide::ATTACKER);
+	Target target;
+	target.emplace_back(&corpse, BattleHex());
+
+	const auto result = subject->getHealthChange(&mechanicsMock, target);
 
 	EXPECT_EQ(result.hpDelta, 0);
 	EXPECT_EQ(result.unitsDelta, 0);
@@ -430,6 +631,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		expectHeroCasterByDefault(*this);
 
 		{
 			JsonNode config;
@@ -458,6 +660,9 @@ TEST_F(SacrificeApplyTest, ResurrectsTarget)
 	const int64_t expectedHealValue = (effectPower + victimUnitHP + effectValue) * victimCount;
 
 	auto & targetUnit = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(targetUnit, alive()).Times(AtLeast(1)).WillRepeatedly(Return(false));
+	EXPECT_CALL(targetUnit, isGhost()).Times(0);
+	EXPECT_CALL(targetUnit, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
 	EXPECT_CALL(targetUnit, unitBaseAmount()).WillRepeatedly(Return(unitAmount));
 	EXPECT_CALL(targetUnit, unitId()).WillRepeatedly(Return(unitId));
 	EXPECT_CALL(targetUnit, unitType()).WillRepeatedly(Return(pikeman));
@@ -471,6 +676,10 @@ TEST_F(SacrificeApplyTest, ResurrectsTarget)
 	targetUnit.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, unitHP, BonusSourceID()));
 
 	auto & victim = unitsFake.add(BattleSide::ATTACKER);
+	victim.makeAlive();
+	EXPECT_CALL(victim, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, isReceptive(Eq(&victim))).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, ownerMatches(Eq(&victim))).WillRepeatedly(Return(true));
 	EXPECT_CALL(victim, unitId()).Times(AtLeast(1)).WillRepeatedly(Return(victimId));
 	EXPECT_CALL(victim, getCount()).Times(AtLeast(1)).WillRepeatedly(Return(victimCount));
 
@@ -503,6 +712,63 @@ TEST_F(SacrificeApplyTest, ResurrectsTarget)
 	subject->apply(&serverMock, &mechanicsMock, target);
 
 	EXPECT_EQ(targetUnitState->getAvailableHealth(), expectedHealValue);
+}
+
+TEST_F(SacrificeApplyTest, RejectsPhantomAsEitherTargetBeforeServerChanges)
+{
+	auto phantomCorpse = std::make_shared<PhantomUnitFake>();
+	EXPECT_CALL(*phantomCorpse, alive()).Times(AtLeast(1)).WillRepeatedly(Return(false));
+	EXPECT_CALL(*phantomCorpse, isGhost()).Times(0);
+	auto & ordinaryVictim = unitsFake.add(BattleSide::ATTACKER);
+	ON_CALL(ordinaryVictim, alive()).WillByDefault(Return(true));
+	EXPECT_CALL(ordinaryVictim, alive()).Times(0);
+	Target target;
+	target.emplace_back(phantomCorpse.get(), BattleHex());
+	target.emplace_back(&ordinaryVictim, BattleHex());
+	subject->apply(&serverMock, &mechanicsMock, target);
+
+	auto & ordinaryCorpse = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(ordinaryCorpse, alive()).Times(AtLeast(1)).WillRepeatedly(Return(false));
+	EXPECT_CALL(ordinaryCorpse, isGhost()).Times(0);
+	EXPECT_CALL(ordinaryCorpse, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+	auto phantomVictim = std::make_shared<PhantomUnitFake>();
+	phantomVictim->makeAlive();
+	target[0].unitValue = &ordinaryCorpse;
+	target[1].unitValue = phantomVictim.get();
+	subject->apply(&serverMock, &mechanicsMock, target);
+}
+
+TEST_F(SacrificeApplyTest, RejectsRemovedVictimBeforeServerChanges)
+{
+	auto & corpse = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(corpse, alive()).Times(AtLeast(1)).WillRepeatedly(Return(false));
+	EXPECT_CALL(corpse, isGhost()).Times(0);
+	EXPECT_CALL(corpse, isValidTarget(Eq(true))).WillRepeatedly(Return(true));
+
+	auto & removedVictim = unitsFake.add(BattleSide::ATTACKER);
+	removedVictim.makeAlive();
+	EXPECT_CALL(removedVictim, isValidTarget(Eq(true))).WillRepeatedly(Return(false));
+
+	Target target;
+	target.emplace_back(&corpse, BattleHex());
+	target.emplace_back(&removedVictim, BattleHex());
+	subject->apply(&serverMock, &mechanicsMock, target);
+}
+
+TEST_F(SacrificeApplyTest, PhantomUnitCasterCannotResurrectOrConsumeCreatures)
+{
+	auto phantomCaster = std::make_shared<PhantomUnitFake>();
+	EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(1).WillOnce(Return(phantomCaster.get()));
+	EXPECT_CALL(*battleFake, updateUnit(_, _, _)).Times(0);
+	EXPECT_CALL(*battleFake, removeUnit(_)).Times(0);
+
+	auto & corpse = unitsFake.add(BattleSide::ATTACKER);
+	auto & victim = unitsFake.add(BattleSide::ATTACKER);
+	Target target;
+	target.emplace_back(&corpse, BattleHex());
+	target.emplace_back(&victim, BattleHex());
+
+	subject->apply(&serverMock, &mechanicsMock, target);
 }
 
 }

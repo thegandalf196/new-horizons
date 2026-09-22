@@ -18,7 +18,12 @@ JsonNode v1Rules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = 1;
-	rules["spells"]["core:magicArrow"].Struct().erase("directDamage");
+	for(auto & [name, spell] : rules["spells"].Struct())
+	{
+		(void)name;
+		spell.Struct().erase("active");
+		spell.Struct().erase("directDamage");
+	}
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;
 }
@@ -70,6 +75,20 @@ TEST(NewHorizonsMagicV2SchemaTest, FormulaObjectRejectsNullMissingAndExtraFields
 	EXPECT_FALSE(v2(rules)) << "Native type checking alone permits null; the explicit exclusion is required";
 	rules = v2Rules();
 	rules["spells"]["core:magicArrow"]["directDamage"]["divisor"].Integer() = 10;
+	EXPECT_FALSE(v2(rules));
+}
+
+TEST(NewHorizonsMagicV2SchemaTest, ActiveFlagIsOptionalAndBoolean)
+{
+	auto rules = v2Rules();
+	EXPECT_TRUE(v2(rules)) << "Older v2 rows without an active marker remain valid";
+	rules["spells"]["core:clone"]["active"].Bool() = false;
+	EXPECT_TRUE(v2(rules));
+	rules["spells"]["new-horizons:phantomArmy"]["active"].Bool() = true;
+	EXPECT_TRUE(v2(rules));
+	rules["spells"]["core:clone"]["active"] = JsonNode();
+	EXPECT_FALSE(v2(rules));
+	rules["spells"]["core:clone"]["active"].String() = "false";
 	EXPECT_FALSE(v2(rules));
 }
 

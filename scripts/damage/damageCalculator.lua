@@ -11,6 +11,8 @@ Script.type = "damageCalculator"
 local DAMAGE_TYPE_ALL = "damageTypeAll"
 local DAMAGE_TYPE_MELEE = "damageTypeMelee"
 local DAMAGE_TYPE_RANGED = "damageTypeRanged"
+local PHANTOM_PHYSICAL_DAMAGE_TAKEN_PERCENT = 25
+local PHANTOM_MAGICAL_DAMAGE_TAKEN_PERCENT = 200
 
 --- Integer division as the engine does it, rounding towards zero.
 local function idiv(dividend, divisor)
@@ -425,9 +427,30 @@ function Script:getDamageCap(info)
 	return math.huge
 end
 
+--- Phantom Army keeps its full creature count while its separate Integrity pool
+--- absorbs damage. The attack payload carries the authoritative physical/magical
+--- classification so predictions and applied hits use the same profile.
+function Script:getPhantomDamageMultiplier(info)
+	if info.defender:getPhantomIntegrity() <= 0 then return 1 end
+
+	local magical = not info.physicalDamage
+	local percent = magical and PHANTOM_MAGICAL_DAMAGE_TAKEN_PERCENT
+		or PHANTOM_PHYSICAL_DAMAGE_TAKEN_PERCENT
+	return percent / 100
+end
+
 --- How many creatures blows of this size kill. Both ends of the range are answered at once, since
 --- what decides it - the health and the size of the target - is the same for either.
 function Script:getCasualties(info, lowDamage, highDamage)
+	local phantomIntegrity = info.defender:getPhantomIntegrity()
+	if phantomIntegrity > 0 then
+		local casualties = math.max(0, info.defender:getCount())
+		local function killedBy(damage)
+			return damage >= phantomIntegrity and casualties or 0
+		end
+		return killedBy(lowDamage), killedBy(highDamage)
+	end
+
 	local firstHealth = info.defender:getFirstHPleft()
 	local creatureHealth = info.defender:getMaxHealth()
 	local count = info.defender:getCount()
@@ -454,6 +477,7 @@ function Script:calculate(battle, info)
 	-- Offense/Archery factor. This keeps Brace and Second Wind penalties from
 	-- being cancelled by ordinary attack bonuses.
 	local heroOrderMultiplier = math.max(0, (info.heroOrderFinalDamageMultiplier or 100) / 100)
+	local phantomDamageMultiplier = self:getPhantomDamageMultiplier(info)
 
 	for _, method in ipairs(self:getFactors()) do
 		local factor = self[method](self, info)
@@ -472,8 +496,8 @@ function Script:calculate(battle, info)
 		return math.min(cap, math.max(1, math.floor(base * factor)))
 	end
 
-	local damageMin = apply(baseMin, raising * lowering * heroOrderMultiplier)
-	local damageMax = apply(baseMax, raising * lowering * heroOrderMultiplier)
+	local damageMin = apply(baseMin, raising * lowering * heroOrderMultiplier * phantomDamageMultiplier)
+	local damageMax = apply(baseMax, raising * lowering * heroOrderMultiplier * phantomDamageMultiplier)
 
 	local killsMin, killsMax = self:getCasualties(info, damageMin, damageMax)
 

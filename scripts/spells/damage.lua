@@ -55,6 +55,7 @@ end
 
 function Script:damageForTarget(targetIndex, mechanics, unit)
 	local base
+	local directKillEffect = self.killByPercentage or self.killByCount
 	if self.killByPercentage then
 		local toKill = math.floor(unit:getCount() * mechanics:getEffectValue() / 100)
 		base = toKill * unit:getMaxHealth()
@@ -62,6 +63,17 @@ function Script:damageForTarget(targetIndex, mechanics, unit)
 		base = mechanics:getEffectValue() * unit:getMaxHealth()
 	else
 		base = mechanics:adjustEffectValue(unit)
+	end
+	-- Count-based effects such as Death Stare bypass adjustEffectValue, so apply
+	-- Phantom Army's magical vulnerability to their HP-equivalent directly.
+	local phantomIntegrity = unit:getPhantomIntegrity()
+	if directKillEffect and mechanics:getSpell():isMagical() and phantomIntegrity > 0 then
+		-- Clamp before doubling to avoid overflowing large HP-equivalent values.
+		if base >= phantomIntegrity / 2 then
+			base = phantomIntegrity
+		else
+			base = base * 2
+		end
 	end
 	local chainLength = self.chainLength or 0
 	if chainLength > 1 and targetIndex > 0 then

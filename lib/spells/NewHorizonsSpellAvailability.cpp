@@ -30,8 +30,21 @@ bool spellBelongsToRules(const JsonNode & rules, const std::string & scopedIdent
 		return !scopedIdentity.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':');
 	if(!rules.isStruct() || !rules["spells"].isStruct())
 		throw std::runtime_error("Spell availability requires a saved spell roster");
-	return rules["spells"].Struct().contains(scopedIdentity)
-		|| (rules["adventureSpells"].isStruct() && rules["adventureSpells"].Struct().contains(scopedIdentity));
+	const auto & savedSpells = rules["spells"].Struct();
+	const auto found = savedSpells.find(scopedIdentity);
+	if(found != savedSpells.end())
+	{
+		if(!found->second.isStruct())
+			throw std::runtime_error("Saved spell roster entry must be an object");
+		const auto active = found->second.Struct().find("active");
+		if(active == found->second.Struct().end())
+			return true; // Old snapshots had no marker and keep their saved spell.
+		if(!active->second.isBool())
+			throw std::runtime_error("Saved spell roster active marker must be boolean");
+		return active->second.Bool();
+	}
+	return rules["adventureSpells"].isStruct()
+		&& rules["adventureSpells"].Struct().contains(scopedIdentity);
 }
 
 bool spellAllowedBySavedRoster(const JsonNode & rules, SpellID spell)

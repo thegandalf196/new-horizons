@@ -115,6 +115,7 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshSolmyrUsesMasterChainLightningAn
 	const auto * solmyr = findHeroAt({5, 5, 0});
 	ASSERT_NE(solmyr, nullptr);
 	EXPECT_EQ(solmyr->getHeroClass()->getJsonKey(), "core:wizard");
+	EXPECT_EQ(solmyr->getHeroClass()->getNameTranslated(), "Wizard");
 
 	const auto metamagic = scopedSkill("new-horizons:metamagic");
 	const auto havoc = scopedSkill("new-horizons:havocMagic");

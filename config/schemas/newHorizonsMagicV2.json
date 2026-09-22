@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema",
 	"title": "Saved New Horizons magic rules v2",
-	"description": "New Horizons magic rules with saved direct-damage formulas. Canonical identifiers, complete common-spell coverage and spell-specific required formulas are enforced by runtime validation.",
+	"description": "New Horizons magic rules with saved direct-damage formulas and optional per-row active state. Missing active markers remain enabled for old snapshots; false disables that spell only in the saved roster. Canonical identifiers, complete common-spell coverage and spell-specific required formulas are enforced by runtime validation.",
 	"type": "object",
 	"required": ["schemaVersion", "rulesetVersion", "schools", "spells", "schoolSkills", "skillReplacements"],
 	"additionalProperties": false,
@@ -92,6 +92,7 @@
 					"maxItems": 4,
 					"items": {"type": "integer", "not": {"type": "null"}, "minimum": 0, "maximum": 1000000}
 				},
+				"active": {"type": "boolean", "not": {"type": "null"}},
 				"directDamage": {"$ref": "#/definitions/directDamage"}
 			}
 		},

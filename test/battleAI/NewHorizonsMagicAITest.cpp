@@ -9,7 +9,6 @@
  */
 #include "StdInc.h"
 #include "../server/battles/HeroCommandFixture.h"
-#include "../spells/NewHorizonsMagicProfileFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/PossibleSpellcast.h"
 #include "../../AI/BattleAI/PotentialTargets.h"
@@ -25,6 +24,7 @@
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/Problem.h"
 
@@ -50,6 +50,44 @@ public:
 		submitted.push_back(action);
 	}
 };
+
+std::string describeMagicAIState(const MagicCallback & callback, const JsonNode & magicRules,
+	const JsonNode & heroCommandRules)
+{
+	std::ostringstream out;
+	out << "submitted actions: ";
+	if(callback.submitted.empty())
+		out << "<none>";
+	for(size_t index = 0; index < callback.submitted.size(); ++index)
+	{
+		if(index != 0)
+			out << "; ";
+		const auto & action = callback.submitted[index];
+		out << '#' << index << "{actionType=" << static_cast<int>(action.actionType)
+			<< ", command=" << heroCommands::key(action.command) << '(' << static_cast<int>(action.command) << ')'
+			<< ", spell=" << action.spell.getNum()
+			<< ", targetCount=" << action.target.size()
+			<< ", metamagicFollowup=" << action.metamagicFollowup
+			<< ", metamagicGrand=" << action.metamagicGrand
+			<< ", metamagicDecline=" << action.metamagicDecline << '}';
+	}
+	const auto rulesetVersion = [](const JsonNode & rules)
+	{
+		return rules["rulesetVersion"].isNumber()
+			? std::to_string(rules["rulesetVersion"].Integer()) : std::string("<absent>");
+	};
+	const auto entryCount = [](const JsonNode & node)
+	{
+		return node.isStruct() ? node.Struct().size() : size_t{0};
+	};
+	out << "; magicRules={type=" << static_cast<int>(magicRules.getType())
+		<< ", version=" << rulesetVersion(magicRules)
+		<< ", spellRows=" << entryCount(magicRules["spells"])
+		<< "}; heroCommandRules={type=" << static_cast<int>(heroCommandRules.getType())
+		<< ", version=" << rulesetVersion(heroCommandRules)
+		<< ", commands=" << entryCount(heroCommandRules["commands"]) << '}';
+	return out.str();
+}
 }
 
 namespace
@@ -68,6 +106,7 @@ class NewHorizonsMagicAITest : public HeroCommandFixture
 protected:
 	bool useCurrentMagicRules = false;
 	bool useLegacyMagicRules = false;
+	bool neutralizeCommandEffects = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -77,6 +116,21 @@ protected:
 		else if(useCurrentMagicRules)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		if(neutralizeCommandEffects)
+		{
+			const JsonNode combatRules(JsonPath::builtin("config/newHorizonsCombat"));
+			JsonNode rules = combatRules["combat"]["heroCommands"];
+			for(auto & commandEntry : rules["commands"].Struct())
+				for(auto & effectEntry : commandEntry.second["effects"].Struct())
+				{
+					auto & formula = effectEntry.second;
+					formula["base"].Float() = 0;
+					formula["attack"].Float() = 0;
+					formula["defense"].Float() = 0;
+				}
+			heroCommands::validateRules(rules);
+			loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
+		}
 	}
 
 	void SetUp() override
@@ -177,6 +231,72 @@ TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithou
 		EXPECT_TRUE(weak->alive());
 		EXPECT_EQ(attackerSideHero->mana, 1000);
 	}
+}
+
+TEST_F(NewHorizonsMagicAITest, PhantomArmyValuesTemporaryCombatPowerAndChoosesTheStrongestLegalSource)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+
+	const auto phantomArmy = SpellID(SpellID::decode("new-horizons:phantomArmy"));
+	ASSERT_NE(phantomArmy, SpellID::NONE);
+	const auto * spell = phantomArmy.toSpell();
+	ASSERT_NE(spell, nullptr);
+	ASSERT_EQ(spell->getJsonKey(), newHorizonsSorcery::PHANTOM_ARMY_SPELL);
+
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto knownSpell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(knownSpell);
+	attackerSideHero->addSpellToSpellbook(phantomArmy);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 5), 1);
+	auto * strongSource = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(2, 4), 100);
+	auto * weakSource = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(4, 5), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 100);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != strongSource && unit != weakSource && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS);
+	const auto ordinaryAction = evaluator.selectStackAction(active);
+	ASSERT_EQ(ordinaryAction.actionType, EActionType::SHOOT);
+
+	// The ordinary shot gives the spell evaluator a real pass/attack baseline.
+	// An unvalued temporary summon ties that baseline and is rejected; the
+	// Phantom's copied combat power must make the spell the better hero action.
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	ASSERT_EQ(action.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(action.spell, phantomArmy);
+	const auto target = action.getTarget(battle());
+	ASSERT_EQ(target.size(), 1u);
+	EXPECT_EQ(target.front().unitValue, strongSource);
+
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->mana, 1000 - battle()->battleGetSpellCost(spell, attackerSideHero));
 }
 
 TEST_F(NewHorizonsMagicAITest, CounterspellAIArmsAThreatWardAndSkipsAnAlreadyArmedWard)
@@ -283,7 +403,8 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIDeclinesLegalButHarmfulFollowup)
 	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 1, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-	for(const auto spell : attackerSideHero->getSpellsInSpellbook())
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
 		attackerSideHero->removeSpellFromSpellbook(spell);
 	attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
 	attackerSideHero->mana = 1000;
@@ -351,7 +472,8 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIUsesOrdinaryRepeatedSpellAndLeavesGran
 	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.grandMetamagic"});
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-	for(const auto spell : attackerSideHero->getSpellsInSpellbook())
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
 		attackerSideHero->removeSpellFromSpellbook(spell);
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
 	attackerSideHero->mana = 1000;
@@ -404,10 +526,10 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIChoosesGrandForAHighValueDistinctAlter
 	ASSERT_GE(metamagic, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 3, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.grandMetamagic"});
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.perfectSequence"});
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-	for(const auto spell : attackerSideHero->getSpellsInSpellbook())
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
 		attackerSideHero->removeSpellFromSpellbook(spell);
 	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
@@ -1324,9 +1446,13 @@ TEST_F(NewHorizonsMagicAITest, SacrificeAccountsForRemovedVictimAndKeepsHypothet
 	callback->onBattleStarted(battle());
 	BattleEvaluator evaluator(environment, callback, victim, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(victim);
+	const auto diagnostics = [&]
+	{
+		return describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	};
 	// Restoring one peasant is not worth losing the only large friendly army.
-	EXPECT_FALSE(evaluator.attemptCastingSpell(victim));
-	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_FALSE(evaluator.attemptCastingSpell(victim)) << diagnostics();
+	EXPECT_TRUE(callback->submitted.empty()) << diagnostics();
 
 	HypotheticBattle model(environment.get(), callback->getBattle(BattleID(0)));
 	spells::BattleCast simulated(&model, attackerSideHero, spells::Mode::HERO, spell);
@@ -1735,9 +1861,8 @@ TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 	// No magic-setting fixture override: actual curated module activation must
 	// supply these rules at ordinary new-game initialization.
 	prepareCommands(true);
-	const bool managed = newHorizonsTest::managedMissileProfileRequested();
-	ASSERT_EQ(gameState()->getMagicRules()["rulesetVersion"].Integer(), managed ? 2 : 1);
-	ASSERT_EQ(gameState()->getMagicRules()["spells"].Struct().size(), managed ? 70u : 69u);
+	ASSERT_EQ(gameState()->getMagicRules()["rulesetVersion"].Integer(), 2);
+	ASSERT_EQ(gameState()->getMagicRules()["spells"].Struct().size(), 70u);
 	ASSERT_EQ(battle()->battleGetActiveSpellSchools().size(), 6u);
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
@@ -1781,7 +1906,9 @@ TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 TEST_F(NewHorizonsMagicAITest, CanonicalLevelOneHavocRankingCrossesOverWithoutMutatingLiveBattle)
 {
 	useCurrentMagicRules = true;
+	neutralizeCommandEffects = true;
 	prepareCommands(true);
+	ASSERT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto id : initialSpells)
 		attackerSideHero->removeSpellFromSpellbook(id);
@@ -1806,7 +1933,6 @@ TEST_F(NewHorizonsMagicAITest, CanonicalLevelOneHavocRankingCrossesOverWithoutMu
 	const auto healthBefore = enemy->getAvailableHealth();
 	const auto manaBefore = attackerSideHero->mana;
 	const auto castsBefore = battle()->battleCastSpells(BattleSide::ATTACKER);
-	ASSERT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 	const auto chooseAtPower = [&](int32_t power)
 	{
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
@@ -1814,14 +1940,17 @@ TEST_F(NewHorizonsMagicAITest, CanonicalLevelOneHavocRankingCrossesOverWithoutMu
 		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
 		evaluator.selectStackAction(active);
 		EXPECT_TRUE(evaluator.attemptCastingSpell(active));
-		EXPECT_EQ(callback->submitted.size(), 1u);
+		EXPECT_EQ(callback->submitted.size(), 1u)
+			<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 		return callback->submitted.empty() ? SpellID::NONE : callback->submitted.front().spell;
 	};
 
-	EXPECT_EQ(chooseAtPower(20), iceBolt);
+	EXPECT_EQ(chooseAtPower(20), iceBolt)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_EQ(enemy->getAvailableHealth(), healthBefore);
 	EXPECT_EQ(attackerSideHero->mana, manaBefore);
-	EXPECT_EQ(chooseAtPower(100), lightningBolt);
+	EXPECT_EQ(chooseAtPower(100), lightningBolt)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_EQ(enemy->getAvailableHealth(), healthBefore);
 	EXPECT_EQ(attackerSideHero->mana, manaBefore);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), castsBefore);
@@ -1831,7 +1960,9 @@ TEST_F(NewHorizonsMagicAITest, CanonicalLevelOneHavocRankingCrossesOverWithoutMu
 TEST_F(NewHorizonsMagicAITest, CanonicalFireballIsPreferredForClusterWithoutMutatingLiveBattle)
 {
 	useCurrentMagicRules = true;
+	neutralizeCommandEffects = true;
 	prepareCommands(true);
+	ASSERT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto id : initialSpells)
 		attackerSideHero->removeSpellFromSpellbook(id);
@@ -1860,12 +1991,13 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireballIsPreferredForClusterWithoutMuta
 	const auto secondHealth = second->getAvailableHealth();
 	const auto manaBefore = attackerSideHero->mana;
 	const auto castsBefore = battle()->battleCastSpells(BattleSide::ATTACKER);
-	ASSERT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(active);
 	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
-	ASSERT_EQ(callback->submitted.size(), 1u);
-	EXPECT_EQ(callback->submitted.front().spell, fireball);
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_EQ(callback->submitted.front().spell, fireball)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_EQ(first->getAvailableHealth(), firstHealth);
 	EXPECT_EQ(second->getAvailableHealth(), secondHealth);
 	EXPECT_EQ(attackerSideHero->mana, manaBefore);
@@ -1876,7 +2008,9 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireballIsPreferredForClusterWithoutMuta
 TEST_F(NewHorizonsMagicAITest, CanonicalFrostRingUsesSafeFriendlyCenter)
 {
 	useCurrentMagicRules = true;
+	neutralizeCommandEffects = true;
 	prepareCommands(true);
+	ASSERT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto id : initialSpells)
 		attackerSideHero->removeSpellFromSpellbook(id);
@@ -1905,9 +2039,12 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFrostRingUsesSafeFriendlyCenter)
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(active);
 	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
-	ASSERT_EQ(callback->submitted.size(), 1u);
-	EXPECT_EQ(callback->submitted.front().spell, frostRing);
-	ASSERT_EQ(callback->submitted.front().target.size(), 1u);
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_EQ(callback->submitted.front().spell, frostRing)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	ASSERT_EQ(callback->submitted.front().target.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_EQ(callback->submitted.front().target.front().hexValue, center->getPosition());
 	EXPECT_EQ(center->getAvailableHealth(), centerHealth);
 	EXPECT_EQ(first->getAvailableHealth(), firstHealth);
@@ -1917,7 +2054,9 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFrostRingUsesSafeFriendlyCenter)
 TEST_F(NewHorizonsMagicAITest, CanonicalInfernoIsPreferredForBroadEnemyCluster)
 {
 	useCurrentMagicRules = true;
+	neutralizeCommandEffects = true;
 	prepareCommands(true);
+	ASSERT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto id : initialSpells)
 		attackerSideHero->removeSpellFromSpellbook(id);
@@ -1946,8 +2085,10 @@ TEST_F(NewHorizonsMagicAITest, CanonicalInfernoIsPreferredForBroadEnemyCluster)
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(active);
 	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
-	ASSERT_EQ(callback->submitted.size(), 1u);
-	EXPECT_EQ(callback->submitted.front().spell, inferno);
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_EQ(callback->submitted.front().spell, inferno)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_EQ(first->getAvailableHealth(), healthBefore[0]);
 	EXPECT_EQ(second->getAvailableHealth(), healthBefore[1]);
 	EXPECT_EQ(third->getAvailableHealth(), healthBefore[2]);

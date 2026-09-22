@@ -1687,7 +1687,7 @@
 					"requires": "advanced",
 					"description": "Phantom Army receives 25% more phantom integrity.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Phantom Army receives 25% more phantom integrity."
 					}
 				},

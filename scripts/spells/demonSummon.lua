@@ -2,6 +2,11 @@ local Base = require("spells/unitEffect")
 local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
+local function isPhantomUnitCaster(mechanics)
+	local caster = mechanics:getUnitCaster()
+	return caster ~= nil and caster:getPhantomInitialIntegrity() > 0
+end
+
 --- Returns the number of demons that can be raised from a dead unit.
 function Script:raisedCreatureAmount(mechanics, unit)
 	local creatureType = LIBRARY:getCreatureByName(self.id)
@@ -21,6 +26,8 @@ end
 --- A unit is a valid target if it is a dead, non-ghost corpse whose hexes are
 --- not blocked by any alive unit, and our spellpower can raise at least one demon.
 function Script:isValidTarget(mechanics, unit)
+	if isPhantomUnitCaster(mechanics) then return false end
+	if unit:getPhantomInitialIntegrity() > 0 then return false end
 	if not unit:isDead() then return false end
 
 	local hexes = unit:getHexes()
@@ -41,13 +48,16 @@ end
 
 --- Raise demons from each target corpse and remove the corpse.
 function Script:apply(mechanics, server, target)
+	if isPhantomUnitCaster(mechanics) then return end
+
 	local creatureType = LIBRARY:getCreatureByName(self.id)
 	local battle       = mechanics:getBattle()
 
 	for _, dest in ipairs(target) do
 		local targetStack = dest.unit
 
-		if targetStack == nil or not targetStack:isDead() or targetStack:isGhost() then
+		if targetStack == nil or targetStack:getPhantomInitialIntegrity() > 0
+				or not targetStack:isDead() or targetStack:isGhost() then
 			print("DemonSummon: no valid corpse for demonization")
 			break
 		end
@@ -87,10 +97,17 @@ end
 
 --- Returns the number of demons that would be raised for the hover preview.
 function Script:getHealthChange(mechanics, spellTarget)
+	if isPhantomUnitCaster(mechanics) then
+		return { hpDelta = 0, unitsDelta = 0 }
+	end
+
 	local creatureType = LIBRARY:getCreatureByName(self.id)
 
 	for _, dest in ipairs(spellTarget) do
 		if dest.unit ~= nil then
+			if dest.unit:getPhantomInitialIntegrity() > 0 then
+				return { hpDelta = 0, unitsDelta = 0 }
+			end
 			local amount = self:raisedCreatureAmount(mechanics, dest.unit)
 			return {
 				hpDelta    = 0,

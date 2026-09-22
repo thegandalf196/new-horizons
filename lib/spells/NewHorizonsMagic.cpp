@@ -250,7 +250,9 @@ void validateRules(const JsonNode & rules)
 		if(version == RULESET_VERSION)
 			fields(data, {"schools", "level", "costs"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active"});
+		if(version == DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("active"))
+			require(data["active"].isBool(), "spell active flag");
 		// Strict field/type/bounds checks, including rejection of present-null.
 		(void)directDamageFormula(data, version);
 		const auto id = resolve("spell", name);

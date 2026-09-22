@@ -76,6 +76,30 @@ TEST_F(NewHorizonsSpellRosterContextTest, ActualWorldAndBattleQueriesDoNotReplac
 	EXPECT_TRUE(newHorizonsMagic::spellAllowedByBattleRoster(*battle(), arrow()));
 }
 
+TEST_F(NewHorizonsSpellRosterContextTest, PhantomArmyReplacesCloneOnlyInNewHorizonsSnapshots)
+{
+	startGame();
+	const SpellID clone(SpellID::decode("core:clone"));
+	const SpellID phantom(SpellID::decode("new-horizons:phantomArmy"));
+	ASSERT_NE(clone, SpellID::NONE);
+	ASSERT_NE(phantom, SpellID::NONE);
+	ASSERT_TRUE(phantom.toSpell()->isCommonHeroSpell());
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByWorldRoster(*gameState(), clone));
+	EXPECT_TRUE(newHorizonsMagic::spellAllowedByWorldRoster(*gameState(), phantom));
+
+	JsonNode oldSnapshot = gameState()->getMagicRules();
+	oldSnapshot["spells"].Struct().erase("new-horizons:phantomArmy");
+	oldSnapshot["spells"]["core:clone"].Struct().erase("active");
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(oldSnapshot));
+	RosterWorld oldWorld(*gameState(), std::move(oldSnapshot));
+	EXPECT_TRUE(newHorizonsMagic::spellAllowedByWorldRoster(oldWorld, clone));
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByWorldRoster(oldWorld, phantom));
+
+	RosterWorld baseWorld(*gameState(), JsonNode());
+	EXPECT_TRUE(newHorizonsMagic::spellAllowedByWorldRoster(baseWorld, clone));
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByWorldRoster(baseWorld, phantom));
+}
+
 TEST_F(NewHorizonsSpellRosterContextTest, LegacySnapshotKeepsOrdinarySpellsButMissingBattleIsNotWorldFallback)
 {
 	legacyMagic = true;

@@ -288,6 +288,48 @@ TEST_F(HeroCommandTest, BracePreemptiveStrikeUsesItsOwnDamageFormula)
 	EXPECT_FALSE(battle()->battleCanTriggerHeroOrderBrace(defender, attacker, 2, false, false));
 }
 
+TEST_F(HeroCommandTest, BraceTriggerLogsResolvedDamageAndCasualties)
+{
+	prepareCommands();
+	auto * braced = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(93), 100);
+	auto * mover = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(89), 1);
+	forceMaximumDamage(braced);
+	blockRetaliation(braced);
+	blockRetaliation(mover);
+	ASSERT_TRUE(issue(HeroCommand::BRACE));
+	server.attacks.clear();
+	server.battleLogLines.clear();
+
+	// The mover crosses three hexes to attack the braced stack at hex 93.
+	battle()->activeStack = mover->unitId();
+	const auto action = BattleAction::makeMeleeAttack(mover, braced, BattleHex(92), false);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), action));
+
+	const auto braceAttack = std::ranges::find_if(server.attacks, [braced](const BattleAttack & attack)
+	{
+		return attack.stackAttacking == braced->unitId();
+	});
+	ASSERT_NE(braceAttack, server.attacks.end());
+	const auto hit = std::ranges::find(braceAttack->bsa, mover->unitId(), &BattleStackAttacked::stackAttacked);
+	ASSERT_NE(hit, braceAttack->bsa.end());
+	ASSERT_EQ(hit->killedAmount, 1u);
+
+	const auto causalLine = std::ranges::find_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Brace preemptive strike:") != std::string::npos;
+	});
+	ASSERT_NE(causalLine, server.battleLogLines.end()) << ::testing::PrintToString(server.battleLogLines);
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr(braced->unitType()->getNamePluralTranslated()));
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr(mover->unitType()->getNameSingularTranslated()));
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr("for " + std::to_string(hit->damageAmount) + " damage"));
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr("(" + std::to_string(hit->killedAmount) + " killed)"));
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr("before the incoming melee attack."));
+	EXPECT_EQ(std::ranges::count_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Brace preemptive strike:") != std::string::npos;
+	}), 1);
+}
+
 TEST_F(HeroCommandTest, ProtectRedirectsOneAdjacentWardAttack)
 {
 	prepareCommands();

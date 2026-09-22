@@ -196,6 +196,7 @@
 			"schools": [
 				"new-horizons:sorcery"
 			],
+			"active": false,
 			"level": 3,
 			"costs": [
 				12,
@@ -214,6 +215,18 @@
 				11,
 				11,
 				11
+			]
+		},
+		"new-horizons:phantomArmy": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"level": 4,
+			"costs": [
+				15,
+				15,
+				15,
+				15
 			]
 		},
 		"core:counterstrike": {

@@ -435,6 +435,9 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	defensiveStanceMeleeBonus = other.defensiveStanceMeleeBonus;
 	defensiveStanceRangedBonus = other.defensiveStanceRangedBonus;
 	bulwarkPreemptiveUsed = other.bulwarkPreemptiveUsed;
+	phantomInitialIntegrity = other.phantomInitialIntegrity;
+	phantomIntegrity = other.phantomIntegrity;
+	phantomRoundsRemaining = other.phantomRoundsRemaining;
 	casts = other.casts;
 	counterAttacks = other.counterAttacks;
 	shots = other.shots;
@@ -653,12 +656,39 @@ int32_t CUnitState::getUnusableRemains() const
 
 int64_t CUnitState::getAvailableHealth() const
 {
+	if(phantomInitialIntegrity > 0)
+		return phantomIntegrity;
+
 	return health.available();
 }
 
 int64_t CUnitState::getTotalHealth() const
 {
 	return health.total();
+}
+
+int64_t CUnitState::getPhantomIntegrity() const
+{
+	return phantomIntegrity;
+}
+
+int64_t CUnitState::getPhantomInitialIntegrity() const
+{
+	return phantomInitialIntegrity;
+}
+
+void CUnitState::initializePhantomProfile(int64_t integrity, int32_t duration)
+{
+	if(phantomInitialIntegrity != 0 || phantomIntegrity != 0 || phantomRoundsRemaining != 0)
+		throw std::logic_error("Phantom Army profile is already initialized");
+	if(integrity <= 0
+		|| duration != newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS
+		|| !summoned || natureSummoned || cloned || getCount() <= 0)
+		throw std::invalid_argument("Invalid Phantom Army profile");
+
+	phantomInitialIntegrity = integrity;
+	phantomIntegrity = integrity;
+	phantomRoundsRemaining = duration;
 }
 
 uint32_t CUnitState::getMaxHealth() const
@@ -923,6 +953,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("defensiveStanceMeleeBonus", defensiveStanceMeleeBonus, 0);
 	handler.serializeInt("defensiveStanceRangedBonus", defensiveStanceRangedBonus, 0);
 	handler.serializeBool("bulwarkPreemptiveUsed", bulwarkPreemptiveUsed);
+	handler.serializeInt("phantomInitialIntegrity", phantomInitialIntegrity, 0);
+	handler.serializeInt("phantomIntegrity", phantomIntegrity, 0);
+	handler.serializeInt("phantomRoundsRemaining", phantomRoundsRemaining, 0);
 
 	handler.serializeStruct("casts", casts);
 	handler.serializeStruct("counterAttacks", counterAttacks);
@@ -965,6 +998,9 @@ void CUnitState::reset()
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
 	bulwarkPreemptiveUsed = false;
+	phantomInitialIntegrity = 0;
+	phantomIntegrity = 0;
+	phantomRoundsRemaining = 0;
 
 	casts.reset();
 	counterAttacks.reset();
@@ -991,6 +1027,15 @@ void CUnitState::load(const JsonNode & data)
 	reset();
 	JsonDeserializer deser(nullptr, data);
 	deser.serializeStruct("state", *this);
+	if(phantomInitialIntegrity < 0 || phantomIntegrity < 0 || phantomRoundsRemaining < 0
+		|| phantomIntegrity > phantomInitialIntegrity
+		|| phantomRoundsRemaining > newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS
+		|| (phantomInitialIntegrity == 0 && (phantomIntegrity != 0 || phantomRoundsRemaining != 0))
+		|| (phantomInitialIntegrity > 0 && (!summoned || natureSummoned || cloned))
+		|| (phantomInitialIntegrity > 0 && ((phantomIntegrity > 0
+			&& (phantomRoundsRemaining == 0 || !alive() || health.getCount() != unitBaseAmount()))
+			|| (phantomIntegrity == 0 && (phantomRoundsRemaining != 0 || alive())))))
+		throw std::runtime_error("Invalid saved Phantom Army profile");
 }
 
 void CUnitState::damage(int64_t & amount)
@@ -1015,6 +1060,17 @@ void CUnitState::damage(int64_t & amount, bool destroyRemains)
 			health.reset();
 		}
 	}
+	else if(phantomInitialIntegrity > 0)
+	{
+		amount = std::clamp<int64_t>(amount, 0, phantomIntegrity);
+		phantomIntegrity -= amount;
+		if(phantomIntegrity == 0)
+		{
+			phantomRoundsRemaining = 0;
+			health.reset();
+			ghostPending = true;
+		}
+	}
 	else
 	{
 		health.damage(amount, destroyRemains);
@@ -1028,6 +1084,12 @@ void CUnitState::damage(int64_t & amount, bool destroyRemains)
 HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)
 {
 	if(isTimeStopped())
+	{
+		amount = 0;
+		return {};
+	}
+
+	if(phantomInitialIntegrity > 0)
 	{
 		amount = 0;
 		return {};
@@ -1067,8 +1129,15 @@ void CUnitState::afterWait()
 	waitedThisTurn = true;
 }
 
-void CUnitState::afterNewRound()
+void CUnitState::afterNewRound(bool isFirstRound)
 {
+	if(!isFirstRound && phantomInitialIntegrity > 0 && phantomIntegrity > 0
+		&& phantomRoundsRemaining > 0 && !isTimeStopped())
+	{
+		if(--phantomRoundsRemaining == 0)
+			makeGhost();
+	}
+
 	defending = false;
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
@@ -1107,6 +1176,8 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 
 void CUnitState::makeGhost()
 {
+	phantomIntegrity = 0;
+	phantomRoundsRemaining = 0;
 	health.reset();
 	ghostPending = true;
 }
@@ -1118,6 +1189,8 @@ void CUnitState::onRemoved()
 	// is assembled; clearing the ledger here would make those direct-hit
 	// casualties look like ordinary Necromancy-eligible deaths.
 	health.reset(false);
+	phantomIntegrity = 0;
+	phantomRoundsRemaining = 0;
 	ghostPending = false;
 	ghost = true;
 }

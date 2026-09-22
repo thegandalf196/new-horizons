@@ -106,6 +106,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	position = info.position;
 	summoned = info.summoned;
 	natureSummoned = info.natureSummoned;
+	if(info.phantomIntegrity > 0)
+		initializePhantomProfile(info.phantomIntegrity, info.phantomDuration);
 }
 
 StackWithBonuses::~StackWithBonuses() = default;
@@ -550,7 +552,7 @@ void HypotheticBattle::nextRound()
 		auto forUpdate = getForUpdate(unit->unitId());
 		if(!firstRound && !forUpdate->isTimeStopped())
 			forUpdate->advanceTimedRound();
-		forUpdate->afterNewRound();
+		forUpdate->afterNewRound(firstRound);
 		if(forUpdate->ghostPending)
 			pendingRemoval.push_back(unit->unitId());
 	}

@@ -64,6 +64,19 @@ class MagicV2DataTest(unittest.TestCase):
         del self.rules['spells'][self.formula_spell]['directDamage']
         self.validator.validate(self.rules)
 
+    def test_active_marker_is_optional_for_old_rows_and_boolean_for_new_rows(self):
+        self.validator.validate(self.rules)
+        changed = copy.deepcopy(self.rules)
+        del changed['spells']['core:clone']['active']
+        self.validator.validate(changed)
+        changed['spells']['core:clone']['active'] = False
+        self.validator.validate(changed)
+        for invalid in (None, 0, 1, 'false'):
+            changed = copy.deepcopy(self.rules)
+            changed['spells']['core:clone']['active'] = invalid
+            with self.subTest(invalid=repr(invalid)):
+                self.assertFalse(self.validator.is_valid(changed))
+
     def test_existing_school_rank_and_cost_constraints_remain(self):
         for key, value in (('schools', ['core:air']), ('level', 0), ('costs', [5] * 3), ('costs', [5, None, 5, 5])):
             with self.subTest(key=key, value=value):

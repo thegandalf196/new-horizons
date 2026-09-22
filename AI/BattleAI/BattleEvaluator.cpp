@@ -85,6 +85,69 @@ bool isCanonicalTimeStop(const CSpell * spell)
 	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
 }
 
+bool isPhantomArmy(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsSorcery::PHANTOM_ARMY_SPELL;
+}
+
+template<typename Unit>
+int64_t phantomArmyMarkerIntegrity(const Unit * unit, SpellID spellId)
+{
+	const auto markers = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellId)));
+	if(!markers)
+		return 0;
+
+	for(const auto & marker : *markers)
+		if(marker && marker->type == BonusType::NONE)
+			return std::max<int64_t>(0, marker->val);
+
+	return 0;
+}
+
+template<typename Unit>
+int64_t phantomArmyCurrentIntegrity(const Unit * unit, SpellID spellId)
+{
+	if constexpr(requires { unit->getPhantomIntegrity(); })
+		return std::max<int64_t>(0, unit->getPhantomIntegrity());
+	else
+		return phantomArmyMarkerIntegrity(unit, spellId);
+}
+
+template<typename Unit>
+int64_t phantomArmyInitialIntegrity(const Unit * unit, SpellID spellId)
+{
+	if constexpr(requires { unit->getPhantomInitialIntegrity(); })
+		return std::max<int64_t>(0, unit->getPhantomInitialIntegrity());
+	else
+		return phantomArmyMarkerIntegrity(unit, spellId);
+}
+
+/// Estimate the temporary combat value of one newly projected Phantom Army
+/// stack.  Its copied count provides normal offensive power, while the
+/// integrity pool limits how much of that power is likely to survive; its
+/// two-round lifetime caps the contribution.  This score deliberately uses
+/// the Phantom profile instead of the stack's synthetic ordinary health.
+float phantomArmyCombatValue(const battle::Unit * unit, SpellID spellId)
+{
+	const auto currentIntegrity = phantomArmyCurrentIntegrity(unit, spellId);
+	const auto initialIntegrity = phantomArmyInitialIntegrity(unit, spellId);
+	const auto totalHealth = std::max<int64_t>(1, unit->getTotalHealth());
+	const auto creature = unit->unitType();
+	if(currentIntegrity <= 0 || initialIntegrity <= 0 || !creature || unit->getCount() <= 0)
+		return 0.0f;
+
+	const auto integrityFraction = std::clamp(
+		static_cast<float>(initialIntegrity) / static_cast<float>(totalHealth), 0.0f, 1.0f);
+	const auto survivingFraction = std::clamp(
+		static_cast<float>(currentIntegrity) / static_cast<float>(initialIntegrity), 0.0f, 1.0f);
+	const auto expectedActiveRounds = static_cast<float>(newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS)
+		* survivingFraction;
+	const auto copiedArmyValue = static_cast<float>(unit->getCount())
+		* static_cast<float>(std::max(0, creature->getAIValue()));
+
+	return copiedArmyValue * integrityFraction * expectedActiveRounds;
+}
+
 BattleHex::EDir fireWallDirection(const spells::Target & target)
 {
 	if(target.size() < 2 || target.front().unitValue != nullptr || target.at(1).unitValue != nullptr)
@@ -1437,6 +1500,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				// Removed sacrifice victims must remain in the health accounting below.
 				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return !u->isTurret(); });
 				const bool transfigureMatter = isTransfigureMatter(ps.spell);
+				const bool phantomArmy = isPhantomArmy(ps.spell);
 
 				auto needFullEval = ps.command == HeroCommand::FOCUS_FIRE
 					|| state->hasObstacleChanges() || state->hasWallChanges()
@@ -1514,6 +1578,16 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					auto newHealth = unit->getAvailableHealth();
 					auto oldHealth = vstd::find_or(healthOfStack, unit->unitId(), 0); // old health value may not exist for newly summoned units
 					auto original = cb->getBattle(battleID)->battleGetUnitByID(unit->unitId());
+					const bool phantomArmyStack = phantomArmy && !original
+						&& state->battleGetOwner(unit) == playerID
+						&& phantomArmyInitialIntegrity(unit, ps.spell->getId()) > 0;
+					if(phantomArmyStack)
+					{
+						// Summoned stacks are excluded from the ordinary health-delta score
+						// below.  Score this copied army once from its full count, its
+						// dedicated integrity pool, and the spell's two-round duration.
+						damageToHostilesScore += phantomArmyCombatValue(unit, ps.spell->getId());
+					}
 					if(transfigureMatter && !original && unit->unitType()
 						&& unit->unitType()->getJsonKey() == "core:diamondGolem"
 						&& state->battleGetOwner(unit) == playerID && newHealth > 0)
@@ -1549,7 +1623,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							damage,
 							innerCache,
 							state);
-
 						const bool ourUnit = state->battleGetOwner(unit) == playerID;
 						const bool goodEffect = newHealth > oldHealth;
 
@@ -1557,7 +1630,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						{
 							auto isMagical = state->getForUpdate(unit->unitId())->summoned
 								|| unit->isClone()
-								|| unit->isGhost();
+								|| unit->isGhost()
+								|| phantomArmyStack;
 
 							if(ourUnit && goodEffect && isMagical)
 								continue;
@@ -1606,7 +1680,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				{
 					ps.value = stackActionScore + damageToFriendliesScore + damageToHostilesScore + initiativeEffectScore;
 				}
-
 #if BATTLE_TRACE_LEVEL >= 1
 				logAi->trace("Total score for %s: %2f (action: %2f, friedly damage: %2f, hostile damage: %2f)", ps.name(), ps.value, stackActionScore, damageToFriendliesScore, damageToHostilesScore);
 #endif
@@ -1614,6 +1687,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 #if BATTLE_TRACE_LEVEL == 0
 		});
 #endif
+
+	// No effective ordinary action still permits declining a harmful spell.
+	// Use this same baseline for casts and their projected continuations.
+	const auto noCastBaseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
+		? cachedAttack.score : 0.0f;
 
 	// Grand Metamagic buys a second follow-up, so its first-cast candidate must
 	// include the value of a legal second spell.  The ordinary hypothetical
@@ -1643,7 +1721,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				// spending the once-per-battle Grand charge worthwhile.
 				if(firstSpell.hasValue() && second.spell->getId() == firstSpell)
 					continue;
-				bestContinuation = std::max(bestContinuation, second.value - cachedAttack.score);
+				bestContinuation = std::max(bestContinuation, second.value - noCastBaseline);
 			}
 			if(bestContinuation > 0.0f)
 				first.value += bestContinuation;
@@ -1657,8 +1735,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			return ps.value;
 		});
 	if(metamagicFollowup
-		&& (castToPerform.value < cachedAttack.score
-			|| vstd::isAlmostEqual(castToPerform.value, cachedAttack.score)))
+		&& (castToPerform.value < noCastBaseline
+			|| vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
 		// Decline is the no-cast baseline, not literal score zero: hypothetical
 		// spell values include the active exchange's projected attack. A legal
@@ -1670,7 +1748,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		return true;
 	}
 
-	if(metamagicFollowup || (castToPerform.value > cachedAttack.score && !vstd::isAlmostEqual(castToPerform.value, cachedAttack.score)))
+	if(metamagicFollowup || (castToPerform.value > noCastBaseline && !vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
 		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);
 		if(castToPerform.command != HeroCommand::NONE)

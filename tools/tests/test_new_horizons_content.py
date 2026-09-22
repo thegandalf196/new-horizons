@@ -22,6 +22,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:counterspell',
     'new-horizons:disintegrate',
     'new-horizons:masterChainLightning',
+    'new-horizons:phantomArmy',
     'new-horizons:timeStop',
     'new-horizons:transfigureMatter',
 }
@@ -95,6 +96,7 @@ def legacy_rules(rules):
         result['rulesetVersion'] = 1
         for spell in result['spells'].values():
             spell.pop('directDamage', None)
+            spell.pop('active', None)
     return result
 
 
@@ -515,11 +517,25 @@ class NewHorizonsContentTest(unittest.TestCase):
         # Mysticism hook is cleared.
         self.assertEqual(patches['core:halon']['specialty']['bonuses']['metamagicUses']['val'], 1)
 
-    def test_sorcery_spell_foundation_definitions_remain_deferred(self):
+    def test_phantom_army_is_a_common_active_sorcery_spell_and_replaces_clone(self):
+        content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        phantom = content['phantomArmy']
+        self.assertFalse(phantom['flags'].get('special', False))
+        self.assertEqual(phantom['school'], {'new-horizons:sorcery': True})
+        self.assertEqual(phantom['level'], 4)
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            self.assertEqual(phantom['levels'][rank]['cost'], 15)
+        self.assertEqual(self.rules['spells']['new-horizons:phantomArmy'], {
+            'schools': ['new-horizons:sorcery'],
+            'level': 4,
+            'costs': [15, 15, 15, 15],
+        })
+        self.assertFalse(self.rules['spells']['core:clone']['active'])
+
+    def test_other_sorcery_spell_foundation_definitions_remain_deferred(self):
         """Deferred source definitions stay schema-shaped but out of the saved roster."""
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
         expected = {
-            'phantomArmy': (4, 15, 'phantomArmy'),
             'spellLock': (5, 22, 'spellLock'),
         }
         for name, (level, cost, effect) in expected.items():
@@ -579,7 +595,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'newHorizonsMasteries': load('config/newHorizonsMasteries.json'),
                               'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
-        self.assertEqual(module['version'], '0.10.0')
+        self.assertEqual(module['version'], '0.11.0')
         self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json', 'config/heroes/solmyr.json'])
         self.assertIn('Magic Arrow', module['description'])
         self.assertIn('Overcharge', module['description'])

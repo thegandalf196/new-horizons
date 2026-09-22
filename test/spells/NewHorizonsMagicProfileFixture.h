@@ -27,8 +27,8 @@ public:
 	MagicV1Baseline()
 	{
 		const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-		if(rules["rulesetVersion"].Integer() != 2 || rules["spells"].Struct().size() != 69)
-			throw std::runtime_error("Fixture requires unchanged canonical v2/69 magic baseline");
+		if(rules["rulesetVersion"].Integer() != 2 || rules["spells"].Struct().size() != 70)
+			throw std::runtime_error("Fixture requires the canonical v2/70 magic baseline");
 		auto full = LIBRARY->settingsHandler->getFullConfig();
 		full["magic"]["newHorizons"] = rules;
 		auto replacement = std::make_unique<GameSettings>();

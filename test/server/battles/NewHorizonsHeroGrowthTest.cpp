@@ -1307,6 +1307,7 @@ TEST_F(NewHorizonsHeroGrowthTest, RealSummonRoundsAfterScaledPowerProduct)
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
 	action.spell = spellID;
+	action.aimToHex(BattleHex::INVALID);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	int count = 0;
 	for(const auto * unit : battle()->battleGetAllStacks())

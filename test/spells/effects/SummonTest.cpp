@@ -26,6 +26,15 @@ static const CreatureID creature1(CreatureID::AIR_ELEMENTAL);
 static const CreatureID creature2(CreatureID::FIRE_ELEMENTAL);
 static const int summonSpellPower = 100; // enough to summon at least 1 unit
 
+class PhantomUnitCasterFake final : public battle::UnitFake
+{
+public:
+	int64_t getPhantomInitialIntegrity() const override
+	{
+		return 1;
+	}
+};
+
 class SummonTest : public TestWithParam<::testing::tuple<CreatureID, bool, bool>>, public EffectFixture
 {
 public:
@@ -68,6 +77,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(nullptr));
 
 		otherSummoned = ::testing::get<0>(GetParam());
 		exclusive = ::testing::get<1>(GetParam());
@@ -152,6 +162,28 @@ TEST_P(SummonTest, Transform)
 	EXPECT_THAT(transformed, ContainerEq(expected));
 }
 
+TEST_P(SummonTest, PhantomUnitCasterCannotGenerateOrPreviewSummonedCreatures)
+{
+	PhantomUnitCasterFake caster;
+	EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(&caster));
+	EXPECT_CALL(mechanicsMock, adaptGenericProblem(Ref(problemMock))).Times(AtLeast(1)).WillRepeatedly(Return(false));
+
+	EXPECT_FALSE(subject->applicableGeneral(problemMock, &mechanicsMock));
+
+	Target target;
+	target.emplace_back(BattleHex(1));
+	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, target));
+	EXPECT_TRUE(subject->transformTarget(&mechanicsMock, target, target).empty());
+	EXPECT_TRUE(subject->filterTarget(&mechanicsMock, target).empty());
+
+	const auto preview = subject->getHealthChange(&mechanicsMock, target);
+	EXPECT_EQ(preview.hpDelta, 0);
+	EXPECT_EQ(preview.unitsDelta, 0);
+
+	// Direct application is guarded independently of the applicability path.
+	subject->apply(&serverMock, &mechanicsMock, target);
+}
+
 INSTANTIATE_TEST_SUITE_P
 (
 	ByConfig,
@@ -226,6 +258,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(nullptr));
 
 		permanent = ::testing::get<0>(GetParam());
 		summonByHealth = ::testing::get<1>(GetParam());
@@ -249,6 +282,11 @@ protected:
 
 TEST_P(SummonApplyTest, SpawnsNewUnit)
 {
+	auto & caster = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(&caster));
+	if(!permanent)
+		EXPECT_CALL(mechanicsMock, getSpellId()).WillOnce(Return(SpellID(SpellID::SUMMON_AIR_ELEMENTAL)));
+
 	setDefaultExpectations();
 
 	EXPECT_CALL(*battleFake, nextUnitId()).WillOnce(Return(unitId));

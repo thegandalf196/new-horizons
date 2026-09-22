@@ -79,7 +79,11 @@ void UnitProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Unit::getTotalHealth>("getTotalHealth", {},
 		"Returns the total hit points across all creatures in the stack, including dead.");
 	R.method<&Unit::getAvailableHealth>("getAvailableHealth", {},
-		"Returns the current hit points of living creatures of this unit.");
+		"Returns current hit points; for Phantom Army this is its separate Integrity pool.");
+	R.method<&Unit::getPhantomIntegrity>("getPhantomIntegrity", {},
+		"Returns current Phantom Army Integrity, or zero for ordinary units.");
+	R.method<&Unit::getPhantomInitialIntegrity>("getPhantomInitialIntegrity", {},
+		"Returns initial Phantom Army Integrity, or zero for ordinary units.");
 	R.method<&Unit::getUnusableRemains>("getUnusableRemains", {},
 		"Returns the number of casualties whose remains cannot be resurrected.");
 	R.method<&Unit::getCount>("getCount", {},

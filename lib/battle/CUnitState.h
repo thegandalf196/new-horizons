@@ -237,7 +237,13 @@ public:
 	int32_t getUnusableRemains() const override;
 	int64_t getAvailableHealth() const override;
 	int64_t getTotalHealth() const override;
+	int64_t getPhantomIntegrity() const override;
+	int64_t getPhantomInitialIntegrity() const override;
 	uint32_t getMaxHealth() const override;
+
+	/// Install the transient Phantom Army durability profile after the stack has
+	/// completed normal battlefield initialization.
+	void initializePhantomProfile(int64_t integrity, int32_t duration);
 
 	BattleHex getPosition() const override;
 	void setPosition(const BattleHex & hex) override;
@@ -289,7 +295,7 @@ public:
 	/// Record the authoritative Wait action and arm Battlecraft's one-shot bonus.
 	void afterWait();
 
-	void afterNewRound();
+	void afterNewRound(bool isFirstRound = false);
 
 	void afterGetsTurn(BattleUnitTurnReason reason);
 
@@ -299,6 +305,9 @@ public:
 
 private:
 	const IUnitEnvironment * env;
+	int64_t phantomInitialIntegrity = 0;
+	int64_t phantomIntegrity = 0;
+	int32_t phantomRoundsRemaining = 0;
 
 	BonusCachePerTurn initiativeBasePerTurn;
 	BonusCachePerTurn initiativeBasePresencePerTurn;

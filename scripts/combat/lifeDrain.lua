@@ -18,7 +18,7 @@ local function drainableDamage(payload)
 	local total = 0
 
 	for _, target in ipairs(payload.targets or {}) do
-		if target.unit and target.unit:isLiving() then
+		if target.unit and target.unit:isLiving() and target.unit:getPhantomInitialIntegrity() <= 0 then
 			total = total + target.damage
 		end
 	end

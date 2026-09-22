@@ -63,8 +63,9 @@ def main():
                        'power coefficient 20). Faction Skills are assigned to every new hero '
                        'from its faction; Magic heroes replace Wisdom and Might heroes preserve '
                        'their class signature while replacing an optional starting skill. '
-                       'Transfigure Matter and Disintegrate are registered functional new spells; '
-                       'the remaining planned new spell roster, including Magic Missile, is not registered. '
+                       'Transfigure Matter, Disintegrate and Phantom Army are registered functional new spells. '
+                       'Phantom Army is active in the Sorcery roster; Clone remains in saved rules but is disabled '
+                       'for new games. Other planned spells, including Magic Missile, are not registered. '
                        'All factions expose functional Mage Guild I-V; Castle, Stronghold and Fortress '
                        'reuse their final existing town-screen guild structure for newly added levels as a '
                        'presentation placeholder. '
@@ -142,7 +143,7 @@ def main():
         # Tower's Mage/Genie identity swap and the direct class-name object
         # patches alter saved/live content presentation. Bump the live module
         # identity so managed profiles cannot silently retain the older data.
-        metadata['version'] = '0.10.0'
+        metadata['version'] = '0.11.0'
         metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
         metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
         metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry; active entries '

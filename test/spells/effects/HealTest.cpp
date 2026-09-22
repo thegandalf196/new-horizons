@@ -25,6 +25,15 @@ using namespace ::spells;
 using namespace ::spells::effects;
 using namespace ::testing;
 
+class PhantomUnitCasterFake final : public battle::UnitFake
+{
+public:
+	int64_t getPhantomInitialIntegrity() const override
+	{
+		return 1;
+	}
+};
+
 class HealTest : public Test, public EffectFixture
 {
 public:
@@ -38,6 +47,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(nullptr));
 	}
 };
 
@@ -67,6 +77,62 @@ TEST_F(HealTest, ApplicableToWoundedUnit)
 	EXPECT_CALL(unit, getTotalHealth()).WillOnce(Return(200));
 	EXPECT_CALL(unit, getAvailableHealth()).WillOnce(Return(100));
 
+	EXPECT_CALL(mechanicsMock, isSmart()).WillOnce(Return(false));
+
+	Target target;
+	target.emplace_back(&unit, BattleHex());
+
+	EXPECT_TRUE(subject->applicableTarget(problemMock, &mechanicsMock, target));
+}
+
+TEST_F(HealTest, PhantomUnitCasterCannotTargetDeadUnitsForResurrection)
+{
+	JsonNode config;
+	config["healLevel"].String() = "resurrect";
+	EffectFixture::setupEffect(config);
+
+	PhantomUnitCasterFake caster;
+	EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(&caster));
+	EXPECT_CALL(mechanicsMock, getHeroCaster()).Times(AnyNumber()).WillRepeatedly(Return(nullptr));
+
+	auto & deadUnit = unitsFake.add(BattleSide::ATTACKER);
+	EXPECT_CALL(deadUnit, alive()).WillRepeatedly(Return(false));
+	EXPECT_CALL(deadUnit, isGhost()).WillRepeatedly(Return(false));
+	EXPECT_CALL(deadUnit, isValidTarget(Eq(false))).WillRepeatedly(Return(false));
+	Target target;
+	target.emplace_back(&deadUnit, BattleHex());
+
+	EXPECT_FALSE(subject->applicableTarget(problemMock, &mechanicsMock, target));
+	const auto preview = subject->getHealthChange(&mechanicsMock, target);
+	EXPECT_EQ(preview.hpDelta, 0);
+	EXPECT_EQ(preview.unitsDelta, 0);
+
+	// Even a bypassed target filter cannot let a Phantom source resurrect a corpse.
+	subject->apply(&serverMock, &mechanicsMock, target);
+}
+
+TEST_F(HealTest, PhantomResurrectionCanHealPartialCasualtyDespiteMinimumFullUnits)
+{
+	JsonNode config;
+	config["healLevel"].String() = "resurrect";
+	config["healPower"].String() = "oneBattle";
+	config["minFullUnits"].Integer() = 1;
+	EffectFixture::setupEffect(config);
+
+	PhantomUnitCasterFake caster;
+	EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(&caster));
+
+	auto & unit = unitsFake.add(BattleSide::ATTACKER);
+	unit.makeAlive();
+	unit.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACK_HEALTH,
+		BonusSource::CREATURE_ABILITY, 100, BonusSourceID()));
+	unitsFake.setDefaultBonusExpectations();
+	EXPECT_CALL(unit, isValidTarget(Eq(false))).WillOnce(Return(true));
+	EXPECT_CALL(unit, getTotalHealth()).WillOnce(Return(400));
+	EXPECT_CALL(unit, getAvailableHealth()).WillOnce(Return(390));
+	// If the original minFullUnits threshold is used, ten healed HP must remain
+	// below the 100 HP needed to restore a whole creature.
+	EXPECT_CALL(mechanicsMock, getEffectValue()).Times(AnyNumber()).WillRepeatedly(Return(10));
 	EXPECT_CALL(mechanicsMock, isSmart()).WillOnce(Return(false));
 
 	Target target;
@@ -366,6 +432,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(nullptr));
 
 		healLevel = ::testing::get<0>(GetParam());
 		healPower = ::testing::get<1>(GetParam());
@@ -519,6 +586,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(nullptr));
 	}
 };
 
@@ -684,6 +752,109 @@ TEST_F(HealApplyOneOffTest, ApplyHealsMultipleTargets)
 	const int32_t expectedCount = static_cast<int32_t>((available + unitHP - 1) / unitHP);
 	EXPECT_EQ(state1->getCount(), expectedCount);
 	EXPECT_EQ(state2->getCount(), expectedCount);
+}
+
+TEST_F(HealApplyOneOffTest, PhantomCasterPreviewCannotCreateCreatures)
+{
+	JsonNode config;
+	config["healLevel"].String() = "overHeal";
+	EffectFixture::setupEffect(config);
+
+	using namespace ::battle;
+
+	const int64_t effectValue = 1000;
+	const int32_t unitAmount = 4;
+	const int32_t unitHP = 100;
+	const uint32_t unitId = 42;
+	const CreatureID creatureId(CreatureID::decode("core:pikeman"));
+	const auto pikeman = creatureId.toCreature();
+
+	auto & targetUnit = unitsFake.add(BattleSide::ATTACKER);
+	targetUnit.makeAlive();
+	EXPECT_CALL(targetUnit, unitBaseAmount()).WillRepeatedly(Return(unitAmount));
+	EXPECT_CALL(targetUnit, unitId()).WillRepeatedly(Return(unitId));
+	EXPECT_CALL(targetUnit, unitType()).WillRepeatedly(Return(pikeman));
+	EXPECT_CALL(targetUnit, creatureId()).WillRepeatedly(Return(creatureId));
+	targetUnit.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACK_HEALTH,
+		BonusSource::CREATURE_ABILITY, unitHP, BonusSourceID()));
+	unitsFake.setDefaultBonusExpectations();
+
+	auto state = std::make_shared<CUnitStateDetached>(&targetUnit, &targetUnit);
+	state->localInit(&unitEnvironmentMock);
+	int64_t initialDamage = 150;
+	state->health.damage(initialDamage);
+	ASSERT_EQ(state->getCount(), 3);
+
+	PhantomUnitCasterFake caster;
+	EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(&caster));
+	EXPECT_CALL(mechanicsMock, getEffectValue()).WillRepeatedly(Return(effectValue));
+	EXPECT_CALL(mechanicsMock, applySpellBonus(Eq(effectValue), Eq(&targetUnit))).WillRepeatedly(Return(effectValue));
+	EXPECT_CALL(targetUnit, acquireState()).WillRepeatedly(Return(state));
+
+	Target target;
+	target.emplace_back(&targetUnit, BattleHex());
+	const auto preview = subject->getHealthChange(&mechanicsMock, target);
+
+	EXPECT_EQ(preview.hpDelta, 50);
+	EXPECT_EQ(preview.unitsDelta, 0);
+	EXPECT_EQ(preview.unitType, static_cast<const Creature *>(pikeman));
+}
+
+TEST_F(HealApplyOneOffTest, PhantomCasterHealsLivingTroopsWithoutResurrectingOrOverhealing)
+{
+	JsonNode config;
+	config["healLevel"].String() = "resurrect";
+	config["healPower"].String() = "oneBattle";
+	config["minFullUnits"].Integer() = 1;
+	EffectFixture::setupEffect(config);
+
+	using namespace ::battle;
+
+	const int64_t effectValue = 1000;
+	const int32_t unitAmount = 4;
+	const int32_t unitHP = 100;
+	const uint32_t unitId = 42;
+	const CreatureID creatureId(CreatureID::decode("core:pikeman"));
+	const auto pikeman = creatureId.toCreature();
+
+	auto & targetUnit = unitsFake.add(BattleSide::ATTACKER);
+	targetUnit.makeAlive();
+	EXPECT_CALL(targetUnit, unitBaseAmount()).WillRepeatedly(Return(unitAmount));
+	EXPECT_CALL(targetUnit, unitId()).WillRepeatedly(Return(unitId));
+	EXPECT_CALL(targetUnit, unitType()).WillRepeatedly(Return(pikeman));
+	EXPECT_CALL(targetUnit, creatureId()).WillRepeatedly(Return(creatureId));
+	targetUnit.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACK_HEALTH,
+		BonusSource::CREATURE_ABILITY, unitHP, BonusSourceID()));
+	unitsFake.setDefaultBonusExpectations();
+
+	auto state = std::make_shared<CUnitStateDetached>(&targetUnit, &targetUnit);
+	state->localInit(&unitEnvironmentMock);
+	int64_t initialDamage = 150;
+	state->health.damage(initialDamage);
+	const auto existingCount = state->getCount();
+	ASSERT_EQ(existingCount, 3);
+
+	PhantomUnitCasterFake caster;
+	mechanicsMock.caster = &caster;
+	EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(&caster));
+	EXPECT_CALL(mechanicsMock, getHeroCaster()).WillRepeatedly(Return(nullptr));
+	EXPECT_CALL(mechanicsMock, getEffectValue()).WillRepeatedly(Return(effectValue));
+	EXPECT_CALL(mechanicsMock, applySpellBonus(Eq(effectValue), Eq(&targetUnit))).WillRepeatedly(Return(effectValue));
+	EXPECT_CALL(caster, creatureId()).WillRepeatedly(Return(creatureId));
+	EXPECT_CALL(caster, getCasterUnitId()).WillRepeatedly(Return(creatureId.getNum()));
+	EXPECT_CALL(targetUnit, acquire()).WillRepeatedly(Return(state));
+
+	EXPECT_CALL(*battleFake, updateUnit(Eq(unitId), _, Gt(0))).Times(1);
+	EXPECT_CALL(serverMock, apply(Matcher<BattleUnitsChanged &>(_))).Times(1);
+	EXPECT_CALL(serverMock, apply(Matcher<BattleLogMessage &>(_))).Times(AtLeast(1));
+	setupDefaultRNG();
+
+	Target target;
+	target.emplace_back(&targetUnit, BattleHex());
+	subject->apply(&serverMock, &mechanicsMock, target);
+
+	EXPECT_EQ(state->getCount(), existingCount);
+	EXPECT_EQ(state->getAvailableHealth(), existingCount * unitHP);
 }
 
 }

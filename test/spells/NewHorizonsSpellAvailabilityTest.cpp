@@ -34,6 +34,29 @@ TEST(NewHorizonsSpellAvailabilityTest, LaterRosterDoesNotRetroactivelyExpandEarl
 	EXPECT_FALSE(spellBelongsToRules(older, "new-horizons:disease", true));
 }
 
+TEST(NewHorizonsSpellAvailabilityTest, ActiveMarkerExcludesOnlyTheSavedRow)
+{
+	const JsonNode legacy;
+	JsonNode oldNewHorizons;
+	oldNewHorizons["spells"]["core:clone"] = JsonNode(JsonMap{});
+	JsonNode current = oldNewHorizons;
+	current["spells"]["core:clone"]["active"].Bool() = false;
+	current["spells"]["new-horizons:phantomArmy"] = JsonNode(JsonMap{});
+
+	EXPECT_TRUE(spellBelongsToRules(legacy, "core:clone", true));
+	EXPECT_TRUE(spellBelongsToRules(oldNewHorizons, "core:clone", true));
+	EXPECT_FALSE(spellBelongsToRules(current, "core:clone", true));
+	EXPECT_TRUE(spellBelongsToRules(current, "new-horizons:phantomArmy", true));
+	EXPECT_FALSE(spellBelongsToRules(oldNewHorizons, "new-horizons:phantomArmy", true));
+}
+
+TEST(NewHorizonsSpellAvailabilityTest, InvalidActiveMarkerRejectsInsteadOfSilentlyActivating)
+{
+	JsonNode invalid;
+	invalid["spells"]["core:clone"]["active"].String() = "false";
+	EXPECT_THROW(spellBelongsToRules(invalid, "core:clone", true), std::runtime_error);
+}
+
 TEST(NewHorizonsSpellAvailabilityTest, MalformedCommonSpellContextRejects)
 {
 	EXPECT_THROW(spellBelongsToRules(JsonNode(), "unscoped", true), std::runtime_error);

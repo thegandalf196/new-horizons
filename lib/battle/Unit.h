@@ -131,6 +131,10 @@ public:
 
 	/// returns total health that unit had initially
 	virtual int64_t getTotalHealth() const = 0;
+	/// Current separate durability pool for a Phantom Army stack, or zero for ordinary units.
+	virtual int64_t getPhantomIntegrity() const { return 0; }
+	/// Initial separate durability pool for a Phantom Army stack, or zero for ordinary units.
+	virtual int64_t getPhantomInitialIntegrity() const { return 0; }
 
 	virtual int getTotalAttacks(bool ranged) const = 0;
 	/// Creature Defense with the temporary bonus granted by the Defend action removed.
@@ -209,6 +213,10 @@ public:
 	bool summoned = false;
 	/// True only for a temporary stack created by a Nature spell.
 	bool natureSummoned = false;
+	/// Initial Phantom Army durability pool. Zero means this is an ordinary unit.
+	int64_t phantomIntegrity = 0;
+	/// Number of battle rounds the Phantom Army profile lasts.
+	int32_t phantomDuration = 0;
 
 	void serializeJson(JsonSerializeFormat & handler);
 
@@ -224,6 +232,8 @@ public:
 		s("position", position, "Position of the stack on the battlefield. For double-wide units this is their front hex");
 		s("summoned", summoned, "True if the stack was summoned mid-battle and was not part of the initial army.");
 		s("natureSummoned", natureSummoned, "True if this temporary stack was created by a Nature spell.");
+		s("phantomIntegrity", phantomIntegrity, "Initial separate durability pool for a Phantom Army stack; zero for other stacks.");
+		s("phantomDuration", phantomDuration, "Number of battle rounds the Phantom Army profile lasts.");
 	}
 };
 

@@ -255,6 +255,20 @@ float AttackPossibility::calculateDamageReduce(
 			attackerUnitForMeasurement = ourUnits.front();
 	}
 
+	// Phantom Army has one stack-wide Integrity pool, not ordinary per-creature
+	// health. Losing Integrity does not reduce the copied stack's offensive
+	// count; only exhausting the pool removes the full copied stack.
+	if(defender->getPhantomInitialIntegrity() > 0)
+	{
+		const auto integrity = defender->getPhantomIntegrity();
+		if(integrity <= 0 || defender->getCount() <= 0
+			|| damageDealt < static_cast<uint64_t>(integrity))
+			return 0.0f;
+
+		const auto copiedStackDamage = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state);
+		return static_cast<float>(copiedStackDamage);
+	}
+
 	auto maxHealth = defender->getMaxHealth();
 	auto availableHealth = defender->getFirstHPleft() + ((defender->getCount() - 1) * maxHealth);
 

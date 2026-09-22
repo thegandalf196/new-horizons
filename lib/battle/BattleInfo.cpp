@@ -26,6 +26,7 @@
 #include "../IGameSettings.h"
 #include "../mapObjects/CGTownInstance.h"
 #include "../spells/CSpell.h"
+#include "../spells/NewHorizonsSorcery.h"
 #include "../texts/CGeneralTextHandler.h"
 #include "../BattleFieldHandler.h"
 #include "../ObstacleHandler.h"
@@ -1001,7 +1002,7 @@ void BattleInfo::nextRound()
 		if(!isFirstRound && !s->isTimeStopped())
 			s->reduceBonusDurations(Bonus::NTurns);
 
-		s->afterNewRound();
+		s->afterNewRound(isFirstRound);
 	}
 
 	for(auto & obst : obstacles)
@@ -1065,6 +1066,14 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 		throw std::runtime_error("Invalid New Horizons targeted unit allocation");
 	battle::UnitInfo info;
 	info.load(id, data);
+	if(info.phantomIntegrity < 0 || info.phantomDuration < 0
+		|| ((info.phantomIntegrity == 0) != (info.phantomDuration == 0)))
+		throw std::runtime_error("Invalid Phantom Army spawn profile");
+	if(info.phantomIntegrity > 0
+		&& (info.count <= 0 || !info.summoned || info.natureSummoned
+			|| info.phantomDuration != newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS))
+		throw std::runtime_error("Invalid Phantom Army spawn profile");
+
 	CStackBasicDescriptor base(info.type, info.count);
 
 	PlayerColor owner = getSidePlayer(info.side);
@@ -1081,6 +1090,8 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 	// Restore the authoritative packet values before any subsequent bonus query.
 	stacks.back()->summoned = info.summoned;
 	stacks.back()->natureSummoned = info.natureSummoned;
+	if(info.phantomIntegrity > 0)
+		stacks.back()->initializePhantomProfile(info.phantomIntegrity, info.phantomDuration);
 	stacks.back()->nodeHasChanged();
 }
 

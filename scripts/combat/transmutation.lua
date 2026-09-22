@@ -29,7 +29,10 @@ end
 function Script:onAfterAttack(server, battle, unit, other)
 	-- a dead attacker transmutes nothing, and it may have been killed by the retaliation to this attack
 	if not unit:isAlive() then return end
+	-- A temporary illusion cannot create a persistent replacement army.
+	if unit:getPhantomInitialIntegrity() > 0 then return end
 	if not other or not other:isAlive() or not other:isLiving() then return end
+	if other:getPhantomInitialIntegrity() > 0 then return end
 	if self:isImmune(other) then return end
 	if not server:rollCombatAbility(battle, unit, self.val or 0) then return end
 

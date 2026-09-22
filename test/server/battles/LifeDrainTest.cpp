@@ -10,6 +10,9 @@
 #include "StdInc.h"
 
 #include "BattleTestFixture.h"
+#include "../../../server/CGameHandler.h"
+
+#include "../../../lib/spells/NewHorizonsSorcery.h"
 
 namespace
 {
@@ -29,6 +32,26 @@ constexpr int32_t victimCount = 800;
 class LifeDrainTest : public BattleTestFixture
 {
 public:
+	CStack * addPhantomTarget(BattleSide side, const BattleHex & position, int64_t integrity)
+	{
+		battle::UnitInfo info;
+		info.id = battle()->battleNextUnitId();
+		info.count = victimCount;
+		info.type = creatureByName("core:pikeman");
+		info.side = side;
+		info.position = position;
+		info.summoned = true;
+		info.phantomIntegrity = integrity;
+		info.phantomDuration = newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS;
+
+		BattleUnitsChanged pack;
+		pack.battleID = BattleID(0);
+		pack.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+		info.save(pack.changedStacks.back().data);
+		gameHandler->sendAndApply(pack);
+		return battle()->getStack(info.id);
+	}
+
 	void setUpBattle(const std::string & victimCreature)
 	{
 		startGame();
@@ -45,6 +68,22 @@ public:
 
 		// vampires are undead, so no blessing will reach them - the effect of one is granted
 		// directly instead, to collapse both damage ranges onto a single value
+		forceMaximumDamage(victim);
+		forceMaximumDamage(vampires);
+	}
+
+	void setUpPhantomBattle()
+	{
+		startGame();
+		startBattle();
+
+		victim = addPhantomTarget(BattleSide::ATTACKER, BattleHex(leftHex), 1'000'000);
+		vampires = addStack(BattleSide::DEFENDER, creatureByName("core:vampireLord"), BattleHex(rightHex), vampireCount);
+		ASSERT_NE(victim, nullptr);
+		ASSERT_NE(vampires, nullptr);
+
+		blockRetaliation(victim);
+		blockRetaliation(vampires);
 		forceMaximumDamage(victim);
 		forceMaximumDamage(vampires);
 	}
@@ -112,6 +151,19 @@ TEST_F(LifeDrainTest, DrainsNothingFromTheUndead)
 	ASSERT_TRUE(attack(vampires, BattleHex(leftHex)));
 
 	EXPECT_EQ(vampires->getAvailableHealth(), healthBefore);
+}
+
+TEST_F(LifeDrainTest, DrainsNothingFromPhantomArmy)
+{
+	setUpPhantomBattle();
+	woundVampires();
+
+	const int64_t vampireHealthBefore = vampires->getAvailableHealth();
+	const int64_t phantomIntegrityBefore = victim->getPhantomIntegrity();
+	ASSERT_TRUE(attack(vampires, BattleHex(leftHex)));
+
+	EXPECT_LT(victim->getPhantomIntegrity(), phantomIntegrityBefore);
+	EXPECT_EQ(vampires->getAvailableHealth(), vampireHealthBefore);
 }
 
 TEST_F(LifeDrainTest, UnwoundedStackDrainsNothing)

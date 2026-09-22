@@ -295,6 +295,8 @@ void UnitInfo::serializeJson(JsonSerializeFormat & handler)
 	position = positionValue;
 	handler.serializeBool("summoned", summoned);
 	handler.serializeBool("natureSummoned", natureSummoned);
+	handler.serializeInt("phantomIntegrity", phantomIntegrity, 0);
+	handler.serializeInt("phantomDuration", phantomDuration, 0);
 }
 
 void UnitInfo::save(JsonNode & data)

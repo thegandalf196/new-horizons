@@ -17,9 +17,10 @@ class CBattleInfoCallback;
 
 namespace newHorizonsMagic
 {
-/// Roster-expansion primitive. Given validated saved rules and an installed
-/// spell's scoped identity/kind, decide whether that world includes the spell.
-/// Not a replacement for map bans, targeting, mana or authoritative validation.
+/// Given saved rules and an installed spell's scoped identity/kind, decide
+/// whether that world includes the spell. In v2 rows, optional `active:false`
+/// disables an entry; old rows without the marker remain enabled. This is not
+/// a replacement for map bans, targeting, mana or authoritative validation.
 DLL_LINKAGE bool spellBelongsToRules(const JsonNode & rules, const std::string & scopedIdentity, bool commonHeroSpell);
 /// Copied admission only: no map bans, possession, mana or targeting decisions.
 /// Invalid/out-of-range/null definitions fail before dereference. Callers supply

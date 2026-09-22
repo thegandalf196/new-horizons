@@ -6,40 +6,36 @@ Script.__index = Script
 -- Clone units have special zero-damage/round-expiry behavior in the engine and
 -- therefore cannot represent Phantom Integrity or the physical/magical damage
 -- split from the New Horizons rules.
-local SPELL_KEY = "new-horizons:phantomArmy"
 local ILLUSIONIST_SKILL = "new-horizons:sorceryMagic"
 local ILLUSIONIST_PERK = "new-horizons:sorceryMagic.illusionist"
 local BASE_INTEGRITY_PERCENT = 20
-local INTEGRITY_PER_POWER = 0.15
+local INTEGRITY_BASIS_POINTS_PER_POWER = 15
 local INTEGRITY_CAP_PERCENT = 40
 local ILLUSIONIST_MULTIPLIER = 125
 local DURATION_ROUNDS = 2
 
-local function hasPhantomMarker(unit)
-	for _, bonus in ipairs(unit:getBonuses({})) do
-		if bonus:getSource() == ENUM.BonusSource.spellEffect
-			and bonus:getSourceID() == SPELL_KEY then
-			return true
-		end
-	end
-	return false
-end
-
 local function validSource(mechanics, unit)
 	if unit == nil or not unit:isAlive() or not unit:isValidTarget(false) then return false end
-	if unit:isClone() or hasPhantomMarker(unit) then return false end
+	if unit:isClone() or unit:getPhantomInitialIntegrity() > 0 then return false end
 	if unit:hasBonuses({type = "SIEGE_WEAPON"}) then return false end
-	return mechanics:ownerMatches(unit)
+	return mechanics:ownerMatches(unit) and mechanics:isReceptive(unit)
 end
 
 local function integrityPool(mechanics, source)
-	local percent = math.min(INTEGRITY_CAP_PERCENT,
-		BASE_INTEGRITY_PERCENT + INTEGRITY_PER_POWER * mechanics:getEffectPower())
-	local pool = math.floor(source:getAvailableHealth() * percent / 100)
+	local basisPoints = math.min(INTEGRITY_CAP_PERCENT * 100,
+		BASE_INTEGRITY_PERCENT * 100 + INTEGRITY_BASIS_POINTS_PER_POWER * mechanics:getEffectPower())
+	local multiplier = 100
 	local hero = mechanics:getHeroCaster()
 	if hero ~= nil and hero:hasActivePerk(ILLUSIONIST_SKILL, ILLUSIONIST_PERK) then
-		pool = math.floor(pool * ILLUSIONIST_MULTIPLIER / 100)
+		multiplier = ILLUSIONIST_MULTIPLIER
 	end
+	-- Keep all intermediates integral and round once, matching the C++ helper.
+	-- A floating-point percentage can turn an exact 323 into 322.99999999999994.
+	local numerator = basisPoints * multiplier
+	local denominator = 1000000
+	local health = source:getAvailableHealth()
+	local pool = math.floor(health / denominator) * numerator
+		+ math.floor((health % denominator) * numerator / denominator)
 	return math.max(1, pool)
 end
 
@@ -77,12 +73,10 @@ function Script:applicableTarget(mechanics, problem, target)
 end
 
 function Script:transformTarget(mechanics, aimPoint, spellTarget)
-	local result = {}
-	for _, destination in ipairs(spellTarget) do
-		if validSource(mechanics, destination.unit) then
-			result[#result + 1] = destination
-		end
-	end
+	-- Creature-aimed casts arrive from the client as a battlefield hex.  The
+	-- shared unit-effect resolver finds the occupant before filtering targets.
+	local result = Base.transformTarget(self, mechanics, aimPoint, spellTarget)
+	if #result > 1 then return { result[1] } end
 	return result
 end
 
@@ -102,30 +96,11 @@ function Script:apply(mechanics, server, target)
 			type = creature,
 			side = mechanics:getCasterSide(),
 			position = position,
-			summoned = true
+			summoned = true,
+			phantomIntegrity = integrity,
+			phantomDuration = DURATION_ROUNDS
 		})
 		if phantom == nil then goto continue end
-
-		-- Keep the aggregate pool exact when the spawned stack's ordinary health is
-		-- above the source-derived integrity.  The marker is intentionally a
-		-- normal spell-effect bonus: the authoritative C++ damage/expiry hooks can
-		-- identify the phantom without abusing UnitState::setCloned.
-		local excess = phantom:getAvailableHealth() - integrity
-		if excess > 0 then
-			local state = phantom:copy()
-			state:damage(excess)
-			server:changeUnit(battle, state)
-		end
-		server:addUnitBonus(battle, phantom, {
-			type = "NONE",
-			val = integrity,
-			duration = ENUM.BonusDuration.nTurns,
-			turns = DURATION_ROUNDS,
-			sourceType = ENUM.BonusSource.spellEffect,
-			sourceID = SPELL_KEY,
-			hidden = true,
-			description = "Phantom Integrity"
-		}, false)
 
 		::continue::
 	end

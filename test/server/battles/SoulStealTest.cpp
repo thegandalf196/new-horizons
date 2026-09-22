@@ -10,6 +10,9 @@
 #include "StdInc.h"
 
 #include "BattleTestFixture.h"
+#include "../../../server/CGameHandler.h"
+
+#include "../../../lib/spells/NewHorizonsSorcery.h"
 
 namespace
 {
@@ -26,6 +29,26 @@ constexpr int32_t gainPerKill = 2;
 class SoulStealTest : public BattleTestFixture
 {
 public:
+	CStack * addPhantomVictim()
+	{
+		battle::UnitInfo info;
+		info.id = battle()->battleNextUnitId();
+		info.count = victimCount;
+		info.type = creatureByName("core:pikeman");
+		info.side = BattleSide::ATTACKER;
+		info.position = BattleHex(leftHex);
+		info.summoned = true;
+		info.phantomIntegrity = 1;
+		info.phantomDuration = newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS;
+
+		BattleUnitsChanged pack;
+		pack.battleID = BattleID(0);
+		pack.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+		info.save(pack.changedStacks.back().data);
+		gameHandler->sendAndApply(pack);
+		return battle()->getStack(info.id);
+	}
+
 	void setUpBattle(const std::string & victimCreature)
 	{
 		startGame();
@@ -64,6 +87,23 @@ TEST_F(SoulStealTest, TakesNoSoulsFromTheUndead)
 	ASSERT_TRUE(attack(stealer, BattleHex(leftHex)));
 
 	ASSERT_LT(victim->getCount(), victimCount) << "the attack was meant to kill some skeletons";
+	EXPECT_EQ(stealer->getCount(), stealerCount);
+}
+
+TEST_F(SoulStealTest, TakesNoSoulsFromPhantomArmy)
+{
+	startGame();
+	startBattle();
+	victim = addPhantomVictim();
+	stealer = addStack(BattleSide::DEFENDER, creatureByName("vcmi-test:testSoulStealer"), BattleHex(rightHex), stealerCount);
+	ASSERT_NE(victim, nullptr);
+	ASSERT_NE(stealer, nullptr);
+	blockRetaliation(stealer);
+	forceMaximumDamage(stealer);
+
+	ASSERT_TRUE(attack(stealer, BattleHex(leftHex)));
+
+	EXPECT_FALSE(victim->alive()) << "the attack should kill the Phantom stack's remaining Integrity";
 	EXPECT_EQ(stealer->getCount(), stealerCount);
 }
 

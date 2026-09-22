@@ -34,6 +34,9 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 
 	int chargeDistance = 0;
 	bool shooting = false;
+	/// Whether this attack deals physical creature damage. Spell-like shots and other
+	/// explicitly nonphysical attacks use the magical Phantom Army damage multiplier.
+	bool physicalDamage = true;
 	bool luckyStrike = false;
 	bool unluckyStrike = false;
 	bool deathBlow = false;
@@ -111,6 +114,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("defenderBonuses", defenderBonuses, "Bonus types the defender carries.");
 		s("chargeDistance", chargeDistance, "Hexes crossed to reach the target, which is what jousting scales with.");
 		s("shooting", shooting, "Whether the blow is a shot.");
+		s("physicalDamage", physicalDamage, "Whether this attack deals physical creature damage.");
 		s("targetedRangedCommandPercent", targetedRangedCommandPercent, "Target-specific additive ranged premium.");
 		s("targetedRangedCommand", targetedRangedCommand, "Whether Focus Fire halves range and obstacle penalties for this primary shot.");
 		s("luckyRangedDefenseIgnorePercent", luckyRangedDefenseIgnorePercent,

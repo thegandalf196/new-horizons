@@ -2,6 +2,11 @@ local Base = require("spells/spellEffect")
 local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
+local function isPhantomUnitCaster(mechanics)
+	local caster = mechanics:getUnitCaster()
+	return caster ~= nil and caster:getPhantomInitialIntegrity() > 0
+end
+
 function Script:summonedEffectValue(mechanics)
 	local effectPower = mechanics:getEffectPower()
 	local rawEffectPower = mechanics:calculateRawEffectValue(0, effectPower)
@@ -34,6 +39,11 @@ end
 --- if no valid targets exist, script needs to call `problem:add`
 --- to explain the reason to the player
 function Script:applicableGeneral(mechanics, problem)
+	if isPhantomUnitCaster(mechanics) then
+		problem:addGeneric(mechanics)
+		return false
+	end
+
 	local creature = LIBRARY:getCreatureByName(self.id)
 
 	if self:summonedCreatureAmount(mechanics) == 0 then
@@ -78,9 +88,31 @@ function Script:applicableGeneral(mechanics, problem)
 	return true
 end
 
+function Script:applicableTarget(mechanics, problem, target)
+	if isPhantomUnitCaster(mechanics) then
+		problem:addGeneric(mechanics)
+		return false
+	end
+	return true
+end
+
+function Script:filterTarget(mechanics, target)
+	if isPhantomUnitCaster(mechanics) then return {} end
+	return target
+end
+
+function Script:getHealthChange(mechanics, spellTarget)
+	if isPhantomUnitCaster(mechanics) then
+		return { hpDelta = 0, unitsDelta = 0 }
+	end
+	return Base.getHealthChange(self, mechanics, spellTarget)
+end
+
 --- Actually casts the spells and applies all changes caused by spell
 --- use `server` parameter to apply changes on specified target(s)
 function Script:apply(mechanics, server, target)
+	if isPhantomUnitCaster(mechanics) then return end
+
 	local creature = LIBRARY:getCreatureByName(self.id)
 	local battle   = mechanics:getBattle()
 
@@ -115,6 +147,8 @@ end
 --- for example, area damage spells should locate all units on affected hexes
 --- and return list of affected units
 function Script:transformTarget(mechanics, aimPoint, spellTarget)
+	if isPhantomUnitCaster(mechanics) then return {} end
+
 	local creature = LIBRARY:getCreatureByName(self.id)
 	local sameSummoned = mechanics:getBattle():getUnitsIf(function(unit)
 		return (unit:getOwner() == mechanics:getCasterColor())
