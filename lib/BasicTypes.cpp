@@ -90,7 +90,10 @@ int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList) const
 
 	bonusList = getBonusBearer()->getBonusesOfType(BonusType::MORALE);
 
-	return std::clamp(bonusList->totalValue(), maxBadMorale, maxGoodMorale);
+	int result = std::clamp(bonusList->totalValue(), maxBadMorale, maxGoodMorale);
+	if(getBonusBearer()->hasBonusOfType(BonusType::MINIMUM_MORALE))
+		result = std::max(result, getBonusBearer()->valOfBonuses(BonusType::MINIMUM_MORALE));
+	return std::clamp(result, maxBadMorale, maxGoodMorale);
 }
 
 int AFactionMember::luckValAndBonusList(TConstBonusListPtr & bonusList) const

@@ -385,6 +385,7 @@ CUnitState::CUnitState():
 	initiativeBasePerTurn(this, Selector::type()(BonusType::STACKS_INITIATIVE_BASE), BonusCacheMode::VALUE),
 	initiativeBasePresencePerTurn(this, Selector::type()(BonusType::STACKS_INITIATIVE_BASE), BonusCacheMode::PRESENCE),
 	initiativePercentPerTurn(this, Selector::type()(BonusType::STACKS_INITIATIVE), BonusCacheMode::VALUE),
+	initiativeFlatPerTurn(this, Selector::type()(BonusType::STACKS_INITIATIVE_FLAT), BonusCacheMode::VALUE),
 	stackSpeedPerTurn(this, Selector::type()(BonusType::STACKS_SPEED), BonusCacheMode::VALUE),
 	movementRangePerTurn(this, Selector::type()(BonusType::STACKS_MOVEMENT_RANGE), BonusCacheMode::VALUE),
 	immobilizedPerTurn(this, Selector::type()(BonusType::SIEGE_WEAPON).Or(Selector::type()(BonusType::BIND_EFFECT)), BonusCacheMode::PRESENCE),
@@ -664,7 +665,7 @@ int32_t CUnitState::getInitiative(int turn) const
 		? initiativeBasePerTurn.getValue(turn)
 		: speed;
 	const int64_t percent = std::max<int64_t>(0, 100 + initiativePercentPerTurn.getValue(turn));
-	return static_cast<int32_t>(baseInitiative * percent / 100);
+	return static_cast<int32_t>(baseInitiative * percent / 100 + initiativeFlatPerTurn.getValue(turn));
 }
 
 ui32 CUnitState::getMovementRange(int turn) const

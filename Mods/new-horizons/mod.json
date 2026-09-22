@@ -5864,7 +5864,7 @@
 								"requires": "advanced",
 								"description": "If the Gate is placed adjacent to another friendly Inferno stack, the gated stack gains +2 Initiative during its first round on the battlefield.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "If the Gate is placed adjacent to another friendly Inferno stack, the gated stack gains +2 Initiative during its first round on the battlefield."
 								}
 							},
@@ -5884,7 +5884,7 @@
 								"requires": "advanced",
 								"description": "Gated stacks treat negative Morale as 0 during the round in which they arrive.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Gated stacks treat negative Morale as 0 during the round in which they arrive."
 								}
 							},
@@ -5904,7 +5904,7 @@
 								"requires": "expert",
 								"description": "After a victorious combat, 50% of casualties suffered specifically by gated Core and Elite reserve stacks are restored to the Demonic Reserve, rounded down.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After a victorious combat, 50% of casualties suffered specifically by gated Core and Elite reserve stacks are restored to the Demonic Reserve, rounded down."
 								}
 							}

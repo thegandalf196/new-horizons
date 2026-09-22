@@ -367,13 +367,27 @@ void BattleResultProcessor::endBattleConfirm(const CBattleInfoCallback & battle)
 				&& side.gatedDemonicStacks.empty() && hero->getDemonicReserve().empty())
 				continue;
 			auto reserve = side.demonicReserve;
+			const bool endlessLegion = !finishingBattle->isDraw() && finishingBattle->winnerSide == sideId
+				&& hero->hasActivePerk("new-horizons:demonicGating",
+					"new-horizons:demonicGating.endlessLegion");
 			for(const auto & pending : side.pendingDemonicGates)
 				reserve[pending.creature] += pending.count;
 			for(const auto & gated : side.gatedDemonicStacks)
 			{
 				const auto * stack = battle.battleGetStackByID(gated.unitId, false);
-				if(stack && stack->alive() && stack->getCount() > 0)
-					reserve[gated.creature] += stack->getCount();
+				const TQuantity survivors = stack && stack->alive() ? stack->getCount() : 0;
+				if(survivors > 0)
+					reserve[gated.creature] += survivors;
+				if(endlessLegion)
+				{
+					const auto category = battle.battleGetCreatureCategory(gated.creature);
+					if(category && category->category != newHorizonsCreatures::CreatureCategory::CHAMPION)
+					{
+						const TQuantity restored = gated.endlessLegionRestoration(survivors);
+						if(restored > 0)
+							reserve[gated.creature] += restored;
+					}
+				}
 			}
 			SetNewHorizonsDemonicReserve update;
 			update.heroId = hero->id;

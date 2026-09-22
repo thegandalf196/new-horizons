@@ -220,6 +220,8 @@ class JsonNode;
 	BONUS_NAME(LEADERSHIP) /*permanent New Horizons hero Leadership training*/ \
 	BONUS_NAME(STACKS_INITIATIVE_BASE) /*base battle initiative; falls back to STACKS_SPEED when absent*/ \
 	BONUS_NAME(STACKS_MOVEMENT_RANGE) /*additive movement range; never contributes to battle initiative*/ \
+	BONUS_NAME(STACKS_INITIATIVE_FLAT) /*flat points added after percentage initiative modifiers*/ \
+	BONUS_NAME(MINIMUM_MORALE) /*minimum final morale while present; value is the floor*/ \
 
 	/* end of list */
 

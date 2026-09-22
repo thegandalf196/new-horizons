@@ -298,6 +298,7 @@ private:
 	BonusCachePerTurn initiativeBasePerTurn;
 	BonusCachePerTurn initiativeBasePresencePerTurn;
 	BonusCachePerTurn initiativePercentPerTurn;
+	BonusCachePerTurn initiativeFlatPerTurn;
 	BonusCachePerTurn stackSpeedPerTurn;
 	BonusCachePerTurn movementRangePerTurn;
 	BonusCachePerTurn immobilizedPerTurn;

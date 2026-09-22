@@ -45,11 +45,14 @@ protected:
 		return BattleHex();
 	}
 
-	void grantGatingPerk(const std::string & perkId)
+	void grantGatingPerk(const std::string & perkId, int rank = MasteryLevel::BASIC)
 	{
+		attackerSideHero->setSecSkillLevel(
+			SecondarySkill(SecondarySkill::decode("new-horizons:demonicGating")),
+			rank, ChangeValueMode::ABSOLUTE);
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
 		state.selected.clear();
-		state.select("new-horizons:demonicGating", perkId, MasteryLevel::BASIC);
+		state.select("new-horizons:demonicGating", perkId, rank);
 		ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:demonicGating", perkId));
 	}
 
@@ -231,4 +234,76 @@ TEST_F(NewHorizonsDemonicGatingTest, HellfireArrivalDealsFifteenPercentAggregate
 	ASSERT_EQ(server.injuries.size(), 1u);
 	ASSERT_EQ(server.injuries.front().stacks.size(), 1u);
 	EXPECT_EQ(server.injuries.front().stacks.front().damageAmount, expected);
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, InfernalBeaconAddsTwoFlatInitiativeBesideInfernoAlly)
+{
+	grantGatingPerk("new-horizons:demonicGating.infernalBeacon", MasteryLevel::ADVANCED);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const int32_t ordinaryInitiative = active->getInitiative();
+	const BattleHex destination = gateHexAtDistance(active, 1, 1);
+	ASSERT_TRUE(destination.isAvailable());
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(destination);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	endRound();
+
+	const auto gated = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSlot() == SlotID::SUMMONED_SLOT_PLACEHOLDER
+			&& stack->unitSide() == BattleSide::ATTACKER;
+	});
+	ASSERT_EQ(gated.size(), 1u);
+	EXPECT_EQ(gated.front()->getInitiative(), ordinaryInitiative + 2);
+	const auto bonus = gated.front()->getFirstBonus(Selector::type()(BonusType::STACKS_INITIATIVE_FLAT));
+	ASSERT_NE(bonus, nullptr);
+	EXPECT_EQ(bonus->turnsRemain, 1);
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, ReserveDisciplineFloorsNegativeArrivalMoraleAtZero)
+{
+	grantGatingPerk("new-horizons:demonicGating.reserveDiscipline", MasteryLevel::ADVANCED);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const BattleHex destination = legalGateHex(active);
+	ASSERT_TRUE(destination.isAvailable());
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(destination);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	endRound();
+
+	const auto gated = battle()->battleGetStacksIf([](const CStack * stack)
+	{
+		return stack->unitSlot() == SlotID::SUMMONED_SLOT_PLACEHOLDER
+			&& stack->unitSide() == BattleSide::ATTACKER;
+	});
+	ASSERT_EQ(gated.size(), 1u);
+	auto * gatedStack = const_cast<CStack *>(gated.front());
+	gatedStack->addNewBonus(std::make_shared<Bonus>(
+		BonusDuration::ONE_BATTLE, BonusType::MORALE, BonusSource::OTHER, -3, BonusSourceID()));
+	EXPECT_EQ(gatedStack->moraleVal(), 0);
+	const auto floor = gatedStack->getFirstBonus(Selector::type()(BonusType::MINIMUM_MORALE));
+	ASSERT_NE(floor, nullptr);
+	EXPECT_EQ(floor->turnsRemain, 1);
+}
+
+TEST(NewHorizonsDemonicGatingRules, EndlessLegionRestoresHalfOfGatedCasualtiesRoundedDown)
+{
+	SideInBattle::GatedDemonicStack gated;
+	gated.initialCount = 12;
+	EXPECT_EQ(gated.endlessLegionRestoration(12), 0);
+	EXPECT_EQ(gated.endlessLegionRestoration(5), 3);
+	EXPECT_EQ(gated.endlessLegionRestoration(0), 6);
+	EXPECT_EQ(gated.endlessLegionRestoration(20), 0);
 }

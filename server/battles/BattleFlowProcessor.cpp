@@ -354,6 +354,10 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			"new-horizons:demonicGating", "new-horizons:demonicGating.swiftGate");
 		const bool hellfireArrival = hero && hero->hasActivePerk(
 			"new-horizons:demonicGating", "new-horizons:demonicGating.hellfireArrival");
+		const bool infernalBeacon = hero && hero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.infernalBeacon");
+		const bool reserveDiscipline = hero && hero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.reserveDiscipline");
 
 		BattleDemonicGatingStateChanged update;
 		update.battleID = concrete->getBattleID();
@@ -417,10 +421,44 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			info.save(add.changedStacks.back().data);
 			gameHandler->sendAndApply(add);
 			update.gated.push_back({info.id, gate.creature, gate.count});
+			const auto * gated = battle.battleGetStackByID(info.id, false);
+
+			std::vector<Bonus> arrivalBonuses;
+			if(infernalBeacon && gated)
+			{
+				const bool adjacentInfernoAlly = std::ranges::any_of(battle.battleAdjacentUnits(gated), [&battle, sideId, info](const auto * adjacent)
+				{
+					return adjacent && adjacent->alive() && adjacent->unitId() != info.id
+						&& battle.playerToSide(battle.battleGetOwner(adjacent)) == sideId
+						&& adjacent->creatureId().toCreature()->getFactionID() == FactionID::INFERNO;
+				});
+				if(adjacentInfernoAlly)
+				{
+					Bonus initiative(BonusDuration::N_TURNS, BonusType::STACKS_INITIATIVE_FLAT,
+						BonusSource::HERO_SPECIAL, 2, BonusSourceID(hero->id));
+					initiative.turnsRemain = endOfRoundPhase ? 2 : 1;
+					initiative.description.appendRawString("Infernal Beacon");
+					arrivalBonuses.push_back(std::move(initiative));
+				}
+			}
+			if(reserveDiscipline && gated)
+			{
+				Bonus moraleFloor(BonusDuration::N_TURNS, BonusType::MINIMUM_MORALE,
+					BonusSource::HERO_SPECIAL, 0, BonusSourceID(hero->id));
+				moraleFloor.turnsRemain = endOfRoundPhase ? 2 : 1;
+				moraleFloor.description.appendRawString("Reserve Discipline");
+				arrivalBonuses.push_back(std::move(moraleFloor));
+			}
+			if(!arrivalBonuses.empty())
+			{
+				SetStackEffect effect;
+				effect.battleID = concrete->getBattleID();
+				effect.toAdd.emplace_back(info.id, std::move(arrivalBonuses));
+				gameHandler->sendAndApply(effect);
+			}
 
 			if(hellfireArrival)
 			{
-				const auto * gated = battle.battleGetStackByID(info.id, false);
 				std::vector<const battle::Unit *> enemies;
 				if(gated)
 					for(const auto * adjacent : battle.battleAdjacentUnits(gated))

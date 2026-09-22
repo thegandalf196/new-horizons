@@ -49,6 +49,11 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		CreatureID creature;
 		TQuantity initialCount = 0;
 
+		TQuantity endlessLegionRestoration(TQuantity survivors) const
+		{
+			return std::max<TQuantity>(0, initialCount - std::max<TQuantity>(0, survivors)) / 2;
+		}
+
 		auto operator<=>(const GatedDemonicStack &) const = default;
 
 		template <typename Handler> void serialize(Handler & h)

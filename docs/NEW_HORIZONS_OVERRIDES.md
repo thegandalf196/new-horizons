@@ -204,3 +204,20 @@ requiring the complete source document to be replaced.
   Focused live-content tests cover both sides of Wide Gate authority, Swift timing,
   exact Hellfire damage, base arrival, invalid-action atomicity, reserve transfers,
   and wire compatibility.
+
+### 2026-09-22 — Second Demonic Gating perk tranche
+
+- **Status:** Accepted
+- **Rule:** Infernal Beacon grants exactly +2 flat Initiative during an arriving
+  stack's first actionable round when its Gate is adjacent to another friendly
+  Inferno stack. Reserve Discipline floors negative Morale at 0 only during that
+  arrival round; it does not suppress positive Morale. Endless Legion restores
+  half of gated Core and Elite casualties after victory, rounded down, and never
+  restores Champion casualties or losses suffered by the defeated side.
+- **Implementation evidence:** Reusable `STACKS_INITIATIVE_FLAT` and
+  `MINIMUM_MORALE` timed bonuses preserve speed/initiative separation and ordinary
+  positive Morale. The Gate resolver applies them with duration adjusted for
+  ordinary versus Swift arrival timing. Post-battle reserve reconciliation uses
+  each gated stack's authoritative initial and surviving counts and the saved
+  creature category. Live-content integration tests cover Beacon and Reserve
+  Discipline; exact Endless Legion rounding has direct rules coverage.
