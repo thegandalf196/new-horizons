@@ -67,6 +67,14 @@ public:
 		int64_t healthRestored = 0;
 	};
 
+	struct AddedUnit
+	{
+		uint32_t unitId;
+		CreatureID creature;
+		int32_t count;
+		bool clone;
+	};
+
 	EffectPacketRecorder(ServerCallback & delegate, const IBattleInfoCallback & battle)
 		: delegate(delegate)
 		, battle(battle)
@@ -111,6 +119,19 @@ public:
 
 	const std::vector<BattleStackAttacked> & injuries() const { return recordedInjuries; }
 	const std::vector<HealingChange> & healingChanges() const { return recordedHealingChanges; }
+	std::vector<AddedUnit> addedUnits() const
+	{
+		std::vector<AddedUnit> result;
+		result.reserve(addedUnitIds.size());
+		for(const auto unitId : addedUnitIds)
+		{
+			const auto * unit = battle.battleGetUnitByID(unitId);
+			if(!unit || !unit->alive() || unit->isGhost())
+				continue;
+			result.push_back({unitId, unit->creatureId(), unit->getCount(), unit->isClone()});
+		}
+		return result;
+	}
 	bool touchedStackEffects() const { return stackEffectsTouched; }
 	const std::vector<EffectChange> & effectChanges()
 	{
@@ -155,6 +176,7 @@ private:
 	const IBattleInfoCallback & battle;
 	std::vector<BattleStackAttacked> recordedInjuries;
 	std::vector<HealingChange> recordedHealingChanges;
+	std::vector<uint32_t> addedUnitIds;
 	std::vector<EffectChange> recordedEffectChanges;
 	std::vector<std::pair<uint32_t, std::vector<EffectState>>> initialEffectStates;
 	bool effectChangesFinalized = false;
@@ -179,6 +201,9 @@ private:
 		std::vector<uint32_t> updatedUnits;
 		for(const auto & change : pack.changedStacks)
 		{
+			if(change.operation == UnitChanges::EOperation::ADD
+				&& !vstd::contains(addedUnitIds, change.id))
+				addedUnitIds.push_back(change.id);
 			if(change.operation != UnitChanges::EOperation::UPDATE || change.healthDelta <= 0
 				|| vstd::contains(updatedUnits, change.id))
 				continue;
@@ -892,9 +917,38 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		else
 		{
 			bool wroteOutcome = false;
+			bool wroteCreation = false;
+			const auto addedUnits = effectRecorder.addedUnits();
+			const bool ordinarySummon = getSpellId() == SpellID::SUMMON_FIRE_ELEMENTAL
+				|| getSpellId() == SpellID::SUMMON_EARTH_ELEMENTAL
+				|| getSpellId() == SpellID::SUMMON_WATER_ELEMENTAL
+				|| getSpellId() == SpellID::SUMMON_AIR_ELEMENTAL;
+			if(ordinarySummon || getSpellId() == SpellID::CLONE)
+			{
+				bool wroteAddedUnit = false;
+				for(const auto & added : addedUnits)
+				{
+					if(getSpellId() == SpellID::CLONE && !added.clone)
+						continue;
+					if(wroteAddedUnit)
+						line.appendRawString("; ");
+					else
+						line.appendRawString(", ");
+					line.appendRawString(getSpellId() == SpellID::CLONE ? "creating a clone of " : "summoning ");
+					line.appendNumber(added.count);
+					line.appendRawString(" ");
+					line.appendName(added.creature, added.count);
+					wroteAddedUnit = true;
+				}
+				if(wroteAddedUnit)
+				{
+					wroteOutcome = true;
+					wroteCreation = true;
+				}
+			}
 			if(!damagedTargets.empty())
 			{
-				line.appendRawString(", dealing ");
+				line.appendRawString(wroteOutcome ? ", and dealing " : ", dealing ");
 				for(size_t index = 0; index < damagedTargets.size(); ++index)
 				{
 					const auto & outcome = damagedTargets[index];
@@ -983,7 +1037,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			}
 			if(wroteStatusChange)
 				wroteOutcome = true;
-			else if(effectRecorder.touchedStackEffects())
+			else if(effectRecorder.touchedStackEffects() && !wroteCreation)
 			{
 				line.appendRawString(wroteOutcome ? ", and causing no status change" : ", causing no status change");
 				wroteOutcome = true;

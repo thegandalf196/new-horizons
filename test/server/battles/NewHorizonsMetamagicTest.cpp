@@ -63,6 +63,8 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
 		attackerSideHero->addSpellToSpellbook(SpellID::CURE);
 		attackerSideHero->addSpellToSpellbook(SpellID::RESURRECTION);
+		attackerSideHero->addSpellToSpellbook(SpellID::CLONE);
+		attackerSideHero->addSpellToSpellbook(SpellID::SUMMON_AIR_ELEMENTAL);
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("core:iceBolt")));
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("new-horizons:counterspell")));
 		attackerSideHero->mana = 1000;
@@ -129,6 +131,16 @@ protected:
 		action.metamagicFollowup = followup;
 		action.aimToHex(target);
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
+	}
+
+	void castNoTargetFollowupDirect(SpellID spell, bool counterspelled = false)
+	{
+		spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+		event.setSpellLevel(3);
+		event.setMetamagicFollowup(true);
+		if(counterspelled)
+			event.setCounterspell(BattleSide::DEFENDER, true);
+		event.cast(gameHandler->spellcastEnvironment(), {});
 	}
 
 	static std::string creatureName(const CStack * unit, int32_t count)
@@ -491,6 +503,90 @@ TEST_F(NewHorizonsMetamagicTest, CounterspelledHealingFollowupRecordsNoHealingOu
 	{
 		return line.find("casts a second Cure through Metamagic, but the spell was counterspelled.")
 			!= std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupSummonLogUsesFinalAuthoritativeIdentityAndCountOnce)
+{
+	prepare(1);
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(),
+		BonusSubtypeID(SpellSchool::ANY)));
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	castNoTargetFollowupDirect(SpellID::SUMMON_AIR_ELEMENTAL);
+
+	const CStack * summoned = nullptr;
+	for(const auto * unit : battle()->battleGetAllStacks())
+		if(unit->unitSide() == BattleSide::ATTACKER && unit->isSummoned() && !unit->isClone())
+			summoned = unit;
+	ASSERT_NE(summoned, nullptr);
+	ASSERT_GT(summoned->getCount(), 0);
+
+	const auto casts = server.castsOf(SpellID::SUMMON_AIR_ELEMENTAL);
+	ASSERT_EQ(casts.size(), 1u);
+	const auto expected = "casts a second Air Elemental through Metamagic, summoning "
+		+ std::to_string(summoned->getCount()) + " " + creatureName(summoned, summoned->getCount()) + ".";
+	EXPECT_EQ(std::ranges::count_if(casts.front().logLines, [&](const std::string & line)
+	{
+		return line.find("through Metamagic, summoning") != std::string::npos;
+	}), 1);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [&](const std::string & line)
+	{
+		return line.find(expected) != std::string::npos;
+	})) << ::testing::PrintToString(casts.front().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupCloneLogUsesFinalCloneIdentityAndCountOnce)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::CLONE, attacker, true));
+
+	const CStack * clone = nullptr;
+	for(const auto * unit : battle()->battleGetAllStacks())
+		if(unit->unitSide() == BattleSide::ATTACKER && unit->isClone())
+			clone = unit;
+	ASSERT_NE(clone, nullptr);
+	ASSERT_EQ(clone->creatureId(), attacker->creatureId());
+	ASSERT_EQ(clone->getCount(), attacker->getCount());
+
+	const auto casts = server.castsOf(SpellID::CLONE);
+	ASSERT_EQ(casts.size(), 1u);
+	const auto expected = "casts a second Clone through Metamagic, creating a clone of "
+		+ std::to_string(clone->getCount()) + " " + creatureName(clone, clone->getCount()) + ".";
+	EXPECT_EQ(std::ranges::count_if(casts.front().logLines, [&](const std::string & line)
+	{
+		return line.find("through Metamagic, creating a clone of") != std::string::npos;
+	}), 1);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [&](const std::string & line)
+	{
+		return line.find(expected) != std::string::npos;
+	})) << ::testing::PrintToString(casts.front().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, CounterspelledSummonFollowupAddsNoUnitOrSummonOutcome)
+{
+	prepare(1);
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(),
+		BonusSubtypeID(SpellSchool::ANY)));
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto unitCountBefore = battle()->battleGetAllStacks().size();
+	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
+	defenderSideHero->mana = 1000;
+	castNoTargetFollowupDirect(SpellID::SUMMON_AIR_ELEMENTAL, true);
+	EXPECT_EQ(battle()->battleGetAllStacks().size(), unitCountBefore);
+
+	const auto casts = server.castsOf(SpellID::SUMMON_AIR_ELEMENTAL);
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("casts a second Air Elemental through Metamagic, but the spell was counterspelled.")
+			!= std::string::npos;
+	}));
+	EXPECT_TRUE(std::ranges::none_of(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("summoning") != std::string::npos;
 	}));
 }
 

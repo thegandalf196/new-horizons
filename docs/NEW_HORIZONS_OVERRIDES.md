@@ -132,10 +132,14 @@ requiring the complete source document to be replaced.
   mixed damage/status results, or an actual no-op; counterspelled effects cannot
   mutate the target. Healing and Resurrection report realized restored health and
   resurrected creature counts from authoritative unit-state updates, including
-  capped healing, partial casualties, and Counterspell suppression. Behavioral coverage is in
+  capped healing, partial casualties, and Counterspell suppression. Elemental
+  summons and Clone report the final authoritative creature identity and count;
+  Clone is classified only after its construction update marks the new stack as
+  a clone, and counterspelled creation emits no false outcome. Behavioral coverage is in
   `NewHorizonsMetamagicTest.FollowupLogNamesSecondAndThirdMagicArrowDamage`,
   `NewHorizonsMetamagicTest.FollowupLogReportsAffectedNonDamageOutcome`, and
-  `NewHorizonsMetamagicTest.FollowupLogDoesNotCallSuccessfulObstacleSpellNoEffect`.
+  `NewHorizonsMetamagicTest.FollowupLogDoesNotCallSuccessfulObstacleSpellNoEffect`,
+  plus the focused Summon and Clone outcome cases in that suite.
 
 ### 2026-09-21 — Tower class and creature presentation
 
