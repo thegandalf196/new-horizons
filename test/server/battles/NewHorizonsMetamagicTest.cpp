@@ -57,6 +57,8 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
 		attackerSideHero->addSpellToSpellbook(SpellID::BLESS);
 		attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+		attackerSideHero->addSpellToSpellbook(SpellID::FIREBALL);
+		attackerSideHero->addSpellToSpellbook(SpellID::CHAIN_LIGHTNING);
 		attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("new-horizons:counterspell")));
 		attackerSideHero->mana = 1000;
@@ -112,6 +114,25 @@ protected:
 		for(const auto hex : hexes)
 			action.aimToHex(BattleHex(hex));
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
+	}
+
+	bool castAtHex(SpellID spell, BattleHex target, bool followup = false)
+	{
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = spell;
+		action.metamagicFollowup = followup;
+		action.aimToHex(target);
+		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
+	}
+
+	static std::string creatureName(const CStack * unit, int32_t count)
+	{
+		MetaString text;
+		text.appendRawString("%s");
+		unit->addNameReplacement(text, count);
+		return text.toString(LIBRARY->staticTexts());
 	}
 
 	int followupPower(SpellID spell, const CStack * target, bool grand = false)
@@ -331,10 +352,126 @@ TEST_F(NewHorizonsMetamagicTest, FollowupLogNamesSecondAndThirdMagicArrowDamage)
 	};
 	EXPECT_TRUE(contains(arrows[0], "casts a second Magic Arrow through Metamagic, dealing"));
 	EXPECT_TRUE(contains(arrows[0], "dealing " + std::to_string(arrows[0].damage) + " damage"));
-	EXPECT_TRUE(contains(arrows[0], "killing " + std::to_string(arrows[0].killed)));
+	EXPECT_TRUE(contains(arrows[0], "damage to Pikemen (" + std::to_string(arrows[0].killed) + " killed)"));
 	EXPECT_TRUE(contains(arrows[1], "casts a third Magic Arrow through Metamagic, dealing"));
 	EXPECT_TRUE(contains(arrows[1], "dealing " + std::to_string(arrows[1].damage) + " damage"));
-	EXPECT_TRUE(contains(arrows[1], "killing " + std::to_string(arrows[1].killed)));
+	EXPECT_TRUE(contains(arrows[1], "damage to Pikemen (" + std::to_string(arrows[1].killed) + " killed)"));
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupDamageLogUsesAuthoritativePacketValuesAcrossRebirth)
+{
+	prepare(1);
+	defender->addNewBonus(std::make_shared<Bonus>(
+		BonusDuration::PERMANENT, BonusType::REBIRTH, BonusSource::OTHER, 100, BonusSourceID()));
+	defender->addNewBonus(std::make_shared<Bonus>(
+		BonusDuration::PERMANENT, BonusType::CASTS, BonusSource::OTHER, 1, BonusSourceID()));
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender, true));
+	const auto casts = server.castsOf(SpellID::MAGIC_ARROW);
+	ASSERT_EQ(casts.size(), 1u);
+	ASSERT_GT(casts.front().damage, 0);
+	ASSERT_GT(casts.front().killed, 0u);
+	ASSERT_TRUE(defender->alive());
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [&](const std::string & line)
+	{
+		const auto packetOutcome = std::to_string(casts.front().damage) + " damage to Pikemen ("
+			+ std::to_string(casts.front().killed) + " killed)";
+		return line.find(packetOutcome) != std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupChainLightningLogNamesEveryDamagedStack)
+{
+	prepare(1);
+	addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(rightHex + 2), 100);
+	addStack(BattleSide::DEFENDER, creatureByName("core:griffin"), BattleHex(rightHex + 3), 100);
+	addStack(BattleSide::DEFENDER, creatureByName("core:monk"), BattleHex(rightHex + 4), 100);
+
+	struct Before
+	{
+		const CStack * unit;
+		int64_t health;
+		int32_t count;
+	};
+	std::vector<Before> before;
+	for(const auto * unit : battle()->battleGetAllStacks(true))
+		before.push_back({unit, unit->getAvailableHealth(), unit->getCount()});
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::CHAIN_LIGHTNING, defender, true));
+	const auto casts = server.castsOf(SpellID::CHAIN_LIGHTNING);
+	ASSERT_EQ(casts.size(), 1u);
+	const auto lineIt = std::ranges::find_if(casts.front().logLines, [](const std::string & candidate)
+	{
+		return candidate.find("through Metamagic, dealing") != std::string::npos;
+	});
+	ASSERT_NE(lineIt, casts.front().logLines.end());
+	const auto & line = *lineIt;
+
+	int damagedStacks = 0;
+	size_t previousOutcomePosition = 0;
+	for(const auto & injuryPack : server.injuries)
+	{
+		for(const auto & injury : injuryPack.stacks)
+		{
+			if(injury.damageAmount <= 0)
+				continue;
+			const auto snapshot = std::ranges::find(before, injury.stackAttacked,
+				[](const Before & value) { return value.unit->unitId(); });
+			ASSERT_NE(snapshot, before.end());
+			++damagedStacks;
+			const auto outcome = std::to_string(injury.damageAmount) + " damage to "
+				+ creatureName(snapshot->unit, snapshot->count) + " ("
+				+ std::to_string(injury.killedAmount) + " killed)";
+			const auto outcomePosition = line.find(outcome);
+			EXPECT_NE(outcomePosition, std::string::npos) << outcome << " missing from: " << line;
+			if(damagedStacks > 1 && outcomePosition != std::string::npos)
+			{
+				EXPECT_GT(outcomePosition, previousOutcomePosition) << "Target outcomes must retain packet order";
+			}
+			previousOutcomePosition = outcomePosition;
+		}
+	}
+	EXPECT_EQ(damagedStacks, 4);
+}
+
+TEST_F(NewHorizonsMetamagicTest, FollowupAreaDamageLogNamesEveryDamagedStack)
+{
+	prepare(1);
+	const auto * archer = addStack(BattleSide::DEFENDER,
+		creatureByName("core:archer"), BattleHex(rightHex + 1), 100);
+	const auto * griffin = addStack(BattleSide::DEFENDER,
+		creatureByName("core:griffin"), BattleHex(rightHex + GameConstants::BFIELD_WIDTH), 100);
+	const std::array<const CStack *, 4> targets{attacker, defender, archer, griffin};
+	std::map<uint32_t, std::pair<int64_t, int32_t>> before;
+	for(const auto * target : targets)
+		before[target->unitId()] = {target->getAvailableHealth(), target->getCount()};
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(castAtHex(SpellID::FIREBALL, defender->getPosition(), true));
+	const auto casts = server.castsOf(SpellID::FIREBALL);
+	ASSERT_EQ(casts.size(), 1u);
+	const auto lineIt = std::ranges::find_if(casts.front().logLines, [](const std::string & candidate)
+	{
+		return candidate.find("through Metamagic, dealing") != std::string::npos;
+	});
+	ASSERT_NE(lineIt, casts.front().logLines.end());
+
+	int damagedStacks = 0;
+	for(const auto * target : targets)
+	{
+		const auto [health, count] = before.at(target->unitId());
+		const auto damage = health - target->getAvailableHealth();
+		if(damage <= 0)
+			continue;
+		++damagedStacks;
+		const auto killed = count - target->getCount();
+		const auto outcome = std::to_string(damage) + " damage to "
+			+ creatureName(target, count) + " (" + std::to_string(killed) + " killed)";
+		EXPECT_NE(lineIt->find(outcome), std::string::npos) << outcome << " missing from: " << *lineIt;
+	}
+	EXPECT_EQ(damagedStacks, 4);
 }
 
 TEST_F(NewHorizonsMetamagicTest, FollowupLogReportsAffectedNonDamageOutcome)
@@ -350,6 +487,45 @@ TEST_F(NewHorizonsMetamagicTest, FollowupLogReportsAffectedNonDamageOutcome)
 	EXPECT_TRUE(std::any_of(slows.front().logLines.begin(), slows.front().logLines.end(), [](const std::string & line)
 	{
 		return line.find("casts a second Slow through Metamagic, affecting 1 target.") != std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsMetamagicTest, ResistedFollowupKeepsResistanceOutcomeWithoutDamage)
+{
+	prepare(1);
+	// A full 100% bonus makes the target invalid before casting; the fixture's
+	// fixed RNG seed makes this 99% resistance outcome deterministic.
+	defender->addNewBonus(std::make_shared<Bonus>(
+		BonusDuration::PERMANENT, BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 99, BonusSourceID()));
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender, true));
+
+	const auto casts = server.castsOf(SpellID::MAGIC_ARROW);
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_EQ(casts.front().damage, 0);
+	EXPECT_EQ(casts.front().killed, 0u);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("casts a second Magic Arrow through Metamagic, resisted by 1 target.") != std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsMetamagicTest, CounterspelledFollowupKeepsCounterspellOutcomeWithoutDamage)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
+	defenderSideHero->mana = 1000;
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender, true));
+
+	const auto casts = server.castsOf(SpellID::MAGIC_ARROW);
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_TRUE(casts.front().announcement.counterspellNegated);
+	EXPECT_EQ(casts.front().damage, 0);
+	EXPECT_EQ(casts.front().killed, 0u);
+	EXPECT_TRUE(std::ranges::any_of(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("casts a second Magic Arrow through Metamagic, but the spell was counterspelled.") != std::string::npos;
 	}));
 }
 

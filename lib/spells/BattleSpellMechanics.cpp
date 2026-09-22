@@ -29,6 +29,57 @@
 namespace spells
 {
 
+namespace
+{
+
+class EffectPacketRecorder final : public ServerCallback
+{
+public:
+	explicit EffectPacketRecorder(ServerCallback & delegate)
+		: delegate(delegate)
+	{
+	}
+
+	void complain(const std::string & problem) override { delegate.complain(problem); }
+	bool describeChanges() const override { return delegate.describeChanges(); }
+	vstd::RNG * getRNG() override { return delegate.getRNG(); }
+	bool rollCombatAbility(const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance) override
+	{
+		return delegate.rollCombatAbility(battle, actor, percentageChance);
+	}
+
+	void apply(CPackForClient & pack) override
+	{
+		if(const auto * injured = dynamic_cast<const StacksInjured *>(&pack))
+			record(*injured);
+		delegate.apply(pack);
+	}
+	void apply(BattleLogMessage & pack) override { delegate.apply(pack); }
+	void apply(BattleStackMoved & pack) override { delegate.apply(pack); }
+	void apply(BattleUnitsChanged & pack) override { delegate.apply(pack); }
+	void apply(SetStackEffect & pack) override { delegate.apply(pack); }
+	void apply(StacksInjured & pack) override
+	{
+		record(pack);
+		delegate.apply(pack);
+	}
+	void apply(BattleObstaclesChanged & pack) override { delegate.apply(pack); }
+	void apply(CatapultAttack & pack) override { delegate.apply(pack); }
+
+	const std::vector<BattleStackAttacked> & injuries() const { return recordedInjuries; }
+
+private:
+	ServerCallback & delegate;
+	std::vector<BattleStackAttacked> recordedInjuries;
+
+	void record(const StacksInjured & pack)
+	{
+		recordedInjuries.insert(recordedInjuries.end(), pack.stacks.begin(), pack.stacks.end());
+	}
+};
+
+}
+
 namespace SRSLPraserHelpers
 {
 	static int XYToHex(int x, int y)
@@ -415,8 +466,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		: 0;
 	struct FollowupTargetSnapshot
 	{
-		const battle::Unit * unit = nullptr;
-		int64_t availableHealth = 0;
+		uint32_t unitId = std::numeric_limits<uint32_t>::max();
+		CreatureID creature;
 		int32_t count = 0;
 	};
 	std::vector<FollowupTargetSnapshot> followupTargets;
@@ -494,7 +545,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		{
 			if(!unit)
 				continue;
-			followupTargets.push_back({unit, unit->getAvailableHealth(), unit->getCount()});
+			followupTargets.push_back({unit->unitId(), unit->creatureId(), unit->getCount()});
 		}
 	}
 
@@ -530,22 +581,45 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 
 	server->apply(sc);
 
+	EffectPacketRecorder effectRecorder(*server);
 	if(!isCounterspellNegated())
 	{
 		for(auto & p : effectsToApply)
-			p.first->apply(server, this, p.second);
+			p.first->apply(&effectRecorder, this, p.second);
 	}
 
 	if(logMetamagicFollowup)
 	{
-		int64_t totalDamage = 0;
-		int32_t totalKilled = 0;
-		for(const auto & snapshot : followupTargets)
+		struct FollowupTargetOutcome
 		{
-			if(!snapshot.unit)
+			const FollowupTargetSnapshot * snapshot = nullptr;
+			int64_t damage = 0;
+			int32_t killed = 0;
+		};
+		std::vector<FollowupTargetOutcome> damagedTargets;
+		damagedTargets.reserve(effectRecorder.injuries().size());
+		for(const auto & injury : effectRecorder.injuries())
+		{
+			if(injury.damageAmount <= 0)
 				continue;
-			totalDamage += std::max<int64_t>(0, snapshot.availableHealth - snapshot.unit->getAvailableHealth());
-			totalKilled += std::max<int32_t>(0, snapshot.count - snapshot.unit->getCount());
+			const auto snapshot = std::ranges::find(followupTargets, injury.stackAttacked,
+				&FollowupTargetSnapshot::unitId);
+			if(snapshot == followupTargets.end())
+				continue;
+			const auto existing = std::ranges::find(damagedTargets, &*snapshot,
+				&FollowupTargetOutcome::snapshot);
+			if(existing == damagedTargets.end())
+			{
+				damagedTargets.push_back({
+					&*snapshot,
+					injury.damageAmount,
+					static_cast<int32_t>(injury.killedAmount)});
+			}
+			else
+			{
+				existing->damage += injury.damageAmount;
+				existing->killed += static_cast<int32_t>(injury.killedAmount);
+			}
 		}
 
 		BattleLogMessage metamagicDescription;
@@ -570,16 +644,20 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		{
 			line.appendRawString(", but the spell was counterspelled");
 		}
-		else if(totalDamage > 0)
+		else if(!damagedTargets.empty())
 		{
 			line.appendRawString(", dealing ");
-			line.appendNumber(totalDamage);
-			line.appendRawString(" damage");
-			if(totalKilled > 0)
+			for(size_t index = 0; index < damagedTargets.size(); ++index)
 			{
-				line.appendRawString(" and killing ");
-				line.appendNumber(totalKilled);
-				line.appendRawString(totalKilled == 1 ? " creature" : " creatures");
+				const auto & outcome = damagedTargets[index];
+				if(index > 0)
+					line.appendRawString("; ");
+				line.appendNumber(outcome.damage);
+				line.appendRawString(" damage to ");
+				line.appendName(outcome.snapshot->creature, outcome.snapshot->count);
+				line.appendRawString(" (");
+				line.appendNumber(outcome.killed);
+				line.appendRawString(" killed)");
 			}
 			if(!sc.resistedCres.empty())
 			{

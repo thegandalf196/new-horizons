@@ -125,7 +125,9 @@ requiring the complete source document to be replaced.
   authoritative spell-mechanics path after their effects resolve. The log names
   the casting hero, second/third sequence position, spell, Metamagic cause, and
   damage, kills, resistance, affected-target count, ward creation, or successful
-  non-unit resolution as applicable. Behavioral coverage is in
+  non-unit resolution as applicable. Direct and area damage use the authoritative
+  injury packets to name every affected stack with exact damage and pre-Rebirth
+  casualties in packet order. Behavioral coverage is in
   `NewHorizonsMetamagicTest.FollowupLogNamesSecondAndThirdMagicArrowDamage`,
   `NewHorizonsMetamagicTest.FollowupLogReportsAffectedNonDamageOutcome`, and
   `NewHorizonsMetamagicTest.FollowupLogDoesNotCallSuccessfulObstacleSpellNoEffect`.
