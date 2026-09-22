@@ -12,6 +12,8 @@
 #include "CWindowObject.h"
 #include "../widgets/Images.h"
 
+#include <array>
+
 class CBuilding;
 class CGTownInstance;
 class CSpell;
@@ -328,10 +330,12 @@ class LabeledValue : public CIntObject
 	std::shared_ptr<CLabel> name;
 	std::shared_ptr<CLabel> value;
 	void init(std::string name, std::string descr, int min, int max);
+	void init(std::string name, std::string descr, const std::string & valueText);
 
 public:
 	LabeledValue(Rect size, std::string name, std::string descr, int min, int max);
 	LabeledValue(Rect size, std::string name, std::string descr, int val);
+	LabeledValue(Rect size, std::string name, std::string descr, const std::string & valueText);
 	void hover(bool on) override;
 };
 
@@ -347,15 +351,16 @@ class CFortScreen : public CStatusbarWindow
 		std::shared_ptr<CLabel> availableCount;
 
 		std::vector<std::shared_ptr<LabeledValue>> values;
-		std::shared_ptr<CPicture> icons;
+		std::shared_ptr<CPicture> cardBackground;
 		std::shared_ptr<CAnimImage> buildingIcon;
 		std::shared_ptr<CLabel> buildingName;
-		std::shared_ptr<CLabel> categoryLabel;
+		int cardWidth;
+		int cardHeight;
 
 		const CCreature * getMyCreature();
 		const CBuilding * getMyBuilding();
 	public:
-		RecruitArea(int posX, int posY, const CGTownInstance *town, int level);
+		RecruitArea(int posX, int posY, const CGTownInstance *town, int level, int width = 386, int height = 126);
 
 		void creaturesChangedEventHandler();
 		void hover(bool on) override;
@@ -364,6 +369,7 @@ class CFortScreen : public CStatusbarWindow
 
 	};
 	std::shared_ptr<CLabel> title;
+	std::array<std::shared_ptr<CLabel>, 3> categoryHeaders;
 	std::vector<std::shared_ptr<RecruitArea>> recAreas;
 	std::shared_ptr<CMinorResDataBar> resdatabar;
 	std::shared_ptr<CButton> exit;
