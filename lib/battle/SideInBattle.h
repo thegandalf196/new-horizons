@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <limits>
 
 #include "../GameConstants.h"
@@ -31,16 +32,27 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		BattleHex position;
 		int32_t arrivalRound = 0;
 		uint32_t sourceUnitId = std::numeric_limits<uint32_t>::max();
+		// A Chain Gate token may advance exactly this pending Gate to the end of
+		// the current round.  Keep the fact explicit instead of inferring it from
+		// arrivalRound so later round processing cannot accidentally accelerate a
+		// different Gate.
+		bool chainGateAccelerated = false;
 
 		auto operator<=>(const PendingDemonicGate &) const = default;
 
 		template <typename Handler> void serialize(Handler & h)
 		{
+			if(h.saving && chainGateAccelerated && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
+				throw std::runtime_error("Cannot discard accelerated Chain Gate state");
 			h & creature;
 			h & count;
 			h & position;
 			h & arrivalRound;
 			h & sourceUnitId;
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
+				h & chainGateAccelerated;
+			else if(!h.saving)
+				chainGateAccelerated = false;
 		}
 	};
 	struct GatedDemonicStack
@@ -106,6 +118,18 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	std::map<CreatureID, TQuantity> demonicReserve;
 	std::vector<PendingDemonicGate> pendingDemonicGates;
 	std::vector<GatedDemonicStack> gatedDemonicStacks;
+	// Chain Gate is a single battle-long token.  Keeping it beside the
+	// authoritative gated-stack identities makes the token survive a save/load
+	// without allowing ordinary stacks to qualify by creature or slot alone.
+	bool chainGateArmed = false;
+
+	bool hasChainGateState() const
+	{
+		return chainGateArmed || std::any_of(pendingDemonicGates.begin(), pendingDemonicGates.end(), [](const auto & gate)
+		{
+			return gate.chainGateAccelerated;
+		});
+	}
 
 	void init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town);
 	const CArmedInstance * getArmy() const;
@@ -113,6 +137,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
+			throw std::runtime_error("Cannot discard Chain Gate battle state");
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
 			h & sylvanLuck;
 		else if(!h.saving)
@@ -239,6 +265,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		}
 		else if(!demonicReserve.empty() || !pendingDemonicGates.empty() || !gatedDemonicStacks.empty())
 			throw std::runtime_error("Cannot discard Demonic Gating battle state");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
+			h & chainGateArmed;
+		else if(!h.saving)
+			chainGateArmed = false;
 	}
 
 	void clearMetamagicSequence()

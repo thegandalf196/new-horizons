@@ -20,6 +20,8 @@ KINGDOM = (ROOT / "client/windows/CKingdomInterface.cpp").read_text(encoding="ut
 KINGDOM_HEADER = (ROOT / "client/windows/CKingdomInterface.h").read_text(encoding="utf-8")
 WIKI = (ROOT / "client/windows/wiki/WikiTownContent.cpp").read_text(encoding="utf-8")
 HELPER = (ROOT / "client/windows/NewHorizonsCreatureCategoryUI.h").read_text(encoding="utf-8")
+TOWER_RANKS = (ROOT / "Mods/new-horizons/Content/config/factions/towerCreatureRanks.json").read_text(encoding="utf-8")
+FORT_TEXTS = (ROOT / "config/newHorizonsFortTexts.json").read_text(encoding="utf-8")
 
 
 def require(source: str, fragment: str, message: str) -> None:
@@ -52,9 +54,57 @@ require(CASTLE, "getCreatureCategory", "town dwelling presentation reads saved c
 require(CASTLE, "newHorizonsCreatureCategoryUI::prefix", "town dwelling text is category-aware")
 require(CASTLE, "categoryLabel", "fort recruitment area shows category")
 require(CASTLE_HEADER, "std::shared_ptr<CLabel> categoryLabel", "fort recruitment area owns category label")
-require(CASTLE, "displayLevels", "fort screen keeps model dwelling levels independent from visual order")
-require(CASTLE, "std::stable_sort", "fort screen groups active New Horizons ranks")
-require(CASTLE, "hasCompleteCategoryContext", "legacy/custom towns retain stock fort order")
+require(CASTLE, "hasCompleteCreatureCategoryContext", "legacy/custom towns retain stock fort order")
+require(CASTLE, "if(count == 0)", "any nonempty complete categorized roster uses ranked layout")
+if "count != GameConstants::CREATURES_PER_TOWN" in CASTLE:
+    raise AssertionError("seven-row towns must not be excluded from ranked fort layout")
+require(CASTLE, "categoryLevels", "fort screen groups active New Horizons ranks")
+require(CASTLE, "categoryHeaders", "fort screen renders rank headings")
+require(CASTLE, "categoryViews", "fort headings retain the saved category text IDs")
+require(CASTLE, "newHorizonsCreatureCategoryUI::name(categoryViews[rank]", "fort headings use the active category translator")
+for stock_key in ("core.castinfo.0", "core.castinfo.1", "core.castinfo.2", "core.castinfo.3", "core.castinfo.4", "core.castinfo.5"):
+    require(CASTLE, f'"{stock_key}"', f"fort cards reuse the stock translation for {stock_key}")
+for nh_key in (
+    "new-horizons.fort.stat.initiative",
+    "new-horizons.fort.stat.initiative.description",
+    "new-horizons.fort.stat.leadershipCost",
+    "new-horizons.fort.stat.leadershipCost.description",
+):
+    require(CASTLE, f'"{nh_key}"', f"fort cards translate New Horizons-only stat {nh_key}")
+    require(FORT_TEXTS, f'"{nh_key}"', f"canonical translations define {nh_key}")
+if 'const std::array<const char *, 3> headings' in CASTLE:
+    raise AssertionError("ranked fort headings must not hard-code English labels")
+if 'std::make_shared<LabeledValue>(sizes, "Attack", ""' in CASTLE:
+    raise AssertionError("ranked fort stat names/descriptions must be translated")
+require(CASTLE, "createResponsiveFortBackground", "ranked fort background follows the viewport")
+require(CASTLE, "createResponsiveFortCardBackground", "ranked cards have bounded backgrounds")
+require(CASTLE, "CanvasScalingPolicy::AUTO", "ranked fort canvases follow UI scaling")
+require(CASTLE, "CanvasClipRectGuard", "ranked fort clips its child drawing to the window")
+require(CASTLE, "castleInt->pos.dimensions()", "ranked fort remains inside the parent town window")
+require(CASTLE, "RecruitArea::showAll", "ranked cards clip oversized creature portraits")
+require(CASTLE, "compactTitleCenterY", "ranked card titles are top-safe")
+require(CASTLE, "minimumStatWidth", "ranked stat columns reserve Leadership Cost and values")
+require(CASTLE, "rankedFortMinimumCardHeight", "ranked card minimum derives from actual tiny-font metrics")
+require(CASTLE, "rankedFortStatBottomPadding", "ranked stat rows reserve bottom padding")
+require(CASTLE, "rankedFortStatRowHeight", "ranked stat rows derive from the card height")
+require(CASTLE, "rankedFortStatRowCount(compactStatGrid) * rankedFortStatRowHeight(cardHeight, compactStatGrid)", "ranked code asserts all stat rows fit")
+require(CASTLE, "compactStatGrid", "multi-row authored rosters use compact stat geometry")
+require(CASTLE, "NH_FORT_COMPACT_STAT_COLUMNS", "compact cards use a two-column stat grid")
+require(CASTLE, "rankedStatRect", "compact cards place all eight stat rows in the grid")
+require(CASTLE, "RankedFortCreatureViewport", "compact cards clip the portrait to its utility band")
+require(CASTLE, "cardsBottom", "ranked code computes the final band bottom")
+require(CASTLE, "assert(cardsBottom <= footerTop)", "ranked code keeps every band above the footer")
+require(CASTLE, "std::string availableText = rankedLayout", "ranked available counts stay compact after updates")
+require(CASTLE_HEADER, "void showAll(Canvas & to) override", "fort screen owns its clipping boundary")
+require(CASTLE, "levels[rowBegin + column]", "fort cards preserve their model dwelling level")
+require(CASTLE, "getBaseInitiative()", "fort cards show creature Initiative")
+require(CASTLE, "capabilityCreatureLeadershipRequirement", "fort cards show authoritative Leadership Cost")
+if "Attack Skill" in CASTLE:
+    raise AssertionError("ranked fort must not add the obsolete bottom Attack Skill label")
+require(TOWER_RANKS, '"modify@4": [ "genie", "masterGenie" ]', "Tower Genies use dwelling row four")
+require(TOWER_RANKS, '"modify@5": [ "mage", "archMage" ]', "Tower Magi use dwelling row five")
+if '"modify@3"' in TOWER_RANKS:
+    raise AssertionError("Tower creature override must not replace the Golem row")
 require(KINGDOM, "getCreatureCategory", "kingdom town overview reads saved category")
 require(KINGDOM, "creatureCategoryBadge", "kingdom town overview marks rank groups")
 require(KINGDOM, "townCreatureAtLevel", "kingdom rank badges also cover unbuilt template dwellings")

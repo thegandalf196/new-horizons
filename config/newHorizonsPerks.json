@@ -3535,7 +3535,7 @@
 					"requires": "advanced",
 					"description": "After a gated stack destroys an enemy stack, the next Gate opened during that combat resolves one timing step sooner.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After a gated stack destroys an enemy stack, the next Gate opened during that combat resolves one timing step sooner."
 					}
 				},

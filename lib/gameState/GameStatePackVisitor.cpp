@@ -67,6 +67,33 @@ void refreshBloodrageLivingUnits(BattleInfo & battle, const std::vector<BattleSt
 			battle.clearBloodrageStackDeath(update.stackAttacked);
 	}
 }
+
+bool chainGateKillQualifies(BattleInfo & battle, uint32_t attackerId,
+	const std::vector<BattleStackAttacked> & hits)
+{
+	const auto rewardSide = battle.gatedDemonicStackSide(attackerId);
+	if(rewardSide != BattleSide::ATTACKER && rewardSide != BattleSide::DEFENDER)
+		return false;
+	const auto * attacker = battle.getStack(static_cast<int>(attackerId), false);
+	if(!attacker)
+		return false;
+	const auto * hero = battle.battleGetFightingHero(rewardSide);
+	if(!hero || !hero->hasActivePerk(
+		"new-horizons:demonicGating", "new-horizons:demonicGating.chainGate")
+		|| attacker->unitId() != attackerId)
+		return false;
+
+	return std::ranges::any_of(hits, [&battle, attackerId, rewardSide, attacker](const auto & hit)
+	{
+		if(hit.attackerID != attackerId || !hit.killed() || hit.cloneKilled() || hit.willRebirth())
+			return false;
+		const auto * victim = battle.getStack(hit.stackAttacked, false);
+		// A hypnotized gated unit still belongs to the side whose gated-stack
+		// record names it.  Compare the victim with that original side rather
+		// than with the attacker's temporary controller.
+		return victim && victim != attacker && victim->unitSide() != rewardSide;
+	});
+}
 }
 
 void GameStatePackVisitor::updateMoraleOnTroopMixingBonusChange(CBonusSystemNode * node, const Bonus & bonus)
@@ -1526,6 +1553,8 @@ void GameStatePackVisitor::visitBattleStackMoved(BattleStackMoved & pack)
 void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
+	if(pack.chainGateTriggered && !chainGateKillQualifies(*battle, pack.stackAttacking, pack.bsa))
+		throw std::runtime_error("Invalid Chain Gate attack trigger");
 	if(pack.fortuneState)
 		battle->getSide(pack.fortuneSide).sylvanLuck = *pack.fortuneState;
 	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.bsa);
@@ -1538,6 +1567,8 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 		battle->updateUnit(stack.newState.id, stack.newState.data, stack.newState.healthDelta);
 	recordBloodrageDeaths(*battle, bloodrageCandidates);
 	refreshBloodrageLivingUnits(*battle, pack.bsa);
+	if(pack.chainGateTriggered)
+		battle->armChainGate(battle->gatedDemonicStackSide(pack.stackAttacking));
 
 	if(!attacker->isTimeStopped())
 		attacker->removeBonusesRecursive(Bonus::UntilAttack);
@@ -1794,6 +1825,7 @@ void GameStatePackVisitor::visitBattleDemonicGatingStateChanged(BattleDemonicGat
 	side.demonicReserve = std::move(pack.reserve);
 	side.pendingDemonicGates = std::move(pack.pending);
 	side.gatedDemonicStacks = std::move(pack.gated);
+	side.chainGateArmed = pack.chainGateArmed;
 }
 
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
@@ -1889,6 +1921,10 @@ void GameStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
+	std::set<BattleSide> chainGateSides;
+	for(const auto & hit : pack.stacks)
+		if(chainGateKillQualifies(*battle, hit.attackerID, pack.stacks))
+			chainGateSides.insert(battle->gatedDemonicStackSide(hit.attackerID));
 	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.stacks);
 	BattleStatePackVisitor battleVisitor(*battle);
 	for (auto attackInfo : pack.stacks)
@@ -1900,6 +1936,8 @@ void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 	pack.visitTyped(battleVisitor);
 	recordBloodrageDeaths(*battle, bloodrageCandidates);
 	refreshBloodrageLivingUnits(*battle, pack.stacks);
+	for(const auto side : chainGateSides)
+		battle->armChainGate(side);
 }
 
 void GameStatePackVisitor::visitBattleUnitsChanged(BattleUnitsChanged & pack)

@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <limits>
 
 #include "NetPacksBase.h"
@@ -39,6 +40,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE)
+			&& info->hasChainGateState())
+			throw std::runtime_error("Cannot discard Chain Gate battle start state");
 		h & battleID;
 		h & info;
 		assert(battleID != BattleID::NONE);
@@ -67,16 +71,27 @@ struct DLL_LINKAGE BattleDemonicGatingStateChanged : public CPackForClient
 	std::map<CreatureID, TQuantity> reserve;
 	std::vector<SideInBattle::PendingDemonicGate> pending;
 	std::vector<SideInBattle::GatedDemonicStack> gated;
+	bool chainGateArmed = false;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE)
+			&& (chainGateArmed || std::any_of(pending.begin(), pending.end(), [](const auto & gate)
+			{
+				return gate.chainGateAccelerated;
+			})))
+			throw std::runtime_error("Cannot discard Chain Gate battle state update");
 		h & battleID;
 		h & side;
 		h & reserve;
 		h & pending;
 		h & gated;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
+			h & chainGateArmed;
+		else if(!h.saving)
+			chainGateArmed = false;
 	}
 };
 
@@ -293,6 +308,9 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 
 	BattleHex tile;
 	SpellID spellID = SpellID::NONE; //for SPELL_LIKE
+	/// Server-authored trigger marker.  The receiver validates the gated-stack
+	/// identity and qualifying lethal hit before arming its local token.
+	bool chainGateTriggered = false;
 
 	bool shot() const//distance attack - decrease number of shots
 	{
@@ -331,6 +349,8 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && chainGateTriggered && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
+			throw std::runtime_error("Cannot discard Chain Gate attack state");
 		h & battleID;
 		h & bsa;
 		h & stackAttacking;
@@ -352,6 +372,10 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			fortuneSide = BattleSide::NONE;
 			fortuneState.reset();
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
+			h & chainGateTriggered;
+		else if(!h.saving)
+			chainGateTriggered = false;
 		assert(battleID != BattleID::NONE);
 	}
 };

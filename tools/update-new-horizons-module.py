@@ -31,6 +31,7 @@ def main():
     skills = canonical('newHorizonsSkills.json')
     hero_class_translations = canonical('newHorizonsHeroClassTexts.json')
     category_translations = canonical('newHorizonsCreatureCategoryTexts.json')
+    fort_translations = canonical('newHorizonsFortTexts.json')
     muster_translations = canonical('newHorizonsMusterTexts.json')
     # These patch files contain explicit hero overrides plus the
     # creation-only neutralization and faction-skill presentation replacement
@@ -121,6 +122,7 @@ def main():
         settings['heroes']['newHorizonsMasteries'] = canonical('newHorizonsMasteries.json')
         metadata['translations'] = canonical('newHorizonsMasteryTexts.json')
         metadata['translations'].update(category_translations)
+        metadata['translations'].update(fort_translations)
         metadata['translations'].update(muster_translations)
         if preview_output is None:
             metadata['translations'].update(hero_class_translations)

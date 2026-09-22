@@ -12,6 +12,8 @@
 #include "CWindowObject.h"
 #include "../widgets/Images.h"
 
+#include <array>
+
 class CBuilding;
 class CGTownInstance;
 class CSpell;
@@ -327,11 +329,13 @@ class LabeledValue : public CIntObject
 	std::string hoverText;
 	std::shared_ptr<CLabel> name;
 	std::shared_ptr<CLabel> value;
-	void init(std::string name, std::string descr, int min, int max);
+	void init(std::string name, std::string descr, int min, int max, bool compact = false);
+	void init(std::string name, std::string descr, const std::string & valueText, bool compact = false);
 
 public:
-	LabeledValue(Rect size, std::string name, std::string descr, int min, int max);
-	LabeledValue(Rect size, std::string name, std::string descr, int val);
+	LabeledValue(Rect size, std::string name, std::string descr, int min, int max, bool compact = false);
+	LabeledValue(Rect size, std::string name, std::string descr, int val, bool compact = false);
+	LabeledValue(Rect size, std::string name, std::string descr, const std::string & valueText, bool compact = false);
 	void hover(bool on) override;
 };
 
@@ -351,24 +355,36 @@ class CFortScreen : public CStatusbarWindow
 		std::shared_ptr<CAnimImage> buildingIcon;
 		std::shared_ptr<CLabel> buildingName;
 		std::shared_ptr<CLabel> categoryLabel;
+		std::shared_ptr<CPicture> cardBackground;
+		int cardWidth;
+		int cardHeight;
+		bool rankedLayout;
+		bool compactStatGrid;
 
 		const CCreature * getMyCreature();
 		const CBuilding * getMyBuilding();
 	public:
-		RecruitArea(int posX, int posY, const CGTownInstance *town, int level);
+		RecruitArea(int posX, int posY, const CGTownInstance *town, int level,
+			int width = 386, int height = 126, bool ranked = false, bool compactStats = false);
 
 		void creaturesChangedEventHandler();
 		void hover(bool on) override;
 		void clickPressed(const Point & cursorPosition) override;
 		void showPopupWindow(const Point & cursorPosition) override;
+		void show(Canvas & to) override;
+		void showAll(Canvas & to) override;
 
 	};
 	std::shared_ptr<CLabel> title;
+	std::array<std::shared_ptr<CLabel>, 3> categoryHeaders;
 	std::vector<std::shared_ptr<RecruitArea>> recAreas;
 	std::shared_ptr<CMinorResDataBar> resdatabar;
 	std::shared_ptr<CButton> exit;
+	bool rankedLayout = false;
 
 	ImagePath getBgName(const CGTownInstance * town);
+	void show(Canvas & to) override;
+	void showAll(Canvas & to) override;
 
 public:
 	CFortScreen(const CGTownInstance * town);

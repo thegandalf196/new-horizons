@@ -1,0 +1,6 @@
+{
+	"new-horizons.fort.stat.initiative": "Initiative",
+	"new-horizons.fort.stat.initiative.description": "Determines this creature's turn order in battle.",
+	"new-horizons.fort.stat.leadershipCost": "Leadership Cost",
+	"new-horizons.fort.stat.leadershipCost.description": "Leadership required for each creature in this stack."
+}

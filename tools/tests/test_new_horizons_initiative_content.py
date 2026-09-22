@@ -85,8 +85,29 @@ class NewHorizonsInitiativeContentTest(unittest.TestCase):
     def test_tower_town_swaps_genies_and_magi_before_rank_presentation(self):
         patch = load("Mods/new-horizons/Content/config/factions/towerCreatureRanks.json")
         creatures = patch["core:tower"]["town"]["creatures"]
-        self.assertEqual(creatures["modify@3"], ["genie", "masterGenie"])
-        self.assertEqual(creatures["modify@4"], ["mage", "archMage"])
+        self.assertEqual(creatures["modify@4"], ["genie", "masterGenie"])
+        self.assertEqual(creatures["modify@5"], ["mage", "archMage"])
+
+        base = load("config/factions/tower.json")
+        rows = copy.deepcopy(base["tower"]["town"]["creatures"])
+        for key, value in creatures.items():
+            index = int(key.removeprefix("modify@")) - 1
+            rows[index] = value
+
+        self.assertEqual(rows, [
+            ["gremlin", "masterGremlin"],
+            ["stoneGargoyle", "obsidianGargoyle"],
+            ["ironGolem", "stoneGolem"],
+            ["genie", "masterGenie"],
+            ["mage", "archMage"],
+            ["naga", "nagaQueen"],
+            ["giant", "titan"],
+        ])
+        self.assertEqual(len(rows), 7)
+        self.assertEqual(len({tuple(row) for row in rows}), 7)
+        self.assertEqual(rows[2], ["ironGolem", "stoneGolem"], "the Golem row must not be overwritten")
+        self.assertEqual(rows[3], ["genie", "masterGenie"], "Genies occupy the level-4 dwelling")
+        self.assertEqual(rows[4], ["mage", "archMage"], "Magi occupy the level-5 dwelling")
 
         structures = patch["core:tower"]["town"]["structures"]
         expected_structures = {
@@ -109,6 +130,84 @@ class NewHorizonsInitiativeContentTest(unittest.TestCase):
         buildings = patch["core:tower"]["town"]["buildings"]
         self.assertIsNone(buildings["dwellingUpLvl4"]["requires"])
         self.assertEqual(buildings["dwellingUpLvl5"]["requires"], ["special3"])
+
+        categories = load("config/newHorizonsCreatureCategories.json")["creatures"]
+        tower_categories = [categories[f"core:{row[0]}"] for row in rows]
+        self.assertEqual(tower_categories, ["core", "core", "core", "elite", "elite", "elite", "champion"])
+        self.assertTrue(
+            rows and all(f"core:{creature}" in categories for row in rows for creature in row),
+            "the seven-row Tower roster is complete and must select the ranked fort layout",
+        )
+
+    def test_ranked_bands_fit_tower_and_four_row_rosters_at_bundled_metrics(self):
+        """The responsive card math must fit both normal Tower and authored bands."""
+        castle = (ROOT / "client/windows/CCastleInterface.cpp").read_text(encoding="utf-8")
+        self.assertIn("rowBegin += NH_FORT_CARDS_PER_ROW", castle)
+        self.assertIn("void CFortScreen::RecruitArea::showAll", castle)
+        self.assertIn("CanvasClipRectGuard clip(to, pos)", castle)
+        self.assertIn("availableCardHeight < rankedFortMinimumCardHeight(false)", castle)
+
+        viewport = (800, 528)
+        parent = (800, 600)
+        window = (min(viewport[0] - 8, parent[0]), min(viewport[1] - 8, parent[1]))
+        card_gap = 4
+        side_margin = 12
+        card_width = (window[0] - 2 * side_margin - 2 * card_gap) // 3
+        self.assertEqual(card_width, 253)
+
+        # Actual bundled logical metrics at this viewport: BIG25, SMALL15,
+        # TINY13.  The production code queries these from the renderer; this
+        # model keeps the panel budget and the card geometry in lockstep.
+        title_height = 25
+        heading_height = 15
+        tiny_font_height = 13
+        compact_portrait_height = 15
+        content_top = 2 + title_height + 2
+        row_minimum = tiny_font_height + 1
+        stat_bottom_padding = max(2, tiny_font_height // 2)
+        normal_minimum_card_height = (1 + tiny_font_height + 1) + 8 * row_minimum + stat_bottom_padding
+        footer_top = window[1] - 48
+
+        def assert_geometry(groups):
+            total_rows = sum((count + 2) // 3 for count in groups)
+            band_gaps = card_gap * 3
+            row_gaps = card_gap * total_rows
+            fixed_height = content_top + heading_height * 3 + band_gaps + row_gaps + 48
+            available_card_height = (window[1] - fixed_height) // total_rows
+            compact_stat_grid = available_card_height < normal_minimum_card_height
+            self.assertTrue(compact_stat_grid)
+            stat_rows = 4
+            stat_top = 1 + tiny_font_height + 1 + compact_portrait_height
+            minimum_card_height = stat_top + row_minimum * stat_rows + stat_bottom_padding
+            card_height = max(minimum_card_height, available_card_height)
+            row_height = max(row_minimum, (card_height - stat_top - stat_bottom_padding) // stat_rows)
+            self.assertGreaterEqual(card_height, minimum_card_height)
+            for index in range(8):
+                stat_row = index // 2
+                self.assertLessEqual(
+                    stat_top + (stat_row + 1) * row_height + stat_bottom_padding,
+                    card_height,
+                    "every stat rect must stay inside its ranked card",
+                )
+            self.assertGreater(
+                stat_top - compact_portrait_height + 120,
+                card_height,
+                "oversized portraits must be card-clipped",
+            )
+            cards_bottom = content_top + heading_height * 3 + band_gaps + row_gaps + total_rows * card_height
+            self.assertLessEqual(cards_bottom, footer_top, "all authored cards must fit before the footer")
+            self.assertLess(card_height, normal_minimum_card_height)
+
+        assert_geometry((3, 3, 1))
+        assert_geometry((4, 3, 1))
+
+        image_column = 24
+        creature_right = image_column + 4 + 120
+        minimum_stat_width = 78 + 20 + 6  # Leadership Cost + a 3-digit value + gutters
+        compact_stat_width = card_width - 8
+        compact_stat_cell_width = (compact_stat_width - card_gap) // 2
+        self.assertGreaterEqual(compact_stat_cell_width, minimum_stat_width)
+        self.assertGreater(creature_right, image_column)
 
     def test_generated_module_mounts_tower_and_spell_patches(self):
         manifest = load("Mods/new-horizons/mod.json")

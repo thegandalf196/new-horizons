@@ -588,6 +588,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(module['filesystem']['SPRITES/'], [{'type': 'dir', 'path': '/Images'}])
         translations = load('config/newHorizonsMasteryTexts.json')
         translations.update(load('config/newHorizonsCreatureCategoryTexts.json'))
+        translations.update(load('config/newHorizonsFortTexts.json'))
         translations.update(load('config/newHorizonsMusterTexts.json'))
         translations.update(load('config/newHorizonsHeroClassTexts.json'))
         self.assertEqual(module['translations'], translations)

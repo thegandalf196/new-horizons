@@ -114,7 +114,10 @@ function Script:apply(mechanics, server, target)
 		local unit = dest.unit
 		if unit and unit:isAlive() then
 			local amount = self:damageForTarget(i - 1, mechanics, unit)
-			local dmg, killed = server:damageUnit(battle, unit, amount, self.destroyRemains == true)
+			-- Creature casts expose their battle Unit; hero and environmental casts return nil and
+			-- intentionally remain unattributed.
+			local dmg, killed = server:damageUnit(
+				battle, unit, amount, self.destroyRemains == true, mechanics:getUnitCaster())
 			if describe then
 				if firstUnit then multiple = true else firstUnit = unit end
 				totalDamage = totalDamage + dmg

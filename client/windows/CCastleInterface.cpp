@@ -37,6 +37,7 @@
 #include "../widgets/RadialMenu.h"
 #include "../widgets/CExchangeController.h"
 #include "render/Canvas.h"
+#include "render/CanvasImage.h"
 #include "render/IImage.h"
 #include "render/IRenderHandler.h"
 #include "render/CAnimation.h"
@@ -62,6 +63,7 @@
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/building/CBuilding.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
+#include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/TownBuildingInstance.h"
@@ -78,6 +80,102 @@ static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreature
 
 namespace
 {
+constexpr int NH_FORT_CARD_GAP = 4;
+constexpr int NH_FORT_SIDE_MARGIN = 12;
+constexpr int NH_FORT_CARDS_PER_ROW = 3;
+constexpr int NH_FORT_FOOTER_HEIGHT = 48;
+constexpr int NH_FORT_STAT_COUNT = 8;
+constexpr int NH_FORT_COMPACT_STAT_COLUMNS = 2;
+constexpr int NH_FORT_COMPACT_STAT_ROWS = NH_FORT_STAT_COUNT / NH_FORT_COMPACT_STAT_COLUMNS;
+constexpr int NH_FORT_COMPACT_PORTRAIT_HEIGHT = 15;
+
+int rankedFortTinyFontHeight()
+{
+	return static_cast<int>(ENGINE->renderHandler().loadFont(FONT_TINY)->getLineHeight());
+}
+
+int rankedFortStatTop(bool compactStatGrid = false)
+{
+	const int titleBottom = 1 + rankedFortTinyFontHeight() + 1;
+	return titleBottom + (compactStatGrid ? NH_FORT_COMPACT_PORTRAIT_HEIGHT : 0);
+}
+
+int rankedFortStatBottomPadding()
+{
+	return std::max(2, rankedFortTinyFontHeight() / 2);
+}
+
+int rankedFortStatMinimumRowHeight()
+{
+	return rankedFortTinyFontHeight() + 1;
+}
+
+int rankedFortStatRowCount(bool compactStatGrid)
+{
+	return compactStatGrid ? NH_FORT_COMPACT_STAT_ROWS : NH_FORT_STAT_COUNT;
+}
+
+int rankedFortMinimumCardHeight(bool compactStatGrid)
+{
+	return rankedFortStatTop(compactStatGrid) + rankedFortStatRowCount(compactStatGrid) * rankedFortStatMinimumRowHeight()
+		+ rankedFortStatBottomPadding();
+}
+
+int rankedFortStatRowHeight(int cardHeight, bool compactStatGrid)
+{
+	return std::max(rankedFortStatMinimumRowHeight(),
+		(cardHeight - rankedFortStatTop(compactStatGrid) - rankedFortStatBottomPadding())
+			/ rankedFortStatRowCount(compactStatGrid));
+}
+
+class RankedFortCreatureViewport : public CIntObject
+{
+public:
+	RankedFortCreatureViewport(const Rect & clip, int creatureX, int creatureY, const CCreature * creature)
+		: CIntObject(0, clip.topLeft())
+	{
+		pos.w = clip.w;
+		pos.h = clip.h;
+		OBJECT_CONSTRUCTION;
+		new CCreaturePic(creatureX - clip.x, creatureY - clip.y, creature, false);
+	}
+
+	void show(Canvas & to) override
+	{
+		CanvasClipRectGuard clip(to, pos);
+		CIntObject::show(to);
+	}
+
+	void showAll(Canvas & to) override
+	{
+		CanvasClipRectGuard clip(to, pos);
+		CIntObject::showAll(to);
+	}
+};
+
+std::shared_ptr<CPicture> createResponsiveFortBackground(const Point & size)
+{
+	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::AUTO);
+	Canvas canvas = image->getCanvas();
+	canvas.fillTexture(ENGINE->renderHandler().loadImage(
+		ImageLocator(ImagePath::builtin("DiBoxBck"), EImageBlitMode::OPAQUE)));
+	canvas.drawColorBlended(Rect(0, size.y - NH_FORT_FOOTER_HEIGHT, size.x, NH_FORT_FOOTER_HEIGHT), ColorRGBA(0, 0, 0, 88));
+	canvas.drawBorder(Rect(0, 0, size.x, size.y), ColorRGBA(165, 122, 55));
+	return std::make_shared<CPicture>(std::static_pointer_cast<IImage>(image), Point(0, 0));
+}
+
+std::shared_ptr<CPicture> createResponsiveFortCardBackground(const Point & size)
+{
+	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::AUTO);
+	Canvas canvas = image->getCanvas();
+	canvas.fillTexture(ENGINE->renderHandler().loadImage(
+		ImageLocator(ImagePath::builtin("DiBoxBck"), EImageBlitMode::OPAQUE)));
+	canvas.drawColorBlended(Rect(1, 1, size.x - 2, size.y - 2), ColorRGBA(0, 0, 0, 92));
+	canvas.drawBorder(Rect(0, 0, size.x, size.y), ColorRGBA(165, 122, 55));
+	canvas.drawBorder(Rect(2, 2, size.x - 4, size.y - 4), ColorRGBA(70, 46, 28));
+	return std::make_shared<CPicture>(std::static_pointer_cast<IImage>(image), Point(0, 0));
+}
+
 const CCreature * creatureAtDwellingLevel(const CGTownInstance * town, int level)
 {
 	if(!town || level < 0 || static_cast<size_t>(level) >= town->creatures.size())
@@ -90,6 +188,31 @@ const CCreature * creatureAtDwellingLevel(const CGTownInstance * town, int level
 		return town->getTown()->creatures[level].front().toCreature();
 
 	return nullptr;
+}
+
+ui32 fortCreatureCount(const CGTownInstance * town)
+{
+	if(!town || town->creatures.empty())
+		return 0;
+
+	ui32 result = static_cast<ui32>(town->creatures.size());
+	if(result > town->getTown()->creatures.size() && town->creatures.back().second.empty())
+		--result;
+	return std::min(result, static_cast<ui32>(GameConstants::CREATURES_PER_TOWN));
+}
+
+bool hasCompleteCreatureCategoryContext(const CGTownInstance * town)
+{
+	const auto count = fortCreatureCount(town);
+	if(count == 0)
+		return false;
+
+	for(ui32 level = 0; level < count; ++level)
+	{
+		if(!currentCreatureCategory(creatureAtDwellingLevel(town, static_cast<int>(level))))
+			return false;
+	}
+	return true;
 }
 
 int creatureCategoryRank(const std::optional<newHorizonsCreatures::CreatureCategoryView> & category)
@@ -2237,30 +2360,38 @@ std::string CBuildWindow::getTextForState(EBuildingState state)
 	return ret.toString(&GAME->translator());
 }
 
-LabeledValue::LabeledValue(Rect size, std::string name, std::string descr, int min, int max)
+LabeledValue::LabeledValue(Rect size, std::string name, std::string descr, int min, int max, bool compact)
 {
 	OBJECT_CONSTRUCTION;
 	pos.x+=size.x;
 	pos.y+=size.y;
 	pos.w = size.w;
 	pos.h = size.h;
-	init(name, descr, min, max);
+	init(name, descr, min, max, compact);
 }
 
-LabeledValue::LabeledValue(Rect size, std::string name, std::string descr, int val)
+LabeledValue::LabeledValue(Rect size, std::string name, std::string descr, int val, bool compact)
 {
 	OBJECT_CONSTRUCTION;
 	pos.x+=size.x;
 	pos.y+=size.y;
 	pos.w = size.w;
 	pos.h = size.h;
-	init(name, descr, val, val);
+	init(name, descr, val, val, compact);
 }
 
-void LabeledValue::init(std::string nameText, std::string descr, int min, int max)
+LabeledValue::LabeledValue(Rect size, std::string name, std::string descr, const std::string & valueText, bool compact)
 {
-	addUsedEvents(HOVER);
-	hoverText = descr;
+	OBJECT_CONSTRUCTION;
+	pos.x+=size.x;
+	pos.y+=size.y;
+	pos.w = size.w;
+	pos.h = size.h;
+	init(name, descr, valueText, compact);
+}
+
+void LabeledValue::init(std::string nameText, std::string descr, int min, int max, bool compact)
+{
 	std::string valueText;
 	if(min && max)
 	{
@@ -2268,8 +2399,19 @@ void LabeledValue::init(std::string nameText, std::string descr, int min, int ma
 		if(min != max)
 			valueText += '-' + std::to_string(max);
 	}
-	name = std::make_shared<CLabel>(3, 0, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, nameText);
-	value = std::make_shared<CLabel>(pos.w-3, pos.h-2, FONT_SMALL, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, valueText);
+	init(nameText, descr, valueText, compact);
+}
+
+void LabeledValue::init(std::string nameText, std::string descr, const std::string & valueText, bool compact)
+{
+	addUsedEvents(HOVER);
+	hoverText = descr;
+	const auto font = compact ? FONT_TINY : FONT_SMALL;
+	const auto & fontData = ENGINE->renderHandler().loadFont(font);
+	const int valueWidth = static_cast<int>(fontData->getStringWidth(valueText));
+	const int nameWidth = std::max(1, pos.w - valueWidth - 6);
+	name = std::make_shared<CLabel>(3, 0, font, ETextAlignment::TOPLEFT, Colors::WHITE, nameText, nameWidth);
+	value = std::make_shared<CLabel>(pos.w-3, pos.h-2, font, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, valueText);
 }
 
 void LabeledValue::hover(bool on)
@@ -2285,88 +2427,151 @@ void LabeledValue::hover(bool on)
 }
 
 CFortScreen::CFortScreen(const CGTownInstance * town):
-	CWindowObject(PLAYER_COLORED | BORDERED, getBgName(town))
+	CWindowObject(PLAYER_COLORED | BORDERED, {})
 {
 	OBJECT_CONSTRUCTION;
-	ui32 fortSize = static_cast<ui32>(town->creatures.size());
-	if(fortSize > town->getTown()->creatures.size() && town->creatures.back().second.empty())
-		fortSize--;
-	fortSize = std::min(fortSize, static_cast<ui32>(GameConstants::CREATURES_PER_TOWN)); // for 8 creatures + portal of summoning
-
-	const auto & fortBuilding = town->getTown()->buildings.at(BuildingID(town->fortLevel()+6));
-	title = std::make_shared<CLabel>(400, 12, FONT_BIG, ETextAlignment::CENTER, Colors::WHITE, fortBuilding->getNameTranslated());
-
-	MetaString exitText = MetaString::createFromTextID("core.castinfo.6"); // Exit %s
-	exitText.replaceTextID(fortBuilding->getNameTextID());
-	exit = std::make_shared<CButton>(Point(748, 556), AnimationPath::builtin("TPMAGE1"), CButton::tooltip(exitText.toString(&GAME->translator())), [&](){ close(); }, EShortcut::GLOBAL_RETURN);
-
-	std::vector<Point> positions =
+	const ui32 fortSize = fortCreatureCount(town);
+	const bool useRankedLayout = hasCompleteCreatureCategoryContext(town);
+	rankedLayout = useRankedLayout;
+	std::array<std::vector<int>, 3> categoryLevels;
+	std::array<std::optional<newHorizonsCreatures::CreatureCategoryView>, 3> categoryViews;
+	if(useRankedLayout)
 	{
-		Point(10,  22), Point(404, 22),
-		Point(10, 155), Point(404,155),
-		Point(10, 288), Point(404,288)
-	};
+		for(ui32 level = 0; level < fortSize; ++level)
+		{
+			const auto category = currentCreatureCategory(creatureAtDwellingLevel(town, static_cast<int>(level)));
+			const int rank = creatureCategoryRank(category);
+			if(rank >= 0 && rank < static_cast<int>(categoryLevels.size()))
+			{
+				categoryLevels[rank].push_back(static_cast<int>(level));
+				if(!categoryViews[rank])
+					categoryViews[rank] = category;
+			}
+		}
 
-	if(fortSize == GameConstants::CREATURES_PER_TOWN)
-	{
-		positions.push_back(Point(10, 421));
-		positions.push_back(Point(404,421));
+		const Point viewport = ENGINE->screenDimensions();
+		// The fort is a child modal of the town screen.  Keep its generated
+		// surface within the town window's footprint so it cannot cover the
+		// persistent right-side town controls or the resource/date bars.
+		const Point fallbackSize(800, 600);
+		const Point parentSize = GAME && GAME->interface() && GAME->interface()->castleInt
+			? GAME->interface()->castleInt->pos.dimensions()
+			: fallbackSize;
+		const Point windowSize(
+			std::max(1, std::min(viewport.x - 8, parentSize.x)),
+			std::max(1, std::min(viewport.y - 8, parentSize.y)));
+		background = createResponsiveFortBackground(windowSize);
+		pos = background->center();
+		updateShadow();
 	}
 	else
 	{
-		positions.push_back(Point(206,421));
+		background = createBg(getBgName(town), PLAYER_COLORED | BORDERED);
+		pos = background->center();
+		updateShadow();
 	}
 
-	std::vector<int> displayLevels(fortSize);
-	std::iota(displayLevels.begin(), displayLevels.end(), 0);
+	const auto & fortBuilding = town->getTown()->buildings.at(BuildingID(town->fortLevel()+6));
+	const int titleHeight = static_cast<int>(ENGINE->renderHandler().loadFont(FONT_BIG)->getLineHeight());
+	const int titleTop = useRankedLayout ? 2 : 0;
+	const int titleCenterY = useRankedLayout ? titleTop + titleHeight / 2 : 12;
+	title = std::make_shared<CLabel>(pos.w / 2, titleCenterY, FONT_BIG, ETextAlignment::CENTER, Colors::WHITE, fortBuilding->getNameTranslated());
 
-	// New Horizons presents the same independent dwelling rows in rank groups.
-	// The level remains the model identity passed to RecruitArea, so availability,
-	// upgrades, and click requests still target the original dwelling row. If a
-	// custom/legacy town has no complete category context, retain the stock order
-	// and layout exactly.
-	const bool hasCompleteCategoryContext = std::all_of(displayLevels.begin(), displayLevels.end(), [town](int level)
+	MetaString exitText = MetaString::createFromTextID("core.castinfo.6"); // Exit %s
+	exitText.replaceTextID(fortBuilding->getNameTextID());
+	const int footerTop = useRankedLayout ? pos.h - 47 : 556;
+	exit = std::make_shared<CButton>(Point(pos.w - 52, footerTop), AnimationPath::builtin("TPMAGE1"), CButton::tooltip(exitText.toString(&GAME->translator())), [&](){ close(); }, EShortcut::GLOBAL_RETURN);
+
+	if(useRankedLayout)
 	{
-		return currentCreatureCategory(creatureAtDwellingLevel(town, level)).has_value();
-	});
-	if(hasCompleteCategoryContext)
-	{
-		std::stable_sort(displayLevels.begin(), displayLevels.end(), [town](int lhs, int rhs)
+		const std::array<newHorizonsCreatures::CreatureCategory, 3> categories =
 		{
-			const int lhsRank = creatureCategoryRank(currentCreatureCategory(creatureAtDwellingLevel(town, lhs)));
-			const int rhsRank = creatureCategoryRank(currentCreatureCategory(creatureAtDwellingLevel(town, rhs)));
-			return lhsRank == rhsRank ? lhs < rhs : lhsRank < rhsRank;
+			newHorizonsCreatures::CreatureCategory::CORE,
+			newHorizonsCreatures::CreatureCategory::ELITE,
+			newHorizonsCreatures::CreatureCategory::CHAMPION
+		};
+		const int cardWidth = (pos.w - 2 * NH_FORT_SIDE_MARGIN - NH_FORT_CARD_GAP * (NH_FORT_CARDS_PER_ROW - 1)) / NH_FORT_CARDS_PER_ROW;
+		const int totalRows = std::accumulate(categoryLevels.begin(), categoryLevels.end(), 0, [](int result, const auto & levels)
+		{
+			return result + std::max(1, static_cast<int>((levels.size() + NH_FORT_CARDS_PER_ROW - 1) / NH_FORT_CARDS_PER_ROW));
 		});
-	}
+		const int headingHeight = static_cast<int>(ENGINE->renderHandler().loadFont(FONT_SMALL)->getLineHeight());
+		const int contentTop = 2 + titleHeight + 2;
+		const int bandGaps = NH_FORT_CARD_GAP * static_cast<int>(categoryLevels.size());
+		const int rowGaps = NH_FORT_CARD_GAP * totalRows;
+		const int fixedHeight = contentTop + headingHeight * static_cast<int>(categoryLevels.size()) + bandGaps + rowGaps + NH_FORT_FOOTER_HEIGHT;
+		// Use the 2x4 stat grid whenever the normal eight-row card minimum
+		// cannot fit the current per-row budget.  This covers both the authored
+		// four-row rank case and the ordinary Tower 3/3/1 layout at small views.
+		const int availableCardHeight = (pos.h - fixedHeight) / std::max(1, totalRows);
+		const bool compactStatGrid = availableCardHeight < rankedFortMinimumCardHeight(false);
+		const int cardHeight = std::max(rankedFortMinimumCardHeight(compactStatGrid), (pos.h - fixedHeight) / std::max(1, totalRows));
+		assert(cardHeight >= rankedFortStatTop(compactStatGrid)
+			+ rankedFortStatRowCount(compactStatGrid) * rankedFortStatRowHeight(cardHeight, compactStatGrid)
+			+ rankedFortStatBottomPadding());
+		[[maybe_unused]] const int cardsBottom = contentTop + headingHeight * static_cast<int>(categoryLevels.size())
+			+ bandGaps + rowGaps + totalRows * cardHeight;
+		[[maybe_unused]] const int footerTop = pos.h - NH_FORT_FOOTER_HEIGHT;
+		assert(cardsBottom <= footerTop);
+		int bandTop = contentTop;
 
-	for(ui32 displayIndex=0; displayIndex<fortSize; displayIndex++)
-	{
-		const int level = displayLevels[displayIndex];
-		BuildingID buildingID;
-		if(fortSize == town->getTown()->creatures.size())
+		for(size_t rank = 0; rank < categoryLevels.size(); ++rank)
 		{
-			BuildingID buildID = BuildingID(BuildingID::getDwellingFromLevel(level, 0));
+			const int headingTop = bandTop;
+			const int headingCenterY = headingTop + headingHeight / 2;
+			const auto heading = newHorizonsCreatureCategoryUI::name(categoryViews[rank], GAME ? &GAME->translator() : nullptr);
+			categoryHeaders[rank] = std::make_shared<CLabel>(pos.w / 2, headingCenterY, FONT_SMALL,
+				ETextAlignment::CENTER, creatureCategoryColor(categories[rank]), heading);
+			bandTop += headingHeight;
 
-			for(; town->getBuildings().count(buildID); BuildingID::advanceDwelling(buildID))
+			const auto & levels = categoryLevels[rank];
+			for(size_t rowBegin = 0; rowBegin < levels.size(); rowBegin += NH_FORT_CARDS_PER_ROW)
 			{
-				if(town->hasBuilt(buildID))
-					buildingID = buildID;
+				const int rowSize = std::min(NH_FORT_CARDS_PER_ROW, static_cast<int>(levels.size() - rowBegin));
+				const int totalWidth = cardWidth * rowSize + NH_FORT_CARD_GAP * (rowSize - 1);
+				const int startX = (pos.w - totalWidth) / 2;
+				for(int column = 0; column < rowSize; ++column)
+				{
+					const int x = startX + column * (cardWidth + NH_FORT_CARD_GAP);
+					recAreas.push_back(std::make_shared<RecruitArea>(x, bandTop, town, levels[rowBegin + column], cardWidth, cardHeight, true, compactStatGrid));
+				}
+				bandTop += cardHeight + NH_FORT_CARD_GAP;
 			}
+			bandTop += NH_FORT_CARD_GAP;
+		}
+	}
+	else
+	{
+		std::vector<Point> positions =
+		{
+			Point(10, 22), Point(404, 22),
+			Point(10, 155), Point(404, 155),
+			Point(10, 288), Point(404, 288)
+		};
+
+		if(fortSize == GameConstants::CREATURES_PER_TOWN)
+		{
+			positions.push_back(Point(10, 421));
+			positions.push_back(Point(404, 421));
 		}
 		else
-		{
-			buildingID = BuildingID::SPECIAL_3;
-		}
+			positions.push_back(Point(206, 421));
 
-		recAreas.push_back(std::make_shared<RecruitArea>(positions[displayIndex].x, positions[displayIndex].y, town, level));
+		std::vector<int> displayLevels(fortSize);
+		std::iota(displayLevels.begin(), displayLevels.end(), 0);
+		for(ui32 displayIndex = 0; displayIndex < fortSize; ++displayIndex)
+			recAreas.push_back(std::make_shared<RecruitArea>(positions[displayIndex].x, positions[displayIndex].y, town, displayLevels[displayIndex]));
 	}
 
 	resdatabar = std::make_shared<CMinorResDataBar>();
+	if(useRankedLayout)
+		resdatabar->moveTo(Point((pos.w - resdatabar->pos.w) / 2, pos.h - resdatabar->pos.h - 3), true);
 	resdatabar->moveBy(pos.topLeft(), true);
 
-	Rect barRect(4, 554, 740, 18);
-
-	auto statusbarBackground = std::make_shared<CPicture>(background->getSurface(), barRect, 4, 554);
+	const int barY = useRankedLayout ? resdatabar->pos.y - pos.y - 20 : 554;
+	const int barWidth = useRankedLayout ? std::max(1, pos.w - 64) : 740;
+	Rect barRect(4, barY, barWidth, 18);
+	auto statusbarBackground = std::make_shared<CPicture>(background->getSurface(), barRect, 4, barY);
 	statusbar = CGStatusBar::create(statusbarBackground);
 }
 
@@ -2391,34 +2596,87 @@ void CFortScreen::creaturesChangedEventHandler()
 	GAME->interface()->castleInt->creaturesChangedEventHandler();
 }
 
-CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance * Town, int Level):
+void CFortScreen::show(Canvas & to)
+{
+	if(rankedLayout)
+	{
+		CanvasClipRectGuard clip(to, pos);
+		CIntObject::show(to);
+	}
+	else
+		CIntObject::show(to);
+}
+
+void CFortScreen::showAll(Canvas & to)
+{
+	if(rankedLayout)
+	{
+		CanvasClipRectGuard clip(to, pos);
+		CWindowObject::showAll(to);
+	}
+	else
+		CWindowObject::showAll(to);
+}
+
+CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance * Town, int Level, int Width, int Height, bool Ranked, bool CompactStats):
 	town(Town),
 	level(Level),
-	availableCount(nullptr)
+	availableCount(nullptr),
+	cardWidth(Width),
+	cardHeight(Height),
+	rankedLayout(Ranked),
+	compactStatGrid(CompactStats)
 {
 	OBJECT_CONSTRUCTION;
 	pos.x +=posX;
 	pos.y +=posY;
-	pos.w = 386;
-	pos.h = 126;
+	pos.w = cardWidth;
+	pos.h = cardHeight;
+	const int compactFontHeight = rankedLayout ? rankedFortTinyFontHeight() : 0;
+	const int compactTitleCenterY = rankedLayout ? 1 + compactFontHeight / 2 : 0;
+	const int compactTitleTop = rankedLayout ? 1 : 0;
 
 	if(!town->creatures[level].second.empty())
 		addUsedEvents(LCLICK | HOVER);//Activate only if dwelling is present
 
 	addUsedEvents(SHOW_POPUP);
 
-	icons = std::make_shared<CPicture>(ImagePath::builtin("TPCAINFO"), 261, 3);
+	if(rankedLayout)
+		cardBackground = createResponsiveFortCardBackground(Point(cardWidth, cardHeight));
+	else
+		icons = std::make_shared<CPicture>(ImagePath::builtin("TPCAINFO"), 261, 3);
 
+	const int imageColumnWidth = rankedLayout ? 24 : 152;
 	if(getMyBuilding() != nullptr)
 	{
-		buildingIcon = std::make_shared<CAnimImage>(town->getTown()->clientInfo.buildingsIcons, getMyBuilding()->bid, 0, 4, 21);
-		buildingName = std::make_shared<CLabel>(78, 101, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, getMyBuilding()->getNameTranslated(), 152);
+		if(rankedLayout)
+		{
+			const int buildingIconTop = compactStatGrid ? compactTitleTop + compactFontHeight + 1 : 24;
+			const int buildingIconHeight = compactStatGrid ? 13 : 38;
+			buildingIcon = std::make_shared<CAnimImage>(town->getTown()->clientInfo.buildingsIcons, getMyBuilding()->bid,
+				Rect(2, buildingIconTop, imageColumnWidth - 4, buildingIconHeight), 0);
+			if(!compactStatGrid)
+				buildingName = std::make_shared<CLabel>(imageColumnWidth / 2, 65, FONT_TINY, ETextAlignment::CENTER,
+					Colors::WHITE, getMyBuilding()->getNameTranslated(), imageColumnWidth);
+		}
+		else
+		{
+			buildingIcon = std::make_shared<CAnimImage>(town->getTown()->clientInfo.buildingsIcons, getMyBuilding()->bid, 0, 4, 21);
+			buildingName = std::make_shared<CLabel>(78, 101, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, getMyBuilding()->getNameTranslated(), 152);
+		}
 
 		if(town->hasBuilt(getMyBuilding()->bid))
 		{
 			ui32 available = town->creatures[level].first;
-			std::string availableText = LIBRARY->generaltexth->allTexts[217]+ std::to_string(available);
-			availableCount = std::make_shared<CLabel>(78, 119, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, availableText);
+			if(rankedLayout)
+				availableCount = std::make_shared<CLabel>(imageColumnWidth / 2,
+					compactStatGrid ? compactTitleCenterY : cardHeight - compactFontHeight / 2 - 1, FONT_TINY, ETextAlignment::CENTER,
+					Colors::WHITE, std::to_string(available), imageColumnWidth);
+			else
+			{
+				std::string availableText = LIBRARY->generaltexth->allTexts[217]+ std::to_string(available);
+				availableCount = std::make_shared<CLabel>(78, 119, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, availableText);
+			}
 		}
 	}
 
@@ -2427,27 +2685,139 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 		MetaString hoverTextMessage = MetaString::createFromTextID("core.tcommand.21"); // Recruit %s
 		hoverTextMessage.replaceNamePlural(getMyCreature()->getId());
 		hoverText = hoverTextMessage.toString(&GAME->translator());
-		new CCreaturePic(159, 4, getMyCreature(), false);
-		new CLabel(78,  11, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, getMyCreature()->getNamePluralTranslated(), 152);
+		const int creatureX = rankedLayout ? imageColumnWidth + 4 : 159;
+		const int creatureY = rankedLayout ? compactTitleTop + compactFontHeight + 1 : 4;
+		const int statTop = rankedLayout ? rankedFortStatTop(compactStatGrid) : 4;
+		if(rankedLayout && compactStatGrid)
+		{
+			const Rect creatureClip(creatureX, creatureY, std::max(1, cardWidth - creatureX - 4),
+				std::max(1, statTop - creatureY));
+			new RankedFortCreatureViewport(creatureClip, creatureX, creatureY, getMyCreature());
+		}
+		else
+			new CCreaturePic(creatureX, creatureY, getMyCreature(), false);
+		new CLabel(rankedLayout ? cardWidth / 2 : 78, rankedLayout ? compactTitleCenterY : 11, rankedLayout ? FONT_TINY : FONT_SMALL,
+			ETextAlignment::CENTER, Colors::WHITE, getMyCreature()->getNamePluralTranslated(), rankedLayout ? cardWidth - 8 : 152);
 		const auto category = currentCreatureCategory(getMyCreature());
 		const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
-		if(category && !categoryName.empty())
+		if(!rankedLayout && category && !categoryName.empty())
 			categoryLabel = std::make_shared<CLabel>(78, 28, FONT_TINY, ETextAlignment::CENTER,
 				creatureCategoryColor(category->category), categoryName, 152);
 
-		Rect sizes(287, 4, 96, 18);
-		values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[190], LIBRARY->generaltexth->translate("core.castinfo.0"), getMyCreature()->getAttack(false)));
-		sizes.y+=20;
-		values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[191], LIBRARY->generaltexth->translate("core.castinfo.1"), getMyCreature()->getDefense(false)));
-		sizes.y+=21;
-		values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[199], LIBRARY->generaltexth->translate("core.castinfo.2"), getMyCreature()->getMinDamage(false), getMyCreature()->getMaxDamage(false)));
-		sizes.y+=20;
-		values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[388], LIBRARY->generaltexth->translate("core.castinfo.3"), getMyCreature()->getMaxHealth()));
-		sizes.y+=21;
-		values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[193], LIBRARY->generaltexth->translate("core.castinfo.4"), getMyCreature()->valOfBonuses(BonusType::STACKS_SPEED)));
-		sizes.y+=20;
-		values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[194], LIBRARY->generaltexth->translate("core.castinfo.5"), town->creatureGrowth(level)));
+		const std::array<std::string, NH_FORT_STAT_COUNT> rankedStatNames =
+		{
+			LIBRARY->generaltexth->allTexts[190],
+			LIBRARY->generaltexth->allTexts[191],
+			LIBRARY->generaltexth->allTexts[199],
+			LIBRARY->generaltexth->allTexts[388],
+			LIBRARY->generaltexth->allTexts[193],
+			LIBRARY->generaltexth->translate("new-horizons.fort.stat.initiative"),
+			LIBRARY->generaltexth->translate("new-horizons.fort.stat.leadershipCost"),
+			LIBRARY->generaltexth->allTexts[194]
+		};
+		const std::array<std::string, NH_FORT_STAT_COUNT> rankedStatDescriptions =
+		{
+			LIBRARY->generaltexth->translate("core.castinfo.0"),
+			LIBRARY->generaltexth->translate("core.castinfo.1"),
+			LIBRARY->generaltexth->translate("core.castinfo.2"),
+			LIBRARY->generaltexth->translate("core.castinfo.3"),
+			LIBRARY->generaltexth->translate("core.castinfo.4"),
+			LIBRARY->generaltexth->translate("new-horizons.fort.stat.initiative.description"),
+			LIBRARY->generaltexth->translate("new-horizons.fort.stat.leadershipCost.description"),
+			LIBRARY->generaltexth->translate("core.castinfo.5")
+		};
+		const int rowHeight = rankedLayout ? rankedFortStatRowHeight(cardHeight, compactStatGrid) : 20;
+		if(rankedLayout)
+			assert(cardHeight >= statTop + rankedFortStatRowCount(compactStatGrid) * rowHeight + rankedFortStatBottomPadding());
+		const auto tinyFont = rankedLayout ? ENGINE->renderHandler().loadFont(FONT_TINY) : nullptr;
+		const int statLabelWidth = rankedLayout
+			? static_cast<int>(std::max({
+				tinyFont->getStringWidth(rankedStatNames[0]),
+				tinyFont->getStringWidth(rankedStatNames[1]),
+				tinyFont->getStringWidth(rankedStatNames[2]),
+				tinyFont->getStringWidth(rankedStatNames[3]),
+				tinyFont->getStringWidth(rankedStatNames[4]),
+				tinyFont->getStringWidth(rankedStatNames[5]),
+				tinyFont->getStringWidth(rankedStatNames[6]),
+				tinyFont->getStringWidth(rankedStatNames[7])
+			}))
+			: 0;
+		const int statValueWidth = rankedLayout
+			? static_cast<int>(tinyFont->getStringWidth("999"))
+			: 0;
+		const int minimumStatWidth = statLabelWidth + statValueWidth + 6;
+		const int statX = rankedLayout ? (compactStatGrid ? 4 : std::max(creatureX + 120, cardWidth - minimumStatWidth - 4)) : 287;
+		const int statWidth = rankedLayout ? (compactStatGrid ? std::max(1, cardWidth - 8) : std::max(1, cardWidth - statX - 4)) : 96;
+		const int statColumnGap = compactStatGrid ? NH_FORT_CARD_GAP : 0;
+		const int statColumnWidth = compactStatGrid
+			? std::max(1, (statWidth - statColumnGap) / NH_FORT_COMPACT_STAT_COLUMNS)
+			: statWidth;
+		const bool useCompactStatGrid = compactStatGrid;
+		const auto rankedStatRect = [statX, statTop, rowHeight, statWidth, useCompactStatGrid, statColumnWidth, statColumnGap](size_t index)
+		{
+			if(!useCompactStatGrid)
+				return Rect(statX, statTop + static_cast<int>(index) * rowHeight, statWidth, rowHeight);
+			return Rect(statX + static_cast<int>(index % NH_FORT_COMPACT_STAT_COLUMNS) * (statColumnWidth + statColumnGap),
+				statTop + static_cast<int>(index / NH_FORT_COMPACT_STAT_COLUMNS) * rowHeight,
+				statColumnWidth, rowHeight);
+		};
+		Rect sizes(statX, statTop, statWidth, rowHeight);
+		if(rankedLayout)
+		{
+			values.push_back(std::make_shared<LabeledValue>(rankedStatRect(0), rankedStatNames[0], rankedStatDescriptions[0], getMyCreature()->getAttack(false), true));
+			values.push_back(std::make_shared<LabeledValue>(rankedStatRect(1), rankedStatNames[1], rankedStatDescriptions[1], getMyCreature()->getDefense(false), true));
+			values.push_back(std::make_shared<LabeledValue>(rankedStatRect(2), rankedStatNames[2], rankedStatDescriptions[2], getMyCreature()->getMinDamage(false), getMyCreature()->getMaxDamage(false), true));
+			values.push_back(std::make_shared<LabeledValue>(rankedStatRect(3), rankedStatNames[3], rankedStatDescriptions[3], getMyCreature()->getMaxHealth(), true));
+			values.push_back(std::make_shared<LabeledValue>(rankedStatRect(4), rankedStatNames[4], rankedStatDescriptions[4], getMyCreature()->getBaseSpeed(), true));
+			values.push_back(std::make_shared<LabeledValue>(rankedStatRect(5), rankedStatNames[5], rankedStatDescriptions[5], getMyCreature()->getBaseInitiative(), true));
+
+			int leadershipCost = 0;
+			if(GAME && GAME->interface() && GAME->interface()->cb)
+			{
+				const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
+				if(newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2)
+					leadershipCost = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(capabilityRules, getMyCreature()->getId());
+			}
+			values.push_back(std::make_shared<LabeledValue>(rankedStatRect(6), rankedStatNames[6], rankedStatDescriptions[6], leadershipCost > 0 ? std::to_string(leadershipCost) : "--", true));
+			values.push_back(std::make_shared<LabeledValue>(rankedStatRect(7), rankedStatNames[7], rankedStatDescriptions[7], town->creatureGrowth(level), true));
+		}
+		else
+		{
+			values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[190], LIBRARY->generaltexth->translate("core.castinfo.0"), getMyCreature()->getAttack(false)));
+			sizes.y+=20;
+			values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[191], LIBRARY->generaltexth->translate("core.castinfo.1"), getMyCreature()->getDefense(false)));
+			sizes.y+=21;
+			values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[199], LIBRARY->generaltexth->translate("core.castinfo.2"), getMyCreature()->getMinDamage(false), getMyCreature()->getMaxDamage(false)));
+			sizes.y+=20;
+			values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[388], LIBRARY->generaltexth->translate("core.castinfo.3"), getMyCreature()->getMaxHealth()));
+			sizes.y+=21;
+			values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[193], LIBRARY->generaltexth->translate("core.castinfo.4"), getMyCreature()->valOfBonuses(BonusType::STACKS_SPEED)));
+			sizes.y+=20;
+			values.push_back(std::make_shared<LabeledValue>(sizes, LIBRARY->generaltexth->allTexts[194], LIBRARY->generaltexth->translate("core.castinfo.5"), town->creatureGrowth(level)));
+		}
 	}
+}
+
+void CFortScreen::RecruitArea::show(Canvas & to)
+{
+	if(rankedLayout)
+	{
+		CanvasClipRectGuard clip(to, pos);
+		CIntObject::show(to);
+	}
+	else
+		CIntObject::show(to);
+}
+
+void CFortScreen::RecruitArea::showAll(Canvas & to)
+{
+	if(rankedLayout)
+	{
+		CanvasClipRectGuard clip(to, pos);
+		CIntObject::showAll(to);
+	}
+	else
+		CIntObject::showAll(to);
 }
 
 const CCreature * CFortScreen::RecruitArea::getMyCreature()
@@ -2492,7 +2862,9 @@ void CFortScreen::RecruitArea::creaturesChangedEventHandler()
 {
 	if(availableCount)
 	{
-		std::string availableText = LIBRARY->generaltexth->allTexts[217] + std::to_string(town->creatures[level].first);
+		std::string availableText = rankedLayout
+			? std::to_string(town->creatures[level].first)
+			: LIBRARY->generaltexth->allTexts[217] + std::to_string(town->creatures[level].first);
 		availableCount->setText(availableText);
 	}
 }

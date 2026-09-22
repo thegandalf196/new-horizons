@@ -366,11 +366,14 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 		update.side = sideId;
 		update.reserve = snapshot.demonicReserve;
 		update.gated = snapshot.gatedDemonicStacks;
+		update.chainGateArmed = snapshot.chainGateArmed;
+		std::vector<uint32_t> hellfireSources;
 
 		for(const auto & gate : snapshot.pendingDemonicGates)
 		{
 			const bool due = endOfRoundPhase
-				? swiftGate && gate.arrivalRound <= concrete->getRound() + 1
+				? gate.chainGateAccelerated || gate.arrivalRound <= concrete->getRound()
+					|| (swiftGate && gate.arrivalRound <= concrete->getRound() + 1)
 				: gate.arrivalRound <= concrete->getRound();
 			if(!due)
 			{
@@ -472,40 +475,7 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			}
 
 			if(hellfireArrival)
-			{
-				std::vector<const battle::Unit *> enemies;
-				if(gated)
-					for(const auto * adjacent : battle.battleAdjacentUnits(gated))
-						if(adjacent && adjacent->alive() && adjacent->unitSide() != sideId)
-							enemies.push_back(adjacent);
-				const int64_t totalFireDamage = gated ? gated->getAvailableHealth() * 15 / 100 : 0;
-				const int64_t damagePerEnemy = enemies.empty() ? 0 : totalFireDamage / enemies.size();
-				if(damagePerEnemy > 0)
-				{
-					StacksInjured injury;
-					injury.battleID = concrete->getBattleID();
-					int64_t appliedDamage = 0;
-					for(const auto * enemy : enemies)
-					{
-						BattleStackAttacked hit;
-						hit.attackerID = info.id;
-						hit.stackAttacked = enemy->unitId();
-						hit.damageAmount = damagePerEnemy;
-						hit.flags |= BattleStackAttacked::SPELL_EFFECT;
-						CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), enemy->acquireState());
-						appliedDamage += hit.damageAmount;
-						injury.stacks.push_back(hit);
-					}
-					gameHandler->sendAndApply(injury);
-					BattleLogMessage hellfireLog;
-					hellfireLog.battleID = concrete->getBattleID();
-					MetaString hellfireLine = MetaString::createFromRawString("Hellfire deals ");
-					hellfireLine.appendNumber(appliedDamage);
-					hellfireLine.appendRawString(" damage.");
-					hellfireLog.lines.push_back(std::move(hellfireLine));
-					gameHandler->sendAndApply(hellfireLog);
-				}
-			}
+				hellfireSources.push_back(info.id);
 			BattleLogMessage message;
 			message.battleID = concrete->getBattleID();
 			MetaString line = MetaString::createFromRawString("The Gate brings forth ");
@@ -517,6 +487,48 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			gameHandler->sendAndApply(message);
 		}
 		gameHandler->sendAndApply(update);
+
+		// Publish the gated-stack identity before Hellfire emits its indirect
+		// damage packet.  That packet carries the gated unit as attackerID, so
+		// the shared visitor can authoritatively recognize a lethal Hellfire hit
+		// as a Chain Gate trigger.
+		for(const auto sourceId : hellfireSources)
+		{
+			const auto * gated = battle.battleGetStackByID(sourceId, false);
+			if(!gated)
+				continue;
+			std::vector<const battle::Unit *> enemies;
+			for(const auto * adjacent : battle.battleAdjacentUnits(gated))
+				if(adjacent && adjacent->alive() && adjacent->unitSide() != sideId)
+					enemies.push_back(adjacent);
+			const int64_t totalFireDamage = gated->getAvailableHealth() * 15 / 100;
+			const int64_t damagePerEnemy = enemies.empty() ? 0 : totalFireDamage / enemies.size();
+			if(damagePerEnemy <= 0)
+				continue;
+
+			StacksInjured injury;
+			injury.battleID = concrete->getBattleID();
+			int64_t appliedDamage = 0;
+			for(const auto * enemy : enemies)
+			{
+				BattleStackAttacked hit;
+				hit.attackerID = sourceId;
+				hit.stackAttacked = enemy->unitId();
+				hit.damageAmount = damagePerEnemy;
+				hit.flags |= BattleStackAttacked::SPELL_EFFECT;
+				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), enemy->acquireState());
+				appliedDamage += hit.damageAmount;
+				injury.stacks.push_back(hit);
+			}
+			gameHandler->sendAndApply(injury);
+			BattleLogMessage hellfireLog;
+			hellfireLog.battleID = concrete->getBattleID();
+			MetaString hellfireLine = MetaString::createFromRawString("Hellfire deals ");
+			hellfireLine.appendNumber(appliedDamage);
+			hellfireLine.appendRawString(" damage.");
+			hellfireLog.lines.push_back(std::move(hellfireLine));
+			gameHandler->sendAndApply(hellfireLog);
+		}
 	}
 }
 

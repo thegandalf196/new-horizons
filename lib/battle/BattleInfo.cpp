@@ -105,6 +105,41 @@ SideInBattle & BattleInfo::getSide(BattleSide side)
 	return sides.at(side);
 }
 
+BattleSide BattleInfo::gatedDemonicStackSide(uint32_t unitId) const
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & gated = sides.at(side).gatedDemonicStacks;
+		if(std::ranges::any_of(gated, [unitId](const auto & stack)
+		{
+			return stack.unitId == unitId;
+		}))
+			return side;
+	}
+	return BattleSide::NONE;
+}
+
+bool BattleInfo::hasGatedDemonicStack(BattleSide side, uint32_t unitId) const
+{
+	return gatedDemonicStackSide(unitId) == side;
+}
+
+void BattleInfo::armChainGate(BattleSide side)
+{
+	// The token is intentionally a bool: several kills in one BattleAttack or
+	// across one round cannot bank more than the one promised acceleration.
+	sides.at(side).chainGateArmed = true;
+}
+
+bool BattleInfo::consumeChainGate(BattleSide side)
+{
+	auto & token = sides.at(side).chainGateArmed;
+	if(!token)
+		return false;
+	token = false;
+	return true;
+}
+
 void BattleInfo::recordBloodrageStackDeath(uint32_t unitId)
 {
 	if(sides[BattleSide::ATTACKER].bloodrageRank == 0 && sides[BattleSide::DEFENDER].bloodrageRank == 0)

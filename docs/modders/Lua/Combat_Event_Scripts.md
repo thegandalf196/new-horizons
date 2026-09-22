@@ -55,7 +55,8 @@ Script.__index = Script
 
 function Script:onAfterAttacked(server, battle, unit, other)
     if other and other:isAlive() then
-        server:damageUnit(battle, other, self.damage)
+        -- Pass the bearer as source when this damage is caused by that unit.
+        server:damageUnit(battle, other, self.damage, false, unit)
     end
 end
 

@@ -5874,7 +5874,7 @@
 								"requires": "advanced",
 								"description": "After a gated stack destroys an enemy stack, the next Gate opened during that combat resolves one timing step sooner.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After a gated stack destroys an enemy stack, the next Gate opened during that combat resolves one timing step sooner."
 								}
 							},
@@ -8412,6 +8412,10 @@
 		"new-horizons.category.elite.description": "Elite creature category. This classification does not change creature statistics, recruitment, upgrades or army capacity.",
 		"new-horizons.category.champion.name": "Champion",
 		"new-horizons.category.champion.description": "Champion creature category. This classification does not change creature statistics, recruitment, upgrades or army capacity.",
+		"new-horizons.fort.stat.initiative": "Initiative",
+		"new-horizons.fort.stat.initiative.description": "Determines this creature's turn order in battle.",
+		"new-horizons.fort.stat.leadershipCost": "Leadership Cost",
+		"new-horizons.fort.stat.leadershipCost.description": "Leadership required for each creature in this stack.",
 		"new-horizons.muster.title": "Muster",
 		"new-horizons.muster.available": "Muster available this week",
 		"new-horizons.muster.used": "Muster used this week",

@@ -84,10 +84,11 @@ void ServerCallbackProxy::registerMethods(MethodRegistrar & R)
 			{"battle", "Battle",  "Battle in which damage is dealt."},
 			{"unit",   "Unit",    "Target unit."},
 			{"damage", "integer", "Damage points to deal (will be clamped to remaining health)."},
-			{"destroyRemains", "boolean?", "Optional: casualties killed by this hit leave no usable remains."}
+			{"destroyRemains", "boolean?", "Optional: casualties killed by this hit leave no usable remains."},
+			{"source", "Unit?", "Optional creature credited with this damage; it must belong to this battle. Omit for unattributed damage."}
 		},
 		{"integer, integer", "Damage actually dealt, and the count of killed creatures."},
-		"Damages the unit, returning the actual damage dealt and the number of killed creatures.");
+		"Damages the unit, returning the actual damage dealt and the number of killed creatures. An optional source unit attributes the hit to that unit; omitted damage remains unattributed.");
 	R.function<&ServerCallbackProxy::removeUnit>("removeUnit",
 		{
 			{"battle", "Battle the unit belongs to."},
@@ -517,11 +518,20 @@ int ServerCallbackProxy::damageUnit(lua_State * L)
 	bool destroyRemains = false;
 	if(S.stackSize() >= 5)
 		S.get(5, destroyRemains);
+	const battle::Unit * source = nullptr;
+	if(S.stackSize() >= 6)
+		S.get(6, source);
+	if(source)
+	{
+		const auto * sourceInBattle = battle->battleGetUnitByID(source->unitId());
+		if(sourceInBattle != source)
+			throw std::runtime_error("Damage source must be a unit in the given battle");
+	}
 
 	BattleStackAttacked bsa;
 	bsa.damageAmount = damageAmount;
 	bsa.stackAttacked = unit->unitId();
-	bsa.attackerID = -1;
+	bsa.attackerID = source ? source->unitId() : -1;
 	auto newState = unit->acquireState();
 	CStack::prepareAttacked(bsa, *object->getRNG(), newState, destroyRemains);
 

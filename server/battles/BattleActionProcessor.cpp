@@ -109,6 +109,32 @@ static bool canonicalFireWallDirection(BattleHex::EDir direction)
 	return direction >= BattleHex::TOP_LEFT && direction <= BattleHex::LEFT;
 }
 
+static bool chainGateKillQualifies(const CBattleInfoCallback & battle,
+	const CStack * attacker, const std::vector<BattleStackAttacked> & hits)
+{
+	if(!attacker)
+		return false;
+	const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle());
+	if(!concrete)
+		return false;
+	const auto rewardSide = concrete->gatedDemonicStackSide(attacker->unitId());
+	if((rewardSide != BattleSide::ATTACKER && rewardSide != BattleSide::DEFENDER)
+		|| attacker->unitId() == std::numeric_limits<uint32_t>::max())
+		return false;
+	const auto * hero = battle.battleGetFightingHero(rewardSide);
+	if(!hero || !hero->hasActivePerk(
+		"new-horizons:demonicGating", "new-horizons:demonicGating.chainGate"))
+		return false;
+
+	return std::ranges::any_of(hits, [&battle, attacker, rewardSide](const auto & hit)
+	{
+		if(hit.attackerID != attacker->unitId() || !hit.killed() || hit.cloneKilled() || hit.willRebirth())
+			return false;
+		const auto * victim = battle.battleGetUnitByID(hit.stackAttacked);
+		return victim && victim != attacker && victim->unitSide() != rewardSide;
+	});
+}
+
 static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)
 {
 	if(action.actionType != EActionType::DEMONIC_GATING || !action.gatingCreature.hasValue()
@@ -1142,6 +1168,7 @@ bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & ba
 		update.reserve = side.demonicReserve;
 		update.pending = side.pendingDemonicGates;
 		update.gated = side.gatedDemonicStacks;
+		update.chainGateArmed = side.chainGateArmed;
 		SideInBattle::PendingDemonicGate gate;
 		gate.creature = reserve->first;
 		gate.count = reserve->second;
@@ -1159,12 +1186,46 @@ bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & ba
 	});
 	if(found == gates.end())
 		return false;
+	const auto acceptedGate = *found;
+
+	// A valid Gate is the only point at which the token is spent.  Validation
+	// happened before StartAction, so rejected requests never reach this block;
+	// Swift Gate still consumes Chain Gate but retains its already-end-of-round
+	// timing instead of advancing it any further.
+	const auto * hero = battle.battleGetFightingHero(ba.side);
+	if(hero && hero->hasActivePerk(
+		"new-horizons:demonicGating", "new-horizons:demonicGating.chainGate")
+		&& concrete->getChainGateArmed(ba.side))
+	{
+		const bool swiftGate = hero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.swiftGate");
+		BattleDemonicGatingStateChanged update;
+		update.battleID = concrete->getBattleID();
+		update.side = ba.side;
+		update.reserve = concrete->getSide(ba.side).demonicReserve;
+		update.pending = concrete->getSide(ba.side).pendingDemonicGates;
+		update.gated = concrete->getSide(ba.side).gatedDemonicStacks;
+		update.chainGateArmed = false;
+		if(!swiftGate)
+		{
+			const auto pending = std::ranges::find_if(update.pending, [&ba](const auto & gate)
+			{
+				return gate.sourceUnitId == ba.stackNumber && gate.creature == ba.gatingCreature;
+			});
+			if(pending != update.pending.end())
+			{
+				pending->arrivalRound = concrete->getRound();
+				pending->chainGateAccelerated = true;
+			}
+		}
+		gameHandler->sendAndApply(update);
+	}
 	BattleLogMessage message;
 	message.battleID = concrete->getBattleID();
 	MetaString line = MetaString::createFromRawString("A Gate opens for ");
-	line.appendNumber(found->count);
+	line.appendNumber(acceptedGate.count);
 	line.appendRawString(" ");
-	line.appendName(found->creature, found->count);
+	line.appendName(acceptedGate.creature, acceptedGate.count);
 	line.appendRawString(".");
 	message.lines.push_back(std::move(line));
 	gameHandler->sendAndApply(message);
@@ -2037,6 +2098,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	for(const AttackedTarget & target : payload.targets)
 		collectEventTriggers(battle, reactions, CombatEventType::AFTER_ATTACKED, target.unit, attacker);
 
+	// The packet carries the server-authored trigger so receivers can converge
+	// on the same capped token without inferring gameplay state from animation
+	// or client-side damage estimates.
+	bat.chainGateTriggered = chainGateKillQualifies(battle, attacker, bat.bsa);
 	gameHandler->sendAndApply(bat);
 
 	// Bulwark reflects a share of the physical health loss that actually landed,

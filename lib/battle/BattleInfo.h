@@ -52,6 +52,14 @@ public:
 	{
 		return sides.at(side).demonicReserve;
 	}
+	bool getChainGateArmed(BattleSide side) const { return sides.at(side).chainGateArmed; }
+	bool hasChainGateState() const
+	{
+		return sides[BattleSide::ATTACKER].hasChainGateState()
+			|| sides[BattleSide::DEFENDER].hasChainGateState();
+	}
+	BattleSide gatedDemonicStackSide(uint32_t unitId) const;
+	bool hasGatedDemonicStack(BattleSide side, uint32_t unitId) const;
 	HeroCommand getActiveDoctrine(BattleSide side) const override { (void)side; return HeroCommand::NONE; }
 	HeroCommand getActiveOrder(BattleSide side) const override
 	{
@@ -99,6 +107,8 @@ public:
 	{
 		if(h.saving)
 		{
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
+				throw std::runtime_error("Cannot discard Chain Gate battle state");
 			heroCommands::validateRules(heroCommandRules);
 			validateFocusFireStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_MOMENT)
@@ -343,6 +353,13 @@ public:
 	bool setHeroOrderSecondWindActive(BattleSide side, bool active);
 	void recordBloodrageStackDeath(uint32_t unitId);
 	void clearBloodrageStackDeath(uint32_t unitId);
+	/// Arm the single Chain Gate token for a side.  Repeated qualifying kills
+	/// remain capped at one token.
+	void armChainGate(BattleSide side);
+	/// Consume the Chain Gate token if one is armed, returning whether it was
+	/// consumed.  Validation is deliberately separate so rejected Gate actions
+	/// leave the token untouched.
+	bool consumeChainGate(BattleSide side);
 
 	//////////////////////////////////////////////////////////////////////////
 	CStack * getStack(int stackID, bool onlyAlive = true);

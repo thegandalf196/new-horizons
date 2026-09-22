@@ -38,6 +38,8 @@ Damages the unit, returning the actual damage dealt and the number of killed cre
 - param `battle`: [`Battle`](Battle.md) — Battle in which damage is dealt.
 - param `unit`: [`Unit`](Unit.md) — Target unit.
 - param `damage`: `integer` — Damage points to deal (will be clamped to remaining health).
+- param `destroyRemains`: `boolean?` — Optional: casualties killed by this hit leave no usable remains.
+- param `source`: [`Unit`](Unit.md)? — Optional creature credited with this damage. It must belong to `battle`; omit it for unattributed damage.
 
 - returns `integer, integer` — Damage actually dealt, and the count of killed creatures.
 

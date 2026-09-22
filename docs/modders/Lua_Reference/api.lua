@@ -440,8 +440,9 @@ function BattleServer:changeUnit(battle, unitState, healthDelta) end
 ---@param unit Unit # Target unit.
 ---@param damage integer # Damage points to deal (will be clamped to remaining health).
 ---@param destroyRemains boolean? # Optional: casualties killed by this hit leave no usable remains.
+---@param source Unit? # Optional creature credited with this damage; it must belong to battle. Omit for unattributed damage.
 ---@return integer, integer # Damage actually dealt, and the count of killed creatures.
-function BattleServer:damageUnit(battle, unit, damage, destroyRemains) end
+function BattleServer:damageUnit(battle, unit, damage, destroyRemains, source) end
 
 ---Removes the unit or its corpse from the battlefield.
 ---@param battle Battle # Battle the unit belongs to.

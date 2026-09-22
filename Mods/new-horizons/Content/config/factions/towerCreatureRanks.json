@@ -2,8 +2,8 @@
 	"core:tower": {
 		"town": {
 			"creatures": {
-				"modify@3": [ "genie", "masterGenie" ],
-				"modify@4": [ "mage", "archMage" ]
+				"modify@4": [ "genie", "masterGenie" ],
+				"modify@5": [ "mage", "archMage" ]
 			},
 			"structures": {
 				"dwellingLvl4": {
