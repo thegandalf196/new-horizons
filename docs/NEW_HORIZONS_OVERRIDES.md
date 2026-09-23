@@ -346,3 +346,17 @@ requiring the complete source document to be replaced.
 - **Rule:** Core, Elite, and Champion headings all use the same yellow font
   color. Correct the Conflux-specific crowded layout and clipped creature
   previews without redesigning the working layouts of other towns.
+
+### 2026-09-23 — Preserve the accepted inscribed-spell casting rule
+
+- **Status:** Accepted; records the earlier explicit spellbook clarification.
+- **Rule:** A combat spell already inscribed in a hero's spellbook is not locked
+  for casting by insufficient School proficiency. This applies to every hero,
+  including Solmyr's Master Chain Lightning, and does not require Spellbinder's
+  Hat. It overrides the older scripture's proficiency gate for those spells.
+- **Boundaries:** This grants no unknown spell and does not reactivate removed
+  spells. Canonical roster eligibility, mana, action allowances, valid targets,
+  and other ordinary casting restrictions still apply. Acquisition rules and
+  the separate Adventure Spell system are not changed by this clarification.
+- **Follow-up:** Reconcile Spellbinder's Hat's benefit with this broader rule;
+  do not restore the proficiency lock merely to preserve its old distinction.
