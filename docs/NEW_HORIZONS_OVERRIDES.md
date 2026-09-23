@@ -34,6 +34,19 @@ requiring the complete source document to be replaced.
 
 ## Accepted overrides
 
+### 2026-09-23 — Reserved Gating arrival area
+
+- **Status:** Accepted
+- **Overrides:** Pending Demonic Gate placement and arrival presentation.
+- **Rule:** A pending Gate visibly marks and reserves the arriving creature's
+  full battlefield footprint, including both hexes for a double-wide creature.
+  Other stacks cannot occupy that footprint before arrival. Use the existing
+  Fire Wall flame animation with an amber hex outline as a visual marker only;
+  it does not deal Fire Wall damage. On successful creature arrival, remove the
+  marker and play the Devil's movement sound once. Gate placement itself does
+  not play the arrival sound.
+- **Implementation evidence:** Pending implementation and validation.
+
 ### 2026-09-22 — Replace Metamagic's countered-spell perk
 
 - **Status:** Accepted
