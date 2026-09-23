@@ -58,3 +58,18 @@ simulation, and visual confirmation of the hero panel.
 
 Perks require their own runtime and regression coverage before their registry
 entries may be changed from `planned` to `active`.
+
+## Directional perks
+
+Martial Channeling adds 10 percentage points only when a Spell arms the next
+Order. Arcane Channeling adds 10 percent only when an Order arms the next Spell.
+The percentage is captured when readiness is armed, so later changes do not
+silently alter an already issued Order or an in-flight spell calculation.
+
+Tactical Weaving extends the inclusive expiry to the end of round R+2, where R
+is the round in which readiness was armed; without it the expiry is R+1.
+It does not grant another Hero Action or change Metamagic follow-up eligibility.
+
+Readiness icons identify the next action, not the hero's mastery rank. Perks can
+increase the amount without increasing mastery, so the UI must never infer
+Basic, Advanced, or Expert from the displayed percentage.

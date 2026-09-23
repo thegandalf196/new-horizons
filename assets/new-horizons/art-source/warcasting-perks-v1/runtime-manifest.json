@@ -1,0 +1,26 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_martial_channeling",
+    "NH_perk_arcane_channeling",
+    "NH_perk_tactical_weaving"
+  ],
+  "files": {
+    "NH_perk_martial_channeling_normal.png": "2118d33fd58f1116410c84b90675561cccd945328cbf35ed4e6eb5253c6743d1",
+    "NH_perk_martial_channeling_pressed.png": "36d08eaffe2e0d51e7cb5f1731f88c3114b2c1c3b4fb3c159e3a045e0a3c6ecc",
+    "NH_perk_martial_channeling_disabled.png": "7ddc4431d5c2d6fb7a4b4b0719ec7097af38beb212d223ccecc650f84d45d346",
+    "NH_perk_martial_channeling_highlighted.png": "25f049d4326ce82caa6502642a601493dbad882d5537b742dafb150129b9d4c7",
+    "NH_perk_martial_channeling.json": "2c991581d527775792ecdbf5e0d7d4a0cb103605156cfb6f7487891ccccaabd4",
+    "NH_perk_arcane_channeling_normal.png": "24dc5d6b74027586a5e0f4d25ccf088d851bbdf881514b70c8cf4a33eefde5b8",
+    "NH_perk_arcane_channeling_pressed.png": "0aa88cc42529af56a500c3d06d6fcf04423c8f18f7fca372c23c54182c0fe96e",
+    "NH_perk_arcane_channeling_disabled.png": "9c579a0b34ef53f022ede30d181c4321d806ee737617efe949524c267318b4bd",
+    "NH_perk_arcane_channeling_highlighted.png": "8d517949f119c7ad3ba474b817692c2f66abdbc4ec2eb05694c1d381a63334a6",
+    "NH_perk_arcane_channeling.json": "8b6e17da4d44abbd922b5e623f02e53ca03fe97388b3b6e30ac106ecfbb36791",
+    "NH_perk_tactical_weaving_normal.png": "864a13878ccf57a7827cac37b83e4702c6a639092d3cfe6bb4747c48d41c2161",
+    "NH_perk_tactical_weaving_pressed.png": "f93ce70c91ad568a2fdfb99281afa1c203b03c8c4d5fe6501da56eb9411a8df3",
+    "NH_perk_tactical_weaving_disabled.png": "6ba031defd3a2664b6a83d08773f161d5c42fd1adbcf22d1da7a4ad3f6012b52",
+    "NH_perk_tactical_weaving_highlighted.png": "4ef4689e42d7b50215d662c75eb6cf8d84719deacf38941f601f34ff196a5833",
+    "NH_perk_tactical_weaving.json": "eb8c5f7613f7e501f8f986b8cfa43754792eeb42245a3adae7a21dea246ac24c"
+  }
+}

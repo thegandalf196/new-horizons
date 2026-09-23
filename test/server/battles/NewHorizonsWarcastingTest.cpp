@@ -24,6 +24,9 @@ namespace
 {
 constexpr auto warcastingSkill = "new-horizons:warcasting";
 constexpr auto metamagicSkill = "new-horizons:metamagic";
+constexpr auto martialChannelingPerk = "new-horizons:warcasting.martialChanneling";
+constexpr auto arcaneChannelingPerk = "new-horizons:warcasting.arcaneChanneling";
+constexpr auto tacticalWeavingPerk = "new-horizons:warcasting.tacticalWeaving";
 
 class WarcastingEnvironment final : public Environment
 {
@@ -51,8 +54,25 @@ protected:
 		auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		magicRules["warcasting"] = JsonNode(true);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+
+		auto perkRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		if(!plannedWarcastingPerkBeforeInit.empty())
+		{
+			auto & perks = perkRules["skills"][warcastingSkill]["perks"].Vector();
+			const auto planned = std::find_if(perks.begin(), perks.end(), [&](const auto & perk)
+			{
+				return perk["id"].String() == plannedWarcastingPerkBeforeInit;
+			});
+			if(planned == perks.end())
+				throw std::runtime_error("Unknown Warcasting perk requested for saved planned-rule fixture");
+			(*planned)["effect"]["status"].String() = "planned";
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
+	}
+
+	void markPerkPlannedBeforeInitialization(const std::string & perkId)
+	{
+		plannedWarcastingPerkBeforeInit = perkId;
 	}
 
 	void prepareWarcasting(int rank = 1, bool withMetamagic = false)
@@ -97,6 +117,24 @@ protected:
 		gameHandler->sendAndApply(activate);
 	}
 
+	void selectWarcastingPerk(const std::string & perkId)
+	{
+		attackerSideHero->applyPerkSelection({std::string(warcastingSkill), perkId});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(std::string(warcastingSkill), perkId));
+	}
+
+	const JsonNode & savedPerkDefinition(const std::string & perkId) const
+	{
+		const auto & perks = attackerSideHero->getPerkState().rules["skills"][warcastingSkill]["perks"].Vector();
+		const auto definition = std::find_if(perks.begin(), perks.end(), [&](const auto & perk)
+		{
+			return perk["id"].String() == perkId;
+		});
+		if(definition == perks.end())
+			throw std::runtime_error("Missing Warcasting perk in saved rules snapshot");
+		return *definition;
+	}
+
 	bool cast(SpellID spell, const CStack * target, bool followup = false)
 	{
 		BattleAction action;
@@ -123,6 +161,7 @@ protected:
 
 	CStack * attacker = nullptr;
 	CStack * defender = nullptr;
+	std::string plannedWarcastingPerkBeforeInit;
 };
 }
 
@@ -219,6 +258,194 @@ TEST_F(NewHorizonsWarcastingTest, OrderReadinessIsAvailableThroughInclusiveExpir
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), AlternatingHeroActionState{});
 }
 
+TEST_F(NewHorizonsWarcastingTest, MartialChannelingAddsOnlyToSpellToOrderReadiness)
+{
+	prepareWarcasting();
+	EXPECT_EQ(savedPerkDefinition(martialChannelingPerk)["effect"]["status"].String(), "active");
+	selectWarcastingPerk(martialChannelingPerk);
+	const int32_t spellRound = battle()->getRound();
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto spellToOrder = battle()->getWarcastingState(BattleSide::ATTACKER);
+	EXPECT_EQ(spellToOrder.nextEligibleAction, AlternatingHeroActionState::Action::ORDER);
+	EXPECT_EQ(spellToOrder.empowermentPercent, 20);
+	EXPECT_EQ(spellToOrder.expiryRound, spellRound + 1);
+	auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(restored, nullptr);
+	EXPECT_EQ(restored->getWarcastingState(BattleSide::ATTACKER), spellToOrder);
+	EXPECT_EQ(newHorizonsWarcasting::orderBonus(restored->getWarcastingState(BattleSide::ATTACKER), spellRound), 20);
+
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto orderState = battle()->getHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(orderState);
+	EXPECT_EQ(orderState->warcastingBonusPercent, 20);
+	const auto & chargeFormula = battle()->getHeroCommandRules()["commands"]["charge"]["effects"]["meleeDamagePercent"];
+	EXPECT_EQ(heroCommands::coefficient(chargeFormula, *attackerSideHero, orderState->warcastingBonusPercent), 34);
+
+	// Martial Channeling does not leak onto the Order-to-Spell direction.
+	const auto orderToSpell = battle()->getWarcastingState(BattleSide::ATTACKER);
+	EXPECT_EQ(orderToSpell.nextEligibleAction, AlternatingHeroActionState::Action::SPELL);
+	EXPECT_EQ(orderToSpell.empowermentPercent, 10);
+}
+
+TEST_F(NewHorizonsWarcastingTest, ArcaneChannelingAddsOnlyToOrderToSpellReadiness)
+{
+	prepareWarcasting();
+	EXPECT_EQ(savedPerkDefinition(arcaneChannelingPerk)["effect"]["status"].String(), "active");
+	selectWarcastingPerk(arcaneChannelingPerk);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 24, ChangeValueMode::ABSOLUTE);
+	const int32_t orderRound = battle()->getRound();
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto orderToSpell = battle()->getWarcastingState(BattleSide::ATTACKER);
+	EXPECT_EQ(orderToSpell.nextEligibleAction, AlternatingHeroActionState::Action::SPELL);
+	EXPECT_EQ(orderToSpell.empowermentPercent, 20);
+	EXPECT_EQ(orderToSpell.expiryRound, orderRound + 1);
+
+	advanceRound();
+	ASSERT_EQ(battle()->getRound(), orderRound + 1);
+	const auto healthBefore = defender->getAvailableHealth();
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender));
+	EXPECT_EQ(healthBefore - defender->getAvailableHealth(), 77);
+
+	// Arcane Channeling does not leak onto the Spell-to-Order direction.
+	const auto spellToOrder = battle()->getWarcastingState(BattleSide::ATTACKER);
+	EXPECT_EQ(spellToOrder.nextEligibleAction, AlternatingHeroActionState::Action::ORDER);
+	EXPECT_EQ(spellToOrder.empowermentPercent, 10);
+}
+
+TEST_F(NewHorizonsWarcastingTest, TacticalWeavingKeepsReadinessThroughSecondInclusiveRound)
+{
+	prepareWarcasting(2);
+	EXPECT_EQ(savedPerkDefinition(tacticalWeavingPerk)["effect"]["status"].String(), "active");
+	selectWarcastingPerk(tacticalWeavingPerk);
+	const int32_t spellRound = battle()->getRound();
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto spellToOrder = battle()->getWarcastingState(BattleSide::ATTACKER);
+	EXPECT_EQ(spellToOrder.empowermentPercent, 20);
+	EXPECT_EQ(spellToOrder.expiryRound, spellRound + 2);
+	EXPECT_EQ(newHorizonsWarcasting::readinessLifetimeRounds(attackerSideHero), 2);
+
+	advanceRound();
+	advanceRound();
+	ASSERT_EQ(battle()->getRound(), spellRound + 2);
+	EXPECT_EQ(newHorizonsWarcasting::orderBonus(battle()->getWarcastingState(BattleSide::ATTACKER),
+		battle()->getRound()), 20);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_TRUE(battle()->getHeroOrderState(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->getHeroOrderState(BattleSide::ATTACKER)->warcastingBonusPercent, 20);
+}
+
+TEST_F(NewHorizonsWarcastingTest, UnselectedPerksDoNotChangeBaseReadiness)
+{
+	prepareWarcasting(2);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(std::string(warcastingSkill), martialChannelingPerk));
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(std::string(warcastingSkill), arcaneChannelingPerk));
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(std::string(warcastingSkill), tacticalWeavingPerk));
+	EXPECT_EQ(newHorizonsWarcasting::readinessLifetimeRounds(attackerSideHero), 1);
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).empowermentPercent, 20);
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto orderState = battle()->getHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(orderState);
+	EXPECT_EQ(orderState->warcastingBonusPercent, 20);
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).empowermentPercent, 20);
+}
+
+TEST_F(NewHorizonsWarcastingTest, SavedPlannedMartialChannelingCannotBeSelectedOrBoostSpellToOrder)
+{
+	markPerkPlannedBeforeInitialization(martialChannelingPerk);
+	prepareWarcasting();
+	EXPECT_EQ(savedPerkDefinition(martialChannelingPerk)["effect"]["status"].String(), "planned");
+	EXPECT_THROW(attackerSideHero->applyPerkSelection({std::string(warcastingSkill), martialChannelingPerk}),
+		std::runtime_error);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(std::string(warcastingSkill), martialChannelingPerk));
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).empowermentPercent, 10);
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_TRUE(battle()->getHeroOrderState(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->getHeroOrderState(BattleSide::ATTACKER)->warcastingBonusPercent, 10);
+}
+
+TEST_F(NewHorizonsWarcastingTest, SavedPlannedArcaneChannelingCannotBeSelectedOrBoostOrderToSpell)
+{
+	markPerkPlannedBeforeInitialization(arcaneChannelingPerk);
+	prepareWarcasting();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 24, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(savedPerkDefinition(arcaneChannelingPerk)["effect"]["status"].String(), "planned");
+	EXPECT_THROW(attackerSideHero->applyPerkSelection({std::string(warcastingSkill), arcaneChannelingPerk}),
+		std::runtime_error);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(std::string(warcastingSkill), arcaneChannelingPerk));
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).empowermentPercent, 10);
+	advanceRound();
+	const auto healthBefore = defender->getAvailableHealth();
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender));
+	EXPECT_EQ(healthBefore - defender->getAvailableHealth(), 72);
+}
+
+TEST_F(NewHorizonsWarcastingTest, RankLossDisablesSelectedChanneling)
+{
+	prepareWarcasting();
+	selectWarcastingPerk(martialChannelingPerk);
+	const int decodedWarcasting = SecondarySkill::decode(warcastingSkill);
+	ASSERT_GE(decodedWarcasting, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(decodedWarcasting), 0, ChangeValueMode::ABSOLUTE);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(std::string(warcastingSkill), martialChannelingPerk));
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), AlternatingHeroActionState{});
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_TRUE(battle()->getHeroOrderState(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->getHeroOrderState(BattleSide::ATTACKER)->warcastingBonusPercent, 0);
+}
+
+TEST_F(NewHorizonsWarcastingTest, RankLossDisablesAdvancedTacticalWeaving)
+{
+	prepareWarcasting(2);
+	selectWarcastingPerk(tacticalWeavingPerk);
+	const int decodedWarcasting = SecondarySkill::decode(warcastingSkill);
+	ASSERT_GE(decodedWarcasting, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(decodedWarcasting), 1, ChangeValueMode::ABSOLUTE);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(std::string(warcastingSkill), tacticalWeavingPerk));
+	EXPECT_EQ(newHorizonsWarcasting::readinessLifetimeRounds(attackerSideHero), 1);
+
+	const int32_t spellRound = battle()->getRound();
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).expiryRound, spellRound + 1);
+}
+
+TEST_F(NewHorizonsWarcastingTest, TacticalOrderToSpellReadinessExpiresUnusedAtRoundThree)
+{
+	prepareWarcasting(2);
+	selectWarcastingPerk(tacticalWeavingPerk);
+	const int32_t orderRound = battle()->getRound();
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto orderToSpell = battle()->getWarcastingState(BattleSide::ATTACKER);
+	EXPECT_EQ(orderToSpell.nextEligibleAction, AlternatingHeroActionState::Action::SPELL);
+	EXPECT_EQ(orderToSpell.empowermentPercent, 20);
+	EXPECT_EQ(orderToSpell.expiryRound, orderRound + 2);
+
+	advanceRound();
+	advanceRound();
+	ASSERT_EQ(battle()->getRound(), orderRound + 2);
+	EXPECT_EQ(newHorizonsWarcasting::spellBonus(battle()->getWarcastingState(BattleSide::ATTACKER),
+		battle()->getRound()), 20);
+	advanceRound();
+	ASSERT_EQ(battle()->getRound(), orderRound + 3);
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), AlternatingHeroActionState{});
+	EXPECT_TRUE(server.casts.empty());
+}
+
 TEST_F(NewHorizonsWarcastingTest, MetamagicDeclineDoesNotChangeReadiness)
 {
 	prepareWarcasting(1, true);
@@ -233,8 +460,10 @@ TEST_F(NewHorizonsWarcastingTest, MetamagicDeclineDoesNotChangeReadiness)
 TEST_F(NewHorizonsWarcastingTest, AcceptedMetamagicFollowupDoesNotChangeReadiness)
 {
 	prepareWarcasting(1, true);
+	selectWarcastingPerk(martialChannelingPerk);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	const auto beforeFollowup = battle()->getWarcastingState(BattleSide::ATTACKER);
+	ASSERT_EQ(beforeFollowup.empowermentPercent, 20);
 	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), beforeFollowup);
 }

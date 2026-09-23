@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-23",
+  "generator": "OpenAI built-in image generator",
+  "method": "Original generated raster artwork; no reference images were used. Masters are reduced with homm3-art export_art.py; runtime states use brightness/color-only transforms.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "prompt_file": "prompts.md",
+  "assets": [
+    {
+      "id": "new-horizons:warcasting.martialChanneling",
+      "name": "Martial Channeling",
+      "key": "NH_perk_martial_channeling",
+      "master": "exports/martial-channeling/master.png",
+      "generated_output": "exec-3a44ea44-511a-497e-84d1-4e6cff7dc950.png",
+      "prompt_section": "Martial Channeling",
+      "dimensions": [1254, 1254],
+      "source_sha256": "c1fc520827692e71458ca20f9317cc37f8bbb13641216ffa89f1bc28256211ce",
+      "style_reference": null
+    },
+    {
+      "id": "new-horizons:warcasting.arcaneChanneling",
+      "name": "Arcane Channeling",
+      "key": "NH_perk_arcane_channeling",
+      "master": "exports/arcane-channeling/master.png",
+      "generated_output": "exec-4c029696-211c-4c85-9159-7e45350393d9.png",
+      "prompt_section": "Arcane Channeling",
+      "dimensions": [1254, 1254],
+      "source_sha256": "65281b5f68946c3878911d9f6384227ef3bf51eaa4617f163d9e5e8b352880cb",
+      "style_reference": null
+    },
+    {
+      "id": "new-horizons:warcasting.tacticalWeaving",
+      "name": "Tactical Weaving",
+      "key": "NH_perk_tactical_weaving",
+      "master": "exports/tactical-weaving/master.png",
+      "generated_output": "exec-05177e78-4889-4df5-97b8-0b3249ac527b.png",
+      "prompt_section": "Tactical Weaving",
+      "dimensions": [1254, 1254],
+      "source_sha256": "4d0dc8896bf4f6df3afbdb3d66b5c02581503c8d595c996ba5345d8b3fa0d1f9",
+      "style_reference": null
+    }
+  ]
+}

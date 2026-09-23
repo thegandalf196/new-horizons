@@ -1686,7 +1686,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			auto next = side.warcastingState;
 			const auto * hero = commandBattle->battleGetFightingHero(pack.ba.side);
 			const int consumedBonus = next.recordAcceptedAction(AlternatingHeroActionState::Action::ORDER,
-				commandBattle->getRound(), newHorizonsWarcasting::empowerment(hero));
+				commandBattle->getRound(), newHorizonsWarcasting::empowerment(hero,
+					AlternatingHeroActionState::Action::ORDER), newHorizonsWarcasting::readinessLifetimeRounds(hero));
 			if(canonicalOrder && (!pack.orderState || consumedBonus != pack.orderState->warcastingBonusPercent))
 				throw std::runtime_error("Warcasting Order snapshot does not match current readiness");
 			nextWarcastingState = std::move(next);
@@ -1928,7 +1929,8 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		{
 			auto next = casterSide.warcastingState;
 			next.recordAcceptedAction(AlternatingHeroActionState::Action::SPELL, battle->getRound(),
-				newHorizonsWarcasting::empowerment(hero));
+				newHorizonsWarcasting::empowerment(hero, AlternatingHeroActionState::Action::SPELL),
+				newHorizonsWarcasting::readinessLifetimeRounds(hero));
 			casterSide.warcastingState = std::move(next);
 		}
 	}

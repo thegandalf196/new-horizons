@@ -2155,7 +2155,7 @@
 					"requires": "basic",
 					"description": "The Spell-to-Order Warcasting bonus gains an additional +10 percentage points of efficiency.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The Spell-to-Order Warcasting bonus gains an additional +10 percentage points of efficiency."
 					}
 				},
@@ -2165,7 +2165,7 @@
 					"requires": "basic",
 					"description": "The Order-to-Spell Warcasting bonus gains an additional +10% to the spell's Spell Power-derived component.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The Order-to-Spell Warcasting bonus gains an additional +10% to the spell's Spell Power-derived component."
 					}
 				},
@@ -2215,7 +2215,7 @@
 					"requires": "advanced",
 					"description": "An armed Warcasting bonus remains available for two rounds instead of expiring at the end of the next round.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "An armed Warcasting bonus remains available for two rounds instead of expiring at the end of the next round."
 					}
 				},

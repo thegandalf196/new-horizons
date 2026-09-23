@@ -52,13 +52,13 @@ bool hasActiveWarcasting(const AlternatingHeroActionState & state, int round)
 	return state.bonusFor(state.nextEligibleAction, round) > 0;
 }
 
-std::string warcastingIconName(int empowerment)
+std::string warcastingIconName(AlternatingHeroActionState::Action action)
 {
-	if(empowerment >= 30)
-		return "NH_warcasting_expert_small.png";
-	if(empowerment >= 20)
-		return "NH_warcasting_advanced_small.png";
-	return "NH_warcasting_basic_small.png";
+	if(action == AlternatingHeroActionState::Action::SPELL)
+		return "NH_perk_arcane_channeling_normal.png";
+	if(action == AlternatingHeroActionState::Action::ORDER)
+		return "NH_perk_martial_channeling_normal.png";
+	return {};
 }
 }
 
@@ -125,7 +125,7 @@ void HeroBattleStatusArea::refreshContents()
 		backgrounds.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, warcastingRowY,
 			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::effectAreaRowHeight),
 			ColorRGBA(0, 0, 0, 75), ColorRGBA(128, 100, 75)));
-		warcastingIcon = std::make_shared<CPicture>(ImagePath::builtin(warcastingIconName(empowerment)),
+		warcastingIcon = std::make_shared<CPicture>(ImagePath::builtin(warcastingIconName(action)),
 			Point(3, warcastingRowY + 5));
 		warcastingIcon->scaleTo(Point(HeroInfoPanelLayout::effectAreaIconSize, HeroInfoPanelLayout::effectAreaIconSize));
 		labels.push_back(std::make_shared<CLabel>(21, warcastingRowY + 2, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,

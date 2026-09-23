@@ -59,6 +59,9 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:necromancy.blackHarvest", "NH_perk_black_harvest"},
 		{"new-horizons:bloodrage.warDrums", "NH_perk_war_drums"},
 		{"new-horizons:necromancy.boneCollector", "NH_perk_bone_collector"},
+		{"new-horizons:warcasting.martialChanneling", "NH_perk_martial_channeling"},
+		{"new-horizons:warcasting.arcaneChanneling", "NH_perk_arcane_channeling"},
+		{"new-horizons:warcasting.tacticalWeaving", "NH_perk_tactical_weaving"},
 	};
 	static const std::string fallback = "NH_perk_neutral";
 	const auto found = icons.find(perkId);
