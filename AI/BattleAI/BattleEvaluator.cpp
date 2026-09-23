@@ -1098,7 +1098,21 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		const bool canUseTemporalField = spell->getId() == SpellID::SLOW
 			&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField")
 			&& !cb->getBattle(battleID)->battleWasTemporalFieldUsed(side);
+		std::vector<SpellID> cureAfflictionChoices{SpellID::NONE};
+		const auto & magicRules = cb->getBattle(battleID)->getBattle()->getMagicRules();
+		if(newHorizonsMagic::cureEnabled(magicRules, spell->getId()))
+		{
+			for(const auto * unit : cb->getBattle(battleID)->battleGetAllUnits(false))
+				for(const auto affliction : newHorizonsMagic::cureAfflictions(magicRules, unit))
+					if(!vstd::contains(cureAfflictionChoices, affliction))
+						cureAfflictionChoices.push_back(affliction);
+			std::sort(cureAfflictionChoices.begin(), cureAfflictionChoices.end(), [](const SpellID & lhs, const SpellID & rhs)
+			{
+				return lhs.getNum() < rhs.getNum();
+			});
+		}
 
+		for(const auto cureAffliction : cureAfflictionChoices)
 		for(const bool massSlow : {false, true})
 		{
 			if(massSlow && !canUseTemporalField)
@@ -1110,6 +1124,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				spells::BattleCast temp(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
 				temp.setMetamagicFollowup(metamagicFollowup);
 				temp.setMetamagicGrand(metamagicGrandChoice);
+				temp.setCureAffliction(cureAffliction);
 				temp.setMassSlow(massSlow);
 				temp.setSelectiveDispel(selectiveDispel);
 				for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
@@ -1119,6 +1134,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						spells::BattleCast candidateCast(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
 						candidateCast.setMetamagicFollowup(metamagicFollowup);
 						candidateCast.setMetamagicGrand(metamagicGrandChoice);
+						candidateCast.setCureAffliction(cureAffliction);
 						if(!target.empty() && target.front().unitValue)
 							candidateCast.setMetamagicTargetUnitId(target.front().unitValue->unitId());
 						candidateCast.setOvercharge(overcharge);
@@ -1143,6 +1159,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.metamagicGrand = metamagicGrandChoice;
 						ps.spellOvercharge = overcharge;
 						ps.spellSelectiveDispel = selectiveDispel;
+						ps.spellCureAffliction = cureAffliction;
 						ps.spellMassSlow = massSlow;
 						if(isCanonicalLandMine(*cb->getBattle(battleID), spell))
 							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::landMinePlacementValue(
@@ -1478,6 +1495,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						cast.setMetamagicTargetUnitId(ps.dest.front().unitValue->unitId());
 					cast.setOvercharge(ps.spellOvercharge);
 					cast.setSelectiveDispel(ps.spellSelectiveDispel);
+					cast.setCureAffliction(ps.spellCureAffliction);
 					cast.setMassSlow(ps.spellMassSlow);
 					cast.castEval(state->getServerCallback(), ps.dest);
 				}
@@ -1786,6 +1804,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		spellcast.spell = castToPerform.spell->id;
 		spellcast.spellOvercharge = castToPerform.spellOvercharge;
 		spellcast.spellSelectiveDispel = castToPerform.spellSelectiveDispel;
+		spellcast.spellCureAffliction = castToPerform.spellCureAffliction;
 		spellcast.spellMassSlow = castToPerform.spellMassSlow;
 		spellcast.metamagicFollowup = castToPerform.metamagicFollowup;
 		spellcast.metamagicGrand = castToPerform.metamagicGrand;

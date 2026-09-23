@@ -63,6 +63,12 @@ std::string MechanicsProxy::getPluralFormTextID(const spells::Mechanics & m, con
 	return Languages::getPluralFormTextID(lang, count, baseTextID);
 }
 
+std::string MechanicsProxy::getCureAfflictionSource(const spells::Mechanics & m)
+{
+	const auto * spell = m.getCureAffliction().toSpell();
+	return spell ? spell->getJsonKey() : std::string();
+}
+
 void MechanicsProxy::registerMethods(MethodRegistrar & R)
 {
 	R.method<&Mechanics::isPositiveSpell>("isPositive", {},
@@ -91,6 +97,10 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the effect duration in turns.");
 	R.method<&Mechanics::isSelectiveDispel>("isSelectiveDispel", {},
 		"True when this authoritative cast selected the Sorcery Selective Dispel mode.");
+	R.method<&Mechanics::isNewHorizonsCure>("isNewHorizonsCure", {},
+		"True when this cast uses the explicitly saved New Horizons Cure behavior.");
+	R.function<&MechanicsProxy::getCureAfflictionSource>("getCureAfflictionSource", {},
+		"Returns the selected Cure affliction source key, or an empty string for heal-only.");
 	R.method<&Mechanics::isMassSlow>("isMassSlow", {},
 		"True when this authoritative cast selected the Sorcery Temporal Field Mass Slow mode.");
 	R.method<&Mechanics::usesNewHorizonsMagic>("usesNewHorizonsMagic", {},

@@ -25,7 +25,8 @@ enum class EAccessibility
 	DESTRUCTIBLE_WALL,
 	GATE, //sieges -> gate opens only for defender stacks
 	UNAVAILABLE, //indestructible wall parts, special battlefields (like boat-to-boat)
-	SIDE_COLUMN //used for first and last columns of hexes that are unavailable but war machines can stand there
+	SIDE_COLUMN, //used for first and last columns of hexes that are unavailable but war machines can stand there
+	DEMONIC_GATE_RESERVED // pending Demonic Gate arrival footprint
 };
 
 
@@ -35,10 +36,18 @@ using TBattlefieldTurnsArray = std::array<int8_t, GameConstants::BFIELD_SIZE>;
 struct DLL_LINKAGE AccessibilityInfo : TAccessibilityArray
 {
 	std::shared_ptr<const TBattlefieldTurnsArray> destructibleEnemyTurns; //used only as a view for destructibleEnemyTurns from ReachabilityInfo::Parameters
+	std::array<uint32_t, GameConstants::BFIELD_SIZE> demonicGateReservationCounts{};
+	TAccessibilityArray demonicGateReservationBase{};
 
 	public:
 		bool accessible(const BattleHex & tile, const battle::Unit * stack) const; //checks for both tiles if stack is double wide
 		bool accessible(const BattleHex & tile, bool doubleWide, BattleSide side) const; //checks for both tiles if stack is double wide
+		bool accessibleForDemonicGateArrival(const BattleHex & tile, bool doubleWide, BattleSide side,
+			const BattleHex & reservedPosition, bool reservedDoubleWide) const;
+		void reserveDemonicGateFootprint(const BattleHex & position, bool doubleWide, BattleSide side);
+		bool isDemonicGateReserved(const BattleHex & tile) const;
 	private:
-		bool tileAccessibleWithGate(const BattleHex & tile, BattleSide side) const;
+		bool tileAccessibleWithGate(const BattleHex & tile, BattleSide side, uint32_t ignoredGateReservations = 0) const;
+		bool accessibleImpl(const BattleHex & tile, bool doubleWide, BattleSide side,
+			const BattleHex & ignoredReservationPosition, bool ignoredReservationDoubleWide) const;
 };

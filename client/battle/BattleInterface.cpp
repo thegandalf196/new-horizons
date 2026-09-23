@@ -38,6 +38,7 @@
 #include "media/ISoundPlayer.h"
 #include "render/Canvas.h"
 #include "../windows/CTutorialWindow.h"
+#include "../windows/GUIClasses.h"
 
 #include "../../lib/BattleFieldHandler.h"
 #include "../../lib/CConfigHandler.h"
@@ -103,6 +104,7 @@ BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *
 	obstacleController.reset(new BattleObstacleController(*this));
 	installMagicArrowOverchargeUI();
 	installSelectiveDispelUI();
+	installCureAfflictionUI();
 	installTemporalFieldUI();
 
 	adventureInt->onAudioPaused();
@@ -323,6 +325,75 @@ void BattleInterface::installSelectiveDispelUI()
 			};
 			return context;
 		});
+}
+
+void BattleInterface::installCureAfflictionUI()
+{
+	if(!actionsController)
+		return;
+
+	actionsController->setCureAfflictionPicker([this](const BattleAction & pending, const CStack * initialTarget)
+	{
+		const BattleID localBattleID = getBattleID();
+		const auto callback = curInt && curInt->cb ? curInt->cb->getBattle(localBattleID) : nullptr;
+		if(!callback || !callback->getBattle() || !initialTarget || !currentHero()
+			|| !newHorizonsMagic::cureEnabled(callback->getBattle()->getMagicRules(), pending.spell))
+			return false;
+
+		const auto choices = newHorizonsMagic::cureAfflictions(callback->getBattle()->getMagicRules(), initialTarget);
+		if(choices.empty())
+			return false; // Ordinary healing needs no additional choice.
+
+		std::vector<std::string> names;
+		for(const auto choice : choices)
+			names.push_back(choice.toSpell()->getNameTranslated());
+		const auto targetID = initialTarget->unitId();
+		const auto heroID = currentHero()->id;
+		const auto session = actionsController->getCastingSession();
+		auto confirm = [this, pending, localBattleID, targetID, heroID, choices, session](int selected)
+		{
+			if(!actionsController || actionsController->getCastingSession() != session
+				|| !actionsController->heroSpellcastingModeActive() || !makingTurn())
+				return;
+			actionsController->endCastingSpell();
+			if(!curInt || !curInt->cb || selected < 0 || static_cast<size_t>(selected) >= choices.size())
+				return;
+			const auto callback = curInt->cb->getBattle(localBattleID);
+			const auto * hero = currentHero();
+			const auto * target = callback ? callback->battleGetUnitByID(targetID) : nullptr;
+			if(!callback || !callback->getBattle() || !hero || hero->id != heroID || !target)
+				return;
+
+			const auto * spell = pending.spell.toSpell();
+			spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
+			preview.setMetamagicFollowup(pending.metamagicFollowup);
+			preview.setMetamagicGrand(pending.metamagicGrand);
+			preview.setCureAffliction(choices[selected]);
+			auto mechanics = spell->battleMechanics(&preview);
+			spells::detail::ProblemImpl problem;
+			battle::Target targetCheck;
+			targetCheck.emplace_back(target, target->getPosition());
+			if(!mechanics->canBeCast(problem) || !mechanics->canBeCastAt(targetCheck, problem))
+			{
+				curInt->showInfoDialog("This affliction can no longer be cured.");
+				return;
+			}
+
+			BattleAction action = pending;
+			action.target.clear();
+			action.aimToUnit(target);
+			action.spellCureAffliction = choices[selected];
+			curInt->cb->battleMakeSpellAction(localBattleID, action);
+		};
+		auto window = std::make_shared<CObjectListWindow>(names, nullptr, "Cure", "Choose a physical affliction to remove.", confirm);
+		window->onExit = [this, session]
+		{
+			if(actionsController && actionsController->getCastingSession() == session)
+				actionsController->endCastingSpell();
+		};
+		ENGINE->windows().pushWindow(window);
+		return true;
+	});
 }
 
 void BattleInterface::installTemporalFieldUI()

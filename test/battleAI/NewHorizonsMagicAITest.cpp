@@ -66,6 +66,7 @@ std::string describeMagicAIState(const MagicCallback & callback, const JsonNode 
 		out << '#' << index << "{actionType=" << static_cast<int>(action.actionType)
 			<< ", command=" << heroCommands::key(action.command) << '(' << static_cast<int>(action.command) << ')'
 			<< ", spell=" << action.spell.getNum()
+			<< ", cureAffliction=" << action.spellCureAffliction.getNum()
 			<< ", targetCount=" << action.target.size()
 			<< ", metamagicFollowup=" << action.metamagicFollowup
 			<< ", metamagicGrand=" << action.metamagicGrand
@@ -1696,6 +1697,104 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAIChoosesMassSlowWithoutMutatingLive
 	EXPECT_FALSE(enemyB->hasBonus(slowEffect));
 	EXPECT_FALSE(enemyC->hasBonus(slowEffect));
 	EXPECT_FALSE(enemyD->hasBonus(slowEffect));
+}
+
+TEST_F(NewHorizonsMagicAITest, CureAISelectsAndSubmitsAValidAfflictionThroughHypotheticalCastEvaluation)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto knownSpell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(knownSpell);
+	attackerSideHero->addSpellToSpellbook(SpellID::CURE);
+	const auto lightMagic = SecondarySkill::decode("new-horizons:lightMagic");
+	ASSERT_GE(lightMagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(lightMagic), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->mana = 1000;
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
+	auto * wounded = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(4, 5), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(wounded, nullptr);
+	ASSERT_NE(enemy, nullptr);
+
+	// Disease's attack/defense group can change this valuable stack's projected
+	// combat output, unlike a tiny amount of healing spread across a ten-creature
+	// Archangel stack facing an effectively harmless lone enemy.
+	for(const auto skill : {PrimarySkill::ATTACK, PrimarySkill::DEFENSE})
+	{
+		auto disease = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::PRIMARY_SKILL,
+			BonusSource::SPELL_EFFECT, -2, BonusSourceID(SpellID(SpellID::DISEASE)), BonusSubtypeID(skill));
+		disease->turnsRemain = 3;
+		wounded->addNewBonus(disease);
+	}
+	auto state = wounded->acquireState();
+	int64_t damage = 175;
+	state->damage(damage);
+	BattleUnitsChanged injury;
+	injury.battleID = BattleID(0);
+	injury.changedStacks.emplace_back(wounded->unitId(), UnitChanges::EOperation::UPDATE);
+	injury.changedStacks.back().data = state->save();
+	injury.changedStacks.back().healthDelta = -damage;
+	gameHandler->sendAndApply(injury);
+	ASSERT_EQ(wounded->getCount(), 1);
+	ASSERT_GT(wounded->getAvailableHealth(), 0);
+	ASSERT_LE(wounded->getAvailableHealth() * 2, wounded->getTotalHealth());
+	ASSERT_TRUE(wounded->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::DISEASE)))));
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	const auto healthBeforeEvaluation = wounded->getAvailableHealth();
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(action.spell, SpellID::CURE);
+	EXPECT_EQ(action.spellCureAffliction, SpellID::DISEASE);
+	const auto selected = action.getTarget(battle());
+	ASSERT_EQ(selected.size(), 1u);
+	EXPECT_EQ(selected.front().unitValue, wounded);
+	const auto healthBeforeCast = wounded->getAvailableHealth();
+	const auto manaBeforeCast = attackerSideHero->mana;
+	EXPECT_EQ(healthBeforeCast, healthBeforeEvaluation);
+	EXPECT_TRUE(wounded->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::DISEASE)))));
+	EXPECT_EQ(manaBeforeCast, 1000);
+
+	// The simulated choice must be a valid wire action, and the authoritative
+	// server must remove exactly the selected Disease source group.
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - 4);
+	EXPECT_GT(wounded->getAvailableHealth(), healthBeforeCast);
+	EXPECT_EQ(wounded->getCount(), 1);
+	EXPECT_FALSE(wounded->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::DISEASE)))));
 }
 
 TEST_F(NewHorizonsMagicAITest, TemporalFieldAIRespectsConsumedBudget)

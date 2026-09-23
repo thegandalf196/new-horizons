@@ -49,6 +49,8 @@ class BattleActionsController
 	MagicArrowOverchargeFactory magicArrowOverchargeFactory;
 	/// Optional post-target Selective Dispel prompt.
 	SelectiveDispelFactory selectiveDispelFactory;
+	std::function<bool(const BattleAction &, const CStack *)> cureAfflictionPicker;
+	uint64_t castingSession = 0;
 	/// Optional pre-target Temporal Field choice for Sorcery Slow.
 	TemporalFieldFactory temporalFieldFactory;
 
@@ -220,6 +222,8 @@ public:
 	/// the compact overcharge window.
 	void setMagicArrowOverchargeFactory(MagicArrowOverchargeFactory factory);
 	void setSelectiveDispelFactory(SelectiveDispelFactory factory);
+	void setCureAfflictionPicker(std::function<bool(const BattleAction &, const CStack *)> picker);
+	uint64_t getCastingSession() const { return castingSession; }
 	void setTemporalFieldFactory(TemporalFieldFactory factory);
 
 	/// Continue the ordinary Slow path after the Temporal Field modal chose

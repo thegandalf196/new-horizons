@@ -202,6 +202,15 @@ namespace
 
 		return false;
 	}
+
+	bool demonicGateFootprintHasObstacle(const CBattleInfoCallback & battle,
+		const BattleHex & position, bool doubleWide, BattleSide side)
+	{
+		for(const auto & hex : battle::Unit::getHexes(position, doubleWide, side))
+			if(hex.isAvailable() && !battle.battleGetAllObstaclesOnPos(hex, false).empty())
+				return true;
+		return false;
+	}
 }
 
 BattleFlowProcessor::BattleFlowProcessor(BattleProcessor * owner, CGameHandler * newGameHandler)
@@ -381,30 +390,22 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 				continue;
 			}
 
+			if(!gate.creature.hasValue())
+			{
+				update.pending.push_back(gate);
+				continue;
+			}
 			const auto * creature = gate.creature.toCreature();
 			if(!creature || gate.count <= 0)
-				continue;
-			auto accessibility = battle.getAccessibility();
-			BattleHex arrival = gate.position;
-			if(!accessibility.accessible(arrival, creature->isDoubleWide(), sideId))
 			{
-				BattleHex best;
-				uint8_t bestDistance = std::numeric_limits<uint8_t>::max();
-				for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
-				{
-					BattleHex candidate(index);
-					if(!candidate.isAvailable() || !accessibility.accessible(candidate, creature->isDoubleWide(), sideId))
-						continue;
-					const auto distance = BattleHex::getDistance(gate.position, candidate);
-					if(distance < bestDistance)
-					{
-						best = candidate;
-						bestDistance = distance;
-					}
-				}
-				arrival = best;
+				update.pending.push_back(gate);
+				continue;
 			}
-			if(!arrival.isAvailable())
+			auto accessibility = battle.getAccessibility();
+			const BattleHex arrival = gate.position;
+			if(!accessibility.accessibleForDemonicGateArrival(arrival, creature->isDoubleWide(), sideId,
+				gate.position, creature->isDoubleWide())
+				|| demonicGateFootprintHasObstacle(battle, arrival, creature->isDoubleWide(), sideId))
 			{
 				update.pending.push_back(gate);
 				continue;
@@ -425,6 +426,21 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 			add.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
 			info.save(add.changedStacks.back().data);
 			gameHandler->sendAndApply(add);
+
+			const auto devilId = CreatureID(CreatureID::decode("core:devil"));
+			if(devilId.hasValue())
+			{
+				const auto * devil = devilId.toCreature();
+				if(devil && !devil->sounds.startMoving.empty())
+				{
+					BattleAnimationPlayed arrivalSound;
+					arrivalSound.battleID = concrete->getBattleID();
+					arrivalSound.sound = devil->sounds.startMoving;
+					arrivalSound.targets.push_back({static_cast<int32_t>(info.id), arrival});
+					gameHandler->sendAndApply(arrivalSound);
+				}
+			}
+
 			update.gated.push_back({info.id, gate.creature, gate.count});
 			const auto * gated = battle.battleGetStackByID(info.id, false);
 			int64_t reinforcedHealth = 0;

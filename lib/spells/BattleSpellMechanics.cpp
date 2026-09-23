@@ -34,6 +34,15 @@ namespace spells
 namespace
 {
 
+bool isLivingCureTarget(const battle::Unit * unit)
+{
+	return unit && unit->isValidTarget(false) && unit->alive()
+		&& !unit->hasBonusOfType(BonusType::UNDEAD)
+		&& !unit->hasBonusOfType(BonusType::NON_LIVING)
+		&& !unit->hasBonusOfType(BonusType::MECHANICAL)
+		&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
+}
+
 class EffectPacketRecorder final : public ServerCallback
 {
 private:
@@ -503,6 +512,11 @@ void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & 
 
 bool BattleSpellMechanics::canBeCast(Problem & problem) const
 {
+	// The source selector belongs only to the explicitly enabled Cure action.
+	// Reject stray client metadata on all other spells and legacy snapshots.
+	if(getCureAffliction() != SpellID::NONE && !isNewHorizonsCure())
+		return adaptGenericProblem(problem);
+
 	if(mode == Mode::HERO && isMetamagicFollowup()
 		&& !battle()->battleCanUseMetamagicSpell(casterSide, owner->getId(), isMetamagicGrand()))
 		return adaptGenericProblem(problem);
@@ -606,6 +620,29 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	if(newHorizonsMagic::isCounterspell(owner))
 		return true;
 
+	// Spellbook/target-picker availability cannot know the eventual Cure choice.
+	// Accept the spell when some friendly living unit can be healed or has a
+	// supported affliction; canBeCastAt below validates the submitted selection
+	// against the exact target before the server spends anything.
+	if(isNewHorizonsCure())
+	{
+		if(mode != Mode::HERO || !castingHero)
+			return adaptGenericProblem(problem);
+
+		const auto & rules = battle()->getBattle()->getMagicRules();
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+		{
+			if(!isLivingCureTarget(unit)
+				|| !ownerMatches(unit, true) || !isReceptive(unit))
+				continue;
+
+			if(!newHorizonsMagic::cureAfflictions(rules, unit).empty()
+				|| unit->getAvailableHealth() < unit->getTotalHealth())
+				return true;
+		}
+		return adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+	}
+
 	return effects->applicable(problem, this);
 }
 
@@ -661,6 +698,29 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		return false;
 
 	Target spellTarget = transformSpellTarget(target);
+	if(isNewHorizonsCure())
+	{
+		if(mode != Mode::HERO || target.size() != 1 || spellTarget.size() != 1)
+			return false;
+
+		const auto * cureTarget = spellTarget.front().unitValue;
+		if(!isLivingCureTarget(cureTarget)
+			|| !ownerMatches(cureTarget, true) || !isReceptive(cureTarget))
+			return false;
+
+		const auto & rules = battle()->getBattle()->getMagicRules();
+		const auto afflictions = newHorizonsMagic::cureAfflictions(rules, cureTarget);
+		const auto selected = getCureAffliction();
+		if(selected == SpellID::NONE)
+		{
+			if(!afflictions.empty())
+				return false;
+		}
+		else if(!vstd::contains(afflictions, selected))
+		{
+			return false;
+		}
+	}
 
 	const battle::Unit * mainTarget = nullptr;
 
@@ -1277,6 +1337,11 @@ void BattleSpellMechanics::doRemoveEffects(ServerCallback * server, const battle
 
 bool BattleSpellMechanics::counteringSelector(const Bonus * bonus) const
 {
+	// Opt-in Cure's Lua dispel removes only the chosen source group. Do not also
+	// apply the old spell-counter table (notably Stone Gaze) before effects run.
+	if(isNewHorizonsCure())
+		return false;
+
 	if(bonus->source != BonusSource::SPELL_EFFECT)
 		return false;
 

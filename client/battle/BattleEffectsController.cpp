@@ -63,6 +63,13 @@ void BattleEffectsController::displayAnimation(const AnimationPath & animation, 
 
 void BattleEffectsController::battleAnimationPlayed(const BattleAnimationPlayed & pack)
 {
+	if(pack.animation.empty())
+	{
+		if(!pack.sound.empty())
+			ENGINE->sound().playSound(pack.sound);
+		return;
+	}
+
 	BattleHexArray tiles;
 
 	for(const auto & target : pack.targets)

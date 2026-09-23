@@ -19,6 +19,11 @@
 
 class CGHeroInstance;
 
+namespace battle
+{
+class Unit;
+}
+
 namespace spells
 {
 class Spell;
@@ -88,6 +93,14 @@ DLL_LINKAGE std::optional<int64_t> directDamageValue(const JsonNode & rules, con
 /// for a saved roster which classifies the canonical core spell as Sorcery;
 /// legacy worlds therefore retain the original fixed-cost/fixed-effect cast.
 DLL_LINKAGE bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spell);
+/// True only when the saved New Horizons row explicitly opts Cure into its
+/// single-target, selected-physical-affliction behavior. Missing settings keep
+/// older snapshots on the original Cure mechanics.
+DLL_LINKAGE bool cureEnabled(const JsonNode & rules, SpellID spell);
+/// Saved Cure source identities whose complete SPELL_EFFECT source groups are
+/// currently present on this unit. Results are sorted by SpellID for stable UI
+/// and AI enumeration; legacy/unspecified Cure profiles return no candidates.
+DLL_LINKAGE std::vector<SpellID> cureAfflictions(const JsonNode & rules, const battle::Unit * unit);
 struct DLL_LINKAGE MagicArrowOverchargeModifiers
 {
 	int maximumBonus = 0;

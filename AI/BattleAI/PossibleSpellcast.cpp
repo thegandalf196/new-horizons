@@ -27,6 +27,12 @@ std::string PossibleSpellcast::name() const
 		return heroCommands::key(command);
 	if(spellSelectiveDispel)
 		return spell->getNameTranslated() + " (Selective)";
+	if(spellCureAffliction != SpellID::NONE)
+	{
+		const auto * affliction = spellCureAffliction.toSpell();
+		return spell->getNameTranslated() + " (Cure: "
+			+ (affliction ? affliction->getNameTranslated() : std::to_string(spellCureAffliction.getNum())) + ")";
+	}
 	if(spellMassSlow)
 		return spell->getNameTranslated() + " (Mass)";
 	if(spellOvercharge == 0)

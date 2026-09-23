@@ -22,6 +22,9 @@
 #include "../bonuses/BonusEnum.h"
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
+#include "../battle/Unit.h"
+#include "../bonuses/Bonus.h"
+#include "../bonuses/BonusSelector.h"
 #include <cmath>
 
 namespace
@@ -163,6 +166,13 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		return spell->getDescriptionTranslated(schoolLevel);
 	};
 
+	if(hero && cureEnabled(hero->getMagicRules(), spell->getId()))
+	{
+		return "Targets one friendly living stack. Heals 25 + 1.5 \u00d7 Spell Power HP and cannot resurrect casualties. "
+			"If the target has Poison or Disease, choose one physical affliction to remove. "
+			"Cure does not remove magical effects.";
+	}
+
 	if(!hero || !rulesActive(hero->getMagicRules())
 		|| spell->getJsonKey() != "new-horizons:masterChainLightning")
 		return description();
@@ -250,9 +260,26 @@ void validateRules(const JsonNode & rules)
 		if(version == RULESET_VERSION)
 			fields(data, {"schools", "level", "costs"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions"});
 		if(version == DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("active"))
 			require(data["active"].isBool(), "spell active flag");
+		if(version == DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("cureAfflictions"))
+		{
+			require(name == "core:cure", "cureAfflictions is only valid for core:cure");
+			const auto & afflictions = data["cureAfflictions"];
+			require(afflictions.isVector() && !afflictions.Vector().empty(), "non-empty Cure afflictions array");
+			std::set<std::string> uniqueAfflictions;
+			for(const auto & affliction : afflictions.Vector())
+			{
+				require(affliction.isString(), "Cure affliction identity");
+				const auto & identity = affliction.String();
+				require(uniqueAfflictions.insert(identity).second, "duplicate Cure affliction");
+				const auto afflictionID = resolve("spell", identity);
+				const SpellID sourceSpell(afflictionID);
+				require((sourceSpell == SpellID::POISON || sourceSpell == SpellID::DISEASE)
+					&& sourceSpell.toSpell(), "only Poison and Disease are supported Cure afflictions");
+			}
+		}
 		// Strict field/type/bounds checks, including rejection of present-null.
 		(void)directDamageFormula(data, version);
 		const auto id = resolve("spell", name);
@@ -355,6 +382,45 @@ bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spell)
 		return false;
 
 	return vstd::contains_if(spellSchools(rules, spell), sorceryMember);
+}
+
+bool cureEnabled(const JsonNode & rules, SpellID spell)
+{
+	return spell == SpellID::CURE && rulesActive(rules)
+		&& rules["spells"].isStruct()
+		&& rules["spells"].Struct().contains("core:cure")
+		&& rules["spells"]["core:cure"].isStruct()
+		&& rules["spells"]["core:cure"].Struct().contains("cureAfflictions")
+		&& rules["spells"]["core:cure"]["cureAfflictions"].isVector();
+}
+
+std::vector<SpellID> cureAfflictions(const JsonNode & rules, const battle::Unit * unit)
+{
+	std::vector<SpellID> result;
+	if(!unit || !cureEnabled(rules, SpellID(SpellID::CURE)))
+		return result;
+
+	for(const auto & savedIdentity : rules["spells"]["core:cure"]["cureAfflictions"].Vector())
+	{
+		if(!savedIdentity.isString())
+			continue; // Rules are validated on load; fail closed for transient callers.
+		const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell", savedIdentity.String());
+		if(!id)
+			continue;
+		const SpellID affliction(*id);
+		if(!affliction.toSpell())
+			continue;
+		if(affliction != SpellID::POISON && affliction != SpellID::DISEASE)
+			continue;
+		if(unit->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(affliction))))
+			result.push_back(affliction);
+	}
+	std::sort(result.begin(), result.end(), [](const SpellID & lhs, const SpellID & rhs)
+	{
+		return lhs.getNum() < rhs.getNum();
+	});
+	result.erase(std::unique(result.begin(), result.end()), result.end());
+	return result;
 }
 
 MagicArrowOverchargeModifiers magicArrowOverchargeModifiers(const CGHeroInstance * hero)

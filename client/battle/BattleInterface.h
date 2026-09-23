@@ -134,6 +134,7 @@ class BattleInterface
 	void onIntroSoundPlayed();
 	void installMagicArrowOverchargeUI();
 	void installSelectiveDispelUI();
+	void installCureAfflictionUI();
 	void installTemporalFieldUI();
 public:
 	/// copy of initial armies (for result window)

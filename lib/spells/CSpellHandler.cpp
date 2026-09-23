@@ -485,7 +485,7 @@ std::shared_ptr<CSpell> CSpellHandler::loadFromJson(const std::string & scope, c
 		{
 			levelObject.battleEffects = levelNode["battleEffects"];
 
-			if(!levelObject.cumulativeEffects.Struct().empty() || !levelObject.effects.Struct().empty() || spell->isOffensive())
+			if(!levelObject.cumulativeEffects.Struct().empty() || !levelObject.effects.Struct().empty())
 				logGlobal->error("Mixing %s special effects with old format effects gives unpredictable result", spell->getNameTranslated());
 		}
 	}

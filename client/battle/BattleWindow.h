@@ -25,6 +25,7 @@ class BattleRenderer;
 class StackQueue;
 class TurnTimerWidget;
 class HeroInfoBasicPanel;
+class HeroCounterspellStatusArea;
 class StackInfoBasicPanel;
 class QuickSpellPanel;
 class UnitActionPanel;
@@ -43,8 +44,8 @@ class BattleWindow : public InterfaceObjectConfigurable
 	std::shared_ptr<CLabel> metamagicGrandLabel;
 	std::shared_ptr<HeroInfoBasicPanel> attackerHeroWindow;
 	std::shared_ptr<HeroInfoBasicPanel> defenderHeroWindow;
-	std::shared_ptr<CLabel> attackerCounterspellStatus;
-	std::shared_ptr<CLabel> defenderCounterspellStatus;
+	std::shared_ptr<HeroCounterspellStatusArea> attackerCounterspellStatus;
+	std::shared_ptr<HeroCounterspellStatusArea> defenderCounterspellStatus;
 	std::shared_ptr<StackInfoBasicPanel> attackerStackWindow;
 	std::shared_ptr<StackInfoBasicPanel> defenderStackWindow;
 

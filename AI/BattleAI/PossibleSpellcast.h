@@ -11,6 +11,7 @@
 #pragma once
 
 #include <vcmi/spells/Magic.h>
+#include "../../lib/constants/EntityIdentifiers.h"
 
 #include "../../lib/battle/Destination.h"
 #include "../../lib/battle/HeroCommand.h"
@@ -39,6 +40,7 @@ public:
 	const CSpell * spell;
 	int32_t spellOvercharge = 0;
 	bool spellSelectiveDispel = false;
+	SpellID spellCureAffliction = SpellID::NONE;
 	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
 	bool spellMassSlow = false;
 	/// The cast is an immediate, non-chaining Tower Metamagic follow-up.

@@ -94,6 +94,8 @@ void RecordingGameServer::record(CPackForClient & pack)
 		recording = false;
 		return;
 	}
+	if(const auto * animation = dynamic_cast<const BattleAnimationPlayed *>(&pack))
+		battleAnimations.push_back(*animation);
 
 	if(const auto * announcement = dynamic_cast<const BattleSpellCast *>(&pack))
 	{

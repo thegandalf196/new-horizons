@@ -1041,6 +1041,11 @@ void BattleActionsController::setSelectiveDispelFactory(SelectiveDispelFactory f
 	selectiveDispelFactory = std::move(factory);
 }
 
+void BattleActionsController::setCureAfflictionPicker(std::function<bool(const BattleAction &, const CStack *)> picker)
+{
+	cureAfflictionPicker = std::move(picker);
+}
+
 void BattleActionsController::setTemporalFieldFactory(TemporalFieldFactory factory)
 {
 	temporalFieldFactory = std::move(factory);
@@ -1048,6 +1053,7 @@ void BattleActionsController::setTemporalFieldFactory(TemporalFieldFactory facto
 
 void BattleActionsController::endCastingSpell()
 {
+	++castingSession;
 	// The battle's Escape shortcut also reaches this method outside spell mode.
 	owner.clearPerfectMoment();
 	cancelHeroOrderTargeting();
@@ -1277,6 +1283,7 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 		return;
 
 	heroSpellToCast = std::make_shared<BattleAction>();
+	++castingSession;
 	heroSpellToCast->actionType = EActionType::HERO_SPELL;
 	heroSpellToCast->spell = spellID;
 	heroSpellToCast->stackNumber = -1;
@@ -2159,6 +2166,16 @@ void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, c
 		case PossiblePlayerBattleAction::FREE_LOCATION:
 		{
 			if(action.get() == PossiblePlayerBattleAction::AIMED_SPELL_CREATURE
+				&& heroSpellToCast && targetStack && cureAfflictionPicker)
+			{
+				BattleAction pending = *heroSpellToCast;
+				pending.target.clear();
+				pending.aimToUnit(targetStack);
+				if(cureAfflictionPicker(pending, targetStack))
+					return;
+			}
+
+			if(action.get() == PossiblePlayerBattleAction::AIMED_SPELL_CREATURE
 				&& heroSpellToCast
 				&& heroSpellToCast->spell == SpellID(SpellID::DISPEL)
 				&& targetStack
@@ -2485,6 +2502,23 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 	spells::detail::ProblemImpl problem; //todo: display problem in status bar
 	if(m->canBeCastAt(target, problem))
 		return true;
+
+	// A physical affliction is selected after the stack, not before hovering it.
+	// Try legal choices without mutating the pending action or battle state.
+	const auto & rules = owner.getBattle()->getBattle()->getMagicRules();
+	if(mode == spells::Mode::HERO && newHorizonsMagic::cureEnabled(rules, currentSpell->getId()))
+	{
+		const auto * cureTarget = targetStack ? targetStack : getStackForHex(targetHex);
+		for(const auto affliction : newHorizonsMagic::cureAfflictions(rules, cureTarget))
+		{
+			cast.setCureAffliction(affliction);
+			auto cureMechanics = currentSpell->battleMechanics(&cast);
+			spells::detail::ProblemImpl cureProblem;
+			if(cureMechanics->canBeCastAt(target, cureProblem))
+				return true;
+		}
+		return false;
+	}
 
 	// The Selective Dispel perk expands the legal target set: basic ordinary
 	// Dispel is smart-targeted, while selective mode explicitly supports both

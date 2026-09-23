@@ -15,6 +15,7 @@
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/networkPacks/StackLocation.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 
@@ -190,6 +191,33 @@ TEST_F(NewHorizonsDemonicGatingTest, CommitsOwnedReserveAndArrivesAtNextRound)
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	ASSERT_TRUE(battle()->getSide(BattleSide::ATTACKER).demonicReserve.empty());
 	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.size(), 1u);
+	const auto & pending = battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.front();
+	ASSERT_EQ(pending.position, destination);
+	const auto reservedAccessibility = battle()->getAccessibility();
+	EXPECT_TRUE(reservedAccessibility.isDemonicGateReserved(destination));
+	EXPECT_EQ(reservedAccessibility[destination.toInt()], EAccessibility::DEMONIC_GATE_RESERVED);
+	EXPECT_FALSE(reservedAccessibility.accessible(destination, false, BattleSide::ATTACKER));
+	EXPECT_TRUE(reservedAccessibility.accessibleForDemonicGateArrival(destination, false,
+		BattleSide::ATTACKER, destination, false));
+	EXPECT_FALSE(battle()->battleGetAvailableHexes(active, false).contains(destination));
+	EXPECT_TRUE(battle()->getPath(active->getPosition(), destination, active).first.empty());
+	ReachabilityInfo::Parameters flyingParameters(active, active->getPosition());
+	flyingParameters.flying = true;
+	EXPECT_FALSE(battle()->getReachability(flyingParameters).isReachable(destination));
+
+	const auto devilId = CreatureID(CreatureID::decode("core:devil"));
+	ASSERT_TRUE(devilId.hasValue());
+	const auto * devil = devilId.toCreature();
+	ASSERT_NE(devil, nullptr);
+	ASSERT_FALSE(devil->sounds.startMoving.empty());
+	const auto arrivalSoundCount = [&]()
+	{
+		return std::ranges::count_if(server.battleAnimations, [&devil](const auto & pack)
+		{
+			return pack.sound == devil->sounds.startMoving;
+		});
+	};
+	EXPECT_EQ(arrivalSoundCount(), 0);
 
 	endRound();
 	const auto gated = battle()->battleGetStacksIf([](const CStack * stack)
@@ -198,6 +226,17 @@ TEST_F(NewHorizonsDemonicGatingTest, CommitsOwnedReserveAndArrivesAtNextRound)
 			&& stack->creatureId() == creatureByName("core:imp") && stack->getCount() == 12;
 	});
 	ASSERT_EQ(gated.size(), 1u);
+	EXPECT_EQ(gated.front()->getPosition(), destination);
+	EXPECT_EQ(arrivalSoundCount(), 1);
+	const auto soundPack = std::ranges::find_if(server.battleAnimations, [&devil](const auto & pack)
+	{
+		return pack.sound == devil->sounds.startMoving;
+	});
+	ASSERT_NE(soundPack, server.battleAnimations.end());
+	EXPECT_TRUE(soundPack->animation.empty());
+	ASSERT_EQ(soundPack->targets.size(), 1u);
+	EXPECT_EQ(soundPack->targets.front().unitID, static_cast<int32_t>(gated.front()->unitId()));
+	EXPECT_EQ(soundPack->targets.front().tile, destination);
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.empty());
 	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).gatedDemonicStacks.size(), 1u);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).gatedDemonicStacks.front().unitId, gated.front()->unitId());
@@ -205,6 +244,104 @@ TEST_F(NewHorizonsDemonicGatingTest, CommitsOwnedReserveAndArrivesAtNextRound)
 	EXPECT_FALSE(hasBattleLogFragment("Reinforced Gate grants"));
 	EXPECT_FALSE(hasBattleLogFragment("Infernal Beacon grants"));
 	EXPECT_FALSE(hasBattleLogFragment("Reserve Discipline prevents"));
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, BlockedLandingKeepsItsReservationInsteadOfRelocating)
+{
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const BattleHex destination = legalGateHex(active);
+	ASSERT_TRUE(destination.isAvailable());
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = active->unitId();
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(destination);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	// A passable obstacle is not a movement-path blocker, but it still makes a landing illegal.
+	auto obstacle = std::make_shared<SpellCreatedObstacle>();
+	obstacle->pos = destination;
+	obstacle->passable = true;
+	obstacle->customSize.insert(destination);
+	battle()->obstacles.push_back(obstacle);
+
+	endRound();
+
+	const auto & side = battle()->getSide(BattleSide::ATTACKER);
+	ASSERT_EQ(side.pendingDemonicGates.size(), 1u);
+	EXPECT_EQ(side.pendingDemonicGates.front().position, destination);
+	EXPECT_EQ(side.pendingDemonicGates.front().count, 12);
+	EXPECT_TRUE(battle()->getAccessibility().isDemonicGateReserved(destination));
+	EXPECT_TRUE(std::ranges::none_of(side.gatedDemonicStacks, [](const auto & gated)
+	{
+		return gated.creature == creatureByName("core:imp");
+	}));
+	const auto devilId = CreatureID(CreatureID::decode("core:devil"));
+	ASSERT_TRUE(devilId.hasValue());
+	const auto * devil = devilId.toCreature();
+	ASSERT_NE(devil, nullptr);
+	EXPECT_TRUE(std::ranges::none_of(server.battleAnimations, [devil](const auto & pack)
+	{
+		return pack.sound == devil->sounds.startMoving;
+	}));
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, DoubleWidePendingGateReservesBothHexesAndCanUseItsOwnFootprint)
+{
+	const auto hellHound = creatureByName("core:hellHound");
+	ASSERT_TRUE(hellHound.hasValue());
+	ASSERT_TRUE(hellHound.toCreature()->isDoubleWide());
+	const BattleHex position(8, 5);
+	auto & pending = battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates;
+	pending.push_back({hellHound, 4, position, battle()->getRound() + 1});
+
+	const auto accessibility = battle()->getAccessibility();
+	const auto footprint = battle::Unit::getHexes(position, true, BattleSide::ATTACKER);
+	ASSERT_EQ(footprint.size(), 2u);
+	for(const auto & hex : footprint)
+	{
+		EXPECT_TRUE(accessibility.isDemonicGateReserved(hex));
+		EXPECT_FALSE(accessibility.accessible(hex, false, BattleSide::DEFENDER));
+	}
+	EXPECT_FALSE(accessibility.accessible(position, true, BattleSide::ATTACKER));
+	EXPECT_TRUE(accessibility.accessibleForDemonicGateArrival(position, true, BattleSide::ATTACKER,
+		position, true));
+	const auto accessibleHexOverride = battle()->getAccessibility(footprint);
+	for(const auto & hex : footprint)
+	{
+		EXPECT_TRUE(accessibleHexOverride.isDemonicGateReserved(hex));
+		EXPECT_FALSE(accessibleHexOverride.accessible(hex, false, BattleSide::ATTACKER));
+	}
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, ArrivalExceptionIgnoresOnlyItsOwnReservationAndPreservesBlockers)
+{
+	const BattleHex position(8, 5);
+	AccessibilityInfo oneReservation;
+	oneReservation.fill(EAccessibility::ACCESSIBLE);
+	oneReservation.reserveDemonicGateFootprint(position, false, BattleSide::ATTACKER);
+	EXPECT_TRUE(oneReservation.accessibleForDemonicGateArrival(position, false, BattleSide::ATTACKER,
+		position, false));
+	oneReservation.reserveDemonicGateFootprint(position, false, BattleSide::ATTACKER);
+	EXPECT_FALSE(oneReservation.accessibleForDemonicGateArrival(position, false, BattleSide::ATTACKER,
+		position, false));
+
+	AccessibilityInfo occupied;
+	occupied.fill(EAccessibility::ACCESSIBLE);
+	occupied[position.toInt()] = EAccessibility::ALIVE_STACK;
+	occupied.reserveDemonicGateFootprint(position, false, BattleSide::ATTACKER);
+	EXPECT_FALSE(occupied.accessibleForDemonicGateArrival(position, false, BattleSide::ATTACKER,
+		position, false));
+
+	AccessibilityInfo obstructed;
+	obstructed.fill(EAccessibility::ACCESSIBLE);
+	obstructed[position.toInt()] = EAccessibility::OBSTACLE;
+	obstructed.reserveDemonicGateFootprint(position, false, BattleSide::ATTACKER);
+	EXPECT_FALSE(obstructed.accessibleForDemonicGateArrival(position, false, BattleSide::ATTACKER,
+		position, false));
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, RejectsUnavailableAndOutOfRangeSelectionsWithoutSpendingTurn)

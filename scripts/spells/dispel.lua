@@ -4,6 +4,17 @@ Script.__index = Script
 
 function Script:getDispelableBonuses(mechanics, unit)
 	local currentSpellKey = mechanics:getSpell():getJsonKey()
+	if mechanics:isNewHorizonsCure() then
+		local selectedAffliction = mechanics:getCureAfflictionSource()
+		-- Cure removes only the explicitly selected physical-affliction source
+		-- group. The shared C++ preflight validates that this ID is present in
+		-- the saved allowlist and still exists on the exact target.
+		return unit:getBonuses({}):filter(function(bonus)
+			return selectedAffliction ~= ""
+				and bonus:getSource() == ENUM.BonusSource.spellEffect
+				and bonus:getSourceID() == selectedAffliction
+		end)
+	end
 	local selective = mechanics:isSelectiveDispel()
 	local friendly = selective and mechanics:ownerIsSameAs(unit)
 	-- no filter describes this: what makes a bonus dispelable is the spell that granted it

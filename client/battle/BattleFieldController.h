@@ -34,6 +34,8 @@ class BattleFieldController : public CIntObject
 	std::shared_ptr<IImage> cellShade;
 	std::shared_ptr<CAnimation> rangedFullDamageLimitImages;
 	std::shared_ptr<CAnimation> shootingRangeLimitImages;
+	std::vector<std::shared_ptr<IImage>> demonicGateReservationFlameFrames;
+	float demonicGateAnimationTime = 0.f;
 
 	/// Canvas that contains background, hex grid (if enabled), absolute obstacles and movement range of active stack
 	std::unique_ptr<Canvas> backgroundWithHexes;
@@ -99,6 +101,7 @@ class BattleFieldController : public CIntObject
 	void showBackground(Canvas & canvas);
 	void showBackgroundImage(Canvas & canvas);
 	void showBackgroundImageWithHexes(Canvas & canvas);
+	void showDemonicGateReservations(Canvas & canvas);
 	void showHighlightedHexes(Canvas & canvas);
 	void updateAccessibleHexes();
 

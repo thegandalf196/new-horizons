@@ -52,6 +52,13 @@ public:
 	{
 		return sides.at(side).demonicReserve;
 	}
+	std::vector<PendingDemonicGateFootprint> getPendingDemonicGateFootprints(BattleSide side) const override
+	{
+		std::vector<PendingDemonicGateFootprint> ret;
+		for(const auto & gate : sides.at(side).pendingDemonicGates)
+			ret.push_back({gate.creature, gate.position});
+		return ret;
+	}
 	bool getChainGateArmed(BattleSide side) const { return sides.at(side).chainGateArmed; }
 	bool hasChainGateState() const
 	{

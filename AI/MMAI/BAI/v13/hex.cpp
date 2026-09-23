@@ -288,6 +288,9 @@ void Hex::setStateMask(const EAccessibility accessibility, const std::vector<std
 			// ASSERT(stack, "accessibility is ALIVE_STACK, but no stack was found on hex");
 			statemask &= ~S_PASSABLE;
 			break;
+		case EAccessibility::DEMONIC_GATE_RESERVED:
+			statemask &= ~S_PASSABLE;
+			break;
 		case EAccessibility::DESTRUCTIBLE_WALL:
 			// XXX: Destroyed walls become ACCESSIBLE.
 			ASSERT(!stack, "accessibility is DESTRUCTIBLE_WALL, but a stack was found on hex");

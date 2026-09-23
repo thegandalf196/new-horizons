@@ -26,10 +26,10 @@
 #include "../GameEngine.h"
 #include "../GameInstance.h"
 #include "../adventureMap/CInGameConsole.h"
-#include "render/CAnimation.h"
 #include "../gui/CursorHandler.h"
 #include "render/CAnimation.h"
 #include "render/Canvas.h"
+#include "render/CanvasImage.h"
 #include "render/IImage.h"
 #include "render/IRenderHandler.h"
 #include "render/IScreenHandler.h"
@@ -144,6 +144,22 @@ BattleFieldController::BattleFieldController(BattleInterface & owner):
 
 	rangedFullDamageLimitImages = ENGINE->renderHandler().loadAnimation(AnimationPath::builtin("battle/rangeHighlights/rangeHighlightsGreen.json"), EImageBlitMode::COLORKEY);
 	shootingRangeLimitImages = ENGINE->renderHandler().loadAnimation(AnimationPath::builtin("battle/rangeHighlights/rangeHighlightsRed.json"), EImageBlitMode::COLORKEY);
+	const auto gateReservationFlames = ENGINE->renderHandler().loadAnimation(AnimationPath::builtin("C07SPF61"), EImageBlitMode::SIMPLE);
+	if(gateReservationFlames)
+	{
+		for(size_t frame = 0; frame < gateReservationFlames->size(); ++frame)
+		{
+			auto sourceImage = gateReservationFlames->getImage(frame);
+			if(!sourceImage)
+				continue;
+
+			Canvas source(Point(sourceImage->width(), sourceImage->height()), CanvasScalingPolicy::IGNORE);
+			source.draw(sourceImage, Point(0, 0));
+			auto scaledImage = ENGINE->renderHandler().createImage(Point(28, 30), CanvasScalingPolicy::AUTO);
+			scaledImage->getCanvas().drawScaled(source, Point(0, 0), Point(28, 30));
+			demonicGateReservationFlameFrames.push_back(std::move(scaledImage));
+		}
+	}
 
 	if(!owner.siegeController)
 	{
@@ -289,8 +305,44 @@ void BattleFieldController::renderBattlefield(Canvas & canvas)
 	BattleRenderer renderer(owner);
 
 	renderer.execute(clippedCanvas);
+	showDemonicGateReservations(clippedCanvas);
 
 	owner.projectilesController->render(clippedCanvas);
+}
+
+void BattleFieldController::showDemonicGateReservations(Canvas & canvas)
+{
+	const auto accessibility = owner.getBattle()->getAccessibility();
+	const size_t frameCount = demonicGateReservationFlameFrames.size();
+	const auto frameIndex = frameCount == 0 ? 0
+		: static_cast<size_t>(demonicGateAnimationTime * AnimationControls::getObstaclesSpeed()) % frameCount;
+	auto flame = frameCount == 0 ? std::shared_ptr<IImage>() : demonicGateReservationFlameFrames[frameIndex];
+	const ColorRGBA outline(255, 176, 48);
+
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(!accessibility.isDemonicGateReserved(hex))
+			continue;
+
+		const auto hexRect = hexPositionLocal(hex);
+		if(flame)
+			canvas.draw(flame, hexRect.center() - Point(flame->width() / 2, flame->height() / 2));
+
+		const Point origin = hexRect.topLeft();
+		const Point top = origin + Point(hexRect.w / 2, 0);
+		const Point upperRight = origin + Point(hexRect.w - 1, hexRect.h / 4);
+		const Point lowerRight = origin + Point(hexRect.w - 1, hexRect.h * 3 / 4);
+		const Point bottom = origin + Point(hexRect.w / 2, hexRect.h - 1);
+		const Point lowerLeft = origin + Point(0, hexRect.h * 3 / 4);
+		const Point upperLeft = origin + Point(0, hexRect.h / 4);
+		canvas.drawLine(top, upperRight, outline, outline);
+		canvas.drawLine(upperRight, lowerRight, outline, outline);
+		canvas.drawLine(lowerRight, bottom, outline, outline);
+		canvas.drawLine(bottom, lowerLeft, outline, outline);
+		canvas.drawLine(lowerLeft, upperLeft, outline, outline);
+		canvas.drawLine(upperLeft, top, outline, outline);
+	}
 }
 
 void BattleFieldController::showBackground(Canvas & canvas)
@@ -941,6 +993,7 @@ void BattleFieldController::showAll(Canvas & to)
 
 void BattleFieldController::tick(uint32_t msPassed)
 {
+	demonicGateAnimationTime += msPassed / 1000.f;
 	updateShake();
 	updateAccessibleHexes();
 	owner.stacksController->tick(msPassed);

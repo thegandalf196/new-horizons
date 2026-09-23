@@ -72,6 +72,28 @@ TEST_F(HypotheticWallTest, FieldBattleSnapshotsDoNotInventWallsGatesOrBlockedTil
 		EXPECT_EQ(childAccess[hex], liveAccess[hex]);
 }
 
+TEST_F(HypotheticWallTest, PendingDemonicGateReservationsSurviveNestedBattleProxies)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+	const auto imp = CreatureID(CreatureID::decode("core:imp"));
+	ASSERT_TRUE(imp.hasValue());
+	const BattleHex landing(8, 5);
+	battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.push_back(
+		{imp, 12, landing, battle()->getRound() + 1});
+
+	environment = std::make_shared<WallEnvironment>(gameState());
+	callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	HypotheticBattle child(environment.get(), parent);
+	for(const auto * projection : {parent.get(), &child})
+	{
+		const auto accessibility = projection->getAccessibility();
+		EXPECT_TRUE(accessibility.isDemonicGateReserved(landing));
+		EXPECT_EQ(accessibility[landing.toInt()], EAccessibility::DEMONIC_GATE_RESERVED);
+		EXPECT_FALSE(accessibility.accessible(landing, false, BattleSide::DEFENDER));
+	}
+}
+
 TEST_F(HypotheticWallTest, ChangedWallInvalidatesOnlyLocalProjectionAndNestedCopies)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareSiege());

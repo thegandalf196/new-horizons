@@ -264,31 +264,29 @@ void BattleWindow::createQueue()
 void BattleWindow::createStickyHeroInfoWindows()
 {
 	OBJECT_CONSTRUCTION;
+	const bool attackerWardArmed = owner.getBattle()->battleWasCounterspellArmed(BattleSide::ATTACKER);
+	const bool defenderWardArmed = owner.getBattle()->battleWasCounterspellArmed(BattleSide::DEFENDER);
 
 	if(owner.defendingHeroInstance)
 	{
 		InfoAboutHero info;
 		info.initFromHero(owner.defendingHeroInstance, InfoAboutHero::EInfoLevel::INBATTLE);
-		defenderHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr, true, true,
-			owner.getBattle()->battleWasCounterspellArmed(BattleSide::DEFENDER));
+		defenderHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr, true, true, defenderWardArmed);
 	}
 	if(owner.attackingHeroInstance)
 	{
 		InfoAboutHero info;
 		info.initFromHero(owner.attackingHeroInstance, InfoAboutHero::EInfoLevel::INBATTLE);
-		attackerHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr, true, true,
-			owner.getBattle()->battleWasCounterspellArmed(BattleSide::ATTACKER));
+		attackerHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr, true, true, attackerWardArmed);
 	}
 	if(attackerHeroWindow)
-		attackerCounterspellStatus = std::make_shared<CLabel>(39, 353, EFonts::FONT_TINY,
-			ETextAlignment::CENTER,
-			owner.getBattle()->battleWasCounterspellArmed(BattleSide::ATTACKER) ? Colors::YELLOW : Colors::WHITE,
-			owner.getBattle()->battleWasCounterspellArmed(BattleSide::ATTACKER) ? "Ward: ARMED" : "Ward: none");
+		attackerCounterspellStatus = std::make_shared<HeroCounterspellStatusArea>(
+			Point(HeroInfoPanelLayout::compactAttackerEffectAreaLeft,
+				HeroInfoPanelLayout::compactPanelOffsetY + HeroInfoPanelLayout::effectAreaTop), attackerWardArmed);
 	if(defenderHeroWindow)
-		defenderCounterspellStatus = std::make_shared<CLabel>(761, 353, EFonts::FONT_TINY,
-			ETextAlignment::CENTER,
-			owner.getBattle()->battleWasCounterspellArmed(BattleSide::DEFENDER) ? Colors::YELLOW : Colors::WHITE,
-			owner.getBattle()->battleWasCounterspellArmed(BattleSide::DEFENDER) ? "Ward: ARMED" : "Ward: none");
+		defenderCounterspellStatus = std::make_shared<HeroCounterspellStatusArea>(
+			Point(HeroInfoPanelLayout::compactDefenderEffectAreaLeft,
+				HeroInfoPanelLayout::compactPanelOffsetY + HeroInfoPanelLayout::effectAreaTop), defenderWardArmed);
 
 	bool showInfoWindows = settings["battle"]["stickyHeroInfoWindows"].Bool();
 
@@ -558,7 +556,7 @@ void BattleWindow::setPositionInfoWindow()
 	{
 		Point position = placeInfoWindowsOutside()
 				? Point(pos.x + pos.w - 1 + xOffsetDefender, pos.y - 1 + yOffsetDefender)
-				: Point(pos.x + pos.w -79, pos.y + 195);
+				: Point(pos.x + pos.w -79, pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
 		defenderHeroWindow->moveTo(position);
 		defenderHeroWindow->setAboveBattlefield(!placeInfoWindowsOutside());
 	}
@@ -566,23 +564,27 @@ void BattleWindow::setPositionInfoWindow()
 	{
 		Point position = placeInfoWindowsOutside()
 				? Point(pos.x - 77 + xOffsetAttacker, pos.y - 1 + yOffsetAttacker)
-				: Point(pos.x + 1, pos.y + 195);
+				: Point(pos.x + 1, pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
 		attackerHeroWindow->moveTo(position);
 		attackerHeroWindow->setAboveBattlefield(!placeInfoWindowsOutside());
 	}
 	if(defenderStackWindow)
 	{
 		Point position = placeInfoWindowsOutside()
-				? Point(pos.x + pos.w - 1 + xOffsetDefender, defenderHeroWindow ? defenderHeroWindow->pos.y + 210 : pos.y - 1 + yOffsetDefender)
-				: Point(pos.x + pos.w -79, defenderHeroWindow ? defenderHeroWindow->pos.y : pos.y + 195);
+				? Point(pos.x + pos.w - 1 + xOffsetDefender,
+					defenderHeroWindow ? defenderHeroWindow->pos.y + HeroInfoPanelLayout::outsideStackPanelOffsetY : pos.y - 1 + yOffsetDefender)
+				: Point(pos.x + pos.w -79,
+					defenderHeroWindow ? defenderHeroWindow->pos.y : pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
 		defenderStackWindow->moveTo(position);
 		defenderStackWindow->setAboveBattlefield(!placeInfoWindowsOutside());
 	}
 	if(attackerStackWindow)
 	{
 		Point position = placeInfoWindowsOutside()
-				? Point(pos.x - 77 + xOffsetAttacker, attackerHeroWindow ? attackerHeroWindow->pos.y + 210 : pos.y - 1 + yOffsetAttacker)
-				: Point(pos.x + 1, attackerHeroWindow ? attackerHeroWindow->pos.y : pos.y + 195);
+				? Point(pos.x - 77 + xOffsetAttacker,
+					attackerHeroWindow ? attackerHeroWindow->pos.y + HeroInfoPanelLayout::outsideStackPanelOffsetY : pos.y - 1 + yOffsetAttacker)
+				: Point(pos.x + 1,
+					attackerHeroWindow ? attackerHeroWindow->pos.y : pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
 		attackerStackWindow->moveTo(position);
 		attackerStackWindow->setAboveBattlefield(!placeInfoWindowsOutside());
 	}
@@ -605,15 +607,9 @@ void BattleWindow::updateCounterspellStatus()
 	if(defenderHeroWindow)
 		defenderHeroWindow->setCounterspellStatus(defenderArmed);
 	if(attackerCounterspellStatus)
-	{
-		attackerCounterspellStatus->setText(attackerArmed ? "Ward: ARMED" : "Ward: none");
-		attackerCounterspellStatus->setColor(attackerArmed ? Colors::YELLOW : Colors::WHITE);
-	}
+		attackerCounterspellStatus->setArmed(attackerArmed);
 	if(defenderCounterspellStatus)
-	{
-		defenderCounterspellStatus->setText(defenderArmed ? "Ward: ARMED" : "Ward: none");
-		defenderCounterspellStatus->setColor(defenderArmed ? Colors::YELLOW : Colors::WHITE);
-	}
+		defenderCounterspellStatus->setArmed(defenderArmed);
 	if(metamagicDeclineButton)
 	{
 		const auto side = owner.getBattle()->battleGetMySide();

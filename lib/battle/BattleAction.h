@@ -34,6 +34,9 @@ public:
 	/// Requests the target-aware Selective Dispel mode. The server validates
 	/// the spell, hero and saved perk before accepting this optional mode.
 	bool spellSelectiveDispel = false;
+	/// Selects a saved New Horizons Cure affliction by its SPELL_EFFECT source
+	/// identity. NONE means heal-only and is validated against current target state.
+	SpellID spellCureAffliction = SpellID::NONE;
 	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
 	/// The server validates perk ownership, availability and cost.
 	bool spellMassSlow = false;
@@ -123,6 +126,9 @@ public:
 		if(h.saving && spellSelectiveDispel
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SELECTIVE_DISPEL))
 			throw std::runtime_error("Cannot serialize Selective Dispel to an older protocol");
+		if(h.saving && spellCureAffliction != SpellID::NONE
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CURE_AFFLICTION))
+			throw std::runtime_error("Cannot serialize Cure affliction selection to an older protocol");
 		if(h.saving && spellMassSlow
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
 			throw std::runtime_error("Cannot serialize Temporal Field to an older protocol");
@@ -167,6 +173,14 @@ public:
 		else if(!h.saving)
 		{
 			spellSelectiveDispel = false;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CURE_AFFLICTION))
+		{
+			h & spellCureAffliction;
+		}
+		else if(!h.saving)
+		{
+			spellCureAffliction = SpellID::NONE;
 		}
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
 		{

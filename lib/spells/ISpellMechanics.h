@@ -93,6 +93,8 @@ public:
 	/// Additional mana selected for a spell-specific cast option.  The default
 	/// keeps old callers and non-Sorcery spells unchanged.
 	virtual OptionalValue getOvercharge() const { return std::nullopt; }
+	/// Optional New Horizons Cure source identity; NONE is the heal-only choice.
+	virtual SpellID getCureAffliction() const { return SpellID::NONE; }
 	/// Server-side passive effects such as canonical Fire Wall may explicitly
 	/// target either side.  Ordinary casts retain their spell-defined smart
 	/// targeting when this remains false.
@@ -137,6 +139,7 @@ public:
 	OptionalValue getEffectPower() const override;
 	OptionalValue getEffectDuration() const override;
 	OptionalValue getOvercharge() const override;
+	SpellID getCureAffliction() const override;
 	bool getForceNonSmartTargeting() const override;
 	bool getSelectiveDispel() const override;
 	bool getMassSlow() const override;
@@ -156,6 +159,7 @@ public:
 	void setEffectPower(Value value);
 	void setEffectDuration(Value value);
 	void setOvercharge(Value value);
+	void setCureAffliction(SpellID value);
 	void setForceNonSmartTargeting(bool value);
 	void setSelectiveDispel(bool value);
 	void setMassSlow(bool value);
@@ -192,6 +196,8 @@ private:
 	OptionalValue64 effectValue;
 	///Additional mana selected for a spell-specific cast option.
 	OptionalValue overcharge;
+	///Optional New Horizons Cure source group selected by the player.
+	SpellID cureAffliction = SpellID::NONE;
 	bool forceNonSmartTargeting = false;
 	bool selectiveDispel = false;
 	bool massSlow = false;
@@ -279,6 +285,8 @@ public:
 	virtual int32_t getEffectPowerDivisor() const { return 1; }
 	virtual IBattleCast::Value getEffectDuration() const = 0;
 	virtual bool isSelectiveDispel() const { return false; }
+	virtual bool isNewHorizonsCure() const { return false; }
+	virtual SpellID getCureAffliction() const { return SpellID::NONE; }
 	virtual bool isMassSlow() const { return false; }
 	virtual bool usesNewHorizonsMagic() const { return false; }
 
@@ -353,9 +361,11 @@ public:
 	IBattleCast::Value getEffectDuration() const override;
 	IBattleCast::Value64 getEffectValue() const override;
 	IBattleCast::Value getOvercharge() const;
+	SpellID getCureAffliction() const override;
 	BattleSide getCounterspellSide() const;
 	bool isCounterspellNegated() const;
 	bool isSelectiveDispel() const override;
+	bool isNewHorizonsCure() const override;
 	bool isMassSlow() const override;
 	bool isMetamagicFollowup() const;
 	bool isMetamagicGrand() const;
@@ -415,6 +425,7 @@ private:
 	IBattleCast::Value64 effectValue;
 	///Additional mana selected for a spell-specific cast option.
 	IBattleCast::Value overcharge = 0;
+	SpellID cureAffliction = SpellID::NONE;
 	BattleSide counterspellSide = BattleSide::NONE;
 	bool counterspellNegated = false;
 	bool selectiveDispel = false;

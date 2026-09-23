@@ -276,6 +276,17 @@ static bool chainGateKillQualifies(const CBattleInfoCallback & battle,
 	});
 }
 
+static bool demonicGateFootprintHasObstacle(const CBattleInfoCallback & battle,
+	const BattleHex & position, bool doubleWide, BattleSide side)
+{
+	for(const auto & hex : battle::Unit::getHexes(position, doubleWide, side))
+	{
+		if(hex.isAvailable() && !battle.battleGetAllObstaclesOnPos(hex, false).empty())
+			return true;
+	}
+	return false;
+}
+
 static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)
 {
 	if(action.actionType != EActionType::DEMONIC_GATING || !action.gatingCreature.hasValue()
@@ -322,7 +333,8 @@ static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, cons
 	if(!target.isAvailable() || target == sourcePosition || target == occupiedTail
 		|| (gatedTail.isValid() && (gatedTail == sourcePosition || gatedTail == occupiedTail))
 		|| BattleHex::getDistance(sourcePosition, target) > placementRange
-		|| battle.battleGetUnitByPos(target, true) || !battle.battleGetAllObstaclesOnPos(target, false).empty())
+		|| battle.battleGetUnitByPos(target, true)
+		|| demonicGateFootprintHasObstacle(battle, target, creature->isDoubleWide(), action.side))
 		return false;
 	const auto accessibility = battle.getAccessibility();
 	return accessibility.accessible(target, creature->isDoubleWide(), action.side);
@@ -452,6 +464,7 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 	spells::BattleCast parameters(&battle, hero, spells::Mode::HERO, spell);
 	parameters.setOvercharge(ba.spellOvercharge);
 	parameters.setSelectiveDispel(ba.spellSelectiveDispel);
+	parameters.setCureAffliction(ba.spellCureAffliction);
 	parameters.setMassSlow(ba.spellMassSlow);
 	parameters.setMetamagicFollowup(ba.metamagicFollowup);
 	parameters.setMetamagicGrand(ba.metamagicGrand);
@@ -515,6 +528,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	spells::BattleCast parameters(&battle, h, spells::Mode::HERO, s);
 	parameters.setOvercharge(ba.spellOvercharge);
 	parameters.setSelectiveDispel(ba.spellSelectiveDispel);
+	parameters.setCureAffliction(ba.spellCureAffliction);
 	parameters.setMassSlow(ba.spellMassSlow);
 	parameters.setMetamagicFollowup(ba.metamagicFollowup);
 	parameters.setMetamagicGrand(ba.metamagicGrand);
@@ -1294,7 +1308,7 @@ bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & ba
 		const bool gateStillLegal = source && source->alive() && hero && creature
 			&& BattleHex::getDistance(source->getPosition(), gateHex) <= placementRange
 			&& !battle.battleGetUnitByPos(gateHex, true)
-			&& battle.battleGetAllObstaclesOnPos(gateHex, false).empty()
+			&& !demonicGateFootprintHasObstacle(battle, gateHex, creature->isDoubleWide(), ba.side)
 			&& accessibility.accessible(gateHex, creature->isDoubleWide(), ba.side);
 		if(!gateStillLegal)
 			return true; // authoritative movement or an obstacle may still have consumed the activation

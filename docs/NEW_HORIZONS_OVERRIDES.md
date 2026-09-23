@@ -45,7 +45,13 @@ requiring the complete source document to be replaced.
   it does not deal Fire Wall damage. On successful creature arrival, remove the
   marker and play the Devil's movement sound once. Gate placement itself does
   not play the arrival sound.
-- **Implementation evidence:** Pending implementation and validation.
+- **Implementation evidence:** Shared accessibility and battle-proxy queries
+  reserve the full footprint. `NewHorizonsDemonicGatingTest` covers exact arrival,
+  blocked arrival retention, double-wide reservations, overlapping reservations,
+  ground/flying landing exclusion, and the single Devil sound event.
+  `HypotheticWallTest.PendingDemonicGateReservationsSurviveNestedBattleProxies`
+  covers AI simulation forwarding. The flame/outline renderer compiles; graphical
+  appearance still requires in-game validation.
 
 ### 2026-09-22 — Replace Metamagic's countered-spell perk
 

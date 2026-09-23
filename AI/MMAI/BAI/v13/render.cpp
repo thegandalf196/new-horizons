@@ -500,6 +500,7 @@ void Verify(const State * state) // NOSONAR - function used for debugging only
 								break;
 							case EAccessibility::ALIVE_STACK:
 							case EAccessibility::OBSTACLE:
+							case EAccessibility::DEMONIC_GATE_RESERVED:
 							case EAccessibility::DESTRUCTIBLE_WALL:
 							case EAccessibility::GATE:
 								break;

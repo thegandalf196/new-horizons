@@ -104,6 +104,8 @@ set(test_SRCS
 		spells/AbilityCasterTest.cpp
 		spells/AdventureSpellEffectTest.cpp
 		spells/CSpellTest.cpp
+		spells/CSpellHandlerEffectFormatTest.cpp
+		modding/ScopedIdentifierTest.cpp
 		spells/NewHorizonsDirectDamageTest.cpp
 		spells/NewHorizonsAdventureMagicTest.cpp
 		spells/NewHorizonsMagicTest.cpp
@@ -208,6 +210,7 @@ set(test_SRCS
 		server/battles/NewHorizonsCommandTest.cpp
 		server/battles/NewHorizonsCombatSkillsTest.cpp
 		server/battles/NewHorizonsPhantomArmyTest.cpp
+		server/battles/NewHorizonsCureTest.cpp
 		server/battles/NewHorizonsShroudTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp

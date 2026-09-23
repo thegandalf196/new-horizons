@@ -80,6 +80,10 @@ public:
 	{
 		return subject->getBattle()->getBloodrageRank(side);
 	}
+	std::vector<PendingDemonicGateFootprint> getPendingDemonicGateFootprints(BattleSide side) const override
+	{
+		return subject->getBattle()->getPendingDemonicGateFootprints(side);
+	}
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override
 	{
 		return subject->getBattle()->getSylvanLuckState(side);

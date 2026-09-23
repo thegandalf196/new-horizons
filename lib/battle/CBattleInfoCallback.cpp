@@ -2294,6 +2294,24 @@ AccessibilityInfo CBattleInfoCallback::getAccessibility() const
 		}
 	}
 
+	// Pending Gates own their requested landing footprint until they resolve.
+	// Keeping reservations in the same accessibility result makes movement,
+	// placement and battle AI agree on which hexes remain unavailable.
+	if(const auto * battleInfo = getBattle())
+	{
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			for(const auto & gate : battleInfo->getPendingDemonicGateFootprints(side))
+			{
+				if(!gate.creature.hasValue())
+					continue;
+				const auto * creature = gate.creature.toCreature();
+				if(creature)
+					ret.reserveDemonicGateFootprint(gate.position, creature->isDoubleWide(), side);
+			}
+		}
+	}
+
 	return ret;
 }
 
@@ -2306,7 +2324,7 @@ AccessibilityInfo CBattleInfoCallback::getAccessibility(const BattleHexArray & a
 {
 	auto ret = getAccessibility();
 	for(const auto & hex : accessibleHexes)
-		if(hex.isValid())
+		if(hex.isValid() && !ret.isDemonicGateReserved(hex))
 			ret[hex.toInt()] = EAccessibility::ACCESSIBLE;
 
 	return ret;

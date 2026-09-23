@@ -242,8 +242,12 @@
 			"costs": [
 				4,
 				4,
-				3,
-				3
+				4,
+				4
+			],
+			"cureAfflictions": [
+				"core:poison",
+				"core:disease"
 			]
 		},
 		"core:curse": {

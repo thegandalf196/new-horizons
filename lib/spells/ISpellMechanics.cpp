@@ -191,6 +191,11 @@ BattleCast::OptionalValue BattleCast::getOvercharge() const
 	return overcharge;
 }
 
+SpellID BattleCast::getCureAffliction() const
+{
+	return cureAffliction;
+}
+
 bool BattleCast::getForceNonSmartTargeting() const
 {
 	return forceNonSmartTargeting;
@@ -264,6 +269,11 @@ void BattleCast::setEffectDuration(BattleCast::Value value)
 void BattleCast::setOvercharge(BattleCast::Value value)
 {
 	overcharge = std::make_optional(value);
+}
+
+void BattleCast::setCureAffliction(SpellID value)
+{
+	cureAffliction = value;
 }
 
 void BattleCast::setForceNonSmartTargeting(bool value)
@@ -439,6 +449,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		}
 	}
 	overcharge = event->getOvercharge().value_or(0);
+	cureAffliction = event->getCureAffliction();
 	counterspellSide = event->getCounterspellSide();
 	counterspellNegated = event->isCounterspellNegated();
 	selectiveDispel = event->getSelectiveDispel();
@@ -499,21 +510,31 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		else
 		{
 			const auto * battle = cb->getBattle();
-			const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(
-				dynamic_cast<const CGHeroInstance *>(caster));
-			const auto magicArrowValue = battle
-				? newHorizonsMagic::magicArrowDamage(battle->getMagicRules(), owner->getId(), effectPower,
-					getEffectPowerDivisor(), getOvercharge(), modifiers)
-				: std::nullopt;
-			const auto savedValue = battle && !magicArrowValue
-				? newHorizonsMagic::directDamageValue(battle->getMagicRules(), owner->getJsonKey(), effectPower, getEffectPowerDivisor())
-				: std::nullopt;
-			if(magicArrowValue)
-				effectValue = *magicArrowValue;
-			else if(savedValue)
-				effectValue = *savedValue;
+			if(battle && newHorizonsMagic::cureEnabled(battle->getMagicRules(), owner->getId()))
+			{
+				// The New Horizons Cure formula has a fixed component and a
+				// Spell-Power component. Target, school, and specialty modifiers
+				// still flow through the usual applySpellBonus call in heal.lua.
+				effectValue = 25 + 3LL * effectPower / 2;
+			}
 			else
-				effectValue = owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
+			{
+				const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(
+					dynamic_cast<const CGHeroInstance *>(caster));
+				const auto magicArrowValue = battle
+					? newHorizonsMagic::magicArrowDamage(battle->getMagicRules(), owner->getId(), effectPower,
+						getEffectPowerDivisor(), getOvercharge(), modifiers)
+					: std::nullopt;
+				const auto savedValue = battle && !magicArrowValue
+					? newHorizonsMagic::directDamageValue(battle->getMagicRules(), owner->getJsonKey(), effectPower, getEffectPowerDivisor())
+					: std::nullopt;
+				if(magicArrowValue)
+					effectValue = *magicArrowValue;
+				else if(savedValue)
+					effectValue = *savedValue;
+				else
+					effectValue = owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
+			}
 		}
 		vstd::amax(effectValue, 0);
 	}
@@ -628,6 +649,9 @@ int32_t BaseMechanics::getSpellLevel() const
 
 bool BaseMechanics::isSmart() const
 {
+	if(isNewHorizonsCure())
+		return true;
+
 	if(forceNonSmartTargeting)
 		return false;
 
@@ -643,6 +667,9 @@ bool BaseMechanics::isSmart() const
 
 bool BaseMechanics::isMassive() const
 {
+	if(isNewHorizonsCure())
+		return false;
+
 	if(forceMassive || isMassSlow())
 		return true;
 
@@ -732,6 +759,11 @@ IBattleCast::Value BaseMechanics::getEffectLevel() const
 
 IBattleCast::Value BaseMechanics::getRangeLevel() const
 {
+	// Detailed New Horizons Cure is a one-unit cast at every mastery rank;
+	// retain the computed effect level while resolving the target with base range.
+	if(isNewHorizonsCure())
+		return 0;
+
 	// Temporal Field owns Slow's mass mode explicitly. At Expert mastery the
 	// legacy spell data would otherwise make the "Ordinary" branch a full-power,
 	// single-cost mass cast and bypass the perk's saved budget and trade-off.
@@ -783,6 +815,17 @@ bool BaseMechanics::isCounterspellNegated() const
 bool BaseMechanics::isSelectiveDispel() const
 {
 	return selectiveDispel;
+}
+
+bool BaseMechanics::isNewHorizonsCure() const
+{
+	return cb && cb->getBattle()
+		&& newHorizonsMagic::cureEnabled(cb->getBattle()->getMagicRules(), owner->getId());
+}
+
+SpellID BaseMechanics::getCureAffliction() const
+{
+	return cureAffliction;
 }
 
 bool BaseMechanics::isMassSlow() const

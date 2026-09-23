@@ -36,6 +36,13 @@ namespace battle
 	class UnitInfo;
 }
 
+/// Read-only landing data used to derive Demonic Gate reservations in shared battle queries.
+struct DLL_LINKAGE PendingDemonicGateFootprint
+{
+	CreatureID creature;
+	BattleHex position;
+};
+
 class DLL_LINKAGE IBattleInfo : public IConstBonusProvider
 {
 public:
@@ -101,6 +108,12 @@ public:
 	{
 		static const std::map<CreatureID, TQuantity> empty;
 		return empty;
+	}
+	/// Pending Demonic Gate landing footprints are authoritative but derived into accessibility.
+	virtual std::vector<PendingDemonicGateFootprint> getPendingDemonicGateFootprints(BattleSide side) const
+	{
+		(void)side;
+		return {};
 	}
 
 	virtual ui8 getTacticDist() const = 0;
