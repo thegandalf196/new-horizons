@@ -46,6 +46,81 @@ bool Rewardable::Interface::rewardTeachesSecondarySkill(const Rewardable::VisitI
 	return false;
 }
 
+namespace
+{
+bool hasNonSkillReward(const Rewardable::Reward & reward)
+{
+	return reward.resources.nonZero()
+		|| reward.heroExperience != 0
+		|| reward.heroLevel != 0
+		|| reward.manaDiff != 0
+		|| reward.manaPercentage >= 0
+		|| reward.movePoints != 0
+		|| reward.movePercentage >= 0
+		|| !reward.heroBonuses.empty()
+		|| !reward.commanderBonuses.empty()
+		|| !reward.playerBonuses.empty()
+		|| std::ranges::any_of(reward.primary, [](si32 value) { return value != 0; })
+		|| !reward.creaturesChange.empty()
+		|| !reward.grantedArtifacts.empty()
+		|| !reward.takenArtifacts.empty()
+		|| !reward.takenArtifactSlots.empty()
+		|| !reward.grantedScrolls.empty()
+		|| !reward.takenScrolls.empty()
+		|| !reward.spells.empty()
+		|| !reward.creatures.empty()
+		|| !reward.takenCreatures.empty()
+		|| reward.spellCast.first != SpellID::NONE
+		|| reward.revealTiles.has_value();
+}
+
+bool canReceiveNewRewardedSkill(const CGHeroInstance * hero, SecondarySkill skill)
+{
+	// New Horizons has an explicit per-class offer table: a zero or missing
+	// weight forbids acquiring that skill from teachers as well as level-ups.
+	// Keep legacy reward behaviour unchanged, where skill probabilities are not
+	// an acquisition allowlist for direct rewards.
+	if(newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()))
+		return hero->canLearnSkill(skill);
+
+	return hero->canLearnSkill();
+}
+
+bool isPureSkillTeacherReward(const Rewardable::VisitInfo & info)
+{
+	return !hasNonSkillReward(info.reward)
+		&& std::ranges::any_of(info.reward.secondary, [](const auto & entry) { return entry.second > 0; });
+}
+
+bool canReceiveAnyRewardedSkill(const Rewardable::VisitInfo & info, const CGHeroInstance * hero)
+{
+	if(!hero || !newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()))
+		return true;
+
+	for(const auto & [authoredSkill, levels] : info.reward.secondary)
+	{
+		// Negative adjustments can remove an existing rank, so do not hide the
+		// reward just because a separate positive skill offer is forbidden.
+		if(levels < 0)
+			return true;
+
+		if(levels <= 0)
+			continue;
+
+		const auto replaced = newHorizonsMagic::replacementSkill(hero->getMagicRules(), authoredSkill);
+		const auto skill = newHorizonsHeroes::normalizeRewardSkill(hero->getPrimaryGrowthRules(), replaced);
+		if(!skill)
+			continue;
+
+		if(hero->getSecSkillLevel(*skill) != MasteryLevel::NONE
+			|| canReceiveNewRewardedSkill(hero, *skill))
+			return true;
+	}
+
+	return false;
+}
+}
+
 std::vector<ui32> Rewardable::Interface::getAvailableRewards(const CGHeroInstance * hero, Rewardable::EEventType event) const
 {
 	std::vector<ui32> ret;
@@ -54,7 +129,9 @@ std::vector<ui32> Rewardable::Interface::getAvailableRewards(const CGHeroInstanc
 	{
 		const Rewardable::VisitInfo & visit = configuration.info[i];
 
-		if(event == visit.visitType && (!hero || visit.limiter.heroAllowed(hero)))
+		if(event == visit.visitType && (!hero || visit.limiter.heroAllowed(hero))
+			&& (!hero || !newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules())
+				|| !isPureSkillTeacherReward(visit) || canReceiveAnyRewardedSkill(visit, hero)))
 			ret.push_back(static_cast<ui32>(i));
 	}
 	return ret;
@@ -148,7 +225,9 @@ void Rewardable::Interface::grantRewardBeforeLevelup(IGameEventCallback & gameEv
 			gameEvents.showInfoDialog(&cannotImprove);
 			continue;
 		}
-		bool canLearn = currentLevel != 0 || hero->canLearnSkill();
+		// Existing skills may still be improved (even with a full skill bar),
+		// while a new New Horizons skill must pass its class-specific eligibility.
+		bool canLearn = currentLevel != 0 || canReceiveNewRewardedSkill(hero, *skill);
 
 		if(currentLevel != newLevelClamped && canLearn)
 			gameEvents.changeSecSkill(hero, *skill, newLevelClamped, ChangeValueMode::ABSOLUTE);
