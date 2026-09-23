@@ -301,6 +301,7 @@ set(lib_MAIN_SRCS
 	spells/CSpellHandler.cpp
 	spells/NewHorizonsDirectDamage.cpp
 	spells/NewHorizonsMagic.cpp
+	spells/MagicalDamageReduction.cpp
 	spells/NewHorizonsSorcery.cpp
 	spells/NewHorizonsSpellAvailability.cpp
 	spells/ExternalCaster.cpp
@@ -810,6 +811,7 @@ set(lib_MAIN_HEADERS
 	spells/CSpellHandler.h
 	spells/NewHorizonsDirectDamage.h
 	spells/NewHorizonsMagic.h
+	spells/MagicalDamageReduction.h
 	spells/NewHorizonsSorcery.h
 	spells/NewHorizonsSpellAvailability.h
 	spells/ExternalCaster.h

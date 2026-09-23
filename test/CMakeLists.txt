@@ -110,6 +110,7 @@ set(test_SRCS
 		spells/NewHorizonsDirectDamageTest.cpp
 		spells/NewHorizonsAdventureMagicTest.cpp
 		spells/NewHorizonsMagicTest.cpp
+		spells/MagicalDamageReductionTest.cpp
 		spells/NewHorizonsMagicArrowTest.cpp
 		spells/NewHorizonsMagicSchemaTest.cpp
 		spells/NewHorizonsMagicV2RulesTest.cpp
