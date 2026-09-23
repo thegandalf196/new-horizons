@@ -18,7 +18,8 @@ cleanup()
 trap cleanup EXIT
 
 set +e
-timeout --signal=TERM "${duration}s" "$launcher" -- \
+# Let the launcher forward termination and keep runtime assets until its client exits.
+timeout --foreground --signal=TERM "${duration}s" "$launcher" -- \
 	--testmap "$map" \
 	--headless \
 	--disable-video \
