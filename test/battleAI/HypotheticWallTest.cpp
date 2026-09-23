@@ -16,6 +16,7 @@
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/Problem.h"
 
 namespace
 {
@@ -212,17 +213,52 @@ TEST_F(HypotheticWallTest, DestroyedGateBecomesPassableWithoutChangingParentOrLi
 TEST_F(HypotheticWallTest, RealEarthquakeCanDestroyTheLastGateInModelAndAuthoritativeBattle)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareSiege());
+	// Siege defenders can act first. Reach an actual attacker spell window
+	// through legal actions instead of submitting a request on the enemy turn.
+	for(int actions = 0; actions < 100; ++actions)
+	{
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		const auto owner = battle()->battleGetOwner(active);
+		if(owner == PlayerColor(0))
+			break;
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(
+			BattleID(0), owner, BattleAction::makeDefend(active)));
+	}
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleGetOwner(battle()->battleActiveUnit()), PlayerColor(0));
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::EARTHQUAKE);
 	attackerSideHero->mana = 1000;
 	for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
-		battle()->setWallState(static_cast<EWallPart>(index), EWallState::DESTROYED);
-	battle()->setWallState(EWallPart::GATE, EWallState::DAMAGED);
+	{
+		const auto part = static_cast<EWallPart>(index);
+		if(part != EWallPart::GATE)
+			battle()->setWallState(part, EWallState::DESTROYED);
+	}
+	if(battle()->si.canonicalStructuralHP)
+	{
+		// Setting only the visual state cannot revive canonical HP after destruction.
+		battle()->setWallStructuralHP(EWallPart::GATE, 1);
+		ASSERT_EQ(battle()->getWallStructuralHP(EWallPart::GATE), 1);
+	}
+	else
+	{
+		battle()->setWallState(EWallPart::GATE, EWallState::DAMAGED);
+	}
 	battle()->si.gateState = EGateState::CLOSED;
 	const auto * spell = SpellID(SpellID::EARTHQUAKE).toSpell();
-	ASSERT_TRUE(spell->canBeCast(battle(), spells::Mode::HERO, attackerSideHero));
 	spells::BattleCast live(battle(), attackerSideHero, spells::Mode::HERO, spell);
-	ASSERT_TRUE(spell->battleMechanics(&live)->canBeCastAt({}));
+	const auto mechanics = spell->battleMechanics(&live);
+	ASSERT_TRUE(battle()->hasFortifications());
+	ASSERT_TRUE(!mechanics->isSmart() || mechanics->getCasterSide() == BattleSide::ATTACKER);
+	ASSERT_TRUE(battle()->isWallPartAttackable(EWallPart::GATE));
+	spells::detail::ProblemImpl castProblem;
+	const bool canCast = spell->canBeCast(castProblem, battle(), spells::Mode::HERO, attackerSideHero);
+	std::vector<std::string> castProblems;
+	castProblem.getAll(castProblems);
+	ASSERT_TRUE(canCast) << testing::PrintToString(castProblems);
+	ASSERT_TRUE(mechanics->canBeCastAt({}));
 	HypotheticBattle model(environment.get(), callback);
 	spells::BattleCast projected(&model, attackerSideHero, spells::Mode::HERO, spell);
 	projected.castEval(model.getServerCallback(), {});
@@ -238,7 +274,11 @@ TEST_F(HypotheticWallTest, RealEarthquakeCanDestroyTheLastGateInModelAndAuthorit
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
 	action.spell = SpellID::EARTHQUAKE;
+	action.aimToHex(BattleHex::INVALID);
 	const auto cost = attackerSideHero->getSpellCost(spell);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	ASSERT_EQ(battle()->battleGetOwner(active), PlayerColor(0));
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(battle()->battleGetWallState(EWallPart::GATE), EWallState::DESTROYED);
 	EXPECT_EQ(battle()->battleGetGateState(), EGateState::DESTROYED);
