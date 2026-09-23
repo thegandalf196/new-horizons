@@ -10,9 +10,20 @@
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/battle/BattleInfo.h"
+#include "../../../lib/entities/hero/CHeroClass.h"
 #include "../../../lib/spells/CSpell.h"
 
-class HeroCommandCloneTest : public HeroCommandFixture {};
+class HeroCommandCloneTest : public HeroCommandFixture
+{
+protected:
+	void mapLoaded(CMap * map) override
+	{
+		HeroCommandFixture::mapLoaded(map);
+		// This test exercises core Clone's command-expiry interaction. The
+		// installed New Horizons roster intentionally disables core:clone.
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+	}
+};
 
 TEST_F(HeroCommandCloneTest, RealCloneDoesNotCopyExpiredOrderButReceivesSubsequentOrder)
 {

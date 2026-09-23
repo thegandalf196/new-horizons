@@ -14,11 +14,14 @@
 
 class HeroCommandRejectionTest : public HeroCommandFixture {};
 
-TEST_F(HeroCommandRejectionTest, RejectedCommandDoesNotReactivateUnitOrExpireItsBonuses)
+TEST_F(HeroCommandRejectionTest, RejectedCommandRestoresControlWithoutStartingActionOrExpiringBonuses)
 {
 	prepareCommands();
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto activeUnitId = active->unitId();
+	const auto orderUsed = battle()->getHeroCommandUsed(BattleSide::ATTACKER);
 	Bonus temporary;
 	temporary.type = BonusType::STACKS_SPEED;
 	temporary.val = 5;
@@ -33,7 +36,12 @@ TEST_F(HeroCommandRejectionTest, RejectedCommandDoesNotReactivateUnitOrExpireIts
 
 	ASSERT_FALSE(issue(HeroCommand::HOLD_THE_LINE));
 	EXPECT_EQ(server.startedActions.size(), starts);
-	EXPECT_EQ(server.stackActivations.size(), activations);
+	ASSERT_EQ(server.stackActivations.size(), activations + 1);
+	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::ACTION_REJECTED);
+	EXPECT_EQ(server.stackActivations.back().stack, activeUnitId);
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeUnitId);
+	EXPECT_EQ(battle()->getHeroCommandUsed(BattleSide::ATTACKER), orderUsed);
 	EXPECT_EQ(active->getMovementRange(), speed);
+	EXPECT_FALSE(active->getAllBonuses(Bonus::UntilGetsTurn)->empty());
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::CHARGE);
 }

@@ -29,6 +29,7 @@
 #include "../../../lib/networkPacks/PacksForClient.h"
 #include "../../../lib/networkPacks/StackLocation.h"
 #include "../../../lib/entities/hero/CHeroHandler.h"
+#include "../../../lib/entities/hero/CHeroClass.h"
 #include "../../../lib/CPlayerState.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
@@ -65,6 +66,7 @@ protected:
 
 	bool growthEnabled = true;
 	int extraChance = 100;
+	bool legacyMagicRules = false;
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
@@ -83,6 +85,12 @@ protected:
 				for(int rank = 1; rank <= 3; ++rank)
 					extra["chances"].Vector()[rank].Integer() = extraChance;
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		if(legacyMagicRules)
+		{
+			// Keep the legacy Fire Wall trigger/divisor regression isolated from
+			// the v2 placement and damage-snapshot protocol.
+			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		}
 	}
 };
 
@@ -1043,12 +1051,22 @@ TEST_F(NewHorizonsHeroGrowthTest, RealInitializationCapturesProfileAndKnowledgeM
 	ASSERT_NE(hero, nullptr);
 	const auto view = hero->getPrimaryGrowthView();
 	ASSERT_TRUE(view.has_value());
-	EXPECT_EQ(view->base, (std::array<int, 4>{15, 20, 5, 10}));
+	EXPECT_EQ(view->profile.starting, (std::array<int, 4>{15, 20, 5, 10}));
+	EXPECT_EQ(view->base, (std::array<int, 4>{20, 20, 5, 5}));
 	EXPECT_EQ(view->modified, view->base);
 	EXPECT_EQ(view->profile.growth, (std::array<int, 4>{4, 4, 1, 1}));
-	EXPECT_EQ(hero->manaLimit(), 10);
-	EXPECT_EQ(hero->mana, 10);
-	EXPECT_EQ(gameState()->getHeroDevelopmentRules(), testHeroRules());
+	EXPECT_EQ(hero->manaLimit(), 5);
+	EXPECT_EQ(hero->mana, 5);
+	const auto & savedRules = gameState()->getHeroDevelopmentRules();
+	EXPECT_EQ(savedRules["schemaVersion"].Integer(), 1);
+	EXPECT_EQ(savedRules["rulesetVersion"].Integer(), 1);
+	EXPECT_EQ(savedRules["powerDivisor"].Integer(), 10);
+	const auto & savedProfile = savedRules["classProfiles"][hero->getHeroClass()->getJsonKey()];
+	EXPECT_EQ(savedProfile["starting"].convertTo<std::vector<int>>(), (std::vector<int>{15, 20, 5, 10}));
+	EXPECT_EQ(savedProfile["growth"].convertTo<std::vector<int>>(), (std::vector<int>{4, 4, 1, 1}));
+	ASSERT_EQ(savedRules["extraGrowth"].Vector().size(), 2u);
+	for(const auto & extra : savedRules["extraGrowth"].Vector())
+		EXPECT_EQ(extra["chances"].convertTo<std::vector<int>>(), (std::vector<int>{0, 100, 100, 100}));
 }
 
 TEST_F(NewHorizonsHeroGrowthTest, MapExperienceUsesTheSameFourAttributeGrowthPath)
@@ -1345,6 +1363,7 @@ TEST_F(NewHorizonsHeroGrowthTest, RealSacrificeKeepsVictimHealthAndMasteryTermsU
 
 TEST_F(NewHorizonsHeroGrowthTest, RealFireWallCreationTriggerAndBattlePacketKeepLatchedScale)
 {
+	legacyMagicRules = true;
 	prepareScaledExpert(SpellID::FIRE_WALL);
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;

@@ -35,22 +35,36 @@ TEST_F(HeroCommandEligibilityTest, SuccessfulOrderDoesNotExpirePreexistingUnitTu
 	EXPECT_FALSE(active->getAllBonuses(Bonus::UntilGetsTurn)->empty());
 }
 
-TEST_F(HeroCommandEligibilityTest, TacticsRejectionPreservesBudgetAndUnitActivation)
+TEST_F(HeroCommandEligibilityTest, TacticsRejectionPreservesBudgetAndOnlyRestoresControl)
 {
 	prepareCommands();
 	// Fixture-only setup isolates tactics from the otherwise eligible active hero.
 	battle()->tacticDistance = 1;
 	battle()->tacticsSide = BattleSide::ATTACKER;
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto activeUnitId = active->unitId();
 	const auto starts = server.startedActions.size();
 	const auto activations = server.stackActivations.size();
+	size_t rejectedCommands = 0;
 	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
 		HeroCommand::ADVANCE, HeroCommand::AGGRESSIVE, HeroCommand::DEFENSIVE})
 	{
+		++rejectedCommands;
 		EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, command));
 		EXPECT_FALSE(issue(command));
 	}
 	EXPECT_EQ(server.startedActions.size(), starts);
-	EXPECT_EQ(server.stackActivations.size(), activations);
+	// Each rejection returns control to the same stack without a new turn activation.
+	ASSERT_EQ(server.stackActivations.size(), activations + rejectedCommands);
+	for(auto i = activations; i < server.stackActivations.size(); ++i)
+	{
+		EXPECT_EQ(server.stackActivations[i].reason, BattleUnitTurnReason::ACTION_REJECTED);
+		EXPECT_EQ(server.stackActivations[i].stack, activeUnitId);
+	}
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeUnitId);
+	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
 	battle()->tacticDistance = 0;
 	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
 }
@@ -64,12 +78,20 @@ TEST_F(HeroCommandEligibilityTest, MissingCommanderRejectionPreservesBudget)
 	const auto hero = side.heroID;
 	side.heroID = ObjectInstanceID();
 	ASSERT_EQ(battle()->battleGetFightingHero(BattleSide::ATTACKER), nullptr);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto activeUnitId = active->unitId();
 	const auto starts = server.startedActions.size();
 	const auto activations = server.stackActivations.size();
 	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 	EXPECT_FALSE(issue(HeroCommand::CHARGE));
 	EXPECT_EQ(server.startedActions.size(), starts);
-	EXPECT_EQ(server.stackActivations.size(), activations);
+	ASSERT_EQ(server.stackActivations.size(), activations + 1);
+	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::ACTION_REJECTED);
+	EXPECT_EQ(server.stackActivations.back().stack, activeUnitId);
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeUnitId);
+	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
 	side.heroID = hero;
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 }
@@ -77,12 +99,20 @@ TEST_F(HeroCommandEligibilityTest, MissingCommanderRejectionPreservesBudget)
 TEST_F(HeroCommandEligibilityTest, InvalidSideIsRejectedWithoutFlowOrBudgetChange)
 {
 	prepareCommands();
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto activeUnitId = active->unitId();
 	const auto starts = server.startedActions.size();
 	const auto activations = server.stackActivations.size();
 	auto invalid = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::AGGRESSIVE);
 	invalid.side = static_cast<BattleSide>(127);
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), invalid));
 	EXPECT_EQ(server.startedActions.size(), starts);
-	EXPECT_EQ(server.stackActivations.size(), activations);
+	ASSERT_EQ(server.stackActivations.size(), activations + 1);
+	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::ACTION_REJECTED);
+	EXPECT_EQ(server.stackActivations.back().stack, activeUnitId);
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeUnitId);
+	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 }
