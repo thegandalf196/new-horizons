@@ -361,3 +361,23 @@ requiring the complete source document to be replaced.
   the separate Adventure Spell system are not changed by this clarification.
 - **Follow-up:** Reconcile Spellbinder's Hat's benefit with this broader rule;
   do not restore the proficiency lock merely to preserve its old distinction.
+
+### 2026-09-23 — Different Orders coexist
+
+- **Status:** Accepted
+- **Rule:** When a perk permits additional Orders, different Orders remain active
+  together for their normal durations. Issuing a new Order does not replace the
+  previous Order. Preserve each Order's own targets, effects and expiration.
+- **Boundaries:** This does not grant additional actions by itself or permit an
+  otherwise forbidden repeat of the same Order. Perk prerequisites, usage limits,
+  trigger timing and typed Order Action validation remain applicable.
+
+### 2026-09-23 — Unified spell access and Normal/Buffer Spell Points
+
+- **Status:** Accepted; supersedes the older Spellbinder's Hat no-grant design.
+- **Rule:** [NEW_HORIZONS_SPELL_POINTS.md](NEW_HORIZONS_SPELL_POINTS.md) records
+  the complete spell-access, Hat availability, Normal/Buffer pools, Knowledge,
+  Intelligence, anti-equipment-swap clamping, restoration and UI requirements.
+- **Priority:** Implement this as one coherent authoritative model, with AI,
+  save compatibility and all resource consumers updated together. Do not
+  simulate Buffer as increased maximum capacity or allow it to refill Normal.
