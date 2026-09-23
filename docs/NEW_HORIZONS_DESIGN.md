@@ -20,8 +20,9 @@ Read [NEW_HORIZONS_OVERRIDES.md](NEW_HORIZONS_OVERRIDES.md) immediately after
 the source document. Accepted entries there are later, narrowly scoped user
 instructions and override only the exact scripture rules they name; all other
 scripture rules remain authoritative.
-This currently means that Version 1.0 uses the ten-perk, choose-at-most-three
-Skill model; Governors and Caravans remain future work; the detailed Sorcery
+This currently means that Version 1.0 uses the ten-perk Skill model, with at
+most one learned Basic, one Advanced and one Expert perk per Skill as clarified
+in the overrides; Governors and Caravans remain future work; the detailed Sorcery
 roster's Magic Arrow with Overcharge controls over the earlier Magic Missile
 summary entry; and the superseded Doctrine experiment is not part of New
 Horizons. Orders remain in scope. Existing Doctrine code must not be exposed as
@@ -63,15 +64,16 @@ the prior architectural experiment is closed. Deferred smoothness research is in
   AI valuation/targeting, costs, school UI and descriptions.
 - Deterministic primary growth totaling ten points per level, with each hero
   class granting its fixed four-attribute vector on every level. There are no
-  skill-based extra rolls or level-10 transition. Starting ratings use
-  20/15/10/5 arranged by priority as the initial proposal. Knowledge directly supplies base
+  skill-based extra rolls or level-10 transition. The accepted starting/growth
+  rule is `Attribute(L) = growth * (L + 4)` before other bonuses; the older
+  20/15/10/5 priority proposal is superseded. Knowledge directly supplies base
   mana; all relevant formulas/tooltips must use the new scale coherently.
 - Secondary attributes include mana, leadership capacity, movement, morale, luck
   and siege capability. Skills modify capabilities; leadership capacity and siege
   are not additional automatically rolled primary stats.
-- Expert skills gain a further level-up choice of one of three masteries. Prefer
-  qualitatively different playstyles; the document's percentages are examples,
-  not a reason to block initial implementation with numerical tuning.
+- Skills use their ten-perk pools with rank-specific choices, not the historical
+  post-Expert three-mastery proposal. Follow the accepted perk-rank override;
+  numerical balance is not a reason to block functional implementation.
 - Core/Elite/Champion creature categorization. Conflux proposal: Pixies/Sprites
   as separate Core choices, five elementals as Elite, Phoenix as Champion.
   Preserve actual creature/army functionality while category/UI changes land.
@@ -117,9 +119,9 @@ provenance review. Scope later new creature animation sets explicitly.
 
 ## Unresolved choices — keep visible, do not silently decide
 
-- Earlier universal 4/3/2/1 growth versus later class-specific ten-point patterns:
-  implement a data-driven profile mechanism supporting both. Later class examples
-  are provisional inputs, not a complete final class table.
+- Primary growth is resolved by the accepted class-specific fixed-vector rule.
+  Missing authored class data is an implementation/data gap, not permission to
+  restore probabilistic growth or a level-10 transition.
 - Prose Necropolis Shadow/Chaos versus table Shadow/Sorcery; Fortress minor-school
   cell missing despite prose Nature/Shadow. Keep the conflict flagged; author the
   six-school registry/UI without making an irreversible faction assignment.

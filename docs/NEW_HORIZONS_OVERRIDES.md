@@ -41,7 +41,8 @@ requiring the complete source document to be replaced.
 - **Rule:** A pending Gate visibly marks and reserves the arriving creature's
   full battlefield footprint, including both hexes for a double-wide creature.
   Other stacks cannot occupy that footprint before arrival. Use the existing
-  Fire Wall flame animation with an amber hex outline as a visual marker only;
+  Fire Wall flame animation as a visual marker only, without a hex outline
+  (the later Pending Gate marker clarification supersedes the original outline);
   it does not deal Fire Wall damage. On successful creature arrival, remove the
   marker and play the Devil's movement sound once. Gate placement itself does
   not play the arrival sound.
@@ -50,7 +51,8 @@ requiring the complete source document to be replaced.
   blocked arrival retention, double-wide reservations, overlapping reservations,
   ground/flying landing exclusion, and the single Devil sound event.
   `HypotheticWallTest.PendingDemonicGateReservationsSurviveNestedBattleProxies`
-  covers AI simulation forwarding. The flame/outline renderer compiles; graphical
+  covers AI simulation forwarding. The original flame/outline renderer compiled;
+  that historical result is not acceptance of the later outline-free design. Graphical
   appearance still requires in-game validation.
 
 ### 2026-09-22 — Replace Metamagic's countered-spell perk
@@ -80,14 +82,15 @@ requiring the complete source document to be replaced.
   authored creature row in its assigned band; the UI must adapt the row layout
   rather than dropping, merging, or duplicating creatures to force a universal
   3/3/1 count.
-  Each card combines creature name, dwelling preview, creature portrait,
+  Each card combines creature name, creature portrait,
   available count, weekly growth, and a compact statistic column. The statistic
   column must include Attack, Defense, Damage, Health, Speed, Initiative,
   Leadership Cost, and Growth. Increase the window and card height enough to
   give Initiative and Leadership Cost their own readable rows; do not compress,
   overlap, or abbreviate those statistics merely to retain the old dimensions.
-  Rank is communicated by the band heading rather than repeated as text over
-  individual dwelling images. Retain the town's Heroes III visual identity,
+  Do not show dwelling previews or dwelling names in this screen: the later
+  user clarification removes them. Use the same statistic icons as the creature
+  UI, not words alone. Rank is communicated by the band heading. Retain the town's Heroes III visual identity,
   resource bar, date, and confirmation control.
 - **Implementation evidence:** Commit `704f5e98d` implements the adaptive
   simultaneous rank bands, full authored-roster preservation, eight-stat cards,
@@ -309,7 +312,8 @@ requiring the complete source document to be replaced.
 ### 2026-09-23 — Metamagic grants a round-long Spell Action
 
 - **Status:** Accepted; combat-allowance consumption timing awaits clarification.
-- **Rule:** Each round grants one Hero Action usable until the round ends.
+- **Rule:** At each round's start, each hero receives one Hero Action usable
+  until that round ends.
   When that Hero Action casts a spell, Metamagic can grant a separate Spell
   Action, with 1/2/3 uses per combat at Basic/Advanced/Expert rank. The Spell
   Action is usable until the round ends and can only cast a spell: it is not
@@ -378,6 +382,168 @@ requiring the complete source document to be replaced.
 - **Rule:** [NEW_HORIZONS_SPELL_POINTS.md](NEW_HORIZONS_SPELL_POINTS.md) records
   the complete spell-access, Hat availability, Normal/Buffer pools, Knowledge,
   Intelligence, anti-equipment-swap clamping, restoration and UI requirements.
+- **Mandatory reading:** That linked specification is part of this Accepted
+  override, not optional background. Read it before implementing or reviewing
+  spell acquisition, spellbook access, Mana costs, restoration, capacity,
+  equipment effects, related AI or Spell Point presentation.
+- **Core invariants:** Legitimately inscribed combat spells have no School-rank
+  casting lock. Maximum Spell Points equal effective Knowledge, or
+  `floor(1.30 * effective Knowledge)` with Intelligence. Normal points never
+  exceed the current maximum; capacity increases do not refill them, and
+  capacity reductions immediately discard excess Normal points. Buffer is
+  independent, survives capacity reductions, and is spent before Normal.
+  Ordinary restoration fills Normal only; Buffer grants do not refill Normal.
+  Arcane Reservoir grants +50 Buffer; Magic Spring fills Normal and grants
+  +25 Buffer, preserving their usage restrictions. These grant amounts remain
+  balance parameters. Spellbinder's Hat supplies eligible Level 5 combat spells
+  while equipped, without removing independently learned spells on unequip.
+  In `310 / 460 +50`, 310 already includes the 50 Buffer; do not add it twice.
 - **Priority:** Implement this as one coherent authoritative model, with AI,
   save compatibility and all resource consumers updated together. Do not
   simulate Buffer as increased maximum capacity or allow it to refill Normal.
+
+## Conversation audit — explicit clarifications consolidated 2026-09-23
+
+These entries record earlier explicit user instructions and the latest visual
+clarifications. The date is the consolidation date, not an inferred date for
+each original message. They are design requirements, not implementation claims.
+
+### Deterministic growth and secondary-skill offers
+
+- **Status:** Accepted
+- **Rule:** Every class has a fixed four-attribute growth vector totaling ten.
+  Every level adds exactly that vector; there is no primary-stat roll or
+  level-10 transition. Before other bonuses, `Attribute(L) = growth * (L + 4)`.
+  Knight's example is `3 / 4 / 1 / 2`. Preserve the authored class vectors,
+  rather than replacing them with low/high-level probability tables.
+  Secondary-skill selection uses the authored class weights, without the
+  original forced Wisdom or magic-school offer cadence. Wisdom remains a Skill.
+  Solmyr is a Wizard, not a Battle Mage; use the Wizard table for his offers.
+- **Boundary:** An observed run without Wisdom is not by itself evidence of
+  incorrect probabilities. Validate the actual eligible pool and weighted draw.
+
+### Perk ranks, missing choices, and empty slots
+
+- **Status:** Accepted
+- **Rule:** Each Skill permits at most one Basic, one Advanced, and one Expert
+  perk. Once a hero chooses a perk of one rank, other perks of that same rank
+  from that same Skill must not be offered. This restriction does not suppress
+  that rank's choices in other Skills. Advancing a Skill through a teacher must
+  not silently erase an unchosen lower-rank perk opportunity.
+  Unfilled perk slots look empty, not like an "Unbound" perk. Perk help identifies
+  both the owning Skill's name and its icon, including level-up right-click help.
+- **Boundary:** The reported teacher-induced skipped choice requires runtime
+  verification; this entry does not claim it is fixed.
+
+### All skill-teaching sources use the current learning rules
+
+- **Status:** Accepted
+- **Rule:** Every source that teaches a Skill asks whether the hero wants to
+  learn it. If already known, it can advance to Advanced or Expert as applicable;
+  an Expert hero receives an explanation instead of a redundant grant.
+  Apply current New Horizons eligibility and the live Skill registry consistently
+  to Witch Huts, Scholars/teachers, universities and unique buildings; do not
+  leak retired vanilla skills. A later building-specific replacement, such as
+  House of Wisdom selling scrolls, takes precedence over generic teaching rules.
+
+### Hero initialization and stale spells
+
+- **Status:** Accepted
+- **Rule:** Audit starting Skills, spells and specialties together when their
+  vanilla mechanic is removed or replaced. Halon's removed Mysticism must not
+  leave him with a missing starting Skill or an obsolete specialty. Apply the
+  current spell roster to hero starts/specialties, map teachers, Mage Guilds and
+  other acquisition sources, not just the spellbook display. Starting armies
+  must respect the hero's Leadership rules. The three-starting-development
+  direction applies to all heroes eventually, with Solmyr implemented first.
+- **Boundary:** Reports naming Cure, Shield, Stone Skin or Haste are audit
+  requests, not permission to remove a spell that the controlling detailed
+  scripture retains. Verify membership and revised behavior separately; see
+  [NH_USER_FEEDBACK.md](NH_USER_FEEDBACK.md). Unspecified replacement specialties
+  and starting choices must be authored, not presented as user-approved facts.
+
+### Leadership displays
+
+- **Status:** Accepted
+- **Rule:** Beside the hero's current Leadership total, show `+x` for the amount
+  gained per level, analogous to primary-attribute growth. Artifact and other
+  bonuses contribute to the total; they are not what this `+x` represents.
+  In the creature window, Leadership Cost is a full stat row like Attack and
+  Defense, with room for its icon. Also display current stack size / maximum
+  commandable count, such as `5 / 11`. Keep per-creature cost distinct from
+  total-stack cost if both are shown; do not confuse either with that count.
+
+### Creature rank row and latest icon direction
+
+- **Status:** Accepted
+- **Rule:** Core / Elite / Champion is a horizontal creature-stat row like
+  Attack, not a floating badge. Its icon is a simple yellow monochrome ascending
+  stair-step line, as in the user's final shape reference, NOT a ladder with
+  rails and rungs. Creature Leadership uses a simple yellow monochrome crown.
+  Preserve readable icon/label/value spacing and the existing stat-row style.
+- **Art status:** Generated drafts are not automatically approved or installed.
+  The hero Movement and hero Leadership replacement-icon requests remain active;
+  the generated winged boot and command banner are proposals, not final art.
+
+### Skills probability control and familiar panel styling
+
+- **Status:** Accepted
+- **Rule:** Replace the obsolete class-growth button with the skill-probability
+  control beside the Skills / learned perks heading. The latest redraw specifies
+  a small gold circled serif `i`, close to the heading, with leather showing
+  through and no rectangular button background. The pane shows Skill icons and
+  excludes other factions' unique Skills. The hero combat action/status panel
+  must use the surrounding leather texture, red outlines and gold detailing,
+  with legible spacing; a bare rectangular box is not accepted visual completion.
+
+### Spellbook inspection and casting dialogs
+
+- **Status:** Accepted
+- **Rule:** The player can open and inspect the spellbook after casting actions
+  are exhausted; inspection does not permit an illegal cast. Center the Magic
+  Arrow Mana/Overcharge calculation dialog on the screen. Metamagic must never
+  automatically reopen the spellbook or require a repurposed Wait button to
+  clear a pending mandatory follow-up.
+
+### Orders targeting, indication, animations, and art
+
+- **Status:** Accepted
+- **Rule:** Targeted Orders such as Flank are selected in the Orders interface,
+  then aimed by clicking the stack on the battlefield, not by choosing that
+  stack in a separate menu. Active Orders have visible creature-window effect
+  indicators, but are not thereby made dispellable spells or subject to spell
+  duration modifiers. Heroes likewise need visible active-effect indications,
+  including Warcasting, in addition to their typed-action counts.
+  Orders remain right-click inspectable when unavailable. Their chooser uses
+  the game's textured visual style, not a flat grey rectangle. The combat Orders
+  button uses a readable monochrome yellow gauntlet consistent with the spellbook
+  control; do not accept clipped or partially visible art.
+  Reuse suitable existing animations for Orders with distinct animation choices,
+  not repeated animations across different Orders. The mounted celebration and
+  former Mirth effect were suggestions; exact per-Order assignments were delegated
+  to implementation judgment rather than fixed by those examples.
+
+### Meaningful logs and direct wording
+
+- **Status:** Accepted
+- **Rule:** Battle logs explain actual numerical outcomes and causes, including
+  how much damage an Order or perk adds or prevents. A Charge/Warcasting message
+  that only says "gains damage" is insufficient: expose the applicable amount
+  or formula and conditions, then log realized outcomes when the attack resolves.
+  Use direct Heroes III-style language; omit repetitive "New Horizons:" prefixes
+  and obsolete "legacy artillery" labels from live player-facing presentation.
+  Attribute mitigation to the actual mechanic; user examples do not redefine
+  Brace or other Orders' canonical effects.
+
+### Art coverage and status tracking
+
+- **Status:** Accepted
+- **Rule:** Provide role-appropriate provisional art for new Skills, perks,
+  Orders and derived attributes including Leadership and Siege. Transfigure
+  Matter uses Remove Obstacle's spell icon. Maintain the UI/asset register across
+  the complete live content, not only the user's examples, with Not done,
+  Provisional and Final classifications. An unrelated borrowed icon is Not done,
+  not a finished provisional design. The six school bookmarks are user-classified
+  Final; Metamagic's prior art is Provisional. All new art, even provisional art,
+  uses the HoMM3 Art skill. Preserve reference and approval evidence separately
+  from runtime installation and functionality checks.

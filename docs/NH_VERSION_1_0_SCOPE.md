@@ -5,6 +5,8 @@
 The current user-supplied gameplay authority is
 [New Horizons.docx](design-sources/New%20Horizons.docx). Detailed system sections
 in that document override earlier summary lists and older repository planning.
+Read [NEW_HORIZONS_OVERRIDES.md](NEW_HORIZONS_OVERRIDES.md) immediately afterward:
+its Accepted user clarifications supersede the exact rules they name here too.
 Version 1.0 replaces the seven-tier organization with Core, Elite, and Champion.
 Governors, regional administration, and Caravans are explicitly future work, not
 Version 1.0 dependencies.
@@ -14,7 +16,8 @@ Version 1.0 dependencies.
 1. **Primary attributes:** class-based deterministic development and coherent
    scaled formulas/readouts.
 2. **Secondary skills:** Basic/Advanced/Expert ranks with a ten-perk pool for each
-   Skill and at most three learned perks from that pool. A level-up may offer up
+   Skill and at most one learned perk of each rank (Basic, Advanced, Expert)
+   from that pool. A level-up may offer up
    to two Skill choices and two perk choices, from which the hero selects one.
    The full source roster and prerequisites replace the older three-ability and
    post-Expert mastery targets. Save migration remains explicit and versioned.
