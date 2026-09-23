@@ -16,6 +16,7 @@
 		"speed": 5,
 		"initiative": 5,
 		"abilities": {
+			"noMeleePenalty": null,
 			"noDistancePenalty": {
 				"type": "NO_DISTANCE_PENALTY"
 			}
@@ -38,6 +39,7 @@
 		"speed": 5,
 		"initiative": 7,
 		"abilities": {
+			"noMeleePenalty": null,
 			"noDistancePenalty": {
 				"type": "NO_DISTANCE_PENALTY"
 			}

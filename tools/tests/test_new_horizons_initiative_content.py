@@ -141,26 +141,39 @@ class NewHorizonsInitiativeContentTest(unittest.TestCase):
         master_genie = copy.deepcopy(base["masterGenie"])
         merge_objects(master_genie, patch["core:masterGenie"])
 
+        # JsonUtils::merge clears null-patched nodes; CCreatureHandler then
+        # ignores those null ability entries when constructing the creature.
+        self.assertIsNone(patch["core:mage"]["abilities"]["noMeleePenalty"])
+        self.assertIsNone(patch["core:archMage"]["abilities"]["noMeleePenalty"])
+        mage_abilities = {
+            name: ability for name, ability in mage["abilities"].items()
+            if ability is not None
+        }
+        arch_mage_abilities = {
+            name: ability for name, ability in arch_mage["abilities"].items()
+            if ability is not None
+        }
+
         self.assertEqual(
-            {name: ability["type"] for name, ability in mage["abilities"].items()},
+            {name: ability["type"] for name, ability in mage_abilities.items()},
             {
                 "shooter": "SHOOTER",
-                "noMeleePenalty": "NO_MELEE_PENALTY",
                 "reduceSpellCost": "CHANGES_SPELL_COST_FOR_ALLY",
                 "noDistancePenalty": "NO_DISTANCE_PENALTY",
             },
         )
+        self.assertNotIn("noMeleePenalty", mage_abilities)
         self.assertEqual(mage["abilities"]["reduceSpellCost"]["val"], 2)
         self.assertEqual(
-            {name: ability["type"] for name, ability in arch_mage["abilities"].items()},
+            {name: ability["type"] for name, ability in arch_mage_abilities.items()},
             {
                 "shooter": "SHOOTER",
-                "noMeleePenalty": "NO_MELEE_PENALTY",
                 "noWallPenalty": "NO_WALL_PENALTY",
                 "reduceSpellCost": "CHANGES_SPELL_COST_FOR_ALLY",
                 "noDistancePenalty": "NO_DISTANCE_PENALTY",
             },
         )
+        self.assertNotIn("noMeleePenalty", arch_mage_abilities)
         self.assertEqual(arch_mage["abilities"]["reduceSpellCost"]["val"], 2)
         for creature, required in {
             "genie": {"canFly", "hateEfreet", "hateEfreetSultans"},

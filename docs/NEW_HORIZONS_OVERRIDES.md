@@ -285,3 +285,17 @@ requiring the complete source document to be replaced.
   An invalid request changes neither position, reserve, nor activation state;
   an in-path battlefield interruption may consume movement/activation but never
   consumes reserve troops unless the Gate remains legal from the actual endpoint.
+
+### 2026-09-23 — Magi melee penalty
+
+- **Status:** Accepted
+- **Rule:** Magi and Arch Magi do not have No Melee Penalty. Their ordinary
+  shooter melee penalty applies. Their other abilities, including No Distance
+  Penalty, are unchanged.
+
+### 2026-09-23 — Art workflow for provisional assets
+
+- **Status:** Accepted
+- **Rule:** All New Horizons artwork, including provisional placeholders, uses
+  the `homm3-art` art workflow. Provisional status does not waive that workflow
+  or its Heroes III visual direction.

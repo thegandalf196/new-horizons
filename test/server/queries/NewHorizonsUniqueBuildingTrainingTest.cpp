@@ -7,6 +7,7 @@
 
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/bonuses/BonusEnum.h"
+#include "../../../lib/CCreatureHandler.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/mapObjects/TownBuildingInstance.h"
@@ -50,6 +51,21 @@ protected:
 		return HeroTypeID(HeroTypeID::decode(id));
 	}
 };
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, MagiUseShooterMeleePenaltyWithoutLosingRangedAbilities)
+{
+	for(const auto * id : {"core:mage", "core:archMage"})
+	{
+		const auto * creature = CreatureID(CreatureID::decode(id)).toCreature();
+		ASSERT_NE(creature, nullptr);
+		EXPECT_FALSE(creature->hasBonusOfType(BonusType::NO_MELEE_PENALTY)) << id;
+		EXPECT_TRUE(creature->hasBonusOfType(BonusType::SHOOTER)) << id;
+		EXPECT_TRUE(creature->hasBonusOfType(BonusType::NO_DISTANCE_PENALTY)) << id;
+		EXPECT_TRUE(creature->hasBonusOfType(BonusType::CHANGES_SPELL_COST_FOR_ALLY)) << id;
+	}
+	EXPECT_TRUE(CreatureID(CreatureID::decode("core:archMage")).toCreature()
+		->hasBonusOfType(BonusType::NO_WALL_PENALTY));
 }
 
 TEST_F(NewHorizonsUniqueBuildingTrainingTest, TrainingPersistsAndAstralNexusAlwaysRefillsToNormalMaximum)
