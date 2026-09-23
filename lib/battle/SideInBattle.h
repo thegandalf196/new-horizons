@@ -17,6 +17,7 @@
 #include "HeroCommand.h"
 #include "FocusFireState.h"
 #include "SylvanLuckState.h"
+#include "AlternatingHeroActionState.h"
 #include "../callback/GameCallbackHolder.h"
 
 class CGHeroInstance;
@@ -122,6 +123,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// authoritative gated-stack identities makes the token survive a save/load
 	// without allowing ordinary stacks to qualify by creature or slot alone.
 	bool chainGateArmed = false;
+	// Only accepted ordinary hero actions update this alternating readiness.
+	AlternatingHeroActionState warcastingState;
 
 	bool hasChainGateState() const
 	{
@@ -139,6 +142,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	{
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
 			throw std::runtime_error("Cannot discard Chain Gate battle state");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING)
+			&& warcastingState != AlternatingHeroActionState{})
+			throw std::runtime_error("Cannot discard Warcasting battle state");
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
 			h & sylvanLuck;
 		else if(!h.saving)
@@ -269,6 +275,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & chainGateArmed;
 		else if(!h.saving)
 			chainGateArmed = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING))
+			h & warcastingState;
+		else if(!h.saving)
+			warcastingState = {};
 	}
 
 	void clearMetamagicSequence()

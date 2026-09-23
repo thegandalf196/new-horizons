@@ -25,6 +25,8 @@
 #include "../bonuses/Bonus.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
+#include "../battle/AlternatingHeroActionState.h"
+#include "../battle/NewHorizonsWarcasting.h"
 #include "../battle/Unit.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../serializer/JsonDeserializer.h"
@@ -35,6 +37,55 @@
 
 namespace spells
 {
+
+namespace
+{
+int64_t multiplyDivideFloor(int64_t value, uint64_t multiplier, int64_t divisor)
+{
+	// value is smaller than divisor. This bitwise quotient/remainder loop avoids
+	// forming value * multiplier, which may overflow even when the final quotient
+	// is small. The multiplier is at most INT32_MAX + 100.
+	int64_t quotient = 0;
+	int64_t remainder = 0;
+	for(int bit = 31; bit >= 0; --bit)
+	{
+		quotient *= 2;
+		remainder *= 2;
+		if(multiplier & (uint64_t{1} << bit))
+			remainder += value;
+		quotient += remainder / divisor;
+		remainder %= divisor;
+	}
+	return quotient;
+}
+}
+
+int64_t scaleWarcastingSpellPowerComponent(const int64_t numerator, const int32_t divisor, const int32_t bonusPercent)
+{
+	if(numerator < 0 || divisor <= 0 || bonusPercent < 0)
+		throw std::invalid_argument("Invalid Warcasting spell component inputs");
+	if(numerator == 0)
+		return 0;
+
+	const int64_t denominator = static_cast<int64_t>(divisor) * 100;
+	const uint64_t multiplier = static_cast<uint64_t>(100LL + bonusPercent);
+	const int64_t whole = numerator / denominator;
+	const int64_t remainder = numerator % denominator;
+	const int64_t maximum = std::numeric_limits<int64_t>::max();
+	if(whole > maximum / static_cast<int64_t>(multiplier))
+		throw std::overflow_error("Warcasting spell component overflows");
+
+	const int64_t scaledWhole = whole * static_cast<int64_t>(multiplier);
+	const int64_t scaledRemainder = multiplyDivideFloor(remainder, multiplier, denominator);
+	if(scaledWhole > maximum - scaledRemainder)
+		throw std::overflow_error("Warcasting spell component overflows");
+	return scaledWhole + scaledRemainder;
+}
+
+int64_t Mechanics::scaleSpellPowerComponent(const int64_t numerator, const int32_t divisor) const
+{
+	return scaleWarcastingSpellPowerComponent(numerator, divisor, getWarcastingBonusPercent());
+}
 
 static std::shared_ptr<TargetCondition> makeCondition(const CSpell * s)
 {
@@ -399,6 +450,14 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	caster = event->getCaster();
 
 	casterSide = cb->playerToSide(caster->getCasterOwner());
+	if(mode == Mode::HERO && dynamic_cast<const CGHeroInstance *>(caster) && !event->isMetamagicFollowup()
+		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER))
+	{
+		const auto * battleInfo = cb->getBattle();
+		if(battleInfo && newHorizonsWarcasting::enabled(battleInfo->getMagicRules()))
+			warcastingBonusPercent = battleInfo->getWarcastingState(casterSide).bonusFor(
+				AlternatingHeroActionState::Action::SPELL, battleInfo->getRound());
+	}
 
 	{
 		auto value = event->getSpellLevel();
@@ -515,23 +574,49 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				// The New Horizons Cure formula has a fixed component and a
 				// Spell-Power component. Target, school, and specialty modifiers
 				// still flow through the usual applySpellBonus call in heal.lua.
-				effectValue = 25 + 3LL * effectPower / 2;
+				effectValue = 25 + scaleSpellPowerComponent(3LL * effectPower, 2);
 			}
 			else
 			{
 				const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(
 					dynamic_cast<const CGHeroInstance *>(caster));
-				const auto magicArrowValue = battle
+				auto magicArrowValue = battle
 					? newHorizonsMagic::magicArrowDamage(battle->getMagicRules(), owner->getId(), effectPower,
 						getEffectPowerDivisor(), getOvercharge(), modifiers)
 					: std::nullopt;
-				const auto savedValue = battle && !magicArrowValue
+				if(magicArrowValue && warcastingBonusPercent > 0)
+				{
+					const auto formula = newHorizonsMagic::spellDirectDamage(battle->getMagicRules(), owner->getJsonKey())
+						.value_or(newHorizonsMagic::DirectDamageFormula{20, 20});
+					const int64_t powerNumerator = static_cast<int64_t>(formula.powerCoefficient) * effectPower;
+					const int64_t baseDamage = formula.base
+						+ scaleSpellPowerComponent(powerNumerator, getEffectPowerDivisor());
+					const int64_t overchargeMultiplier = 1000LL
+						+ static_cast<int64_t>(modifiers.damagePercentTenths) * getOvercharge();
+					magicArrowValue = baseDamage * overchargeMultiplier / 1000;
+				}
+				auto savedValue = battle && !magicArrowValue
 					? newHorizonsMagic::directDamageValue(battle->getMagicRules(), owner->getJsonKey(), effectPower, getEffectPowerDivisor())
 					: std::nullopt;
+				if(savedValue && warcastingBonusPercent > 0)
+				{
+					const auto formula = newHorizonsMagic::spellDirectDamage(battle->getMagicRules(), owner->getJsonKey());
+					if(formula)
+					{
+						const int64_t powerNumerator = static_cast<int64_t>(formula->powerCoefficient) * effectPower;
+						*savedValue = formula->base + scaleSpellPowerComponent(powerNumerator, getEffectPowerDivisor());
+					}
+				}
 				if(magicArrowValue)
 					effectValue = *magicArrowValue;
 				else if(savedValue)
 					effectValue = *savedValue;
+				else if(warcastingBonusPercent > 0)
+				{
+					const int64_t powerNumerator = static_cast<int64_t>(owner->getBasePower()) * effectPower;
+					effectValue = owner->getLevelPower(effectLevel)
+						+ scaleSpellPowerComponent(powerNumerator, getEffectPowerDivisor());
+				}
 				else
 					effectValue = owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
 			}
@@ -785,6 +870,11 @@ int32_t BaseMechanics::getEffectPowerDivisor() const
 IBattleCast::Value BaseMechanics::getEffectPower() const
 {
 	return effectPower;
+}
+
+int32_t BaseMechanics::getWarcastingBonusPercent() const
+{
+	return warcastingBonusPercent;
 }
 
 IBattleCast::Value BaseMechanics::getEffectDuration() const

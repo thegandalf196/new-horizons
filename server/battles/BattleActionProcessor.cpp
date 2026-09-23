@@ -183,6 +183,12 @@ static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSid
 	line.appendRawString(": ");
 	line.appendRawString(heroOrderDisplayName(state.command));
 	line.appendRawString("!");
+	if(state.warcastingBonusPercent > 0)
+	{
+		line.appendRawString(" Warcasting adds +");
+		line.appendNumber(state.warcastingBonusPercent);
+		line.appendRawString(" percentage points to attribute-derived efficiency.");
+	}
 
 	switch(state.command)
 	{

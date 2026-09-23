@@ -94,6 +94,9 @@ struct DLL_LINKAGE HeroOrderState
 	std::vector<uint32_t> holdBrokenUnitIds;
 	std::vector<HeroOrderAnchor> anchors;
 	std::vector<HeroOrderFlankTarget> flankTargets;
+	/// Spell-to-Order Warcasting empowerment captured when this Order was issued.
+	/// Later attacks must not consult the side's newly armed Order-to-Spell state.
+	int32_t warcastingBonusPercent = 0;
 
 	bool operator==(const HeroOrderState &) const = default;
 
@@ -143,6 +146,7 @@ struct DLL_LINKAGE HeroOrderState
 	{
 		const auto maxWireId = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
 		if(command == HeroCommand::NONE || issuedRound < 1
+			|| warcastingBonusPercent < 0 || warcastingBonusPercent > 100
 			|| (primaryTargetUnitId != INVALID_UNIT_ID && primaryTargetUnitId > maxWireId)
 			|| (secondaryTargetUnitId != INVALID_UNIT_ID && secondaryTargetUnitId > maxWireId)
 			|| !std::is_sorted(consumedUnitIds.begin(), consumedUnitIds.end())
@@ -177,6 +181,8 @@ struct DLL_LINKAGE HeroOrderState
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && warcastingBonusPercent != 0 && !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING))
+			throw std::runtime_error("Cannot discard Warcasting Order snapshot");
 		if(h.saving)
 			validateShape();
 		h & command;
@@ -191,6 +197,10 @@ struct DLL_LINKAGE HeroOrderState
 		h & holdBrokenUnitIds;
 		h & anchors;
 		h & flankTargets;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING))
+			h & warcastingBonusPercent;
+		else if(!h.saving)
+			warcastingBonusPercent = 0;
 		if(!h.saving)
 			validateShape();
 	}
@@ -223,7 +233,13 @@ DLL_LINKAGE int coefficient(const JsonNode & effect, int attack, int defense);
 /// Evaluate an Order formula for a hero, scaling only its Attack/Defense-derived
 /// terms by the hero's New Horizons Command rank (100/110/120/130%).
 DLL_LINKAGE int coefficient(const JsonNode & effect, const CGHeroInstance & hero);
+/// Add a consumed Spell-to-Order Warcasting efficiency bonus to those same
+/// attribute-derived terms. Flat formula terms remain unchanged.
+DLL_LINKAGE int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent);
 DLL_LINKAGE int efficiencyPercent(const CGHeroInstance & hero);
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero);
+/// Warcasting scales only Second Wind's Leadership-derived part; its base 50%
+/// damage component remains flat.
+DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent);
 DLL_LINKAGE std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero);
 }

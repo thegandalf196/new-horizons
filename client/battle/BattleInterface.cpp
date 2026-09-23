@@ -698,6 +698,11 @@ void BattleInterface::newRound()
 {
 	console->addText(LIBRARY->generaltexth->allTexts[412]);
 	round++;
+	// The BattleNextRound state packet has been applied before this callback.
+	// Refresh transient hero indicators so an inclusive expiry cannot linger
+	// until another spell or Order is issued.
+	if(windowObject)
+		windowObject->updateCounterspellStatus();
 }
 
 void BattleInterface::giveCommand(EActionType action, const BattleHex & tile, SpellID spell)

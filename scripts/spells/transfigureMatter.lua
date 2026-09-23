@@ -130,7 +130,7 @@ end
 function Script:hpPool(mechanics, obstacle)
 	local hexes = obstacle:getHexes()
 	local spellPower = mechanics:getEffectPower()
-	local pool = 80 + 2 * spellPower + 50 * hexes:size()
+	local pool = 80 + mechanics:scaleSpellPowerComponent(2 * spellPower, 1) + 50 * hexes:size()
 
 	local hero = mechanics:getHeroCaster()
 	if hero ~= nil and hero:hasActivePerk(MATTER_SHAPER_SKILL, MATTER_SHAPER_PERK) then

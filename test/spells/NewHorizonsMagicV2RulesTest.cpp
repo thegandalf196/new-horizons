@@ -92,6 +92,23 @@ TEST(NewHorizonsMagicV2RulesTest, ActiveSpellMarkerMustBeBooleanAndOldRowsStayVa
 	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
 }
 
+TEST(NewHorizonsMagicV2RulesTest, WarcastingOptInIsOptionalAndStrictlyBoolean)
+{
+	auto rules = formulaRules();
+	rules.Struct().erase("warcasting");
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	rules["warcasting"].Bool() = false;
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	rules["warcasting"].Bool() = true;
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	rules["warcasting"].String() = "true";
+	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+	rules["warcasting"].Integer() = 1;
+	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+	rules["warcasting"] = JsonNode();
+	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+}
+
 TEST(NewHorizonsMagicV2RulesTest, AbsentSnapshotRowAndOptionalFormulaNeverUseInstalledDamage)
 {
 	EXPECT_FALSE(newHorizonsMagic::spellDirectDamage(JsonNode(), arrowKey));

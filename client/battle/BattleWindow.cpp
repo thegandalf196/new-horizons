@@ -264,29 +264,30 @@ void BattleWindow::createQueue()
 void BattleWindow::createStickyHeroInfoWindows()
 {
 	OBJECT_CONSTRUCTION;
-	const bool attackerWardArmed = owner.getBattle()->battleWasCounterspellArmed(BattleSide::ATTACKER);
-	const bool defenderWardArmed = owner.getBattle()->battleWasCounterspellArmed(BattleSide::DEFENDER);
 
 	if(owner.defendingHeroInstance)
 	{
 		InfoAboutHero info;
 		info.initFromHero(owner.defendingHeroInstance, InfoAboutHero::EInfoLevel::INBATTLE);
-		defenderHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr, true, true, defenderWardArmed);
+		defenderHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr, true, true);
 	}
 	if(owner.attackingHeroInstance)
 	{
 		InfoAboutHero info;
 		info.initFromHero(owner.attackingHeroInstance, InfoAboutHero::EInfoLevel::INBATTLE);
-		attackerHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr, true, true, attackerWardArmed);
+		attackerHeroWindow = std::make_shared<HeroInfoBasicPanel>(info, nullptr, true, true);
 	}
 	if(attackerHeroWindow)
-		attackerCounterspellStatus = std::make_shared<HeroCounterspellStatusArea>(
+		attackerHeroStatus = std::make_shared<HeroBattleStatusArea>(
 			Point(HeroInfoPanelLayout::compactAttackerEffectAreaLeft,
-				HeroInfoPanelLayout::compactPanelOffsetY + HeroInfoPanelLayout::effectAreaTop), attackerWardArmed);
+				HeroInfoPanelLayout::compactPanelOffsetY + HeroInfoPanelLayout::effectAreaTop));
 	if(defenderHeroWindow)
-		defenderCounterspellStatus = std::make_shared<HeroCounterspellStatusArea>(
+		defenderHeroStatus = std::make_shared<HeroBattleStatusArea>(
 			Point(HeroInfoPanelLayout::compactDefenderEffectAreaLeft,
-				HeroInfoPanelLayout::compactPanelOffsetY + HeroInfoPanelLayout::effectAreaTop), defenderWardArmed);
+				HeroInfoPanelLayout::compactPanelOffsetY + HeroInfoPanelLayout::effectAreaTop));
+
+	refreshHeroBattleStatus(BattleSide::ATTACKER);
+	refreshHeroBattleStatus(BattleSide::DEFENDER);
 
 	bool showInfoWindows = settings["battle"]["stickyHeroInfoWindows"].Bool();
 
@@ -297,17 +298,17 @@ void BattleWindow::createStickyHeroInfoWindows()
 
 		if(defenderHeroWindow)
 			defenderHeroWindow->disable();
-		if(attackerCounterspellStatus)
-			attackerCounterspellStatus->enable();
-		if(defenderCounterspellStatus)
-			defenderCounterspellStatus->enable();
+		if(attackerHeroStatus)
+			attackerHeroStatus->enable();
+		if(defenderHeroStatus)
+			defenderHeroStatus->enable();
 	}
 	else
 	{
-		if(attackerCounterspellStatus)
-			attackerCounterspellStatus->disable();
-		if(defenderCounterspellStatus)
-			defenderCounterspellStatus->disable();
+		if(attackerHeroStatus)
+			attackerHeroStatus->disable();
+		if(defenderHeroStatus)
+			defenderHeroStatus->disable();
 	}
 
 	setPositionInfoWindow();
@@ -516,11 +517,11 @@ void BattleWindow::hideStickyHeroWindows()
 	if(defenderHeroWindow)
 		defenderHeroWindow->disable();
 
-	if(attackerCounterspellStatus)
-		attackerCounterspellStatus->enable();
+	if(attackerHeroStatus)
+		attackerHeroStatus->enable();
 
-	if(defenderCounterspellStatus)
-		defenderCounterspellStatus->enable();
+	if(defenderHeroStatus)
+		defenderHeroStatus->enable();
 
 	ENGINE->windows().totalRedraw();
 }
@@ -558,7 +559,9 @@ void BattleWindow::setPositionInfoWindow()
 				? Point(pos.x + pos.w - 1 + xOffsetDefender, pos.y - 1 + yOffsetDefender)
 				: Point(pos.x + pos.w -79, pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
 		defenderHeroWindow->moveTo(position);
-		defenderHeroWindow->setAboveBattlefield(!placeInfoWindowsOutside());
+		const bool aboveBattlefield = !placeInfoWindowsOutside();
+		defenderHeroWindow->setAboveBattlefield(aboveBattlefield);
+		defenderHeroWindow->setBattleStatusRenderDuringShow(!aboveBattlefield);
 	}
 	if(attackerHeroWindow)
 	{
@@ -566,7 +569,9 @@ void BattleWindow::setPositionInfoWindow()
 				? Point(pos.x - 77 + xOffsetAttacker, pos.y - 1 + yOffsetAttacker)
 				: Point(pos.x + 1, pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
 		attackerHeroWindow->moveTo(position);
-		attackerHeroWindow->setAboveBattlefield(!placeInfoWindowsOutside());
+		const bool aboveBattlefield = !placeInfoWindowsOutside();
+		attackerHeroWindow->setAboveBattlefield(aboveBattlefield);
+		attackerHeroWindow->setBattleStatusRenderDuringShow(!aboveBattlefield);
 	}
 	if(defenderStackWindow)
 	{
@@ -594,22 +599,36 @@ void BattleWindow::updateHeroInfoWindow(uint8_t side, const InfoAboutHero & hero
 {
 	std::shared_ptr<HeroInfoBasicPanel> panelToUpdate = side == 0 ? attackerHeroWindow : defenderHeroWindow;
 	if(panelToUpdate)
-		panelToUpdate->update(hero, owner.getBattle()->battleWasCounterspellArmed(
-			side == 0 ? BattleSide::ATTACKER : BattleSide::DEFENDER));
+		panelToUpdate->update(hero);
+	refreshHeroBattleStatus(side == 0 ? BattleSide::ATTACKER : BattleSide::DEFENDER);
+}
+
+void BattleWindow::refreshHeroBattleStatus(BattleSide side)
+{
+	const auto battleCallback = owner.getBattle();
+	if(!battleCallback)
+		return;
+	const auto * battle = battleCallback->getBattle();
+	if(!battle)
+		return;
+
+	const bool counterspellArmed = battleCallback->battleWasCounterspellArmed(side);
+	const auto & warcasting = battle->getWarcastingState(side);
+	const auto round = battle->getRound();
+
+	const auto panel = side == BattleSide::ATTACKER ? attackerHeroWindow : defenderHeroWindow;
+	if(panel)
+		panel->setBattleStatus(counterspellArmed, warcasting, round);
+
+	const auto statusArea = side == BattleSide::ATTACKER ? attackerHeroStatus : defenderHeroStatus;
+	if(statusArea)
+		statusArea->setStatus(counterspellArmed, warcasting, round);
 }
 
 void BattleWindow::updateCounterspellStatus()
 {
-	const bool attackerArmed = owner.getBattle()->battleWasCounterspellArmed(BattleSide::ATTACKER);
-	const bool defenderArmed = owner.getBattle()->battleWasCounterspellArmed(BattleSide::DEFENDER);
-	if(attackerHeroWindow)
-		attackerHeroWindow->setCounterspellStatus(attackerArmed);
-	if(defenderHeroWindow)
-		defenderHeroWindow->setCounterspellStatus(defenderArmed);
-	if(attackerCounterspellStatus)
-		attackerCounterspellStatus->setArmed(attackerArmed);
-	if(defenderCounterspellStatus)
-		defenderCounterspellStatus->setArmed(defenderArmed);
+	refreshHeroBattleStatus(BattleSide::ATTACKER);
+	refreshHeroBattleStatus(BattleSide::DEFENDER);
 	if(metamagicDeclineButton)
 	{
 		const auto side = owner.getBattle()->battleGetMySide();

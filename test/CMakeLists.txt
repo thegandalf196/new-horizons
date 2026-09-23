@@ -113,6 +113,7 @@ set(test_SRCS
 		spells/NewHorizonsMagicArrowTest.cpp
 		spells/NewHorizonsMagicSchemaTest.cpp
 		spells/NewHorizonsMagicV2RulesTest.cpp
+		spells/WarcastingSpellComponentTest.cpp
 		spells/NewHorizonsMagicV2SchemaTest.cpp
 		spells/NewHorizonsSpellAvailabilityTest.cpp
 		spells/NewHorizonsModCompatibilityTest.cpp
@@ -212,6 +213,8 @@ set(test_SRCS
 		server/battles/NewHorizonsCombatSkillsTest.cpp
 		server/battles/NewHorizonsPhantomArmyTest.cpp
 		server/battles/NewHorizonsCureTest.cpp
+		server/battles/NewHorizonsWarcastingTest.cpp
+		server/battles/WarcastingScriptSpellTest.cpp
 		server/battles/NewHorizonsShroudTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp

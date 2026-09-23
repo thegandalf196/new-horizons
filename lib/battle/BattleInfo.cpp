@@ -106,6 +106,14 @@ SideInBattle & BattleInfo::getSide(BattleSide side)
 	return sides.at(side);
 }
 
+const AlternatingHeroActionState & BattleInfo::getWarcastingState(BattleSide side) const
+{
+	static const AlternatingHeroActionState empty;
+	if(!newHorizonsWarcasting::enabled(magicRules))
+		return empty;
+	return sides.at(side).warcastingState;
+}
+
 BattleSide BattleInfo::gatedDemonicStackSide(uint32_t unitId) const
 {
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -995,6 +1003,8 @@ void BattleInfo::nextRound()
 	// are applied, so skip the decrement here to grant them their full configured duration
 	bool isFirstRound = round == 0;
 	round += 1;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		sides.at(side).warcastingState = sides.at(side).warcastingState.clearedIfExpired(round);
 
 	for(auto & s : stacks)
 	{

@@ -25,7 +25,7 @@ class BattleRenderer;
 class StackQueue;
 class TurnTimerWidget;
 class HeroInfoBasicPanel;
-class HeroCounterspellStatusArea;
+class HeroBattleStatusArea;
 class StackInfoBasicPanel;
 class QuickSpellPanel;
 class UnitActionPanel;
@@ -44,8 +44,8 @@ class BattleWindow : public InterfaceObjectConfigurable
 	std::shared_ptr<CLabel> metamagicGrandLabel;
 	std::shared_ptr<HeroInfoBasicPanel> attackerHeroWindow;
 	std::shared_ptr<HeroInfoBasicPanel> defenderHeroWindow;
-	std::shared_ptr<HeroCounterspellStatusArea> attackerCounterspellStatus;
-	std::shared_ptr<HeroCounterspellStatusArea> defenderCounterspellStatus;
+	std::shared_ptr<HeroBattleStatusArea> attackerHeroStatus;
+	std::shared_ptr<HeroBattleStatusArea> defenderHeroStatus;
 	std::shared_ptr<StackInfoBasicPanel> attackerStackWindow;
 	std::shared_ptr<StackInfoBasicPanel> defenderStackWindow;
 
@@ -96,6 +96,7 @@ class BattleWindow : public InterfaceObjectConfigurable
 	void toggleStickyHeroWindowsVisibility();
 	void toggleStickyQuickSpellVisibility();
 	void createStickyHeroInfoWindows();
+	void refreshHeroBattleStatus(BattleSide side);
 	void createQuickSpellWindow();
 	void createTimerInfoWindows();
 
@@ -145,7 +146,7 @@ public:
 	/// Refresh sticky variant of hero info window after spellcast, side same as in BattleSpellCast::side
 	void updateHeroInfoWindow(uint8_t side, const InfoAboutHero & hero);
 
-	/// Refresh the read-only Counterspell ward indicator from the authoritative battle snapshot.
+	/// Refresh read-only Counterspell and Warcasting indicators from authoritative battle state.
 	void updateCounterspellStatus();
 
 	/// Refresh sticky variant of hero info window after spellcast, side same as in BattleSpellCast::side

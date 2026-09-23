@@ -73,6 +73,7 @@ ACTIVE_PERKS = {
     "new-horizons:havocMagic.annihilator",
 }
 ACTIVE_RANK_SKILLS = {
+    "new-horizons:warcasting",
     "new-horizons:demonicGating",
     "new-horizons:offense",
     "new-horizons:armorer",

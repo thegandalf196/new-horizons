@@ -10,7 +10,8 @@ end
 function Script:summonedEffectValue(mechanics)
 	local effectPower = mechanics:getEffectPower()
 	local rawEffectPower = mechanics:calculateRawEffectValue(0, effectPower)
-	local finalEffectPower = mechanics:applySpecificSpellBonus(math.floor(rawEffectPower / mechanics:getEffectPowerDivisor()))
+	local finalEffectPower = mechanics:applySpecificSpellBonus(
+		mechanics:scaleSpellPowerComponent(rawEffectPower, mechanics:getEffectPowerDivisor()))
 
 	return finalEffectPower
 end

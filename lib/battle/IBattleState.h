@@ -15,6 +15,7 @@
 #include "HeroCommand.h"
 #include "FocusFireState.h"
 #include "SylvanLuckState.h"
+#include "AlternatingHeroActionState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class ObstacleChanges;
@@ -79,6 +80,12 @@ public:
 	virtual const JsonNode & getMagicRules() const;
 	virtual const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const;
 	virtual bool getHeroCommandUsed(BattleSide side) const { return false; }
+	virtual const AlternatingHeroActionState & getWarcastingState(BattleSide side) const
+	{
+		(void)side;
+		static const AlternatingHeroActionState empty;
+		return empty;
+	}
 	virtual HeroCommand getActiveDoctrine(BattleSide side) const { return HeroCommand::NONE; }
 	virtual HeroCommand getActiveOrder(BattleSide side) const { return HeroCommand::NONE; }
 	virtual std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const { return {}; }

@@ -138,6 +138,7 @@ public:
 
 	BattleID getBattleID() const override;
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override;
+	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override;
 	void setFocusFireState(BattleSide side, const FocusFireState & state);
@@ -207,6 +208,7 @@ public:
 
 private:
 	BattleSideArray<std::optional<HeroOrderState>> heroOrderStates;
+	BattleSideArray<AlternatingHeroActionState> warcastingStates;
 	std::map<BattleSide, std::optional<FocusFireState>> focusFireStates;
 	BattleSideArray<int32_t> bloodrageRanks;
 	BattleSideArray<int32_t> bloodrageDamagePercents;

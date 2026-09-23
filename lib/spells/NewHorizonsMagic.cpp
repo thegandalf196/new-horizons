@@ -187,10 +187,15 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
+	if(rules.Struct().contains("warcasting"))
+	{
+		require(version == DIRECT_DAMAGE_RULESET_VERSION, "Warcasting requires magic rules v2");
+		require(rules["warcasting"].isBool(), "boolean Warcasting setting");
+	}
 	if(version == DIRECT_DAMAGE_RULESET_VERSION)
 	{
 		require(rules["schemaVersion"].getType() == JsonNode::JsonType::DATA_INTEGER, "integer schemaVersion");

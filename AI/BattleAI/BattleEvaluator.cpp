@@ -29,6 +29,7 @@
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/BattleAction.h"
+#include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 
@@ -389,10 +390,12 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	}
 
 	const auto & commandRules = battle.getBattle()->getHeroCommandRules()["commands"];
+	const int warcastingBonus = hero && newHorizonsWarcasting::enabled(battle.getBattle()->getMagicRules())
+		? newHorizonsWarcasting::orderBonus(battle.getBattle()->getWarcastingState(side), battle.battleGetRound()) : 0;
 	const auto coefficient = [&](const char * commandKey, const char * effectKey)
 	{
 		const auto & formula = commandRules[commandKey]["effects"][effectKey];
-		return static_cast<float>(hero ? heroCommands::coefficient(formula, *hero)
+		return static_cast<float>(hero ? heroCommands::coefficient(formula, *hero, warcastingBonus)
 			: heroCommands::coefficient(formula, 0, 0));
 	};
 	const auto meleeDamage = [&](const battle::Unit * attackerUnit, const battle::Unit * defenderUnit)
@@ -537,7 +540,8 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 		float extraAttack = 0.0f;
 		for(const auto * enemy : enemyUnits)
 			extraAttack = std::max(extraAttack, anyDamage(target, enemy));
-		const auto directDamagePercent = hero ? static_cast<float>(heroCommands::secondWindPercent(*hero)) : 50.0f;
+		const auto directDamagePercent = hero
+			? static_cast<float>(heroCommands::secondWindPercent(*hero, warcastingBonus)) : 50.0f;
 		return extraAttack * directDamagePercent / 100.0f;
 	}
 

@@ -18,11 +18,13 @@ JsonNode v1Rules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = 1;
+	rules.Struct().erase("warcasting");
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
 		(void)name;
 		spell.Struct().erase("active");
 		spell.Struct().erase("directDamage");
+		spell.Struct().erase("cureAfflictions");
 	}
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;
@@ -89,6 +91,23 @@ TEST(NewHorizonsMagicV2SchemaTest, ActiveFlagIsOptionalAndBoolean)
 	rules["spells"]["core:clone"]["active"] = JsonNode();
 	EXPECT_FALSE(v2(rules));
 	rules["spells"]["core:clone"]["active"].String() = "false";
+	EXPECT_FALSE(v2(rules));
+}
+
+TEST(NewHorizonsMagicV2SchemaTest, WarcastingOptInRequiresBooleanAndAllowsAbsence)
+{
+	auto rules = v2Rules();
+	rules.Struct().erase("warcasting");
+	EXPECT_TRUE(v2(rules));
+	rules["warcasting"].Bool() = false;
+	EXPECT_TRUE(v2(rules));
+	rules["warcasting"].Bool() = true;
+	EXPECT_TRUE(v2(rules));
+	rules["warcasting"].String() = "true";
+	EXPECT_FALSE(v2(rules));
+	rules["warcasting"].Integer() = 1;
+	EXPECT_FALSE(v2(rules));
+	rules["warcasting"] = JsonNode();
 	EXPECT_FALSE(v2(rules));
 }
 

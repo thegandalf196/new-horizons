@@ -348,6 +348,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderState(side);
+		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		focusFireStates[side] = realBattle->battleGetFocusFireState(side);
 		fortuneStates[side] = realBattle->getBattle()->getSylvanLuckState(side);
 		bloodrageRanks[side] = realBattle->getBattle()->getBloodrageRank(side);
@@ -488,6 +489,11 @@ std::optional<HeroOrderState> HypotheticBattle::getHeroOrderState(BattleSide sid
 	return heroOrderStates.at(side);
 }
 
+const AlternatingHeroActionState & HypotheticBattle::getWarcastingState(BattleSide side) const
+{
+	return warcastingStates.at(side);
+}
+
 void HypotheticBattle::setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state)
 {
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -546,6 +552,8 @@ void HypotheticBattle::nextRound()
 	// BattleInfo grants opening effects their full duration in round one.
 	const bool firstRound = projectedRound == 0;
 	++projectedRound;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		warcastingStates[side] = warcastingStates[side].clearedIfExpired(projectedRound);
 	std::vector<uint32_t> pendingRemoval;
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
 	{

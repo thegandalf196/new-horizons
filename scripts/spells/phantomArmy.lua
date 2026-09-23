@@ -23,7 +23,8 @@ end
 
 local function integrityPool(mechanics, source)
 	local basisPoints = math.min(INTEGRITY_CAP_PERCENT * 100,
-		BASE_INTEGRITY_PERCENT * 100 + INTEGRITY_BASIS_POINTS_PER_POWER * mechanics:getEffectPower())
+		BASE_INTEGRITY_PERCENT * 100 + mechanics:scaleSpellPowerComponent(
+			INTEGRITY_BASIS_POINTS_PER_POWER * mechanics:getEffectPower(), 1))
 	local multiplier = 100
 	local hero = mechanics:getHeroCaster()
 	if hero ~= nil and hero:hasActivePerk(ILLUSIONIST_SKILL, ILLUSIONIST_PERK) then

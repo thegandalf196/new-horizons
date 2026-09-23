@@ -311,6 +311,7 @@
 			"newHorizons": {
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
+				"warcasting": true,
 				"schools": [
 					"new-horizons:light",
 					"new-horizons:nature",
@@ -4485,21 +4486,21 @@
 							"basic": {
 								"description": "After using the Hero Action to cast a Spell, the next Order issued before the end of the next round gains +10 percentage points of efficiency on its attribute-derived components. After using the Hero Action to issue an Order, the next Spell cast before the end of the next round gains +10% to its Spell Power-derived numerical component.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After using the Hero Action to cast a Spell, the next Order issued before the end of the next round gains +10 percentage points of efficiency on its attribute-derived components. After using the Hero Action to issue an Order, the next Spell cast before the end of the next round gains +10% to its Spell Power-derived numerical component."
 								}
 							},
 							"advanced": {
 								"description": "Both alternating bonuses become 20% / +20 percentage points.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Both alternating bonuses become 20% / +20 percentage points."
 								}
 							},
 							"expert": {
 								"description": "Both alternating bonuses become 30% / +30 percentage points.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Both alternating bonuses become 30% / +30 percentage points."
 								}
 							}

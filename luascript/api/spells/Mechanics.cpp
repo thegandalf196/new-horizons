@@ -127,6 +127,12 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 			{"levelPowerMultiplier", "Multiplier applied to the per-level power bonus."}
 		}, {},
 		"Returns the raw effect value before unit-specific adjustments.");
+	R.method<&Mechanics::scaleSpellPowerComponent>("scaleSpellPowerComponent",
+		{
+			{"numerator", "An explicitly Spell-Power-derived numerator, before applying its divisor."},
+			{"divisor", "Divisor applied after the optional Warcasting percentage; defaults to one."}
+		}, {},
+		"Applies this cast's snapshotted Warcasting percentage to a Spell-Power-derived component, then divides it with integer truncation. Fixed base and level-power terms must be added separately.");
 	R.method<&Mechanics::applySpecificSpellBonus>("applySpecificSpellBonus",
 		{{"value", "Base value to which spell-specific modifiers are applied. Use 0 for default"}}, {},
 		"Applies any spell-specific bonus modifier and returns the resulting value.");

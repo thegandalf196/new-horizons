@@ -20,6 +20,7 @@
 #include "NewHorizonsBattlecraft.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsShroud.h"
+#include "NewHorizonsWarcasting.h"
 #include "IGameSettings.h"
 #include "PossiblePlayerBattleAction.h"
 #include "../bonuses/BonusParameters.h"
@@ -343,7 +344,9 @@ std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(B
 	result.issuedRound = battleGetRound();
 	const auto * hero = battleGetFightingHero(side);
 	const auto & formula = getBattle()->getHeroCommandRules()["commands"]["focusFire"]["effects"]["rangedDamagePercent"];
-	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero);
+	const auto warcastingBonus = newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
+		? newHorizonsWarcasting::orderBonus(getBattle()->getWarcastingState(side), result.issuedRound) : 0;
+	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero, warcastingBonus);
 	const auto recipients = battleGetUnitsIf([this, side](const battle::Unit * unit)
 	{
 		return battleIsFocusFireRecipient(unit, side);
@@ -532,6 +535,9 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 	result.issuedRound = battleGetRound();
 	if(result.issuedRound < 1)
 		return {};
+	if(newHorizonsWarcasting::enabled(getBattle()->getMagicRules()))
+		result.warcastingBonusPercent = newHorizonsWarcasting::orderBonus(
+			getBattle()->getWarcastingState(side), result.issuedRound);
 
 	if(command == HeroCommand::FOCUS_FIRE)
 	{
@@ -1786,9 +1792,11 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		const auto defenderSide = playerToSide(battleGetOwner(info.defender));
 		const auto attackerState = battleGetHeroOrderState(attackerSide);
 		const auto defenderState = battleGetHeroOrderState(defenderSide);
-		const auto coefficientFor = [](const JsonNode & formula, const CGHeroInstance * hero)
+		const auto coefficientFor = [](const JsonNode & formula, const CGHeroInstance * hero,
+			const HeroOrderState * orderState)
 		{
-			return hero ? heroCommands::coefficient(formula, *hero) : 0;
+			return hero ? heroCommands::coefficient(formula, *hero,
+				orderState ? orderState->warcastingBonusPercent : 0) : 0;
 		};
 		const auto eligibleOrderUnit = [](const battle::Unit * unit)
 		{
@@ -1804,7 +1812,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				if(eligibleOrderUnit(info.attacker) && !info.shooting && !info.secondaryAttack && info.chargeDistance >= 3
 					&& !attackerState->containsConsumed(info.attacker->unitId()))
 				{
-					payload.heroOrderDamagePercent = coefficientFor(rules["charge"]["effects"]["meleeDamagePercent"], attack)
+					payload.heroOrderDamagePercent = coefficientFor(rules["charge"]["effects"]["meleeDamagePercent"], attack, &*attackerState)
 						+ 2 * (info.chargeDistance - 3);
 					if(payload.heroOrderDamagePercent > 0)
 						attackerOrderCause = HeroCommand::CHARGE;
@@ -1816,14 +1824,14 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			case HeroCommand::RIPOSTE:
 				if(eligibleOrderUnit(info.attacker) && info.retaliation && !info.shooting)
 				{
-					payload.heroOrderDamagePercent = coefficientFor(rules["riposte"]["effects"]["retaliationDamagePercent"], attack);
+					payload.heroOrderDamagePercent = coefficientFor(rules["riposte"]["effects"]["retaliationDamagePercent"], attack, &*attackerState);
 					if(payload.heroOrderDamagePercent > 0)
 						attackerOrderCause = HeroCommand::RIPOSTE;
 				}
 				break;
 			case HeroCommand::BRACE:
 				if(eligibleOrderUnit(info.attacker) && info.bracePreemptive && !info.shooting)
-					payload.heroOrderFinalDamageMultiplier = coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"], attack);
+					payload.heroOrderFinalDamageMultiplier = coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"], attack, &*attackerState);
 				break;
 			case HeroCommand::FLANK:
 				if(eligibleOrderUnit(info.attacker) && !info.shooting
@@ -1838,8 +1846,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 						for(auto bits = static_cast<uint8_t>(sideMask & ~flank->sideMask); bits; bits &= static_cast<uint8_t>(bits - 1))
 							++distinct; // each newly contacting side established by this blow counts once
 						const int additionalSides = std::max(0, distinct - 1);
-						payload.heroOrderDamagePercent = coefficientFor(rules["flank"]["effects"]["meleeDamagePercent"], attack)
-							+ additionalSides * coefficientFor(rules["flank"]["effects"]["additionalSidePercent"], attack);
+						payload.heroOrderDamagePercent = coefficientFor(rules["flank"]["effects"]["meleeDamagePercent"], attack, &*attackerState)
+							+ additionalSides * coefficientFor(rules["flank"]["effects"]["additionalSidePercent"], attack, &*attackerState);
 						if(payload.heroOrderDamagePercent > 0)
 							attackerOrderCause = HeroCommand::FLANK;
 					}
@@ -1848,7 +1856,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			case HeroCommand::SECOND_WIND:
 				if(attackerState->secondWindActive && attackerState->primaryTargetUnitId == info.attacker->unitId())
 				{
-					payload.heroOrderFinalDamageMultiplier = heroCommands::secondWindPercent(*attack);
+					payload.heroOrderFinalDamageMultiplier = heroCommands::secondWindPercent(
+						*attack, attackerState->warcastingBonusPercent);
 					if(payload.heroOrderFinalDamageMultiplier < 100)
 						attackerOrderCause = HeroCommand::SECOND_WIND;
 				}
@@ -1864,18 +1873,18 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			{
 			case HeroCommand::RIPOSTE:
 				if(!info.shooting)
-					payload.heroOrderDamageReductionPercent = coefficientFor(rules["riposte"]["effects"]["meleeDamageReductionPercent"], defend);
+					payload.heroOrderDamageReductionPercent = coefficientFor(rules["riposte"]["effects"]["meleeDamageReductionPercent"], defend, &*defenderState);
 				break;
 			case HeroCommand::HOLD_THE_LINE:
 				if(const auto * anchor = defenderState->anchorFor(info.defender->unitId());
 					anchor && !defenderState->containsHoldBroken(info.defender->unitId())
 					&& anchor->position == info.defender->getPosition().toInt())
-					payload.heroOrderDamageReductionPercent = coefficientFor(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend);
+					payload.heroOrderDamageReductionPercent = coefficientFor(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend, &*defenderState);
 				break;
 			case HeroCommand::PROTECT:
 				if(!info.shooting && info.protectIntercepted
 					&& defenderState->primaryTargetUnitId == info.defender->unitId())
-					payload.heroOrderDamageReductionPercent = coefficientFor(rules["protect"]["effects"]["interceptedDamageReductionPercent"], defend);
+					payload.heroOrderDamageReductionPercent = coefficientFor(rules["protect"]["effects"]["interceptedDamageReductionPercent"], defend, &*defenderState);
 				break;
 			default:
 				break;

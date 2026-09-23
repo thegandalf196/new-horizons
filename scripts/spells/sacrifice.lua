@@ -105,8 +105,11 @@ function Script:transformTarget(mechanics, aimPoint, spellTarget)
 end
 
 function Script:calculateHealValue(mechanics, victim)
-	return math.floor((mechanics:getEffectPower() / mechanics:getEffectPowerDivisor() + victim:getMaxHealth()
-		+ mechanics:calculateRawEffectValue(0, 1)) * victim:getCount())
+	local count = victim:getCount()
+	local fixedPerCreature = victim:getMaxHealth() + mechanics:calculateRawEffectValue(0, 1)
+	local scaledPowerForStack = mechanics:scaleSpellPowerComponent(
+		mechanics:getEffectPower() * count, mechanics:getEffectPowerDivisor())
+	return fixedPerCreature * count + scaledPowerForStack
 end
 
 --- Returns HP change preview.

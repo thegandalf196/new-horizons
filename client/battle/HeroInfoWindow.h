@@ -9,11 +9,10 @@
  */
 #pragma once
 
-#include <optional>
-
 #include "../windows/CWindowObject.h"
 
 #include "BattleSidePanel.h"
+#include "../../lib/battle/AlternatingHeroActionState.h"
 
 class CLabel;
 class CAnimImage;
@@ -32,11 +31,9 @@ constexpr int luckIconHeight = 22;
 constexpr int effectAreaLeft = 4;
 constexpr int effectAreaTop = 204;
 constexpr int effectAreaWidth = 70;
-constexpr int effectAreaHeight = 26;
-constexpr int effectAreaTextLineAllowance = 14;
-constexpr int effectAreaTextMargin = 3;
-constexpr int effectAreaIconSize = 22;
-constexpr int counterspellStatusY = effectAreaTop + effectAreaHeight / 2;
+constexpr int effectAreaRowHeight = 26;
+constexpr int effectAreaHeight = effectAreaRowHeight * 2;
+constexpr int effectAreaIconSize = 16;
 constexpr int compactAttackerEffectAreaLeft = 5;
 constexpr int compactDefenderEffectAreaLeft = 725;
 constexpr int spellPointsLabelY = 174;
@@ -44,18 +41,30 @@ constexpr int spellPointsValueY = 186;
 constexpr int outsideStackPanelOffsetY = effectAreaTop + effectAreaHeight + 3;
 }
 
-/// Small hero-side effect/status row. The row is created only while it has an active entry.
-class HeroCounterspellStatusArea : public CIntObject
+/// Compact read-only indicators for active Counterspell and Warcasting battle state.
+class HeroBattleStatusArea : public CIntObject
 {
-	std::shared_ptr<TransparentFilledRectangle> background;
-	std::shared_ptr<CLabel> label;
-	bool armed = false;
+	std::vector<std::shared_ptr<TransparentFilledRectangle>> backgrounds;
+	std::shared_ptr<CPicture> warcastingIcon;
+	std::vector<std::shared_ptr<CLabel>> labels;
+	bool counterspellArmed = false;
+	bool hasVisibleStatus = false;
+	AlternatingHeroActionState warcastingState;
+	int currentRound = 0;
+	std::string statusbarText;
+	std::string helpText;
 	bool renderDuringShow = true;
 
+	void refreshContents();
+
 public:
-	HeroCounterspellStatusArea(const Point & position, bool armed);
-	void setArmed(bool value);
+	HeroBattleStatusArea(const Point & position);
+	void setStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting,
+		int round);
 	void setRenderDuringShow(bool value);
+	void hover(bool on) override;
+	void showPopupWindow(const Point & cursorPosition) override;
+	void showAll(Canvas & to) override;
 	void show(Canvas & to) override;
 };
 
@@ -63,19 +72,20 @@ class HeroInfoBasicPanel : public BattleSidePanel //extracted from InfoWindow to
 {
 private:
 	std::shared_ptr<CPicture> background;
-	std::shared_ptr<HeroCounterspellStatusArea> counterspellStatus;
+	std::shared_ptr<HeroBattleStatusArea> battleStatus;
 	std::vector<std::shared_ptr<CLabel>> labels;
 	std::vector<std::shared_ptr<CAnimImage>> icons;
-	bool showCounterspellStatus = false;
-	bool counterspellArmed = false;
+	bool showBattleStatus = false;
 
 public:
 	HeroInfoBasicPanel(const InfoAboutHero & hero, const Point * position, bool initializeBackground = true,
-		bool showCounterspellStatus = false, bool counterspellArmed = false);
+		bool showBattleStatus = false);
 
 	void initializeData(const InfoAboutHero & hero);
-	void update(const InfoAboutHero & updatedInfo, std::optional<bool> counterspellArmed = std::nullopt);
-	void setCounterspellStatus(bool armed);
+	void update(const InfoAboutHero & updatedInfo);
+	void setBattleStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting,
+		int round);
+	void setBattleStatusRenderDuringShow(bool value);
 };
 
 class HeroInfoWindow : public CWindowObject

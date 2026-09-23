@@ -84,6 +84,21 @@ class MagicV2DataTest(unittest.TestCase):
                 changed['spells'][self.formula_spell][key] = value
                 self.assertFalse(self.validator.is_valid(changed))
 
+    def test_warcasting_is_optional_but_strictly_boolean_and_v2_only(self):
+        changed = copy.deepcopy(self.rules)
+        changed.pop('warcasting')
+        self.validator.validate(changed)
+        for value in (False, True):
+            changed['warcasting'] = value
+            self.validator.validate(changed)
+            old = copy.deepcopy(self.old_rules)
+            old['warcasting'] = value
+            self.assertFalse(self.old_validator.is_valid(old))
+        for value in (None, 0, 1, 'true', {}, []):
+            with self.subTest(value=value):
+                changed['warcasting'] = value
+                self.assertFalse(self.validator.is_valid(changed))
+
 
 if __name__ == '__main__':
     unittest.main()

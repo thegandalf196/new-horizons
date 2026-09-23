@@ -915,6 +915,21 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		server->apply(castDescription);
 
 	server->apply(sc);
+	if(mode == Mode::HERO && getWarcastingBonusPercent() > 0)
+	{
+		BattleLogMessage warcastingDescription;
+		warcastingDescription.battleID = battle()->getBattle()->getBattleID();
+		MetaString line;
+		line.appendTextID(caster->getCasterNameTextID());
+		line.appendRawString(" consumes Warcasting (+");
+		line.appendNumber(getWarcastingBonusPercent());
+		line.appendRawString("%) while casting ");
+		line.appendTextID(owner->getNameTextID());
+		if(isCounterspellNegated())
+			line.appendRawString("; the spell was counterspelled");
+		warcastingDescription.lines.push_back(std::move(line));
+		server->apply(warcastingDescription);
+	}
 
 	if(!isCounterspellNegated())
 	{

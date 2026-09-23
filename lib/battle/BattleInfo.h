@@ -13,6 +13,7 @@
 #include "IBattleState.h"
 #include "SideInBattle.h"
 #include "SiegeInfo.h"
+#include "NewHorizonsWarcasting.h"
 
 #include "../callback/GameCallbackHolder.h"
 #include "../bonuses/Bonus.h"
@@ -42,6 +43,7 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 public:
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
+	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return creatureCategoryRules; }
 	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
 	int32_t getBloodrageDamagePercent(BattleSide side) const override { return sides.at(side).bloodrageDamagePercent; }
@@ -114,6 +116,9 @@ public:
 	{
 		if(h.saving)
 		{
+			if(newHorizonsWarcasting::enabled(magicRules)
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING))
+				throw std::runtime_error("Cannot save an active Warcasting battle in an older format");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
 				throw std::runtime_error("Cannot discard Chain Gate battle state");
 			heroCommands::validateRules(heroCommandRules);
@@ -226,6 +231,18 @@ public:
 		}
 		else if(!h.saving)
 			magicRules = JsonNode();
+
+		if(!h.saving && !newHorizonsWarcasting::enabled(magicRules))
+		{
+			// Old readers arrive here with default-empty state. A newer payload that
+			// carries readiness while its saved rules opt out is inconsistent.
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			{
+				if(sides.at(side).warcastingState != AlternatingHeroActionState{}
+					|| (sides.at(side).orderState && sides.at(side).orderState->warcastingBonusPercent != 0))
+					throw std::runtime_error("Saved Warcasting state requires the opt-in magic rules");
+			}
+		}
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_CATEGORIES))
 		{

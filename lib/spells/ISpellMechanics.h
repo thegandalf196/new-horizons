@@ -72,6 +72,11 @@ public:
 namespace spells
 {
 
+/// Applies a snapshotted Warcasting percentage to an already identified
+/// Spell-Power-derived numerator, then divides with integer truncation.
+/// The input must exclude any fixed spell base or level-power component.
+DLL_LINKAGE int64_t scaleWarcastingSpellPowerComponent(int64_t numerator, int32_t divisor, int32_t bonusPercent);
+
 class DLL_LINKAGE IBattleCast
 {
 public:
@@ -283,6 +288,9 @@ public:
 
 	virtual IBattleCast::Value getEffectPower() const = 0;
 	virtual int32_t getEffectPowerDivisor() const { return 1; }
+	/// Percentage captured from the matching pre-cast Warcasting readiness.
+	/// Non-hero casts and Metamagic follow-ups return zero.
+	virtual int32_t getWarcastingBonusPercent() const { return 0; }
 	virtual IBattleCast::Value getEffectDuration() const = 0;
 	virtual bool isSelectiveDispel() const { return false; }
 	virtual bool isNewHorizonsCure() const { return false; }
@@ -318,6 +326,9 @@ public:
 	virtual int64_t applySpellBonus(int64_t value, const battle::Unit * target) const = 0;
 	virtual int64_t applySpecificSpellBonus(int64_t value) const = 0;
 	virtual int64_t calculateRawEffectValue(int32_t basePowerMultiplier, int32_t levelPowerMultiplier) const = 0;
+	/// Scales an explicitly Spell-Power-derived numerator before applying its divisor.
+	/// Fixed base terms must be added by the caller after this calculation.
+	int64_t scaleSpellPowerComponent(int64_t numerator, int32_t divisor = 1) const;
 	virtual Target canonicalizeTarget(const Target & aim) const = 0;
 
 	//Battle facade
@@ -358,6 +369,7 @@ public:
 	IBattleCast::Value getRangeLevel() const override;
 	IBattleCast::Value getEffectPower() const override;
 	int32_t getEffectPowerDivisor() const override;
+	int32_t getWarcastingBonusPercent() const override;
 	IBattleCast::Value getEffectDuration() const override;
 	IBattleCast::Value64 getEffectValue() const override;
 	IBattleCast::Value getOvercharge() const;
@@ -418,6 +430,8 @@ private:
 
 	///actual spell-power affecting effect values
 	IBattleCast::Value effectPower;
+	///Matching ordinary-hero Spell Warcasting empowerment captured before cast consumption.
+	int32_t warcastingBonusPercent = 0;
 	///actual spell-power affecting effect duration
 	IBattleCast::Value effectDuration;
 

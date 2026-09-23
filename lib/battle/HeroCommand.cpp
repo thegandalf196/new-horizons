@@ -396,7 +396,12 @@ int coefficient(const JsonNode & effect, int attack, int defense)
 
 int coefficient(const JsonNode & effect, const CGHeroInstance & hero)
 {
-	const int efficiency = efficiencyPercent(hero);
+	return coefficient(effect, hero, 0);
+}
+
+int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent)
+{
+	const int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100);
 	return boundedCoefficient({effect["base"].Float(), effect["attack"].Float() * efficiency / 100.0,
 		effect["defense"].Float() * efficiency / 100.0},
 		{1, hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE)});
@@ -409,10 +414,16 @@ int efficiencyPercent(const CGHeroInstance & hero)
 
 int secondWindPercent(const CGHeroInstance & hero)
 {
+	return secondWindPercent(hero, 0);
+}
+
+int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent)
+{
 	int64_t leadership = 0;
 	if(const auto capacity = hero.getLeadershipCapacity())
 		leadership = capacity->capacity;
-	const double leadershipComponent = 0.015 * static_cast<double>(leadership) * efficiencyPercent(hero) / 100.0;
+	const int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100);
+	const double leadershipComponent = 0.015 * static_cast<double>(leadership) * efficiency / 100.0;
 	return std::clamp(50 + static_cast<int>(std::lround(leadershipComponent)), 0, 100);
 }
 

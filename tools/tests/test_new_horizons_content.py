@@ -94,9 +94,11 @@ def legacy_rules(rules):
     result = copy.deepcopy(rules)
     if result:
         result['rulesetVersion'] = 1
+        result.pop('warcasting', None)
         for spell in result['spells'].values():
             spell.pop('directDamage', None)
             spell.pop('active', None)
+            spell.pop('cureAfflictions', None)
     return result
 
 

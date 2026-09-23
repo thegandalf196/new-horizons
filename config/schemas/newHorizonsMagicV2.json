@@ -8,6 +8,11 @@
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [2]},
+		"warcasting": {
+			"type": "boolean",
+			"not": {"type": "null"},
+			"description": "Enable alternating Hero Action empowerment. Absence or false preserves pre-Warcasting battle rules."
+		},
 		"schools": {
 			"type": "array",
 			"minItems": 6,

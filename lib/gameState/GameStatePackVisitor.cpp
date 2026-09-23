@@ -11,6 +11,7 @@
 #include "GameStatePackVisitor.h"
 
 #include "CGameState.h"
+#include "../battle/NewHorizonsWarcasting.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "TavernHeroesPool.h"
 
@@ -1677,9 +1678,23 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		if(heroCommands::isDoctrine(pack.ba.command)
 			|| !heroCommands::supportedByRules(gs.getBattle(pack.battleID)->getHeroCommandRules(), pack.ba.command))
 			throw std::runtime_error("Legacy or unsupported Hero Doctrine cannot be applied");
-		auto & side = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
+		auto * commandBattle = gs.getBattle(pack.battleID);
+		auto & side = commandBattle->getSide(pack.ba.side);
+		std::optional<AlternatingHeroActionState> nextWarcastingState;
+		if(newHorizonsWarcasting::enabled(commandBattle->getMagicRules()))
+		{
+			auto next = side.warcastingState;
+			const auto * hero = commandBattle->battleGetFightingHero(pack.ba.side);
+			const int consumedBonus = next.recordAcceptedAction(AlternatingHeroActionState::Action::ORDER,
+				commandBattle->getRound(), newHorizonsWarcasting::empowerment(hero));
+			if(canonicalOrder && (!pack.orderState || consumedBonus != pack.orderState->warcastingBonusPercent))
+				throw std::runtime_error("Warcasting Order snapshot does not match current readiness");
+			nextWarcastingState = std::move(next);
+		}
 		side.counterspellArmed = false;
 		side.heroCommandUsed = true;
+		if(nextWarcastingState)
+			side.warcastingState = *nextWarcastingState;
 		if(targeted)
 			side.focusFire = pack.focusFire;
 		if(canonicalOrder)
@@ -1908,6 +1923,13 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 				casterSide.metamagicSequenceSpells = {pack.spellID};
 				casterSide.metamagicFirstCounterspellNegated = pack.counterspellNegated;
 			}
+		}
+		if(!pack.metamagicFollowup && newHorizonsWarcasting::enabled(battle->getMagicRules()))
+		{
+			auto next = casterSide.warcastingState;
+			next.recordAcceptedAction(AlternatingHeroActionState::Action::SPELL, battle->getRound(),
+				newHorizonsWarcasting::empowerment(hero));
+			casterSide.warcastingState = std::move(next);
 		}
 	}
 }
