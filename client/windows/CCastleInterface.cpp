@@ -88,16 +88,17 @@ constexpr int NH_FORT_STAT_COUNT = 8;
 constexpr int NH_FORT_COMPACT_STAT_COLUMNS = 2;
 constexpr int NH_FORT_COMPACT_STAT_ROWS = NH_FORT_STAT_COUNT / NH_FORT_COMPACT_STAT_COLUMNS;
 constexpr int NH_FORT_COMPACT_PORTRAIT_HEIGHT = 15;
+constexpr int NH_FORT_CONFLUX_COMPACT_PORTRAIT_MAX_HEIGHT = 40;
 
 int rankedFortTinyFontHeight()
 {
 	return static_cast<int>(ENGINE->renderHandler().loadFont(FONT_TINY)->getLineHeight());
 }
 
-int rankedFortStatTop(bool compactStatGrid = false)
+int rankedFortStatTop(bool compactStatGrid = false, int compactPortraitHeight = NH_FORT_COMPACT_PORTRAIT_HEIGHT)
 {
 	const int titleBottom = 1 + rankedFortTinyFontHeight() + 1;
-	return titleBottom + (compactStatGrid ? NH_FORT_COMPACT_PORTRAIT_HEIGHT : 0);
+	return titleBottom + (compactStatGrid ? compactPortraitHeight : 0);
 }
 
 int rankedFortStatBottomPadding()
@@ -115,41 +116,92 @@ int rankedFortStatRowCount(bool compactStatGrid)
 	return compactStatGrid ? NH_FORT_COMPACT_STAT_ROWS : NH_FORT_STAT_COUNT;
 }
 
-int rankedFortMinimumCardHeight(bool compactStatGrid)
+int rankedFortMinimumCardHeight(bool compactStatGrid, int compactPortraitHeight = NH_FORT_COMPACT_PORTRAIT_HEIGHT)
 {
-	return rankedFortStatTop(compactStatGrid) + rankedFortStatRowCount(compactStatGrid) * rankedFortStatMinimumRowHeight()
+	return rankedFortStatTop(compactStatGrid, compactPortraitHeight)
+		+ rankedFortStatRowCount(compactStatGrid) * rankedFortStatMinimumRowHeight()
 		+ rankedFortStatBottomPadding();
 }
 
-int rankedFortStatRowHeight(int cardHeight, bool compactStatGrid)
+int rankedFortStatRowHeight(int cardHeight, bool compactStatGrid,
+	int compactPortraitHeight = NH_FORT_COMPACT_PORTRAIT_HEIGHT)
 {
 	return std::max(rankedFortStatMinimumRowHeight(),
-		(cardHeight - rankedFortStatTop(compactStatGrid) - rankedFortStatBottomPadding())
+		(cardHeight - rankedFortStatTop(compactStatGrid, compactPortraitHeight) - rankedFortStatBottomPadding())
 			/ rankedFortStatRowCount(compactStatGrid));
+}
+
+int rankedFortConfluxCompactPortraitHeight(int cardHeight)
+{
+	const int minimumStatAreaHeight = NH_FORT_COMPACT_STAT_ROWS * rankedFortStatMinimumRowHeight();
+	const int availablePortraitHeight = cardHeight - rankedFortStatTop() - minimumStatAreaHeight
+		- rankedFortStatBottomPadding();
+	return std::clamp(availablePortraitHeight, NH_FORT_COMPACT_PORTRAIT_HEIGHT,
+		NH_FORT_CONFLUX_COMPACT_PORTRAIT_MAX_HEIGHT);
 }
 
 class RankedFortCreatureViewport : public CIntObject
 {
+	std::shared_ptr<CCreaturePic> creaturePicture;
+	std::unique_ptr<Canvas> creatureCanvas;
+	std::unique_ptr<Canvas> scaledCreatureCanvas;
+	Point scaledCreatureSize;
+
+	void showContained(Canvas & to)
+	{
+		const Point sourceSize = creaturePicture->pos.dimensions();
+		const Point creaturePicturePosition = creaturePicture->pos.topLeft();
+		creaturePicture->moveTo(Point(), true);
+		creatureCanvas->drawColor(Rect(Point(), sourceSize), Colors::TRANSPARENCY);
+		creaturePicture->showAll(*creatureCanvas);
+		creaturePicture->moveTo(creaturePicturePosition, true);
+
+		scaledCreatureCanvas->drawColor(Rect(Point(), scaledCreatureSize), Colors::TRANSPARENCY);
+		scaledCreatureCanvas->drawScaled(*creatureCanvas, Point(), scaledCreatureSize);
+		const Point drawPosition = pos.topLeft()
+			+ Point((pos.w - scaledCreatureSize.x) / 2, (pos.h - scaledCreatureSize.y) / 2);
+		to.drawTransparent(*scaledCreatureCanvas, drawPosition, 1.0);
+	}
+
 public:
-	RankedFortCreatureViewport(const Rect & clip, int creatureX, int creatureY, const CCreature * creature)
+	RankedFortCreatureViewport(const Rect & clip, int creatureX, int creatureY,
+		const CCreature * creature, bool containPortrait)
 		: CIntObject(0, clip.topLeft())
 	{
 		pos.w = clip.w;
 		pos.h = clip.h;
 		OBJECT_CONSTRUCTION;
-		new CCreaturePic(creatureX - clip.x, creatureY - clip.y, creature, false);
+		creaturePicture = std::make_shared<CCreaturePic>(creatureX - clip.x, creatureY - clip.y, creature, false);
+		if(containPortrait)
+		{
+			const Point sourceSize = creaturePicture->pos.dimensions();
+			if(sourceSize.x > 0 && sourceSize.y > 0 && pos.w > 0 && pos.h > 0)
+			{
+				const double scale = std::min(static_cast<double>(pos.w) / sourceSize.x, static_cast<double>(pos.h) / sourceSize.y);
+				scaledCreatureSize = Point(std::max(1, static_cast<int>(sourceSize.x * scale)),
+					std::max(1, static_cast<int>(sourceSize.y * scale)));
+				creatureCanvas = std::make_unique<Canvas>(sourceSize, CanvasScalingPolicy::AUTO);
+				scaledCreatureCanvas = std::make_unique<Canvas>(scaledCreatureSize, CanvasScalingPolicy::AUTO);
+			}
+		}
 	}
 
 	void show(Canvas & to) override
 	{
 		CanvasClipRectGuard clip(to, pos);
-		CIntObject::show(to);
+		if(creatureCanvas)
+			showContained(to);
+		else
+			CIntObject::show(to);
 	}
 
 	void showAll(Canvas & to) override
 	{
 		CanvasClipRectGuard clip(to, pos);
-		CIntObject::showAll(to);
+		if(creatureCanvas)
+			showContained(to);
+		else
+			CIntObject::showAll(to);
 	}
 };
 
@@ -2484,12 +2536,6 @@ CFortScreen::CFortScreen(const CGTownInstance * town):
 
 	if(useRankedLayout)
 	{
-		const std::array<newHorizonsCreatures::CreatureCategory, 3> categories =
-		{
-			newHorizonsCreatures::CreatureCategory::CORE,
-			newHorizonsCreatures::CreatureCategory::ELITE,
-			newHorizonsCreatures::CreatureCategory::CHAMPION
-		};
 		const int cardWidth = (pos.w - 2 * NH_FORT_SIDE_MARGIN - NH_FORT_CARD_GAP * (NH_FORT_CARDS_PER_ROW - 1)) / NH_FORT_CARDS_PER_ROW;
 		const int totalRows = std::accumulate(categoryLevels.begin(), categoryLevels.end(), 0, [](int result, const auto & levels)
 		{
@@ -2521,7 +2567,7 @@ CFortScreen::CFortScreen(const CGTownInstance * town):
 			const int headingCenterY = headingTop + headingHeight / 2;
 			const auto heading = newHorizonsCreatureCategoryUI::name(categoryViews[rank], GAME ? &GAME->translator() : nullptr);
 			categoryHeaders[rank] = std::make_shared<CLabel>(pos.w / 2, headingCenterY, FONT_SMALL,
-				ETextAlignment::CENTER, creatureCategoryColor(categories[rank]), heading);
+				ETextAlignment::CENTER, Colors::YELLOW, heading);
 			bandTop += headingHeight;
 
 			const auto & levels = categoryLevels[rank];
@@ -2635,6 +2681,10 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 	const int compactFontHeight = rankedLayout ? rankedFortTinyFontHeight() : 0;
 	const int compactTitleCenterY = rankedLayout ? 1 + compactFontHeight / 2 : 0;
 	const int compactTitleTop = rankedLayout ? 1 : 0;
+	const bool containConfluxPortrait = rankedLayout && compactStatGrid && town->getFactionID() == FactionID::CONFLUX;
+	const int compactPortraitHeight = containConfluxPortrait
+		? rankedFortConfluxCompactPortraitHeight(cardHeight)
+		: NH_FORT_COMPACT_PORTRAIT_HEIGHT;
 
 	if(!town->creatures[level].second.empty())
 		addUsedEvents(LCLICK | HOVER);//Activate only if dwelling is present
@@ -2676,12 +2726,12 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 		hoverText = hoverTextMessage.toString(&GAME->translator());
 		const int creatureX = rankedLayout ? 4 : 159;
 		const int creatureY = rankedLayout ? compactTitleTop + compactFontHeight + 1 : 4;
-		const int statTop = rankedLayout ? rankedFortStatTop(compactStatGrid) : 4;
+		const int statTop = rankedLayout ? rankedFortStatTop(compactStatGrid, compactPortraitHeight) : 4;
 		if(rankedLayout && compactStatGrid)
 		{
 			const Rect creatureClip(creatureX, creatureY, std::max(1, cardWidth - creatureX - 4),
 				std::max(1, statTop - creatureY));
-			new RankedFortCreatureViewport(creatureClip, creatureX, creatureY, getMyCreature());
+			new RankedFortCreatureViewport(creatureClip, creatureX, creatureY, getMyCreature(), containConfluxPortrait);
 		}
 		else
 			new CCreaturePic(creatureX, creatureY, getMyCreature(), false);
@@ -2715,7 +2765,7 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 			LIBRARY->generaltexth->translate("new-horizons.fort.stat.leadershipCost.description"),
 			LIBRARY->generaltexth->translate("core.castinfo.5")
 		};
-		const int rowHeight = rankedLayout ? rankedFortStatRowHeight(cardHeight, compactStatGrid) : 20;
+		const int rowHeight = rankedLayout ? rankedFortStatRowHeight(cardHeight, compactStatGrid, compactPortraitHeight) : 20;
 		if(rankedLayout)
 			assert(cardHeight >= statTop + rankedFortStatRowCount(compactStatGrid) * rowHeight + rankedFortStatBottomPadding());
 		const auto tinyFont = rankedLayout ? ENGINE->renderHandler().loadFont(FONT_TINY) : nullptr;
@@ -2805,7 +2855,12 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 					leadershipCost = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(capabilityRules, getMyCreature()->getId());
 			}
 			values.push_back(std::make_shared<LabeledValue>(rankedValueRect(6), rankedStatNames[6], rankedStatDescriptions[6], leadershipCost > 0 ? std::to_string(leadershipCost) : "--", true));
-			values.push_back(std::make_shared<LabeledValue>(rankedValueRect(7), rankedStatNames[7], rankedStatDescriptions[7], town->creatureGrowth(level), true));
+			if(town->getFactionID() == FactionID::CONFLUX && town->creatures[level].second.empty())
+				values.push_back(std::make_shared<LabeledValue>(rankedValueRect(7), rankedStatNames[7],
+					rankedStatDescriptions[7], std::string("0"), true));
+			else
+				values.push_back(std::make_shared<LabeledValue>(rankedValueRect(7), rankedStatNames[7],
+					rankedStatDescriptions[7], town->creatureGrowth(level), true));
 		}
 		else
 		{
