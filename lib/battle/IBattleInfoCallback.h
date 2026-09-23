@@ -12,6 +12,7 @@
 
 #include "GameConstants.h"
 #include "BattleHexArray.h"
+#include "HeroCommand.h"
 
 #include "../constants/Enumerations.h"
 
@@ -43,13 +44,19 @@ struct DamageRange
 	int64_t max = 0;
 };
 
-struct DamageEstimation
+struct DLL_LINKAGE DamageEstimation
 {
 	DamageRange damage;
 	DamageRange kills;
 	/// Damage with every mitigating factor of the target left out. Abilities that reflect a strike
 	/// back at its author, such as Fire Shield, work from this rather than from the damage dealt.
 	DamageRange damageBeforeDefense;
+	/// Order or legacy Focus Fire command whose offensive effect contributed, if any.
+	/// This is transient calculation metadata and is not serialized or sent over the network.
+	HeroCommand attackerOrderCause = HeroCommand::NONE;
+	/// Order whose defensive effect contributed to this estimate, if any.
+	/// Kept separately because both sides can have an active Order for the same hit.
+	HeroCommand defenderOrderCause = HeroCommand::NONE;
 };
 
 class DLL_LINKAGE IBattleInfoCallback : public IConstBonusProvider, public scripting::ApiRawPointer<IBattleInfoCallback>

@@ -1702,6 +1702,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		throw std::runtime_error("No damage calculator script is loaded!");
 
 	DamageAttackInfo payload;
+	HeroCommand attackerOrderCause = HeroCommand::NONE;
+	HeroCommand defenderOrderCause = HeroCommand::NONE;
 
 	payload.attacker = info.attacker;
 	payload.defender = info.defender;
@@ -1716,6 +1718,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
 	payload.targetedRangedCommandPercent = battleTargetedRangedCommandPercent(
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
+	if(payload.targetedRangedCommand && payload.targetedRangedCommandPercent > 0)
+		attackerOrderCause = HeroCommand::FOCUS_FIRE;
 	if(info.physicalDamage && !info.shooting && info.attacker && info.defender
 		&& battleGetOwner(info.attacker) != battleGetOwner(info.defender))
 	{
@@ -1802,6 +1806,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				{
 					payload.heroOrderDamagePercent = coefficientFor(rules["charge"]["effects"]["meleeDamagePercent"], attack)
 						+ 2 * (info.chargeDistance - 3);
+					if(payload.heroOrderDamagePercent > 0)
+						attackerOrderCause = HeroCommand::CHARGE;
 					if(info.physicalDamage && battleGetOwner(info.attacker) != battleGetOwner(info.defender)
 						&& attack->hasActivePerk("new-horizons:offense", "new-horizons:offense.shockAssault"))
 						payload.chargeDefenseIgnorePercent = SHOCK_ASSAULT_DEFENSE_IGNORE_PERCENT;
@@ -1809,7 +1815,11 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				break;
 			case HeroCommand::RIPOSTE:
 				if(eligibleOrderUnit(info.attacker) && info.retaliation && !info.shooting)
+				{
 					payload.heroOrderDamagePercent = coefficientFor(rules["riposte"]["effects"]["retaliationDamagePercent"], attack);
+					if(payload.heroOrderDamagePercent > 0)
+						attackerOrderCause = HeroCommand::RIPOSTE;
+				}
 				break;
 			case HeroCommand::BRACE:
 				if(eligibleOrderUnit(info.attacker) && info.bracePreemptive && !info.shooting)
@@ -1830,6 +1840,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 						const int additionalSides = std::max(0, distinct - 1);
 						payload.heroOrderDamagePercent = coefficientFor(rules["flank"]["effects"]["meleeDamagePercent"], attack)
 							+ additionalSides * coefficientFor(rules["flank"]["effects"]["additionalSidePercent"], attack);
+						if(payload.heroOrderDamagePercent > 0)
+							attackerOrderCause = HeroCommand::FLANK;
 					}
 				}
 				break;
@@ -1837,6 +1849,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				if(attackerState->secondWindActive && attackerState->primaryTargetUnitId == info.attacker->unitId())
 				{
 					payload.heroOrderFinalDamageMultiplier = heroCommands::secondWindPercent(*attack);
+					if(payload.heroOrderFinalDamageMultiplier < 100)
+						attackerOrderCause = HeroCommand::SECOND_WIND;
 				}
 				break;
 			default:
@@ -1866,6 +1880,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			default:
 				break;
 			}
+			if(payload.heroOrderDamageReductionPercent > 0)
+				defenderOrderCause = defenderState->command;
 		}
 	}
 	payload.luckyStrike = info.luckyStrike;
@@ -1895,7 +1911,10 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.defenseFactorPerPoint = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_DEFENSE_POINT_DAMAGE_FACTOR);
 	payload.defenseFactorCap = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_DEFENSE_POINT_DAMAGE_FACTOR_CAP);
 
-	return script->calculate(*this, payload);
+	auto result = script->calculate(*this, payload);
+	result.attackerOrderCause = attackerOrderCause;
+	result.defenderOrderCause = defenderOrderCause;
+	return result;
 }
 
 DamageEstimation CBattleInfoCallback::battleEstimateDamage(const battle::Unit * attacker, const battle::Unit * defender, const BattleHex & attackerPosition, DamageEstimation * retaliationDmg) const

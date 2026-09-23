@@ -101,6 +101,69 @@ static const char * heroOrderDisplayName(HeroCommand command)
 	}
 }
 
+static void appendHeroOrderCauseName(MetaString & line, const CBattleInfoCallback & battle,
+	const battle::Unit * unit, HeroCommand command)
+{
+	const auto side = battle.playerToSide(battle.battleGetOwner(unit));
+	if(const auto * hero = battle.battleGetFightingHero(side))
+	{
+		line.appendTextID(hero->getNameTextID());
+		line.appendRawString("'s ");
+	}
+	else
+		line.appendRawString("A hero's ");
+
+	line.appendRawString(heroOrderDisplayName(command));
+}
+
+static MetaString orderDamageLogLine(const CBattleInfoCallback & battle, const CStack * attacker,
+	const battle::Unit * target, const BattleStackAttacked & hit,
+	HeroCommand attackerOrderCause, HeroCommand defenderOrderCause)
+{
+	MetaString line;
+	if(attackerOrderCause != HeroCommand::NONE)
+	{
+		appendHeroOrderCauseName(line, battle, attacker, attackerOrderCause);
+		if(attackerOrderCause == HeroCommand::SECOND_WIND)
+		{
+			line.appendRawString(" gave %s a reduced-strength follow-up against %s: ");
+			attacker->addNameReplacement(line, attacker->getCount());
+			target->addNameReplacement(line, target->getCount());
+		}
+		else
+		{
+			line.appendRawString(": %s struck %s for ");
+			attacker->addNameReplacement(line, attacker->getCount());
+			target->addNameReplacement(line, target->getCount());
+		}
+		line.appendNumber(hit.damageAmount);
+		line.appendRawString(" damage (");
+		line.appendNumber(hit.killedAmount);
+		line.appendRawString(" killed)");
+
+		if(defenderOrderCause != HeroCommand::NONE)
+		{
+			line.appendRawString("; ");
+			appendHeroOrderCauseName(line, battle, target, defenderOrderCause);
+			line.appendRawString(" reduced the damage to %s");
+			target->addNameReplacement(line, target->getCount());
+		}
+		line.appendRawString(".");
+	}
+	else if(defenderOrderCause != HeroCommand::NONE)
+	{
+		appendHeroOrderCauseName(line, battle, target, defenderOrderCause);
+		line.appendRawString(" reduced the damage to %s: ");
+		target->addNameReplacement(line, target->getCount());
+		line.appendNumber(hit.damageAmount);
+		line.appendRawString(" damage (");
+		line.appendNumber(hit.killedAmount);
+		line.appendRawString(" killed) from %s.");
+		attacker->addNameReplacement(line, attacker->getCount());
+	}
+	return line;
+}
+
 static void appendHeroOrderTarget(MetaString & line, const CBattleInfoCallback & battle, uint32_t unitId)
 {
 	const auto * target = battle.battleGetUnitByID(unitId);
@@ -2063,6 +2126,13 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	BattleAttack bat;
 	BattleLogMessage blm;
+	struct ResolvedOrderCauses
+	{
+		uint32_t targetUnitId;
+		HeroCommand attacker = HeroCommand::NONE;
+		HeroCommand defender = HeroCommand::NONE;
+	};
+	std::vector<ResolvedOrderCauses> resolvedOrderCauses;
 	// Brace's pre-emptive strike is dispatched through the counterattack path so
 	// that it happens before the incoming blow, but it must not consume the
 	// defender's normal retaliation. Keep the two notions separate here.
@@ -2106,7 +2176,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// only primary target
 	if(defender && defender->alive())
 	{
-		applyBattleEffects(battle, bat, attackerState, payload, defender, attack.distance, false, attack.brace, attack.preemptiveDamagePercent, protectIntercepted);
+		const auto estimation = applyBattleEffects(battle, bat, attackerState, payload, defender,
+			attack.distance, false, attack.brace, attack.preemptiveDamagePercent, protectIntercepted);
+		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
+			resolvedOrderCauses.push_back({defender->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
 		if(!attack.ranged && !attack.counter)
 		{
 			if(const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle()))
@@ -2132,7 +2205,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		if(!unit->alive())
 			continue;
 
-		applyBattleEffects(battle, bat, attackerState, payload, unit, attack.distance, true, attack.brace, attack.preemptiveDamagePercent, false);
+		const auto estimation = applyBattleEffects(battle, bat, attackerState, payload, unit,
+			attack.distance, true, attack.brace, attack.preemptiveDamagePercent, false);
+		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
+			resolvedOrderCauses.push_back({unit->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
 		if(!unit->isTimeStopped())
 			removeBonuses(battle, unit, *unit->getAllBonuses(Bonus::UntilTakingIndirectDamage));
 	}
@@ -2210,12 +2286,35 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			braceLogLine.appendRawString(" damage (");
 			braceLogLine.appendNumber(hit.killedAmount);
 			braceLogLine.appendRawString(" killed)");
+			const auto cause = std::ranges::find(resolvedOrderCauses, hit.stackAttacked,
+				&ResolvedOrderCauses::targetUnitId);
+			if(cause != resolvedOrderCauses.end() && cause->defender != HeroCommand::NONE)
+			{
+				braceLogLine.appendRawString(" despite ");
+				appendHeroOrderCauseName(braceLogLine, battle, target, cause->defender);
+				braceLogLine.appendRawString(" reducing the damage");
+			}
 			wroteTarget = true;
 		}
 		if(wroteTarget)
 			braceLogLine.appendRawString(" before the incoming melee attack.");
 		else
 			braceLogLine = MetaString::createFromRawString("Brace triggers, but its preemptive strike deals no damage.");
+	}
+	// Format provenance while Order state and hero names are still available.
+	// The outgoing BattleAttack may consume the source Order.
+	std::vector<MetaString> orderDamageLogLines;
+	if(!attack.brace)
+	{
+		for(const auto & cause : resolvedOrderCauses)
+		{
+			const auto hit = std::ranges::find(bat.bsa, cause.targetUnitId, &BattleStackAttacked::stackAttacked);
+			const auto * target = battle.battleGetUnitByID(cause.targetUnitId);
+			if(hit == bat.bsa.end() || !target)
+				continue;
+			orderDamageLogLines.push_back(orderDamageLogLine(battle, attacker, target, *hit,
+				cause.attacker, cause.defender));
+		}
 	}
 	gameHandler->sendAndApply(bat);
 
@@ -2276,6 +2375,9 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 			if(defender)
 				addGenericKilledLog(blm, defender, totalKills, multipleTargets);
+
+			for(auto & line : orderDamageLogLines)
+				blm.lines.push_back(std::move(line));
 		}
 	}
 
@@ -2415,7 +2517,7 @@ void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback &
 		attackCasting(battle, payload.ranged, BonusType::SPELL_AFTER_ATTACK, attacker, defender);
 }
 
-void BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, bool protectIntercepted) const
+DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, bool protectIntercepted) const
 {
 	BattleStackAttacked bsa;
 	if(secondary)
@@ -2459,6 +2561,7 @@ void BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battl
 		: 0;
 	target.healthBeforeAttack = def->getAvailableHealth();
 	payload.targets.push_back(target);
+	return range;
 }
 
 void BattleActionProcessor::addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const

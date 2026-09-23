@@ -139,7 +139,9 @@ TEST_F(HeroCommandTest, ChargeChangesRealDamageWithoutManaOrCreatureTurn)
 	const auto mana = attackerSideHero->mana;
 	const auto before = battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min;
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	EXPECT_GT(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, before);
+	const auto charged = battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false));
+	EXPECT_GT(charged.damage.min, before);
+	EXPECT_EQ(charged.attackerOrderCause, HeroCommand::CHARGE);
 	EXPECT_EQ(attackerSideHero->mana, mana);
 	EXPECT_EQ(battle()->getActiveStackID(), active);
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::CHARGE);
@@ -147,6 +149,42 @@ TEST_F(HeroCommandTest, ChargeChangesRealDamageWithoutManaOrCreatureTurn)
 	advanceRound();
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
 	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min, before);
+}
+
+TEST_F(HeroCommandTest, ChargeResolvedHitLogsItsCauseAndDamageAfterTheOneShotIsConsumed)
+{
+	prepareCommands();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(89), 100);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(93), 1);
+	forceMaximumDamage(attacker);
+	blockRetaliation(attacker);
+	blockRetaliation(target);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	server.attacks.clear();
+	server.battleLogLines.clear();
+
+	battle()->activeStack = attacker->unitId();
+	const auto action = BattleAction::makeMeleeAttack(attacker, target, BattleHex(92), false);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	const auto attack = std::ranges::find_if(server.attacks, [attacker](const BattleAttack & value)
+	{
+		return value.stackAttacking == attacker->unitId();
+	});
+	ASSERT_NE(attack, server.attacks.end());
+	const auto hit = std::ranges::find(attack->bsa, target->unitId(), &BattleStackAttacked::stackAttacked);
+	ASSERT_NE(hit, attack->bsa.end());
+	const auto causalLine = std::ranges::find_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Charge:") != std::string::npos;
+	});
+	ASSERT_NE(causalLine, server.battleLogLines.end()) << ::testing::PrintToString(server.battleLogLines);
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr(attacker->unitType()->getNamePluralTranslated()));
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr(target->unitType()->getNameSingularTranslated()));
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr("for " + std::to_string(hit->damageAmount) + " damage"));
+	const auto order = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(order);
+	EXPECT_TRUE(order->containsConsumed(attacker->unitId()));
 }
 
 TEST_F(HeroCommandTest, HoldTheLineReducesRealIncomingPhysicalDamage)
@@ -160,11 +198,43 @@ TEST_F(HeroCommandTest, HoldTheLineReducesRealIncomingPhysicalDamage)
 	ASSERT_EQ(server.battleLogLines.size(), 1);
 	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Hold the Line!"));
 	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("hold position"));
-	EXPECT_LT(battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, false)).damage.min, before);
+	const auto heldMelee = battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, false));
+	EXPECT_LT(heldMelee.damage.min, before);
+	EXPECT_EQ(heldMelee.defenderOrderCause, HeroCommand::HOLD_THE_LINE);
 	// Hold the Line covers all physical creature damage, including missiles.
 	EXPECT_LT(battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, true)).damage.min, shotBefore);
+	BattleAttackInfo spellLike(enemy, ours, 0, false);
+	spellLike.physicalDamage = false;
+	EXPECT_EQ(battle()->calculateDmgRange(spellLike).defenderOrderCause, HeroCommand::NONE);
 	advanceRound();
 	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(enemy, ours, 0, false)).damage.min, before);
+}
+
+TEST_F(HeroCommandTest, HoldTheLineLogsResolvedIncomingDamage)
+{
+	prepareCommands();
+	auto * ours = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	blockRetaliation(ours);
+	blockRetaliation(enemy);
+	server.attacks.clear();
+	server.battleLogLines.clear();
+
+	ASSERT_TRUE(attack(enemy, ours->getPosition()));
+	const auto resolvedAttack = std::ranges::find_if(server.attacks, [enemy](const BattleAttack & value)
+	{
+		return value.stackAttacking == enemy->unitId() && !value.counter();
+	});
+	ASSERT_NE(resolvedAttack, server.attacks.end());
+	const auto hit = std::ranges::find(resolvedAttack->bsa, ours->unitId(), &BattleStackAttacked::stackAttacked);
+	ASSERT_NE(hit, resolvedAttack->bsa.end());
+	const auto causalLine = std::ranges::find_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Hold the Line reduced the damage") != std::string::npos;
+	});
+	ASSERT_NE(causalLine, server.battleLogLines.end()) << ::testing::PrintToString(server.battleLogLines);
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr(std::to_string(hit->damageAmount) + " damage"));
 }
 
 TEST_F(HeroCommandTest, ChargeExpiresAtTheRoundBoundary)
@@ -264,7 +334,27 @@ TEST_F(HeroCommandTest, RiposteBoostsOnlyRetaliationDamage)
 	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("take less melee damage"));
 	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("retaliate more fiercely"));
 	ordinary.retaliation = true;
-	EXPECT_GT(battle()->calculateDmgRange(ordinary).damage.min, before);
+	const auto retaliation = battle()->calculateDmgRange(ordinary);
+	EXPECT_GT(retaliation.damage.min, before);
+	EXPECT_EQ(retaliation.attackerOrderCause, HeroCommand::RIPOSTE);
+
+	forceMaximumDamage(attacker);
+	server.attacks.clear();
+	server.battleLogLines.clear();
+	ASSERT_TRUE(attack(defender, attacker->getPosition()));
+	const auto riposte = std::ranges::find_if(server.attacks, [attacker](const BattleAttack & value)
+	{
+		return value.stackAttacking == attacker->unitId() && value.counter();
+	});
+	ASSERT_NE(riposte, server.attacks.end());
+	const auto hit = std::ranges::find(riposte->bsa, defender->unitId(), &BattleStackAttacked::stackAttacked);
+	ASSERT_NE(hit, riposte->bsa.end());
+	const auto causalLine = std::ranges::find_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Riposte:") != std::string::npos;
+	});
+	ASSERT_NE(causalLine, server.battleLogLines.end()) << ::testing::PrintToString(server.battleLogLines);
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr(std::to_string(hit->damageAmount) + " damage"));
 }
 
 TEST_F(HeroCommandTest, BracePreemptiveStrikeUsesItsOwnDamageFormula)
@@ -296,6 +386,10 @@ TEST_F(HeroCommandTest, BraceTriggerLogsResolvedDamageAndCasualties)
 	forceMaximumDamage(braced);
 	blockRetaliation(braced);
 	blockRetaliation(mover);
+	battle()->activeStack = mover->unitId();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
+		BattleAction::makeHeroCommand(BattleSide::DEFENDER, HeroCommand::RIPOSTE)));
+	battle()->activeStack = braced->unitId();
 	ASSERT_TRUE(issue(HeroCommand::BRACE));
 	server.attacks.clear();
 	server.battleLogLines.clear();
@@ -323,10 +417,15 @@ TEST_F(HeroCommandTest, BraceTriggerLogsResolvedDamageAndCasualties)
 	EXPECT_THAT(*causalLine, ::testing::HasSubstr(mover->unitType()->getNameSingularTranslated()));
 	EXPECT_THAT(*causalLine, ::testing::HasSubstr("for " + std::to_string(hit->damageAmount) + " damage"));
 	EXPECT_THAT(*causalLine, ::testing::HasSubstr("(" + std::to_string(hit->killedAmount) + " killed)"));
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr("Riposte reducing the damage"));
 	EXPECT_THAT(*causalLine, ::testing::HasSubstr("before the incoming melee attack."));
 	EXPECT_EQ(std::ranges::count_if(server.battleLogLines, [](const std::string & line)
 	{
 		return line.find("Brace preemptive strike:") != std::string::npos;
+	}), 1);
+	EXPECT_EQ(std::ranges::count_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Riposte") != std::string::npos;
 	}), 1);
 }
 
@@ -363,15 +462,33 @@ TEST_F(HeroCommandTest, ProtectReductionIsScopedToTheInterceptedBlowAndStateIsRe
 		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
 			protector->unitId(), ward->unitId())));
 	const auto normal = battle()->calculateDmgRange(BattleAttackInfo(enemy, protector, 0, false)).damage.min;
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(enemy, protector, 0, false)).defenderOrderCause,
+		HeroCommand::NONE);
 	BattleAttackInfo intercepted(enemy, protector, 0, false);
 	intercepted.protectIntercepted = true;
 	const auto reduced = battle()->calculateDmgRange(intercepted).damage.min;
+	EXPECT_EQ(battle()->calculateDmgRange(intercepted).defenderOrderCause, HeroCommand::PROTECT);
 	EXPECT_LT(reduced, normal);
 	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(enemy, protector, 0, false)).damage.min, normal);
 	blockRetaliation(protector);
 	blockRetaliation(ward);
+	server.attacks.clear();
+	server.battleLogLines.clear();
 	const auto statePacketsBeforeAttack = server.orderStateUpdates.size();
 	ASSERT_TRUE(attack(enemy, ward->getPosition()));
+	const auto interceptedAttack = std::ranges::find_if(server.attacks, [enemy](const BattleAttack & value)
+	{
+		return value.stackAttacking == enemy->unitId() && !value.counter();
+	});
+	ASSERT_NE(interceptedAttack, server.attacks.end());
+	const auto hit = std::ranges::find(interceptedAttack->bsa, protector->unitId(), &BattleStackAttacked::stackAttacked);
+	ASSERT_NE(hit, interceptedAttack->bsa.end());
+	const auto causalLine = std::ranges::find_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Protect reduced the damage") != std::string::npos;
+	});
+	ASSERT_NE(causalLine, server.battleLogLines.end()) << ::testing::PrintToString(server.battleLogLines);
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr(std::to_string(hit->damageAmount) + " damage"));
 	ASSERT_GT(server.orderStateUpdates.size(), statePacketsBeforeAttack);
 	ASSERT_TRUE(server.orderStateUpdates.back().state);
 	EXPECT_TRUE(server.orderStateUpdates.back().state->protectIntercepted);
@@ -414,15 +531,47 @@ TEST_F(HeroCommandTest, FlankRaisesTheFirstDistinctSideAttack)
 	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("exploit new sides this round"));
 	const auto side = battle()->battleHeroOrderFlankSide(attacker, defender);
 	ASSERT_NE(side, 0);
-	const auto firstSide = battle()->calculateDmgRange(attack).damage.min;
+	const auto firstSideEstimate = battle()->calculateDmgRange(attack);
+	const auto firstSide = firstSideEstimate.damage.min;
 	EXPECT_GT(firstSide, before);
-	ASSERT_TRUE(battle()->recordHeroOrderFlankSide(BattleSide::ATTACKER, defender->unitId(), side));
+	EXPECT_EQ(firstSideEstimate.attackerOrderCause, HeroCommand::FLANK);
+	forceMaximumDamage(attacker);
+	blockRetaliation(defender);
+	server.attacks.clear();
+	server.battleLogLines.clear();
+	ASSERT_TRUE(this->attack(attacker, defender->getPosition()));
+	const auto resolvedAttack = std::ranges::find_if(server.attacks, [attacker](const BattleAttack & value)
+	{
+		return value.stackAttacking == attacker->unitId() && !value.counter();
+	});
+	ASSERT_NE(resolvedAttack, server.attacks.end());
+	const auto resolvedHit = std::ranges::find(resolvedAttack->bsa, defender->unitId(), &BattleStackAttacked::stackAttacked);
+	ASSERT_NE(resolvedHit, resolvedAttack->bsa.end());
+	const auto causalLine = std::ranges::find_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Flank:") != std::string::npos;
+	});
+	ASSERT_NE(causalLine, server.battleLogLines.end()) << ::testing::PrintToString(server.battleLogLines);
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr(std::to_string(resolvedHit->damageAmount) + " damage"));
+	BattleAttackInfo secondary(attacker, defender, 0, false);
+	secondary.secondaryAttack = true;
+	// Flank already applies to melee contact with its marked target, including
+	// collateral contact. Provenance follows that calculation, not Charge's
+	// primary-hit-only restriction.
+	const auto collateral = battle()->calculateDmgRange(secondary);
+	const auto currentPrimary = battle()->calculateDmgRange(BattleAttackInfo(attacker, defender, 0, false));
+	EXPECT_EQ(collateral.damage.min, currentPrimary.damage.min);
+	EXPECT_EQ(collateral.attackerOrderCause, HeroCommand::FLANK);
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(attacker, defender, 0, true)).attackerOrderCause,
+		HeroCommand::NONE);
 	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->flankFor(defender->unitId())->sideMask, side);
 	BattleAttackInfo secondAttack(secondAttacker, defender, 0, false);
 	const auto secondSide = battle()->battleHeroOrderFlankSide(secondAttacker, defender);
 	ASSERT_NE(secondSide, 0);
 	ASSERT_NE(secondSide, side);
 	EXPECT_GT(battle()->calculateDmgRange(secondAttack).damage.min, firstSide);
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(attacker, secondAttacker, 0, false)).attackerOrderCause,
+		HeroCommand::NONE);
 }
 
 TEST_F(HeroCommandTest, SecondWindActivatesMovedStackWithDirectDamagePenalty)
@@ -442,7 +591,32 @@ TEST_F(HeroCommandTest, SecondWindActivatesMovedStackWithDirectDamagePenalty)
 	ASSERT_TRUE(state);
 	EXPECT_TRUE(state->secondWindActive);
 	EXPECT_EQ(battle()->getActiveStackID(), target->unitId());
-	EXPECT_LT(battle()->calculateDmgRange(attack).damage.min, before);
+	const auto followUp = battle()->calculateDmgRange(attack);
+	EXPECT_LT(followUp.damage.min, before);
+	EXPECT_EQ(followUp.attackerOrderCause, HeroCommand::SECOND_WIND);
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(enemy, target, 0, false)).attackerOrderCause,
+		HeroCommand::NONE);
+
+	blockRetaliation(target);
+	blockRetaliation(enemy);
+	server.attacks.clear();
+	server.battleLogLines.clear();
+	const auto action = BattleAction::makeMeleeAttack(target, enemy, target->getPosition(), false);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	const auto resolvedAttack = std::ranges::find_if(server.attacks, [target](const BattleAttack & value)
+	{
+		return value.stackAttacking == target->unitId();
+	});
+	ASSERT_NE(resolvedAttack, server.attacks.end());
+	const auto hit = std::ranges::find(resolvedAttack->bsa, enemy->unitId(), &BattleStackAttacked::stackAttacked);
+	ASSERT_NE(hit, resolvedAttack->bsa.end());
+	const auto causalLine = std::ranges::find_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Second Wind") != std::string::npos;
+	});
+	ASSERT_NE(causalLine, server.battleLogLines.end()) << ::testing::PrintToString(server.battleLogLines);
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr("reduced-strength follow-up"));
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr(std::to_string(hit->damageAmount) + " damage"));
 }
 
 TEST_F(HeroCommandTest, LegacyDoctrineIdsAreNeverIssuableOrExposed)

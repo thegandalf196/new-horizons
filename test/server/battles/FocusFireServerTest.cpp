@@ -70,6 +70,38 @@ TEST_F(FocusFireServerTest, SpellLikePhysicalAreaPreviewOnlyRaisesTheMarkedPrima
 	EXPECT_EQ(collateral.damage.max, 300);
 }
 
+TEST_F(FocusFireServerTest, MarkedPrimaryShotLogsFocusFireWithResolvedDamage)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareFocus());
+	auto * other = addStack(BattleSide::DEFENDER, creatureByName("core:angel"),
+		BattleHex(rightHex + 5), 100);
+	ASSERT_TRUE(submit(focusAction(target->unitId())));
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(shooter, target, 0, true)).attackerOrderCause,
+		HeroCommand::FOCUS_FIRE);
+	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(shooter, other, 0, true)).attackerOrderCause,
+		HeroCommand::NONE);
+	BattleAttackInfo secondary(shooter, target, 0, true);
+	secondary.secondaryAttack = true;
+	EXPECT_EQ(battle()->calculateDmgRange(secondary).attackerOrderCause, HeroCommand::NONE);
+
+	server.attacks.clear();
+	server.battleLogLines.clear();
+	ASSERT_TRUE(submit(BattleAction::makeShotAttack(shooter, target)));
+	const auto attack = std::ranges::find_if(server.attacks, [this](const BattleAttack & value)
+	{
+		return value.stackAttacking == shooter->unitId() && value.shot() && !value.counter();
+	});
+	ASSERT_NE(attack, server.attacks.end());
+	const auto hit = std::ranges::find(attack->bsa, target->unitId(), &BattleStackAttacked::stackAttacked);
+	ASSERT_NE(hit, attack->bsa.end());
+	const auto causalLine = std::ranges::find_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Focus Fire:") != std::string::npos;
+	});
+	ASSERT_NE(causalLine, server.battleLogLines.end()) << ::testing::PrintToString(server.battleLogLines);
+	EXPECT_THAT(*causalLine, ::testing::HasSubstr(std::to_string(hit->damageAmount) + " damage"));
+}
+
 TEST_F(FocusFireServerTest, ShootingWarMachineCannotSupplyLegalityOrJoinFrozenCohort)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareFocus());

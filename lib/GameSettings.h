@@ -29,8 +29,9 @@ class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
 	std::array<JsonNode, OPTIONS_COUNT> baseSettings;
 	// contains settings that were overriden, in map or in random map template
 	std::array<JsonNode, OPTIONS_COUNT> overridenSettings;
-	// An explicit null magic context differs from an absent override.
+	// An explicit null versioned context differs from an absent override.
 	bool magicOverridePresent = false;
+	bool heroCommandsOverridePresent = false;
 	// for convenience / performance, contains actual settings - combined version of base and override settings
 	std::array<JsonNode, OPTIONS_COUNT> actualSettings;
 

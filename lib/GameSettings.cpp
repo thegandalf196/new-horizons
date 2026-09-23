@@ -179,9 +179,10 @@ void GameSettings::loadOverrides(const JsonNode & input)
 	for(const auto & option : settingProperties)
 	{
 		const JsonNode & optionValue = input[option.group][option.key];
-		const bool explicitMagic = option.setting == EGameSettings::MAGIC_NEW_HORIZONS
+		const bool explicitVersionedContext = (option.setting == EGameSettings::MAGIC_NEW_HORIZONS
+			|| option.setting == EGameSettings::COMBAT_HERO_COMMANDS)
 			&& input[option.group].Struct().contains(option.key);
-		if (!optionValue.isNull() || explicitMagic)
+		if (!optionValue.isNull() || explicitVersionedContext)
 			addOverride(option.setting, optionValue);
 	}
 }
@@ -193,9 +194,15 @@ void GameSettings::addOverride(EGameSettings option, const JsonNode & input)
 	overridenSettings[index] = input;
 	if(option == EGameSettings::MAGIC_NEW_HORIZONS)
 	{
-		// Version, roster and formulas constitute one authored context. Merging
-		// a v1 map over an installed v2 roster would invent a mixed ruleset.
+		// Version, roster and formulas constitute one authored context.
 		magicOverridePresent = true;
+		actualSettings[index] = input;
+	}
+	else if(option == EGameSettings::COMBAT_HERO_COMMANDS)
+	{
+		// Command definitions and their version are one authored snapshot. Merging
+		// a saved profile over the installed one could invent a mixed ruleset.
+		heroCommandsOverridePresent = true;
 		actualSettings[index] = input;
 	}
 	else
@@ -211,6 +218,7 @@ const JsonNode & GameSettings::getValue(EGameSettings option) const
 	auto index = static_cast<size_t>(option);
 
 	assert(option == EGameSettings::MAGIC_NEW_HORIZONS
+		|| option == EGameSettings::COMBAT_HERO_COMMANDS
 		|| option == EGameSettings::HEROES_NEW_HORIZONS_PERKS
 		|| !actualSettings.at(index).isNull());
 	return actualSettings.at(index);
@@ -238,7 +246,10 @@ JsonNode GameSettings::getAllOverrides() const
 	for(const auto & option : settingProperties)
 	{
 		const JsonNode & value = overridenSettings[static_cast<int32_t>(option.setting)];
-		if (!value.isNull() || (option.setting == EGameSettings::MAGIC_NEW_HORIZONS && magicOverridePresent))
+		const bool explicitVersionedNull =
+			(option.setting == EGameSettings::MAGIC_NEW_HORIZONS && magicOverridePresent)
+			|| (option.setting == EGameSettings::COMBAT_HERO_COMMANDS && heroCommandsOverridePresent);
+		if (!value.isNull() || explicitVersionedNull)
 			result[option.group][option.key] = value;
 	}
 

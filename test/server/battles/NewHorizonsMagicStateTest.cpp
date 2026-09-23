@@ -145,11 +145,11 @@ TEST_F(NewHorizonsMagicStateTest, ActualSchoolRankCostAndServerCastUseSavedClass
 
 TEST_F(NewHorizonsMagicStateTest, StartingRanksConvertAndNewSkillsCanBeOffered)
 {
+	startSkilledHero();
 	const auto schoolSkills = newHorizonsMagic::schoolSkills(gameState()->getMagicRules());
 	EXPECT_EQ(schoolSkills.size(), 6u);
 	EXPECT_EQ(std::set<SecondarySkill>(schoolSkills.begin(), schoolSkills.end()).size(), 6u);
 
-	startSkilledHero();
 	const auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
 	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
@@ -183,7 +183,7 @@ TEST_F(NewHorizonsMagicStateTest, ActualGameAndBattlePacketRetainSavedRules)
 	attackerSideHero->mana = 100;
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 3, ChangeValueMode::ABSOLUTE);
 	const auto rules = gameState()->getMagicRules();
-	ASSERT_EQ(rules["rulesetVersion"].Integer(), 1);
+	ASSERT_EQ(rules["rulesetVersion"].Integer(), 2);
 	const auto bytes = gameState()->saveToMemory();
 	auto restored = std::make_shared<CGameState>();
 	restored->preInit(LIBRARY);
