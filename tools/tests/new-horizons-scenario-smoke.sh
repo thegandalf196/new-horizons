@@ -49,6 +49,8 @@ for pattern in \
 	"Encoding coversion failure" \
 	"Unable to select shooter for tower" \
 	"Disaster happened" \
+	"Segmentation fault" \
+	"core dumped" \
 	"Failed to launch game" \
 	"Invalid New Horizons capability rules"; do
 	if grep -Fq "$pattern" "$run_log"; then
