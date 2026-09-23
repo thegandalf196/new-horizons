@@ -19,6 +19,7 @@ ACTIVE_PERKS = {
     "new-horizons:warcasting.martialChanneling",
     "new-horizons:warcasting.arcaneChanneling",
     "new-horizons:warcasting.tacticalWeaving",
+    "new-horizons:warcasting.battleMeditation",
     "new-horizons:demonicGating.swiftGate",
     "new-horizons:demonicGating.wideGate",
     "new-horizons:demonicGating.hellfireArrival",

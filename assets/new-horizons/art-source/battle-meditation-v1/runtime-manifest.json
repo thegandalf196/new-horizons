@@ -1,0 +1,14 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_battle_meditation"
+  ],
+  "files": {
+    "NH_perk_battle_meditation_normal.png": "2aaeec976b1311a575012311358641a533bcc65dc24ebb78de210e291b5ff493",
+    "NH_perk_battle_meditation_pressed.png": "4da7fef578f48cecc39e3083e1d6fb049f61f01b8ea876892b6e06e76c6bef38",
+    "NH_perk_battle_meditation_disabled.png": "12382c83f79dcbecc6291827d0aadb3c4009efa830ef5082c04b1b7159ba9dd5",
+    "NH_perk_battle_meditation_highlighted.png": "6c058724d3867e4adba73b033a4a83482460f74aebdb7f14a2e7786a5defe3db",
+    "NH_perk_battle_meditation.json": "1d112a1124d2bc6ba7e970a9fb06902750e6dce4ffe9b20a84596bdbcb8d24d2"
+  }
+}

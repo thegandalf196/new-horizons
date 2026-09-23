@@ -63,6 +63,7 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:warcasting.martialChanneling", "NH_perk_martial_channeling"},
 		{"new-horizons:warcasting.arcaneChanneling", "NH_perk_arcane_channeling"},
 		{"new-horizons:warcasting.tacticalWeaving", "NH_perk_tactical_weaving"},
+		{"new-horizons:warcasting.battleMeditation", "NH_perk_battle_meditation"},
 	};
 	static const std::string fallback = "NH_perk_neutral";
 	const auto found = icons.find(perkId);

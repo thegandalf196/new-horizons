@@ -19,6 +19,7 @@
 
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
+#include "../battle/NewHorizonsWarcasting.h"
 #include "../battle/Unit.h"
 #include "../bonuses/Updaters.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -868,6 +869,17 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		sc.activeCast = true;
 	}
 
+	// Capture eligibility before the accepted BattleSpellCast packet consumes
+	// the Order-to-Spell readiness. Hypothetical spell evaluation uses castEval
+	// and never enters this authoritative mana-update path.
+	const auto * casterHero = mode == Mode::HERO ? dynamic_cast<const CGHeroInstance *>(caster) : nullptr;
+	const auto * battleInfo = battle()->getBattle();
+	const int32_t battleRound = battleInfo->getRound();
+	const bool validHeroSide = casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER;
+	const bool recoverBattleMeditation = sc.activeCast && casterHero && !sc.metamagicFollowup && validHeroSide
+		&& newHorizonsWarcasting::battleMeditationEligible(battleInfo->getMagicRules(), casterHero,
+			battleInfo->getWarcastingState(casterSide), battleRound);
+
 	if(!isCounterspellNegated())
 		beforeCast(sc, *server->getRNG(), target);
 
@@ -1168,6 +1180,28 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if(sc.activeCast)
 	{
 		caster->spendMana(server, spellCost);
+		if(recoverBattleMeditation)
+		{
+			const auto manaBeforeRecovery = casterHero->mana;
+			const auto recoveryCapacity = newHorizonsWarcasting::battleMeditationRecoveryAmount(manaBeforeRecovery);
+			if(recoveryCapacity > 0)
+				casterHero->spendMana(server, -recoveryCapacity);
+			const auto actualRecovery = std::max<int64_t>(0, casterHero->mana - manaBeforeRecovery);
+			if(actualRecovery > 0)
+			{
+				BattleLogMessage meditationDescription;
+				meditationDescription.battleID = battle()->getBattle()->getBattleID();
+				MetaString line;
+				line.appendTextID(casterHero->getCasterNameTextID());
+				line.appendRawString(" recovers ");
+				line.appendNumber(static_cast<int32_t>(actualRecovery));
+				line.appendRawString(" Mana from Battle Meditation after casting ");
+				line.appendTextID(owner->getNameTextID());
+				line.appendRawString(".");
+				meditationDescription.lines.push_back(std::move(line));
+				server->apply(meditationDescription);
+			}
+		}
 		if(getMetamagicManaRefund() > 0)
 			caster->spendMana(server, -getMetamagicManaRefund());
 

@@ -27,6 +27,7 @@ struct DLL_LINKAGE AlternatingHeroActionState
 	Action nextEligibleAction = Action::NONE;
 	int32_t empowermentPercent = 0;
 	int32_t expiryRound = 0;
+	int32_t lastManaRecoveryRound = -1;
 
 	bool operator==(const AlternatingHeroActionState &) const = default;
 
@@ -90,17 +91,26 @@ struct DLL_LINKAGE AlternatingHeroActionState
 			&& empowermentPercent == 0 && expiryRound == 0;
 		const bool activeShape = nextEligibleAction != Action::NONE
 			&& empowermentPercent > 0 && expiryRound >= 0;
-		if(!validAction || (!inactiveShape && !activeShape))
+		if(!validAction || (!inactiveShape && !activeShape) || lastManaRecoveryRound < -1)
 			throw std::runtime_error("Invalid alternating hero action state shape");
 	}
 
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving)
+		{
 			validateShape();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_MEDITATION)
+				&& lastManaRecoveryRound != -1)
+				throw std::runtime_error("Cannot save Battle Meditation recovery state to an older version");
+		}
 		h & nextEligibleAction;
 		h & empowermentPercent;
 		h & expiryRound;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_MEDITATION))
+			h & lastManaRecoveryRound;
+		else if(!h.saving)
+			lastManaRecoveryRound = -1;
 		if(!h.saving)
 			validateShape();
 	}

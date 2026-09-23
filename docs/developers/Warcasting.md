@@ -73,3 +73,20 @@ It does not grant another Hero Action or change Metamagic follow-up eligibility.
 Readiness icons identify the next action, not the hero's mastery rank. Perks can
 increase the amount without increasing mastery, so the UI must never infer
 Basic, Advanced, or Expert from the displayed percentage.
+
+## Battle Meditation contract
+
+An accepted ordinary hero spell that consumes an unexpired Order-to-Spell
+empowerment restores 3 Mana after its casting cost is paid, at most once per
+battle round. An accepted spell suppressed by Counterspell still consumes that
+empowerment and qualifies. Rejected casts, expired readiness, spells without
+empowerment, and Metamagic follow-ups do not qualify.
+
+The last recovery round must survive save/load and readiness expiry or refresh.
+Older saves default to no recovery used; a downgrade must reject state that
+would lose an already-used recovery. Projected battle copies must preserve this
+marker without changing the live battle. The combat log reports the recovery
+separately from spell damage so a countered spell is not described as landing.
+
+Activation requires native coverage for these cases and saved perk-rule status;
+the contract alone does not establish runtime completion.

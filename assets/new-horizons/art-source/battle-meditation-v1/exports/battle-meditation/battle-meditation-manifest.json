@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "battle-meditation",
+  "source": {
+    "path": "generated_images/01a0cea2-40a5-7531-be99-239dd9a14810/exec-326a9772-246b-4e86-bef2-f41ddeae992a.png",
+    "filename": "exec-326a9772-246b-4e86-bef2-f41ddeae992a.png",
+    "byte_size": 2604615,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "87f5f99b1ac267a3e88b4a4711f33e392f5f0d58d1ce6faa4cd9a706c96738a4"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "87f5f99b1ac267a3e88b4a4711f33e392f5f0d58d1ce6faa4cd9a706c96738a4"
+    },
+    {
+      "file": "battle-meditation-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "ba51b108b0b9a31417361e997c52391d7f806f54f0f86973c588511287fb72dc"
+    },
+    {
+      "file": "battle-meditation-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "4ec24b793f2a114ce13944156ae210b9ada50a2bc040f457b7c52b8886992596"
+    },
+    {
+      "file": "battle-meditation-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "48dadb8ee7aa1865d006d38f6378e45bb1260733b9bebc589c19ba3fc8c9ea40"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "battle-meditation-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "battle-meditation-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "battle-meditation-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "battle-meditation-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

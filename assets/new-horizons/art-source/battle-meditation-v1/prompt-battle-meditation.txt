@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: one original square secondary-perk icon for a fantasy game, with a detailed high-resolution master.
+Primary request: Battle Meditation, a Warcasting perk that once per round restores 3 mana after the hero spends the empowered spell from Order→Spell Warcasting. Convey calm replenishment after battle magic has been spent, without numbers or lettering.
+Scene/backdrop: subdued, textured dark umber and oxblood leather tabletop, softly fading into deep shadow.
+Subject: a closed, thick, worn leather spellbook rests beside a steel armored gauntlet laid palm-down with relaxed, slightly curled fingers. A compact faceted sapphire-blue crystal leans against the book near the gauntlet, holding a gentle concentrated inner blue light that suggests mana quietly gathered back. The three objects form one tightly integrated still life; no figure is present.
+Style/medium: late-1990s Western PC fantasy illustration, a miniature modeled fantasy still-life painting with painterly fantasy-book character and believable material modeling rather than photorealism.
+Composition/framing: close three-quarter view; one dominant, compact group fills most of the square with a narrow safe inset. Keep the full book, gauntlet, and crystal unclipped. Make their main silhouettes and the blue crystal readable at 44×44 and 32×32.
+Lighting/mood: theatrical chiaroscuro, warm hero light on worn steel and leather from upper left, a deep shadow side, small brilliant metallic highlights, calm restorative mood. Keep magical blue light contained to the crystal and a faint nearby reflection.
+Color palette: rich steel grey, aged brown leather, parchment-gold page edges, saturated sapphire blue, subdued umber and oxblood shadows.
+Materials/textures: worn polished steel, folded leather, thick book pages and faceted translucent crystal, each distinctly modeled.
+Constraints: original artwork; no reference images; no border, words, lettering, readable runes, interface, watermark, extra props, figures, swords or floating objects. No visible numbers or mana symbols. Keep all major forms inside the frame.
+Avoid: neon bloom, broad particle effects, flat vector outlines, cartoon styling, deliberate pixel art, dithering, plastic surfaces, modern glossy mobile-game rendering.

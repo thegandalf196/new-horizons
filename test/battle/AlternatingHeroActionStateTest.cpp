@@ -10,6 +10,7 @@
 #include "StdInc.h"
 
 #include "../../lib/battle/AlternatingHeroActionState.h"
+#include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 
 #include <type_traits>
@@ -26,10 +27,16 @@ class MalformedStateReader
 
 public:
 	static constexpr bool saving = false;
+	using Version = ESerializationVersion;
 
 	explicit MalformedStateReader(std::vector<int32_t> values)
 		: values(std::move(values))
 	{
+	}
+
+	bool hasFeature(Version) const
+	{
+		return false;
 	}
 
 	template <typename T> MalformedStateReader & operator&(T & value)
@@ -54,8 +61,19 @@ TEST(AlternatingHeroActionState, DefaultsToNoReadiness)
 	EXPECT_EQ(state.nextEligibleAction, Action::NONE);
 	EXPECT_EQ(state.empowermentPercent, 0);
 	EXPECT_EQ(state.expiryRound, 0);
+	EXPECT_EQ(state.lastManaRecoveryRound, -1);
 	EXPECT_EQ(state.bonusFor(Action::SPELL, 1), 0);
 	EXPECT_EQ(state.bonusFor(Action::ORDER, 1), 0);
+}
+
+TEST(BattleMeditation, RefundCapacityDoesNotOverflowInt32Mana)
+{
+	const auto maxMana = std::numeric_limits<int32_t>::max();
+	EXPECT_EQ(newHorizonsWarcasting::battleMeditationRecoveryAmount(maxMana), 0);
+	EXPECT_EQ(newHorizonsWarcasting::battleMeditationRecoveryAmount(maxMana - 1), 1);
+	EXPECT_EQ(newHorizonsWarcasting::battleMeditationRecoveryAmount(maxMana - 2), 2);
+	EXPECT_EQ(newHorizonsWarcasting::battleMeditationRecoveryAmount(maxMana - 3), 3);
+	EXPECT_EQ(newHorizonsWarcasting::battleMeditationRecoveryAmount(0), 3);
 }
 
 TEST_P(AlternatingHeroActionRankTest, StoresRankForTheOppositeAction)
@@ -154,6 +172,18 @@ TEST(AlternatingHeroActionState, ExpiryClearingReturnsAChangedCopy)
 	EXPECT_EQ(state, original);
 }
 
+TEST(AlternatingHeroActionState, ExpiryClearingPreservesBattleMeditationRound)
+{
+	State state;
+	state.recordAcceptedAction(Action::SPELL, 5, 20);
+	state.lastManaRecoveryRound = 6;
+
+	const auto expired = state.clearedIfExpired(7);
+	EXPECT_EQ(expired.nextEligibleAction, Action::NONE);
+	EXPECT_EQ(expired.lastManaRecoveryRound, 6);
+	EXPECT_EQ(state.lastManaRecoveryRound, 6);
+}
+
 TEST(AlternatingHeroActionState, ZeroLifetimeExpiresInclusivelyAtTheCurrentRound)
 {
 	State state;
@@ -199,6 +229,7 @@ TEST(AlternatingHeroActionState, SerializationRoundTripsAndValidatesShape)
 {
 	State original;
 	original.recordAcceptedAction(Action::SPELL, 4, 30, 2);
+	original.lastManaRecoveryRound = 5;
 
 	CMemorySerializer serializer;
 	serializer.oser.version = ESerializationVersion::CURRENT;
@@ -224,6 +255,37 @@ TEST(AlternatingHeroActionState, SerializationRoundTripsAndValidatesShape)
 	EXPECT_THROW(malformed.serialize(wrappedNegativeAction), std::runtime_error);
 	MalformedStateReader negativeExpiry({static_cast<int32_t>(Action::ORDER), 20, -1});
 	EXPECT_THROW(malformed.serialize(negativeExpiry), std::runtime_error);
+}
+
+TEST(AlternatingHeroActionState, OlderWarcastingSaveDefaultsRecoveryRoundAndRejectsLossyWrite)
+{
+	State original;
+	original.recordAcceptedAction(Action::SPELL, 4, 20);
+	CMemorySerializer oldVersion;
+	oldVersion.oser.version = ESerializationVersion::NEW_HORIZONS_WARCASTING;
+	oldVersion.iser.version = ESerializationVersion::NEW_HORIZONS_WARCASTING;
+	oldVersion.oser & original;
+
+	State restored;
+	oldVersion.iser & restored;
+	EXPECT_EQ(restored.nextEligibleAction, original.nextEligibleAction);
+	EXPECT_EQ(restored.empowermentPercent, original.empowermentPercent);
+	EXPECT_EQ(restored.expiryRound, original.expiryRound);
+	EXPECT_EQ(restored.lastManaRecoveryRound, -1);
+
+	State recoveryOnly;
+	recoveryOnly.lastManaRecoveryRound = 9;
+	CMemorySerializer lossySave;
+	lossySave.oser.version = ESerializationVersion::NEW_HORIZONS_WARCASTING;
+	EXPECT_THROW(lossySave.oser & recoveryOnly, std::runtime_error);
+	EXPECT_TRUE(lossySave.extractBuffer().empty());
+
+	recoveryOnly.lastManaRecoveryRound = -2;
+	EXPECT_THROW(recoveryOnly.validateShape(), std::runtime_error);
+	CMemorySerializer malformed;
+	malformed.oser.version = ESerializationVersion::CURRENT;
+	EXPECT_THROW(malformed.oser & recoveryOnly, std::runtime_error);
+	EXPECT_TRUE(malformed.extractBuffer().empty());
 }
 
 TEST(AlternatingHeroActionState, InactiveStateRoundTrips)

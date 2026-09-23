@@ -5,6 +5,7 @@
 #include "StdInc.h"
 
 #include "HeroCommandFixture.h"
+#include "../../../lib/spells/CSpell.h"
 
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/GameConstants.h"
@@ -27,6 +28,7 @@ constexpr auto metamagicSkill = "new-horizons:metamagic";
 constexpr auto martialChannelingPerk = "new-horizons:warcasting.martialChanneling";
 constexpr auto arcaneChannelingPerk = "new-horizons:warcasting.arcaneChanneling";
 constexpr auto tacticalWeavingPerk = "new-horizons:warcasting.tacticalWeaving";
+constexpr auto battleMeditationPerk = "new-horizons:warcasting.battleMeditation";
 
 class WarcastingEnvironment final : public Environment
 {
@@ -67,12 +69,28 @@ protected:
 				throw std::runtime_error("Unknown Warcasting perk requested for saved planned-rule fixture");
 			(*planned)["effect"]["status"].String() = "planned";
 		}
+		if(activateBattleMeditationBeforeInit && plannedWarcastingPerkBeforeInit != battleMeditationPerk)
+		{
+			auto & perks = perkRules["skills"][warcastingSkill]["perks"].Vector();
+			const auto meditation = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
+			{
+				return perk["id"].String() == battleMeditationPerk;
+			});
+			if(meditation == perks.end())
+				throw std::runtime_error("Missing Battle Meditation perk in saved rules fixture");
+			(*meditation)["effect"]["status"].String() = "active";
+		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
 	}
 
 	void markPerkPlannedBeforeInitialization(const std::string & perkId)
 	{
 		plannedWarcastingPerkBeforeInit = perkId;
+	}
+
+	void activateBattleMeditationBeforeInitialization()
+	{
+		activateBattleMeditationBeforeInit = true;
 	}
 
 	void prepareWarcasting(int rank = 1, bool withMetamagic = false)
@@ -162,6 +180,7 @@ protected:
 	CStack * attacker = nullptr;
 	CStack * defender = nullptr;
 	std::string plannedWarcastingPerkBeforeInit;
+	bool activateBattleMeditationBeforeInit = false;
 };
 }
 
@@ -533,10 +552,157 @@ TEST_F(NewHorizonsWarcastingTest, CounteredEmpoweredSpellLogsConsumptionWithoutC
 		battle()->getRound()), 0);
 }
 
+TEST_F(NewHorizonsWarcastingTest, BattleMeditationRecoversManaAfterEmpoweredSpellsAndRearmsNextRound)
+{
+	activateBattleMeditationBeforeInitialization();
+	prepareWarcasting();
+	selectWarcastingPerk(battleMeditationPerk);
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	advanceRound();
+	const auto firstSpellRound = battle()->battleGetRound();
+	const auto * haste = SpellID(SpellID::HASTE).toSpell();
+	ASSERT_NE(haste, nullptr);
+	const auto orderToSpell = battle()->getWarcastingState(BattleSide::ATTACKER);
+	const auto manaBeforeRejectedCast = attackerSideHero->mana;
+	BattleAction rejected;
+	rejected.actionType = EActionType::HERO_SPELL;
+	rejected.side = BattleSide::ATTACKER;
+	rejected.spell = SpellID::HASTE;
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), rejected));
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeRejectedCast);
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), orderToSpell);
+	auto manaBeforeCast = attackerSideHero->mana;
+	const auto hasteCost = battle()->battleGetSpellCost(haste, attackerSideHero);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost + newHorizonsWarcasting::BATTLE_MEDITATION_MANA_RECOVERY);
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, firstSpellRound);
+	const auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(restored, nullptr);
+	EXPECT_EQ(restored->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, firstSpellRound);
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const auto & line)
+	{
+		return line.find("Orrin") != std::string::npos
+			&& line.find("recovers 3 Mana from Battle Meditation after casting Haste") != std::string::npos;
+	}));
+
+	// The empowered Spell re-arms Order; an accepted Order next round re-arms
+	// Spell again, and the round marker permits another recovery in that round.
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, firstSpellRound);
+	advanceRound();
+	const auto secondSpellRound = battle()->battleGetRound();
+	ASSERT_NE(secondSpellRound, firstSpellRound);
+	manaBeforeCast = attackerSideHero->mana;
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost + newHorizonsWarcasting::BATTLE_MEDITATION_MANA_RECOVERY);
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, secondSpellRound);
+}
+
+TEST_F(NewHorizonsWarcastingTest, BattleMeditationCanRecoverOnAnAcceptedCounterspelledCast)
+{
+	activateBattleMeditationBeforeInitialization();
+	prepareWarcasting();
+	selectWarcastingPerk(battleMeditationPerk);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	advanceRound();
+	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
+
+	const auto * haste = SpellID(SpellID::HASTE).toSpell();
+	const auto manaBeforeCast = attackerSideHero->mana;
+	const auto hasteCost = battle()->battleGetSpellCost(haste, attackerSideHero);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost + newHorizonsWarcasting::BATTLE_MEDITATION_MANA_RECOVERY);
+	EXPECT_FALSE(attacker->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::HASTE)))));
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, battle()->battleGetRound());
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const auto & line)
+	{
+		return line.find("Orrin") != std::string::npos
+			&& line.find("recovers 3 Mana from Battle Meditation after casting Haste") != std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsWarcastingTest, BattleMeditationDoesNotRecoverTwiceInAMarkedRound)
+{
+	activateBattleMeditationBeforeInitialization();
+	prepareWarcasting();
+	selectWarcastingPerk(battleMeditationPerk);
+
+	// Model a rearmed Order-to-Spell readiness with the per-round recovery
+	// already spent; the normal hero-action budget prevents constructing two
+	// accepted hero actions in one round through the public action path.
+	const auto round = battle()->battleGetRound();
+	auto & state = battle()->getSide(BattleSide::ATTACKER).warcastingState;
+	state.nextEligibleAction = AlternatingHeroActionState::Action::SPELL;
+	state.empowermentPercent = 10;
+	state.expiryRound = round + 1;
+	state.lastManaRecoveryRound = round;
+
+	const auto * haste = SpellID(SpellID::HASTE).toSpell();
+	const auto manaBeforeCast = attackerSideHero->mana;
+	const auto hasteCost = battle()->battleGetSpellCost(haste, attackerSideHero);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost);
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, round);
+}
+
+TEST_F(NewHorizonsWarcastingTest, BattleMeditationDoesNotRecoverFromExpiredReadinessOrMetamagicFollowup)
+{
+	activateBattleMeditationBeforeInitialization();
+	prepareWarcasting(1, true);
+	selectWarcastingPerk(battleMeditationPerk);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	advanceRound();
+	advanceRound();
+	const auto * haste = SpellID(SpellID::HASTE).toSpell();
+	auto manaBeforeCast = attackerSideHero->mana;
+	const auto hasteCost = battle()->battleGetSpellCost(haste, attackerSideHero);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost);
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, -1);
+
+	// Deliberately provide otherwise-eligible readiness to isolate the explicit
+	// follow-up exclusion, rather than passing because the readiness is expired.
+	auto & followupReadiness = battle()->getSide(BattleSide::ATTACKER).warcastingState;
+	followupReadiness.recordAcceptedAction(AlternatingHeroActionState::Action::ORDER,
+		battle()->getRound(), 10);
+	ASSERT_TRUE(newHorizonsWarcasting::battleMeditationEligible(battle()->getMagicRules(),
+		attackerSideHero, followupReadiness, battle()->getRound()));
+	const auto readinessBeforeFollowup = followupReadiness;
+	manaBeforeCast = attackerSideHero->mana;
+	const auto slowCost = battle()->battleGetSpellCost(SpellID(SpellID::SLOW).toSpell(), attackerSideHero);
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - slowCost);
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), readinessBeforeFollowup);
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, -1);
+	EXPECT_FALSE(std::ranges::any_of(server.battleLogLines, [](const auto & line)
+	{
+		return line.find("Battle Meditation") != std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsWarcastingTest, PlannedBattleMeditationIsInactive)
+{
+	markPerkPlannedBeforeInitialization(battleMeditationPerk);
+	prepareWarcasting();
+	ASSERT_FALSE(attackerSideHero->hasActivePerk(warcastingSkill, battleMeditationPerk));
+	EXPECT_THROW(attackerSideHero->applyPerkSelection({std::string(warcastingSkill), battleMeditationPerk}),
+		std::runtime_error);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	advanceRound();
+	const auto manaBeforeCast = attackerSideHero->mana;
+	const auto hasteCost = battle()->battleGetSpellCost(SpellID(SpellID::HASTE).toSpell(), attackerSideHero);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost);
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, -1);
+}
+
 TEST_F(NewHorizonsWarcastingTest, HypotheticalBattleCopiesAndExpiresItsReadinessIndependently)
 {
 	prepareWarcasting();
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	battle()->getSide(BattleSide::ATTACKER).warcastingState.lastManaRecoveryRound = battle()->getRound();
 	const auto authoritative = battle()->getWarcastingState(BattleSide::ATTACKER);
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
@@ -546,7 +712,12 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalBattleCopiesAndExpiresItsReadiness
 	projection.nextRound();
 	EXPECT_EQ(newHorizonsWarcasting::spellBonus(projection.getWarcastingState(BattleSide::ATTACKER),
 		projection.getRound()), 10);
+	EXPECT_EQ(projection.getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound,
+		authoritative.lastManaRecoveryRound);
 	projection.nextRound();
-	EXPECT_EQ(projection.getWarcastingState(BattleSide::ATTACKER), AlternatingHeroActionState{});
+	EXPECT_EQ(projection.getWarcastingState(BattleSide::ATTACKER).nextEligibleAction,
+		AlternatingHeroActionState::Action::NONE);
+	EXPECT_EQ(projection.getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound,
+		authoritative.lastManaRecoveryRound);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), authoritative);
 }

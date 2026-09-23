@@ -1928,6 +1928,9 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		if(!pack.metamagicFollowup && newHorizonsWarcasting::enabled(battle->getMagicRules()))
 		{
 			auto next = casterSide.warcastingState;
+			if(newHorizonsWarcasting::battleMeditationEligible(
+				battle->getMagicRules(), hero, casterSide.warcastingState, battle->getRound()))
+				next.lastManaRecoveryRound = battle->getRound();
 			next.recordAcceptedAction(AlternatingHeroActionState::Action::SPELL, battle->getRound(),
 				newHorizonsWarcasting::empowerment(hero, AlternatingHeroActionState::Action::SPELL),
 				newHorizonsWarcasting::readinessLifetimeRounds(hero));

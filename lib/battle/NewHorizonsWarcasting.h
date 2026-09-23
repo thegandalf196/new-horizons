@@ -12,6 +12,7 @@
 #include "../spells/NewHorizonsMagic.h"
 
 #include <algorithm>
+#include <limits>
 
 namespace newHorizonsWarcasting
 {
@@ -66,5 +67,26 @@ inline int orderBonus(const AlternatingHeroActionState & state, int32_t round)
 inline int spellBonus(const AlternatingHeroActionState & state, int32_t round)
 {
 	return state.bonusFor(AlternatingHeroActionState::Action::SPELL, round);
+}
+
+/// Battle Meditation is earned only by consuming live Order-to-Spell readiness.
+/// Call before the accepted spell packet changes that readiness.
+inline bool battleMeditationEligible(const JsonNode & rules, const CGHeroInstance * hero,
+	const AlternatingHeroActionState & state, int32_t round)
+{
+	return round >= 0 && enabled(rules) && hero
+		&& hero->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.battleMeditation")
+		&& state.lastManaRecoveryRound != round
+		&& spellBonus(state, round) > 0;
+}
+
+inline constexpr int BATTLE_MEDITATION_MANA_RECOVERY = 3;
+
+/// SetMana stores Mana in int32_t and applies relative changes without a
+/// maximum-mana clamp, so cap the refund at the representable amount first.
+inline int battleMeditationRecoveryAmount(int32_t currentMana)
+{
+	const auto room = static_cast<int64_t>(std::numeric_limits<int32_t>::max()) - currentMana;
+	return static_cast<int>(std::clamp<int64_t>(room, 0, BATTLE_MEDITATION_MANA_RECOVERY));
 }
 }

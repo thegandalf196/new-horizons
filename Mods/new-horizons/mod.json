@@ -4542,7 +4542,7 @@
 								"requires": "basic",
 								"description": "Once per round, after an Order-to-Spell Warcasting bonus is consumed, recover 3 Mana.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Once per round, after an Order-to-Spell Warcasting bonus is consumed, recover 3 Mana."
 								}
 							},
