@@ -25,6 +25,21 @@ Examples with 100 incoming damage:
 Magic Resistance, genuine spell/school immunity, and invincibility are separate
 mechanics and must retain their own checks.
 
+## Existing content sources
+
+The four intrinsic Golem reductions and the four legacy Protection spell
+definitions use additive percentage bonuses. Tower's historical internal IDs
+are reversed: `core:ironGolem` (index 32, `CSGOLE.DEF`) is the displayed Stone
+Golem with 50% reduction; `core:stoneGolem` (index 33) is the displayed Iron
+Golem with 75%. Do not swap their reduction values based on identifier spelling.
+
+The optional Commander progression path creates `BASE_NUMBER` reduction
+bonuses. The stack-experience importer creates additive reductions with rank
+and creature-level limiters. These are not evidence that every raw bonus value
+can be multiplied independently: effective bonus selection, stacking, and
+incremental contributions from a single source must be accounted for before
+feeding independent reductions to the arithmetic helper.
+
 ## Runtime boundaries
 
 Enable the new aggregation through an explicit saved magic-rules opt-in, so a
