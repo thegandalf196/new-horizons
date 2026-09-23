@@ -11,6 +11,7 @@
 #include "../../../lib/modding/IdentifierStorage.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/modding/ModScope.h"
+#include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/networkPacks/StackLocation.h"
@@ -51,6 +52,79 @@ protected:
 				return candidate;
 		}
 		return BattleHex();
+	}
+
+	BattleHex legalWideStackHex(BattleSide side) const
+	{
+		const auto accessibility = battle()->getAccessibility();
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+		{
+			const BattleHex candidate(index);
+			if(candidate.isAvailable() && accessibility.accessible(candidate, true, side))
+				return candidate;
+		}
+		return BattleHex();
+	}
+
+	std::pair<BattleHex, BattleHex> legalGateWithRearOnlyTeleportHex(
+		const battle::Unit * source, const battle::Unit * target) const
+	{
+		const auto gateAccessibility = battle()->getAccessibility();
+		const auto teleportAccessibility = battle()->getAccessibility(target);
+		for(int gateIndex = 0; gateIndex < GameConstants::BFIELD_SIZE; ++gateIndex)
+		{
+			const BattleHex gate(gateIndex);
+			if(!gate.isAvailable() || gate == source->getPosition()
+				|| BattleHex::getDistance(source->getPosition(), gate) > 3
+				|| !gateAccessibility.accessible(gate, false, source->unitSide())
+				|| !battle()->battleGetAllObstaclesOnPos(gate, false).empty()
+				|| !teleportAccessibility.accessible(gate, target))
+				continue;
+
+			for(int headIndex = 0; headIndex < GameConstants::BFIELD_SIZE; ++headIndex)
+			{
+				const BattleHex head(headIndex);
+				if(!head.isAvailable() || head == gate || target->getHexes().contains(head)
+					|| !battle::Unit::getHexes(head, true, target->unitSide()).contains(gate)
+					|| !teleportAccessibility.accessible(head, false, target->unitSide())
+					|| !teleportAccessibility.accessible(head, target)
+					|| !battle()->battleGetAllObstaclesOnPos(head, false).empty())
+					continue;
+
+				return {gate, head};
+			}
+		}
+		return {BattleHex(), BattleHex()};
+	}
+
+	BattleHex legalFreeTeleportHex(const battle::Unit * target,
+		const BattleHex & reservedHex, const BattleHex & rearOnlyHead) const
+	{
+		const auto accessibility = battle()->getAccessibility(target);
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+		{
+			const BattleHex candidate(index);
+			if(!candidate.isAvailable() || candidate == reservedHex || candidate == rearOnlyHead
+				|| target->getHexes().contains(candidate)
+				|| battle::Unit::getHexes(candidate, target->doubleWide(), target->unitSide()).contains(reservedHex)
+				|| !accessibility.accessible(candidate, target)
+				|| !battle()->battleGetAllObstaclesOnPos(candidate, false).empty())
+				continue;
+
+			return candidate;
+		}
+		return BattleHex();
+	}
+
+	bool castTeleport(const battle::Unit * target, const BattleHex & destination)
+	{
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = SpellID::TELEPORT;
+		action.aimToUnit(target);
+		action.aimToHex(destination);
+		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
 
 	void grantGatingPerk(const std::string & perkId, int rank = MasteryLevel::BASIC)
@@ -244,6 +318,114 @@ TEST_F(NewHorizonsDemonicGatingTest, CommitsOwnedReserveAndArrivesAtNextRound)
 	EXPECT_FALSE(hasBattleLogFragment("Reinforced Gate grants"));
 	EXPECT_FALSE(hasBattleLogFragment("Infernal Beacon grants"));
 	EXPECT_FALSE(hasBattleLogFragment("Reserve Discipline prevents"));
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, TeleportRejectsPendingGateHeadAndDoubleWideRearWithoutSpendingHeroAction)
+{
+	const auto * gateSource = battle()->battleActiveUnit();
+	ASSERT_NE(gateSource, nullptr);
+	ASSERT_EQ(gateSource->unitSide(), BattleSide::ATTACKER);
+	const uint32_t gateSourceId = gateSource->unitId();
+
+	const auto hellHound = creatureByName("core:hellHound");
+	ASSERT_TRUE(hellHound.hasValue());
+	ASSERT_TRUE(hellHound.toCreature()->isDoubleWide());
+	const BattleHex targetStart = legalWideStackHex(BattleSide::ATTACKER);
+	ASSERT_TRUE(targetStart.isAvailable());
+	auto * target = addStack(BattleSide::ATTACKER, hellHound, targetStart, 1);
+	ASSERT_NE(target, nullptr);
+	const auto * gateSourceAfterAdd = battle()->battleGetStackByID(gateSourceId, false);
+	ASSERT_NE(gateSourceAfterAdd, nullptr);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), gateSourceId);
+	// Keep this stack immediately after the already-active Gate source. Initiative
+	// is distinct from movement speed in the New Horizons ruleset.
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::STACKS_INITIATIVE_FLAT, BonusSource::OTHER, 100, BonusSourceID()));
+	ASSERT_GT(target->getInitiative(0), gateSourceAfterAdd->getInitiative(0));
+
+	const auto sorceryMagic = SecondarySkill::decode("new-horizons:sorceryMagic");
+	ASSERT_GE(sorceryMagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorceryMagic), 2, ChangeValueMode::ABSOLUTE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	attackerSideHero->addSpellToSpellbook(SpellID::TELEPORT);
+	attackerSideHero->mana = 100;
+	ASSERT_EQ(battle()->battleCanCastSpell(attackerSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
+
+	const auto [gateHex, rearOnlyHead] = legalGateWithRearOnlyTeleportHex(gateSourceAfterAdd, target);
+	ASSERT_TRUE(gateHex.isAvailable());
+	ASSERT_TRUE(rearOnlyHead.isAvailable());
+	ASSERT_NE(gateHex, rearOnlyHead);
+	const auto accessibilityBeforeGate = battle()->getAccessibility(target);
+	ASSERT_TRUE(accessibilityBeforeGate.accessible(gateHex, target));
+	ASSERT_TRUE(accessibilityBeforeGate.accessible(rearOnlyHead, target));
+	const BattleHex freeTeleportHead = legalFreeTeleportHex(target, gateHex, rearOnlyHead);
+	ASSERT_TRUE(freeTeleportHead.isAvailable());
+	ASSERT_TRUE(accessibilityBeforeGate.accessible(freeTeleportHead, target));
+
+	const auto startingRound = battle()->getRound();
+	BattleAction gate;
+	gate.actionType = EActionType::DEMONIC_GATING;
+	gate.side = BattleSide::ATTACKER;
+	gate.stackNumber = gateSourceId;
+	gate.gatingCreature = creatureByName("core:imp");
+	gate.aimToHex(gateHex);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), gate));
+	EXPECT_EQ(battle()->getRound(), startingRound);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), target->unitId());
+	EXPECT_EQ(battle()->battleActiveUnit()->unitSide(), BattleSide::ATTACKER);
+
+	const auto & pendingAfterGate = battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates;
+	ASSERT_EQ(pendingAfterGate.size(), 1u);
+	EXPECT_EQ(pendingAfterGate.front().position, gateHex);
+	EXPECT_EQ(pendingAfterGate.front().arrivalRound, startingRound + 1);
+	EXPECT_EQ(pendingAfterGate.front().sourceUnitId, gateSourceId);
+	EXPECT_TRUE(battle()->getAccessibility().isDemonicGateReserved(gateHex));
+	const auto accessibilityAfterGate = battle()->getAccessibility(target);
+	EXPECT_FALSE(accessibilityAfterGate.accessible(gateHex, target));
+	EXPECT_TRUE(accessibilityAfterGate.accessible(rearOnlyHead, false, BattleSide::ATTACKER));
+	EXPECT_FALSE(accessibilityAfterGate.accessible(rearOnlyHead, target));
+	EXPECT_TRUE(accessibilityAfterGate.accessible(freeTeleportHead, target));
+
+	const auto assertRejectedTeleportPreservesState = [&](const BattleHex & destination)
+	{
+		const auto positionBefore = target->getPosition();
+		const auto manaBefore = attackerSideHero->mana;
+		const auto spellCountBefore = battle()->getSide(BattleSide::ATTACKER).castSpellsCount;
+		const auto activeStackBefore = battle()->getActiveStackID();
+		const auto pending = battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.front();
+		EXPECT_FALSE(castTeleport(target, destination));
+		EXPECT_EQ(target->getPosition(), positionBefore);
+		EXPECT_EQ(attackerSideHero->mana, manaBefore);
+		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).castSpellsCount, spellCountBefore);
+		EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).heroCommandUsed);
+		EXPECT_EQ(battle()->getActiveStackID(), activeStackBefore);
+		EXPECT_EQ(battle()->getRound(), startingRound);
+		const auto & pendingAfterReject = battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates;
+		ASSERT_EQ(pendingAfterReject.size(), 1u);
+		EXPECT_EQ(pendingAfterReject.front().position, pending.position);
+		EXPECT_EQ(pendingAfterReject.front().count, pending.count);
+		EXPECT_EQ(pendingAfterReject.front().arrivalRound, pending.arrivalRound);
+		EXPECT_EQ(pendingAfterReject.front().sourceUnitId, pending.sourceUnitId);
+		EXPECT_TRUE(battle()->getAccessibility().isDemonicGateReserved(gateHex));
+	};
+
+	// The requested head hex and the rear-only-overlap destination were both
+	// Teleport-accessible before Gate reserved its landing footprint.
+	assertRejectedTeleportPreservesState(gateHex);
+	assertRejectedTeleportPreservesState(rearOnlyHead);
+	EXPECT_EQ(battle()->battleCanCastSpell(attackerSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
+
+	// A clear Teleport through the same authoritative request path is still legal,
+	// proving the two preceding rejections were caused by Gate's footprint.
+	const auto manaBeforeLegalTeleport = attackerSideHero->mana;
+	const auto spellCountBeforeLegalTeleport = battle()->getSide(BattleSide::ATTACKER).castSpellsCount;
+	ASSERT_TRUE(castTeleport(target, freeTeleportHead));
+	EXPECT_EQ(target->getPosition(), freeTeleportHead);
+	EXPECT_LT(attackerSideHero->mana, manaBeforeLegalTeleport);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).castSpellsCount, spellCountBeforeLegalTeleport + 1);
+	EXPECT_EQ(battle()->getRound(), startingRound);
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.size(), 1u);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.front().position, gateHex);
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, BlockedLandingKeepsItsReservationInsteadOfRelocating)
