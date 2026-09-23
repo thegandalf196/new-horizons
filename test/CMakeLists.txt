@@ -163,6 +163,7 @@ set(test_SRCS
 		server/battles/NewHorizonsDisciplineTest.cpp
 		server/battles/HeroCommandPersistenceTest.cpp
 		server/battles/HeroCommandFixtureExportTest.cpp
+		server/battles/NewHorizonsDemonicGatingFixtureExportTest.cpp
 		server/battles/HeroCommandRejectionTest.cpp
 		server/battles/HeroCommandRejectionAtomicityTest.cpp
 		server/battles/HeroCommandEligibilityTest.cpp
