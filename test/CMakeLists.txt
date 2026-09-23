@@ -28,6 +28,7 @@ set(test_SRCS
  		JsonComparer.cpp
 
 		battle/AutocombatPreferencesTest.cpp
+		battle/AlternatingHeroActionStateTest.cpp
  		battle/BattleHexTest.cpp
  		battle/CBattleInfoCallbackTest.cpp
  		battle/CHealthTest.cpp

@@ -482,6 +482,7 @@ set(lib_MAIN_HEADERS
 	battle/HeroCommand.h
 	battle/FocusFireState.h
 	battle/SylvanLuckState.h
+	battle/AlternatingHeroActionState.h
 	battle/BattleInfo.h
 	battle/NewHorizonsBloodrage.h
 	battle/NewHorizonsBulwark.h
