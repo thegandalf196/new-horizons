@@ -1870,11 +1870,15 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 		case PossiblePlayerBattleAction::DEMONIC_GATE:
 		{
 			const auto * source = owner.stacksController->getActiveStack();
+			if(!source || !demonicGatingCreature.hasValue())
+				return false;
 			const auto * creature = demonicGatingCreature.toCreature();
-			const auto * hero = source ? owner.getBattle()->battleGetFightingHero(source->unitSide()) : nullptr;
+			if(!creature)
+				return false;
+			const auto * hero = owner.getBattle()->battleGetFightingHero(source->unitSide());
 			const bool mobileGate = hero && hero->hasActivePerk(
 				"new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate");
-			if(source && mobileGate && !demonicGatingMovement.isValid())
+			if(mobileGate && !demonicGatingMovement.isValid())
 			{
 				if(targetHex == source->getPosition())
 					return true;
@@ -2016,7 +2020,9 @@ void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, c
 		case PossiblePlayerBattleAction::DEMONIC_GATE:
 		{
 			const auto * active = owner.stacksController->getActiveStack();
-			const auto * hero = active ? owner.getBattle()->battleGetFightingHero(active->unitSide()) : nullptr;
+			if(!active || !demonicGatingCreature.hasValue() || !demonicGatingCreature.toCreature())
+				return;
+			const auto * hero = owner.getBattle()->battleGetFightingHero(active->unitSide());
 			const bool mobileGate = hero && hero->hasActivePerk(
 				"new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate");
 			if(mobileGate && !demonicGatingMovement.isValid())
@@ -2639,6 +2645,9 @@ void BattleActionsController::setPriorityActions(const std::vector<PossiblePlaye
 
 void BattleActionsController::selectDemonicGatingCreature(CreatureID creature)
 {
+	if(!creature.hasValue() || !creature.toCreature())
+		return;
+
 	demonicGatingCreature = creature;
 	demonicGatingMovement = BattleHex::INVALID;
 	possibleActions = {PossiblePlayerBattleAction::DEMONIC_GATE};

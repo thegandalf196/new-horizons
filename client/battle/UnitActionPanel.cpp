@@ -167,7 +167,7 @@ void UnitActionPanel::setPossibleActions(const std::vector<PossiblePlayerBattleA
 	testAndAddAction(newActions, actionsShoot, ImagePath::builtin("battle/actionShoot"), "vcmi.battle.action.shoot");
 	testAndAddAction(newActions, actionsGenie, ImagePath::builtin("battle/actionGenie"), "vcmi.battle.action.genie");
 	testAndAddAction(newActions, actionsAttackLongWeapon, ImagePath::builtin("battle/actionLongWeapon"), "vcmi.battle.action.attackLongWeapon");
-	testAndAddAction(newActions, actionsGate, ImagePath::builtin("NH_demonicGating_basic_small"), "new-horizons.skill.demonicGating.name");
+	testAndAddAction(newActions, actionsGate, ImagePath::builtin("NH_demonicGating_basic_small"), "skill.new-horizons.demonicGating.name");
 
 	std::vector<SpellID> spells;
 
