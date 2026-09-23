@@ -6,6 +6,7 @@
 #include "StdInc.h"
 
 #include <gtest/gtest.h>
+#include <tuple>
 
 #include "../../lib/GameConstants.h"
 #include "../../lib/entities/hero/CHero.h"
@@ -265,6 +266,15 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, GarrisonSwapRejectsAnOversizedTownSta
 	const auto capacity = hero->getLeadershipSlotCapacity(gog);
 	ASSERT_TRUE(capacity);
 	town->setStackCount(SlotID(1), capacity->maximum + 1);
+	const auto snapshotArmy = [](const CArmedInstance & army)
+	{
+		std::vector<std::tuple<int, int, TQuantity>> snapshot;
+		for(const auto & [slot, stack] : army.Slots())
+			snapshot.emplace_back(slot.getNum(), stack->getCreatureID().getNum(), stack->getCount());
+		return snapshot;
+	};
+	const auto townArmyBefore = snapshotArmy(*town);
+	const auto heroArmyBefore = snapshotArmy(*hero);
 	LeadershipRecordingServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
 	gameState()->actingPlayers.insert(player);
@@ -274,9 +284,8 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, GarrisonSwapRejectsAnOversizedTownSta
 	request.requestID = 43;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
 
-	EXPECT_EQ(town->getStackCount(SlotID(0)), 1);
-	EXPECT_EQ(town->getStackCount(SlotID(1)), capacity->maximum + 1);
-	EXPECT_EQ(hero->stacksCount(), 0);
+	EXPECT_EQ(snapshotArmy(*town), townArmyBefore);
+	EXPECT_EQ(snapshotArmy(*hero), heroArmyBefore);
 	EXPECT_EQ(town->getVisitingHero(), hero);
 	EXPECT_EQ(town->getGarrisonHero(), nullptr);
 	ASSERT_EQ(server.responses.size(), 1u);
