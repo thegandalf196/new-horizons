@@ -103,6 +103,9 @@ public:
 
 class CHeroLevelUpDialogQuery : public CDialogQuery
 {
+private:
+	void refreshChoicesBeforePrompt();
+
 public:
 	static constexpr QueryType TYPE = QueryType::HeroLevelUpDialog;
 

@@ -69,6 +69,34 @@ protected:
 			gameHandler->onAdvInterfaceReady(attackerSideHero->getOwner());
 	}
 
+	void disablePerkOffers()
+	{
+		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+		state.rules = JsonNode();
+		state.selected.clear();
+	}
+
+	HeroLevelUp makeLevelUpOffer(std::vector<SecondarySkill> skills = {}) const
+	{
+		HeroLevelUp offer;
+		offer.player = attackerSideHero->getOwner();
+		offer.heroId = attackerSideHero->id;
+		offer.primskill = PrimarySkill::DEFENSE;
+		offer.skills = std::move(skills);
+		offer.perkOfferSeed = 0;
+		offer.artilleryExpertBeforeGain = false;
+		offer.logisticsExpertBeforeGain = false;
+		return offer;
+	}
+
+	std::array<int, GameConstants::PRIMARY_SKILLS> basePrimaryValues() const
+	{
+		std::array<int, GameConstants::PRIMARY_SKILLS> result{};
+		for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
+			result[i] = attackerSideHero->getBasePrimarySkillValue(PrimarySkill(i));
+		return result;
+	}
+
 	void levelAndReply()
 	{
 		attackerSideHero->setExperience(LIBRARY->heroh->reqExp(attackerSideHero->level + 1), ChangeValueMode::ABSOLUTE);
@@ -162,20 +190,235 @@ TEST_F(NewHorizonsMasteryTest, DeferredLevelDialogCannotReclassifyExpertGainedAf
 {
 	startGame();
 	train(MasteryLevel::ADVANCED, false);
+	disablePerkOffers();
+	const auto levelBeforeGain = attackerSideHero->level;
+	const auto primaryBeforeGain = basePrimaryValues();
 	attackerSideHero->setExperience(LIBRARY->heroh->reqExp(2), ChangeValueMode::ABSOLUTE);
 	gameHandler->levelUpHero(attackerSideHero);
 	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gameHandler->queries->topQuery(PlayerColor(0)));
 	ASSERT_TRUE(query);
 	ASSERT_FALSE(query->prompted);
+	ASSERT_EQ(query->hlu.skills, (std::vector<SecondarySkill>{SecondarySkill::ARTILLERY}));
+	EXPECT_EQ(attackerSideHero->level, levelBeforeGain);
+	const auto savedPrimarySkill = query->hlu.primskill;
+	const auto savedPrimaryGains = query->hlu.primaryGains;
+	const auto savedSeed = query->hlu.perkOfferSeed;
+	const auto savedArtillerySnapshot = query->hlu.artilleryExpertBeforeGain;
+	const auto savedLogisticsSnapshot = query->hlu.logisticsExpertBeforeGain;
+	const auto levelBeforePrompt = attackerSideHero->level;
+	const auto primaryAfterGain = basePrimaryValues();
+	for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
+		EXPECT_EQ(primaryAfterGain[i] - primaryBeforeGain[i], savedPrimaryGains[i]);
 	EXPECT_FALSE(query->hlu.artilleryExpertBeforeGain);
 	// Another reward can arrive while the level dialog waits for readiness.
 	gameHandler->changeSecSkill(attackerSideHero, SecondarySkill::ARTILLERY, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	gameHandler->onAdvInterfaceReady(PlayerColor(0));
 	ASSERT_TRUE(query->prompted);
+	EXPECT_TRUE(query->hlu.skills.empty());
+	EXPECT_TRUE(query->hlu.perks.empty());
+	EXPECT_EQ(query->hlu.primskill, savedPrimarySkill);
+	EXPECT_EQ(query->hlu.primaryGains, savedPrimaryGains);
+	EXPECT_EQ(query->hlu.perkOfferSeed, savedSeed);
+	EXPECT_EQ(query->hlu.artilleryExpertBeforeGain, savedArtillerySnapshot);
+	EXPECT_EQ(query->hlu.logisticsExpertBeforeGain, savedLogisticsSnapshot);
+	EXPECT_EQ(attackerSideHero->level, levelBeforePrompt + 1);
+	EXPECT_EQ(basePrimaryValues(), primaryAfterGain);
+	EXPECT_TRUE(query->isValidReply(0));
+	EXPECT_FALSE(query->isValidReply(1));
 	ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, PlayerColor(0)));
 	EXPECT_FALSE(attackerSideHero->getMasteryState().pending);
 	EXPECT_FALSE(gameHandler->queries->topQuery(PlayerColor(0)));
+	EXPECT_EQ(attackerSideHero->level, levelBeforePrompt + 1);
+	EXPECT_EQ(basePrimaryValues(), primaryAfterGain);
 	EXPECT_EQ(attackerSideHero->getMasteryView()->eligibleNextLevel, (std::vector<SecondarySkill>{SecondarySkill::ARTILLERY}));
+}
+
+TEST_F(NewHorizonsMasteryTest, FirstAddedPromptFiltersStaleSkillAndRetainsValidChoice)
+{
+	startGame();
+	disablePerkOffers();
+	gameHandler->changeSecSkill(attackerSideHero, SecondarySkill::ARTILLERY, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	gameHandler->changeSecSkill(attackerSideHero, SecondarySkill::LOGISTICS, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	gameHandler->onAdvInterfaceReady(PlayerColor(0));
+
+	auto offer = makeLevelUpOffer({SecondarySkill::LOGISTICS, SecondarySkill::ARTILLERY});
+	auto query = std::make_shared<CHeroLevelUpDialogQuery>(gameHandler.get(), offer, attackerSideHero);
+	gameHandler->queries->addQuery(query);
+
+	ASSERT_TRUE(query->prompted);
+	EXPECT_EQ(query->hlu.skills, (std::vector<SecondarySkill>{SecondarySkill::LOGISTICS}));
+	EXPECT_EQ(query->hlu.primskill, offer.primskill);
+	EXPECT_EQ(query->hlu.primaryGains, offer.primaryGains);
+	EXPECT_EQ(query->hlu.perkOfferSeed, offer.perkOfferSeed);
+	EXPECT_EQ(query->hlu.artilleryExpertBeforeGain, offer.artilleryExpertBeforeGain);
+	EXPECT_EQ(query->hlu.logisticsExpertBeforeGain, offer.logisticsExpertBeforeGain);
+
+	ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, PlayerColor(0)));
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill::ARTILLERY), MasteryLevel::EXPERT);
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill::LOGISTICS), MasteryLevel::EXPERT);
+}
+
+TEST_F(NewHorizonsMasteryTest, FirstAddedPromptAcknowledgesWhenEverySkillChoiceWentStale)
+{
+	startGame();
+	disablePerkOffers();
+	gameHandler->changeSecSkill(attackerSideHero, SecondarySkill::ARTILLERY, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	gameHandler->onAdvInterfaceReady(PlayerColor(0));
+
+	auto offer = makeLevelUpOffer({SecondarySkill::ARTILLERY});
+	auto query = std::make_shared<CHeroLevelUpDialogQuery>(gameHandler.get(), offer, attackerSideHero);
+	gameHandler->queries->addQuery(query);
+
+	ASSERT_TRUE(query->prompted);
+	EXPECT_TRUE(query->hlu.skills.empty());
+	EXPECT_TRUE(query->hlu.perks.empty());
+	EXPECT_EQ(query->hlu.perkOfferSeed, offer.perkOfferSeed);
+	EXPECT_EQ(query->hlu.artilleryExpertBeforeGain, offer.artilleryExpertBeforeGain);
+	EXPECT_EQ(query->hlu.logisticsExpertBeforeGain, offer.logisticsExpertBeforeGain);
+	EXPECT_TRUE(query->isValidReply(0));
+	EXPECT_FALSE(query->isValidReply(1));
+	ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, PlayerColor(0)));
+	EXPECT_FALSE(gameHandler->queries->topQuery(PlayerColor(0)));
+	EXPECT_FALSE(attackerSideHero->getMasteryState().pending);
+}
+
+TEST_F(NewHorizonsMasteryTest, AlreadyPromptedChoicesKeepTheirIndicesOnReExposure)
+{
+	startGame();
+	disablePerkOffers();
+	gameHandler->changeSecSkill(attackerSideHero, SecondarySkill::LOGISTICS, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	gameHandler->changeSecSkill(attackerSideHero, SecondarySkill::ARTILLERY, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	gameHandler->onAdvInterfaceReady(PlayerColor(0));
+
+	auto offer = makeLevelUpOffer({SecondarySkill::LOGISTICS, SecondarySkill::ARTILLERY});
+	auto query = std::make_shared<CHeroLevelUpDialogQuery>(gameHandler.get(), offer, attackerSideHero);
+	gameHandler->queries->addQuery(query);
+	ASSERT_TRUE(query->prompted);
+	ASSERT_EQ(query->hlu.skills, offer.skills);
+	const auto promptedSkills = query->hlu.skills;
+
+	gameHandler->changeSecSkill(attackerSideHero, SecondarySkill::LOGISTICS, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	query->onExposure(query);
+	EXPECT_EQ(query->hlu.skills, promptedSkills);
+	EXPECT_FALSE(gameHandler->queryReply(query->queryID, 0, PlayerColor(0)));
+	EXPECT_EQ(gameHandler->queries->topQuery(PlayerColor(0)), query);
+	EXPECT_EQ(query->hlu.skills, promptedSkills);
+
+	ASSERT_TRUE(gameHandler->queryReply(query->queryID, 1, PlayerColor(0)));
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill::ARTILLERY), MasteryLevel::EXPERT);
+}
+
+TEST_F(NewHorizonsMasteryTest, DeferredPerkOfferRebuildsFromCurrentTierOccupancyAndSavedSeed)
+{
+	startGame();
+	const std::string offenseId = "new-horizons:offense";
+	const int decodedOffense = SecondarySkill::decode(offenseId);
+	ASSERT_GE(decodedOffense, 0);
+	const SecondarySkill offense(decodedOffense);
+	gameHandler->changeSecSkill(attackerSideHero, offense, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	const std::string warcastingId = "new-horizons:warcasting";
+	const int decodedWarcasting = SecondarySkill::decode(warcastingId);
+	ASSERT_GE(decodedWarcasting, 0);
+	const SecondarySkill warcasting(decodedWarcasting);
+	gameHandler->changeSecSkill(attackerSideHero, warcasting, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+
+	auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	state.selected.clear();
+	state.validate();
+	constexpr uint64_t offerSeed = 42;
+	const auto rankLookup = [this](const std::string & skillId)
+	{
+		return attackerSideHero->getPerkSkillRank(skillId);
+	};
+	const auto originalOffer = state.prepareOffer(rankLookup, offerSeed);
+	ASSERT_FALSE(originalOffer.empty());
+
+	auto offer = makeLevelUpOffer();
+	offer.perkOfferSeed = offerSeed;
+	offer.perks = originalOffer;
+	auto query = std::make_shared<CHeroLevelUpDialogQuery>(gameHandler.get(), offer, attackerSideHero);
+	gameHandler->queries->addQuery(query);
+	ASSERT_FALSE(query->prompted);
+
+	const auto newlySelected = originalOffer.front().selection;
+	gameHandler->levelUpHero(attackerSideHero, originalOffer, 0, offerSeed, false);
+	const auto expectedOffer = state.prepareOffer(rankLookup, offerSeed);
+	ASSERT_FALSE(expectedOffer.empty());
+	EXPECT_NE(expectedOffer, originalOffer);
+	EXPECT_FALSE(std::any_of(expectedOffer.begin(), expectedOffer.end(), [&newlySelected](const auto & candidate)
+	{
+		return candidate.selection == newlySelected;
+	}));
+	EXPECT_FALSE(std::any_of(expectedOffer.begin(), expectedOffer.end(), [&newlySelected, &originalOffer](const auto & candidate)
+	{
+		return candidate.selection.skillId == newlySelected.skillId
+			&& candidate.requiredRank == originalOffer.front().requiredRank;
+	}));
+
+	gameHandler->onAdvInterfaceReady(PlayerColor(0));
+	ASSERT_TRUE(query->prompted);
+	EXPECT_EQ(query->hlu.perks, expectedOffer);
+	EXPECT_EQ(query->hlu.perkOfferSeed, offerSeed);
+	EXPECT_EQ(query->hlu.primskill, offer.primskill);
+	EXPECT_EQ(query->hlu.primaryGains, offer.primaryGains);
+	EXPECT_EQ(query->hlu.artilleryExpertBeforeGain, offer.artilleryExpertBeforeGain);
+	EXPECT_EQ(query->hlu.logisticsExpertBeforeGain, offer.logisticsExpertBeforeGain);
+	ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, PlayerColor(0)));
+	EXPECT_TRUE(state.hasSelection(expectedOffer.front().selection.skillId, expectedOffer.front().selection.perkId));
+}
+
+TEST_F(NewHorizonsMasteryTest, DeferredEmptyPerkOfferCanBecomeEligibleBeforePrompt)
+{
+	startGame();
+	const std::string offenseId = "new-horizons:offense";
+	const int decodedOffense = SecondarySkill::decode(offenseId);
+	ASSERT_GE(decodedOffense, 0);
+	const SecondarySkill offense(decodedOffense);
+	const std::string warcastingId = "new-horizons:warcasting";
+	const int decodedWarcasting = SecondarySkill::decode(warcastingId);
+	ASSERT_GE(decodedWarcasting, 0);
+	const SecondarySkill warcasting(decodedWarcasting);
+
+	auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	state.selected.clear();
+	state.validate();
+	for(const auto & skillEntry : state.rules["skills"].Struct())
+	{
+		const auto & skillId = skillEntry.first;
+		const int decodedSkill = SecondarySkill::decode(skillId);
+		if(decodedSkill < 0)
+			continue;
+		const SecondarySkill skill(decodedSkill);
+		if(SecondarySkill::encode(skill.getNum()) == skillId)
+			gameHandler->changeSecSkill(attackerSideHero, skill, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	}
+	constexpr uint64_t offerSeed = 42;
+	const auto rankLookup = [this](const std::string & skillId)
+	{
+		return attackerSideHero->getPerkSkillRank(skillId);
+	};
+	EXPECT_TRUE(state.prepareOffer(rankLookup, offerSeed).empty());
+
+	auto offer = makeLevelUpOffer();
+	offer.perkOfferSeed = offerSeed;
+	auto query = std::make_shared<CHeroLevelUpDialogQuery>(gameHandler.get(), offer, attackerSideHero);
+	gameHandler->queries->addQuery(query);
+	ASSERT_FALSE(query->prompted);
+	ASSERT_TRUE(query->hlu.perks.empty());
+
+	gameHandler->changeSecSkill(attackerSideHero, offense, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	gameHandler->changeSecSkill(attackerSideHero, warcasting, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	const auto expectedOffer = state.prepareOffer(rankLookup, offerSeed);
+	ASSERT_FALSE(expectedOffer.empty());
+	gameHandler->onAdvInterfaceReady(PlayerColor(0));
+
+	ASSERT_TRUE(query->prompted);
+	EXPECT_EQ(query->hlu.perks, expectedOffer);
+	EXPECT_EQ(query->hlu.perkOfferSeed, offerSeed);
+	ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, PlayerColor(0)));
+	EXPECT_TRUE(state.hasSelection(expectedOffer.front().selection.skillId, expectedOffer.front().selection.perkId));
 }
 
 TEST_F(NewHorizonsMasteryTest, RankLossIsDormantAndRestorationDoesNotDuplicateChosenBonuses)

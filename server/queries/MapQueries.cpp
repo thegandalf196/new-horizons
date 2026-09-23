@@ -274,6 +274,22 @@ CHeroLevelUpDialogQuery::CHeroLevelUpDialogQuery(CGameHandler * owner, const Her
 	addPlayer(hero->tempOwner);
 }
 
+void CHeroLevelUpDialogQuery::refreshChoicesBeforePrompt()
+{
+	std::erase_if(hlu.skills, [this](SecondarySkill skill)
+	{
+		return !isValidHeroSkillChoice(*gh, hero, skill);
+	});
+
+	// Perk replies are validated against the complete deterministic offer, not a
+	// filtered subset. Rebuild it from the saved seed and current hero ranks so
+	// the offer reflects current eligibility while retaining seeded ordering.
+	hlu.perks = hero->getPerkState().prepareOffer([this](const std::string & skillId)
+	{
+		return hero->getPerkSkillRank(skillId);
+	}, hlu.perkOfferSeed);
+}
+
 bool CHeroLevelUpDialogQuery::isValidReply(std::optional<int32_t> reply) const
 {
 	if(!reply || *reply < 0)
@@ -351,6 +367,7 @@ void CHeroLevelUpDialogQuery::onAdded(PlayerColor color)
 	if(!gh->uiReadyForDialogs.contains(color))
 		return;
 
+	refreshChoicesBeforePrompt();
 	prompted = true;
 	hlu.queryID = queryID;
 	gh->sendAndApply(hlu);
@@ -375,6 +392,7 @@ void CHeroLevelUpDialogQuery::onExposure(QueryPtr topQuery)
 		if(!gh->uiReadyForDialogs.contains(color))
 			continue;
 
+		refreshChoicesBeforePrompt();
 		prompted = true;
 		hlu.queryID = queryID;
 		gh->sendAndApply(hlu);
