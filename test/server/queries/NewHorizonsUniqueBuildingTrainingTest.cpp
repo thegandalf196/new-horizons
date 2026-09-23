@@ -282,21 +282,45 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, TowerLibraryOnlyAddsMageGrowthAndB
 	towerTown->addBuilding(BuildingID::DWELL_LVL_4_UP);
 	towerTown->addBuilding(BuildingID::DWELL_LVL_5);
 	towerTown->addBuilding(BuildingID::DWELL_LVL_5_UP);
-	// addBuilding is intentionally a bare fixture helper; populate the
-	// dwelling's offered creature list as the real build packet would.
-	towerTown->creatures[3].second = towerTown->getTown()->creatures[3];
-	towerTown->creatures[4].second = towerTown->getTown()->creatures[4];
 
+	const auto mage = CreatureID(CreatureID::decode("core:mage"));
 	const auto archMage = CreatureID(CreatureID::decode("core:archMage"));
+	const auto genie = CreatureID(CreatureID::decode("core:genie"));
 	const auto masterGenie = CreatureID(CreatureID::decode("core:masterGenie"));
-	ASSERT_EQ(towerTown->getTown()->creatures[3].back(), archMage);
-	ASSERT_EQ(towerTown->getTown()->creatures[4].back(), masterGenie);
+	const auto rowForUpgrades = [&](CreatureID base, CreatureID upgraded)
+	{
+		return std::find_if(towerTown->getTown()->creatures.begin(), towerTown->getTown()->creatures.end(),
+			[base, upgraded](const auto & row)
+			{
+				return std::find(row.begin(), row.end(), base) != row.end()
+					&& std::find(row.begin(), row.end(), upgraded) != row.end();
+			});
+	};
+	const auto mageRow = rowForUpgrades(mage, archMage);
+	const auto genieRow = rowForUpgrades(genie, masterGenie);
+	ASSERT_NE(mageRow, towerTown->getTown()->creatures.end());
+	ASSERT_NE(genieRow, towerTown->getTown()->creatures.end());
+	const int mageLevel = static_cast<int>(std::distance(towerTown->getTown()->creatures.begin(), mageRow));
+	const int genieLevel = static_cast<int>(std::distance(towerTown->getTown()->creatures.begin(), genieRow));
+	ASSERT_NE(mageLevel, genieLevel);
 
-	const int mageGrowthBefore = towerTown->getGrowthInfo(3).totalGrowth();
-	const int genieGrowthBefore = towerTown->getGrowthInfo(4).totalGrowth();
+	// addBuilding is intentionally a bare fixture helper; model the currently
+	// offered base and upgraded creatures explicitly, regardless of tier order.
+	const auto growthWith = [&](int level, std::vector<CreatureID> available)
+	{
+		towerTown->creatures[level].second = std::move(available);
+		return towerTown->getGrowthInfo(level).totalGrowth();
+	};
+	const int mageGrowthBefore = growthWith(mageLevel, {mage});
+	const int archMageGrowthBefore = growthWith(mageLevel, {mage, archMage});
+	const int genieGrowthBefore = growthWith(genieLevel, {genie});
+	const int masterGenieGrowthBefore = growthWith(genieLevel, {genie, masterGenie});
+
 	towerTown->addBuilding(BuildingID::SPECIAL_3);
-	EXPECT_EQ(towerTown->getGrowthInfo(3).totalGrowth(), mageGrowthBefore + 1);
-	EXPECT_EQ(towerTown->getGrowthInfo(4).totalGrowth(), genieGrowthBefore);
+	EXPECT_EQ(growthWith(mageLevel, {mage}), mageGrowthBefore + 1);
+	EXPECT_EQ(growthWith(mageLevel, {mage, archMage}), archMageGrowthBefore + 1);
+	EXPECT_EQ(growthWith(genieLevel, {genie}), genieGrowthBefore);
+	EXPECT_EQ(growthWith(genieLevel, {genie, masterGenie}), masterGenieGrowthBefore);
 
 	const auto sulfurBefore = infernoTown->dailyIncome()[EGameResID::SULFUR];
 	infernoTown->addBuilding(BuildingID::SPECIAL_2);
