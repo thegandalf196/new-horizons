@@ -124,6 +124,9 @@ protected:
 		result["leadership"]["minimumMovementPercent"].Integer() = 50;
 		for(int value : {1, 2, 3, 4})
 			result["siege"]["ballistaDamageMultiplier"].Vector().emplace_back(value);
+		// This is a complete legacy world snapshot, not a partial patch over the
+		// installed v3 capability rules. Replace the authored context as a whole.
+		result.setOverrideFlag(true);
 		return result;
 	}
 	void mapLoaded(CMap * map) override
@@ -575,7 +578,9 @@ TEST_F(NewHorizonsPerSlotLeadershipTest, DuplicateCreatureRewardIsRejectedBefore
 TEST_F(NewHorizonsCapabilityStateTest, InitializationCapturesIndependentWorldAndResolvedClass)
 {
 	startGame();
-	EXPECT_EQ(gameState()->getHeroCapabilityRules(), capabilityWorldRules());
+	const auto expectedCapabilityRules = capabilityWorldRules();
+	ASSERT_TRUE(expectedCapabilityRules.getOverrideFlag());
+	EXPECT_EQ(gameState()->getHeroCapabilityRules(), expectedCapabilityRules);
 	const auto & resolved = attackerSideHero->getCapabilityRules();
 	EXPECT_EQ(resolved["profile"]["base"].Integer(), 2000);
 	EXPECT_EQ(resolved["profile"]["perLevel"].Integer(), 200);
