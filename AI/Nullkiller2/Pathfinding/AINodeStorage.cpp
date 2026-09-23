@@ -1848,10 +1848,13 @@ bool AINodeStorage::calculatePathInfo(AIPath & path, const AIPathNode * node) co
 	}
 
 	int fortLevel = 0;
-	for(const auto * object : aiNk->cc->getVisitableObjs(node->coord))
+	if(aiNk->cc->isVisible(node->coord))
 	{
-		if(objWithID<Obj::TOWN>(object))
-			fortLevel = dynamic_cast<const CGTownInstance *>(object)->fortLevel();
+		for(const auto * object : aiNk->cc->getVisitableObjs(node->coord))
+		{
+			if(objWithID<Obj::TOWN>(object))
+				fortLevel = dynamic_cast<const CGTownInstance *>(object)->fortLevel();
+		}
 	}
 
 	path.targetObjectArmyLoss = evaluateArmyLoss(

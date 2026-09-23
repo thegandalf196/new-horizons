@@ -11,15 +11,18 @@
 #include "StdInc.h"
 
 #include "AI/Nullkiller2/AIGateway.h"
+#include "AI/Nullkiller2/Engine/FuzzyHelper.h"
 #include "AI/Nullkiller2/Goals/AdventureSpellCast.h"
 #include "AI/Nullkiller2/Goals/Composition.h"
 #include "AI/Nullkiller2/Helpers/ExplorationHelper.h"
+#include "AI/Nullkiller2/Pathfinding/AIPathfinder.h"
 
 #include "mock/TinyH3MBuilder.h"
 #include "nullkiller2/NullkillerTest.h"
 
 #include "lib/CPlayerState.h"
 #include "lib/IGameSettings.h"
+#include "lib/logging/CLogger.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/spells/CSpell.h"
 
@@ -27,6 +30,26 @@ namespace
 {
 const PlayerColor PLAYER = PlayerColor(0);
 const SpellID DIMENSION_DOOR = SpellID(8);
+
+class HiddenTileVisibilityLogTarget final : public ILogTarget
+{
+public:
+	HiddenTileVisibilityLogTarget(int3 tile, std::weak_ptr<std::atomic_size_t> warningCount)
+		: tile(std::move(tile)), warningCount(std::move(warningCount))
+	{
+	}
+
+	void write(const LogRecord & record) override
+	{
+		const auto counter = warningCount.lock();
+		if(counter && record.message.find(tile.toString() + " is not visible!") != std::string::npos)
+			counter->fetch_add(1);
+	}
+
+private:
+	int3 tile;
+	std::weak_ptr<std::atomic_size_t> warningCount;
+};
 
 TinyH3M::TinyH3MBuilder makeDimensionDoorExplorationMap(bool withDimensionDoor)
 {
@@ -149,4 +172,48 @@ TEST_F(TinyH3MDimensionDoorExplorationTest, GeneratedDimensionDoorHeroDoesNotPro
 
 	EXPECT_TRUE(helper.canUseDimensionDoor());
 	EXPECT_FALSE(helper.considerDimensionDoorExplorationTargets());
+}
+
+TEST_F(TinyH3MDimensionDoorExplorationTest, ReconstructsHiddenPathSummaryWithoutQueryingHiddenFortification)
+{
+	startWithMap(makeDimensionDoorExplorationMap(false));
+
+	auto * hero = findHeroByOwner(PLAYER);
+	ASSERT_NE(hero, nullptr);
+	hero->setMovementPoints(2000);
+	revealMap(PLAYER);
+
+	const auto callback = makeCallback(PLAYER);
+	const auto gateway = makeGateway(callback);
+	const int3 target = hero->visitablePos() + int3(1, 0, 0);
+	ASSERT_TRUE(callback->isVisible(target));
+
+	NK2AI::HeroMap<NK2AI::HeroRole> heroes;
+	heroes.emplace(hero, NK2AI::MAIN);
+	NK2AI::PathfinderSettings settings;
+	settings.useHeroChain = false;
+	gateway->nullkiller->pathfinder->updatePaths(heroes, settings);
+
+	std::vector<NK2AI::AIPathSummary> summaries;
+	gateway->nullkiller->pathfinder->calculatePathSummaries(summaries, target);
+	ASSERT_FALSE(summaries.empty());
+	NK2AI::AIPath visiblePath;
+	ASSERT_TRUE(gateway->nullkiller->pathfinder->calculatePathInfo(visiblePath, summaries.front()));
+
+	auto warningCount = std::make_shared<std::atomic_size_t>(0);
+	CLogger::getGlobalLogger()->addTarget(
+		std::make_unique<HiddenTileVisibilityLogTarget>(target, warningCount));
+
+	setTileVisible(PLAYER, target, false);
+	EXPECT_TRUE(callback->getVisitableObjs(target).empty());
+	EXPECT_GT(warningCount->load(), 0u);
+	warningCount->store(0);
+
+	NK2AI::AIPath path;
+	ASSERT_TRUE(gateway->nullkiller->pathfinder->calculatePathInfo(path, summaries.front()));
+	EXPECT_FALSE(path.nodes.empty());
+	EXPECT_EQ(path.targetTile(), target);
+	EXPECT_EQ(path.targetObjectDanger, gateway->nullkiller->dangerEvaluator->evaluateDanger(target, hero));
+	EXPECT_GT(path.targetObjectDanger, visiblePath.targetObjectDanger);
+	EXPECT_EQ(warningCount->load(), 0u);
 }
