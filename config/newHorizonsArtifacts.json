@@ -1,0 +1,8 @@
+{
+	"randomPoolExclusions": [
+		"core:tomeOfAirMagic",
+		"core:tomeOfFireMagic",
+		"core:tomeOfWaterMagic",
+		"core:tomeOfEarthMagic"
+	]
+}

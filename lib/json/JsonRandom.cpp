@@ -28,6 +28,7 @@
 #include "../constants/StringConstants.h"
 #include "../entities/ResourceTypeHandler.h"
 #include "../entities/artifact/CArtHandler.h"
+#include "../entities/artifact/RandomArtifactPool.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/CHeroClass.h"
@@ -236,6 +237,42 @@ ArtifactID JsonRandom::loadArtifact(const JsonNode & value, const Variables & va
 			allowedArts.insert(artifact->getId());
 
 	std::set<ArtifactID> potentialPicks = jsonKeyExtractor.filterKeys(value, allowedArts, variables);
+	auto collectExplicitSelections = [&](auto && self, const JsonNode & selector) -> std::set<ArtifactID>
+	{
+		if(selector.isString())
+			return jsonKeyExtractor.filterKeys(selector, allowedArts, variables);
+		if(!selector.isStruct())
+			return {};
+
+		std::set<ArtifactID> explicitlySelected;
+
+		if(!selector["type"].isNull())
+			explicitlySelected = self(self, selector["type"]);
+		else if(selector["anyOf"].isVector())
+			for(const auto & entry : selector["anyOf"].Vector())
+			{
+				const auto fromBranch = self(self, entry);
+				explicitlySelected.insert(fromBranch.begin(), fromBranch.end());
+			}
+
+		// This branch-local intersection prevents a literal from an impossible anyOf
+		// branch from exempting the same artifact when another branch selects it generically.
+		const auto selectedByExpression = jsonKeyExtractor.filterKeys(selector, allowedArts, variables);
+		for(auto it = explicitlySelected.begin(); it != explicitlySelected.end(); )
+			if(!selectedByExpression.contains(*it))
+				it = explicitlySelected.erase(it);
+			else
+				++it;
+
+		return explicitlySelected;
+	};
+	const auto explicitlySelected = collectExplicitSelections(collectExplicitSelections, value);
+
+	const auto & exclusions = cb->getRandomArtifactPoolExclusions();
+	std::erase_if(potentialPicks, [&](ArtifactID id)
+	{
+		return exclusions.contains(id) && !explicitlySelected.contains(id);
+	});
 
 	return gameRandomizer.rollArtifact(potentialPicks);
 }

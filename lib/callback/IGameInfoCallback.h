@@ -97,6 +97,8 @@ public:
 
 	//// Returns game settings for current map
 	virtual const IGameSettings & getSettings() const = 0;
+	/// Artifacts excluded from generated random pools in this saved world. Empty for legacy contexts.
+	virtual const std::set<ArtifactID> & getRandomArtifactPoolExclusions() const;
 	/// Saved ruleset snapshot, not the currently loaded mod defaults. Empty means legacy.
 	virtual const JsonNode & getHeroCommandRules() const;
 	virtual const JsonNode & getMagicRules() const;

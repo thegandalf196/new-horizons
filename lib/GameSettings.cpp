@@ -41,6 +41,7 @@ GameSettings::~GameSettings() = default;
 
 const std::vector<GameSettings::SettingOption> GameSettings::settingProperties = {
 		{EGameSettings::BANKS_SHOW_GUARDS_COMPOSITION,                    "banks",     "showGuardsComposition"                },
+		{EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS,                 "artifacts", "randomPoolExclusions"                 },
 		{EGameSettings::BONUSES_GLOBAL,                                   "bonuses",   "global"                               },
 		{EGameSettings::BONUSES_PER_HERO,                                 "bonuses",   "perHero"                              },
 		{EGameSettings::CAMPAIGN_UNLOCK_ALL,                              "campaign",  "unlockAll"                            },
@@ -220,6 +221,7 @@ const JsonNode & GameSettings::getValue(EGameSettings option) const
 	assert(option == EGameSettings::MAGIC_NEW_HORIZONS
 		|| option == EGameSettings::COMBAT_HERO_COMMANDS
 		|| option == EGameSettings::HEROES_NEW_HORIZONS_PERKS
+		|| option == EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS
 		|| !actualSettings.at(index).isNull());
 	return actualSettings.at(index);
 }

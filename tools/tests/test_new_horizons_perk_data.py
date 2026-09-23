@@ -308,7 +308,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
 
     def test_default_module_carries_canonical_registry(self):
         module = load("Mods/new-horizons/mod.json")
-        self.assertEqual(module["version"], "0.11.0")
+        self.assertEqual(module["version"], "0.12.0")
         self.assertEqual(module["settings"]["heroes"]["newHorizonsPerks"], self.rules)
 
 

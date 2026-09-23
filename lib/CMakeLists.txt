@@ -578,6 +578,7 @@ set(lib_MAIN_HEADERS
 	entities/artifact/CArtifactFittingSet.h
 	entities/artifact/CArtifactSet.h
 	entities/artifact/EArtifactClass.h
+	entities/artifact/RandomArtifactPool.h
 	entities/building/CBuilding.h
 	entities/building/TownFortifications.h
 	entities/faction/CFaction.h

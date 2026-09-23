@@ -235,6 +235,8 @@ set(test_SRCS
 		server/NewHorizonsLeadershipAdmissionTest.cpp
 		server/NewHorizonsRecruitmentMusterTest.cpp
 		server/NewHorizonsDemonicReserveTest.cpp
+		server/RandomArtifactPoolExclusionsTest.cpp
+		server/RandomArtifactPoolConsumersTest.cpp
 
 		texts/TextOperationsTest.cpp
 

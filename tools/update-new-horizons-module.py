@@ -136,14 +136,14 @@ def main():
                                     'after a level gained with prior Expert Artillery. Not secondary rank four '
                                     'or completion of other mastery families, creature tiers or new spell effects.')
     if preview_output is None:
+        settings['artifacts'] = canonical('newHorizonsArtifacts.json')
         # Default edition matches the active Magic Arrow v2 composition and
         # carries the canonical perk registry for saved runtime identity.
         # Explicit historical preview/control branches retain their own identities.
         settings['heroes']['newHorizonsPerks'] = canonical('newHorizonsPerks.json')
-        # Tower's Mage/Genie identity swap and the direct class-name object
-        # patches alter saved/live content presentation. Bump the live module
-        # identity so managed profiles cannot silently retain the older data.
-        metadata['version'] = '0.11.0'
+        # Random artifact exclusions change new-game content; managed profiles
+        # must not silently retain the older module settings.
+        metadata['version'] = '0.12.0'
         metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
         metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
         metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry; active entries '

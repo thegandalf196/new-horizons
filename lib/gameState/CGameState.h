@@ -14,6 +14,7 @@
 #include "../entities/hero/NewHorizonsMasteryRules.h"
 #include "../entities/hero/NewHorizonsPerkRules.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../entities/artifact/RandomArtifactPool.h"
 
 #include "../battle/HeroCommand.h"
 #include "../spells/NewHorizonsMagic.h"
@@ -172,6 +173,7 @@ public:
 	const JsonNode & getHeroMasteryRules() const override { return heroMasteryRules; }
 	const JsonNode & getHeroPerkRules() const override { return heroPerkRules; }
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return creatureCategoryRules; }
+	const std::set<ArtifactID> & getRandomArtifactPoolExclusions() const override { return randomArtifactPoolExclusions; }
 
 	StartInfo * getStartInfo()
 	{
@@ -347,6 +349,19 @@ public:
 		else if(!h.saving)
 			creatureCategoryRules = newHorizonsCreatures::CreatureCategoryRules();
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RANDOM_ARTIFACT_POOL))
+		{
+			if(h.saving)
+				artifactRandomPool::validateExclusions(randomArtifactPoolExclusions);
+			h & randomArtifactPoolExclusions;
+			if(!h.saving)
+				artifactRandomPool::validateExclusions(randomArtifactPoolExclusions);
+		}
+		else if(h.saving && !randomArtifactPoolExclusions.empty())
+			throw std::runtime_error("Random artifact pool exclusions require the new save format");
+		else if(!h.saving)
+			randomArtifactPoolExclusions.clear();
+
 		if(!h.saving && h.loadingGamestate)
 			restoreBonusSystemTree();
 	}
@@ -359,6 +374,7 @@ private:
 	JsonNode heroMasteryRules;
 	JsonNode heroPerkRules;
 	newHorizonsCreatures::CreatureCategoryRules creatureCategoryRules;
+	std::set<ArtifactID> randomArtifactPoolExclusions;
 	// ----- initialization -----
 	void initNewGame(const IMapService * mapService, vstd::RNG & randomGenerator, bool allowSavingRandomMap, Load::ProgressAccumulator & progressTracking);
 	void initGlobalBonuses();

@@ -29,6 +29,7 @@ public:
 	const JsonNode & getHeroMasteryRules() const override;
 	const JsonNode & getHeroPerkRules() const override;
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override;
+	const std::set<ArtifactID> & getRandomArtifactPoolExclusions() const override;
 	//various
 
 	Calendar getCalendar() const override;

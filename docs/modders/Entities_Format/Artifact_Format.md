@@ -2,6 +2,32 @@
 
 Artifact bonuses use [Bonus Format](../Bonus_Format.md)
 
+## Random pool exclusions
+
+Game settings can exclude artifact identifiers from generated random pools without
+removing the artifact definitions or explicitly authored items:
+
+```json
+{
+    "artifacts": {
+        "randomPoolExclusions": ["core:tomeOfAirMagic"]
+    }
+}
+```
+
+Use fully qualified identifiers (`mod:artifact`, including `core:` for built-in
+artifacts), so installed mods cannot change how a name resolves.
+The default is an empty array. A map or template can override the list, including
+with `[]` to clear it. The effective list is captured for a new game and saved;
+saves predating this feature retain an empty exclusion list. RMG quest-artifact
+selection uses the effective template/map setting during generation.
+
+The policy applies to generated artifact pools, including random map placeholders,
+merchant stock, and random reward filters. Explicit artifact identifiers in map
+placements or reward expressions remain authored choices, including identifiers
+inside `anyOf`. This setting does not change artifact effects, erase inventory
+items, or replace the separate map allowed-artifact restrictions.
+
 ## Required data
 
 In order to make functional artifact you also need:

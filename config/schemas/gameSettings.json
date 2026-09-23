@@ -5,6 +5,18 @@
 	"description" : "Format used to define game settings in VCMI",
 	"additionalProperties" : false,
 	"properties" : {
+		"artifacts" : {
+			"type" : "object",
+			"additionalProperties" : false,
+			"properties" : {
+				"randomPoolExclusions" : {
+					"type" : "array",
+					"uniqueItems" : true,
+					"items" : { "type" : "string", "pattern" : "^[^:]+:[^:]+$" },
+					"description" : "Artifact identifiers excluded from generated random pools, not explicitly authored items."
+				}
+			}
+		},
 		"textData" : {
 			"type" : "object",
 			"additionalProperties" : false,

@@ -16,6 +16,8 @@
 #include "../texts/CGeneralTextHandler.h"
 #include "../CRandomGenerator.h"
 #include "../entities/artifact/CArtHandler.h"
+#include "../entities/artifact/RandomArtifactPool.h"
+#include "../IGameSettings.h"
 #include "../entities/faction/CTownHandler.h"
 #include "../entities/faction/CFaction.h"
 #include "../entities/hero/CHero.h"
@@ -37,6 +39,8 @@
 #include <vstd/RNG.h>
 #include <vcmi/HeroTypeService.h>
 
+#include <tbb/global_control.h>
+#include <tbb/task_arena.h>
 #include <tbb/task_group.h>
 
 CMapGenerator::CMapGenerator(CMapGenOptions& mapGenOptions, IGameInfoCallback * cb, int RandomSeed) :
@@ -114,11 +118,13 @@ const CMapGenOptions& CMapGenerator::getMapGenOptions() const
 void CMapGenerator::initQuestArtsRemaining()
 {
 	//TODO: Move to QuestArtifactPlacer?
+	const auto excludedArtifacts = artifactRandomPool::exclusionsFromSetting(
+		map->mapInstance->getSettings().getValue(EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS));
 	for (auto artID : LIBRARY->arth->getDefaultAllowed())
 	{
 		auto art = artID.toArtifact();
 		//Don't use parts of combined artifacts
-		if (art->aClass == EArtifactClass::ART_TREASURE && LIBRARY->arth->legalArtifact(art->getId()) && art->getPartOf().empty())
+		if (!excludedArtifacts.contains(artID) && art->aClass == EArtifactClass::ART_TREASURE && LIBRARY->arth->legalArtifact(art->getId()) && art->getPartOf().empty())
 			questArtifacts.push_back(art->getId());
 	}
 }
@@ -385,7 +391,9 @@ void CMapGenerator::fillZones()
 
 	Load::Progress::setupStepsTill(allJobs.size(), 240);
 
-	if (config.singleThread) //No thread pool, just queue with deterministic order
+	const bool singleWorker = tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism) <= 1
+		|| tbb::this_task_arena::max_concurrency() <= 1;
+	if (config.singleThread || singleWorker) //No worker can progress queued jobs while this thread polls readiness.
 	{
 		while (!allJobs.empty())
 		{

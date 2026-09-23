@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "CGameInfoCallback.h"
 
+#include <set>
+
 #include "../entities/building/CBuilding.h"
 #include "../gameState/CGameState.h"
 #include "../gameState/UpgradeInfo.h"
@@ -58,6 +60,12 @@ const JsonNode & IGameInfoCallback::getHeroPerkRules() const
 	return legacy;
 }
 
+const std::set<ArtifactID> & IGameInfoCallback::getRandomArtifactPoolExclusions() const
+{
+	static const std::set<ArtifactID> empty;
+	return empty;
+}
+
 const JsonNode & CGameInfoCallback::getHeroPerkRules() const
 {
 	return gameState().getHeroPerkRules();
@@ -66,6 +74,11 @@ const JsonNode & CGameInfoCallback::getHeroPerkRules() const
 const newHorizonsCreatures::CreatureCategoryRules & CGameInfoCallback::getCreatureCategoryRules() const
 {
 	return gameState().getCreatureCategoryRules();
+}
+
+const std::set<ArtifactID> & CGameInfoCallback::getRandomArtifactPoolExclusions() const
+{
+	return gameState().getRandomArtifactPoolExclusions();
 }
 
 const IMarket * CGameInfoCallback::getMarket(ObjectInstanceID objid) const

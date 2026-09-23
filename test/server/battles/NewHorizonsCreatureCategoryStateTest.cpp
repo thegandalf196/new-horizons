@@ -112,6 +112,7 @@ class NewHorizonsCreatureCategoryStateTest : public HeroCommandFixture
 protected:
 	bool enabled = true;
 	bool legacyBattleFormat = false;
+	bool legacyWholeWorldSave = false;
 	JsonNode authoredRules = contextFixture();
 	void mapLoaded(CMap * map) override
 	{
@@ -124,6 +125,13 @@ protected:
 			auto magicRules = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
 			magicRules["warcasting"] = JsonNode(false);
 			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+		}
+		if(legacyWholeWorldSave)
+		{
+			// Keep this pre-pool world snapshot independent of newer installed defaults.
+			JsonNode emptyArtifactPool;
+			emptyArtifactPool.Vector();
+			map->overrideGameSetting(EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS, emptyArtifactPool);
 		}
 	}
 };
@@ -230,6 +238,7 @@ TEST_F(NewHorizonsCreatureCategoryStateTest, ActualWorldSaveRetainsNamedCopiedVi
 
 TEST_F(NewHorizonsCreatureCategoryStateTest, OldWorldIsAbsentButCurrentBattlePacketRetainsOwnSnapshot)
 {
+	legacyWholeWorldSave = true;
 	InstalledCategoryOverride installed(authoredRules, true);
 	startGame();
 	CMemorySerializer old;

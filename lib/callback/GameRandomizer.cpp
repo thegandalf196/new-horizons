@@ -19,6 +19,7 @@
 #include "../IGameSettings.h"
 #include "../entities/artifact/CArtHandler.h"
 #include "../entities/artifact/EArtifactClass.h"
+#include "../entities/artifact/RandomArtifactPool.h"
 #include "../entities/hero/CHeroClass.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -168,6 +169,7 @@ ArtifactID GameRandomizer::rollArtifact()
 
 		potentialPicks.insert(artifactID);
 	}
+	artifactRandomPool::removeExclusions(potentialPicks, gameInfo.getRandomArtifactPoolExclusions());
 
 	return rollArtifact(potentialPicks);
 }
@@ -191,6 +193,7 @@ ArtifactID GameRandomizer::rollArtifact(EArtifactClass type)
 
 		potentialPicks.insert(artifactID);
 	}
+	artifactRandomPool::removeExclusions(potentialPicks, gameInfo.getRandomArtifactPoolExclusions());
 
 	return rollArtifact(potentialPicks);
 }
@@ -201,6 +204,9 @@ ArtifactID GameRandomizer::rollArtifact(std::set<ArtifactID> potentialPicks)
 	// FIXME: investigate how such cases are handled by H3 - some heavily customized user-made maps likely rely on H3 behavior
 	if(potentialPicks.empty())
 	{
+		if(gameInfo.getRandomArtifactPoolExclusions().contains(ArtifactID::GRAIL))
+			throw std::runtime_error("Cannot use the Grail fallback because Grail is excluded from the random artifact pool");
+
 		logGlobal->warn("Failed to find artifact that matches requested parameters!");
 		return ArtifactID::GRAIL;
 	}

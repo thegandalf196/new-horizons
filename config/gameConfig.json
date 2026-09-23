@@ -508,6 +508,12 @@
 			}
 		},
 
+		"artifacts" :
+		{
+			// Excludes items from random pools, without removing explicitly authored rewards.
+			"randomPoolExclusions" : []
+		},
+
 		"heroes" :
 		{
 			// number of heroes that player can have active on map at the same time

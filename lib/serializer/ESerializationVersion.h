@@ -101,12 +101,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_WARCASTING, // alternating hero-action readiness and consumed Order snapshot
 	NEW_HORIZONS_BATTLE_MEDITATION, // per-round Battle Meditation recovery state
 	NEW_HORIZONS_HERO_ACTION_ALLOWANCES, // authoritative typed Hero/Spell/Order action grants
+	NEW_HORIZONS_RANDOM_ARTIFACT_POOL, // saved generated-random artifact pool exclusions
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_HERO_ACTION_ALLOWANCES,
+	CURRENT = NEW_HORIZONS_RANDOM_ARTIFACT_POOL,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -118,6 +119,7 @@ static_assert(ESerializationVersion::NEW_HORIZONS_DEMONIC_RESERVE > ESerializati
 static_assert(ESerializationVersion::NEW_HORIZONS_CHAIN_GATE > ESerializationVersion::NEW_HORIZONS_DEMONIC_RESERVE);
 static_assert(ESerializationVersion::NEW_HORIZONS_CURE_AFFLICTION > ESerializationVersion::NEW_HORIZONS_CHAIN_GATE);
 static_assert(ESerializationVersion::NEW_HORIZONS_WARCASTING > ESerializationVersion::NEW_HORIZONS_CURE_AFFLICTION);
+static_assert(ESerializationVersion::NEW_HORIZONS_RANDOM_ARTIFACT_POOL > ESerializationVersion::NEW_HORIZONS_HERO_ACTION_ALLOWANCES);
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION > ESerializationVersion::NEW_HORIZONS_WARCASTING);
 static_assert(ESerializationVersion::NEW_HORIZONS_HERO_ACTION_ALLOWANCES > ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTERIES > ESerializationVersion::NEW_HORIZONS_CAPABILITIES);

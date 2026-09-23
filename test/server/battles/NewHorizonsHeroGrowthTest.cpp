@@ -152,6 +152,10 @@ protected:
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+		// The historical world save predates the generated-artifact-pool policy.
+		JsonNode emptyArtifactPool;
+		emptyArtifactPool.Vector();
+		loaded->overrideGameSetting(EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS, emptyArtifactPool);
 	}
 };
 
@@ -163,6 +167,10 @@ protected:
 		NewHorizonsHeroGrowthTest::mapLoaded(loaded);
 		// The 0.34 save predates saved New Horizons perk state.
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+		// The 0.34 world predates generated-artifact-pool exclusions.
+		JsonNode emptyArtifactPool;
+		emptyArtifactPool.Vector();
+		loaded->overrideGameSetting(EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS, emptyArtifactPool);
 	}
 };
 

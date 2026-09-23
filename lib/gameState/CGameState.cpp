@@ -40,6 +40,7 @@
 #include "../constants/StringConstants.h"
 #include "../entities/artifact/ArtifactUtils.h"
 #include "../entities/artifact/CArtHandler.h"
+#include "../entities/artifact/RandomArtifactPool.h"
 #include "../entities/faction/CTownHandler.h"
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/CHeroClass.h"
@@ -209,6 +210,8 @@ void CGameState::init(const IMapService * mapService, StartInfo * si, IGameRando
 		logGlobal->error("Wrong mode: %d", static_cast<int>(scenarioOps->mode));
 		return;
 	}
+	randomArtifactPoolExclusions = artifactRandomPool::exclusionsFromSetting(
+		getSettings().getValue(EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS));
 	logGlobal->info("Map loaded!");
 
 	day = 0;
