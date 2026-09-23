@@ -114,13 +114,24 @@ bool CBattleInfoEssentials::battleMetamagicFirstCounterspellNegated(BattleSide s
 
 bool CBattleInfoEssentials::battleCanUseMetamagicFollowup(BattleSide side) const
 {
-	return battleMetamagicPendingCount(side) > 0;
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return false;
+	if(!heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE))
+		return battleMetamagicPendingCount(side) > 0;
+	const auto round = battleGetRound();
+	const auto & allowances = getBattle()->getHeroActionAllowances(side);
+	if(round < 0 || allowances.currentRound != round)
+		return false;
+	const auto selection = allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, round);
+	return selection && selection->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
+		&& (selection->source == HeroActionAllowanceState::GrantSource::METAMAGIC
+			|| selection->source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND);
 }
 
 bool CBattleInfoEssentials::battleCanUseMetamagicSpell(BattleSide side, SpellID spell, bool grand) const
 {
-	// Grand changes the number of immediate follow-ups, not the spellbook
-	// legality of those follow-ups.  Repeated spells remain valid; Perfect
+	// Grand changes the number of additional Spell Actions, not the spellbook
+	// legality of those actions. Repeated spells remain valid; Perfect
 	// Sequence is a power bonus evaluated by the spell mechanics, never a
 	// server-side legality filter.
 	(void)side;
@@ -394,6 +405,19 @@ int32_t CBattleInfoEssentials::battleCastSpells(BattleSide side) const
 {
 	RETURN_IF_NOT_BATTLE(-1);
 	return getBattle()->getCastSpells(side);
+}
+
+HeroActionAllowanceState::Counts CBattleInfoEssentials::battleHeroActionAllowanceCounts(BattleSide side) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return {};
+	const auto round = battleGetRound();
+	if(round < 0)
+		return {};
+	const auto & allowances = getBattle()->getHeroActionAllowances(side);
+	if(allowances.currentRound != round)
+		return {};
+	return allowances.remainingCounts(round);
 }
 
 const IBonusBearer * CBattleInfoEssentials::getBonusBearer() const

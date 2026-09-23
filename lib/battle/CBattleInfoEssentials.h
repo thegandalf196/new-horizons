@@ -10,6 +10,7 @@
 #pragma once
 #include "IBattleInfoCallback.h"
 #include "BattleSide.h"
+#include "HeroActionAllowanceState.h"
 #include "../bonuses/BonusEnum.h"
 
 class CGTownInstance;
@@ -84,6 +85,7 @@ public:
 	TownFortifications battleGetFortifications() const;
 	bool battleHasHero(BattleSide side) const;
 	int32_t battleCastSpells(BattleSide side) const; //how many spells has given side cast
+	HeroActionAllowanceState::Counts battleHeroActionAllowanceCounts(BattleSide side) const;
 	bool battleWasTemporalFieldUsed(BattleSide side) const;
 	bool battleWasCounterspellArmed(BattleSide side) const;
 	int32_t battleMetamagicPendingCount(BattleSide side) const;

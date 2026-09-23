@@ -54,6 +54,7 @@ set(lib_MAIN_SRCS
 	battle/BattleHexArray.cpp
 	battle/HeroCommand.cpp
 	battle/BattleInfo.cpp
+	battle/TimeStopState.cpp
 	battle/NewHorizonsBloodrage.cpp
 	battle/NewHorizonsBulwark.cpp
 	battle/NewHorizonsBattlecraft.cpp
@@ -484,6 +485,8 @@ set(lib_MAIN_HEADERS
 	battle/FocusFireState.h
 	battle/SylvanLuckState.h
 	battle/AlternatingHeroActionState.h
+	battle/HeroActionAllowanceState.h
+	battle/TimeStopState.h
 	battle/NewHorizonsWarcasting.h
 	battle/BattleInfo.h
 	battle/NewHorizonsBloodrage.h

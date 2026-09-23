@@ -11,7 +11,10 @@
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/battle/HeroActionAllowanceState.h"
 #include "../../../lib/battle/NewHorizonsWarcasting.h"
+#include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/bonuses/Limiters.h"
@@ -25,10 +28,27 @@ namespace
 {
 constexpr auto warcastingSkill = "new-horizons:warcasting";
 constexpr auto metamagicSkill = "new-horizons:metamagic";
+constexpr auto metamagicGrandPerk = "new-horizons:metamagic.grandMetamagic";
+constexpr auto counterspellKey = "new-horizons:counterspell";
+constexpr auto sorcerySkill = "new-horizons:sorceryMagic";
+constexpr auto countermagePerk = "new-horizons:sorceryMagic.countermage";
 constexpr auto martialChannelingPerk = "new-horizons:warcasting.martialChanneling";
 constexpr auto arcaneChannelingPerk = "new-horizons:warcasting.arcaneChanneling";
 constexpr auto tacticalWeavingPerk = "new-horizons:warcasting.tacticalWeaving";
 constexpr auto battleMeditationPerk = "new-horizons:warcasting.battleMeditation";
+
+std::shared_ptr<Bonus> testTimeStopMarker(BattleSide side)
+{
+	auto marker = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
+		BonusSource::OTHER, 1, BonusSourceID());
+	marker->parameters = std::make_shared<BonusParameters>(static_cast<int32_t>(side));
+	return marker;
+}
+
+SpellID counterspellId()
+{
+	return SpellID(SpellID::decode(counterspellKey));
+}
 
 class WarcastingEnvironment final : public Environment
 {
@@ -93,7 +113,7 @@ protected:
 		activateBattleMeditationBeforeInit = true;
 	}
 
-	void prepareWarcasting(int rank = 1, bool withMetamagic = false)
+	void prepareWarcasting(int rank = 1, bool withMetamagic = false, bool defenderCountermage = false)
 	{
 		startGame();
 		const int decodedWarcasting = SecondarySkill::decode(warcastingSkill);
@@ -104,6 +124,17 @@ protected:
 			const int decodedMetamagic = SecondarySkill::decode(metamagicSkill);
 			ASSERT_GE(decodedMetamagic, 0);
 			attackerSideHero->setSecSkillLevel(SecondarySkill(decodedMetamagic), 1, ChangeValueMode::ABSOLUTE);
+		}
+		if(defenderCountermage)
+		{
+			const int decodedSorcery = SecondarySkill::decode(sorcerySkill);
+			ASSERT_GE(decodedSorcery, 0);
+			// Countermage is an Advanced Sorcery perk, so its fixture hero must
+			// meet the same rank gate as an ordinary selection.
+			defenderSideHero->setSecSkillLevel(SecondarySkill(decodedSorcery), MasteryLevel::ADVANCED,
+				ChangeValueMode::ABSOLUTE);
+			defenderSideHero->applyPerkSelection({std::string(sorcerySkill), std::string(countermagePerk)});
+			ASSERT_TRUE(defenderSideHero->hasActivePerk(std::string(sorcerySkill), std::string(countermagePerk)));
 		}
 		attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 100, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->mana = 1000;
@@ -135,6 +166,13 @@ protected:
 		gameHandler->sendAndApply(activate);
 	}
 
+	uint32_t grantOrderAllowanceForFixture(BattleSide side)
+	{
+		auto & allowances = battle()->getSide(side).heroActionAllowances;
+		return allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
+			HeroActionAllowanceState::GrantSource::PERK, battle()->battleGetRound());
+	}
+
 	void selectWarcastingPerk(const std::string & perkId)
 	{
 		attackerSideHero->applyPerkSelection({std::string(warcastingSkill), perkId});
@@ -153,13 +191,14 @@ protected:
 		return *definition;
 	}
 
-	bool cast(SpellID spell, const CStack * target, bool followup = false)
+	bool cast(SpellID spell, const CStack * target, bool followup = false, bool grand = false)
 	{
 		BattleAction action;
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::ATTACKER;
 		action.spell = spell;
 		action.metamagicFollowup = followup;
+		action.metamagicGrand = grand;
 		action.aimToUnit(target);
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
@@ -701,6 +740,484 @@ TEST_F(NewHorizonsWarcastingTest, PlannedBattleMeditationIsInactive)
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, -1);
+}
+
+TEST_F(NewHorizonsWarcastingTest, FreshBattleStartRoundTripsBeforeAnyHeroActionIsGranted)
+{
+	startGame();
+	startBattle();
+	ASSERT_EQ(battle()->getRound(), 0);
+	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(BattleSide::ATTACKER).heroActions, 0u);
+	EXPECT_NO_THROW(EXPECT_FALSE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER)));
+	EXPECT_NO_THROW(EXPECT_NE(battle()->battleCanCastSpell(attackerSideHero, spells::Mode::HERO),
+		ESpellCastProblem::OK));
+	BattleStart packet;
+	packet.battleID = BattleID(0);
+	ASSERT_NO_THROW(packet.info = CMemorySerializer::deepCopy(*battle(), gameState().get()));
+	std::unique_ptr<BattleStart> restored;
+	ASSERT_NO_THROW(restored = CMemorySerializer::deepCopy(packet, gameState().get()));
+	ASSERT_TRUE(restored && restored->info);
+	EXPECT_EQ(restored->info->getRound(), 0);
+	EXPECT_EQ(restored->info->battleHeroActionAllowanceCounts(BattleSide::ATTACKER).heroActions, 0u);
+	EXPECT_EQ(restored->info->getHeroActionAllowances(BattleSide::ATTACKER).currentRound, -1);
+
+	auto & preplayAllowances = battle()->getSide(BattleSide::ATTACKER).heroActionAllowances;
+	preplayAllowances.resetForRound(0);
+	preplayAllowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
+		HeroActionAllowanceState::GrantSource::PERK, 0);
+	EXPECT_THROW(CMemorySerializer::deepCopy(*battle(), gameState().get()), std::runtime_error);
+}
+
+TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesMetamagicAndRoundTrips)
+{
+	prepareWarcasting(1, true);
+	const auto side = BattleSide::ATTACKER;
+	const auto round = battle()->battleGetRound();
+	const auto orderGrantId = grantOrderAllowanceForFixture(side);
+	const auto beforeSpellCounts = battle()->getHeroActionAllowances(side).remainingCounts(round);
+	EXPECT_EQ(beforeSpellCounts.heroActions, 1u);
+	EXPECT_EQ(beforeSpellCounts.orderActions, 1u);
+	EXPECT_EQ(beforeSpellCounts.spellActions, 0u);
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto & afterSpell = battle()->getSide(side);
+	ASSERT_EQ(afterSpell.castSpellsCount, 1u);
+	ASSERT_EQ(afterSpell.metamagicPendingCount, 1u);
+	ASSERT_EQ(afterSpell.metamagicSequenceSpells, (std::vector<SpellID>{SpellID::HASTE}));
+	const auto afterSpellCounts = afterSpell.heroActionAllowances.remainingCounts(round);
+	EXPECT_EQ(afterSpellCounts.heroActions, 0u);
+	EXPECT_EQ(afterSpellCounts.orderActions, 1u);
+	EXPECT_EQ(afterSpellCounts.spellActions, 1u);
+
+	const auto eligibleOrder = afterSpell.heroActionAllowances.eligibleAllowance(
+		HeroActionAllowanceState::ActionKind::ORDER, round);
+	ASSERT_TRUE(eligibleOrder);
+	EXPECT_EQ(eligibleOrder->grantId, orderGrantId);
+	EXPECT_EQ(eligibleOrder->allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+
+	const auto & afterOrder = battle()->getSide(side);
+	EXPECT_EQ(battle()->getHeroCommandUsed(side), true);
+	EXPECT_EQ(battle()->getActiveOrder(side), HeroCommand::CHARGE);
+	EXPECT_EQ(afterOrder.castSpellsCount, 1u);
+	EXPECT_EQ(afterOrder.usedSpellsHistory, (std::vector<SpellID>{SpellID::HASTE}));
+	EXPECT_EQ(afterOrder.metamagicPendingCount, 1u);
+	EXPECT_EQ(afterOrder.metamagicSequenceSpells, (std::vector<SpellID>{SpellID::HASTE}));
+	const auto afterOrderCounts = afterOrder.heroActionAllowances.remainingCounts(round);
+	EXPECT_EQ(afterOrderCounts.heroActions, 0u);
+	EXPECT_EQ(afterOrderCounts.orderActions, 0u);
+	EXPECT_EQ(afterOrderCounts.spellActions, 1u);
+	ASSERT_EQ(afterOrder.heroActionAllowances.grants.size(), 1u);
+	EXPECT_EQ(afterOrder.heroActionAllowances.grants.front().allowance,
+		HeroActionAllowanceState::AllowanceKind::SPELL);
+	EXPECT_EQ(afterOrder.heroActionAllowances.grants.front().source,
+		HeroActionAllowanceState::GrantSource::METAMAGIC);
+
+	auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(restored, nullptr);
+	const auto & restoredSide = restored->getSide(side);
+	EXPECT_EQ(restoredSide.castSpellsCount, 1u);
+	EXPECT_EQ(restoredSide.usedSpellsHistory, afterOrder.usedSpellsHistory);
+	EXPECT_EQ(restoredSide.metamagicPendingCount, 1u);
+	EXPECT_EQ(restoredSide.metamagicSequenceSpells, afterOrder.metamagicSequenceSpells);
+	EXPECT_TRUE(restored->getHeroCommandUsed(side));
+	EXPECT_EQ(restored->getActiveOrder(side), HeroCommand::CHARGE);
+	EXPECT_EQ(restored->getHeroOrderState(side), battle()->getHeroOrderState(side));
+	EXPECT_EQ(restored->getHeroActionAllowances(side), afterOrder.heroActionAllowances);
+	const auto restoredCounts = restored->getHeroActionAllowances(side).remainingCounts(round);
+	EXPECT_EQ(restoredCounts.orderActions, 0u);
+	EXPECT_EQ(restoredCounts.spellActions, 1u);
+}
+
+TEST_F(NewHorizonsWarcastingTest, NormalMetamagicOfferAfterGrandUseRoundTrips)
+{
+	prepareWarcasting(1, true);
+	const int decodedMetamagic = SecondarySkill::decode(metamagicSkill);
+	ASSERT_GE(decodedMetamagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(decodedMetamagic), 3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(metamagicSkill), std::string(metamagicGrandPerk)});
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true, true));
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender, true));
+	ASSERT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicGrandUsed);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0u);
+
+	advanceRound();
+	activate(attacker);
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender));
+	const auto & afterNewOffer = battle()->getSide(BattleSide::ATTACKER);
+	EXPECT_TRUE(afterNewOffer.metamagicGrandUsed);
+	ASSERT_EQ(afterNewOffer.metamagicPendingCount, 1u);
+	ASSERT_EQ(afterNewOffer.metamagicSequenceSpells, (std::vector<SpellID>{SpellID::MAGIC_ARROW}));
+	ASSERT_EQ(afterNewOffer.heroActionAllowances.grants.size(), 1u);
+	EXPECT_EQ(afterNewOffer.heroActionAllowances.grants.front().source,
+		HeroActionAllowanceState::GrantSource::METAMAGIC);
+
+	auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(restored, nullptr);
+	const auto & restoredSide = restored->getSide(BattleSide::ATTACKER);
+	EXPECT_TRUE(restoredSide.metamagicGrandUsed);
+	EXPECT_EQ(restoredSide.metamagicPendingCount, 1u);
+	EXPECT_EQ(restoredSide.metamagicSequenceSpells, afterNewOffer.metamagicSequenceSpells);
+	EXPECT_EQ(restored->getHeroActionAllowances(BattleSide::ATTACKER),
+		afterNewOffer.heroActionAllowances);
+}
+
+TEST_F(NewHorizonsWarcastingTest, HypotheticalBattleSpendsTypedAllowancesWithoutChangingLiveState)
+{
+	prepareWarcasting(1, true);
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto side = BattleSide::ATTACKER;
+	const auto authoritative = battle()->getHeroActionAllowances(side);
+	ASSERT_EQ(authoritative.remainingCounts(battle()->getRound()).heroActions, 1u);
+	ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::HASTE, attacker->unitId(), false, false));
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).heroActions, 0u);
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, 1u);
+	EXPECT_FALSE(projection.projectHeroOrderAllowance(side));
+	const auto readiness = projection.getWarcastingState(side);
+	ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::SLOW, defender->unitId(), true, false));
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, 0u);
+	EXPECT_EQ(projection.getMetamagicUsesConsumed(side), 1);
+	EXPECT_EQ(projection.getWarcastingState(side), readiness);
+	EXPECT_EQ(battle()->getHeroActionAllowances(side), authoritative);
+	EXPECT_EQ(battle()->getMetamagicUsesConsumed(side), 0);
+	projection.nextRound();
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).heroActions, 1u);
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, 0u);
+	ASSERT_TRUE(projection.projectHeroOrderAllowance(side));
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).heroActions, 0u);
+}
+
+TEST_F(NewHorizonsWarcastingTest, HypotheticalHeroReceiptExpiresOnlyItsTimeStopAndWard)
+{
+	prepareWarcasting(1, true);
+	auto attackerMarker = testTimeStopMarker(BattleSide::ATTACKER);
+	auto defenderMarker = testTimeStopMarker(BattleSide::DEFENDER);
+	battle()->addOrUpdateUnitBonus(attacker, *attackerMarker, true);
+	battle()->addOrUpdateUnitBonus(defender, *defenderMarker, true);
+	battle()->notePendingTimeStopHeroAction(BattleSide::ATTACKER);
+	battle()->notePendingTimeStopHeroAction(BattleSide::DEFENDER);
+	battle()->getSide(BattleSide::ATTACKER).counterspellArmed = true;
+	battle()->getSide(BattleSide::ATTACKER).metamagicCountersequenceArmed = true;
+	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
+
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	ASSERT_TRUE(prepared);
+	EXPECT_EQ(prepared->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::HERO);
+	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
+
+	EXPECT_FALSE(projection.getCounterspellArmed(BattleSide::ATTACKER));
+	EXPECT_FALSE(projection.getMetamagicCountersequenceArmed(BattleSide::ATTACKER));
+	EXPECT_TRUE(projection.getCounterspellArmed(BattleSide::DEFENDER));
+	auto projectedAttacker = projection.battleGetUnitByID(attacker->unitId());
+	auto projectedDefender = projection.battleGetUnitByID(defender->unitId());
+	ASSERT_NE(projectedAttacker, nullptr);
+	ASSERT_NE(projectedDefender, nullptr);
+	EXPECT_FALSE(projectedAttacker->isTimeStopped());
+	EXPECT_TRUE(projectedDefender->isTimeStopped());
+	EXPECT_EQ(projection.getProjectedPendingTimeStopHeroActionSides(), 2u);
+	EXPECT_TRUE(attacker->isTimeStopped());
+	EXPECT_TRUE(defender->isTimeStopped());
+	EXPECT_EQ(battle()->getPendingTimeStopHeroActionSides(), 3u);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+}
+
+TEST_F(NewHorizonsWarcastingTest, TypedSpellAndOrderReceiptsPreserveOwnTimeStopAndWard)
+{
+	prepareWarcasting(1, true);
+	const auto round = battle()->battleGetRound();
+	auto & allowances = battle()->getSide(BattleSide::ATTACKER).heroActionAllowances;
+	allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::SPELL,
+		HeroActionAllowanceState::GrantSource::PERK, round);
+	allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
+		HeroActionAllowanceState::GrantSource::PERK, round);
+	auto marker = testTimeStopMarker(BattleSide::ATTACKER);
+	battle()->addOrUpdateUnitBonus(attacker, *marker, true);
+	battle()->notePendingTimeStopHeroAction(BattleSide::ATTACKER);
+	battle()->getSide(BattleSide::ATTACKER).counterspellArmed = true;
+	battle()->getSide(BattleSide::ATTACKER).metamagicCountersequenceArmed = true;
+
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	auto spell = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	ASSERT_TRUE(spell);
+	EXPECT_EQ(spell->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
+	EXPECT_EQ(spell->action.receipt.source, HeroActionAllowanceState::GrantSource::PERK);
+	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *spell));
+	ASSERT_TRUE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
+		attacker->unitId(), false, false, false, false, *spell));
+	EXPECT_TRUE(projection.getCounterspellArmed(BattleSide::ATTACKER));
+	EXPECT_TRUE(projection.getMetamagicCountersequenceArmed(BattleSide::ATTACKER));
+	EXPECT_TRUE(projection.battleGetUnitByID(attacker->unitId())->isTimeStopped());
+	EXPECT_EQ(projection.getProjectedPendingTimeStopHeroActionSides(), 1u);
+
+	auto order = projection.prepareHeroOrderAllowance(BattleSide::ATTACKER);
+	ASSERT_TRUE(order);
+	EXPECT_EQ(order->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
+	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *order));
+	ASSERT_TRUE(projection.projectAcceptedHeroOrder(BattleSide::ATTACKER, *order));
+	EXPECT_TRUE(projection.getCounterspellArmed(BattleSide::ATTACKER));
+	EXPECT_TRUE(projection.getMetamagicCountersequenceArmed(BattleSide::ATTACKER));
+	EXPECT_TRUE(projection.battleGetUnitByID(attacker->unitId())->isTimeStopped());
+	EXPECT_EQ(projection.getProjectedPendingTimeStopHeroActionSides(), 1u);
+}
+
+TEST_F(NewHorizonsWarcastingTest, PreparedAllowanceCommitCannotBeReplayed)
+{
+	prepareWarcasting(1, true);
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	ASSERT_TRUE(prepared);
+	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
+	ASSERT_TRUE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
+		attacker->unitId(), false, false, false, false, *prepared));
+	const auto afterCommit = projection.getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_FALSE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
+		attacker->unitId(), false, false, false, false, *prepared));
+	EXPECT_EQ(projection.getHeroActionAllowances(BattleSide::ATTACKER), afterCommit);
+	EXPECT_EQ(projection.getMetamagicUsesConsumed(BattleSide::ATTACKER), 0);
+}
+
+TEST_F(NewHorizonsWarcastingTest, StalePreparedActionCannotClearEffectsBeforeCommitRejection)
+{
+	prepareWarcasting(1, true);
+	const auto side = BattleSide::ATTACKER;
+	const auto round = battle()->battleGetRound();
+	battle()->getSide(side).heroActionAllowances.grantAllowance(
+		HeroActionAllowanceState::AllowanceKind::ORDER,
+		HeroActionAllowanceState::GrantSource::PERK, round);
+	auto marker = testTimeStopMarker(side);
+	battle()->addOrUpdateUnitBonus(attacker, *marker, true);
+	battle()->notePendingTimeStopHeroAction(side);
+	battle()->getSide(side).counterspellArmed = true;
+	battle()->getSide(side).metamagicCountersequenceArmed = true;
+
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto staleSpell = projection.prepareHeroSpellAllowance(side, false, false);
+	ASSERT_TRUE(staleSpell);
+
+	// A typed Order consumes a different grant without crossing the Hero-action
+	// boundary. It makes the prepared spell token stale while preserving effects.
+	ASSERT_TRUE(projection.projectHeroOrderAllowance(side));
+	EXPECT_TRUE(projection.getCounterspellArmed(side));
+	EXPECT_TRUE(projection.getMetamagicCountersequenceArmed(side));
+	EXPECT_EQ(projection.getProjectedPendingTimeStopHeroActionSides(), 1u);
+	auto projectedAttacker = projection.battleGetUnitByID(attacker->unitId());
+	ASSERT_NE(projectedAttacker, nullptr);
+	EXPECT_TRUE(projectedAttacker->isTimeStopped());
+
+	EXPECT_FALSE(projection.beginProjectedHeroAction(side, *staleSpell));
+	EXPECT_FALSE(projection.projectAcceptedHeroSpell(side, SpellID::HASTE,
+		attacker->unitId(), false, false, false, false, *staleSpell));
+	EXPECT_TRUE(projection.getCounterspellArmed(side));
+	EXPECT_TRUE(projection.getMetamagicCountersequenceArmed(side));
+	EXPECT_EQ(projection.getProjectedPendingTimeStopHeroActionSides(), 1u);
+	EXPECT_TRUE(projectedAttacker->isTimeStopped());
+}
+
+TEST_F(NewHorizonsWarcastingTest, BegunOrderTokenCannotAuthorizeSameEpochSpellCommit)
+{
+	prepareWarcasting(1, true);
+	const auto side = BattleSide::ATTACKER;
+	const auto round = battle()->battleGetRound();
+	battle()->getSide(side).heroActionAllowances.grantAllowance(
+		HeroActionAllowanceState::AllowanceKind::ORDER,
+		HeroActionAllowanceState::GrantSource::PERK, round);
+	auto marker = testTimeStopMarker(side);
+	battle()->addOrUpdateUnitBonus(attacker, *marker, true);
+	battle()->notePendingTimeStopHeroAction(side);
+	battle()->getSide(side).counterspellArmed = true;
+	battle()->getSide(side).metamagicCountersequenceArmed = true;
+
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto spell = projection.prepareHeroSpellAllowance(side, false, false);
+	const auto order = projection.prepareHeroOrderAllowance(side);
+	ASSERT_TRUE(spell);
+	ASSERT_TRUE(order);
+	EXPECT_EQ(spell->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::HERO);
+	EXPECT_EQ(order->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
+
+	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *order));
+	EXPECT_FALSE(projection.projectAcceptedHeroSpell(side, SpellID::HASTE,
+		attacker->unitId(), false, false, false, false, *spell));
+	EXPECT_TRUE(projection.getCounterspellArmed(side));
+	EXPECT_TRUE(projection.getMetamagicCountersequenceArmed(side));
+	EXPECT_EQ(projection.getProjectedPendingTimeStopHeroActionSides(), 1u);
+	auto projectedAttacker = projection.battleGetUnitByID(attacker->unitId());
+	ASSERT_NE(projectedAttacker, nullptr);
+	EXPECT_TRUE(projectedAttacker->isTimeStopped());
+
+	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, *order));
+	EXPECT_TRUE(projection.getCounterspellArmed(side));
+	EXPECT_TRUE(projection.getMetamagicCountersequenceArmed(side));
+	EXPECT_TRUE(projectedAttacker->isTimeStopped());
+}
+
+TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountersequenceAndRealManaThreshold)
+{
+	prepareWarcasting(1, true);
+	const int listedCost = attackerSideHero->getListedSpellCost(SpellID(SpellID::HASTE).toSpell());
+	const int wardCost = newHorizonsMagic::counterspellCost(listedCost, false, true);
+	defenderSideHero->mana = wardCost - 1;
+	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
+	battle()->getSide(BattleSide::DEFENDER).metamagicCountersequenceArmed = true;
+
+	WarcastingEnvironment environment(gameState());
+	// Counterspell resolution needs the opposing hero's saved perk and mana.
+	// Use an all-knowing battle view here; the player-scoped attacker view
+	// intentionally hides the defender hero.
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
+	ASSERT_NE(callback->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
+	HypotheticBattle lowManaProjection(&environment, callback);
+	auto lowManaPrepared = lowManaProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	ASSERT_TRUE(lowManaPrepared);
+	ASSERT_TRUE(lowManaProjection.beginProjectedHeroAction(BattleSide::ATTACKER, *lowManaPrepared));
+	auto outcome = lowManaProjection.resolveProjectedCounterspell(BattleSide::ATTACKER,
+		SpellID(SpellID::HASTE).toSpell());
+	EXPECT_TRUE(outcome.wardActive);
+	EXPECT_EQ(outcome.wardSide, BattleSide::DEFENDER);
+	ASSERT_TRUE(outcome.resolutionKnown);
+	ASSERT_TRUE(outcome.manaCost.has_value());
+	ASSERT_TRUE(outcome.negated.has_value());
+	EXPECT_EQ(*outcome.manaCost, wardCost);
+	EXPECT_FALSE(*outcome.negated);
+	ASSERT_TRUE(lowManaProjection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
+		attacker->unitId(), false, false, outcome.wardActive, *outcome.negated, *lowManaPrepared));
+	EXPECT_FALSE(lowManaProjection.getMetamagicFirstCounterspellNegated(BattleSide::ATTACKER));
+	EXPECT_EQ(lowManaProjection.getMetamagicPendingCount(BattleSide::ATTACKER), 1);
+	EXPECT_FALSE(lowManaProjection.getCounterspellArmed(BattleSide::DEFENDER));
+	EXPECT_EQ(defenderSideHero->mana, wardCost - 1);
+
+	defenderSideHero->mana = wardCost;
+	HypotheticBattle negatedProjection(&environment, callback);
+	const auto prepared = negatedProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	ASSERT_TRUE(prepared);
+	ASSERT_TRUE(negatedProjection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
+	outcome = negatedProjection.resolveProjectedCounterspell(BattleSide::ATTACKER,
+		SpellID(SpellID::HASTE).toSpell());
+	ASSERT_TRUE(outcome.resolutionKnown);
+	ASSERT_TRUE(outcome.manaCost.has_value());
+	ASSERT_TRUE(outcome.negated.has_value());
+	EXPECT_TRUE(*outcome.negated);
+	EXPECT_EQ(*outcome.manaCost, wardCost);
+	ASSERT_TRUE(negatedProjection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
+		attacker->unitId(), false, false, outcome.wardActive, *outcome.negated, *prepared));
+	EXPECT_TRUE(negatedProjection.getMetamagicFirstCounterspellNegated(BattleSide::ATTACKER));
+	EXPECT_EQ(negatedProjection.getMetamagicPendingCount(BattleSide::ATTACKER), 1);
+	EXPECT_FALSE(negatedProjection.getCounterspellArmed(BattleSide::DEFENDER));
+	EXPECT_EQ(defenderSideHero->mana, wardCost);
+}
+
+TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountermageCostWithoutSpendingMana)
+{
+	prepareWarcasting(1, true, true);
+	const int listedCost = attackerSideHero->getListedSpellCost(SpellID(SpellID::HASTE).toSpell());
+	const int wardCost = newHorizonsMagic::counterspellCost(listedCost, true, false);
+	defenderSideHero->mana = wardCost - 1;
+	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
+
+	WarcastingEnvironment environment(gameState());
+	// Counterspell resolution needs the opposing hero's saved perk and mana.
+	// Use an all-knowing battle view here; the player-scoped attacker view
+	// intentionally hides the defender hero.
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
+	ASSERT_NE(callback->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
+	HypotheticBattle projection(&environment, callback);
+	const auto outcome = projection.resolveProjectedCounterspell(BattleSide::ATTACKER,
+		SpellID(SpellID::HASTE).toSpell());
+	EXPECT_TRUE(outcome.wardActive);
+	ASSERT_TRUE(outcome.resolutionKnown);
+	ASSERT_TRUE(outcome.manaCost.has_value());
+	ASSERT_TRUE(outcome.negated.has_value());
+	EXPECT_EQ(*outcome.manaCost, wardCost);
+	EXPECT_FALSE(*outcome.negated);
+	EXPECT_EQ(defenderSideHero->mana, wardCost - 1);
+}
+
+TEST_F(NewHorizonsWarcastingTest, PlayerViewKeepsHiddenArmedCounterspellUnresolved)
+{
+	prepareWarcasting(1, true);
+	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
+	defenderSideHero->mana = 0;
+	ASSERT_FALSE(defenderSideHero->hasActivePerk(std::string(sorcerySkill), std::string(countermagePerk)));
+
+	WarcastingEnvironment environment(gameState());
+	auto projectFromAttackerView = [&]()
+	{
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		EXPECT_EQ(callback->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
+		EXPECT_TRUE(callback->battleWasCounterspellArmed(BattleSide::DEFENDER));
+		HypotheticBattle projection(&environment, callback);
+		const auto allowancesBefore = projection.getHeroActionAllowances(BattleSide::ATTACKER);
+		const auto outcome = projection.resolveProjectedCounterspell(BattleSide::ATTACKER,
+			SpellID(SpellID::HASTE).toSpell());
+		EXPECT_TRUE(outcome.wardActive);
+		EXPECT_EQ(outcome.wardSide, BattleSide::DEFENDER);
+		EXPECT_FALSE(outcome.resolutionKnown);
+		EXPECT_FALSE(outcome.manaCost.has_value());
+		EXPECT_FALSE(outcome.negated.has_value());
+
+		// The convenience wrapper must not turn an unknown ward into a resolved
+		// cast or spend the projected allowance while doing so.
+		EXPECT_FALSE(projection.projectHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE,
+			attacker->unitId(), false, false));
+		EXPECT_EQ(projection.getHeroActionAllowances(BattleSide::ATTACKER), allowancesBefore);
+		EXPECT_TRUE(projection.getCounterspellArmed(BattleSide::DEFENDER));
+		return outcome;
+	};
+
+	const auto withoutCountermage = projectFromAttackerView();
+	ASSERT_GE(SecondarySkill::decode(sorcerySkill), 0);
+	defenderSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(sorcerySkill)),
+		MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	defenderSideHero->applyPerkSelection({std::string(sorcerySkill), std::string(countermagePerk)});
+	ASSERT_TRUE(defenderSideHero->hasActivePerk(std::string(sorcerySkill), std::string(countermagePerk)));
+	defenderSideHero->mana = 1000;
+	const auto withCountermage = projectFromAttackerView();
+
+	EXPECT_EQ(withCountermage.wardActive, withoutCountermage.wardActive);
+	EXPECT_EQ(withCountermage.wardSide, withoutCountermage.wardSide);
+	EXPECT_EQ(withCountermage.resolutionKnown, withoutCountermage.resolutionKnown);
+	EXPECT_EQ(withCountermage.manaCost, withoutCountermage.manaCost);
+	EXPECT_EQ(withCountermage.negated, withoutCountermage.negated);
+}
+
+TEST_F(NewHorizonsWarcastingTest, TypedCounterspellReplacesOldCountersequenceProvenance)
+{
+	prepareWarcasting();
+	const auto round = battle()->battleGetRound();
+	battle()->getSide(BattleSide::ATTACKER).heroActionAllowances.grantAllowance(
+		HeroActionAllowanceState::AllowanceKind::SPELL,
+		HeroActionAllowanceState::GrantSource::PERK, round);
+	battle()->getSide(BattleSide::ATTACKER).counterspellArmed = true;
+	battle()->getSide(BattleSide::ATTACKER).metamagicCountersequenceArmed = true;
+
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	ASSERT_TRUE(prepared);
+	EXPECT_EQ(prepared->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
+	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
+	const auto id = counterspellId();
+	ASSERT_TRUE(id.hasValue());
+	ASSERT_TRUE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, id,
+		std::numeric_limits<uint32_t>::max(), false, false, false, false, *prepared));
+	EXPECT_TRUE(projection.getCounterspellArmed(BattleSide::ATTACKER));
+	EXPECT_FALSE(projection.getMetamagicCountersequenceArmed(BattleSide::ATTACKER));
 }
 
 TEST_F(NewHorizonsWarcastingTest, HypotheticalBattleCopiesAndExpiresItsReadinessIndependently)

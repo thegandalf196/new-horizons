@@ -1628,6 +1628,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	if(pack.ba.side == BattleSide::ATTACKER || pack.ba.side == BattleSide::DEFENDER)
 	{
 		auto * battle = gs.getBattle(pack.battleID);
+		if(pack.ba.metamagicFollowup && !battleContext->battleCanUseMetamagicFollowup(pack.ba.side))
+			throw std::runtime_error("Metamagic follow-up StartAction without a selected Metamagic grant");
 		if(pack.ba.timeStopHeroActionPass)
 		{
 			const auto * active = battle->battleActiveUnit();
@@ -1637,21 +1639,27 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				throw std::runtime_error("Invalid Time Stop Hero Action pass StartAction");
 			battle->expireTimeStops(pack.ba.side);
 		}
-		// Time Stop lasts until the beginning of the caster's next Hero Action.
-		// A Metamagic follow-up is an immediate continuation of the same action,
-		// so it must not release the stasis early.  The authoritative StartAction
-		// packet is shared with clients, making this lifecycle transition converge
-		// without a client-side mutation path.
-		if(!pack.ba.metamagicFollowup && !pack.ba.metamagicDecline
-			&& (pack.ba.actionType == EActionType::HERO_SPELL
-				|| pack.ba.actionType == EActionType::HERO_COMMAND))
-			battle->expireTimeStops(pack.ba.side);
+		// A spell action is not necessarily a Hero Action: inspect the selected
+		// allowance rather than inferring provenance from Metamagic packet flags.
+		// This runs at StartAction so Time Stop ends before the Hero-paid spell
+		// resolves. The cast visitor later consumes the same deterministic grant.
+		if(pack.ba.actionType == EActionType::HERO_SPELL && !pack.ba.metamagicDecline)
+		{
+			const bool sharedActionBudget = heroCommands::supportedByRules(
+				battle->getHeroCommandRules(), HeroCommand::CHARGE);
+			bool spendsHeroAction = !pack.ba.metamagicFollowup;
+			if(sharedActionBudget)
+			{
+				const auto selected = battle->getSide(pack.ba.side).heroActionAllowances.eligibleAllowance(
+					HeroActionAllowanceState::ActionKind::SPELL, battle->getRound());
+				spendsHeroAction = selected
+					&& selected->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
+			}
+			if(spendsHeroAction)
+				battle->expireTimeStops(pack.ba.side);
+		}
 
 		auto & metamagicSide = battle->getSide(pack.ba.side);
-		if(metamagicSide.metamagicPendingCount != 0
-			&& !(pack.ba.actionType == EActionType::HERO_SPELL && pack.ba.metamagicFollowup)
-			&& !pack.ba.metamagicDecline)
-			throw std::runtime_error("Pending Metamagic sequence must resolve before another battle action");
 		if(pack.ba.metamagicDecline)
 		{
 			if(pack.ba.actionType != EActionType::HERO_COMMAND || pack.ba.command != HeroCommand::NONE
@@ -1670,8 +1678,6 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			metamagicSide.clearMetamagicSequence();
 			return;
 		}
-		if(pack.ba.metamagicFollowup && metamagicSide.metamagicPendingCount == 0)
-			throw std::runtime_error("Metamagic follow-up StartAction without pending sequence");
 	}
 	if(pack.ba.actionType == EActionType::HERO_COMMAND)
 	{
@@ -1680,8 +1686,33 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			throw std::runtime_error("Legacy or unsupported Hero Doctrine cannot be applied");
 		auto * commandBattle = gs.getBattle(pack.battleID);
 		auto & side = commandBattle->getSide(pack.ba.side);
+		const bool sharedActionBudget = heroCommands::supportedByRules(
+			commandBattle->getHeroCommandRules(), HeroCommand::CHARGE);
+		std::optional<HeroActionAllowanceState::Receipt> orderReceipt;
+		if(sharedActionBudget)
+		{
+			const auto selected = side.heroActionAllowances.eligibleAllowance(
+				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound());
+			if(!selected)
+				throw std::runtime_error("Accepted Order has no eligible action allowance");
+			orderReceipt = side.heroActionAllowances.consumeAllowance(selected->grantId,
+				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound());
+			if(!orderReceipt)
+				throw std::runtime_error("Could not commit accepted Order action allowance");
+		}
+		const bool spendsHeroAction = sharedActionBudget
+			? orderReceipt && orderReceipt->allowance == HeroActionAllowanceState::AllowanceKind::HERO
+			: true;
+		if(spendsHeroAction)
+		{
+			commandBattle->expireTimeStops(pack.ba.side);
+			side.counterspellArmed = false;
+			side.metamagicCountersequenceArmed = false;
+		}
 		std::optional<AlternatingHeroActionState> nextWarcastingState;
-		if(newHorizonsWarcasting::enabled(commandBattle->getMagicRules()))
+		if(newHorizonsWarcasting::enabled(commandBattle->getMagicRules())
+			&& (!sharedActionBudget || (orderReceipt
+				&& orderReceipt->allowance == HeroActionAllowanceState::AllowanceKind::HERO)))
 		{
 			auto next = side.warcastingState;
 			const auto * hero = commandBattle->battleGetFightingHero(pack.ba.side);
@@ -1692,7 +1723,9 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				throw std::runtime_error("Warcasting Order snapshot does not match current readiness");
 			nextWarcastingState = std::move(next);
 		}
-		side.counterspellArmed = false;
+		// Preserve the legacy action-history marker for save validators and
+		// presentation. Shared-budget availability is derived only from the
+		// receipt-backed ledger above.
 		side.heroCommandUsed = true;
 		if(nextWarcastingState)
 			side.warcastingState = *nextWarcastingState;
@@ -1850,13 +1883,50 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 	{
 		auto * battle = gs.getBattle(pack.battleID);
 		auto & casterSide = battle->getSide(pack.side);
+		const auto * hero = battle->battleGetFightingHero(pack.side);
+		const bool sharedActionBudget = heroCommands::supportedByRules(
+			battle->getHeroCommandRules(), HeroCommand::CHARGE);
+		std::optional<HeroSpellAllowanceTransition::Result> spellTransition;
+		if(pack.metamagicGrand && !pack.metamagicFollowup)
+			throw std::runtime_error("Grand Metamagic metadata requires a follow-up cast");
+		if(pack.metamagicManaRefund > 0
+			&& (!pack.metamagicFollowup || pack.metamagicGrand || casterSide.metamagicPendingCount != 1
+				|| casterSide.metamagicFormulaReserveUsed || !hero
+				|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE)))
+			throw std::runtime_error("Invalid Formula Reserve Metamagic refund");
+		if(sharedActionBudget)
+		{
+			const auto selected = casterSide.heroActionAllowances.eligibleAllowance(
+				HeroActionAllowanceState::ActionKind::SPELL, battle->getRound());
+			if(!selected)
+				throw std::runtime_error("Accepted Hero spell has no eligible action allowance");
+			auto transition = HeroSpellAllowanceTransition::commitAcceptedCast(
+				casterSide.heroActionAllowances, selected->grantId, battle->getRound(),
+				pack.metamagicFollowup, pack.metamagicGrand,
+				static_cast<uint8_t>(hero ? newHorizonsMagic::metamagicRank(hero) : 0),
+				hero && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
+				casterSide.metamagicUsesConsumed, casterSide.metamagicPendingCount,
+				casterSide.metamagicGrandUsed, casterSide.metamagicSequenceSpells.size());
+			if(!transition)
+				throw std::runtime_error("Accepted Hero spell has forged or inconsistent allowance metadata");
+			spellTransition = std::move(*transition);
+		}
+		else if(pack.metamagicFollowup && casterSide.metamagicPendingCount == 0)
+			throw std::runtime_error("Metamagic follow-up cast without pending sequence");
+		const bool spendsHeroAllowance = spellTransition
+			? spellTransition->receipt.allowance == HeroActionAllowanceState::AllowanceKind::HERO
+			: !pack.metamagicFollowup;
+
 		if(!pack.metamagicFollowup)
 			casterSide.castSpellsCount++;
-		// StartAction is published before full spell/target validation. Expire the
-		// caster's old ward only once the authoritative cast packet exists; an
-		// invalid hero action must leave its armed Counterspell intact.
-		casterSide.counterspellArmed = false;
-		casterSide.metamagicCountersequenceArmed = false;
+		// The accepted cast packet is the own-ward boundary. Invalid or rejected
+		// requests never reach this visitor. An enemy hero spell still clears the
+		// opposing ward below, independent of its allowance.
+		if(spendsHeroAllowance)
+		{
+			casterSide.counterspellArmed = false;
+			casterSide.metamagicCountersequenceArmed = false;
+		}
 		if(pack.temporalFieldCast)
 			casterSide.temporalFieldUsed = true;
 		if(pack.counterspellSide == BattleSide::ATTACKER || pack.counterspellSide == BattleSide::DEFENDER)
@@ -1867,26 +1937,37 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		if(!pack.counterspellNegated && newHorizonsMagic::isCounterspell(pack.spellID.toSpell()))
 		{
 			casterSide.counterspellArmed = true;
-			if(pack.metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(
-				battle->battleGetFightingHero(pack.side), newHorizonsMagic::METAMAGIC_COUNTERSEQUENCE))
-				casterSide.metamagicCountersequenceArmed = true;
+			casterSide.metamagicCountersequenceArmed = pack.metamagicFollowup
+				&& newHorizonsMagic::hasMetamagicPerk(
+					battle->battleGetFightingHero(pack.side), newHorizonsMagic::METAMAGIC_COUNTERSEQUENCE);
 		}
 
-		const auto * hero = battle->battleGetFightingHero(pack.side);
-		if(pack.metamagicGrand && !pack.metamagicFollowup)
-			throw std::runtime_error("Grand Metamagic metadata requires a follow-up cast");
 		if(pack.metamagicManaRefund > 0)
-		{
-			if(!pack.metamagicFollowup || pack.metamagicGrand || casterSide.metamagicPendingCount != 1
-				|| casterSide.metamagicFormulaReserveUsed || !hero
-				|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
-				throw std::runtime_error("Invalid Formula Reserve Metamagic refund");
 			casterSide.metamagicFormulaReserveUsed = true;
-		}
-		if(pack.metamagicFollowup)
+		if(sharedActionBudget)
 		{
-			if(casterSide.metamagicPendingCount == 0)
-				throw std::runtime_error("Metamagic follow-up cast without pending sequence");
+			const auto & receipt = spellTransition->receipt;
+			if(receipt.allowance == HeroActionAllowanceState::AllowanceKind::HERO)
+			{
+				casterSide.heroCommandUsed = true;
+				if(spellTransition->pendingMetamagicGrants != 0)
+				{
+					casterSide.metamagicFirstSpell = pack.spellID;
+					casterSide.metamagicFirstTargetUnitId = pack.metamagicTargetUnitId;
+					casterSide.metamagicSequenceSpells = {pack.spellID};
+					casterSide.metamagicFirstCounterspellNegated = pack.counterspellNegated;
+				}
+			}
+			else if(receipt.source == HeroActionAllowanceState::GrantSource::METAMAGIC
+				|| receipt.source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND)
+			{
+				casterSide.metamagicSequenceSpells.push_back(pack.spellID);
+				if(spellTransition->pendingMetamagicGrants == 0)
+					casterSide.clearMetamagicSequence();
+			}
+		}
+		else if(pack.metamagicFollowup)
+		{
 			if(pack.metamagicGrand)
 			{
 				const int rank = hero ? newHorizonsMagic::metamagicRank(hero) : 0;
@@ -1903,9 +1984,6 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 				const int rank = hero ? newHorizonsMagic::metamagicRank(hero) : 0;
 				if(!hero || rank <= casterSide.metamagicUsesConsumed)
 					throw std::runtime_error("Metamagic use was not available when follow-up was accepted");
-				// The use is committed when the player accepts the offered follow-up,
-				// not when the ordinary triggering spell merely resolves.  Declining
-				// therefore leaves the per-combat budget untouched.
 				++casterSide.metamagicUsesConsumed;
 			}
 			--casterSide.metamagicPendingCount;
@@ -1925,7 +2003,7 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 				casterSide.metamagicFirstCounterspellNegated = pack.counterspellNegated;
 			}
 		}
-		if(!pack.metamagicFollowup && newHorizonsWarcasting::enabled(battle->getMagicRules()))
+		if(spendsHeroAllowance && newHorizonsWarcasting::enabled(battle->getMagicRules()))
 		{
 			auto next = casterSide.warcastingState;
 			if(newHorizonsWarcasting::battleMeditationEligible(

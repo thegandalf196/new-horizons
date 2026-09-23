@@ -393,7 +393,7 @@ TEST_F(NewHorizonsMagicAITest, CounterspellAIArmsAThreatWardAndSkipsAnAlreadyArm
 	EXPECT_TRUE(callback->submitted.empty());
 }
 
-TEST_F(NewHorizonsMagicAITest, MetamagicAIDeclinesLegalButHarmfulFollowup)
+TEST_F(NewHorizonsMagicAITest, MetamagicAIRetainsAllowanceInsteadOfCastingHarmfulFollowup)
 {
 	useCommands = false;
 	useCurrentMagicRules = true;
@@ -455,10 +455,10 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIDeclinesLegalButHarmfulFollowup)
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
 		BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(active);
-	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
-	ASSERT_EQ(callback->submitted.size(), 1u);
-	EXPECT_TRUE(callback->submitted.front().metamagicDecline);
-	EXPECT_FALSE(callback->submitted.front().metamagicFollowup);
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active));
+	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_EQ(side.metamagicPendingCount, 1);
+	EXPECT_EQ(side.metamagicUsesConsumed, 0);
 }
 
 TEST_F(NewHorizonsMagicAITest, MetamagicAIUsesOrdinaryRepeatedSpellAndLeavesGrandAvailable)

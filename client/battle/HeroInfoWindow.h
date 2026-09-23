@@ -13,6 +13,7 @@
 
 #include "BattleSidePanel.h"
 #include "../../lib/battle/AlternatingHeroActionState.h"
+#include "../../lib/battle/HeroActionAllowanceState.h"
 
 class CLabel;
 class CAnimImage;
@@ -32,7 +33,10 @@ constexpr int effectAreaLeft = 4;
 constexpr int effectAreaTop = 204;
 constexpr int effectAreaWidth = 70;
 constexpr int effectAreaRowHeight = 26;
-constexpr int effectAreaHeight = effectAreaRowHeight * 2;
+constexpr int actionCountLineHeight = 12;
+constexpr int actionCountPanelHeight = actionCountLineHeight * 3;
+constexpr int effectAreaMaxStatusRows = 2;
+constexpr int effectAreaHeight = effectAreaRowHeight * effectAreaMaxStatusRows + actionCountPanelHeight;
 constexpr int effectAreaIconSize = 16;
 constexpr int compactAttackerEffectAreaLeft = 5;
 constexpr int compactDefenderEffectAreaLeft = 725;
@@ -50,6 +54,8 @@ class HeroBattleStatusArea : public CIntObject
 	bool counterspellArmed = false;
 	bool hasVisibleStatus = false;
 	AlternatingHeroActionState warcastingState;
+	HeroActionAllowanceState::Counts actionCounts;
+	bool showActionCounts = false;
 	int currentRound = 0;
 	std::string statusbarText;
 	std::string helpText;
@@ -60,7 +66,7 @@ class HeroBattleStatusArea : public CIntObject
 public:
 	HeroBattleStatusArea(const Point & position);
 	void setStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting,
-		int round);
+		const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts, int round);
 	void setRenderDuringShow(bool value);
 	void hover(bool on) override;
 	void showPopupWindow(const Point & cursorPosition) override;
@@ -84,7 +90,7 @@ public:
 	void initializeData(const InfoAboutHero & hero);
 	void update(const InfoAboutHero & updatedInfo);
 	void setBattleStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting,
-		int round);
+		const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts, int round);
 	void setBattleStatusRenderDuringShow(bool value);
 };
 

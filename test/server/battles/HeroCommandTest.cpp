@@ -705,6 +705,9 @@ TEST_F(HeroCommandTest, LegacyAdvanceIdentitySurvivesSideDecodeUntilBattleNormal
 	source = battle()->getSide(BattleSide::ATTACKER);
 	source.heroCommandUsed = true;
 	source.activeOrder = HeroCommand::ADVANCE;
+	// This fixture represents a pre-ledger side, not a lossy downgrade of an
+	// active modern battle. Modern allowance downgrade rejection is tested separately.
+	source.heroActionAllowances = {};
 
 	CMemorySerializer memory;
 	memory.oser.version = ESerializationVersion::HERO_COMMANDS;

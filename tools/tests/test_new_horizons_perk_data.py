@@ -192,6 +192,16 @@ def source_perk_row_for_current_rules(row):
             row[1],
             "If the additional Spell repeats the first Spell in the Metamagic sequence, it gains +25% to its Spell Power-derived component.",
         ]
+    if row == [
+        "Grand Metamagic",
+        "Expert",
+        "Once per combat, one Metamagic use permits two additional Spells instead of one. Neither additional Spell can trigger further additional casting.",
+    ]:
+        return [
+            "Grand Metamagic",
+            "Expert",
+            "Once per combat, choose Grand when casting an optional Metamagic Spell: one use permits two extra Spells. Casting the first grants a second Spell Action usable until the round ends; the second costs no additional use. Neither extra cast triggers Metamagic again.",
+        ]
     return row
 
 
@@ -273,6 +283,23 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
 
         self.assertEqual(len(all_perk_ids), 310)
         self.assertEqual(len(set(all_perk_ids)), 310)
+
+    def test_metamagic_text_describes_round_long_optional_spell_actions(self):
+        metamagic = self.rules["skills"]["new-horizons:metamagic"]
+        for rank in RANKS:
+            with self.subTest(rank=rank):
+                description = metamagic["ranks"][rank]["description"]
+                self.assertIn("optional Spell Action usable until the round ends", description)
+                self.assertIn("Casting with it spends", description)
+                self.assertIn("cannot trigger Metamagic again", description)
+
+        grand = next(
+            perk for perk in metamagic["perks"]
+            if perk["id"] == "new-horizons:metamagic.grandMetamagic"
+        )["description"]
+        self.assertIn("Spell Action usable until the round ends", grand)
+        self.assertIn("the second costs no additional use", grand)
+        self.assertIn("Neither extra cast triggers Metamagic again", grand)
 
     def test_game_settings_schema_exposes_registry_without_activating_it(self):
         settings = load("config/schemas/gameSettings.json")

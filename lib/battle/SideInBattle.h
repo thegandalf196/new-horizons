@@ -18,6 +18,7 @@
 #include "FocusFireState.h"
 #include "SylvanLuckState.h"
 #include "AlternatingHeroActionState.h"
+#include "HeroActionAllowanceState.h"
 #include "../callback/GameCallbackHolder.h"
 
 class CGHeroInstance;
@@ -94,9 +95,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	uint32_t castSpellsCount = 0; //how many spells each side has been cast this turn
 	bool temporalFieldUsed = false; // saved once-per-combat Sorcery Mass Slow budget
 	bool counterspellArmed = false; // saved Sorcery Counterspell ward, until the next hero action or enemy hero spell
-	// Tower Metamagic is a battle-long budget.  The pending sequence is kept
-	// separately from the ordinary hero-action spell count: additional spells
-	// are immediate follow-ups and never buy another hero action.
+	// Tower Metamagic's combat-use budget and spell-sequence provenance remain
+	// separate from the round-long action ledger below. Pending sequence metadata
+	// describes an available Spell Action; it does not lock creature actions or
+	// expire until the round boundary.
 	uint8_t metamagicUsesConsumed = 0;
 	uint8_t metamagicPendingCount = 0;
 	bool metamagicGrandUsed = false;
@@ -125,6 +127,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	bool chainGateArmed = false;
 	// Only accepted ordinary hero actions update this alternating readiness.
 	AlternatingHeroActionState warcastingState;
+	// Authoritative round-long Hero/typed action budget. Creature activations
+	// remain outside this ledger; legacy counters above are retained for history
+	// and migration only.
+	HeroActionAllowanceState heroActionAllowances;
 
 	bool hasChainGateState() const
 	{
@@ -145,6 +151,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING)
 			&& warcastingState != AlternatingHeroActionState{})
 			throw std::runtime_error("Cannot discard Warcasting battle state");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES)
+			&& heroActionAllowances != HeroActionAllowanceState{})
+			throw std::runtime_error("Cannot discard Hero Action allowance battle state");
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
 			h & sylvanLuck;
 		else if(!h.saving)
@@ -279,6 +288,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & warcastingState;
 		else if(!h.saving)
 			warcastingState = {};
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES))
+			h & heroActionAllowances;
+		else if(!h.saving)
+			heroActionAllowances = {};
 	}
 
 	void clearMetamagicSequence()
@@ -288,5 +301,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		metamagicFirstTargetUnitId = std::numeric_limits<uint32_t>::max();
 		metamagicSequenceSpells.clear();
 		metamagicFirstCounterspellNegated = false;
+		std::erase_if(heroActionAllowances.grants, [](const auto & grant)
+		{
+			return grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC
+				|| grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND;
+		});
 	}
 };

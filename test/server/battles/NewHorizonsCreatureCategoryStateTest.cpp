@@ -111,6 +111,7 @@ class NewHorizonsCreatureCategoryStateTest : public HeroCommandFixture
 {
 protected:
 	bool enabled = true;
+	bool legacyBattleFormat = false;
 	JsonNode authoredRules = contextFixture();
 	void mapLoaded(CMap * map) override
 	{
@@ -118,6 +119,12 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		map->overrideGameSetting(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES,
 			enabled ? authoredRules : JsonNode());
+		if(legacyBattleFormat)
+		{
+			auto magicRules = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+			magicRules["warcasting"] = JsonNode(false);
+			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+		}
 	}
 };
 
@@ -171,6 +178,7 @@ TEST_F(NewHorizonsCreatureCategoryStateTest, InvalidWorldTableCannotPublishItsOt
 
 TEST_F(NewHorizonsCreatureCategoryStateTest, CapturedWorldAndBattleIgnoreLaterSettingsChanges)
 {
+	InstalledCategoryOverride initial(authoredRules);
 	startGame();
 	auto replacement = contextFixture();
 	replacement["creatures"]["core:pixie"].String() = "champion";
@@ -252,6 +260,7 @@ TEST_F(NewHorizonsCreatureCategoryStateTest, OldWorldIsAbsentButCurrentBattlePac
 
 TEST_F(NewHorizonsCreatureCategoryStateTest, OldBattleAndResavedAbsenceCannotFallBackToActiveWorld)
 {
+	legacyBattleFormat = true;
 	startGame();
 	startBattle();
 	ASSERT_TRUE(gameState()->getCreatureCategory(pixie()));
@@ -271,6 +280,7 @@ TEST_F(NewHorizonsCreatureCategoryStateTest, OldBattleAndResavedAbsenceCannotFal
 
 TEST_F(NewHorizonsCreatureCategoryStateTest, RealAiHypotheticProxyUsesBattleSnapshotWithoutWorldFallback)
 {
+	legacyBattleFormat = true;
 	startGame();
 	startBattle();
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));

@@ -18,8 +18,10 @@
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/battle/BattleProxy.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/HeroActionAllowanceState.h"
 
 class HypotheticBattle;
+class CSpell;
 
 ///Fake random generator, used by AI to evaluate random server behavior
 class RNGStub final : public vstd::RNG
@@ -139,6 +141,97 @@ public:
 	BattleID getBattleID() const override;
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override;
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
+	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override;
+	bool getCounterspellArmed(BattleSide side) const override { return counterspellArmedStates.at(side); }
+	int32_t getMetamagicPendingCount(BattleSide side) const override { return metamagicStates.at(side).pending; }
+	int32_t getMetamagicUsesConsumed(BattleSide side) const override { return metamagicStates.at(side).uses; }
+	bool getMetamagicGrandUsed(BattleSide side) const override { return metamagicStates.at(side).grandUsed; }
+	SpellID getMetamagicFirstSpell(BattleSide side) const override { return metamagicStates.at(side).firstSpell; }
+	uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override { return metamagicStates.at(side).firstTarget; }
+	const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override
+	{
+		return metamagicStates.at(side).sequence;
+	}
+	bool getMetamagicFirstCounterspellNegated(BattleSide side) const override
+	{
+		return metamagicStates.at(side).firstCountered;
+	}
+	bool getMetamagicCountersequenceArmed(BattleSide side) const override
+	{
+		return countersequenceArmedStates.at(side);
+	}
+	struct ProjectedActionReceipt
+	{
+		BattleSide side = BattleSide::NONE;
+		HeroActionAllowanceState::Receipt receipt;
+		bool typedLedger = true;
+		uint64_t epoch = 0;
+
+		bool operator==(const ProjectedActionReceipt &) const = default;
+
+		bool isHeroAction() const
+		{
+			return receipt.allowance == HeroActionAllowanceState::AllowanceKind::HERO;
+		}
+	};
+	struct ProjectedMetamagicSnapshot
+	{
+		uint8_t uses = 0;
+		uint8_t pending = 0;
+		bool grandUsed = false;
+		SpellID firstSpell;
+		uint32_t firstTarget = std::numeric_limits<uint32_t>::max();
+		bool firstCountered = false;
+		std::vector<SpellID> sequence;
+
+		bool operator==(const ProjectedMetamagicSnapshot &) const = default;
+	};
+	struct ProjectedSpellAllowance
+	{
+		ProjectedActionReceipt action;
+		HeroActionAllowanceState allowancesBefore;
+		HeroActionAllowanceState allowancesAfter;
+		ProjectedMetamagicSnapshot metamagicBefore;
+		bool metamagicFollowup = false;
+		bool grand = false;
+		uint8_t usesAfter = 0;
+		uint8_t pendingAfter = 0;
+		bool grandUsedAfter = false;
+
+		bool operator==(const ProjectedSpellAllowance &) const = default;
+	};
+	struct ProjectedOrderAllowance
+	{
+		ProjectedActionReceipt action;
+		HeroActionAllowanceState allowancesBefore;
+		HeroActionAllowanceState allowancesAfter;
+		ProjectedMetamagicSnapshot metamagicBefore;
+
+		bool operator==(const ProjectedOrderAllowance &) const = default;
+	};
+	struct ProjectedCounterspellOutcome
+	{
+		BattleSide wardSide = BattleSide::NONE;
+		bool wardActive = false;
+		bool resolutionKnown = false;
+		std::optional<bool> negated;
+		std::optional<int> manaCost;
+	};
+	std::optional<ProjectedSpellAllowance> prepareHeroSpellAllowance(BattleSide side,
+		bool metamagicFollowup, bool grand) const;
+	std::optional<ProjectedOrderAllowance> prepareHeroOrderAllowance(BattleSide side) const;
+	bool beginProjectedHeroAction(BattleSide side, const ProjectedSpellAllowance & prepared);
+	bool beginProjectedHeroAction(BattleSide side, const ProjectedOrderAllowance & prepared);
+	bool projectAcceptedHeroSpell(BattleSide side, SpellID spell, uint32_t target,
+		bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated,
+		const ProjectedSpellAllowance & prepared);
+	bool projectAcceptedHeroOrder(BattleSide side, const ProjectedOrderAllowance & prepared);
+	ProjectedCounterspellOutcome resolveProjectedCounterspell(BattleSide casterSide, const CSpell * spell) const;
+	bool projectHeroSpellAllowance(BattleSide side, SpellID spell, uint32_t target,
+		bool metamagicFollowup, bool grand);
+	bool projectHeroOrderAllowance(BattleSide side);
+	void expireProjectedTimeStops(BattleSide casterSide);
+	ui8 getProjectedPendingTimeStopHeroActionSides() const { return pendingTimeStopHeroActionSides; }
 	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override;
 	void setFocusFireState(BattleSide side, const FocusFireState & state);
@@ -209,6 +302,22 @@ public:
 private:
 	BattleSideArray<std::optional<HeroOrderState>> heroOrderStates;
 	BattleSideArray<AlternatingHeroActionState> warcastingStates;
+	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;
+	BattleSideArray<bool> counterspellArmedStates;
+	BattleSideArray<bool> countersequenceArmedStates;
+	ui8 pendingTimeStopHeroActionSides = 0;
+	using ProjectedMetamagic = ProjectedMetamagicSnapshot;
+	BattleSideArray<ProjectedMetamagic> metamagicStates;
+	BattleSideArray<uint64_t> projectedActionEpochs{};
+	BattleSideArray<std::optional<ProjectedSpellAllowance>> begunProjectedSpellAllowances{};
+	BattleSideArray<std::optional<ProjectedOrderAllowance>> begunProjectedOrderAllowances{};
+	bool isCurrentPreparedSpellAction(BattleSide side, const ProjectedSpellAllowance & prepared,
+		bool requireBegun) const;
+	bool isCurrentPreparedOrderAction(BattleSide side, const ProjectedOrderAllowance & prepared,
+		bool requireBegun) const;
+	void beginProjectedHeroAction(BattleSide side, const ProjectedActionReceipt & receipt);
+	void finishProjectedHeroAction(BattleSide side, const ProjectedSpellAllowance & prepared);
+	void finishProjectedHeroAction(BattleSide side, const ProjectedOrderAllowance & prepared);
 	std::map<BattleSide, std::optional<FocusFireState>> focusFireStates;
 	BattleSideArray<int32_t> bloodrageRanks;
 	BattleSideArray<int32_t> bloodrageDamagePercents;

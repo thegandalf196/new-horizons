@@ -3180,27 +3180,27 @@
 			"name": "Metamagic",
 			"domain": "Faction",
 			"availability": "Tower heroes only",
-			"description": "Faction-locked Skill. Tower specializes in manipulating the act of spellcasting itself. Metamagic permits a second spell after a normal spell cast, with a limited number of uses per combat.",
+			"description": "Faction-locked Skill. If a use remains, after casting a Spell with your Hero Action, Metamagic offers an optional Spell Action usable until the round ends. An extra Spell cast with it spends a use and cannot trigger Metamagic again.",
 			"ranks": {
 				"basic": {
-					"description": "Once per combat, after using the Hero Action to cast a Spell, immediately cast one additional Spell.",
+					"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends your one Metamagic use for this combat and cannot trigger Metamagic again.",
 					"effect": {
 						"status": "active",
-						"description": "Once per combat, after using the Hero Action to cast a Spell, immediately cast one additional Spell."
+						"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends your one Metamagic use for this combat and cannot trigger Metamagic again."
 					}
 				},
 				"advanced": {
-					"description": "Metamagic may be used twice per combat.",
+					"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your two Metamagic uses for this combat and cannot trigger Metamagic again.",
 					"effect": {
 						"status": "active",
-						"description": "Metamagic may be used twice per combat."
+						"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your two Metamagic uses for this combat and cannot trigger Metamagic again."
 					}
 				},
 				"expert": {
-					"description": "Metamagic may be used three times per combat.",
+					"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your three Metamagic uses for this combat and cannot trigger Metamagic again.",
 					"effect": {
 						"status": "active",
-						"description": "Metamagic may be used three times per combat."
+						"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your three Metamagic uses for this combat and cannot trigger Metamagic again."
 					}
 				}
 			},
@@ -3289,10 +3289,10 @@
 					"id": "new-horizons:metamagic.grandMetamagic",
 					"name": "Grand Metamagic",
 					"requires": "expert",
-					"description": "Once per combat, one Metamagic use permits two additional Spells instead of one. Neither additional Spell can trigger further additional casting.",
+					"description": "Once per combat, choose Grand when casting an optional Metamagic Spell: one use permits two extra Spells. Casting the first grants a second Spell Action usable until the round ends; the second costs no additional use. Neither extra cast triggers Metamagic again.",
 					"effect": {
 						"status": "active",
-						"description": "Once per combat, one Metamagic use permits two additional Spells instead of one. Neither additional Spell can trigger further additional casting."
+						"description": "Once per combat, choose Grand when casting an optional Metamagic Spell: one use permits two extra Spells. Casting the first grants a second Spell Action usable until the round ends; the second costs no additional use. Neither extra cast triggers Metamagic again."
 					}
 				},
 				{

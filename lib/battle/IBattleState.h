@@ -15,6 +15,7 @@
 #include "HeroCommand.h"
 #include "FocusFireState.h"
 #include "SylvanLuckState.h"
+#include "HeroActionAllowanceState.h"
 #include "AlternatingHeroActionState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
@@ -80,6 +81,12 @@ public:
 	virtual const JsonNode & getMagicRules() const;
 	virtual const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const;
 	virtual bool getHeroCommandUsed(BattleSide side) const { return false; }
+	virtual const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const
+	{
+		(void)side;
+		static const HeroActionAllowanceState empty;
+		return empty;
+	}
 	virtual const AlternatingHeroActionState & getWarcastingState(BattleSide side) const
 	{
 		(void)side;

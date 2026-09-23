@@ -137,6 +137,35 @@ protected:
 	}
 };
 
+class NewHorizonsHistoricalGrowthSnapshotTest : public NewHorizonsCapabilityStateTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsCapabilityStateTest::mapLoaded(loaded);
+		// This save version includes primary ratings and the original
+		// non-targeted command rules, but predates targeted commands and perks.
+		JsonNode combat(JsonPath::builtin("config/newHorizonsCombatV2"));
+		auto rules = combat["combat"]["heroCommands"];
+		rules["rulesetVersion"].Integer() = heroCommands::RULESET_VERSION;
+		rules["commands"].Struct().erase("focusFire");
+		rules.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+	}
+};
+
+class NewHorizonsActual034SnapshotTest : public NewHorizonsHeroGrowthTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsHeroGrowthTest::mapLoaded(loaded);
+		// The 0.34 save predates saved New Horizons perk state.
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+	}
+};
+
 class NewHorizonsPerSlotLeadershipTest : public NewHorizonsCapabilityStateTest
 {
 protected:
@@ -1010,7 +1039,7 @@ TEST_F(NewHorizonsCapabilityStateTest, FullWorldRoundtripKeepsBothIndependentIde
 	EXPECT_EQ(restored.getHeroCapabilityRules(), gameState()->getHeroCapabilityRules());
 }
 
-TEST_F(NewHorizonsCapabilityStateTest, GrowthCheckpointBinaryDoesNotAcquireCapabilities)
+TEST_F(NewHorizonsHistoricalGrowthSnapshotTest, GrowthCheckpointBinaryDoesNotAcquireCapabilities)
 {
 	capabilitiesEnabled = false;
 	startGame();
@@ -1090,7 +1119,11 @@ TEST_F(NewHorizonsHeroGrowthTest, MapExperienceUsesTheSameFourAttributeGrowthPat
 	ASSERT_NE(hero, nullptr);
 	EXPECT_EQ(hero->level, 3);
 	ASSERT_TRUE(hero->getPrimaryGrowthView());
-	EXPECT_EQ(hero->getPrimaryGrowthView()->base, (std::array<int, 4>{23, 28, 7, 12}));
+	// The fixture's fixed 4/4/1/1 vector determines both the starting profile
+	// and every level gained from authored map experience.
+	const std::array<int, 4> growth{4, 4, 1, 1};
+	for(int attribute = 0; attribute < 4; ++attribute)
+		EXPECT_EQ(hero->getPrimaryGrowthView()->base[attribute], growth[attribute] * (hero->level + 4));
 }
 
 TEST_F(NewHorizonsHeroGrowthTest, LegacyInstanceHasNoGrowthViewAndOriginalScale)
@@ -1152,7 +1185,7 @@ TEST_F(NewHorizonsHeroGrowthTest, AuthorityAppliesAndReportsAllFourActualLevelGa
 	EXPECT_EQ(attackerSideHero->level, level + 1);
 	const auto view = attackerSideHero->getPrimaryGrowthView();
 	ASSERT_TRUE(view);
-	EXPECT_EQ(view->lastGains, (std::array<int, 4>{5, 5, 1, 1}));
+	EXPECT_EQ(view->lastGains, (std::array<int, 4>{4, 4, 1, 1}));
 	for(int i = 0; i < 4; ++i)
 		EXPECT_EQ(view->base[i] - before[i], view->lastGains[i]);
 }
@@ -1212,9 +1245,10 @@ TEST_F(NewHorizonsHeroGrowthTest, FullGameRoundtripPreservesResolvedHeroAndWorld
 	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::ATTACK), 150);
 }
 
-TEST_F(NewHorizonsHeroGrowthTest, Actual034VersionAndOldCrossoverRemainLegacy)
+TEST_F(NewHorizonsActual034SnapshotTest, Actual034VersionAndOldCrossoverRemainLegacy)
 {
 	growthEnabled = false;
+	useCommands = false;
 	startGame();
 	CMemorySerializer memory;
 	memory.oser.version = ESerializationVersion::NEW_HORIZONS_MAGIC;
@@ -1264,8 +1298,9 @@ TEST_F(NewHorizonsHeroGrowthTest, ExpandedRatingsDoNotBecomeCreatureDamageButDoS
 {
 	prepareCommands();
 	auto * ours = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
-	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
-	const auto damage = [&] { return battle()->calculateDmgRange(BattleAttackInfo(ours, enemy, 0, false)).damage.min; };
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(74), 100);
+	// Charge applies to an attack after at least three hexes of movement.
+	const auto damage = [&] { return battle()->calculateDmgRange(BattleAttackInfo(ours, enemy, 3, false)).damage.min; };
 	const auto before = damage();
 	attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 150, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(damage(), before); // Separate controls: equal A/D must not hide leakage.

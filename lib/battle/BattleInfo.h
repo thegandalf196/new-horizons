@@ -44,6 +44,10 @@ public:
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
+	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override
+	{
+		return sides.at(side).heroActionAllowances;
+	}
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return creatureCategoryRules; }
 	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
 	int32_t getBloodrageDamagePercent(BattleSide side) const override { return sides.at(side).bloodrageDamagePercent; }
@@ -116,6 +120,9 @@ public:
 	{
 		if(h.saving)
 		{
+			if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE)
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES))
+				throw std::runtime_error("Cannot save typed Hero Action budgets in an older format");
 			if(newHorizonsWarcasting::enabled(magicRules)
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING))
 				throw std::runtime_error("Cannot save an active Warcasting battle in an older format");
@@ -231,6 +238,93 @@ public:
 		}
 		else if(!h.saving)
 			magicRules = JsonNode();
+
+		if(!h.saving)
+		{
+			const bool usesSharedActionBudget = heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE);
+			for(const auto sideId : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			{
+				auto & side = sides.at(sideId);
+				auto & allowances = side.heroActionAllowances;
+				if(!usesSharedActionBudget)
+				{
+					if(allowances != HeroActionAllowanceState{})
+						throw std::runtime_error("Saved Hero Action allowance state requires shared action rules");
+					continue;
+				}
+				const bool noPreRoundActionHistory = !side.heroCommandUsed && side.castSpellsCount == 0
+					&& side.metamagicPendingCount == 0 && side.metamagicUsesConsumed == 0
+					&& side.activeOrder == HeroCommand::NONE && !side.orderState && !side.focusFire
+					&& side.metamagicSequenceSpells.empty();
+				const bool cleanUninitializedLedger = allowances == HeroActionAllowanceState{};
+
+				if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES))
+				{
+					if(round <= 0)
+					{
+						if(!noPreRoundActionHistory)
+							throw std::runtime_error("Action history exists before the first playable battle round");
+						if(!cleanUninitializedLedger)
+							throw std::runtime_error("Hero Action allowances exist before the first playable battle round");
+						continue;
+					}
+					if(allowances.currentRound != round)
+						throw std::runtime_error("Hero Action allowance round does not match battle round");
+					allowances.validateShape();
+
+				}
+				else if(round <= 0)
+				{
+					if(!noPreRoundActionHistory)
+						throw std::runtime_error("Action history exists before the first playable battle round");
+					if(!cleanUninitializedLedger)
+						throw std::runtime_error("Hero Action allowances exist before the first playable battle round");
+				}
+				else
+				{
+					// Old saves represented both a consumed Hero Action and an available
+					// Metamagic continuation with independent counters. Reconstruct the
+					// typed grants once from that authoritative legacy snapshot.
+					allowances.resetForRound(round);
+					if(side.heroCommandUsed || side.castSpellsCount > 0)
+					{
+						const auto baseAction = allowances.eligibleAllowance(
+							HeroActionAllowanceState::ActionKind::SPELL, round);
+						if(!baseAction || baseAction->allowance != HeroActionAllowanceState::AllowanceKind::HERO
+							|| !allowances.consumeAllowance(baseAction->grantId,
+								HeroActionAllowanceState::ActionKind::SPELL, round))
+							throw std::runtime_error("Could not migrate spent legacy Hero Action");
+					}
+					if(side.metamagicPendingCount > 1)
+						throw std::runtime_error("Unsupported legacy pending Metamagic allowance count");
+					if(side.metamagicPendingCount == 1)
+					{
+						if(side.castSpellsCount == 0 && !side.heroCommandUsed)
+							throw std::runtime_error("Legacy Metamagic grant has no consumed Hero Action");
+						const bool grandContinuation = side.metamagicGrandUsed && side.metamagicSequenceSpells.size() == 2;
+						allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::SPELL,
+							grandContinuation ? HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND
+								: HeroActionAllowanceState::GrantSource::METAMAGIC,
+							round);
+					}
+				}
+
+				uint32_t metamagicGrantCount = 0;
+				uint32_t grandGrantCount = 0;
+				for(const auto & grant : allowances.grants)
+				{
+					if(grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC)
+						++metamagicGrantCount;
+					else if(grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND)
+						++grandGrantCount;
+				}
+				if(metamagicGrantCount + grandGrantCount != side.metamagicPendingCount
+					|| metamagicGrantCount > 1 || grandGrantCount > 1
+					|| (metamagicGrantCount != 0 && side.metamagicSequenceSpells.size() != 1)
+					|| (grandGrantCount != 0 && (!side.metamagicGrandUsed || side.metamagicSequenceSpells.size() != 2)))
+					throw std::runtime_error("Metamagic metadata does not match typed Spell grants");
+			}
+		}
 
 		if(!h.saving && !newHorizonsWarcasting::enabled(magicRules))
 		{

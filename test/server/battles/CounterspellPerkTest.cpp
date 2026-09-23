@@ -8,6 +8,8 @@
 #include "HeroCommandFixture.h"
 
 #include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/bonuses/BonusParameters.h"
+#include "../../../lib/battle/HeroActionAllowanceState.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -17,22 +19,33 @@ namespace
 constexpr auto counterspellKey = "new-horizons:counterspell";
 constexpr auto sorcerySkill = "new-horizons:sorceryMagic";
 constexpr auto countermagePerk = "new-horizons:sorceryMagic.countermage";
+constexpr auto metamagicSkill = "new-horizons:metamagic";
 
 SpellID counterspell()
 {
 	return SpellID(SpellID::decode(counterspellKey));
+}
+
+std::shared_ptr<Bonus> testTimeStopMarker(BattleSide side)
+{
+	auto marker = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
+		BonusSource::OTHER, 1, BonusSourceID());
+	marker->parameters = std::make_shared<BonusParameters>(static_cast<int32_t>(side));
+	return marker;
 }
 }
 
 class CounterspellPerkTest : public HeroCommandFixture
 {
 protected:
+	bool typedAllowanceFixture = false;
+
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons module";
-		useCommands = false;
+		useCommands = typedAllowanceFixture;
 	}
 
 	void mapLoaded(CMap * loaded) override
@@ -44,13 +57,23 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
-	void prepare(int counterMana, bool selectCountermage)
+	void prepare(int counterMana, bool selectCountermage,
+		bool attackerMetamagic = false, bool defenderMetamagic = false)
 	{
 		startGame();
 		const auto decoded = SecondarySkill::decode(sorcerySkill);
 		ASSERT_GE(decoded, 0);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), 2, ChangeValueMode::ABSOLUTE);
 		defenderSideHero->setSecSkillLevel(SecondarySkill(decoded), 1, ChangeValueMode::ABSOLUTE);
+		if(attackerMetamagic || defenderMetamagic)
+		{
+			const auto metamagic = SecondarySkill::decode(metamagicSkill);
+			ASSERT_GE(metamagic, 0);
+			if(attackerMetamagic)
+				attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 1, ChangeValueMode::ABSOLUTE);
+			if(defenderMetamagic)
+				defenderSideHero->setSecSkillLevel(SecondarySkill(metamagic), 1, ChangeValueMode::ABSOLUTE);
+		}
 		if(selectCountermage)
 			attackerSideHero->applyPerkSelection({sorcerySkill, countermagePerk});
 
@@ -99,24 +122,26 @@ protected:
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
 
-	bool castEnemyHaste()
+	bool castEnemyHaste(bool followup = false)
 	{
 		activate(defender);
 		BattleAction action;
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::DEFENDER;
 		action.spell = SpellID::HASTE;
+		action.metamagicFollowup = followup;
 		action.aimToUnit(defender);
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), action);
 	}
 
-	bool castOwnHaste()
+	bool castOwnHaste(bool followup = false)
 	{
 		activate(attacker);
 		BattleAction action;
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::ATTACKER;
 		action.spell = SpellID::HASTE;
+		action.metamagicFollowup = followup;
 		action.aimToUnit(attacker);
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
@@ -141,6 +166,16 @@ protected:
 
 	CStack * attacker = nullptr;
 	CStack * defender = nullptr;
+};
+
+class TypedCounterspellPerkTest : public CounterspellPerkTest
+{
+protected:
+	void SetUp() override
+	{
+		typedAllowanceFixture = true;
+		CounterspellPerkTest::SetUp();
+	}
 };
 
 TEST_F(CounterspellPerkTest, CanonicalSpellAndCountermageDataAreActive)
@@ -277,4 +312,81 @@ TEST_F(CounterspellPerkTest, InvalidOwnHeroSpellDoesNotExpireArmedWard)
 	advanceRound();
 	EXPECT_FALSE(castOwnHasteWithoutMana());
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+}
+
+TEST_F(TypedCounterspellPerkTest, TypedOrderPreservesOwnWardAndTimeStopUntilHeroSpell)
+{
+	prepare(100, false);
+	ASSERT_TRUE(castCounterspell());
+	ASSERT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+
+	// Make both action-boundary effects visible on the same accepted typed Order.
+	// Keep the currently active stack eligible; the stopped defender exposes
+	// the side-scoped Time Stop expiry behavior.
+	auto marker = testTimeStopMarker(BattleSide::ATTACKER);
+	battle()->addOrUpdateUnitBonus(defender, *marker, true);
+	battle()->notePendingTimeStopHeroAction(BattleSide::ATTACKER);
+	ASSERT_TRUE(defender->isTimeStopped());
+	battle()->getSide(BattleSide::ATTACKER).heroActionAllowances.grantAllowance(
+		HeroActionAllowanceState::AllowanceKind::ORDER,
+		HeroActionAllowanceState::GrantSource::PERK, battle()->getRound());
+	activate(attacker);
+	ASSERT_EQ(battle()->battleActiveUnit(), attacker);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+	EXPECT_TRUE(defender->isTimeStopped());
+
+	// The following round's flexible Hero Action is the actual boundary for both.
+	advanceRound();
+	ASSERT_TRUE(castOwnHaste());
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+	EXPECT_FALSE(defender->isTimeStopped());
+}
+
+TEST_F(TypedCounterspellPerkTest, MetamagicFollowupDoesNotExpireOwnWard)
+{
+	prepare(100, false, true, false);
+	ASSERT_TRUE(castCounterspell());
+	ASSERT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+	ASSERT_TRUE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER));
+	auto * stopped = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(15, 5), 10);
+	ASSERT_NE(stopped, nullptr);
+	auto marker = testTimeStopMarker(BattleSide::ATTACKER);
+	battle()->addOrUpdateUnitBonus(stopped, *marker, true);
+	battle()->notePendingTimeStopHeroAction(BattleSide::ATTACKER);
+	ASSERT_TRUE(castOwnHaste(true));
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+	EXPECT_TRUE(stopped->isTimeStopped());
+}
+
+TEST_F(TypedCounterspellPerkTest, TypedCounterspellReplacementClearsOldCountersequenceLink)
+{
+	prepare(100, false);
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	side.counterspellArmed = true;
+	side.metamagicCountersequenceArmed = true;
+	side.heroActionAllowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::SPELL,
+		HeroActionAllowanceState::GrantSource::PERK, battle()->getRound());
+
+	ASSERT_TRUE(castCounterspell());
+	EXPECT_TRUE(side.counterspellArmed);
+	EXPECT_FALSE(side.metamagicCountersequenceArmed);
+}
+
+TEST_F(TypedCounterspellPerkTest, EnemyMetamagicSpellActionStillConsumesWard)
+{
+	prepare(100, false, false, true);
+	ASSERT_TRUE(castEnemyHaste()); // Creates a round-long Spell Action for the defender.
+	ASSERT_TRUE(battle()->battleCanUseMetamagicFollowup(BattleSide::DEFENDER));
+	// The attacker may cast only during its active stack's owner window.
+	activate(attacker);
+	ASSERT_TRUE(castCounterspell());
+	ASSERT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+	ASSERT_TRUE(castEnemyHaste(true));
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+
+	const auto casts = server.castsOf(SpellID::HASTE);
+	ASSERT_GE(casts.size(), 2u);
+	EXPECT_EQ(casts.back().announcement.counterspellSide, BattleSide::ATTACKER);
+	EXPECT_TRUE(casts.back().announcement.counterspellNegated);
 }

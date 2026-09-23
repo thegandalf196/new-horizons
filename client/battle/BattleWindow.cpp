@@ -32,6 +32,7 @@
 #include "../gui/WindowHandler.h"
 #include "render/CAnimation.h"
 #include "render/Canvas.h"
+#include "render/IFont.h"
 #include "render/IRenderHandler.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/Images.h"
@@ -64,6 +65,9 @@
 namespace
 {
 constexpr int ordersControlPitch = 51;
+// StackInfoBasicPanel's tallest child is the CCRPOP background at y=37 with
+// height 286. Keep the outside hero/status/stack column inside short screens.
+constexpr int outsideStackInfoPanelExtent = 37 + 286;
 }
 
 BattleWindow::BattleWindow(BattleInterface & Owner)
@@ -131,10 +135,7 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 	});
 	addShortcut(EShortcut::GLOBAL_CANCEL, [this]()
 	{
-		if(this->owner.actionsController->metamagicFollowupModeActive())
-			this->owner.declineMetamagicFollowup();
-		else
-			this->owner.actionsController->endCastingSpell();
+		this->owner.actionsController->endCastingSpell();
 	});
 	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, true);
 	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE, true);
@@ -159,15 +160,8 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		});
 	addWidget("nhLandMineConfirm", landMineConfirmButton);
 	landMineConfirmButton->setEnabled(false);
-	metamagicDeclineButton = std::make_shared<CButton>(Point(697, 560), AnimationPath::builtin("NH_hero_actions_entry"),
-		CButton::tooltip("Decline / End Metamagic", "End the pending Metamagic sequence without spending another Hero Action."), [this]()
-		{
-			owner.declineMetamagicFollowup();
-		});
-	addWidget("nhMetamagicDecline", metamagicDeclineButton);
-	metamagicDeclineButton->setEnabled(false);
 	metamagicGrandButton = std::make_shared<CButton>(Point(640, 560), AnimationPath::builtin("NH_hero_actions_entry"),
-		CButton::tooltip("Grand Metamagic", "Use this pending Metamagic sequence for two additional spells."), [this]()
+		CButton::tooltip("Grand Metamagic", "Spend one Metamagic use for two Spell Actions this round."), [this]()
 		{
 			owner.toggleMetamagicGrandFollowup();
 		});
@@ -615,27 +609,25 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 	const bool counterspellArmed = battleCallback->battleWasCounterspellArmed(side);
 	const auto & warcasting = battle->getWarcastingState(side);
 	const auto round = battle->getRound();
+	const bool showActionCounts = battleCallback->battleUsesHeroCommands()
+		&& battle->getSideHero(side) != nullptr;
+	const auto actionCounts = showActionCounts
+		? battleCallback->battleHeroActionAllowanceCounts(side)
+		: HeroActionAllowanceState::Counts{};
 
 	const auto panel = side == BattleSide::ATTACKER ? attackerHeroWindow : defenderHeroWindow;
 	if(panel)
-		panel->setBattleStatus(counterspellArmed, warcasting, round);
+		panel->setBattleStatus(counterspellArmed, warcasting, actionCounts, showActionCounts, round);
 
 	const auto statusArea = side == BattleSide::ATTACKER ? attackerHeroStatus : defenderHeroStatus;
 	if(statusArea)
-		statusArea->setStatus(counterspellArmed, warcasting, round);
+		statusArea->setStatus(counterspellArmed, warcasting, actionCounts, showActionCounts, round);
 }
 
 void BattleWindow::updateCounterspellStatus()
 {
 	refreshHeroBattleStatus(BattleSide::ATTACKER);
 	refreshHeroBattleStatus(BattleSide::DEFENDER);
-	if(metamagicDeclineButton)
-	{
-		const auto side = owner.getBattle()->battleGetMySide();
-		const bool pending = side != BattleSide::NONE && owner.getBattle()->battleCanUseMetamagicFollowup(side);
-		metamagicDeclineButton->setEnabled(pending);
-		metamagicDeclineButton->block(!pending);
-	}
 	if(metamagicGrandButton)
 	{
 		const auto side = owner.getBattle()->battleGetMySide();
@@ -1020,8 +1012,6 @@ void BattleWindow::openSpellbook()
 	auto myHero = owner.currentHero();
 	if(!myHero)
 		return;
-	if(owner.getBattle()->battleCanUseMetamagicFollowup(owner.getBattle()->battleGetMySide()))
-		owner.actionsController->beginMetamagicFollowup();
 
 	ENGINE->cursor().set(Cursor::Map::POINTER);
 
@@ -1067,30 +1057,6 @@ void BattleWindow::openSpellbook()
 	else
 	{
 		logGlobal->warn("Unexpected problem with readiness to cast spell");
-	}
-}
-
-void BattleWindow::openMetamagicSpellbook()
-{
-	if(!owner.actionsController)
-		return;
-	owner.actionsController->beginMetamagicFollowup();
-	if(owner.actionsController->metamagicFollowupModeActive())
-	{
-		const auto side = owner.getBattle()->battleGetMySide();
-		const int remaining = std::max(0,
-			newHorizonsMagic::metamagicRank(owner.currentHero())
-			- owner.getBattle()->battleMetamagicUsesConsumed(side));
-		const bool grandAvailable = owner.getBattle()->battleMetamagicPendingCount(side) == 1
-			&& owner.getBattle()->battleMetamagicSequenceSpells(side).size() == 1
-			&& !owner.getBattle()->battleMetamagicGrandUsed(side)
-			&& newHorizonsMagic::metamagicRank(owner.currentHero()) >= 3
-			&& newHorizonsMagic::hasMetamagicPerk(owner.currentHero(), newHorizonsMagic::METAMAGIC_GRAND);
-		owner.appendBattleLog("Metamagic: choose an immediate additional spell (remaining uses this combat: "
-			+ std::to_string(remaining) + ")."
-			+ (grandAvailable ? " Grand Metamagic is optional; use its button for two additional spells." : "")
-			+ " Decline / End is available beside Wait.");
-		openSpellbook();
 	}
 }
 
@@ -1304,10 +1270,32 @@ bool BattleWindow::placeInfoWindowsOutside() const
 	constexpr int widthWithQuickActions = 800 + 50*2 + 75*2;
 	constexpr int widthBaseWindow = 800 + 75*2;
 
-	if (quickActionsPanelActive())
-		return ENGINE->screenDimensions().x >= widthWithQuickActions;
-	else
-		return ENGINE->screenDimensions().x >= widthBaseWindow;
+	const bool enoughWidth = quickActionsPanelActive()
+		? ENGINE->screenDimensions().x >= widthWithQuickActions
+		: ENGINE->screenDimensions().x >= widthBaseWindow;
+	if(!enoughWidth)
+		return false;
+
+	int timerOffset = 0;
+	const auto & turnTimers = GAME->interface()->cb->getStartInfo()->turnTimerInfo;
+	if(turnTimers.battleTimer != 0 || turnTimers.unitTimer != 0)
+	{
+		const int bigFontHeight = static_cast<int>(ENGINE->renderHandler().loadFont(FONT_BIG)->getLineHeight());
+		timerOffset = 6 + bigFontHeight - 4;
+		if(turnTimers.battleTimer != 0)
+			timerOffset += bigFontHeight;
+		if(!turnTimers.accumulatingUnitTimer && turnTimers.unitTimer != 0)
+			timerOffset += bigFontHeight;
+		timerOffset += 9;
+	}
+
+	// placeInfoWindowsOutside() is shared by the hero and stack panel layouts.
+	// If the complete outside column would extend past the viewport, use the
+	// existing compact overlay layout rather than hiding the bottom of the stack
+	// readout below the screen.
+	const int stackPanelBottom = pos.y - 1 + timerOffset
+		+ HeroInfoPanelLayout::outsideStackPanelOffsetY + outsideStackInfoPanelExtent;
+	return stackPanelBottom <= ENGINE->screenDimensions().y;
 }
 
 bool BattleWindow::quickActionsPanelActive() const

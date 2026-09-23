@@ -1480,28 +1480,9 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		gameHandler->complain("Metamagic action has an invalid battle side");
 		return false;
 	}
-	// A hypnotized stack keeps its original BattleSide in the action packet,
-	// while its controlling player (and therefore any pending hero sequence)
-	// is the opposite side.  Pending-sequence authority follows the controller;
-	// otherwise an automatic or player action for that stack can bypass the
-	// immediate follow-up window simply by carrying the origin side.
-	BattleSide controllingSide = ba.side;
-	if(ba.isUnitAction())
-	{
-		const auto * actionUnit = battle.battleGetStackByID(ba.stackNumber, false);
-		if(actionUnit && actionUnit->isHypnotized())
-		{
-			const auto controlledSide = battle.playerToSide(battle.battleGetOwner(actionUnit));
-			if(controlledSide == BattleSide::ATTACKER || controlledSide == BattleSide::DEFENDER)
-				controllingSide = controlledSide;
-		}
-	}
-	if(battle.battleCanUseMetamagicFollowup(controllingSide)
-		&& !(ba.actionType == EActionType::HERO_SPELL || ba.metamagicDecline))
-	{
-		gameHandler->complain("An immediate Metamagic follow-up must resolve before another action");
-		return false;
-	}
+	// Typed Spell allowances last through the round. Their presence does not
+	// block creature actions, Orders, Wait, or Defend; only an accepted HERO_SPELL
+	// may consume the selected spell grant.
 	if(ba.actionType == EActionType::HERO_SPELL
 		&& ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side))
 	{
@@ -1520,7 +1501,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	}
 	if(ba.actionType == EActionType::HERO_SPELL && !ba.metamagicFollowup && ba.metamagicGrand)
 	{
-		gameHandler->complain("Grand Metamagic requires an immediate follow-up spell");
+		gameHandler->complain("Grand Metamagic requires a Metamagic Spell Action");
 		return false;
 	}
 	if(ba.metamagicDecline)

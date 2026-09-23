@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleInfo.h"
 #include "NewHorizonsBloodrage.h"
+#include "TimeStopState.h"
 
 #include "BattleLayout.h"
 #include "CObstacleInstance.h"
@@ -35,51 +36,6 @@
 
 namespace
 {
-bool isTimeStopBonus(const Bonus & bonus)
-{
-	// The dedicated marker is authoritative even when a legacy/content-light
-	// loader cannot resolve the script's SpellID.  The source check below keeps
-	// the old NONE/NOT_ACTIVE/INVINCIBLE fallback markers recognizable.
-	if(bonus.type == BonusType::TIME_STOP)
-		return true;
-
-	if(bonus.source != BonusSource::SPELL_EFFECT || !bonus.sid.as<SpellID>().hasValue())
-		return false;
-
-	const auto * spell = bonus.sid.as<SpellID>().toSpell();
-	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
-}
-
-bool isTimeStopStateBonus(const Bonus & bonus)
-{
-	return isTimeStopBonus(bonus)
-		&& (bonus.type == BonusType::TIME_STOP
-			|| bonus.type == BonusType::NONE
-			|| bonus.type == BonusType::NOT_ACTIVE
-			|| bonus.type == BonusType::INVINCIBLE);
-}
-
-bool timeStopBelongsToSide(const Bonus & bonus, BattleSide side)
-{
-	if(!isTimeStopBonus(bonus))
-		return false;
-
-	// Early development snapshots did not carry the caster side in addInfo.
-	// They are safe to clean up on either hero action rather than leaving a
-	// permanent stale marker in a loaded battle.
-	if(!bonus.parameters)
-		return true;
-
-	try
-	{
-		return bonus.parameters->toNumber() == static_cast<int32_t>(side);
-	}
-	catch(const std::exception &)
-	{
-		return false;
-	}
-}
-
 bool orderUnitsAdjacent(const battle::Unit * first, const battle::Unit * second)
 {
 	if(!first || !second)
@@ -994,8 +950,8 @@ void BattleInfo::nextRound()
 		sides.at(i).activeOrder = HeroCommand::NONE;
 		sides.at(i).orderState.reset();
 		sides.at(i).focusFire.reset();
-		// A sequence is immediate: an unspent follow-up cannot survive into a
-		// later round.  The per-combat Metamagic and Grand/Formula budgets remain.
+		// Unspent round-long Metamagic Spell grants expire below; the per-combat
+		// Metamagic and Grand/Formula budgets remain.
 		sides.at(i).clearMetamagicSequence();
 		vstd::amax(--sides.at(i).enchanterCounter, 0);
 	}
@@ -1004,7 +960,11 @@ void BattleInfo::nextRound()
 	bool isFirstRound = round == 0;
 	round += 1;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE))
+			sides.at(side).heroActionAllowances.resetForRound(round);
 		sides.at(side).warcastingState = sides.at(side).warcastingState.clearedIfExpired(round);
+	}
 
 	for(auto & s : stacks)
 	{
@@ -1308,7 +1268,7 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 	for(const Bonus & one : bonus)
 	{
-		if(sta->isTimeStopped() && !isTimeStopStateBonus(one))
+		if(sta->isTimeStopped() && !timeStopState::isStateBonus(one))
 		{
 			logNetwork->warn("Ignoring effect removal from Time Stop unit %d", id);
 			continue;
@@ -1342,8 +1302,8 @@ void BattleInfo::expireTimeStops(BattleSide casterSide)
 
 		stack->removeBonusesRecursive(CSelector([casterSide](const Bonus * bonus)
 		{
-			return bonus && isTimeStopStateBonus(*bonus)
-				&& timeStopBelongsToSide(*bonus, casterSide);
+			return bonus && timeStopState::isStateBonus(*bonus)
+				&& timeStopState::belongsToSide(*bonus, casterSide);
 		}));
 	}
 
@@ -1422,7 +1382,7 @@ uint32_t BattleInfo::nextUnitId() const
 
 void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool forceAdd)
 {
-	if(sta->isTimeStopped() && !isTimeStopStateBonus(value))
+	if(sta->isTimeStopped() && !timeStopState::isStateBonus(value))
 	{
 		logNetwork->warn("Ignoring new effect on Time Stop unit %d", sta->unitId());
 		return;
@@ -1535,13 +1495,19 @@ void BattleInfo::validateFocusFireStates() const
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		const auto & state = sides.at(side);
+		// In legacy saves the spell count doubled as an action-budget marker.
+		// Once the typed ledger is initialized for this round, spell history is
+		// descriptive only and must not invalidate a later Order.
+		const bool legacySpellHistoryBlocksOrder = state.castSpellsCount != 0
+			&& (!heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE)
+				|| state.heroActionAllowances.currentRound != round);
 		if((state.activeDoctrine != HeroCommand::NONE
 				&& (!heroCommands::isDoctrine(state.activeDoctrine)
 					|| !heroCommands::supportedByRules(heroCommandRules, state.activeDoctrine)))
 			|| (state.activeOrder != HeroCommand::NONE
 				&& (heroCommands::isDoctrine(state.activeOrder)
 					|| !heroCommands::supportedByRules(heroCommandRules, state.activeOrder)
-					|| !state.heroCommandUsed || state.castSpellsCount != 0)))
+					|| !state.heroCommandUsed || legacySpellHistoryBlocksOrder)))
 			throw std::runtime_error("Invalid New Horizons saved command state");
 		if(state.orderState)
 		{
@@ -1549,7 +1515,7 @@ void BattleInfo::validateFocusFireStates() const
 			if(!heroCommands::isCanonicalRules(heroCommandRules)
 				|| state.orderState->command != state.activeOrder
 				|| state.orderState->issuedRound != round
-				|| !state.heroCommandUsed || state.castSpellsCount != 0
+				|| !state.heroCommandUsed || legacySpellHistoryBlocksOrder
 				|| !heroCommands::supportedByRules(heroCommandRules, state.orderState->command))
 				throw std::runtime_error("Invalid New Horizons canonical Order context");
 			if(state.orderState->primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
@@ -1568,7 +1534,7 @@ void BattleInfo::validateFocusFireStates() const
 		const auto & mark = *state.focusFire;
 		mark.validateShape();
 		if(!heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE)
-			|| !getSideHero(side) || !state.heroCommandUsed || state.castSpellsCount != 0 || mark.issuedRound != round
+			|| !getSideHero(side) || !state.heroCommandUsed || legacySpellHistoryBlocksOrder || mark.issuedRound != round
 			|| !battleGetUnitByID(mark.targetUnitId))
 			throw std::runtime_error("Invalid New Horizons Focus Fire battle context");
 		for(auto id : mark.recipientUnitIds)

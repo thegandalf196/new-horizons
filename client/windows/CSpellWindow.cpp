@@ -561,15 +561,15 @@ void CSpellWindow::processSpells()
 
 void CSpellWindow::fexitb()
 {
-	closeSpellbook(true);
+	closeSpellbook();
 }
 
 void CSpellWindow::closeForSpellSelection()
 {
-	closeSpellbook(false);
+	closeSpellbook();
 }
 
-void CSpellWindow::closeSpellbook(bool declineMetamagic)
+void CSpellWindow::closeSpellbook()
 {
 	auto spellBookState = myInt->localState->getSpellbookSettings();
 	if(myInt->battleInt)
@@ -583,10 +583,6 @@ void CSpellWindow::closeSpellbook(bool declineMetamagic)
 		spellBookState.spellbookLastPageAdvmap = currentPage;
 	}
 	myInt->localState->setSpellbookSettings(spellBookState);
-
-	if(declineMetamagic && myInt->battleInt && myInt->battleInt->actionsController
-		&& myInt->battleInt->actionsController->metamagicFollowupModeActive())
-		myInt->battleInt->declineMetamagicFollowup();
 
 	if(onSpellSelect)
 		onSpellSelect(SpellID::NONE);

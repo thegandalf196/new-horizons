@@ -154,7 +154,7 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 
 	bool openOnBattleSpells;
 	std::function<void(SpellID)> onSpellSelect; //external processing of selected spell
-	void closeSpellbook(bool declineMetamagic);
+	void closeSpellbook();
 
 public:
 	CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _myInt, bool openOnBattleSpells = true, const std::function<void(SpellID)> & onSpellSelect = nullptr);

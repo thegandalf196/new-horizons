@@ -250,24 +250,6 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 	if(stack->isTimeStopped())
 	{
 		const auto battleCallback = cb->getBattle(battleID);
-		const bool metamagicFollowup = battleCallback->battleCanUseMetamagicFollowup(side);
-		if(metamagicFollowup && battleCallback->battleGetMyHero())
-		{
-			BattleEvaluator evaluator(
-				env, cb, stack, playerID, battleID, side,
-				getStrengthRatio(battleCallback, side),
-				getSimulationTurnsCount(env->game()->getStartInfo()));
-			if(evaluator.attemptCastingSpell(stack, true))
-				return;
-			cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
-			return;
-		}
-		if(metamagicFollowup)
-		{
-			cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
-			return;
-		}
-
 		if(battleCallback->battleGetMyHero()
 			&& (autobattlePreferences.enableSpellsUsage || battleCallback->battleUsesHeroCommands()))
 		{

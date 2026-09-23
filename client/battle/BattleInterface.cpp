@@ -1143,17 +1143,6 @@ void BattleInterface::activateStack()
 	windowObject->blockUI(false);
 	fieldController->redrawBackgroundWithHexes();
 	actionsController->activateStack();
-	if(metamagicPromptPending && windowObject && curInt && !curInt->isAutoFightOn)
-	{
-		const auto side = getBattle()->battleGetMySide();
-		metamagicPromptPending = false;
-		// Keep the follow-up offer on the battle screen.  The player must
-		// explicitly open the spellbook to choose the extra spell (or use the
-		// visible Decline / End control); opening a modal spellbook here used to
-		// interrupt every active stack automatically after the first cast.
-		if(side != BattleSide::NONE && getBattle()->battleCanUseMetamagicFollowup(side))
-			windowObject->updateCounterspellStatus();
-	}
 	ENGINE->fakeMouseMove();
 }
 
@@ -1205,15 +1194,6 @@ void BattleInterface::endAction(const BattleAction &action)
 	if(action.actionType == EActionType::HERO_SPELL || action.actionType == EActionType::HERO_COMMAND)
 		fieldController->redrawBackgroundWithHexes();
 
-	if(action.actionType == EActionType::HERO_SPELL && windowObject && curInt
-		&& !curInt->isAutoFightOn && action.side == getBattle()->battleGetMySide()
-		&& getBattle()->battleCanUseMetamagicFollowup(action.side))
-	{
-		metamagicPromptPending = true;
-		// The offer is intentionally non-modal.  Refresh the battle-bar affordance
-		// immediately so the player can either open the spellbook or decline it.
-		windowObject->updateCounterspellStatus();
-	}
 }
 
 void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
@@ -1441,23 +1421,6 @@ void BattleInterface::requestAutofightingAIToTakeAction()
 void BattleInterface::castThisSpell(SpellID spellID)
 {
 	actionsController->castThisSpell(spellID);
-}
-
-void BattleInterface::declineMetamagicFollowup()
-{
-	if(!actionsController || !actionsController->metamagicFollowupModeActive())
-		return;
-
-	// Clear the local selector even when the authoritative offer has already
-	// disappeared.  Doing this immediately also makes repeated UI clicks
-	// idempotent while the server response is in flight.
-	if(curInt && getBattle())
-	{
-		const auto side = getBattle()->battleGetMySide();
-		if(getBattle()->battleCanUseMetamagicFollowup(side))
-			curInt->cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
-	}
-	actionsController->endCastingSpell();
 }
 
 void BattleInterface::toggleMetamagicGrandFollowup()

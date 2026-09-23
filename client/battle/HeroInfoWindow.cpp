@@ -26,8 +26,11 @@ namespace
 static_assert(HeroInfoPanelLayout::effectAreaWidth == 70,
 	"Compact hero battle status rows must retain the existing 70px width");
 static_assert(HeroInfoPanelLayout::effectAreaRowHeight == 26
-	&& HeroInfoPanelLayout::effectAreaHeight == HeroInfoPanelLayout::effectAreaRowHeight * 2,
-	"Counterspell and Warcasting reserve two non-overlapping 26px rows");
+	&& HeroInfoPanelLayout::effectAreaHeight == HeroInfoPanelLayout::effectAreaRowHeight * 2
+		+ HeroInfoPanelLayout::actionCountPanelHeight,
+	"Counterspell and Warcasting rows must stay separate from the three-line allowance panel");
+static_assert(HeroInfoPanelLayout::actionCountPanelHeight == HeroInfoPanelLayout::actionCountLineHeight * 3,
+	"Each hero allowance count needs its own readable line");
 static_assert(HeroInfoPanelLayout::effectAreaLeft - HeroInfoPanelLayout::backgroundInset >= 3,
 	"Hero effect area must keep a side margin from the portrait frame");
 static_assert(HeroInfoPanelLayout::backgroundInset + HeroInfoPanelLayout::width
@@ -70,10 +73,11 @@ HeroBattleStatusArea::HeroBattleStatusArea(const Point & position)
 	pos.h = 0;
 }
 
-void HeroBattleStatusArea::setStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting, int round)
+void HeroBattleStatusArea::setStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting,
+	const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts_, int round)
 {
 	if(counterspellArmed == counterspellIsArmed && warcastingState == warcasting
-		&& currentRound == round)
+		&& actionCounts == this->actionCounts && showActionCounts == showActionCounts_ && currentRound == round)
 		return;
 
 	if(!statusbarText.empty())
@@ -82,6 +86,8 @@ void HeroBattleStatusArea::setStatus(bool counterspellIsArmed, const Alternating
 	OBJECT_CONSTRUCTION;
 	counterspellArmed = counterspellIsArmed;
 	warcastingState = warcasting;
+	this->actionCounts = actionCounts;
+	showActionCounts = showActionCounts_;
 	currentRound = round;
 	refreshContents();
 }
@@ -97,11 +103,10 @@ void HeroBattleStatusArea::refreshContents()
 	helpText.clear();
 
 	const bool warcastingActive = hasActiveWarcasting(warcastingState, currentRound);
-	hasVisibleStatus = counterspellArmed || warcastingActive;
-	pos.h = hasVisibleStatus
-		? ((counterspellArmed && warcastingActive) ? HeroInfoPanelLayout::effectAreaHeight
-			: HeroInfoPanelLayout::effectAreaRowHeight)
-		: 0;
+	const int statusRows = static_cast<int>(counterspellArmed) + static_cast<int>(warcastingActive);
+	hasVisibleStatus = statusRows > 0 || showActionCounts;
+	pos.h = statusRows * HeroInfoPanelLayout::effectAreaRowHeight
+		+ (showActionCounts ? HeroInfoPanelLayout::actionCountPanelHeight : 0);
 	if(!hasVisibleStatus)
 	{
 		removeUsedEvents(HOVER | SHOW_POPUP);
@@ -163,6 +168,38 @@ void HeroBattleStatusArea::refreshContents()
 		if(!statusbarText.empty())
 			statusbarText += "  ";
 		statusbarText += "Counterspell ward: armed.";
+	}
+
+	if(showActionCounts)
+	{
+		const int countsTop = statusRows * HeroInfoPanelLayout::effectAreaRowHeight;
+		backgrounds.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, countsTop,
+			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::actionCountPanelHeight),
+			ColorRGBA(0, 0, 0, 75), ColorRGBA(128, 100, 75)));
+		labels.push_back(std::make_shared<CLabel>(4, countsTop + 1, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
+			Colors::WHITE, "Hero: " + std::to_string(actionCounts.heroActions), HeroInfoPanelLayout::effectAreaWidth - 8));
+		labels.push_back(std::make_shared<CLabel>(4, countsTop + 1 + HeroInfoPanelLayout::actionCountLineHeight,
+			EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE,
+			"Order: " + std::to_string(actionCounts.orderActions), HeroInfoPanelLayout::effectAreaWidth - 8));
+		labels.push_back(std::make_shared<CLabel>(4, countsTop + 1 + 2 * HeroInfoPanelLayout::actionCountLineHeight,
+			EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE,
+			"Spell: " + std::to_string(actionCounts.spellActions), HeroInfoPanelLayout::effectAreaWidth - 8));
+
+		const auto countsHelp = CInfoWindow::genText("Hero Action Allowances",
+			"Hero Actions: " + std::to_string(actionCounts.heroActions)
+			+ "\nOrder Actions: " + std::to_string(actionCounts.orderActions)
+			+ "\nSpell Actions: " + std::to_string(actionCounts.spellActions)
+			+ "\nHero Actions can cast a spell OR issue an Order."
+			+ " Spell Actions can only cast spells; Order Actions can only issue Orders."
+			+ " Metamagic Spell Actions remain available until used or expired, and creature actions do not spend them.");
+		if(helpText.empty())
+			helpText = countsHelp;
+		else
+			helpText += "\n\n" + countsHelp;
+		if(!statusbarText.empty())
+			statusbarText += "  ";
+		statusbarText += "Hero / Order / Spell Actions: " + std::to_string(actionCounts.heroActions) + " / "
+			+ std::to_string(actionCounts.orderActions) + " / " + std::to_string(actionCounts.spellActions) + ".";
 	}
 
 	ENGINE->windows().totalRedraw();
@@ -278,11 +315,11 @@ void HeroInfoBasicPanel::update(const InfoAboutHero & updatedInfo)
 }
 
 void HeroInfoBasicPanel::setBattleStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting,
-	int round)
+	const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts, int round)
 {
 	if(!showBattleStatus || !battleStatus)
 		return;
-	battleStatus->setStatus(counterspellIsArmed, warcasting, round);
+	battleStatus->setStatus(counterspellIsArmed, warcasting, actionCounts, showActionCounts, round);
 }
 
 void HeroInfoBasicPanel::setBattleStatusRenderDuringShow(bool value)

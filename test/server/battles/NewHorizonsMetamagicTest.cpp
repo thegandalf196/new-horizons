@@ -207,10 +207,7 @@ TEST_F(NewHorizonsMetamagicTest, InitialOfferDoesNotConsumeUseAndDeclineIsAuthor
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).castSpellsCount, 1);
 
-	// The immediate sequence blocks every ordinary action until the player
-	// accepts a spell or submits the explicit End/Decline command.
-	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(
-		BattleID(0), PlayerColor(0), BattleAction::makeWait(attacker)));
+	// A forged unit action is still rejected independently of the Spell Action.
 	BattleAction forgedWait = BattleAction::makeWait(attacker);
 	forgedWait.side = BattleSide::DEFENDER;
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), forgedWait));
@@ -221,6 +218,61 @@ TEST_F(NewHorizonsMetamagicTest, InitialOfferDoesNotConsumeUseAndDeclineIsAuthor
 
 	// A forged decline cannot clear an already-resolved offer.
 	EXPECT_FALSE(decline());
+}
+
+TEST_F(NewHorizonsMetamagicTest, SpellActionSurvivesCreatureWaitAndCanBeSpentLaterInRound)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto before = battle()->battleHeroActionAllowanceCounts(BattleSide::ATTACKER);
+	EXPECT_EQ(before.heroActions, 0u);
+	EXPECT_EQ(before.orderActions, 0u);
+	EXPECT_EQ(before.spellActions, 1u);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(
+		BattleID(0), PlayerColor(0), BattleAction::makeWait(attacker)));
+	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(BattleSide::ATTACKER), before);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 0);
+
+	// Return to this side's legal activation window without crossing a round.
+	activate(attacker);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker, true));
+	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(BattleSide::ATTACKER).spellActions, 0u);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 1);
+}
+
+TEST_F(NewHorizonsMetamagicTest, LegacyPendingMetamagicWithoutManaDoesNotBlockCreatureActions)
+{
+	useCommands = false;
+	prepare(1);
+	ASSERT_FALSE(battle()->battleUsesHeroCommands());
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
+	attackerSideHero->mana = 0;
+	EXPECT_FALSE(cast(SpellID::SLOW, defender, true));
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(
+		BattleID(0), PlayerColor(0), BattleAction::makeWait(attacker)));
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 0);
+}
+
+TEST_F(NewHorizonsMetamagicTest, UnspentSpellActionExpiresAndOneHeroActionReturnsNextRound)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_EQ(battle()->battleHeroActionAllowanceCounts(BattleSide::ATTACKER).spellActions, 1u);
+	BattleNextRound next;
+	next.battleID = BattleID(0);
+	gameHandler->sendAndApply(next);
+	const auto counts = battle()->battleHeroActionAllowanceCounts(BattleSide::ATTACKER);
+	EXPECT_EQ(counts.heroActions, 1u);
+	EXPECT_EQ(counts.orderActions, 0u);
+	EXPECT_EQ(counts.spellActions, 0u);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 0);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.empty());
+	activate(attacker);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(BattleSide::ATTACKER).heroActions, 0u);
+	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(BattleSide::ATTACKER).spellActions, 1u);
 }
 
 TEST_F(NewHorizonsMetamagicTest, MalformedDeclineStackDoesNotPublishOrClearSequence)
@@ -999,7 +1051,7 @@ TEST_F(NewHorizonsMetamagicTest, FocusedPairingIgnoresTwentyPercentOfMagicalRedu
 	EXPECT_EQ(healthBefore - defender->getAvailableHealth(), raw * 60 / 100);
 }
 
-TEST_F(NewHorizonsMetamagicTest, PendingSequenceFollowsControllerForHypnotizedAction)
+TEST_F(NewHorizonsMetamagicTest, SpellActionDoesNotBlockControlledHypnotizedStack)
 {
 	prepare(1);
 	const auto decoded = SecondarySkill::decode(metamagicSkill);
@@ -1020,14 +1072,14 @@ TEST_F(NewHorizonsMetamagicTest, PendingSequenceFollowsControllerForHypnotizedAc
 	ASSERT_EQ(battle()->getSide(BattleSide::DEFENDER).metamagicPendingCount, 1);
 
 	// The stack retains ATTACKER as its origin side, but Hypnotize gives the
-	// DEFENDER player control.  A unit action must therefore not bypass the
-	// defender's pending immediate follow-up by carrying ATTACKER in ba.side.
+	// DEFENDER player control. Its creature activation must leave the
+	// controlling hero's independent Spell Action untouched.
 	auto control = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
 		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID());
 	attacker->addNewBonus(control);
 	ASSERT_EQ(battle()->battleGetOwner(attacker), PlayerColor(1));
 	activate(attacker);
-	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(
 		BattleID(0), PlayerColor(1), BattleAction::makeWait(attacker)));
 	EXPECT_EQ(battle()->getSide(BattleSide::DEFENDER).metamagicPendingCount, 1);
 }

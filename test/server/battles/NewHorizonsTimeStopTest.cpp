@@ -6,6 +6,7 @@
 #include "StdInc.h"
 
 #include "BattleTestFixture.h"
+#include "HeroCommandFixture.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
 #include "../../../lib/battle/BattleAction.h"
@@ -187,7 +188,16 @@ TEST_F(BattleTestFixture, TimeStopMarkerBlocksUnitInteractionsAndPausesRoundEffe
 
 	// Expiry is side-scoped and occurs at the Hero Action boundary. A follow-up
 	// StartAction from the same sequence does not release the marker.
-	battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount = 1;
+	auto & attackerSide = battle()->getSide(BattleSide::ATTACKER);
+	attackerSide.metamagicPendingCount = 1;
+	const bool sharedActionBudget = heroCommands::supportedByRules(
+		battle()->getHeroCommandRules(), HeroCommand::CHARGE);
+	if(sharedActionBudget)
+	{
+		ASSERT_EQ(attackerSide.heroActionAllowances.currentRound, battle()->getRound());
+		attackerSide.heroActionAllowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::SPELL,
+			HeroActionAllowanceState::GrantSource::METAMAGIC, battle()->getRound());
+	}
 	BattleAction followup = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::NONE);
 	followup.actionType = EActionType::HERO_SPELL;
 	followup.spell = SpellID::MAGIC_ARROW;
@@ -197,7 +207,7 @@ TEST_F(BattleTestFixture, TimeStopMarkerBlocksUnitInteractionsAndPausesRoundEffe
 	gameHandler->sendAndApply(followupStart);
 	EXPECT_TRUE(stopped->isTimeStopped());
 
-	battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount = 0;
+	attackerSide.clearMetamagicSequence();
 	BattleAction nextHeroAction = followup;
 	nextHeroAction.metamagicFollowup = false;
 	StartAction nextHeroStart(nextHeroAction);
@@ -259,6 +269,19 @@ protected:
 	}
 };
 
+class NewHorizonsTimeStopTypedActionTest : public NewHorizonsTimeStopContentTest
+{
+protected:
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsTimeStopContentTest::mapLoaded(map);
+		const JsonNode combatRules(JsonPath::builtin("config/newHorizonsCombat"));
+		const auto & rules = combatRules["combat"]["heroCommands"];
+		heroCommands::validateRules(rules);
+		map->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
+	}
+};
+
 TEST_F(NewHorizonsTimeStopContentTest, RealCastDrainsRoundAndNextHeroActionExpiresOnlyCasterMarkers)
 {
 	const auto spell = timeStopSpell();
@@ -268,7 +291,11 @@ TEST_F(NewHorizonsTimeStopContentTest, RealCastDrainsRoundAndNextHeroActionExpir
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(spell);
 	attackerSideHero->addSpellToSpellbook(SpellID::FIRE_WALL);
+	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill::WISDOM, 3, ChangeValueMode::ABSOLUTE);
+	const auto decodedMetamagic = SecondarySkill::decode("new-horizons:metamagic");
+	ASSERT_GE(decodedMetamagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(decodedMetamagic), 1, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 	attackerSideHero->mana = 1000;
@@ -293,31 +320,25 @@ TEST_F(NewHorizonsTimeStopContentTest, RealCastDrainsRoundAndNextHeroActionExpir
 	cast.actionType = EActionType::HERO_SPELL;
 	cast.side = BattleSide::ATTACKER;
 	cast.spell = spell;
-	// Leave a real Metamagic follow-up pending while the stopped queue drains.
-	// The synthetic automatic NO_ACTION must be rejected, then the ordinary
-	// TURN_QUEUE activation must remain visible so the side can decline it.
-	// The Time Stop cast itself consumes one continuation. Keep a second one
-	// pending so the post-stasis control window genuinely has a decline choice.
-	battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount = 2;
-	cast.metamagicFollowup = true;
+	// The real Time Stop drains the remaining stopped activations into the next
+	// round. Its unspent Metamagic Spell Action expires naturally at that boundary.
 	cast.aimToHex(center);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(
 		BattleID(0), battle()->sideToPlayer(BattleSide::ATTACKER), cast));
 
-	// The real cast consumed one continuation, but the remaining Metamagic
-	// choice belongs to the same Hero Action. It must stay in this round until
-	// the player casts again or declines, without releasing Time Stop.
-	EXPECT_EQ(battle()->getRound(), startingRound);
+	EXPECT_GT(battle()->getRound(), startingRound);
 	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
 	EXPECT_EQ(battle()->battleActiveUnit()->unitSide(), BattleSide::ATTACKER);
 	EXPECT_TRUE(attacker->isTimeStopped());
 	EXPECT_TRUE(defender->isTimeStopped());
 	ASSERT_FALSE(server.stackActivations.empty());
 	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
+	EXPECT_FALSE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER));
 
 	// A separate defender-origin marker is deliberately kept on a third unit.
 	// It must survive the attacker's next Hero Action even though all three
-	// stacks remain physical and blocked while the pending window is declined.
+	// stacks remain physical and blocked.
 	battle()->addOrUpdateUnitBonus(defender, *timeStopMarker(BattleSide::DEFENDER), true);
 	auto * defenderOrigin = addStack(BattleSide::DEFENDER, CreatureID(0), BattleHex(15, 5), 10);
 	ASSERT_NE(defenderOrigin, nullptr);
@@ -325,14 +346,9 @@ TEST_F(NewHorizonsTimeStopContentTest, RealCastDrainsRoundAndNextHeroActionExpir
 	battle()->notePendingTimeStopHeroAction(BattleSide::DEFENDER);
 	EXPECT_TRUE(defenderOrigin->isTimeStopped());
 
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(
-		BattleID(0), battle()->sideToPlayer(BattleSide::ATTACKER),
-		BattleAction::makeMetamagicDecline(BattleSide::ATTACKER)));
-	EXPECT_GT(battle()->getRound(), startingRound);
 	EXPECT_TRUE(attacker->isTimeStopped());
 	EXPECT_TRUE(defender->isTimeStopped());
 	EXPECT_TRUE(defenderOrigin->isTimeStopped());
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
 	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::TURN_QUEUE);
 	EXPECT_TRUE(battle()->hasPendingTimeStopHeroAction(BattleSide::ATTACKER));
 	EXPECT_TRUE(battle()->hasPendingTimeStopHeroAction(BattleSide::DEFENDER));
@@ -341,23 +357,27 @@ TEST_F(NewHorizonsTimeStopContentTest, RealCastDrainsRoundAndNextHeroActionExpir
 	EXPECT_TRUE(restoredBattle->hasPendingTimeStopHeroAction(BattleSide::ATTACKER));
 	EXPECT_TRUE(restoredBattle->hasPendingTimeStopHeroAction(BattleSide::DEFENDER));
 
-	// A side may have no useful Hero Action (or no hero at all). Existing clients
-	// submit DEFEND to close the control-visible activation; the authoritative
-	// server canonicalizes it to a no-op and reaches the next boundary without
-	// granting a creature action or throwing.
-	const auto * stoppedAnchor = battle()->battleActiveUnit();
-	ASSERT_NE(stoppedAnchor, nullptr);
+	// Add a fresh, unstopped friendly target: the two deployment stacks were both
+	// caught by Time Stop, but this later stack is a legal Haste target.
+	auto * heroTarget = addStack(BattleSide::ATTACKER, CreatureID(0), BattleHex(6, 5), 10);
+	ASSERT_NE(heroTarget, nullptr);
+	EXPECT_FALSE(heroTarget->isTimeStopped());
+
+	// A real Hero spell is the next boundary. It releases only markers created by
+	// the attacker, leaving the independent defender-origin stasis intact.
+	BattleAction nextHeroSpell;
+	nextHeroSpell.actionType = EActionType::HERO_SPELL;
+	nextHeroSpell.side = BattleSide::ATTACKER;
+	nextHeroSpell.spell = SpellID::HASTE;
+	nextHeroSpell.aimToUnit(heroTarget);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(
-		BattleID(0), battle()->sideToPlayer(stoppedAnchor->unitSide()),
-		BattleAction::makeDefend(stoppedAnchor)));
-	EXPECT_FALSE(stoppedAnchor->defended());
+		BattleID(0), battle()->sideToPlayer(BattleSide::ATTACKER), nextHeroSpell));
 	EXPECT_FALSE(attacker->isTimeStopped());
 	EXPECT_TRUE(defender->isTimeStopped());
 	EXPECT_TRUE(defenderOrigin->isTimeStopped());
 	EXPECT_FALSE(battle()->hasPendingTimeStopHeroAction(BattleSide::ATTACKER));
 	EXPECT_TRUE(battle()->hasPendingTimeStopHeroAction(BattleSide::DEFENDER));
 	ASSERT_EQ(battle()->battleActiveUnit(), attacker);
-	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::HERO_COMMAND);
 
 	// The attacker is now unstopped, but every defender-controlled stack is
 	// still stopped by the independent defender origin. Ending the attacker's
@@ -429,6 +449,69 @@ TEST_F(NewHorizonsTimeStopContentTest, InvalidHeroTargetDoesNotExpireOrAdvanceSt
 	EXPECT_EQ(battle()->getRound(), initialRound);
 	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), attacker->unitId());
 	EXPECT_EQ(server.stackActivations.size(), initialActivationCount + 1);
+}
+
+TEST_F(NewHorizonsTimeStopTypedActionTest, MetamagicSpellActionDoesNotExpireTimeStopAtStartAction)
+{
+	const auto magicArrow = SpellID(SpellID::decode("core:magicArrow"));
+	ASSERT_TRUE(magicArrow.hasValue());
+	ASSERT_NE(magicArrow.toSpell(), nullptr);
+	startGame();
+	const auto decodedMetamagic = SecondarySkill::decode("new-horizons:metamagic");
+	ASSERT_GE(decodedMetamagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(decodedMetamagic), 1, ChangeValueMode::ABSOLUTE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	attackerSideHero->addSpellToSpellbook(magicArrow);
+	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill::WISDOM, 3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	attackerSideHero->mana = 1000;
+	startBattle();
+
+	const BattleHex center(8, 5);
+	auto * attacker = addStack(BattleSide::ATTACKER, CreatureID(0), center, 10);
+	auto * defender = addStack(BattleSide::DEFENDER, CreatureID(0), center.copyToEast(), 10);
+	ASSERT_NE(attacker, nullptr);
+	ASSERT_NE(defender, nullptr);
+	removeAllBattleUnits(*this, {attacker, defender});
+	beginTimeStopTestCombat(*this, attacker);
+
+	BattleAction firstCast;
+	firstCast.actionType = EActionType::HERO_SPELL;
+	firstCast.side = BattleSide::ATTACKER;
+	firstCast.spell = SpellID::HASTE;
+	firstCast.aimToUnit(attacker);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(
+		BattleID(0), battle()->sideToPlayer(BattleSide::ATTACKER), firstCast));
+
+	// Use a separate marker rather than casting Time Stop here: a real Time Stop
+	// drains the queue and naturally crosses the round boundary before a Spell
+	// Action can be selected.
+	auto * protectedStack = addStack(BattleSide::ATTACKER, CreatureID(0), BattleHex(6, 5), 10);
+	ASSERT_NE(protectedStack, nullptr);
+	EXPECT_FALSE(protectedStack->isTimeStopped());
+	auto marker = timeStopMarker(BattleSide::ATTACKER);
+	battle()->addOrUpdateUnitBonus(protectedStack, *marker, true);
+	battle()->notePendingTimeStopHeroAction(BattleSide::ATTACKER);
+	ASSERT_TRUE(protectedStack->isTimeStopped());
+	EXPECT_FALSE(defender->isTimeStopped());
+	const auto selection = battle()->getHeroActionAllowances(BattleSide::ATTACKER).eligibleAllowance(
+		HeroActionAllowanceState::ActionKind::SPELL, battle()->getRound());
+	ASSERT_TRUE(selection.has_value());
+	EXPECT_EQ(selection->source, HeroActionAllowanceState::GrantSource::METAMAGIC);
+
+	// This accepted cast is paid by the typed Spell Action, not a new Hero Action.
+	BattleAction followup;
+	followup.actionType = EActionType::HERO_SPELL;
+	followup.side = BattleSide::ATTACKER;
+	followup.spell = magicArrow;
+	followup.aimToUnit(defender);
+	followup.metamagicFollowup = true;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(
+		BattleID(0), battle()->sideToPlayer(BattleSide::ATTACKER), followup));
+	EXPECT_TRUE(protectedStack->isTimeStopped());
+	EXPECT_FALSE(defender->isTimeStopped());
 }
 
 TEST_F(NewHorizonsTimeStopContentTest, SelectedHexUsesOccupiedIntersectionAndAllowsEmptyFootprint)

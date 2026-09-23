@@ -870,13 +870,27 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	}
 
 	// Capture eligibility before the accepted BattleSpellCast packet consumes
-	// the Order-to-Spell readiness. Hypothetical spell evaluation uses castEval
-	// and never enters this authoritative mana-update path.
+	// the selected action allowance and Order-to-Spell readiness. Hypothetical
+	// spell evaluation uses castEval and never enters this authoritative path.
 	const auto * casterHero = mode == Mode::HERO ? dynamic_cast<const CGHeroInstance *>(caster) : nullptr;
 	const auto * battleInfo = battle()->getBattle();
 	const int32_t battleRound = battleInfo->getRound();
 	const bool validHeroSide = casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER;
-	const bool recoverBattleMeditation = sc.activeCast && casterHero && !sc.metamagicFollowup && validHeroSide
+	bool spendsHeroAllowance = !sc.metamagicFollowup;
+	if(mode == Mode::HERO && validHeroSide && battleRound >= 0
+		&& heroCommands::supportedByRules(battleInfo->getHeroCommandRules(), HeroCommand::CHARGE))
+	{
+		const auto & allowances = battleInfo->getHeroActionAllowances(casterSide);
+		if(allowances.currentRound == battleRound)
+		{
+			const auto selection = allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, battleRound);
+			spendsHeroAllowance = selection
+				&& selection->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
+		}
+		else
+			spendsHeroAllowance = false;
+	}
+	const bool recoverBattleMeditation = sc.activeCast && casterHero && spendsHeroAllowance && validHeroSide
 		&& newHorizonsWarcasting::battleMeditationEligible(battleInfo->getMagicRules(), casterHero,
 			battleInfo->getWarcastingState(casterSide), battleRound);
 

@@ -1447,7 +1447,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "Once per combat, after using the Hero Action to cast a Spell, immediately cast one additional Spell.",
+			"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends your one Metamagic use for this combat and cannot trigger Metamagic again.",
 			"images": {
 				"small": "NH_metamagic_basic_small.png",
 				"medium": "NH_metamagic_basic_medium.png",
@@ -1463,7 +1463,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Metamagic may be used twice per combat.",
+			"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your two Metamagic uses for this combat and cannot trigger Metamagic again.",
 			"images": {
 				"small": "NH_metamagic_advanced_small.png",
 				"medium": "NH_metamagic_advanced_medium.png",
@@ -1479,7 +1479,7 @@
 			}
 		},
 		"expert": {
-			"description": "Metamagic may be used three times per combat.",
+			"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your three Metamagic uses for this combat and cannot trigger Metamagic again.",
 			"images": {
 				"small": "NH_metamagic_expert_small.png",
 				"medium": "NH_metamagic_expert_medium.png",

@@ -224,8 +224,17 @@ bool CBattleInfoCallback::battleHeroCommandCommonAvailable(BattleSide side, Hero
 	if(!getBattle() || !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), command)
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		|| battleTacticDist() || !battleGetFightingHero(side)
-		|| getBattle()->getHeroCommandUsed(side) || battleCastSpells(side) != 0
 		|| battleGetActiveDoctrine(side) == command || battleGetActiveOrder(side) != HeroCommand::NONE)
+		return false;
+	if(battleUsesHeroCommands())
+	{
+		const auto round = battleGetRound();
+		const auto & allowances = getBattle()->getHeroActionAllowances(side);
+		if(round < 0 || allowances.currentRound != round || !allowances.eligibleAllowance(
+			HeroActionAllowanceState::ActionKind::ORDER, round))
+			return false;
+	}
+	else if(getBattle()->getHeroCommandUsed(side) || battleCastSpells(side) != 0)
 		return false;
 	const auto * active = battleActiveUnit();
 	return active && battleGetOwner(active) == sideToPlayer(side);
@@ -535,7 +544,10 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 	result.issuedRound = battleGetRound();
 	if(result.issuedRound < 1)
 		return {};
-	if(newHorizonsWarcasting::enabled(getBattle()->getMagicRules()))
+	const auto allowance = getBattle()->getHeroActionAllowances(side).eligibleAllowance(
+		HeroActionAllowanceState::ActionKind::ORDER, result.issuedRound);
+	if(newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
+		&& allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO)
 		result.warcastingBonusPercent = newHorizonsWarcasting::orderBonus(
 			getBattle()->getWarcastingState(side), result.issuedRound);
 
@@ -711,12 +723,18 @@ ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster *
 
 		if(!hero)
 			return ESpellCastProblem::NO_HERO_TO_CAST_SPELL;
-		if(!metamagicFollowup && battleUsesHeroCommands()
-			&& (getBattle()->getHeroCommandUsed(side) || battleCastSpells(side) >= 1))
-			return ESpellCastProblem::CASTS_PER_TURN_LIMIT;
+		if(battleUsesHeroCommands())
+		{
+			const auto round = battleGetRound();
+			const auto & allowances = getBattle()->getHeroActionAllowances(side);
+			if(round < 0 || allowances.currentRound != round || !allowances.eligibleAllowance(
+				HeroActionAllowanceState::ActionKind::SPELL, round))
+				return ESpellCastProblem::CASTS_PER_TURN_LIMIT;
+		}
 		if(!hero->hasSpellbook())
 			return ESpellCastProblem::NO_SPELLBOOK;
-		if(!metamagicFollowup && battleCastSpells(side) >= hero->valOfBonuses(BonusType::HERO_SPELL_CASTS_PER_COMBAT_TURN))
+		if(!battleUsesHeroCommands() && !metamagicFollowup
+			&& battleCastSpells(side) >= hero->valOfBonuses(BonusType::HERO_SPELL_CASTS_PER_COMBAT_TURN))
 			return ESpellCastProblem::CASTS_PER_TURN_LIMIT;
 	}
 		break;

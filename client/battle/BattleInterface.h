@@ -105,11 +105,6 @@ class BattleInterface
 	/// Presentation-only declaration, bound to one active stack. The server owns
 	/// eligibility and the once-per-combat expenditure.
 	std::optional<uint32_t> perfectMomentStack;
-	/// Set after a spell's EndAction when the authoritative battle state offers
-	/// an immediate Metamagic continuation.  The active-stack packet arrives
-	/// later, so opening the spellbook directly from EndAction races makingTurn().
-	bool metamagicPromptPending = false;
-
 	/// used during tactics mode, points to the interface of player with higher tactics (can be either attacker or defender in hot-seat), valid onloy for human players
 	std::shared_ptr<CPlayerInterface> tacticianInterface;
 
@@ -235,9 +230,6 @@ public:
 	void spellCast(const BattleSpellCast *sc); //called when a hero casts a spell
 	void battleStacksEffectsSet(const SetStackEffect & sse); //called when a specific effect is set to stacks
 	void castThisSpell(SpellID spellID); //called when player has chosen a spell from spellbook
-	/// Submit the authoritative Decline/End action for a pending Metamagic
-	/// sequence without spending another hero action.
-	void declineMetamagicFollowup();
 	/// Toggle the explicit Expert Grand Metamagic choice in the follow-up UI.
 	void toggleMetamagicGrandFollowup();
 

@@ -29,6 +29,8 @@ set(test_SRCS
 
 		battle/AutocombatPreferencesTest.cpp
 		battle/AlternatingHeroActionStateTest.cpp
+		battle/HeroActionAllowanceStateTest.cpp
+		battle/HeroSpellAllowanceTransitionTest.cpp
  		battle/BattleHexTest.cpp
  		battle/CBattleInfoCallbackTest.cpp
  		battle/CHealthTest.cpp

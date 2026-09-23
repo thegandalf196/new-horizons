@@ -1035,18 +1035,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		&& !cb->getBattle(battleID)->battleMetamagicGrandUsed(side)
 		&& newHorizonsMagic::metamagicRank(hero) >= 3
 		&& newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND);
-	// Grand is an optional variant of the immediate offer.  Keep both choices
+	// Grand is an optional variant of the available Spell Action. Keep both choices
 	// in the candidate set so the ordinary one-extra spell can win when it is
 	// better (and so a repeated first spell remains available as an ordinary
 	// cast even though the Grand version is rejected by Perfect Sequence).
 	const std::vector<bool> metamagicGrandChoices = metamagicGrandAvailable
 		? std::vector<bool>{false, true}
 		: std::vector<bool>{false};
-	// A pending sequence is an authoritative immediate window.  Do not let a
-	// player preference that disables ordinary spell use strand the AI in that
-	// window: it still has to search for a legal follow-up (or decline below).
-	if(metamagicFollowup)
-		allowSpells = true;
 	//Get all spells we can cast
 	struct SpellOption
 	{
@@ -1199,12 +1194,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			}
 		}
 	}
-	// Commands compete in the same exchange evaluation as legal spell/target pairs
-	// only for an ordinary hero action.  While a Metamagic sequence is pending,
-	// the server rejects every other action until a follow-up or explicit decline
-	// resolves it.
-	if(!metamagicFollowup)
-	{
+	// Authoritative queries decide whether an Order allowance is available.
+	// Possessing a Spell Action must not hide a separate legal Order Action.
 	// Side-wide Orders use the authoritative availability query.  Targeted Orders
 	// are enumerated through the callback's legal target-set query, with no local
 	// guess about action budget, ownership, or current-round state.
@@ -1265,17 +1256,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			possibleCasts.push_back(std::move(candidate));
 		}
 	}
-	}
 	LOGFL("Found %d spell-target combinations.", possibleCasts.size());
 	if(possibleCasts.empty())
 	{
-		if(metamagicFollowup)
-		{
-			LOGL("No legal Metamagic follow-up remains; declining the sequence.");
-			cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
-			activeActionMade = true;
-			return true;
-		}
 		return false;
 	}
 
@@ -1308,7 +1291,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				{
 					enemyHadTurn = true;
 
-					if(!firstRound || state->battleCastSpells(unit->unitSide()) == 0)
+					const auto enemySide = state->playerToSide(state->battleGetOwner(unit));
+					const auto & enemyAllowances = state->getHeroActionAllowances(enemySide);
+					const bool enemyCanPayForSpell = enemyAllowances.currentRound >= 0
+						? enemyAllowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL,
+							state->getRound()).has_value()
+						: state->battleCastSpells(enemySide) == 0;
+					if(!firstRound || enemyCanPayForSpell)
 					{
 						//enemy could counter our spell at this point
 						//anyway, we do not know what enemy will do
@@ -1439,8 +1428,61 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			for(auto i = r.begin(); i != r.end(); i++)
 			{
 				auto & ps = possibleCasts[i];
+				auto state = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
+				const auto baseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
+					? cachedAttack.score : 0.0f;
+				std::optional<HypotheticBattle::ProjectedSpellAllowance> spellAllowance;
+				std::optional<HypotheticBattle::ProjectedOrderAllowance> orderAllowance;
+				HypotheticBattle::ProjectedCounterspellOutcome counterspell;
+				bool counterspellNegated = false;
+				uint32_t targetId = std::numeric_limits<uint32_t>::max();
+
+				if(ps.command == HeroCommand::NONE)
+				{
+					spellAllowance = state->prepareHeroSpellAllowance(side, ps.metamagicFollowup, ps.metamagicGrand);
+					if(!spellAllowance)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					if(!state->beginProjectedHeroAction(side, *spellAllowance))
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					counterspell = state->resolveProjectedCounterspell(side, ps.spell);
+					if(!counterspell.resolutionKnown || !counterspell.negated.has_value())
+					{
+						// The armed ward is public, but the opposing hero's mana and
+						// Countermage perk may be hidden from this player's callback.
+						// Do not invent either a successful or failed Counterspell result.
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					counterspellNegated = *counterspell.negated;
+				}
+				else
+				{
+					orderAllowance = state->prepareHeroOrderAllowance(side);
+					if(!orderAllowance)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					if(!state->beginProjectedHeroAction(side, *orderAllowance))
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+				}
 				if(isCounterspell(ps.spell))
+				{
+					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+						counterspellNegated, *spellAllowance) || counterspellNegated)
+						ps.value = std::numeric_limits<float>::lowest();
 					continue;
+				}
 				// Canonical Land Mine deliberately has no immediate unit-health delta:
 				// its value is the pressure it places on hostile ground approaches.
 				// Keep that deterministic live-snapshot score instead of allowing the
@@ -1452,9 +1494,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					// same valid best-attack baseline used by contextual Orders so a
 					// placement heuristic is compared against an ordinary action on
 					// the shared BattleAI scale.
-					const auto baseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
-						? cachedAttack.score : 0.0f;
-					ps.value = baseline + ps.spellPlacementHeuristicValue;
+					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+						counterspellNegated, *spellAllowance) || counterspellNegated)
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + ps.spellPlacementHeuristicValue;
 					continue;
 				}
 				// Contextual Orders have no faithful projection in the old
@@ -1470,9 +1515,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					// in the candidate value so contextual Orders compete on the same
 					// scale as spells and ordinary attacks rather than being treated as
 					// a small, standalone bonus.
-					const auto baseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
-						? cachedAttack.score : 0.0f;
-					ps.value = baseline + ps.commandHeuristicValue;
+					if(!state->projectAcceptedHeroOrder(side, *orderAllowance))
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + ps.commandHeuristicValue;
 					continue;
 				}
 
@@ -1488,20 +1534,45 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				}
 #endif
 
-				auto state = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
-
 				if(ps.command == HeroCommand::NONE)
 				{
+					auto candidateTarget = ps.dest;
+					bool missingProjectedTarget = false;
+					if(!candidateTarget.empty() && candidateTarget.front().unitValue)
+						targetId = candidateTarget.front().unitValue->unitId();
+					for(auto & destination : candidateTarget)
+					{
+						if(!destination.unitValue)
+							continue;
+						const auto destinationId = destination.unitValue->unitId();
+						destination.unitValue = state->battleGetUnitByID(destinationId);
+						missingProjectedTarget |= destination.unitValue == nullptr;
+					}
+					if(missingProjectedTarget)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
 					spells::BattleCast cast(state.get(), hero, spells::Mode::HERO, ps.spell);
 					cast.setMetamagicFollowup(ps.metamagicFollowup);
 					cast.setMetamagicGrand(ps.metamagicGrand);
-					if(!ps.dest.empty() && ps.dest.front().unitValue)
-						cast.setMetamagicTargetUnitId(ps.dest.front().unitValue->unitId());
+					if(targetId != std::numeric_limits<uint32_t>::max())
+						cast.setMetamagicTargetUnitId(targetId);
 					cast.setOvercharge(ps.spellOvercharge);
 					cast.setSelectiveDispel(ps.spellSelectiveDispel);
 					cast.setCureAffliction(ps.spellCureAffliction);
 					cast.setMassSlow(ps.spellMassSlow);
-					cast.castEval(state->getServerCallback(), ps.dest);
+					if(counterspell.wardActive)
+						cast.setCounterspell(counterspell.wardSide, counterspellNegated);
+					if(!counterspellNegated)
+						cast.castEval(state->getServerCallback(), candidateTarget);
+					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+						counterspellNegated, *spellAllowance))
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
 				}
 				else if(ps.command == HeroCommand::FOCUS_FIRE)
 				{
@@ -1517,6 +1588,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						if(unit->alive() && !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON))
 							state->addUnitBonus(unit->unitId(), effects);
 					}
+				}
+
+				if(ps.command != HeroCommand::NONE && !state->projectAcceptedHeroOrder(side, *orderAllowance))
+				{
+					ps.value = std::numeric_limits<float>::lowest();
+					continue;
 				}
 
 				// Removed sacrifice victims must remain in the health accounting below.
@@ -1760,14 +1837,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		&& (castToPerform.value < noCastBaseline
 			|| vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
-		// Decline is the no-cast baseline, not literal score zero: hypothetical
+		// Keeping the allowance is the no-cast baseline, not literal score zero: hypothetical
 		// spell values include the active exchange's projected attack. A legal
 		// follow-up can therefore be positive in absolute terms while still
 		// being harmful relative to leaving the active exchange untouched.
-		LOGL("All Metamagic follow-ups are no better than declining; ending sequence.");
-		cb->battleMakeSpellAction(battleID, BattleAction::makeMetamagicDecline(side));
-		activeActionMade = true;
-		return true;
+		LOGL("No beneficial hero action; retaining the Spell Action for this round.");
+		return false;
 	}
 
 	if(metamagicFollowup || (castToPerform.value > noCastBaseline && !vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))

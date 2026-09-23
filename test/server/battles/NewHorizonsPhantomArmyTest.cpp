@@ -40,6 +40,7 @@ class NewHorizonsPhantomArmyTest : public BattleTestFixture
 {
 protected:
 	bool useIllusionistPerkRules = false;
+	bool startCombatBeforeCast = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -96,6 +97,12 @@ protected:
 			if(damage != sourceDamageBeforeCast)
 				return false;
 		}
+		// Hero Actions are granted when the first playable round begins, not
+		// during the round-zero battle construction phase.
+		if(startCombatBeforeCast)
+			beginCombat();
+		else
+			battle()->nextRound();
 		if(!castOn(attackerSideHero, spell, source))
 			return false;
 
@@ -239,9 +246,8 @@ TEST_F(NewHorizonsPhantomArmyTest, TimeStopPausesPhantomRemainingDuration)
 	ASSERT_TRUE(startPhantomBattle(source, phantom));
 	const auto integrity = phantom->getPhantomIntegrity();
 
-	// The opening transition is free; Time Stop then holds the full two-round
-	// duration across several later transitions.
-	battle()->nextRound();
+	// Cast in the first playable round; Time Stop holds the full two-round
+	// duration across later transitions.
 	ASSERT_EQ(battle()->getRound(), 1);
 	battle()->addOrUpdateUnitBonus(phantom, *timeStopMarker(BattleSide::DEFENDER), true);
 	ASSERT_TRUE(phantom->isTimeStopped());
@@ -327,9 +333,8 @@ TEST_F(NewHorizonsPhantomArmyTest, MagicalSpellAndPositiveFireShieldDamageDouble
 	ASSERT_GT(normalCasts.back().damage, 0);
 	EXPECT_EQ(source->getAvailableHealth(), sourceHealthBefore - normalCasts.back().damage);
 
-	// The ordinary hero spell action budget is one cast per round. This opening
-	// transition preserves Phantom Army's full duration while allowing a second
-	// real cast against the matching phantom stack.
+	// The ordinary Hero Action is one per round. The next transition leaves
+	// one round of Phantom Army duration and permits the matching second cast.
 	battle()->nextRound();
 	ASSERT_TRUE(castOn(defenderSideHero, SpellID::MAGIC_ARROW, phantom));
 	const auto casts = server.castsOf(SpellID::MAGIC_ARROW);
@@ -382,11 +387,12 @@ TEST_F(NewHorizonsPhantomArmyTest, PhantomExpiresAfterTwoRoundsAndLethalHitHasNo
 
 TEST_F(NewHorizonsPhantomArmyTest, ExpiryRemovesPhantomAfterTwoFullBattleRounds)
 {
+	startCombatBeforeCast = true;
 	CStack * source = nullptr;
 	CStack * expiring = nullptr;
 	ASSERT_TRUE(startPhantomBattle(source, expiring));
 	const uint32_t expiringId = expiring->unitId();
-	beginCombat();
+	ASSERT_EQ(battle()->getRound(), 1);
 	ASSERT_TRUE(battle()->getStack(expiringId)->alive());
 	endRound();
 	ASSERT_NE(battle()->getStack(expiringId), nullptr);

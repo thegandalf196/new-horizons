@@ -80,6 +80,20 @@ protected:
 		unit->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::LUCK, BonusSource::OTHER, value, BonusSourceID()));
 	}
 };
+
+class NewHorizonsSylvanLuckLegacySaveTest : public NewHorizonsSylvanLuckTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsSylvanLuckTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+		auto magicRules = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+		magicRules["warcasting"] = JsonNode(false);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+	}
+};
 }
 
 TEST(SylvanLuckRulesTest, ChanceOnlyHistoryAndRoundProtection)
@@ -631,7 +645,7 @@ TEST_F(NewHorizonsSylvanLuckTest, WildChanceScopesSylvanLuckToNatureSummons)
 	EXPECT_EQ(nonNature->valOfBonuses(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE), 0);
 }
 
-TEST_F(NewHorizonsSylvanLuckTest, LegacySaveIsInertAndCannotDiscardLiveHistory)
+TEST_F(NewHorizonsSylvanLuckLegacySaveTest, LegacySaveIsInertAndCannotDiscardLiveHistory)
 {
 	startBattle();
 	CMemorySerializer old;

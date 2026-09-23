@@ -778,14 +778,25 @@ TEST_F(NewHorizonsPerkAITest, rampartAIChoosesActiveFactionPerkThenFactionSkillR
 	EXPECT_EQ(hero->getPerkState().selected.front(), chosenPerk.selection);
 	EXPECT_TRUE(hero->hasActivePerk(chosenPerk.selection.skillId, chosenPerk.selection.perkId));
 
-	// Second level-up: after the sole active faction perk is selected, the AI
-	// must advance the faction Skill itself instead of falling back to a foreign
-	// or generic legacy skill.
+	// Second level-up: isolate the AI's faction-skill rank decision from the
+	// Ranger's weighted new-skill pool. Sylvan Luck is a positive-weight choice,
+	// but its configured weight does not guarantee that a random offer includes
+	// it when many other skills are learnable.
+	auto & skillOfferRules = const_cast<JsonNode &>(hero->getPrimaryGrowthRules());
+	const auto sylvanLuckId = SecondarySkill::encode(sylvanLuck.getNum());
+	ASSERT_GT(newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), sylvanLuck).value_or(0), 0);
+	for(auto & [skillId, weight] : skillOfferRules["skillOfferWeights"].Struct())
+		if(skillId != sylvanLuckId)
+			weight.Integer() = 0;
+
+	// The server-authored second offer now has only the faction Skill rank-up;
+	// the AI must choose it rather than rely on unrelated RNG outcomes.
 	hero->setExperience(LIBRARY->heroh->reqExp(hero->level + 1), ChangeValueMode::ABSOLUTE);
 	gh.levelUpHero(hero);
 	query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gh.queries->topQuery(owner));
 	ASSERT_NE(query, nullptr);
 	ASSERT_TRUE(query->hlu.perks.empty());
+	ASSERT_EQ(query->hlu.skills.size(), 1u);
 	const auto skillChoice = std::find(query->hlu.skills.begin(), query->hlu.skills.end(), sylvanLuck);
 	ASSERT_NE(skillChoice, query->hlu.skills.end());
 	const auto skillIndex = static_cast<int>(std::distance(query->hlu.skills.begin(), skillChoice));

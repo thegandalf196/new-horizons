@@ -6,6 +6,7 @@
 
 #include "BattleTestFixture.h"
 #include "../../../server/CGameHandler.h"
+#include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/bonuses/Limiters.h"
@@ -88,6 +89,20 @@ protected:
 			ASSERT_NE(battle()->getStack(attacked.stackAttacked, false), nullptr);
 		}
 		gameHandler->sendAndApply(injury);
+	}
+};
+
+class NewHorizonsBloodrageLegacySerializationTest : public NewHorizonsBloodrageRuntimeTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+		auto magicRules = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+		magicRules["warcasting"] = JsonNode(false);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 	}
 };
 
@@ -316,7 +331,7 @@ TEST_F(NewHorizonsBloodrageRuntimeTest, CurrentBattleRoundTripPreservesCounter)
 	EXPECT_EQ(restored->getBloodrageDamagePercent(BattleSide::ATTACKER), 24);
 }
 
-TEST_F(NewHorizonsBloodrageRuntimeTest, LegacyBattleReadDefaultsCounter)
+TEST_F(NewHorizonsBloodrageLegacySerializationTest, LegacyBattleReadDefaultsCounter)
 {
 	startBattle();
 	CMemorySerializer old;
@@ -331,12 +346,25 @@ TEST_F(NewHorizonsBloodrageRuntimeTest, LegacyBattleReadDefaultsCounter)
 	EXPECT_EQ(oldRestored.getBloodrageDamagePercent(BattleSide::ATTACKER), 0);
 }
 
-TEST_F(NewHorizonsBloodrageRuntimeTest, LegacyBattleWriteRejectsCounterLoss)
+TEST_F(NewHorizonsBloodrageLegacySerializationTest, LegacyBattleWriteRejectsCounterLoss)
 {
 	startBattle();
+	CMemorySerializer control;
+	control.oser.version = ESerializationVersion::NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS;
+	ASSERT_NO_THROW(control.oser & *battle());
+	EXPECT_FALSE(control.extractBuffer().empty());
+
 	battle()->getSide(BattleSide::ATTACKER).bloodrageDamagePercent = 24;
 	CMemorySerializer rejected;
 	rejected.oser.version = ESerializationVersion::NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS;
-	EXPECT_THROW(rejected.oser & *battle(), std::runtime_error);
+	try
+	{
+		rejected.oser & *battle();
+		FAIL() << "Expected an older save to reject the Bloodrage counter";
+	}
+	catch(const std::runtime_error & error)
+	{
+		EXPECT_EQ(std::string(error.what()), "Cannot discard Bloodrage battle state");
+	}
 	EXPECT_TRUE(rejected.extractBuffer().empty());
 }

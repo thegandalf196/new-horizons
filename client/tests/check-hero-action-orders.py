@@ -61,8 +61,13 @@ assert "battlePrepareFocusFireState" in controller
 assert "isCanonicalRules" in controller
 assert "heroOrderTargetingModeActive" in controller
 assert "getHeroOrderTargetingLegalHexes" in (ROOT / "client/battle/BattleFieldController.cpp").read_text(encoding="utf-8")
-assert "BattleHex::getDistance" not in controller
-assert "adjacent(*" not in controller
+# Orders must ask the shared rules for targets. Other controller modes, such as
+# Demonic Gating placement, legitimately use distance for their previews.
+order_targeting = controller.split("bool BattleActionsController::heroOrderTargetingContextIsCurrent()", 1)[1].split(
+    "bool BattleActionsController::landMinePlacementModeActive()", 1
+)[0]
+assert "BattleHex::getDistance" not in order_targeting
+assert "adjacent(*" not in order_targeting
 assert "visibleCommandDisplays" in action
 assert "CRClickPopup::createAndPush" in action
 assert 'AnimationPath::builtin("NH_orders_gauntlet_framed")' in (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")

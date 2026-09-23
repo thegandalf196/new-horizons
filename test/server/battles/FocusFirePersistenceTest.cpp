@@ -226,7 +226,13 @@ TEST_F(FocusFirePersistenceTest, InvalidSavedContextCannotBeSerializedAsCanonica
 	const auto original = side;
 	const std::vector<std::function<void(SideInBattle &)>> corruptions = {
 		[](SideInBattle & value) { value.heroCommandUsed = false; },
-		[](SideInBattle & value) { value.castSpellsCount = 1; },
+		[](SideInBattle & value)
+		{
+			// Spell history can coexist with an Order under the typed ledger,
+			// but not under the uninitialized legacy action-budget state.
+			value.castSpellsCount = 1;
+			value.heroActionAllowances = {};
+		},
 		[](SideInBattle & value) { value.heroID = ObjectInstanceID(); },
 		[](SideInBattle & value) { value.activeOrder = HeroCommand::CHARGE; },
 		[](SideInBattle & value) { value.focusFire->issuedRound++; },
