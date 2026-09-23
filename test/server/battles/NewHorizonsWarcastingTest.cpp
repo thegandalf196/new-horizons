@@ -222,6 +222,11 @@ TEST_F(NewHorizonsWarcastingTest, CounterspelledSpellReadiesOrderAndOrderSnapsho
 	const auto & formula = battle()->getHeroCommandRules()["commands"]["charge"]["effects"]["meleeDamagePercent"];
 	EXPECT_EQ(heroCommands::coefficient(formula, *attackerSideHero), 30);
 	EXPECT_EQ(heroCommands::coefficient(formula, *attackerSideHero, orderState->warcastingBonusPercent), 32);
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const auto & line)
+	{
+		return line.find("gains +32% damage, plus 2 percentage points per additional hex, this round.")
+			!= std::string::npos;
+	}));
 	JsonNode flatOnly = formula;
 	flatOnly["attack"] = JsonNode(0.0);
 	flatOnly["defense"] = JsonNode(0.0);

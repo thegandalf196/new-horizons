@@ -193,7 +193,11 @@ static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSid
 	switch(state.command)
 	{
 		case HeroCommand::CHARGE:
-			line.appendRawString(" Each allied stack's first melee attack after moving at least 3 hexes gains damage this round.");
+			line.appendRawString(" Each allied stack's first melee attack after moving at least 3 hexes gains +");
+			line.appendNumber(hero ? heroCommands::coefficient(
+				battle.getBattle()->getHeroCommandRules()["commands"]["charge"]["effects"]["meleeDamagePercent"],
+				*hero, state.warcastingBonusPercent) : 0);
+			line.appendRawString("% damage, plus 2 percentage points per additional hex, this round.");
 			break;
 		case HeroCommand::HOLD_THE_LINE:
 			line.appendRawString(" Allied stacks that hold position resist physical damage this round.");

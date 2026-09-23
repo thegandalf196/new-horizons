@@ -521,10 +521,12 @@ TEST_F(NewHorizonsNecromancyRuntimeTest, GameStateAppliesHarvestAfterBattleManaC
 
 TEST_F(NewHorizonsNecromancyRuntimeTest, GameStateClampsCombatBonusManaBeforeHarvestAndHeroLimit)
 {
-	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 10;
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 10, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->manaLimit(), 10);
+	attackerSideHero->mana = 5;
 	startBattle();
-	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).initialMana, 10);
+	const auto initialMana = battle()->getSide(BattleSide::ATTACKER).initialMana;
+	ASSERT_EQ(initialMana, 5);
 
 	BattleResultsApplied applied;
 	applied.battleID = BattleID(0);
@@ -532,9 +534,11 @@ TEST_F(NewHorizonsNecromancyRuntimeTest, GameStateClampsCombatBonusManaBeforeHar
 	applied.loser = PlayerColor(1);
 	applied.necromancy.active = true;
 	applied.necromancy.applied = true;
-	applied.necromancy.manaRecovered = 3;
-	attackerSideHero->mana = 13; // Temporary combat-only mana above the snapshot.
+	applied.necromancy.manaRecovered = 10; // Harvest would exceed the hero limit after restoring the snapshot.
+	attackerSideHero->mana = 13; // Temporary combat-only mana above the pre-battle snapshot.
 	gameState()->apply(applied);
 
-	EXPECT_EQ(attackerSideHero->mana, 10);
+	EXPECT_EQ(attackerSideHero->mana, attackerSideHero->manaLimit());
+	EXPECT_GT(attackerSideHero->mana, initialMana)
+		<< "Harvest must be added after temporary combat mana is clamped to the pre-battle snapshot";
 }

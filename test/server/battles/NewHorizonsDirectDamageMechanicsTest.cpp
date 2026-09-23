@@ -778,17 +778,49 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, PlannedTemporalistInAnOlderSnapshot
 	usePerks = true;
 	prepare();
 	const auto * slow = SpellID(SpellID::SLOW).toSpell();
+	attackerSideHero->addSpellToSpellbook(slow->getId());
 	attackerSideHero->setSecSkillLevel(
 		SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 1, ChangeValueMode::ABSOLUTE);
 	auto & saved = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+	constexpr auto skillId = "new-horizons:sorceryMagic";
+	constexpr auto perkId = "new-horizons:sorceryMagic.temporalist";
+	bool foundTemporalist = false;
 	for(auto & perk : saved.rules["skills"]["new-horizons:sorceryMagic"]["perks"].Vector())
-		if(perk["id"].String() == "new-horizons:sorceryMagic.temporalist")
+	{
+		if(perk["id"].String() == perkId)
+		{
 			perk["effect"]["status"].String() = "planned";
-	attackerSideHero->applyPerkSelection(
-		{"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalist"});
+			foundTemporalist = true;
+		}
+	}
+	ASSERT_TRUE(foundTemporalist);
+	EXPECT_THROW(saved.select(skillId, perkId, 1), std::runtime_error);
 
+	// Older saves can still contain a selection whose saved rules now mark it
+	// planned. Restore that identity through the supported saved-state loader;
+	// do not author it through the current selection API.
+	auto oldSave = saved.toJson();
+	JsonNode priorSelection;
+	priorSelection["skillId"].String() = skillId;
+	priorSelection["perkId"].String() = perkId;
+	oldSave["selected"].Vector().push_back(std::move(priorSelection));
+	saved = newHorizonsHeroes::PerkState::fromJson(oldSave);
+	ASSERT_TRUE(saved.hasSelection(skillId, perkId));
+
+	const int ordinaryDuration = attackerSideHero->getEnchantPower(slow);
 	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, slow);
-	EXPECT_EQ(slow->battleMechanics(&cast)->getEffectDuration(), attackerSideHero->getEnchantPower(slow));
+	EXPECT_EQ(slow->battleMechanics(&cast)->getEffectDuration(), ordinaryDuration);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = slow->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	const auto slowBonuses = target->getAllBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SLOW))));
+	ASSERT_FALSE(slowBonuses->empty());
+	EXPECT_EQ(slowBonuses->front()->turnsRemain, ordinaryDuration);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsOutOfRangeAndLegacyOverchargeAtomically)

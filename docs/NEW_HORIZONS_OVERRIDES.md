@@ -299,3 +299,22 @@ requiring the complete source document to be replaced.
 - **Rule:** All New Horizons artwork, including provisional placeholders, uses
   the `homm3-art` art workflow. Provisional status does not waive that workflow
   or its Heroes III visual direction.
+
+### 2026-09-23 — Pending Gate marker
+
+- **Status:** Accepted
+- **Rule:** Pending Gate hexes use the flame animation without a yellow hex
+  outline. Their full reserved footprint remains impassable until arrival.
+
+### 2026-09-23 — Metamagic grants a round-long Spell Action
+
+- **Status:** Accepted; combat-allowance consumption timing awaits clarification.
+- **Rule:** Each round grants one Hero Action usable until the round ends.
+  When that Hero Action casts a spell, Metamagic can grant a separate Spell
+  Action, with 1/2/3 uses per combat at Basic/Advanced/Expert rank. The Spell
+  Action is usable until the round ends and can only cast a spell: it is not
+  another Hero Action and cannot issue an Order. Creature actions do not force
+  immediate use or discard of this Spell Action. Do not reopen the spellbook
+  automatically or replace the normal Wait action with a mandatory decline.
+- **Open detail:** Whether the combat allowance is consumed when the Spell
+  Action is granted or when its spell is cast remains unconfirmed.

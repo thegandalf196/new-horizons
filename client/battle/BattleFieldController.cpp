@@ -317,7 +317,6 @@ void BattleFieldController::showDemonicGateReservations(Canvas & canvas)
 	const auto frameIndex = frameCount == 0 ? 0
 		: static_cast<size_t>(demonicGateAnimationTime * AnimationControls::getObstaclesSpeed()) % frameCount;
 	auto flame = frameCount == 0 ? std::shared_ptr<IImage>() : demonicGateReservationFlameFrames[frameIndex];
-	const ColorRGBA outline(255, 176, 48);
 
 	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 	{
@@ -328,20 +327,6 @@ void BattleFieldController::showDemonicGateReservations(Canvas & canvas)
 		const auto hexRect = hexPositionLocal(hex);
 		if(flame)
 			canvas.draw(flame, hexRect.center() - Point(flame->width() / 2, flame->height() / 2));
-
-		const Point origin = hexRect.topLeft();
-		const Point top = origin + Point(hexRect.w / 2, 0);
-		const Point upperRight = origin + Point(hexRect.w - 1, hexRect.h / 4);
-		const Point lowerRight = origin + Point(hexRect.w - 1, hexRect.h * 3 / 4);
-		const Point bottom = origin + Point(hexRect.w / 2, hexRect.h - 1);
-		const Point lowerLeft = origin + Point(0, hexRect.h * 3 / 4);
-		const Point upperLeft = origin + Point(0, hexRect.h / 4);
-		canvas.drawLine(top, upperRight, outline, outline);
-		canvas.drawLine(upperRight, lowerRight, outline, outline);
-		canvas.drawLine(lowerRight, bottom, outline, outline);
-		canvas.drawLine(bottom, lowerLeft, outline, outline);
-		canvas.drawLine(lowerLeft, upperLeft, outline, outline);
-		canvas.drawLine(upperLeft, top, outline, outline);
 	}
 }
 
