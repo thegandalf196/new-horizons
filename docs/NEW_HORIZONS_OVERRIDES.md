@@ -318,3 +318,31 @@ requiring the complete source document to be replaced.
   automatically or replace the normal Wait action with a mandatory decline.
 - **Open detail:** Whether the combat allowance is consumed when the Spell
   Action is granted or when its spell is cast remains unconfirmed.
+
+### 2026-09-23 — Shared typed action system
+
+- **Status:** Accepted architecture direction; implementation audit required.
+- **Rule:** Apply the Hero Action, Spell Action, and Order Action distinction
+  consistently throughout combat. A Hero Action is the general allowance;
+  a Spell Action permits spellcasting only, and an Order Action permits Orders
+  only. Do not implement this distinction solely as a Metamagic UI workaround.
+- **Required audit:** All grants, spending, expiry, perks, AI decisions, client
+  controls, combat logs, authoritative validation, and save/load must agree.
+  Creature actions must not accidentally spend a hero's typed allowances.
+
+### 2026-09-23 — Hero combat action panel
+
+- **Status:** Accepted
+- **Rule:** The hero's combat sidebar includes a panel below Morale/Luck showing
+  remaining Hero Actions, Order Actions, and Spell Actions as separate counts.
+  Read these counts from authoritative battle state. A flexible Hero Action
+  must not also appear in the specialized Spell or Order Action count.
+  Metamagic's granted Spell Action must be visible here without automatically
+  reopening the spellbook or preventing creature actions.
+
+### 2026-09-23 — Fort category headings and Conflux layout
+
+- **Status:** Accepted
+- **Rule:** Core, Elite, and Champion headings all use the same yellow font
+  color. Correct the Conflux-specific crowded layout and clipped creature
+  previews without redesigning the working layouts of other towns.

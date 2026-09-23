@@ -4,6 +4,13 @@ The detailed Warcasting section in `docs/design-sources/New Horizons.docx`
 defines the gameplay rule. This document describes its engine boundaries; it
 does not replace the source or claim that every Warcasting perk is implemented.
 
+The accepted typed-action direction in
+[`NEW_HORIZONS_OVERRIDES.md`](../NEW_HORIZONS_OVERRIDES.md) supersedes the
+immediate Metamagic continuation model described below. The current
+implementation still excludes Metamagic bonus casts from Warcasting readiness
+transitions; the shared-action migration must explicitly reconcile that
+interaction rather than infer it from a renamed action or UI control.
+
 ## Rules and state
 
 New Horizons magic rules v2 may explicitly set `warcasting: true`. Missing or
