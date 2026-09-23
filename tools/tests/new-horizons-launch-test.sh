@@ -4,7 +4,47 @@
 set -euo pipefail
 launcher=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)/new-horizons-launch.sh
 tmp=$(mktemp -d)
-trap 'rm -rf -- "$tmp"' EXIT
+cleanup_release_files=()
+cleanup_done_files=()
+cleanup_launcher_pids=()
+cleanup() {
+	local file pid attempt
+	for file in "${cleanup_release_files[@]}"; do
+		: > "$file"
+	done
+	for pid in "${cleanup_launcher_pids[@]}"; do
+		if kill -0 "$pid" 2>/dev/null; then
+			kill -TERM "$pid" 2>/dev/null || true
+		fi
+	done
+	for pid in "${cleanup_launcher_pids[@]}"; do
+		wait "$pid" 2>/dev/null || true
+	done
+	for file in "${cleanup_done_files[@]}"; do
+		for ((attempt = 0; attempt < 200; ++attempt)); do
+			[[ -f $file ]] && break
+			sleep 0.05
+		done
+	done
+	rm -rf -- "$tmp"
+}
+trap cleanup EXIT
+forget_launcher() {
+	local target=$1 pid
+	local remaining=()
+	for pid in "${cleanup_launcher_pids[@]}"; do
+		[[ $pid == "$target" ]] || remaining+=("$pid")
+	done
+	cleanup_launcher_pids=("${remaining[@]}")
+}
+wait_for_file() {
+	local file=$1 attempts=${2:-200} attempt
+	for ((attempt = 0; attempt < attempts; ++attempt)); do
+		[[ -f $file ]] && return 0
+		sleep 0.05
+	done
+	return 1
+}
 engine="$tmp/engine with spaces"
 assets="$tmp/purchaser's installation"
 profile="$tmp/NH writable profile"
@@ -55,6 +95,22 @@ else
 	grep -Fq '"mods": ["vcmi", "core"]' "$preset"
 	! grep -q 'new-horizons' "$preset"
 fi
+if [[ -n ${LIFETIME_SIGNAL:-} ]]; then
+	handle_lifetime_signal() {
+		printf '%s received\n' "$LIFETIME_SIGNAL" > "$LIFETIME_SIGNAL_SEEN"
+		if [[ ${LIFETIME_EXIT_ON_SIGNAL:-0} == 1 ]]; then
+			[[ -r Data/h3sprite.lod ]]
+			printf 'child read Data after signal\n' > "$LIFETIME_READ"
+			exit "${LIFETIME_EXIT:-23}"
+		fi
+	}
+	trap handle_lifetime_signal "$LIFETIME_SIGNAL"
+	printf '%s\n%s\n' "$PWD" "$$" > "$LIFETIME_READY"
+	while [[ ! -e $LIFETIME_RELEASE ]]; do sleep 0.05; done
+	[[ -r Data/h3sprite.lod ]]
+	printf 'child read Data after signal\n' > "$LIFETIME_READ"
+	exit "${LIFETIME_EXIT:-23}"
+fi
 printf 'stub only\n' >> "$STUB_RECEIPT"
 printf 'save placeholder\n' > "$XDG_DATA_HOME/vcmi/Saves/stub-save"
 exit "${STUB_EXIT:-0}"
@@ -74,6 +130,57 @@ expect_fail() {
 	if bash "$launcher" "$@" > "$tmp/output" 2>&1; then
 		printf 'Expected rejection: %s\n' "$*" >&2; exit 1
 	fi
+}
+exercise_signal_lifecycle() {
+	local signal=$1 exitOnSignal=${2:-0} expectedExit=${3:-23} label ready release seen readFile launchPid
+	local childRuntime childPid status
+	label=${signal,,}
+	[[ $exitOnSignal == 1 ]] && label+="-immediate-$expectedExit"
+	ready="$tmp/$label.ready"
+	release="$tmp/$label.release"
+	seen="$tmp/$label.signal-seen"
+	readFile="$tmp/$label.read"
+	LIFETIME_SIGNAL=$signal LIFETIME_EXIT_ON_SIGNAL=$exitOnSignal LIFETIME_EXIT=$expectedExit \
+		LIFETIME_READY=$ready LIFETIME_RELEASE=$release \
+		LIFETIME_SIGNAL_SEEN=$seen LIFETIME_READ=$readFile \
+		env --default-signal=INT bash "$launcher" "${args[@]}" \
+		> "$tmp/$label.launch-output" 2>&1 &
+	launchPid=$!
+	cleanup_launcher_pids+=("$launchPid")
+	cleanup_release_files+=("$release")
+	cleanup_done_files+=("$readFile")
+	wait_for_file "$ready" || { printf 'Timed out waiting for %s client.\n' "$signal" >&2; return 1; }
+	mapfile -t readyValues < "$ready"
+	childRuntime=${readyValues[0]}
+	childPid=${readyValues[1]}
+	[[ -n $childRuntime && $childPid =~ ^[0-9]+$ ]]
+	[[ -L $childRuntime/Data && -r $childRuntime/Data/h3sprite.lod ]]
+	kill -s "$signal" "$launchPid"
+	wait_for_file "$seen" || { printf 'Client did not receive %s.\n' "$signal" >&2; return 1; }
+	[[ $(< "$seen") == "$signal received" ]]
+	if [[ $exitOnSignal == 1 ]]; then
+		if wait "$launchPid"; then status=0; else status=$?; fi
+		forget_launcher "$launchPid"
+		[[ $status == "$expectedExit" ]]
+		[[ $(< "$readFile") == 'child read Data after signal' ]]
+		[[ ! -e $childRuntime ]]
+		return
+	fi
+	kill -0 "$launchPid"
+	kill -0 "$childPid"
+	[[ -L $childRuntime/Data && -r $childRuntime/Data/h3sprite.lod ]]
+	[[ -f $profile/.nh-lock ]]
+	if bash "$launcher" "${args[@]}" --verify-only > "$tmp/$label.lock-output" 2>&1; then
+		printf '%s signal released the profile lock before the client exited.\n' "$signal" >&2
+		return 1
+	fi
+	grep -q 'This NH profile is already in use.' "$tmp/$label.lock-output"
+	: > "$release"
+	if wait "$launchPid"; then status=0; else status=$?; fi
+	forget_launcher "$launchPid"
+	[[ $status == 23 ]]
+	[[ $(< "$readFile") == 'child read Data after signal' ]]
+	[[ ! -e $childRuntime ]]
 }
 bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
 [[ ! -e $profile && ! -e $STUB_RECEIPT ]]
@@ -137,6 +244,11 @@ bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ $(< "$profile/config/vcmi/settings.json") == 'settings sentinel' ]]
 [[ $(< "$profile/data/vcmi/Saves/existing-save") == 'legacy save sentinel' ]]
 ! grep -q 'unwanted' "$profile/config/vcmi/modSettings.json"
+for signal in TERM HUP INT; do
+	exercise_signal_lifecycle "$signal"
+done
+exercise_signal_lifecycle TERM 1
+exercise_signal_lifecycle TERM 1 127
 # Simulate a hard-killed previous launch.  An exact launcher-owned runtime is
 # reclaimed after locking; a lookalike with unexpected contents is still refused.
 stale=$profile/runtime.A1b2C3d4
@@ -196,4 +308,4 @@ ln -s -- "$profile/config-real" "$profile/config"
 expect_fail "${args[@]}" --verify-only
 [[ ! -e $assets/Saves && ! -e $engine/Saves ]]
 [[ -e $assets/Mods/unwanted && -e $engine/Mods/unwanted ]]
-printf '%s\n' 'PASS: verify-only, rejected inputs, isolated stub launch, reuse, lock ordering, cleanup; no game executed.'
+printf '%s\n' 'PASS: verify-only, rejected inputs, isolated stub launch, signal lifecycle/status, reuse, lock ordering, cleanup; no game executed.'

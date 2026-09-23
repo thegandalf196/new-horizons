@@ -201,6 +201,24 @@ mv -fT -- "$preset" "$profile/config/vcmi/modSettings.json"
 # chdirs to its parent; VCMIDirs developmentMode then excludes ALL system roots.
 runtime=$(mktemp -d -- "$profile/runtime.XXXXXXXX")
 trap 'rm -rf -- "$runtime"' EXIT
+# The client uses this directory as its working directory, so do not remove it
+# until the child has actually exited. Bash traps interrupt `wait`; retrying the
+# wait keeps the runtime and profile lock alive for TERM-delayed clients.
+client_pid=''
+received_signal=''
+received_signal_count=0
+forward_signal() {
+	local signal=$1
+	received_signal=$signal
+	received_signal_count=$((received_signal_count + 1))
+	if [[ -n ${client_pid:-} ]] && kill -0 "$client_pid" 2>/dev/null; then
+		kill -s "$signal" "$client_pid" 2>/dev/null || true
+	fi
+	return 0
+}
+trap 'forward_signal HUP' HUP
+trap 'forward_signal INT' INT
+trap 'forward_signal TERM' TERM
 mkdir -- "$runtime/Mods"
 ln -s -- "$client" "$runtime/vcmiclient"
 ln -s -- "$(dirname -- "$client")/libvcmi.so" "$runtime/libvcmi.so"
@@ -213,10 +231,45 @@ fi
 ln -s -- "$data" "$runtime/Data"
 ln -s -- "$maps" "$runtime/Maps"
 ln -s -- "$mp3" "$runtime/Mp3"
+# A signal received while assembling the runtime still prevents client startup.
+if [[ -n $received_signal ]]; then
+	case $received_signal in
+		HUP) exit 129;;
+		INT) exit 130;;
+		TERM) exit 143;;
+	esac
+fi
 # Do not inherit XDG VCMI settings, optional mods, or loader injection variables.
 # This is a curated launch profile, not a sandbox or global mod prohibition.
-env -u LD_PRELOAD -u LD_AUDIT \
+env --default-signal=INT -u LD_PRELOAD -u LD_AUDIT \
 	LD_LIBRARY_PATH="$(dirname -- "$client")" \
 	XDG_DATA_HOME="$profile/data" XDG_CONFIG_HOME="$profile/config" \
 	XDG_CACHE_HOME="$profile/cache" XDG_DATA_DIRS="$runtime" \
-	"$runtime/vcmiclient" --nointro "${client_args[@]}"
+	"$runtime/vcmiclient" --nointro "${client_args[@]}" &
+client_pid=$!
+# Cover a signal that arrived between the pre-start check and PID assignment.
+if [[ -n $received_signal ]] && kill -0 "$client_pid" 2>/dev/null; then
+	kill -s "$received_signal" "$client_pid" 2>/dev/null || true
+fi
+
+# Preserve the child's status and keep the runtime and profile lock until the
+# client exits. FD 9 intentionally remains inherited by the client so a
+# forcibly killed launcher cannot release the profile lock while that child is
+# still alive.
+client_status=0
+while true; do
+	signal_count_before_wait=$received_signal_count
+	if wait "$client_pid"; then
+		client_status=0
+	else
+		client_status=$?
+	fi
+	# Bash wait returns 128+signal when a trapped signal interrupts it, even if
+	# the client exits while the trap handler is forwarding that signal. Re-wait
+	# after any handled signal to retrieve the child's cached exit status.
+	if (( received_signal_count == signal_count_before_wait )); then
+		break
+	fi
+done
+client_pid=''
+exit "$client_status"
