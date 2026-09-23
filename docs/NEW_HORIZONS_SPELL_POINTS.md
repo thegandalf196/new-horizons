@@ -121,3 +121,28 @@ originally obtained.
 
 The governing distinction is: Knowledge defines capacity; Intelligence improves
 capacity; restoration fills capacity; Buffer effects exceed capacity.
+
+## Integration acceptance checks
+
+The pool value type alone does not implement this system in gameplay. Verify all
+of these paths before promoting a build with the new model:
+
+- Spell costs and Mana drains consume Buffer before Normal, including exact
+  exhaustion and insufficient-funds rejection without partial mutation.
+- Restoration and Buffer grants commute as described above; AI distinguishes
+  total casting resources from missing Normal capacity.
+- Equipment swaps reconcile capacity after the complete authoritative operation,
+  not after intermediate removal steps. An equal-capacity swap preserves Normal;
+  a real capacity reduction loses excess Normal without touching Buffer.
+- Knowledge, Intelligence, inherited bonuses and level changes all update the
+  same capacity contract, on both simulation and client state.
+- Battle cancellation/retry restores the original pair of pools. A completed
+  battle preserves legitimate restoration and persistent Buffer grants, while
+  expiring any unused combat-only energy. Do not cap total or Buffer against its
+  pre-battle value: that would discard points legitimately gained during combat.
+- Battle saves and adventure saves round-trip both pools; legacy scalar Mana
+  migration is explicit and never manufactures Buffer from an unknown source.
+- Spellbinder's Hat supplies temporary eligible Level 5 combat access without
+  writing permanent knowledge; removing it preserves independently learned spells.
+- All total/maximum readouts and tooltips agree on the Buffer-inclusive total;
+  they neither add Buffer twice nor disclose hidden enemy information.

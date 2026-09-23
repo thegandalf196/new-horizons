@@ -92,6 +92,15 @@ optional unlicensed art, or claim that public availability grants reuse rights.
 
 ## Asset policy
 
+Maintain the [UI and asset status register](NH_UI_ASSET_STATUS.md) alongside
+runtime UI/asset changes. Its coverage is the live New Horizons content and UI,
+not just previously reported examples. Use **Not done**, **Provisional**, or
+**Final** for each tracked item. An unrelated borrowed icon is **Not done**;
+a purpose-made draft is **Provisional**; **Final** requires approval evidence,
+not merely an existing file. Track incorrect bindings or layout defects
+separately from the approval status of the artwork itself. All new artwork,
+including provisional artwork, must use the HoMM3 art skill.
+
 Inspect actual installed Heroes III spellbook/school artwork and VCMI lookups before
 asserting what exists or choosing replacement dimensions. Record external resource
 names, sizes, palette/transparency, frame/state needs and placement. Do not launch
