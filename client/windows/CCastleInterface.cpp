@@ -284,21 +284,6 @@ int creatureCategoryRank(const std::optional<newHorizonsCreatures::CreatureCateg
 
 	return -1;
 }
-
-ColorRGBA creatureCategoryColor(const newHorizonsCreatures::CreatureCategory category)
-{
-	switch(category)
-	{
-	case newHorizonsCreatures::CreatureCategory::CORE:
-		return Colors::YELLOW;
-	case newHorizonsCreatures::CreatureCategory::ELITE:
-		return Colors::CYAN;
-	case newHorizonsCreatures::CreatureCategory::CHAMPION:
-		return Colors::ORANGE;
-	}
-
-	return Colors::WHITE;
-}
 }
 
 static bool useCompactCreatureBox()
@@ -2741,7 +2726,7 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 		const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
 		if(!rankedLayout && category && !categoryName.empty())
 			categoryLabel = std::make_shared<CLabel>(78, 28, FONT_TINY, ETextAlignment::CENTER,
-				creatureCategoryColor(category->category), categoryName, 152);
+				Colors::YELLOW, categoryName, 152);
 
 		const std::array<std::string, NH_FORT_STAT_COUNT> rankedStatNames =
 		{

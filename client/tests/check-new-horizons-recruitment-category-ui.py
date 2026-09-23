@@ -60,6 +60,10 @@ if "count != GameConstants::CREATURES_PER_TOWN" in CASTLE:
     raise AssertionError("seven-row towns must not be excluded from ranked fort layout")
 require(CASTLE, "categoryLevels", "fort screen groups active New Horizons ranks")
 require(CASTLE, "categoryHeaders", "fort screen renders rank headings")
+require(CASTLE, "ETextAlignment::CENTER, Colors::YELLOW, heading", "all town rank headings use yellow")
+require(CASTLE, "Colors::YELLOW, categoryName, 152", "fallback fort rank labels also use yellow")
+if "creatureCategoryColor" in CASTLE:
+    raise AssertionError("fort ranks must not restore distinct category colors")
 require(CASTLE, "categoryViews", "fort headings retain the saved category text IDs")
 require(CASTLE, "newHorizonsCreatureCategoryUI::name(categoryViews[rank]", "fort headings use the active category translator")
 for stock_key in ("core.castinfo.0", "core.castinfo.1", "core.castinfo.2", "core.castinfo.3", "core.castinfo.4", "core.castinfo.5"):

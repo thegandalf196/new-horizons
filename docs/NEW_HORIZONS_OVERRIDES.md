@@ -344,8 +344,9 @@ requiring the complete source document to be replaced.
 
 - **Status:** Accepted
 - **Rule:** Core, Elite, and Champion headings all use the same yellow font
-  color. Correct the Conflux-specific crowded layout and clipped creature
-  previews without redesigning the working layouts of other towns.
+  color in every town, including fallback Fort category labels. Correct the
+  Conflux-specific crowded layout and clipped creature previews without
+  redesigning the working layouts of other towns.
 
 ### 2026-09-23 — Preserve the accepted inscribed-spell casting rule
 
