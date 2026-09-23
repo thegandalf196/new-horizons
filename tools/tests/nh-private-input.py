@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Normal XTest input on an identity-guarded private :191 Xvfb; no fallback.
 
-Usage: nh-private-input.py --guard LOCAL_JSON click X Y key Escape wait 1
+Usage: nh-private-input.py --guard LOCAL_JSON move X Y click X Y key Escape wait 1
 The tester records pid/start_ticks/boot_id/socket_inode when starting owned Xvfb.
 Never create a guard by discovering an arbitrary existing display.
 """
@@ -60,7 +60,10 @@ try:
     while args:
         check_owner()
         action = args.pop(0)
-        if action == 'click':
+        if action == 'move':
+            px, py = int(args.pop(0)), int(args.pop(0))
+            t.XTestFakeMotionEvent(d, 0, px, py, 0)
+        elif action == 'click':
             px, py = int(args.pop(0)), int(args.pop(0))
             t.XTestFakeMotionEvent(d, 0, px, py, 0)
             t.XTestFakeButtonEvent(d, 1, 1, 0)
