@@ -153,9 +153,10 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, SchoolGrantAndTomesGrantBannedSetting
 {
 	prepareHero();
 	const auto arrow = spellNamed("core:magicArrow");
-	ASSERT_TRUE(arrow.toSpell()->schools.count(SpellSchool::AIR));
+	const auto schools = attackerSideHero->getSpellSchools(arrow.toSpell());
+	ASSERT_FALSE(schools.empty());
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::SPELLS_OF_SCHOOL,
-		BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(SpellSchool::AIR)));
+		BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(schools.front())));
 	ASSERT_FALSE(attackerSideHero->getSourcesForSpell(arrow).empty());
 	ExcludingWorld excluded(*gameState(), "core:magicArrow");
 	ScopedHeroCallback context(*attackerSideHero, &excluded);

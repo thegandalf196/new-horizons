@@ -310,7 +310,8 @@ double getArtifactBonusRelevance(const CGHeroInstance * hero, const std::shared_
 		for (auto spellID : LIBRARY->spellh->getDefaultAllowed())
 		{
 			auto spell = spellID.toEntity(LIBRARY);
-			if (!spell->hasSchool(school) && !vstd::contains(hero->getSpellSchools(spell), school))
+			if (!newHorizonsMagic::spellAllowedBySavedRoster(hero->getMagicRules(), spellID)
+				|| !vstd::contains(hero->getSpellSchools(spell), school))
 				continue;
 
 			uint64_t spellLevel = hero->getSpellLevel(spell);
@@ -320,7 +321,7 @@ double getArtifactBonusRelevance(const CGHeroInstance * hero, const std::shared_
 			totalWeight += spellWeight;
 		}
 		if (totalWeight == 0)
-			return 0.0;
+			return 1.0; // An empty grant set contains no missing spells to value.
 
 		return static_cast<double>(knownWeight) / totalWeight;
 	};

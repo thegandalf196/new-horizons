@@ -1627,13 +1627,7 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 	if (tomesGrantBannedSpells || cb->isAllowed(spellId))
 	{
 		const auto spell = spellId.toSpell();
-		auto tomeSchools = getSpellSchools(spell);
-		// Original elemental tomes must not become inert in a six-school game.
-		spell->forEachSchool([&](const SpellSchool & school, bool & stop)
-		{
-			if(!vstd::contains(tomeSchools, school))
-				tomeSchools.push_back(school);
-		});
+		const auto tomeSchools = getSpellSchools(spell);
 		for(const auto & cnf : tomeSchools)
 		{
 			for(const auto & bonus : *getBonusesOfType(BonusType::SPELLS_OF_SCHOOL, cnf))
