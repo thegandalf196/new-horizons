@@ -66,6 +66,7 @@ set(test_SRCS
 		hero/NewHorizonsPrimaryProfileTest.cpp
 		hero/NewHorizonsPrimaryGrowthTest.cpp
 		hero/NewHorizonsPrimaryScaleTest.cpp
+		hero/SpellPointStateTest.cpp
 		hero/NewHorizonsLeadershipTest.cpp
 		hero/NewHorizonsMovementRulesTest.cpp
 		hero/NewHorizonsCapabilityRulesTest.cpp

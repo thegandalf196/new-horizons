@@ -592,6 +592,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsPrimaryProfile.h
 	entities/hero/NewHorizonsPrimaryGrowth.h
 	entities/hero/NewHorizonsPrimaryScale.h
+	entities/hero/SpellPointState.h
 	entities/creature/NewHorizonsCreatureCategoryRules.h
 	entities/creature/NewHorizonsMusterRules.h
 	entities/hero/NewHorizonsHeroRules.h
