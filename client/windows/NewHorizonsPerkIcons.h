@@ -16,6 +16,7 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:offense.breakthrough", "NH_perk_breakthrough"},
 		{"new-horizons:battlecraft.entrench", "NH_perk_entrench"},
 		{"new-horizons:discipline.inspirationalLeader", "NH_perk_inspirational_leader"},
+		{"new-horizons:demonicGating.chainGate", "NH_perk_chain_gate"},
 		{"new-horizons:sorceryMagic.overcharger", "NH_perk_overcharger"},
 		{"new-horizons:sorceryMagic.selectiveDispel", "NH_perk_selective_dispel"},
 		{"new-horizons:sorceryMagic.temporalist", "NH_perk_temporalist"},

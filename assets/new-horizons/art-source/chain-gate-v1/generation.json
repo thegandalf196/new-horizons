@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-23",
+  "generator": "OpenAI built-in image generator",
+  "method": "Original generated raster artwork from the configured Chain Gate perk effect; no reference image pixels were used. The retained master is reduced with homm3-art export_art.py; runtime states use brightness/color-only transforms.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "style_guide": "homm3-art/references/style-guide.md (secondary-skill icons)",
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "prompt_file": "prompt-chain-gate.txt",
+  "assets": [
+    {
+      "id": "new-horizons:demonicGating.chainGate",
+      "name": "Chain Gate",
+      "key": "NH_perk_chain_gate",
+      "master": "exports/chain-gate/master.png",
+      "generated_output": "generated_images/exec-eb1c863c-e160-4a3e-b207-3c361c24705a.png",
+      "prompt_file": "prompt-chain-gate.txt",
+      "dimensions": [1254, 1254],
+      "source_sha256": "7fc602dac7d7eb392779088fbdc2ca3054367983d2019e7580df1857a06da766",
+      "style_reference": null
+    }
+  ]
+}

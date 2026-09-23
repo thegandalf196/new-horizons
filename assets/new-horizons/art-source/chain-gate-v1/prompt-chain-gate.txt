@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: one original square secondary-perk icon for a fantasy game, with a detailed high-resolution master.
+Primary request: Chain Gate, a battle perk where a kill by a gated stack causes the next Gate opened in that combat to resolve one timing step sooner. Show this as a physical emblematic still life, not a scene: one heavy blackened iron infernal gate with its leaves sprung open, a thick aged chain wrapped around the latch and snapped at a single link, the broken chain pulled aside as a concentrated ember-red portal glow opens just inside the threshold.
+Subject: the iron gate and broken chain form one tightly integrated dominant object group; no characters or creature silhouettes.
+Style/medium: late-1990s Western PC fantasy illustration, a miniature modeled fantasy still-life painting with painterly fantasy-book character, convincing material modeling rather than photorealism.
+Composition/framing: close three-quarter frontal view, strong simple silhouette filling most of the square with a narrow safe inset; keep the entire arch, gate leaves and broken chain unclipped. Make the gate, chain break and opening obvious at 44x44 and 32x32.
+Lighting/mood: theatrical chiaroscuro, warm upper-left hero light on worn iron and rusted chain, deep shadow on the far side, a small intense red-orange glow confined to the opening.
+Color palette: blackened iron, rust, muted charcoal stone, restrained ember red and warm brass highlights against a dark earthy umber background.
+Materials/textures: thick forged iron, heavy individually readable chain links, worn stone and a compact magical threshold glow.
+Constraints: original artwork; no reference images; no border, words, lettering, readable runes, UI, watermark, extra props or extra figures. Keep all major forms inside the frame.
+Avoid: neon bloom, broad particle effects, flat vector outlines, cartoon styling, deliberate pixel art, dithering, plastic gloss, modern mobile-game rendering.
