@@ -13,7 +13,10 @@
 #include "../../../lib/mapObjects/TownBuildingInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/gameState/CGameState.h"
+#include "../../../lib/texts/CGeneralTextHandler.h"
+#include "../../../lib/CPlayerState.h"
 #include "../../../server/CGameHandler.h"
+#include "../../../server/processors/NewTurnProcessor.h"
 #include "../../mock/GameHandlerTestServer.h"
 #include "../../mock/TinyH3MBuilder.h"
 #include "../../mock/TinyMapGameTest.h"
@@ -212,15 +215,21 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	const auto tower = faction("core:tower");
 
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
-	builder.size(48, false).playerActive(PlayerColor(0))
+	builder.size(48, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
 		.town({20, 20, 0}, tower, PlayerColor(0))
+		.town({35, 20, 0}, faction("core:inferno"), PlayerColor(1))
 		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0))
-		.hero({7, 5, 0}, heroType("core:tyris"), PlayerColor(0));
+		.hero({7, 5, 0}, heroType("core:tyris"), PlayerColor(0))
+		.hero({35, 5, 0}, heroType("core:valeska"), PlayerColor(1));
 	startWithMap(std::move(builder));
 
 	auto towns = findAll<CGTownInstance>();
-	ASSERT_EQ(towns.size(), 1u);
-	auto * town = towns.front();
+	ASSERT_EQ(towns.size(), 2u);
+	CGTownInstance * town = nullptr;
+	for(auto * candidate : towns)
+		if(candidate->getOwner() == PlayerColor(0))
+			town = candidate;
+	ASSERT_NE(town, nullptr);
 	town->addBuilding(BuildingID::SPECIAL_4);
 	ASSERT_TRUE(town->rewardableBuildings.contains(BuildingID::SPECIAL_4));
 	auto * reservoir = town->rewardableBuildings.at(BuildingID::SPECIAL_4).get();
@@ -260,6 +269,7 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	for(int day = 0; day < 8; ++day)
 		gameHandler.onNewTurn();
 	EXPECT_EQ(gameState()->day, 8u);
+	EXPECT_EQ(gameState()->players.at(PlayerColor(1)).status, EPlayerStatus::INGAME);
 	EXPECT_FALSE(reservoir->wasVisited(firstHero));
 
 	town->setVisitingHero(nullptr);
@@ -268,6 +278,42 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	ASSERT_TRUE(gameHandler.visitTownBuilding(town->id, BuildingID::SPECIAL_4));
 	EXPECT_EQ(secondHero->mana, secondManaLimit * 2);
 	EXPECT_TRUE(reservoir->wasVisited(secondHero));
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, WeeklySpecialRumorFallsBackWhenNoPlayersCanBeRanked)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(48, false).playerActive(PlayerColor(0))
+		.town({20, 20, 0}, faction("core:castle"), PlayerColor(0))
+		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	ASSERT_FALSE(LIBRARY->generaltexth->findStringsWithPrefix("core.randtvrn").empty());
+	auto player = gameState()->players.find(PlayerColor(0));
+	ASSERT_NE(player, gameState()->players.end());
+	player->second.status = EPlayerStatus::LOSER;
+
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+
+	// With the first-turn Castle fixture, no other weekly path draws randomness
+	// before pickNewRumor. Find a seed whose first draw selects TYPE_SPECIAL, then
+	// reset it so this test exercises the empty thief-guild ranking fallback.
+	int specialRumorSeed = -1;
+	for(int candidateSeed = 1; candidateSeed <= 50000; ++candidateSeed)
+	{
+		gameHandler.randomizer->setSeed(candidateSeed);
+		if(gameHandler.getRandomGenerator().nextInt64(0, 3) == 1)
+		{
+			specialRumorSeed = candidateSeed;
+			break;
+		}
+	}
+	ASSERT_NE(specialRumorSeed, -1);
+	gameHandler.randomizer->setSeed(specialRumorSeed);
+	gameHandler.newTurnProcessor->onNewTurn();
+
+	EXPECT_EQ(gameState()->currentRumor.type, RumorState::TYPE_RAND);
 }
 
 TEST_F(NewHorizonsUniqueBuildingTrainingTest, TowerLibraryOnlyAddsMageGrowthAndBrimstoneProducesSulfur)

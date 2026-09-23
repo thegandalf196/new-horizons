@@ -501,6 +501,20 @@ RumorState NewTurnProcessor::pickNewRumor()
 	int rumorId = -1;
 	int rumorExtra = -1;
 	auto & rand = gameHandler->getRandomGenerator();
+	auto pickRandomTextRumor = [&]()
+	{
+		auto rumors = LIBRARY->generaltexth->findStringsWithPrefix("core.randtvrn");
+		if(rumors.empty())
+		{
+			newRumor.type = RumorState::TYPE_NONE;
+			return false;
+		}
+
+		newRumor.type = RumorState::TYPE_RAND;
+		rumorExtra = -1;
+		rumorId = rand.nextInt(static_cast<int>(rumors.size()) - 1);
+		return true;
+	};
 	newRumor.type = *RandomGeneratorUtil::nextItem(rumorTypes, rand);
 
 	do
@@ -511,6 +525,13 @@ RumorState NewTurnProcessor::pickNewRumor()
 			{
 				SThievesGuildInfo tgi;
 				gameHandler->gameState().obtainPlayersStats(tgi, 20);
+				if(tgi.playerColors.empty())
+				{
+					if(!pickRandomTextRumor())
+						return newRumor;
+					break;
+				}
+
 				rumorId = *RandomGeneratorUtil::nextItem(sRumorTypes, rand);
 				if(rumorId == RumorState::RUMOR_GRAIL)
 				{
@@ -519,23 +540,33 @@ RumorState NewTurnProcessor::pickNewRumor()
 				}
 
 				std::vector<PlayerColor> players = {};
+				auto topRank = [](const std::vector<std::vector<PlayerColor>> & rankings)
+				{
+					return rankings.empty() ? std::vector<PlayerColor>{} : rankings.front();
+				};
 				switch(rumorId)
 				{
 					case RumorState::RUMOR_OBELISKS:
-						players = tgi.obelisks[0];
+						players = topRank(tgi.obelisks);
 						break;
 
 					case RumorState::RUMOR_ARTIFACTS:
-						players = tgi.artifacts[0];
+						players = topRank(tgi.artifacts);
 						break;
 
 					case RumorState::RUMOR_ARMY:
-						players = tgi.army[0];
+						players = topRank(tgi.army);
 						break;
 
 					case RumorState::RUMOR_INCOME:
-						players = tgi.income[0];
+						players = topRank(tgi.income);
 						break;
+				}
+				if(players.empty())
+				{
+					if(!pickRandomTextRumor())
+						return newRumor;
+					break;
 				}
 				rumorExtra = RandomGeneratorUtil::nextItem(players, rand)->getNum();
 
@@ -553,8 +584,8 @@ RumorState NewTurnProcessor::pickNewRumor()
 				[[fallthrough]];
 
 			case RumorState::TYPE_RAND:
-				auto vector = LIBRARY->generaltexth->findStringsWithPrefix("core.randtvrn");
-				rumorId = rand.nextInt(static_cast<int>(vector.size()) - 1);
+				if(!pickRandomTextRumor())
+					return newRumor;
 
 				break;
 		}
