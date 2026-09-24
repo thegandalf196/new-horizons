@@ -249,11 +249,39 @@ void GameStatePackVisitor::visitSetResources(SetResources & pack)
 	gs.getPlayerState(pack.player)->resources.positive();
 }
 
+void GameStatePackVisitor::reconcileSpellPointCapacity()
+{
+	if(!needsSpellPointReconciliation()
+		|| !newHorizonsMagic::spellPointRulesActive(gs.getMagicRules()))
+		return;
+	const auto reconcile = [](CGHeroInstance * hero)
+	{
+		if(hero && hero->areSpellPointsInitialized())
+			hero->clampSpellPointsToCapacity();
+	};
+	if(spellPointBonusGraphChanged)
+	{
+		// Shared/propagated bonuses can affect more than the packet's direct target.
+		// Each hero skips recalculation when its own bonus revision is unchanged.
+		for(auto * hero : gs.getMap().getObjects<CGHeroInstance>())
+			reconcile(hero);
+		for(const auto type : gs.getMap().getHeroesInPool())
+			reconcile(gs.getMap().tryGetFromHeroPool(type));
+	}
+	else
+		for(const auto id : spellPointHeroes)
+			reconcile(gs.getHero(id));
+}
+
 void GameStatePackVisitor::visitSetPrimarySkill(SetPrimarySkill & pack)
 {
 	CGHeroInstance * hero = gs.getHero(pack.id);
 	assert(hero);
+	const auto oldKnowledge = hero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
 	hero->setPrimarySkill(pack.which, pack.val, pack.mode);
+	if(pack.which == PrimarySkill::KNOWLEDGE
+		&& hero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE) < oldKnowledge)
+		spellPointHeroes.insert(pack.id);
 }
 
 void GameStatePackVisitor::visitSetHeroExperience(SetHeroExperience & pack)
@@ -276,11 +304,15 @@ void GameStatePackVisitor::visitGiveStackExperience(GiveStackExperience & pack)
 void GameStatePackVisitor::visitSetSecSkill(SetSecSkill & pack)
 {
 	CGHeroInstance *hero = gs.getHero(pack.id);
+	const auto previousRank = hero->getSecSkillLevel(pack.which);
 	hero->setSecSkillLevel(pack.which, pack.val, pack.mode);
+	if(hero->getSecSkillLevel(pack.which) < previousRank)
+		spellPointHeroes.insert(pack.id);
 }
 
 void GameStatePackVisitor::visitSetCommanderProperty(SetCommanderProperty & pack)
 {
+	spellPointBonusGraphChanged = true;
 	const auto & commander = gs.getHero(pack.heroid)->getCommander();
 	assert (commander);
 
@@ -350,6 +382,7 @@ void GameStatePackVisitor::visitChangeTownName(ChangeTownName & pack)
 
 void GameStatePackVisitor::visitHeroVisitCastle(HeroVisitCastle & pack)
 {
+	spellPointBonusGraphChanged = true;
 	CGHeroInstance *h = gs.getHero(pack.hid);
 	CGTownInstance *t = gs.getTown(pack.tid);
 
@@ -457,11 +490,13 @@ void GameStatePackVisitor::visitFoWChange(FoWChange & pack)
 
 void GameStatePackVisitor::visitSetAvailableHero(SetAvailableHero & pack)
 {
+	spellPointBonusGraphChanged = true;
 	gs.heroesPool->setHeroForPlayer(pack.player, pack.slotID, pack.hid, pack.army, pack.roleID, pack.replenishPoints);
 }
 
 void GameStatePackVisitor::visitGiveBonus(GiveBonus & pack)
 {
+	spellPointBonusGraphChanged = true;
 	CBonusSystemNode *cbsn = nullptr;
 	switch(pack.who)
 	{
@@ -581,6 +616,7 @@ void GameStatePackVisitor::visitPlayerEndsGame(PlayerEndsGame & pack)
 
 void GameStatePackVisitor::visitRemoveBonus(RemoveBonus & pack)
 {
+	spellPointBonusGraphChanged = true;
 	CBonusSystemNode *node = nullptr;
 	switch(pack.who)
 	{
@@ -616,6 +652,7 @@ void GameStatePackVisitor::visitRemoveBonus(RemoveBonus & pack)
 
 void GameStatePackVisitor::visitRemoveObject(RemoveObject & pack)
 {
+	spellPointBonusGraphChanged = true;
 	CGObjectInstance *obj = gs.getObjInstance(pack.objectID);
 	logGlobal->debug("removing object id=%d; address=%x; name=%s", pack.objectID, (intptr_t)obj, obj->getObjectNameTextID());
 
@@ -807,6 +844,7 @@ void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)
 
 void GameStatePackVisitor::visitNewStructures(NewStructures & pack)
 {
+	spellPointBonusGraphChanged = true;
 	CGTownInstance *t = gs.getTown(pack.tid);
 
 	for(const auto & id : pack.bid)
@@ -821,6 +859,7 @@ void GameStatePackVisitor::visitNewStructures(NewStructures & pack)
 
 void GameStatePackVisitor::visitRazeStructures(RazeStructures & pack)
 {
+	spellPointBonusGraphChanged = true;
 	CGTownInstance *t = gs.getTown(pack.tid);
 	for(const auto & id : pack.bid)
 	{
@@ -841,6 +880,7 @@ void GameStatePackVisitor::visitSetAvailableCreatures(SetAvailableCreatures & pa
 
 void GameStatePackVisitor::visitSetHeroesInTown(SetHeroesInTown & pack)
 {
+	spellPointBonusGraphChanged = true;
 	CGTownInstance *t = gs.getTown(pack.tid);
 
 	CGHeroInstance * v = gs.getHero(pack.visiting);
@@ -867,6 +907,7 @@ void GameStatePackVisitor::visitSetHeroesInTown(SetHeroesInTown & pack)
 
 void GameStatePackVisitor::visitHeroRecruited(HeroRecruited & pack)
 {
+	spellPointBonusGraphChanged = true;
 	auto h = gs.heroesPool->takeHeroFromPool(pack.hid);
 	CGTownInstance *t = gs.getTown(pack.tid);
 	PlayerState *p = gs.getPlayerState(pack.player);
@@ -903,6 +944,7 @@ void GameStatePackVisitor::visitHeroRecruited(HeroRecruited & pack)
 
 void GameStatePackVisitor::visitGiveHero(GiveHero & pack)
 {
+	spellPointBonusGraphChanged = true;
 	CGHeroInstance *h = gs.getHero(pack.id);
 
 	if (pack.boatId.hasValue())
@@ -935,6 +977,7 @@ void GameStatePackVisitor::visitGiveHero(GiveHero & pack)
 
 void GameStatePackVisitor::visitNewObject(NewObject & pack)
 {
+	spellPointBonusGraphChanged = true;
 	int3 objPosition = pack.newObject->anchorPos();
 	int3 objDimensions(pack.newObject->getWidth(), pack.newObject->getHeight(), 1);
 
@@ -1107,6 +1150,7 @@ void GameStatePackVisitor::visitBulkRebalanceStacks(BulkRebalanceStacks & pack)
 
 void GameStatePackVisitor::visitGrowUpArtifact(GrowUpArtifact & pack)
 {
+	spellPointBonusGraphChanged = true;
 	auto artInst = gs.getArtInstance(pack.id);
 	assert(artInst);
 	artInst->growingUp();
@@ -1114,6 +1158,7 @@ void GameStatePackVisitor::visitGrowUpArtifact(GrowUpArtifact & pack)
 
 void GameStatePackVisitor::visitPutArtifact(PutArtifact & pack)
 {
+	spellPointBonusGraphChanged = true;
 	auto art = gs.getArtInstance(pack.id);
 	assert(!art->getParentNodes().empty());
 	auto hero = gs.getHero(pack.al.artHolder);
@@ -1127,6 +1172,7 @@ void GameStatePackVisitor::visitPutArtifact(PutArtifact & pack)
 
 void GameStatePackVisitor::visitBulkEraseArtifacts(BulkEraseArtifacts & pack)
 {
+	spellPointBonusGraphChanged = true;
 	const auto artSet = gs.getArtSet(pack.artHolder);
 	assert(artSet);
 
@@ -1170,6 +1216,7 @@ void GameStatePackVisitor::visitBulkEraseArtifacts(BulkEraseArtifacts & pack)
 
 void GameStatePackVisitor::visitBulkMoveArtifacts(BulkMoveArtifacts & pack)
 {
+	spellPointBonusGraphChanged = true;
 	const auto bulkArtsRemove = [this](std::vector<MoveArtifactInfo> & artsPack, CArtifactSet & artSet)
 	{
 		std::vector<ArtifactPosition> packToRemove;
@@ -1214,6 +1261,7 @@ void GameStatePackVisitor::visitBulkMoveArtifacts(BulkMoveArtifacts & pack)
 
 void GameStatePackVisitor::visitDischargeArtifact(DischargeArtifact & pack)
 {
+	spellPointBonusGraphChanged = true;
 	auto artInst = gs.getArtInstance(pack.id);
 	assert(artInst);
 	artInst->discharge(pack.charges);
@@ -1232,6 +1280,7 @@ void GameStatePackVisitor::visitDischargeArtifact(DischargeArtifact & pack)
 
 void GameStatePackVisitor::visitAssembledArtifact(AssembledArtifact & pack)
 {
+	spellPointBonusGraphChanged = true;
 	auto artSet = gs.getArtSet(pack.al.artHolder);
 	assert(artSet);
 	const auto transformedArt = artSet->getArt(pack.al.slot);
@@ -1301,6 +1350,7 @@ void GameStatePackVisitor::visitAssembledArtifact(AssembledArtifact & pack)
 
 void GameStatePackVisitor::visitDisassembledArtifact(DisassembledArtifact & pack)
 {
+	spellPointBonusGraphChanged = true;
 	auto hero = gs.getHero(pack.al.artHolder);
 	assert(hero);
 	auto disassembledArtID = hero->getArtID(pack.al.slot);
@@ -1353,6 +1403,7 @@ void GameStatePackVisitor::visitSetHouseOfWisdomScrolls(SetHouseOfWisdomScrolls 
 
 void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 {
+	spellPointBonusGraphChanged = true;
 	gs.day = pack.day;
 	gs.nextAstrologyWeek = pack.nextAstrologyWeek;
 	if(newHorizonsMagic::adventureSpellRulesActive(gs.getMagicRules()))
@@ -1429,6 +1480,7 @@ void GameStatePackVisitor::visitSetQuestHint(SetQuestHint & pack)
 
 void GameStatePackVisitor::visitSetObjectProperty(SetObjectProperty & pack)
 {
+	spellPointBonusGraphChanged = true;
 	CGObjectInstance *obj = gs.getObjInstance(pack.id);
 	if(!obj)
 	{
@@ -1538,6 +1590,7 @@ void GameStatePackVisitor::visitCommanderLevelUp(CommanderLevelUp & pack)
 
 void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 {
+	spellPointBonusGraphChanged = true;
 	if(!pack.info)
 		throw std::runtime_error("Missing BattleStart state");
 	// Internal connections can deliver packets without binary deserialization,
@@ -1662,6 +1715,7 @@ void GameStatePackVisitor::visitBattleUpdateGateState(BattleUpdateGateState & pa
 
 void GameStatePackVisitor::visitBattleResultAccepted(BattleResultAccepted & pack)
 {
+	spellPointBonusGraphChanged = true;
 	// Remove any "until next battle" bonuses
 	if(const auto attackerHero = gs.getHero(pack.heroResult[BattleSide::ATTACKER].heroID))
 		attackerHero->removeBonusesRecursive(Bonus::OneBattle);
@@ -2215,6 +2269,7 @@ void GameStatePackVisitor::restorePreBattleState(BattleID battleID)
 
 void GameStatePackVisitor::visitBattleCancelled(BattleCancelled & pack)
 {
+	spellPointBonusGraphChanged = true;
 	restorePreBattleState(pack.battleID);
 
 	auto battleIter = std::ranges::find_if(gs.currentBattles, [&](const auto & battle)
@@ -2243,6 +2298,7 @@ void GameStatePackVisitor::visitBattleCancelled(BattleCancelled & pack)
 
 void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack)
 {
+	spellPointBonusGraphChanged = true;
 	restorePreBattleState(pack.battleID);
 	pack.learnedSpells.visit(*this);
 
@@ -2308,6 +2364,7 @@ void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack
 
 void GameStatePackVisitor::visitBattleEnded(BattleEnded & pack)
 {
+	spellPointBonusGraphChanged = true;
 	auto battleIter = std::ranges::find_if(gs.currentBattles, [&](const auto & battle)
 	{
 		return battle->battleID == pack.battleID;
@@ -2411,6 +2468,7 @@ void GameStatePackVisitor::visitTurnTimeUpdate(TurnTimeUpdate & pack)
 
 void GameStatePackVisitor::visitEntitiesChanged(EntitiesChanged & pack)
 {
+	spellPointBonusGraphChanged = true;
 	for(const auto & change : pack.changes)
 		gs.updateEntity(change.metatype, change.entityIndex, change.data);
 }

@@ -16,6 +16,7 @@
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/gameState/CGameState.h"
+#include "../../lib/gameState/GameStatePackVisitor.h"
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -28,6 +29,7 @@
 #include "../../server/CGameHandler.h"
 
 #include <array>
+#include <chrono>
 #include <limits>
 #include <stdexcept>
 #include <utility>
@@ -213,6 +215,73 @@ TEST_F(SpellPointCapacityTest, IntelligenceRaisesKnowledgeCapacityByThirtyPercen
 	expectPools(attackerSideHero, 130, 37, 130);
 	equipKnowledgeSet(attackerSideHero);
 	expectPools(attackerSideHero, 130, 37, 156);
+
+	// Removing the skill disables the learned perk and must invalidate capacity.
+	setNormal(attackerSideHero, 156);
+	rank.val = 0;
+	gameState()->apply(rank);
+	expectPools(attackerSideHero, 120, 37, 120);
+}
+
+TEST_F(SpellPointCapacityTest, AcknowledgementsDoNotScheduleCapacityReconciliation)
+{
+	GameStatePackVisitor visitor(*gameState());
+	PackageReceived received;
+	received.visit(visitor);
+	EXPECT_FALSE(visitor.needsSpellPointReconciliation());
+	PackageApplied applied;
+	applied.visit(visitor);
+	EXPECT_FALSE(visitor.needsSpellPointReconciliation());
+	visitor.reconcileSpellPointCapacity();
+
+	// Exercise the real apply path, including the recruitment pool. Record rather
+	// than assert wall-clock timing so loaded CI hosts do not cause flaky tests.
+	const auto start = std::chrono::steady_clock::now();
+	for(int i = 0; i < 1000; ++i)
+		gameState()->apply(received);
+	const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+		std::chrono::steady_clock::now() - start).count();
+	RecordProperty("acknowledgement_1000_us", std::to_string(elapsed));
+}
+
+TEST_F(SpellPointCapacityTest, KnowledgeChangeSchedulesDeferredCapacityReconciliation)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 100);
+	grantBuffer(attackerSideHero, 50);
+	GameStatePackVisitor visitor(*gameState());
+	SetPrimarySkill change;
+	change.id = attackerSideHero->id;
+	change.which = PrimarySkill::KNOWLEDGE;
+	change.val = 80;
+	change.mode = ChangeValueMode::ABSOLUTE;
+	change.visit(visitor);
+	EXPECT_TRUE(visitor.needsSpellPointReconciliation());
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 100);
+	visitor.reconcileSpellPointCapacity();
+	expectPools(attackerSideHero, 80, 50, 80);
+}
+
+TEST_F(SpellPointCapacityTest, MovementAndCapacityIncreasesDoNotScheduleReconciliation)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 80);
+	grantBuffer(attackerSideHero, 50);
+	GameStatePackVisitor visitor(*gameState());
+	SetMovePoints movement;
+	movement.hid = attackerSideHero->id;
+	movement.val = 100;
+	movement.visit(visitor);
+	EXPECT_FALSE(visitor.needsSpellPointReconciliation());
+	SetPrimarySkill increase;
+	increase.id = attackerSideHero->id;
+	increase.which = PrimarySkill::KNOWLEDGE;
+	increase.val = 120;
+	increase.mode = ChangeValueMode::ABSOLUTE;
+	increase.visit(visitor);
+	EXPECT_FALSE(visitor.needsSpellPointReconciliation());
+	visitor.reconcileSpellPointCapacity();
+	expectPools(attackerSideHero, 80, 50, 120);
 }
 
 TEST_F(SpellPointCapacityTest, InvalidManaMutationPayloadsAreRejectedWithoutChangingEitherPool)

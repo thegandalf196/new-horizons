@@ -11,6 +11,8 @@
 
 #include "../networkPacks/NetPackVisitor.h"
 
+#include <set>
+
 class CBonusSystemNode;
 class CGameState;
 struct Bonus;
@@ -29,8 +31,16 @@ class GameStatePackVisitor final : public ICPackVisitor
 	void updateMoraleOnArtifactChange(const ObjectInstanceID & artHolder);
 private:
 	CGameState & gs;
+	std::set<ObjectInstanceID> spellPointHeroes;
+	bool spellPointBonusGraphChanged = false;
 
 public:
+	/// Reconcile once after the complete packet, never during a bulk equipment swap.
+	void reconcileSpellPointCapacity();
+	bool needsSpellPointReconciliation() const
+	{
+		return spellPointBonusGraphChanged || !spellPointHeroes.empty();
+	}
 	GameStatePackVisitor(CGameState & gs)
 		: gs(gs)
 	{

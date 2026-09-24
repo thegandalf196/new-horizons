@@ -1207,23 +1207,7 @@ void CGameState::apply(CPackForClient & pack)
 
 	GameStatePackVisitor visitor(*this);
 	pack.visit(visitor);
-
-	// Packs may detach and reattach artifacts or otherwise change a hero's
-	// Knowledge/perks in several visitor steps. Reconcile once after the whole
-	// authoritative operation so intermediate equipment states cannot discard
-	// Normal Spell Points.
-	if(newHorizonsMagic::spellPointRulesActive(magicRules))
-	{
-		for(auto * hero : getMap().getObjects<CGHeroInstance>())
-			if(hero->areSpellPointsInitialized())
-				hero->clampSpellPointsToCapacity();
-		for(const auto heroType : getMap().getHeroesInPool())
-		{
-			auto * hero = getMap().tryGetFromHeroPool(heroType);
-			if(hero && hero->areSpellPointsInitialized())
-				hero->clampSpellPointsToCapacity();
-		}
-	}
+	visitor.reconcileSpellPointCapacity();
 }
 
 void CGameState::calculatePaths(const std::shared_ptr<PathfinderConfig> & config) const

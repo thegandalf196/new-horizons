@@ -109,3 +109,37 @@ negative findings and unsupported variants. No architectural switch becomes the
 shipping default without the user's subsequent decision. If transport overhead
 is negligible relative to AI/rendering/animation, say so plainly and identify the
 measured bottleneck instead.
+
+## Combat evaluation regression investigation
+
+A reported 45.829-second adventure-AI turn spent approximately 45.739 seconds
+between battle-AI creation and post-battle result processing. State-update
+durations were only 0–4 milliseconds. Trace gaps repeatedly surround movement
+and spell-candidate evaluation; this is not evidence of transport delay.
+
+The movement evaluator calls damage estimation while exploring enemy approach
+positions. Physical melee estimates query several Offense perks.
+`CGHeroInstance::hasActivePerk` currently calls `PerkState::project`, which calls
+full registry validation and repeats it through selected-perk lookups. Even an
+absent perk query pays that cost. A native positive-speed movement-evaluator
+reproduction must establish baseline timing and verify unchanged decisions before
+optimizing this path. Preserve strict validation at authored-state initialization,
+selection, and save loading; do not replace the problem with per-frame polling.
+
+A separate Leadership rejection occurred during post-battle result processing,
+after the long evaluation interval. Necromancy's slot-only destination preflight
+is a candidate defect, not yet a confirmed attribution of that rejection.
+
+### Focused native result
+
+`NewHorizonsMagicAITest.RepeatedMovementEvaluationWithSavedPerksIsStableAndReadOnly`
+now exercises positive-speed melee movement against two unreachable enemies with
+saved selected Offense perks. Three evaluator samples before optimization were
+102425, 102411, and 102394 microseconds; after the direct selected-perk lookup they
+were 1651, 1540, and 1520 microseconds. This is a small synthetic diagnostic,
+not a full-game speedup estimate or a tail-latency measurement. Repeated decisions
+were stable within each run and authoritative state bytes remained unchanged.
+The combined 66-test Mana-capacity, perk-state and magic-AI suite passed afterward.
+The optimized query reads the saved registry and current rank without a cache;
+strict validation remains at initialization, selection and loading boundaries.
+Replaying the originally reported match remains unverified.

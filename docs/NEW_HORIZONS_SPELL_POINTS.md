@@ -49,6 +49,15 @@ operations produces the same result.
 
 ## Knowledge, Intelligence and equipment
 
+Capacity enforcement is event-driven, not polled. Whenever Maximum Spell Points
+decreases, discard Normal Spell Points above the new maximum immediately; Buffer
+is unaffected. Reconcile affected heroes after complete artifact transactions,
+Knowledge-modifier removal/expiry, or loss of capacity-granting skill effects.
+Normalize defensively after loading the complete bonus tree. Ordinary movement,
+rendering, acknowledgements, timers, and unrelated combat actions must not scan
+heroes or recalculate capacity. Capacity increases do not refill Normal Mana and
+do not require clamping. Buffer grants/spending never change capacity.
+
 Without Intelligence:
 
 `Maximum Spell Points = effective Knowledge`
@@ -99,6 +108,10 @@ removed by changing the resource model.
 ## Presentation and integration
 
 Keep a familiar total/maximum display with a distinct Buffer annotation:
+
+The later user clarification permits yellow rather than blue for Buffer text.
+Use ordinary yellow emphasis in compact labels and expanded tooltips; do not
+embed a colour code that can be displayed literally by a compact label.
 
 `310 / 460   +50 Buffer`
 

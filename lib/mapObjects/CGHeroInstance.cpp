@@ -205,6 +205,8 @@ void CGHeroInstance::setSecSkillLevel(const SecondarySkill & which, int val, Cha
 		}
 	}
 
+	// Rank changes can enable/disable Intelligence even if the skill has no bonuses.
+	spellPointCapacityRevision.reset();
 	updateSkillBonus(which, newLevelClamped);
 	if(which == SecondarySkill::ARTILLERY || which == SecondarySkill::LOGISTICS)
 		refreshMasteryBonuses();
@@ -1541,7 +1543,8 @@ si32 CGHeroInstance::manaLimit() const
 	if(newHorizonsMagic::spellPointRulesActive(getMagicRules()))
 	{
 		const int64_t knowledge = std::max<int64_t>(0, getPrimSkillLevel(PrimarySkill::KNOWLEDGE));
-		const bool intelligence = hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.intelligence");
+		const bool intelligence = perkState.hasSelection("new-horizons:wisdom", "new-horizons:wisdom.intelligence")
+			&& hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.intelligence");
 		const int32_t percent = intelligence
 			? newHorizonsMagic::spellPointsIntelligenceMaximumPercent(getMagicRules())
 			: 100;
@@ -1572,6 +1575,7 @@ int32_t CGHeroInstance::getBufferSpellPoints() const
 
 void CGHeroInstance::initializeSpellPoints(int32_t normal, int32_t buffer)
 {
+	spellPointCapacityRevision.reset();
 	if(normal < 0 || buffer < 0)
 		throw std::runtime_error("Cannot initialize negative Spell Point pools");
 	const int32_t maximum = newHorizonsMagic::spellPointRulesActive(getMagicRules())
@@ -1637,10 +1641,14 @@ bool CGHeroInstance::spendSpellPoints(int64_t amount)
 
 void CGHeroInstance::clampSpellPointsToCapacity()
 {
+	const auto revision = getTreeVersion();
+	if(spellPointCapacityRevision && *spellPointCapacityRevision == revision)
+		return;
 	const int32_t maximum = newHorizonsMagic::spellPointRulesActive(getMagicRules())
 		? manaLimit()
 		: std::numeric_limits<int32_t>::max();
 	spellPointState.clampNormal(maximum);
+	spellPointCapacityRevision = revision;
 }
 
 HeroTypeID CGHeroInstance::getPortraitSource() const
@@ -1986,14 +1994,20 @@ int CGHeroInstance::getPerkSkillRank(const std::string & skillId) const
 
 bool CGHeroInstance::hasActivePerk(const std::string & skillId, const std::string & perkId) const
 {
-	const auto modifiers = perkState.project([this](const std::string & id)
+	if(!perkState.hasSelection(skillId, perkId))
+		return false;
+
+	// This private saved state is validated on initialization, selection and load.
+	// Combat estimates query individual perks thousands of times: do not project
+	// every selection (and revalidate the entire registry) for each damage estimate.
+	// Read the current rank rather than caching enabled flags across skill changes.
+	for(const auto & perk : perkState.rules["skills"][skillId]["perks"].Vector())
 	{
-		return getPerkSkillRank(id);
-	});
-	return vstd::contains_if(modifiers, [&](const auto & modifier)
-	{
-		return modifier.enabled && modifier.skillId == skillId && modifier.perkId == perkId;
-	});
+		if(perk["id"].String() == perkId)
+			return perk["effect"]["status"].String() == "active"
+				&& getPerkSkillRank(skillId) >= newHorizonsHeroes::perkRequiredRank(perk["requires"].String());
+	}
+	return false;
 }
 
 bool CGHeroInstance::usesNewHorizonsNecromancy() const
@@ -2015,6 +2029,8 @@ int CGHeroInstance::getNewHorizonsNecromancyRank() const
 void CGHeroInstance::applyPerkSelection(const newHorizonsHeroes::PerkSelection & selection)
 {
 	perkState.select(selection.skillId, selection.perkId, getPerkSkillRank(selection.skillId));
+	// Perks can affect derived capacity without adding a bonus node.
+	spellPointCapacityRevision.reset();
 }
 
 std::optional<newHorizonsHeroes::MasteryView> CGHeroInstance::getMasteryView() const

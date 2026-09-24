@@ -29,6 +29,8 @@
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/Problem.h"
 
+#include <chrono>
+
 namespace
 {
 class MagicEnvironment final : public Environment
@@ -109,6 +111,7 @@ protected:
 	bool useCurrentMagicRules = false;
 	bool useLegacyMagicRules = false;
 	bool neutralizeCommandEffects = false;
+	bool useSavedPerkRules = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -118,6 +121,9 @@ protected:
 		else if(useCurrentMagicRules)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		if(useSavedPerkRules)
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		if(neutralizeCommandEffects)
 		{
 			const JsonNode combatRules(JsonPath::builtin("config/newHorizonsCombat"));
@@ -233,6 +239,122 @@ TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithou
 		EXPECT_TRUE(weak->alive());
 		EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 	}
+}
+
+TEST_F(NewHorizonsMagicAITest, RepeatedMovementEvaluationWithSavedPerksIsStableAndReadOnly)
+{
+	useCommands = false;
+	useSavedPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+
+	const auto offenseId = SecondarySkill::decode("new-horizons:offense");
+	ASSERT_GE(offenseId, 0);
+	const SecondarySkill offense(offenseId);
+	attackerSideHero->setSecSkillLevel(offense, 2, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:offense", "new-horizons:offense.executioner"});
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:offense", "new-horizons:offense.armorPiercer"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:offense", "new-horizons:offense.executioner"));
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:offense", "new-horizons:offense.armorPiercer"));
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(
+		"new-horizons:offense", "new-horizons:offense.breakthrough"));
+
+	attackerSideHero->setSecSkillLevel(offense, 1, ChangeValueMode::ABSOLUTE);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(
+		"new-horizons:offense", "new-horizons:offense.armorPiercer"));
+	EXPECT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:offense", "new-horizons:offense.executioner"));
+	attackerSideHero->setSecSkillLevel(offense, 2, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:offense", "new-horizons:offense.armorPiercer"));
+
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 10);
+	auto * enemyA = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(10, 5), 100);
+	auto * enemyB = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(14, 5), 100);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemyA && unit != enemyB)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	ASSERT_GT(active->getMovementRange(), 0);
+	ASSERT_FALSE(active->hasBonusOfType(BonusType::FLYING));
+	ASSERT_EQ(battle()->battleGetOwnerHero(active), attackerSideHero);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), active->unitId());
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache damageCache;
+	damageCache.buildDamageCache(model, BattleSide::ATTACKER);
+	const auto * projectedActive = model->battleGetUnitByID(active->unitId());
+	ASSERT_NE(projectedActive, nullptr);
+	PotentialTargets targets(projectedActive, damageCache, model);
+	EXPECT_TRUE(targets.possibleAttacks.empty());
+	ASSERT_GE(targets.unreachableEnemies.size(), 2u);
+
+	const auto stateBefore = gameState()->saveToMemory();
+	const auto roundBefore = battle()->battleGetRound();
+	const auto activeUnitBefore = battle()->battleActiveUnit()->unitId();
+	auto snapshotBattleUnits = [&]()
+	{
+		std::vector<std::tuple<uint32_t, int32_t, int32_t, int64_t>> snapshot;
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			snapshot.emplace_back(unit->unitId(), unit->getPosition().toInt(),
+				unit->getCount(), unit->getAvailableHealth());
+		std::ranges::sort(snapshot);
+		return snapshot;
+	};
+	const auto battleUnitsBefore = snapshotBattleUnits();
+
+	BattleExchangeEvaluator evaluator(model, environment, 1.0f, 2);
+	constexpr int sampleCount = 3;
+	std::array<MoveTarget, sampleCount> decisions;
+	std::array<int64_t, sampleCount> sampleMicros{};
+	for(int sample = 0; sample < sampleCount; ++sample)
+	{
+		const auto started = std::chrono::steady_clock::now();
+		decisions[sample] = evaluator.findMoveTowardsUnreachable(
+			projectedActive, targets, damageCache, model);
+		const auto finished = std::chrono::steady_clock::now();
+		sampleMicros[sample] = std::chrono::duration_cast<std::chrono::microseconds>(finished - started).count();
+	}
+
+	ASSERT_FALSE(decisions.front().positions.empty());
+	EXPECT_NE(decisions.front().score, EvaluationResult::INEFFECTIVE_SCORE);
+	EXPECT_GT(decisions.front().turnsToReach, 1);
+	for(int sample = 1; sample < sampleCount; ++sample)
+	{
+		EXPECT_FLOAT_EQ(decisions[sample].score, decisions.front().score);
+		EXPECT_EQ(decisions[sample].positions, decisions.front().positions);
+		EXPECT_EQ(decisions[sample].turnsToReach, decisions.front().turnsToReach);
+	}
+	EXPECT_EQ(gameState()->saveToMemory(), stateBefore);
+	EXPECT_EQ(battle()->battleGetRound(), roundBefore);
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeUnitBefore);
+	EXPECT_EQ(snapshotBattleUnits(), battleUnitsBefore);
+
+	std::ostringstream sampleTimes;
+	for(int sample = 0; sample < sampleCount; ++sample)
+	{
+		if(sample != 0)
+			sampleTimes << ',';
+		sampleTimes << sampleMicros[sample];
+	}
+	RecordProperty("movementEvaluatorSampleCount", sampleCount);
+	RecordProperty("movementEvaluatorSampleMicros", sampleTimes.str());
 }
 
 TEST_F(NewHorizonsMagicAITest, PhantomArmyValuesTemporaryCombatPowerAndChoosesTheStrongestLegalSource)

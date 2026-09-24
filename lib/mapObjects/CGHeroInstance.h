@@ -80,6 +80,8 @@ private:
 	BonusValueCache manaPerKnowledgeCached;
 	newHorizonsHeroes::SpellPointState spellPointState;
 	bool spellPointsInitialized = false;
+	// Derived reconciliation cache; never serialized. Bonus-tree changes invalidate it.
+	std::optional<int32_t> spellPointCapacityRevision;
 	std::unique_ptr<TurnInfoCache> turnInfoCache;
 	std::unique_ptr<CCommanderInstance> commander;
 
@@ -464,6 +466,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(!h.saving)
+			spellPointCapacityRevision.reset();
 		h & static_cast<CArmedInstance&>(*this);
 		h & static_cast<CArtifactSet&>(*this);
 		h & exp;
