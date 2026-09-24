@@ -33,6 +33,16 @@ public:
 		return true;
 	}
 
+	virtual bool canAct(const Nullkiller * aiNk, const AIPathNode * source, int) const
+	{
+		return canAct(aiNk, source);
+	}
+
+	virtual bool usesNewHorizonsAdventureSpellOpportunity() const
+	{
+		return false;
+	}
+
 	virtual bool canAct(const Nullkiller * aiNk, const AIPathNodeInfo & source) const
 	{
 		return true;
@@ -75,6 +85,8 @@ public:
 	CompositeAction(std::vector<std::shared_ptr<const SpecialAction>> parts) : parts(parts) {}
 
 	bool canAct(const Nullkiller * aiNk, const AIPathNode * source) const override;
+	bool canAct(const Nullkiller * aiNk, const AIPathNode * source, int plannedTurn) const override;
+	bool usesNewHorizonsAdventureSpellOpportunity() const override;
 	void execute(AIGateway * aiGw, const CGHeroInstance * hero) const override;
 	std::string toString() const override;
 	const CGObjectInstance * targetObject() const override;

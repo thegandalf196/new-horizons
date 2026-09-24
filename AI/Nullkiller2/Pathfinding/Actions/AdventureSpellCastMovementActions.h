@@ -11,6 +11,7 @@
 #pragma once
 
 #include "SpecialAction.h"
+#include "../AINodeStorage.h"
 #include "../../../../lib/mapObjects/MapObjects.h"
 
 namespace NK2AI
@@ -25,6 +26,7 @@ namespace AIPathfinding
 		const CGHeroInstance * hero;
 		int manaCost;
 		DayFlags flagsToAdd;
+		bool usesSharedDailyOpportunity;
 
 	public:
 		AdventureCastAction(SpellID spellToCast, const CGHeroInstance * hero, DayFlags flagsToAdd = DayFlags::NONE);
@@ -39,6 +41,8 @@ namespace AIPathfinding
 			const AIPathNode * srcNode) const override;
 
 		bool canAct(const Nullkiller * aiNk, const AIPathNode * source) const override;
+		bool canAct(const Nullkiller * aiNk, const AIPathNode * source, int plannedTurn) const override;
+		bool usesNewHorizonsAdventureSpellOpportunity() const override { return usesSharedDailyOpportunity; }
 
 		std::string toString() const override;
 	};

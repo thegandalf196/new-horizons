@@ -14,8 +14,10 @@
 #include "../../../../lib/pathfinder/CPathfinder.h"
 #include "../../../../lib/pathfinder/TurnInfo.h"
 #include "../../../../lib/spells/ISpellMechanics.h"
+#include "../../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../../lib/spells/adventure/SummonBoatEffect.h"
 #include "../../../../lib/spells/CSpellHandler.h"
+#include "../../../../lib/mapObjects/MiscObjects.h"
 
 namespace NK2AI
 {
@@ -75,7 +77,7 @@ namespace AIPathfinding
 
 		if(source.node->layer == EPathfindingLayer::LAND && destination.node->layer == EPathfindingLayer::WATER)
 		{
-			if(nodeStorage->getAINode(source.node)->dayFlags & DayFlags::WATER_WALK_CAST)
+			if(dayFlagsForTurn(nodeStorage->getAINode(source.node), destination.turn) & DayFlags::WATER_WALK_CAST)
 			{
 				destination.blocked = false;
 				return;
@@ -93,7 +95,7 @@ namespace AIPathfinding
 
 		if(source.node->layer == EPathfindingLayer::LAND && destination.node->layer == EPathfindingLayer::AIR)
 		{
-			if(nodeStorage->getAINode(source.node)->dayFlags & DayFlags::FLY_CAST)
+			if(dayFlagsForTurn(nodeStorage->getAINode(source.node), destination.turn) & DayFlags::FLY_CAST)
 			{
 				destination.blocked = false;
 				return;
@@ -138,6 +140,17 @@ namespace AIPathfinding
 
 	void AILayerTransitionRule::collectVirtualBoats()
 	{
+		bool hasKnownUnoccupiedBoat = false;
+		for(const ObjectInstanceID objId : aiNk->memory->visitableObjs)
+		{
+			const auto * boat = dynamic_cast<const CGBoat *>(aiNk->cc->getObjInstance(objId));
+			if(boat && boat->layer == EPathfindingLayer::SAIL && !boat->getBoardedHero())
+			{
+				hasKnownUnoccupiedBoat = true;
+				break;
+			}
+		}
+
 		std::vector<const IShipyard *> shipyards;
 
 		for(const CGTownInstance * t : aiNk->cc->getTownsInfo())
@@ -178,10 +191,17 @@ namespace AIPathfinding
 				if(!effect || !hero->canCastThisSpell(spell.get()))
 					continue;
 
-				if(effect->canCreateNewBoat() && effect->getSuccessChance(hero) == 100)
+				const bool usesNewHorizonsDailyAllowance = newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), spell->id);
+				const bool canCreateReliableBoat = effect->canCreateNewBoat() && effect->getSuccessChance(hero) == 100;
+				const bool canSummonKnownBoat = usesNewHorizonsDailyAllowance
+					&& hasKnownUnoccupiedBoat
+					&& effect->getSuccessChance(hero) == 100;
+				if(canCreateReliableBoat || canSummonKnownBoat)
 				{
 					// TODO: For lower school level we might need to check the existence of some boat
-					summonableVirtualBoats[hero] = std::make_shared<SummonBoatAction>(spell->id);
+					summonableVirtualBoats[hero] = std::make_shared<SummonBoatAction>(
+							spell->id,
+							usesNewHorizonsDailyAllowance);
 				}
 			}
 		}
@@ -199,7 +219,8 @@ namespace AIPathfinding
 		{
 			const CGHeroInstance * hero = nodeStorage->getHero(source.node);
 
-			if(summonableVirtualBoats.contains(hero) && summonableVirtualBoats.at(hero)->canAct(aiNk, nodeStorage->getAINode(source.node)))
+			if(summonableVirtualBoats.contains(hero)
+				&& summonableVirtualBoats.at(hero)->canAct(aiNk, nodeStorage->getAINode(source.node), destination.turn))
 			{
 				virtualBoat = summonableVirtualBoats.at(hero);
 			}
@@ -216,12 +237,23 @@ namespace AIPathfinding
 	) const
 	{
 		bool result = false;
+		const auto * sourceAINode = nodeStorage->getAINode(source.node);
+		if(!specialAction->canAct(aiNk, sourceAINode, destination.turn))
+			return false;
+
+		DayFlags targetDayFlags = dayFlagsForTurn(sourceAINode, destination.turn);
+		if(specialAction->usesNewHorizonsAdventureSpellOpportunity())
+			targetDayFlags = static_cast<DayFlags>(targetDayFlags | DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
 
 		nodeStorage->updateAINode(
 			destination.node,
 			[&](const AIPathNode * node)
 			{
-				const auto castNodeOptional = nodeStorage->getOrCreateNode(node->coord, node->layer, specialAction->getActor(node->actor));
+				const auto castNodeOptional = nodeStorage->getOrCreateNode(
+					node->coord,
+					node->layer,
+					specialAction->getActor(node->actor),
+					targetDayFlags);
 				if(!castNodeOptional)
 				{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 1

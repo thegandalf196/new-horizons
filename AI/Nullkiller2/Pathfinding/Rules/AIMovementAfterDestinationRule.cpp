@@ -188,7 +188,8 @@ namespace AIPathfinding
 				const std::optional<AIPathNode *> questNode = nodeStorage->getOrCreateNode(
 					destination.coord,
 					destination.node->layer,
-					destinationNode->actor->resourceActor);
+					destinationNode->actor->resourceActor,
+					dayFlagsForTurn(destinationNode, destination.turn));
 				if (!questNode)
 				{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 1
@@ -298,7 +299,8 @@ namespace AIPathfinding
 		const auto battleNodeOptional = nodeStorage->getOrCreateNode(
 			destination.coord,
 			destination.node->layer,
-			destNode->actor->battleActor);
+			destNode->actor->battleActor,
+			dayFlagsForTurn(destNode, destination.turn));
 
 		if(!battleNodeOptional)
 		{

@@ -16,6 +16,7 @@
 #include "../../Goals/BuildBoat.h"
 #include "../../../../lib/mapObjects/MapObjects.h"
 #include "../../../../lib/spells/CSpell.h"
+#include "../AINodeStorage.h"
 #include "BoatActions.h"
 
 namespace NK2AI
@@ -110,6 +111,9 @@ namespace AIPathfinding
 	{
 		dstMode->manaCost = srcNode->manaCost + getManaCost(hero);
 		dstMode->theNodeBefore = source.node;
+		dstMode->dayFlags = dayFlagsForTurn(srcNode, destination.turn);
+		if(usesSharedDailyOpportunity)
+			dstMode->dayFlags = static_cast<DayFlags>(dstMode->dayFlags | DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
 	}
 
 	std::string BuildBoatAction::toString() const
@@ -119,7 +123,15 @@ namespace AIPathfinding
 
 	bool SummonBoatAction::canAct(const Nullkiller * aiNk, const AIPathNode * source) const
 	{
+		return canAct(aiNk, source, source->turns);
+	}
+
+	bool SummonBoatAction::canAct(const Nullkiller * aiNk, const AIPathNode * source, const int plannedTurn) const
+	{
 		auto hero = source->actor->hero;
+		if(usesSharedDailyOpportunity
+			&& hasNewHorizonsAdventureSpellCastFlag(dayFlagsForTurn(source, plannedTurn)))
+			return false;
 
 #ifdef VCMI_TRACE_PATHFINDER
 		logAi->trace(

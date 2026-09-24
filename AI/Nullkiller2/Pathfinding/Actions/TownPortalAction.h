@@ -23,15 +23,26 @@ namespace AIPathfinding
 	private:
 		const CGTownInstance * target;
 		SpellID usedSpell;
+		bool usesSharedDailyOpportunity;
 
 	public:
-		TownPortalAction(const CGTownInstance * target, SpellID usedSpell)
+		TownPortalAction(const CGTownInstance * target, SpellID usedSpell, bool usesSharedDailyOpportunity)
 			:target(target)
 			,usedSpell(usedSpell)
+			,usesSharedDailyOpportunity(usesSharedDailyOpportunity)
 		{
 		}
 
 		void execute(AIGateway * aiGw, const CGHeroInstance * hero) const override;
+		bool canAct(const Nullkiller * aiNk, const AIPathNode * source) const override;
+		bool canAct(const Nullkiller * aiNk, const AIPathNode * source, int plannedTurn) const override;
+		bool usesNewHorizonsAdventureSpellOpportunity() const override { return usesSharedDailyOpportunity; }
+		void applyOnDestination(
+			const CGHeroInstance * hero,
+			CDestinationNodeInfo & destination,
+			const PathNodeInfo & source,
+			AIPathNode * dstNode,
+			const AIPathNode * srcNode) const override;
 
 		std::string toString() const override;
 	};

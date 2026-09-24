@@ -578,7 +578,7 @@ bool CPathfinderHelper::isLayerAvailable(const EPathfindingLayer & layer) const
 		if(!options.useFlying)
 			return false;
 
-		if(canCastFly && options.canUseCast)
+		if(canCastFly && options.canUseCast && (turn > 0 || !hero->hasNewHorizonsAdventureSpellCastToday()))
 			return true;
 
 		break;
@@ -587,7 +587,7 @@ bool CPathfinderHelper::isLayerAvailable(const EPathfindingLayer & layer) const
 		if(!options.useWaterWalking)
 			return false;
 
-		if(canCastWaterWalk && options.canUseCast)
+		if(canCastWaterWalk && options.canUseCast && (turn > 0 || !hero->hasNewHorizonsAdventureSpellCastToday()))
 			return true;
 
 		break;
@@ -683,25 +683,68 @@ int CPathfinderHelper::getMovementCost(
 		dstTile = hero->cb->getTile(dst);
 	}
 
-	bool isSailLayer = dstLayer == EPathfindingLayer::SAIL;
-	bool isWaterLayer = dstLayer == EPathfindingLayer::WATER;
-
-	bool isAirLayer = (hero->inBoat() && hero->getBoat()->layer == EPathfindingLayer::AIR) || ti->hasFlyingMovement();
-
-	bool isAviateLayer = hero->inBoat() && hero->getBoat()->layer == EPathfindingLayer::AVIATE;
-
 	const bool usesNewHorizonsMovement = ti->usesNewHorizonsMovement();
+	const bool isSailLayer = dstLayer == EPathfindingLayer::SAIL;
+	const bool isWaterLayer = dstLayer == EPathfindingLayer::WATER;
+	const bool isAirLayer = usesNewHorizonsMovement
+		? dstLayer == EPathfindingLayer::AIR
+		: (hero->inBoat() && hero->getBoat()->layer == EPathfindingLayer::AIR) || ti->hasFlyingMovement();
+	const bool isAviateLayer = hero->inBoat() && hero->getBoat()->layer == EPathfindingLayer::AVIATE
+		&& (!usesNewHorizonsMovement || dstLayer == EPathfindingLayer::LAND || dstLayer == EPathfindingLayer::AVIATE);
+
+	const auto sourceHasUnwalkableObject = [this](const TerrainTile & tile)
+	{
+		if(!tile.getTerrain()->isPassable())
+			return true;
+
+		for(const auto objectID : tile.blockingObjects)
+		{
+			if(objectID == hero->id)
+				continue;
+
+			const auto * object = gameInfo.getObjInstance(objectID);
+			const bool ordinaryVisitable = object
+				&& !object->isBlockedVisitable()
+				&& std::find(tile.visitableObjects.begin(), tile.visitableObjects.end(), objectID) != tile.visitableObjects.end();
+			if(!object || (!ordinaryVisitable && !object->passableFor(hero)))
+				return true;
+		}
+
+		for(const auto objectID : tile.visitableObjects)
+		{
+			if(objectID == hero->id)
+				continue;
+
+			const auto * object = gameInfo.getObjInstance(objectID);
+			if(object && object->isBlockedVisitable() && !object->passableFor(hero))
+				return true;
+		}
+
+		return false;
+	};
+
+	// A requested LAND step can still be the final Water Walk/Fly traversal
+	// when the source itself is water or cannot be traversed on foot. Open land
+	// is an ordinary landing point, so walking away from it remains unmodified.
+	const bool isWaterWalkLanding = usesNewHorizonsMovement && dstLayer == EPathfindingLayer::LAND
+		&& !hero->inBoat() && srcTile->isWater();
+	const bool isFlightLanding = usesNewHorizonsMovement && dstLayer == EPathfindingLayer::LAND && !hero->inBoat()
+		&& sourceHasUnwalkableObject(*srcTile);
+	const bool isSpecialTravel = usesNewHorizonsMovement && !hero->inBoat()
+		&& (dstLayer == EPathfindingLayer::AIR || dstLayer == EPathfindingLayer::WATER
+			|| isWaterWalkLanding || isFlightLanding);
 	const bool diagonal = src.x != dst.x && src.y != dst.y;
 	// Water is an ordinary travel surface for both boats and Water Walk.  The
 	// faction/army terrain-affinity table governs land terrain; applying the
 	// non-native multiplier to every sea tile would make the fixed 200-point
 	// sea Movement system diverge from the canonical ordinary-water cost.
-	const bool ordinaryWater = isSailLayer || isWaterLayer;
+	const bool ordinaryWater = isSailLayer || isWaterLayer || srcTile->isWater();
 	int movementCost = usesNewHorizonsMovement
 		? newHorizonsMovement::stepCost(diagonal,
 			ordinaryWater || ti->hasNoTerrainPenalty(srcTile->getTerrainID()),
 			!ordinaryWater && srcTile->getTerrainID() == ETerrainId::SAND,
-			!ordinaryWater && srcTile->hasRoad() && dstTile->hasRoad())
+			!ordinaryWater && srcTile->hasRoad() && dstTile->hasRoad(),
+			isSpecialTravel)
 		: getTileMovementCost(*dstTile, *srcTile, ti);
 	if(isSailLayer)
 	{
@@ -710,11 +753,17 @@ int CPathfinderHelper::getMovementCost(
 	}
 	else if(isAirLayer)
 	{
-		int baseCost = gameInfo.getSettings().getInteger(EGameSettings::HEROES_MOVEMENT_COST_BASE);
-		vstd::amin(movementCost, baseCost + ti->getFlyingMovementValue());
+		if(!usesNewHorizonsMovement)
+		{
+			int baseCost = gameInfo.getSettings().getInteger(EGameSettings::HEROES_MOVEMENT_COST_BASE);
+			vstd::amin(movementCost, baseCost + ti->getFlyingMovementValue());
+		}
 	}
 	else if(isWaterLayer && ti->hasWaterWalking())
-		movementCost = static_cast<int>(movementCost * (100.0 + ti->getWaterWalkingValue()) / 100.0);
+	{
+		if(!usesNewHorizonsMovement)
+			movementCost = static_cast<int>(movementCost * (100.0 + ti->getWaterWalkingValue()) / 100.0);
+	}
 	else if(isAviateLayer)
 	{
 		int baseCost = gameInfo.getSettings().getInteger(EGameSettings::HEROES_MOVEMENT_COST_BASE);

@@ -37,6 +37,24 @@ bool CompositeAction::canAct(const Nullkiller * aiNk, const AIPathNode * source)
 	return true;
 }
 
+bool CompositeAction::canAct(const Nullkiller * aiNk, const AIPathNode * source, const int plannedTurn) const
+{
+	for(auto part : parts)
+	{
+		if(!part->canAct(aiNk, source, plannedTurn)) return false;
+	}
+
+	return true;
+}
+
+bool CompositeAction::usesNewHorizonsAdventureSpellOpportunity() const
+{
+	return std::ranges::any_of(parts, [](const auto & part)
+	{
+		return part->usesNewHorizonsAdventureSpellOpportunity();
+	});
+}
+
 Goals::TSubgoal CompositeAction::decompose(const Nullkiller * aiNk, const CGHeroInstance * hero) const
 {
 	for(auto part : parts)

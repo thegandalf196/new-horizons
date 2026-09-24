@@ -42,7 +42,8 @@ enum DayFlags : ui8
 {
 	NONE = 0,
 	FLY_CAST = 1,
-	WATER_WALK_CAST = 2
+	WATER_WALK_CAST = 2,
+	NEW_HORIZONS_ADVENTURE_SPELL_CAST = 4
 };
 
 struct AIPathNode : public CGPathNode
@@ -79,6 +80,16 @@ struct AIPathNode : public CGPathNode
 		accessible = accessibility;
 	}
 };
+
+inline DayFlags dayFlagsForTurn(const AIPathNode * node, const int turn)
+{
+	return node && node->turns == turn ? node->dayFlags : DayFlags::NONE;
+}
+
+inline bool hasNewHorizonsAdventureSpellCastFlag(const DayFlags flags)
+{
+	return (flags & DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST) != DayFlags::NONE;
+}
 
 struct AIPathNodeInfo
 {
@@ -312,7 +323,11 @@ public:
 
 	bool isDistanceLimitReached(const PathNodeInfo & source, CDestinationNodeInfo & destination) const;
 
-	std::optional<AIPathNode *> getOrCreateNode(const int3 & coord, const EPathfindingLayer layer, const ChainActor * actor);
+	std::optional<AIPathNode *> getOrCreateNode(
+		const int3 & coord,
+		const EPathfindingLayer layer,
+		const ChainActor * actor,
+		DayFlags dayFlags = DayFlags::NONE);
 	bool hasCurrentNodes(const int3 & pos) const;
 	void calculateChainInfo(std::vector<AIPath> & paths, const int3 & pos, bool isOnLand) const;
 	void calculatePathSummaries(std::vector<AIPathSummary> & summaries, const int3 & pos, bool isOnLand) const;
@@ -397,6 +412,7 @@ private:
 		int manaCost = 0;
 		int castsLimit = 0;
 		int castsAlreadyPerformed = 0;
+		bool usesNewHorizonsAdventureSpellOpportunity = false;
 	};
 
 	struct DimensionDoorSpellPlan
@@ -408,6 +424,7 @@ private:
 		int plannedSourceMoveLimit = 1;
 		int plannedSourceMoveRemains = 0;
 		int plannedDimensionDoorCasts = 0;
+		bool usesNewHorizonsAdventureSpellOpportunity = false;
 		float destinationCost = 0.f;
 	};
 

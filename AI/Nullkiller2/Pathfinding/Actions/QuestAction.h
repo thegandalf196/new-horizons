@@ -23,6 +23,8 @@ namespace AIPathfinding
 		QuestInfo questInfo;
 
 	public:
+		using SpecialAction::canAct;
+
 		QuestAction(QuestInfo questInfo)
 			:questInfo(questInfo)
 		{

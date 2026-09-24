@@ -43,6 +43,22 @@ TEST(NewHorizonsMovementRules, StepCostUsesCanonicalMultipliersAndCeiling)
 	EXPECT_EQ(stepCost(true, false, true, true), 17); // ceil(14 * 1.80 * .67)
 }
 
+TEST(NewHorizonsMovementRules, SpecialTravelMultiplierIsAppliedBeforeFinalCeiling)
+{
+	using newHorizonsMovement::stepCost;
+	EXPECT_EQ(stepCost(false, true, false, false, true), 15); // ceil(10 * 1.5)
+	EXPECT_EQ(stepCost(true, true, false, false, true), 21); // ceil(14 * 1.5)
+	EXPECT_EQ(stepCost(false, false, false, false, true), 21); // ceil(10 * 1.4 * 1.5)
+	EXPECT_EQ(stepCost(true, false, false, false, true), 30); // ceil(14 * 1.4 * 1.5)
+	EXPECT_EQ(stepCost(false, false, true, false, true), 27); // ceil(10 * 1.8 * 1.5)
+	EXPECT_EQ(stepCost(true, false, true, false, true), 38); // ceil(14 * 1.8 * 1.5)
+	EXPECT_EQ(stepCost(false, true, false, true, true), 11); // ceil(10 * .67 * 1.5)
+	EXPECT_EQ(stepCost(false, false, false, true, true), 15); // ceil(10 * 1.4 * .67 * 1.5)
+	EXPECT_EQ(stepCost(false, false, true, true, true), 19); // ceil(10 * 1.8 * .67 * 1.5)
+	EXPECT_EQ(stepCost(true, false, false, true, true), 20); // ceil(14 * 1.4 * .67 * 1.5)
+	EXPECT_EQ(stepCost(true, false, true, true, true), 26); // ceil(14 * 1.8 * .67 * 1.5)
+}
+
 TEST(NewHorizonsMovementRules, NativeAffinityOverridesNonNativeAndDesertSurcharges)
 {
 	using newHorizonsMovement::stepCost;

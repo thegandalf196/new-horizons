@@ -19,6 +19,7 @@
 #include "../../../lib/pathfinder/PathfinderUtil.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/CSpellHandler.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/adventure/TownPortalEffect.h"
 #include "../Engine/Nullkiller.h"
 #include "../AIGateway.h"
@@ -226,7 +227,8 @@ void AINodeStorage::clear()
 std::optional<AIPathNode *> AINodeStorage::getOrCreateNode(
 	const int3 & pos,
 	const EPathfindingLayer layer,
-	const ChainActor * actor)
+	const ChainActor * actor,
+	const DayFlags dayFlags)
 {
 	// Modified to 1 bucket because properly load balancing multiple buckets is not worth. Backwards compatible
 	const int total = aiNk->settings->getPathfinderBucketSize() * aiNk->settings->getPathfinderBucketsCount();
@@ -237,9 +239,12 @@ std::optional<AIPathNode *> AINodeStorage::getOrCreateNode(
 	}
 
 	const auto & chains = nodes.get(pos);
+	const bool requestedSharedSpellOpportunityUsed = hasNewHorizonsAdventureSpellCastFlag(dayFlags);
 	for(AIPathNode * node : chains)
 	{
-		if(node->actor == actor && node->layer == layer)
+		if(node->actor == actor
+			&& node->layer == layer
+			&& hasNewHorizonsAdventureSpellCastFlag(node->dayFlags) == requestedSharedSpellOpportunityUsed)
 			return node;
 	}
 
@@ -259,6 +264,7 @@ std::optional<AIPathNode *> AINodeStorage::getOrCreateNode(
 	node->reset(layer, getAccessibility(pos, layer));
 	node->version = nodes.getGeneration();
 	node->actor = actor;
+	node->dayFlags = dayFlags;
 	return node;
 
 }
@@ -279,7 +285,11 @@ std::vector<CGPathNode *> AINodeStorage::getInitialNodes()
 	{
 		const ChainActor * actor = actorPtr.get();
 
-		auto allocated = getOrCreateNode(actor->initialPosition, actor->layer, actor);
+		const DayFlags initialDayFlags = actor->initialTurn == 0 && actor->hero
+			&& actor->hero->hasNewHorizonsAdventureSpellCastToday()
+			? DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST
+			: DayFlags::NONE;
+		auto allocated = getOrCreateNode(actor->initialPosition, actor->layer, actor, initialDayFlags);
 		if(!allocated)
 		{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 1
@@ -318,8 +328,45 @@ std::vector<CGPathNode *> AINodeStorage::getInitialNodes()
 void AINodeStorage::commit(CDestinationNodeInfo & destination, const PathNodeInfo & source)
 {
 	const AIPathNode * srcNode = getAINode(source.node);
+	auto * dstNode = static_cast<AIPathNode *>(destination.node);
+	const auto pendingSpecialAction = dstNode->specialAction;
+	DayFlags destinationDayFlags = dayFlagsForTurn(srcNode, destination.turn);
+	if(pendingSpecialAction && pendingSpecialAction->usesNewHorizonsAdventureSpellOpportunity())
+		destinationDayFlags = static_cast<DayFlags>(destinationDayFlags | DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
 
-	updateAINode(destination.node, [&](AIPathNode * dstNode)
+	if(hasNewHorizonsAdventureSpellCastFlag(destinationDayFlags)
+		!= hasNewHorizonsAdventureSpellCastFlag(dstNode->dayFlags))
+	{
+		const auto canonicalNode = getOrCreateNode(dstNode->coord, dstNode->layer, dstNode->actor, destinationDayFlags);
+		if(!canonicalNode)
+		{
+			// If the node has not been committed yet, reuse its slot when the pathfinder bucket is full.
+			if(dstNode->action != EPathNodeAction::UNKNOWN || dstNode->turns != 0xFF || dstNode->locked)
+			{
+				destination.blocked = true;
+				return;
+			}
+
+			dstNode->dayFlags = destinationDayFlags;
+		}
+		else if(canonicalNode.value() != dstNode)
+		{
+			destination.node = canonicalNode.value();
+			dstNode = canonicalNode.value();
+
+			// MovementCostRule made its better-route decision using the original node. Recheck after
+			// resolving the turn-correct daily-spell state, and never overwrite a node already settled.
+			if(dstNode->locked || !destination.isBetterWay())
+			{
+				destination.blocked = true;
+				return;
+			}
+
+			dstNode->specialAction = pendingSpecialAction;
+		}
+	}
+
+	updateAINode(dstNode, [&](AIPathNode * dstNode)
 	{
 		commit(dstNode, srcNode, destination.action, destination.turn, destination.movementLeft, destination.cost);
 
@@ -441,7 +488,7 @@ void AINodeStorage::calculateNeighbours(
 			continue;
 		}
 
-		auto nextNode = getOrCreateNode(neighbour, layer, srcNode->actor);
+		auto nextNode = getOrCreateNode(neighbour, layer, srcNode->actor, dayFlagsForTurn(srcNode, pathfinderHelper->turn));
 		if(!nextNode)
 		{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 2 // Suuuuper noisy, leave on 2
@@ -864,7 +911,12 @@ void HeroChainCalculationTask::addHeroChain(const std::vector<ExchangeCandidate>
 		auto carrier = chainInfo.carrierParent;
 		auto newActor = chainInfo.actor;
 		auto other = chainInfo.otherParent;
-		auto chainNodeOptional = storage.getOrCreateNode(carrier->coord, carrier->layer, newActor);
+		DayFlags chainDayFlags = DayFlags::NONE;
+		if(newActor->hero == carrier->actor->hero)
+			chainDayFlags = dayFlagsForTurn(carrier, chainInfo.turns);
+		else if(newActor->hero == other->actor->hero)
+			chainDayFlags = dayFlagsForTurn(other, chainInfo.turns);
+		auto chainNodeOptional = storage.getOrCreateNode(carrier->coord, carrier->layer, newActor, chainDayFlags);
 
 		if(!chainNodeOptional)
 		{
@@ -916,6 +968,7 @@ void HeroChainCalculationTask::addHeroChain(const std::vector<ExchangeCandidate>
 			chainInfo.moveRemains,
 			chainInfo.getCost(),
 			DO_NOT_SAVE_TO_COMMITTED_TILES);
+		exchangeNode->dayFlags = chainDayFlags;
 
 		if(carrier->specialAction || carrier->chainOther)
 		{
@@ -1122,7 +1175,11 @@ void AINodeStorage::calculateObjectTeleportations(
 
 	for(auto & neighbour : accessibleExits)
 	{
-		std::optional<AIPathNode *> node = getOrCreateNode(neighbour, source.node->layer, srcNode->actor);
+		std::optional<AIPathNode *> node = getOrCreateNode(
+			neighbour,
+			source.node->layer,
+			srcNode->actor,
+			dayFlagsForTurn(srcNode, pathfinderHelper->turn));
 		if(!node)
 		{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 1
@@ -1190,6 +1247,7 @@ const std::vector<AINodeStorage::DimensionDoorCapability> & AINodeStorage::getDi
 		capability.manaCost = hero->getSpellCost(spell);
 		capability.castsLimit = mechanics.getCastsLimit(hero, mapSize);
 		capability.castsAlreadyPerformed = mechanics.getCastsAlreadyPerformed(hero);
+		capability.usesNewHorizonsAdventureSpellOpportunity = newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), spell->id);
 		capabilities.push_back(capability);
 	});
 
@@ -1210,6 +1268,10 @@ std::optional<AINodeStorage::DimensionDoorSpellPlan> AINodeStorage::getDimension
 		: plannedSourceMoveLimit;
 	const int plannedDimensionDoorCasts = plannedSourceTurn == source.node->turns ? srcNode->dimensionDoorCasts : 0;
 	const int castsAlreadyPerformed = plannedSourceTurn == 0 ? capability.castsAlreadyPerformed : 0;
+	const DayFlags plannedDayFlags = dayFlagsForTurn(srcNode, plannedSourceTurn);
+	if(capability.usesNewHorizonsAdventureSpellOpportunity
+		&& hasNewHorizonsAdventureSpellCastFlag(plannedDayFlags))
+		return std::nullopt;
 
 	if(!AIPathfinding::hasDimensionDoorActionResources({
 		hero,
@@ -1237,6 +1299,7 @@ std::optional<AINodeStorage::DimensionDoorSpellPlan> AINodeStorage::getDimension
 	plan.plannedSourceMoveLimit = plannedSourceMoveLimit;
 	plan.plannedSourceMoveRemains = plannedSourceMoveRemains;
 	plan.plannedDimensionDoorCasts = plannedDimensionDoorCasts;
+	plan.usesNewHorizonsAdventureSpellOpportunity = capability.usesNewHorizonsAdventureSpellOpportunity;
 	plan.destinationCost = source.node->getCost() + movementCost;
 
 	return plan;
@@ -1324,7 +1387,10 @@ void AINodeStorage::addDimensionDoorTeleportation(
 	const DimensionDoorSpellPlan & plan,
 	const DimensionDoorLandingInfo & landing)
 {
-	auto nodeOptional = getOrCreateNode(destination, source.node->layer, landing.destinationActor);
+	DayFlags destinationDayFlags = dayFlagsForTurn(srcNode, plan.plannedSourceTurn);
+	if(plan.usesNewHorizonsAdventureSpellOpportunity)
+		destinationDayFlags = static_cast<DayFlags>(destinationDayFlags | DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
+	auto nodeOptional = getOrCreateNode(destination, source.node->layer, landing.destinationActor, destinationDayFlags);
 	if(!nodeOptional)
 	{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 1
@@ -1351,6 +1417,7 @@ void AINodeStorage::addDimensionDoorTeleportation(
 	parameters.plannedSourceMoveRemains = plan.plannedSourceMoveRemains;
 	parameters.plannedSourceMoveLimit = plan.plannedSourceMoveLimit;
 	parameters.plannedDimensionDoorCasts = plan.plannedDimensionDoorCasts;
+	parameters.usesNewHorizonsAdventureSpellOpportunity = plan.usesNewHorizonsAdventureSpellOpportunity;
 	parameters.guardedLandingDanger = landing.guardedLandingDanger;
 	parameters.guardedLandingArmyLoss = landing.guardedLandingArmyLoss;
 
@@ -1369,6 +1436,7 @@ struct TownPortalFinder
 	uint64_t movementNeeded;
 	SpellID spellID;
 	bool townSelectionAllowed;
+	bool usesSharedDailyOpportunity;
 
 	TownPortalFinder(const ChainActor * actor, const std::vector<CGPathNode *> & initialNodes, const std::vector<const CGTownInstance *> & targetTowns, AINodeStorage * nodeStorage, SpellID spellID)
 		: initialNodes(initialNodes)
@@ -1378,6 +1446,7 @@ struct TownPortalFinder
 		, nodeStorage(nodeStorage)
 		, townPortal(spellID.toSpell())
 		, spellID(spellID)
+		, usesSharedDailyOpportunity(newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), spellID))
 	{
 		auto townPortalEffect = townPortal->getAdventureMechanics().getEffectAs<TownPortalEffect>(hero);
 		movementNeeded = townPortalEffect->getMovementPointsRequired();
@@ -1402,6 +1471,10 @@ struct TownPortalFinder
 				continue;
 			}
 
+			if(usesSharedDailyOpportunity
+				&& hasNewHorizonsAdventureSpellCastFlag(dayFlagsForTurn(aiNode, node->turns)))
+				continue;
+
 			if(!townSelectionAllowed)
 			{
 				const CGTownInstance * nearestTown = *vstd::minElementByFun(targetTowns, [&](const CGTownInstance * t) -> int
@@ -1425,7 +1498,14 @@ struct TownPortalFinder
 		if(!bestNode)
 			return std::nullopt;
 
-		const auto nodeOptional = nodeStorage->getOrCreateNode(targetTown->visitablePos(), EPathfindingLayer::LAND, actor->castActor);
+		DayFlags destinationDayFlags = dayFlagsForTurn(nodeStorage->getAINode(bestNode), bestNode->turns);
+		if(usesSharedDailyOpportunity)
+			destinationDayFlags = static_cast<DayFlags>(destinationDayFlags | DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
+		const auto nodeOptional = nodeStorage->getOrCreateNode(
+			targetTown->visitablePos(),
+			EPathfindingLayer::LAND,
+			actor->castActor,
+			destinationDayFlags);
 		if(!nodeOptional)
 		{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 1
@@ -1451,9 +1531,11 @@ struct TownPortalFinder
 				bestNode->moveRemains - movementNeeded,
 				movementCost,
 				DO_NOT_SAVE_TO_COMMITTED_TILES);
+			node->dayFlags = destinationDayFlags;
 
 			node->theNodeBefore = bestNode;
-			node->addSpecialAction(std::make_shared<AIPathfinding::TownPortalAction>(targetTown, spellID));
+			node->manaCost = nodeStorage->getAINode(bestNode)->manaCost + hero->getSpellCost(townPortal);
+			node->addSpecialAction(std::make_shared<AIPathfinding::TownPortalAction>(targetTown, spellID, usesSharedDailyOpportunity));
 		}
 
 		return nodeOptional;
@@ -1615,6 +1697,13 @@ bool AINodeStorage::isOtherChainBetter(
 	const AIPathNode & candidateNode,
 	const AIPathNode & other) const
 {
+	const DayFlags candidateDayFlags = dayFlagsForTurn(&candidateNode, candidateNode.turns);
+	const DayFlags otherDayFlags = dayFlagsForTurn(&other, candidateNode.turns);
+	if(other.actor && candidateNode.actor && other.actor->hero == candidateNode.actor->hero
+		&& hasNewHorizonsAdventureSpellCastFlag(otherDayFlags)
+		&& !hasNewHorizonsAdventureSpellCastFlag(candidateDayFlags))
+		return false;
+
 	auto sameNode = other.actor == candidateNode.actor;
 
 	if(sameNode || other.action == EPathNodeAction::UNKNOWN || !other.actor || !other.actor->hero)
@@ -1968,7 +2057,7 @@ bool AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & pa
 			if(pathNode.specialAction)
 			{
 				auto targetNode = node->theNodeBefore ? getAINode(node->theNodeBefore) : node;
-				pathNode.actionIsBlocked = !pathNode.specialAction->canAct(aiNk, targetNode);
+				pathNode.actionIsBlocked = !pathNode.specialAction->canAct(aiNk, targetNode, node->turns);
 			}
 
 			const int nextParentIndex = static_cast<int>(pathToAppend.nodes.size());

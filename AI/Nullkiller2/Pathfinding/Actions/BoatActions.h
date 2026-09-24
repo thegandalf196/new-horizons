@@ -25,9 +25,11 @@ namespace AIPathfinding
 	class SummonBoatAction : public VirtualBoatAction
 	{
 		SpellID usedSpell;
+		bool usesSharedDailyOpportunity;
 	public:
-		SummonBoatAction(SpellID usedSpell)
+		SummonBoatAction(SpellID usedSpell, bool usesSharedDailyOpportunity)
 			: usedSpell(usedSpell)
+			, usesSharedDailyOpportunity(usesSharedDailyOpportunity)
 		{
 		}
 
@@ -41,6 +43,8 @@ namespace AIPathfinding
 			const AIPathNode * srcNode) const override;
 
 		bool canAct(const Nullkiller * aiNk, const AIPathNode * source) const override;
+		bool canAct(const Nullkiller * aiNk, const AIPathNode * source, int plannedTurn) const override;
+		bool usesNewHorizonsAdventureSpellOpportunity() const override { return usesSharedDailyOpportunity; }
 
 		const ChainActor * getActor(const ChainActor * sourceActor) const override;
 
@@ -57,6 +61,8 @@ namespace AIPathfinding
 		const CPlayerSpecificInfoCallback * cpsic;
 
 	public:
+		using VirtualBoatAction::canAct;
+
 		BuildBoatAction(const CPlayerSpecificInfoCallback * cpsic, const IShipyard * shipyard)
 			: cpsic(cpsic), shipyard(shipyard)
 		{

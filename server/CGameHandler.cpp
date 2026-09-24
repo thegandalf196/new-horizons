@@ -1059,14 +1059,58 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 
 	const bool canFly = ti->hasFlyingMovement() || (h->inBoat() && (h->getBoat()->layer == EPathfindingLayer::AIR || h->getBoat()->layer == EPathfindingLayer::AVIATE));
 	const bool canWalkOnSea = ti->hasWaterWalking() || (h->inBoat() && h->getBoat()->layer == EPathfindingLayer::WATER);
-	const bool usesMovementCost = movementMode == EMovementMode::STANDARD || embarking || disembarking;
-	const int cost = usesMovementCost
-		? pathfinderHelper->getMovementCost(h->visitablePos(), hmpos, layer, h->movementPointsRemaining())
-		: 0;
 
 	const bool movingOntoObstacle = t.blocked() && !t.visitable();
 	const bool objectCoastVisitable = objectToVisit && objectToVisit->isCoastVisitable();
 	const bool movingOntoWater = !h->inBoat() && t.isWater() && !objectCoastVisitable;
+
+	if(requiresLayer && ti->usesNewHorizonsMovement())
+	{
+		const bool boatCanSail = h->inBoat() && h->getBoat()->layer == EPathfindingLayer::SAIL;
+		const bool boatCanFly = h->inBoat()
+			&& (h->getBoat()->layer == EPathfindingLayer::AIR || h->getBoat()->layer == EPathfindingLayer::AVIATE);
+
+		// `transit` controls whether the destination is visited; it does not
+		// select the movement surface and is valid for both intermediate and
+		// final AIR/WATER steps. The later generic transit check validates any
+		// requested pass-through against actual travel capability.
+		const bool transitLayer = layer == EPathfindingLayer::AIR
+			|| layer == EPathfindingLayer::WATER || layer == EPathfindingLayer::AVIATE;
+		bool validLayer = !transit || transitLayer || CGTeleport::isTeleport(objectToVisit);
+		const bool coastVisitableOnWater = objectCoastVisitable && objectToVisit->ID != Obj::BOAT;
+		switch(layer.toEnum())
+		{
+		case EPathfindingLayer::LAND:
+			validLayer = validLayer && (t.isLand() || coastVisitableOnWater)
+				&& !movingOntoObstacle && (!h->inBoat() || disembarking);
+			break;
+		case EPathfindingLayer::SAIL:
+			validLayer = validLayer && t.isWater() && (boatCanSail || embarking);
+			break;
+		case EPathfindingLayer::AIR:
+			validLayer = validLayer && canFly && (!h->inBoat() || boatCanFly);
+			break;
+		case EPathfindingLayer::WATER:
+			validLayer = validLayer && t.isWater()
+				&& ((h->inBoat() && h->getBoat()->layer == EPathfindingLayer::WATER)
+					|| (!h->inBoat() && ti->hasWaterWalking()));
+			break;
+		case EPathfindingLayer::AVIATE:
+			validLayer = validLayer && h->inBoat() && h->getBoat()->layer == EPathfindingLayer::AVIATE;
+			break;
+		default:
+			validLayer = false;
+			break;
+		}
+
+		if(!validLayer)
+			return complainRet("Invalid movement layer for destination tile!");
+	}
+
+	const bool usesMovementCost = movementMode == EMovementMode::STANDARD || embarking || disembarking;
+	const int cost = usesMovementCost
+		? pathfinderHelper->getMovementCost(h->visitablePos(), hmpos, layer, h->movementPointsRemaining())
+		: 0;
 
 	if (guardian && getVisitingHero(guardian) != nullptr)
 		return complainRet("You cannot move your hero there. Simultaneous turns are active and another player is interacting with this wandering monster!");

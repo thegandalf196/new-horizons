@@ -88,7 +88,7 @@ int maximumDailyMovement(const int64_t baseValue, const int64_t percentageToBase
 	return static_cast<int>(std::clamp<int64_t>(total, 0, std::numeric_limits<int>::max()));
 }
 
-int stepCost(const bool diagonal, const bool terrainAffinity, const bool desert, const bool road)
+int stepCost(const bool diagonal, const bool terrainAffinity, const bool desert, const bool road, const bool specialTravel)
 {
 	const int base = diagonal ? DIAGONAL_STEP_COST : ORTHOGONAL_STEP_COST;
 
@@ -101,8 +101,10 @@ int stepCost(const bool diagonal, const bool terrainAffinity, const bool desert,
 	const int terrainDenominator = desert && !terrainAffinity ? 5 : (terrainAffinity ? 1 : 5);
 	const int roadNumerator = road ? 67 : 1;
 	const int roadDenominator = road ? 100 : 1;
+	const int travelNumerator = specialTravel ? 3 : 1;
+	const int travelDenominator = specialTravel ? 2 : 1;
 
-	return ceilRational(static_cast<int64_t>(base) * terrainNumerator * roadNumerator,
-		static_cast<int64_t>(terrainDenominator) * roadDenominator);
+	return ceilRational(static_cast<int64_t>(base) * terrainNumerator * roadNumerator * travelNumerator,
+		static_cast<int64_t>(terrainDenominator) * roadDenominator * travelDenominator);
 }
 }

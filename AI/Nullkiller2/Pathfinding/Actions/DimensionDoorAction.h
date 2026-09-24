@@ -43,6 +43,7 @@ namespace NK2AI::AIPathfinding
 		int plannedSourceMoveRemains = 0;
 		int plannedSourceMoveLimit = 1;
 		int plannedDimensionDoorCasts = 0;
+		bool usesNewHorizonsAdventureSpellOpportunity = false;
 		uint64_t guardedLandingDanger = 0;
 		uint64_t guardedLandingArmyLoss = 0;
 	};
@@ -59,6 +60,7 @@ namespace NK2AI::AIPathfinding
 		int plannedSourceMoveRemains;
 		int plannedSourceMoveLimit;
 		int plannedDimensionDoorCasts;
+		bool usesSharedDailyOpportunity;
 		uint64_t guardedLandingDanger;
 		uint64_t guardedLandingArmyLoss;
 
@@ -66,6 +68,8 @@ namespace NK2AI::AIPathfinding
 		explicit DimensionDoorAction(const DimensionDoorActionParameters & parameters);
 
 		bool canAct(const Nullkiller * aiNk, const AIPathNode * source) const override;
+		bool canAct(const Nullkiller * aiNk, const AIPathNode * source, int plannedTurn) const override;
+		bool usesNewHorizonsAdventureSpellOpportunity() const override { return usesSharedDailyOpportunity; }
 		void execute(AIGateway * aiGw, const CGHeroInstance * hero) const override;
 		void applyOnDestination(
 			const CGHeroInstance * hero,

@@ -16,6 +16,8 @@
 #include "../../Goals/BuildBoat.h"
 #include "../../../../lib/mapObjects/MapObjects.h"
 #include "../../../../lib/spells/CSpell.h"
+#include "../../../../lib/spells/NewHorizonsMagic.h"
+#include "../AINodeStorage.h"
 #include "AdventureSpellCastMovementActions.h"
 
 namespace NK2AI
@@ -27,6 +29,7 @@ namespace AIPathfinding
 		:spellToCast(spellToCast), hero(hero), flagsToAdd(flagsToAdd)
 	{
 		manaCost = hero->getSpellCost(spellToCast.toSpell());
+		usesSharedDailyOpportunity = newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), spellToCast);
 	}
 
 	WaterWalkingAction::WaterWalkingAction(const CGHeroInstance * hero, SpellID spellToCast)
@@ -47,7 +50,9 @@ namespace AIPathfinding
 	{
 		dstNode->manaCost = srcNode->manaCost + manaCost;
 		dstNode->theNodeBefore = source.node;
-		dstNode->dayFlags = static_cast<DayFlags>(dstNode->dayFlags | flagsToAdd);
+		dstNode->dayFlags = static_cast<DayFlags>(dayFlagsForTurn(srcNode, destination.turn) | flagsToAdd);
+		if(usesSharedDailyOpportunity)
+			dstNode->dayFlags = static_cast<DayFlags>(dstNode->dayFlags | DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
 	}
 
 	void AdventureCastAction::execute(AIGateway * aiGw, const CGHeroInstance * hero) const
@@ -59,7 +64,15 @@ namespace AIPathfinding
 
 	bool AdventureCastAction::canAct(const Nullkiller * aiNk, const AIPathNode * source) const
 	{
+		return canAct(aiNk, source, source->turns);
+	}
+
+	bool AdventureCastAction::canAct(const Nullkiller * aiNk, const AIPathNode * source, const int plannedTurn) const
+	{
 		assert(hero == this->hero);
+		if(usesSharedDailyOpportunity
+			&& hasNewHorizonsAdventureSpellCastFlag(dayFlagsForTurn(source, plannedTurn)))
+			return false;
 
 		auto hero = source->actor->hero;
 

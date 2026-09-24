@@ -11,12 +11,46 @@
 #include "StdInc.h"
 #include "../../Goals/AdventureSpellCast.h"
 #include "../../../../lib/mapObjects/MapObjects.h"
+#include "../../../../lib/spells/CSpell.h"
+#include "../AINodeStorage.h"
 #include "TownPortalAction.h"
 
 namespace NK2AI
 {
 
 using namespace AIPathfinding;
+
+bool TownPortalAction::canAct(const Nullkiller * aiNk, const AIPathNode * source) const
+{
+	return canAct(aiNk, source, source->turns);
+}
+
+bool TownPortalAction::canAct(const Nullkiller *, const AIPathNode * source, const int plannedTurn) const
+{
+	const auto * hero = source->actor ? source->actor->hero : nullptr;
+	if(!hero || !hero->canCastThisSpell(usedSpell.toSpell()))
+		return false;
+
+	if(usesSharedDailyOpportunity
+		&& hasNewHorizonsAdventureSpellCastFlag(dayFlagsForTurn(source, plannedTurn)))
+		return false;
+
+	return hero->getManaAvailable() >= source->manaCost + hero->getSpellCost(usedSpell.toSpell());
+}
+
+void TownPortalAction::applyOnDestination(
+	const CGHeroInstance * hero,
+	CDestinationNodeInfo & destination,
+	const PathNodeInfo & source,
+	AIPathNode * dstNode,
+	const AIPathNode * srcNode) const
+{
+	dstNode->manaCost = srcNode->manaCost + hero->getSpellCost(usedSpell.toSpell());
+	dstNode->theNodeBefore = source.node;
+	dstNode->dayFlags = dayFlagsForTurn(srcNode, destination.turn);
+	if(usesSharedDailyOpportunity)
+		dstNode->dayFlags = static_cast<DayFlags>(dstNode->dayFlags | DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
+}
 
 void TownPortalAction::execute(AIGateway * aiGw, const CGHeroInstance * hero) const
 {

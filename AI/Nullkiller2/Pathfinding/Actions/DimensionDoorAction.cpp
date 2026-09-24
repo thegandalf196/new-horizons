@@ -53,6 +53,7 @@ namespace NK2AI::AIPathfinding
 		, plannedSourceMoveRemains(parameters.plannedSourceMoveRemains)
 		, plannedSourceMoveLimit(parameters.plannedSourceMoveLimit)
 		, plannedDimensionDoorCasts(parameters.plannedDimensionDoorCasts)
+		, usesSharedDailyOpportunity(parameters.usesNewHorizonsAdventureSpellOpportunity)
 		, guardedLandingDanger(parameters.guardedLandingDanger)
 		, guardedLandingArmyLoss(parameters.guardedLandingArmyLoss)
 	{
@@ -60,10 +61,19 @@ namespace NK2AI::AIPathfinding
 
 	bool DimensionDoorAction::canAct(const Nullkiller * aiNk, const AIPathNode * source) const
 	{
+		return canAct(aiNk, source, plannedSourceTurn);
+	}
+
+	bool DimensionDoorAction::canAct(const Nullkiller * aiNk, const AIPathNode * source, const int) const
+	{
 		const auto * hero = source->actor->hero;
 		const auto * spell = usedSpell.toSpell();
 
 		if(!hero || !spell)
+			return false;
+
+		if(usesSharedDailyOpportunity
+			&& NK2AI::hasNewHorizonsAdventureSpellCastFlag(NK2AI::dayFlagsForTurn(source, plannedSourceTurn)))
 			return false;
 
 		const auto & mechanics = spell->getAdventureMechanics();
@@ -97,6 +107,9 @@ namespace NK2AI::AIPathfinding
 		dstNode->manaCost = srcNode->manaCost + manaCost;
 		dstNode->dimensionDoorCasts = plannedDimensionDoorCasts + 1;
 		dstNode->theNodeBefore = source.node;
+		dstNode->dayFlags = NK2AI::dayFlagsForTurn(srcNode, plannedSourceTurn);
+		if(usesSharedDailyOpportunity)
+			dstNode->dayFlags = static_cast<NK2AI::DayFlags>(dstNode->dayFlags | NK2AI::DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
 		dstNode->moveRemains = std::max(0, plannedSourceMoveRemains - movementPointsTaken);
 		dstNode->setCost(srcNode->getCost() + static_cast<float>(std::min(plannedSourceMoveRemains, movementPointsTaken)) / plannedSourceMoveLimit);
 		dstNode->armyLoss += guardedLandingArmyLoss;
