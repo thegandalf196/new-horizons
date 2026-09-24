@@ -43,13 +43,17 @@
 			"required": ["starting", "growth"],
 			"additionalProperties": false,
 			"properties": {
+				"progressionVersion": {
+					"description": "Absent or 1 preserves ten-point growth times (level+4). Version 2 uses starting plus (level-1) times growth; runtime requires starting total 100 and growth total 18.",
+					"type": "integer", "enum": [1, 2]
+				},
 				"starting": {
 					"type": "array", "minItems": 4, "maxItems": 4,
 					"items": {"type": "integer", "minimum": 0, "maximum": 1000000}
 				},
 				"growth": {
 					"type": "array", "minItems": 4, "maxItems": 4,
-					"items": {"type": "integer", "minimum": 1, "maximum": 10}
+					"items": {"type": "integer", "minimum": 1, "maximum": 18}
 				}
 			}
 		},

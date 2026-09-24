@@ -94,6 +94,46 @@ protected:
 	}
 };
 
+class NewHorizonsVersionTwoHeroGrowthTest : public NewHorizonsHeroGrowthTest
+{
+protected:
+	JsonNode versionTwoKnightRules() const
+	{
+		auto rules = testHeroRules();
+		auto & profile = rules["classProfiles"]["core:knight"];
+		profile["progressionVersion"].Integer() = newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH;
+		profile["starting"].Vector().clear();
+		for(int value : {30, 45, 10, 15})
+			profile["starting"].Vector().emplace_back(value);
+		profile["growth"].Vector().clear();
+		for(int value : {6, 7, 2, 3})
+			profile["growth"].Vector().emplace_back(value);
+		return rules;
+	}
+
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsHeroGrowthTest::mapLoaded(map);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, versionTwoKnightRules());
+	}
+
+	void startMixedClassGame()
+	{
+		const CreatureID token(0);
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(0)).heroGarrison({{token, 1}})
+			.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:adela")), PlayerColor(1)).heroGarrison({{token, 1}});
+		startWithMap(std::move(builder));
+
+		server.gameState = gameState();
+		gameHandler = std::make_shared<CGameHandler>(server, gameState());
+		gameHandler->randomizer->setSeed(seed);
+		attackerSideHero = findHeroByOwner(PlayerColor(0));
+		defenderSideHero = findHeroByOwner(PlayerColor(1));
+	}
+};
+
 class LegacySpellCostTest : public HeroCommandFixture
 {
 protected:
@@ -1111,6 +1151,38 @@ TEST_F(NewHorizonsHeroGrowthTest, RealInitializationCapturesProfileAndKnowledgeM
 		EXPECT_EQ(extra["chances"].convertTo<std::vector<int>>(), (std::vector<int>{0, 100, 100, 100}));
 }
 
+TEST_F(NewHorizonsVersionTwoHeroGrowthTest, VersionTwoInitializationUsesApprovedKnightProfile)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(0)).heroExperience(0)
+		.heroGarrison({{CreatureID(0), 10}});
+	startWithMap(std::move(builder));
+
+	const auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	ASSERT_EQ(hero->getHeroClass()->getJsonKey(), "core:knight");
+	const auto view = hero->getPrimaryGrowthView();
+	ASSERT_TRUE(view);
+	EXPECT_EQ(view->profile.progressionVersion, newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
+	EXPECT_EQ(view->profile.starting, (std::array<int, 4>{30, 45, 10, 15}));
+	EXPECT_EQ(view->base, (std::array<int, 4>{30, 45, 10, 15}));
+	EXPECT_EQ(view->modified, view->base);
+	EXPECT_EQ(view->profile.growth, (std::array<int, 4>{6, 7, 2, 3}));
+	EXPECT_EQ(hero->manaLimit(), 15);
+	EXPECT_EQ(hero->getManaAvailable(), 15);
+
+	const auto & savedRules = gameState()->getHeroDevelopmentRules();
+	EXPECT_EQ(savedRules["schemaVersion"].Integer(), 1);
+	EXPECT_EQ(savedRules["rulesetVersion"].Integer(), 1);
+	EXPECT_EQ(savedRules["powerDivisor"].Integer(), 10);
+	const auto & savedProfile = savedRules["classProfiles"]["core:knight"];
+	EXPECT_EQ(savedProfile["progressionVersion"].Integer(), newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
+	EXPECT_EQ(savedProfile["starting"].convertTo<std::vector<int>>(), (std::vector<int>{30, 45, 10, 15}));
+	EXPECT_EQ(savedProfile["growth"].convertTo<std::vector<int>>(), (std::vector<int>{6, 7, 2, 3}));
+	EXPECT_TRUE(savedRules["classProfiles"]["core:cleric"]["progressionVersion"].isNull());
+}
+
 TEST_F(NewHorizonsHeroGrowthTest, MapExperienceUsesTheSameFourAttributeGrowthPath)
 {
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -1134,11 +1206,36 @@ TEST_F(NewHorizonsHeroGrowthTest, MapExperienceUsesTheSameFourAttributeGrowthPat
 		EXPECT_EQ(hero->getPrimaryGrowthView()->base[attribute], growth[attribute] * (hero->level + 4));
 }
 
+TEST_F(NewHorizonsVersionTwoHeroGrowthTest, VersionTwoMapExperienceUsesStartingPlusGrowthPerLevel)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(0))
+		.heroExperience(LIBRARY->heroh->reqExp(3))
+		.heroSecondarySkills({{SecondarySkill::PATHFINDING, 1}, {SecondarySkill::ARCHERY, 1},
+			{SecondarySkill::LOGISTICS, 1}, {SecondarySkill::SCOUTING, 1},
+			{SecondarySkill::DIPLOMACY, 1}, {SecondarySkill::NAVIGATION, 1},
+			{SecondarySkill::LEADERSHIP, 1}, {SecondarySkill::WISDOM, 1}})
+		.heroGarrison({{CreatureID(0), 10}});
+	startWithMap(std::move(builder));
+
+	const auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	ASSERT_EQ(hero->getHeroClass()->getJsonKey(), "core:knight");
+	EXPECT_EQ(hero->level, 3);
+	const auto view = hero->getPrimaryGrowthView();
+	ASSERT_TRUE(view);
+	EXPECT_EQ(view->profile.progressionVersion, newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
+	EXPECT_EQ(view->base, (std::array<int, 4>{42, 59, 14, 21}));
+}
+
 TEST_F(NewHorizonsHeroGrowthTest, LegacyInstanceHasNoGrowthViewAndOriginalScale)
 {
 	growthEnabled = false;
+	legacyMagicRules = true;
 	startGame();
 	EXPECT_FALSE(attackerSideHero->getPrimaryGrowthView());
+	EXPECT_TRUE(attackerSideHero->getMagicRules().isNull());
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 20, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(attackerSideHero->manaLimit(), 200);
 	EXPECT_EQ(attackerSideHero->getEffectPowerDivisor(nullptr), 1);
@@ -1198,6 +1295,40 @@ TEST_F(NewHorizonsHeroGrowthTest, AuthorityAppliesAndReportsAllFourActualLevelGa
 		EXPECT_EQ(view->base[i] - before[i], view->lastGains[i]);
 }
 
+TEST_F(NewHorizonsVersionTwoHeroGrowthTest, VersionTwoRandomizerAndLevelUpUseKnightVector)
+{
+	startGame();
+	ASSERT_EQ(attackerSideHero->getHeroClass()->getJsonKey(), "core:knight");
+	attackerSideHero->setSecSkillLevel(SecondarySkill::OFFENCE, 3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill::ARMORER, 3, ChangeValueMode::ABSOLUTE);
+	const std::array<int, 4> expectedGrowth{6, 7, 2, 3};
+	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero), expectedGrowth);
+
+	CMemorySerializer randomizerMemory;
+	randomizerMemory.oser & *gameHandler->randomizer;
+	GameRandomizer restoredRandomizer(*gameState());
+	randomizerMemory.iser & restoredRandomizer;
+	for(int i = 0; i < 8; ++i)
+	{
+		EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero), expectedGrowth);
+		EXPECT_EQ(restoredRandomizer.rollPrimarySkillsForLevelup(attackerSideHero), expectedGrowth);
+	}
+
+	const auto before = attackerSideHero->getPrimaryGrowthView()->base;
+	const auto level = attackerSideHero->level;
+	attackerSideHero->setExperience(LIBRARY->heroh->reqExp(level + 1), ChangeValueMode::ABSOLUTE);
+	gameHandler->levelUpHero(attackerSideHero);
+	EXPECT_EQ(attackerSideHero->level, level);
+	EXPECT_EQ(attackerSideHero->getPrimaryGrowthView()->lastGains, (std::array<int, 4>{0, 0, 0, 0}));
+	gameHandler->onAdvInterfaceReady(attackerSideHero->getOwner());
+	EXPECT_EQ(attackerSideHero->level, level + 1);
+	const auto view = attackerSideHero->getPrimaryGrowthView();
+	ASSERT_TRUE(view);
+	EXPECT_EQ(view->lastGains, expectedGrowth);
+	for(int i = 0; i < 4; ++i)
+		EXPECT_EQ(view->base[i] - before[i], view->lastGains[i]);
+}
+
 TEST_F(NewHorizonsHeroGrowthTest, ChainedLevelQueriesReportActualCapClippedGainsIncludingAllZeros)
 {
 	// Deliberate native cap diagnostic, not the ordinary canonical GUI map.
@@ -1251,6 +1382,68 @@ TEST_F(NewHorizonsHeroGrowthTest, FullGameRoundtripPreservesResolvedHeroAndWorld
 	EXPECT_EQ(hero->getPrimaryGrowthRules(), attackerSideHero->getPrimaryGrowthRules());
 	EXPECT_EQ(restored.getHeroDevelopmentRules(), gameState()->getHeroDevelopmentRules());
 	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::ATTACK), 150);
+}
+
+TEST_F(NewHorizonsVersionTwoHeroGrowthTest, VersionedWorldSaveAndCrossoverPreserveMixedProfiles)
+{
+	startMixedClassGame();
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	ASSERT_EQ(attackerSideHero->getHeroClass()->getJsonKey(), "core:knight");
+	ASSERT_EQ(defenderSideHero->getHeroClass()->getJsonKey(), "core:cleric");
+
+	const auto knightView = attackerSideHero->getPrimaryGrowthView();
+	const auto clericView = defenderSideHero->getPrimaryGrowthView();
+	ASSERT_TRUE(knightView);
+	ASSERT_TRUE(clericView);
+	EXPECT_EQ(knightView->profile.progressionVersion, newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
+	EXPECT_EQ(knightView->base, (std::array<int, 4>{30, 45, 10, 15}));
+	EXPECT_EQ(clericView->profile.progressionVersion, newHorizonsHeroes::PRIMARY_PROFILE_VERSION_LEGACY);
+	EXPECT_EQ(clericView->base, (std::array<int, 4>{20, 20, 5, 5}));
+
+	const auto & worldRules = gameState()->getHeroDevelopmentRules();
+	EXPECT_EQ(worldRules["schemaVersion"].Integer(), 1);
+	EXPECT_EQ(worldRules["rulesetVersion"].Integer(), 1);
+	EXPECT_EQ(worldRules["classProfiles"]["core:knight"]["progressionVersion"].Integer(),
+		newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
+	EXPECT_TRUE(worldRules["classProfiles"]["core:cleric"]["progressionVersion"].isNull());
+
+	CampaignState campaign;
+	const auto knightNode = campaign.crossoverSerialize(attackerSideHero);
+	const auto knightCrossover = campaign.crossoverDeserialize(knightNode, map());
+	ASSERT_NE(knightCrossover, nullptr);
+	ASSERT_TRUE(knightCrossover->getPrimaryGrowthView());
+	EXPECT_EQ(knightCrossover->getPrimaryGrowthView()->profile.progressionVersion,
+		newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
+	EXPECT_EQ(knightCrossover->getPrimaryGrowthView()->base, knightView->base);
+
+	const auto clericNode = campaign.crossoverSerialize(defenderSideHero);
+	const auto clericCrossover = campaign.crossoverDeserialize(clericNode, map());
+	ASSERT_NE(clericCrossover, nullptr);
+	ASSERT_TRUE(clericCrossover->getPrimaryGrowthView());
+	EXPECT_EQ(clericCrossover->getPrimaryGrowthView()->profile.progressionVersion,
+		newHorizonsHeroes::PRIMARY_PROFILE_VERSION_LEGACY);
+	EXPECT_EQ(clericCrossover->getPrimaryGrowthView()->base, clericView->base);
+
+	CMemorySerializer memory;
+	memory.oser & *gameState();
+	CGameState restored;
+	memory.iser.cb = &restored;
+	memory.iser.loadingGamestate = true;
+	memory.iser & restored;
+	const auto * restoredKnight = restored.getHero(attackerSideHero->id);
+	const auto * restoredCleric = restored.getHero(defenderSideHero->id);
+	ASSERT_NE(restoredKnight, nullptr);
+	ASSERT_NE(restoredCleric, nullptr);
+	ASSERT_TRUE(restoredKnight->getPrimaryGrowthView());
+	ASSERT_TRUE(restoredCleric->getPrimaryGrowthView());
+	EXPECT_EQ(restoredKnight->getPrimaryGrowthView()->profile.progressionVersion,
+		newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
+	EXPECT_EQ(restoredKnight->getPrimaryGrowthView()->base, knightView->base);
+	EXPECT_EQ(restoredCleric->getPrimaryGrowthView()->profile.progressionVersion,
+		newHorizonsHeroes::PRIMARY_PROFILE_VERSION_LEGACY);
+	EXPECT_EQ(restoredCleric->getPrimaryGrowthView()->base, clericView->base);
+	EXPECT_EQ(restored.getHeroDevelopmentRules(), worldRules);
 }
 
 TEST_F(NewHorizonsActual034SnapshotTest, Actual034VersionAndOldCrossoverRemainLegacy)
@@ -1334,8 +1527,20 @@ TEST_F(NewHorizonsHeroGrowthTest, RealCastScalesPowerTermAndPreservesFixedExpert
 {
 	prepareCommands(true);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 20, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->setSecSkillLevel(SecondarySkill::INTELLIGENCE, 2, ChangeValueMode::ABSOLUTE);
-	EXPECT_EQ(attackerSideHero->manaLimit(), 30);
+	const int wisdomId = SecondarySkill::decode("new-horizons:wisdom");
+	ASSERT_GE(wisdomId, 0);
+	SetSecSkill wisdom;
+	wisdom.id = attackerSideHero->id;
+	wisdom.which = SecondarySkill(wisdomId);
+	wisdom.val = MasteryLevel::BASIC;
+	wisdom.mode = ChangeValueMode::ABSOLUTE;
+	gameState()->apply(wisdom);
+	HeroPerkChosen intelligence;
+	intelligence.hero = attackerSideHero->id;
+	intelligence.selection = {"new-horizons:wisdom", "new-horizons:wisdom.intelligence"};
+	gameState()->apply(intelligence);
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.intelligence"));
+	EXPECT_EQ(attackerSideHero->manaLimit(), 26);
 	setTestSpellPointTotal(attackerSideHero, attackerSideHero->manaLimit());
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MAGIC_SCHOOL_SKILL,

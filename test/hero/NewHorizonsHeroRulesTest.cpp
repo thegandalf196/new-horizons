@@ -70,6 +70,33 @@ TEST(NewHorizonsHeroRulesTest, ResolvedSnapshotDoesNotFollowChangedInstalledProf
 	EXPECT_FALSE(usesRules(resolveHeroRules(JsonNode(), HeroClassID(0))));
 }
 
+TEST(NewHorizonsHeroRulesTest, ExplicitProgressionVersionKeepsOldAndNewSnapshotsIndependent)
+{
+	auto rules = testHeroRules();
+	const auto oldSnapshot = resolveHeroRules(rules, HeroClassID(0));
+	auto & profile = rules["classProfiles"][HeroClassID::encode(0)];
+	profile["progressionVersion"].Integer() = 2;
+	profile["starting"].Vector().clear();
+	profile["growth"].Vector().clear();
+	for(int value : {30, 45, 10, 15})
+		profile["starting"].Vector().push_back(JsonNode(value));
+	for(int value : {6, 7, 2, 3})
+		profile["growth"].Vector().push_back(JsonNode(value));
+	ASSERT_NO_THROW(validateHeroRules(rules, true));
+	EXPECT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "versioned primary profiles"));
+	const auto newSnapshot = resolveHeroRules(rules, HeroClassID(0));
+	EXPECT_NO_THROW(validateResolvedHeroRules(oldSnapshot));
+	EXPECT_NO_THROW(validateResolvedHeroRules(newSnapshot));
+	EXPECT_EQ(parsePrimaryProfile(oldSnapshot["profile"]).baseAtLevel(1), (std::array<int64_t, 4>{20, 20, 5, 5}));
+	EXPECT_EQ(parsePrimaryProfile(newSnapshot["profile"]).baseAtLevel(1), (std::array<int64_t, 4>{30, 45, 10, 15}));
+	EXPECT_EQ(parsePrimaryProfile(newSnapshot["profile"]).baseAtLevel(2), (std::array<int64_t, 4>{36, 52, 12, 18}));
+	profile["progressionVersion"].Integer() = 3;
+	EXPECT_FALSE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "unsupported primary progression"));
+	EXPECT_THROW(validateHeroRules(rules, true), std::runtime_error);
+	EXPECT_EQ(newSnapshot["profile"]["progressionVersion"].Integer(), 2);
+	EXPECT_TRUE(oldSnapshot["profile"]["progressionVersion"].isNull());
+}
+
 TEST(NewHorizonsHeroRulesTest, OldResolvedSnapshotWithoutMigrationTableRemainsLoadable)
 {
 	if(!newHorizonsModuleActive())
