@@ -89,6 +89,13 @@ provenance tests, and independent review. The broader level-up/art audit still
 fails its existing active-perk completeness gate: 14 active perk IDs lack named
 art mappings. That unrelated gap is not waived by the focused checks. These
 hero replacement assets remain provisional pending in-game visual review.
+Source `359c0b509` was rebuilt, frozen and promoted as snapshot
+`3ddeb77330ced93d2b8fb981fbe318068271ac7c100e7ca6f421e788da1d28b1`.
+Its bounded 35-second headless All for One run completed 57 AI turns
+(configured seed 1284510375; maximum completed turn 3960ms), with no checked
+crash, unsupported-rules or command-rejection errors. Planned timeout completed
+without a remaining client process; launcher verify-only passed. This is
+startup/AI smoke evidence, not visual acceptance of the new icon bindings.
 
 ## Spellbook binding details
 
