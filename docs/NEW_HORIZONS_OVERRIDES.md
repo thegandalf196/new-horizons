@@ -594,3 +594,36 @@ generation together when installing this table.
 - **Presentation:** Group by Basic, Advanced and Expert and distinguish learned
   perks from unlearned ones. Use the game's existing leather, borders and text
   conventions, with no new unrelated placeholder artwork.
+
+## Ordered Skill and perk progression — 2026-09-24
+
+- **Status:** Accepted; implementation pending.
+- **Rule:** Each Skill progresses in this order: **Basic Skill → Basic perk →
+  Advanced Skill → Advanced perk → Expert Skill → Expert perk**. A hero must
+  choose that Skill's Basic perk before advancing it to Advanced, and its
+  Advanced perk before advancing it to Expert. A higher-rank perk cannot skip
+  the earlier perk choices. This supersedes the earlier permission to advance
+  a Skill while leaving its lower-rank perk slot empty.
+- **Scope:** Apply the sequence consistently to level-up choices and all Skill
+  teaching or advancement sources. Teaching must not silently supply an
+  arbitrary perk to bypass a missing choice. Retain the limit of one chosen
+  perk per rank in each Skill.
+- **Compatibility approach:** Preserve already-earned ranks in existing saves;
+  require missing earlier perk choices before further progression. This is an
+  implementation migration policy, not permission to grant unchosen perks.
+
+## Passive Grand Metamagic — 2026-09-24
+
+- **Status:** Accepted direction; replacement implementation pending.
+- **Rule:** Rework Grand Metamagic as a passive perk. It must not require a
+  separate activation click, toggle, or declaration to receive its benefit.
+  Remove the old manual Grand selection from live battle controls and help.
+- **Rejected approach:** The user rejected an automatic extra Spell Action
+  and its unused-benefit carry-over bookkeeping as too confusing. Do not
+  implement that proposal.
+- **Also rejected:** A 50% follow-up Mana discount; the user considers Tower
+  already abundant in Mana.
+- **Open replacement:** A passive two-round duration increase for buffs and
+  debuffs cast through Metamagic was proposed next, but is not user-approved.
+  Do not treat that proposal as canonical. The accepted requirement remains a
+  simpler passive redesign without extra actions or a Mana-economy benefit.
