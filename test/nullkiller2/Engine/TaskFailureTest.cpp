@@ -11,6 +11,7 @@
 
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
 #include "AI/Nullkiller2/Pathfinding/AIPathfinder.h"
+#include "AI/Nullkiller2/Pathfinding/AIPathfinderConfig.h"
 #include "AI/Nullkiller2/Pathfinding/Actions/BattleAction.h"
 #include "AI/Nullkiller2/Goals/ExecuteHeroChain.h"
 #include "AI/Nullkiller2/Goals/Composition.h"
@@ -169,6 +170,60 @@ TEST_F(Nullkiller2_MovementFailure, projectedRoutePreservesRequiredEnemyHeroBatt
 TEST_F(Nullkiller2_MovementFailure, townPurchaseRoutePreservesRequiredEnemyHeroBattle)
 {
 	checkRequiredBattleRoute(false, true, true);
+}
+
+TEST_F(Nullkiller2_MovementFailure, supersededBattleNodeCannotResumeWithoutBattleAction)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).name("SupersededBattleNode")
+		.playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(0), PlayerColor(0))
+		.heroGarrison({{CreatureID(27), 100}});
+	startWithMap(std::move(builder));
+	revealMap(PlayerColor(0));
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	for(int x = 0; x < 36; ++x)
+		for(int y = 0; y < 36; ++y)
+			map()->getTile({x, y, 0}).terrainType = y == 5 ? ETerrainId::GRASS : ETerrainId::ROCK;
+	auto garrison = std::make_shared<CGGarrison>(gameState().get());
+	garrison->id = ObjectInstanceID(static_cast<int>(map()->objects.size()));
+	garrison->ID = Obj::GARRISON;
+	garrison->subID = MapObjectSubID(0);
+	garrison->tempOwner = PlayerColor::NEUTRAL;
+	garrison->appearance = hero->appearance;
+	garrison->pos = int3(10, 5, 0) + garrison->getVisitableOffset();
+	ASSERT_TRUE(garrison->setCreature(SlotID(0), CreatureID(0), 10));
+	map()->objects.push_back(garrison);
+	map()->getTile({10, 5, 0}).blockingObjects.push_back(garrison->id);
+	map()->getTile({10, 5, 0}).visitableObjects.push_back(garrison->id);
+	auto gateway = makeGateway(PlayerColor(0));
+	auto storage = std::make_shared<NK2AI::AINodeStorage>(gateway->nullkiller.get(), gateway->cc->getMapSize());
+	storage->clear();
+	NK2AI::HeroMap<NK2AI::HeroRole> heroes;
+	heroes.emplace(hero, NK2AI::MAIN);
+	storage->setHeroes(heroes);
+	auto config = std::make_shared<NK2AI::AIPathfinding::AIPathfinderConfig>(gateway->nullkiller.get(), storage, true, false);
+	gateway->cc->calculatePaths(config);
+	int superseded = 0;
+	int battleAware = 0;
+	storage->iterateValidNodes({10, 5, 0}, EPathfindingLayer::LAND, [&](NK2AI::AIPathNode & node)
+	{
+		if(node.action == EPathNodeAction::BATTLE && node.specialAction)
+			++battleAware;
+		else if(!node.actor->allowBattle && node.turns != 0xff)
+		{
+			++superseded;
+			EXPECT_EQ(node.action, EPathNodeAction::UNKNOWN);
+			EXPECT_FALSE(node.locked);
+			CDestinationNodeInfo cheaperApproach;
+			cheaperApproach.node = &node;
+			cheaperApproach.cost = node.getCost() - 0.01f;
+			EXPECT_TRUE(cheaperApproach.isBetterWay());
+		}
+	});
+	EXPECT_GT(superseded, 0);
+	EXPECT_GT(battleAware, 0);
 }
 
 TEST_F(Nullkiller2_MovementFailure, townPurchaseRoutePreservesRequiredGarrisonBattle)

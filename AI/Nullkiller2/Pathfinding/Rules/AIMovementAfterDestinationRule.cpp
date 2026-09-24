@@ -344,6 +344,13 @@ namespace AIPathfinding
 				battleNode->specialAction = destNode->specialAction;
 			}
 
+			// MovementCostRule already committed the pre-battle node. Only its
+			// battle-aware replacement may expand beyond this encounter; otherwise
+			// the final hero-chain pass can resume the old node without a battle.
+			// Invalidate it for dominance comparisons too, but keep it unlocked so
+			// a cheaper approach can still relax this actor's node later.
+			if(destination.node != battleNode)
+				destination.node->action = EPathNodeAction::UNKNOWN;
 			destination.node = battleNode;
 			nodeStorage->commit(destination, source);
 
