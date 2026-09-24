@@ -47,7 +47,7 @@ class MagicCallback final : public CBattleCallback
 {
 public:
 	std::vector<BattleAction> submitted;
-	MagicCallback() : CBattleCallback(PlayerColor(0), nullptr) {}
+	explicit MagicCallback(PlayerColor player = PlayerColor(0)) : CBattleCallback(player, nullptr) {}
 	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override
 	{
 		submitted.push_back(action);
@@ -355,6 +355,147 @@ TEST_F(NewHorizonsMagicAITest, RepeatedMovementEvaluationWithSavedPerksIsStableA
 	}
 	RecordProperty("movementEvaluatorSampleCount", sampleCount);
 	RecordProperty("movementEvaluatorSampleMicros", sampleTimes.str());
+}
+
+TEST_F(NewHorizonsMagicAITest, DenseBattleEvaluationWithSavedPerksIsStableAndReadOnly)
+{
+	useCommands = false;
+	useSavedPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+
+	const auto offenseId = SecondarySkill::decode("new-horizons:offense");
+	ASSERT_GE(offenseId, 0);
+	const SecondarySkill offense(offenseId);
+	attackerSideHero->setSecSkillLevel(offense, 2, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:offense", "new-horizons:offense.executioner"});
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:offense", "new-horizons:offense.armorPiercer"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:offense", "new-horizons:offense.executioner"));
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:offense", "new-horizons:offense.armorPiercer"));
+
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	const auto centaur = creatureByName("core:centaur");
+	const auto dwarf = creatureByName("core:dwarf");
+	const auto pikeman = creatureByName("core:pikeman");
+	const std::array<CStack *, 10> stacks{
+		addStack(BattleSide::ATTACKER, centaur, BattleHex(2, 1), 3),
+		addStack(BattleSide::ATTACKER, dwarf, BattleHex(3, 3), 3),
+		addStack(BattleSide::ATTACKER, centaur, BattleHex(2, 5), 3),
+		addStack(BattleSide::ATTACKER, dwarf, BattleHex(3, 7), 3),
+		addStack(BattleSide::ATTACKER, centaur, BattleHex(4, 9), 3),
+		addStack(BattleSide::ATTACKER, dwarf, BattleHex(5, 2), 3),
+		addStack(BattleSide::ATTACKER, centaur, BattleHex(5, 6), 3),
+		addStack(BattleSide::DEFENDER, pikeman, BattleHex(13, 1), 14),
+		addStack(BattleSide::DEFENDER, pikeman, BattleHex(14, 5), 15),
+		addStack(BattleSide::DEFENDER, pikeman, BattleHex(13, 9), 14),
+	};
+	for(const auto * stack : stacks)
+	{
+		ASSERT_NE(stack, nullptr);
+	}
+	auto * active = stacks[8];
+	ASSERT_EQ(active->unitSide(), BattleSide::DEFENDER);
+	ASSERT_EQ(active->getCount(), 15);
+	ASSERT_EQ(battle()->battleGetOwnerHero(active), defenderSideHero);
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(std::ranges::find(stacks, unit) == stacks.end())
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	ASSERT_EQ(battle()->battleGetAllUnits(false).size(), stacks.size());
+	std::set<int32_t> occupiedHexes;
+	for(const auto * stack : stacks)
+	{
+		ASSERT_TRUE(stack->getPosition().isValid());
+		for(const auto & hex : stack->getHexes())
+		{
+			EXPECT_TRUE(hex.isAvailable()) << "unavailable occupied battle hex " << hex;
+			EXPECT_TRUE(occupiedHexes.insert(hex.toInt()).second)
+				<< "overlapping occupied battle hex " << hex;
+		}
+	}
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), active->unitId());
+
+	const auto stateBefore = gameState()->saveToMemory();
+	const auto roundBefore = battle()->battleGetRound();
+	const auto activeUnitBefore = battle()->battleActiveUnit()->unitId();
+	auto snapshotBattleUnits = [&]()
+	{
+		std::vector<std::tuple<uint32_t, int32_t, int32_t, int64_t>> snapshot;
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			snapshot.emplace_back(unit->unitId(), unit->getPosition().toInt(),
+				unit->getCount(), unit->getAvailableHealth());
+		std::ranges::sort(snapshot);
+		return snapshot;
+	};
+	const auto battleUnitsBefore = snapshotBattleUnits();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+
+	constexpr int sampleCount = 3;
+	std::array<BattleAction, sampleCount> actions;
+	std::array<int64_t, sampleCount> sampleMicros{};
+	for(int sample = 0; sample < sampleCount; ++sample)
+	{
+		auto callback = std::make_shared<MagicCallback>(PlayerColor(1));
+		callback->onBattleStarted(battle());
+		const auto started = std::chrono::steady_clock::now();
+		BattleEvaluator evaluator(environment, callback, active, PlayerColor(1), BattleID(0),
+			BattleSide::DEFENDER, 1.0f, 2);
+		actions[sample] = evaluator.selectStackAction(active);
+		const auto finished = std::chrono::steady_clock::now();
+		sampleMicros[sample] = std::chrono::duration_cast<std::chrono::microseconds>(finished - started).count();
+	}
+
+	auto actionIdentity = [](const BattleAction & action)
+	{
+		std::vector<std::pair<int32_t, int32_t>> targetIdentity;
+		targetIdentity.reserve(action.target.size());
+		for(const auto & target : action.target)
+			targetIdentity.emplace_back(target.unitValue, target.hexValue.toInt());
+		return std::tuple{
+			static_cast<int32_t>(action.side), action.stackNumber, static_cast<int32_t>(action.actionType),
+			action.spell.getNum(), action.spellOvercharge, action.spellSelectiveDispel,
+			action.spellCureAffliction.getNum(), action.spellMassSlow, action.perfectMoment,
+			static_cast<int32_t>(action.spellFireWallDirection), action.metamagicFollowup,
+			action.metamagicGrand, action.metamagicDecline, action.timeStopHeroActionPass,
+			action.metamagicManaRefund,
+			static_cast<int32_t>(action.command), action.gatingCreature.getNum(), std::move(targetIdentity)};
+	};
+	const auto firstActionIdentity = actionIdentity(actions.front());
+	for(int sample = 1; sample < sampleCount; ++sample)
+		EXPECT_EQ(actionIdentity(actions[sample]), firstActionIdentity);
+	RecordProperty("denseBattleEvaluatorActionSignature", testing::PrintToString(firstActionIdentity));
+	EXPECT_EQ(actions.front().side, BattleSide::DEFENDER);
+	EXPECT_EQ(actions.front().stackNumber, active->unitId());
+
+	EXPECT_EQ(gameState()->saveToMemory(), stateBefore);
+	EXPECT_EQ(battle()->battleGetRound(), roundBefore);
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeUnitBefore);
+	EXPECT_EQ(snapshotBattleUnits(), battleUnitsBefore);
+
+	std::ostringstream sampleTimes;
+	for(int sample = 0; sample < sampleCount; ++sample)
+	{
+		if(sample != 0)
+			sampleTimes << ',';
+		sampleTimes << sampleMicros[sample];
+	}
+	RecordProperty("denseBattleEvaluatorStackCount", stacks.size());
+	RecordProperty("denseBattleEvaluatorSampleCount", sampleCount);
+	RecordProperty("denseBattleEvaluatorSampleMicros", sampleTimes.str());
 }
 
 TEST_F(NewHorizonsMagicAITest, PhantomArmyValuesTemporaryCombatPowerAndChoosesTheStrongestLegalSource)

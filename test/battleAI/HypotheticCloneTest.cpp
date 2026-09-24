@@ -34,6 +34,14 @@ public:
 class HypotheticCloneTest : public HeroCommandFixture
 {
 protected:
+	void mapLoaded(CMap * map) override
+	{
+		HeroCommandFixture::mapLoaded(map);
+		// Hypothetic Clone mechanics tests exercise core:clone independently of
+		// the New Horizons roster, which intentionally disables that spell.
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+	}
+
 	uint32_t originalId = 0;
 	uint32_t cloneId = 0;
 	std::shared_ptr<CloneEnvironment> environment;

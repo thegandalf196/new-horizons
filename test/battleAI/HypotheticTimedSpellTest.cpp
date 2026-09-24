@@ -363,3 +363,96 @@ TEST_F(HypotheticTimedSpellTest, RemovedRecipientStillAgesTimedSpellAndCommandBo
 	EXPECT_FALSE(unit->getAllBonuses(Bonus::NTurns)->empty());
 	EXPECT_TRUE(unit->alive());
 }
+
+TEST_F(HypotheticTimedSpellTest, CleanNestedQueryRetainsSnapshotsAcrossAuthoritativeMutationsAndDestruction)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
+	const auto hasteBonus = std::make_shared<Bonus>(haste(2));
+	unit->addNewBonus(hasteBonus);
+
+	const auto spellEffects = Selector::sourceTypeSel(BonusSource::SPELL_EFFECT);
+	const auto hasteSelector = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::HASTE)));
+	const auto prayerSelector = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::PRAYER)));
+	const std::string cachingStr = "HypotheticTimedSpellTest.nested-query";
+
+	TConstBonusListPtr initial;
+	TConstBonusListPtr afterAdd;
+	TConstBonusListPtr afterRemove;
+	{
+		auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+		parent->getForUpdate(unit->unitId());
+		HypotheticBattle child(environment.get(), parent);
+		const auto projected = child.getForUpdate(unit->unitId());
+
+		initial = projected->getAllBonuses(spellEffects, cachingStr);
+		ASSERT_EQ(initial->size(), 1u);
+		ASSERT_TRUE(initial->getFirst(hasteSelector));
+		EXPECT_EQ(initial->getFirst(hasteSelector)->turnsRemain, 2);
+
+		const auto prayerBonus = std::make_shared<Bonus>(haste(4));
+		prayerBonus->sid = BonusSourceID(SpellID(SpellID::PRAYER));
+		prayerBonus->val = 4;
+		unit->addNewBonus(prayerBonus);
+		afterAdd = projected->getAllBonuses(spellEffects, cachingStr);
+		ASSERT_EQ(afterAdd->size(), 2u);
+		ASSERT_TRUE(afterAdd->getFirst(prayerSelector));
+		EXPECT_EQ(afterAdd->getFirst(prayerSelector)->val, 4);
+		EXPECT_EQ(initial->size(), 1u);
+		EXPECT_FALSE(initial->getFirst(prayerSelector));
+
+		unit->removeBonus(prayerBonus);
+		afterRemove = projected->getAllBonuses(spellEffects, cachingStr);
+		ASSERT_EQ(afterRemove->size(), 1u);
+		EXPECT_TRUE(afterRemove->getFirst(hasteSelector));
+		EXPECT_FALSE(afterRemove->getFirst(prayerSelector));
+		EXPECT_TRUE(afterAdd->getFirst(prayerSelector));
+	}
+
+	ASSERT_TRUE(initial);
+	ASSERT_TRUE(afterAdd);
+	ASSERT_TRUE(afterRemove);
+	EXPECT_EQ(initial->size(), 1u);
+	EXPECT_TRUE(initial->getFirst(hasteSelector));
+	EXPECT_EQ(afterAdd->size(), 2u);
+	EXPECT_TRUE(afterAdd->getFirst(prayerSelector));
+	EXPECT_EQ(afterRemove->size(), 1u);
+	EXPECT_TRUE(afterRemove->getFirst(hasteSelector));
+}
+
+TEST_F(HypotheticTimedSpellTest, NestedOverlayRemovalAndEmptyProjectionRemainIsolated)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
+	const auto spellEffects = Selector::sourceTypeSel(BonusSource::SPELL_EFFECT);
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	parent->addUnitBonus(unit->unitId(), {haste(5)});
+
+	HypotheticBattle cleanChild(environment.get(), parent);
+	const auto cleanUnit = cleanChild.getForUpdate(unit->unitId());
+	const auto inherited = cleanUnit->getAllBonuses(spellEffects);
+	ASSERT_EQ(inherited->size(), 1u);
+	EXPECT_EQ(inherited->front()->turnsRemain, 5);
+
+	HypotheticBattle removingChild(environment.get(), parent);
+	const auto removingUnit = removingChild.getForUpdate(unit->unitId());
+	const auto retained = removingUnit->getAllBonuses(spellEffects);
+	ASSERT_EQ(retained->size(), 1u);
+	removingUnit->removeUnitBonus(spellEffects);
+	EXPECT_TRUE(removingUnit->getAllBonuses(spellEffects)->empty());
+	EXPECT_EQ(retained->size(), 1u);
+	const auto parentEffects = parent->battleGetUnitByID(unit->unitId())->getAllBonuses(spellEffects);
+	EXPECT_EQ(parentEffects->size(), 1u);
+	EXPECT_EQ(inherited->size(), 1u);
+
+	auto emptyParent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	emptyParent->getForUpdate(unit->unitId()); // Child must inherit this model, not bypass it to the live stack.
+	HypotheticBattle emptyChild(environment.get(), emptyParent);
+	const auto emptyUnit = emptyChild.getForUpdate(unit->unitId());
+	emptyUnit->removeUnitBonus(spellEffects); // Captures an engaged, empty projected-effects snapshot.
+	emptyParent->addUnitBonus(unit->unitId(), {haste()});
+
+	EXPECT_TRUE(emptyUnit->getAllBonuses(spellEffects)->empty());
+	const auto emptyParentEffects = emptyParent->battleGetUnitByID(unit->unitId())->getAllBonuses(spellEffects);
+	ASSERT_EQ(emptyParentEffects->size(), 1u);
+}

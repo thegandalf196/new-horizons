@@ -170,3 +170,60 @@ capacity, room spread over duplicate stacks, mixed-output choice filtering, and
 capacity lost while a conversion query is pending. Client and test targets build;
 the Necromancy summary UI source check also passes. No graphical run or replay of
 the original slow match is included in this result.
+
+### Remaining combat cost after the route correction
+
+A bounded headless `All for One` new-game check of commit `d9774fb54`, with
+seed `1284510375`, completed 43 AI turns in a 35-second observation window.
+It used a separate temporary profile, dummy media drivers, a 200% CPU quota,
+and no autosaves. The final in-progress turn was stopped by the planned timeout.
+No checked crash, failed command, Leadership rejection or capability-load error
+appeared. Path-node allocation warnings were still present. This is not a replay
+of the original slow match, a graphical test, or a controlled before/after pair.
+
+The longest completed turn was blue's day 4, at 5313 milliseconds. Its battle
+began about 94 milliseconds after the turn began and ended shortly before the
+turn finished. Timestamped `activeStack` entry/exit pairs account for 5153
+milliseconds across 72 decisions, with a maximum of 247 milliseconds per
+decision. Post-battle state updates were around 6–8 milliseconds. Thus this
+outlier is cumulative combat evaluation, not one multi-second adventure-path
+update or evidence of a transport stall.
+
+Movement checks against unreachable enemies dominate the visible trace in the
+slower neutral decisions. The next diagnostic should cover a dense mixed-melee
+battle and preserve complete action choices and authoritative state. Repeated
+bonus-list copying in unmodified hypothetical stacks is a source-level candidate,
+not yet a measured bottleneck. Neither reducing search depth nor dropping
+mechanics is an acceptable substitute for measuring and removing redundant work.
+
+### Dense decision diagnostic and rejected bonus-list experiment
+
+`DenseBattleEvaluationWithSavedPerksIsStableAndReadOnly` constructs ten mixed
+melee stacks, selects a defender Pikeman's action against seven enemy stacks,
+and records three fresh evaluator-construction/stack-action samples. It compares
+every current action field and ordered target, as well as serialized live state
+and unit snapshots. Commands are disabled: this is stack-action evaluation, not
+complete hero-spell selection or whole-combat timing. The fixture is synthetic,
+not a reconstruction of the original match.
+
+Baseline samples were 20344, 21637 and 21282 microseconds. An experimental early
+return from `StackWithBonuses::getAllBonuses` for completely untouched overlays
+gave 19517, 21247 and 21093 microseconds. The complete recorded action signature
+matched exactly (WAIT), and all 15 focused diagnostic/timed-effect tests passed
+with and without the experiment. The sparse movement diagnostic was likewise
+essentially unchanged: 1666/1528/1493 versus 1661/1525/1512 microseconds.
+
+This small, unpaired sample does not establish a meaningful improvement. The
+production experiment was therefore removed; the dense diagnostic and nested
+bonus-list lifetime/invalidation/overlay-isolation tests remain. No new cache,
+reduced search depth or altered battle rules were introduced. The remaining
+combat cost still needs narrower attribution, especially in later crowded
+positions rather than only separated opening formations.
+
+The wider battle-AI validation passed all 66 tests across five suites after
+making `HypotheticCloneTest` explicitly use legacy magic rules. Its existing
+Clone lifecycle tests had inherited the New Horizons roster, where `core:clone`
+is intentionally inactive, so their setup casts were correctly rejected. This
+fixture correction preserves all lifecycle assertions and does not enable Clone
+in New Horizons or loosen authoritative spell validation. The diagnostic-only
+changes do not replace the currently promoted playable snapshot.
