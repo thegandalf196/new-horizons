@@ -319,6 +319,9 @@ void AIGateway::heroMovePointsChanged(const CGHeroInstance * hero)
 void AIGateway::garrisonsChanged(ObjectInstanceID id1, ObjectInstanceID id2)
 {
 	LOG_TRACE(logAi);
+	// Army strength changes the guards that projected routes can bypass, even
+	// when recruitment or a transfer leaves every hero on the same tile.
+	nullkiller->invalidatePathfinderData();
 }
 
 void AIGateway::newObject(const CGObjectInstance * obj)

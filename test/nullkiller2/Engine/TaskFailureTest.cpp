@@ -167,6 +167,46 @@ TEST_F(Nullkiller2_MovementFailure, townPurchaseRoutePreservesRequiredEnemyHeroB
 	checkRequiredBattleRoute(false, true, true);
 }
 
+TEST_F(Nullkiller2_MovementFailure, armyChangeRefreshesGuardedRoutesWithoutMovingHero)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).name("ArmyChangeRoute")
+		.playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(0), PlayerColor(0))
+		.heroGarrison({{CreatureID(0), 1}})
+		.monster({10, 5, 0}, CreatureID(0), 100);
+	startWithMap(std::move(builder));
+	revealMap(PlayerColor(0));
+	for(int x = 0; x < 36; ++x)
+		for(int y = 0; y < 36; ++y)
+			map()->getTile({x, y, 0}).terrainType = y == 5 ? ETerrainId::GRASS : ETerrainId::ROCK;
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto position = hero->visitablePos();
+	auto gateway = makeGateway(PlayerColor(0));
+	NK2AI::Goals::TGoalVec priorityTasks;
+	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 1));
+	const int3 target(15, 5, 0);
+	EXPECT_TRUE(gateway->nullkiller->pathfinder->getPathInfo(target).empty());
+	ASSERT_TRUE(hero->setCreature(SlotID(0), CreatureID(27), 100));
+	gateway->garrisonsChanged(hero->id, ObjectInstanceID());
+	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 2));
+	const auto strongerPaths = gateway->nullkiller->pathfinder->getPathInfo(target);
+	ASSERT_FALSE(strongerPaths.empty());
+	for(const auto & path : strongerPaths)
+	{
+		EXPECT_TRUE(std::ranges::any_of(path.nodes, [](const NK2AI::AIPathNodeInfo & node)
+		{
+			return dynamic_cast<const NK2AI::AIPathfinding::BattleAction *>(node.specialAction.get()) != nullptr;
+		}));
+	}
+	ASSERT_TRUE(hero->setCreature(SlotID(0), CreatureID(0), 1));
+	gateway->garrisonsChanged(hero->id, ObjectInstanceID());
+	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 3));
+	EXPECT_TRUE(gateway->nullkiller->pathfinder->getPathInfo(target).empty());
+	EXPECT_EQ(hero->visitablePos(), position);
+}
+
 TEST(Nullkiller2_Engine_TaskFailure, triesNextTaskWhenAnotherCandidateIsAvailable)
 {
 	EXPECT_EQ(
