@@ -631,7 +631,12 @@ generation together when installing this table.
 
 ## Dynamic Overcharge outcome preview — 2026-09-24
 
-- **Status:** Accepted; implementation pending.
+- **Status:** Implemented in source; native client build and source guard pass.
+  Rendered layout and player interaction acceptance remain pending.
+- **Validation:** Focused native tests cover wounded and temporary-health
+  forecast copies, unchanged original stacks, and Overcharge forecast damage
+  and casualties matching the authoritative cast. The focused 17-test run
+  passed with the New Horizons test preset enabled.
 - **Rule:** The Overcharge dialog (currently Magic Arrow) dynamically compares
   the selected target's expected damage and creature casualties without
   Overcharge against the currently selected Overcharge amount. Refresh these

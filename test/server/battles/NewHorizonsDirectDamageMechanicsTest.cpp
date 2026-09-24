@@ -14,6 +14,7 @@
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/battle/BattleHexArray.h"
+#include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/battle/Destination.h"
 #include "../../../lib/callback/CGameInfoCallback.h"
 #include "../../../lib/gameState/CGameState.h"
@@ -25,6 +26,7 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/ProxyCaster.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/effects/Effect.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/bonuses/Limiters.h"
@@ -527,6 +529,72 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(before - target->getAvailableHealth(), 352);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 8);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeHealthChangeForecastCopiesWoundsAndTemporaryHealth)
+{
+	forceRealHeroScale = true;
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+
+	int64_t initialWound = 1;
+	target->health.damage(initialWound);
+	ASSERT_EQ(initialWound, 1);
+	target->health.addTemporaryHitPoints(std::max<int64_t>(1, target->getMaxHealth() / 2));
+	const auto healthBefore = target->getAvailableHealth();
+	const auto countBefore = target->getCount();
+	const auto firstHPBefore = target->getFirstHPleft();
+	const auto temporaryHealthBefore = target->health.getTemporaryHitPoints();
+
+	spells::Target aim;
+	aim.emplace_back(target);
+	spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	legal.setOvercharge(4);
+	auto mechanics = spell->battleMechanics(&legal);
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(mechanics->canBeCast(problem));
+	ASSERT_TRUE(mechanics->canBeCastAt(aim, problem));
+	ASSERT_EQ(mechanics->getEffectValue(), 352);
+
+	// Compute expected casualties by applying the selected raw damage to a real
+	// detached copy of the wounded, temporarily reinforced stack.
+	auto simulatedState = target->acquireState();
+	ASSERT_NE(simulatedState, nullptr);
+	int64_t simulatedDamage = mechanics->getEffectValue();
+	simulatedState->damage(simulatedDamage);
+	ASSERT_EQ(simulatedDamage, mechanics->getEffectValue());
+	const auto expectedHealthDelta = simulatedState->getAvailableHealth() - healthBefore;
+	const auto expectedUnitsDelta = simulatedState->getCount() - countBefore;
+	ASSERT_LT(expectedUnitsDelta, 0);
+
+	const auto spellTarget = mechanics->canonicalizeTarget(aim);
+	spells::effects::SpellEffectValue forecast;
+	mechanics->forEachEffect([&](const spells::effects::Effect & effect)
+	{
+		const auto affected = effect.transformTarget(mechanics.get(), aim, spellTarget);
+		forecast += effect.getHealthChange(mechanics.get(), affected);
+		return false;
+	});
+	EXPECT_EQ(forecast.hpDelta, expectedHealthDelta);
+	EXPECT_EQ(forecast.hpDelta, -352);
+	EXPECT_EQ(forecast.unitsDelta, expectedUnitsDelta);
+
+	// The hover-style forecast mutates only its copy. The original stack still
+	// has its wound, count, and temporary HP until the authoritative action.
+	EXPECT_EQ(target->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(target->getCount(), countBefore);
+	EXPECT_EQ(target->getFirstHPleft(), firstHPBefore);
+	EXPECT_EQ(target->health.getTemporaryHitPoints(), temporaryHealthBefore);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.spellOvercharge = 4;
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(healthBefore - target->getAvailableHealth(), -forecast.hpDelta);
+	EXPECT_EQ(countBefore - target->getCount(), -forecast.unitsDelta);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, WisdomDiscountsMagicArrowBaseButNotOverchargeSurcharge)

@@ -352,6 +352,104 @@ TEST_F(DamageApplyTest, GetHealthChangeAliveUnit)
 	EXPECT_EQ(result.unitsDelta, -1);
 }
 
+TEST_F(DamageApplyTest, GetHealthChangeUsesInjuredUnitCopyForCasualties)
+{
+	EffectFixture::setupEffect(JsonNode());
+	using namespace ::battle;
+
+	const int64_t effectValue = 40;
+	const int32_t unitAmount = 25;
+	const int32_t unitHP = 100;
+	const uint32_t unitId = 42;
+	auto & targetUnit = unitsFake.add(BattleSide::ATTACKER);
+
+	targetUnit.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, unitHP, BonusSourceID()));
+	EXPECT_CALL(targetUnit, unitId()).WillRepeatedly(Return(unitId));
+	EXPECT_CALL(targetUnit, unitBaseAmount()).WillRepeatedly(Return(unitAmount));
+	EXPECT_CALL(targetUnit, alive()).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, adjustEffectValue(Eq(&targetUnit))).WillOnce(Return(effectValue));
+
+	unitsFake.setDefaultBonusExpectations();
+	auto targetUnitState = std::make_shared<CUnitStateDetached>(&targetUnit, &targetUnit);
+	targetUnitState->localInit(&unitEnvironmentMock);
+	int64_t initialDamage = 80;
+	targetUnitState->damage(initialDamage);
+	ASSERT_EQ(initialDamage, 80);
+	ASSERT_EQ(targetUnitState->getFirstHPleft(), 20);
+	const auto healthBefore = targetUnitState->getAvailableHealth();
+	const auto countBefore = targetUnitState->getCount();
+
+	std::shared_ptr<CUnitState> forecastState;
+	EXPECT_CALL(targetUnit, acquireState()).WillOnce(Invoke([&]()
+	{
+		forecastState = targetUnitState->acquireState();
+		return forecastState;
+	}));
+	Target target;
+	target.emplace_back(&targetUnit, BattleHex());
+
+	auto result = subject->getHealthChange(&mechanicsMock, target);
+
+	ASSERT_NE(forecastState, nullptr);
+	EXPECT_EQ(result.hpDelta, -effectValue);
+	EXPECT_EQ(result.unitsDelta, -1);
+	EXPECT_EQ(forecastState->getAvailableHealth(), healthBefore - effectValue);
+	EXPECT_EQ(forecastState->getCount(), countBefore - 1);
+	EXPECT_EQ(forecastState->getFirstHPleft(), 80);
+	EXPECT_EQ(targetUnitState->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(targetUnitState->getCount(), countBefore);
+	EXPECT_EQ(targetUnitState->getFirstHPleft(), 20);
+}
+
+TEST_F(DamageApplyTest, GetHealthChangeConsumesTemporaryHealthOnCopyBeforeCreatureHealth)
+{
+	EffectFixture::setupEffect(JsonNode());
+	using namespace ::battle;
+
+	const int64_t effectValue = 120;
+	const int32_t unitAmount = 25;
+	const int32_t unitHP = 100;
+	const uint32_t unitId = 42;
+	auto & targetUnit = unitsFake.add(BattleSide::ATTACKER);
+
+	targetUnit.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, unitHP, BonusSourceID()));
+	EXPECT_CALL(targetUnit, unitId()).WillRepeatedly(Return(unitId));
+	EXPECT_CALL(targetUnit, unitBaseAmount()).WillRepeatedly(Return(unitAmount));
+	EXPECT_CALL(targetUnit, alive()).WillRepeatedly(Return(true));
+	EXPECT_CALL(mechanicsMock, adjustEffectValue(Eq(&targetUnit))).WillOnce(Return(effectValue));
+
+	unitsFake.setDefaultBonusExpectations();
+	auto targetUnitState = std::make_shared<CUnitStateDetached>(&targetUnit, &targetUnit);
+	targetUnitState->localInit(&unitEnvironmentMock);
+	targetUnitState->health.addTemporaryHitPoints(40);
+	const auto healthBefore = targetUnitState->getAvailableHealth();
+	const auto countBefore = targetUnitState->getCount();
+	ASSERT_EQ(healthBefore, unitAmount * unitHP + 40);
+
+	std::shared_ptr<CUnitState> forecastState;
+	EXPECT_CALL(targetUnit, acquireState()).WillOnce(Invoke([&]()
+	{
+		forecastState = targetUnitState->acquireState();
+		return forecastState;
+	}));
+	Target target;
+	target.emplace_back(&targetUnit, BattleHex());
+
+	auto result = subject->getHealthChange(&mechanicsMock, target);
+
+	ASSERT_NE(forecastState, nullptr);
+	EXPECT_EQ(result.hpDelta, -effectValue);
+	EXPECT_EQ(result.unitsDelta, 0);
+	EXPECT_EQ(forecastState->getAvailableHealth(), healthBefore - effectValue);
+	EXPECT_EQ(forecastState->getCount(), countBefore);
+	EXPECT_EQ(forecastState->getFirstHPleft(), 20);
+	EXPECT_EQ(forecastState->health.getTemporaryHitPoints(), 0);
+	EXPECT_EQ(targetUnitState->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(targetUnitState->getCount(), countBefore);
+	EXPECT_EQ(targetUnitState->getFirstHPleft(), unitHP);
+	EXPECT_EQ(targetUnitState->health.getTemporaryHitPoints(), 40);
+}
+
 TEST_F(DamageApplyTest, AppliesChainFactorToSubsequentTargets)
 {
 	{
