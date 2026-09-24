@@ -1,0 +1,18 @@
+{
+	"core:magicSpring": {
+		"types": {
+			"magicSpring": {
+				"description": "Restores Normal Spell Points to maximum and grants 25 Buffer Spell Points. The spring can be used once per week.",
+				"onEmptyMessage": "The Magic Spring has already been used this week.",
+				"onVisitedMessage": "The Magic Spring has already been used this week.",
+				"rewards": [
+					{
+						"message": "The Magic Spring restores your Normal Spell Points and grants 25 Buffer Spell Points.",
+						"manaPercentage": 100,
+						"manaBuffer": 25
+					}
+				]
+			}
+		}
+	}
+}

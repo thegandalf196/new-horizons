@@ -705,8 +705,8 @@ std::vector<SetMana> NewTurnProcessor::updateHeroesManaPoints()
 		{
 			int32_t newMana = h->getManaNewTurn();
 
-			if (newMana != h->mana)
-				result.emplace_back(h->id, newMana, ChangeValueMode::ABSOLUTE);
+			if (newMana != h->getNormalSpellPoints())
+				result.emplace_back(h->id, SetMana::Operation::SET_NORMAL, newMana);
 		}
 	}
 	return result;

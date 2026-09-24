@@ -1,0 +1,7 @@
+{
+	"core:spellbindersHat": {
+		"text": {
+			"description": "While equipped, all available Level 5 combat spells are inscribed in your spellbook. Removing the hat removes only the spells it supplies, not spells you have learned. Normal spell costs and casting rules still apply."
+		}
+	}
+}

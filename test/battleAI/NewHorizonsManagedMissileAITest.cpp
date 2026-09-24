@@ -124,7 +124,7 @@ protected:
 		attackerSideHero->removeAllSpells();
 		attackerSideHero->addSpellToSpellbook(missile); // Also probes possession bypass in old69.
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 9900, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->mana = 1000;
+		setTestSpellPointTotal(attackerSideHero, 1000);
 		startBattle();
 		beginCombat();
 		active = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 100);
@@ -157,7 +157,7 @@ TEST_F(NewHorizonsManagedMissileAITest, ActualEvaluatorSelectsManagedIdentityAnd
 	ASSERT_LT(19820, enemy->getAvailableHealth());
 	ASSERT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 	const auto health = enemy->getAvailableHealth();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(choose());
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	const auto & action = callback->submitted.front();
@@ -173,10 +173,10 @@ TEST_F(NewHorizonsManagedMissileAITest, ActualEvaluatorSelectsManagedIdentityAnd
 	ASSERT_NE(selectedUnit, nullptr);
 	ASSERT_EQ(selectedUnit->unitId(), enemy->unitId());
 	EXPECT_EQ(enemy->getAvailableHealth(), health) << "AI selection must not apply its prediction to real units";
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(enemy->getAvailableHealth(), health - 19820);
-	EXPECT_EQ(attackerSideHero->mana, mana - 5);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 5);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 }
@@ -189,8 +189,8 @@ TEST_F(NewHorizonsManagedMissileAITest, ActualEvaluatorCannotSelectExcludedManag
 	ASSERT_TRUE(choose());
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	ASSERT_EQ(callback->submitted.front().actionType, EActionType::HERO_COMMAND);
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), callback->submitted.front()));
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_TRUE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
 }

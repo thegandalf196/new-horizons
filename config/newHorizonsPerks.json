@@ -2021,10 +2021,10 @@
 					"id": "new-horizons:wisdom.intelligence",
 					"name": "Intelligence",
 					"requires": "basic",
-					"description": "Maximum Mana increases by 25% of Knowledge, rounded down.",
+					"description": "Maximum Spell Points are 130% of effective Knowledge, rounded down. Increasing capacity does not restore Spell Points.",
 					"effect": {
-						"status": "planned",
-						"description": "Maximum Mana increases by 25% of Knowledge, rounded down."
+						"status": "active",
+						"description": "Maximum Spell Points are 130% of effective Knowledge, rounded down. Increasing capacity does not restore Spell Points."
 					}
 				},
 				{

@@ -1207,6 +1207,23 @@ void CGameState::apply(CPackForClient & pack)
 
 	GameStatePackVisitor visitor(*this);
 	pack.visit(visitor);
+
+	// Packs may detach and reattach artifacts or otherwise change a hero's
+	// Knowledge/perks in several visitor steps. Reconcile once after the whole
+	// authoritative operation so intermediate equipment states cannot discard
+	// Normal Spell Points.
+	if(newHorizonsMagic::spellPointRulesActive(magicRules))
+	{
+		for(auto * hero : getMap().getObjects<CGHeroInstance>())
+			if(hero->areSpellPointsInitialized())
+				hero->clampSpellPointsToCapacity();
+		for(const auto heroType : getMap().getHeroesInPool())
+		{
+			auto * hero = getMap().tryGetFromHeroPool(heroType);
+			if(hero && hero->areSpellPointsInitialized())
+				hero->clampSpellPointsToCapacity();
+		}
+	}
 }
 
 void CGameState::calculatePaths(const std::shared_ptr<PathfinderConfig> & config) const
@@ -1697,6 +1714,21 @@ void CGameState::restoreBonusSystemTree()
 
 	for(auto & heroID : map->getHeroesInPool())
 		map->tryGetFromHeroPool(heroID)->artDeserializationFix(*this, map->tryGetFromHeroPool(heroID));
+
+	// Saved Normal values are decoded before hero bonuses are rebuilt. Reconcile
+	// only after the complete bonus tree and artifact attachments are restored.
+	if(newHorizonsMagic::spellPointRulesActive(magicRules))
+	{
+		for(auto * hero : map->getObjects<CGHeroInstance>())
+			if(hero->areSpellPointsInitialized())
+				hero->clampSpellPointsToCapacity();
+		for(const auto heroID : map->getHeroesInPool())
+		{
+			auto * hero = map->tryGetFromHeroPool(heroID);
+			if(hero && hero->areSpellPointsInitialized())
+				hero->clampSpellPointsToCapacity();
+		}
+	}
 
 	if (campaign)
 		campaign->setGamestate(this);

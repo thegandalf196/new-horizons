@@ -87,7 +87,9 @@ def main():
         'creatures': creature_patch_files,
         'heroClasses': hero_class_patch_files,
         'heroes': hero_patch_files,
+        'artifacts': ['config/artifacts/spellbindersHat.json'],
         'factions': faction_patch_files,
+        'objects': ['config/objects/magicSpring.json'],
         'spells': [
             'config/spells/newHorizons.json',
             'config/spells/iceBolt.json',
@@ -143,7 +145,7 @@ def main():
         settings['heroes']['newHorizonsPerks'] = canonical('newHorizonsPerks.json')
         # Random artifact exclusions change new-game content; managed profiles
         # must not silently retain the older module settings.
-        metadata['version'] = '0.12.0'
+        metadata['version'] = '0.13.0'
         metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
         metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
         metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry; active entries '

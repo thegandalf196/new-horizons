@@ -33,9 +33,18 @@ assert "(inclusive)." in status
 # The 70px status strip stays within the side panel, while Counterspell and
 # Warcasting each retain their own row above a readable three-line action area.
 assert "constexpr int effectAreaWidth = 70;" in layout
-assert "constexpr int effectAreaRowHeight = 26;" in layout
-assert "constexpr int actionCountLineHeight = 12;" in layout
-assert "constexpr int actionCountPanelHeight = actionCountLineHeight * 3;" in layout
+assert "constexpr int effectAreaRowHeight = 32;" in layout
+assert "constexpr int actionCountLineHeight = 14;" in layout
+assert "constexpr int actionCountHeaderHeight = 18;" in layout
+assert "constexpr int actionCountPanelPadding = 6;" in layout
+assert "constexpr int actionCountPanelHeight = actionCountHeaderHeight + actionCountLineHeight * 3 + actionCountPanelPadding;" in layout
+assert 'ImagePath::builtin("DIBOXBCK")' in status
+assert "ColorRGBA(145, 18, 12), 2" in status
+assert "ColorRGBA(213, 185, 117)" in status
+assert 'addCount(0, "Hero", actionCounts.heroActions);' in status
+assert 'addCount(1, "Order", actionCounts.orderActions);' in status
+assert 'addCount(2, "Spell", actionCounts.spellActions);' in status
+assert "ETextAlignment::BOTTOMRIGHT, count > 0" in status
 assert "constexpr int effectAreaMaxStatusRows = 2;" in layout
 assert "constexpr int effectAreaHeight = effectAreaRowHeight * effectAreaMaxStatusRows + actionCountPanelHeight;" in layout
 assert "constexpr int outsideStackPanelOffsetY = effectAreaTop + effectAreaHeight + 3;" in layout

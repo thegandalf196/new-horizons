@@ -1644,10 +1644,25 @@ void CGameHandler::setMovePoints(ObjectInstanceID hid, int val)
 
 void CGameHandler::setManaPoints(ObjectInstanceID hid, int val)
 {
-	SetMana sm;
-	sm.hid = hid;
-	sm.val = val;
-	sm.mode = ChangeValueMode::ABSOLUTE;
+	SetMana sm(hid, SetMana::Operation::SET_NORMAL, std::max(val, 0));
+	sendAndApply(sm);
+}
+
+void CGameHandler::restoreSpellPoints(ObjectInstanceID hid, int32_t amount)
+{
+	SetMana sm(hid, SetMana::Operation::RESTORE_NORMAL, amount);
+	sendAndApply(sm);
+}
+
+void CGameHandler::spendSpellPoints(ObjectInstanceID hid, int64_t amount)
+{
+	SetMana sm(hid, SetMana::Operation::SPEND, amount);
+	sendAndApply(sm);
+}
+
+void CGameHandler::grantBufferSpellPoints(ObjectInstanceID hid, int32_t amount)
+{
+	SetMana sm(hid, SetMana::Operation::GRANT_BUFFER, amount);
 	sendAndApply(sm);
 }
 

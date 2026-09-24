@@ -17,6 +17,7 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/entities/artifact/CArtifactInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/constants/StringConstants.h"
 #include "../../lib/callback/CBattleCallback.h"
@@ -154,7 +155,7 @@ TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithou
 	const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER,
 		2 * attackerSideHero->getEffectPowerDivisor(spell), ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	ASSERT_NO_FATAL_FAILURE(startBattle());
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
@@ -230,7 +231,7 @@ TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithou
 		EXPECT_EQ(target.front().unitValue, valuable);
 		EXPECT_EQ(valuable->getAvailableHealth(), health);
 		EXPECT_TRUE(weak->alive());
-		EXPECT_EQ(attackerSideHero->mana, 1000);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 	}
 }
 
@@ -255,7 +256,7 @@ TEST_F(NewHorizonsMagicAITest, PhantomArmyValuesTemporaryCombatPowerAndChoosesTh
 	const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
 	ASSERT_GE(sorcery, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 3, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 
 	ASSERT_NO_FATAL_FAILURE(startBattle());
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
@@ -297,7 +298,7 @@ TEST_F(NewHorizonsMagicAITest, PhantomArmyValuesTemporaryCombatPowerAndChoosesTh
 	EXPECT_EQ(target.front().unitValue, strongSource);
 
 	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(attackerSideHero->mana, 1000 - battle()->battleGetSpellCost(spell, attackerSideHero));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000 - battle()->battleGetSpellCost(spell, attackerSideHero));
 }
 
 TEST_F(NewHorizonsMagicAITest, CounterspellAIArmsAThreatWardAndSkipsAnAlreadyArmedWard)
@@ -317,8 +318,8 @@ TEST_F(NewHorizonsMagicAITest, CounterspellAIArmsAThreatWardAndSkipsAnAlreadyArm
 		defenderSideHero->removeSpellFromSpellbook(spell);
 	attackerSideHero->addSpellToSpellbook(counterspell);
 	defenderSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
-	attackerSideHero->mana = 100;
-	defenderSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
+	setTestSpellPointTotal(defenderSideHero, 100);
 	ASSERT_NO_FATAL_FAILURE(startBattle());
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
 
@@ -393,6 +394,95 @@ TEST_F(NewHorizonsMagicAITest, CounterspellAIArmsAThreatWardAndSkipsAnAlreadyArm
 	EXPECT_TRUE(callback->submitted.empty());
 }
 
+TEST_F(NewHorizonsMagicAITest, CounterspellAIRecognizesEnemyHatOnlyLevelFiveSpellThreat)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	const auto counterspell = SpellID(SpellID::decode("new-horizons:counterspell"));
+	const auto armageddon = SpellID(SpellID::decode("core:armageddon"));
+	const ArtifactID spellbindersHat(ArtifactID::decode("core:spellbindersHat"));
+	ASSERT_TRUE(counterspell.hasValue());
+	ASSERT_TRUE(armageddon.hasValue());
+	ASSERT_TRUE(spellbindersHat.hasValue());
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	attackerSideHero->removeAllSpells();
+	defenderSideHero->removeAllSpells();
+	attackerSideHero->addSpellToSpellbook(counterspell);
+	ASSERT_TRUE(defenderSideHero->getSpellsInSpellbook().empty());
+	ASSERT_EQ(defenderSideHero->getSpellLevel(armageddon.toSpell()), 5);
+	giveArtifact(defenderSideHero, spellbindersHat, ArtifactPosition::HEAD);
+	ASSERT_NE(defenderSideHero->getArt(ArtifactPosition::HEAD), nullptr);
+	ASSERT_EQ(defenderSideHero->getArt(ArtifactPosition::HEAD)->getTypeId(), spellbindersHat);
+	ASSERT_FALSE(defenderSideHero->spellbookContainsSpell(armageddon));
+	ASSERT_TRUE(vstd::contains(defenderSideHero->getInscribedSpellsForCasting(), armageddon));
+	setTestSpellPointTotal(attackerSideHero, 100);
+	setTestSpellPointTotal(defenderSideHero, 100);
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
+	addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 1);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit->unitSide() == BattleSide::ATTACKER)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	ASSERT_TRUE(defenderSideHero->hasSpellbook());
+	ASSERT_TRUE(defenderSideHero->canCastThisSpell(armageddon.toSpell()));
+	ASSERT_GE(defenderSideHero->getManaAvailable(),
+		battle()->battleGetSpellCost(armageddon.toSpell(), defenderSideHero));
+	const auto counterspellCost = battle()->battleGetSpellCost(counterspell.toSpell(), attackerSideHero);
+	const auto armageddonWardCost = newHorizonsMagic::counterspellCost(
+		defenderSideHero->getListedSpellCost(armageddon.toSpell()), false);
+	ASSERT_GE(attackerSideHero->getManaAvailable() - counterspellCost, armageddonWardCost);
+
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, counterspell);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), callback->submitted.front()));
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
+
+	ASSERT_TRUE(gameHandler->moveArtifact(PlayerColor(1),
+		ArtifactLocation(defenderSideHero->id, ArtifactPosition::HEAD),
+		ArtifactLocation(defenderSideHero->id, ArtifactPosition::BACKPACK_START)));
+	EXPECT_FALSE(defenderSideHero->isSpellInscribedForCasting(armageddon));
+	EXPECT_FALSE(vstd::contains(defenderSideHero->getInscribedSpellsForCasting(), armageddon));
+
+	// Clear only the state produced by the accepted cast so the next evaluation
+	// isolates the removed artifact's threat contribution.
+	auto & attackerState = battle()->getSide(BattleSide::ATTACKER);
+	attackerState.counterspellArmed = false;
+	attackerState.castSpellsCount = 0;
+	attackerState.heroCommandUsed = false;
+	callback->submitted.clear();
+	BattleEvaluator noHatEvaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	noHatEvaluator.selectStackAction(active);
+	EXPECT_FALSE(noHatEvaluator.attemptCastingSpell(active));
+	EXPECT_TRUE(callback->submitted.empty());
+}
+
 TEST_F(NewHorizonsMagicAITest, MetamagicAIRetainsAllowanceInsteadOfCastingHarmfulFollowup)
 {
 	useCommands = false;
@@ -408,7 +498,7 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIRetainsAllowanceInsteadOfCastingHarmfu
 	for(const auto spell : knownSpells)
 		attackerSideHero->removeSpellFromSpellbook(spell);
 	attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 
 	ASSERT_NO_FATAL_FAILURE(startBattle());
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
@@ -477,7 +567,7 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIUsesOrdinaryRepeatedSpellAndLeavesGran
 	for(const auto spell : knownSpells)
 		attackerSideHero->removeSpellFromSpellbook(spell);
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 
 	ASSERT_NO_FATAL_FAILURE(startBattle());
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
@@ -535,7 +625,7 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIChoosesGrandForAHighValueDistinctAlter
 	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
 	attackerSideHero->addSpellToSpellbook(SpellID::FIREBALL);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 
 	ASSERT_NO_FATAL_FAILURE(startBattle());
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
@@ -577,7 +667,7 @@ TEST_F(NewHorizonsMagicAITest, ResurrectionCanonicalTargetReacquiresProjectedSta
 {
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	attackerSideHero->addSpellToSpellbook(SpellID::RESURRECTION);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	const auto * unit = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(8, 5), 1);
 	const auto health = unit->getAvailableHealth();
 	auto environment = std::make_shared<MagicEnvironment>(gameState());
@@ -604,7 +694,7 @@ TEST_F(NewHorizonsMagicAITest, ResurrectionCanonicalTargetReacquiresProjectedSta
 	cast.castEval(model.getServerCallback(), aim);
 	EXPECT_TRUE(projectedUnit->alive());
 	EXPECT_EQ(unit->getAvailableHealth(), health);
-	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 }
 
 TEST_F(NewHorizonsMagicAITest, CreatureSpellPreviewUsesCurrentVictimControlAndTracksRestoration)
@@ -659,7 +749,7 @@ TEST_F(NewHorizonsMagicAITest, RemoveObstacleEnumeratesNormalizedLocationAndRemo
 	attackerSideHero->addSpellToSpellbook(SpellID::REMOVE_OBSTACLE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:natureMagic")),
 		3, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	SpellCreatedObstacle obstacle;
 	obstacle.uniqueID = 0;
 	obstacle.ID = SpellID::FORCE_FIELD;
@@ -690,7 +780,7 @@ TEST_F(NewHorizonsMagicAITest, RemoveObstacleEnumeratesNormalizedLocationAndRemo
 	EXPECT_TRUE(model.hasObstacleChanges());
 	EXPECT_EQ(battle()->getAllObstacles().size(), 1u);
 	EXPECT_EQ(battle()->getAccessibility()[obstacle.pos.toInt()], EAccessibility::OBSTACLE);
-	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -699,7 +789,7 @@ TEST_F(NewHorizonsMagicAITest, RemoveObstacleEnumeratesNormalizedLocationAndRemo
 	const auto cost = attackerSideHero->getSpellCost(spell);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_TRUE(battle()->getAllObstacles().empty());
-	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000 - cost);
 }
 
 TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIProducesCompactOrientedActionServerAcceptsIt)
@@ -713,7 +803,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIProducesCompactOrientedActionS
 	attackerSideHero->addSpellToSpellbook(SpellID::FIRE_WALL);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -785,7 +875,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIProducesCompactOrientedActionS
 	ASSERT_TRUE(mechanics->canBeCastAt(footprint));
 	EXPECT_GT(SpellTargetEvaluator::fireWallPlacementValue(mechanics.get(), footprint), 0.0f);
 
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	ASSERT_EQ(battle()->obstacles.size(), obstaclesBefore + 1);
 	const auto wallIt = std::find_if(battle()->obstacles.begin(), battle()->obstacles.end(), [](const auto & obstacle)
@@ -801,7 +891,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIProducesCompactOrientedActionS
 		EXPECT_TRUE(wall->customSize.contains(destination.hexValue));
 	EXPECT_TRUE(wall->damageSnapshot);
 	EXPECT_TRUE(wall->passable);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 12);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 12);
 }
 
 TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIAvoidsFriendlyGroundExposure)
@@ -815,7 +905,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIAvoidsFriendlyGroundExposure)
 	attackerSideHero->addSpellToSpellbook(SpellID::FIRE_WALL);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -877,7 +967,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireWallAIRejectsZeroHostilePressure)
 	attackerSideHero->addSpellToSpellbook(SpellID::FIRE_WALL);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -920,7 +1010,7 @@ TEST_F(NewHorizonsMagicAITest, LandMineAIUsesExactSpellPowerCountAndOnlyLiveLega
 		attackerSideHero->removeSpellFromSpellbook(spell);
 	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -956,7 +1046,7 @@ TEST_F(NewHorizonsMagicAITest, LandMineAIUsesExactSpellPowerCountAndOnlyLiveLega
 			EXPECT_TRUE(selected.insert(destination.hexValue.toInt()).second);
 		}
 		EXPECT_TRUE(mechanics->canBeCastAt(targets.front()));
-		EXPECT_EQ(attackerSideHero->mana, 1000);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 		EXPECT_EQ(battle()->obstacles.size(), obstaclesBefore);
 	}
 
@@ -985,7 +1075,7 @@ TEST_F(NewHorizonsMagicAITest, LandMineAISelectsHostileGroundApproachPressureAnd
 	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -1052,7 +1142,7 @@ TEST_F(NewHorizonsMagicAITest, LandMinePlacementIgnoresImmuneClusterForSusceptib
 	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -1107,7 +1197,7 @@ TEST_F(NewHorizonsMagicAITest, LandMinePlacementUsesDamageScaleAndSkipsTinyOrImm
 	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -1170,7 +1260,7 @@ TEST_F(NewHorizonsMagicAITest, LandMinePlacementCountsEachConsumableMineOnceAcro
 	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -1217,7 +1307,7 @@ TEST_F(NewHorizonsMagicAITest, LandMinePlacementUsesMaximumWeightDistinctMineAss
 	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -1264,7 +1354,7 @@ TEST_F(NewHorizonsMagicAITest, LandMinePlacementIsInvariantToTargetVectorPermuta
 	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -1307,7 +1397,7 @@ TEST_F(NewHorizonsMagicAITest, LandMineDoesNotOutrankImmediateMagicArrowOnTheSam
 	attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 
@@ -1351,7 +1441,7 @@ TEST_F(NewHorizonsMagicAITest, LandMineAILeavesLegacyNoTargetSelectionUntouched)
 	for(const auto spell : knownSpells)
 		attackerSideHero->removeSpellFromSpellbook(spell);
 	attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 
 	const auto * spell = SpellID(SpellID::LAND_MINE).toSpell();
 	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
@@ -1368,7 +1458,7 @@ TEST_F(NewHorizonsMagicAITest, ForceFieldCastEvaluationCreatesIsolatedBlockingOb
 {
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	attackerSideHero->addSpellToSpellbook(SpellID::FORCE_FIELD);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	const auto * spell = SpellID(SpellID::FORCE_FIELD).toSpell();
 	const BattleHex destination(8, 5);
 	const battle::Target target{battle::Destination(destination)};
@@ -1386,7 +1476,7 @@ TEST_F(NewHorizonsMagicAITest, ForceFieldCastEvaluationCreatesIsolatedBlockingOb
 	EXPECT_TRUE(model.hasObstacleChanges());
 	EXPECT_EQ(model.getAccessibility()[destination.toInt()], EAccessibility::OBSTACLE);
 	EXPECT_TRUE(battle()->getAllObstacles().empty());
-	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -1396,7 +1486,7 @@ TEST_F(NewHorizonsMagicAITest, ForceFieldCastEvaluationCreatesIsolatedBlockingOb
 	const auto cost = attackerSideHero->getSpellCost(spell);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(battle()->getAccessibility()[destination.toInt()], EAccessibility::OBSTACLE);
-	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000 - cost);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 }
 
@@ -1410,7 +1500,7 @@ TEST_F(NewHorizonsMagicAITest, SacrificeAccountsForRemovedVictimAndKeepsHypothet
 	attackerSideHero->addSpellToSpellbook(SpellID::SACRIFICE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:shadowMagic")),
 		3, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	auto * victim = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(2, 5), 300);
 	auto * corpse = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(3, 5), 1);
 	addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(14, 5), 500);
@@ -1464,7 +1554,7 @@ TEST_F(NewHorizonsMagicAITest, SacrificeAccountsForRemovedVictimAndKeepsHypothet
 	EXPECT_FALSE(corpse->alive());
 	EXPECT_FALSE(victim->isGhost());
 	EXPECT_EQ(victim->getAvailableHealth(), victimHealth);
-	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
 
 	BattleAction action;
@@ -1476,7 +1566,7 @@ TEST_F(NewHorizonsMagicAITest, SacrificeAccountsForRemovedVictimAndKeepsHypothet
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_TRUE(corpse->alive());
 	EXPECT_TRUE(victim->isGhost());
-	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000 - cost);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 }
 
@@ -1490,7 +1580,7 @@ TEST_F(NewHorizonsMagicAITest, TeleportEvaluatorMovesSlowArmyToDistantThreatWith
 	attackerSideHero->addSpellToSpellbook(SpellID::TELEPORT);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")),
 		3, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 
 	const BattleHex origin(2, 5);
 	const BattleHex distantPosition(14, 5);
@@ -1519,12 +1609,12 @@ TEST_F(NewHorizonsMagicAITest, TeleportEvaluatorMovesSlowArmyToDistantThreatWith
 	ASSERT_EQ(action.spell, SpellID::TELEPORT);
 	EXPECT_EQ(active->getPosition(), origin);
 	EXPECT_EQ(distant->getPosition(), distantPosition);
-	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_NE(active->getPosition(), origin);
 	EXPECT_EQ(distant->getPosition(), distantPosition);
-	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000 - cost);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 }
 
@@ -1543,7 +1633,7 @@ TEST_F(NewHorizonsMagicAITest, SelectiveDispelPreservesBeneficialEffectWhenFullD
 	attackerSideHero->applyPerkSelection({
 		"new-horizons:sorceryMagic",
 		"new-horizons:sorceryMagic.selectiveDispel"});
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(
 		"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel"));
 	ASSERT_NO_FATAL_FAILURE(startBattle());
@@ -1622,7 +1712,7 @@ TEST_F(NewHorizonsMagicAITest, SelectiveDispelPreservesBeneficialEffectWhenFullD
 	const auto target = action.getTarget(battle());
 	ASSERT_EQ(target.size(), 1u);
 	EXPECT_EQ(target.front().unitValue, active);
-	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 	EXPECT_TRUE(active->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS)))));
 	EXPECT_TRUE(active->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::CURSE)))));
 }
@@ -1641,7 +1731,7 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAIChoosesMassSlowWithoutMutatingLive
 	attackerSideHero->applyPerkSelection({
 		"new-horizons:sorceryMagic",
 		"new-horizons:sorceryMagic.temporalField"});
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(
 		"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"));
 
@@ -1670,7 +1760,7 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAIChoosesMassSlowWithoutMutatingLive
 	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
 	gameHandler->sendAndApply(activate);
 
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto enemyAHealthBefore = enemyA->getAvailableHealth();
 	const auto enemyBHealthBefore = enemyB->getAvailableHealth();
 	const bool temporalFieldBefore = battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed;
@@ -1688,7 +1778,7 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAIChoosesMassSlowWithoutMutatingLive
 	ASSERT_EQ(action.target.size(), 1u);
 	EXPECT_FALSE(action.target.front().hexValue.isValid());
 	EXPECT_LT(action.target.front().unitValue, 0);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed, temporalFieldBefore);
 	EXPECT_EQ(enemyA->getAvailableHealth(), enemyAHealthBefore);
 	EXPECT_EQ(enemyB->getAvailableHealth(), enemyBHealthBefore);
@@ -1712,7 +1802,7 @@ TEST_F(NewHorizonsMagicAITest, CureAISelectsAndSubmitsAValidAfflictionThroughHyp
 	ASSERT_GE(lightMagic, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(lightMagic), MasteryLevel::BASIC,
 		ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 
 	BattleUnitsChanged remove;
 	remove.battleID = BattleID(0);
@@ -1781,7 +1871,7 @@ TEST_F(NewHorizonsMagicAITest, CureAISelectsAndSubmitsAValidAfflictionThroughHyp
 	ASSERT_EQ(selected.size(), 1u);
 	EXPECT_EQ(selected.front().unitValue, wounded);
 	const auto healthBeforeCast = wounded->getAvailableHealth();
-	const auto manaBeforeCast = attackerSideHero->mana;
+	const auto manaBeforeCast = attackerSideHero->getManaAvailable();
 	EXPECT_EQ(healthBeforeCast, healthBeforeEvaluation);
 	EXPECT_TRUE(wounded->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
 		BonusSourceID(SpellID(SpellID::DISEASE)))));
@@ -1790,7 +1880,7 @@ TEST_F(NewHorizonsMagicAITest, CureAISelectsAndSubmitsAValidAfflictionThroughHyp
 	// The simulated choice must be a valid wire action, and the authoritative
 	// server must remove exactly the selected Disease source group.
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - 4);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeCast - 4);
 	EXPECT_GT(wounded->getAvailableHealth(), healthBeforeCast);
 	EXPECT_EQ(wounded->getCount(), 1);
 	EXPECT_FALSE(wounded->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
@@ -1811,7 +1901,7 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAIRespectsConsumedBudget)
 	attackerSideHero->applyPerkSelection({
 		"new-horizons:sorceryMagic",
 		"new-horizons:sorceryMagic.temporalField"});
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 1);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(10, 5), 1000);
 	BattleUnitsChanged remove;
@@ -1861,7 +1951,7 @@ TEST_F(NewHorizonsMagicAITest, TransfigureMatterAIChoosesPhysicalObstacleAndKeep
 	ASSERT_GE(sorcery, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 3, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->applyPerkSelection({"new-horizons:sorceryMagic", matterShaperPerk});
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 
 	const BattleHex physicalPosition(8, 5);
 	auto physical = std::make_shared<CObstacleInstance>();
@@ -1910,7 +2000,7 @@ TEST_F(NewHorizonsMagicAITest, TransfigureMatterAIChoosesPhysicalObstacleAndKeep
 	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
 	gameHandler->sendAndApply(activate);
 
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto obstacleCountBefore = battle()->obstacles.size();
 	const auto unitCountBefore = battle()->battleGetAllUnits(false).size();
 	auto environment = std::make_shared<MagicEnvironment>(gameState());
@@ -1949,7 +2039,7 @@ TEST_F(NewHorizonsMagicAITest, TransfigureMatterAIChoosesPhysicalObstacleAndKeep
 
 	// castEval is a private hypothetical branch of the evaluator. Neither its
 	// temporary golems nor obstacle removal may leak to the authoritative battle.
-	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_EQ(battle()->obstacles.size(), obstacleCountBefore);
 	EXPECT_EQ(battle()->battleGetAllUnits(false).size(), unitCountBefore);
 	EXPECT_EQ(battle()->battleGetAllObstaclesOnPos(physicalPosition, false).size(), 1u);
@@ -1975,7 +2065,7 @@ TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER,
 		99 * attackerSideHero->getEffectPowerDivisor(spell), ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 3, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	ASSERT_EQ(spell->calculateDamage(attackerSideHero), 7725);
 	SpellSchool best;
 	ASSERT_EQ(attackerSideHero->getSpellSchoolLevel(spell, &best), 3);
@@ -1997,7 +2087,7 @@ TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 	ASSERT_EQ(callback->submitted.front().actionType, EActionType::HERO_SPELL);
 	ASSERT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), callback->submitted.front()));
-	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000 - cost);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 }
@@ -2017,7 +2107,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalLevelOneHavocRankingCrossesOverWithoutMu
 	attackerSideHero->addSpellToSpellbook(lightningBolt);
 	attackerSideHero->setSecSkillLevel(
 		SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 1, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(71), 100);
 	BattleSetActiveStack activate;
@@ -2030,7 +2120,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalLevelOneHavocRankingCrossesOverWithoutMu
 	callback->onBattleStarted(battle());
 	auto environment = std::make_shared<MagicEnvironment>(gameState());
 	const auto healthBefore = enemy->getAvailableHealth();
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto castsBefore = battle()->battleCastSpells(BattleSide::ATTACKER);
 	const auto chooseAtPower = [&](int32_t power)
 	{
@@ -2047,11 +2137,11 @@ TEST_F(NewHorizonsMagicAITest, CanonicalLevelOneHavocRankingCrossesOverWithoutMu
 	EXPECT_EQ(chooseAtPower(20), iceBolt)
 		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_EQ(enemy->getAvailableHealth(), healthBefore);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_EQ(chooseAtPower(100), lightningBolt)
 		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_EQ(enemy->getAvailableHealth(), healthBefore);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), castsBefore);
 	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 }
@@ -2072,7 +2162,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireballIsPreferredForClusterWithoutMuta
 	attackerSideHero->setSecSkillLevel(
 		SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 1, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
 	auto * first = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(75), 100);
 	auto * second = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(76), 100);
@@ -2088,7 +2178,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireballIsPreferredForClusterWithoutMuta
 	auto environment = std::make_shared<MagicEnvironment>(gameState());
 	const auto firstHealth = first->getAvailableHealth();
 	const auto secondHealth = second->getAvailableHealth();
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto castsBefore = battle()->battleCastSpells(BattleSide::ATTACKER);
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(active);
@@ -2099,7 +2189,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireballIsPreferredForClusterWithoutMuta
 		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_EQ(first->getAvailableHealth(), firstHealth);
 	EXPECT_EQ(second->getAvailableHealth(), secondHealth);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), castsBefore);
 	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 }
@@ -2118,7 +2208,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFrostRingUsesSafeFriendlyCenter)
 	attackerSideHero->setSecSkillLevel(
 		SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 1, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 200, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
 	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(75), 1);
 	auto * first = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(74), 1);
@@ -2166,7 +2256,7 @@ TEST_F(NewHorizonsMagicAITest, CanonicalInfernoIsPreferredForBroadEnemyCluster)
 	attackerSideHero->setSecSkillLevel(
 		SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 2, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
 	auto * first = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(75), 100);
 	auto * second = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(76), 100);

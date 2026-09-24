@@ -49,10 +49,10 @@ TEST_P(HeroCommandRejectionAtomicityTest, FreshBudgetRejectionPreservesUnitAndAl
 	const auto starts = server.startedActions.size();
 	const auto activations = server.stackActivations.size();
 	// Nonzero test sentinels, without giving either hero a spellbook.
-	attackerSideHero->mana = 37;
-	defenderSideHero->mana = 23;
-	const auto mana = attackerSideHero->mana;
-	const auto defenderMana = defenderSideHero->mana;
+	setTestSpellPointTotal(attackerSideHero, 37);
+	setTestSpellPointTotal(defenderSideHero, 23);
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto defenderMana = defenderSideHero->getManaAvailable();
 	ASSERT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
 	ASSERT_FALSE(battle()->getHeroCommandUsed(BattleSide::DEFENDER));
 
@@ -89,8 +89,8 @@ TEST_P(HeroCommandRejectionAtomicityTest, FreshBudgetRejectionPreservesUnitAndAl
 	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
 	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeId);
 	EXPECT_EQ(battle()->battleActiveUnit()->getMovementRange(), speed);
-	EXPECT_EQ(attackerSideHero->mana, mana);
-	EXPECT_EQ(defenderSideHero->mana, defenderMana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), defenderMana);
 	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
 	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::DEFENDER));
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -106,8 +106,8 @@ TEST_P(HeroCommandRejectionAtomicityTest, FreshBudgetRejectionPreservesUnitAndAl
 	EXPECT_EQ(battle()->battleActiveUnit()->getMovementRange(), speed);
 	ASSERT_EQ(server.stackActivations.size(), activations + (battleExists ? 2 : 1));
 	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::HERO_COMMAND);
-	EXPECT_EQ(attackerSideHero->mana, mana);
-	EXPECT_EQ(defenderSideHero->mana, defenderMana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), defenderMana);
 	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::DEFENDER));
 }
 

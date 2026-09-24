@@ -52,7 +52,9 @@ public:
 	struct DLL_LINKAGE Details
 	{
 		std::vector<si32> primskills;
-		si32 mana, manaLimit, luck, morale;
+		int64_t mana = 0; // buffer-inclusive total; retained for the existing UI contract
+		si32 bufferMana = 0;
+		si32 manaLimit = 0, luck = 0, morale = 0;
 
 		bool operator==(const Details & other) const = default;
 	};

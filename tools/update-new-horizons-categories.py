@@ -25,12 +25,12 @@ def main():
     metadata = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
     rules = json.loads((ROOT / 'config/newHorizonsCreatureCategories.json').read_text())
     texts = json.loads((ROOT / 'config/newHorizonsCreatureCategoryTexts.json').read_text())
-    if metadata['version'] != '0.12.0' or metadata['settings'].get('creatures') != {'newHorizonsCategories': rules}:
+    if metadata['version'] != '0.13.0' or metadata['settings'].get('creatures') != {'newHorizonsCategories': rules}:
         parser.error('unexpected live category composition; regenerate the active module first')
     if any(metadata['translations'].get(key) != value for key, value in texts.items()):
         parser.error('live category translations are missing or stale')
     metadata['name'] = 'New Horizons (category diagnostic)'
-    metadata['version'] = '0.12.1'
+    metadata['version'] = '0.13.1'
     metadata['description'] += (
         ' This private category diagnostic mirrors the complete active standard-faction'
         ' Core/Elite/Champion table. Recruitment row identity, upgrades, statistics,'

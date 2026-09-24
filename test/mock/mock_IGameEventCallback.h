@@ -44,6 +44,9 @@ public:
 
 	// ---- captured mutations inspected by MapScriptTest -------------------
 	std::vector<std::pair<ObjectInstanceID, int>>        manaPointsSet;
+	std::vector<std::pair<ObjectInstanceID, int32_t>>     normalSpellPointsRestored;
+	std::vector<std::pair<ObjectInstanceID, int64_t>>     spellPointsSpent;
+	std::vector<std::pair<ObjectInstanceID, int32_t>>     bufferSpellPointsGranted;
 	std::vector<std::pair<ObjectInstanceID, int>>        movePointsSet;
 	std::vector<std::pair<ObjectInstanceID, BuildingID>> builtStructures;
 
@@ -105,6 +108,9 @@ public:
 	void setMovePoints(SetMovePoints *) override {}
 	void setMovePoints(ObjectInstanceID hid, int val) override { movePointsSet.emplace_back(hid, val); }
 	void setManaPoints(ObjectInstanceID hid, int val) override { manaPointsSet.emplace_back(hid, val); }
+	void restoreSpellPoints(ObjectInstanceID hid, int32_t amount) override { normalSpellPointsRestored.emplace_back(hid, amount); }
+	void spendSpellPoints(ObjectInstanceID hid, int64_t amount) override { spellPointsSpent.emplace_back(hid, amount); }
+	void grantBufferSpellPoints(ObjectInstanceID hid, int32_t amount) override { bufferSpellPointsGranted.emplace_back(hid, amount); }
 	void giveHero(ObjectInstanceID, PlayerColor, ObjectInstanceID) override {}
 	void changeObjPos(ObjectInstanceID, int3, const PlayerColor &) override {}
 	void heroExchange(ObjectInstanceID, ObjectInstanceID) override {}

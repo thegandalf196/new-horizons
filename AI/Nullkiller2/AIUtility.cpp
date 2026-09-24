@@ -16,6 +16,7 @@
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/entities/artifact/CArtifact.h"
+#include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
 #include "../../lib/mapObjects/MapObjects.h"
 #include "../../lib/mapObjects/Quest.h"
@@ -336,13 +337,21 @@ double getArtifactBonusRelevance(const CGHeroInstance * hero, const std::shared_
 			auto spell = spellID.toEntity(LIBRARY);
 			if (hero->getSpellLevel(spell) != level)
 				continue;
+			if(newHorizonsMagic::rulesActive(hero->getMagicRules())
+				&& (!newHorizonsMagic::spellAllowedBySavedRoster(hero->getMagicRules(), spellID)
+					|| (hero->getHeroType() && hero->getHeroType()->excludedSpells.count(spellID))
+					|| !hero->cb->isAllowed(spellID)
+					|| !spell->isCommonHeroSpell() || !spell->isCombat()))
+				continue;
 
+			// Value the artifact against permanent learning, not against the
+			// temporary access provided by this same equipped artifact.
 			if (hero->spellbookContainsSpell(spellID))
 				knownWeight += 1;
 			totalWeight += 1;
 		}
 		if (totalWeight == 0)
-			return 0.0;
+			return 1.0; // No eligible missing spell means no spell-grant value.
 
 		return static_cast<double>(knownWeight) / totalWeight;
 	};
@@ -736,7 +745,7 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 		break;
 	}
 	case Obj::MAGIC_WELL:
-		return hero->mana < hero->manaLimit();
+		return hero->getNormalSpellPoints() < hero->manaLimit();
 	case Obj::PRISON:
 		return !aiNk->heroManager->heroCapReached();
 	case Obj::TAVERN:

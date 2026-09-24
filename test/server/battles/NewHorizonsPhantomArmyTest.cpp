@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../SpellPointTestUtils.h"
 
 #include "BattleTestFixture.h"
 #include "../../../server/CGameHandler.h"
@@ -81,7 +82,7 @@ protected:
 		}
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(spell);
-		attackerSideHero->mana = 9999;
+		setTestSpellPointTotal(attackerSideHero, 9999);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 		startBattle();
 
@@ -320,7 +321,7 @@ TEST_F(NewHorizonsPhantomArmyTest, MagicalSpellAndPositiveFireShieldDamageDouble
 
 	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	defenderSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
-	defenderSideHero->mana = 9999;
+	setTestSpellPointTotal(defenderSideHero, 9999);
 	const auto copiedCount = source->getCount();
 	const auto sourceHealthBefore = source->getAvailableHealth();
 	const auto integrityBefore = phantom->getPhantomIntegrity();

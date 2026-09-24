@@ -8,12 +8,14 @@
  *
  */
 #include "StdInc.h"
+#include "../windows/SpellPointPresentation.h"
 #include "HeroInfoWindow.h"
 #include "../GameEngine.h"
 #include "../gui/WindowHandler.h"
 
 #include "../widgets/Images.h"
 #include "../widgets/TextControls.h"
+#include "../widgets/MiscWidgets.h"
 #include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../windows/InfoWindows.h"
 
@@ -25,11 +27,12 @@ namespace
 {
 static_assert(HeroInfoPanelLayout::effectAreaWidth == 70,
 	"Compact hero battle status rows must retain the existing 70px width");
-static_assert(HeroInfoPanelLayout::effectAreaRowHeight == 26
+static_assert(HeroInfoPanelLayout::effectAreaRowHeight == 32
 	&& HeroInfoPanelLayout::effectAreaHeight == HeroInfoPanelLayout::effectAreaRowHeight * 2
 		+ HeroInfoPanelLayout::actionCountPanelHeight,
 	"Counterspell and Warcasting rows must stay separate from the three-line allowance panel");
-static_assert(HeroInfoPanelLayout::actionCountPanelHeight == HeroInfoPanelLayout::actionCountLineHeight * 3,
+static_assert(HeroInfoPanelLayout::actionCountPanelHeight == HeroInfoPanelLayout::actionCountHeaderHeight
+	+ HeroInfoPanelLayout::actionCountLineHeight * 3 + HeroInfoPanelLayout::actionCountPanelPadding,
 	"Each hero allowance count needs its own readable line");
 static_assert(HeroInfoPanelLayout::effectAreaLeft - HeroInfoPanelLayout::backgroundInset >= 3,
 	"Hero effect area must keep a side margin from the portrait frame");
@@ -92,10 +95,27 @@ void HeroBattleStatusArea::setStatus(bool counterspellIsArmed, const Alternating
 	refreshContents();
 }
 
+void HeroBattleStatusArea::addFramedBackground(const Rect & bounds)
+{
+	// Reuse the battle UI's original leather texture, with the red inset and
+	// fine gold edging of the adjacent hero-card compartments.
+	textures.push_back(std::make_shared<CFilledTexture>(ImagePath::builtin("DIBOXBCK"), bounds));
+	const ColorRGBA transparent(0, 0, 0, 0);
+	backgrounds.push_back(std::make_shared<TransparentFilledRectangle>(bounds,
+		transparent, ColorRGBA(213, 185, 117)));
+	backgrounds.push_back(std::make_shared<TransparentFilledRectangle>(
+		Rect(bounds.x + 1, bounds.y + 1, bounds.w - 2, bounds.h - 2),
+		transparent, ColorRGBA(145, 18, 12), 2));
+	backgrounds.push_back(std::make_shared<TransparentFilledRectangle>(
+		Rect(bounds.x + 3, bounds.y + 3, bounds.w - 6, bounds.h - 6),
+		transparent, ColorRGBA(120, 98, 56)));
+}
+
 void HeroBattleStatusArea::refreshContents()
 {
 	OBJECT_CONSTRUCTION;
 	const bool wasVisible = hasVisibleStatus;
+	textures.clear();
 	backgrounds.clear();
 	warcastingIcon.reset();
 	labels.clear();
@@ -127,16 +147,15 @@ void HeroBattleStatusArea::refreshContents()
 			: "+" + std::to_string(empowerment) + "pp";
 		const auto warcastingRowY = counterspellArmed ? HeroInfoPanelLayout::effectAreaRowHeight : 0;
 
-		backgrounds.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, warcastingRowY,
-			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::effectAreaRowHeight),
-			ColorRGBA(0, 0, 0, 75), ColorRGBA(128, 100, 75)));
+		addFramedBackground(Rect(0, warcastingRowY,
+			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::effectAreaRowHeight));
 		warcastingIcon = std::make_shared<CPicture>(ImagePath::builtin(warcastingIconName(action)),
-			Point(3, warcastingRowY + 5));
+			Point(5, warcastingRowY + 8));
 		warcastingIcon->scaleTo(Point(HeroInfoPanelLayout::effectAreaIconSize, HeroInfoPanelLayout::effectAreaIconSize));
-		labels.push_back(std::make_shared<CLabel>(21, warcastingRowY + 2, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
-			Colors::YELLOW, std::string(actionName) + " " + amount, 47));
-		labels.push_back(std::make_shared<CLabel>(21, warcastingRowY + 13, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
-			Colors::WHITE, "Through R" + std::to_string(warcastingState.expiryRound), 47));
+		labels.push_back(std::make_shared<CLabel>(23, warcastingRowY + 5, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
+			Colors::YELLOW, actionName, 42));
+		labels.push_back(std::make_shared<CLabel>(23, warcastingRowY + 17, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
+			Colors::WHITE, amount, 42));
 
 		const auto actionEffect = action == AlternatingHeroActionState::Action::SPELL
 			? "to its Spell Power-derived numerical component."
@@ -153,9 +172,8 @@ void HeroBattleStatusArea::refreshContents()
 
 	if(counterspellArmed)
 	{
-		backgrounds.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, 0,
-			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::effectAreaRowHeight),
-			ColorRGBA(0, 0, 0, 75), ColorRGBA(128, 100, 75)));
+		addFramedBackground(Rect(0, 0,
+			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::effectAreaRowHeight));
 		labels.push_back(std::make_shared<CLabel>(HeroInfoPanelLayout::effectAreaWidth / 2,
 			HeroInfoPanelLayout::effectAreaRowHeight / 2, EFonts::FONT_TINY, ETextAlignment::CENTER,
 			Colors::YELLOW, "Ward: ARMED"));
@@ -173,17 +191,23 @@ void HeroBattleStatusArea::refreshContents()
 	if(showActionCounts)
 	{
 		const int countsTop = statusRows * HeroInfoPanelLayout::effectAreaRowHeight;
-		backgrounds.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, countsTop,
-			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::actionCountPanelHeight),
-			ColorRGBA(0, 0, 0, 75), ColorRGBA(128, 100, 75)));
-		labels.push_back(std::make_shared<CLabel>(4, countsTop + 1, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
-			Colors::WHITE, "Hero: " + std::to_string(actionCounts.heroActions), HeroInfoPanelLayout::effectAreaWidth - 8));
-		labels.push_back(std::make_shared<CLabel>(4, countsTop + 1 + HeroInfoPanelLayout::actionCountLineHeight,
-			EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE,
-			"Order: " + std::to_string(actionCounts.orderActions), HeroInfoPanelLayout::effectAreaWidth - 8));
-		labels.push_back(std::make_shared<CLabel>(4, countsTop + 1 + 2 * HeroInfoPanelLayout::actionCountLineHeight,
-			EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE,
-			"Spell: " + std::to_string(actionCounts.spellActions), HeroInfoPanelLayout::effectAreaWidth - 8));
+		addFramedBackground(Rect(0, countsTop,
+			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::actionCountPanelHeight));
+		labels.push_back(std::make_shared<CLabel>(HeroInfoPanelLayout::effectAreaWidth / 2,
+			countsTop + 11, EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::YELLOW, "Actions"));
+		const auto addCount = [&](int row, const std::string & name, int count)
+		{
+			const int y = countsTop + HeroInfoPanelLayout::actionCountHeaderHeight
+				+ row * HeroInfoPanelLayout::actionCountLineHeight;
+			labels.push_back(std::make_shared<CLabel>(7, y, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
+				Colors::WHITE, name));
+			labels.push_back(std::make_shared<CLabel>(HeroInfoPanelLayout::effectAreaWidth - 7,
+				y + HeroInfoPanelLayout::actionCountLineHeight - 2, EFonts::FONT_TINY,
+				ETextAlignment::BOTTOMRIGHT, count > 0 ? Colors::YELLOW : Colors::WHITE, std::to_string(count)));
+		};
+		addCount(0, "Hero", actionCounts.heroActions);
+		addCount(1, "Order", actionCounts.orderActions);
+		addCount(2, "Spell", actionCounts.spellActions);
 
 		const auto countsHelp = CInfoWindow::genText("Hero Action Allowances",
 			"Hero Actions: " + std::to_string(actionCounts.heroActions)
@@ -297,11 +321,20 @@ void HeroInfoBasicPanel::initializeData(const InfoAboutHero & hero)
 		HeroInfoPanelLayout::luckIconY));
 
 	//spell points
-	const auto spellPointsText = std::to_string(currentSpellPoints) + "/" + std::to_string(maxSpellPoints);
-	labels.push_back(std::make_shared<CLabel>(39, HeroInfoPanelLayout::spellPointsLabelY, EFonts::FONT_TINY,
+	const bool hasBuffer = hero.details->bufferMana > 0;
+	const auto spellPointsText = std::to_string(currentSpellPoints)
+		+ (maxSpellPoints >= 0 ? "/" + std::to_string(maxSpellPoints) : "");
+	labels.push_back(std::make_shared<CLabel>(39, HeroInfoPanelLayout::spellPointsLabelY - (hasBuffer ? 4 : 0), EFonts::FONT_TINY,
 		ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[387]));
-	labels.push_back(std::make_shared<CLabel>(39, HeroInfoPanelLayout::spellPointsValueY, EFonts::FONT_TINY,
-		ETextAlignment::CENTER, Colors::WHITE, spellPointsText));
+	labels.push_back(std::make_shared<CLabel>(39, HeroInfoPanelLayout::spellPointsValueY - (hasBuffer ? 4 : 0), EFonts::FONT_TINY,
+		ETextAlignment::CENTER, Colors::WHITE, spellPointsText, 70));
+	// Keep the Buffer annotation on its own line in this narrow panel. Trimming
+	// an inline colored string can cut its markup as well as hide the amount.
+	if(hasBuffer)
+		labels.push_back(std::make_shared<CLabel>(39, HeroInfoPanelLayout::spellPointsValueY + 8, EFonts::FONT_TINY,
+			ETextAlignment::CENTER, ColorRGBA(0, 191, 255), "+" + std::to_string(hero.details->bufferMana), 70));
+	spellPointsArea = std::make_shared<LRClickableAreaWText>(Rect(3, 166, 70, 33), LIBRARY->generaltexth->allTexts[387],
+		spellPointPresentation::tooltip(currentSpellPoints, maxSpellPoints, hero.details->bufferMana));
 
 }
 

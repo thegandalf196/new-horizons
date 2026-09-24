@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../SpellPointTestUtils.h"
 
 #include "BattleTestFixture.h"
 #include "../../../server/CGameHandler.h"
@@ -348,7 +349,7 @@ TEST_F(NewHorizonsDemonicGatingTest, TeleportRejectsPendingGateHeadAndDoubleWide
 	attackerSideHero->setSecSkillLevel(SecondarySkill(sorceryMagic), 2, ChangeValueMode::ABSOLUTE);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::TELEPORT);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	ASSERT_EQ(battle()->battleCanCastSpell(attackerSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
 
 	const auto [gateHex, rearOnlyHead] = legalGateWithRearOnlyTeleportHex(gateSourceAfterAdd, target);
@@ -389,13 +390,13 @@ TEST_F(NewHorizonsDemonicGatingTest, TeleportRejectsPendingGateHeadAndDoubleWide
 	const auto assertRejectedTeleportPreservesState = [&](const BattleHex & destination)
 	{
 		const auto positionBefore = target->getPosition();
-		const auto manaBefore = attackerSideHero->mana;
+		const auto manaBefore = attackerSideHero->getManaAvailable();
 		const auto spellCountBefore = battle()->getSide(BattleSide::ATTACKER).castSpellsCount;
 		const auto activeStackBefore = battle()->getActiveStackID();
 		const auto pending = battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.front();
 		EXPECT_FALSE(castTeleport(target, destination));
 		EXPECT_EQ(target->getPosition(), positionBefore);
-		EXPECT_EQ(attackerSideHero->mana, manaBefore);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).castSpellsCount, spellCountBefore);
 		EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).heroCommandUsed);
 		EXPECT_EQ(battle()->getActiveStackID(), activeStackBefore);
@@ -417,11 +418,11 @@ TEST_F(NewHorizonsDemonicGatingTest, TeleportRejectsPendingGateHeadAndDoubleWide
 
 	// A clear Teleport through the same authoritative request path is still legal,
 	// proving the two preceding rejections were caused by Gate's footprint.
-	const auto manaBeforeLegalTeleport = attackerSideHero->mana;
+	const auto manaBeforeLegalTeleport = attackerSideHero->getManaAvailable();
 	const auto spellCountBeforeLegalTeleport = battle()->getSide(BattleSide::ATTACKER).castSpellsCount;
 	ASSERT_TRUE(castTeleport(target, freeTeleportHead));
 	EXPECT_EQ(target->getPosition(), freeTeleportHead);
-	EXPECT_LT(attackerSideHero->mana, manaBeforeLegalTeleport);
+	EXPECT_LT(attackerSideHero->getManaAvailable(), manaBeforeLegalTeleport);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).castSpellsCount, spellCountBeforeLegalTeleport + 1);
 	EXPECT_EQ(battle()->getRound(), startingRound);
 	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.size(), 1u);
@@ -1221,7 +1222,7 @@ TEST_F(NewHorizonsDemonicGatingTest, HeroSpellDamageRemainsUnattributed)
 	ASSERT_NE(enemy, nullptr);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
-	attackerSideHero->mana = 9999;
+	setTestSpellPointTotal(attackerSideHero, 9999);
 	server.injuries.clear();
 
 	ASSERT_TRUE(castOn(attackerSideHero, SpellID::MAGIC_ARROW, enemy));

@@ -461,7 +461,11 @@ uint64_t RewardEvaluator::townArmyGrowth(const CGTownInstance * town) const
 
 float RewardEvaluator::getManaRecoveryArmyReward(const CGHeroInstance * hero) const
 {
-	return aiNk->heroManager->getMagicStrength(hero) * 10000 * (1.0f - std::sqrt(static_cast<float>(hero->mana) / hero->manaLimit()));
+	const auto maximum = hero->manaLimit();
+	if(maximum <= 0)
+		return 0.0f;
+	const float filled = std::clamp(static_cast<float>(hero->getNormalSpellPoints()) / maximum, 0.0f, 1.0f);
+	return aiNk->heroManager->getMagicStrength(hero) * 10000 * (1.0f - std::sqrt(filled));
 }
 
 /// @return between 0-1.0f

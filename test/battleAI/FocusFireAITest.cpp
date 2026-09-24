@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../SpellPointTestUtils.h"
 #include "../server/battles/FocusFireFixture.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
@@ -600,7 +601,7 @@ TEST_F(FocusFireAITest, StrongerLegalSpellCompetesWithTargetedOrderAndAuthorityA
 	ASSERT_NO_FATAL_FAILURE(prepareAI());
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
 	const auto divisor = attackerSideHero->getEffectPowerDivisor(spell);
 	ASSERT_GT(divisor, 0);

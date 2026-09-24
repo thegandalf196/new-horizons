@@ -84,6 +84,7 @@ void CGPandoraBox::grantRewardWithMessage(IGameEventCallback & gameEvents, const
 	temp.secondary = vi.reward.secondary;
 	temp.heroBonuses = vi.reward.heroBonuses;
 	temp.manaDiff = vi.reward.manaDiff;
+	temp.manaBuffer = vi.reward.manaBuffer;
 	temp.manaPercentage = vi.reward.manaPercentage;
 	
 	MetaString txt;
@@ -102,7 +103,7 @@ void CGPandoraBox::grantRewardWithMessage(IGameEventCallback & gameEvents, const
 		}
 	}
 	
-	if(vi.reward.manaDiff || vi.reward.manaPercentage >= 0)
+	if(vi.reward.manaDiff || vi.reward.manaPercentage >= 0 || vi.reward.manaBuffer > 0)
 		txt = setText(temp.manaDiff > 0, 177, 176, h);
 	
 	for(auto b : vi.reward.heroBonuses)
@@ -223,6 +224,9 @@ void CGPandoraBox::serializeJsonOptions(JsonSerializeFormat & handler)
 				
 		handler.serializeInt("experience", vinfo.reward.heroExperience, 0);
 		handler.serializeInt("mana", vinfo.reward.manaDiff, 0);
+		handler.serializeInt("manaBuffer", vinfo.reward.manaBuffer, 0);
+		if(vinfo.reward.manaBuffer < 0)
+			throw std::runtime_error("Pandora Box manaBuffer cannot be negative");
 		
 		int val = 0;
 		handler.serializeInt("morale", val, 0);

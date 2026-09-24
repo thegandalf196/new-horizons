@@ -396,10 +396,7 @@ void PlayerMessageProcessor::cheatGiveSpells(PlayerColor player, const CGHeroIns
 	gameHandler->sendAndApply(giveBonus);
 
 	///Give mana
-	SetMana sm;
-	sm.hid = hero->id;
-	sm.val = 999;
-	sm.mode = ChangeValueMode::ABSOLUTE;
+	SetMana sm(hero->id, SetMana::Operation::SET_NORMAL, 999);
 	gameHandler->sendAndApply(sm);
 }
 

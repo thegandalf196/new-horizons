@@ -61,6 +61,7 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 
 		std::string hoverText;
 		std::string helpText;
+		bool spellPointsHelp = false;
 	public:
 		void clickPressed(const Point & cursorPosition) override;
 		void showPopupWindow(const Point & cursorPosition) override;

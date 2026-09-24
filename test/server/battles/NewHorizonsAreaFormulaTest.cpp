@@ -55,7 +55,7 @@ protected:
 		ASSERT_LT(expected, friendlyHealth);
 		ASSERT_LT(expected, firstHealth);
 		ASSERT_LT(expected, secondHealth);
-		const auto mana = attackerSideHero->mana;
+		const auto mana = attackerSideHero->getManaAvailable();
 		const auto cost = battle()->battleGetSpellCost(spell, attackerSideHero);
 		const auto * active = battle()->battleActiveUnit();
 		BattleAction action;
@@ -68,7 +68,7 @@ protected:
 		EXPECT_EQ(first->getAvailableHealth(), firstHealth - expected);
 		EXPECT_EQ(second->getAvailableHealth(), secondHealth - expected);
 		EXPECT_EQ(distant->getAvailableHealth(), distantHealth);
-		EXPECT_EQ(attackerSideHero->mana, mana - cost);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost);
 		EXPECT_EQ(battle()->battleActiveUnit(), active);
 		EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 		EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));

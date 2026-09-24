@@ -59,7 +59,7 @@ protected:
 			attackerSideHero->applyPerkSelection({teleporterSkill, teleporterPerk});
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(SpellID::TELEPORT);
-		attackerSideHero->mana = 100;
+		setTestSpellPointTotal(attackerSideHero, 100);
 
 		startBattle();
 		teleported = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(rightHex), 10);

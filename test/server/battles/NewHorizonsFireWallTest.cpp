@@ -31,7 +31,7 @@ protected:
 		prepareCommands(true);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->mana = attackerSideHero->manaLimit();
+		setTestSpellPointTotal(attackerSideHero, attackerSideHero->manaLimit());
 		attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 			BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 		attackerSideHero->addSpellToSpellbook(SpellID::FIRE_WALL);
@@ -116,7 +116,7 @@ TEST(NewHorizonsFireWallTest, TriggerProxyUsesTheCastTimeSnapshotExactly)
 TEST_F(NewHorizonsFireWallRuntimeTest, ServerBuildsThreeHexLineAndRejectsInvalidPlacements)
 {
 	prepareFireWall();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		fireWallAction(BattleHex(70), BattleHex::RIGHT)));
@@ -133,13 +133,13 @@ TEST_F(NewHorizonsFireWallRuntimeTest, ServerBuildsThreeHexLineAndRejectsInvalid
 	EXPECT_EQ(wall->turnsRemaining, 3); // canonical Fire Wall lasts three full rounds
 
 	// Canonical New Horizons Fire Wall is level 3 and costs 12 mana.
-	EXPECT_EQ(attackerSideHero->mana, mana - 12);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 12);
 }
 
 TEST_F(NewHorizonsFireWallRuntimeTest, ServerRejectsMissingDirectionBoundaryAndOccupiedLineAtomically)
 {
 	prepareFireWall();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		fireWallAction(BattleHex(70), BattleHex::NONE)));
@@ -150,7 +150,7 @@ TEST_F(NewHorizonsFireWallRuntimeTest, ServerRejectsMissingDirectionBoundaryAndO
 		fireWallAction(BattleHex(70), BattleHex::RIGHT)));
 
 	EXPECT_TRUE(battle()->obstacles.empty());
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 }
 
 TEST_F(NewHorizonsFireWallRuntimeTest, GroundFriendAndFoeTriggerOncePerActivationAndFlyingUnitsDoNot)

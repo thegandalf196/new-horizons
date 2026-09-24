@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "SpellPointPresentation.h"
 #include "CHeroWindow.h"
 #include "NewHorizonsPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
@@ -27,6 +28,7 @@
 #include "../gui/TextAlignment.h"
 #include "../gui/Shortcut.h"
 #include "../gui/WindowHandler.h"
+#include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../widgets/Images.h"
 #include "../widgets/MiscWidgets.h"
 #include "../widgets/CComponent.h"
@@ -49,6 +51,33 @@
 
 namespace
 {
+class HeroSkillOddsInfoMark : public CIntObject
+{
+	std::shared_ptr<GraphicalPrimitiveCanvas> circle;
+	std::shared_ptr<CLabel> info;
+
+public:
+	HeroSkillOddsInfoMark()
+	{
+		OBJECT_CONSTRUCTION;
+		pos = Rect(0, 0, 16, 16);
+
+		circle = std::make_shared<GraphicalPrimitiveCanvas>(Rect(0, 0, 16, 16));
+		constexpr std::array<Point, 13> outline = {
+			Point(8, 2), Point(11, 3), Point(13, 5), Point(14, 8), Point(13, 11),
+			Point(11, 13), Point(8, 14), Point(5, 13), Point(3, 11), Point(2, 8),
+			Point(3, 5), Point(5, 3), Point(8, 2)
+		};
+		for(size_t point = 0; point + 1 < outline.size(); ++point)
+			circle->addLine(outline[point], outline[point + 1], Colors::METALLIC_GOLD);
+
+		// FONT_TIMES supplies a real serif lowercase i; the unfilled center lets
+		// the hero-window leather texture show through.
+		info = std::make_shared<CLabel>(8, 8, EFonts::FONT_TIMES, ETextAlignment::CENTER,
+			Colors::METALLIC_GOLD, "i");
+	}
+};
+
 bool useNewHorizonsHeroLayout(const CGHeroInstance * hero)
 {
 	// Centered body plus native 14px frame and 8px shadow on each side.
@@ -118,6 +147,16 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 				ENGINE->windows().createAndPushWindow<HeroSkillOddsWindow>(*curHero);
 			});
 		growthButton->setHoverable(true);
+		if(newHorizonsLayout)
+		{
+			auto infoMark = std::make_shared<HeroSkillOddsInfoMark>();
+			growthButton->setOverlay(infoMark);
+			for(auto * child : growthButton->children)
+			{
+				if(child != infoMark.get())
+					child->disable();
+			}
+		}
 	}
 
 	statusbar = CGStatusBar::create(std::make_shared<CPicture>(background->getSurface(), Rect(7, 559, 660, 19), 7, 559));
@@ -271,9 +310,6 @@ void CHeroWindow::configureNewHorizonsLayout()
 	name->setMaxWidth(114);
 	move(title, Point(152, 61));
 	title->setMaxWidth(140);
-	// The compact growth glyph sits just after the Skills / learned perks
-	// heading; keep the existing 24px art readable without a wide dead gap.
-	move(growthButton, Point(396, 166));
 	move(portraitImage, Point(16, 18));
 	move(portraitArea, Point(16, 18));
 	move(portraitWikiArea, Point(16, 18));
@@ -317,7 +353,12 @@ void CHeroWindow::configureNewHorizonsLayout()
 	manaValue = std::make_shared<CLabel>(342, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
 	labels.push_back(std::make_shared<CLabel>(568, 13, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Morale", 74));
 	labels.push_back(std::make_shared<CLabel>(650, 13, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Luck", 74));
-	labels.push_back(std::make_shared<CLabel>(16, 176, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Skills / learned perks", 376));
+	const auto skillsHeading = std::make_shared<CLabel>(16, 176, FONT_SMALL, ETextAlignment::TOPLEFT,
+		Colors::YELLOW, "Skills / learned perks", 376);
+	labels.push_back(skillsHeading);
+	// The visible 16px mark is centered in the existing 24px click target and
+	// follows the rendered heading width instead of a fixed, empty-column gap.
+	move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), 172));
 	for(size_t i = 0; i < secSkills.size(); ++i)
 	{
 		const int y = 192 + static_cast<int>(i) * 44;
@@ -767,9 +808,8 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	expstr << curHero->exp;
 	expValue->setText(expstr.str());
 
-	std::ostringstream manastr;
-	manastr << curHero->mana << '/' << curHero->manaLimit();
-	manaValue->setText(manastr.str());
+	manaValue->setText(spellPointPresentation::readout(curHero->getManaAvailable(),
+		curHero->manaLimit(), curHero->getBufferSpellPoints()));
 
 	if(newHorizonsLayout)
 	{
@@ -881,12 +921,8 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	expText.replaceNumber(curHero->exp);
 	expArea->text = expText.toString(&GAME->translator());
 
-	MetaString spellPointsText;
-	spellPointsText.appendTextID("core.genrltxt.205");
-	spellPointsText.replaceTextID(curHero->getNameTextID());
-	spellPointsText.replaceNumber(curHero->mana);
-	spellPointsText.replaceNumber(curHero->manaLimit());
-	spellPointsArea->text = spellPointsText.toString(&GAME->translator());
+	spellPointsArea->text = spellPointPresentation::tooltip(curHero->getManaAvailable(),
+		curHero->manaLimit(), curHero->getBufferSpellPoints());
 
 	//if we have exchange window with this curHero open
 	bool noDismiss=false;

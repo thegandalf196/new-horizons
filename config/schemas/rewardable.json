@@ -114,6 +114,7 @@
 				"manaPercentage" : { "$ref" : "#/definitions/value" },
 				"manaPoints" : { "$ref" : "#/definitions/value" },
 				"manaOverflowFactor" : { "$ref" : "#/definitions/value" },
+				"manaBuffer" : { "type" : "integer", "not" : { "type" : "null" }, "minimum" : 0, "maximum" : 2147483647 },
 
 				"removeObject" : { "type" : "boolean" },
 				"bonuses" : {

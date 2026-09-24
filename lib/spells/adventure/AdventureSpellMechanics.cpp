@@ -140,7 +140,7 @@ bool AdventureSpellMechanics::canBeCast(spells::Problem & problem, const IGameIn
 		if(!heroCaster->canCastThisSpell(owner))
 			return false;
 
-		if(heroCaster->mana < cost)
+		if(heroCaster->getManaAvailable() < cost)
 			return false;
 
 		if(newHorizonsMagic::isAdventureSpell(heroCaster->getMagicRules(), owner->id)

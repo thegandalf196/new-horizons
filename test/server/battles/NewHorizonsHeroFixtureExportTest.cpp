@@ -152,7 +152,7 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryCapabilityOnlyIdentityCon
 	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::DEFENSE), 2);
 	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), 3);
 	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 10);
-	EXPECT_EQ(hero->mana, 100);
+	EXPECT_EQ(hero->getManaAvailable(), 100);
 	EXPECT_EQ(hero->manaLimit(), 100);
 	ASSERT_TRUE(hero->getLeadershipCapacity());
 	EXPECT_EQ(hero->getLeadershipCapacity()->capacity, 750);
@@ -227,7 +227,7 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryKnightWithNearbyExperienc
 	EXPECT_EQ(view->modified, view->base);
 	EXPECT_EQ(view->profile.growth, (std::array<int, 4>{3, 4, 1, 2}));
 	EXPECT_TRUE(view->extraGrowth.empty());
-	EXPECT_EQ(hero->mana, 10);
+	EXPECT_EQ(hero->getManaAvailable(), 10);
 	EXPECT_EQ(hero->manaLimit(), 10);
 	ASSERT_TRUE(gameState()->getPlayerState(PlayerColor(0))->isHuman());
 	ASSERT_FALSE(gameState()->getPlayerState(PlayerColor(1))->isHuman());

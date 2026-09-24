@@ -30,7 +30,7 @@ namespace NK2AI::AIPathfinding
 		const int plannedAndPerformedCasts = validation.castsAlreadyPerformed
 			+ validation.plannedDimensionDoorCasts;
 
-		return validation.hero->mana >= validation.manaAlreadySpent + validation.manaCost
+		return validation.hero->getManaAvailable() >= validation.manaAlreadySpent + validation.manaCost
 			&& validation.movementPointsRemaining > validation.movementPointsRequired
 			&& (validation.castsLimit <= 0 || plannedAndPerformedCasts < validation.castsLimit);
 	}

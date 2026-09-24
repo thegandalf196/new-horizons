@@ -120,13 +120,13 @@ namespace AIPathfinding
 					continue;
 
 				if(spell->getAdventureMechanics().givesBonus(hero, BonusType::WATER_WALKING) && hero->canCastThisSpell(spell.get())
-				   && hero->mana >= hero->getSpellCost(spell.get()))
+				   && hero->getManaAvailable() >= hero->getSpellCost(spell.get()))
 				{
 					waterWalkingActions[hero] = std::make_shared<WaterWalkingAction>(hero, spell->id);
 				}
 
 				if(spell->getAdventureMechanics().givesBonus(hero, BonusType::FLYING_MOVEMENT) && hero->canCastThisSpell(spell.get())
-				   && hero->mana >= hero->getSpellCost(spell.get()))
+				   && hero->getManaAvailable() >= hero->getSpellCost(spell.get()))
 				{
 					airWalkingActions[hero] = std::make_shared<AirWalkingAction>(hero, spell->id);
 				}

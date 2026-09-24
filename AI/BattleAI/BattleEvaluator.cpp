@@ -187,14 +187,14 @@ float counterspellThreatValue(const CBattleInfoCallback & battle, BattleSide sid
 	const auto maxEnemySpellLevel = authoritativeBattle->battleMaxSpellLevel(enemySide);
 
 	const int armCost = battle.battleGetSpellCost(counterspell, caster);
-	const int remainingMana = caster->mana - armCost;
+	const int64_t remainingMana = caster->getManaAvailable() - armCost;
 	if(remainingMana < 0)
 		return 0.0f;
 
 	const bool countermage = caster->hasActivePerk(
 		"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.countermage");
 	float bestValue = 0.0f;
-	for(const auto spellID : enemy->getSpellsInSpellbook())
+	for(const auto spellID : enemy->getInscribedSpellsForCasting())
 	{
 		const auto * spell = spellID.toSpell();
 		if(!spell || !spell->isCombat() || spell->isCreatureAbility() || isCounterspell(spell))
@@ -207,7 +207,7 @@ float counterspellThreatValue(const CBattleInfoCallback & battle, BattleSide sid
 
 		const int listedCost = enemy->getListedSpellCost(spell);
 		const int enemyManaCost = battle.battleGetSpellCost(spell, enemy);
-		if(listedCost < 0 || enemy->mana < enemyManaCost)
+		if(listedCost < 0 || enemy->getManaAvailable() < enemyManaCost)
 			continue;
 
 		const int wardCost = newHorizonsMagic::counterspellCost(listedCost, countermage);

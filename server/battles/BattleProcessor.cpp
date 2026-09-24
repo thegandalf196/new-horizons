@@ -80,20 +80,6 @@ void BattleProcessor::restartBattle(const BattleID & battleID, const CArmedInsta
 	//existing battle query for retying auto-combat
 	if(lastBattleQuery)
 	{
-		BattleSideArray<const CGHeroInstance*> heroes{hero1, hero2};
-
-		for(auto i : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		{
-			if(heroes[i])
-			{
-				SetMana restoreInitialMana;
-				restoreInitialMana.val = battle->getSide(i).initialMana;
-				restoreInitialMana.hid = heroes[i]->id;
-				restoreInitialMana.mode = ChangeValueMode::ABSOLUTE;
-				gameHandler->sendAndApply(restoreInitialMana);
-			}
-		}
-
 		lastBattleQuery->result = std::nullopt;
 
 		assert(lastBattleQuery->belligerents[BattleSide::ATTACKER] == battle->getSideArmy(BattleSide::ATTACKER));

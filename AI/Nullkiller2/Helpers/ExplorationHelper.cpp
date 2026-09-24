@@ -486,7 +486,8 @@ int ExplorationHelper::getRemainingDimensionDoorCasts(const CSpell * spell) cons
 		return 0;
 
 	const auto & mechanics = spell->getAdventureMechanics();
-	const int castsByMana = hero->mana / manaCost;
+	const int castsByMana = static_cast<int>(std::min<int64_t>(
+		hero->getManaAvailable() / manaCost, std::numeric_limits<int>::max()));
 	const int castsLimit = mechanics.getCastsLimit(hero, cc->getMapSize());
 	const int castsAlreadyPerformed = mechanics.getCastsAlreadyPerformed(hero);
 	const int castsByLimit = castsLimit > 0

@@ -18,6 +18,8 @@
 class CLabel;
 class CAnimImage;
 class TransparentFilledRectangle;
+class LRClickableAreaWText;
+class CFilledTexture;
 
 struct InfoAboutHero;
 
@@ -32,9 +34,11 @@ constexpr int luckIconHeight = 22;
 constexpr int effectAreaLeft = 4;
 constexpr int effectAreaTop = 204;
 constexpr int effectAreaWidth = 70;
-constexpr int effectAreaRowHeight = 26;
-constexpr int actionCountLineHeight = 12;
-constexpr int actionCountPanelHeight = actionCountLineHeight * 3;
+constexpr int effectAreaRowHeight = 32;
+constexpr int actionCountLineHeight = 14;
+constexpr int actionCountHeaderHeight = 18;
+constexpr int actionCountPanelPadding = 6;
+constexpr int actionCountPanelHeight = actionCountHeaderHeight + actionCountLineHeight * 3 + actionCountPanelPadding;
 constexpr int effectAreaMaxStatusRows = 2;
 constexpr int effectAreaHeight = effectAreaRowHeight * effectAreaMaxStatusRows + actionCountPanelHeight;
 constexpr int effectAreaIconSize = 16;
@@ -48,6 +52,7 @@ constexpr int outsideStackPanelOffsetY = effectAreaTop + effectAreaHeight + 3;
 /// Compact read-only indicators for active Counterspell and Warcasting battle state.
 class HeroBattleStatusArea : public CIntObject
 {
+	std::vector<std::shared_ptr<CFilledTexture>> textures;
 	std::vector<std::shared_ptr<TransparentFilledRectangle>> backgrounds;
 	std::shared_ptr<CPicture> warcastingIcon;
 	std::vector<std::shared_ptr<CLabel>> labels;
@@ -62,6 +67,7 @@ class HeroBattleStatusArea : public CIntObject
 	bool renderDuringShow = true;
 
 	void refreshContents();
+	void addFramedBackground(const Rect & bounds);
 
 public:
 	HeroBattleStatusArea(const Point & position);
@@ -79,6 +85,7 @@ class HeroInfoBasicPanel : public BattleSidePanel //extracted from InfoWindow to
 private:
 	std::shared_ptr<CPicture> background;
 	std::shared_ptr<HeroBattleStatusArea> battleStatus;
+	std::shared_ptr<LRClickableAreaWText> spellPointsArea;
 	std::vector<std::shared_ptr<CLabel>> labels;
 	std::vector<std::shared_ptr<CAnimImage>> icons;
 	bool showBattleStatus = false;

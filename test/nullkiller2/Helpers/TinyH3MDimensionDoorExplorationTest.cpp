@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "SpellPointTestUtils.h"
 
 #include "AI/Nullkiller2/AIGateway.h"
 #include "AI/Nullkiller2/Engine/FuzzyHelper.h"
@@ -93,7 +94,7 @@ public:
 		if(spellCost <= 0)
 			return false;
 
-		hero.mana = spellCost;
+		setTestSpellPointTotal(&hero, spellCost);
 		hero.setMovementPoints(500);
 		return true;
 	}

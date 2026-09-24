@@ -82,8 +82,8 @@ inline bool battleMeditationEligible(const JsonNode & rules, const CGHeroInstanc
 
 inline constexpr int BATTLE_MEDITATION_MANA_RECOVERY = 3;
 
-/// SetMana stores Mana in int32_t and applies relative changes without a
-/// maximum-mana clamp, so cap the refund at the representable amount first.
+/// Battle Meditation restores the capacity-bound Normal pool, whose storage is
+/// int32_t; cap the refund at the representable amount first.
 inline int battleMeditationRecoveryAmount(int32_t currentMana)
 {
 	const auto room = static_cast<int64_t>(std::numeric_limits<int32_t>::max()) - currentMana;

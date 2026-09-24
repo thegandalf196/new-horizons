@@ -104,11 +104,11 @@ TEST_F(NewHorizonsMagicFixtureExportTest, ExportOrdinaryFullBookWithStartingRank
 	// Preserve the original 200-mana oracle for legacy primary rules.
 	ASSERT_EQ(human->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 20);
 	const int expectedHumanMana = human->usesPrimaryGrowth() ? 20 : 200;
-	ASSERT_EQ(human->mana, expectedHumanMana);
+	ASSERT_EQ(human->getManaAvailable(), expectedHumanMana);
 	ASSERT_EQ(human->manaLimit(), expectedHumanMana);
 	ASSERT_EQ(computer->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 10);
 	const int expectedComputerMana = computer->usesPrimaryGrowth() ? 10 : 100;
-	ASSERT_EQ(computer->mana, expectedComputerMana);
+	ASSERT_EQ(computer->getManaAvailable(), expectedComputerMana);
 	ASSERT_EQ(computer->manaLimit(), expectedComputerMana);
 	ASSERT_EQ(human->getSpellsInSpellbook(), std::set<SpellID>(originalSpells.begin(), originalSpells.end()));
 	for(const auto & [oldSkill, rank] : authoredRanks)

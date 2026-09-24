@@ -100,7 +100,7 @@ TEST_P(HeroCommandFixtureExportTest, ExportValidatedOrdinaryHeroBattle)
 		ASSERT_EQ(hero->getPrimSkillLevel(PrimarySkill::ATTACK), 2);
 		ASSERT_EQ(hero->getPrimSkillLevel(PrimarySkill::DEFENSE), 2);
 		ASSERT_EQ(hero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), 10);
-		ASSERT_EQ(hero->mana, 100);
+		ASSERT_EQ(hero->getManaAvailable(), 100);
 		ASSERT_EQ(hero->stacksCount(), 2);
 		ASSERT_EQ(hero->getStackCount(SlotID(0)), 600);
 		ASSERT_EQ(hero->getStackCount(SlotID(1)), 80);

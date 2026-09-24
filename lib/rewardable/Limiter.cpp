@@ -11,6 +11,8 @@
 #include "StdInc.h"
 #include "Limiter.h"
 
+#include <limits>
+
 #include "../CPlayerState.h"
 #include "../CSkillHandler.h"
 #include "../StartInfo.h"
@@ -124,7 +126,7 @@ bool Rewardable::Limiter::heroAllowed(const CGHeroInstance * hero) const
 	if(static_cast<TExpType>(heroExperience) > hero->exp)
 		return false;
 
-	if(manaPoints > hero->mana)
+	if(manaPoints > hero->getManaAvailable())
 		return false;
 
 	if(movePoints > hero->movementPointsRemaining())
@@ -133,7 +135,7 @@ bool Rewardable::Limiter::heroAllowed(const CGHeroInstance * hero) const
 	if (canLearnSkills && !hero->canLearnSkill())
 		return false;
 
-	if (hero->manaLimit() != 0 && manaPercentage > 100 * hero->mana / hero->manaLimit())
+	if (hero->manaLimit() != 0 && manaPercentage > 100 * hero->getManaAvailable() / hero->manaLimit())
 		return false;
 
 	if (hero->movementPointsLimit() != 0 && movePercentage > 100 * hero->movementPointsRemaining()/ hero->movementPointsLimit())
@@ -285,8 +287,12 @@ void Rewardable::Limiter::loadComponents(std::vector<Component> & comps,
 
 	if (manaPoints || manaPercentage > 0)
 	{
-		int absoluteMana = (h && h->manaLimit()) ? (manaPercentage * h->mana / h->manaLimit() / 100) : 0;
-		comps.emplace_back(ComponentType::MANA, absoluteMana + manaPoints);
+		const int64_t absoluteMana = (h && h->manaLimit())
+			? static_cast<int64_t>(manaPercentage) * h->getManaAvailable() / h->manaLimit() / 100
+			: 0;
+		const int32_t displayedMana = static_cast<int32_t>(std::clamp<int64_t>(absoluteMana + manaPoints,
+			std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
+		comps.emplace_back(ComponentType::MANA, displayedMana);
 	}
 
 	for (size_t i=0; i<primary.size(); i++)

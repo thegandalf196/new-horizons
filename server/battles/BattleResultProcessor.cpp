@@ -30,6 +30,7 @@
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 
 #include <vcmi/spells/Spell.h>
 
@@ -545,11 +546,13 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleID & battleID
 	const bool skeletonAvailable = existingSkeletonSlot.validSlot() || !freeSlots.empty();
 	const bool zombieAvailable = existingZombieSlot.validSlot() || !freeSlots.empty();
 	const bool zombieChoice = selected && *selected == zombie;
-	const int32_t postBattleMana = std::min<int32_t>(winnerHero->mana, initialMana);
-	// Black Harvest is a separate perk gate.  The resolver's mana field is
-	// otherwise zero even when a large conversion is performed. Use the same
-	// post-battle clamp baseline as BattleResultsApplied so combat-only bonus
-	// mana cannot suppress a recovery that will fit after the clamp.
+	const bool hasTwoPoolSpellPoints = newHorizonsMagic::spellPointRulesActive(winnerHero->getMagicRules());
+	const int32_t currentNormal = winnerHero->getNormalSpellPoints();
+	const int32_t postBattleMana = hasTwoPoolSpellPoints
+		? currentNormal
+		: std::min<int32_t>(currentNormal, initialMana);
+	// Black Harvest uses remaining Normal capacity. Combat-only Buffer never
+	// suppresses a recovery that fits in Normal.
 	auto summary = newHorizonsNecromancy::resolve(winnerHero->getNewHorizonsNecromancyRank(), eligibleCount,
 		boneCollector, corpsePreservation, darkConversion, zombieChoice,
 		skeletonAvailable, zombieAvailable, postBattleMana,
@@ -735,7 +738,8 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 			// stack/mana packs are emitted.
 			const auto preview = newHorizonsNecromancy::resolve(winnerHero->getNewHorizonsNecromancyRank(),
 				eligibleCount, boneCollector, corpsePreservation, darkConversion, false,
-				true, true, winnerHero->mana, blackHarvest ? winnerHero->manaLimit() : winnerHero->mana);
+				true, true, winnerHero->getNormalSpellPoints(),
+				blackHarvest ? winnerHero->manaLimit() : winnerHero->getNormalSpellPoints());
 			std::vector<CreatureID> choices;
 			std::map<CreatureID, int32_t> offeredCounts;
 			if(preview.skeletonsOffered > 0)

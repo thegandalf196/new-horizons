@@ -39,12 +39,12 @@ bool TownPortalAction::canAct(const CGHeroInstance * hero, const AIPathNode * so
 	logAi->trace(
 		"Hero %s has %d mana and needed %d and already spent %d",
 		hero->name,
-		hero->mana,
+		hero->getManaAvailable(),
 		getManaCost(hero),
 		source->manaCost);
 #endif
 
-	return hero->mana >= source->manaCost + getManaCost(hero);
+	return hero->getManaAvailable() >= source->manaCost + getManaCost(hero);
 }
 
 uint32_t TownPortalAction::getManaCost(const CGHeroInstance * hero) const

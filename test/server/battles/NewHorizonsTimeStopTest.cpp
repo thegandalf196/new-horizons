@@ -298,7 +298,7 @@ TEST_F(NewHorizonsTimeStopContentTest, RealCastDrainsRoundAndNextHeroActionExpir
 	attackerSideHero->setSecSkillLevel(SecondarySkill(decodedMetamagic), 1, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	startBattle();
 
 	const BattleHex center(8, 5);
@@ -414,7 +414,7 @@ TEST_F(NewHorizonsTimeStopContentTest, InvalidHeroTargetDoesNotExpireOrAdvanceSt
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(spell);
 	attackerSideHero->setSecSkillLevel(SecondarySkill::WISDOM, 3, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	startBattle();
 
 	auto * attacker = addStack(BattleSide::ATTACKER, CreatureID(0), BattleHex(8, 5), 10);
@@ -466,7 +466,7 @@ TEST_F(NewHorizonsTimeStopTypedActionTest, MetamagicSpellActionDoesNotExpireTime
 	attackerSideHero->setSecSkillLevel(SecondarySkill::WISDOM, 3, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	startBattle();
 
 	const BattleHex center(8, 5);
@@ -525,7 +525,7 @@ TEST_F(NewHorizonsTimeStopContentTest, SelectedHexUsesOccupiedIntersectionAndAll
 	attackerSideHero->setSecSkillLevel(SecondarySkill::WISDOM, 3, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	startBattle();
 
 	const BattleHex center(8, 5);
@@ -591,7 +591,7 @@ TEST_F(NewHorizonsTimeStopContentTest, ChronomancerRadiusThreeIncludesDoubleWide
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 1000, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	startBattle();
 
 	// Find a legal location where only the non-head hex of a double-wide unit

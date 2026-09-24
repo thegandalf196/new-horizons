@@ -46,6 +46,7 @@
 #include "../pathfinder/TurnInfo.h"
 #include "../serializer/JsonSerializeFormat.h"
 #include "../spells/CSpell.h"
+#include "../spells/CSpellHandler.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../spells/NewHorizonsSpellAvailability.h"
 #include "../entities/hero/NewHorizonsMasteryEffects.h"
@@ -59,6 +60,21 @@
 #include "../constants/StringConstants.h"
 #include "../battle/Unit.h"
 #include "CConfigHandler.h"
+
+namespace
+{
+const ArtifactID & spellbindersHatArtifactID()
+{
+	static const ArtifactID result(ArtifactID::decode("core:spellbindersHat"));
+	return result;
+}
+
+bool isSpellbindersHatLevelGrant(const Bonus & bonus)
+{
+	return bonus.source == BonusSource::ARTIFACT
+		&& bonus.sid == BonusSourceID(spellbindersHatArtifactID());
+}
+}
 
 const ui32 CGHeroInstance::NO_PATROLLING = std::numeric_limits<ui32>::max();
 
@@ -393,7 +409,6 @@ CGHeroInstance::CGHeroInstance(IGameInfoCallback * cb)
 	tacticFormationEnabled(true),
 	inTownGarrison(false),
 	moveDir(4),
-	mana(UNINITIALIZED_MANA),
 	movement(UNINITIALIZED_MOVEMENT),
 	level(1),
 	exp(UNINITIALIZED_EXPERIENCE),
@@ -687,7 +702,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	recreateSecondarySkillsBonuses();
 
 	movement = movementPointsLimit();
-	mana = manaLimit(); //after all bonuses are taken into account, make sure this line is the last one
+	initializeSpellPoints(manaLimit()); //after all bonuses are taken into account, make sure this line is the last one
 }
 
 void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
@@ -990,12 +1005,13 @@ double CGHeroInstance::getMagicStrength() const
 		return 1;
 	if(usesPrimaryGrowth())
 	{
-		const double fraction = static_cast<double>(mana) / manaLimit();
+		const double fraction = static_cast<double>(getManaAvailable()) / manaLimit();
 		const double power = static_cast<double>(getPrimSkillLevel(PrimarySkill::SPELL_POWER)) / getEffectPowerDivisor(nullptr);
 		const double knowledge = getPrimSkillLevel(PrimarySkill::KNOWLEDGE) / 10.0;
 		return sqrt((1.0 + 0.05 * knowledge * fraction) * (1.0 + 0.05 * power * fraction));
 	}
-	return sqrt((1.0 + 0.05*skillValues[PrimarySkill::KNOWLEDGE.getNum()] * mana / manaLimit()) * (1.0 + 0.05*skillValues[PrimarySkill::SPELL_POWER.getNum()] * mana / manaLimit()));
+	const double manaFraction = static_cast<double>(getManaAvailable()) / manaLimit();
+	return sqrt((1.0 + 0.05*skillValues[PrimarySkill::KNOWLEDGE.getNum()] * manaFraction) * (1.0 + 0.05*skillValues[PrimarySkill::SPELL_POWER.getNum()] * manaFraction));
 }
 
 double CGHeroInstance::getHeroStrength() const
@@ -1206,12 +1222,13 @@ void CGHeroInstance::spendMana(ServerCallback * server, const int spellCost) con
 {
 	if(spellCost != 0)
 	{
-		SetMana sm;
-		sm.mode = ChangeValueMode::RELATIVE;
-		sm.hid = id;
-		sm.val = -spellCost;
-
-		server->apply(sm);
+		SetMana change;
+		change.hid = id;
+		if(spellCost > 0)
+			change.setOperation(SetMana::Operation::SPEND, spellCost);
+		else
+			change.setOperation(SetMana::Operation::RESTORE_NORMAL, -static_cast<int64_t>(spellCost));
+		server->apply(change);
 	}
 }
 
@@ -1221,10 +1238,9 @@ bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 		return false;
 	if(isNewHorizonsSpellExcluded(spell->getId()))
 		return false;
-	const bool inSpellBook = spellbookContainsSpell(spell->getId()) && hasSpellbook();
-	// A spell already inscribed in the hero's spellbook is known and castable.
-	// School proficiency governs learning new spells and non-inscribed sources;
-	// it must never invalidate an authored or previously learned spellbook entry.
+	const bool inSpellBook = isSpellInscribedForCasting(spell->getId()) && hasSpellbook();
+	// An eligible temporary inscription is treated like a known spell for school
+	// proficiency. This does not grant the physical Spellbook or other casting permissions.
 	if(!inSpellBook && !newHorizonsMagic::hasSchoolProficiency(this, spell->getId()))
 		return false;
 
@@ -1401,24 +1417,26 @@ int CGHeroInstance::getSightRadius() const
 si32 CGHeroInstance::manaRegain() const
 {
 	int percentageRegeneration = valOfBonuses(BonusType::MANA_PERCENTAGE_REGENERATION);
-	int regeneratedByPercentage = manaLimit() * percentageRegeneration / 100;
-	int regeneratedByValue = valOfBonuses(BonusType::MANA_REGENERATION);
+	const int64_t regeneratedByPercentage = static_cast<int64_t>(manaLimit()) * percentageRegeneration / 100;
+	const int64_t regeneratedByValue = valOfBonuses(BonusType::MANA_REGENERATION);
 
-	return std::max(regeneratedByValue, regeneratedByPercentage);
+	return static_cast<si32>(std::clamp<int64_t>(std::max(regeneratedByValue, regeneratedByPercentage),
+		std::numeric_limits<si32>::min(), std::numeric_limits<si32>::max()));
 }
 
 si32 CGHeroInstance::getManaNewTurn() const
 {
+	const int32_t normal = getNormalSpellPoints();
 	if(getVisitedTown() && getVisitedTown()->hasBuilt(BuildingID::MAGES_GUILD_1))
 	{
-		//if hero starts turn in town with mage guild - restore all mana
-		return std::max(mana, manaLimit());
+		//if hero starts turn in town with mage guild - restore Normal to capacity
+		return std::max(normal, manaLimit());
 	}
-	si32 res = mana + manaRegain();
-	res = std::min(res, manaLimit());
-	res = std::max(res, mana);
-	res = std::max(res, 0);
-	return res;
+	int64_t res = static_cast<int64_t>(normal) + manaRegain();
+	res = std::min<int64_t>(res, manaLimit());
+	res = std::max<int64_t>(res, normal);
+	res = std::max<int64_t>(res, 0);
+	return static_cast<si32>(std::min<int64_t>(res, std::numeric_limits<si32>::max()));
 }
 
 // /**
@@ -1520,11 +1538,109 @@ std::string CGHeroInstance::nodeName() const
 
 si32 CGHeroInstance::manaLimit() const
 {
+	if(newHorizonsMagic::spellPointRulesActive(getMagicRules()))
+	{
+		const int64_t knowledge = std::max<int64_t>(0, getPrimSkillLevel(PrimarySkill::KNOWLEDGE));
+		const bool intelligence = hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.intelligence");
+		const int32_t percent = intelligence
+			? newHorizonsMagic::spellPointsIntelligenceMaximumPercent(getMagicRules())
+			: 100;
+		return static_cast<si32>(std::min<int64_t>(knowledge * percent / 100, std::numeric_limits<si32>::max()));
+	}
+
 	// Existing cache has a 1000% (ten mana/Knowledge) base. Normalize that
 	// base to one in the new scale, preserving Intelligence/artifact modifiers.
 	const int percentageBase = usesPrimaryGrowth() ? 1000 : 100;
 	const auto value = static_cast<int64_t>(getPrimSkillLevel(PrimarySkill::KNOWLEDGE)) * manaPerKnowledgeCached.getValue() / percentageBase;
 	return std::clamp<int64_t>(value, 0, std::numeric_limits<int32_t>::max());
+}
+
+int64_t CGHeroInstance::getManaAvailable() const
+{
+	return spellPointState.getTotal();
+}
+
+int32_t CGHeroInstance::getNormalSpellPoints() const
+{
+	return spellPointState.getNormal();
+}
+
+int32_t CGHeroInstance::getBufferSpellPoints() const
+{
+	return spellPointState.getBuffer();
+}
+
+void CGHeroInstance::initializeSpellPoints(int32_t normal, int32_t buffer)
+{
+	if(normal < 0 || buffer < 0)
+		throw std::runtime_error("Cannot initialize negative Spell Point pools");
+	const int32_t maximum = newHorizonsMagic::spellPointRulesActive(getMagicRules())
+		? manaLimit()
+		: std::numeric_limits<int32_t>::max();
+	if(!spellPointState.restoreSnapshot(normal, buffer, maximum))
+		throw std::runtime_error("Cannot initialize invalid Spell Point pools");
+	spellPointsInitialized = true;
+}
+
+void CGHeroInstance::restoreSpellPointSnapshot(int32_t normal, int32_t buffer)
+{
+	initializeSpellPoints(normal, buffer);
+}
+
+void CGHeroInstance::setNormalSpellPoints(int32_t value)
+{
+	if(value < 0)
+		value = 0;
+	const int32_t maximum = newHorizonsMagic::spellPointRulesActive(getMagicRules())
+		? manaLimit()
+		: std::numeric_limits<int32_t>::max();
+	spellPointState.setNormal(value, maximum);
+	spellPointsInitialized = true;
+}
+
+bool CGHeroInstance::restoreNormalSpellPoints(int32_t amount)
+{
+	const int32_t maximum = newHorizonsMagic::spellPointRulesActive(getMagicRules())
+		? manaLimit()
+		: std::numeric_limits<int32_t>::max();
+	const bool restored = spellPointState.restoreNormal(amount, maximum);
+	if(restored)
+		spellPointsInitialized = true;
+	return restored;
+}
+
+bool CGHeroInstance::grantBufferSpellPoints(int32_t amount)
+{
+	if(!newHorizonsMagic::spellPointRulesActive(getMagicRules()))
+		return false;
+	const bool granted = spellPointState.grantBuffer(amount);
+	if(granted)
+		spellPointsInitialized = true;
+	return granted;
+}
+
+bool CGHeroInstance::removeBufferSpellPoints(int64_t amount)
+{
+	const bool removed = spellPointState.removeBuffer(amount);
+	if(removed)
+		spellPointsInitialized = true;
+	return removed;
+}
+
+bool CGHeroInstance::spendSpellPoints(int64_t amount)
+{
+	const bool spent = spellPointState.spend(amount);
+	if(spent)
+		spellPointsInitialized = true;
+	return spent;
+}
+
+void CGHeroInstance::clampSpellPointsToCapacity()
+{
+	const int32_t maximum = newHorizonsMagic::spellPointRulesActive(getMagicRules())
+		? manaLimit()
+		: std::numeric_limits<int32_t>::max();
+	spellPointState.clampNormal(maximum);
 }
 
 HeroTypeID CGHeroInstance::getPortraitSource() const
@@ -1608,6 +1724,47 @@ bool CGHeroInstance::spellbookContainsSpell(const SpellID & spell) const
 	return vstd::contains(spells, spell);
 }
 
+bool CGHeroInstance::isSpellInscribedForCasting(const SpellID & spellId) const
+{
+	return spellbookContainsSpell(spellId) || isSpellbinderHatGrantEligible(spellId);
+}
+
+bool CGHeroInstance::isSpellbinderHatGrantEligible(const SpellID & spellId) const
+{
+	// The temporary grant is tied to this exact equipped artifact and a saved
+	// New Horizons rules snapshot. Legacy games retain SPELLS_OF_LEVEL behavior.
+	if(!spellId.hasValue() || !newHorizonsMagic::rulesActive(getMagicRules()) || !cb)
+		return false;
+	const auto * head = getArt(ArtifactPosition::HEAD);
+	if(!head || head->getTypeId() != spellbindersHatArtifactID())
+		return false;
+
+	const auto * spell = spellId.toSpell();
+	if(!spell || !spell->isCommonHeroSpell() || !spell->isCombat())
+		return false;
+	if(!newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spellId)
+		|| isNewHorizonsSpellExcluded(spellId) || !cb->isAllowed(spellId))
+		return false;
+
+	return getSpellLevel(spell) == 5;
+}
+
+std::set<SpellID> CGHeroInstance::getInscribedSpellsForCasting() const
+{
+	auto result = spells;
+	if(!newHorizonsMagic::rulesActive(getMagicRules()) || !cb || !LIBRARY || !LIBRARY->spellh)
+		return result;
+	const auto * head = getArt(ArtifactPosition::HEAD);
+	if(!head || head->getTypeId() != spellbindersHatArtifactID())
+		return result;
+
+	for(const auto & spell : LIBRARY->spellh->objects)
+		if(spell && isSpellInscribedForCasting(spell->getId()))
+			result.insert(spell->getId());
+
+	return result;
+}
+
 std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & spellId) const
 {
 	std::vector<BonusSourceID> sources;
@@ -1635,7 +1792,15 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 		}
 
 		for(const auto & bonus : *getBonusesOfType(BonusType::SPELLS_OF_LEVEL, BonusCustomSubtype::spellLevel(getSpellLevel(spell))))
+		{
+			// In New Horizons the Hat's temporary level-5 grant must not resurrect
+			// map-banned or otherwise unavailable spells, even when legacy tome rules
+			// allow other SPELLS_OF_LEVEL sources to grant banned spells.
+			if(newHorizonsMagic::rulesActive(getMagicRules()) && isSpellbindersHatLevelGrant(*bonus)
+				&& !isSpellbinderHatGrantEligible(spellId))
+				continue;
 			sources.emplace_back(bonus->sid);
+		}
 	}
 
 	return sources;

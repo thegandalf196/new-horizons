@@ -154,7 +154,8 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				return listedCost;
 			};
 			const int baseMana = metamagicBaseCost(hero, callback->battleGetSpellCost(spell, hero));
-			const int maximumOvercharge = std::min(formulaMaximumOvercharge, std::max(0, hero->mana - baseMana));
+			const int maximumOvercharge = static_cast<int>(std::min<int64_t>(formulaMaximumOvercharge,
+				std::max<int64_t>(0, hero->getManaAvailable() - baseMana)));
 
 			// battleGetSpellCost is the authoritative ordinary cost. Runtime owns
 			// Wisdom and other modifiers; apply the same Metamagic discount as the
@@ -181,7 +182,7 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				values.baseMana = metamagicBaseCost(hero, callback->battleGetSpellCost(spell, hero));
 				values.additionalMana = values.overcharge;
 				values.totalMana = values.baseMana + values.additionalMana;
-				values.availableMana = hero->mana;
+				values.availableMana = hero->getManaAvailable();
 				values.affordable = values.totalMana <= values.availableMana;
 				values.targetDescription = "Target: " + std::to_string(target->getCount()) + " "
 					+ target->unitType()->getNamePluralTranslated();
@@ -231,7 +232,7 @@ void BattleInterface::installMagicArrowOverchargeUI()
 					return false;
 
 				const int baseCost = metamagicBaseCost(hero, callback->battleGetSpellCost(spell, hero));
-				if(baseCost < 0 || baseCost + overcharge > hero->mana)
+				if(baseCost < 0 || baseCost + overcharge > hero->getManaAvailable())
 					return false;
 
 				BattleAction action = pending;
@@ -435,7 +436,7 @@ void BattleInterface::installTemporalFieldUI()
 
 				values.ordinaryMana = callback->battleGetSpellCost(spell, hero);
 				values.massMana = callback->battleGetSpellCost(spell, hero, 3);
-				values.availableMana = hero->mana;
+				values.availableMana = hero->getManaAvailable();
 				const auto side = callback->battleGetMySide();
 				values.remaining = side != BattleSide::NONE && !callback->battleWasTemporalFieldUsed(side);
 

@@ -614,7 +614,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		counterspellCost = newHorizonsMagic::counterspellCost(listedCost,
 			counteringHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.countermage"),
 			battle.battleMetamagicCountersequenceArmed(counteringSide));
-		counterspellNegated = counteringHero->mana >= counterspellCost;
+		counterspellNegated = counteringHero->getManaAvailable() >= counterspellCost;
 		parameters.setCounterspell(counteringSide, counterspellNegated);
 	}
 

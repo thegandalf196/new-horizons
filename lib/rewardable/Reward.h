@@ -14,6 +14,9 @@
 #include "../bonuses/Bonus.h"
 #include "../networkPacks/Component.h"
 
+#include <limits>
+#include <stdexcept>
+
 struct Bonus;
 struct Component;
 class CStackBasicDescriptor;
@@ -67,6 +70,9 @@ struct DLL_LINKAGE Reward final
 
 	/// mana given to/taken from hero, fixed value
 	si32 manaDiff;
+
+	/// independent Buffer Spell Points granted without restoring Normal
+	si32 manaBuffer;
 
 	/// if giving mana points puts hero above mana pool, any overflow will be multiplied by specified percentage
 	si32 manaOverflowFactor;
@@ -163,6 +169,16 @@ struct DLL_LINKAGE Reward final
 		h & creaturesChange;
 		h & revealTiles;
 		h & spellCast;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_POINTS))
+		{
+			h & manaBuffer;
+			if(!h.saving && manaBuffer < 0)
+				throw std::runtime_error("Invalid negative Buffer Spell Point reward");
+		}
+		else if(h.saving && manaBuffer != 0)
+			throw std::runtime_error("Buffer reward requires the New Horizons Spell Point save format");
+		else if(!h.saving)
+			manaBuffer = 0;
 	}
 	
 	void serializeJson(JsonSerializeFormat & handler);

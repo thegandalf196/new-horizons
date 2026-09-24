@@ -10,6 +10,7 @@
 #pragma once
 
 #include "BattleTestFixture.h"
+#include "../../SpellPointTestUtils.h"
 #include "../../../lib/battle/HeroCommand.h"
 #include "../../../lib/filesystem/ResourcePath.h"
 #include "../../../lib/mapping/CMap.h"
@@ -47,7 +48,7 @@ protected:
 		{
 			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 			attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
-			attackerSideHero->mana = 100;
+			setTestSpellPointTotal(attackerSideHero, 100);
 		}
 		startBattle();
 		beginCombat();

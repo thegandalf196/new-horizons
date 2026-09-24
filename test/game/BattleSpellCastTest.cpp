@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../SpellPointTestUtils.h"
 
 #include "mock/mock_Services.h"
 #include "mock/mock_MapService.h"
@@ -400,7 +401,7 @@ public:
 		}
 
 		hero->addSpellToSpellbook(spell);
-		hero->mana = 99999;
+		setTestSpellPointTotal(hero, 99999);
 	}
 
 	/// Append a stack to an ongoing battle and return the created unit.
@@ -578,7 +579,7 @@ TEST_F(BattleSpellCastTest, battleResurrection)
 	attacker->addSpellToSpellbook(SpellID::RESURRECTION);
 	attacker->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	attacker->setPrimarySkill(PrimarySkill::KNOWLEDGE, 20, ChangeValueMode::ABSOLUTE);
-	attacker->mana = attacker->manaLimit();
+	setTestSpellPointTotal(attacker, attacker->manaLimit());
 
 	{
 		NewArtifact na;
@@ -730,7 +731,7 @@ TEST_F(BattleSpellCastTest, chainLightningChainsToDistinctUnits)
 	ASSERT_NE(attacker, nullptr);
 	ASSERT_NE(defender, nullptr);
 
-	attacker->mana = 999;
+	setTestSpellPointTotal(attacker, 999);
 
 	startTestBattle(attacker, defender);
 

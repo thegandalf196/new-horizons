@@ -1387,7 +1387,7 @@ void BattleFlowProcessor::stackTurnTrigger(const CBattleInfoCallback & battle, c
 			if(opponentHero)
 			{
 				ui32 manaDrained = st->valOfBonuses(BonusType::MANA_DRAIN);
-				vstd::amin(manaDrained, opponentHero->mana);
+				manaDrained = static_cast<ui32>(std::min<int64_t>(manaDrained, opponentHero->getManaAvailable()));
 				if(manaDrained)
 				{
 					bte.effect = BonusType::MANA_DRAIN;

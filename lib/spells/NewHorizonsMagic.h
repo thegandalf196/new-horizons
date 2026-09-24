@@ -33,6 +33,8 @@ namespace newHorizonsMagic
 {
 constexpr int RULESET_VERSION = 1;
 constexpr int DIRECT_DAMAGE_RULESET_VERSION = 2;
+constexpr int SPELL_POINTS_RULESET_VERSION = 1;
+constexpr int SPELL_POINTS_INTELLIGENCE_MAXIMUM_PERCENT = 130;
 constexpr int DIRECT_DAMAGE_POWER_DIVISOR = 10;
 constexpr int COUNTERSPELL_LISTED_COST = 11;
 inline constexpr std::string_view METAMAGIC_SKILL = "new-horizons:metamagic";
@@ -70,6 +72,11 @@ constexpr int LAND_MINE_FOUR_HEX_POWER = 200;
 /// identity and requires non-NH common coverage. Present NH common rows require
 /// v2; absent newly installed NH content never invalidates an older roster.
 DLL_LINKAGE void validateRules(const JsonNode & rules);
+/// True only when the saved magic-rules snapshot opts into the Normal/Buffer
+/// Spell Point model. Installed configuration never activates it for a legacy save.
+DLL_LINKAGE bool spellPointRulesActive(const JsonNode & rules);
+/// Saved Intelligence capacity multiplier for the opted-in Spell Point rules.
+DLL_LINKAGE int32_t spellPointsIntelligenceMaximumPercent(const JsonNode & rules);
 /// True when the supplied saved battle snapshot uses New Horizons magic.
 /// This is intentionally state-backed; installed content alone must not alter
 /// legacy saves.

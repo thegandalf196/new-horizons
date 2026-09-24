@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../SpellPointTestUtils.h"
 #include "FocusFireFixture.h"
 
 class FocusFireLifecycleTest : public FocusFireFixture {};
@@ -17,7 +18,7 @@ TEST_F(FocusFireLifecycleTest, ValidSpellExcludesFocusFire)
 	ASSERT_NO_FATAL_FAILURE(prepareFocus());
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	ASSERT_TRUE(submit(heroAction(0)));
 	const auto started = server.startedActions.size();
 	EXPECT_FALSE(submit(focusAction(target->unitId())));
@@ -30,13 +31,13 @@ TEST_F(FocusFireLifecycleTest, FocusFireExcludesAnOtherwiseLegalSpellWithoutMana
 	ASSERT_NO_FATAL_FAILURE(prepareFocus());
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	ASSERT_EQ(battle()->battleCanCastSpell(attackerSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
 	ASSERT_TRUE(submit(focusAction(target->unitId())));
 	const auto started = server.startedActions.size();
 	EXPECT_FALSE(submit(heroAction(0)));
 	EXPECT_EQ(server.startedActions.size(), started);
-	EXPECT_EQ(attackerSideHero->mana, 100);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 100);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
 }
 

@@ -54,6 +54,7 @@ bool hasNonSkillReward(const Rewardable::Reward & reward)
 		|| reward.heroExperience != 0
 		|| reward.heroLevel != 0
 		|| reward.manaDiff != 0
+		|| reward.manaBuffer != 0
 		|| reward.manaPercentage >= 0
 		|| reward.movePoints != 0
 		|| reward.movePercentage >= 0
@@ -253,8 +254,26 @@ void Rewardable::Interface::grantRewardAfterLevelup(IGameEventCallback & gameEve
 {
 	auto cb = getObject()->cb;
 
-	if(info.reward.manaDiff || info.reward.manaPercentage >= 0)
+	const bool spellPointRules = newHorizonsMagic::spellPointRulesActive(hero->getMagicRules());
+	if(spellPointRules && info.reward.manaDiff < 0)
+	{
+		// Percentage rewards replace Normal first; the fixed negative portion is
+		// then paid from Buffer before Normal. Keep Buffer grants below this block
+		// so a reward cannot spend the Buffer it is itself granting.
+		if(info.reward.manaPercentage >= 0)
+		{
+			const int64_t requestedNormal = static_cast<int64_t>(hero->manaLimit()) * info.reward.manaPercentage / 100;
+			const int32_t cappedNormal = static_cast<int32_t>(std::clamp<int64_t>(requestedNormal, 0, hero->manaLimit()));
+			gameEvents.setManaPoints(hero->id, cappedNormal);
+		}
+		const int64_t requestedCost = -static_cast<int64_t>(info.reward.manaDiff);
+		const int64_t affordableCost = std::min(requestedCost, hero->getManaAvailable());
+		gameEvents.spendSpellPoints(hero->id, affordableCost);
+	}
+	else if(info.reward.manaDiff || info.reward.manaPercentage >= 0)
 		gameEvents.setManaPoints(hero->id, info.reward.calculateManaPoints(hero));
+	if(info.reward.manaBuffer > 0)
+		gameEvents.grantBufferSpellPoints(hero->id, info.reward.manaBuffer);
 
 	if(info.reward.movePoints != 0 || info.reward.movePercentage >= 0)
 		gameEvents.setMovePoints(hero->id, info.reward.calculateMovePoints(hero));

@@ -43,7 +43,7 @@ void AdventureSpellCast::accept(AIGateway * aiGw)
 	if(!hero->canCastThisSpell(spell))
 		throw cannotFulfillGoalException("Hero can not cast " + spell->getNameTranslated());
 
-	if(hero->mana < hero->getSpellCost(spell))
+	if(hero->getManaAvailable() < hero->getSpellCost(spell))
 		throw cannotFulfillGoalException("Hero has not enough mana to cast " + spell->getNameTranslated());
 
 	auto townPortalEffect = spell->getAdventureMechanics().getEffectAs<TownPortalEffect>(hero);

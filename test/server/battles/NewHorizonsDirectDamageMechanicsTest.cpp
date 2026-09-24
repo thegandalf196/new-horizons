@@ -248,7 +248,7 @@ protected:
 		spell = SpellID(SpellID::decode(selectedSpellKey)).toSpell();
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(spell->getId());
-		attackerSideHero->mana = 100;
+		setTestSpellPointTotal(attackerSideHero, 100);
 		startBattle();
 		target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
 		beginCombat();
@@ -341,7 +341,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuth
 	ASSERT_TRUE(mechanics->canBeCastAt(destination, problem));
 	ASSERT_EQ(mechanics->getEffectValue(), 68);
 	const auto before = target->getAvailableHealth();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	DamageEnvironment environment(gameState(), nullptr);
 	HypotheticBattle predicted(&environment, callback);
@@ -349,7 +349,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuth
 	prediction.castEval(predicted.getServerCallback(), destination);
 	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 68);
 	EXPECT_EQ(target->getAvailableHealth(), before);
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -357,7 +357,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuth
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(before - target->getAvailableHealth(), 68);
-	EXPECT_LT(attackerSideHero->mana, mana);
+	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(before - target->getAvailableHealth(), 68) << "Rejected second hero action must not apply damage";
 }
@@ -372,7 +372,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, IceBoltUsesCanonicalDamageAndFiveMa
 	auto * adjacent = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex - 1), 1000);
 	const auto healthBefore = target->getAvailableHealth();
 	const auto adjacentBefore = adjacent->getAvailableHealth();
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -381,7 +381,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, IceBoltUsesCanonicalDamageAndFiveMa
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(healthBefore - target->getAvailableHealth(), 65);
 	EXPECT_EQ(adjacent->getAvailableHealth(), adjacentBefore);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 5);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 5);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, LightningBoltUsesCanonicalHighPowerDamageAndFiveMana)
@@ -394,7 +394,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, LightningBoltUsesCanonicalHighPower
 	auto * adjacent = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex - 1), 1000);
 	const auto healthBefore = target->getAvailableHealth();
 	const auto adjacentBefore = adjacent->getAvailableHealth();
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -403,7 +403,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, LightningBoltUsesCanonicalHighPower
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(healthBefore - target->getAvailableHealth(), 170);
 	EXPECT_EQ(adjacent->getAvailableHealth(), adjacentBefore);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 5);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 5);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, FireballAppliesCanonicalDamageToTargetAndAdjacentOnly)
@@ -419,7 +419,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, FireballAppliesCanonicalDamageToTar
 	const auto targetBefore = target->getAvailableHealth();
 	const auto adjacentBefore = adjacent->getAvailableHealth();
 	const auto distantBefore = distant->getAvailableHealth();
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -429,7 +429,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, FireballAppliesCanonicalDamageToTar
 	EXPECT_EQ(targetBefore - target->getAvailableHealth(), 41);
 	EXPECT_EQ(adjacentBefore - adjacent->getAvailableHealth(), 41);
 	EXPECT_EQ(distant->getAvailableHealth(), distantBefore);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 5);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 5);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, FrostRingLeavesCenterSafeAndDamagesOnlyTheSurroundingRing)
@@ -449,7 +449,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, FrostRingLeavesCenterSafeAndDamages
 	for(const auto * stack : ring)
 		ringBefore.push_back(stack->getAvailableHealth());
 	const auto distantBefore = distant->getAvailableHealth();
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -460,7 +460,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, FrostRingLeavesCenterSafeAndDamages
 	for(size_t index = 0; index < ring.size(); ++index)
 		EXPECT_EQ(ringBefore[index] - ring[index]->getAvailableHealth(), 77) << "ring index " << index;
 	EXPECT_EQ(distant->getAvailableHealth(), distantBefore);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 8);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 8);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, InfernoDamagesItsBroadRadiusWithCanonicalFormula)
@@ -476,7 +476,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, InfernoDamagesItsBroadRadiusWithCan
 	const auto innerBefore = inner->getAvailableHealth();
 	const auto outerBefore = outer->getAvailableHealth();
 	const auto distantBefore = distant->getAvailableHealth();
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -487,7 +487,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, InfernoDamagesItsBroadRadiusWithCan
 	EXPECT_EQ(innerBefore - inner->getAvailableHealth(), 94);
 	EXPECT_EQ(outerBefore - outer->getAvailableHealth(), 94);
 	EXPECT_EQ(distant->getAvailableHealth(), distantBefore);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 13);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 13);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePredictionAndAuthoritativeManaPath)
@@ -507,7 +507,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	EXPECT_EQ(mechanics->getEffectValue(), 352);
 
 	const auto before = target->getAvailableHealth();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	DamageEnvironment environment(gameState(), nullptr);
 	HypotheticBattle predicted(&environment, callback);
@@ -516,7 +516,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	prediction.castEval(predicted.getServerCallback(), destination);
 	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 352);
 	EXPECT_EQ(target->getAvailableHealth(), before);
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -526,7 +526,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(before - target->getAvailableHealth(), 352);
-	EXPECT_EQ(attackerSideHero->mana, mana - 8);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 8);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, WisdomDiscountsMagicArrowBaseButNotOverchargeSurcharge)
@@ -544,7 +544,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, WisdomDiscountsMagicArrowBaseButNot
 	ASSERT_EQ(attackerSideHero->getSpellCost(spell), 3);
 	ASSERT_EQ(battle()->battleGetSpellCost(spell, attackerSideHero), 3);
 
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -552,7 +552,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, WisdomDiscountsMagicArrowBaseButNot
 	action.spellOvercharge = 4;
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(attackerSideHero->mana, mana - 7);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 7);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuthoritativeCastToSixPoints)
@@ -582,7 +582,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuth
 	EXPECT_EQ(mechanics->getEffectValue(), 656);
 
 	const auto before = target->getAvailableHealth();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	DamageEnvironment environment(gameState(), nullptr);
 	HypotheticBattle predicted(&environment, callback);
@@ -591,7 +591,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuth
 	prediction.castEval(predicted.getServerCallback(), destination);
 	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 656);
 	EXPECT_EQ(target->getAvailableHealth(), before);
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -601,7 +601,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuth
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(before - target->getAvailableHealth(), 656);
-	EXPECT_EQ(attackerSideHero->mana, mana - 10);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 10);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, ConductorUsesAuthoredPerJumpMultipliersInPredictionAndCast)
@@ -829,7 +829,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsOutOfRangeAndLegac
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	const auto before = target->getAvailableHealth();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	BattleAction tooMuch;
 	tooMuch.actionType = EActionType::HERO_SPELL;
@@ -839,7 +839,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsOutOfRangeAndLegac
 	tooMuch.aimToUnit(target);
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), tooMuch));
 	EXPECT_EQ(target->getAvailableHealth(), before);
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsMissingTargetBeforeSpendingManaOrAction)
@@ -848,7 +848,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsMissingTargetBefor
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	const auto before = target->getAvailableHealth();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	BattleAction missingTarget;
 	missingTarget.actionType = EActionType::HERO_SPELL;
@@ -857,7 +857,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsMissingTargetBefor
 	missingTarget.spellOvercharge = 4;
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), missingTarget));
 	EXPECT_EQ(target->getAvailableHealth(), before);
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 
 	BattleAction valid = missingTarget;
 	valid.aimToUnit(target);
@@ -870,7 +870,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, LegacyMagicArrowRejectsOverchargeWi
 	savedEnabled = false;
 	prepare();
 	const auto legacyHealth = target->getAvailableHealth();
-	const auto legacyMana = attackerSideHero->mana;
+	const auto legacyMana = attackerSideHero->getManaAvailable();
 	BattleAction legacy;
 	legacy.actionType = EActionType::HERO_SPELL;
 	legacy.side = BattleSide::ATTACKER;
@@ -879,7 +879,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, LegacyMagicArrowRejectsOverchargeWi
 	legacy.aimToUnit(target);
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), legacy));
 	EXPECT_EQ(target->getAvailableHealth(), legacyHealth);
-	EXPECT_EQ(attackerSideHero->mana, legacyMana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), legacyMana);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, LegacyWisdomDoesNotDiscountMagicArrow)
@@ -895,14 +895,14 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, LegacyWisdomDoesNotDiscountMagicArr
 	const auto legacyListed = spell->getCost(attackerSideHero->getSpellSchoolLevel(spell));
 	ASSERT_EQ(attackerSideHero->getListedSpellCost(spell), legacyListed);
 	ASSERT_EQ(attackerSideHero->getSpellCost(spell), legacyListed);
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
 	action.spell = spell->getId();
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(attackerSideHero->mana, mana - legacyListed);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - legacyListed);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, ActualAiPredictionAndServerApplicationUseSavedFormula)

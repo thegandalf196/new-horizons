@@ -82,8 +82,8 @@ protected:
 		attackerSideHero->addSpellToSpellbook(counterspell());
 		attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
 		defenderSideHero->addSpellToSpellbook(SpellID::HASTE);
-		attackerSideHero->mana = counterMana;
-		defenderSideHero->mana = 100;
+		setTestSpellPointTotal(attackerSideHero, counterMana);
+		setTestSpellPointTotal(defenderSideHero, 100);
 
 		startBattle();
 		attacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
@@ -149,7 +149,7 @@ protected:
 	bool castOwnHasteWithoutMana()
 	{
 		activate(attacker);
-		attackerSideHero->mana = 0;
+		setTestSpellPointTotal(attackerSideHero, 0);
 		BattleAction action;
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::ATTACKER;
@@ -203,19 +203,19 @@ TEST_F(CounterspellPerkTest, ArmedWardNegatesEnemyHeroSpellAndChargesListedCost)
 	prepare(100, false);
 	const auto enemyCost = defenderSideHero->getSpellCost(SpellID(SpellID::HASTE).toSpell());
 	ASSERT_EQ(enemyCost, 4);
-	const auto counterManaBefore = attackerSideHero->mana;
-	const auto enemyManaBefore = defenderSideHero->mana;
+	const auto counterManaBefore = attackerSideHero->getManaAvailable();
+	const auto enemyManaBefore = defenderSideHero->getManaAvailable();
 
 	ASSERT_TRUE(castCounterspell());
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
-	EXPECT_EQ(attackerSideHero->mana, counterManaBefore - newHorizonsMagic::COUNTERSPELL_LISTED_COST);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), counterManaBefore - newHorizonsMagic::COUNTERSPELL_LISTED_COST);
 
 	ASSERT_TRUE(castEnemyHaste());
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
 	EXPECT_FALSE(hasHaste());
-	EXPECT_EQ(attackerSideHero->mana, counterManaBefore - newHorizonsMagic::COUNTERSPELL_LISTED_COST
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), counterManaBefore - newHorizonsMagic::COUNTERSPELL_LISTED_COST
 		- newHorizonsMagic::counterspellCost(enemyCost, false));
-	EXPECT_EQ(defenderSideHero->mana, enemyManaBefore - enemyCost);
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), enemyManaBefore - enemyCost);
 
 	const auto casts = server.castsOf(SpellID::HASTE);
 	ASSERT_FALSE(casts.empty());
@@ -234,17 +234,17 @@ TEST_F(CounterspellPerkTest, CounterspellUsesEnemyListedCostBeforeWisdomDiscount
 	const auto discountedCost = defenderSideHero->getSpellCost(SpellID(SpellID::HASTE).toSpell());
 	ASSERT_EQ(listedCost, 4);
 	ASSERT_EQ(discountedCost, 3);
-	const auto counterManaBefore = attackerSideHero->mana;
-	const auto enemyManaBefore = defenderSideHero->mana;
+	const auto counterManaBefore = attackerSideHero->getManaAvailable();
+	const auto enemyManaBefore = defenderSideHero->getManaAvailable();
 
 	ASSERT_TRUE(castCounterspell());
 	ASSERT_TRUE(castEnemyHaste());
 
 	// The enemy pays discounted Wisdom mana, but Counterspell prices the ward
 	// from the enemy spell's raw listed cost: ceil(4 * 2) = 8.
-	EXPECT_EQ(attackerSideHero->mana, counterManaBefore - newHorizonsMagic::COUNTERSPELL_LISTED_COST
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), counterManaBefore - newHorizonsMagic::COUNTERSPELL_LISTED_COST
 		- newHorizonsMagic::counterspellCost(listedCost, false));
-	EXPECT_EQ(defenderSideHero->mana, enemyManaBefore - discountedCost);
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), enemyManaBefore - discountedCost);
 	EXPECT_FALSE(hasHaste());
 }
 
@@ -253,7 +253,7 @@ TEST_F(CounterspellPerkTest, InsufficientArmingManaIsRejectedBeforeStateChanges)
 	prepare(newHorizonsMagic::COUNTERSPELL_LISTED_COST - 1, false);
 	EXPECT_FALSE(castCounterspell());
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
-	EXPECT_EQ(attackerSideHero->mana, newHorizonsMagic::COUNTERSPELL_LISTED_COST - 1);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), newHorizonsMagic::COUNTERSPELL_LISTED_COST - 1);
 }
 
 TEST_F(CounterspellPerkTest, CountermageUsesCeiledOnePointSeventyFiveMultiplier)
@@ -265,9 +265,9 @@ TEST_F(CounterspellPerkTest, CountermageUsesCeiledOnePointSeventyFiveMultiplier)
 	ASSERT_TRUE(castEnemyHaste());
 
 	EXPECT_FALSE(hasHaste());
-	EXPECT_EQ(attackerSideHero->mana,
+	EXPECT_EQ(attackerSideHero->getManaAvailable(),
 		100 - newHorizonsMagic::COUNTERSPELL_LISTED_COST - newHorizonsMagic::counterspellCost(enemyCost, true));
-	EXPECT_EQ(defenderSideHero->mana, 100 - enemyCost);
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), 100 - enemyCost);
 	const auto casts = server.castsOf(SpellID::HASTE);
 	ASSERT_FALSE(casts.empty());
 	EXPECT_TRUE(casts.back().announcement.counterspellNegated);
@@ -279,13 +279,13 @@ TEST_F(CounterspellPerkTest, InsufficientCounterManaCollapsesWardWithoutAddition
 	const auto enemyCost = defenderSideHero->getSpellCost(SpellID(SpellID::HASTE).toSpell());
 	ASSERT_EQ(enemyCost, 4);
 	ASSERT_TRUE(castCounterspell());
-	ASSERT_EQ(attackerSideHero->mana, 18 - newHorizonsMagic::COUNTERSPELL_LISTED_COST);
+	ASSERT_EQ(attackerSideHero->getManaAvailable(), 18 - newHorizonsMagic::COUNTERSPELL_LISTED_COST);
 
 	ASSERT_TRUE(castEnemyHaste());
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
 	EXPECT_TRUE(hasHaste());
-	EXPECT_EQ(attackerSideHero->mana, 18 - newHorizonsMagic::COUNTERSPELL_LISTED_COST);
-	EXPECT_EQ(defenderSideHero->mana, 100 - enemyCost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 18 - newHorizonsMagic::COUNTERSPELL_LISTED_COST);
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), 100 - enemyCost);
 	const auto casts = server.castsOf(SpellID::HASTE);
 	ASSERT_FALSE(casts.empty());
 	EXPECT_EQ(casts.back().announcement.counterspellSide, BattleSide::ATTACKER);

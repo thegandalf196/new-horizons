@@ -475,7 +475,7 @@ TEST_F(NewHorizonsManagedMissileTest, RealManagedSpellAiPredictionAndAuthoritati
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(missile);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 24, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	startBattle();
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
 	beginCombat();
@@ -492,7 +492,7 @@ TEST_F(NewHorizonsManagedMissileTest, RealManagedSpellAiPredictionAndAuthoritati
 	ASSERT_TRUE(mechanics->canBeCast(problem));
 	ASSERT_TRUE(mechanics->canBeCastAt(destination, problem));
 	const auto health = target->getAvailableHealth();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	MissileEnvironment environment(gameState());
 	HypotheticBattle prediction(&environment, callback);
@@ -500,7 +500,7 @@ TEST_F(NewHorizonsManagedMissileTest, RealManagedSpellAiPredictionAndAuthoritati
 	evaluation.castEval(prediction.getServerCallback(), destination);
 	EXPECT_EQ(health - prediction.battleGetUnitByID(target->unitId())->getAvailableHealth(), 68);
 	EXPECT_EQ(target->getAvailableHealth(), health);
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -508,9 +508,9 @@ TEST_F(NewHorizonsManagedMissileTest, RealManagedSpellAiPredictionAndAuthoritati
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(health - target->getAvailableHealth(), 68);
-	EXPECT_EQ(attackerSideHero->mana, mana - 5);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 5);
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(target->getAvailableHealth(), health - 68);
-	EXPECT_EQ(attackerSideHero->mana, mana - 5);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 5);
 	// Actual AI effect evaluation, not yet BattleAI's candidate selection gate.
 }

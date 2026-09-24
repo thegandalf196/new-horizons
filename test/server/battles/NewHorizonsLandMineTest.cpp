@@ -32,7 +32,7 @@ protected:
 		prepareCommands(true);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->mana = attackerSideHero->manaLimit();
+		setTestSpellPointTotal(attackerSideHero, attackerSideHero->manaLimit());
 		attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 			BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 		attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
@@ -129,7 +129,7 @@ TEST(NewHorizonsLandMineTest, TriggerProxyUsesTheCastTimeSnapshotExactly)
 TEST_F(NewHorizonsLandMineRuntimeTest, ServerRejectsWrongCountDuplicateAndOccupiedHexes)
 {
 	prepareLandMine();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), landMineAction({70})));
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), landMineAction({70, 70})));
@@ -137,19 +137,19 @@ TEST_F(NewHorizonsLandMineRuntimeTest, ServerRejectsWrongCountDuplicateAndOccupi
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), landMineAction({70, 71})));
 
 	EXPECT_TRUE(battle()->obstacles.empty());
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 }
 
 TEST_F(NewHorizonsLandMineRuntimeTest, ServerRejectsBattlefieldSpecificImpassableHexesAtomically)
 {
 	prepareLandMine();
 	battle()->battlefieldType = BattleField(BattleField::decode("core:ship_to_ship"));
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	ASSERT_EQ(battle()->getAccessibility()[BattleHex(6).toInt()], EAccessibility::UNAVAILABLE);
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), landMineAction({6, 70})));
 	EXPECT_TRUE(battle()->obstacles.empty());
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 }
 
 TEST_F(NewHorizonsLandMineRuntimeTest, SelectedMinesSnapshotDamageAndConsumeOnHostileGroundTrigger)

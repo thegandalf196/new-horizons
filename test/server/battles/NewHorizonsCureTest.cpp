@@ -59,7 +59,7 @@ protected:
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(SpellID::CURE);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->mana = 100;
+		setTestSpellPointTotal(attackerSideHero, 100);
 		startBattle();
 		removeDeployedUnits();
 		target = addStack(BattleSide::ATTACKER, creatureByName(creature), BattleHex(3, 5), count);
@@ -219,14 +219,14 @@ TEST_F(NewHorizonsCureTest, HealsByTwentyFivePlusFloorOnePointFiveSpellPower)
 	ASSERT_NO_FATAL_FAILURE(prepare(21, "core:archangel", 10));
 	ASSERT_NO_FATAL_FAILURE(injure(100));
 	const auto before = target->getAvailableHealth();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	const auto * spell = SpellID(SpellID::CURE).toSpell();
 	spells::BattleCast parameters(battle(), attackerSideHero, spells::Mode::HERO, spell);
 	EXPECT_EQ(spell->battleMechanics(&parameters)->getEffectValue(), 56);
 
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), cureAction(target)));
 	EXPECT_EQ(target->getAvailableHealth() - before, 56);
-	EXPECT_EQ(attackerSideHero->mana, mana - 4);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 4);
 	EXPECT_EQ(target->getCount(), 10);
 }
 
@@ -236,13 +236,13 @@ TEST_F(NewHorizonsCureTest, FullHealthTargetCanBeCleansedBySelectingPoison)
 	addPoison();
 	ASSERT_TRUE(target->getAvailableHealth() >= target->getTotalHealth());
 	const auto health = target->getAvailableHealth();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		cureAction(target, SpellID::POISON)));
 	EXPECT_FALSE(hasSource(SpellID::POISON));
 	EXPECT_EQ(target->getAvailableHealth(), health);
-	EXPECT_EQ(attackerSideHero->mana, mana - 4);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 4);
 }
 
 TEST_F(NewHorizonsCureTest, PoisonHealthReductionIsRemovedBeforeHealing)
@@ -295,13 +295,13 @@ TEST_F(NewHorizonsCureTest, MagicalConditionsAreNotCureAfflictions)
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	addMagicalConditions();
 	ASSERT_NO_FATAL_FAILURE(injure(2));
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	for(const auto spell : {SpellID::CURSE, SpellID::SLOW, SpellID::BERSERK})
 	{
 		EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 			cureAction(target, spell)));
-		EXPECT_EQ(attackerSideHero->mana, mana);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 		EXPECT_TRUE(hasSource(spell));
 	}
 }
@@ -313,31 +313,31 @@ TEST_F(NewHorizonsCureTest, SuccessfulCurePreservesStoneGazeAndOtherMagicalCondi
 	addMagicalConditions();
 	target->addNewBonus(spellEffect(SpellID::STONE_GAZE, BonusType::NOT_ACTIVE, 0));
 	ASSERT_NO_FATAL_FAILURE(injure(2));
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		cureAction(target, SpellID::POISON)));
 	EXPECT_FALSE(hasSource(SpellID::POISON));
 	for(const auto spell : {SpellID::STONE_GAZE, SpellID::CURSE, SpellID::SLOW, SpellID::BERSERK})
 		EXPECT_TRUE(hasSource(spell));
-	EXPECT_EQ(attackerSideHero->mana, mana - 4);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 4);
 }
 
 TEST_F(NewHorizonsCureTest, StaleSelectorIsRejectedBeforeManaAndHeroActionAreSpent)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(injure(2));
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		cureAction(target, SpellID::POISON)));
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
 
 	const SpellID forged(10000);
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		cureAction(target, forged)));
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
 }
 
@@ -346,11 +346,11 @@ TEST_F(NewHorizonsCureTest, HealOnlySelectorCannotBypassARequiredAfflictionChoic
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	addPoison();
 	ASSERT_NO_FATAL_FAILURE(injure(2));
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		cureAction(target)));
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_TRUE(hasSource(SpellID::POISON));
 }
 
@@ -359,11 +359,11 @@ TEST_F(NewHorizonsCureTest, NonCureSpellRejectsCureSelectorBeforeSpendingMana)
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(injure(2));
 	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	auto hasteAction = cureAction(target, SpellID::POISON);
 	hasteAction.spell = SpellID::HASTE;
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), hasteAction));
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
 }
 
@@ -373,10 +373,10 @@ TEST_F(NewHorizonsCureTest, LegacyCureRejectsAfflictionSelectorBeforeSpendingMan
 	optIntoNewCure = false;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(injure(2));
-	const auto legacyMana = attackerSideHero->mana;
+	const auto legacyMana = attackerSideHero->getManaAvailable();
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		cureAction(target, SpellID::POISON)));
-	EXPECT_EQ(attackerSideHero->mana, legacyMana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), legacyMana);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
 }
 
@@ -384,19 +384,19 @@ TEST_F(NewHorizonsCureTest, EnemyAndUndeadTargetsAreRejectedWithoutSpendingMana)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(injure(2)); // keeps the generic spell available before target selection
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 5), 1);
 	enemy->addNewBonus(spellEffect(SpellID::POISON, BonusType::POISON, 30));
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		cureAction(enemy, SpellID::POISON)));
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_FALSE(enemy->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
 		BonusSourceID(SpellID(SpellID::POISON))))->empty());
 
 	auto * undead = addStack(BattleSide::ATTACKER, creatureByName("core:skeleton"), BattleHex(4, 5), 1);
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		cureAction(undead)));
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 }
 
 TEST_F(NewHorizonsCureTest, ExpertCureStaysSingleTargetAndNeverResurrects)
@@ -407,7 +407,7 @@ TEST_F(NewHorizonsCureTest, ExpertCureStaysSingleTargetAndNeverResurrects)
 	attackerSideHero->setSecSkillLevel(SecondarySkill(lightMagic), MasteryLevel::EXPERT,
 		ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::CURE);
 	startBattle();
@@ -445,7 +445,7 @@ TEST_F(NewHorizonsCureTest, UlandSpellSpecialtyStillScalesTheHealingComponent)
 		attackerSideHero->addNewBonus(std::make_shared<Bonus>(*bonus));
 	attackerSideHero->level = 7;
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::CURE);
 	startBattle();

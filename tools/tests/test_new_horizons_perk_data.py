@@ -16,6 +16,7 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:wisdom.intelligence",
     "new-horizons:warcasting.martialChanneling",
     "new-horizons:warcasting.arcaneChanneling",
     "new-horizons:warcasting.tacticalWeaving",
@@ -171,6 +172,9 @@ def source_description_for_current_rules(description):
     to remove the retired primary-growth chance promise.
     """
     return description.replace(
+        "Maximum Mana increases by 25% of Knowledge, rounded down.",
+        "Maximum Spell Points are 130% of effective Knowledge, rounded down. Increasing capacity does not restore Spell Points.",
+    ).replace(
         "Wisdom's chance to grant +1 Knowledge at level-up increases by 10 percentage points.",
         "Wisdom's Mana discount remains effective when other percentage-based Mana modifiers are active.",
     ).replace(
@@ -308,7 +312,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
 
     def test_default_module_carries_canonical_registry(self):
         module = load("Mods/new-horizons/mod.json")
-        self.assertEqual(module["version"], "0.12.0")
+        self.assertEqual(module["version"], "0.13.0")
         self.assertEqual(module["settings"]["heroes"]["newHorizonsPerks"], self.rules)
 
 

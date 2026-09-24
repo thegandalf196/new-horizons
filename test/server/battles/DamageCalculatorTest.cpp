@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../SpellPointTestUtils.h"
 
 #include "BattleTestFixture.h"
 
@@ -117,7 +118,7 @@ public:
 			giveArtifact(caster, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 
 		caster->addSpellToSpellbook(spell);
-		caster->mana = 9999;
+		setTestSpellPointTotal(caster, 9999);
 
 		for(const auto & school : {"airMagic", "fireMagic", "waterMagic", "earthMagic"})
 			setSkill(caster, school, mastery);

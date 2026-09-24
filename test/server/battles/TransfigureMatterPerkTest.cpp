@@ -76,7 +76,7 @@ protected:
 		if(healthArtifact)
 			giveArtifact(attackerSideHero, ArtifactID(ArtifactID::decode("core:ringOfVitality")), ArtifactPosition::MISC1);
 		attackerSideHero->addSpellToSpellbook(spell);
-		attackerSideHero->mana = 100;
+		setTestSpellPointTotal(attackerSideHero, 100);
 
 		startBattle();
 		beginCombat();
@@ -164,7 +164,7 @@ TEST_F(TransfigureMatterPerkTest, ConvertsPhysicalFootprintIntoExactTemporaryGol
 	const auto expectedHealth = 80LL + 2LL * spellPower + 50LL * footprint;
 	const auto maxHealth = static_cast<int64_t>(creatureByName("core:diamondGolem").toEntity(LIBRARY)->getMaxHealth());
 	const auto expectedCount = (expectedHealth + maxHealth - 1) / maxHealth;
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 
 	ASSERT_GT(footprint, 1);
 	ASSERT_TRUE(castAt(obstacle->pos));
@@ -178,7 +178,7 @@ TEST_F(TransfigureMatterPerkTest, ConvertsPhysicalFootprintIntoExactTemporaryGol
 	EXPECT_TRUE(golems.front()->isSummoned());
 	EXPECT_EQ(golems.front()->getPosition(), obstacle->pos);
 	EXPECT_TRUE(battle()->obstacles.empty());
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 8);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 8);
 }
 
 TEST_F(TransfigureMatterPerkTest, MatterShaperAddsTwentyFivePercentWithIntegralRounding)
@@ -251,12 +251,12 @@ TEST_F(TransfigureMatterPerkTest, OneHexAnchorExcludingObstacleRejectsOccupiedPl
 	ASSERT_FALSE(footprint.contains(obstacle->pos));
 	const auto target = footprint.front();
 	addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), target, 1);
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto obstacleCountBefore = battle()->obstacles.size();
 	const auto unitCountBefore = battle()->battleGetAllUnits(false).size();
 
 	EXPECT_FALSE(castAt(target));
-	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_EQ(battle()->obstacles.size(), obstacleCountBefore);
 	EXPECT_EQ(battle()->battleGetAllUnits(false).size(), unitCountBefore);
 	EXPECT_TRUE(diamondGolems().empty());
@@ -275,14 +275,14 @@ TEST_F(TransfigureMatterPerkTest, InvalidObstacleCategoriesAreRejectedAtomically
 	magical->pos = magicalPosition;
 	magical->customSize.insert(magicalPosition);
 	battle()->obstacles.push_back(magical);
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto obstacleCountBefore = battle()->obstacles.size();
 	const auto unitCountBefore = battle()->battleGetAllUnits(false).size();
 
 	for(const auto position : {absolutePosition, moatPosition, magicalPosition, active->getPosition()})
 	{
 		EXPECT_FALSE(castAt(position));
-		EXPECT_EQ(attackerSideHero->mana, manaBefore);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 		EXPECT_EQ(battle()->obstacles.size(), obstacleCountBefore);
 		EXPECT_EQ(battle()->battleGetAllUnits(false).size(), unitCountBefore);
 	}

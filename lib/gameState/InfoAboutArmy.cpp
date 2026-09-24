@@ -121,7 +121,8 @@ void InfoAboutHero::initFromHero(const CGHeroInstance *h, InfoAboutHero::EInfoLe
 		details = Details();
 		details->luck = h->luckVal();
 		details->morale = h->moraleVal();
-		details->mana = h->mana;
+		details->mana = h->getManaAvailable();
+		details->bufferMana = h->getBufferSpellPoints();
 		details->primskills.resize(GameConstants::PRIMARY_SKILLS);
 
 		for (int i = 0; i < GameConstants::PRIMARY_SKILLS ; i++)

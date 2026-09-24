@@ -181,6 +181,9 @@ public:
 	void setMovePoints(SetMovePoints * smp) override;
 	void setMovePoints(ObjectInstanceID hid, int val) override;
 	void setManaPoints(ObjectInstanceID hid, int val) override;
+	void restoreSpellPoints(ObjectInstanceID hid, int32_t amount) override;
+	void spendSpellPoints(ObjectInstanceID hid, int64_t amount) override;
+	void grantBufferSpellPoints(ObjectInstanceID hid, int32_t amount) override;
 	void giveHero(ObjectInstanceID id, PlayerColor player, ObjectInstanceID boatId = ObjectInstanceID()) override;
 	void changeObjPos(ObjectInstanceID objid, int3 newPos, const PlayerColor & initiator) override;
 	void heroExchange(ObjectInstanceID hero1, ObjectInstanceID hero2) override;

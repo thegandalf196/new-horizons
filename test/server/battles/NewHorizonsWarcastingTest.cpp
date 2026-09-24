@@ -137,8 +137,12 @@ protected:
 			ASSERT_TRUE(defenderSideHero->hasActivePerk(std::string(sorcerySkill), std::string(countermagePerk)));
 		}
 		attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 100, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->mana = 1000;
-		defenderSideHero->mana = 1000;
+		// Recovery restores Normal, not Buffer: give these casting fixtures real
+		// capacity instead of implicitly overcharging a zero-Knowledge hero.
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
+		defenderSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+		setTestSpellPointTotal(defenderSideHero, 1000);
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		for(const auto spell : {SpellID::HASTE, SpellID::SLOW, SpellID::MAGIC_ARROW})
 			attackerSideHero->addSpellToSpellbook(spell);
@@ -608,18 +612,18 @@ TEST_F(NewHorizonsWarcastingTest, BattleMeditationRecoversManaAfterEmpoweredSpel
 	const auto * haste = SpellID(SpellID::HASTE).toSpell();
 	ASSERT_NE(haste, nullptr);
 	const auto orderToSpell = battle()->getWarcastingState(BattleSide::ATTACKER);
-	const auto manaBeforeRejectedCast = attackerSideHero->mana;
+	const auto manaBeforeRejectedCast = attackerSideHero->getManaAvailable();
 	BattleAction rejected;
 	rejected.actionType = EActionType::HERO_SPELL;
 	rejected.side = BattleSide::ATTACKER;
 	rejected.spell = SpellID::HASTE;
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), rejected));
-	EXPECT_EQ(attackerSideHero->mana, manaBeforeRejectedCast);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeRejectedCast);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), orderToSpell);
-	auto manaBeforeCast = attackerSideHero->mana;
+	auto manaBeforeCast = attackerSideHero->getManaAvailable();
 	const auto hasteCost = battle()->battleGetSpellCost(haste, attackerSideHero);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost + newHorizonsWarcasting::BATTLE_MEDITATION_MANA_RECOVERY);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeCast - hasteCost + newHorizonsWarcasting::BATTLE_MEDITATION_MANA_RECOVERY);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, firstSpellRound);
 	const auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
 	ASSERT_NE(restored, nullptr);
@@ -638,9 +642,9 @@ TEST_F(NewHorizonsWarcastingTest, BattleMeditationRecoversManaAfterEmpoweredSpel
 	advanceRound();
 	const auto secondSpellRound = battle()->battleGetRound();
 	ASSERT_NE(secondSpellRound, firstSpellRound);
-	manaBeforeCast = attackerSideHero->mana;
+	manaBeforeCast = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost + newHorizonsWarcasting::BATTLE_MEDITATION_MANA_RECOVERY);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeCast - hasteCost + newHorizonsWarcasting::BATTLE_MEDITATION_MANA_RECOVERY);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, secondSpellRound);
 }
 
@@ -654,10 +658,10 @@ TEST_F(NewHorizonsWarcastingTest, BattleMeditationCanRecoverOnAnAcceptedCounters
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
 
 	const auto * haste = SpellID(SpellID::HASTE).toSpell();
-	const auto manaBeforeCast = attackerSideHero->mana;
+	const auto manaBeforeCast = attackerSideHero->getManaAvailable();
 	const auto hasteCost = battle()->battleGetSpellCost(haste, attackerSideHero);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost + newHorizonsWarcasting::BATTLE_MEDITATION_MANA_RECOVERY);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeCast - hasteCost + newHorizonsWarcasting::BATTLE_MEDITATION_MANA_RECOVERY);
 	EXPECT_FALSE(attacker->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::HASTE)))));
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, battle()->battleGetRound());
 	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const auto & line)
@@ -684,10 +688,10 @@ TEST_F(NewHorizonsWarcastingTest, BattleMeditationDoesNotRecoverTwiceInAMarkedRo
 	state.lastManaRecoveryRound = round;
 
 	const auto * haste = SpellID(SpellID::HASTE).toSpell();
-	const auto manaBeforeCast = attackerSideHero->mana;
+	const auto manaBeforeCast = attackerSideHero->getManaAvailable();
 	const auto hasteCost = battle()->battleGetSpellCost(haste, attackerSideHero);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeCast - hasteCost);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, round);
 }
 
@@ -700,10 +704,10 @@ TEST_F(NewHorizonsWarcastingTest, BattleMeditationDoesNotRecoverFromExpiredReadi
 	advanceRound();
 	advanceRound();
 	const auto * haste = SpellID(SpellID::HASTE).toSpell();
-	auto manaBeforeCast = attackerSideHero->mana;
+	auto manaBeforeCast = attackerSideHero->getManaAvailable();
 	const auto hasteCost = battle()->battleGetSpellCost(haste, attackerSideHero);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeCast - hasteCost);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, -1);
 
 	// Deliberately provide otherwise-eligible readiness to isolate the explicit
@@ -714,10 +718,10 @@ TEST_F(NewHorizonsWarcastingTest, BattleMeditationDoesNotRecoverFromExpiredReadi
 	ASSERT_TRUE(newHorizonsWarcasting::battleMeditationEligible(battle()->getMagicRules(),
 		attackerSideHero, followupReadiness, battle()->getRound()));
 	const auto readinessBeforeFollowup = followupReadiness;
-	manaBeforeCast = attackerSideHero->mana;
+	manaBeforeCast = attackerSideHero->getManaAvailable();
 	const auto slowCost = battle()->battleGetSpellCost(SpellID(SpellID::SLOW).toSpell(), attackerSideHero);
 	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
-	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - slowCost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeCast - slowCost);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), readinessBeforeFollowup);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, -1);
 	EXPECT_FALSE(std::ranges::any_of(server.battleLogLines, [](const auto & line)
@@ -735,10 +739,10 @@ TEST_F(NewHorizonsWarcastingTest, PlannedBattleMeditationIsInactive)
 		std::runtime_error);
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	advanceRound();
-	const auto manaBeforeCast = attackerSideHero->mana;
+	const auto manaBeforeCast = attackerSideHero->getManaAvailable();
 	const auto hasteCost = battle()->battleGetSpellCost(SpellID(SpellID::HASTE).toSpell(), attackerSideHero);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(attackerSideHero->mana, manaBeforeCast - hasteCost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeCast - hasteCost);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound, -1);
 }
 
@@ -1071,7 +1075,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountersequenceAnd
 	prepareWarcasting(1, true);
 	const int listedCost = attackerSideHero->getListedSpellCost(SpellID(SpellID::HASTE).toSpell());
 	const int wardCost = newHorizonsMagic::counterspellCost(listedCost, false, true);
-	defenderSideHero->mana = wardCost - 1;
+	setTestSpellPointTotal(defenderSideHero, wardCost - 1);
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
 	battle()->getSide(BattleSide::DEFENDER).metamagicCountersequenceArmed = true;
 
@@ -1099,9 +1103,9 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountersequenceAnd
 	EXPECT_FALSE(lowManaProjection.getMetamagicFirstCounterspellNegated(BattleSide::ATTACKER));
 	EXPECT_EQ(lowManaProjection.getMetamagicPendingCount(BattleSide::ATTACKER), 1);
 	EXPECT_FALSE(lowManaProjection.getCounterspellArmed(BattleSide::DEFENDER));
-	EXPECT_EQ(defenderSideHero->mana, wardCost - 1);
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), wardCost - 1);
 
-	defenderSideHero->mana = wardCost;
+	setTestSpellPointTotal(defenderSideHero, wardCost);
 	HypotheticBattle negatedProjection(&environment, callback);
 	const auto prepared = negatedProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
 	ASSERT_TRUE(prepared);
@@ -1118,7 +1122,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountersequenceAnd
 	EXPECT_TRUE(negatedProjection.getMetamagicFirstCounterspellNegated(BattleSide::ATTACKER));
 	EXPECT_EQ(negatedProjection.getMetamagicPendingCount(BattleSide::ATTACKER), 1);
 	EXPECT_FALSE(negatedProjection.getCounterspellArmed(BattleSide::DEFENDER));
-	EXPECT_EQ(defenderSideHero->mana, wardCost);
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), wardCost);
 }
 
 TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountermageCostWithoutSpendingMana)
@@ -1126,7 +1130,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountermageCostWit
 	prepareWarcasting(1, true, true);
 	const int listedCost = attackerSideHero->getListedSpellCost(SpellID(SpellID::HASTE).toSpell());
 	const int wardCost = newHorizonsMagic::counterspellCost(listedCost, true, false);
-	defenderSideHero->mana = wardCost - 1;
+	setTestSpellPointTotal(defenderSideHero, wardCost - 1);
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
 
 	WarcastingEnvironment environment(gameState());
@@ -1144,14 +1148,14 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountermageCostWit
 	ASSERT_TRUE(outcome.negated.has_value());
 	EXPECT_EQ(*outcome.manaCost, wardCost);
 	EXPECT_FALSE(*outcome.negated);
-	EXPECT_EQ(defenderSideHero->mana, wardCost - 1);
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), wardCost - 1);
 }
 
 TEST_F(NewHorizonsWarcastingTest, PlayerViewKeepsHiddenArmedCounterspellUnresolved)
 {
 	prepareWarcasting(1, true);
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	defenderSideHero->mana = 0;
+	setTestSpellPointTotal(defenderSideHero, 0);
 	ASSERT_FALSE(defenderSideHero->hasActivePerk(std::string(sorcerySkill), std::string(countermagePerk)));
 
 	WarcastingEnvironment environment(gameState());
@@ -1185,7 +1189,7 @@ TEST_F(NewHorizonsWarcastingTest, PlayerViewKeepsHiddenArmedCounterspellUnresolv
 		MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 	defenderSideHero->applyPerkSelection({std::string(sorcerySkill), std::string(countermagePerk)});
 	ASSERT_TRUE(defenderSideHero->hasActivePerk(std::string(sorcerySkill), std::string(countermagePerk)));
-	defenderSideHero->mana = 1000;
+	setTestSpellPointTotal(defenderSideHero, 1000);
 	const auto withCountermage = projectFromAttackerView();
 
 	EXPECT_EQ(withCountermage.wardActive, withoutCountermage.wardActive);

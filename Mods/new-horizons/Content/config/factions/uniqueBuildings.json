@@ -126,7 +126,7 @@
 				},
 				"special4": {
 					"name": "Arcane Reservoir",
-					"description": "Once per week, the Arcane Reservoir can raise one visiting hero's current Mana to twice that hero's normal maximum.",
+					"description": "Once per week, the Arcane Reservoir grants one visiting hero 50 Buffer Spell Points. It does not restore Normal Spell Points.",
 					"manualHeroVisit": true,
 					"configuration": {
 						"resetParameters": {
@@ -136,11 +136,8 @@
 						"visitMode": "once",
 						"rewards": [
 							{
-								"limiter": {
-									"noneOf": [ { "manaPercentage": 200 } ]
-								},
-								"message": "The Arcane Reservoir doubles this hero's current Mana for the week.",
-								"manaPercentage": 200
+								"message": "The Arcane Reservoir grants 50 Buffer Spell Points. Normal Spell Points are unchanged.",
+								"manaBuffer": 50
 							}
 						]
 					}

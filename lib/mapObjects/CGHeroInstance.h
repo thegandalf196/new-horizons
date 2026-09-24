@@ -13,6 +13,7 @@
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsMasteryState.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
+#include "../entities/hero/SpellPointState.h"
 #include "../spells/NewHorizonsMagic.h"
 
 #include <vcmi/spells/Caster.h>
@@ -26,6 +27,8 @@
 #include "../entities/hero/EHeroGender.h"
 
 #include <algorithm>
+#include <limits>
+#include <stdexcept>
 
 class CHero;
 class CGBoat;
@@ -75,6 +78,8 @@ private:
 	PrimarySkillsCache primarySkills;
 	MagicSchoolMasteryCache magicSchoolMastery;
 	BonusValueCache manaPerKnowledgeCached;
+	newHorizonsHeroes::SpellPointState spellPointState;
+	bool spellPointsInitialized = false;
 	std::unique_ptr<TurnInfoCache> turnInfoCache;
 	std::unique_ptr<CCommanderInstance> commander;
 
@@ -86,6 +91,7 @@ private:
 	bool inTownGarrison; // if hero is in town garrison
 
 	IGameInfoCallback * getCallback() const final { return cb; }
+	bool isSpellbinderHatGrantEligible(const SpellID & spell) const;
 
 public:
 	//////////////////////////////////////////////////////////////////////////
@@ -102,7 +108,6 @@ public:
 
 	/// If not NONE - then hero should use portrait from referenced hero type
 	HeroTypeID customPortraitSource;
-	si32 mana; // remaining spell points
 	std::vector<std::pair<SecondarySkill,ui8> > secSkills; //first - ID of skill, second - level of skill (1 - basic, 2 - adv., 3 - expert); if hero has ability (-1, -1) it meansthat it should have default secondary abilities
 	EHeroGender gender;
 
@@ -131,8 +136,24 @@ public:
 
 	inline bool isInitialized() const
 	{ // has this hero been on the map at least once?
-		return movement != UNINITIALIZED_MOVEMENT && mana != UNINITIALIZED_MANA;
+		return movement != UNINITIALIZED_MOVEMENT && spellPointsInitialized;
 	}
+
+	/// Buffer-inclusive spendable Spell Points. Buffer is included exactly once.
+	int64_t getManaAvailable() const;
+	int32_t getNormalSpellPoints() const;
+	int32_t getBufferSpellPoints() const;
+	bool areSpellPointsInitialized() const { return spellPointsInitialized; }
+	/// Initialize or restore an exact saved pool pair. Invalid negative values are rejected.
+	void initializeSpellPoints(int32_t normal, int32_t buffer = 0);
+	void restoreSpellPointSnapshot(int32_t normal, int32_t buffer);
+	void setNormalSpellPoints(int32_t value);
+	bool restoreNormalSpellPoints(int32_t amount);
+	bool grantBufferSpellPoints(int32_t amount);
+	bool removeBufferSpellPoints(int64_t amount);
+	bool spendSpellPoints(int64_t amount);
+	/// Clamp Normal after capacity-affecting changes; inactive legacy rules stay uncapped.
+	void clampSpellPointsToCapacity();
 
 	//int3 getSightCenter() const; //"center" tile from which the sight distance is calculated
 	int getSightRadius() const override; //sight distance (should be used if player-owned structure)
@@ -168,6 +189,11 @@ public:
 	int maxSpellLevel() const;
 	void addSpellToSpellbook(const SpellID & spell);
 	void removeSpellFromSpellbook(const SpellID & spell);
+	/// True for durable knowledge or eligible temporary spellbook access supplied by equipped effects.
+	/// This does not supply a physical Spellbook artifact or bypass other casting rules.
+	bool isSpellInscribedForCasting(const SpellID & spell) const;
+	/// Durable spellbook entries plus temporary eligible inscriptions for cast-selection consumers.
+	std::set<SpellID> getInscribedSpellsForCasting() const;
 	bool spellbookContainsSpell(const SpellID & spell) const;
 	std::vector<BonusSourceID> getSourcesForSpell(const SpellID & spell) const;
 	void removeSpellbook();
@@ -445,7 +471,40 @@ public:
 		h & nameCustomTextId;
 		h & biographyCustomTextId;
 		h & customPortraitSource;
-		h & mana;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_POINTS))
+		{
+			int32_t normal = spellPointsInitialized ? spellPointState.getNormal() : 0;
+			int32_t buffer = spellPointState.getBuffer();
+			h & normal;
+			h & buffer;
+			h & spellPointsInitialized;
+			if(!h.saving)
+			{
+				if(spellPointsInitialized && !spellPointState.restoreSnapshot(normal, buffer, std::numeric_limits<int32_t>::max()))
+					throw std::runtime_error("Invalid negative Spell Point pool in hero state");
+				if(!spellPointsInitialized && (normal != 0 || buffer != 0))
+					throw std::runtime_error("Uninitialized hero has nonzero Spell Point pools");
+				if(!spellPointsInitialized)
+					spellPointState.restoreSnapshot(0, 0, std::numeric_limits<int32_t>::max());
+			}
+		}
+		else
+		{
+			if(h.saving && spellPointState.getBuffer() != 0)
+				throw std::runtime_error("Cannot discard Buffer Spell Points in an older save format");
+			int32_t legacyMana = h.saving
+				? (spellPointsInitialized ? spellPointState.getNormal() : UNINITIALIZED_MANA)
+				: UNINITIALIZED_MANA;
+			h & legacyMana;
+			if(!h.saving)
+			{
+				if(legacyMana < UNINITIALIZED_MANA)
+					throw std::runtime_error("Invalid negative legacy Spell Point pool in hero state");
+				spellPointsInitialized = legacyMana != UNINITIALIZED_MANA;
+				if(spellPointsInitialized && !spellPointState.restoreSnapshot(legacyMana, 0, std::numeric_limits<int32_t>::max()))
+					throw std::runtime_error("Invalid legacy Spell Point pool in hero state");
+			}
+		}
 		h & secSkills;
 		h & movement;
 		h & gender;

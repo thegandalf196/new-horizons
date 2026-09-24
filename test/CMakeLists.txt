@@ -67,6 +67,9 @@ set(test_SRCS
 		hero/NewHorizonsPrimaryGrowthTest.cpp
 		hero/NewHorizonsPrimaryScaleTest.cpp
 		hero/SpellPointStateTest.cpp
+		hero/SpellPointCapacityTest.cpp
+		hero/SpellPointRewardTest.cpp
+		hero/SpellPointPresentationTest.cpp
 		hero/NewHorizonsLeadershipTest.cpp
 		hero/NewHorizonsMovementRulesTest.cpp
 		hero/NewHorizonsCapabilityRulesTest.cpp
@@ -258,6 +261,7 @@ set(test_HEADERS
 
  		CVcmiTestConfig.h
 		JsonComparer.h
+		SpellPointTestUtils.h
 
 		map/MapComparer.h
 

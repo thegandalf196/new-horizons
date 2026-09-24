@@ -136,13 +136,13 @@ TEST_F(HeroCommandTest, ChargeChangesRealDamageWithoutManaOrCreatureTurn)
 	auto * from = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
 	auto * to = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
 	const auto active = battle()->getActiveStackID();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	const auto before = battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false)).damage.min;
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	const auto charged = battle()->calculateDmgRange(BattleAttackInfo(from, to, 3, false));
 	EXPECT_GT(charged.damage.min, before);
 	EXPECT_EQ(charged.attackerOrderCause, HeroCommand::CHARGE);
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(battle()->getActiveStackID(), active);
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::CHARGE);
 	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
@@ -655,10 +655,10 @@ TEST_P(HeroActionBudgetTest, EverySecondSpellOrderCombinationIsRejected)
 	prepareCommands(true);
 	const auto [first, second] = GetParam();
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroAction(first)));
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	const auto starts = server.startedActions.size();
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroAction(second)));
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(server.startedActions.size(), starts);
 	advanceRound();
 	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));

@@ -8,6 +8,17 @@
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [2]},
+		"spellPoints": {
+			"type": "object",
+			"not": {"type": "null"},
+			"required": ["rulesetVersion", "intelligenceMaximumPercent"],
+			"additionalProperties": false,
+			"properties": {
+				"rulesetVersion": {"type": "integer", "enum": [1]},
+				"intelligenceMaximumPercent": {"type": "integer", "not": {"type": "null"}, "minimum": 100, "maximum": 1000}
+			},
+			"description": "Opt in to separate Normal and Buffer Spell Points. Omission preserves legacy single-pool semantics."
+		},
 		"warcasting": {
 			"type": "boolean",
 			"not": {"type": "null"},

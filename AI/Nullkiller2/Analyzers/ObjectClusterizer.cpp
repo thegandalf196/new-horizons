@@ -31,11 +31,12 @@ static std::vector<DimensionDoorExpansionReach> getDimensionDoorExpansionReach(
 				return;
 
 			const int manaCost = hero->getSpellCost(spell);
-			if(manaCost <= 0 || hero->mana < manaCost)
+			if(manaCost <= 0 || hero->getManaAvailable() < manaCost)
 				return;
 
 			const int castsLimit = mechanics.getCastsLimit(hero, mapSize);
-			const int castsByMana = hero->mana / manaCost;
+			const int castsByMana = static_cast<int>(std::min<int64_t>(
+				hero->getManaAvailable() / manaCost, std::numeric_limits<int>::max()));
 			const int casts = castsLimit > 0 ? std::min(castsLimit, castsByMana) : castsByMana;
 
 			if(casts <= 0)

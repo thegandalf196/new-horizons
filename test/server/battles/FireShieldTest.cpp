@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../SpellPointTestUtils.h"
 
 #include "BattleTestFixture.h"
 
@@ -53,11 +54,11 @@ TEST_P(FireShieldTest, reflectsExpectedDamage)
 
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::FIRE_SHIELD);
-	attackerSideHero->mana = 9999;
+	setTestSpellPointTotal(attackerSideHero, 9999);
 
 	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	defenderSideHero->addSpellToSpellbook(SpellID(SpellID::BLESS));
-	defenderSideHero->mana = 9999;
+	setTestSpellPointTotal(defenderSideHero, 9999);
 
 	if(scenario.skill >= 0)
 		attackerSideHero->setSecSkillLevel(SecondarySkill(scenario.skill), scenario.mastery, ChangeValueMode::ABSOLUTE);
@@ -174,7 +175,7 @@ TEST_F(FireShieldRollTest, reflectsTheBlowThatLandedRatherThanTheBestPossibleRol
 
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::FIRE_SHIELD);
-	attackerSideHero->mana = 9999;
+	setTestSpellPointTotal(attackerSideHero, 9999);
 
 	startBattle();
 

@@ -549,10 +549,10 @@ CPathfinderHelper::CPathfinderHelper(const IGameInfoCallback & gameInfo, const C
 			if (!spell || !spell->isAdventure())
 				continue;
 
-			if(spell->getAdventureMechanics().givesBonus(hero, BonusType::WATER_WALKING) && hero->canCastThisSpell(spell.get()) && hero->mana >= hero->getSpellCost(spell.get()))
+			if(spell->getAdventureMechanics().givesBonus(hero, BonusType::WATER_WALKING) && hero->canCastThisSpell(spell.get()) && hero->getManaAvailable() >= hero->getSpellCost(spell.get()))
 				canCastWaterWalk = true;
 
-			if(spell->getAdventureMechanics().givesBonus(hero, BonusType::FLYING_MOVEMENT) && hero->canCastThisSpell(spell.get()) && hero->mana >= hero->getSpellCost(spell.get()))
+			if(spell->getAdventureMechanics().givesBonus(hero, BonusType::FLYING_MOVEMENT) && hero->canCastThisSpell(spell.get()) && hero->getManaAvailable() >= hero->getSpellCost(spell.get()))
 				canCastFly = true;
 		}
 	}

@@ -20,6 +20,8 @@
 #include "../callback/IGameRandomizer.h"
 #include "../json/JsonRandom.h"
 #include "../spells/CSpellHandler.h"
+
+#include <limits>
 #include <stdexcept>
 #include "../mapObjects/IObjectInterface.h"
 #include "../modding/IdentifierStorage.h"
@@ -176,6 +178,16 @@ void Rewardable::Info::configureReward(Rewardable::Configuration & object, IGame
 	reward.heroLevel = randomizer.loadValue(source["heroLevel"], variables);
 
 	reward.manaDiff = randomizer.loadValue(source["manaPoints"], variables);
+	if(source.Struct().contains("manaBuffer"))
+	{
+		const auto & manaBuffer = source["manaBuffer"];
+		if(manaBuffer.getType() != JsonNode::JsonType::DATA_INTEGER
+			|| manaBuffer.Integer() < 0 || manaBuffer.Integer() > std::numeric_limits<si32>::max())
+			throw std::runtime_error("Reward manaBuffer must be a nonnegative int32 literal");
+		reward.manaBuffer = static_cast<si32>(manaBuffer.Integer());
+	}
+	else
+		reward.manaBuffer = 0;
 	reward.manaOverflowFactor = randomizer.loadValue(source["manaOverflowFactor"], variables);
 	reward.manaPercentage = randomizer.loadValue(source["manaPercentage"], variables, -1);
 
@@ -562,7 +574,8 @@ bool Rewardable::Info::givesExperience() const
 
 bool Rewardable::Info::givesMana() const
 {
-	return testForKey(parameters, "manaPoints") || testForKey(parameters, "manaPercentage");
+	return testForKey(parameters, "manaPoints") || testForKey(parameters, "manaPercentage")
+		|| testForKey(parameters, "manaBuffer");
 }
 
 bool Rewardable::Info::givesMovement() const

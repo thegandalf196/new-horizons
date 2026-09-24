@@ -72,6 +72,16 @@ public:
 		return true;
 	}
 
+	/// Remove only Buffer, for effects such as clearing unused temporary battle
+	/// points. This must not fall through to spending from the Normal pool.
+	bool removeBuffer(int64_t amount) noexcept
+	{
+		if(amount < 0 || amount > buffer)
+			return false;
+		buffer -= static_cast<int32_t>(amount);
+		return true;
+	}
+
 	/// Enforce the current Normal capacity. Buffer is never affected.
 	void clampNormal(int32_t maximum) noexcept
 	{
@@ -94,14 +104,14 @@ public:
 
 	/// Spend one nonnegative cost, consuming Buffer before Normal. Insufficient
 	/// funds or a negative cost leave both pools unchanged.
-	bool spend(int32_t cost) noexcept
+	bool spend(int64_t cost) noexcept
 	{
-		if(cost < 0 || static_cast<int64_t>(cost) > getTotal())
+		if(cost < 0 || cost > getTotal())
 			return false;
 
-		const int32_t spentFromBuffer = std::min(buffer, cost);
+		const int32_t spentFromBuffer = static_cast<int32_t>(std::min<int64_t>(buffer, cost));
 		buffer -= spentFromBuffer;
-		normal -= cost - spentFromBuffer;
+		normal -= static_cast<int32_t>(cost - spentFromBuffer);
 		return true;
 	}
 

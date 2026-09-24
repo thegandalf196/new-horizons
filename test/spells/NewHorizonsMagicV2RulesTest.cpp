@@ -21,6 +21,22 @@ JsonNode originalRules()
 	return JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 }
 
+JsonNode legacyRules()
+{
+	auto rules = originalRules();
+	rules["rulesetVersion"].Integer() = newHorizonsMagic::RULESET_VERSION;
+	rules.Struct().erase("spellPoints");
+	rules.Struct().erase("warcasting");
+	for(auto & [name, spell] : rules["spells"].Struct())
+	{
+		(void)name;
+		spell.Struct().erase("active");
+		spell.Struct().erase("directDamage");
+		spell.Struct().erase("cureAfflictions");
+	}
+	return rules;
+}
+
 JsonNode formulaRules()
 {
 	auto rules = originalRules();
@@ -35,7 +51,7 @@ JsonNode formulaRules()
 
 TEST(NewHorizonsMagicV2RulesTest, ActualV1AndV2DecodeWithoutChangingExistingSchoolsLevelsOrCosts)
 {
-	const auto old = originalRules();
+	const auto old = legacyRules();
 	const auto current = formulaRules();
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(old));
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(current));
@@ -107,6 +123,37 @@ TEST(NewHorizonsMagicV2RulesTest, WarcastingOptInIsOptionalAndStrictlyBoolean)
 	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
 	rules["warcasting"] = JsonNode();
 	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+}
+
+TEST(NewHorizonsMagicV2RulesTest, SpellPointOptInIsV2OnlyAndUsesSavedCapacityPercent)
+{
+	auto rules = originalRules();
+	ASSERT_TRUE(rules["spellPoints"].isStruct());
+	EXPECT_TRUE(newHorizonsMagic::spellPointRulesActive(rules));
+	EXPECT_EQ(newHorizonsMagic::spellPointsIntelligenceMaximumPercent(rules), 130);
+
+	rules["spellPoints"]["intelligenceMaximumPercent"].Integer() = 175;
+	EXPECT_EQ(newHorizonsMagic::spellPointsIntelligenceMaximumPercent(rules), 175);
+
+	auto absent = rules;
+	absent.Struct().erase("spellPoints");
+	EXPECT_FALSE(newHorizonsMagic::spellPointRulesActive(absent));
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(absent));
+
+	auto legacy = rules;
+	legacy["rulesetVersion"].Integer() = newHorizonsMagic::RULESET_VERSION;
+	EXPECT_FALSE(newHorizonsMagic::spellPointRulesActive(legacy));
+	EXPECT_THROW(newHorizonsMagic::validateRules(legacy), std::runtime_error)
+		<< "The opt-in must not silently change an existing v1 snapshot";
+
+	auto malformed = rules;
+	malformed["spellPoints"]["intelligenceMaximumPercent"].Float() = 175.0;
+	EXPECT_FALSE(newHorizonsMagic::spellPointRulesActive(malformed));
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	malformed = rules;
+	malformed["spellPoints"]["intelligenceMaximumPercent"].Integer() = 99;
+	EXPECT_FALSE(newHorizonsMagic::spellPointRulesActive(malformed));
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
 }
 
 TEST(NewHorizonsMagicV2RulesTest, AbsentSnapshotRowAndOptionalFormulaNeverUseInstalledDamage)

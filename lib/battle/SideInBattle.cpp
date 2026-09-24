@@ -20,12 +20,19 @@ void SideInBattle::init(const CGHeroInstance * Hero, const CArmedInstance * Army
 	if (Hero)
 	{
 		heroID = Hero->id;
-		initialMana = Hero->mana;
+		initialMana = Hero->getNormalSpellPoints();
+		initialNormalSpellPoints = Hero->getNormalSpellPoints();
+		initialBufferSpellPoints = Hero->getBufferSpellPoints();
 		// NOTE: hero is not attached to town directly at this point, only indirectly via townAndVis
-		additionalMana = Hero->valOfBonuses(BonusType::COMBAT_MANA_BONUS);
+		int64_t additionalManaTotal = Hero->valOfBonuses(BonusType::COMBAT_MANA_BONUS);
 		demonicReserve = Hero->getDemonicReserve();
 		if (town)
-			additionalMana += town->valOfBonuses(BonusType::COMBAT_MANA_BONUS);
+			additionalManaTotal += town->valOfBonuses(BonusType::COMBAT_MANA_BONUS);
+		additionalMana = static_cast<int32_t>(std::clamp<int64_t>(additionalManaTotal,
+			std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
+		if(newHorizonsMagic::spellPointRulesActive(Hero->getMagicRules()))
+			temporaryBufferRemaining = std::min<int64_t>(std::max<int64_t>(0, additionalManaTotal),
+				static_cast<int64_t>(std::numeric_limits<int32_t>::max()) - initialBufferSpellPoints);
 	}
 
 	switch(Army->ID.toEnum())

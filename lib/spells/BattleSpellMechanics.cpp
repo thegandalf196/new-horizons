@@ -579,7 +579,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 					requiredMana = std::max(1, requiredMana - 2);
 				if(adjustableMagicArrow)
 					requiredMana += selectedOvercharge;
-				if(castingHero->mana < requiredMana) //not enough mana
+				if(castingHero->getManaAvailable() < requiredMana) //not enough Spell Points
 					genProblem = ESpellCastProblem::NOT_ENOUGH_MANA;
 			}
 		}
@@ -1196,11 +1196,11 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		caster->spendMana(server, spellCost);
 		if(recoverBattleMeditation)
 		{
-			const auto manaBeforeRecovery = casterHero->mana;
+			const auto manaBeforeRecovery = casterHero->getNormalSpellPoints();
 			const auto recoveryCapacity = newHorizonsWarcasting::battleMeditationRecoveryAmount(manaBeforeRecovery);
 			if(recoveryCapacity > 0)
 				casterHero->spendMana(server, -recoveryCapacity);
-			const auto actualRecovery = std::max<int64_t>(0, casterHero->mana - manaBeforeRecovery);
+			const auto actualRecovery = std::max<int64_t>(0, casterHero->getNormalSpellPoints() - manaBeforeRecovery);
 			if(actualRecovery > 0)
 			{
 				BattleLogMessage meditationDescription;

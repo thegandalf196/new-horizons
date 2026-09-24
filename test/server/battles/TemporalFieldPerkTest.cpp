@@ -35,7 +35,7 @@ protected:
 			attackerSideHero->applyPerkSelection({sorcerySkill, temporalFieldPerk});
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(SpellID::SLOW);
-		attackerSideHero->mana = mana;
+		setTestSpellPointTotal(attackerSideHero, mana);
 
 		startBattle();
 		friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
@@ -73,7 +73,7 @@ protected:
 TEST_F(TemporalFieldPerkTest, MassSlowAffectsEveryEligibleEnemyAtSixtyPercentAndConsumesBudget)
 {
 	prepare(true);
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto movementBefore = enemyA->getMovementRange();
 	const auto initiativeBefore = enemyA->getInitiative();
 
@@ -85,7 +85,7 @@ TEST_F(TemporalFieldPerkTest, MassSlowAffectsEveryEligibleEnemyAtSixtyPercentAnd
 	EXPECT_EQ(slow(friendly), nullptr);
 	EXPECT_EQ(enemyA->getMovementRange(), movementBefore);
 	EXPECT_LT(enemyA->getInitiative(), initiativeBefore);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 9);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 9);
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
 }
 
@@ -95,10 +95,10 @@ TEST_F(TemporalFieldPerkTest, SecondMassSlowIsRejectedWithoutManaOrStateMutation
 	ASSERT_TRUE(castSlow(true));
 	auto * freshEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:griffin"), BattleHex(14, 5), 10);
 	advanceRound();
-	const auto manaAfterFirst = attackerSideHero->mana;
+	const auto manaAfterFirst = attackerSideHero->getManaAvailable();
 
 	EXPECT_FALSE(castSlow(true));
-	EXPECT_EQ(attackerSideHero->mana, manaAfterFirst);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaAfterFirst);
 	EXPECT_TRUE(castSlow(false, freshEnemy));
 	EXPECT_NE(slow(freshEnemy), nullptr);
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
@@ -107,26 +107,26 @@ TEST_F(TemporalFieldPerkTest, SecondMassSlowIsRejectedWithoutManaOrStateMutation
 TEST_F(TemporalFieldPerkTest, OrdinarySlowKeepsFullMagnitudeAndDoesNotConsumeTemporalField)
 {
 	prepare(true);
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 
 	ASSERT_TRUE(castSlow(false, enemyA));
 	ASSERT_NE(slow(enemyA), nullptr);
 	EXPECT_EQ(slow(enemyA)->val, -50);
 	EXPECT_EQ(slow(enemyB), nullptr);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 3);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 3);
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
 }
 
 TEST_F(TemporalFieldPerkTest, ExpertOrdinarySlowCannotBypassTemporalFieldTradeoff)
 {
 	prepare(true, 100, 3);
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 
 	ASSERT_TRUE(castSlow(false, enemyA));
 	ASSERT_NE(slow(enemyA), nullptr);
 	EXPECT_EQ(slow(enemyA)->val, -50);
 	EXPECT_EQ(slow(enemyB), nullptr);
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 3);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 3);
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
 }
 
@@ -157,9 +157,9 @@ TEST_F(TemporalFieldPerkTest, MassMagnitudeScalesTheFinalSpecialistAdjustedSlow)
 TEST_F(TemporalFieldPerkTest, MissingPerkAndInsufficientManaRejectAtomically)
 {
 	prepare(false);
-	const auto manaWithoutPerk = attackerSideHero->mana;
+	const auto manaWithoutPerk = attackerSideHero->getManaAvailable();
 	EXPECT_FALSE(castSlow(true));
-	EXPECT_EQ(attackerSideHero->mana, manaWithoutPerk);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaWithoutPerk);
 	EXPECT_EQ(slow(enemyA), nullptr);
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
 }
@@ -168,7 +168,7 @@ TEST_F(TemporalFieldPerkTest, TripleListedCostIsCheckedBeforeApplyingEffects)
 {
 	prepare(true, 8);
 	EXPECT_FALSE(castSlow(true));
-	EXPECT_EQ(attackerSideHero->mana, 8);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 8);
 	EXPECT_EQ(slow(enemyA), nullptr);
 	EXPECT_EQ(slow(enemyB), nullptr);
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
@@ -177,10 +177,10 @@ TEST_F(TemporalFieldPerkTest, TripleListedCostIsCheckedBeforeApplyingEffects)
 TEST_F(TemporalFieldPerkTest, TripleListedCostPrecedesBattlefieldCostReduction)
 {
 	prepare(true);
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
 		BonusType::CHANGES_SPELL_COST_FOR_ALLY, BonusSource::OTHER, 2, BonusSourceID()));
 
 	ASSERT_TRUE(castSlow(true));
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - 7); // 3 * listed 3, then the 2-point reduction.
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 7); // 3 * listed 3, then the 2-point reduction.
 }

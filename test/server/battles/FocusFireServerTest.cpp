@@ -20,7 +20,7 @@ TEST_F(FocusFireServerTest, InvalidTargetsPreserveBudgetAndPermitLegalRetry)
 	ASSERT_NO_FATAL_FAILURE(prepareFocus());
 	ASSERT_FALSE(attackerSideHero->hasSpellbook());
 	const auto started = server.startedActions.size();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	std::vector<BattleAction> invalid;
 	invalid.push_back(BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::FOCUS_FIRE));
 	invalid.push_back(focusAction(shooter->unitId()));
@@ -40,7 +40,7 @@ TEST_F(FocusFireServerTest, InvalidTargetsPreserveBudgetAndPermitLegalRetry)
 		EXPECT_EQ(server.startedActions.size(), started);
 		EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
 		EXPECT_FALSE(battle()->battleGetFocusFireState(BattleSide::ATTACKER));
-		EXPECT_EQ(attackerSideHero->mana, mana);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	}
 	ASSERT_TRUE(submit(focusAction(target->unitId())));
 	ASSERT_EQ(server.startedActions.size(), started + 1);
@@ -48,7 +48,7 @@ TEST_F(FocusFireServerTest, InvalidTargetsPreserveBudgetAndPermitLegalRetry)
 	EXPECT_EQ(server.startedActions.back().focusFire->targetUnitId, target->unitId());
 	EXPECT_TRUE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
 	EXPECT_EQ(battle()->getActiveStackID(), shooter->unitId());
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 }
 
 TEST_F(FocusFireServerTest, SpellLikePhysicalAreaPreviewOnlyRaisesTheMarkedPrimary)
@@ -195,8 +195,8 @@ TEST_F(FocusFireServerTest, InternalStartActionRejectsForgedSnapshotsBeforeBudge
 	malformed[5].battleID = BattleID(1);
 	ASSERT_EQ(gameState()->getBattle(malformed[4].battleID), nullptr);
 	ASSERT_EQ(gameState()->getBattle(malformed[5].battleID), nullptr);
-	const auto mana = attackerSideHero->mana;
-	const auto defenderMana = defenderSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto defenderMana = defenderSideHero->getManaAvailable();
 	for(auto & packet : malformed)
 	{
 		// Deliberately injected internal packets: test canonical publication,
@@ -205,8 +205,8 @@ TEST_F(FocusFireServerTest, InternalStartActionRejectsForgedSnapshotsBeforeBudge
 		EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
 		EXPECT_EQ(battle()->getActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
 		EXPECT_FALSE(battle()->battleGetFocusFireState(BattleSide::ATTACKER));
-		EXPECT_EQ(attackerSideHero->mana, mana);
-		EXPECT_EQ(defenderSideHero->mana, defenderMana);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+		EXPECT_EQ(defenderSideHero->getManaAvailable(), defenderMana);
 		EXPECT_EQ(attackerSideHero->battle, battle());
 		EXPECT_EQ(defenderSideHero->battle, battle());
 		EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::DEFENDER));
@@ -232,8 +232,8 @@ TEST_F(FocusFireServerTest, InternalStartActionRejectsForgedSnapshotsBeforeBudge
 	EXPECT_EQ(battle()->battleGetFocusFireState(BattleSide::ATTACKER), mark);
 	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::DEFENDER));
 	EXPECT_FALSE(battle()->battleGetFocusFireState(BattleSide::DEFENDER));
-	EXPECT_EQ(attackerSideHero->mana, mana);
-	EXPECT_EQ(defenderSideHero->mana, defenderMana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(defenderSideHero->getManaAvailable(), defenderMana);
 	EXPECT_EQ(attackerSideHero->battle, battle());
 	EXPECT_EQ(defenderSideHero->battle, battle());
 	EXPECT_EQ(battle()->getActiveStackID(), shooter->unitId());

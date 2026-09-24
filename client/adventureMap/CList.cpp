@@ -244,7 +244,7 @@ void CHeroList::CHeroItem::update()
 		? static_cast<size_t>(static_cast<uint64_t>(movementRemaining) * (movementFrames - 1) / movementLimit)
 		: 0;
 	movement->setFrame(movementFrame);
-	mana->setFrame(std::min<size_t>(mana->size()-1, hero->mana / 5));
+	mana->setFrame(std::min<size_t>(mana->size()-1, hero->getManaAvailable() / 5));
 	redraw();
 }
 

@@ -14,6 +14,17 @@ except ImportError as error:
 
 
 class MagicV2DataTest(unittest.TestCase):
+    def test_hat_description_patch_is_registered_without_changing_core_artifact(self):
+        metadata = load('Mods/new-horizons/mod.json')
+        path = 'config/artifacts/spellbindersHat.json'
+        self.assertIn(path, metadata['artifacts'])
+        patch = load('Mods/new-horizons/Content/' + path)
+        description = patch['core:spellbindersHat']['text']['description']
+        self.assertIn('While equipped', description)
+        self.assertIn('Level 5 combat spells', description)
+        self.assertIn('not spells you have learned', description)
+        self.assertNotIn('bonuses', patch['core:spellbindersHat'])
+
     def setUp(self):
         self.v1 = load('config/schemas/newHorizonsMagic.json')
         self.v2 = load('config/schemas/newHorizonsMagicV2.json')
@@ -98,6 +109,55 @@ class MagicV2DataTest(unittest.TestCase):
             with self.subTest(value=value):
                 changed['warcasting'] = value
                 self.assertFalse(self.validator.is_valid(changed))
+
+    def test_spell_point_pools_are_explicit_optional_and_strict(self):
+        changed = copy.deepcopy(self.rules)
+        changed.pop('spellPoints')
+        self.validator.validate(changed)
+        for invalid in (None, {}, [], True,
+                        {'rulesetVersion': 2, 'intelligenceMaximumPercent': 130},
+                        {'rulesetVersion': 1, 'intelligenceMaximumPercent': 99},
+                        {'rulesetVersion': 1, 'intelligenceMaximumPercent': 1001},
+                        {'rulesetVersion': 1, 'intelligenceMaximumPercent': None},
+                        {'rulesetVersion': 1, 'intelligenceMaximumPercent': 130, 'unknown': 1}):
+            changed['spellPoints'] = invalid
+            with self.subTest(invalid=invalid):
+                self.assertFalse(self.validator.is_valid(changed))
+        self.assertEqual(self.rules['spellPoints'],
+                         {'rulesetVersion': 1, 'intelligenceMaximumPercent': 130})
+
+    def test_buffer_sources_do_not_multiply_normal_capacity(self):
+        reservoir = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')[
+            'core:tower']['town']['buildings']['special4']['configuration']
+        self.assertEqual(reservoir['visitMode'], 'once')
+        self.assertEqual(reservoir['resetParameters']['weeks'], 1)
+        self.assertEqual(reservoir['rewards'][0]['manaBuffer'], 50)
+        self.assertNotIn('manaPercentage', reservoir['rewards'][0])
+        spring = load('Mods/new-horizons/Content/config/objects/magicSpring.json')[
+            'core:magicSpring']['types']['magicSpring']['rewards'][0]
+        self.assertEqual(spring['manaPercentage'], 100)
+        self.assertEqual(spring['manaBuffer'], 25)
+        self.assertNotIn('limiter', spring)
+        base_spring = load('config/objects/magicSpring.json')['magicSpring']['types']['magicSpring']
+        self.assertEqual(base_spring['visitMode'], 'once')
+        self.assertEqual(base_spring['resetParameters'], {'weeks': 1, 'visitors': True})
+        # Preserve the base game's definition; only the curated module changes it.
+        self.assertEqual(base_spring['rewards'][0]['manaPercentage'], 200)
+        module = load('Mods/new-horizons/mod.json')
+        self.assertIn('config/objects/magicSpring.json', module['objects'])
+
+    def test_buffer_reward_requires_nonnegative_bounded_integer(self):
+        schema = load('config/schemas/rewardable.json')
+        validator = Draft4Validator(schema)
+        for amount in (0, 25, 50, 2147483647):
+            with self.subTest(amount=amount):
+                validator.validate({'rewards': [{'manaBuffer': amount}]})
+        for amount in (-1, 2147483648, 0.5, '50', None, True, [], {}):
+            with self.subTest(invalid=repr(amount)):
+                self.assertFalse(validator.is_valid({'rewards': [{'manaBuffer': amount}]}))
+        # Buffer is an explicit reward, not a new ordinary-Mana requirement.
+        validator.validate({'rewards': [{'manaPoints': 25}]})
+        self.assertNotIn('manaBuffer', schema['definitions']['limiter']['properties'])
 
 
 if __name__ == '__main__':

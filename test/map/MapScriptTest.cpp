@@ -534,7 +534,7 @@ TEST_F(MapScriptTest, grantPointsRespectMode)
 	ASSERT_NE(dispatcher, nullptr);
 	ASSERT_NE(hero, nullptr);
 
-	const int baseMana = hero->mana;
+	const int baseMana = hero->getManaAvailable();
 	const int baseMove = hero->movementPointsRemaining();
 
 	dispatcher->onObjectVisit(*gameEventCallback, "grantPoints", hero, hero);

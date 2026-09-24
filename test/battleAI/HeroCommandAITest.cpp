@@ -157,13 +157,13 @@ TEST_F(HeroCommandAITest, BooklessHeroChoosesBeneficialCommandAndServerAccepts)
 {
 	prepareEvaluation(false);
 	ASSERT_FALSE(attackerSideHero->hasSpellbook());
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(choose());
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	EXPECT_EQ(callback->submitted.front().actionType, EActionType::HERO_COMMAND);
 	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, callback->submitted.front().command));
 	executeChosen();
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_TRUE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
 	EXPECT_FALSE(choose());
 	EXPECT_EQ(callback->submitted.size(), 1u);
@@ -174,7 +174,7 @@ TEST_F(HeroCommandAITest, StrongOffensiveSpellCompetesWithOrdersAndServerAccepts
 	prepareEvaluation(true);
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 99, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
 	ASSERT_EQ(attackerSideHero->getEffectPower(spell), 99);
 	ASSERT_TRUE(spell->canBeCast(callback->getBattle(BattleID(0)).get(), spells::Mode::HERO, attackerSideHero));
@@ -202,9 +202,9 @@ TEST_F(HeroCommandAITest, StrongOffensiveSpellCompetesWithOrdersAndServerAccepts
 	ASSERT_TRUE(choose());
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	EXPECT_EQ(callback->submitted.front().actionType, EActionType::HERO_SPELL);
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	executeChosen();
-	EXPECT_LT(attackerSideHero->mana, mana);
+	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 }

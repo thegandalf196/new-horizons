@@ -315,7 +315,7 @@ class NewHorizonsInitiativeContentTest(unittest.TestCase):
 
     def test_generated_module_mounts_tower_and_spell_patches(self):
         manifest = load("Mods/new-horizons/mod.json")
-        self.assertEqual(manifest["version"], "0.12.0")
+        self.assertEqual(manifest["version"], "0.13.0")
         self.assertIn("config/creatures/tower.json", manifest["creatures"])
         self.assertIn("config/factions/towerCreatureRanks.json", manifest["factions"])
         self.assertIn("config/spells/iceBolt.json", manifest["spells"])

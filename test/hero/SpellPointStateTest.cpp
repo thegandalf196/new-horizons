@@ -163,6 +163,19 @@ TEST(SpellPointStateTest, SpendingConsumesBufferBeforeNormal)
 	EXPECT_EQ(state.getTotal(), 20);
 }
 
+TEST(SpellPointStateTest, TemporaryBufferCleanupCannotChargeNormalWhenMetadataIsInvalid)
+{
+	SpellPointState state;
+	ASSERT_TRUE(state.restoreSnapshot(7, 2, 10));
+
+	EXPECT_FALSE(state.removeBuffer(3));
+	EXPECT_EQ(state.getNormal(), 7);
+	EXPECT_EQ(state.getBuffer(), 2);
+	ASSERT_TRUE(state.removeBuffer(2));
+	EXPECT_EQ(state.getNormal(), 7);
+	EXPECT_EQ(state.getBuffer(), 0);
+}
+
 TEST(SpellPointStateTest, InvalidCostsAndNegativeGrantsAreAtomic)
 {
 	SpellPointState state;

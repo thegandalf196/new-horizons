@@ -445,13 +445,30 @@ void AdventureServerProxy::grantLuck(IGameEventCallback & object, const CGHeroIn
 
 void AdventureServerProxy::grantSpellPoints(IGameEventCallback & object, const CGHeroInstance & hero, int amount, int mode)
 {
-	int result = amount; // mode 2: set the total directly
-	if(mode == 0)
-		result = hero.mana + amount;
-	else if(mode == 1)
-		result = std::max(0, hero.mana - amount);
-
-	object.setManaPoints(hero.id, result);
+	const int64_t magnitude = std::abs(static_cast<int64_t>(amount));
+	if(mode == 0) // mode 0: add/subtract Spell Points
+	{
+		if(amount >= 0)
+			object.restoreSpellPoints(hero.id, amount);
+		else
+			object.spendSpellPoints(hero.id, std::min(magnitude, hero.getManaAvailable()));
+	}
+	else if(mode == 1) // mode 1: subtract/add Spell Points
+	{
+		if(amount >= 0)
+			object.spendSpellPoints(hero.id, std::min(magnitude, hero.getManaAvailable()));
+		else
+			object.restoreSpellPoints(hero.id, static_cast<int32_t>(std::min<int64_t>(magnitude, std::numeric_limits<int32_t>::max())));
+	}
+	else // mode 2: set the requested total, adjusting Buffer first if reducing it
+	{
+		const int64_t target = std::max<int64_t>(0, amount);
+		const int64_t current = hero.getManaAvailable();
+		if(target < current)
+			object.spendSpellPoints(hero.id, current - target);
+		else if(target > current)
+			object.restoreSpellPoints(hero.id, static_cast<int32_t>(std::min<int64_t>(target - current, std::numeric_limits<int32_t>::max())));
+	}
 }
 
 void AdventureServerProxy::grantMovementPoints(IGameEventCallback & object, const CGHeroInstance & hero, int amount, int mode)

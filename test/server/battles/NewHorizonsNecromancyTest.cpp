@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../SpellPointTestUtils.h"
 
 #include "BattleTestFixture.h"
 #include "../../../server/CGameHandler.h"
@@ -13,8 +14,12 @@
 #include "../../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/networkPacks/PacksForClient.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+
+#include <limits>
 
 namespace
 {
@@ -107,6 +112,64 @@ protected:
 	{
 		BattleTestFixture::SetUp();
 		startGame();
+	}
+
+	void verifyTemporaryBufferCleanupAfterSpend(int32_t spent, int32_t expectedRemainingTemporary, int32_t expectedBuffer)
+	{
+		ASSERT_TRUE(newHorizonsMagic::spellPointRulesActive(attackerSideHero->getMagicRules()));
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 10, ChangeValueMode::ABSOLUTE);
+		ASSERT_EQ(attackerSideHero->manaLimit(), 10);
+		attackerSideHero->initializeSpellPoints(5, 2);
+
+		Bonus combatMana;
+		combatMana.type = BonusType::COMBAT_MANA_BONUS;
+		combatMana.val = 8;
+		GiveBonus grantCombatMana(GiveBonus::ETarget::OBJECT, attackerSideHero->id, combatMana);
+		gameHandler->sendAndApply(grantCombatMana);
+
+		startBattle();
+		auto & attackerSide = battle()->getSide(BattleSide::ATTACKER);
+		ASSERT_EQ(attackerSide.initialNormalSpellPoints, 5);
+		ASSERT_EQ(attackerSide.initialBufferSpellPoints, 2);
+		ASSERT_EQ(attackerSide.temporaryBufferRemaining, 8);
+		ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), 10);
+
+		gameHandler->grantBufferSpellPoints(attackerSideHero->id, 3);
+		EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 13);
+		gameHandler->spendSpellPoints(attackerSideHero->id, spent);
+		EXPECT_EQ(attackerSide.temporaryBufferRemaining, expectedRemainingTemporary);
+
+		BattleResultsApplied applied;
+		applied.battleID = BattleID(0);
+		gameState()->apply(applied);
+
+		EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 5);
+		EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), expectedBuffer);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), 5 + expectedBuffer);
+	}
+
+	void verifyNegativeCombatManaPenalty(int32_t penalty, int32_t expectedNormal, int32_t expectedBuffer)
+	{
+		ASSERT_TRUE(newHorizonsMagic::spellPointRulesActive(attackerSideHero->getMagicRules()));
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 10, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->initializeSpellPoints(5, 2);
+
+		Bonus combatMana;
+		combatMana.type = BonusType::COMBAT_MANA_BONUS;
+		combatMana.val = penalty;
+		GiveBonus grantCombatMana(GiveBonus::ETarget::OBJECT, attackerSideHero->id, combatMana);
+		gameHandler->sendAndApply(grantCombatMana);
+
+		startBattle();
+		EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), expectedNormal);
+		EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), expectedBuffer);
+
+		BattleCancelled cancelled;
+		cancelled.battleID = BattleID(0);
+		gameState()->apply(cancelled);
+
+		EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 5);
+		EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 2);
 	}
 };
 
@@ -501,7 +564,7 @@ TEST_F(NewHorizonsNecromancyRuntimeTest, LegacyHeroDoesNotEnterNewHorizonsResolv
 TEST_F(NewHorizonsNecromancyRuntimeTest, GameStateAppliesHarvestAfterBattleManaClamp)
 {
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 10, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = 5;
+	setTestSpellPointTotal(attackerSideHero, 5);
 	startBattle();
 	const auto initialMana = battle()->getSide(BattleSide::ATTACKER).initialMana;
 	ASSERT_EQ(initialMana, 5);
@@ -513,32 +576,143 @@ TEST_F(NewHorizonsNecromancyRuntimeTest, GameStateAppliesHarvestAfterBattleManaC
 	applied.necromancy.active = true;
 	applied.necromancy.applied = true;
 	applied.necromancy.manaRecovered = 3;
-	attackerSideHero->mana = 2; // Three mana spent during combat.
+	setTestSpellPointTotal(attackerSideHero, 2); // Three mana spent during combat.
 	gameState()->apply(applied);
 
-	EXPECT_EQ(attackerSideHero->mana, initialMana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), initialMana);
 }
 
-TEST_F(NewHorizonsNecromancyRuntimeTest, GameStateClampsCombatBonusManaBeforeHarvestAndHeroLimit)
+TEST_F(NewHorizonsNecromancyRuntimeTest, PersistentBufferGrantSurvivesAfterTemporaryBufferIsFullySpent)
 {
+	verifyTemporaryBufferCleanupAfterSpend(10, 0, 3);
+}
+
+TEST_F(NewHorizonsNecromancyRuntimeTest, PersistentBufferGrantAndOriginalBufferSurvivePartialTemporarySpend)
+{
+	verifyTemporaryBufferCleanupAfterSpend(5, 3, 5);
+}
+
+TEST_F(NewHorizonsNecromancyRuntimeTest, WraithManaDrainSpendsCombatBufferFirstAndCleanupKeepsPersistentGrant)
+{
+	ASSERT_TRUE(newHorizonsMagic::spellPointRulesActive(attackerSideHero->getMagicRules()));
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 10, ChangeValueMode::ABSOLUTE);
-	ASSERT_EQ(attackerSideHero->manaLimit(), 10);
-	attackerSideHero->mana = 5;
+	attackerSideHero->initializeSpellPoints(5, 2);
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creature("core:wraith"), 1));
+
+	Bonus combatMana;
+	combatMana.type = BonusType::COMBAT_MANA_BONUS;
+	combatMana.val = 8;
+	GiveBonus grantCombatMana(GiveBonus::ETarget::OBJECT, attackerSideHero->id, combatMana);
+	gameHandler->sendAndApply(grantCombatMana);
+
 	startBattle();
-	const auto initialMana = battle()->getSide(BattleSide::ATTACKER).initialMana;
-	ASSERT_EQ(initialMana, 5);
+	auto & attackerSide = battle()->getSide(BattleSide::ATTACKER);
+	ASSERT_EQ(attackerSide.initialNormalSpellPoints, 5);
+	ASSERT_EQ(attackerSide.initialBufferSpellPoints, 2);
+	ASSERT_EQ(attackerSide.temporaryBufferRemaining, 8);
+	ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), 10);
+
+	// This Buffer is persistent and arrives after the combat-only bonus. Mana
+	// Drain must still consume the remaining temporary portion first.
+	gameHandler->grantBufferSpellPoints(attackerSideHero->id, 3);
+	ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), 13);
+	beginCombat();
+
+	const auto wraithID = creature("core:wraith");
+	const auto wraiths = battle()->battleGetStacksIf([&](const CStack * stack)
+	{
+		return stack->unitSide() == BattleSide::DEFENDER && stack->unitType()->getId() == wraithID;
+	});
+	ASSERT_EQ(wraiths.size(), 1u);
+	const auto * wraith = wraiths.front();
+	ASSERT_TRUE(wraith->hasBonusOfType(BonusType::MANA_DRAIN));
+
+	for(int remainingActivations = 0; remainingActivations < 8 && !wraith->drainedMana; ++remainingActivations)
+	{
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(active->unitId(), wraith->unitId())
+			<< "Mana Drain is applied before the Wraith's activation is published";
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+			battle()->sideToPlayer(active->unitSide()), BattleAction::makeDefend(active)));
+	}
+
+	ASSERT_TRUE(wraith->drainedMana);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 5);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 11);
+	EXPECT_EQ(attackerSide.temporaryBufferRemaining, 6);
 
 	BattleResultsApplied applied;
 	applied.battleID = BattleID(0);
-	applied.victor = PlayerColor(0);
-	applied.loser = PlayerColor(1);
-	applied.necromancy.active = true;
-	applied.necromancy.applied = true;
-	applied.necromancy.manaRecovered = 10; // Harvest would exceed the hero limit after restoring the snapshot.
-	attackerSideHero->mana = 13; // Temporary combat-only mana above the pre-battle snapshot.
 	gameState()->apply(applied);
 
-	EXPECT_EQ(attackerSideHero->mana, attackerSideHero->manaLimit());
-	EXPECT_GT(attackerSideHero->mana, initialMana)
-		<< "Harvest must be added after temporary combat mana is clamped to the pre-battle snapshot";
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 5);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 5)
+		<< "Cleanup removes the six unspent combat-only points while preserving original + new persistent Buffer";
+}
+
+TEST_F(NewHorizonsNecromancyRuntimeTest, NegativeCombatManaBonusDrainsBufferBeforeNormalAndCancelRestoresPools)
+{
+	verifyNegativeCombatManaPenalty(-4, 3, 0);
+}
+
+TEST_F(NewHorizonsNecromancyRuntimeTest, MinimumCombatManaBonusCannotOverflowAndCancelRestoresPools)
+{
+	verifyNegativeCombatManaPenalty(std::numeric_limits<int32_t>::min(), 0, 0);
+}
+
+TEST_F(NewHorizonsNecromancyRuntimeTest, NormalRestorationDuringCombatSurvivesSuccessfulResult)
+{
+	ASSERT_TRUE(newHorizonsMagic::spellPointRulesActive(attackerSideHero->getMagicRules()));
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 10, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->initializeSpellPoints(5, 2);
+
+	Bonus combatMana;
+	combatMana.type = BonusType::COMBAT_MANA_BONUS;
+	combatMana.val = 8;
+	GiveBonus grantCombatMana(GiveBonus::ETarget::OBJECT, attackerSideHero->id, combatMana);
+	gameHandler->sendAndApply(grantCombatMana);
+
+	startBattle();
+	auto & attackerSide = battle()->getSide(BattleSide::ATTACKER);
+	ASSERT_EQ(attackerSide.temporaryBufferRemaining, 8);
+	ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), 10);
+
+	gameHandler->restoreSpellPoints(attackerSideHero->id, 4);
+	gameHandler->grantBufferSpellPoints(attackerSideHero->id, 3);
+	ASSERT_EQ(attackerSideHero->getNormalSpellPoints(), 9);
+	ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), 13);
+
+	BattleResultsApplied applied;
+	applied.battleID = BattleID(0);
+	gameState()->apply(applied);
+
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 9);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 5);
+}
+
+TEST_F(NewHorizonsNecromancyRuntimeTest, CombatManaBufferGrantSaturatesAtInt32Maximum)
+{
+	ASSERT_TRUE(newHorizonsMagic::spellPointRulesActive(attackerSideHero->getMagicRules()));
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 10, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->initializeSpellPoints(5, std::numeric_limits<int32_t>::max() - 3);
+
+	Bonus combatMana;
+	combatMana.type = BonusType::COMBAT_MANA_BONUS;
+	combatMana.val = std::numeric_limits<int32_t>::max();
+	GiveBonus grantCombatMana(GiveBonus::ETarget::OBJECT, attackerSideHero->id, combatMana);
+	gameHandler->sendAndApply(grantCombatMana);
+
+	startBattle();
+	const auto & attackerSide = battle()->getSide(BattleSide::ATTACKER);
+	EXPECT_EQ(attackerSide.additionalMana, std::numeric_limits<int32_t>::max());
+	EXPECT_EQ(attackerSide.temporaryBufferRemaining, 3);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), std::numeric_limits<int32_t>::max());
+
+	BattleResultsApplied applied;
+	applied.battleID = BattleID(0);
+	gameState()->apply(applied);
+
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 5);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), std::numeric_limits<int32_t>::max() - 3);
 }

@@ -229,7 +229,7 @@ TEST_F(HypotheticWallTest, RealEarthquakeCanDestroyTheLastGateInModelAndAuthorit
 	ASSERT_EQ(battle()->battleGetOwner(battle()->battleActiveUnit()), PlayerColor(0));
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	attackerSideHero->addSpellToSpellbook(SpellID::EARTHQUAKE);
-	attackerSideHero->mana = 1000;
+	setTestSpellPointTotal(attackerSideHero, 1000);
 	for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
 	{
 		const auto part = static_cast<EWallPart>(index);
@@ -268,7 +268,7 @@ TEST_F(HypotheticWallTest, RealEarthquakeCanDestroyTheLastGateInModelAndAuthorit
 	EXPECT_TRUE(model.getAccessibility().accessible(BattleHex::GATE_OUTER, false, BattleSide::ATTACKER));
 	EXPECT_EQ(battle()->battleGetWallState(EWallPart::GATE), EWallState::DAMAGED);
 	EXPECT_EQ(battle()->battleGetGateState(), EGateState::CLOSED);
-	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -282,5 +282,5 @@ TEST_F(HypotheticWallTest, RealEarthquakeCanDestroyTheLastGateInModelAndAuthorit
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(battle()->battleGetWallState(EWallPart::GATE), EWallState::DESTROYED);
 	EXPECT_EQ(battle()->battleGetGateState(), EGateState::DESTROYED);
-	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000 - cost);
 }

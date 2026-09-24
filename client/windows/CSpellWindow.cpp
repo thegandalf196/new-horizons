@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "SpellPointPresentation.h"
 #include "CSpellWindow.h"
 
 #include "../../lib/ScopeGuard.h"
@@ -85,6 +86,7 @@ CSpellWindow::InteractiveArea::InteractiveArea(const Rect & myRect, const std::f
 	onLeft = funcL;
 	hoverText = LIBRARY->generaltexth->zelp[helpTextId].first;
 	helpText = LIBRARY->generaltexth->zelp[helpTextId].second;
+	spellPointsHelp = helpTextId == 459;
 	owner = _owner;
 }
 
@@ -110,7 +112,10 @@ void CSpellWindow::InteractiveArea::clickPressed(const Point & cursorPosition)
 
 void CSpellWindow::InteractiveArea::showPopupWindow(const Point & cursorPosition)
 {
-	CRClickPopup::createAndPush(helpText);
+	CRClickPopup::createAndPush(spellPointsHelp
+		? spellPointPresentation::tooltip(owner->myHero->getManaAvailable(),
+			owner->myHero->manaLimit(), owner->myHero->getBufferSpellPoints())
+		: helpText);
 }
 
 void CSpellWindow::InteractiveArea::hover(bool on)
@@ -305,7 +310,7 @@ CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _m
 	}
 	schoolPicture = std::make_shared<CAnimImage>(AnimationPath::builtin("Schools"), 0, 0, 117 + offL, 74 + offT);
 
-	mana = std::make_shared<CLabel>(435 + (isBigSpellbook ? 159 : 0), 426 + offB, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, std::to_string(myHero->mana));
+	mana = std::make_shared<CLabel>(435 + (isBigSpellbook ? 159 : 0), 426 + offB, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, std::to_string(myHero->getManaAvailable()));
 
 	// Metamagic's Grand variant is an explicit choice made before the selected
 	// spell is submitted.  Keep this toggle in the modal spellbook itself; the
@@ -805,7 +810,7 @@ void CSpellWindow::setCurrentPage(int value)
 
 	ENGINE->fakeMouseMove(); // refresh hover state so a stale page-turn hint clears when the corner is disabled under the cursor
 
-	mana->setText(std::to_string(myHero->mana));//just in case, it will be possible to cast spell without closing book
+	mana->setText(std::to_string(myHero->getManaAvailable()));//just in case, it will be possible to cast spell without closing book
 }
 
 void CSpellWindow::turnPageLeft()
@@ -922,11 +927,11 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 		auto spellCost = owner->myInt->cb->getSpellCost(mySpell, owner->myHero);
 		if(metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(owner->myHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
 			spellCost = std::max(1, spellCost - 2);
-		if(spellCost > owner->myHero->mana && !metamagicFollowup) //insufficient mana; follow-ups use authoritative preview below
+		if(spellCost > owner->myHero->getManaAvailable() && !metamagicFollowup) //insufficient mana; follow-ups use authoritative preview below
 		{
 			MetaString message = MetaString::createFromTextID("core.genrltxt.206"); // That spell costs %d spell points. Your hero only has %d spell points...
 			message.replaceNumber(spellCost);
-			message.replaceNumber(owner->myHero->mana);
+			message.replaceNumber(owner->myHero->getManaAvailable());
 			GAME->interface()->showInfoDialog(message.toString(&GAME->translator()));
 			return;
 		}
@@ -1066,10 +1071,9 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 	{
 		const int requiredRank = newHorizonsMagic::requiredSchoolRank(owner->myHero->getMagicRules(), mySpell->getId());
 		const bool inscribedInSpellbook = owner->myHero->hasSpellbook()
-			&& owner->myHero->spellbookContainsSpell(mySpell->getId());
-		// Authored and previously learned spells remain usable. School ranks gate
-		// learning and external spell sources, never an entry already inscribed in
-		// this hero's spellbook (the same contract enforced by canCastThisSpell()).
+			&& owner->myHero->isSpellInscribedForCasting(mySpell->getId());
+		// Durable and eligible temporary inscriptions are usable regardless of
+		// School rank; learning and other non-inscribed sources remain gated.
 		schoolLocked = requiredRank > 0 && !inscribedInSpellbook
 			&& !newHorizonsMagic::hasSchoolProficiency(owner->myHero, mySpell->getId());
 		if(schoolLocked)
@@ -1114,7 +1118,7 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 		}
 
 		ColorRGBA firstLineColor, secondLineColor;
-		if((spellCost > owner->myHero->mana || schoolLocked) && !owner->onSpellSelect) //hero cannot cast this spell
+		if((spellCost > owner->myHero->getManaAvailable() || schoolLocked) && !owner->onSpellSelect) //hero cannot cast this spell
 		{
 			firstLineColor = Colors::WHITE;
 			secondLineColor = Colors::ORANGE;

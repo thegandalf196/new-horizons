@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../SpellPointTestUtils.h"
 
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../server/battles/HeroCommandFixture.h"
@@ -99,7 +100,7 @@ protected:
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
 		attackerSideHero->addSpellToSpellbook(SpellID::CURE);
-		attackerSideHero->mana = 100;
+		setTestSpellPointTotal(attackerSideHero, 100);
 		startBattle();
 		target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 100);
 		beginCombat();

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "SpellPointPresentation.h"
 #include "CKingdomInterface.h"
 
 #include "CCastleInterface.h"
@@ -378,7 +379,7 @@ si64 InfoBoxHeroData::getValue()
 	case HERO_PRIMARY_SKILL:
 		return hero->getPrimSkillLevel(static_cast<PrimarySkill>(index));
 	case HERO_MANA:
-		return hero->mana;
+		return hero->getManaAvailable();
 	case HERO_EXPERIENCE:
 		return hero->exp;
 	case HERO_SECONDARY_SKILL:
@@ -436,8 +437,8 @@ std::string InfoBoxHeroData::getValueText()
 		switch (type)
 		{
 		case HERO_MANA:
-			return std::to_string(hero->mana) + '/' +
-				std::to_string(hero->manaLimit());
+			return spellPointPresentation::readout(hero->getManaAvailable(),
+				hero->manaLimit(), hero->getBufferSpellPoints());
 		case HERO_EXPERIENCE:
 			return TextOperations::formatMetric(hero->exp, 6);
 		}
@@ -452,12 +453,8 @@ void InfoBoxHeroData::prepareMessage(std::string & text, std::shared_ptr<CCompon
 	{
 	case HERO_MANA:
 	{
-		MetaString message;
-		message.appendTextID("core.genrltxt.205");
-		message.replaceTextID(hero->getNameTextID());
-		message.replaceNumber(hero->mana);
-		message.replaceNumber(hero->manaLimit());
-		text = message.toString(&GAME->translator());
+		text = spellPointPresentation::tooltip(hero->getManaAvailable(),
+			hero->manaLimit(), hero->getBufferSpellPoints());
 		break;
 	}
 	case HERO_EXPERIENCE:

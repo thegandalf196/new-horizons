@@ -20,7 +20,7 @@ protected:
 	{
 		ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 		attackerSideHero->addSpellToSpellbook(SpellID::RESURRECTION);
-		attackerSideHero->mana = 1000;
+		setTestSpellPointTotal(attackerSideHero, 1000);
 	}
 
 	void kill(CStack * unit)
@@ -86,7 +86,7 @@ TEST_F(SpellTargetIdentityTest, ResurrectionRevivesTheSelectedSecondCorpseNotThe
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), resurrect(selected)));
 	EXPECT_TRUE(selected->alive());
 	EXPECT_FALSE(first->alive());
-	EXPECT_EQ(attackerSideHero->mana, 1000 - cost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000 - cost);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 }
 
@@ -121,6 +121,6 @@ TEST_F(SpellTargetIdentityTest, RejectedExplicitGhostNeverFallsBackToAnotherCorp
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), resurrect(selected)));
 	EXPECT_FALSE(corpse->alive());
 	EXPECT_TRUE(selected->isGhost());
-	EXPECT_EQ(attackerSideHero->mana, 1000);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
 }

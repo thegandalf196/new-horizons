@@ -65,7 +65,7 @@ void TavernHeroesPool::setHeroForPlayer(PlayerColor player, TavernHeroSlot slot,
 	if (replenishPoints)
 	{
 		h->setMovementPoints(h->movementPointsLimit());
-		h->mana = h->manaLimit();
+		h->setNormalSpellPoints(h->manaLimit());
 	}
 
 	TavernSlot newSlot;
@@ -141,7 +141,7 @@ void TavernHeroesPool::onNewDay()
 			continue;
 
 		heroPtr->setMovementPoints(heroPtr->movementPointsLimit());
-		heroPtr->mana = heroPtr->getManaNewTurn();
+		heroPtr->setNormalSpellPoints(heroPtr->getManaNewTurn());
 	}
 }
 

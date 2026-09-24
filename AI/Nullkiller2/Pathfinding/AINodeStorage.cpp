@@ -1386,7 +1386,7 @@ struct TownPortalFinder
 
 	bool actorCanCastTownPortal()
 	{
-		return hero->canCastThisSpell(townPortal) && hero->mana >= hero->getSpellCost(townPortal);
+		return hero->canCastThisSpell(townPortal) && hero->getManaAvailable() >= hero->getSpellCost(townPortal);
 	}
 
 	CGPathNode * getBestInitialNodeForTownPortal(const CGTownInstance * targetTown)

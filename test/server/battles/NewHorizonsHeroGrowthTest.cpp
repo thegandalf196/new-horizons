@@ -58,7 +58,7 @@ protected:
 		prepareCommands(true);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->mana = attackerSideHero->manaLimit();
+		setTestSpellPointTotal(attackerSideHero, attackerSideHero->manaLimit());
 		attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MAGIC_SCHOOL_SKILL,
 			BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 		attackerSideHero->addSpellToSpellbook(spell);
@@ -1098,7 +1098,7 @@ TEST_F(NewHorizonsHeroGrowthTest, RealInitializationCapturesProfileAndKnowledgeM
 	EXPECT_EQ(view->modified, view->base);
 	EXPECT_EQ(view->profile.growth, (std::array<int, 4>{4, 4, 1, 1}));
 	EXPECT_EQ(hero->manaLimit(), 5);
-	EXPECT_EQ(hero->mana, 5);
+	EXPECT_EQ(hero->getManaAvailable(), 5);
 	const auto & savedRules = gameState()->getHeroDevelopmentRules();
 	EXPECT_EQ(savedRules["schemaVersion"].Integer(), 1);
 	EXPECT_EQ(savedRules["rulesetVersion"].Integer(), 1);
@@ -1336,7 +1336,7 @@ TEST_F(NewHorizonsHeroGrowthTest, RealCastScalesPowerTermAndPreservesFixedExpert
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 20, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill::INTELLIGENCE, 2, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(attackerSideHero->manaLimit(), 30);
-	attackerSideHero->mana = attackerSideHero->manaLimit();
+	setTestSpellPointTotal(attackerSideHero, attackerSideHero->manaLimit());
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MAGIC_SCHOOL_SKILL,
 		BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
@@ -1349,7 +1349,7 @@ TEST_F(NewHorizonsHeroGrowthTest, RealCastScalesPowerTermAndPreservesFixedExpert
 	EXPECT_EQ(spell->calculateDamage(&proxy), 622);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
 	const auto health = enemy->getAvailableHealth();
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	const auto cost = attackerSideHero->getSpellCost(spell);
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -1358,7 +1358,7 @@ TEST_F(NewHorizonsHeroGrowthTest, RealCastScalesPowerTermAndPreservesFixedExpert
 	action.aimToUnit(enemy);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(health - enemy->getAvailableHealth(), 622);
-	EXPECT_EQ(attackerSideHero->mana, mana - cost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost);
 	EXPECT_FALSE(issue(HeroCommand::CHARGE));
 }
 
@@ -1368,7 +1368,7 @@ TEST_F(NewHorizonsHeroGrowthTest, RealSummonRoundsAfterScaledPowerProduct)
 	prepareScaledExpert(spellID);
 	const auto * spell = spellID.toSpell();
 	ASSERT_EQ(spell->getLevelPower(3), 4);
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -1380,7 +1380,7 @@ TEST_F(NewHorizonsHeroGrowthTest, RealSummonRoundsAfterScaledPowerProduct)
 		if(unit->isSummoned() && unit->unitSide() == BattleSide::ATTACKER)
 			count += unit->getCount();
 	EXPECT_EQ(count, 17); // floor(43 * 4 / 10), not floor(43 / 10) * 4.
-	EXPECT_EQ(attackerSideHero->mana, mana - attackerSideHero->getSpellCost(spell));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - attackerSideHero->getSpellCost(spell));
 	EXPECT_FALSE(issue(HeroCommand::CHARGE));
 }
 
@@ -1395,7 +1395,7 @@ TEST_F(NewHorizonsHeroGrowthTest, RealSacrificeKeepsVictimHealthAndMasteryTermsU
 	ASSERT_FALSE(dead->alive());
 	const auto * spell = spellID.toSpell();
 	const int64_t expected = (43 + 10 * victim->getMaxHealth() + 10 * spell->getLevelPower(3)) * victim->getCount() / 10;
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -1405,7 +1405,7 @@ TEST_F(NewHorizonsHeroGrowthTest, RealSacrificeKeepsVictimHealthAndMasteryTermsU
 	EXPECT_TRUE(dead->alive());
 	EXPECT_EQ(dead->getAvailableHealth(), expected);
 	EXPECT_FALSE(victim->alive());
-	EXPECT_EQ(attackerSideHero->mana, mana - attackerSideHero->getSpellCost(spell));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - attackerSideHero->getSpellCost(spell));
 	EXPECT_FALSE(issue(HeroCommand::CHARGE));
 }
 
@@ -1436,10 +1436,10 @@ TEST_F(NewHorizonsHeroGrowthTest, RealFireWallCreationTriggerAndBattlePacketKeep
 	const auto health = recipient->getAvailableHealth();
 	ASSERT_GT(expected, 0);
 	ASSERT_LT(expected, health);
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	battle()->handleObstacleTriggersForUnit(*gameHandler->spellEnv, *recipient, BattleHexArray());
 	EXPECT_EQ(health - recipient->getAvailableHealth(), expected);
-	EXPECT_EQ(attackerSideHero->mana, mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_FALSE(issue(HeroCommand::CHARGE));
 	CMemorySerializer memory;
 	memory.oser & *gameState();

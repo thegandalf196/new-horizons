@@ -32,6 +32,7 @@ Rewardable::Reward::Reward()
 	: heroExperience(0)
 	, heroLevel(0)
 	, manaDiff(0)
+	, manaBuffer(0)
 	, manaPercentage(-1)
 	, manaOverflowFactor(0)
 	, movePoints(0)
@@ -47,17 +48,38 @@ Rewardable::Reward::~Reward() = default;
 
 si32 Rewardable::Reward::calculateManaPoints(const CGHeroInstance * hero) const
 {
-	si32 manaScaled = hero->mana;
+	const bool spellPointRules = newHorizonsMagic::spellPointRulesActive(hero->getMagicRules());
+	int64_t manaScaled = hero->getNormalSpellPoints();
 	if (manaPercentage >= 0)
-		manaScaled = hero->manaLimit() * manaPercentage / 100;
+		manaScaled = static_cast<int64_t>(hero->manaLimit()) * manaPercentage / 100;
 
-	si32 manaMissing   = std::max(0, hero->manaLimit() - manaScaled);
-	si32 manaGranted   = std::min(manaMissing, manaDiff);
-	si32 manaOverflow  = manaDiff - manaGranted;
-	si32 manaOverLimit = manaOverflow * manaOverflowFactor / 100;
-	si32 manaOutput    = manaScaled + manaGranted + manaOverLimit;
+	if(spellPointRules)
+	{
+		const int64_t normalCapacity = hero->manaLimit();
+		manaScaled = std::clamp<int64_t>(manaScaled, 0, normalCapacity);
 
-	return manaOutput;
+		// In the two-pool rules, a negative fixed mana reward is a cost. It drains
+		// Buffer first, so only the part of the cost left after Buffer can lower
+		// the displayed/returned Normal value.
+		if(manaDiff < 0)
+		{
+			const int64_t cost = -static_cast<int64_t>(manaDiff);
+			const int64_t bufferSpent = std::min<int64_t>(cost, hero->getBufferSpellPoints());
+			manaScaled = std::max<int64_t>(0, manaScaled - (cost - bufferSpent));
+			return static_cast<si32>(manaScaled);
+		}
+	}
+
+	const int64_t manaMissing = std::max<int64_t>(0, static_cast<int64_t>(hero->manaLimit()) - manaScaled);
+	const int64_t manaGranted = std::min<int64_t>(manaMissing, manaDiff);
+	const int64_t manaOverflow = static_cast<int64_t>(manaDiff) - manaGranted;
+	const int64_t manaOverLimit = manaOverflow * manaOverflowFactor / 100;
+	int64_t manaOutput = manaScaled + manaGranted + manaOverLimit;
+	if(spellPointRules)
+		manaOutput = std::min<int64_t>(manaOutput, hero->manaLimit());
+
+	const int64_t minimum = spellPointRules ? 0 : std::numeric_limits<si32>::min();
+	return static_cast<si32>(std::clamp<int64_t>(manaOutput, minimum, std::numeric_limits<si32>::max()));
 }
 
 si32 Rewardable::Reward::calculateMovePoints(const CGHeroInstance * hero) const
@@ -111,8 +133,16 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 	if (heroLevel)
 		comps.emplace_back(ComponentType::LEVEL, heroLevel);
 
-	if (manaDiff || manaPercentage >= 0)
-		comps.emplace_back(ComponentType::MANA, h ? (calculateManaPoints(h) - h->mana) : manaDiff);
+	if (manaDiff || manaPercentage >= 0 || manaBuffer != 0)
+	{
+		const int64_t normalChange = h ? static_cast<int64_t>(calculateManaPoints(h)) - h->getNormalSpellPoints() : manaDiff;
+		const int64_t bufferSpent = h && newHorizonsMagic::spellPointRulesActive(h->getMagicRules()) && manaDiff < 0
+			? std::min<int64_t>(-static_cast<int64_t>(manaDiff), h->getBufferSpellPoints())
+			: 0;
+		const int64_t totalChange = normalChange - bufferSpent + manaBuffer;
+		comps.emplace_back(ComponentType::MANA, static_cast<si32>(std::clamp<int64_t>(totalChange,
+			std::numeric_limits<si32>::min(), std::numeric_limits<si32>::max())));
+	}
 
 	for (size_t i=0; i<primary.size(); i++)
 	{
@@ -177,10 +207,15 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 
 void Rewardable::Reward::serializeJson(JsonSerializeFormat & handler)
 {
+	if(handler.saving && manaBuffer < 0)
+		throw std::runtime_error("Buffer reward cannot be negative");
 	resources.serializeJson(handler, "resources");
 	handler.serializeBool("removeObject", removeObject);
 	handler.serializeInt("manaPercentage", manaPercentage);
 	handler.serializeInt("movePercentage", movePercentage);
+	handler.serializeInt("manaBuffer", manaBuffer, 0);
+	if(!handler.saving && manaBuffer < 0)
+		throw std::runtime_error("Buffer reward cannot be negative");
 	handler.serializeInt("heroExperience", heroExperience);
 	handler.serializeInt("heroLevel", heroLevel);
 	handler.serializeInt("manaDiff", manaDiff);

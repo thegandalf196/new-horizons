@@ -2,6 +2,10 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"warcasting": true,
+	"spellPoints": {
+		"rulesetVersion": 1,
+		"intelligenceMaximumPercent": 130
+	},
 	"schools": [
 		"new-horizons:light",
 		"new-horizons:nature",

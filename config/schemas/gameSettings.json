@@ -12,8 +12,8 @@
 				"randomPoolExclusions" : {
 					"type" : "array",
 					"uniqueItems" : true,
-					"items" : { "type" : "string", "pattern" : "^[^:]+:[^:]+$" },
-					"description" : "Artifact identifiers excluded from generated random pools, not explicitly authored items."
+					"items" : { "type" : "string", "minLength" : 3 },
+					"description" : "Artifact identifiers excluded from generated random pools, not explicitly authored items. Runtime validation resolves scoped identifiers; the native schema validator does not support pattern."
 				}
 			}
 		},

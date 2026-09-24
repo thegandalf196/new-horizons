@@ -390,6 +390,16 @@ struct DLL_LINKAGE SetResearchedSpells : public CPackForClient
 
 struct DLL_LINKAGE SetMana : public CPackForClient
 {
+	enum class Operation : uint8_t
+	{
+		LEGACY,
+		SET_NORMAL,
+		RESTORE_NORMAL,
+		SPEND,
+		GRANT_BUFFER,
+		RESTORE_SNAPSHOT
+	};
+
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	SetMana() = default;
@@ -398,16 +408,91 @@ struct DLL_LINKAGE SetMana : public CPackForClient
 		, val(val)
 		, mode(mode)
 	{}
+	SetMana(ObjectInstanceID hid, Operation operation, int64_t amount, int32_t bufferAmount = 0)
+		: hid(hid)
+	{
+		setOperation(operation, amount, bufferAmount);
+	}
+
+	void setOperation(Operation value, int64_t operationAmount, int32_t operationBufferAmount = 0)
+	{
+		operation = value;
+		amount = operationAmount;
+		bufferAmount = operationBufferAmount;
+		mode = ChangeValueMode::RELATIVE;
+		val = 0;
+		switch(operation)
+		{
+			case Operation::SET_NORMAL:
+				mode = ChangeValueMode::ABSOLUTE;
+				val = static_cast<si32>(std::clamp<int64_t>(amount, 0, std::numeric_limits<si32>::max()));
+				break;
+			case Operation::RESTORE_NORMAL:
+				val = static_cast<si32>(std::clamp<int64_t>(amount, 0, std::numeric_limits<si32>::max()));
+				break;
+			case Operation::SPEND:
+				val = static_cast<si32>(-std::clamp<int64_t>(amount, 0, std::numeric_limits<si32>::max()));
+				break;
+			case Operation::GRANT_BUFFER:
+				val = static_cast<si32>(std::clamp<int64_t>(amount, 0, std::numeric_limits<si32>::max()));
+				break;
+			case Operation::RESTORE_SNAPSHOT:
+				mode = ChangeValueMode::ABSOLUTE;
+				val = static_cast<si32>(std::clamp<int64_t>(amount, 0, std::numeric_limits<si32>::max()));
+				break;
+			case Operation::LEGACY:
+				break;
+		}
+		validateOperationPayload();
+	}
+
+	void validateOperationPayload() const
+	{
+		if(operation < Operation::LEGACY || operation > Operation::RESTORE_SNAPSHOT
+			|| amount < 0 || bufferAmount < 0)
+			throw std::runtime_error("Invalid Spell Point mutation payload");
+		if((operation == Operation::LEGACY && amount != 0)
+			|| (operation != Operation::RESTORE_SNAPSHOT && bufferAmount != 0))
+			throw std::runtime_error("Invalid Buffer payload for Spell Point mutation");
+		if((operation == Operation::SET_NORMAL || operation == Operation::RESTORE_NORMAL
+			|| operation == Operation::GRANT_BUFFER || operation == Operation::RESTORE_SNAPSHOT)
+			&& amount > std::numeric_limits<int32_t>::max())
+			throw std::runtime_error("Spell Point mutation exceeds a pool's representable range");
+	}
 
 	ObjectInstanceID hid;
 	si32 val = 0;
 	ChangeValueMode mode = ChangeValueMode::RELATIVE;
+	Operation operation = Operation::LEGACY;
+	int64_t amount = 0;
+	int32_t bufferAmount = 0;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
 		h & val;
 		h & hid;
 		h & mode;
+		validateOperationPayload();
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_POINTS)
+			&& (operation == Operation::GRANT_BUFFER
+				|| (operation == Operation::RESTORE_SNAPSHOT && bufferAmount != 0)
+				|| (operation != Operation::LEGACY && amount > std::numeric_limits<int32_t>::max())))
+			throw std::runtime_error("Cannot discard Buffer Spell Point mutation in an older pack format");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_POINTS))
+		{
+			h & operation;
+			h & amount;
+			h & bufferAmount;
+			if(!h.saving && (operation < Operation::LEGACY || operation > Operation::RESTORE_SNAPSHOT))
+				throw std::runtime_error("Invalid Spell Point mutation operation");
+			validateOperationPayload();
+		}
+		else if(!h.saving)
+		{
+			operation = Operation::LEGACY;
+			amount = 0;
+			bufferAmount = 0;
+		}
 	}
 };
 

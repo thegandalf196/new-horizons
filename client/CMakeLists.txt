@@ -387,6 +387,7 @@ set(vcmiclientcommon_HEADERS
 	windows/HeroSkillOddsWindow.h
 	windows/NewHorizonsPerkIcons.h
 	windows/NewHorizonsPerkHelp.h
+	windows/SpellPointPresentation.h
 	windows/HeroMasteryWindow.h
 	windows/HeroMasteryDialogState.h
 	windows/CKingdomInterface.h

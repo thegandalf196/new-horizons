@@ -118,6 +118,9 @@ public:
 	virtual void setMovePoints(SetMovePoints * smp)=0;
 	virtual void setMovePoints(ObjectInstanceID hid, int val)=0;
 	virtual void setManaPoints(ObjectInstanceID hid, int val)=0;
+	virtual void restoreSpellPoints(ObjectInstanceID hid, int32_t amount)=0;
+	virtual void spendSpellPoints(ObjectInstanceID hid, int64_t amount)=0;
+	virtual void grantBufferSpellPoints(ObjectInstanceID hid, int32_t amount)=0;
 	virtual void giveHero(ObjectInstanceID id, PlayerColor player, ObjectInstanceID boatId = ObjectInstanceID()) = 0;
 	virtual void changeObjPos(ObjectInstanceID objid, int3 newPos, const PlayerColor & initiator)=0;
 	virtual void sendAndApply(CPackForClient & pack) = 0;

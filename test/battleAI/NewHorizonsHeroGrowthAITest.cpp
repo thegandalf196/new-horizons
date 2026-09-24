@@ -63,7 +63,7 @@ TEST_F(NewHorizonsHeroGrowthAITest, RealEvaluatorExecutesScaledSpellAgainstLegal
 	gameHandler->sendAndApply(activate);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 990, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->mana = attackerSideHero->manaLimit();
+	setTestSpellPointTotal(attackerSideHero, attackerSideHero->manaLimit());
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MAGIC_SCHOOL_SKILL,
 		BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
@@ -86,12 +86,12 @@ TEST_F(NewHorizonsHeroGrowthAITest, RealEvaluatorExecutesScaledSpellAgainstLegal
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	ASSERT_EQ(callback->submitted.front().actionType, EActionType::HERO_SPELL);
 	ASSERT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
-	const auto mana = attackerSideHero->mana;
+	const auto mana = attackerSideHero->getManaAvailable();
 	const auto health = enemy->getAvailableHealth();
 	const auto cost = attackerSideHero->getSpellCost(spell);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), callback->submitted.front()));
 	EXPECT_EQ(health - enemy->getAvailableHealth(), 7725);
-	EXPECT_EQ(attackerSideHero->mana, mana - cost);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
 	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 }

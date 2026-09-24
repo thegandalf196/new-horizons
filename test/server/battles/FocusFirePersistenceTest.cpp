@@ -429,20 +429,20 @@ TEST_F(FocusFirePersistenceTest, MalformedInternalBattleStartIsRejectedBeforeArm
 	auto * hero = replica->getHero(attackerSideHero->id);
 	ASSERT_NE(hero, nullptr);
 	ASSERT_EQ(hero->battle, nullptr);
-	const auto mana = hero->mana;
+	const auto mana = hero->getManaAvailable();
 	RecordingGameServer restoredServer;
 	restoredServer.gameState = replica;
 	auto handler = std::make_shared<CGameHandler>(restoredServer, replica);
 	EXPECT_THROW(handler->sendAndApply(malformed), std::runtime_error);
 	EXPECT_TRUE(replica->currentBattles.empty());
 	EXPECT_EQ(hero->battle, nullptr);
-	EXPECT_EQ(hero->mana, mana);
+	EXPECT_EQ(hero->getManaAvailable(), mana);
 	// A null unit must be rejected before localInit/post-load consumers dereference it.
 	malformed.info->getSide(BattleSide::ATTACKER).focusFire->targetUnitId = target->unitId();
 	malformed.info->stacks.emplace_back();
 	EXPECT_THROW(handler->sendAndApply(malformed), std::runtime_error);
 	EXPECT_TRUE(replica->currentBattles.empty());
 	EXPECT_EQ(hero->battle, nullptr);
-	EXPECT_EQ(hero->mana, mana);
+	EXPECT_EQ(hero->getManaAvailable(), mana);
 	EXPECT_EQ(attackerSideHero->battle, battle());
 }

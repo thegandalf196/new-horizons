@@ -18,6 +18,7 @@
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/callback/CGameInfoCallback.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
+#include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/battle/CObstacleInstance.h"
@@ -73,6 +74,21 @@ public:
 	~ScopedHeroCallback() { hero.cb = prior; }
 };
 
+class ScopedHeroSpellExclusion
+{
+	CHero * heroType;
+	SpellID spell;
+	bool inserted;
+public:
+	ScopedHeroSpellExclusion(CGHeroInstance & hero, SpellID spell)
+		: heroType(const_cast<CHero *>(hero.getHeroType())), spell(spell), inserted(heroType->excludedSpells.insert(spell).second) {}
+	~ScopedHeroSpellExclusion()
+	{
+		if(inserted)
+			heroType->excludedSpells.erase(spell);
+	}
+};
+
 class ExcludingBattle final : public BattleInfo
 {
 	JsonNode rules;
@@ -120,6 +136,12 @@ protected:
 		if(book)
 			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	}
+	void removeNewHorizonsSchoolRanks()
+	{
+		for(const auto skill : newHorizonsMagic::schoolSkills(gameState()->getMagicRules()))
+			attackerSideHero->setSecSkillLevel(skill, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	}
+	ArtifactID spellbindersHat() const { return ArtifactID::decode("core:spellbindersHat"); }
 };
 
 TEST_F(NewHorizonsSpellRosterConsumerTest, ExcludedKnownBookRemainsStoredButCannotGrant)
@@ -177,6 +199,118 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, LevelGrantCannotBypassRoster)
 	ScopedHeroCallback context(*attackerSideHero, &excluded);
 	EXPECT_TRUE(attackerSideHero->getSourcesForSpell(implosion).empty());
 	EXPECT_FALSE(attackerSideHero->canCastThisSpell(implosion.toSpell()));
+}
+
+TEST_F(NewHorizonsSpellRosterConsumerTest, SpellbindersHatTemporarilyInscribesEligibleLevelFiveCombatSpells)
+{
+	prepareHero();
+	removeNewHorizonsSchoolRanks();
+	const auto armageddon = spellNamed("core:armageddon");
+	ASSERT_EQ(attackerSideHero->getSpellLevel(armageddon.toSpell()), 5);
+	ASSERT_TRUE(armageddon.toSpell()->isCommonHeroSpell());
+	ASSERT_TRUE(armageddon.toSpell()->isCombat());
+	ASSERT_FALSE(attackerSideHero->spellbookContainsSpell(armageddon));
+	ASSERT_FALSE(attackerSideHero->isSpellInscribedForCasting(armageddon));
+
+	giveArtifact(attackerSideHero, spellbindersHat(), ArtifactPosition::HEAD);
+
+	EXPECT_FALSE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, armageddon));
+	EXPECT_TRUE(attackerSideHero->isSpellInscribedForCasting(armageddon));
+	EXPECT_TRUE(vstd::contains(attackerSideHero->getInscribedSpellsForCasting(), armageddon));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(armageddon));
+	EXPECT_TRUE(attackerSideHero->getSpellsInSpellbook().empty());
+	EXPECT_TRUE(attackerSideHero->canCastThisSpell(armageddon.toSpell()));
+
+	// Adventure spells do not become combat inscriptions, even if their legacy
+	// spell definition has level five.
+	const auto dimensionDoor = spellNamed("core:dimensionDoor");
+	ASSERT_FALSE(dimensionDoor.toSpell()->isCombat());
+	EXPECT_FALSE(attackerSideHero->isSpellInscribedForCasting(dimensionDoor));
+}
+
+TEST_F(NewHorizonsSpellRosterConsumerTest, SpellbindersHatStillRequiresPhysicalSpellbookManaAndHeroAction)
+{
+	prepareHero(false);
+	removeNewHorizonsSchoolRanks();
+	const auto armageddon = spellNamed("core:armageddon");
+	giveArtifact(attackerSideHero, spellbindersHat(), ArtifactPosition::HEAD);
+
+	EXPECT_TRUE(attackerSideHero->isSpellInscribedForCasting(armageddon));
+	EXPECT_FALSE(attackerSideHero->hasSpellbook());
+	EXPECT_FALSE(attackerSideHero->canCastThisSpell(armageddon.toSpell()));
+
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setNormalSpellPoints(0);
+	startBattle();
+	beginCombat();
+	ASSERT_TRUE(attackerSideHero->canCastThisSpell(armageddon.toSpell()));
+
+	BattleAction cast;
+	cast.actionType = EActionType::HERO_SPELL;
+	cast.side = BattleSide::ATTACKER;
+	cast.spell = armageddon;
+	// Global battlefield spells still require an explicit target entry in the
+	// authoritative action protocol, represented by the invalid-hex sentinel.
+	cast.aimToHex(BattleHex::INVALID);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), cast));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 0);
+
+	attackerSideHero->setNormalSpellPoints(100);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), cast));
+	EXPECT_LT(attackerSideHero->getManaAvailable(), 100);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), cast))
+		<< "The Hat grants inscription, not a second hero spell action";
+}
+
+TEST_F(NewHorizonsSpellRosterConsumerTest, SpellbindersHatGrantRespectsMapAndSavedRosterBans)
+{
+	prepareHero();
+	const auto armageddon = spellNamed("core:armageddon");
+	giveArtifact(attackerSideHero, spellbindersHat(), ArtifactPosition::HEAD);
+	ASSERT_TRUE(attackerSideHero->isSpellInscribedForCasting(armageddon));
+
+	ASSERT_TRUE(gameState()->getMap().allowedSpells.count(armageddon));
+	gameState()->getMap().allowedSpells.erase(armageddon);
+	EXPECT_FALSE(attackerSideHero->isSpellInscribedForCasting(armageddon));
+	EXPECT_TRUE(attackerSideHero->getSourcesForSpell(armageddon).empty());
+	EXPECT_FALSE(attackerSideHero->canCastThisSpell(armageddon.toSpell()));
+	gameState()->getMap().allowedSpells.insert(armageddon);
+
+	ExcludingWorld excluded(*gameState(), "core:armageddon");
+	ScopedHeroCallback context(*attackerSideHero, &excluded);
+	EXPECT_FALSE(attackerSideHero->isSpellInscribedForCasting(armageddon));
+	EXPECT_TRUE(attackerSideHero->getSourcesForSpell(armageddon).empty());
+}
+
+TEST_F(NewHorizonsSpellRosterConsumerTest, SpellbindersHatGrantRespectsHeroExclusionsAndLegacyRules)
+{
+	prepareHero();
+	const auto armageddon = spellNamed("core:armageddon");
+	giveArtifact(attackerSideHero, spellbindersHat(), ArtifactPosition::HEAD);
+	ASSERT_TRUE(attackerSideHero->isSpellInscribedForCasting(armageddon));
+	{
+		ScopedHeroSpellExclusion excluded(*attackerSideHero, armageddon);
+		EXPECT_FALSE(attackerSideHero->isSpellInscribedForCasting(armageddon));
+		EXPECT_TRUE(attackerSideHero->getSourcesForSpell(armageddon).empty());
+	}
+	EXPECT_TRUE(attackerSideHero->isSpellInscribedForCasting(armageddon));
+
+	LegacyMagicWorld legacy(*gameState());
+	ScopedHeroCallback legacyContext(*attackerSideHero, &legacy);
+	EXPECT_FALSE(attackerSideHero->isSpellInscribedForCasting(armageddon));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(armageddon));
+	// Armageddon is level four in the classic rules and only becomes level five
+	// in the New Horizons roster, so the classic Spellbinder's Hat does not
+	// grant it. A genuinely classic fifth-level spell remains available.
+	ASSERT_EQ(armageddon.toSpell()->getLevel(), 4);
+	EXPECT_FALSE(attackerSideHero->canCastThisSpell(armageddon.toSpell()));
+	const auto implosion = spellNamed("core:implosion");
+	ASSERT_EQ(implosion.toSpell()->getLevel(), 5);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(implosion));
+	EXPECT_FALSE(attackerSideHero->isSpellInscribedForCasting(implosion));
+	EXPECT_FALSE(attackerSideHero->getSourcesForSpell(implosion).empty());
+	EXPECT_TRUE(attackerSideHero->canCastThisSpell(implosion.toSpell()));
 }
 
 TEST_F(NewHorizonsSpellRosterConsumerTest, AllowBannedCannotLearnAnExcludedUnknownSpell)
@@ -367,7 +501,7 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, CommonCastGateRejectsExcludedBattleDe
 	prepareHero();
 	const auto arrow = spellNamed("core:magicArrow");
 	attackerSideHero->addSpellToSpellbook(arrow);
-	attackerSideHero->mana = 100;
+	setTestSpellPointTotal(attackerSideHero, 100);
 	startBattle();
 	beginCombat();
 	spells::BattleCast original(battle(), attackerSideHero, spells::Mode::HERO, arrow.toSpell());

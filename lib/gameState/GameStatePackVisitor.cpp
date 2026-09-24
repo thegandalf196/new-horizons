@@ -37,6 +37,106 @@
 
 namespace
 {
+SideInBattle * findBattleSide(CGameState & gs, ObjectInstanceID heroID)
+{
+	for(auto & battle : gs.currentBattles)
+	{
+		if(!battle)
+			continue;
+		for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			auto & side = battle->getSide(sideID);
+			if(side.heroID == heroID)
+				return &side;
+		}
+	}
+	return nullptr;
+}
+
+void validateBattleSpellPointSnapshots(const BattleInfo & battle)
+{
+	for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & side = battle.getSide(sideID);
+		if(side.initialNormalSpellPoints < 0 || side.initialBufferSpellPoints < 0 || side.temporaryBufferRemaining < 0)
+			throw std::runtime_error("Invalid negative battle Spell Point snapshot");
+
+		const int64_t initialAndTemporaryBuffer = static_cast<int64_t>(side.initialBufferSpellPoints)
+			+ side.temporaryBufferRemaining;
+		if(initialAndTemporaryBuffer > std::numeric_limits<int32_t>::max())
+			throw std::runtime_error("Battle temporary Spell Point Buffer overflows its persistent snapshot");
+	}
+}
+
+void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMana & pack)
+{
+	using Operation = SetMana::Operation;
+	// Validate the original payload before translating its legacy representation.
+	// Otherwise a nonzero typed amount on a legacy packet would be overwritten
+	// before it could be rejected.
+	pack.validateOperationPayload();
+	auto operation = pack.operation;
+	int64_t amount = pack.amount;
+	int32_t bufferAmount = pack.bufferAmount;
+	if(operation == Operation::LEGACY)
+	{
+		if(pack.mode != ChangeValueMode::ABSOLUTE && pack.mode != ChangeValueMode::RELATIVE)
+			throw std::runtime_error("Invalid legacy Spell Point mutation mode");
+		if(pack.mode == ChangeValueMode::ABSOLUTE)
+		{
+			operation = Operation::SET_NORMAL;
+			amount = std::max<int32_t>(0, pack.val);
+		}
+		else if(pack.val < 0)
+		{
+			operation = Operation::SPEND;
+			amount = -static_cast<int64_t>(pack.val);
+		}
+		else
+		{
+			operation = Operation::RESTORE_NORMAL;
+			amount = pack.val;
+		}
+	}
+
+	const int32_t bufferBefore = hero.getBufferSpellPoints();
+	switch(operation)
+	{
+		case Operation::SET_NORMAL:
+			hero.setNormalSpellPoints(static_cast<int32_t>(amount));
+			break;
+		case Operation::RESTORE_NORMAL:
+			if(!hero.restoreNormalSpellPoints(static_cast<int32_t>(amount)))
+				throw std::runtime_error("Invalid Normal Spell Point restoration");
+			break;
+		case Operation::SPEND:
+			if(!hero.spendSpellPoints(amount))
+				throw std::runtime_error("Insufficient Spell Points for authoritative spend");
+			break;
+		case Operation::GRANT_BUFFER:
+			if(bufferAmount != 0 || !hero.grantBufferSpellPoints(static_cast<int32_t>(amount)))
+				throw std::runtime_error("Invalid Buffer Spell Point grant");
+			break;
+		case Operation::RESTORE_SNAPSHOT:
+			if(findBattleSide(gs, hero.id))
+				throw std::runtime_error("Cannot restore Spell Point snapshot during battle without temporary Buffer provenance");
+			hero.restoreSpellPointSnapshot(static_cast<int32_t>(amount), bufferAmount);
+			break;
+		case Operation::LEGACY:
+			throw std::runtime_error("Unresolved legacy Spell Point mutation");
+	}
+
+	if(operation == Operation::SPEND)
+	{
+		if(auto * side = findBattleSide(gs, hero.id))
+		{
+			const int32_t spentFromBuffer = bufferBefore - hero.getBufferSpellPoints();
+			side->temporaryBufferRemaining = std::max<int32_t>(0,
+				side->temporaryBufferRemaining - std::min(side->temporaryBufferRemaining, spentFromBuffer));
+		}
+	}
+}
+
 std::set<uint32_t> bloodrageDeathCandidates(BattleInfo & battle, const std::vector<BattleStackAttacked> & updates)
 {
 	std::set<uint32_t> result;
@@ -296,13 +396,7 @@ void GameStatePackVisitor::visitSetMana(SetMana & pack)
 	CGHeroInstance * hero = gs.getHero(pack.hid);
 
 	assert(hero);
-
-	if(pack.mode == ChangeValueMode::ABSOLUTE)
-		hero->mana = pack.val;
-	else
-		hero->mana += pack.val;
-
-	vstd::amax(hero->mana, 0); //not less than 0
+	applySpellPointMutation(gs, *hero, pack);
 }
 
 void GameStatePackVisitor::visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack)
@@ -1446,7 +1540,10 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 {
 	if(!pack.info)
 		throw std::runtime_error("Missing BattleStart state");
-	// Internal connections can deliver packets without binary deserialization.
+	// Internal connections can deliver packets without binary deserialization,
+	// so validate both sides before localInit attaches armies or either hero is
+	// mutated from its saved pool snapshot.
+	validateBattleSpellPointSnapshots(*pack.info);
 	// Validate before localInit attaches armies or changes the canonical battle.
 	heroCommands::validateRules(pack.info->getHeroCommandRules());
 	pack.info->normalizeLegacyHeroCommandState();
@@ -1473,7 +1570,27 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 		if (pack.info->getSide(i).heroID.hasValue())
 		{
 			CGHeroInstance * hero = gs.getHero(pack.info->getSideHero(i)->id);
-			hero->mana = pack.info->getSide(i).initialMana + pack.info->getSide(i).additionalMana;
+			auto & side = pack.info->getSide(i);
+			if(newHorizonsMagic::spellPointRulesActive(hero->getMagicRules()))
+			{
+				hero->restoreSpellPointSnapshot(side.initialNormalSpellPoints, side.initialBufferSpellPoints);
+				if(side.temporaryBufferRemaining > 0 && !hero->grantBufferSpellPoints(side.temporaryBufferRemaining))
+					throw std::runtime_error("Failed to grant temporary combat Spell Points");
+				if(side.additionalMana < 0)
+				{
+					// Preserve signed combat-mana penalties, consuming available
+					// energy Buffer-first just like any other Mana drain.
+					const int64_t drain = std::min(hero->getManaAvailable(), -static_cast<int64_t>(side.additionalMana));
+					if(!hero->spendSpellPoints(drain))
+						throw std::runtime_error("Failed to apply combat Spell Point penalty");
+				}
+			}
+			else
+			{
+				const auto initial = std::clamp<int64_t>(static_cast<int64_t>(side.initialMana) + side.additionalMana,
+					0, std::numeric_limits<int32_t>::max());
+				hero->setNormalSpellPoints(static_cast<int32_t>(initial));
+			}
 		}
 	}
 
@@ -1506,9 +1623,16 @@ void GameStatePackVisitor::visitBattleTriggerEffect(BattleTriggerEffect & pack)
 		case BonusType::MANA_DRAIN:
 		{
 			CGHeroInstance * h = gs.getHero(ObjectInstanceID(pack.additionalInfo));
+			const int32_t bufferBefore = h->getBufferSpellPoints();
+			if(!h->spendSpellPoints(pack.val))
+				throw std::runtime_error("Invalid authoritative Mana Drain amount");
 			st->drainedMana = true;
-			h->mana -= pack.val;
-			vstd::amax(h->mana, 0);
+			if(auto * side = findBattleSide(gs, h->id))
+			{
+				const int32_t spentFromBuffer = bufferBefore - h->getBufferSpellPoints();
+				side->temporaryBufferRemaining = std::max<int32_t>(0,
+					side->temporaryBufferRemaining - std::min(side->temporaryBufferRemaining, spentFromBuffer));
+			}
 			break;
 		}
 		case BonusType::POISON:
@@ -2105,7 +2229,11 @@ void GameStatePackVisitor::visitBattleCancelled(BattleCancelled & pack)
 		if (currentBattle.getSide(i).heroID.hasValue())
 		{
 			CGHeroInstance * hero = gs.getHero(currentBattle.getSideHero(i)->id);
-			hero->mana = currentBattle.getSide(i).initialMana;
+			const auto & side = currentBattle.getSide(i);
+			if(newHorizonsMagic::spellPointRulesActive(hero->getMagicRules()))
+				hero->restoreSpellPointSnapshot(side.initialNormalSpellPoints, side.initialBufferSpellPoints);
+			else
+				hero->setNormalSpellPoints(side.initialMana);
 		}
 	}
 
@@ -2138,15 +2266,33 @@ void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack
 		if (currentBattle.getSide(i).heroID.hasValue())
 		{
 			CGHeroInstance * hero = gs.getHero(currentBattle.getSideHero(i)->id);
-			hero->mana = std::min(hero->mana, currentBattle.getSide(i).initialMana);
-			// Battle casting uses SideInBattle's mana snapshot.  The normal
-			// post-battle clamp therefore restores the pre-battle value; apply the
-			// authoritative New Horizons Black Harvest recovery after that clamp so
-			// it is not lost on either the server or client game-state visitor.
-			if(pack.necromancy.active && pack.necromancy.applied
-				&& pack.necromancy.manaRecovered > 0
-				&& hero->getOwner() == pack.victor)
-				hero->mana = std::min<si32>(hero->mana + pack.necromancy.manaRecovered, hero->manaLimit());
+			const auto & side = currentBattle.getSide(i);
+			if(newHorizonsMagic::spellPointRulesActive(hero->getMagicRules()))
+			{
+				// Remove only the unused combat-only part. Buffer granted during the
+				// battle remains, and Normal restoration is not rolled back.
+				if(side.temporaryBufferRemaining > 0)
+				{
+					if(!hero->removeBufferSpellPoints(side.temporaryBufferRemaining))
+						throw std::runtime_error("Invalid remaining temporary combat Spell Points");
+				}
+				if(pack.necromancy.active && pack.necromancy.applied
+					&& pack.necromancy.manaRecovered > 0
+					&& hero->getOwner() == pack.victor
+					&& !hero->restoreNormalSpellPoints(pack.necromancy.manaRecovered))
+					throw std::runtime_error("Invalid Black Harvest Normal Spell Point recovery");
+			}
+			else
+			{
+				hero->setNormalSpellPoints(std::min(hero->getNormalSpellPoints(), side.initialMana));
+				// Preserve the legacy scalar cleanup path for old rule snapshots.
+				if(pack.necromancy.active && pack.necromancy.applied
+					&& pack.necromancy.manaRecovered > 0
+					&& hero->getOwner() == pack.victor)
+					hero->setNormalSpellPoints(std::min<int64_t>(
+						static_cast<int64_t>(hero->getNormalSpellPoints()) + pack.necromancy.manaRecovered,
+						hero->manaLimit()));
+			}
 		}
 	}
 

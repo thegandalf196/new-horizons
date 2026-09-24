@@ -94,7 +94,7 @@ protected:
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		for(const auto spell : {SpellID(SpellID::SUMMON_AIR_ELEMENTAL), SpellID(SpellID::SACRIFICE), phantom, transfigure})
 			attackerSideHero->addSpellToSpellbook(spell);
-		attackerSideHero->mana = 1000;
+		setTestSpellPointTotal(attackerSideHero, 1000);
 
 		// Seed ordinary army slots before battle creation. BattleUnitsChanged ADD
 		// uses the summoned-slot placeholder even when its temporary flag is false,

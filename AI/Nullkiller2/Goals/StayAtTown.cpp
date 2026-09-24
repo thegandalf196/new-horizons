@@ -36,7 +36,7 @@ std::string StayAtTown::toString() const
 {
 	return "Stay at town " + town->getNameTextID()
 		+ " hero " + hero->getNameTextID()
-		+ ", mana: " + std::to_string(hero->mana)
+		+ ", mana: " + std::to_string(hero->getManaAvailable())
 		+ " / " + std::to_string(hero->manaLimit());
 }
 

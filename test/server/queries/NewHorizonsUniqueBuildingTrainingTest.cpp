@@ -167,19 +167,19 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, TrainingPersistsAndAstralNexusAlwa
 	const int manaLimitBeforeVisit = hero->manaLimit();
 	ASSERT_GT(manaLimitBeforeVisit, 7);
 	gameHandler.setManaPoints(hero->id, manaLimitBeforeVisit - 7);
-	ASSERT_EQ(hero->mana, manaLimitBeforeVisit - 7);
+	ASSERT_EQ(hero->getManaAvailable(), manaLimitBeforeVisit - 7);
 	visit(dungeonTown, BuildingID::SPECIAL_2);
-	EXPECT_EQ(hero->mana, hero->manaLimit());
-	EXPECT_EQ(hero->mana, manaLimitBeforeVisit);
+	EXPECT_EQ(hero->getManaAvailable(), hero->manaLimit());
+	EXPECT_EQ(hero->getManaAvailable(), manaLimitBeforeVisit);
 	gameHandler.setManaPoints(hero->id, manaLimitBeforeVisit - 3);
-	ASSERT_EQ(hero->mana, manaLimitBeforeVisit - 3);
+	ASSERT_EQ(hero->getManaAvailable(), manaLimitBeforeVisit - 3);
 	visit(dungeonTown, BuildingID::SPECIAL_2);
-	EXPECT_EQ(hero->mana, hero->manaLimit());
+	EXPECT_EQ(hero->getManaAvailable(), hero->manaLimit());
 	gameHandler.setManaPoints(hero->id, manaLimitBeforeVisit + 11);
-	ASSERT_EQ(hero->mana, manaLimitBeforeVisit + 11);
+	ASSERT_EQ(hero->getManaAvailable(), manaLimitBeforeVisit + 11);
 	visit(dungeonTown, BuildingID::SPECIAL_2);
-	EXPECT_EQ(hero->mana, hero->manaLimit());
-	EXPECT_EQ(hero->mana, manaLimitBeforeVisit);
+	EXPECT_EQ(hero->getManaAvailable(), hero->manaLimit());
+	EXPECT_EQ(hero->getManaAvailable(), manaLimitBeforeVisit);
 	visit(strongholdTown, BuildingID::SPECIAL_4);
 	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::ATTACK), attackBefore + 5);
 
@@ -200,7 +200,7 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, TrainingPersistsAndAstralNexusAlwa
 	ASSERT_NE(restoredHero, nullptr);
 	EXPECT_EQ(restoredHero->valOfBonuses(BonusType::LEADERSHIP), leadershipBefore + 200);
 	EXPECT_EQ(restoredHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), spellPowerBefore + 5);
-	EXPECT_EQ(restoredHero->mana, restoredHero->manaLimit());
+	EXPECT_EQ(restoredHero->getManaAvailable(), restoredHero->manaLimit());
 	EXPECT_EQ(restoredHero->getPrimSkillLevel(PrimarySkill::ATTACK), attackBefore + 5);
 
 	EXPECT_TRUE(restored.getTown(castleOneID)->rewardableBuildings.at(BuildingID::SPECIAL_3)->wasVisited(restoredHero));
@@ -251,7 +251,7 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	town->setVisitingHero(firstHero);
 	gameHandler.setManaPoints(firstHero->id, firstManaLimit - 3);
 	ASSERT_TRUE(gameHandler.visitTownBuilding(town->id, BuildingID::SPECIAL_4));
-	EXPECT_EQ(firstHero->mana, firstManaLimit * 2);
+	EXPECT_EQ(firstHero->getManaAvailable(), firstManaLimit * 2);
 	EXPECT_TRUE(reservoir->wasVisited(firstHero));
 
 	// VISIT_ONCE is shared by the physical building, so a different hero is
@@ -262,7 +262,7 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	ASSERT_GT(secondManaLimit, 4);
 	gameHandler.setManaPoints(secondHero->id, secondManaLimit - 4);
 	ASSERT_TRUE(gameHandler.visitTownBuilding(town->id, BuildingID::SPECIAL_4));
-	EXPECT_EQ(secondHero->mana, secondManaLimit - 4);
+	EXPECT_EQ(secondHero->getManaAvailable(), secondManaLimit - 4);
 
 	// The reset fires when the authoritative NewTurn packet advances the map
 	// from day 7 to day 8, i.e. at the start of the next week.
@@ -276,7 +276,7 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	town->setVisitingHero(secondHero);
 	gameHandler.setManaPoints(secondHero->id, secondManaLimit - 2);
 	ASSERT_TRUE(gameHandler.visitTownBuilding(town->id, BuildingID::SPECIAL_4));
-	EXPECT_EQ(secondHero->mana, secondManaLimit * 2);
+	EXPECT_EQ(secondHero->getManaAvailable(), secondManaLimit * 2);
 	EXPECT_TRUE(reservoir->wasVisited(secondHero));
 }
 

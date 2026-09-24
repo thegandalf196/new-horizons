@@ -146,3 +146,18 @@ of these paths before promoting a build with the new model:
   writing permanent knowledge; removing it preserves independently learned spells.
 - All total/maximum readouts and tooltips agree on the Buffer-inclusive total;
   they neither add Buffer twice nor disclose hidden enemy information.
+
+## Implementation checkpoint — 2026-09-23
+
+The native client and test binary build successfully. The final focused run
+passed 66 tests covering pools, artifact capacity changes, rewards, hero/battle
+serialization and legacy scalar reading, Hat access and AI valuation, real
+Wraith Mana Drain, and rejection of malformed drain/BattleStart packets without
+partial state changes. A broader 146-test combat/AI run passed before the final
+two rejection-path hardening changes; the focused run includes those changes.
+The 68 selected Python content/configuration checks also passed.
+
+These are scoped automated checks, not full gameplay or graphical acceptance.
+The compact hero tooltips have compiled Buffer readouts, but rendered spacing
+and long-value clipping remain unverified. The requested blue sparkle artwork
+is not installed. Snapshot startup validation and promotion are separate gates.

@@ -61,6 +61,9 @@ protected:
 		ASSERT_GE(decoded, 0);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), rank, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
+		// Ordinary restoration tests need actual Normal capacity. A zero-Knowledge
+		// fixture with a scalar total would now place all funds in Buffer instead.
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
 		for(const auto perk : perks)
 			attackerSideHero->applyPerkSelection({metamagicSkill, perk});
 
@@ -81,7 +84,7 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID::SUMMON_AIR_ELEMENTAL);
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("core:iceBolt")));
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("new-horizons:counterspell")));
-		attackerSideHero->mana = 1000;
+		setTestSpellPointTotal(attackerSideHero, 1000);
 
 		startBattle();
 		attacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
@@ -247,7 +250,7 @@ TEST_F(NewHorizonsMetamagicTest, LegacyPendingMetamagicWithoutManaDoesNotBlockCr
 	ASSERT_FALSE(battle()->battleUsesHeroCommands());
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
-	attackerSideHero->mana = 0;
+	setTestSpellPointTotal(attackerSideHero, 0);
 	EXPECT_FALSE(cast(SpellID::SLOW, defender, true));
 	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(
 		BattleID(0), PlayerColor(0), BattleAction::makeWait(attacker)));
@@ -336,15 +339,15 @@ TEST_F(NewHorizonsMetamagicTest, FormulaReserveRefundsOnlyAfterGrandSequenceReso
 {
 	prepare(3, {grandMetamagic, formulaReserve});
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	const auto manaBeforeGrand = attackerSideHero->mana;
+	const auto manaBeforeGrand = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(cast(SpellID::SLOW, defender, true, true));
-	const auto manaAfterGrand = attackerSideHero->mana;
+	const auto manaAfterGrand = attackerSideHero->getManaAvailable();
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicFormulaReserveUsed, false);
 
 	// Ending the second leg still resolves the first Metamagic sequence and
 	// grants Formula Reserve's three mana exactly once.
 	ASSERT_TRUE(decline());
-	EXPECT_EQ(attackerSideHero->mana, manaAfterGrand + 3);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaAfterGrand + 3);
 	EXPECT_GT(manaBeforeGrand, manaAfterGrand);
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicFormulaReserveUsed);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
@@ -356,11 +359,11 @@ TEST_F(NewHorizonsMetamagicTest, ArcaneEconomyReducesOnlyAcceptedFollowupCost)
 	prepare(1, {arcaneEconomy});
 	const auto ordinaryCost = attackerSideHero->getSpellCost(SpellID(SpellID::HASTE).toSpell());
 	const auto listedCost = attackerSideHero->getSpellCost(SpellID(SpellID::SLOW).toSpell());
-	attackerSideHero->mana = ordinaryCost + std::max(1, listedCost - 2);
+	setTestSpellPointTotal(attackerSideHero, ordinaryCost + std::max(1, listedCost - 2));
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	const auto manaBeforeFollowup = attackerSideHero->mana;
+	const auto manaBeforeFollowup = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
-	EXPECT_EQ(attackerSideHero->mana,
+	EXPECT_EQ(attackerSideHero->getManaAvailable(),
 		manaBeforeFollowup - std::max(1, listedCost - 2));
 }
 
@@ -406,7 +409,7 @@ TEST_F(NewHorizonsMetamagicTest, MagicArrowFollowupUsesArcaneEconomyInAuthoritat
 	const auto magicArrow = SpellID(SpellID::MAGIC_ARROW);
 	const auto ordinaryCost = attackerSideHero->getSpellCost(magicArrow.toSpell());
 	const auto triggerCost = attackerSideHero->getSpellCost(SpellID(SpellID::HASTE).toSpell());
-	attackerSideHero->mana = triggerCost + std::max(1, ordinaryCost - 2);
+	setTestSpellPointTotal(attackerSideHero, triggerCost + std::max(1, ordinaryCost - 2));
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 
 	spells::BattleCast preview(battle(), attackerSideHero, spells::Mode::HERO, magicArrow.toSpell());
@@ -416,7 +419,7 @@ TEST_F(NewHorizonsMetamagicTest, MagicArrowFollowupUsesArcaneEconomyInAuthoritat
 	spells::detail::ProblemImpl problem;
 	ASSERT_TRUE(preview.getSpell()->battleMechanics(&preview)->canBeCast(problem));
 
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -424,7 +427,7 @@ TEST_F(NewHorizonsMetamagicTest, MagicArrowFollowupUsesArcaneEconomyInAuthoritat
 	action.metamagicFollowup = true;
 	action.aimToUnit(defender);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(attackerSideHero->mana, manaBefore - std::max(1, ordinaryCost - 2));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - std::max(1, ordinaryCost - 2));
 }
 
 TEST_F(NewHorizonsMetamagicTest, FollowupLogNamesSecondAndThirdMagicArrowDamage)
@@ -559,7 +562,7 @@ TEST_F(NewHorizonsMetamagicTest, CounterspelledHealingFollowupRecordsNoHealingOu
 	damage(attacker, 1);
 	const auto healthBefore = attacker->getAvailableHealth();
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	defenderSideHero->mana = 1000;
+	setTestSpellPointTotal(defenderSideHero, 1000);
 	ASSERT_TRUE(cast(SpellID::CURE, attacker, true));
 	EXPECT_EQ(attacker->getAvailableHealth(), healthBefore);
 
@@ -668,7 +671,7 @@ TEST_F(NewHorizonsMetamagicTest, CounterspelledPhantomArmyFollowupLogsNoCreation
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	const auto stackCountBefore = battle()->battleGetAllStacks().size();
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	defenderSideHero->mana = 1000;
+	setTestSpellPointTotal(defenderSideHero, 1000);
 	ASSERT_TRUE(cast(phantomArmySpell(), attacker, true));
 	EXPECT_EQ(battle()->battleGetAllStacks().size(), stackCountBefore);
 
@@ -694,7 +697,7 @@ TEST_F(NewHorizonsMetamagicTest, CounterspelledSummonFollowupAddsNoUnitOrSummonO
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	const auto unitCountBefore = battle()->battleGetAllStacks().size();
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	defenderSideHero->mana = 1000;
+	setTestSpellPointTotal(defenderSideHero, 1000);
 	castNoTargetFollowupDirect(SpellID::SUMMON_AIR_ELEMENTAL, true);
 	EXPECT_EQ(battle()->battleGetAllStacks().size(), unitCountBefore);
 
@@ -920,7 +923,7 @@ TEST_F(NewHorizonsMetamagicTest, CounterspelledStatusCounterPreservesExistingEff
 
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	defenderSideHero->mana = 1000;
+	setTestSpellPointTotal(defenderSideHero, 1000);
 	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
 
 	EXPECT_TRUE(defender->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
@@ -959,7 +962,7 @@ TEST_F(NewHorizonsMetamagicTest, CounterspelledFollowupKeepsCounterspellOutcomeW
 	prepare(1);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	defenderSideHero->mana = 1000;
+	setTestSpellPointTotal(defenderSideHero, 1000);
 	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender, true));
 
 	const auto casts = server.castsOf(SpellID::MAGIC_ARROW);
@@ -1060,7 +1063,7 @@ TEST_F(NewHorizonsMetamagicTest, SpellActionDoesNotBlockControlledHypnotizedStac
 	defenderSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
 	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	defenderSideHero->addSpellToSpellbook(SpellID::HASTE);
-	defenderSideHero->mana = 1000;
+	setTestSpellPointTotal(defenderSideHero, 1000);
 
 	activate(defender);
 	BattleAction trigger;
@@ -1099,11 +1102,11 @@ TEST_F(NewHorizonsMetamagicTest, CountersequenceUsesTheCeiledOnePointSevenFiveMu
 	followup.metamagicFollowup = true;
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), followup));
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicCountersequenceArmed);
-	const auto manaBeforeEnemySpell = attackerSideHero->mana;
+	const auto manaBeforeEnemySpell = attackerSideHero->getManaAvailable();
 
 	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	defenderSideHero->addSpellToSpellbook(SpellID::HASTE);
-	defenderSideHero->mana = 1000;
+	setTestSpellPointTotal(defenderSideHero, 1000);
 	activate(defender);
 	BattleAction enemySpell;
 	enemySpell.actionType = EActionType::HERO_SPELL;
@@ -1111,7 +1114,7 @@ TEST_F(NewHorizonsMetamagicTest, CountersequenceUsesTheCeiledOnePointSevenFiveMu
 	enemySpell.spell = SpellID::HASTE;
 	enemySpell.aimToUnit(defender);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), enemySpell));
-	EXPECT_EQ(attackerSideHero->mana,
+	EXPECT_EQ(attackerSideHero->getManaAvailable(),
 		manaBeforeEnemySpell - newHorizonsMagic::counterspellCost(4, false, true));
 	EXPECT_FALSE(defender->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
 		BonusSourceID(SpellID(SpellID::HASTE)))));

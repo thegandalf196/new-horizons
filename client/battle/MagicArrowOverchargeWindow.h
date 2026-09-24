@@ -7,6 +7,7 @@
 #include "../windows/CWindowObject.h"
 
 #include <functional>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -30,7 +31,7 @@ struct MagicArrowOverchargeValues
 	int baseMana = 0;       ///< Wisdom-adjusted ordinary spell cost.
 	int additionalMana = 0; ///< Deliberate overcharge surcharge.
 	int totalMana = 0;
-	int availableMana = 0;
+	int64_t availableMana = 0;
 	int baseDamage = 0;
 	int projectedDamage = 0; ///< Raw projected damage before target resistance.
 	bool legal = true;       ///< The selected target still passes spell target validation.

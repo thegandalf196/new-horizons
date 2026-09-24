@@ -368,6 +368,33 @@ Keep in mind, that all randomization is performed on map load and on object rese
 "manaPercentage": 200, 
 ```
 
+### New Horizons Spell Point pools
+
+When the saved New Horizons magic rules enable `spellPoints`, ordinary positive
+`manaPoints` and `manaPercentage` rewards affect **Normal Spell Points only**.
+Normal points are capped at the hero's current maximum; `manaOverflowFactor` and
+percentages above 100 do not manufacture Buffer or increase that maximum.
+Negative `manaPoints` remain a Mana cost, consuming Buffer before Normal. A
+`manaPoints` limiter checks total spendable points, including Buffer.
+
+Use `manaBuffer` for an explicit Buffer grant:
+
+```json
+{
+  "manaPercentage": 100,
+  "manaBuffer": 25
+}
+```
+
+This fills Normal capacity and grants 25 Buffer points. Omitting
+`manaPercentage` grants Buffer without restoring missing Normal points.
+`manaBuffer` is a literal integer from 0 through 2147483647, not a limiter or a
+random-value expression. It does not change visit limits or reset schedules.
+Buffer grants require the two-pool rules; legacy rules retain the original
+single-pool behavior described above. See
+[Spell access and Spell Points](../../NEW_HORIZONS_SPELL_POINTS.md) for the
+complete capacity, equipment and spending contract.
+
 ### Movement Points
 
 - Can be used as limiter. Hero must have at least specific movement points amount

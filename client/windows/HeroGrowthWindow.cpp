@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "SpellPointPresentation.h"
 #include "HeroGrowthWindow.h"
 
 #include "../GameEngine.h"
@@ -212,7 +213,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	// Retain the existing live-instance queries. Do not derive mana or movement
 	// from displayed primary ratings, or invent leadership/siege capabilities.
 	const std::array<std::string, 4> values = {
-		std::to_string(hero.mana) + "/" + std::to_string(hero.manaLimit()),
+		spellPointPresentation::readout(hero.getManaAvailable(), hero.manaLimit(), hero.getBufferSpellPoints()),
 		std::to_string(hero.movementPointsRemaining()) + "/" + std::to_string(hero.movementPointsLimit()),
 		std::to_string(hero.moraleVal()), std::to_string(hero.luckVal())
 	};

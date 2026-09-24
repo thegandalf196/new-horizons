@@ -35,7 +35,7 @@ protected:
 			attackerSideHero->applyPerkSelection({sorcerySkill, selectiveDispelPerk});
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
-		attackerSideHero->mana = 100;
+		setTestSpellPointTotal(attackerSideHero, 100);
 
 		startBattle();
 		friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
@@ -127,10 +127,10 @@ TEST_F(SelectiveDispelPerkTest, ServerRejectsSelectiveModeWithoutActiveSavedPerk
 {
 	prepareDispel(false);
 	addOppositeEffects(friendly);
-	const auto manaBefore = attackerSideHero->mana;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 
 	EXPECT_FALSE(castDispel(friendly, true));
-	EXPECT_EQ(attackerSideHero->mana, manaBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_TRUE(hasEffect(friendly, SpellID::BLESS));
 	EXPECT_TRUE(hasEffect(friendly, SpellID::CURSE));
 }

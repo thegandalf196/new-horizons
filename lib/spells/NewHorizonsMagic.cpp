@@ -187,10 +187,23 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
+	if(rules.Struct().contains("spellPoints"))
+	{
+		const auto & spellPoints = rules["spellPoints"];
+		require(version == DIRECT_DAMAGE_RULESET_VERSION, "Spell Points require magic rules v2");
+		require(spellPoints.isStruct(), "Spell Points object");
+		fields(spellPoints, {"rulesetVersion", "intelligenceMaximumPercent"});
+		require(spellPoints["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& integer(spellPoints["rulesetVersion"], SPELL_POINTS_RULESET_VERSION, SPELL_POINTS_RULESET_VERSION),
+			"Spell Points rulesetVersion");
+		require(spellPoints["intelligenceMaximumPercent"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& integer(spellPoints["intelligenceMaximumPercent"], 100, 1000),
+			"Spell Points intelligenceMaximumPercent");
+	}
 	if(rules.Struct().contains("warcasting"))
 	{
 		require(version == DIRECT_DAMAGE_RULESET_VERSION, "Warcasting requires magic rules v2");
@@ -338,6 +351,27 @@ void validateRules(const JsonNode & rules)
 			require(data["provisional"].isNull() || data["provisional"].isBool(), "provisional flag");
 		}
 	}
+}
+
+bool spellPointRulesActive(const JsonNode & rules)
+{
+	if(legacy(rules) || !rules.isStruct() || !rules["spellPoints"].isStruct())
+		return false;
+	if(rules["rulesetVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| !integer(rules["rulesetVersion"], DIRECT_DAMAGE_RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION))
+		return false;
+	const auto & spellPoints = rules["spellPoints"];
+	return spellPoints["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& integer(spellPoints["rulesetVersion"], SPELL_POINTS_RULESET_VERSION, SPELL_POINTS_RULESET_VERSION)
+		&& spellPoints["intelligenceMaximumPercent"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& integer(spellPoints["intelligenceMaximumPercent"], 100, 1000);
+}
+
+int32_t spellPointsIntelligenceMaximumPercent(const JsonNode & rules)
+{
+	return spellPointRulesActive(rules)
+		? static_cast<int32_t>(rules["spellPoints"]["intelligenceMaximumPercent"].Integer())
+		: SPELL_POINTS_INTELLIGENCE_MAXIMUM_PERCENT;
 }
 
 std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, const std::string & scopedIdentity)

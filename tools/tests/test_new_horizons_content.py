@@ -95,6 +95,7 @@ def legacy_rules(rules):
     if result:
         result['rulesetVersion'] = 1
         result.pop('warcasting', None)
+        result.pop('spellPoints', None)
         for spell in result['spells'].values():
             spell.pop('directDamage', None)
             spell.pop('active', None)
@@ -598,7 +599,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'newHorizonsMasteries': load('config/newHorizonsMasteries.json'),
                               'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
-        self.assertEqual(module['version'], '0.12.0')
+        self.assertEqual(module['version'], '0.13.0')
         self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json', 'config/heroes/solmyr.json'])
         self.assertIn('Magic Arrow', module['description'])
         self.assertIn('Overcharge', module['description'])

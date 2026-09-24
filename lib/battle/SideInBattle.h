@@ -115,6 +115,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// Keeping new runtime fields at the end avoids shifting preceding offsets.
 	// All consumers still require a synchronized rebuild when this struct changes.
 	// BattleInfo owns the versioned wire representation.
+	int32_t initialNormalSpellPoints = 0;
+	int32_t initialBufferSpellPoints = 0;
+	int32_t temporaryBufferRemaining = 0;
 	int32_t bloodrageDamagePercent = 0;
 	int32_t bloodrageRank = 0;
 	SylvanLuckState sylvanLuck;
@@ -292,6 +295,22 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & heroActionAllowances;
 		else if(!h.saving)
 			heroActionAllowances = {};
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_POINTS))
+		{
+			h & initialNormalSpellPoints;
+			h & initialBufferSpellPoints;
+			h & temporaryBufferRemaining;
+			if(!h.saving && (initialNormalSpellPoints < 0 || initialBufferSpellPoints < 0 || temporaryBufferRemaining < 0))
+				throw std::runtime_error("Invalid saved battle Spell Point snapshot");
+		}
+		else if(h.saving && (initialBufferSpellPoints != 0 || temporaryBufferRemaining != 0))
+			throw std::runtime_error("Cannot discard battle Buffer Spell Point state");
+		else if(!h.saving)
+		{
+			initialNormalSpellPoints = std::max<int32_t>(0, initialMana);
+			initialBufferSpellPoints = 0;
+			temporaryBufferRemaining = 0;
+		}
 	}
 
 	void clearMetamagicSequence()
