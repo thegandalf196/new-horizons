@@ -745,6 +745,12 @@ void ApplyClientNetPackVisitor::visitSetObjectProperty(SetObjectProperty & pack)
 	}
 }
 
+void ApplyClientNetPackVisitor::visitHeroPerkChosen(HeroPerkChosen & pack)
+{
+	// Perks can change movement costs without changing a bonus node.
+	callAllInterfaces(cl, &CGameInterface::invalidatePaths);
+}
+
 void ApplyClientNetPackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	const CGHeroInstance * hero = cl.gameInfo().getHero(pack.heroId);

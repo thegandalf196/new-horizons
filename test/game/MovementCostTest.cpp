@@ -87,6 +87,8 @@ protected:
 		MovementCostTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
 	void addTravelBonus(CGHeroInstance * hero, BonusType type)
@@ -103,6 +105,56 @@ protected:
 		});
 	}
 };
+
+TEST_F(NewHorizonsMovementCostTest, pathfindingPerkUpdatesTerrainCostsAndAuthoritativeMovement)
+{
+	startTestGame();
+	const auto heroes = gameState->getPlayerState(PlayerColor(0))->getHeroes();
+	ASSERT_FALSE(heroes.empty());
+	auto * hero = heroes.front();
+	const auto logistics = SecondarySkill(SecondarySkill::decode("new-horizons:logistics"));
+	hero->setSecSkillLevel(logistics, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	const int3 sourcePosition = hero->visitablePos();
+	const int3 destinationPosition = sourcePosition + int3(1, 0, 0);
+	for(const auto & position : {sourcePosition, destinationPosition})
+	{
+		auto & tile = gameState->getMap().getTile(position);
+		tile.terrainType = ETerrainId::SAND;
+		tile.roadType = RoadId::NO_ROAD;
+	}
+	CPathfinderHelper before(*gameState, hero, PathfinderOptions(*gameState));
+	ASSERT_FALSE(before.getTurnInfo()->hasNoTerrainPenalty(ETerrainId::SAND));
+	EXPECT_EQ(before.getMovementCost(sourcePosition, destinationPosition,
+		EPathfindingLayer::LAND, 1000, false), 18);
+
+	HeroPerkChosen chosen;
+	chosen.hero = hero->id;
+	chosen.selection = {"new-horizons:logistics", "new-horizons:logistics.pathfinding"};
+	gameState->apply(chosen);
+	ASSERT_TRUE(hero->hasActivePerk(chosen.selection.skillId, chosen.selection.perkId));
+	CPathfinderHelper after(*gameState, hero, PathfinderOptions(*gameState));
+	EXPECT_EQ(after.getMovementCost(sourcePosition, destinationPosition,
+		EPathfindingLayer::LAND, 1000, false), 14);
+
+	CPathsInfo paths(gameState->getMapSize(), hero);
+	auto config = std::make_shared<SingleHeroPathfinderConfig>(paths, *gameState, hero);
+	CPathfinder pathfinder(*gameState, config);
+	pathfinder.calculatePaths();
+	const auto * destinationNode = paths.getNode(destinationPosition, EPathfindingLayer::LAND);
+	ASSERT_TRUE(destinationNode->reachable());
+	const int initialMovement = hero->movementPointsRemaining();
+	EXPECT_EQ(destinationNode->moveRemains, initialMovement - 14);
+	testing::NiceMock<GameServerMock> server;
+	initializeGameHandler(server);
+	CGameHandler gameHandler(server, gameState);
+	ASSERT_TRUE(gameHandler.moveHero(hero->id, hero->convertFromVisitablePos(destinationPosition),
+		EMovementMode::STANDARD, false, hero->getOwner(), EPathfindingLayer::LAND));
+	EXPECT_EQ(hero->movementPointsRemaining(), initialMovement - 14);
+
+	hero->setSecSkillLevel(logistics, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	CPathfinderHelper disabled(*gameState, hero, PathfinderOptions(*gameState));
+	EXPECT_FALSE(disabled.getTurnInfo()->hasNewHorizonsPathfinding());
+}
 
 TEST_F(MovementCostTest, usesExplicitDestinationLayer)
 {

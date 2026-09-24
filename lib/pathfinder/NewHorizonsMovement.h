@@ -35,5 +35,6 @@ DLL_LINKAGE int maximumDailyMovement(std::int64_t baseValue,
 /// Returns the final cost of one adventure-map step. Terrain, road, and
 /// special-travel multipliers are represented as exact rational constants and
 /// rounded up only after all modifiers have been applied.
-DLL_LINKAGE int stepCost(bool diagonal, bool terrainAffinity, bool desert, bool road, bool specialTravel = false);
+DLL_LINKAGE int stepCost(bool diagonal, bool terrainAffinity, bool desert, bool road,
+	bool specialTravel = false, bool pathfinding = false);
 }

@@ -322,6 +322,8 @@ TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, i
 {
 	CSelector daySelector = Selector::days(Turn);
 	const bool newHorizonsMovement = target->usesNewHorizonsMovement();
+	newHorizonsPathfinding = newHorizonsMovement
+		&& target->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.pathfinding");
 
 	int lowestSpeed = 10;
 	if(!newHorizonsMovement)

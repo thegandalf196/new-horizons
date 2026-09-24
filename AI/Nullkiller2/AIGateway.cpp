@@ -1972,6 +1972,9 @@ bool AIStatus::channelProbing()
 void AIGateway::invalidatePaths()
 {
 	nullkiller->invalidatePaths();
+	// Movement-rule changes affect projected hero chains as well as ordinary
+	// client paths. Mark them dirty; rebuilding stays in the normal AI pass.
+	nullkiller->invalidatePathfinderData();
 }
 
 std::string AIGateway::heroRoleDebugText(const CGHeroInstance * hero) const

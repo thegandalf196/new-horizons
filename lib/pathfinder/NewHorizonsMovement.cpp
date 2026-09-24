@@ -88,7 +88,8 @@ int maximumDailyMovement(const int64_t baseValue, const int64_t percentageToBase
 	return static_cast<int>(std::clamp<int64_t>(total, 0, std::numeric_limits<int>::max()));
 }
 
-int stepCost(const bool diagonal, const bool terrainAffinity, const bool desert, const bool road, const bool specialTravel)
+int stepCost(const bool diagonal, const bool terrainAffinity, const bool desert, const bool road,
+	const bool specialTravel, const bool pathfinding)
 {
 	const int base = diagonal ? DIAGONAL_STEP_COST : ORTHOGONAL_STEP_COST;
 
@@ -97,8 +98,9 @@ int stepCost(const bool diagonal, const bool terrainAffinity, const bool desert,
 	// terrain affinity is ordinary terrain even when the tile is sand; the
 	// default faction data contains no sand-native faction, while scenarios can
 	// explicitly provide one through the normal native-terrain data.
-	const int terrainNumerator = desert && !terrainAffinity ? 9 : (terrainAffinity ? 1 : 7);
-	const int terrainDenominator = desert && !terrainAffinity ? 5 : (terrainAffinity ? 1 : 5);
+	// Pathfinding halves only the surcharge: 40% becomes 20%, 80% becomes 40%.
+	const int terrainNumerator = terrainAffinity ? 5 : 5 + (desert ? 4 : 2) / (pathfinding ? 2 : 1);
+	const int terrainDenominator = 5;
 	const int roadNumerator = road ? 67 : 1;
 	const int roadDenominator = road ? 100 : 1;
 	const int travelNumerator = specialTravel ? 3 : 1;

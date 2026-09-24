@@ -4666,7 +4666,7 @@
 								"requires": "basic",
 								"description": "Difficult-terrain movement penalties are reduced by 50%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Difficult-terrain movement penalties are reduced by 50%."
 								}
 							},

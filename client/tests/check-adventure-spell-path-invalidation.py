@@ -21,6 +21,14 @@ def main():
     header = (root / "client/ClientNetPackVisitors.h").read_text()
     source = (root / "client/NetPacksClient.cpp").read_text()
     verify(header, source)
+    perk_signature = "visitHeroPerkChosen(HeroPerkChosen & pack)"
+    assert f"void {perk_signature} override;" in header
+    perk_body = source.split(f"void ApplyClientNetPackVisitor::{perk_signature}", 1)[1].split(
+        "void ApplyClientNetPackVisitor::visitHeroLevelUp", 1
+    )[0]
+    assert "callAllInterfaces(cl, &CGameInterface::invalidatePaths);" in perk_body
+    assert "calculatePaths" not in perk_body
+    assert "headless" not in perk_body
     signature = "void ApplyClientNetPackVisitor::visitSetNewHorizonsAdventureSpellState"
     before, method = source.split(signature, 1)
     body, after = method.split("void ApplyClientNetPackVisitor::visitSetMovePoints", 1)
@@ -34,6 +42,7 @@ def main():
         raise AssertionError("Invalidation regression was not detected")
     print("PASS: authoritative daily Adventure Spell state invalidates client paths lazily; 3 mutants rejected")
     print("Source wiring only; not compiled or runtime cache evidence")
+    print("PASS: perk choices also invalidate paths lazily for human and AI interfaces")
 
 
 if __name__ == "__main__":

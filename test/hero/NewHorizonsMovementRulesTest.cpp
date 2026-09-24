@@ -43,6 +43,22 @@ TEST(NewHorizonsMovementRules, StepCostUsesCanonicalMultipliersAndCeiling)
 	EXPECT_EQ(stepCost(true, false, true, true), 17); // ceil(14 * 1.80 * .67)
 }
 
+TEST(NewHorizonsMovementRules, PathfindingHalvesOnlyTerrainSurchargeBeforeFinalCeiling)
+{
+	using newHorizonsMovement::stepCost;
+	EXPECT_EQ(stepCost(false, false, false, false, false, true), 12);
+	EXPECT_EQ(stepCost(true, false, false, false, false, true), 17);
+	EXPECT_EQ(stepCost(false, false, true, false, false, true), 14);
+	EXPECT_EQ(stepCost(true, false, true, false, false, true), 20);
+	EXPECT_EQ(stepCost(false, true, false, false, false, true), 10);
+	EXPECT_EQ(stepCost(true, true, true, false, false, true), 14);
+	EXPECT_EQ(stepCost(false, false, false, true, false, true), 9);
+	EXPECT_EQ(stepCost(true, false, true, true, false, true), 14);
+	EXPECT_EQ(stepCost(false, false, false, false, true, true), 18);
+	EXPECT_EQ(stepCost(true, false, false, true, true, true), 17);
+	EXPECT_EQ(stepCost(false, true, false, false, true, true), 15);
+}
+
 TEST(NewHorizonsMovementRules, SpecialTravelMultiplierIsAppliedBeforeFinalCeiling)
 {
 	using newHorizonsMovement::stepCost;

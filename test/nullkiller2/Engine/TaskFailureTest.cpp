@@ -298,6 +298,38 @@ TEST_F(Nullkiller2_MovementFailure, alliedHeroCanBlockPreviouslyPlannedCorridor)
 	EXPECT_EQ(queuedRoute.getBlockedInitialRoute(gateway->nullkiller.get()), nullptr);
 }
 
+TEST_F(Nullkiller2_MovementFailure, perkMovementChangeRefreshesProjectedRoutesWithoutMovingHero)
+{
+	auto * hero = startHero();
+	ASSERT_NE(hero, nullptr);
+	if(!hero->usesNewHorizonsMovement())
+		GTEST_SKIP() << "Requires New Horizons movement";
+	const auto logistics = SecondarySkill(SecondarySkill::decode("new-horizons:logistics"));
+	hero->setSecSkillLevel(logistics, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	const auto position = hero->visitablePos();
+	const int3 target = position + int3(2, 0, 0);
+	for(int x = 0; x < 36; ++x)
+		for(int y = 0; y < 36; ++y)
+		{
+			auto & tile = map()->getTile({x, y, 0});
+			tile.terrainType = y == position.y ? ETerrainId::SAND : ETerrainId::ROCK;
+			tile.roadType = RoadId::NO_ROAD;
+		}
+	auto gateway = makeGateway(PlayerColor(0));
+	NK2AI::Goals::TGoalVec priorityTasks;
+	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 1));
+	const auto before = gateway->nullkiller->pathfinder->getPathInfo(target);
+	ASSERT_FALSE(before.empty());
+	hero->applyPerkSelection({"new-horizons:logistics", "new-horizons:logistics.pathfinding"});
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.pathfinding"));
+	gateway->invalidatePaths();
+	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 2));
+	const auto after = gateway->nullkiller->pathfinder->getPathInfo(target);
+	ASSERT_FALSE(after.empty());
+	EXPECT_LT(after.front().movementCost(), before.front().movementCost());
+	EXPECT_EQ(hero->visitablePos(), position);
+}
+
 TEST_F(Nullkiller2_MovementFailure, armyChangeRefreshesGuardedRoutesWithoutMovingHero)
 {
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);

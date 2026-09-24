@@ -759,7 +759,7 @@ int CPathfinderHelper::getMovementCost(
 			ordinaryWater || ti->hasNoTerrainPenalty(srcTile->getTerrainID()),
 			!ordinaryWater && srcTile->getTerrainID() == ETerrainId::SAND,
 			!ordinaryWater && srcTile->hasRoad() && dstTile->hasRoad(),
-			isSpecialTravel)
+			isSpecialTravel, ti->hasNewHorizonsPathfinding())
 		: getTileMovementCost(*dstTile, *srcTile, ti);
 	if(isSailLayer)
 	{
