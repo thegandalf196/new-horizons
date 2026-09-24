@@ -61,8 +61,8 @@ The `output/homm3/` paths are local working outputs, not shipped assets.
 | Requested replacement | Implementation | Art | Local evidence and remaining work |
 | --- | --- | --- | --- |
 | Metamagic Basic/Advanced/Expert | Not done | Provisional | `output/homm3/metamagic-v1/` contains separate rank masters and 32/44px exports. Resolve the reported Expert-background concern, prepare every runtime size, and replace the existing `NH_metamagic_*` bindings only after checking exports. |
-| Hero Movement | Not done | Provisional | `output/homm3/hero-movement-v1/` contains master and 20/32/44px exports. The hero window still uses `NH_hero_movement_32`. |
-| Hero Leadership | Not done | Provisional | `output/homm3/hero-leadership-v1/` contains master and 20/32/44px exports. The hero window still uses the older `NH_capability_leadership` family. |
+| Hero Movement | Provisional | Provisional | The HoMM3-skill winged riding boot is bound as `NH_hero_movement_44` in the native 44px attribute slot and `NH_hero_movement_painted_32` in the growth window. Retained master, exact prompt and export hashes are under `assets/new-horizons/art-source/hero-attribute-replacements-v1/`. In-game visual acceptance remains pending. |
+| Hero Leadership | Provisional | Provisional | The HoMM3-skill command banner/gauntlet is bound as `NH_hero_leadership_44` in the main attribute pane and `NH_hero_leadership_24` in the compact legacy layout. The generic capability family remains unchanged for town/other consumers. Native exports are inspected; in-game visual acceptance remains pending. |
 | Creature Leadership crown | Provisional | Provisional | The retained HoMM3-skill crown is bound as `NH_creature_leadership_20` in the creature Leadership Cost row. Source master, exact prompt and hashes are under `assets/new-horizons/art-source/creature-stat-glyphs-v1/`. Native export checks pass; in-game presentation remains unverified. |
 | Creature rank staircase and stat row | Provisional | Provisional | The v2 stair-step glyph is bound as `NH_creature_rank_20` to a horizontal MainSection Rank row instead of a separate category section. Generated panels allocate the extra row only for categorized creatures; legacy uncategorized geometry is unchanged. Source and art remain provisional pending rendered review. |
 
@@ -82,6 +82,13 @@ All for One smoke run (configured seed 1284510375; maximum completed turn
 The run ended at the planned timeout and left no client process. The normal
 launcher's verify-only check passed. This confirms candidate startup/AI play,
 not the creature panel's rendered appearance; GUI acceptance remains pending.
+
+The hero Movement/Leadership replacement integration passed the Linux client
+build, the focused hero-attribute binding/dimension guard, two master/export
+provenance tests, and independent review. The broader level-up/art audit still
+fails its existing active-perk completeness gate: 14 active perk IDs lack named
+art mappings. That unrelated gap is not waived by the focused checks. These
+hero replacement assets remain provisional pending in-game visual review.
 
 ## Spellbook binding details
 

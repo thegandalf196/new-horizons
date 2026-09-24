@@ -218,7 +218,9 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 		std::to_string(hero.moraleVal()), std::to_string(hero.luckVal())
 	};
 	const std::array<const char *, 4> names = {"Mana", "Movement", "Morale", "Luck"};
-	const std::array<const char *, 4> images = {"NH_hero_mana_32", "NH_hero_movement_32", "NH_hero_morale_32", "NH_hero_luck_32"};
+	const std::array<const char *, 4> images = {
+		"NH_hero_mana_32", "NH_hero_movement_painted_32", "NH_hero_morale_32", "NH_hero_luck_32"
+	};
 	for(size_t i = 0; i < values.size(); ++i)
 	{
 		const int x = 22 + static_cast<int>(i) * 167;

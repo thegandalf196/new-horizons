@@ -306,7 +306,7 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 		FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
 	legacyLeadershipLabel = std::make_shared<CLabel>(438, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Lead --", 65);
 	legacySiegeLabel = std::make_shared<CLabel>(534, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Siege --", 65);
-	legacyLeadershipImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_leadership_32"), 0, Rect(410, 404, 24, 24));
+	legacyLeadershipImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_hero_leadership_24"), 0, Rect(410, 404, 24, 24));
 	legacySiegeImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_siege_32"), 0, Rect(506, 404, 24, 24));
 	legacyBoneCollectorImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_bone_collector"), 0, Rect(314, 404, 24, 24));
 	if(newHorizonsLayout)
@@ -420,8 +420,10 @@ void CHeroWindow::configureNewHorizonsLayout()
 		// Movement is a first-class New Horizons derived attribute just like
 		// Leadership and Siege.  Keep its glyph in the same visual slot so the
 		// value is not presented as an unexplained text-only exception.
-		const auto iconKey = fieldName == "Leadership" ? "NH_capability_leadership"
-			: fieldName == "Movement" ? "NH_hero_movement_32" : "NH_capability_siege";
+		// Hero-specific icons draw at native size in these 44px rows; the generic
+		// Leadership capability symbol remains available for creature costs.
+		const auto iconKey = fieldName == "Leadership" ? "NH_hero_leadership_44"
+			: fieldName == "Movement" ? "NH_hero_movement_44" : "NH_capability_siege";
 		capabilityIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin(iconKey), 0, 0, field.first.x, field.first.y));
 		labels.push_back(std::make_shared<CLabel>(field.first.x + 50, field.first.y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, field.second, 88));
 	}

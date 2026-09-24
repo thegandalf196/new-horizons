@@ -1,0 +1,20 @@
+{
+  "status": "provisional; in-game visual acceptance pending",
+  "method": "HoMM3 Art skill original generation; export_art.py RGB LANCZOS reduction",
+  "masters": {
+    "movement-master.png": "d08a186c0ee4c8ceb5a48121b179648a25ced8bcff2a518f056a4569a0178f54",
+    "leadership-master.png": "aa119c23fd6ebe18a6cc98193663fe1c4fdfdccd8ed2a712d82f7dd38836da23"
+  },
+  "private_original_hashes": {
+    "movement": "6c8b38073a07e5f63f38392615bc67bb5facbe0796952c653be5396f0edfde1f",
+    "leadership": "0662af35ad8c0ca8c5393498e0ef28a4295eaeb34a484bdc1bbe607368a1db66"
+  },
+  "master_metadata": "caBX carrier removed; IHDR/IDAT/IEND and decoded pixels unchanged",
+  "runtime": {
+    "NH_hero_movement_painted_32.png": {"source": "movement-master.png", "size": 32, "sha256": "7400a684b89e2ca4e22e453d4505c91894f808a3a3fd3144d47b9d2e0028752f"},
+    "NH_hero_movement_44.png": {"source": "movement-master.png", "size": 44, "sha256": "0c2e81bf1e1aa916c86f35881a4c050101893fe94d100bdf87a23e9af19e53df"},
+    "NH_hero_leadership_44.png": {"source": "leadership-master.png", "size": 44, "sha256": "b8aa6e64d87d20caf34345a8040c530d71547cd24834fb4deba6a8163355dabc"},
+    "NH_hero_leadership_24.png": {"source": "leadership-master.png", "size": 24, "sha256": "d32edaf7c1e4b48e2aa7e597442d1821ce2e318241ec74e330f68b867cb28a00"}
+  },
+  "consumers": ["client/windows/CHeroWindow.cpp", "client/windows/HeroGrowthWindow.cpp"]
+}
