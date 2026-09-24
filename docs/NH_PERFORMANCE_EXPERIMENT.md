@@ -174,7 +174,7 @@ the original slow match is included in this result.
 ### Remaining combat cost after the route correction
 
 A bounded headless `All for One` new-game check of commit `d9774fb54`, with
-seed `1284510375`, completed 43 AI turns in a 35-second observation window.
+startup random draw `1284510375`, completed 43 AI turns in a 35-second observation window.
 It used a separate temporary profile, dummy media drivers, a 200% CPU quota,
 and no autosaves. The final in-progress turn was stopped by the planned timeout.
 No checked crash, failed command, Leadership rejection or capability-load error
@@ -227,3 +227,44 @@ is intentionally inactive, so their setup casts were correctly rejected. This
 fixture correction preserves all lifecycle assertions and does not enable Clone
 in New Horizons or loosen authoritative spell validation. The diagnostic-only
 changes do not replace the currently promoted playable snapshot.
+
+### Attributing exchange simulation cost
+
+The dense diagnostic now covers both legacy and New Horizons command rules,
+with separated opening and synthetic crowded post-wait formations. Each case
+checks complete action identity and authoritative state preservation. The
+post-wait activation is deliberately constructed, not a naturally played battle
+sequence. This distinction matters: New Horizons command rules require dynamic
+damage valuation, whereas the legacy fixture can reuse simpler damage snapshots.
+
+Temporary, aggregated timers measured 880 unreachable-movement searches in a
+bounded headless match: 13368 milliseconds total, with 12337 milliseconds inside
+exchange evaluation. Reachability setup accounted for only 67 milliseconds.
+This run requested seed 1284510375; the startup log printed 293067988 because
+that message prints a random draw, not the configured seed. It is not a replay
+of the preceding match or the user's unavailable autosave.
+
+In the parameterized synthetic test, New Horizons opening searches took about
+143–146 milliseconds and crowded searches 162–164 milliseconds. Legacy cases
+took about 19 and 21–23 milliseconds respectively. Nested timers attributed
+96–97 milliseconds of the opening case and 108–110 milliseconds of the crowded
+case to target-score estimates (2288 and 2600 calls). Round transitions, activation
+updates and child setup were each around one millisecond. These are instrumented
+diagnostic observations, not whole-turn performance guarantees.
+
+The target-selection comparator recomputed the incumbent score on each comparison.
+A local single-pass selector now evaluates each candidate once per selection,
+preserving candidate order, the first equal-scoring target, and the no-evaluation
+singleton case. It does not reuse scores across attacks or activations, change
+damage rules, reduce candidate sets, or bypass dynamic damage validation.
+
+With the same temporary timers, the crowded New Horizons sample reduced target
+estimates from 2600 to 1950 and search time from 162–164 to approximately 138–141
+milliseconds. Full recorded action signatures matched the baseline for both
+formations under both command modes. This small sample establishes removal of
+redundant estimates, not a general percentage improvement for complete AI turns.
+
+All temporary timers were removed before the final client/test build. The
+broader native AI regression run passed 154 tests across 28 suites, and the
+uninstrumented diagnostic action signatures still matched the measured baseline.
+No graphical validation or replay of the user's slow match is claimed.

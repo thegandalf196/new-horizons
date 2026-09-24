@@ -902,6 +902,29 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 
 					return score;
 				};
+				auto selectBestTarget = [&](const battle::Units & candidates) -> const battle::Unit *
+				{
+					if(candidates.empty())
+						return nullptr;
+
+					const battle::Unit * best = candidates.front();
+					// maxElementByFun never invokes its comparator for one element.
+					if(candidates.size() == 1)
+						return best;
+
+					float bestScore = estimateAttack(best);
+					for(size_t index = 1; index < candidates.size(); ++index)
+					{
+						const auto * candidate = candidates[index];
+						const float candidateScore = estimateAttack(candidate);
+						if(candidateScore > bestScore)
+						{
+							best = candidate;
+							bestScore = candidateScore;
+						}
+					}
+					return best;
+				};
 
 				auto unitsInOppositeQueueExceptInaccessible = oppositeQueue;
 
@@ -923,7 +946,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 
 				if(!unitsInOppositeQueueExceptInaccessible.empty())
 				{
-					targetUnit = *vstd::maxElementByFun(unitsInOppositeQueueExceptInaccessible, estimateAttack);
+					targetUnit = selectBestTarget(unitsInOppositeQueueExceptInaccessible);
 				}
 				else
 				{
@@ -948,7 +971,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 
 					if(!reachable.empty())
 					{
-						targetUnit = *vstd::maxElementByFun(reachable, estimateAttack);
+						targetUnit = selectBestTarget(reachable);
 					}
 					else
 					{

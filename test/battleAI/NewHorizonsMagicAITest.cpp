@@ -149,6 +149,10 @@ protected:
 	}
 };
 
+class NewHorizonsDenseMagicAITest : public NewHorizonsMagicAITest, public ::testing::WithParamInterface<bool>
+{
+};
+
 TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithoutFollowUpAttacks)
 {
 	useCommands = false;
@@ -357,9 +361,9 @@ TEST_F(NewHorizonsMagicAITest, RepeatedMovementEvaluationWithSavedPerksIsStableA
 	RecordProperty("movementEvaluatorSampleMicros", sampleTimes.str());
 }
 
-TEST_F(NewHorizonsMagicAITest, DenseBattleEvaluationWithSavedPerksIsStableAndReadOnly)
+TEST_P(NewHorizonsDenseMagicAITest, DenseBattleEvaluationWithSavedPerksIsStableAndReadOnly)
 {
-	useCommands = false;
+	useCommands = GetParam();
 	useSavedPerkRules = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
 
@@ -429,9 +433,6 @@ TEST_F(NewHorizonsMagicAITest, DenseBattleEvaluationWithSavedPerksIsStableAndRea
 	gameHandler->sendAndApply(activate);
 	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), active->unitId());
 
-	const auto stateBefore = gameState()->saveToMemory();
-	const auto roundBefore = battle()->battleGetRound();
-	const auto activeUnitBefore = battle()->battleActiveUnit()->unitId();
 	auto snapshotBattleUnits = [&]()
 	{
 		std::vector<std::tuple<uint32_t, int32_t, int32_t, int64_t>> snapshot;
@@ -441,24 +442,7 @@ TEST_F(NewHorizonsMagicAITest, DenseBattleEvaluationWithSavedPerksIsStableAndRea
 		std::ranges::sort(snapshot);
 		return snapshot;
 	};
-	const auto battleUnitsBefore = snapshotBattleUnits();
 	auto environment = std::make_shared<MagicEnvironment>(gameState());
-
-	constexpr int sampleCount = 3;
-	std::array<BattleAction, sampleCount> actions;
-	std::array<int64_t, sampleCount> sampleMicros{};
-	for(int sample = 0; sample < sampleCount; ++sample)
-	{
-		auto callback = std::make_shared<MagicCallback>(PlayerColor(1));
-		callback->onBattleStarted(battle());
-		const auto started = std::chrono::steady_clock::now();
-		BattleEvaluator evaluator(environment, callback, active, PlayerColor(1), BattleID(0),
-			BattleSide::DEFENDER, 1.0f, 2);
-		actions[sample] = evaluator.selectStackAction(active);
-		const auto finished = std::chrono::steady_clock::now();
-		sampleMicros[sample] = std::chrono::duration_cast<std::chrono::microseconds>(finished - started).count();
-	}
-
 	auto actionIdentity = [](const BattleAction & action)
 	{
 		std::vector<std::pair<int32_t, int32_t>> targetIdentity;
@@ -474,29 +458,97 @@ TEST_F(NewHorizonsMagicAITest, DenseBattleEvaluationWithSavedPerksIsStableAndRea
 			action.metamagicManaRefund,
 			static_cast<int32_t>(action.command), action.gatingCreature.getNum(), std::move(targetIdentity)};
 	};
-	const auto firstActionIdentity = actionIdentity(actions.front());
-	for(int sample = 1; sample < sampleCount; ++sample)
-		EXPECT_EQ(actionIdentity(actions[sample]), firstActionIdentity);
-	RecordProperty("denseBattleEvaluatorActionSignature", testing::PrintToString(firstActionIdentity));
-	EXPECT_EQ(actions.front().side, BattleSide::DEFENDER);
-	EXPECT_EQ(actions.front().stackNumber, active->unitId());
-
-	EXPECT_EQ(gameState()->saveToMemory(), stateBefore);
-	EXPECT_EQ(battle()->battleGetRound(), roundBefore);
-	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeUnitBefore);
-	EXPECT_EQ(snapshotBattleUnits(), battleUnitsBefore);
-
-	std::ostringstream sampleTimes;
-	for(int sample = 0; sample < sampleCount; ++sample)
+	auto evaluateFormation = [&](const std::string & propertyPrefix)
 	{
-		if(sample != 0)
-			sampleTimes << ',';
-		sampleTimes << sampleMicros[sample];
+		const auto stateBefore = gameState()->saveToMemory();
+		const auto roundBefore = battle()->battleGetRound();
+		const auto activeUnitBefore = battle()->battleActiveUnit()->unitId();
+		const auto battleUnitsBefore = snapshotBattleUnits();
+
+		constexpr int sampleCount = 3;
+		std::array<BattleAction, sampleCount> actions;
+		std::array<int64_t, sampleCount> sampleMicros{};
+		for(int sample = 0; sample < sampleCount; ++sample)
+		{
+			auto callback = std::make_shared<MagicCallback>(PlayerColor(1));
+			callback->onBattleStarted(battle());
+			const auto started = std::chrono::steady_clock::now();
+			BattleEvaluator evaluator(environment, callback, active, PlayerColor(1), BattleID(0),
+				BattleSide::DEFENDER, 1.0f, 2);
+			actions[sample] = evaluator.selectStackAction(active);
+			const auto finished = std::chrono::steady_clock::now();
+			sampleMicros[sample] = std::chrono::duration_cast<std::chrono::microseconds>(finished - started).count();
+		}
+
+		const auto firstActionIdentity = actionIdentity(actions.front());
+		for(int sample = 1; sample < sampleCount; ++sample)
+			EXPECT_EQ(actionIdentity(actions[sample]), firstActionIdentity);
+		RecordProperty(propertyPrefix + "ActionSignature", testing::PrintToString(firstActionIdentity));
+		EXPECT_EQ(actions.front().side, BattleSide::DEFENDER);
+		EXPECT_EQ(actions.front().stackNumber, active->unitId());
+
+		EXPECT_EQ(gameState()->saveToMemory(), stateBefore);
+		EXPECT_EQ(battle()->battleGetRound(), roundBefore);
+		EXPECT_EQ(battle()->battleActiveUnit()->unitId(), activeUnitBefore);
+		EXPECT_EQ(snapshotBattleUnits(), battleUnitsBefore);
+
+		std::ostringstream sampleTimes;
+		for(int sample = 0; sample < sampleCount; ++sample)
+		{
+			if(sample != 0)
+				sampleTimes << ',';
+			sampleTimes << sampleMicros[sample];
+		}
+		RecordProperty(propertyPrefix + "StackCount", std::to_string(stacks.size()));
+		RecordProperty(propertyPrefix + "TargetStackCount", "7");
+		RecordProperty(propertyPrefix + "SampleCount", std::to_string(sampleCount));
+		RecordProperty(propertyPrefix + "SampleMicros", sampleTimes.str());
+		RecordProperty(propertyPrefix + "WaitedBeforeEvaluation", active->waitedThisTurn ? "true" : "false");
+	};
+
+	evaluateFormation("denseOpening");
+
+	const std::array<BattleHex, 10> crowdedPositions{
+		BattleHex(7, 2), BattleHex(8, 2), BattleHex(7, 4), BattleHex(8, 4),
+		BattleHex(7, 6), BattleHex(8, 6), BattleHex(7, 8),
+		BattleHex(13, 2), BattleHex(14, 5), BattleHex(13, 8),
+	};
+	for(size_t index = 0; index < stacks.size(); ++index)
+	{
+		BattleStackMoved move;
+		move.battleID = BattleID(0);
+		move.stack = stacks[index]->unitId();
+		move.teleporting = true;
+		move.tilesToMove.insert(crowdedPositions[index]);
+		gameHandler->sendAndApply(move);
 	}
-	RecordProperty("denseBattleEvaluatorStackCount", stacks.size());
-	RecordProperty("denseBattleEvaluatorSampleCount", sampleCount);
-	RecordProperty("denseBattleEvaluatorSampleMicros", sampleTimes.str());
+	std::set<int32_t> crowdedOccupiedHexes;
+	for(const auto * stack : stacks)
+		for(const auto & hex : stack->getHexes())
+		{
+			ASSERT_TRUE(hex.isAvailable());
+			ASSERT_TRUE(crowdedOccupiedHexes.insert(hex.toInt()).second)
+				<< "overlapping crowded battle hex " << hex;
+		}
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
+		BattleAction::makeWait(active)));
+	ASSERT_TRUE(active->waitedThisTurn);
+	BattleSetActiveStack reactivate;
+	reactivate.battleID = BattleID(0);
+	reactivate.stack = active->unitId();
+	reactivate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(reactivate);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), active->unitId());
+	ASSERT_TRUE(active->waitedThisTurn);
+	evaluateFormation("denseCrowded");
 }
+
+INSTANTIATE_TEST_SUITE_P(CommandRules, NewHorizonsDenseMagicAITest, ::testing::Bool(),
+	[](const ::testing::TestParamInfo<bool> & info)
+	{
+		return info.param ? "NHCommands" : "LegacyCommands";
+	});
 
 TEST_F(NewHorizonsMagicAITest, PhantomArmyValuesTemporaryCombatPowerAndChoosesTheStrongestLegalSource)
 {
