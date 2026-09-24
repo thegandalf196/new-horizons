@@ -1,0 +1,312 @@
+{
+  "images": [
+    {
+      "group": 0,
+      "frame": 0,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 0
+    },
+    {
+      "group": 0,
+      "frame": 1,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 1
+    },
+    {
+      "group": 0,
+      "frame": 2,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 2
+    },
+    {
+      "group": 0,
+      "frame": 3,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 3
+    },
+    {
+      "group": 0,
+      "frame": 4,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 4
+    },
+    {
+      "group": 0,
+      "frame": 5,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 5
+    },
+    {
+      "group": 0,
+      "frame": 6,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 6
+    },
+    {
+      "group": 0,
+      "frame": 7,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 7
+    },
+    {
+      "group": 0,
+      "frame": 8,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 8
+    },
+    {
+      "group": 0,
+      "frame": 9,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 9
+    },
+    {
+      "group": 0,
+      "frame": 10,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 10
+    },
+    {
+      "group": 0,
+      "frame": 11,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 11
+    },
+    {
+      "group": 0,
+      "frame": 12,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 12
+    },
+    {
+      "group": 0,
+      "frame": 13,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 13
+    },
+    {
+      "group": 0,
+      "frame": 14,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 14
+    },
+    {
+      "group": 0,
+      "frame": 15,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 15
+    },
+    {
+      "group": 0,
+      "frame": 16,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 16
+    },
+    {
+      "group": 0,
+      "frame": 17,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 17
+    },
+    {
+      "group": 0,
+      "frame": 18,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 18
+    },
+    {
+      "group": 0,
+      "frame": 19,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 19
+    },
+    {
+      "group": 0,
+      "frame": 20,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 20
+    },
+    {
+      "group": 0,
+      "frame": 21,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 21
+    },
+    {
+      "group": 0,
+      "frame": 22,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 22
+    },
+    {
+      "group": 0,
+      "frame": 23,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 23
+    },
+    {
+      "group": 0,
+      "frame": 24,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 24
+    },
+    {
+      "group": 0,
+      "frame": 25,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 25
+    },
+    {
+      "group": 0,
+      "frame": 26,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 26
+    },
+    {
+      "group": 0,
+      "frame": 27,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 27
+    },
+    {
+      "group": 0,
+      "frame": 28,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 28
+    },
+    {
+      "group": 0,
+      "frame": 29,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 29
+    },
+    {
+      "group": 0,
+      "frame": 30,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 30
+    },
+    {
+      "group": 0,
+      "frame": 31,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 31
+    },
+    {
+      "group": 0,
+      "frame": 32,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 32
+    },
+    {
+      "group": 0,
+      "frame": 33,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 34
+    },
+    {
+      "group": 0,
+      "frame": 34,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 33
+    },
+    {
+      "group": 0,
+      "frame": 35,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 35
+    },
+    {
+      "group": 0,
+      "frame": 36,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 36
+    },
+    {
+      "group": 0,
+      "frame": 37,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 37
+    },
+    {
+      "group": 0,
+      "frame": 38,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 38
+    },
+    {
+      "group": 0,
+      "frame": 39,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 39
+    },
+    {
+      "group": 0,
+      "frame": 40,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 41
+    },
+    {
+      "group": 0,
+      "frame": 41,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 40
+    },
+    {
+      "group": 0,
+      "frame": 42,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 42
+    },
+    {
+      "group": 0,
+      "frame": 43,
+      "defFile": "HALLTOWR.DEF",
+      "defGroup": 0,
+      "defFrame": 43
+    }
+  ]
+}

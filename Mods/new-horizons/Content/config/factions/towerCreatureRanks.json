@@ -1,6 +1,14 @@
 {
 	"core:tower": {
 		"town": {
+			"buildingsIcons": "NH_tower_buildings",
+			"hallSlots": [
+				[ [ "villageHall", "townHall", "cityHall", "capitol" ], [ "fort", "citadel", "castle" ], [ "tavern" ], [ "blacksmith" ] ],
+				[ [ "marketplace", "resourceSilo" ], [ "mageGuild1", "mageGuild2", "mageGuild3", "mageGuild4", "mageGuild5" ], [ "special4" ] ],
+				[ [ "special1" ], [ "special2" ], [ "horde1", "horde1Upgr" ] ],
+				[ [ "dwellingLvl1", "dwellingUpLvl1" ], [ "dwellingLvl2", "dwellingUpLvl2" ], [ "dwellingLvl3", "dwellingUpLvl3" ], [ "dwellingLvl4", "dwellingUpLvl4" ] ],
+				[ [ "dwellingLvl5", "dwellingUpLvl5" ], [ "special3" ], [ "dwellingLvl6", "dwellingUpLvl6" ], [ "dwellingLvl7", "dwellingUpLvl7" ] ]
+			],
 			"creatures": {
 				"modify@4": [ "genie", "masterGenie" ],
 				"modify@5": [ "mage", "archMage" ]
@@ -43,10 +51,58 @@
 				"special3": {
 					"requires": [ "allOf", [ "dwellingLvl5" ], [ "mageGuild4" ] ]
 				},
+				"dwellingLvl4": {
+					"name": "Altar of Wishes",
+					"description": "The Altar of Wishes recruits Genies and can be upgraded to recruit Master Genies.",
+					"cost#override": {
+						"wood": 5,
+						"mercury": 5,
+						"ore": 5,
+						"sulfur": 5,
+						"crystal": 5,
+						"gems": 5,
+						"gold": 2500
+					}
+				},
 				"dwellingUpLvl4": {
+					"name": "Upgraded Altar of Wishes",
+					"description": "The Upgraded Altar of Wishes recruits Master Genies.",
+					"cost#override": {
+						"wood": 5,
+						"mercury": 0,
+						"ore": 0,
+						"sulfur": 0,
+						"crystal": 0,
+						"gems": 0,
+						"gold": 2000
+					},
 					"requires": null
 				},
+				"dwellingLvl5": {
+					"name": "Mage Tower",
+					"description": "The Mage Tower recruits Mages and can be upgraded to recruit Arch Mages.",
+					"cost#override": {
+						"wood": 5,
+						"mercury": 0,
+						"ore": 5,
+						"sulfur": 0,
+						"crystal": 6,
+						"gems": 6,
+						"gold": 3000
+					}
+				},
 				"dwellingUpLvl5": {
+					"name": "Upgraded Mage Tower",
+					"description": "The Upgraded Mage Tower recruits Arch Mages.",
+					"cost#override": {
+						"wood": 5,
+						"mercury": 0,
+						"ore": 0,
+						"sulfur": 0,
+						"crystal": 0,
+						"gems": 0,
+						"gold": 2000
+					},
 					"requires": [ "special3" ]
 				}
 			}

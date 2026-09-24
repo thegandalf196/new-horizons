@@ -623,7 +623,19 @@ generation together when installing this table.
   implement that proposal.
 - **Also rejected:** A 50% follow-up Mana discount; the user considers Tower
   already abundant in Mana.
-- **Open replacement:** A passive two-round duration increase for buffs and
-  debuffs cast through Metamagic was proposed next, but is not user-approved.
-  Do not treat that proposal as canonical. The accepted requirement remains a
-  simpler passive redesign without extra actions or a Mana-economy benefit.
+- **Deferred to the user:** The duration-increase proposal was not accepted.
+  The user will supply a replacement after brainstorming. Do not implement any
+  of these proposed replacements or choose another one meanwhile. The accepted
+  direction remains a simpler passive redesign without extra actions or a
+  Mana-economy benefit; the existing implementation is not the final design.
+
+## Dynamic Overcharge outcome preview — 2026-09-24
+
+- **Status:** Accepted; implementation pending.
+- **Rule:** The Overcharge dialog (currently Magic Arrow) dynamically compares
+  the selected target's expected damage and creature casualties without
+  Overcharge against the currently selected Overcharge amount. Refresh these
+  values when the amount changes, alongside the existing Mana-cost calculation.
+  Use the shared battle preview calculation and current target state, including
+  partial health and applicable mitigation. Represent uncertainty honestly;
+  never present a guaranteed kill count where the outcome can vary.
