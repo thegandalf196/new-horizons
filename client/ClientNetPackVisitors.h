@@ -33,6 +33,7 @@ public:
 	void visitSetSecSkill(SetSecSkill & pack) override;
 	void visitHeroVisitCastle(HeroVisitCastle & pack) override;
 	void visitSetMana(SetMana & pack) override;
+	void visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack) override;
 	void visitSetMovePoints(SetMovePoints & pack) override;
 	void visitSetResearchedSpells(SetResearchedSpells & pack) override;
 	void visitFoWChange(FoWChange & pack) override;

@@ -81,7 +81,9 @@ def verify_spent_action_spell_feedback(source):
     assert 'const bool ownedOrGranted = !myHero->getSourcesForSpell' in spell_window
     assert 'newHorizonsMagic::requiredSchoolRank' in spell_window
     assert 'newHorizonsMagic::hasSchoolProficiency' in spell_window
-    assert 'owner->myHero->spellbookContainsSpell(mySpell->getId())' in spell_window
+    # The shared predicate includes eligible temporary inscriptions from
+    # Spellbinder's Hat as well as the hero's permanent spellbook entries.
+    assert 'owner->myHero->isSpellInscribedForCasting(mySpell->getId())' in spell_window
     assert '!inscribedInSpellbook' in spell_window
     assert 'schoolRequirementLabel = "Locked: " + rankName' in spell_window
 

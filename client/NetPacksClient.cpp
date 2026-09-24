@@ -190,6 +190,13 @@ void ApplyClientNetPackVisitor::visitSetMana(SetMana & pack)
 		window->heroManaPointsChanged(h);
 }
 
+void ApplyClientNetPackVisitor::visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack)
+{
+	// The shared daily allowance changes after the spell's effects and Mana
+	// payment. Cached routes must observe this final authoritative state.
+	callAllInterfaces(cl, &CGameInterface::invalidatePaths);
+}
+
 void ApplyClientNetPackVisitor::visitSetMovePoints(SetMovePoints & pack)
 {
 	const CGHeroInstance *h = cl.gameInfo().getHero(pack.hid);
