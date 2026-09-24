@@ -16,13 +16,16 @@ The user supplied the current gameplay specification as
 [New Horizons.docx](design-sources/New%20Horizons.docx). It is the newest
 authority for gameplay scope and mechanics. When its roadmap or summary tables
 conflict with a later detailed system section, the detailed section controls.
-Read [NEW_HORIZONS_OVERRIDES.md](NEW_HORIZONS_OVERRIDES.md) immediately after
-the source document. Accepted entries there are later, narrowly scoped user
-instructions and override only the exact scripture rules they name; all other
-scripture rules remain authoritative.
-This currently means that Version 1.0 uses the ten-perk Skill model, with at
-most one learned Basic, one Advanced and one Expert perk per Skill as clarified
-in the overrides; Governors and Caravans remain future work; the detailed Sorcery
+The DOCX is the sole canonical design specification.
+[Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md) contains only temporary
+amendments awaiting integration. Legacy
+[Overrides](NEW_HORIZONS_OVERRIDES.md) is a migration source, not a permanent
+precedence layer. Audit each entry through
+[NH_OVERRIDE_MIGRATION.md](NH_OVERRIDE_MIGRATION.md): preserve missing intended
+decisions by integrating them into the appropriate canonical section, flag
+conflicts for review, and retire Overrides only after every entry is resolved.
+Do not silently choose between conflicting perk progression rules during that
+transition. Governors and Caravans remain future work; the detailed Sorcery
 roster's Magic Arrow with Overcharge controls over the earlier Magic Missile
 summary entry; and the superseded Doctrine experiment is not part of New
 Horizons. Orders remain in scope. Existing Doctrine code must not be exposed as

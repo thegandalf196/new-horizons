@@ -1,8 +1,10 @@
 # Spell access and Spell Points
 
-Accepted user specification, 2026-09-23. This document overrides conflicting
-scripture passages only for the rules below. Referenced by
-[NEW_HORIZONS_OVERRIDES.md](NEW_HORIZONS_OVERRIDES.md).
+Legacy accepted user specification, 2026-09-23. Preserved as supporting evidence
+for entry L25 in [NH_OVERRIDE_MIGRATION.md](NH_OVERRIDE_MIGRATION.md), not as a
+permanent precedence layer. New Horizons.docx is the sole canonical design
+specification. Conflicts below require transition review; do not discard missing
+decisions or automatically replace the canonical text with this document.
 
 ## Inscribed combat spells
 

@@ -1,5 +1,14 @@
 # New Horizons — focused scripture overrides
 
+> **Legacy migration source — not a design precedence layer.**
+> New Horizons.docx is the sole canonical design specification. This file is
+> retained intact for the item-by-item transition audit in
+> [NH_OVERRIDE_MIGRATION.md](NH_OVERRIDE_MIGRATION.md). Do not discard entries
+> merely because a newer document exists, and do not automatically resolve
+> conflicts. The historical authority instructions below no longer govern.
+> New temporary amendments belong in
+> [NEW_HORIZONS_PENDING_CHANGES.md](NEW_HORIZONS_PENDING_CHANGES.md).
+
 This file records narrow, user-approved changes to
 [`design-sources/New Horizons.docx`](design-sources/New%20Horizons.docx) without
 requiring the complete source document to be replaced.
