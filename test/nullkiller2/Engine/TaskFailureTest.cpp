@@ -171,6 +171,11 @@ TEST_F(Nullkiller2_MovementFailure, townPurchaseRoutePreservesRequiredEnemyHeroB
 	checkRequiredBattleRoute(false, true, true);
 }
 
+TEST_F(Nullkiller2_MovementFailure, townPurchaseRoutePreservesRequiredGarrisonBattle)
+{
+	checkRequiredBattleRoute(true, false, true);
+}
+
 TEST_F(Nullkiller2_MovementFailure, alliedHeroCanBlockPreviouslyPlannedCorridor)
 {
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
