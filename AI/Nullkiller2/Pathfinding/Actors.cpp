@@ -280,7 +280,7 @@ ExchangeResult HeroExchangeMap::tryExchangeNoLock(const ChainActor * other)
 		{
 			if(upgradedInitialArmy)
 			{
-				newArmy = pickBestCreatures(upgradedInitialArmy, other->creatureSet);
+				newArmy = pickBestCreatures(upgradedInitialArmy, other->creatureSet, other->hero);
 				newArmy->armyCost = upgradedInitialArmy->armyCost;
 				newArmy->requireBuyArmy = upgradedInitialArmy->requireBuyArmy;
 
@@ -288,7 +288,7 @@ ExchangeResult HeroExchangeMap::tryExchangeNoLock(const ChainActor * other)
 			}
 			else
 			{
-				newArmy = pickBestCreatures(actor->creatureSet, other->creatureSet);
+				newArmy = pickBestCreatures(actor->creatureSet, other->creatureSet, other->hero);
 			}
 		}
 		else
@@ -301,7 +301,11 @@ ExchangeResult HeroExchangeMap::tryExchangeNoLock(const ChainActor * other)
 		auto newArmyStrength = newArmy->getArmyStrength();
 		auto oldArmyStrength = actor->creatureSet->getArmyStrength();
 
-		if(newArmyStrength <= oldArmyStrength) return result;
+		if(newArmyStrength <= oldArmyStrength)
+		{
+			delete newArmy;
+			return result;
+		}
 
 		auto reinforcement = newArmyStrength - oldArmyStrength;
 
@@ -387,10 +391,12 @@ HeroExchangeArmy * HeroExchangeMap::tryUpgrade(
 	return target;
 }
 
-HeroExchangeArmy * HeroExchangeMap::pickBestCreatures(const CCreatureSet * army1, const CCreatureSet * army2) const
+HeroExchangeArmy * HeroExchangeMap::pickBestCreatures(const CCreatureSet * army1, const CCreatureSet * army2,
+	const CGHeroInstance * sourceCarrier) const
 {
 	auto * target = new HeroExchangeArmy();
-	auto bestArmy = aiNk->armyManager->getBestArmy(actor->hero, army1, army2, aiNk->cc->getTile(actor->hero->visitablePos())->getTerrainID());
+	auto bestArmy = aiNk->armyManager->getBestArmy(actor->hero, army1, army2,
+		aiNk->cc->getTile(actor->hero->visitablePos())->getTerrainID(), sourceCarrier);
 
 	for(auto & slotInfo : bestArmy)
 	{

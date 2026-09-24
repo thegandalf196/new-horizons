@@ -38,7 +38,8 @@ uint64_t HeroExchange::getReinforcementArmyStrength(const Nullkiller * aiNk) con
 		hero,
 		hero,
 		exchangePath.heroArmy,
-		aiNk->cc->getTile(exchangePath.targetTile())->getTerrainID());
+		aiNk->cc->getTile(exchangePath.targetTile())->getTerrainID(),
+		exchangePath.targetHero);
 }
 
 }

@@ -20,6 +20,11 @@ namespace NK2AI
 
 class Nullkiller;
 
+namespace armyFormation
+{
+struct DLL_LINKAGE ArmyExchangeProjection;
+}
+
 struct SlotInfo
 {
 	const CCreature * creature;
@@ -54,9 +59,14 @@ public:
 		const IBonusBearer * armyCarrier,
 		const CCreatureSet * target,
 		const CCreatureSet * source,
-		const TerrainId & armyTerrain) const = 0;
+		const TerrainId & armyTerrain,
+		const CGHeroInstance * sourceCarrier = nullptr) const = 0;
 
-	virtual std::vector<SlotInfo> getBestArmy(const IBonusBearer * armyCarrier, const CCreatureSet * target, const CCreatureSet * source, const TerrainId & armyTerrain) const = 0;
+	/// Optionally return the exact Leadership-aware transfer plan used for this
+	/// valuation. The output is reset when no capacity-aware exchange is needed.
+	virtual std::vector<SlotInfo> getBestArmy(const IBonusBearer * armyCarrier, const CCreatureSet * target,
+		const CCreatureSet * source, const TerrainId & armyTerrain, const CGHeroInstance * sourceCarrier = nullptr,
+		armyFormation::ArmyExchangeProjection * exchangePlan = nullptr) const = 0;
 	virtual std::vector<SlotInfo>::iterator getBestUnitForScout(std::vector<SlotInfo> & army, const TerrainId & armyTerrain) const = 0;
 	virtual std::vector<SlotInfo> getSortedSlots(const CCreatureSet * target, const CCreatureSet * source) const = 0;
 	virtual std::vector<SlotInfo> toSlotInfo(std::vector<creInfo> creatures) const = 0;
@@ -98,8 +108,11 @@ public:
 		uint8_t turn = 0) const override;
 
 	ui64 howManyReinforcementsCanGet(const CGHeroInstance * hero, const CCreatureSet * source) const override;
-	ui64 howManyReinforcementsCanGet(const IBonusBearer * armyCarrier, const CCreatureSet * target, const CCreatureSet * source, const TerrainId & armyTerrain) const override;
-	std::vector<SlotInfo> getBestArmy(const IBonusBearer * armyCarrier, const CCreatureSet * target, const CCreatureSet * source, const TerrainId & armyTerrain) const override;
+	ui64 howManyReinforcementsCanGet(const IBonusBearer * armyCarrier, const CCreatureSet * target,
+		const CCreatureSet * source, const TerrainId & armyTerrain, const CGHeroInstance * sourceCarrier = nullptr) const override;
+	std::vector<SlotInfo> getBestArmy(const IBonusBearer * armyCarrier, const CCreatureSet * target,
+		const CCreatureSet * source, const TerrainId & armyTerrain, const CGHeroInstance * sourceCarrier = nullptr,
+		armyFormation::ArmyExchangeProjection * exchangePlan = nullptr) const override;
 	std::vector<SlotInfo>::iterator getBestUnitForScout(std::vector<SlotInfo> & army, const TerrainId & armyTerrain) const override;
 	std::vector<SlotInfo> getSortedSlots(const CCreatureSet * target, const CCreatureSet * source) const override;
 	std::vector<SlotInfo> toSlotInfo(std::vector<creInfo> creatures) const override;

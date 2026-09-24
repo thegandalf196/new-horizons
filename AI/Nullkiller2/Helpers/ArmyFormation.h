@@ -14,6 +14,8 @@
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameLibrary.h"
 
+class CGHeroInstance;
+
 namespace NK2AI
 {
 
@@ -24,6 +26,58 @@ namespace NK2AI
 /// requests that the server must reject.
 namespace armyFormation
 {
+struct DLL_LINKAGE DesiredArmyStack
+{
+	CreatureID creature = CreatureID::NONE;
+	int count = 0;
+};
+
+struct DLL_LINKAGE ProjectedArmyStack
+{
+	SlotID slot;
+	CreatureID creature = CreatureID::NONE;
+	int count = 0;
+};
+
+enum class ArmyExchangeSide
+{
+	RECEIVER,
+	SOURCE
+};
+
+struct DLL_LINKAGE ArmyExchangeTransfer
+{
+	ArmyExchangeSide sourceSide = ArmyExchangeSide::SOURCE;
+	SlotID sourceSlot;
+	SlotID destinationSlot;
+	CreatureID expectedSourceCreature = CreatureID::NONE;
+	int expectedSourceCount = 0;
+	CreatureID expectedDestinationCreature = CreatureID::NONE;
+	int expectedDestinationCount = 0;
+	int transferCount = 0;
+	int resultingDestinationCount = 0;
+	bool swapsStacks = false;
+};
+
+struct DLL_LINKAGE ArmyExchangeProjection
+{
+	std::vector<ArmyExchangeTransfer> transfers;
+	std::vector<ProjectedArmyStack> receiverSlots;
+	std::vector<ProjectedArmyStack> sourceSlots;
+};
+
+/// Projects a preferred receiver army onto the two physical slot layouts.
+/// Duplicate preferred creature entries describe distinct stacks; Leadership
+/// capacity is applied to each slot independently. Existing troops that cannot
+/// legally leave the receiver are preserved in the projection.
+DLL_EXPORT ArmyExchangeProjection projectArmyExchange(
+	const CCreatureSet * receiverArmy,
+	const CCreatureSet * sourceArmy,
+	const CGHeroInstance * receiverHero,
+	const CGHeroInstance * sourceHero,
+	const std::vector<DesiredArmyStack> & desiredReceiver);
+DLL_EXPORT bool hasLeadershipCapacityRules(const CGHeroInstance * hero, const CCreatureSet * army);
+
 bool canReceiveStack(const CArmedInstance * destination, CreatureID creature, int resultingCount);
 bool canSwapStacks(const CArmedInstance * first, const CArmedInstance * second,
 	SlotID firstSlot, SlotID secondSlot);

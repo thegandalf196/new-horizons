@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "ArmyManager.h"
+#include "../Helpers/ArmyFormation.h"
 #include "../Engine/Nullkiller.h"
 #include "../../../lib/mapObjects/MapObjects.h"
 #include "../../../lib/mapping/TerrainTile.h"
@@ -179,11 +180,29 @@ public:
 	}
 };
 
-std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier, const CCreatureSet * target, const CCreatureSet * source, const TerrainId & armyTerrain) const
+std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier, const CCreatureSet * target,
+	const CCreatureSet * source, const TerrainId & armyTerrain, const CGHeroInstance * sourceCarrier,
+	armyFormation::ArmyExchangeProjection * exchangePlan) const
 {
+	if(exchangePlan)
+		*exchangePlan = {};
+	const auto * receiverHero = dynamic_cast<const CGHeroInstance *>(armyCarrier);
 	auto sortedSlots = getSortedSlots(target, source);
 	if(source->stacksCount() == 0)
+	{
+		if(armyFormation::hasLeadershipCapacityRules(receiverHero, target))
+		{
+			std::vector<SlotInfo> currentArmy;
+			currentArmy.reserve(target->stacksCount());
+			for(const auto & slot : target->Slots())
+			{
+				const auto * creature = slot.second->getCreatureID().toCreature();
+				currentArmy.push_back({creature, slot.second->getCount(), evaluateStackPower(creature, slot.second->getCount())});
+			}
+			return currentArmy;
+		}
 		return sortedSlots;
+	}
 
 	std::map<FactionID, uint64_t> alignmentMap;
 
@@ -256,6 +275,51 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 
 		resultingArmy = newArmy;
 		armyValue = newValue;
+	}
+
+	const auto * sourceHero = sourceCarrier ? sourceCarrier : dynamic_cast<const CGHeroInstance *>(source);
+	const bool leadershipRulesApply = armyFormation::hasLeadershipCapacityRules(receiverHero, target)
+		|| armyFormation::hasLeadershipCapacityRules(receiverHero, source)
+		|| armyFormation::hasLeadershipCapacityRules(sourceHero, target)
+		|| armyFormation::hasLeadershipCapacityRules(sourceHero, source);
+	if(leadershipRulesApply)
+	{
+		std::vector<armyFormation::DesiredArmyStack> desiredArmy;
+		int freeStackSlots = GameConstants::ARMY_SIZE;
+
+		for(const auto & slot : resultingArmy)
+		{
+			int remainingCount = slot.count;
+			const auto capacity = receiverHero
+				? receiverHero->getLeadershipSlotCapacity(slot.creature->getId())
+				: std::nullopt;
+			const int maximumStackCount = capacity
+				? capacity->maximum
+				: remainingCount;
+
+			while(remainingCount > 0 && freeStackSlots > 0 && maximumStackCount > 0)
+			{
+				const int stackCount = std::min(remainingCount, maximumStackCount);
+				desiredArmy.push_back({slot.creature->getId(), stackCount});
+				remainingCount -= stackCount;
+				--freeStackSlots;
+			}
+		}
+
+		const auto projection = armyFormation::projectArmyExchange(
+			target, source, receiverHero, sourceHero, desiredArmy);
+		// Preserve the exact executable plan behind the valuation. Reprojecting
+		// its resulting army can reserve different duplicate slots and lose swaps.
+		if(exchangePlan)
+			*exchangePlan = projection;
+		std::vector<SlotInfo> projectedArmy;
+		projectedArmy.reserve(projection.receiverSlots.size());
+		for(const auto & slot : projection.receiverSlots)
+		{
+			const auto * creature = slot.creature.toCreature();
+			projectedArmy.push_back({creature, slot.count, evaluateStackPower(creature, slot.count)});
+		}
+		return projectedArmy;
 	}
 
 	if(resultingArmy.size() <= GameConstants::ARMY_SIZE
@@ -442,14 +506,15 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 	return creaturesInDwellings;
 }
 
-ui64 ArmyManager::howManyReinforcementsCanGet(const IBonusBearer * armyCarrier, const CCreatureSet * target, const CCreatureSet * source, const TerrainId & armyTerrain) const
+ui64 ArmyManager::howManyReinforcementsCanGet(const IBonusBearer * armyCarrier, const CCreatureSet * target,
+	const CCreatureSet * source, const TerrainId & armyTerrain, const CGHeroInstance * sourceCarrier) const
 {
 	if(source->stacksCount() == 0)
 	{
 		return 0;
 	}
 
-	auto bestArmy = getBestArmy(armyCarrier, target, source, armyTerrain);
+	auto bestArmy = getBestArmy(armyCarrier, target, source, armyTerrain, sourceCarrier);
 	uint64_t newArmy = 0;
 	uint64_t oldArmy = target->getArmyStrength();
 

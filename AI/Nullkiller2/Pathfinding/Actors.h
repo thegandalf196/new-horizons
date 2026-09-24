@@ -102,7 +102,8 @@ public:
 	ExchangeResult tryExchangeNoLock(const ChainActor * other);
 
 private:
-	HeroExchangeArmy * pickBestCreatures(const CCreatureSet * army1, const CCreatureSet * army2) const;
+	HeroExchangeArmy * pickBestCreatures(const CCreatureSet * army1, const CCreatureSet * army2,
+		const CGHeroInstance * sourceCarrier) const;
 	HeroExchangeArmy * tryUpgrade(const CCreatureSet * army, const CGObjectInstance * upgrader, TResources resources) const;
 };
 
