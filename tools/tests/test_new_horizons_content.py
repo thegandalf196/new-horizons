@@ -270,7 +270,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             {'skill': 'new-horizons:spellcraft', 'level': 'basic'},
         ])
         self.assertEqual(patch['images']['specialtySmall'], 'NH_metamagic_prism_basic_small.png')
-        self.assertEqual(patch['images']['specialtyLarge'], 'NH_metamagic_prism_basic_large.png')
+        self.assertEqual(patch['images']['specialtyLarge'], 'NH_metamagic_prism_basic_medium.png')
         self.assertEqual(patch['images']['small'], 'HPS041WZ.bmp')
         self.assertEqual(patch['images']['large'], 'HPL041WZ.bmp')
         self.assertIsNone(patch['specialty']['secondary'])
@@ -502,23 +502,26 @@ class NewHorizonsContentTest(unittest.TestCase):
                 self.assertNotIn('Resistance', patch['texts']['specialty']['description'])
                 self.assertNotIn('Sorcery', patch['texts']['specialty']['description'])
                 if icon_stem == 'necromancy':
-                    expected_small, expected_large = 'SECSK32:0:39', 'SECSK82:0:39'
+                    expected_small, expected_large = 'SECSK32:0:39', 'SECSKILL:0:39'
                 elif icon_stem == 'metamagic':
                     expected_small = 'NH_metamagic_prism_basic_small.png'
-                    expected_large = 'NH_metamagic_prism_basic_large.png'
+                    expected_large = 'NH_metamagic_prism_basic_medium.png'
                     self.assertTrue((ROOT / 'Mods/new-horizons/Images' /
                                      expected_small).is_file())
                     self.assertTrue((ROOT / 'Mods/new-horizons/Images' /
                                      expected_large).is_file())
                 else:
                     expected_small = 'NH_' + icon_stem + '_basic_small.png'
-                    expected_large = 'NH_' + icon_stem + '_basic_large.png'
+                    expected_large = 'NH_' + icon_stem + '_basic_medium.png'
                     self.assertTrue((ROOT / 'Mods/new-horizons/Images' /
                                      expected_small).is_file())
                     self.assertTrue((ROOT / 'Mods/new-horizons/Images' /
                                      expected_large).is_file())
                 self.assertEqual(patch['images']['specialtySmall'], expected_small)
                 self.assertEqual(patch['images']['specialtyLarge'], expected_large)
+                if expected_large.endswith('.png'):
+                    self.assertEqual(png_size(ROOT / 'Mods/new-horizons/Images' /
+                                              expected_large), (44, 44))
         for hero in ('jaegar', 'rosic', 'axsis'):
             with self.subTest(mysticism_bonus=hero):
                 self.assertIsNone(

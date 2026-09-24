@@ -100,7 +100,7 @@ require(CASTLE, "std::min(rankedStatIconWidth, rect.h - 1)", "ranked stat icons 
 require(CASTLE, "icon->scaleTo(Point(iconSize, iconSize))", "bitmap stat icons scale with compact rows")
 for icon in ("iconAttack", "iconDefense", "iconDamage", "iconHealth", "iconSpeed", "iconInitiative", "iconGrowth"):
     require(CASTLE, f'"stackWindow/{icon}"', f"ranked cards reuse creature UI {icon}")
-require(CASTLE, '"NH_capability_leadership_32"', "ranked cards show the Leadership Cost icon")
+require(CASTLE, '"NH_creature_leadership_20"', "ranked cards show the crown Leadership Cost icon")
 require(CASTLE, "if(!rankedLayout)", "ranked cards omit obsolete dwelling art and names")
 require(CASTLE, "RankedFortCreatureViewport", "compact cards clip the portrait to its utility band")
 require(CASTLE, "cardsBottom", "ranked code computes the final band bottom")

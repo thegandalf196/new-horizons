@@ -123,6 +123,17 @@ The normal launcher's verify-only path check passes for this snapshot.
 
 ## Spellbook binding details
 
+### Specialty and Fort binding correction
+
+Hero `specialtyLarge` images feed the 44×44 `UN44` atlas, not the 82×93
+secondary-skill slot. All 21 authored New Horizons specialty bindings now use
+their native 44×44 medium artwork; the four Necromancy specialties use the
+corresponding classic `SECSKILL` frame. Skill-window large images are unchanged.
+Fort Leadership Cost uses the same monochrome crown as the creature window,
+retaining its existing row geometry. The 27 focused content/binding tests and
+Fort source guard pass; independent review found no blockers. Native build and
+playable promotion are tracked separately; these checks are not rendered acceptance.
+
 The current mod.json binds, for each of Light, Nature, Sorcery, Havoc, Shadow, and Chaos:
 
 - NH_<school>_bookmark.json, with selected/unselected frames.

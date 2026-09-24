@@ -2809,7 +2809,7 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 				const int iconY = rect.y + (rect.h - iconSize) / 2;
 				if(index == 6)
 					rankedStatIcons.push_back(std::make_shared<CAnimImage>(
-						AnimationPath::builtin("NH_capability_leadership_32"), 0,
+						AnimationPath::builtin("NH_creature_leadership_20"), 0,
 						Rect(iconX, iconY, iconSize, iconSize)));
 				else
 				{

@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 import unittest
 
+from PIL import Image
+
 
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
@@ -49,13 +51,14 @@ class MetamagicArtBindingsTest(unittest.TestCase):
             with self.subTest(hero=hero):
                 images = self.hero_patches[hero]["images"]
                 self.assertEqual(images["specialtySmall"], basic_images["small"])
-                self.assertEqual(images["specialtyLarge"], basic_images["large"])
+                self.assertEqual(images["specialtyLarge"], basic_images["medium"])
                 self.assertTrue(
                     (ROOT / "Mods/new-horizons/Images" / images["specialtySmall"]).is_file()
                 )
-                self.assertTrue(
-                    (ROOT / "Mods/new-horizons/Images" / images["specialtyLarge"]).is_file()
-                )
+                specialty_large = ROOT / "Mods/new-horizons/Images" / images["specialtyLarge"]
+                self.assertTrue(specialty_large.is_file())
+                with Image.open(specialty_large) as image:
+                    self.assertEqual(image.size, (44, 44))
 
 
 if __name__ == "__main__":
