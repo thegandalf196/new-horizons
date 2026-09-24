@@ -44,6 +44,15 @@ std::string Composition::toString() const
 	return result;
 }
 
+const CGHeroInstance * Composition::getBlockedInitialRoute(const Nullkiller * aiNk) const
+{
+	// accept() starts with the final sequence. Its first task may alter the
+	// world, so preflighting any subsequent task here would be speculative.
+	if(subtasks.empty() || subtasks.back().empty() || !subtasks.back().front()->isElementar())
+		return nullptr;
+	return subtasks.back().front()->asTask()->getBlockedInitialRoute(aiNk);
+}
+
 void Composition::accept(AIGateway * aiGw)
 {
 	for(auto task : subtasks.back())

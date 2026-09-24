@@ -12,6 +12,9 @@
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
 #include "AI/Nullkiller2/Pathfinding/AIPathfinder.h"
 #include "AI/Nullkiller2/Pathfinding/Actions/BattleAction.h"
+#include "AI/Nullkiller2/Goals/ExecuteHeroChain.h"
+#include "AI/Nullkiller2/Goals/Composition.h"
+#include "AI/Nullkiller2/Goals/Invalid.h"
 #include "nullkiller2/NullkillerTest.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/MiscObjects.h"
@@ -205,10 +208,26 @@ TEST_F(Nullkiller2_MovementFailure, alliedHeroCanBlockPreviouslyPlannedCorridor)
 	gateway->nullkiller->pathfinder->updatePaths(heroes, settings);
 	const auto retainedPlans = gateway->nullkiller->pathfinder->getPathInfo(target);
 	ASSERT_FALSE(retainedPlans.empty());
+	const NK2AI::Goals::ExecuteHeroChain queuedRoute(retainedPlans.front());
+	NK2AI::Goals::Composition queuedComposition;
+	queuedComposition.addNext(queuedRoute);
+	EXPECT_EQ(queuedRoute.getBlockedInitialRoute(gateway->nullkiller.get()), nullptr);
+	EXPECT_EQ(queuedComposition.getBlockedInitialRoute(gateway->nullkiller.get()), nullptr);
 	const auto original = blocker->pos;
 	map()->moveObject(blocker->id, int3(10, 5, 0) + blocker->getVisitableOffset());
 	gateway->nullkiller->invalidatePaths();
 	EXPECT_FALSE(gateway->nullkiller->getPathsInfo(traveler)->getPath(live, target));
+	EXPECT_EQ(queuedRoute.getBlockedInitialRoute(gateway->nullkiller.get()), traveler);
+	EXPECT_EQ(queuedComposition.getBlockedInitialRoute(gateway->nullkiller.get()), traveler);
+	EXPECT_FALSE(gateway->nullkiller->isHeroLocked(traveler));
+	// An earlier task or special action must execute before a later route can
+	// be judged; it may remove the obstruction or transport the hero.
+	NK2AI::Goals::Composition earlierTask;
+	earlierTask.addNextSequence({NK2AI::Goals::sptr(NK2AI::Goals::Invalid()), NK2AI::Goals::sptr(queuedRoute)});
+	EXPECT_EQ(earlierTask.getBlockedInitialRoute(gateway->nullkiller.get()), nullptr);
+	auto specialPath = retainedPlans.front();
+	specialPath.nodes.back().specialAction = std::make_shared<NK2AI::AIPathfinding::BattleAction>(target);
+	EXPECT_EQ(NK2AI::Goals::ExecuteHeroChain(specialPath).getBlockedInitialRoute(gateway->nullkiller.get()), nullptr);
 	gateway->nullkiller->pathfinder->updatePaths(heroes, settings);
 	EXPECT_TRUE(gateway->nullkiller->pathfinder->getPathInfo(target).empty());
 	// A copied plan remains a historical plan, not proof that its route is still open.
@@ -216,6 +235,7 @@ TEST_F(Nullkiller2_MovementFailure, alliedHeroCanBlockPreviouslyPlannedCorridor)
 	map()->moveObject(blocker->id, original);
 	gateway->nullkiller->invalidatePaths();
 	EXPECT_TRUE(gateway->nullkiller->getPathsInfo(traveler)->getPath(live, target));
+	EXPECT_EQ(queuedRoute.getBlockedInitialRoute(gateway->nullkiller.get()), nullptr);
 }
 
 TEST_F(Nullkiller2_MovementFailure, armyChangeRefreshesGuardedRoutesWithoutMovingHero)

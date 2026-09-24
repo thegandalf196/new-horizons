@@ -38,6 +38,7 @@ namespace Goals
 
 		std::vector<ObjectInstanceID> getAffectedObjects() const override;
 		bool isObjectAffected(ObjectInstanceID id) const override;
+		const CGHeroInstance * getBlockedInitialRoute(const Nullkiller * aiNk) const override;
 	};
 }
 

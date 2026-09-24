@@ -188,6 +188,9 @@ namespace Goals
 		virtual int getHeroExchangeCount() const = 0;
 		virtual bool isObjectAffected(ObjectInstanceID h) const = 0;
 		virtual std::vector<ObjectInstanceID> getAffectedObjects() const = 0;
+		// A known-unreachable first ordinary move, before this task changes state.
+		// Null means no such failure was established, not that every step is validated.
+		virtual const CGHeroInstance * getBlockedInitialRoute(const Nullkiller * aiNk) const { return nullptr; }
 	};
 }
 

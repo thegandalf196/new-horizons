@@ -592,6 +592,7 @@ void Nullkiller::makeTurn()
 	resetState();
 	Goals::TGoalVec tasks;
 	tracePlayerStatus(true);
+	std::set<ObjectInstanceID> replannedRouteHeroes;
 
 	for(int pass = 1; pass <= settings->getMaxPass() && cc->getPlayerStatus(playerID) == EPlayerStatus::INGAME; pass++)
 	{
@@ -715,6 +716,17 @@ void Nullkiller::makeTurn()
 
 				logAi->trace("Pass %d: Goal %s has too low priority. It is not worth doing it.", pass, taskDescription);
 				continue;
+			}
+
+			if(hasAnySuccess && pathfinderInvalidated)
+			{
+				const auto * blockedHero = selectedTask->getBlockedInitialRoute(this);
+				if(blockedHero && replannedRouteHeroes.insert(blockedHero->id).second)
+				{
+					logAi->debug("Queued route for %s became unavailable after an earlier task. Replanning without locking the hero.",
+						blockedHero->getNameTextID());
+					break;
+				}
 			}
 
 			logAi->info("Pass %d: Performing task (prioOfTask %d) %s with prio: %d", pass, prioOfTask, selectedTask->toString(), selectedTask->priority);

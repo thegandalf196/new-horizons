@@ -36,6 +36,7 @@ namespace Goals
 
 		std::vector<ObjectInstanceID> getAffectedObjects() const override;
 		bool isObjectAffected(ObjectInstanceID id) const override;
+		const CGHeroInstance * getBlockedInitialRoute(const Nullkiller * aiNk) const override;
 
 	private:
 		bool moveHeroToTile(AIGateway * aiGw, const CGHeroInstance * hero, const int3 & tile);

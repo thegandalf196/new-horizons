@@ -143,6 +143,21 @@ bool ExecuteHeroChain::isObjectAffected(ObjectInstanceID id) const
 	return false;
 }
 
+const CGHeroInstance * ExecuteHeroChain::getBlockedInitialRoute(const Nullkiller * aiNk) const
+{
+	if(chainPath.nodes.empty())
+		return nullptr;
+	const auto & first = chainPath.nodes.back();
+	const auto * traveler = first.targetHero;
+	// Casts, exchanges and battles can themselves establish the route. Do not
+	// predict their outcome or inspect a later step before they have executed.
+	if(first.specialAction || !traveler || !HeroPtr(traveler, aiNk->cc.get()).isVerified()
+		|| first.coord == traveler->visitablePos() || !traveler->movementPointsRemaining())
+		return nullptr;
+	CGPath live;
+	return aiNk->getPathsInfo(traveler)->getPath(live, first.coord) ? nullptr : traveler;
+}
+
 void ExecuteHeroChain::accept(AIGateway * aiGw)
 {
 	logAi->debug("Executing hero chain towards %s. Path %s", targetName, chainPath.toString());
