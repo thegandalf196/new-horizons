@@ -13,6 +13,7 @@
 #include "AI/Nullkiller2/Pathfinding/Actions/DimensionDoorAction.h"
 #include "AI/Nullkiller2/Pathfinding/Actions/TownPortalAction.h"
 #include "AI/Nullkiller2/Pathfinding/AINodeStorage.h"
+#include "AI/Nullkiller2/Pathfinding/AIPathfinder.h"
 #include "SpellPointTestUtils.h"
 #include "mock/TinyH3MBuilder.h"
 #include "nullkiller2/NullkillerTest.h"
@@ -20,9 +21,9 @@
 #include "lib/GameLibrary.h"
 #include "lib/GameConstants.h"
 #include "lib/IGameSettings.h"
+#include "lib/bonuses/Bonus.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/modding/CModHandler.h"
-#include "lib/pathfinder/PathfinderOptions.h"
 #include "lib/pathfinder/PathfinderOptions.h"
 #include "lib/spells/NewHorizonsMagic.h"
 #include "lib/spells/CSpell.h"
@@ -36,9 +37,23 @@ SpellID spell(const char * identity)
 	return SpellID(SpellID::decode(identity));
 }
 
+template<typename TAction>
+bool hasAvailableActionOnTurn(const NK2AI::AIPath & path, uint8_t turn)
+{
+	return std::ranges::any_of(path.nodes, [turn](const NK2AI::AIPathNodeInfo & node)
+	{
+		return node.turns == turn
+			&& node.specialAction
+			&& dynamic_cast<const TAction *>(node.specialAction.get())
+			&& !node.actionIsBlocked;
+	});
+}
+
 class AdventureSpellDailyPathfindingTest : public NullkillerTest
 {
 protected:
+	static constexpr int MOVEMENT_POINTS_BELOW_ONE_STEP = 1;
+
 	bool useNewHorizonsRules = true;
 
 	void SetUp() override
@@ -61,14 +76,9 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
 	}
 
-	CGHeroInstance * startHero(bool newHorizons)
+	CGHeroInstance * startHeroWithSpells(bool newHorizons, std::vector<SpellID> heroSpells)
 	{
 		useNewHorizonsRules = newHorizons;
-		const SpellID fly = spell("core:fly");
-		const SpellID waterWalk = spell("core:waterWalk");
-		const SpellID summonBoat = spell("core:summonBoat");
-		const SpellID dimensionDoor = spell("core:dimensionDoor");
-		const SpellID townPortal = spell("core:townPortal");
 
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder
@@ -76,8 +86,9 @@ protected:
 			.name("AdventureSpellDailyPathfinding")
 			.playerActive(PLAYER)
 			.hero({5, 5, 0}, HeroTypeID(0), PLAYER)
+			.heroGarrison({{CreatureID(27), 1}})
 			.heroPrimary(10, 10, 10, 20)
-			.heroSpells({fly, waterWalk, summonBoat, dimensionDoor, townPortal})
+			.heroSpells(std::move(heroSpells))
 			.heroEquipped({{ArtifactPosition::SPELLBOOK, ArtifactID::SPELLBOOK}});
 		startWithMap(std::move(builder));
 
@@ -88,6 +99,46 @@ protected:
 			hero->setMovementPoints(2000);
 		}
 		return hero;
+	}
+
+	CGHeroInstance * startHero(bool newHorizons)
+	{
+		return startHeroWithSpells(newHorizons, {
+			spell("core:fly"),
+			spell("core:waterWalk"),
+			spell("core:summonBoat"),
+			spell("core:dimensionDoor"),
+			spell("core:townPortal")});
+	}
+
+	std::vector<NK2AI::AIPath> pathsTo(NK2AI::AIGateway & gateway, const CGHeroInstance * hero, const int3 & target)
+	{
+		NK2AI::HeroMap<NK2AI::HeroRole> heroes;
+		heroes.emplace(hero, NK2AI::MAIN);
+		NK2AI::PathfinderSettings settings;
+		settings.useHeroChain = false;
+		gateway.nullkiller->pathfinder->updatePaths(heroes, settings);
+		return gateway.nullkiller->pathfinder->getPathInfo(target);
+	}
+
+	void surroundWithWater(const int3 & center)
+	{
+		for(int dx = -1; dx <= 1; ++dx)
+		{
+			for(int dy = -1; dy <= 1; ++dy)
+			{
+				if(dx == 0 && dy == 0)
+					continue;
+
+				gameState()->getMap().getTile(center + int3(dx, dy, 0)).terrainType = ETerrainId::WATER;
+			}
+		}
+	}
+
+	void addOneDayTravelBonus(CGHeroInstance * hero, BonusType type)
+	{
+		hero->addNewBonus(std::make_shared<Bonus>(
+			BonusDuration::ONE_DAY, type, BonusSource::SPELL_EFFECT, 40, BonusSourceID()));
 	}
 };
 }
@@ -261,6 +312,117 @@ TEST_F(AdventureSpellDailyPathfindingTest, RolloverUsesCanonicalUnspentNodeWitho
 		EXPECT_FLOAT_EQ((*unspent)->getCost(), settled ? 9.0f : 1.1f);
 		EXPECT_EQ(storage.getOrCreateNode(target, EPathfindingLayer::LAND, &actor, NK2AI::DayFlags::NONE), unspent);
 	}
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, LowMovementRolloverCanUseTomorrowWaterWalkAfterAllowanceWasSpentToday)
+{
+	const SpellID waterWalkSpell = spell("core:waterWalk");
+	auto * hero = startHeroWithSpells(true, {waterWalkSpell});
+	ASSERT_NE(hero, nullptr);
+	hero->setMovementPoints(MOVEMENT_POINTS_BELOW_ONE_STEP);
+	hero->setNewHorizonsAdventureSpellCastToday(true);
+
+	const int3 source = hero->visitablePos();
+	surroundWithWater(source);
+	const int3 target = source + int3(2, 0, 0);
+	const auto gateway = makeGateway(PLAYER);
+	const auto paths = pathsTo(*gateway, hero, target);
+	const auto route = std::ranges::find_if(paths, [hero, target](const NK2AI::AIPath & path)
+	{
+		return path.targetHero == hero && path.targetTile() == target;
+	});
+
+	ASSERT_NE(route, paths.end()) << "AI should defer the water crossing until movement replenishes tomorrow";
+	EXPECT_TRUE((hasAvailableActionOnTurn<NK2AI::AIPathfinding::WaterWalkingAction>(*route, 1))) << route->toString();
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, OneDayWaterWalkExpiresBeforeLowMovementCrossingTomorrow)
+{
+	const SpellID waterWalkSpell = spell("core:waterWalk");
+	auto * hero = startHeroWithSpells(true, {waterWalkSpell});
+	ASSERT_NE(hero, nullptr);
+	addOneDayTravelBonus(hero, BonusType::WATER_WALKING);
+	hero->setNewHorizonsAdventureSpellCastToday(true);
+	hero->setMovementPoints(MOVEMENT_POINTS_BELOW_ONE_STEP);
+
+	const int3 source = hero->visitablePos();
+	surroundWithWater(source);
+	const int3 target = source + int3(2, 0, 0);
+	const auto gateway = makeGateway(PLAYER);
+	const auto paths = pathsTo(*gateway, hero, target);
+	const auto route = std::ranges::find_if(paths, [hero, target](const NK2AI::AIPath & path)
+	{
+		return path.targetHero == hero && path.targetTile() == target;
+	});
+
+	ASSERT_NE(route, paths.end()) << "AI should not carry today's one-day Water Walk into tomorrow";
+	EXPECT_TRUE((hasAvailableActionOnTurn<NK2AI::AIPathfinding::WaterWalkingAction>(*route, 1))) << route->toString();
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, OneDayFlyExpiresBeforeLowMovementCrossingTomorrow)
+{
+	const SpellID flySpell = spell("core:fly");
+	auto * hero = startHeroWithSpells(true, {flySpell});
+	ASSERT_NE(hero, nullptr);
+	addOneDayTravelBonus(hero, BonusType::FLYING_MOVEMENT);
+	hero->setNewHorizonsAdventureSpellCastToday(true);
+	hero->setMovementPoints(MOVEMENT_POINTS_BELOW_ONE_STEP);
+
+	const int3 source = hero->visitablePos();
+	surroundWithWater(source);
+	const int3 target = source + int3(2, 0, 0);
+	const auto gateway = makeGateway(PLAYER);
+	const auto paths = pathsTo(*gateway, hero, target);
+	const auto route = std::ranges::find_if(paths, [hero, target](const NK2AI::AIPath & path)
+	{
+		return path.targetHero == hero && path.targetTile() == target;
+	});
+
+	ASSERT_NE(route, paths.end()) << "AI should recast Fly when its one-day effect expires before tomorrow's movement";
+	EXPECT_TRUE((hasAvailableActionOnTurn<NK2AI::AIPathfinding::AirWalkingAction>(*route, 1))) << route->toString();
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, RolloverRekeysLockedProvisionalNodeBeforeCheckingItsCanonicalTomorrowNode)
+{
+	auto * hero = startHero(true);
+	ASSERT_NE(hero, nullptr);
+	const auto gateway = makeGateway(PLAYER);
+	NK2AI::ChainActor actor;
+	actor.hero = hero;
+	const int3 target = hero->visitablePos() + int3(1, 0, 0);
+
+	NK2AI::AINodeStorage storage(gateway->nullkiller.get(), gameState()->getMapSize());
+	storage.clear();
+	storage.setHeroes({});
+	storage.initialize(PathfinderOptions(*gameState()), *gameState());
+	const auto usedToday = storage.getOrCreateNode(
+		target, EPathfindingLayer::LAND, &actor, NK2AI::DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
+	const auto availableTomorrow = storage.getOrCreateNode(target, EPathfindingLayer::LAND, &actor, NK2AI::DayFlags::NONE);
+	ASSERT_TRUE(usedToday);
+	ASSERT_TRUE(availableTomorrow);
+	ASSERT_NE(*usedToday, *availableTomorrow);
+
+	(*usedToday)->locked = true;
+	(*usedToday)->specialAction = std::make_shared<NK2AI::AIPathfinding::WaterWalkingAction>(
+		hero, spell("core:waterWalk"));
+	NK2AI::AIPathNode sourceNode;
+	sourceNode.actor = &actor;
+	sourceNode.turns = 0;
+	sourceNode.dayFlags = NK2AI::DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST;
+	PathNodeInfo source;
+	source.node = &sourceNode;
+	CDestinationNodeInfo destination;
+	destination.node = *usedToday;
+	destination.turn = 1;
+	destination.blocked = false;
+
+	storage.prepareDestination(destination, source);
+
+	EXPECT_EQ(destination.node, *availableTomorrow);
+	EXPECT_FALSE(destination.blocked);
+	EXPECT_TRUE((*usedToday)->locked);
+	ASSERT_NE((*usedToday)->specialAction, nullptr);
+	EXPECT_EQ((*availableTomorrow)->specialAction, nullptr);
 }
 
 TEST_F(AdventureSpellDailyPathfindingTest, LegacyWalkCastDoesNotConsumeSharedNewHorizonsFlag)

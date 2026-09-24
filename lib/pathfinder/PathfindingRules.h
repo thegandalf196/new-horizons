@@ -26,6 +26,17 @@ public:
 		CPathfinderHelper * pathfinderHelper) const = 0;
 };
 
+/// Resolve the movement day before checking expiring capabilities or casting.
+class DLL_LINKAGE MovementPreparationRule : public IPathfindingRule
+{
+public:
+	void process(
+		const PathNodeInfo & source,
+		CDestinationNodeInfo & destination,
+		const PathfinderConfig * pathfinderConfig,
+		CPathfinderHelper * pathfinderHelper) const override;
+};
+
 class DLL_LINKAGE MovementCostRule : public IPathfindingRule
 {
 public:

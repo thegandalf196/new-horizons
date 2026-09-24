@@ -36,6 +36,14 @@ namespace AIPathfinding
 	) const
 	{
 		LayerTransitionRule::process(source, destination, pathfinderConfig, pathfinderHelper);
+		if(source.node->layer == destination.node->layer)
+		{
+			const auto flags = dayFlagsForTurn(nodeStorage->getAINode(source.node), destination.turn);
+			if((destination.node->layer == EPathfindingLayer::AIR && (flags & DayFlags::FLY_CAST))
+				|| (destination.node->layer == EPathfindingLayer::WATER && (flags & DayFlags::WATER_WALK_CAST)))
+				destination.blocked = false;
+			return;
+		}
 
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 2
 		logAi->trace(

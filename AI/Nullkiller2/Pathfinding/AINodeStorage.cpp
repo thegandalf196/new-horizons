@@ -325,6 +325,24 @@ std::vector<CGPathNode *> AINodeStorage::getInitialNodes()
 	return initialNodes;
 }
 
+void AINodeStorage::prepareDestination(CDestinationNodeInfo & destination, const PathNodeInfo & source)
+{
+	auto * node = static_cast<AIPathNode *>(destination.node);
+	const auto flags = dayFlagsForTurn(getAINode(source.node), destination.turn);
+	if(hasNewHorizonsAdventureSpellCastFlag(flags) == hasNewHorizonsAdventureSpellCastFlag(node->dayFlags))
+		return;
+
+	const auto canonicalNode = getOrCreateNode(node->coord, node->layer, node->actor, flags);
+	if(canonicalNode)
+		destination.node = canonicalNode.value();
+	else if(node->action == EPathNodeAction::UNKNOWN && node->turns == 0xFF && !node->locked)
+		// The provisional candidate may occupy the final bucket slot. Only an
+		// unused slot can safely change its daily-state identity in place.
+		node->dayFlags = flags;
+	else
+		destination.blocked = true;
+}
+
 void AINodeStorage::commit(CDestinationNodeInfo & destination, const PathNodeInfo & source)
 {
 	const AIPathNode * srcNode = getAINode(source.node);
@@ -489,6 +507,21 @@ void AINodeStorage::calculateNeighbours(
 		}
 
 		auto nextNode = getOrCreateNode(neighbour, layer, srcNode->actor, dayFlagsForTurn(srcNode, pathfinderHelper->turn));
+		if(!nextNode)
+		{
+			// A full bucket can still contain the variant needed after a day
+			// rollover. Borrow only its geometry here; preparation must resolve
+			// the exact daily state and check locking before any action uses it.
+			for(auto * candidate : nodes.get(neighbour))
+			{
+				if(candidate->coord == neighbour && candidate->layer == layer
+					&& candidate->actor == srcNode->actor && candidate->version == nodes.getGeneration())
+				{
+					nextNode = candidate;
+					break;
+				}
+			}
+		}
 		if(!nextNode)
 		{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 2 // Suuuuper noisy, leave on 2

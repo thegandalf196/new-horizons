@@ -25,6 +25,7 @@ namespace AIPathfinding
 	makeRuleset(CPlayerSpecificInfoCallback * cpsic, Nullkiller * aiNk, std::shared_ptr<AINodeStorage> nodeStorage, bool allowBypassObjects)
 	{
 		std::vector<std::shared_ptr<IPathfindingRule>> rules = {
+			std::make_shared<MovementPreparationRule>(),
 			std::make_shared<AILayerTransitionRule>(aiNk, nodeStorage),
 			std::make_shared<DestinationActionRule>(),
 			std::make_shared<AIMovementToDestinationRule>(nodeStorage, allowBypassObjects, *aiNk->cc),

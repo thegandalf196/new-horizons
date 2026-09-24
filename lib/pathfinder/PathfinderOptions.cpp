@@ -49,6 +49,7 @@ PathfinderConfig::PathfinderConfig(std::shared_ptr<INodeStorage> nodeStorage, co
 std::vector<std::shared_ptr<IPathfindingRule>> SingleHeroPathfinderConfig::buildRuleSet()
 {
 	return std::vector<std::shared_ptr<IPathfindingRule>>{
+		std::make_shared<MovementPreparationRule>(),
 		std::make_shared<LayerTransitionRule>(),
 			std::make_shared<DestinationActionRule>(),
 			std::make_shared<MovementToDestinationRule>(),

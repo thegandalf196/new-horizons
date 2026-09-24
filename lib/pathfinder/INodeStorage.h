@@ -43,5 +43,9 @@ public:
 
 	virtual void commit(CDestinationNodeInfo & destination, const PathNodeInfo & source) = 0;
 
+	// Resolve state-dependent node identity after selecting the movement day,
+	// before checking whether that node has already been settled.
+	virtual void prepareDestination(CDestinationNodeInfo & destination, const PathNodeInfo & source) {}
+
 	virtual void initialize(const PathfinderOptions & options, const IGameInfoCallback & gameInfo) = 0;
 };

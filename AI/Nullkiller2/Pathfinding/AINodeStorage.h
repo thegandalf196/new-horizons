@@ -265,6 +265,7 @@ public:
 		const CPathfinderHelper * pathfinderHelper) override;
 
 	void commit(CDestinationNodeInfo & destination, const PathNodeInfo & source) override;
+	void prepareDestination(CDestinationNodeInfo & destination, const PathNodeInfo & source) override;
 
 	void commit(
 		AIPathNode * destination,

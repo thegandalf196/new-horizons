@@ -14,11 +14,52 @@
 #include "CPathfinder.h"
 #include "INodeStorage.h"
 #include "PathfinderOptions.h"
+#include "TurnInfo.h"
 
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/MiscObjects.h"
 #include "../mapObjects/Quest.h"
 #include "../mapping/TerrainTile.h"
+
+void MovementPreparationRule::process(
+	const PathNodeInfo & source,
+	CDestinationNodeInfo & destination,
+	const PathfinderConfig * pathfinderConfig,
+	CPathfinderHelper * pathfinderHelper) const
+{
+	pathfinderHelper->updateTurnInfo(destination.turn);
+	const int currentLimit = pathfinderHelper->getMaxMovePoints(source.node->layer);
+	if(currentLimit <= 0 || destination.turn > pathfinderConfig->options.turnLimit)
+	{
+		destination.blocked = true;
+		return;
+	}
+
+	const int stepCost = pathfinderHelper->getMovementCost(source, destination, destination.movementLeft);
+	if(destination.movementLeft < stepCost)
+	{
+		if(!pathfinderHelper->passOneTurnLimitCheck(source)
+			|| destination.turn >= pathfinderConfig->options.turnLimit)
+		{
+			destination.blocked = true;
+			return;
+		}
+
+		destination.cost += static_cast<float>(destination.movementLeft) / currentLimit;
+		++destination.turn;
+		pathfinderHelper->updateTurnInfo(destination.turn);
+		destination.movementLeft = pathfinderHelper->getMaxMovePoints(source.node->layer);
+		if(destination.movementLeft <= 0)
+		{
+			destination.blocked = true;
+			return;
+		}
+	}
+
+	pathfinderConfig->nodeStorage->prepareDestination(destination, source);
+	if(destination.node->locked)
+		destination.blocked = true;
+}
 
 void MovementCostRule::process(
 	const PathNodeInfo & source,
@@ -38,18 +79,10 @@ void MovementCostRule::process(
 
 	if(currentMovePointsLeft < moveCostPoints)
 	{
-		// occurs rarely, when hero with low movepoints tries to leave the road
-		// in this case, all remaining movement points from current turn are spent
-		// and actual movement will happen on next turn, spending points from next turn pool
-
-		destinationCost += static_cast<float>(currentMovePointsLeft) / sourceLayerMaxMovePoints;
-		destTurnsUsed += 1;
-		destMovePointsLeft = sourceLayerMaxMovePoints;
-
-		// update move cost - it might have changed since hero now makes next turn and replenished his pool
-		moveCostPoints = pathfinderHelper->getMovementCost(source, destination, destMovePointsLeft);
-
-		pathfinderHelper->updateTurnInfo(destTurnsUsed);
+		// Preparation has already selected the day. Do not silently advance it
+		// after the layer/cast rules have validated a different day's abilities.
+		destination.blocked = true;
+		return;
 	}
 
 	if(destination.action == EPathNodeAction::EMBARK || destination.action == EPathNodeAction::DISEMBARK)
@@ -383,6 +416,13 @@ void LayerTransitionRule::process(
 	const PathfinderConfig * pathfinderConfig,
 	CPathfinderHelper * pathfinderHelper) const
 {
+	if((destination.node->layer == EPathfindingLayer::AIR || destination.node->layer == EPathfindingLayer::WATER)
+		&& !pathfinderHelper->getTurnInfo()->isLayerAvailable(destination.node->layer))
+	{
+		destination.blocked = true;
+		return;
+	}
+
 	if(source.node->layer == destination.node->layer)
 		return;
 

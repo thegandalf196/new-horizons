@@ -143,11 +143,11 @@ void CPathfinder::calculatePaths()
 		hlp->updateTurnInfo(turn);
 		if(movement == 0)
 		{
+			if(turn >= hlp->options.turnLimit)
+				continue;
 			hlp->updateTurnInfo(++turn);
 			movement = hlp->getMaxMovePoints(source.node->layer);
 			if(!hlp->passOneTurnLimitCheck(source))
-				continue;
-			if(turn > hlp->options.turnLimit)
 				continue;
 		}
 
@@ -157,6 +157,7 @@ void CPathfinder::calculatePaths()
 		//add accessible neighbouring nodes to the queue
 		for(EPathfindingLayer layer = EPathfindingLayer::LAND; layer < EPathfindingLayer::NUM_LAYERS; layer.advance(1))
 		{
+			hlp->updateTurnInfo(turn);
 			if(!hlp->isLayerAvailable(layer))
 				continue;
 
@@ -164,11 +165,9 @@ void CPathfinder::calculatePaths()
 
 			for(CGPathNode * neighbour : neighbourNodes)
 			{
-				if(neighbour->locked)
-					continue;
-
 				destination.setNode(gameInfo, neighbour);
 				hlp = config->getOrCreatePathfinderHelper(destination, gameInfo);
+				hlp->updateTurnInfo(turn);
 
 				if(!hlp->isPatrolMovementAllowed(neighbour->coord))
 					continue;
@@ -199,6 +198,7 @@ void CPathfinder::calculatePaths()
 
 		//just add all passable teleport exits
 		hlp = config->getOrCreatePathfinderHelper(source, gameInfo);
+		hlp->updateTurnInfo(turn);
 
 		/// For now we disable teleports usage for patrol movement
 		/// VCAI not aware about patrol and may stuck while attempt to use teleport
@@ -578,7 +578,7 @@ bool CPathfinderHelper::isLayerAvailable(const EPathfindingLayer & layer) const
 		if(!options.useFlying)
 			return false;
 
-		if(canCastFly && options.canUseCast && (turn > 0 || !hero->hasNewHorizonsAdventureSpellCastToday()))
+		if(canCastFly && options.canUseCast)
 			return true;
 
 		break;
@@ -587,7 +587,7 @@ bool CPathfinderHelper::isLayerAvailable(const EPathfindingLayer & layer) const
 		if(!options.useWaterWalking)
 			return false;
 
-		if(canCastWaterWalk && options.canUseCast && (turn > 0 || !hero->hasNewHorizonsAdventureSpellCastToday()))
+		if(canCastWaterWalk && options.canUseCast)
 			return true;
 
 		break;
