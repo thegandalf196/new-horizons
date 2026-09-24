@@ -37,7 +37,7 @@ Implementation is Final only when the intended UI behavior and its presentation 
 | Planned perk definitions (250) | Not done | Not done | All planned entries are inventoried individually. They are not active features and have no role-specific runtime binding; neutral fallback is not artwork. Reassess as each effect moves to active. |
 | Eight Order icons and action controls | Provisional | Provisional | Eight action-window descriptors and order icons are present and referenced by BattleHeroActionWindow.cpp. No user-final art approval or recorded in-game review is present. |
 | Hero attributes, capabilities, growth/mastery and category icons | Provisional | Provisional | NH images are present and bound from hero/growth/town UI source. Their actual rendered layouts have not been accepted in a GUI pass. Leadership, Siege and Movement are called out in the CSV. |
-| Blue-buffer spell-points UI | Provisional | Not done | [SpellPointPresentation.h](../client/windows/SpellPointPresentation.h) supplies total/maximum, blue Buffer annotation and explanatory tooltips. Hero, kingdom, exchange, spellbook and battle surfaces have compiled bindings; narrow battle and compact hero tooltips use a separate blue Buffer line. Integrated in promoted source checkpoint `cf815453b`, with focused native tests and headless new-game initialization passing. Rendered checks, including long-value clipping, remain pending; hidden maximum Mana is not queried. The requested sparkle artwork is not bound; a preview mockup is not a runtime asset. |
+| Buffer spell-points UI | Provisional | Not done | [SpellPointPresentation.h](../client/windows/SpellPointPresentation.h) supplies total/maximum, Buffer annotation and explanatory tooltips. The user reported literal colour markup in the compact hero readout and approved yellow text. The shared formatter now uses ordinary yellow emphasis; this follow-up has compiled, passed its native presentation tests, and been promoted. Rendered confirmation remains pending. Separate narrow-panel Buffer labels retain their blue colour. Long-value clipping remains unverified; hidden maximum Mana is not queried. The requested sparkle artwork is not bound; a preview mockup is not a runtime asset. |
 | Fortress/Conflux ranked recruitment presentation | Provisional | Provisional | [CCastleInterface.cpp](../client/windows/CCastleInterface.cpp) contains ranked recruitment cards and a contained-portrait path for compact Conflux cards. That is source evidence only; no GUI acceptance is recorded. The 14-row Conflux category mapping remains a proposal and Firebird's Champion category is explicitly provisional in [NH_CONTENT_ACCEPTANCE.md](NH_CONTENT_ACCEPTANCE.md). The town-card composition and roster/category presentation still need review. |
 | Extra Mage Guild levels for Castle, Stronghold and Fortress | Provisional | Provisional | Current mod.json describes reuse of the existing final town-screen guild structure as a presentation placeholder for newly added levels. Confirm the actual faction screens and labels during UI acceptance; do not treat the placeholder as final presentation. |
 | Quick-save/load controls and creature-status icons | Provisional | Provisional | The mod contains button states and ten new status icons under Mods/new-horizons/Images. These are user-authorized UI additions but no final-art or graphical acceptance evidence is recorded here. See [NH_USER_FEEDBACK.md](NH_USER_FEEDBACK.md) and the source files linked by the CSV. |
@@ -49,6 +49,26 @@ The companion CSV has grouped rows for the main New Horizons surfaces requested 
 Legacy mastery/artillery UI references are not counted as live New Horizons 1.0 surfaces: [NH_VERSION_1_0_SCOPE.md](NH_VERSION_1_0_SCOPE.md) supersedes the earlier post-Expert mastery organization and scopes Siege as a rating, not a spendable Artillery resource. Existing historical code or files are not evidence of a requested live feature.
 
 ## Verified spellbook bindings
+
+### Pending replacement-art integration
+
+The following local HoMM3-skill drafts are **not installed**. Existing live
+Provisional icons in the inventory must not be mistaken for these replacements.
+The `output/homm3/` paths are local working outputs, not shipped assets.
+
+| Requested replacement | Implementation | Art | Local evidence and remaining work |
+| --- | --- | --- | --- |
+| Metamagic Basic/Advanced/Expert | Not done | Provisional | `output/homm3/metamagic-v1/` contains separate rank masters and 32/44px exports. Resolve the reported Expert-background concern, prepare every runtime size, and replace the existing `NH_metamagic_*` bindings only after checking exports. |
+| Hero Movement | Not done | Provisional | `output/homm3/hero-movement-v1/` contains master and 20/32/44px exports. The hero window still uses `NH_hero_movement_32`. |
+| Hero Leadership | Not done | Provisional | `output/homm3/hero-leadership-v1/` contains master and 20/32/44px exports. The hero window still uses the older `NH_capability_leadership` family. |
+| Creature Leadership crown | Not done | Provisional | `output/homm3/creature-leadership-v1/` contains exports. Bind the requested simple monochrome yellow crown to the creature Leadership row; current source still references `NH_capability_leadership_32`. |
+| Creature rank staircase and stat row | Not done | Provisional | `output/homm3/creature-rank-v2/` is the stair-step revision, superseding the rung-ladder v1. The creature window still constructs a separate `CategorySection`; implement the requested horizontal stat row and bind the yellow stair-step glyph. |
+
+Installation requires recorded provenance, retained source art, correctly sized
+runtime exports, binding checks, and rendered review. Draft generation alone
+does not complete any of these replacement requests.
+
+## Spellbook binding details
 
 The current mod.json binds, for each of Light, Nature, Sorcery, Havoc, Shadow, and Chaos:
 

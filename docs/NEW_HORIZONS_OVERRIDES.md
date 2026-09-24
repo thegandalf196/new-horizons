@@ -547,3 +547,49 @@ each original message. They are design requirements, not implementation claims.
   Final; Metamagic's prior art is Provisional. All new art, even provisional art,
   uses the HoMM3 Art skill. Preserve reference and approval evidence separately
   from runtime installation and functionality checks.
+
+## Approved replacement primary-attribute table — 2026-09-23
+
+- **Status:** Accepted; implementation deferred until the severe gameplay-lag regression is fixed.
+- **Rule:** Store the class profiles in editable JSON. Attributes are deterministic:
+  `Attribute(L) = starting + (L - 1) * growth`, before other bonuses.
+  This supersedes the earlier `growth * (L + 4)` rule and ten-point growth total.
+  Every class starts with 100 total points and gains 18 each level. No level-10
+  transition or probability roll. Solmyr remains a Wizard.
+- **Order:** Attack / Defense / Spell Power / Knowledge.
+
+| Faction | Class | Type | Starting | Growth |
+| --- | --- | --- | --- | --- |
+| Castle | Knight | Might | 30 / 45 / 10 / 15 | 6 / 7 / 2 / 3 |
+| Castle | Cleric | Magic | 10 / 15 / 30 / 45 | 2 / 3 / 6 / 7 |
+| Rampart | Ranger | Might | 35 / 35 / 15 / 15 | 6 / 6 / 3 / 3 |
+| Rampart | Druid | Magic | 5 / 10 / 30 / 55 | 1 / 2 / 6 / 9 |
+| Tower | Battle Mage | Might | 30 / 20 / 20 / 30 | 5 / 4 / 4 / 5 |
+| Tower | Wizard | Magic | 5 / 5 / 45 / 45 | 1 / 1 / 8 / 8 |
+| Inferno | Tyrant | Might | 55 / 20 / 20 / 5 | 9 / 4 / 4 / 1 |
+| Inferno | Cultist | Magic | 20 / 5 / 50 / 25 | 4 / 1 / 8 / 5 |
+| Necropolis | Death Knight | Might | 45 / 20 / 30 / 5 | 7 / 4 / 6 / 1 |
+| Necropolis | Necromancer | Magic | 5 / 20 / 50 / 25 | 1 / 4 / 8 / 5 |
+| Dungeon | Overlord | Might | 50 / 25 / 20 / 5 | 8 / 5 / 4 / 1 |
+| Dungeon | Warlock | Magic | 15 / 5 / 60 / 20 | 3 / 1 / 10 / 4 |
+| Stronghold | Barbarian | Might | 55 / 35 / 5 / 5 | 9 / 7 / 1 / 1 |
+| Stronghold | Shaman | Magic | 45 / 5 / 30 / 20 | 7 / 1 / 6 / 4 |
+| Fortress | Beastmaster | Might | 35 / 55 / 5 / 5 | 7 / 9 / 1 / 1 |
+| Fortress | Witch | Magic | 5 / 15 / 20 / 60 | 1 / 3 / 4 / 10 |
+| Conflux | Planeswalker | Might | 35 / 20 / 30 / 15 | 6 / 4 / 5 / 3 |
+| Conflux | Elementalist | Magic | 5 / 5 / 60 / 30 | 1 / 1 / 10 / 6 |
+
+Keep existing saved profiles explicit; changing JSON must not silently rewrite
+an ongoing game's captured class rules. Update validation, UI and new-game
+generation together when installing this table.
+
+## Skill perk browser — 2026-09-23
+
+- **Status:** Accepted; not implemented yet.
+- **Rule:** Left-clicking a skill in the hero screen opens a read-only browser
+  of all its perks, showing names and icons. Right-clicking any listed perk
+  shows the same explanation used by that perk in the existing hero UI,
+  including perks the hero has not learned. Browsing never acquires a perk.
+- **Presentation:** Group by Basic, Advanced and Expert and distinguish learned
+  perks from unlearned ones. Use the game's existing leather, borders and text
+  conventions, with no new unrelated placeholder artwork.
