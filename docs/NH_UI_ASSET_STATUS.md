@@ -1,6 +1,6 @@
 # New Horizons UI and asset status register
 
-Last audited: 2026-09-23
+Last audited: 2026-09-24
 
 This is the maintained UI/art status index for the current New Horizons working tree. It records live bindings and remaining visual/UI work. It does not replace gameplay specs, source configs, runtime manifests, or acceptance records. The row-level index is [NH_UI_ASSET_INVENTORY.csv](NH_UI_ASSET_INVENTORY.csv).
 
@@ -22,6 +22,7 @@ Implementation is Final only when the intended UI behavior and its presentation 
 
 | Component | Implementation | Art | Evidence and remaining work |
 | --- | --- | --- | --- |
+| Learned-skill perk browser | Provisional | Provisional | Left-click opens saved-registry perks grouped by Basic, Advanced and Expert, with names, existing icons, learned state and implementation status. Right-click uses shared perk help and the parent-skill component. Native client build and focused source guard pass; rendered layout, long names and pointer interaction remain unverified. Reuses the existing leather dialog and perk art; fallback icons remain Not done in their individual inventory entries. |
 | Six custom-school bookmark pairs | Provisional | Final | The user has explicitly classified the six schools' selected/unselected bookmark art as Final. All six descriptor bindings exist in [mod.json](../Mods/new-horizons/mod.json). [CSpellWindow.cpp](../client/windows/CSpellWindow.cpp) uses frames 0/1 and aspect-preserving 68×51 compact rendering for six schools in the small book. Runtime layout and state behavior still lack a recorded GUI acceptance pass. |
 | Six school headers and spell-mastery borders | Provisional | Provisional | All six headers and four-frame border descriptors are bound in mod.json. The header is page-one-only and borders follow school proficiency 0–3. User approval of these assets is not recorded. Review header transparency, all four corners/levels, spell overlap, and book layouts. |
 | School emblems and school button states | Not done | Provisional | Image files/descriptors exist under Mods/new-horizons/Images, but SpellSchoolHandler currently reads only schoolBorders, schoolBookmark, and schoolHeader. No live consumer for the additional emblem/button family was found in the current school config/code. Keep these outputs provisional and do not count them as integrated school UI. |

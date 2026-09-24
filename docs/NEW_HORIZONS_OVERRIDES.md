@@ -585,7 +585,8 @@ generation together when installing this table.
 
 ## Skill perk browser — 2026-09-23
 
-- **Status:** Accepted; not implemented yet.
+- **Status:** Accepted; source implementation and native client build verified
+  on 2026-09-24. Rendered layout and interaction acceptance remain pending.
 - **Rule:** Left-clicking a skill in the hero screen opens a read-only browser
   of all its perks, showing names and icons. Right-clicking any listed perk
   shows the same explanation used by that perk in the existing hero UI,

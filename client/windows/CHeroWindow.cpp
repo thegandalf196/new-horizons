@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "SpellPointPresentation.h"
 #include "CHeroWindow.h"
+#include "NewHorizonsPerkBrowser.h"
 #include "NewHorizonsPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
 #include "HeroSkillOddsWindow.h"
@@ -266,6 +267,29 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 
 		secSkillValues.push_back(std::make_shared<CLabel>(x, y, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", width));
 		secSkillNames.push_back(std::make_shared<CLabel>(x, y+20, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", width));
+		secSkills.back()->setClickPressedCallback([this, i](CComponentHolder & skillArea, const Point & cursorPosition)
+		{
+			if(!curHero)
+				return;
+
+			const size_t offset = secSkillSlider ? static_cast<size_t>(secSkillSlider->getValue()) * 2 : 0;
+			const size_t skillIndex = i + offset;
+			if(skillIndex < curHero->secSkills.size())
+			{
+				const auto & skill = curHero->secSkills[skillIndex].first;
+				const std::string skillId = skill.toSkill()->getJsonKey();
+				if(newHorizonsPerkHelp::skillDefinition(curHero, skillId))
+				{
+					ENGINE->windows().createAndPushWindow<NewHorizonsPerkBrowser>(*curHero, skillId);
+					return;
+				}
+			}
+
+			// Preserve the standard learned-skill info dialog for legacy Skills
+			// and for heroes without a saved New Horizons perk catalogue.
+			if(!skillArea.text.empty())
+				static_cast<LRClickableAreaWTextComp &>(skillArea).LRClickableAreaWTextComp::clickPressed(cursorPosition);
+		});
 	}
 
 	// various texts
