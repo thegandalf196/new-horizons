@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "NewHorizonsMagic.h"
 
+#include "../ResourceSet.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "CSpell.h"
@@ -138,6 +139,15 @@ constexpr std::array ADVENTURE_SPELLS = {
 	AdventureSpellDefinition{"core:fly", 4, 60},
 	AdventureSpellDefinition{"core:dimensionDoor", 5, 80},
 };
+
+const AdventureSpellDefinition * adventureSpellDefinition(std::string_view identity)
+{
+	const auto found = std::find_if(ADVENTURE_SPELLS.begin(), ADVENTURE_SPELLS.end(), [identity](const auto & expected)
+	{
+		return expected.identity == identity;
+	});
+	return found == ADVENTURE_SPELLS.end() ? nullptr : &*found;
+}
 
 bool sorceryMember(const SpellSchool school)
 {
@@ -713,6 +723,73 @@ int adventureSpellCost(const JsonNode & rules, SpellID spell)
 bool adventureSpellRulesActive(const JsonNode & rules)
 {
 	return rulesActive(rules) && rules["adventureSpells"].isStruct();
+}
+
+SpellID adventureSpellForGuildLevel(const JsonNode & rules, int guildLevel)
+{
+	if(!adventureSpellRulesActive(rules) || guildLevel < 1 || guildLevel > static_cast<int>(ADVENTURE_SPELLS.size())
+		|| !LIBRARY || !LIBRARY->identifiers())
+		return SpellID::NONE;
+
+	const auto expected = std::find_if(ADVENTURE_SPELLS.begin(), ADVENTURE_SPELLS.end(), [guildLevel](const auto & definition)
+	{
+		return definition.guildLevel == guildLevel;
+	});
+	if(expected == ADVENTURE_SPELLS.end())
+		return SpellID::NONE;
+
+	const auto & savedEntry = rules["adventureSpells"][std::string(expected->identity)];
+	if(!savedEntry.isStruct() || savedEntry["guildLevel"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| !integer(savedEntry["guildLevel"], expected->guildLevel, expected->guildLevel))
+		return SpellID::NONE;
+
+	const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell", std::string(expected->identity), true);
+	if(!id || *id < 0)
+		return SpellID::NONE;
+	const SpellID spell(*id);
+	const auto tier = adventureSpellGuildLevel(rules, spell);
+	if(!tier || *tier != guildLevel)
+		return SpellID::NONE;
+	return spell;
+}
+
+std::optional<int> adventureSpellGuildLevel(const JsonNode & rules, SpellID spell)
+{
+	const auto id = spell.getNum();
+	if(!adventureSpellRulesActive(rules) || id < 0 || !LIBRARY || !LIBRARY->spellh
+		|| static_cast<size_t>(id) >= LIBRARY->spellh->objects.size() || !LIBRARY->spellh->objects.at(id))
+		return std::nullopt;
+	const auto * spellDefinition = spell.toSpell();
+	if(!spellDefinition || !spellDefinition->isCommonHeroSpell() || !spellDefinition->isAdventure())
+		return std::nullopt;
+
+	const auto * expected = adventureSpellDefinition(spellDefinition->getJsonKey());
+	if(!expected)
+		return std::nullopt;
+	const auto & savedEntry = rules["adventureSpells"][std::string(expected->identity)];
+	if(!savedEntry.isStruct() || savedEntry["guildLevel"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| !integer(savedEntry["guildLevel"], expected->guildLevel, expected->guildLevel))
+		return std::nullopt;
+	return expected->guildLevel;
+}
+
+ResourceSet adventureSpellUnlockCost(const JsonNode & rules, SpellID spell)
+{
+	require(adventureSpellGuildLevel(rules, spell).has_value(), "unlock cost requested for unavailable adventure spell");
+	const auto & unlockCost = rules["adventureSpells"][spell.toSpell()->getJsonKey()]["unlockCost"];
+	require(unlockCost.isStruct(), "adventure spell unlock cost is missing or not an object");
+	fields(unlockCost, {"gold", "mercury", "sulfur", "crystal", "gems"});
+	for(const auto * resource : {"gold", "mercury", "sulfur", "crystal", "gems"})
+		require(unlockCost[resource].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& integer(unlockCost[resource], 0, 1000000), "adventure spell unlock cost");
+
+	ResourceSet result;
+	result[EGameResID::GOLD] = unlockCost["gold"].Integer();
+	result[EGameResID::MERCURY] = unlockCost["mercury"].Integer();
+	result[EGameResID::SULFUR] = unlockCost["sulfur"].Integer();
+	result[EGameResID::CRYSTAL] = unlockCost["crystal"].Integer();
+	result[EGameResID::GEMS] = unlockCost["gems"].Integer();
+	return result;
 }
 
 bool isLandMine(SpellID spell)

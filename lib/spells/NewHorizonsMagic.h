@@ -10,6 +10,7 @@
 #pragma once
 
 #include <limits>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -18,6 +19,7 @@
 #include "NewHorizonsDirectDamage.h"
 
 class CGHeroInstance;
+class ResourceSet;
 
 namespace battle
 {
@@ -162,6 +164,16 @@ DLL_LINKAGE int adventureSpellCost(const JsonNode & rules, SpellID spell);
 /// True when the saved snapshot contains the New Horizons Adventure Magic
 /// roster. Empty/legacy snapshots retain the original adventure-spell rules.
 DLL_LINKAGE bool adventureSpellRulesActive(const JsonNode & rules);
+/// Resolve the single canonical Adventure Spell assigned to this Guild tier
+/// in the saved roster. Legacy snapshots and invalid/unavailable tiers return
+/// SpellID::NONE; this never falls back to installed configuration.
+DLL_LINKAGE SpellID adventureSpellForGuildLevel(const JsonNode & rules, int guildLevel);
+/// Return the validated canonical Guild tier for a saved Adventure Spell.
+/// Legacy, unavailable, or malformed entries have no tier.
+DLL_LINKAGE std::optional<int> adventureSpellGuildLevel(const JsonNode & rules, SpellID spell);
+/// Return the town unlock price captured in the saved rules. Missing or
+/// malformed unlockCost data is rejected; it is never interpreted as free.
+DLL_LINKAGE ResourceSet adventureSpellUnlockCost(const JsonNode & rules, SpellID spell);
 /// True only for the canonical core Land Mine identity.  Spell indices remain
 /// stable in the saved protocol, but the identity check keeps this helper
 /// independent of installed mod ordering.
