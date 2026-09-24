@@ -16,6 +16,9 @@
 inline JsonNode testHeroRules()
 {
 	JsonNode rules;
+	// This is a complete legacy rules context, not a patch over installed
+	// profiles. In particular, do not inherit their progressionVersion field.
+	rules.setOverrideFlag(true);
 	rules["schemaVersion"].Integer() = 1;
 	rules["rulesetVersion"].Integer() = 1;
 	rules["powerDivisor"].Integer() = 10;

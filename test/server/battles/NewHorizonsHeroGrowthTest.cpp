@@ -134,6 +134,123 @@ protected:
 	}
 };
 
+class NewHorizonsCanonicalClassGrowthTest : public HeroCommandFixture, public ::testing::WithParamInterface<int>
+{
+};
+
+TEST_P(NewHorizonsCanonicalClassGrowthTest, InstalledProfilesInitializeAllClassesAndSurviveReload)
+{
+	if(!newHorizonsHeroes::usesRules(LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS)))
+		GTEST_SKIP() << "Requires the activated New Horizons preset";
+	const JsonNode canonical(JsonPath::builtin("config/newHorizonsHeroes"));
+	const auto expectedManaLimit = [](const CGHeroInstance * hero)
+	{
+		const auto knowledge = hero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
+		const int percent = hero->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.intelligence") ? 130 : 100;
+		return knowledge * percent / 100;
+	};
+	ASSERT_EQ(canonical["classProfiles"].Struct().size(), 18u);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0));
+	size_t index = 0;
+	for(const auto & [classKey, profile] : canonical["classProfiles"].Struct())
+	{
+		SCOPED_TRACE(classKey);
+		const auto found = std::find_if(LIBRARY->heroh->objects.begin(), LIBRARY->heroh->objects.end(),
+			[&](const auto & hero)
+			{
+				return hero && hero->heroClass->getJsonKey() == classKey
+					&& (classKey != "core:wizard" || hero->getJsonKey() == "core:solmyr");
+			});
+		ASSERT_NE(found, LIBRARY->heroh->objects.end());
+		builder.hero({5 + static_cast<int>(index % 6) * 4, 5 + static_cast<int>(index / 6) * 5, 0},
+			HeroTypeID((*found)->getIndex()), PlayerColor(0))
+			.heroExperience(LIBRARY->heroh->reqExp(GetParam()))
+			.heroGarrison({{CreatureID(0), 1}});
+		++index;
+	}
+	// No hero-rule override or authored primary ratings: exercise installed data.
+	startWithMap(std::move(builder));
+	ASSERT_EQ(gameState()->getHeroDevelopmentRules(), canonical);
+	ASSERT_EQ(map()->getHeroesOnMap().size(), 18u);
+	std::set<std::string> seen;
+	for(const auto heroId : map()->getHeroesOnMap())
+	{
+		const auto * hero = gameState()->getHero(heroId);
+		ASSERT_NE(hero, nullptr);
+		const auto classKey = hero->getHeroClass()->getJsonKey();
+		SCOPED_TRACE(classKey);
+		ASSERT_TRUE(seen.insert(classKey).second);
+		const auto expected = newHorizonsHeroes::parsePrimaryProfile(canonical["classProfiles"][classKey]);
+		const auto view = hero->getPrimaryGrowthView();
+		ASSERT_TRUE(view);
+		EXPECT_EQ(hero->level, GetParam());
+		EXPECT_EQ(view->profile.progressionVersion, newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
+		EXPECT_EQ(view->profile.starting, expected.starting);
+		EXPECT_EQ(view->profile.growth, expected.growth);
+		const auto expectedBase = expected.baseAtLevel(GetParam());
+		for(int attribute = 0; attribute < GameConstants::PRIMARY_SKILLS; ++attribute)
+			EXPECT_EQ(view->base[attribute], expectedBase[attribute]);
+		EXPECT_EQ(hero->manaLimit(), expectedManaLimit(hero));
+		if(classKey == "core:wizard")
+		{
+			EXPECT_EQ(hero->getHeroType()->getJsonKey(), "core:solmyr");
+		}
+	}
+
+	if(GetParam() == 1)
+	{
+		server.gameState = gameState();
+		gameHandler = std::make_shared<CGameHandler>(server, gameState());
+		gameHandler->randomizer->setSeed(seed);
+		gameHandler->onAdvInterfaceReady(PlayerColor(0));
+		for(const auto heroId : map()->getHeroesOnMap())
+		{
+			auto * hero = gameState()->getHero(heroId);
+			SCOPED_TRACE(hero->getHeroClass()->getJsonKey());
+			const auto before = *hero->getPrimaryGrowthView();
+			const auto manaBefore = hero->getManaAvailable();
+			hero->setExperience(LIBRARY->heroh->reqExp(2), ChangeValueMode::ABSOLUTE);
+			gameHandler->levelUpHero(hero);
+			ASSERT_EQ(hero->level, 2);
+			ASSERT_TRUE(hero->getPrimaryGrowthView());
+			const auto after = *hero->getPrimaryGrowthView();
+			EXPECT_EQ(after.lastGains, before.profile.growth);
+			for(int attribute = 0; attribute < GameConstants::PRIMARY_SKILLS; ++attribute)
+				EXPECT_EQ(after.base[attribute] - before.base[attribute], before.profile.growth[attribute]);
+			EXPECT_EQ(hero->getManaAvailable(), manaBefore);
+			EXPECT_EQ(hero->manaLimit(), expectedManaLimit(hero));
+			int answered = 0;
+			while(const auto query = gameHandler->queries->topQuery(PlayerColor(0)))
+			{
+				ASSERT_LT(answered++, 10);
+				ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, PlayerColor(0)));
+			}
+		}
+	}
+
+	CMemorySerializer memory;
+	memory.oser & *gameState();
+	CGameState restored;
+	memory.iser.cb = &restored;
+	memory.iser.loadingGamestate = true;
+	memory.iser & restored;
+	EXPECT_EQ(restored.getHeroDevelopmentRules(), canonical);
+	for(const auto heroId : map()->getHeroesOnMap())
+	{
+		const auto * hero = gameState()->getHero(heroId);
+		ASSERT_NE(hero, nullptr);
+		const auto * loaded = restored.getHero(hero->id);
+		ASSERT_NE(loaded, nullptr);
+		ASSERT_TRUE(loaded->getPrimaryGrowthView());
+		EXPECT_EQ(loaded->getPrimaryGrowthRules(), hero->getPrimaryGrowthRules());
+		EXPECT_EQ(loaded->getPrimaryGrowthView()->base, hero->getPrimaryGrowthView()->base);
+		EXPECT_EQ(loaded->manaLimit(), hero->manaLimit());
+	}
+}
+
+INSTANTIATE_TEST_SUITE_P(AuthoredLevels, NewHorizonsCanonicalClassGrowthTest, ::testing::Values(1, 2, 20));
+
 class LegacySpellCostTest : public HeroCommandFixture
 {
 protected:

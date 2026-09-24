@@ -72,7 +72,7 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryOvercapacityArmyAndTraine
 	const auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
 	ASSERT_TRUE(hero->getPrimaryGrowthView());
-	EXPECT_EQ(hero->getPrimaryGrowthView()->base, (std::array<int, 4>{15, 20, 5, 10}));
+	EXPECT_EQ(hero->getPrimaryGrowthView()->base, (std::array<int, 4>{30, 45, 10, 15}));
 	ASSERT_TRUE(hero->getLeadershipCapacity());
 	EXPECT_EQ(hero->getLeadershipCapacity()->capacity, 750);
 	EXPECT_EQ(hero->getLeadershipCapacity()->used, 1000);
@@ -185,7 +185,7 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryKnightWithNearbyExperienc
 	if(!enabled || std::string(enabled) != "1")
 		GTEST_SKIP() << "Build-owned opt-in export requires NH_EXPORT_HERO_FIXTURES=1";
 	if(!newHorizonsHeroes::usesRules(LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS)))
-		GTEST_SKIP() << "Requires a separate actually activated future preset; no fixture rule overrides";
+		GTEST_SKIP() << "Requires the activated New Horizons preset; no fixture rule overrides";
 	const JsonNode canonical(JsonPath::builtin("config/newHorizonsHeroes"));
 	const std::string name = "NHHeroGrowthXP";
 	const ArtifactID axe(ArtifactID::decode("core:centaurAxe"));
@@ -193,13 +193,14 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryKnightWithNearbyExperienc
 	Builder builder(EMapFormat::SOD);
 	builder.size(36, false).name(name)
 		.description("Hero growth diagnostic, not a balanced scenario. Red human, Blue computer, Gold bonuses. "
-			"Orrin starts at level1 with Pathfinding only, no authored primary overrides. "
+			"Orrin starts at level1 with the New Horizons Knight profile (30/45/10/15) and Pathfinding only; "
+			"no authored primary overrides. "
 			"Open hero development and save. Pick up the Centaur's Axe at18,12 (+2 Attack): inspect auto-equip, "
 			"move it to backpack and re-equip; Base must not change. Visit the nearby Seer Hut east at21,10: its Orrin-only quest "
 			"awards1000XP through normal dialogue, without taking troops. Complete the level-up choice, "
-			"inspect actual gains and mana limit, save/reload. First growth should be3/4/1/2: "
+			"inspect actual gains and mana limit, save/reload. First growth should be6/7/2/3: "
 			"no starting skill grants extra primary rolls. Do not compare class starts to old-save stats; "
-			"old034 saves must remain legacy in the future client.")
+			"old saves retain their captured legacy rules.")
 		.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
 		.town({8, 10, 0}, FactionID::CASTLE, PlayerColor(0)).townGarrison({})
 		.town({30, 30, 0}, FactionID::CASTLE, PlayerColor(1)).townGarrison({})
@@ -223,12 +224,13 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryKnightWithNearbyExperienc
 	const auto view = hero->getPrimaryGrowthView();
 	ASSERT_TRUE(view);
 	EXPECT_EQ(hero->level, 1);
-	EXPECT_EQ(view->base, (std::array<int, 4>{15, 20, 5, 10}));
+	EXPECT_EQ(view->base, (std::array<int, 4>{30, 45, 10, 15}));
 	EXPECT_EQ(view->modified, view->base);
-	EXPECT_EQ(view->profile.growth, (std::array<int, 4>{3, 4, 1, 2}));
+	EXPECT_EQ(view->profile.progressionVersion, newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
+	EXPECT_EQ(view->profile.growth, (std::array<int, 4>{6, 7, 2, 3}));
 	EXPECT_TRUE(view->extraGrowth.empty());
-	EXPECT_EQ(hero->getManaAvailable(), 10);
-	EXPECT_EQ(hero->manaLimit(), 10);
+	EXPECT_EQ(hero->getManaAvailable(), 15);
+	EXPECT_EQ(hero->manaLimit(), 15);
 	ASSERT_TRUE(gameState()->getPlayerState(PlayerColor(0))->isHuman());
 	ASSERT_FALSE(gameState()->getPlayerState(PlayerColor(1))->isHuman());
 	ASSERT_NE(findObjectAt({21, 10, 0}), nullptr);

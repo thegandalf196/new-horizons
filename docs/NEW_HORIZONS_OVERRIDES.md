@@ -550,7 +550,7 @@ each original message. They are design requirements, not implementation claims.
 
 ## Approved replacement primary-attribute table — 2026-09-23
 
-- **Status:** Accepted; implementation deferred until the severe gameplay-lag regression is fixed.
+- **Status:** Accepted; canonical JSON activation and native regression checks implemented. Playable promotion is tracked separately in `NH_PRIMARY_PROGRESSION.md`.
 - **Rule:** Store the class profiles in editable JSON. Attributes are deterministic:
   `Attribute(L) = starting + (L - 1) * growth`, before other bonuses.
   This supersedes the earlier `growth * (L + 4)` rule and ten-point growth total.

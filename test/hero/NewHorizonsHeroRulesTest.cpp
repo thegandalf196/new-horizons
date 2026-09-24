@@ -129,24 +129,24 @@ TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasExactClassProfilesAndSkillO
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "actual unactivated canonical hero data"));
 	ASSERT_NO_THROW(validateHeroRules(rules, true));
 	const std::map<std::string, std::pair<std::array<int, 4>, std::array<int, 4>>> expectedProfiles = {
-		{"core:knight", {{15, 20, 5, 10}, {3, 4, 1, 2}}},
-		{"core:cleric", {{5, 10, 15, 20}, {1, 2, 3, 4}}},
-		{"core:ranger", {{15, 15, 10, 10}, {3, 3, 2, 2}}},
-		{"core:druid", {{5, 5, 15, 25}, {1, 1, 3, 5}}},
-		{"core:alchemist", {{15, 10, 10, 15}, {3, 2, 2, 3}}},
-		{"core:wizard", {{5, 5, 20, 20}, {1, 1, 4, 4}}},
-		{"core:demoniac", {{25, 10, 10, 5}, {5, 2, 2, 1}}},
-		{"core:heretic", {{10, 5, 20, 15}, {2, 1, 4, 3}}},
-		{"core:deathknight", {{20, 10, 15, 5}, {4, 2, 3, 1}}},
-		{"core:necromancer", {{5, 10, 20, 15}, {1, 2, 4, 3}}},
-		{"core:overlord", {{20, 15, 10, 5}, {4, 3, 2, 1}}},
-		{"core:warlock", {{10, 5, 25, 10}, {2, 1, 5, 2}}},
-		{"core:barbarian", {{25, 15, 5, 5}, {5, 3, 1, 1}}},
-		{"core:battlemage", {{20, 5, 15, 10}, {4, 1, 3, 2}}},
-		{"core:beastmaster", {{15, 25, 5, 5}, {3, 5, 1, 1}}},
-		{"core:witch", {{5, 10, 10, 25}, {1, 2, 2, 5}}},
-		{"core:planeswalker", {{15, 10, 15, 10}, {3, 2, 3, 2}}},
-		{"core:elementalist", {{5, 5, 25, 15}, {1, 1, 5, 3}}}
+		{"core:knight", {{30, 45, 10, 15}, {6, 7, 2, 3}}},
+		{"core:cleric", {{10, 15, 30, 45}, {2, 3, 6, 7}}},
+		{"core:ranger", {{35, 35, 15, 15}, {6, 6, 3, 3}}},
+		{"core:druid", {{5, 10, 30, 55}, {1, 2, 6, 9}}},
+		{"core:alchemist", {{30, 20, 20, 30}, {5, 4, 4, 5}}},
+		{"core:wizard", {{5, 5, 45, 45}, {1, 1, 8, 8}}},
+		{"core:demoniac", {{55, 20, 20, 5}, {9, 4, 4, 1}}},
+		{"core:heretic", {{20, 5, 50, 25}, {4, 1, 8, 5}}},
+		{"core:deathknight", {{45, 20, 30, 5}, {7, 4, 6, 1}}},
+		{"core:necromancer", {{5, 20, 50, 25}, {1, 4, 8, 5}}},
+		{"core:overlord", {{50, 25, 20, 5}, {8, 5, 4, 1}}},
+		{"core:warlock", {{15, 5, 60, 20}, {3, 1, 10, 4}}},
+		{"core:barbarian", {{55, 35, 5, 5}, {9, 7, 1, 1}}},
+		{"core:battlemage", {{45, 5, 30, 20}, {7, 1, 6, 4}}},
+		{"core:beastmaster", {{35, 55, 5, 5}, {7, 9, 1, 1}}},
+		{"core:witch", {{5, 15, 20, 60}, {1, 3, 4, 10}}},
+		{"core:planeswalker", {{35, 20, 30, 15}, {6, 4, 5, 3}}},
+		{"core:elementalist", {{5, 5, 60, 30}, {1, 1, 10, 6}}}
 	};
 	EXPECT_EQ(rules["classProfiles"].Struct().size(), expectedProfiles.size());
 	EXPECT_EQ(rules["powerDivisor"].Integer(), 10);
@@ -155,6 +155,7 @@ TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasExactClassProfilesAndSkillO
 	{
 		SCOPED_TRACE(key);
 		const auto profile = parsePrimaryProfile(rules["classProfiles"][key]);
+		EXPECT_EQ(profile.progressionVersion, PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
 		EXPECT_EQ(profile.starting, expected.first);
 		EXPECT_EQ(profile.growth, expected.second);
 	}
@@ -165,7 +166,7 @@ TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasExactClassProfilesAndSkillO
 		EXPECT_EQ(weights.Struct().size(), HERO_SKILL_OFFER_COUNT);
 	}
 	const auto knight = parsePrimaryProfile(rules["classProfiles"]["core:knight"]);
-	EXPECT_EQ(knight.baseAtLevel(20), (std::array<int64_t, 4>{72, 96, 24, 48}));
+	EXPECT_EQ(knight.baseAtLevel(20), (std::array<int64_t, 4>{144, 178, 48, 72}));
 	const auto resolved = resolveHeroRules(rules, HeroClassID(HeroClassID::decode("core:knight")));
 	ASSERT_NO_THROW(validateResolvedHeroRules(resolved));
 	ASSERT_TRUE(resolved["skillOfferWeights"].isStruct());
