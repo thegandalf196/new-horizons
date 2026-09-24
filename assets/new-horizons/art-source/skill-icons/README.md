@@ -3,12 +3,16 @@
 This directory records the nine faction-skill families that are installed in
 `Mods/new-horizons/Images/`. Each family has Basic, Advanced, and Expert
 variants in the four module slots (`small`, `medium`, `large`, and
-`scenarioBonus`). The eight new families use a high-resolution square master
+`scenarioBonus`). Seven generated families use a high-resolution square master
 generated with the host's built-in image generator and deterministic
-downsampling in `../export_skill_icons.py`; the installed rank variants are
+downsampling in `../export_skill_icons.py`; their installed rank variants are
 the same still life with restrained contrast/saturation shifts and three rank
-pips. The master paths, visual briefs, and source classification are recorded
-in `faction_skill_icon_manifest.json`.
+pips. Metamagic is a versioned exception: three rank-specific masters and
+no-stretch native exports are recorded in
+`../metamagic-prisms-v2/manifest.json`, and the new
+`NH_metamagic_prism_*` bindings are separate from the historical single-master
+exports. Do not use `../export_skill_icons.py` to produce the active Metamagic
+family. Source classification is recorded in `faction_skill_icon_manifest.json`.
 
 Necromancy is deliberately different: its Basic/Advanced/Expert entries refer
 to frames 39/40/41 of the purchaser-supplied `SECSK32`, `SECSKILL`, and
@@ -22,7 +26,7 @@ fork's no-original-assets packaging contract.
 | --- | --- |
 | Divine Mandate | Gold crown, ivory sun medallion, and red velvet command regalia; sacred authority. |
 | Sylvan Luck | Silver antler branch wound with wet green leaves, clover, and amber berries; forest fortune. |
-| Metamagic | Faceted crystal suspended over a bronze occult ring, splitting into four colored spell rays; spell shaping. |
+| Metamagic | Rank-specific prism mounts with one, two, and three outgoing rays; see `../metamagic-prisms-v2/README.md`. |
 | Shroud of Malassa | Cracked black mask beneath a heavy purple veil on volcanic stone; stealth and shadow. |
 | Demonic Gating | Massive horned iron gate opening onto a red inferno, with chain and basalt; summoning portal. |
 | Bloodrage | Blood-wet battle axe embedded in a crimson crystal slab; escalating violence. |

@@ -8041,10 +8041,10 @@
 			"basic": {
 				"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends your one Metamagic use for this combat and cannot trigger Metamagic again.",
 				"images": {
-					"small": "NH_metamagic_basic_small.png",
-					"medium": "NH_metamagic_basic_medium.png",
-					"large": "NH_metamagic_basic_large.png",
-					"scenarioBonus": "NH_metamagic_basic_scenarioBonus.png"
+					"small": "NH_metamagic_prism_basic_small.png",
+					"medium": "NH_metamagic_prism_basic_medium.png",
+					"large": "NH_metamagic_prism_basic_large.png",
+					"scenarioBonus": "NH_metamagic_prism_basic_scenarioBonus.png"
 				},
 				"effects": {
 					"metamagicUses": {
@@ -8057,10 +8057,10 @@
 			"advanced": {
 				"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your two Metamagic uses for this combat and cannot trigger Metamagic again.",
 				"images": {
-					"small": "NH_metamagic_advanced_small.png",
-					"medium": "NH_metamagic_advanced_medium.png",
-					"large": "NH_metamagic_advanced_large.png",
-					"scenarioBonus": "NH_metamagic_advanced_scenarioBonus.png"
+					"small": "NH_metamagic_prism_advanced_small.png",
+					"medium": "NH_metamagic_prism_advanced_medium.png",
+					"large": "NH_metamagic_prism_advanced_large.png",
+					"scenarioBonus": "NH_metamagic_prism_advanced_scenarioBonus.png"
 				},
 				"effects": {
 					"metamagicUses": {
@@ -8073,10 +8073,10 @@
 			"expert": {
 				"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your three Metamagic uses for this combat and cannot trigger Metamagic again.",
 				"images": {
-					"small": "NH_metamagic_expert_small.png",
-					"medium": "NH_metamagic_expert_medium.png",
-					"large": "NH_metamagic_expert_large.png",
-					"scenarioBonus": "NH_metamagic_expert_scenarioBonus.png"
+					"small": "NH_metamagic_prism_expert_small.png",
+					"medium": "NH_metamagic_prism_expert_medium.png",
+					"large": "NH_metamagic_prism_expert_large.png",
+					"scenarioBonus": "NH_metamagic_prism_expert_scenarioBonus.png"
 				},
 				"effects": {
 					"metamagicUses": {

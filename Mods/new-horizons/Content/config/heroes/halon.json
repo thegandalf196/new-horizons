@@ -7,8 +7,8 @@
 		"images": {
 			"large": "HPL041WZ.bmp",
 			"small": "HPS041WZ.bmp",
-			"specialtyLarge": "NH_metamagic_basic_large.png",
-			"specialtySmall": "NH_metamagic_basic_small.png"
+			"specialtyLarge": "NH_metamagic_prism_basic_large.png",
+			"specialtySmall": "NH_metamagic_prism_basic_small.png"
 		},
 		"texts": {
 			"specialty": {
@@ -60,7 +60,7 @@
 		"specialty": {"secondary": null}
 	},
 	"core:serena": {
-		"images": {"large": "HPL042WZ.bmp", "small": "HPS042WZ.bmp", "specialtyLarge": "NH_metamagic_basic_large.png", "specialtySmall": "NH_metamagic_basic_small.png"},
+		"images": {"large": "HPL042WZ.bmp", "small": "HPS042WZ.bmp", "specialtyLarge": "NH_metamagic_prism_basic_large.png", "specialtySmall": "NH_metamagic_prism_basic_small.png"},
 		"texts": {"specialty": {"name": "Metamagic", "tooltip": "Faction skill: Metamagic", "description": "Tower heroes begin with Metamagic. Once per combat, casting a Spell with the Hero Action permits one additional Spell."}},
 		"specialty": {"secondary": null}
 	},

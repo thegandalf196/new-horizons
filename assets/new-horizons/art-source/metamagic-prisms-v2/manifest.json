@@ -1,0 +1,195 @@
+{
+  "status": "provisional; rendered acceptance pending",
+  "method": "HoMM3 Art generation/edit; skill export_art.py LANCZOS squares; centered transparent padding, no stretching",
+  "ranks": {
+    "basic": {
+      "master": "basic-master.png",
+      "sha256": "757ea18c6be2409ae493f06c0191106997908a34cd6b4aa195b42beb3d8aa74d",
+      "original_sha256": "0cf27146a7cd229516837bd83b5f93b8a4636e25ddbd7e2b819034dc590fd8f9",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "small": {
+          "file": "NH_metamagic_prism_basic_small.png",
+          "sha256": "befd31ac7d3dde64cefc44942663486df221fa7e16e548bfa6c5d08e27e56c53",
+          "dimensions": [
+            32,
+            32
+          ],
+          "square_sha256": "0bc8feadd8cfe7ee4d98bbd56c54f858c0ec0f53e67dd2bb3923de1675c0e2e6",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "medium": {
+          "file": "NH_metamagic_prism_basic_medium.png",
+          "sha256": "50972781b5c5a21775b34954ec94e3b815879ad2da1024f03bff60e0e87f72f6",
+          "dimensions": [
+            44,
+            44
+          ],
+          "square_sha256": "6d1a392a8e4befde4281d86df4a90e6280967977b78a90b835bbbe6d2a5a6838",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "large": {
+          "file": "NH_metamagic_prism_basic_large.png",
+          "sha256": "6e8ba23708f1c9e5776f7b6f5bee256e149644f0973b48a3270384e434b97b84",
+          "dimensions": [
+            82,
+            93
+          ],
+          "square_sha256": "7f257def01940fd8342ac2edc07e788d9a4fd0e6ed965b0b26e272ea34ebb86f",
+          "offset": [
+            0,
+            5
+          ]
+        },
+        "scenarioBonus": {
+          "file": "NH_metamagic_prism_basic_scenarioBonus.png",
+          "sha256": "43268720da6986ad202d9affef513026f1bef16ae38fc398005b6d9b8070687a",
+          "dimensions": [
+            58,
+            64
+          ],
+          "square_sha256": "e1eae698fd0dda1ec04cda9eff095213613beb7c6e0e523abcc72593769dfcd2",
+          "offset": [
+            0,
+            3
+          ]
+        }
+      }
+    },
+    "advanced": {
+      "master": "advanced-master.png",
+      "sha256": "33e50d5fe4b1f7a1752b9aa4be5ae37b63045126fcda2d4acff426440b0fd6b5",
+      "original_sha256": "e213ad625dcb8d838c976eb984f8ff871ff78b120931de2fa646718f6b75ddd7",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "small": {
+          "file": "NH_metamagic_prism_advanced_small.png",
+          "sha256": "4329d239d6e7d2d74874841c57ae785967fc23508e8805c6a55b3bbb2d609ee4",
+          "dimensions": [
+            32,
+            32
+          ],
+          "square_sha256": "7e4240f159fbd762aba6b8e8f96879877e1d4388d13d64a7a860ba56fbd00124",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "medium": {
+          "file": "NH_metamagic_prism_advanced_medium.png",
+          "sha256": "59272e25a7654618c28f2997c9a7ef582f45f561c54af262e7fa080502f1855c",
+          "dimensions": [
+            44,
+            44
+          ],
+          "square_sha256": "31d355af02d0b5bbddbc84f8648f8d4a7f9fcccdffd48b7210fa46c8dbe6dfc1",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "large": {
+          "file": "NH_metamagic_prism_advanced_large.png",
+          "sha256": "034dec93b3a2d39a34779210b0f28ff1670550db13542a898f8955ec0ea2abc6",
+          "dimensions": [
+            82,
+            93
+          ],
+          "square_sha256": "580c78be191512a31dc18b4e35ca44d6d6bab3486c95ba6d4cdea98c83a2690f",
+          "offset": [
+            0,
+            5
+          ]
+        },
+        "scenarioBonus": {
+          "file": "NH_metamagic_prism_advanced_scenarioBonus.png",
+          "sha256": "cdc0480a0b5e675c872da10a72e16971ba872b6ac6f7e249392a426796ba53a7",
+          "dimensions": [
+            58,
+            64
+          ],
+          "square_sha256": "f2e6a93af2945bb1bcce59633e14119265432f882c6f4a3697305ffe476f88ee",
+          "offset": [
+            0,
+            3
+          ]
+        }
+      }
+    },
+    "expert": {
+      "master": "expert-master.png",
+      "sha256": "bc3e2cab2f00f87fba5c3e8adca4d2010e5cde81401e9684758c573662dfee68",
+      "original_sha256": "19b86841b59d71092f838705ae15394de487c26aa90d44b741e7cca33da91e7f",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "outputs": {
+        "small": {
+          "file": "NH_metamagic_prism_expert_small.png",
+          "sha256": "2aa9a3d43917c7e70f716c4bf9020b80e7b1838f6e0452a1af8a14b136413001",
+          "dimensions": [
+            32,
+            32
+          ],
+          "square_sha256": "08468292aea6fa5ceb349c595c1ecd540ceeaaca65861be0ed423baf077bce49",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "medium": {
+          "file": "NH_metamagic_prism_expert_medium.png",
+          "sha256": "6728023219e7a4a3aa9b2ada45cc354933e5ba36ed2b39628e0adf4cf8c4ee40",
+          "dimensions": [
+            44,
+            44
+          ],
+          "square_sha256": "6d96d8cf8b447eb6d83792081316e44881ca31f5c33d8fd57029371351647905",
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "large": {
+          "file": "NH_metamagic_prism_expert_large.png",
+          "sha256": "974f3fd674acabbcfd2d4f5272a436711c34d90f042f54f00a9fc5b8df2a36c9",
+          "dimensions": [
+            82,
+            93
+          ],
+          "square_sha256": "a2c8869d5d99e32af07ca908258d58dcc266f074026985675f3b72e68ffd5556",
+          "offset": [
+            0,
+            5
+          ]
+        },
+        "scenarioBonus": {
+          "file": "NH_metamagic_prism_expert_scenarioBonus.png",
+          "sha256": "e80bf52d8fbe4d09ce542ea9496f867cd4a5d828335b750fbd8a4aff41b9d2c0",
+          "dimensions": [
+            58,
+            64
+          ],
+          "square_sha256": "c098ebb6bd9f894cc1a6736c492f81bf135f94d3bb1205f6e73bbb42071a69fb",
+          "offset": [
+            0,
+            3
+          ]
+        }
+      }
+    }
+  }
+}

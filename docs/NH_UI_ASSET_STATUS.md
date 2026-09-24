@@ -60,7 +60,7 @@ The `output/homm3/` paths are local working outputs, not shipped assets.
 
 | Requested replacement | Implementation | Art | Local evidence and remaining work |
 | --- | --- | --- | --- |
-| Metamagic Basic/Advanced/Expert | Not done | Provisional | `output/homm3/metamagic-v1/` contains separate rank masters and 32/44px exports. Resolve the reported Expert-background concern, prepare every runtime size, and replace the existing `NH_metamagic_*` bindings only after checking exports. |
+| Metamagic Basic/Advanced/Expert | Provisional | Provisional | Canonical skill data selects the twelve `NH_metamagic_prism_*` assets. Basic/Advanced reuse the HoMM3-skill rank paintings; Expert has a targeted opaque-leather background repair. Masters, prompts, hashes and slot details are retained under `assets/new-horizons/art-source/metamagic-prisms-v2/`. Native32/44/82/58 reductions preserve shape; rectangular slots add transparent margins rather than stretching. Basic's slight original translucency is disclosed. In-game review and final user approval remain pending. |
 | Hero Movement | Provisional | Provisional | The HoMM3-skill winged riding boot is bound as `NH_hero_movement_44` in the native 44px attribute slot and `NH_hero_movement_painted_32` in the growth window. Retained master, exact prompt and export hashes are under `assets/new-horizons/art-source/hero-attribute-replacements-v1/`. In-game visual acceptance remains pending. |
 | Hero Leadership | Provisional | Provisional | The HoMM3-skill command banner/gauntlet is bound as `NH_hero_leadership_44` in the main attribute pane and `NH_hero_leadership_24` in the compact legacy layout. The generic capability family remains unchanged for town/other consumers. Native exports are inspected; in-game visual acceptance remains pending. |
 | Creature Leadership crown | Provisional | Provisional | The retained HoMM3-skill crown is bound as `NH_creature_leadership_20` in the creature Leadership Cost row. Source master, exact prompt and hashes are under `assets/new-horizons/art-source/creature-stat-glyphs-v1/`. Native export checks pass; in-game presentation remains unverified. |
@@ -96,6 +96,21 @@ Its bounded 35-second headless All for One run completed 57 AI turns
 crash, unsupported-rules or command-rejection errors. Planned timeout completed
 without a remaining client process; launcher verify-only passed. This is
 startup/AI smoke evidence, not visual acceptance of the new icon bindings.
+
+## Metamagic prism integration validation
+
+The three rank paintings now supply all twelve skill image slots and the Basic
+specialty images for Halon and Serena. The focused content, faction-art,
+skill-entity, binding and pixel-export suite passes 39 tests; module regeneration
+check and independent review pass. Square artwork is not stretched to fill the
+rectangular slots. Expert's missing background is repaired; Basic retains its
+original slight translucency.
+
+The broader `nh-new-art-audit.py` still rejects unrelated unclassified PNG
+families at its SVG/PNG inventory comparison. Its exact twelve-file prism
+inventory check passes; this change does not relax the remaining inventory
+requirement. Build, snapshot promotion and in-game visual acceptance are not
+implied by these source checks. The artwork remains Provisional.
 
 ## Spellbook binding details
 

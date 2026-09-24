@@ -58,6 +58,9 @@ class NewHorizonsFactionSkillIconAudit(unittest.TestCase):
             source = self.manifest["skills"][skill]["source"]
             self.assertTrue(source)
             self.assertNotIn("NH_lightMagic", source)
+        metamagic_source = self.manifest["skills"]["metamagic"]["source"]
+        self.assertEqual(metamagic_source, "../metamagic-prisms-v2/manifest.json")
+        self.assertTrue((PROVENANCE / metamagic_source).resolve().is_file())
 
     def test_config_points_each_rank_to_its_own_family(self):
         for skill in SKILLS:
@@ -72,6 +75,10 @@ class NewHorizonsFactionSkillIconAudit(unittest.TestCase):
                             "large": f"SECSK82:0:{frame}",
                             "scenarioBonus": f"SECSKILL:0:{frame}",
                         }
+                    elif skill == "metamagic":
+                        expected = {
+                            size: f"NH_metamagic_prism_{rank}_{size}.png" for size in SIZES
+                        }
                     else:
                         expected = {
                             size: f"NH_{skill}_{rank}_{size}.png" for size in SIZES
@@ -85,16 +92,41 @@ class NewHorizonsFactionSkillIconAudit(unittest.TestCase):
             rank_hashes = set()
             for rank in RANKS:
                 for size_name, dimensions in SIZES.items():
-                    path = IMAGES / f"NH_{skill}_{rank}_{size_name}.png"
+                    path = IMAGES / self.skills[skill][rank]["images"][size_name]
                     self.assertTrue(path.is_file(), path)
                     with Image.open(path) as image:
                         self.assertEqual(image.size, dimensions, path)
                         self.assertEqual(image.mode, "RGBA", path)
-                medium = IMAGES / f"NH_{skill}_{rank}_medium.png"
+                medium = IMAGES / self.skills[skill][rank]["images"]["medium"]
                 rank_hashes.add(digest(medium))
                 family_medium_hashes.add(digest(medium))
             self.assertEqual(len(rank_hashes), len(RANKS), skill)
         self.assertEqual(len(family_medium_hashes), len(GENERATED_SKILLS) * len(RANKS))
+
+    def test_metamagic_manifest_matches_all_canonical_runtime_slots(self):
+        source_path = (PROVENANCE / self.manifest["skills"]["metamagic"]["source"]).resolve()
+        source_manifest = json.loads(source_path.read_text(encoding="utf-8"))
+        expected_offsets = {
+            "small": [0, 0],
+            "medium": [0, 0],
+            "large": [0, 5],
+            "scenarioBonus": [0, 3],
+        }
+        for rank in RANKS:
+            with self.subTest(rank=rank):
+                rank_record = source_manifest["ranks"][rank]
+                master = source_path.parent / rank_record["master"]
+                self.assertTrue(master.is_file(), master)
+                self.assertEqual(digest(master), rank_record["sha256"])
+                for size_name, dimensions in SIZES.items():
+                    output = rank_record["outputs"][size_name]
+                    bound_name = self.skills["metamagic"][rank]["images"][size_name]
+                    self.assertEqual(bound_name, output["file"])
+                    self.assertEqual(output["dimensions"], list(dimensions))
+                    self.assertEqual(output["offset"], expected_offsets[size_name])
+                    path = IMAGES / bound_name
+                    self.assertTrue(path.is_file(), path)
+                    self.assertEqual(digest(path), output["sha256"])
 
     def test_necromancy_uses_purchaser_supplied_classic_frames(self):
         for rank, frame in NECROMANCY_FRAMES.items():

@@ -12,9 +12,9 @@
       "identity": "silver antler branch, wet leaves, clover and amber berries"
     },
     "metamagic": {
-      "source": "../NH_metamagic_master.png",
-      "method": "host built-in image generation; deterministic Pillow rank/export derivatives",
-      "identity": "faceted crystal over a bronze occult ring with split spell rays"
+      "source": "../metamagic-prisms-v2/manifest.json",
+      "method": "three rank-specific HoMM3 Art masters; Pillow LANCZOS square reductions with centered transparent padding for rectangular slots, no stretching",
+      "identity": "rank-specific prism mounts with one, two, and three outgoing rays"
     },
     "demonicGating": {
       "source": "../NH_demonicGating_master.png",
