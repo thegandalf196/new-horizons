@@ -73,8 +73,15 @@ does not complete any of these replacement requests.
 The creature rank/crown integration passed the Linux `vcmiclient` build,
 three glyph provenance/export tests, the creature rank and Initiative source
 guards, and the recruitment-category source guard. Independent review found
-no blocking issues. These checks are not a GUI acceptance pass or evidence
-that the default playable snapshot has been promoted with this change.
+no blocking issues. Source `df7e2cae6` was rebuilt with its committed identity,
+frozen and promoted as snapshot
+`ca6afa103919effdcb38e63d22105200d744cf6ac963732d5b3368977b28c8a0`.
+The exact candidate completed 74 AI turns in a bounded 45-second headless
+All for One smoke run (configured seed 1284510375; maximum completed turn
+3823ms), with no checked crash, unsupported-rules or command-rejection errors.
+The run ended at the planned timeout and left no client process. The normal
+launcher's verify-only check passed. This confirms candidate startup/AI play,
+not the creature panel's rendered appearance; GUI acceptance remains pending.
 
 ## Spellbook binding details
 
