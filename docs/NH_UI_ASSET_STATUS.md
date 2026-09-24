@@ -112,6 +112,15 @@ inventory check passes; this change does not relax the remaining inventory
 requirement. Build, snapshot promotion and in-game visual acceptance are not
 implied by these source checks. The artwork remains Provisional.
 
+Source `e03005ae9` subsequently built successfully and was promoted as snapshot
+`184dec2d8cb728229089ec477894a435e37e937ffdc545aa2ae413f39f07b3ad`.
+The exact frozen candidate completed 57 AI turns in a 35-second isolated
+headless check (configured seed 1284510375, maximum completed turn 3878ms).
+No checked crash, unsupported-rule or command-rejection errors appeared;
+the planned timeout left no client process. AI path-node allocation warnings
+remain, so this is not a general performance clearance or visual acceptance.
+The normal launcher's verify-only path check passes for this snapshot.
+
 ## Spellbook binding details
 
 The current mod.json binds, for each of Light, Nature, Sorcery, Havoc, Shadow, and Chaos:
