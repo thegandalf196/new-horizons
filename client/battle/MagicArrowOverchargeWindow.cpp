@@ -15,8 +15,8 @@
 
 namespace
 {
-constexpr int WINDOW_WIDTH = 360;
-constexpr int WINDOW_HEIGHT = 244;
+constexpr int WINDOW_WIDTH = 420;
+constexpr int WINDOW_HEIGHT = 340;
 
 std::string signedMana(int value)
 {
@@ -44,42 +44,42 @@ MagicArrowOverchargeWindow::MagicArrowOverchargeWindow(MagicArrowOverchargeConte
 	decoration.push_back(std::make_shared<CLabel>(WINDOW_WIDTH / 2, 46, FONT_SMALL,
 		ETextAlignment::CENTER, Colors::WHITE, "Choose optional Overcharge after selecting a target"));
 
-	targetLabel = std::make_shared<CMultiLineLabel>(Rect(16, 57, WINDOW_WIDTH - 32, 28),
+	targetLabel = std::make_shared<CMultiLineLabel>(Rect(16, 55, WINDOW_WIDTH - 32, 45),
 		FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "");
-	overchargeLabel = std::make_shared<CLabel>(WINDOW_WIDTH / 2, 98, FONT_MEDIUM,
+	overchargeLabel = std::make_shared<CLabel>(WINDOW_WIDTH / 2, 108, FONT_MEDIUM,
 		ETextAlignment::CENTER, Colors::YELLOW, "");
 
-	minus = std::make_shared<CButton>(Point(18, 88), AnimationPath::builtin("settingsWindow/button80"),
+	minus = std::make_shared<CButton>(Point(18, 98), AnimationPath::builtin("settingsWindow/button80"),
 		CButton::tooltip("Reduce Overcharge", "Spend one less optional Mana on Magic Arrow."),
 		[this] { setOvercharge((slider ? slider->getValue() : 0) - 1); });
 	minus->setTextOverlay("-", FONT_BIG, Colors::WHITE);
 	minus->setHoverable(true);
 
-	plus = std::make_shared<CButton>(Point(WINDOW_WIDTH - 98, 88), AnimationPath::builtin("settingsWindow/button80"),
+	plus = std::make_shared<CButton>(Point(WINDOW_WIDTH - 98, 98), AnimationPath::builtin("settingsWindow/button80"),
 		CButton::tooltip("Increase Overcharge", "Spend one more optional Mana on Magic Arrow."),
 		[this] { setOvercharge((slider ? slider->getValue() : 0) + 1); });
 	plus->setTextOverlay("+", FONT_BIG, Colors::WHITE);
 	plus->setHoverable(true);
 
 	const int maximum = std::max(0, context.initial.maximumOvercharge);
-	slider = std::make_shared<CSlider>(Point(91, 105), WINDOW_WIDTH - 182,
+	slider = std::make_shared<CSlider>(Point(101, 115), WINDOW_WIDTH - 202,
 		[this](int value) { setOvercharge(value); }, 1, maximum + 1,
 		std::clamp(context.initial.overcharge, 0, maximum), Orientation::HORIZONTAL, CSlider::BLUE);
 
-	costLabel = std::make_shared<CLabel>(16, 139, FONT_SMALL, ETextAlignment::TOPLEFT,
+	costLabel = std::make_shared<CMultiLineLabel>(Rect(16, 147, WINDOW_WIDTH - 32, 38), FONT_SMALL, ETextAlignment::TOPLEFT,
 		Colors::WHITE, "");
-	damageLabel = std::make_shared<CLabel>(16, 158, FONT_SMALL, ETextAlignment::TOPLEFT,
+	damageLabel = std::make_shared<CMultiLineLabel>(Rect(16, 190, WINDOW_WIDTH - 32, 55), FONT_SMALL, ETextAlignment::TOPLEFT,
 		Colors::WHITE, "");
-	stateLabel = std::make_shared<CLabel>(16, 183, FONT_SMALL, ETextAlignment::TOPLEFT,
+	stateLabel = std::make_shared<CMultiLineLabel>(Rect(16, 251, WINDOW_WIDTH - 32, 35), FONT_SMALL, ETextAlignment::TOPLEFT,
 		Colors::YELLOW, "");
 
-	confirmButton = std::make_shared<CButton>(Point(WINDOW_WIDTH - 194, 204), AnimationPath::builtin("settingsWindow/button80"),
+	confirmButton = std::make_shared<CButton>(Point(WINDOW_WIDTH - 194, 292), AnimationPath::builtin("settingsWindow/button80"),
 		CButton::tooltip("Confirm Magic Arrow", "Submit the selected target and Overcharge through the normal hero spell request."),
 		[this] { confirm(); });
 	confirmButton->setTextOverlay("Confirm", FONT_SMALL, Colors::WHITE);
 	confirmButton->setHoverable(true);
 
-	cancelButton = std::make_shared<CButton>(Point(WINDOW_WIDTH - 98, 204), AnimationPath::builtin("settingsWindow/button80"),
+	cancelButton = std::make_shared<CButton>(Point(WINDOW_WIDTH - 98, 292), AnimationPath::builtin("settingsWindow/button80"),
 		CButton::tooltip("Cancel", "Discard the target and Overcharge choice without spending mana or the Hero Action."),
 		[this] { cancel(); }, EShortcut::GLOBAL_CANCEL);
 	cancelButton->setTextOverlay("Cancel", FONT_SMALL, Colors::WHITE);
@@ -95,14 +95,12 @@ MagicArrowOverchargeValues MagicArrowOverchargeWindow::valuesFor(int overcharge)
 	if(context.evaluate)
 		return context.evaluate(overcharge);
 
-	// This fallback is only for a standalone UI consumer (for example a
-	// layout test).  The live battle path always supplies `evaluate`, so the
-	// authoritative Wisdom, resistance and target formulas stay server-owned.
+	// Without a target-aware core evaluator, never invent a damage projection.
 	MagicArrowOverchargeValues values = context.initial;
 	values.overcharge = overcharge;
+	values.previewAvailable = false;
 	values.additionalMana = overcharge;
 	values.totalMana = values.baseMana + values.additionalMana;
-	values.projectedDamage = static_cast<int>(static_cast<int64_t>(values.baseDamage) * (100 + 15 * overcharge) / 100);
 	values.affordable = values.totalMana <= values.availableMana;
 	return values;
 }
@@ -121,26 +119,31 @@ void MagicArrowOverchargeWindow::refresh()
 	const int selected = slider ? slider->getValue() : context.initial.overcharge;
 	const auto values = valuesFor(selected);
 
-	if(targetLabel->getText() != values.targetDescription)
-		targetLabel->setText(values.targetDescription);
+	const std::string targetSummary = values.targetDescription + "\nMagic resistance: "
+		+ std::to_string(values.magicResistancePercent) + "% chance; estimates assume the spell lands.";
+	if(targetLabel->getText() != targetSummary)
+		targetLabel->setText(targetSummary);
 	overchargeLabel->setText("Overcharge " + std::to_string(values.overcharge) + " / " + std::to_string(values.maximumOvercharge));
 	costLabel->setText("Mana: base " + std::to_string(values.baseMana) + "  surcharge " + signedMana(values.additionalMana)
-		+ "  total " + std::to_string(values.totalMana) + " / " + std::to_string(values.availableMana));
-	damageLabel->setText("Projected damage: " + std::to_string(values.baseDamage) + " -> " + std::to_string(values.projectedDamage));
+		+ "\nTotal: " + std::to_string(values.totalMana) + " / available " + std::to_string(values.availableMana));
+	if(values.previewAvailable)
+		damageLabel->setText("No Overcharge: " + std::to_string(values.baseDamage) + " damage, " + std::to_string(values.baseKills)
+			+ " estimated kills\nWith Overcharge " + std::to_string(values.overcharge) + ": "
+			+ std::to_string(values.projectedDamage) + " damage, " + std::to_string(values.projectedKills) + " estimated kills");
+	else
+		damageLabel->setText("No Overcharge: -- damage, -- estimated kills\nWith Overcharge " + std::to_string(values.overcharge)
+			+ ": -- damage, -- estimated kills");
 
 	const std::string state = !values.legal ? "Target is no longer legal for Magic Arrow. Cancel to return."
-		: values.affordable ? "Optional overcharge is affordable. Confirm to cast or Cancel to return."
-		: "Not enough Mana for this Overcharge value.";
+		: !values.affordable ? "Not enough Mana for this Overcharge value."
+		: !values.previewAvailable ? "Forecast unavailable; estimate omitted. Confirm to cast or Cancel to return."
+		: "Optional overcharge is affordable. Confirm to cast or Cancel to return.";
 	if(stateLabel->getText() != state)
 		stateLabel->setText(state);
 
 	minus->block(values.overcharge <= 0);
 	plus->block(values.overcharge >= values.maximumOvercharge || !values.affordable);
 	confirmButton->block(!values.legal || !values.affordable);
-
-	// A context can become stale while this modal is open (for example when a
-	// battle ends or another request changes Mana).  The next redraw reevaluates
-	// the same value and disables confirmation instead of silently submitting.
 }
 
 void MagicArrowOverchargeWindow::confirm()

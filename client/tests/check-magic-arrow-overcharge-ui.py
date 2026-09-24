@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Focused source guard for the Magic Arrow Overcharge client bridge.
 
-This is intentionally a static client test: the battle/runtime evaluator is
-authoritative and needs a real battle to exercise.  The guard proves that the
-UI exposes all required values, that target selection pauses only through the
-generic action controller, and that cancellation/confirmation are wired to
-callbacks rather than mutating rules locally.
+This is intentionally a static client test: the shared battle-mechanics
+forecast needs a real battle to exercise. The guard proves that the UI exposes
+the selected-target forecast and resistance caveat, target selection pauses
+only through the generic action controller, and cancellation/confirmation are
+wired to callbacks rather than mutating rules locally.
 """
 
 from pathlib import Path
@@ -17,6 +17,8 @@ WINDOW_HEADER = (ROOT / "client/battle/MagicArrowOverchargeWindow.h").read_text(
 CONTROLLER = (ROOT / "client/battle/BattleActionsController.cpp").read_text()
 CONTROLLER_HEADER = (ROOT / "client/battle/BattleActionsController.h").read_text()
 INTERFACE = (ROOT / "client/battle/BattleInterface.cpp").read_text()
+MAGIC_ARROW_CONFIG = (ROOT / "config/spells/offensive.json").read_text()
+MAGIC_ARROW_CONFIG_SECTION = MAGIC_ARROW_CONFIG.split('"magicArrow"', 1)[1].split('"iceBolt"', 1)[0]
 
 
 def require(haystack: str, needle: str, label: str) -> None:
@@ -40,14 +42,25 @@ def main() -> None:
         "availableMana",
         "baseDamage",
         "projectedDamage",
-	        "legal",
+        "baseKills",
+        "projectedKills",
+        "magicResistancePercent",
+        "previewAvailable",
+        "legal",
     ):
         require(WINDOW_HEADER, field, f"preview field {field}")
 
     for text in (
         '"Overcharge "',
         '"Mana: base "',
-        '"Projected damage: "',
+        '"No Overcharge: "',
+        '" estimated kills\\nWith Overcharge "',
+        'Magic resistance: ',
+        '"% chance; estimates assume the spell lands."',
+        '"Forecast unavailable; estimate omitted. Confirm to cast or Cancel to return."',
+        '-- damage, -- estimated kills',
+        'constexpr int WINDOW_WIDTH = 420;',
+        'CMultiLineLabel>(Rect(16, 190',
         'CSlider',
         '"-"',
         '"+"',
@@ -72,6 +85,24 @@ def main() -> None:
     require(INTERFACE, "magicArrowOverchargeEnabled", "saved-roster gate")
     require(INTERFACE, "spellOvercharge", "generic BattleAction payload")
     require(INTERFACE, "canBeCastAt", "stale target legality guard")
+    require(INTERFACE, 'effect.name != "directDamage"', "single direct damage effect forecast")
+    require(INTERFACE, "effect.transformTarget", "canonical target effect filtering")
+    require(INTERFACE, "effect.getHealthChange", "shared health and casualty forecast")
+    require(INTERFACE, "target->magicResistance()", "target resistance estimate")
+    require(INTERFACE, "target->getCount()", "casualties clamped to live stack count")
+    require(MAGIC_ARROW_CONFIG, '"magicArrow"', "core Magic Arrow configuration")
+    require(MAGIC_ARROW_CONFIG_SECTION, '"directDamage" : {"type":"damage"}', "configured Magic Arrow damage effect")
+    if "adjustEffectValue(target)" in INTERFACE:
+        raise AssertionError("preview must use target health/casualty simulation, not raw adjusted damage")
+    if "100 + 15 * overcharge" in WINDOW:
+        raise AssertionError("window must not invent its own Overcharge damage formula")
+    require(WINDOW, "confirmButton->block(!values.legal || !values.affordable)", "preview-independent cast eligibility")
+    require(WINDOW, "if(!values.legal || !values.affordable)", "preview-independent confirmation callback")
+    if "!values.previewAvailable ||" in WINDOW:
+        raise AssertionError("missing forecast must not disable an otherwise legal cast")
+    preview_selection = INTERFACE.split("const auto baseChange = previewChange(0);", 1)[1].split("MagicArrowOverchargeContext context;", 1)[0]
+    if "values.legal = false" in preview_selection:
+        raise AssertionError("missing effect forecast must not make a legal target uncastable")
     require((ROOT / "client/battle/BattleWindow.cpp").read_text(), "Grand ON", "persistent Grand selection label")
     require((ROOT / "client/battle/BattleWindow.cpp").read_text(), "Grand OFF", "persistent Grand deselection label")
     require((ROOT / "client/windows/CSpellWindow.cpp").read_text(), "metamagicGrandLabel", "spellbook Grand selection state")

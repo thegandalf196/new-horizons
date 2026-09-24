@@ -17,13 +17,11 @@ class CLabel;
 class CMultiLineLabel;
 class CSlider;
 
-/// Values returned by the authoritative Magic Arrow overcharge preview.
+/// Values returned by the shared battle-mechanics Magic Arrow forecast.
 ///
-/// The client deliberately does not calculate New Horizons spell rules.  The
-/// battle/runtime layer supplies these values for the currently selected
-/// target and may reject stale or unaffordable confirmations.  Keeping this
-/// DTO on the client boundary also makes the panel usable by the normal spell
-/// targeting flow without teaching the widget about battle state.
+/// The forecast uses the selected target's normal effect-health simulation;
+/// it does not roll resistance or decide cast eligibility. The server still
+/// validates the ordinary spell request and selected Overcharge.
 struct MagicArrowOverchargeValues
 {
 	int overcharge = 0;
@@ -32,8 +30,12 @@ struct MagicArrowOverchargeValues
 	int additionalMana = 0; ///< Deliberate overcharge surcharge.
 	int totalMana = 0;
 	int64_t availableMana = 0;
-	int baseDamage = 0;
-	int projectedDamage = 0; ///< Raw projected damage before target resistance.
+	int64_t baseDamage = 0; ///< Shared effect preview for zero Overcharge, if the spell lands.
+	int64_t projectedDamage = 0; ///< Shared effect preview for the selected Overcharge, if the spell lands.
+	int baseKills = 0;
+	int projectedKills = 0;
+	int magicResistancePercent = 0;
+	bool previewAvailable = false;
 	bool legal = true;       ///< The selected target still passes spell target validation.
 	bool affordable = false;
 	std::string targetDescription;
@@ -69,10 +71,10 @@ class MagicArrowOverchargeWindow final : public CWindowObject
 	std::shared_ptr<CButton> confirmButton;
 	std::shared_ptr<CButton> cancelButton;
 	std::shared_ptr<CLabel> overchargeLabel;
-	std::shared_ptr<CLabel> costLabel;
-	std::shared_ptr<CLabel> damageLabel;
+	std::shared_ptr<CMultiLineLabel> costLabel;
+	std::shared_ptr<CMultiLineLabel> damageLabel;
 	std::shared_ptr<CMultiLineLabel> targetLabel;
-	std::shared_ptr<CLabel> stateLabel;
+	std::shared_ptr<CMultiLineLabel> stateLabel;
 
 	MagicArrowOverchargeValues valuesFor(int overcharge) const;
 	void setOvercharge(int overcharge);

@@ -56,6 +56,7 @@
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/Problem.h"
+#include "../../lib/spells/effects/Effect.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
 BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *army1, const CCreatureSet *army2,
@@ -186,6 +187,7 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				values.affordable = values.totalMana <= values.availableMana;
 				values.targetDescription = "Target: " + std::to_string(target->getCount()) + " "
 					+ target->unitType()->getNamePluralTranslated();
+				values.magicResistancePercent = std::clamp(target->magicResistance(), 0, 100);
 
 				spells::BattleCast legality(callback.get(), hero, spells::Mode::HERO, spell);
 				legality.setMetamagicFollowup(metamagicFollowup);
@@ -197,7 +199,8 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				targetCheck.emplace_back(target, target->getPosition());
 				values.legal = spell->battleMechanics(&legality)->canBeCastAt(targetCheck, legalityProblem);
 
-				const auto previewDamage = [&](int selectedOvercharge)
+				const auto previewChange = [&](int selectedOvercharge)
+					-> std::optional<spells::effects::SpellEffectValue>
 				{
 					spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
 					preview.setMetamagicFollowup(metamagicFollowup);
@@ -205,10 +208,38 @@ void BattleInterface::installMagicArrowOverchargeUI()
 					preview.setMetamagicTargetUnitId(targetUnitID);
 					preview.setOvercharge(selectedOvercharge);
 					auto mechanics = spell->battleMechanics(&preview);
-					return static_cast<int>(mechanics->adjustEffectValue(target));
+					if(!mechanics)
+						return std::nullopt;
+
+					spells::Target aim;
+					aim.emplace_back(target->getPosition());
+					aim.emplace_back(spells::Destination(target, target->getPosition()));
+					const auto canonicalTarget = mechanics->canonicalizeTarget(aim);
+					std::optional<spells::effects::SpellEffectValue> result;
+					mechanics->forEachEffect([&](const spells::effects::Effect & effect)
+					{
+						// Magic Arrow currently has one directDamage effect. Stop at that
+						// effect so adding another spell effect cannot double-count this
+						// single-hit preview.
+						if(effect.name != "directDamage")
+							return false;
+
+						const auto effectTarget = effect.transformTarget(mechanics.get(), aim, canonicalTarget);
+						result = effect.getHealthChange(mechanics.get(), effectTarget);
+						return true;
+					});
+					return result;
 				};
-				values.baseDamage = previewDamage(0);
-				values.projectedDamage = previewDamage(values.overcharge);
+
+				const auto baseChange = previewChange(0);
+				const auto selectedChange = previewChange(values.overcharge);
+				if(!baseChange || !selectedChange)
+					return values;
+				values.previewAvailable = true;
+				values.baseDamage = std::max<int64_t>(0, -baseChange->hpDelta);
+				values.projectedDamage = std::max<int64_t>(0, -selectedChange->hpDelta);
+				values.baseKills = static_cast<int>(std::clamp<int64_t>(-baseChange->unitsDelta, 0, target->getCount()));
+				values.projectedKills = static_cast<int>(std::clamp<int64_t>(-selectedChange->unitsDelta, 0, target->getCount()));
 				return values;
 			};
 
