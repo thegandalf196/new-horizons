@@ -80,6 +80,12 @@ void AssetGenerator::initialize()
 	imageFiles[ImagePath::builtin("stackWindow/info-panel-nh-0.png")] = [this](){ return createCreatureInfoPanel(2, true);};
 	imageFiles[ImagePath::builtin("stackWindow/info-panel-nh-1.png")] = [this](){ return createCreatureInfoPanel(3, true);};
 	imageFiles[ImagePath::builtin("stackWindow/info-panel-nh-2.png")] = [this](){ return createCreatureInfoPanel(4, true);};
+	imageFiles[ImagePath::builtin("stackWindow/info-panel-rank-0.png")] = [this](){ return createCreatureInfoPanel(2, false, true);};
+	imageFiles[ImagePath::builtin("stackWindow/info-panel-rank-1.png")] = [this](){ return createCreatureInfoPanel(3, false, true);};
+	imageFiles[ImagePath::builtin("stackWindow/info-panel-rank-2.png")] = [this](){ return createCreatureInfoPanel(4, false, true);};
+	imageFiles[ImagePath::builtin("stackWindow/info-panel-nh-rank-0.png")] = [this](){ return createCreatureInfoPanel(2, true, true);};
+	imageFiles[ImagePath::builtin("stackWindow/info-panel-nh-rank-1.png")] = [this](){ return createCreatureInfoPanel(3, true, true);};
+	imageFiles[ImagePath::builtin("stackWindow/info-panel-nh-rank-2.png")] = [this](){ return createCreatureInfoPanel(4, true, true);};
 	imageFiles[ImagePath::builtin("stackWindow/iconInitiative.png")] = [this](){ return createCreatureInitiativeIcon(); };
 	imageFiles[ImagePath::builtin("stackWindow/bonus-effects.png")] = [this](){ return createCreatureInfoPanelElement(BONUS_EFFECTS);};
 	imageFiles[ImagePath::builtin("stackWindow/spell-effects.png")] = [this](){ return createCreatureInfoPanelElement(SPELL_EFFECTS);};
@@ -853,12 +859,11 @@ AssetGenerator::AnimationLayoutMap AssetGenerator::createSliderBar(bool brown, b
 	return layout;
 }
 
-AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanel(int boxesAmount, bool showNewHorizonsStats) const
+AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanel(int boxesAmount, bool showNewHorizonsStats, bool showRank) const
 {
-	// The ordinary panel keeps the legacy nine-row footprint.  New Horizons
-	// adds Initiative beside Speed and retains Leadership Cost as a normal
-	// tenth row, so give that presentation its own taller generated panel.
-	const int statRows = showNewHorizonsStats ? 10 : 9;
+	// Preserve the legacy nine-row footprint. NH inserts Initiative beside
+	// Speed; categorized creatures independently get one additional Rank row.
+	const int statRows = (showNewHorizonsStats ? 10 : 9) + (showRank ? 1 : 0);
 	Point size(438, 30 + statRows * 19 + 5);
 
 	auto image = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);

@@ -222,22 +222,6 @@ CStackWindow::CWindowSection::CWindowSection(CStackWindow * parent, const ImageP
 	}
 }
 
-CStackWindow::CategorySection::CategorySection(CStackWindow * owner, int yOffset)
-	: CWindowSection(owner, {}, yOffset)
-{
-	OBJECT_CONSTRUCTION;
-	pos.w = owner->pos.w;
-	pos.h = 28;
-
-	const auto & category = *owner->info->category;
-	const auto name = GAME->translator().translate(category.nameTextId);
-	const auto description = GAME->translator().translate(category.descriptionTextId);
-	const auto title = "Category: " + name;
-	label = std::make_shared<CLabel>(pos.w / 2, pos.h / 2, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, title, pos.w - 16);
-	details = std::make_shared<LRClickableAreaWText>(Rect(8, 0, pos.w - 16, pos.h), title,
-		"{" + name + "}\n\n" + description);
-}
-
 CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset)
 	: CWindowSection(owner, ImagePath::builtin("stackWindow/spell-effects"), yOffset)
 {
@@ -738,8 +722,8 @@ CStackWindow::CommanderMainSection::CommanderMainSection(CStackWindow * owner, i
 	}
 }
 
-CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showLeadership, bool showNewHorizonsStats)
-	: CWindowSection(owner, getBackgroundName(showExp, showArt, showNewHorizonsStats), yOffset),
+CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showLeadership, bool showNewHorizonsStats, bool showRank)
+	: CWindowSection(owner, getBackgroundName(showExp, showArt, showNewHorizonsStats, showRank), yOffset),
 	  showNewHorizonsStats(showNewHorizonsStats)
 {
 	OBJECT_CONSTRUCTION;
@@ -756,7 +740,8 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		LIBRARY->generaltexth->zelp[441].first,//SPEED
 		"Initiative",
 		LIBRARY->generaltexth->allTexts[399],//MANA
-		"Leadership Cost"
+		"Leadership Cost",
+		"Rank"
 	};
 
 	statFormats =
@@ -771,6 +756,7 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		"%d (%d)",
 		"%d (%d)",
 		"%d (%d)",
+		"%s",
 		"%s"
 	};
 
@@ -823,8 +809,8 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		"stackWindow/iconAttack", "stackWindow/iconDefense", "stackWindow/iconShots", "stackWindow/iconDamage",
 		"stackWindow/iconHealth", "stackWindow/iconHealthLeft", "stackWindow/iconSpeed"
 	};
-	static const std::array<int, 10> iconY = {
-		31, 49, 69, 88, 107, 126, 144, 164, 183, 202
+	static const std::array<int, 11> iconY = {
+		31, 49, 69, 88, 107, 126, 144, 164, 183, 202, 220
 	};
 	for(size_t i = 0; i < baseIconNames.size(); i++)
 		statIcons[i] = std::make_shared<CPicture>(ImagePath::builtin(baseIconNames[i]), 117, iconY[i]);
@@ -844,8 +830,12 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 
 	if(showLeadership)
 		statIcons[static_cast<size_t>(EStat::LEADERSHIP)] = std::make_shared<CAnimImage>(
-			AnimationPath::builtin("NH_capability_leadership_32"), 0,
-			Rect(116, iconY[static_cast<size_t>(EStat::LEADERSHIP)], 20, 20));
+			AnimationPath::builtin("NH_creature_leadership_20"), 0,
+			Rect(116, iconY[statRow(EStat::LEADERSHIP)], 20, 20));
+	if(showRank)
+		statIcons[static_cast<size_t>(EStat::RANK)] = std::make_shared<CAnimImage>(
+			AnimationPath::builtin("NH_creature_rank_20"), 0,
+			Rect(116, iconY[statRow(EStat::RANK)], 20, 20));
 
 	morale = std::make_shared<MoraleLuckBox>(true, Rect(Point(321, 32), Point(42, 42) ));
 	luck = std::make_shared<MoraleLuckBox>(false,  Rect(Point(375, 32), Point(42, 42) ));
@@ -919,6 +909,18 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		addStatLabel(EStat::LEADERSHIP, costText + capacityText);
 	}
 
+	if(showRank)
+	{
+		const auto & category = *parent->info->category;
+		const auto nameText = GAME->translator().translate(category.nameTextId);
+		const auto description = GAME->translator().translate(category.descriptionTextId);
+		addStatLabel(EStat::RANK, nameText);
+		rankArea = std::make_shared<LRClickableAreaWText>(
+			Rect(114, iconY[statRow(EStat::RANK)], 194, 20),
+			"Rank: " + nameText,
+			"{" + nameText + "}\n\n" + description);
+	}
+
 	if(showExp)
 	{
 		const CStackInstance * stack = parent->info->stackNode;
@@ -985,15 +987,16 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 }
 
 
-ImagePath CStackWindow::MainSection::getBackgroundName(bool showExp, bool showArt, bool showNewHorizonsStats)
+ImagePath CStackWindow::MainSection::getBackgroundName(bool showExp, bool showArt, bool showNewHorizonsStats, bool showRank)
 {
 	const std::string prefix = showNewHorizonsStats ? "stackWindow/info-panel-nh-" : "stackWindow/info-panel-";
+	const auto rankPrefix = prefix + (showRank ? "rank-" : "");
 	if(showExp && showArt)
-		return ImagePath::builtin(prefix + "2");
+		return ImagePath::builtin(rankPrefix + "2");
 	else if(showExp || showArt)
-		return ImagePath::builtin(prefix + "1");
+		return ImagePath::builtin(rankPrefix + "1");
 	else
-		return ImagePath::builtin(prefix + "0");
+		return ImagePath::builtin(rankPrefix + "0");
 }
 
 void CStackWindow::MainSection::addStatLabel(EStat index, int64_t value1, int64_t value2)
@@ -1150,7 +1153,6 @@ void CStackWindow::updateCommanderLevelUpData(const CCommanderInstance * command
 
 	switchButtons.clear();
 	mainSection.reset();
-	categorySection.reset();
 	activeSpellsSection.reset();
 	commanderMainSection.reset();
 	commanderBonusesSection.reset();
@@ -1384,17 +1386,12 @@ void CStackWindow::initSections()
 	const bool showLeadership = info->owner
 		? info->owner->getLeadershipSlotCapacity(info->creature->getId()).has_value()
 		: showNewHorizonsStats;
+	const bool showRank = info->category.has_value();
 
-	mainSection = std::make_shared<MainSection>(this, pos.h, showExp, showArt, showLeadership, showNewHorizonsStats);
+	mainSection = std::make_shared<MainSection>(this, pos.h, showExp, showArt, showLeadership, showNewHorizonsStats, showRank);
 
 	pos.w = mainSection->pos.w;
 	pos.h += mainSection->pos.h;
-
-	if(info->category)
-	{
-		categorySection = std::make_shared<CategorySection>(this, pos.h);
-		pos.h += categorySection->pos.h;
-	}
 
 	if(info->stack) // in battle
 	{

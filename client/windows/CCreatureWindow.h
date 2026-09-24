@@ -73,14 +73,6 @@ class CStackWindow : public CWindowObject
 		CWindowSection(CStackWindow * parent, const ImagePath & backgroundPath, int yOffset);
 	};
 
-	class CategorySection : public CWindowSection
-	{
-		std::shared_ptr<CLabel> label;
-		std::shared_ptr<LRClickableAreaWText> details;
-	public:
-		CategorySection(CStackWindow * owner, int yOffset);
-	};
-
 	class ActiveSpellsSection : public CWindowSection
 	{
 		std::vector<std::shared_ptr<CAnimImage>> spellIcons;
@@ -156,6 +148,7 @@ class CStackWindow : public CWindowObject
 			INITIATIVE,
 			MANA,
 			LEADERSHIP,
+			RANK,
 			AFTER_LAST
 		};
 
@@ -163,10 +156,11 @@ class CStackWindow : public CWindowObject
 		std::shared_ptr<CPicture> deadCommanderOverlay;
 		std::shared_ptr<LRClickableArea> animationArea;
 		std::shared_ptr<CLabel> name;
-		std::array<std::shared_ptr<CIntObject>, 10> statIcons;
+		std::array<std::shared_ptr<CIntObject>, 11> statIcons;
 		std::shared_ptr<CPicture> icons;
 		std::shared_ptr<MoraleLuckBox> morale;
 		std::shared_ptr<MoraleLuckBox> luck;
+		std::shared_ptr<LRClickableAreaWText> rankArea;
 
 		std::vector<std::shared_ptr<CLabel>> stats;
 
@@ -180,12 +174,12 @@ class CStackWindow : public CWindowObject
 		void addStatLabel(EStat index, const std::string & value);
 		size_t statRow(EStat index) const;
 
-		static ImagePath getBackgroundName(bool showExp, bool showArt, bool showNewHorizonsStats);
+		static ImagePath getBackgroundName(bool showExp, bool showArt, bool showNewHorizonsStats, bool showRank);
 
-		std::array<std::string, 10> statNames;
-		std::array<std::string, 10> statFormats;
+		std::array<std::string, 11> statNames;
+		std::array<std::string, 11> statFormats;
 	public:
-		MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showLeadership, bool showNewHorizonsStats);
+		MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showLeadership, bool showNewHorizonsStats, bool showRank);
 	};
 
 	class StackExperienceDetailsWindow;
@@ -206,7 +200,6 @@ class CStackWindow : public CWindowObject
 	std::map<size_t, std::shared_ptr<CButton>> switchButtons;
 
 	std::shared_ptr<CWindowSection> mainSection;
-	std::shared_ptr<CWindowSection> categorySection;
 	std::shared_ptr<CWindowSection> activeSpellsSection;
 	std::shared_ptr<CWindowSection> orderIndicatorsSection;
 	std::shared_ptr<CWindowSection> commanderMainSection;

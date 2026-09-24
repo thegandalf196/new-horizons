@@ -16,9 +16,9 @@ ASSET = (ROOT / "client/render/AssetGenerator.cpp").read_text(encoding="utf-8")
 ASSET_HEADER = (ROOT / "client/render/AssetGenerator.h").read_text(encoding="utf-8")
 
 assert "INITIATIVE" in HEADER
-assert "std::array<std::shared_ptr<CIntObject>, 10> statIcons" in HEADER
-assert "std::array<std::string, 10> statNames" in HEADER
-assert "std::array<std::string, 10> statFormats" in HEADER
+assert "std::array<std::shared_ptr<CIntObject>, 11> statIcons" in HEADER
+assert "std::array<std::string, 11> statNames" in HEADER
+assert "std::array<std::string, 11> statFormats" in HEADER
 assert '"Initiative"' in WINDOW
 assert '"Leadership Cost"' in WINDOW
 
@@ -31,10 +31,11 @@ assert "addStatLabel(EStat::INITIATIVE" in WINDOW
 assert "showNewHorizonsStats" in WINDOW
 assert '"stackWindow/iconInitiative"' in WINDOW
 
-# Legacy panels retain their old dimensions; NH panels get a tenth row.
+# The New Horizons panel has an Initiative row; the optional rank row adds a
+# further row only for saved contexts with an explicit category.
 assert '"stackWindow/info-panel-nh-0.png"' in ASSET
 assert 'createCreatureInfoPanel(2, true)' in ASSET
-assert "const int statRows = showNewHorizonsStats ? 10 : 9;" in ASSET
+assert "(showNewHorizonsStats ? 10 : 9) + (showRank ? 1 : 0)" in ASSET
 assert "createCreatureInitiativeIcon" in ASSET_HEADER
 assert "createCreatureInitiativeIcon" in ASSET
 

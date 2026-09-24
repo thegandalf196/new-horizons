@@ -53,8 +53,9 @@ Legacy mastery/artillery UI references are not counted as live New Horizons 1.0 
 
 ### Pending replacement-art integration
 
-The following local HoMM3-skill drafts are **not installed**. Existing live
-Provisional icons in the inventory must not be mistaken for these replacements.
+The table distinguishes installed source bindings from still-uninstalled
+HoMM3-skill drafts. Existing live Provisional icons must not be mistaken for
+the replacements that remain Not done.
 The `output/homm3/` paths are local working outputs, not shipped assets.
 
 | Requested replacement | Implementation | Art | Local evidence and remaining work |
@@ -62,12 +63,18 @@ The `output/homm3/` paths are local working outputs, not shipped assets.
 | Metamagic Basic/Advanced/Expert | Not done | Provisional | `output/homm3/metamagic-v1/` contains separate rank masters and 32/44px exports. Resolve the reported Expert-background concern, prepare every runtime size, and replace the existing `NH_metamagic_*` bindings only after checking exports. |
 | Hero Movement | Not done | Provisional | `output/homm3/hero-movement-v1/` contains master and 20/32/44px exports. The hero window still uses `NH_hero_movement_32`. |
 | Hero Leadership | Not done | Provisional | `output/homm3/hero-leadership-v1/` contains master and 20/32/44px exports. The hero window still uses the older `NH_capability_leadership` family. |
-| Creature Leadership crown | Not done | Provisional | `output/homm3/creature-leadership-v1/` contains exports. Bind the requested simple monochrome yellow crown to the creature Leadership row; current source still references `NH_capability_leadership_32`. |
-| Creature rank staircase and stat row | Not done | Provisional | `output/homm3/creature-rank-v2/` is the stair-step revision, superseding the rung-ladder v1. The creature window still constructs a separate `CategorySection`; implement the requested horizontal stat row and bind the yellow stair-step glyph. |
+| Creature Leadership crown | Provisional | Provisional | The retained HoMM3-skill crown is bound as `NH_creature_leadership_20` in the creature Leadership Cost row. Source master, exact prompt and hashes are under `assets/new-horizons/art-source/creature-stat-glyphs-v1/`. Native export checks pass; in-game presentation remains unverified. |
+| Creature rank staircase and stat row | Provisional | Provisional | The v2 stair-step glyph is bound as `NH_creature_rank_20` to a horizontal MainSection Rank row instead of a separate category section. Generated panels allocate the extra row only for categorized creatures; legacy uncategorized geometry is unchanged. Source and art remain provisional pending rendered review. |
 
 Installation requires recorded provenance, retained source art, correctly sized
 runtime exports, binding checks, and rendered review. Draft generation alone
 does not complete any of these replacement requests.
+
+The creature rank/crown integration passed the Linux `vcmiclient` build,
+three glyph provenance/export tests, the creature rank and Initiative source
+guards, and the recruitment-category source guard. Independent review found
+no blocking issues. These checks are not a GUI acceptance pass or evidence
+that the default playable snapshot has been promoted with this change.
 
 ## Spellbook binding details
 

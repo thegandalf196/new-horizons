@@ -1,0 +1,19 @@
+{
+  "status": "provisional; native export inspected, in-game acceptance pending",
+  "method": "HoMM3 Art skill built-in image generation; export_art.py RGBA LANCZOS reduction; exact-byte integration",
+  "masters": {
+    "rank-master.png": "23a1a79e53eac0fe442be9748e057ced9fa00b1d1b6b001c5bfb997ff403c1c1",
+    "leadership-master.png": "6c83f35f9e74a90e673571555f9070cc878c7da852726150d54a3e9fc6dc9147"
+  },
+  "private_original_hashes": {
+    "rank": "d2230162246931d84e514d51e41aa18bd4dc722acc48ad0aa755fb30eefa7cb1",
+    "leadership": "43e013e8db487e8aabca8b7859f4944e072add94ba72958d9de772cc26266da2"
+  },
+  "master_metadata": "caBX carrier removed for repository copies; IHDR/IDAT/IEND bytes and decoded pixels unchanged",
+  "runtime": {
+    "NH_creature_rank_20.png": "53d2cb5007351a9b59bac942fcb5141192436dd714867b14055523a9143b7af2",
+    "NH_creature_leadership_20.png": "136eaed4b71d8a33083f301648fe60f7456c96569b1a88ad4ae00d28023dedb9"
+  },
+  "dimensions": { "masters": [1254, 1254], "runtime": [20, 20] },
+  "consumer": "client/windows/CCreatureWindow.cpp MainSection"
+}
