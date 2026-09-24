@@ -69,3 +69,14 @@ in addition to checking conservation, capacity and repeat-call idempotence.
 These checks do not establish full-match turn-time performance or graphical
 acceptance. Duplicate-stack handling during separate upgrade/purchase planning
 still requires review.
+
+### Exchange timing diagnostic
+
+`RepeatedExchangeValuationIsStableAndReadOnly` measures three full valuation
+calls with seven repeated Pikeman stacks on each hero, only one unit of receiver
+capacity available, and captured New Horizons rules. Samples on the initial
+diagnostic build were 390, 376 and 375 microseconds. Each call returned the same
+one-unit transfer and physical army plan; serialized authoritative state remained
+unchanged. There is no machine-dependent pass/fail timing threshold. This small
+fixture does not establish whole-turn performance, diverse-creature swap cost,
+or a need for a new persistent capacity cache.

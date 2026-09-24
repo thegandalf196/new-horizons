@@ -16,6 +16,9 @@
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/networkPacks/PacksForClient.h"
 
+#include <chrono>
+#include <sstream>
+
 namespace
 {
 const PlayerColor PLAYER(0);
@@ -244,6 +247,71 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, ReinforcementValuationPreservesPe
 	EXPECT_EQ(
 		gateway->nullkiller->armyManager->howManyReinforcementsCanGet(receiver, source),
 		pikeman.toCreature()->getAIValue());
+}
+
+TEST_F(NewHorizonsArmyFormationLeadershipTest, RepeatedExchangeValuationIsStableAndReadOnly)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	startExchangeGame({}, {});
+	auto * receiver = findHeroAt(HERO_POS);
+	auto * source = findHeroAt(SOURCE_HERO_POS);
+	ASSERT_NE(receiver, nullptr);
+	ASSERT_NE(source, nullptr);
+	receiver->clearSlots();
+	source->clearSlots();
+	const auto capacity = receiver->getLeadershipSlotCapacity(pikeman);
+	const auto sourceCapacity = source->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
+	ASSERT_TRUE(sourceCapacity);
+	ASSERT_GT(capacity->maximum, 1);
+	ASSERT_GE(sourceCapacity->maximum, 4);
+	for(int slot = 0; slot < GameConstants::ARMY_SIZE; ++slot)
+	{
+		ASSERT_TRUE(receiver->setCreature(SlotID(slot), pikeman, capacity->maximum - (slot == 0 ? 1 : 0)));
+		ASSERT_TRUE(source->setCreature(SlotID(slot), pikeman, 4));
+	}
+	const auto gateway = makeGateway(PLAYER);
+	const auto stateBefore = gameState()->saveToMemory();
+	std::string expectedPlan;
+	std::ostringstream sampleTimes;
+	constexpr int sampleCount = 3;
+	for(int sample = 0; sample < sampleCount; ++sample)
+	{
+		NK2AI::armyFormation::ArmyExchangeProjection plan;
+		const auto started = std::chrono::steady_clock::now();
+		const auto army = gateway->nullkiller->armyManager->getBestArmy(
+			receiver, receiver, source, TerrainId::NONE, source, &plan);
+		const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+			std::chrono::steady_clock::now() - started).count();
+		if(sample)
+			sampleTimes << ',';
+		sampleTimes << elapsed;
+		ASSERT_EQ(army.size(), GameConstants::ARMY_SIZE);
+		ASSERT_EQ(plan.transfers.size(), 1);
+		EXPECT_EQ(plan.transfers.front().transferCount, 1);
+		std::ostringstream signature;
+		for(const auto & stack : army)
+		{
+			EXPECT_EQ(stack.count, capacity->maximum);
+			signature << stack.creature->getId().getNum() << ':' << stack.count << ';';
+		}
+		for(const auto * slots : {&plan.receiverSlots, &plan.sourceSlots})
+		{
+			signature << '|';
+			for(const auto & stack : *slots)
+				signature << stack.slot.getNum() << ':' << stack.creature.getNum() << ':' << stack.count << ';';
+		}
+		const auto & transfer = plan.transfers.front();
+		signature << static_cast<int>(transfer.sourceSide) << ':' << transfer.sourceSlot.getNum()
+			<< ':' << transfer.destinationSlot.getNum() << ':' << transfer.transferCount;
+		if(sample == 0)
+			expectedPlan = signature.str();
+		else
+			EXPECT_EQ(signature.str(), expectedPlan);
+		EXPECT_EQ(gameState()->saveToMemory(), stateBefore);
+	}
+	RecordProperty("exchangeValuationSampleCount", sampleCount);
+	RecordProperty("exchangeValuationSampleMicros", sampleTimes.str());
 }
 
 TEST_F(NewHorizonsArmyFormationLeadershipTest, EmptyNewHorizonsHeroReceivesOnlyLeadershipLegalStacksFromNonHeroDonor)
