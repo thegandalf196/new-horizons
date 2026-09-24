@@ -7,9 +7,10 @@
 
 TEST(SpellPointPresentationTest, BufferIsIncludedNotAddedTwice)
 {
-	EXPECT_EQ(spellPointPresentation::readout(310, 460, 50), "310 / 460  {#00BFFF|+50}");
+	EXPECT_EQ(spellPointPresentation::readout(310, 460, 50), "310 / 460  {+50}");
 	const auto text = spellPointPresentation::tooltip(310, 460, 50);
-	EXPECT_NE(text.find("260 Normal + {#00BFFF|50 Buffer}"), std::string::npos);
+	EXPECT_NE(text.find("260 Normal + {50 Buffer}"), std::string::npos);
+	EXPECT_EQ(text.find('#'), std::string::npos);
 	EXPECT_EQ(text.find("360"), std::string::npos);
 	EXPECT_NE(text.find("included in your total"), std::string::npos);
 }
@@ -29,5 +30,5 @@ TEST(SpellPointPresentationTest, HiddenMaximumIsNotInvented)
 TEST(SpellPointPresentationTest, LargeTotalsRemainExact)
 {
 	EXPECT_EQ(spellPointPresentation::readout(4294967294LL, 2147483647, 2147483647),
-		"4294967294 / 2147483647  {#00BFFF|+2147483647}");
+		"4294967294 / 2147483647  {+2147483647}");
 }
