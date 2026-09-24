@@ -1413,7 +1413,10 @@ CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &b
 int CGHeroInstance::getSightRadius() const
 {
 	int baseValue = LIBRARY->engineSettings()->getInteger(EGameSettings::HEROES_BASE_SCOUNTING_RANGE);
-	return applyBonuses(BonusType::SIGHT_RADIUS, baseValue);
+	const int radius = applyBonuses(BonusType::SIGHT_RADIUS, baseValue);
+	const int scouting = hasActivePerk("new-horizons:logistics", "new-horizons:logistics.scouting") ? 5 : 0;
+	return static_cast<int>(std::min<int64_t>(static_cast<int64_t>(radius) + scouting,
+		std::numeric_limits<int>::max()));
 }
 
 si32 CGHeroInstance::manaRegain() const

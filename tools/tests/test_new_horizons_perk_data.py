@@ -18,6 +18,7 @@ RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:logistics.pathfinding",
     "new-horizons:logistics.navigation",
+    "new-horizons:logistics.scouting",
     "new-horizons:wisdom.intelligence",
     "new-horizons:warcasting.martialChanneling",
     "new-horizons:warcasting.arcaneChanneling",

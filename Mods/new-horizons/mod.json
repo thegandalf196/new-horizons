@@ -4686,7 +4686,7 @@
 								"requires": "basic",
 								"description": "Adventure-map sight radius increases by 5 hexes.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Adventure-map sight radius increases by 5 hexes."
 								}
 							},

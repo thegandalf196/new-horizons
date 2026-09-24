@@ -83,6 +83,47 @@ protected:
 };
 }
 
+TEST_F(NewHorizonsPerkVerticalSliceTest, ScoutingImmediatelyRevealsExpandedSightAndSurvivesSaveLoad)
+{
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	const auto logistics = skill("new-horizons:logistics");
+	gameHandler.changeSecSkill(hero, logistics, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	const int originalRadius = hero->getSightRadius();
+	const auto expandedTile = hero->getSightCenter() + int3(originalRadius + 2, 0, 0);
+	ASSERT_FALSE(gameState()->isVisibleFor(expandedTile, hero->getOwner()));
+	const auto ranks = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
+	bool selected = false;
+	for(uint64_t seed = 0; seed < 1000 && !selected; ++seed)
+	{
+		const auto offer = hero->getPerkState().prepareOffer(ranks, seed);
+		for(size_t index = 0; index < offer.size(); ++index)
+		{
+			if(offer[index].selection.perkId != "new-horizons:logistics.scouting")
+				continue;
+			gameHandler.levelUpHero(hero, offer, index, seed, false);
+			selected = true;
+			break;
+		}
+	}
+	ASSERT_TRUE(selected);
+	EXPECT_EQ(hero->getSightRadius(), originalRadius + 5);
+	EXPECT_TRUE(gameState()->isVisibleFor(expandedTile, hero->getOwner()));
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	EXPECT_EQ(restored.getHero(hero->id)->getSightRadius(), originalRadius + 5);
+	EXPECT_TRUE(restored.isVisibleFor(expandedTile, hero->getOwner()));
+	gameHandler.changeSecSkill(hero, logistics, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(hero->getSightRadius(), originalRadius);
+	// Losing sight range does not erase terrain already explored.
+	EXPECT_TRUE(gameState()->isVisibleFor(expandedTile, hero->getOwner()));
+}
+
 TEST_F(NewHorizonsPerkVerticalSliceTest, ExperienceOfferChoiceActivatesEffectAndSurvivesSaveLoad)
 {
 	startGame();

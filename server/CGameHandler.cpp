@@ -160,7 +160,10 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero,
 	HeroPerkChosen chosen;
 	chosen.hero = hero->id;
 	chosen.selection = offer.at(choice).selection;
+	const int previousSight = hero->getSightRadius();
 	sendAndApply(chosen);
+	if(hero->getOwner().isValidPlayer() && hero->getSightRadius() > previousSight)
+		changeFogOfWar(hero->getSightCenter(), hero->getSightRadius(), hero->getOwner(), ETileVisibility::REVEALED);
 	if(continueProgression)
 		heroLevelUpChoiceDone(hero);
 }
