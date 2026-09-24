@@ -19,7 +19,7 @@
 class Nullkiller2_MovementFailure : public NullkillerTest
 {
 protected:
-	void checkRequiredBattleRoute(bool useGarrison, bool useEnemyHero = false);
+	void checkRequiredBattleRoute(bool useGarrison, bool useEnemyHero = false, bool useTownPurchase = false);
 
 	CGHeroInstance * startHero()
 	{
@@ -68,13 +68,17 @@ TEST_F(Nullkiller2_MovementFailure, validFutureDayDestinationIsPendingNotFailure
 	EXPECT_EQ(hero->movementPointsRemaining(), 0);
 }
 
-void Nullkiller2_MovementFailure::checkRequiredBattleRoute(bool useGarrison, bool useEnemyHero)
+void Nullkiller2_MovementFailure::checkRequiredBattleRoute(bool useGarrison, bool useEnemyHero, bool useTownPurchase)
 {
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).name("RequiredBattleRoute")
 		.playerActive(PlayerColor(0))
 		.hero({5, 5, 0}, HeroTypeID(0), PlayerColor(0))
-		.heroGarrison({{CreatureID(27), 100}});
+		.heroGarrison(useTownPurchase
+			? std::vector<std::pair<CreatureID, uint16_t>>{{CreatureID(0), 1}}
+			: std::vector<std::pair<CreatureID, uint16_t>>{{CreatureID(27), 100}});
+	if(useTownPurchase)
+		builder.town({6, 3, 0}, FactionID::CASTLE, PlayerColor(0)).townGarrison({});
 	if(useEnemyHero)
 		builder.playerActive(PlayerColor(1))
 			.hero({10, 5, 0}, HeroTypeID(1), PlayerColor(1))
@@ -85,9 +89,18 @@ void Nullkiller2_MovementFailure::checkRequiredBattleRoute(bool useGarrison, boo
 	revealMap(PlayerColor(0));
 	for(int x = 0; x < 36; ++x)
 		for(int y = 0; y < 36; ++y)
-			map()->getTile({x, y, 0}).terrainType = y == 5 ? ETerrainId::GRASS : ETerrainId::ROCK;
+			map()->getTile({x, y, 0}).terrainType = y == 5 || (useTownPurchase && x < 9)
+				? ETerrainId::GRASS : ETerrainId::ROCK;
 	auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
+	if(useTownPurchase)
+	{
+		auto * town = findFirst<CGTownInstance>();
+		ASSERT_NE(town, nullptr);
+		town->addBuilding(BuildingID::DWELL_LVL_1);
+		town->creatures.at(0) = {40, {CreatureID(0)}};
+		grantResources(PlayerColor(0), GameResID(GameResID::GOLD), 100000);
+	}
 	if(useGarrison)
 	{
 		auto garrison = std::make_shared<CGGarrison>(gameState().get());
@@ -114,10 +127,17 @@ void Nullkiller2_MovementFailure::checkRequiredBattleRoute(bool useGarrison, boo
 	NK2AI::HeroMap<NK2AI::HeroRole> heroes;
 	heroes.emplace(hero, NK2AI::MAIN);
 	NK2AI::PathfinderSettings settings;
-	settings.useHeroChain = false;
+	settings.useHeroChain = useTownPurchase;
 	gateway->nullkiller->pathfinder->updatePaths(heroes, settings);
 	const auto paths = gateway->nullkiller->pathfinder->getPathInfo(target);
 	ASSERT_FALSE(paths.empty());
+	if(useTownPurchase)
+	{
+		ASSERT_TRUE(std::ranges::any_of(paths, [](const NK2AI::AIPath & path)
+		{
+			return path.exchangeCount > 1;
+		}));
+	}
 	for(const auto & path : paths)
 	{
 		EXPECT_TRUE(std::ranges::any_of(path.nodes, [](const NK2AI::AIPathNodeInfo & node)
@@ -140,6 +160,11 @@ TEST_F(Nullkiller2_MovementFailure, projectedRoutePreservesRequiredGarrisonBattl
 TEST_F(Nullkiller2_MovementFailure, projectedRoutePreservesRequiredEnemyHeroBattleBeforeDistantTarget)
 {
 	checkRequiredBattleRoute(false, true);
+}
+
+TEST_F(Nullkiller2_MovementFailure, townPurchaseRoutePreservesRequiredEnemyHeroBattle)
+{
+	checkRequiredBattleRoute(false, true, true);
 }
 
 TEST(Nullkiller2_Engine_TaskFailure, triesNextTaskWhenAnotherCandidateIsAvailable)
