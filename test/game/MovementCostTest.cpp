@@ -156,6 +156,82 @@ TEST_F(NewHorizonsMovementCostTest, pathfindingPerkUpdatesTerrainCostsAndAuthori
 	EXPECT_FALSE(disabled.getTurnInfo()->hasNewHorizonsPathfinding());
 }
 
+TEST_F(NewHorizonsMovementCostTest, navigationChangesSeaCapacityAndBoardingWithoutRefillingMovement)
+{
+	startTestGame();
+	const auto heroes = gameState->getPlayerState(PlayerColor(0))->getHeroes();
+	ASSERT_FALSE(heroes.empty());
+	auto * hero = heroes.front();
+	const auto logistics = SecondarySkill(SecondarySkill::decode("new-horizons:logistics"));
+	hero->setSecSkillLevel(logistics, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	CPathfinderHelper before(*gameState, hero, PathfinderOptions(*gameState));
+	const int landMaximum = before.getTurnInfo()->getMaxMovePoints(EPathfindingLayer::LAND);
+	const int seaMaximum = before.getTurnInfo()->getMaxMovePoints(EPathfindingLayer::SAIL);
+	const int movement = hero->movementPointsRemaining();
+	HeroPerkChosen chosen;
+	chosen.hero = hero->id;
+	chosen.selection = {"new-horizons:logistics", "new-horizons:logistics.navigation"};
+	gameState->apply(chosen);
+	CPathfinderHelper after(*gameState, hero, PathfinderOptions(*gameState));
+	const auto * info = after.getTurnInfo();
+	ASSERT_TRUE(info->hasNewHorizonsNavigation());
+	EXPECT_EQ(info->getMaxMovePoints(EPathfindingLayer::LAND), landMaximum);
+	EXPECT_EQ(info->getMaxMovePoints(EPathfindingLayer::SAIL), seaMaximum + 50);
+	EXPECT_EQ(hero->movementPointsRemaining(), movement);
+	EXPECT_EQ(hero->movementPointsAfterEmbark(landMaximum, 5, false, info),
+		(landMaximum / 2) * (seaMaximum + 50) / landMaximum);
+	EXPECT_EQ(hero->movementPointsAfterEmbark(5, 5, false, info),
+		2 * (seaMaximum + 50) / landMaximum);
+	EXPECT_EQ(hero->movementPointsAfterEmbark(0, 5, false, info), 0);
+	addTravelBonus(hero, BonusType::FREE_SHIP_BOARDING);
+	CPathfinderHelper freeBoarding(*gameState, hero, PathfinderOptions(*gameState));
+	EXPECT_EQ(hero->movementPointsAfterEmbark(landMaximum, 5, false, freeBoarding.getTurnInfo()),
+		(landMaximum - 5) * (seaMaximum + 50) / landMaximum);
+	hero->setSecSkillLevel(logistics, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	CPathfinderHelper disabled(*gameState, hero, PathfinderOptions(*gameState));
+	EXPECT_FALSE(disabled.getTurnInfo()->hasNewHorizonsNavigation());
+}
+
+TEST_F(NewHorizonsMovementCostTest, navigationBoardingPreviewMatchesExecutor)
+{
+	startTestGame();
+	auto * hero = gameState->getPlayerState(PlayerColor(0))->getHeroes().front();
+	hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:logistics")),
+		MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	HeroPerkChosen chosen;
+	chosen.hero = hero->id;
+	chosen.selection = {"new-horizons:logistics", "new-horizons:logistics.navigation"};
+	gameState->apply(chosen);
+	const int3 shore = hero->visitablePos();
+	const int3 sea = shore + int3(1, 0, 0);
+	gameState->getMap().getTile(sea).terrainType = ETerrainId::WATER;
+	testing::NiceMock<GameServerMock> server;
+	initializeGameHandler(server);
+	CGameHandler gameHandler(server, gameState);
+	gameHandler.createBoat(sea, BoatId::CASTLE, hero->getOwner());
+	gameHandler.setMovePoints(hero->id, 220);
+	CPathfinderHelper helper(*gameState, hero, PathfinderOptions(*gameState));
+	EXPECT_EQ(helper.getMovementCost(shore, sea, EPathfindingLayer::SAIL, 220, false), 5);
+	CPathsInfo paths(gameState->getMapSize(), hero);
+	auto config = std::make_shared<SingleHeroPathfinderConfig>(paths, *gameState, hero);
+	CPathfinder pathfinder(*gameState, config);
+	pathfinder.calculatePaths();
+	const auto * node = paths.getNode(sea, EPathfindingLayer::SAIL);
+	ASSERT_TRUE(node->reachable());
+	const int predicted = node->moveRemains;
+	ASSERT_TRUE(gameHandler.moveHero(hero->id, hero->convertFromVisitablePos(sea),
+		EMovementMode::STANDARD, false, hero->getOwner(), EPathfindingLayer::SAIL));
+	EXPECT_EQ(hero->movementPointsRemaining(), predicted);
+	EXPECT_EQ(predicted, 135);
+	CPathfinderHelper aboard(*gameState, hero, PathfinderOptions(*gameState));
+	const int cost = aboard.getMovementCost(sea, shore, EPathfindingLayer::LAND, predicted, false);
+	const int landing = hero->movementPointsAfterEmbark(predicted, cost, true, aboard.getTurnInfo());
+	ASSERT_TRUE(gameHandler.moveHero(hero->id, hero->convertFromVisitablePos(shore),
+		EMovementMode::STANDARD, false, hero->getOwner(), EPathfindingLayer::LAND));
+	EXPECT_EQ(hero->movementPointsRemaining(), landing);
+	EXPECT_LT(landing, predicted);
+}
+
 TEST_F(MovementCostTest, usesExplicitDestinationLayer)
 {
 	startTestGame();

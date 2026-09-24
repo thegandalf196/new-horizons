@@ -667,7 +667,8 @@ int CPathfinderHelper::getMovementCost(
 		remainingMovePoints,
 		checkLast,
 		src.tile,
-		dst.tile
+		dst.tile,
+		src.node->layer
 	);
 }
 
@@ -678,7 +679,8 @@ int CPathfinderHelper::getMovementCost(
 	const int remainingMovePoints,
 	const bool checkLast,
 	const TerrainTile * srcTile,
-	const TerrainTile * dstTile) const
+	const TerrainTile * dstTile,
+	const EPathfindingLayer & srcLayer) const
 {
 	if(src == dst) //same tile
 		return 0;
@@ -694,6 +696,9 @@ int CPathfinderHelper::getMovementCost(
 	}
 
 	const bool usesNewHorizonsMovement = ti->usesNewHorizonsMovement();
+	const auto sourceLayer = srcLayer == EPathfindingLayer::AUTO
+		? (hero->inBoat() ? hero->getBoat()->layer : EPathfindingLayer::LAND) : srcLayer;
+	const bool sourceSailing = sourceLayer == EPathfindingLayer::SAIL;
 	// Coast-visitable blocking objects (for example Shipwrecks) use a SAIL
 	// destination node, but the hero remains on shore. Do not price that
 	// interaction as terrain-independent sailing.
@@ -741,9 +746,9 @@ int CPathfinderHelper::getMovementCost(
 	// A requested LAND step can still be the final Water Walk/Fly traversal
 	// when the source itself is water or cannot be traversed on foot. Open land
 	// is an ordinary landing point, so walking away from it remains unmodified.
-	const bool isWaterWalkLanding = usesNewHorizonsMovement && dstLayer == EPathfindingLayer::LAND
+	const bool isWaterWalkLanding = usesNewHorizonsMovement && !sourceSailing && dstLayer == EPathfindingLayer::LAND
 		&& !hero->inBoat() && srcTile->isWater();
-	const bool isFlightLanding = usesNewHorizonsMovement && dstLayer == EPathfindingLayer::LAND && !hero->inBoat()
+	const bool isFlightLanding = usesNewHorizonsMovement && !sourceSailing && dstLayer == EPathfindingLayer::LAND && !hero->inBoat()
 		&& sourceHasUnwalkableObject(*srcTile);
 	const bool isSpecialTravel = usesNewHorizonsMovement && !hero->inBoat()
 		&& (dstLayer == EPathfindingLayer::AIR || dstLayer == EPathfindingLayer::WATER
@@ -812,6 +817,19 @@ int CPathfinderHelper::getMovementCost(
 			return remainingMovePoints;
 	}
 
+	if(ti->hasNewHorizonsNavigation())
+	{
+		const bool disembarking = sourceSailing && dstLayer == EPathfindingLayer::LAND;
+		bool embarking = false;
+		if(sourceLayer == EPathfindingLayer::LAND && dstLayer == EPathfindingLayer::SAIL
+			&& !dstTile->visitableObjects.empty())
+		{
+			const auto * object = gameInfo.getObjInstance(dstTile->visitableObjects.back());
+			embarking = object && object->ID == Obj::BOAT;
+		}
+		if(embarking || disembarking)
+			movementCost = movementCost / 2 + movementCost % 2;
+	}
 	return movementCost;
 }
 

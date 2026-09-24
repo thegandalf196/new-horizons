@@ -128,7 +128,8 @@ public:
 		const int remainingMovePoints = -1,
 		const bool checkLast = true,
 		const TerrainTile * srcTile = nullptr,
-		const TerrainTile * dstTile = nullptr) const;
+		const TerrainTile * dstTile = nullptr,
+		const EPathfindingLayer & srcLayer = EPathfindingLayer::AUTO) const;
 
 	int getMovementCost(
 		const PathNodeInfo & src,

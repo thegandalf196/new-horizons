@@ -1909,7 +1909,7 @@ CBonusSystemNode & CGHeroInstance::whereShouldBeAttached(CGameState & gs)
 
 int CGHeroInstance::movementPointsAfterEmbark(int MPsBefore, int basicCost, bool disembark, const TurnInfo * ti) const
 {
-	if(!ti->hasFreeShipBoarding())
+	if(!ti->hasFreeShipBoarding() && !ti->hasNewHorizonsNavigation())
 		return 0; // take all MPs by default
 	
 	auto boatLayer = inBoat() ? getBoat()->layer : EPathfindingLayer::SAIL;
@@ -1919,6 +1919,15 @@ int CGHeroInstance::movementPointsAfterEmbark(int MPsBefore, int basicCost, bool
 
 	int mp1 = ti->getMaxMovePoints(disembark ? EPathfindingLayer::LAND : boatLayer);
 	int mp2 = ti->getMaxMovePoints(disembark ? boatLayer : EPathfindingLayer::LAND);
+	if(ti->hasNewHorizonsNavigation())
+	{
+		// The shared step-cost helper already discounted basicCost. Without
+		// free boarding, halve the usual all-remaining-movement charge instead.
+		const int remaining = ti->hasFreeShipBoarding()
+			? std::max(0, MPsBefore - basicCost) : std::max(0, MPsBefore) / 2;
+		return mp2 > 0 ? static_cast<int>(std::min<int64_t>(
+			static_cast<int64_t>(remaining) * mp1 / mp2, std::numeric_limits<int>::max())) : 0;
+	}
 	int ret = static_cast<int>((MPsBefore - basicCost) * static_cast<double>(mp1) / mp2);
 	return ret;
 }

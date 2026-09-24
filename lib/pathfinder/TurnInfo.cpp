@@ -324,6 +324,8 @@ TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, i
 	const bool newHorizonsMovement = target->usesNewHorizonsMovement();
 	newHorizonsPathfinding = newHorizonsMovement
 		&& target->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.pathfinding");
+	newHorizonsNavigation = newHorizonsMovement
+		&& target->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.navigation");
 
 	int lowestSpeed = 10;
 	if(!newHorizonsMovement)
@@ -381,7 +383,9 @@ TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, i
 		const auto waterBonuses = newHorizonsWaterBonuses(landBonuses,
 			sharedCache->movementPointsLimitWater.getBonusList(target, waterSelector));
 		const auto landModifiers = getNewHorizonsMovementModifiers(landBonuses, daySelector);
-		const auto waterModifiers = getNewHorizonsMovementModifiers(waterBonuses, daySelector);
+		auto waterModifiers = getNewHorizonsMovementModifiers(waterBonuses, daySelector);
+		if(newHorizonsNavigation)
+			waterModifiers.percentageToBase = saturatingAdd(waterModifiers.percentageToBase, 25);
 		movePointsLimitLand = applyNewHorizonsMovementBounds(
 			newHorizonsMovement::maximumDailyMovement(
 				saturatingAdd(newHorizonsMovement::BASE_DAILY_MOVEMENT, landModifiers.base),

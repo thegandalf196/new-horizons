@@ -2297,7 +2297,7 @@
 					"requires": "basic",
 					"description": "Sea Movement increases by 25%, and embark/disembark Movement costs are halved.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Sea Movement increases by 25%, and embark/disembark Movement costs are halved."
 					}
 				},

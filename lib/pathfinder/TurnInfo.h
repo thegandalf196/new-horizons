@@ -66,6 +66,7 @@ private:
 	bool flyingMovementTest;
 	bool freeShipBoardingTest;
 	bool newHorizonsPathfinding;
+	bool newHorizonsNavigation;
 
 public:
 	int hasWaterWalking() const;
@@ -82,6 +83,7 @@ public:
 	int getMovePointsLimitAir() const;
 	bool usesNewHorizonsMovement() const;
 	bool hasNewHorizonsPathfinding() const { return newHorizonsPathfinding; }
+	bool hasNewHorizonsNavigation() const { return newHorizonsNavigation; }
 
 	TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, int Turn,
 		const CCreatureSet * projectedArmy = nullptr);

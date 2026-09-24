@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:logistics.pathfinding",
+    "new-horizons:logistics.navigation",
     "new-horizons:wisdom.intelligence",
     "new-horizons:warcasting.martialChanneling",
     "new-horizons:warcasting.arcaneChanneling",
