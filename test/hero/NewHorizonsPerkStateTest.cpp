@@ -21,6 +21,12 @@ const std::string SKILL = "new-horizons:sorceryMagic";
 // Keep this fixture pointed at a skill whose entire perk pool is still planned.
 // Offense now has the active Shock Assault vertical slice.
 const std::string PLANNED_SKILL = "new-horizons:armorer";
+constexpr auto HISTORICAL_PERK_SOURCE_SHA256 =
+	"d0aa9c0017967e85120b4e63e04df3d58441d606ce9c496d29117515330654ce";
+constexpr auto CURRENT_DESIGN_SOURCE_SHA256 =
+	"563c0a6e4fd3f33ffb8a7aecab443e74df531d300eb0f998f4085ba290d7daa6";
+constexpr auto UNKNOWN_SOURCE_SHA256 =
+	"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 }
 
 TEST(NewHorizonsPerkState, LegacyStateRemainsEmptyAndCannotSelect)
@@ -153,9 +159,10 @@ TEST(NewHorizonsPerkState, JsonAndBinaryRoundTripsPreserveSavedRegistrySnapshot)
 	EXPECT_TRUE(fromBinary.hasSelection(PLANNED_SKILL, legacyPlanned.id));
 }
 
-TEST(NewHorizonsPerkState, RetiredSpellBufferMigratesToSpellEchoAcrossJsonAndBinaryLoads)
+TEST(NewHorizonsPerkState, HistoricalRetiredSpellBufferMigratesToSpellEchoAcrossJsonAndBinaryLoads)
 {
 	auto legacy = state();
+	legacy.rules["sourceSha256"].String() = HISTORICAL_PERK_SOURCE_SHA256;
 	constexpr auto skill = "new-horizons:metamagic";
 	constexpr auto retired = "new-horizons:metamagic.spellBuffer";
 	constexpr auto replacement = "new-horizons:metamagic.spellEcho";
@@ -190,6 +197,82 @@ TEST(NewHorizonsPerkState, RetiredSpellBufferMigratesToSpellEchoAcrossJsonAndBin
 		restoredBinary.rules, skill, replacement);
 	ASSERT_TRUE(binaryDefinition);
 	EXPECT_EQ(binaryDefinition->name, "Spell Echo");
+}
+
+TEST(NewHorizonsPerkState, RevivedSpellBufferSurvivesJsonAndBinaryLoadsForNewOrUnknownSnapshots)
+{
+	constexpr auto skill = "new-horizons:metamagic";
+	constexpr auto revived = "new-horizons:metamagic.spellBuffer";
+	constexpr auto replacement = "new-horizons:metamagic.spellEcho";
+	constexpr auto revivedDescription = "An unused Metamagic Spell Action grants 6 buffer Mana when it expires.";
+
+	for(const auto * sourceSha256 : {CURRENT_DESIGN_SOURCE_SHA256, UNKNOWN_SOURCE_SHA256})
+	{
+		auto current = state();
+		current.rules["sourceSha256"].String() = sourceSha256;
+		for(auto & perk : current.rules["skills"][skill]["perks"].Vector())
+		{
+			if(perk["id"].String() != replacement)
+				continue;
+			perk["id"].String() = revived;
+			perk["name"].String() = "Spell Buffer";
+			perk["description"].String() = revivedDescription;
+			perk["effect"]["description"].String() = revivedDescription;
+		}
+		current.selected.push_back({skill, revived});
+		current.validate();
+
+		const auto restoredJson = newHorizonsHeroes::PerkState::fromJson(current.toJson());
+		EXPECT_TRUE(restoredJson.hasSelection(skill, revived));
+		EXPECT_FALSE(restoredJson.hasSelection(skill, replacement));
+		EXPECT_EQ(restoredJson.rules, current.rules);
+		EXPECT_EQ(restoredJson.selected, current.selected);
+		const auto jsonDefinition = newHorizonsHeroes::perkDefinition(restoredJson.rules, skill, revived);
+		ASSERT_TRUE(jsonDefinition);
+		EXPECT_EQ(jsonDefinition->name, "Spell Buffer");
+		EXPECT_EQ(jsonDefinition->description, revivedDescription);
+
+		CMemorySerializer memory;
+		memory.oser & current;
+		newHorizonsHeroes::PerkState restoredBinary;
+		memory.iser & restoredBinary;
+		EXPECT_TRUE(restoredBinary.hasSelection(skill, revived));
+		EXPECT_FALSE(restoredBinary.hasSelection(skill, replacement));
+		EXPECT_EQ(restoredBinary.rules, current.rules);
+		EXPECT_EQ(restoredBinary.selected, current.selected);
+		const auto binaryDefinition = newHorizonsHeroes::perkDefinition(restoredBinary.rules, skill, revived);
+		ASSERT_TRUE(binaryDefinition);
+		EXPECT_EQ(binaryDefinition->name, "Spell Buffer");
+		EXPECT_EQ(binaryDefinition->description, revivedDescription);
+	}
+}
+
+TEST(NewHorizonsPerkState, RetiredSelectionWithoutMatchingHistoricalDefinitionIsRejected)
+{
+	constexpr auto skill = "new-horizons:metamagic";
+	constexpr auto retired = "new-horizons:metamagic.spellBuffer";
+	constexpr auto currentPerk = "new-horizons:metamagic.spellEcho";
+	auto currentRules = state().rules;
+	currentRules["sourceSha256"].String() = HISTORICAL_PERK_SOURCE_SHA256;
+
+	JsonNode invalidJson;
+	invalidJson["stateVersion"].Integer() = 1;
+	invalidJson["rules"] = currentRules;
+	invalidJson["selected"].Vector();
+	JsonNode savedSelection;
+	savedSelection["skillId"].String() = skill;
+	savedSelection["perkId"].String() = retired;
+	invalidJson["selected"].Vector().push_back(savedSelection);
+	EXPECT_THROW(newHorizonsHeroes::PerkState::fromJson(invalidJson), std::runtime_error);
+
+	std::vector<newHorizonsHeroes::PerkSelection> orphanSelection = {{skill, retired}};
+	CMemorySerializer memory;
+	memory.oser & currentRules;
+	memory.oser & orphanSelection;
+	newHorizonsHeroes::PerkState restoredBinary;
+	EXPECT_THROW(memory.iser & restoredBinary, std::runtime_error);
+	EXPECT_FALSE(restoredBinary.hasSelection(skill, currentPerk));
+	EXPECT_TRUE(restoredBinary.hasSelection(skill, retired));
 }
 
 TEST(NewHorizonsPerkState, CrossoverRejectsUnknownFieldsAndForgedSelections)

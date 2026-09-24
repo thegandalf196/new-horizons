@@ -18,6 +18,13 @@ namespace
 constexpr std::string_view METAMAGIC_SKILL = "new-horizons:metamagic";
 constexpr std::string_view RETIRED_SPELL_BUFFER = "new-horizons:metamagic.spellBuffer";
 constexpr std::string_view SPELL_ECHO = "new-horizons:metamagic.spellEcho";
+// This source hash identifies the historical rules authority under which
+// Spell Buffer meant Counterspell protection. New catalogs must use their
+// reconciled source hash before reintroducing Spell Buffer.
+constexpr std::string_view RETIRED_SPELL_BUFFER_SOURCE_SHA256 =
+	"d0aa9c0017967e85120b4e63e04df3d58441d606ce9c496d29117515330654ce";
+constexpr int RETIRED_SPELL_BUFFER_SCHEMA_VERSION = 1;
+constexpr int RETIRED_SPELL_BUFFER_RULESET_VERSION = 1;
 constexpr std::string_view SPELL_ECHO_DESCRIPTION =
 	"If the additional Spell repeats the first Spell in the Metamagic sequence, it gains +25% to its Spell Power-derived component.";
 
@@ -33,28 +40,39 @@ void savedFields(const JsonNode & node, std::initializer_list<std::string_view> 
 
 void PerkState::migrateRetiredPerks()
 {
-	if(!usesPerkRules(rules))
+	if(!usesPerkRules(rules)
+		|| !rules["schemaVersion"].isNumber()
+		|| rules["schemaVersion"].Integer() != RETIRED_SPELL_BUFFER_SCHEMA_VERSION
+		|| !rules["rulesetVersion"].isNumber()
+		|| rules["rulesetVersion"].Integer() != RETIRED_SPELL_BUFFER_RULESET_VERSION
+		|| !rules["sourceSha256"].isString()
+		|| rules["sourceSha256"].String() != RETIRED_SPELL_BUFFER_SOURCE_SHA256)
 		return;
 
 	auto & skills = rules["skills"].Struct();
 	const auto skillIt = skills.find(std::string(METAMAGIC_SKILL));
-	if(skillIt != skills.end())
+	if(skillIt == skills.end() || !skillIt->second["perks"].isVector())
+		return;
+
+	bool migratedDefinition = false;
+	for(auto & perk : skillIt->second["perks"].Vector())
 	{
-		for(auto & perk : skillIt->second["perks"].Vector())
-		{
-			if(perk["id"].String() != RETIRED_SPELL_BUFFER)
-				continue;
-			perk["id"].String() = SPELL_ECHO;
-			perk["name"].String() = "Spell Echo";
-			perk["description"].String() = SPELL_ECHO_DESCRIPTION;
-			perk["effect"]["status"].String() = "active";
-			perk["effect"]["description"].String() = SPELL_ECHO_DESCRIPTION;
-		}
+		if(perk["id"].String() != RETIRED_SPELL_BUFFER)
+			continue;
+		perk["id"].String() = SPELL_ECHO;
+		perk["name"].String() = "Spell Echo";
+		perk["description"].String() = SPELL_ECHO_DESCRIPTION;
+		perk["effect"]["status"].String() = "active";
+		perk["effect"]["description"].String() = SPELL_ECHO_DESCRIPTION;
+		migratedDefinition = true;
 	}
 
-	for(auto & selection : selected)
-		if(selection.skillId == METAMAGIC_SKILL && selection.perkId == RETIRED_SPELL_BUFFER)
-			selection.perkId = SPELL_ECHO;
+	if(migratedDefinition)
+	{
+		for(auto & selection : selected)
+			if(selection.skillId == METAMAGIC_SKILL && selection.perkId == RETIRED_SPELL_BUFFER)
+				selection.perkId = SPELL_ECHO;
+	}
 }
 
 bool PerkState::hasSelection(const std::string & skillId, const std::string & perkId) const
