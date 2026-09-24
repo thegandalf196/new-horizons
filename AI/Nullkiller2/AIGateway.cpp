@@ -322,6 +322,10 @@ void AIGateway::garrisonsChanged(ObjectInstanceID id1, ObjectInstanceID id2)
 	// Army strength changes the guards that projected routes can bypass, even
 	// when recruitment or a transfer leaves every hero on the same tile.
 	nullkiller->invalidatePathfinderData();
+	// Enemy routes depend on the defending army too. Threat rebuilding clears
+	// the shared tile records, so refresh their town ownership at the same time.
+	nullkiller->dangerHitMap->resetHitmap();
+	nullkiller->dangerHitMap->resetTileOwners();
 }
 
 void AIGateway::newObject(const CGObjectInstance * obj)

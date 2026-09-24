@@ -22,6 +22,7 @@ class DLL_EXPORT FuzzyHelper
 {
 private:
 	const Nullkiller * aiNk;
+	ui64 evaluateDanger(const CGObjectInstance * obj, const CGHeroInstance * visitor);
 
 public:
 	FuzzyHelper(const Nullkiller * aiNk): aiNk(aiNk) {}

@@ -41,7 +41,7 @@ ui64 FuzzyHelper::evaluateDanger(const int3 & tile, const CGHeroInstance * visit
 
 	if(const CGObjectInstance * dangerousObject = vstd::backOrNull(visitableObjects))
 	{
-		objectDanger = evaluateDanger(dangerousObject); //unguarded objects can also be dangerous or unhandled
+		objectDanger = evaluateDanger(dangerousObject, visitor); //unguarded objects can also be dangerous or unhandled
 
 		if(objWithID<Obj::HERO>(dangerousObject))
 		{
@@ -49,7 +49,7 @@ ui64 FuzzyHelper::evaluateDanger(const int3 & tile, const CGHeroInstance * visit
 
 			if(hero->getVisitedTown() && !hero->getVisitedTown()->getGarrisonHero())
 			{
-				objectDanger += evaluateDanger(hero->getVisitedTown());
+				objectDanger += evaluateDanger(hero->getVisitedTown(), visitor);
 			}
 			objectDanger *= aiNk->heroManager->getFightingStrengthCached(hero);
 		}
@@ -71,7 +71,7 @@ ui64 FuzzyHelper::evaluateDanger(const int3 & tile, const CGHeroInstance * visit
 				auto guards = cb->getGuardingCreatures(it->second->visitablePos());
 
 				for(auto cre : guards)
-					vstd::amax(guardDanger, evaluateDanger(cre));
+					vstd::amax(guardDanger, evaluateDanger(cre, visitor));
 			}
 		}
 	}
@@ -80,7 +80,7 @@ ui64 FuzzyHelper::evaluateDanger(const int3 & tile, const CGHeroInstance * visit
 	{
 		auto guards = cb->getGuardingCreatures(tile);
 		for(auto cre : guards)
-			vstd::amax(guardDanger, evaluateDanger(cre)); //we are interested in strongest monster around
+			vstd::amax(guardDanger, evaluateDanger(cre, visitor)); //we are interested in strongest monster around
 	}
 
 	//TODO mozna odwiedzic blockvis nie ruszajac straznika
@@ -89,9 +89,15 @@ ui64 FuzzyHelper::evaluateDanger(const int3 & tile, const CGHeroInstance * visit
 
 ui64 FuzzyHelper::evaluateDanger(const CGObjectInstance * obj)
 {
-	auto cb = aiNk->cc.get();
+	return evaluateDanger(obj, nullptr);
+}
 
-	if(obj->tempOwner.isValidPlayer() && cb->getPlayerRelations(obj->tempOwner, aiNk->playerID) != PlayerRelations::ENEMIES) //owned or allied objects don't pose any threat
+ui64 FuzzyHelper::evaluateDanger(const CGObjectInstance * obj, const CGHeroInstance * visitor)
+{
+	auto cb = aiNk->cc.get();
+	const auto perspective = visitor ? visitor->getOwner() : aiNk->playerID;
+
+	if(obj->tempOwner.isValidPlayer() && cb->getPlayerRelations(obj->tempOwner, perspective) != PlayerRelations::ENEMIES) //owned or allied objects don't pose any threat
 		return 0;
 
 	switch(obj->ID)

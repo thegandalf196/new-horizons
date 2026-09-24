@@ -15,6 +15,7 @@
 #include "nullkiller2/NullkillerTest.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/MiscObjects.h"
+#include "lib/CPlayerState.h"
 
 class Nullkiller2_MovementFailure : public NullkillerTest
 {
@@ -205,6 +206,57 @@ TEST_F(Nullkiller2_MovementFailure, armyChangeRefreshesGuardedRoutesWithoutMovin
 	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 3));
 	EXPECT_TRUE(gateway->nullkiller->pathfinder->getPathInfo(target).empty());
 	EXPECT_EQ(hero->visitablePos(), position);
+}
+
+TEST_F(Nullkiller2_MovementFailure, armyChangeRefreshesEnemyRoutesThroughStationaryHero)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).name("ArmyChangeThreat")
+		.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+		.hero({10, 5, 0}, HeroTypeID(0), PlayerColor(0))
+		.heroGarrison({{CreatureID(0), 1}})
+		.hero({5, 5, 0}, HeroTypeID(1), PlayerColor(1))
+		.heroGarrison({{CreatureID(0), 100}});
+	startWithMap(std::move(builder));
+	revealMap(PlayerColor(0));
+	for(int x = 0; x < 36; ++x)
+		for(int y = 0; y < 36; ++y)
+			map()->getTile({x, y, 0}).terrainType = y == 5 ? ETerrainId::GRASS : ETerrainId::ROCK;
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto position = hero->visitablePos();
+	auto gateway = makeGateway(PlayerColor(0));
+	NK2AI::Goals::TGoalVec priorityTasks;
+	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 1));
+	const int3 target(15, 5, 0);
+	EXPECT_GT(gateway->nullkiller->dangerHitMap->getTileThreat(target).maximumDanger.danger, 0);
+	const auto * enemy = findHeroByOwner(PlayerColor(1));
+	ASSERT_NE(enemy, nullptr);
+	EXPECT_EQ(gateway->nullkiller->dangerEvaluator->evaluateDanger(position, hero), 0);
+	EXPECT_GT(gateway->nullkiller->dangerEvaluator->evaluateDanger(position, enemy), 0);
+	EXPECT_EQ(gateway->nullkiller->dangerEvaluator->evaluateDanger(enemy->visitablePos(), enemy), 0);
+	EXPECT_GT(gateway->nullkiller->dangerEvaluator->evaluateDanger(enemy->visitablePos(), hero), 0);
+	EXPECT_EQ(gateway->nullkiller->dangerEvaluator->evaluateDanger(hero), 0);
+	EXPECT_GT(gateway->nullkiller->dangerEvaluator->evaluateDanger(enemy), 0);
+	EXPECT_TRUE(gateway->nullkiller->dangerHitMap->isHitMapUpToDate());
+	EXPECT_TRUE(gateway->nullkiller->dangerHitMap->isTileOwnersUpToDate());
+	ASSERT_TRUE(hero->setCreature(SlotID(0), CreatureID(27), 100));
+	gateway->garrisonsChanged(hero->id, ObjectInstanceID());
+	EXPECT_FALSE(gateway->nullkiller->dangerHitMap->isHitMapUpToDate());
+	EXPECT_FALSE(gateway->nullkiller->dangerHitMap->isTileOwnersUpToDate());
+	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 2));
+	EXPECT_EQ(gateway->nullkiller->dangerHitMap->getTileThreat(target).maximumDanger.danger, 0);
+	EXPECT_TRUE(gateway->nullkiller->dangerHitMap->isHitMapUpToDate());
+	EXPECT_TRUE(gateway->nullkiller->dangerHitMap->isTileOwnersUpToDate());
+	EXPECT_EQ(hero->visitablePos(), position);
+	CGHeroInstance neutralVisitor(gameState().get());
+	neutralVisitor.setOwner(PlayerColor::NEUTRAL);
+	EXPECT_GT(gateway->nullkiller->dangerEvaluator->evaluateDanger(position, &neutralVisitor), 0);
+	gameState()->getPlayerTeam(PlayerColor(1))->players.erase(PlayerColor(1));
+	gameState()->getPlayerTeam(PlayerColor(0))->players.insert(PlayerColor(1));
+	gameState()->getPlayerState(PlayerColor(1))->team = gameState()->getPlayerState(PlayerColor(0))->team;
+	EXPECT_EQ(gateway->nullkiller->dangerEvaluator->evaluateDanger(position, enemy), 0);
+	EXPECT_EQ(gateway->nullkiller->dangerEvaluator->evaluateDanger(enemy->visitablePos(), hero), 0);
 }
 
 TEST(Nullkiller2_Engine_TaskFailure, triesNextTaskWhenAnotherCandidateIsAvailable)
