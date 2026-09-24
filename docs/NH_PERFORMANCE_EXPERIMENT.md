@@ -268,3 +268,15 @@ All temporary timers were removed before the final client/test build. The
 broader native AI regression run passed 154 tests across 28 suites, and the
 uninstrumented diagnostic action signatures still matched the measured baseline.
 No graphical validation or replay of the user's slow match is claimed.
+
+The committed `3cb608d7d` build was subsequently frozen and validated as snapshot
+`b753cef75ef2921efe38d30af9c4ac6feef96328263d708abee452bc9a81d433`.
+A 35-second headless `All for One` run with a fresh private profile and configured
+seed 1284510375 completed 48 AI turns (maximum 4880 milliseconds; mean about
+638 milliseconds). It reported none of the checked crash, command-rejection,
+Leadership-limit or unsupported-rules errors. The planned timeout stopped the
+in-progress turn, and no launcher/client child remained afterward. This is a
+bounded smoke check, not whole-match acceptance or a controlled latency comparison.
+That exact snapshot is promoted for the ordinary Linux launcher; the preceding
+snapshot remains recorded as its rollback reference. Multi-second turn latency
+still requires investigation.
