@@ -16,7 +16,10 @@
 #include "Actors.h"
 #include "../Helpers/HeroMap.h"
 
+#include <map>
+#include <optional>
 #include <tbb/concurrent_vector.h>
+#include <vector>
 
 #define NK2AI_PATHFINDER_TRACE_LEVEL 0
 constexpr int NK2AI_GRAPH_TRACE_LEVEL = 0; // To actually enable graph visualization, enter `/vslog graph` in game chat
@@ -332,7 +335,13 @@ public:
 
 	void calculateTownPortalTeleportations(std::vector<CGPathNode *> & neighbours);
 
-	using RealMoveMasksByHero = std::map<const CGHeroInstance *, uint64_t>;
+	struct DLL_LINKAGE RealMoveMaskCommitment
+	{
+		uint64_t mask;
+		const AIPathNode * spineRoot;
+	};
+
+	using RealMoveMasksByHero = std::map<const CGHeroInstance *, std::vector<RealMoveMaskCommitment>>;
 
 	inline bool isRealMovementNode(const AIPathNode * node) const
 	{
@@ -340,7 +349,7 @@ public:
 	}
 
 	// Reconstructs an AIPath by walking theNodeBefore / chainOther, appending branch nodes first and linking them via parentIndex
-	// Returns false when reconstruction would assign conflicting real-move chainMasks to the same hero
+	// Same-hero movement mask changes are allowed only at a verified exchange edge; conflicting masks on separate spines are rejected
 	bool tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const;
 	bool calculatePathInfo(AIPath & path, const AIPathNode * node) const;
 

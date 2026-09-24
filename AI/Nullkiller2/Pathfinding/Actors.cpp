@@ -341,15 +341,22 @@ HeroExchangeArmy * HeroExchangeMap::tryUpgrade(
 	TResources resources) const
 {
 	auto * target = new HeroExchangeArmy();
-	auto upgradeInfo = aiNk->armyManager->calculateCreaturesUpgrade(army, upgrader, resources);
+	auto upgradeInfo = aiNk->armyManager->calculateCreaturesUpgrade(army, upgrader, resources, actor->hero);
 
 	if(upgradeInfo.upgradeValue)
 	{
+		if(upgradeInfo.resultingArmy.size() != army->Slots().size())
+		{
+			logAi->error("Rejecting projected army upgrade because the resulting physical slot count changed");
+			delete target;
+			return nullptr;
+		}
+
+		auto sourceSlot = army->Slots().begin();
 		for(auto & slotInfo : upgradeInfo.resultingArmy)
 		{
-			auto targetSlot = target->getFreeSlot();
-
-			target->addToSlot(targetSlot, slotInfo.creature->getId(), TQuantity(slotInfo.count));
+			target->addToSlot(sourceSlot->first, slotInfo.creature->getId(), TQuantity(slotInfo.count));
+			++sourceSlot;
 		}
 
 		resources -= upgradeInfo.upgradeCost;
@@ -358,16 +365,13 @@ HeroExchangeArmy * HeroExchangeMap::tryUpgrade(
 	else
 	{
 		for(const auto & slot : army->Slots())
-		{
-			const auto & targetSlot = target->getSlotFor(slot.second->getCreatureID());
-
-			target->addToSlot(targetSlot, slot.second->getCreatureID(), slot.second->getCount());
-		}
+			target->addToSlot(slot.first, slot.second->getCreatureID(), slot.second->getCount());
 	}
 
 	if(upgrader->ID == Obj::TOWN)
 	{
-		auto buyArmy = aiNk->armyManager->getArmyAvailableToBuy(target, aiNk->cc->getTown(upgrader->id), resources);
+		auto buyArmy = aiNk->armyManager->getArmyAvailableToBuy(
+			target, aiNk->cc->getTown(upgrader->id), resources, 0, actor->hero);
 
 		for(auto & creatureToBuy : buyArmy)
 		{

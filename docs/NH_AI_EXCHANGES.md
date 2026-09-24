@@ -80,3 +80,49 @@ one-unit transfer and physical army plan; serialized authoritative state remaine
 unchanged. There is no machine-dependent pass/fail timing threshold. This small
 fixture does not establish whole-turn performance, diverse-creature swap cost,
 or a need for a new persistent capacity cache.
+
+### Upgrade, purchase and route reconstruction follow-up
+
+Town-path forecasts previously merged duplicate physical slots when no upgrade
+was available. Their purchase and upgrade estimates could also lose the actual
+hero identity when operating on a synthetic army. The follow-up preserves slot
+identity and threads the carrier through path, Gather Army and hill-fort reward/
+cost estimates. Upgrade candidates are filtered against that carrier's capacity;
+purchase counts are capped before allocating the resource budget.
+
+This deliberately mirrors current recruitment's first matching slot. Spare room
+in a later duplicate slot is not yet usable by the actual recruitment command;
+fixing the forecast is not a claim that this broader recruitment limitation is
+resolved. Native purchase-capacity/resource-ordering and real/synthetic upgrade
+carrier tests pass. The public town-path regression exposed a separate
+reconstruction defect: an accepted purchase actor is discarded when the carrier's
+arrival and post-purchase nodes have different chain masks. The projected army
+and exchange actor are created successfully; path reconstruction rejects their
+chronological dependency.
+
+The correction distinguishes one hero's successive states along its carrier
+predecessor path from incompatible commitments in separate donor branches. A
+mask change is permitted only at an explicit exchange boundary: the predecessor
+must carry the same hero, its mask must be disjoint from the donor's, and their
+union must exactly equal the exchange result. Compressed predecessors need not
+occupy the exchange tile. Verified transitions also advance local history through
+starting-position nodes, without making those nodes real-movement commitments.
+
+Distinct movement commitments are retained by predecessor-spine identity and
+mask. Ordinary movement does not add duplicate commitments. Separate branches
+still reject incompatible masks, including subset relationships; keeping only
+the latest mask would incorrectly lose this protection. Reconstruction remains
+local to a path query, with no persistent state or world-wide scan.
+
+Regression acceptance must retain the purchase/arrival action dependency,
+physical stacks and unchanged authoritative state while continuing to reject
+conflicting branches. Direct reconstruction cases cover successive exchanges,
+compressed predecessors, starting-position transitions and bounded bookkeeping.
+
+The client and native test executable rebuild successfully. All 13 focused
+purchase/reconstruction tests pass, including the previously failing public
+town-path case. A broader run passes 301 tests across 42 suites covering
+adventure AI, battle magic AI, Leadership formation/exchanges, Necromancy,
+Spell Point pools and capacity, primary progression and historical rule
+snapshots. These are synthetic/headless checks, not a replay of the reported
+slow match or graphical acceptance, and they do not establish full-turn latency.

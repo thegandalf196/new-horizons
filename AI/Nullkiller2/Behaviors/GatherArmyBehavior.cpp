@@ -281,7 +281,8 @@ Goals::TGoalVec GatherArmyBehavior::upgradeArmy(const Nullkiller * aiNk, const C
 			continue;
 		}
 
-		auto upgrade = aiNk->armyManager->calculateCreaturesUpgrade(path.heroArmy, upgrader, availableResources);
+		auto upgrade = aiNk->armyManager->calculateCreaturesUpgrade(
+			path.heroArmy, upgrader, availableResources, path.targetHero);
 		if(!upgrader->getGarrisonHero() && (hasMainAround || aiNk->heroManager->getHeroRoleOrDefaultInefficient(path.targetHero) == HeroRole::MAIN))
 		{
 			ArmyUpgradeInfo armyToGetOrBuy;

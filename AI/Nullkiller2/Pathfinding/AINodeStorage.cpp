@@ -1867,19 +1867,90 @@ bool AINodeStorage::calculatePathInfo(AIPath & path, const AIPathNode * node) co
 
 bool AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path,	int & parentIndex, RealMoveMasksByHero & realMoveMasks) const
 {
-	while(node != nullptr)
+	struct ExchangeMaskTransition
 	{
-		if(!node->actor->hero)
-			return true;
+		const CGHeroInstance * hero;
+		uint64_t exchangeMask;
+		uint64_t predecessorMask;
+	};
 
-		const auto tryAppendCurrentNode = [this, &node](AIPath & candidatePath, int candidateParentIndex,
-																										RealMoveMasksByHero & candidateMasks) -> std::optional<int>
+	const auto getVerifiedExchangeTransition = [](const AIPathNode * exchangeNode, const AIPathNode * predecessor) -> std::optional<ExchangeMaskTransition>
+	{
+		if(!exchangeNode || !predecessor || !exchangeNode->chainOther
+			|| !exchangeNode->actor || !predecessor->actor || !exchangeNode->chainOther->actor)
+			return std::nullopt;
+
+		const auto * hero = exchangeNode->actor->hero;
+		if(!hero || predecessor->actor->hero != hero)
+			return std::nullopt;
+
+		const uint64_t predecessorMask = predecessor->actor->chainMask;
+		const uint64_t donorMask = exchangeNode->chainOther->actor->chainMask;
+		if((predecessorMask & donorMask) != 0
+			|| exchangeNode->actor->chainMask != (predecessorMask | donorMask))
+			return std::nullopt;
+
+		return ExchangeMaskTransition{hero, exchangeNode->actor->chainMask, predecessorMask};
+	};
+
+	const auto reconstruct = [this, &getVerifiedExchangeTransition](auto && self,
+		const AIPathNode * spineRoot,
+		AIPath & candidatePath,
+		int & candidateParentIndex,
+		RealMoveMasksByHero & candidateMasks) -> bool
+	{
+		std::map<const CGHeroInstance *, uint64_t> currentMasks;
+		std::optional<ExchangeMaskTransition> expectedTransition;
+		const AIPathNode * currentNode = spineRoot;
+
+		const auto tryAppendCurrentNode = [this, spineRoot, &currentMasks, &expectedTransition](
+			const AIPathNode * node,
+			AIPath & pathToAppend,
+			int parent,
+			RealMoveMasksByHero & masks) -> std::optional<int>
 		{
+			const auto transitionForNode = expectedTransition;
+			expectedTransition.reset(); // A verified transition belongs to the immediate predecessor edge only.
+			const auto * hero = node->actor->hero;
+			const uint64_t nodeMask = node->actor->chainMask;
+
+			auto currentMask = currentMasks.find(hero);
+			const bool verifiedTransition = transitionForNode
+				&& transitionForNode->hero == hero
+				&& currentMask != currentMasks.end()
+				&& currentMask->second == transitionForNode->exchangeMask
+				&& nodeMask == transitionForNode->predecessorMask;
+
+			// A verified edge changes the expected mask even when its predecessor is the
+			// hero's starting-position node and therefore does not commit real movement.
+			if(verifiedTransition)
+				currentMasks[hero] = nodeMask;
+
 			if(isRealMovementNode(node))
 			{
-				auto existingMask = candidateMasks.find(node->actor->hero);
-				if(existingMask != candidateMasks.end() && existingMask->second != node->actor->chainMask)
+				const auto commitments = masks.find(hero);
+				if(commitments != masks.end())
+				{
+					for(const auto & commitment : commitments->second)
+					{
+						if(commitment.spineRoot != spineRoot && commitment.mask != nodeMask)
+							return std::nullopt;
+					}
+				}
+
+				currentMask = currentMasks.find(hero);
+
+				if(currentMask != currentMasks.end() && currentMask->second != nodeMask && !verifiedTransition)
 					return std::nullopt;
+
+				currentMasks[hero] = nodeMask;
+				auto & heroCommitments = masks[hero];
+				const auto hasCommitment = std::ranges::any_of(heroCommitments, [spineRoot, nodeMask](const RealMoveMaskCommitment & commitment)
+				{
+					return commitment.spineRoot == spineRoot && commitment.mask == nodeMask;
+				});
+				if(!hasCommitment)
+					heroCommitments.push_back({nodeMask, spineRoot});
 			}
 
 			AIPathNodeInfo pathNode;
@@ -1890,7 +1961,7 @@ bool AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & pa
 			pathNode.turns = node->turns;
 			pathNode.danger = node->danger;
 			pathNode.coord = node->coord;
-			pathNode.parentIndex = candidateParentIndex;
+			pathNode.parentIndex = parent;
 			pathNode.actionIsBlocked = false;
 			pathNode.layer = node->layer;
 
@@ -1900,44 +1971,51 @@ bool AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & pa
 				pathNode.actionIsBlocked = !pathNode.specialAction->canAct(aiNk, targetNode);
 			}
 
-			const int nextParentIndex = static_cast<int>(candidatePath.nodes.size());
-
-			candidatePath.nodes.push_back(pathNode);
-			if(isRealMovementNode(node))
-				candidateMasks[node->actor->hero] = node->actor->chainMask;
-
+			const int nextParentIndex = static_cast<int>(pathToAppend.nodes.size());
+			pathToAppend.nodes.push_back(pathNode);
 			return nextParentIndex;
 		};
 
-		if(node->chainOther)
+		while(currentNode != nullptr)
 		{
-			AIPath pathWithBranch = path;
-			auto masksWithBranch = realMoveMasks;
-			int parentIndexWithBranch = parentIndex;
+			if(!currentNode->actor->hero)
+				return true;
 
-			if(!tryReconstructChainInfo(node->chainOther, pathWithBranch, parentIndexWithBranch, masksWithBranch))
-				return false; // Reject path because chainOther branch is conflicting for hero
+			const AIPathNode * predecessor = currentNode->theNodeBefore ? getAINode(currentNode->theNodeBefore) : nullptr;
+			if(currentNode->chainOther)
+			{
+				AIPath pathWithBranch = candidatePath;
+				auto masksWithBranch = candidateMasks;
+				int parentIndexWithBranch = candidateParentIndex;
 
-			auto nextParentIndex = tryAppendCurrentNode(pathWithBranch, parentIndexWithBranch, masksWithBranch);
-			if(!nextParentIndex)
-				return false; // Reject path because current node conflicts after chainOther for hero
+				if(!self(self, currentNode->chainOther, pathWithBranch, parentIndexWithBranch, masksWithBranch))
+					return false; // Reject path because chainOther branch is conflicting for hero.
 
-			path = std::move(pathWithBranch);
-			realMoveMasks = std::move(masksWithBranch);
-			parentIndex = *nextParentIndex;
-			node = getAINode(node->theNodeBefore);
-			continue;
+				auto nextParentIndex = tryAppendCurrentNode(currentNode, pathWithBranch, parentIndexWithBranch, masksWithBranch);
+				if(!nextParentIndex)
+					return false; // Reject path because current node conflicts after chainOther for hero.
+
+				candidatePath = std::move(pathWithBranch);
+				candidateMasks = std::move(masksWithBranch);
+				candidateParentIndex = *nextParentIndex;
+			}
+			else
+			{
+				auto nextParentIndex = tryAppendCurrentNode(currentNode, candidatePath, candidateParentIndex, candidateMasks);
+				if(!nextParentIndex)
+					return false;
+
+				candidateParentIndex = *nextParentIndex;
+			}
+
+			expectedTransition = getVerifiedExchangeTransition(currentNode, predecessor);
+			currentNode = predecessor;
 		}
 
-		auto nextParentIndex = tryAppendCurrentNode(path, parentIndex, realMoveMasks);
-		if(!nextParentIndex)
-			return false;
+		return true;
+	};
 
-		parentIndex = *nextParentIndex;
-		node = getAINode(node->theNodeBefore);
-	}
-
-	return true;
+	return reconstruct(reconstruct, node, path, parentIndex, realMoveMasks);
 }
 
 AIPath::AIPath()

@@ -76,14 +76,16 @@ public:
 		const CCreatureSet * hero,
 		const CGDwelling * dwelling,
 		TResources availableRes,
-		uint8_t turn = 0) const = 0;
+		uint8_t turn = 0,
+		const CGHeroInstance * carrier = nullptr) const = 0;
 
 	virtual uint64_t evaluateStackPower(const Creature * creature, int count) const = 0;
 	virtual SlotInfo getTotalCreaturesAvailable(CreatureID creatureID) const = 0;
 	virtual ArmyUpgradeInfo calculateCreaturesUpgrade(
 		const CCreatureSet * army,
 		const CGObjectInstance * upgrader,
-		const TResources & availableResources) const = 0;
+		const TResources & availableResources,
+		const CGHeroInstance * carrier = nullptr) const = 0;
 	virtual std::shared_ptr<CCreatureSet> getArmyAvailableToBuyAsCCreatureSet(const CGDwelling * dwelling, TResources availableRes) const = 0;
 };
 
@@ -122,7 +124,8 @@ public:
 		const CCreatureSet * hero,
 		const CGDwelling * dwelling,
 		TResources availableRes,
-		uint8_t turn = 0) const override;
+		uint8_t turn = 0,
+		const CGHeroInstance * carrier = nullptr) const override;
 
 	std::shared_ptr<CCreatureSet> getArmyAvailableToBuyAsCCreatureSet(const CGDwelling * dwelling, TResources availableRes) const override;
 	uint64_t evaluateStackPower(const Creature * creature, int count) const override;
@@ -130,13 +133,17 @@ public:
 	ArmyUpgradeInfo calculateCreaturesUpgrade(
 		const CCreatureSet * army, 
 		const CGObjectInstance * upgrader,
-		const TResources & availableResources) const override;
+		const TResources & availableResources,
+		const CGHeroInstance * carrier = nullptr) const override;
 
 private:
 	std::vector<SlotInfo> convertToSlots(const CCreatureSet * army) const;
-	std::vector<StackUpgradeInfo> getPossibleUpgrades(const CCreatureSet * army, const CGObjectInstance * upgrader) const;
-	std::vector<StackUpgradeInfo> getHillFortUpgrades(const CCreatureSet * army) const;
-	std::vector<StackUpgradeInfo> getDwellingUpgrades(const CCreatureSet * army, const CGDwelling * dwelling) const;
+	std::vector<StackUpgradeInfo> getPossibleUpgrades(
+		const CCreatureSet * army, const CGObjectInstance * upgrader, const CGHeroInstance * carrier) const;
+	std::vector<StackUpgradeInfo> getHillFortUpgrades(
+		const CCreatureSet * army, const CGHeroInstance * carrier) const;
+	std::vector<StackUpgradeInfo> getDwellingUpgrades(
+		const CCreatureSet * army, const CGDwelling * dwelling, const CGHeroInstance * carrier) const;
 };
 
 }

@@ -13,6 +13,7 @@
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
 #include "AI/Nullkiller2/Helpers/ArmyFormation.h"
 #include "AI/Nullkiller2/Pathfinding/AIPathfinder.h"
+#include "AI/Nullkiller2/Pathfinding/Actions/BuyArmyAction.h"
 
 #include "mock/GameHandlerTestServer.h"
 #include "mock/TinyH3MBuilder.h"
@@ -109,6 +110,20 @@ TinyH3M::TinyH3MBuilder makeLeadershipExchangeMap(CreatureID creature, uint16_t 
 		.hero(EXCHANGE_SOURCE_POS,
 			HeroTypeID(HeroTypeID::decode("core:valeska")), PLAYER)
 		.heroGarrison({{creature, sourceCount}});
+
+	return builder;
+}
+
+TinyH3M::TinyH3MBuilder makeLeadershipTownPurchaseMap()
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder
+		.size(36, false)
+		.name("NK2LeadershipTownPurchase")
+		.playerActive(PLAYER)
+		.town({9, 5, 0}, FactionID::CASTLE, PLAYER)
+		.hero(EXCHANGE_RECEIVER_POS,
+			HeroTypeID(HeroTypeID::decode("core:orrin")), PLAYER);
 
 	return builder;
 }
@@ -337,4 +352,209 @@ TEST_F(Nullkiller2_Behaviors_GatherArmyBehavior, PickBestCreaturesAppliesProject
 	EXPECT_EQ(receiver->getStackCount(SlotID(GameConstants::ARMY_SIZE - 1)), capacity->maximum);
 	EXPECT_EQ(source->getStackCount(SlotID(0)), 3);
 	EXPECT_EQ(totalCreatures(*receiver) + totalCreatures(*source), initialCreatures);
+}
+
+TEST_F(Nullkiller2_Behaviors_GatherArmyBehavior, TownPurchasePathPreservesDuplicatePhysicalStacks)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const CreatureID archangel(CreatureID::decode("core:archangel"));
+	startNewHorizonsMap(makeLeadershipTownPurchaseMap());
+
+	auto * hero = findHeroAt(EXCHANGE_RECEIVER_POS);
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(town, nullptr);
+	hero->clearSlots();
+	town->clearSlots();
+	ASSERT_TRUE(town->Slots().empty());
+	ASSERT_EQ(town->getGarrisonHero(), nullptr);
+
+	const auto pikemanCapacity = hero->getLeadershipSlotCapacity(pikeman);
+	const auto archangelCapacity = hero->getLeadershipSlotCapacity(archangel);
+	ASSERT_TRUE(pikemanCapacity);
+	ASSERT_GT(pikemanCapacity->maximum, 1);
+	ASSERT_TRUE(archangelCapacity);
+	ASSERT_GT(archangelCapacity->maximum, 0);
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, pikemanCapacity->maximum - 1));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, pikemanCapacity->maximum));
+
+	// No Pike upgrade is available. The town can recruit a sufficiently strong
+	// creature to ensure the public town-actor exchange survives path filtering.
+	town->creatures.clear();
+	town->creatures.emplace_back(0, std::vector<CreatureID>{pikeman});
+	town->creatures.emplace_back(archangelCapacity->maximum,
+		std::vector<CreatureID>{archangel});
+	for(int resource = 0; resource < GameConstants::RESOURCE_QUANTITY; ++resource)
+		grantResources(PLAYER, GameResID(resource), 1000000);
+
+	const auto gateway = makeGateway(PLAYER);
+	const TResources freeResources = gateway->nullkiller->getFreeResources();
+	ASSERT_TRUE(freeResources.canAfford(
+		archangel.toCreature()->getFullRecruitCost() * archangelCapacity->maximum));
+	const auto purchaseForecast = gateway->nullkiller->armyManager->getArmyAvailableToBuy(
+		hero, town, freeResources, 0, hero);
+	const auto archangelOffer = std::ranges::find_if(purchaseForecast, [archangel](const auto & offer)
+	{
+		return offer.creID == archangel;
+	});
+	ASSERT_NE(archangelOffer, purchaseForecast.end());
+	EXPECT_EQ(archangelOffer->count, archangelCapacity->maximum);
+	EXPECT_GT(archangel.toCreature()->getAIValue() * archangelOffer->count, 5000);
+
+	const auto authoritativeState = gameState()->saveToMemory();
+	updateHeroPaths(gateway->nullkiller.get());
+	const auto paths = gateway->nullkiller->pathfinder->getPathInfo(
+		town->visitablePos(), gateway->nullkiller->isObjectGraphAllowed());
+	EXPECT_EQ(gameState()->saveToMemory(), authoritativeState);
+	const auto projectedPath = std::ranges::find_if(paths, [hero, town, archangel](const NK2AI::AIPath & path)
+	{
+		if(path.targetHero != hero || path.targetTile() != town->visitablePos()
+			|| path.heroArmy == hero || !path.heroArmy)
+			return false;
+
+		const SlotID archangelSlot = path.heroArmy->getSlotFor(archangel);
+		return archangelSlot.validSlot() && path.heroArmy->hasStackAtSlot(archangelSlot)
+			&& path.heroArmy->getCreature(archangelSlot)
+			&& path.heroArmy->getCreature(archangelSlot)->getId() == archangel;
+	});
+	std::stringstream pathDiagnostics;
+	for(const auto & path : paths)
+	{
+		const SlotID archangelSlot = path.heroArmy->getSlotFor(archangel);
+		const bool hasArchangel = archangelSlot.validSlot() && path.heroArmy->hasStackAtSlot(archangelSlot);
+		pathDiagnostics << path.toString()
+			<< " target=" << path.targetTile().toString()
+			<< " first=" << path.firstTileToGet().toString()
+			<< " exchanged=" << (path.heroArmy != hero)
+			<< " armyStrength=" << path.heroArmy->getArmyStrength()
+			<< " hasArchangel=" << hasArchangel << "\n";
+	}
+	ASSERT_NE(projectedPath, paths.end()) << "Pathfinder results:\n" << pathDiagnostics.str();
+	const auto purchaseNode = std::ranges::find_if(projectedPath->nodes, [](const auto & node)
+	{
+		return dynamic_cast<const NK2AI::AIPathfinding::BuyArmyAction *>(node.specialAction.get()) != nullptr;
+	});
+	ASSERT_NE(purchaseNode, projectedPath->nodes.end());
+	EXPECT_EQ(purchaseNode->coord, town->visitablePos());
+	const auto purchaseIndex = static_cast<int>(std::distance(projectedPath->nodes.begin(), purchaseNode));
+	EXPECT_TRUE(std::ranges::any_of(projectedPath->nodes, [&](const auto & node)
+	{
+		return node.targetHero == hero && node.coord == town->visitablePos()
+			&& node.parentIndex == purchaseIndex;
+	}));
+
+	ASSERT_NE(projectedPath->heroArmy->getCreature(SlotID(0)), nullptr);
+	ASSERT_NE(projectedPath->heroArmy->getCreature(SlotID(1)), nullptr);
+	EXPECT_EQ(projectedPath->heroArmy->getCreature(SlotID(0))->getId(), pikeman);
+	EXPECT_EQ(projectedPath->heroArmy->getStackCount(SlotID(0)), pikemanCapacity->maximum - 1);
+	EXPECT_EQ(projectedPath->heroArmy->getCreature(SlotID(1))->getId(), pikeman);
+	EXPECT_EQ(projectedPath->heroArmy->getStackCount(SlotID(1)), pikemanCapacity->maximum);
+	EXPECT_LE(projectedPath->heroArmy->getStackCount(SlotID(0)), pikemanCapacity->maximum);
+	EXPECT_LE(projectedPath->heroArmy->getStackCount(SlotID(1)), pikemanCapacity->maximum);
+	EXPECT_EQ(projectedPath->heroArmy->getStackCount(projectedPath->heroArmy->getSlotFor(archangel)),
+		archangelOffer->count);
+}
+
+TEST_F(Nullkiller2_Behaviors_GatherArmyBehavior, TownPurchaseForecastUsesFirstMatchingLeadershipSlot)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const CreatureID archer(CreatureID::decode("core:archer"));
+	startNewHorizonsMap(makeLeadershipTownPurchaseMap());
+
+	auto * hero = findHeroAt(EXCHANGE_RECEIVER_POS);
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(town, nullptr);
+	hero->clearSlots();
+
+	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
+	ASSERT_GT(capacity->maximum, 1);
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->maximum));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, capacity->maximum - 1));
+
+	// The later duplicate has spare room, but the server recruits into the first
+	// matching slot. A capped Pike offer must not spend resources or block the
+	// cheaper Archer offer processed afterwards.
+	town->creatures.clear();
+	town->creatures.emplace_back(3, std::vector<CreatureID>{archer});
+	town->creatures.emplace_back(3, std::vector<CreatureID>{pikeman});
+	TResources archerResources = archer.toCreature()->getFullRecruitCost();
+	const auto gateway = makeGateway(PLAYER);
+	auto purchases = gateway->nullkiller->armyManager->getArmyAvailableToBuy(
+		hero, town, archerResources);
+	ASSERT_EQ(purchases.size(), 1);
+	EXPECT_EQ(purchases.front().creID, archer);
+	EXPECT_EQ(purchases.front().count, 1);
+
+	// With one unit of room in the first slot, the purchase forecast remains
+	// bounded there instead of aggregating capacity from both duplicates.
+	hero->setCreature(SlotID(0), pikeman, capacity->maximum - 1);
+	town->creatures.clear();
+	town->creatures.emplace_back(3, std::vector<CreatureID>{pikeman});
+	TResources pikemanResources = pikeman.toCreature()->getFullRecruitCost() * 3;
+	purchases = gateway->nullkiller->armyManager->getArmyAvailableToBuy(
+		hero, town, pikemanResources);
+	ASSERT_EQ(purchases.size(), 1);
+	EXPECT_EQ(purchases.front().creID, pikeman);
+	EXPECT_EQ(purchases.front().count, 1);
+}
+
+TEST_F(Nullkiller2_Behaviors_GatherArmyBehavior, UpgradeForecastRespectsCarrierLeadershipCapacity)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const CreatureID halberdier(CreatureID::decode("core:halberdier"));
+	startNewHorizonsMap(makeLeadershipTownPurchaseMap());
+
+	auto * hero = findHeroAt(EXCHANGE_RECEIVER_POS);
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(town, nullptr);
+	hero->clearSlots();
+
+	const auto pikemanCapacity = hero->getLeadershipSlotCapacity(pikeman);
+	const auto halberdierCapacity = hero->getLeadershipSlotCapacity(halberdier);
+	ASSERT_TRUE(pikemanCapacity);
+	ASSERT_TRUE(halberdierCapacity);
+	ASSERT_GT(halberdierCapacity->maximum, 0);
+	ASSERT_LT(halberdierCapacity->maximum, pikemanCapacity->maximum);
+
+	town->creatures.clear();
+	town->creatures.emplace_back(1, std::vector<CreatureID>{halberdier});
+	TResources ampleResources;
+	for(auto & resource : ampleResources)
+		resource = 1000000;
+
+	// A synthetic projection must use its actual hero carrier: this Pike stack
+	// is valid as Pikemen but cannot become Halberdiers at the same count.
+	CCreatureSet projectedArmy;
+	const int overUpgradeCapacity = halberdierCapacity->maximum + 1;
+	ASSERT_LE(overUpgradeCapacity, pikemanCapacity->maximum);
+	ASSERT_TRUE(projectedArmy.setCreature(SlotID(0), pikeman, overUpgradeCapacity));
+	const auto gateway = makeGateway(PLAYER);
+	auto upgrade = gateway->nullkiller->armyManager->calculateCreaturesUpgrade(
+		&projectedArmy, town, ampleResources, hero);
+	EXPECT_EQ(upgrade.upgradeValue, 0);
+	EXPECT_TRUE(upgrade.resultingArmy.empty());
+
+	ASSERT_TRUE(projectedArmy.setCreature(SlotID(0), pikeman, halberdierCapacity->maximum));
+	upgrade = gateway->nullkiller->armyManager->calculateCreaturesUpgrade(
+		&projectedArmy, town, ampleResources, hero);
+	EXPECT_GT(upgrade.upgradeValue, 0);
+	ASSERT_EQ(upgrade.resultingArmy.size(), 1);
+	EXPECT_EQ(upgrade.resultingArmy.front().creature->getId(), halberdier);
+	EXPECT_EQ(upgrade.resultingArmy.front().count, halberdierCapacity->maximum);
+
+	// Real hero callers infer their carrier when the optional argument is omitted.
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, overUpgradeCapacity));
+	upgrade = gateway->nullkiller->armyManager->calculateCreaturesUpgrade(hero, town, ampleResources);
+	EXPECT_EQ(upgrade.upgradeValue, 0);
+	EXPECT_TRUE(upgrade.resultingArmy.empty());
+
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, halberdierCapacity->maximum));
+	upgrade = gateway->nullkiller->armyManager->calculateCreaturesUpgrade(hero, town, ampleResources);
+	EXPECT_GT(upgrade.upgradeValue, 0);
+	ASSERT_EQ(upgrade.resultingArmy.size(), 1);
+	EXPECT_EQ(upgrade.resultingArmy.front().creature->getId(), halberdier);
+	EXPECT_EQ(upgrade.resultingArmy.front().count, halberdierCapacity->maximum);
 }

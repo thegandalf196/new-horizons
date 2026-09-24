@@ -406,10 +406,14 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 	const CCreatureSet * hero,
 	const CGDwelling * dwelling,
 	TResources availableRes,
-	uint8_t turn) const
+	uint8_t turn,
+	const CGHeroInstance * carrier) const
 {
 	std::vector<creInfo> creaturesInDwellings;
 	int freeHeroSlots = GameConstants::ARMY_SIZE - hero->stacksCount();
+	if(!carrier)
+		carrier = dynamic_cast<const CGHeroInstance *>(hero);
+	std::map<CreatureID, int64_t> projectedCreatureCounts;
 	auto calendar = cpsic->getCalendar();
 	bool countGrowth = (calendar.getDayOfWeek() + turn) > calendar.getDaysInWeek();
 
@@ -432,17 +436,37 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 
 		if(!ci.count) continue;
 
-		// Calculate the market value of the new stack
-		TResources newStackValue = ci.creID.toCreature()->getFullRecruitCost() * ci.count;
-
 		SlotID dst = hero->getSlotFor(ci.creID);
+		const bool hasExistingStack = dst.validSlot() && hero->hasStackAtSlot(dst);
+		const auto projectedCount = projectedCreatureCounts.find(ci.creID);
+		const bool hasProjectedStack = projectedCount != projectedCreatureCounts.end();
+		const int64_t alreadyPresent = (hasExistingStack ? hero->getStackCount(dst) : 0)
+			+ (hasProjectedStack ? projectedCount->second : 0);
+
+		// Recruitment uses getSlotFor on both the AI callback and the server. It
+		// therefore targets the first physical same-creature slot, not spare room
+		// in a later duplicate slot. Keep the forecast on that same slot.
+		vstd::amin(ci.count, availableRes / ci.creID.toCreature()->getFullRecruitCost());
+		if(carrier)
+		{
+			if(const auto capacity = carrier->getLeadershipSlotCapacity(ci.creID))
+				ci.count = static_cast<int>(std::min<int64_t>(ci.count,
+					std::max<int64_t>(0, static_cast<int64_t>(capacity->maximum) - alreadyPresent)));
+		}
+
+		if(ci.count <= 0)
+			continue;
+
+		// Calculate the value after stock, resource, and Leadership limits. This
+		// avoids valuing an impossible replacement with the dwelling's full stock.
+		TResources newStackValue = ci.creID.toCreature()->getFullRecruitCost() * ci.count;
 
 		// Keep track of the least valuable slot in the hero's army
 		SlotID leastValuableSlot;
 		TResources leastValuableStackValue;
 		leastValuableStackValue[6] = std::numeric_limits<int>::max();
 		bool shouldDisband = false;
-		if(!hero->hasStackAtSlot(dst)) //need another new slot for this stack
+		if(!hasExistingStack && !hasProjectedStack) //need another new slot for this stack
 		{
 			if(!freeHeroSlots) // No free slots; consider replacing
 			{
@@ -483,8 +507,6 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 			}
 		}
 
-		vstd::amin(ci.count, availableRes / ci.creID.toCreature()->getFullRecruitCost()); //max count we can afford
-
 		int disbandMalus = 0;
 		
 		if (shouldDisband)
@@ -500,6 +522,7 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 
 		ci.level = i; //this is important for Dungeon Summoning Portal
 		creaturesInDwellings.push_back(ci);
+		projectedCreatureCounts[ci.creID] += ci.count;
 		availableRes -= ci.creID.toCreature()->getFullRecruitCost() * ci.count;
 	}
 
@@ -584,7 +607,8 @@ std::vector<SlotInfo> ArmyManager::convertToSlots(const CCreatureSet * army) con
 	return result;
 }
 
-std::vector<StackUpgradeInfo> ArmyManager::getHillFortUpgrades(const CCreatureSet * army) const
+std::vector<StackUpgradeInfo> ArmyManager::getHillFortUpgrades(
+	const CCreatureSet * army, const CGHeroInstance * carrier) const
 {
 	std::vector<StackUpgradeInfo> upgrades;
 
@@ -592,6 +616,14 @@ std::vector<StackUpgradeInfo> ArmyManager::getHillFortUpgrades(const CCreatureSe
 	{
 		CreatureID initial = creature.second->getCreatureID();
 		auto possibleUpgrades = initial.toCreature()->upgrades;
+		if(carrier)
+		{
+			vstd::erase_if(possibleUpgrades, [&](CreatureID upgradeCreature)
+			{
+				const auto capacity = carrier->getLeadershipSlotCapacity(upgradeCreature);
+				return capacity && !capacity->accepts(creature.second->getCount());
+			});
+		}
 
 		if(possibleUpgrades.empty())
 			continue;
@@ -612,7 +644,8 @@ std::vector<StackUpgradeInfo> ArmyManager::getHillFortUpgrades(const CCreatureSe
 	return upgrades;
 }
 
-std::vector<StackUpgradeInfo> ArmyManager::getDwellingUpgrades(const CCreatureSet * army, const CGDwelling * dwelling) const
+std::vector<StackUpgradeInfo> ArmyManager::getDwellingUpgrades(
+	const CCreatureSet * army, const CGDwelling * dwelling, const CGHeroInstance * carrier) const
 {
 	std::vector<StackUpgradeInfo> upgrades;
 
@@ -623,6 +656,10 @@ std::vector<StackUpgradeInfo> ArmyManager::getDwellingUpgrades(const CCreatureSe
 
 		vstd::erase_if(possibleUpgrades, [&](CreatureID creID) -> bool
 		{
+			const auto capacity = carrier ? carrier->getLeadershipSlotCapacity(creID) : std::nullopt;
+			if(capacity && !capacity->accepts(creature.second->getCount()))
+				return true;
+
 			for(auto pair : dwelling->creatures)
 			{
 				if(vstd::contains(pair.second, creID))
@@ -648,13 +685,14 @@ std::vector<StackUpgradeInfo> ArmyManager::getDwellingUpgrades(const CCreatureSe
 	return upgrades;
 }
 
-std::vector<StackUpgradeInfo> ArmyManager::getPossibleUpgrades(const CCreatureSet * army, const CGObjectInstance * upgrader) const
+std::vector<StackUpgradeInfo> ArmyManager::getPossibleUpgrades(
+	const CCreatureSet * army, const CGObjectInstance * upgrader, const CGHeroInstance * carrier) const
 {
 	std::vector<StackUpgradeInfo> upgrades;
 
 	if(upgrader->ID == Obj::HILL_FORT)
 	{
-		upgrades = getHillFortUpgrades(army);
+		upgrades = getHillFortUpgrades(army, carrier);
 	}
 	else
 	{
@@ -662,7 +700,7 @@ std::vector<StackUpgradeInfo> ArmyManager::getPossibleUpgrades(const CCreatureSe
 
 		if(dwelling)
 		{
-			upgrades = getDwellingUpgrades(army, dwelling);
+			upgrades = getDwellingUpgrades(army, dwelling, carrier);
 		}
 	}
 
@@ -672,12 +710,15 @@ std::vector<StackUpgradeInfo> ArmyManager::getPossibleUpgrades(const CCreatureSe
 ArmyUpgradeInfo ArmyManager::calculateCreaturesUpgrade(
 	const CCreatureSet * army,
 	const CGObjectInstance * upgrader,
-	const TResources & availableResources) const
+	const TResources & availableResources,
+	const CGHeroInstance * carrier) const
 {
 	if(!upgrader)
 		return ArmyUpgradeInfo();
+	if(!carrier)
+		carrier = dynamic_cast<const CGHeroInstance *>(army);
 
-	std::vector<StackUpgradeInfo> upgrades = getPossibleUpgrades(army, upgrader);
+	std::vector<StackUpgradeInfo> upgrades = getPossibleUpgrades(army, upgrader, carrier);
 
 	vstd::erase_if(upgrades, [&](const StackUpgradeInfo & u) -> bool
 	{

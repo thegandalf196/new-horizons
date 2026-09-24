@@ -264,7 +264,8 @@ uint64_t RewardEvaluator::getArmyReward(
 	switch(target->ID)
 	{
 	case Obj::HILL_FORT:
-		return aiNk->armyManager->calculateCreaturesUpgrade(army, target, aiNk->cc->getResourceAmount()).upgradeValue;
+		return aiNk->armyManager->calculateCreaturesUpgrade(
+			army, target, aiNk->cc->getResourceAmount(), hero).upgradeValue;
 	case Obj::CREATURE_GENERATOR1:
 	case Obj::CREATURE_GENERATOR2:
 	case Obj::CREATURE_GENERATOR3:
@@ -379,7 +380,8 @@ int RewardEvaluator::getGoldCost(const CGObjectInstance * target, const CGHeroIn
 	switch(target->ID)
 	{
 	case Obj::HILL_FORT:
-		return aiNk->armyManager->calculateCreaturesUpgrade(army, target, aiNk->cc->getResourceAmount()).upgradeCost[EGameResID::GOLD];
+		return aiNk->armyManager->calculateCreaturesUpgrade(
+			army, target, aiNk->cc->getResourceAmount(), hero).upgradeCost[EGameResID::GOLD];
 	case Obj::SCHOOL_OF_MAGIC:
 	case Obj::SCHOOL_OF_WAR:
 		return 1000;
