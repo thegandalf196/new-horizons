@@ -1085,7 +1085,9 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 				&& !movingOntoObstacle && (!h->inBoat() || disembarking);
 			break;
 		case EPathfindingLayer::SAIL:
-			validLayer = validLayer && t.isWater() && (boatCanSail || embarking);
+			validLayer = validLayer && t.isWater() && (boatCanSail || embarking
+				|| (!h->inBoat() && !transit && pathfinderHelper->isCoastalBlockingVisit(
+					*gameInfo().getTile(h->visitablePos()), t)));
 			break;
 		case EPathfindingLayer::AIR:
 			validLayer = validLayer && canFly && (!h->inBoat() || boatCanFly);

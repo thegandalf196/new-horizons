@@ -53,6 +53,19 @@ public:
 	bool isCoastVisitable() const override { return true; }
 };
 
+class BlockedCoastVisitableObject : public CoastVisitableObject
+{
+public:
+	using CoastVisitableObject::CoastVisitableObject;
+
+	void onHeroVisit(IGameEventCallback &, const CGHeroInstance *) const override
+	{
+		++visitCount;
+	}
+
+	mutable int visitCount = 0;
+};
+
 }
 
 class MovementCostTest : public GameStateTest
@@ -487,6 +500,79 @@ TEST_F(NewHorizonsMovementCostTest, coastVisitableWaterObjectDoesNotGrantSailing
 		EMovementMode::STANDARD, false, hero->getOwner(), EPathfindingLayer::SAIL));
 	EXPECT_EQ(hero->visitablePos(), source);
 	EXPECT_EQ(hero->movementPointsRemaining(), initialMovement);
+	EXPECT_FALSE(hero->inBoat());
+}
+
+TEST_F(NewHorizonsMovementCostTest, blockedCoastVisitableWaterObjectIsVisitedFromShoreAtWalkingCost)
+{
+	startTestGame();
+	const auto heroes = gameState->getPlayerState(PlayerColor(0))->getHeroes();
+	ASSERT_FALSE(heroes.empty());
+	auto * hero = heroes.front();
+	ASSERT_TRUE(hero->usesNewHorizonsMovement());
+	ASSERT_FALSE(hero->inBoat());
+
+	const int3 source = hero->visitablePos();
+	const int3 destination = source + int3(1, 0, 0);
+	auto & sourceTile = gameState->getMap().getTile(source);
+	auto & destinationTile = gameState->getMap().getTile(destination);
+
+	CPathfinderHelper helper(*gameState, hero, PathfinderOptions(*gameState));
+	const std::array landTerrains = {ETerrainId::SAND, ETerrainId::DIRT, ETerrainId::GRASS, ETerrainId::SNOW,
+		ETerrainId::SWAMP, ETerrainId::ROUGH, ETerrainId::SUBTERRANEAN, ETerrainId::LAVA};
+	const auto nonNativeTerrain = std::find_if(landTerrains.begin(), landTerrains.end(), [&](ETerrainId terrain)
+	{
+		return !helper.getTurnInfo()->hasNoTerrainPenalty(terrain)
+			&& newHorizonsMovement::stepCost(false, false, terrain == ETerrainId::SAND, false) > 10;
+	});
+	ASSERT_NE(nonNativeTerrain, landTerrains.end());
+
+	sourceTile.terrainType = *nonNativeTerrain;
+	sourceTile.extTileFlags &= static_cast<ui8>(~FAVORABLE_WINDS_FLAG);
+	destinationTile.terrainType = ETerrainId::WATER;
+
+	auto object = std::make_shared<BlockedCoastVisitableObject>(gameState.get());
+	object->id = ObjectInstanceID(static_cast<si32>(gameState->getMap().objects.size()));
+	object->ID = Obj::SHIPWRECK;
+	object->subID = MapObjectSubID(0);
+	// Supply visit-direction geometry for the pathfinder; no artwork is
+	// rendered by this synthetic blocking-visit fixture.
+	object->appearance = hero->appearance;
+	object->pos = destination + object->getVisitableOffset();
+	object->blockVisit = true;
+	const auto objectID = object->id;
+	gameState->getMap().objects.push_back(object);
+	destinationTile.blockingObjects.push_back(objectID);
+	destinationTile.visitableObjects.push_back(objectID);
+	ASSERT_TRUE(object->isBlockedVisitable());
+	ASSERT_TRUE(object->isCoastVisitable());
+
+	const int initialMovement = hero->movementPointsRemaining();
+	const bool terrainAffinity = helper.getTurnInfo()->hasNoTerrainPenalty(*nonNativeTerrain);
+	const int expectedWalkingCost = newHorizonsMovement::stepCost(false, terrainAffinity,
+		*nonNativeTerrain == ETerrainId::SAND, sourceTile.hasRoad() && destinationTile.hasRoad());
+	ASSERT_GT(expectedWalkingCost, 10);
+	EXPECT_EQ(helper.getMovementCost(source, destination, EPathfindingLayer::LAND, initialMovement), expectedWalkingCost);
+	EXPECT_EQ(helper.getMovementCost(source, destination, EPathfindingLayer::SAIL, initialMovement), expectedWalkingCost);
+
+	CPathsInfo paths(gameState->getMapSize(), hero);
+	auto config = std::make_shared<SingleHeroPathfinderConfig>(paths, *gameState, hero);
+	CPathfinder pathfinder(*gameState, config);
+	pathfinder.calculatePaths();
+
+	const auto * destinationNode = paths.getNode(destination, EPathfindingLayer::SAIL);
+	ASSERT_TRUE(destinationNode->reachable());
+	ASSERT_EQ(destinationNode->action, EPathNodeAction::BLOCKING_VISIT);
+	ASSERT_EQ(destinationNode->moveRemains, initialMovement - expectedWalkingCost);
+
+	testing::NiceMock<GameServerMock> server;
+	initializeGameHandler(server);
+	CGameHandler gameHandler(server, gameState);
+	ASSERT_TRUE(gameHandler.moveHero(hero->id, hero->convertFromVisitablePos(destination),
+		EMovementMode::STANDARD, false, hero->getOwner(), destinationNode->layer));
+	EXPECT_EQ(object->visitCount, 1);
+	EXPECT_EQ(hero->visitablePos(), source);
+	EXPECT_EQ(hero->movementPointsRemaining(), destinationNode->moveRemains);
 	EXPECT_FALSE(hero->inBoat());
 }
 

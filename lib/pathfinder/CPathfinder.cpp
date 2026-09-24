@@ -644,6 +644,16 @@ void CPathfinderHelper::getNeighbours(
 	}
 }
 
+bool CPathfinderHelper::isCoastalBlockingVisit(const TerrainTile & source, const TerrainTile & destination) const
+{
+	if(!source.isLand() || !destination.isWater() || destination.visitableObjects.empty())
+		return false;
+
+	const auto * object = gameInfo.getObjInstance(destination.visitableObjects.back());
+	return object && object->ID != Obj::BOAT && object->isCoastVisitable()
+		&& object->isBlockedVisitable() && !object->passableFor(hero);
+}
+
 int CPathfinderHelper::getMovementCost(
 	const PathNodeInfo & src,
 	const PathNodeInfo & dst,
@@ -684,7 +694,12 @@ int CPathfinderHelper::getMovementCost(
 	}
 
 	const bool usesNewHorizonsMovement = ti->usesNewHorizonsMovement();
-	const bool isSailLayer = dstLayer == EPathfindingLayer::SAIL;
+	// Coast-visitable blocking objects (for example Shipwrecks) use a SAIL
+	// destination node, but the hero remains on shore. Do not price that
+	// interaction as terrain-independent sailing.
+	const bool shoreVisit = usesNewHorizonsMovement && dstLayer == EPathfindingLayer::SAIL
+		&& isCoastalBlockingVisit(*srcTile, *dstTile);
+	const bool isSailLayer = dstLayer == EPathfindingLayer::SAIL && !shoreVisit;
 	const bool isWaterLayer = dstLayer == EPathfindingLayer::WATER;
 	const bool isAirLayer = usesNewHorizonsMovement
 		? dstLayer == EPathfindingLayer::AIR

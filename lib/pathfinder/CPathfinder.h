@@ -118,6 +118,9 @@ public:
 		NeighbourTilesVector & vec,
 		const bool limitCoastSailing) const;
 
+	/// A shore interaction represented by SAIL, without entering the water tile.
+	bool isCoastalBlockingVisit(const TerrainTile & source, const TerrainTile & destination) const;
+
 	int getMovementCost(
 		const int3 & src,
 		const int3 & dst,
