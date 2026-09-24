@@ -168,6 +168,56 @@ TEST_F(Nullkiller2_MovementFailure, townPurchaseRoutePreservesRequiredEnemyHeroB
 	checkRequiredBattleRoute(false, true, true);
 }
 
+TEST_F(Nullkiller2_MovementFailure, alliedHeroCanBlockPreviouslyPlannedCorridor)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).name("AlliedCorridorBlocker")
+		.playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(0), PlayerColor(0))
+		.heroGarrison({{CreatureID(0), 1}})
+		.hero({10, 8, 0}, HeroTypeID(1), PlayerColor(0))
+		.heroGarrison({{CreatureID(0), 1}});
+	startWithMap(std::move(builder));
+	revealMap(PlayerColor(0));
+	for(int x = 0; x < 36; ++x)
+		for(int y = 0; y < 36; ++y)
+			map()->getTile({x, y, 0}).terrainType = y == 5 || y == 8
+				? ETerrainId::GRASS : ETerrainId::ROCK;
+	auto gateway = makeGateway(PlayerColor(0));
+	const CGHeroInstance * traveler = nullptr;
+	const CGHeroInstance * blocker = nullptr;
+	for(const auto * hero : gateway->cc->getHeroesInfo())
+	{
+		if(hero->visitablePos().y == 5)
+			traveler = hero;
+		else
+			blocker = hero;
+	}
+	ASSERT_NE(traveler, nullptr);
+	ASSERT_NE(blocker, nullptr);
+	const int3 target(15, 5, 0);
+	CGPath live;
+	ASSERT_TRUE(gateway->nullkiller->getPathsInfo(traveler)->getPath(live, target));
+	NK2AI::HeroMap<NK2AI::HeroRole> heroes;
+	heroes.emplace(traveler, NK2AI::MAIN);
+	NK2AI::PathfinderSettings settings;
+	settings.useHeroChain = false;
+	gateway->nullkiller->pathfinder->updatePaths(heroes, settings);
+	const auto retainedPlans = gateway->nullkiller->pathfinder->getPathInfo(target);
+	ASSERT_FALSE(retainedPlans.empty());
+	const auto original = blocker->pos;
+	map()->moveObject(blocker->id, int3(10, 5, 0) + blocker->getVisitableOffset());
+	gateway->nullkiller->invalidatePaths();
+	EXPECT_FALSE(gateway->nullkiller->getPathsInfo(traveler)->getPath(live, target));
+	gateway->nullkiller->pathfinder->updatePaths(heroes, settings);
+	EXPECT_TRUE(gateway->nullkiller->pathfinder->getPathInfo(target).empty());
+	// A copied plan remains a historical plan, not proof that its route is still open.
+	EXPECT_EQ(retainedPlans.front().targetTile(), target);
+	map()->moveObject(blocker->id, original);
+	gateway->nullkiller->invalidatePaths();
+	EXPECT_TRUE(gateway->nullkiller->getPathsInfo(traveler)->getPath(live, target));
+}
+
 TEST_F(Nullkiller2_MovementFailure, armyChangeRefreshesGuardedRoutesWithoutMovingHero)
 {
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
