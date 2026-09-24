@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "AdventureSpellCast.h"
 #include "../AIGateway.h"
+#include "../../../lib/ScopeGuard.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/spells/adventure/TownPortalEffect.h"
@@ -72,6 +73,10 @@ void AdventureSpellCast::accept(AIGateway * aiGw)
 	}
 
 	const auto wait = aiGw->cc->waitTillRealize;
+	auto restoreWait = vstd::makeScopeGuard([callback = aiGw->cc, wait]()
+	{
+		callback->waitTillRealize = wait;
+	});
 	aiGw->cc->waitTillRealize = true;
 	aiGw->cc->castSpell(hero, spellID, tile);
 	aiGw->waitTillFree(); // Adventure spells may trigger visits and level-up queries.
@@ -82,7 +87,6 @@ void AdventureSpellCast::accept(AIGateway * aiGw)
 		aiGw->moveHeroToTile(town->visitablePos(), HeroPtr(hero, aiGw->cc.get()));
 	}
 
-	aiGw->cc->waitTillRealize = wait;
 	throw goalFulfilledException(sptr(*this));
 }
 

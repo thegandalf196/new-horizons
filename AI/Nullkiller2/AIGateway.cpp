@@ -1445,8 +1445,9 @@ bool AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)
 		nullkiller->getPathsInfo(heroPtr.get())->getPath(path, dst);
 		if(path.nodes.empty())
 		{
-			logAi->error("Hero %s cannot reach %s.", heroPtr->getNameTextID(), dst.toString());
-			return true;
+			logAi->error("Hero %s cannot reach %s from %s with %d movement points.",
+				heroPtr->getNameTextID(), dst.toString(), startHpos.toString(), heroPtr->movementPointsRemaining());
+			throw cannotFulfillGoalException("No live path to movement target!");
 		}
 		int i = (int)path.nodes.size() - 1;
 
