@@ -143,3 +143,30 @@ The combined 66-test Mana-capacity, perk-state and magic-AI suite passed afterwa
 The optimized query reads the saved registry and current rank without a cache;
 strict validation remains at initialization, selection and loading boundaries.
 Replaying the originally reported match remains unverified.
+
+### Post-battle correctness follow-up
+
+Necromancy's former destination check accepted a matching stack without checking
+its remaining Leadership capacity. The server then rejected the increase, even
+when another slot could hold the award. The replacement preflights the complete
+award across matching stacks and empty slots, using the same per-slot capacity
+rule as server validation. Dark Conversion previews and post-query delivery use
+the same planner. If the complete result cannot fit, no creatures or Black
+Harvest mana are awarded; existing troops are unchanged. This preserves the
+resolver's all-or-nothing policy rather than inventing partial rewards.
+
+A separate full-flow native test exposed a defeated hero retaining a borrowed
+battle pointer after moving into the hero pool. Battle destruction could no
+longer find that hero through its map ID, and subsequent mana reconciliation
+dereferenced the stale pointer. Removal now clears the link before pool transfer,
+after the active-battle guard and bonus detachment. The regression checks pooled
+hero rule and mana access after battle finalization. This is a lifecycle repair,
+not a return to per-update mana polling.
+
+Validation: the combined 116-test native Necromancy, Spell Point state/capacity/
+reward/presentation, perk-state and combat-magic AI run passes. Five full-flow
+admission cases cover a capped matching stack with spare space, no remaining
+capacity, room spread over duplicate stacks, mixed-output choice filtering, and
+capacity lost while a conversion query is pending. Client and test targets build;
+the Necromancy summary UI source check also passes. No graphical run or replay of
+the original slow match is included in this result.

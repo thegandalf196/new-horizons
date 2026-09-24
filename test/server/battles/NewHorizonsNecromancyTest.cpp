@@ -6,12 +6,19 @@
 #include "../../SpellPointTestUtils.h"
 
 #include "BattleTestFixture.h"
+#include "../../mock/TinyH3MBuilder.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
 #include "../../../server/queries/BattleQueries.h"
 #include "../../../server/queries/QueriesProcessor.h"
+#include "../../../lib/GameConstants.h"
 #include "../../../lib/CPlayerState.h"
+#include "../../../lib/CSkillHandler.h"
+#include "../../../lib/IGameSettings.h"
+#include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/entities/hero/NewHorizonsNecromancy.h"
+#include "../../../lib/mapObjects/CGHeroInstance.h"
+#include "../../../lib/mapping/CMap.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClient.h"
@@ -19,7 +26,10 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 
+#include <array>
 #include <limits>
+#include <memory>
+#include <vector>
 
 namespace
 {
@@ -29,6 +39,26 @@ CreatureID creature(const char * id)
 {
 	return CreatureID(CreatureID::decode(id));
 }
+
+/// The normal battle fixture records combat activity but intentionally ignores
+/// result and system-message packs. These post-battle regressions also need to
+/// verify that a capacity rejection is reported in the result without sending
+/// a server complaint.
+class NecromancyAdmissionRecordingServer final : public RecordingGameServer
+{
+public:
+	void applyPack(CPackForClient & pack) override
+	{
+		if(dynamic_cast<SystemMessage *>(&pack))
+			++systemMessages;
+		if(const auto * results = dynamic_cast<const BattleResultsApplied *>(&pack))
+			battleResults.push_back(*results);
+		RecordingGameServer::applyPack(pack);
+	}
+
+	int systemMessages = 0;
+	std::vector<BattleResultsApplied> battleResults;
+};
 }
 
 TEST(NewHorizonsNecromancy, RankFormulaUsesExactLivingCountsAndBoneCollectorPoints)
@@ -296,6 +326,145 @@ protected:
 	}
 };
 
+/// Same computer-winner full-flow fixture, with a recorder installed after
+/// setup so the assertions can inspect authoritative result/error packs.
+class NewHorizonsNecromancyAdmissionAITest : public NewHorizonsNecromancyAITest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsNecromancyAITest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
+			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+	}
+
+	void SetUp() override
+	{
+		// Build with a Necromancer-class hero from the outset. Hero capability
+		// rules are captured during initialization, so changing the prototype
+		// afterward (as the compact base fixture does) would retain Castle caps.
+		BattleTestFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+
+		const CreatureID token(0);
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).name("NecromancyCapacityTest")
+			.playerActive(PlayerColor(0))
+			.playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(72), PlayerColor(0)).heroGarrison({{token, 1}})
+			.hero({7, 7, 0}, HeroTypeID(1), PlayerColor(1)).heroGarrison({{token, 1}});
+		startWithMap(std::move(builder));
+
+		recordingServer = std::make_unique<NecromancyAdmissionRecordingServer>();
+		recordingServer->gameState = gameState();
+		gameHandler = std::make_shared<CGameHandler>(*recordingServer, gameState());
+		gameHandler->randomizer->setSeed(seed);
+
+		attackerSideHero = findHeroByOwner(PlayerColor(0));
+		defenderSideHero = findHeroByOwner(PlayerColor(1));
+		ASSERT_NE(attackerSideHero, nullptr);
+		ASSERT_NE(defenderSideHero, nullptr);
+		makeNeutralForCapacityTest(attackerSideHero);
+		makeNeutralForCapacityTest(defenderSideHero);
+		// Human-facing dialog queries remain dormant until the adventure UI
+		// reports ready. These native full-flow tests answer those queries
+		// directly, so mark both simulated controllers ready first.
+		gameHandler->onAdvInterfaceReady(PlayerColor(0));
+		gameHandler->onAdvInterfaceReady(PlayerColor(1));
+	}
+
+	void TearDown() override
+	{
+		gameHandler.reset();
+		recordingServer.reset();
+		NewHorizonsNecromancyAITest::TearDown();
+	}
+
+	void prepareNecromancerArmy(bool fillAllSlots)
+	{
+		const auto necromancy = SecondarySkill::decode("new-horizons:necromancy");
+		ASSERT_GE(necromancy, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(necromancy), MasteryLevel::BASIC,
+			ChangeValueMode::ABSOLUTE);
+
+		const auto skeleton = creature("core:skeleton");
+		const auto capacity = attackerSideHero->getLeadershipSlotCapacity(skeleton);
+		ASSERT_TRUE(capacity);
+		ASSERT_EQ(capacity->leadership, 725);
+		ASSERT_EQ(capacity->maximum, 16);
+		attackerSideHero->clearSlots();
+		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), skeleton, capacity->maximum));
+
+		if(fillAllSlots)
+			fillFillerSlots(1, GameConstants::ARMY_SIZE - 1);
+
+		ASSERT_TRUE(attackerSideHero->usesNewHorizonsNecromancy());
+		ASSERT_FALSE(attackerSideHero->hasActivePerk(
+			"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"));
+	}
+
+	void fillFillerSlots(int firstSlot, int count)
+	{
+		const std::array<const char *, GameConstants::ARMY_SIZE - 1> fillerCreatures = {
+			"core:pikeman", "core:archer", "core:swordsman", "core:griffin", "core:monk", "core:cavalier"
+		};
+		ASSERT_LE(count, static_cast<int>(fillerCreatures.size()));
+		for(int i = 0; i < count; ++i)
+		{
+			const auto filler = creature(fillerCreatures[static_cast<size_t>(i)]);
+			const auto fillerCapacity = attackerSideHero->getLeadershipSlotCapacity(filler);
+			ASSERT_TRUE(fillerCapacity);
+			ASSERT_GE(fillerCapacity->maximum, 1);
+			ASSERT_TRUE(attackerSideHero->setCreature(SlotID(firstSlot + i), filler, 1));
+		}
+	}
+
+	void makeNeutralForCapacityTest(CGHeroInstance * hero)
+	{
+		for(const auto & bonus : hero->getHeroType()->specialty)
+			hero->removeBonus(bonus);
+		for(int i = 0; i < LIBRARY->skillh->size(); ++i)
+			hero->setSecSkillLevel(SecondarySkill(i), 0, ChangeValueMode::ABSOLUTE);
+		for(auto skill : {PrimarySkill::ATTACK, PrimarySkill::DEFENSE,
+			PrimarySkill::SPELL_POWER, PrimarySkill::KNOWLEDGE})
+			hero->setPrimarySkill(skill, 0, ChangeValueMode::ABSOLUTE);
+	}
+
+	void resolveBattleDialogsOnly()
+	{
+		for(const auto player : {PlayerColor(0), PlayerColor(1)})
+		{
+			auto dialog = gameHandler->queries->topQuery(player);
+			if(dialog && dialog->getType() == QueryType::BattleDialog)
+			{
+				ASSERT_TRUE(gameHandler->queryReply(dialog->queryID, 0, player));
+			}
+		}
+	}
+
+	void resolveLevelUpDialogs()
+	{
+		for(int remainingLevelUps = 10; remainingLevelUps > 0; --remainingLevelUps)
+		{
+			auto followup = gameHandler->queries->topQuery(PlayerColor(0));
+			if(!followup)
+				break;
+			ASSERT_EQ(followup->getType(), QueryType::HeroLevelUpDialog);
+			ASSERT_TRUE(gameHandler->queryReply(followup->queryID, 0, PlayerColor(0)));
+		}
+		EXPECT_EQ(gameHandler->queries->topQuery(PlayerColor(0)), nullptr);
+	}
+
+	void resolveBattleDialogs()
+	{
+		resolveBattleDialogsOnly();
+		resolveLevelUpDialogs();
+	}
+
+	std::unique_ptr<NecromancyAdmissionRecordingServer> recordingServer;
+};
+
 TEST_F(NewHorizonsNecromancyRuntimeTest, CasualtySnapshotExcludesUndeadAndNonliving)
 {
 	const auto living = creature("core:pikeman");
@@ -343,6 +512,7 @@ TEST_F(NewHorizonsNecromancyAITest, ComputerWinnerReceivesAndResumesAuthoritativ
 {
 	ASSERT_NE(attackerSideHero, nullptr);
 	ASSERT_NE(defenderSideHero, nullptr);
+	CGHeroInstance * const defeatedHero = defenderSideHero;
 
 	// BattleTestFixture uses a Castle hero for its compact setup.  Switching the
 	// prototype before the battle is enough for the saved faction identity and
@@ -411,6 +581,264 @@ TEST_F(NewHorizonsNecromancyAITest, ComputerWinnerReceivesAndResumesAuthoritativ
 	EXPECT_EQ(attackerSideHero->getStackCount(zombieSlot), 3);
 	EXPECT_EQ(attackerSideHero->getStackCount(skeletonSlot), 1);
 	EXPECT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+
+	// The defeated hero is retained in the pool, not destroyed. It must no
+	// longer point at the BattleInfo that BattleEnded just erased; post-battle
+	// magic-rule and mana reads must remain safe on that pooled object.
+	ASSERT_EQ(defeatedHero->battle, nullptr);
+	auto * pooledDefeatedHero = gameState()->getMap().tryGetFromHeroPool(defeatedHero->getHeroTypeID());
+	ASSERT_EQ(pooledDefeatedHero, defeatedHero);
+	ASSERT_EQ(pooledDefeatedHero->battle, nullptr);
+	EXPECT_TRUE(newHorizonsMagic::spellPointRulesActive(pooledDefeatedHero->getMagicRules()));
+	EXPECT_LE(pooledDefeatedHero->getNormalSpellPoints(), pooledDefeatedHero->manaLimit());
+	EXPECT_GE(pooledDefeatedHero->getBufferSpellPoints(), 0);
+}
+
+TEST_F(NewHorizonsNecromancyAdmissionAITest, PostBattleRaisesSkeletonsInSpareSlotWhenExistingStackIsAtLeadershipCap)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	prepareNecromancerArmy(false);
+
+	const auto gargoyle = creature("core:stoneGargoyle");
+	const auto skeleton = creature("core:skeleton");
+	ASSERT_TRUE(gargoyle.toCreature());
+	ASSERT_FALSE(gargoyle.toCreature()->hasBonusOfType(BonusType::UNDEAD));
+	ASSERT_FALSE(gargoyle.toCreature()->hasBonusOfType(BonusType::NON_LIVING));
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), gargoyle, 100));
+
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+	resolveBattleDialogs();
+
+	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(necromancyResult.active);
+	ASSERT_EQ(necromancyResult.eligibleCasualties, 100);
+	ASSERT_EQ(necromancyResult.rank, 1);
+	const auto expected = resolve(necromancyResult.rank,
+		necromancyResult.eligibleCasualties, false, false, false, false, true, true, 0, 0);
+	ASSERT_TRUE(expected.applied);
+	EXPECT_EQ(necromancyResult.skeletonsRaised, expected.skeletonsRaised);
+	EXPECT_FALSE(necromancyResult.blockedByArmyCapacity);
+	EXPECT_TRUE(necromancyResult.applied);
+
+	int32_t totalSkeletons = 0;
+	int32_t skeletonStacks = 0;
+	for(const auto & [slot, stack] : attackerSideHero->Slots())
+	{
+		if(stack->getCreatureID() == skeleton)
+		{
+			totalSkeletons += stack->getCount();
+			++skeletonStacks;
+		}
+		const auto capacity = attackerSideHero->getLeadershipSlotCapacity(stack->getCreatureID());
+		ASSERT_TRUE(capacity);
+		EXPECT_LE(stack->getCount(), capacity->maximum) << "slot " << slot.getNum();
+	}
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
+	EXPECT_EQ(totalSkeletons, 16 + expected.skeletonsRaised);
+	EXPECT_EQ(skeletonStacks, 2);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancyAdmissionAITest, PostBattleNecromancyWithNoFreeSlotIsReportedBlockedWithoutComplaint)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	prepareNecromancerArmy(true);
+	ASSERT_EQ(attackerSideHero->stacksCount(), GameConstants::ARMY_SIZE);
+	ASSERT_TRUE(attackerSideHero->getFreeSlots().empty());
+
+	const auto gargoyle = creature("core:stoneGargoyle");
+	const auto skeleton = creature("core:skeleton");
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), gargoyle, 100));
+
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+	resolveBattleDialogs();
+
+	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(necromancyResult.active);
+	ASSERT_EQ(necromancyResult.eligibleCasualties, 100);
+	EXPECT_EQ(necromancyResult.skeletonsOffered, 10);
+	EXPECT_TRUE(necromancyResult.blockedByArmyCapacity);
+	EXPECT_FALSE(necromancyResult.applied);
+	EXPECT_EQ(necromancyResult.skeletonsRaised, 0);
+	EXPECT_EQ(necromancyResult.zombiesRaised, 0);
+
+	int32_t totalSkeletons = 0;
+	for(const auto & [slot, stack] : attackerSideHero->Slots())
+	{
+		if(stack->getCreatureID() == skeleton)
+			totalSkeletons += stack->getCount();
+		const auto capacity = attackerSideHero->getLeadershipSlotCapacity(stack->getCreatureID());
+		ASSERT_TRUE(capacity);
+		EXPECT_LE(stack->getCount(), capacity->maximum) << "slot " << slot.getNum();
+	}
+	EXPECT_EQ(totalSkeletons, 16);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionPreviewRejectsMixedOutputThatNeedsTwoSlots)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	prepareNecromancerArmy(false);
+	fillFillerSlots(1, GameConstants::ARMY_SIZE - 2);
+	ASSERT_EQ(attackerSideHero->getFreeSlots().size(), 1u);
+
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"));
+
+	const auto gargoyle = creature("core:stoneGargoyle");
+	const auto skeleton = creature("core:skeleton");
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), gargoyle, 100));
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+	// Basic Necromancy offers ten Skeletons: those fit in the single free slot.
+	// Converting them needs both one Skeleton (the remainder) and three Zombies,
+	// so the preview must not offer the impossible mixed result.
+	resolveBattleDialogs();
+
+	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(necromancyResult.active);
+	EXPECT_EQ(necromancyResult.rank, 1);
+	EXPECT_EQ(necromancyResult.skeletonsOffered, 10);
+	EXPECT_TRUE(necromancyResult.darkConversionAvailable);
+	EXPECT_FALSE(necromancyResult.darkConversionChosen);
+	EXPECT_TRUE(necromancyResult.applied);
+	EXPECT_FALSE(necromancyResult.blockedByArmyCapacity);
+	EXPECT_EQ(necromancyResult.skeletonsRaised, 10);
+	EXPECT_EQ(necromancyResult.zombiesRaised, 0);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(6)), 10);
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(6)), skeleton.toCreature());
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionRechecksArmyCapacityAfterChoiceQuery)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	prepareNecromancerArmy(false);
+	// With two empty slots, both Skeleton-only and mixed Zombie output fit.
+	fillFillerSlots(1, GameConstants::ARMY_SIZE - 3);
+	ASSERT_EQ(attackerSideHero->getFreeSlots().size(), 2u);
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"));
+
+	const auto gargoyle = creature("core:stoneGargoyle");
+	const auto zombie = creature("core:zombie");
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), gargoyle, 100));
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+	resolveBattleDialogsOnly();
+
+	auto necromancyQuery = gameHandler->queries->topQuery(PlayerColor(0));
+	ASSERT_NE(necromancyQuery, nullptr);
+	ASSERT_EQ(necromancyQuery->getType(), QueryType::NecromancyChoice);
+	ASSERT_TRUE(necromancyQuery->isValidReply(2)); // Zombie was legal when offered.
+
+	// Model an authoritative army-capacity change while the choice is pending.
+	// The remaining empty slot can hold the Skeleton remainder or the Zombies,
+	// but not both; the selected mixed result must now fail atomically.
+	const auto monk = creature("core:monk");
+	const auto monkCapacity = attackerSideHero->getLeadershipSlotCapacity(monk);
+	ASSERT_TRUE(monkCapacity);
+	ASSERT_GE(monkCapacity->maximum, 1);
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(5), monk, 1));
+	ASSERT_EQ(attackerSideHero->getFreeSlots().size(), 1u);
+
+	ASSERT_TRUE(gameHandler->queryReply(necromancyQuery->queryID, 2, PlayerColor(0)));
+	resolveLevelUpDialogs();
+	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(necromancyResult.active);
+	EXPECT_EQ(necromancyResult.rank, 1);
+	EXPECT_TRUE(necromancyResult.darkConversionAvailable);
+	EXPECT_TRUE(necromancyResult.darkConversionChosen);
+	EXPECT_EQ(necromancyResult.skeletonsOffered, 10);
+	EXPECT_FALSE(necromancyResult.applied);
+	EXPECT_TRUE(necromancyResult.blockedByArmyCapacity);
+	EXPECT_EQ(necromancyResult.skeletonsRaised, 0);
+	EXPECT_EQ(necromancyResult.zombiesRaised, 0);
+	EXPECT_EQ(necromancyResult.manaRecovered, 0);
+	EXPECT_EQ(recordingServer->battleResults.back().raisedStack.getCreature(), nullptr);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(5)), monk.toCreature());
+	const auto zombieSlot = attackerSideHero->getSlotFor(zombie);
+	ASSERT_TRUE(zombieSlot.validSlot());
+	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(zombieSlot));
+	for(const auto & [slot, stack] : attackerSideHero->Slots())
+	{
+		const auto capacity = attackerSideHero->getLeadershipSlotCapacity(stack->getCreatureID());
+		ASSERT_TRUE(capacity);
+		EXPECT_LE(stack->getCount(), capacity->maximum) << "slot " << slot.getNum();
+	}
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancyAdmissionAITest, PostBattleFillsCapacityAcrossDuplicateSkeletonStacks)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	prepareNecromancerArmy(false);
+
+	const auto skeleton = creature("core:skeleton");
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), skeleton, 11));
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(1), skeleton, 11));
+	fillFillerSlots(2, GameConstants::ARMY_SIZE - 2);
+	ASSERT_EQ(attackerSideHero->stacksCount(), GameConstants::ARMY_SIZE);
+	ASSERT_TRUE(attackerSideHero->getFreeSlots().empty());
+
+	const auto gargoyle = creature("core:stoneGargoyle");
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), gargoyle, 100));
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+	resolveBattleDialogs();
+
+	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(necromancyResult.active);
+	ASSERT_TRUE(necromancyResult.applied);
+	EXPECT_FALSE(necromancyResult.blockedByArmyCapacity);
+	EXPECT_EQ(necromancyResult.skeletonsRaised, 10);
+
+	int32_t skeletonStacks = 0;
+	int32_t totalSkeletons = 0;
+	for(const auto & [slot, stack] : attackerSideHero->Slots())
+	{
+		if(stack->getCreatureID() == skeleton)
+		{
+			++skeletonStacks;
+			totalSkeletons += stack->getCount();
+		}
+		const auto capacity = attackerSideHero->getLeadershipSlotCapacity(stack->getCreatureID());
+		ASSERT_TRUE(capacity);
+		EXPECT_LE(stack->getCount(), capacity->maximum) << "slot " << slot.getNum();
+	}
+	EXPECT_EQ(skeletonStacks, 2);
+	EXPECT_EQ(totalSkeletons, 32);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 16);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
 
 TEST_F(NewHorizonsNecromancyAITest, BattleResultExcludesDestroyRemainsCasualtiesAfterGhostRemoval)

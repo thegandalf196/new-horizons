@@ -705,6 +705,12 @@ void GameStatePackVisitor::visitRemoveObject(RemoveObject & pack)
 		}
 
 		beatenHero->detachFromBonusSystem(gs);
+		// The hero is about to leave the map and become pool-owned. BattleInfo
+		// clears this borrowed link from its destructor by looking the army up on
+		// the map; that lookup cannot find a hero once eraseObject has moved it
+		// into the hero pool. BattleResultsApplied has already released the hero
+		// from the active battle above, so it no longer needs battle-scoped rules.
+		beatenHero->battle = nullptr;
 		beatenHero->tempOwner = PlayerColor::NEUTRAL; //no one owns beaten hero
 		auto beatenObject = gs.getMap().eraseObject(obj->id);
 

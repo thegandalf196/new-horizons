@@ -34,6 +34,84 @@
 
 #include <vcmi/spells/Spell.h>
 
+namespace
+{
+struct RaisedArmyAddition
+{
+	SlotID slot;
+	CreatureID creature;
+	TQuantity count;
+};
+
+using RaisedArmyPlan = std::vector<RaisedArmyAddition>;
+
+// Resolve every output against one projected army before emitting any packs.
+// A matching stack may be full even though another slot can admit the reward.
+std::optional<RaisedArmyPlan> planRaisedArmy(const CGHeroInstance & hero,
+	const std::vector<std::pair<CreatureID, int64_t>> & outputs)
+{
+	struct ProjectedSlot
+	{
+		CreatureID creature = CreatureID::NONE;
+		int64_t count = 0;
+	};
+	std::array<ProjectedSlot, GameConstants::ARMY_SIZE> slots;
+	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
+		if(const auto * stack = hero.getStackPtr(SlotID(i)))
+		{
+			if(stack->getCount() < 0)
+				return std::nullopt;
+			slots[i] = {stack->getCreatureID(), stack->getCount()};
+		}
+
+	RaisedArmyPlan plan;
+	for(const auto & [creature, count] : outputs)
+	{
+		if(count < 0 || (count > 0 && !creature.hasValue()))
+			return std::nullopt;
+		if(count == 0)
+			continue;
+		int64_t capacity = std::numeric_limits<TQuantity>::max();
+		if(const auto leadership = hero.getLeadershipSlotCapacity(creature))
+			capacity = std::min<int64_t>(capacity, leadership->maximum);
+		int64_t remaining = count;
+		// Fill every matching stack first, then reserve distinct empty slots.
+		for(const bool empty : {false, true})
+			for(int i = 0; i < GameConstants::ARMY_SIZE && remaining > 0; ++i)
+			{
+				auto & slot = slots[i];
+				if(empty ? slot.creature.hasValue() : slot.creature != creature)
+					continue;
+				const int64_t amount = std::min(remaining, std::max<int64_t>(0, capacity - slot.count));
+				if(amount == 0)
+					continue;
+				plan.push_back({SlotID(i), creature, static_cast<TQuantity>(amount)});
+				slot.creature = creature;
+				slot.count += amount;
+				remaining -= amount;
+			}
+		if(remaining > 0)
+			return std::nullopt;
+	}
+	return plan;
+}
+
+void applyRaisedArmy(CGameHandler & handler, const CGHeroInstance & hero, const RaisedArmyPlan & plan)
+{
+	for(const auto & addition : plan)
+	{
+		const StackLocation location(hero.id, addition.slot);
+		const bool applied = hero.hasStackAtSlot(addition.slot)
+			? handler.changeStackCount(location, addition.count, ChangeValueMode::RELATIVE)
+			: handler.insertNewStack(location, addition.creature.toCreature(), addition.count);
+		// The simulation thread applies this preflighted plan without yielding.
+		// A rejection is an internal error, not an ordinary capacity failure.
+		if(!applied)
+			throw std::runtime_error("Preflighted Necromancy army addition was rejected");
+	}
+}
+}
+
 BattleResultProcessor::BattleResultProcessor(CGameHandler * gameHandler)
 	: gameHandler(gameHandler)
 {
@@ -534,17 +612,6 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleID & battleID
 	const bool blackHarvest = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::BLACK_HARVEST_ID);
 
-	const auto existingSlot = [winnerHero](CreatureID creature)
-	{
-		const auto slot = winnerHero->getSlotFor(creature);
-		return slot.validSlot() && winnerHero->hasStackAtSlot(slot)
-			&& winnerHero->getCreature(slot) == creature.toCreature() ? slot : SlotID();
-	};
-	const auto existingSkeletonSlot = existingSlot(skeleton);
-	const auto existingZombieSlot = existingSlot(zombie);
-	const auto freeSlots = winnerHero->getFreeSlots();
-	const bool skeletonAvailable = existingSkeletonSlot.validSlot() || !freeSlots.empty();
-	const bool zombieAvailable = existingZombieSlot.validSlot() || !freeSlots.empty();
 	const bool zombieChoice = selected && *selected == zombie;
 	const bool hasTwoPoolSpellPoints = newHorizonsMagic::spellPointRulesActive(winnerHero->getMagicRules());
 	const int32_t currentNormal = winnerHero->getNormalSpellPoints();
@@ -555,7 +622,7 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleID & battleID
 	// suppresses a recovery that fits in Normal.
 	auto summary = newHorizonsNecromancy::resolve(winnerHero->getNewHorizonsNecromancyRank(), eligibleCount,
 		boneCollector, corpsePreservation, darkConversion, zombieChoice,
-		skeletonAvailable, zombieAvailable, postBattleMana,
+		true, true, postBattleMana,
 		blackHarvest ? winnerHero->manaLimit() : postBattleMana);
 	if(!summary.active)
 		return false;
@@ -563,57 +630,21 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleID & battleID
 	// A dark-conversion answer is legal only if the exact output it produces
 	// still fits.  This is rechecked after the query, immediately before state
 	// mutation, to keep the operation atomic.
-	if(summary.blockedByArmyCapacity)
-	{
-		resultsApplied.necromancy = summary;
-		return true;
-	}
-
-	// Reserve every destination before emitting either mutation. getSlotFor()
-	// returns the same first empty slot for two absent creature types, so using
-	// it independently would reject a legal conversion even when more empty
-	// slots exist (or risk a partial result). Existing matching stacks do not
-	// consume an empty destination.
-	const auto destinations = newHorizonsNecromancy::reserveDestinations(
-		existingSkeletonSlot, existingZombieSlot, freeSlots,
-		summary.skeletonsRaised, summary.zombiesRaised);
-	if(!destinations.fits)
+	const auto plan = planRaisedArmy(*winnerHero,
+		{{skeleton, summary.skeletonsRaised}, {zombie, summary.zombiesRaised}});
+	if(!plan)
 	{
 		summary.applied = false;
 		summary.blockedByArmyCapacity = true;
 		summary.skeletonsRaised = 0;
 		summary.zombiesRaised = 0;
 		summary.manaRecovered = 0;
+		summary.raisedCreature = CreatureID::NONE;
 		resultsApplied.necromancy = summary;
 		return true;
 	}
 
-	auto addRaised = [this, winnerHero](SlotID slot, CreatureID creature, int32_t count) -> bool
-	{
-		if(count <= 0)
-			return true;
-		if(!slot.validSlot())
-			return false;
-		const auto location = StackLocation(winnerHero->id, slot);
-		if(winnerHero->hasStackAtSlot(slot))
-			return gameHandler->changeStackCount(location, count, ChangeValueMode::RELATIVE);
-		return gameHandler->insertNewStack(location, creature.toCreature(), count);
-	};
-
-	if(!addRaised(destinations.skeleton, skeleton, summary.skeletonsRaised)
-		|| !addRaised(destinations.zombie, zombie, summary.zombiesRaised))
-	{
-		// The preflight above should make this unreachable on the authoritative
-		// simulation thread.  Keep the summary truthful if an invariant is ever
-		// violated rather than claiming creatures were raised.
-		summary.applied = false;
-		summary.blockedByArmyCapacity = true;
-		summary.skeletonsRaised = 0;
-		summary.zombiesRaised = 0;
-		summary.manaRecovered = 0;
-		resultsApplied.necromancy = summary;
-		return true;
-	}
+	applyRaisedArmy(*gameHandler, *winnerHero, *plan);
 
 	// Keep the legacy descriptor useful for clients when there is one output
 	// stack.  A Dark Conversion result may contain two stacks; leaving the
@@ -744,21 +775,12 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 			std::map<CreatureID, int32_t> offeredCounts;
 			if(preview.skeletonsOffered > 0)
 			{
-				const auto skeletonSlot = winnerHero->getSlotFor(skeleton);
-				const auto zombieSlot = winnerHero->getSlotFor(zombie);
-				const bool hasSkeletonStack = skeletonSlot.validSlot()
-					&& winnerHero->hasStackAtSlot(skeletonSlot)
-					&& winnerHero->getCreature(skeletonSlot) == skeleton.toCreature();
-				const bool hasZombieStack = zombieSlot.validSlot()
-					&& winnerHero->hasStackAtSlot(zombieSlot)
-					&& winnerHero->getCreature(zombieSlot) == zombie.toCreature();
-				const auto freeSlotCount = winnerHero->getFreeSlots().size();
-				const bool skeletonFits = hasSkeletonStack || freeSlotCount >= 1;
+				const bool skeletonFits = planRaisedArmy(*winnerHero,
+					{{skeleton, preview.skeletonsOffered}}).has_value();
 				const int32_t zombies = preview.skeletonsOffered / 3;
 				const int32_t remainder = preview.skeletonsOffered % 3;
-				const size_t requiredFreeSlots = (hasZombieStack ? 0 : 1)
-					+ (remainder > 0 && !hasSkeletonStack ? 1 : 0);
-				const bool zombieFits = zombies > 0 && freeSlotCount >= requiredFreeSlots;
+				const bool zombieFits = zombies > 0 && planRaisedArmy(*winnerHero,
+					{{skeleton, remainder}, {zombie, zombies}}).has_value();
 
 				if(skeletonFits)
 				{
@@ -850,9 +872,15 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 		{
 			// Give raised units to winner, if any were raised, units will be given after casualties are taken
 			resultsApplied.raisedStack = winnerHero->calculateNecromancy(result);
-			const SlotID necroSlot = resultsApplied.raisedStack.getCreature() ? winnerHero->getSlotFor(resultsApplied.raisedStack.getCreature()) : SlotID();
-			if(necroSlot != SlotID() && !finishingBattle->isDraw())
-				gameHandler->addToSlot(StackLocation(finishingBattle->winnerId, necroSlot), resultsApplied.raisedStack.getCreature(), resultsApplied.raisedStack.getCount());
+			if(resultsApplied.raisedStack.getCreature() && !finishingBattle->isDraw())
+			{
+				const auto plan = planRaisedArmy(*winnerHero,
+					{{resultsApplied.raisedStack.getCreature()->getId(), resultsApplied.raisedStack.getCount()}});
+				if(plan)
+					applyRaisedArmy(*gameHandler, *winnerHero, *plan);
+				else
+					resultsApplied.raisedStack = CStackBasicDescriptor();
+			}
 		}
 	}
 
