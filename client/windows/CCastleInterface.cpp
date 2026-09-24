@@ -2767,13 +2767,15 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 			}))
 			: 0;
 		const int statValueWidth = rankedLayout
-			? static_cast<int>(tinyFont->getStringWidth("999"))
+			? static_cast<int>(tinyFont->getStringWidth("99999"))
 			: 0;
 		constexpr int rankedStatIconWidth = 19;
 		constexpr int rankedStatIconGap = 2;
-		const int minimumStatWidth = rankedStatIconWidth + rankedStatIconGap + statLabelWidth + statValueWidth + 6;
-		const int statX = rankedLayout ? (compactStatGrid ? 4 : std::max(creatureX + 120, cardWidth - minimumStatWidth - 4)) : 287;
-		const int statWidth = rankedLayout ? (compactStatGrid ? std::max(1, cardWidth - 8) : std::max(1, cardWidth - statX - 4)) : 96;
+		constexpr int rankedStatTextValueGap = 12;
+		constexpr int rankedStatRightInset = 12;
+		const int minimumStatWidth = rankedStatIconWidth + rankedStatIconGap + statLabelWidth + statValueWidth + rankedStatTextValueGap;
+		const int statX = rankedLayout ? (compactStatGrid ? 4 : std::max(creatureX + 156, cardWidth - minimumStatWidth - rankedStatRightInset)) : 287;
+		const int statWidth = rankedLayout ? (compactStatGrid ? std::max(1, cardWidth - 8) : std::max(1, cardWidth - statX - rankedStatRightInset)) : 96;
 		const int statColumnGap = compactStatGrid ? NH_FORT_CARD_GAP : 0;
 		const int statColumnWidth = compactStatGrid
 			? std::max(1, (statWidth - statColumnGap) / NH_FORT_COMPACT_STAT_COLUMNS)
