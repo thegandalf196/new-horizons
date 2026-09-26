@@ -1,0 +1,15 @@
+{
+  "basepath": "HALLFORT/",
+  "images": [
+    {
+      "group": 0,
+      "frame": 3,
+      "file": "mage-guild-4.png"
+    },
+    {
+      "group": 0,
+      "frame": 4,
+      "file": "mage-guild-5.png"
+    }
+  ]
+}

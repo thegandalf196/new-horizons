@@ -8,6 +8,8 @@
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/bonuses/BonusEnum.h"
 #include "../../../lib/CCreatureHandler.h"
+#include "../../../lib/entities/faction/CTown.h"
+#include "../../../lib/filesystem/ResourcePath.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/mapObjects/TownBuildingInstance.h"
@@ -364,7 +366,10 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, TowerLibraryOnlyAddsMageGrowthAndB
 	ASSERT_NE(genieRow, towerTown->getTown()->creatures.end());
 	const int mageLevel = static_cast<int>(std::distance(towerTown->getTown()->creatures.begin(), mageRow));
 	const int genieLevel = static_cast<int>(std::distance(towerTown->getTown()->creatures.begin(), genieRow));
-	ASSERT_NE(mageLevel, genieLevel);
+	// Check the real loaded module, not only the source patch or display names.
+	// Town creature rows are zero-based: Genies occupy dwelling 4, Magi 5.
+	ASSERT_EQ(genieLevel, 3);
+	ASSERT_EQ(mageLevel, 4);
 
 	// addBuilding is intentionally a bare fixture helper; model the currently
 	// offered base and upgraded creatures explicitly, regardless of tier order.
@@ -387,4 +392,148 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, TowerLibraryOnlyAddsMageGrowthAndB
 	const auto sulfurBefore = infernoTown->dailyIncome()[EGameResID::SULFUR];
 	infernoTown->addBuilding(BuildingID::SPECIAL_2);
 	EXPECT_EQ(infernoTown->dailyIncome()[EGameResID::SULFUR], sulfurBefore + 1);
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, MissingMageGuildLevelsBuildSequentiallyWithLoadedArtBindings)
+{
+	struct GuildTown
+	{
+		FactionID faction;
+		BuildingID level4;
+		BuildingID level5;
+		CGTownInstance * town = nullptr;
+	};
+
+	std::vector<GuildTown> guildTowns{
+		{faction("core:castle"), BuildingID::MAGES_GUILD_4, BuildingID::MAGES_GUILD_5},
+		{faction("core:stronghold"), BuildingID::MAGES_GUILD_4, BuildingID::MAGES_GUILD_5},
+		{faction("core:fortress"), BuildingID::MAGES_GUILD_4, BuildingID::MAGES_GUILD_5},
+	};
+
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(48, false).playerActive(PlayerColor(0))
+		.town({5, 12, 0}, guildTowns[0].faction, PlayerColor(0))
+		.town({17, 12, 0}, guildTowns[1].faction, PlayerColor(0))
+		.town({29, 12, 0}, guildTowns[2].faction, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), guildTowns.size());
+	for(auto & guildTown : guildTowns)
+	{
+		const auto found = std::find_if(towns.begin(), towns.end(), [&guildTown](const CGTownInstance * candidate)
+		{
+			return candidate->getFactionID() == guildTown.faction;
+		});
+		ASSERT_NE(found, towns.end());
+		guildTown.town = *found;
+		ASSERT_EQ(guildTown.town->mageGuildLevel(), 0);
+		ASSERT_EQ(guildTown.town->getTown()->mageLevel, GameConstants::SPELL_LEVELS);
+		ASSERT_TRUE(guildTown.town->getTown()->buildings.contains(guildTown.level4));
+		ASSERT_TRUE(guildTown.town->getTown()->buildings.contains(guildTown.level5));
+	}
+
+	grantResources(PlayerColor(0), GameResID(EGameResID::GOLD), 50000);
+	for(const auto resource : {GameResID(EGameResID::MERCURY), GameResID(EGameResID::SULFUR),
+		GameResID(EGameResID::CRYSTAL), GameResID(EGameResID::GEMS)})
+		grantResources(PlayerColor(0), resource, 50);
+
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+	const auto resourcesBeforeRejectedBuilds = gameState()->getPlayerState(PlayerColor(0))->resources;
+	for(const auto & guildTown : guildTowns)
+	{
+		EXPECT_FALSE(gameHandler.buildStructure(guildTown.town->id, guildTown.level4));
+		EXPECT_FALSE(gameHandler.buildStructure(guildTown.town->id, guildTown.level5));
+		EXPECT_EQ(guildTown.town->mageGuildLevel(), 0);
+	}
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, resourcesBeforeRejectedBuilds);
+
+	// Fixture setup supplies the existing tiers. The missing IV/V levels below
+	// are always constructed through the authoritative game handler.
+	for(const auto & guildTown : guildTowns)
+	{
+		guildTown.town->addBuilding(BuildingID::MAGES_GUILD_1);
+		guildTown.town->addBuilding(BuildingID::MAGES_GUILD_2);
+		guildTown.town->addBuilding(BuildingID::MAGES_GUILD_3);
+		ASSERT_EQ(guildTown.town->mageGuildLevel(), 3);
+		EXPECT_FALSE(gameHandler.buildStructure(guildTown.town->id, guildTown.level5));
+		EXPECT_FALSE(guildTown.town->hasBuilt(guildTown.level5));
+		EXPECT_EQ(guildTown.town->mageGuildLevel(), 3);
+	}
+
+	const auto buildGuildLevel = [&](const GuildTown & guildTown, BuildingID building, int level)
+	{
+		const auto cost = guildTown.town->getBuildingCost(building);
+		const int expectedGold = level == 4 ? 5000 : 10000;
+		const int expectedRareResource = level == 4 ? 5 : 10;
+		ASSERT_EQ(cost[EGameResID::GOLD], expectedGold);
+		for(const auto resource : {EGameResID::MERCURY, EGameResID::SULFUR, EGameResID::CRYSTAL, EGameResID::GEMS})
+			EXPECT_EQ(cost[resource], expectedRareResource);
+
+		const auto resourcesBefore = gameState()->getPlayerState(PlayerColor(0))->resources;
+		ASSERT_TRUE(gameHandler.buildStructure(guildTown.town->id, building));
+		EXPECT_TRUE(guildTown.town->hasBuilt(building));
+		EXPECT_EQ(guildTown.town->mageGuildLevel(), level);
+		EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, resourcesBefore - cost);
+	};
+
+	for(const auto & guildTown : guildTowns)
+		buildGuildLevel(guildTown, guildTown.level4, 4);
+
+	// Construction is limited to one building per town per day. Advance through
+	// the normal authoritative turn path before upgrading each guild to level V.
+	gameHandler.onNewTurn();
+	for(const auto & guildTown : guildTowns)
+		buildGuildLevel(guildTown, guildTown.level5, 5);
+
+	const auto expectStructureArt = [](const CGTownInstance * town, BuildingID building,
+		const char * animation, const char * campaignBonus, const char * border, const char * area)
+	{
+		const auto buildingInfo = town->getTown()->buildings.find(building);
+		ASSERT_NE(buildingInfo, town->getTown()->buildings.end());
+		const auto & structures = town->getTown()->clientInfo.structures;
+		const auto structure = std::find_if(structures.begin(), structures.end(), [&buildingInfo](const auto & candidate)
+		{
+			return candidate->building == buildingInfo->second.get();
+		});
+		ASSERT_NE(structure, structures.end());
+		EXPECT_EQ((*structure)->defName, AnimationPath::builtin(animation));
+		EXPECT_EQ((*structure)->campaignBonus, ImagePath::builtin(campaignBonus));
+		EXPECT_EQ((*structure)->borderName, ImagePath::builtin(border));
+		EXPECT_EQ((*structure)->areaName, ImagePath::builtin(area));
+	};
+
+	EXPECT_EQ(guildTowns[0].town->getTown()->clientInfo.buildingsIcons,
+		AnimationPath::builtin("HALLCSTL"));
+	EXPECT_EQ(guildTowns[1].town->getTown()->clientInfo.buildingsIcons,
+		AnimationPath::builtin("HALLSTRN"));
+	EXPECT_EQ(guildTowns[2].town->getTown()->clientInfo.buildingsIcons,
+		AnimationPath::builtin("HALLFORT"));
+	expectStructureArt(guildTowns[0].town, guildTowns[0].level5,
+		"TBCSMAG5.json", "BoCsMag4.pcx", "TOCSM501.png", "TZCSM501.png");
+	expectStructureArt(guildTowns[1].town, guildTowns[1].level4,
+		"SMAGSW4.json", "BoSmage3.pcx", "TOSMAGSW4.png", "TZSMAGSW4.png");
+	expectStructureArt(guildTowns[1].town, guildTowns[1].level5,
+		"SMAGSW5.json", "BoSmage3.pcx", "TOSMAGSW5.png", "TZSMAGSW5.png");
+	expectStructureArt(guildTowns[2].town, guildTowns[2].level4,
+		"TBFRMAG4.json", "BoFmage3.pcx", "TOFMAG3A.bmp", "TZFMAG3A.bmp");
+	expectStructureArt(guildTowns[2].town, guildTowns[2].level5,
+		"TBFRMAG5.json", "BoFmage3.pcx", "TOFMAG3A.bmp", "TZFMAG3A.bmp");
+	for(int level = 1; level <= 3; ++level)
+	{
+		const auto suffix = std::to_string(level);
+		expectStructureArt(guildTowns[1].town, BuildingID(level - 1),
+			("SMAGSW" + suffix + ".json").c_str(), ("BoSmage" + suffix + ".pcx").c_str(),
+			("TOSMAGSW" + suffix + ".png").c_str(), ("TZSMAGSW" + suffix + ".png").c_str());
+	}
+	expectStructureArt(guildTowns[1].town, BuildingID::SPECIAL_4,
+		"SVAHSW.json", "BoSvahal.pcx", "TOSVAH.bmp", "TZSVAH.bmp");
+
+	for(const auto & guildTown : guildTowns)
+	{
+		ASSERT_EQ(guildTown.town->spells.size(), static_cast<size_t>(GameConstants::SPELL_LEVELS));
+		EXPECT_NO_THROW((void)guildTown.town->spells.at(3));
+		EXPECT_NO_THROW((void)guildTown.town->spells.at(4));
+	}
 }

@@ -1,9 +1,10 @@
 {
-	// New Horizons makes Mage Guild I-V available in every town.  The new
-	// town-screen levels reuse the last purchaser-supplied faction structure as
-	// a functional placeholder; this is not a claim of finished art.
+	// New Horizons makes Mage Guild I-V available in every town. The five
+	// missing faction/level structures use the supplied Mage Guild packages.
+	// Keep NH costs and complete spell rows; do not append the standalone mods' rows.
 	"core:castle": {
 		"town": {
+			"buildingsIcons": "HALLCSTL",
 			"mageGuild": 5,
 			"hallSlots": [
 				[ [ "villageHall", "townHall", "cityHall", "capitol" ], [ "fort", "citadel", "castle" ], [ "tavern", "special3" ], [ "blacksmith" ] ],
@@ -21,13 +22,13 @@
 			],
 			"structures": {
 				"mageGuild5": {
-					"animation": "TBCSMAG4.def",
+					"animation": "TBCSMAG5.json",
 					"x": 704,
-					"y": 76,
+					"y": 56,
 					"z": 1,
 					"campaignBonus": "BoCsMag4.pcx",
-					"border": "TOCSM401.bmp",
-					"area": "TZCSM401.bmp"
+					"border": "TOCSM501.png",
+					"area": "TZCSM501.png"
 				}
 			},
 			"buildings": {
@@ -57,6 +58,7 @@
 	},
 	"core:stronghold": {
 		"town": {
+			"buildingsIcons": "HALLSTRN",
 			"mageGuild": 5,
 			"hallSlots": [
 				[ [ "villageHall", "townHall", "cityHall", "capitol" ], [ "fort", "citadel", "castle" ], [ "tavern" ], [ "blacksmith" ] ],
@@ -73,23 +75,59 @@
 				[ { "x": 491, "y": 325 }, { "x": 591, "y": 325 } ]
 			],
 			"structures": {
-				"mageGuild4": {
-					"animation": "TBSTMAG3.def",
-					"x": 473,
-					"y": 1,
+				"mageGuild1": {
+					"animation": "SMAGSW1.json",
+					"x": 260,
+					"y": 13,
+					"z": -2,
+					"campaignBonus": "BoSmage1.pcx",
+					"border": "TOSMAGSW1.png",
+					"area": "TZSMAGSW1.png"
+				},
+				"mageGuild2": {
+					"animation": "SMAGSW2.json",
+					"x": 260,
+					"y": 13,
+					"z": -2,
+					"campaignBonus": "BoSmage2.pcx",
+					"border": "TOSMAGSW2.png",
+					"area": "TZSMAGSW2.png"
+				},
+				"mageGuild3": {
+					"animation": "SMAGSW3.json",
+					"x": 260,
+					"y": 13,
 					"z": -2,
 					"campaignBonus": "BoSmage3.pcx",
-					"border": "TOSMAG3.bmp",
-					"area": "TZSMAG3.bmp"
+					"border": "TOSMAGSW3.png",
+					"area": "TZSMAGSW3.png"
+				},
+				"special4": {
+					"animation": "SVAHSW.json",
+					"x": 473,
+					"y": 13,
+					"z": -3,
+					"campaignBonus": "BoSvahal.pcx",
+					"border": "TOSVAH.bmp",
+					"area": "TZSVAH.bmp"
+				},
+				"mageGuild4": {
+					"animation": "SMAGSW4.json",
+					"x": 260,
+					"y": 13,
+					"z": -2,
+					"campaignBonus": "BoSmage3.pcx",
+					"border": "TOSMAGSW4.png",
+					"area": "TZSMAGSW4.png"
 				},
 				"mageGuild5": {
-					"animation": "TBSTMAG3.def",
-					"x": 473,
-					"y": 1,
+					"animation": "SMAGSW5.json",
+					"x": 260,
+					"y": 13,
 					"z": -2,
 					"campaignBonus": "BoSmage3.pcx",
-					"border": "TOSMAG3.bmp",
-					"area": "TZSMAG3.bmp"
+					"border": "TOSMAGSW5.png",
+					"area": "TZSMAGSW5.png"
 				}
 			},
 			"buildings": {
@@ -122,6 +160,7 @@
 	},
 	"core:fortress": {
 		"town": {
+			"buildingsIcons": "HALLFORT",
 			"mageGuild": 5,
 			"hallSlots": [
 				[ [ "villageHall", "townHall", "cityHall", "capitol" ], [ "fort", "citadel", "castle" ], [ "tavern" ], [ "blacksmith" ] ],
@@ -139,7 +178,7 @@
 			],
 			"structures": {
 				"mageGuild4": {
-					"animation": "TBFRMAG3.def",
+					"animation": "TBFRMAG4.json",
 					"x": 0,
 					"y": 135,
 					"z": -1,
@@ -148,7 +187,7 @@
 					"area": "TZFMAG3A.bmp"
 				},
 				"mageGuild5": {
-					"animation": "TBFRMAG3.def",
+					"animation": "TBFRMAG5.json",
 					"x": 0,
 					"y": 135,
 					"z": -1,
