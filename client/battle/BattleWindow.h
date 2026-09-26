@@ -94,6 +94,7 @@ class BattleWindow : public InterfaceObjectConfigurable
 	void toggleStickyQuickSpellVisibility();
 	void createStickyHeroInfoWindows();
 	void refreshHeroBattleStatus(BattleSide side);
+	int heroBattleStatusHeight(BattleSide side) const;
 	void createQuickSpellWindow();
 	void createTimerInfoWindows();
 

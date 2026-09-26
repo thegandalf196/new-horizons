@@ -11,7 +11,12 @@
 #include "StdInc.h"
 #include "CSkillHandler.h"
 
+#include <algorithm>
+#include <array>
 #include <cctype>
+#include <stdexcept>
+#include <string_view>
+#include <utility>
 
 #include "GameLibrary.h"
 #include "bonuses/Updaters.h"
@@ -23,6 +28,14 @@
 #include "texts/CLegacyConfigParser.h"
 #include "json/JsonBonus.h"
 #include "json/JsonUtils.h"
+
+namespace
+{
+constexpr std::array<std::pair<std::string_view, CSkill::CombatStatusProvider>, 2> combatStatusProviders = {{
+	{"metamagicUses", CSkill::CombatStatusProvider::METAMAGIC_USES},
+	{"bloodrageDamage", CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE},
+}};
+}
 
 CSkill::CSkill(const SecondarySkill & id, std::string identifier):
 	id(id),
@@ -77,6 +90,18 @@ std::string CSkill::getDescriptionTextID(int level) const
 std::string CSkill::getDescriptionTranslated(int level) const
 {
 	return LIBRARY->generaltexth->translate(getDescriptionTextID(level));
+}
+
+CSkill::CombatStatusProvider CSkill::getCombatStatusProvider() const
+{
+	return combatStatusProvider;
+}
+
+std::string CSkill::getCombatStatusDescriptionTranslated() const
+{
+	if(combatStatusDescriptionTextID.empty())
+		return {};
+	return LIBRARY->generaltexth->translate(combatStatusDescriptionTextID);
 }
 
 void CSkill::registerIcons(const IconRegistar & cb) const
@@ -219,8 +244,48 @@ std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, c
 {
 	assert(identifier.find(':') == std::string::npos);
 	assert(!scope.empty());
+
+	const JsonNode * combatStatus = nullptr;
+	const auto combatStatusEntry = json.Struct().find("combatStatus");
+	CSkill::CombatStatusProvider combatStatusProvider = CSkill::CombatStatusProvider::NONE;
+	if(combatStatusEntry != json.Struct().end())
+	{
+		combatStatus = &combatStatusEntry->second;
+		if(!combatStatus->isStruct())
+			throw std::runtime_error("Invalid combatStatus for skill " + scope + ':' + identifier + ": object required");
+
+		for(const auto & [key, value] : combatStatus->Struct())
+			if(key != "provider" && key != "description")
+				throw std::runtime_error("Invalid combatStatus for skill " + scope + ':' + identifier + ": unknown field " + key);
+
+		const auto providerEntry = combatStatus->Struct().find("provider");
+		if(providerEntry == combatStatus->Struct().end() || !providerEntry->second.isString())
+			throw std::runtime_error("Invalid combatStatus for skill " + scope + ':' + identifier + ": provider string required");
+
+		const auto providerName = providerEntry->second.String();
+		const auto provider = std::find_if(combatStatusProviders.begin(), combatStatusProviders.end(), [&providerName](const auto & candidate)
+		{
+			return candidate.first == providerName;
+		});
+		if(provider == combatStatusProviders.end())
+			throw std::runtime_error("Invalid combatStatus for skill " + scope + ':' + identifier + ": unsupported provider " + providerEntry->second.String());
+
+		const auto descriptionEntry = combatStatus->Struct().find("description");
+		if(descriptionEntry == combatStatus->Struct().end() || !descriptionEntry->second.isString() || descriptionEntry->second.String().empty())
+			throw std::runtime_error("Invalid combatStatus for skill " + scope + ':' + identifier + ": nonempty description string required");
+
+		combatStatusProvider = provider->second;
+	}
+
 	auto skill = std::make_shared<CSkill>(SecondarySkill(index), identifier);
 	skill->modScope = scope;
+	skill->combatStatusProvider = combatStatusProvider;
+	if(combatStatus != nullptr)
+	{
+		TextIdentifier descriptionId("skill", scope, identifier, "combatStatus", "description");
+		skill->combatStatusDescriptionTextID = descriptionId.get();
+		LIBRARY->generaltexth->registerString(scope, skill->combatStatusDescriptionTextID, (*combatStatus)["description"]);
+	}
 
 	for (const auto & tag : json["tags"].Struct())
 		if (tag.second.Bool())

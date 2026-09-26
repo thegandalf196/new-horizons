@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Guard the non-forcing Metamagic and authoritative action-count UI contract."""
+"""Guard Metamagic, generic combat-status providers, and action-count UI behavior."""
 
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -15,6 +16,13 @@ actions_h = (ROOT / "client/battle/BattleActionsController.h").read_text(encodin
 actions = (ROOT / "client/battle/BattleActionsController.cpp").read_text(encoding="utf-8")
 spellbook = (ROOT / "client/windows/CSpellWindow.cpp").read_text(encoding="utf-8")
 mechanics = (ROOT / "lib/spells/BattleSpellMechanics.cpp").read_text(encoding="utf-8")
+skill_schema = json.loads((ROOT / "config/schemas/skill.json").read_text(encoding="utf-8"))
+new_horizons_skills = json.loads((ROOT / "config/newHorizonsSkills.json").read_text(encoding="utf-8"))
+
+combat_status_providers = skill_schema["properties"]["combatStatus"]["properties"]["provider"]["enum"]
+assert combat_status_providers == ["metamagicUses", "bloodrageDamage"]
+assert new_horizons_skills["metamagic"]["combatStatus"]["provider"] == "metamagicUses"
+assert new_horizons_skills["bloodrage"]["combatStatus"]["provider"] == "bloodrageDamage"
 
 # A pending authoritative follow-up is available to the player; it is not an
 # interrupt, a spellbook launch, or a client-side decline command.
@@ -104,6 +112,32 @@ refresh = window.split("void BattleWindow::refreshHeroBattleStatus", 1)[1].split
 assert "battleCallback->battleUsesHeroCommands()" in refresh
 assert "battle->getSideHero(side) != nullptr" in refresh
 assert "battleHeroActionAllowanceCounts(side)" in refresh
+assert "battleCallback->battleGetFightingHero(side)" in refresh
+assert "skill->getCombatStatusProvider() == CSkill::CombatStatusProvider::NONE" in refresh
+assert "!skill ||" in refresh
+assert "hero->getPerkSkillRank(skill->getJsonKey())" in refresh
+assert "if(skillRank <= 0)" in refresh
+assert "switch(skill->getCombatStatusProvider())" in refresh
+assert "case CSkill::CombatStatusProvider::METAMAGIC_USES:" in refresh
+assert "case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:" in refresh
+assert "newHorizonsMagic::metamagicRank(hero)" in refresh
+assert "if(total <= 0)" in refresh
+assert "battleCallback->battleMetamagicUsesConsumed(side)" in refresh
+assert "std::clamp(battleCallback->battleMetamagicUsesConsumed(side), 0, total)" in refresh
+assert 'std::to_string(total - consumed) + " / " + std::to_string(total)' in refresh
+assert "newHorizonsBloodrage::capForRank(battle->getBloodrageRank(side))" in refresh
+assert "battle->getBloodrageDamagePercent(side)" in refresh
+assert '"/" + std::to_string(cap) + "%"' in refresh
+assert refresh.index("switch(skill->getCombatStatusProvider())") < refresh.index(
+    "const auto description = skill->getCombatStatusDescriptionTranslated()"
+)
+assert refresh.count("entries.push_back({skill->at(") == 1
+assert "skill->at(std::clamp(skillRank, 1, 3)).iconSmall" in refresh
+assert "skill->getNameTranslated()" in refresh
+assert "skill->getCombatStatusDescriptionTranslated()" in refresh
+assert "std::vector<CombatStatusEntry> entries;" in refresh
+assert "panel->setBattleStatus(entries, actionCounts, showActionCounts);" in refresh
+assert "statusArea->setStatus(entries, actionCounts, showActionCounts);" in refresh
 assert 'addCount(0, "Hero", actionCounts.heroActions);' in hero_panel
 assert 'addCount(1, "Order", actionCounts.orderActions);' in hero_panel
 assert 'addCount(2, "Spell", actionCounts.spellActions);' in hero_panel
@@ -115,9 +149,31 @@ assert "Spell Actions can only cast spells; Order Actions can only issue Orders.
 outside_layout = window.split("bool BattleWindow::placeInfoWindowsOutside() const", 1)[1].split(
     "bool BattleWindow::quickActionsPanelActive() const", 1
 )[0]
-assert "HeroInfoPanelLayout::outsideStackPanelOffsetY" in outside_layout
+assert "heroBattleStatusHeight(BattleSide::ATTACKER)" in outside_layout
+assert "heroBattleStatusHeight(BattleSide::DEFENDER)" in outside_layout
 assert "outsideStackInfoPanelExtent" in outside_layout
 assert "stackPanelBottom <= ENGINE->screenDimensions().y" in outside_layout
+
+# The status renderer is generic and resource/action rows remain distinct.
+assert "struct CombatStatusEntry" in hero_panel_h
+assert "std::vector<CombatStatusEntry> statusEntries;" in hero_panel_h
+assert "const int statusRows = static_cast<int>(statusEntries.size());" in hero_panel
+assert "const int countsTop = statusRows * HeroInfoPanelLayout::effectAreaRowHeight;" in hero_panel
+assert "effectAreaMaxStatusRows" not in hero_panel_h
+assert "outsideStackPanelOffsetY" not in hero_panel_h
+
+# State-driven refreshes also recompute placement when rows appear or disappear.
+update_status = window.split("void BattleWindow::updateCounterspellStatus()", 1)[1].split(
+    "void BattleWindow::updateStackInfoWindow", 1
+)[0]
+assert "refreshHeroBattleStatus(BattleSide::ATTACKER);" in update_status
+assert "refreshHeroBattleStatus(BattleSide::DEFENDER);" in update_status
+assert "setPositionInfoWindow();" in update_status
+update_hero = window.split("void BattleWindow::updateHeroInfoWindow", 1)[1].split(
+    "void BattleWindow::refreshHeroBattleStatus", 1
+)[0]
+assert "refreshHeroBattleStatus" in update_hero
+assert "setPositionInfoWindow();" in update_hero
 
 # Expiry rewards arrive with the round packet, not a separate mana packet.
 new_round = interface.split("void BattleInterface::newRound()", 1)[1].split(

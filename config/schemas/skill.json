@@ -86,6 +86,24 @@
 				}
 			}
 		},
+		"combatStatus" : {
+			"type" : "object",
+			"description" : "Optional combat status shown with the skill's existing name and rank icon",
+			"additionalProperties" : false,
+			"required" : ["provider", "description"],
+			"properties" : {
+				"provider" : {
+					"type" : "string",
+					"enum" : ["metamagicUses", "bloodrageDamage"],
+					"description" : "Source of the read-only combat status value"
+				},
+				"description" : {
+					"type" : "string",
+					"minLength" : 1,
+					"description" : "Localized tooltip explaining the combat status"
+				}
+			}
+		},
 		"base" : {
 			"type" : "object",
 			"description" : "will be merged with all levels",

@@ -45,10 +45,12 @@
 #include "../windows/settings/SettingsMainWindow.h"
 
 #include "../../lib/CConfigHandler.h"
+#include "../../lib/CSkillHandler.h"
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/StartInfo.h"
 #include "../../lib/battle/BattleInfo.h"
+#include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CCallback.h"
@@ -68,6 +70,20 @@ constexpr int ordersControlPitch = 51;
 // StackInfoBasicPanel's tallest child is the CCRPOP background at y=37 with
 // height 286. Keep the outside hero/status/stack column inside short screens.
 constexpr int outsideStackInfoPanelExtent = 37 + 286;
+
+bool hasActiveWarcasting(const AlternatingHeroActionState & state, int round)
+{
+	return state.bonusFor(state.nextEligibleAction, round) > 0;
+}
+
+std::string warcastingIconName(AlternatingHeroActionState::Action action)
+{
+	if(action == AlternatingHeroActionState::Action::SPELL)
+		return "NH_perk_arcane_channeling_normal.png";
+	if(action == AlternatingHeroActionState::Action::ORDER)
+		return "NH_perk_martial_channeling_normal.png";
+	return {};
+}
 }
 
 BattleWindow::BattleWindow(BattleInterface & Owner)
@@ -264,12 +280,12 @@ void BattleWindow::createStickyHeroInfoWindows()
 	}
 	if(attackerHeroWindow)
 		attackerHeroStatus = std::make_shared<HeroBattleStatusArea>(
-			Point(HeroInfoPanelLayout::compactAttackerEffectAreaLeft,
-				HeroInfoPanelLayout::compactPanelOffsetY + HeroInfoPanelLayout::effectAreaTop));
+			Point(pos.x + 1 + HeroInfoPanelLayout::effectAreaLeft,
+				pos.y + HeroInfoPanelLayout::compactPanelOffsetY + HeroInfoPanelLayout::effectAreaTop));
 	if(defenderHeroWindow)
 		defenderHeroStatus = std::make_shared<HeroBattleStatusArea>(
-			Point(HeroInfoPanelLayout::compactDefenderEffectAreaLeft,
-				HeroInfoPanelLayout::compactPanelOffsetY + HeroInfoPanelLayout::effectAreaTop));
+			Point(pos.x + pos.w - 79 + HeroInfoPanelLayout::effectAreaLeft,
+				pos.y + HeroInfoPanelLayout::compactPanelOffsetY + HeroInfoPanelLayout::effectAreaTop));
 
 	refreshHeroBattleStatus(BattleSide::ATTACKER);
 	refreshHeroBattleStatus(BattleSide::DEFENDER);
@@ -532,51 +548,68 @@ void BattleWindow::updateQueue()
 
 void BattleWindow::setPositionInfoWindow()
 {
+	const bool placeOutside = placeInfoWindowsOutside();
 	int xOffsetAttacker = quickSpellWindow->isDisabled() ? 0 : -51;
 	int xOffsetDefender = unitActionWindow->isDisabled() ? 0 : 51;
 
 	int yOffsetAttacker = attackerTimerWidget ? attackerTimerWidget->pos.h + 9 : 0;
 	int yOffsetDefender = defenderTimerWidget ? defenderTimerWidget->pos.h + 9 : 0;
+	const auto compactPanelY = [this](BattleSide side)
+	{
+		const int contentHeight = std::max(HeroInfoPanelLayout::height,
+			HeroInfoPanelLayout::effectAreaTop + heroBattleStatusHeight(side));
+		const int top = pos.y;
+		const int bottom = std::max(top, ENGINE->screenDimensions().y - contentHeight);
+		return std::clamp(pos.y + HeroInfoPanelLayout::compactPanelOffsetY, top, bottom);
+	};
 
 	if(defenderHeroWindow)
 	{
-		Point position = placeInfoWindowsOutside()
+		Point position = placeOutside
 				? Point(pos.x + pos.w - 1 + xOffsetDefender, pos.y - 1 + yOffsetDefender)
-				: Point(pos.x + pos.w -79, pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
+				: Point(pos.x + pos.w -79, compactPanelY(BattleSide::DEFENDER));
 		defenderHeroWindow->moveTo(position);
-		const bool aboveBattlefield = !placeInfoWindowsOutside();
+		const bool aboveBattlefield = !placeOutside;
 		defenderHeroWindow->setAboveBattlefield(aboveBattlefield);
 		defenderHeroWindow->setBattleStatusRenderDuringShow(!aboveBattlefield);
 	}
 	if(attackerHeroWindow)
 	{
-		Point position = placeInfoWindowsOutside()
+		Point position = placeOutside
 				? Point(pos.x - 77 + xOffsetAttacker, pos.y - 1 + yOffsetAttacker)
-				: Point(pos.x + 1, pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
+				: Point(pos.x + 1, compactPanelY(BattleSide::ATTACKER));
 		attackerHeroWindow->moveTo(position);
-		const bool aboveBattlefield = !placeInfoWindowsOutside();
+		const bool aboveBattlefield = !placeOutside;
 		attackerHeroWindow->setAboveBattlefield(aboveBattlefield);
 		attackerHeroWindow->setBattleStatusRenderDuringShow(!aboveBattlefield);
 	}
+	if(defenderHeroStatus && defenderHeroWindow)
+		defenderHeroStatus->moveTo(Point(defenderHeroWindow->pos.x + HeroInfoPanelLayout::effectAreaLeft,
+			defenderHeroWindow->pos.y + HeroInfoPanelLayout::effectAreaTop));
+	if(attackerHeroStatus && attackerHeroWindow)
+		attackerHeroStatus->moveTo(Point(attackerHeroWindow->pos.x + HeroInfoPanelLayout::effectAreaLeft,
+			attackerHeroWindow->pos.y + HeroInfoPanelLayout::effectAreaTop));
 	if(defenderStackWindow)
 	{
-		Point position = placeInfoWindowsOutside()
+		Point position = placeOutside
 				? Point(pos.x + pos.w - 1 + xOffsetDefender,
-					defenderHeroWindow ? defenderHeroWindow->pos.y + HeroInfoPanelLayout::outsideStackPanelOffsetY : pos.y - 1 + yOffsetDefender)
+					defenderHeroWindow ? defenderHeroWindow->pos.y + HeroInfoPanelLayout::effectAreaTop
+						+ heroBattleStatusHeight(BattleSide::DEFENDER) + 3 : pos.y - 1 + yOffsetDefender)
 				: Point(pos.x + pos.w -79,
-					defenderHeroWindow ? defenderHeroWindow->pos.y : pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
+					defenderHeroWindow ? compactPanelY(BattleSide::DEFENDER) : pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
 		defenderStackWindow->moveTo(position);
-		defenderStackWindow->setAboveBattlefield(!placeInfoWindowsOutside());
+		defenderStackWindow->setAboveBattlefield(!placeOutside);
 	}
 	if(attackerStackWindow)
 	{
-		Point position = placeInfoWindowsOutside()
+		Point position = placeOutside
 				? Point(pos.x - 77 + xOffsetAttacker,
-					attackerHeroWindow ? attackerHeroWindow->pos.y + HeroInfoPanelLayout::outsideStackPanelOffsetY : pos.y - 1 + yOffsetAttacker)
+					attackerHeroWindow ? attackerHeroWindow->pos.y + HeroInfoPanelLayout::effectAreaTop
+						+ heroBattleStatusHeight(BattleSide::ATTACKER) + 3 : pos.y - 1 + yOffsetAttacker)
 				: Point(pos.x + 1,
-					attackerHeroWindow ? attackerHeroWindow->pos.y : pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
+					attackerHeroWindow ? compactPanelY(BattleSide::ATTACKER) : pos.y + HeroInfoPanelLayout::compactPanelOffsetY);
 		attackerStackWindow->moveTo(position);
-		attackerStackWindow->setAboveBattlefield(!placeInfoWindowsOutside());
+		attackerStackWindow->setAboveBattlefield(!placeOutside);
 	}
 }
 
@@ -586,6 +619,7 @@ void BattleWindow::updateHeroInfoWindow(uint8_t side, const InfoAboutHero & hero
 	if(panelToUpdate)
 		panelToUpdate->update(hero);
 	refreshHeroBattleStatus(side == 0 ? BattleSide::ATTACKER : BattleSide::DEFENDER);
+	setPositionInfoWindow();
 }
 
 void BattleWindow::refreshHeroBattleStatus(BattleSide side)
@@ -597,9 +631,79 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 	if(!battle)
 		return;
 
+	std::vector<CombatStatusEntry> entries;
 	const bool counterspellArmed = battleCallback->battleWasCounterspellArmed(side);
+	if(counterspellArmed)
+	{
+		entries.push_back({{}, "Ward", "ARMED",
+			CInfoWindow::genText("Counterspell Ward", "The Counterspell ward is armed for this side.")});
+	}
+
 	const auto & warcasting = battle->getWarcastingState(side);
 	const auto round = battle->getRound();
+	if(hasActiveWarcasting(warcasting, round))
+	{
+		const auto action = warcasting.nextEligibleAction;
+		const auto empowerment = warcasting.bonusFor(action, round);
+		const auto actionName = action == AlternatingHeroActionState::Action::SPELL ? "Spell" : "Order";
+		const auto amount = action == AlternatingHeroActionState::Action::SPELL
+			? "+" + std::to_string(empowerment) + "%"
+			: "+" + std::to_string(empowerment) + "pp";
+		const auto actionEffect = action == AlternatingHeroActionState::Action::SPELL
+			? "to its Spell Power-derived numerical component."
+			: "to efficiency on attribute-derived components.";
+		const auto amountDescription = action == AlternatingHeroActionState::Action::SPELL
+			? "+" + std::to_string(empowerment) + "%"
+			: "+" + std::to_string(empowerment) + " percentage points";
+		const auto tooltip = CInfoWindow::genText("Warcasting",
+			std::string("Next eligible action: ") + actionName + ". It gains " + amountDescription + " " + actionEffect
+			+ " Available through round " + std::to_string(warcasting.expiryRound) + " (inclusive).");
+		entries.push_back({warcastingIconName(action), actionName, amount, tooltip});
+	}
+
+	if(const auto * hero = battleCallback->battleGetFightingHero(side))
+	{
+		for(const auto & skill : LIBRARY->skillh->objects)
+		{
+			if(!skill || skill->getCombatStatusProvider() == CSkill::CombatStatusProvider::NONE)
+				continue;
+			const int skillRank = hero->getPerkSkillRank(skill->getJsonKey());
+			if(skillRank <= 0)
+				continue;
+
+			std::string value;
+			switch(skill->getCombatStatusProvider())
+			{
+				case CSkill::CombatStatusProvider::METAMAGIC_USES:
+				{
+					const int total = newHorizonsMagic::metamagicRank(hero);
+					if(total <= 0)
+						continue;
+					const int consumed = std::clamp(battleCallback->battleMetamagicUsesConsumed(side), 0, total);
+					value = std::to_string(total - consumed) + " / " + std::to_string(total);
+					break;
+				}
+				case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:
+				{
+					const int cap = newHorizonsBloodrage::capForRank(battle->getBloodrageRank(side));
+					if(cap <= 0)
+						continue;
+					const int current = std::clamp(battle->getBloodrageDamagePercent(side), 0, cap);
+					// Keep current/cap legible in the compact 42 px value column.
+					// The localized tooltip carries the fully expanded explanation.
+					value = "+" + std::to_string(current) + "/" + std::to_string(cap) + "%";
+					break;
+				}
+				case CSkill::CombatStatusProvider::NONE:
+					continue;
+			}
+			const auto description = skill->getCombatStatusDescriptionTranslated();
+			const auto details = description.empty() ? value : description + "\n\n" + value;
+			entries.push_back({skill->at(std::clamp(skillRank, 1, 3)).iconSmall,
+				skill->getNameTranslated(), value, CInfoWindow::genText(skill->getNameTranslated(), details)});
+		}
+	}
+
 	const bool showActionCounts = battleCallback->battleUsesHeroCommands()
 		&& battle->getSideHero(side) != nullptr;
 	const auto actionCounts = showActionCounts
@@ -608,17 +712,30 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 
 	const auto panel = side == BattleSide::ATTACKER ? attackerHeroWindow : defenderHeroWindow;
 	if(panel)
-		panel->setBattleStatus(counterspellArmed, warcasting, actionCounts, showActionCounts, round);
+		panel->setBattleStatus(entries, actionCounts, showActionCounts);
 
 	const auto statusArea = side == BattleSide::ATTACKER ? attackerHeroStatus : defenderHeroStatus;
 	if(statusArea)
-		statusArea->setStatus(counterspellArmed, warcasting, actionCounts, showActionCounts, round);
+		statusArea->setStatus(entries, actionCounts, showActionCounts);
+}
+
+int BattleWindow::heroBattleStatusHeight(BattleSide side) const
+{
+	if(settings["battle"]["stickyHeroInfoWindows"].Bool())
+	{
+		const auto panel = side == BattleSide::ATTACKER ? attackerHeroWindow : defenderHeroWindow;
+		return panel ? panel->battleStatusHeight() : 0;
+	}
+
+	const auto statusArea = side == BattleSide::ATTACKER ? attackerHeroStatus : defenderHeroStatus;
+	return statusArea ? statusArea->statusHeight() : 0;
 }
 
 void BattleWindow::updateCounterspellStatus()
 {
 	refreshHeroBattleStatus(BattleSide::ATTACKER);
 	refreshHeroBattleStatus(BattleSide::DEFENDER);
+	setPositionInfoWindow();
 }
 
 void BattleWindow::updateStackInfoWindow(const CStack * stack)
@@ -1264,8 +1381,12 @@ bool BattleWindow::placeInfoWindowsOutside() const
 	// If the complete outside column would extend past the viewport, use the
 	// existing compact overlay layout rather than hiding the bottom of the stack
 	// readout below the screen.
+	const int attackerOffset = attackerHeroWindow
+		? HeroInfoPanelLayout::effectAreaTop + heroBattleStatusHeight(BattleSide::ATTACKER) + 3 : 0;
+	const int defenderOffset = defenderHeroWindow
+		? HeroInfoPanelLayout::effectAreaTop + heroBattleStatusHeight(BattleSide::DEFENDER) + 3 : 0;
 	const int stackPanelBottom = pos.y - 1 + timerOffset
-		+ HeroInfoPanelLayout::outsideStackPanelOffsetY + outsideStackInfoPanelExtent;
+		+ std::max(attackerOffset, defenderOffset) + outsideStackInfoPanelExtent;
 	return stackPanelBottom <= ENGINE->screenDimensions().y;
 }
 

@@ -22,15 +22,16 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
+#include "../../lib/texts/TextOperations.h"
+#include "../render/IRenderHandler.h"
+#include "../render/IFont.h"
 
 namespace
 {
 static_assert(HeroInfoPanelLayout::effectAreaWidth == 70,
-	"Compact hero battle status rows must retain the existing 70px width");
-static_assert(HeroInfoPanelLayout::effectAreaRowHeight == 32
-	&& HeroInfoPanelLayout::effectAreaHeight == HeroInfoPanelLayout::effectAreaRowHeight * 2
-		+ HeroInfoPanelLayout::actionCountPanelHeight,
-	"Counterspell and Warcasting rows must stay separate from the three-line allowance panel");
+	"Compact hero battle status entries must retain the existing 70px width");
+static_assert(HeroInfoPanelLayout::effectAreaRowHeight >= HeroInfoPanelLayout::effectAreaIconSize + 2 * 2,
+	"Combat status entries must retain an inset for their optional icons");
 static_assert(HeroInfoPanelLayout::actionCountPanelHeight == HeroInfoPanelLayout::actionCountHeaderHeight
 	+ HeroInfoPanelLayout::actionCountLineHeight * 3 + HeroInfoPanelLayout::actionCountPanelPadding,
 	"Each hero allowance count needs its own readable line");
@@ -43,28 +44,20 @@ static_assert(
 	HeroInfoPanelLayout::effectAreaTop - (HeroInfoPanelLayout::backgroundInset + HeroInfoPanelLayout::height) >= 3,
 	"Hero effect area must remain below the portrait frame with an internal gap");
 static_assert(
-	HeroInfoPanelLayout::effectAreaRowHeight >= HeroInfoPanelLayout::effectAreaIconSize + 2 * 2,
-	"Hero effect area must retain an inset for the Warcasting icon");
-static_assert(HeroInfoPanelLayout::compactAttackerEffectAreaLeft + HeroInfoPanelLayout::effectAreaWidth <= 800
-	&& HeroInfoPanelLayout::compactDefenderEffectAreaLeft + HeroInfoPanelLayout::effectAreaWidth <= 800,
-	"Compact hero status rows must stay inside the 800px battle reference width");
-static_assert(
-	HeroInfoPanelLayout::outsideStackPanelOffsetY
-		>= HeroInfoPanelLayout::effectAreaTop + HeroInfoPanelLayout::effectAreaHeight + 3,
-	"Outside stack panel must not overlap the hero effect row");
+	HeroInfoPanelLayout::effectAreaWidth >= 23 + 42 + 5,
+	"Icon-backed status text and value must fit without overlapping the frame");
 
-bool hasActiveWarcasting(const AlternatingHeroActionState & state, int round)
+std::string fitStatusRowText(const std::string & text, int maxWidth)
 {
-	return state.bonusFor(state.nextEligibleAction, round) > 0;
-}
+	const auto & font = ENGINE->renderHandler().loadFont(EFonts::FONT_TINY);
+	if(font->getStringWidth(text) <= maxWidth)
+		return text;
 
-std::string warcastingIconName(AlternatingHeroActionState::Action action)
-{
-	if(action == AlternatingHeroActionState::Action::SPELL)
-		return "NH_perk_arcane_channeling_normal.png";
-	if(action == AlternatingHeroActionState::Action::ORDER)
-		return "NH_perk_martial_channeling_normal.png";
-	return {};
+	std::string shortened = text;
+	constexpr std::string_view ellipsis = "...";
+	while(!shortened.empty() && font->getStringWidth(shortened + std::string(ellipsis)) > maxWidth)
+		TextOperations::trimRightUnicode(shortened);
+	return shortened.empty() ? std::string(ellipsis) : shortened + std::string(ellipsis);
 }
 }
 
@@ -76,23 +69,25 @@ HeroBattleStatusArea::HeroBattleStatusArea(const Point & position)
 	pos.h = 0;
 }
 
-void HeroBattleStatusArea::setStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting,
-	const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts_, int round)
+void HeroBattleStatusArea::setStatus(const std::vector<CombatStatusEntry> & entries,
+	const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts_)
 {
-	if(counterspellArmed == counterspellIsArmed && warcastingState == warcasting
-		&& actionCounts == this->actionCounts && showActionCounts == showActionCounts_ && currentRound == round)
+	if(statusEntries == entries && actionCounts == this->actionCounts && showActionCounts == showActionCounts_)
 		return;
 
 	if(!statusbarText.empty())
 		ENGINE->statusbar()->clearIfMatching(statusbarText);
 
 	OBJECT_CONSTRUCTION;
-	counterspellArmed = counterspellIsArmed;
-	warcastingState = warcasting;
+	statusEntries = entries;
 	this->actionCounts = actionCounts;
 	showActionCounts = showActionCounts_;
-	currentRound = round;
 	refreshContents();
+}
+
+int HeroBattleStatusArea::statusHeight() const
+{
+	return pos.h;
 }
 
 void HeroBattleStatusArea::addFramedBackground(const Rect & bounds)
@@ -117,14 +112,13 @@ void HeroBattleStatusArea::refreshContents()
 	const bool wasVisible = hasVisibleStatus;
 	textures.clear();
 	backgrounds.clear();
-	warcastingIcon.reset();
+	statusIcons.clear();
 	labels.clear();
 	statusbarText.clear();
 	helpText.clear();
 
-	const bool warcastingActive = hasActiveWarcasting(warcastingState, currentRound);
-	const int statusRows = static_cast<int>(counterspellArmed) + static_cast<int>(warcastingActive);
-	hasVisibleStatus = statusRows > 0 || showActionCounts;
+	const int statusRows = static_cast<int>(statusEntries.size());
+	hasVisibleStatus = !statusEntries.empty() || showActionCounts;
 	pos.h = statusRows * HeroInfoPanelLayout::effectAreaRowHeight
 		+ (showActionCounts ? HeroInfoPanelLayout::actionCountPanelHeight : 0);
 	if(!hasVisibleStatus)
@@ -137,55 +131,41 @@ void HeroBattleStatusArea::refreshContents()
 
 	addUsedEvents(HOVER | SHOW_POPUP);
 
-	if(warcastingActive)
+	for(size_t row = 0; row < statusEntries.size(); ++row)
 	{
-		const auto action = warcastingState.nextEligibleAction;
-		const auto empowerment = warcastingState.bonusFor(action, currentRound);
-		const auto actionName = action == AlternatingHeroActionState::Action::SPELL ? "Spell" : "Order";
-		const auto amount = action == AlternatingHeroActionState::Action::SPELL
-			? "+" + std::to_string(empowerment) + "%"
-			: "+" + std::to_string(empowerment) + "pp";
-		const auto warcastingRowY = counterspellArmed ? HeroInfoPanelLayout::effectAreaRowHeight : 0;
-
-		addFramedBackground(Rect(0, warcastingRowY,
+		const auto & entry = statusEntries[row];
+		const int rowY = static_cast<int>(row) * HeroInfoPanelLayout::effectAreaRowHeight;
+		addFramedBackground(Rect(0, rowY,
 			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::effectAreaRowHeight));
-		warcastingIcon = std::make_shared<CPicture>(ImagePath::builtin(warcastingIconName(action)),
-			Point(5, warcastingRowY + 8));
-		warcastingIcon->scaleTo(Point(HeroInfoPanelLayout::effectAreaIconSize, HeroInfoPanelLayout::effectAreaIconSize));
-		labels.push_back(std::make_shared<CLabel>(23, warcastingRowY + 5, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
-			Colors::YELLOW, actionName, 42));
-		labels.push_back(std::make_shared<CLabel>(23, warcastingRowY + 17, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
-			Colors::WHITE, amount, 42));
+		const bool hasIcon = !entry.icon.empty();
+		const int textLeft = hasIcon ? 23 : 7;
+		const int textWidth = hasIcon ? 42 : 56;
+		if(hasIcon)
+		{
+			auto icon = std::make_shared<CPicture>(ImagePath::builtin(entry.icon), Point(5, rowY + 8));
+			icon->scaleTo(Point(HeroInfoPanelLayout::effectAreaIconSize, HeroInfoPanelLayout::effectAreaIconSize));
+			statusIcons.push_back(std::move(icon));
+		}
 
-		const auto actionEffect = action == AlternatingHeroActionState::Action::SPELL
-			? "to its Spell Power-derived numerical component."
-			: "to efficiency on attribute-derived components.";
-		const auto amountDescription = action == AlternatingHeroActionState::Action::SPELL
-			? "+" + std::to_string(empowerment) + "%"
-			: "+" + std::to_string(empowerment) + " percentage points";
-		helpText = CInfoWindow::genText("Warcasting",
-			std::string("Next eligible action: ") + actionName + ". It gains " + amountDescription + " " + actionEffect
-			+ " Available through round " + std::to_string(warcastingState.expiryRound) + " (inclusive).");
-		statusbarText = std::string("Warcasting: next ") + actionName + " " + amount
-			+ " through round " + std::to_string(warcastingState.expiryRound) + " (inclusive).";
-	}
+		const auto label = fitStatusRowText(entry.label, textWidth);
+		const auto value = fitStatusRowText(entry.value, textWidth);
+		labels.push_back(std::make_shared<CLabel>(textLeft, rowY + 5, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
+			Colors::YELLOW, label, textWidth));
+		labels.push_back(std::make_shared<CLabel>(textLeft, rowY + 17, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
+			Colors::WHITE, value, textWidth));
 
-	if(counterspellArmed)
-	{
-		addFramedBackground(Rect(0, 0,
-			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::effectAreaRowHeight));
-		labels.push_back(std::make_shared<CLabel>(HeroInfoPanelLayout::effectAreaWidth / 2,
-			HeroInfoPanelLayout::effectAreaRowHeight / 2, EFonts::FONT_TINY, ETextAlignment::CENTER,
-			Colors::YELLOW, "Ward: ARMED"));
-
-		const auto wardHelp = CInfoWindow::genText("Counterspell Ward", "The Counterspell ward is armed for this side.");
-		if(helpText.empty())
-			helpText = wardHelp;
-		else
-			helpText += "\n\n" + wardHelp;
-		if(!statusbarText.empty())
-			statusbarText += "  ";
-		statusbarText += "Counterspell ward: armed.";
+		if(!entry.tooltip.empty())
+		{
+			if(!helpText.empty())
+				helpText += "\n\n";
+			helpText += entry.tooltip;
+		}
+		if(!entry.label.empty() || !entry.value.empty())
+		{
+			if(!statusbarText.empty())
+				statusbarText += "  ";
+			statusbarText += entry.label + (entry.value.empty() ? "." : ": " + entry.value + ".");
+		}
 	}
 
 	if(showActionCounts)
@@ -347,12 +327,17 @@ void HeroInfoBasicPanel::update(const InfoAboutHero & updatedInfo)
 	redraw();
 }
 
-void HeroInfoBasicPanel::setBattleStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting,
-	const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts, int round)
+void HeroInfoBasicPanel::setBattleStatus(const std::vector<CombatStatusEntry> & entries,
+	const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts)
 {
 	if(!showBattleStatus || !battleStatus)
 		return;
-	battleStatus->setStatus(counterspellIsArmed, warcasting, actionCounts, showActionCounts, round);
+	battleStatus->setStatus(entries, actionCounts, showActionCounts);
+}
+
+int HeroInfoBasicPanel::battleStatusHeight() const
+{
+	return battleStatus ? battleStatus->statusHeight() : 0;
 }
 
 void HeroInfoBasicPanel::setBattleStatusRenderDuringShow(bool value)

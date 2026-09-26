@@ -8047,6 +8047,10 @@
 			"tags": {
 				"special": true
 			},
+			"combatStatus": {
+				"provider": "metamagicUses",
+				"description": "Remaining Metamagic uses for this combat. A use is consumed only when the extra spell is actually cast. If you do not use the optional action before the round ends, it expires without spending a use. Metamagic uses are not Spell Actions."
+			},
 			"gainChance": {
 				"might": 0,
 				"magic": 0
@@ -8282,6 +8286,10 @@
 			"specialty": [],
 			"tags": {
 				"special": true
+			},
+			"combatStatus": {
+				"provider": "bloodrageDamage",
+				"description": "Current cumulative creature damage bonus from Bloodrage, up to the cap for the learned rank."
 			},
 			"gainChance": {
 				"might": 0,

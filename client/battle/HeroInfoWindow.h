@@ -12,11 +12,11 @@
 #include "../windows/CWindowObject.h"
 
 #include "BattleSidePanel.h"
-#include "../../lib/battle/AlternatingHeroActionState.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
 
 class CLabel;
 class CAnimImage;
+class CPicture;
 class TransparentFilledRectangle;
 class LRClickableAreaWText;
 class CFilledTexture;
@@ -39,29 +39,35 @@ constexpr int actionCountLineHeight = 14;
 constexpr int actionCountHeaderHeight = 18;
 constexpr int actionCountPanelPadding = 6;
 constexpr int actionCountPanelHeight = actionCountHeaderHeight + actionCountLineHeight * 3 + actionCountPanelPadding;
-constexpr int effectAreaMaxStatusRows = 2;
-constexpr int effectAreaHeight = effectAreaRowHeight * effectAreaMaxStatusRows + actionCountPanelHeight;
 constexpr int effectAreaIconSize = 16;
-constexpr int compactAttackerEffectAreaLeft = 5;
-constexpr int compactDefenderEffectAreaLeft = 725;
 constexpr int spellPointsLabelY = 174;
 constexpr int spellPointsValueY = 186;
-constexpr int outsideStackPanelOffsetY = effectAreaTop + effectAreaHeight + 3;
 }
 
-/// Compact read-only indicators for active Counterspell and Warcasting battle state.
+/// Render-ready, read-only status contributed by a battle skill or active battle state.
+struct CombatStatusEntry
+{
+	/// Optional builtin image key. Empty entries retain the text-only layout.
+	std::string icon;
+	std::string label;
+	std::string value;
+	/// Full popup contents, including the untrimmed label and current value.
+	std::string tooltip;
+
+	bool operator==(const CombatStatusEntry &) const = default;
+};
+
+/// Compact read-only indicators assembled from generic combat-status entries.
 class HeroBattleStatusArea : public CIntObject
 {
 	std::vector<std::shared_ptr<CFilledTexture>> textures;
 	std::vector<std::shared_ptr<TransparentFilledRectangle>> backgrounds;
-	std::shared_ptr<CPicture> warcastingIcon;
+	std::vector<std::shared_ptr<CPicture>> statusIcons;
 	std::vector<std::shared_ptr<CLabel>> labels;
-	bool counterspellArmed = false;
+	std::vector<CombatStatusEntry> statusEntries;
 	bool hasVisibleStatus = false;
-	AlternatingHeroActionState warcastingState;
 	HeroActionAllowanceState::Counts actionCounts;
 	bool showActionCounts = false;
-	int currentRound = 0;
 	std::string statusbarText;
 	std::string helpText;
 	bool renderDuringShow = true;
@@ -71,8 +77,9 @@ class HeroBattleStatusArea : public CIntObject
 
 public:
 	HeroBattleStatusArea(const Point & position);
-	void setStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting,
-		const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts, int round);
+	void setStatus(const std::vector<CombatStatusEntry> & entries,
+		const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts);
+	int statusHeight() const;
 	void setRenderDuringShow(bool value);
 	void hover(bool on) override;
 	void showPopupWindow(const Point & cursorPosition) override;
@@ -96,8 +103,9 @@ public:
 
 	void initializeData(const InfoAboutHero & hero);
 	void update(const InfoAboutHero & updatedInfo);
-	void setBattleStatus(bool counterspellIsArmed, const AlternatingHeroActionState & warcasting,
-		const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts, int round);
+	void setBattleStatus(const std::vector<CombatStatusEntry> & entries,
+		const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts);
+	int battleStatusHeight() const;
 	void setBattleStatusRenderDuringShow(bool value);
 };
 

@@ -21,6 +21,13 @@ class JsonSerializeFormat;
 class DLL_LINKAGE CSkill : public Skill
 {
 public:
+	enum class CombatStatusProvider : ui8
+	{
+		NONE,
+		METAMAGIC_USES,
+		BLOODRAGE_DAMAGE,
+	};
+
 	struct LevelInfo
 	{
 		std::string iconSmall;
@@ -61,6 +68,8 @@ public:
 
 	std::string getDescriptionTextID(int level) const override;
 	std::string getDescriptionTranslated(int level) const override;
+	CombatStatusProvider getCombatStatusProvider() const;
+	std::string getCombatStatusDescriptionTranslated() const;
 
 	const LevelInfo & at(int level) const;
 	LevelInfo & at(int level);
@@ -82,6 +91,8 @@ public:
 	friend DLL_LINKAGE std::ostream & operator<<(std::ostream & out, const CSkill::LevelInfo & info);
 private:
 	std::vector<std::string> tags;
+	CombatStatusProvider combatStatusProvider = CombatStatusProvider::NONE;
+	std::string combatStatusDescriptionTextID;
 };
 
 class DLL_LINKAGE CSkillHandler: public CHandlerBase<SecondarySkill, Skill, CSkill, SkillService>
