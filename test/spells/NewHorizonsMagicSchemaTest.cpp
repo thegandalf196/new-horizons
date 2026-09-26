@@ -19,6 +19,8 @@ JsonNode fullV1Rules()
 	JsonNode result(JsonPath::builtin("config/newHorizonsMagic"));
 	result["rulesetVersion"].Integer() = 1;
 	result.Struct().erase("warcasting");
+	result.Struct().erase("spellPoints");
+	result.Struct().erase("physicalDamageReductionCapPercent");
 	for(auto & [spellId, spell] : result["spells"].Struct())
 	{
 		(void)spellId;

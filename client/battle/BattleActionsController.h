@@ -65,9 +65,6 @@ class BattleActionsController
 
 	/// if true, active stack could possibly cast some target spell
 	std::vector<const CSpell *> creatureSpells;
-	/// Explicit Expert Grand Metamagic choice for the next available Spell Action.
-	/// The pending allowance and its sequence remain authoritative battle state.
-	bool metamagicGrandMode = false;
 
 	/// stack that has been selected as first target for multi-target spells (Teleport & Sacrifice)
 	const CStack * selectedStack;
@@ -206,8 +203,6 @@ public:
 
 	/// initialize hero spellcasting mode, e.g. on selecting spell in spellbook
 	void castThisSpell(SpellID spellID);
-	void toggleMetamagicGrandFollowup();
-	bool metamagicGrandModeActive() const;
 
 	/// Install the authority-backed post-target Magic Arrow UI adapter.  The
 	/// adapter owns all formula, target identity, cost and request validation;

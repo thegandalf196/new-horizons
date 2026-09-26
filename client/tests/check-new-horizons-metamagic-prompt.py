@@ -10,6 +10,7 @@ interface = (ROOT / "client/battle/BattleInterface.cpp").read_text(encoding="utf
 window_h = (ROOT / "client/battle/BattleWindow.h").read_text(encoding="utf-8")
 window = (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
 hero_panel = (ROOT / "client/battle/HeroInfoWindow.cpp").read_text(encoding="utf-8")
+hero_panel_h = (ROOT / "client/battle/HeroInfoWindow.h").read_text(encoding="utf-8")
 actions_h = (ROOT / "client/battle/BattleActionsController.h").read_text(encoding="utf-8")
 actions = (ROOT / "client/battle/BattleActionsController.cpp").read_text(encoding="utf-8")
 spellbook = (ROOT / "client/windows/CSpellWindow.cpp").read_text(encoding="utf-8")
@@ -64,17 +65,25 @@ assert "owner.giveCommand(EActionType::WAIT);" in wait
 assert "Metamagic" not in wait
 
 cast = actions.split("void BattleActionsController::castThisSpell", 1)[1].split(
-    "void BattleActionsController::toggleMetamagicGrandFollowup", 1
+    "bool BattleActionsController::continueOrdinarySpellcast", 1
 )[0]
 assert "battleCanUseMetamagicFollowup(heroSpellToCast->side)" in cast
 assert "heroSpellToCast->metamagicFollowup" in cast
-assert "heroSpellToCast->metamagicGrand = heroSpellToCast->metamagicFollowup && metamagicGrandMode;" in cast
+assert "metamagicGrand" not in cast
 
-grand = actions.split("void BattleActionsController::toggleMetamagicGrandFollowup", 1)[1].split(
-    "bool BattleActionsController::metamagicGrandModeActive", 1
-)[0]
-assert "battleMetamagicSequenceSpells(side).size() == 1" in grand
-assert "metamagicGrandMode = !metamagicGrandMode;" in grand
+# Grand extension is selected from authoritative consumed-use state by the
+# runtime, never from a client-side mode or BattleAction request bit. All
+# spell previews likewise use the default (non-player-selected) legality path.
+client_sources = (interface_h, interface, window_h, window, actions_h, actions, spellbook,
+                  (ROOT / "client/windows/CSpellWindow.h").read_text(encoding="utf-8"))
+for source in client_sources:
+    for term in ("metamagicGrand", "toggleMetamagicGrandFollowup", "metamagicGrandModeActive"):
+        assert term not in source, f"manual Grand request/control remains: {term}"
+assert "setMetamagicFollowup(followup)" in actions
+assert "setMetamagicGrand" not in actions + interface
+assert "battleCanUseMetamagicFollowup(metamagicSide)" in spellbook
+assert "METAMAGIC_ARCANE_ECONOMY" in spellbook
+assert "owner->myHero);" in spellbook.split("const bool canCast", 1)[1].split("if(canCast)", 1)[0]
 
 book_exit = spellbook.split("void CSpellWindow::fexitb()", 1)[1].split(
     "void CSpellWindow::closeForSpellSelection()", 1
@@ -95,9 +104,9 @@ refresh = window.split("void BattleWindow::refreshHeroBattleStatus", 1)[1].split
 assert "battleCallback->battleUsesHeroCommands()" in refresh
 assert "battle->getSideHero(side) != nullptr" in refresh
 assert "battleHeroActionAllowanceCounts(side)" in refresh
-assert '"Hero: "' in hero_panel
-assert '"Order: "' in hero_panel
-assert '"Spell: "' in hero_panel
+assert 'addCount(0, "Hero", actionCounts.heroActions);' in hero_panel
+assert 'addCount(1, "Order", actionCounts.orderActions);' in hero_panel
+assert 'addCount(2, "Spell", actionCounts.spellActions);' in hero_panel
 assert "Hero Actions can cast a spell OR issue an Order." in hero_panel
 assert "Spell Actions can only cast spells; Order Actions can only issue Orders." in hero_panel
 
@@ -109,6 +118,13 @@ outside_layout = window.split("bool BattleWindow::placeInfoWindowsOutside() cons
 assert "HeroInfoPanelLayout::outsideStackPanelOffsetY" in outside_layout
 assert "outsideStackInfoPanelExtent" in outside_layout
 assert "stackPanelBottom <= ENGINE->screenDimensions().y" in outside_layout
+
+# Expiry rewards arrive with the round packet, not a separate mana packet.
+new_round = interface.split("void BattleInterface::newRound()", 1)[1].split(
+    "void BattleInterface::giveCommand", 1
+)[0]
+assert "windowObject->heroManaPointsChanged(attackingHeroInstance);" in new_round
+assert "windowObject->heroManaPointsChanged(defendingHeroInstance);" in new_round
 
 # Preserve the existing hidden-hero access guard used by follow-up mechanics.
 assert "visibleSide == BattleSide::ALL_KNOWING || visibleSide == otherSide" in mechanics

@@ -22,7 +22,8 @@ namespace newHorizonsHeroes
 /// The canonical registry is deliberately data-only.  The engine validates
 /// its shape and identities, but does not assign meanings to individual
 /// perks or effect payloads.
-constexpr int PERK_RULESET_VERSION = 1;
+constexpr int PERK_MIN_RULESET_VERSION = 1;
+constexpr int PERK_RULESET_VERSION = 2;
 constexpr int PERK_SCHEMA_VERSION = 1;
 constexpr int PERK_MAX_SKILL_CHOICES = 2;
 constexpr int PERK_MAX_PERK_CHOICES = 2;

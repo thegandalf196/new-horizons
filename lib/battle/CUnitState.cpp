@@ -682,7 +682,7 @@ void CUnitState::initializePhantomProfile(int64_t integrity, int32_t duration)
 	if(phantomInitialIntegrity != 0 || phantomIntegrity != 0 || phantomRoundsRemaining != 0)
 		throw std::logic_error("Phantom Army profile is already initialized");
 	if(integrity <= 0
-		|| duration != newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS
+		|| !newHorizonsSorcery::phantomArmyDurationSupported(duration)
 		|| !summoned || natureSummoned || cloned || getCount() <= 0)
 		throw std::invalid_argument("Invalid Phantom Army profile");
 
@@ -1029,7 +1029,7 @@ void CUnitState::load(const JsonNode & data)
 	deser.serializeStruct("state", *this);
 	if(phantomInitialIntegrity < 0 || phantomIntegrity < 0 || phantomRoundsRemaining < 0
 		|| phantomIntegrity > phantomInitialIntegrity
-		|| phantomRoundsRemaining > newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS
+		|| phantomRoundsRemaining > newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS
 		|| (phantomInitialIntegrity == 0 && (phantomIntegrity != 0 || phantomRoundsRemaining != 0))
 		|| (phantomInitialIntegrity > 0 && (!summoned || natureSummoned || cloned))
 		|| (phantomInitialIntegrity > 0 && ((phantomIntegrity > 0

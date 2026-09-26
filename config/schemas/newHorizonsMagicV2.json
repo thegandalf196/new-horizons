@@ -24,6 +24,13 @@
 			"not": {"type": "null"},
 			"description": "Enable alternating Hero Action empowerment. Absence or false preserves pre-Warcasting battle rules."
 		},
+		"physicalDamageReductionCapPercent": {
+			"type": "integer",
+			"not": {"type": "null"},
+			"minimum": 0,
+			"maximum": 100,
+			"description": "Opt in to independent multiplicative physical-damage reductions with this aggregate cap. Omission preserves historical calculation order."
+		},
 		"schools": {
 			"type": "array",
 			"minItems": 6,

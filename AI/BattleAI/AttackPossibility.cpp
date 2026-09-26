@@ -17,6 +17,7 @@
 #include "../../lib/spells/ObstacleCasterProxy.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 
 #include "../../lib/GameLibrary.h"
 
@@ -24,8 +25,24 @@
 #include <vcmi/spells/Spell.h>
 
 
+namespace
+{
+bool hasRangedMarkEffect(const battle::Unit * unit, const char * source)
+{
+	if(!unit)
+		return false;
+	const auto triggers = unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	for(const auto & bonus : *triggers)
+		if(bonus->source == BonusSource::SPELL_EFFECT && bonus->sid.toString() == source)
+			return true;
+	return false;
+}
+}
+
 void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
+	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
+		rangedMarkTargets.insert(defender->unitId());
 	auto damage = hb->battleExpectedLuckDamage(BattleAttackInfo(attacker, defender, 0, hb->battleCanShoot(attacker, defender->getPosition())));
 
 	damageCache[attacker->unitId()][defender->unitId()] = static_cast<float>(damage) / attacker->getCount();
@@ -123,12 +140,24 @@ void DamageCache::buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleS
 	}
 }
 
+bool DamageCache::tracksRangedMarks(uint32_t defenderId) const
+{
+	for(const auto * cache = this; cache; cache = cache->parent)
+		if(cache->rangedMarkTargets.contains(defenderId))
+			return true;
+	return false;
+}
+
 int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
+	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
+		rangedMarkTargets.insert(defender->unitId());
 	// IDs alone cannot key a target/controller/round-sensitive premium. Preserve
 	// original-damage snapshots for comparison, but recompute current v2 damage.
+	// Remember marked targets so expiry/Dispel cannot revive a cached premium.
 	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE)
-		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0)
+		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
+		|| tracksRangedMarks(defender->unitId()))
 	{
 		if(!attacker->alive())
 			return 0;
@@ -384,12 +413,18 @@ AttackPossibility AttackPossibility::evaluate(
 		ap.perfectMoment = perfectMoment && state->battleCanUsePerfectMoment(attacker)
 			&& !attackInfo.retaliation && state->battleMatchOwner(attacker, defender);
 		std::shared_ptr<HypotheticBattle> fortunePreview;
-		if(ap.perfectMoment)
+		const bool projectsMarks = attackInfo.shooting
+			&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
+		if(ap.perfectMoment || projectsMarks)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
+		if(projectsMarks)
+			ap.effectPreview = fortunePreview;
 		const CBattleInfoCallback & luckState = fortunePreview
 			? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
-		ap.attackerState = attacker->acquireState();
+		ap.attackerState = ap.effectPreview
+			? std::static_pointer_cast<battle::CUnitState>(ap.effectPreview->getForUpdate(attacker->unitId()))
+			: attacker->acquireState();
 		ap.shootersBlockedDmg = bestAp.shootersBlockedDmg;
 
 		const int totalAttacks = getAttackCount(*ap.attackerState, attackInfo.shooting, *state);
@@ -447,7 +482,9 @@ AttackPossibility AttackPossibility::evaluate(
 			if(u->unitId() == attacker->unitId())
 				continue;
 
-			auto defenderState = u->acquireState();
+			auto defenderState = ap.effectPreview
+				? std::static_pointer_cast<battle::CUnitState>(ap.effectPreview->getForUpdate(u->unitId()))
+				: u->acquireState();
 
 			ap.affectedUnits.push_back(defenderState);
 			defenderStates[u->unitId()] = defenderState;
@@ -590,6 +627,12 @@ AttackPossibility AttackPossibility::evaluate(
 				{
 					ap.defenderDead = !defenderState->alive();
 				}
+			}
+			if(ap.effectPreview)
+			{
+				BattleAttackInfo projectedAttack(ap.attackerState.get(),
+					defenderStates.at(defender->unitId()).get(), 0, true);
+				ap.effectPreview->projectRangedMarkStrike(projectedAttack, strike.hits);
 			}
 			// The preview state must observe the same primary-hit -> Recovery ->
 			// retaliation ordering as authority. Otherwise a wounded double-attacker

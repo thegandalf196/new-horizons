@@ -26,6 +26,24 @@ TEST(NewHorizonsMagicTest, LegacySchoolsCostsAndLevelsRemainOriginal)
 		EXPECT_EQ(newHorizonsMagic::spellCost(legacy, arrow, mastery), definition->getCost(mastery));
 }
 
+TEST(NewHorizonsMagicTest, PhysicalReductionOptInIsValidatedAndAbsentForOlderSnapshots)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	EXPECT_EQ(newHorizonsMagic::physicalDamageReductionCapPercent(rules), 80);
+	rules.Struct().erase("physicalDamageReductionCapPercent");
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	EXPECT_EQ(newHorizonsMagic::physicalDamageReductionCapPercent(rules), -1);
+	EXPECT_EQ(newHorizonsMagic::physicalDamageReductionCapPercent(JsonNode()), -1);
+	for(const int invalid : {-1, 101})
+	{
+		rules["physicalDamageReductionCapPercent"].Integer() = invalid;
+		EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+	}
+	rules["physicalDamageReductionCapPercent"].Float() = 80.5;
+	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+}
+
 TEST(NewHorizonsMagicTest, WisdomDiscountRoundsUpAfterListedMultiplier)
 {
 	EXPECT_EQ(newHorizonsMagic::wisdomAdjustedCost(5, 1, MasteryLevel::NONE), 5);

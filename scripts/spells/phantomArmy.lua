@@ -99,7 +99,7 @@ function Script:apply(mechanics, server, target)
 			position = position,
 			summoned = true,
 			phantomIntegrity = integrity,
-			phantomDuration = DURATION_ROUNDS
+			phantomDuration = mechanics:adjustEffectDuration(DURATION_ROUNDS)
 		})
 		if phantom == nil then goto continue end
 

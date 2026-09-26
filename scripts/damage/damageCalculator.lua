@@ -95,6 +95,92 @@ local function getBonusValueOfTypeAndRange(unit, present, type, shooting)
 	return unit:getBonusesValue({type = type, shooting = shooting})
 end
 
+local function hasPhysicalDamageReductionStage(info)
+	return info.physicalDamage
+		and (info.physicalDamageReductionCapPercent or -1) >= 0
+end
+
+--- Values from one source and source ID keep BonusList's value-type rules together.
+--- Distinct source IDs remain independent reductions in the physical mitigation stage.
+--- This opt-in curated path assumes source-local modifiers; the Lua Bonus API cannot attribute
+--- cross-source-ID PERCENT_TO_SOURCE/PERCENT_TO_TARGET_TYPE modifiers to independent groups.
+local function getBonusValuesBySourceAndID(bonuses)
+	local seen = {}
+	local groups = {}
+	for index = 1, bonuses:size() do
+		local bonus = bonuses:getBonus(index)
+		local source = bonus:getSource()
+		local sourceID = bonus:getSourceID()
+		local sourceIDs = seen[source]
+		if not sourceIDs then
+			sourceIDs = {}
+			seen[source] = sourceIDs
+		end
+		if not sourceIDs[sourceID] then
+			sourceIDs[sourceID] = true
+			table.insert(groups, { source, sourceID })
+		end
+	end
+
+	table.sort(groups, function(left, right)
+		if left[1] ~= right[1] then return left[1] < right[1] end
+		return left[2] < right[2]
+	end)
+
+	local values = {}
+	for _, group in ipairs(groups) do
+		local source = group[1]
+		local sourceID = group[2]
+		local value = bonuses:filter(function(bonus)
+			return bonus:getSource() == source and bonus:getSourceID() == sourceID
+		end):totalValue()
+		table.insert(values, value)
+	end
+	return values
+end
+
+local function getPhysicalDamageReductionFactor(info)
+	local reductions = {}
+	if hasBonusOfType(info.defenderBonuses, "GENERAL_DAMAGE_REDUCTION") then
+		local allDamageBonuses = info.defender:getBonuses({
+			type = "GENERAL_DAMAGE_REDUCTION",
+			subtype = DAMAGE_TYPE_ALL,
+			shooting = info.shooting
+		}):filter(function(bonus)
+			return bonus:getSource() ~= ENUM.BonusSource.spellEffect
+		end)
+		for _, value in ipairs(getBonusValuesBySourceAndID(allDamageBonuses)) do
+			table.insert(reductions, { value, 100 })
+		end
+
+		local subtype = info.shooting and DAMAGE_TYPE_RANGED or DAMAGE_TYPE_MELEE
+		local subtypeBonuses = info.defender:getBonuses({
+			type = "GENERAL_DAMAGE_REDUCTION",
+			subtype = subtype,
+			shooting = info.shooting
+		})
+		for _, value in ipairs(getBonusValuesBySourceAndID(subtypeBonuses)) do
+			table.insert(reductions, { value, 100 })
+		end
+	end
+
+	table.insert(reductions, { info.newHorizonsArmorerReductionPercent or 0, 100 })
+	table.insert(reductions, { info.battlecraftDefendReductionPercent or 0, 100 })
+	table.insert(reductions, { info.bulwarkDamageReductionBasisPoints or 0, 10000 })
+	table.insert(reductions, { info.heroOrderDamageReductionPercent or 0, 100 })
+
+	local remainingDamage = 1.0
+	for _, reduction in ipairs(reductions) do
+		local value = reduction[1]
+		local scale = reduction[2]
+		local fraction = math.max(0, math.min(scale, value)) / scale
+		remainingDamage = remainingDamage * (1 - fraction)
+	end
+
+	local capPercent = math.max(0, math.min(100, info.physicalDamageReductionCapPercent))
+	return math.max(remainingDamage, 1 - capPercent / 100)
+end
+
 -- The same four, as methods - a patch is a chunk of its own and cannot see the locals above. The
 -- base script keeps calling the locals, which spares it a walk up the whole chain of patches.
 
@@ -197,6 +283,13 @@ function Script:getDefenseIgnored(info, reducer, present, defense, targetDefense
 	-- defense while resolving Frenzy.
 	if targetDefense and info.shooting and info.luckyStrike then
 		ignored = ignored + math.floor((info.luckyRangedDefenseIgnorePercent or 0) * defense / 100)
+	end
+
+	-- Arcane Breach marks contribute only to the target-side Creature Defense of a
+	-- physical shot. The callback supplies the captured, bounded total for the
+	-- attacker's current controlling side; Frenzy's own-defense trade never uses it.
+	if targetDefense and info.shooting and info.physicalDamage then
+		ignored = ignored + math.floor((info.rangedDefenseIgnoreBasisPoints or 0) * math.max(0, defense) / 10000)
 	end
 
 	-- Shock Assault is carried by the exact Charge attack selected by the
@@ -332,6 +425,8 @@ end
 
 --- Armorer and everything else that lessens every kind of blow, other than being petrified.
 function Script:getArmorerFactor(info)
+	if hasPhysicalDamageReductionStage(info) then return 0 end
+
 	local reduction = 0
 	if hasBonusOfType(info.defenderBonuses, "GENERAL_DAMAGE_REDUCTION") then
 		reduction = info.defender:getBonuses({type = "GENERAL_DAMAGE_REDUCTION", subtype = DAMAGE_TYPE_ALL}):filter(function(bonus)
@@ -347,16 +442,19 @@ end
 
 --- New Horizons Armorer is an independent post-Defense reduction source.
 function Script:getNewHorizonsArmorerFactor(info)
+	if hasPhysicalDamageReductionStage(info) then return 0 end
 	return -(info.newHorizonsArmorerReductionPercent or 0) / 100
 end
 
 --- Battlecraft's Defend training is independent from Armorer and Orders.
 function Script:getBattlecraftDefendFactor(info)
+	if hasPhysicalDamageReductionStage(info) then return 0 end
 	return -(info.battlecraftDefendReductionPercent or 0) / 100
 end
 
 --- Shield and air shield: each lessens one kind of blow and ignores the other.
 function Script:getMagicShieldFactor(info)
+	if hasPhysicalDamageReductionStage(info) then return 0 end
 	local subtype = info.shooting and DAMAGE_TYPE_RANGED or DAMAGE_TYPE_MELEE
 	return -getBonusValueOfSubtype(info.defender, info.defenderBonuses, "GENERAL_DAMAGE_REDUCTION", subtype) / 100
 end
@@ -468,6 +566,7 @@ function Script:calculate(battle, info)
 	-- the battle answers the queries that depend on where the blow happens; it rides along with the
 	-- rest of the attack rather than in a global, which a script shared between threads must not have
 	info.battle = battle
+	local usesPhysicalDamageReductionStage = hasPhysicalDamageReductionStage(info)
 
 	local baseMin, baseMax = self:getBaseDamage(info)
 
@@ -478,6 +577,8 @@ function Script:calculate(battle, info)
 	-- being cancelled by ordinary attack bonuses.
 	local heroOrderMultiplier = math.max(0, (info.heroOrderFinalDamageMultiplier or 100) / 100)
 	local phantomDamageMultiplier = self:getPhantomDamageMultiplier(info)
+	local physicalDamageReductionMultiplier = usesPhysicalDamageReductionStage
+		and getPhysicalDamageReductionFactor(info) or 1.0
 
 	for _, method in ipairs(self:getFactors()) do
 		local factor = self[method](self, info)
@@ -492,12 +593,26 @@ function Script:calculate(battle, info)
 
 	local cap = self:getDamageCap(info)
 
-	local function apply(base, factor)
-		return math.min(cap, math.max(1, math.floor(base * factor)))
+	local function apply(base, factor, stabilizePdrRounding)
+		local damage = base * factor
+		if stabilizePdrRounding then
+			-- Products such as 0.8 * 0.7 can land a few floating-point steps below
+			-- an exact integer. Snap only values within a narrow relative tolerance;
+			-- the legacy path and non-integral results keep their existing floor.
+			local nearestInteger = math.floor(damage + 0.5)
+			local tolerance = math.max(1e-12, math.abs(damage) * 1e-14)
+			if math.abs(damage - nearestInteger) <= tolerance then
+				damage = nearestInteger
+			end
+		end
+		return math.min(cap, math.max(1, math.floor(damage)))
 	end
 
-	local damageMin = apply(baseMin, raising * lowering * heroOrderMultiplier * phantomDamageMultiplier)
-	local damageMax = apply(baseMax, raising * lowering * heroOrderMultiplier * phantomDamageMultiplier)
+	local damageFactor = raising * lowering * physicalDamageReductionMultiplier
+		* heroOrderMultiplier * phantomDamageMultiplier
+	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1
+	local damageMin = apply(baseMin, damageFactor, stabilizePdrRounding)
+	local damageMax = apply(baseMax, damageFactor, stabilizePdrRounding)
 
 	local killsMin, killsMax = self:getCasualties(info, damageMin, damageMax)
 

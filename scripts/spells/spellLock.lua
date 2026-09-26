@@ -14,9 +14,9 @@ local function duration(mechanics)
 		1 + math.floor(mechanics:getEffectPower() / POWER_PER_EXTRA_ROUND))
 	local hero = mechanics:getHeroCaster()
 	if hero ~= nil and hero:hasActivePerk(SPELLBINDER_SKILL, SPELLBINDER_PERK) then
-		return math.min(SPELLBINDER_DURATION_CAP, base + 1)
+		base = math.min(SPELLBINDER_DURATION_CAP, base + 1)
 	end
-	return base
+	return mechanics:adjustEffectDuration(base)
 end
 
 local function opposingBonuses(mechanics, unit)

@@ -145,7 +145,7 @@ void validatePerkRules(const JsonNode & rules)
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
 		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills"});
 	require(integer(rules["schemaVersion"], PERK_SCHEMA_VERSION, PERK_SCHEMA_VERSION), "schemaVersion");
-	require(integer(rules["rulesetVersion"], PERK_RULESET_VERSION, PERK_RULESET_VERSION), "rulesetVersion");
+	require(integer(rules["rulesetVersion"], PERK_MIN_RULESET_VERSION, PERK_RULESET_VERSION), "rulesetVersion");
 	require(rules["sourceDocument"].isString() && !rules["sourceDocument"].String().empty(), "sourceDocument");
 	require(rules["sourceSha256"].isString() && rules["sourceSha256"].String().size() == 64, "sourceSha256");
 	for(const auto c : rules["sourceSha256"].String())

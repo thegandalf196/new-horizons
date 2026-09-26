@@ -1041,7 +1041,7 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 		throw std::runtime_error("Invalid Phantom Army spawn profile");
 	if(info.phantomIntegrity > 0
 		&& (info.count <= 0 || !info.summoned || info.natureSummoned
-			|| info.phantomDuration != newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS))
+			|| !newHorizonsSorcery::phantomArmyDurationSupported(info.phantomDuration)))
 		throw std::runtime_error("Invalid Phantom Army spawn profile");
 
 	CStackBasicDescriptor base(info.type, info.count);

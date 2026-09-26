@@ -559,5 +559,131 @@
 			"special" : true
 		},
 		"targetCondition" : {}
+	},
+	"focusMagic" : {
+		"name" : "Focus Magic",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:sorcery" : true
+		},
+		"level" : 3,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		// Existing spellLock frames are unrelated graphic placeholders; no Focus Magic art is defined here.
+		"graphics" : {
+			"iconBook" : "SPELLS.def:0:15",
+			"iconScroll" : "SPELLSCR.def:0:15",
+			"iconEffect" : "SPELLINT.def:0:16",
+			"iconImmune" : "SPELLINT.def:0:16",
+			"iconScenarioBonus" : "SPELLBON.def:0:15"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that captured value: min(20%, 10% + 0.05% x Spell Power). Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"cost" : 11,
+				"power" : 0,
+				"battleEffects" : {
+					"focusMagic" : {
+						"type" : "core:focusMagicEnchantment"
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that captured value: min(20%, 10% + 0.05% x Spell Power). Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"cost" : 11,
+				"power" : 0,
+				"battleEffects" : {
+					"focusMagic" : {
+						"type" : "core:focusMagicEnchantment"
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that captured value: min(20%, 10% + 0.05% x Spell Power). Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"cost" : 11,
+				"power" : 0,
+				"battleEffects" : {
+					"focusMagic" : {
+						"type" : "core:focusMagicEnchantment"
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that captured value: min(20%, 10% + 0.05% x Spell Power). Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"cost" : 11,
+				"power" : 0,
+				"battleEffects" : {
+					"focusMagic" : {
+						"type" : "core:focusMagicEnchantment"
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {
+			"positive" : true,
+			"special" : false
+		},
+		"targetCondition" : {}
+	},
+	"arcaneBreach" : {
+		"name" : "Arcane Breach",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:sorcery" : true
+		},
+		"level" : 0,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		// Existing spellLock frames are an unrelated internal placeholder; no Arcane Breach art is defined here.
+		"graphics" : {
+			"iconBook" : "SPELLS.def:0:15",
+			"iconScroll" : "SPELLSCR.def:0:15",
+			"iconEffect" : "SPELLINT.def:0:16",
+			"iconImmune" : "SPELLINT.def:0:16",
+			"iconScenarioBonus" : "SPELLBON.def:0:15"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Internal negative status identity for Arcane Breach marks. Not castable.",
+				"cost" : 0,
+				"power" : 0
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Internal negative status identity for Arcane Breach marks. Not castable.",
+				"cost" : 0,
+				"power" : 0
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Internal negative status identity for Arcane Breach marks. Not castable.",
+				"cost" : 0,
+				"power" : 0
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Internal negative status identity for Arcane Breach marks. Not castable.",
+				"cost" : 0,
+				"power" : 0
+			}
+		},
+		"flags" : {
+			"negative" : true,
+			"persistent" : false,
+			"special" : true
+		}
 	}
 }

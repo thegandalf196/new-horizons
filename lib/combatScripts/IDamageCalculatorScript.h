@@ -37,6 +37,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// Whether this attack deals physical creature damage. Spell-like shots and other
 	/// explicitly nonphysical attacks use the magical Phantom Army damage multiplier.
 	bool physicalDamage = true;
+	/// -1 retains legacy reduction factors; nonnegative opts into independent capped PDR.
+	int physicalDamageReductionCapPercent = -1;
 	bool luckyStrike = false;
 	bool unluckyStrike = false;
 	bool deathBlow = false;
@@ -61,6 +63,9 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// Percentage of the target's Creature Defense ignored by this melee attack.
 	/// This is populated from the authoritative Armor Piercer perk state.
 	int meleeDefenseIgnorePercent = 0;
+	/// Ranged Creature Defense ignored by marks for the attacker's current controlling side,
+	/// in basis points (10000 = 100%).
+	int rangedDefenseIgnoreBasisPoints = 0;
 	/// Additive melee damage premium against a target below the Executioner threshold.
 	int executionerDamagePercent = 0;
 	/// Additive direct damage component from a canonical New Horizons Order.
@@ -115,6 +120,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("chargeDistance", chargeDistance, "Hexes crossed to reach the target, which is what jousting scales with.");
 		s("shooting", shooting, "Whether the blow is a shot.");
 		s("physicalDamage", physicalDamage, "Whether this attack deals physical creature damage.");
+		s("physicalDamageReductionCapPercent", physicalDamageReductionCapPercent,
+			"Combined independent physical reduction cap; -1 preserves legacy calculations.");
 		s("targetedRangedCommandPercent", targetedRangedCommandPercent, "Target-specific additive ranged premium.");
 		s("targetedRangedCommand", targetedRangedCommand, "Whether Focus Fire halves range and obstacle penalties for this primary shot.");
 		s("luckyRangedDefenseIgnorePercent", luckyRangedDefenseIgnorePercent,
@@ -123,6 +130,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Percentage of target Creature Defense ignored by this Shock Assault Charge attack.");
 		s("meleeDefenseIgnorePercent", meleeDefenseIgnorePercent,
 			"Percentage of target Creature Defense ignored by this Armor Piercer melee attack.");
+		s("rangedDefenseIgnoreBasisPoints", rangedDefenseIgnoreBasisPoints,
+			"Target Creature Defense ignored by current-side ranged marks, in basis points.");
 		s("executionerDamagePercent", executionerDamagePercent,
 			"Conditional melee damage premium supplied by the active Executioner perk.");
 		s("heroOrderDamagePercent", heroOrderDamagePercent, "Direct damage component from the active canonical Order.");

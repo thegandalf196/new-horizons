@@ -50,24 +50,20 @@ public:
 	/// server accepts this only while its saved battle snapshot has a pending
 	/// sequence; it never buys another Hero Action or chains recursively.
 	bool metamagicFollowup = false;
-	/// Chooses the Expert Grand Metamagic variant for the first additional
-	/// spell in this offered sequence.  The choice is explicit: merely opening
-	/// the follow-up prompt never consumes a use or reserves Grand.
+	/// Retired manual Grand request, retained for serialized action compatibility.
+	/// New requests must leave this false; Grand activation is server-derived.
 	bool metamagicGrand = false;
-	/// Explicitly declines the currently pending Metamagic sequence.  This is
-	/// validated by the server and clears only the immediate sequence.  An
-	/// initial decline leaves the use available; declining the second leg of a
-	/// Grand sequence preserves the already-accepted use and may carry Formula
-	/// Reserve's server-derived refund below.
+	/// Retired Metamagic-decline request bit. Retained only so old serialized
+	/// actions can be decoded and rejected explicitly; current clients and the
+	/// authoritative server must never create or execute this transition.
 	bool metamagicDecline = false;
 	/// Server-authored marker for an owner-authenticated pass at a visible Time
 	/// Stop Hero Action boundary. Incoming clients may never set this flag. It is
 	/// replicated in StartAction so every game-state copy expires the same origin,
 	/// while synthetic AUTOMATIC_ACTION no-ops remain ordinary NO_ACTION actions.
 	bool timeStopHeroActionPass = false;
-	/// Server-derived Formula Reserve refund attached to a Decline/End after
-	/// at least one additional spell of a Grand sequence resolved.  Clients may
-	/// never author this value; the action processor fills it from saved state.
+	/// Server-derived Formula Reserve refund attached to an accepted spell cast
+	/// that completes a Metamagic sequence. Clients may never author this value.
 	si32 metamagicManaRefund = 0;
 	HeroCommand command = HeroCommand::NONE;
 	/// Real Inferno reserve stack selected for Demonic Gating. The entire
@@ -95,7 +91,6 @@ public:
 	static BattleAction makeEndOFTacticPhase(BattleSide side);
 	static BattleAction makeRetreat(BattleSide side);
 	static BattleAction makeSurrender(BattleSide side);
-	static BattleAction makeMetamagicDecline(BattleSide side);
 
 	bool isTacticsAction() const;
 	bool isUnitAction() const;

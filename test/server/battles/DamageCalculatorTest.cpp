@@ -13,6 +13,7 @@
 #include "BattleTestFixture.h"
 
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/battle/CBattleInfoCallback.h"
 #include "../../../lib/bonuses/Bonus.h"
@@ -137,6 +138,98 @@ public:
 class DamageCalculatorTest : public DamageCalculatorTestBase
 {
 };
+
+class NewHorizonsPhysicalReductionTest : public DamageCalculatorTestBase
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+		rules["physicalDamageReductionCapPercent"].Integer() = 80;
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+	}
+
+	static void reduction(CStack * stack, int percent, SpellID source)
+	{
+		stack->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::GENERAL_DAMAGE_REDUCTION, BonusSource::SPELL_EFFECT, percent,
+			BonusSourceID(source), BonusSubtypeID(BonusCustomSubtype::damageTypeMelee)));
+	}
+};
+
+TEST_F(NewHorizonsPhysicalReductionTest, IndependentSourcesMultiplyInsteadOfAdding)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel);
+	reduction(to, 20, SpellID::SHIELD);
+	reduction(to, 30, SpellID::AIR_SHIELD);
+	EXPECT_EQ(estimate(from, to).damage.min, 2800);
+}
+
+class HistoricalPhysicalReductionTest : public NewHorizonsPhysicalReductionTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+		rules.Struct().erase("physicalDamageReductionCapPercent");
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+	}
+};
+
+TEST_F(HistoricalPhysicalReductionTest, AbsentSettingRetainsHistoricalCombinedShieldFactor)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel);
+	reduction(to, 20, SpellID::SHIELD);
+	reduction(to, 30, SpellID::AIR_SHIELD);
+	EXPECT_EQ(estimate(from, to).damage.min, 2500);
+}
+
+TEST_F(NewHorizonsPhysicalReductionTest, ContributionsToOneSourceRemainOneCoefficient)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel);
+	reduction(to, 20, SpellID::SHIELD);
+	reduction(to, 10, SpellID::SHIELD);
+	EXPECT_EQ(estimate(from, to).damage.min, 3500);
+}
+
+TEST_F(NewHorizonsPhysicalReductionTest, CombinedReductionCapsAtEightyPercent)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel);
+	reduction(to, 80, SpellID::SHIELD);
+	reduction(to, 80, SpellID::AIR_SHIELD);
+	EXPECT_EQ(estimate(from, to).damage.min, 1000);
+}
+
+TEST_F(NewHorizonsPhysicalReductionTest, PetrificationStaysOutsidePhysicalReductionCap)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel);
+	reduction(to, 80, SpellID::SHIELD);
+	grant(to, BonusType::GENERAL_DAMAGE_REDUCTION, 50,
+		BonusSubtypeID(BonusCustomSubtype::damageTypeAll), BonusSource::SPELL_EFFECT);
+	EXPECT_EQ(estimate(from, to).damage.min, 500);
+}
+
+TEST_F(NewHorizonsPhysicalReductionTest, MeleeOnlyGeneralReductionDoesNotReduceRangedDamage)
+{
+	auto * from = attacker(titan);
+	auto * to = defender(titan);
+	const auto meleeBefore = estimate(from, to).damage.min;
+	const auto rangedBefore = estimate(from, to, 0, true).damage.min;
+	auto bonus = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::GENERAL_DAMAGE_REDUCTION, BonusSource::OTHER, 50,
+		BonusSourceID(), BonusSubtypeID(BonusCustomSubtype::damageTypeAll));
+	bonus->effectRange = BonusLimitEffect::ONLY_MELEE_FIGHT;
+	to->addNewBonus(bonus);
+	EXPECT_EQ(estimate(from, to).damage.min, meleeBefore / 2);
+	EXPECT_EQ(estimate(from, to, 0, true).damage.min, rangedBefore);
+}
 
 class SylvanLuckPerkDamageTest : public DamageCalculatorTestBase
 {

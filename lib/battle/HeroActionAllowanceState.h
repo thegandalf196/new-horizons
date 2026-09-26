@@ -337,11 +337,32 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 		uint8_t pendingMetamagicGrants = 0;
 	};
 
+	/// Reports the automatic Grand outcome for a candidate extra spell. Grand
+	/// is available only for the first extra spell of the third Metamagic use.
+	static bool activatesGrand(
+		bool metamagicFollowup,
+		uint8_t metamagicPendingCount,
+		size_t sequenceSpellCount,
+		uint8_t metamagicUsesConsumed,
+		uint8_t metamagicRank,
+		bool grandPerkEnabled,
+		bool metamagicGrandUsed)
+	{
+		return metamagicFollowup
+			&& metamagicPendingCount == 1
+			&& sequenceSpellCount == 1
+			&& metamagicUsesConsumed == 2
+			&& metamagicRank >= 3
+			&& grandPerkEnabled
+			&& !metamagicGrandUsed;
+	}
+
 	/// Commits an already accepted HERO-mode spell. `selectionGrantId` must be
 	/// the currently preferred spell-paying grant; validation/preflight remains
 	/// the caller's responsibility. The protocol follow-up flag is meaningful
-	/// only for Metamagic grants, not every future typed spell source. Failure is
-	/// atomic and leaves every argument unchanged.
+	/// only for Metamagic grants, not every future typed spell source. `grand`
+	/// is the expected server-derived outcome. Failure is atomic and leaves
+	/// every argument unchanged.
 	static std::optional<Result> commitAcceptedCast(
 		HeroActionAllowanceState & ledger,
 		uint32_t selectionGrantId,
@@ -378,6 +399,12 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 			|| (grand && (!metaSource || !metamagicFollowup)))
 			return {};
 
+		const bool activatesGrand = HeroSpellAllowanceTransition::activatesGrand(
+			metamagicFollowup, metamagicPendingCount, sequenceSpellCount,
+			metamagicUsesConsumed, metamagicRank, grandPerkEnabled, metamagicGrandUsed);
+		if(grand != activatesGrand)
+			return {};
+
 		if(selection->allowance == Allowance::HERO)
 		{
 			if(metamagicFollowup || grand || metamagicPendingCount != 0 || sequenceSpellCount != 0)
@@ -388,8 +415,6 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 			if(metaSource)
 			{
 				if(metamagicPendingCount != 1 || sequenceSpellCount != 1 || metamagicUsesConsumed >= metamagicRank)
-					return {};
-				if(grand && (!grandPerkEnabled || metamagicRank < 3 || metamagicGrandUsed))
 					return {};
 			}
 			else if(grandSource)
@@ -429,7 +454,7 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 		{
 			++nextUsesConsumed; // charged only when the first Metamagic extra cast is accepted
 			nextPendingCount = 0;
-			if(grand)
+			if(activatesGrand)
 			{
 				result.grantedGrantIds.push_back(nextLedger.grantAllowance(
 					Allowance::SPELL, Source::METAMAGIC_GRAND, round));

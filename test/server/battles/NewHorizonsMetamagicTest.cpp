@@ -5,26 +5,40 @@
  */
 #include "StdInc.h"
 
+#include "BattleStartSnapshotFixture.h"
 #include "HeroCommandFixture.h"
 
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/spells/Problem.h"
 
+#include <limits>
+
 namespace
 {
 constexpr auto metamagicSkill = "new-horizons:metamagic";
 constexpr auto arcaneEconomy = "new-horizons:metamagic.arcaneEconomy";
 constexpr auto formulaReserve = "new-horizons:metamagic.formulaReserve";
+constexpr auto spellBuffer = "new-horizons:metamagic.spellBuffer";
 constexpr auto grandMetamagic = "new-horizons:metamagic.grandMetamagic";
+constexpr auto arcaneAcquisition = "new-horizons:metamagic.arcaneAcquisition";
+constexpr auto echoedDuration = "new-horizons:metamagic.echoedDuration";
+constexpr auto sorceryMagicSkill = "new-horizons:sorceryMagic";
+constexpr auto spellbinderPerk = "new-horizons:sorceryMagic.spellbinder";
 
 SpellID phantomArmySpell()
 {
 	return SpellID(SpellID::decode(newHorizonsSorcery::PHANTOM_ARMY_SPELL));
+}
+
+SpellID spellLockSpell()
+{
+	return SpellID(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
 }
 }
 
@@ -53,7 +67,8 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
-	void prepare(int rank, std::initializer_list<const char *> perks = {}, bool useLegacyCloneRoster = false)
+	void prepare(int rank, std::initializer_list<const char *> perks = {}, bool useLegacyCloneRoster = false,
+		int32_t combatManaBonus = 0)
 	{
 		legacyCloneRoster = useLegacyCloneRoster;
 		startGame();
@@ -64,8 +79,32 @@ protected:
 		// Ordinary restoration tests need actual Normal capacity. A zero-Knowledge
 		// fixture with a scalar total would now place all funds in Buffer instead.
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
+		std::array<std::string, 4> selectedPerTier;
+		const JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
 		for(const auto perk : perks)
-			attackerSideHero->applyPerkSelection({metamagicSkill, perk});
+		{
+			const auto & definitions = perkRules["skills"][metamagicSkill]["perks"].Vector();
+			const auto definition = std::find_if(definitions.begin(), definitions.end(), [perk](const JsonNode & entry)
+			{
+				return entry["id"].String() == perk;
+			});
+			ASSERT_NE(definition, definitions.end()) << "Missing Metamagic perk " << perk;
+			const auto & required = (*definition)["requires"].String();
+			const int tier = required == "basic" ? 1 : required == "advanced" ? 2 : required == "expert" ? 3 : 0;
+			ASSERT_GT(tier, 0) << "Invalid Metamagic perk tier for " << perk;
+			ASSERT_TRUE(selectedPerTier[tier].empty()) << "Two fixture perks occupy tier " << tier;
+			selectedPerTier[tier] = perk;
+		}
+		// Tests that exercise a later-tier perk must still model the canonical
+		// Basic -> Advanced -> Expert selection order. These defaults have no
+		// effect on the scenarios that require them.
+		if(rank >= 2 && selectedPerTier[1].empty())
+			selectedPerTier[1] = arcaneAcquisition;
+		if(rank >= 3 && selectedPerTier[2].empty())
+			selectedPerTier[2] = echoedDuration;
+		for(int tier = 1; tier <= 3; ++tier)
+			if(!selectedPerTier[tier].empty())
+				attackerSideHero->applyPerkSelection({metamagicSkill, selectedPerTier[tier]});
 
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
@@ -85,6 +124,14 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("core:iceBolt")));
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode("new-horizons:counterspell")));
 		setTestSpellPointTotal(attackerSideHero, 1000);
+		if(combatManaBonus > 0)
+		{
+			Bonus combatMana;
+			combatMana.type = BonusType::COMBAT_MANA_BONUS;
+			combatMana.val = combatManaBonus;
+			GiveBonus grantCombatMana(GiveBonus::ETarget::OBJECT, attackerSideHero->id, combatMana);
+			gameHandler->sendAndApply(grantCombatMana);
+		}
 
 		startBattle();
 		attacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
@@ -123,8 +170,9 @@ protected:
 
 	bool decline()
 	{
-		return gameHandler->battles->makePlayerBattleAction(
-			BattleID(0), PlayerColor(0), BattleAction::makeMetamagicDecline(BattleSide::ATTACKER));
+		BattleAction retired = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::NONE);
+		retired.metamagicDecline = true;
+		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), retired);
 	}
 
 	bool castLandMineFollowup(std::initializer_list<int> hexes)
@@ -186,6 +234,53 @@ protected:
 		return spell.toSpell()->battleMechanics(&event)->getEffectDuration();
 	}
 
+	void setSpellLockDurationTestPower()
+	{
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 1000, ChangeValueMode::ABSOLUTE);
+	}
+
+	void grantSpellbinder()
+	{
+		const auto decoded = SecondarySkill::decode(sorceryMagicSkill);
+		ASSERT_GE(decoded, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::EXPERT,
+			ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({sorceryMagicSkill, spellbinderPerk});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(sorceryMagicSkill, spellbinderPerk));
+	}
+
+	void applySpellLockScript(const CStack * target, bool followup = false)
+	{
+		const auto spell = spellLockSpell();
+		ASSERT_NE(spell, SpellID::NONE);
+		ASSERT_NE(spell.toSpell(), nullptr);
+		ASSERT_TRUE(spell.toSpell()->hasBattleEffects());
+		// Spell Lock is intentionally not in the New Horizons common spell roster.
+		// Invoke its loaded special-spell definition directly to verify this script's
+		// authoritative bonus application without changing that roster.
+		ASSERT_EQ(gameState()->getMagicRules()["spells"].Struct().count(newHorizonsSorcery::SPELL_LOCK_SPELL), 0u);
+		ASSERT_FALSE(spell.toSpell()->isCommonHeroSpell());
+
+		spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+		event.setSpellLevel(3);
+		event.setMetamagicFollowup(followup);
+		event.setMetamagicTargetUnitId(target->unitId());
+		event.cast(gameHandler->spellcastEnvironment(), {spells::Destination(target)});
+	}
+
+	void expectAppliedSpellLockDuration(const CStack * target, int32_t expectedDuration)
+	{
+		const auto source = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLockSpell()));
+		const auto bonuses = target->getBonuses(source);
+		const auto resistance = bonuses->getFirst(CSelector([](const Bonus * bonus)
+		{
+			return bonus && bonus->type == BonusType::MAGIC_RESISTANCE;
+		}));
+		ASSERT_NE(resistance, nullptr);
+		EXPECT_EQ(resistance->duration, BonusDuration::N_TURNS);
+		EXPECT_EQ(resistance->turnsRemain, expectedDuration);
+	}
+
 	void damage(CStack * target, int64_t amount)
 	{
 		auto state = target->acquireState();
@@ -202,7 +297,7 @@ protected:
 	CStack * defender = nullptr;
 };
 
-TEST_F(NewHorizonsMetamagicTest, InitialOfferDoesNotConsumeUseAndDeclineIsAuthoritative)
+TEST_F(NewHorizonsMetamagicTest, RetiredDeclineCannotClearAnUnusedOffer)
 {
 	prepare(1);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
@@ -214,13 +309,13 @@ TEST_F(NewHorizonsMetamagicTest, InitialOfferDoesNotConsumeUseAndDeclineIsAuthor
 	BattleAction forgedWait = BattleAction::makeWait(attacker);
 	forgedWait.side = BattleSide::DEFENDER;
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), forgedWait));
-	ASSERT_TRUE(decline());
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 0);
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
-	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicFormulaReserveUsed);
-
-	// A forged decline cannot clear an already-resolved offer.
 	EXPECT_FALSE(decline());
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 0);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicFormulaReserveUsed);
+	endRound();
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 0);
 }
 
 TEST_F(NewHorizonsMetamagicTest, SpellActionSurvivesCreatureWaitAndCanBeSpentLaterInRound)
@@ -278,14 +373,15 @@ TEST_F(NewHorizonsMetamagicTest, UnspentSpellActionExpiresAndOneHeroActionReturn
 	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(BattleSide::ATTACKER).spellActions, 1u);
 }
 
-TEST_F(NewHorizonsMetamagicTest, MalformedDeclineStackDoesNotPublishOrClearSequence)
+TEST_F(NewHorizonsMetamagicTest, RetiredDeclineRequestIsRejectedAtomically)
 {
 	prepare(1);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	const auto pendingBefore = battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount;
 	const auto sequenceBefore = battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells;
 
-	BattleAction malformed = BattleAction::makeMetamagicDecline(BattleSide::ATTACKER);
+	BattleAction malformed = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::NONE);
+	malformed.metamagicDecline = true;
 	malformed.stackNumber = attacker->unitId();
 	bool accepted = false;
 	EXPECT_NO_THROW(accepted = gameHandler->battles->makePlayerBattleAction(
@@ -293,7 +389,8 @@ TEST_F(NewHorizonsMetamagicTest, MalformedDeclineStackDoesNotPublishOrClearSeque
 	EXPECT_FALSE(accepted);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, pendingBefore);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells, sequenceBefore);
-	ASSERT_TRUE(decline());
+	endRound();
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
 }
 
 TEST_F(NewHorizonsMetamagicTest, AcceptedFollowupConsumesOneUseWithoutAnotherHeroActionOrChain)
@@ -318,40 +415,213 @@ TEST_F(NewHorizonsMetamagicTest, AcceptedFollowupConsumesOneUseWithoutAnotherHer
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), forged));
 }
 
-TEST_F(NewHorizonsMetamagicTest, GrandMetamagicIsExplicitAndProvidesExactlyTwoExtras)
+TEST_F(NewHorizonsMetamagicTest, GrandMetamagicAutomaticallyContinuesTheThirdUsedSequence)
 {
 	prepare(3, {grandMetamagic});
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 0);
+	for(uint8_t used = 0; used < 3; ++used)
+	{
+		if(used != 0)
+		{
+			advanceRound();
+			activate(attacker);
+		}
+		ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, used);
+		if(used == 2)
+		{
+			// A rejected spell does not consume the third use or activate Grand.
+			EXPECT_FALSE(cast(SpellID::RESURRECTION, defender, true));
+			EXPECT_FALSE(cast(SpellID::SLOW, defender, true, true));
+			EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 2);
+			EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicGrandUsed);
+			EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
+		}
+		ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, used + 1);
+		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, used == 2 ? 1 : 0);
+		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicGrandUsed, used == 2);
+	}
 
-	ASSERT_TRUE(cast(SpellID::SLOW, defender, true, true));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 1);
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
-	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicGrandUsed);
-
+	// The accepted continuation is a saved, pending Grand grant and does not
+	// charge another Metamagic use.
 	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender, true));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 1);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 3);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).castSpellsCount, 1);
+}
+
+TEST_F(NewHorizonsMetamagicTest, PendingGrandContinuationRoundTripsAndPaysFormulaReserveOnce)
+{
+	prepare(3, {grandMetamagic, formulaReserve});
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	side.metamagicUsesConsumed = 2;
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+	ASSERT_EQ(side.metamagicUsesConsumed, 3);
+	ASSERT_TRUE(side.metamagicGrandUsed);
+	ASSERT_EQ(side.metamagicPendingCount, 1);
+	ASSERT_EQ(side.metamagicSequenceSpells,
+		(std::vector<SpellID>{SpellID::HASTE, SpellID::SLOW}));
+	ASSERT_EQ(side.heroActionAllowances.remainingCounts(battle()->getRound()).spellActions, 1u);
+	ASSERT_EQ(side.heroActionAllowances.grants.size(), 1u);
+	ASSERT_EQ(side.heroActionAllowances.grants.front().source,
+		HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND);
+
+	// Game snapshots intentionally omit active battles. Restore the independent
+	// world first, then send the live battle through its real BattleStart wire path.
+	const auto savedWorld = gameState()->saveToMemory();
+	auto replica = std::make_shared<CGameState>();
+	replica->preInit(LIBRARY);
+	replica->loadFromMemory(savedWorld);
+	ASSERT_TRUE(replica->currentBattles.empty());
+
+	BattleStart outgoing;
+	outgoing.battleID = BattleID(0);
+	outgoing.info = battleStartFixture::snapshot(*battle(), replica.get());
+	CMemorySerializer wire;
+	wire.oser & outgoing;
+	wire.iser.cb = replica.get();
+	BattleStart incoming;
+	wire.iser & incoming;
+	ASSERT_NE(incoming.info, nullptr);
+
+	RecordingGameServer restoredServer;
+	restoredServer.gameState = replica;
+	auto restoredHandler = std::make_shared<CGameHandler>(restoredServer, replica);
+	restoredHandler->sendAndApply(incoming);
+	auto * restoredBattle = replica->getBattle(BattleID(0));
+	ASSERT_NE(restoredBattle, nullptr);
+	auto & restoredSide = restoredBattle->getSide(BattleSide::ATTACKER);
+	EXPECT_EQ(restoredSide.metamagicUsesConsumed, 3);
+	EXPECT_TRUE(restoredSide.metamagicGrandUsed);
+	EXPECT_EQ(restoredSide.metamagicPendingCount, 1);
+	EXPECT_EQ(restoredSide.metamagicSequenceSpells,
+		(std::vector<SpellID>{SpellID::HASTE, SpellID::SLOW}));
+	ASSERT_EQ(restoredSide.heroActionAllowances.remainingCounts(restoredBattle->getRound()).spellActions, 1u);
+	ASSERT_EQ(restoredSide.heroActionAllowances.grants.size(), 1u);
+	EXPECT_EQ(restoredSide.heroActionAllowances.grants.front().source,
+		HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND);
+
+	auto * restoredHero = replica->getHero(attackerSideHero->id);
+	const auto * restoredTarget = restoredBattle->getStack(defender->unitId());
+	ASSERT_NE(restoredHero, nullptr);
+	ASSERT_NE(restoredTarget, nullptr);
+	const auto * continuationSpell = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	ASSERT_NE(continuationSpell, nullptr);
+	const int32_t continuationCost = restoredHero->getSpellCost(continuationSpell);
+	ASSERT_GT(continuationCost, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
+	const int32_t normalBeforeContinuation = restoredHero->getNormalSpellPoints();
+	const int32_t bufferBeforeContinuation = restoredHero->getBufferSpellPoints();
+
+	BattleAction continuation;
+	continuation.actionType = EActionType::HERO_SPELL;
+	continuation.side = BattleSide::ATTACKER;
+	continuation.spell = SpellID::MAGIC_ARROW;
+	continuation.metamagicFollowup = true;
+	continuation.aimToUnit(restoredTarget);
+	ASSERT_TRUE(restoredHandler->battles->makePlayerBattleAction(
+		BattleID(0), PlayerColor(0), continuation));
+
+	EXPECT_EQ(restoredSide.metamagicUsesConsumed, 3);
+	EXPECT_TRUE(restoredSide.metamagicGrandUsed);
+	EXPECT_EQ(restoredSide.metamagicPendingCount, 0);
+	EXPECT_TRUE(restoredSide.metamagicSequenceSpells.empty());
+	EXPECT_TRUE(restoredSide.metamagicFormulaReserveUsed);
+	EXPECT_EQ(restoredSide.heroActionAllowances.remainingCounts(restoredBattle->getRound()).spellActions, 0u);
+	EXPECT_EQ(restoredHero->getNormalSpellPoints(), normalBeforeContinuation - continuationCost
+		+ newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
+	EXPECT_EQ(restoredHero->getBufferSpellPoints(), bufferBeforeContinuation);
+	const auto casts = restoredServer.castsOf(SpellID::MAGIC_ARROW);
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_EQ(casts.front().announcement.metamagicManaRefund,
+		newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
+	EXPECT_EQ(std::ranges::count_if(restoredServer.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Formula Reserve restores 3 Normal Spell Points") != std::string::npos;
+	}), 1);
+
+	const int32_t normalAfterContinuation = restoredHero->getNormalSpellPoints();
+	BattleAction retired = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::NONE);
+	retired.metamagicDecline = true;
+	EXPECT_FALSE(restoredHandler->battles->makePlayerBattleAction(
+		BattleID(0), PlayerColor(0), retired));
+	EXPECT_EQ(restoredHero->getNormalSpellPoints(), normalAfterContinuation);
 }
 
 TEST_F(NewHorizonsMetamagicTest, FormulaReserveRefundsOnlyAfterGrandSequenceResolves)
 {
 	prepare(3, {grandMetamagic, formulaReserve});
+	// Precondition this focused branch test at the third use so Grand defers
+	// Formula Reserve until the pending continuation is resolved.
+	battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed = 2;
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	const auto manaBeforeGrand = attackerSideHero->getManaAvailable();
-	ASSERT_TRUE(cast(SpellID::SLOW, defender, true, true));
-	const auto manaAfterGrand = attackerSideHero->getManaAvailable();
+	const auto normalBeforeGrand = attackerSideHero->getNormalSpellPoints();
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+	const auto normalAfterGrand = attackerSideHero->getNormalSpellPoints();
+	const auto bufferAfterGrand = attackerSideHero->getBufferSpellPoints();
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicFormulaReserveUsed, false);
 
-	// Ending the second leg still resolves the first Metamagic sequence and
-	// grants Formula Reserve's three mana exactly once.
-	ASSERT_TRUE(decline());
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaAfterGrand + 3);
-	EXPECT_GT(manaBeforeGrand, manaAfterGrand);
+	// The unused Grand continuation closes automatically at the round boundary.
+	// Formula Reserve restores Normal only, not Buffer.
+	endRound();
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalAfterGrand + newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
+	EXPECT_GT(normalBeforeGrand, normalAfterGrand);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferAfterGrand);
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicFormulaReserveUsed);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
-	EXPECT_FALSE(decline());
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Formula Reserve restores 3 Normal Spell Points") != std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsMetamagicTest, FormulaReservePaysForEveryQualifyingSequence)
+{
+	prepare(2, {formulaReserve});
+	const int listedCost = attackerSideHero->getSpellCost(SpellID(SpellID::SLOW).toSpell());
+	for(int sequence = 0; sequence < 2; ++sequence)
+	{
+		if(sequence > 0)
+		{
+			endRound();
+			activate(attacker);
+		}
+		ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+		const int32_t normalBeforeFollowup = attackerSideHero->getNormalSpellPoints();
+		ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+		EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalBeforeFollowup - listedCost
+			+ newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
+		const auto slows = server.castsOf(SpellID::SLOW);
+		ASSERT_EQ(slows.size(), static_cast<size_t>(sequence + 1));
+		EXPECT_EQ(slows.back().announcement.metamagicManaRefund,
+			newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
+	}
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicFormulaReserveUsed);
+	EXPECT_EQ(std::ranges::count_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Formula Reserve restores 3 Normal Spell Points") != std::string::npos;
+	}), 2);
+}
+
+TEST_F(NewHorizonsMetamagicTest, FormulaReserveRestoresOnlyAvailableNormalCapacity)
+{
+	prepare(3, {grandMetamagic, formulaReserve});
+	battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed = 2;
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+	const int32_t normalCapacity = attackerSideHero->manaLimit();
+	ASSERT_GT(normalCapacity, 1);
+	attackerSideHero->setNormalSpellPoints(normalCapacity - 1);
+	const int32_t bufferBeforeExpiry = attackerSideHero->getBufferSpellPoints();
+
+	endRound();
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalCapacity);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeExpiry);
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Formula Reserve restores 1 Normal Spell Points") != std::string::npos;
+	})) << ::testing::PrintToString(server.battleLogLines);
 }
 
 TEST_F(NewHorizonsMetamagicTest, ArcaneEconomyReducesOnlyAcceptedFollowupCost)
@@ -437,8 +707,20 @@ TEST_F(NewHorizonsMetamagicTest, FollowupLogNamesSecondAndThirdMagicArrowDamage)
 	// provisional Magic Arrow damage kills an entire ten-unit stack.
 	CStack * secondTarget = addStack(BattleSide::DEFENDER,
 		creatureByName("core:pikeman"), BattleHex(rightHex + 2), 10);
+	for(uint8_t used = 0; used < 2; ++used)
+	{
+		if(used != 0)
+		{
+			advanceRound();
+			activate(attacker);
+		}
+		ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+		ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+	}
+	advanceRound();
+	activate(attacker);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender, true, true));
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender, true));
 	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, secondTarget, true));
 
 	const auto arrows = server.castsOf(SpellID::MAGIC_ARROW);
@@ -663,6 +945,25 @@ TEST_F(NewHorizonsMetamagicTest, FollowupPhantomArmyLogReportsResolvedStackInteg
 	{
 		return line.find(expected) != std::string::npos;
 	})) << ::testing::PrintToString(casts.front().logLines);
+}
+
+TEST_F(NewHorizonsMetamagicTest, EchoedPhantomArmyFollowupLogReportsThreeRounds)
+{
+	prepare(2, {newHorizonsMagic::METAMAGIC_ECHOED_DURATION.data()});
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(phantomArmySpell(), attacker, true));
+
+	const auto casts = server.castsOf(phantomArmySpell());
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_EQ(std::ranges::count_if(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("through Metamagic, creating a phantom stack of") != std::string::npos
+			&& line.find("integrity for 3 rounds.") != std::string::npos;
+	}), 1) << ::testing::PrintToString(casts.front().logLines);
+	EXPECT_FALSE(std::ranges::any_of(casts.front().logLines, [](const std::string & line)
+	{
+		return line.find("integrity for 2 rounds.") != std::string::npos;
+	}));
 }
 
 TEST_F(NewHorizonsMetamagicTest, CounterspelledPhantomArmyFollowupLogsNoCreationOutcome)
@@ -1028,6 +1329,66 @@ TEST_F(NewHorizonsMetamagicTest, EchoedDurationOnlyAffectsTheAdditionalSpell)
 	const auto ordinaryMechanics = slow.toSpell()->battleMechanics(&ordinary);
 	const auto followupMechanics = slow.toSpell()->battleMechanics(&followup);
 	EXPECT_EQ(followupMechanics->getEffectDuration(), ordinaryMechanics->getEffectDuration() + 1);
+	EXPECT_EQ(ordinaryMechanics->adjustEffectDuration(3), 3);
+	EXPECT_EQ(followupMechanics->adjustEffectDuration(3), 4);
+	EXPECT_EQ(followupMechanics->adjustEffectDuration(std::numeric_limits<int32_t>::max()),
+		std::numeric_limits<int32_t>::max());
+
+	followup.setEffectDuration(7);
+	const auto explicitMechanics = slow.toSpell()->battleMechanics(&followup);
+	EXPECT_EQ(explicitMechanics->getEffectDuration(), 7);
+}
+
+TEST_F(NewHorizonsMetamagicTest, SpellLockScriptRetainsItsOrdinaryThreeRoundCapWithoutPerks)
+{
+	prepare(1);
+	setSpellLockDurationTestPower();
+
+	applySpellLockScript(defender);
+	expectAppliedSpellLockDuration(defender, newHorizonsSorcery::SPELL_LOCK_BASE_DURATION_CAP);
+}
+
+TEST_F(NewHorizonsMetamagicTest, SpellbinderRaisesSpellLockOrdinaryDurationToFourRounds)
+{
+	prepare(1);
+	setSpellLockDurationTestPower();
+	grantSpellbinder();
+
+	applySpellLockScript(defender);
+	expectAppliedSpellLockDuration(defender, newHorizonsSorcery::SPELL_LOCK_SPELLBINDER_DURATION_CAP);
+}
+
+TEST_F(NewHorizonsMetamagicTest, EchoedDurationDoesNotChangeAnOrdinarySpellLockCast)
+{
+	prepare(2, {newHorizonsMagic::METAMAGIC_ECHOED_DURATION.data()});
+	setSpellLockDurationTestPower();
+
+	applySpellLockScript(defender);
+	expectAppliedSpellLockDuration(defender, newHorizonsSorcery::SPELL_LOCK_BASE_DURATION_CAP);
+}
+
+TEST_F(NewHorizonsMetamagicTest, EchoedDurationAddsOneRoundToAppliedSpellLockFollowup)
+{
+	prepare(2, {newHorizonsMagic::METAMAGIC_ECHOED_DURATION.data()});
+	setSpellLockDurationTestPower();
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+
+	applySpellLockScript(defender, true);
+	expectAppliedSpellLockDuration(defender, newHorizonsSorcery::SPELL_LOCK_BASE_DURATION_CAP + 1);
+}
+
+TEST_F(NewHorizonsMetamagicTest, SpellbinderThenEchoedDurationAllowsFiveRoundsOnSpellLockFollowup)
+{
+	prepare(2, {newHorizonsMagic::METAMAGIC_ECHOED_DURATION.data()});
+	setSpellLockDurationTestPower();
+	grantSpellbinder();
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+
+	applySpellLockScript(defender, true);
+	// The ordinary three-round cap is raised to four first; Echoed Duration is
+	// then applied once for this additional Metamagic Spell Action.
+	expectAppliedSpellLockDuration(defender,
+		newHorizonsSorcery::SPELL_LOCK_SPELLBINDER_DURATION_CAP + 1);
 }
 
 TEST_F(NewHorizonsMetamagicTest, FocusedPairingIgnoresTwentyPercentOfMagicalReduction)
@@ -1087,84 +1448,230 @@ TEST_F(NewHorizonsMetamagicTest, SpellActionDoesNotBlockControlledHypnotizedStac
 	EXPECT_EQ(battle()->getSide(BattleSide::DEFENDER).metamagicPendingCount, 1);
 }
 
-TEST_F(NewHorizonsMetamagicTest, CountersequenceUsesTheCeiledOnePointSevenFiveMultiplier)
-{
-	prepare(1, {newHorizonsMagic::METAMAGIC_COUNTERSEQUENCE.data()});
-	const auto counterspell = SpellID(SpellID::decode("new-horizons:counterspell"));
-	ASSERT_NE(counterspell, SpellID::NONE);
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-
-	BattleAction followup;
-	followup.actionType = EActionType::HERO_SPELL;
-	followup.side = BattleSide::ATTACKER;
-	followup.spell = counterspell;
-	followup.aimToHex(BattleHex::INVALID);
-	followup.metamagicFollowup = true;
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), followup));
-	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicCountersequenceArmed);
-	const auto manaBeforeEnemySpell = attackerSideHero->getManaAvailable();
-
-	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-	defenderSideHero->addSpellToSpellbook(SpellID::HASTE);
-	setTestSpellPointTotal(defenderSideHero, 1000);
-	activate(defender);
-	BattleAction enemySpell;
-	enemySpell.actionType = EActionType::HERO_SPELL;
-	enemySpell.side = BattleSide::DEFENDER;
-	enemySpell.spell = SpellID::HASTE;
-	enemySpell.aimToUnit(defender);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), enemySpell));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(),
-		manaBeforeEnemySpell - newHorizonsMagic::counterspellCost(4, false, true));
-	EXPECT_FALSE(defender->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(SpellID(SpellID::HASTE)))));
-}
-
-TEST_F(NewHorizonsMetamagicTest, SpellEchoDataReplacesRetiredSpellBufferAtAdvancedRank)
+TEST_F(NewHorizonsMetamagicTest, SpellBufferDataIsAnAdvancedOnceCombatExpiryReward)
 {
 	const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 	const auto & entries = perks["skills"][metamagicSkill]["perks"].Vector();
 	const auto found = std::find_if(entries.begin(), entries.end(), [](const JsonNode & entry)
 	{
-		return entry["id"].String() == "new-horizons:metamagic.spellEcho";
+		return entry["id"].String() == spellBuffer;
 	});
 	ASSERT_NE(found, entries.end());
-	EXPECT_EQ((*found)["name"].String(), "Spell Echo");
+	EXPECT_EQ((*found)["name"].String(), "Spell Buffer");
 	EXPECT_EQ((*found)["requires"].String(), "advanced");
 	EXPECT_EQ((*found)["effect"]["status"].String(), "active");
-	EXPECT_NE((*found)["description"].String().find("repeats the first Spell"), std::string::npos);
-	EXPECT_NE((*found)["description"].String().find("+25%"), std::string::npos);
+	EXPECT_NE((*found)["description"].String().find("unused Metamagic Spell Action expires"), std::string::npos);
+	EXPECT_NE((*found)["description"].String().find("6 Buffer Spell Points"), std::string::npos);
 	EXPECT_EQ(std::find_if(entries.begin(), entries.end(), [](const JsonNode & entry)
 	{
-		return entry["id"].String() == "new-horizons:metamagic.spellBuffer";
+		return entry["id"].String() == "new-horizons:metamagic.spellEcho";
 	}), entries.end());
 }
 
-TEST_F(NewHorizonsMetamagicTest, SpellEchoBoostsAdditionalRepeatedSpell)
+TEST_F(NewHorizonsMetamagicTest, SpellBufferRewardsOnlyTheFirstUnusedOfferAtRoundExpiry)
 {
-	prepare(2, {newHorizonsMagic::METAMAGIC_SPELL_ECHO.data()});
+	prepare(2, {newHorizonsMagic::METAMAGIC_SPELL_BUFFER.data()});
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-
-	// This shared BattleCast preview is also the path used by BattleAI's
-	// hypothetical spell evaluation.  The follow-up repeats the first spell,
-	// so Spell Echo adds its 25% Spell Power-derived component.
-	EXPECT_EQ(followupPower(SpellID::HASTE, attacker), 12);
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker, true));
-	const auto casts = server.castsOf(SpellID::HASTE);
-	ASSERT_EQ(casts.size(), 2u);
-	EXPECT_TRUE(std::ranges::any_of(casts.back().logLines, [](const std::string & line)
+	const int32_t normalBeforeExpiry = attackerSideHero->getNormalSpellPoints();
+	const int32_t bufferBeforeExpiry = attackerSideHero->getBufferSpellPoints();
+	const int32_t temporaryBufferBeforeExpiry = battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining;
+	endRound();
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalBeforeExpiry);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeExpiry
+		+ newHorizonsMagic::METAMAGIC_SPELL_BUFFER_POINTS);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, temporaryBufferBeforeExpiry);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const std::string & line)
 	{
-		return line.find("casts a second Haste through Metamagic, causing no status change.")
-			!= std::string::npos;
-	})) << ::testing::PrintToString(casts.back().logLines);
+		return line.find("Spell Buffer grants 6 Buffer Spell Points") != std::string::npos;
+	})) << ::testing::PrintToString(server.battleLogLines);
+
+	activate(attacker);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const int32_t bufferBeforeSecondExpiry = attackerSideHero->getBufferSpellPoints();
+	endRound();
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeSecondExpiry);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
 }
 
-TEST_F(NewHorizonsMetamagicTest, SpellEchoDoesNotBoostADifferentAdditionalSpell)
+TEST_F(NewHorizonsMetamagicTest, SpellBufferIsConsumedEvenWhenThePoolIsCapped)
 {
-	prepare(2, {newHorizonsMagic::METAMAGIC_SPELL_ECHO.data()});
+	prepare(2, {newHorizonsMagic::METAMAGIC_SPELL_BUFFER.data()});
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	EXPECT_EQ(followupPower(SpellID::SLOW, defender), 10);
+	// Fill after paying for the triggering spell: expiry must consume the perk
+	// even when the grant itself has no available Buffer capacity.
+	attackerSideHero->initializeSpellPoints(attackerSideHero->getNormalSpellPoints(),
+		std::numeric_limits<int32_t>::max());
+	endRound();
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), std::numeric_limits<int32_t>::max());
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
+}
+
+TEST_F(NewHorizonsMetamagicTest, RetiredDeclineCannotSuppressSpellBufferAtExpiry)
+{
+	prepare(2, {newHorizonsMagic::METAMAGIC_SPELL_BUFFER.data()});
+	const int32_t bufferBeforeDecline = attackerSideHero->getBufferSpellPoints();
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_FALSE(decline());
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeDecline);
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
+	endRound();
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeDecline
+		+ newHorizonsMagic::METAMAGIC_SPELL_BUFFER_POINTS);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
+}
+
+TEST_F(NewHorizonsMetamagicTest, GrandContinuationExpiryPaysFormulaReserveButNotSpellBuffer)
+{
+	prepare(3, {grandMetamagic, formulaReserve});
+	battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed = 2;
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
-	EXPECT_TRUE(defender->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(SpellID(SpellID::SLOW)))));
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.size(), 2u);
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
+	const int32_t normalBeforeExpiry = attackerSideHero->getNormalSpellPoints();
+	const int32_t bufferBeforeExpiry = attackerSideHero->getBufferSpellPoints();
+
+	endRound();
+
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalBeforeExpiry
+		+ newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeExpiry);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicFormulaReserveUsed);
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.empty());
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Formula Reserve restores 3 Normal Spell Points") != std::string::npos;
+	})) << ::testing::PrintToString(server.battleLogLines);
+	EXPECT_TRUE(std::ranges::none_of(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Spell Buffer grants") != std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsMetamagicTest, GrandContinuationExpiryDoesNotGrantSpellBuffer)
+{
+	prepare(3, {grandMetamagic, spellBuffer});
+	battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed = 2;
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.size(), 2u);
+	const int32_t bufferBeforeExpiry = attackerSideHero->getBufferSpellPoints();
+
+	endRound();
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeExpiry);
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.empty());
+}
+
+TEST_F(NewHorizonsMetamagicTest, BattleEndClosesGrandSequenceBeforeReleasingHeroes)
+{
+	prepare(3, {grandMetamagic, formulaReserve});
+	battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed = 2;
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+	const int32_t normalBeforeResults = attackerSideHero->getNormalSpellPoints();
+	const int32_t bufferBeforeResults = attackerSideHero->getBufferSpellPoints();
+
+	BattleResultsApplied applied;
+	applied.battleID = BattleID(0);
+	gameState()->apply(applied);
+	const int32_t normalAfterResults = attackerSideHero->getNormalSpellPoints();
+	EXPECT_EQ(normalAfterResults, normalBeforeResults + newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeResults);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.empty());
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).heroID, ObjectInstanceID::NONE);
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
+
+	// Reapplying the same closure event cannot restore the same sequence twice.
+	gameState()->apply(applied);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalAfterResults);
+}
+
+TEST_F(NewHorizonsMetamagicTest, BattleEndDoesNotGrantSpellBufferForGrandContinuation)
+{
+	prepare(3, {grandMetamagic, spellBuffer});
+	battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed = 2;
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.size(), 2u);
+	const int32_t bufferBeforeResults = attackerSideHero->getBufferSpellPoints();
+
+	BattleResultsApplied applied;
+	applied.battleID = BattleID(0);
+	gameState()->apply(applied);
+
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeResults);
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.empty());
+}
+
+TEST_F(NewHorizonsMetamagicTest, BattleEndKeepsEarnedSpellBufferAfterTemporaryBufferCleanup)
+{
+	prepare(2, {spellBuffer}, false, 10);
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	ASSERT_EQ(side.temporaryBufferRemaining, 10);
+	ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), 10);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_GT(side.temporaryBufferRemaining, 0);
+	const int32_t temporaryBufferAfterCast = side.temporaryBufferRemaining;
+	ASSERT_LT(temporaryBufferAfterCast, 10);
+
+	endRound();
+	ASSERT_TRUE(side.metamagicSpellBufferUsed);
+	EXPECT_EQ(side.temporaryBufferRemaining, temporaryBufferAfterCast);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), temporaryBufferAfterCast
+		+ newHorizonsMagic::METAMAGIC_SPELL_BUFFER_POINTS);
+
+	BattleResultsApplied applied;
+	applied.battleID = BattleID(0);
+	gameState()->apply(applied);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), newHorizonsMagic::METAMAGIC_SPELL_BUFFER_POINTS);
+	EXPECT_EQ(side.temporaryBufferRemaining, temporaryBufferAfterCast);
+}
+
+TEST_F(NewHorizonsMetamagicTest, BattleEndDoesNotGrantBufferForAnUnusedOffer)
+{
+	prepare(2, {spellBuffer});
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const int32_t bufferBeforeResults = attackerSideHero->getBufferSpellPoints();
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.size(), 1u);
+
+	BattleResultsApplied applied;
+	applied.battleID = BattleID(0);
+	gameState()->apply(applied);
+
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeResults);
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.empty());
+}
+
+TEST(NewHorizonsMetamagicStateTest, SpellBufferUseHasVersionedRoundTripAndOldReadDefault)
+{
+	SideInBattle outgoing(nullptr);
+	outgoing.metamagicSpellBufferUsed = true;
+	CMemorySerializer current;
+	current.oser.version = ESerializationVersion::CURRENT;
+	current.iser.version = ESerializationVersion::CURRENT;
+	ASSERT_NO_THROW(current.oser & outgoing);
+	SideInBattle restored(nullptr);
+	ASSERT_NO_THROW(current.iser & restored);
+	EXPECT_TRUE(restored.metamagicSpellBufferUsed);
+
+	CMemorySerializer oldWire;
+	oldWire.oser.version = ESerializationVersion::NEW_HORIZONS_SPELL_POINTS;
+	oldWire.iser.version = ESerializationVersion::NEW_HORIZONS_SPELL_POINTS;
+	SideInBattle oldDefault(nullptr);
+	ASSERT_NO_THROW(oldWire.oser & oldDefault);
+	SideInBattle oldDecoded(nullptr);
+	oldDecoded.metamagicSpellBufferUsed = true;
+	ASSERT_NO_THROW(oldWire.iser & oldDecoded);
+	EXPECT_FALSE(oldDecoded.metamagicSpellBufferUsed);
+
+	CMemorySerializer lossy;
+	lossy.oser.version = ESerializationVersion::NEW_HORIZONS_SPELL_POINTS;
+	EXPECT_THROW(lossy.oser & outgoing, std::runtime_error);
 }

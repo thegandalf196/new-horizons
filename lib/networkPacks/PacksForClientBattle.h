@@ -494,7 +494,7 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 	BattleSide counterspellSide = BattleSide::NONE; // ward side consumed or collapsed while this hero spell was attempted
 	bool counterspellNegated = false; // the ward had enough mana and suppressed this spell's effects
 	bool metamagicFollowup = false; // this spell spends a Metamagic Spell Action without recursively granting another
-	bool metamagicGrand = false; // first follow-up explicitly accepted the Expert two-spell variant
+	bool metamagicGrand = false; // authoritative automatic Grand activation on this accepted follow-up
 	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max(); // primary target used by sequence perks
 	int32_t metamagicManaRefund = 0; // Formula Reserve refund published with the final additional cast
 

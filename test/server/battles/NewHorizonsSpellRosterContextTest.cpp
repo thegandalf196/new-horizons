@@ -100,6 +100,38 @@ TEST_F(NewHorizonsSpellRosterContextTest, PhantomArmyReplacesCloneOnlyInNewHoriz
 	EXPECT_FALSE(newHorizonsMagic::spellAllowedByWorldRoster(baseWorld, phantom));
 }
 
+TEST_F(NewHorizonsSpellRosterContextTest, FocusMagicIsAvailableInNewWorldsWithoutRewritingOlderRosters)
+{
+	startGame();
+	const SpellID focus(SpellID::decode("new-horizons:focusMagic"));
+	ASSERT_NE(focus, SpellID::NONE);
+	ASSERT_TRUE(focus.toSpell()->isCommonHeroSpell());
+	EXPECT_TRUE(newHorizonsMagic::spellAllowedByWorldRoster(*gameState(), focus));
+	JsonNode oldSnapshot = gameState()->getMagicRules();
+	oldSnapshot["spells"].Struct().erase("new-horizons:focusMagic");
+	RosterWorld oldWorld(*gameState(), std::move(oldSnapshot));
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByWorldRoster(oldWorld, focus));
+	RosterWorld baseWorld(*gameState(), JsonNode());
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByWorldRoster(baseWorld, focus));
+}
+
+TEST_F(NewHorizonsSpellRosterContextTest, ArcaneBreachIsANegativeStatusNotALearnableSpell)
+{
+	startGame();
+	const SpellID breach(SpellID::decode("new-horizons:arcaneBreach"));
+	ASSERT_NE(breach, SpellID::NONE);
+	const auto * effect = breach.toSpell();
+	ASSERT_NE(effect, nullptr);
+	EXPECT_TRUE(effect->isNegative());
+	EXPECT_FALSE(effect->isPositive());
+	EXPECT_TRUE(effect->isSpecial());
+	EXPECT_FALSE(effect->isCommonHeroSpell());
+	EXPECT_FALSE(effect->isAdventure());
+	EXPECT_FALSE(effect->isPersistent());
+	EXPECT_EQ(gameState()->getMagicRules()["spells"].Struct().count("new-horizons:arcaneBreach"), 0);
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(effect));
+}
+
 TEST_F(NewHorizonsSpellRosterContextTest, LegacySnapshotKeepsOrdinarySpellsButMissingBattleIsNotWorldFallback)
 {
 	legacyMagic = true;

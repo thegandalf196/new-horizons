@@ -324,10 +324,45 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 	// Swift Gate resolves while the current round still exists. Ordinary Gates
 	// resolve only after BattleNextRound advances the authoritative round.
 	resolveDemonicGates(battle, true);
+	struct SpellPointSnapshot
+	{
+		const CGHeroInstance * hero;
+		int32_t normal;
+		int32_t buffer;
+	};
+	std::vector<SpellPointSnapshot> spellPointSnapshots;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(const auto * hero = battle.battleGetFightingHero(side))
+			spellPointSnapshots.push_back({hero, hero->getNormalSpellPoints(), hero->getBufferSpellPoints()});
 	BattleNextRound bnr;
 	bnr.battleID = battle.getBattle()->getBattleID();
 	logGlobal->debug("Next round starts");
 	gameHandler->sendAndApply(bnr);
+	BattleLogMessage rewards;
+	rewards.battleID = bnr.battleID;
+	for(const auto & snapshot : spellPointSnapshots)
+	{
+		const auto normalRestored = snapshot.hero->getNormalSpellPoints() - snapshot.normal;
+		const auto bufferGranted = snapshot.hero->getBufferSpellPoints() - snapshot.buffer;
+		if(normalRestored > 0)
+		{
+			MetaString line = MetaString::createFromTextID(snapshot.hero->getNameTextID());
+			line.appendRawString(": Formula Reserve restores ");
+			line.appendNumber(normalRestored);
+			line.appendRawString(" Normal Spell Points as the Metamagic sequence ends with the round.");
+			rewards.lines.push_back(std::move(line));
+		}
+		if(bufferGranted > 0)
+		{
+			MetaString line = MetaString::createFromTextID(snapshot.hero->getNameTextID());
+			line.appendRawString(": Spell Buffer grants ");
+			line.appendNumber(bufferGranted);
+			line.appendRawString(" Buffer Spell Points because the unused Metamagic Spell Action expired. Normal Spell Points are unchanged.");
+			rewards.lines.push_back(std::move(line));
+		}
+	}
+	if(!rewards.lines.empty())
+		gameHandler->sendAndApply(rewards);
 	resolveDemonicGates(battle, false);
 
 	// operate on copy - removing obstacles will invalidate iterator on 'battle' container

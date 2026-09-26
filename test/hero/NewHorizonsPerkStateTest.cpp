@@ -24,7 +24,7 @@ const std::string PLANNED_SKILL = "new-horizons:armorer";
 constexpr auto HISTORICAL_PERK_SOURCE_SHA256 =
 	"d0aa9c0017967e85120b4e63e04df3d58441d606ce9c496d29117515330654ce";
 constexpr auto CURRENT_DESIGN_SOURCE_SHA256 =
-	"563c0a6e4fd3f33ffb8a7aecab443e74df531d300eb0f998f4085ba290d7daa6";
+	"7fd38c3b12386e62f511d66bfbd1ea615f301d1e2bdf57a9c70b831ff3ff81e4";
 constexpr auto UNKNOWN_SOURCE_SHA256 =
 	"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 }
@@ -54,6 +54,41 @@ TEST(NewHorizonsPerkState, SelectionEnforcesExactlyOnePerTierAndThreePerSkillCap
 	EXPECT_THROW(saved.select(SKILL, options[9].id, 3), std::runtime_error);
 	EXPECT_THROW(saved.select(SKILL, "new-horizons:offense.unknown", 3), std::runtime_error);
 	EXPECT_EQ(saved.selected.size(), 3u);
+}
+
+TEST(NewHorizonsPerkState, OrdinaryRanksAndPerksAlternateWhilePerkTiersStayOrdered)
+{
+	auto saved = state();
+	const auto options = newHorizonsHeroes::perkOptions(saved.rules, SKILL);
+	const auto noRank = [](const std::string &) { return 0; };
+	const auto expert = [](const std::string & skillId) { return skillId == SKILL ? 3 : 0; };
+
+	EXPECT_TRUE(saved.canAdvanceSkillNormally(SKILL, 0));
+	EXPECT_FALSE(saved.canAdvanceSkillNormally(SKILL, 1));
+
+	// Exceptional teacher advancement can raise rank without granting a perk.
+	EXPECT_FALSE(saved.canAdvanceSkillNormally(SKILL, 2));
+	auto offer = saved.prepareOffer(expert, 11);
+	ASSERT_EQ(offer.size(), 2u);
+	for(const auto & candidate : offer)
+		EXPECT_EQ(candidate.requiredRank, 1);
+	EXPECT_THROW(saved.select(SKILL, options[4].id, 3), std::runtime_error);
+
+	saved.acceptOffer(offer, 0, expert, 11);
+	EXPECT_TRUE(saved.canAdvanceSkillNormally(SKILL, 1));
+	EXPECT_FALSE(saved.canAdvanceSkillNormally(SKILL, 2));
+	offer = saved.prepareOffer(expert, 12);
+	ASSERT_EQ(offer.size(), 2u);
+	for(const auto & candidate : offer)
+		EXPECT_EQ(candidate.requiredRank, 2);
+
+	saved.acceptOffer(offer, 0, expert, 12);
+	offer = saved.prepareOffer(expert, 13);
+	ASSERT_EQ(offer.size(), 2u);
+	for(const auto & candidate : offer)
+		EXPECT_EQ(candidate.requiredRank, 3);
+	EXPECT_FALSE(saved.canAdvanceSkillNormally(SKILL, 3));
+	EXPECT_TRUE(saved.prepareOffer(noRank, 14).empty());
 }
 
 TEST(NewHorizonsPerkState, OccupiedTierOnlyBlocksAlternativesFromTheSameSkill)
@@ -162,13 +197,14 @@ TEST(NewHorizonsPerkState, JsonAndBinaryRoundTripsPreserveSavedRegistrySnapshot)
 TEST(NewHorizonsPerkState, HistoricalRetiredSpellBufferMigratesToSpellEchoAcrossJsonAndBinaryLoads)
 {
 	auto legacy = state();
+	legacy.rules["rulesetVersion"].Integer() = 1;
 	legacy.rules["sourceSha256"].String() = HISTORICAL_PERK_SOURCE_SHA256;
 	constexpr auto skill = "new-horizons:metamagic";
 	constexpr auto retired = "new-horizons:metamagic.spellBuffer";
 	constexpr auto replacement = "new-horizons:metamagic.spellEcho";
 	for(auto & perk : legacy.rules["skills"][skill]["perks"].Vector())
 	{
-		if(perk["id"].String() != replacement)
+		if(perk["id"].String() != replacement && perk["id"].String() != retired)
 			continue;
 		perk["id"].String() = retired;
 		perk["name"].String() = "Spell Buffer";
@@ -197,6 +233,18 @@ TEST(NewHorizonsPerkState, HistoricalRetiredSpellBufferMigratesToSpellEchoAcross
 		restoredBinary.rules, skill, replacement);
 	ASSERT_TRUE(binaryDefinition);
 	EXPECT_EQ(binaryDefinition->name, "Spell Echo");
+
+	// A v1 save that has already migrated must retain Echo on subsequent loads.
+	auto migrated = restoredBinary;
+	const auto reloadedJson = newHorizonsHeroes::PerkState::fromJson(migrated.toJson());
+	EXPECT_EQ(reloadedJson.rules, migrated.rules);
+	EXPECT_EQ(reloadedJson.selected, migrated.selected);
+	CMemorySerializer migratedMemory;
+	migratedMemory.oser & migrated;
+	newHorizonsHeroes::PerkState reloadedBinary;
+	migratedMemory.iser & reloadedBinary;
+	EXPECT_EQ(reloadedBinary.rules, migrated.rules);
+	EXPECT_EQ(reloadedBinary.selected, migrated.selected);
 }
 
 TEST(NewHorizonsPerkState, RevivedSpellBufferSurvivesJsonAndBinaryLoadsForNewOrUnknownSnapshots)
@@ -206,13 +254,16 @@ TEST(NewHorizonsPerkState, RevivedSpellBufferSurvivesJsonAndBinaryLoadsForNewOrU
 	constexpr auto replacement = "new-horizons:metamagic.spellEcho";
 	constexpr auto revivedDescription = "An unused Metamagic Spell Action grants 6 buffer Mana when it expires.";
 
-	for(const auto * sourceSha256 : {CURRENT_DESIGN_SOURCE_SHA256, UNKNOWN_SOURCE_SHA256})
+	for(const auto & [version, sourceSha256] : std::vector<std::pair<int, const char *>>{
+		{1, CURRENT_DESIGN_SOURCE_SHA256}, {1, UNKNOWN_SOURCE_SHA256},
+		{2, HISTORICAL_PERK_SOURCE_SHA256}, {2, CURRENT_DESIGN_SOURCE_SHA256}, {2, UNKNOWN_SOURCE_SHA256}})
 	{
 		auto current = state();
+		current.rules["rulesetVersion"].Integer() = version;
 		current.rules["sourceSha256"].String() = sourceSha256;
 		for(auto & perk : current.rules["skills"][skill]["perks"].Vector())
 		{
-			if(perk["id"].String() != replacement)
+			if(perk["id"].String() != replacement && perk["id"].String() != revived)
 				continue;
 			perk["id"].String() = revived;
 			perk["name"].String() = "Spell Buffer";
@@ -253,7 +304,11 @@ TEST(NewHorizonsPerkState, RetiredSelectionWithoutMatchingHistoricalDefinitionIs
 	constexpr auto retired = "new-horizons:metamagic.spellBuffer";
 	constexpr auto currentPerk = "new-horizons:metamagic.spellEcho";
 	auto currentRules = state().rules;
+	currentRules["rulesetVersion"].Integer() = 1;
 	currentRules["sourceSha256"].String() = HISTORICAL_PERK_SOURCE_SHA256;
+	for(auto & perk : currentRules["skills"][skill]["perks"].Vector())
+		if(perk["id"].String() == retired)
+			perk["id"].String() = currentPerk;
 
 	JsonNode invalidJson;
 	invalidJson["stateVersion"].Integer() = 1;
@@ -347,13 +402,11 @@ TEST(NewHorizonsPerkState, OfferIsDeterministicBoundedAndUsesOnlyLearnedEligible
 	EXPECT_TRUE(saved.prepareOffer([](const std::string &) { return 0; }, 42).empty());
 }
 
-TEST(NewHorizonsPerkState, ExpertHavocWithBasicStormcallerOffersLaterTiers)
+TEST(NewHorizonsPerkState, ExpertHavocWithBasicStormcallerOffersOnlyAdvancedTier)
 {
 	auto saved = state();
 	constexpr auto havoc = "new-horizons:havocMagic";
 	constexpr auto stormcaller = "new-horizons:havocMagic.stormcaller";
-	constexpr auto conductor = "new-horizons:havocMagic.conductor";
-	constexpr auto annihilator = "new-horizons:havocMagic.annihilator";
 	saved.select(havoc, stormcaller, 1);
 
 	const auto offer = saved.prepareOffer([](const std::string & skillId)
@@ -364,17 +417,8 @@ TEST(NewHorizonsPerkState, ExpertHavocWithBasicStormcallerOffersLaterTiers)
 	for(const auto & candidate : offer)
 	{
 		EXPECT_EQ(candidate.selection.skillId, havoc);
-		EXPECT_GE(candidate.requiredRank, 2);
-		EXPECT_LE(candidate.requiredRank, 3);
+		EXPECT_EQ(candidate.requiredRank, 2);
 	}
-	EXPECT_TRUE(std::any_of(offer.begin(), offer.end(), [conductor](const auto & candidate)
-	{
-		return candidate.selection.perkId == conductor;
-	}));
-	EXPECT_TRUE(std::any_of(offer.begin(), offer.end(), [annihilator](const auto & candidate)
-	{
-		return candidate.selection.perkId == annihilator;
-	}));
 }
 
 TEST(NewHorizonsPerkState, OfferExcludesPlannedPerksAndCanBeEmpty)

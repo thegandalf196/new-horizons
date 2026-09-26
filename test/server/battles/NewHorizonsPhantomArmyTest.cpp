@@ -7,13 +7,17 @@
 
 #include "BattleTestFixture.h"
 #include "../../../server/CGameHandler.h"
+#include "../../../server/battles/BattleProcessor.h"
 
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
+#include "../../../lib/battle/BattleAction.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 
 namespace
@@ -41,14 +45,18 @@ class NewHorizonsPhantomArmyTest : public BattleTestFixture
 {
 protected:
 	bool useIllusionistPerkRules = false;
+	bool useEchoedDurationPerkRules = false;
 	bool startCombatBeforeCast = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
 		BattleTestFixture::mapLoaded(loaded);
-		if(useIllusionistPerkRules)
+		if(useIllusionistPerkRules || useEchoedDurationPerkRules)
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		if(useEchoedDurationPerkRules)
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
 
 	void SetUp() override
@@ -60,13 +68,14 @@ protected:
 
 	bool startPhantomBattle(CStack *& source, CStack *& phantom, int32_t sourceCount = 1000,
 		bool sourceHasExtraHealth = false, bool selectIllusionist = false,
-		int32_t spellPower = 100, int64_t sourceDamageBeforeCast = 0)
+		int32_t spellPower = 100, int64_t sourceDamageBeforeCast = 0, bool selectEchoedDuration = false)
 	{
 		const SpellID spell = phantomArmySpell();
 		if(spell == SpellID::NONE)
 			return false;
 
 		useIllusionistPerkRules = selectIllusionist;
+		useEchoedDurationPerkRules = selectEchoedDuration;
 		startGame();
 		if(selectIllusionist)
 		{
@@ -80,8 +89,24 @@ protected:
 				"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.illusionist"))
 				return false;
 		}
+		if(selectEchoedDuration)
+		{
+			const auto metamagicSkill = SecondarySkill::decode(
+				std::string(newHorizonsMagic::METAMAGIC_SKILL));
+			if(metamagicSkill < 0)
+				return false;
+			attackerSideHero->setSecSkillLevel(SecondarySkill(metamagicSkill), MasteryLevel::ADVANCED,
+				ChangeValueMode::ABSOLUTE);
+			const auto skillId = std::string(newHorizonsMagic::METAMAGIC_SKILL);
+			const auto perkId = std::string(newHorizonsMagic::METAMAGIC_ECHOED_DURATION);
+			attackerSideHero->applyPerkSelection({skillId, perkId});
+			if(!attackerSideHero->hasActivePerk(skillId, perkId))
+				return false;
+		}
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(spell);
+		if(selectEchoedDuration)
+			attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
 		setTestSpellPointTotal(attackerSideHero, 9999);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 		startBattle();
@@ -100,11 +125,21 @@ protected:
 		}
 		// Hero Actions are granted when the first playable round begins, not
 		// during the round-zero battle construction phase.
-		if(startCombatBeforeCast)
+		if(startCombatBeforeCast || selectEchoedDuration)
+		{
 			beginCombat();
+			if(selectEchoedDuration)
+				activateStack(source);
+		}
 		else
 			battle()->nextRound();
-		if(!castOn(attackerSideHero, spell, source))
+		if(selectEchoedDuration)
+		{
+			if(!submitHeroSpellAction(SpellID::HASTE, source, false)
+				|| !submitHeroSpellAction(spell, source, true))
+				return false;
+		}
+		else if(!castOn(attackerSideHero, spell, source))
 			return false;
 
 		const auto phantoms = battle()->battleGetStacksIf([](const CStack * unit)
@@ -115,6 +150,26 @@ protected:
 			return false;
 		phantom = const_cast<CStack *>(phantoms.front());
 		return true;
+	}
+
+	void activateStack(const CStack * stack)
+	{
+		BattleSetActiveStack activate;
+		activate.battleID = BattleID(0);
+		activate.stack = stack->unitId();
+		activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+		gameHandler->sendAndApply(activate);
+	}
+
+	bool submitHeroSpellAction(SpellID spell, const CStack * target, bool metamagicFollowup)
+	{
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = spell;
+		action.metamagicFollowup = metamagicFollowup;
+		action.aimToUnit(target);
+		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
 };
 }
@@ -162,10 +217,14 @@ TEST_F(NewHorizonsPhantomArmyTest, RealCastPreservesCountAndIntegrityAcrossUnitA
 	int64_t damage = std::max<int64_t>(1, expectedIntegrity / 4);
 	damaged->damage(damage);
 	const auto stateData = damaged->save();
+	EXPECT_EQ(stateData["state"]["phantomRoundsRemaining"].Integer(),
+		newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS);
 	auto restored = phantom->acquireState();
 	restored->load(stateData);
 	EXPECT_EQ(restored->getPhantomInitialIntegrity(), expectedIntegrity);
 	EXPECT_EQ(restored->getPhantomIntegrity(), expectedIntegrity - damage);
+	EXPECT_EQ(restored->save()["state"]["phantomRoundsRemaining"].Integer(),
+		newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS);
 	EXPECT_EQ(restored->getCount(), source->getCount());
 	EXPECT_EQ(restored->getTotalHealth(), source->getTotalHealth());
 }
@@ -198,6 +257,67 @@ TEST_F(NewHorizonsPhantomArmyTest, SourceHealthIntegrityMayExceedNominalHealthAn
 	EXPECT_THROW(battle()->addUnit(invalid.id, packetData), std::runtime_error);
 	EXPECT_EQ(battle()->battleGetStacksIf([](const CStack *) { return true; }).size(), initialStacks);
 	EXPECT_EQ(battle()->getStack(invalid.id), nullptr);
+
+	int32_t index = 0;
+	for(const auto duration : {newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS - 1,
+		newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS + 1})
+	{
+		battle::UnitInfo invalidDuration;
+		invalidDuration.id = battle()->nextUnitId();
+		invalidDuration.count = source->getCount();
+		invalidDuration.type = source->creatureId();
+		invalidDuration.side = BattleSide::ATTACKER;
+		invalidDuration.position = BattleHex(leftHex + 11 + index++);
+		invalidDuration.summoned = true;
+		invalidDuration.phantomIntegrity = 1;
+		invalidDuration.phantomDuration = duration;
+		JsonNode invalidPacketData;
+		invalidDuration.save(invalidPacketData);
+
+		EXPECT_THROW(battle()->addUnit(invalidDuration.id, invalidPacketData), std::runtime_error);
+		EXPECT_EQ(battle()->battleGetStacksIf([](const CStack *) { return true; }).size(), initialStacks);
+		EXPECT_EQ(battle()->getStack(invalidDuration.id), nullptr);
+	}
+}
+
+TEST_F(NewHorizonsPhantomArmyTest, EchoedDurationExtendsARealMetamagicFollowupAndSavedLifetime)
+{
+	startCombatBeforeCast = true;
+	CStack * source = nullptr;
+	CStack * phantom = nullptr;
+	ASSERT_TRUE(startPhantomBattle(source, phantom, 1000, false, false, 100, 0, true));
+	ASSERT_NE(source, nullptr);
+	ASSERT_NE(phantom, nullptr);
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		std::string(newHorizonsMagic::METAMAGIC_SKILL),
+		std::string(newHorizonsMagic::METAMAGIC_ECHOED_DURATION)));
+	ASSERT_EQ(battle()->getRound(), 1);
+
+	const auto initialState = phantom->acquireState()->save();
+	ASSERT_TRUE(initialState["state"]["phantomRoundsRemaining"].isNumber());
+	EXPECT_EQ(initialState["state"]["phantomRoundsRemaining"].Integer(),
+		newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS);
+
+	auto restored = phantom->acquireState();
+	restored->load(initialState);
+	EXPECT_EQ(restored->save()["state"]["phantomRoundsRemaining"].Integer(),
+		newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS);
+
+	auto invalidSavedState = initialState;
+	invalidSavedState["state"]["phantomRoundsRemaining"].Integer() =
+		newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS + 1;
+	auto invalidRestored = phantom->acquireState();
+	EXPECT_THROW(invalidRestored->load(invalidSavedState), std::runtime_error);
+
+	const auto phantomId = phantom->unitId();
+	endRound();
+	ASSERT_NE(battle()->getStack(phantomId), nullptr);
+	EXPECT_TRUE(battle()->getStack(phantomId)->alive());
+	endRound();
+	ASSERT_NE(battle()->getStack(phantomId), nullptr);
+	EXPECT_TRUE(battle()->getStack(phantomId)->alive());
+	endRound();
+	EXPECT_EQ(battle()->getStack(phantomId), nullptr);
 }
 
 TEST_F(NewHorizonsPhantomArmyTest, IllusionistBoostsCappedIntegrityByTwentyFivePercent)

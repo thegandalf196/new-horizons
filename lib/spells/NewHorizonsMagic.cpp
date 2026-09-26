@@ -197,10 +197,17 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "physicalDamageReductionCapPercent"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
+	if(rules.Struct().contains("physicalDamageReductionCapPercent"))
+	{
+		require(version == DIRECT_DAMAGE_RULESET_VERSION, "Physical reduction requires magic rules v2");
+		const auto & cap = rules["physicalDamageReductionCapPercent"];
+		require(cap.getType() == JsonNode::JsonType::DATA_INTEGER && integer(cap, 0, 100),
+			"integer physicalDamageReductionCapPercent in [0,100]");
+	}
 	if(rules.Struct().contains("spellPoints"))
 	{
 		const auto & spellPoints = rules["spellPoints"];
@@ -361,6 +368,15 @@ void validateRules(const JsonNode & rules)
 			require(data["provisional"].isNull() || data["provisional"].isBool(), "provisional flag");
 		}
 	}
+}
+
+int physicalDamageReductionCapPercent(const JsonNode & rules)
+{
+	if(!rulesActive(rules) || rules["rulesetVersion"].Integer() != DIRECT_DAMAGE_RULESET_VERSION)
+		return -1;
+	const auto & cap = rules["physicalDamageReductionCapPercent"];
+	return cap.getType() == JsonNode::JsonType::DATA_INTEGER && integer(cap, 0, 100)
+		? static_cast<int>(cap.Integer()) : -1;
 }
 
 bool spellPointRulesActive(const JsonNode & rules)

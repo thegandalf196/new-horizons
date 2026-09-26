@@ -47,6 +47,7 @@ ACTIVE_PERKS = {
     "new-horizons:sorceryMagic.countermage",
     "new-horizons:sorceryMagic.illusionist",
     "new-horizons:sorceryMagic.chronomancer",
+    "new-horizons:sorceryMagic.spellbinder",
     "new-horizons:sylvanLuck.elvenPrecision",
     "new-horizons:sylvanLuck.forestSFavor",
     "new-horizons:sylvanLuck.serendipity",
@@ -64,11 +65,11 @@ ACTIVE_PERKS = {
     "new-horizons:metamagic.spellSequencing",
     "new-horizons:metamagic.arcaneEconomy",
     "new-horizons:metamagic.focusedPairing",
-    "new-horizons:metamagic.countersequence",
+    "new-horizons:metamagic.arcaneAcquisition",
     "new-horizons:metamagic.echoedDuration",
     "new-horizons:metamagic.splitFocus",
     "new-horizons:metamagic.formulaReserve",
-    "new-horizons:metamagic.spellEcho",
+    "new-horizons:metamagic.spellBuffer",
     "new-horizons:metamagic.grandMetamagic",
     "new-horizons:metamagic.perfectSequence",
     "new-horizons:battlecraft.entrench",
@@ -167,48 +168,8 @@ def source_perk_tables(path):
     return tables
 
 
-def source_description_for_current_rules(description):
-    """Apply the deterministic-growth wording migration to frozen source prose.
-
-    The supplied design document predates the fixed class-vector rule. Keep its
-    hash and table layout as provenance checks while allowing the live registry
-    to remove the retired primary-growth chance promise.
-    """
-    return description.replace(
-        "Maximum Mana increases by 25% of Knowledge, rounded down.",
-        "Maximum Spell Points are 130% of effective Knowledge, rounded down. Increasing capacity does not restore Spell Points.",
-    ).replace(
-        "Wisdom's chance to grant +1 Knowledge at level-up increases by 10 percentage points.",
-        "Wisdom's Mana discount remains effective when other percentage-based Mana modifiers are active.",
-    ).replace(
-        "Lightning Bolt and Chain Lightning receive +15% to their Spell Power-derived damage components.",
-        "Lightning Bolt, Chain Lightning, and Master Chain Lightning receive +15% to their Spell Power-derived damage components.",
-    )
-
-
 def source_perk_row_for_current_rules(row):
-    """Apply the user-authorized replacement of the retired Metamagic perk.
-
-    The canonical document predates the playable replacement, so preserve its
-    hash/provenance while comparing the live registry against the current
-    rules contract.
-    """
-    if row[0] == "Spell Buffer":
-        return [
-            "Spell Echo",
-            row[1],
-            "If the additional Spell repeats the first Spell in the Metamagic sequence, it gains +25% to its Spell Power-derived component.",
-        ]
-    if row == [
-        "Grand Metamagic",
-        "Expert",
-        "Once per combat, one Metamagic use permits two additional Spells instead of one. Neither additional Spell can trigger further additional casting.",
-    ]:
-        return [
-            "Grand Metamagic",
-            "Expert",
-            "Once per combat, choose Grand when casting an optional Metamagic Spell: one use permits two extra Spells. Casting the first grants a second Spell Action usable until the round ends; the second costs no additional use. Neither extra cast triggers Metamagic again.",
-        ]
+    """Return a canonical perk row; retained as the comparison seam."""
     return row
 
 
@@ -223,7 +184,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
 
     def test_source_identity_and_selection_limits(self):
         self.assertEqual(self.rules["schemaVersion"], 1)
-        self.assertEqual(self.rules["rulesetVersion"], 1)
+        self.assertEqual(self.rules["rulesetVersion"], 2)
         self.assertEqual(self.rules["sourceDocument"], "docs/design-sources/New Horizons.docx")
         source = ROOT / self.rules["sourceDocument"]
         self.assertTrue(source.is_file())
@@ -253,7 +214,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                         (
                             current_row[0],
                             current_row[1],
-                            source_description_for_current_rules(current_row[2]),
+                            current_row[2],
                         )
                         for row in source_rows
                         for current_row in [source_perk_row_for_current_rules(row)]
@@ -304,9 +265,51 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             perk for perk in metamagic["perks"]
             if perk["id"] == "new-horizons:metamagic.grandMetamagic"
         )["description"]
-        self.assertIn("Spell Action usable until the round ends", grand)
-        self.assertIn("the second costs no additional use", grand)
-        self.assertIn("Neither extra cast triggers Metamagic again", grand)
+        self.assertIn("first additional Spell of the third used Metamagic sequence", grand)
+        self.assertIn("Both opportunities expire at the end of the round", grand)
+        self.assertIn("neither can trigger Metamagic", grand)
+
+    def test_metamagic_rewards_distinguish_normal_restoration_from_buffer(self):
+        perks = {
+            perk["id"]: perk for perk in self.rules["skills"]["new-horizons:metamagic"]["perks"]
+        }
+        self.assertNotIn("new-horizons:metamagic.spellEcho", perks)
+        self.assertNotIn("new-horizons:metamagic.countersequence", perks)
+        acquisition = perks["new-horizons:metamagic.arcaneAcquisition"]
+        self.assertEqual(acquisition["name"], "Arcane Acquisition")
+        self.assertEqual(acquisition["effect"]["status"], "active")
+        self.assertIn("each living enemy stack", acquisition["description"])
+        self.assertIn("Check each target when it is damaged", acquisition["description"])
+        buffer = perks["new-horizons:metamagic.spellBuffer"]
+        self.assertEqual(buffer["requires"], "advanced")
+        self.assertIn("Once per combat", buffer["description"])
+        self.assertIn("expires unused at the end of the round", buffer["description"])
+        self.assertIn("6 Buffer Spell Points", buffer["description"])
+        self.assertIn("does not consume a Metamagic use", buffer["description"])
+        reserve = perks["new-horizons:metamagic.formulaReserve"]["description"]
+        self.assertIn("After each Metamagic sequence", reserve)
+        self.assertIn("at least one additional Spell", reserve)
+        self.assertIn("3 Normal Spell Points", reserve)
+
+    def test_spell_point_perks_are_integrated_into_the_canonical_document(self):
+        perks = {
+            perk["name"]: perk["description"]
+            for perk in self.rules["skills"]["new-horizons:metamagic"]["perks"]
+        }
+        self.assertIn("Normal Spell Points", perks["Formula Reserve"])
+        self.assertIn("Buffer Spell Points", perks["Spell Buffer"])
+        intelligence = next(
+            perk for perk in self.rules["skills"]["new-horizons:wisdom"]["perks"]
+            if perk["name"] == "Intelligence"
+        )["description"]
+        self.assertIn("floor(1.30 × effective Knowledge)", intelligence)
+        source_rows = source_perk_tables(ROOT / self.rules["sourceDocument"])
+        all_rows = [row for table in source_rows for row in table]
+        source_text = {row[0]: row[2] for row in all_rows}
+        self.assertIn("3 Normal Spell Points", source_text["Formula Reserve"])
+        self.assertIn("6 Buffer Spell Points", source_text["Spell Buffer"])
+        self.assertIn("floor(1.30 × effective Knowledge)", source_text["Intelligence"])
+        self.assertEqual(source_text["Intelligence"], intelligence)
 
     def test_game_settings_schema_exposes_registry_without_activating_it(self):
         settings = load("config/schemas/gameSettings.json")

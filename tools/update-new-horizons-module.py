@@ -33,6 +33,7 @@ def main():
     category_translations = canonical('newHorizonsCreatureCategoryTexts.json')
     fort_translations = canonical('newHorizonsFortTexts.json')
     muster_translations = canonical('newHorizonsMusterTexts.json')
+    combat_translations = canonical('newHorizonsCombatTexts.json')
     # These patch files contain explicit hero overrides plus the
     # creation-only neutralization and faction-skill presentation replacement
     # for legacy secondary-skill specialties. Keep it in the generated
@@ -98,8 +99,8 @@ def main():
         'skills': skills,
         'filesystem': {'SPRITES/': [{'type': 'dir', 'path': '/Images'}]},
     }
-    metadata['description'] += (' Deterministic primary growth uses each class profile vector on every level; '
-                                'the deprecated extraGrowth field is retained only for old-save compatibility. '
+    metadata['description'] += (' Primary growth grants a fixed twenty-point class vector on every level, '
+                                'plus independent configured skill-based bonus rolls. Older saved profiles retain their original growth rules. '
                                 'Not the frozen commands/schools release or full mastery/tier implementation.')
     destination = root / 'Mods/new-horizons/mod.json'
     preview_output = args.mastery_preview_output or args.capability_only_control_output or args.capability_preview_output or args.hero_preview_output
@@ -109,6 +110,7 @@ def main():
     # even though the live curated module is correctly localized.
     if preview_output is not None and args.mastery_preview_output is None:
         metadata['translations'] = dict(hero_class_translations)
+        metadata['translations'].update(combat_translations)
     if preview_output is not None:
         destination = preview_output.resolve()
         if not destination.is_relative_to((root / 'build').resolve()):
@@ -131,6 +133,7 @@ def main():
         metadata['translations'].update(category_translations)
         metadata['translations'].update(fort_translations)
         metadata['translations'].update(muster_translations)
+        metadata['translations'].update(combat_translations)
         if preview_output is None:
             metadata['translations'].update(hero_class_translations)
         metadata['version'] = '0.5.0'

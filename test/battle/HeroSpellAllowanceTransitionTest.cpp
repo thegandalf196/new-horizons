@@ -104,55 +104,78 @@ TEST(HeroSpellAllowanceTransition, BaseHeroCastReservesOneMetamagicGrantAndFirst
 	EXPECT_EQ(fixture.ledger.grants.front().id, orderGrant);
 }
 
-TEST(HeroSpellAllowanceTransition, GrandExtraGrantsOneFollowUpAndSecondExtraDoesNotCharge)
+TEST(HeroSpellAllowanceTransition, GrandAutomaticallyContinuesOnlyTheThirdUsedSequence)
 {
 	TransitionFixture fixture;
-	fixture.round = 3;
-	fixture.ledger.resetForRound(fixture.round);
-	auto selection = fixture.ledger.eligibleAllowance(Action::SPELL, fixture.round);
-	ASSERT_TRUE(selection);
+	for(uint8_t sequence = 0; sequence < 3; ++sequence)
+	{
+		fixture.round = sequence;
+		fixture.ledger.resetForRound(fixture.round);
+		fixture.metamagicPendingCount = 0;
+		size_t sequenceSpellCount = 0;
+		auto selection = fixture.ledger.eligibleAllowance(Action::SPELL, fixture.round);
+		ASSERT_TRUE(selection);
+		const auto baseCast = Transition::commitAcceptedCast(fixture.ledger, selection->grantId, fixture.round,
+			false, false, 3, true, fixture.metamagicUsesConsumed, fixture.metamagicPendingCount,
+			fixture.metamagicGrandUsed, sequenceSpellCount);
+		ASSERT_TRUE(baseCast);
+		EXPECT_FALSE(baseCast->chargedMetamagicUse);
+		ASSERT_EQ(baseCast->grantedGrantIds.size(), 1);
+		EXPECT_EQ(fixture.metamagicPendingCount, 1);
+		++sequenceSpellCount;
 
-	size_t sequenceSpellCount = 0;
-	const auto baseCast = Transition::commitAcceptedCast(fixture.ledger, selection->grantId, fixture.round,
-		false, false, 3, true, fixture.metamagicUsesConsumed, fixture.metamagicPendingCount,
-		fixture.metamagicGrandUsed, sequenceSpellCount);
-	ASSERT_TRUE(baseCast);
-	EXPECT_FALSE(baseCast->chargedMetamagicUse);
-	ASSERT_EQ(baseCast->grantedGrantIds.size(), 1);
-	++sequenceSpellCount;
+		selection = fixture.ledger.eligibleAllowance(Action::SPELL, fixture.round);
+		ASSERT_TRUE(selection);
+		const bool activatesGrand = Transition::activatesGrand(true, fixture.metamagicPendingCount,
+			sequenceSpellCount, fixture.metamagicUsesConsumed, 3, true, fixture.metamagicGrandUsed);
+		EXPECT_EQ(activatesGrand, sequence == 2);
+		const auto extraCast = Transition::commitAcceptedCast(fixture.ledger, selection->grantId, fixture.round,
+			true, activatesGrand, 3, true, fixture.metamagicUsesConsumed, fixture.metamagicPendingCount,
+			fixture.metamagicGrandUsed, sequenceSpellCount);
+		ASSERT_TRUE(extraCast);
+		EXPECT_TRUE(extraCast->chargedMetamagicUse);
+		EXPECT_EQ(extraCast->activatedGrand, sequence == 2);
+		EXPECT_EQ(fixture.metamagicUsesConsumed, sequence + 1);
+		EXPECT_EQ(fixture.metamagicPendingCount, sequence == 2 ? 1 : 0);
+		EXPECT_EQ(fixture.metamagicGrandUsed, sequence == 2);
+		++sequenceSpellCount;
 
-	selection = fixture.ledger.eligibleAllowance(Action::SPELL, fixture.round);
-	ASSERT_TRUE(selection);
-	const auto firstExtra = Transition::commitAcceptedCast(fixture.ledger, selection->grantId, fixture.round,
-		true, true, 3, true, fixture.metamagicUsesConsumed, fixture.metamagicPendingCount,
-		fixture.metamagicGrandUsed, sequenceSpellCount);
-	ASSERT_TRUE(firstExtra);
-	EXPECT_TRUE(firstExtra->chargedMetamagicUse);
-	EXPECT_TRUE(firstExtra->activatedGrand);
-	ASSERT_EQ(firstExtra->grantedGrantIds.size(), 1);
-	EXPECT_EQ(firstExtra->pendingMetamagicGrants, 1);
-	EXPECT_EQ(fixture.metamagicUsesConsumed, 1);
-	EXPECT_EQ(fixture.metamagicPendingCount, 1);
-	EXPECT_TRUE(fixture.metamagicGrandUsed);
-	EXPECT_EQ(fixture.ledger.grants.back().source, Source::METAMAGIC_GRAND);
-	EXPECT_EQ(sequenceSpellCount, 1);
+		if(sequence == 2)
+		{
+			ASSERT_EQ(extraCast->grantedGrantIds.size(), 1);
+			EXPECT_EQ(fixture.ledger.grants.back().source, Source::METAMAGIC_GRAND);
+			selection = fixture.ledger.eligibleAllowance(Action::SPELL, fixture.round);
+			ASSERT_TRUE(selection);
+			const auto continuation = Transition::commitAcceptedCast(fixture.ledger, selection->grantId,
+				fixture.round, true, false, 3, true, fixture.metamagicUsesConsumed,
+				fixture.metamagicPendingCount, fixture.metamagicGrandUsed, sequenceSpellCount);
+			ASSERT_TRUE(continuation);
+			EXPECT_EQ(continuation->receipt.source, Source::METAMAGIC_GRAND);
+			EXPECT_FALSE(continuation->chargedMetamagicUse);
+			EXPECT_FALSE(continuation->activatedGrand);
+			EXPECT_TRUE(continuation->grantedGrantIds.empty());
+			EXPECT_EQ(continuation->pendingMetamagicGrants, 0);
+			EXPECT_EQ(fixture.metamagicUsesConsumed, 3);
+			EXPECT_EQ(fixture.metamagicPendingCount, 0);
+		}
+		else
+		{
+			EXPECT_TRUE(extraCast->grantedGrantIds.empty());
+			EXPECT_EQ(fixture.metamagicUsesConsumed, sequence + 1);
+		}
+	}
+}
 
-	++sequenceSpellCount; // The caller appends the accepted first extra cast.
-	selection = fixture.ledger.eligibleAllowance(Action::SPELL, fixture.round);
-	ASSERT_TRUE(selection);
-	const auto secondExtra = Transition::commitAcceptedCast(fixture.ledger, selection->grantId, fixture.round,
-		true, false, 3, true, fixture.metamagicUsesConsumed, fixture.metamagicPendingCount,
-		fixture.metamagicGrandUsed, sequenceSpellCount);
-	ASSERT_TRUE(secondExtra);
-	EXPECT_EQ(secondExtra->receipt.source, Source::METAMAGIC_GRAND);
-	EXPECT_FALSE(secondExtra->chargedMetamagicUse);
-	EXPECT_FALSE(secondExtra->activatedGrand);
-	EXPECT_TRUE(secondExtra->grantedGrantIds.empty());
-	EXPECT_EQ(secondExtra->pendingMetamagicGrants, 0);
-	EXPECT_EQ(fixture.metamagicUsesConsumed, 1);
-	EXPECT_EQ(fixture.metamagicPendingCount, 0);
-	EXPECT_TRUE(fixture.metamagicGrandUsed);
-	EXPECT_EQ(sequenceSpellCount, 2);
+TEST(HeroSpellAllowanceTransition, GrandActivationRequiresThirdUseExpertRankPerkAndUnusedState)
+{
+	EXPECT_TRUE(Transition::activatesGrand(true, 1, 1, 2, 3, true, false));
+	EXPECT_FALSE(Transition::activatesGrand(false, 1, 1, 2, 3, true, false));
+	EXPECT_FALSE(Transition::activatesGrand(true, 0, 1, 2, 3, true, false));
+	EXPECT_FALSE(Transition::activatesGrand(true, 1, 2, 2, 3, true, false));
+	EXPECT_FALSE(Transition::activatesGrand(true, 1, 1, 1, 3, true, false));
+	EXPECT_FALSE(Transition::activatesGrand(true, 1, 1, 2, 2, true, false));
+	EXPECT_FALSE(Transition::activatesGrand(true, 1, 1, 2, 3, false, false));
+	EXPECT_FALSE(Transition::activatesGrand(true, 1, 1, 2, 3, true, true));
 }
 
 TEST(HeroSpellAllowanceTransition, RejectsProtocolFollowUpFromWrongSourceAtomically)
@@ -198,6 +221,34 @@ TEST(HeroSpellAllowanceTransition, RejectsInvalidGrandActivationAtomically)
 			true, true, 3, true, fixture.metamagicUsesConsumed, fixture.metamagicPendingCount,
 			fixture.metamagicGrandUsed, 1);
 	});
+
+	auto automatic = makeSpellGrantFixture(Source::METAMAGIC);
+	automatic.metamagicUsesConsumed = 2;
+	expectRejectedAtomically(automatic, [&automatic]()
+	{
+		return Transition::commitAcceptedCast(automatic.ledger, automatic.selectionGrantId, automatic.round,
+			true, false, 3, true, automatic.metamagicUsesConsumed, automatic.metamagicPendingCount,
+			automatic.metamagicGrandUsed, 1);
+	});
+}
+
+TEST(HeroSpellAllowanceTransition, PreviouslyGrantedGrandContinuationCanFinishWithoutAnotherUse)
+{
+	auto fixture = makeSpellGrantFixture(Source::METAMAGIC_GRAND, 5);
+	fixture.metamagicUsesConsumed = 3;
+	fixture.metamagicGrandUsed = true;
+	const auto continuation = Transition::commitAcceptedCast(fixture.ledger, fixture.selectionGrantId,
+		fixture.round, true, false, 3, true, fixture.metamagicUsesConsumed,
+		fixture.metamagicPendingCount, fixture.metamagicGrandUsed, 2);
+	ASSERT_TRUE(continuation);
+	EXPECT_EQ(continuation->receipt.source, Source::METAMAGIC_GRAND);
+	EXPECT_FALSE(continuation->chargedMetamagicUse);
+	EXPECT_FALSE(continuation->activatedGrand);
+	EXPECT_TRUE(continuation->grantedGrantIds.empty());
+	EXPECT_EQ(continuation->pendingMetamagicGrants, 0);
+	EXPECT_EQ(fixture.metamagicUsesConsumed, 3);
+	EXPECT_EQ(fixture.metamagicPendingCount, 0);
+	EXPECT_TRUE(fixture.metamagicGrandUsed);
 }
 
 TEST(HeroSpellAllowanceTransition, RejectsInvalidSequenceShapeAtomically)

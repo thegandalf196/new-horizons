@@ -24,6 +24,14 @@ void validateSpellPower(int32_t spellPower)
 }
 }
 
+int32_t arcaneBreachMarkBasisPoints(int32_t spellPower)
+{
+	validateSpellPower(spellPower);
+	const int64_t uncapped = ARCANE_BREACH_BASE_BASIS_POINTS
+		+ static_cast<int64_t>(spellPower) * ARCANE_BREACH_POWER_BASIS_POINTS;
+	return static_cast<int32_t>(std::min<int64_t>(ARCANE_BREACH_CAP_BASIS_POINTS, uncapped));
+}
+
 int32_t phantomArmyIntegrityBasisPoints(int32_t spellPower, bool illusionist)
 {
 	validateSpellPower(spellPower);

@@ -83,6 +83,27 @@ bool PerkState::hasSelection(const std::string & skillId, const std::string & pe
 	});
 }
 
+bool PerkState::canAdvanceSkillNormally(std::string_view skillId, int currentRank) const
+{
+	if(currentRank < 0 || currentRank > 2)
+		return false;
+	if(!usesPerkRules(rules) || currentRank == 0)
+		return true;
+	validate();
+	for(int requiredTier = 1; requiredTier <= currentRank; ++requiredTier)
+	{
+		const bool tierSelected = std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
+		{
+			const auto definition = perkDefinition(rules, entry.skillId, entry.perkId);
+			return entry.skillId == skillId && definition
+				&& perkRequiredRank(definition->requiredRank) == requiredTier;
+		});
+		if(!tierSelected)
+			return false;
+	}
+	return true;
+}
+
 void PerkState::normalizeLegacyTierConflicts()
 {
 	if(!usesPerkRules(rules))
@@ -131,6 +152,17 @@ void PerkState::select(const std::string & skillId, const std::string & perkId, 
 		|| currentRank < perkRequiredRank(definition->requiredRank) || hasSelection(skillId, perkId))
 		throw std::runtime_error("Unavailable New Horizons perk selection");
 	const int selectedTier = perkRequiredRank(definition->requiredRank);
+	for(int prerequisiteTier = 1; prerequisiteTier < selectedTier; ++prerequisiteTier)
+	{
+		const bool prerequisiteSelected = std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
+		{
+			const auto existing = perkDefinition(rules, entry.skillId, entry.perkId);
+			return entry.skillId == skillId && existing
+				&& perkRequiredRank(existing->requiredRank) == prerequisiteTier;
+		});
+		if(!prerequisiteSelected)
+			throw std::runtime_error("Earlier New Horizons perk tier is still required");
+	}
 	if(std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
 	{
 		const auto existing = perkDefinition(rules, entry.skillId, entry.perkId);
@@ -183,6 +215,19 @@ std::vector<PerkOfferCandidate> PerkState::prepareOffer(
 		});
 		if(selectedForSkill >= rules["maxPerksPerSkill"].Integer())
 			continue;
+		int nextTier = 1;
+		while(nextTier <= 3)
+		{
+			const bool tierSelected = std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
+			{
+				const auto existing = perkDefinition(rules, entry.skillId, entry.perkId);
+				return entry.skillId == skillId && existing
+					&& perkRequiredRank(existing->requiredRank) == nextTier;
+			});
+			if(!tierSelected)
+				break;
+			++nextTier;
+		}
 		for(const auto & perkNode : skillNode["perks"].Vector())
 		{
 			// Planned registry entries are deliberately retained in the saved rules
@@ -194,7 +239,7 @@ std::vector<PerkOfferCandidate> PerkState::prepareOffer(
 			if(hasSelection(skillId, perkId))
 				continue;
 			const int requiredRank = perkRequiredRank(perkNode["requires"].String());
-			if(rank < requiredRank)
+			if(rank < requiredRank || requiredRank != nextTier)
 				continue;
 			const bool tierOccupied = std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
 			{

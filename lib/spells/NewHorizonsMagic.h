@@ -37,6 +37,8 @@ constexpr int RULESET_VERSION = 1;
 constexpr int DIRECT_DAMAGE_RULESET_VERSION = 2;
 constexpr int SPELL_POINTS_RULESET_VERSION = 1;
 constexpr int SPELL_POINTS_INTELLIGENCE_MAXIMUM_PERCENT = 130;
+constexpr int METAMAGIC_FORMULA_RESERVE_POINTS = 3;
+constexpr int METAMAGIC_SPELL_BUFFER_POINTS = 6;
 constexpr int DIRECT_DAMAGE_POWER_DIVISOR = 10;
 constexpr int COUNTERSPELL_LISTED_COST = 11;
 inline constexpr std::string_view METAMAGIC_SKILL = "new-horizons:metamagic";
@@ -47,6 +49,7 @@ inline constexpr std::string_view METAMAGIC_COUNTERSEQUENCE = "new-horizons:meta
 inline constexpr std::string_view METAMAGIC_ECHOED_DURATION = "new-horizons:metamagic.echoedDuration";
 inline constexpr std::string_view METAMAGIC_SPLIT_FOCUS = "new-horizons:metamagic.splitFocus";
 inline constexpr std::string_view METAMAGIC_FORMULA_RESERVE = "new-horizons:metamagic.formulaReserve";
+inline constexpr std::string_view METAMAGIC_SPELL_BUFFER = "new-horizons:metamagic.spellBuffer";
 inline constexpr std::string_view METAMAGIC_SPELL_ECHO = "new-horizons:metamagic.spellEcho";
 inline constexpr std::string_view METAMAGIC_GRAND = "new-horizons:metamagic.grandMetamagic";
 inline constexpr std::string_view METAMAGIC_PERFECT_SEQUENCE = "new-horizons:metamagic.perfectSequence";
@@ -79,6 +82,8 @@ DLL_LINKAGE void validateRules(const JsonNode & rules);
 DLL_LINKAGE bool spellPointRulesActive(const JsonNode & rules);
 /// Saved Intelligence capacity multiplier for the opted-in Spell Point rules.
 DLL_LINKAGE int32_t spellPointsIntelligenceMaximumPercent(const JsonNode & rules);
+/// Explicit multiplicative physical-reduction model; -1 preserves historical calculations.
+DLL_LINKAGE int physicalDamageReductionCapPercent(const JsonNode & rules);
 /// True when the supplied saved battle snapshot uses New Horizons magic.
 /// This is intentionally state-backed; installed content alone must not alter
 /// legacy saves.

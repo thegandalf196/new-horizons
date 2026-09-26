@@ -23,6 +23,7 @@
 #include "../../../lib/battle/CBattleInfoCallback.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/battle/Unit.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -69,6 +70,18 @@ std::string MechanicsProxy::getCureAfflictionSource(const spells::Mechanics & m)
 	return spell ? spell->getJsonKey() : std::string();
 }
 
+int32_t MechanicsProxy::getArcaneBreachMarkBasisPoints(const spells::Mechanics & m)
+{
+	using namespace newHorizonsSorcery;
+	// Validate the same domain as the shared unmodified formula. Warcasting
+	// boosts only the Spell Power component, before the final per-mark cap.
+	arcaneBreachMarkBasisPoints(m.getEffectPower());
+	const auto component = m.scaleSpellPowerComponent(
+		static_cast<int64_t>(m.getEffectPower()) * ARCANE_BREACH_POWER_BASIS_POINTS);
+	return static_cast<int32_t>(std::min<int64_t>(ARCANE_BREACH_CAP_BASIS_POINTS,
+		ARCANE_BREACH_BASE_BASIS_POINTS + component));
+}
+
 void MechanicsProxy::registerMethods(MethodRegistrar & R)
 {
 	R.method<&Mechanics::isPositiveSpell>("isPositive", {},
@@ -89,14 +102,21 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the effective mastery level used for the spell's magnitude.");
 	R.method<&Mechanics::getRangeLevel>("getRangeLevel", {},
 		"Returns the effective mastery level used for the spell's range.");
+	R.function<&MechanicsProxy::getArcaneBreachMarkBasisPoints>("getArcaneBreachMarkBasisPoints", {},
+		"Returns one Arcane Breach mark's penetration in basis points, including the cast's Warcasting boost to its Spell Power component before the cap.");
 	R.method<&Mechanics::getEffectPower>("getEffectPower", {},
 		"Returns the effective spell power applied to the magnitude calculation.");
 	R.method<&Mechanics::getEffectPowerDivisor>("getEffectPowerDivisor", {},
 		"Returns the saved caster power divisor; legacy and ordinary creature casts use one.");
 	R.method<&Mechanics::getEffectDuration>("getEffectDuration", {},
 		"Returns the effect duration in turns.");
+	R.method<&Mechanics::adjustEffectDuration>("adjustEffectDuration",
+		{{"baseDuration", "Base effect duration in turns."}}, {},
+		"Returns the base duration adjusted by cast-specific duration mechanics.");
 	R.method<&Mechanics::isSelectiveDispel>("isSelectiveDispel", {},
 		"True when this authoritative cast selected the Sorcery Selective Dispel mode.");
+	R.method<&Mechanics::isMetamagicFollowup>("isMetamagicFollowup", {},
+		"True when this hero spell is being cast through an additional Metamagic Spell Action.");
 	R.method<&Mechanics::isNewHorizonsCure>("isNewHorizonsCure", {},
 		"True when this cast uses the explicitly saved New Horizons Cure behavior.");
 	R.function<&MechanicsProxy::getCureAfflictionSource>("getCureAfflictionSource", {},

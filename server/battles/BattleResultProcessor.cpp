@@ -960,8 +960,31 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	resultsApplied.battleID = battleID;
 	resultsApplied.victor = finishingBattle->victor;
 	resultsApplied.loser = finishingBattle->loser;
+	// Capture this specific reward before the result pack also removes temporary
+	// Buffer and applies other recovery effects. A total pool delta would conflate
+	// Formula Reserve with those unrelated effects.
+	BattleLogMessage metamagicRewards;
+	metamagicRewards.battleID = battleID;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto * hero = (*battle)->battleGetFightingHero(side);
+		const auto & state = (*battle)->getSide(side);
+		if(!hero || state.metamagicPendingCount == 0 || state.metamagicSequenceSpells.size() <= 1
+			|| !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
+			|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
+			continue;
+		const int restored = std::min(newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS,
+			std::max(0, hero->manaLimit() - hero->getNormalSpellPoints()));
+		MetaString line = MetaString::createFromTextID(hero->getNameTextID());
+		line.appendRawString(": Formula Reserve restores ");
+		line.appendNumber(restored);
+		line.appendRawString(" Normal Spell Points as the Metamagic sequence ends with combat.");
+		metamagicRewards.lines.push_back(std::move(line));
+	}
 	//BattleResultsApplied does not end the battle, it only applies most of its consequences
 	gameHandler->sendAndApply(resultsApplied);
+	if(!metamagicRewards.lines.empty())
+		gameHandler->sendAndApply(metamagicRewards);
 	if(resumingNecromancy)
 		pendingNecromancy.erase(battleID);
 

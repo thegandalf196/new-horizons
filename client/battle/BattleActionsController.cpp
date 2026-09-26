@@ -14,6 +14,7 @@
 #include "BattleHero.h"
 #include "BattleInterface.h"
 #include "MagicArrowOverchargeWindow.h"
+#include "NewHorizonsBattleStatus.h"
 #include "BattleSiegeController.h"
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
@@ -600,7 +601,6 @@ int BattleActionsController::landMinePlacementRequiredHexes() const
 	const auto hero = owner.currentHero();
 	spells::BattleCast cast(owner.getBattle().get(), hero, spells::Mode::HERO, spell);
 	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
-	cast.setMetamagicGrand(heroSpellToCast->metamagicGrand);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return 0;
@@ -686,7 +686,6 @@ bool BattleActionsController::fireWallPlacementLineIsLegal(const BattleHex & sta
 	const auto * spell = heroSpellToCast->spell.toSpell();
 	spells::BattleCast cast(owner.getBattle().get(), owner.currentHero(), spells::Mode::HERO, spell);
 	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
-	cast.setMetamagicGrand(heroSpellToCast->metamagicGrand);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return false;
@@ -1064,7 +1063,6 @@ void BattleActionsController::endCastingSpell()
 		heroSpellToCast.reset();
 		owner.windowObject->blockUI(false);
 	}
-	metamagicGrandMode = false;
 
 	if(monsterCaster)
 	{
@@ -1288,9 +1286,6 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	heroSpellToCast->side = battle->battleGetMySide();
 	heroSpellToCast->metamagicFollowup = heroSpellToCast->side != BattleSide::NONE
 		&& battle->battleCanUseMetamagicFollowup(heroSpellToCast->side);
-	heroSpellToCast->metamagicGrand = heroSpellToCast->metamagicFollowup && metamagicGrandMode;
-	if(!heroSpellToCast->metamagicFollowup)
-		metamagicGrandMode = false;
 
 	// Canonical New Horizons Land Mine is an ordered multi-hex action.  It must
 	// not enter the generic NO_TARGET path, which would immediately submit the
@@ -1362,32 +1357,6 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	}
 
 	owner.windowObject->blockUI(true);
-}
-
-void BattleActionsController::toggleMetamagicGrandFollowup()
-{
-	if(!owner.curInt || !owner.currentHero())
-		return;
-	const auto battle = owner.getBattle();
-	const auto side = battle ? battle->battleGetMySide() : BattleSide::NONE;
-	if(!battle || side == BattleSide::NONE || !battle->battleCanUseMetamagicFollowup(side))
-		return;
-	const bool available = side != BattleSide::NONE
-		&& battle->battleMetamagicPendingCount(side) == 1
-		&& battle->battleMetamagicSequenceSpells(side).size() == 1
-		&& !battle->battleMetamagicGrandUsed(side)
-		&& newHorizonsMagic::metamagicRank(owner.currentHero()) >= 3
-		&& newHorizonsMagic::hasMetamagicPerk(owner.currentHero(), newHorizonsMagic::METAMAGIC_GRAND);
-	if(!available)
-		return;
-	metamagicGrandMode = !metamagicGrandMode;
-	if(owner.windowObject)
-		owner.windowObject->updateCounterspellStatus();
-}
-
-bool BattleActionsController::metamagicGrandModeActive() const
-{
-	return metamagicGrandMode;
 }
 
 bool BattleActionsController::continueOrdinarySpellcast()
@@ -1660,7 +1629,27 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			DamageEstimation estimation = owner.getBattle()->battleEstimateDamage(attackInfo, &retaliation);
 			estimation.kills.max = std::min<int64_t>(estimation.kills.max, targetStack->getCount());
 			estimation.kills.min = std::min<int64_t>(estimation.kills.min, targetStack->getCount());
-			return formatRangedAttack(estimation, targetStack->getName(), shooter->shots.available());
+			auto result = formatRangedAttack(estimation, targetStack->getName(), shooter->shots.available());
+			const auto & battle = *owner.getBattle();
+			if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+				&& battle.battleGetOwner(shooter) != battle.battleGetOwner(targetStack))
+			{
+				const auto side = static_cast<int32_t>(battle.playerToSide(battle.battleGetOwner(shooter)));
+				const auto marks = newHorizonsBattleStatus::arcaneBreachStatus(
+					*targetStack->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER));
+				int64_t penetration = 0;
+				for(const auto & group : marks.groups)
+					if(group.beneficiarySide == side)
+						penetration += group.totalPenetrationBasisPoints;
+				if(penetration > 0)
+					result += "\nArcane Breach: " + newHorizonsBattleStatus::formatBasisPoints(penetration)
+						+ " Creature Defense ignored (included above).";
+				const auto focus = newHorizonsBattleStatus::focusMagicStatus(
+					*shooter->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER));
+				if(focus && focus->beneficiarySide == side)
+					result += "\nFocus Magic: a damaging hit adds or refreshes a mark if the target survives.";
+			}
+			return result;
 		}
 
 		case PossiblePlayerBattleAction::AIMED_SPELL_CREATURE:
@@ -2484,7 +2473,6 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 		const bool followup = side != BattleSide::NONE
 			&& owner.getBattle()->battleCanUseMetamagicFollowup(side);
 		cast.setMetamagicFollowup(followup);
-		cast.setMetamagicGrand(followup && metamagicGrandMode);
 	}
 
 	auto m = currentSpell->battleMechanics(&cast);
@@ -2526,7 +2514,6 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 		const bool followup = side != BattleSide::NONE
 			&& owner.getBattle()->battleCanUseMetamagicFollowup(side);
 		selectiveCast.setMetamagicFollowup(followup);
-		selectiveCast.setMetamagicGrand(followup && metamagicGrandMode);
 	}
 	selectiveCast.setSelectiveDispel(true);
 	auto selectiveMechanics = currentSpell->battleMechanics(&selectiveCast);

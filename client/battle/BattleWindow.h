@@ -39,8 +39,6 @@ class BattleWindow : public InterfaceObjectConfigurable
 	std::shared_ptr<BattleConsole> console;
 	std::shared_ptr<CButton> ordersButton;
 	std::shared_ptr<CButton> landMineConfirmButton;
-	std::shared_ptr<CButton> metamagicGrandButton;
-	std::shared_ptr<CLabel> metamagicGrandLabel;
 	std::shared_ptr<HeroInfoBasicPanel> attackerHeroWindow;
 	std::shared_ptr<HeroInfoBasicPanel> defenderHeroWindow;
 	std::shared_ptr<HeroBattleStatusArea> attackerHeroStatus;

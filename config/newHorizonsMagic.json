@@ -2,6 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"warcasting": true,
+	"physicalDamageReductionCapPercent": 80,
 	"spellPoints": {
 		"rulesetVersion": 1,
 		"intelligenceMaximumPercent": 130
@@ -72,6 +73,11 @@
 		}
 	},
 	"spells": {
+		"new-horizons:focusMagic": {
+			"schools": ["new-horizons:sorcery"],
+			"level": 3,
+			"costs": [11, 11, 11, 11]
+		},
 		"core:airElemental": {
 			"schools": [
 				"new-horizons:nature",

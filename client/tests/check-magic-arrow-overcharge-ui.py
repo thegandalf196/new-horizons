@@ -107,9 +107,15 @@ def main() -> None:
     preview_selection = INTERFACE.split("const auto baseChange = previewChange(0);", 1)[1].split("MagicArrowOverchargeContext context;", 1)[0]
     if "values.legal = false" in preview_selection:
         raise AssertionError("missing effect forecast must not make a legal target uncastable")
-    require((ROOT / "client/battle/BattleWindow.cpp").read_text(), "Grand ON", "persistent Grand selection label")
-    require((ROOT / "client/battle/BattleWindow.cpp").read_text(), "Grand OFF", "persistent Grand deselection label")
-    require((ROOT / "client/windows/CSpellWindow.cpp").read_text(), "metamagicGrandLabel", "spellbook Grand selection state")
+    battle_window = (ROOT / "client/battle/BattleWindow.cpp").read_text()
+    spellbook = (ROOT / "client/windows/CSpellWindow.cpp").read_text()
+    for source in (battle_window, spellbook):
+        for manual_grand_control in ("metamagicGrand", "Grand ON", "Grand OFF", "toggleMetamagicGrandFollowup"):
+            if manual_grand_control in source:
+                raise AssertionError(f"client must not expose manual Grand choice: {manual_grand_control}")
+    require(INTERFACE, "setMetamagicFollowup(metamagicFollowup)", "follow-up spell legality preview")
+    if "setMetamagicGrand" in INTERFACE:
+        raise AssertionError("spell previews must not model a player-selected Grand mode")
     if "NEW_HORIZONS_MAGIC_MISSILE" in CONTROLLER + INTERFACE + WINDOW:
         raise AssertionError("frontend must not activate the abandoned Magic Missile draft")
 

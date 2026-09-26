@@ -1029,19 +1029,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	LOGL("Casting spells sounds like fun. Let's see...");
 	const bool metamagicFollowup = cb->getBattle(battleID)->battleCanUseMetamagicFollowup(side);
-	const bool metamagicGrandAvailable = metamagicFollowup
-		&& cb->getBattle(battleID)->battleMetamagicPendingCount(side) == 1
-		&& cb->getBattle(battleID)->battleMetamagicSequenceSpells(side).size() == 1
-		&& !cb->getBattle(battleID)->battleMetamagicGrandUsed(side)
-		&& newHorizonsMagic::metamagicRank(hero) >= 3
-		&& newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND);
-	// Grand is an optional variant of the available Spell Action. Keep both choices
-	// in the candidate set so the ordinary one-extra spell can win when it is
-	// better (and so a repeated first spell remains available as an ordinary
-	// cast even though the Grand version is rejected by Perfect Sequence).
-	const std::vector<bool> metamagicGrandChoices = metamagicGrandAvailable
-		? std::vector<bool>{false, true}
-		: std::vector<bool>{false};
+	const bool activatesGrand = HeroSpellAllowanceTransition::activatesGrand(metamagicFollowup,
+		cb->getBattle(battleID)->battleMetamagicPendingCount(side),
+		cb->getBattle(battleID)->battleMetamagicSequenceSpells(side).size(),
+		cb->getBattle(battleID)->battleMetamagicUsesConsumed(side),
+		newHorizonsMagic::metamagicRank(hero),
+		newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
+		cb->getBattle(battleID)->battleMetamagicGrandUsed(side));
+	// Grand is an automatic outcome of the third used sequence, never a
+	// selectable alternative. Project exactly the transition the server applies.
 	//Get all spells we can cast
 	struct SpellOption
 	{
@@ -1050,10 +1046,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	};
 	std::vector<SpellOption> possibleSpells;
 
-	for(const auto metamagicGrand : metamagicGrandChoices)
-		for(auto const & s : LIBRARY->spellh->objects)
-			if(allowSpells && s->canBeCast(cb->getBattle(battleID).get(), spells::Mode::HERO, hero, metamagicGrand))
-				possibleSpells.push_back({s.get(), metamagicGrand});
+	for(auto const & s : LIBRARY->spellh->objects)
+		if(allowSpells && s->canBeCast(cb->getBattle(battleID).get(), spells::Mode::HERO, hero, activatesGrand))
+			possibleSpells.push_back({s.get(), activatesGrand});
 
 	LOGFL("I can cast %d spells.", possibleSpells.size());
 
@@ -1792,40 +1787,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	const auto noCastBaseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
 		? cachedAttack.score : 0.0f;
 
-	// Grand Metamagic buys a second follow-up, so its first-cast candidate must
-	// include the value of a legal second spell.  The ordinary hypothetical
-	// evaluation above already gives us the best current-state value for every
-	// spell/target pair; use the best positive marginal as a conservative
-	// continuation estimate.  Repeated spells remain legal here; Perfect
-	// Sequence changes their power, not their availability.  A distinct second
-	// spell is the opportunity signal for spending Grand: an ordinary repeat is
-	// already available without consuming that once-per-battle reserve.
-	if(metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND))
-	{
-		const auto & sequence = cb->getBattle(battleID)->battleMetamagicSequenceSpells(side);
-		const auto firstSpell = sequence.size() == 1 ? sequence.front() : SpellID();
-		for(auto & first : possibleCasts)
-		{
-			if(!first.metamagicGrand || !first.spell)
-				continue;
-
-			float bestContinuation = 0.0f;
-			for(const auto & second : possibleCasts)
-			{
-				if(second.metamagicGrand || !second.spell)
-					continue;
-				// Keep Grand in reserve when its only projected continuation is
-				// the same spell that ordinary Metamagic can already repeat.  A
-				// distinct legal continuation is the opportunity that makes
-				// spending the once-per-battle Grand charge worthwhile.
-				if(firstSpell.hasValue() && second.spell->getId() == firstSpell)
-					continue;
-				bestContinuation = std::max(bestContinuation, second.value - noCastBaseline);
-			}
-			if(bestContinuation > 0.0f)
-				first.value += bestContinuation;
-		}
-	}
+	// Re-evaluate a granted continuation against the actual post-cast battlefield
+	// on the next decision. Do not add a second copy of a pre-cast damage score:
+	// the first spell may remove its target or spend the mana the second needs.
 
 	LOGFL("Evaluation took %d ms", timer.getDiff());
 
@@ -1886,7 +1850,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		spellcast.spellCureAffliction = castToPerform.spellCureAffliction;
 		spellcast.spellMassSlow = castToPerform.spellMassSlow;
 		spellcast.metamagicFollowup = castToPerform.metamagicFollowup;
-		spellcast.metamagicGrand = castToPerform.metamagicGrand;
 		if(isCanonicalFireWall(*cb->getBattle(battleID), castToPerform.spell)
 			&& castToPerform.spellFireWallDirection != BattleHex::NONE
 			&& !castToPerform.dest.empty())

@@ -209,7 +209,8 @@ TEST(NewHorizonsMagicArrowActionTest, MetamagicActionsRoundTripAndRejectOlderPro
 	EXPECT_THROW(old.oser & action, std::runtime_error);
 	EXPECT_TRUE(old.extractBuffer().empty());
 
-	BattleAction decline = BattleAction::makeMetamagicDecline(BattleSide::ATTACKER);
+	BattleAction decline = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::NONE);
+	decline.metamagicDecline = true;
 	decline.metamagicManaRefund = 3;
 	CMemorySerializer declineWire;
 	declineWire.oser.version = ESerializationVersion::CURRENT;

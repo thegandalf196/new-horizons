@@ -115,6 +115,7 @@ float BattleExchangeVariant::trackAttack(
 				hb->setSylvanLuckState(side, fortune);
 			}
 			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled);
+			hb->projectRangedMarkStrike(projectedAttack, actualHits);
 		}
 
 		// A preview can contain damage sources which are not represented by a
@@ -268,6 +269,7 @@ float BattleExchangeVariant::trackAttack(
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
+		hb->projectRangedMarkStrike(projectedAttack, {{defender->unitId(), actualDamage}});
 		attacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
 	}
 

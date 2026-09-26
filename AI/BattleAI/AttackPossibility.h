@@ -32,9 +32,11 @@ class DamageCache
 private:
 	std::unordered_map<uint32_t, std::unordered_map<uint32_t, float>> damageCache;
 	std::map<BattleHex, std::unordered_map<uint32_t, int64_t>> obstacleDamage;
+	std::set<uint32_t> rangedMarkTargets;
 	DamageCache * parent;
 
 	void buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
+	bool tracksRangedMarks(uint32_t defenderId) const;
 
 public:
 	DamageCache() : parent(nullptr) {}
@@ -59,6 +61,9 @@ public:
 	BattleAttackInfo attack;
 	bool perfectMoment = false;
 
+	// Detached unit states borrow their bonus bearer. Keep a per-candidate
+	// mark projection alive for as long as its returned states can be read.
+	std::shared_ptr<HypotheticBattle> effectPreview;
 	std::shared_ptr<battle::CUnitState> attackerState;
 
 	std::vector<std::shared_ptr<battle::CUnitState>> affectedUnits;

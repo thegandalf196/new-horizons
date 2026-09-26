@@ -31,6 +31,7 @@
 #include "../scripting/ScriptService.h"
 #include "../spells/ObstacleCasterProxy.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSorcery.h"
 #include "../spells/ISpellMechanics.h"
 #include "../spells/Problem.h"
 #include "../spells/CSpell.h"
@@ -1738,6 +1739,67 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.chargeDistance = info.chargeDistance;
 	payload.shooting = info.shooting;
 	payload.physicalDamage = info.physicalDamage;
+	const auto * currentBattle = getBattle();
+	if(currentBattle)
+		payload.physicalDamageReductionCapPercent = newHorizonsMagic::physicalDamageReductionCapPercent(currentBattle->getMagicRules());
+	if(currentBattle && info.physicalDamage && info.shooting && info.attacker && info.defender
+		&& info.defender->alive() && !info.defender->isGhost()
+		&& newHorizonsMagic::rulesActive(currentBattle->getMagicRules()))
+	{
+		const auto attackerSide = playerToSide(battleGetOwner(info.attacker));
+		const auto defenderSide = playerToSide(battleGetOwner(info.defender));
+		if(attackerSide != BattleSide::NONE && defenderSide != BattleSide::NONE && attackerSide != defenderSide)
+		{
+				int validMarks = 0;
+				const auto triggers = info.defender->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+				for(const auto & bonus : *triggers)
+			{
+				if(bonus->source != BonusSource::SPELL_EFFECT || !bonus->parameters)
+					continue;
+				try
+				{
+					// Check source spell identity first; only those candidates need the
+					// script subtype's resolved name.
+					if(bonus->sid.toString() != newHorizonsSorcery::ARCANE_BREACH_EFFECT
+						|| bonus->subtype.toString() != newHorizonsSorcery::ARCANE_BREACH_TRIGGER)
+						continue;
+				}
+				catch(const std::exception &)
+				{
+					continue;
+				}
+
+				const JsonNode * markParameters = nullptr;
+				try
+				{
+					markParameters = &bonus->parameters->toCustom<JsonNode>();
+				}
+				catch(const std::exception &)
+				{
+					continue;
+				}
+				if(!markParameters->isStruct())
+					continue;
+
+				const auto sideParameter = markParameters->Struct().find("beneficiarySide");
+				// Lua numbers round-trip as JSON floats. Compare the exact enum value
+				// rather than rejecting valid 0.0/1.0 or truncating fractional inputs.
+				if(sideParameter == markParameters->Struct().end()
+					|| !sideParameter->second.isNumber()
+					|| sideParameter->second.Float() != static_cast<int32_t>(attackerSide)
+					|| bonus->val <= 0)
+					continue;
+
+				const int perMarkBasisPoints = std::min(bonus->val,
+					newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS);
+				payload.rangedDefenseIgnoreBasisPoints = std::min(
+					payload.rangedDefenseIgnoreBasisPoints + perMarkBasisPoints,
+					newHorizonsSorcery::ARCANE_BREACH_MAX_MARKS * newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS);
+				if(++validMarks >= newHorizonsSorcery::ARCANE_BREACH_MAX_MARKS)
+					break;
+			}
+		}
+	}
 	payload.targetedRangedCommand = battleIsTargetedRangedCommand(
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
 	payload.targetedRangedCommandPercent = battleTargetedRangedCommandPercent(

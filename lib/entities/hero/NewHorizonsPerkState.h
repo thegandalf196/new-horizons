@@ -73,6 +73,9 @@ public:
 	std::vector<PerkSelection> selected;
 
 	bool hasSelection(const std::string & skillId, const std::string & perkId) const;
+	/// Whether ordinary advancement from currentRank to currentRank + 1 is unlocked.
+	/// Exceptional external rank grants intentionally bypass this check.
+	bool canAdvanceSkillNormally(std::string_view skillId, int currentRank) const;
 	void validate() const;
 	void select(const std::string & skillId, const std::string & perkId, int currentRank);
 	std::vector<PerkOfferCandidate> prepareOffer(

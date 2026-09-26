@@ -112,6 +112,7 @@ protected:
 	bool useLegacyMagicRules = false;
 	bool neutralizeCommandEffects = false;
 	bool useSavedPerkRules = false;
+	bool useFocusMagic = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -121,6 +122,13 @@ protected:
 		else if(useCurrentMagicRules)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		if(useFocusMagic)
+		{
+			JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+			ASSERT_FALSE(rules["spells"][newHorizonsSorcery::FOCUS_MAGIC_SPELL].isNull());
+			newHorizonsMagic::validateRules(rules);
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+		}
 		if(useSavedPerkRules)
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
@@ -152,6 +160,56 @@ protected:
 class NewHorizonsDenseMagicAITest : public NewHorizonsMagicAITest, public ::testing::WithParamInterface<bool>
 {
 };
+
+TEST_F(NewHorizonsMagicAITest, FocusMagicAIValuesSuccessiveShotsAndSelectsFriendlyShooter)
+{
+	useCommands = false;
+	useFocusMagic = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	const SpellID spell(SpellID::decode(newHorizonsSorcery::FOCUS_MAGIC_SPELL));
+	ASSERT_NE(spell, SpellID::NONE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto known : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(spell);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 200, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 100);
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:grandElf"), BattleHex(3, 5), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 1000);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != shooter && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = shooter->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto healthBefore = enemy->getAvailableHealth();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, shooter, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(shooter);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(shooter));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, spell);
+	const auto target = callback->submitted.front().getTarget(battle());
+	ASSERT_EQ(target.size(), 1u);
+	ASSERT_NE(target.front().unitValue, nullptr);
+	EXPECT_EQ(target.front().unitValue->unitId(), shooter->unitId());
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(enemy->getAvailableHealth(), healthBefore);
+	EXPECT_FALSE(shooter->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell))));
+}
 
 TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithoutFollowUpAttacks)
 {
@@ -866,7 +924,7 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIRetainsAllowanceInsteadOfCastingHarmfu
 	EXPECT_EQ(side.metamagicUsesConsumed, 0);
 }
 
-TEST_F(NewHorizonsMagicAITest, MetamagicAIUsesOrdinaryRepeatedSpellAndLeavesGrandAvailable)
+TEST_F(NewHorizonsMagicAITest, MetamagicAIFirstSequenceDoesNotRequestGrand)
 {
 	useCommands = false;
 	useCurrentMagicRules = true;
@@ -922,9 +980,9 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIUsesOrdinaryRepeatedSpellAndLeavesGran
 	EXPECT_FALSE(metamagicState.metamagicGrandUsed);
 }
 
-TEST_F(NewHorizonsMagicAITest, MetamagicAIChoosesGrandForAHighValueDistinctAlternative)
+TEST_F(NewHorizonsMagicAITest, MetamagicAIThirdUsedSequenceSubmitsSpellWithoutManualGrandFlag)
 {
-	useCommands = false;
+	useCommands = true;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
 
@@ -964,6 +1022,14 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIChoosesGrandForAHighValueDistinctAlter
 	metamagicState.metamagicFirstSpell = SpellID::HASTE;
 	metamagicState.metamagicFirstTargetUnitId = newHorizonsMagic::INVALID_METAMAGIC_TARGET;
 	metamagicState.metamagicSequenceSpells = {SpellID::HASTE};
+	metamagicState.metamagicUsesConsumed = 2;
+	// Mirror the already accepted base cast in the typed action ledger too.
+	auto & ledger = metamagicState.heroActionAllowances;
+	const auto base = ledger.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, battle()->getRound());
+	ASSERT_TRUE(base);
+	ASSERT_TRUE(ledger.consumeAllowance(base->grantId, HeroActionAllowanceState::ActionKind::SPELL, battle()->getRound()));
+	ledger.grantAllowance(HeroActionAllowanceState::AllowanceKind::SPELL,
+		HeroActionAllowanceState::GrantSource::METAMAGIC, battle()->getRound());
 
 	auto environment = std::make_shared<MagicEnvironment>(gameState());
 	auto callback = std::make_shared<MagicCallback>();
@@ -975,7 +1041,11 @@ TEST_F(NewHorizonsMagicAITest, MetamagicAIChoosesGrandForAHighValueDistinctAlter
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	EXPECT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
 	EXPECT_TRUE(callback->submitted.front().metamagicFollowup);
-	EXPECT_TRUE(callback->submitted.front().metamagicGrand);
+	EXPECT_FALSE(callback->submitted.front().metamagicGrand);
+	// The callback only records the request. AI evaluation must not spend the
+	// real allowance or mark Grand used before the server accepts the cast.
+	EXPECT_EQ(metamagicState.metamagicUsesConsumed, 2);
+	EXPECT_FALSE(metamagicState.metamagicGrandUsed);
 }
 
 TEST_F(NewHorizonsMagicAITest, ResurrectionCanonicalTargetReacquiresProjectedStateFromLiveAimIdentity)
@@ -2366,7 +2436,7 @@ TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 	// supply these rules at ordinary new-game initialization.
 	prepareCommands(true);
 	ASSERT_EQ(gameState()->getMagicRules()["rulesetVersion"].Integer(), 2);
-	ASSERT_EQ(gameState()->getMagicRules()["spells"].Struct().size(), 70u);
+	ASSERT_EQ(gameState()->getMagicRules()["spells"].Struct().size(), 71u);
 	ASSERT_EQ(battle()->battleGetActiveSpellSchools().size(), 6u);
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);

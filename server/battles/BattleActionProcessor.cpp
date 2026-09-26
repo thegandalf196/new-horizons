@@ -24,6 +24,7 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/BattleAction.h"
+#include "../../lib/battle/HeroActionAllowanceState.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/scripting/ScriptService.h"
 #include "../../lib/combatScripts/ICombatEventScript.h"
@@ -83,6 +84,19 @@ static bool isTimeStopHeroAction(const BattleAction & action)
 		return false;
 	const auto * spell = action.spell.toSpell();
 	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
+}
+
+static bool shouldActivateGrandMetamagic(const CBattleInfoCallback & battle, BattleSide side,
+	const CGHeroInstance * hero, bool metamagicFollowup)
+{
+	return HeroSpellAllowanceTransition::activatesGrand(
+		metamagicFollowup,
+		static_cast<uint8_t>(battle.battleMetamagicPendingCount(side)),
+		battle.battleMetamagicSequenceSpells(side).size(),
+		static_cast<uint8_t>(battle.battleMetamagicUsesConsumed(side)),
+		static_cast<uint8_t>(hero ? newHorizonsMagic::metamagicRank(hero) : 0),
+		hero && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
+		battle.battleMetamagicGrandUsed(side));
 }
 
 static const char * heroOrderDisplayName(HeroCommand command)
@@ -449,20 +463,10 @@ bool BattleActionProcessor::doSurrenderAction(const CBattleInfoCallback & battle
 
 bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
+	if(ba.metamagicGrand)
+		return false;
 	if(ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side))
 		return false;
-	if(ba.metamagicGrand)
-	{
-		const auto * grandHero = battle.battleGetFightingHero(ba.side);
-		const bool grandAvailable = grandHero
-			&& battle.battleMetamagicPendingCount(ba.side) == 1
-			&& battle.battleMetamagicSequenceSpells(ba.side).size() == 1
-			&& !battle.battleMetamagicGrandUsed(ba.side)
-			&& newHorizonsMagic::metamagicRank(grandHero) >= 3
-			&& newHorizonsMagic::hasMetamagicPerk(grandHero, newHorizonsMagic::METAMAGIC_GRAND);
-		if(!ba.metamagicFollowup || !grandAvailable)
-			return false;
-	}
 
 	const auto * hero = battle.battleGetFightingHero(ba.side);
 	if(!hero || !ba.spell.hasValue())
@@ -477,7 +481,7 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 	parameters.setCureAffliction(ba.spellCureAffliction);
 	parameters.setMassSlow(ba.spellMassSlow);
 	parameters.setMetamagicFollowup(ba.metamagicFollowup);
-	parameters.setMetamagicGrand(ba.metamagicGrand);
+	parameters.setMetamagicGrand(shouldActivateGrandMetamagic(battle, ba.side, hero, ba.metamagicFollowup));
 	if(ba.metamagicFollowup && !ba.target.empty() && ba.target.front().unitValue >= 0)
 		parameters.setMetamagicTargetUnitId(static_cast<uint32_t>(ba.target.front().unitValue));
 
@@ -507,21 +511,6 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		gameHandler->complain("Metamagic follow-up is not available in the authoritative battle state");
 		return false;
 	}
-	if(ba.metamagicGrand)
-	{
-		const auto * grandHero = battle.battleGetFightingHero(ba.side);
-		const bool grandAvailable = grandHero
-			&& battle.battleMetamagicPendingCount(ba.side) == 1
-			&& battle.battleMetamagicSequenceSpells(ba.side).size() == 1
-			&& !battle.battleMetamagicGrandUsed(ba.side)
-			&& newHorizonsMagic::metamagicRank(grandHero) >= 3
-			&& newHorizonsMagic::hasMetamagicPerk(grandHero, newHorizonsMagic::METAMAGIC_GRAND);
-		if(!ba.metamagicFollowup || !grandAvailable)
-		{
-			gameHandler->complain("Grand Metamagic is not available for this follow-up");
-			return false;
-		}
-	}
 	const CGHeroInstance *h = battle.battleGetFightingHero(ba.side);
 	if (!h)
 	{
@@ -541,7 +530,8 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	parameters.setCureAffliction(ba.spellCureAffliction);
 	parameters.setMassSlow(ba.spellMassSlow);
 	parameters.setMetamagicFollowup(ba.metamagicFollowup);
-	parameters.setMetamagicGrand(ba.metamagicGrand);
+	const bool grandActivation = shouldActivateGrandMetamagic(battle, ba.side, h, ba.metamagicFollowup);
+	parameters.setMetamagicGrand(grandActivation);
 	// BaseMechanics snapshots the cast metadata in its constructor.  Seed the
 	// first targeted unit before creating it so Split Focus and Focused Pairing
 	// see the authoritative first target during effect evaluation.  The target
@@ -594,11 +584,11 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	}
 	if(ba.metamagicFollowup && !target.empty() && target.front().unitValue)
 		parameters.setMetamagicTargetUnitId(target.front().unitValue->unitId());
-	if(ba.metamagicFollowup && !ba.metamagicGrand
+	if(ba.metamagicFollowup && !grandActivation
 		&& battle.battleMetamagicPendingCount(ba.side) == 1
-		&& !battle.battleMetamagicFormulaReserveUsed(ba.side)
+		&& newHorizonsMagic::spellPointRulesActive(h->getMagicRules())
 		&& newHorizonsMagic::hasMetamagicPerk(h, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
-		parameters.setMetamagicManaRefund(3);
+		parameters.setMetamagicManaRefund(newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
 
 	// Counterspell is resolved after the enemy hero's ordinary cast checks. A
 	// valid hero spell therefore still consumes its action and listed mana even
@@ -1399,18 +1389,6 @@ bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & ba
 
 bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
-	if(ba.metamagicDecline)
-	{
-		if(ba.metamagicManaRefund > 0)
-		{
-			const auto * hero = battle.battleGetFightingHero(ba.side);
-			if(!hero)
-				return false;
-			hero->spendMana(gameHandler->spellcastEnvironment(), -ba.metamagicManaRefund);
-		}
-		return true; // the authoritative StartAction visitor clears the sequence
-	}
-
 	// Canonical Orders are represented by an immutable StartAction snapshot and
 	// evaluated from that snapshot by the battle callback.  There is no broad
 	// SetStackEffect to emit here: doing so would turn conditional Orders into
@@ -1499,21 +1477,15 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		gameHandler->complain("Grand Metamagic flag is only valid for Hero Spell actions");
 		return false;
 	}
-	if(ba.actionType == EActionType::HERO_SPELL && !ba.metamagicFollowup && ba.metamagicGrand)
+	if(ba.actionType == EActionType::HERO_SPELL && ba.metamagicGrand)
 	{
-		gameHandler->complain("Grand Metamagic requires a Metamagic Spell Action");
+		gameHandler->complain("Grand Metamagic activation is derived by the server");
 		return false;
 	}
 	if(ba.metamagicDecline)
 	{
-		const auto expectedHeroStack = static_cast<uint32_t>(ba.side == BattleSide::ATTACKER ? -1 : -2);
-		if(ba.actionType != EActionType::HERO_COMMAND || ba.command != HeroCommand::NONE
-			|| ba.stackNumber != expectedHeroStack || !ba.target.empty() || ba.spell.hasValue()
-			|| !battle.battleCanUseMetamagicFollowup(ba.side))
-		{
-			gameHandler->complain("Forged or malformed Metamagic decline request");
-			return false;
-		}
+		gameHandler->complain("Metamagic decline is retired; unused opportunities expire at the round boundary");
+		return false;
 	}
 	if(ba.metamagicManaRefund != 0)
 	{
@@ -1528,17 +1500,9 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		return false;
 	}
 	BattleAction effectiveAction = ba;
-	if(ba.metamagicDecline)
-	{
-		const auto * hero = battle.battleGetFightingHero(ba.side);
-		if(hero && battle.battleMetamagicSequenceSpells(ba.side).size() > 1
-			&& !battle.battleMetamagicFormulaReserveUsed(ba.side)
-			&& newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
-			effectiveAction.metamagicManaRefund = 3;
-	}
 	std::optional<FocusFireState> preparedFocusFire;
 	std::optional<HeroOrderState> preparedOrderState;
-	if(ba.actionType == EActionType::HERO_COMMAND && !ba.metamagicDecline)
+	if(ba.actionType == EActionType::HERO_COMMAND)
 	{
 		const bool canonical = heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules());
 		if(canonical)

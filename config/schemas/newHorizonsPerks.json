@@ -16,7 +16,7 @@
 	],
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
-		"rulesetVersion": {"type": "integer", "enum": [1]},
+		"rulesetVersion": {"type": "integer", "enum": [1, 2]},
 		"sourceDocument": {"type": "string", "minLength": 1},
 		"sourceSha256": {"type": "string", "minLength": 64, "maxLength": 64},
 		"maxSkillChoices": {"type": "integer", "enum": [2]},

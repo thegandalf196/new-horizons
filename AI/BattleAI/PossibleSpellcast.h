@@ -45,7 +45,7 @@ public:
 	bool spellMassSlow = false;
 	/// The cast is an immediate, non-chaining Tower Metamagic follow-up.
 	bool metamagicFollowup = false;
-	bool metamagicGrand = false;
+	bool metamagicGrand = false; // projected automatic outcome, never a player request
 	/// Delayed placement value for canonical New Horizons Land Mine.  Mines do
 	/// not change unit health during hypothetical cast evaluation, so the
 	/// targeting evaluator supplies this read-only pressure score explicitly.

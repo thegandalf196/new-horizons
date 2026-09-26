@@ -54,6 +54,8 @@ void BonusProxy::registerMethods(MethodRegistrar & R)
 		"Returns the bonus's extra parameters encoded as a single integer (0 if none).");
 	R.function<&BonusProxy::getParametersAsVector>("getParametersAsVector", {},
 		"Returns the bonus's extra parameters as a list of integers (empty if not stored as an array).");
+	R.function<&BonusProxy::getParametersAsJson>("getParametersAsJson", {},
+		"Returns a copy of a combat event trigger's JSON parameters, or nil for other bonus types or absent parameters.");
 }
 
 std::string BonusProxy::getType(const Bonus & b)
@@ -77,6 +79,15 @@ std::vector<int32_t> BonusProxy::getParametersAsVector(const Bonus & b)
 	if (b.parameters && b.parameters->isVector())
 		return b.parameters->toVector();
 	return {};
+}
+
+JsonNode BonusProxy::getParametersAsJson(const Bonus & b)
+{
+	// COMBAT_EVENT_TRIGGER is the JSON-parameter variant of the bonus schema.
+	// Other bonus types retain their scalar/vector/typed parameter contracts.
+	if(b.type != BonusType::COMBAT_EVENT_TRIGGER || !b.parameters)
+		return JsonNode();
+	return b.parameters->toCustom<JsonNode>();
 }
 
 std::vector<BonusDuration::BonusDuration> BonusProxy::getDuration(const Bonus & b)

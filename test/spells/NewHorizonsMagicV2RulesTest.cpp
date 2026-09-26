@@ -26,6 +26,7 @@ JsonNode legacyRules()
 	auto rules = originalRules();
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::RULESET_VERSION;
 	rules.Struct().erase("spellPoints");
+	rules.Struct().erase("physicalDamageReductionCapPercent");
 	rules.Struct().erase("warcasting");
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{

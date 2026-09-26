@@ -28,6 +28,27 @@ The two totals are multiplied together. This is why a single -50% never quite ha
 
 **3. Casualties.** How many creatures the resulting damage kills, given the health left on the first one. This is only used for damage preview in UI, and for AI estimation - engine instead rolls damage within specified range.
 
+## New Horizons physical reduction stage
+
+Saved New Horizons magic rules may opt into independent physical reductions with
+`physicalDamageReductionCapPercent` (integer 0–100; current content uses 80).
+The corresponding attack payload uses `-1` when the setting is absent, preserving
+historical damage calculations. The setting is valid only in magic rules v2.
+
+For opted-in physical attacks, explicit reduction sources multiply separately,
+then their combined reduction is capped before final damage rounding. Creature
+Defense, petrification, range/obstacle/melee penalties, outgoing damage penalties,
+and Phantom Army's damage profile remain outside this cap. Armorer, Battlecraft
+Defend, Bulwark, defensive Orders and applicable Shield-type effects contribute
+to this stage instead of also contributing to the old reduction factors.
+
+Generic reduction bonus contributions are grouped by source and source ID within
+their applicable subtype; each group's `totalValue()` supplies one coefficient.
+This preserves ordinary base/percentage contributions to one named effect.
+Cross-source bonus modifiers are not a supported content pattern for this
+curated stage; third-party content relying on them should retain the historical
+path until it defines an explicit reduction-source contract.
+
 ## Adding a factor
 
 Write a patch, list it in `patches`, write the factor as a method of it, and hand its name to `addDamageFactor`:

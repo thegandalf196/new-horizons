@@ -86,6 +86,7 @@ public:
 		bool clone;
 		int64_t phantomInitialIntegrity;
 		int64_t phantomIntegrity;
+		int32_t phantomDuration;
 	};
 
 	EffectPacketRecorder(ServerCallback & delegate, const IBattleInfoCallback & battle)
@@ -141,8 +142,13 @@ public:
 			const auto * unit = battle.battleGetUnitByID(unitId);
 			if(!unit || !unit->alive() || unit->isGhost())
 				continue;
+			const auto duration = std::ranges::find_if(addedUnitDurations, [unitId](const auto & entry)
+			{
+				return entry.first == unitId;
+			});
 			result.push_back({unitId, unit->creatureId(), unit->getCount(), unit->isClone(),
-				unit->getPhantomInitialIntegrity(), unit->getPhantomIntegrity()});
+				unit->getPhantomInitialIntegrity(), unit->getPhantomIntegrity(),
+				duration == addedUnitDurations.end() ? 0 : duration->second});
 		}
 		return result;
 	}
@@ -191,6 +197,7 @@ private:
 	std::vector<BattleStackAttacked> recordedInjuries;
 	std::vector<HealingChange> recordedHealingChanges;
 	std::vector<uint32_t> addedUnitIds;
+	std::vector<std::pair<uint32_t, int32_t>> addedUnitDurations;
 	std::vector<EffectChange> recordedEffectChanges;
 	std::vector<std::pair<uint32_t, std::vector<EffectState>>> initialEffectStates;
 	bool effectChangesFinalized = false;
@@ -217,7 +224,12 @@ private:
 		{
 			if(change.operation == UnitChanges::EOperation::ADD
 				&& !vstd::contains(addedUnitIds, change.id))
+			{
+				battle::UnitInfo addedUnit;
+				addedUnit.load(change.id, change.data);
 				addedUnitIds.push_back(change.id);
+				addedUnitDurations.emplace_back(change.id, addedUnit.phantomDuration);
+			}
 			if(change.operation != UnitChanges::EOperation::UPDATE || change.healthDelta <= 0
 				|| vstd::contains(updatedUnits, change.id))
 				continue;
@@ -1056,7 +1068,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 						line.appendRawString("/");
 						line.appendNumber(added.phantomInitialIntegrity);
 						line.appendRawString(" integrity for ");
-						line.appendNumber(newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS);
+						line.appendNumber(added.phantomDuration);
 						line.appendRawString(" rounds");
 					}
 					wroteAddedUnit = true;
@@ -1217,7 +1229,24 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			}
 		}
 		if(getMetamagicManaRefund() > 0)
+		{
+			const int32_t normalBeforeRefund = casterHero ? casterHero->getNormalSpellPoints() : 0;
 			caster->spendMana(server, -getMetamagicManaRefund());
+			const int32_t restored = casterHero
+				? std::max<int32_t>(0, casterHero->getNormalSpellPoints() - normalBeforeRefund)
+				: 0;
+			if(restored > 0)
+			{
+				BattleLogMessage formulaReserveDescription;
+				formulaReserveDescription.battleID = battle()->getBattle()->getBattleID();
+				MetaString line = MetaString::createFromTextID(casterHero->getNameTextID());
+				line.appendRawString(": Formula Reserve restores ");
+				line.appendNumber(restored);
+				line.appendRawString(" Normal Spell Points as the Metamagic sequence ends.");
+				formulaReserveDescription.lines.push_back(std::move(line));
+				server->apply(formulaReserveDescription);
+			}
+		}
 
 		if(!isCounterspellNegated() && sc.manaGained > 0)
 		{

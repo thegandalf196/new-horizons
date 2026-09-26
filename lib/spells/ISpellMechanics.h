@@ -292,6 +292,8 @@ public:
 	/// Non-hero casts and Metamagic follow-ups return zero.
 	virtual int32_t getWarcastingBonusPercent() const { return 0; }
 	virtual IBattleCast::Value getEffectDuration() const = 0;
+	/// Applies cast-specific modifiers to a script-supplied fixed duration.
+	virtual IBattleCast::Value adjustEffectDuration(IBattleCast::Value baseDuration) const { return baseDuration; }
 	virtual bool isSelectiveDispel() const { return false; }
 	virtual bool isNewHorizonsCure() const { return false; }
 	virtual SpellID getCureAffliction() const { return SpellID::NONE; }
@@ -371,6 +373,7 @@ public:
 	int32_t getEffectPowerDivisor() const override;
 	int32_t getWarcastingBonusPercent() const override;
 	IBattleCast::Value getEffectDuration() const override;
+	IBattleCast::Value adjustEffectDuration(IBattleCast::Value baseDuration) const override;
 	IBattleCast::Value64 getEffectValue() const override;
 	IBattleCast::Value getOvercharge() const;
 	SpellID getCureAffliction() const override;

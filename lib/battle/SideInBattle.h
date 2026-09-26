@@ -102,6 +102,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	uint8_t metamagicUsesConsumed = 0;
 	uint8_t metamagicPendingCount = 0;
 	bool metamagicGrandUsed = false;
+	// Historical compatibility bit; sequence rewards no longer use it as a gate.
 	bool metamagicFormulaReserveUsed = false;
 	bool metamagicCountersequenceArmed = false;
 	SpellID metamagicFirstSpell;
@@ -118,6 +119,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int32_t initialNormalSpellPoints = 0;
 	int32_t initialBufferSpellPoints = 0;
 	int32_t temporaryBufferRemaining = 0;
+	bool metamagicSpellBufferUsed = false;
 	int32_t bloodrageDamagePercent = 0;
 	int32_t bloodrageRank = 0;
 	SylvanLuckState sylvanLuck;
@@ -173,6 +175,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			|| !metamagicSequenceSpells.empty() || metamagicFirstCounterspellNegated)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
 			throw std::runtime_error("Cannot discard Metamagic battle state");
+		if(h.saving && metamagicSpellBufferUsed
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC_REWARDS))
+			throw std::runtime_error("Cannot discard consumed Metamagic Spell Buffer state");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 			&& (focusFire || activeOrder == HeroCommand::FOCUS_FIRE))
 			throw std::runtime_error("Cannot discard New Horizons targeted command state");
@@ -311,6 +316,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			initialBufferSpellPoints = 0;
 			temporaryBufferRemaining = 0;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC_REWARDS))
+			h & metamagicSpellBufferUsed;
+		else if(!h.saving)
+			metamagicSpellBufferUsed = false;
 	}
 
 	void clearMetamagicSequence()

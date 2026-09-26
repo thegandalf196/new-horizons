@@ -84,6 +84,14 @@ When several bonuses on the same unit grant the same script, each of them runs t
 
 Parameters:
 
+Stored trigger parameters can be inspected with `bonus:getParametersAsJson()`.
+This returns a copy of a `COMBAT_EVENT_TRIGGER` bonus's JSON `addInfo`, or `nil`
+for other bonus types or absent parameters. Editing that copy does not mutate
+the bonus; persistent changes still require authoritative bonus packets.
+Use `battle:getControllingSide(unit)` when an effect depends on the current
+controller (including temporary control changes). `unit:getSide()` describes
+the unit's original battle side instead.
+
 - `server` - used to apply actual changes to the battle state. See [BattleServer](../Lua_Reference/BattleServer.md).
 - `battle` - state of the battle this event happened in. See [Battle](../Lua_Reference/Battle.md).
 - `unit` - the unit carrying the bonus, which this event happened to. See [Unit](../Lua_Reference/Unit.md).

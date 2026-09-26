@@ -137,6 +137,40 @@ void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMa
 	}
 }
 
+void applyFormulaReserveClosureReward(BattleInfo & battle, BattleSide sideID)
+{
+	auto & side = battle.getSide(sideID);
+	if(side.metamagicPendingCount == 0 || side.metamagicSequenceSpells.size() <= 1)
+		return;
+
+	auto * hero = battle.battleGetFightingHero(sideID);
+	if(!hero || !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
+		|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
+		return;
+
+	if(!hero->restoreNormalSpellPoints(newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS))
+		throw std::runtime_error("Invalid Formula Reserve Normal Spell Point restoration");
+	side.metamagicFormulaReserveUsed = true;
+}
+
+void applySpellBufferRoundExpiryReward(BattleInfo & battle, BattleSide sideID)
+{
+	auto & side = battle.getSide(sideID);
+	if(side.metamagicPendingCount == 0 || side.metamagicSequenceSpells.size() != 1
+		|| side.metamagicSpellBufferUsed)
+		return;
+
+	auto * hero = battle.battleGetFightingHero(sideID);
+	if(!hero || !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
+		|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_SPELL_BUFFER))
+		return;
+
+	if(!hero->grantBufferSpellPoints(newHorizonsMagic::METAMAGIC_SPELL_BUFFER_POINTS))
+		throw std::runtime_error("Invalid Spell Buffer grant");
+	// The combat reward is permanent even if the pool was already capped.
+	side.metamagicSpellBufferUsed = true;
+}
+
 std::set<uint32_t> bloodrageDeathCandidates(BattleInfo & battle, const std::vector<BattleStackAttacked> & updates)
 {
 	std::set<uint32_t> result;
@@ -1659,7 +1693,15 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 
 void GameStatePackVisitor::visitBattleNextRound(BattleNextRound & pack)
 {
-	gs.getBattle(pack.battleID)->nextRound();
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("BattleNextRound references a missing battle");
+	for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		applyFormulaReserveClosureReward(*battle, sideID);
+		applySpellBufferRoundExpiryReward(*battle, sideID);
+	}
+	battle->nextRound();
 }
 
 void GameStatePackVisitor::visitBattleSetActiveStack(BattleSetActiveStack & pack)
@@ -1776,7 +1818,9 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	const auto * battleContext = gs.getBattle(pack.battleID);
 	if(!battleContext)
 		throw std::runtime_error(targeted ? "Missing targeted StartAction battle context" : "Missing StartAction battle context");
-	const bool canonicalOrder = !pack.ba.metamagicDecline && pack.ba.actionType == EActionType::HERO_COMMAND
+	if(pack.ba.metamagicDecline)
+		throw std::runtime_error("Retired Metamagic decline StartAction");
+	const bool canonicalOrder = pack.ba.actionType == EActionType::HERO_COMMAND
 		&& heroCommands::isCanonicalRules(battleContext->getHeroCommandRules());
 	if(pack.orderState.has_value() != canonicalOrder)
 		throw std::runtime_error("Inconsistent canonical Order StartAction payload");
@@ -1827,7 +1871,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		// allowance rather than inferring provenance from Metamagic packet flags.
 		// This runs at StartAction so Time Stop ends before the Hero-paid spell
 		// resolves. The cast visitor later consumes the same deterministic grant.
-		if(pack.ba.actionType == EActionType::HERO_SPELL && !pack.ba.metamagicDecline)
+		if(pack.ba.actionType == EActionType::HERO_SPELL)
 		{
 			const bool sharedActionBudget = heroCommands::supportedByRules(
 				battle->getHeroCommandRules(), HeroCommand::CHARGE);
@@ -1841,26 +1885,6 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			}
 			if(spendsHeroAction)
 				battle->expireTimeStops(pack.ba.side);
-		}
-
-		auto & metamagicSide = battle->getSide(pack.ba.side);
-		if(pack.ba.metamagicDecline)
-		{
-			if(pack.ba.actionType != EActionType::HERO_COMMAND || pack.ba.command != HeroCommand::NONE
-				|| metamagicSide.metamagicPendingCount == 0
-				|| pack.ba.stackNumber != static_cast<uint32_t>(pack.ba.side == BattleSide::ATTACKER ? -1 : -2))
-				throw std::runtime_error("Invalid Metamagic decline StartAction");
-			const auto * hero = gs.getBattle(pack.battleID)->battleGetFightingHero(pack.ba.side);
-			const int expectedRefund = metamagicSide.metamagicSequenceSpells.size() > 1
-				&& !metamagicSide.metamagicFormulaReserveUsed && hero
-				&& newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE)
-				? 3 : 0;
-			if(pack.ba.metamagicManaRefund != expectedRefund)
-				throw std::runtime_error("Invalid Metamagic Formula Reserve decline refund");
-			if(expectedRefund > 0)
-				metamagicSide.metamagicFormulaReserveUsed = true;
-			metamagicSide.clearMetamagicSequence();
-			return;
 		}
 	}
 	if(pack.ba.actionType == EActionType::HERO_COMMAND)
@@ -2075,7 +2099,7 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 			throw std::runtime_error("Grand Metamagic metadata requires a follow-up cast");
 		if(pack.metamagicManaRefund > 0
 			&& (!pack.metamagicFollowup || pack.metamagicGrand || casterSide.metamagicPendingCount != 1
-				|| casterSide.metamagicFormulaReserveUsed || !hero
+				|| !hero || !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
 				|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE)))
 			throw std::runtime_error("Invalid Formula Reserve Metamagic refund");
 		if(sharedActionBudget)
@@ -2152,13 +2176,24 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		}
 		else if(pack.metamagicFollowup)
 		{
+			const int rank = hero ? newHorizonsMagic::metamagicRank(hero) : 0;
+			const bool grandActivation = HeroSpellAllowanceTransition::activatesGrand(
+				pack.metamagicFollowup,
+				casterSide.metamagicPendingCount,
+				casterSide.metamagicSequenceSpells.size(),
+				casterSide.metamagicUsesConsumed,
+				static_cast<uint8_t>(rank),
+				hero && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
+				casterSide.metamagicGrandUsed);
+			if(pack.metamagicGrand != grandActivation)
+				throw std::runtime_error("Battle spell cast has forged Grand Metamagic outcome");
+
 			if(pack.metamagicGrand)
 			{
-				const int rank = hero ? newHorizonsMagic::metamagicRank(hero) : 0;
 				if(!hero || casterSide.metamagicPendingCount != 1 || casterSide.metamagicSequenceSpells.size() != 1
-					|| casterSide.metamagicGrandUsed || rank < 3 || casterSide.metamagicUsesConsumed >= rank
+					|| casterSide.metamagicGrandUsed || rank < 3 || casterSide.metamagicUsesConsumed != 2
 					|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND))
-					throw std::runtime_error("Invalid Grand Metamagic choice");
+					throw std::runtime_error("Invalid server-derived Grand Metamagic outcome");
 				++casterSide.metamagicUsesConsumed;
 				casterSide.metamagicGrandUsed = true;
 				casterSide.metamagicPendingCount = 2;
@@ -2304,6 +2339,15 @@ void GameStatePackVisitor::visitBattleCancelled(BattleCancelled & pack)
 
 void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack)
 {
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("BattleResultsApplied references a missing battle");
+	for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		applyFormulaReserveClosureReward(*battle, sideID);
+		battle->getSide(sideID).clearMetamagicSequence();
+	}
+
 	spellPointBonusGraphChanged = true;
 	restorePreBattleState(pack.battleID);
 	pack.learnedSpells.visit(*this);

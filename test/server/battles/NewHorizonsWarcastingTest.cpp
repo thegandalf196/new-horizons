@@ -28,6 +28,8 @@ namespace
 {
 constexpr auto warcastingSkill = "new-horizons:warcasting";
 constexpr auto metamagicSkill = "new-horizons:metamagic";
+constexpr auto metamagicBasicPerk = "new-horizons:metamagic.arcaneAcquisition";
+constexpr auto metamagicAdvancedPerk = "new-horizons:metamagic.echoedDuration";
 constexpr auto metamagicGrandPerk = "new-horizons:metamagic.grandMetamagic";
 constexpr auto counterspellKey = "new-horizons:counterspell";
 constexpr auto sorcerySkill = "new-horizons:sorceryMagic";
@@ -209,8 +211,9 @@ protected:
 
 	bool declineMetamagic()
 	{
-		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
-			BattleAction::makeMetamagicDecline(BattleSide::ATTACKER));
+		BattleAction retired = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::NONE);
+		retired.metamagicDecline = true;
+		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), retired);
 	}
 
 	void advanceRound()
@@ -513,13 +516,13 @@ TEST_F(NewHorizonsWarcastingTest, TacticalOrderToSpellReadinessExpiresUnusedAtRo
 	EXPECT_TRUE(server.casts.empty());
 }
 
-TEST_F(NewHorizonsWarcastingTest, MetamagicDeclineDoesNotChangeReadiness)
+TEST_F(NewHorizonsWarcastingTest, RetiredMetamagicDeclineIsRejectedWithoutChangingReadiness)
 {
 	prepareWarcasting(1, true);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	const auto afterOrdinaryCast = battle()->getWarcastingState(BattleSide::ATTACKER);
 	ASSERT_EQ(afterOrdinaryCast.nextEligibleAction, AlternatingHeroActionState::Action::ORDER);
-	ASSERT_TRUE(declineMetamagic());
+	EXPECT_FALSE(declineMetamagic());
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), afterOrdinaryCast);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).castSpellsCount, 1u);
 }
@@ -833,22 +836,21 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesMetamagicAndR
 	EXPECT_EQ(restoredCounts.spellActions, 1u);
 }
 
-TEST_F(NewHorizonsWarcastingTest, NormalMetamagicOfferAfterGrandUseRoundTrips)
+TEST_F(NewHorizonsWarcastingTest, LegacyEarlyGrandUseDoesNotCorruptLaterNormalOfferOnReload)
 {
 	prepareWarcasting(1, true);
 	const int decodedMetamagic = SecondarySkill::decode(metamagicSkill);
 	ASSERT_GE(decodedMetamagic, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(decodedMetamagic), 3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(metamagicSkill), std::string(metamagicBasicPerk)});
+	attackerSideHero->applyPerkSelection({std::string(metamagicSkill), std::string(metamagicAdvancedPerk)});
 	attackerSideHero->applyPerkSelection({std::string(metamagicSkill), std::string(metamagicGrandPerk)});
 
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
-	ASSERT_TRUE(cast(SpellID::SLOW, defender, true, true));
-	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender, true));
-	ASSERT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicGrandUsed);
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0u);
-
-	advanceRound();
-	activate(attacker);
+	// Older saves could spend Grand on their first used sequence. That state
+	// still permits the remaining ordinary sequences; new casts cannot create it.
+	auto & legacy = battle()->getSide(BattleSide::ATTACKER);
+	legacy.metamagicGrandUsed = true;
+	legacy.metamagicUsesConsumed = 1;
 	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender));
 	const auto & afterNewOffer = battle()->getSide(BattleSide::ATTACKER);
 	EXPECT_TRUE(afterNewOffer.metamagicGrandUsed);
@@ -893,6 +895,44 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalBattleSpendsTypedAllowancesWithout
 	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, 0u);
 	ASSERT_TRUE(projection.projectHeroOrderAllowance(side));
 	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).heroActions, 0u);
+}
+
+TEST_F(NewHorizonsWarcastingTest, HypotheticalGrandMatchesThirdUsedSequenceAndDoesNotRecurse)
+{
+	prepareWarcasting(1, true);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(metamagicSkill)),
+		3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(metamagicSkill), std::string(metamagicBasicPerk)});
+	attackerSideHero->applyPerkSelection({std::string(metamagicSkill), std::string(metamagicAdvancedPerk)});
+	attackerSideHero->applyPerkSelection({std::string(metamagicSkill), std::string(metamagicGrandPerk)});
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto side = BattleSide::ATTACKER;
+	const auto realAllowances = battle()->getHeroActionAllowances(side);
+	for(int sequence = 0; sequence < 3; ++sequence)
+	{
+		if(sequence != 0)
+			projection.nextRound();
+		ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::HASTE, attacker->unitId(), false, false));
+		const auto before = projection.getHeroActionAllowances(side);
+		const bool activatesGrand = sequence == 2;
+		EXPECT_FALSE(projection.prepareHeroSpellAllowance(side, true, !activatesGrand));
+		EXPECT_EQ(projection.getHeroActionAllowances(side), before);
+		ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::SLOW, defender->unitId(), true, activatesGrand));
+		EXPECT_EQ(projection.getMetamagicUsesConsumed(side), sequence + 1);
+		EXPECT_EQ(projection.getMetamagicGrandUsed(side), activatesGrand);
+		EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, activatesGrand ? 1u : 0u);
+	}
+	ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::HASTE, attacker->unitId(), true, false));
+	EXPECT_EQ(projection.getMetamagicUsesConsumed(side), 3);
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, 0u);
+	projection.nextRound();
+	ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::HASTE, attacker->unitId(), false, false));
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, 0u);
+	EXPECT_EQ(battle()->getHeroActionAllowances(side), realAllowances);
+	EXPECT_EQ(battle()->getMetamagicUsesConsumed(side), 0);
+	EXPECT_FALSE(battle()->getMetamagicGrandUsed(side));
 }
 
 TEST_F(NewHorizonsWarcastingTest, HypotheticalHeroReceiptExpiresOnlyItsTimeStopAndWard)

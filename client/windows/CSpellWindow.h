@@ -99,10 +99,6 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 
 	std::shared_ptr<CToggleButton> showAllSpells;
 	std::shared_ptr<CLabel> showAllSpellsDescription;
-	/// Battle-only Grand Metamagic choice kept inside the modal spellbook so
-	/// selecting the two-extra variant is possible before choosing a spell.
-	std::shared_ptr<CButton> metamagicGrandToggle;
-	std::shared_ptr<CLabel> metamagicGrandLabel;
 
 	std::shared_ptr<VideoWidgetOnce> video;
 

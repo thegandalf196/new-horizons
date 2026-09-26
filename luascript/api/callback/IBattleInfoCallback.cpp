@@ -36,6 +36,9 @@ namespace scripting::api
 
 void IBattleInfoCallbackProxy::registerMethods(MethodRegistrar & R)
 {
+	R.function<&IBattleInfoCallbackProxy::getControllingSide>("getControllingSide",
+		{{"unit", "Unit whose current controller is queried."}}, {},
+		"Returns the controlling battle side, including temporary control changes; unlike Unit.getSide this is not its original side.");
 	R.method<&BattleCb::battleTacticDist>("getTacticDistance", {},
 		"Returns the available tactic phase distance, or 0 if the tactic phase has ended.");
 	R.cfunction<&IBattleInfoCallbackProxy::getAvailableHex>("getAvailableHex",
@@ -226,6 +229,12 @@ int IBattleInfoCallbackProxy::getAvailableHex(lua_State * L)
 	BattleHex result = object->getAvailableHex(creature, side, hexVal);
 	S.push(result);
 	return 1;
+}
+
+BattleSide IBattleInfoCallbackProxy::getControllingSide(const IBattleInfoCallback & object, const battle::Unit & unit)
+{
+	const auto & cb = dynamic_cast<const CBattleInfoCallback &>(object);
+	return cb.playerToSide(cb.battleGetOwner(&unit));
 }
 
 const battle::Unit * IBattleInfoCallbackProxy::getUnitByPos(const IBattleInfoCallback & object, BattleHex hex, bool onlyAlive)

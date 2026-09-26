@@ -1485,6 +1485,10 @@ function SpellMechanics:getEffectLevel() end
 ---@return integer
 function SpellMechanics:getRangeLevel() end
 
+---Returns one Arcane Breach mark's penetration in basis points, including cast-specific scaling and the per-mark cap.
+---@return integer
+function SpellMechanics:getArcaneBreachMarkBasisPoints() end
+
 ---Returns the effective spell power applied to the magnitude calculation.
 ---@return integer
 function SpellMechanics:getEffectPower() end
@@ -1492,6 +1496,15 @@ function SpellMechanics:getEffectPower() end
 ---Returns the effect duration in turns.
 ---@return integer
 function SpellMechanics:getEffectDuration() end
+
+---Returns a supplied base duration adjusted by cast-specific duration mechanics.
+---@param baseDuration integer # Base effect duration in turns.
+---@return integer
+function SpellMechanics:adjustEffectDuration(baseDuration) end
+
+---True when this hero spell is being cast through an additional Metamagic Spell Action.
+---@return boolean
+function SpellMechanics:isMetamagicFollowup() end
 
 ---Returns the computed effect value (e.g. damage / health amount).
 ---@return integer

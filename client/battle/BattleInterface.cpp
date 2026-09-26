@@ -147,7 +147,6 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				callback->getBattle()->getMagicRules(), spell->id, spellPower,
 				newHorizonsMagic::magicArrowOverchargeModifiers(hero));
 			const bool metamagicFollowup = pending.metamagicFollowup;
-			const bool metamagicGrand = pending.metamagicGrand;
 			const auto metamagicBaseCost = [metamagicFollowup](const CGHeroInstance * currentHero, int listedCost)
 			{
 				if(metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(currentHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
@@ -162,7 +161,7 @@ void BattleInterface::installMagicArrowOverchargeUI()
 			// Wisdom and other modifiers; apply the same Metamagic discount as the
 			// BattleSpellMechanics path before adding the optional surcharge.
 			const auto evaluate = [this, localBattleID, targetUnitID, spell, maximumOvercharge,
-				metamagicFollowup, metamagicGrand, metamagicBaseCost]
+				metamagicFollowup, metamagicBaseCost]
 				(int overcharge)
 				-> MagicArrowOverchargeValues
 			{
@@ -191,7 +190,6 @@ void BattleInterface::installMagicArrowOverchargeUI()
 
 				spells::BattleCast legality(callback.get(), hero, spells::Mode::HERO, spell);
 				legality.setMetamagicFollowup(metamagicFollowup);
-				legality.setMetamagicGrand(metamagicGrand);
 				legality.setMetamagicTargetUnitId(targetUnitID);
 				legality.setOvercharge(values.overcharge);
 				spells::detail::ProblemImpl legalityProblem;
@@ -204,7 +202,6 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				{
 					spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
 					preview.setMetamagicFollowup(metamagicFollowup);
-					preview.setMetamagicGrand(metamagicGrand);
 					preview.setMetamagicTargetUnitId(targetUnitID);
 					preview.setOvercharge(selectedOvercharge);
 					auto mechanics = spell->battleMechanics(&preview);
@@ -324,7 +321,6 @@ void BattleInterface::installSelectiveDispelUI()
 
 				spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
 				preview.setMetamagicFollowup(pending.metamagicFollowup);
-				preview.setMetamagicGrand(pending.metamagicGrand);
 				preview.setSelectiveDispel(selective);
 				auto mechanics = spell->battleMechanics(&preview);
 				spells::detail::ProblemImpl problem;
@@ -399,7 +395,6 @@ void BattleInterface::installCureAfflictionUI()
 			const auto * spell = pending.spell.toSpell();
 			spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
 			preview.setMetamagicFollowup(pending.metamagicFollowup);
-			preview.setMetamagicGrand(pending.metamagicGrand);
 			preview.setCureAffliction(choices[selected]);
 			auto mechanics = spell->battleMechanics(&preview);
 			spells::detail::ProblemImpl problem;
@@ -453,8 +448,7 @@ void BattleInterface::installTemporalFieldUI()
 				return std::nullopt;
 
 			auto evaluate = [this, localBattleID, spell,
-				metamagicFollowup = pending.metamagicFollowup,
-				metamagicGrand = pending.metamagicGrand]() -> TemporalFieldValues
+				metamagicFollowup = pending.metamagicFollowup]() -> TemporalFieldValues
 			{
 				TemporalFieldValues values;
 				if(!curInt || !curInt->cb)
@@ -473,7 +467,6 @@ void BattleInterface::installTemporalFieldUI()
 
 				spells::BattleCast massCast(callback.get(), hero, spells::Mode::HERO, spell);
 				massCast.setMetamagicFollowup(metamagicFollowup);
-				massCast.setMetamagicGrand(metamagicGrand);
 				massCast.setMassSlow(true);
 				auto mechanics = spell->battleMechanics(&massCast);
 				spells::Target noTarget;
@@ -524,7 +517,6 @@ void BattleInterface::installTemporalFieldUI()
 
 				spells::BattleCast massCast(callback.get(), hero, spells::Mode::HERO, spell);
 				massCast.setMetamagicFollowup(pending.metamagicFollowup);
-				massCast.setMetamagicGrand(pending.metamagicGrand);
 				massCast.setMassSlow(true);
 				auto mechanics = spell->battleMechanics(&massCast);
 				if(!mechanics)
@@ -734,7 +726,15 @@ void BattleInterface::newRound()
 	// Refresh transient hero indicators so an inclusive expiry cannot linger
 	// until another spell or Order is issued.
 	if(windowObject)
+	{
+		// Round-expiry perks mutate Spell Points as part of BattleNextRound,
+		// without a separate SetMana packet. Refresh the displayed pools here.
+		if(attackingHeroInstance)
+			windowObject->heroManaPointsChanged(attackingHeroInstance);
+		if(defendingHeroInstance)
+			windowObject->heroManaPointsChanged(defendingHeroInstance);
 		windowObject->updateCounterspellStatus();
+	}
 }
 
 void BattleInterface::giveCommand(EActionType action, const BattleHex & tile, SpellID spell)
@@ -1453,12 +1453,6 @@ void BattleInterface::requestAutofightingAIToTakeAction()
 void BattleInterface::castThisSpell(SpellID spellID)
 {
 	actionsController->castThisSpell(spellID);
-}
-
-void BattleInterface::toggleMetamagicGrandFollowup()
-{
-	if(actionsController)
-		actionsController->toggleMetamagicGrandFollowup();
 }
 
 void BattleInterface::endNetwork()

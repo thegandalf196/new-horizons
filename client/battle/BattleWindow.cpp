@@ -160,15 +160,6 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		});
 	addWidget("nhLandMineConfirm", landMineConfirmButton);
 	landMineConfirmButton->setEnabled(false);
-	metamagicGrandButton = std::make_shared<CButton>(Point(640, 560), AnimationPath::builtin("NH_hero_actions_entry"),
-		CButton::tooltip("Grand Metamagic", "Spend one Metamagic use for two Spell Actions this round."), [this]()
-		{
-			owner.toggleMetamagicGrandFollowup();
-		});
-	addWidget("nhMetamagicGrand", metamagicGrandButton);
-	metamagicGrandButton->setEnabled(false);
-	metamagicGrandLabel = std::make_shared<CLabel>(0, 0, FONT_TINY, ETextAlignment::CENTER, Colors::YELLOW, "Grand OFF");
-	metamagicGrandButton->setOverlay(metamagicGrandLabel);
 	if(owner.getBattle()->battleUsesHeroCommands())
 	{
 		widget<CButton>("consoleUp")->moveBy(Point(-ordersControlPitch, 0));
@@ -628,26 +619,6 @@ void BattleWindow::updateCounterspellStatus()
 {
 	refreshHeroBattleStatus(BattleSide::ATTACKER);
 	refreshHeroBattleStatus(BattleSide::DEFENDER);
-	if(metamagicGrandButton)
-	{
-		const auto side = owner.getBattle()->battleGetMySide();
-		const auto * hero = owner.currentHero();
-		const bool available = side != BattleSide::NONE && hero
-			&& owner.getBattle()->battleMetamagicPendingCount(side) == 1
-			&& owner.getBattle()->battleMetamagicSequenceSpells(side).size() == 1
-			&& !owner.getBattle()->battleMetamagicGrandUsed(side)
-			&& newHorizonsMagic::metamagicRank(hero) >= 3
-			&& newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND);
-		const bool selected = available && owner.actionsController
-			&& owner.actionsController->metamagicGrandModeActive();
-		metamagicGrandButton->setEnabled(available);
-		metamagicGrandButton->block(!available);
-		if(metamagicGrandLabel)
-		{
-			metamagicGrandLabel->setText(selected ? "Grand ON" : "Grand OFF");
-			metamagicGrandLabel->setColor(selected ? Colors::GREEN : Colors::YELLOW);
-		}
-	}
 }
 
 void BattleWindow::updateStackInfoWindow(const CStack * stack)

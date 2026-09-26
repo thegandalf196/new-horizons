@@ -37,6 +37,24 @@ TEST(NewHorizonsPerkRules, EmptyRegistryIsLegacyAndUnknownLookupStaysEmpty)
 	EXPECT_FALSE(perkDefinition(JsonNode(), "new-horizons:anything", "new-horizons:anything.perk"));
 }
 
+TEST(NewHorizonsPerkRules, VersionedCatalogAcceptsHistoricalAndCurrentButRejectsUnknownRevisions)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	EXPECT_EQ(rules["rulesetVersion"].Integer(), 2);
+	for(const int version : {1, 2})
+	{
+		rules["rulesetVersion"].Integer() = version;
+		EXPECT_NO_THROW(newHorizonsHeroes::validatePerkRules(rules));
+		EXPECT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsPerks", "supported perk catalog"));
+	}
+	for(const int version : {0, 3})
+	{
+		rules["rulesetVersion"].Integer() = version;
+		EXPECT_THROW(newHorizonsHeroes::validatePerkRules(rules), std::runtime_error);
+		EXPECT_FALSE(JsonUtils::validate(rules, "vcmi:newHorizonsPerks", "unknown perk catalog"));
+	}
+}
+
 TEST(NewHorizonsPerkRules, RuntimeRejectsIdentityCardinalityRankAndEffectForgery)
 {
 	using namespace newHorizonsHeroes;

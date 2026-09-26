@@ -448,6 +448,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	cb(event->getBattle())
 {
 	caster = event->getCaster();
+	metamagicFollowup = event->isMetamagicFollowup();
 
 	casterSide = cb->playerToSide(caster->getCasterOwner());
 	if(mode == Mode::HERO && dynamic_cast<const CGHeroInstance *>(caster) && !event->isMetamagicFollowup()
@@ -505,6 +506,10 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				dynamic_cast<const CGHeroInstance *>(caster), owner->getId());
 			if(effectDuration <= std::numeric_limits<decltype(effectDuration)>::max() - bonus)
 				effectDuration += bonus;
+
+			// Echoed Duration applies only to an additional cast and only when
+			// the spell did not provide an explicit duration override.
+			effectDuration = adjustEffectDuration(effectDuration);
 		}
 	}
 	overcharge = event->getOvercharge().value_or(0);
@@ -513,7 +518,6 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	counterspellNegated = event->isCounterspellNegated();
 	selectiveDispel = event->getSelectiveDispel();
 	massSlow = event->getMassSlow();
-	metamagicFollowup = event->isMetamagicFollowup();
 	metamagicGrand = event->isMetamagicGrand();
 	metamagicTargetUnitId = event->getMetamagicTargetUnitId();
 	metamagicManaRefund = event->getMetamagicManaRefund();
@@ -622,14 +626,6 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			}
 		}
 		vstd::amax(effectValue, 0);
-	}
-	// Echoed Duration is intentionally applied only to the additional cast and
-	// only when the spell did not provide an explicit duration override.
-	if(!event->getEffectDuration().has_value() && event->isMetamagicFollowup()
-		&& newHorizonsMagic::hasMetamagicPerk(dynamic_cast<const CGHeroInstance *>(caster), newHorizonsMagic::METAMAGIC_ECHOED_DURATION))
-	{
-		if(effectDuration < std::numeric_limits<decltype(effectDuration)>::max())
-			++effectDuration;
 	}
 }
 
@@ -880,6 +876,18 @@ int32_t BaseMechanics::getWarcastingBonusPercent() const
 IBattleCast::Value BaseMechanics::getEffectDuration() const
 {
 	return effectDuration;
+}
+
+IBattleCast::Value BaseMechanics::adjustEffectDuration(IBattleCast::Value baseDuration) const
+{
+	if(!isMetamagicFollowup()
+		|| !newHorizonsMagic::hasMetamagicPerk(dynamic_cast<const CGHeroInstance *>(caster),
+			newHorizonsMagic::METAMAGIC_ECHOED_DURATION))
+		return baseDuration;
+
+	if(baseDuration < std::numeric_limits<IBattleCast::Value>::max())
+		++baseDuration;
+	return baseDuration;
 }
 
 IBattleCast::Value64 BaseMechanics::getEffectValue() const

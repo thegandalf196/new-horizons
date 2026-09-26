@@ -296,6 +296,11 @@ public:
 		activeUnitId = -1;
 	}
 
+	/// Apply only the deterministic ranged-mark reaction after projected hit
+	/// damage. This does not dispatch unrelated combat scripts or real packets.
+	void projectRangedMarkStrike(const BattleAttackInfo & attack,
+		const std::vector<std::pair<uint32_t, int64_t>> & hits);
+
 	ServerCallback * getServerCallback();
 	const scripting::Pool & getScriptContextPool() const override;
 

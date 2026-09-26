@@ -339,5 +339,18 @@
 			},
 			"additionalProperties" : false
 		}
+	},
+	"focusMagicEnchantment" : {
+		"implements" : "spellEffect",
+		"script" : "spells/focusMagic",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
 	}
 }

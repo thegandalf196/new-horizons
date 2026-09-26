@@ -15,6 +15,10 @@
 #include "../../AI/BattleAI/PotentialTargets.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/modding/IdentifierStorage.h"
+#include "../../lib/modding/ModScope.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 
 namespace
 {
@@ -174,6 +178,105 @@ TEST_F(AttackResourceProjectionTest, TrackingTwoShotPreviewConsumesBothShotsOnly
 	exchange.trackAttack(attack, model, cache);
 	EXPECT_EQ(model->getForUpdate(shooter->unitId())->shots.available(), available - 2);
 	EXPECT_EQ(shooter->shots.available(), available);
+}
+
+TEST_F(AttackResourceProjectionTest, FocusMagicMarksApplyBetweenShotsWithoutMutatingTheSourceBattle)
+{
+	const auto focus = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell",
+		std::string(newHorizonsSorcery::FOCUS_MAGIC_SPELL));
+	if(!focus)
+		GTEST_SKIP() << "Requires New Horizons Focus Magic content";
+	const auto trigger = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "script",
+		std::string(newHorizonsSorcery::FOCUS_MAGIC_TRIGGER));
+	const auto marker = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "script",
+		std::string(newHorizonsSorcery::ARCANE_BREACH_TRIGGER));
+	ASSERT_TRUE(trigger);
+	ASSERT_TRUE(marker);
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:grandElf"), BattleHex(3, 5), 10);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 1000);
+	forceMaximumDamage(shooter);
+	auto enchantment = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::COMBAT_EVENT_TRIGGER,
+		BonusSource::SPELL_EFFECT, 2000, BonusSourceID(SpellID(*focus)), BonusSubtypeID(ScriptID(*trigger)));
+	enchantment->turnsRemain = 3;
+	JsonNode parameters;
+	parameters["beneficiarySide"].Integer() = static_cast<int>(BattleSide::ATTACKER);
+	enchantment->parameters = std::make_shared<BonusParameters>(parameters);
+	shooter->addNewBonus(enchantment);
+	prepareModel();
+	const auto countMarks = [&](const battle::Unit * unit)
+	{
+		return unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER, BonusSubtypeID(ScriptID(*marker)))->size();
+	};
+	const BattleAttackInfo info(shooter, defender, 0, true);
+	const auto initialHealth = defender->getAvailableHealth();
+	const auto firstDamage = model->battleExpectedLuckDamage(info);
+	const auto prediction = AttackPossibility::evaluate(info, shooter->getPosition(), cache, model);
+	ASSERT_NE(prediction.effectPreview, nullptr);
+	ASSERT_EQ(prediction.fortuneStrikes.size(), 2);
+	ASSERT_EQ(prediction.fortuneStrikes[0].hits.size(), 1);
+	ASSERT_EQ(prediction.fortuneStrikes[1].hits.size(), 1);
+	EXPECT_EQ(prediction.fortuneStrikes[0].hits[0].second, firstDamage);
+	EXPECT_GT(prediction.fortuneStrikes[1].hits[0].second, firstDamage);
+	EXPECT_EQ(countMarks(prediction.effectPreview->getForUpdate(defender->unitId()).get()), 2);
+	EXPECT_EQ(countMarks(model->getForUpdate(defender->unitId()).get()), 0);
+	EXPECT_EQ(countMarks(defender), 0);
+	EXPECT_EQ(defender->getAvailableHealth(), initialHealth);
+
+	BattleExchangeVariant exchange;
+	exchange.trackAttack(prediction, model, cache);
+	auto projectedDefender = model->getForUpdate(defender->unitId());
+	EXPECT_EQ(countMarks(projectedDefender.get()), 2);
+	EXPECT_EQ(projectedDefender->getAvailableHealth(), initialHealth
+		- prediction.fortuneStrikes[0].hits[0].second - prediction.fortuneStrikes[1].hits[0].second);
+	exchange.trackAttack(model->getForUpdate(shooter->unitId()), projectedDefender,
+		true, true, cache, model, true, false);
+	EXPECT_EQ(countMarks(projectedDefender.get()), 2); // Read-only target probing.
+	exchange.trackAttack(model->getForUpdate(shooter->unitId()), projectedDefender,
+		true, true, cache, model, false, false);
+	EXPECT_EQ(countMarks(projectedDefender.get()), 3);
+	EXPECT_EQ(countMarks(defender), 0);
+}
+
+TEST_F(AttackResourceProjectionTest, RangedMarkCacheDropsPenetrationAfterExpiry)
+{
+	const auto spell = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell",
+		std::string(newHorizonsSorcery::ARCANE_BREACH_EFFECT));
+	if(!spell)
+		GTEST_SKIP() << "Requires New Horizons Arcane Breach content";
+	const auto trigger = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "script",
+		std::string(newHorizonsSorcery::ARCANE_BREACH_TRIGGER));
+	ASSERT_TRUE(trigger);
+	// Exercise mark invalidation without the independent Focus Fire cache bypass.
+	useCommands = false;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:grandElf"), BattleHex(3, 5), 10);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 1000);
+	forceMaximumDamage(shooter);
+	prepareModel();
+	auto projectedShooter = model->getForUpdate(shooter->unitId());
+	auto projectedDefender = model->getForUpdate(defender->unitId());
+	const auto baseline = model->battleExpectedLuckDamage(
+		BattleAttackInfo(projectedShooter.get(), projectedDefender.get(), 0, true));
+	Bonus mark(BonusDuration::N_TURNS, BonusType::COMBAT_EVENT_TRIGGER,
+		BonusSource::SPELL_EFFECT, 2000, BonusSourceID(SpellID(*spell)), BonusSubtypeID(ScriptID(*trigger)));
+	mark.turnsRemain = 2;
+	JsonNode parameters;
+	parameters["beneficiarySide"].Integer() = static_cast<int>(BattleSide::ATTACKER);
+	mark.parameters = std::make_shared<BonusParameters>(parameters);
+	model->addUnitBonus(defender->unitId(), {mark});
+	DamageCache markedCache;
+	markedCache.cacheDamage(projectedShooter.get(), projectedDefender.get(), model);
+	ASSERT_GT(markedCache.getDamage(projectedShooter.get(), projectedDefender.get(), model), baseline);
+	model->nextRound();
+	model->nextRound();
+	ASSERT_TRUE(projectedDefender->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER,
+		BonusSubtypeID(ScriptID(*trigger)))->empty());
+	EXPECT_EQ(markedCache.getDamage(projectedShooter.get(), projectedDefender.get(), model), baseline);
+	DamageCache childCache(&markedCache);
+	EXPECT_EQ(childCache.getDamage(projectedShooter.get(), projectedDefender.get(), model), baseline);
+	EXPECT_TRUE(defender->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER,
+		BonusSubtypeID(ScriptID(*trigger)))->empty());
 }
 
 TEST_F(AttackResourceProjectionTest, TrackingFirstOfTwoRetaliationsConsumesItWhileRetaliationRemainsPossible)

@@ -52,6 +52,13 @@ Returns the effective mastery level used for the spell's range.
 
 - returns `integer`
 
+### getArcaneBreachMarkBasisPoints
+
+Returns one Arcane Breach mark's Magical Damage Reduction penetration in basis
+points, including cast-specific Spell Power scaling and the per-mark cap.
+
+- returns `integer`
+
 ### getEffectPower
 
 Returns the effective spell power applied to the magnitude calculation.
@@ -63,6 +70,20 @@ Returns the effective spell power applied to the magnitude calculation.
 Returns the effect duration in turns.
 
 - returns `integer`
+
+### adjustEffectDuration
+
+Returns a supplied base duration adjusted by cast-specific duration mechanics.
+
+- param `baseDuration`: `integer` — Base effect duration in turns.
+
+- returns `integer`
+
+### isMetamagicFollowup
+
+Returns true when this hero spell is being cast through an additional Metamagic Spell Action.
+
+- returns `boolean`
 
 ### getEffectValue
 

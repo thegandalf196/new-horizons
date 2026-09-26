@@ -19,6 +19,7 @@ JsonNode v1Rules()
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = 1;
 	rules.Struct().erase("warcasting");
+	rules.Struct().erase("physicalDamageReductionCapPercent");
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
 		(void)name;
@@ -108,6 +109,27 @@ TEST(NewHorizonsMagicV2SchemaTest, WarcastingOptInRequiresBooleanAndAllowsAbsenc
 	rules["warcasting"].Integer() = 1;
 	EXPECT_FALSE(v2(rules));
 	rules["warcasting"] = JsonNode();
+	EXPECT_FALSE(v2(rules));
+}
+
+TEST(NewHorizonsMagicV2SchemaTest, PhysicalReductionCapRequiresIntegerPercentageAndAllowsAbsence)
+{
+	auto rules = v2Rules();
+	rules.Struct().erase("physicalDamageReductionCapPercent");
+	EXPECT_TRUE(v2(rules));
+	for(const int cap : {0, 80, 100})
+	{
+		rules["physicalDamageReductionCapPercent"].Integer() = cap;
+		EXPECT_TRUE(v2(rules));
+	}
+	for(const int cap : {-1, 101})
+	{
+		rules["physicalDamageReductionCapPercent"].Integer() = cap;
+		EXPECT_FALSE(v2(rules));
+	}
+	rules["physicalDamageReductionCapPercent"].Float() = 80.5;
+	EXPECT_FALSE(v2(rules));
+	rules["physicalDamageReductionCapPercent"] = JsonNode();
 	EXPECT_FALSE(v2(rules));
 }
 

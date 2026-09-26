@@ -13,6 +13,20 @@
 
 #include <limits>
 
+TEST(NewHorizonsSorceryTest, ArcaneBreachPreservesFractionalPenetrationAndCapsEachMark)
+{
+	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(0), 1000);
+	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(1), 1005);
+	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(20), 1100);
+	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(50), 1250);
+	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(100), 1500);
+	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(150), 1750);
+	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(199), 1995);
+	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(200), 2000);
+	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(std::numeric_limits<int32_t>::max()), 2000);
+	EXPECT_THROW(newHorizonsSorcery::arcaneBreachMarkBasisPoints(-1), std::invalid_argument);
+}
+
 TEST(NewHorizonsSorceryTest, PhantomIntegrityUsesTheCanonicalCapAndPerkMultiplier)
 {
 	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityBasisPoints(0), 2000);

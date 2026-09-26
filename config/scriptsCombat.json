@@ -144,5 +144,34 @@
 			"additionalProperties" : false
 		},
 		"description" : ""
+	},
+	"focusMagic" : {
+		"implements" : "combatEvent",
+		"script" : "combat/focusMagic",
+		"patches" : [ ],
+		"priority" : 0,
+		"schema" : {
+			"required" : ["beneficiarySide"],
+			"properties" : {
+				"beneficiarySide" : { "type" : "integer", "enum" : [0, 1], "description" : "captured beneficiary battle side (0=attacker, 1=defender)" },
+				"arcaneAcquisition" : { "type" : "boolean", "description" : "whether the creating Focus Magic cast carried eligible Arcane Acquisition provenance" }
+			},
+			"additionalProperties" : false
+		},
+		"description" : ""
+	},
+	"arcaneBreach" : {
+		"implements" : "combatEvent",
+		"script" : "combat/arcaneBreach",
+		"patches" : [ ],
+		"priority" : 0,
+		"schema" : {
+			"required" : ["beneficiarySide"],
+			"properties" : {
+				"beneficiarySide" : { "type" : "integer", "enum" : [0, 1], "description" : "captured beneficiary battle side (0=attacker, 1=defender)" }
+			},
+			"additionalProperties" : false
+		},
+		"description" : ""
 	}
 }
