@@ -7,10 +7,10 @@ That historical digest does not identify the newly supplied revision. The
 current comparison baseline is recorded in
 [the legacy migration audit](../NH_OVERRIDE_MIGRATION.md).
 
-Legacy Overrides must be audited item by item and retired only after every
-decision is incorporated, explicitly superseded, or otherwise resolved. It is
-not a permanent precedence layer. Unintegrated amendments belong exclusively
-in [Pending Changes](../NEW_HORIZONS_PENDING_CHANGES.md).
+The legacy Overrides audit is complete and the source has been retired. Its
+item-by-item dispositions and verification evidence remain in the migration
+audit. It is not a permanent precedence layer. Unintegrated amendments belong
+exclusively in [Pending Changes](../NEW_HORIZONS_PENDING_CHANGES.md).
 
 The document is the newest authority for gameplay scope and mechanics. Detailed
 per-system sections take precedence over earlier roadmap and summary tables when

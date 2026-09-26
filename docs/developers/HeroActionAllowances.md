@@ -1,87 +1,91 @@
-# Typed combat action allowances
+# Contextual combat action opportunities
 
-## Status
+## Status and authority
 
-Migration design, not a claim of implemented behavior. The accepted rules are in
-[New Horizons overrides](../NEW_HORIZONS_OVERRIDES.md). Existing immediate
-Metamagic sequence enforcement must be replaced across all consumers together.
+This document describes the engine boundary for the action rules in the
+canonical [New Horizons.docx](../design-sources/New%20Horizons.docx). The legacy
+three-counter allowance proposal was superseded during the completed
+[Overrides migration](../NH_OVERRIDE_MIGRATION.md). This is not a second gameplay
+specification and does not claim that every consumer is already migrated.
 
-## State contract
+## Core contract
 
-Keep the performed action (spell or Order) distinct from the allowance paying
-for it (Hero, Spell, or Order). Hero allowances can pay for either kind; typed
-allowances can pay only for their matching kind. Creature activations are a
-separate resource and do not consume any of these allowances.
+Each hero receives the ordinary shared Hero Action for the round. That action
+may pay for either one spell or one Order. Creature activations are separate and
+never consume the hero's action.
 
-Use one authoritative, serialized allowance ledger per battle side. Grants need
-their source, permitted action kind, expiry, and any source-specific eligibility
-restriction. This supports restricted grants such as a Light-only spell or a
-different Order without treating them as unrestricted extra Hero Actions.
-Source-specific once-per-combat budgets remain distinct from spendable grants.
+Some mechanics create a contextual opportunity to perform a particular action,
+such as Metamagic permitting another spell or a perk permitting a different
+Order. These opportunities are source-specific permissions, not a general token
+currency and not three independent Hero/Spell/Order counters. They must retain:
 
-Validation selects an eligible allowance without mutating state. Commit its
-consumption only when the action is accepted. A rejected target or canceled
-dialog spends nothing; an accepted spell that is countered still spends its
-allowance. Record the spent allowance and grant source with the accepted action
-so perks and logs do not reconstruct provenance from spell-count heuristics.
+- their source and eligibility restriction;
+- their expiry and any once-per-combat budget;
+- the provenance of the accepted action that created or consumed them;
+- authoritative serialization when they can cross a save boundary.
 
-Prefer an eligible specialized allowance before the flexible Hero allowance.
-Do not spend a restricted grant on an ineligible spell or Order. All UI and AI
-predictions must use the same eligibility query as authoritative validation.
+An opportunity never authorizes out-of-turn input. Existing side control and
+activation-window rules still apply. A restricted spell opportunity cannot issue
+an Order, and an Order opportunity cannot cast a spell.
 
-Possessing an allowance does not authorize out-of-turn input. Preserve existing
-side-control and activation-window validation; a round-long lifetime alone must
-not allow interruption of an opponent's activation. Determine any additional
-end-of-round action window explicitly rather than introducing it implicitly.
-Use expiry and stable grant identity to break ties between equally specialized
-eligible grants. Sidebar counts report unexpired grants, not whether the currently
-selected target satisfies a grant's restrictions.
+## Authoritative transitions
 
-## Metamagic migration
+Validation queries eligibility without mutating state. Consumption occurs only
+when the server accepts the complete action. Canceling a dialog, choosing an
+invalid target, or receiving a rejected request spends nothing. An accepted spell
+that is subsequently countered has still used the opportunity that paid for it.
 
-An accepted spell paid for with the round's Hero Action can grant a Spell Action.
-That grant lasts through the current round and does not force immediate use.
-Movement, attacks, Wait, and Defend must remain legal while it is available.
-The spellbook does not reopen automatically, and Wait retains its normal role.
-A spell paid for with a Spell Action is not another Hero Action for grant
-triggers. Preserve spell-sequence metadata needed by Metamagic perks separately
-from the allowance that permits the next cast.
+All consumers must use the same authoritative eligibility query: spell and Order
+controls, server validation, replicated state, AI simulation and execution,
+combat logging, and save/load. Cast histories remain histories; they must not be
+reconstructed as action budgets. Stable source identity and expiry resolve any
+case in which more than one contextual permission could pay for the same action.
 
-Combat-use charging on grant versus actual cast is not yet resolved. Preserve
-the existing actual-cast charging behavior until that choice is confirmed.
-Outstanding grants must reserve their source's remaining combat capacity so
-deferred charging cannot create more grants than the source permits.
-Grand Metamagic and source-specific immediate grants require an explicit audit;
-do not silently generalize the round-long override to every perk's timing.
+Distinct active Orders coexist for their normal durations. Issuing a second
+different Order does not replace the first, and no grant may create a recursive
+extra-action loop unless a canonical rule explicitly says so.
 
-## Presentation and consumers
+## Metamagic
 
-The hero sidebar displays separate remaining Hero, Order, and Spell Action
-counts below Morale/Luck. A flexible allowance is counted once, under Hero.
-Expose counts through the read-only battle callback, not client-maintained
-counters. Describe restricted grants and expiry in help text.
+When the ordinary Hero Action is used to cast a spell, Metamagic may open one
+additional Spell opportunity according to its current rank, sequence budget, and
+perk restrictions. It lasts until the end of the current round, does not force an
+immediate follow-up, cannot issue an Order, and cannot itself trigger another
+ordinary Metamagic grant. Creature movement, attacks, Wait, and Defend remain
+legal while it is available; the spellbook does not reopen automatically.
 
-Server validation, replicated state application, spell and Order availability,
-AI hypothetical battle state, action selection, combat logs, and save/load must
-all use the shared contract. Cast histories remain histories, not substitute
-action budgets. Warcasting must distinguish triggers requiring a Hero Action
-from effects consumed by a subsequent spell or Order.
-The same provenance audit must cover Battle Meditation, Time Stop expiry,
-Counterspell wards, and Metamagic sequence perks. An old saved pending Metamagic
-sequence must migrate to its corresponding Spell allowance and retain its
-sequence metadata; both expire at the appropriate round boundary.
+The sequence use is charged when the additional spell is actually accepted, not
+merely when the opportunity becomes available. Formula Reserve, Spell Buffer,
+Grand Metamagic, and other source-specific behavior remain separate canonical
+rules; do not generalize one source's timing or eligibility to all opportunities.
+Spell-sequence metadata must remain distinct from the permission to cast.
+
+## Presentation
+
+The hero battle panel presents the ordinary Hero Action and any currently usable
+contextual spell or Order opportunity in the established leather, red, and gold
+style. It must not imply that every hero owns three refillable counters. Generic
+provider-driven Skill status appears beneath the action state, so Metamagic points
+and future faction resources can share the same UI without a hardcoded
+Metamagic-only field.
+
+Help text identifies the source, eligible action, remaining uses where relevant,
+and expiry. Controls remain the ordinary spellbook and Order controls rather than
+inventing a replacement Wait button or automatically opening a modal. The compact
+Overcharge/casting modal is centered, but its placement does not change action
+semantics.
 
 ## Required validation
 
 - A spell and an Order compete for the single ordinary Hero Action.
-- A Spell Action cannot issue an Order; an Order Action cannot cast a spell.
-- Intervening creature actions leave a Metamagic Spell Action available.
-- Expiry and round refresh occur once and survive save/load correctly.
-- Canceled/rejected actions spend nothing; accepted countered spells do spend.
-- Specialized grants do not create recursive Hero Action triggers.
-- AI simulation and execution spend identical allowances and cannot loop on
-  unavailable casts or Orders.
-- Sidebar counts and logs reflect accepted authoritative transitions.
-- Old saves migrate explicitly; exporting unrepresentable state fails visibly.
-- Each existing active grant and each newly implemented perk has a regression
-  covering its restrictions, budget, expiry, and interaction with other grants.
+- A contextual Spell opportunity cannot issue an Order, and vice versa.
+- Intervening creature actions leave an unexpired Metamagic opportunity usable.
+- Expiry, round refresh, once-per-combat use, and save/load occur exactly once.
+- Canceled or rejected actions spend nothing; accepted countered spells do spend.
+- Additional casts do not recursively trigger ordinary Metamagic grants.
+- Distinct Orders can coexist for their normal independent durations.
+- AI projection and execution agree with authoritative eligibility and cannot loop.
+- UI status and logs reflect accepted transitions and their actual source.
+- Old saves migrate explicitly; unrepresentable active state fails visibly.
+- Warcasting, Battle Meditation, Time Stop, Counterspell, and every implemented
+  source-specific opportunity have focused provenance and expiry regressions.

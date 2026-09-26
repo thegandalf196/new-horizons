@@ -5,10 +5,10 @@
 Read [NH_VERSION_1_0_SCOPE.md](NH_VERSION_1_0_SCOPE.md) for the user-confirmed
 release boundary: primary attributes, secondary skills with associated abilities
 (replacing old masteries), six magic schools, Core/Elite/Champion creature
-organization, Commands and Castellans/governors. The single-expeditionary-Hero
-restriction is NOT implicitly included. Older conflicting passages below remain
-historical pending reconciled implementation/migration; do not use them to undo
-this direction or infer unspecified castellan/Siege rules.
+organization, and Commands. Governors/Castellans and Caravans remain future work.
+The single-expeditionary-Hero restriction is NOT implicitly included. Older
+conflicting passages below remain historical; do not use them to undo this
+direction or infer unspecified castellan/Siege rules.
 
 ## Canonical gameplay source
 
@@ -18,14 +18,11 @@ authority for gameplay scope and mechanics. When its roadmap or summary tables
 conflict with a later detailed system section, the detailed section controls.
 The DOCX is the sole canonical design specification.
 [Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md) contains only temporary
-amendments awaiting integration. Legacy
-[Overrides](NEW_HORIZONS_OVERRIDES.md) is a migration source, not a permanent
-precedence layer. Audit each entry through
-[NH_OVERRIDE_MIGRATION.md](NH_OVERRIDE_MIGRATION.md): preserve missing intended
-decisions by integrating them into the appropriate canonical section, flag
-conflicts for review, and retire Overrides only after every entry is resolved.
-Do not silently choose between conflicting perk progression rules during that
-transition. Governors and Caravans remain future work; the detailed Sorcery
+amendments awaiting integration. The item-by-item legacy Overrides transition is
+complete; its dispositions and verification evidence are retained in
+[NH_OVERRIDE_MIGRATION.md](NH_OVERRIDE_MIGRATION.md), and the retired Overrides
+file is not a runtime or precedence layer. Governors and Caravans remain future
+work; the detailed Sorcery
 roster's Magic Arrow with Overcharge controls over the earlier Magic Missile
 summary entry; and the superseded Doctrine experiment is not part of New
 Horizons. Orders remain in scope. Existing Doctrine code must not be exposed as
@@ -65,12 +62,16 @@ the prior architectural experiment is closed. Deferred smoothness research is in
 - Six magic schools: Light, Nature, Sorcery, Havoc, Shadow, Chaos. Towns receive
   distinct major/minor identities. Existing and new spells need real effects,
   AI valuation/targeting, costs, school UI and descriptions.
-- Deterministic primary growth totaling ten points per level, with each hero
-  class granting its fixed four-attribute vector on every level. There are no
-  skill-based extra rolls or level-10 transition. The accepted starting/growth
-  rule is `Attribute(L) = growth * (L + 4)` before other bonuses; the older
-  20/15/10/5 priority proposal is superseded. Knowledge directly supplies base
-  mana; all relevant formulas/tooltips must use the new scale coherently.
+- Deterministic base primary growth totaling twenty points per level, with each
+  hero class granting its fixed four-attribute vector on every level and starting
+  attributes equal to five times that vector. The base rule is
+  `Attribute(L) = growth * (L + 4)`, before bonuses. In addition, Offense and
+  Archery each independently roll for +1 Attack, Armorer for +1 Defense,
+  Spellcraft for +1 Spell Power, and Wisdom for +1 Knowledge, at 10/20/30%
+  for Basic/Advanced/Expert. There is no level-10 transition. This replaces the
+  older ten-point/no-extra-roll contract; the user retained the new DOCX model
+  during migration review. Knowledge directly supplies base mana; all relevant
+  formulas/tooltips must use the new scale coherently.
 - Secondary attributes include mana, leadership capacity, movement, morale, luck
   and siege capability. Skills modify capabilities; leadership capacity and siege
   are not additional automatically rolled primary stats.
