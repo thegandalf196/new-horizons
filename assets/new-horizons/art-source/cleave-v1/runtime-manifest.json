@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_cleave"
+  ],
+  "files": {
+    "source/NH_perk_cleave_normal.png": "32e92464f9d834bcbca5d3c87f5fda16d61ccf95d37fe85fa69ff94d9f619d0a",
+    "Mods/NH_perk_cleave_normal.png": "32e92464f9d834bcbca5d3c87f5fda16d61ccf95d37fe85fa69ff94d9f619d0a",
+    "source/NH_perk_cleave_pressed.png": "58197a8d24e28f0d4950cecc8abdb9fee32961ec83826909600d21e8fe28c5e3",
+    "Mods/NH_perk_cleave_pressed.png": "58197a8d24e28f0d4950cecc8abdb9fee32961ec83826909600d21e8fe28c5e3",
+    "source/NH_perk_cleave_disabled.png": "f32d26ccfae0b76a8ba252adffd74e432275e96ea34b2a53aa8294562b338796",
+    "Mods/NH_perk_cleave_disabled.png": "f32d26ccfae0b76a8ba252adffd74e432275e96ea34b2a53aa8294562b338796",
+    "source/NH_perk_cleave_highlighted.png": "c7d24629e945c4bc72cbbaa21296016fe3670a4f5a5b92377e45e5ff73ff84ba",
+    "Mods/NH_perk_cleave_highlighted.png": "c7d24629e945c4bc72cbbaa21296016fe3670a4f5a5b92377e45e5ff73ff84ba",
+    "source/NH_perk_cleave.json": "d91e7cfc0836181072c1ab2bcc422de377633b856d307052522e776431805932",
+    "Mods/NH_perk_cleave.json": "d91e7cfc0836181072c1ab2bcc422de377633b856d307052522e776431805932"
+  }
+}

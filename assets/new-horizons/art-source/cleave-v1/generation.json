@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-27",
+  "generator": "OpenAI built-in image generator via homm3-art skill",
+  "method": "Original generated raster artwork for the canonical Cleave perk; no reference image pixels were used. The retained master is reduced with homm3-art export_art.py; runtime states use brightness/color-only transforms.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "style_guide": "homm3-art/references/style-guide.md (secondary-skill icons)",
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "prompt_file": "prompt-cleave.txt",
+  "assets": [
+    {
+      "id": "new-horizons:offense.cleave",
+      "name": "Cleave",
+      "key": "NH_perk_cleave",
+      "master": "exports/cleave/master.png",
+      "generated_output": "generated_images/01a0e169-3c7b-7302-8db1-5c38051cc3bd/exec-005d5213-d367-4728-991e-5a458ada6a8d.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "8bb83cb604ec5371c2fcd729715f60f5d8d80122d76699af8c2e81aa6b9abdf7",
+      "style_reference": null
+    }
+  ]
+}

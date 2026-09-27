@@ -1,0 +1,13 @@
+Use case: stylized-concept
+Asset type: square secondary-skill perk icon for a Heroes III-inspired fantasy game
+Primary request: Create an original, detailed high-resolution master painting for the Offense perk Cleave. Clearly communicate one automatic secondary melee strike by showing a heavy notched battle axe completing a sweeping follow-through from one shattered shield toward a second adjacent shield.
+Scene/backdrop: Compact miniature fantasy still life on a dark, subtly textured oxblood and umber ground.
+Subject: One substantial iron battle axe in a forceful diagonal follow-through; its broad, visibly notched blade has just smashed the first battered shield, while the same sweep is visibly continuing toward a second shield close beside it. Both shields must be separately identifiable; the first is split and splintered, the second intact but being struck or immediately about to be struck. Keep the axe, broken shield fragments, and second shield tightly grouped into one unmistakable action.
+Style/medium: Late-1990s Western PC fantasy illustration, a richly modeled miniature still-life painting with pre-rendered volume and painterly fantasy-book character. Credible steel, wood, leather, and aged brass; clearly distinct materials, softened modeled contours, no cartoon outlines.
+Composition/framing: Close square composition, objects fill most of the canvas with a narrow safe inset and no clipping. Add a narrow, physically modeled warm brown leather surround with restrained aged-brass edging as an integral object frame; do not let it overpower or obscure the action. The axe head and both shield silhouettes must remain large and legible when reduced to 44x44 and 32x32.
+Lighting/mood: Theatrical chiaroscuro, strong warm hero-side light on axe steel and the broken first shield, deep umber shadow on the opposite side, a few concentrated bright metal highlights. Suggest motion through the axe pose and a restrained sweep of splinters, without obscuring the objects.
+Color palette: Aged steel gray, dark timber, muted oxblood leather, warm brass, subdued earth colors; saturated but never neon.
+Materials/textures: Heavy worn steel blade with a few large readable edge notches, thick dark haft, splintered shield wood, worn leather shield bosses and straps, softly reflective aged brass frame.
+Text (verbatim): none
+Constraints: Original artwork; square high-resolution painted master; preserve strong major value shapes for small-size reduction.
+Avoid: letters, runes, words, numbers, watermark, extra weapons, extra shields, people, hands, UI chrome, broad empty margins, neon glow, particles, plastic gloss, vector shapes, cartoon styling, deliberate pixel art, pixel clusters, dithering, black outlines.
