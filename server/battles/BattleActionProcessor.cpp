@@ -409,6 +409,18 @@ void BattleActionProcessor::publishHeroOrderState(const CBattleInfoCallback & ba
 
 bool BattleActionProcessor::doEmptyAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
+	if(const auto * stack = battle.battleGetStackByID(ba.stackNumber, false);
+		stack && stack->pursuitMovementRemaining > 0)
+	{
+		setPursuitMovementRemaining(battle, stack, 0);
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("%s forgo Pursuit movement.");
+		stack->addNameReplacement(line, stack->getCount());
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+	}
 	return true;
 }
 
@@ -620,6 +632,7 @@ bool BattleActionProcessor::doWalkAction(const CBattleInfoCallback & battle, con
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
 	battle::Target target = ba.getTarget(&battle);
+	const bool pursuitContinuation = stack && stack->pursuitMovementRemaining > 0;
 
 	if (!canStackAct(battle, stack))
 		return false;
@@ -637,6 +650,19 @@ bool BattleActionProcessor::doWalkAction(const CBattleInfoCallback & battle, con
 	{
 		gameHandler->complain("Stack failed movement!");
 		return false;
+	}
+	if(pursuitContinuation)
+	{
+		setPursuitMovementRemaining(battle, stack, 0);
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("%s use Pursuit to move ");
+		stack->addNameReplacement(line, stack->getCount());
+		line.appendNumber(movementResult.distance);
+		line.appendRawString(movementResult.distance == 1 ? " hex." : " hexes.");
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
 	}
 	processBattleEventTriggers(battle, CombatEventType::AFTER_MOVE, stack, nullptr);
 	return true;
@@ -736,7 +762,8 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 	return true;
 }
 
-bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba)
+bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba,
+	bool allowPursuitContinuation)
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
 	const auto perfectMomentSide = ba.perfectMoment ? battle.playerToSide(battle.battleGetOwner(stack)) : BattleSide::NONE;
@@ -744,6 +771,11 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 
 	if (!canStackAct(battle, stack))
 		return false;
+	if(stack->pursuitMovementRemaining > 0)
+	{
+		gameHandler->complain("Pursuit allows movement only; it does not grant another attack");
+		return false;
+	}
 
 	if(target.size() < 2)
 	{
@@ -764,6 +796,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	BattleHex startingPos = stack->getPosition();
 	int beforeAttackSpeed = stack->getMovementRange(0);
 	const auto movementResult = moveStack(battle, ba.stackNumber, attackPos);
+	int movementSpent = movementResult.distance;
 
 	logGlobal->trace("%s will attack %s", stack->nodeName(), destinationStack->nodeName());
 
@@ -811,6 +844,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	}
 
 	bool ferocityApplied = false;
+	bool destroyedEnemy = false;
 	int32_t defenderInitialQuantity = destinationStack->getCount();
 
 	BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);	//they need to be gathered here since bonuses with this duration added during attack (like blind) should not be removed
@@ -843,7 +877,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			// Pass the originally selected Ward to makeAttack so Protect can
 			// consume its first interception atomically; attackTarget is only the
 			// resolved recipient used for local retaliation checks below.
-			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE});
+			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, &destroyedEnemy);
 
 			if(!ferocityApplied && stack->hasBonusOfType(BonusType::FEROCITY))
 			{
@@ -886,7 +920,11 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		std::pair<BattleHexArray, int> path = battle.getPath(stack->getPosition(), startingPos, stack);
 		size_t maxReachbleIndex = std::max(0, beforeAttackSpeed - afterAttackSpeed);
 		if(maxReachbleIndex < path.first.size())
-			moveStack(battle, ba.stackNumber, path.first[maxReachbleIndex]);
+		{
+			const auto returnResult = moveStack(battle, ba.stackNumber, path.first[maxReachbleIndex]);
+			if(!returnResult.invalidRequest)
+				movementSpent += returnResult.distance;
+		}
 	}
 
 	removeBonuses(battle, stack, attackerBonusesToRemove);
@@ -897,7 +935,43 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	if(movementResult.distance == 0)
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
 
+	const auto * resolvedAttacker = battle.battleGetStackByID(ba.stackNumber, false);
+	const auto * ownerHero = resolvedAttacker ? battle.battleGetOwnerHero(resolvedAttacker) : nullptr;
+	const int remainingMovement = std::max(0, beforeAttackSpeed - movementSpent);
+	if(allowPursuitContinuation && destroyedEnemy && remainingMovement > 0
+		&& resolvedAttacker && resolvedAttacker->alive()
+		&& resolvedAttacker->canMove() && !resolvedAttacker->isTimeStopped() && ownerHero
+		&& ownerHero->hasActivePerk("new-horizons:offense", "new-horizons:offense.pursuit"))
+	{
+		setPursuitMovementRemaining(battle, resolvedAttacker, remainingMovement);
+
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("%s trigger Pursuit and may move up to ");
+		resolvedAttacker->addNameReplacement(line, resolvedAttacker->getCount());
+		line.appendNumber(remainingMovement);
+		line.appendRawString(remainingMovement == 1 ? " hex." : " hexes.");
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+	}
+
 	return true;
+}
+
+void BattleActionProcessor::setPursuitMovementRemaining(const CBattleInfoCallback & battle,
+	const CStack * stack, int32_t remaining) const
+{
+	if(!stack)
+		return;
+	auto state = stack->acquireState();
+	state->pursuitMovementRemaining = std::max(0, remaining);
+	BattleUnitsChanged changed;
+	changed.battleID = battle.getBattle()->getBattleID();
+	UnitChanges update(stack->unitId(), UnitChanges::EOperation::UPDATE);
+	update.data = state->save();
+	changed.changedStacks.push_back(std::move(update));
+	gameHandler->sendAndApply(changed);
 }
 
 void BattleActionProcessor::removeBonuses(const CBattleInfoCallback & battle, const battle::Unit * stack, BonusList bonuses)
@@ -1239,7 +1313,8 @@ bool BattleActionProcessor::canStackAct(const CBattleInfoCallback & battle, cons
 	return true;
 }
 
-bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba)
+bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba,
+	bool allowPursuitContinuation)
 {
 	switch(ba.actionType)
 	{
@@ -1263,7 +1338,7 @@ bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & bat
 		case EActionType::DEFEND:
 			return doDefendAction(battle, ba);
 		case EActionType::WALK_AND_ATTACK:
-			return doAttackAction(battle, ba);
+			return doAttackAction(battle, ba, allowPursuitContinuation);
 		case EActionType::WALK_AND_CAST:
 			return doWalkAndSpellcastAction(battle, ba);
 		case EActionType::SHOOT:
@@ -1600,7 +1675,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		gameHandler->sendAndApply(startAction);
 	}
 
-	bool result = dispatchBattleAction(battle, effectiveAction);
+	bool result = dispatchBattleAction(battle, effectiveAction, masterGateActivationContinuationOut != nullptr);
 	if(masterGateActivationContinuationOut && result && masterGateWasUnused)
 	{
 		const auto * updatedBattle = gameHandler->gs->getBattle(battle.getBattle()->getBattleID());
@@ -1615,11 +1690,18 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 
 	if (!ba.isBattleEndAction())
 	{
+		const auto * updatedBattle = gameHandler->gs->getBattle(battle.getBattle()->getBattleID());
+		const auto * updatedStack = updatedBattle && effectiveAction.stackNumber >= 0
+			? updatedBattle->battleGetStackByID(effectiveAction.stackNumber, false) : nullptr;
+		const bool pursuitContinuation = masterGateActivationContinuationOut && result
+			&& effectiveAction.actionType == EActionType::WALK_AND_ATTACK
+			&& updatedStack && updatedStack->pursuitMovementRemaining > 0;
 		EndAction endAction;
 		endAction.battleID = battle.getBattle()->getBattleID();
 		endAction.endsFortuneActivation = result && effectiveAction.isUnitAction() && !battle.battleTacticDist()
 			&& stack && !stack->isTimeStopped() && !effectiveAction.timeStopHeroActionPass
 			&& !(masterGateActivationContinuationOut && *masterGateActivationContinuationOut)
+			&& !pursuitContinuation
 			&& !(effectiveAction.actionType == EActionType::MONSTER_SPELL && effectiveAction.spell.hasValue()
 				&& effectiveAction.spell.toSpell()->canCastWithoutSkip());
 		gameHandler->sendAndApply(endAction);
@@ -1688,6 +1770,8 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	bool movementSuccess = true;
 
 	int unitMovementRange = currentUnit->getMovementRange(0);
+	if(currentUnit->pursuitMovementRemaining > 0)
+		unitMovementRange = std::min(unitMovementRange, currentUnit->pursuitMovementRemaining);
 
 	if (battle.battleGetTacticDist() > 0 && unitMovementRange > 0)
 		unitMovementRange = GameConstants::BFIELD_SIZE;
@@ -2044,7 +2128,8 @@ void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleA
 	}
 }
 
-void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack)
+void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker,
+	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut)
 {
 	const int bulwarkReflectionPercent = defender && !attack.ranged && defender->defended()
 		? newHorizonsBulwark::reflectionPercent(newHorizonsBulwark::rank(battle.battleGetOwnerHero(defender)))
@@ -2310,6 +2395,18 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				continue;
 			orderDamageLogLines.push_back(orderDamageLogLine(battle, attacker, target, *hit,
 				cause.attacker, cause.defender));
+		}
+	}
+	if(destroyedEnemyOut)
+	{
+		for(const auto & hit : bat.bsa)
+		{
+			const auto * victim = battle.battleGetUnitByID(hit.stackAttacked);
+			if(victim && hit.killed() && !hit.willRebirth() && battle.battleMatchOwner(attacker, victim))
+			{
+				*destroyedEnemyOut = true;
+				break;
+			}
 		}
 	}
 	gameHandler->sendAndApply(bat);
@@ -2697,6 +2794,25 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			if(effectiveActionOut)
 				*effectiveActionOut = pass;
 			return makeBattleActionImpl(battle, pass, masterGateActivationContinuationOut);
+		}
+
+		if(active->pursuitMovementRemaining > 0)
+		{
+			if(ba.actionType == EActionType::DEFEND || ba.actionType == EActionType::NO_ACTION)
+			{
+				// Defend is the existing visible close-turn control. During Pursuit it
+				// declines the optional movement without granting a defensive stance.
+				BattleAction pass = BattleAction::makeNoAction(active);
+				pass.side = controllingSide;
+				if(effectiveActionOut)
+					*effectiveActionOut = pass;
+				return makeBattleActionImpl(battle, pass, masterGateActivationContinuationOut);
+			}
+			if(ba.isUnitAction() && ba.actionType != EActionType::WALK)
+			{
+				gameHandler->complain("Pursuit continuation permits only movement or ending the creature activation");
+				return false;
+			}
 		}
 	}
 

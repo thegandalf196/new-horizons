@@ -1182,7 +1182,7 @@ bool BattleFlowProcessor::rollGoodMorale(const CBattleInfoCallback & battle, con
 }
 
 void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const BattleAction &ba,
-	bool masterGateActivationContinuation)
+	bool masterGateActivationContinuation, bool pursuitActivationContinuation)
 {
 	const auto * actedStack = battle.battleGetStackByID(ba.stackNumber, false);
 	const auto * activeStack = battle.battleActiveUnit();
@@ -1207,6 +1207,16 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	{
 		if(actedStack && activeStack == actedStack && actedStack->alive() && !actedStack->isTimeStopped())
 			setActiveStack(battle, actedStack, BattleUnitTurnReason::MASTER_GATE_CONTINUATION);
+		else
+			activateNextStack(battle);
+		return;
+	}
+
+	if(pursuitActivationContinuation)
+	{
+		if(actedStack && activeStack == actedStack && actedStack->alive()
+			&& !actedStack->isTimeStopped() && actedStack->pursuitMovementRemaining > 0)
+			setActiveStack(battle, actedStack, BattleUnitTurnReason::PURSUIT_CONTINUATION);
 		else
 			activateNextStack(battle);
 		return;

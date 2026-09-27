@@ -150,6 +150,10 @@ public:
 	bool ghost;
 	bool ghostPending;
 	bool movedThisRound;
+	/// Movement still available during an Offense: Pursuit continuation.
+	/// A positive value means this unit is in the movement-only tail of its
+	/// current activation; it must never grant another attack.
+	int32_t pursuitMovementRemaining;
 	bool timeStopTurnConsumedFlag;
 	bool summoned;
 	bool natureSummoned;

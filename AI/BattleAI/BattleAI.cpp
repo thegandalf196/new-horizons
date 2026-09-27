@@ -226,6 +226,36 @@ std::optional<BattleAction> chooseDemonicGate(const std::shared_ptr<CBattleInfoC
 	return result;
 }
 
+BattleAction CBattleAI::choosePursuitMovement(const std::shared_ptr<CBattleInfoCallback> & battle,
+	const CStack * source)
+{
+	const auto reachable = battle->battleGetAvailableHexes(source, false);
+	const auto enemies = battle->battleAliveUnits(CBattleInfoEssentials::otherSide(source->unitSide()));
+	BattleHex best = BattleHex::INVALID;
+	int bestEnemyDistance = std::numeric_limits<int>::max();
+	int bestTravelDistance = -1;
+	const auto distances = battle->battleGetDistances(source, source->getPosition());
+	for(const auto candidate : reachable)
+	{
+		if(candidate == source->getPosition())
+			continue;
+		int enemyDistance = std::numeric_limits<int>::max();
+		for(const auto * enemy : enemies)
+			for(const auto occupied : enemy->getHexes())
+				enemyDistance = std::min(enemyDistance,
+					static_cast<int>(BattleHex::getDistance(candidate, occupied)));
+		const int travelDistance = distances[candidate.toInt()];
+		if(enemyDistance < bestEnemyDistance
+			|| (enemyDistance == bestEnemyDistance && travelDistance > bestTravelDistance))
+		{
+			best = candidate;
+			bestEnemyDistance = enemyDistance;
+			bestTravelDistance = travelDistance;
+		}
+	}
+	return best.isAvailable() ? BattleAction::makeMove(source, best) : BattleAction::makeDefend(source);
+}
+
 void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 {
 	LOG_TRACE_PARAMS(logAi, "stack: %s", stack->nodeName());
@@ -267,6 +297,24 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		// that controller, just like the available Hero Action above.
 		pass.side = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
 		cb->battleMakeUnitAction(battleID, pass);
+		return;
+	}
+
+	if(stack->pursuitMovementRemaining > 0)
+	{
+		const auto battleCallback = cb->getBattle(battleID);
+		if(battleCallback->battleGetMyHero()
+			&& (autobattlePreferences.enableSpellsUsage || battleCallback->battleUsesHeroCommands()))
+		{
+			BattleEvaluator evaluator(
+				env, cb, stack, playerID, battleID, side,
+				getStrengthRatio(battleCallback, side),
+				getSimulationTurnsCount(env->game()->getStartInfo()));
+			if(evaluator.canCastSpell()
+				&& evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage))
+				return;
+		}
+		cb->battleMakeUnitAction(battleID, choosePursuitMovement(battleCallback, stack));
 		return;
 	}
 

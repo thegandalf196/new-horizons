@@ -63,7 +63,7 @@
 					"requires": "basic",
 					"description": "After destroying an enemy stack in melee, the attacker's Creature Activation remains open for movement using its unused movement. It gains no additional attack.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After destroying an enemy stack in melee, the attacker's Creature Activation remains open for movement using its unused movement. It gains no additional attack."
 					}
 				},

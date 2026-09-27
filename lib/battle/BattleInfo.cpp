@@ -983,7 +983,8 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
 	activeStack = unitId;
 	if(reason == BattleUnitTurnReason::ACTION_REJECTED
-		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION)
+		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
+		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION)
 		return;
 
 	CStack * st = getStack(activeStack);
@@ -1018,6 +1019,8 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 			&& orderState->secondWindActive
 			&& orderState->primaryTargetUnitId == unitId;
 	}
+	if(newActivation)
+		st->pursuitMovementRemaining = 0;
 	if(newActivation && activationSerial < std::numeric_limits<si32>::max())
 		++activationSerial;
 
@@ -1029,6 +1032,14 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	}
 
 	st->afterGetsTurn(reason);
+}
+
+bool BattleInfo::hasPursuitState() const
+{
+	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
+	{
+		return stack && stack->pursuitMovementRemaining > 0;
+	});
 }
 
 void BattleInfo::addUnit(uint32_t id, const JsonNode & data)

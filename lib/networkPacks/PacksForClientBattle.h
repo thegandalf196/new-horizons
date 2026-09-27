@@ -44,6 +44,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE)
 			&& info->hasChainGateState())
 			throw std::runtime_error("Cannot discard Chain Gate battle start state");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT)
+			&& info->hasPursuitState())
+			throw std::runtime_error("Cannot discard Pursuit battle start state");
 		h & battleID;
 		h & info;
 		assert(battleID != BattleID::NONE);
@@ -121,6 +124,9 @@ struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT))
+			throw std::runtime_error("Can not serialize a Pursuit continuation to an older format");
 		h & battleID;
 		h & stack;
 		h & reason;

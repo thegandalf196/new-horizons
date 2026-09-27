@@ -74,6 +74,10 @@ public:
 	void print(const std::string &text) const;
 	BattleAction useCatapult(const BattleID & battleID, const CStack *stack);
 	BattleAction useHealingTent(const BattleID & battleID, const CStack *stack);
+	/// Chooses the movement-only tail of a Pursuit activation. Exposed for the
+	/// deterministic AI regression; callers must submit it through the server.
+	static BattleAction choosePursuitMovement(const std::shared_ptr<CBattleInfoCallback> & battle,
+		const CStack * source);
 
 	void battleStart(const BattleID & battleID, const CCreatureSet * army1, const CCreatureSet * army2, int3 tile, const CGHeroInstance * hero1, const CGHeroInstance * hero2, BattleSide side, bool replayAllowed) override;
 	void actionFinished(const BattleID & battleID, const BattleAction & action) override;

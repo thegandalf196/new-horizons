@@ -371,10 +371,17 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 		}
 		return false;
 	}
-	if(!masterGateActivationContinuation)
+	const auto * updatedBattle = gameHandler->gameState().getBattle(battleID);
+	const auto * updatedStack = updatedBattle && effectiveAction.stackNumber >= 0
+		? updatedBattle->battleGetStackByID(effectiveAction.stackNumber, false) : nullptr;
+	const bool pursuitActivationContinuation = result
+		&& effectiveAction.actionType == EActionType::WALK_AND_ATTACK
+		&& updatedStack && updatedStack->pursuitMovementRemaining > 0;
+	if(!masterGateActivationContinuation && !pursuitActivationContinuation)
 		expireStackActivationBonuses(battleID, effectiveAction);
 	if (gameHandler->gameState().getBattle(battleID) != nullptr && !resultProcessor->battleIsEnding(*battle))
-		flowProcessor->onActionMade(*battle, effectiveAction, masterGateActivationContinuation);
+		flowProcessor->onActionMade(*battle, effectiveAction, masterGateActivationContinuation,
+			pursuitActivationContinuation);
 	return result;
 }
 

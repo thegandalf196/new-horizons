@@ -97,7 +97,9 @@ class BattleActionProcessor : boost::noncopyable
 	};
 
 	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest); //returned value - travelled distance
-	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack);
+	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender,
+		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr);
+	void setPursuitMovementRemaining(const CBattleInfoCallback & battle, const CStack * stack, int32_t remaining) const;
 
 	/// Rolls what is decided before any damage: luck, and the abilities that double it by chance.
 	void rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const;
@@ -136,14 +138,14 @@ class BattleActionProcessor : boost::noncopyable
 	bool doWalkAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doWaitAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doDefendAction(const CBattleInfoCallback & battle, const BattleAction & ba);
-	bool doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba);
+	bool doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
 	bool doWalkAndSpellcastAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doCatapultAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doUnitSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doHealAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 
-	bool dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba);
+	bool dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
 	bool makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction & ba,
 		bool * masterGateActivationContinuationOut = nullptr);
 	void removeBonuses(const CBattleInfoCallback & battle, const battle::Unit * stack, BonusList bonuses);

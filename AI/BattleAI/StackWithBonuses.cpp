@@ -1001,7 +1001,8 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	activeUnitId = unitId;
 	auto unit = getForUpdate(unitId);
 	if(reason == BattleUnitTurnReason::ACTION_REJECTED
-		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION)
+		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
+		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION)
 		return;
 	if(battleBeginsActivation(unit.get(), reason))
 	{
@@ -1009,6 +1010,18 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		for(auto owner : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			fortuneStates.at(owner).beginActivation(unitId, side == owner);
 	}
+	bool newActivation = reason != BattleUnitTurnReason::HERO_SPELLCAST
+		&& reason != BattleUnitTurnReason::UNIT_SPELLCAST;
+	if(reason == BattleUnitTurnReason::HERO_COMMAND)
+	{
+		const auto orderState = getHeroOrderState(unit->unitSide());
+		newActivation = orderState
+			&& orderState->command == HeroCommand::SECOND_WIND
+			&& orderState->secondWindActive
+			&& orderState->primaryTargetUnitId == unitId;
+	}
+	if(newActivation)
+		unit->pursuitMovementRemaining = 0;
 
 	if(!unit->isTimeStopped() && reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
 		unit->removeUnitBonus(Bonus::UntilGetsTurn);

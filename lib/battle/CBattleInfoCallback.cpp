@@ -388,6 +388,7 @@ bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, Batt
 {
 	if(!unit || unit->isTimeStopped() || reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
+		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
 		|| reason == BattleUnitTurnReason::HERO_SPELLCAST || reason == BattleUnitTurnReason::UNIT_SPELLCAST)
 		return false;
 	if(reason != BattleUnitTurnReason::HERO_COMMAND)
@@ -906,6 +907,15 @@ std::vector<PossiblePlayerBattleAction> CBattleInfoCallback::getClientActionsFor
 	}
 	else
 	{
+		// Pursuit is the movement-only tail of an activation. Keep information
+		// actions client-side, but never advertise another attack, creature spell,
+		// Gate, Wait, or other creature action while its allowance is pending.
+		if(stack->pursuitMovementRemaining > 0)
+		{
+			if(stack->canMove())
+				allowedActionList.push_back(PossiblePlayerBattleAction::MOVE_STACK);
+			return allowedActionList;
+		}
 		if(stack->canCast()) //TODO: check for battlefield effects that prevent casting?
 		{
 			if(stack->hasBonusOfType(BonusType::SPELLCASTER))
@@ -1292,6 +1302,9 @@ BattleHexArray CBattleInfoCallback::battleGetAvailableHexes(const ReachabilityIn
 		return ret;
 
 	auto unitSpeed = unit->getMovementRange(0);
+	if(const auto * state = dynamic_cast<const CUnitState *>(unit);
+		state && state->pursuitMovementRemaining > 0)
+		unitSpeed = std::min<int32_t>(unitSpeed, state->pursuitMovementRemaining);
 
 	const bool tacticsPhase = battleTacticDist() && battleGetTacticsSide() == unit->unitSide();
 
