@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_no_quarter"
+  ],
+  "files": {
+    "source/NH_perk_no_quarter_normal.png": "6c53089ccbadee3af47168be287deaf8eb389b9f6f1c2c92af2420d342290c77",
+    "Mods/NH_perk_no_quarter_normal.png": "6c53089ccbadee3af47168be287deaf8eb389b9f6f1c2c92af2420d342290c77",
+    "source/NH_perk_no_quarter_pressed.png": "b874cde4d9c4608b0fe7364dee6630bbfc3efc22cf21ee25457a6ccfd0ff72f7",
+    "Mods/NH_perk_no_quarter_pressed.png": "b874cde4d9c4608b0fe7364dee6630bbfc3efc22cf21ee25457a6ccfd0ff72f7",
+    "source/NH_perk_no_quarter_disabled.png": "181bedb92a22da8dee71422873df454d7bd1d8477e3b3b12e49dd9e7f46f0e82",
+    "Mods/NH_perk_no_quarter_disabled.png": "181bedb92a22da8dee71422873df454d7bd1d8477e3b3b12e49dd9e7f46f0e82",
+    "source/NH_perk_no_quarter_highlighted.png": "11cac241ce4cfcd770ae4146a6167ccb464517fa51f89f3a2a6a5fccea3fca01",
+    "Mods/NH_perk_no_quarter_highlighted.png": "11cac241ce4cfcd770ae4146a6167ccb464517fa51f89f3a2a6a5fccea3fca01",
+    "source/NH_perk_no_quarter.json": "489286e1d4b0ff946dc4f481ee23d468be6a655832a34f90952ca9fed4de5635",
+    "Mods/NH_perk_no_quarter.json": "489286e1d4b0ff946dc4f481ee23d468be6a655832a34f90952ca9fed4de5635"
+  }
+}

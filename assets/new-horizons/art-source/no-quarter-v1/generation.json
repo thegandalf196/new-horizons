@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-27",
+  "generator": "OpenAI built-in image generator via homm3-art skill",
+  "method": "Original generated raster artwork, followed by one focused framing edit. No user-reference pixels, purchaser art, existing game art, or external style-reference pixels were used. The retained master is reduced with homm3-art export_art.py; runtime states use brightness/color-only transforms.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "edit_source": "first original No Quarter generation, host output ID 01a0e237-d046-72b0-b386-2b9646e4756f/exec-afb39d89-3ae0-40f0-99e3-9fb01f7195ab.png (framing edit target, not a user style reference)",
+  "style_guide": "homm3-art/references/style-guide.md (secondary-skill icons)",
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "prompts": [
+    {
+      "file": "prompt-no-quarter.txt",
+      "pass": "original generation",
+      "host_output_id": "01a0e237-d046-72b0-b386-2b9646e4756f/exec-afb39d89-3ae0-40f0-99e3-9fb01f7195ab.png"
+    },
+    {
+      "file": "prompt-no-quarter-framing-edit.txt",
+      "pass": "focused framing edit",
+      "host_output_id": "01a0e237-d046-72b0-b386-2b9646e4756f/exec-e8e752ab-3cd2-4624-a610-f2fa1bc5262a.png"
+    }
+  ],
+  "assets": [
+    {
+      "id": "new-horizons:offense.noQuarter",
+      "name": "No Quarter",
+      "key": "NH_perk_no_quarter",
+      "master": "exports/no-quarter/master.png",
+      "generated_output_id": "01a0e237-d046-72b0-b386-2b9646e4756f/exec-e8e752ab-3cd2-4624-a610-f2fa1bc5262a.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "3365ef2f5523b70f050f9d47e1f9831918b9e6e9e96215d109e953b0770cd76e",
+      "style_reference": null
+    }
+  ]
+}
