@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_pavise"
+  ],
+  "files": {
+    "source/NH_perk_pavise_normal.png": "eb213cd719eca06e7af636fd39328d7af0a2c7328caf293eafe5749d47c9f147",
+    "Mods/NH_perk_pavise_normal.png": "eb213cd719eca06e7af636fd39328d7af0a2c7328caf293eafe5749d47c9f147",
+    "source/NH_perk_pavise_pressed.png": "56f45154140bc6b555fd44b0081daa94976b28d5cb5dd764e4c2d6eb2c426491",
+    "Mods/NH_perk_pavise_pressed.png": "56f45154140bc6b555fd44b0081daa94976b28d5cb5dd764e4c2d6eb2c426491",
+    "source/NH_perk_pavise_disabled.png": "15dd9cb846fe208bc8a294e714f589f119a56c05aa6dd085f83ead31567c7235",
+    "Mods/NH_perk_pavise_disabled.png": "15dd9cb846fe208bc8a294e714f589f119a56c05aa6dd085f83ead31567c7235",
+    "source/NH_perk_pavise_highlighted.png": "335cd3534c7b8470f94aa67f494b5d356f7e0c2b8a439da1d4dc9d7988ba8f9a",
+    "Mods/NH_perk_pavise_highlighted.png": "335cd3534c7b8470f94aa67f494b5d356f7e0c2b8a439da1d4dc9d7988ba8f9a",
+    "source/NH_perk_pavise.json": "6f6e06cfd5bc8ca972a33e95fb3898aa07b98337d4a0b1825af645b65ba70ad4",
+    "Mods/NH_perk_pavise.json": "6f6e06cfd5bc8ca972a33e95fb3898aa07b98337d4a0b1825af645b65ba70ad4"
+  }
+}
