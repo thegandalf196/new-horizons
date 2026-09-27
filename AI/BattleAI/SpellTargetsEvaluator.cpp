@@ -809,7 +809,7 @@ float SpellTargetEvaluator::spellLockPlacementValue(const Mechanics * spellMecha
 		}
 	}
 
-	const int rounds = std::clamp(spellMechanics->getEffectDuration().value_or(1), 1, 5);
+	const int rounds = std::clamp(spellMechanics->getEffectDuration(), 1, 5);
 	return value * (0.7f + 0.1f * static_cast<float>(rounds));
 }
 
