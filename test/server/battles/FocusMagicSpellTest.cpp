@@ -8,6 +8,7 @@
  */
 #include "StdInc.h"
 
+#include "BattleStartSnapshotFixture.h"
 #include "HeroCommandFixture.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
@@ -427,6 +428,11 @@ TEST_F(FocusMagicSpellTest, ArcaneAcquisitionSnapshotsMetamagicAndRechecksMarksB
 	ASSERT_TRUE(castAtUnit(shooter));
 	ASSERT_TRUE(castAtUnit(shooter, true));
 	expectCapturedFocusMagic(shooter, 2000, BattleSide::ATTACKER,
+		newHorizonsSorcery::FOCUS_MAGIC_DURATION_ROUNDS, true);
+	auto restoredBattle = battleStartFixture::snapshot(*battle(), gameState().get());
+	const auto * restoredShooter = restoredBattle->getStack(shooter->unitId());
+	ASSERT_NE(restoredShooter, nullptr);
+	expectCapturedFocusMagic(restoredShooter, 2000, BattleSide::ATTACKER,
 		newHorizonsSorcery::FOCUS_MAGIC_DURATION_ROUNDS, true);
 
 	ASSERT_TRUE(battle()->battleCanShoot(shooter, target->getPosition()));
