@@ -28,6 +28,12 @@ ACTIVE_PERKS = {
     "new-horizons:archery.skirmisher",
     "new-horizons:archery.pointBlankShot",
     "new-horizons:archery.counterfire",
+    "new-horizons:archery.armorPiercingShot",
+    "new-horizons:archery.suppression",
+    "new-horizons:archery.highArc",
+    "new-horizons:archery.crossfire",
+    "new-horizons:archery.deadeye",
+    "new-horizons:archery.rainOfArrows",
     "new-horizons:demonicGating.swiftGate",
     "new-horizons:demonicGating.wideGate",
     "new-horizons:demonicGating.hellfireArrival",
@@ -275,6 +281,27 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertEqual(perk["description"], description)
         self.assertEqual(perk["effect"]["status"], "active")
         self.assertEqual(perk["effect"]["description"], description)
+
+    def test_all_ten_archery_perks_are_active_at_their_canonical_ranks(self):
+        skill = self.rules["skills"]["new-horizons:archery"]
+        canonical = {
+            "new-horizons:archery.targetCaller": "basic",
+            "new-horizons:archery.skirmisher": "basic",
+            "new-horizons:archery.pointBlankShot": "basic",
+            "new-horizons:archery.counterfire": "basic",
+            "new-horizons:archery.armorPiercingShot": "advanced",
+            "new-horizons:archery.suppression": "advanced",
+            "new-horizons:archery.highArc": "advanced",
+            "new-horizons:archery.crossfire": "advanced",
+            "new-horizons:archery.deadeye": "expert",
+            "new-horizons:archery.rainOfArrows": "expert",
+        }
+        perks = {perk["id"]: perk for perk in skill["perks"]}
+        self.assertEqual(set(perks), set(canonical))
+        for perk_id, rank in canonical.items():
+            with self.subTest(perk=perk_id):
+                self.assertEqual(perks[perk_id]["requires"], rank)
+                self.assertEqual(perks[perk_id]["effect"]["status"], "active")
 
     def test_perk_definitions_match_source_document(self):
         source_tables = source_perk_tables(ROOT / self.rules["sourceDocument"])

@@ -57,6 +57,11 @@ struct DLL_LINKAGE DamageEstimation
 	/// Order whose defensive effect contributed to this estimate, if any.
 	/// Kept separately because both sides can have an active Order for the same hit.
 	HeroCommand defenderOrderCause = HeroCommand::NONE;
+	/// Transient Archery explanation data for combat feedback and forecasts.
+	int archeryDefenseIgnorePercent = 0;
+	int archeryCrossfireDamagePercent = 0;
+	bool archeryDeadeye = false;
+	bool archeryHighArc = false;
 };
 
 class DLL_LINKAGE IBattleInfoCallback : public IConstBonusProvider, public scripting::ApiRawPointer<IBattleInfoCallback>

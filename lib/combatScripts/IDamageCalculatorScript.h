@@ -63,6 +63,14 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// Percentage of the target's Creature Defense ignored by this exact attack.  This is
 	/// populated from authoritative saved perk state, not from installed content alone.
 	int luckyRangedDefenseIgnorePercent = 0;
+	/// Percentage of target Creature Defense ignored by the owning hero's Archery perks.
+	int archeryRangedDefenseIgnorePercent = 0;
+	/// Crossfire's additive ranged premium for this shot only.
+	int archeryCrossfireDamagePercent = 0;
+	/// High Arc halves distance penalties and ignores obstacle penalties on physical shots.
+	bool archeryHighArc = false;
+	/// Deadeye makes the creature's rolled base damage use its maximum value.
+	bool archeryMaximumCreatureDamage = false;
 	/// Percentage of the target's Creature Defense ignored by this exact Charge attack.
 	/// This is populated from the authoritative active Order and saved perk state.
 	int chargeDefenseIgnorePercent = 0;
@@ -147,6 +155,13 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Whether Point-Blank Shot removes the ordinary adjacent-target ranged penalty from this shot.");
 		s("luckyRangedDefenseIgnorePercent", luckyRangedDefenseIgnorePercent,
 			"Percentage of target Creature Defense ignored by this lucky ranged attack.");
+		s("archeryRangedDefenseIgnorePercent", archeryRangedDefenseIgnorePercent,
+			"Percentage of target Creature Defense ignored by an Archery ranged attack.");
+		s("archeryCrossfireDamagePercent", archeryCrossfireDamagePercent,
+			"Crossfire's additive damage premium for this ranged attack.");
+		s("archeryHighArc", archeryHighArc, "Whether High Arc halves distance penalties and ignores obstacle penalties.");
+		s("archeryMaximumCreatureDamage", archeryMaximumCreatureDamage,
+			"Whether Deadeye sets the creature's base damage roll to its maximum.");
 		s("chargeDefenseIgnorePercent", chargeDefenseIgnorePercent,
 			"Percentage of target Creature Defense ignored by this Shock Assault Charge attack.");
 		s("meleeDefenseIgnorePercent", meleeDefenseIgnorePercent,

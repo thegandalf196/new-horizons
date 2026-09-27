@@ -891,6 +891,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	}
 	if(skirmisherShot)
 	{
+		auto rainOfArrows = beginRainOfArrows(battle, stack, destinationStack);
 		BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);
 		BonusList defenderBonusesToRemove = *destinationStack->getAllBonuses(Bonus::untilAfterAttackSequence);
 		static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE,
@@ -901,7 +902,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		if(!firstStrike)
 			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .first = true, .ranged = true,
 				.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT,
-				.perfectMomentSide = perfectMomentSide});
+				.perfectMomentSide = perfectMomentSide}, nullptr, nullptr, &rainOfArrows);
 
 		if(destinationStack->alive()
 			&& destinationStack->hasBonusOfType(BonusType::RANGED_RETALIATION)
@@ -923,11 +924,12 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 				makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .attackIndex = i,
 					.first = i == 0, .ranged = true,
 					.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT,
-					.perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE});
+					.perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, nullptr, nullptr, &rainOfArrows);
 		}
 
 		removeBonuses(battle, stack, attackerBonusesToRemove);
 		removeBonuses(battle, destinationStack, defenderBonusesToRemove);
+		resolveRainOfArrows(battle, stack, rainOfArrows);
 		return true;
 	}
 
@@ -1108,6 +1110,116 @@ void BattleActionProcessor::removeBonuses(const CBattleInfoCallback & battle, co
 	gameHandler->sendAndApply(sse);
 }
 
+BattleActionProcessor::RainOfArrowsAction BattleActionProcessor::beginRainOfArrows(
+	const CBattleInfoCallback & battle, const CStack * attacker, const CStack * primaryTarget) const
+{
+	RainOfArrowsAction action;
+	if(!attacker || !primaryTarget || battle.battleMatchOwner(attacker, primaryTarget, true)
+		|| !newHorizonsArchery::isOrdinaryPhysicalShooter(attacker))
+		return action;
+
+	const auto * hero = battle.battleGetOwnerHero(attacker);
+	if(!newHorizonsArchery::hasRainOfArrows(hero))
+		return action;
+
+	const auto state = attacker->acquireState();
+	if(state->archeryRainOfArrowsActivationSerial == battle.getBattle()->getActivationSerial())
+		return action;
+
+	action.enabled = true;
+	action.primaryTargetUnitId = primaryTarget->unitId();
+	for(const auto & hex : primaryTarget->getHexes())
+		if(hex.isValid())
+			action.primaryFootprint.push_back(hex);
+	return action;
+}
+
+void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle,
+	const CStack * attacker, RainOfArrowsAction & action)
+{
+	if(!action.enabled || !attacker)
+		return;
+
+	const auto adjacentToOriginalPrimary = [&action](const battle::Unit * candidate)
+	{
+		for(const auto & targetHex : candidate->getHexes())
+		{
+			if(!targetHex.isValid())
+				continue;
+			for(const auto & primaryHex : action.primaryFootprint)
+				if(BattleHex::getDistance(targetHex, primaryHex) == 1)
+					return true;
+		}
+		return false;
+	};
+	const auto lowestOccupiedHex = [](const battle::Unit * unit)
+	{
+		int result = GameConstants::BFIELD_SIZE;
+		for(const auto & hex : unit->getHexes())
+			if(hex.isValid())
+				result = std::min(result, static_cast<int>(hex.toInt()));
+		return result;
+	};
+	const battle::Unit * secondary = nullptr;
+	for(const auto * candidate : battle.battleGetUnitsIf([](const battle::Unit * unit)
+		{ return unit->alive(); }))
+	{
+		if(candidate->unitId() == action.primaryTargetUnitId
+			|| battle.battleMatchOwner(attacker, candidate, true)
+			|| !adjacentToOriginalPrimary(candidate))
+			continue;
+		if(!secondary || candidate->getAvailableHealth() > secondary->getAvailableHealth()
+			|| (candidate->getAvailableHealth() == secondary->getAvailableHealth()
+				&& std::pair{lowestOccupiedHex(candidate), candidate->unitId()}
+					< std::pair{lowestOccupiedHex(secondary), secondary->unitId()}))
+			secondary = candidate;
+	}
+
+	BattleLogMessage message;
+	message.battleID = battle.getBattle()->getBattleID();
+	MetaString line;
+	if(action.actualPrimaryDamage <= 0)
+		line = MetaString::createFromRawString(
+			"Rain of Arrows deals no secondary damage because the primary target took no actual damage.");
+	else if(!secondary)
+		line = MetaString::createFromRawString(
+			"Rain of Arrows finds no enemy stack adjacent to the primary target; no secondary damage is dealt.");
+	else
+	{
+		const int64_t proposedDamage = action.actualPrimaryDamage * newHorizonsArchery::RAIN_OF_ARROWS_DAMAGE_PERCENT / 100;
+		if(proposedDamage <= 0)
+			line = MetaString::createFromRawString(
+				"Rain of Arrows deals no secondary damage: 35% of the primary damage rounds down to zero.");
+		else
+		{
+			BattleStackAttacked hit;
+			hit.attackerID = attacker->unitId();
+			hit.stackAttacked = secondary->unitId();
+			hit.damageAmount = proposedDamage;
+			CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), secondary->acquireState());
+			StacksInjured injury;
+			injury.battleID = battle.getBattle()->getBattleID();
+			injury.stacks.push_back(hit);
+			gameHandler->sendAndApply(injury);
+
+			line.appendRawString("Rain of Arrows deals ");
+			line.appendNumber(hit.damageAmount);
+			line.appendRawString(" damage to %s (based on ");
+			secondary->addNameReplacement(line, secondary->getCount());
+			line.appendNumber(action.actualPrimaryDamage);
+			line.appendRawString(" actual damage to the primary target).");
+			if(hit.killedAmount > 0)
+			{
+				line.appendRawString(" ");
+				line.appendNumber(hit.killedAmount);
+				line.appendRawString(hit.killedAmount == 1 ? " creature perishes." : " creatures perish.");
+			}
+		}
+	}
+	message.lines.push_back(std::move(line));
+	gameHandler->sendAndApply(message);
+}
+
 bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
@@ -1140,6 +1252,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		gameHandler->complain("No target to shoot!");
 		return false;
 	}
+	auto rainOfArrows = beginRainOfArrows(battle, stack, destinationStack);
 	RelentlessAssaultActionContext relentlessAssault;
 
 	bool firstStrike = false;
@@ -1150,7 +1263,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 	}
 
 	if (!firstStrike)
-		makeAttack(battle, stack, destinationStack, {.targetHex = destination, .first = true, .ranged = true, .perfectMomentSide = perfectMomentSide}, nullptr, &relentlessAssault);
+		makeAttack(battle, stack, destinationStack, {.targetHex = destination, .first = true, .ranged = true, .perfectMomentSide = perfectMomentSide}, nullptr, &relentlessAssault, &rainOfArrows);
 
 	BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);	//they need to be gathered here since bonuses with this duration added during attack (like blind) should not be removed
 	BonusList defenderBonusesToRemove;
@@ -1186,12 +1299,13 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		{
 			// when the defender strikes first the opening shot above is skipped and this loop makes
 			// it instead, so the shot that abilities fire on is the first one this loop makes
-			makeAttack(battle, stack, destinationStack, {.targetHex = destination, .attackIndex = i, .first = i == 0, .ranged = true, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, nullptr, &relentlessAssault);
+			makeAttack(battle, stack, destinationStack, {.targetHex = destination, .attackIndex = i, .first = i == 0, .ranged = true, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, nullptr, &relentlessAssault, &rainOfArrows);
 		}
 	}
 
 	removeBonuses(battle, stack, attackerBonusesToRemove);
 	removeBonuses(battle, destinationStack, defenderBonusesToRemove);
+	resolveRainOfArrows(battle, stack, rainOfArrows);
 
 	return true;
 }
@@ -2275,7 +2389,7 @@ void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleA
 
 void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker,
 	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut,
-	RelentlessAssaultActionContext * relentlessAssault)
+	RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows)
 {
 	const int bulwarkReflectionPercent = defender && !attack.ranged && defender->defended()
 		? newHorizonsBulwark::reflectionPercent(newHorizonsBulwark::rank(battle.battleGetOwnerHero(defender)))
@@ -2360,6 +2474,37 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		HeroCommand defender = HeroCommand::NONE;
 	};
 	std::vector<ResolvedOrderCauses> resolvedOrderCauses;
+	std::vector<MetaString> archeryFeedbackLogLines;
+	const auto appendArcheryFeedback = [&](const DamageEstimation & estimation, const battle::Unit * target)
+	{
+		if(!target || !attack.ranged || bat.spellLike())
+			return;
+		if(estimation.archeryDeadeye)
+		{
+			MetaString line;
+			line.appendRawString("Deadeye rolls maximum creature damage and ignores 25% Creature Defense against %s.");
+			target->addNameReplacement(line, target->getCount());
+			archeryFeedbackLogLines.push_back(std::move(line));
+		}
+		if(estimation.archeryDefenseIgnorePercent > (estimation.archeryDeadeye
+			? newHorizonsArchery::DEADEYE_DEFENSE_IGNORE_PERCENT : 0))
+		{
+			MetaString line;
+			line.appendRawString("Armor-Piercing Shot ignores 20% of Creature Defense against %s.");
+			target->addNameReplacement(line, target->getCount());
+			archeryFeedbackLogLines.push_back(std::move(line));
+		}
+		if(estimation.archeryCrossfireDamagePercent > 0)
+		{
+			MetaString line;
+			line.appendRawString("Crossfire adds +15% ranged damage against %s.");
+			target->addNameReplacement(line, target->getCount());
+			archeryFeedbackLogLines.push_back(std::move(line));
+		}
+		if(estimation.archeryHighArc)
+			archeryFeedbackLogLines.push_back(MetaString::createFromRawString(
+				"High Arc ignores obstacle penalties and halves distance penalties for this ranged attack."));
+	};
 	// Brace's pre-emptive strike is dispatched through the counterattack path so
 	// that it happens before the incoming blow, but it must not consume the
 	// defender's normal retaliation. Keep the two notions separate here.
@@ -2438,6 +2583,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			attack.cleaveDamagePercent, protectIntercepted,
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
 			attack.archeryRangedDamageMultiplierPercent);
+		appendArcheryFeedback(estimation, defender);
 		if(relentlessAssault && relentlessAssault->eligible
 			&& relentlessAssault->lastRecordedTargetUnitId != defender->unitId()
 			&& std::ranges::any_of(bat.bsa, [defender](const auto & hit)
@@ -2486,10 +2632,45 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			attack.cleaveDamagePercent, false,
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
 			attack.archeryRangedDamageMultiplierPercent);
+		appendArcheryFeedback(estimation, unit);
 		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
 			resolvedOrderCauses.push_back({unit->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
 		if(!unit->isTimeStopped())
 			removeBonuses(battle, unit, *unit->getAllBonuses(Bonus::UntilTakingIndirectDamage));
+	}
+
+	const auto currentActivationSerial = battle.getBattle()->getActivationSerial();
+	const int currentRound = battle.battleGetRound();
+	const auto * attackerHero = battle.battleGetOwnerHero(attacker);
+	const bool ordinaryPhysicalShot = attack.ranged && !attack.brace
+		&& !attack.cleaveFollowup && !bat.spellLike()
+		&& newHorizonsArchery::isOrdinaryPhysicalShooter(attacker);
+	if(ordinaryPhysicalShot && attackerHero && newHorizonsArchery::hasDeadeye(attackerHero)
+		&& attackerState->archeryDeadeyeRound != currentRound)
+		attackerState->archeryDeadeyeRound = currentRound;
+	if(ordinaryPhysicalShot && !attack.counter && rainOfArrows && rainOfArrows->enabled
+		&& attackerState->archeryRainOfArrowsActivationSerial != currentActivationSerial)
+		attackerState->archeryRainOfArrowsActivationSerial = currentActivationSerial;
+	if(ordinaryPhysicalShot && !attack.counter && rainOfArrows && rainOfArrows->enabled
+		&& rainOfArrows->primaryTargetUnitId == (defender ? defender->unitId() : 0))
+	{
+		for(const auto & hit : bat.bsa)
+			if(hit.stackAttacked == rainOfArrows->primaryTargetUnitId)
+				rainOfArrows->actualPrimaryDamage += hit.damageAmount;
+	}
+	std::optional<uint32_t> suppressedTargetId;
+	if(ordinaryPhysicalShot && !attack.counter && attackerHero && newHorizonsArchery::hasSuppression(attackerHero)
+		&& attackerState->archerySuppressionActivationSerial != currentActivationSerial)
+	{
+		const auto firstDamaged = std::ranges::find_if(bat.bsa, [](const BattleStackAttacked & hit)
+		{
+			return hit.damageAmount > 0;
+		});
+		if(firstDamaged != bat.bsa.end())
+		{
+			suppressedTargetId = firstDamaged->stackAttacked;
+			attackerState->archerySuppressionActivationSerial = currentActivationSerial;
+		}
 	}
 
 	markSpellLikeAttack(attacker, bat);
@@ -2612,6 +2793,25 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		}
 	}
 	gameHandler->sendAndApply(bat);
+	std::optional<MetaString> suppressionLogLine;
+	if(suppressedTargetId)
+	{
+		const auto * target = battle.battleGetUnitByID(*suppressedTargetId);
+		if(target && target->alive())
+		{
+			SetStackEffect suppression;
+			suppression.battleID = battle.getBattle()->getBattleID();
+			const Bonus slow(BonusDuration::STACK_GETS_TURN, BonusType::STACKS_SPEED,
+				BonusSource::OTHER, -1, BonusSourceID());
+			suppression.toAdd.emplace_back(target->unitId(), std::vector<Bonus>{slow});
+			gameHandler->sendAndApply(suppression);
+
+			MetaString line;
+			line.appendRawString("Suppression reduces %s's Speed by 1 until its next activation.");
+			target->addNameReplacement(line, target->getCount());
+			suppressionLogLine = std::move(line);
+		}
+	}
 
 	BattleAttackInfo noQuarterAttack(attacker, defender, attack.distance, attack.ranged);
 	noQuarterAttack.retaliation = normalCounter;
@@ -2761,6 +2961,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				line.appendRawString("%.");
 				blm.lines.push_back(std::move(line));
 			}
+			for(auto & line : archeryFeedbackLogLines)
+				blm.lines.push_back(std::move(line));
+			if(suppressionLogLine)
+				blm.lines.push_back(std::move(*suppressionLogLine));
 		}
 	}
 
@@ -2815,8 +3019,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			gameHandler->sendAndApply(counterfireLog);
 
 			makeAttack(battle, reactionShooter, attacker, {.targetHex = attacker->getPosition(), .first = true,
-				.ranged = true, .counter = true, .archeryCounterfire = true,
-				.archeryRangedDamageMultiplierPercent = newHorizonsArchery::COUNTERFIRE_DAMAGE_PERCENT});
+				.ranged = true, .archeryRangedDamageMultiplierPercent = newHorizonsArchery::COUNTERFIRE_DAMAGE_PERCENT,
+				.counter = true, .archeryCounterfire = true});
 		}
 	}
 
@@ -3032,7 +3236,15 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	auto range = battle.calculateDmgRange(bai);
 	{
 		bsa.damageAmount = battle.getBattle()->getActualDamage(range.damage, attackerState->getCount(), gameHandler->getRandomGenerator());
-		CStack::prepareAttacked(bsa, gameHandler->getRandomGenerator(), bai.defender->acquireState()); //calculate casualties
+		auto defenderState = bai.defender->acquireState();
+		CStack::prepareAttacked(bsa, gameHandler->getRandomGenerator(), defenderState); //calculate casualties
+		if(bsa.damageAmount > 0 && !bat.spellLike()
+			&& newHorizonsArchery::isOrdinaryPhysicalShooter(attackerState.get()))
+		{
+			const auto shooterSide = battle.playerToSide(battle.battleGetOwner(attackerState.get()));
+			defenderState->archeryRecordCrossfireDamage(shooterSide, attackerState->unitId(), battle.battleGetRound());
+			bsa.newState.data = defenderState->save();
+		}
 	}
 
 	bat.bsa.push_back(bsa); //add this stack to the list of victims after drain life has been calculated

@@ -449,13 +449,29 @@ AttackPossibility AttackPossibility::evaluate(
 			&& !attackInfo.retaliation && state->battleMatchOwner(attacker, defender);
 		const auto * raPrimaryTarget = state->battleResolveHeroOrderTarget(attacker, requestedDefender,
 			attackInfo.shooting);
-	const auto * raHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
-		? state->battleGetFightingHero(attackerSide) : nullptr;
-	const bool projectsSkirmisher = attackInfo.shooting && hex.isValid()
-		&& hex != attacker->getPosition()
-		&& attackInfo.archeryRangedDamageMultiplierPercent == newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT
-		&& newHorizonsArchery::canUseSkirmisher(raHero, attacker);
-	const bool ordinaryRelentlessAssaultAttack = raHero
+		const auto * raHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
+			? state->battleGetFightingHero(attackerSide) : nullptr;
+		const bool ordinaryArcheryShooter = newHorizonsArchery::isOrdinaryPhysicalShooter(attacker);
+		const auto currentRound = state->battleGetRound();
+		const auto currentActivationSerial = static_cast<int32_t>(state->getBattle()->getActivationSerial());
+		const auto initialAttackerState = attacker->acquireState();
+		const bool projectsDeadeye = attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
+			&& ordinaryArcheryShooter && raHero && newHorizonsArchery::hasDeadeye(raHero)
+			&& initialAttackerState->archeryDeadeyeRound != currentRound;
+		const bool projectsCrossfire = ordinaryArcheryShooter && raHero && newHorizonsArchery::hasCrossfire(raHero);
+		const bool projectsSuppression = attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
+			&& ordinaryArcheryShooter && raHero && newHorizonsArchery::hasSuppression(raHero)
+			&& initialAttackerState->archerySuppressionActivationSerial != currentActivationSerial;
+		const bool projectsRainOfArrows = attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
+			&& ordinaryArcheryShooter && raHero && newHorizonsArchery::hasRainOfArrows(raHero)
+			&& initialAttackerState->archeryRainOfArrowsActivationSerial != currentActivationSerial;
+		const auto rainPrimaryFootprint = requestedDefender->getHexes();
+		const bool projectsArcheryState = projectsDeadeye || projectsCrossfire || projectsSuppression || projectsRainOfArrows;
+		const bool projectsSkirmisher = attackInfo.shooting && hex.isValid()
+			&& hex != attacker->getPosition()
+			&& attackInfo.archeryRangedDamageMultiplierPercent == newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT
+			&& newHorizonsArchery::canUseSkirmisher(raHero, attacker);
+		const bool ordinaryRelentlessAssaultAttack = raHero
 			&& raHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT)
 			&& !attackInfo.retaliation && !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
 			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
@@ -487,11 +503,11 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool projectsProtect = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
 		if(ap.perfectMoment || projectsMarks || projectsCleave || projectsProtect || projectsSkirmisher
-			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter)
+			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 		if(projectsMarks || projectsCleave || projectsProtect || projectsSkirmisher
-			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter)
+			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState)
 			ap.effectPreview = fortunePreview;
 		const CBattleInfoCallback & luckState = fortunePreview
 			? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
@@ -580,6 +596,8 @@ AttackPossibility AttackPossibility::evaluate(
 		auto protectOrder = projectsProtect ? state->battleGetHeroOrderState(protectSide) : std::nullopt;
 		uint8_t projectedProtectInterceptionsConsumed = protectOrder
 			? protectOrder->protectInterceptionsConsumed : 0;
+		int64_t projectedRainPrimaryDamage = 0;
+		bool projectedSuppressionSpent = false;
 
 		for(int i = 0; i < totalAttacks; i++)
 		{
@@ -752,6 +770,15 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.collateralDamageReduce += defenderDamageReduce;
 
 				strike.hits.emplace_back(u->unitId(), damageDealt);
+				if(damageDealt > 0 && attackInfo.physicalDamage
+					&& newHorizonsArchery::isOrdinaryPhysicalShooter(ap.attackerState.get()))
+				{
+					const auto shooterSide = state->playerToSide(state->battleGetOwner(ap.attackerState.get()));
+					defenderState->archeryRecordCrossfireDamage(shooterSide,
+						ap.attackerState->unitId(), currentRound);
+				}
+				if(projectsRainOfArrows && u->unitId() == requestedDefender->unitId())
+					projectedRainPrimaryDamage += damageDealt;
 				const bool mayRebirth = !defenderState->isClone()
 					&& defenderState->valOfBonuses(BonusType::REBIRTH) > 0
 					&& defenderState->canCast() && defenderState->getPhantomInitialIntegrity() == 0;
@@ -765,6 +792,36 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.defenderDead = !defenderState->alive();
 				}
 			}
+			if(projectsSuppression && !projectedSuppressionSpent)
+			{
+				const auto primaryHit = std::ranges::find_if(strike.hits,
+					[&strike](const auto & hit)
+					{
+						return hit.first == strike.defenderId && hit.second > 0;
+					});
+				const auto firstDamaged = primaryHit != strike.hits.end() ? primaryHit
+					: std::ranges::find_if(strike.hits,
+						[&strike](const auto & hit)
+						{
+							return hit.first != strike.defenderId && hit.second > 0;
+						});
+				if(firstDamaged != strike.hits.end())
+				{
+					projectedSuppressionSpent = true;
+					ap.attackerState->archerySuppressionActivationSerial = currentActivationSerial;
+					const auto targetState = defenderStates.find(firstDamaged->first);
+					if(targetState != defenderStates.end() && targetState->second->alive())
+					{
+						const Bonus suppression(BonusDuration::STACK_GETS_TURN, BonusType::STACKS_SPEED,
+							BonusSource::OTHER, -1, BonusSourceID());
+						fortunePreview->addUnitBonus(firstDamaged->first, {suppression});
+					}
+				}
+			}
+			if(projectsDeadeye && ap.attackerState->archeryDeadeyeRound != currentRound)
+				ap.attackerState->archeryDeadeyeRound = currentRound;
+			if(projectsRainOfArrows && ap.attackerState->archeryRainOfArrowsActivationSerial != currentActivationSerial)
+				ap.attackerState->archeryRainOfArrowsActivationSerial = currentActivationSerial;
 
 			// Counterfire is an immediate, once-per-round answer to physical creature
 			// ranged damage. Include it in the exchange value so the AI does not price
@@ -790,10 +847,20 @@ AttackPossibility AttackPossibility::evaluate(
 					BattleAttackInfo counterfire(counterShooter.get(), ap.attackerState.get(), 0, true);
 					counterfire.archeryRangedDamageMultiplierPercent = newHorizonsArchery::COUNTERFIRE_DAMAGE_PERCENT;
 					int64_t counterfireDamage = luckState.battleExpectedLuckDamage(counterfire);
+					if(newHorizonsArchery::hasDeadeye(counterHero)
+						&& counterShooter->archeryDeadeyeRound != currentRound)
+						counterShooter->archeryDeadeyeRound = currentRound;
 					vstd::amin(counterfireDamage, ap.attackerState->getAvailableHealth());
 					ap.attackerDamageReduce += calculateDamageReduce(counterShooter.get(), ap.attackerState.get(),
 						counterfireDamage, damageCache, state);
 					ap.attackerState->damage(counterfireDamage);
+					if(counterfireDamage > 0 && attackInfo.physicalDamage
+						&& newHorizonsArchery::isOrdinaryPhysicalShooter(counterShooter.get()))
+					{
+						const auto shooterSide = state->playerToSide(state->battleGetOwner(counterShooter.get()));
+						ap.attackerState->archeryRecordCrossfireDamage(shooterSide,
+							counterShooter->unitId(), currentRound);
+					}
 					counterShooter->afterAttack(true, false, true);
 				}
 			}
@@ -1034,6 +1101,56 @@ AttackPossibility AttackPossibility::evaluate(
 				fortune.consumePerfectMoment();
 				fortune.recordStrike(attacker->unitId(), true, false);
 				fortunePreview->setSylvanLuckState(attackerSide, fortune);
+			}
+		}
+		if(projectsRainOfArrows && projectedRainPrimaryDamage > 0 && fortunePreview)
+		{
+			const auto adjacentToPrimary = [&rainPrimaryFootprint](const battle::Unit * candidate)
+			{
+				for(const auto & candidateHex : candidate->getHexes())
+				{
+					if(!candidateHex.isValid())
+						continue;
+					for(const auto & primaryHex : rainPrimaryFootprint)
+						if(primaryHex.isValid() && BattleHex::getDistance(candidateHex, primaryHex) == 1)
+							return true;
+				}
+				return false;
+			};
+			const auto lowestOccupiedHex = [](const battle::Unit * unit)
+			{
+				int result = GameConstants::BFIELD_SIZE;
+				for(const auto & occupied : unit->getHexes())
+					if(occupied.isValid())
+						result = std::min(result, static_cast<int>(occupied.toInt()));
+				return result;
+			};
+			const battle::Unit * secondary = nullptr;
+			for(const auto * candidate : fortunePreview->battleGetUnitsIf(
+				[](const battle::Unit * unit) { return unit->alive(); }))
+			{
+				if(candidate->unitId() == requestedDefender->unitId()
+					|| fortunePreview->battleMatchOwner(ap.attackerState.get(), candidate, true)
+					|| !adjacentToPrimary(candidate))
+					continue;
+				if(!secondary || candidate->getAvailableHealth() > secondary->getAvailableHealth()
+					|| (candidate->getAvailableHealth() == secondary->getAvailableHealth()
+						&& std::pair{lowestOccupiedHex(candidate), candidate->unitId()}
+							< std::pair{lowestOccupiedHex(secondary), secondary->unitId()}))
+					secondary = candidate;
+			}
+			const int64_t proposedDamage = projectedRainPrimaryDamage
+				* newHorizonsArchery::RAIN_OF_ARROWS_DAMAGE_PERCENT / 100;
+			if(secondary && proposedDamage > 0)
+			{
+				auto secondaryState = fortunePreview->getForUpdate(secondary->unitId());
+				int64_t actualDamage = std::min(proposedDamage, secondaryState->getAvailableHealth());
+				ap.defenderDamageReduce += calculateDamageReduce(ap.attackerState.get(), secondaryState.get(),
+					actualDamage, damageCache, state);
+				secondaryState->damage(actualDamage);
+				if(!vstd::contains_if(ap.affectedUnits, [secondaryState](const auto & affected)
+					{ return affected->unitId() == secondaryState->unitId(); }))
+					ap.affectedUnits.push_back(std::move(secondaryState));
 			}
 		}
 

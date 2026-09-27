@@ -10,11 +10,13 @@
 #include "../../AI/BattleAI/PotentialTargets.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/CSkillHandler.h"
+#include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/CStack.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
+#include "../../server/CGameHandler.h"
 
 namespace
 {
@@ -137,15 +139,16 @@ TEST_F(NewHorizonsArcheryAITest, PotentialTargetsScoreSkirmisherPositionsAlongsi
 		simulation->battleGetUnitByID(shooter->unitId()), target->getPosition());
 	ASSERT_FALSE(candidates.empty());
 	PotentialTargets evaluated(shooter, cache, simulation);
-	EXPECT_TRUE(std::ranges::any_of(evaluated.possibleAttacks, [target](const AttackPossibility & attack)
+	const uint32_t targetUnitId = target->unitId();
+	EXPECT_TRUE(std::ranges::any_of(evaluated.possibleAttacks, [targetUnitId](const AttackPossibility & attack)
 	{
-		return attack.attack.shooting && attack.attack.defender->unitId() == target->unitId()
+		return attack.attack.shooting && attack.attack.defender->unitId() == targetUnitId
 			&& !attack.from.isValid();
 	})) << "Direct fire remains a candidate when legal";
 	for(const BattleHex & candidate : candidates)
-		EXPECT_TRUE(std::ranges::any_of(evaluated.possibleAttacks, [target, candidate](const AttackPossibility & attack)
+		EXPECT_TRUE(std::ranges::any_of(evaluated.possibleAttacks, [targetUnitId, candidate](const AttackPossibility & attack)
 		{
-			return attack.attack.shooting && attack.attack.defender->unitId() == target->unitId()
+			return attack.attack.shooting && attack.attack.defender->unitId() == targetUnitId
 				&& attack.from == candidate;
 		})) << "Each legal move-and-fire destination is evaluated by the AI";
 }
@@ -162,12 +165,13 @@ TEST_F(NewHorizonsArcheryAITest, SkirmisherForecastsEveryMarksmanRangedAttack)
 		simulation->battleGetUnitByID(shooter->unitId()), target->getPosition());
 	ASSERT_FALSE(candidates.empty());
 	PotentialTargets evaluated(shooter, cache, simulation);
+	const uint32_t targetUnitId = target->unitId();
 	for(const BattleHex & candidate : candidates)
 	{
 		const auto scored = std::ranges::find_if(evaluated.possibleAttacks,
-			[target, candidate](const AttackPossibility & attack)
+			[targetUnitId, candidate](const AttackPossibility & attack)
 			{
-				return attack.attack.shooting && attack.attack.defender->unitId() == target->unitId()
+				return attack.attack.shooting && attack.attack.defender->unitId() == targetUnitId
 					&& attack.from == candidate;
 			});
 		ASSERT_NE(scored, evaluated.possibleAttacks.end());
@@ -231,4 +235,174 @@ TEST_F(NewHorizonsArcheryAITest, SkirmisherForecastProjectsMovePositionForRangeA
 	EXPECT_GT(possibility.defenderDamageReduce, 0.0f);
 	EXPECT_GT(possibility.attackerDamageReduce, 0.0f)
 		<< "The target's legal Counterfire at the moved destination is included in the forecast";
+}
+
+TEST_F(NewHorizonsArcheryAITest, NullkillerProjectsDeadeyeForOnlyTheFirstMarksmanStrike)
+{
+	startGame();
+	const int archery = SecondarySkill::decode(std::string(newHorizonsArchery::SKILL));
+	ASSERT_GE(archery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(archery), MasteryLevel::EXPERT,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsArchery::SKILL),
+		std::string(newHorizonsArchery::DEADEYE)});
+	startBattle();
+	shooter = addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(3, 5), 10);
+	target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(12, 5), 100);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != shooter && unit != target)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	beginCombat();
+	callback = std::make_shared<ArcheryAICallback>();
+	callback->onBattleStarted(battle());
+	environment = std::make_shared<ArcheryAIEnvironment>(gameState());
+	auto simulation = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache cache;
+	cache.buildDamageCache(simulation, BattleSide::ATTACKER);
+	const auto * simShooter = simulation->battleGetUnitByID(shooter->unitId());
+	const auto * simTarget = simulation->battleGetUnitByID(target->unitId());
+	const auto possibility = AttackPossibility::evaluate(BattleAttackInfo(simShooter, simTarget, 0, true),
+		BattleHex::INVALID, cache, simulation);
+	ASSERT_EQ(possibility.fortuneStrikes.size(), static_cast<size_t>(shooter->getTotalAttacks(true)));
+	ASSERT_GT(possibility.fortuneStrikes.size(), 1u);
+	ASSERT_EQ(possibility.fortuneStrikes[0].hits.front().first, target->unitId());
+	ASSERT_EQ(possibility.fortuneStrikes[1].hits.front().first, target->unitId());
+	EXPECT_GT(possibility.fortuneStrikes[0].hits.front().second,
+		possibility.fortuneStrikes[1].hits.front().second)
+		<< "The forecast uses maximum creature damage on the first shot, then ordinary ranged damage";
+	EXPECT_EQ(possibility.attackerState->archeryDeadeyeRound, battle()->battleGetRound());
+}
+
+TEST_F(NewHorizonsArcheryAITest, NullkillerProjectsSuppressionAndRainDamageIntoTheTargetStates)
+{
+	startGame();
+	const int archery = SecondarySkill::decode(std::string(newHorizonsArchery::SKILL));
+	ASSERT_GE(archery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(archery), MasteryLevel::EXPERT,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsArchery::SKILL),
+		std::string(newHorizonsArchery::SUPPRESSION)});
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsArchery::SKILL),
+		std::string(newHorizonsArchery::RAIN_OF_ARROWS)});
+	startBattle();
+	shooter = addStack(BattleSide::ATTACKER, creatureByName("core:titan"), BattleHex(3, 5), 10);
+	const BattleHex targetHex(12, 5);
+	BattleHex collateralHex = BattleHex::INVALID;
+	for(int rawHex = 0; rawHex < GameConstants::BFIELD_SIZE; ++rawHex)
+	{
+		const BattleHex candidate(rawHex);
+		if(candidate.isValid() && BattleHex::getDistance(candidate, targetHex) == 1
+			&& !battle()->battleGetStackByPos(candidate))
+		{
+			collateralHex = candidate;
+			break;
+		}
+	}
+	ASSERT_TRUE(collateralHex.isValid());
+	auto * secondary = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), collateralHex, 5);
+	target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), targetHex, 100);
+	ASSERT_LT(secondary->unitId(), target->unitId()) << "The collateral is deliberately enumerated before the primary";
+	const Bonus splash(BonusDuration::PERMANENT, BonusType::SHOOTS_ALL_ADJACENT,
+		BonusSource::OTHER, 1, BonusSourceID());
+	shooter->addNewBonus(std::make_shared<Bonus>(splash));
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != shooter && unit != target && unit != secondary)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	beginCombat();
+	callback = std::make_shared<ArcheryAICallback>();
+	callback->onBattleStarted(battle());
+	environment = std::make_shared<ArcheryAIEnvironment>(gameState());
+	auto simulation = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache cache;
+	cache.buildDamageCache(simulation, BattleSide::ATTACKER);
+	const auto * simShooter = simulation->battleGetUnitByID(shooter->unitId());
+	const auto * simTarget = simulation->battleGetUnitByID(target->unitId());
+	const auto possibility = AttackPossibility::evaluate(BattleAttackInfo(simShooter, simTarget, 0, true),
+		BattleHex::INVALID, cache, simulation);
+	ASSERT_NE(possibility.effectPreview, nullptr);
+	const auto projectedTarget = possibility.effectPreview->getForUpdate(target->unitId());
+	const auto speedPenalties = projectedTarget->getAllBonuses(Selector::type()(BonusType::STACKS_SPEED));
+	ASSERT_TRUE(speedPenalties);
+	EXPECT_TRUE(std::ranges::any_of(*speedPenalties, [](const auto & bonus)
+	{
+		return bonus->source == BonusSource::OTHER && bonus->duration == BonusDuration::STACK_GETS_TURN
+			&& bonus->val == -1;
+	}));
+	const auto collateralSpeedPenalties = possibility.effectPreview->getForUpdate(secondary->unitId())
+		->getAllBonuses(Selector::type()(BonusType::STACKS_SPEED));
+	ASSERT_TRUE(collateralSpeedPenalties);
+	EXPECT_FALSE(std::ranges::any_of(*collateralSpeedPenalties, [](const auto & bonus)
+	{
+		return bonus->source == BonusSource::OTHER && bonus->duration == BonusDuration::STACK_GETS_TURN
+			&& bonus->val == -1;
+	})) << "The AI projects Suppression onto the server's primary hit, not lower-ID collateral";
+	int64_t projectedPrimaryDamage = 0;
+	int64_t projectedCollateralDamage = 0;
+	for(const auto & strike : possibility.fortuneStrikes)
+		for(const auto & hit : strike.hits)
+		{
+			if(hit.first == target->unitId())
+				projectedPrimaryDamage += hit.second;
+			if(hit.first == secondary->unitId())
+				projectedCollateralDamage += hit.second;
+		}
+	ASSERT_GT(projectedPrimaryDamage, 0);
+	const auto projectedSecondary = possibility.effectPreview->getForUpdate(secondary->unitId());
+	EXPECT_EQ(secondary->getAvailableHealth() - projectedSecondary->getAvailableHealth() - projectedCollateralDamage,
+		projectedPrimaryDamage * newHorizonsArchery::RAIN_OF_ARROWS_DAMAGE_PERCENT / 100)
+		<< "Rain is forecast from primary damage and applied to the adjacent stack in the projected state";
+	EXPECT_EQ(possibility.attackerState->archeryRainOfArrowsActivationSerial,
+		static_cast<int32_t>(battle()->getBattle()->getActivationSerial()));
+}
+
+TEST_F(NewHorizonsArcheryAITest, LethalRainSecondaryKeepsNullkillerDamageScoreFinite)
+{
+	startGame();
+	const int archery = SecondarySkill::decode(std::string(newHorizonsArchery::SKILL));
+	ASSERT_GE(archery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(archery), MasteryLevel::EXPERT,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsArchery::SKILL),
+		std::string(newHorizonsArchery::RAIN_OF_ARROWS)});
+	startBattle();
+	shooter = addStack(BattleSide::ATTACKER, creatureByName("core:titan"), BattleHex(3, 5), 100);
+	target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(12, 5), 100);
+	BattleHex secondaryHex = BattleHex::INVALID;
+	for(const auto & hex : target->getSurroundingHexes())
+		if(hex.isValid() && !battle()->battleGetStackByPos(hex))
+		{
+			secondaryHex = hex;
+			break;
+		}
+	ASSERT_TRUE(secondaryHex.isValid());
+	ASSERT_EQ(BattleHex::getDistance(secondaryHex, target->getPosition()), 1);
+	auto * secondary = addStack(BattleSide::DEFENDER, creatureByName("core:marksman"), secondaryHex, 1);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != shooter && unit != target && unit != secondary)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	beginCombat();
+	callback = std::make_shared<ArcheryAICallback>();
+	callback->onBattleStarted(battle());
+	environment = std::make_shared<ArcheryAIEnvironment>(gameState());
+	auto simulation = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache cache;
+	cache.buildDamageCache(simulation, BattleSide::ATTACKER);
+	const auto * simShooter = simulation->battleGetUnitByID(shooter->unitId());
+	const auto * simTarget = simulation->battleGetUnitByID(target->unitId());
+	const auto possibility = AttackPossibility::evaluate(BattleAttackInfo(simShooter, simTarget, 0, true),
+		BattleHex::INVALID, cache, simulation);
+	ASSERT_NE(possibility.effectPreview, nullptr);
+	const auto projectedSecondary = possibility.effectPreview->getForUpdate(secondary->unitId());
+	EXPECT_FALSE(projectedSecondary->alive()) << "The chosen adjacent target is lethally hit by Rain of Arrows";
+	EXPECT_TRUE(std::isfinite(static_cast<double>(possibility.defenderDamageReduce)))
+		<< "A lethal Rain secondary must not evaluate casualty value after its unit count reaches zero";
 }

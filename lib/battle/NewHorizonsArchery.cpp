@@ -7,6 +7,7 @@
 #include "NewHorizonsArchery.h"
 
 #include "Unit.h"
+#include "NewHorizonsCombatSkills.h"
 #include "../mapObjects/CGHeroInstance.h"
 
 namespace newHorizonsArchery
@@ -34,6 +35,42 @@ bool hasPointBlankShot(const CGHeroInstance * hero)
 bool hasCounterfire(const CGHeroInstance * hero)
 {
 	return hasPerk(hero, COUNTERFIRE);
+}
+
+bool hasArmorPiercingShot(const CGHeroInstance * hero)
+{
+	return hasPerk(hero, ARMOR_PIERCING_SHOT);
+}
+
+bool hasSuppression(const CGHeroInstance * hero)
+{
+	return hasPerk(hero, SUPPRESSION);
+}
+
+bool hasHighArc(const CGHeroInstance * hero)
+{
+	return hasPerk(hero, HIGH_ARC);
+}
+
+bool hasCrossfire(const CGHeroInstance * hero)
+{
+	return hasPerk(hero, CROSSFIRE);
+}
+
+bool hasDeadeye(const CGHeroInstance * hero)
+{
+	return hasPerk(hero, DEADEYE);
+}
+
+bool hasRainOfArrows(const CGHeroInstance * hero)
+{
+	return hasPerk(hero, RAIN_OF_ARROWS);
+}
+
+bool isOrdinaryPhysicalShooter(const battle::Unit * shooter)
+{
+	return newHorizonsCombatSkills::isOrdinaryCreatureAttacker(shooter)
+		&& shooter->isShooter() && !shooter->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK);
 }
 
 bool canUseSkirmisher(const CGHeroInstance * hero, const battle::Unit * shooter)

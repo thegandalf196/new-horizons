@@ -347,7 +347,7 @@
 					"requires": "advanced",
 					"description": "Ranged attacks ignore 20% of the target's Creature Defense.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Ranged attacks ignore 20% of the target's Creature Defense."
 					}
 				},
@@ -357,7 +357,7 @@
 					"requires": "advanced",
 					"description": "The first ranged hit made by a stack during its activation reduces the target's Speed by 1 until the target's next activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first ranged hit made by a stack during its activation reduces the target's Speed by 1 until the target's next activation."
 					}
 				},
@@ -367,7 +367,7 @@
 					"requires": "advanced",
 					"description": "Ranged attacks ignore obstacle penalties and halve ordinary range penalties.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Ranged attacks ignore obstacle penalties and halve ordinary range penalties."
 					}
 				},
@@ -377,7 +377,7 @@
 					"requires": "advanced",
 					"description": "A ranged attack deals +15% damage if another friendly shooter has already damaged the same target this round.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A ranged attack deals +15% damage if another friendly shooter has already damaged the same target this round."
 					}
 				},
@@ -387,7 +387,7 @@
 					"requires": "expert",
 					"description": "The first ranged attack made by each friendly shooter each round rolls maximum creature damage and ignores 25% Creature Defense.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first ranged attack made by each friendly shooter each round rolls maximum creature damage and ignores 25% Creature Defense."
 					}
 				},
@@ -397,7 +397,7 @@
 					"requires": "expert",
 					"description": "Once per activation after a ranged attack, the enemy stack adjacent to the primary target with the highest current aggregate HP suffers 35% of the actual damage dealt to the primary target. Ties use deterministic hex order; if no adjacent enemy exists, there is no secondary damage.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Once per activation after a ranged attack, the enemy stack adjacent to the primary target with the highest current aggregate HP suffers 35% of the actual damage dealt to the primary target. Ties use deterministic hex order; if no adjacent enemy exists, there is no secondary damage."
 					}
 				}

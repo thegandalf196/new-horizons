@@ -253,6 +253,9 @@ function Script:getBaseDamageBlessCurse(info)
 
 	-- both at once is a contradiction no spell of the game can produce; they cancel out
 	if cursed and blessed then return minDamage, maxDamage end
+	-- Deadeye fixes the creature's roll at the upper end before the normal
+	-- attack/defense and damage-factor pipeline is applied.
+	if info.archeryMaximumCreatureDamage then return maxDamage, maxDamage end
 
 	if cursed then return minDamage, minDamage end
 	if blessed then return maxDamage, maxDamage end
@@ -291,6 +294,7 @@ function Script:getDefenseIgnored(info, reducer, present, defense, targetDefense
 	-- attacker's current controlling side; Frenzy's own-defense trade never uses it.
 	if targetDefense and info.shooting and info.physicalDamage then
 		ignored = ignored + math.floor((info.rangedDefenseIgnoreBasisPoints or 0) * math.max(0, defense) / 10000)
+		ignored = ignored + math.floor((info.archeryRangedDefenseIgnorePercent or 0) * math.max(0, defense) / 100)
 	end
 
 	-- Shock Assault is carried by the exact Charge attack selected by the
@@ -384,7 +388,7 @@ function Script:getOffenseArcheryFactor(info)
 		+ targetedPremium + (info.executionerDamagePercent or 0) + (info.heroOrderDamagePercent or 0)
 		+ (info.bloodrageDamagePercent or 0) + (info.shroudFlankingDamagePercent or 0)
 		+ (info.newHorizonsArcheryDamagePercent or 0) + (info.battlecraftWaitDamagePercent or 0)
-		+ (info.relentlessAssaultDamagePercent or 0)) / 100
+		+ (info.relentlessAssaultDamagePercent or 0) + (info.archeryCrossfireDamagePercent or 0)) / 100
 end
 
 function Script:getBlessFactor(info)
@@ -475,7 +479,7 @@ function Script:getRangePenaltyFactor(info)
 			return info.targetedRangedCommand and -0.25 or -0.5
 		end
 		if info.battle:hasDistancePenalty(info.attacker, info.defender, info.attackerHex, info.defenderHex) then
-			return info.targetedRangedCommand and -0.25 or -0.5
+			return (info.targetedRangedCommand or info.archeryHighArc) and -0.25 or -0.5
 		end
 
 		return 0
@@ -489,6 +493,7 @@ end
 function Script:getObstacleFactor(info)
 	if not info.shooting then return 0 end
 	if info.archeryIgnoreObstaclePenalty then return 0 end
+	if info.archeryHighArc then return 0 end
 	if info.battle:hasWallPenalty(info.attacker, info.defender, info.attackerHex, info.defenderHex) then
 		return info.targetedRangedCommand and -0.25 or -0.5
 	end

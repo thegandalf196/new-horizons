@@ -13,8 +13,8 @@ player feedback, focused tests, independent review, and target-build evidence.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. After the reviewed Basic Archery checkpoint, 81 ranks
-and 79 perks are marked active, with 12 ranks and 231 perks still planned. No
+requirements in total. After activating the remaining six Archery perks, 81 ranks
+and 85 perks are marked active, with 12 ranks and 225 perks still planned. No
 entry yet has the whole
 UP-023 evidence chain recorded here. `Mireborn` has an inaccessible partial
 runtime hook despite planned status; `Corpse Preservation` is read but does not
@@ -24,7 +24,7 @@ change casualty eligibility.
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Evidence audit required |
 | Armorer | 3/0 | 4/6 | Six perks missing |
-| Archery | 3/0 | 4/6 | Four Basic perks source-reviewed; six perks remain |
+| Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 1/9 | Nine perks missing |
 | War Machines | 3/0 | 0/10 | Progression blocked |
 | Discipline | 3/0 | 1/9 | Nine perks missing |
@@ -55,10 +55,10 @@ change casualty eligibility.
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
-rank. Sixteen Skills therefore cannot normally advance beyond Basic because they
-have no active Basic perk: Archery, War Machines, Command, Light Magic, Shadow
-Magic, Nature Magic, Chaos Magic, Spellcraft, Diplomacy, Estates, Learning, Luck,
-Divine Mandate, Shroud of Malassa, Bulwark of the Mire, and Elemental Rebirth.
+rank. Fifteen Skills therefore cannot normally advance beyond Basic because they
+have no active Basic perk: War Machines, Command, Light Magic, Shadow Magic,
+Nature Magic, Chaos Magic, Spellcraft, Diplomacy, Estates, Learning, Luck, Divine
+Mandate, Shroud of Malassa, Bulwark of the Mire, and Elemental Rebirth.
 
 ## Spell baseline
 
@@ -106,9 +106,15 @@ spell. Ice Bolt must not retain its legacy Speed/Initiative reduction.
 
 1. **Spell Lock:** complete the already implemented canonical mechanic across
    roster admission, acquisition, AI, feedback and focused evidence.
-2. **Archery:** the four Basic perks are source-reviewed; implement and verify
-   the six Advanced/Expert perks and close native/build/playable evidence for
-   the whole Skill while preserving the existing three rank effects.
+2. **Archery:** all four Basic and six Advanced/Expert perks are active.
+   Authoritative mechanics, AI projection, progression, and combat logs are
+   implemented; focused C++ source syntax checks and the 15-case perk-data test
+   pass. Native test execution remains pending: `cmake --build
+   build/new-horizons-linux --target vcmitest -j4` stops during reconfigure at
+   `CMakeLists.txt:846` with `Stale curated module settings: run python3
+   tools/update-new-horizons-module.py`. The generator was not run; unrelated
+   category/bonus mirror drift is preserved. Record native/runtime evidence
+   separately while preserving all three rank effects.
 3. **Bulwark of the Mire:** next full Skill slice after Spell Lock and Archery;
    validate all three rank effects and implement all ten perks, including turning
    the existing inaccessible Mireborn hook into a complete selectable mechanic.

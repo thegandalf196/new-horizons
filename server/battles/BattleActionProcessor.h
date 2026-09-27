@@ -113,10 +113,25 @@ class BattleActionProcessor : boost::noncopyable
 		BattleSide perfectMomentSide = BattleSide::NONE;
 	};
 
+	/// Action-local accounting for Rain of Arrows. The original primary footprint
+	/// is captured before the first projectile, since the target can die mid-volley.
+	struct RainOfArrowsAction
+	{
+		bool enabled = false;
+		uint32_t primaryTargetUnitId = 0;
+		std::vector<BattleHex> primaryFootprint;
+		int64_t actualPrimaryDamage = 0;
+	};
+
 	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest); //returned value - travelled distance
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender,
 		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr,
-		RelentlessAssaultActionContext * relentlessAssault = nullptr);
+		RelentlessAssaultActionContext * relentlessAssault = nullptr,
+		RainOfArrowsAction * rainOfArrows = nullptr);
+	RainOfArrowsAction beginRainOfArrows(const CBattleInfoCallback & battle,
+		const CStack * attacker, const CStack * primaryTarget) const;
+	void resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker,
+		RainOfArrowsAction & action);
 	void setPursuitMovementRemaining(const CBattleInfoCallback & battle, const CStack * stack, int32_t remaining) const;
 	void setCleaveUsed(const CBattleInfoCallback & battle, const CStack * stack) const;
 

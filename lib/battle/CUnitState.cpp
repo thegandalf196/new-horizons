@@ -432,6 +432,12 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	pursuitMovementRemaining = other.pursuitMovementRemaining;
 	cleaveUsedThisActivation = other.cleaveUsedThisActivation;
 	archeryCounterfireRound = other.archeryCounterfireRound;
+	archeryDeadeyeRound = other.archeryDeadeyeRound;
+	archerySuppressionActivationSerial = other.archerySuppressionActivationSerial;
+	archeryRainOfArrowsActivationSerial = other.archeryRainOfArrowsActivationSerial;
+	archeryCrossfireRound = other.archeryCrossfireRound;
+	archeryCrossfireAttackers = other.archeryCrossfireAttackers;
+	archeryCrossfireDefenders = other.archeryCrossfireDefenders;
 	noQuarterMoraleActivationsRemaining = other.noQuarterMoraleActivationsRemaining;
 	timeStopTurnConsumedFlag = other.timeStopTurnConsumedFlag;
 	summoned = other.summoned;
@@ -956,6 +962,12 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 		throw std::runtime_error("Invalid negative Pursuit movement allowance");
 	handler.serializeBool("cleaveUsedThisActivation", cleaveUsedThisActivation);
 	handler.serializeInt("archeryCounterfireRound", archeryCounterfireRound, -1);
+	handler.serializeInt("archeryDeadeyeRound", archeryDeadeyeRound, -1);
+	handler.serializeInt("archerySuppressionActivationSerial", archerySuppressionActivationSerial, -1);
+	handler.serializeInt("archeryRainOfArrowsActivationSerial", archeryRainOfArrowsActivationSerial, -1);
+	handler.serializeInt("archeryCrossfireRound", archeryCrossfireRound, -1);
+	handler.enterArray("archeryCrossfireAttackers").serializeArray(archeryCrossfireAttackers);
+	handler.enterArray("archeryCrossfireDefenders").serializeArray(archeryCrossfireDefenders);
 	handler.serializeInt("noQuarterMoraleActivationsRemaining", noQuarterMoraleActivationsRemaining, 0);
 	if(noQuarterMoraleActivationsRemaining < 0 || noQuarterMoraleActivationsRemaining > 2)
 		throw std::runtime_error("Invalid No Quarter morale lifetime");
@@ -1026,6 +1038,39 @@ void CUnitState::reset()
 	cloneID = -1;
 
 	position = BattleHex::INVALID;
+	archeryCounterfireRound = -1;
+	archeryDeadeyeRound = -1;
+	archerySuppressionActivationSerial = -1;
+	archeryRainOfArrowsActivationSerial = -1;
+	archeryCrossfireRound = -1;
+	archeryCrossfireAttackers.clear();
+	archeryCrossfireDefenders.clear();
+}
+
+bool CUnitState::archeryCrossfireAvailable(BattleSide side, uint32_t currentShooter, int32_t round) const
+{
+	if(archeryCrossfireRound != round || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return false;
+	const auto & shooters = side == BattleSide::ATTACKER ? archeryCrossfireAttackers : archeryCrossfireDefenders;
+	return std::ranges::any_of(shooters, [currentShooter](uint32_t shooter)
+	{
+		return shooter != currentShooter;
+	});
+}
+
+void CUnitState::archeryRecordCrossfireDamage(BattleSide side, uint32_t shooter, int32_t round)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return;
+	if(archeryCrossfireRound != round)
+	{
+		archeryCrossfireRound = round;
+		archeryCrossfireAttackers.clear();
+		archeryCrossfireDefenders.clear();
+	}
+	auto * shooters = side == BattleSide::ATTACKER ? &archeryCrossfireAttackers : &archeryCrossfireDefenders;
+	if(std::ranges::find(*shooters, shooter) == shooters->end())
+		shooters->push_back(shooter);
 }
 
 JsonNode CUnitState::save()

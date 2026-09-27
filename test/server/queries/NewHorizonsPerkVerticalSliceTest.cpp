@@ -185,6 +185,38 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, BlockedSkillRanksNeverEnterTheWeightedO
 	EXPECT_TRUE(sawLegalOffer);
 }
 
+TEST_F(NewHorizonsPerkVerticalSliceTest, ActiveBasicArcheryPerkUnlocksAdvancedRankAndAdvancedPerks)
+{
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto archery = skill("new-horizons:archery");
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameHandler.changeSecSkill(hero, archery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	hero->applyPerkSelection({"new-horizons:archery", "new-horizons:archery.pointBlankShot"});
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:archery", "new-horizons:archery.pointBlankShot"));
+	EXPECT_TRUE(hero->getPerkState().canAdvanceSkillNormally("new-horizons:archery", MasteryLevel::BASIC));
+
+	gameHandler.changeSecSkill(hero, archery, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	const auto rankLookup = [hero](const std::string & skillId) { return hero->getPerkSkillRank(skillId); };
+	std::vector<newHorizonsHeroes::PerkOfferCandidate> offer;
+	for(uint64_t seed = 0; seed < 1000; ++seed)
+	{
+		offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+		if(offerContains(offer, "new-horizons:archery.armorPiercingShot"))
+			break;
+	}
+	EXPECT_TRUE(offerContains(offer, "new-horizons:archery.armorPiercingShot"));
+	for(const auto & candidate : offer)
+	{
+		if(candidate.selection.skillId == "new-horizons:archery")
+		{
+			EXPECT_EQ(candidate.requiredRank, MasteryLevel::ADVANCED);
+		}
+	}
+}
+
 TEST_F(NewHorizonsPerkVerticalSliceTest, ExperienceOfferChoiceActivatesEffectAndSurvivesSaveLoad)
 {
 	startGame();

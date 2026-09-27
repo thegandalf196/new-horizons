@@ -14,6 +14,8 @@
 #include "Unit.h"
 #include "../bonuses/BonusCache.h"
 
+#include <vector>
+
 class JsonSerializeFormat;
 class UnitChanges;
 
@@ -159,6 +161,17 @@ public:
 	bool cleaveUsedThisActivation;
 	/// Round in which this stack last used Archery's once-per-round Counterfire.
 	int32_t archeryCounterfireRound = -1;
+	/// Round in which this stack first spent Deadeye on an ordinary ranged shot.
+	int32_t archeryDeadeyeRound = -1;
+	/// Global activation serial in which this stack first triggered Suppression.
+	int32_t archerySuppressionActivationSerial = -1;
+	/// Global activation serial in which this stack spent Rain of Arrows.
+	int32_t archeryRainOfArrowsActivationSerial = -1;
+	/// Crossfire provenance is tracked per battle side on the damaged stack.
+	/// A new round invalidates both sets lazily via archeryCrossfireRound.
+	int32_t archeryCrossfireRound = -1;
+	std::vector<uint32_t> archeryCrossfireAttackers;
+	std::vector<uint32_t> archeryCrossfireDefenders;
 	/// Number of accepted activations remaining before No Quarter's morale penalty ends.
 	int32_t noQuarterMoraleActivationsRemaining;
 	bool timeStopTurnConsumedFlag;
@@ -309,6 +322,9 @@ public:
 	void afterNewRound(bool isFirstRound = false);
 
 	void afterGetsTurn(BattleUnitTurnReason reason);
+
+	bool archeryCrossfireAvailable(BattleSide side, uint32_t currentShooter, int32_t round) const;
+	void archeryRecordCrossfireDamage(BattleSide side, uint32_t shooter, int32_t round);
 
 	void makeGhost();
 

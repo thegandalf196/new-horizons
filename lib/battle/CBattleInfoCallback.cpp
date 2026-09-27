@@ -16,6 +16,7 @@
 #include "../CStack.h"
 #include "BattleInfo.h"
 #include "CObstacleInstance.h"
+#include "CUnitState.h"
 #include "NewHorizonsBulwark.h"
 #include "NewHorizonsBattlecraft.h"
 #include "NewHorizonsArchery.h"
@@ -2088,6 +2089,36 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		payload.targetedRangedCommandPercent += newHorizonsArchery::TARGET_CALLER_DAMAGE_PERCENT;
 		payload.archeryIgnoreObstaclePenalty = true;
 	}
+	const auto * archeryHero = info.attacker ? battleGetOwnerHero(info.attacker) : nullptr;
+	const bool ordinaryArcheryShot = info.physicalDamage && info.shooting
+		&& newHorizonsArchery::isOrdinaryPhysicalShooter(info.attacker) && archeryHero;
+	if(ordinaryArcheryShot)
+	{
+		if(newHorizonsArchery::hasArmorPiercingShot(archeryHero))
+			payload.archeryRangedDefenseIgnorePercent += newHorizonsArchery::ARMOR_PIERCING_DEFENSE_IGNORE_PERCENT;
+		payload.archeryHighArc = newHorizonsArchery::hasHighArc(archeryHero);
+		if(payload.archeryHighArc)
+			payload.archeryIgnoreObstaclePenalty = true;
+
+		if(newHorizonsArchery::hasDeadeye(archeryHero))
+		{
+			const auto attackerState = info.attacker->acquireState();
+			if(attackerState->archeryDeadeyeRound != battleGetRound())
+			{
+				payload.archeryMaximumCreatureDamage = true;
+				payload.archeryRangedDefenseIgnorePercent += newHorizonsArchery::DEADEYE_DEFENSE_IGNORE_PERCENT;
+			}
+		}
+
+		if(newHorizonsArchery::hasCrossfire(archeryHero) && info.defender)
+		{
+			const auto attackerSide = playerToSide(battleGetOwner(info.attacker));
+			const auto defenderState = std::dynamic_pointer_cast<battle::CUnitState>(info.defender->acquireState());
+			if(defenderState && defenderState->archeryCrossfireAvailable(
+				attackerSide, info.attacker->unitId(), battleGetRound()))
+				payload.archeryCrossfireDamagePercent = newHorizonsArchery::CROSSFIRE_DAMAGE_PERCENT;
+		}
+	}
 	if(payload.targetedRangedCommand && payload.targetedRangedCommandPercent > 0)
 		attackerOrderCause = HeroCommand::FOCUS_FIRE;
 	if(info.physicalDamage && !info.shooting && info.attacker && info.defender
@@ -2292,6 +2323,10 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	auto result = script->calculate(*this, payload);
 	result.attackerOrderCause = attackerOrderCause;
 	result.defenderOrderCause = defenderOrderCause;
+	result.archeryDefenseIgnorePercent = payload.archeryRangedDefenseIgnorePercent;
+	result.archeryCrossfireDamagePercent = payload.archeryCrossfireDamagePercent;
+	result.archeryDeadeye = payload.archeryMaximumCreatureDamage;
+	result.archeryHighArc = payload.archeryHighArc;
 	return result;
 }
 
