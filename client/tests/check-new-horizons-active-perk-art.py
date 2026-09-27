@@ -14,6 +14,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_V2 = ROOT / "assets/new-horizons/art-source/active-perks-v2"
 SOURCE_V3 = ROOT / "assets/new-horizons/art-source/active-perks-v3"
+SOURCE_V5 = ROOT / "assets/new-horizons/art-source/active-perks-v5"
 IMAGES = ROOT / "Mods/new-horizons/Images"
 ICONS = ROOT / "client/windows/NewHorizonsPerkIcons.h"
 DEFINITIONS = ROOT / "config/newHorizonsPerks.json"
@@ -38,7 +39,93 @@ V3_EXPECTED = {
         "shock-assault",
     ),
 }
-EXPECTED = V2_EXPECTED | V3_EXPECTED
+V5_EXPECTED = {
+    "new-horizons:metamagic.arcaneAcquisition": (
+        "NH_perk_arcane_acquisition",
+        "arcane-acquisition",
+    ),
+    "new-horizons:metamagic.spellBuffer": (
+        "NH_perk_spell_buffer_v2",
+        "spell-buffer",
+    ),
+    "new-horizons:havocMagic.stormcaller": (
+        "NH_perk_stormcaller_v2",
+        "stormcaller",
+    ),
+    "new-horizons:wisdom.intelligence": (
+        "NH_perk_intelligence",
+        "intelligence",
+    ),
+    "new-horizons:sorceryMagic.illusionist": (
+        "NH_perk_illusionist",
+        "illusionist",
+    ),
+    "new-horizons:sorceryMagic.spellbinder": (
+        "NH_perk_spellbinder",
+        "spellbinder",
+    ),
+    "new-horizons:logistics.pathfinding": (
+        "NH_perk_pathfinding",
+        "pathfinding",
+    ),
+    "new-horizons:logistics.navigation": (
+        "NH_perk_navigation",
+        "navigation",
+    ),
+    "new-horizons:logistics.scouting": (
+        "NH_perk_scouting",
+        "scouting",
+    ),
+    "new-horizons:recruitment.volunteerNetwork": (
+        "NH_perk_volunteer_network",
+        "volunteer-network",
+    ),
+    "new-horizons:recruitment.eliteDraft": (
+        "NH_perk_elite_draft",
+        "elite-draft",
+    ),
+    "new-horizons:recruitment.championSCall": (
+        "NH_perk_champions_call",
+        "champions-call",
+    ),
+    "new-horizons:recruitment.masterRecruiter": (
+        "NH_perk_master_recruiter",
+        "master-recruiter",
+    ),
+    "new-horizons:demonicGating.swiftGate": (
+        "NH_perk_swift_gate",
+        "swift-gate",
+    ),
+    "new-horizons:demonicGating.wideGate": (
+        "NH_perk_wide_gate",
+        "wide-gate",
+    ),
+    "new-horizons:demonicGating.hellfireArrival": (
+        "NH_perk_hellfire_arrival",
+        "hellfire-arrival",
+    ),
+    "new-horizons:demonicGating.reinforcedGate": (
+        "NH_perk_reinforced_gate",
+        "reinforced-gate",
+    ),
+    "new-horizons:demonicGating.mobileGate": (
+        "NH_perk_mobile_gate",
+        "mobile-gate",
+    ),
+    "new-horizons:demonicGating.infernalBeacon": (
+        "NH_perk_infernal_beacon",
+        "infernal-beacon",
+    ),
+    "new-horizons:demonicGating.reserveDiscipline": (
+        "NH_perk_reserve_discipline",
+        "reserve-discipline",
+    ),
+    "new-horizons:demonicGating.endlessLegion": (
+        "NH_perk_endless_legion",
+        "endless-legion",
+    ),
+}
+EXPECTED = V2_EXPECTED | V3_EXPECTED | V5_EXPECTED
 
 
 def digest(path: Path) -> str:
@@ -52,7 +139,11 @@ def image_size(path: Path) -> tuple[int, int]:
 
 def main() -> None:
     mapping = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}', ICONS.read_text(encoding="utf-8")))
-    for source, expected in ((SOURCE_V2, V2_EXPECTED), (SOURCE_V3, V3_EXPECTED)):
+    for source, expected in (
+        (SOURCE_V2, V2_EXPECTED),
+        (SOURCE_V3, V3_EXPECTED),
+        (SOURCE_V5, V5_EXPECTED),
+    ):
         generation = json.loads((source / "generation.json").read_text(encoding="utf-8"))
         by_id = {asset["id"]: asset for asset in generation["assets"]}
         assert set(by_id) == set(expected), (source, "generation coverage")
@@ -101,6 +192,8 @@ def main() -> None:
         if perk["effect"]["status"] == "active"
     }
     assert set(EXPECTED) <= active
+    missing = sorted(active - set(mapping))
+    assert not missing, f"active perks without named icon mappings: {missing}"
     normal_hashes = set()
     for perk_id in sorted(active):
         key = mapping[perk_id]

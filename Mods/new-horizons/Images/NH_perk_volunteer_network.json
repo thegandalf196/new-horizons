@@ -1,0 +1,24 @@
+{
+  "images": [
+    {
+      "group": 0,
+      "frame": 0,
+      "file": "NH_perk_volunteer_network_normal.png"
+    },
+    {
+      "group": 0,
+      "frame": 1,
+      "file": "NH_perk_volunteer_network_pressed.png"
+    },
+    {
+      "group": 0,
+      "frame": 2,
+      "file": "NH_perk_volunteer_network_disabled.png"
+    },
+    {
+      "group": 0,
+      "frame": 3,
+      "file": "NH_perk_volunteer_network_highlighted.png"
+    }
+  ]
+}

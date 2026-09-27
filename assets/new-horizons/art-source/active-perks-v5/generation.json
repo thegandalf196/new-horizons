@@ -1,0 +1,224 @@
+{
+  "generator": "OpenAI built-in image generation via homm3-art skill",
+  "date": "2026-09-26",
+  "styleReference": "homm3-art/references/style-guide.md",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    {
+      "id": "new-horizons:metamagic.arcaneAcquisition",
+      "key": "NH_perk_arcane_acquisition",
+      "slug": "arcane-acquisition",
+      "subject": "Brass astrolabe and crystal prism splitting arcane light toward two marked targets",
+      "master": "exports/arcane-acquisition/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "c9caaf9f153e1e2e15c5ef4fc4f96f03163634eaaa2bf81c15f9046869004347",
+      "prompt_file": "prompts/arcane-acquisition.txt"
+    },
+    {
+      "id": "new-horizons:metamagic.spellBuffer",
+      "key": "NH_perk_spell_buffer_v2",
+      "slug": "spell-buffer",
+      "subject": "Brass-caged azure crystal reservoir holding surplus magical energy",
+      "master": "exports/spell-buffer/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "9ca7def249bee715fd9986aa8fe11a9ed6db304652c6050bdf6d020d2179e9da",
+      "prompt_file": "prompts/spell-buffer.txt"
+    },
+    {
+      "id": "new-horizons:havocMagic.stormcaller",
+      "key": "NH_perk_stormcaller_v2",
+      "slug": "stormcaller",
+      "subject": "Copper storm horn drawing lightning from a spiral of dark cloud",
+      "master": "exports/stormcaller/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "9cea3fb428ccc9a00165a7f7313e348c7a5f69ebab4c69c24ddfee171a5e3f3e",
+      "prompt_file": "prompts/stormcaller.txt"
+    },
+    {
+      "id": "new-horizons:wisdom.intelligence",
+      "key": "NH_perk_intelligence",
+      "slug": "intelligence",
+      "subject": "Ordered sapphire mind-crystal drawing knowledge from an open spellbook",
+      "master": "exports/intelligence/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "29f4ec4d895ae50651eb832089e8ebe48b8f607a995a64c848a604043beb95b0",
+      "prompt_file": "prompts/intelligence.txt"
+    },
+    {
+      "id": "new-horizons:sorceryMagic.illusionist",
+      "key": "NH_perk_illusionist",
+      "slug": "illusionist",
+      "subject": "Silver mirror repeating a violet crystal into unreal copies",
+      "master": "exports/illusionist/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "5e8a2b63341e0beec5cbff94226501be0d61292c31511820381b7c5fa70e09bf",
+      "prompt_file": "prompts/illusionist.txt"
+    },
+    {
+      "id": "new-horizons:sorceryMagic.spellbinder",
+      "key": "NH_perk_spellbinder",
+      "slug": "spellbinder",
+      "subject": "Clasped black grimoire gathering five streams of high magic",
+      "master": "exports/spellbinder/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "40450ee3247ab3f7fe130d7a5e42aa55a1b7ba8a7212eec5b9d70844b937e292",
+      "prompt_file": "prompts/spellbinder.txt"
+    },
+    {
+      "id": "new-horizons:logistics.pathfinding",
+      "key": "NH_perk_pathfinding",
+      "slug": "pathfinding",
+      "subject": "Travel boot following safe stones between thorns and marsh",
+      "master": "exports/pathfinding/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "56a3d90ea8f3602a148817827031dda9b5e429a3e0c57a5bf53a9dcddba6ab09",
+      "prompt_file": "prompts/pathfinding.txt"
+    },
+    {
+      "id": "new-horizons:logistics.navigation",
+      "key": "NH_perk_navigation",
+      "slug": "navigation",
+      "subject": "Brass sextant and compass pointing toward a lighthouse",
+      "master": "exports/navigation/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "4ecef34dbd6a06473c01caae8063a09b6f9ebf95813972ec41f58e8a3c1fb29e",
+      "prompt_file": "prompts/navigation.txt"
+    },
+    {
+      "id": "new-horizons:logistics.scouting",
+      "key": "NH_perk_scouting",
+      "slug": "scouting",
+      "subject": "Spyglass revealing an illuminated watchtower and terrain",
+      "master": "exports/scouting/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "0f5419716cc97bfc6476adc1765deec15443f6ce5ba36d2469a6bf3b4753d9cc",
+      "prompt_file": "prompts/scouting.txt"
+    },
+    {
+      "id": "new-horizons:recruitment.volunteerNetwork",
+      "key": "NH_perk_volunteer_network",
+      "slug": "volunteer-network",
+      "subject": "Village pennants and seals converging on a muster roll",
+      "master": "exports/volunteer-network/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "13f71e52a7de602ab42fc5d70a2ddc2175238fdcab7f8dcb0096f51bca2c0015",
+      "prompt_file": "prompts/volunteer-network.txt"
+    },
+    {
+      "id": "new-horizons:recruitment.eliteDraft",
+      "key": "NH_perk_elite_draft",
+      "slug": "elite-draft",
+      "subject": "Polished officer's helm selected from common equipment",
+      "master": "exports/elite-draft/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "6a456ba1f42354e7381c98ddd2b1196ec658027cd16ce81d43f34909c9f50014",
+      "prompt_file": "prompts/elite-draft.txt"
+    },
+    {
+      "id": "new-horizons:recruitment.championSCall",
+      "key": "NH_perk_champions_call",
+      "slug": "champions-call",
+      "subject": "Ceremonial war horn opening the champion's gate",
+      "master": "exports/champions-call/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "d054d36acd21c3bc0bd2492309793e216387ec7921e769329cb78fef34bc091e",
+      "prompt_file": "prompts/champions-call.txt"
+    },
+    {
+      "id": "new-horizons:recruitment.masterRecruiter",
+      "key": "NH_perk_master_recruiter",
+      "slug": "master-recruiter",
+      "subject": "Command seal completing an all-tier muster ledger",
+      "master": "exports/master-recruiter/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "58f975221a6177321589de3ff76f281ca93e556ff7e74380696d95428ec510d7",
+      "prompt_file": "prompts/master-recruiter.txt"
+    },
+    {
+      "id": "new-horizons:demonicGating.swiftGate",
+      "key": "NH_perk_swift_gate",
+      "slug": "swift-gate",
+      "subject": "Nearly emptied hourglass inside a rushing infernal portal",
+      "master": "exports/swift-gate/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "a6104df1a834190f02baf1b094668f27d4f792907e0c17315d8f1da6d321b8ee",
+      "prompt_file": "prompts/swift-gate.txt"
+    },
+    {
+      "id": "new-horizons:demonicGating.wideGate",
+      "key": "NH_perk_wide_gate",
+      "slug": "wide-gate",
+      "subject": "Infernal gate surrounded by two expanded rings of battlefield hexes",
+      "master": "exports/wide-gate/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "8ec11938905f59b21614c5e9ce8129a546ca7e75f7123981301f3d56ea828991",
+      "prompt_file": "prompts/wide-gate.txt"
+    },
+    {
+      "id": "new-horizons:demonicGating.hellfireArrival",
+      "key": "NH_perk_hellfire_arrival",
+      "slug": "hellfire-arrival",
+      "subject": "Newly opened infernal gate blasting fire into adjacent directions",
+      "master": "exports/hellfire-arrival/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "2b0239cdd6afda61b80edda1ad7f499ab17ceec6dce9d233f14a867f599dbfc3",
+      "prompt_file": "prompts/hellfire-arrival.txt"
+    },
+    {
+      "id": "new-horizons:demonicGating.reinforcedGate",
+      "key": "NH_perk_reinforced_gate",
+      "slug": "reinforced-gate",
+      "subject": "Iron-braced infernal gate protected by a crimson force shield",
+      "master": "exports/reinforced-gate/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "9b5669b353ef8d487c445fff7ae2c3c8ac9845742d221e70ac6347882f28ec88",
+      "prompt_file": "prompts/reinforced-gate.txt"
+    },
+    {
+      "id": "new-horizons:demonicGating.mobileGate",
+      "key": "NH_perk_mobile_gate",
+      "slug": "mobile-gate",
+      "subject": "Ember footprints leading from an infernal greave into a portal",
+      "master": "exports/mobile-gate/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "169b07aef7b8d4f91da09496666657d2b47a88f5d2ca52648ada28e7db0ff8fb",
+      "prompt_file": "prompts/mobile-gate.txt"
+    },
+    {
+      "id": "new-horizons:demonicGating.infernalBeacon",
+      "key": "NH_perk_infernal_beacon",
+      "slug": "infernal-beacon",
+      "subject": "Infernal gate, allied banner and beacon sharing an Initiative sign",
+      "master": "exports/infernal-beacon/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "602ba374f2f5dda4d78a6a035194a453ba33ff9b0dbc8e7c1c62d0cd6dd64748",
+      "prompt_file": "prompts/infernal-beacon.txt"
+    },
+    {
+      "id": "new-horizons:demonicGating.reserveDiscipline",
+      "key": "NH_perk_reserve_discipline",
+      "slug": "reserve-discipline",
+      "subject": "Iron war mask holding a broken negative-morale mark level",
+      "master": "exports/reserve-discipline/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "ae4c21dbd7b4dfcea8c0d16a457b3668c3ebd341f390a9dc252a437aa2c96d42",
+      "prompt_file": "prompts/reserve-discipline.txt"
+    },
+    {
+      "id": "new-horizons:demonicGating.endlessLegion",
+      "key": "NH_perk_endless_legion",
+      "slug": "endless-legion",
+      "subject": "Ruined reserve arms returning as embers through a barred gate",
+      "master": "exports/endless-legion/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "2f09665c7e47b7b747cdbdb04bcb8d581b2a589c37a6850ec91aef07bbb46ab3",
+      "prompt_file": "prompts/endless-legion.txt"
+    }
+  ],
+  "constraints": [
+    "square high-resolution master",
+    "late-1990s modeled fantasy still life",
+    "readable at 44x44 and 32x32",
+    "no text, border, interface chrome, watermark, or intentional pixel art"
+  ]
+}

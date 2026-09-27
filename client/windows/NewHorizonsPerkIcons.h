@@ -16,19 +16,34 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:offense.breakthrough", "NH_perk_breakthrough"},
 		{"new-horizons:battlecraft.entrench", "NH_perk_entrench"},
 		{"new-horizons:discipline.inspirationalLeader", "NH_perk_inspirational_leader"},
+		{"new-horizons:wisdom.intelligence", "NH_perk_intelligence"},
+		{"new-horizons:logistics.pathfinding", "NH_perk_pathfinding"},
+		{"new-horizons:logistics.navigation", "NH_perk_navigation"},
+		{"new-horizons:logistics.scouting", "NH_perk_scouting"},
+		{"new-horizons:recruitment.volunteerNetwork", "NH_perk_volunteer_network"},
+		{"new-horizons:recruitment.eliteDraft", "NH_perk_elite_draft"},
+		{"new-horizons:recruitment.championSCall", "NH_perk_champions_call"},
+		{"new-horizons:recruitment.masterRecruiter", "NH_perk_master_recruiter"},
 		{"new-horizons:demonicGating.chainGate", "NH_perk_chain_gate"},
+		{"new-horizons:demonicGating.swiftGate", "NH_perk_swift_gate"},
+		{"new-horizons:demonicGating.wideGate", "NH_perk_wide_gate"},
+		{"new-horizons:demonicGating.hellfireArrival", "NH_perk_hellfire_arrival"},
+		{"new-horizons:demonicGating.reinforcedGate", "NH_perk_reinforced_gate"},
+		{"new-horizons:demonicGating.mobileGate", "NH_perk_mobile_gate"},
+		{"new-horizons:demonicGating.infernalBeacon", "NH_perk_infernal_beacon"},
+		{"new-horizons:demonicGating.reserveDiscipline", "NH_perk_reserve_discipline"},
+		{"new-horizons:demonicGating.endlessLegion", "NH_perk_endless_legion"},
 		{"new-horizons:sorceryMagic.overcharger", "NH_perk_overcharger"},
 		{"new-horizons:sorceryMagic.selectiveDispel", "NH_perk_selective_dispel"},
 		{"new-horizons:sorceryMagic.temporalist", "NH_perk_temporalist"},
 		{"new-horizons:sorceryMagic.matterShaper", "NH_perk_matter_shaper"},
 		{"new-horizons:sorceryMagic.teleporter", "NH_perk_teleporter"},
 		{"new-horizons:sorceryMagic.countermage", "NH_perk_countermage"},
+		{"new-horizons:sorceryMagic.illusionist", "NH_perk_illusionist"},
 		{"new-horizons:sorceryMagic.temporalField", "NH_perk_temporal_field"},
 		{"new-horizons:sorceryMagic.chronomancer", "NH_perk_chronomancer"},
-		// Stormcaller is active in the authored perk registry.  Reuse the
-		// school glyph until a dedicated lightning painting is available rather
-		// than silently falling back to the neutral placeholder.
-		{"new-horizons:havocMagic.stormcaller", "NH_perk_stormcaller"},
+		{"new-horizons:sorceryMagic.spellbinder", "NH_perk_spellbinder"},
+		{"new-horizons:havocMagic.stormcaller", "NH_perk_stormcaller_v2"},
 		// Provisional but distinct bindings for the newly playable higher-rank
 		// Havoc perks.  Dedicated Havoc paintings can replace these asset keys
 		// later without falling back to the neutral placeholder meanwhile.
@@ -51,9 +66,11 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:metamagic.echoedDuration", "NH_perk_echoed_duration"},
 		{"new-horizons:metamagic.splitFocus", "NH_perk_split_focus"},
 		{"new-horizons:metamagic.formulaReserve", "NH_perk_formula_reserve"},
+		{"new-horizons:metamagic.arcaneAcquisition", "NH_perk_arcane_acquisition"},
 		// Spell Echo has no dedicated painting yet; use the neutral placeholder
 		// rather than exposing the retired Spell Buffer artwork for a new rule.
 		{"new-horizons:metamagic.spellEcho", "NH_perk_neutral"},
+		{"new-horizons:metamagic.spellBuffer", "NH_perk_spell_buffer_v2"},
 		{"new-horizons:metamagic.grandMetamagic", "NH_perk_grand_metamagic"},
 		{"new-horizons:metamagic.perfectSequence", "NH_perk_perfect_sequence"},
 		{"new-horizons:necromancy.darkConversion", "NH_perk_dark_conversion"},
