@@ -18,6 +18,7 @@
 #include "CObstacleInstance.h"
 #include "NewHorizonsBulwark.h"
 #include "NewHorizonsBattlecraft.h"
+#include "NewHorizonsArchery.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsShroud.h"
@@ -1064,7 +1065,7 @@ std::vector<PossiblePlayerBattleAction> CBattleInfoCallback::getClientActionsFor
 		if(stack->hasBonusOfType(BonusType::LONG_WEAPON))
 			allowedActionList.push_back(PossiblePlayerBattleAction::LONG_WEAPON_ATTACK);
 
-		if (stack->isMeleeAttacker()) //not all stacks can actually attack or walk and attack, check this elsewhere
+		if(stack->isMeleeAttacker())
 		{
 			allowedActionList.push_back(PossiblePlayerBattleAction::ATTACK);
 			allowedActionList.push_back(PossiblePlayerBattleAction::WALK_AND_ATTACK);
@@ -1073,12 +1074,12 @@ std::vector<PossiblePlayerBattleAction> CBattleInfoCallback::getClientActionsFor
 		if(stack->canMove() && stack->getMovementRange(0)) //probably no reason to try move war machines or bound stacks
 			allowedActionList.push_back(PossiblePlayerBattleAction::MOVE_STACK);
 
+		const auto * hero = battleGetFightingHero(stack->unitSide());
 		const auto * siegedTown = battleGetDefendedTown();
 		if(siegedTown && siegedTown->fortificationsLevel().wallsHealth > 0 && stack->hasBonusOfType(BonusType::CATAPULT)) //TODO: check shots
 			allowedActionList.push_back(PossiblePlayerBattleAction::CATAPULT);
 		if(stack->hasBonusOfType(BonusType::HEALER))
 			allowedActionList.push_back(PossiblePlayerBattleAction::HEAL);
-		const auto * hero = battleGetFightingHero(stack->unitSide());
 		if(hero && stack->creatureId().toCreature()->getFactionID() == FactionID::INFERNO)
 		{
 			const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
@@ -1691,6 +1692,105 @@ bool CBattleInfoCallback::battleCanAttackHex(const BattleHexArray & availableHex
 	return false;
 }
 
+BattleHexArray CBattleInfoCallback::battleGetSkirmisherTargetHexes(const battle::Unit * attacker) const
+{
+	RETURN_IF_NOT_BATTLE(BattleHexArray{});
+	if(!attacker || battleTacticDist())
+		return {};
+	const auto * hero = battleGetOwnerHero(attacker);
+	if(!newHorizonsArchery::canUseSkirmisher(hero, attacker))
+		return {};
+
+	const int movementLimit = static_cast<int>(attacker->getMovementRange(0) / 2);
+	if(movementLimit <= 0)
+		return {};
+	const auto reachability = getReachability(attacker);
+	const BattleHexArray reachable = battleGetAvailableHexes(reachability, attacker, false);
+	BattleHexArray firingPositions;
+	for(const BattleHex & candidate : reachable)
+	{
+		if(candidate == attacker->getPosition())
+			continue;
+		const uint32_t distance = reachability.distances[candidate.toInt()];
+		if(distance == ReachabilityInfo::INFINITE_DIST || distance == 0 || distance > static_cast<uint32_t>(movementLimit))
+			continue;
+		firingPositions.insert(candidate);
+	}
+	if(firingPositions.empty())
+		return {};
+
+	auto projected = attacker->acquireState();
+	BattleHexArray result;
+	for(const auto * target : battleAliveUnits())
+	{
+		// battleMatchOwner is true for hostile stacks; reject allies and accept enemies.
+		if(!target || target->isInvincible() || !battleMatchOwner(attacker, target))
+			continue;
+		for(const BattleHex & targetHex : target->getHexes())
+		{
+			for(const BattleHex & candidate : firingPositions)
+			{
+				projected->setPosition(candidate);
+				if(battleCanShoot(projected.get(), targetHex))
+				{
+					result.insert(targetHex);
+					break;
+				}
+			}
+		}
+	}
+	return result;
+}
+
+BattleHexArray CBattleInfoCallback::battleGetSkirmisherAttackFromHexes(const battle::Unit * attacker,
+	const BattleHex & targetHex, ReachabilityInfo::TDistances * distances) const
+{
+	if(distances)
+		distances->fill(ReachabilityInfo::INFINITE_DIST);
+	RETURN_IF_NOT_BATTLE(BattleHexArray{});
+	if(!attacker || !targetHex.isAvailable() || battleTacticDist())
+		return {};
+	const auto * hero = battleGetOwnerHero(attacker);
+	if(!newHorizonsArchery::canUseSkirmisher(hero, attacker))
+		return {};
+	const auto * target = battleGetUnitByPos(targetHex);
+	if(!target || !target->alive() || target->isInvincible() || !battleMatchOwner(attacker, target))
+		return {};
+
+	const int movementLimit = static_cast<int>(attacker->getMovementRange(0) / 2);
+	if(movementLimit <= 0)
+		return {};
+	const auto reachability = getReachability(attacker);
+	const BattleHexArray reachable = battleGetAvailableHexes(reachability, attacker, false);
+	BattleHexArray result;
+	auto moved = attacker->acquireState();
+	for(const BattleHex & candidate : reachable)
+	{
+		if(candidate == attacker->getPosition())
+			continue;
+		const uint32_t distance = reachability.distances[candidate.toInt()];
+		if(distance == ReachabilityInfo::INFINITE_DIST || distance == 0 || distance > static_cast<uint32_t>(movementLimit))
+			continue;
+
+		moved->setPosition(candidate);
+		if(!battleCanShoot(moved.get(), targetHex))
+			continue;
+		result.insert(candidate);
+		if(distances)
+			(*distances)[candidate.toInt()] = distance;
+	}
+	return result;
+}
+
+bool CBattleInfoCallback::battleCanSkirmisherAttackFromHex(const battle::Unit * attacker,
+	const BattleHex & targetHex, const BattleHex & attackFromHex) const
+{
+	if(!attackFromHex.isAvailable())
+		return false;
+	const auto candidates = battleGetSkirmisherAttackFromHexes(attacker, targetHex);
+	return vstd::contains(candidates, attackFromHex);
+}
+
 bool CBattleInfoCallback::battleCanAttackUnit(const battle::Unit * attacker, const battle::Unit * target) const
 {
 	RETURN_IF_NOT_BATTLE(false);
@@ -1707,10 +1807,9 @@ bool CBattleInfoCallback::battleCanAttackUnit(const battle::Unit * attacker, con
 	if(attacker == target || !battleMatchOwner(attacker, target))
 		return false;
 
-	if (!attacker->isMeleeAttacker())
+	if(!target->alive())
 		return false;
-
-	return target->alive();
+	return attacker->isMeleeAttacker();
 }
 
 bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker) const
@@ -1849,10 +1948,19 @@ bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, const Ba
 	bool attackerIsBerserk = attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE);
 	if(emptyHexAreaAttack || (defender->alive() && (attackerIsBerserk || battleMatchOwner(attacker, defender))))
 	{
-		if(battleCanShoot(attacker))
+		const bool pointBlankAdjacentShot = defender && attacker->isShooter() && attacker->canShoot()
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
+			&& !attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+			&& newHorizonsArchery::hasPointBlankShot(battleGetOwnerHero(attacker))
+			&& battleMatchOwner(attacker, defender)
+			&& isMeleeAttackPossible(attacker, defender);
+		// Point-Blank Shot is the sole exception to the blocked-shooter gate,
+		// and only for an adjacent enemy that can actually be hit as a ranged shot.
+		if(battleCanShoot(attacker) || pointBlankAdjacentShot)
 		{
 			// e.g. Steel Elves - unit shoots freely while blocked, but adjacent units can only be attacked in melee
-			if(defender && !canShootAdjacentUnits(attacker) && isMeleeAttackPossible(attacker, defender))
+			if(defender && !canShootAdjacentUnits(attacker) && isMeleeAttackPossible(attacker, defender)
+				&& !pointBlankAdjacentShot)
 				return false;
 
 			auto limitedRangeBonus = attacker->getBonus(Selector::type()(BonusType::LIMITED_SHOOTING_RANGE));
@@ -1895,6 +2003,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.chargeDistance = info.chargeDistance;
 	payload.shooting = info.shooting;
 	payload.physicalDamage = info.physicalDamage;
+	payload.archeryRangedDamageMultiplierPercent = info.archeryRangedDamageMultiplierPercent;
 	payload.relentlessAssaultDamagePercent = info.relentlessAssaultDamagePercent;
 	const auto * currentBattle = getBattle();
 	if(currentBattle)
@@ -1961,6 +2070,24 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
 	payload.targetedRangedCommandPercent = battleTargetedRangedCommandPercent(
 		info.attacker, info.defender, info.shooting, info.secondaryAttack);
+	if(info.shooting && info.physicalDamage && info.attacker && info.defender)
+	{
+		const auto & adjacentHexes = info.attacker->getSurroundingHexes(payload.attackerHex);
+		const auto & targetHexes = info.defender->getHexes(payload.defenderHex);
+		payload.archeryAdjacentRangedTarget = std::ranges::any_of(targetHexes, [&adjacentHexes](BattleHex hex)
+		{
+			return adjacentHexes.contains(hex);
+		});
+		payload.archeryIgnoreAdjacentRangedPenalty = payload.archeryAdjacentRangedTarget
+			&& newHorizonsArchery::hasPointBlankShot(battleGetOwnerHero(info.attacker));
+	}
+	if(payload.targetedRangedCommand && info.physicalDamage
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker)
+		&& newHorizonsArchery::hasTargetCaller(battleGetOwnerHero(info.attacker)))
+	{
+		payload.targetedRangedCommandPercent += newHorizonsArchery::TARGET_CALLER_DAMAGE_PERCENT;
+		payload.archeryIgnoreObstaclePenalty = true;
+	}
 	if(payload.targetedRangedCommand && payload.targetedRangedCommandPercent > 0)
 		attackerOrderCause = HeroCommand::FOCUS_FIRE;
 	if(info.physicalDamage && !info.shooting && info.attacker && info.defender

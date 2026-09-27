@@ -101,7 +101,10 @@ class BattleActionProcessor : boost::noncopyable
 		/// attackIndex 0 for a defender striking first
 		bool first = false;
 		bool ranged = false;
+		int archeryRangedDamageMultiplierPercent = 100;
 		bool counter = false;
+		/// Counterfire is a counter-flagged reaction but does not consume normal retaliation.
+		bool archeryCounterfire = false;
 		bool brace = false;
 		int preemptiveDamagePercent = 0;
 		bool cleaveFollowup = false;
@@ -139,7 +142,7 @@ class BattleActionProcessor : boost::noncopyable
 		std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload,
 		const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
 		int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
-		int relentlessAssaultDamagePercent) const;
+		int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent) const;
 	void publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const;
 
 	void addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const;

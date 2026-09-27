@@ -33,6 +33,7 @@
 #include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
@@ -935,6 +936,20 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 				else if(bestAttack.attack.shooting)
 				{
 					activeActionMade = true;
+					const auto * hero = hb->battleGetFightingHero(stack->unitSide());
+					if(bestAttack.from.isValid() && bestAttack.from != stack->getPosition()
+						&& newHorizonsArchery::canUseSkirmisher(hero, stack)
+						&& hb->battleCanSkirmisherAttackFromHex(stack,
+							bestAttack.attack.defender->getPosition(), bestAttack.from))
+					{
+						// Skirmisher encodes its chosen legal move-and-fire destination through
+						// the existing WALK_AND_ATTACK packet.
+						auto action = BattleAction::makeMeleeAttack(stack,
+							bestAttack.attack.defender->getPosition(), bestAttack.from, false);
+						action.archerySkirmisherAttack = true;
+						action.perfectMoment = bestAttack.perfectMoment;
+						return action;
+					}
 					auto action = BattleAction::makeShotAttack(stack, bestAttack.attack.defender);
 					action.perfectMoment = bestAttack.perfectMoment;
 					return action;

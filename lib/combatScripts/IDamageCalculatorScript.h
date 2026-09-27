@@ -54,6 +54,12 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int targetedRangedCommandPercent = 0;
 	/// Focus Fire's reduced range/obstacle penalty for this exact primary shot.
 	bool targetedRangedCommand = false;
+	/// Target Caller's Focus Fire shot ignores all wall/obstacle damage penalties.
+	bool archeryIgnoreObstaclePenalty = false;
+	/// This physical shot targets an adjacent unit and uses the ordinary -50% ranged penalty.
+	bool archeryAdjacentRangedTarget = false;
+	/// Point-Blank Shot removes only the ordinary adjacent-target penalty from this shot.
+	bool archeryIgnoreAdjacentRangedPenalty = false;
 	/// Percentage of the target's Creature Defense ignored by this exact attack.  This is
 	/// populated from authoritative saved perk state, not from installed content alone.
 	int luckyRangedDefenseIgnorePercent = 0;
@@ -103,6 +109,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// Independent final multiplier for an automatic Cleave strike. This composes
 	/// with Orders instead of overwriting their explicit final multiplier.
 	int cleaveFinalDamageMultiplier = 100;
+	/// Independent final multiplier for an explicitly reduced-strength Archery attack.
+	int archeryRangedDamageMultiplierPercent = 100;
 
 	/// Which of the bonus types the script declared an interest in each of the two carries
 	std::unordered_map<std::string, bool> attackerBonuses;
@@ -131,6 +139,12 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Combined independent physical reduction cap; -1 preserves legacy calculations.");
 		s("targetedRangedCommandPercent", targetedRangedCommandPercent, "Target-specific additive ranged premium.");
 		s("targetedRangedCommand", targetedRangedCommand, "Whether Focus Fire halves range and obstacle penalties for this primary shot.");
+		s("archeryIgnoreObstaclePenalty", archeryIgnoreObstaclePenalty,
+			"Whether Target Caller removes every obstacle penalty from this Focus Fire shot.");
+		s("archeryAdjacentRangedTarget", archeryAdjacentRangedTarget,
+			"Whether this ranged shot is against an adjacent target and receives the ordinary adjacent-shot penalty.");
+		s("archeryIgnoreAdjacentRangedPenalty", archeryIgnoreAdjacentRangedPenalty,
+			"Whether Point-Blank Shot removes the ordinary adjacent-target ranged penalty from this shot.");
 		s("luckyRangedDefenseIgnorePercent", luckyRangedDefenseIgnorePercent,
 			"Percentage of target Creature Defense ignored by this lucky ranged attack.");
 		s("chargeDefenseIgnorePercent", chargeDefenseIgnorePercent,
@@ -170,6 +184,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Final multiplicative damage percentage supplied by the active canonical Order; 100 is neutral.");
 		s("cleaveFinalDamageMultiplier", cleaveFinalDamageMultiplier,
 			"Final multiplicative percentage for an automatic Cleave strike; 100 is neutral.");
+		s("archeryRangedDamageMultiplierPercent", archeryRangedDamageMultiplierPercent,
+			"Final multiplicative percentage for reduced-strength Archery shots; 100 is neutral.");
 		s("luckyStrike", luckyStrike, "Whether luck struck.");
 		s("unluckyStrike", unluckyStrike, "Whether bad luck struck.");
 		s("deathBlow", deathBlow, "Whether a death blow was rolled.");

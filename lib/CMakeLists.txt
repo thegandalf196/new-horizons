@@ -58,6 +58,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsBloodrage.cpp
 	battle/NewHorizonsBulwark.cpp
 	battle/NewHorizonsBattlecraft.cpp
+	battle/NewHorizonsArchery.cpp
 	battle/NewHorizonsCombatSkills.cpp
 	battle/NewHorizonsShroud.cpp
 	battle/BattleLayout.cpp
@@ -493,6 +494,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsBloodrage.h
 	battle/NewHorizonsBulwark.h
 	battle/NewHorizonsBattlecraft.h
+	battle/NewHorizonsArchery.h
 	battle/NewHorizonsCombatSkills.h
 	battle/NewHorizonsShroud.h
 	battle/BattleLayout.h

@@ -33,6 +33,7 @@
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CObstacleInstance.h"
+#include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/IBattleState.h"
@@ -1227,6 +1228,8 @@ void BattleActionsController::reorderPossibleActionsPriority(const CStack * stac
 				break;
 			case PossiblePlayerBattleAction::WALK_AND_ATTACK:
 				return 8;
+			case PossiblePlayerBattleAction::SKIRMISHER_ATTACK:
+				return 0;
 				break;
 			case PossiblePlayerBattleAction::WALK_AND_SPELLCAST:
 				return 9;
@@ -1444,6 +1447,11 @@ const CStack * BattleActionsController::getStackForHex(const BattleHex & hovered
 
 void BattleActionsController::actionSetCursor(PossiblePlayerBattleAction action, const BattleHex & targetHex)
 {
+	if(action.get() == PossiblePlayerBattleAction::SKIRMISHER_ATTACK)
+	{
+		ENGINE->cursor().set(Cursor::Combat::SHOOT);
+		return;
+	}
 	switch (action.get())
 	{
 		case PossiblePlayerBattleAction::CHOOSE_TACTICS_STACK:
@@ -1559,6 +1567,32 @@ void BattleActionsController::actionSetCursorBlocked(PossiblePlayerBattleAction 
 std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattleAction action, const BattleHex & targetHex)
 {
 	const CStack * targetStack = getStackForHex(targetHex);
+	if(action.get() == PossiblePlayerBattleAction::SKIRMISHER_ATTACK)
+	{
+		const auto * attacker = owner.stacksController->getActiveStack();
+		if(!skirmisherTargetHex.isValid())
+			return "Skirmisher: choose an enemy stack. It will move up to half Speed and shoot at 75% damage.";
+		const auto * selectedTarget = owner.getBattle()->battleGetStackByPos(skirmisherTargetHex);
+		if(!attacker || !selectedTarget)
+			return "Skirmisher: choose a highlighted firing destination.";
+		const auto & legalFiringHexes = getSkirmisherLegalFiringHexes();
+		if(!vstd::contains(legalFiringHexes, targetHex))
+			return "Skirmisher: choose a highlighted firing destination.";
+		const auto distance = skirmisherFiringDistancesCache[targetHex.toInt()];
+		BattleAttackInfo estimate(attacker, selectedTarget, static_cast<int>(distance), true);
+		estimate.attackerPos = targetHex;
+		estimate.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT;
+		int rangedAttacks = attacker->getTotalAttacks(true);
+		if(const auto * hero = owner.getBattle()->battleGetFightingHero(attacker->unitSide()))
+			rangedAttacks += hero->valOfBonuses(BonusType::HERO_GRANTS_ATTACKS, BonusSubtypeID(attacker->creatureId()));
+		if(attacker->shots.isLimited())
+			rangedAttacks = std::min(rangedAttacks, attacker->shots.available());
+		const int shotsAfterAction = std::max(0, attacker->shots.available() - rangedAttacks);
+		const std::string attackCount = rangedAttacks == 1 ? "one ranged attack" : std::to_string(rangedAttacks) + " ranged attacks";
+		return "Skirmisher: move " + std::to_string(distance) + " hexes, then make " + attackCount
+			+ " at 75% damage. Estimate per attack: "
+			+ formatRangedAttack(owner.getBattle()->battleEstimateDamage(estimate), selectedTarget->getName(), shotsAfterAction);
+	}
 
 	switch (action.get()) //display console message, realize selected action
 	{
@@ -1903,6 +1937,16 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 				&& owner.getBattle()->getAccessibility().accessible(targetHex, creature->isDoubleWide(), source->unitSide());
 		}
 
+		case PossiblePlayerBattleAction::SKIRMISHER_ATTACK:
+		{
+			const auto * active = owner.stacksController->getActiveStack();
+			if(!active || !owner.getBattle())
+				return false;
+			if(!skirmisherTargetHex.isValid())
+				return vstd::contains(getSkirmisherLegalTargetHexes(), targetHex);
+			return vstd::contains(getSkirmisherLegalFiringHexes(), targetHex);
+		}
+
 		case PossiblePlayerBattleAction::ATTACK:
 		case PossiblePlayerBattleAction::LONG_WEAPON_ATTACK:
 		case PossiblePlayerBattleAction::WALK_AND_ATTACK:
@@ -1999,6 +2043,31 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, const BattleHex & targetHex)
 {
 	const CStack * targetStack = getStackForHex(targetHex);
+	if(action.get() == PossiblePlayerBattleAction::SKIRMISHER_ATTACK)
+	{
+		const auto * attacker = owner.stacksController->getActiveStack();
+		if(!attacker || !owner.getBattle())
+			return;
+		if(!skirmisherTargetHex.isValid())
+		{
+			if(vstd::contains(getSkirmisherLegalTargetHexes(), targetHex))
+			{
+				skirmisherTargetHex = targetHex;
+				invalidateSkirmisherFiringCache();
+			}
+			ENGINE->fakeMouseMove();
+			return;
+		}
+		const auto * selectedTarget = owner.getBattle()->battleGetStackByPos(skirmisherTargetHex);
+		if(!selectedTarget || !vstd::contains(getSkirmisherLegalFiringHexes(), targetHex))
+			return;
+		BattleAction command = BattleAction::makeMeleeAttack(attacker, skirmisherTargetHex, targetHex, false);
+		command.archerySkirmisherAttack = true;
+		skirmisherTargetHex = BattleHex::INVALID;
+		invalidateSkirmisherTargetCache();
+		owner.sendCommand(command, attacker);
+		return;
+	}
 
 	switch (action.get()) //display console message, realize selected action
 	{
@@ -2531,6 +2600,8 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 void BattleActionsController::activateStack()
 {
 	cancelHeroOrderTargeting();
+	skirmisherTargetHex = BattleHex::INVALID;
+	invalidateSkirmisherTargetCache();
 	demonicGatingCreature = CreatureID();
 	demonicGatingMovement = BattleHex::INVALID;
 	const CStack * s = owner.stacksController->getActiveStack();
@@ -2546,6 +2617,18 @@ void BattleActionsController::activateStack()
 void BattleActionsController::onHexRightClicked(const BattleHex & clickedHex)
 {
 	owner.clearPerfectMoment();
+	if(skirmisherActionModeActive())
+	{
+		if(skirmisherTargetHex.isValid())
+		{
+			skirmisherTargetHex = BattleHex::INVALID;
+			invalidateSkirmisherFiringCache();
+		}
+		else
+			resetCurrentStackPossibleActions();
+		ENGINE->fakeMouseMove();
+		return;
+	}
 	if(heroOrderTargetingModeActive())
 	{
 		cancelHeroOrderTargeting();
@@ -2652,7 +2735,58 @@ const std::vector<PossiblePlayerBattleAction> & BattleActionsController::getPoss
 
 void BattleActionsController::setPriorityActions(const std::vector<PossiblePlayerBattleAction> & actions)
 {
+	skirmisherTargetHex = BattleHex::INVALID;
+	invalidateSkirmisherTargetCache();
 	possibleActions = actions;
+}
+
+bool BattleActionsController::skirmisherActionModeActive() const
+{
+	return vstd::contains_if(possibleActions, [](const PossiblePlayerBattleAction & action)
+		{ return action.get() == PossiblePlayerBattleAction::SKIRMISHER_ATTACK; });
+}
+
+const BattleHexArray & BattleActionsController::getSkirmisherLegalTargetHexes() const
+{
+	const auto * attacker = owner.stacksController->getActiveStack();
+	static const BattleHexArray empty;
+	if(!skirmisherActionModeActive() || skirmisherTargetHex.isValid() || !attacker || !owner.getBattle())
+		return empty;
+	if(!skirmisherTargetHexesCached)
+	{
+		skirmisherTargetHexesCache = owner.getBattle()->battleGetSkirmisherTargetHexes(attacker);
+		skirmisherTargetHexesCached = true;
+	}
+	return skirmisherTargetHexesCache;
+}
+
+const BattleHexArray & BattleActionsController::getSkirmisherLegalFiringHexes() const
+{
+	const auto * attacker = owner.stacksController->getActiveStack();
+	static const BattleHexArray empty;
+	if(!skirmisherActionModeActive() || !skirmisherTargetHex.isValid() || !attacker || !owner.getBattle())
+		return empty;
+	if(!skirmisherFiringHexesCached)
+	{
+		skirmisherFiringHexesCache = owner.getBattle()->battleGetSkirmisherAttackFromHexes(
+			attacker, skirmisherTargetHex, &skirmisherFiringDistancesCache);
+		skirmisherFiringHexesCached = true;
+	}
+	return skirmisherFiringHexesCache;
+}
+
+void BattleActionsController::invalidateSkirmisherTargetCache()
+{
+	skirmisherTargetHexesCached = false;
+	skirmisherTargetHexesCache.clear();
+	invalidateSkirmisherFiringCache();
+}
+
+void BattleActionsController::invalidateSkirmisherFiringCache()
+{
+	skirmisherFiringHexesCached = false;
+	skirmisherFiringHexesCache.clear();
+	skirmisherFiringDistancesCache.fill(ReachabilityInfo::INFINITE_DIST);
 }
 
 void BattleActionsController::selectDemonicGatingCreature(CreatureID creature)
@@ -2668,6 +2802,8 @@ void BattleActionsController::selectDemonicGatingCreature(CreatureID creature)
 
 void BattleActionsController::resetCurrentStackPossibleActions()
 {
+	skirmisherTargetHex = BattleHex::INVALID;
+	invalidateSkirmisherTargetCache();
 	demonicGatingCreature = CreatureID();
 	demonicGatingMovement = BattleHex::INVALID;
 	possibleActions = getPossibleActionsForStack(owner.stacksController->getActiveStack());

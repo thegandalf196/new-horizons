@@ -2769,7 +2769,7 @@
 								"requires": "basic",
 								"description": "While Focus Fire! is active, friendly shooters gain an additional +5 percentage points of damage against the designated target and ignore all obstacle penalties.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "While Focus Fire! is active, friendly shooters gain an additional +5 percentage points of damage against the designated target and ignore all obstacle penalties."
 								}
 							},
@@ -2779,7 +2779,7 @@
 								"requires": "basic",
 								"description": "A shooter may move up to half its Speed and then make a ranged attack at 75% normal damage during the same activation.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "A shooter may move up to half its Speed and then make a ranged attack at 75% normal damage during the same activation."
 								}
 							},
@@ -2789,7 +2789,7 @@
 								"requires": "basic",
 								"description": "Shooters may use their ranged attack against adjacent enemies without the ordinary adjacent-target ranged penalty.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Shooters may use their ranged attack against adjacent enemies without the ordinary adjacent-target ranged penalty."
 								}
 							},
@@ -2799,7 +2799,7 @@
 								"requires": "basic",
 								"description": "Once per round, after a shooter suffers ranged creature damage, it automatically makes a ranged attack against the attacker at 50% normal damage if the attacker is a legal target.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Once per round, after a shooter suffers ranged creature damage, it automatically makes a ranged attack against the attacker at 50% normal damage if the attacker is a legal target."
 								}
 							},

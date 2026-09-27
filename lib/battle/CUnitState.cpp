@@ -431,6 +431,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	movedThisRound = other.movedThisRound;
 	pursuitMovementRemaining = other.pursuitMovementRemaining;
 	cleaveUsedThisActivation = other.cleaveUsedThisActivation;
+	archeryCounterfireRound = other.archeryCounterfireRound;
 	noQuarterMoraleActivationsRemaining = other.noQuarterMoraleActivationsRemaining;
 	timeStopTurnConsumedFlag = other.timeStopTurnConsumedFlag;
 	summoned = other.summoned;
@@ -954,6 +955,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	if(pursuitMovementRemaining < 0)
 		throw std::runtime_error("Invalid negative Pursuit movement allowance");
 	handler.serializeBool("cleaveUsedThisActivation", cleaveUsedThisActivation);
+	handler.serializeInt("archeryCounterfireRound", archeryCounterfireRound, -1);
 	handler.serializeInt("noQuarterMoraleActivationsRemaining", noQuarterMoraleActivationsRemaining, 0);
 	if(noQuarterMoraleActivationsRemaining < 0 || noQuarterMoraleActivationsRemaining > 2)
 		throw std::runtime_error("Invalid No Quarter morale lifetime");
@@ -1163,6 +1165,7 @@ void CUnitState::afterNewRound(bool isFirstRound)
 	movedThisRound = false;
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
+	archeryCounterfireRound = -1;
 	hadMorale = false;
 	castSpellThisTurn = false;
 	fear = false;

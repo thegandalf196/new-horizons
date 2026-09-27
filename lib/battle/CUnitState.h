@@ -157,6 +157,8 @@ public:
 	/// Cleave may create at most one automatic follow-up strike in a genuine
 	/// creature activation. Hero actions and same-activation continuations keep it.
 	bool cleaveUsedThisActivation;
+	/// Round in which this stack last used Archery's once-per-round Counterfire.
+	int32_t archeryCounterfireRound = -1;
 	/// Number of accepted activations remaining before No Quarter's morale penalty ends.
 	int32_t noQuarterMoraleActivationsRemaining;
 	bool timeStopTurnConsumedFlag;

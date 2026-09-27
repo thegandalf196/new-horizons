@@ -13,8 +13,9 @@ player feedback, focused tests, independent review, and target-build evidence.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The 2026-09-27 static audit found 81 ranks and 75 perks
-marked active, 12 ranks and 235 perks marked planned. No entry yet has the whole
+requirements in total. After the reviewed Basic Archery checkpoint, 81 ranks
+and 79 perks are marked active, with 12 ranks and 231 perks still planned. No
+entry yet has the whole
 UP-023 evidence chain recorded here. `Mireborn` has an inaccessible partial
 runtime hook despite planned status; `Corpse Preservation` is read but does not
 change casualty eligibility.
@@ -23,7 +24,7 @@ change casualty eligibility.
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Evidence audit required |
 | Armorer | 3/0 | 4/6 | Six perks missing |
-| Archery | 3/0 | 0/10 | Active implementation slice; progression blocked |
+| Archery | 3/0 | 4/6 | Four Basic perks source-reviewed; six perks remain |
 | Battlecraft | 3/0 | 1/9 | Nine perks missing |
 | War Machines | 3/0 | 0/10 | Progression blocked |
 | Discipline | 3/0 | 1/9 | Nine perks missing |
@@ -105,8 +106,9 @@ spell. Ice Bolt must not retain its legacy Speed/Initiative reduction.
 
 1. **Spell Lock:** complete the already implemented canonical mechanic across
    roster admission, acquisition, AI, feedback and focused evidence.
-2. **Archery:** implement all ten perks and remove the Skill's progression
-   deadlock, while preserving the existing three rank effects.
+2. **Archery:** the four Basic perks are source-reviewed; implement and verify
+   the six Advanced/Expert perks and close native/build/playable evidence for
+   the whole Skill while preserving the existing three rank effects.
 3. **Bulwark of the Mire:** next full Skill slice after Spell Lock and Archery;
    validate all three rank effects and implement all ten perks, including turning
    the existing inaccessible Mireborn hook into a complete selectable mechanic.

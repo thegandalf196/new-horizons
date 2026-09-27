@@ -29,6 +29,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpell.h"
@@ -109,7 +110,10 @@ void UnitActionPanel::testAndAddAction(const std::vector<PossiblePlayerBattleAct
 	const auto & callback = [this, filteredActions, index](bool isSelected){ if (isSelected) setActions(index, filteredActions); else restoreAllActions(); };
 
 	MetaString tooltip;
-	tooltip.appendTextID(descriptionTextID);
+	if(descriptionTextID == "new-horizons.battle.action.skirmisher")
+		tooltip.appendRawString("Skirmisher: choose an enemy, then choose where to move and fire.");
+	else
+		tooltip.appendTextID(descriptionTextID);
 
 	auto button = std::make_shared<CToggleButton>(Point(2, 7 + 50 * index), AnimationPath::builtin("battleUnitAction"), CButton::tooltip(tooltip.toString(&GAME->translator())), callback);
 	button->setOverlay(std::make_shared<CPicture>(iconPath));
@@ -160,10 +164,17 @@ void UnitActionPanel::setPossibleActions(const std::vector<PossiblePlayerBattleA
 	static const std::vector actionsReturn = { PossiblePlayerBattleAction::ATTACK_AND_RETURN };
 	static const std::vector actionsAttackLongWeapon = { PossiblePlayerBattleAction::LONG_WEAPON_ATTACK };
 	static const std::vector actionsGate = { PossiblePlayerBattleAction::DEMONIC_GATE };
+	static const std::vector actionsSkirmisher = { PossiblePlayerBattleAction::SKIRMISHER_ATTACK };
+	auto panelActions = newActions;
+	const auto * activeStack = owner.stacksController->getActiveStack();
+	const auto * hero = activeStack ? owner.getBattle()->battleGetFightingHero(activeStack->unitSide()) : nullptr;
+	if(newHorizonsArchery::canUseSkirmisher(hero, activeStack))
+		panelActions.emplace_back(PossiblePlayerBattleAction::SKIRMISHER_ATTACK);
 
 	testAndAddAction(newActions, actionsMove, ImagePath::builtin("battle/actionMove"), "vcmi.battle.action.move");
 	testAndAddAction(newActions, actionsReturn, ImagePath::builtin("battle/actionReturn"), "vcmi.battle.action.return");
 	testAndAddAction(newActions, actionsAttack, ImagePath::builtin("battle/actionAttack"), "vcmi.battle.action.attack");
+	testAndAddAction(panelActions, actionsSkirmisher, ImagePath::builtin("battle/actionShoot"), "new-horizons.battle.action.skirmisher");
 	testAndAddAction(newActions, actionsShoot, ImagePath::builtin("battle/actionShoot"), "vcmi.battle.action.shoot");
 	testAndAddAction(newActions, actionsGenie, ImagePath::builtin("battle/actionGenie"), "vcmi.battle.action.genie");
 	testAndAddAction(newActions, actionsAttackLongWeapon, ImagePath::builtin("battle/actionLongWeapon"), "vcmi.battle.action.attackLongWeapon");

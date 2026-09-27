@@ -327,6 +327,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsNoQuarterAITest.cpp
 		battleAI/NewHorizonsRelentlessAssaultAITest.cpp
 		battleAI/NewHorizonsPaviseAITest.cpp
+		battleAI/NewHorizonsArcheryAITest.cpp
 	)
 endif()
 

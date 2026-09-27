@@ -41,6 +41,7 @@ public:
 		SACRIFICE,
 		FREE_LOCATION,        // used with Force Field and Fire Wall - all tiles affected by spell must be free
 		AIMED_SPELL_CREATURE, // spell targeted at creature
+		SKIRMISHER_ATTACK,    // player-selected two-step move-and-shoot action (not a wire action)
 	};
 
 private:

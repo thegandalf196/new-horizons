@@ -187,6 +187,12 @@ public:
 
 	bool battleCanTargetEmptyHex(const battle::Unit * attacker) const; //determines of stack with given ID can target empty hex to attack - currently used only for SPELL_LIKE_ATTACK shooting
 	bool battleCanAttackUnit(const battle::Unit * attacker, const battle::Unit * target) const; //determines if attacker can attack target (no spatial reasoning)
+	/// Legal move-then-shoot destinations for Skirmisher, limited to half the unit's current movement.
+	BattleHexArray battleGetSkirmisherTargetHexes(const battle::Unit * attacker) const;
+	BattleHexArray battleGetSkirmisherAttackFromHexes(const battle::Unit * attacker, const BattleHex & targetHex,
+		ReachabilityInfo::TDistances * distances = nullptr) const;
+	/// Exact legality test for a player-selected Skirmisher firing destination.
+	bool battleCanSkirmisherAttackFromHex(const battle::Unit * attacker, const BattleHex & targetHex, const BattleHex & attackFromHex) const;
 	bool battleCanShoot(const battle::Unit * attacker, const BattleHex & dest) const; //determines if stack with given ID shoot at the selected destination
 	bool battleCanShoot(const battle::Unit * attacker) const; //determines if stack with given ID shoot in principle
 	bool isLongWeaponAttack(const battle::Unit * attacker, const battle::Unit * defender) const;

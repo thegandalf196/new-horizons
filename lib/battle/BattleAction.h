@@ -69,6 +69,9 @@ public:
 	/// Real Inferno reserve stack selected for Demonic Gating. The entire
 	/// currently available stack is committed; no creatures are created.
 	CreatureID gatingCreature;
+	/// Marks a Skirmisher move-and-shoot command, distinct from ordinary melee
+	/// WALK_AND_ATTACK so the server can validate the selected firing hex.
+	bool archerySkirmisherAttack = false;
 
 	BattleAction();
 	/// Explicitly closes a control-visible Time Stop activation without
@@ -144,6 +147,9 @@ public:
 		if(h.saving && spell == SpellID(SpellID::LAND_MINE)
 			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE))
 			throw std::runtime_error("Cannot serialize multi-hex Land Mine action to an older protocol");
+		if(h.saving && archerySkirmisherAttack
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_ARCHERY_SKIRMISHER))
+			throw std::runtime_error("Cannot serialize Skirmisher attack metadata to an older protocol");
 		h & side;
 		h & stackNumber;
 		h & actionType;
@@ -235,6 +241,10 @@ public:
 			gatingCreature = CreatureID();
 		else if(gatingCreature.hasValue())
 			throw std::runtime_error("Cannot serialize Demonic Gating to an older protocol");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ARCHERY_SKIRMISHER))
+			h & archerySkirmisherAttack;
+		else if(!h.saving)
+			archerySkirmisherAttack = false;
 		if(!h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Targeted command requires the new protocol");

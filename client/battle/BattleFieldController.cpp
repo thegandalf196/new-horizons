@@ -679,6 +679,22 @@ void BattleFieldController::calculateRangeLimitAndHighlightImages(uint8_t distan
 
 void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 {
+	// Skirmisher is a player-directed two-click choice: first mark an enemy,
+	// then pick any legal half-Speed firing position. Keep these candidates
+	// distinct from the ordinary direct-shot and melee actions.
+	if(owner.actionsController->skirmisherActionModeActive())
+	{
+		const auto & targets = owner.actionsController->getSkirmisherLegalTargetHexes();
+		for(const auto & hex : targets)
+			showHighlightedHex(canvas, cellShade, hex, true);
+		const auto & firingHexes = owner.actionsController->getSkirmisherLegalFiringHexes();
+		for(const auto & hex : firingHexes)
+			showHighlightedHex(canvas, cellShade, hex, true);
+		const auto hovered = getHoveredHex();
+		if(hovered.isValid() && (vstd::contains(targets, hovered) || vstd::contains(firingHexes, hovered)))
+			showHighlightedHex(canvas, cellUnitMovementHighlight, hovered, false);
+		return;
+	}
 	// Canonical New Horizons Land Mine uses a dedicated ordered placement
 	// selector.  Keep its candidates and selected cells visually distinct from
 	// movement/attack shadows, and keep rendering alive even when the pointer

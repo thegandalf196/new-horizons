@@ -12,6 +12,8 @@
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/mapObjects/army/CStackBasicDescriptor.h"
+#include "../../../lib/battle/NewHorizonsArchery.h"
+#include "../../../lib/CSkillHandler.h"
 
 class FocusFireServerTest : public FocusFireFixture {};
 
@@ -272,6 +274,31 @@ TEST_F(FocusFireServerTest, RealLastShotAndPredictionUseAdditiveArcheryNotFinalM
 	EXPECT_EQ(found, 1u);
 	EXPECT_EQ(shooter->shots.available(), 0);
 	EXPECT_EQ(battle()->battleTargetedRangedCommandPercent(shooter, target, true), 30);
+}
+
+TEST_F(FocusFireServerTest, TargetCallerAddsFivePointsAndExplainsItsObstacleBenefit)
+{
+	startGame();
+	const int decoded = SecondarySkill::decode(std::string(newHorizonsArchery::SKILL));
+	ASSERT_GE(decoded, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsArchery::SKILL),
+		std::string(newHorizonsArchery::TARGET_CALLER)});
+	ASSERT_TRUE(newHorizonsArchery::hasTargetCaller(attackerSideHero));
+	prepareFocusBattle();
+
+	ASSERT_TRUE(submit(focusAction(target->unitId())));
+	BattleAttackInfo info(shooter, target, 0, true);
+	EXPECT_EQ(battle()->battleTargetedRangedCommandPercent(shooter, target, true), 30);
+	EXPECT_EQ(battle()->calculateDmgRange(info).damage.max, 185)
+		<< "Target Caller adds five percentage points to the existing 30-point Focus Fire premium";
+
+	server.battleLogLines.clear();
+	ASSERT_TRUE(submit(BattleAction::makeShotAttack(shooter, target)));
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Target Caller adds +5 percentage points and ignores all obstacle penalties") != std::string::npos;
+	}));
 }
 
 TEST_F(FocusFireServerTest, CohortIncludesEmptyAmmoButNeverLateIdsAndPremiumIsSnapshotted)

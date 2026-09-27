@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleActionProcessor.h"
+#include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
@@ -813,6 +814,11 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	BattleHex attackPos = target.at(0).hexValue;
 	BattleHex destinationTile = target.at(1).hexValue;
 	const CStack * destinationStack = battle.battleGetStackByPos(destinationTile, true);
+	if(ba.archerySkirmisherAttack && target.size() != 2)
+	{
+		gameHandler->complain("Skirmisher move-and-shoot requires exactly one movement and one target hex.");
+		return false;
+	}
 
 	if(!destinationStack)
 	{
@@ -822,6 +828,27 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 
 	BattleHex startingPos = stack->getPosition();
 	int beforeAttackSpeed = stack->getMovementRange(0);
+	const auto * skirmisherHero = battle.battleGetFightingHero(stack->unitSide());
+	const bool skirmisherAvailable = newHorizonsArchery::canUseSkirmisher(skirmisherHero, stack);
+	const bool requestedSkirmisherPosition = ba.archerySkirmisherAttack
+		&& battle.battleCanSkirmisherAttackFromHex(stack, destinationTile, attackPos);
+	if(ba.archerySkirmisherAttack && (!skirmisherAvailable || !requestedSkirmisherPosition))
+	{
+		gameHandler->complain("Invalid Skirmisher firing destination.");
+		return false;
+	}
+	if(skirmisherAvailable && !ba.archerySkirmisherAttack)
+	{
+		auto projectedAttacker = stack->acquireState();
+		projectedAttacker->setPosition(attackPos);
+		const bool ordinaryAttackFromPosition = battle.isMeleeAttackPossible(projectedAttacker.get(), destinationStack)
+			|| battle.isLongWeaponAttack(projectedAttacker.get(), destinationStack);
+		if(!ordinaryAttackFromPosition)
+		{
+			gameHandler->complain("Attack position is not a legal melee hex. Use the explicit Skirmisher action to move and fire.");
+			return false;
+		}
+	}
 	const auto movementResult = moveStack(battle, ba.stackNumber, attackPos);
 	int movementSpent = movementResult.distance;
 
@@ -853,11 +880,55 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 
 	const bool regularMeleeAttack = battle.isMeleeAttackPossible(stack, destinationStack);
 	const bool longWeaponAttack = battle.isLongWeaponAttack(stack, destinationStack);
+	const bool skirmisherShot = requestedSkirmisherPosition
+		&& newHorizonsArchery::canUseSkirmisher(skirmisherHero, stack)
+		&& battle.battleCanShoot(stack, destinationTile);
 
-	if(!regularMeleeAttack && !longWeaponAttack)
+	if(!regularMeleeAttack && !longWeaponAttack && !skirmisherShot)
 	{
 		gameHandler->complain("Attack cannot be performed!");
 		return false;
+	}
+	if(skirmisherShot)
+	{
+		BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);
+		BonusList defenderBonusesToRemove = *destinationStack->getAllBonuses(Bonus::untilAfterAttackSequence);
+		static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE,
+			BonusCustomSubtype::damageTypeAll).Or(Selector::typeSubtype(BonusType::FIRST_STRIKE,
+			BonusCustomSubtype::damageTypeRanged));
+		const bool firstStrike = destinationStack->hasBonus(firstStrikeSelector)
+			&& !destinationStack->hasBonusOfType(BonusType::NOT_ACTIVE);
+		if(!firstStrike)
+			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .first = true, .ranged = true,
+				.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT,
+				.perfectMomentSide = perfectMomentSide});
+
+		if(destinationStack->alive()
+			&& destinationStack->hasBonusOfType(BonusType::RANGED_RETALIATION)
+			&& !stack->hasBonusOfType(BonusType::BLOCKS_RANGED_RETALIATION)
+			&& destinationStack->ableToRetaliate()
+			&& battle.battleCanShoot(destinationStack, stack->getPosition())
+			&& stack->alive())
+			makeAttack(battle, destinationStack, stack, {.targetHex = stack->getPosition(), .first = true,
+				.ranged = true, .counter = true});
+
+		int totalRangedAttacks = stack->getTotalAttacks(true);
+		const auto * attackingHero = battle.battleGetFightingHero(ba.side);
+		if(attackingHero)
+			totalRangedAttacks += attackingHero->valOfBonuses(BonusType::HERO_GRANTS_ATTACKS,
+				BonusSubtypeID(stack->creatureId()));
+		for(int i = firstStrike ? 0 : 1; i < totalRangedAttacks; ++i)
+		{
+			if(stack->alive() && destinationStack->alive() && stack->shots.canUse())
+				makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .attackIndex = i,
+					.first = i == 0, .ranged = true,
+					.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT,
+					.perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE});
+		}
+
+		removeBonuses(battle, stack, attackerBonusesToRemove);
+		removeBonuses(battle, destinationStack, defenderBonusesToRemove);
+		return true;
 	}
 
 	//attack
@@ -1359,6 +1430,11 @@ bool BattleActionProcessor::canStackAct(const CBattleInfoCallback & battle, cons
 bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba,
 	bool allowPursuitContinuation)
 {
+	if(ba.archerySkirmisherAttack && ba.actionType != EActionType::WALK_AND_ATTACK)
+	{
+		gameHandler->complain("Skirmisher metadata is only valid for a move-and-attack action.");
+		return false;
+	}
 	switch(ba.actionType)
 	{
 		case EActionType::BAD_MORALE:
@@ -1589,15 +1665,19 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	if(ba.perfectMoment)
 	{
 		const auto * unit = battle.battleGetStackByID(ba.stackNumber, false);
-		const bool melee = ba.actionType == EActionType::WALK_AND_ATTACK;
+		const bool skirmisherShot = ba.archerySkirmisherAttack
+			&& ba.actionType == EActionType::WALK_AND_ATTACK;
+		const bool melee = ba.actionType == EActionType::WALK_AND_ATTACK && !skirmisherShot;
 		const bool shooting = ba.actionType == EActionType::SHOOT;
 		const auto targets = ba.getTarget(&battle);
-		const auto * target = targets.size() == (melee ? 2u : 1u)
+		const auto * target = targets.size() == ((melee || skirmisherShot) ? 2u : 1u)
 			? battle.battleGetStackByPos(targets.back().hexValue) : nullptr;
-		bool legal = (melee || shooting) && battle.battleCanUsePerfectMoment(unit)
+		bool legal = (melee || shooting || skirmisherShot) && battle.battleCanUsePerfectMoment(unit)
 			&& target && target->alive() && battle.battleMatchOwner(unit, target);
 		if(legal && shooting)
 			legal = battle.battleCanShoot(unit, target->getPosition());
+		if(legal && skirmisherShot)
+			legal = battle.battleCanSkirmisherAttackFromHex(unit, targets.back().hexValue, targets.front().hexValue);
 		if(legal && melee)
 		{
 			const auto position = targets.front().hexValue;
@@ -2283,7 +2363,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// Brace's pre-emptive strike is dispatched through the counterattack path so
 	// that it happens before the incoming blow, but it must not consume the
 	// defender's normal retaliation. Keep the two notions separate here.
-	const bool normalCounter = attack.counter && !attack.brace && attack.preemptiveDamagePercent <= 0;
+	const bool counterAttack = attack.counter && !attack.brace && attack.preemptiveDamagePercent <= 0;
+	const bool normalCounter = counterAttack && !attack.archeryCounterfire;
 	blm.battleID = battle.getBattle()->getBattleID();
 	bat.battleID = battle.getBattle()->getBattleID();
 	bat.attackerChanges.battleID = battle.getBattle()->getBattleID();
@@ -2292,7 +2373,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	if(attack.ranged)
 		bat.flags |= BattleAttack::SHOT;
-	if(normalCounter)
+	if(counterAttack)
 		bat.flags |= BattleAttack::COUNTER;
 
 	// the same units feed the notification below and the damage further down
@@ -2301,7 +2382,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	CombatEventPayload payload;
 	payload.ranged = attack.ranged;
-	payload.isCounter = normalCounter;
+	payload.isCounter = counterAttack;
 	payload.attackIndex = attack.attackIndex;
 
 	CombatEventPayload upcoming = payload;
@@ -2355,7 +2436,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		const auto estimation = applyBattleEffects(battle, bat, attackerState, payload, defender,
 			attack.distance, false, attack.brace, attack.preemptiveDamagePercent,
 			attack.cleaveDamagePercent, protectIntercepted,
-			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0);
+			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
+			attack.archeryRangedDamageMultiplierPercent);
 		if(relentlessAssault && relentlessAssault->eligible
 			&& relentlessAssault->lastRecordedTargetUnitId != defender->unitId()
 			&& std::ranges::any_of(bat.bsa, [defender](const auto & hit)
@@ -2402,7 +2484,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		const auto estimation = applyBattleEffects(battle, bat, attackerState, payload, unit,
 			attack.distance, true, attack.brace, attack.preemptiveDamagePercent,
 			attack.cleaveDamagePercent, false,
-			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0);
+			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
+			attack.archeryRangedDamageMultiplierPercent);
 		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
 			resolvedOrderCauses.push_back({unit->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
 		if(!unit->isTimeStopped())
@@ -2508,8 +2591,12 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			const auto * target = battle.battleGetUnitByID(cause.targetUnitId);
 			if(hit == bat.bsa.end() || !target)
 				continue;
-			orderDamageLogLines.push_back(orderDamageLogLine(battle, attacker, target, *hit,
-				cause.attacker, cause.defender));
+			auto line = orderDamageLogLine(battle, attacker, target, *hit, cause.attacker, cause.defender);
+			const auto * hero = battle.battleGetOwnerHero(attacker);
+			if(cause.attacker == HeroCommand::FOCUS_FIRE && attack.ranged && !bat.spellLike()
+				&& newHorizonsArchery::hasTargetCaller(hero))
+				line.appendRawString(" Target Caller adds +5 percentage points and ignores all obstacle penalties.");
+			orderDamageLogLines.push_back(std::move(line));
 		}
 	}
 	if(destroyedEnemyOut)
@@ -2639,6 +2726,24 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		else
 		{
 			addGenericDamageLog(blm, attackerState, totalDamage);
+			if(attack.ranged && attack.archeryRangedDamageMultiplierPercent == newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT)
+			{
+				MetaString line;
+				line.appendRawString("Skirmisher lets the shooter move and fire at 75% normal damage.");
+				blm.lines.push_back(std::move(line));
+			}
+			if(attack.ranged && !bat.spellLike() && defender
+				&& newHorizonsArchery::hasPointBlankShot(battle.battleGetOwnerHero(attacker)))
+			{
+				const auto adjacent = battle.battleAdjacentUnits(attacker);
+				if(vstd::contains_if(adjacent, [defender](const battle::Unit * unit)
+					{ return unit->unitId() == defender->unitId(); }))
+				{
+					MetaString line;
+					line.appendRawString("Point-Blank Shot ignores the ordinary adjacent-target ranged penalty.");
+					blm.lines.push_back(std::move(line));
+				}
+			}
 
 			if(defender)
 				addGenericKilledLog(blm, defender, totalKills, multipleTargets);
@@ -2669,6 +2774,51 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// burn the attacker down and how a death stare only lands after it. Not gated on anyone being
 	// alive: a reflecting ability answers a lethal blow while dying, so each reaction decides for itself
 	runEventTriggers(battle, reactions, payload);
+
+	// Counterfire is a once-per-round ranged reaction to physical creature damage. Process
+	// every actually damaged stack (including secondary targets) only after the original
+	// attack's primary damage and event reactions have resolved. Stamp before each response;
+	// the counter flag is the recursion guard, so a Counterfire shot cannot provoke another.
+	if(attacker && attack.ranged && !attack.counter && !attack.brace && !attack.cleaveFollowup
+		&& !bat.spellLike() && attacker->alive()
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker))
+	{
+		std::set<uint32_t> counterfireTargets;
+		for(const auto & hit : bat.bsa)
+		{
+			if(hit.damageAmount <= 0 || !counterfireTargets.insert(hit.stackAttacked).second || !attacker->alive())
+				continue;
+
+			const auto * reactionUnit = battle.battleGetUnitByID(hit.stackAttacked);
+			const auto * reactionShooter = dynamic_cast<const CStack *>(reactionUnit);
+			if(!reactionShooter
+				|| !newHorizonsArchery::canUseCounterfire(battle.battleGetOwnerHero(reactionShooter), reactionShooter)
+				|| reactionShooter->acquireState()->archeryCounterfireRound == battle.battleGetRound()
+				|| !battle.battleCanShoot(reactionShooter, attacker->getPosition()))
+				continue;
+
+			auto state = reactionShooter->acquireState();
+			state->archeryCounterfireRound = battle.battleGetRound();
+			BattleUnitsChanged stateChange;
+			stateChange.battleID = battle.getBattle()->getBattleID();
+			UnitChanges update(reactionShooter->unitId(), UnitChanges::EOperation::UPDATE);
+			update.data = state->save();
+			stateChange.changedStacks.push_back(std::move(update));
+			gameHandler->sendAndApply(stateChange);
+
+			BattleLogMessage counterfireLog;
+			counterfireLog.battleID = battle.getBattle()->getBattleID();
+			MetaString line;
+			line.appendRawString("Counterfire: %s answers the ranged attack with a shot at 50% normal damage.");
+			reactionShooter->addNameReplacement(line, reactionShooter->getCount());
+			counterfireLog.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(counterfireLog);
+
+			makeAttack(battle, reactionShooter, attacker, {.targetHex = attacker->getPosition(), .first = true,
+				.ranged = true, .counter = true, .archeryCounterfire = true,
+				.archeryRangedDamageMultiplierPercent = newHorizonsArchery::COUNTERFIRE_DAMAGE_PERCENT});
+		}
+	}
 
 	if(!attack.cleaveFollowup && !attack.ranged && !attack.counter && !attack.brace
 		&& attack.preemptiveDamagePercent <= 0 && !bat.spellLike())
@@ -2851,7 +3001,7 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload,
 	const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
 	int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
-	int relentlessAssaultDamagePercent) const
+	int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent) const
 {
 	BattleStackAttacked bsa;
 	if(secondary)
@@ -2870,6 +3020,7 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	bai.preemptiveDamagePercent = preemptiveDamagePercent;
 	bai.cleaveDamagePercent = cleaveDamagePercent;
 	bai.relentlessAssaultDamagePercent = relentlessAssaultDamagePercent;
+	bai.archeryRangedDamageMultiplierPercent = archeryRangedDamageMultiplierPercent;
 	bai.protectIntercepted = protectIntercepted;
 	bai.physicalDamage = !bat.spellLike();
 	bai.deathBlow = bat.deathBlow();

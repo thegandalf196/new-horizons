@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "PotentialTargets.h"
 #include "../../lib/CStack.h"//todo: remove
+#include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 
 PotentialTargets::PotentialTargets(
@@ -42,6 +43,9 @@ PotentialTargets::PotentialTargets(
 		{
 			int distance = hex.isValid() ? reachability.distances[hex.toInt()] : 0;
 			auto bai = BattleAttackInfo(attackerInfo, defender, distance, shooting);
+			if(shooting && hex.isValid() && hex != attackerInfo->getPosition()
+				&& newHorizonsArchery::canUseSkirmisher(state->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
+				bai.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT;
 
 			auto ordinary = AttackPossibility::evaluate(bai, hex, damageCache, state);
 			if(!isBerserk && state->battleCanUsePerfectMoment(attackerInfo))
@@ -70,20 +74,32 @@ PotentialTargets::PotentialTargets(
 				unreachableEnemies.push_back(defender);
 			}
 		}
-		else if(state->battleCanShoot(attackerInfo, defender->getPosition()))
-		{
-			possibleAttacks.push_back(GenerateAttackInfo(true, BattleHex::INVALID));
-		}
 		else
 		{
-			for(const BattleHex & hex : avHexes)
-			{
-				if(!state->isMeleeAttackPossible(attackerInfo, defender, hex))
-					continue;
+			const bool canShootFromCurrentPosition = state->battleCanShoot(attackerInfo, defender->getPosition());
+			if(canShootFromCurrentPosition)
+				possibleAttacks.push_back(GenerateAttackInfo(true, BattleHex::INVALID));
 
-				auto bai = GenerateAttackInfo(false, hex);
-				if(!bai.affectedUnits.empty())
-					possibleAttacks.push_back(bai);
+			if(newHorizonsArchery::canUseSkirmisher(state->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
+			{
+				// Score every legal destination so the AI can trade movement, firing line,
+				// range, and Counterfire exposure instead of always choosing one nearest hex.
+				for(const BattleHex & hex : state->battleGetSkirmisherAttackFromHexes(attackerInfo,
+					defender->getPosition()))
+					possibleAttacks.push_back(GenerateAttackInfo(true, hex));
+			}
+
+			if(!canShootFromCurrentPosition)
+			{
+				for(const BattleHex & hex : avHexes)
+				{
+					if(!state->isMeleeAttackPossible(attackerInfo, defender, hex))
+						continue;
+
+					auto bai = GenerateAttackInfo(false, hex);
+					if(!bai.affectedUnits.empty())
+						possibleAttacks.push_back(bai);
+				}
 			}
 
 			if(!vstd::contains_if(possibleAttacks, [=](const AttackPossibility & pa) { return pa.attack.defender->unitId() == defender->unitId(); }))

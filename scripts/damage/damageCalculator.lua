@@ -470,6 +470,10 @@ end
 --- Shooting too far, or shooting at all with something meant for melee.
 function Script:getRangePenaltyFactor(info)
 	if info.shooting then
+		if info.archeryAdjacentRangedTarget then
+			if info.archeryIgnoreAdjacentRangedPenalty then return info.targetedRangedCommand and -0.25 or 0 end
+			return info.targetedRangedCommand and -0.25 or -0.5
+		end
 		if info.battle:hasDistancePenalty(info.attacker, info.defender, info.attackerHex, info.defenderHex) then
 			return info.targetedRangedCommand and -0.25 or -0.5
 		end
@@ -484,6 +488,7 @@ end
 
 function Script:getObstacleFactor(info)
 	if not info.shooting then return 0 end
+	if info.archeryIgnoreObstaclePenalty then return 0 end
 	if info.battle:hasWallPenalty(info.attacker, info.defender, info.attackerHex, info.defenderHex) then
 		return info.targetedRangedCommand and -0.25 or -0.5
 	end
@@ -585,6 +590,7 @@ function Script:calculate(battle, info)
 	-- being cancelled by ordinary attack bonuses.
 	local heroOrderMultiplier = math.max(0, (info.heroOrderFinalDamageMultiplier or 100) / 100)
 	local cleaveMultiplier = math.max(0, (info.cleaveFinalDamageMultiplier or 100) / 100)
+	local archeryRangedMultiplier = math.max(0, (info.archeryRangedDamageMultiplierPercent or 100) / 100)
 	local phantomDamageMultiplier = self:getPhantomDamageMultiplier(info)
 	local physicalDamageReductionMultiplier = usesPhysicalDamageReductionStage
 		and getPhysicalDamageReductionFactor(info) or 1.0
@@ -618,7 +624,7 @@ function Script:calculate(battle, info)
 	end
 
 	local damageFactor = raising * lowering * physicalDamageReductionMultiplier
-		* heroOrderMultiplier * cleaveMultiplier * phantomDamageMultiplier
+		* heroOrderMultiplier * cleaveMultiplier * archeryRangedMultiplier * phantomDamageMultiplier
 	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1
 	local damageMin = apply(baseMin, damageFactor, stabilizePdrRounding)
 	local damageMax = apply(baseMax, damageFactor, stabilizePdrRounding)

@@ -17,7 +17,9 @@
 #include "../../lib/spells/ObstacleCasterProxy.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
+#include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 
 #include "../../lib/GameLibrary.h"
@@ -402,6 +404,10 @@ int AttackPossibility::getAttackCount(const battle::Unit & attacker, bool shooti
 	const auto * hero = attackerHeroKnown ? state.battleGetFightingHero(attacker.unitSide()) : nullptr;
 	if(hero)
 		result += hero->valOfBonuses(BonusType::HERO_GRANTS_ATTACKS, BonusSubtypeID(attacker.creatureId()));
+	if(shooting)
+		if(const auto * unitState = dynamic_cast<const battle::CUnitState *>(&attacker);
+			unitState && unitState->shots.isLimited())
+			result = std::min(result, unitState->shots.available());
 	return result;
 }
 
@@ -443,9 +449,13 @@ AttackPossibility AttackPossibility::evaluate(
 			&& !attackInfo.retaliation && state->battleMatchOwner(attacker, defender);
 		const auto * raPrimaryTarget = state->battleResolveHeroOrderTarget(attacker, requestedDefender,
 			attackInfo.shooting);
-		const auto * raHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
-			? state->battleGetFightingHero(attackerSide) : nullptr;
-		const bool ordinaryRelentlessAssaultAttack = raHero
+	const auto * raHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
+		? state->battleGetFightingHero(attackerSide) : nullptr;
+	const bool projectsSkirmisher = attackInfo.shooting && hex.isValid()
+		&& hex != attacker->getPosition()
+		&& attackInfo.archeryRangedDamageMultiplierPercent == newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT
+		&& newHorizonsArchery::canUseSkirmisher(raHero, attacker);
+	const bool ordinaryRelentlessAssaultAttack = raHero
 			&& raHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT)
 			&& !attackInfo.retaliation && !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
 			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
@@ -476,11 +486,12 @@ AttackPossibility AttackPossibility::evaluate(
 			&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
 		const bool projectsProtect = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
-		if(ap.perfectMoment || projectsMarks || projectsCleave || projectsProtect
+		if(ap.perfectMoment || projectsMarks || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
-		if(projectsMarks || projectsCleave || projectsProtect || ordinaryRelentlessAssaultAttack || projectsNoQuarter)
+		if(projectsMarks || projectsCleave || projectsProtect || projectsSkirmisher
+			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter)
 			ap.effectPreview = fortunePreview;
 		const CBattleInfoCallback & luckState = fortunePreview
 			? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
@@ -491,7 +502,7 @@ AttackPossibility AttackPossibility::evaluate(
 
 		const int totalAttacks = getAttackCount(*ap.attackerState, attackInfo.shooting, *state);
 
-		if (!attackInfo.shooting)
+		if(!attackInfo.shooting || projectsSkirmisher)
 			ap.attackerState->setPosition(hex);
 
 		battle::Units defenderUnits;
@@ -752,6 +763,38 @@ AttackPossibility AttackPossibility::evaluate(
 				if(u->unitId() == strikeDefender->unitId())
 				{
 					ap.defenderDead = !defenderState->alive();
+				}
+			}
+
+			// Counterfire is an immediate, once-per-round answer to physical creature
+			// ranged damage. Include it in the exchange value so the AI does not price
+			// a shot as if the marked shooter could not return fire.
+			if(attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
+				&& ap.attackerState->alive())
+			{
+				for(const auto & [hitUnitId, damageDealt] : strike.hits)
+				{
+					if(damageDealt <= 0)
+						continue;
+					auto stateIt = defenderStates.find(hitUnitId);
+					if(stateIt == defenderStates.end())
+						continue;
+					auto counterShooter = stateIt->second;
+					const auto * counterHero = state->battleGetFightingHero(counterShooter->unitSide());
+					if(!newHorizonsArchery::canUseCounterfire(counterHero, counterShooter.get())
+						|| counterShooter->archeryCounterfireRound == state->battleGetRound()
+						|| !luckState.battleCanShoot(counterShooter.get(), ap.attackerState->getPosition()))
+						continue;
+
+					counterShooter->archeryCounterfireRound = state->battleGetRound();
+					BattleAttackInfo counterfire(counterShooter.get(), ap.attackerState.get(), 0, true);
+					counterfire.archeryRangedDamageMultiplierPercent = newHorizonsArchery::COUNTERFIRE_DAMAGE_PERCENT;
+					int64_t counterfireDamage = luckState.battleExpectedLuckDamage(counterfire);
+					vstd::amin(counterfireDamage, ap.attackerState->getAvailableHealth());
+					ap.attackerDamageReduce += calculateDamageReduce(counterShooter.get(), ap.attackerState.get(),
+						counterfireDamage, damageCache, state);
+					ap.attackerState->damage(counterfireDamage);
+					counterShooter->afterAttack(true, false, true);
 				}
 			}
 			if(fortunePreview && !strike.hits.empty())

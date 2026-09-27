@@ -91,6 +91,18 @@ class BattleActionsController
 	/// Mobile Gate's first battlefield click. INVALID means the player is still
 	/// choosing where the acting stack moves before placing the Gate.
 	BattleHex demonicGatingMovement = BattleHex::INVALID;
+	/// Two-click selector for a player-chosen Skirmisher destination.
+	BattleHex skirmisherTargetHex = BattleHex::INVALID;
+	/// The move-and-fire target and destination candidates are stable while this
+	/// action is selected. Cache them instead of running pathfinding on each UI hover.
+	mutable bool skirmisherTargetHexesCached = false;
+	mutable BattleHexArray skirmisherTargetHexesCache;
+	mutable bool skirmisherFiringHexesCached = false;
+	mutable BattleHexArray skirmisherFiringHexesCache;
+	mutable ReachabilityInfo::TDistances skirmisherFiringDistancesCache{};
+
+	void invalidateSkirmisherTargetCache();
+	void invalidateSkirmisherFiringCache();
 
 	bool isCastingPossibleHere (const CSpell * spell, const CStack *shere, const BattleHex & myNumber);
 	std::vector<PossiblePlayerBattleAction> getPossibleActionsForStack (const CStack *stack) const; //called when stack gets its turn
@@ -250,6 +262,9 @@ public:
 	/// sets list of high-priority actions that should be selected before any other actions
 	void setPriorityActions(const std::vector<PossiblePlayerBattleAction> &);
 	void selectDemonicGatingCreature(CreatureID creature);
+	bool skirmisherActionModeActive() const;
+	const BattleHexArray & getSkirmisherLegalTargetHexes() const;
+	const BattleHexArray & getSkirmisherLegalFiringHexes() const;
 
 	/// resets possible actions to original state
 	void resetCurrentStackPossibleActions();
