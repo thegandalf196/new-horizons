@@ -590,7 +590,9 @@ void CHeroWindow::demonicReserveClicked()
 			{
 				if(reserveAmount > 0)
 					GAME->interface()->cb->arrangeDemonicReserve(curHero, slot, creature, reserveAmount, true);
-			}, minimumActive, 0, count, 0);
+			}, minimumActive, 0, count, 0,
+			CSplitWindowOwner{curHero, "Hero: " + curHero->getObjectName().toString(&GAME->translator())},
+			CSplitWindowOwner{nullptr, "Demonic Reserve"});
 		return;
 	}
 
@@ -624,7 +626,9 @@ void CHeroWindow::demonicReserveClicked()
 				{
 					if(activeAmount > 0)
 						GAME->interface()->cb->arrangeDemonicReserve(curHero, SlotID(), creature, activeAmount, false);
-				}, 0, 0, count, 0);
+				}, 0, 0, count, 0,
+				CSplitWindowOwner{nullptr, "Demonic Reserve"},
+				CSplitWindowOwner{curHero, "Hero: " + curHero->getObjectName().toString(&GAME->translator())});
 		}));
 }
 

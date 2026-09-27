@@ -18,6 +18,7 @@
 
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/texts/CGeneralTextHandler.h"
 
 namespace
 {
@@ -146,6 +147,14 @@ void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
 	if(!targetSlot.validSlot())
 		return;
 
+	const bool mustKeepLastSourceCreature = source->stacksCount() == 1 && source->needsLastStack();
+	const TQuantity sourceCount = source->getStackCount(sourceSlot);
+	if(mustKeepLastSourceCreature && sourceCount <= 1)
+	{
+		GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));
+		return;
+	}
+
 	if(target->getCreature(targetSlot))
 	{
 		// A same-creature destination is a combine request. The server computes
@@ -154,18 +163,21 @@ void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
 		return;
 	}
 
-	const bool mustKeepLastSourceCreature = source->stacksCount() == 1 && source->needsLastStack();
-	const TQuantity sourceCount = source->getStackCount(sourceSlot);
-	const TQuantity amountToMove = sourceCount - (mustKeepLastSourceCreature ? 1 : 0);
+	if(mustKeepLastSourceCreature)
+	{
+		// This is a whole-stack move intent. The server retains one unit and
+		// clamps the transfer to the receiving hero's current Leadership limit.
+		GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
+		return;
+	}
+
+	const TQuantity amountToMove = sourceCount;
 	if(amountToMove <= 0)
 		return;
 	if(!UIHelper::checkLeadershipTransfer(source, target, sourceSlot, targetSlot, amountToMove))
 		return;
 
-	if(mustKeepLastSourceCreature)
-		GAME->interface()->cb->splitStack(source, target, sourceSlot, targetSlot, amountToMove);
-	else
-		GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
+	GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
 }
 
 void CExchangeController::moveSingleStackCreature(bool leftToRight, SlotID sourceSlot, bool forceEmptySlotTarget)

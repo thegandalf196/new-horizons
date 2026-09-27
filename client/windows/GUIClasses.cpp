@@ -60,6 +60,7 @@
 #include "../../lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "../../lib/mapObjectConstructors/CommonConstructors.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/mapObjects/army/CArmedInstance.h"
 #include "../../lib/mapObjects/CGMarket.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
@@ -83,6 +84,61 @@ static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreature
 	if(!creature || !GAME || !GAME->interface() || !GAME->interface()->cb)
 		return std::nullopt;
 	return GAME->interface()->cb->getCreatureCategory(creature->getId());
+}
+
+static ImagePath splitDialogBackgroundImage()
+{
+	PlayerColor color = GAME && GAME->interface() ? GAME->interface()->playerID : PlayerColor(1);
+	if(!color.isValidPlayer())
+		color = PlayerColor(1);
+	return ImagePath::builtin("newHorizonsSplitBackground-" + color.toString() + ".png");
+}
+
+namespace
+{
+	std::string splitOwnerDisplayText(const std::string & fullText)
+	{
+		constexpr int maxWidth = 122;
+		const std::string ellipsis = "...";
+		const auto font = ENGINE->renderHandler().loadFont(FONT_TINY);
+		std::string displayText = fullText;
+		std::replace(displayText.begin(), displayText.end(), '\n', ' ');
+		std::replace(displayText.begin(), displayText.end(), '\r', ' ');
+
+		if(font->getStringWidth(displayText.c_str()) <= maxWidth)
+			return displayText;
+
+		while(!displayText.empty() && font->getStringWidth((displayText + ellipsis).c_str()) > maxWidth)
+			TextOperations::trimRightUnicode(displayText);
+
+		return displayText + ellipsis;
+	}
+
+	class CSplitOwnerLabel final : public CMultiLineLabel
+	{
+		std::string fullText;
+
+	public:
+		CSplitOwnerLabel(const Rect & position, const std::string & fullText)
+			: CMultiLineLabel(position, FONT_TINY, ETextAlignment::CENTER, Colors::YELLOW, splitOwnerDisplayText(fullText))
+			, fullText(fullText)
+		{
+			addUsedEvents(HOVER | SHOW_POPUP);
+		}
+
+		void hover(bool on) override
+		{
+			if(on)
+				ENGINE->statusbar()->write(fullText);
+			else
+				ENGINE->statusbar()->clearIfMatching(fullText);
+		}
+
+		void showPopupWindow(const Point &) override
+		{
+			CRClickPopup::createAndPush(fullText);
+		}
+	};
 }
 
 
@@ -519,8 +575,8 @@ void CRecruitmentWindow::sliderMoved(int to)
 }
 
 CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback_, int leftMin_, int rightMin_,
-	int leftAmount_, int rightAmount_, std::string leftOwnerText, std::string rightOwnerText)
-	: CWindowObject(PLAYER_COLORED, ImagePath::builtin("GPUCRDIV")),
+	int leftAmount_, int rightAmount_, CSplitWindowOwner leftOwnerInfo, CSplitWindowOwner rightOwnerInfo)
+	: CWindowObject(0, splitDialogBackgroundImage()),
 	callback(callback_),
 	leftAmount(leftAmount_),
 	rightAmount(rightAmount_),
@@ -538,13 +594,56 @@ CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, i
 	leftAmount = total - defaultRightAmount;
 	rightAmount = defaultRightAmount;
 
-	ok = std::make_shared<CButton>(Point(20, 263), AnimationPath::builtin("IOK6432"), CButton::tooltip(), std::bind(&CSplitWindow::apply, this), EShortcut::GLOBAL_ACCEPT);
-	cancel = std::make_shared<CButton>(Point(214, 263), AnimationPath::builtin("ICN6432"), CButton::tooltip(), std::bind(&CSplitWindow::close, this), EShortcut::GLOBAL_CANCEL);
+	constexpr int leftSideCenter = 70;
+	constexpr int rightSideCenter = 227;
+
+	auto createOwnerMarker = [](const CSplitWindowOwner & owner, int centerX)
+	{
+		if(!owner.army)
+			return std::shared_ptr<CAnimImage>();
+
+		constexpr int ownerMarkerY = 194;
+		constexpr int markerHalfWidth = 29;
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(owner.army))
+			return std::make_shared<CAnimImage>(AnimationPath::builtin("PortraitsLarge"), hero->getIconIndex(), 0,
+				centerX - markerHalfWidth, ownerMarkerY);
+
+		const PlayerColor player = owner.army->getOwner();
+		if(player.isValidPlayer())
+			return std::make_shared<CAnimImage>(AnimationPath::builtin("CREST58"), player.getNum(), 0,
+				centerX - markerHalfWidth, ownerMarkerY);
+
+		return std::shared_ptr<CAnimImage>();
+	};
+
+	leftOwnerMarker = createOwnerMarker(leftOwnerInfo, leftSideCenter);
+	rightOwnerMarker = createOwnerMarker(rightOwnerInfo, rightSideCenter);
+
+	const auto * leftHero = leftOwnerInfo.army ? dynamic_cast<const CGHeroInstance *>(leftOwnerInfo.army) : nullptr;
+	const auto * rightHero = rightOwnerInfo.army ? dynamic_cast<const CGHeroInstance *>(rightOwnerInfo.army) : nullptr;
+	const bool sameHeroPortrait = leftHero && rightHero && leftHero != rightHero
+		&& leftHero->getIconIndex() == rightHero->getIconIndex();
+	const bool sameGarrisonCrest = leftOwnerInfo.army && rightOwnerInfo.army
+		&& leftOwnerInfo.army != rightOwnerInfo.army && !leftHero && !rightHero
+		&& leftOwnerInfo.army->getOwner().isValidPlayer()
+		&& leftOwnerInfo.army->getOwner() == rightOwnerInfo.army->getOwner();
+	const bool showOwnerLabels = sameHeroPortrait || sameGarrisonCrest;
+	const bool showLeftOwnerLabel = !leftOwnerMarker || showOwnerLabels;
+	const bool showRightOwnerLabel = !rightOwnerMarker || showOwnerLabels;
+	const int ownerLabelControlOffset = showLeftOwnerLabel || showRightOwnerLabel ? 12 : 0;
+
+	if(showLeftOwnerLabel && !leftOwnerInfo.label.empty())
+		leftOwnerLabel = std::make_shared<CSplitOwnerLabel>(Rect(5, 259, 130, 27), leftOwnerInfo.label);
+	if(showRightOwnerLabel && !rightOwnerInfo.label.empty())
+		rightOwnerLabel = std::make_shared<CSplitOwnerLabel>(Rect(162, 259, 130, 27), rightOwnerInfo.label);
+
+	ok = std::make_shared<CButton>(Point(20, 347 + ownerLabelControlOffset), AnimationPath::builtin("IOK6432"), CButton::tooltip(), std::bind(&CSplitWindow::apply, this), EShortcut::GLOBAL_ACCEPT);
+	cancel = std::make_shared<CButton>(Point(214, 347 + ownerLabelControlOffset), AnimationPath::builtin("ICN6432"), CButton::tooltip(), std::bind(&CSplitWindow::close, this), EShortcut::GLOBAL_CANCEL);
 
 	int sliderPosition = total - leftMin - rightMin;
 
-	leftInput = std::make_shared<CTextInput>(Rect(20, 218, 100, 36), FONT_BIG, ETextAlignment::CENTER, true);
-	rightInput = std::make_shared<CTextInput>(Rect(176, 218, 100, 36), FONT_BIG, ETextAlignment::CENTER, true);
+	leftInput = std::make_shared<CTextInput>(Rect(20, 302 + ownerLabelControlOffset, 100, 36), FONT_BIG, ETextAlignment::CENTER, true);
+	rightInput = std::make_shared<CTextInput>(Rect(176, 302 + ownerLabelControlOffset, 100, 36), FONT_BIG, ETextAlignment::CENTER, true);
 
 	leftInput->setCallback(std::bind(&CSplitWindow::setAmountText, this, _1, true));
 	rightInput->setCallback(std::bind(&CSplitWindow::setAmountText, this, _1, false));
@@ -558,12 +657,8 @@ CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, i
 
 	animLeft = std::make_shared<CCreaturePic>(20, 54, creature, true, false);
 	animRight = std::make_shared<CCreaturePic>(177, 54,creature, true, false);
-	leftOwner = std::make_shared<CLabel>(70, 176, FONT_SMALL, ETextAlignment::CENTER,
-		Colors::YELLOW, std::move(leftOwnerText), 132);
-	rightOwner = std::make_shared<CLabel>(227, 176, FONT_SMALL, ETextAlignment::CENTER,
-		Colors::YELLOW, std::move(rightOwnerText), 132);
 
-	slider = std::make_shared<CSlider>(Point(21, 194), 257, std::bind(&CSplitWindow::sliderMoved, this, _1), 0, sliderPosition, defaultRightAmount - rightMin, Orientation::HORIZONTAL);
+	slider = std::make_shared<CSlider>(Point(21, 275 + ownerLabelControlOffset), 257, std::bind(&CSplitWindow::sliderMoved, this, _1), 0, sliderPosition, defaultRightAmount - rightMin, Orientation::HORIZONTAL);
 
 	MetaString titleStr = MetaString::createFromTextID("core.genrltxt.256");
 	titleStr.replaceNamePlural(creature->getId());

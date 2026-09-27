@@ -338,6 +338,176 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, WholeStackDragRejectsTwoEmptySlotsWit
 	EXPECT_EQ(server.systemMessages, 1);
 }
 
+TEST_F(NewHorizonsLeadershipAdmissionTest, LastHeroCreatureDragToEmptyGarrisonReportsGameplayReason)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const PlayerColor player(0);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.town({12, 12, 0}, faction("core:castle"), player)
+		.hero({5, 5, 0}, heroType("core:christian"), player);
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(player);
+	auto * garrison = findFirst<CGTownInstance>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(garrison, nullptr);
+	garrison->setVisitingHero(hero);
+	hero->clearSlots();
+	ASSERT_TRUE(hero->needsLastStack());
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, 1));
+	ASSERT_TRUE(garrison->slotEmpty(SlotID(0)));
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+	// Match the ordinary whole-stack drag intent with the empty garrison target
+	// first. The server must reject this without receiving a zero-count split.
+	ArrangeStacks drag(1, SlotID(0), SlotID(0), garrison->id, hero->id, 0);
+	drag.player = player;
+	drag.requestID = 52;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, drag);
+
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 1);
+	EXPECT_TRUE(garrison->slotEmpty(SlotID(0)));
+	EXPECT_EQ(hero->getStackCount(SlotID(0)) + garrison->getStackCount(SlotID(0)), 1);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	ASSERT_EQ(server.systemMessageTexts.size(), 1u);
+	EXPECT_NE(server.systemMessageTexts.back().find("Cannot move away the last creature!"), std::string::npos);
+	EXPECT_EQ(server.systemMessageTexts.back().find("No creatures to split"), std::string::npos);
+	EXPECT_EQ(server.rebalancePacks, 0);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, LastHeroStackDragToEmptyGarrisonTransfersAllButOne)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const PlayerColor player(0);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.town({12, 12, 0}, faction("core:castle"), player)
+		.hero({5, 5, 0}, heroType("core:christian"), player);
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(player);
+	auto * garrison = findFirst<CGTownInstance>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(garrison, nullptr);
+	garrison->setVisitingHero(hero);
+	hero->clearSlots();
+	ASSERT_TRUE(hero->needsLastStack());
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, 4));
+	ASSERT_TRUE(garrison->slotEmpty(SlotID(0)));
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+	ArrangeStacks drag(1, SlotID(0), SlotID(0), garrison->id, hero->id, 0);
+	drag.player = player;
+	drag.requestID = 55;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, drag);
+
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 1);
+	EXPECT_EQ(garrison->getStackCount(SlotID(0)), 3);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)) + garrison->getStackCount(SlotID(0)), 4);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.systemMessages, 0);
+	EXPECT_EQ(server.rebalancePacks, 1);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, LastHeroStackMoveToEmptyHeroSlotTransfersMaximumLegalAmountAndKeepsOne)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const PlayerColor player(0);
+	const int3 townPosition(12, 12, 0);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.town(townPosition, faction("core:castle"), player)
+		.hero({5, 5, 0}, heroType("core:christian"), player)
+		.hero({6, 6, 0}, heroType("core:valeska"), player);
+	startWithMap(std::move(builder));
+
+	auto * town = findFirst<CGTownInstance>();
+	auto heroes = findAll<CGHeroInstance>();
+	ASSERT_NE(town, nullptr);
+	ASSERT_EQ(heroes.size(), 2u);
+	auto * destination = heroes[0];
+	auto * source = heroes[1];
+	destination->clearSlots();
+	source->clearSlots();
+	ASSERT_TRUE(source->needsLastStack());
+	SetHeroesInTown setHeroes;
+	setHeroes.tid = town->id;
+	setHeroes.visiting = destination->id;
+	setHeroes.garrison = source->id;
+	gameState()->apply(setHeroes);
+
+	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
+	ASSERT_GT(capacity->maximum, 1);
+	// Leave more than one creature if the receiving hero's capacity, rather
+	// than the last-stack rule, is the limiting factor.
+	const TQuantity sourceCount = capacity->maximum + 5;
+	ASSERT_TRUE(source->setCreature(SlotID(0), pikeman, sourceCount));
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+	// As in the exchange UI, send the clicked empty destination before the
+	// selected source. The server reserves one creature and applies Leadership.
+	ArrangeStacks drag(1, SlotID(0), SlotID(0), destination->id, source->id, 0);
+	drag.player = player;
+	drag.requestID = 53;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, drag);
+
+	EXPECT_EQ(destination->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(source->getStackCount(SlotID(0)), 5);
+	EXPECT_EQ(destination->getStackCount(SlotID(0)) + source->getStackCount(SlotID(0)), sourceCount);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.systemMessages, 0);
+	EXPECT_EQ(server.rebalancePacks, 1);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, StaleLastStackMoveToEmptyGarrisonDoesNotMutate)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const PlayerColor player(0);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.town({12, 12, 0}, faction("core:castle"), player)
+		.hero({5, 5, 0}, heroType("core:christian"), player);
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(player);
+	auto * garrison = findFirst<CGTownInstance>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(garrison, nullptr);
+	garrison->setVisitingHero(hero);
+	hero->clearSlots();
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, 2));
+	const TQuantity expectedGarrisonCount = garrison->getStackCount(SlotID(0));
+	hero->eraseStack(SlotID(0)); // The source vanished after the drag request was built.
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+	ArrangeStacks stale(1, SlotID(0), SlotID(0), garrison->id, hero->id, 0);
+	stale.player = player;
+	stale.requestID = 54;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, stale);
+
+	EXPECT_TRUE(hero->slotEmpty(SlotID(0)));
+	EXPECT_EQ(garrison->getStackCount(SlotID(0)), expectedGarrisonCount);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	ASSERT_EQ(server.systemMessageTexts.size(), 1u);
+	EXPECT_NE(server.systemMessageTexts.back().find("No stack to move!"), std::string::npos);
+	EXPECT_EQ(server.systemMessageTexts.back().find("No creatures to split"), std::string::npos);
+	EXPECT_EQ(server.rebalancePacks, 0);
+}
+
 TEST_F(LegacyLeadershipAdmissionTest, OrdinaryMergeRemainsUncappedWithoutSavedLeadershipRules)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));

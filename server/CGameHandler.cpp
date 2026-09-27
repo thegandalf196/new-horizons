@@ -5006,21 +5006,25 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 	{
 		if(!source->hasStackAtSlot(sourceLocation.slot))
 			return moveStack(sourceLocation, destinationLocation);
-		const TQuantity sourceCount = source->getStackCount(sourceLocation.slot);
+		const int64_t sourceCount = source->getStackCount(sourceLocation.slot);
+		const auto * creature = source->getCreature(sourceLocation.slot);
+		const bool mustKeepLastSourceCreature = source->id != destination->id
+			&& source->needsLastStack() && source->stacksCount() == 1;
+		// Whole-stack drags are move intents: reserve a required last creature,
+		// then clamp the transfer to the destination hero's current capacity.
+		int64_t transferCount = sourceCount - (mustKeepLastSourceCreature ? 1 : 0);
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(destination))
 		{
-			if(const auto capacity = hero->getLeadershipSlotCapacity(source->getCreature(sourceLocation.slot)->getId());
-				capacity && sourceCount > capacity->maximum)
+			if(const auto capacity = hero->getLeadershipSlotCapacity(creature->getId()))
 			{
-				// A whole-stack drag into an empty hero slot is an ordinary move
-				// intent, not an exact numeric split. Fill the slot to its current
-				// Leadership capacity and leave the excess in the source army.
 				if(capacity->maximum <= 0)
-					return validateLeadershipStack(destination, source->getCreature(sourceLocation.slot)->getId(), sourceCount);
-				return moveStack(sourceLocation, destinationLocation, capacity->maximum);
+					return validateLeadershipStack(destination, creature->getId(), 1);
+				transferCount = std::min<int64_t>(transferCount, capacity->maximum);
 			}
 		}
-		return moveStack(sourceLocation, destinationLocation);
+		if(transferCount <= 0 && mustKeepLastSourceCreature && sourceCount > 0)
+			COMPLAIN_RET("Cannot move away the last creature!");
+		return moveStack(sourceLocation, destinationLocation, static_cast<TQuantity>(transferCount));
 	};
 
 	if(!army1->hasStackAtSlot(sl1.slot))

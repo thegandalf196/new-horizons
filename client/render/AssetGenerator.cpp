@@ -121,6 +121,11 @@ void AssetGenerator::initialize()
 	imageFiles[ImagePath::builtin("newHorizonsHeroBackground.png")] = [this](){ return createNewHorizonsHeroBackground(); };
 	imageFiles[ImagePath::builtin("newHorizonsLevelUpBackground.png")] = [this](){ return createNewHorizonsLevelUpBackground(); };
 	addDialogBackground("newHorizonsOrdersBackground.png", Point(640, 500));
+	for(PlayerColor color(0); color < PlayerColor::PLAYER_LIMIT; ++color)
+	{
+		const std::string name = "newHorizonsSplitBackground-" + color.toString() + ".png";
+		imageFiles[ImagePath::builtin(name)] = [this, color](){ return createSplitDialogBackground(color); };
+	}
 
 	imageFiles[ImagePath::builtin("questDialog.png")] = [this](){ return createQuestWindow();};
 	imageFiles[ImagePath::builtin("stackArtifactIndicatorSmall.png")] = [this](){ return createStackArtifactIndicator(Point(14, 14));};
@@ -1596,6 +1601,57 @@ AssetGenerator::CanvasPtr AssetGenerator::createDialogBackground(const Point & s
 		const int statusBarOverlayHeight = 30;
 		canvas.drawColorBlended(Rect(0, size.y - statusBarOverlayHeight, size.x, statusBarOverlayHeight), ColorRGBA(0, 0, 0, 88));
 	}
+
+	return image;
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::createSplitDialogBackground(PlayerColor color) const
+{
+	// Keep the classic split-dialog art, but extend its lower frame for the
+	// owner markers and controls. The installed GPUCRDIV image remains the
+	// source; no flattened copy of the original artwork is shipped.
+	constexpr int dialogWidth = 298;
+	constexpr int dialogHeight = 440;
+	constexpr int upperContentHeight = 186;
+	constexpr int footerSourceTop = 300;
+	constexpr int footerHeight = 37;
+	constexpr int footerTop = dialogHeight - footerHeight;
+	constexpr int railWidth = 14;
+	constexpr int textureLeft = railWidth;
+	constexpr int textureWidth = dialogWidth - 2 * textureLeft;
+	constexpr int textureSourceTop = 14;
+	constexpr int textureTileHeight = 36;
+
+	assert(color.isValidPlayer());
+	if(!color.isValidPlayer())
+		color = PlayerColor(1);
+
+	auto image = ENGINE->renderHandler().createImage(Point(dialogWidth, dialogHeight), CanvasScalingPolicy::IGNORE);
+	Canvas canvas = image->getCanvas();
+	canvas.fillTexture(ENGINE->renderHandler().loadImage(ImageLocator(ImagePath::builtin("DiBoxBck"), EImageBlitMode::OPAQUE)));
+
+	auto original = ENGINE->renderHandler().loadImage(ImageLocator(ImagePath::builtin("GPUCRDIV"), EImageBlitMode::OPAQUE));
+	original->playerColored(color);
+
+	// Preserve the complete title and creature-art area.
+	canvas.draw(original, Point(0, 0), Rect(0, 0, dialogWidth, upperContentHeight));
+
+	// Continue the same leather texture between the creature panes and the
+	// controls. The sampled patch is intentionally clear of the baked-in boxes.
+	for(int y = upperContentHeight; y < footerTop; y += textureTileHeight)
+	{
+		const int tileHeight = std::min(textureTileHeight, footerTop - y);
+		canvas.draw(original, Point(textureLeft, y), Rect(textureLeft, textureSourceTop, textureWidth, tileHeight));
+	}
+
+	// Extend the original thin gold side rails into the new area.
+	const int railHeight = footerTop - upperContentHeight;
+	canvas.draw(original, Point(0, upperContentHeight), Rect(0, textureSourceTop, railWidth, railHeight));
+	canvas.draw(original, Point(dialogWidth - railWidth, upperContentHeight), Rect(dialogWidth - railWidth, textureSourceTop, railWidth, railHeight));
+
+	// Reuse the original ornate lower frame at the bottom, leaving a margin
+	// below the tallest button even when fallback owner labels are shown.
+	canvas.draw(original, Point(0, footerTop), Rect(0, footerSourceTop, dialogWidth, footerHeight));
 
 	return image;
 }

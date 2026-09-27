@@ -21,6 +21,7 @@
 class CGHeroInstance;
 class CGObjectInstance;
 class CGDwelling;
+class CArmedInstance;
 class IMarket;
 class MetaString;
 
@@ -35,6 +36,7 @@ class CHeroArea;
 class CSlider;
 class CComponentBox;
 class CLabel;
+class CMultiLineLabel;
 class CTextInput;
 class CListBox;
 class CLabelGroup;
@@ -116,6 +118,12 @@ public:
 };
 
 /// Split window where creatures can be split up into two single unit stacks
+struct CSplitWindowOwner
+{
+	const CArmedInstance * army = nullptr;
+	std::string label;
+};
+
 class CSplitWindow : public CWindowObject
 {
 	std::function<void(int, int)> callback;
@@ -132,8 +140,10 @@ class CSplitWindow : public CWindowObject
 	std::shared_ptr<CButton> cancel;
 	std::shared_ptr<CTextInput> leftInput;
 	std::shared_ptr<CTextInput> rightInput;
-	std::shared_ptr<CLabel> leftOwner;
-	std::shared_ptr<CLabel> rightOwner;
+	std::shared_ptr<CAnimImage> leftOwnerMarker;
+	std::shared_ptr<CAnimImage> rightOwnerMarker;
+	std::shared_ptr<CMultiLineLabel> leftOwnerLabel;
+	std::shared_ptr<CMultiLineLabel> rightOwnerLabel;
 
 	void setAmountText(std::string text, bool left);
 	void setAmount(int value, bool left);
@@ -148,7 +158,7 @@ public:
 	 * leftAmount, rightAmount - amount of creatures in each stack
 	 */
 	CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback, int leftMin, int rightMin,
-		int leftAmount, int rightAmount, std::string leftOwnerText = {}, std::string rightOwnerText = {});
+		int leftAmount, int rightAmount, CSplitWindowOwner leftOwner = {}, CSplitWindowOwner rightOwner = {});
 };
 
 /// Raised up level window where you can select one out of two skills

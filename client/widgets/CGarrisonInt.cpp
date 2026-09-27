@@ -400,18 +400,22 @@ bool CGarrisonSlot::split()
 			owner->splitStacks(selection, owner->army(upg), ID, amountRight);
 	};
 
-	auto armyLabel = [](const CArmedInstance * army)
+	auto ownerPresentation = [](const CArmedInstance * army)
 	{
+		CSplitWindowOwner owner;
+		owner.army = army;
 		if(!army)
-			return std::string();
+			return owner;
 		const std::string name = army->getObjectName().toString(&GAME->translator());
 		if(dynamic_cast<const CGHeroInstance *>(army))
-			return "Hero: " + name;
-		return name.empty() ? std::string("Garrison") : "Garrison: " + name;
+			owner.label = "Hero: " + name;
+		else
+			owner.label = name.empty() ? std::string("Garrison") : "Garrison: " + name;
+		return owner;
 	};
 	ENGINE->windows().createAndPushWindow<CSplitWindow>(selection->creature, splitFunctor,
 		minLeft, minRight, countLeft, countRight,
-		armyLabel(owner->army(selection->upg)), armyLabel(owner->army(upg)));
+		ownerPresentation(owner->army(selection->upg)), ownerPresentation(owner->army(upg)));
 	return true;
 }
 
@@ -492,11 +496,13 @@ void CGarrisonSlot::clickPressed(const Point & cursorPosition)
 			{
 				refr = split();
 			}
-			else if(!creature && lastHeroStackSelected) // split all except last creature
+			else if(!creature && lastHeroStackSelected) // whole-stack intent reserves the last creature on the server
 			{
 				const auto amount = selection->myStack->getCount() - 1;
-				if(owner->checkLeadershipTransfer(selectedObj, owner->army(upg), selection->ID, ID, amount))
-					GAME->interface()->cb->splitStack(selectedObj, owner->army(upg), selection->ID, ID, amount);
+				if(amount <= 0)
+					GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));
+				else
+					GAME->interface()->cb->mergeOrSwapStacks(selectedObj, owner->army(upg), selection->ID, ID);
 			}
 			else if(creature != selection->creature) // swap
 			{
