@@ -26,8 +26,17 @@ JsonNode legacyRules()
 	auto rules = originalRules();
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::RULESET_VERSION;
 	rules.Struct().erase("spellPoints");
+	rules.Struct().erase("mageGuildGeneration");
 	rules.Struct().erase("physicalDamageReductionCapPercent");
 	rules.Struct().erase("warcasting");
+	for(auto & [factionId, faction] : rules["factions"].Struct())
+	{
+		(void)factionId;
+		faction["major"] = faction["preferredA"];
+		faction["minor"] = faction["preferredB"];
+		faction.Struct().erase("preferredA");
+		faction.Struct().erase("preferredB");
+	}
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
 		(void)name;
@@ -54,6 +63,15 @@ TEST(NewHorizonsMagicV2RulesTest, ActualV1AndV2DecodeWithoutChangingExistingScho
 {
 	const auto old = legacyRules();
 	const auto current = formulaRules();
+	EXPECT_FALSE(old.Struct().contains("mageGuildGeneration"));
+	for(const auto & [factionId, faction] : old["factions"].Struct())
+	{
+		(void)factionId;
+		EXPECT_TRUE(faction.Struct().contains("major"));
+		EXPECT_TRUE(faction.Struct().contains("minor"));
+		EXPECT_FALSE(faction.Struct().contains("preferredA"));
+		EXPECT_FALSE(faction.Struct().contains("preferredB"));
+	}
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(old));
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(current));
 	const SpellID arrow(SpellID::decode(arrowKey));

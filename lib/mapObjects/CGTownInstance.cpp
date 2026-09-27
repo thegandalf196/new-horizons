@@ -352,9 +352,14 @@ void CGTownInstance::setHouseOfWisdomScrolls(std::vector<SpellID> scrolls)
 
 int CGTownInstance::spellsAtLevel(int level, bool checkGuild) const
 {
+	if(level < 1 || level > GameConstants::SPELL_LEVELS)
+		return 0;
 	if(checkGuild && mageGuildLevel() < level)
 		return 0;
-	int ret = 6 - level; //how many spells are available at this level
+	if(newHorizonsMagic::mageGuildGenerationActive(cb->getMagicRules())
+		&& newHorizonsMageGuildVisibleSpells.size() == GameConstants::SPELL_LEVELS)
+		return newHorizonsMageGuildVisibleSpells.at(level - 1);
+	int ret = newHorizonsMagic::mageGuildSpellsAtLevel(cb->getMagicRules(), level);
 
 	const bool newHorizonsTowerLibrary = newHorizonsMagic::rulesActive(cb->getMagicRules())
 		&& getFactionID() == FactionID::TOWER;
@@ -362,6 +367,29 @@ int CGTownInstance::spellsAtLevel(int level, bool checkGuild) const
 		ret++;
 
 	return ret;
+}
+
+int CGTownInstance::spellResearchCandidateIndex(int level, int visibleIndex) const
+{
+	if(level < 1 || level > GameConstants::SPELL_LEVELS)
+		return -1;
+	const auto & levelSpells = spells.at(level - 1);
+	const int visibleCount = spellsAtLevel(level, false);
+	if(visibleIndex < 0 || visibleIndex >= visibleCount
+		|| visibleCount >= static_cast<int>(levelSpells.size()))
+		return -1;
+
+	if(!newHorizonsMagic::mageGuildGenerationActive(cb->getMagicRules()))
+		return visibleCount;
+	if(newHorizonsMageGuildVisibleSpellSchools.size() != GameConstants::SPELL_LEVELS
+		|| newHorizonsMageGuildVisibleSpellSchools.at(level - 1).size() != static_cast<size_t>(visibleCount))
+		return -1;
+
+	const auto requiredSchool = newHorizonsMageGuildVisibleSpellSchools.at(level - 1).at(visibleIndex);
+	for(size_t index = static_cast<size_t>(visibleCount); index < levelSpells.size(); ++index)
+		if(vstd::contains(newHorizonsMagic::spellSchools(cb->getMagicRules(), levelSpells[index]), requiredSchool))
+			return static_cast<int>(index);
+	return -1;
 }
 
 bool CGTownInstance::needsLastStack() const

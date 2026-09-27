@@ -2793,6 +2793,11 @@ bool CGameHandler::razeStructure (ObjectInstanceID tid, BuildingID bid)
 bool CGameHandler::spellResearch(ObjectInstanceID tid, SpellID spellAtSlot, bool accepted)
 {
 	const CGTownInstance * t = gameState().getTown(tid);
+	if(!t && complain("Town for spell research not found!"))
+		return false;
+	if(newHorizonsMagic::mageGuildGenerationActive(gameInfo().getMagicRules())
+		&& complain("Spell research is unavailable with fixed New Horizons Mage Guilds!"))
+		return false;
 
 	if(!gameInfo().getSettings().getBoolean(EGameSettings::TOWNS_SPELL_RESEARCH) && complain("Spell research not allowed!"))
 		return false;
@@ -2800,14 +2805,24 @@ bool CGameHandler::spellResearch(ObjectInstanceID tid, SpellID spellAtSlot, bool
 		return false;
 
 	int level = -1;
+	int visibleIndex = -1;
 	for(int i = 0; i < t->spells.size(); i++)
-		if(vstd::find_pos(t->spells[i], spellAtSlot) != -1)
+	{
+		const int position = vstd::find_pos(t->spells[i], spellAtSlot);
+		if(position >= 0 && position < t->spellsAtLevel(i + 1, false))
+		{
 			level = i;
+			visibleIndex = position;
+		}
+	}
 
 	if(level == -1 && complain("Spell for replacement not found!"))
 		return false;
 
 	auto spells = t->spells.at(level);
+	const int candidateIndex = t->spellResearchCandidateIndex(level + 1, visibleIndex);
+	if(candidateIndex < 0 && complain("No eligible replacement spell remains for this slot!"))
+		return false;
 
 	bool researchLimitExceeded = t->spellResearchCounterDay >= gameInfo().getSettings().getValue(EGameSettings::TOWNS_SPELL_RESEARCH_PER_DAY).Vector()[level].Float();
 	if(researchLimitExceeded && complain("Already researched today!"))
@@ -2827,9 +2842,9 @@ bool CGameHandler::spellResearch(ObjectInstanceID tid, SpellID spellAtSlot, bool
 	giveResources(t->getOwner(), -cost);
 
 	if(accepted)
-		std::swap(spells.at(t->spellsAtLevel(level, false)), spells.at(vstd::find_pos(spells, spellAtSlot)));
+		std::swap(spells.at(candidateIndex), spells.at(visibleIndex));
 
-	auto it = spells.begin() + t->spellsAtLevel(level, false);
+	auto it = spells.begin() + candidateIndex;
 	std::rotate(it, it + 1, spells.end()); // move to end
 	setResearchedSpells(t, level, spells, accepted);
 

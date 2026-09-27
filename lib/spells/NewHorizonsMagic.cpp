@@ -161,6 +161,45 @@ bool rulesActive(const JsonNode & rules)
 		&& integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION);
 }
 
+bool mageGuildGenerationActive(const JsonNode & rules)
+{
+	if(!rulesActive(rules) || !rules["mageGuildGeneration"].isStruct())
+		return false;
+	const auto & generation = rules["mageGuildGeneration"];
+	if(!integer(generation["rulesetVersion"], MAGE_GUILD_GENERATION_RULESET_VERSION,
+		MAGE_GUILD_GENERATION_RULESET_VERSION)
+		|| !generation["nonPreferredSlots"].isVector()
+		|| generation["nonPreferredSlots"].Vector().size() != 5)
+		return false;
+	constexpr std::array<int, 5> expectedSlots{3, 2, 0, 0, 0};
+	for(size_t level = 0; level < expectedSlots.size(); ++level)
+		if(!integer(generation["nonPreferredSlots"].Vector()[level], expectedSlots[level], expectedSlots[level]))
+			return false;
+	return true;
+}
+
+int mageGuildSpellsAtLevel(const JsonNode & rules, int level)
+{
+	if(level < 1 || level > 5)
+		return 0;
+	if(!mageGuildGenerationActive(rules))
+		return 6 - level;
+	return 2 + rules["mageGuildGeneration"]["nonPreferredSlots"].Vector().at(level - 1).Integer();
+}
+
+std::vector<SpellSchool> preferredSchools(const JsonNode & rules, FactionID faction)
+{
+	if(!mageGuildGenerationActive(rules))
+		return {};
+	const auto & identity = rules["factions"][FactionID::encode(faction.getNum())];
+	if(!identity.isStruct())
+		return {};
+	return {
+		SpellSchool(resolve("spellSchool", identity["preferredA"].String())),
+		SpellSchool(resolve("spellSchool", identity["preferredB"].String()))
+	};
+}
+
 int masterChainLightningRetentionPercent(int heroLevel)
 {
 	return std::min(90, 75 + std::max(0, heroLevel));
@@ -197,7 +236,7 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "physicalDamageReductionCapPercent"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
@@ -220,6 +259,21 @@ void validateRules(const JsonNode & rules)
 		require(spellPoints["intelligenceMaximumPercent"].getType() == JsonNode::JsonType::DATA_INTEGER
 			&& integer(spellPoints["intelligenceMaximumPercent"], 100, 1000),
 			"Spell Points intelligenceMaximumPercent");
+	}
+	if(rules.Struct().contains("mageGuildGeneration"))
+	{
+		const auto & generation = rules["mageGuildGeneration"];
+		require(version == DIRECT_DAMAGE_RULESET_VERSION, "Mage Guild generation requires magic rules v2");
+		require(generation.isStruct(), "Mage Guild generation object");
+		fields(generation, {"rulesetVersion", "nonPreferredSlots"});
+		require(integer(generation["rulesetVersion"], MAGE_GUILD_GENERATION_RULESET_VERSION,
+			MAGE_GUILD_GENERATION_RULESET_VERSION), "Mage Guild generation rulesetVersion");
+		require(generation["nonPreferredSlots"].isVector()
+			&& generation["nonPreferredSlots"].Vector().size() == 5, "five Mage Guild non-preferred slot counts");
+		constexpr std::array<int, 5> expectedSlots{3, 2, 0, 0, 0};
+		for(size_t level = 0; level < expectedSlots.size(); ++level)
+			require(integer(generation["nonPreferredSlots"].Vector()[level], expectedSlots[level], expectedSlots[level]),
+				"canonical Mage Guild non-preferred slot profile");
 	}
 	if(rules.Struct().contains("warcasting"))
 	{
@@ -351,6 +405,7 @@ void validateRules(const JsonNode & rules)
 			require(mapped.count(spell->getId().getNum()) != 0, "unclassified hero spell " + spell->getJsonKey());
 	if(!rules["factionWeights"].isNull())
 	{
+		require(!mageGuildGenerationActive(rules), "fixed Mage Guild generation does not use faction weights");
 		fields(rules["factionWeights"], {"major", "minor"});
 		require(integer(rules["factionWeights"]["major"], 1, 1000)
 			&& integer(rules["factionWeights"]["minor"], 1, 1000), "positive faction weights");
@@ -358,16 +413,29 @@ void validateRules(const JsonNode & rules)
 	if(!rules["factions"].isNull())
 	{
 		require(rules["factions"].isStruct(), "factions object");
+		const bool fixedGuildGeneration = mageGuildGenerationActive(rules);
 		for(const auto & [name, data] : rules["factions"].Struct())
 		{
 			resolve("faction", name);
-			fields(data, {"major", "minor", "provisional"});
-			require(data["major"].isString() && data["minor"].isString(), "faction school identifiers");
-			require(schools.count(data["major"].String()) && schools.count(data["minor"].String()), "inactive faction school");
-			require(data["major"].String() != data["minor"].String(), "distinct major/minor required");
+			const char * first = fixedGuildGeneration ? "preferredA" : "major";
+			const char * second = fixedGuildGeneration ? "preferredB" : "minor";
+			fields(data, {first, second, "provisional"});
+			require(data[first].isString() && data[second].isString(), "faction school identifiers");
+			require(schools.count(data[first].String()) && schools.count(data[second].String()), "inactive faction school");
+			require(data[first].String() != data[second].String(), "distinct preferred schools required");
 			require(data["provisional"].isNull() || data["provisional"].isBool(), "provisional flag");
 		}
+		if(fixedGuildGeneration)
+		{
+			for(const auto faction : {FactionID::CASTLE, FactionID::RAMPART, FactionID::TOWER,
+				FactionID::INFERNO, FactionID::NECROPOLIS, FactionID::DUNGEON,
+				FactionID::STRONGHOLD, FactionID::FORTRESS, FactionID::CONFLUX})
+				require(rules["factions"].Struct().contains(FactionID::encode(faction.getNum())),
+					"fixed Mage Guild generation requires every core faction preference pair");
+		}
 	}
+	else
+		require(!mageGuildGenerationActive(rules), "fixed Mage Guild generation requires faction preferences");
 }
 
 int physicalDamageReductionCapPercent(const JsonNode & rules)

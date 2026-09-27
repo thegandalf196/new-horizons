@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
+    'new-horizons:focusMagic',
     'new-horizons:counterspell',
     'new-horizons:disintegrate',
     'new-horizons:masterChainLightning',
@@ -96,6 +97,11 @@ def legacy_rules(rules):
         result['rulesetVersion'] = 1
         result.pop('warcasting', None)
         result.pop('spellPoints', None)
+        result.pop('mageGuildGeneration', None)
+        result.pop('physicalDamageReductionCapPercent', None)
+        for faction in result.get('factions', {}).values():
+            faction['major'] = faction.pop('preferredA')
+            faction['minor'] = faction.pop('preferredB')
         for spell in result['spells'].values():
             spell.pop('directDamage', None)
             spell.pop('active', None)
@@ -123,7 +129,9 @@ def validate_rules(rules):
         raise ValueError('Hero spell inventory does not match curated mappings')
     pairs = set()
     for entry in rules.get('factions', {}).values():
-        pair = frozenset((entry['major'], entry['minor']))
+        fixed = 'mageGuildGeneration' in rules
+        pair = frozenset((entry['preferredA' if fixed else 'major'],
+                          entry['preferredB' if fixed else 'minor']))
         if len(pair) != 2 or pair in pairs:
             raise ValueError('Faction schools must form distinct, unique pairs')
         pairs.add(pair)
@@ -621,6 +629,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         translations.update(load('config/newHorizonsFortTexts.json'))
         translations.update(load('config/newHorizonsMusterTexts.json'))
         translations.update(load('config/newHorizonsHeroClassTexts.json'))
+        translations.update(load('config/newHorizonsCombatTexts.json'))
         self.assertEqual(module['translations'], translations)
         self.assertEqual(module['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))
         self.assertEqual(module['filesystem'][''], [{'type': 'dir', 'path': '/Content'}])
@@ -661,14 +670,45 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual({k: v['index'] for k, v in legacy.items()},
                          {'air': 0, 'fire': 1, 'earth': 2, 'water': 3})
 
-    def test_conflicts_remain_explicit_and_no_fictional_new_spells(self):
-        self.assertTrue(self.rules['factions']['core:necropolis']['provisional'])
-        self.assertTrue(self.rules['factions']['core:fortress']['provisional'])
+    def test_settled_faction_pairs_and_no_fictional_new_spells(self):
+        self.assertFalse(self.rules['factions']['core:necropolis']['provisional'])
+        self.assertFalse(self.rules['factions']['core:fortress']['provisional'])
         self.assertEqual(set(self.rules['spells']['core:blind']['schools']),
                          {'new-horizons:shadow', 'new-horizons:chaos'})
         self.assertNotIn('core:titanBolt', self.rules['spells'])
         self.assertNotIn('core:poison', self.rules['spells'])
         self.assertIn('new-horizons:timeStop', self.rules['spells'])
+
+    def test_fixed_mage_guild_preferences_match_the_canonical_faction_matrix(self):
+        expected = {
+            'core:castle': ('new-horizons:light', 'new-horizons:sorcery'),
+            'core:rampart': ('new-horizons:nature', 'new-horizons:light'),
+            'core:tower': ('new-horizons:sorcery', 'new-horizons:havoc'),
+            'core:inferno': ('new-horizons:chaos', 'new-horizons:havoc'),
+            'core:necropolis': ('new-horizons:shadow', 'new-horizons:sorcery'),
+            'core:dungeon': ('new-horizons:havoc', 'new-horizons:shadow'),
+            'core:stronghold': ('new-horizons:chaos', 'new-horizons:nature'),
+            'core:fortress': ('new-horizons:nature', 'new-horizons:shadow'),
+            'core:conflux': ('new-horizons:havoc', 'new-horizons:nature'),
+        }
+        actual = {
+            faction: (entry['preferredA'], entry['preferredB'])
+            for faction, entry in self.rules['factions'].items()
+        }
+        self.assertEqual(actual, expected)
+
+    def test_fixed_mage_guilds_disable_spell_research_in_client_and_server(self):
+        client = (ROOT / 'client/windows/CCastleInterface.cpp').read_text(
+            encoding='utf-8')
+        self.assertIn(
+            'if(!newHorizonsMagic::mageGuildGenerationActive(GAME->interface()->cb->getMagicRules())\n'
+            '\t\t&& GAME->interface()->cb->getSettings().getBoolean(EGameSettings::TOWNS_SPELL_RESEARCH)',
+            client)
+        server = (ROOT / 'server/CGameHandler.cpp').read_text(encoding='utf-8')
+        self.assertIn(
+            'if(newHorizonsMagic::mageGuildGenerationActive(gameInfo().getMagicRules())\n'
+            '\t\t&& complain("Spell research is unavailable with fixed New Horizons Mage Guilds!"))',
+            server)
 
     def test_negative_controls(self):
         corruptions = [
@@ -682,8 +722,8 @@ class NewHorizonsContentTest(unittest.TestCase):
             lambda r: r['spells']['core:haste'].pop('schools'),
             lambda r: r['schoolSkills'].pop('new-horizons:light'),
             lambda r: r['skillReplacements'].__setitem__('core:airMagic', 'new-horizons:chaosMagic'),
-            lambda r: r['factionWeights'].__setitem__('major', 0),
-            lambda r: r['factions']['core:castle'].__setitem__('minor', 'new-horizons:light'),
+            lambda r: r['mageGuildGeneration']['nonPreferredSlots'].__setitem__(0, 4),
+            lambda r: r['factions']['core:castle'].__setitem__('preferredB', 'new-horizons:light'),
             lambda r: r.__setitem__('unexpected', True),
         ]
         for index, corrupt in enumerate(corruptions):

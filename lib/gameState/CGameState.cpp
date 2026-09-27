@@ -76,6 +76,45 @@
 #include <vcmi/scripting/Service.h>
 #include <vstd/RNG.h>
 
+namespace
+{
+struct SchoolSpellMatching
+{
+	std::vector<int> slotToSpell;
+};
+
+SchoolSpellMatching maximumSchoolSpellMatching(const JsonNode & rules,
+	const std::vector<SpellSchool> & slots, const std::vector<SpellID> & spells)
+{
+	std::vector<int> spellToSlot(spells.size(), -1);
+	std::vector<int> slotToSpell(slots.size(), -1);
+	std::function<bool(size_t, std::vector<bool> &)> augment = [&](size_t slot, std::vector<bool> & seen)
+	{
+		for(size_t spell = 0; spell < spells.size(); ++spell)
+		{
+			if(seen[spell]
+				|| !vstd::contains(newHorizonsMagic::spellSchools(rules, spells[spell]), slots[slot]))
+				continue;
+			seen[spell] = true;
+			if(spellToSlot[spell] < 0 || augment(static_cast<size_t>(spellToSlot[spell]), seen))
+			{
+				spellToSlot[spell] = static_cast<int>(slot);
+				slotToSpell[slot] = static_cast<int>(spell);
+				return true;
+			}
+		}
+		return false;
+	};
+
+	for(size_t slot = 0; slot < slots.size(); ++slot)
+	{
+		std::vector<bool> seen(spells.size(), false);
+		augment(slot, seen);
+	}
+	return {std::move(slotToSpell)};
+}
+}
+
 std::shared_mutex CGameState::mutex;
 
 const Services * GameStateEnvironment::services() const
@@ -985,18 +1024,28 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 		//init spells
 		vti->spells.resize(GameConstants::SPELL_LEVELS);
 		vti->possibleSpells -= SpellID::PRESET;
+		const bool fixedMageGuildGeneration = newHorizonsMagic::mageGuildGenerationActive(magicRules);
 
 		for(ui32 z=0; z<vti->obligatorySpells.size();z++)
 		{
 			const auto spellID = vti->obligatorySpells[z];
-			// Mandatory spells retain their original map-ban override, but cannot
-			// bypass saved-roster admission or index a level-zero/invalid bucket.
+			const auto * spell = spellID.toSpell();
+			// Fixed-school generation treats map bans as an ordinary eligibility
+			// constraint and admits only ordinary combat spells. Legacy generation
+			// retains the historical authored override.
+			if(!spell)
+				continue;
+			if(fixedMageGuildGeneration && (!spell->isCommonHeroSpell() || spell->isAdventure()))
+				continue;
 			if(!newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spellID))
+				continue;
+			if(fixedMageGuildGeneration && !isAllowed(spellID))
 				continue;
 			const auto level = getSpellLevel(spellID);
 			if(level < 1 || level > GameConstants::SPELL_LEVELS)
 				continue;
-			vti->spells.at(level - 1).push_back(spellID);
+			if(!vstd::contains(vti->spells.at(level - 1), spellID))
+				vti->spells.at(level - 1).push_back(spellID);
 			vti->possibleSpells -= spellID;
 		}
 
@@ -1006,10 +1055,9 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 				return true;
 			const auto * spell = spellID.toSpell();
 
-			if (newHorizonsMagic::factionSpellWeight(magicRules, vti->getFactionID(), spellID) == 0)
+			if(!spell || spell->isSpecial() || spell->isCreatureAbility())
 				return true;
-
-			if (spell->isSpecial() || spell->isCreatureAbility())
+			if(fixedMageGuildGeneration && spell->isAdventure())
 				return true;
 
 			if (!isAllowed(spellID))
@@ -1019,20 +1067,102 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 			return level < 1 || level > GameConstants::SPELL_LEVELS;
 		});
 
-		std::vector<int> spellWeights;
-		for (auto & spellID : vti->possibleSpells)
-			spellWeights.push_back(newHorizonsMagic::factionSpellWeight(magicRules, vti->getFactionID(), spellID));
-
-
-		while(!vti->possibleSpells.empty())
+		if(fixedMageGuildGeneration)
 		{
-			size_t index = RandomGeneratorUtil::nextItemWeighted(spellWeights, randomGenerator);
+			vti->newHorizonsMageGuildVisibleSpells.assign(GameConstants::SPELL_LEVELS, 0);
+			vti->newHorizonsMageGuildVisibleSpellSchools.assign(GameConstants::SPELL_LEVELS, {});
+			const auto preferred = newHorizonsMagic::preferredSchools(magicRules, vti->getFactionID());
+			std::vector<SpellSchool> nonPreferred = newHorizonsMagic::activeSchools(magicRules);
+			vstd::erase_if(nonPreferred, [&preferred](SpellSchool school)
+			{
+				return vstd::contains(preferred, school);
+			});
 
-			const auto * s = vti->possibleSpells[index].toSpell();
-			vti->spells[getSpellLevel(s->id)-1].push_back(s->id);
+			for(int level = 1; level <= GameConstants::SPELL_LEVELS; ++level)
+			{
+				std::vector<SpellSchool> slotSchools = preferred;
+				auto availableNonPreferred = nonPreferred;
+				const int nonPreferredCount = newHorizonsMagic::mageGuildSpellsAtLevel(magicRules, level)
+					- static_cast<int>(preferred.size());
+				for(int slot = 0; slot < nonPreferredCount && !availableNonPreferred.empty(); ++slot)
+				{
+					auto selectedSchool = RandomGeneratorUtil::nextItem(availableNonPreferred, randomGenerator);
+					slotSchools.push_back(*selectedSchool);
+					availableNonPreferred.erase(selectedSchool);
+				}
 
-			vti->possibleSpells.erase(vti->possibleSpells.begin() + index);
-			spellWeights.erase(spellWeights.begin() + index);
+				// Compatible authored spells retain priority, but cannot replace a
+				// different required school. An unmatched authored spell is discarded;
+				// fixed-school New Horizons Guilds have no Spell Research reserve.
+				auto mandatory = std::move(vti->spells.at(level - 1));
+				vti->spells.at(level - 1).clear();
+				const auto mandatoryMatching = maximumSchoolSpellMatching(magicRules, slotSchools, mandatory);
+				std::vector<SpellSchool> remainingSlots;
+				for(size_t slot = 0; slot < slotSchools.size(); ++slot)
+				{
+					const int matchedSpell = mandatoryMatching.slotToSpell[slot];
+					if(matchedSpell < 0)
+						remainingSlots.push_back(slotSchools[slot]);
+					else
+					{
+						vti->spells.at(level - 1).push_back(mandatory.at(matchedSpell));
+						vti->newHorizonsMageGuildVisibleSpellSchools.at(level - 1).push_back(slotSchools[slot]);
+					}
+				}
+				std::vector<SpellID> levelPool;
+				for(const auto spell : vti->possibleSpells)
+					if(getSpellLevel(spell) == level)
+						levelPool.push_back(spell);
+				RandomGeneratorUtil::randomShuffle(remainingSlots, randomGenerator);
+				while(!remainingSlots.empty())
+				{
+					std::vector<SpellID> eligible;
+					for(const auto candidate : levelPool)
+						if(vstd::contains(newHorizonsMagic::spellSchools(magicRules, candidate), remainingSlots.front()))
+							eligible.push_back(candidate);
+					if(!eligible.empty())
+					{
+						// Every currently eligible spell in this school/level receives
+						// exactly one entry in the draw. Do not bias multi-school spells
+						// merely to preserve a later slot; uniqueness may legitimately
+						// leave that later required-school slot empty.
+						const auto selected = *RandomGeneratorUtil::nextItem(eligible, randomGenerator);
+						vti->spells.at(level - 1).push_back(selected);
+						vti->newHorizonsMageGuildVisibleSpellSchools.at(level - 1).push_back(remainingSlots.front());
+						vti->possibleSpells -= selected;
+						vstd::erase_if(levelPool, [selected](SpellID spell) { return spell == selected; });
+					}
+					// No eligible candidate means this required school slot remains empty.
+					remainingSlots.erase(remainingSlots.begin());
+				}
+				vti->newHorizonsMageGuildVisibleSpells.at(level - 1) = std::min<int>(
+					newHorizonsMagic::mageGuildSpellsAtLevel(magicRules, level),
+					vti->spells.at(level - 1).size());
+			}
+
+			// Only the visible fixed-school prefix is part of a New Horizons town's
+			// spell list. Unselected candidates are not hidden replacement stock.
+			vti->possibleSpells.clear();
+		}
+		else
+		{
+			vti->newHorizonsMageGuildVisibleSpells.clear();
+			vti->newHorizonsMageGuildVisibleSpellSchools.clear();
+			vstd::erase_if(vti->possibleSpells, [&](const SpellID & spellID)
+			{
+				return newHorizonsMagic::factionSpellWeight(magicRules, vti->getFactionID(), spellID) == 0;
+			});
+			std::vector<int> spellWeights;
+			for(auto spellID : vti->possibleSpells)
+				spellWeights.push_back(newHorizonsMagic::factionSpellWeight(magicRules, vti->getFactionID(), spellID));
+			while(!vti->possibleSpells.empty())
+			{
+				const size_t index = RandomGeneratorUtil::nextItemWeighted(spellWeights, randomGenerator);
+				const auto * spell = vti->possibleSpells[index].toSpell();
+				vti->spells[getSpellLevel(spell->id) - 1].push_back(spell->id);
+				vti->possibleSpells.erase(vti->possibleSpells.begin() + index);
+				spellWeights.erase(spellWeights.begin() + index);
+			}
 		}
 	}
 }

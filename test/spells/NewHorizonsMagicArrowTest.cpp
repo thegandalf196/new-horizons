@@ -71,7 +71,20 @@ TEST(NewHorizonsMagicArrowTest, LegacyAndWrongSpellDoNotGainOvercharge)
 
 	JsonNode v1(JsonPath::builtin("config/newHorizonsMagic"));
 	v1["rulesetVersion"].Integer() = 1;
-	v1["spells"]["core:magicArrow"].Struct().erase("directDamage");
+	v1.Struct().erase("mageGuildGeneration");
+	for(auto & [factionId, faction] : v1["factions"].Struct())
+	{
+		(void)factionId;
+		faction["major"] = faction["preferredA"];
+		faction["minor"] = faction["preferredB"];
+		faction.Struct().erase("preferredA");
+		faction.Struct().erase("preferredB");
+	}
+	for(auto & [spellId, spell] : v1["spells"].Struct())
+	{
+		(void)spellId;
+		spell.Struct().erase("directDamage");
+	}
 	EXPECT_FALSE(newHorizonsMagic::magicArrowOverchargeEnabled(v1, arrow));
 	EXPECT_FALSE(newHorizonsMagic::magicArrowDamage(v1, arrow, 100, 1, 0).has_value());
 

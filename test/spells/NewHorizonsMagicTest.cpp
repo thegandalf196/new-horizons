@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/filesystem/ResourcePath.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 
 TEST(NewHorizonsMagicTest, LegacySchoolsCostsAndLevelsRemainOriginal)
@@ -41,6 +42,72 @@ TEST(NewHorizonsMagicTest, PhysicalReductionOptInIsValidatedAndAbsentForOlderSna
 		EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
 	}
 	rules["physicalDamageReductionCapPercent"].Float() = 80.5;
+	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+}
+
+TEST(NewHorizonsMagicTest, FixedSchoolMageGuildGenerationIsSavedAndValidated)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	ASSERT_TRUE(newHorizonsMagic::mageGuildGenerationActive(rules));
+	const std::array<int, 5> expected{5, 4, 2, 2, 2};
+	for(int level = 1; level <= 5; ++level)
+		EXPECT_EQ(newHorizonsMagic::mageGuildSpellsAtLevel(rules, level), expected.at(level - 1));
+	EXPECT_EQ(newHorizonsMagic::mageGuildSpellsAtLevel(rules, 0), 0);
+	EXPECT_EQ(newHorizonsMagic::mageGuildSpellsAtLevel(rules, 6), 0);
+
+	const std::array factions{
+		FactionID::CASTLE, FactionID::RAMPART, FactionID::TOWER,
+		FactionID::INFERNO, FactionID::NECROPOLIS, FactionID::DUNGEON,
+		FactionID::STRONGHOLD, FactionID::FORTRESS, FactionID::CONFLUX};
+	const std::array<std::array<const char *, 2>, 9> expectedPreferences{{
+		{{"new-horizons:light", "new-horizons:sorcery"}},
+		{{"new-horizons:nature", "new-horizons:light"}},
+		{{"new-horizons:sorcery", "new-horizons:havoc"}},
+		{{"new-horizons:chaos", "new-horizons:havoc"}},
+		{{"new-horizons:shadow", "new-horizons:sorcery"}},
+		{{"new-horizons:havoc", "new-horizons:shadow"}},
+		{{"new-horizons:chaos", "new-horizons:nature"}},
+		{{"new-horizons:nature", "new-horizons:shadow"}},
+		{{"new-horizons:havoc", "new-horizons:nature"}}
+	}};
+	for(size_t index = 0; index < factions.size(); ++index)
+	{
+		const auto preferred = newHorizonsMagic::preferredSchools(rules, factions[index]);
+		ASSERT_EQ(preferred.size(), 2u);
+		EXPECT_EQ(preferred.front().serializationKey(), expectedPreferences[index][0]);
+		EXPECT_EQ(preferred.back().serializationKey(), expectedPreferences[index][1]);
+	}
+
+	auto historical = rules;
+	historical.Struct().erase("mageGuildGeneration");
+	for(auto & [name, faction] : historical["factions"].Struct())
+	{
+		(void)name;
+		faction["major"] = faction["preferredA"];
+		faction["minor"] = faction["preferredB"];
+		faction.Struct().erase("preferredA");
+		faction.Struct().erase("preferredB");
+	}
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(historical));
+	EXPECT_FALSE(newHorizonsMagic::mageGuildGenerationActive(historical));
+	for(int level = 1; level <= 5; ++level)
+		EXPECT_EQ(newHorizonsMagic::mageGuildSpellsAtLevel(historical, level), 6 - level);
+}
+
+TEST(NewHorizonsMagicTest, FixedSchoolMageGuildGenerationRequiresCompleteUnweightedFactionPreferences)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["factions"].Struct().erase("core:castle");
+	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+
+	rules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	rules.Struct().erase("factions");
+	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+
+	rules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["factionWeights"]["major"].Integer() = 3;
+	rules["factionWeights"]["minor"].Integer() = 1;
 	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
 }
 

@@ -7,6 +7,10 @@
 		"rulesetVersion": 1,
 		"intelligenceMaximumPercent": 130
 	},
+	"mageGuildGeneration": {
+		"rulesetVersion": 1,
+		"nonPreferredSlots": [3, 2, 0, 0, 0]
+	},
 	"schools": [
 		"new-horizons:light",
 		"new-horizons:nature",
@@ -73,11 +77,6 @@
 		}
 	},
 	"spells": {
-		"new-horizons:focusMagic": {
-			"schools": ["new-horizons:sorcery"],
-			"level": 3,
-			"costs": [11, 11, 11, 11]
-		},
 		"core:airElemental": {
 			"schools": [
 				"new-horizons:nature",
@@ -215,6 +214,11 @@
 				10,
 				10
 			]
+		},
+		"new-horizons:focusMagic": {
+			"schools": ["new-horizons:sorcery"],
+			"level": 3,
+			"costs": [11, 11, 11, 11]
 		},
 		"new-horizons:counterspell": {
 			"schools": [
@@ -759,54 +763,50 @@
 	},
 	"factions": {
 		"core:castle": {
-			"major": "new-horizons:light",
-			"minor": "new-horizons:sorcery",
+			"preferredA": "new-horizons:light",
+			"preferredB": "new-horizons:sorcery",
 			"provisional": false
 		},
 		"core:rampart": {
-			"major": "new-horizons:nature",
-			"minor": "new-horizons:light",
+			"preferredA": "new-horizons:nature",
+			"preferredB": "new-horizons:light",
 			"provisional": false
 		},
 		"core:tower": {
-			"major": "new-horizons:sorcery",
-			"minor": "new-horizons:havoc",
+			"preferredA": "new-horizons:sorcery",
+			"preferredB": "new-horizons:havoc",
 			"provisional": false
 		},
 		"core:inferno": {
-			"major": "new-horizons:chaos",
-			"minor": "new-horizons:havoc",
+			"preferredA": "new-horizons:chaos",
+			"preferredB": "new-horizons:havoc",
 			"provisional": false
 		},
 		"core:necropolis": {
-			"major": "new-horizons:shadow",
-			"minor": "new-horizons:chaos",
-			"provisional": true
+			"preferredA": "new-horizons:shadow",
+			"preferredB": "new-horizons:sorcery",
+			"provisional": false
 		},
 		"core:dungeon": {
-			"major": "new-horizons:havoc",
-			"minor": "new-horizons:shadow",
+			"preferredA": "new-horizons:havoc",
+			"preferredB": "new-horizons:shadow",
 			"provisional": false
 		},
 		"core:stronghold": {
-			"major": "new-horizons:chaos",
-			"minor": "new-horizons:nature",
+			"preferredA": "new-horizons:chaos",
+			"preferredB": "new-horizons:nature",
 			"provisional": false
 		},
 		"core:fortress": {
-			"major": "new-horizons:nature",
-			"minor": "new-horizons:shadow",
-			"provisional": true
+			"preferredA": "new-horizons:nature",
+			"preferredB": "new-horizons:shadow",
+			"provisional": false
 		},
 		"core:conflux": {
-			"major": "new-horizons:havoc",
-			"minor": "new-horizons:nature",
+			"preferredA": "new-horizons:havoc",
+			"preferredB": "new-horizons:nature",
 			"provisional": false
 		}
-	},
-	"factionWeights": {
-		"major": 3,
-		"minor": 1
 	},
 	"schoolSkills": {
 		"new-horizons:light": "new-horizons:lightMagic",

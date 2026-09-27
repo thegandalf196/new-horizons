@@ -15,6 +15,9 @@
 #include "../../../lib/mapObjects/TownBuildingInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/gameState/CGameState.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/texts/CGeneralTextHandler.h"
 #include "../../../lib/CPlayerState.h"
 #include "../../../server/CGameHandler.h"
@@ -28,6 +31,11 @@ namespace
 class NewHorizonsUniqueBuildingTrainingTest : public TinyMapGameTest
 {
 protected:
+	std::optional<std::set<SpellID>> allowedSpellsOverride;
+	std::vector<SpellID> obligatoryTownSpells;
+	bool enableSpellResearch = false;
+	bool useLegacySpellResearchRules = false;
+
 	void SetUp() override
 	{
 		TinyMapGameTest::SetUp();
@@ -42,8 +50,27 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+		if(useLegacySpellResearchRules)
+		{
+			magicRules.Struct().erase("mageGuildGeneration");
+			for(auto & [factionId, faction] : magicRules["factions"].Struct())
+			{
+				(void)factionId;
+				faction["major"] = faction["preferredA"];
+				faction["minor"] = faction["preferredB"];
+				faction.Struct().erase("preferredA");
+				faction.Struct().erase("preferredB");
+			}
+		}
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+		if(enableSpellResearch)
+			loaded->overrideGameSetting(EGameSettings::TOWNS_SPELL_RESEARCH, JsonNode(true));
+		if(allowedSpellsOverride)
+			loaded->allowedSpells = *allowedSpellsOverride;
+		if(!obligatoryTownSpells.empty())
+			for(auto * town : loaded->getObjects<CGTownInstance>())
+				town->obligatorySpells = obligatoryTownSpells;
 	}
 
 	static FactionID faction(const char * id)
@@ -536,4 +563,348 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, MissingMageGuildLevelsBuildSequent
 		EXPECT_NO_THROW((void)guildTown.town->spells.at(3));
 		EXPECT_NO_THROW((void)guildTown.town->spells.at(4));
 	}
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, MageGuildsUseFixedPreferredAndDistinctNonPreferredSchoolSlots)
+{
+	const std::array<FactionID, 9> factions{
+		FactionID::CASTLE, FactionID::RAMPART, FactionID::TOWER,
+		FactionID::INFERNO, FactionID::NECROPOLIS, FactionID::DUNGEON,
+		FactionID::STRONGHOLD, FactionID::FORTRESS, FactionID::CONFLUX};
+
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(72, false).playerActive(PlayerColor(0));
+	for(size_t index = 0; index < factions.size(); ++index)
+		builder.town({5 + static_cast<int>(index % 5) * 12,
+			8 + static_cast<int>(index / 5) * 18, 0}, factions[index], PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto & rules = gameState()->getMagicRules();
+	ASSERT_TRUE(newHorizonsMagic::mageGuildGenerationActive(rules));
+	const auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), factions.size());
+
+	const auto canAssignToConfiguredSlots = [&](const auto & spells,
+		const std::vector<SpellSchool> & preferred, int nonPreferredSlots)
+	{
+		std::function<bool(size_t, std::set<SpellSchool> &, std::set<SpellSchool> &)> assign =
+			[&](size_t position, std::set<SpellSchool> & usedPreferred,
+				std::set<SpellSchool> & usedNonPreferred)
+		{
+			if(position == spells.size())
+				return true;
+			for(const auto school : newHorizonsMagic::spellSchools(rules, spells[position]))
+			{
+				if(vstd::contains(preferred, school))
+				{
+					if(usedPreferred.contains(school))
+						continue;
+					usedPreferred.insert(school);
+					if(assign(position + 1, usedPreferred, usedNonPreferred))
+						return true;
+					usedPreferred.erase(school);
+				}
+				else
+				{
+					if(usedNonPreferred.contains(school)
+						|| usedNonPreferred.size() >= static_cast<size_t>(nonPreferredSlots))
+						continue;
+					usedNonPreferred.insert(school);
+					if(assign(position + 1, usedPreferred, usedNonPreferred))
+						return true;
+					usedNonPreferred.erase(school);
+				}
+			}
+			return false;
+		};
+		std::set<SpellSchool> usedPreferred;
+		std::set<SpellSchool> usedNonPreferred;
+		return assign(0, usedPreferred, usedNonPreferred);
+	};
+
+	for(const auto * town : towns)
+	{
+		const auto preferred = newHorizonsMagic::preferredSchools(rules, town->getFactionID());
+		ASSERT_EQ(preferred.size(), 2u);
+		ASSERT_EQ(town->spells.size(), static_cast<size_t>(GameConstants::SPELL_LEVELS));
+		for(int level = 1; level <= GameConstants::SPELL_LEVELS; ++level)
+		{
+			const auto & allSpells = town->spells.at(level - 1);
+			const auto expected = newHorizonsMagic::mageGuildSpellsAtLevel(rules, level);
+			const auto visibleCount = town->spellsAtLevel(level, false);
+			ASSERT_LE(visibleCount, expected);
+			ASSERT_LE(static_cast<size_t>(visibleCount), allSpells.size());
+			const std::vector<SpellID> spells(allSpells.begin(), allSpells.begin() + visibleCount);
+			EXPECT_EQ(std::set<SpellID>(spells.begin(), spells.end()).size(), spells.size());
+			EXPECT_TRUE(canAssignToConfiguredSlots(spells, preferred, expected - 2))
+				<< "Every generated spell must fit one unique configured school slot";
+
+			for(const auto preferredSchool : preferred)
+			{
+				const bool hasEligibleSpell = std::any_of(LIBRARY->spellh->objects.begin(),
+					LIBRARY->spellh->objects.end(), [&](const auto & candidate)
+				{
+					return candidate && candidate->isCommonHeroSpell()
+						&& newHorizonsMagic::spellAllowedBySavedRoster(rules, candidate->getId())
+						&& newHorizonsMagic::spellLevel(rules, candidate->getId()) == level
+						&& vstd::contains(newHorizonsMagic::spellSchools(rules, candidate->getId()), preferredSchool);
+				});
+				if(hasEligibleSpell)
+					EXPECT_TRUE(std::any_of(spells.begin(), spells.end(), [&](SpellID selected)
+					{
+						return vstd::contains(newHorizonsMagic::spellSchools(rules, selected), preferredSchool);
+					})) << "An eligible preferred-school slot must not be left empty";
+			}
+		}
+	}
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, MageGuildConstrainedMultiSchoolPoolNeverDuplicatesOrSubstitutes)
+{
+	const SpellID shared(SpellID::decode("core:airElemental"));
+	const SpellID havocOnly(SpellID::decode("new-horizons:disintegrate"));
+	allowedSpellsOverride = std::set<SpellID>{shared, havocOnly};
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::CONFLUX, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	const auto * town = towns.front();
+	ASSERT_GE(town->spellsAtLevel(5, false), 1);
+	ASSERT_LE(town->spellsAtLevel(5, false), 2);
+	const auto & levelFive = town->spells.at(4);
+	const auto visibleCount = town->spellsAtLevel(5, false);
+	ASSERT_GE(levelFive.size(), static_cast<size_t>(visibleCount));
+	const std::set<SpellID> visible(levelFive.begin(), levelFive.begin() + visibleCount);
+	EXPECT_EQ(visible.size(), static_cast<size_t>(visibleCount));
+	EXPECT_TRUE(std::ranges::all_of(visible, [&](SpellID spell)
+	{
+		return spell == shared || spell == havocOnly;
+	}));
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, EmptyRequiredSchoolSlotDoesNotSubstituteAnOffSchoolAuthoredSpell)
+{
+	const SpellID havocOnly(SpellID::decode("new-horizons:disintegrate"));
+	const SpellID wrongSchool(SpellID::decode("new-horizons:timeStop"));
+	allowedSpellsOverride = std::set<SpellID>{havocOnly, wrongSchool};
+	obligatoryTownSpells = {wrongSchool, wrongSchool};
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::CONFLUX, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	const auto * town = towns.front();
+	ASSERT_EQ(town->spellsAtLevel(5, false), 1);
+	const auto & levelFive = town->spells.at(4);
+	ASSERT_EQ(levelFive.size(), 1u) << "Off-school authored spells are not exposed as hidden replacements";
+	EXPECT_EQ(levelFive.front(), havocOnly);
+	EXPECT_FALSE(vstd::contains(levelFive, wrongSchool));
+
+	const auto townId = town->id;
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredTown = restored.getTown(townId);
+	ASSERT_NE(restoredTown, nullptr);
+	EXPECT_EQ(restoredTown->spellsAtLevel(5, false), 1);
+	ASSERT_EQ(restoredTown->spells.at(4).size(), 1u);
+	EXPECT_EQ(restoredTown->spells.at(4).front(), havocOnly);
+	EXPECT_FALSE(vstd::contains(restoredTown->spells.at(4), wrongSchool));
+	ASSERT_EQ(restoredTown->newHorizonsMageGuildVisibleSpellSchools.size(),
+		static_cast<size_t>(GameConstants::SPELL_LEVELS));
+	EXPECT_EQ(restoredTown->newHorizonsMageGuildVisibleSpellSchools,
+		town->newHorizonsMageGuildVisibleSpellSchools);
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, AuthoredPositiveLevelSpecialAndCreatureAbilityNeverEnterFixedGuildSlots)
+{
+	const SpellID special(SpellID::decode("core:landMineTrigger"));
+	const SpellID creatureAbility(SpellID::decode("core:summonDemons"));
+	ASSERT_NE(special.toSpell(), nullptr);
+	ASSERT_NE(creatureAbility.toSpell(), nullptr);
+	ASSERT_TRUE(special.toSpell()->isSpecial());
+	ASSERT_GT(special.toSpell()->getLevel(), 0);
+	ASSERT_TRUE(creatureAbility.toSpell()->isCreatureAbility());
+	ASSERT_GT(creatureAbility.toSpell()->getLevel(), 0);
+	allowedSpellsOverride = std::set<SpellID>{special, creatureAbility};
+	obligatoryTownSpells = {special, creatureAbility};
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::TOWER, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	const auto * town = towns.front();
+	for(const auto & level : town->spells)
+	{
+		EXPECT_FALSE(vstd::contains(level, special));
+		EXPECT_FALSE(vstd::contains(level, creatureAbility));
+	}
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, LegacySpellResearchReplacesAVisibleSlot)
+{
+	enableSpellResearch = true;
+	useLegacySpellResearchRules = true;
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::TOWER, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	auto * town = towns.front();
+	town->spellResearchAllowed = true;
+	int level = -1;
+	int visibleIndex = -1;
+	int candidateIndex = -1;
+	for(int currentLevel = 1; currentLevel <= GameConstants::SPELL_LEVELS && candidateIndex < 0; ++currentLevel)
+		for(int index = 0; index < town->spellsAtLevel(currentLevel, false); ++index)
+		{
+			const int candidate = town->spellResearchCandidateIndex(currentLevel, index);
+			if(candidate >= 0)
+			{
+				level = currentLevel;
+				visibleIndex = index;
+				candidateIndex = candidate;
+				break;
+			}
+		}
+	ASSERT_GT(level, 0);
+	ASSERT_GE(visibleIndex, 0);
+	ASSERT_GE(candidateIndex, town->spellsAtLevel(level, false));
+	const auto oldSpell = town->spells.at(level - 1).at(visibleIndex);
+	const auto candidate = town->spells.at(level - 1).at(candidateIndex);
+	const auto originalSpellCount = town->spells.at(level - 1).size();
+
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+	TResources resources;
+	resources[GameResID::GOLD] = 100000;
+	gameHandler.giveResources(PlayerColor(0), resources);
+	ASSERT_TRUE(gameHandler.spellResearch(town->id, oldSpell, true));
+	EXPECT_EQ(town->spells.at(level - 1).at(visibleIndex), candidate);
+	EXPECT_EQ(town->spells.at(level - 1).size(), originalSpellCount);
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, SpellResearchRejectsAnExhaustedReserveBeforeChargingResources)
+{
+	enableSpellResearch = true;
+	useLegacySpellResearchRules = true;
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::TOWER, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	auto * town = towns.front();
+	town->spellResearchAllowed = true;
+	const int level = 1;
+	const int visibleCount = town->spellsAtLevel(level, false);
+	ASSERT_GT(visibleCount, 0);
+	town->spells.at(level - 1).resize(visibleCount);
+	const auto oldSpell = town->spells.at(level - 1).front();
+	const auto resourcesBefore = gameState()->getPlayerState(PlayerColor(0))->resources;
+
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+	EXPECT_FALSE(gameHandler.spellResearch(town->id, oldSpell, true));
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, resourcesBefore);
+	EXPECT_FALSE(gameHandler.spellResearch(town->id, oldSpell, false));
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, resourcesBefore);
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, FixedSchoolMageGuildsRejectSpellResearchAndRerolls)
+{
+	enableSpellResearch = true;
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::TOWER, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	auto * town = towns.front();
+	town->spellResearchAllowed = true;
+	ASSERT_TRUE(newHorizonsMagic::mageGuildGenerationActive(gameState()->getMagicRules()));
+	ASSERT_GT(town->spellsAtLevel(1, false), 0);
+	const auto originalSpells = town->spells;
+	const auto resourcesBefore = gameState()->getPlayerState(PlayerColor(0))->resources;
+
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+	const auto visibleSpell = town->spells.at(0).front();
+	EXPECT_FALSE(gameHandler.spellResearch(town->id, visibleSpell, true));
+	EXPECT_FALSE(gameHandler.spellResearch(town->id, visibleSpell, false));
+	EXPECT_EQ(town->spells, originalSpells);
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, resourcesBefore);
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, MageGuildVisibleSlotsDefaultForOlderTownSavesAndCannotBeDownsaved)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::TOWER, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	auto * town = towns.front();
+	ASSERT_EQ(town->newHorizonsMageGuildVisibleSpells.size(),
+		static_cast<size_t>(GameConstants::SPELL_LEVELS));
+	ASSERT_EQ(town->newHorizonsMageGuildVisibleSpellSchools.size(),
+		static_cast<size_t>(GameConstants::SPELL_LEVELS));
+	const auto savedVisibleCounts = town->newHorizonsMageGuildVisibleSpells;
+	const auto savedVisibleSchools = town->newHorizonsMageGuildVisibleSpellSchools;
+
+	// The prior save format has no fixed-school visibility metadata. It must load
+	// with the documented empty/default state while preserving following fields.
+	town->newHorizonsMageGuildVisibleSpells.clear();
+	town->newHorizonsMageGuildVisibleSpellSchools.clear();
+	CMemorySerializer older;
+	older.oser.version = ESerializationVersion::NEW_HORIZONS_METAMAGIC_REWARDS;
+	older.iser.version = ESerializationVersion::NEW_HORIZONS_METAMAGIC_REWARDS;
+	const uint32_t sentinel = 0x41a05e27;
+	older.oser & *town;
+	older.oser & sentinel;
+	town->newHorizonsMageGuildVisibleSpells = savedVisibleCounts;
+	town->newHorizonsMageGuildVisibleSpellSchools = savedVisibleSchools;
+	older.iser.cb = gameState();
+	older.iser & *town;
+	uint32_t restoredSentinel = 0;
+	older.iser & restoredSentinel;
+	EXPECT_EQ(restoredSentinel, sentinel);
+	EXPECT_TRUE(town->newHorizonsMageGuildVisibleSpells.empty());
+	EXPECT_TRUE(town->newHorizonsMageGuildVisibleSpellSchools.empty());
+
+	town->newHorizonsMageGuildVisibleSpells = savedVisibleCounts;
+	town->newHorizonsMageGuildVisibleSpellSchools = savedVisibleSchools;
+	CMemorySerializer rejectedDownsave;
+	rejectedDownsave.oser.version = ESerializationVersion::NEW_HORIZONS_METAMAGIC_REWARDS;
+	EXPECT_THROW(rejectedDownsave.oser & *town, std::runtime_error);
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, MapBannedAuthoredSpellCannotBypassFixedSchoolEligibility)
+{
+	const SpellID authored(SpellID::decode("new-horizons:timeStop"));
+	allowedSpellsOverride = std::set<SpellID>{};
+	obligatoryTownSpells = {authored, authored};
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::TOWER, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	const auto * town = towns.front();
+	EXPECT_EQ(town->spellsAtLevel(5, false), 0);
+	EXPECT_TRUE(town->spells.at(4).empty());
 }

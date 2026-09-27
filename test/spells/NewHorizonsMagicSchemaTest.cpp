@@ -20,7 +20,16 @@ JsonNode fullV1Rules()
 	result["rulesetVersion"].Integer() = 1;
 	result.Struct().erase("warcasting");
 	result.Struct().erase("spellPoints");
+	result.Struct().erase("mageGuildGeneration");
 	result.Struct().erase("physicalDamageReductionCapPercent");
+	for(auto & [factionId, faction] : result["factions"].Struct())
+	{
+		(void)factionId;
+		faction["major"] = faction["preferredA"];
+		faction["minor"] = faction["preferredB"];
+		faction.Struct().erase("preferredA");
+		faction.Struct().erase("preferredB");
+	}
 	for(auto & [spellId, spell] : result["spells"].Struct())
 	{
 		(void)spellId;
@@ -44,6 +53,15 @@ TEST(NewHorizonsMagicSchemaTest, NamedFullEmptyAndRealSettingsWrapperValidate)
 	EXPECT_EQ(full["schemaVersion"].Integer(), 1);
 	EXPECT_EQ(full["rulesetVersion"].Integer(), 1);
 	EXPECT_FALSE(full.Struct().contains("warcasting"));
+	EXPECT_FALSE(full.Struct().contains("mageGuildGeneration"));
+	for(const auto & [factionId, faction] : full["factions"].Struct())
+	{
+		(void)factionId;
+		EXPECT_TRUE(faction.Struct().contains("major"));
+		EXPECT_TRUE(faction.Struct().contains("minor"));
+		EXPECT_FALSE(faction.Struct().contains("preferredA"));
+		EXPECT_FALSE(faction.Struct().contains("preferredB"));
+	}
 	for(const auto & [spellId, spell] : full["spells"].Struct())
 	{
 		(void)spellId;

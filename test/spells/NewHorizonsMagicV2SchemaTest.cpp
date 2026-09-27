@@ -19,7 +19,17 @@ JsonNode v1Rules()
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = 1;
 	rules.Struct().erase("warcasting");
+	rules.Struct().erase("spellPoints");
+	rules.Struct().erase("mageGuildGeneration");
 	rules.Struct().erase("physicalDamageReductionCapPercent");
+	for(auto & [name, faction] : rules["factions"].Struct())
+	{
+		(void)name;
+		faction["major"] = faction["preferredA"];
+		faction["minor"] = faction["preferredB"];
+		faction.Struct().erase("preferredA");
+		faction.Struct().erase("preferredB");
+	}
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
 		(void)name;
@@ -112,6 +122,41 @@ TEST(NewHorizonsMagicV2SchemaTest, WarcastingOptInRequiresBooleanAndAllowsAbsenc
 	EXPECT_FALSE(v2(rules));
 }
 
+TEST(NewHorizonsMagicV2SchemaTest, MageGuildGenerationRequiresCanonicalFiveLevelSlotProfile)
+{
+	auto rules = v2Rules();
+	EXPECT_TRUE(v2(rules));
+	rules.Struct().erase("mageGuildGeneration");
+	EXPECT_TRUE(v2(rules)) << "Older v2 saves keep the historical generation algorithm";
+
+	rules = v2Rules();
+	rules["mageGuildGeneration"]["rulesetVersion"].Integer() = 2;
+	EXPECT_FALSE(v2(rules));
+	rules = v2Rules();
+	rules["mageGuildGeneration"]["nonPreferredSlots"].Vector().pop_back();
+	EXPECT_FALSE(v2(rules));
+	for(const int invalid : {-1, 4, 5})
+	{
+		rules = v2Rules();
+		rules["mageGuildGeneration"]["nonPreferredSlots"].Vector().front().Integer() = invalid;
+		EXPECT_FALSE(v2(rules));
+	}
+	rules = v2Rules();
+	rules["mageGuildGeneration"] = JsonNode();
+	EXPECT_FALSE(v2(rules));
+
+	rules = v2Rules();
+	rules.Struct().erase("factions");
+	EXPECT_FALSE(v2(rules));
+	rules = v2Rules();
+	rules["factions"].Struct().erase("core:castle");
+	EXPECT_TRUE(v2(rules)) << "The generic schema permits modded faction sets; runtime enforces core coverage";
+	rules = v2Rules();
+	rules["factionWeights"]["major"].Integer() = 3;
+	rules["factionWeights"]["minor"].Integer() = 1;
+	EXPECT_FALSE(v2(rules)) << "Fixed-school generation and legacy faction weights are mutually exclusive";
+}
+
 TEST(NewHorizonsMagicV2SchemaTest, PhysicalReductionCapRequiresIntegerPercentageAndAllowsAbsence)
 {
 	auto rules = v2Rules();
@@ -172,7 +217,7 @@ TEST(NewHorizonsMagicV2SchemaTest, RealCrossSchemaSchoolAndFactionReferencesReje
 	rules["schools"].Vector().front().String() = "core:air";
 	EXPECT_FALSE(v2(rules));
 	rules = v2Rules();
-	rules["factions"]["core:castle"]["major"].String() = "core:air";
+	rules["factions"]["core:castle"]["preferredA"].String() = "core:air";
 	EXPECT_FALSE(v2(rules));
 }
 

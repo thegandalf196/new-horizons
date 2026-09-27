@@ -4,10 +4,18 @@
 	"description": "New Horizons magic rules with saved direct-damage formulas, optional per-row active state, and optional explicit Cure-affliction mode. Missing Cure settings preserve older Cure mechanics. Canonical identifiers, complete common-spell coverage and spell-specific required formulas are enforced by runtime validation.",
 	"type": "object",
 	"required": ["schemaVersion", "rulesetVersion", "schools", "spells", "schoolSkills", "skillReplacements"],
+	"dependencies": {"mageGuildGeneration": ["factions"]},
+	"allOf": [
+		{"not": {"required": ["mageGuildGeneration", "factionWeights"]}}
+	],
 	"additionalProperties": false,
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [2]},
+		"physicalDamageReductionCapPercent": {
+			"type": "integer", "not": {"type": "null"}, "minimum": 0, "maximum": 100,
+			"description": "Opt in to multiplicative independent physical reductions capped at this percentage. Omission preserves historical damage rules."
+		},
 		"spellPoints": {
 			"type": "object",
 			"not": {"type": "null"},
@@ -19,17 +27,33 @@
 			},
 			"description": "Opt in to separate Normal and Buffer Spell Points. Omission preserves legacy single-pool semantics."
 		},
+		"mageGuildGeneration": {
+			"type": "object",
+			"not": {"type": "null"},
+			"required": ["rulesetVersion", "nonPreferredSlots"],
+			"additionalProperties": false,
+			"properties": {
+				"rulesetVersion": {"type": "integer", "enum": [1]},
+				"nonPreferredSlots": {
+					"type": "array",
+					"minItems": 5,
+					"maxItems": 5,
+					"additionalItems": false,
+					"items": [
+						{"type": "integer", "enum": [3]},
+						{"type": "integer", "enum": [2]},
+						{"type": "integer", "enum": [0]},
+						{"type": "integer", "enum": [0]},
+						{"type": "integer", "enum": [0]}
+					]
+				}
+			},
+			"description": "Opt in to fixed-school Mage Guild generation. Each level receives one slot for each preferred school plus the configured number of distinct non-preferred schools."
+		},
 		"warcasting": {
 			"type": "boolean",
 			"not": {"type": "null"},
 			"description": "Enable alternating Hero Action empowerment. Absence or false preserves pre-Warcasting battle rules."
-		},
-		"physicalDamageReductionCapPercent": {
-			"type": "integer",
-			"not": {"type": "null"},
-			"minimum": 0,
-			"maximum": 100,
-			"description": "Opt in to independent multiplicative physical-damage reductions with this aggregate cap. Omission preserves historical calculation order."
 		},
 		"schools": {
 			"type": "array",
@@ -83,7 +107,7 @@
 		},
 		"factions": {
 			"type": "object",
-			"additionalProperties": {"$ref": "vcmi:newHorizonsMagic#/definitions/faction"}
+			"additionalProperties": {"$ref": "#/definitions/faction"}
 		},
 		"factionWeights": {
 			"type": "object",
@@ -135,6 +159,27 @@
 				"base": {"type": "integer", "not": {"type": "null"}, "minimum": 0, "maximum": 1000000},
 				"powerCoefficient": {"type": "integer", "not": {"type": "null"}, "minimum": 0, "maximum": 1000000}
 			}
+		},
+		"faction": {
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"preferredA": {"$ref": "vcmi:newHorizonsMagic#/definitions/school"},
+				"preferredB": {"$ref": "vcmi:newHorizonsMagic#/definitions/school"},
+				"major": {"$ref": "vcmi:newHorizonsMagic#/definitions/school"},
+				"minor": {"$ref": "vcmi:newHorizonsMagic#/definitions/school"},
+				"provisional": {"type": "boolean"}
+			},
+			"oneOf": [
+				{
+					"required": ["preferredA", "preferredB"],
+					"not": {"anyOf": [{"required": ["major"]}, {"required": ["minor"]}]}
+				},
+				{
+					"required": ["major", "minor"],
+					"not": {"anyOf": [{"required": ["preferredA"]}, {"required": ["preferredB"]}]}
+				}
+			]
 		}
 	}
 }

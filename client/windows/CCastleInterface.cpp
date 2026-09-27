@@ -3066,12 +3066,23 @@ CMageGuildScreen::Scroll::Scroll(Point position, const CSpell *Spell, ObjectInst
 void CMageGuildScreen::Scroll::clickPressed(const Point & cursorPosition)
 {
 	const CGTownInstance * town = GAME->interface()->cb->getTown(townId);
-	if(GAME->interface()->cb->getSettings().getBoolean(EGameSettings::TOWNS_SPELL_RESEARCH) && town->spellResearchAllowed)
+	if(!newHorizonsMagic::mageGuildGenerationActive(GAME->interface()->cb->getMagicRules())
+		&& GAME->interface()->cb->getSettings().getBoolean(EGameSettings::TOWNS_SPELL_RESEARCH)
+		&& town->spellResearchAllowed)
 	{
 		int level = -1;
+		int visibleIndex = -1;
 		for(int i = 0; i < town->spells.size(); i++)
-			if(vstd::find_pos(town->spells[i], spell->id) != -1)
+		{
+			const int position = vstd::find_pos(town->spells[i], spell->id);
+			if(position >= 0 && position < town->spellsAtLevel(i + 1, false))
+			{
 				level = i;
+				visibleIndex = position;
+			}
+		}
+		if(level < 0)
+			return;
 				
 		if(town->spellResearchCounterDay >= GAME->interface()->cb->getSettings().getValue(EGameSettings::TOWNS_SPELL_RESEARCH_PER_DAY).Vector()[level].Float())
 		{
@@ -3089,8 +3100,8 @@ void CMageGuildScreen::Scroll::clickPressed(const Point & cursorPosition)
 
 		std::vector<std::shared_ptr<CComponent>> resComps;
 
-		int index = town->spellsAtLevel(level, false);
-		if (index >= town->spells[level].size())
+		const int index = town->spellResearchCandidateIndex(level + 1, visibleIndex);
+		if(index < 0)
 		{
 			GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("vcmi.spellResearch.noMoreSpells"));
 			return;

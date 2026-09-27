@@ -115,10 +115,11 @@ TEST_F(NewHorizonsManagedMissileFixtureExportTest, ExportOrdinaryGuildLearningAn
 	for(const auto & spell : LIBRARY->spellh->objects)
 		if(spell && spell->isCommonHeroSpell())
 			++common;
-	ASSERT_EQ(common, 70);
 	const auto installed = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
 	ASSERT_EQ(installed["rulesetVersion"].Integer(), 2);
-	ASSERT_EQ(installed["spells"].Struct().size(), 70u);
+	ASSERT_EQ(installed["spells"].Struct().size(), 71u);
+	ASSERT_EQ(installed["adventureSpells"].Struct().size(), 5u);
+	ASSERT_EQ(common, installed["spells"].Struct().size() + installed["adventureSpells"].Struct().size());
 
 	const CreatureID pike(CreatureID::decode("core:pikeman"));
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);

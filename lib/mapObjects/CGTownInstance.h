@@ -67,6 +67,12 @@ public:
 	std::map<BuildingID, std::unique_ptr<TownRewardableBuildingInstance>> rewardableBuildings;
 	std::vector<SpellID> possibleSpells, obligatorySpells;
 	std::vector<std::vector<SpellID> > spells; //spells[level] -> vector of spells, first will be available in guild
+	/// Actual visible fixed-school spell count per level. Fixed-school generation
+	/// stores no hidden replacement reserve. Empty preserves historical rules.
+	std::vector<si32> newHorizonsMageGuildVisibleSpells;
+	/// Required school assigned to each visible fixed-school spell. Retained in
+	/// serialized town state so the generated Guild remains deterministic.
+	std::vector<std::vector<SpellSchool>> newHorizonsMageGuildVisibleSpellSchools;
 	std::vector<CCastleEvent> events;
 	std::pair<si32, si32> bonusValue;//var to store town bonuses (rampart = resources from mystic pond, factory = save debts);
 	int32_t spellResearchCounterDay;
@@ -118,6 +124,20 @@ public:
 
 		if(h.hasFeature(Handler::Version::SPELL_RESEARCH_IMPROVEMENTS))
 			h & spellResearchPendingRerollsCounters;
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGE_GUILD_SLOTS))
+		{
+			h & newHorizonsMageGuildVisibleSpells;
+			h & newHorizonsMageGuildVisibleSpellSchools;
+		}
+		else if(h.saving && (!newHorizonsMageGuildVisibleSpells.empty()
+			|| !newHorizonsMageGuildVisibleSpellSchools.empty()))
+			throw std::runtime_error("Cannot discard New Horizons Mage Guild slot counts");
+		else if(!h.saving)
+		{
+			newHorizonsMageGuildVisibleSpells.clear();
+			newHorizonsMageGuildVisibleSpellSchools.clear();
+		}
 
 		if(h.hasFeature(Handler::Version::TOWN_CUSTOM_INITIAL_GARRISON))
 			h & customInitialGarrison;
@@ -220,6 +240,10 @@ public:
 	std::vector<CreatureID> providedCreatures() const override;
 
 	int spellsAtLevel(int level, bool checkGuild) const; //levels are counted from 1 (1 - 5)
+	/// Legacy Spell Research helper. Returns the reserve index offered for a
+	/// visible spell slot, or -1 when the slot/candidate is invalid. Fixed-school
+	/// New Horizons Guilds reject research before reaching this path.
+	int spellResearchCandidateIndex(int level, int visibleIndex) const;
 	bool armedGarrison() const; //true if town has creatures in garrison or garrisoned hero
 	int getTownLevel() const;
 

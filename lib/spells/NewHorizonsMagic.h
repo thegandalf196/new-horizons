@@ -36,6 +36,7 @@ namespace newHorizonsMagic
 constexpr int RULESET_VERSION = 1;
 constexpr int DIRECT_DAMAGE_RULESET_VERSION = 2;
 constexpr int SPELL_POINTS_RULESET_VERSION = 1;
+constexpr int MAGE_GUILD_GENERATION_RULESET_VERSION = 1;
 constexpr int SPELL_POINTS_INTELLIGENCE_MAXIMUM_PERCENT = 130;
 constexpr int METAMAGIC_FORMULA_RESERVE_POINTS = 3;
 constexpr int METAMAGIC_SPELL_BUFFER_POINTS = 6;
@@ -82,12 +83,15 @@ DLL_LINKAGE void validateRules(const JsonNode & rules);
 DLL_LINKAGE bool spellPointRulesActive(const JsonNode & rules);
 /// Saved Intelligence capacity multiplier for the opted-in Spell Point rules.
 DLL_LINKAGE int32_t spellPointsIntelligenceMaximumPercent(const JsonNode & rules);
-/// Explicit multiplicative physical-reduction model; -1 preserves historical calculations.
-DLL_LINKAGE int physicalDamageReductionCapPercent(const JsonNode & rules);
 /// True when the supplied saved battle snapshot uses New Horizons magic.
 /// This is intentionally state-backed; installed content alone must not alter
 /// legacy saves.
 DLL_LINKAGE bool rulesActive(const JsonNode & rules);
+DLL_LINKAGE bool mageGuildGenerationActive(const JsonNode & rules);
+DLL_LINKAGE int mageGuildSpellsAtLevel(const JsonNode & rules, int level);
+DLL_LINKAGE std::vector<SpellSchool> preferredSchools(const JsonNode & rules, FactionID faction);
+/// Explicit multiplicative physical-reduction model; -1 preserves historical calculations.
+DLL_LINKAGE int physicalDamageReductionCapPercent(const JsonNode & rules);
 /// Master Chain Lightning retains 75% of the previous hop at level zero and
 /// gains one percentage point per hero level, capped at 90%.  The helper keeps
 /// the displayed value aligned with the authoritative Lua effect.

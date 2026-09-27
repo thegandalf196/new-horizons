@@ -64,7 +64,7 @@ protected:
 		ASSERT_EQ(std::string(flag), "1");
 		installed = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
 		ASSERT_EQ(installed["rulesetVersion"].Integer(), 2);
-		ASSERT_EQ(installed["spells"].Struct().size(), 70u);
+		ASSERT_EQ(installed["spells"].Struct().size(), 71u);
 		missile = SpellID(SpellID::decode(GameConstants::NEW_HORIZONS_MAGIC_MISSILE));
 		ASSERT_NE(missile, SpellID(SpellID::NONE));
 		ASSERT_NE(missile, SpellID(SpellID::MAGIC_ARROW));
