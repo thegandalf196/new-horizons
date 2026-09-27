@@ -165,6 +165,7 @@ local function getPhysicalDamageReductionFactor(info)
 	end
 
 	table.insert(reductions, { info.newHorizonsArmorerReductionPercent or 0, 100 })
+	table.insert(reductions, { info.paviseDamageReductionPercent or 0, 100 })
 	table.insert(reductions, { info.battlecraftDefendReductionPercent or 0, 100 })
 	table.insert(reductions, { info.bulwarkDamageReductionBasisPoints or 0, 10000 })
 	table.insert(reductions, { info.heroOrderDamageReductionPercent or 0, 100 })
@@ -447,6 +448,12 @@ function Script:getNewHorizonsArmorerFactor(info)
 	return -(info.newHorizonsArmorerReductionPercent or 0) / 100
 end
 
+--- Pavise is an independent reduction against a Defending stack's ranged physical hit.
+function Script:getPaviseFactor(info)
+	if hasPhysicalDamageReductionStage(info) then return 0 end
+	return -(info.paviseDamageReductionPercent or 0) / 100
+end
+
 --- Battlecraft's Defend training is independent from Armorer and Orders.
 function Script:getBattlecraftDefendFactor(info)
 	if hasPhysicalDamageReductionStage(info) then return 0 end
@@ -641,7 +648,7 @@ end
 for _, factor in ipairs({
 	"getAttackDefenseFactor", "getOffenseArcheryFactor", "getBlessFactor", "getLuckFactor",
 	"getJoustingFactor", "getDeathBlowFactor", "getDoubleDamageFactor", "getHateCreatureFactor",
-	"getArmorerFactor", "getNewHorizonsArmorerFactor", "getBattlecraftDefendFactor", "getMagicShieldFactor", "getRangePenaltyFactor", "getObstacleFactor",
+	"getArmorerFactor", "getNewHorizonsArmorerFactor", "getPaviseFactor", "getBattlecraftDefendFactor", "getMagicShieldFactor", "getRangePenaltyFactor", "getObstacleFactor",
 	"getBlindParalysisFactor", "getUnluckyFactor", "getForgetfulnessFactor", "getPetrificationFactor"
 }) do
 	Script:addDamageFactor(factor)

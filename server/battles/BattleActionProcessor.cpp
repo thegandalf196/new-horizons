@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleActionProcessor.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 
@@ -774,6 +775,13 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 	text.replaceNumber(difference);
 
 	message.lines.push_back(text);
+	if(newHorizonsCombatSkills::paviseReductionPercent(battle.battleGetOwnerHero(stack)) > 0)
+	{
+		MetaString paviseText;
+		paviseText.appendRawString("%s braces behind a Pavise, reducing ranged physical creature damage by 25% while Defending.");
+		stack->addNameReplacement(paviseText);
+		message.lines.push_back(std::move(paviseText));
+	}
 
 	gameHandler->sendAndApply(message);
 

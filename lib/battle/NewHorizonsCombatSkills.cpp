@@ -7,6 +7,7 @@
 #include "NewHorizonsCombatSkills.h"
 
 #include "../mapObjects/CGHeroInstance.h"
+#include "Unit.h"
 
 namespace
 {
@@ -35,6 +36,19 @@ int armorerRank(const CGHeroInstance * hero)
 int armorerReductionPercent(int value)
 {
 	return std::clamp(value, 0, 3) * 5;
+}
+
+bool isOrdinaryCreatureAttacker(const battle::Unit * attacker)
+{
+	return attacker && !attacker->isTurret()
+		&& !attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		&& attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+}
+
+int paviseReductionPercent(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(ARMORER_SKILL_ID), std::string(PAVISE_PERK_ID))
+		? PAVISE_REDUCTION_PERCENT : 0;
 }
 
 int archeryRank(const CGHeroInstance * hero)

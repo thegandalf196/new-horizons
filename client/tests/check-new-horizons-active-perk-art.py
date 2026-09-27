@@ -21,6 +21,7 @@ SOURCE_MASTER_GATE = ROOT / "assets/new-horizons/art-source/master-gate-v1"
 SOURCE_COUNTERCHARGE = ROOT / "assets/new-horizons/art-source/countercharge-v1"
 SOURCE_SHIELD_MASTER = ROOT / "assets/new-horizons/art-source/shield-master-v1"
 SOURCE_IRON_DISCIPLINE = ROOT / "assets/new-horizons/art-source/iron-discipline-v1"
+SOURCE_PAVISE = ROOT / "assets/new-horizons/art-source/pavise-v1"
 IMAGES = ROOT / "Mods/new-horizons/Images"
 ICONS = ROOT / "client/windows/NewHorizonsPerkIcons.h"
 DEFINITIONS = ROOT / "config/newHorizonsPerks.json"
@@ -167,6 +168,12 @@ IRON_DISCIPLINE_EXPECTED = {
         "iron-discipline",
     ),
 }
+PAVISE_EXPECTED = {
+    "new-horizons:armorer.pavise": (
+        "NH_perk_pavise",
+        "pavise",
+    ),
+}
 EXPECTED = (
     V2_EXPECTED
     | V3_EXPECTED
@@ -177,6 +184,7 @@ EXPECTED = (
     | COUNTERCHARGE_EXPECTED
     | SHIELD_MASTER_EXPECTED
     | IRON_DISCIPLINE_EXPECTED
+    | PAVISE_EXPECTED
 )
 
 
@@ -201,6 +209,7 @@ def main() -> None:
         (SOURCE_COUNTERCHARGE, COUNTERCHARGE_EXPECTED),
         (SOURCE_SHIELD_MASTER, SHIELD_MASTER_EXPECTED),
         (SOURCE_IRON_DISCIPLINE, IRON_DISCIPLINE_EXPECTED),
+        (SOURCE_PAVISE, PAVISE_EXPECTED),
     ):
         generation = json.loads((source / "generation.json").read_text(encoding="utf-8"))
         by_id = {asset["id"]: asset for asset in generation["assets"]}
@@ -232,6 +241,7 @@ def main() -> None:
                 "new-horizons:armorer.countercharge",
                 "new-horizons:armorer.shieldMaster",
                 "new-horizons:armorer.ironDiscipline",
+                "new-horizons:armorer.pavise",
             }:
                 export_manifest = json.loads(
                     (export / f"{slug}-manifest.json").read_text(encoding="utf-8")
@@ -342,6 +352,26 @@ def main() -> None:
         if manifest_path.startswith("Mods/") and filename.endswith(".png"):
             live_state_hashes.add(expected_hash)
     assert len(live_state_hashes) == 4, "Iron Discipline runtime states must have distinct hashes"
+
+    pavise_manifest = json.loads(
+        (SOURCE_PAVISE / "runtime-manifest.json").read_text(encoding="utf-8")
+    )
+    assert pavise_manifest["status"].startswith("provisional")
+    assert pavise_manifest["assets"] == ["NH_perk_pavise"]
+    live_state_hashes = set()
+    for manifest_path, expected_hash in pavise_manifest["files"].items():
+        filename = Path(manifest_path).name
+        if manifest_path.startswith("source/"):
+            path = SOURCE_PAVISE / "runtime" / filename
+        elif manifest_path.startswith("Mods/"):
+            path = IMAGES / filename
+        else:
+            raise AssertionError(f"unexpected Pavise runtime manifest path: {manifest_path}")
+        assert path.is_file(), path
+        assert digest(path) == expected_hash, (manifest_path, "runtime export hash")
+        if manifest_path.startswith("Mods/") and filename.endswith(".png"):
+            live_state_hashes.add(expected_hash)
+    assert len(live_state_hashes) == 4, "Pavise runtime states must have distinct hashes"
 
     definitions = json.loads(DEFINITIONS.read_text(encoding="utf-8"))
     active = {

@@ -78,6 +78,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int newHorizonsArcheryDamagePercent = 0;
 	/// Canonical New Horizons Armorer reduction for this physical creature blow.
 	int newHorizonsArmorerReductionPercent = 0;
+	/// Independent Pavise reduction for a ranged physical hit against a Defending stack.
+	int paviseDamageReductionPercent = 0;
 	/// One-shot physical premium earned by Waiting under Battlecraft.
 	int battlecraftWaitDamagePercent = 0;
 	/// Additive damage premium supplied by the current Relentless Assault chain.
@@ -148,6 +150,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Canonical New Horizons Archery ranged damage premium.");
 		s("newHorizonsArmorerReductionPercent", newHorizonsArmorerReductionPercent,
 			"Canonical New Horizons Armorer physical creature damage reduction.");
+		s("paviseDamageReductionPercent", paviseDamageReductionPercent,
+			"Independent ranged physical reduction from Pavise against a Defending target.");
 		s("battlecraftWaitDamagePercent", battlecraftWaitDamagePercent,
 			"One-shot physical damage premium earned by Waiting under Battlecraft.");
 		s("relentlessAssaultDamagePercent", relentlessAssaultDamagePercent,

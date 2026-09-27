@@ -33,6 +33,7 @@
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CObstacleInstance.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/GameLibrary.h"
@@ -1634,6 +1635,12 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 				&& battle.battleGetOwner(shooter) != battle.battleGetOwner(targetStack))
 			{
+				if(targetStack->defended() && !shooter->isTurret()
+					&& !shooter->hasBonusOfType(BonusType::SIEGE_WEAPON)
+					&& shooter->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+					&& !shooter->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+					&& newHorizonsCombatSkills::paviseReductionPercent(battle.battleGetOwnerHero(targetStack)) > 0)
+					result += "\nPavise: 25% independent ranged physical reduction (included above; combined cap applies).";
 				const auto side = static_cast<int32_t>(battle.playerToSide(battle.battleGetOwner(shooter)));
 				const auto marks = newHorizonsBattleStatus::arcaneBreachStatus(
 					*targetStack->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER));

@@ -1988,9 +1988,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	if(info.physicalDamage)
 	{
 		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker);
-		const bool ordinaryCreatureAttack = info.attacker && !info.attacker->isTurret()
-			&& !info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
-			&& info.attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+		const bool ordinaryCreatureAttack = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker);
 		if(info.shooting && ordinaryCreatureAttack)
 			payload.newHorizonsArcheryDamagePercent = newHorizonsCombatSkills::archeryDamagePercent(
 				newHorizonsCombatSkills::archeryRank(battleGetOwnerHero(info.attacker)));
@@ -2001,8 +1999,13 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			payload.newHorizonsArmorerReductionPercent = newHorizonsCombatSkills::armorerReductionPercent(
 				newHorizonsCombatSkills::armorerRank(battleGetOwnerHero(info.defender)));
 		if(ordinaryCreatureAttack && info.defender && info.defender->defended())
+		{
 			payload.battlecraftDefendReductionPercent = newHorizonsBattlecraft::defendReductionPercent(
 				battleGetOwnerHero(info.defender));
+			if(info.shooting)
+				payload.paviseDamageReductionPercent = newHorizonsCombatSkills::paviseReductionPercent(
+					battleGetOwnerHero(info.defender));
+		}
 		if(battleIsShroudFlankingAttack(info))
 			payload.shroudFlankingDamagePercent = newHorizonsShroud::flankingDamagePercent(
 				newHorizonsShroud::rank(battleGetOwnerHero(info.attacker)));

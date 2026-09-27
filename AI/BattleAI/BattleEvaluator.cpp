@@ -684,6 +684,48 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 
 	return 0.0f;
 }
+
+bool paviseMakesDefendWorthwhile(const Environment * environment,
+	const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack)
+{
+	if(!stack || stack->defended()
+		|| newHorizonsCombatSkills::paviseReductionPercent(battle->battleGetOwnerHero(stack)) == 0)
+		return false;
+
+	auto defendedPreview = std::make_shared<HypotheticBattle>(environment, battle);
+	auto projectedTarget = defendedPreview->getForUpdate(stack->unitId());
+	if(!projectedTarget)
+		return false;
+	projectedTarget->defending = true;
+	int64_t damagePrevented = 0;
+	const auto enemies = battle->battleGetUnitsIf([&](const battle::Unit * enemy)
+	{
+		return enemy && enemy->alive()
+			&& battle->battleGetOwner(enemy) != battle->battleGetOwner(stack)
+			&& !enemy->isGhost()
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(enemy)
+			&& enemy->canShoot();
+	});
+	for(const auto * enemy : enemies)
+	{
+		if(!battle->battleCanShoot(enemy, stack->getPosition()))
+			continue;
+		const auto * projectedEnemy = defendedPreview->battleGetUnitByID(enemy->unitId());
+		const auto * projectedStack = defendedPreview->battleGetUnitByID(stack->unitId());
+		if(!projectedEnemy || !projectedStack)
+			continue;
+		const BattleAttackInfo incoming(enemy, stack, 0, true);
+		const BattleAttackInfo projectedIncoming(projectedEnemy, projectedStack, 0, true);
+		const auto before = battle->battleEstimateDamage(incoming).damage;
+		const auto after = defendedPreview->battleEstimateDamage(projectedIncoming).damage;
+		const int64_t prevented = std::max<int64_t>(0,
+			((before.min + before.max) - (after.min + after.max)) / 2);
+		damagePrevented = std::min(stack->getAvailableHealth(), damagePrevented + prevented);
+	}
+	// Do not make Defend automatic for a token reduction: the projected saving
+	// must reach 5% of this stack's current health to beat the existing Wait fallback.
+	return damagePrevented >= std::max<int64_t>(1, stack->getAvailableHealth() / 20);
+}
 }
 
 BattleEvaluator::BattleEvaluator(
@@ -951,10 +993,9 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 
 			return goTowardsNearest(stack, moveTarget.positions, *targets);
 		}
-				else
+		else
 		{
 			cachedAttack.waited = true;
-
 			return BattleAction::makeWait(stack);
 		}
 	}
@@ -978,7 +1019,12 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 		}
 	}
 
-	return stack->acquireState()->waitedThisTurn ? BattleAction::makeDefend(stack) : BattleAction::makeWait(stack);
+	if(stack->acquireState()->waitedThisTurn)
+		return BattleAction::makeDefend(stack);
+
+	if(paviseMakesDefendWorthwhile(env.get(), hb, stack))
+		return BattleAction::makeDefend(stack);
+	return BattleAction::makeWait(stack);
 }
 
 uint64_t timeElapsed(std::chrono::time_point<std::chrono::steady_clock> start)

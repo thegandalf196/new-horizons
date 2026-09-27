@@ -2654,7 +2654,7 @@
 								"requires": "basic",
 								"description": "When a friendly stack Defends, ranged physical creature damage against it is reduced by an additional 25%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When a friendly stack Defends, ranged physical creature damage against it is reduced by an additional 25%."
 								}
 							},
