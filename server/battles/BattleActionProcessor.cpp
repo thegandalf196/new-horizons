@@ -2870,7 +2870,8 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			return makeBattleActionImpl(battle, pass, masterGateActivationContinuationOut);
 		}
 
-		if(active->pursuitMovementRemaining > 0)
+		const auto * activeStack = battle.battleGetStackByID(active->unitId(), false);
+		if(activeStack && activeStack->pursuitMovementRemaining > 0)
 		{
 			if(ba.actionType == EActionType::DEFEND || ba.actionType == EActionType::NO_ACTION)
 			{
