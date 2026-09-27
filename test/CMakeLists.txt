@@ -37,6 +37,7 @@ set(test_SRCS
 		battle/CUnitStateTest.cpp
 		battle/CUnitStateMagicTest.cpp
 		battle/FocusFireStateTest.cpp
+		battle/RelentlessAssaultStateTest.cpp
 		battle/HeroCommandFocusFireRulesTest.cpp
 		battle/battle_UnitTest.cpp
 
@@ -174,6 +175,7 @@ set(test_SRCS
 		server/battles/NewHorizonsOffenseRankTest.cpp
 		server/battles/NewHorizonsVengeanceTest.cpp
 		server/battles/NewHorizonsCleaveTest.cpp
+		server/battles/NewHorizonsRelentlessAssaultTest.cpp
 		server/battles/NewHorizonsPursuitTest.cpp
 		server/battles/NewHorizonsDisciplineTest.cpp
 		server/battles/HeroCommandPersistenceTest.cpp
@@ -320,6 +322,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HypotheticObstacleTest.cpp
 		battleAI/HypotheticWallTest.cpp
 		battleAI/NewHorizonsSylvanLuckAITest.cpp
+		battleAI/NewHorizonsRelentlessAssaultAITest.cpp
 	)
 endif()
 

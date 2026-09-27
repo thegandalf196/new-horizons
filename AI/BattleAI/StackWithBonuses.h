@@ -140,6 +140,11 @@ public:
 
 	BattleID getBattleID() const override;
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override;
+	std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const override;
+	const RelentlessAssaultState & battleGetRelentlessAssaultState(BattleSide side) const override;
+	const RelentlessAssaultState & getRelentlessAssaultState(BattleSide side) const override;
+	void setRelentlessAssaultState(BattleSide side, const RelentlessAssaultState & state) override;
+	void recordRelentlessAssaultAttack(BattleSide side, uint32_t targetUnitId) override;
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override;
 	bool getCounterspellArmed(BattleSide side) const override { return counterspellArmedStates.at(side); }
@@ -324,6 +329,7 @@ private:
 	void finishProjectedHeroAction(BattleSide side, const ProjectedSpellAllowance & prepared);
 	void finishProjectedHeroAction(BattleSide side, const ProjectedOrderAllowance & prepared);
 	std::map<BattleSide, std::optional<FocusFireState>> focusFireStates;
+	BattleSideArray<RelentlessAssaultState> relentlessAssaultStates;
 	BattleSideArray<int32_t> bloodrageRanks;
 	BattleSideArray<int32_t> bloodrageDamagePercents;
 	std::set<uint32_t> bloodrageDestroyedUnits;

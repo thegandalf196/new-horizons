@@ -17,6 +17,59 @@
 
 #include <tbb/parallel_for.h>
 
+namespace
+{
+std::optional<uint32_t> relentlessAssaultPrimaryTargetId(const CBattleInfoCallback & battle,
+	const BattleAttackInfo & attack)
+{
+	const auto * attacker = attack.attacker;
+	const auto * defender = attack.defender;
+	if(!attacker || !defender || !attack.physicalDamage || attack.retaliation
+		|| attack.secondaryAttack || attack.bracePreemptive || attack.preemptiveDamagePercent > 0
+		|| attack.cleaveDamagePercent > 0 || attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))
+		return {};
+	const auto side = attacker->unitSide();
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return {};
+	const auto * hero = battle.battleGetFightingHero(side);
+	if(!hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT)
+		|| !attacker->alive() || attacker->isGhost() || attacker->isTurret()
+		|| attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
+		return {};
+	const auto * primaryTarget = battle.battleResolveHeroOrderTarget(attacker, defender, attack.shooting);
+	if(!primaryTarget || !primaryTarget->alive() || primaryTarget->isGhost() || primaryTarget->isTurret()
+		|| primaryTarget->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| primaryTarget->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+		|| !battle.battleMatchOwner(attacker, primaryTarget))
+		return {};
+	return primaryTarget->unitId();
+}
+
+void projectRelentlessAssaultAttack(HypotheticBattle & battle, const BattleAttackInfo & attack,
+	std::optional<uint32_t> primaryTargetUnitId)
+{
+	if(!attack.attacker || (!primaryTargetUnitId && !attack.protectIntercepted))
+		return;
+	const auto * selectedTarget = attack.defender;
+	if(!attack.shooting && attack.protectIntercepted && selectedTarget)
+	{
+		auto order = battle.getHeroOrderState(selectedTarget->unitSide());
+		if(order && order->command == HeroCommand::PROTECT
+			&& order->issuedRound == battle.battleGetRound()
+			&& order->secondaryTargetUnitId == selectedTarget->unitId()
+			&& (!primaryTargetUnitId || order->primaryTargetUnitId == *primaryTargetUnitId)
+			&& !order->protectIntercepted && !order->protectBroken)
+		{
+			order->protectIntercepted = true;
+			battle.setHeroOrderState(selectedTarget->unitSide(), order);
+		}
+	}
+	if(primaryTargetUnitId)
+		battle.recordRelentlessAssaultAttack(attack.attacker->unitSide(), *primaryTargetUnitId);
+}
+}
+
 AttackerValue::AttackerValue()
 	: value(0),
 	isRetaliated(false)
@@ -120,6 +173,18 @@ float BattleExchangeVariant::trackAttack(
 			}
 			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled);
 			hb->projectRangedMarkStrike(projectedAttack, actualHits);
+			// Protect applies to the captured primary target of each blow, not
+			// once to the whole multi-attack action. AttackPossibility snapshots
+			// the redirected ID before damage, so a killed Protector still records
+			// the actual first target; later strikes can correctly target the Ward.
+			if(strike.relentlessAssaultEligible || strike.protectIntercepted)
+			{
+				auto projectedHeroOrderAttack = ap.attack;
+				projectedHeroOrderAttack.protectIntercepted = strike.protectIntercepted;
+				const auto primaryTarget = strike.relentlessAssaultEligible
+					? std::optional<uint32_t>(strike.defenderId) : std::nullopt;
+				projectRelentlessAssaultAttack(*hb, projectedHeroOrderAttack, primaryTarget);
+			}
 		}
 
 		// A preview can contain damage sources which are not represented by a
@@ -242,7 +307,21 @@ float BattleExchangeVariant::trackAttack(
 	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
 		.Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
 	const bool counterAttacksBlocked = attacker->hasBonus(selectorBlocksRetaliation, cachingStringBlocksRetaliation);
+	const auto requestedDefender = defender;
+	BattleAttackInfo requestedAttack(attacker.get(), requestedDefender.get(), 0, shooting);
+	const auto relentlessAssaultTargetUnitId = relentlessAssaultPrimaryTargetId(*hb, requestedAttack);
+	const auto * redirectedDefender = hb->battleResolveHeroOrderTarget(attacker.get(), requestedDefender.get(), shooting);
+	const bool protectIntercepted = !shooting && redirectedDefender
+		&& redirectedDefender->unitId() != requestedDefender->unitId();
+	requestedAttack.protectIntercepted = protectIntercepted;
+	if(protectIntercepted)
+	{
+		defender = hb->getForUpdate(redirectedDefender->unitId());
+		if(!defender)
+			return 0;
+	}
 	BattleAttackInfo projectedAttack(attacker.get(), defender.get(), 0, shooting);
+	projectedAttack.protectIntercepted = protectIntercepted;
 
 	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
 	float defenderDamageReduce = AttackPossibility::calculateDamageReduce(attacker.get(), defender.get(), attackDamage, damageCache, hb);
@@ -281,6 +360,7 @@ float BattleExchangeVariant::trackAttack(
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
 		hb->projectRangedMarkStrike(projectedAttack, {{defender->unitId(), actualDamage}});
+		projectRelentlessAssaultAttack(*hb, requestedAttack, relentlessAssaultTargetUnitId);
 	}
 	projectedAttacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
 
@@ -333,7 +413,9 @@ float BattleExchangeVariant::trackAttack(
 	if(!evaluateOnly && allowRetaliation && defender->alive() && defender->ableToRetaliate() && !counterAttacksBlocked && !shooting
 		&& (!hb->battleShroudDeniesRetaliation(projectedAttack) || defender->hasBonus(firstStrikeSelector)))
 	{
-		auto retaliationDamage = damageCache.getDamage(defender.get(), attacker.get(), hb);
+		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
+		retaliationAttack.retaliation = true;
+		auto retaliationDamage = hb->battleExpectedLuckDamage(retaliationAttack);
 		attackerDamageReduce = AttackPossibility::calculateDamageReduce(defender.get(), attacker.get(), retaliationDamage, damageCache, hb);
 
 #if BATTLE_TRACE_LEVEL>=1
@@ -360,8 +442,6 @@ float BattleExchangeVariant::trackAttack(
 		const bool attackerWasAlive = attacker->alive();
 		attacker->damage(retaliationDamage);
 		hb->recordBloodrageTransition(attacker, attackerWasAlive);
-		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
-		retaliationAttack.retaliation = true;
 		hb->projectFortuneStrike(retaliationAttack, {{attacker->unitId(), actualDamage}}, defender.get(),
 			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()));
 		defender->afterAttack(false, true, retaliationAttack.physicalDamage);
@@ -952,7 +1032,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 						exchangeBattle->battleCanShoot(stackWithBonuses.get()),
 						isOur,
 						damageCache,
-						hb,
+						exchangeBattle,
 						true);
 
 #if BATTLE_TRACE_LEVEL>=2

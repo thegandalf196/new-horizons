@@ -80,6 +80,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int newHorizonsArmorerReductionPercent = 0;
 	/// One-shot physical premium earned by Waiting under Battlecraft.
 	int battlecraftWaitDamagePercent = 0;
+	/// Additive damage premium supplied by the current Relentless Assault chain.
+	int relentlessAssaultDamagePercent = 0;
 	/// Independent physical reduction while Defending under Battlecraft.
 	int battlecraftDefendReductionPercent = 0;
 	/// Physical damage reduction supplied by the defending stack's canonical Order.
@@ -148,6 +150,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Canonical New Horizons Armorer physical creature damage reduction.");
 		s("battlecraftWaitDamagePercent", battlecraftWaitDamagePercent,
 			"One-shot physical damage premium earned by Waiting under Battlecraft.");
+		s("relentlessAssaultDamagePercent", relentlessAssaultDamagePercent,
+			"Physical damage premium for an eligible attack action in the Expert Offense target streak.");
 		s("battlecraftDefendReductionPercent", battlecraftDefendReductionPercent,
 			"Independent physical reduction while Defending under Battlecraft.");
 		s("heroOrderDamageReductionPercent", heroOrderDamageReductionPercent,

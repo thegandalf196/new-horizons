@@ -14,6 +14,7 @@
 #include "SideInBattle.h"
 #include "SiegeInfo.h"
 #include "NewHorizonsWarcasting.h"
+#include "NewHorizonsOffense.h"
 
 #include "../callback/GameCallbackHolder.h"
 #include "../bonuses/Bonus.h"
@@ -44,6 +45,10 @@ public:
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
+	const RelentlessAssaultState & getRelentlessAssaultState(BattleSide side) const override
+	{
+		return sides.at(side).relentlessAssault;
+	}
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override
 	{
 		return sides.at(side).heroActionAllowances;
@@ -73,6 +78,11 @@ public:
 	}
 	bool hasPursuitState() const;
 	bool hasCleaveState() const;
+	bool hasRelentlessAssaultState() const
+	{
+		return sides[BattleSide::ATTACKER].relentlessAssault.hasState()
+			|| sides[BattleSide::DEFENDER].relentlessAssault.hasState();
+	}
 	BattleSide gatedDemonicStackSide(uint32_t unitId) const;
 	bool hasGatedDemonicStack(BattleSide side, uint32_t unitId) const;
 	HeroCommand getActiveDoctrine(BattleSide side) const override { (void)side; return HeroCommand::NONE; }
@@ -87,6 +97,7 @@ public:
 	/// Round Order bonuses are intentionally preserved.
 	void normalizeLegacyHeroCommandState();
 	void validateFocusFireStates() const;
+	void validateRelentlessAssaultStates() const;
 	BattleID battleID = BattleID(0);
 
 	si32 activeStack;
@@ -137,8 +148,11 @@ public:
 				throw std::runtime_error("Cannot discard Pursuit battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CLEAVE) && hasCleaveState())
 				throw std::runtime_error("Cannot discard Cleave battle state");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RELENTLESS_ASSAULT) && hasRelentlessAssaultState())
+				throw std::runtime_error("Cannot discard Relentless Assault battle state");
 			heroCommands::validateRules(heroCommandRules);
 			validateFocusFireStates();
+			validateRelentlessAssaultStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_MOMENT)
 				&& (sides[BattleSide::ATTACKER].sylvanLuck.perfectMoment || sides[BattleSide::DEFENDER].sylvanLuck.perfectMoment))
 				throw std::runtime_error("Cannot discard Perfect Moment battle state");
@@ -368,6 +382,7 @@ public:
 			// units and resolves their army bindings. Validation does not need those bindings.
 			normalizeLegacyHeroCommandState();
 			validateFocusFireStates();
+			validateRelentlessAssaultStates();
 			postDeserialize();
 		}
 	}
@@ -466,6 +481,28 @@ public:
 	void updateObstacle(const ObstacleChanges& changes) override;
 	void removeObstacle(uint32_t id) override;
 	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
+	void setRelentlessAssaultState(BattleSide side, const RelentlessAssaultState & state) override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			throw std::invalid_argument("Invalid Relentless Assault side");
+		state.validateShape();
+		const auto * hero = battleGetFightingHero(side);
+		if(!hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
+		{
+			if(state.hasState())
+				throw std::runtime_error("Relentless Assault state requires its hero perk");
+		}
+		sides.at(side).relentlessAssault = state;
+	}
+	void recordRelentlessAssaultAttack(BattleSide side, uint32_t targetUnitId) override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return;
+		const auto * hero = battleGetFightingHero(side);
+		if(!hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
+			return;
+		sides.at(side).relentlessAssault.recordAttack(targetUnitId);
+	}
 
 	static void addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool forceAdd);
 

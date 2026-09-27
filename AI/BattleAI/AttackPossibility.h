@@ -24,6 +24,8 @@ struct FortuneStrikeProjection
 	bool shooting = false;
 	bool retaliation = false;
 	bool perfectMoment = false;
+	bool protectIntercepted = false;
+	bool relentlessAssaultEligible = false;
 	int cleaveDamagePercent = 0;
 	std::vector<std::pair<uint32_t, int64_t>> hits;
 };

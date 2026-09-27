@@ -536,6 +536,36 @@ int CBattleInfoCallback::battleGetBloodrageDamagePercent(const battle::Unit * un
 	return std::max(0, getBattle()->getBloodrageDamagePercent(side));
 }
 
+const RelentlessAssaultState & CBattleInfoCallback::battleGetRelentlessAssaultState(BattleSide side) const
+{
+	static const RelentlessAssaultState empty;
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return empty;
+	return getBattle()->getRelentlessAssaultState(side);
+}
+
+int CBattleInfoCallback::battleGetRelentlessAssaultDamagePercent(const battle::Unit * attacker,
+	const battle::Unit * primaryTarget) const
+{
+	if(!getBattle() || !attacker || !primaryTarget || !attacker->alive() || !primaryTarget->alive()
+		|| attacker->isGhost() || primaryTarget->isGhost()
+		|| attacker->isTurret() || primaryTarget->isTurret()
+		|| attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| primaryTarget->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+		|| primaryTarget->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+		|| attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+		|| battleGetOwner(attacker) == battleGetOwner(primaryTarget))
+		return 0;
+	const auto side = playerToSide(battleGetOwner(attacker));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return 0;
+	const auto * hero = battleGetFightingHero(side);
+	if(!hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
+		return 0;
+	return battleGetRelentlessAssaultState(side).damagePercentForTarget(primaryTarget->unitId());
+}
+
 bool CBattleInfoCallback::battleIsShroudFlankingAttack(const BattleAttackInfo & attack) const
 {
 	if(!getBattle() || !attack.attacker || !attack.defender || attack.shooting || !attack.physicalDamage
@@ -1811,6 +1841,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.chargeDistance = info.chargeDistance;
 	payload.shooting = info.shooting;
 	payload.physicalDamage = info.physicalDamage;
+	payload.relentlessAssaultDamagePercent = info.relentlessAssaultDamagePercent;
 	const auto * currentBattle = getBattle();
 	if(currentBattle)
 		payload.physicalDamageReductionCapPercent = newHorizonsMagic::physicalDamageReductionCapPercent(currentBattle->getMagicRules());

@@ -153,16 +153,33 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 {
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
 		rangedMarkTargets.insert(defender->unitId());
+	const auto raSide = hb->playerToSide(hb->battleGetOwner(attacker));
+	const auto * raHero = raSide == BattleSide::ATTACKER || raSide == BattleSide::DEFENDER
+		? hb->battleGetFightingHero(raSide) : nullptr;
+	const bool hasRelentlessAssault = raHero
+		&& raHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT);
 	// IDs alone cannot key a target/controller/round-sensitive premium. Preserve
 	// original-damage snapshots for comparison, but recompute current v2 damage.
 	// Remember marked targets so expiry/Dispel cannot revive a cached premium.
+	// Relentless Assault depends on the hero-side streak and target; never let an
+	// ID-only cache reuse damage from another hypothetical chain tier.
 	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE)
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
+		|| hasRelentlessAssault
 		|| tracksRangedMarks(defender->unitId()))
 	{
 		if(!attacker->alive())
 			return 0;
-		return hb->battleExpectedLuckDamage(BattleAttackInfo(attacker, defender, 0, hb->battleCanShoot(attacker, defender->getPosition())));
+		const bool shooting = hb->battleCanShoot(attacker, defender->getPosition());
+		const auto * primaryTarget = hb->battleResolveHeroOrderTarget(attacker, defender, shooting);
+		BattleAttackInfo attack(attacker, primaryTarget ? primaryTarget : defender, 0, shooting);
+		attack.protectIntercepted = !shooting && primaryTarget && primaryTarget->unitId() != defender->unitId();
+		if(hasRelentlessAssault)
+		{
+			attack.relentlessAssaultDamagePercent = hb->battleGetRelentlessAssaultDamagePercent(
+				attacker, attack.defender);
+		}
+		return hb->battleExpectedLuckDamage(attack);
 	}
 	bool wasComputedBefore = damageCache[attacker->unitId()].count(defender->unitId());
 
@@ -389,7 +406,10 @@ AttackPossibility AttackPossibility::evaluate(
 	std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)
 {
 	auto attacker = attackInfo.attacker;
-	auto defender = attackInfo.defender;
+	const auto * requestedDefender = attackInfo.defender;
+	const auto * redirectedDefender = state->battleResolveHeroOrderTarget(attacker, requestedDefender,
+		attackInfo.shooting);
+	const auto * defender = redirectedDefender ? redirectedDefender : requestedDefender;
 	const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
 	static const auto selectorBlocksRetaliation = Selector::type()(BonusType::BLOCKS_RETALIATION);
 	const auto attackerSide = state->playerToSide(state->battleGetOwner(attacker));
@@ -401,9 +421,9 @@ AttackPossibility AttackPossibility::evaluate(
 
 	BattleHexArray defenderHex;
 	if(attackInfo.shooting)
-		defenderHex.insert(defender->getPosition());
+		defenderHex.insert(requestedDefender->getPosition());
 	else
-		defenderHex = state->meleeAttackHexes(attacker, defender, hex);
+		defenderHex = state->meleeAttackHexes(attacker, requestedDefender, hex);
 
 	for(const BattleHex & defHex : defenderHex)
 	{
@@ -411,8 +431,31 @@ AttackPossibility AttackPossibility::evaluate(
 			continue;
 
 		AttackPossibility ap(hex, defHex, attackInfo);
+		ap.attack.protectIntercepted = !attackInfo.shooting
+			&& defender->unitId() != requestedDefender->unitId();
 		ap.perfectMoment = perfectMoment && state->battleCanUsePerfectMoment(attacker)
 			&& !attackInfo.retaliation && state->battleMatchOwner(attacker, defender);
+		const auto * raPrimaryTarget = state->battleResolveHeroOrderTarget(attacker, requestedDefender,
+			attackInfo.shooting);
+		const auto * raHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
+			? state->battleGetFightingHero(attackerSide) : nullptr;
+		const bool ordinaryRelentlessAssaultAttack = raHero
+			&& raHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT)
+			&& !attackInfo.retaliation && !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
+			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
+			&& attackInfo.physicalDamage && attacker->alive() && raPrimaryTarget && raPrimaryTarget->alive()
+			&& !attacker->isGhost() && !attacker->isTurret()
+			&& !attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+			&& !attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+			&& !raPrimaryTarget->isGhost() && !raPrimaryTarget->isTurret()
+			&& !raPrimaryTarget->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& raPrimaryTarget->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+			&& state->battleMatchOwner(attacker, raPrimaryTarget);
+		if(ordinaryRelentlessAssaultAttack)
+		{
+			ap.attack.relentlessAssaultDamagePercent = state->battleGetRelentlessAssaultDamagePercent(attacker, raPrimaryTarget);
+		}
 		std::shared_ptr<HypotheticBattle> fortunePreview;
 		const bool projectsCleave = !attackInfo.shooting && !attackInfo.retaliation
 			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
@@ -420,10 +463,12 @@ AttackPossibility AttackPossibility::evaluate(
 			&& attackInfo.physicalDamage && state->battleCanTriggerCleave(attacker);
 		const bool projectsMarks = attackInfo.shooting
 			&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
-		if(ap.perfectMoment || projectsMarks || projectsCleave)
+		const bool projectsProtect = !attackInfo.shooting
+			&& defender->unitId() != requestedDefender->unitId();
+		if(ap.perfectMoment || projectsMarks || projectsCleave || projectsProtect || ordinaryRelentlessAssaultAttack)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
-		if(projectsMarks || projectsCleave)
+		if(projectsMarks || projectsCleave || projectsProtect || ordinaryRelentlessAssaultAttack)
 			ap.effectPreview = fortunePreview;
 		const CBattleInfoCallback & luckState = fortunePreview
 			? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
@@ -438,6 +483,7 @@ AttackPossibility AttackPossibility::evaluate(
 			ap.attackerState->setPosition(hex);
 
 		battle::Units defenderUnits;
+		battle::Units requestedDefenderUnits;
 		battle::Units retaliatedUnits = {attacker};
 		battle::Units affectedUnits;
 
@@ -446,6 +492,9 @@ AttackPossibility AttackPossibility::evaluate(
 		else
 		{
 			defenderUnits = state->getAttackedBattleUnits(attacker, defender, defHex, false, hex, defender->getPosition());
+			if(projectsProtect)
+				requestedDefenderUnits = state->getAttackedBattleUnits(attacker, requestedDefender, defHex,
+					false, hex, requestedDefender->getPosition());
 			retaliatedUnits = state->getAttackedBattleUnits(defender, attacker, hex, false, defender->getPosition(), hex);
 
 			// attacker can not melle-attack itself but still can hit that place where it was before moving
@@ -466,6 +515,9 @@ AttackPossibility AttackPossibility::evaluate(
 				ap.preAttackDamage += obstacleDamage;
 			}
 		}
+		if(projectsProtect && !vstd::contains_if(requestedDefenderUnits, [requestedDefender](const battle::Unit * unit)
+			{ return unit->unitId() == requestedDefender->unitId(); }))
+			requestedDefenderUnits.push_back(requestedDefender);
 
 		// ensure the defender is also affected
 		if(!vstd::contains_if(defenderUnits, [defender](const battle::Unit * u) -> bool { return u->unitId() == defender->unitId(); }))
@@ -474,6 +526,10 @@ AttackPossibility AttackPossibility::evaluate(
 		}
 
 		affectedUnits = defenderUnits;
+		for(const auto * unit : requestedDefenderUnits)
+			if(!vstd::contains_if(affectedUnits, [unit](const battle::Unit * value)
+				{ return value->unitId() == unit->unitId(); }))
+				affectedUnits.push_back(unit);
 		vstd::concatenate(affectedUnits, retaliatedUnits);
 
 #if BATTLE_TRACE_LEVEL>=1
@@ -497,21 +553,39 @@ AttackPossibility AttackPossibility::evaluate(
 
 		for(int i = 0; i < totalAttacks; i++)
 		{
-			if(!ap.attackerState->alive() || !defenderStates[defender->unitId()]->alive()
+			// Protect redirects the first qualifying blow only. Subsequent attacks
+			// in the same multistrike target the originally selected Ward, just as
+			// the authoritative server re-resolves the interception per blow.
+			const bool protectAlreadyIntercepted = projectsProtect && i > 0;
+			const auto * strikeDefender = protectAlreadyIntercepted ? requestedDefender : defender;
+			const auto & strikeDefenderUnits = protectAlreadyIntercepted ? requestedDefenderUnits : defenderUnits;
+			const auto strikeDefenderState = defenderStates.find(strikeDefender->unitId());
+			if(!ap.attackerState->alive() || strikeDefenderState == defenderStates.end()
+				|| !strikeDefenderState->second->alive()
 				|| (attackInfo.shooting && !ap.attackerState->canShoot()))
 				break;
+			const int relentlessAssaultDamagePercent = ordinaryRelentlessAssaultAttack
+				? luckState.battleGetRelentlessAssaultDamagePercent(
+					ap.attackerState.get(), strikeDefenderState->second.get())
+				: 0;
 
 			FortuneStrikeProjection strike;
 			strike.attackerId = ap.attackerState->unitId();
-			strike.defenderId = defender->unitId();
+			strike.defenderId = strikeDefender->unitId();
 			strike.shooting = attackInfo.shooting;
 			strike.perfectMoment = ap.perfectMoment && i == 0;
+			strike.protectIntercepted = projectsProtect && i == 0;
+			strike.relentlessAssaultEligible = ordinaryRelentlessAssaultAttack
+				&& !strikeDefender->isGhost() && !strikeDefender->isTurret()
+				&& !strikeDefender->hasBonusOfType(BonusType::SIEGE_WEAPON)
+				&& strikeDefender->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+				&& state->battleMatchOwner(attacker, strikeDefender);
 			std::optional<FortuneStrikeProjection> retaliation;
 			std::optional<FortuneStrikeProjection> cleave;
 			std::vector<std::pair<std::shared_ptr<battle::CUnitState>, int64_t>> pendingRetaliationDamage;
 			std::vector<const battle::Unit *> destroyedEnemyUnits;
 
-			for(auto u : defenderUnits)
+			for(auto u : strikeDefenderUnits)
 			{
 				auto defenderState = defenderStates.at(u->unitId());
 				if(!defenderState->alive())
@@ -523,7 +597,10 @@ AttackPossibility AttackPossibility::evaluate(
 				auto victimAttack = ap.attack;
 				victimAttack.attacker = ap.attackerState.get();
 				victimAttack.defender = defenderState.get();
-				victimAttack.secondaryAttack = u->unitId() != defender->unitId();
+				victimAttack.secondaryAttack = u->unitId() != strikeDefender->unitId();
+				victimAttack.relentlessAssaultDamagePercent = relentlessAssaultDamagePercent;
+				victimAttack.protectIntercepted = projectsProtect && i == 0
+					&& u->unitId() == strikeDefender->unitId();
 				// The authoritative path spends movement on the first strike and
 				// consumes Charge before collateral. Later attacks therefore have no
 				// charge distance; collateral retains distance for ordinary jousting,
@@ -535,8 +612,7 @@ AttackPossibility AttackPossibility::evaluate(
 					victimAttack.luckyStrike = !victimAttack.secondaryAttack || state->getBattle()->getLuckRollRules().affectsAllTargets;
 					victimAttack.unluckyStrike = false;
 				}
-				if(victimAttack.secondaryAttack)
-					victimAttack.defenderPos = defenderState->getPosition();
+				victimAttack.defenderPos = defenderState->getPosition();
 				if(strike.perfectMoment)
 				{
 					// Non-lucky collateral of a forced positive strike is neutral,
@@ -556,7 +632,7 @@ AttackPossibility AttackPossibility::evaluate(
 				defenderDamageReduce = calculateDamageReduce(ap.attackerState.get(), defenderState.get(),
 					damageDealt, damageCache, state);
 
-				if (i == 0 && !attackInfo.shooting && u->unitId() == defender->unitId()
+				if(i == 0 && !attackInfo.shooting && u->unitId() == strikeDefender->unitId()
 					&& retaliatorState->alive() && retaliatorState->ableToRetaliate() && !counterAttacksBlocked
 					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector))
 					&& !ap.attackerState->isInvincible() && !state->isLongWeaponAttack(ap.attackerState.get(), defenderState.get()))
@@ -595,9 +671,27 @@ AttackPossibility AttackPossibility::evaluate(
 					&& state->battleMatchOwner(ap.attackerState.get(), u))
 					destroyedEnemyUnits.push_back(u);
 
-				if(u->unitId() == defender->unitId())
+				if(u->unitId() == strikeDefender->unitId())
 				{
 					ap.defenderDead = !defenderState->alive();
+				}
+			}
+			if(fortunePreview && !strike.hits.empty())
+			{
+				if(strike.relentlessAssaultEligible)
+					fortunePreview->recordRelentlessAssaultAttack(attackerSide, strikeDefender->unitId());
+				if(strike.protectIntercepted)
+				{
+					const auto protectedSide = requestedDefender->unitSide();
+					auto order = fortunePreview->battleGetHeroOrderState(protectedSide);
+					if(order && order->command == HeroCommand::PROTECT
+						&& order->secondaryTargetUnitId == requestedDefender->unitId()
+						&& order->primaryTargetUnitId == strikeDefender->unitId()
+						&& !order->protectIntercepted && !order->protectBroken)
+					{
+						order->protectIntercepted = true;
+						fortunePreview->setHeroOrderState(protectedSide, order);
+					}
 				}
 			}
 			// Authority consumes the physical attack's once-per-activation effects
@@ -613,7 +707,7 @@ AttackPossibility AttackPossibility::evaluate(
 				{
 					const auto fortune = state->getBattle()->getSylvanLuckState(side);
 					const auto rules = state->getBattle()->getLuckRollRules();
-					const int luck = luckState.battleGetAttackLuck(attacker, defender, false);
+					const int luck = luckState.battleGetAttackLuck(attacker, strikeDefender, false);
 					const auto chanceIndex = luck > 0 && !rules.goodChance.empty()
 						? std::min<size_t>(static_cast<size_t>(luck), rules.goodChance.size()) - 1
 						: 0;

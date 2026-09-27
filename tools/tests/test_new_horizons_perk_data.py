@@ -42,6 +42,7 @@ ACTIVE_PERKS = {
     "new-horizons:offense.breakthrough",
     "new-horizons:offense.cleave",
     "new-horizons:offense.vengeance",
+    "new-horizons:offense.relentlessAssault",
     "new-horizons:discipline.inspirationalLeader",
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.matterShaper",
@@ -233,6 +234,22 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertEqual(vengeance["description"], description)
         self.assertEqual(vengeance["effect"]["status"], "active")
         self.assertEqual(vengeance["effect"]["description"], description)
+
+    def test_relentless_assault_is_active_expert_offense_perk(self):
+        perk = next(
+            perk
+            for perk in self.rules["skills"]["new-horizons:offense"]["perks"]
+            if perk["id"] == "new-horizons:offense.relentlessAssault"
+        )
+        description = (
+            "Consecutive activations attacking the same enemy stack gain +10% damage, "
+            "stacking to +30%. Attacking another target resets the bonus."
+        )
+        self.assertEqual(perk["name"], "Relentless Assault")
+        self.assertEqual(perk["requires"], "expert")
+        self.assertEqual(perk["description"], description)
+        self.assertEqual(perk["effect"]["status"], "active")
+        self.assertEqual(perk["effect"]["description"], description)
 
     def test_perk_definitions_match_source_document(self):
         source_tables = source_perk_tables(ROOT / self.rules["sourceDocument"])

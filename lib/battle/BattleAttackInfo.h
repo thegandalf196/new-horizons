@@ -37,6 +37,7 @@ struct DLL_LINKAGE BattleAttackInfo
 	bool bracePreemptive = false; // The blow is Brace's one pre-emptive strike.
 	int preemptiveDamagePercent = 0; // Explicit final multiplier for a pre-emptive reaction.
 	int cleaveDamagePercent = 0; // Independent final multiplier for an automatic Cleave strike.
+	int relentlessAssaultDamagePercent = 0; // Side-chain additive bonus for this physical attack action.
 	bool luckyStrike   = false;
 	bool unluckyStrike = false;
 	bool deathBlow     = false;

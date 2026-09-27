@@ -370,6 +370,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderState(side);
+		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
 		counterspellArmedStates[side] = realBattle->getBattle()->getCounterspellArmed(side);
@@ -520,6 +521,43 @@ BattleID HypotheticBattle::getBattleID() const
 std::optional<HeroOrderState> HypotheticBattle::getHeroOrderState(BattleSide side) const
 {
 	return heroOrderStates.at(side);
+}
+
+std::optional<HeroOrderState> HypotheticBattle::battleGetHeroOrderState(BattleSide side) const
+{
+	return heroOrderStates.at(side);
+}
+
+const RelentlessAssaultState & HypotheticBattle::battleGetRelentlessAssaultState(BattleSide side) const
+{
+	return relentlessAssaultStates.at(side);
+}
+
+const RelentlessAssaultState & HypotheticBattle::getRelentlessAssaultState(BattleSide side) const
+{
+	return relentlessAssaultStates.at(side);
+}
+
+void HypotheticBattle::setRelentlessAssaultState(BattleSide side, const RelentlessAssaultState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid hypothetical Relentless Assault side");
+	state.validateShape();
+	const auto * hero = battleGetFightingHero(side);
+	if((!hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
+		&& state.hasState())
+		throw std::runtime_error("Hypothetical Relentless Assault state requires its hero perk");
+	relentlessAssaultStates.at(side) = state;
+}
+
+void HypotheticBattle::recordRelentlessAssaultAttack(BattleSide side, uint32_t targetUnitId)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return;
+	const auto * hero = battleGetFightingHero(side);
+	if(!hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
+		return;
+	relentlessAssaultStates.at(side).recordAttack(targetUnitId);
 }
 
 const AlternatingHeroActionState & HypotheticBattle::getWarcastingState(BattleSide side) const
@@ -1025,6 +1063,15 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	{
 		unit->pursuitMovementRemaining = 0;
 		unit->cleaveUsedThisActivation = false;
+		const auto side = playerToSide(battleGetOwner(unit.get()));
+		const bool ordinaryCreature = unit->alive() && !unit->isGhost() && !unit->isTurret()
+			&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+		const auto * hero = side == BattleSide::ATTACKER || side == BattleSide::DEFENDER
+			? battleGetFightingHero(side) : nullptr;
+		if(ordinaryCreature && hero
+			&& hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
+			relentlessAssaultStates.at(side).beginActivation();
 	}
 
 	if(!unit->isTimeStopped() && reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)

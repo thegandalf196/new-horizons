@@ -848,6 +848,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 
 	bool ferocityApplied = false;
 	bool destroyedEnemy = false;
+	RelentlessAssaultActionContext relentlessAssault;
 	int32_t defenderInitialQuantity = destinationStack->getCount();
 
 	BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);	//they need to be gathered here since bonuses with this duration added during attack (like blind) should not be removed
@@ -880,7 +881,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			// Pass the originally selected Ward to makeAttack so Protect can
 			// consume its first interception atomically; attackTarget is only the
 			// resolved recipient used for local retaliation checks below.
-			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, &destroyedEnemy);
+			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, &destroyedEnemy, &relentlessAssault);
 
 			if(!ferocityApplied && stack->hasBonusOfType(BonusType::FEROCITY))
 			{
@@ -1044,6 +1045,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		gameHandler->complain("No target to shoot!");
 		return false;
 	}
+	RelentlessAssaultActionContext relentlessAssault;
 
 	bool firstStrike = false;
 	if(!emptyTileAreaAttack)
@@ -1053,7 +1055,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 	}
 
 	if (!firstStrike)
-		makeAttack(battle, stack, destinationStack, {.targetHex = destination, .first = true, .ranged = true, .perfectMomentSide = perfectMomentSide});
+		makeAttack(battle, stack, destinationStack, {.targetHex = destination, .first = true, .ranged = true, .perfectMomentSide = perfectMomentSide}, nullptr, &relentlessAssault);
 
 	BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);	//they need to be gathered here since bonuses with this duration added during attack (like blind) should not be removed
 	BonusList defenderBonusesToRemove;
@@ -1089,7 +1091,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		{
 			// when the defender strikes first the opening shot above is skipped and this loop makes
 			// it instead, so the shot that abilities fire on is the first one this loop makes
-			makeAttack(battle, stack, destinationStack, {.targetHex = destination, .attackIndex = i, .first = i == 0, .ranged = true, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE});
+			makeAttack(battle, stack, destinationStack, {.targetHex = destination, .attackIndex = i, .first = i == 0, .ranged = true, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, nullptr, &relentlessAssault);
 		}
 	}
 
@@ -2168,7 +2170,8 @@ void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleA
 }
 
 void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker,
-	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut)
+	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut,
+	RelentlessAssaultActionContext * relentlessAssault)
 {
 	const int bulwarkReflectionPercent = defender && !attack.ranged && defender->defended()
 		? newHorizonsBulwark::reflectionPercent(newHorizonsBulwark::rank(battle.battleGetOwnerHero(defender)))
@@ -2287,6 +2290,34 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	if((!attacker->alive()) || (defender && !defender->alive()))
 		return;
 
+	if(relentlessAssault && defender && !attack.counter && !attack.brace && !attack.cleaveFollowup
+		&& attack.preemptiveDamagePercent <= 0 && !attacker->isGhost() && !attacker->isTurret()
+		&& !attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		&& attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+		&& !attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+		&& !defender->isGhost() && !defender->isTurret()
+		&& !defender->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		&& defender->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+		&& battle.battleMatchOwner(attacker, defender))
+	{
+		const auto side = battle.playerToSide(battle.battleGetOwner(attacker));
+		const auto * hero = (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+			? battle.battleGetFightingHero(side) : nullptr;
+		if(hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
+		{
+			relentlessAssault->eligible = true;
+			relentlessAssault->side = side;
+			if(relentlessAssault->primaryTargetUnitId != defender->unitId())
+			{
+				relentlessAssault->damagePercent = relentlessAssault->primaryTargetUnitId
+					== RelentlessAssaultState::INVALID_TARGET
+					? battle.battleGetRelentlessAssaultDamagePercent(attacker, defender)
+					: 0;
+				relentlessAssault->primaryTargetUnitId = defender->unitId();
+			}
+		}
+	}
+
 	std::shared_ptr<battle::CUnitState> attackerState = attacker->acquireState();
 
 	const bool perfectMoment = attack.perfectMomentSide != BattleSide::NONE && !attack.counter && !attack.brace
@@ -2299,7 +2330,24 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	{
 		const auto estimation = applyBattleEffects(battle, bat, attackerState, payload, defender,
 			attack.distance, false, attack.brace, attack.preemptiveDamagePercent,
-			attack.cleaveDamagePercent, protectIntercepted);
+			attack.cleaveDamagePercent, protectIntercepted,
+			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0);
+		if(relentlessAssault && relentlessAssault->eligible
+			&& relentlessAssault->lastRecordedTargetUnitId != defender->unitId()
+			&& std::ranges::any_of(bat.bsa, [defender](const auto & hit)
+			{
+				return hit.stackAttacked == defender->unitId();
+			}))
+		{
+			if(const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle()))
+			{
+				auto * mutableState = const_cast<BattleInfo *>(state);
+				mutableState->recordRelentlessAssaultAttack(relentlessAssault->side, defender->unitId());
+				bat.relentlessAssaultSide = relentlessAssault->side;
+				bat.relentlessAssaultState = state->getRelentlessAssaultState(relentlessAssault->side);
+				relentlessAssault->lastRecordedTargetUnitId = defender->unitId();
+			}
+		}
 		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
 			resolvedOrderCauses.push_back({defender->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
 		if(!attack.ranged && !attack.counter)
@@ -2329,7 +2377,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 		const auto estimation = applyBattleEffects(battle, bat, attackerState, payload, unit,
 			attack.distance, true, attack.brace, attack.preemptiveDamagePercent,
-			attack.cleaveDamagePercent, false);
+			attack.cleaveDamagePercent, false,
+			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0);
 		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
 			resolvedOrderCauses.push_back({unit->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
 		if(!unit->isTimeStopped())
@@ -2513,6 +2562,17 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 			for(auto & line : orderDamageLogLines)
 				blm.lines.push_back(std::move(line));
+
+			if(relentlessAssault && relentlessAssault->eligible
+				&& relentlessAssault->damagePercent > 0 && defender
+				&& relentlessAssault->primaryTargetUnitId == defender->unitId())
+			{
+				MetaString line;
+				line.appendRawString("Relentless Assault increases this attack's damage by +");
+				line.appendNumber(relentlessAssault->damagePercent);
+				line.appendRawString("%.");
+				blm.lines.push_back(std::move(line));
+			}
 		}
 	}
 
@@ -2541,7 +2601,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		{
 			int result = GameConstants::BFIELD_SIZE;
 			for(const auto hex : unit->getHexes())
-				result = std::min(result, hex.toInt());
+				result = std::min<int>(result, hex.toInt());
 			return result;
 		};
 		std::sort(destroyedEnemies.begin(), destroyedEnemies.end(), [&](const battle::Unit * left,
@@ -2707,7 +2767,8 @@ void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback &
 DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat,
 	std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload,
 	const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
-	int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted) const
+	int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
+	int relentlessAssaultDamagePercent) const
 {
 	BattleStackAttacked bsa;
 	if(secondary)
@@ -2725,6 +2786,7 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	bai.bracePreemptive = bracePreemptive;
 	bai.preemptiveDamagePercent = preemptiveDamagePercent;
 	bai.cleaveDamagePercent = cleaveDamagePercent;
+	bai.relentlessAssaultDamagePercent = relentlessAssaultDamagePercent;
 	bai.protectIntercepted = protectIntercepted;
 	bai.physicalDamage = !bat.spellLike();
 	bai.deathBlow = bat.deathBlow();

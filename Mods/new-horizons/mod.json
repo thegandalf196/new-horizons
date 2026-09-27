@@ -2572,7 +2572,7 @@
 								"requires": "expert",
 								"description": "Consecutive activations attacking the same enemy stack gain +10% damage, stacking to +30%. Attacking another target resets the bonus.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Consecutive activations attacking the same enemy stack gain +10% damage, stacking to +30%. Attacking another target resets the bonus."
 								}
 							},

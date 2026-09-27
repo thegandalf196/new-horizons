@@ -11,6 +11,7 @@
 #include "GameStatePackVisitor.h"
 
 #include "CGameState.h"
+#include "../battle/NewHorizonsOffense.h"
 #include "../battle/NewHorizonsWarcasting.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "TavernHeroesPool.h"
@@ -1783,6 +1784,8 @@ void GameStatePackVisitor::visitBattleStackMoved(BattleStackMoved & pack)
 void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("BattleAttack references a missing battle");
 	if(pack.chainGateTriggered && !chainGateKillQualifies(*battle, pack.stackAttacking, pack.bsa))
 		throw std::runtime_error("Invalid Chain Gate attack trigger");
 	if(pack.fortuneState)
@@ -1790,11 +1793,37 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.bsa);
 	CStack * attacker = battle->getStack(pack.stackAttacking);
 	assert(attacker);
+	if(pack.relentlessAssaultState)
+	{
+		pack.relentlessAssaultState->validateShape();
+		if((pack.relentlessAssaultSide != BattleSide::ATTACKER && pack.relentlessAssaultSide != BattleSide::DEFENDER)
+			|| !attacker)
+			throw std::runtime_error("Invalid Relentless Assault attack state side or attacker");
+		const auto * hero = battle->battleGetFightingHero(pack.relentlessAssaultSide);
+		if((pack.relentlessAssaultSide != BattleSide::ATTACKER && pack.relentlessAssaultSide != BattleSide::DEFENDER)
+			|| battle->playerToSide(battle->battleGetOwner(attacker)) != pack.relentlessAssaultSide
+			|| !hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT)
+			|| attacker->isGhost() || attacker->isTurret()
+			|| attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
+			throw std::runtime_error("Invalid Relentless Assault attack state update");
+		const auto targetId = pack.relentlessAssaultState->activationTargetUnitId;
+		const auto * target = targetId == RelentlessAssaultState::INVALID_TARGET
+			? nullptr : battle->battleGetUnitByID(targetId);
+		if(!pack.relentlessAssaultState->activationInitialized
+			|| !pack.relentlessAssaultState->activationHadEligibleAttack
+			|| targetId >= battle->nextUnitId()
+			|| pack.bsa.empty() || pack.bsa.front().stackAttacked != targetId
+			|| (target && target->unitSide() == pack.relentlessAssaultSide))
+			throw std::runtime_error("Invalid Relentless Assault primary target update");
+	}
 
 	pack.attackerChanges.visit(*this);
 
 	for(BattleStackAttacked & stack : pack.bsa)
 		battle->updateUnit(stack.newState.id, stack.newState.data, stack.newState.healthDelta);
+	if(pack.relentlessAssaultState)
+		battle->setRelentlessAssaultState(pack.relentlessAssaultSide, *pack.relentlessAssaultState);
 	recordBloodrageDeaths(*battle, bloodrageCandidates);
 	refreshBloodrageLivingUnits(*battle, pack.bsa);
 	if(pack.chainGateTriggered)

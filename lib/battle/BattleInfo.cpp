@@ -1024,6 +1024,15 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	{
 		st->pursuitMovementRemaining = 0;
 		st->cleaveUsedThisActivation = false;
+		const auto side = playerToSide(battleGetOwner(st));
+		const bool ordinaryCreature = st->alive() && !st->isGhost() && !st->isTurret()
+			&& !st->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& st->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+		const auto * hero = side == BattleSide::ATTACKER || side == BattleSide::DEFENDER
+			? battleGetFightingHero(side) : nullptr;
+		if(ordinaryCreature && hero
+			&& hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
+			sides.at(side).relentlessAssault.beginActivation();
 	}
 	if(newActivation && activationSerial < std::numeric_limits<si32>::max())
 		++activationSerial;
@@ -1578,6 +1587,28 @@ void BattleInfo::validateFocusFireStates() const
 			// Ghosts and changed controllers are valid retained, possibly inactive references.
 			if(!battleGetUnitByID(id))
 				throw std::runtime_error("Invalid New Horizons Focus Fire recipient reference");
+		}
+	}
+}
+
+void BattleInfo::validateRelentlessAssaultStates() const
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & state = sides.at(side).relentlessAssault;
+		state.validateShape();
+		if(!state.hasState())
+			continue;
+
+		const auto * hero = battleGetFightingHero(side);
+		if(!hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
+			throw std::runtime_error("Relentless Assault state requires its hero perk");
+
+		if(state.targetUnitId != RelentlessAssaultState::INVALID_TARGET)
+		{
+			const auto * target = battleGetUnitByID(state.targetUnitId);
+			if(state.targetUnitId >= nextUnitId() || (target && target->unitSide() == side))
+				throw std::runtime_error("Invalid Relentless Assault streak target");
 		}
 	}
 }

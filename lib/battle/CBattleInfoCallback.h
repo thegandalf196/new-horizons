@@ -13,6 +13,7 @@
 
 #include "ReachabilityInfo.h"
 #include "BattleAttackInfo.h"
+#include "RelentlessAssaultState.h"
 #include "HeroCommand.h"
 #include "FocusFireState.h"
 #include "BattleUnitTurnReason.h"
@@ -96,9 +97,14 @@ public:
 	std::vector<uint32_t> battleFortuneAdjacentFriends(const battle::Unit * unit) const;
 	/// Expected luck damage used by the AI, without consuming RNG.
 	int64_t battleExpectedLuckDamage(const BattleAttackInfo & attack) const;
-	std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const;
+	virtual std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const;
 	/// Current cumulative physical creature damage percentage for the unit's side.
 	int battleGetBloodrageDamagePercent(const battle::Unit * unit) const;
+	/// Projectable side-local Relentless Assault state; hypothetical battles override this view.
+	virtual const RelentlessAssaultState & battleGetRelentlessAssaultState(BattleSide side) const;
+	/// Additive Expert Offense streak damage for an ordinary primary target.
+	int battleGetRelentlessAssaultDamagePercent(const battle::Unit * attacker,
+		const battle::Unit * primaryTarget) const;
 	/// True for an ordinary hostile melee blow delivered from behind the defender.
 	bool battleIsShroudFlankingAttack(const BattleAttackInfo & attack) const;
 	/// Expert Shroud flanks deny the defender's normal retaliation.

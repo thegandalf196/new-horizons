@@ -17,6 +17,7 @@
 #include "SylvanLuckState.h"
 #include "HeroActionAllowanceState.h"
 #include "AlternatingHeroActionState.h"
+#include "RelentlessAssaultState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class ObstacleChanges;
@@ -91,6 +92,12 @@ public:
 	{
 		(void)side;
 		static const AlternatingHeroActionState empty;
+		return empty;
+	}
+	virtual const RelentlessAssaultState & getRelentlessAssaultState(BattleSide side) const
+	{
+		(void)side;
+		static const RelentlessAssaultState empty;
 		return empty;
 	}
 	virtual HeroCommand getActiveDoctrine(BattleSide side) const { return HeroCommand::NONE; }
@@ -174,4 +181,6 @@ public:
 	/// The default keeps lightweight callback proxies and test doubles source
 	/// compatible; concrete battle state stores it.
 	virtual void setHeroOrderState(BattleSide, const std::optional<HeroOrderState> &) {}
+	virtual void setRelentlessAssaultState(BattleSide, const RelentlessAssaultState &) {}
+	virtual void recordRelentlessAssaultAttack(BattleSide, uint32_t) {}
 };

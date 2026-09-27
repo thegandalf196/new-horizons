@@ -13,6 +13,7 @@ namespace newHorizonsOffense
 inline constexpr const char * SKILL = "new-horizons:offense";
 inline constexpr const char * CLEAVE = "new-horizons:offense.cleave";
 inline constexpr const char * VENGEANCE = "new-horizons:offense.vengeance";
+inline constexpr const char * RELENTLESS_ASSAULT = "new-horizons:offense.relentlessAssault";
 inline constexpr int CLEAVE_DAMAGE_PERCENT = 50;
 
 inline Bonus vengeanceRetaliationBonus()

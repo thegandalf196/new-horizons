@@ -50,6 +50,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_CLEAVE)
 			&& info->hasCleaveState())
 			throw std::runtime_error("Cannot discard Cleave battle start state");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_RELENTLESS_ASSAULT)
+			&& info->hasRelentlessAssaultState())
+			throw std::runtime_error("Cannot discard Relentless Assault battle start state");
 		h & battleID;
 		h & info;
 		assert(battleID != BattleID::NONE);
@@ -336,6 +339,11 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 	/// Server-authored trigger marker.  The receiver validates the gated-stack
 	/// identity and qualifying lethal hit before arming its local token.
 	bool chainGateTriggered = false;
+	/// Snapshot carried when an eligible primary attack advances the hero-side
+	/// Relentless Assault chain. The ordinary activation boundary is replicated
+	/// by BattleSetActiveStack and deterministically advances both sides.
+	BattleSide relentlessAssaultSide = BattleSide::NONE;
+	std::optional<RelentlessAssaultState> relentlessAssaultState;
 
 	bool shot() const//distance attack - decrease number of shots
 	{
@@ -401,6 +409,24 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			h & chainGateTriggered;
 		else if(!h.saving)
 			chainGateTriggered = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RELENTLESS_ASSAULT))
+		{
+			if(h.saving && (relentlessAssaultState.has_value()
+				!= (relentlessAssaultSide == BattleSide::ATTACKER || relentlessAssaultSide == BattleSide::DEFENDER)))
+				throw std::runtime_error("Invalid Relentless Assault attack snapshot");
+			h & relentlessAssaultSide;
+			h & relentlessAssaultState;
+			if(!h.saving && (relentlessAssaultState.has_value()
+				!= (relentlessAssaultSide == BattleSide::ATTACKER || relentlessAssaultSide == BattleSide::DEFENDER)))
+				throw std::runtime_error("Invalid Relentless Assault attack snapshot");
+		}
+		else if(h.saving && (relentlessAssaultState || relentlessAssaultSide != BattleSide::NONE))
+			throw std::runtime_error("Cannot discard Relentless Assault attack state");
+		else if(!h.saving)
+		{
+			relentlessAssaultSide = BattleSide::NONE;
+			relentlessAssaultState.reset();
+		}
 		assert(battleID != BattleID::NONE);
 	}
 };

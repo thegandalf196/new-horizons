@@ -19,6 +19,7 @@
 #include "SylvanLuckState.h"
 #include "AlternatingHeroActionState.h"
 #include "HeroActionAllowanceState.h"
+#include "RelentlessAssaultState.h"
 #include "../callback/GameCallbackHolder.h"
 
 class CGHeroInstance;
@@ -138,6 +139,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	HeroActionAllowanceState heroActionAllowances;
 	// Master Gate grants one free Gate opening per side and combat.
 	bool masterGateUsed = false;
+	// Expert Offense's target streak is shared across all ordinary allied
+	// creature activations for this hero side.
+	RelentlessAssaultState relentlessAssault;
 
 	bool hasChainGateState() const
 	{
@@ -163,6 +167,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			throw std::runtime_error("Cannot discard Hero Action allowance battle state");
 		if(h.saving && masterGateUsed && !h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_GATE))
 			throw std::runtime_error("Cannot discard Master Gate battle state");
+		if(h.saving && relentlessAssault.hasState()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_RELENTLESS_ASSAULT))
+			throw std::runtime_error("Cannot discard Relentless Assault battle state");
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
 			h & sylvanLuck;
 		else if(!h.saving)
@@ -304,6 +311,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & heroActionAllowances;
 		else if(!h.saving)
 			heroActionAllowances = {};
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RELENTLESS_ASSAULT))
+			h & relentlessAssault;
+		else if(!h.saving)
+			relentlessAssault = {};
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_POINTS))
 		{
 			h & initialNormalSpellPoints;

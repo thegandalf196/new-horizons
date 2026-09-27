@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "battle/IBattleInfoCallback.h"
+#include "battle/RelentlessAssaultState.h"
 #include "bonuses/Bonus.h"
 #include "combatScripts/CombatEventPayload.h"
 
@@ -42,6 +43,17 @@ class BattleActionProcessor : boost::noncopyable
 		bool obstacleHit;
 		/// Unit was unable to move to destination, e.g. invalid request
 		bool invalidRequest;
+	};
+
+	/// Per-action snapshot shared by an attack's multistrikes. It is local to
+	/// the authoritative action; only the resulting side state is replicated.
+	struct RelentlessAssaultActionContext
+	{
+		bool eligible = false;
+		BattleSide side = BattleSide::NONE;
+		uint32_t primaryTargetUnitId = RelentlessAssaultState::INVALID_TARGET;
+		uint32_t lastRecordedTargetUnitId = RelentlessAssaultState::INVALID_TARGET;
+		int damagePercent = 0;
 	};
 
 	BattleProcessor * owner;
@@ -100,7 +112,8 @@ class BattleActionProcessor : boost::noncopyable
 
 	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest); //returned value - travelled distance
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender,
-		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr);
+		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr,
+		RelentlessAssaultActionContext * relentlessAssault = nullptr);
 	void setPursuitMovementRemaining(const CBattleInfoCallback & battle, const CStack * stack, int32_t remaining) const;
 	void setCleaveUsed(const CBattleInfoCallback & battle, const CStack * stack) const;
 
@@ -125,7 +138,8 @@ class BattleActionProcessor : boost::noncopyable
 	DamageEstimation applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat,
 		std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload,
 		const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
-		int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted) const;
+		int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
+		int relentlessAssaultDamagePercent) const;
 	void publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const;
 
 	void addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const;
