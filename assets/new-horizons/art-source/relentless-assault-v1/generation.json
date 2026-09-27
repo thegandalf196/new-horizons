@@ -1,0 +1,14 @@
+{
+  "created": "2026-09-27",
+  "tool": "built-in image generation",
+  "source_output": "built-in image generator result; ephemeral host path intentionally not retained",
+  "style_reference": null,
+  "style_reference_used": false,
+  "master": {
+    "file": "exports/relentless-assault/master.png",
+    "dimensions": [1254, 1254],
+    "sha256": "0d50caf2e39122cb5a8d2f7a908e4e10fb7d32687cf71f110110d16a143dfc38"
+  },
+  "prompt_file": "prompt-relentless-assault.txt",
+  "status": "provisional; not final user-approved artwork"
+}

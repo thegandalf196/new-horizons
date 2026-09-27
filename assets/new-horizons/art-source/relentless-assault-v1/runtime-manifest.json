@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_relentless_assault"
+  ],
+  "files": {
+    "source/NH_perk_relentless_assault_normal.png": "69815b62bdfd0addf6f5fa533604dbcdc7ac073e6153030bf824d30021f741a7",
+    "Mods/NH_perk_relentless_assault_normal.png": "69815b62bdfd0addf6f5fa533604dbcdc7ac073e6153030bf824d30021f741a7",
+    "source/NH_perk_relentless_assault_pressed.png": "3dca4b1a888ea71f796b0d303a203c5e412b2ebe4cc4d2af464fe00eb6b327b2",
+    "Mods/NH_perk_relentless_assault_pressed.png": "3dca4b1a888ea71f796b0d303a203c5e412b2ebe4cc4d2af464fe00eb6b327b2",
+    "source/NH_perk_relentless_assault_disabled.png": "12a2c462073fd7a7ed138b4c976c0412314ed1181ec4885923882c0a22f7344f",
+    "Mods/NH_perk_relentless_assault_disabled.png": "12a2c462073fd7a7ed138b4c976c0412314ed1181ec4885923882c0a22f7344f",
+    "source/NH_perk_relentless_assault_highlighted.png": "b37d1115e9865106922d04cd3018d11b7ed6d6c4453387f2cb236ce7dc7f6c0c",
+    "Mods/NH_perk_relentless_assault_highlighted.png": "b37d1115e9865106922d04cd3018d11b7ed6d6c4453387f2cb236ce7dc7f6c0c",
+    "source/NH_perk_relentless_assault.json": "3b8577f1b20cf10eb6ecca1f32ecbe17183280d1158a0ed64cb83893592962fd",
+    "Mods/NH_perk_relentless_assault.json": "3b8577f1b20cf10eb6ecca1f32ecbe17183280d1158a0ed64cb83893592962fd"
+  }
+}
