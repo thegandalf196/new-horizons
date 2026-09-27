@@ -14,6 +14,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/modding/CModHandler.h"
@@ -106,22 +107,25 @@ protected:
 	}
 };
 
-/// Isolate one canonical Order while still running the real evaluator and
-/// authoritative action path.  The ordinary rules remain canonical (all eight
-/// commands are present), but every non-selected command has a zero-valued
-/// effect so it cannot win the evaluator's contextual heuristic.
+/// Isolate canonical Orders while still running the real evaluator and
+/// authoritative action path. The ordinary rules remain canonical (all eight
+/// commands are present); tests either zero non-selected effects or explicitly
+/// configure the paired Charge/Brace competition.
 class CanonicalOrderAITest : public HeroCommandAITest
 {
 protected:
 	HeroCommand selectedCommand = HeroCommand::NONE;
 	bool selectEncirclement = false;
 	bool configureVengeancePerkData = false;
+	bool selectCountercharge = false;
+	bool configureCounterchargePerkData = false;
+	bool competeBraceAndCharge = false;
 	bool zeroRiposteEffects = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		if(configureVengeancePerkData)
+		if(configureVengeancePerkData || configureCounterchargePerkData)
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		if(selectedCommand == HeroCommand::NONE)
@@ -144,33 +148,46 @@ protected:
 			}
 		}
 
-		// Keep a modest positive coefficient for the selected Order.  Second Wind
-		// has a fixed direct-damage heuristic, but retaining a positive authored
-		// formula keeps this fixture valid for every canonical command uniformly.
-		auto & selectedEffects = rules["commands"][heroCommands::key(selectedCommand)]["effects"];
-		for(auto & [name, formula] : selectedEffects.Struct())
+		if(competeBraceAndCharge)
 		{
-			(void)name;
-			formula["base"].Integer() = 50;
+			// A real utility contest: without Countercharge, Brace is worth 50%
+			// against the expected advancing stack while Charge is worth 60%.
+			// Countercharge should raise only Brace to 75%, changing the winner.
+			rules["commands"][heroCommands::key(HeroCommand::CHARGE)]["effects"]
+				["meleeDamagePercent"]["base"].Integer() = 60;
+			rules["commands"][heroCommands::key(HeroCommand::BRACE)]["effects"]
+				["preemptiveDamagePercent"]["base"].Integer() = 50;
 		}
-		if(selectedCommand == HeroCommand::RIPOSTE && zeroRiposteEffects)
+		else
 		{
+			// Keep a modest positive coefficient for the selected Order.  Second
+			// Wind has a fixed direct-damage heuristic, but retaining a positive
+			// authored formula keeps this fixture valid for every canonical command.
+			auto & selectedEffects = rules["commands"][heroCommands::key(selectedCommand)]["effects"];
 			for(auto & [name, formula] : selectedEffects.Struct())
 			{
 				(void)name;
-				formula["base"].Integer() = 0;
-				formula["attack"].Float() = 0;
-				formula["defense"].Float() = 0;
+				formula["base"].Integer() = 50;
 			}
-		}
-		if(selectedCommand == HeroCommand::FLANK)
-		{
-			// Keep the canonical non-perk coefficient so the AI test exercises
-			// Encirclement's shared resolver for the 4% -> 7% change.
-			selectedEffects["additionalSidePercent"]["base"].Integer() = 4;
-			if(selectEncirclement)
-				loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-					JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+			if(selectedCommand == HeroCommand::RIPOSTE && zeroRiposteEffects)
+			{
+				for(auto & [name, formula] : selectedEffects.Struct())
+				{
+					(void)name;
+					formula["base"].Integer() = 0;
+					formula["attack"].Float() = 0;
+					formula["defense"].Float() = 0;
+				}
+			}
+			if(selectedCommand == HeroCommand::FLANK)
+			{
+				// Keep the canonical non-perk coefficient so the AI test exercises
+				// Encirclement's shared resolver for the 4% -> 7% change.
+				selectedEffects["additionalSidePercent"]["base"].Integer() = 4;
+				if(selectEncirclement)
+					loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+						JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+			}
 		}
 		heroCommands::validateRules(rules);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
@@ -178,13 +195,24 @@ protected:
 
 	void configureHeroBeforeBattle() override
 	{
-		if(!selectEncirclement)
-			return;
-		const auto offense = SecondarySkill::decode("new-horizons:offense");
-		ASSERT_GE(offense, 0);
-		attackerSideHero->setSecSkillLevel(SecondarySkill(offense), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->applyPerkSelection({"new-horizons:offense", "new-horizons:offense.encirclement"});
-		ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:offense", "new-horizons:offense.encirclement"));
+		if(selectEncirclement)
+		{
+			const auto offense = SecondarySkill::decode("new-horizons:offense");
+			ASSERT_GE(offense, 0);
+			attackerSideHero->setSecSkillLevel(SecondarySkill(offense), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({"new-horizons:offense", "new-horizons:offense.encirclement"});
+			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:offense", "new-horizons:offense.encirclement"));
+		}
+		if(selectCountercharge)
+		{
+			const auto armorer = SecondarySkill::decode("new-horizons:armorer");
+			ASSERT_GE(armorer, 0);
+			attackerSideHero->setSecSkillLevel(SecondarySkill(armorer), MasteryLevel::BASIC,
+				ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({"new-horizons:armorer", "new-horizons:armorer.countercharge"});
+			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:armorer",
+				"new-horizons:armorer.countercharge"));
+		}
 	}
 
 	void prepareOrder(HeroCommand command)
@@ -203,6 +231,18 @@ protected:
 		const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 		ASSERT_TRUE(state);
 		EXPECT_EQ(state->command, command);
+	}
+
+	void keepOnlyCompetingStacks()
+	{
+		BattleUnitsChanged removed;
+		removed.battleID = BattleID(0);
+		for(const auto * stack : battle()->battleGetAllStacks(false))
+			if(stack != active && stack != enemy)
+				removed.changedStacks.emplace_back(stack->unitId(), UnitChanges::EOperation::REMOVE);
+		if(!removed.changedStacks.empty())
+			gameHandler->sendAndApply(removed);
+		ASSERT_EQ(battle()->battleGetAllStacks(false).size(), 2u);
 	}
 };
 
@@ -347,6 +387,56 @@ TEST_F(CanonicalOrderAITest, EvaluatorChoosesBraceAndAuthoritativeTriggerIsLegal
 	assertChosenOrder(HeroCommand::BRACE);
 	EXPECT_TRUE(battle()->battleCanTriggerHeroOrderBrace(enemy, active, 3, false, false));
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::BRACE);
+}
+
+TEST_F(CanonicalOrderAITest, CounterchargeBraceHeuristicAndDamageForecastShareTheSameMultiplier)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	selectedCommand = HeroCommand::BRACE;
+	configureCounterchargePerkData = true;
+	selectCountercharge = true;
+	prepareEvaluation(false);
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
+	const auto normal = battle()->battleEstimateDamage(BattleAttackInfo(active, enemy, 0, false));
+
+	assertChosenOrder(HeroCommand::BRACE);
+	EXPECT_TRUE(battle()->battleCanTriggerHeroOrderBrace(enemy, active, 3, false, false));
+	BattleAttackInfo preemptive(active, enemy, 0, false);
+	preemptive.bracePreemptive = true;
+	const auto resolved = battle()->battleEstimateDamage(preemptive);
+	EXPECT_EQ(resolved.damage.min, normal.damage.min * 75 / 100);
+	EXPECT_EQ(resolved.damage.max, normal.damage.max * 75 / 100)
+		<< "AI valuation and saved Brace order damage resolution both use the shared 75% result";
+}
+
+TEST_F(CanonicalOrderAITest, ChargeBeatsUnmodifiedBraceInRealOrderCompetition)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	selectedCommand = HeroCommand::BRACE;
+	configureCounterchargePerkData = true;
+	competeBraceAndCharge = true;
+	prepareEvaluation(false);
+	keepOnlyCompetingStacks();
+	ASSERT_FALSE(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
+
+	assertChosenOrder(HeroCommand::CHARGE);
+}
+
+TEST_F(CanonicalOrderAITest, CounterchargeMakesBraceBeatHigherValuedCharge)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	selectedCommand = HeroCommand::BRACE;
+	configureCounterchargePerkData = true;
+	selectCountercharge = true;
+	competeBraceAndCharge = true;
+	prepareEvaluation(false);
+	keepOnlyCompetingStacks();
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
+
+	assertChosenOrder(HeroCommand::BRACE);
 }
 
 TEST_F(CanonicalOrderAITest, EvaluatorChoosesProtectWithAnAuthoritativePair)

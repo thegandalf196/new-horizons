@@ -46,4 +46,18 @@ int archeryDamagePercent(int value)
 {
 	return std::clamp(value, 0, 3) * 10;
 }
+
+int bracePreemptivePercent(int basePercent, bool hasCountercharge)
+{
+	if(!hasCountercharge || basePercent <= 0)
+		return basePercent;
+	return std::min(basePercent, 75) + 25;
+}
+
+int bracePreemptivePercent(int basePercent, const CGHeroInstance * hero)
+{
+	const bool hasCountercharge = hero && hero->hasActivePerk(
+		std::string(ARMORER_SKILL_ID), std::string(COUNTERCHARGE_PERK_ID));
+	return bracePreemptivePercent(basePercent, hasCountercharge);
+}
 }

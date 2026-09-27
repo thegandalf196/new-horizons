@@ -2024,7 +2024,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				break;
 			case HeroCommand::BRACE:
 				if(eligibleOrderUnit(info.attacker) && info.bracePreemptive && !info.shooting)
-					payload.heroOrderFinalDamageMultiplier = coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"], attack, &*attackerState);
+					payload.heroOrderFinalDamageMultiplier = newHorizonsCombatSkills::bracePreemptivePercent(
+						coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"], attack, &*attackerState), attack);
 				break;
 			case HeroCommand::FLANK:
 				if(eligibleOrderUnit(info.attacker) && !info.shooting

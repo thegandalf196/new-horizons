@@ -31,6 +31,7 @@
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 
@@ -557,7 +558,8 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 					// Brace is a pre-emptive blow by the defending friendly stack,
 					// not a multiplier on the advancing enemy's own attack.
 					advancingDamage = std::max(advancingDamage, meleeDamage(own, enemy));
-		return advancingDamage * braceDamage / 100.0f;
+		const auto resolvedBraceDamage = newHorizonsCombatSkills::bracePreemptivePercent(braceDamage, hero);
+		return advancingDamage * resolvedBraceDamage / 100.0f;
 	}
 
 	if(command == protectCommand() && targetIds.size() == 2)

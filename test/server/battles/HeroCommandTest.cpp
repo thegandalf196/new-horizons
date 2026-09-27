@@ -13,10 +13,12 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/SideInBattle.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
+#include "../../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../../lib/battle/Unit.h"
 #include "../../../lib/bonuses/Bonus.h"
 // Full game-state roundtrips instantiate serializers for the complete object graph.
 #include "../../../lib/CPlayerState.h"
+#include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/bonuses/Limiters.h"
 #include "../../../lib/bonuses/Propagators.h"
@@ -65,6 +67,61 @@ protected:
 				"new-horizons:offense", "new-horizons:offense.shockAssault"});
 		ASSERT_EQ(attackerSideHero->hasActivePerk(
 			"new-horizons:offense", "new-horizons:offense.shockAssault"), selectPerk);
+	}
+};
+
+class CounterchargeTest : public HeroCommandFixture
+{
+protected:
+	bool enableWarcasting = false;
+
+	void SetUp() override
+	{
+		HeroCommandFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons content module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		if(enableWarcasting)
+		{
+			auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+			magicRules["warcasting"] = JsonNode(true);
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+		}
+	}
+
+	void prepareCountercharge(bool selectPerk, bool prepareWarcasting = false)
+	{
+		enableWarcasting = prepareWarcasting;
+		if(prepareWarcasting)
+		{
+			startGame();
+			const int warcasting = SecondarySkill::decode("new-horizons:warcasting");
+			ASSERT_GE(warcasting, 0);
+			attackerSideHero->setSecSkillLevel(SecondarySkill(warcasting), MasteryLevel::BASIC,
+				ChangeValueMode::ABSOLUTE);
+			attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
+			setTestSpellPointTotal(attackerSideHero, 1000);
+			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+			attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
+			startBattle();
+			beginCombat();
+		}
+		else
+			prepareCommands();
+		const int decoded = SecondarySkill::decode("new-horizons:armorer");
+		ASSERT_GE(decoded, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC,
+			ChangeValueMode::ABSOLUTE);
+		if(selectPerk)
+			attackerSideHero->applyPerkSelection({"new-horizons:armorer", "new-horizons:armorer.countercharge"});
+		EXPECT_EQ(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"),
+			selectPerk);
 	}
 };
 
@@ -579,6 +636,171 @@ TEST_F(HeroCommandTest, BracePreemptiveStrikeUsesItsOwnDamageFormula)
 	EXPECT_TRUE(battle()->battleCanTriggerHeroOrderBrace(defender, attacker, 3, false, false));
 	EXPECT_TRUE(battle()->battleCanTriggerHeroOrderBrace(defender, attacker, 3, false, false));
 	EXPECT_FALSE(battle()->battleCanTriggerHeroOrderBrace(defender, attacker, 2, false, false));
+}
+
+TEST_F(CounterchargeTest, CounterchargeAddsTwentyFivePointsOnlyToBracePreemptiveHit)
+{
+	prepareCountercharge(true);
+	auto * braced = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 100);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(71), 100);
+	const BattleAttackInfo ordinary(braced, target, 0, false);
+	const auto normal = battle()->calculateDmgRange(ordinary);
+
+	ASSERT_TRUE(issue(HeroCommand::BRACE));
+	const auto orderState = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(orderState);
+	EXPECT_EQ(orderState->command, HeroCommand::BRACE);
+
+	BattleAttackInfo braceStrike(braced, target, 0, false);
+	braceStrike.bracePreemptive = true;
+	const auto forecast = battle()->calculateDmgRange(braceStrike);
+	EXPECT_EQ(forecast.damage.min, normal.damage.min * 75 / 100);
+	EXPECT_EQ(forecast.damage.max, normal.damage.max * 75 / 100);
+
+	const auto normalAfterOrder = battle()->calculateDmgRange(ordinary);
+	EXPECT_EQ(normalAfterOrder.damage.min, normal.damage.min);
+	EXPECT_EQ(normalAfterOrder.damage.max, normal.damage.max)
+		<< "A normal attack does not inherit Brace's Countercharge modifier";
+}
+
+TEST_F(CounterchargeTest, AuthoritativeBraceTriggerUsesCounterchargeDamage)
+{
+	prepareCountercharge(true);
+	auto * braced = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(93), 100);
+	auto * mover = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(89), 100);
+	forceMaximumDamage(braced);
+	blockRetaliation(braced);
+	blockRetaliation(mover);
+	const auto normalDamage = battle()->calculateDmgRange(BattleAttackInfo(braced, mover, 0, false)).damage.max;
+	ASSERT_TRUE(issue(HeroCommand::BRACE));
+	server.attacks.clear();
+
+	battle()->activeStack = mover->unitId();
+	const auto action = BattleAction::makeMeleeAttack(mover, braced, BattleHex(92), false);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), action));
+	const auto braceAttack = std::ranges::find_if(server.attacks, [braced](const BattleAttack & value)
+	{
+		return value.stackAttacking == braced->unitId();
+	});
+	ASSERT_NE(braceAttack, server.attacks.end());
+	const auto hit = std::ranges::find(braceAttack->bsa, mover->unitId(), &BattleStackAttacked::stackAttacked);
+	ASSERT_NE(hit, braceAttack->bsa.end());
+	EXPECT_EQ(hit->damageAmount, normalDamage * 75 / 100)
+		<< "The server's actual pre-emptive attack uses the same capped Countercharge percentage";
+}
+
+TEST_F(CounterchargeTest, UnselectedCounterchargeDoesNotEmpowerBrace)
+{
+	prepareCountercharge(false);
+	auto * braced = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 100);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(71), 100);
+	const auto normal = battle()->calculateDmgRange(BattleAttackInfo(braced, target, 0, false));
+	ASSERT_TRUE(issue(HeroCommand::BRACE));
+	BattleAttackInfo braceStrike(braced, target, 0, false);
+	braceStrike.bracePreemptive = true;
+	EXPECT_EQ(battle()->calculateDmgRange(braceStrike).damage.min, normal.damage.min / 2)
+		<< "Basic Armorer without the selected Countercharge perk keeps ordinary Brace damage";
+}
+
+TEST_F(CounterchargeTest, CounterchargeDoesNotBuffBulwarkOrOrdinaryRetaliations)
+{
+	prepareCountercharge(true);
+	auto * braced = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 100);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(71), 100);
+	const auto normal = battle()->calculateDmgRange(BattleAttackInfo(braced, target, 0, false));
+	ASSERT_TRUE(issue(HeroCommand::BRACE));
+
+	BattleAttackInfo bulwarkPreemptive(braced, target, 0, false);
+	bulwarkPreemptive.preemptiveDamagePercent = 50;
+	EXPECT_EQ(battle()->calculateDmgRange(bulwarkPreemptive).damage.min, normal.damage.min / 2)
+		<< "The separate Bulwark pre-emptive multiplier is not a Brace pre-emptive hit";
+
+	BattleAttackInfo retaliation(braced, target, 0, false);
+	retaliation.retaliation = true;
+	EXPECT_EQ(battle()->calculateDmgRange(retaliation).damage.min, normal.damage.min)
+		<< "Ordinary retaliation is not amplified by Countercharge";
+}
+
+TEST_F(CounterchargeTest, PerkSelectionSurvivesGameSaveAndLoad)
+{
+	startGame();
+	const int decoded = SecondarySkill::decode("new-horizons:armorer");
+	ASSERT_GE(decoded, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:armorer", "new-horizons:armorer.countercharge"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
+
+	auto restored = std::make_shared<CGameState>();
+	restored->preInit(LIBRARY);
+	restored->loadFromMemory(gameState()->saveToMemory());
+	const auto * restoredHero = restored->getHero(attackerSideHero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_TRUE(restoredHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
+	EXPECT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(50, restoredHero), 75)
+		<< "A restored Countercharge hero keeps the same shared Brace resolver result";
+}
+
+TEST_F(CounterchargeTest, BraceWarcastingSnapshotSurvivesBattleDeepCopyWithCounterchargeDamage)
+{
+	prepareCountercharge(true, true);
+	attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 20, ChangeValueMode::ABSOLUTE);
+	auto * braced = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 100);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(71), 100);
+	const auto ordinary = battle()->calculateDmgRange(BattleAttackInfo(braced, target, 0, false));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = braced->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	BattleAction spell;
+	spell.actionType = EActionType::HERO_SPELL;
+	spell.side = BattleSide::ATTACKER;
+	spell.spell = SpellID::HASTE;
+	spell.aimToUnit(braced);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spell));
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).empowermentPercent, 10);
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::BRACE));
+
+	auto order = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(order);
+	ASSERT_EQ(order->command, HeroCommand::BRACE);
+	ASSERT_EQ(order->warcastingBonusPercent, 10);
+	const auto coefficient = heroCommands::coefficient(
+		battle()->getHeroCommandRules()["commands"]["brace"]["effects"]["preemptiveDamagePercent"],
+		*attackerSideHero, order->warcastingBonusPercent);
+	ASSERT_EQ(coefficient, 56);
+	const auto expectedPercent = newHorizonsCombatSkills::bracePreemptivePercent(coefficient, attackerSideHero);
+	ASSERT_EQ(expectedPercent, 81);
+	BattleAttackInfo braceStrike(braced, target, 0, false);
+	braceStrike.bracePreemptive = true;
+	const auto liveDamage = battle()->calculateDmgRange(braceStrike);
+	EXPECT_EQ(liveDamage.damage.min, ordinary.damage.min * expectedPercent / 100);
+	EXPECT_EQ(liveDamage.damage.max, ordinary.damage.max * expectedPercent / 100);
+
+	const auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(restored, nullptr);
+	const auto restoredOrder = restored->getHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(restoredOrder);
+	EXPECT_EQ(*restoredOrder, *order);
+	EXPECT_EQ(restoredOrder->warcastingBonusPercent, 10);
+	const auto * restoredBraced = restored->getStack(braced->unitId(), false);
+	const auto * restoredTarget = restored->getStack(target->unitId(), false);
+	ASSERT_NE(restoredBraced, nullptr);
+	ASSERT_NE(restoredTarget, nullptr);
+	EXPECT_EQ(restoredBraced->unitId(), braced->unitId());
+	EXPECT_EQ(restoredTarget->unitId(), target->unitId());
+	const auto * restoredHero = restored->battleGetFightingHero(BattleSide::ATTACKER);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_TRUE(restoredHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
+
+	BattleAttackInfo restoredBraceStrike(restoredBraced, restoredTarget, 0, false);
+	restoredBraceStrike.bracePreemptive = true;
+	const auto restoredDamage = restored->calculateDmgRange(restoredBraceStrike);
+	EXPECT_EQ(restoredDamage.damage.min, liveDamage.damage.min);
+	EXPECT_EQ(restoredDamage.damage.max, liveDamage.damage.max)
+		<< "The restored active Order snapshot and selected Countercharge hero reproduce the same Brace forecast";
 }
 
 TEST_F(HeroCommandTest, BraceTriggerLogsResolvedDamageAndCasualties)

@@ -195,7 +195,7 @@
 					"requires": "basic",
 					"description": "The pre-emptive attack granted by Brace! deals an additional +25 percentage points of normal damage, up to 100%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The pre-emptive attack granted by Brace! deals an additional +25 percentage points of normal damage, up to 100%."
 					}
 				},

@@ -44,6 +44,18 @@ TEST(NewHorizonsCombatSkillsRulesTest, RankTablesMatchCanonicalPercentages)
 	EXPECT_EQ(newHorizonsCombatSkills::archeryDamagePercent(3), 30);
 }
 
+TEST(NewHorizonsCombatSkillsRulesTest, CounterchargeAddsTwentyFivePointsAndCapsAtOneHundred)
+{
+	EXPECT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(50, false), 50);
+	EXPECT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(50, true), 75);
+	EXPECT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(75, true), 100);
+	EXPECT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(100, true), 100);
+	EXPECT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(110, false), 110)
+		<< "Without Countercharge preserve the authored Brace formula unchanged";
+	EXPECT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(0, true), 0)
+		<< "Countercharge does not create a strike when Brace's authored coefficient is zero";
+}
+
 TEST_F(NewHorizonsCombatSkillsTest, ExpertArmorerReducesOnlyPhysicalCreatureDamage)
 {
 	startGame();
