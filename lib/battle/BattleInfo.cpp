@@ -1020,7 +1020,10 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 			&& orderState->primaryTargetUnitId == unitId;
 	}
 	if(newActivation)
+	{
 		st->pursuitMovementRemaining = 0;
+		st->cleaveUsedThisActivation = false;
+	}
 	if(newActivation && activationSerial < std::numeric_limits<si32>::max())
 		++activationSerial;
 
@@ -1039,6 +1042,14 @@ bool BattleInfo::hasPursuitState() const
 	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
 	{
 		return stack && stack->pursuitMovementRemaining > 0;
+	});
+}
+
+bool BattleInfo::hasCleaveState() const
+{
+	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
+	{
+		return stack && stack->cleaveUsedThisActivation;
 	});
 }
 

@@ -1021,7 +1021,10 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 			&& orderState->primaryTargetUnitId == unitId;
 	}
 	if(newActivation)
+	{
 		unit->pursuitMovementRemaining = 0;
+		unit->cleaveUsedThisActivation = false;
+	}
 
 	if(!unit->isTimeStopped() && reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
 		unit->removeUnitBonus(Bonus::UntilGetsTurn);

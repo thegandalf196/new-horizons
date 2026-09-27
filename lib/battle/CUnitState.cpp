@@ -388,6 +388,7 @@ CUnitState::CUnitState():
 	ghostPending(false),
 	movedThisRound(false),
 	pursuitMovementRemaining(0),
+	cleaveUsedThisActivation(false),
 	timeStopTurnConsumedFlag(false),
 	summoned(false),
 	natureSummoned(false),
@@ -428,6 +429,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	ghostPending = other.ghostPending;
 	movedThisRound = other.movedThisRound;
 	pursuitMovementRemaining = other.pursuitMovementRemaining;
+	cleaveUsedThisActivation = other.cleaveUsedThisActivation;
 	timeStopTurnConsumedFlag = other.timeStopTurnConsumedFlag;
 	summoned = other.summoned;
 	natureSummoned = other.natureSummoned;
@@ -949,6 +951,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("pursuitMovementRemaining", pursuitMovementRemaining, 0);
 	if(pursuitMovementRemaining < 0)
 		throw std::runtime_error("Invalid negative Pursuit movement allowance");
+	handler.serializeBool("cleaveUsedThisActivation", cleaveUsedThisActivation);
 	handler.serializeBool("timeStopTurnConsumed", timeStopTurnConsumedFlag);
 	handler.serializeBool("summoned", summoned);
 	handler.serializeBool("natureSummoned", natureSummoned);
@@ -1153,6 +1156,7 @@ void CUnitState::afterNewRound(bool isFirstRound)
 	timeStopTurnConsumedFlag = false;
 	movedThisRound = false;
 	pursuitMovementRemaining = 0;
+	cleaveUsedThisActivation = false;
 	hadMorale = false;
 	castSpellThisTurn = false;
 	fear = false;
@@ -1183,6 +1187,7 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 void CUnitState::makeGhost()
 {
 	pursuitMovementRemaining = 0;
+	cleaveUsedThisActivation = false;
 	phantomIntegrity = 0;
 	phantomRoundsRemaining = 0;
 	health.reset();

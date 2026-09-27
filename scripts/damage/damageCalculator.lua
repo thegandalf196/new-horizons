@@ -576,6 +576,7 @@ function Script:calculate(battle, info)
 	-- Offense/Archery factor. This keeps Brace and Second Wind penalties from
 	-- being cancelled by ordinary attack bonuses.
 	local heroOrderMultiplier = math.max(0, (info.heroOrderFinalDamageMultiplier or 100) / 100)
+	local cleaveMultiplier = math.max(0, (info.cleaveFinalDamageMultiplier or 100) / 100)
 	local phantomDamageMultiplier = self:getPhantomDamageMultiplier(info)
 	local physicalDamageReductionMultiplier = usesPhysicalDamageReductionStage
 		and getPhysicalDamageReductionFactor(info) or 1.0
@@ -609,7 +610,7 @@ function Script:calculate(battle, info)
 	end
 
 	local damageFactor = raising * lowering * physicalDamageReductionMultiplier
-		* heroOrderMultiplier * phantomDamageMultiplier
+		* heroOrderMultiplier * cleaveMultiplier * phantomDamageMultiplier
 	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1
 	local damageMin = apply(baseMin, damageFactor, stabilizePdrRounding)
 	local damageMax = apply(baseMax, damageFactor, stabilizePdrRounding)
@@ -621,7 +622,7 @@ function Script:calculate(battle, info)
 		kills = { min = killsMin, max = killsMax },
 		-- what the blow would have been worth had the target no defences at all, which is what an
 		-- ability reflecting a strike works from
-		damageBeforeDefense = { min = apply(baseMin, raising * heroOrderMultiplier), max = apply(baseMax, raising * heroOrderMultiplier) }
+		damageBeforeDefense = { min = apply(baseMin, raising * heroOrderMultiplier * cleaveMultiplier), max = apply(baseMax, raising * heroOrderMultiplier * cleaveMultiplier) }
 	}
 end
 

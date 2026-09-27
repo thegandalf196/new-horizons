@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleActionProcessor.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 
 #include "BattleProcessor.h"
@@ -966,6 +967,20 @@ void BattleActionProcessor::setPursuitMovementRemaining(const CBattleInfoCallbac
 		return;
 	auto state = stack->acquireState();
 	state->pursuitMovementRemaining = std::max(0, remaining);
+	BattleUnitsChanged changed;
+	changed.battleID = battle.getBattle()->getBattleID();
+	UnitChanges update(stack->unitId(), UnitChanges::EOperation::UPDATE);
+	update.data = state->save();
+	changed.changedStacks.push_back(std::move(update));
+	gameHandler->sendAndApply(changed);
+}
+
+void BattleActionProcessor::setCleaveUsed(const CBattleInfoCallback & battle, const CStack * stack) const
+{
+	if(!stack)
+		return;
+	auto state = stack->acquireState();
+	state->cleaveUsedThisActivation = true;
 	BattleUnitsChanged changed;
 	changed.battleID = battle.getBattle()->getBattleID();
 	UnitChanges update(stack->unitId(), UnitChanges::EOperation::UPDATE);
@@ -2230,7 +2245,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		bat.flags |= BattleAttack::COUNTER;
 
 	// the same units feed the notification below and the damage further down
-	const battle::Units secondaryTargets = collectSecondaryTargets(battle, attacker, defender, attack, bat);
+	const battle::Units secondaryTargets = attack.cleaveFollowup
+		? battle::Units{} : collectSecondaryTargets(battle, attacker, defender, attack, bat);
 
 	CombatEventPayload payload;
 	payload.ranged = attack.ranged;
@@ -2258,7 +2274,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	if(defender && defender->alive())
 	{
 		const auto estimation = applyBattleEffects(battle, bat, attackerState, payload, defender,
-			attack.distance, false, attack.brace, attack.preemptiveDamagePercent, protectIntercepted);
+			attack.distance, false, attack.brace, attack.preemptiveDamagePercent,
+			attack.cleaveDamagePercent, protectIntercepted);
 		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
 			resolvedOrderCauses.push_back({defender->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
 		if(!attack.ranged && !attack.counter)
@@ -2287,7 +2304,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			continue;
 
 		const auto estimation = applyBattleEffects(battle, bat, attackerState, payload, unit,
-			attack.distance, true, attack.brace, attack.preemptiveDamagePercent, false);
+			attack.distance, true, attack.brace, attack.preemptiveDamagePercent,
+			attack.cleaveDamagePercent, false);
 		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
 			resolvedOrderCauses.push_back({unit->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
 		if(!unit->isTimeStopped())
@@ -2477,13 +2495,65 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// sent before the triggers below so that anything they log lands after the attack description
 	gameHandler->sendAndApply(blm);
 
-	if(defender)
+	if(defender && !attack.cleaveFollowup)
 		handleAfterAttackCasting(battle, attacker, defender, payload);
 
 	// priority alone decides what runs first, which is how life drain heals before a fire shield can
 	// burn the attacker down and how a death stare only lands after it. Not gated on anyone being
 	// alive: a reflecting ability answers a lethal blow while dying, so each reaction decides for itself
 	runEventTriggers(battle, reactions, payload);
+
+	if(!attack.cleaveFollowup && !attack.ranged && !attack.counter && !attack.brace
+		&& attack.preemptiveDamagePercent <= 0 && !bat.spellLike())
+	{
+		std::vector<const battle::Unit *> destroyedEnemies;
+		for(const auto & hit : bat.bsa)
+		{
+			const auto * destroyed = battle.battleGetUnitByID(hit.stackAttacked);
+			if(destroyed && hit.killed() && !hit.willRebirth() && battle.battleMatchOwner(attacker, destroyed))
+				destroyedEnemies.push_back(destroyed);
+		}
+		const auto lowestOccupiedHex = [](const battle::Unit * unit)
+		{
+			int result = GameConstants::BFIELD_SIZE;
+			for(const auto hex : unit->getHexes())
+				result = std::min(result, hex.toInt());
+			return result;
+		};
+		std::sort(destroyedEnemies.begin(), destroyedEnemies.end(), [&](const battle::Unit * left,
+			const battle::Unit * right)
+		{
+			const int leftHex = lowestOccupiedHex(left);
+			const int rightHex = lowestOccupiedHex(right);
+			return leftHex != rightHex ? leftHex < rightHex : left->unitId() < right->unitId();
+		});
+		const auto * resolvedAttacker = battle.battleGetStackByID(attacker->unitId(), false);
+		if(resolvedAttacker && battle.battleCanTriggerCleave(resolvedAttacker))
+		{
+			for(const auto * destroyed : destroyedEnemies)
+			{
+				const auto * selected = battle.battleSelectCleaveTarget(resolvedAttacker, destroyed);
+				const auto * cleaveTarget = dynamic_cast<const CStack *>(selected);
+				if(!cleaveTarget)
+					continue;
+
+				setCleaveUsed(battle, resolvedAttacker);
+				BattleLogMessage cleaveLog;
+				cleaveLog.battleID = battle.getBattle()->getBattleID();
+				MetaString line;
+				line.appendRawString("Cleave: %s automatically strike %s for 50% normal damage.");
+				resolvedAttacker->addNameReplacement(line, resolvedAttacker->getCount());
+				cleaveTarget->addNameReplacement(line, cleaveTarget->getCount());
+				cleaveLog.lines.push_back(std::move(line));
+				gameHandler->sendAndApply(cleaveLog);
+
+				makeAttack(battle, resolvedAttacker, cleaveTarget,
+					{.targetHex = cleaveTarget->getPosition(), .cleaveFollowup = true,
+						.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT});
+				break;
+			}
+		}
+	}
 }
 
 void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender)
@@ -2610,7 +2680,10 @@ void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback &
 		attackCasting(battle, payload.ranged, BonusType::SPELL_AFTER_ATTACK, attacker, defender);
 }
 
-DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, bool protectIntercepted) const
+DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat,
+	std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload,
+	const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
+	int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted) const
 {
 	BattleStackAttacked bsa;
 	if(secondary)
@@ -2627,6 +2700,7 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	bai.retaliation = bat.counter() && !bracePreemptive;
 	bai.bracePreemptive = bracePreemptive;
 	bai.preemptiveDamagePercent = preemptiveDamagePercent;
+	bai.cleaveDamagePercent = cleaveDamagePercent;
 	bai.protectIntercepted = protectIntercepted;
 	bai.physicalDamage = !bat.spellLike();
 	bai.deathBlow = bat.deathBlow();

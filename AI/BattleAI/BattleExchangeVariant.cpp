@@ -12,6 +12,7 @@
 #include "BattleEvaluator.h"
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 
 #include <tbb/parallel_for.h>
@@ -107,6 +108,9 @@ float BattleExchangeVariant::trackAttack(
 
 			BattleAttackInfo projectedAttack(projectedAttacker.get(), projectedDefender.get(), 0, strike.shooting);
 			projectedAttack.retaliation = strike.retaliation;
+			projectedAttack.cleaveDamagePercent = strike.cleaveDamagePercent;
+			if(strike.cleaveDamagePercent > 0)
+				projectedAttacker->cleaveUsedThisActivation = true;
 			if(strike.perfectMoment && !strike.retaliation)
 			{
 				const auto side = hb->playerToSide(hb->battleGetOwner(projectedAttacker.get()));
@@ -156,6 +160,7 @@ float BattleExchangeVariant::trackAttack(
 		static_cast<battle::CAmmo &>(unitToUpdate->shots) = affectedUnit->shots;
 		static_cast<battle::CAmmo &>(unitToUpdate->counterAttacks) = affectedUnit->counterAttacks;
 		unitToUpdate->battlecraftWaitBonusUsed = affectedUnit->battlecraftWaitBonusUsed;
+		unitToUpdate->cleaveUsedThisActivation = affectedUnit->cleaveUsedThisActivation;
 
 		if(unitToUpdate->unitSide() == attacker->unitSide())
 		{
@@ -242,6 +247,13 @@ float BattleExchangeVariant::trackAttack(
 	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
 	float defenderDamageReduce = AttackPossibility::calculateDamageReduce(attacker.get(), defender.get(), attackDamage, damageCache, hb);
 	float attackerDamageReduce = 0;
+	const bool defenderWasAlive = defender->alive();
+	const int64_t defenderHealthBeforeAttack = defender->getAvailableHealth();
+	const bool defenderMayRebirth = !defender->isClone()
+		&& defender->valOfBonuses(BonusType::REBIRTH) > 0
+		&& defender->canCast() && defender->getPhantomInitialIntegrity() == 0;
+	auto projectedAttacker = evaluateOnly ? attacker->acquireState()
+		: std::static_pointer_cast<battle::CUnitState>(attacker);
 
 	if(!evaluateOnly)
 	{
@@ -264,13 +276,58 @@ float BattleExchangeVariant::trackAttack(
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
 		const int64_t actualDamage = std::min<int64_t>(attackDamage, defender->getAvailableHealth());
-		const bool defenderWasAlive = defender->alive();
 		defender->damage(attackDamage);
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
 		hb->projectRangedMarkStrike(projectedAttack, {{defender->unitId(), actualDamage}});
-		attacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
+	}
+	projectedAttacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
+
+	const bool projectedEnemyKill = defenderWasAlive && !defenderMayRebirth
+		&& (evaluateOnly
+			? attackDamage > 0 && (defender->isClone() || attackDamage >= defenderHealthBeforeAttack)
+			: !defender->alive());
+	if(!shooting && projectedEnemyKill && hb->battleMatchOwner(attacker.get(), defender.get())
+		&& hb->battleCanTriggerCleave(projectedAttacker.get()))
+	{
+		if(const auto * selected = hb->battleSelectCleaveTarget(projectedAttacker.get(), defender.get()))
+		{
+			auto target = evaluateOnly
+				? std::shared_ptr<StackWithBonuses>{}
+				: hb->getForUpdate(selected->unitId());
+			const battle::Unit * targetUnit = target ? target.get() : selected;
+			BattleAttackInfo cleaveAttack(projectedAttacker.get(), targetUnit, 0, false);
+			cleaveAttack.attackerPos = projectedAttacker->getPosition();
+			cleaveAttack.defenderPos = targetUnit->getPosition();
+			cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
+			projectedAttacker->cleaveUsedThisActivation = true;
+
+			int64_t cleaveDamage = hb->battleExpectedLuckDamage(cleaveAttack);
+			vstd::amin(cleaveDamage, targetUnit->getAvailableHealth());
+			const float cleaveDamageReduce = AttackPossibility::calculateDamageReduce(
+				projectedAttacker.get(), targetUnit, cleaveDamage, damageCache, hb);
+			defenderDamageReduce += cleaveDamageReduce;
+
+			if(!evaluateOnly)
+			{
+				if(isOurAttack)
+				{
+					dpsScore.enemyDamageReduce += cleaveDamageReduce;
+					attackerValue[attacker->unitId()].value += cleaveDamageReduce;
+				}
+				else
+					dpsScore.ourDamageReduce += cleaveDamageReduce;
+
+				const bool targetWasAlive = target->alive();
+				target->damage(cleaveDamage);
+				hb->recordBloodrageTransition(target, targetWasAlive);
+				hb->projectFortuneStrike(cleaveAttack, {{target->unitId(), cleaveDamage}}, attacker.get(),
+					targetWasAlive && !target->alive() && hb->battleMatchOwner(attacker.get(), target.get()));
+				hb->projectRangedMarkStrike(cleaveAttack, {{target->unitId(), cleaveDamage}});
+			}
+			projectedAttacker->afterAttack(false, false, cleaveAttack.physicalDamage);
+		}
 	}
 
 	if(!evaluateOnly && allowRetaliation && defender->alive() && defender->ableToRetaliate() && !counterAttacksBlocked && !shooting

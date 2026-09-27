@@ -36,6 +36,7 @@ struct DLL_LINKAGE BattleAttackInfo
 	bool retaliation = false; // The blow is a normal creature retaliation/counterattack.
 	bool bracePreemptive = false; // The blow is Brace's one pre-emptive strike.
 	int preemptiveDamagePercent = 0; // Explicit final multiplier for a pre-emptive reaction.
+	int cleaveDamagePercent = 0; // Independent final multiplier for an automatic Cleave strike.
 	bool luckyStrike   = false;
 	bool unluckyStrike = false;
 	bool deathBlow     = false;

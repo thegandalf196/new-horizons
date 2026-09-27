@@ -88,6 +88,9 @@ public:
 	/// Roll-only Luck; does not change the unit's displayed/static Luck bonuses.
 	int battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const;
 	bool battleCanUsePerfectMoment(const battle::Unit * attacker) const;
+	bool battleCanTriggerCleave(const battle::Unit * attacker) const;
+	const battle::Unit * battleSelectCleaveTarget(const battle::Unit * attacker,
+		const battle::Unit * destroyed) const;
 	int battleFortuneSpeed(const battle::Unit * unit) const;
 	bool battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const;
 	std::vector<uint32_t> battleFortuneAdjacentFriends(const battle::Unit * unit) const;

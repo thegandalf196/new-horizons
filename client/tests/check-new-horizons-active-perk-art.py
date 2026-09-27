@@ -16,6 +16,7 @@ SOURCE_V2 = ROOT / "assets/new-horizons/art-source/active-perks-v2"
 SOURCE_V3 = ROOT / "assets/new-horizons/art-source/active-perks-v3"
 SOURCE_V5 = ROOT / "assets/new-horizons/art-source/active-perks-v5"
 SOURCE_ENCIRCLEMENT = ROOT / "assets/new-horizons/art-source/encirclement-v1"
+SOURCE_CLEAVE = ROOT / "assets/new-horizons/art-source/cleave-v1"
 SOURCE_MASTER_GATE = ROOT / "assets/new-horizons/art-source/master-gate-v1"
 IMAGES = ROOT / "Mods/new-horizons/Images"
 ICONS = ROOT / "client/windows/NewHorizonsPerkIcons.h"
@@ -45,6 +46,12 @@ ENCIRCLEMENT_EXPECTED = {
     "new-horizons:offense.encirclement": (
         "NH_perk_encirclement",
         "encirclement",
+    ),
+}
+CLEAVE_EXPECTED = {
+    "new-horizons:offense.cleave": (
+        "NH_perk_cleave",
+        "cleave",
     ),
 }
 V5_EXPECTED = {
@@ -139,7 +146,14 @@ MASTER_GATE_EXPECTED = {
         "master-gate",
     ),
 }
-EXPECTED = V2_EXPECTED | V3_EXPECTED | V5_EXPECTED | ENCIRCLEMENT_EXPECTED | MASTER_GATE_EXPECTED
+EXPECTED = (
+    V2_EXPECTED
+    | V3_EXPECTED
+    | V5_EXPECTED
+    | ENCIRCLEMENT_EXPECTED
+    | CLEAVE_EXPECTED
+    | MASTER_GATE_EXPECTED
+)
 
 
 def digest(path: Path) -> str:
@@ -159,6 +173,7 @@ def main() -> None:
         (SOURCE_ENCIRCLEMENT, ENCIRCLEMENT_EXPECTED),
         (SOURCE_V5, V5_EXPECTED),
         (SOURCE_MASTER_GATE, MASTER_GATE_EXPECTED),
+        (SOURCE_CLEAVE, CLEAVE_EXPECTED),
     ):
         generation = json.loads((source / "generation.json").read_text(encoding="utf-8"))
         by_id = {asset["id"]: asset for asset in generation["assets"]}
@@ -170,7 +185,9 @@ def main() -> None:
             assert master.is_file(), master
             assert image_size(master) == tuple(asset["dimensions"]) == (1254, 1254)
             assert digest(master) == asset["source_sha256"], (perk_id, "master hash")
-            prompt = source / asset["prompt_file"]
+            prompt_name = asset.get("prompt_file", generation.get("prompt_file"))
+            assert prompt_name, (perk_id, "missing prompt provenance")
+            prompt = source / prompt_name
             assert prompt.is_file() and prompt.read_text(encoding="utf-8").strip(), prompt
 
             export = source / "exports" / slug
@@ -209,6 +226,22 @@ def main() -> None:
         path = IMAGES / filename
         assert path.is_file(), path
         assert digest(path) == expected_hash, (filename, "runtime export hash")
+
+    cleave_manifest = json.loads(
+        (SOURCE_CLEAVE / "runtime-manifest.json").read_text(encoding="utf-8")
+    )
+    assert cleave_manifest["status"].startswith("provisional")
+    assert cleave_manifest["assets"] == ["NH_perk_cleave"]
+    for manifest_path, expected_hash in cleave_manifest["files"].items():
+        filename = Path(manifest_path).name
+        if manifest_path.startswith("source/"):
+            path = SOURCE_CLEAVE / "runtime" / filename
+        elif manifest_path.startswith("Mods/"):
+            path = IMAGES / filename
+        else:
+            raise AssertionError(f"unexpected Cleave runtime manifest path: {manifest_path}")
+        assert path.is_file(), path
+        assert digest(path) == expected_hash, (manifest_path, "runtime export hash")
 
     definitions = json.loads(DEFINITIONS.read_text(encoding="utf-8"))
     active = {

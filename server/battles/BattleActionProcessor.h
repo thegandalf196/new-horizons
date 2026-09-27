@@ -92,6 +92,8 @@ class BattleActionProcessor : boost::noncopyable
 		bool counter = false;
 		bool brace = false;
 		int preemptiveDamagePercent = 0;
+		bool cleaveFollowup = false;
+		int cleaveDamagePercent = 0;
 		bool protectIntercepted = false;
 		BattleSide perfectMomentSide = BattleSide::NONE;
 	};
@@ -100,6 +102,7 @@ class BattleActionProcessor : boost::noncopyable
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender,
 		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr);
 	void setPursuitMovementRemaining(const CBattleInfoCallback & battle, const CStack * stack, int32_t remaining) const;
+	void setCleaveUsed(const CBattleInfoCallback & battle, const CStack * stack) const;
 
 	/// Rolls what is decided before any damage: luck, and the abilities that double it by chance.
 	void rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const;
@@ -119,7 +122,10 @@ class BattleActionProcessor : boost::noncopyable
 	std::set<SpellID> getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender);
 
 	/// Rolls the damage one attacked unit takes and appends what scripts need to know about it to the payload
-	DamageEstimation applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, bool protectIntercepted) const;
+	DamageEstimation applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat,
+		std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload,
+		const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
+		int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted) const;
 	void publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const;
 
 	void addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const;

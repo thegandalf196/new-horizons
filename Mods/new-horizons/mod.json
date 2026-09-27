@@ -2552,7 +2552,7 @@
 								"requires": "advanced",
 								"description": "After destroying a stack in melee, automatically strike the adjacent enemy stack with the highest current aggregate HP for 50% normal damage. Ties use deterministic hex order. Once per activation; Cleave cannot trigger itself.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After destroying a stack in melee, automatically strike the adjacent enemy stack with the highest current aggregate HP for 50% normal damage. Ties use deterministic hex order. Once per activation; Cleave cannot trigger itself."
 								}
 							},

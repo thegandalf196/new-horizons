@@ -47,6 +47,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT)
 			&& info->hasPursuitState())
 			throw std::runtime_error("Cannot discard Pursuit battle start state");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_CLEAVE)
+			&& info->hasCleaveState())
+			throw std::runtime_error("Cannot discard Cleave battle start state");
 		h & battleID;
 		h & info;
 		assert(battleID != BattleID::NONE);

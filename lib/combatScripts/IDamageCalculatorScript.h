@@ -96,6 +96,9 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// after normal additive attack/defense factors so a penalty cannot be
 	/// cancelled by Offense/Archery bonuses. 100 is neutral.
 	int heroOrderFinalDamageMultiplier = 100;
+	/// Independent final multiplier for an automatic Cleave strike. This composes
+	/// with Orders instead of overwriting their explicit final multiplier.
+	int cleaveFinalDamageMultiplier = 100;
 
 	/// Which of the bonus types the script declared an interest in each of the two carries
 	std::unordered_map<std::string, bool> attackerBonuses;
@@ -157,6 +160,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Defend's temporary Creature Defense contribution available to Breakthrough.");
 		s("heroOrderFinalDamageMultiplier", heroOrderFinalDamageMultiplier,
 			"Final multiplicative damage percentage supplied by the active canonical Order; 100 is neutral.");
+		s("cleaveFinalDamageMultiplier", cleaveFinalDamageMultiplier,
+			"Final multiplicative percentage for an automatic Cleave strike; 100 is neutral.");
 		s("luckyStrike", luckyStrike, "Whether luck struck.");
 		s("unluckyStrike", unluckyStrike, "Whether bad luck struck.");
 		s("deathBlow", deathBlow, "Whether a death blow was rolled.");

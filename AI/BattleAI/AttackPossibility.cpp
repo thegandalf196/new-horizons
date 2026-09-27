@@ -17,6 +17,7 @@
 #include "../../lib/spells/ObstacleCasterProxy.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
+#include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 
 #include "../../lib/GameLibrary.h"
@@ -413,12 +414,16 @@ AttackPossibility AttackPossibility::evaluate(
 		ap.perfectMoment = perfectMoment && state->battleCanUsePerfectMoment(attacker)
 			&& !attackInfo.retaliation && state->battleMatchOwner(attacker, defender);
 		std::shared_ptr<HypotheticBattle> fortunePreview;
+		const bool projectsCleave = !attackInfo.shooting && !attackInfo.retaliation
+			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
+			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
+			&& attackInfo.physicalDamage && state->battleCanTriggerCleave(attacker);
 		const bool projectsMarks = attackInfo.shooting
 			&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
-		if(ap.perfectMoment || projectsMarks)
+		if(ap.perfectMoment || projectsMarks || projectsCleave)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
-		if(projectsMarks)
+		if(projectsMarks || projectsCleave)
 			ap.effectPreview = fortunePreview;
 		const CBattleInfoCallback & luckState = fortunePreview
 			? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
@@ -502,7 +507,9 @@ AttackPossibility AttackPossibility::evaluate(
 			strike.shooting = attackInfo.shooting;
 			strike.perfectMoment = ap.perfectMoment && i == 0;
 			std::optional<FortuneStrikeProjection> retaliation;
+			std::optional<FortuneStrikeProjection> cleave;
 			std::vector<std::pair<std::shared_ptr<battle::CUnitState>, int64_t>> pendingRetaliationDamage;
+			std::vector<const battle::Unit *> destroyedEnemyUnits;
 
 			for(auto u : defenderUnits)
 			{
@@ -512,7 +519,6 @@ AttackPossibility AttackPossibility::evaluate(
 
 				int64_t damageDealt;
 				float defenderDamageReduce;
-				float attackerDamageReduce;
 
 				auto victimAttack = ap.attack;
 				victimAttack.attacker = ap.attackerState.get();
@@ -550,9 +556,6 @@ AttackPossibility AttackPossibility::evaluate(
 				defenderDamageReduce = calculateDamageReduce(ap.attackerState.get(), defenderState.get(),
 					damageDealt, damageCache, state);
 
-				//FIXME: use ranged retaliation
-				attackerDamageReduce = 0;
-
 				if (i == 0 && !attackInfo.shooting && u->unitId() == defender->unitId()
 					&& retaliatorState->alive() && retaliatorState->ableToRetaliate() && !counterAttacksBlocked
 					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector))
@@ -564,43 +567,11 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliation->retaliation = true;
 					for(auto retaliated : retaliatedUnits)
 					{
-						auto retaliationAttack = victimAttack.reverse();
-						retaliationAttack.attacker = retaliatorState.get();
-						retaliationAttack.defender = retaliated->unitId() == attacker->unitId()
-							? ap.attackerState.get() : defenderStates.at(retaliated->unitId()).get();
-						retaliationAttack.secondaryAttack = retaliated->unitId() != attacker->unitId();
-						if(retaliationAttack.secondaryAttack)
-							retaliationAttack.defenderPos = retaliationAttack.defender->getPosition();
 						if(retaliated->unitId() == attacker->unitId())
-						{
-							int64_t damageReceived = state->battleExpectedLuckDamage(retaliationAttack);
-							const auto uncappedDamage = damageReceived;
-
-							vstd::amin(damageReceived, ap.attackerState->getAvailableHealth());
-							retaliation->hits.emplace_back(retaliated->unitId(), uncappedDamage);
-
-							attackerDamageReduce = calculateDamageReduce(defender, retaliated, damageReceived, damageCache, state);
-							pendingRetaliationDamage.emplace_back(ap.attackerState, uncappedDamage);
-						}
+							pendingRetaliationDamage.emplace_back(ap.attackerState, 0);
 						else
-						{
-							int64_t damageReceived = state->battleExpectedLuckDamage(retaliationAttack);
-							const auto uncappedDamage = damageReceived;
-
-							vstd::amin(damageReceived, retaliated->getAvailableHealth());
-							retaliation->hits.emplace_back(retaliated->unitId(), uncappedDamage);
-
-							if(defender->unitSide() == retaliated->unitSide())
-								defenderDamageReduce += calculateDamageReduce(defender, retaliated, damageReceived, damageCache, state);
-							else
-								ap.collateralDamageReduce += calculateDamageReduce(defender, retaliated, damageReceived, damageCache, state);
-
-							pendingRetaliationDamage.emplace_back(
-								defenderStates.at(retaliated->unitId()), uncappedDamage);
-						}
-						
+							pendingRetaliationDamage.emplace_back(defenderStates.at(retaliated->unitId()), 0);
 					}
-					defenderState->afterAttack(attackInfo.shooting, true, victimAttack.physicalDamage);
 				}
 
 				bool isEnemy = state->battleMatchOwner(attacker, u);
@@ -613,30 +584,28 @@ AttackPossibility AttackPossibility::evaluate(
 				if(attackerSide == u->unitSide())
 					ap.collateralDamageReduce += defenderDamageReduce;
 
-				if(u->unitId() == defender->unitId()
-					|| (!attackInfo.shooting && state->isMeleeAttackPossible(u, attacker, hex)))
-				{
-					//FIXME: handle RANGED_RETALIATION ?
-					ap.attackerDamageReduce += attackerDamageReduce;
-				}
-
 				strike.hits.emplace_back(u->unitId(), damageDealt);
+				const bool wasAlive = defenderState->alive();
 				defenderState->damage(damageDealt);
+				const bool mayRebirth = !defenderState->isClone()
+					&& defenderState->valOfBonuses(BonusType::REBIRTH) > 0
+					&& defenderState->canCast() && defenderState->getPhantomInitialIntegrity() == 0;
+				if(wasAlive && !defenderState->alive()
+					&& !mayRebirth
+					&& state->battleMatchOwner(ap.attackerState.get(), u))
+					destroyedEnemyUnits.push_back(u);
 
 				if(u->unitId() == defender->unitId())
 				{
 					ap.defenderDead = !defenderState->alive();
 				}
 			}
-			if(ap.effectPreview)
-			{
-				BattleAttackInfo projectedAttack(ap.attackerState.get(),
-					defenderStates.at(defender->unitId()).get(), 0, true);
-				ap.effectPreview->projectRangedMarkStrike(projectedAttack, strike.hits);
-			}
-			// The preview state must observe the same primary-hit -> Recovery ->
-			// retaliation ordering as authority. Otherwise a wounded double-attacker
-			// can be considered dead before the heal which enables its second blow.
+			// Authority consumes the physical attack's once-per-activation effects
+			// before the Cleave follow-up is resolved. In particular, a waited
+			// Battlecraft bonus belongs to the triggering blow only.
+			ap.attackerState->afterAttack(attackInfo.shooting, false, attackInfo.physicalDamage);
+			// Recovery is part of the triggering attack and resolves before an
+			// automatic Cleave strike can select or damage its target.
 			if(!attackInfo.shooting && !strike.hits.empty())
 			{
 				const auto side = state->playerToSide(state->battleGetOwner(attacker));
@@ -662,6 +631,127 @@ AttackPossibility AttackPossibility::evaluate(
 					}
 				}
 			}
+
+			if(projectsCleave && ap.effectPreview
+				&& ap.effectPreview->battleCanTriggerCleave(ap.attackerState.get())
+				&& !destroyedEnemyUnits.empty())
+			{
+				const auto lowestOccupiedHex = [](const battle::Unit * unit)
+				{
+					int result = GameConstants::BFIELD_SIZE;
+					for(const auto hex : unit->getHexes())
+						result = std::min(result, hex.toInt());
+					return result;
+				};
+				std::sort(destroyedEnemyUnits.begin(), destroyedEnemyUnits.end(), [&](const battle::Unit * left,
+					const battle::Unit * right)
+				{
+					const int leftHex = lowestOccupiedHex(left);
+					const int rightHex = lowestOccupiedHex(right);
+					return leftHex != rightHex ? leftHex < rightHex : left->unitId() < right->unitId();
+				});
+				destroyedEnemyUnits.erase(std::unique(destroyedEnemyUnits.begin(), destroyedEnemyUnits.end(),
+					[](const battle::Unit * left, const battle::Unit * right)
+					{
+						return left->unitId() == right->unitId();
+					}), destroyedEnemyUnits.end());
+
+				for(const auto * destroyed : destroyedEnemyUnits)
+				{
+					const auto * projectedDestroyed = ap.effectPreview->battleGetUnitByID(destroyed->unitId());
+					const auto * target = ap.effectPreview->battleSelectCleaveTarget(ap.attackerState.get(), projectedDestroyed);
+					if(!target)
+						continue;
+
+					auto targetStateIt = defenderStates.find(target->unitId());
+					std::shared_ptr<battle::CUnitState> targetState;
+					if(targetStateIt != defenderStates.end())
+						targetState = targetStateIt->second;
+					else
+					{
+						targetState = ap.effectPreview->getForUpdate(target->unitId());
+						defenderStates.emplace(target->unitId(), targetState);
+						ap.affectedUnits.push_back(targetState);
+					}
+
+					ap.attackerState->cleaveUsedThisActivation = true;
+					BattleAttackInfo cleaveAttack(ap.attackerState.get(), targetState.get(), 0, false);
+					cleaveAttack.attackerPos = ap.attackerState->getPosition();
+					cleaveAttack.defenderPos = targetState->getPosition();
+					cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
+					int64_t cleaveDamage = luckState.battleExpectedLuckDamage(cleaveAttack);
+					vstd::amin(cleaveDamage, targetState->getAvailableHealth());
+					ap.defenderDamageReduce += calculateDamageReduce(ap.attackerState.get(), targetState.get(),
+						cleaveDamage, damageCache, state);
+
+					cleave.emplace();
+					cleave->attackerId = ap.attackerState->unitId();
+					cleave->defenderId = targetState->unitId();
+					cleave->cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
+					cleave->hits.emplace_back(targetState->unitId(), cleaveDamage);
+					targetState->damage(cleaveDamage);
+					if(targetState->unitId() == defender->unitId())
+						ap.defenderDead = !targetState->alive();
+					ap.attackerState->afterAttack(false, false, true);
+					break;
+				}
+			}
+
+			// The outer counterattack occurs only if its original defender survives
+			// the primary attack's Cleave follow-up. Drop its damage, score and strike
+			// metadata together when Cleave destroys that stack.
+			if(retaliation)
+			{
+				if(!defenderStates.at(retaliation->attackerId)->alive())
+				{
+					retaliation.reset();
+					pendingRetaliationDamage.clear();
+				}
+				else
+				{
+					auto retaliatorState = defenderStates.at(retaliation->attackerId)->acquireState();
+					retaliation->hits.clear();
+					for(auto & [targetState, rawDamage] : pendingRetaliationDamage)
+					{
+						if(!targetState->alive())
+						{
+							rawDamage = 0;
+							continue;
+						}
+
+						BattleAttackInfo retaliationAttack(retaliatorState.get(), targetState.get(), 0, false);
+						retaliationAttack.retaliation = true;
+						retaliationAttack.secondaryAttack = targetState->unitId() != attacker->unitId();
+						retaliationAttack.attackerPos = ap.attack.defenderPos;
+						retaliationAttack.defenderPos = retaliationAttack.secondaryAttack
+							? targetState->getPosition() : ap.attack.attackerPos;
+						rawDamage = state->battleExpectedLuckDamage(retaliationAttack);
+						retaliation->hits.emplace_back(targetState->unitId(), rawDamage);
+
+						const auto actualDamage = std::min(rawDamage, targetState->getAvailableHealth());
+						const auto damageReduce = calculateDamageReduce(retaliatorState.get(), targetState.get(),
+							actualDamage, damageCache, state);
+						if(targetState->unitId() == attacker->unitId())
+							ap.attackerDamageReduce += damageReduce;
+						else if(retaliatorState->unitSide() == targetState->unitSide())
+						{
+							if(state->battleMatchOwner(attacker, defender))
+								ap.defenderDamageReduce += damageReduce;
+							if(attackerSide == defender->unitSide())
+								ap.collateralDamageReduce += damageReduce;
+						}
+						else
+							ap.collateralDamageReduce += damageReduce;
+					}
+				}
+			}
+
+			if(ap.effectPreview)
+			{
+				BattleAttackInfo projectedAttack(ap.attackerState.get(),
+					defenderStates.at(defender->unitId()).get(), 0, true);
+				ap.effectPreview->projectRangedMarkStrike(projectedAttack, strike.hits);
+			}
 			int64_t retaliationActualDamage = 0;
 			for(auto & [targetState, rawDamage] : pendingRetaliationDamage)
 			{
@@ -670,6 +760,11 @@ AttackPossibility AttackPossibility::evaluate(
 				if(retaliation && (targetState->unitId() == retaliation->defenderId
 					|| state->getBattle()->getLuckRollRules().affectsAllTargets))
 					retaliationActualDamage += actualDamage;
+			}
+			if(retaliation && !retaliation->hits.empty())
+			{
+				auto retaliatorState = defenderStates.at(retaliation->attackerId);
+				retaliatorState->afterAttack(attackInfo.shooting, true, attackInfo.physicalDamage);
 			}
 			if(retaliation && retaliationActualDamage > 0)
 			{
@@ -698,6 +793,8 @@ AttackPossibility AttackPossibility::evaluate(
 
 			if(!strike.hits.empty())
 				ap.fortuneStrikes.push_back(std::move(strike));
+			if(cleave && !cleave->hits.empty())
+				ap.fortuneStrikes.push_back(std::move(*cleave));
 			if(retaliation && !retaliation->hits.empty())
 				ap.fortuneStrikes.push_back(std::move(*retaliation));
 			if(ap.perfectMoment && i == 0 && fortunePreview && !ap.fortuneStrikes.empty())
@@ -710,8 +807,6 @@ AttackPossibility AttackPossibility::evaluate(
 				fortune.recordStrike(attacker->unitId(), true, false);
 				fortunePreview->setSylvanLuckState(attackerSide, fortune);
 			}
-			// One attack spends ammunition once, not once for every collateral victim.
-			ap.attackerState->afterAttack(attackInfo.shooting, false, attackInfo.physicalDamage);
 		}
 
 #if BATTLE_TRACE_LEVEL>=2

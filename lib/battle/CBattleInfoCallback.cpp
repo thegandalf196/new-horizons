@@ -19,6 +19,7 @@
 #include "NewHorizonsBulwark.h"
 #include "NewHorizonsBattlecraft.h"
 #include "NewHorizonsCombatSkills.h"
+#include "NewHorizonsOffense.h"
 #include "NewHorizonsShroud.h"
 #include "NewHorizonsWarcasting.h"
 #include "IGameSettings.h"
@@ -428,6 +429,48 @@ bool CBattleInfoCallback::battleCanUsePerfectMoment(const battle::Unit * attacke
 	const auto side = playerToSide(battleGetOwner(attacker));
 	return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 		&& getBattle()->getSylvanLuckState(side).canUsePerfectMoment();
+}
+
+bool CBattleInfoCallback::battleCanTriggerCleave(const battle::Unit * attacker) const
+{
+	if(!attacker || !getBattle() || !attacker->alive() || attacker->isGhost()
+		|| attacker->isTurret() || attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
+		return false;
+	const auto * state = dynamic_cast<const battle::CUnitState *>(attacker);
+	const auto * hero = battleGetOwnerHero(attacker);
+	return state && !state->cleaveUsedThisActivation && hero
+		&& hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE);
+}
+
+const battle::Unit * CBattleInfoCallback::battleSelectCleaveTarget(const battle::Unit * attacker,
+	const battle::Unit * destroyed) const
+{
+	if(!attacker || !destroyed || !getBattle())
+		return nullptr;
+	auto candidates = battleAdjacentUnits(destroyed);
+	vstd::erase_if(candidates, [this, attacker](const battle::Unit * candidate)
+	{
+		return !candidate || !candidate->alive() || candidate->isGhost()
+			|| candidate->unitId() == attacker->unitId()
+			|| !battleMatchOwner(attacker, candidate);
+	});
+	const auto lowestOccupiedHex = [](const battle::Unit * unit)
+	{
+		int result = GameConstants::BFIELD_SIZE;
+		for(const auto hex : unit->getHexes())
+			result = std::min(result, hex.toInt());
+		return result;
+	};
+	std::sort(candidates.begin(), candidates.end(), [&](const battle::Unit * left, const battle::Unit * right)
+	{
+		if(left->getAvailableHealth() != right->getAvailableHealth())
+			return left->getAvailableHealth() > right->getAvailableHealth();
+		const int leftHex = lowestOccupiedHex(left);
+		const int rightHex = lowestOccupiedHex(right);
+		return leftHex != rightHex ? leftHex < rightHex : left->unitId() < right->unitId();
+	});
+	return candidates.empty() ? nullptr : candidates.front();
 }
 
 int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const
@@ -1891,6 +1934,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	}
 	if(info.preemptiveDamagePercent > 0)
 		payload.heroOrderFinalDamageMultiplier = info.preemptiveDamagePercent;
+	if(info.cleaveDamagePercent > 0)
+		payload.cleaveFinalDamageMultiplier = info.cleaveDamagePercent;
 	if(heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		&& info.attacker && info.defender && !info.attacker->isGhost() && !info.defender->isGhost())
 	{

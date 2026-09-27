@@ -107,12 +107,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_MAGE_GUILD_SLOTS, // actual fixed-school visible counts and assigned schools
 	NEW_HORIZONS_MASTER_GATE, // per-side once-per-combat Master Gate activation continuation
 	NEW_HORIZONS_PURSUIT, // saved movement-only continuation after a lethal melee attack
+	NEW_HORIZONS_CLEAVE, // per-stack once-per-activation Cleave expenditure
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_PURSUIT,
+	CURRENT = NEW_HORIZONS_CLEAVE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -130,6 +131,7 @@ static_assert(ESerializationVersion::NEW_HORIZONS_METAMAGIC_REWARDS > ESerializa
 static_assert(ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS > ESerializationVersion::NEW_HORIZONS_METAMAGIC_REWARDS);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTER_GATE > ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS);
 static_assert(ESerializationVersion::NEW_HORIZONS_PURSUIT > ESerializationVersion::NEW_HORIZONS_MASTER_GATE);
+static_assert(ESerializationVersion::NEW_HORIZONS_CLEAVE > ESerializationVersion::NEW_HORIZONS_PURSUIT);
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION > ESerializationVersion::NEW_HORIZONS_WARCASTING);
 static_assert(ESerializationVersion::NEW_HORIZONS_HERO_ACTION_ALLOWANCES > ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTERIES > ESerializationVersion::NEW_HORIZONS_CAPABILITIES);

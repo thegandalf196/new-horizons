@@ -72,6 +72,7 @@ public:
 			|| sides[BattleSide::DEFENDER].hasChainGateState();
 	}
 	bool hasPursuitState() const;
+	bool hasCleaveState() const;
 	BattleSide gatedDemonicStackSide(uint32_t unitId) const;
 	bool hasGatedDemonicStack(BattleSide side, uint32_t unitId) const;
 	HeroCommand getActiveDoctrine(BattleSide side) const override { (void)side; return HeroCommand::NONE; }
@@ -134,6 +135,8 @@ public:
 				throw std::runtime_error("Cannot discard Master Gate battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT) && hasPursuitState())
 				throw std::runtime_error("Cannot discard Pursuit battle state");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CLEAVE) && hasCleaveState())
+				throw std::runtime_error("Cannot discard Cleave battle state");
 			heroCommands::validateRules(heroCommandRules);
 			validateFocusFireStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_MOMENT)

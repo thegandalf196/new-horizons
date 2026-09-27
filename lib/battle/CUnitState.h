@@ -154,6 +154,9 @@ public:
 	/// A positive value means this unit is in the movement-only tail of its
 	/// current activation; it must never grant another attack.
 	int32_t pursuitMovementRemaining;
+	/// Cleave may create at most one automatic follow-up strike in a genuine
+	/// creature activation. Hero actions and same-activation continuations keep it.
+	bool cleaveUsedThisActivation;
 	bool timeStopTurnConsumedFlag;
 	bool summoned;
 	bool natureSummoned;

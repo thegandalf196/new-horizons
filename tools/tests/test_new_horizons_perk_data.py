@@ -40,6 +40,7 @@ ACTIVE_PERKS = {
     "new-horizons:offense.executioner",
     "new-horizons:offense.armorPiercer",
     "new-horizons:offense.breakthrough",
+    "new-horizons:offense.cleave",
     "new-horizons:discipline.inspirationalLeader",
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.matterShaper",
@@ -201,6 +202,23 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
     def test_canonical_31_skill_roster(self):
         self.assertEqual(tuple(self.rules["skills"]), EXPECTED_SKILLS)
         self.assertEqual(len(self.rules["skills"]), 31)
+
+    def test_cleave_is_active_advanced_offense_perk(self):
+        cleave = next(
+            perk
+            for perk in self.rules["skills"]["new-horizons:offense"]["perks"]
+            if perk["id"] == "new-horizons:offense.cleave"
+        )
+        description = (
+            "After destroying a stack in melee, automatically strike the adjacent enemy "
+            "stack with the highest current aggregate HP for 50% normal damage. Ties use "
+            "deterministic hex order. Once per activation; Cleave cannot trigger itself."
+        )
+        self.assertEqual(cleave["name"], "Cleave")
+        self.assertEqual(cleave["requires"], "advanced")
+        self.assertEqual(cleave["description"], description)
+        self.assertEqual(cleave["effect"]["status"], "active")
+        self.assertEqual(cleave["effect"]["description"], description)
 
     def test_perk_definitions_match_source_document(self):
         source_tables = source_perk_tables(ROOT / self.rules["sourceDocument"])
