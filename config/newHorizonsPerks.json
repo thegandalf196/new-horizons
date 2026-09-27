@@ -175,7 +175,7 @@
 					"requires": "basic",
 					"description": "Protect! may intercept the first two qualifying melee attacks against the Ward each round instead of only the first.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Protect! may intercept the first two qualifying melee attacks against the Ward each round instead of only the first."
 					}
 				},

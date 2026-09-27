@@ -165,9 +165,11 @@ bool BattleInfo::breakHeroOrderHold(uint32_t unitId)
 bool BattleInfo::interceptHeroOrderProtect(BattleSide side)
 {
 	auto & state = sides.at(side).orderState;
-	if(!state || state->command != HeroCommand::PROTECT || state->protectIntercepted || state->protectBroken)
+	if(!state || state->command != HeroCommand::PROTECT || state->issuedRound != getRound()
+		|| state->protectInterceptionsConsumed >= battleHeroOrderProtectInterceptionLimit(side)
+		|| state->protectBroken)
 		return false;
-	state->protectIntercepted = true;
+	++state->protectInterceptionsConsumed;
 	return true;
 }
 
@@ -1586,6 +1588,9 @@ void BattleInfo::validateFocusFireStates() const
 			if(state.orderState->secondaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
 				&& !battleGetUnitByID(state.orderState->secondaryTargetUnitId))
 				throw std::runtime_error("Invalid New Horizons canonical Order secondary target");
+			if(state.orderState->command == HeroCommand::PROTECT
+				&& state.orderState->protectInterceptionsConsumed > battleHeroOrderProtectInterceptionLimit(side))
+				throw std::runtime_error("Shield Master Protect interception count exceeds the saved hero perk limit");
 		}
 		else if(heroCommands::isCanonicalRules(heroCommandRules) && state.activeOrder != HeroCommand::NONE)
 			throw std::runtime_error("Missing New Horizons canonical Order state");

@@ -671,6 +671,10 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 			return {};
 		result.primaryTargetUnitId = protector->unitId();
 		result.secondaryTargetUnitId = ward->unitId();
+		result.protectInterceptionLimit = hero->hasActivePerk(
+			newHorizonsShieldMaster::SKILL, newHorizonsShieldMaster::PERK)
+			? newHorizonsShieldMaster::SHIELD_MASTER_PROTECT_INTERCEPTION_LIMIT
+			: newHorizonsShieldMaster::ORDINARY_PROTECT_INTERCEPTION_LIMIT;
 		return result;
 	}
 	if(command == HeroCommand::SECOND_WIND)
@@ -710,13 +714,24 @@ const battle::Unit * CBattleInfoCallback::battleResolveHeroOrderTarget(const bat
 	const auto side = playerToSide(battleGetOwner(defender));
 	const auto state = battleGetHeroOrderState(side);
 	if(!state || state->command != HeroCommand::PROTECT || state->issuedRound != battleGetRound()
-		|| state->protectIntercepted || state->protectBroken || state->secondaryTargetUnitId != defender->unitId())
+		|| state->protectInterceptionsConsumed >= battleHeroOrderProtectInterceptionLimit(side)
+		|| state->protectBroken || state->secondaryTargetUnitId != defender->unitId())
 		return defender;
 	const auto * protector = battleGetUnitByID(state->primaryTargetUnitId);
 	if(!protector || !protector->alive() || protector->isGhost()
 		|| !orderUnitsAdjacent(protector, defender))
 		return defender;
 	return protector;
+}
+
+int CBattleInfoCallback::battleHeroOrderProtectInterceptionLimit(BattleSide side) const
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return newHorizonsShieldMaster::ORDINARY_PROTECT_INTERCEPTION_LIMIT;
+	const auto state = battleGetHeroOrderState(side);
+	return state && state->command == HeroCommand::PROTECT
+		? state->protectInterceptionLimit
+		: newHorizonsShieldMaster::ORDINARY_PROTECT_INTERCEPTION_LIMIT;
 }
 
 bool CBattleInfoCallback::battleCanTriggerHeroOrderBrace(const battle::Unit * attacker,

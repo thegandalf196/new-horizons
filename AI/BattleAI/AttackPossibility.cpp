@@ -176,9 +176,10 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		if(!attacker->alive())
 			return 0;
 		const bool shooting = hb->battleCanShoot(attacker, defender->getPosition());
+		BattleAttackInfo attack(attacker, defender, 0, shooting);
 		const auto * primaryTarget = hb->battleResolveHeroOrderTarget(attacker, defender, shooting);
-		BattleAttackInfo attack(attacker, primaryTarget ? primaryTarget : defender, 0, shooting);
-		attack.protectIntercepted = !shooting && primaryTarget && primaryTarget->unitId() != defender->unitId();
+		attack.defender = primaryTarget ? primaryTarget : defender;
+		attack.protectIntercepted = attack.defender->unitId() != defender->unitId();
 		if(hasRelentlessAssault)
 		{
 			attack.relentlessAssaultDamagePercent = hb->battleGetRelentlessAssaultDamagePercent(
@@ -503,13 +504,16 @@ AttackPossibility AttackPossibility::evaluate(
 		else
 		{
 			defenderUnits = state->getAttackedBattleUnits(attacker, defender, defHex, false, hex, defender->getPosition());
-			if(projectsProtect)
-				requestedDefenderUnits = state->getAttackedBattleUnits(attacker, requestedDefender, defHex,
-					false, hex, requestedDefender->getPosition());
+			// Keep the originally requested footprint even when Protect has already
+			// spent its allowance (or is broken/unavailable). Later strikes then
+			// correctly fall back to the Ward instead of evaluating an empty target set.
+			requestedDefenderUnits = state->getAttackedBattleUnits(attacker, requestedDefender, defHex,
+				false, hex, requestedDefender->getPosition());
 			retaliatedUnits = state->getAttackedBattleUnits(defender, attacker, hex, false, defender->getPosition(), hex);
 
 			// attacker can not melle-attack itself but still can hit that place where it was before moving
 			vstd::erase_if(defenderUnits, [attacker](const battle::Unit * u) -> bool { return u->unitId() == attacker->unitId(); });
+			vstd::erase_if(requestedDefenderUnits, [attacker](const battle::Unit * u) -> bool { return u->unitId() == attacker->unitId(); });
 
 			if(!vstd::contains_if(retaliatedUnits, [attacker](const battle::Unit * u) -> bool { return u->unitId() == attacker->unitId(); }))
 			{
@@ -561,15 +565,37 @@ AttackPossibility AttackPossibility::evaluate(
 			ap.affectedUnits.push_back(defenderState);
 			defenderStates[u->unitId()] = defenderState;
 		}
+		const auto protectSide = requestedDefender->unitSide();
+		auto protectOrder = projectsProtect ? state->battleGetHeroOrderState(protectSide) : std::nullopt;
+		uint8_t projectedProtectInterceptionsConsumed = protectOrder
+			? protectOrder->protectInterceptionsConsumed : 0;
 
 		for(int i = 0; i < totalAttacks; i++)
 		{
-			// Protect redirects the first qualifying blow only. Subsequent attacks
-			// in the same multistrike target the originally selected Ward, just as
-			// the authoritative server re-resolves the interception per blow.
-			const bool protectAlreadyIntercepted = projectsProtect && i > 0;
-			const auto * strikeDefender = protectAlreadyIntercepted ? requestedDefender : defender;
-			const auto & strikeDefenderUnits = protectAlreadyIntercepted ? requestedDefenderUnits : defenderUnits;
+			// Resolve Protect against the projected count before every blow. This
+			// gives ordinary Protect one redirect and Shield Master two, while a
+			// dead Protector or broken pair immediately falls back to the Ward.
+			const battle::Unit * strikeDefender = requestedDefender;
+			const battle::Units * strikeDefenderUnits = &defenderUnits;
+			if(projectsProtect)
+			{
+				const auto wardState = defenderStates.find(requestedDefender->unitId());
+				const battle::Unit * projectedWard = wardState != defenderStates.end()
+					? wardState->second.get() : requestedDefender;
+				const auto * resolved = fortunePreview
+					? fortunePreview->battleResolveHeroOrderTarget(ap.attackerState.get(), projectedWard, false)
+					: (protectOrder && !protectOrder->protectBroken
+						&& projectedProtectInterceptionsConsumed < state->battleHeroOrderProtectInterceptionLimit(protectSide)
+						&& defenderStates.at(defender->unitId())->alive()
+						? defender : requestedDefender);
+				if(resolved && resolved->unitId() != requestedDefender->unitId())
+				{
+					strikeDefender = resolved;
+					strikeDefenderUnits = &defenderUnits;
+				}
+				else
+					strikeDefenderUnits = &requestedDefenderUnits;
+			}
 			const auto strikeDefenderState = defenderStates.find(strikeDefender->unitId());
 			if(!ap.attackerState->alive() || strikeDefenderState == defenderStates.end()
 				|| !strikeDefenderState->second->alive()
@@ -585,7 +611,32 @@ AttackPossibility AttackPossibility::evaluate(
 			strike.defenderId = strikeDefender->unitId();
 			strike.shooting = attackInfo.shooting;
 			strike.perfectMoment = ap.perfectMoment && i == 0;
-			strike.protectIntercepted = projectsProtect && i == 0;
+			strike.protectIntercepted = projectsProtect
+				&& strikeDefender->unitId() != requestedDefender->unitId();
+			// The authoritative server consumes immediately after resolving the
+			// redirected recipient, before reactions or damage. Mirror that timing
+			// even if this projected blow later produces no damage events.
+			if(strike.protectIntercepted)
+			{
+				if(fortunePreview)
+				{
+					auto order = fortunePreview->battleGetHeroOrderState(protectSide);
+					if(order && order->command == HeroCommand::PROTECT
+						&& order->secondaryTargetUnitId == requestedDefender->unitId()
+						&& order->primaryTargetUnitId == strikeDefender->unitId()
+						&& order->protectInterceptionsConsumed
+							< fortunePreview->battleHeroOrderProtectInterceptionLimit(protectSide)
+						&& !order->protectBroken)
+					{
+						++order->protectInterceptionsConsumed;
+						fortunePreview->setHeroOrderState(protectSide, order);
+					}
+				}
+				else if(protectOrder && !protectOrder->protectBroken
+					&& projectedProtectInterceptionsConsumed
+						< state->battleHeroOrderProtectInterceptionLimit(protectSide))
+					++projectedProtectInterceptionsConsumed;
+			}
 			strike.relentlessAssaultEligible = ordinaryRelentlessAssaultAttack
 				&& !strikeDefender->isGhost() && !strikeDefender->isTurret()
 				&& !strikeDefender->hasBonusOfType(BonusType::SIEGE_WEAPON)
@@ -596,7 +647,7 @@ AttackPossibility AttackPossibility::evaluate(
 			std::vector<std::pair<std::shared_ptr<battle::CUnitState>, int64_t>> pendingRetaliationDamage;
 			std::vector<const battle::Unit *> destroyedEnemyUnits;
 
-			for(auto u : strikeDefenderUnits)
+			for(auto u : *strikeDefenderUnits)
 			{
 				auto defenderState = defenderStates.at(u->unitId());
 				if(!defenderState->alive())
@@ -610,7 +661,7 @@ AttackPossibility AttackPossibility::evaluate(
 				victimAttack.defender = defenderState.get();
 				victimAttack.secondaryAttack = u->unitId() != strikeDefender->unitId();
 				victimAttack.relentlessAssaultDamagePercent = relentlessAssaultDamagePercent;
-				victimAttack.protectIntercepted = projectsProtect && i == 0
+				victimAttack.protectIntercepted = strike.protectIntercepted
 					&& u->unitId() == strikeDefender->unitId();
 				// The authoritative path spends movement on the first strike and
 				// consumes Charge before collateral. Later attacks therefore have no
@@ -707,19 +758,6 @@ AttackPossibility AttackPossibility::evaluate(
 			{
 				if(strike.relentlessAssaultEligible)
 					fortunePreview->recordRelentlessAssaultAttack(attackerSide, strikeDefender->unitId());
-				if(strike.protectIntercepted)
-				{
-					const auto protectedSide = requestedDefender->unitSide();
-					auto order = fortunePreview->battleGetHeroOrderState(protectedSide);
-					if(order && order->command == HeroCommand::PROTECT
-						&& order->secondaryTargetUnitId == requestedDefender->unitId()
-						&& order->primaryTargetUnitId == strikeDefender->unitId()
-						&& !order->protectIntercepted && !order->protectBroken)
-					{
-						order->protectIntercepted = true;
-						fortunePreview->setHeroOrderState(protectedSide, order);
-					}
-				}
 			}
 			// Authority consumes the physical attack's once-per-activation effects
 			// before the Cleave follow-up is resolved. In particular, a waited

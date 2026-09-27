@@ -977,6 +977,23 @@ void HypotheticBattle::setHeroOrderState(BattleSide side, const std::optional<He
 	++bonusTreeVersion;
 }
 
+bool HypotheticBattle::consumeHeroOrderProtectInterception(uint32_t wardUnitId, uint32_t protectorUnitId)
+{
+	const auto * ward = battleGetUnitByID(wardUnitId);
+	if(!ward)
+		return false;
+	const auto side = ward->unitSide();
+	auto state = battleGetHeroOrderState(side);
+	if(!state || state->command != HeroCommand::PROTECT || state->issuedRound != battleGetRound()
+		|| state->secondaryTargetUnitId != wardUnitId || state->primaryTargetUnitId != protectorUnitId
+		|| state->protectBroken
+		|| state->protectInterceptionsConsumed >= battleHeroOrderProtectInterceptionLimit(side))
+		return false;
+	++state->protectInterceptionsConsumed;
+	setHeroOrderState(side, state);
+	return true;
+}
+
 std::optional<FocusFireState> HypotheticBattle::getFocusFireState(BattleSide side) const
 {
 	const auto found = focusFireStates.find(side);

@@ -148,6 +148,8 @@ public:
 	const RelentlessAssaultState & getRelentlessAssaultState(BattleSide side) const override;
 	void setRelentlessAssaultState(BattleSide side, const RelentlessAssaultState & state) override;
 	void recordRelentlessAssaultAttack(BattleSide side, uint32_t targetUnitId) override;
+	/// Consume the copied Protect state immediately after hypothetical redirection, before effects resolve.
+	bool consumeHeroOrderProtectInterception(uint32_t wardUnitId, uint32_t protectorUnitId);
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override;
 	bool getCounterspellArmed(BattleSide side) const override { return counterspellArmedStates.at(side); }

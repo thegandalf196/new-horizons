@@ -64,24 +64,9 @@ std::optional<uint32_t> relentlessAssaultPrimaryTargetId(const CBattleInfoCallba
 void projectRelentlessAssaultAttack(HypotheticBattle & battle, const BattleAttackInfo & attack,
 	std::optional<uint32_t> primaryTargetUnitId)
 {
-	if(!attack.attacker || (!primaryTargetUnitId && !attack.protectIntercepted))
+	if(!attack.attacker || !primaryTargetUnitId)
 		return;
-	const auto * selectedTarget = attack.defender;
-	if(!attack.shooting && attack.protectIntercepted && selectedTarget)
-	{
-		auto order = battle.getHeroOrderState(selectedTarget->unitSide());
-		if(order && order->command == HeroCommand::PROTECT
-			&& order->issuedRound == battle.battleGetRound()
-			&& order->secondaryTargetUnitId == selectedTarget->unitId()
-			&& (!primaryTargetUnitId || order->primaryTargetUnitId == *primaryTargetUnitId)
-			&& !order->protectIntercepted && !order->protectBroken)
-		{
-			order->protectIntercepted = true;
-			battle.setHeroOrderState(selectedTarget->unitSide(), order);
-		}
-	}
-	if(primaryTargetUnitId)
-		battle.recordRelentlessAssaultAttack(attack.attacker->unitSide(), *primaryTargetUnitId);
+	battle.recordRelentlessAssaultAttack(attack.attacker->unitSide(), *primaryTargetUnitId);
 }
 }
 
@@ -152,6 +137,8 @@ float BattleExchangeVariant::trackAttack(
 		{
 			auto projectedAttacker = hb->getForUpdate(strike.attackerId);
 			auto projectedDefender = hb->getForUpdate(strike.defenderId);
+			if(strike.protectIntercepted)
+				hb->consumeHeroOrderProtectInterception(ap.attack.defender->unitId(), strike.defenderId);
 			std::vector<std::pair<uint32_t, int64_t>> actualHits;
 			actualHits.reserve(strike.hits.size());
 			bool enemyStackKilled = false;
@@ -195,7 +182,7 @@ float BattleExchangeVariant::trackAttack(
 			// once to the whole multi-attack action. AttackPossibility snapshots
 			// the redirected ID before damage, so a killed Protector still records
 			// the actual first target; later strikes can correctly target the Ward.
-			if(strike.relentlessAssaultEligible || strike.protectIntercepted)
+			if(strike.relentlessAssaultEligible)
 			{
 				auto projectedHeroOrderAttack = ap.attack;
 				projectedHeroOrderAttack.protectIntercepted = strike.protectIntercepted;
@@ -334,6 +321,8 @@ float BattleExchangeVariant::trackAttack(
 	const auto * redirectedDefender = hb->battleResolveHeroOrderTarget(attacker.get(), requestedDefender.get(), shooting);
 	const bool protectIntercepted = !shooting && redirectedDefender
 		&& redirectedDefender->unitId() != requestedDefender->unitId();
+	if(protectIntercepted && !evaluateOnly)
+		hb->consumeHeroOrderProtectInterception(requestedDefender->unitId(), redirectedDefender->unitId());
 	requestedAttack.protectIntercepted = protectIntercepted;
 	if(protectIntercepted)
 	{
@@ -382,7 +371,8 @@ float BattleExchangeVariant::trackAttack(
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
 		hb->projectRangedMarkStrike(projectedAttack, {{defender->unitId(), actualDamage}});
-		projectRelentlessAssaultAttack(*hb, requestedAttack, relentlessAssaultTargetUnitId);
+		if(relentlessAssaultTargetUnitId)
+			projectRelentlessAssaultAttack(*hb, requestedAttack, relentlessAssaultTargetUnitId);
 	}
 	projectedAttacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
 

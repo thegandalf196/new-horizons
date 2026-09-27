@@ -19,6 +19,7 @@ SOURCE_ENCIRCLEMENT = ROOT / "assets/new-horizons/art-source/encirclement-v1"
 SOURCE_CLEAVE = ROOT / "assets/new-horizons/art-source/cleave-v1"
 SOURCE_MASTER_GATE = ROOT / "assets/new-horizons/art-source/master-gate-v1"
 SOURCE_COUNTERCHARGE = ROOT / "assets/new-horizons/art-source/countercharge-v1"
+SOURCE_SHIELD_MASTER = ROOT / "assets/new-horizons/art-source/shield-master-v1"
 IMAGES = ROOT / "Mods/new-horizons/Images"
 ICONS = ROOT / "client/windows/NewHorizonsPerkIcons.h"
 DEFINITIONS = ROOT / "config/newHorizonsPerks.json"
@@ -153,6 +154,12 @@ COUNTERCHARGE_EXPECTED = {
         "countercharge",
     ),
 }
+SHIELD_MASTER_EXPECTED = {
+    "new-horizons:armorer.shieldMaster": (
+        "NH_perk_shield_master",
+        "shield-master",
+    ),
+}
 EXPECTED = (
     V2_EXPECTED
     | V3_EXPECTED
@@ -161,6 +168,7 @@ EXPECTED = (
     | CLEAVE_EXPECTED
     | MASTER_GATE_EXPECTED
     | COUNTERCHARGE_EXPECTED
+    | SHIELD_MASTER_EXPECTED
 )
 
 
@@ -183,6 +191,7 @@ def main() -> None:
         (SOURCE_MASTER_GATE, MASTER_GATE_EXPECTED),
         (SOURCE_CLEAVE, CLEAVE_EXPECTED),
         (SOURCE_COUNTERCHARGE, COUNTERCHARGE_EXPECTED),
+        (SOURCE_SHIELD_MASTER, SHIELD_MASTER_EXPECTED),
     ):
         generation = json.loads((source / "generation.json").read_text(encoding="utf-8"))
         by_id = {asset["id"]: asset for asset in generation["assets"]}
@@ -210,7 +219,7 @@ def main() -> None:
                 assert (export / filename).is_file(), export / filename
             assert image_size(export / f"{slug}-44.png") == (44, 44)
             assert image_size(export / f"{slug}-32.png") == (32, 32)
-            if perk_id == "new-horizons:armorer.countercharge":
+            if perk_id in {"new-horizons:armorer.countercharge", "new-horizons:armorer.shieldMaster"}:
                 export_manifest = json.loads(
                     (export / f"{slug}-manifest.json").read_text(encoding="utf-8")
                 )
@@ -280,6 +289,26 @@ def main() -> None:
         if manifest_path.startswith("Mods/") and filename.endswith(".png"):
             live_state_hashes.add(expected_hash)
     assert len(live_state_hashes) == 4, "Countercharge runtime states must have distinct hashes"
+
+    shield_master_manifest = json.loads(
+        (SOURCE_SHIELD_MASTER / "runtime-manifest.json").read_text(encoding="utf-8")
+    )
+    assert shield_master_manifest["status"].startswith("provisional")
+    assert shield_master_manifest["assets"] == ["NH_perk_shield_master"]
+    live_state_hashes = set()
+    for manifest_path, expected_hash in shield_master_manifest["files"].items():
+        filename = Path(manifest_path).name
+        if manifest_path.startswith("source/"):
+            path = SOURCE_SHIELD_MASTER / "runtime" / filename
+        elif manifest_path.startswith("Mods/"):
+            path = IMAGES / filename
+        else:
+            raise AssertionError(f"unexpected Shield Master runtime manifest path: {manifest_path}")
+        assert path.is_file(), path
+        assert digest(path) == expected_hash, (manifest_path, "runtime export hash")
+        if manifest_path.startswith("Mods/") and filename.endswith(".png"):
+            live_state_hashes.add(expected_hash)
+    assert len(live_state_hashes) == 4, "Shield Master runtime states must have distinct hashes"
 
     definitions = json.loads(DEFINITIONS.read_text(encoding="utf-8"))
     active = {

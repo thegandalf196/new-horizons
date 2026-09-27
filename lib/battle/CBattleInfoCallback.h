@@ -116,6 +116,9 @@ public:
 	/// Returns the actual melee defender after a valid Protect interception, without consuming it.
 	const battle::Unit * battleResolveHeroOrderTarget(const battle::Unit * attacker,
 		const battle::Unit * defender, bool shooting) const;
+	/// Number of melee attacks Protect can redirect for this saved hero snapshot.
+	/// Ordinary Protect allows one; an active Shield Master perk allows two.
+	int battleHeroOrderProtectInterceptionLimit(BattleSide side) const;
 	/// Returns whether Brace is armed for this defender and this qualifying incoming attack.
 	bool battleCanTriggerHeroOrderBrace(const battle::Unit * attacker, const battle::Unit * defender,
 		int movementDistance, bool shooting, bool counter) const;

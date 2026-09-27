@@ -25,6 +25,8 @@
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 
+#include <algorithm>
+
 namespace
 {
 struct CommandDisplay
@@ -40,7 +42,7 @@ const std::array<CommandDisplay, 8> commandDisplays = {{
 	{HeroCommand::RIPOSTE, "NH_riposte_button", "Riposte", "Friendly stacks take less melee damage and deal increased retaliation damage this round."},
 	{HeroCommand::HOLD_THE_LINE, "NH_holdTheLine_button", "Hold the Line", "Friendly stacks take reduced physical damage while they remain in their issued positions."},
 	{HeroCommand::BRACE, "NH_brace_button", "Brace", "Friendly stacks pre-emptively attack enemies that moved at least 3 hexes before a melee attack."},
-	{HeroCommand::PROTECT, "NH_protect_button", "Protect", "Choose a Protector and adjacent Ward. The first melee attack against the Ward is redirected."},
+	{HeroCommand::PROTECT, "NH_protect_button", "Protect", "Choose a Protector and adjacent Ward. The first qualifying melee attack is redirected; Shield Master allows the first two."},
 	{HeroCommand::FLANK, "NH_flank_button", "Flank", "Choose one enemy stack. Friendly melee damage increases from additional distinct attack sides."},
 	{HeroCommand::SECOND_WIND, "NH_secondWind_button", "Second Wind", "Choose a friendly stack that already completed its normal activation for an additional activation at reduced direct damage."}
 }};
@@ -449,8 +451,13 @@ void BattleHeroActionWindow::refresh()
 			else if(active->command == HeroCommand::FOCUS_FIRE)
 				readback += " | target " + std::to_string(active->primaryTargetUnitId);
 			else if(active->command == HeroCommand::PROTECT)
+			{
+				const int limit = callback->battleHeroOrderProtectInterceptionLimit(side);
+				const int used = active->protectInterceptionsConsumed;
 				readback += " | Protector " + std::to_string(active->primaryTargetUnitId) + " -> Ward " + std::to_string(active->secondaryTargetUnitId)
-					+ (active->protectIntercepted ? " | interception spent" : " | interception ready");
+					+ " | interceptions " + std::to_string(used) + "/" + std::to_string(limit)
+					+ " used (" + std::to_string(std::max(0, limit - used)) + " remaining)";
+			}
 			else if(active->command == HeroCommand::FLANK && !active->flankTargets.empty())
 			{
 				unsigned sides = active->flankTargets.front().sideMask;

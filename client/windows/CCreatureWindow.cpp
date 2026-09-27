@@ -15,6 +15,8 @@
 #include <vcmi/spells/Spell.h>
 #include <vcmi/spells/Service.h>
 
+#include <algorithm>
+
 #include "../CPlayerInterface.h"
 #include "render/Canvas.h"
 #include "../widgets/Buttons.h"
@@ -355,6 +357,7 @@ std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
 		const bool own = battle->playerToSide(battle->battleGetOwner(stack)) == side;
 		bool applies = false;
 		std::string suffix;
+		std::string detail;
 		switch(state->command)
 		{
 		case HeroCommand::CHARGE:
@@ -389,7 +392,11 @@ std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
 				else if(state->secondaryTargetUnitId == stack->unitId())
 				{
 					applies = true;
-					suffix = state->protectIntercepted ? "ward (interception spent)" : "ward";
+					const int limit = battle->battleHeroOrderProtectInterceptionLimit(side);
+					const int used = state->protectInterceptionsConsumed;
+					suffix = "ward " + std::to_string(used) + "/" + std::to_string(limit);
+					detail = "Protect interceptions: " + std::to_string(used) + "/" + std::to_string(limit)
+						+ " used; " + std::to_string(std::max(0, limit - used)) + " remaining this round.";
 				}
 			}
 			break;
@@ -411,6 +418,7 @@ std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
 			const auto name = orderName(state->command);
 			result.push_back({state->command, suffix.empty() ? name : name + ": " + suffix,
 				name + (suffix.empty() ? "" : " — " + suffix)
+				+ (detail.empty() ? "" : "\n" + detail)
 				+ "\nTactical Order: presentation only; not a spell and cannot be dispelled."});
 		}
 	}

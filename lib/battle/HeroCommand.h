@@ -84,7 +84,13 @@ struct DLL_LINKAGE HeroOrderState
 	int32_t issuedRound = 0;
 	uint32_t primaryTargetUnitId = INVALID_UNIT_ID;
 	uint32_t secondaryTargetUnitId = INVALID_UNIT_ID;
-	bool protectIntercepted = false;
+	/// Number of qualifying melee attacks redirected by Protect during this Order.
+	/// This count and the issued-order limit below are public battle snapshots, so
+	/// AI and clients never need to inspect a concealed opposing hero.
+	uint8_t protectInterceptionsConsumed = 0;
+	/// Protect allowance captured when the Order is issued: one normally, two with
+	/// Shield Master. It does not change if perk data or hero visibility changes.
+	uint8_t protectInterceptionLimit = 1;
 	/// Protect is a one-way adjacency contract. Once either unit separates, it
 	/// cannot become armed again merely by moving back next to its partner.
 	bool protectBroken = false;
@@ -147,6 +153,8 @@ struct DLL_LINKAGE HeroOrderState
 		const auto maxWireId = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
 		if(command == HeroCommand::NONE || issuedRound < 1
 			|| warcastingBonusPercent < 0 || warcastingBonusPercent > 100
+			|| protectInterceptionLimit < 1 || protectInterceptionLimit > 2
+			|| protectInterceptionsConsumed > protectInterceptionLimit
 			|| (primaryTargetUnitId != INVALID_UNIT_ID && primaryTargetUnitId > maxWireId)
 			|| (secondaryTargetUnitId != INVALID_UNIT_ID && secondaryTargetUnitId > maxWireId)
 			|| !std::is_sorted(consumedUnitIds.begin(), consumedUnitIds.end())
@@ -156,6 +164,9 @@ struct DLL_LINKAGE HeroOrderState
 			|| !std::is_sorted(holdBrokenUnitIds.begin(), holdBrokenUnitIds.end())
 			|| std::adjacent_find(holdBrokenUnitIds.begin(), holdBrokenUnitIds.end()) != holdBrokenUnitIds.end())
 			throw std::runtime_error("Invalid New Horizons Hero Order state shape");
+		if(command != HeroCommand::PROTECT
+			&& (protectInterceptionsConsumed != 0 || protectInterceptionLimit != 1))
+			throw std::runtime_error("Non-Protect Hero Order contains Protect interception state");
 		for(const auto & id : consumedUnitIds)
 			if(id > maxWireId)
 				throw std::runtime_error("Invalid consumed Hero Order unit identity");
@@ -181,6 +192,9 @@ struct DLL_LINKAGE HeroOrderState
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && (protectInterceptionsConsumed > 1 || protectInterceptionLimit > 1)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SHIELD_MASTER))
+			throw std::runtime_error("Cannot discard Shield Master Protect state");
 		if(h.saving && warcastingBonusPercent != 0 && !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING))
 			throw std::runtime_error("Cannot discard Warcasting Order snapshot");
 		if(h.saving)
@@ -189,7 +203,23 @@ struct DLL_LINKAGE HeroOrderState
 		h & issuedRound;
 		h & primaryTargetUnitId;
 		h & secondaryTargetUnitId;
-		h & protectIntercepted;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SHIELD_MASTER))
+		{
+			h & protectInterceptionsConsumed;
+			h & protectInterceptionLimit;
+		}
+		else if(h.saving)
+		{
+			bool legacyProtectIntercepted = protectInterceptionsConsumed != 0;
+			h & legacyProtectIntercepted;
+		}
+		else
+		{
+			bool legacyProtectIntercepted = false;
+			h & legacyProtectIntercepted;
+			protectInterceptionsConsumed = legacyProtectIntercepted ? 1 : 0;
+			protectInterceptionLimit = 1;
+		}
 		h & protectBroken;
 		h & secondWindActive;
 		h & consumedUnitIds;
@@ -205,6 +235,14 @@ struct DLL_LINKAGE HeroOrderState
 			validateShape();
 	}
 };
+
+namespace newHorizonsShieldMaster
+{
+constexpr char SKILL[] = "new-horizons:armorer";
+constexpr char PERK[] = "new-horizons:armorer.shieldMaster";
+constexpr uint8_t ORDINARY_PROTECT_INTERCEPTION_LIMIT = 1;
+constexpr uint8_t SHIELD_MASTER_PROTECT_INTERCEPTION_LIMIT = 2;
+}
 
 namespace heroCommands
 {

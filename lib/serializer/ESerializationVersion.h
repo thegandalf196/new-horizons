@@ -110,12 +110,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_CLEAVE, // per-stack once-per-activation Cleave expenditure
 	NEW_HORIZONS_RELENTLESS_ASSAULT, // per-side target streak and current activation snapshot
 	NEW_HORIZONS_NO_QUARTER, // round retaliation block and next-activation morale penalty
+	NEW_HORIZONS_SHIELD_MASTER, // exact Protect interception count, including Shield Master's second use
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_NO_QUARTER,
+	CURRENT = NEW_HORIZONS_SHIELD_MASTER,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -136,6 +137,7 @@ static_assert(ESerializationVersion::NEW_HORIZONS_PURSUIT > ESerializationVersio
 static_assert(ESerializationVersion::NEW_HORIZONS_CLEAVE > ESerializationVersion::NEW_HORIZONS_PURSUIT);
 static_assert(ESerializationVersion::NEW_HORIZONS_RELENTLESS_ASSAULT > ESerializationVersion::NEW_HORIZONS_CLEAVE);
 static_assert(ESerializationVersion::NEW_HORIZONS_NO_QUARTER > ESerializationVersion::NEW_HORIZONS_RELENTLESS_ASSAULT);
+static_assert(ESerializationVersion::NEW_HORIZONS_SHIELD_MASTER > ESerializationVersion::NEW_HORIZONS_NO_QUARTER);
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION > ESerializationVersion::NEW_HORIZONS_WARCASTING);
 static_assert(ESerializationVersion::NEW_HORIZONS_HERO_ACTION_ALLOWANCES > ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTERIES > ESerializationVersion::NEW_HORIZONS_CAPABILITIES);

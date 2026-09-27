@@ -46,6 +46,15 @@ protected:
 			newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT));
 	}
 
+	void grantShieldMaster(CGHeroInstance * hero)
+	{
+		const int armorer = SecondarySkill::decode("new-horizons:armorer");
+		ASSERT_GE(armorer, 0);
+		hero->setSecSkillLevel(SecondarySkill(armorer), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		hero->applyPerkSelection({"new-horizons:armorer", "new-horizons:armorer.shieldMaster"});
+		ASSERT_TRUE(hero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.shieldMaster"));
+	}
+
 	void startBattleWithRelentlessAssault()
 	{
 		startGame();
@@ -153,12 +162,91 @@ TEST_F(NewHorizonsRelentlessAssaultAITest, ProtectMultistrikeUsesCapturedTargetA
 	EXPECT_EQ(projectedStreak.targetUnitId, ward->unitId());
 	EXPECT_EQ(projectedStreak.tier, 0);
 	ASSERT_TRUE(projectedModel->battleGetHeroOrderState(BattleSide::DEFENDER).has_value());
-	EXPECT_TRUE(projectedModel->battleGetHeroOrderState(BattleSide::DEFENDER)->protectIntercepted);
+	EXPECT_EQ(projectedModel->battleGetHeroOrderState(BattleSide::DEFENDER)->protectInterceptionsConsumed, 1);
 	EXPECT_EQ(battle()->getRelentlessAssaultState(BattleSide::ATTACKER), liveStreakBefore);
 	ASSERT_TRUE(battle()->battleGetHeroOrderState(BattleSide::DEFENDER).has_value());
-	EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::DEFENDER)->protectIntercepted);
+	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::DEFENDER)->protectInterceptionsConsumed, 0);
 	EXPECT_EQ(ordinaryModel->battleGetRelentlessAssaultState(BattleSide::ATTACKER).targetUnitId,
 		RelentlessAssaultState::INVALID_TARGET);
+}
+
+TEST_F(NewHorizonsRelentlessAssaultAITest, ShieldMasterRedirectsTwoOfThreeProjectedStrikesWithoutMutatingLiveBattle)
+{
+	startGame();
+	ASSERT_NO_FATAL_FAILURE(grantShieldMaster(defenderSideHero));
+	startBattle();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 100);
+	auto * ward = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 100);
+	BattleHex protectorHex = BattleHex::INVALID;
+	for(const auto candidate : ward->getPosition().getNeighbouringTiles())
+		if(candidate.isAvailable() && candidate != attacker->getPosition()
+			&& !battle()->battleGetUnitByPos(candidate, true))
+		{
+			protectorHex = candidate;
+			break;
+		}
+	ASSERT_TRUE(protectorHex.isAvailable());
+	auto * protector = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), protectorHex, 100);
+	attacker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::ADDITIONAL_ATTACK, BonusSource::OTHER, 2, BonusSourceID()));
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	HeroOrderState protect;
+	protect.command = HeroCommand::PROTECT;
+	protect.issuedRound = battle()->battleGetRound();
+	protect.primaryTargetUnitId = protector->unitId();
+	protect.secondaryTargetUnitId = ward->unitId();
+	protect.protectInterceptionLimit = 2;
+	battle()->setHeroOrderState(BattleSide::DEFENDER, protect);
+	ASSERT_EQ(battle()->battleHeroOrderProtectInterceptionLimit(BattleSide::DEFENDER), 2);
+
+	RelentlessAssaultEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto projectedModel = std::make_shared<HypotheticBattle>(&environment, callback);
+	ASSERT_EQ(projectedModel->battleHeroOrderProtectInterceptionLimit(BattleSide::DEFENDER), 2);
+	DamageCache cache;
+	auto projectedAttacker = projectedModel->getForUpdate(attacker->unitId());
+	auto projectedWard = projectedModel->getForUpdate(ward->unitId());
+	const auto possibility = AttackPossibility::evaluate(
+		BattleAttackInfo(projectedAttacker.get(), projectedWard.get(), 0, false),
+		attacker->getPosition(), cache, projectedModel);
+	const auto strikes = primaryAttacks(possibility);
+	ASSERT_EQ(strikes.size(), 3u);
+	EXPECT_EQ(strikes[0]->defenderId, protector->unitId());
+	EXPECT_EQ(strikes[1]->defenderId, protector->unitId());
+	EXPECT_EQ(strikes[2]->defenderId, ward->unitId());
+	EXPECT_TRUE(strikes[0]->protectIntercepted);
+	EXPECT_TRUE(strikes[1]->protectIntercepted);
+	EXPECT_FALSE(strikes[2]->protectIntercepted);
+	ASSERT_TRUE(possibility.effectPreview);
+	ASSERT_TRUE(possibility.effectPreview->battleGetHeroOrderState(BattleSide::DEFENDER));
+	EXPECT_EQ(possibility.effectPreview->battleGetHeroOrderState(BattleSide::DEFENDER)
+		->protectInterceptionsConsumed, 2);
+
+	const auto live = battle()->battleGetHeroOrderState(BattleSide::DEFENDER);
+	ASSERT_TRUE(live);
+	EXPECT_EQ(live->protectInterceptionsConsumed, 0);
+	BattleExchangeVariant exchange;
+	exchange.trackAttack(possibility, projectedModel, cache);
+	ASSERT_TRUE(projectedModel->battleGetHeroOrderState(BattleSide::DEFENDER));
+	EXPECT_EQ(projectedModel->battleGetHeroOrderState(BattleSide::DEFENDER)
+		->protectInterceptionsConsumed, 2);
+	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::DEFENDER)->protectInterceptionsConsumed, 0);
+
+	// With both interceptions spent, a later hypothetical attack must resolve
+	// against the Ward normally rather than seeing an empty projected target set.
+	auto projectedAttackerAfter = projectedModel->getForUpdate(attacker->unitId());
+	auto projectedWardAfter = projectedModel->getForUpdate(ward->unitId());
+	const auto afterExhaustion = AttackPossibility::evaluate(
+		BattleAttackInfo(projectedAttackerAfter.get(), projectedWardAfter.get(), 0, false),
+		attacker->getPosition(), cache, projectedModel);
+	const auto laterStrikes = primaryAttacks(afterExhaustion);
+	ASSERT_EQ(laterStrikes.size(), 3u);
+	for(const auto * strike : laterStrikes)
+	{
+		EXPECT_EQ(strike->defenderId, ward->unitId());
+		EXPECT_FALSE(strike->protectIntercepted);
+	}
 }
 
 TEST_F(NewHorizonsRelentlessAssaultAITest, DefendingHeroStreakDoesNotIncreaseRetaliationDamage)

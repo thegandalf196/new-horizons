@@ -155,6 +155,39 @@ protected:
 	}
 };
 
+class ShieldMasterTest : public HeroCommandFixture
+{
+protected:
+	void SetUp() override
+	{
+		HeroCommandFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
+
+	void prepareShieldMaster(bool selectPerk = true)
+	{
+		startGame();
+		const int armorer = SecondarySkill::decode("new-horizons:armorer");
+		ASSERT_GE(armorer, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(armorer), MasteryLevel::BASIC,
+			ChangeValueMode::ABSOLUTE);
+		if(selectPerk)
+			attackerSideHero->applyPerkSelection({"new-horizons:armorer", "new-horizons:armorer.shieldMaster"});
+		ASSERT_EQ(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.shieldMaster"),
+			selectPerk);
+		startBattle();
+		beginCombat();
+	}
+};
+
 TEST_F(EncirclementTest, EncirclementChangesOnlyAdditionalSideDamageAfterARecordedFlank)
 {
 	prepareEncirclement();
@@ -301,7 +334,8 @@ TEST_F(HeroCommandTest, HeroOrderStatePacketRoundTripsThroughClientPackPointer)
 	state.issuedRound = 3;
 	state.primaryTargetUnitId = 11;
 	state.secondaryTargetUnitId = 12;
-	state.protectIntercepted = true;
+	state.protectInterceptionsConsumed = 2;
+	state.protectInterceptionLimit = 2;
 	outgoing.state = state;
 
 	const CPackForClient & base = outgoing;
@@ -312,6 +346,38 @@ TEST_F(HeroCommandTest, HeroOrderStatePacketRoundTripsThroughClientPackPointer)
 	EXPECT_EQ(registered->side, outgoing.side);
 	ASSERT_TRUE(registered->state);
 	EXPECT_EQ(*registered->state, *outgoing.state);
+}
+
+TEST_F(HeroCommandTest, ShieldMasterProtectCountRoundTripsAndRejectsLossyDownsave)
+{
+	HeroOrderState twoUses;
+	twoUses.command = HeroCommand::PROTECT;
+	twoUses.issuedRound = 3;
+	twoUses.primaryTargetUnitId = 11;
+	twoUses.secondaryTargetUnitId = 12;
+	twoUses.protectInterceptionsConsumed = 2;
+	twoUses.protectInterceptionLimit = 2;
+	CMemorySerializer current;
+	current.oser & twoUses;
+	HeroOrderState currentRestored;
+	current.iser & currentRestored;
+	EXPECT_EQ(currentRestored, twoUses);
+
+	CMemorySerializer legacy;
+	legacy.oser.version = ESerializationVersion::NEW_HORIZONS_NO_QUARTER;
+	legacy.iser.version = ESerializationVersion::NEW_HORIZONS_NO_QUARTER;
+	HeroOrderState oneUse = twoUses;
+	oneUse.protectInterceptionsConsumed = 1;
+	oneUse.protectInterceptionLimit = 1;
+	legacy.oser & oneUse;
+	HeroOrderState legacyRestored;
+	legacy.iser & legacyRestored;
+	EXPECT_EQ(legacyRestored.protectInterceptionsConsumed, 1);
+	EXPECT_EQ(legacyRestored.protectInterceptionLimit, 1);
+	EXPECT_THROW(legacy.oser & twoUses, std::runtime_error);
+	HeroOrderState unspentShieldMaster = twoUses;
+	unspentShieldMaster.protectInterceptionsConsumed = 0;
+	EXPECT_THROW(legacy.oser & unspentShieldMaster, std::runtime_error);
 }
 
 TEST_F(HeroCommandTest, FlankSideMaskRoundTripsThroughClientPackPointer)
@@ -865,6 +931,7 @@ TEST_F(HeroCommandTest, ProtectRedirectsOneAdjacentWardAttack)
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
 			protector->unitId(), ward->unitId())));
+	EXPECT_EQ(battle()->battleHeroOrderProtectInterceptionLimit(BattleSide::ATTACKER), 1);
 	ASSERT_EQ(server.battleLogLines.size(), 1);
 	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("Protect! Protector: Angels. Ward: Angels."));
 	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("first qualifying melee attack"));
@@ -874,6 +941,132 @@ TEST_F(HeroCommandTest, ProtectRedirectsOneAdjacentWardAttack)
 	EXPECT_EQ(state->secondaryTargetUnitId, ward->unitId());
 	EXPECT_EQ(battle()->battleResolveHeroOrderTarget(enemy, ward, false), protector);
 	ASSERT_TRUE(battle()->interceptHeroOrderProtect(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->battleResolveHeroOrderTarget(enemy, ward, false), ward);
+}
+
+TEST_F(ShieldMasterTest, ProtectRedirectsAndReducesExactlyTheFirstTwoOfThreeMeleeAttacks)
+{
+	prepareShieldMaster();
+	auto * protector = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 1);
+	auto * ward = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(71), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(72), 1);
+	ASSERT_NE(protector, nullptr);
+	ASSERT_NE(ward, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	ASSERT_EQ(BattleHex::getDistance(protector->getPosition(), ward->getPosition()), 1);
+	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::ADDITIONAL_ATTACK,
+		BonusSource::OTHER, 2, BonusSourceID()));
+	forceMaximumDamage(enemy);
+	blockRetaliation(protector);
+	blockRetaliation(ward);
+	blockRetaliation(enemy);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
+			protector->unitId(), ward->unitId())));
+	EXPECT_EQ(battle()->battleHeroOrderProtectInterceptionLimit(BattleSide::ATTACKER), 2);
+	ASSERT_EQ(server.battleLogLines.size(), 1);
+	EXPECT_THAT(server.battleLogLines.front(), ::testing::HasSubstr("first two qualifying melee attacks"));
+
+	const auto ordinaryDamage = battle()->calculateDmgRange(BattleAttackInfo(enemy, ward, 0, false)).damage.max;
+	BattleAttackInfo interceptedDamage(enemy, protector, 0, false);
+	interceptedDamage.protectIntercepted = true;
+	const auto reducedDamage = battle()->calculateDmgRange(interceptedDamage).damage.max;
+	ASSERT_GT(ordinaryDamage, reducedDamage);
+	server.attacks.clear();
+	server.battleLogLines.clear();
+
+	ASSERT_TRUE(attack(enemy, ward->getPosition()));
+	std::vector<const BattleAttack *> strikes;
+	for(const auto & candidate : server.attacks)
+		if(candidate.stackAttacking == enemy->unitId() && !candidate.counter())
+			strikes.push_back(&candidate);
+	ASSERT_EQ(strikes.size(), 3u) << ::testing::PrintToString(server.attacks);
+	for(size_t i = 0; i < strikes.size(); ++i)
+	{
+		const auto expectedTarget = i < 2 ? protector->unitId() : ward->unitId();
+		const auto hit = std::ranges::find(strikes[i]->bsa, expectedTarget, &BattleStackAttacked::stackAttacked);
+		ASSERT_NE(hit, strikes[i]->bsa.end()) << "Strike " << i << " hit the wrong stack";
+		EXPECT_EQ(hit->damageAmount, i < 2 ? reducedDamage : ordinaryDamage);
+	}
+	const auto finalState = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(finalState);
+	EXPECT_EQ(finalState->protectInterceptionsConsumed, 2);
+	EXPECT_EQ(std::ranges::count_if(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Protect reduced the damage") != std::string::npos;
+	}), 2);
+}
+
+TEST_F(ShieldMasterTest, RangedAttackDoesNotConsumeProtectInterception)
+{
+	prepareShieldMaster();
+	auto * protector = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 10);
+	auto * ward = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(71), 10);
+	auto * shooter = addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(93), 10);
+	ASSERT_NE(protector, nullptr);
+	ASSERT_NE(ward, nullptr);
+	ASSERT_NE(shooter, nullptr);
+	blockRetaliation(protector);
+	blockRetaliation(ward);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
+			protector->unitId(), ward->unitId())));
+	ASSERT_TRUE(battle()->battleCanShoot(shooter, ward->getPosition()));
+	server.attacks.clear();
+	battle()->activeStack = shooter->unitId();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
+		BattleAction::makeShotAttack(shooter, ward)));
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_EQ(state->protectInterceptionsConsumed, 0);
+	EXPECT_EQ(battle()->battleResolveHeroOrderTarget(shooter, ward, false), protector);
+	const auto shot = std::ranges::find_if(server.attacks, [shooter](const BattleAttack & value)
+	{
+		return value.stackAttacking == shooter->unitId() && value.shot();
+	});
+	ASSERT_NE(shot, server.attacks.end());
+	EXPECT_NE(std::ranges::find(shot->bsa, ward->unitId(), &BattleStackAttacked::stackAttacked), shot->bsa.end());
+}
+
+TEST_F(ShieldMasterTest, DeadProtectorBreaksPairWithoutSpendingAUseAndNewRoundResetsCount)
+{
+	prepareShieldMaster();
+	auto * protector = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 1);
+	auto * ward = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(71), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(72), 1);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
+			protector->unitId(), ward->unitId())));
+	ASSERT_TRUE(battle()->interceptHeroOrderProtect(BattleSide::ATTACKER));
+	ASSERT_TRUE(battle()->interceptHeroOrderProtect(BattleSide::ATTACKER));
+	EXPECT_FALSE(battle()->interceptHeroOrderProtect(BattleSide::ATTACKER));
+	auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_EQ(state->protectInterceptionsConsumed, 2);
+
+	advanceRound();
+	EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
+			protector->unitId(), ward->unitId())));
+	state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_EQ(state->protectInterceptionsConsumed, 0);
+
+	auto deadProtector = protector->acquireState();
+	int64_t lethalDamage = deadProtector->getAvailableHealth();
+	deadProtector->damage(lethalDamage);
+	ASSERT_FALSE(deadProtector->alive());
+	BattleUnitsChanged killed;
+	killed.battleID = BattleID(0);
+	killed.changedStacks.emplace_back(protector->unitId(), UnitChanges::EOperation::UPDATE);
+	killed.changedStacks.back().data = deadProtector->save();
+	killed.changedStacks.back().healthDelta = -lethalDamage;
+	gameHandler->sendAndApply(killed);
+	const auto broken = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(broken);
+	EXPECT_TRUE(broken->protectBroken);
+	EXPECT_EQ(broken->protectInterceptionsConsumed, 0);
 	EXPECT_EQ(battle()->battleResolveHeroOrderTarget(enemy, ward, false), ward);
 }
 
@@ -916,7 +1109,7 @@ TEST_F(HeroCommandTest, ProtectReductionIsScopedToTheInterceptedBlowAndStateIsRe
 	EXPECT_THAT(*causalLine, ::testing::HasSubstr(std::to_string(hit->damageAmount) + " damage"));
 	ASSERT_GT(server.orderStateUpdates.size(), statePacketsBeforeAttack);
 	ASSERT_TRUE(server.orderStateUpdates.back().state);
-	EXPECT_TRUE(server.orderStateUpdates.back().state->protectIntercepted);
+	EXPECT_EQ(server.orderStateUpdates.back().state->protectInterceptionsConsumed, 1);
 }
 
 TEST_F(HeroCommandTest, ProtectExpiresPermanentlyAfterFullFootprintSeparation)

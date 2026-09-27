@@ -235,7 +235,9 @@ static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSid
 			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
 			line.appendRawString(". Ward:");
 			appendHeroOrderTarget(line, battle, state.secondaryTargetUnitId);
-			line.appendRawString(". The first qualifying melee attack is intercepted this round.");
+			line.appendRawString(battle.battleHeroOrderProtectInterceptionLimit(side) > 1
+				? ". The first two qualifying melee attacks are intercepted this round."
+				: ". The first qualifying melee attack is intercepted this round.");
 			break;
 		case HeroCommand::FLANK:
 			line.appendRawString(" Target:");
@@ -2179,9 +2181,9 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	std::optional<HeroOrderState> orderStateBeforeAttacker = battle.battleGetHeroOrderState(BattleSide::ATTACKER);
 	std::optional<HeroOrderState> orderStateBeforeDefender = battle.battleGetHeroOrderState(BattleSide::DEFENDER);
 	bool protectIntercepted = attack.protectIntercepted;
-	// Protect redirects only the first melee blow aimed at its Ward. Resolve the
-	// destination on the authoritative battle snapshot before any attack
-	// reactions or damage are calculated, so every observer sees the same target.
+	// Protect redirects each qualifying melee blow until this saved Order's
+	// snapshot-aware interception allowance is consumed. Resolve and consume the
+	// destination on the authoritative battle snapshot before reactions or damage.
 	if(defender && !attack.ranged)
 	{
 		const auto * redirected = battle.battleResolveHeroOrderTarget(attacker, defender, false);
