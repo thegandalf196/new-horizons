@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-27",
+  "generator": "OpenAI built-in image generator via homm3-art skill",
+  "method": "Original generated raster artwork for the canonical Encirclement perk; no reference image pixels were used. The retained master is reduced with homm3-art export_art.py; runtime states use brightness/color-only transforms.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "style_guide": "homm3-art/references/style-guide.md (secondary-skill icons)",
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "prompt_file": "prompt-encirclement.txt",
+  "assets": [
+    {
+      "id": "new-horizons:offense.encirclement",
+      "name": "Encirclement",
+      "key": "NH_perk_encirclement",
+      "master": "exports/encirclement/master.png",
+      "generated_output": "generated_images/01a0b955-f4cb-7e13-bf57-deb7ff85e2db/exec-58fd8f3e-442d-4a3b-813b-3008bb71d434.png",
+      "prompt_file": "prompt-encirclement.txt",
+      "dimensions": [1254, 1254],
+      "source_sha256": "fc39ba806bd7003644cbf8d5614382800f8f6ec5f8f0b7f501031f7821069339",
+      "style_reference": null
+    }
+  ]
+}

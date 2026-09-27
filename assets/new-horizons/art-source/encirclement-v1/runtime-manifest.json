@@ -1,0 +1,14 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_encirclement"
+  ],
+  "files": {
+    "NH_perk_encirclement_normal.png": "bd68bf0917c489ace974c3361a769180aafbf257442fbcff1b20b21454ea763a",
+    "NH_perk_encirclement_pressed.png": "52b9b7eaacbbfba311c75da98d73ad953361b372b23431b2a7ff6f1fe68d9896",
+    "NH_perk_encirclement_disabled.png": "468f7a34853a0e65e64cffc64685e7a3e09018cc380e2b3b1da1cdb2fb99e73e",
+    "NH_perk_encirclement_highlighted.png": "c402eae1b8e94f6138659255044d35193db99d5508256d08e67cf87eaaea3594",
+    "NH_perk_encirclement.json": "2cc2effb6d8529cfc8d7c8ab37b6f727b9a93b5e7b4dfbe64ee24321f87f2ab1"
+  }
+}

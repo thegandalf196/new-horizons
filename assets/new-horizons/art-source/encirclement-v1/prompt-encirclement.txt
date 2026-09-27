@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: Heroes III-style New Horizons Basic perk icon, square high-resolution master for reduction to 44x44 and 32x32
+Primary request: Create an original icon for the perk “Encirclement,” representing the Flank order gaining stronger damage from additional distinct attack sides.
+Subject: One tightly integrated miniature fantasy still life: a battered round blackened-steel shield at the center, visibly hemmed in by exactly three different medieval weapon heads converging toward it from three clearly separated directions—an iron sword from upper left, a spear from upper right, and a heavy axe from below. A narrow torn crimson pennant curls around the group to unify the silhouette and suggest coordinated assault.
+Scene/backdrop: dark worn oxblood leather and smoky umber, minimal background detail.
+Style/medium: late-1990s Western PC fantasy illustration, richly dimensional miniature modeled fantasy still-life painting, painterly pre-rendered materials.
+Composition/framing: bold compact triangular/radial silhouette filling most of the square with a narrow safe inset; central shield dominant; exactly three converging weapons easy to count; no clipping; prioritize readability after downsampling.
+Lighting/mood: theatrical chiaroscuro, warm gold-red side light, cold steel highlights, deep shadows.
+Color palette: blackened iron, worn steel, oxblood, restrained crimson and warm brass; saturated medieval colors below neon.
+Materials/textures: chipped steel, dark iron, worn leather, torn cloth.
+Constraints: no words, letters, numbers, runes, arrows, diagrams, characters, faces, logos, watermark, UI chrome, ornamental border, flat vector shapes, cartoon outlines, intentional pixel art, dithering, neon bloom, or excessive particles. Major shapes must remain identifiable at 44x44 and 32x32.
