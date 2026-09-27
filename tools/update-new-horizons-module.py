@@ -6,6 +6,29 @@ import json
 from pathlib import Path
 
 
+BIOGRAPHY_FACTIONS = (
+    'castle', 'rampart', 'tower', 'inferno', 'necropolis', 'dungeon',
+    'stronghold', 'fortress', 'conflux',
+)
+
+
+def biography_patch(root):
+    result = {}
+    for faction in BIOGRAPHY_FACTIONS:
+        roster = json.loads((root / 'config' / 'heroes' / f'{faction}.json').read_text(encoding='utf-8'))
+        authored = json.loads((root / 'config' / 'newHorizonsHeroBiographies' /
+                               f'{faction}.json').read_text(encoding='utf-8'))
+        if set(authored) != set(roster):
+            raise ValueError(f'Biography decisions do not match the core {faction} roster')
+        for hero, biography in authored.items():
+            if biography is None:
+                continue
+            if not isinstance(biography, str) or not biography.strip():
+                raise ValueError(f'Biography override for core:{hero} must be non-empty text or null')
+            result[f'core:{hero}'] = {'texts': {'biography': biography}}
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
@@ -40,6 +63,7 @@ def main():
     # manifest so the curated module cannot silently omit the retired-skill
     # audit fixes.
     hero_patch_files = [
+        'config/heroes/biographies.json',
         'config/heroes/fafner.json',
         'config/heroes/halon.json',
         'config/heroes/solmyr.json',
@@ -148,22 +172,32 @@ def main():
         settings['heroes']['newHorizonsPerks'] = canonical('newHorizonsPerks.json')
         # Random artifact exclusions change new-game content; managed profiles
         # must not silently retain the older module settings.
-        metadata['version'] = '0.13.0'
+        metadata['version'] = '0.14.0'
         metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
         metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
         metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry; active entries '
                                     'are backed by their corresponding runtime systems while remaining entries '
                                     'stay planned. '
                                     'Includes independently authored quick-save/load buttons and creature ability '
-                                    'icons; landscape presentation only.')
+                                    'icons; landscape presentation only. '
+                                    'Selectively reviewed hero biography rewrites replace only entries proven '
+                                    'stronger than the installed originals.')
     expected = json.dumps(metadata, indent='\t', ensure_ascii=False) + '\n'
+    biographies = json.dumps(biography_patch(root), indent='\t', ensure_ascii=False) + '\n'
+    biography_destination = root / 'Mods/new-horizons/Content/config/heroes/biographies.json'
     if args.check:
         if not destination.is_file() or destination.read_text(encoding='utf-8') != expected:
             parser.exit(1, 'Curated module metadata is stale; run tools/update-new-horizons-module.py\n')
+        if (not biography_destination.is_file()
+                or biography_destination.read_text(encoding='utf-8') != biographies):
+            parser.exit(1, 'Curated hero biographies are stale; run tools/update-new-horizons-module.py\n')
         print('PASS: module settings, six schools, 31 Skill entities, perk registry, image mount and metadata match canonical data')
     else:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(expected, encoding='utf-8')
+        if preview_output is None:
+            biography_destination.parent.mkdir(parents=True, exist_ok=True)
+            biography_destination.write_text(biographies, encoding='utf-8')
         print('Updated ' + str(destination.relative_to(root)))
 
 

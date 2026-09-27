@@ -1,0 +1,262 @@
+{
+	"core:sylvia": {
+		"texts": {
+			"biography": "Sylvia spent several years as a Regnan Pirate, until she decided that a pirate's life was not for her. She sought a new beginning in Erathia's military and now serves in the Coastal Patrol. There she fights raids by the very Pirates with whom she once sailed."
+		}
+	},
+	"core:lordHaart": {
+		"texts": {
+			"biography": "Some say Lord Haart left Enroth because of ties to a Necromantic cult. His service to Erathia's crown, like his service to Roland Ironfist before the Succession Wars, has been spotless—a stark contrast to the rumor."
+		}
+	},
+	"core:christian": {
+		"texts": {
+			"biography": "Christian was a frontiersman long before he settled into Erathian military service, having set foot in nearly every part of Enroth. A wanderer and something of a dreamer, he is far from the conventional Knight. His battlefield tactics, however, are feared throughout the world."
+		}
+	},
+	"core:cuthbert": {
+		"texts": {
+			"biography": "Cuthbert once toyed with darker magics as a young man. When a spell he cast went awry and killed his wife, he turned to good and never looked back. His past did not erase what he learned: Cuthbert's insight into the workings of dark magic gives him an edge possessed by no other."
+		}
+	},
+	"core:adelaide": {
+		"texts": {
+			"biography": "A storm caught Adelaide at sea, wrecking her ship on Vori, home of the Snow Elves. She trained with them for some twenty years. Upon returning to Erathia, she discovered that no time had passed in her absence."
+		}
+	},
+	"core:mephala": {
+		"texts": {
+			"biography": "Mephala trained in Erathia's military and showed a genius for using terrain to her advantage in battle. Several years ago, she resigned her commission, preferring AvLee's quiet serenity to the bustle of Erathia's cities instead."
+		}
+	},
+	"core:ryland": {
+		"texts": {
+			"biography": "Ryland was the first human—and to date the only one—fully accepted by AvLee's Circle of Elder Dendroids as a Ranger. Some joke that he was once an Elf, killed and accidentally reincarnated into a human body."
+		}
+	},
+	"core:gem": {
+		"texts": {
+			"biography": "Gem was one of Enroth's greatest Sorceresses, serving King Roland Ironfist during the Succession Wars. Shortly after Roland secured the throne of Enroth, Gem left for Erathia, where she found a new home in AvLee."
+		}
+	},
+	"core:alagar": {
+		"texts": {
+			"biography": "Alagar is rumored to have lived among Vori's Snow Elves. His command of the element of Water is unsurpassed, especially his command of ice. He has been in AvLee's service since before the Kreegan invasion."
+		}
+	},
+	"core:fafner": {
+		"texts": {
+			"biography": "It is said that Fafner became a Genie over a millennium ago after finding a Genie bottle and wishing to be as powerful as the Genie who granted the wish. The wish was granted, and he has served the leaders of Bracada ever since."
+		}
+	},
+	"core:astral": {
+		"texts": {
+			"biography": "Astral arrived in Erathia nearly ten years ago and was quickly accepted into Bracada's Wizards' Guild. His rapid rise through the ranks led some to joke that only magic could have brought him such success so soon."
+		}
+	},
+	"core:serena": {
+		"texts": {
+			"biography": "The first time Serena cast a spell, she nearly killed herself by channeling too much magical energy into it. A Wizard in a neighboring town felt the force, sought her out and brought her to the Wizards' Guild to learn control. Her remarkable power came before she knew how to contain it."
+		}
+	},
+	"core:solmyr": {
+		"texts": {
+			"biography": "Solmyr was trapped in a Genie bottle for over a millennium. Grateful to the human who finally released him, he accidentally swore to serve that man for eternity. As fate would have it, the man is Gavin Magnus, immortal ruler of the Bracada Highlands."
+		}
+	},
+	"core:fiona": {
+		"texts": {
+			"biography": "Before the Devils invaded, Fiona trained circus animals in eastern Erathia. Hell Hounds were always temperamental, but she quickly proved that her control over animals extended to them. Eeofol immediately accepted her into its armies."
+		}
+	},
+	"core:ignatius": {
+		"texts": {
+			"biography": "When the Devils came to Erathia, Ignatius believed joining them was his only chance to survive. He has persuaded them that he can still be useful, though he fears they may someday decide a human is no longer needed among them."
+		}
+	},
+	"core:ash": {
+		"texts": {
+			"biography": "Ash received her name during the first attack on Erathia. Her forces trapped several dozen Elves and Dwarves inside a wooden fort, then her spell blasted it so completely that the structure became a cloud of ash, exposing its very shocked occupants."
+		}
+	},
+	"core:vokial": {
+		"texts": {
+			"biography": "Nearly four centuries ago, Vokial ruled his own kingdom. In time, he grew bored with its day-to-day responsibilities and gave everything up for the life of adventuring he preferred. He is an elder even among Vampires."
+		}
+	},
+	"core:septienna": {
+		"texts": {
+			"biography": "Many call Septienna's magic 'wasted' because she seems to draw more life energy from victims than she transfers to her minions. Some claim she retains the residual energy for herself; they suggest this may explain why she does not appear to age."
+		}
+	},
+	"core:nimbus": {
+		"texts": {
+			"biography": "As a child, Nimbus had a small dog that died of old age. He found he could resurrect the pet by sacrificing a small bird or another creature, and repeated the feat each time the dog died. He did not realize he was exploring the beginnings of Necromancy."
+		}
+	},
+	"core:xsi": {
+		"texts": {
+			"biography": "Only a handful of females were considered worthy of becoming full Liches, and Xsi was among them. She was selected for her unique ability to resist physical damage, a trick that has saved her more than once."
+		}
+	},
+	"core:vidomina": {
+		"texts": {
+			"biography": "Vidomina showed promise as an Alchemist while still young, but her work was not the animation of inanimate matter. She tried instead to restore life to creatures that had once lived. When Bracada discovered this, it drove her from the country."
+		}
+	},
+	"core:lorelei": {
+		"texts": {
+			"biography": "From her home, Lorelei wandered as a child into a network of caves. A Harpy Hag found and raised her there; Lorelei has no memory of her real parents. Shortly before the invasion of Erathia, she volunteered to serve the Dungeon Overlords."
+		}
+	},
+	"core:ajit": {
+		"texts": {
+			"biography": "Ajit carefully studied the works of Agar, the foolish Wizard and scientist of Enroth, who accidentally created the Beholders and the Evil Eyes which Ajit now commands, training a 'better breed' to be used in combat."
+		}
+	},
+	"core:gunnar": {
+		"texts": {
+			"biography": "Gunnar served as a Dungeon Overlord scout, then as guide and bodyguard to several high-ranking officials. He was eventually given command of a garrison on rugged Nighon's borders. What he lacks in brains, he makes up for in instinct."
+		}
+	},
+	"core:jeddite": {
+		"texts": {
+			"biography": "Some say Jeddite has seen Zenofex's face. Others argue that if Jeddite is still alive, the rumor cannot possibly be true. He has never confirmed or denied the story, leaving the question unanswered and the rumor alive."
+		}
+	},
+	"core:geon": {
+		"texts": {
+			"biography": "Geon can see into the minds of other spellcasters, reading their thoughts as they invoke their powers. In many cases, he learns to cast those spells himself. This ability accounts for much of his magical skill as a Warlock."
+		}
+	},
+	"core:deemer": {
+		"texts": {
+			"biography": "As a young adult, Deemer's magical ability was so far out of control that he nearly had to be killed; it threatened both himself and those around him. He has since learned to control his powers and is more than a formidable foe in combat."
+		}
+	},
+	"core:sephinroth": {
+		"texts": {
+			"biography": "Sephinroth claims to be King Gryphonheart's illegitimate daughter. His refusal to acknowledge her has fueled her hatred of Erathia's throne, which she hopes one day to claim. She joined the Warlocks and is the only known woman to bear that title."
+		}
+	},
+	"core:darkstorn": {
+		"texts": {
+			"biography": "Darkstorn challenged his way through Nighon's warrior ranks, secretly using magic to make sure he won. Once he had gained a position of power, he revealed his true abilities. Since that revelation, none have challenged him again."
+		}
+	},
+	"core:yog": {
+		"texts": {
+			"biography": "Yog spent many years studying with the Wizards of Bracada, though war texts drew him more often than books on magic. When the Duke of Krewlod offered him a military command, Yog gladly accepted: at last, his knowledge of war could be put to use."
+		}
+	},
+	"core:shiva": {
+		"texts": {
+			"biography": "Shiva is the youngest of six daughters in a family of circus animal trainers. Unwilling to spend her life in the family business, she left for a mercenary's place in the Krewlod military. There she found a new calling and excelled at it."
+		}
+	},
+	"core:krellion": {
+		"texts": {
+			"biography": "Krellion joined the army as a prizefighter and became so well known that his fans insisted he lead them into battle. It may not have been the smartest decision, but he proved an exceptional leader, especially among ogrekind."
+		}
+	},
+	"core:cragHack": {
+		"texts": {
+			"biography": "A decorated hero in Enroth, Crag Hack grew bored with home and set sail for a new life in Erathia. He was delighted to find the frontier in turmoil: at last, a land where his skills could be put to use."
+		}
+	},
+	"core:tyraxor": {
+		"texts": {
+			"biography": "Already a Wolf Rider captain, Tyraxor was on a long march along the Krewlod–Tatalia border when he sniffed out a Tatalian ambush. He was not yet among Krewlod's heroes; the discovery earned him that standing."
+		}
+	},
+	"core:gird": {
+		"texts": {
+			"biography": "Gird learned most of what she knows from her hometown Shaman. It is assumed she would have taken his place, but the Magi of Krewlod took her from her village while searching for children able to wield magic."
+		}
+	},
+	"core:vey": {
+		"texts": {
+			"biography": "Vey is an Ogre Mage whose command skills are unparalleled, as he has proven time and again. Should the Duke's son ever falter, Vey would be considered the leading candidate to succeed to Krewlod's throne."
+		}
+	},
+	"core:dessa": {
+		"texts": {
+			"biography": "Nearly fifteen years ago, human marauders massacred Dessa's village. He was one of only six children to survive. Since then, he has dreamed of repaying the humans for their crime; the memory of that loss still shapes his purpose."
+		}
+	},
+	"core:terek": {
+		"texts": {
+			"biography": "Terek spent several years as a strongman at the Circus of the Sun, challenging spectators to throw large rocks farther than he could. One day he lost and was run out of the circus. The man who beat him then recruited him into the Krewlod Army."
+		}
+	},
+	"core:gundula": {
+		"texts": {
+			"biography": "Orphaned at birth, Gundula was raised as a daughter by Duke Boragus. Learning he was not her true father, she joined the military hoping to die an honorable death in battle. It never happened; instead, she became one of its feared leaders."
+		}
+	},
+	"core:oris": {
+		"texts": {
+			"biography": "Oris showed little promise as a mage early in her career. But she can learn nearly any spell she sees cast, an uncanny gift that has more than made up for her apparent lack of magical skill."
+		}
+	},
+	"core:alkin": {
+		"texts": {
+			"biography": "King Tralossk never liked Alkin, but gave him his own command in hopes he would one day get himself killed. That never happened: Alkin went on to a long and glorious career, much to the King's displeasure."
+		}
+	},
+	"core:andra": {
+		"texts": {
+			"biography": "King Tralossk made Andra, a mere human, undergo trials of knowledge before allowing her to lead one of his armies. She missed not a single question. With every answer right, the King had no choice but to accept her."
+		}
+	},
+	"core:broghild": {
+		"texts": {
+			"biography": "Broghild's grandfather first tamed wild Wyverns for use as flying scouts above the Tatalian Lowlands. He passed the secrets of handling them to Broghild's father, who then passed that knowledge in turn to Broghild himself."
+		}
+	},
+	"core:korbac": {
+		"texts": {
+			"biography": "Humans of Erathia know Korbac as the 'hero who saved the scholar, Xanthor'—though how true the story is remains uncertain. He has nevertheless proven his bravery on more than one occasion during his service in Tatalia."
+		}
+	},
+	"core:mirlanda": {
+		"texts": {
+			"biography": "In her youth, Mirlanda toyed with the dark arts until she saw that such a path often led to self-destruction. She now walks a fine line between good and evil, careful that neither grows more powerful than the other."
+		}
+	},
+	"core:tazar": {
+		"texts": {
+			"biography": "During a six-month border war with Krewlod, Tazar led a small force to make a stand at a Tatalian outpost. Nearly five times their number attacked; for more than eight days, his soldiers held until reinforcements arrived."
+		}
+	},
+	"core:wystan": {
+		"texts": {
+			"biography": "Wedded to King Tralossk's eldest daughter, Wystan is next heir to Tatalia's throne. For now, he is content to serve and learn from the King, waiting until the time is right to kill his mentor and assume the throne."
+		}
+	},
+	"core:aenain": {
+		"texts": {
+			"biography": "Created by great power from mystical forces, Genies are creatures of magic; Aenain was made imperfect. For centuries he has worked to overcome the perception of his imperfection. His diligence and dedication to Air Magic earned him a call to the Conflux."
+		}
+	},
+	"core:ciele": {
+		"texts": {
+			"biography": "Ciele grew up beside the ocean bordering Avlee and always felt a bond with its ancient waters. She wandered the lands seeking her calling; at last, her search brought her into the service of the Conflux."
+		}
+	},
+	"core:inteus": {
+		"texts": {
+			"biography": "Inteus mastered fire at an early age and earned a place in a troupe of entertainers. Some believed he was the son of a Fire Elemental. One night, he felt a calling and left his profession; he now serves the Conflux."
+		}
+	},
+	"core:labetha": {
+		"texts": {
+			"biography": "Labetha was born poor, and her peasant parents were slaughtered during the Restoration wars. Dendroids took her into their service in AvLee, where her power over earth developed quickly. When the Conflux called, she answered just as quickly."
+		}
+	},
+	"core:luna": {
+		"texts": {
+			"biography": "Once a sorceress in Enroth, Luna felt the call of the elemental Conflux and made her way to Erathia. There she was compelled to set aside her aquatic talents and turn her efforts toward developing fire magic."
+		}
+	}
+}

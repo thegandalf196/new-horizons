@@ -265,6 +265,8 @@ class HeroDataTest(unittest.TestCase):
     def test_preview_generation_is_separate_and_never_overwrites(self):
         live = ROOT / 'Mods/new-horizons/mod.json'
         before = live.read_bytes()
+        biographies = ROOT / 'Mods/new-horizons/Content/config/heroes/biographies.json'
+        biographies_before = biographies.read_bytes()
         script = ROOT / 'tools/update-new-horizons-module.py'
         with tempfile.TemporaryDirectory(dir=ROOT / 'build') as temporary:
             output = Path(temporary) / 'mod.json'
@@ -273,11 +275,13 @@ class HeroDataTest(unittest.TestCase):
             generated = json.loads(output.read_text())
             self.assertEqual(generated['settings']['heroes']['newHorizons'], self.rules)
             self.assertEqual(generated['version'], '0.3.0')
+            self.assertIn('config/heroes/biographies.json', generated['heroes'])
             self.assertNotIn('newHorizonsCapabilities', generated['settings']['heroes'])
             subprocess.run(command + ['--check'], check=True, capture_output=True)
             self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
         self.assertNotEqual(subprocess.run([sys.executable, str(script), '--hero-preview-output', str(live)], capture_output=True).returncode, 0)
         self.assertEqual(live.read_bytes(), before)
+        self.assertEqual(biographies.read_bytes(), biographies_before)
         self.assertEqual(json.loads(before)['settings']['heroes']['newHorizons'], self.rules)
         subprocess.run([sys.executable, str(script), '--check'], check=True, capture_output=True)
 

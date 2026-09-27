@@ -309,7 +309,12 @@ class NewHorizonsContentTest(unittest.TestCase):
             'description': 'Halon can use Metamagic one additional time per combat.',
         })
         module = load('Mods/new-horizons/mod.json')
-        self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json', 'config/heroes/solmyr.json'])
+        self.assertEqual(module['heroes'], [
+            'config/heroes/biographies.json',
+            'config/heroes/fafner.json',
+            'config/heroes/halon.json',
+            'config/heroes/solmyr.json',
+        ])
 
     def test_fafner_patch_keeps_a_valid_non_faction_skill_with_metamagic(self):
         patch = load('Mods/new-horizons/Content/config/heroes/fafner.json')['core:fafner']
@@ -746,8 +751,13 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'newHorizonsMasteries': load('config/newHorizonsMasteries.json'),
                               'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
-        self.assertEqual(module['version'], '0.13.0')
-        self.assertEqual(module['heroes'], ['config/heroes/fafner.json', 'config/heroes/halon.json', 'config/heroes/solmyr.json'])
+        self.assertEqual(module['version'], '0.14.0')
+        self.assertEqual(module['heroes'], [
+            'config/heroes/biographies.json',
+            'config/heroes/fafner.json',
+            'config/heroes/halon.json',
+            'config/heroes/solmyr.json',
+        ])
         self.assertIn('Magic Arrow', module['description'])
         self.assertIn('Overcharge', module['description'])
         self.assertEqual(module['spellSchools'], load('config/newHorizonsSchools.json'))
