@@ -375,9 +375,12 @@ bool CGarrisonSlot::split()
 	int countLeft = selection->myStack ? selection->myStack->getCount() : 0;
 	int countRight = myStack ? myStack->getCount() : 0;
 
-	auto splitFunctor = [this, selection](int amountLeft, int amountRight)
+	auto splitFunctor = [this, selection, countLeft, countRight](int amountLeft, int amountRight)
 	{
-		owner->splitStacks(selection, owner->army(upg), ID, amountRight);
+		if(amountLeft > countLeft && amountRight < countRight)
+			owner->splitStacks(this, owner->army(selection->upg), selection->ID, amountLeft);
+		else if(amountLeft < countLeft && amountRight > countRight)
+			owner->splitStacks(selection, owner->army(upg), ID, amountRight);
 	};
 
 	ENGINE->windows().createAndPushWindow<CSplitWindow>(selection->creature,  splitFunctor, minLeft, minRight, countLeft, countRight);
@@ -472,14 +475,8 @@ void CGarrisonSlot::clickPressed(const Point & cursorPosition)
 				if(owner->checkLeadershipSwap(owner->army(upg), selectedObj, ID, selection->ID))
 					GAME->interface()->cb->swapCreatures(owner->army(upg), selectedObj, ID, selection->ID);
 			}
-			else if(lastHeroStackSelected) // merge last stack to other hero stack
-				refr = split();
 			else // merge
-			{
-				if(owner->checkLeadershipTransfer(selectedObj, owner->army(upg), selection->ID, ID,
-					selection->myStack->getCount()))
-					GAME->interface()->cb->mergeStacks(selectedObj, owner->army(upg), selection->ID, ID);
-			}
+				GAME->interface()->cb->mergeStacks(selectedObj, owner->army(upg), selection->ID, ID);
 		}
 		if(refr)
 		{
@@ -756,8 +753,10 @@ void CGarrisonInt::splitStacks(const CGarrisonSlot * from, const CArmedInstance 
 {
 	if(showStackTransferError(from))
 		return;
-	if(!checkLeadershipTransfer(armedObjs[from->upg], armyDest, from->ID, slotDest,
-		amount - (armyDest->getStackCount(slotDest))))
+	const TQuantity transferAmount = amount - armyDest->getStackCount(slotDest);
+	if(transferAmount <= 0)
+		return;
+	if(!checkLeadershipTransfer(armedObjs[from->upg], armyDest, from->ID, slotDest, transferAmount))
 		return;
 
 	GAME->interface()->cb->splitStack(armedObjs[from->upg], armyDest, from->ID, slotDest, amount);
@@ -813,18 +812,17 @@ void CGarrisonInt::moveStackToAnotherArmy(const CGarrisonSlot * selected)
 		destSlot = srcSlot; // Same place is more preferable
 
 	const bool isLastStack = srcArmy->stacksCount() == 1 && srcArmy->needsLastStack();
-	auto srcAmount = selected->myStack->getCount() - (isLastStack ? 1 : 0);
-
-	if(!srcAmount)
-		return;
-	if(!checkLeadershipTransfer(srcArmy, destArmy, srcSlot, destSlot,
-		srcAmount))
-		return;
-
-	if(!isDestSlotEmpty || isLastStack)
+	if(!isDestSlotEmpty)
 	{
-		srcAmount += destArmy->getStackCount(destSlot); // Due to 'split' implementation in the 'CGameHandler::arrangeStacks'
-		GAME->interface()->cb->splitStack(srcArmy, destArmy, srcSlot, destSlot, srcAmount);
+		// This is a combine intent, not a numeric split. The server can move
+		// only the Leadership-legal amount and preserve the source's last stack.
+		GAME->interface()->cb->mergeStacks(srcArmy, destArmy, srcSlot, destSlot);
+	}
+	else if(isLastStack)
+	{
+		const auto srcAmount = selected->myStack->getCount() - 1;
+		if(srcAmount > 0 && checkLeadershipTransfer(srcArmy, destArmy, srcSlot, destSlot, srcAmount))
+			GAME->interface()->cb->splitStack(srcArmy, destArmy, srcSlot, destSlot, srcAmount);
 	}
 	else
 	{
@@ -865,13 +863,6 @@ void CGarrisonInt::bulkMergeStacks(const CGarrisonSlot * selected)
 	const auto type = selected->upg;
 
 	if(!armedObjs[type]->hasCreatureSlots(selected->creature, selected->ID))
-		return;
-
-	TQuantity resultingCount = selected->myStack->getCount();
-	for(const auto & slot : armedObjs[type]->Slots())
-		if(slot.first != selected->ID && slot.second->getCreatureID() == selected->creature->getId())
-			resultingCount += slot.second->getCount();
-	if(!checkLeadershipResult(armedObjs[type], selected->creature->getId(), resultingCount))
 		return;
 
 	GAME->interface()->cb->bulkMergeStacks(armedObjs[type]->id, selected->ID);

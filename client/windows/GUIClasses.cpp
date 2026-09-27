@@ -600,8 +600,17 @@ void CSplitWindow::setAmount(int value, bool left)
 
 void CSplitWindow::apply()
 {
-	callback(leftAmount, rightAmount);
+	// The callback may open an error dialog (for example, when Leadership
+	// rejects the requested stack size). Remove this window before invoking it:
+	// callbacks can also close/destroy the split window, so snapshot everything
+	// they need before closing.
+	auto callbackToRun = std::exchange(callback, nullptr);
+	const int left = leftAmount;
+	const int right = rightAmount;
 	close();
+
+	if(callbackToRun)
+		callbackToRun(left, right);
 }
 
 void CSplitWindow::sliderMoved(int to)

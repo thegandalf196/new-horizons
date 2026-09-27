@@ -143,24 +143,29 @@ void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
 		return;
 
 	SlotID targetSlot = target->getSlotFor(creature);
-	if(targetSlot.validSlot())
+	if(!targetSlot.validSlot())
+		return;
+
+	if(target->getCreature(targetSlot))
 	{
-		if(source->stacksCount() == 1 && source->needsLastStack())
-		{
-			if(!UIHelper::checkLeadershipTransfer(source, target, sourceSlot, targetSlot,
-				source->getStackCount(sourceSlot) - 1))
-				return;
-			GAME->interface()->cb->splitStack(source, target, sourceSlot, targetSlot,
-				target->getStackCount(targetSlot) + source->getStackCount(sourceSlot) - 1);
-		}
-		else
-		{
-			if(!UIHelper::checkLeadershipTransfer(source, target, sourceSlot, targetSlot,
-				source->getStackCount(sourceSlot)))
-				return;
-			GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
-		}
+		// A same-creature destination is a combine request. The server computes
+		// the legal partial amount and retains a required last source stack.
+		GAME->interface()->cb->mergeStacks(source, target, sourceSlot, targetSlot);
+		return;
 	}
+
+	const bool mustKeepLastSourceCreature = source->stacksCount() == 1 && source->needsLastStack();
+	const TQuantity sourceCount = source->getStackCount(sourceSlot);
+	const TQuantity amountToMove = sourceCount - (mustKeepLastSourceCreature ? 1 : 0);
+	if(amountToMove <= 0)
+		return;
+	if(!UIHelper::checkLeadershipTransfer(source, target, sourceSlot, targetSlot, amountToMove))
+		return;
+
+	if(mustKeepLastSourceCreature)
+		GAME->interface()->cb->splitStack(source, target, sourceSlot, targetSlot, amountToMove);
+	else
+		GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
 }
 
 void CExchangeController::moveSingleStackCreature(bool leftToRight, SlotID sourceSlot, bool forceEmptySlotTarget)

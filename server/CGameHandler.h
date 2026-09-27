@@ -335,7 +335,7 @@ public:
 	friend class CVCMIServer;
 private:
 	void getVictoryLossMessage(PlayerColor player, const EVictoryLossCheckResult & victoryLossCheckResult, InfoWindow & out) const;
-	bool validateLeadershipStack(const CArmedInstance * destination, CreatureID creature, int resultingCount);
+	bool validateLeadershipStack(const CArmedInstance * destination, CreatureID creature, int64_t resultingCount);
 	bool validateLeadershipArmyAddition(const CGHeroInstance * destination, const CCreatureSet & incoming);
 
 	const std::string complainNoCreatures;
