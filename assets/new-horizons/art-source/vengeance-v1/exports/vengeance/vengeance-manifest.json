@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "vengeance",
+  "source": {
+    "path": "$HOME/.codex/generated_images/01a0e19a-0ca8-7351-adc1-39e4385812e7/exec-43f37521-a44f-4a36-98c8-ecc7835e845a.png",
+    "filename": "exec-43f37521-a44f-4a36-98c8-ecc7835e845a.png",
+    "byte_size": 3440298,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "a5e927e96d240fe6f4c54dda2b4052ea8ddc8735d869dd2bdb11aa47b3db60a5"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "a5e927e96d240fe6f4c54dda2b4052ea8ddc8735d869dd2bdb11aa47b3db60a5"
+    },
+    {
+      "file": "vengeance-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "0c4896cff20375df4dd344d5162226e69e395c3114f17c0df715ffcc5760bd70"
+    },
+    {
+      "file": "vengeance-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "a1243673ea0ee78e03de5d2a728d920a994bd169ff1d90863659044cb379e7e1"
+    },
+    {
+      "file": "vengeance-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "8b717b4437396723940fb36e645625d7b06a856f1f6c4ef6ee75ddbc0b9035d7"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "vengeance-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "vengeance-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "vengeance-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "vengeance-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

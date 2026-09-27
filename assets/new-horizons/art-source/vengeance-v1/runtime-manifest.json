@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_vengeance"
+  ],
+  "files": {
+    "source/NH_perk_vengeance_normal.png": "0c4896cff20375df4dd344d5162226e69e395c3114f17c0df715ffcc5760bd70",
+    "Mods/NH_perk_vengeance_normal.png": "0c4896cff20375df4dd344d5162226e69e395c3114f17c0df715ffcc5760bd70",
+    "source/NH_perk_vengeance_pressed.png": "f2ac3c5899aac26fea9b3729bb23b75bdce0ae6010ef164354584aa8cbce0908",
+    "Mods/NH_perk_vengeance_pressed.png": "f2ac3c5899aac26fea9b3729bb23b75bdce0ae6010ef164354584aa8cbce0908",
+    "source/NH_perk_vengeance_disabled.png": "19d48349593120de89f7dc8d3bde6641894ac53987c29e8468dc1f55f1eb303a",
+    "Mods/NH_perk_vengeance_disabled.png": "19d48349593120de89f7dc8d3bde6641894ac53987c29e8468dc1f55f1eb303a",
+    "source/NH_perk_vengeance_highlighted.png": "87e8fcc74dcd06bc97d9a2ccc72de8a1f458258fb2919cb9f39f7d971f9753db",
+    "Mods/NH_perk_vengeance_highlighted.png": "87e8fcc74dcd06bc97d9a2ccc72de8a1f458258fb2919cb9f39f7d971f9753db",
+    "source/NH_perk_vengeance.json": "15b8c54d015306b7448868c1c3e29b01bd9b566cd3559dd7933f49c713f74127",
+    "Mods/NH_perk_vengeance.json": "15b8c54d015306b7448868c1c3e29b01bd9b566cd3559dd7933f49c713f74127"
+  }
+}

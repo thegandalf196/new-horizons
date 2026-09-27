@@ -17,6 +17,7 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:offense.armorPiercer", "NH_perk_armor_piercer"},
 		{"new-horizons:offense.breakthrough", "NH_perk_breakthrough"},
 		{"new-horizons:offense.cleave", "NH_perk_cleave"},
+		{"new-horizons:offense.vengeance", "NH_perk_vengeance"},
 		{"new-horizons:battlecraft.entrench", "NH_perk_entrench"},
 		{"new-horizons:discipline.inspirationalLeader", "NH_perk_inspirational_leader"},
 		{"new-horizons:wisdom.intelligence", "NH_perk_intelligence"},

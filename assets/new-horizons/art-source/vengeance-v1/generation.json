@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-27",
+  "generator": "OpenAI built-in image generator via homm3-art skill",
+  "method": "Original generated raster artwork for the canonical Vengeance perk; no input image pixels or style references were used. The retained master is reduced with homm3-art export_art.py; runtime states use brightness/color-only transforms.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "style_guide": "homm3-art/references/style-guide.md (secondary-skill icons)",
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "prompt_file": "prompt-vengeance.txt",
+  "assets": [
+    {
+      "id": "new-horizons:offense.vengeance",
+      "name": "Vengeance",
+      "key": "NH_perk_vengeance",
+      "master": "exports/vengeance/master.png",
+      "generated_output": "generated_images/01a0e19a-0ca8-7351-adc1-39e4385812e7/exec-43f37521-a44f-4a36-98c8-ecc7835e845a.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "a5e927e96d240fe6f4c54dda2b4052ea8ddc8735d869dd2bdb11aa47b3db60a5",
+      "style_reference": null
+    }
+  ]
+}
