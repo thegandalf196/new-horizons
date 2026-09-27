@@ -30,6 +30,16 @@ bool hasMireborn(const CGHeroInstance * hero)
 	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(MIREBORN_ID));
 }
 
+bool hasThickHide(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(THICK_HIDE_ID));
+}
+
+bool hasBogAmbush(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(BOG_AMBUSH_ID));
+}
+
 int reductionBasisPoints(int value, int heroDefense, bool mireTerrain)
 {
 	const int64_t defense = std::max(0, heroDefense);
@@ -54,13 +64,20 @@ int reductionBasisPoints(int value, int heroDefense, bool mireTerrain)
 
 int preemptivePercent(int value)
 {
+	return preemptivePercent(value, false);
+}
+
+int preemptivePercent(int value, bool bogAmbush)
+{
+	int result = 0;
 	switch(value)
 	{
-		case 1: return 50;
-		case 2: return 75;
-		case 3: return 100;
+		case 1: result = 50; break;
+		case 2: result = 75; break;
+		case 3: result = 100; break;
 		default: return 0;
 	}
+	return bogAmbush ? std::min(100, result + 25) : result;
 }
 
 int reflectionPercent(int value)
@@ -71,5 +88,26 @@ int reflectionPercent(int value)
 		case 3: return 50;
 		default: return 0;
 	}
+}
+
+int reflectionBasisPoints(int value, bool ranged, bool thickHide)
+{
+	const int meleePercent = reflectionPercent(value);
+	if(meleePercent == 0 || (ranged && !thickHide))
+		return 0;
+
+	const int multiplier = ranged ? 50 : 100;
+	return meleePercent * BASIS_POINTS_PER_PERCENT * multiplier / 100;
+}
+
+int64_t reflectedDamage(int64_t actualHealthLoss, int reflectionBasisPoints)
+{
+	if(actualHealthLoss <= 0 || reflectionBasisPoints <= 0)
+		return 0;
+
+	const int64_t boundedBasisPoints = std::clamp(reflectionBasisPoints, 0, 10000);
+	const int64_t wholeUnits = actualHealthLoss / 10000;
+	const int64_t remainingBasisPoints = actualHealthLoss % 10000;
+	return wholeUnits * boundedBasisPoints + remainingBasisPoints * boundedBasisPoints / 10000;
 }
 }

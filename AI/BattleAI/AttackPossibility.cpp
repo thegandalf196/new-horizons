@@ -20,6 +20,7 @@
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 
 #include "../../lib/GameLibrary.h"
@@ -39,6 +40,30 @@ bool hasRangedMarkEffect(const battle::Unit * unit, const char * source)
 		if(bonus->source == BonusSource::SPELL_EFFECT && bonus->sid.toString() == source)
 			return true;
 	return false;
+}
+
+int bulwarkPreemptivePercent(const battle::Unit * defender, const CBattleInfoCallback & state)
+{
+	if(!defender || !defender->defended()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender))
+		return 0;
+	const auto * hero = state.battleGetOwnerHero(defender);
+	const int rank = newHorizonsBulwark::rank(hero);
+	const auto unitState = defender->acquireState();
+	if(rank <= 0 || !unitState || unitState->bulwarkPreemptiveUsed)
+		return 0;
+	return newHorizonsBulwark::preemptivePercent(rank, newHorizonsBulwark::hasBogAmbush(hero));
+}
+
+int bulwarkReflectionBasisPoints(const battle::Unit * defender, const CBattleInfoCallback & state,
+	bool ranged)
+{
+	if(!defender || !defender->defended()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender))
+		return 0;
+	const auto * hero = state.battleGetOwnerHero(defender);
+	return newHorizonsBulwark::reflectionBasisPoints(newHorizonsBulwark::rank(hero), ranged,
+		newHorizonsBulwark::hasThickHide(hero));
 }
 
 int32_t noQuarterMoraleActivations(const CBattleInfoCallback & battle, uint32_t targetUnitId)
@@ -502,12 +527,24 @@ AttackPossibility AttackPossibility::evaluate(
 			&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
 		const bool projectsProtect = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
+		const bool ordinaryAttacker = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker);
+		const bool mayReceiveBulwarkReaction = ordinaryAttacker && attackInfo.physicalDamage
+			&& !attackInfo.shooting && !attackInfo.retaliation
+			&& !attackInfo.bracePreemptive && attackInfo.preemptiveDamagePercent <= 0
+			&& (bulwarkPreemptivePercent(defender, *state) > 0
+				|| bulwarkPreemptivePercent(requestedDefender, *state) > 0);
+		const bool mayReflectBulwarkDamage = attackInfo.physicalDamage && ordinaryAttacker
+			&& (bulwarkReflectionBasisPoints(defender, *state, attackInfo.shooting) > 0
+				|| bulwarkReflectionBasisPoints(requestedDefender, *state, attackInfo.shooting) > 0);
+		const bool projectsBulwarkEffects = mayReceiveBulwarkReaction || mayReflectBulwarkDamage;
 		if(ap.perfectMoment || projectsMarks || projectsCleave || projectsProtect || projectsSkirmisher
-			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState)
+			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
+			|| projectsBulwarkEffects)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 		if(projectsMarks || projectsCleave || projectsProtect || projectsSkirmisher
-			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState)
+			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
+			|| projectsBulwarkEffects)
 			ap.effectPreview = fortunePreview;
 		const CBattleInfoCallback & luckState = fortunePreview
 			? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
@@ -630,6 +667,32 @@ AttackPossibility AttackPossibility::evaluate(
 				|| !strikeDefenderState->second->alive()
 				|| (attackInfo.shooting && !ap.attackerState->canShoot()))
 				break;
+			if(ordinaryAttacker && attackInfo.physicalDamage && !attackInfo.shooting
+				&& !attackInfo.retaliation && !attackInfo.bracePreemptive
+				&& attackInfo.preemptiveDamagePercent <= 0)
+			{
+				const int preemptivePercent = bulwarkPreemptivePercent(
+					strikeDefenderState->second.get(), *state);
+				if(preemptivePercent > 0)
+				{
+					// Defend's first-melee reaction resolves before the incoming attack.
+					// Mark only the detached target state; choosing or probing this
+					// possibility never consumes the live stack's reaction.
+					strikeDefenderState->second->bulwarkPreemptiveUsed = true;
+					BattleAttackInfo preemptive(strikeDefenderState->second.get(), ap.attackerState.get(), 0, false);
+					preemptive.retaliation = true;
+					preemptive.preemptiveDamagePercent = preemptivePercent;
+					preemptive.attackerPos = strikeDefenderState->second->getPosition();
+					preemptive.defenderPos = ap.attackerState->getPosition();
+					auto preemptiveDamage = luckState.battleExpectedLuckDamage(preemptive);
+					vstd::amin(preemptiveDamage, ap.attackerState->getAvailableHealth());
+					ap.attackerDamageReduce += calculateDamageReduce(strikeDefenderState->second.get(),
+						ap.attackerState.get(), preemptiveDamage, damageCache, state);
+					ap.attackerState->damage(preemptiveDamage);
+				}
+			}
+			if(!ap.attackerState->alive())
+				break;
 			const int relentlessAssaultDamagePercent = ordinaryRelentlessAssaultAttack
 				? luckState.battleGetRelentlessAssaultDamagePercent(
 					ap.attackerState.get(), strikeDefenderState->second.get())
@@ -673,6 +736,8 @@ AttackPossibility AttackPossibility::evaluate(
 				&& state->battleMatchOwner(attacker, strikeDefender);
 			std::optional<FortuneStrikeProjection> retaliation;
 			std::optional<FortuneStrikeProjection> cleave;
+			int64_t bulwarkPrimaryHealthLoss = 0;
+			int bulwarkReflectionRate = 0;
 			std::vector<std::pair<std::shared_ptr<battle::CUnitState>, int64_t>> pendingRetaliationDamage;
 			std::vector<const battle::Unit *> destroyedEnemyUnits;
 
@@ -735,6 +800,14 @@ AttackPossibility AttackPossibility::evaluate(
 
 				const bool wasAlive = defenderState->alive();
 				defenderState->damage(damageDealt);
+				if(u->unitId() == strikeDefender->unitId() && damageDealt > 0
+					&& attackInfo.physicalDamage && ordinaryAttacker
+					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(ap.attackerState.get()))
+				{
+					bulwarkPrimaryHealthLoss = damageDealt;
+					bulwarkReflectionRate = bulwarkReflectionBasisPoints(
+						defenderState.get(), *state, attackInfo.shooting);
+				}
 				if(appliesNoQuarter && defenderState->alive())
 				{
 					fortunePreview->getForUpdate(u->unitId())->applyNoQuarter(moraleActivations);
@@ -790,6 +863,24 @@ AttackPossibility AttackPossibility::evaluate(
 				if(u->unitId() == strikeDefender->unitId())
 				{
 					ap.defenderDead = !defenderState->alive();
+				}
+			}
+			// The server resolves every victim of a breath/splash strike before it
+			// applies Bulwark's direct reflection. Deferring this hit also keeps the
+			// attacker count stable while collateral damage is forecast.
+			if(bulwarkPrimaryHealthLoss > 0 && bulwarkReflectionRate > 0
+				&& ap.attackerState->alive())
+			{
+				const int64_t reflectedDamage = newHorizonsBulwark::reflectedDamage(
+					bulwarkPrimaryHealthLoss, bulwarkReflectionRate);
+				if(reflectedDamage > 0)
+				{
+					auto actualReflectedDamage = std::min(reflectedDamage,
+						ap.attackerState->getAvailableHealth());
+					const auto * reflectedFrom = defenderStates.at(strikeDefender->unitId()).get();
+					ap.attackerDamageReduce += calculateDamageReduce(reflectedFrom,
+						ap.attackerState.get(), actualReflectedDamage, damageCache, state);
+					ap.attackerState->damage(actualReflectedDamage);
 				}
 			}
 			if(projectsSuppression && !projectedSuppressionSpent)

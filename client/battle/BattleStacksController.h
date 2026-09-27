@@ -10,6 +10,9 @@
 #pragma once
 
 #include "../../lib/Color.h"
+#include "StackInfoPanelHoverState.h"
+
+#include <optional>
 
 class BattleHex;
 class BattleHexArray;
@@ -83,6 +86,10 @@ class BattleStacksController
 	/// currently active stack; nullptr - no one
 	const CStack *activeStack;
 
+	/// stack represented in the info panel, retained while the cursor enters that panel
+	std::optional<uint32_t> stackInfoUnitId;
+	newHorizonsBattleStatus::StackInfoPanelHoverRetention stackInfoPanelRetention;
+
 	/// stacks or their battle queue images below mouse pointer (multiple stacks possible while spellcasting), used for border animation
 	std::vector<const CStack *> mouseHoveredStacks;
 
@@ -142,7 +149,7 @@ public:
 	void showAliveStack(Canvas & canvas, const CStack * stack);
 	void showStack(Canvas & canvas, const CStack * stack);
 
-	void updateHoveredStacks();
+	void updateHoveredStacks(uint32_t msPassed);
 
 	void collectRenderableObjects(BattleRenderer & renderer);
 

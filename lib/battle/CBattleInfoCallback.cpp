@@ -2167,7 +2167,9 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		if(battleIsShroudFlankingAttack(info))
 			payload.shroudFlankingDamagePercent = newHorizonsShroud::flankingDamagePercent(
 				newHorizonsShroud::rank(battleGetOwnerHero(info.attacker)));
-		if(info.defender && info.defender->defended())
+		if(info.defender && info.defender->defended() && ordinaryCreatureAttack
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.defender)
+			&& (!info.shooting || !info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)))
 		{
 			const auto * hero = battleGetOwnerHero(info.defender);
 			const int bulwarkRank = newHorizonsBulwark::rank(hero);

@@ -16,6 +16,9 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:bulwarkOfTheMire.mireborn",
+    "new-horizons:bulwarkOfTheMire.thickHide",
+    "new-horizons:bulwarkOfTheMire.bogAmbush",
     "new-horizons:logistics.pathfinding",
     "new-horizons:logistics.navigation",
     "new-horizons:logistics.scouting",

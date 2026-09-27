@@ -2391,9 +2391,6 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut,
 	RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows)
 {
-	const int bulwarkReflectionPercent = defender && !attack.ranged && defender->defended()
-		? newHorizonsBulwark::reflectionPercent(newHorizonsBulwark::rank(battle.battleGetOwnerHero(defender)))
-		: 0;
 	std::optional<HeroOrderState> orderStateBeforeAttacker = battle.battleGetHeroOrderState(BattleSide::ATTACKER);
 	std::optional<HeroOrderState> orderStateBeforeDefender = battle.battleGetHeroOrderState(BattleSide::DEFENDER);
 	bool protectIntercepted = attack.protectIntercepted;
@@ -2432,6 +2429,15 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	if((!attacker->alive()) || (defender && !defender->alive()))
 		return;
 
+	const auto * bulwarkHero = defender && defender->defended()
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)
+		? battle.battleGetOwnerHero(defender) : nullptr;
+	const int bulwarkReflectionBasisPoints = bulwarkHero
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
+		? newHorizonsBulwark::reflectionBasisPoints(newHorizonsBulwark::rank(bulwarkHero),
+			attack.ranged, newHorizonsBulwark::hasThickHide(bulwarkHero))
+		: 0;
+
 	// Brace answers every qualifying incoming melee attack after the enemy has
 	// voluntarily crossed three or more hexes. The recursive pre-emptive strike
 	// is marked as a counter so it cannot recursively trigger Brace itself.
@@ -2444,10 +2450,13 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	}
 
 	if(defender && !attack.ranged && !attack.counter && defender->defended()
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
 		&& !defender->acquireState()->bulwarkPreemptiveUsed)
 	{
 		const int percent = newHorizonsBulwark::preemptivePercent(
-			newHorizonsBulwark::rank(battle.battleGetOwnerHero(defender)));
+			newHorizonsBulwark::rank(battle.battleGetOwnerHero(defender)),
+			newHorizonsBulwark::hasBogAmbush(battle.battleGetOwnerHero(defender)));
 		if(percent > 0)
 		{
 			auto state = defender->acquireState();
@@ -2875,7 +2884,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// Bulwark reflects a share of the physical health loss that actually landed,
 	// after all reductions. It is direct retaliation damage, not another attack,
 	// so it cannot recursively trigger attack reactions or consume retaliation.
-	if(bulwarkReflectionPercent > 0 && !bat.spellLike() && attacker->alive() && defender)
+	if(bulwarkReflectionBasisPoints > 0 && !bat.spellLike() && attacker->alive() && defender)
 	{
 		const auto reflectedFrom = std::find_if(payload.targets.begin(), payload.targets.end(), [&](const auto & target)
 		{
@@ -2884,7 +2893,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		if(reflectedFrom != payload.targets.end())
 		{
 			const int64_t received = std::min(reflectedFrom->damage, reflectedFrom->healthBeforeAttack);
-			const int64_t reflected = received * bulwarkReflectionPercent / 100;
+			const int64_t reflected = newHorizonsBulwark::reflectedDamage(
+				received, bulwarkReflectionBasisPoints);
 			if(reflected > 0)
 			{
 				StacksInjured injury;

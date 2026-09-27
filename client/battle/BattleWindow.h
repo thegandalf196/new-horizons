@@ -147,6 +147,11 @@ public:
 
 	/// Refresh sticky variant of hero info window after spellcast, side same as in BattleSpellCast::side
 	void updateStackInfoWindow(const CStack * stack);
+	/// Refresh the current hovered stack's transient Defend status after battle state updates.
+	void refreshHoveredStackStatus(const CStack * stack);
+	/// True while the cursor is over either visible stack-information panel.
+	bool cursorOverStackInfoWindow() const;
+	bool hasStackInfoWindow() const;
 
 	/// Get mouse-hovered battle queue unit ID if any found
 	std::optional<uint32_t> getQueueHoveredUnitId();

@@ -6333,7 +6333,7 @@
 								"requires": "basic",
 								"description": "On swamp or rough terrain, Bulwark grants an additional 5 percentage points of physical damage reduction.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "On swamp or rough terrain, Bulwark grants an additional 5 percentage points of physical damage reduction."
 								}
 							},
@@ -6343,7 +6343,7 @@
 								"requires": "basic",
 								"description": "Bulwark's damage reflection also applies to ranged physical creature damage at half its normal reflection percentage.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Bulwark's damage reflection also applies to ranged physical creature damage at half its normal reflection percentage."
 								}
 							},
@@ -6353,7 +6353,7 @@
 								"requires": "basic",
 								"description": "Bulwark's pre-emptive attack gains +25 percentage points of normal damage, capped at 100%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Bulwark's pre-emptive attack gains +25 percentage points of normal damage, capped at 100%."
 								}
 							},

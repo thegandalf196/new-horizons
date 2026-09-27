@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../../lib/battle/BattleSide.h"
+#include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -162,6 +163,70 @@ inline std::string formatBasisPoints(int64_t basisPoints)
 inline std::string roundsRemaining(int rounds)
 {
 	return std::to_string(rounds) + (rounds == 1 ? " round remaining" : " rounds remaining");
+}
+
+struct BulwarkStatus
+{
+	int32_t damageReductionBasisPoints = 0;
+	int32_t preemptiveDamagePercent = 0;
+	int32_t meleeReflectionBasisPoints = 0;
+	int32_t rangedReflectionBasisPoints = 0;
+	bool mirebornTerrainBonus = false;
+	bool bogAmbush = false;
+	bool preemptiveReady = false;
+
+	bool operator==(const BulwarkStatus &) const = default;
+};
+
+inline std::optional<BulwarkStatus> makeBulwarkStatus(int rank, int heroDefense, bool mirebornTerrain,
+	bool bogAmbush, bool thickHide, bool preemptiveUsed)
+{
+	if(rank < 1 || rank > 3)
+		return std::nullopt;
+
+	return BulwarkStatus{
+		newHorizonsBulwark::reductionBasisPoints(rank, heroDefense, mirebornTerrain),
+		newHorizonsBulwark::preemptivePercent(rank, bogAmbush),
+		newHorizonsBulwark::reflectionBasisPoints(rank, false, thickHide),
+		newHorizonsBulwark::reflectionBasisPoints(rank, true, thickHide),
+		mirebornTerrain,
+		bogAmbush,
+		!preemptiveUsed};
+}
+
+struct DefendStatus
+{
+	bool defending = false;
+	std::optional<BulwarkStatus> bulwark;
+
+	bool operator==(const DefendStatus &) const = default;
+};
+
+inline std::string defendStatusTooltip(const DefendStatus & status)
+{
+	if(!status.defending)
+		return {};
+
+	if(!status.bulwark)
+		return "Defend\nThis stack remains Defending through the end of the current battle round.";
+
+	const auto & bulwark = *status.bulwark;
+	std::string result = "Bulwark of the Mire - Defend\nThis stack remains Defending through the end of the current battle round.";
+	result += "\nPhysical creature damage reduction: " + formatBasisPoints(bulwark.damageReductionBasisPoints) + ".";
+	if(bulwark.mirebornTerrainBonus)
+		result += " Includes Mireborn's +5 percentage points on swamp or rough terrain.";
+	result += "\nPre-emptive strike: " + std::to_string(bulwark.preemptiveDamagePercent)
+		+ "% normal damage against the first qualifying melee attacker; ";
+	result += bulwark.preemptiveReady ? "ready." : "already triggered during this Defend stance.";
+	if(bulwark.bogAmbush)
+		result += " Bog Ambush is included above (+25 percentage points, capped at 100%).";
+	if(bulwark.meleeReflectionBasisPoints > 0)
+		result += "\nMelee reflection: " + formatBasisPoints(bulwark.meleeReflectionBasisPoints)
+			+ " of actual physical health loss after reductions.";
+	if(bulwark.rangedReflectionBasisPoints > 0)
+		result += "\nRanged reflection: " + formatBasisPoints(bulwark.rangedReflectionBasisPoints)
+			+ " of actual ranged physical health loss after reductions (Thick Hide).";
+	return result;
 }
 
 inline std::string beneficiarySideName(int32_t side)

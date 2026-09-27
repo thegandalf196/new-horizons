@@ -366,7 +366,7 @@ void BattleStacksController::showStack(Canvas & canvas, const CStack * stack)
 
 void BattleStacksController::tick(uint32_t msPassed)
 {
-	updateHoveredStacks();
+	updateHoveredStacks(msPassed);
 	updateBattleAnimations(msPassed);
 }
 
@@ -428,6 +428,13 @@ void BattleStacksController::addNewAnim(BattleAnimation *anim)
 
 void BattleStacksController::stackRemoved(uint32_t stackID)
 {
+	if (stackInfoUnitId && *stackInfoUnitId == stackID)
+	{
+		stackInfoUnitId.reset();
+		stackInfoPanelRetention.clear();
+		owner.windowObject->updateStackInfoWindow(nullptr);
+	}
+
 	if (getActiveStack() && getActiveStack()->unitId() == stackID)
 		setActiveStack(nullptr);
 
@@ -890,16 +897,44 @@ void BattleStacksController::removeExpiredColorFilters()
 	});
 }
 
-void BattleStacksController::updateHoveredStacks()
+void BattleStacksController::updateHoveredStacks(uint32_t msPassed)
 {
-	auto newStacks = selectHoveredStacks();
+	// A side panel can overlap the battlefield on compact layouts; treat it as the hover target
+	// instead of selecting whichever creature happens to be behind it.
+	const bool cursorOverStackInfo = owner.windowObject->cursorOverStackInfoWindow();
+	auto newStacks = cursorOverStackInfo ? std::vector<const CStack *>{} : selectHoveredStacks();
 
 	// info panel follows the stack directly under the cursor; the highlight set may hold extra
 	// stacks from a multi-hex attack preview, which must not suppress it
 	const CStack * newInfoStack = newStacks.empty() ? nullptr : newStacks.front();
 	const CStack * oldInfoStack = mouseHoveredStacks.empty() ? nullptr : mouseHoveredStacks.front();
-	if(newInfoStack != oldInfoStack)
-		owner.windowObject->updateStackInfoWindow(newInfoStack);
+	if(newInfoStack)
+	{
+		stackInfoUnitId = newInfoStack->unitId();
+		stackInfoPanelRetention.stackInspected();
+		if(newInfoStack != oldInfoStack)
+			owner.windowObject->updateStackInfoWindow(newInfoStack);
+		else
+			owner.windowObject->refreshHoveredStackStatus(newInfoStack);
+	}
+	else if(stackInfoUnitId && stackInfoPanelRetention.retain(msPassed, cursorOverStackInfo))
+	{
+		const auto * stack = owner.getBattle()->battleGetStackByID(*stackInfoUnitId, false);
+		if(stack)
+			owner.windowObject->refreshHoveredStackStatus(stack);
+		else
+		{
+			owner.windowObject->updateStackInfoWindow(nullptr);
+			stackInfoUnitId.reset();
+			stackInfoPanelRetention.clear();
+		}
+	}
+	else if(owner.windowObject->hasStackInfoWindow())
+	{
+		owner.windowObject->updateStackInfoWindow(nullptr);
+		stackInfoUnitId.reset();
+		stackInfoPanelRetention.clear();
+	}
 
 	for(const auto * stack : mouseHoveredStacks)
 	{

@@ -13,11 +13,12 @@ player feedback, focused tests, independent review, and target-build evidence.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. After activating the remaining six Archery perks, 81 ranks
-and 85 perks are marked active, with 12 ranks and 225 perks still planned. No
+requirements in total. After activating the remaining six Archery perks and
+Bulwark's first three Basic perks, 81 ranks and 88 perks are marked active, with
+12 ranks and 222 perks still planned. No
 entry yet has the whole
-UP-023 evidence chain recorded here. `Mireborn` has an inaccessible partial
-runtime hook despite planned status; `Corpse Preservation` is read but does not
+UP-023 evidence chain recorded here. Bulwark's remaining seven perks are planned;
+`Corpse Preservation` is read but does not
 change casualty eligibility.
 
 | Skill | Active/planned ranks | Active/planned perks | Immediate state |
@@ -51,14 +52,14 @@ change casualty eligibility.
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |
 | Necromancy | 3/0 | 3/7 | Seven perks missing; one inert hook |
 | Bloodrage | 3/0 | 1/9 | Nine perks missing |
-| Bulwark of the Mire | 3/0 | 0/10 | Progression blocked; Mireborn partial |
+| Bulwark of the Mire | 3/0 | 3/7 | Basic progression opened; seven perks missing |
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
-rank. Fifteen Skills therefore cannot normally advance beyond Basic because they
+rank. Fourteen Skills therefore cannot normally advance beyond Basic because they
 have no active Basic perk: War Machines, Command, Light Magic, Shadow Magic,
 Nature Magic, Chaos Magic, Spellcraft, Diplomacy, Estates, Learning, Luck, Divine
-Mandate, Shroud of Malassa, Bulwark of the Mire, and Elemental Rebirth.
+Mandate, Shroud of Malassa, and Elemental Rebirth.
 
 ## Spell baseline
 

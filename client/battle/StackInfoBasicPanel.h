@@ -10,8 +10,10 @@
 #pragma once
 
 #include "BattleSidePanel.h"
+#include "NewHorizonsBattleStatus.h"
 
 class CStack;
+class CPlayerBattleCallback;
 
 class CLabel;
 class CMultiLineLabel;
@@ -27,10 +29,15 @@ private:
 	std::vector<std::shared_ptr<CMultiLineLabel>> labelsMultiline;
 	std::vector<std::shared_ptr<CAnimImage>> icons;
 	std::vector<std::shared_ptr<LRClickableAreaWText>> statusTooltips;
+	std::shared_ptr<CPlayerBattleCallback> battleCallback;
+	newHorizonsBattleStatus::DefendStatus displayedDefendStatus;
 
 public:
-	StackInfoBasicPanel(const CStack * stack, bool initializeBackground);
+	StackInfoBasicPanel(
+		const CStack * stack, std::shared_ptr<CPlayerBattleCallback> battleCallback, bool initializeBackground);
 
 	void initializeData(const CStack * stack);
 	void update(const CStack * updatedInfo);
+	void refreshDefendStatus(const CStack * updatedInfo);
+	bool containsPoint(const Point & point) const;
 };

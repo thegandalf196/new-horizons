@@ -743,10 +743,11 @@ void BattleWindow::updateStackInfoWindow(const CStack * stack)
 	OBJECT_CONSTRUCTION;
 
 	bool showInfoWindows = settings["battle"]["stackInfoBasicPanel"].Bool();
+	const auto battleCallback = owner.getBattle();
 
 	if(stack && stack->unitSide() == BattleSide::DEFENDER)
 	{
-		defenderStackWindow = std::make_shared<StackInfoBasicPanel>(stack, true);
+		defenderStackWindow = std::make_shared<StackInfoBasicPanel>(stack, battleCallback, true);
 		defenderStackWindow->setEnabled(showInfoWindows);
 	}
 	else
@@ -754,7 +755,7 @@ void BattleWindow::updateStackInfoWindow(const CStack * stack)
 	
 	if(stack && stack->unitSide() == BattleSide::ATTACKER)
 	{
-		attackerStackWindow = std::make_shared<StackInfoBasicPanel>(stack, true);
+		attackerStackWindow = std::make_shared<StackInfoBasicPanel>(stack, battleCallback, true);
 		attackerStackWindow->setEnabled(showInfoWindows);
 	}
 	else
@@ -763,6 +764,31 @@ void BattleWindow::updateStackInfoWindow(const CStack * stack)
 	createTimerInfoWindows();
 	setPositionInfoWindow();
 	redraw();
+}
+
+void BattleWindow::refreshHoveredStackStatus(const CStack * stack)
+{
+	if(!stack)
+		return;
+
+	auto panel = stack->unitSide() == BattleSide::DEFENDER ? defenderStackWindow : attackerStackWindow;
+	if(panel)
+		panel->refreshDefendStatus(stack);
+}
+
+bool BattleWindow::cursorOverStackInfoWindow() const
+{
+	const Point cursor = ENGINE->getCursorPosition();
+	const auto containsCursor = [&cursor](const std::shared_ptr<StackInfoBasicPanel> & panel)
+	{
+		return panel && !panel->isDisabled() && panel->containsPoint(cursor);
+	};
+	return containsCursor(attackerStackWindow) || containsCursor(defenderStackWindow);
+}
+
+bool BattleWindow::hasStackInfoWindow() const
+{
+	return attackerStackWindow || defenderStackWindow;
 }
 
 void BattleWindow::heroManaPointsChanged(const CGHeroInstance * hero)

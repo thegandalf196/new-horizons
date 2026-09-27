@@ -8,6 +8,10 @@ option(ENABLE_NEW_HORIZONS_MANAGED_TESTS
 add_executable(nhHeroDevelopmentNavigationTest ../client/tests/HeroDevelopmentNavigationTest.cpp)
 add_test(NAME nhHeroDevelopmentNavigationTest COMMAND nhHeroDevelopmentNavigationTest)
 
+# Pure UI-state test for the stack hover-to-panel travel grace period.
+add_executable(nhStackInfoPanelHoverStateTest ../client/tests/StackInfoPanelHoverStateTest.cpp)
+add_test(NAME nhStackInfoPanelHoverStateTest COMMAND nhStackInfoPanelHoverStateTest)
+
 set(VCMI_GOOGLETEST_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/googletest" CACHE PATH
 	"GoogleTest source directory (bundled submodule or installed local sources)")
 set(googleTest_Dir "${VCMI_GOOGLETEST_SOURCE_DIR}")
@@ -326,6 +330,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsSylvanLuckAITest.cpp
 		battleAI/NewHorizonsNoQuarterAITest.cpp
 		battleAI/NewHorizonsRelentlessAssaultAITest.cpp
+		battleAI/NewHorizonsBulwarkAITest.cpp
 		battleAI/NewHorizonsPaviseAITest.cpp
 		battleAI/NewHorizonsArcheryAITest.cpp
 	)

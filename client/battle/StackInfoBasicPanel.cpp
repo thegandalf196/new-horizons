@@ -19,12 +19,52 @@
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/texts/TextOperations.h"
 
-StackInfoBasicPanel::StackInfoBasicPanel(const CStack * stack, bool initializeBackground)
-	: BattleSidePanel(0)
+namespace
+{
+newHorizonsBattleStatus::DefendStatus currentDefendStatus(
+	const CStack * stack, const CPlayerBattleCallback * battleCallback)
+{
+	newHorizonsBattleStatus::DefendStatus result;
+	if(!stack || !stack->defended())
+		return result;
+
+	result.defending = true;
+	if(!battleCallback || !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack))
+		return result;
+
+	const auto ownerSide = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
+	if(ownerSide != BattleSide::ATTACKER && ownerSide != BattleSide::DEFENDER)
+		return result;
+
+	// This player-scoped query hides the opposing hero's private skill data.
+	const auto * hero = battleCallback->battleGetFightingHero(ownerSide);
+	if(!hero)
+		return result;
+
+	const int rank = newHorizonsBulwark::rank(hero);
+	if(rank <= 0)
+		return result;
+
+	const auto terrain = stack->getCurrentTerrain();
+	const bool mirebornTerrain = newHorizonsBulwark::hasMireborn(hero)
+		&& (terrain == TerrainId::SWAMP || terrain == TerrainId::ROUGH);
+	result.bulwark = newHorizonsBattleStatus::makeBulwarkStatus(rank,
+		hero->getPrimSkillLevel(PrimarySkill::DEFENSE), mirebornTerrain,
+		newHorizonsBulwark::hasBogAmbush(hero), newHorizonsBulwark::hasThickHide(hero),
+		stack->bulwarkPreemptiveUsed);
+	return result;
+}
+}
+
+StackInfoBasicPanel::StackInfoBasicPanel(
+	const CStack * stack, std::shared_ptr<CPlayerBattleCallback> battleCallback, bool initializeBackground)
+	: BattleSidePanel(0), battleCallback(std::move(battleCallback))
 {
 	OBJECT_CONSTRUCTION;
 
@@ -87,6 +127,15 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("IMRL22"), std::clamp(morale + 3, 0, 6), 0, 47, 131));
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("ILCK22"), std::clamp(luck + 3, 0, 6), 0, 47, 143));
+
+	displayedDefendStatus = currentDefendStatus(stack, battleCallback.get());
+	if(displayedDefendStatus.defending)
+	{
+		const auto badge = displayedDefendStatus.bulwark ? "BULWARK" : "DEFEND";
+		const auto tooltip = newHorizonsBattleStatus::defendStatusTooltip(displayedDefendStatus);
+		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW, badge));
+		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 153, 39, 13), tooltip, tooltip));
+	}
 
 	//extra information
 	labels.push_back(std::make_shared<CLabel>(9, 168, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, LIBRARY->generaltexth->translate("vcmi.battleWindow.killed") + ":"));
@@ -211,4 +260,22 @@ void StackInfoBasicPanel::update(const CStack * updatedInfo)
 
 	initializeData(updatedInfo);
 	redraw();
+}
+
+void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
+{
+	if(!updatedInfo)
+		return;
+
+	const auto current = currentDefendStatus(updatedInfo, battleCallback.get());
+	if(current == displayedDefendStatus)
+		return;
+
+	update(updatedInfo);
+}
+
+bool StackInfoBasicPanel::containsPoint(const Point & point) const
+{
+	return (background && background->pos.isInside(point))
+		|| (background2 && background2->pos.isInside(point));
 }

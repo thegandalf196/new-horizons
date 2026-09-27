@@ -234,6 +234,7 @@ float BattleExchangeVariant::trackAttack(
 		static_cast<battle::CAmmo &>(unitToUpdate->counterAttacks) = affectedUnit->counterAttacks;
 		unitToUpdate->battlecraftWaitBonusUsed = affectedUnit->battlecraftWaitBonusUsed;
 		unitToUpdate->cleaveUsedThisActivation = affectedUnit->cleaveUsedThisActivation;
+		unitToUpdate->bulwarkPreemptiveUsed = affectedUnit->bulwarkPreemptiveUsed;
 
 		if(unitToUpdate->unitSide() == attacker->unitSide())
 		{
