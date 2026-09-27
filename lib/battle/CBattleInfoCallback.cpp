@@ -664,6 +664,21 @@ uint8_t CBattleInfoCallback::battleHeroOrderFlankSide(const battle::Unit * attac
 	return orderContactingSideMask(attacker, defender);
 }
 
+int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide side,
+	int warcastingBonusPercent) const
+{
+	const auto * battle = getBattle();
+	if(!battle || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return 0;
+	const auto & formula = battle->getHeroCommandRules()["commands"]["flank"]["effects"]["additionalSidePercent"];
+	const auto * hero = battle->getSideHero(side);
+	if(hero && hero->hasActivePerk("new-horizons:offense", "new-horizons:offense.encirclement"))
+		return heroCommands::ENCIRCLEMENT_ADDITIONAL_SIDE_PERCENT;
+	if(hero)
+		return heroCommands::coefficient(formula, *hero, warcastingBonusPercent);
+	return heroCommands::coefficient(formula, 0, 0);
+}
+
 bool CBattleInfoCallback::battleIsFocusFireTargetActive(BattleSide side) const
 {
 	const auto mark = battleGetFocusFireState(side);
@@ -1928,7 +1943,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 							++distinct; // each newly contacting side established by this blow counts once
 						const int additionalSides = std::max(0, distinct - 1);
 						payload.heroOrderDamagePercent = coefficientFor(rules["flank"]["effects"]["meleeDamagePercent"], attack, &*attackerState)
-							+ additionalSides * coefficientFor(rules["flank"]["effects"]["additionalSidePercent"], attack, &*attackerState);
+							+ additionalSides * battleHeroOrderFlankAdditionalSidePercent(
+								attackerSide, attackerState->warcastingBonusPercent);
 						if(payload.heroOrderDamagePercent > 0)
 							attackerOrderCause = HeroCommand::FLANK;
 					}

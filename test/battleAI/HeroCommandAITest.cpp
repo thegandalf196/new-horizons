@@ -13,6 +13,8 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/bonuses/Bonus.h"
+#include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
 #include <limits>
 
@@ -58,9 +60,22 @@ protected:
 	std::shared_ptr<RecordingCommandCallback> callback;
 	std::shared_ptr<CommandEnvironment> environment;
 
+	virtual void configureHeroBeforeBattle()
+	{
+	}
+
 	void prepareEvaluation(bool book)
 	{
-		prepareCommands(book);
+		startGame();
+		if(book)
+		{
+			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+			attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
+			setTestSpellPointTotal(attackerSideHero, 100);
+		}
+		configureHeroBeforeBattle();
+		startBattle();
+		beginCombat();
 		active = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
 		enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
 		BattleSetActiveStack activate;
@@ -97,6 +112,7 @@ class CanonicalOrderAITest : public HeroCommandAITest
 {
 protected:
 	HeroCommand selectedCommand = HeroCommand::NONE;
+	bool selectEncirclement = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -130,8 +146,28 @@ protected:
 			(void)name;
 			formula["base"].Integer() = 50;
 		}
+		if(selectedCommand == HeroCommand::FLANK)
+		{
+			// Keep the canonical non-perk coefficient so the AI test exercises
+			// Encirclement's shared resolver for the 4% -> 7% change.
+			selectedEffects["additionalSidePercent"]["base"].Integer() = 4;
+			if(selectEncirclement)
+				loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+					JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		}
 		heroCommands::validateRules(rules);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
+	}
+
+	void configureHeroBeforeBattle() override
+	{
+		if(!selectEncirclement)
+			return;
+		const auto offense = SecondarySkill::decode("new-horizons:offense");
+		ASSERT_GE(offense, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(offense), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({"new-horizons:offense", "new-horizons:offense.encirclement"});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:offense", "new-horizons:offense.encirclement"));
 	}
 
 	void prepareOrder(HeroCommand command)
@@ -283,6 +319,80 @@ TEST_F(CanonicalOrderAITest, EvaluatorChoosesFlankAndAuthoritativeSideBonusIsRec
 	const auto * flank = afterAttack->flankFor(enemy->unitId());
 	ASSERT_NE(flank, nullptr);
 	EXPECT_NE(flank->sideMask, 0);
+}
+
+TEST_F(CanonicalOrderAITest, FlankHeuristicPrefersTargetWithMultipleCurrentContactSides)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	selectEncirclement = true;
+	prepareOrder(HeroCommand::FLANK);
+	ASSERT_EQ(battle()->battleHeroOrderFlankAdditionalSidePercent(BattleSide::ATTACKER), 7);
+	std::vector<uint32_t> defenderTokens;
+	for(const auto * stack : battle()->battleGetAllStacks(false))
+		if(battle()->battleGetOwner(stack) == PlayerColor(1) && stack != enemy)
+			defenderTokens.push_back(stack->unitId());
+	for(const auto unitId : defenderTokens)
+	{
+		BattleUnitsChanged removed;
+		removed.battleID = BattleID(0);
+		removed.changedStacks.emplace_back(unitId, UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(removed);
+	}
+	auto * secondAttacker = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(54), 100);
+	ASSERT_NE(secondAttacker, nullptr);
+
+	std::optional<BattleHex> remoteTargetPosition;
+	const auto allUnits = battle()->battleGetAllUnits(false);
+	for(int index = 0; index < GameConstants::BFIELD_SIZE && !remoteTargetPosition; ++index)
+	{
+		const BattleHex candidate(index);
+		if(!candidate.isAvailable() || battle()->battleGetUnitByPos(candidate))
+			continue;
+		bool adjacentToReadyAlly = false;
+		for(const auto * unit : allUnits)
+		{
+			if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret()
+				|| battle()->battleGetOwner(unit) != PlayerColor(0)
+				|| !unit->isMeleeAttacker() || !unit->willMove(0))
+				continue;
+			for(const auto & occupied : unit->getHexes())
+				if(occupied.isValid() && BattleHex::getDistance(occupied, candidate) == 1)
+					adjacentToReadyAlly = true;
+		}
+		if(!adjacentToReadyAlly)
+			remoteTargetPosition = candidate;
+	}
+	ASSERT_TRUE(remoteTargetPosition);
+	auto * remoteTarget = addStack(BattleSide::DEFENDER, creatureByName("angel"), *remoteTargetPosition, 100);
+	ASSERT_NE(remoteTarget, nullptr);
+	remoteTarget->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::PRIMARY_SKILL, BonusSource::SPELL_EFFECT, -1,
+		BonusSourceID(SpellID(SpellID::BLESS)), BonusSubtypeID(PrimarySkill::DEFENSE)));
+
+	uint8_t contactedSides = battle()->battleHeroOrderFlankSide(active, enemy);
+	contactedSides |= battle()->battleHeroOrderFlankSide(secondAttacker, enemy);
+	const auto countSides = [](uint8_t mask)
+	{
+		int count = 0;
+		for(auto bits = mask; bits; bits &= static_cast<uint8_t>(bits - 1))
+			++count;
+		return count;
+	};
+	EXPECT_GE(countSides(contactedSides), 2);
+	uint8_t remoteSides = battle()->battleHeroOrderFlankSide(active, remoteTarget);
+	remoteSides |= battle()->battleHeroOrderFlankSide(secondAttacker, remoteTarget);
+	EXPECT_EQ(remoteSides, 0);
+	const auto enemyBaseDamage = battle()->calculateDmgRange(BattleAttackInfo(active, enemy, 0, false)).damage.min;
+	const auto remoteBaseDamage = battle()->calculateDmgRange(BattleAttackInfo(active, remoteTarget, 0, false)).damage.min;
+	ASSERT_GT(remoteBaseDamage, enemyBaseDamage)
+		<< "Without the additional-side opportunity, the slightly lower-Defense remote target should win";
+
+	assertChosenOrder(HeroCommand::FLANK);
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_EQ(state->primaryTargetUnitId, enemy->unitId())
+		<< "The AI should value Flank's bonus for the extra distinct contact side";
 }
 
 TEST_F(CanonicalOrderAITest, EvaluatorChoosesSecondWindForMovedStackAndActivatesIt)

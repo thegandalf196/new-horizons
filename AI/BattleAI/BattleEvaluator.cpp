@@ -527,9 +527,23 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 		const auto * target = battle.battleGetUnitByID(targetIds.front());
 		if(!target || !target->alive() || battle.battleGetOwner(target) == battle.sideToPlayer(side))
 			return 0.0f;
-		// The first distinct side gets the base bonus; additional side bonuses are
-		// earned only after the authoritative combat path records another approach.
-		return bestOwnMeleeDamage(target) * flankDamage / 100.0f;
+		// Estimate the immediate opportunity from allied melee stacks that have not
+		// acted yet. The authoritative attack path records exact sides as attacks
+		// resolve; this projection reads current contacts only and never mutates them.
+		uint8_t availableSides = 0;
+		for(const auto * unit : ownUnits)
+		{
+			if(!unit->isMeleeAttacker() || !unit->willMove(0))
+				continue;
+			availableSides |= battle.battleHeroOrderFlankSide(unit, target);
+		}
+		int distinctSides = 0;
+		for(auto bits = availableSides; bits; bits &= static_cast<uint8_t>(bits - 1))
+			++distinctSides;
+		const int additionalSides = std::max(0, distinctSides - 1);
+		const int additionalSidePercent = battle.battleHeroOrderFlankAdditionalSidePercent(side, warcastingBonus);
+		return bestOwnMeleeDamage(target)
+			* (flankDamage + additionalSides * additionalSidePercent) / 100.0f;
 	}
 
 	if(command == secondWindCommand() && targetIds.size() == 1)

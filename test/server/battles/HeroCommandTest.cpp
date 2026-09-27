@@ -13,6 +13,7 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/SideInBattle.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
+#include "../../../lib/battle/Unit.h"
 #include "../../../lib/bonuses/Bonus.h"
 // Full game-state roundtrips instantiate serializers for the complete object graph.
 #include "../../../lib/CPlayerState.h"
@@ -67,6 +68,172 @@ protected:
 	}
 };
 
+class EncirclementTest : public HeroCommandFixture
+{
+protected:
+	void SetUp() override
+	{
+		HeroCommandFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons content module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
+
+	void prepareEncirclement()
+	{
+		startGame();
+		const int decoded = SecondarySkill::decode("new-horizons:offense");
+		ASSERT_GE(decoded, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		ASSERT_FALSE(attackerSideHero->hasActivePerk(
+			"new-horizons:offense", "new-horizons:offense.encirclement"));
+		startBattle();
+		beginCombat();
+	}
+};
+
+TEST_F(EncirclementTest, EncirclementChangesOnlyAdditionalSideDamageAfterARecordedFlank)
+{
+	prepareEncirclement();
+
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * secondAttacker = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(54), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	ASSERT_NE(attacker, nullptr);
+	ASSERT_NE(secondAttacker, nullptr);
+	ASSERT_NE(defender, nullptr);
+	EXPECT_EQ(battle()->battleHeroOrderFlankAdditionalSidePercent(BattleSide::ATTACKER), 4);
+
+	const BattleAttackInfo firstAttack(attacker, defender, 0, false);
+	const BattleAttackInfo secondAttack(secondAttacker, defender, 0, false);
+	const auto firstWithoutOrder = battle()->calculateDmgRange(firstAttack).damage.min;
+	const auto secondWithoutOrder = battle()->calculateDmgRange(secondAttack).damage.min;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeTargetedHeroCommand(BattleSide::ATTACKER, HeroCommand::FLANK, defender->unitId())));
+
+	const auto firstSide = battle()->battleHeroOrderFlankSide(attacker, defender);
+	ASSERT_NE(firstSide, 0);
+	const auto firstFlankDamage = battle()->calculateDmgRange(firstAttack);
+	EXPECT_GT(firstFlankDamage.damage.min, firstWithoutOrder);
+	EXPECT_EQ(firstFlankDamage.attackerOrderCause, HeroCommand::FLANK);
+
+	blockRetaliation(defender);
+	ASSERT_TRUE(this->attack(attacker, defender->getPosition()));
+	const auto afterFirstAttack = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(afterFirstAttack);
+	const auto * flank = afterFirstAttack->flankFor(defender->unitId());
+	ASSERT_NE(flank, nullptr);
+	EXPECT_EQ(flank->sideMask, firstSide);
+
+	const auto repeatedSideBeforeSelection = battle()->calculateDmgRange(firstAttack);
+	EXPECT_EQ(repeatedSideBeforeSelection.damage.min, firstFlankDamage.damage.min);
+	EXPECT_EQ(repeatedSideBeforeSelection.damage.max, firstFlankDamage.damage.max);
+	EXPECT_EQ(repeatedSideBeforeSelection.attackerOrderCause, HeroCommand::FLANK);
+
+	const auto secondSide = battle()->battleHeroOrderFlankSide(secondAttacker, defender);
+	ASSERT_NE(secondSide, 0);
+	const auto newlyContactingSides = static_cast<uint8_t>(secondSide & ~flank->sideMask);
+	ASSERT_NE(newlyContactingSides, 0);
+	const auto extraSideBeforeSelection = battle()->calculateDmgRange(secondAttack);
+	EXPECT_GT(extraSideBeforeSelection.damage.min, secondWithoutOrder);
+	EXPECT_EQ(extraSideBeforeSelection.attackerOrderCause, HeroCommand::FLANK);
+
+	attackerSideHero->applyPerkSelection({"new-horizons:offense", "new-horizons:offense.encirclement"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:offense", "new-horizons:offense.encirclement"));
+	EXPECT_EQ(battle()->battleHeroOrderFlankAdditionalSidePercent(BattleSide::ATTACKER), 7);
+	const auto repeatedSideAfterSelection = battle()->calculateDmgRange(firstAttack);
+	EXPECT_EQ(repeatedSideAfterSelection.damage.min, repeatedSideBeforeSelection.damage.min);
+	EXPECT_EQ(repeatedSideAfterSelection.damage.max, repeatedSideBeforeSelection.damage.max);
+	const auto extraSideAfterSelection = battle()->calculateDmgRange(secondAttack);
+	EXPECT_GT(extraSideAfterSelection.damage.min, extraSideBeforeSelection.damage.min)
+		<< "Encirclement must affect a newly distinct side in the authoritative damage calculation";
+	EXPECT_EQ(extraSideAfterSelection.attackerOrderCause, HeroCommand::FLANK);
+	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->flankFor(defender->unitId())->sideMask,
+		firstSide) << "Hypothetical damage estimation must not record a Flank approach";
+}
+
+TEST_F(HeroCommandTest, WideFlankContactReportsEachDistinctContactSide)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+	const auto blackDragon = creatureByName("core:blackDragon");
+	ASSERT_TRUE(blackDragon.toCreature()->isDoubleWide());
+
+	const auto cellsAreFree = [this](const BattleHexArray & cells)
+	{
+		bool hasValidCell = false;
+		for(const auto & cell : cells)
+		{
+			if(!cell.isValid())
+				continue;
+			hasValidCell = true;
+			if(battle()->battleGetUnitByPos(cell))
+				return false;
+		}
+		return hasValidCell;
+	};
+	const auto contactMask = [](const BattleHexArray & attackerCells, const BattleHexArray & defenderCells)
+	{
+		uint8_t mask = 0;
+		for(const auto & attackerHex : attackerCells)
+			for(const auto & defenderHex : defenderCells)
+				if(attackerHex.isValid() && defenderHex.isValid()
+					&& BattleHex::getDistance(defenderHex, attackerHex) == 1)
+				{
+					const auto direction = BattleHex::mutualPosition(defenderHex, attackerHex);
+					if(direction >= BattleHex::TOP_LEFT && direction <= BattleHex::LEFT)
+						mask |= static_cast<uint8_t>(1u << static_cast<unsigned>(direction));
+				}
+		return mask;
+	};
+	const auto sideCount = [](uint8_t mask)
+	{
+		int count = 0;
+		for(auto bits = mask; bits; bits &= static_cast<uint8_t>(bits - 1))
+			++count;
+		return count;
+	};
+
+	std::optional<std::pair<BattleHex, BattleHex>> positions;
+	for(int attackerIndex = 0; attackerIndex < GameConstants::BFIELD_SIZE && !positions; ++attackerIndex)
+	{
+		const BattleHex attackerPosition(attackerIndex);
+		const auto & attackerCells = battle::Unit::getHexes(attackerPosition, true, BattleSide::ATTACKER);
+		if(attackerCells.size() != 2 || !cellsAreFree(attackerCells))
+			continue;
+		for(int defenderIndex = 0; defenderIndex < GameConstants::BFIELD_SIZE; ++defenderIndex)
+		{
+			const BattleHex defenderPosition(defenderIndex);
+			const auto & defenderCells = battle::Unit::getHexes(defenderPosition, false, BattleSide::DEFENDER);
+			if(!cellsAreFree(defenderCells))
+				continue;
+			bool overlaps = false;
+			for(const auto & attackerHex : attackerCells)
+				for(const auto & defenderHex : defenderCells)
+					if(attackerHex.isValid() && defenderHex.isValid() && attackerHex == defenderHex)
+						overlaps = true;
+			if(overlaps || sideCount(contactMask(attackerCells, defenderCells)) < 2)
+				continue;
+			positions = std::make_pair(attackerPosition, defenderPosition);
+			break;
+		}
+	}
+	ASSERT_TRUE(positions) << "A wide stack should be able to contact one target from multiple hex sides";
+
+	auto * wide = addStack(BattleSide::ATTACKER, blackDragon, positions->first, 1);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("angel"), positions->second, 1);
+	ASSERT_NE(wide, nullptr);
+	ASSERT_NE(target, nullptr);
+	const auto actualMask = battle()->battleHeroOrderFlankSide(wide, target);
+	EXPECT_GE(sideCount(actualMask), 2);
+	EXPECT_EQ(actualMask, contactMask(wide->getHexes(), target->getHexes()));
+}
+
 TEST_F(HeroCommandTest, HeroOrderStatePacketRoundTripsThroughClientPackPointer)
 {
 	BattleHeroOrderStateChanged outgoing;
@@ -88,6 +255,42 @@ TEST_F(HeroCommandTest, HeroOrderStatePacketRoundTripsThroughClientPackPointer)
 	EXPECT_EQ(registered->side, outgoing.side);
 	ASSERT_TRUE(registered->state);
 	EXPECT_EQ(*registered->state, *outgoing.state);
+}
+
+TEST_F(HeroCommandTest, FlankSideMaskRoundTripsThroughClientPackPointer)
+{
+	BattleHeroOrderStateChanged outgoing;
+	outgoing.battleID = BattleID(7);
+	outgoing.side = BattleSide::ATTACKER;
+	HeroOrderState state;
+	state.command = HeroCommand::FLANK;
+	state.issuedRound = 3;
+	state.primaryTargetUnitId = 11;
+	state.flankTargets.push_back({11, 0b100101});
+	outgoing.state = state;
+
+	const CPackForClient & base = outgoing;
+	auto polymorphic = CMemorySerializer::deepCopy(base);
+	const auto * registered = dynamic_cast<const BattleHeroOrderStateChanged *>(polymorphic.get());
+	ASSERT_NE(registered, nullptr);
+	ASSERT_TRUE(registered->state);
+	ASSERT_NE(registered->state->flankFor(11), nullptr);
+	EXPECT_EQ(registered->state->flankFor(11)->sideMask, 0b100101);
+}
+
+TEST_F(HeroCommandTest, FlankSideMaskSurvivesSaveStateRoundTrip)
+{
+	HeroOrderState original;
+	original.command = HeroCommand::FLANK;
+	original.issuedRound = 3;
+	original.primaryTargetUnitId = 11;
+	original.flankTargets.push_back({11, 0b100101});
+
+	CMemorySerializer memory;
+	memory.oser & original;
+	HeroOrderState restored;
+	memory.iser & restored;
+	EXPECT_EQ(restored, original);
 }
 
 TEST_F(HeroCommandTest, CreatureLocationSpellPacketPreservesUnitZeroAndLanding)

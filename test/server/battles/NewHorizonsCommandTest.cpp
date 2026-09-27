@@ -90,6 +90,25 @@ TEST_P(NewHorizonsCommandTest, AuthoritativeFocusFireStateUsesTheRankedCoefficie
 	EXPECT_THAT(server.battleLogLines.front(), ::testing::Not(::testing::HasSubstr("New Horizons:")));
 }
 
+TEST_F(NewHorizonsCommandTest, EncirclementChangesOnlyTheAdditionalFlankSideCoefficient)
+{
+	prepareRank(MasteryLevel::BASIC, 50);
+	const int offenseSkill = SecondarySkill::decode("new-horizons:offense");
+	ASSERT_GE(offenseSkill, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(offenseSkill), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+
+	const auto & effects = battle()->getHeroCommandRules()["commands"]["flank"]["effects"];
+	const int firstSideCoefficient = heroCommands::coefficient(effects["meleeDamagePercent"], *attackerSideHero);
+	EXPECT_EQ(battle()->battleHeroOrderFlankAdditionalSidePercent(BattleSide::ATTACKER), 4);
+	EXPECT_EQ(battle()->battleHeroOrderFlankAdditionalSidePercent(BattleSide::NONE), 0);
+
+	attackerSideHero->applyPerkSelection({"new-horizons:offense", "new-horizons:offense.encirclement"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:offense", "new-horizons:offense.encirclement"));
+	EXPECT_EQ(battle()->battleHeroOrderFlankAdditionalSidePercent(BattleSide::ATTACKER),
+		heroCommands::ENCIRCLEMENT_ADDITIONAL_SIDE_PERCENT);
+	EXPECT_EQ(heroCommands::coefficient(effects["meleeDamagePercent"], *attackerSideHero), firstSideCoefficient);
+}
+
 TEST_F(NewHorizonsCommandTest, AcceptedOrderWritesOneAuthoritativeHeroAndScopeLine)
 {
 	prepareRank(MasteryLevel::BASIC, 50);

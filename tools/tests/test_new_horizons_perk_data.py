@@ -35,6 +35,7 @@ ACTIVE_PERKS = {
     "new-horizons:demonicGating.masterGate",
     "new-horizons:demonicGating.endlessLegion",
     "new-horizons:offense.shockAssault",
+    "new-horizons:offense.encirclement",
     "new-horizons:offense.executioner",
     "new-horizons:offense.armorPiercer",
     "new-horizons:offense.breakthrough",

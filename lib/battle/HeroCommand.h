@@ -216,6 +216,8 @@ constexpr int ORDERS_ONLY_RULESET_VERSION = 3;
 constexpr int CURRENT_RULESET_VERSION = ORDERS_ONLY_RULESET_VERSION;
 constexpr int MIN_EFFECT_PERCENT = -90;
 constexpr int MAX_EFFECT_PERCENT = 200;
+/// Basic Offense Encirclement value for each additional distinct Flank side.
+constexpr int ENCIRCLEMENT_ADDITIONAL_SIDE_PERCENT = 7;
 /// Arithmetic safety bound, not a gameplay balance target.
 constexpr double MAX_TARGETED_COEFFICIENT = 1000000;
 DLL_LINKAGE std::string key(HeroCommand command);

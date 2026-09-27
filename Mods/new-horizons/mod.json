@@ -2502,7 +2502,7 @@
 								"requires": "basic",
 								"description": "Flank! gains +7% damage per additional distinct attack side instead of +4%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Flank! gains +7% damage per additional distinct attack side instead of +4%."
 								}
 							},

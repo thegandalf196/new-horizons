@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE_V2 = ROOT / "assets/new-horizons/art-source/active-perks-v2"
 SOURCE_V3 = ROOT / "assets/new-horizons/art-source/active-perks-v3"
 SOURCE_V5 = ROOT / "assets/new-horizons/art-source/active-perks-v5"
+SOURCE_ENCIRCLEMENT = ROOT / "assets/new-horizons/art-source/encirclement-v1"
 SOURCE_MASTER_GATE = ROOT / "assets/new-horizons/art-source/master-gate-v1"
 IMAGES = ROOT / "Mods/new-horizons/Images"
 ICONS = ROOT / "client/windows/NewHorizonsPerkIcons.h"
@@ -38,6 +39,12 @@ V3_EXPECTED = {
     "new-horizons:offense.shockAssault": (
         "NH_perk_shock_assault",
         "shock-assault",
+    ),
+}
+ENCIRCLEMENT_EXPECTED = {
+    "new-horizons:offense.encirclement": (
+        "NH_perk_encirclement",
+        "encirclement",
     ),
 }
 V5_EXPECTED = {
@@ -132,7 +139,7 @@ MASTER_GATE_EXPECTED = {
         "master-gate",
     ),
 }
-EXPECTED = V2_EXPECTED | V3_EXPECTED | V5_EXPECTED | MASTER_GATE_EXPECTED
+EXPECTED = V2_EXPECTED | V3_EXPECTED | V5_EXPECTED | ENCIRCLEMENT_EXPECTED | MASTER_GATE_EXPECTED
 
 
 def digest(path: Path) -> str:
@@ -149,6 +156,7 @@ def main() -> None:
     for source, expected in (
         (SOURCE_V2, V2_EXPECTED),
         (SOURCE_V3, V3_EXPECTED),
+        (SOURCE_ENCIRCLEMENT, ENCIRCLEMENT_EXPECTED),
         (SOURCE_V5, V5_EXPECTED),
         (SOURCE_MASTER_GATE, MASTER_GATE_EXPECTED),
     ):
@@ -191,6 +199,16 @@ def main() -> None:
                 path = IMAGES / frame["file"]
                 assert path.is_file(), path
                 assert image_size(path) == (44, 44)
+
+    encirclement_manifest = json.loads(
+        (SOURCE_ENCIRCLEMENT / "runtime-manifest.json").read_text(encoding="utf-8")
+    )
+    assert encirclement_manifest["status"].startswith("provisional")
+    assert encirclement_manifest["assets"] == ["NH_perk_encirclement"]
+    for filename, expected_hash in encirclement_manifest["files"].items():
+        path = IMAGES / filename
+        assert path.is_file(), path
+        assert digest(path) == expected_hash, (filename, "runtime export hash")
 
     definitions = json.loads(DEFINITIONS.read_text(encoding="utf-8"))
     active = {
