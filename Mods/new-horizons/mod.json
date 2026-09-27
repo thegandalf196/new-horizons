@@ -2562,7 +2562,7 @@
 								"requires": "advanced",
 								"description": "While Riposte! is active, each affected stack gains one additional retaliation for the round.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "While Riposte! is active, each affected stack gains one additional retaliation for the round."
 								}
 							},

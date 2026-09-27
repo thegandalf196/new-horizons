@@ -172,6 +172,7 @@ set(test_SRCS
 		server/battles/WarMachineControlTest.cpp
 		server/battles/HeroCommandTest.cpp
 		server/battles/NewHorizonsOffenseRankTest.cpp
+		server/battles/NewHorizonsVengeanceTest.cpp
 		server/battles/NewHorizonsCleaveTest.cpp
 		server/battles/NewHorizonsPursuitTest.cpp
 		server/battles/NewHorizonsDisciplineTest.cpp

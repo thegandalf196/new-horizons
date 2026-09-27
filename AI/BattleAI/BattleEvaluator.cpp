@@ -30,6 +30,7 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/NewHorizonsWarcasting.h"
+#include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 
@@ -487,18 +488,64 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	{
 		float incoming = 0.0f;
 		float retaliation = 0.0f;
+		float vengeanceRetaliation = 0.0f;
+		static const auto firstStrikeSelector = Selector::typeSubtype(
+			BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
+			.Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
 		for(const auto * own : ownUnits)
 			for(const auto * enemy : enemyUnits)
 			{
 				if(!enemy->isMeleeAttacker())
 					continue;
+				const BattleAttackInfo incomingAttack(enemy, own, 0, false);
 				DamageEstimation retaliationEstimate;
-				const auto incomingEstimate = battle.battleEstimateDamage(
-					BattleAttackInfo(enemy, own, 0, false), &retaliationEstimate);
+				const auto incomingEstimate = battle.battleEstimateDamage(incomingAttack, &retaliationEstimate);
 				incoming = std::max(incoming, averageOrderDamage(incomingEstimate));
 				retaliation = std::max(retaliation, averageOrderDamage(retaliationEstimate));
+				if(hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE)
+					&& isEligibleOrderUnit(battle, side, own)
+					&& own->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+					&& !own->hasBonusOfType(BonusType::UNLIMITED_RETALIATIONS)
+					&& !own->isTimeStopped()
+					&& !own->hasBonusOfType(BonusType::NO_RETALIATION)
+					&& !enemy->hasBonusOfType(BonusType::BLOCKS_RETALIATION)
+					&& !enemy->isInvincible()
+					&& !battle.isLongWeaponAttack(enemy, own)
+					&& (!battle.battleShroudDeniesRetaliation(incomingAttack)
+						|| own->hasBonus(firstStrikeSelector))
+					&& !newHorizonsOffense::hasVengeanceRetaliationBonus(own))
+				{
+					// Vengeance supplies the charge that ableToRetaliate() would otherwise
+					// reject after a spent counter. Mirror the engine's non-ammunition
+					// restrictions above, then estimate from detached post-hit states.
+					const auto estimateExtraCounter = [&](int64_t projectedDamage)
+					{
+						auto projectedOwn = own->acquireState();
+						projectedOwn->damage(projectedDamage);
+						if(!projectedOwn->alive())
+							return DamageEstimation();
+						BattleAttackInfo extraRetaliation(projectedOwn.get(), enemy, 0, false);
+						extraRetaliation.retaliation = true;
+						return battle.battleEstimateDamage(extraRetaliation);
+					};
+					const auto counterAfterMinimumDamage = estimateExtraCounter(incomingEstimate.damage.min);
+					const auto counterAfterMaximumDamage = estimateExtraCounter(incomingEstimate.damage.max);
+					DamageEstimation projectedRetaliation;
+					projectedRetaliation.damage.min = std::min(counterAfterMinimumDamage.damage.min,
+						counterAfterMaximumDamage.damage.min);
+					projectedRetaliation.damage.max = std::max(counterAfterMinimumDamage.damage.max,
+						counterAfterMaximumDamage.damage.max);
+					projectedRetaliation.kills.min = std::min(counterAfterMinimumDamage.kills.min,
+						counterAfterMaximumDamage.kills.min);
+					projectedRetaliation.kills.max = std::max(counterAfterMinimumDamage.kills.max,
+						counterAfterMaximumDamage.kills.max);
+					vengeanceRetaliation = std::max(vengeanceRetaliation,
+						averageOrderDamage(projectedRetaliation));
+				}
 			}
-		return incoming * riposteReduction / 100.0f + retaliation * riposteDamage / 100.0f;
+		const float extraRetaliation = vengeanceRetaliation * (100.0f + riposteDamage) / 100.0f;
+		return incoming * riposteReduction / 100.0f
+			+ retaliation * riposteDamage / 100.0f + extraRetaliation;
 	}
 
 	if(command == braceCommand())

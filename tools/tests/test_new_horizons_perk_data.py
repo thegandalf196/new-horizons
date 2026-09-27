@@ -41,6 +41,7 @@ ACTIVE_PERKS = {
     "new-horizons:offense.armorPiercer",
     "new-horizons:offense.breakthrough",
     "new-horizons:offense.cleave",
+    "new-horizons:offense.vengeance",
     "new-horizons:discipline.inspirationalLeader",
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.matterShaper",
@@ -219,6 +220,19 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertEqual(cleave["description"], description)
         self.assertEqual(cleave["effect"]["status"], "active")
         self.assertEqual(cleave["effect"]["description"], description)
+
+    def test_vengeance_is_active_advanced_offense_perk(self):
+        vengeance = next(
+            perk
+            for perk in self.rules["skills"]["new-horizons:offense"]["perks"]
+            if perk["id"] == "new-horizons:offense.vengeance"
+        )
+        description = "While Riposte! is active, each affected stack gains one additional retaliation for the round."
+        self.assertEqual(vengeance["name"], "Vengeance")
+        self.assertEqual(vengeance["requires"], "advanced")
+        self.assertEqual(vengeance["description"], description)
+        self.assertEqual(vengeance["effect"]["status"], "active")
+        self.assertEqual(vengeance["effect"]["description"], description)
 
     def test_perk_definitions_match_source_document(self):
         source_tables = source_perk_tables(ROOT / self.rules["sourceDocument"])

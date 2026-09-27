@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleInfo.h"
 #include "NewHorizonsBloodrage.h"
+#include "NewHorizonsOffense.h"
 #include "TimeStopState.h"
 
 #include "BattleLayout.h"
@@ -1085,6 +1086,18 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 	stacks.back()->natureSummoned = info.natureSummoned;
 	if(info.phantomIntegrity > 0)
 		stacks.back()->initializePhantomProfile(info.phantomIntegrity, info.phantomDuration);
+	const auto & orderState = sides.at(info.side).orderState;
+	const auto * hero = battleGetFightingHero(info.side);
+	if(orderState && orderState->command == HeroCommand::RIPOSTE && orderState->issuedRound == round
+		&& hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE))
+	{
+		auto * addedUnit = stacks.back().get();
+		if(addedUnit->alive() && !addedUnit->isGhost() && !addedUnit->isTurret()
+			&& !addedUnit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& addedUnit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+			&& !newHorizonsOffense::hasVengeanceRetaliationBonus(addedUnit))
+			addedUnit->addNewBonus(std::make_shared<Bonus>(newHorizonsOffense::vengeanceRetaliationBonus()));
+	}
 	stacks.back()->nodeHasChanged();
 }
 

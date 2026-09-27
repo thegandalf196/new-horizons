@@ -11,6 +11,7 @@
 #include "StackWithBonuses.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
+#include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/TimeStopState.h"
 #include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/SiegeInfo.h"
@@ -1038,6 +1039,16 @@ void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 	info.load(id, data);
 	auto newUnit = std::make_shared<StackWithBonuses>(this, info);
 	stackStates[newUnit->unitId()] = newUnit;
+	const auto & orderState = heroOrderStates.at(info.side);
+	const auto * hero = battleGetFightingHero(info.side);
+	if(orderState && orderState->command == HeroCommand::RIPOSTE
+		&& orderState->issuedRound == projectedRound
+		&& hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE)
+		&& newUnit->alive() && !newUnit->isGhost() && !newUnit->isTurret()
+		&& !newUnit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		&& newUnit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+		&& !newHorizonsOffense::hasVengeanceRetaliationBonus(newUnit.get()))
+		addUnitBonus(newUnit->unitId(), {newHorizonsOffense::vengeanceRetaliationBonus()});
 }
 
 void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)

@@ -10,9 +10,11 @@
 #include "StdInc.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
@@ -56,7 +58,7 @@ class HeroCommandAITest : public HeroCommandFixture
 {
 protected:
 	CStack * active = nullptr;
-	const CStack * enemy = nullptr;
+	CStack * enemy = nullptr;
 	std::shared_ptr<RecordingCommandCallback> callback;
 	std::shared_ptr<CommandEnvironment> environment;
 
@@ -113,10 +115,15 @@ class CanonicalOrderAITest : public HeroCommandAITest
 protected:
 	HeroCommand selectedCommand = HeroCommand::NONE;
 	bool selectEncirclement = false;
+	bool configureVengeancePerkData = false;
+	bool zeroRiposteEffects = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
+		if(configureVengeancePerkData)
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		if(selectedCommand == HeroCommand::NONE)
 			return;
 
@@ -145,6 +152,16 @@ protected:
 		{
 			(void)name;
 			formula["base"].Integer() = 50;
+		}
+		if(selectedCommand == HeroCommand::RIPOSTE && zeroRiposteEffects)
+		{
+			for(auto & [name, formula] : selectedEffects.Struct())
+			{
+				(void)name;
+				formula["base"].Integer() = 0;
+				formula["attack"].Float() = 0;
+				formula["defense"].Float() = 0;
+			}
 		}
 		if(selectedCommand == HeroCommand::FLANK)
 		{
@@ -257,6 +274,71 @@ TEST_F(CanonicalOrderAITest, EvaluatorChoosesRiposteAndRoundLifecycleIsAuthorita
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::RIPOSTE);
 	advanceRound();
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
+}
+
+TEST_F(CanonicalOrderAITest, VengeanceValuesSpentBeforeIssueRetaliationWithoutMutatingLiveBattle)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	selectedCommand = HeroCommand::RIPOSTE;
+	configureVengeancePerkData = true;
+	zeroRiposteEffects = true;
+	prepareEvaluation(false);
+
+	active->counterAttacks.use();
+	ASSERT_FALSE(active->counterAttacks.canUse());
+	const auto baselineTotal = active->counterAttacks.total();
+	const auto baselineAvailable = active->counterAttacks.available();
+	choose();
+	EXPECT_FALSE(std::ranges::any_of(callback->submitted, [](const BattleAction & action)
+	{
+		return action.actionType == EActionType::HERO_COMMAND && action.command == HeroCommand::RIPOSTE;
+	}));
+	callback->submitted.clear();
+
+	const int offense = SecondarySkill::decode(newHorizonsOffense::SKILL);
+	ASSERT_GE(offense, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(offense), MasteryLevel::ADVANCED,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE));
+	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::BLOCKS_RETALIATION, BonusSource::OTHER, 1, BonusSourceID()));
+	choose();
+	EXPECT_FALSE(std::ranges::any_of(callback->submitted, [](const BattleAction & action)
+	{
+		return action.actionType == EActionType::HERO_COMMAND && action.command == HeroCommand::RIPOSTE;
+	})) << "Vengeance must not value a counterattack against a retaliation-blocking attacker";
+	callback->submitted.clear();
+	enemy->removeBonuses(Selector::type()(BonusType::BLOCKS_RETALIATION));
+
+	ASSERT_TRUE(choose());
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().actionType, EActionType::HERO_COMMAND);
+	EXPECT_EQ(callback->submitted.front().command, HeroCommand::RIPOSTE);
+	EXPECT_EQ(active->counterAttacks.total(), baselineTotal);
+	EXPECT_EQ(active->counterAttacks.available(), baselineAvailable);
+	EXPECT_FALSE(newHorizonsOffense::hasVengeanceRetaliationBonus(active));
+	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::NONE);
+
+	executeChosen();
+	battle::UnitInfo lateArrival;
+	lateArrival.id = battle()->battleNextUnitId();
+	lateArrival.count = 3;
+	lateArrival.type = creatureByName("core:angel");
+	lateArrival.side = BattleSide::ATTACKER;
+	lateArrival.position = BattleHex(80);
+	lateArrival.summoned = true;
+	JsonNode arrivalData;
+	lateArrival.save(arrivalData);
+	HypotheticBattle projected(environment.get(), callback->getBattle(BattleID(0)));
+	projected.addUnit(lateArrival.id, arrivalData);
+	const auto * projectedArrival = projected.battleGetUnitByID(lateArrival.id);
+	ASSERT_NE(projectedArrival, nullptr);
+	EXPECT_TRUE(newHorizonsOffense::hasVengeanceRetaliationBonus(projectedArrival));
+	EXPECT_EQ(projectedArrival->counterAttacks.total(), 2);
+	EXPECT_EQ(battle()->getStack(lateArrival.id, false), nullptr)
+		<< "Projecting a summoned unit must not add it to the authoritative battle";
 }
 
 TEST_F(CanonicalOrderAITest, EvaluatorChoosesBraceAndAuthoritativeTriggerIsLegal)

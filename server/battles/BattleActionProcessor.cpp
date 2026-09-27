@@ -224,6 +224,8 @@ static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSid
 			break;
 		case HeroCommand::RIPOSTE:
 			line.appendRawString(" Allied stacks take less melee damage and retaliate more fiercely this round.");
+			if(hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE))
+				line.appendRawString(" Vengeance grants each affected stack one additional retaliation this round.");
 			break;
 		case HeroCommand::BRACE:
 			line.appendRawString(" Allied stacks strike first when an enemy moves at least 3 hexes before a melee attack this round.");
@@ -1497,6 +1499,28 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 		const auto state = battle.battleGetHeroOrderState(ba.side);
 		if(!state || state->command != ba.command)
 			return false;
+		if(ba.command == HeroCommand::RIPOSTE)
+		{
+			const auto * hero = battle.battleGetFightingHero(ba.side);
+			if(hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE))
+			{
+				SetStackEffect update;
+				update.battleID = battle.getBattle()->getBattleID();
+				for(const auto * unit : battle.battleGetAllStacks(true))
+				{
+					if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret()
+						|| unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+						|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+						|| battle.battleGetOwner(unit) != battle.sideToPlayer(ba.side)
+						|| newHorizonsOffense::hasVengeanceRetaliationBonus(unit))
+						continue;
+					update.toAdd.emplace_back(unit->unitId(),
+						std::vector<Bonus>{newHorizonsOffense::vengeanceRetaliationBonus()});
+				}
+				if(!update.toAdd.empty())
+					gameHandler->sendAndApply(update);
+			}
+		}
 		BattleLogMessage message;
 		message.battleID = battle.getBattle()->getBattleID();
 		message.lines.push_back(heroOrderLogLine(battle, ba.side, *state));
