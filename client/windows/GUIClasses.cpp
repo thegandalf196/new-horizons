@@ -518,7 +518,8 @@ void CRecruitmentWindow::sliderMoved(int to)
 	totalCostValue->set(selected->creature->getFullRecruitCost() * to);
 }
 
-CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback_, int leftMin_, int rightMin_, int leftAmount_, int rightAmount_)
+CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback_, int leftMin_, int rightMin_,
+	int leftAmount_, int rightAmount_, std::string leftOwnerText, std::string rightOwnerText)
 	: CWindowObject(PLAYER_COLORED, ImagePath::builtin("GPUCRDIV")),
 	callback(callback_),
 	leftAmount(leftAmount_),
@@ -557,6 +558,10 @@ CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, i
 
 	animLeft = std::make_shared<CCreaturePic>(20, 54, creature, true, false);
 	animRight = std::make_shared<CCreaturePic>(177, 54,creature, true, false);
+	leftOwner = std::make_shared<CLabel>(70, 176, FONT_SMALL, ETextAlignment::CENTER,
+		Colors::YELLOW, std::move(leftOwnerText), 132);
+	rightOwner = std::make_shared<CLabel>(227, 176, FONT_SMALL, ETextAlignment::CENTER,
+		Colors::YELLOW, std::move(rightOwnerText), 132);
 
 	slider = std::make_shared<CSlider>(Point(21, 194), 257, std::bind(&CSplitWindow::sliderMoved, this, _1), 0, sliderPosition, defaultRightAmount - rightMin, Orientation::HORIZONTAL);
 

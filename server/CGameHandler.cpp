@@ -4999,14 +4999,37 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 {
 	const auto * army1 = dynamic_cast<const CArmedInstance*>(gameInfo().getObj(sl1.army));
 	const auto * army2 = dynamic_cast<const CArmedInstance*>(gameInfo().getObj(sl2.army));
+	if(!army1 || !army2)
+		COMPLAIN_RET("Cannot swap stacks between non-existing armies!");
+	auto moveIntoEmptySlot = [this](const CArmedInstance * source, const CArmedInstance * destination,
+		const StackLocation & sourceLocation, const StackLocation & destinationLocation)
+	{
+		if(!source->hasStackAtSlot(sourceLocation.slot))
+			return moveStack(sourceLocation, destinationLocation);
+		const TQuantity sourceCount = source->getStackCount(sourceLocation.slot);
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(destination))
+		{
+			if(const auto capacity = hero->getLeadershipSlotCapacity(source->getCreature(sourceLocation.slot)->getId());
+				capacity && sourceCount > capacity->maximum)
+			{
+				// A whole-stack drag into an empty hero slot is an ordinary move
+				// intent, not an exact numeric split. Fill the slot to its current
+				// Leadership capacity and leave the excess in the source army.
+				if(capacity->maximum <= 0)
+					return validateLeadershipStack(destination, source->getCreature(sourceLocation.slot)->getId(), sourceCount);
+				return moveStack(sourceLocation, destinationLocation, capacity->maximum);
+			}
+		}
+		return moveStack(sourceLocation, destinationLocation);
+	};
 
 	if(!army1->hasStackAtSlot(sl1.slot))
 	{
-		return moveStack(sl2, sl1);
+		return moveIntoEmptySlot(army2, army1, sl2, sl1);
 	}
 	else if(!army2->hasStackAtSlot(sl2.slot))
 	{
-		return moveStack(sl1, sl2);
+		return moveIntoEmptySlot(army1, army2, sl1, sl2);
 	}
 	else
 	{

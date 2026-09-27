@@ -264,6 +264,80 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershi
 	EXPECT_EQ(server.systemMessages, 0);
 }
 
+TEST_F(NewHorizonsLeadershipAdmissionTest, WholeStackDragIntoEmptyHeroSlotFillsLeadershipCapacityAndLeavesRemainder)
+{
+	const CreatureID dendroidGuard(CreatureID::decode("core:dendroidGuard"));
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, faction("core:rampart"), PlayerColor(0))
+		.townGarrison({{dendroidGuard, 25}})
+		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	auto * garrison = findFirst<CGTownInstance>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(garrison, nullptr);
+	garrison->setVisitingHero(hero);
+	hero->clearSlots();
+	ASSERT_TRUE(garrison->hasStackAtSlot(SlotID(0)));
+	ASSERT_FALSE(hero->hasStackAtSlot(SlotID(0)));
+	const auto capacity = hero->getLeadershipSlotCapacity(dendroidGuard);
+	ASSERT_TRUE(capacity);
+	ASSERT_GT(capacity->maximum, 0);
+	ASSERT_LT(capacity->maximum, garrison->getStackCount(SlotID(0)));
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(PlayerColor(0));
+	// The exchange UI sends the clicked empty hero destination first and the
+	// previously selected garrison source second.
+	ArrangeStacks drag(1, SlotID(0), SlotID(0), hero->id, garrison->id, 0);
+	drag.player = PlayerColor(0);
+	drag.requestID = 49;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, drag);
+
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(garrison->getStackCount(SlotID(0)), 25 - capacity->maximum);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.systemMessages, 0);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, WholeStackDragRejectsTwoEmptySlotsWithoutMutation)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, faction("core:rampart"), PlayerColor(0))
+		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	auto * garrison = findFirst<CGTownInstance>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(garrison, nullptr);
+	garrison->setVisitingHero(hero);
+	hero->clearSlots();
+	ASSERT_TRUE(hero->slotEmpty(SlotID(0)));
+	ASSERT_TRUE(garrison->slotEmpty(SlotID(0)));
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(PlayerColor(0));
+	// Empty hero destination first exercises the same branch as the reported UI
+	// route while proving a missing garrison source is rejected safely.
+	ArrangeStacks emptyDrag(1, SlotID(0), SlotID(0), hero->id, garrison->id, 0);
+	emptyDrag.player = PlayerColor(0);
+	emptyDrag.requestID = 51;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, emptyDrag);
+
+	EXPECT_TRUE(hero->slotEmpty(SlotID(0)));
+	EXPECT_TRUE(garrison->slotEmpty(SlotID(0)));
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	EXPECT_EQ(server.systemMessages, 1);
+}
+
 TEST_F(LegacyLeadershipAdmissionTest, OrdinaryMergeRemainsUncappedWithoutSavedLeadershipRules)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));

@@ -56,10 +56,27 @@ bool CGarrisonInt::checkLeadershipSwap(const CArmedInstance * leftArmy, const CA
 	const auto * leftCreature = leftArmy ? leftArmy->getCreature(leftSlot) : nullptr;
 	const auto * rightCreature = rightArmy ? rightArmy->getCreature(rightSlot) : nullptr;
 	if(!leftCreature || !rightCreature)
-		return checkLeadershipTransfer(leftArmy, rightArmy, leftSlot, rightSlot,
-			leftCreature ? leftArmy->getStackCount(leftSlot) : 0)
-			&& checkLeadershipTransfer(rightArmy, leftArmy, rightSlot, leftSlot,
-				rightCreature ? rightArmy->getStackCount(rightSlot) : 0);
+	{
+		if(!leftCreature && !rightCreature)
+			return true;
+		const auto * source = leftCreature ? leftArmy : rightArmy;
+		const auto * destination = leftCreature ? rightArmy : leftArmy;
+		const SlotID sourceSlot = leftCreature ? leftSlot : rightSlot;
+		const SlotID destinationSlot = leftCreature ? rightSlot : leftSlot;
+		const auto * creature = leftCreature ? leftCreature : rightCreature;
+		const TQuantity count = source->getStackCount(sourceSlot);
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(destination))
+		{
+			if(const auto capacity = hero->getLeadershipSlotCapacity(creature->getId());
+				capacity && count > capacity->maximum && capacity->maximum > 0)
+			{
+				// The server treats a whole-stack drag into an empty hero slot as
+				// a partial move intent and transfers exactly what fits.
+				return true;
+			}
+		}
+		return checkLeadershipTransfer(source, destination, sourceSlot, destinationSlot, count);
+	}
 
 	// A true swap replaces each stack; it does not merge equal creature types.
 	return checkLeadershipResult(rightArmy, leftCreature->getId(), leftArmy->getStackCount(leftSlot))
@@ -383,7 +400,18 @@ bool CGarrisonSlot::split()
 			owner->splitStacks(selection, owner->army(upg), ID, amountRight);
 	};
 
-	ENGINE->windows().createAndPushWindow<CSplitWindow>(selection->creature,  splitFunctor, minLeft, minRight, countLeft, countRight);
+	auto armyLabel = [](const CArmedInstance * army)
+	{
+		if(!army)
+			return std::string();
+		const std::string name = army->getObjectName().toString(&GAME->translator());
+		if(dynamic_cast<const CGHeroInstance *>(army))
+			return "Hero: " + name;
+		return name.empty() ? std::string("Garrison") : "Garrison: " + name;
+	};
+	ENGINE->windows().createAndPushWindow<CSplitWindow>(selection->creature, splitFunctor,
+		minLeft, minRight, countLeft, countRight,
+		armyLabel(owner->army(selection->upg)), armyLabel(owner->army(upg)));
 	return true;
 }
 

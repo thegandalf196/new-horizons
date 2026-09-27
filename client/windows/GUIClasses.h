@@ -132,6 +132,8 @@ class CSplitWindow : public CWindowObject
 	std::shared_ptr<CButton> cancel;
 	std::shared_ptr<CTextInput> leftInput;
 	std::shared_ptr<CTextInput> rightInput;
+	std::shared_ptr<CLabel> leftOwner;
+	std::shared_ptr<CLabel> rightOwner;
 
 	void setAmountText(std::string text, bool left);
 	void setAmount(int value, bool left);
@@ -145,7 +147,8 @@ public:
 	 * leftMin, rightMin - minimal amount of creatures in each stack
 	 * leftAmount, rightAmount - amount of creatures in each stack
 	 */
-	CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback, int leftMin, int rightMin, int leftAmount, int rightAmount);
+	CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback, int leftMin, int rightMin,
+		int leftAmount, int rightAmount, std::string leftOwnerText = {}, std::string rightOwnerText = {});
 };
 
 /// Raised up level window where you can select one out of two skills
