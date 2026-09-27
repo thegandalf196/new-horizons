@@ -1,0 +1,15 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "asset_binding": {
+    "perk_id": "new-horizons:offense.pursuit",
+    "image_key": "NH_perk_pursuit_v2"
+  },
+  "files": {
+    "NH_perk_pursuit_v2_normal.png": "63b594608c713a8098ff8a34d127ea055da95fd362e2102d523d674f49cda52a",
+    "NH_perk_pursuit_v2_pressed.png": "12985ab14d614604acffbfdd09a2cd955ef5a5bb030a2b51a9a96c37ba37205c",
+    "NH_perk_pursuit_v2_disabled.png": "8f0026fa13dbd50b7c3e9f975e3edb785865d7de16ae822e964950a60dd655ba",
+    "NH_perk_pursuit_v2_highlighted.png": "4c36661c7e990265824701d364658628b5243f400eaeaa98f37d98ce89629c5a",
+    "NH_perk_pursuit_v2.json": "fdd75c34863212b1f471fc40ac79bff4042c69ebc553a1580d77ca3ba051e590"
+  }
+}

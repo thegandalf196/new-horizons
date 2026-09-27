@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: Heroes III-style New Horizons Basic perk icon, square high-resolution master for reduction to 44x44 and 32x32
+Primary request: Create an original icon for the perk “Pursuit,” representing a melee attacker continuing to move after destroying an enemy stack, without making another attack.
+Subject: One tightly integrated miniature fantasy still life: a forward-driving, worn dark leather cavalry boot with a substantial bright steel spur, its toe planted beyond a cracked blackened-steel enemy helmet; a short curling strip of crimson cloth trails behind the boot to imply momentum and the defeated enemy left behind. Keep the boot and spur as the dominant recognizable group; helmet clearly secondary.
+Scene/backdrop: subdued dark oxblood leather and smoky umber, lightly textured, minimal detail.
+Style/medium: late-1990s Western PC fantasy illustration, richly dimensional miniature modeled fantasy still-life painting, painterly pre-rendered materials.
+Composition/framing: bold diagonal forward-moving silhouette filling most of the square with narrow safe inset; boot points decisively forward; steel spur distinct; broken helmet small and behind; no clipping; readable after reduction.
+Lighting/mood: theatrical chiaroscuro, warm gold-red light on forward edge, cool steel highlights, deep shadow mass.
+Color palette: dark leather, worn steel, restrained crimson, warm brass, earthy low-value backdrop; below neon.
+Materials/textures: creased leather, scuffed steel, torn cloth, chipped helmet.
+Constraints: no words, letters, numbers, runes, arrows, diagrams, characters, faces, logos, watermark, UI chrome, ornamental border, flat vector shapes, cartoon outlines, intentional pixel art, dithering, neon bloom, or excessive particles. Major shapes must remain identifiable at 44x44 and 32x32.

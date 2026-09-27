@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-27",
+  "generator": "OpenAI built-in image generator via homm3-art skill",
+  "method": "Focused built-in image edit of the retained original Pursuit concept to correct edge clipping and simplify the icon silhouette. The selected master is reduced with homm3-art export_art.py; runtime states use brightness/color-only transforms.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "edit_source": "../pursuit-v1/exports/pursuit/master.png (generated original; framing edit target, not a user style reference)",
+  "style_guide": "homm3-art/references/style-guide.md (secondary-skill icons)",
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "prompt_file": "prompt-pursuit-v2.txt",
+  "assets": [
+    {
+      "id": "new-horizons:offense.pursuit",
+      "name": "Pursuit",
+      "key": "NH_perk_pursuit_v2",
+      "master": "exports/pursuit/master.png",
+      "generated_output": "generated_images/01a0e145-c661-7391-8888-309e192999d8/exec-91d4faf6-4933-45a8-a51b-487386188fc8.png",
+      "prompt_file": "prompt-pursuit-v2.txt",
+      "dimensions": [1254, 1254],
+      "source_sha256": "dd4585831d6acce569bde44878ff9a02ec33423da9875463f4b4893e057c260d",
+      "style_reference": null
+    }
+  ]
+}
