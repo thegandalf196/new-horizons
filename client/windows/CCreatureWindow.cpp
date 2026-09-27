@@ -237,9 +237,17 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 	//spell effects
 	int printed=0; //how many effect pics have been printed
 	std::vector<SpellID> spells = battleStack->activeSpells();
-	// Keep Time Stop visible when the full stack window reaches its eight-icon
-	// display limit.  stable_partition preserves all other effect ordering.
-	std::stable_partition(spells.begin(), spells.end(), [](const SpellID effect)
+	// Keep the New Horizons combat statuses visible when the full stack window
+	// reaches its eight-icon display limit. stable_partition preserves their
+	// relative order and the ordering of all other effects.
+	const auto prioritizedEnd = std::stable_partition(spells.begin(), spells.end(), [](const SpellID effect)
+	{
+		const auto spellKey = effect.toSpell()->getJsonKey();
+		return newHorizonsBattleStatus::isTimeStop(spellKey)
+			|| newHorizonsBattleStatus::isFocusMagic(spellKey)
+			|| newHorizonsBattleStatus::isArcaneBreach(spellKey);
+	});
+	std::stable_partition(spells.begin(), prioritizedEnd, [](const SpellID effect)
 	{
 		return newHorizonsBattleStatus::isTimeStop(effect.toSpell()->getJsonKey());
 	});
@@ -258,7 +266,13 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 				throw std::runtime_error("Failed to find effects for spell " + effect.toSpell()->getJsonKey());
 
 			int duration = spellBonuses->front()->turnsRemain;
-			const bool timeStop = newHorizonsBattleStatus::isTimeStop(spell->getJsonKey());
+			const auto spellKey = spell->getJsonKey();
+			const bool timeStop = newHorizonsBattleStatus::isTimeStop(spellKey);
+			const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
+			const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
+			const auto arcaneStatus = arcaneBreach
+				? newHorizonsBattleStatus::arcaneBreachStatus(*spellBonuses)
+				: newHorizonsBattleStatus::ArcaneBreachStatus{};
 			std::string preferredLanguage = LIBRARY->generaltexth->getPreferredLanguage();
 
 			MetaString spellText;
@@ -272,9 +286,20 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 			std::string spellDescription = spellText.toString(&GAME->translator());
 			if(timeStop)
 				spellDescription = newHorizonsBattleStatus::timeStopTooltip(spellDescription);
+			else if(focusMagic)
+			{
+				const auto tooltipStatus = newHorizonsBattleStatus::focusMagicStatus(*spellBonuses);
+				if(tooltipStatus)
+					spellDescription = newHorizonsBattleStatus::focusMagicTooltip(spell->getDescriptionTranslated(0), *tooltipStatus);
+			}
+			else if(arcaneBreach)
+				spellDescription = newHorizonsBattleStatus::arcaneBreachTooltip(arcaneStatus);
 
 			spellIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect + 1, 0, firstPos.x + offset.x * printed, firstPos.y + offset.y * printed));
-			labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, timeStop ? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE) : std::to_string(duration)));
+			const std::string badge = timeStop
+				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
+				: arcaneBreach ? std::to_string(arcaneStatus.markCount()) : std::to_string(duration);
+			labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
 			clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(firstPos + offset * printed, Point(50, 38)), spellDescription, spellDescription));
 			if(++printed >= 8) // interface limit reached
 				break;
