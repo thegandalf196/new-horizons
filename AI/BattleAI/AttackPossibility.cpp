@@ -640,7 +640,7 @@ AttackPossibility AttackPossibility::evaluate(
 				{
 					int result = GameConstants::BFIELD_SIZE;
 					for(const auto hex : unit->getHexes())
-						result = std::min(result, hex.toInt());
+						result = std::min<int>(result, hex.toInt());
 					return result;
 				};
 				std::sort(destroyedEnemyUnits.begin(), destroyedEnemyUnits.end(), [&](const battle::Unit * left,
