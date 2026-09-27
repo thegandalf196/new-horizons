@@ -17,6 +17,7 @@
 
 #include "texts/CGeneralTextHandler.h"
 #include "battle/BattleInfo.h"
+#include "battle/NewHorizonsOffense.h"
 #include "GameLibrary.h"
 #include "networkPacks/PacksForClientBattle.h"
 #include "spells/CSpell.h"
@@ -76,6 +77,15 @@ void CStack::localInit(BattleInfo * battleInfo)
 	}
 	CUnitState::localInit(this); //it causes execution of the CStack::isOnNativeTerrain where nativeTerrain will be considered
 	position = initialPosition;
+}
+
+void CStack::afterNewRound(bool isFirstRound)
+{
+	battle::CUnitState::afterNewRound(isFirstRound);
+	removeBonusesRecursive(CSelector([](const Bonus * bonus)
+	{
+		return newHorizonsOffense::isNoQuarterRetaliationBonus(bonus);
+	}));
 }
 
 bool CStack::acceptsBonus(const Bonus & bonus) const

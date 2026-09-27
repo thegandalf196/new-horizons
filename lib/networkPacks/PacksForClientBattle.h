@@ -53,6 +53,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_RELENTLESS_ASSAULT)
 			&& info->hasRelentlessAssaultState())
 			throw std::runtime_error("Cannot discard Relentless Assault battle start state");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER)
+			&& info->hasNoQuarterState())
+			throw std::runtime_error("Cannot discard No Quarter battle start state");
 		h & battleID;
 		h & info;
 		assert(battleID != BattleID::NONE);
@@ -267,6 +270,10 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER)
+			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
+				{ return change.hasNoQuarterMoraleState(); }))
+			throw std::runtime_error("Cannot discard No Quarter unit state update");
 		h & battleID;
 		h & changedStacks;
 		assert(battleID != BattleID::NONE);
@@ -382,6 +389,12 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER)
+			&& (std::ranges::any_of(attackerChanges.changedStacks, [](const UnitChanges & change)
+					{ return change.hasNoQuarterMoraleState(); })
+				|| std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
+					{ return hit.newState.hasNoQuarterMoraleState(); })))
+			throw std::runtime_error("Cannot discard No Quarter attack state");
 		if(h.saving && chainGateTriggered && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
 			throw std::runtime_error("Cannot discard Chain Gate attack state");
 		h & battleID;

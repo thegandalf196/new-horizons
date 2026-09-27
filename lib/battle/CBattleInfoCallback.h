@@ -90,6 +90,7 @@ public:
 	int battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const;
 	bool battleCanUsePerfectMoment(const battle::Unit * attacker) const;
 	bool battleCanTriggerCleave(const battle::Unit * attacker) const;
+	bool battleCanTriggerNoQuarter(const BattleAttackInfo & attack) const;
 	const battle::Unit * battleSelectCleaveTarget(const battle::Unit * attacker,
 		const battle::Unit * destroyed) const;
 	int battleFortuneSpeed(const battle::Unit * unit) const;

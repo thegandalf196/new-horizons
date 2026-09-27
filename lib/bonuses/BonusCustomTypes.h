@@ -23,6 +23,7 @@ public:
 	static si32 decode(const std::string & identifier);
 
 	static const BonusCustomSource undeadMoraleDebuff; // -2
+	static const BonusCustomSource newHorizonsNoQuarter;
 };
 
 class DLL_LINKAGE BonusCustomSubtype : public StaticIdentifier<BonusCustomSubtype>

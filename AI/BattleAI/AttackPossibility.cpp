@@ -38,6 +38,11 @@ bool hasRangedMarkEffect(const battle::Unit * unit, const char * source)
 			return true;
 	return false;
 }
+
+int32_t noQuarterMoraleActivations(const CBattleInfoCallback & battle, uint32_t targetUnitId)
+{
+	return battle.getBattle()->getActiveStackID() == static_cast<int32_t>(targetUnitId) ? 2 : 1;
+}
 }
 
 void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
@@ -457,6 +462,11 @@ AttackPossibility AttackPossibility::evaluate(
 			ap.attack.relentlessAssaultDamagePercent = state->battleGetRelentlessAssaultDamagePercent(attacker, raPrimaryTarget);
 		}
 		std::shared_ptr<HypotheticBattle> fortunePreview;
+		BattleAttackInfo potentialRetaliation(defender, attacker, 0, false);
+		potentialRetaliation.retaliation = true;
+		const bool projectsNoQuarter = !attackInfo.shooting && attackInfo.physicalDamage
+			&& (state->battleCanTriggerNoQuarter(attackInfo)
+				|| state->battleCanTriggerNoQuarter(potentialRetaliation));
 		const bool projectsCleave = !attackInfo.shooting && !attackInfo.retaliation
 			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
 			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
@@ -465,10 +475,11 @@ AttackPossibility AttackPossibility::evaluate(
 			&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
 		const bool projectsProtect = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
-		if(ap.perfectMoment || projectsMarks || projectsCleave || projectsProtect || ordinaryRelentlessAssaultAttack)
+		if(ap.perfectMoment || projectsMarks || projectsCleave || projectsProtect
+			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
-		if(projectsMarks || projectsCleave || projectsProtect || ordinaryRelentlessAssaultAttack)
+		if(projectsMarks || projectsCleave || projectsProtect || ordinaryRelentlessAssaultAttack || projectsNoQuarter)
 			ap.effectPreview = fortunePreview;
 		const CBattleInfoCallback & luckState = fortunePreview
 			? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
@@ -632,6 +643,24 @@ AttackPossibility AttackPossibility::evaluate(
 				defenderDamageReduce = calculateDamageReduce(ap.attackerState.get(), defenderState.get(),
 					damageDealt, damageCache, state);
 
+				const bool appliesNoQuarter = fortunePreview
+					&& state->battleCanTriggerNoQuarter(victimAttack)
+					&& !u->isTimeStopped()
+					&& state->battleMatchOwner(ap.attackerState.get(), u)
+					&& retaliatorState->alive()
+					&& newHorizonsOffense::belowNoQuarterThreshold(
+						retaliatorState->getAvailableHealth(), battle::getMaximumHealth(*retaliatorState));
+				const int32_t moraleActivations = appliesNoQuarter
+					? noQuarterMoraleActivations(*state, u->unitId()) : 0;
+
+				const bool wasAlive = defenderState->alive();
+				defenderState->damage(damageDealt);
+				if(appliesNoQuarter && defenderState->alive())
+				{
+					fortunePreview->getForUpdate(u->unitId())->applyNoQuarter(moraleActivations);
+					strike.noQuarterTargets.emplace_back(u->unitId(), moraleActivations);
+				}
+
 				if(i == 0 && !attackInfo.shooting && u->unitId() == strikeDefender->unitId()
 					&& retaliatorState->alive() && retaliatorState->ableToRetaliate() && !counterAttacksBlocked
 					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector))
@@ -661,8 +690,6 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.collateralDamageReduce += defenderDamageReduce;
 
 				strike.hits.emplace_back(u->unitId(), damageDealt);
-				const bool wasAlive = defenderState->alive();
-				defenderState->damage(damageDealt);
 				const bool mayRebirth = !defenderState->isClone()
 					&& defenderState->valOfBonuses(BonusType::REBIRTH) > 0
 					&& defenderState->canCast() && defenderState->getPhantomInitialIntegrity() == 0;
@@ -784,6 +811,16 @@ AttackPossibility AttackPossibility::evaluate(
 					cleave->cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
 					cleave->hits.emplace_back(targetState->unitId(), cleaveDamage);
 					targetState->damage(cleaveDamage);
+					if(state->battleCanTriggerNoQuarter(cleaveAttack) && !targetState->isTimeStopped()
+						&& state->battleMatchOwner(ap.attackerState.get(), targetState.get())
+						&& targetState->alive()
+						&& newHorizonsOffense::belowNoQuarterThreshold(
+							targetState->getAvailableHealth(), battle::getMaximumHealth(*targetState)))
+					{
+						const int32_t moraleActivations = noQuarterMoraleActivations(*state, targetState->unitId());
+						fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations);
+						cleave->noQuarterTargets.emplace_back(targetState->unitId(), moraleActivations);
+					}
 					if(targetState->unitId() == defender->unitId())
 						ap.defenderDead = !targetState->alive();
 					ap.attackerState->afterAttack(false, false, true);
@@ -851,6 +888,22 @@ AttackPossibility AttackPossibility::evaluate(
 			{
 				auto actualDamage = std::min(rawDamage, targetState->getAvailableHealth());
 				targetState->damage(actualDamage);
+				if(retaliation && fortunePreview && targetState->alive())
+				{
+					auto retaliatorState = defenderStates.at(retaliation->attackerId);
+					BattleAttackInfo retaliationAttack(retaliatorState.get(), targetState.get(), 0, false);
+					retaliationAttack.retaliation = true;
+					retaliationAttack.secondaryAttack = targetState->unitId() != attacker->unitId();
+					if(state->battleCanTriggerNoQuarter(retaliationAttack) && !targetState->isTimeStopped()
+						&& state->battleMatchOwner(retaliatorState.get(), targetState.get())
+						&& newHorizonsOffense::belowNoQuarterThreshold(
+							targetState->getAvailableHealth(), battle::getMaximumHealth(*targetState)))
+					{
+						const int32_t moraleActivations = noQuarterMoraleActivations(*state, targetState->unitId());
+						fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations);
+						retaliation->noQuarterTargets.emplace_back(targetState->unitId(), moraleActivations);
+					}
+				}
 				if(retaliation && (targetState->unitId() == retaliation->defenderId
 					|| state->getBattle()->getLuckRollRules().affectsAllTargets))
 					retaliationActualDamage += actualDamage;

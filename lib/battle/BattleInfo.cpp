@@ -1063,6 +1063,22 @@ bool BattleInfo::hasCleaveState() const
 	});
 }
 
+bool BattleInfo::hasNoQuarterState() const
+{
+	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
+	{
+		if(!stack)
+			return false;
+		if(stack->noQuarterMoraleActivationsRemaining > 0)
+			return true;
+		const auto bonuses = stack->getAllBonuses(CSelector([](const Bonus * bonus)
+		{
+			return newHorizonsOffense::isNoQuarterBonus(bonus);
+		}));
+		return bonuses && !bonuses->empty();
+	});
+}
+
 void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 {
 	if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE) && id != nextUnitId())
@@ -1313,7 +1329,8 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 	for(const Bonus & one : bonus)
 	{
-		if(sta->isTimeStopped() && !timeStopState::isStateBonus(one))
+		if(sta->isTimeStopped() && !timeStopState::isStateBonus(one)
+			&& !newHorizonsOffense::isNoQuarterBonus(&one))
 		{
 			logNetwork->warn("Ignoring effect removal from Time Stop unit %d", id);
 			continue;

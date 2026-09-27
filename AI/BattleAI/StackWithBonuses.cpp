@@ -279,6 +279,42 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 	treeVersionLocal++;
 }
 
+void StackWithBonuses::applyNoQuarter(int32_t moraleActivationsRemaining)
+{
+	if(moraleActivationsRemaining <= 0 || moraleActivationsRemaining > 2)
+		throw std::invalid_argument("No Quarter morale duration must be one or two activations");
+
+	removeUnitBonus(CSelector([](const Bonus * bonus)
+	{
+		return newHorizonsOffense::isNoQuarterBonus(bonus);
+	}));
+	addUnitBonus({
+		newHorizonsOffense::noQuarterRetaliationBonus(),
+		newHorizonsOffense::noQuarterMoralePenalty()});
+	noQuarterMoraleActivationsRemaining = moraleActivationsRemaining;
+}
+
+void StackWithBonuses::consumeNoQuarterActivation()
+{
+	if(noQuarterMoraleActivationsRemaining <= 0)
+		return;
+
+	--noQuarterMoraleActivationsRemaining;
+	if(noQuarterMoraleActivationsRemaining == 0)
+		removeUnitBonus(CSelector([](const Bonus * bonus)
+		{
+			return newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
+		}));
+}
+
+void StackWithBonuses::clearNoQuarterRoundBlocker()
+{
+	removeUnitBonus(CSelector([](const Bonus * bonus)
+	{
+		return newHorizonsOffense::isNoQuarterRetaliationBonus(bonus);
+	}));
+}
+
 void StackWithBonuses::captureEffects()
 {
 	// Resolve refreshes before aging or another mutation. Their retained values
@@ -1005,6 +1041,7 @@ void HypotheticBattle::nextRound()
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
 	{
 		auto forUpdate = getForUpdate(unit->unitId());
+		forUpdate->clearNoQuarterRoundBlocker();
 		if(!firstRound && !forUpdate->isTimeStopped())
 			forUpdate->advanceTimedRound();
 		forUpdate->afterNewRound(firstRound);

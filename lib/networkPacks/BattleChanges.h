@@ -44,6 +44,12 @@ public:
 	{
 	}
 
+	bool hasNoQuarterMoraleState() const
+	{
+		const auto & remaining = data["state"]["noQuarterMoraleActivationsRemaining"];
+		return remaining.isNumber() && remaining.Integer() > 0;
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
 		h & id;
@@ -73,4 +79,3 @@ public:
 		h & operation;
 	}
 };
-

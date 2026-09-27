@@ -9,9 +9,12 @@
  */
 #pragma once
 
+#include <algorithm>
+
 #include "NetPacksBase.h"
 
 #include "../bonuses/Bonus.h"
+#include "../battle/NewHorizonsOffense.h"
 
 class IBattleState;
 
@@ -26,6 +29,19 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		const auto containsNoQuarter = [](const auto & effects)
+		{
+			return std::ranges::any_of(effects, [](const auto & stackEffects)
+			{
+				return std::ranges::any_of(stackEffects.second, [](const Bonus & bonus)
+				{
+					return newHorizonsOffense::isNoQuarterBonus(&bonus);
+				});
+			});
+		};
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER)
+			&& (containsNoQuarter(toAdd) || containsNoQuarter(toUpdate) || containsNoQuarter(toRemove)))
+			throw std::runtime_error("Cannot discard No Quarter stack effect");
 		h & battleID;
 		h & toAdd;
 		h & toUpdate;

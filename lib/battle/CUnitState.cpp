@@ -389,6 +389,7 @@ CUnitState::CUnitState():
 	movedThisRound(false),
 	pursuitMovementRemaining(0),
 	cleaveUsedThisActivation(false),
+	noQuarterMoraleActivationsRemaining(0),
 	timeStopTurnConsumedFlag(false),
 	summoned(false),
 	natureSummoned(false),
@@ -430,6 +431,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	movedThisRound = other.movedThisRound;
 	pursuitMovementRemaining = other.pursuitMovementRemaining;
 	cleaveUsedThisActivation = other.cleaveUsedThisActivation;
+	noQuarterMoraleActivationsRemaining = other.noQuarterMoraleActivationsRemaining;
 	timeStopTurnConsumedFlag = other.timeStopTurnConsumedFlag;
 	summoned = other.summoned;
 	natureSummoned = other.natureSummoned;
@@ -952,6 +954,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	if(pursuitMovementRemaining < 0)
 		throw std::runtime_error("Invalid negative Pursuit movement allowance");
 	handler.serializeBool("cleaveUsedThisActivation", cleaveUsedThisActivation);
+	handler.serializeInt("noQuarterMoraleActivationsRemaining", noQuarterMoraleActivationsRemaining, 0);
+	if(noQuarterMoraleActivationsRemaining < 0 || noQuarterMoraleActivationsRemaining > 2)
+		throw std::runtime_error("Invalid No Quarter morale lifetime");
 	handler.serializeBool("timeStopTurnConsumed", timeStopTurnConsumedFlag);
 	handler.serializeBool("summoned", summoned);
 	handler.serializeBool("natureSummoned", natureSummoned);
@@ -998,6 +1003,7 @@ void CUnitState::reset()
 	ghostPending = false;
 	movedThisRound = false;
 	timeStopTurnConsumedFlag = false;
+	noQuarterMoraleActivationsRemaining = 0;
 	summoned = false;
 	natureSummoned = false;
 	waiting = false;

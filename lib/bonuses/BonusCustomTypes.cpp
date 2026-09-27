@@ -36,6 +36,7 @@ const BonusCustomSubtype BonusCustomSubtype::freeShootingNoPenalty(0);
 const BonusCustomSubtype BonusCustomSubtype::freeShootingExceptAdjacent(1);
 
 const BonusCustomSource BonusCustomSource::undeadMoraleDebuff(-2);
+const BonusCustomSource BonusCustomSource::newHorizonsNoQuarter(0x4E51);
 
 BonusCustomSubtype BonusCustomSubtype::spellLevel(int level)
 {

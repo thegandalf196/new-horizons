@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleProcessor.h"
+#include "../../lib/battle/NewHorizonsOffense.h"
 
 #include "BattleActionProcessor.h"
 #include "BattleFlowProcessor.h"
@@ -25,6 +26,7 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/BattleLayout.h"
+#include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/entities/building/TownFortifications.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapping/CMap.h"
@@ -441,6 +443,8 @@ void BattleProcessor::expireStackActivationBonuses(const BattleID & battleID, co
 
 	const auto * currentBattle = gameHandler->gameState().getBattle(battleID);
 	const auto * actedStack = currentBattle ? currentBattle->battleGetStackByID(action.stackNumber, false) : nullptr;
+	if(!actedStack)
+		return;
 	if(actedStack && actedStack->isTimeStopped())
 	{
 		// The automatic no-op used to advance a stopped stack is outside the
@@ -449,16 +453,49 @@ void BattleProcessor::expireStackActivationBonuses(const BattleID & battleID, co
 		return;
 	}
 	const auto expiring = actedStack ? actedStack->getAllBonuses(Bonus::UntilActivationEnds) : nullptr;
-	if(!expiring || expiring->empty())
+	std::vector<Bonus> bonuses;
+	if(expiring)
+		for(const auto & bonus : *expiring)
+			if(!newHorizonsOffense::isNoQuarterMoralePenalty(bonus.get()))
+				bonuses.push_back(*bonus);
+	if(!bonuses.empty())
+	{
+		SetStackEffect remove;
+		remove.battleID = battleID;
+		remove.toRemove.emplace_back(actedStack->unitId(), std::move(bonuses));
+		gameHandler->sendAndApply(remove);
+	}
+
+	if(actedStack->noQuarterMoraleActivationsRemaining <= 0)
 		return;
 
-	SetStackEffect remove;
-	remove.battleID = battleID;
-	std::vector<Bonus> bonuses;
-	for(const auto & bonus : *expiring)
-		bonuses.push_back(*bonus);
-	remove.toRemove.emplace_back(actedStack->unitId(), std::move(bonuses));
-	gameHandler->sendAndApply(remove);
+	auto state = actedStack->acquireState();
+	--state->noQuarterMoraleActivationsRemaining;
+	if(state->noQuarterMoraleActivationsRemaining == 0)
+	{
+		const auto moralePenalty = actedStack->getAllBonuses(CSelector([](const Bonus * bonus)
+		{
+			return newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
+		}));
+		if(moralePenalty && !moralePenalty->empty())
+		{
+			SetStackEffect remove;
+			remove.battleID = battleID;
+			std::vector<Bonus> toRemove;
+			toRemove.reserve(moralePenalty->size());
+			for(const auto & bonus : *moralePenalty)
+				toRemove.push_back(*bonus);
+			remove.toRemove.emplace_back(actedStack->unitId(), std::move(toRemove));
+			gameHandler->sendAndApply(remove);
+		}
+	}
+
+	BattleUnitsChanged stateChange;
+	stateChange.battleID = battleID;
+	UnitChanges update(actedStack->unitId(), UnitChanges::EOperation::UPDATE);
+	update.data = state->save();
+	stateChange.changedStacks.push_back(std::move(update));
+	gameHandler->sendAndApply(stateChange);
 }
 
 void BattleProcessor::processBattleEventTriggers(const CBattleInfoCallback & battle, CombatEventType event, const battle::Unit * target, const battle::Unit * secondary)

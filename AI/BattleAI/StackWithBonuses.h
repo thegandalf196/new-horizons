@@ -102,6 +102,9 @@ public:
 	void removeUnitBonus(const std::vector<Bonus> & bonus);
 
 	void removeUnitBonus(const CSelector & selector);
+	void applyNoQuarter(int32_t moraleActivationsRemaining);
+	void consumeNoQuarterActivation();
+	void clearNoQuarterRoundBlocker();
 	void advanceTimedRound();
 
 	void spendMana(ServerCallback * server, const int spellCost) const override;

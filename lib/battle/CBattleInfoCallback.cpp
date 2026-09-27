@@ -443,6 +443,14 @@ bool CBattleInfoCallback::battleCanTriggerCleave(const battle::Unit * attacker) 
 		&& hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE);
 }
 
+bool CBattleInfoCallback::battleCanTriggerNoQuarter(const BattleAttackInfo & attack) const
+{
+	if(!attack.attacker || attack.shooting || !attack.physicalDamage)
+		return false;
+	const auto * hero = battleGetOwnerHero(attack.attacker);
+	return hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::NO_QUARTER);
+}
+
 const battle::Unit * CBattleInfoCallback::battleSelectCleaveTarget(const battle::Unit * attacker,
 	const battle::Unit * destroyed) const
 {

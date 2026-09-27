@@ -28,6 +28,9 @@ struct FortuneStrikeProjection
 	bool relentlessAssaultEligible = false;
 	int cleaveDamagePercent = 0;
 	std::vector<std::pair<uint32_t, int64_t>> hits;
+	/// Targets receiving No Quarter after these hits, paired with remaining
+	/// accepted activations before the projected Morale penalty expires.
+	std::vector<std::pair<uint32_t, int32_t>> noQuarterTargets;
 };
 
 class DamageCache

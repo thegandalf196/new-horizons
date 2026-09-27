@@ -202,6 +202,15 @@ public:
 	virtual HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power) = 0;
 };
 
+/// Maximum health for a battle unit, using Phantom Army's initial integrity
+/// pool while that profile is present instead of the creature stack's nominal
+/// health total.
+inline int64_t getMaximumHealth(const Unit & unit)
+{
+	const int64_t phantomIntegrity = unit.getPhantomInitialIntegrity();
+	return phantomIntegrity > 0 ? phantomIntegrity : unit.getTotalHealth();
+}
+
 class DLL_LINKAGE UnitInfo final : public scripting::ApiSerializable<UnitInfo>
 {
 public:

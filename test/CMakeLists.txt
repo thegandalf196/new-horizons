@@ -175,6 +175,7 @@ set(test_SRCS
 		server/battles/NewHorizonsOffenseRankTest.cpp
 		server/battles/NewHorizonsVengeanceTest.cpp
 		server/battles/NewHorizonsCleaveTest.cpp
+		server/battles/NewHorizonsNoQuarterTest.cpp
 		server/battles/NewHorizonsRelentlessAssaultTest.cpp
 		server/battles/NewHorizonsPursuitTest.cpp
 		server/battles/NewHorizonsDisciplineTest.cpp
@@ -322,6 +323,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HypotheticObstacleTest.cpp
 		battleAI/HypotheticWallTest.cpp
 		battleAI/NewHorizonsSylvanLuckAITest.cpp
+		battleAI/NewHorizonsNoQuarterAITest.cpp
 		battleAI/NewHorizonsRelentlessAssaultAITest.cpp
 	)
 endif()

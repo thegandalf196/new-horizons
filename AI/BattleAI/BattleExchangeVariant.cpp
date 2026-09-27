@@ -19,6 +19,21 @@
 
 namespace
 {
+bool projectNoQuarterAfterHit(const CBattleInfoCallback & battle, const BattleAttackInfo & attack,
+	StackWithBonuses & target)
+{
+	if(!battle.battleCanTriggerNoQuarter(attack) || !target.alive() || target.isTimeStopped()
+		|| !battle.battleMatchOwner(attack.attacker, &target)
+		|| !newHorizonsOffense::belowNoQuarterThreshold(
+			target.getAvailableHealth(), battle::getMaximumHealth(target)))
+		return false;
+
+	const int32_t moraleActivations = battle.getBattle()->getActiveStackID()
+		== static_cast<int32_t>(target.unitId()) ? 2 : 1;
+	target.applyNoQuarter(moraleActivations);
+	return true;
+}
+
 std::optional<uint32_t> relentlessAssaultPrimaryTargetId(const CBattleInfoCallback & battle,
 	const BattleAttackInfo & attack)
 {
@@ -150,6 +165,9 @@ float BattleExchangeVariant::trackAttack(
 				{
 					const bool wasAlive = target->alive();
 					target->damage(actualDamage);
+					for(const auto & [noQuarterTargetId, moraleActivations] : strike.noQuarterTargets)
+						if(noQuarterTargetId == unitId)
+							target->applyNoQuarter(moraleActivations);
 					hb->recordBloodrageTransition(target, wasAlive);
 					const bool luckAffectedTarget = unitId == strike.defenderId
 						|| hb->getLuckRollRules().affectsAllTargets;
@@ -215,6 +233,9 @@ float BattleExchangeVariant::trackAttack(
 			}
 		}
 	}
+
+	if(hb->getActiveStackID() == static_cast<int32_t>(attacker->unitId()))
+		attacker->consumeNoQuarterActivation();
 
 	for(auto affectedUnit : affectedUnits)
 	{
@@ -356,6 +377,7 @@ float BattleExchangeVariant::trackAttack(
 
 		const int64_t actualDamage = std::min<int64_t>(attackDamage, defender->getAvailableHealth());
 		defender->damage(attackDamage);
+		projectNoQuarterAfterHit(*hb, projectedAttack, *defender);
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
@@ -401,6 +423,7 @@ float BattleExchangeVariant::trackAttack(
 
 				const bool targetWasAlive = target->alive();
 				target->damage(cleaveDamage);
+				projectNoQuarterAfterHit(*hb, cleaveAttack, *target);
 				hb->recordBloodrageTransition(target, targetWasAlive);
 				hb->projectFortuneStrike(cleaveAttack, {{target->unitId(), cleaveDamage}}, attacker.get(),
 					targetWasAlive && !target->alive() && hb->battleMatchOwner(attacker.get(), target.get()));
@@ -441,11 +464,14 @@ float BattleExchangeVariant::trackAttack(
 		const int64_t actualDamage = std::min<int64_t>(retaliationDamage, attacker->getAvailableHealth());
 		const bool attackerWasAlive = attacker->alive();
 		attacker->damage(retaliationDamage);
+		projectNoQuarterAfterHit(*hb, retaliationAttack, *attacker);
 		hb->recordBloodrageTransition(attacker, attackerWasAlive);
 		hb->projectFortuneStrike(retaliationAttack, {{attacker->unitId(), actualDamage}}, defender.get(),
 			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()));
 		defender->afterAttack(false, true, retaliationAttack.physicalDamage);
 	}
+	if(!evaluateOnly && hb->getActiveStackID() == static_cast<int32_t>(attacker->unitId()))
+		attacker->consumeNoQuarterActivation();
 
 	auto score = defenderDamageReduce - attackerDamageReduce;
 

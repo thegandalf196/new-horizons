@@ -50,6 +50,7 @@ public:
 	std::string nodeName() const override;
 
 	void localInit(BattleInfo * battleInfo);
+	void afterNewRound(bool isFirstRound = false);
 	bool acceptsBonus(const Bonus & bonus) const override;
 	std::string getName() const; //plural or singular
 

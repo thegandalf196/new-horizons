@@ -133,7 +133,7 @@
 					"requires": "expert",
 					"description": "If a melee attack leaves an enemy below 25% maximum HP, it loses all remaining retaliations for the round and suffers -2 Morale until the end of its next activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "If a melee attack leaves an enemy below 25% maximum HP, it loses all remaining retaliations for the round and suffers -2 Morale until the end of its next activation."
 					}
 				}

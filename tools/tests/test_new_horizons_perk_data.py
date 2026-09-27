@@ -43,6 +43,7 @@ ACTIVE_PERKS = {
     "new-horizons:offense.cleave",
     "new-horizons:offense.vengeance",
     "new-horizons:offense.relentlessAssault",
+    "new-horizons:offense.noQuarter",
     "new-horizons:discipline.inspirationalLeader",
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.matterShaper",
@@ -246,6 +247,22 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             "stacking to +30%. Attacking another target resets the bonus."
         )
         self.assertEqual(perk["name"], "Relentless Assault")
+        self.assertEqual(perk["requires"], "expert")
+        self.assertEqual(perk["description"], description)
+        self.assertEqual(perk["effect"]["status"], "active")
+        self.assertEqual(perk["effect"]["description"], description)
+
+    def test_no_quarter_is_active_expert_offense_perk(self):
+        perk = next(
+            perk
+            for perk in self.rules["skills"]["new-horizons:offense"]["perks"]
+            if perk["id"] == "new-horizons:offense.noQuarter"
+        )
+        description = (
+            "If a melee attack leaves an enemy below 25% maximum HP, it loses all remaining "
+            "retaliations for the round and suffers -2 Morale until the end of its next activation."
+        )
+        self.assertEqual(perk["name"], "No Quarter")
         self.assertEqual(perk["requires"], "expert")
         self.assertEqual(perk["description"], description)
         self.assertEqual(perk["effect"]["status"], "active")

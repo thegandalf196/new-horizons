@@ -157,6 +157,8 @@ public:
 	/// Cleave may create at most one automatic follow-up strike in a genuine
 	/// creature activation. Hero actions and same-activation continuations keep it.
 	bool cleaveUsedThisActivation;
+	/// Number of accepted activations remaining before No Quarter's morale penalty ends.
+	int32_t noQuarterMoraleActivationsRemaining;
 	bool timeStopTurnConsumedFlag;
 	bool summoned;
 	bool natureSummoned;

@@ -78,6 +78,7 @@ public:
 	}
 	bool hasPursuitState() const;
 	bool hasCleaveState() const;
+	bool hasNoQuarterState() const;
 	bool hasRelentlessAssaultState() const
 	{
 		return sides[BattleSide::ATTACKER].relentlessAssault.hasState()
@@ -150,6 +151,8 @@ public:
 				throw std::runtime_error("Cannot discard Cleave battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RELENTLESS_ASSAULT) && hasRelentlessAssaultState())
 				throw std::runtime_error("Cannot discard Relentless Assault battle state");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER) && hasNoQuarterState())
+				throw std::runtime_error("Cannot discard No Quarter battle state");
 			heroCommands::validateRules(heroCommandRules);
 			validateFocusFireStates();
 			validateRelentlessAssaultStates();

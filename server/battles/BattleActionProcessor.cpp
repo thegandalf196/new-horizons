@@ -2502,6 +2502,65 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	}
 	gameHandler->sendAndApply(bat);
 
+	BattleAttackInfo noQuarterAttack(attacker, defender, attack.distance, attack.ranged);
+	noQuarterAttack.retaliation = normalCounter;
+	noQuarterAttack.bracePreemptive = attack.brace;
+	noQuarterAttack.preemptiveDamagePercent = attack.preemptiveDamagePercent;
+	noQuarterAttack.cleaveDamagePercent = attack.cleaveDamagePercent;
+	noQuarterAttack.physicalDamage = !bat.spellLike();
+	if(battle.battleCanTriggerNoQuarter(noQuarterAttack))
+	{
+		std::set<uint32_t> checkedTargets;
+		for(const auto & hit : bat.bsa)
+		{
+			if(!checkedTargets.insert(hit.stackAttacked).second)
+				continue;
+			const auto * target = battle.battleGetUnitByID(hit.stackAttacked);
+			if(!target || !target->alive() || target->isTimeStopped()
+				|| !battle.battleMatchOwner(attacker, target)
+				|| !newHorizonsOffense::belowNoQuarterThreshold(
+					target->getAvailableHealth(), battle::getMaximumHealth(*target)))
+				continue;
+
+			SetStackEffect effects;
+			effects.battleID = battle.getBattle()->getBattleID();
+			const auto existing = target->getAllBonuses(CSelector([](const Bonus * bonus)
+			{
+				return newHorizonsOffense::isNoQuarterBonus(bonus);
+			}));
+			if(existing && !existing->empty())
+			{
+				std::vector<Bonus> toReplace;
+				toReplace.reserve(existing->size());
+				for(const auto & bonus : *existing)
+					toReplace.push_back(*bonus);
+				effects.toRemove.emplace_back(target->unitId(), std::move(toReplace));
+			}
+			effects.toAdd.emplace_back(target->unitId(), std::vector<Bonus>{
+				newHorizonsOffense::noQuarterRetaliationBonus(),
+				newHorizonsOffense::noQuarterMoralePenalty()});
+			gameHandler->sendAndApply(effects);
+
+			auto state = target->acquireState();
+			state->noQuarterMoraleActivationsRemaining = battle.getBattle()->getActiveStackID()
+				== static_cast<int32_t>(target->unitId()) ? 2 : 1;
+			BattleUnitsChanged stateChange;
+			stateChange.battleID = battle.getBattle()->getBattleID();
+			UnitChanges update(target->unitId(), UnitChanges::EOperation::UPDATE);
+			update.data = state->save();
+			stateChange.changedStacks.push_back(std::move(update));
+			gameHandler->sendAndApply(stateChange);
+
+			BattleLogMessage message;
+			message.battleID = battle.getBattle()->getBattleID();
+			MetaString line;
+			line.appendRawString("No Quarter affects %s: all remaining retaliations are lost this round, and Morale is reduced by 2 until the end of the stack's next activation.");
+			target->addNameReplacement(line, target->getCount());
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+		}
+	}
+
 	// Bulwark reflects a share of the physical health loss that actually landed,
 	// after all reductions. It is direct retaliation damage, not another attack,
 	// so it cannot recursively trigger attack reactions or consume retaliation.
