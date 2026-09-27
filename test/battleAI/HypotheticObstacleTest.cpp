@@ -161,6 +161,40 @@ TEST_F(HypotheticObstacleTest, ObstacleExpiryTicksEvenOnOpeningRoundAndKeepsInfi
 	EXPECT_EQ(battle()->getAllObstacles().size(), 3u);
 }
 
+TEST_F(HypotheticObstacleTest, FourRoundSpellObstacleAgesWithoutMutatingTheLiveBattle)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareObstacles());
+	auto echoedFireWall = wall(7, 4);
+	echoedFireWall.ID = SpellID::FIRE_WALL;
+	addLive(echoedFireWall);
+	HypotheticBattle model(environment.get(), callback);
+	EXPECT_FALSE(model.hasObstacleChanges());
+
+	for(int expected = 3; expected >= 1; --expected)
+	{
+		model.nextRound();
+		const auto projected = model.getAllObstacles();
+		ASSERT_EQ(projected.size(), 1u);
+		const auto current = std::dynamic_pointer_cast<const SpellCreatedObstacle>(projected.front());
+		ASSERT_TRUE(current);
+		EXPECT_EQ(current->turnsRemaining, expected);
+		const auto liveObstacles = battle()->getAllObstacles();
+		ASSERT_EQ(liveObstacles.size(), 1u);
+		const auto live = std::dynamic_pointer_cast<const SpellCreatedObstacle>(liveObstacles.front());
+		ASSERT_TRUE(live);
+		EXPECT_EQ(live->turnsRemaining, 4);
+	}
+
+	model.nextRound();
+	EXPECT_TRUE(model.getAllObstacles().empty());
+	EXPECT_TRUE(model.hasObstacleChanges());
+	const auto liveObstacles = battle()->getAllObstacles();
+	ASSERT_EQ(liveObstacles.size(), 1u);
+	const auto live = std::dynamic_pointer_cast<const SpellCreatedObstacle>(liveObstacles.front());
+	ASSERT_TRUE(live);
+	EXPECT_EQ(live->turnsRemaining, 4);
+}
+
 TEST_F(HypotheticObstacleTest, SnapshotDoesNotDiscoverEnemyHiddenObstacles)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareObstacles());

@@ -488,9 +488,10 @@ TEST_F(NewHorizonsMetamagicTest, PendingGrandContinuationRoundTripsAndPaysFormul
 	replica->preInit(LIBRARY);
 	replica->loadFromMemory(savedWorld);
 	ASSERT_TRUE(replica->currentBattles.empty());
+	const auto restoredBattleId = replica->nextBattleID;
 
 	BattleStart outgoing;
-	outgoing.battleID = BattleID(0);
+	outgoing.battleID = restoredBattleId;
 	outgoing.info = battleStartFixture::snapshot(*battle(), replica.get());
 	CMemorySerializer wire;
 	wire.oser & outgoing;
@@ -503,7 +504,7 @@ TEST_F(NewHorizonsMetamagicTest, PendingGrandContinuationRoundTripsAndPaysFormul
 	restoredServer.gameState = replica;
 	auto restoredHandler = std::make_shared<CGameHandler>(restoredServer, replica);
 	restoredHandler->sendAndApply(incoming);
-	auto * restoredBattle = replica->getBattle(BattleID(0));
+	auto * restoredBattle = replica->getBattle(restoredBattleId);
 	ASSERT_NE(restoredBattle, nullptr);
 	auto & restoredSide = restoredBattle->getSide(BattleSide::ATTACKER);
 	EXPECT_EQ(restoredSide.metamagicUsesConsumed, 3);
@@ -534,7 +535,7 @@ TEST_F(NewHorizonsMetamagicTest, PendingGrandContinuationRoundTripsAndPaysFormul
 	continuation.metamagicFollowup = true;
 	continuation.aimToUnit(restoredTarget);
 	ASSERT_TRUE(restoredHandler->battles->makePlayerBattleAction(
-		BattleID(0), PlayerColor(0), continuation));
+		restoredBattleId, PlayerColor(0), continuation));
 
 	EXPECT_EQ(restoredSide.metamagicUsesConsumed, 3);
 	EXPECT_TRUE(restoredSide.metamagicGrandUsed);
@@ -558,7 +559,7 @@ TEST_F(NewHorizonsMetamagicTest, PendingGrandContinuationRoundTripsAndPaysFormul
 	BattleAction retired = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::NONE);
 	retired.metamagicDecline = true;
 	EXPECT_FALSE(restoredHandler->battles->makePlayerBattleAction(
-		BattleID(0), PlayerColor(0), retired));
+		restoredBattleId, PlayerColor(0), retired));
 	EXPECT_EQ(restoredHero->getNormalSpellPoints(), normalAfterContinuation);
 }
 
@@ -1400,6 +1401,66 @@ TEST_F(NewHorizonsMetamagicTest, EchoedDurationAddsOneRoundToFireWallFollowup)
 	const auto * wall = dynamic_cast<const SpellCreatedObstacle *>(battle()->obstacles.front().get());
 	ASSERT_NE(wall, nullptr);
 	EXPECT_EQ(wall->turnsRemaining, 4);
+}
+
+TEST_F(NewHorizonsMetamagicTest, EchoedDurationFireWallRoundTripsAndExpiresAfterFourBoundaries)
+{
+	prepare(2, {echoedDuration});
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(castFireWallFollowup(BattleHex(70), BattleHex::RIGHT));
+	ASSERT_EQ(battle()->obstacles.size(), 1u);
+
+	// World saves intentionally omit active battles. Restore the world and then
+	// transport the live battle through the same detached BattleStart snapshot
+	// used by a reconnecting client.
+	const auto savedWorld = gameState()->saveToMemory();
+	auto replica = std::make_shared<CGameState>();
+	replica->preInit(LIBRARY);
+	replica->loadFromMemory(savedWorld);
+	ASSERT_TRUE(replica->currentBattles.empty());
+	const auto restoredBattleId = replica->nextBattleID;
+	BattleStart outgoing;
+	outgoing.battleID = restoredBattleId;
+	outgoing.info = battleStartFixture::snapshot(*battle(), replica.get());
+	CMemorySerializer wire;
+	wire.oser & outgoing;
+	wire.iser.cb = replica.get();
+	BattleStart incoming;
+	wire.iser & incoming;
+	ASSERT_NE(incoming.info, nullptr);
+	RecordingGameServer restoredServer;
+	restoredServer.gameState = replica;
+	auto restoredHandler = std::make_shared<CGameHandler>(restoredServer, replica);
+	restoredHandler->sendAndApply(incoming);
+	const auto * restoredBattle = replica->getBattle(restoredBattleId);
+	ASSERT_NE(restoredBattle, nullptr);
+	ASSERT_EQ(restoredBattle->obstacles.size(), 1u);
+	const auto * restoredWall = dynamic_cast<const SpellCreatedObstacle *>(restoredBattle->obstacles.front().get());
+	ASSERT_NE(restoredWall, nullptr);
+	EXPECT_EQ(restoredWall->ID, SpellID::FIRE_WALL);
+	EXPECT_EQ(restoredWall->turnsRemaining, 4);
+
+	const auto advanceRestoredRound = [&]()
+	{
+		const int32_t startingRound = restoredBattle->getRound();
+		while(restoredBattle->getRound() == startingRound)
+		{
+			const auto * active = restoredBattle->battleActiveUnit();
+			ASSERT_NE(active, nullptr);
+			ASSERT_TRUE(restoredHandler->battles->makePlayerBattleAction(restoredBattleId,
+				restoredBattle->sideToPlayer(active->unitSide()), BattleAction::makeDefend(active)));
+		}
+	};
+	for(int expected = 3; expected >= 1; --expected)
+	{
+		advanceRestoredRound();
+		ASSERT_EQ(restoredBattle->obstacles.size(), 1u);
+		const auto * current = dynamic_cast<const SpellCreatedObstacle *>(restoredBattle->obstacles.front().get());
+		ASSERT_NE(current, nullptr);
+		EXPECT_EQ(current->turnsRemaining, expected);
+	}
+	advanceRestoredRound();
+	EXPECT_TRUE(restoredBattle->obstacles.empty());
 }
 
 TEST_F(NewHorizonsMetamagicTest, SpellbinderThenEchoedDurationAllowsFiveRoundsOnSpellLockFollowup)
