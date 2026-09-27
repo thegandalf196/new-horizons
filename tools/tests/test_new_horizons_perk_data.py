@@ -46,6 +46,7 @@ ACTIVE_PERKS = {
     "new-horizons:offense.noQuarter",
     "new-horizons:discipline.inspirationalLeader",
     "new-horizons:armorer.shieldMaster",
+    "new-horizons:armorer.ironDiscipline",
     "new-horizons:armorer.countercharge",
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.matterShaper",

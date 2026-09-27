@@ -797,7 +797,10 @@ int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
 		&& metamagicFocusedPairingEligible && target->unitId() == metamagicFirstTargetUnitId
 		? 20 : 0,
 		newHorizonsMagic::hasAnnihilatorPerk(hero, owner) ? 20 : 0);
-	return owner->adjustRawDamage(caster, target, getEffectValue(), ignoreReduction);
+	const int holdReductionBasisPoints = cb && owner->isMagical() && target
+		? cb->battleGetHoldTheLineMagicalReductionBasisPoints(target) : 0;
+	return owner->adjustRawDamage(caster, target, getEffectValue(), ignoreReduction,
+		holdReductionBasisPoints);
 }
 
 int64_t BaseMechanics::applySpellBonus(int64_t value, const battle::Unit * target) const

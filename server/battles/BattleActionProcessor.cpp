@@ -216,6 +216,20 @@ static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSid
 			break;
 		case HeroCommand::HOLD_THE_LINE:
 			line.appendRawString(" Allied stacks that hold position resist physical damage this round.");
+			if(state.holdMagicalReductionBasisPoints > 0)
+			{
+				line.appendRawString(" Iron Discipline adds ");
+				line.appendNumber(state.holdMagicalReductionBasisPoints / 100);
+				const int remainder = state.holdMagicalReductionBasisPoints % 100;
+				if(remainder != 0)
+				{
+					line.appendRawString(".");
+					if(remainder < 10)
+						line.appendRawString("0");
+					line.appendNumber(remainder % 10 == 0 ? remainder / 10 : remainder);
+				}
+				line.appendRawString("% magical damage reduction while they hold position.");
+			}
 			break;
 		case HeroCommand::FOCUS_FIRE:
 			line.appendRawString(" Target:");

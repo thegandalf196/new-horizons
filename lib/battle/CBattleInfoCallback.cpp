@@ -634,6 +634,14 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 		&& allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO)
 		result.warcastingBonusPercent = newHorizonsWarcasting::orderBonus(
 			getBattle()->getWarcastingState(side), result.issuedRound);
+	if(command == HeroCommand::HOLD_THE_LINE
+		&& hero->hasActivePerk(newHorizonsIronDiscipline::SKILL, newHorizonsIronDiscipline::PERK))
+	{
+		const int physicalReduction = std::clamp(heroCommands::coefficient(
+			(*rules)["effects"]["damageReductionPercent"], *hero, result.warcastingBonusPercent), 0, 100);
+		result.holdMagicalReductionBasisPoints = static_cast<uint16_t>(physicalReduction
+			* newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT);
+	}
 
 	if(command == HeroCommand::FOCUS_FIRE)
 	{
@@ -732,6 +740,29 @@ int CBattleInfoCallback::battleHeroOrderProtectInterceptionLimit(BattleSide side
 	return state && state->command == HeroCommand::PROTECT
 		? state->protectInterceptionLimit
 		: newHorizonsShieldMaster::ORDINARY_PROTECT_INTERCEPTION_LIMIT;
+}
+
+bool CBattleInfoCallback::battleIsHoldTheLineRecipient(const HeroOrderState & state,
+	const battle::Unit * unit) const
+{
+	if(!getBattle() || !unit || !unit->alive() || unit->isGhost() || unit->isTurret()
+		|| unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
+		return false;
+	return state.isHoldTheLineRecipient(unit->unitId(), static_cast<int16_t>(unit->getPosition().toInt()),
+		battleGetRound());
+}
+
+int CBattleInfoCallback::battleGetHoldTheLineMagicalReductionBasisPoints(const battle::Unit * unit) const
+{
+	if(!unit)
+		return 0;
+	const auto side = playerToSide(battleGetOwner(unit));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return 0;
+	const auto state = battleGetHeroOrderState(side);
+	return state && battleIsHoldTheLineRecipient(*state, unit)
+		? state->holdMagicalReductionBasisPoints : 0;
 }
 
 bool CBattleInfoCallback::battleCanTriggerHeroOrderBrace(const battle::Unit * attacker,
@@ -2086,9 +2117,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 					payload.heroOrderDamageReductionPercent = coefficientFor(rules["riposte"]["effects"]["meleeDamageReductionPercent"], defend, &*defenderState);
 				break;
 			case HeroCommand::HOLD_THE_LINE:
-				if(const auto * anchor = defenderState->anchorFor(info.defender->unitId());
-					anchor && !defenderState->containsHoldBroken(info.defender->unitId())
-					&& anchor->position == info.defender->getPosition().toInt())
+				if(battleIsHoldTheLineRecipient(*defenderState, info.defender))
 					payload.heroOrderDamageReductionPercent = coefficientFor(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend, &*defenderState);
 				break;
 			case HeroCommand::PROTECT:

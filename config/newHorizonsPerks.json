@@ -185,7 +185,7 @@
 					"requires": "basic",
 					"description": "Hold the Line! also reduces magical damage by half of its current physical damage-reduction value.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Hold the Line! also reduces magical damage by half of its current physical damage-reduction value."
 					}
 				},

@@ -119,6 +119,10 @@ public:
 	/// Number of melee attacks Protect can redirect for this saved hero snapshot.
 	/// Ordinary Protect allows one; an active Shield Master perk allows two.
 	int battleHeroOrderProtectInterceptionLimit(BattleSide side) const;
+	/// Returns true only for an eligible unit still occupying its unbroken Hold anchor.
+	bool battleIsHoldTheLineRecipient(const HeroOrderState & state, const battle::Unit * unit) const;
+	/// Saved Iron Discipline reduction for an anchored, unbroken Hold recipient.
+	int battleGetHoldTheLineMagicalReductionBasisPoints(const battle::Unit * unit) const;
 	/// Returns whether Brace is armed for this defender and this qualifying incoming attack.
 	bool battleCanTriggerHeroOrderBrace(const battle::Unit * attacker, const battle::Unit * defender,
 		int movementDistance, bool shooting, bool counter) const;

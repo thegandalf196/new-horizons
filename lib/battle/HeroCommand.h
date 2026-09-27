@@ -79,6 +79,8 @@ struct DLL_LINKAGE HeroOrderFlankTarget
 struct DLL_LINKAGE HeroOrderState
 {
 	static constexpr uint32_t INVALID_UNIT_ID = std::numeric_limits<uint32_t>::max();
+	static constexpr uint16_t MAX_HOLD_MAGICAL_REDUCTION_BASIS_POINTS = 5000;
+	static constexpr uint16_t BASIS_POINTS_PER_PHYSICAL_PERCENT = 50;
 
 	HeroCommand command = HeroCommand::NONE;
 	int32_t issuedRound = 0;
@@ -103,6 +105,9 @@ struct DLL_LINKAGE HeroOrderState
 	/// Spell-to-Order Warcasting empowerment captured when this Order was issued.
 	/// Later attacks must not consult the side's newly armed Order-to-Spell state.
 	int32_t warcastingBonusPercent = 0;
+	/// Iron Discipline's magical reduction, captured as basis points when Hold is issued.
+	/// Basis points preserve exactly half of an odd integer physical reduction value.
+	uint16_t holdMagicalReductionBasisPoints = 0;
 
 	bool operator==(const HeroOrderState &) const = default;
 
@@ -119,6 +124,15 @@ struct DLL_LINKAGE HeroOrderState
 	bool containsHoldBroken(uint32_t unitId) const
 	{
 		return std::binary_search(holdBrokenUnitIds.begin(), holdBrokenUnitIds.end(), unitId);
+	}
+
+	bool isHoldTheLineRecipient(uint32_t unitId, int16_t position, int32_t currentRound) const
+	{
+		if(command != HeroCommand::HOLD_THE_LINE || issuedRound != currentRound
+			|| containsHoldBroken(unitId))
+			return false;
+		const auto * anchor = anchorFor(unitId);
+		return anchor && anchor->position == position;
 	}
 
 	const HeroOrderAnchor * anchorFor(uint32_t unitId) const
@@ -153,6 +167,8 @@ struct DLL_LINKAGE HeroOrderState
 		const auto maxWireId = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
 		if(command == HeroCommand::NONE || issuedRound < 1
 			|| warcastingBonusPercent < 0 || warcastingBonusPercent > 100
+			|| holdMagicalReductionBasisPoints > MAX_HOLD_MAGICAL_REDUCTION_BASIS_POINTS
+			|| holdMagicalReductionBasisPoints % BASIS_POINTS_PER_PHYSICAL_PERCENT != 0
 			|| protectInterceptionLimit < 1 || protectInterceptionLimit > 2
 			|| protectInterceptionsConsumed > protectInterceptionLimit
 			|| (primaryTargetUnitId != INVALID_UNIT_ID && primaryTargetUnitId > maxWireId)
@@ -167,6 +183,8 @@ struct DLL_LINKAGE HeroOrderState
 		if(command != HeroCommand::PROTECT
 			&& (protectInterceptionsConsumed != 0 || protectInterceptionLimit != 1))
 			throw std::runtime_error("Non-Protect Hero Order contains Protect interception state");
+		if(command != HeroCommand::HOLD_THE_LINE && holdMagicalReductionBasisPoints != 0)
+			throw std::runtime_error("Non-Hold Hero Order contains Iron Discipline state");
 		for(const auto & id : consumedUnitIds)
 			if(id > maxWireId)
 				throw std::runtime_error("Invalid consumed Hero Order unit identity");
@@ -197,6 +215,9 @@ struct DLL_LINKAGE HeroOrderState
 			throw std::runtime_error("Cannot discard Shield Master Protect state");
 		if(h.saving && warcastingBonusPercent != 0 && !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING))
 			throw std::runtime_error("Cannot discard Warcasting Order snapshot");
+		if(h.saving && holdMagicalReductionBasisPoints != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_IRON_DISCIPLINE))
+			throw std::runtime_error("Cannot discard Iron Discipline Order snapshot");
 		if(h.saving)
 			validateShape();
 		h & command;
@@ -231,6 +252,10 @@ struct DLL_LINKAGE HeroOrderState
 			h & warcastingBonusPercent;
 		else if(!h.saving)
 			warcastingBonusPercent = 0;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_IRON_DISCIPLINE))
+			h & holdMagicalReductionBasisPoints;
+		else if(!h.saving)
+			holdMagicalReductionBasisPoints = 0;
 		if(!h.saving)
 			validateShape();
 	}
@@ -242,6 +267,13 @@ constexpr char SKILL[] = "new-horizons:armorer";
 constexpr char PERK[] = "new-horizons:armorer.shieldMaster";
 constexpr uint8_t ORDINARY_PROTECT_INTERCEPTION_LIMIT = 1;
 constexpr uint8_t SHIELD_MASTER_PROTECT_INTERCEPTION_LIMIT = 2;
+}
+
+namespace newHorizonsIronDiscipline
+{
+constexpr char SKILL[] = "new-horizons:armorer";
+constexpr char PERK[] = "new-horizons:armorer.ironDiscipline";
+constexpr uint16_t BASIS_POINTS_PER_PHYSICAL_PERCENT = HeroOrderState::BASIS_POINTS_PER_PHYSICAL_PERCENT;
 }
 
 namespace heroCommands

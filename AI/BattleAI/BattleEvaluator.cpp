@@ -29,9 +29,11 @@
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/BattleAction.h"
+#include "../../lib/battle/HeroCommand.h"
 #include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 
@@ -371,6 +373,62 @@ float averageOrderDamage(const DamageEstimation & damage)
 	return static_cast<float>(std::max<int64_t>(0, damage.damage.min + damage.damage.max) / 2);
 }
 
+/// Estimate visible creature spell pressure without querying a concealed enemy
+/// hero or asking a random-spellcaster to choose an ability.  Spellcaster
+/// bonuses are part of the visible creature stack; each stack contributes its
+/// strongest currently castable direct-damage spell once.  This is a bounded,
+/// read-only proxy for the magical half of Hold the Line's value.
+float visibleCreatureSpellThreat(const CBattleInfoCallback & battle,
+	const std::vector<const battle::Unit *> & enemyUnits)
+{
+	float totalThreat = 0.0f;
+	for(const auto * enemy : enemyUnits)
+	{
+		if(!enemy || !enemy->canCast())
+			continue;
+		float bestSpellDamage = 0.0f;
+		const auto spellcasters = enemy->getBonuses(Selector::type()(BonusType::SPELLCASTER));
+		if(!spellcasters)
+			continue;
+		for(const auto & bonus : *spellcasters)
+		{
+			if(!bonus || bonus->parameters || !bonus->subtype.as<SpellID>().hasValue())
+				continue;
+			const auto * spell = bonus->subtype.as<SpellID>().toSpell();
+			if(!spell || !spell->isCombat() || !spell->isOffensive() || spell->isCreatureAbility()
+				|| !spell->canBeCast(&battle, spells::Mode::CREATURE_ACTIVE, enemy))
+				continue;
+			bestSpellDamage = std::max(bestSpellDamage,
+				static_cast<float>(std::max<int64_t>(0, spell->calculateDamage(enemy))));
+		}
+		totalThreat += bestSpellDamage;
+	}
+	return totalThreat;
+}
+
+/// Hero presence is exposed through InfoAboutHero even when the opposing
+/// hero's detailed state is concealed.  Use only that public presence bit and
+/// the allied army's visible health to represent a modest possible hero spell;
+/// never inspect the hidden hero's book, mana, attributes, or perks.
+float publicEnemyHeroSpellThreat(const CBattleInfoCallback & battle, BattleSide side,
+	const std::vector<const battle::Unit *> & ownUnits)
+{
+	const auto enemySide = side == BattleSide::ATTACKER ? BattleSide::DEFENDER : BattleSide::ATTACKER;
+	const auto enemyHero = battle.battleGetHeroInfo(enemySide);
+	if(enemyHero.owner == PlayerColor::NEUTRAL)
+		return 0.0f;
+
+	int64_t alliedHealth = 0;
+	for(const auto * own : ownUnits)
+		if(own)
+			alliedHealth += own->getAvailableHealth();
+
+	// Estimate at most 4% of current allied health and cap it so the public
+	// presence signal remains a modest prior rather than overwhelming real
+	// spell or attack valuations.
+	return std::min(static_cast<float>(alliedHealth) * 0.04f, 500.0f);
+}
+
 float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide side,
 	HeroCommand command, const std::vector<uint32_t> & targetIds)
 {
@@ -482,7 +540,23 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 			for(const auto * enemy : enemyUnits)
 				if(enemy->isMeleeAttacker())
 					incoming = std::max(incoming, meleeDamage(enemy, own));
-		return incoming * holdPercent / 100.0f;
+		float value = incoming * holdPercent / 100.0f;
+		if(hero && hero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
+			newHorizonsIronDiscipline::PERK))
+		{
+			// Use the exact saved reduction that issuing Hold would snapshot.  The
+			// prepare query is read-only.  Threat estimation uses only public basic
+			// enemy-hero presence, visible allied health and visible creature spells.
+			const auto prepared = battle.battlePrepareHeroOrderState(side, command, {});
+			if(prepared && prepared->holdMagicalReductionBasisPoints > 0)
+			{
+				const auto visibleCreatureThreat = visibleCreatureSpellThreat(battle, enemyUnits);
+				const auto publicHeroThreat = publicEnemyHeroSpellThreat(battle, side, ownUnits);
+				const auto magicalThreat = std::max(visibleCreatureThreat, publicHeroThreat);
+				value += magicalThreat * static_cast<float>(prepared->holdMagicalReductionBasisPoints) / 10000.0f;
+			}
+		}
+		return value;
 	}
 
 	if(command == riposteCommand())

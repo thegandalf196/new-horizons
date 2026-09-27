@@ -40,7 +40,7 @@ const std::array<CommandDisplay, 8> commandDisplays = {{
 	{HeroCommand::CHARGE, "NH_charge_button", "Charge", "The first melee attack after moving at least 3 hexes gains bonus damage; extra movement adds more."},
 	{HeroCommand::FOCUS_FIRE, "NH_focusFire_button", "Focus Fire", "Choose one enemy stack. Friendly shooters gain damage against it and reduce range and obstacle penalties."},
 	{HeroCommand::RIPOSTE, "NH_riposte_button", "Riposte", "Friendly stacks take less melee damage and deal increased retaliation damage this round."},
-	{HeroCommand::HOLD_THE_LINE, "NH_holdTheLine_button", "Hold the Line", "Friendly stacks take reduced physical damage while they remain in their issued positions."},
+	{HeroCommand::HOLD_THE_LINE, "NH_holdTheLine_button", "Hold the Line", "Friendly stacks take reduced physical damage while they remain in their issued positions. Iron Discipline also reduces magical damage."},
 	{HeroCommand::BRACE, "NH_brace_button", "Brace", "Friendly stacks pre-emptively attack enemies that moved at least 3 hexes before a melee attack."},
 	{HeroCommand::PROTECT, "NH_protect_button", "Protect", "Choose a Protector and adjacent Ward. The first qualifying melee attack is redirected; Shield Master allows the first two."},
 	{HeroCommand::FLANK, "NH_flank_button", "Flank", "Choose one enemy stack. Friendly melee damage increases from additional distinct attack sides."},
@@ -77,6 +77,24 @@ std::string percentText(int value)
 	return (value > 0 ? "+" : "") + std::to_string(value) + "%";
 }
 
+std::string basisPointPercentText(int basisPoints)
+{
+	const int absolute = std::abs(basisPoints);
+	std::string result = basisPoints > 0 ? "+" : (basisPoints < 0 ? "-" : "");
+	result += std::to_string(absolute / 100);
+	const int remainder = absolute % 100;
+	if(remainder != 0)
+	{
+		result += ".";
+		if(remainder < 10)
+			result += "0";
+		result += std::to_string(remainder);
+		if(result.back() == '0')
+			result.pop_back();
+	}
+	return result + "%";
+}
+
 std::string effectLabel(const std::string & key, int value)
 {
 	if(key == "meleeDamagePercent")
@@ -108,7 +126,8 @@ std::string effectLabel(const std::string & key, int value)
 	return key + " " + percentText(value);
 }
 
-std::string commandEffects(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero)
+std::string commandEffects(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero,
+	int warcastingBonusPercent)
 {
 	const auto & effects = rules["commands"][heroCommands::key(command)]["effects"];
 	if(!effects.isStruct())
@@ -122,7 +141,7 @@ std::string commandEffects(const JsonNode & rules, HeroCommand command, const CG
 		{
 			const int value = command == HeroCommand::SECOND_WIND && key == "additionalActivationDamagePercent"
 				? heroCommands::secondWindPercent(hero)
-				: heroCommands::coefficient(formula, hero);
+				: heroCommands::coefficient(formula, hero, warcastingBonusPercent);
 			const auto line = effectLabel(key, value);
 			if(!result.empty())
 				result += '\n';
@@ -133,6 +152,16 @@ std::string commandEffects(const JsonNode & rules, HeroCommand command, const CG
 			// The battle snapshot has already been validated by the authority. A
 			// malformed optional preview must never make the client window fail.
 		}
+	}
+	if(command == HeroCommand::HOLD_THE_LINE
+		&& hero.hasActivePerk(newHorizonsIronDiscipline::SKILL, newHorizonsIronDiscipline::PERK))
+	{
+		const int physicalReduction = std::clamp(heroCommands::coefficient(
+			effects["damageReductionPercent"], hero, warcastingBonusPercent), 0, 100);
+		if(!result.empty())
+			result += '\n';
+		result += "Magical taken " + basisPointPercentText(
+			-physicalReduction * newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT);
 	}
 	return result;
 }
@@ -309,19 +338,21 @@ void BattleHeroActionWindow::setStateText(const std::string & text)
 		state->setText(text);
 }
 
-void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const JsonNode & rules)
+void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const JsonNode & rules,
+	int warcastingBonusPercent)
 {
 	const auto ratings = std::make_pair(hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE));
-	if(effectsInitialized && displayedRatings == ratings)
+	if(effectsInitialized && displayedRatings == ratings && displayedWarcastingBonus == warcastingBonusPercent)
 		return;
 	displayedRatings = ratings;
+	displayedWarcastingBonus = warcastingBonusPercent;
 	effectsInitialized = true;
 
 	for(size_t i = 0; i < commands.size(); ++i)
 	{
 		// The snapshot's coefficient helper is the single source of truth for
 		// the preview. The client only formats the returned numbers.
-		const auto effects = commandEffects(rules, commands[i].first, hero);
+		const auto effects = commandEffects(rules, commands[i].first, hero, warcastingBonusPercent);
 		if(i < effectLabels.size())
 			effectLabels[i]->setText(effects);
 		const auto & display = commandDisplay(commands[i].first);
@@ -368,15 +399,18 @@ void BattleHeroActionWindow::refresh()
 	const auto side = callback->battleGetMySide();
 	const bool canAct = owner->makingTurn() && !owner->curInt->isAutoFightOn && !owner->isInTacticsMode() && !owner->actionsController->heroSpellcastingModeActive();
 	const auto * hero = owner->currentHero();
+	const auto & rules = callback->getBattle()->getHeroCommandRules();
 	if(hero)
-		refreshEffects(*hero, callback->getBattle()->getHeroCommandRules());
+	{
+		const auto preparedHold = callback->battlePrepareHeroOrderState(side, HeroCommand::HOLD_THE_LINE, {});
+		refreshEffects(*hero, rules, preparedHold ? preparedHold->warcastingBonusPercent : 0);
+	}
 	const auto spellProblem = hero ? callback->battleCanCastSpell(hero, spells::Mode::HERO) : ESpellCastProblem::INVALID;
 	const bool canSpell = spellButton && hero
 		&& (spellProblem == ESpellCastProblem::OK || spellProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT);
 	if(spellButton)
 		spellButton->block(!canAct || !canSpell);
 	bool anyCommand = false;
-	const auto & rules = callback->getBattle()->getHeroCommandRules();
 	const auto commonReason = [&]
 	{
 		if(!callback->battleUsesHeroCommands())
@@ -447,7 +481,12 @@ void BattleHeroActionWindow::refresh()
 		{
 			readback = "Active Order: " + HeroCommandUI::name(active->command) + " (round " + std::to_string(active->issuedRound) + ")";
 			if(active->command == HeroCommand::HOLD_THE_LINE)
+			{
 				readback += " | anchored stacks: " + std::to_string(active->anchors.size());
+				if(active->holdMagicalReductionBasisPoints > 0)
+					readback += " | magical taken " + basisPointPercentText(
+						-static_cast<int>(active->holdMagicalReductionBasisPoints));
+			}
 			else if(active->command == HeroCommand::FOCUS_FIRE)
 				readback += " | target " + std::to_string(active->primaryTargetUnitId);
 			else if(active->command == HeroCommand::PROTECT)

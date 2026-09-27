@@ -14,9 +14,11 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/HeroCommand.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/bonuses/Bonus.h"
+#include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
 #include <limits>
@@ -119,13 +121,15 @@ protected:
 	bool configureVengeancePerkData = false;
 	bool selectCountercharge = false;
 	bool configureCounterchargePerkData = false;
+	bool selectIronDiscipline = false;
+	bool configureIronDisciplinePerkData = false;
 	bool competeBraceAndCharge = false;
 	bool zeroRiposteEffects = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		if(configureVengeancePerkData || configureCounterchargePerkData)
+		if(configureVengeancePerkData || configureCounterchargePerkData || configureIronDisciplinePerkData)
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		if(selectedCommand == HeroCommand::NONE)
@@ -213,6 +217,28 @@ protected:
 			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:armorer",
 				"new-horizons:armorer.countercharge"));
 		}
+		if(selectIronDiscipline)
+		{
+			const auto armorer = SecondarySkill::decode(newHorizonsIronDiscipline::SKILL);
+			ASSERT_GE(armorer, 0);
+			attackerSideHero->setSecSkillLevel(SecondarySkill(armorer), MasteryLevel::BASIC,
+				ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({newHorizonsIronDiscipline::SKILL,
+				newHorizonsIronDiscipline::PERK});
+			ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
+				newHorizonsIronDiscipline::PERK));
+		}
+	}
+
+	void addVisibleEnemySpellcaster()
+	{
+		enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::SIEGE_WEAPON, BonusSource::OTHER, 1, BonusSourceID()));
+		enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::SPELLCASTER, BonusSource::OTHER, 1, BonusSourceID(),
+			BonusSubtypeID(SpellID::MAGIC_ARROW)));
+		enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::CASTS, BonusSource::OTHER, 1, BonusSourceID()));
 	}
 
 	void prepareOrder(HeroCommand command)
@@ -387,6 +413,114 @@ TEST_F(CanonicalOrderAITest, EvaluatorChoosesBraceAndAuthoritativeTriggerIsLegal
 	assertChosenOrder(HeroCommand::BRACE);
 	EXPECT_TRUE(battle()->battleCanTriggerHeroOrderBrace(enemy, active, 3, false, false));
 	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::BRACE);
+}
+
+TEST_F(CanonicalOrderAITest, OrdinaryHoldStillValuesPhysicalThreatWithoutIronDiscipline)
+{
+	prepareOrder(HeroCommand::HOLD_THE_LINE);
+	ASSERT_FALSE(attackerSideHero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
+		newHorizonsIronDiscipline::PERK));
+	assertChosenOrder(HeroCommand::HOLD_THE_LINE);
+	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::HOLD_THE_LINE);
+}
+
+TEST_F(CanonicalOrderAITest, IronDisciplineValuesVisibleCreatureSpellThreatWithoutMutatingBattle)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	selectedCommand = HeroCommand::HOLD_THE_LINE;
+	configureIronDisciplinePerkData = true;
+	selectIronDiscipline = true;
+	prepareEvaluation(false);
+	// Isolate the visible creature-caster branch from the separate public
+	// enemy-hero-presence prior exercised below.
+	battle()->getSide(BattleSide::DEFENDER).heroID = ObjectInstanceID();
+	ASSERT_EQ(callback->getBattle(BattleID(0))->battleGetHeroInfo(BattleSide::DEFENDER).owner,
+		PlayerColor::NEUTRAL);
+	addVisibleEnemySpellcaster();
+	keepOnlyCompetingStacks();
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
+		newHorizonsIronDiscipline::PERK));
+	EXPECT_FALSE(enemy->isMeleeAttacker())
+		<< "The Siege Weapon marker removes this test stack from ordinary Hold melee valuation";
+	ASSERT_TRUE(enemy->canCast());
+	ASSERT_TRUE(SpellID::MAGIC_ARROW.toSpell()->canBeCast(
+		battle(), spells::Mode::CREATURE_ACTIVE, enemy));
+	ASSERT_GT(SpellID::MAGIC_ARROW.toSpell()->calculateDamage(enemy), 0);
+	const auto prepared = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER,
+		HeroCommand::HOLD_THE_LINE, {});
+	ASSERT_TRUE(prepared);
+	ASSERT_GT(prepared->holdMagicalReductionBasisPoints, 0);
+
+	const auto initialRound = battle()->battleGetRound();
+	const auto initialActive = battle()->getActiveStackID();
+	const auto initialMana = attackerSideHero->getManaAvailable();
+	const auto initialSpellsCast = battle()->battleCastSpells(BattleSide::ATTACKER);
+
+	ASSERT_TRUE(choose());
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().actionType, EActionType::HERO_COMMAND);
+	EXPECT_EQ(callback->submitted.front().command, HeroCommand::HOLD_THE_LINE);
+	EXPECT_EQ(battle()->battleGetRound(), initialRound);
+	EXPECT_EQ(battle()->getActiveStackID(), initialActive);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), initialMana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), initialSpellsCast);
+	EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER));
+}
+
+TEST_F(CanonicalOrderAITest, IronDisciplineUsesOnlyPublicEnemyHeroPresenceAsSpellThreat)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	selectedCommand = HeroCommand::HOLD_THE_LINE;
+	configureIronDisciplinePerkData = true;
+	selectIronDiscipline = true;
+	prepareEvaluation(false);
+	// Make the only opposing stack unable to create physical melee pressure;
+	// no creature SPELLCASTER bonus is added in this case.
+	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SIEGE_WEAPON, BonusSource::OTHER, 1, BonusSourceID()));
+	keepOnlyCompetingStacks();
+
+	const auto aiBattle = callback->getBattle(BattleID(0));
+	ASSERT_NE(aiBattle, nullptr);
+	const auto enemyHeroInfo = aiBattle->battleGetHeroInfo(BattleSide::DEFENDER);
+	ASSERT_NE(enemyHeroInfo.owner, PlayerColor::NEUTRAL);
+	EXPECT_FALSE(enemyHeroInfo.details.has_value())
+		<< "The enemy hero is concealed at the basic-info level during AI evaluation";
+	EXPECT_EQ(aiBattle->battleGetFightingHero(BattleSide::DEFENDER), nullptr)
+		<< "The heuristic must not need the concealed hero object";
+
+	ASSERT_TRUE(choose());
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().command, HeroCommand::HOLD_THE_LINE);
+	EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER));
+}
+
+TEST_F(CanonicalOrderAITest, IronDisciplineDoesNotAddMagicalThreatValueForNonHolder)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	selectedCommand = HeroCommand::HOLD_THE_LINE;
+	configureIronDisciplinePerkData = true;
+	prepareEvaluation(false);
+	addVisibleEnemySpellcaster();
+	keepOnlyCompetingStacks();
+	ASSERT_FALSE(attackerSideHero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
+		newHorizonsIronDiscipline::PERK));
+	EXPECT_FALSE(enemy->isMeleeAttacker());
+	ASSERT_TRUE(enemy->canCast());
+	ASSERT_TRUE(SpellID::MAGIC_ARROW.toSpell()->canBeCast(
+		battle(), spells::Mode::CREATURE_ACTIVE, enemy));
+	ASSERT_GT(SpellID::MAGIC_ARROW.toSpell()->calculateDamage(enemy), 0);
+	const auto prepared = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER,
+		HeroCommand::HOLD_THE_LINE, {});
+	ASSERT_TRUE(prepared);
+	EXPECT_EQ(prepared->holdMagicalReductionBasisPoints, 0);
+
+	EXPECT_FALSE(choose()) << "No physical melee threat exists: a non-holder must not value the magical extension";
+	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER));
 }
 
 TEST_F(CanonicalOrderAITest, CounterchargeBraceHeuristicAndDamageForecastShareTheSameMultiplier)

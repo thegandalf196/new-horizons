@@ -226,7 +226,7 @@ public:
 public://internal, for use only by Mechanics classes
 	///applies caster`s secondary skills and affectedCreature`s to raw damage
 	int64_t adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage,
-		int ignoreSpellDamageReductionPercent = 0) const;
+		int ignoreSpellDamageReductionPercent = 0, int magicalDamageReductionBasisPoints = 0) const;
 
 	///returns raw damage or healed HP
 	int64_t calculateRawEffectValue(int32_t effectLevel, int32_t basePowerMultiplier, int32_t levelPowerMultiplier, int32_t powerDivisor = 1) const;

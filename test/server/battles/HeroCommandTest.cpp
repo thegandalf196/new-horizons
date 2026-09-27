@@ -36,6 +36,8 @@
 #include "../../../lib/rmg/CMapGenOptions.h"
 #include "../../../lib/modding/ModScope.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/ISpellMechanics.h"
 
 class HeroCommandTest : public HeroCommandFixture {};
 
@@ -185,6 +187,85 @@ protected:
 			selectPerk);
 		startBattle();
 		beginCombat();
+	}
+};
+
+class IronDisciplineTest : public HeroCommandFixture
+{
+protected:
+	bool enableWarcasting = false;
+
+	void attachCombatScript(CStack * unit, const std::string & scriptName, int value)
+	{
+		const auto script = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "script", scriptName);
+		ASSERT_TRUE(script.has_value());
+		unit->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::COMBAT_EVENT_TRIGGER, BonusSource::OTHER, value, BonusSourceID(),
+			BonusSubtypeID(ScriptID(*script))));
+	}
+
+	void SetUp() override
+	{
+		HeroCommandFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		if(enableWarcasting)
+		{
+			auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+			magicRules["warcasting"] = JsonNode(true);
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+		}
+	}
+
+	void prepareIronDiscipline(bool selectPerk = true, bool prepareWarcasting = false)
+	{
+		enableWarcasting = prepareWarcasting;
+		startGame();
+		const int armorer = SecondarySkill::decode(newHorizonsIronDiscipline::SKILL);
+		ASSERT_GE(armorer, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(armorer), MasteryLevel::BASIC,
+			ChangeValueMode::ABSOLUTE);
+		if(selectPerk)
+			attackerSideHero->applyPerkSelection({newHorizonsIronDiscipline::SKILL,
+				newHorizonsIronDiscipline::PERK});
+		ASSERT_EQ(attackerSideHero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
+			newHorizonsIronDiscipline::PERK), selectPerk);
+
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
+		defenderSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+		setTestSpellPointTotal(defenderSideHero, 1000);
+		giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		defenderSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+		if(prepareWarcasting)
+		{
+			const int warcasting = SecondarySkill::decode("new-horizons:warcasting");
+			ASSERT_GE(warcasting, 0);
+			attackerSideHero->setSecSkillLevel(SecondarySkill(warcasting), MasteryLevel::BASIC,
+				ChangeValueMode::ABSOLUTE);
+			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+			attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
+		}
+		startBattle();
+		beginCombat();
+
+		if(prepareWarcasting)
+		{
+			BattleAction spell;
+			spell.actionType = EActionType::HERO_SPELL;
+			spell.side = BattleSide::ATTACKER;
+			spell.spell = SpellID::HASTE;
+			spell.aimToUnit(battle()->battleActiveUnit());
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spell));
+			advanceRound();
+		}
 	}
 };
 
@@ -561,6 +642,185 @@ TEST_F(HeroCommandTest, HoldTheLineLogsResolvedIncomingDamage)
 	});
 	ASSERT_NE(causalLine, server.battleLogLines.end()) << ::testing::PrintToString(server.battleLogLines);
 	EXPECT_THAT(*causalLine, ::testing::HasSubstr(std::to_string(hit->damageAmount) + " damage"));
+}
+
+TEST_F(IronDisciplineTest, HoldTheLineCapturesHalfClampedPhysicalReductionIncludingWarcasting)
+{
+	prepareIronDiscipline(true, true);
+	attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 50, ChangeValueMode::ABSOLUTE);
+	auto * held = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_EQ(state->warcastingBonusPercent, 10);
+	const auto & holdEffect = battle()->getHeroCommandRules()["commands"]["holdTheLine"]["effects"]["damageReductionPercent"];
+	const int physicalReduction = heroCommands::coefficient(holdEffect, *attackerSideHero,
+		state->warcastingBonusPercent);
+	const int physicalReductionWithoutWarcasting = heroCommands::coefficient(holdEffect, *attackerSideHero, 0);
+	ASSERT_GT(physicalReduction, physicalReductionWithoutWarcasting);
+	const int expectedBasisPoints = physicalReduction * newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT;
+	EXPECT_EQ(state->holdMagicalReductionBasisPoints, expectedBasisPoints);
+	EXPECT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), expectedBasisPoints);
+
+	const BattleAttackInfo incoming(enemy, held, 0, false);
+	const auto physicalWithPerk = battle()->calculateDmgRange(incoming).damage;
+	auto & savedState = *battle()->getSide(BattleSide::ATTACKER).orderState;
+	savedState.holdMagicalReductionBasisPoints = 0;
+	const auto physicalWithoutMagicalComponent = battle()->calculateDmgRange(incoming).damage;
+	EXPECT_EQ(physicalWithPerk.min, physicalWithoutMagicalComponent.min);
+	EXPECT_EQ(physicalWithPerk.max, physicalWithoutMagicalComponent.max)
+		<< "Iron Discipline changes only magical spell damage";
+	savedState.holdMagicalReductionBasisPoints = static_cast<uint16_t>(expectedBasisPoints);
+
+	attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 0, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), expectedBasisPoints)
+		<< "The public magical value remains the issue-time snapshot after hero changes";
+}
+
+TEST_F(IronDisciplineTest, HoldTheLineMagicalReductionRequiresAnAnchoredUnbrokenCurrentOrder)
+{
+	prepareIronDiscipline();
+	auto * held = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	ASSERT_GT(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), 0);
+
+	auto * lateArrival = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(73), 100);
+	EXPECT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(lateArrival), 0);
+
+	const BattleAttackInfo incoming(enemy, held, 0, false);
+	const auto heldDamage = battle()->calculateDmgRange(incoming).damage.min;
+	auto & order = *battle()->getSide(BattleSide::ATTACKER).orderState;
+	order.holdBrokenUnitIds.push_back(held->unitId());
+	EXPECT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), 0);
+	EXPECT_GT(battle()->calculateDmgRange(incoming).damage.min, heldDamage)
+		<< "The shared recipient check also removes the physical Hold reduction after its anchor breaks";
+
+	order.holdBrokenUnitIds.clear();
+	advanceRound();
+	EXPECT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), 0)
+		<< "Hold expires at the round boundary";
+}
+
+TEST_F(IronDisciplineTest, HypnosisSuspendsPhysicalAndMagicalHoldProtectionUntilControlReturns)
+{
+	prepareIronDiscipline();
+	auto * held = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	const BattleAttackInfo incoming(enemy, held, 0, false);
+	const auto protectedPhysicalDamage = battle()->calculateDmgRange(incoming).damage;
+	const int protectedMagicalReduction = battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held);
+	ASSERT_GT(protectedMagicalReduction, 0);
+
+	auto control = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID());
+	held->addNewBonus(control);
+	ASSERT_EQ(battle()->battleGetOwner(held), PlayerColor(1));
+	EXPECT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), 0);
+	const auto controlledPhysicalDamage = battle()->calculateDmgRange(incoming).damage;
+	EXPECT_GT(controlledPhysicalDamage.min, protectedPhysicalDamage.min);
+	EXPECT_GT(controlledPhysicalDamage.max, protectedPhysicalDamage.max);
+
+	held->removeBonus(control);
+	ASSERT_EQ(battle()->battleGetOwner(held), PlayerColor(0));
+	EXPECT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), protectedMagicalReduction);
+	const auto restoredPhysicalDamage = battle()->calculateDmgRange(incoming).damage;
+	EXPECT_EQ(restoredPhysicalDamage.min, protectedPhysicalDamage.min);
+	EXPECT_EQ(restoredPhysicalDamage.max, protectedPhysicalDamage.max);
+}
+
+TEST_F(IronDisciplineTest, NonHolderKeepsZeroSnapshotEvenIfPerkIsLearnedAfterIssuingHold)
+{
+	prepareIronDiscipline(false);
+	auto * held = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	ASSERT_TRUE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->holdMagicalReductionBasisPoints, 0);
+
+	attackerSideHero->applyPerkSelection({newHorizonsIronDiscipline::SKILL,
+		newHorizonsIronDiscipline::PERK});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
+		newHorizonsIronDiscipline::PERK));
+	EXPECT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), 0)
+		<< "Eligibility is captured when Hold is issued";
+}
+
+TEST_F(IronDisciplineTest, MagicalReductionStacksWithOrdinaryReductionAndMatchesAppliedSpellDamage)
+{
+	prepareIronDiscipline();
+	attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 50, ChangeValueMode::ABSOLUTE);
+	auto * held = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	ASSERT_NE(enemy, nullptr);
+	held->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50, BonusSourceID(),
+		BonusSubtypeID(SpellSchool::ANY)));
+
+	const auto * spell = SpellID::MAGIC_ARROW.toSpell();
+	spells::BattleCast event(battle(), defenderSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&event);
+	const auto savedStateBeforeForecast = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(savedStateBeforeForecast);
+	auto & savedState = *battle()->getSide(BattleSide::ATTACKER).orderState;
+	const int reductionBasisPoints = savedState.holdMagicalReductionBasisPoints;
+	savedState.holdMagicalReductionBasisPoints = 0;
+	const int64_t ordinaryMagicalReductionDamage = mechanics->adjustEffectValue(held);
+	savedState.holdMagicalReductionBasisPoints = reductionBasisPoints;
+	const int64_t forecastDamage = mechanics->adjustEffectValue(held);
+	const int64_t remainingBasisPoints = 10000 - reductionBasisPoints;
+	const int64_t expectedDamage = ordinaryMagicalReductionDamage / 10000 * remainingBasisPoints
+		+ ordinaryMagicalReductionDamage % 10000 * remainingBasisPoints / 10000;
+	EXPECT_EQ(forecastDamage, expectedDamage);
+	const int effectivePenetratedHoldBasisPoints = reductionBasisPoints * 80 / 100;
+	const int64_t spellDamageWithoutHold = spell->adjustRawDamage(defenderSideHero, held, 10000, 20, 0);
+	const int64_t spellDamageWithPenetratedHold = spell->adjustRawDamage(defenderSideHero, held,
+		10000, 20, reductionBasisPoints);
+	const int64_t expectedPenetratedDamage = spellDamageWithoutHold / 10000
+		* (10000 - effectivePenetratedHoldBasisPoints)
+		+ spellDamageWithoutHold % 10000 * (10000 - effectivePenetratedHoldBasisPoints) / 10000;
+	EXPECT_EQ(spellDamageWithPenetratedHold, expectedPenetratedDamage)
+		<< "Spell penetration reduces Iron Discipline as part of current magical damage reduction";
+	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER), savedStateBeforeForecast)
+		<< "Spell damage evaluation does not consume or mutate Hold state";
+
+	const int64_t healthBefore = held->getAvailableHealth();
+	ASSERT_TRUE(castOn(defenderSideHero, SpellID::MAGIC_ARROW, held));
+	EXPECT_EQ(healthBefore - held->getAvailableHealth(), forecastDamage)
+		<< "The authoritative cast and spell forecast use the shared adjustment";
+}
+
+TEST_F(IronDisciplineTest, HoldTheLineReducesScriptedFireShieldReflection)
+{
+	prepareIronDiscipline();
+	attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 50, ChangeValueMode::ABSOLUTE);
+	auto * held = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
+	auto * shielded = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 1000);
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	auto * lateArrival = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(72), 100);
+	ASSERT_GT(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), 0);
+	ASSERT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(lateArrival), 0);
+	blockRetaliation(held);
+	blockRetaliation(lateArrival);
+	forceMaximumDamage(held);
+	forceMaximumDamage(lateArrival);
+	attachCombatScript(shielded, "fireShield", 100);
+
+	const int reductionBasisPoints = battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held);
+	const int64_t heldHealthBefore = held->getAvailableHealth();
+	ASSERT_TRUE(attack(held, shielded->getPosition()));
+	const int64_t protectedReflection = heldHealthBefore - held->getAvailableHealth();
+	const int64_t lateHealthBefore = lateArrival->getAvailableHealth();
+	ASSERT_TRUE(attack(lateArrival, shielded->getPosition()));
+	const int64_t ordinaryReflection = lateHealthBefore - lateArrival->getAvailableHealth();
+	ASSERT_GT(ordinaryReflection, 0);
+	const int64_t expected = ordinaryReflection / 10000 * (10000 - reductionBasisPoints)
+		+ ordinaryReflection % 10000 * (10000 - reductionBasisPoints) / 10000;
+	EXPECT_EQ(protectedReflection, expected)
+		<< "Lua Fire Shield reflection must use the same saved Iron Discipline reduction";
 }
 
 TEST_F(HeroCommandTest, ChargeExpiresAtTheRoundBoundary)

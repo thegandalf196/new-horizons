@@ -403,7 +403,7 @@ void CSpell::getEffects(std::vector<Bonus> & lst, const int schoolLevel, const b
 }
 
 int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage,
-	int ignoreSpellDamageReductionPercent) const
+	int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints) const
 {
 	auto ret = rawDamage;
 	ignoreSpellDamageReductionPercent = std::clamp(ignoreSpellDamageReductionPercent, 0, 100);
@@ -434,6 +434,19 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 			const int effectiveReduction = reduction * (100 - ignoreSpellDamageReductionPercent) / 100;
 			ret *= 100 - effectiveReduction;
 			ret /= 100;
+		}
+
+		// Hold the Line's saved Iron Discipline value is an independent magical
+		// reduction. Basis points preserve the exact half of an odd physical value.
+		if(isMagical() && magicalDamageReductionBasisPoints > 0)
+		{
+			const int boundedReductionBasisPoints = std::clamp(magicalDamageReductionBasisPoints, 0, 10000);
+			const int effectiveReductionBasisPoints = boundedReductionBasisPoints
+				* (100 - ignoreSpellDamageReductionPercent) / 100;
+			const int remainingDamageBasisPoints = 10000
+				- std::clamp(effectiveReductionBasisPoints, 0, 10000);
+			ret = ret / 10000 * remainingDamageBasisPoints
+				+ ret % 10000 * remainingDamageBasisPoints / 10000;
 		}
 
 		//dmg increasing

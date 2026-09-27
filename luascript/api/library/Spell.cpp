@@ -93,7 +93,8 @@ int64_t SpellProxy::adjustDamage(const Spell & spell, const IBattleInfoCallback 
 	if(!caster)
 		caster = &actor;
 
-	return owner->adjustRawDamage(caster, &target, rawDamage);
+	return owner->adjustRawDamage(caster, &target, rawDamage, 0,
+		cb->battleGetHoldTheLineMagicalReductionBasisPoints(&target));
 }
 
 std::vector<const spells::SpellSchoolType *> SpellProxy::getSchools(const Spell & spell)

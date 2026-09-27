@@ -18,8 +18,42 @@
 #include "../../../lib/bonuses/Updaters.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/serializer/ESerializationVersion.h"
 
 class HeroCommandPersistenceTest : public HeroCommandFixture {};
+
+TEST(HeroOrderStatePersistenceTest, IronDisciplineSnapshotRoundTripsDefaultsForOldSavesAndRejectsDownsave)
+{
+	HeroOrderState source;
+	source.command = HeroCommand::HOLD_THE_LINE;
+	source.issuedRound = 4;
+	source.anchors.push_back({11, 70});
+	source.holdMagicalReductionBasisPoints = 1050;
+	EXPECT_NO_THROW(source.validateShape());
+	HeroOrderState invalidFraction = source;
+	invalidFraction.holdMagicalReductionBasisPoints = 1049;
+	EXPECT_THROW(invalidFraction.validateShape(), std::runtime_error);
+
+	CMemorySerializer current;
+	current.oser.version = ESerializationVersion::CURRENT;
+	current.iser.version = ESerializationVersion::CURRENT;
+	ASSERT_NO_THROW(current.oser & source);
+	HeroOrderState restored;
+	ASSERT_NO_THROW(current.iser & restored);
+	EXPECT_EQ(restored, source);
+
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_SHIELD_MASTER;
+	old.iser.version = ESerializationVersion::NEW_HORIZONS_SHIELD_MASTER;
+	HeroOrderState legacySource = source;
+	legacySource.holdMagicalReductionBasisPoints = 0;
+	ASSERT_NO_THROW(old.oser & legacySource);
+	HeroOrderState legacyRestored;
+	legacyRestored.holdMagicalReductionBasisPoints = 900;
+	ASSERT_NO_THROW(old.iser & legacyRestored);
+	EXPECT_EQ(legacyRestored.holdMagicalReductionBasisPoints, 0);
+	EXPECT_THROW(old.oser & source, std::runtime_error);
+}
 
 TEST_F(HeroCommandPersistenceTest, LegacyAdvanceNormalizationRemovesIdentityAndRoundBonus)
 {
