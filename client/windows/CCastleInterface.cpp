@@ -2167,7 +2167,7 @@ void CCastleInterface::creaturesChangedEventHandler()
 	}
 }
 
-CHallInterface::CBuildingBox::CBuildingBox(int x, int y, const CGTownInstance * Town, const CBuilding * Building):
+CHallInterface::CBuildingBox::CBuildingBox(int x, int y, const CGTownInstance * Town, const CBuilding * Building, bool dynamicFrame):
 	town(Town),
 	building(Building)
 {
@@ -2177,6 +2177,8 @@ CHallInterface::CBuildingBox::CBuildingBox(int x, int y, const CGTownInstance * 
 	pos.y += y;
 	pos.w = 154;
 	pos.h = 92;
+	if(dynamicFrame)
+		cardBackground = createResponsiveFortCardBackground(pos.dimensions());
 
 	state = GAME->interface()->cb->canBuildStructure(town, building->bid);
 
@@ -2235,6 +2237,19 @@ CHallInterface::CHallInterface(const CGTownInstance * Town):
 	town(Town)
 {
 	OBJECT_CONSTRUCTION;
+	const bool dynamicLayout = town->getFactionID() == FactionID::TOWER
+		&& newHorizonsMagic::rulesActive(GAME->interface()->cb->getMagicRules());
+	if(dynamicLayout)
+	{
+		// The original bitmap has card frames baked at the vanilla slot positions.
+		// Preserve its title/footer, but replace the card area before drawing the
+		// relocated Library and dwellings with frames belonging to each card.
+		auto leather = ENGINE->renderHandler().createImage(Point(pos.w - 8, 524), CanvasScalingPolicy::AUTO);
+		auto canvas = leather->getCanvas();
+		canvas.fillTexture(ENGINE->renderHandler().loadImage(
+			ImageLocator(ImagePath::builtin("DiBoxBck"), EImageBlitMode::OPAQUE)));
+		layoutBackground = std::make_shared<CPicture>(std::static_pointer_cast<IImage>(leather), Point(4, 28));
+	}
 
 	resdatabar = std::make_shared<CMinorResDataBar>();
 	resdatabar->moveBy(pos.topLeft(), true);
@@ -2279,7 +2294,7 @@ CHallInterface::CHallInterface(const CGTownInstance * Town):
 			int posY = 35 + 104*(int)row;
 
 			if(building)
-				boxes[row].push_back(std::make_shared<CBuildingBox>(posX, posY, town, building));
+				boxes[row].push_back(std::make_shared<CBuildingBox>(posX, posY, town, building, dynamicLayout));
 		}
 	}
 }

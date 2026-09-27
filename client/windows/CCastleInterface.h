@@ -280,13 +280,14 @@ class CHallInterface : public CStatusbarWindow
 		const CBuilding * building;
 
 		EBuildingState state;
+		std::shared_ptr<CPicture> cardBackground;
 
 		std::shared_ptr<CAnimImage> header;
 		std::shared_ptr<CAnimImage> icon;
 		std::shared_ptr<CAnimImage> mark;
 		std::shared_ptr<CLabel> name;
 	public:
-		CBuildingBox(int x, int y, const CGTownInstance * Town, const CBuilding * Building);
+		CBuildingBox(int x, int y, const CGTownInstance * Town, const CBuilding * Building, bool dynamicFrame = false);
 		void hover(bool on) override;
 		void clickPressed(const Point & cursorPosition) override;
 		void showPopupWindow(const Point & cursorPosition) override;
@@ -294,6 +295,7 @@ class CHallInterface : public CStatusbarWindow
 	const CGTownInstance * town;
 
 	std::vector<std::vector<std::shared_ptr<CBuildingBox>>> boxes;
+	std::shared_ptr<CPicture> layoutBackground;
 	std::shared_ptr<CLabel> title;
 	std::shared_ptr<CMinorResDataBar> resdatabar;
 	std::shared_ptr<CButton> exit;

@@ -37,6 +37,23 @@ def merge_objects(base, patch):
 
 
 class NewHorizonsTowerBuildingProgressionTest(unittest.TestCase):
+    def test_relocated_hall_cards_do_not_reuse_baked_vanilla_frames(self):
+        # Source wiring guard only: pixel appearance still requires visual QA.
+        source = (ROOT / "client/windows/CCastleInterface.cpp").read_text(encoding="utf-8")
+        hall = source.split("CHallInterface::CHallInterface(", 1)[1].split(
+            "CBuildWindow::CBuildWindow(", 1)[0]
+        card = source.split("CHallInterface::CBuildingBox::CBuildingBox(", 1)[1].split(
+            "void CHallInterface::CBuildingBox::hover", 1)[0]
+        self.assertIn("town->getFactionID() == FactionID::TOWER", hall)
+        self.assertIn("newHorizonsMagic::rulesActive", hall)
+        self.assertIn('ImagePath::builtin("DiBoxBck")', hall)
+        self.assertIn("EImageBlitMode::OPAQUE", hall)
+        self.assertLess(hall.index("layoutBackground ="), hall.index("boxes.resize"))
+        self.assertIn("town, building, dynamicLayout", hall)
+        self.assertIn("if(dynamicFrame)", card)
+        self.assertIn("cardBackground = createResponsiveFortCardBackground(pos.dimensions())", card)
+        self.assertLess(card.index("cardBackground ="), card.index("icon ="))
+
     def test_mage_library_and_genie_follow_ranked_hall_progression(self):
         mod_factions = load("Mods/new-horizons/mod.json")["factions"]
         tower_patch_order = [
