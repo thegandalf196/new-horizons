@@ -477,6 +477,29 @@ TEST_F(SpellPointCapacityTest, LegacyHeroSerializationRejectsLossOfBuffer)
 	EXPECT_THROW(memory.oser & attackerSideHero, std::runtime_error);
 }
 
+TEST_F(SpellPointCapacityTest, BufferGrantedDuringCombatPreservesNormalAndTemporaryProvenance)
+{
+	setKnowledge(attackerSideHero, 10);
+	attackerSideHero->initializeSpellPoints(5, 2);
+	Bonus combatMana;
+	combatMana.type = BonusType::COMBAT_MANA_BONUS;
+	combatMana.val = 8;
+	GiveBonus grant(GiveBonus::ETarget::OBJECT, attackerSideHero->id, combatMana);
+	gameHandler->sendAndApply(grant);
+	startBattle();
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	ASSERT_EQ(side.temporaryBufferRemaining, 8);
+	gameHandler->grantBufferSpellPoints(attackerSideHero->id, 6);
+	expectPools(attackerSideHero, 5, 16, 10);
+	EXPECT_EQ(side.temporaryBufferRemaining, 8);
+	gameHandler->spendSpellPoints(attackerSideHero->id, 9);
+	expectPools(attackerSideHero, 5, 7, 10);
+	EXPECT_EQ(side.temporaryBufferRemaining, 0);
+	const auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(restored, nullptr);
+	EXPECT_EQ(restored->getSide(BattleSide::ATTACKER).temporaryBufferRemaining, 0);
+}
+
 TEST_F(SpellPointCapacityTest, BattleSerializationPreservesInitialPoolsAndTemporaryBuffer)
 {
 	setKnowledge(attackerSideHero, 100);

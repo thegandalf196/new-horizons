@@ -12,7 +12,7 @@ import struct
 import unittest
 import zlib
 
-from jsonschema import Draft4Validator
+from jsonschema import Draft4Validator, ValidationError
 from referencing import Registry, Resource
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -184,6 +184,21 @@ class NewHorizonsContentTest(unittest.TestCase):
         shortcuts = (ROOT / 'client/gui/Shortcut.h').read_text()
         self.assertRegex(shortcuts,
                          r'LIST_TOWN_BOTTOM,[\s\S]*BATTLE_OPEN_ORDERS,\s*AFTER_LAST')
+
+    def test_physical_reduction_cap_is_optional_bounded_and_v2_only(self):
+        self.assertEqual(self.rules['physicalDamageReductionCapPercent'], 80)
+        rules = copy.deepcopy(self.rules)
+        rules.pop('physicalDamageReductionCapPercent')
+        validate_rules(rules)
+        for invalid in (-1, 101, 80.5, None, '80', True):
+            with self.subTest(invalid=invalid):
+                rules['physicalDamageReductionCapPercent'] = invalid
+                with self.assertRaises(ValidationError):
+                    validate_rules(rules)
+        old_rules = legacy_rules(self.rules)
+        old_rules['physicalDamageReductionCapPercent'] = 80
+        with self.assertRaises(ValidationError):
+            validate_rules(old_rules)
 
     def test_complete_existing_spell_inventory_and_legacy_schema(self):
         self.assertEqual(len(common_spells()), 69)
@@ -553,6 +568,102 @@ class NewHorizonsContentTest(unittest.TestCase):
         })
         self.assertFalse(self.rules['spells']['core:clone']['active'])
 
+    def test_focus_magic_is_a_common_sorcery_spell_in_new_world_roster(self):
+        content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        spell = content['focusMagic']
+        Draft4Validator(load('config/schemas/spell.json')).validate(spell)
+        self.assertEqual(spell['type'], 'combat')
+        self.assertEqual(spell['school'], {'new-horizons:sorcery': True})
+        self.assertEqual(spell['level'], 3)
+        self.assertEqual(spell['targetType'], 'CREATURE')
+        self.assertTrue(spell['flags']['positive'])
+        self.assertFalse(spell['flags'].get('negative', False))
+        self.assertFalse(spell['flags']['special'])
+        self.assertEqual(spell['defaultGainChance'], 0)
+        self.assertEqual(spell['gainChance'], {})
+        self.assertEqual(set(spell['levels']), {'none', 'basic', 'advanced', 'expert'})
+
+        description = (
+            "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature "
+            "attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the "
+            "hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, "
+            "and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures "
+            "its caster's Spell Power-derived penetration when cast, and each mark copies that "
+            "captured value: min(20%, 10% + 0.05% x Spell Power). Subsequent friendly ranged "
+            "creature attacks ignore that much Creature Defense; Creature Defense is not reduced, "
+            "and melee attacks gain no benefit."
+        )
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            with self.subTest(rank=rank):
+                current = spell['levels'][rank]
+                self.assertEqual(current['cost'], 11)
+                self.assertEqual(current['power'], 0)
+                self.assertEqual(current['description'], description)
+                self.assertEqual(current['battleEffects'], {
+                    'focusMagic': {'type': 'core:focusMagicEnchantment'},
+                })
+                self.assertEqual(current['targetModifier'], {'smart': True})
+
+        self.assertEqual(self.rules['spells']['new-horizons:focusMagic'], {
+            'schools': ['new-horizons:sorcery'],
+            'level': 3,
+            'costs': [11, 11, 11, 11],
+        })
+        self.assertNotIn('new-horizons:focusMagic', self.rules['adventureSpells'])
+        scripts = load('config/scriptsSpells.json')
+        self.assertEqual(scripts['focusMagicEnchantment']['implements'], 'spellEffect')
+        self.assertEqual(scripts['focusMagicEnchantment']['script'], 'spells/focusMagic')
+        combat_scripts = load('config/scriptsCombat.json')
+        self.assertEqual(combat_scripts['focusMagic']['implements'], 'combatEvent')
+        self.assertEqual(combat_scripts['focusMagic']['script'], 'combat/focusMagic')
+        self.assertTrue((ROOT / 'scripts/spells/focusMagic.lua').is_file())
+
+    def test_focus_magic_mark_logs_are_localized_and_authoritative_only(self):
+        texts = load('config/newHorizonsCombatTexts.json')
+        applied_key = 'new-horizons.combat.arcaneBreach.applied'
+        refreshed_key = 'new-horizons.combat.arcaneBreach.refreshed'
+        applied = texts[applied_key]
+        refreshed = texts[refreshed_key]
+
+        self.assertEqual(set(texts), {
+            applied_key,
+            refreshed_key,
+            'new-horizons.combat.arcaneBreach.side.attacker',
+            'new-horizons.combat.arcaneBreach.side.defender',
+        })
+        self.assertEqual(texts['new-horizons.combat.arcaneBreach.side.attacker'], 'attacking')
+        self.assertEqual(texts['new-horizons.combat.arcaneBreach.side.defender'], 'defending')
+        for message in (applied, refreshed):
+            with self.subTest(message=message):
+                self.assertEqual(message.count('%s'), 2)
+                self.assertEqual(message.count('%d'), 5)
+                self.assertIn('%d.%d%d%', message)
+                self.assertIn('for %d rounds', message)
+                self.assertIn('ranged attacks', message)
+                self.assertIn('Creature Defense', message)
+                self.assertIn('total marks', message)
+                self.assertIn("side's marks let its ranged attacks ignore", message)
+                self.assertNotIn('basis point', message.lower())
+        self.assertIn('now at %d of 3 total marks', applied)
+        self.assertIn('refreshed at %d of 3 total marks', refreshed)
+
+        script = (ROOT / 'scripts/combat/focusMagic.lua').read_text(encoding='utf-8')
+        self.assertIn('if server:describeChanges() then', script)
+        self.assertIn('server:appendLog(battle, {', script)
+        self.assertIn('target:getCreature():getNameTextID(target:getCount())', script)
+        self.assertIn(applied_key, script)
+        self.assertIn(refreshed_key, script)
+        self.assertIn('currentMark:getParametersAsJson()', script)
+        self.assertIn('parameters.beneficiarySide == beneficiarySide', script)
+        self.assertIn('combinedPenetrationBasisPoints + perMarkBasisPoints', script)
+        self.assertIn('math.min(currentMark:getVal(), MAX_MARK_PENETRATION_BASIS_POINTS)', script)
+        self.assertIn('MAX_MARKS * MAX_MARK_PENETRATION_BASIS_POINTS', script)
+        self.assertIn('if validMarks >= MAX_MARKS then break end', script)
+        self.assertIn('currentMarks:size(), combinedPenetrationBasisPoints', script)
+        self.assertIn('wholePercent = math.floor(combinedPenetrationBasisPoints / 100)', script)
+        self.assertIn('tenthsPercent = math.floor(combinedPenetrationBasisPoints / 10) % 10', script)
+        self.assertIn('hundredthsPercent = combinedPenetrationBasisPoints % 10', script)
+
     def test_other_sorcery_spell_foundation_definitions_remain_deferred(self):
         """Deferred source definitions stay schema-shaped but out of the saved roster."""
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
@@ -572,6 +683,24 @@ class NewHorizonsContentTest(unittest.TestCase):
                     self.assertEqual(current['cost'], cost)
                     self.assertEqual(current['battleEffects'][effect]['type'],
                                      'core:' + effect)
+
+    def test_arcane_breach_is_only_a_negative_internal_status_identity(self):
+        content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        spell = content['arcaneBreach']
+        Draft4Validator(load('config/schemas/spell.json')).validate(spell)
+        self.assertEqual(spell['type'], 'combat')
+        self.assertTrue(spell['flags']['negative'])
+        self.assertTrue(spell['flags']['special'])
+        self.assertFalse(spell['flags']['persistent'])
+        self.assertEqual(spell['defaultGainChance'], 0)
+        self.assertEqual(spell['gainChance'], {})
+        self.assertNotIn('new-horizons:arcaneBreach', self.rules['spells'])
+        self.assertNotIn('new-horizons:arcaneBreach', self.rules['adventureSpells'])
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            with self.subTest(rank=rank):
+                level = spell['levels'][rank]
+                self.assertEqual(level['cost'], 0)
+                self.assertNotIn('battleEffects', level)
 
     def test_time_stop_is_an_active_sorcery_spell(self):
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
