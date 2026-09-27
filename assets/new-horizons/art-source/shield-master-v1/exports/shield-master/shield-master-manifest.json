@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "shield-master",
+  "source": {
+    "path": "master.png",
+    "filename": "master.png",
+    "byte_size": 2760818,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "b1f32116531990224cfc0b10697d7556881e4622bfe391b777fbcbc10f7e62d2"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "b1f32116531990224cfc0b10697d7556881e4622bfe391b777fbcbc10f7e62d2"
+    },
+    {
+      "file": "shield-master-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "d817f5690f0ee1314254692306df18b7213a7a783ae1525b8e71740ebe09d990"
+    },
+    {
+      "file": "shield-master-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "996c2424cccec8e35eea00ae0634ab37af6a6b054c4f337342a4062b495dade5"
+    },
+    {
+      "file": "shield-master-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "5feec2d24c7fc18f4f78ec763544ae011a15284841e685fab15ba9dede6f922b"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "shield-master-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "shield-master-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "shield-master-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "shield-master-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

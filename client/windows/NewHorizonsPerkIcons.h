@@ -21,6 +21,7 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:offense.relentlessAssault", "NH_perk_relentless_assault"},
 		{"new-horizons:offense.noQuarter", "NH_perk_no_quarter"},
 		{"new-horizons:armorer.countercharge", "NH_perk_countercharge"},
+		{"new-horizons:armorer.shieldMaster", "NH_perk_shield_master"},
 		{"new-horizons:battlecraft.entrench", "NH_perk_entrench"},
 		{"new-horizons:discipline.inspirationalLeader", "NH_perk_inspirational_leader"},
 		{"new-horizons:wisdom.intelligence", "NH_perk_intelligence"},

@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_shield_master"
+  ],
+  "files": {
+    "source/NH_perk_shield_master_normal.png": "bd6c8caac2da010f3561008a070b9ef00aaa4f05eb8fc1fe9f29c909f5094ede",
+    "Mods/NH_perk_shield_master_normal.png": "bd6c8caac2da010f3561008a070b9ef00aaa4f05eb8fc1fe9f29c909f5094ede",
+    "source/NH_perk_shield_master_pressed.png": "5d01ad561bd6c2edbec0fad967e091aa129081fcffc0b540b2f050f80f6ba72d",
+    "Mods/NH_perk_shield_master_pressed.png": "5d01ad561bd6c2edbec0fad967e091aa129081fcffc0b540b2f050f80f6ba72d",
+    "source/NH_perk_shield_master_disabled.png": "d4bd176e54a22501877fc23a8886030560ba38c9ef7293f37cdf357e80f64d7b",
+    "Mods/NH_perk_shield_master_disabled.png": "d4bd176e54a22501877fc23a8886030560ba38c9ef7293f37cdf357e80f64d7b",
+    "source/NH_perk_shield_master_highlighted.png": "8d78ea21cf5b7c3f2108288b6669569d3482461f4139f2551edb881071fac0e4",
+    "Mods/NH_perk_shield_master_highlighted.png": "8d78ea21cf5b7c3f2108288b6669569d3482461f4139f2551edb881071fac0e4",
+    "source/NH_perk_shield_master.json": "b8fe9d3dab384db1197c5b2dc97c879f025f45cdb5b657edcfd9ff10cb05bf39",
+    "Mods/NH_perk_shield_master.json": "b8fe9d3dab384db1197c5b2dc97c879f025f45cdb5b657edcfd9ff10cb05bf39"
+  }
+}
