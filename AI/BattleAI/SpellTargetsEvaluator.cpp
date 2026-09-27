@@ -13,6 +13,7 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "AttackPossibility.h"
 #include "../../lib/spells/Problem.h"
+#include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/CRandomGenerator.h"
