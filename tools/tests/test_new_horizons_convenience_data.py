@@ -12,27 +12,45 @@ from test_new_horizons_content import ROOT, load
 
 
 class ConvenienceDataTest(unittest.TestCase):
-    def test_fragment_only_adds_two_namespaced_existing_actions(self):
+    def test_adaptive_layout_owns_two_namespaced_existing_actions_per_visible_branch(self):
         fragment = load('Mods/new-horizons/Content/config/widgets/nhConvenience.json')
         self.assertEqual(set(fragment), {'items'})
-        self.assertEqual(len(fragment['items']), 1)
-        container = fragment['items'][0]
-        self.assertEqual(container['name'], 'nhConvenienceControls')
-        self.assertEqual(container['hideWhen'], 'worldViewMode')
-        self.assertEqual(container['area'], {'top': 171, 'right': 69, 'width': 56, 'height': 24})
-        buttons = container['items']
-        self.assertEqual(len(buttons), 2)
-        for button, action, image, help_key, left in zip(
-                buttons, ('adventureQuickSave', 'adventureQuickLoad'),
-                ('NH_qsave_24', 'NH_qload_24'), ('quickSave', 'quickLoad'), (0, 32)):
-            self.assertTrue(button['name'].startswith('nhButton'))
-            self.assertEqual(button['hotkey'], action)
-            self.assertEqual(button['image'], image)
-            self.assertEqual(button['help'], 'vcmi.adventureMap.' + help_key)
-            self.assertFalse(button['playerColored'])
-            self.assertEqual(button['area'], {'top': 0, 'left': left, 'width': 24, 'height': 24})
-        self.assertLessEqual(32 + 24, container['area']['width'])
-        self.assertLessEqual(171 + 24, 196)  # Existing landscape lists start here.
+        self.assertEqual(fragment['items'], [])
+
+        layout = load('Mods/new-horizons/Content/config/widgets/adventureMap.json')
+        containers = [container for container in layout['items']
+                      if any(item.get('name') == 'nhButtonQuickSave'
+                             for item in container.get('items', []))]
+        self.assertEqual([container['name'] for container in containers],
+                         ['buttonsContainer4', 'buttonsContainer5'])
+        self.assertEqual(containers[0]['exists'], {'heightMin': 664, 'heightMax': 899})
+        self.assertEqual(containers[1]['exists'], {'heightMin': 899})
+        expected_images = (
+            ['NH_qsave_32', 'NH_qload_32'],
+            ['NH_qsave_64x32', 'NH_qload_64x32'],
+        )
+        expected_areas = (
+            [
+                {'top': 160, 'left': 0, 'width': 32, 'height': 32},
+                {'top': 160, 'left': 32, 'width': 32, 'height': 32},
+            ],
+            [
+                {'top': 64, 'left': 0, 'width': 64, 'height': 32},
+                {'top': 96, 'left': 0, 'width': 64, 'height': 32},
+            ],
+        )
+        for index, container in enumerate(containers):
+            self.assertEqual(container['hideWhen'], 'worldViewMode')
+            buttons = [item for item in container['items']
+                       if item.get('name') in {'nhButtonQuickSave', 'nhButtonQuickLoad'}]
+            self.assertEqual(len(buttons), 2)
+            self.assertEqual([button['hotkey'] for button in buttons],
+                             ['adventureQuickSave', 'adventureQuickLoad'])
+            self.assertEqual([button['image'] for button in buttons], expected_images[index])
+            self.assertEqual([button['area'] for button in buttons], expected_areas[index])
+            self.assertEqual([button['help'] for button in buttons],
+                             ['vcmi.adventureMap.quickSave', 'vcmi.adventureMap.quickLoad'])
+            self.assertTrue(all(not button['playerColored'] for button in buttons))
 
     def test_bonus_patches_change_only_icons_and_explicit_siege_text(self):
         patches = load('config/newHorizonsConvenienceBonuses.json')
@@ -72,7 +90,7 @@ class ConvenienceDataTest(unittest.TestCase):
             metadata = json.loads(output.read_text())
             self.assertEqual(metadata['version'], '0.5.1')
             # The presentation preview keeps its historical identity while
-            # inheriting the active canonical settings (currently module 0.10.0).
+            # inheriting the active canonical settings (currently module 0.13.0).
             self.assertEqual(metadata['settings'], json.loads(before)['settings'])
             self.assertNotEqual(output.read_bytes(), before)
             self.assertEqual(metadata['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))
@@ -88,7 +106,10 @@ class ConvenienceDataTest(unittest.TestCase):
 
     def test_existing_help_is_reused(self):
         texts = load('Mods/vcmi/Content/config/translations/english.json')
-        buttons = load('Mods/new-horizons/Content/config/widgets/nhConvenience.json')['items'][0]['items']
+        layout = load('Mods/new-horizons/Content/config/widgets/adventureMap.json')
+        buttons = [item for container in layout['items'] for item in container.get('items', [])
+                   if item.get('name') in {'nhButtonQuickSave', 'nhButtonQuickLoad'}]
+        self.assertEqual(len(buttons), 4)
         # readHintText appends BOTH suffixes to a string prefix. Checking a
         # standalone translation leaf missed the actual GUI regression.
         reader = (ROOT / 'client/gui/InterfaceObjectConfigurable.cpp').read_text()
