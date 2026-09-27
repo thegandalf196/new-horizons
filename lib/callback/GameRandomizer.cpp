@@ -413,6 +413,14 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 		return !newHorizonsHeroes::isExcludedSkill(hero->getPrimaryGrowthRules(), skill)
 			&& newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), skill).value_or(0) > 0;
 	};
+	const auto canAdvanceNormally = [hero](SecondarySkill skill)
+	{
+		if(!newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+			return true;
+		const auto * definition = LIBRARY->skillh->getById(skill);
+		return definition && hero->getPerkState().canAdvanceSkillNormally(
+			definition->getJsonKey(), hero->getSecSkillLevel(skill));
+	};
 	const auto ownFactionSkillEntry = ownFactionSkill
 		? std::find_if(hero->secSkills.begin(), hero->secSkills.end(), [hero](const auto & entry)
 		{
@@ -433,13 +441,14 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 			for(int i = 0; i < LIBRARY->skillh->size(); ++i)
 			{
 				const SecondarySkill skill(i);
-				if(hasCanonicalOffer(skill) && !isForeignFactionSkill(skill)
+				if(hasCanonicalOffer(skill) && !isForeignFactionSkill(skill) && canAdvanceNormally(skill)
 					&& hero->canLearnSkill(skill))
 					eligible.insert(skill);
 			}
 
 		for(const auto & elem : hero->secSkills)
 			if(elem.second < MasteryLevel::EXPERT && hasCanonicalOffer(elem.first)
+				&& canAdvanceNormally(elem.first)
 				&& !isForeignFactionSkill(elem.first))
 			{
 				const bool duplicateOwnIdentity = ownFactionSkillPresent
@@ -463,6 +472,7 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 	{
 		for(int i = 0; i < LIBRARY->skillh->size(); i++)
 			if(hasCanonicalOffer(SecondarySkill(i)) && !isForeignFactionSkill(SecondarySkill(i))
+				&& canAdvanceNormally(SecondarySkill(i))
 				&& hero->canLearnSkill(SecondarySkill(i)))
 				none.insert(SecondarySkill(i));
 	}
@@ -479,7 +489,8 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 				&& newHorizonsHeroes::isFactionSkillForFaction(
 					hero->getPrimaryGrowthRules(), hero->getFactionID(), elem.first)
 				&& elem.first != ownFactionSkillEntry->first;
-			if(hasCanonicalOffer(elem.first) && !isForeignFactionSkill(elem.first) && !duplicateOwnIdentity)
+			if(hasCanonicalOffer(elem.first) && canAdvanceNormally(elem.first)
+				&& !isForeignFactionSkill(elem.first) && !duplicateOwnIdentity)
 				basicAndAdv.insert(elem.first);
 		}
 		none.erase(elem.first);
@@ -490,7 +501,8 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 	// do not inject it into a saved hero whose rules snapshot predates the
 	// faction-skill system (the helper returns no mapping in that case).
 	if(ownFactionSkill && !ownFactionSkillPresent && hero->getSecSkillLevel(*ownFactionSkill) == MasteryLevel::NONE
-		&& hasCanonicalOffer(*ownFactionSkill) && hero->canLearnSkill() && gameInfo.isAllowed(*ownFactionSkill))
+		&& hasCanonicalOffer(*ownFactionSkill) && canAdvanceNormally(*ownFactionSkill)
+		&& hero->canLearnSkill() && gameInfo.isAllowed(*ownFactionSkill))
 		none.insert(*ownFactionSkill);
 
 	int maxUpgradedSkills = hero->cb->getSettings().getInteger(EGameSettings::LEVEL_UP_UPGRADED_SKILLS_AMOUNT);

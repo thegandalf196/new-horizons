@@ -14,6 +14,7 @@
 #include "../CGameHandler.h"
 #include "../TurnTimerHandler.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/CSkillHandler.h"
 #include "../../lib/callback/IGameInfoCallback.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -252,6 +253,10 @@ bool isValidHeroSkillChoice(CGameHandler & gameHandler, const CGHeroInstance * h
 
 	const int currentRank = hero->getSecSkillLevel(skill);
 	if(currentRank >= MasteryLevel::EXPERT)
+		return false;
+	const auto & perkState = hero->getPerkState();
+	const auto * skillEntity = LIBRARY->skillh->getById(skill);
+	if(!skillEntity || !perkState.canAdvanceSkillNormally(skillEntity->getJsonKey(), currentRank))
 		return false;
 	if(currentRank > MasteryLevel::NONE)
 		return true;

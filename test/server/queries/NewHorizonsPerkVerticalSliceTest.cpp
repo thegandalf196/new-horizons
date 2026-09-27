@@ -8,6 +8,7 @@
 #include "../../../lib/CRandomGenerator.h"
 #include "../../../lib/CSkillHandler.h"
 #include "../../../lib/GameConstants.h"
+#include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/entities/hero/CHeroHandler.h"
 #include "../../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../../lib/gameState/CGameState.h"
@@ -122,6 +123,66 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ScoutingImmediatelyRevealsExpandedSight
 	EXPECT_EQ(hero->getSightRadius(), originalRadius);
 	// Losing sight range does not erase terrain already explored.
 	EXPECT_TRUE(gameState()->isVisibleFor(expandedTile, hero->getOwner()));
+}
+
+TEST_F(NewHorizonsPerkVerticalSliceTest, ExternalRankAdvancementKeepsRankAndOffersMissingPerkTiersInOrder)
+{
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto sylvanLuck = skill(sylvanLuckId);
+	ASSERT_EQ(hero->getSecSkillLevel(sylvanLuck), MasteryLevel::BASIC);
+
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	HeroLevelUp ordinaryRankOffer;
+	ordinaryRankOffer.skills.push_back(sylvanLuck);
+	CHeroLevelUpDialogQuery ordinaryQuery(&gameHandler, ordinaryRankOffer, hero);
+	EXPECT_FALSE(ordinaryQuery.isValidReply(0));
+	EXPECT_THROW(gameHandler.levelUpHero(hero, sylvanLuck, false), std::runtime_error);
+	EXPECT_EQ(hero->getSecSkillLevel(sylvanLuck), MasteryLevel::BASIC);
+
+	gameHandler.changeSecSkill(hero, sylvanLuck, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(hero->getSecSkillLevel(sylvanLuck), MasteryLevel::EXPERT);
+	EXPECT_FALSE(hero->getPerkState().canAdvanceSkillNormally(sylvanLuckId, MasteryLevel::EXPERT));
+
+	const auto rankLookup = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
+	std::vector<newHorizonsHeroes::PerkOfferCandidate> offer;
+	for(uint64_t seed = 0; seed < 1000; ++seed)
+	{
+		offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+		if(offerContains(offer, "new-horizons:sylvanLuck.elvenPrecision"))
+			break;
+	}
+	ASSERT_TRUE(offerContains(offer, "new-horizons:sylvanLuck.elvenPrecision"));
+	for(const auto & candidate : offer)
+	{
+		if(candidate.selection.skillId == sylvanLuckId)
+		{
+			EXPECT_EQ(candidate.requiredRank, MasteryLevel::BASIC);
+		}
+	}
+}
+
+TEST_F(NewHorizonsPerkVerticalSliceTest, BlockedSkillRanksNeverEnterTheWeightedOfferDraw)
+{
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto sylvanLuck = skill(sylvanLuckId);
+	ASSERT_EQ(hero->getSecSkillLevel(sylvanLuck), MasteryLevel::BASIC);
+	ASSERT_FALSE(hero->getPerkState().canAdvanceSkillNormally(sylvanLuckId, MasteryLevel::BASIC));
+
+	bool sawLegalOffer = false;
+	for(int seed = 1; seed <= 100; ++seed)
+	{
+		GameRandomizer randomizer(*gameState());
+		randomizer.setSeed(seed);
+		const auto offers = randomizer.rollSecondarySkills(hero);
+		EXPECT_EQ(std::find(offers.begin(), offers.end(), sylvanLuck), offers.end());
+		sawLegalOffer = sawLegalOffer || !offers.empty();
+	}
+	EXPECT_TRUE(sawLegalOffer);
 }
 
 TEST_F(NewHorizonsPerkVerticalSliceTest, ExperienceOfferChoiceActivatesEffectAndSurvivesSaveLoad)

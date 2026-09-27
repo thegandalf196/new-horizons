@@ -246,6 +246,50 @@ TEST_F(NewHorizonsRewardSkillFilterTest, MissingClassWeightCannotBeLearnedFromPu
 	EXPECT_EQ(attackerSideHero->getSecSkillLevel(lightMagic), MasteryLevel::NONE);
 }
 
+TEST_F(NewHorizonsRewardSkillFilterTest, ExistingZeroWeightSkillCannotBeAdvancedByTeacher)
+{
+	startNewHorizonsAsThane();
+	const auto wisdom = canonical("new-horizons:wisdom");
+	attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getSecSkillLevel(wisdom), MasteryLevel::BASIC);
+	ASSERT_FALSE(newHorizonsHeroes::skillOfferWeight(
+		attackerSideHero->getPrimaryGrowthRules(), wisdom).value_or(0) > 0);
+
+	SkillRewardObject object(gameState().get());
+	Rewardable::VisitInfo teacherReward;
+	teacherReward.visitType = Rewardable::EEventType::EVENT_FIRST_VISIT;
+	teacherReward.reward.secondary[wisdom] = 1;
+	object.configuration.info.push_back(teacherReward);
+
+	EXPECT_TRUE(object.getAvailableRewards(attackerSideHero,
+		Rewardable::EEventType::EVENT_FIRST_VISIT).empty());
+	object.grantRewardBeforeLevelup(*gameHandler, teacherReward, attackerSideHero);
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(wisdom), MasteryLevel::BASIC);
+}
+
+TEST_F(NewHorizonsRewardSkillFilterTest, EligibleTeacherAdvancementBypassesMissingPerkRequirement)
+{
+	startNewHorizonsAsThane();
+	const auto lightMagic = canonical("new-horizons:lightMagic");
+	attackerSideHero->setSecSkillLevel(lightMagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getSecSkillLevel(lightMagic), MasteryLevel::BASIC);
+	ASSERT_GT(newHorizonsHeroes::skillOfferWeight(
+		attackerSideHero->getPrimaryGrowthRules(), lightMagic).value_or(0), 0);
+	ASSERT_FALSE(attackerSideHero->getPerkState().canAdvanceSkillNormally(
+		"new-horizons:lightMagic", MasteryLevel::BASIC));
+
+	SkillRewardObject object(gameState().get());
+	Rewardable::VisitInfo teacherReward;
+	teacherReward.visitType = Rewardable::EEventType::EVENT_FIRST_VISIT;
+	teacherReward.reward.secondary[lightMagic] = 1;
+	object.configuration.info.push_back(teacherReward);
+
+	EXPECT_EQ(object.getAvailableRewards(attackerSideHero,
+		Rewardable::EEventType::EVENT_FIRST_VISIT), (std::vector<ui32>{0}));
+	object.grantRewardBeforeLevelup(*gameHandler, teacherReward, attackerSideHero);
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(lightMagic), MasteryLevel::ADVANCED);
+}
+
 TEST_F(NewHorizonsRewardSkillFilterTest, ConfiguredRewardStoresCanonicalIdentity)
 {
 	startNewHorizons();

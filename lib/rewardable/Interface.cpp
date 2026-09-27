@@ -75,12 +75,38 @@ bool hasNonSkillReward(const Rewardable::Reward & reward)
 		|| reward.revealTiles.has_value();
 }
 
-bool canReceiveNewRewardedSkill(const CGHeroInstance * hero, SecondarySkill skill)
+bool isRewardedSkillEligibleForHero(const CGHeroInstance * hero, SecondarySkill skill)
 {
 	// New Horizons has an explicit per-class offer table: a zero or missing
-	// weight forbids acquiring that skill from teachers as well as level-ups.
+	// weight forbids acquiring or advancing that skill from teachers as well as
+	// level-ups. Faction skills are likewise exclusive to their own faction.
 	// Keep legacy reward behaviour unchanged, where skill probabilities are not
 	// an acquisition allowlist for direct rewards.
+	if(newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()))
+	{
+		const auto & rules = hero->getPrimaryGrowthRules();
+		if(!hero->cb->isAllowed(skill)
+			|| newHorizonsHeroes::isExcludedSkill(rules, skill)
+			|| newHorizonsHeroes::skillOfferWeight(rules, skill).value_or(0) <= 0)
+			return false;
+		if(newHorizonsHeroes::isFactionSkill(rules, skill)
+			&& !newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), skill))
+			return false;
+	}
+
+	return true;
+}
+
+bool canReceivePositiveRewardedSkill(const CGHeroInstance * hero, SecondarySkill skill)
+{
+	if(!isRewardedSkillEligibleForHero(hero, skill))
+		return false;
+
+	// Existing skills do not need a free slot. Explicit rewards may advance them
+	// without the preceding perk; that is the canonical external-grant exception.
+	if(hero->getSecSkillLevel(skill) != MasteryLevel::NONE)
+		return true;
+
 	if(newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()))
 		return hero->canLearnSkill(skill);
 
@@ -113,8 +139,7 @@ bool canReceiveAnyRewardedSkill(const Rewardable::VisitInfo & info, const CGHero
 		if(!skill)
 			continue;
 
-		if(hero->getSecSkillLevel(*skill) != MasteryLevel::NONE
-			|| canReceiveNewRewardedSkill(hero, *skill))
+		if(canReceivePositiveRewardedSkill(hero, *skill))
 			return true;
 	}
 
@@ -226,9 +251,10 @@ void Rewardable::Interface::grantRewardBeforeLevelup(IGameEventCallback & gameEv
 			gameEvents.showInfoDialog(&cannotImprove);
 			continue;
 		}
-		// Existing skills may still be improved (even with a full skill bar),
-		// while a new New Horizons skill must pass its class-specific eligibility.
-		bool canLearn = currentLevel != 0 || canReceiveNewRewardedSkill(hero, *skill);
+		// Existing skills may still be improved (even with a full skill bar and
+		// missing prerequisite perks), but current class/faction eligibility applies
+		// to every positive teacher grant.
+		const bool canLearn = entry.second <= 0 || canReceivePositiveRewardedSkill(hero, *skill);
 
 		if(currentLevel != newLevelClamped && canLearn)
 			gameEvents.changeSecSkill(hero, *skill, newLevelClamped, ChangeValueMode::ABSOLUTE);

@@ -34,6 +34,7 @@
 #include "../lib/StartInfo.h"
 #include "../lib/TerrainHandler.h"
 #include "../lib/GameLibrary.h"
+#include "../lib/CSkillHandler.h"
 #include "../lib/int3.h"
 
 #include "../lib/battle/BattleInfo.h"
@@ -137,6 +138,13 @@ IGameServer & CGameHandler::gameServer() const
 
 void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill, bool continueProgression)
 {
+	if(hero && newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+	{
+		const auto * definition = LIBRARY->skillh->getById(skill);
+		if(!definition || !hero->getPerkState().canAdvanceSkillNormally(definition->getJsonKey(),
+			hero->getSecSkillLevel(skill)))
+			throw std::runtime_error("New Horizons skill advancement requires its preceding perk tier");
+	}
 	changeSecSkill(hero, skill, 1, ChangeValueMode::RELATIVE);
 	if(continueProgression)
 		heroLevelUpChoiceDone(hero);
@@ -253,6 +261,13 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 	hlu.skills = randomizer->rollSecondarySkills(hero);
 	if(newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
 	{
+		const auto & perkState = hero->getPerkState();
+		std::erase_if(hlu.skills, [hero, &perkState](SecondarySkill skill)
+		{
+			const auto * definition = LIBRARY->skillh->getById(skill);
+			return !definition || !perkState.canAdvanceSkillNormally(definition->getJsonKey(),
+				hero->getSecSkillLevel(skill));
+		});
 		const size_t maxSkillChoices = static_cast<size_t>(hero->getPerkState().rules["maxSkillChoices"].Integer());
 		if(hlu.skills.size() > maxSkillChoices)
 			hlu.skills.resize(maxSkillChoices);
