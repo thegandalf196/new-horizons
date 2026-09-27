@@ -459,7 +459,7 @@ const battle::Unit * CBattleInfoCallback::battleSelectCleaveTarget(const battle:
 	{
 		int result = GameConstants::BFIELD_SIZE;
 		for(const auto hex : unit->getHexes())
-			result = std::min(result, hex.toInt());
+			result = std::min(result, static_cast<int>(hex.toInt()));
 		return result;
 	};
 	std::sort(candidates.begin(), candidates.end(), [&](const battle::Unit * left, const battle::Unit * right)
