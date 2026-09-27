@@ -53,6 +53,36 @@ TEST(NewHorizonsPrimaryProfileTest, VersionTwoUsesAuthoredStartAndEighteenPointG
 	EXPECT_EQ(parsed.baseAtLevel(10), (std::array<int64_t, 4>{84, 108, 28, 42}));
 }
 
+TEST(NewHorizonsPrimaryProfileTest, VersionThreePreservesCanonicalStartingToGrowthRelationship)
+{
+	const std::array<std::array<int, 4>, 18> starts = {{
+		{30,45,10,15}, {10,15,30,45}, {35,35,15,15}, {5,10,30,55},
+		{30,20,20,30}, {5,5,45,45}, {55,20,20,5}, {20,5,50,25},
+		{45,20,30,5}, {5,20,50,25}, {50,25,20,5}, {15,5,60,20},
+		{55,35,5,5}, {45,5,30,20}, {35,55,5,5}, {5,15,20,60},
+		{35,20,30,15}, {5,5,60,30}
+	}};
+	for(const auto & starting : starts)
+	{
+		std::array<int, 4> growth;
+		for(size_t i = 0; i < growth.size(); ++i)
+			growth[i] = starting[i] / 5;
+		const auto parsed = newHorizonsHeroes::parsePrimaryProfile(profile(starting, growth,
+			newHorizonsHeroes::PRIMARY_PROFILE_VERSION_TWENTY_POINT));
+		for(int level : {1, 2, 10, 20, std::numeric_limits<int>::max()})
+		{
+			const auto values = parsed.baseAtLevel(level);
+			for(size_t i = 0; i < values.size(); ++i)
+				EXPECT_EQ(values[i], static_cast<int64_t>(growth[i]) * (static_cast<int64_t>(level) + 4));
+		}
+		EXPECT_EQ(std::accumulate(growth.begin(), growth.end(), 0), 20);
+	}
+	// Correct totals alone must not conceal mismatched starting/growth vectors.
+	EXPECT_THROW(newHorizonsHeroes::parsePrimaryProfile(profile({30,45,10,15}, {7,8,2,3}, 3)), std::runtime_error);
+	EXPECT_THROW(newHorizonsHeroes::parsePrimaryProfile(profile({30,40,10,15}, {6,8,2,3}, 3)), std::runtime_error);
+	EXPECT_THROW(newHorizonsHeroes::parsePrimaryProfile(profile({30,45,10,15}, {6,9,2,3}, 4)), std::runtime_error);
+}
+
 TEST(NewHorizonsPrimaryProfileTest, ClassSpecificProfilesAlwaysAddTenWithoutRedistribution)
 {
 	for(const auto & growth : {std::array<int, 4>{4, 4, 1, 1}, {5, 3, 1, 1}, {5, 2, 2, 1}})

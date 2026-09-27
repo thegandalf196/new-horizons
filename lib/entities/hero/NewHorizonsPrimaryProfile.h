@@ -19,9 +19,12 @@ namespace newHorizonsHeroes
 constexpr int PRIMARY_PROFILE_VERSION_LEGACY = 1;
 /// Version 2 uses authored starting ratings plus eighteen points of growth.
 constexpr int PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH = 2;
+/// Version 3 follows the current scripture: starting = five times growth.
+constexpr int PRIMARY_PROFILE_VERSION_TWENTY_POINT = 3;
 constexpr int PRIMARY_GROWTH_PER_LEVEL = 10;
 constexpr int PRIMARY_PROFILE_V2_STARTING_TOTAL = 100;
 constexpr int PRIMARY_PROFILE_V2_GROWTH_PER_LEVEL = 18;
+constexpr int PRIMARY_PROFILE_V3_GROWTH_PER_LEVEL = 20;
 /// Order is the existing PrimarySkill order: Attack, Defense, Spell Power, Knowledge.
 /// A pure profile primitive, not activation of new growth in a running game.
 struct DLL_LINKAGE PrimaryProfile
@@ -38,6 +41,7 @@ struct DLL_LINKAGE PrimaryProfile
 
 /// Versioned tunable primary profile. Missing progressionVersion preserves the
 /// historical ten-point growth formula; version 2 requires 100 starting points
-/// and 18 growth points. Invalid data throws.
+/// and 18 growth points. Version 3 requires 20 growth points and starting
+/// ratings equal to five times the corresponding growth. Invalid data throws.
 DLL_LINKAGE PrimaryProfile parsePrimaryProfile(const JsonNode & data);
 }

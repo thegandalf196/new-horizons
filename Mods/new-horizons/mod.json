@@ -1149,7 +1149,7 @@
 				"maxPrimary": 10000,
 				"classProfiles": {
 					"core:knight": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							30,
 							45,
@@ -1158,13 +1158,13 @@
 						],
 						"growth": [
 							6,
-							7,
+							9,
 							2,
 							3
 						]
 					},
 					"core:cleric": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							10,
 							15,
@@ -1175,11 +1175,11 @@
 							2,
 							3,
 							6,
-							7
+							9
 						]
 					},
 					"core:ranger": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							35,
 							35,
@@ -1187,14 +1187,14 @@
 							15
 						],
 						"growth": [
-							6,
-							6,
+							7,
+							7,
 							3,
 							3
 						]
 					},
 					"core:druid": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							5,
 							10,
@@ -1205,11 +1205,11 @@
 							1,
 							2,
 							6,
-							9
+							11
 						]
 					},
 					"core:alchemist": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							30,
 							20,
@@ -1217,14 +1217,14 @@
 							30
 						],
 						"growth": [
-							5,
+							6,
 							4,
 							4,
-							5
+							6
 						]
 					},
 					"core:wizard": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							5,
 							5,
@@ -1234,12 +1234,12 @@
 						"growth": [
 							1,
 							1,
-							8,
-							8
+							9,
+							9
 						]
 					},
 					"core:demoniac": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							55,
 							20,
@@ -1247,14 +1247,14 @@
 							5
 						],
 						"growth": [
-							9,
+							11,
 							4,
 							4,
 							1
 						]
 					},
 					"core:heretic": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							20,
 							5,
@@ -1264,12 +1264,12 @@
 						"growth": [
 							4,
 							1,
-							8,
+							10,
 							5
 						]
 					},
 					"core:deathknight": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							45,
 							20,
@@ -1277,14 +1277,14 @@
 							5
 						],
 						"growth": [
-							7,
+							9,
 							4,
 							6,
 							1
 						]
 					},
 					"core:necromancer": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							5,
 							20,
@@ -1294,12 +1294,12 @@
 						"growth": [
 							1,
 							4,
-							8,
+							10,
 							5
 						]
 					},
 					"core:overlord": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							50,
 							25,
@@ -1307,14 +1307,14 @@
 							5
 						],
 						"growth": [
-							8,
+							10,
 							5,
 							4,
 							1
 						]
 					},
 					"core:warlock": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							15,
 							5,
@@ -1324,12 +1324,12 @@
 						"growth": [
 							3,
 							1,
-							10,
+							12,
 							4
 						]
 					},
 					"core:barbarian": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							55,
 							35,
@@ -1337,14 +1337,14 @@
 							5
 						],
 						"growth": [
-							9,
+							11,
 							7,
 							1,
 							1
 						]
 					},
 					"core:battlemage": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							45,
 							5,
@@ -1352,14 +1352,14 @@
 							20
 						],
 						"growth": [
-							7,
+							9,
 							1,
 							6,
 							4
 						]
 					},
 					"core:beastmaster": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							35,
 							55,
@@ -1368,13 +1368,13 @@
 						],
 						"growth": [
 							7,
-							9,
+							11,
 							1,
 							1
 						]
 					},
 					"core:witch": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							5,
 							15,
@@ -1385,11 +1385,11 @@
 							1,
 							3,
 							4,
-							10
+							12
 						]
 					},
 					"core:planeswalker": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							35,
 							20,
@@ -1397,14 +1397,14 @@
 							15
 						],
 						"growth": [
-							6,
+							7,
 							4,
-							5,
+							6,
 							3
 						]
 					},
 					"core:elementalist": {
-						"progressionVersion": 2,
+						"progressionVersion": 3,
 						"starting": [
 							5,
 							5,
@@ -1414,7 +1414,7 @@
 						"growth": [
 							1,
 							1,
-							10,
+							12,
 							6
 						]
 					}
@@ -2037,7 +2037,58 @@
 					"core:tactics",
 					"core:wisdom"
 				],
-				"extraGrowth": [],
+				"extraGrowth": [
+					{
+						"skill": "new-horizons:offense",
+						"primary": 0,
+						"chances": [
+							0,
+							10,
+							20,
+							30
+						]
+					},
+					{
+						"skill": "new-horizons:armorer",
+						"primary": 1,
+						"chances": [
+							0,
+							10,
+							20,
+							30
+						]
+					},
+					{
+						"skill": "new-horizons:archery",
+						"primary": 0,
+						"chances": [
+							0,
+							10,
+							20,
+							30
+						]
+					},
+					{
+						"skill": "new-horizons:spellcraft",
+						"primary": 2,
+						"chances": [
+							0,
+							10,
+							20,
+							30
+						]
+					},
+					{
+						"skill": "new-horizons:wisdom",
+						"primary": 3,
+						"chances": [
+							0,
+							10,
+							20,
+							30
+						]
+					}
+				],
 				"startingSkills": {
 					"factionSkills": {
 						"core:castle": "new-horizons:divineMandate",

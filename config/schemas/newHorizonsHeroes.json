@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema",
 	"title": "Saved New Horizons hero growth and scale rules",
-	"description": "New Horizons hero growth, canonical skill-offer weights, and starting-skill schema. Primary growth is the fixed class vector on every level. Empty retains legacy heroes. The deprecated extraGrowth field remains accepted only for loading older saved snapshots and has no live semantics.",
+	"description": "New Horizons hero growth, canonical skill-offer weights, and starting-skill schema. Primary growth grants the fixed class vector on every level; version 3 additionally evaluates independent configured skill bonus rolls. Empty retains legacy heroes.",
 	"type": "object",
 	"oneOf": [
 		{"maxProperties": 0},
@@ -30,7 +30,7 @@
 					"items": {"type": "string", "minLength": 1}
 				},
 				"extraGrowth": {
-					"description": "Deprecated compatibility field. Must be empty in new canonical data; legacy saved rows are accepted but ignored by live growth.",
+					"description": "Independent skill-based primary bonus chances by rank for version 3 profiles. Older profiles ignore these rows.",
 					"type": "array", "items": {"$ref": "#/definitions/extra"}
 				},
 				"startingSkills": {"$ref": "#/definitions/startingSkills"}
@@ -44,8 +44,8 @@
 			"additionalProperties": false,
 			"properties": {
 				"progressionVersion": {
-					"description": "Absent or 1 preserves ten-point growth times (level+4). Version 2 uses starting plus (level-1) times growth; runtime requires starting total 100 and growth total 18.",
-					"type": "integer", "enum": [1, 2]
+					"description": "Absent or 1 preserves ten-point growth times (level+4). Version 2 requires starting total 100 and growth total 18. Version 3 requires growth total 20 and each starting attribute equal to five times its growth. Cross-field constraints are checked at runtime.",
+					"type": "integer", "enum": [1, 2, 3]
 				},
 				"starting": {
 					"type": "array", "minItems": 4, "maxItems": 4,
@@ -53,7 +53,7 @@
 				},
 				"growth": {
 					"type": "array", "minItems": 4, "maxItems": 4,
-					"items": {"type": "integer", "minimum": 1, "maximum": 18}
+					"items": {"type": "integer", "minimum": 1, "maximum": 20}
 				}
 			}
 		},

@@ -323,12 +323,21 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,
 	const std::function<int(SecondarySkill)> & rank)
 {
-	// Keep the field accepted for saved-rules compatibility, but never turn
-	// legacy extraGrowth rows into live primary-stat rolls. New Horizons grants
-	// exactly the authored class vector on every level.
-	(void)resolvedRules;
-	(void)rank;
-	return {};
+	std::vector<SkillGrowthChance> result;
+	if(!usesRules(resolvedRules)
+		|| parsePrimaryProfile(resolvedRules["profile"]).progressionVersion != PRIMARY_PROFILE_VERSION_TWENTY_POINT)
+		return result;
+	for(const auto & extra : resolvedRules["extraGrowth"].Vector())
+	{
+		const SecondarySkill skill(resolve(SecondarySkill::entityType(), extra["skill"].String()));
+		const int skillRank = rank(skill);
+		if(skillRank < 0 || skillRank > 3)
+			throw std::runtime_error("Invalid skill rank for primary growth");
+		const int chance = extra["chances"].Vector().at(skillRank).Integer();
+		if(chance > 0)
+			result.push_back({skill, PrimarySkill(extra["primary"].Integer()), chance});
+	}
+	return result;
 }
 
 std::optional<SecondarySkill> factionSkill(const JsonNode & resolvedRules, FactionID faction)

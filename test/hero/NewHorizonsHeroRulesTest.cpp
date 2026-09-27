@@ -91,10 +91,44 @@ TEST(NewHorizonsHeroRulesTest, ExplicitProgressionVersionKeepsOldAndNewSnapshots
 	EXPECT_EQ(parsePrimaryProfile(newSnapshot["profile"]).baseAtLevel(1), (std::array<int64_t, 4>{30, 45, 10, 15}));
 	EXPECT_EQ(parsePrimaryProfile(newSnapshot["profile"]).baseAtLevel(2), (std::array<int64_t, 4>{36, 52, 12, 18}));
 	profile["progressionVersion"].Integer() = 3;
+	profile["growth"].Vector()[1].Integer() = 9;
+	ASSERT_NO_THROW(validateHeroRules(rules, true));
+	EXPECT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "twenty-point primary profiles"));
+	const auto canonicalSnapshot = resolveHeroRules(rules, HeroClassID(0));
+	EXPECT_NO_THROW(validateResolvedHeroRules(canonicalSnapshot));
+	EXPECT_EQ(parsePrimaryProfile(canonicalSnapshot["profile"]).baseAtLevel(2), (std::array<int64_t, 4>{36, 54, 12, 18}));
+	profile["progressionVersion"].Integer() = 4;
 	EXPECT_FALSE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "unsupported primary progression"));
 	EXPECT_THROW(validateHeroRules(rules, true), std::runtime_error);
 	EXPECT_EQ(newSnapshot["profile"]["progressionVersion"].Integer(), 2);
 	EXPECT_TRUE(oldSnapshot["profile"]["progressionVersion"].isNull());
+}
+
+TEST(NewHorizonsHeroRulesTest, VersionThreeUsesOnlyOwnedConfiguredSkillGrowthChances)
+{
+	auto rules = testHeroRules();
+	auto & profile = rules["classProfiles"][HeroClassID::encode(0)];
+	profile["progressionVersion"].Integer() = 3;
+	profile["starting"].Vector().clear();
+	profile["growth"].Vector().clear();
+	for(int value : {30, 45, 10, 15})
+		profile["starting"].Vector().push_back(JsonNode(value));
+	for(int value : {6, 9, 2, 3})
+		profile["growth"].Vector().push_back(JsonNode(value));
+	for(auto & extra : rules["extraGrowth"].Vector())
+		for(int rank = 0; rank <= 3; ++rank)
+			extra["chances"].Vector()[rank].Integer() = rank * 10;
+	const auto resolved = resolveHeroRules(rules, HeroClassID(0));
+	EXPECT_TRUE(skillGrowthChances(resolved, [](SecondarySkill) { return 0; }).empty());
+	const auto chances = skillGrowthChances(resolved, [](SecondarySkill skill)
+	{
+		return skill == SecondarySkill::OFFENCE ? 2 : 0;
+	});
+	ASSERT_EQ(chances.size(), 1);
+	EXPECT_EQ(chances.front().skill, SecondarySkill::OFFENCE);
+	EXPECT_EQ(chances.front().attribute, PrimarySkill::ATTACK);
+	EXPECT_EQ(chances.front().chancePercent, 20);
+	EXPECT_THROW(skillGrowthChances(resolved, [](SecondarySkill) { return 4; }), std::runtime_error);
 }
 
 TEST(NewHorizonsHeroRulesTest, OldResolvedSnapshotWithoutMigrationTableRemainsLoadable)
@@ -128,25 +162,25 @@ TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasExactClassProfilesAndSkillO
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "actual unactivated canonical hero data"));
 	ASSERT_NO_THROW(validateHeroRules(rules, true));
-	const std::map<std::string, std::pair<std::array<int, 4>, std::array<int, 4>>> expectedProfiles = {
-		{"core:knight", {{30, 45, 10, 15}, {6, 7, 2, 3}}},
-		{"core:cleric", {{10, 15, 30, 45}, {2, 3, 6, 7}}},
-		{"core:ranger", {{35, 35, 15, 15}, {6, 6, 3, 3}}},
-		{"core:druid", {{5, 10, 30, 55}, {1, 2, 6, 9}}},
-		{"core:alchemist", {{30, 20, 20, 30}, {5, 4, 4, 5}}},
-		{"core:wizard", {{5, 5, 45, 45}, {1, 1, 8, 8}}},
-		{"core:demoniac", {{55, 20, 20, 5}, {9, 4, 4, 1}}},
-		{"core:heretic", {{20, 5, 50, 25}, {4, 1, 8, 5}}},
-		{"core:deathknight", {{45, 20, 30, 5}, {7, 4, 6, 1}}},
-		{"core:necromancer", {{5, 20, 50, 25}, {1, 4, 8, 5}}},
-		{"core:overlord", {{50, 25, 20, 5}, {8, 5, 4, 1}}},
-		{"core:warlock", {{15, 5, 60, 20}, {3, 1, 10, 4}}},
-		{"core:barbarian", {{55, 35, 5, 5}, {9, 7, 1, 1}}},
-		{"core:battlemage", {{45, 5, 30, 20}, {7, 1, 6, 4}}},
-		{"core:beastmaster", {{35, 55, 5, 5}, {7, 9, 1, 1}}},
-		{"core:witch", {{5, 15, 20, 60}, {1, 3, 4, 10}}},
-		{"core:planeswalker", {{35, 20, 30, 15}, {6, 4, 5, 3}}},
-		{"core:elementalist", {{5, 5, 60, 30}, {1, 1, 10, 6}}}
+	const std::map<std::string, std::array<int, 4>> expectedProfiles = {
+		{"core:knight", {30, 45, 10, 15}},
+		{"core:cleric", {10, 15, 30, 45}},
+		{"core:ranger", {35, 35, 15, 15}},
+		{"core:druid", {5, 10, 30, 55}},
+		{"core:alchemist", {30, 20, 20, 30}},
+		{"core:wizard", {5, 5, 45, 45}},
+		{"core:demoniac", {55, 20, 20, 5}},
+		{"core:heretic", {20, 5, 50, 25}},
+		{"core:deathknight", {45, 20, 30, 5}},
+		{"core:necromancer", {5, 20, 50, 25}},
+		{"core:overlord", {50, 25, 20, 5}},
+		{"core:warlock", {15, 5, 60, 20}},
+		{"core:barbarian", {55, 35, 5, 5}},
+		{"core:battlemage", {45, 5, 30, 20}},
+		{"core:beastmaster", {35, 55, 5, 5}},
+		{"core:witch", {5, 15, 20, 60}},
+		{"core:planeswalker", {35, 20, 30, 15}},
+		{"core:elementalist", {5, 5, 60, 30}}
 	};
 	EXPECT_EQ(rules["classProfiles"].Struct().size(), expectedProfiles.size());
 	EXPECT_EQ(rules["powerDivisor"].Integer(), 10);
@@ -155,9 +189,10 @@ TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasExactClassProfilesAndSkillO
 	{
 		SCOPED_TRACE(key);
 		const auto profile = parsePrimaryProfile(rules["classProfiles"][key]);
-		EXPECT_EQ(profile.progressionVersion, PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
-		EXPECT_EQ(profile.starting, expected.first);
-		EXPECT_EQ(profile.growth, expected.second);
+		EXPECT_EQ(profile.progressionVersion, PRIMARY_PROFILE_VERSION_TWENTY_POINT);
+		EXPECT_EQ(profile.starting, expected);
+		for(size_t attribute = 0; attribute < profile.growth.size(); ++attribute)
+			EXPECT_EQ(profile.growth[attribute], expected[attribute] / 5);
 	}
 	ASSERT_EQ(rules["skillOfferWeights"].Struct().size(), expectedProfiles.size());
 	for(const auto & [key, weights] : rules["skillOfferWeights"].Struct())
@@ -166,15 +201,16 @@ TEST(NewHorizonsHeroRulesTest, ActualCanonicalDataHasExactClassProfilesAndSkillO
 		EXPECT_EQ(weights.Struct().size(), HERO_SKILL_OFFER_COUNT);
 	}
 	const auto knight = parsePrimaryProfile(rules["classProfiles"]["core:knight"]);
-	EXPECT_EQ(knight.baseAtLevel(20), (std::array<int64_t, 4>{144, 178, 48, 72}));
+	EXPECT_EQ(knight.baseAtLevel(20), (std::array<int64_t, 4>{144, 216, 48, 72}));
 	const auto resolved = resolveHeroRules(rules, HeroClassID(HeroClassID::decode("core:knight")));
 	ASSERT_NO_THROW(validateResolvedHeroRules(resolved));
 	ASSERT_TRUE(resolved["skillOfferWeights"].isStruct());
 	EXPECT_EQ(resolved["skillOfferWeights"].Struct().size(), HERO_SKILL_OFFER_COUNT);
 	EXPECT_TRUE(skillGrowthChances(resolved, [](SecondarySkill) { return 0; }).empty());
-	// The canonical data keeps extraGrowth empty.  The accessor remains for
-	// loading old snapshots but never exposes skill-based primary rolls.
-	EXPECT_TRUE(skillGrowthChances(resolved, [](SecondarySkill) { return 3; }).empty());
+	const auto expertChances = skillGrowthChances(resolved, [](SecondarySkill) { return 3; });
+	ASSERT_EQ(expertChances.size(), 5);
+	for(const auto & chance : expertChances)
+		EXPECT_EQ(chance.chancePercent, 30);
 	const SecondarySkill offense(SecondarySkill::decode("new-horizons:offense"));
 	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
 	EXPECT_TRUE(usesSkillOfferWeights(resolved));

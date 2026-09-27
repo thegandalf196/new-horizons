@@ -10,25 +10,25 @@ import shutil
 
 ROOT = Path(__file__).resolve().parents[2]
 
-CANONICAL_PROFILES = {
-    'core:knight': ([30, 45, 10, 15], [6, 7, 2, 3]),
-    'core:cleric': ([10, 15, 30, 45], [2, 3, 6, 7]),
-    'core:ranger': ([35, 35, 15, 15], [6, 6, 3, 3]),
-    'core:druid': ([5, 10, 30, 55], [1, 2, 6, 9]),
-    'core:alchemist': ([30, 20, 20, 30], [5, 4, 4, 5]),
-    'core:wizard': ([5, 5, 45, 45], [1, 1, 8, 8]),
-    'core:demoniac': ([55, 20, 20, 5], [9, 4, 4, 1]),
-    'core:heretic': ([20, 5, 50, 25], [4, 1, 8, 5]),
-    'core:deathknight': ([45, 20, 30, 5], [7, 4, 6, 1]),
-    'core:necromancer': ([5, 20, 50, 25], [1, 4, 8, 5]),
-    'core:overlord': ([50, 25, 20, 5], [8, 5, 4, 1]),
-    'core:warlock': ([15, 5, 60, 20], [3, 1, 10, 4]),
-    'core:barbarian': ([55, 35, 5, 5], [9, 7, 1, 1]),
-    'core:battlemage': ([45, 5, 30, 20], [7, 1, 6, 4]),
-    'core:beastmaster': ([35, 55, 5, 5], [7, 9, 1, 1]),
-    'core:witch': ([5, 15, 20, 60], [1, 3, 4, 10]),
-    'core:planeswalker': ([35, 20, 30, 15], [6, 4, 5, 3]),
-    'core:elementalist': ([5, 5, 60, 30], [1, 1, 10, 6]),
+CANONICAL_STARTS = {
+    'core:knight': [30, 45, 10, 15],
+    'core:cleric': [10, 15, 30, 45],
+    'core:ranger': [35, 35, 15, 15],
+    'core:druid': [5, 10, 30, 55],
+    'core:alchemist': [30, 20, 20, 30],
+    'core:wizard': [5, 5, 45, 45],
+    'core:demoniac': [55, 20, 20, 5],
+    'core:heretic': [20, 5, 50, 25],
+    'core:deathknight': [45, 20, 30, 5],
+    'core:necromancer': [5, 20, 50, 25],
+    'core:overlord': [50, 25, 20, 5],
+    'core:warlock': [15, 5, 60, 20],
+    'core:barbarian': [55, 35, 5, 5],
+    'core:battlemage': [45, 5, 30, 20],
+    'core:beastmaster': [35, 55, 5, 5],
+    'core:witch': [5, 15, 20, 60],
+    'core:planeswalker': [35, 20, 30, 15],
+    'core:elementalist': [5, 5, 60, 30],
 }
 
 CANONICAL_SKILLS = (
@@ -198,8 +198,9 @@ class HeroDataTest(unittest.TestCase):
     def test_all_core_classes_have_exact_canonical_profiles_and_names(self):
         classes = json.loads((ROOT / 'config/heroClasses.json').read_text())
         self.assertEqual(self.rules['classProfiles'], {
-            class_id: {'progressionVersion': 2, 'starting': starting, 'growth': growth}
-            for class_id, (starting, growth) in CANONICAL_PROFILES.items()
+            class_id: {'progressionVersion': 3, 'starting': starting,
+                       'growth': [value // 5 for value in starting]}
+            for class_id, starting in CANONICAL_STARTS.items()
         })
         # Unchanged names continue to come from HCTRAITS; only the four
         # canonical renames are authored as New Horizons translation
@@ -235,7 +236,7 @@ class HeroDataTest(unittest.TestCase):
                 self.assertEqual(self.rules['skillOfferWeights'][class_id],
                                  dict(zip(CANONICAL_SKILLS, values)))
 
-    def test_retired_skills_are_excluded_and_extra_growth_is_disabled(self):
+    def test_retired_skills_are_excluded_and_only_explicit_skills_grant_growth(self):
         self.assertEqual(set(self.rules['excludedSkills']), {
             'core:airMagic', 'core:earthMagic', 'core:fireMagic', 'core:waterMagic',
             'core:artillery', 'core:ballistics', 'core:firstAid', 'core:eagleEye',
@@ -243,7 +244,12 @@ class HeroDataTest(unittest.TestCase):
             'core:necromancy', 'core:pathfinding', 'core:resistance', 'core:scholar',
             'core:scouting', 'core:sorcery', 'core:tactics', 'core:wisdom',
         })
-        self.assertEqual(self.rules['extraGrowth'], [])
+        self.assertEqual(self.rules['extraGrowth'], [
+            {'skill': 'new-horizons:' + skill, 'primary': primary,
+             'chances': [0, 10, 20, 30]}
+            for skill, primary in [('offense', 0), ('armorer', 1), ('archery', 0),
+                                   ('spellcraft', 2), ('wisdom', 3)]
+        ])
 
     def test_rashka_fresh_roster_has_demonic_gating_and_no_legacy_wisdom(self):
         heroes = json.loads((ROOT / 'config/heroes/inferno.json').read_text())
@@ -286,7 +292,7 @@ class HeroDataTest(unittest.TestCase):
             (root / 'Mods/new-horizons').mkdir(parents=True)
             for name in ('Combat', 'Artifacts', 'Magic', 'CreatureCategories', 'Schools', 'Skills', 'Heroes', 'Capabilities',
                          'Masteries', 'Perks', 'MasteryTexts', 'CreatureCategoryTexts', 'FortTexts', 'MusterTexts',
-                         'HeroClassTexts', 'ConvenienceBonuses'):
+                         'HeroClassTexts', 'CombatTexts', 'ConvenienceBonuses'):
                 shutil.copyfile(ROOT / f'config/newHorizons{name}.json', root / f'config/newHorizons{name}.json')
             shutil.copyfile(ROOT / 'Mods/new-horizons/mod.json', root / 'Mods/new-horizons/mod.json')
             script = root / 'check.cmake'
@@ -330,8 +336,10 @@ class HeroDataTest(unittest.TestCase):
         self.assertTrue(1 <= self.rules['powerDivisor'] <= 1000)
         self.assertTrue(100 <= self.rules['maxPrimary'] <= 1000000)
 
-    def test_extra_growth_is_an_empty_legacy_compatibility_field(self):
-        self.assertEqual(self.rules['extraGrowth'], [])
+    def test_canonical_growth_totals_twenty_and_start_is_five_times_growth(self):
+        for profile in self.rules['classProfiles'].values():
+            self.assertEqual(sum(profile['growth']), 20)
+            self.assertEqual(profile['starting'], [5 * value for value in profile['growth']])
 
 
 if __name__ == '__main__':

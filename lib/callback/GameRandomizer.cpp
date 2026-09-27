@@ -22,6 +22,7 @@
 #include "../entities/artifact/RandomArtifactPool.h"
 #include "../entities/hero/CHeroClass.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsPrimaryGrowth.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "mapObjectConstructors/CObjectClassesHandler.h"
 
@@ -265,11 +266,19 @@ std::array<int, GameConstants::PRIMARY_SKILLS> GameRandomizer::rollPrimarySkills
 	if(!view)
 		return {};
 
-	// New Horizons primary growth is the class vector itself.  Every level,
-	// including levels beyond ten, grants this exact A/D/Spell Power/Knowledge
-	// vector; the old low/high probability rows and skill-related extra rolls
-	// are legacy mechanics and must not alter it.
-	return view->profile.growth;
+	if(view->extraGrowth.empty())
+		return view->profile.growth;
+	if(!heroSkillSeed.count(hero->getHeroTypeID()))
+		heroSkillSeed.try_emplace(hero->getHeroTypeID(), getDefault().nextInt());
+	auto & generator = heroSkillSeed.at(hero->getHeroTypeID()).seed;
+	std::vector<newHorizonsHeroes::ExtraPrimaryRoll> opportunities;
+	std::vector<int> draws;
+	for(const auto & chance : view->extraGrowth)
+	{
+		opportunities.push_back({chance.attribute, chance.chancePercent});
+		draws.push_back(generator.nextInt(0, 99));
+	}
+	return newHorizonsHeroes::calculatePrimaryGrowth(view->profile, opportunities, draws);
 }
 
 PrimarySkill GameRandomizer::rollPrimarySkillForLevelup(const CGHeroInstance * hero)

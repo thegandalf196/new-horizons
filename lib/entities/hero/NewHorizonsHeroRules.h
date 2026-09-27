@@ -32,8 +32,8 @@ struct DLL_LINKAGE SkillGrowthChance
 };
 
 /// Read-only live-hero presentation. No secondary attributes or masteries are
-/// fabricated here. Primary growth is the fixed class vector; extraGrowth is
-/// retained only as an empty compatibility field.
+/// fabricated here. Primary growth is the fixed class vector; version 3 also
+/// exposes the owned skills' independent bonus opportunities.
 struct DLL_LINKAGE PrimaryGrowthView
 {
 	PrimaryProfile profile;
@@ -67,8 +67,7 @@ DLL_LINKAGE void validateHeroRules(const JsonNode & rules, bool requireAllClasse
 DLL_LINKAGE void validateResolvedHeroRules(const JsonNode & rules);
 DLL_LINKAGE JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass);
 /// Legacy compatibility accessor. New Horizons primary growth is deterministic
-/// and this always returns an empty list; old extraGrowth rows remain accepted
-/// only so saved rules can be loaded without changing their shape.
+/// for older profiles. Version 3 returns the configured owned-skill chances.
 DLL_LINKAGE std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,
 	const std::function<int(SecondarySkill)> & rank);
 

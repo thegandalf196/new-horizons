@@ -55,6 +55,13 @@ void validateProfile(const PrimaryProfile & profile)
 		maximumGrowth = PRIMARY_PROFILE_V2_GROWTH_PER_LEVEL;
 		expectedGrowth = PRIMARY_PROFILE_V2_GROWTH_PER_LEVEL;
 		break;
+	case PRIMARY_PROFILE_VERSION_TWENTY_POINT:
+		for(size_t i = 0; i < profile.starting.size(); ++i)
+			if(static_cast<int64_t>(profile.starting[i]) != static_cast<int64_t>(profile.growth[i]) * 5)
+				throw std::runtime_error("Version 3 primary starting ratings must equal five times growth");
+		maximumGrowth = PRIMARY_PROFILE_V3_GROWTH_PER_LEVEL;
+		expectedGrowth = PRIMARY_PROFILE_V3_GROWTH_PER_LEVEL;
+		break;
 	default:
 		throw std::runtime_error("Unsupported primary profile progression version");
 	}
@@ -82,7 +89,8 @@ PrimaryProfile parsePrimaryProfile(const JsonNode & data)
 		if(!version.isNumber() || !std::isfinite(version.Float()) || std::floor(version.Float()) != version.Float())
 			throw std::runtime_error("Primary profile progressionVersion must be an integer");
 		if(version.Float() != PRIMARY_PROFILE_VERSION_LEGACY
-			&& version.Float() != PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH)
+			&& version.Float() != PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH
+			&& version.Float() != PRIMARY_PROFILE_VERSION_TWENTY_POINT)
 			throw std::runtime_error("Unsupported primary profile progression version");
 		// The float has already been matched against the only supported small
 		// integer values, so this conversion cannot overflow.
@@ -91,7 +99,8 @@ PrimaryProfile parsePrimaryProfile(const JsonNode & data)
 
 	result.starting = readRatings(data["starting"], 0, std::numeric_limits<int>::max());
 	const auto maximumGrowth = result.progressionVersion == PRIMARY_PROFILE_VERSION_LEGACY
-		? PRIMARY_GROWTH_PER_LEVEL : PRIMARY_PROFILE_V2_GROWTH_PER_LEVEL;
+		? PRIMARY_GROWTH_PER_LEVEL : result.progressionVersion == PRIMARY_PROFILE_VERSION_TWENTY_POINT
+		? PRIMARY_PROFILE_V3_GROWTH_PER_LEVEL : PRIMARY_PROFILE_V2_GROWTH_PER_LEVEL;
 	result.growth = readRatings(data["growth"], 1, maximumGrowth);
 	validateProfile(result);
 	return result;

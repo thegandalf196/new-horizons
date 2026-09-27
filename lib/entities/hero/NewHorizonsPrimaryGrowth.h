@@ -15,16 +15,16 @@
 
 namespace newHorizonsHeroes
 {
-/// Legacy compatibility shape for old callers. New Horizons no longer
-/// evaluates primary-stat chance rows.
+/// One independent skill-based primary-stat bonus opportunity.
 struct DLL_LINKAGE ExtraPrimaryRoll
 {
 	PrimarySkill attribute;
 	int chancePercent = 0;
 };
 
-/// Returns the authored class vector. The opportunity/draw spans are retained
-/// only for source compatibility and are ignored.
+/// Returns the class vector plus independent version-3 bonuses. Each draw is
+/// in [0, 99] and succeeds when below its percentage. Older profiles ignore
+/// opportunities, preserving their fixed-vector interpretation.
 DLL_LINKAGE std::array<int, GameConstants::PRIMARY_SKILLS> calculatePrimaryGrowth(
 	const PrimaryProfile & profile,
 	std::span<const ExtraPrimaryRoll> opportunities,

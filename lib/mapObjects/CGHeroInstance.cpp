@@ -951,10 +951,8 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 		result.base[i] = getBasePrimarySkillValue(PrimarySkill(i));
 		result.modified[i] = getPrimSkillLevel(PrimarySkill(i));
 	}
-	// Primary growth is fully deterministic in New Horizons. Keep the saved
-	// rules available for compatibility, but do not expose obsolete skill-based
-	// probability opportunities as live growth data.
-	result.extraGrowth.clear();
+	result.extraGrowth = newHorizonsHeroes::skillGrowthChances(primaryGrowthRules,
+		[this](SecondarySkill skill) { return getSecSkillLevel(skill); });
 	result.lastGains = lastPrimaryGains;
 	result.powerDivisor = primaryGrowthRules["powerDivisor"].Integer();
 	result.maximumPrimary = primaryGrowthRules["maxPrimary"].Integer();

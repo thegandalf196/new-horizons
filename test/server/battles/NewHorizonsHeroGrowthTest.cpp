@@ -94,6 +94,161 @@ protected:
 	}
 };
 
+class NewHorizonsVersionThreeHeroGrowthTest : public NewHorizonsHeroGrowthTest
+{
+protected:
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsHeroGrowthTest::mapLoaded(map);
+		auto rules = testHeroRules();
+		for(auto & [id, profile] : rules["classProfiles"].Struct())
+		{
+			profile["progressionVersion"].Integer() = newHorizonsHeroes::PRIMARY_PROFILE_VERSION_TWENTY_POINT;
+			profile["starting"].Vector().clear();
+			profile["growth"].Vector().clear();
+			for(int value : {30, 45, 10, 15})
+				profile["starting"].Vector().emplace_back(value);
+			for(int value : {6, 9, 2, 3})
+				profile["growth"].Vector().emplace_back(value);
+		}
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+	}
+};
+
+TEST_F(NewHorizonsVersionThreeHeroGrowthTest, GuaranteedConfiguredSkillBonusesReachLevelupRolls)
+{
+	startGame();
+	attackerSideHero->setSecSkillLevel(SecondarySkill::OFFENCE, 3, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill::ARMORER, 3, ChangeValueMode::ABSOLUTE);
+	const auto view = attackerSideHero->getPrimaryGrowthView();
+	ASSERT_TRUE(view);
+	ASSERT_EQ(view->extraGrowth.size(), 2);
+	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero), (std::array<int, 4>{7, 10, 2, 3}));
+	const auto before = view->base;
+	gameHandler->onAdvInterfaceReady(attackerSideHero->getOwner());
+	attackerSideHero->setExperience(LIBRARY->heroh->reqExp(2), ChangeValueMode::ABSOLUTE);
+	gameHandler->levelUpHero(attackerSideHero);
+	const auto after = attackerSideHero->getPrimaryGrowthView();
+	ASSERT_TRUE(after);
+	const std::array<int, 4> expected{7, 10, 2, 3};
+	EXPECT_EQ(after->lastGains, expected);
+	for(size_t attribute = 0; attribute < expected.size(); ++attribute)
+		EXPECT_EQ(after->base[attribute] - before[attribute], expected[attribute]);
+	attackerSideHero->setSecSkillLevel(SecondarySkill::OFFENCE, 0, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill::ARMORER, 0, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero), (std::array<int, 4>{6, 9, 2, 3}));
+}
+
+class NewHorizonsInstalledSkillGrowthTest : public HeroCommandFixture
+{
+};
+
+TEST_F(NewHorizonsInstalledSkillGrowthTest, ScopedSkillRanksUseInstalledGrowthMappings)
+{
+	const auto rules = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
+	if(!newHorizonsHeroes::usesRules(rules))
+		GTEST_SKIP() << "Requires the activated New Horizons preset";
+
+	startGame();
+	auto * hero = attackerSideHero;
+	ASSERT_NE(hero, nullptr);
+	const auto initialView = hero->getPrimaryGrowthView();
+	ASSERT_TRUE(initialView);
+	ASSERT_EQ(initialView->profile.progressionVersion, newHorizonsHeroes::PRIMARY_PROFILE_VERSION_TWENTY_POINT);
+
+	struct ExpectedSkillGrowth
+	{
+		const char * id;
+		PrimarySkill attribute;
+	};
+	const std::array<ExpectedSkillGrowth, 5> configuredSkills = {{
+		{"new-horizons:offense", PrimarySkill::ATTACK},
+		{"new-horizons:archery", PrimarySkill::ATTACK},
+		{"new-horizons:armorer", PrimarySkill::DEFENSE},
+		{"new-horizons:spellcraft", PrimarySkill::SPELL_POWER},
+		{"new-horizons:wisdom", PrimarySkill::KNOWLEDGE}
+	}};
+	std::array<SecondarySkill, 5> skills;
+	for(size_t index = 0; index < configuredSkills.size(); ++index)
+	{
+		const auto decoded = SecondarySkill::decode(configuredSkills[index].id);
+		ASSERT_GE(decoded, 0) << configuredSkills[index].id;
+		skills[index] = SecondarySkill(decoded);
+		hero->setSecSkillLevel(skills[index], 0, ChangeValueMode::ABSOLUTE);
+	}
+
+	for(size_t index = 0; index < configuredSkills.size(); ++index)
+	{
+		for(int rank = 1; rank <= 3; ++rank)
+		{
+			hero->setSecSkillLevel(skills[index], rank, ChangeValueMode::ABSOLUTE);
+			const auto view = hero->getPrimaryGrowthView();
+			ASSERT_TRUE(view);
+			ASSERT_EQ(view->extraGrowth.size(), 1u) << configuredSkills[index].id << " at rank " << rank;
+			EXPECT_EQ(view->extraGrowth.front().skill, skills[index]);
+			EXPECT_EQ(view->extraGrowth.front().attribute, configuredSkills[index].attribute);
+			EXPECT_EQ(view->extraGrowth.front().chancePercent, rank * 10);
+		}
+		hero->setSecSkillLevel(skills[index], 0, ChangeValueMode::ABSOLUTE);
+	}
+}
+
+TEST_F(NewHorizonsInstalledSkillGrowthTest, ScopedSkillGrowthRandomizerContinuesAcrossSerialization)
+{
+	const auto rules = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
+	if(!newHorizonsHeroes::usesRules(rules))
+		GTEST_SKIP() << "Requires the activated New Horizons preset";
+
+	startGame();
+	auto * hero = attackerSideHero;
+	ASSERT_NE(hero, nullptr);
+	for(const auto * id : {"new-horizons:offense", "new-horizons:archery", "new-horizons:armorer",
+		"new-horizons:spellcraft", "new-horizons:wisdom"})
+	{
+		const auto decoded = SecondarySkill::decode(id);
+		ASSERT_GE(decoded, 0) << id;
+		hero->setSecSkillLevel(SecondarySkill(decoded), 1, ChangeValueMode::ABSOLUTE);
+	}
+
+	const auto view = hero->getPrimaryGrowthView();
+	ASSERT_TRUE(view);
+	ASSERT_EQ(view->profile.progressionVersion, newHorizonsHeroes::PRIMARY_PROFILE_VERSION_TWENTY_POINT);
+	ASSERT_EQ(view->extraGrowth.size(), 5u);
+	const auto fixedGrowth = view->profile.growth;
+	std::array<int, GameConstants::PRIMARY_SKILLS> maximumSkillBonus{};
+	for(const auto & opportunity : view->extraGrowth)
+		++maximumSkillBonus[opportunity.attribute.getNum()];
+	const auto expectWithinGrowthBounds = [&](const auto & gains)
+	{
+		for(int attribute = 0; attribute < GameConstants::PRIMARY_SKILLS; ++attribute)
+		{
+			EXPECT_GE(gains[attribute], fixedGrowth[attribute]);
+			EXPECT_LE(gains[attribute], fixedGrowth[attribute] + maximumSkillBonus[attribute]);
+		}
+	};
+
+	const auto firstRoll = gameHandler->randomizer->rollPrimarySkillsForLevelup(hero);
+	expectWithinGrowthBounds(firstRoll);
+	CMemorySerializer memory;
+	memory.oser & *gameHandler->randomizer;
+	GameRandomizer restored(*gameState());
+	memory.iser & restored;
+
+	bool sawFixedOnlyRoll = firstRoll == fixedGrowth;
+	bool sawBonusRoll = firstRoll != fixedGrowth;
+	for(int roll = 0; roll < 128; ++roll)
+	{
+		const auto expected = gameHandler->randomizer->rollPrimarySkillsForLevelup(hero);
+		const auto actual = restored.rollPrimarySkillsForLevelup(hero);
+		EXPECT_EQ(actual, expected) << "roll " << roll;
+		expectWithinGrowthBounds(expected);
+		sawFixedOnlyRoll |= expected == fixedGrowth;
+		sawBonusRoll |= expected != fixedGrowth;
+	}
+	EXPECT_TRUE(sawFixedOnlyRoll) << "10% skill chances should also preserve failed rolls";
+	EXPECT_TRUE(sawBonusRoll) << "10% skill chances should produce successful rolls";
+}
+
 class NewHorizonsVersionTwoHeroGrowthTest : public NewHorizonsHeroGrowthTest
 {
 protected:
@@ -149,6 +304,9 @@ TEST_P(NewHorizonsCanonicalClassGrowthTest, InstalledProfilesInitializeAllClasse
 		const int percent = hero->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.intelligence") ? 130 : 100;
 		return knowledge * percent / 100;
 	};
+	std::array<int, GameConstants::PRIMARY_SKILLS> maximumSkillBonusPerLevel{};
+	for(const auto & opportunity : canonical["extraGrowth"].Vector())
+		++maximumSkillBonusPerLevel[opportunity["primary"].Integer()];
 	ASSERT_EQ(canonical["classProfiles"].Struct().size(), 18u);
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(PlayerColor(0));
@@ -185,12 +343,21 @@ TEST_P(NewHorizonsCanonicalClassGrowthTest, InstalledProfilesInitializeAllClasse
 		const auto view = hero->getPrimaryGrowthView();
 		ASSERT_TRUE(view);
 		EXPECT_EQ(hero->level, GetParam());
-		EXPECT_EQ(view->profile.progressionVersion, newHorizonsHeroes::PRIMARY_PROFILE_VERSION_STARTING_AND_GROWTH);
+		EXPECT_EQ(view->profile.progressionVersion, newHorizonsHeroes::PRIMARY_PROFILE_VERSION_TWENTY_POINT);
 		EXPECT_EQ(view->profile.starting, expected.starting);
 		EXPECT_EQ(view->profile.growth, expected.growth);
 		const auto expectedBase = expected.baseAtLevel(GetParam());
 		for(int attribute = 0; attribute < GameConstants::PRIMARY_SKILLS; ++attribute)
-			EXPECT_EQ(view->base[attribute], expectedBase[attribute]);
+		{
+			const auto maximumAccumulatedSkillBonus = maximumSkillBonusPerLevel[attribute] * (GetParam() - 1);
+			EXPECT_GE(view->base[attribute], expectedBase[attribute]);
+			EXPECT_LE(view->base[attribute], expectedBase[attribute] + maximumAccumulatedSkillBonus);
+			if(GetParam() > 1)
+			{
+				EXPECT_GE(view->lastGains[attribute], expected.growth[attribute]);
+				EXPECT_LE(view->lastGains[attribute], expected.growth[attribute] + maximumSkillBonusPerLevel[attribute]);
+			}
+		}
 		EXPECT_EQ(hero->manaLimit(), expectedManaLimit(hero));
 		if(classKey == "core:wizard")
 		{
@@ -210,14 +377,20 @@ TEST_P(NewHorizonsCanonicalClassGrowthTest, InstalledProfilesInitializeAllClasse
 			SCOPED_TRACE(hero->getHeroClass()->getJsonKey());
 			const auto before = *hero->getPrimaryGrowthView();
 			const auto manaBefore = hero->getManaAvailable();
+			std::array<int, GameConstants::PRIMARY_SKILLS> maximumSkillBonus{};
+			for(const auto & opportunity : before.extraGrowth)
+				++maximumSkillBonus[opportunity.attribute.getNum()];
 			hero->setExperience(LIBRARY->heroh->reqExp(2), ChangeValueMode::ABSOLUTE);
 			gameHandler->levelUpHero(hero);
 			ASSERT_EQ(hero->level, 2);
 			ASSERT_TRUE(hero->getPrimaryGrowthView());
 			const auto after = *hero->getPrimaryGrowthView();
-			EXPECT_EQ(after.lastGains, before.profile.growth);
 			for(int attribute = 0; attribute < GameConstants::PRIMARY_SKILLS; ++attribute)
-				EXPECT_EQ(after.base[attribute] - before.base[attribute], before.profile.growth[attribute]);
+			{
+				EXPECT_GE(after.lastGains[attribute], before.profile.growth[attribute]);
+				EXPECT_LE(after.lastGains[attribute], before.profile.growth[attribute] + maximumSkillBonus[attribute]);
+				EXPECT_EQ(after.base[attribute] - before.base[attribute], after.lastGains[attribute]);
+			}
 			EXPECT_EQ(hero->getManaAvailable(), manaBefore);
 			EXPECT_EQ(hero->manaLimit(), expectedManaLimit(hero));
 			int answered = 0;

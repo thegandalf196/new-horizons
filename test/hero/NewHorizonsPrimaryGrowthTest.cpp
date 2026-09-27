@@ -14,6 +14,43 @@ using newHorizonsHeroes::ExtraPrimaryRoll;
 using newHorizonsHeroes::PrimaryProfile;
 using newHorizonsHeroes::calculatePrimaryGrowth;
 
+TEST(NewHorizonsPrimaryGrowthTest, CanonicalSkillRollsAreIndependentAndUseStrictPercentageBoundary)
+{
+	const PrimaryProfile profile{{30, 45, 10, 15}, {6, 9, 2, 3},
+		newHorizonsHeroes::PRIMARY_PROFILE_VERSION_TWENTY_POINT};
+	const std::array<ExtraPrimaryRoll, 4> opportunities = {{
+		{PrimarySkill::ATTACK, 10}, {PrimarySkill::ATTACK, 20},
+		{PrimarySkill::DEFENSE, 30}, {PrimarySkill::KNOWLEDGE, 0}
+	}};
+	const std::array<int, 4> draws{9, 19, 30, 0};
+	EXPECT_EQ(calculatePrimaryGrowth(profile, opportunities, draws), (std::array<int, 4>{8, 9, 2, 3}));
+	EXPECT_EQ(calculatePrimaryGrowth(profile, {}, {}), profile.growth);
+	EXPECT_THROW(calculatePrimaryGrowth(profile, opportunities, {}), std::invalid_argument);
+	const std::array<int, 4> invalid{9, 19, 100, 0};
+	EXPECT_THROW(calculatePrimaryGrowth(profile, opportunities, invalid), std::invalid_argument);
+	EXPECT_EQ(profile.growth, (std::array<int, 4>{6, 9, 2, 3}));
+}
+
+TEST(NewHorizonsPrimaryGrowthTest, EveryPercentileHasTheExpectedCanonicalOutcome)
+{
+	const PrimaryProfile profile{{30, 45, 10, 15}, {6, 9, 2, 3},
+		newHorizonsHeroes::PRIMARY_PROFILE_VERSION_TWENTY_POINT};
+	for(int chance : {0, 10, 20, 30, 100})
+	{
+		const std::array<ExtraPrimaryRoll, 1> opportunities{{{PrimarySkill::ATTACK, chance}}};
+		int successes = 0;
+		for(int percentile = 0; percentile < 100; ++percentile)
+		{
+			const std::array<int, 1> draws{percentile};
+			const auto gains = calculatePrimaryGrowth(profile, opportunities, draws);
+			successes += gains[0] - profile.growth[0];
+			for(size_t attribute = 1; attribute < gains.size(); ++attribute)
+				EXPECT_EQ(gains[attribute], profile.growth[attribute]);
+		}
+		EXPECT_EQ(successes, chance);
+	}
+}
+
 TEST(NewHorizonsPrimaryGrowthTest, NoSkillOpportunityLeavesDeclaredTenPointGrowth)
 {
 	const PrimaryProfile profile{{15, 20, 5, 10}, {4, 4, 1, 1}};

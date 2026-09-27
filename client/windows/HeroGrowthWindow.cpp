@@ -245,9 +245,20 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	auto & perkText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::PERKS)];
 	if(growth)
 	{
-		growthText = "Primary growth is deterministic.\n"
-			"Every level grants the class vector shown above: no skill-based extra points "
-			"and no level-based probability transition.";
+		growthText = "Every level grants the fixed class vector shown above. There is no level-based probability transition.";
+		if(growth->profile.progressionVersion == newHorizonsHeroes::PRIMARY_PROFILE_VERSION_TWENTY_POINT)
+		{
+			growthText += "\nLearned skills can independently grant additional primary points on each level-up.";
+			const std::array<std::string, 4> attributeNames{"Attack", "Defense", "Spell Power", "Knowledge"};
+			for(const auto & opportunity : growth->extraGrowth)
+				growthText += "\n" + opportunity.skill.toEntity(LIBRARY)->getNameTranslated()
+					+ ": " + std::to_string(opportunity.chancePercent) + "% chance of +1 "
+					+ attributeNames.at(static_cast<size_t>(opportunity.attribute)) + ".";
+			if(growth->extraGrowth.empty())
+				growthText += "\nNo skill-based bonus rolls are currently available to this hero.";
+		}
+		else
+			growthText += " This saved growth profile has no skill-based extra points.";
 	}
 	if(leadership)
 	{
