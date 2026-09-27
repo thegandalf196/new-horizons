@@ -6,6 +6,7 @@
 
 #include "HeroCommand.h"
 #include "../bonuses/IBonusBearer.h"
+#include "../bonuses/BonusList.h"
 #include "../bonuses/BonusSelector.h"
 
 namespace newHorizonsOffense
