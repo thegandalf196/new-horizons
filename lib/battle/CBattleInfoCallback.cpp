@@ -387,6 +387,7 @@ int CBattleInfoCallback::battleFortuneSpeed(const battle::Unit * unit) const
 bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const
 {
 	if(!unit || unit->isTimeStopped() || reason == BattleUnitTurnReason::ACTION_REJECTED
+		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
 		|| reason == BattleUnitTurnReason::HERO_SPELLCAST || reason == BattleUnitTurnReason::UNIT_SPELLCAST)
 		return false;
 	if(reason != BattleUnitTurnReason::HERO_COMMAND)

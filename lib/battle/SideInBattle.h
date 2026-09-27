@@ -136,6 +136,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// remain outside this ledger; legacy counters above are retained for history
 	// and migration only.
 	HeroActionAllowanceState heroActionAllowances;
+	// Master Gate grants one free Gate opening per side and combat.
+	bool masterGateUsed = false;
 
 	bool hasChainGateState() const
 	{
@@ -159,6 +161,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES)
 			&& heroActionAllowances != HeroActionAllowanceState{})
 			throw std::runtime_error("Cannot discard Hero Action allowance battle state");
+		if(h.saving && masterGateUsed && !h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_GATE))
+			throw std::runtime_error("Cannot discard Master Gate battle state");
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
 			h & sylvanLuck;
 		else if(!h.saving)
@@ -320,6 +324,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & metamagicSpellBufferUsed;
 		else if(!h.saving)
 			metamagicSpellBufferUsed = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_GATE))
+			h & masterGateUsed;
+		else if(!h.saving)
+			masterGateUsed = false;
 	}
 
 	void clearMetamagicSequence()

@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: Heroes III-style New Horizons Expert perk icon, square high-resolution master for reduction to 44x44 and 32x32
+Primary request: Create an original icon for the perk “Master Gate,” whose first infernal gate in a battle opens without consuming the creature’s normal activation.
+Subject: One tightly integrated miniature fantasy still life: a heavy horned black-iron infernal portal arch stands open with controlled orange flame inside; crossing its foreground is an ornate obsidian-and-brass master key turning the gate mechanism, while a compact flame-lit steel sword remains visibly raised and ready beside it. The key and still-ready sword should communicate “mastered gate, action still available” without symbols or text.
+Scene/backdrop: dark scorched oxblood leather and smoky umber, minimal background detail.
+Style/medium: late-1990s Western PC fantasy illustration, miniature modeled fantasy still-life painting, richly dimensional physical materials, painterly but pre-rendered character.
+Composition/framing: portal, key, and ready sword form one bold triangular silhouette and fill most of the square with a narrow safe inset; no clipping; prioritize readability after downsampling.
+Lighting/mood: theatrical chiaroscuro, hot orange light from the portal on one side, deep shadow on the other, small steel and brass highlights.
+Color palette: blackened iron, oxblood, brass, ember orange, restrained crimson; saturated medieval colors below neon.
+Materials/textures: worn iron, polished brass, chipped obsidian, leather, controlled flame.
+Constraints: no words, letters, numbers, runes, UI chrome, ornamental border, characters, faces, logos, watermark, flat vector shapes, cartoon outlines, intentional pixel art, dithering, excessive particles, neon bloom, or modern glossy mobile-game aesthetic. Major shapes must remain identifiable at 44x44 and 32x32.

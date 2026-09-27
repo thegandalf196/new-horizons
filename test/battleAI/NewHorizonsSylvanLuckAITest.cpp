@@ -101,6 +101,36 @@ TEST_F(NewHorizonsSylvanLuckAITest, CertainStrikeCommitsRecoveryAndSharedCascade
 	EXPECT_TRUE(model->getSylvanLuckState(BattleSide::ATTACKER).cascadingPending);
 }
 
+TEST_F(NewHorizonsSylvanLuckAITest, MasterGateContinuationPreservesProjectedActivationState)
+{
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 10);
+	source->addNewBonus(std::make_shared<Bonus>(BonusDuration::STACK_GETS_TURN,
+		BonusType::STACKS_DEFENSE, BonusSource::OTHER, 3, BonusSourceID()));
+
+	auto environment = std::make_shared<SylvanEnvironment>(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle model(environment.get(), callback);
+	SylvanLuckState fortune;
+	fortune.forestsFavor = true;
+	fortune.positiveLuckUnits.insert(source->unitId());
+	fortune.speedUnits.insert(source->unitId());
+	model.setSylvanLuckState(BattleSide::ATTACKER, fortune);
+	auto projected = model.getForUpdate(source->unitId());
+	projected->defending = true;
+	projected->defensiveStanceMeleeBonus = 2;
+	ASSERT_FALSE(projected->getAllBonuses(Bonus::UntilGetsTurn)->empty());
+
+	model.nextTurn(source->unitId(), BattleUnitTurnReason::MASTER_GATE_CONTINUATION);
+
+	EXPECT_FALSE(projected->getAllBonuses(Bonus::UntilGetsTurn)->empty());
+	EXPECT_TRUE(projected->defending);
+	EXPECT_EQ(projected->defensiveStanceMeleeBonus, 2);
+	EXPECT_TRUE(model.getSylvanLuckState(BattleSide::ATTACKER).speedUnits.contains(source->unitId()));
+}
+
 TEST_F(NewHorizonsSylvanLuckAITest, PerfectMomentProjectsFirstShotOnlyAndCommitsUseOnlyToSelectedModel)
 {
 	ASSERT_NO_FATAL_FAILURE(startGame());

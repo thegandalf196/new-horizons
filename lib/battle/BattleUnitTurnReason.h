@@ -25,5 +25,8 @@ enum class BattleUnitTurnReason : int8_t
 	HERO_COMMAND,
 	/// Server rejected a submitted action and is returning UI control to the
 	/// already-active unit. This is not a new activation and has no lifecycle.
-	ACTION_REJECTED
+	ACTION_REJECTED,
+	/// The first Master Gate continues the same creature activation after Gate.
+	/// This does not begin a new activation or expire activation-scoped state.
+	MASTER_GATE_CONTINUATION
 };

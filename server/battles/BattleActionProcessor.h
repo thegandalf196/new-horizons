@@ -144,7 +144,8 @@ class BattleActionProcessor : boost::noncopyable
 	bool doHealAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 
 	bool dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba);
-	bool makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction & ba);
+	bool makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction & ba,
+		bool * masterGateActivationContinuationOut = nullptr);
 	void removeBonuses(const CBattleInfoCallback & battle, const battle::Unit * stack, BonusList bonuses);
 
 public:
@@ -154,5 +155,5 @@ public:
 
 	bool makeAutomaticBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player, const BattleAction & ba,
-		BattleAction * effectiveActionOut = nullptr);
+		BattleAction * effectiveActionOut = nullptr, bool * masterGateActivationContinuationOut = nullptr);
 };

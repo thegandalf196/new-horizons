@@ -1,10 +1,10 @@
 # New Horizons UI and asset status register
 
-Last audited: 2026-09-26
+Last audited: 2026-09-27
 
 This is the maintained UI/art status index for the current New Horizons working tree. It records live bindings and remaining visual/UI work. It does not replace gameplay specs, source configs, runtime manifests, or acceptance records. The row-level index is [NH_UI_ASSET_INVENTORY.csv](NH_UI_ASSET_INVENTORY.csv).
 
-The audit used canonical registries and current source bindings rather than counting files. It covers 70 active combat-school spells across the six New Horizons schools plus the five Neutral Adventure Spells, all 31 registered secondary skills, all 310 perk definitions (64 active and 246 planned), all eight Order bindings, and the scoped hero, spellbook, convenience, creature-info, and ranked-recruitment UI surfaces below. Active means enabled in source configuration, not necessarily promoted to the playable build. The inactive Clone roster entry is excluded. The unregistered Magic Missile and Spell Lock definitions are noted separately as non-live.
+The audit used canonical registries and current source bindings rather than counting files. It covers 70 active combat-school spells across the six New Horizons schools plus the five Neutral Adventure Spells, all 31 registered secondary skills, all 310 perk definitions (65 active and 245 planned), all eight Order bindings, and the scoped hero, spellbook, convenience, creature-info, and ranked-recruitment UI surfaces below. Active means enabled in source configuration, not necessarily promoted to the playable build. The inactive Clone roster entry is excluded. The unregistered Magic Missile and Spell Lock definitions are noted separately as non-live.
 
 This is a binding inventory, not a full visual audit or a product completion claim. No game was launched and no GUI review was performed for this register. A resource path, generated manifest, native-size file, or implemented code path does not by itself establish final art or accepted UI.
 
@@ -95,7 +95,7 @@ not the creature panel's rendered appearance; GUI acceptance remains pending.
 The hero Movement/Leadership replacement integration passed the Linux client
 build, the focused hero-attribute binding/dimension guard, two master/export
 provenance tests, and independent review. The broader level-up/art audit still
-now passes its active-perk completeness gate: all 64 active perk IDs have named,
+now passes its active-perk completeness gate: all 65 active perk IDs have named,
 unique normal art and complete four-state descriptors. These
 hero replacement assets remain provisional pending in-game visual review.
 Source `359c0b509` was rebuilt, frozen and promoted as snapshot

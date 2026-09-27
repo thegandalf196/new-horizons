@@ -345,7 +345,9 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 
 	const auto activeStackID = battle->getActiveStackID();
 	BattleAction effectiveAction = ba;
-	bool result = actionsProcessor->makePlayerBattleAction(*battle, player, ba, &effectiveAction);
+	bool masterGateActivationContinuation = false;
+	bool result = actionsProcessor->makePlayerBattleAction(*battle, player, ba, &effectiveAction,
+		&masterGateActivationContinuation);
 	if(!result)
 	{
 		// A rejected action never crossed the authoritative action boundary. In
@@ -369,9 +371,10 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 		}
 		return false;
 	}
-	expireStackActivationBonuses(battleID, effectiveAction);
+	if(!masterGateActivationContinuation)
+		expireStackActivationBonuses(battleID, effectiveAction);
 	if (gameHandler->gameState().getBattle(battleID) != nullptr && !resultProcessor->battleIsEnding(*battle))
-		flowProcessor->onActionMade(*battle, effectiveAction);
+		flowProcessor->onActionMade(*battle, effectiveAction, masterGateActivationContinuation);
 	return result;
 }
 

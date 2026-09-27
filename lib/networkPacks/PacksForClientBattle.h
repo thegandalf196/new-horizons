@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 
 #include "NetPacksBase.h"
 #include "BattleChanges.h"
@@ -72,6 +73,8 @@ struct DLL_LINKAGE BattleDemonicGatingStateChanged : public CPackForClient
 	std::vector<SideInBattle::PendingDemonicGate> pending;
 	std::vector<SideInBattle::GatedDemonicStack> gated;
 	bool chainGateArmed = false;
+	bool masterGateUsed = false;
+	std::optional<uint32_t> masterGateContinuationUnitId;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -83,6 +86,9 @@ struct DLL_LINKAGE BattleDemonicGatingStateChanged : public CPackForClient
 				return gate.chainGateAccelerated;
 			})))
 			throw std::runtime_error("Cannot discard Chain Gate battle state update");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_GATE)
+			&& (masterGateUsed || masterGateContinuationUnitId))
+			throw std::runtime_error("Cannot discard Master Gate battle state update");
 		h & battleID;
 		h & side;
 		h & reserve;
@@ -92,6 +98,16 @@ struct DLL_LINKAGE BattleDemonicGatingStateChanged : public CPackForClient
 			h & chainGateArmed;
 		else if(!h.saving)
 			chainGateArmed = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_GATE))
+		{
+			h & masterGateUsed;
+			h & masterGateContinuationUnitId;
+		}
+		else if(!h.saving)
+		{
+			masterGateUsed = false;
+			masterGateContinuationUnitId.reset();
+		}
 	}
 };
 

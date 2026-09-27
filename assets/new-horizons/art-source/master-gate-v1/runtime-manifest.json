@@ -1,0 +1,14 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_master_gate"
+  ],
+  "files": {
+    "NH_perk_master_gate_normal.png": "ebb2cabe5d012f6fbc6ef75194c00b121440f4ec867c7634d075fc0815dced1d",
+    "NH_perk_master_gate_pressed.png": "66c00bf413b24409888cbe44feddf9f0db1ff13792bc65cb2348f2f5d2022f76",
+    "NH_perk_master_gate_disabled.png": "bdb837fea1f52b7b95340f2381e59853e28980db1178130e454781a1030d7af5",
+    "NH_perk_master_gate_highlighted.png": "9658cd58797ca1c4e1fb98bd5d770975212d38b1623ee1042f128d0b416eea0a",
+    "NH_perk_master_gate.json": "65771e7a5c0fb69ed647a7c6afd4ed283239c6b2ad4202ed61ed6277df5be4c2"
+  }
+}

@@ -32,6 +32,7 @@ ACTIVE_PERKS = {
     "new-horizons:demonicGating.infernalBeacon",
     "new-horizons:demonicGating.chainGate",
     "new-horizons:demonicGating.reserveDiscipline",
+    "new-horizons:demonicGating.masterGate",
     "new-horizons:demonicGating.endlessLegion",
     "new-horizons:offense.shockAssault",
     "new-horizons:offense.executioner",

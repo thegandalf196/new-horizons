@@ -21,6 +21,8 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 
+#include <tuple>
+
 namespace
 {
 class NewHorizonsDemonicGatingTest : public BattleTestFixture
@@ -45,10 +47,13 @@ protected:
 	BattleHex legalGateHex(const battle::Unit * source) const
 	{
 		const auto accessibility = battle()->getAccessibility();
+		const auto & pendingGates = battle()->getSide(source->unitSide()).pendingDemonicGates;
 		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 		{
 			BattleHex candidate(index);
-			if(candidate.isAvailable() && BattleHex::getDistance(source->getPosition(), candidate) <= 3
+			if(candidate.isAvailable() && candidate != source->getPosition()
+				&& BattleHex::getDistance(source->getPosition(), candidate) <= 3
+				&& std::ranges::none_of(pendingGates, [&](const auto & gate) { return gate.position == candidate; })
 				&& accessibility.accessible(candidate, false, source->unitSide()))
 				return candidate;
 		}
@@ -139,6 +144,44 @@ protected:
 		ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:demonicGating", perkId));
 	}
 
+	void grantMasterGate(bool mobile = false)
+	{
+		const auto skill = SecondarySkill(SecondarySkill::decode("new-horizons:demonicGating"));
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+		state.selected.clear();
+		state.select("new-horizons:demonicGating", "new-horizons:demonicGating.reinforcedGate", MasteryLevel::EXPERT);
+		if(mobile)
+			state.select("new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate", MasteryLevel::ADVANCED);
+		else
+			state.select("new-horizons:demonicGating", "new-horizons:demonicGating.reserveDiscipline", MasteryLevel::EXPERT);
+		state.select("new-horizons:demonicGating", "new-horizons:demonicGating.masterGate", MasteryLevel::EXPERT);
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.masterGate"));
+		ASSERT_EQ(attackerSideHero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate"), mobile);
+	}
+
+	void addUntilActivationBonus(const battle::Unit * unit)
+	{
+		Bonus bonus(BonusDuration::STACK_ACTIVATION, BonusType::STACKS_SPEED,
+			BonusSource::OTHER, 1, BonusSourceID());
+		SetStackEffect effect;
+		effect.battleID = BattleID(0);
+		effect.toAdd.emplace_back(unit->unitId(), std::vector<Bonus>{bonus});
+		gameHandler->sendAndApply(effect);
+	}
+
+	void addUntilGetsTurnBonus(const battle::Unit * unit)
+	{
+		Bonus bonus(BonusDuration::STACK_GETS_TURN, BonusType::STACKS_DEFENSE,
+			BonusSource::OTHER, 1, BonusSourceID());
+		SetStackEffect effect;
+		effect.battleID = BattleID(0);
+		effect.toAdd.emplace_back(unit->unitId(), std::vector<Bonus>{bonus});
+		gameHandler->sendAndApply(effect);
+	}
+
 	void grantChainGate(bool swift = false)
 	{
 		grantGatingPerk("new-horizons:demonicGating.chainGate", MasteryLevel::ADVANCED);
@@ -198,6 +241,36 @@ protected:
 					|| !battle()->battleGetAllObstaclesOnPos(gate, false).empty())
 					continue;
 				return {movement, gate};
+			}
+		}
+		return {};
+	}
+
+	std::tuple<BattleHex, BattleHex, BattleHex> mobileMoveGateAndEarlyStop(const battle::Unit * source,
+		int movementLimit) const
+	{
+		const auto movementAccessibility = battle()->getAccessibility(source);
+		const auto gateAccessibility = battle()->getAccessibility();
+		for(int moveIndex = 0; moveIndex < GameConstants::BFIELD_SIZE; ++moveIndex)
+		{
+			const BattleHex movement(moveIndex);
+			if(!movement.isAvailable() || !movementAccessibility.accessible(movement, source))
+				continue;
+			const auto [path, distance] = battle()->getPath(source->getPosition(), movement, source);
+			if(path.size() < 2 || distance < 2 || distance > movementLimit)
+				continue;
+			const BattleHex stoppingHex = path.back(); // getPath stores destination first, then predecessor tiles
+			for(int gateIndex = 0; gateIndex < GameConstants::BFIELD_SIZE; ++gateIndex)
+			{
+				const BattleHex gate(gateIndex);
+				if(!gate.isAvailable() || gate == movement || gate == source->getPosition()
+					|| BattleHex::getDistance(movement, gate) > 3
+					|| BattleHex::getDistance(stoppingHex, gate) <= 3
+					|| !gateAccessibility.accessible(gate, false, source->unitSide())
+					|| battle()->battleGetUnitByPos(gate, true)
+					|| !battle()->battleGetAllObstaclesOnPos(gate, false).empty())
+					continue;
+				return {movement, gate, stoppingHex};
 			}
 		}
 		return {};
@@ -319,6 +392,201 @@ TEST_F(NewHorizonsDemonicGatingTest, CommitsOwnedReserveAndArrivesAtNextRound)
 	EXPECT_FALSE(hasBattleLogFragment("Reinforced Gate grants"));
 	EXPECT_FALSE(hasBattleLogFragment("Infernal Beacon grants"));
 	EXPECT_FALSE(hasBattleLogFragment("Reserve Discipline prevents"));
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, MasterGatePreservesTheFirstRegularGateActivationOnly)
+{
+	grantMasterGate();
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto unitId = active->unitId();
+	const auto serialBefore = battle()->getActivationSerial();
+	const auto moraleActivationsBefore = std::ranges::count_if(server.stackActivations, [](const auto & activation)
+	{
+		return activation.reason == BattleUnitTurnReason::MORALE;
+	});
+	addUntilActivationBonus(active);
+	addUntilGetsTurnBonus(active);
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	auto & fortune = side.sylvanLuck;
+	fortune.forestsFavor = true;
+	fortune.positiveLuckUnits.insert(unitId);
+	fortune.speedUnits.insert(unitId);
+
+	BattleAction gate;
+	gate.actionType = EActionType::DEMONIC_GATING;
+	gate.side = BattleSide::ATTACKER;
+	gate.stackNumber = unitId;
+	gate.gatingCreature = creatureByName("core:imp");
+	const auto gateHex = legalGateHex(active);
+	ASSERT_TRUE(gateHex.isAvailable());
+	gate.aimToHex(gateHex);
+	const auto activationCountBefore = server.stackActivations.size();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), gate));
+
+	EXPECT_TRUE(side.masterGateUsed);
+	EXPECT_EQ(battle()->getActiveStackID(), static_cast<int32_t>(unitId));
+	EXPECT_FALSE(active->movedThisRound);
+	EXPECT_FALSE(active->getAllBonuses(Bonus::UntilActivationEnds)->empty());
+	EXPECT_FALSE(active->getAllBonuses(Bonus::UntilGetsTurn)->empty());
+	EXPECT_TRUE(fortune.speedUnits.contains(unitId));
+	EXPECT_EQ(battle()->getActivationSerial(), serialBefore);
+	ASSERT_EQ(server.stackActivations.size(), activationCountBefore + 1);
+	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::MASTER_GATE_CONTINUATION);
+	EXPECT_EQ(std::ranges::count_if(server.stackActivations, [](const auto & activation)
+	{
+		return activation.reason == BattleUnitTurnReason::MORALE;
+	}), moraleActivationsBefore);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeDefend(active)));
+	EXPECT_TRUE(active->getAllBonuses(Bonus::UntilActivationEnds)->empty());
+	EXPECT_TRUE(fortune.speedUnits.empty());
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, MasterGateContinuationMayOpenAnotherGateButDoesNotMakeItFree)
+{
+	grantMasterGate();
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto unitId = active->unitId();
+	BattleAction firstGate;
+	firstGate.actionType = EActionType::DEMONIC_GATING;
+	firstGate.side = BattleSide::ATTACKER;
+	firstGate.stackNumber = unitId;
+	firstGate.gatingCreature = creatureByName("core:imp");
+	const auto firstGateHex = legalGateHex(active);
+	ASSERT_TRUE(firstGateHex.isAvailable());
+	firstGate.aimToHex(firstGateHex);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), firstGate));
+	ASSERT_TRUE(battle()->getSide(BattleSide::ATTACKER).masterGateUsed);
+	ASSERT_FALSE(active->movedThisRound);
+
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	side.demonicReserve[creatureByName("core:imp")] = 3;
+	addUntilActivationBonus(active);
+	const auto masterContinuationsBefore = std::ranges::count_if(server.stackActivations, [](const auto & activation)
+	{
+		return activation.reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION;
+	});
+
+	BattleAction secondGate = firstGate;
+	const auto secondGateHex = legalGateHex(active);
+	ASSERT_TRUE(secondGateHex.isAvailable());
+	secondGate.aimToHex(secondGateHex);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), secondGate));
+	EXPECT_TRUE(side.masterGateUsed);
+	EXPECT_EQ(side.pendingDemonicGates.size(), 2u);
+	EXPECT_TRUE(side.demonicReserve.empty());
+	EXPECT_TRUE(active->movedThisRound);
+	EXPECT_TRUE(active->getAllBonuses(Bonus::UntilActivationEnds)->empty());
+	EXPECT_EQ(std::ranges::count_if(server.stackActivations, [](const auto & activation)
+	{
+		return activation.reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION;
+	}), masterContinuationsBefore);
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, SuccessfulMobileMasterGateRestoresItsStartActionMovementState)
+{
+	grantMasterGate(true);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto unitId = active->unitId();
+	const int movementLimit = static_cast<int>(active->getMovementRange(0) / 2);
+	const auto [movement, gateHex] = mobileMoveAndGate(active, 1, movementLimit, true);
+	ASSERT_TRUE(movement.isAvailable());
+	ASSERT_TRUE(gateHex.isAvailable());
+	const auto serialBefore = battle()->getActivationSerial();
+	const auto moraleActivationsBefore = std::ranges::count_if(server.stackActivations, [](const auto & activation)
+	{
+		return activation.reason == BattleUnitTurnReason::MORALE;
+	});
+	addUntilActivationBonus(active);
+	addUntilGetsTurnBonus(active);
+	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
+	fortune.forestsFavor = true;
+	fortune.positiveLuckUnits.insert(unitId);
+	fortune.speedUnits.insert(unitId);
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = unitId;
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(movement);
+	action.aimToHex(gateHex);
+	const auto activationCountBefore = server.stackActivations.size();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	const auto & side = battle()->getSide(BattleSide::ATTACKER);
+	EXPECT_TRUE(side.masterGateUsed);
+	ASSERT_EQ(side.pendingDemonicGates.size(), 1u);
+	EXPECT_EQ(side.pendingDemonicGates.front().position, gateHex);
+	EXPECT_EQ(battle()->getActiveStackID(), static_cast<int32_t>(unitId));
+	EXPECT_EQ(battle()->battleGetStackByID(unitId, false)->getPosition(), movement);
+	EXPECT_FALSE(active->movedThisRound);
+	EXPECT_FALSE(active->getAllBonuses(Bonus::UntilActivationEnds)->empty());
+	EXPECT_FALSE(active->getAllBonuses(Bonus::UntilGetsTurn)->empty());
+	EXPECT_TRUE(fortune.speedUnits.contains(unitId));
+	EXPECT_EQ(battle()->getActivationSerial(), serialBefore);
+	ASSERT_EQ(server.stackActivations.size(), activationCountBefore + 1);
+	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::MASTER_GATE_CONTINUATION);
+	EXPECT_EQ(std::ranges::count_if(server.stackActivations, [](const auto & activation)
+	{
+		return activation.reason == BattleUnitTurnReason::MORALE;
+	}), moraleActivationsBefore);
+}
+
+TEST_F(NewHorizonsDemonicGatingTest, FailedPostMoveGateConsumesActivationWithoutSpendingMasterGate)
+{
+	grantMasterGate(true);
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto unitId = active->unitId();
+	const int movementLimit = static_cast<int>(active->getMovementRange(0) / 2);
+	const auto [movement, gateHex, stoppingHex] = mobileMoveGateAndEarlyStop(active, movementLimit);
+	ASSERT_TRUE(movement.isAvailable());
+	ASSERT_TRUE(gateHex.isAvailable());
+	ASSERT_TRUE(stoppingHex.isAvailable());
+	ASSERT_GT(BattleHex::getDistance(stoppingHex, gateHex), 3);
+
+	auto trap = std::make_shared<SpellCreatedObstacle>();
+	trap->uniqueID = 7901;
+	trap->ID = SpellID::LAND_MINE;
+	trap->pos = stoppingHex;
+	trap->customSize.insert(stoppingHex);
+	trap->casterSide = BattleSide::DEFENDER;
+	trap->passable = true;
+	trap->trap = true;
+	battle()->obstacles.push_back(trap);
+	Bonus moralePenalty(BonusDuration::ONE_BATTLE, BonusType::MORALE,
+		BonusSource::OTHER, -3, BonusSourceID());
+	SetStackEffect moraleEffect;
+	moraleEffect.battleID = BattleID(0);
+	moraleEffect.toAdd.emplace_back(unitId, std::vector<Bonus>{moralePenalty});
+	gameHandler->sendAndApply(moraleEffect);
+	addUntilActivationBonus(active);
+
+	BattleAction action;
+	action.actionType = EActionType::DEMONIC_GATING;
+	action.side = BattleSide::ATTACKER;
+	action.stackNumber = unitId;
+	action.gatingCreature = creatureByName("core:imp");
+	action.aimToHex(movement);
+	action.aimToHex(gateHex);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	const auto * stopped = battle()->battleGetStackByID(unitId, false);
+	ASSERT_NE(stopped, nullptr);
+	EXPECT_EQ(stopped->getPosition(), stoppingHex);
+	EXPECT_TRUE(stopped->movedThisRound);
+	EXPECT_TRUE(stopped->getAllBonuses(Bonus::UntilActivationEnds)->empty());
+	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).masterGateUsed);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).demonicReserve.at(creatureByName("core:imp")), 12);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).pendingDemonicGates.empty());
+	EXPECT_NE(battle()->getActiveStackID(), static_cast<int32_t>(unitId));
+	ASSERT_FALSE(server.stackActivations.empty());
+	EXPECT_NE(server.stackActivations.back().reason, BattleUnitTurnReason::MASTER_GATE_CONTINUATION);
 }
 
 TEST_F(NewHorizonsDemonicGatingTest, TeleportRejectsPendingGateHeadAndDoubleWideRearWithoutSpendingHeroAction)
@@ -1420,6 +1688,7 @@ TEST(NewHorizonsDemonicGatingWire, ChainGateStateAndAttackMarkerRoundTripOnlyOnN
 {
 	SideInBattle outgoing(nullptr);
 	outgoing.chainGateArmed = true;
+	outgoing.masterGateUsed = true;
 	SideInBattle::PendingDemonicGate accelerated;
 	accelerated.chainGateAccelerated = true;
 	outgoing.pendingDemonicGates.push_back(accelerated);
@@ -1430,6 +1699,7 @@ TEST(NewHorizonsDemonicGatingWire, ChainGateStateAndAttackMarkerRoundTripOnlyOnN
 	SideInBattle restored(nullptr);
 	ASSERT_NO_THROW(current.iser & restored);
 	EXPECT_TRUE(restored.chainGateArmed);
+	EXPECT_TRUE(restored.masterGateUsed);
 	ASSERT_EQ(restored.pendingDemonicGates.size(), 1u);
 	EXPECT_TRUE(restored.pendingDemonicGates.front().chainGateAccelerated);
 
@@ -1444,6 +1714,22 @@ TEST(NewHorizonsDemonicGatingWire, ChainGateStateAndAttackMarkerRoundTripOnlyOnN
 	oldAccelerated.oser.version = ESerializationVersion::NEW_HORIZONS_DEMONIC_RESERVE;
 	EXPECT_THROW(oldAccelerated.oser & acceleratedOnly, std::runtime_error);
 	EXPECT_TRUE(oldAccelerated.extractBuffer().empty());
+
+	SideInBattle legacySide;
+	CMemorySerializer previousVersionSide;
+	previousVersionSide.oser.version = ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS;
+	previousVersionSide.iser.version = ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS;
+	ASSERT_NO_THROW(previousVersionSide.oser & legacySide);
+	SideInBattle restoredPreviousSide;
+	ASSERT_NO_THROW(previousVersionSide.iser & restoredPreviousSide);
+	EXPECT_FALSE(restoredPreviousSide.masterGateUsed);
+
+	SideInBattle usedMasterGateOnly;
+	usedMasterGateOnly.masterGateUsed = true;
+	CMemorySerializer oldMasterGateSide;
+	oldMasterGateSide.oser.version = ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS;
+	EXPECT_THROW(oldMasterGateSide.oser & usedMasterGateOnly, std::runtime_error);
+	EXPECT_TRUE(oldMasterGateSide.extractBuffer().empty());
 
 	BattleAttack attack;
 	attack.battleID = BattleID(7);
@@ -1466,6 +1752,8 @@ TEST(NewHorizonsDemonicGatingWire, ChainGateStateAndAttackMarkerRoundTripOnlyOnN
 	snapshot.battleID = BattleID(7);
 	snapshot.side = BattleSide::ATTACKER;
 	snapshot.chainGateArmed = true;
+	snapshot.masterGateUsed = true;
+	snapshot.masterGateContinuationUnitId = 17;
 	snapshot.pending.push_back(accelerated);
 	CMemorySerializer snapshotWire;
 	snapshotWire.oser.version = ESerializationVersion::CURRENT;
@@ -1474,6 +1762,9 @@ TEST(NewHorizonsDemonicGatingWire, ChainGateStateAndAttackMarkerRoundTripOnlyOnN
 	BattleDemonicGatingStateChanged restoredSnapshot;
 	ASSERT_NO_THROW(snapshotWire.iser & restoredSnapshot);
 	EXPECT_TRUE(restoredSnapshot.chainGateArmed);
+	EXPECT_TRUE(restoredSnapshot.masterGateUsed);
+	ASSERT_TRUE(restoredSnapshot.masterGateContinuationUnitId.has_value());
+	EXPECT_EQ(*restoredSnapshot.masterGateContinuationUnitId, 17u);
 	ASSERT_EQ(restoredSnapshot.pending.size(), 1u);
 	EXPECT_TRUE(restoredSnapshot.pending.front().chainGateAccelerated);
 
@@ -1482,4 +1773,25 @@ TEST(NewHorizonsDemonicGatingWire, ChainGateStateAndAttackMarkerRoundTripOnlyOnN
 	oldSnapshotWire.oser.version = ESerializationVersion::NEW_HORIZONS_DEMONIC_RESERVE;
 	EXPECT_THROW(oldSnapshotWire.oser & oldSnapshot, std::runtime_error);
 	EXPECT_TRUE(oldSnapshotWire.extractBuffer().empty());
+
+	BattleDemonicGatingStateChanged legacySnapshot;
+	legacySnapshot.battleID = BattleID(7);
+	legacySnapshot.side = BattleSide::ATTACKER;
+	CMemorySerializer oldProtocolSnapshot;
+	oldProtocolSnapshot.oser.version = ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS;
+	oldProtocolSnapshot.iser.version = ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS;
+	ASSERT_NO_THROW(oldProtocolSnapshot.oser & legacySnapshot);
+	BattleDemonicGatingStateChanged restoredLegacySnapshot;
+	ASSERT_NO_THROW(oldProtocolSnapshot.iser & restoredLegacySnapshot);
+	EXPECT_FALSE(restoredLegacySnapshot.masterGateUsed);
+	EXPECT_FALSE(restoredLegacySnapshot.masterGateContinuationUnitId.has_value());
+
+	BattleDemonicGatingStateChanged usedMasterGateSnapshot;
+	usedMasterGateSnapshot.battleID = BattleID(7);
+	usedMasterGateSnapshot.side = BattleSide::ATTACKER;
+	usedMasterGateSnapshot.masterGateUsed = true;
+	CMemorySerializer oldMasterGateSnapshot;
+	oldMasterGateSnapshot.oser.version = ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS;
+	EXPECT_THROW(oldMasterGateSnapshot.oser & usedMasterGateSnapshot, std::runtime_error);
+	EXPECT_TRUE(oldMasterGateSnapshot.extractBuffer().empty());
 }

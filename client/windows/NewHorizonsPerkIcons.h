@@ -32,6 +32,7 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:demonicGating.mobileGate", "NH_perk_mobile_gate"},
 		{"new-horizons:demonicGating.infernalBeacon", "NH_perk_infernal_beacon"},
 		{"new-horizons:demonicGating.reserveDiscipline", "NH_perk_reserve_discipline"},
+		{"new-horizons:demonicGating.masterGate", "NH_perk_master_gate"},
 		{"new-horizons:demonicGating.endlessLegion", "NH_perk_endless_legion"},
 		{"new-horizons:sorceryMagic.overcharger", "NH_perk_overcharger"},
 		{"new-horizons:sorceryMagic.selectiveDispel", "NH_perk_selective_dispel"},

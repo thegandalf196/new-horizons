@@ -1000,7 +1000,8 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
 	activeUnitId = unitId;
 	auto unit = getForUpdate(unitId);
-	if(reason == BattleUnitTurnReason::ACTION_REJECTED)
+	if(reason == BattleUnitTurnReason::ACTION_REJECTED
+		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION)
 		return;
 	if(battleBeginsActivation(unit.get(), reason))
 	{

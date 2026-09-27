@@ -1324,6 +1324,9 @@ bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & ba
 		update.pending = side.pendingDemonicGates;
 		update.gated = side.gatedDemonicStacks;
 		update.chainGateArmed = side.chainGateArmed;
+		update.masterGateUsed = side.masterGateUsed;
+		const bool masterGateContinuation = !side.masterGateUsed && hero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.masterGate");
 		SideInBattle::PendingDemonicGate gate;
 		gate.creature = reserve->first;
 		gate.count = reserve->second;
@@ -1332,6 +1335,11 @@ bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & ba
 		gate.sourceUnitId = ba.stackNumber;
 		update.reserve.erase(gate.creature);
 		update.pending.push_back(gate);
+		if(masterGateContinuation)
+		{
+			update.masterGateUsed = true;
+			update.masterGateContinuationUnitId = ba.stackNumber;
+		}
 		gameHandler->sendAndApply(update);
 	}
 	const auto & gates = concrete->getSide(ba.side).pendingDemonicGates;
@@ -1361,6 +1369,7 @@ bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & ba
 		update.pending = concrete->getSide(ba.side).pendingDemonicGates;
 		update.gated = concrete->getSide(ba.side).gatedDemonicStacks;
 		update.chainGateArmed = false;
+		update.masterGateUsed = concrete->getSide(ba.side).masterGateUsed;
 		if(!swiftGate)
 		{
 			const auto pending = std::ranges::find_if(update.pending, [&ba](const auto & gate)
@@ -1424,8 +1433,19 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 	return true;
 }
 
-bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba)
+bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba,
+	bool * masterGateActivationContinuationOut)
 {
+	if(masterGateActivationContinuationOut)
+		*masterGateActivationContinuationOut = false;
+	const auto * demonicBattle = dynamic_cast<const BattleInfo *>(battle.getBattle());
+	const bool validMasterGateSide = ba.side == BattleSide::ATTACKER || ba.side == BattleSide::DEFENDER;
+	const auto * masterGateHero = ba.actionType == EActionType::DEMONIC_GATING && validMasterGateSide
+		? battle.battleGetFightingHero(ba.side) : nullptr;
+	const bool masterGateWasUnused = demonicBattle && masterGateHero
+		&& !demonicBattle->getSide(ba.side).masterGateUsed
+		&& masterGateHero->hasActivePerk(
+			"new-horizons:demonicGating", "new-horizons:demonicGating.masterGate");
 	if(ba.perfectMoment)
 	{
 		const auto * unit = battle.battleGetStackByID(ba.stackNumber, false);
@@ -1581,6 +1601,12 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	}
 
 	bool result = dispatchBattleAction(battle, effectiveAction);
+	if(masterGateActivationContinuationOut && result && masterGateWasUnused)
+	{
+		const auto * updatedBattle = gameHandler->gs->getBattle(battle.getBattle()->getBattleID());
+		*masterGateActivationContinuationOut = updatedBattle
+			&& updatedBattle->getSide(ba.side).masterGateUsed;
+	}
 	if(result && isTimeStopHeroAction(ba))
 	{
 		if(auto * state = gameHandler->gs->getBattle(battle.getBattle()->getBattleID()))
@@ -1593,6 +1619,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		endAction.battleID = battle.getBattle()->getBattleID();
 		endAction.endsFortuneActivation = result && effectiveAction.isUnitAction() && !battle.battleTacticDist()
 			&& stack && !stack->isTimeStopped() && !effectiveAction.timeStopHeroActionPass
+			&& !(masterGateActivationContinuationOut && *masterGateActivationContinuationOut)
 			&& !(effectiveAction.actionType == EActionType::MONSTER_SPELL && effectiveAction.spell.hasValue()
 				&& effectiveAction.spell.toSpell()->canCastWithoutSkip());
 		gameHandler->sendAndApply(endAction);
@@ -2576,8 +2603,10 @@ bool BattleActionProcessor::makeAutomaticBattleAction(const CBattleInfoCallback 
 }
 
 bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player,
-	const BattleAction &ba, BattleAction * effectiveActionOut)
+	const BattleAction &ba, BattleAction * effectiveActionOut, bool * masterGateActivationContinuationOut)
 {
+	if(masterGateActivationContinuationOut)
+		*masterGateActivationContinuationOut = false;
 	if(ba.timeStopHeroActionPass)
 	{
 		gameHandler->complain("Time Stop Hero Action pass is server-derived");
@@ -2653,7 +2682,7 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			pass.timeStopHeroActionPass = true;
 			if(effectiveActionOut)
 				*effectiveActionOut = pass;
-			return makeBattleActionImpl(battle, pass);
+			return makeBattleActionImpl(battle, pass, masterGateActivationContinuationOut);
 		}
 
 		if(active->isTimeStopped() && ba.actionType == EActionType::DEFEND)
@@ -2667,13 +2696,13 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			pass.timeStopHeroActionPass = true;
 			if(effectiveActionOut)
 				*effectiveActionOut = pass;
-			return makeBattleActionImpl(battle, pass);
+			return makeBattleActionImpl(battle, pass, masterGateActivationContinuationOut);
 		}
 	}
 
 	if(effectiveActionOut)
 		*effectiveActionOut = ba;
-	return makeBattleActionImpl(battle, ba);
+	return makeBattleActionImpl(battle, ba, masterGateActivationContinuationOut);
 }
 
 void BattleActionProcessor::runPredefinedReaction(const CBattleInfoCallback & battle, const Bonus & bonus, const battle::Unit * self, const battle::Unit * other)

@@ -1968,16 +1968,29 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	if (pack.ba.isUnitAction())
 	{
 		assert(st); // stack must exists for all non-hero actions
+		bool masterGateContinuation = false;
 		if(pack.ba.actionType == EActionType::DEMONIC_GATING)
 		{
+			if(pack.ba.side != BattleSide::ATTACKER && pack.ba.side != BattleSide::DEFENDER)
+				throw std::runtime_error("Invalid Demonic Gating StartAction side");
 			// Mobile Gate commits its reserve stack only after the authoritative
 			// movement has completed and the destination is revalidated.
 			if(pack.ba.target.size() != 2)
 			{
-				auto & side = gs.getBattle(pack.battleID)->getSide(pack.ba.side);
+				auto & side = battleContext->getSide(pack.ba.side);
 				const auto found = side.demonicReserve.find(pack.ba.gatingCreature);
 				if(found == side.demonicReserve.end() || found->second <= 0 || pack.ba.target.size() != 1)
 					throw std::runtime_error("Invalid Demonic Gating StartAction snapshot");
+				const auto * hero = battleContext->battleGetFightingHero(pack.ba.side);
+				masterGateContinuation = !side.masterGateUsed && hero && hero->hasActivePerk(
+					"new-horizons:demonicGating", "new-horizons:demonicGating.masterGate");
+				if(masterGateContinuation)
+				{
+					const auto * active = battleContext->battleActiveUnit();
+					if(!active || active != st || active->unitSide() != pack.ba.side)
+						throw std::runtime_error("Master Gate StartAction does not match the active stack");
+					side.masterGateUsed = true;
+				}
 				SideInBattle::PendingDemonicGate gate;
 				gate.creature = found->first;
 				gate.count = found->second;
@@ -2044,6 +2057,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				st->movedThisRound = true;
 				break;
 		}
+		if(masterGateContinuation)
+			st->movedThisRound = false;
 	}
 	else
 	{
@@ -2082,10 +2097,44 @@ void GameStatePackVisitor::visitBattleDemonicGatingStateChanged(BattleDemonicGat
 	if(!battle || (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER))
 		throw std::runtime_error("Invalid Demonic Gating battle state update");
 	auto & side = battle->getSide(pack.side);
+	if(pack.masterGateContinuationUnitId)
+	{
+		const auto unitId = *pack.masterGateContinuationUnitId;
+		const auto * unit = battle->battleGetStackByID(unitId, false);
+		const auto * active = battle->battleActiveUnit();
+		const auto * hero = battle->battleGetFightingHero(pack.side);
+		const auto newlyPending = std::ranges::find_if(pack.pending, [&](const auto & gate)
+		{
+			return gate.sourceUnitId == unitId
+				&& std::ranges::none_of(side.pendingDemonicGates, [&](const auto & prior)
+				{
+					return prior.sourceUnitId == gate.sourceUnitId && prior.creature == gate.creature;
+				});
+		});
+		const auto consumedReserve = newlyPending == pack.pending.end() ? side.demonicReserve.end()
+			: side.demonicReserve.find(newlyPending->creature);
+		const auto remainingReserve = newlyPending == pack.pending.end() ? pack.reserve.end()
+			: pack.reserve.find(newlyPending->creature);
+		if(side.masterGateUsed || !pack.masterGateUsed || !unit || !unit->alive()
+			|| unit->unitSide() != pack.side || !active || active->unitId() != unitId
+			|| !unit->movedThisRound || !hero || !hero->hasActivePerk(
+				"new-horizons:demonicGating", "new-horizons:demonicGating.masterGate")
+			|| newlyPending == pack.pending.end() || consumedReserve == side.demonicReserve.end()
+			|| newlyPending->count != consumedReserve->second
+			|| (remainingReserve != pack.reserve.end() && remainingReserve->second >= consumedReserve->second))
+			throw std::runtime_error("Invalid Master Gate mobile continuation state update");
+	}
+	else if(pack.masterGateUsed != side.masterGateUsed)
+	{
+		throw std::runtime_error("Demonic Gating update changed Master Gate state without a continuation");
+	}
 	side.demonicReserve = std::move(pack.reserve);
 	side.pendingDemonicGates = std::move(pack.pending);
 	side.gatedDemonicStacks = std::move(pack.gated);
 	side.chainGateArmed = pack.chainGateArmed;
+	side.masterGateUsed = pack.masterGateUsed;
+	if(pack.masterGateContinuationUnitId)
+		battle->getStack(*pack.masterGateContinuationUnitId)->movedThisRound = false;
 }
 
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)

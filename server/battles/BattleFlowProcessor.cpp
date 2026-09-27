@@ -411,6 +411,7 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 		update.reserve = snapshot.demonicReserve;
 		update.gated = snapshot.gatedDemonicStacks;
 		update.chainGateArmed = snapshot.chainGateArmed;
+		update.masterGateUsed = snapshot.masterGateUsed;
 		std::vector<uint32_t> hellfireSources;
 
 		for(const auto & gate : snapshot.pendingDemonicGates)
@@ -1180,7 +1181,8 @@ bool BattleFlowProcessor::rollGoodMorale(const CBattleInfoCallback & battle, con
 	return false;
 }
 
-void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const BattleAction &ba)
+void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const BattleAction &ba,
+	bool masterGateActivationContinuation)
 {
 	const auto * actedStack = battle.battleGetStackByID(ba.stackNumber, false);
 	const auto * activeStack = battle.battleActiveUnit();
@@ -1200,6 +1202,15 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	// tactics - next stack will be selected by player
 	if(battle.battleGetTacticDist() != 0)
 		return;
+
+	if(masterGateActivationContinuation)
+	{
+		if(actedStack && activeStack == actedStack && actedStack->alive() && !actedStack->isTimeStopped())
+			setActiveStack(battle, actedStack, BattleUnitTurnReason::MASTER_GATE_CONTINUATION);
+		else
+			activateNextStack(battle);
+		return;
+	}
 
 	if(ba.timeStopHeroActionPass)
 	{

@@ -982,7 +982,8 @@ void BattleInfo::nextRound()
 void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
 	activeStack = unitId;
-	if(reason == BattleUnitTurnReason::ACTION_REJECTED)
+	if(reason == BattleUnitTurnReason::ACTION_REJECTED
+		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION)
 		return;
 
 	CStack * st = getStack(activeStack);

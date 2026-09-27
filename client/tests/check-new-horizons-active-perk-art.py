@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE_V2 = ROOT / "assets/new-horizons/art-source/active-perks-v2"
 SOURCE_V3 = ROOT / "assets/new-horizons/art-source/active-perks-v3"
 SOURCE_V5 = ROOT / "assets/new-horizons/art-source/active-perks-v5"
+SOURCE_MASTER_GATE = ROOT / "assets/new-horizons/art-source/master-gate-v1"
 IMAGES = ROOT / "Mods/new-horizons/Images"
 ICONS = ROOT / "client/windows/NewHorizonsPerkIcons.h"
 DEFINITIONS = ROOT / "config/newHorizonsPerks.json"
@@ -125,7 +126,13 @@ V5_EXPECTED = {
         "endless-legion",
     ),
 }
-EXPECTED = V2_EXPECTED | V3_EXPECTED | V5_EXPECTED
+MASTER_GATE_EXPECTED = {
+    "new-horizons:demonicGating.masterGate": (
+        "NH_perk_master_gate",
+        "master-gate",
+    ),
+}
+EXPECTED = V2_EXPECTED | V3_EXPECTED | V5_EXPECTED | MASTER_GATE_EXPECTED
 
 
 def digest(path: Path) -> str:
@@ -143,6 +150,7 @@ def main() -> None:
         (SOURCE_V2, V2_EXPECTED),
         (SOURCE_V3, V3_EXPECTED),
         (SOURCE_V5, V5_EXPECTED),
+        (SOURCE_MASTER_GATE, MASTER_GATE_EXPECTED),
     ):
         generation = json.loads((source / "generation.json").read_text(encoding="utf-8"))
         by_id = {asset["id"]: asset for asset in generation["assets"]}

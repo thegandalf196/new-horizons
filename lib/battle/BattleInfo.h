@@ -128,6 +128,9 @@ public:
 				throw std::runtime_error("Cannot save an active Warcasting battle in an older format");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
 				throw std::runtime_error("Cannot discard Chain Gate battle state");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_GATE)
+				&& (sides[BattleSide::ATTACKER].masterGateUsed || sides[BattleSide::DEFENDER].masterGateUsed))
+				throw std::runtime_error("Cannot discard Master Gate battle state");
 			heroCommands::validateRules(heroCommandRules);
 			validateFocusFireStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_MOMENT)

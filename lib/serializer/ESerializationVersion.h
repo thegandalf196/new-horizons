@@ -105,12 +105,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_SPELL_POINTS, // Normal/Buffer pools, typed mutations, battle snapshots and Buffer rewards
 	NEW_HORIZONS_METAMAGIC_REWARDS, // once-combat Spell Buffer use and sequence-closure rewards
 	NEW_HORIZONS_MAGE_GUILD_SLOTS, // actual fixed-school visible counts and assigned schools
+	NEW_HORIZONS_MASTER_GATE, // per-side once-per-combat Master Gate activation continuation
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_MAGE_GUILD_SLOTS,
+	CURRENT = NEW_HORIZONS_MASTER_GATE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -126,6 +127,7 @@ static_assert(ESerializationVersion::NEW_HORIZONS_RANDOM_ARTIFACT_POOL > ESerial
 static_assert(ESerializationVersion::NEW_HORIZONS_SPELL_POINTS > ESerializationVersion::NEW_HORIZONS_RANDOM_ARTIFACT_POOL);
 static_assert(ESerializationVersion::NEW_HORIZONS_METAMAGIC_REWARDS > ESerializationVersion::NEW_HORIZONS_SPELL_POINTS);
 static_assert(ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS > ESerializationVersion::NEW_HORIZONS_METAMAGIC_REWARDS);
+static_assert(ESerializationVersion::NEW_HORIZONS_MASTER_GATE > ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS);
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION > ESerializationVersion::NEW_HORIZONS_WARCASTING);
 static_assert(ESerializationVersion::NEW_HORIZONS_HERO_ACTION_ALLOWANCES > ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTERIES > ESerializationVersion::NEW_HORIZONS_CAPABILITIES);

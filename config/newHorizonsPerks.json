@@ -3555,7 +3555,7 @@
 					"requires": "expert",
 					"description": "The first Gate opened each combat does not consume the gating stack's Creature Activation. After opening the Gate, that stack proceeds with its normal Creature Activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first Gate opened each combat does not consume the gating stack's Creature Activation. After opening the Gate, that stack proceeds with its normal Creature Activation."
 					}
 				},

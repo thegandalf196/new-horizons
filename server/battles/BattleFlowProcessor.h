@@ -64,5 +64,6 @@ public:
 
 	void onBattleStarted(const CBattleInfoCallback & battle);
 	void onTacticsEnded(const CBattleInfoCallback & battle);
-	void onActionMade(const CBattleInfoCallback & battle, const BattleAction & ba);
+	void onActionMade(const CBattleInfoCallback & battle, const BattleAction & ba,
+		bool masterGateActivationContinuation = false);
 };
