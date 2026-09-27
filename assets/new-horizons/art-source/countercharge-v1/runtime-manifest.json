@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_countercharge"
+  ],
+  "files": {
+    "source/NH_perk_countercharge_normal.png": "fdc9713b837362c8862ea3b9583004f7cd451c728ab04106912f10b7df96866e",
+    "Mods/NH_perk_countercharge_normal.png": "fdc9713b837362c8862ea3b9583004f7cd451c728ab04106912f10b7df96866e",
+    "source/NH_perk_countercharge_pressed.png": "6f63ce8cd2e14006466498f850ac6d236f34124db8d13e650f5ef9453fe50283",
+    "Mods/NH_perk_countercharge_pressed.png": "6f63ce8cd2e14006466498f850ac6d236f34124db8d13e650f5ef9453fe50283",
+    "source/NH_perk_countercharge_disabled.png": "75751c346e44c34df46a0a9f796b41c2c87471f25db2b8b9f76bfa8a23a9f635",
+    "Mods/NH_perk_countercharge_disabled.png": "75751c346e44c34df46a0a9f796b41c2c87471f25db2b8b9f76bfa8a23a9f635",
+    "source/NH_perk_countercharge_highlighted.png": "6d162dcc53db156297efc55219bbc333bdb75d9ef7b040e1e8e8e192a5d779e9",
+    "Mods/NH_perk_countercharge_highlighted.png": "6d162dcc53db156297efc55219bbc333bdb75d9ef7b040e1e8e8e192a5d779e9",
+    "source/NH_perk_countercharge.json": "8b27dbfa378d6274a8af9ec787905821ee49600026e3283f6a7dcc9970d0af3c",
+    "Mods/NH_perk_countercharge.json": "8b27dbfa378d6274a8af9ec787905821ee49600026e3283f6a7dcc9970d0af3c"
+  }
+}
