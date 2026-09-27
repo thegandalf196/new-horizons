@@ -16,6 +16,8 @@ actions_h = (ROOT / "client/battle/BattleActionsController.h").read_text(encodin
 actions = (ROOT / "client/battle/BattleActionsController.cpp").read_text(encoding="utf-8")
 spellbook = (ROOT / "client/windows/CSpellWindow.cpp").read_text(encoding="utf-8")
 mechanics = (ROOT / "lib/spells/BattleSpellMechanics.cpp").read_text(encoding="utf-8")
+mechanics_h = (ROOT / "lib/spells/ISpellMechanics.h").read_text(encoding="utf-8")
+lua_mechanics = (ROOT / "luascript/api/spells/Mechanics.cpp").read_text(encoding="utf-8")
 skill_schema = json.loads((ROOT / "config/schemas/skill.json").read_text(encoding="utf-8"))
 new_horizons_skills = json.loads((ROOT / "config/newHorizonsSkills.json").read_text(encoding="utf-8"))
 
@@ -185,5 +187,15 @@ assert "windowObject->heroManaPointsChanged(defendingHeroInstance);" in new_roun
 # Preserve the existing hidden-hero access guard used by follow-up mechanics.
 assert "visibleSide == BattleSide::ALL_KNOWING || visibleSide == otherSide" in mechanics
 assert "battle()->battleHasHero(otherSide)" in mechanics
+
+# Focus Magic's Lua effect consumes authoritative Metamagic provenance through
+# the common Mechanics facade. Keep the interface and binding in lockstep.
+mechanics_facade = mechanics_h.split("class DLL_LINKAGE Mechanics", 1)[1].split(
+    "class DLL_LINKAGE BaseMechanics", 1
+)[0]
+base_mechanics = mechanics_h.split("class DLL_LINKAGE BaseMechanics", 1)[1]
+assert "virtual bool isMetamagicFollowup() const" in mechanics_facade
+assert "bool isMetamagicFollowup() const override;" in base_mechanics
+assert 'R.method<&Mechanics::isMetamagicFollowup>("isMetamagicFollowup"' in lua_mechanics
 
 print("PASS: pending Metamagic remains optional, action counts use live NH state, and sidebar geometry falls back safely")

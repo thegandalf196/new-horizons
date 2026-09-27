@@ -298,6 +298,10 @@ public:
 	virtual bool isNewHorizonsCure() const { return false; }
 	virtual SpellID getCureAffliction() const { return SpellID::NONE; }
 	virtual bool isMassSlow() const { return false; }
+	/// True when this cast consumes an additional Metamagic Spell Action.
+	/// Exposed on the common Mechanics facade so Lua spell effects can preserve
+	/// authoritative cast provenance without depending on BaseMechanics.
+	virtual bool isMetamagicFollowup() const { return false; }
 	virtual bool usesNewHorizonsMagic() const { return false; }
 
 	virtual IBattleCast::Value64 getEffectValue() const = 0;
@@ -382,7 +386,7 @@ public:
 	bool isSelectiveDispel() const override;
 	bool isNewHorizonsCure() const override;
 	bool isMassSlow() const override;
-	bool isMetamagicFollowup() const;
+	bool isMetamagicFollowup() const override;
 	bool isMetamagicGrand() const;
 	uint32_t getMetamagicTargetUnitId() const;
 	int32_t getMetamagicManaRefund() const;
