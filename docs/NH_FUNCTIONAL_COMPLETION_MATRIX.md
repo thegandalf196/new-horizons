@@ -107,6 +107,9 @@ spell. Ice Bolt must not retain its legacy Speed/Initiative reduction.
    roster admission, acquisition, AI, feedback and focused evidence.
 2. **Archery:** implement all ten perks and remove the Skill's progression
    deadlock, while preserving the existing three rank effects.
+3. **Bulwark of the Mire:** next full Skill slice after Spell Lock and Archery;
+   validate all three rank effects and implement all ten perks, including turning
+   the existing inaccessible Mireborn hook into a complete selectable mechanic.
 
 Next slices are selected by dependency leverage: remove progression deadlocks,
 reuse generic infrastructure across multiple requirements, and never activate a
