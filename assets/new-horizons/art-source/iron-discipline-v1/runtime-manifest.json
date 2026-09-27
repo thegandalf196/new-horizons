@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_iron_discipline"
+  ],
+  "files": {
+    "source/NH_perk_iron_discipline_normal.png": "2715406829b4edfb949f65d723524ba8e0db2e360fda76cd8395e8079d11840e",
+    "Mods/NH_perk_iron_discipline_normal.png": "2715406829b4edfb949f65d723524ba8e0db2e360fda76cd8395e8079d11840e",
+    "source/NH_perk_iron_discipline_pressed.png": "05cfaa344c71d02f0be53c0003e087c310cd67e5774aa00c878bbb81256cc719",
+    "Mods/NH_perk_iron_discipline_pressed.png": "05cfaa344c71d02f0be53c0003e087c310cd67e5774aa00c878bbb81256cc719",
+    "source/NH_perk_iron_discipline_disabled.png": "f1eae704a16d4fa46c4b3cd356fc5a4a2eedb9628a75aac062d7200766821089",
+    "Mods/NH_perk_iron_discipline_disabled.png": "f1eae704a16d4fa46c4b3cd356fc5a4a2eedb9628a75aac062d7200766821089",
+    "source/NH_perk_iron_discipline_highlighted.png": "1c507569ba268fa7beb27c83d81a3f8acfebb9cda1a38c514b0f3d39a8d4292d",
+    "Mods/NH_perk_iron_discipline_highlighted.png": "1c507569ba268fa7beb27c83d81a3f8acfebb9cda1a38c514b0f3d39a8d4292d",
+    "source/NH_perk_iron_discipline.json": "ea36cb4d3c4243dd449703bb49256d5116495a7d59ccf03bd99392418bcf54ba",
+    "Mods/NH_perk_iron_discipline.json": "ea36cb4d3c4243dd449703bb49256d5116495a7d59ccf03bd99392418bcf54ba"
+  }
+}

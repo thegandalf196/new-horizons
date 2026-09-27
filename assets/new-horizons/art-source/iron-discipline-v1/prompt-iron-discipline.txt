@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: square Heroes III-style secondary-perk icon master for “Iron Discipline”
+Primary request: Create an original miniature modeled fantasy still-life that communicates disciplined resistance to magic while holding formation.
+Scene/backdrop: dark worn oxblood leather and smoky umber, subdued and textural.
+Subject: one dominant, heavy riveted iron tower shield planted firmly upright, its lower rim visibly braced into rough earth; a compact blue-violet magical bolt strikes the shield and splits around it into two restrained arcs, while the iron remains unmoved. Add a short leather arm strap and a small iron brace behind the shield, but no person and no heraldic emblem.
+Style/medium: late-1990s Western PC fantasy illustration; richly modeled pre-rendered volume with painterly fantasy-book atmosphere; physical miniature still-life, not modern concept UI.
+Composition/framing: square, shield and magical impact fill most of the image with a narrow safe inset; strong simple silhouette legible at 44×44 and 32×32; nothing clipped.
+Lighting/mood: theatrical chiaroscuro, warm gold light along one shield edge, deep shadow on the other, a small concentrated cool magical impact highlight; steadfast, severe, disciplined.
+Color palette: aged steel grey, dark iron, oxblood, umber, restrained blue-violet magic, tiny warm brass accents; saturated but below neon.
+Materials/textures: battered hammered iron, rivets, worn leather strap, compact dusty earth; clear material separation.
+Constraints: no text, letters, runes, numbers, interface chrome, ornamental border, character, hand, face, heraldry, gore, lightning filling the frame, halo, or transparent checkerboard. No watermark. Detailed high-resolution square master designed to survive LANCZOS reduction.
+Avoid: flat vector art, black cartoon outlines, deliberate pixel art, dithering, plastic or glossy mobile-game styling, excessive particles, broad neon glow, empty background.
