@@ -11,6 +11,8 @@
 #include "../server/battles/BattleStartSnapshotFixture.h"
 
 #include "../../lib/GameLibrary.h"
+#include "../../lib/callback/CCallback.h"
+#include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -127,6 +129,25 @@ protected:
 		EXPECT_EQ(hero->getManaAvailable(), static_cast<int64_t>(normal) + buffer);
 	}
 };
+}
+
+TEST_F(SpellPointCapacityTest, OwnedAdventureHeroInfoIncludesActualCapacityAndBuffer)
+{
+	setKnowledge(attackerSideHero, 30);
+	setNormal(attackerSideHero, 30);
+	grantBuffer(attackerSideHero, 50);
+	auto callback = makeCallback(attackerSideHero->tempOwner);
+	InfoAboutHero info;
+	ASSERT_TRUE(callback->getHeroInfo(attackerSideHero, info));
+	ASSERT_TRUE(info.details);
+	EXPECT_EQ(info.details->manaLimit, attackerSideHero->manaLimit());
+	EXPECT_EQ(info.details->mana, 80);
+	EXPECT_EQ(info.details->bufferMana, 50);
+
+	// DETAILED alone (also used by enemy Visions) must not grant capacity access.
+	InfoAboutHero restricted(attackerSideHero, InfoAboutHero::EInfoLevel::DETAILED);
+	ASSERT_TRUE(restricted.details);
+	EXPECT_EQ(restricted.details->manaLimit, -1);
 }
 
 TEST_F(SpellPointCapacityTest, KnowledgeEquipmentRaisesCapacityWithoutRefillAndRemovalClampsOnlyNormal)

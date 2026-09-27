@@ -346,6 +346,10 @@ bool CGameInfoCallback::getHeroInfo(const CGObjectInstance * hero, InfoAboutHero
 	}
 
 	dest.initFromHero(h, infoLevel);
+	// Owned/accessible heroes expose their actual capacity. Visions may supply
+	// DETAILED enemy information but must retain its hidden maximum.
+	if(hasAccess(h->tempOwner) && dest.details)
+		dest.details->manaLimit = h->manaLimit();
 
 	//DISGUISED bonus implementation
 	if(getPlayerRelations(*getPlayerID(), hero->tempOwner) == PlayerRelations::ENEMIES)

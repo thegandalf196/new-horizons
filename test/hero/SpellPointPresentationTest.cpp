@@ -21,6 +21,21 @@ TEST(SpellPointPresentationTest, EmptyBufferDoesNotShowBonus)
 	EXPECT_EQ(spellPointPresentation::tooltip(80, 100, 0).find("+0"), std::string::npos);
 }
 
+TEST(SpellPointPresentationTest, CompactHeroCardHelpKeepsFullCapacityAndBuffer)
+{
+	EXPECT_EQ(spellPointPresentation::readout(80, 30, 50), "80 / 30  {+50}");
+	const auto text = spellPointPresentation::tooltip(80, 30, 50);
+	EXPECT_NE(text.find("30 Normal + {50 Buffer}"), std::string::npos);
+	EXPECT_NE(text.find("30 Maximum Spell Points"), std::string::npos);
+	EXPECT_EQ(text.find("130"), std::string::npos);
+}
+
+TEST(SpellPointPresentationTest, HiddenCapacityWithBufferIsNotInferredFromTotal)
+{
+	EXPECT_EQ(spellPointPresentation::readout(80, -1, 50), "80  {+50}");
+	EXPECT_EQ(spellPointPresentation::tooltip(80, -1, 50).find("Maximum Spell Points"), std::string::npos);
+}
+
 TEST(SpellPointPresentationTest, HiddenMaximumIsNotInvented)
 {
 	EXPECT_EQ(spellPointPresentation::readout(80, -1, 0), "80");

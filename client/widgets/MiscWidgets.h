@@ -86,6 +86,7 @@ public:
 /// background for tooltip: HEROQVBK
 class CHeroTooltip : public CArmyTooltip
 {
+	std::shared_ptr<CIntObject> spellPoints;
 	std::shared_ptr<CAnimImage> portrait;
 	std::vector<std::shared_ptr<CLabel>> labels;
 	std::shared_ptr<CAnimImage> morale;
@@ -100,6 +101,7 @@ public:
 /// Class for HD mod-like interactable infobox tooltip. Does not have any background!
 class CInteractableHeroTooltip : public CIntObject
 {
+	std::shared_ptr<CIntObject> spellPoints;
 	std::shared_ptr<CLabel> title;
 	std::shared_ptr<CAnimImage> portrait;
 	std::vector<std::shared_ptr<CLabel>> labels;

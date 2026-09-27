@@ -28,7 +28,12 @@
 #include "../windows/CCastleInterface.h"
 #include "../windows/wiki/WikiWindow.h"
 #include "../windows/InfoWindows.h"
+#include "../windows/SpellPointPresentation.h"
 #include "render/Canvas.h"
+#include "render/CanvasImage.h"
+#include "render/IImage.h"
+#include "render/IFont.h"
+#include "render/IRenderHandler.h"
 
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/IGameSettings.h"
@@ -355,6 +360,71 @@ CArmyTooltip::CArmyTooltip(Point pos, const CArmedInstance * army):
 	init(InfoAboutArmy(army, true));
 }
 
+namespace
+{
+/// The stock hero card reserves only 30 pixels for the mana column.
+class CompactHeroSpellPoints : public CHoverableArea
+{
+	std::vector<std::shared_ptr<CPicture>> lines;
+	std::string explanation;
+
+public:
+	CompactHeroSpellPoints(const InfoAboutHero::Details & details, int rowOffset)
+	{
+		OBJECT_CONSTRUCTION;
+		pos += Point(143, 92 + rowOffset);
+		pos.w = 30;
+		pos.h = 20;
+		addUsedEvents(SHOW_POPUP);
+		explanation = spellPointPresentation::tooltip(details.mana, details.manaLimit, details.bufferMana);
+		hoverText = spellPointPresentation::readout(details.mana, details.manaLimit, details.bufferMana);
+
+		const auto font = ENGINE->renderHandler().loadFont(FONT_TINY);
+		auto addLine = [&](std::string text, const std::string & compact, int top, const ColorRGBA & color)
+		{
+			if(font->getStringWidth(text) > static_cast<size_t>(pos.w))
+				text = compact;
+			const Point originalSize(std::max(1, static_cast<int>(font->getStringWidth(text))),
+				std::max(1, static_cast<int>(font->getLineHeight())));
+			auto image = ENGINE->renderHandler().createImage(originalSize, CanvasScalingPolicy::AUTO);
+			auto canvas = image->getCanvas();
+			canvas.drawColor(Rect(Point(0, 0), originalSize), ColorRGBA(0, 0, 0, 0));
+			canvas.applyTransparency(true);
+			canvas.drawText(Point(0, 0), FONT_TINY, color, ETextAlignment::TOPLEFT, text);
+			const Point size(std::min(pos.w, originalSize.x), std::min(10, originalSize.y));
+			auto picture = std::make_shared<CPicture>(std::static_pointer_cast<IImage>(image),
+				Point((pos.w - size.x) / 2, top));
+			picture->scaleTo(size);
+			lines.push_back(picture);
+		};
+
+		std::string total = std::to_string(details.mana);
+		std::string compact = TextOperations::formatMetric(details.mana, 3);
+		if(details.manaLimit >= 0)
+		{
+			total += "/" + std::to_string(details.manaLimit);
+			compact += "/" + TextOperations::formatMetric(details.manaLimit, 3);
+		}
+		addLine(total, compact, details.bufferMana > 0 ? 0 : 5, Colors::WHITE);
+		if(details.bufferMana > 0)
+			addLine("+" + std::to_string(details.bufferMana),
+				"+" + TextOperations::formatMetric(details.bufferMana, 3), 10, Colors::YELLOW);
+	}
+
+	void showPopupWindow(const Point &) override
+	{
+		CRClickPopup::createAndPush(explanation);
+	}
+};
+
+InfoAboutHero accessibleHeroInfo(const CGHeroInstance * hero)
+{
+	InfoAboutHero result(hero, InfoAboutHero::EInfoLevel::BASIC);
+	GAME->interface()->cb->getHeroInfo(hero, result);
+	return result;
+}
+}
+
 void CHeroTooltip::init(const InfoAboutHero & hero)
 {
 	OBJECT_CONSTRUCTION;
@@ -368,10 +438,7 @@ void CHeroTooltip::init(const InfoAboutHero & hero)
 		labels.push_back(std::make_shared<CLabel>(132, 60, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, std::to_string(hero.details->primskills[2]), 25));
 		labels.push_back(std::make_shared<CLabel>(160, 60, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, std::to_string(hero.details->primskills[3]), 25));
 
-		labels.push_back(std::make_shared<CLabel>(158, 100, FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, std::to_string(hero.details->mana), 30));
-		if(hero.details->bufferMana > 0)
-			labels.push_back(std::make_shared<CLabel>(158, 112, FONT_TINY, ETextAlignment::CENTER,
-				ColorRGBA(0, 191, 255), "+" + std::to_string(hero.details->bufferMana), 30));
+		spellPoints = std::make_shared<CompactHeroSpellPoints>(*hero.details, 0);
 
 		morale = std::make_shared<CAnimImage>(AnimationPath::builtin("IMRL22"), std::clamp(hero.details->morale + 3, 0 , 6), 0, 5, 74);
 		luck = std::make_shared<CAnimImage>(AnimationPath::builtin("ILCK22"), std::clamp(hero.details->luck + 3, 0, 6), 0, 5, 91);
@@ -387,13 +454,13 @@ CHeroTooltip::CHeroTooltip(Point pos, const InfoAboutHero &hero):
 // delegates rather than building InfoAboutHero twice - once for the army part and once for the
 // hero part. Each one queries the bonus system for luck, morale and all four primary skills
 CHeroTooltip::CHeroTooltip(Point pos, const CGHeroInstance * hero):
-	CHeroTooltip(pos, InfoAboutHero(hero, InfoAboutHero::EInfoLevel::DETAILED))
+	CHeroTooltip(pos, accessibleHeroInfo(hero))
 {
 }
 
 CInteractableHeroTooltip::CInteractableHeroTooltip(Point pos, const CGHeroInstance * hero)
 {
-	init(InfoAboutHero(hero, InfoAboutHero::EInfoLevel::DETAILED));
+	init(accessibleHeroInfo(hero));
 
 	OBJECT_CONSTRUCTION;
 	garrison = std::make_shared<CGarrisonInt>(pos + Point(0, 73), 4, Point(0, 0), hero, nullptr, true, true, CGarrisonInt::ESlotsLayout::REVERSED_TWO_ROWS);
@@ -413,10 +480,7 @@ void CInteractableHeroTooltip::init(const InfoAboutHero & hero)
 		labels.push_back(std::make_shared<CLabel>(132, 59, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, std::to_string(hero.details->primskills[2]), 25));
 		labels.push_back(std::make_shared<CLabel>(160, 59, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, std::to_string(hero.details->primskills[3]), 25));
 
-		labels.push_back(std::make_shared<CLabel>(158, 99, FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, std::to_string(hero.details->mana), 30));
-		if(hero.details->bufferMana > 0)
-			labels.push_back(std::make_shared<CLabel>(158, 111, FONT_TINY, ETextAlignment::CENTER,
-				ColorRGBA(0, 191, 255), "+" + std::to_string(hero.details->bufferMana), 30));
+		spellPoints = std::make_shared<CompactHeroSpellPoints>(*hero.details, -1);
 
 		morale = std::make_shared<CAnimImage>(AnimationPath::builtin("IMRL22"), std::clamp(hero.details->morale + 3, 0 ,6), 0, 5, 74);
 		luck = std::make_shared<CAnimImage>(AnimationPath::builtin("ILCK22"), std::clamp(hero.details->luck + 3, 0, 6), 0, 5, 91);
