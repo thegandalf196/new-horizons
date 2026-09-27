@@ -1977,7 +1977,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			// movement has completed and the destination is revalidated.
 			if(pack.ba.target.size() != 2)
 			{
-				auto & side = battleContext->getSide(pack.ba.side);
+				auto * actionBattle = gs.getBattle(pack.battleID);
+				auto & side = actionBattle->getSide(pack.ba.side);
 				const auto found = side.demonicReserve.find(pack.ba.gatingCreature);
 				if(found == side.demonicReserve.end() || found->second <= 0 || pack.ba.target.size() != 1)
 					throw std::runtime_error("Invalid Demonic Gating StartAction snapshot");
