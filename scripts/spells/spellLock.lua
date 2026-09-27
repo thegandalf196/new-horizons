@@ -8,6 +8,8 @@ local SPELLBINDER_PERK = "new-horizons:sorceryMagic.spellbinder"
 local BASE_DURATION_CAP = 3
 local SPELLBINDER_DURATION_CAP = 4
 local POWER_PER_EXTRA_ROUND = 80
+local PRESERVE_FRIENDLY_TEXT = "new-horizons.combat.spellLock.preserveBeneficial"
+local PRESERVE_HOSTILE_TEXT = "new-horizons.combat.spellLock.preserveHostile"
 
 local function duration(mechanics)
 	local base = math.min(BASE_DURATION_CAP,
@@ -25,7 +27,7 @@ local function opposingBonuses(mechanics, unit)
 		if bonus:getSource() ~= ENUM.BonusSource.spellEffect then return false end
 		if bonus:getSourceID() == SPELL_KEY then return false end
 		local sourceSpell = LIBRARY:getSpellByName(bonus:getSourceID())
-		if sourceSpell == nil or sourceSpell:isAdventure() then return false end
+		if sourceSpell == nil or sourceSpell:isAdventure() or not sourceSpell:isMagical() then return false end
 		if friendly then return sourceSpell:isNegative() end
 		return sourceSpell:isPositive()
 	end)
@@ -42,15 +44,15 @@ function Script:apply(mechanics, server, target)
 		local unit = destination.unit
 		if unit == nil or not unit:isAlive() then goto continue end
 
+		local friendly = mechanics:ownerMatches(unit)
 		local removable = opposingBonuses(mechanics, unit)
 		if removable:size() > 0 then
 			server:removeUnitBonuses(battle, unit, removable)
 		end
 
-		-- Magic resistance prevents hostile follow-up spells in the existing
-		-- target pipeline.  The hidden marker carries the full Spell Lock state
-		-- for the pending authoritative hook, which must also reject beneficial
-		-- follow-up magic and pause existing timed-effect counters.
+		-- The authoritative spell-target path recognizes this marker and rejects
+		-- all follow-up magic. Its sign records which polarity remains protected;
+		-- the duration itself is always held in turns and stays positive.
 		server:addUnitBonus(battle, unit, {
 			type = "MAGIC_RESISTANCE",
 			val = 100,
@@ -62,14 +64,24 @@ function Script:apply(mechanics, server, target)
 		}, false)
 		server:addUnitBonus(battle, unit, {
 			type = "NONE",
-			val = turns,
+			val = friendly and turns or -turns,
 			duration = ENUM.BonusDuration.nTurns,
 			turns = turns,
 			sourceType = ENUM.BonusSource.spellEffect,
 			sourceID = SPELL_KEY,
 			hidden = true,
-			description = "Spell Lock: preserve the target's remaining magical states"
+			description = friendly
+				and "Spell Lock: preserve beneficial magic and freeze its duration"
+				or "Spell Lock: preserve hostile magic and freeze its duration"
 		}, false)
+
+		if server:describeChanges() then
+			server:appendLog(battle, {
+				append = {friendly and PRESERVE_FRIENDLY_TEXT or PRESERVE_HOSTILE_TEXT},
+				replaceStrings = {unit:getCreature():getNameTextID(unit:getCount())},
+				replaceNumbers = {turns}
+			})
+		end
 
 		::continue::
 	end

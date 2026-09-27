@@ -1038,6 +1038,19 @@
 							6
 						]
 					},
+					"new-horizons:spellLock": {
+						"schools": [
+							"new-horizons:sorcery"
+						],
+						"active": true,
+						"level": 5,
+						"costs": [
+							22,
+							22,
+							22,
+							22
+						]
+					},
 					"new-horizons:timeStop": {
 						"schools": [
 							"new-horizons:sorcery"
@@ -8564,6 +8577,8 @@
 		"new-horizons.combat.arcaneBreach.refreshed": "Arcane Breach on %s is refreshed at %d of 3 total marks for %d rounds. Together, the %s side's marks let its ranged attacks ignore %d.%d%d% of the target's Creature Defense.",
 		"new-horizons.combat.arcaneBreach.side.attacker": "attacking",
 		"new-horizons.combat.arcaneBreach.side.defender": "defending",
+		"new-horizons.combat.spellLock.preserveBeneficial": "Spell Lock seals %s for %d rounds, removing hostile magic and preserving its beneficial magic. Its existing magic is frozen for the duration; no further magic can affect it, but Orders still can.",
+		"new-horizons.combat.spellLock.preserveHostile": "Spell Lock seals %s for %d rounds, removing beneficial magic and preserving its hostile magic. Its existing magic is frozen for the duration; no further magic can affect it, but Orders still can.",
 		"core.heroClass.alchemist.name": "Battle Mage",
 		"core.heroClass.demoniac.name": "Tyrant",
 		"core.heroClass.heretic.name": "Cultist",

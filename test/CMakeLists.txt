@@ -317,6 +317,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp
 		battleAI/NewHorizonsLevelGrantAITest.cpp
 		battleAI/NewHorizonsTimeStopAITest.cpp
+		battleAI/NewHorizonsSpellLockAITest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 		battleAI/HypotheticCloneTest.cpp
 		battleAI/HypotheticTimedSpellTest.cpp

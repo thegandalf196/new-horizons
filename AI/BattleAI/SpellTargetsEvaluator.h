@@ -36,6 +36,10 @@ public:
 	/// ally can make a defensive cast worthwhile.
 	static float timeStopPlacementValue(const spells::Mechanics * spellMechanics,
 		const spells::Target & target);
+	/// Scores cleansing and anti-magic value for a canonical Spell Lock cast.
+	/// Zero means the stack is already locked, unreceptive, or not worth sealing.
+	static float spellLockPlacementValue(const spells::Mechanics * spellMechanics,
+		const spells::Target & target);
 
 private:
 	enum Compare
@@ -52,6 +56,7 @@ private:
 	static std::vector<spells::Target> canonicalLandMineTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalFireWallTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalTimeStopTargets(const spells::Mechanics * spellMechanics);
+	static std::vector<spells::Target> canonicalSpellLockTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> allTargetableCreatures(const spells::Mechanics * spellMechanics, bool exactUnit);
 	static std::vector<spells::Target> theBestLocationCasts(const spells::Mechanics * spellMechanics);
 	static Compare compareAffectedStacks(

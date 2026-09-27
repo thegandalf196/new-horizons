@@ -715,6 +715,19 @@
 				6
 			]
 		},
+		"new-horizons:spellLock": {
+			"schools": [
+				"new-horizons:sorcery"
+			],
+			"active": true,
+			"level": 5,
+			"costs": [
+				22,
+				22,
+				22,
+				22
+			]
+		},
 		"new-horizons:timeStop": {
 			"schools": [
 				"new-horizons:sorcery"

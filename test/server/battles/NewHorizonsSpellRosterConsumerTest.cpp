@@ -372,6 +372,26 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, SixSchoolRanksGateLearningButNotInscr
 	EXPECT_TRUE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, armageddon));
 }
 
+TEST_F(NewHorizonsSpellRosterConsumerTest, SpellLockIsNormallyLearnableAndInscribedCastingIgnoresSchoolRank)
+{
+	prepareHero();
+	const auto spellLock = spellNamed("new-horizons:spellLock");
+	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	ASSERT_TRUE(spellLock.toSpell()->isCommonHeroSpell());
+	ASSERT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), spellLock), MasteryLevel::EXPERT);
+
+	removeNewHorizonsSchoolRanks();
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(spellLock.toSpell(), true));
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_TRUE(attackerSideHero->canLearnSpell(spellLock.toSpell(), true));
+
+	attackerSideHero->addSpellToSpellbook(spellLock);
+	ASSERT_TRUE(attackerSideHero->spellbookContainsSpell(spellLock));
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	EXPECT_FALSE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, spellLock));
+	EXPECT_TRUE(attackerSideHero->canCastThisSpell(spellLock.toSpell()));
+}
+
 TEST_F(NewHorizonsSpellRosterConsumerTest, CanLearnSpellAcceptsEachRequiredSchoolRank)
 {
 	prepareHero();
@@ -386,6 +406,7 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, CanLearnSpellAcceptsEachRequiredSchoo
 		SchoolCase{spellNamed("core:animateDead"), SecondarySkill(SecondarySkill::decode("new-horizons:shadowMagic")), MasteryLevel::BASIC},
 		SchoolCase{spellNamed("core:antiMagic"), SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), MasteryLevel::ADVANCED},
 		SchoolCase{spellNamed("core:armageddon"), SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), MasteryLevel::EXPERT},
+		SchoolCase{spellNamed("new-horizons:spellLock"), SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), MasteryLevel::EXPERT},
 	};
 
 	for(const auto & test : cases)

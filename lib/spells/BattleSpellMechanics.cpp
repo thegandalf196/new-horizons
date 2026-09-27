@@ -44,6 +44,20 @@ bool isLivingCureTarget(const battle::Unit * unit)
 		&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
 }
 
+bool isSpellLocked(const battle::Unit * unit)
+{
+	if(!unit)
+		return false;
+
+	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	const auto lockBonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock)));
+	return lockBonuses && vstd::contains_if(*lockBonuses, [](const std::shared_ptr<Bonus> & bonus)
+	{
+		return bonus && bonus->type == BonusType::MAGIC_RESISTANCE
+			&& Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0;
+	});
+}
+
 class EffectPacketRecorder final : public ServerCallback
 {
 private:
@@ -504,17 +518,36 @@ BattleSpellMechanics::~BattleSpellMechanics() = default;
 
 void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & targets, bool indirect, bool ignoreImmunity) const
 {
+	Target unlockedTargets = targets;
+	if(isMagicalEffect())
+	{
+		const auto targetTypes = getTargetTypes();
+		const bool compoundCreatureTarget = targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::LOCATION}
+			|| targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::CREATURE};
+		const bool compoundTargetLocked = compoundCreatureTarget && vstd::contains_if(unlockedTargets,
+			[](const Destination & destination)
+			{
+				return destination.unitValue && isSpellLocked(destination.unitValue);
+			});
+		if(compoundTargetLocked)
+			return;
+		vstd::erase_if(unlockedTargets, [](const Destination & destination)
+		{
+			return destination.unitValue && isSpellLocked(destination.unitValue);
+		});
+	}
+
 	auto callback = [&](const effects::Effect * effect, bool & stop)
 	{
 		if(indirect == effect->indirect)
 		{
 			if(ignoreImmunity)
 			{
-				effect->apply(server, this, targets);
+				effect->apply(server, this, unlockedTargets);
 			}
 			else
 			{
-				Target filtered = effect->filterTarget(this, targets);
+				Target filtered = effect->filterTarget(this, unlockedTargets);
 				effect->apply(server, this, filtered);
 			}
 		}
@@ -745,6 +778,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	{
 		mainTarget = battle()->battleGetUnitByPos(target.front().hexValue, true);
 	}
+	if(isMagicalEffect() && mainTarget && !target.empty() && target.front().unitValue && isSpellLocked(mainTarget))
+		return false;
 
 	if(!canCastAtTarget(mainTarget))
 		return false;
@@ -784,7 +819,8 @@ std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(const Target
 
 	for(const Destination & dest : all)
 	{
-		if(dest.unitValue && !dest.unitValue->isInvincible())
+		if(dest.unitValue && !dest.unitValue->isInvincible()
+			&& (!isMagicalEffect() || !isSpellLocked(dest.unitValue)))
 		{
 			//FIXME: remove and return battle::Unit
 			stacks.insert(battle()->battleGetStackByID(dest.unitValue->unitId(), false));
@@ -1276,6 +1312,11 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 		//magic resistance
 		for (const auto * unit : battle()->battleGetAllUnits(false))
 		{
+		if(isMagicalEffect() && isSpellLocked(unit))
+			{
+				resistantUnitIds.insert(unit->unitId());
+				continue;
+			}
 			const int prob = std::min(unit->magicResistance(), 100); //probability of resistance in %
 			if(rng.nextInt(0, 99) < prob)
 				resistantUnitIds.insert(unit->unitId());
@@ -1289,7 +1330,11 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 
 	auto filterUnit = [&](const battle::Unit * unit)
 	{
-		if(filterResisted(unit))
+		// Spell Lock is absolute and polarity-independent: it blocks damage,
+		// beneficial magic, hostile magic, dispels, and other combat spells.
+		// Treat it as resistance here so every effect category uses the same
+		// authoritative target filtering and existing resisted logging.
+		if((isMagicalEffect() && isSpellLocked(unit)) || filterResisted(unit))
 			resisted.push_back(unit);
 		else
 			affectedUnits.push_back(unit);
@@ -1298,7 +1343,7 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 	if (!target.empty())
 	{
 		const battle::Unit * targetedUnit = battle()->battleGetUnitByPos(target.front().hexValue, true);
-		if (isReflected(targetedUnit, rng)) {
+		if ((!isMagicalEffect() || !isSpellLocked(targetedUnit)) && isReflected(targetedUnit, rng)) {
 			reflect(sc, rng, targetedUnit);
 			return;
 			}
@@ -1306,12 +1351,16 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 
 	//prepare targets
 	effectsToApply = effects->prepare(this, target, spellTarget);
+	const auto spellLockedUnits = filterSpellLockedEffects(target);
 
 	auto unitTargets = collectTargets();
 
 	//process them
 	for(const auto * unit : unitTargets)
 		filterUnit(unit);
+	for(const auto * unit : spellLockedUnits)
+		if(!vstd::contains(resisted, unit))
+			resisted.push_back(unit);
 
 	//and update targets
 	for(auto & p : effectsToApply)
@@ -1328,6 +1377,66 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 		sc.resistedCres.insert(unit->unitId());
 
 	resistantUnitIds.clear();
+}
+
+battle::Units BattleSpellMechanics::filterSpellLockedEffects(const Target & aimPoint)
+{
+	battle::Units rejected;
+	if(!isMagicalEffect())
+		return rejected;
+
+	const auto targetTypes = getTargetTypes();
+	const bool compoundCreatureTarget = targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::LOCATION}
+		|| targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::CREATURE};
+	const bool compoundTargetLocked = compoundCreatureTarget && vstd::contains_if(aimPoint,
+		[](const Destination & destination)
+		{
+			return destination.unitValue && isSpellLocked(destination.unitValue);
+		});
+	if(compoundTargetLocked)
+	{
+		for(const auto & destination : aimPoint)
+			if(destination.unitValue && isSpellLocked(destination.unitValue)
+				&& !vstd::contains(rejected, destination.unitValue))
+				rejected.push_back(destination.unitValue);
+		// Transforming a locked unit through a Lua effect may already have
+		// removed it from the transformed destinations. Use the submitted aim
+		// to identify rejection and drop the entire paired effect before apply.
+		effectsToApply.clear();
+		return rejected;
+	}
+	for(auto effect = effectsToApply.begin(); effect != effectsToApply.end();)
+	{
+		auto & destinations = effect->second;
+		const bool compoundDestinationLocked = compoundCreatureTarget && vstd::contains_if(destinations,
+			[](const Destination & destination)
+			{
+				return destination.unitValue && isSpellLocked(destination.unitValue);
+			});
+		if(compoundDestinationLocked)
+		{
+			for(const auto & destination : destinations)
+				if(destination.unitValue && isSpellLocked(destination.unitValue)
+					&& !vstd::contains(rejected, destination.unitValue))
+					rejected.push_back(destination.unitValue);
+			// Compound effects (notably Teleport and Sacrifice) consume a paired
+			// target contract. Dropping only its destinations still invokes the
+			// effect script with an empty target and can dereference target[1].
+			effect = effectsToApply.erase(effect);
+			continue;
+		}
+		vstd::erase_if(destinations, [&](const Destination & destination)
+		{
+			const auto * unit = destination.unitValue;
+			if(!unit || !isSpellLocked(unit))
+				return false;
+			if(!vstd::contains(rejected, unit))
+				rejected.push_back(unit);
+			return true;
+		});
+		++effect;
+	}
+	return rejected;
 }
 
 bool BattleSpellMechanics::isReflected(const battle::Unit * unit, vstd::RNG & rng)
@@ -1378,6 +1487,7 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	Target spellTarget = transformSpellTarget(target);
 
 	effectsToApply = effects->prepare(this, target, spellTarget);
+	filterSpellLockedEffects(target);
 
 	auto unitTargets = collectTargets();
 
@@ -1523,7 +1633,8 @@ std::vector<AimType> BattleSpellMechanics::getTargetTypes() const
 
 bool BattleSpellMechanics::isReceptive(const battle::Unit * target) const
 {
-	return targetCondition->isReceptive(this, target);
+	return target && (!isMagicalEffect() || !isSpellLocked(target))
+		&& targetCondition->isReceptive(this, target);
 }
 
 bool BattleSpellMechanics::isSmart() const

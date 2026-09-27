@@ -30,6 +30,7 @@ namespace newHorizonsBattleStatus
 /// the status wording here so each battle stack presentation says the same
 /// thing without adding a second runtime state API to the client.
 inline constexpr std::string_view TIME_STOP_SPELL_KEY = "new-horizons:timeStop";
+inline constexpr std::string_view SPELL_LOCK_SPELL_KEY = "new-horizons:spellLock";
 
 inline bool isTimeStop(std::string_view spellKey)
 {
@@ -43,6 +44,46 @@ inline std::string timeStopTooltip(std::string_view spellDescription)
 	result += "\n\nRemaining: until the beginning of the caster's next Hero Action.";
 	return result;
 }
+
+inline bool isSpellLock(std::string_view spellKey)
+{
+	return spellKey == SPELL_LOCK_SPELL_KEY;
+}
+
+struct SpellLockStatus
+{
+	bool preservesBeneficial = true;
+	int32_t remainingRounds = 0;
+};
+
+template<typename BonusRange>
+inline std::optional<SpellLockStatus> spellLockStatus(const BonusRange & bonuses)
+{
+	for(const auto & bonus : bonuses)
+	{
+		if(!bonus || bonus->source != BonusSource::SPELL_EFFECT || bonus->type != BonusType::NONE
+			|| bonus->sid.toString() != SPELL_LOCK_SPELL_KEY
+			|| bonus->duration != BonusDuration::N_TURNS || bonus->turnsRemain <= 0)
+			continue;
+
+		return SpellLockStatus{bonus->val > 0, bonus->turnsRemain};
+	}
+	return std::nullopt;
+}
+
+inline std::string spellLockTooltip(std::string_view spellDescription, const SpellLockStatus & status)
+{
+	std::string result(spellDescription);
+	result += "\n\nPreserved: ";
+	result += status.preservesBeneficial ? "beneficial" : "hostile";
+	result += " magical effects. Their timers are frozen, but the effects continue working.";
+	result += "\nNo further magic can affect this stack; Orders are unaffected.";
+	result += "\nRemaining: " + std::to_string(status.remainingRounds)
+		+ (status.remainingRounds == 1 ? " round." : " rounds.");
+	return result;
+}
+
+inline constexpr std::string_view SPELL_LOCK_BADGE = "SL";
 
 /// A short badge fits inside the 48x36 SPELLINT slot while the hover text
 /// carries the full remaining-until-caster-action semantics.

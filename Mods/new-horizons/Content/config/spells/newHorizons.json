@@ -555,8 +555,7 @@
 			}
 		},
 		"flags" : {
-			"indifferent" : true,
-			"special" : true
+			"indifferent" : true
 		},
 		"targetCondition" : {}
 	},

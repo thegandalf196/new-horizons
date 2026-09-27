@@ -111,12 +111,17 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	{
 		const auto spellKey = effect.toSpell()->getJsonKey();
 		return newHorizonsBattleStatus::isTimeStop(spellKey)
+			|| newHorizonsBattleStatus::isSpellLock(spellKey)
 			|| newHorizonsBattleStatus::isFocusMagic(spellKey)
 			|| newHorizonsBattleStatus::isArcaneBreach(spellKey);
 	});
-	std::stable_partition(spells.begin(), prioritizedEnd, [](const SpellID effect)
+	const auto afterTimeStop = std::stable_partition(spells.begin(), prioritizedEnd, [](const SpellID effect)
 	{
 		return newHorizonsBattleStatus::isTimeStop(effect.toSpell()->getJsonKey());
+	});
+	std::stable_partition(afterTimeStop, prioritizedEnd, [](const SpellID effect)
+	{
+		return newHorizonsBattleStatus::isSpellLock(effect.toSpell()->getJsonKey());
 	});
 	for(SpellID effect : spells)
 	{
@@ -135,17 +140,22 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			int duration = spellBonuses->front()->turnsRemain;
 			const auto spellKey = effect.toSpell()->getJsonKey();
 			const bool timeStop = newHorizonsBattleStatus::isTimeStop(spellKey);
+			const bool spellLock = newHorizonsBattleStatus::isSpellLock(spellKey);
 			const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
 			const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
+			const auto lockStatus = spellLock
+				? newHorizonsBattleStatus::spellLockStatus(*spellBonuses)
+				: std::optional<newHorizonsBattleStatus::SpellLockStatus>{};
 			const auto arcaneStatus = arcaneBreach
 				? newHorizonsBattleStatus::arcaneBreachStatus(*spellBonuses)
 				: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, firstPos.x + offset.x * printed, firstPos.y + offset.y * printed));
-			if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || arcaneBreach)
+			if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach)
 			{
 				const std::string badge = timeStop
 					? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
+					: spellLock ? std::string(newHorizonsBattleStatus::SPELL_LOCK_BADGE)
 					: arcaneBreach ? std::to_string(arcaneStatus.markCount()) : std::to_string(duration);
 				labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
 			}
@@ -153,6 +163,14 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			if(timeStop)
 			{
 				const std::string tooltip = newHorizonsBattleStatus::timeStopTooltip(effect.toSpell()->getDescriptionTranslated(0));
+				statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(
+					Rect(firstPos.x + offset.x * printed, firstPos.y + offset.y * printed, 48, 36), tooltip, tooltip));
+			}
+			else if(spellLock)
+			{
+				const std::string tooltip = lockStatus
+					? newHorizonsBattleStatus::spellLockTooltip(effect.toSpell()->getDescriptionTranslated(0), *lockStatus)
+					: effect.toSpell()->getDescriptionTranslated(0);
 				statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(
 					Rect(firstPos.x + offset.x * printed, firstPos.y + offset.y * printed, 48, 36), tooltip, tooltip));
 			}

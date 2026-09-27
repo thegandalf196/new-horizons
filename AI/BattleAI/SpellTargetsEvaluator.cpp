@@ -19,6 +19,8 @@
 #include "SpellTargetsEvaluator.h"
 #include <vcmi/spells/Spell.h>
 
+#include <set>
+
 using namespace spells;
 
 namespace
@@ -59,6 +61,26 @@ bool isCanonicalTimeStop(const Mechanics * spellMechanics)
 {
 	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
 	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
+}
+
+bool isCanonicalSpellLock(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return spell && spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL;
+}
+
+bool isSpellLocked(const battle::Unit * unit)
+{
+	if(!unit)
+		return false;
+
+	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	const auto lockBonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock)));
+	return lockBonuses && vstd::contains_if(*lockBonuses, [](const std::shared_ptr<Bonus> & bonus)
+	{
+		return bonus && bonus->type == BonusType::MAGIC_RESISTANCE
+			&& Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0;
+	});
 }
 
 bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle,
@@ -366,6 +388,8 @@ std::vector<Target> physicalObstacleTargets(const Mechanics * spellMechanics)
 
 std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spellMechanics)
 {
+	if(isCanonicalSpellLock(spellMechanics))
+		return canonicalSpellLockTargets(spellMechanics);
 	if(isCanonicalTimeStop(spellMechanics))
 		return canonicalTimeStopTargets(spellMechanics);
 	if(isCanonicalFireWall(spellMechanics))
@@ -405,6 +429,22 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spe
 		default:
 			return result;
 	}
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalSpellLockTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	{
+		if(!unit || !unit->alive() || !unit->isValidTarget(false) || isSpellLocked(unit))
+			continue;
+
+		Target target{Destination(unit)};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
+	}
+	return result;
 }
 
 std::vector<Target> SpellTargetEvaluator::canonicalTimeStopTargets(const spells::Mechanics * spellMechanics)
@@ -713,6 +753,63 @@ float SpellTargetEvaluator::timeStopPlacementValue(const Mechanics * spellMechan
 	}
 
 	return value;
+}
+
+float SpellTargetEvaluator::spellLockPlacementValue(const Mechanics * spellMechanics,
+	const Target & target)
+{
+	if(!isCanonicalSpellLock(spellMechanics) || target.size() != 1 || !target.front().unitValue)
+		return 0.0f;
+
+	const auto * unit = target.front().unitValue;
+	if(!unit->alive() || !unit->isValidTarget(false) || unit->isInvincible() || isSpellLocked(unit)
+		|| !spellMechanics->isReceptive(unit))
+		return 0.0f;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return 0.0f;
+
+	const bool enemy = spellMechanics->battle()->battleGetOwner(unit) != spellMechanics->getCasterColor();
+	const float health = static_cast<float>(std::max<int64_t>(1, unit->getAvailableHealth()));
+	float value = 0.0f;
+	std::set<SpellID> countedEffects;
+	const auto spellBonuses = unit->getBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	if(spellBonuses)
+	{
+		for(const auto & bonus : *spellBonuses)
+		{
+			if(!bonus || !bonus->sid.as<SpellID>().hasValue())
+				continue;
+
+			const auto spellId = bonus->sid.as<SpellID>();
+			const auto * statusSpell = spellId.toSpell();
+			if(!statusSpell || statusSpell->isAdventure() || !statusSpell->isMagical()
+				|| !countedEffects.insert(spellId).second)
+				continue;
+
+			if(enemy)
+			{
+				// Strip enemy enchantments and preserve our own active afflictions.
+				if(statusSpell->isPositive())
+					value += health * 0.65f;
+				if(statusSpell->isNegative())
+					value += health * 0.45f;
+			}
+			else
+			{
+				// Cleanse hostile effects while retaining and protecting friendly
+				// enchantments; the latter are useful but less valuable than a cleanse.
+				if(statusSpell->isNegative())
+					value += health * 0.90f;
+				if(statusSpell->isPositive())
+					value += health * 0.15f;
+			}
+		}
+	}
+
+	const int rounds = std::clamp(spellMechanics->getEffectDuration().value_or(1), 1, 5);
+	return value * (0.7f + 0.1f * static_cast<float>(rounds));
 }
 
 std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)

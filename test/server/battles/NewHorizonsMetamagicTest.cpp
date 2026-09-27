@@ -269,11 +269,9 @@ protected:
 		ASSERT_NE(spell, SpellID::NONE);
 		ASSERT_NE(spell.toSpell(), nullptr);
 		ASSERT_TRUE(spell.toSpell()->hasBattleEffects());
-		// Spell Lock is intentionally not in the New Horizons common spell roster.
-		// Invoke its loaded special-spell definition directly to verify this script's
-		// authoritative bonus application without changing that roster.
-		ASSERT_EQ(gameState()->getMagicRules()["spells"].Struct().count(newHorizonsSorcery::SPELL_LOCK_SPELL), 0u);
-		ASSERT_FALSE(spell.toSpell()->isCommonHeroSpell());
+		ASSERT_NE(gameState()->getMagicRules()["spells"].Struct().count(newHorizonsSorcery::SPELL_LOCK_SPELL), 0u);
+		ASSERT_TRUE(gameState()->getMagicRules()["spells"][newHorizonsSorcery::SPELL_LOCK_SPELL]["active"].Bool());
+		ASSERT_TRUE(spell.toSpell()->isCommonHeroSpell());
 
 		spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
 		event.setSpellLevel(3);
@@ -293,6 +291,26 @@ protected:
 		ASSERT_NE(resistance, nullptr);
 		EXPECT_EQ(resistance->duration, BonusDuration::N_TURNS);
 		EXPECT_EQ(resistance->turnsRemain, expectedDuration);
+	}
+
+	int32_t effectTurns(const CStack * target, SpellID sourceSpell) const
+	{
+		const auto bonus = target->getBonus(Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(sourceSpell)));
+		return bonus && Bonus::NTurns(bonus.get()) ? bonus->turnsRemain : 0;
+	}
+
+	int32_t spellLockTurns(const CStack * target) const
+	{
+		const auto bonuses = target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(spellLockSpell())).And(Selector::type()(BonusType::MAGIC_RESISTANCE)));
+		if(!bonuses)
+			return 0;
+		const auto lock = bonuses->getFirst(CSelector([](const Bonus * bonus)
+		{
+			return bonus && Bonus::NTurns(bonus);
+		}));
+		return lock ? lock->turnsRemain : 0;
 	}
 
 	void damage(CStack * target, int64_t amount)
@@ -1475,6 +1493,171 @@ TEST_F(NewHorizonsMetamagicTest, SpellbinderThenEchoedDurationAllowsFiveRoundsOn
 	// then applied once for this additional Metamagic Spell Action.
 	expectAppliedSpellLockDuration(defender,
 		newHorizonsSorcery::SPELL_LOCK_SPELLBINDER_DURATION_CAP + 1);
+}
+
+TEST_F(NewHorizonsMetamagicTest, SpellLockRemovesOnlyTheOpposingMagicalPolarity)
+{
+	prepare(1);
+	const auto addEffect = [](CStack * target, SpellID source, BonusType type, int32_t value)
+	{
+		auto bonus = std::make_shared<Bonus>(BonusDuration::N_TURNS, type, BonusSource::SPELL_EFFECT,
+			value, BonusSourceID(source));
+		bonus->turnsRemain = 3;
+		target->addNewBonus(bonus);
+	};
+	addEffect(attacker, SpellID(SpellID::HASTE), BonusType::STACKS_SPEED, 3);
+	addEffect(attacker, SpellID(SpellID::SLOW), BonusType::STACKS_SPEED, -3);
+	const SpellID deathCloud(SpellID::decode("core:deathCloud"));
+	ASSERT_NE(deathCloud.toSpell(), nullptr);
+	ASSERT_FALSE(deathCloud.toSpell()->isMagical());
+	addEffect(attacker, deathCloud, BonusType::STACKS_SPEED, -4);
+	addEffect(defender, SpellID(SpellID::HASTE), BonusType::STACKS_SPEED, 3);
+	addEffect(defender, SpellID(SpellID::SLOW), BonusType::STACKS_SPEED, -3);
+
+	setSpellLockDurationTestPower();
+	applySpellLockScript(attacker);
+	applySpellLockScript(defender);
+
+	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), 3);
+	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::SLOW)), 0);
+	EXPECT_EQ(effectTurns(attacker, deathCloud), 3);
+	EXPECT_EQ(effectTurns(defender, SpellID(SpellID::HASTE)), 0);
+	EXPECT_EQ(effectTurns(defender, SpellID(SpellID::SLOW)), 3);
+}
+
+TEST_F(NewHorizonsMetamagicTest, SpellLockBlocksRealCastsAcrossTargetCategories)
+{
+	prepare(1);
+	attackerSideHero->addSpellToSpellbook(SpellID::TELEPORT);
+	setSpellLockDurationTestPower();
+	const auto addEffect = [](CStack * target, SpellID source, BonusType type, int32_t value)
+	{
+		auto bonus = std::make_shared<Bonus>(BonusDuration::N_TURNS, type, BonusSource::SPELL_EFFECT,
+			value, BonusSourceID(source));
+		bonus->turnsRemain = 3;
+		target->addNewBonus(bonus);
+	};
+	addEffect(attacker, SpellID(SpellID::HASTE), BonusType::STACKS_SPEED, 3);
+	addEffect(defender, SpellID(SpellID::SLOW), BonusType::STACKS_SPEED, -3);
+	applySpellLockScript(attacker);
+	applySpellLockScript(defender);
+
+	const auto attackerHealth = attacker->getAvailableHealth();
+	const auto defenderHealth = defender->getAvailableHealth();
+	const auto attackerPosition = attacker->getPosition();
+	const auto hasteTurns = effectTurns(attacker, SpellID(SpellID::HASTE));
+	const auto slowTurns = effectTurns(defender, SpellID(SpellID::SLOW));
+	const auto assertLockedCastIsRejected = [&](SpellID spell, const CStack * target,
+		spells::Target aimedAt)
+	{
+		spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+		event.setSpellLevel(3);
+		const auto mechanics = spell.toSpell()->battleMechanics(&event);
+		EXPECT_FALSE(mechanics->isReceptive(target)) << spell.getNum();
+		EXPECT_FALSE(mechanics->canBeCastAt(aimedAt)) << spell.getNum();
+		event.cast(gameHandler->spellcastEnvironment(), std::move(aimedAt));
+	};
+
+	// Beneficial, hostile, direct damage, dispel, and unit-plus-location
+	// teleportation all share the same locked-target barrier.
+	assertLockedCastIsRejected(SpellID(SpellID::HASTE), attacker, {spells::Destination(attacker)});
+	assertLockedCastIsRejected(SpellID(SpellID::SLOW), defender, {spells::Destination(defender)});
+	assertLockedCastIsRejected(SpellID(SpellID::MAGIC_ARROW), defender, {spells::Destination(defender)});
+	assertLockedCastIsRejected(SpellID(SpellID::DISPEL), attacker, {spells::Destination(attacker)});
+
+	const auto teleportHex = attacker->getPosition().copyToEast();
+	ASSERT_TRUE(teleportHex.isAvailable());
+	assertLockedCastIsRejected(SpellID(SpellID::TELEPORT), attacker,
+		{spells::Destination(attacker), spells::Destination(teleportHex)});
+	assertLockedCastIsRejected(SpellID(SpellID::FIREBALL), defender,
+		{spells::Destination(defender->getPosition())});
+
+	EXPECT_EQ(attacker->getAvailableHealth(), attackerHealth);
+	EXPECT_EQ(defender->getAvailableHealth(), defenderHealth);
+	EXPECT_EQ(attacker->getPosition(), attackerPosition);
+	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), hasteTurns);
+	EXPECT_EQ(effectTurns(defender, SpellID(SpellID::SLOW)), slowTurns);
+}
+
+TEST_F(NewHorizonsMetamagicTest, SpellLockFreezesOnlyPreservedMagicAndOtherRoundStateExpires)
+{
+	prepare(1);
+	setSpellLockDurationTestPower();
+	auto haste = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::SPELL_EFFECT, 3, BonusSourceID(SpellID(SpellID::HASTE)));
+	haste->turnsRemain = 3;
+	attacker->addNewBonus(haste);
+	auto defense = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_DEFENSE,
+		BonusSource::OTHER, 1);
+	defense->turnsRemain = 4;
+	attacker->addNewBonus(defense);
+	const SpellID bindSpell(SpellID::decode("core:bind"));
+	auto nonmagicalSpellEffect = std::make_shared<Bonus>(BonusDuration::N_TURNS,
+		BonusType::STACKS_DEFENSE, BonusSource::SPELL_EFFECT, 2, BonusSourceID(bindSpell));
+	nonmagicalSpellEffect->turnsRemain = 4;
+	attacker->addNewBonus(nonmagicalSpellEffect);
+	auto slow = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::SPELL_EFFECT, -3, BonusSourceID(SpellID(SpellID::SLOW)));
+	slow->turnsRemain = 3;
+	defender->addNewBonus(slow);
+	applySpellLockScript(attacker);
+	applySpellLockScript(defender);
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_TRUE(battle()->getHeroOrderState(BattleSide::ATTACKER));
+	const auto nonmagicalTurns = [&]()
+	{
+		const auto bonuses = attacker->getBonuses(Selector::type()(BonusType::STACKS_DEFENSE));
+		if(!bonuses)
+			return 0;
+		const auto timed = bonuses->getFirst(CSelector([](const Bonus * bonus)
+		{
+			return bonus && bonus->source == BonusSource::OTHER && Bonus::NTurns(bonus);
+		}));
+		return timed ? timed->turnsRemain : 0;
+	};
+	const auto nonmagicalSpellTurns = [&]() { return effectTurns(attacker, bindSpell); };
+	const auto nextRound = [&]()
+	{
+		BattleNextRound next;
+		next.battleID = BattleID(0);
+		gameHandler->sendAndApply(next);
+	};
+	// The transition out of setup round 0 intentionally skips duration aging.
+	while(battle()->getRound() == 0)
+		nextRound();
+	EXPECT_FALSE(battle()->getHeroOrderState(BattleSide::ATTACKER));
+	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), 3);
+	EXPECT_EQ(nonmagicalTurns(), 4);
+	EXPECT_EQ(nonmagicalSpellTurns(), 4);
+
+	nextRound();
+	EXPECT_EQ(spellLockTurns(attacker), 2);
+	EXPECT_EQ(spellLockTurns(defender), 2);
+	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), 3);
+	EXPECT_EQ(effectTurns(defender, SpellID(SpellID::SLOW)), 3);
+	EXPECT_EQ(nonmagicalTurns(), 3);
+	EXPECT_EQ(nonmagicalSpellTurns(), 3);
+
+	nextRound();
+	EXPECT_EQ(spellLockTurns(attacker), 1);
+	EXPECT_EQ(spellLockTurns(defender), 1);
+	EXPECT_EQ(nonmagicalTurns(), 2);
+	EXPECT_EQ(nonmagicalSpellTurns(), 2);
+
+	nextRound();
+	EXPECT_EQ(spellLockTurns(attacker), 0);
+	EXPECT_EQ(spellLockTurns(defender), 0);
+	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), 3);
+	EXPECT_EQ(effectTurns(defender, SpellID(SpellID::SLOW)), 3);
+	EXPECT_EQ(nonmagicalTurns(), 1);
+	EXPECT_EQ(nonmagicalSpellTurns(), 1);
+
+	nextRound();
+	EXPECT_EQ(effectTurns(attacker, SpellID(SpellID::HASTE)), 2);
+	EXPECT_EQ(effectTurns(defender, SpellID(SpellID::SLOW)), 2);
+	EXPECT_EQ(nonmagicalTurns(), 0);
+	EXPECT_EQ(nonmagicalSpellTurns(), 0);
 }
 
 TEST_F(NewHorizonsMetamagicTest, FocusedPairingIgnoresTwentyPercentOfMagicalReduction)

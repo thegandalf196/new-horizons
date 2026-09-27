@@ -78,6 +78,7 @@ private:
 	effects::Effects::EffectsToApply effectsToApply;
 
 	void beforeCast(BattleSpellCast & sc, vstd::RNG & rng, const Target & target);
+	battle::Units filterSpellLockedEffects(const Target & aimPoint);
 	bool isReflected(const battle::Unit * unit, vstd::RNG & rng);
 	void reflect(BattleSpellCast & sc, vstd::RNG & rng, const battle::Unit * unit);
 	const battle::Unit * getRandomUnit(vstd::RNG & rng, const BattleSide & side);
@@ -94,4 +95,3 @@ private:
 };
 
 }
-

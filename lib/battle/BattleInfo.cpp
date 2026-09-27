@@ -51,6 +51,50 @@ bool orderUnitsAdjacent(const battle::Unit * first, const battle::Unit * second)
 	}
 	return false;
 }
+
+bool isSpellLocked(const CStack & stack)
+{
+	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	const auto bonuses = stack.getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock))
+		.And(Selector::type()(BonusType::MAGIC_RESISTANCE)));
+	return bonuses && vstd::contains_if(*bonuses, [](const std::shared_ptr<Bonus> & bonus)
+	{
+		return bonus && Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0;
+	});
+}
+
+std::optional<bool> spellLockPreservesBeneficial(const CStack & stack)
+{
+	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	const auto bonuses = stack.getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock))
+		.And(Selector::type()(BonusType::NONE)));
+	if(!bonuses)
+		return std::nullopt;
+
+	for(const auto & bonus : *bonuses)
+		if(bonus && Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0)
+			return bonus->val > 0;
+	return std::nullopt;
+}
+
+bool isPreservedSpellLockEffect(const Bonus * bonus, bool preserveBeneficial)
+{
+	if(!bonus || bonus->source != BonusSource::SPELL_EFFECT || !Bonus::NTurns(bonus))
+		return false;
+
+	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	const auto sourceSpellID = bonus->sid.as<SpellID>();
+	if(!sourceSpellID.hasValue() || sourceSpellID == spellLock)
+		return false;
+
+	const auto * sourceSpell = sourceSpellID.toSpell();
+	if(!sourceSpell || sourceSpell->isAdventure() || !sourceSpell->isMagical())
+		return false;
+
+	// Spell Lock removes only the opposing polarity. Neutral magical effects
+	// survive either alignment and their timers are frozen as well.
+	return preserveBeneficial ? !sourceSpell->isNegative() : !sourceSpell->isPositive();
+}
 }
 
 const SideInBattle & BattleInfo::getSide(BattleSide side) const
@@ -973,7 +1017,19 @@ void BattleInfo::nextRound()
 	{
 		// new turn effects
 		if(!isFirstRound && !s->isTimeStopped())
-			s->reduceBonusDurations(Bonus::NTurns);
+		{
+			const auto preserveBeneficial = spellLockPreservesBeneficial(*s);
+			if(isSpellLocked(*s) && preserveBeneficial.has_value())
+			{
+				const auto preservedMagic = CSelector([preserveBeneficial](const Bonus * bonus)
+				{
+					return isPreservedSpellLockEffect(bonus, *preserveBeneficial);
+				});
+				s->reduceBonusDurations(CSelector(Bonus::NTurns).And(preservedMagic.Not()));
+			}
+			else
+				s->reduceBonusDurations(Bonus::NTurns);
+		}
 
 		s->afterNewRound(isFirstRound);
 	}

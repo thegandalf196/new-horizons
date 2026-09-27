@@ -24,6 +24,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:disintegrate',
     'new-horizons:masterChainLightning',
     'new-horizons:phantomArmy',
+    'new-horizons:spellLock',
     'new-horizons:timeStop',
     'new-horizons:transfigureMatter',
 }
@@ -630,12 +631,12 @@ class NewHorizonsContentTest(unittest.TestCase):
         applied = texts[applied_key]
         refreshed = texts[refreshed_key]
 
-        self.assertEqual(set(texts), {
+        self.assertTrue({
             applied_key,
             refreshed_key,
             'new-horizons.combat.arcaneBreach.side.attacker',
             'new-horizons.combat.arcaneBreach.side.defender',
-        })
+        }.issubset(texts))
         self.assertEqual(texts['new-horizons.combat.arcaneBreach.side.attacker'], 'attacking')
         self.assertEqual(texts['new-horizons.combat.arcaneBreach.side.defender'], 'defending')
         for message in (applied, refreshed):
@@ -669,25 +670,54 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertIn('tenthsPercent = math.floor(combinedPenetrationBasisPoints / 10) % 10', script)
         self.assertIn('hundredthsPercent = combinedPenetrationBasisPoints % 10', script)
 
-    def test_other_sorcery_spell_foundation_definitions_remain_deferred(self):
-        """Deferred source definitions stay schema-shaped but out of the saved roster."""
+    def test_spell_lock_logs_are_localized_and_describe_lock_effects(self):
+        texts = load('config/newHorizonsCombatTexts.json')
+        preserve_beneficial = 'new-horizons.combat.spellLock.preserveBeneficial'
+        preserve_hostile = 'new-horizons.combat.spellLock.preserveHostile'
+        self.assertIn(preserve_beneficial, texts)
+        self.assertIn(preserve_hostile, texts)
+
+        for key in (preserve_beneficial, preserve_hostile):
+            message = texts[key]
+            with self.subTest(key=key):
+                self.assertEqual(message.count('%s'), 1)
+                self.assertEqual(message.count('%d'), 1)
+                self.assertIn('existing magic is frozen', message)
+                self.assertIn('no further magic can affect it', message)
+                self.assertIn('Orders still can', message)
+
+        beneficial = texts[preserve_beneficial]
+        hostile = texts[preserve_hostile]
+        self.assertIn('removing hostile magic and preserving its beneficial magic', beneficial)
+        self.assertIn('removing beneficial magic and preserving its hostile magic', hostile)
+
+        script = (ROOT / 'scripts/spells/spellLock.lua').read_text(encoding='utf-8')
+        self.assertIn('server:appendLog(battle, {', script)
+        self.assertIn(preserve_beneficial, script)
+        self.assertIn(preserve_hostile, script)
+
+    def test_spell_lock_is_an_active_sorcery_spell(self):
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
-        expected = {
-            'spellLock': (5, 22, 'spellLock'),
-        }
-        for name, (level, cost, effect) in expected.items():
-            with self.subTest(spell=name):
-                spell = content[name]
-                self.assertEqual(spell['school'], {'new-horizons:sorcery': True})
-                self.assertEqual(spell['level'], level)
-                self.assertTrue(spell['flags']['special'])
-                self.assertNotIn('new-horizons:' + name, self.rules['spells'])
-                self.assertEqual(set(spell['levels']), {'none', 'basic', 'advanced', 'expert'})
-                for rank in ('none', 'basic', 'advanced', 'expert'):
-                    current = spell['levels'][rank]
-                    self.assertEqual(current['cost'], cost)
-                    self.assertEqual(current['battleEffects'][effect]['type'],
-                                     'core:' + effect)
+        spell = content['spellLock']
+        Draft4Validator(load('config/schemas/spell.json')).validate(spell)
+        self.assertEqual(spell['school'], {'new-horizons:sorcery': True})
+        self.assertEqual(spell['level'], 5)
+        self.assertFalse(spell['flags'].get('special', False))
+        self.assertTrue(spell['flags']['indifferent'])
+        self.assertEqual(spell['defaultGainChance'], 0)
+        self.assertEqual(spell['gainChance'], {})
+        self.assertEqual(self.rules['spells']['new-horizons:spellLock'], {
+            'schools': ['new-horizons:sorcery'],
+            'active': True,
+            'level': 5,
+            'costs': [22, 22, 22, 22],
+        })
+        self.assertEqual(set(spell['levels']), {'none', 'basic', 'advanced', 'expert'})
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            current = spell['levels'][rank]
+            self.assertEqual(current['cost'], 22)
+            self.assertEqual(current['battleEffects']['spellLock']['type'],
+                             'core:spellLock')
 
     def test_arcane_breach_is_only_a_negative_internal_status_identity(self):
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')

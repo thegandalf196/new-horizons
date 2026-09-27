@@ -90,6 +90,11 @@ bool isCanonicalTimeStop(const CSpell * spell)
 	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
 }
 
+bool isCanonicalSpellLock(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL;
+}
+
 bool isPhantomArmy(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsSorcery::PHANTOM_ARMY_SPELL;
@@ -1363,6 +1368,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							// target comparer cannot tell a helpful enemy footprint from
 							// a harmful healthy-ally footprint.  Require a strictly
 							// beneficial placement before exposing it to action ranking.
+							if(ps.spellPlacementHeuristicValue <= 0.0f)
+								continue;
+						}
+						if(isCanonicalSpellLock(spell))
+						{
+							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::spellLockPlacementValue(
+								candidateMechanics.get(), ps.dest);
+							// Spell Lock is indifferent at the content layer. Do not leave
+							// generic evaluation free to value a no-op seal as a cast.
 							if(ps.spellPlacementHeuristicValue <= 0.0f)
 								continue;
 						}

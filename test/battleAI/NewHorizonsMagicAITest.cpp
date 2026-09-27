@@ -303,6 +303,210 @@ TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithou
 	}
 }
 
+TEST_F(NewHorizonsMagicAITest, SpellLockCastEvaluationMatchesRealMechanicsAcrossTargetShapes)
+{
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	for(const auto spell : {SpellID::HASTE, SpellID::SLOW, SpellID::DISPEL, SpellID::MAGIC_ARROW,
+		SpellID::FIREBALL, SpellID::TELEPORT})
+		attackerSideHero->addSpellToSpellbook(spell);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * lockedAlly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * openAlly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(4, 5), 10);
+	auto * lockedEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 10);
+	auto * openEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 5), 10);
+	ASSERT_NE(lockedAlly, nullptr);
+	ASSERT_NE(openAlly, nullptr);
+	ASSERT_NE(lockedEnemy, nullptr);
+	ASSERT_NE(openEnemy, nullptr);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != lockedAlly && unit != openAlly && unit != lockedEnemy && unit != openEnemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	ASSERT_NE(spellLock, SpellID::NONE);
+	const auto applyLock = [&](CStack * unit)
+	{
+		auto lock = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE,
+			BonusSource::SPELL_EFFECT, 100, BonusSourceID(spellLock));
+		lock->turnsRemain = 3;
+		unit->addNewBonus(lock);
+	};
+	const auto addSpellEffect = [](CStack * unit, SpellID source, int32_t value)
+	{
+		auto effect = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+			BonusSource::SPELL_EFFECT, value, BonusSourceID(source));
+		effect->turnsRemain = 3;
+		unit->addNewBonus(effect);
+	};
+	applyLock(lockedAlly);
+	applyLock(lockedEnemy);
+	addSpellEffect(lockedAlly, SpellID(SpellID::HASTE), 3);
+	addSpellEffect(openAlly, SpellID(SpellID::HASTE), 3);
+	addSpellEffect(lockedEnemy, SpellID(SpellID::SLOW), -3);
+	addSpellEffect(openEnemy, SpellID(SpellID::SLOW), -3);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	const std::array<const CStack *, 4> units{lockedAlly, openAlly, lockedEnemy, openEnemy};
+	const auto statusSnapshot = [](const battle::Unit * unit, SpellID source)
+	{
+		std::vector<std::pair<int32_t, int32_t>> result;
+		const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(source)));
+		if(bonuses)
+			for(const auto & bonus : *bonuses)
+				if(bonus && Bonus::NTurns(bonus.get()))
+					result.emplace_back(bonus->val, bonus->turnsRemain);
+		return result;
+	};
+	const auto runParity = [&](SpellID spellId, const spells::Target & liveAim, bool castable)
+	{
+		const auto * spell = spellId.toSpell();
+		ASSERT_NE(spell, nullptr);
+		HypotheticBattle model(environment.get(), callback->getBattle(BattleID(0)));
+		spells::Target projectedAim;
+		for(const auto & destination : liveAim)
+		{
+			if(destination.unitValue)
+			{
+				const auto * projected = model.battleGetUnitByID(destination.unitValue->unitId());
+				ASSERT_NE(projected, nullptr);
+				projectedAim.emplace_back(projected, destination.hexValue);
+			}
+			else
+				projectedAim.emplace_back(destination.hexValue);
+		}
+		spells::BattleCast simulated(&model, attackerSideHero, spells::Mode::HERO, spell);
+		simulated.setSpellLevel(3);
+		EXPECT_EQ(spell->battleMechanics(&simulated)->canBeCastAt(projectedAim), castable)
+			<< spellId.getNum();
+		simulated.castEval(model.getServerCallback(), projectedAim);
+
+		spells::BattleCast authoritative(battle(), attackerSideHero, spells::Mode::HERO, spell);
+		authoritative.setSpellLevel(3);
+		authoritative.cast(gameHandler->spellcastEnvironment(), liveAim);
+		for(const auto * liveUnit : units)
+		{
+			const auto * projected = model.battleGetUnitByID(liveUnit->unitId());
+			ASSERT_NE(projected, nullptr);
+			EXPECT_EQ(projected->getAvailableHealth(), liveUnit->getAvailableHealth()) << spellId.getNum();
+			EXPECT_EQ(projected->getCount(), liveUnit->getCount()) << spellId.getNum();
+			EXPECT_EQ(projected->getPosition(), liveUnit->getPosition()) << spellId.getNum();
+			for(const auto status : {SpellID(SpellID::HASTE), SpellID(SpellID::SLOW)})
+				EXPECT_EQ(statusSnapshot(projected, status), statusSnapshot(liveUnit, status)) << spellId.getNum();
+		}
+	};
+
+	const spells::Target lockedAllyAim{spells::Destination(lockedAlly)};
+	const spells::Target openAllyAim{spells::Destination(openAlly)};
+	const spells::Target lockedEnemyAim{spells::Destination(lockedEnemy)};
+	const spells::Target openEnemyAim{spells::Destination(openEnemy)};
+	runParity(SpellID::HASTE, lockedAllyAim, false);
+	EXPECT_EQ(statusSnapshot(lockedAlly, SpellID(SpellID::HASTE)).size(), 1u);
+	runParity(SpellID::HASTE, openAllyAim, true);
+	runParity(SpellID::SLOW, lockedEnemyAim, false);
+	EXPECT_EQ(statusSnapshot(lockedEnemy, SpellID(SpellID::SLOW)).size(), 1u);
+	runParity(SpellID::SLOW, openEnemyAim, true);
+	runParity(SpellID::MAGIC_ARROW, lockedEnemyAim, false);
+	runParity(SpellID::MAGIC_ARROW, openEnemyAim, true);
+	EXPECT_LT(openEnemy->getAvailableHealth(), lockedEnemy->getAvailableHealth());
+	runParity(SpellID::DISPEL, lockedAllyAim, false);
+	EXPECT_EQ(statusSnapshot(lockedAlly, SpellID(SpellID::HASTE)).size(), 1u);
+	runParity(SpellID::DISPEL, openAllyAim, true);
+	EXPECT_TRUE(statusSnapshot(openAlly, SpellID(SpellID::HASTE)).empty());
+
+	const auto accessibility = battle()->getAccessibility(openAlly);
+	BattleHex teleportDestination = BattleHex::INVALID;
+	for(si16 offset = 1; offset < GameConstants::BFIELD_SIZE; ++offset)
+	{
+		const BattleHex candidate(static_cast<si16>(openAlly->getPosition().toInt() + offset));
+		if(candidate.isAvailable() && accessibility.accessible(candidate, openAlly))
+		{
+			teleportDestination = candidate;
+			break;
+		}
+	}
+	ASSERT_TRUE(teleportDestination.isAvailable());
+	const auto lockedAllyPosition = lockedAlly->getPosition();
+	const spells::Target lockedTeleportAim{spells::Destination(lockedAlly),
+		spells::Destination(teleportDestination)};
+	runParity(SpellID::TELEPORT, lockedTeleportAim, false);
+	EXPECT_EQ(lockedAlly->getPosition(), lockedAllyPosition);
+	const spells::Target openTeleportAim{spells::Destination(openAlly),
+		spells::Destination(teleportDestination)};
+	runParity(SpellID::TELEPORT, openTeleportAim, true);
+	EXPECT_EQ(openAlly->getPosition(), teleportDestination);
+
+	// Fireball's location target covers both neighboring enemy stacks: the
+	// locked one remains protected while the unmarked one takes damage.
+	const auto lockedEnemyHealth = lockedEnemy->getAvailableHealth();
+	const auto openEnemyHealth = openEnemy->getAvailableHealth();
+	runParity(SpellID::FIREBALL,
+		{spells::Destination(lockedEnemy->getPosition())}, true);
+	EXPECT_EQ(lockedEnemy->getAvailableHealth(), lockedEnemyHealth);
+	EXPECT_LT(openEnemy->getAvailableHealth(), openEnemyHealth);
+}
+
+TEST_F(NewHorizonsMagicAITest, SpellLockDoesNotBlockNonmagicalCreatureAbilityInRealOrForecast)
+{
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto * ability = SpellID(SpellID::decode("core:fireballAbility")).toSpell();
+	ASSERT_NE(ability, nullptr);
+	ASSERT_TRUE(ability->isCreatureAbility());
+	ASSERT_FALSE(ability->isMagical());
+
+	auto * caster = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 2), 10);
+	auto * lockedEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 100);
+	auto * openEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(13, 5), 100);
+	ASSERT_NE(caster, nullptr);
+	ASSERT_NE(lockedEnemy, nullptr);
+	ASSERT_NE(openEnemy, nullptr);
+	Bonus creaturePower;
+	creaturePower.type = BonusType::CREATURE_SPELL_POWER;
+	creaturePower.val = 100;
+	caster->addNewBonus(std::make_shared<Bonus>(creaturePower));
+
+	const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	auto lock = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE,
+		BonusSource::SPELL_EFFECT, 100, BonusSourceID(spellLock));
+	lock->turnsRemain = 3;
+	lockedEnemy->addNewBonus(lock);
+
+	const spells::Target aim{spells::Destination(lockedEnemy->getPosition())};
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	HypotheticBattle model(environment.get(), callback->getBattle(BattleID(0)));
+	spells::BattleCast forecast(&model, caster, spells::Mode::CREATURE_ACTIVE, ability);
+	const auto forecastMechanics = ability->battleMechanics(&forecast);
+	ASSERT_TRUE(forecastMechanics->canBeCastAt(aim));
+	const auto * forecastLocked = model.battleGetUnitByID(lockedEnemy->unitId());
+	const auto * forecastOpen = model.battleGetUnitByID(openEnemy->unitId());
+	ASSERT_NE(forecastLocked, nullptr);
+	ASSERT_NE(forecastOpen, nullptr);
+	const auto lockedHealth = lockedEnemy->getAvailableHealth();
+	const auto openHealth = openEnemy->getAvailableHealth();
+	forecastMechanics->castEval(model.getServerCallback(), aim);
+	EXPECT_LT(forecastLocked->getAvailableHealth(), lockedHealth);
+	EXPECT_LT(forecastOpen->getAvailableHealth(), openHealth);
+
+	spells::BattleCast authoritative(battle(), caster, spells::Mode::CREATURE_ACTIVE, ability);
+	const auto authoritativeMechanics = ability->battleMechanics(&authoritative);
+	ASSERT_TRUE(authoritativeMechanics->canBeCastAt(aim));
+	authoritativeMechanics->cast(gameHandler->spellcastEnvironment(), aim);
+	EXPECT_EQ(forecastLocked->getAvailableHealth(), lockedEnemy->getAvailableHealth());
+	EXPECT_EQ(forecastOpen->getAvailableHealth(), openEnemy->getAvailableHealth());
+	EXPECT_LT(lockedEnemy->getAvailableHealth(), lockedHealth);
+	EXPECT_LT(openEnemy->getAvailableHealth(), openHealth);
+}
+
 TEST_F(NewHorizonsMagicAITest, RepeatedMovementEvaluationWithSavedPerksIsStableAndReadOnly)
 {
 	useCommands = false;
