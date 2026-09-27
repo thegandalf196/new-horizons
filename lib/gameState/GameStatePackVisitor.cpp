@@ -156,7 +156,10 @@ void applyFormulaReserveClosureReward(BattleInfo & battle, BattleSide sideID)
 void applySpellBufferRoundExpiryReward(BattleInfo & battle, BattleSide sideID)
 {
 	auto & side = battle.getSide(sideID);
-	if(side.metamagicPendingCount == 0 || side.metamagicSequenceSpells.size() != 1
+	// Both the initial Metamagic offer and Grand Metamagic's further action are
+	// Spell Actions granted by Metamagic. Either qualifies when it expires unused
+	// at the round boundary; the once-per-combat flag prevents a second reward.
+	if(side.metamagicPendingCount == 0 || side.metamagicSequenceSpells.empty()
 		|| side.metamagicSpellBufferUsed)
 		return;
 

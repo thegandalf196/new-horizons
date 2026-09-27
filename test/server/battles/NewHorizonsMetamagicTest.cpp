@@ -8,8 +8,9 @@
 #include "BattleStartSnapshotFixture.h"
 #include "HeroCommandFixture.h"
 
-#include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
@@ -116,6 +117,7 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID::FIREBALL);
 		attackerSideHero->addSpellToSpellbook(SpellID::CHAIN_LIGHTNING);
 		attackerSideHero->addSpellToSpellbook(SpellID::LAND_MINE);
+		attackerSideHero->addSpellToSpellbook(SpellID::FIRE_WALL);
 		attackerSideHero->addSpellToSpellbook(SpellID::CURE);
 		attackerSideHero->addSpellToSpellbook(SpellID::RESURRECTION);
 		attackerSideHero->addSpellToSpellbook(SpellID::CLONE);
@@ -195,6 +197,18 @@ protected:
 		action.spell = spell;
 		action.metamagicFollowup = followup;
 		action.aimToHex(target);
+		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
+	}
+
+	bool castFireWallFollowup(BattleHex target, BattleHex::EDir direction)
+	{
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = SpellID::FIRE_WALL;
+		action.metamagicFollowup = true;
+		action.aimToHex(target);
+		action.spellFireWallDirection = direction;
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
 
@@ -1377,6 +1391,17 @@ TEST_F(NewHorizonsMetamagicTest, EchoedDurationAddsOneRoundToAppliedSpellLockFol
 	expectAppliedSpellLockDuration(defender, newHorizonsSorcery::SPELL_LOCK_BASE_DURATION_CAP + 1);
 }
 
+TEST_F(NewHorizonsMetamagicTest, EchoedDurationAddsOneRoundToFireWallFollowup)
+{
+	prepare(2, {echoedDuration});
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(castFireWallFollowup(BattleHex(70), BattleHex::RIGHT));
+	ASSERT_EQ(battle()->obstacles.size(), 1u);
+	const auto * wall = dynamic_cast<const SpellCreatedObstacle *>(battle()->obstacles.front().get());
+	ASSERT_NE(wall, nullptr);
+	EXPECT_EQ(wall->turnsRemaining, 4);
+}
+
 TEST_F(NewHorizonsMetamagicTest, SpellbinderThenEchoedDurationAllowsFiveRoundsOnSpellLockFollowup)
 {
 	prepare(2, {newHorizonsMagic::METAMAGIC_ECHOED_DURATION.data()});
@@ -1522,7 +1547,7 @@ TEST_F(NewHorizonsMetamagicTest, RetiredDeclineCannotSuppressSpellBufferAtExpiry
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
 }
 
-TEST_F(NewHorizonsMetamagicTest, GrandContinuationExpiryPaysFormulaReserveButNotSpellBuffer)
+TEST_F(NewHorizonsMetamagicTest, GrandContinuationExpiryPaysFormulaReserveOnce)
 {
 	prepare(3, {grandMetamagic, formulaReserve});
 	battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed = 2;
@@ -1551,19 +1576,28 @@ TEST_F(NewHorizonsMetamagicTest, GrandContinuationExpiryPaysFormulaReserveButNot
 	}));
 }
 
-TEST_F(NewHorizonsMetamagicTest, GrandContinuationExpiryDoesNotGrantSpellBuffer)
+TEST_F(NewHorizonsMetamagicTest, GrandContinuationExpiryGrantsSpellBuffer)
 {
 	prepare(3, {grandMetamagic, spellBuffer});
 	battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed = 2;
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
 	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.size(), 2u);
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 1);
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 3);
 	const int32_t bufferBeforeExpiry = attackerSideHero->getBufferSpellPoints();
 
 	endRound();
-	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeExpiry);
-	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeExpiry
+		+ newHorizonsMagic::METAMAGIC_SPELL_BUFFER_POINTS);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSpellBufferUsed);
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).metamagicSequenceSpells.empty());
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicPendingCount, 0);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 3);
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Spell Buffer grants 6 Buffer Spell Points") != std::string::npos;
+	})) << ::testing::PrintToString(server.battleLogLines);
 }
 
 TEST_F(NewHorizonsMetamagicTest, BattleEndClosesGrandSequenceBeforeReleasingHeroes)

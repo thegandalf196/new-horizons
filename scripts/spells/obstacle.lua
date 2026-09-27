@@ -214,6 +214,10 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 	local newMine = isNewHorizonsLandMine(mechanics)
 	local newFireWall = isNewHorizonsFireWall(mechanics)
 	local snapshotDamage = newMine or newFireWall
+	local turnsRemaining = self.turnsRemaining or -1
+	if newFireWall then
+		turnsRemaining = mechanics:adjustEffectDuration(3)
+	end
 	return {
 		pos              = hex,
 		obstacleType     = ENUM.ObstacleType.spellCreated,
@@ -230,9 +234,10 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 		damageSnapshot   = snapshotDamage,
 		-- The legacy Fire Wall descriptor stores two decrements, which gives
 		-- the original spell's duration.  Canonical New Horizons Fire Wall is
-		-- explicitly a three-round footprint, so preserve that duration in the
-		-- authoritative descriptor without changing legacy content semantics.
-		turnsRemaining   = newFireWall and 3 or (self.turnsRemaining or -1),
+		-- explicitly a three-round footprint. Echoed Duration applies to an
+		-- eligible Metamagic follow-up before the authoritative descriptor is
+		-- stored, without changing legacy content semantics.
+		turnsRemaining   = turnsRemaining,
 		hidden           = self.hidden or false,
 		passable         = self.passable or false,
 		-- Avoid Lua's `a and false or b` pitfall: when `newMine` is true the
