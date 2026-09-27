@@ -9,11 +9,26 @@ window = (root / "client/windows/HeroSkillOddsWindow.cpp").read_text()
 assert "createAndPushWindow<HeroSkillOddsWindow>(*curHero)" in hero
 assert "createAndPushWindow<HeroGrowthWindow>" not in hero
 assert "Open Hero development for the saved growth profile" not in hero
-assert 'move(growthButton, Point(396, 166))' in hero
+assert 'Colors::YELLOW, "Skills / learned perks", 376' in hero
+assert 'move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), 176))' in hero
+assert 'growthButton->pos.w = infoMark->pos.w;' in hero
+assert 'growthButton->pos.h = infoMark->pos.h;' in hero
+resize = hero.index('growthButton->pos.w = infoMark->pos.w;')
+overlay = hero.index('growthButton->setOverlay(infoMark);')
+assert resize < overlay, "Overlay must be centered after the button is resized"
+assert 'pos = Rect(0, 0, 16, 16);' in hero
+assert 'movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44)' in hero
+assert 'legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44)' in hero
 data = (root / "Mods/new-horizons/Images/NH_hero_growth_entry_normal.png").read_bytes()
 width, height = struct.unpack(">II", data[16:24])
-assert 166 + height <= 192, "Button overlaps first skill row"
-assert 396 + width <= 440, "Button leaves skills panel"
+assert (width, height) == (24, 24), "Legacy entry-control frame size changed"
+info_mark_size = 16
+button_y = 176
+upper_row_bottom = 132 + 44
+first_skill_row = 192
+assert button_y >= upper_row_bottom, "Button overlaps the Movement/Siege row"
+assert button_y + info_mark_size <= first_skill_row, "Button overlaps first skill row"
+assert 14 + 376 + info_mark_size <= 440, "Button leaves skills panel at maximum heading width"
 assert 'hero.getPrimaryGrowthRules()' in window
 assert 'newHorizonsHeroes::usesSkillOfferWeights(rules)' in window
 assert 'rules["skillOfferWeights"].Struct()' in window

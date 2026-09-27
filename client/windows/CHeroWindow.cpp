@@ -151,6 +151,8 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 		if(newHorizonsLayout)
 		{
 			auto infoMark = std::make_shared<HeroSkillOddsInfoMark>();
+			growthButton->pos.w = infoMark->pos.w;
+			growthButton->pos.h = infoMark->pos.h;
 			growthButton->setOverlay(infoMark);
 			for(auto * child : growthButton->children)
 			{
@@ -380,9 +382,9 @@ void CHeroWindow::configureNewHorizonsLayout()
 	const auto skillsHeading = std::make_shared<CLabel>(16, 176, FONT_SMALL, ETextAlignment::TOPLEFT,
 		Colors::YELLOW, "Skills / learned perks", 376);
 	labels.push_back(skillsHeading);
-	// The visible 16px mark is centered in the existing 24px click target and
-	// follows the rendered heading width instead of a fixed, empty-column gap.
-	move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), 172));
+	// The visible mark and its 16px click target follow the rendered heading
+	// width instead of occupying a fixed, empty-column gap.
+	move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), 176));
 	for(size_t i = 0; i < secSkills.size(); ++i)
 	{
 		const int y = 192 + static_cast<int>(i) * 44;

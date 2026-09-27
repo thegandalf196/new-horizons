@@ -15,5 +15,8 @@
     "NH_creature_leadership_20.png": "136eaed4b71d8a33083f301648fe60f7456c96569b1a88ad4ae00d28023dedb9"
   },
   "dimensions": { "masters": [1254, 1254], "runtime": [20, 20] },
-  "consumer": "client/windows/CCreatureWindow.cpp MainSection"
+  "consumers": [
+    "client/windows/CCreatureWindow.cpp MainSection",
+    "client/windows/CCastleInterface.cpp ranked Fort cards"
+  ]
 }

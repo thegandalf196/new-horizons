@@ -582,6 +582,8 @@
       }
     },
     "metamagic": {
+      "status": "historical; superseded by the live metamagic-prisms-v2 rank family",
+      "superseded_by": "assets/new-horizons/art-source/metamagic-prisms-v2/manifest.json",
       "master": "NH_metamagic_master.png",
       "master_sha256": "ee97f8e72c4052efcd3e5dc17436dd04b9fc09567238ab9aecbdcd1a36733f16",
       "master_dimensions": [
