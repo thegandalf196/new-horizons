@@ -16,6 +16,7 @@
 
 #include "CGarrisonInt.h"
 
+#include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
