@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "name": "holy-wrath",
+  "source": {
+    "path": "$HOME/Documents/Projects/gandalf/HoMM 3 Complete/HeroesIII-Definitive/assets/new-horizons/art-source/holy-wrath-v1/master.png",
+    "filename": "master.png",
+    "byte_size": 2291804,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "dffe6516cacd083e3ba40a4e40bb298cb87315389f52536ae7b52091b9cfbdd7"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "dffe6516cacd083e3ba40a4e40bb298cb87315389f52536ae7b52091b9cfbdd7"
+    },
+    {
+      "file": "holy-wrath-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "f47660333d87a4a410093ff5f491f11f1efe64885bcdc28e1220dfb33e2aea12"
+    },
+    {
+      "file": "holy-wrath-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "491e0a81c3ae855d5b7ff37edb6e8de2667a221ca01d212c4bade56e6bfe88ae"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": null,
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": null,
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": null,
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": null,
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

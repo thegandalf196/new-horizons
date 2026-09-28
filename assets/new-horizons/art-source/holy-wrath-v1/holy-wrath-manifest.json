@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "holy-wrath",
+  "source": {
+    "path": "$HOME/.codex/generated_images/01a0e9b6-08f0-7101-8e2b-a80822c70b2f/exec-4c4fb6c9-73ce-4176-9fbd-ab41fb1ed15f.png",
+    "filename": "exec-4c4fb6c9-73ce-4176-9fbd-ab41fb1ed15f.png",
+    "byte_size": 2291804,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "dffe6516cacd083e3ba40a4e40bb298cb87315389f52536ae7b52091b9cfbdd7"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "dffe6516cacd083e3ba40a4e40bb298cb87315389f52536ae7b52091b9cfbdd7"
+    },
+    {
+      "file": "holy-wrath-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "c1d32935d1bfbaa9f197778959791a47f96a3dff14fd64f06af313133facd410"
+    },
+    {
+      "file": "holy-wrath-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "dd84eee182c3d37c6107baa3b5f99afcb85c4f8b7d4b4d23d36d4c50f8aa221e"
+    },
+    {
+      "file": "holy-wrath-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "491e0a81c3ae855d5b7ff37edb6e8de2667a221ca01d212c4bade56e6bfe88ae"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "holy-wrath-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "holy-wrath-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "holy-wrath-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "holy-wrath-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

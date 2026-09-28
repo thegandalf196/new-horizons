@@ -1,0 +1,9 @@
+{
+	"basepath": "NH_stormOfDaggersCast/",
+	"sequences": [
+		{
+			"group": 0,
+			"frames": ["00.png", "01.png", "02.png", "03.png"]
+		}
+	]
+}

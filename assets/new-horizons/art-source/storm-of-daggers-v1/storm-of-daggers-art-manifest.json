@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "status": "Provisional",
+  "approval": "No in-game visual review or explicit user approval recorded.",
+  "provenance": {
+    "method": "Original bitmap artwork generated with the built-in image_gen tool in this session.",
+    "workflow": "HoMM3 art skill plus imagegen skill; no Heroes III purchaser asset, extracted sprite, or proprietary reference art was used.",
+    "prompts": "generation-prompts.md",
+    "style": "Late-1990s Western PC fantasy miniature still-life with modeled steel, dramatic light, and painterly fantasy-book character."
+  },
+  "runtime_binding_contract": {
+    "spell": "new-horizons:stormOfDaggers",
+    "spellbook_icon": "Mods/new-horizons/Images/NH_stormOfDaggers_44.png",
+    "scroll_icon": "Mods/new-horizons/Images/NH_stormOfDaggers_44.png",
+    "32px_icon": "Mods/new-horizons/Images/NH_stormOfDaggers_32.png",
+    "battle_effect_icon": "Mods/new-horizons/Images/NH_stormOfDaggers_30.png",
+    "impact_animation": {
+      "animation_path": "NH_stormOfDaggersImpact",
+      "descriptor": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersImpact.json",
+      "queue_role": "spell.animation.affect; the engine queues this once for each affected stack",
+      "projectile": false,
+      "ray": false
+    },
+    "cast_animation": {
+      "animation_path": "NH_stormOfDaggersCast",
+      "descriptor": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersCast.json",
+      "queue_role": "optional spell.animation.cast; shown once for the cast",
+      "projectile": false,
+      "ray": false
+    }
+  },
+  "exports": {
+    "icon": {
+      "master": {
+        "file": "storm-of-daggers-icon-master.png",
+        "generated_output": "exec-0d659f8c-ab2d-4da4-a41d-1365786d3d2d.png",
+        "dimensions": [1254, 1254],
+        "channels": "opaque RGB",
+        "sha256": "8fdd5afc4cc62f6e3797a0f4d91fc1a37ceec96a3e7705d340ff1033e4b68fcd"
+      },
+      "method": "homm3-art/scripts/export_art.py, LANCZOS reduction",
+      "sizes": [30, 32, 44],
+      "comparison": "icon-exports/storm-of-daggers-comparison.png",
+      "comparison_sha256": "1528891dc32e65420de50940035d8e6cea36914296f00075fb98a9e96744ace7",
+      "runtime_files": [
+        {"file": "Mods/new-horizons/Images/NH_stormOfDaggers_30.png", "dimensions": [30, 30], "sha256": "d76f82d58ef94c28f4ee7ba0570aa6a62e84c137717c1994028a4d73452b6ef6"},
+        {"file": "Mods/new-horizons/Images/NH_stormOfDaggers_32.png", "dimensions": [32, 32], "sha256": "83d32aafdb5c4bcb25e96c3bf6094bf4de0a8ce5955a780d0ba7d74f2b6ae70a"},
+        {"file": "Mods/new-horizons/Images/NH_stormOfDaggers_44.png", "dimensions": [44, 44], "sha256": "9d3df28c4fac52037f5d146d7e896b0cb0e8285b2e38993e82fc8a73c686b50b"}
+      ]
+    },
+    "impact": {
+      "master": {
+        "file": "storm-of-daggers-impact-sheet-master.png",
+        "generated_output": "exec-261d25b8-2fe2-4270-97f5-73d08e345779.png",
+        "dimensions": [1774, 887],
+        "channels": "RGBA with transparent background",
+        "sha256": "441ed9a008f0bdd573985205005a6f6993270479be7f052f018b19fbe855294e"
+      },
+      "method": "ImageMagick convert crop plus Lanczos resize; frames keep alpha",
+      "source_grid": [2, 2],
+      "crop_rectangles_px": [[0, 0, 886, 443], [886, 0, 886, 443], [0, 443, 886, 443], [886, 443, 886, 443]],
+      "runtime_dimensions": [224, 112],
+      "runtime_descriptor": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersImpact.json",
+      "runtime_descriptor_sha256": "65a1993f253348ece9e8231358306681e77962932ef20fc536be28bc1efd3b1f",
+      "runtime_frames": [
+        {"file": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersImpact/00.png", "sha256": "8fbc5214bf7aee5b2e53785c42f6d9991759c5780a2c20f06b66fc65521c9a25"},
+        {"file": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersImpact/01.png", "sha256": "36fe1fef1b55f1908b53916c18486a7ae9ab539a2a50f163e0e69aae9d6d5262"},
+        {"file": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersImpact/02.png", "sha256": "321ce5884299e0c2d0c877800529963325465bc9b85ed6d0741056f55e72fa0d"},
+        {"file": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersImpact/03.png", "sha256": "7abc535fd0bc207084c5b9b77a310a5b00480369cbe7d1345f190fb62410bece"}
+      ],
+      "review_sheet": "storm-of-daggers-frame-review.png",
+      "review_sheet_sha256": "2eb8c2d1ac04b1cd0160b31fd25e441bdce80c11136cbc0e3ed85e7e106dd22e"
+    },
+    "cast": {
+      "master": {
+        "file": "storm-of-daggers-cast-sheet-master.png",
+        "generated_output": "exec-fc7b759b-9244-446d-8931-3e758d5cf193.png",
+        "dimensions": [1774, 887],
+        "channels": "RGBA with transparent background",
+        "sha256": "8c1e8c5b6f1f94fc8b093043c02bce66d8262bd677cc79d84d399837d04730df",
+        "style_reference": "storm-of-daggers-impact-sheet-master.png"
+      },
+      "method": "ImageMagick convert crop plus Lanczos resize; frames keep alpha",
+      "source_grid": [2, 2],
+      "crop_rectangles_px": [[0, 0, 886, 443], [886, 0, 886, 443], [0, 443, 886, 443], [886, 443, 886, 443]],
+      "runtime_dimensions": [224, 112],
+      "runtime_descriptor": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersCast.json",
+      "runtime_descriptor_sha256": "341df044da32f830f69228e78103a7550f19bf75908ce3e62ce75b9361ad5e23",
+      "runtime_frames": [
+        {"file": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersCast/00.png", "sha256": "578f5377f75a0c3ddc2c8f08b1370313249a287e95d35657f734a69f443ee57e"},
+        {"file": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersCast/01.png", "sha256": "44c9315f97f0c98bf9cea455e18b0fdc3507f5236e46cf53015c38c203299af6"},
+        {"file": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersCast/02.png", "sha256": "17475713e1c2e313db27dd4d677bb2250ac59d7f1e5956be39759e4af49e1605"},
+        {"file": "Mods/new-horizons/Content/sprites/NH_stormOfDaggersCast/03.png", "sha256": "85111675fa06a86bad3d45523eafab5a1c5f13a649685a73de2efa1648294982"}
+      ],
+      "review_sheet": "storm-of-daggers-frame-review.png",
+      "review_sheet_sha256": "2eb8c2d1ac04b1cd0160b31fd25e441bdce80c11136cbc0e3ed85e7e106dd22e"
+    }
+  },
+  "limitations": [
+    "The 2:1 generator output required preserving 2:1 runtime cel geometry at 224x112 instead of the prompt's proposed 192x192 square frames; the crops were resized without stretching or cropping.",
+    "The cast cue and impact are source art only; no in-game timing, placement, or stack overlap review has been performed.",
+    "The impact currently shows no enemy body because it is a transparent overlay intended to play over each selected stack."
+  ]
+}
