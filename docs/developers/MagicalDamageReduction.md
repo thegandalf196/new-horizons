@@ -1,7 +1,7 @@
 # New Horizons magical damage reduction
 
 The defensive taxonomy and Experimental Values sections of
-`docs/design-sources/New Horizons.docx` define this rule. This document records
+`docs/design-sources/New Horizons.md` define this rule. This document records
 the integration contract; it is not a claim that every path below is implemented.
 
 ## Arithmetic

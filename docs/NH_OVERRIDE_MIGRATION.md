@@ -2,7 +2,9 @@
 
 ## Authority and retirement gate
 
-New Horizons.docx is the sole canonical design specification. Pending Changes
+This audit describes the legacy transition while New Horizons.docx was the
+canonical source. New Horizons.md is now the sole canonical design specification;
+the DOCX is retained for historical comparison. Pending Changes
 holds temporary amendments only. This register preserves legacy decisions while
 they are compared item by item; it does not grant them automatic precedence.
 

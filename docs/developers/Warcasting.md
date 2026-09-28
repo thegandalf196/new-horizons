@@ -1,11 +1,11 @@
 # Warcasting integration contract
 
-The detailed Warcasting section in `docs/design-sources/New Horizons.docx`
+The detailed Warcasting section in `docs/design-sources/New Horizons.md`
 defines the gameplay rule. This document describes its engine boundaries; it
 does not replace the source or claim that every Warcasting perk is implemented.
 
 The canonical contextual-action direction in
-[`New Horizons.docx`](../design-sources/New%20Horizons.docx) supersedes the old
+[`New Horizons.md`](../design-sources/New%20Horizons.md) supersedes the old
 immediate Metamagic continuation model. The migration disposition is recorded in
 [`NH_OVERRIDE_MIGRATION.md`](../NH_OVERRIDE_MIGRATION.md). The current
 implementation still excludes Metamagic bonus casts from Warcasting readiness

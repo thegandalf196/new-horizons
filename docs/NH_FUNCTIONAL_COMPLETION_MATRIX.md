@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-09-27  
-Canonical source SHA-256: `7c7c6c1a45c3b4ee4a3c5c625dd1b1d10eb46acdb6029aedfe8735a523c1108a`
+Canonical source SHA-256: `b9c3b35495bea2ba3f26d2b6d2529b6051bdd30a96c618df9f9071d28a250ee0`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -17,7 +17,10 @@ requirements in total. After activating the remaining six Archery perks and
 Bulwark's first three Basic perks, 81 ranks and 88 perks are marked active, with
 12 ranks and 222 perks still planned. No
 entry yet has the whole
-UP-023 evidence chain recorded here. Bulwark's remaining seven perks are planned;
+UP-023 evidence chain recorded here. The Basic Bulwark source head
+`40628d29d92ab0d47282321fd411f5d079f38844` passed Windows build run
+`36360403677` (artifact `10945274902`), but native tests and in-game validation
+are still pending. Bulwark's remaining seven perks are planned;
 `Corpse Preservation` is read but does not
 change casualty eligibility.
 

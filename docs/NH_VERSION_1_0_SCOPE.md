@@ -3,9 +3,9 @@
 ## Authoritative scope clarification
 
 The current user-supplied gameplay authority is
-[New Horizons.docx](design-sources/New%20Horizons.docx). Detailed system sections
+[New Horizons.md](design-sources/New%20Horizons.md). Detailed system sections
 in that document override earlier summary lists and older repository planning.
-The DOCX is the sole canonical design specification. The legacy Overrides audit
+The Markdown is the sole canonical design specification. The legacy Overrides audit
 is complete and its historical dispositions remain in
 [NH_OVERRIDE_MIGRATION.md](NH_OVERRIDE_MIGRATION.md); the retired source is not a
 precedence layer. Temporary amendments belong in

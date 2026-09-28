@@ -3,7 +3,7 @@
 ## Status and authority
 
 This document describes the engine boundary for the action rules in the
-canonical [New Horizons.docx](../design-sources/New%20Horizons.docx). The legacy
+canonical [New Horizons.md](../design-sources/New%20Horizons.md). The legacy
 three-counter allowance proposal was superseded during the completed
 [Overrides migration](../NH_OVERRIDE_MIGRATION.md). This is not a second gameplay
 specification and does not claim that every consumer is already migrated.

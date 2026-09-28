@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
-	"sourceDocument": "docs/design-sources/New Horizons.docx",
-	"sourceSha256": "7c7c6c1a45c3b4ee4a3c5c625dd1b1d10eb46acdb6029aedfe8735a523c1108a",
+	"sourceDocument": "docs/design-sources/New Horizons.md",
+	"sourceSha256": "b9c3b35495bea2ba3f26d2b6d2529b6051bdd30a96c618df9f9071d28a250ee0",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1071,24 +1071,24 @@
 			"description": "Light preserves: healing, blessing, divine protection, purification, restoration, and holy retaliation.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may learn and cast Level 3 spells from this school.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 3 spells from this school."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
 					}
 				},
 				"advanced": {
-					"description": "The hero may learn and cast Level 4 spells from this school.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 4 spells from this school."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
 					}
 				},
 				"expert": {
-					"description": "The hero may learn and cast Level 5 spells from this school.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 5 spells from this school."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
 					}
 				}
 			},
@@ -1203,24 +1203,24 @@
 			"description": "Shadow condemns: curses, stolen vitality, supernatural affliction, sacrifice, reanimation, and execution.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may learn and cast Level 3 spells from this school.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 3 spells from this school."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
 					}
 				},
 				"advanced": {
-					"description": "The hero may learn and cast Level 4 spells from this school.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 4 spells from this school."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
 					}
 				},
 				"expert": {
-					"description": "The hero may learn and cast Level 5 spells from this school.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 5 spells from this school."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
 					}
 				}
 			},
@@ -1335,24 +1335,24 @@
 			"description": "Nature governs living systems and the physical world: regeneration, vegetation, venom, beasts, terrain, and elemental convergence.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may learn and cast Level 3 spells from this school.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 3 spells from this school."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
 					}
 				},
 				"advanced": {
-					"description": "The hero may learn and cast Level 4 spells from this school.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 4 spells from this school."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
 					}
 				},
 				"expert": {
-					"description": "The hero may learn and cast Level 5 spells from this school.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 5 spells from this school."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
 					}
 				}
 			},
@@ -1467,24 +1467,24 @@
 			"description": "Havoc destroys through fire, frost, lightning, bombardment, traps, and catastrophic force.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may learn and cast Level 3 spells from this school.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 3 spells from this school."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
 					}
 				},
 				"advanced": {
-					"description": "The hero may learn and cast Level 4 spells from this school.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 4 spells from this school."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
 					}
 				},
 				"expert": {
-					"description": "The hero may learn and cast Level 5 spells from this school.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 5 spells from this school."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
 					}
 				}
 			},
@@ -1599,24 +1599,24 @@
 			"description": "Sorcery manipulates magic and reality through technique: overcharge, dispelling, relocation, illusion, counterspells, gravity, time, and magical sealing.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may learn and cast Level 3 spells from this school.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 3 spells from this school."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
 					}
 				},
 				"advanced": {
-					"description": "The hero may learn and cast Level 4 spells from this school.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 4 spells from this school."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
 					}
 				},
 				"expert": {
-					"description": "The hero may learn and cast Level 5 spells from this school.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 5 spells from this school."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
 					}
 				}
 			},
@@ -1731,24 +1731,24 @@
 			"description": "Chaos destabilizes probability, position, identity, control, and the relationship between beneficial and harmful magical states.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may learn and cast Level 3 spells from this school.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 3 spells from this school."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
 					}
 				},
 				"advanced": {
-					"description": "The hero may learn and cast Level 4 spells from this school.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 4 spells from this school."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
 					}
 				},
 				"expert": {
-					"description": "The hero may learn and cast Level 5 spells from this school.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may learn and cast Level 5 spells from this school."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
 					}
 				}
 			},
@@ -3899,10 +3899,10 @@
 					"id": "new-horizons:bulwarkOfTheMire.toxicSpines",
 					"name": "Toxic Spines",
 					"requires": "basic",
-					"description": "The first melee attacker each round that suffers Bulwark reflection also receives a physical Poison affliction defined by the creature-status system.",
+					"description": "Once per Defending Bulwark stack per round, the first melee attacker to suffer Bulwark reflection from that stack receives a physical Poison affliction. Base damage = max(1, floor(actual reflected HP damage / 4)). The affliction ticks on the target's next 3 real activations for base damage, floor(1.5 × base damage), and 2 × base damage. An equal- or stronger-damage reapplication replaces the affliction and restarts its duration; a weaker reapplication is ignored. Cure removes it; Dispel does not.",
 					"effect": {
 						"status": "planned",
-						"description": "The first melee attacker each round that suffers Bulwark reflection also receives a physical Poison affliction defined by the creature-status system."
+						"description": "Once per Defending Bulwark stack per round, the first melee attacker to suffer Bulwark reflection from that stack receives a physical Poison affliction. Base damage = max(1, floor(actual reflected HP damage / 4)). The affliction ticks on the target's next 3 real activations for base damage, floor(1.5 × base damage), and 2 × base damage. An equal- or stronger-damage reapplication replaces the affliction and restarts its duration; a weaker reapplication is ignored. Cure removes it; Dispel does not."
 					}
 				},
 				{
@@ -3949,10 +3949,10 @@
 					"id": "new-horizons:bulwarkOfTheMire.immovable",
 					"name": "Immovable",
 					"requires": "expert",
-					"description": "The first physical creature attack against each Bulwark stack each round deals an additional 25% less final damage.",
+					"description": "While Defending, the first physical creature attack against each Bulwark stack each round deals an additional 25% less final damage.",
 					"effect": {
 						"status": "planned",
-						"description": "The first physical creature attack against each Bulwark stack each round deals an additional 25% less final damage."
+						"description": "While Defending, the first physical creature attack against each Bulwark stack each round deals an additional 25% less final damage."
 					}
 				},
 				{

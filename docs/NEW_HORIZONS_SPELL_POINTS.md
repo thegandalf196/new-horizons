@@ -2,7 +2,7 @@
 
 Legacy accepted user specification, 2026-09-23. Preserved as supporting evidence
 for entry L25 in [NH_OVERRIDE_MIGRATION.md](NH_OVERRIDE_MIGRATION.md), not as a
-permanent precedence layer. New Horizons.docx is the sole canonical design
+permanent precedence layer. New Horizons.md is the sole canonical design
 specification. Conflicts below require transition review; do not discard missing
 decisions or automatically replace the canonical text with this document.
 

@@ -7,9 +7,8 @@ have matching runtime coverage; unimplemented registry entries remain planned.
 import hashlib
 import json
 from pathlib import Path
+import re
 import unittest
-from xml.etree import ElementTree
-from zipfile import ZipFile
 
 from jsonschema import Draft4Validator
 
@@ -174,27 +173,53 @@ def load(path):
 
 
 def source_perk_tables(path):
-    """Return the authored perk rows from the source document's perk tables."""
-    namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
-    with ZipFile(path) as archive:
-        document = ElementTree.fromstring(archive.read("word/document.xml"))
-
+    """Return the 31 authored three-column perk tables from canonical Markdown."""
     tables = []
-    for table in document.findall(".//w:body/w:tbl", namespace):
-        rows = []
-        for row in table.findall("./w:tr", namespace):
-            rows.append([
-                "".join(text.text or "" for text in cell.findall(".//w:t", namespace)).strip()
-                for cell in row.findall("./w:tc", namespace)
-            ])
-        if rows and rows[0] == ["Perk", "Requires", "Effect"]:
-            tables.append(rows[1:])
+    current = []
+
+    def finish_table():
+        if not current or current[0] != ["Perk", "Requires", "Effect"]:
+            return
+        if len(current) < 2 or current[1] != ["---", "---", "---"]:
+            raise AssertionError("Canonical perk table lacks a Markdown separator")
+        if any(len(row) != 3 for row in current[2:]):
+            raise AssertionError("Canonical perk table has a malformed row")
+        tables.append(current[2:].copy())
+
+    for line in [*path.read_text(encoding="utf-8").splitlines(), ""]:
+        if not (line.startswith("|") and line.endswith("|")):
+            finish_table()
+            current = []
+            continue
+        cells = []
+        for cell in line[1:-1].split("|"):
+            cell = re.sub(r"<br\s*/?>", " ", cell, flags=re.IGNORECASE)
+            cell = re.sub(r"\*\*", "", cell)
+            cells.append(" ".join(cell.split()))
+        current.append(cells)
     return tables
 
 
 def source_perk_row_for_current_rules(row):
     """Return a canonical perk row; retained as the comparison seam."""
     return row
+
+
+def source_markdown_tables(path):
+    """Parse all pipe tables so conversion regressions are not perk-only."""
+    tables = []
+    current = []
+    for line in [*path.read_text(encoding="utf-8").splitlines(), ""]:
+        if line.startswith("|") and line.endswith("|"):
+            current.append([" ".join(cell.split()) for cell in line[1:-1].split("|")])
+            continue
+        if current:
+            widths = {len(row) for row in current}
+            if len(widths) != 1:
+                raise AssertionError(f"Malformed canonical Markdown table: {current[0]}")
+            tables.append(current)
+            current = []
+    return tables
 
 
 class NewHorizonsPerkDataTest(unittest.TestCase):
@@ -209,7 +234,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
     def test_source_identity_and_selection_limits(self):
         self.assertEqual(self.rules["schemaVersion"], 1)
         self.assertEqual(self.rules["rulesetVersion"], 2)
-        self.assertEqual(self.rules["sourceDocument"], "docs/design-sources/New Horizons.docx")
+        self.assertEqual(self.rules["sourceDocument"], "docs/design-sources/New Horizons.md")
         source = ROOT / self.rules["sourceDocument"]
         self.assertTrue(source.is_file())
         self.assertEqual(
@@ -218,6 +243,31 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertEqual(self.rules["maxSkillChoices"], 2)
         self.assertEqual(self.rules["maxPerkChoices"], 2)
         self.assertEqual(self.rules["maxPerksPerSkill"], 3)
+
+    def test_converted_non_perk_tables_keep_key_rows(self):
+        source = ROOT / self.rules["sourceDocument"]
+        tables = source_markdown_tables(source)
+        self.assertGreaterEqual(len(tables), 125)
+        rows = {tuple(row) for table in tables for row in table}
+        expected = {
+            ("Fortress", "I–V", "Adds Levels IV and V"),
+            ("Conflux", "I–V", "No maximum-level change"),
+            ("Sacrifice", "Damage bonus"),
+            ("Targets", "Total", "Per target"),
+            ("Debuffs", "Damage"),
+            ("Growth", "Level 1", "Level 10", "Level 20", "Level 30"),
+            ("1", "195", "195"),
+            ("5", "312", "62"),
+        }
+        self.assertTrue(expected <= rows, expected - rows)
+        text = source.read_text(encoding="utf-8")
+        self.assertIn("|Crusade!|", text)
+        self.assertIn("|Pandemonium|", text)
+        self.assertIn("|Shield of Chaos|", text)
+        self.assertIn(
+            "Luck and Morale are Secondary Attributes with a fixed legal range from −10 to +10.",
+            text,
+        )
 
     def test_canonical_31_skill_roster(self):
         self.assertEqual(tuple(self.rules["skills"]), EXPECTED_SKILLS)

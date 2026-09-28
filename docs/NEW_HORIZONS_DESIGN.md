@@ -13,10 +13,11 @@ direction or infer unspecified castellan/Siege rules.
 ## Canonical gameplay source
 
 The user supplied the current gameplay specification as
-[New Horizons.docx](design-sources/New%20Horizons.docx). It is the newest
+[New Horizons.md](design-sources/New%20Horizons.md). It is the newest
 authority for gameplay scope and mechanics. When its roadmap or summary tables
 conflict with a later detailed system section, the detailed section controls.
-The DOCX is the sole canonical design specification.
+The Markdown is the sole canonical design specification. The DOCX is retained
+only as the historical source used to audit the conversion.
 [Pending Changes](NEW_HORIZONS_PENDING_CHANGES.md) contains only temporary
 amendments awaiting integration. The item-by-item legacy Overrides transition is
 complete; its dispositions and verification evidence are retained in
@@ -126,9 +127,9 @@ provenance review. Scope later new creature animation sets explicitly.
 - Primary growth is resolved by the accepted class-specific fixed-vector rule.
   Missing authored class data is an implementation/data gap, not permission to
   restore probabilistic growth or a level-10 transition.
-- Prose Necropolis Shadow/Chaos versus table Shadow/Sorcery; Fortress minor-school
-  cell missing despite prose Nature/Shadow. Keep the conflict flagged; author the
-  six-school registry/UI without making an irreversible faction assignment.
+- The old preferred-school conflict is resolved by the canonical faction table:
+  Necropolis prefers Shadow/Sorcery and Fortress Nature/Shadow. Preferred schools
+  are equal, without Major/Minor weight; do not revive the old ambiguity.
 - Early Orders grant raw hero stats; later scale discussion explicitly replaces
   these with coefficients. Use tunable coefficients for the first playable slice.
 - Command ranks, target coverage and Leadership capacity need
