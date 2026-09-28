@@ -160,6 +160,13 @@ inline std::string formatBasisPoints(int64_t basisPoints)
 	return result + "%";
 }
 
+inline std::string formatPercentagePoints(int64_t basisPoints)
+{
+	auto result = formatBasisPoints(basisPoints);
+	result.pop_back();
+	return result + " percentage points";
+}
+
 inline std::string roundsRemaining(int rounds)
 {
 	return std::to_string(rounds) + (rounds == 1 ? " round remaining" : " rounds remaining");
@@ -174,24 +181,40 @@ struct BulwarkStatus
 	bool mirebornTerrainBonus = false;
 	bool bogAmbush = false;
 	bool preemptiveReady = false;
+	bool sharedCoverApplied = false;
+	int32_t sharedCoverAdjustmentBasisPoints = 0;
+	int32_t vengefulMireBonusBasisPoints = 0;
 
 	bool operator==(const BulwarkStatus &) const = default;
 };
 
 inline std::optional<BulwarkStatus> makeBulwarkStatus(int rank, int heroDefense, bool mirebornTerrain,
-	bool bogAmbush, bool thickHide, bool preemptiveUsed)
+	bool bogAmbush, bool thickHide, bool preemptiveUsed, bool sharedCoverApplies = false,
+	bool vengefulMire = false)
 {
 	if(rank < 1 || rank > 3)
 		return std::nullopt;
 
-	return BulwarkStatus{
-		newHorizonsBulwark::reductionBasisPoints(rank, heroDefense, mirebornTerrain),
-		newHorizonsBulwark::preemptivePercent(rank, bogAmbush),
-		newHorizonsBulwark::reflectionBasisPoints(rank, false, thickHide),
-		newHorizonsBulwark::reflectionBasisPoints(rank, true, thickHide),
-		mirebornTerrain,
-		bogAmbush,
-		!preemptiveUsed};
+	const int baseReduction = newHorizonsBulwark::reductionBasisPoints(rank, heroDefense, mirebornTerrain);
+	const bool applySharedCover = sharedCoverApplies && baseReduction > 0;
+	const int effectiveReduction = applySharedCover
+		? std::min(10000, baseReduction + newHorizonsBulwark::sharedCoverBasisPoints(baseReduction))
+		: baseReduction;
+	const int baseMeleeReflection = newHorizonsBulwark::reflectionBasisPoints(rank, false, thickHide, false);
+	const int effectiveMeleeReflection = newHorizonsBulwark::reflectionBasisPoints(rank, false, thickHide, vengefulMire);
+
+	BulwarkStatus result;
+	result.damageReductionBasisPoints = effectiveReduction;
+	result.preemptiveDamagePercent = newHorizonsBulwark::preemptivePercent(rank, bogAmbush);
+	result.meleeReflectionBasisPoints = effectiveMeleeReflection;
+	result.rangedReflectionBasisPoints = newHorizonsBulwark::reflectionBasisPoints(rank, true, thickHide, vengefulMire);
+	result.mirebornTerrainBonus = mirebornTerrain;
+	result.bogAmbush = bogAmbush;
+	result.preemptiveReady = !preemptiveUsed;
+	result.sharedCoverApplied = applySharedCover;
+	result.sharedCoverAdjustmentBasisPoints = effectiveReduction - baseReduction;
+	result.vengefulMireBonusBasisPoints = effectiveMeleeReflection - baseMeleeReflection;
+	return result;
 }
 
 struct DefendStatus
@@ -215,6 +238,15 @@ inline std::string defendStatusTooltip(const DefendStatus & status)
 	result += "\nPhysical creature damage reduction: " + formatBasisPoints(bulwark.damageReductionBasisPoints) + ".";
 	if(bulwark.mirebornTerrainBonus)
 		result += " Includes Mireborn's +5 percentage points on swamp or rough terrain.";
+	if(bulwark.sharedCoverApplied)
+	{
+		if(bulwark.sharedCoverAdjustmentBasisPoints > 0)
+			result += "\nShared Cover adds +" + formatPercentagePoints(bulwark.sharedCoverAdjustmentBasisPoints)
+				+ " (half the base Bulwark reduction, capped at 100%) while an adjacent friendly creature stack is also Defending.";
+		else
+			result += "\nShared Cover reaches its 100% Bulwark reduction cap while an "
+				"adjacent friendly creature stack is also Defending.";
+	}
 	result += "\nPre-emptive strike: " + std::to_string(bulwark.preemptiveDamagePercent)
 		+ "% normal damage against the first qualifying melee attacker; ";
 	result += bulwark.preemptiveReady ? "ready." : "already triggered during this Defend stance.";
@@ -223,6 +255,9 @@ inline std::string defendStatusTooltip(const DefendStatus & status)
 	if(bulwark.meleeReflectionBasisPoints > 0)
 		result += "\nMelee reflection: " + formatBasisPoints(bulwark.meleeReflectionBasisPoints)
 			+ " of actual physical health loss after reductions.";
+	if(bulwark.vengefulMireBonusBasisPoints > 0)
+		result += " Includes Vengeful Mire (adds +" + formatPercentagePoints(bulwark.vengefulMireBonusBasisPoints)
+			+ " to melee reflection only, up to 75%).";
 	if(bulwark.rangedReflectionBasisPoints > 0)
 		result += "\nRanged reflection: " + formatBasisPoints(bulwark.rangedReflectionBasisPoints)
 			+ " of actual ranged physical health loss after reductions (Thick Hide).";

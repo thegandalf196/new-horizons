@@ -8,6 +8,9 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = (ROOT / "client/battle/NewHorizonsBattleStatus.h").read_text(encoding="utf-8")
 PANEL = (ROOT / "client/battle/StackInfoBasicPanel.cpp").read_text(encoding="utf-8")
+AUTHORITATIVE_BULWARK = (ROOT / "lib/battle/NewHorizonsBulwark.cpp").read_text(encoding="utf-8")
+AUTHORITATIVE_CALLBACK = (ROOT / "lib/battle/CBattleInfoCallback.cpp").read_text(encoding="utf-8")
+AUTHORITATIVE_ATTACK = (ROOT / "server/battles/BattleActionProcessor.cpp").read_text(encoding="utf-8")
 PANEL_H = (ROOT / "client/battle/StackInfoBasicPanel.h").read_text(encoding="utf-8")
 WINDOW = (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
 STACKS = (ROOT / "client/battle/BattleStacksController.cpp").read_text(encoding="utf-8")
@@ -23,8 +26,34 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
         self.assertIn("if(rank < 1 || rank > 3)", STATUS)
         self.assertIn("newHorizonsBulwark::reductionBasisPoints(rank, heroDefense, mirebornTerrain)", STATUS)
         self.assertIn("newHorizonsBulwark::preemptivePercent(rank, bogAmbush)", STATUS)
-        self.assertIn("newHorizonsBulwark::reflectionBasisPoints(rank, false, thickHide)", STATUS)
-        self.assertIn("newHorizonsBulwark::reflectionBasisPoints(rank, true, thickHide)", STATUS)
+        self.assertIn("newHorizonsBulwark::reflectionBasisPoints(rank, false, thickHide, vengefulMire)", STATUS)
+        self.assertIn("newHorizonsBulwark::reflectionBasisPoints(rank, true, thickHide, vengefulMire)", STATUS)
+
+    def test_shared_cover_status_matches_the_current_adjacent_defender_rule(self):
+        status_source = PANEL[PANEL.index("currentDefendStatus("):PANEL.index("StackInfoBasicPanel::StackInfoBasicPanel")]
+        self.assertIn("newHorizonsBulwark::hasSharedCover(hero)", status_source)
+        self.assertIn("battleCallback->battleAdjacentUnits(stack)", status_source)
+        self.assertIn("adjacent->unitSide() == stackSide && adjacent->defended()", status_source)
+        self.assertIn("isOrdinaryCreatureAttacker(adjacent)", status_source)
+        self.assertIn("stack->bulwarkPreemptiveUsed, sharedCoverApplies", status_source)
+        self.assertIn("friendUnit->unitSide() != info.defender->unitSide() || !friendUnit->defended()", AUTHORITATIVE_CALLBACK)
+        self.assertIn("newHorizonsCombatSkills::isOrdinaryCreatureAttacker(friendUnit)", AUTHORITATIVE_CALLBACK)
+        self.assertIn("std::min(10000,", AUTHORITATIVE_CALLBACK)
+        self.assertIn("baseReduction + newHorizonsBulwark::sharedCoverBasisPoints(baseReduction)", AUTHORITATIVE_CALLBACK)
+        self.assertIn("newHorizonsBulwark::sharedCoverBasisPoints(baseReduction)", STATUS)
+        self.assertIn("Shared Cover adds", STATUS)
+        self.assertIn("sharedCoverApplied", STATUS)
+
+    def test_vengeful_mire_status_matches_melee_reflection_only(self):
+        status_source = PANEL[PANEL.index("currentDefendStatus("):PANEL.index("StackInfoBasicPanel::StackInfoBasicPanel")]
+        self.assertIn("newHorizonsBulwark::hasVengefulMire(hero)", status_source)
+        self.assertIn("return ranged || !vengefulMire", AUTHORITATIVE_BULWARK)
+        self.assertIn("std::min(7500, basisPoints + 25 * BASIS_POINTS_PER_PERCENT)", AUTHORITATIVE_BULWARK)
+        self.assertIn("newHorizonsBulwark::hasVengefulMire(bulwarkHero)", AUTHORITATIVE_ATTACK)
+        tooltip = STATUS[STATUS.index("inline std::string defendStatusTooltip"):STATUS.index("inline std::string beneficiarySideName")]
+        self.assertIn("if(bulwark.vengefulMireBonusBasisPoints > 0)", tooltip)
+        self.assertIn("to melee reflection only, up to 75%", tooltip)
+        self.assertIn("vengefulMireBonusBasisPoints = effectiveMeleeReflection - baseMeleeReflection", STATUS)
 
     def test_status_requires_defend_and_does_not_read_hidden_hero_details(self):
         status_source = PANEL[PANEL.index("currentDefendStatus("):PANEL.index("StackInfoBasicPanel::StackInfoBasicPanel")]
@@ -35,6 +64,8 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
         self.assertIn("if(!hero)", status_source)
         self.assertIn("newHorizonsBulwark::hasMireborn(hero)", status_source)
         self.assertIn("terrain == TerrainId::SWAMP || terrain == TerrainId::ROUGH", status_source)
+        self.assertLess(status_source.index("if(!hero)"), status_source.index("newHorizonsBulwark::hasSharedCover(hero)"))
+        self.assertLess(status_source.index("if(!hero)"), status_source.index("newHorizonsBulwark::hasVengefulMire(hero)"))
         self.assertNotIn("stack->getMyHero()", status_source)
 
     def test_help_shows_only_applicable_current_values(self):
@@ -47,6 +78,9 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
         self.assertIn("if(bulwark.rangedReflectionBasisPoints > 0)", tooltip)
         self.assertIn("Mireborn's +5 percentage points", tooltip)
         self.assertIn("Bog Ambush is included above", tooltip)
+        self.assertIn("Shared Cover adds", tooltip)
+        self.assertIn("Shared Cover reaches its 100% Bulwark reduction cap", tooltip)
+        self.assertIn("Vengeful Mire (adds", tooltip)
 
     def test_hovered_status_refreshes_only_when_state_changes(self):
         self.assertIn("if(current == displayedDefendStatus)", PANEL)

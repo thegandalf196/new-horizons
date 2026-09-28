@@ -25,6 +25,8 @@
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/texts/TextOperations.h"
 
+#include <algorithm>
+
 namespace
 {
 newHorizonsBattleStatus::DefendStatus currentDefendStatus(
@@ -54,10 +56,22 @@ newHorizonsBattleStatus::DefendStatus currentDefendStatus(
 	const auto terrain = stack->getCurrentTerrain();
 	const bool mirebornTerrain = newHorizonsBulwark::hasMireborn(hero)
 		&& (terrain == TerrainId::SWAMP || terrain == TerrainId::ROUGH);
+	bool sharedCoverApplies = false;
+	if(newHorizonsBulwark::hasSharedCover(hero))
+	{
+		const auto adjacentUnits = battleCallback->battleAdjacentUnits(stack);
+		const auto stackSide = stack->unitSide();
+		sharedCoverApplies = std::any_of(adjacentUnits.begin(), adjacentUnits.end(), [stackSide](const auto * adjacent)
+		{
+			return adjacent->unitSide() == stackSide && adjacent->defended()
+				&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(adjacent);
+		});
+	}
 	result.bulwark = newHorizonsBattleStatus::makeBulwarkStatus(rank,
 		hero->getPrimSkillLevel(PrimarySkill::DEFENSE), mirebornTerrain,
 		newHorizonsBulwark::hasBogAmbush(hero), newHorizonsBulwark::hasThickHide(hero),
-		stack->bulwarkPreemptiveUsed);
+		stack->bulwarkPreemptiveUsed, sharedCoverApplies,
+		newHorizonsBulwark::hasVengefulMire(hero));
 	return result;
 }
 }
