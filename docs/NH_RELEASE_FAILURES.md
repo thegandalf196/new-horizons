@@ -48,6 +48,58 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## September 27 feature-build incidents
 
+### September 28 local School-rank build check
+
+The later September 28 full native build deliberately reconciled the curated
+module against all current canonical config sources with
+`tools/update-new-horizons-module.py`, then verified its `--check` output
+before normal CMake regeneration. This supersedes the earlier dirty-tree
+blocker for this checkout; it does **not** make that earlier partial link a
+validated release. The Linux `vcmi`, `vcmiclient`, and `vcmitest` targets now
+link. Several first-discovered test compilation errors were stale fixture API
+references: typed `SpellID` wrappers are required for bonus IDs;
+`getEffectDuration()` mocks return an integer, not `optional`; bonus collections
+iterate `shared_ptr<Bonus>`; a creature Defense bonus is
+`PRIMARY_SKILL`/`PrimarySkill::DEFENSE`; and battle AI fixture tests must
+include complete callback/handler types. The corrected object builds are
+recorded separately from runtime pass/fail.
+
+Running `vcmitest` from the ordinary build root skipped every New Horizons
+Bless/Bulwark case because the TEST preset did not activate `new-horizons`.
+Native gameplay evidence requires a private profile with the curated module
+and `vcmi-test` both mounted. The isolated v3 profile under
+`build/nh-current-v3-native` exposes the actual failures; a green build or a
+zero-failure test invocation with all relevant tests skipped is not success.
+
+The first September 28 attempt to deliver the Linux garrison split UI used
+the active dirty build tree with a filtered Ninja manifest. The client objects
+compiled, but final linking failed on unresolved `newHorizonsArchery::*`
+symbols: `lib/CMakeLists.txt` lists the newer `NewHorizonsArchery.cpp`, while
+that build tree's stale `build.ninja` had no object rule for it. Normal CMake
+regeneration was also blocked by the independently dirty creature-category
+module mirror. Do not promote or treat that mixed build as playable. Delivery
+used a clean detached checkout at `8c4ad7e5f` and a fresh CMake build instead;
+that client linked and its frozen snapshot passed the bounded headless smoke.
+
+The dirty-tree Linux `vcmi` production target linked successfully with the
+version-3 School-rank and Transfigure Matter code using a Ninja manifest that
+skipped only CMake regeneration. Normal regeneration was blocked by a stale
+combined module settings mirror: its magic/perk sections match their canonical
+sources, but its creature-category section does not match separate dirty work.
+Do not run the broad module generator merely to clear this guard.
+
+The full `vcmitest` link remains unverified. Compilation exposed several
+pre-existing test fixture gaps (missing complete serialization types, an
+unknown `STACKS_DEFENSE` bonus name, a const stack passed to a mutating
+helper). The Demonic Gating, Unique Building Training, and Hero Command AI
+test translation units were repaired and compiled individually; the next
+unrelated full-target failure has not been pursued. These test-target repairs
+are not evidence that the newly linked production library or a playable client
+passed. To avoid delaying gameplay work on a chain of stale fixtures, use
+focused data/source checks and the production-library build for the current
+School-rank slice, while retaining the missing native execution/full-suite
+validation as an explicit release gate.
+
 These failures came from successive gameplay-feature commits rather than from the
 Windows packaging route. They are retained because a later successful run does not
 make the failed compiler evidence disposable.

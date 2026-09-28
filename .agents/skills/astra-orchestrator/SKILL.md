@@ -1,6 +1,6 @@
 ---
 name: astra-orchestrator
-description: Orchestrate complex Codex coding work for the Pro profile with GPT-6 Astra as planner/integrator, GPT-6 Luna workers for exploration, implementation, testing, and research, and an Astra reviewer. Use for multi-file features, debugging across components, repo-wide changes, parallelizable workstreams, or whenever the user asks to delegate or use subagents. Do not use for trivial one-file edits or simple questions.
+description: Orchestrate complex Codex coding work for the Pro profile with GPT-6 Astra at medium reasoning as planner/integrator, Luna subagents for exploration, implementation, testing, and research, and an Astra reviewer. Use for multi-file features, debugging across components, repo-wide changes, parallelizable workstreams, or whenever the user asks to delegate or use subagents. Do not use for trivial one-file edits or simple questions.
 ---
 
 # Astra Orchestrator — Pro Profile
@@ -26,9 +26,9 @@ Use Luna for all routine subagent execution.
 
 This is a requirement, not a preference.
 
-The root and reviewer use Astra; routine execution subagents use GPT-6 Luna.
+The root and reviewer use Astra; routine execution subagents use Luna.
 
-Do not override a Luna worker unless the user explicitly requests a different model or the worker reports a genuine reasoning blocker that warrants escalation.
+Do not override a Luna subagent to a more expensive model unless the user explicitly asks for escalation or a Luna worker reports that the task requires higher-level reasoning.
 
 ---
 
@@ -103,7 +103,7 @@ When spawning agents, use these models by default:
 - researcher: `gpt-6-luna` at `max` reasoning
 - reviewer: `gpt-6-astra` at `low` reasoning
 
-The root keeps the Pro profile configuration from `.codex/config.toml`: GPT-6 Astra at medium reasoning. Spawned GPT-6 Luna execution roles use `max`; the independent Astra reviewer uses `low`. Preserve those efforts unless the user requests a change. Do not change the root model from within a session.
+The root keeps the Pro profile configuration from `.codex/config.toml`: GPT-6 Astra at medium reasoning. The role files in `.codex/agents/` explicitly set Luna reasoning to `max` and reviewer reasoning to `low`. Preserve those efforts when spawning agents unless the user requests a change. Do not change the root model from within a session.
 
 For every delegated task:
 
@@ -116,7 +116,13 @@ For every delegated task:
 
 Do not silently substitute the root agent for a required Luna worker.
 
-Do not spawn Astra workers except for the reviewer role unless the user explicitly requests Astra or a Luna worker reports a genuine reasoning blocker. Routine execution remains on GPT-6 Luna.
+Do not spawn Astra workers except for the `reviewer` role unless:
+
+- the user explicitly requests Astra
+- Luna reports a genuinely difficult reasoning blocker
+- the root determines that a high-risk architectural or security review needs Astra
+
+Routine execution should remain on Luna.
 
 ---
 
@@ -252,7 +258,7 @@ For non-trivial implementation tasks, prefer this sequence:
 5. wait for implementation
 6. spawn Luna tester
 7. wait for validation
-8. spawn an Astra reviewer at low reasoning when an independent review is materially useful
+8. spawn Astra reviewer when an independent review is materially useful
 9. resolve material findings
 10. run final verification
 11. present the result
@@ -275,7 +281,7 @@ For cross-component bugs:
 4. root determines the likely root cause
 5. assign a bounded Luna worker to implement the fix
 6. assign Luna tester to reproduce the original failure and validate the fix
-7. use an Astra reviewer for high-risk or non-obvious fixes
+7. use Astra reviewer for high-risk or non-obvious fixes
 
 Do not let multiple workers independently attempt competing fixes unless the root intentionally requests alternative approaches.
 
@@ -337,7 +343,7 @@ A subagent should report back instead of expanding scope when it encounters:
 
 The root decides what to do next.
 
-Luna should not independently switch itself to another model.
+Luna should not independently escalate itself to a more expensive model.
 
 The root owns model escalation decisions.
 
@@ -417,4 +423,4 @@ If the user explicitly asks to see delegation, report:
 - assigned task
 - completion status
 
-Do not claim a GPT-6 Luna agent was used unless the trace contains a successful `spawn_agent` call using `gpt-6-luna`.
+Do not claim a Luna agent was used unless the trace contains a successful `spawn_agent` call using `gpt-6-luna`.

@@ -232,3 +232,535 @@ Major dependencies (managed by Conan):
 - Lua/LuaJIT - Scripting (optional), see [`docs/developers/Lua_Scripting_System.md`](docs/developers/Lua_Scripting_System.md)
 - FuzzyLite - Fuzzy logic for AI
 - Intel TBB - Parallel algorithms for AI and map generation
+
+
+# Codex project instructions
+
+For complex coding tasks, use the `astra-orchestrator` skill when its trigger conditions match.
+
+The root agent owns architecture, decomposition, integration, and final verification.
+Prefer specialized subagents for bounded exploration, implementation, testing, review, and technical research.
+
+Do not delegate trivial work merely for parallelism.
+Do not let multiple implementation agents edit the same files without explicit ownership boundaries.
+User instructions always take precedence over this orchestration policy.
+
+## Persistent user-priority queue
+
+Read `docs/NH_USER_PRIORITY_QUEUE.md` before choosing or resuming work, including
+after context compaction or an automatic goal continuation. Immediately record
+new user-assigned tasks there, with concrete requirements and acceptance evidence.
+Resolve its open tasks before returning to the ordinary implementation backlog;
+do not silently substitute another workstream or drop an item from memory.
+If blocked, record the blocker and work on another unblocked queue item. Ask for
+direction if all queue items are blocked; do not silently bypass this priority.
+Preserve safely running processes and unrelated changes when switching work.
+Distinguish source implementation, verification, and playable delivery. A source
+edit or build alone does not close a reported visual/runtime defect. Keep resolved
+entries with their evidence. This queue tracks work, not gameplay authority:
+`New Horizons.md` remains canonical and design amendments belong in Pending Changes.
+
+## Heroes III UI visual construction
+
+Before creating or revising New Horizons UI, read
+`docs/NH_HOMM3_UI_STYLE_GUIDE.md` and apply its outside-in panel-construction
+and native-resolution review checklist. Treat mockups as layout/interaction
+guides, not permission to reproduce pasted-together visual treatment. Preserve
+gameplay behavior unless the user separately requests a functional change.
+
+
+# New Horizons Development Phases
+
+New Horizons is being developed in explicit phases.
+
+The root orchestrator owns the current phase, task prioritization, delegation,
+integration, and phase transitions.
+
+Do not optimize for the goals of a later phase while the current phase remains
+incomplete.
+
+Current phase: PHASE 1 — IMPLEMENTATION COVERAGE
+
+The governing priorities are:
+
+PHASE 1:
+Specification coverage > test-suite perfection.
+
+PHASE 2:
+Integration correctness > new feature development.
+
+PHASE 3:
+Playtest evidence > theoretical balance assumptions.
+
+
+## Phase 1 — Implementation Coverage
+
+Primary objective:
+
+Implement the complete Version 1.0 specification.
+
+During this phase, maximize specification coverage. Missing specified mechanics
+and content take precedence over increasingly exhaustive verification of systems
+that already function.
+
+Track coverage explicitly.
+
+At minimum, maintain counts/status for:
+
+- Orders
+- combat Spells
+- Adventure Spells
+- Skills and Skill ranks
+- Skill perks
+- Faction Skills
+- Faction perks
+- Hero Action / Creature Activation mechanics
+- Leadership
+- Siege and War Machines
+- Luck and Morale
+- creature mechanics
+- town/building mechanics
+- artifacts and specialties
+- recruitment and Diplomacy
+- required combat UI
+- required hero-development UI
+- required adventure-magic UI
+- save-state representation
+- minimum AI hooks required to exercise implemented mechanics
+
+A missing specification item normally outranks additional integration tests for
+an already functioning item.
+
+### Phase 1 task priority
+
+Choose work in approximately this order:
+
+1. Missing foundational mechanic required by other Version 1.0 features
+2. Missing P0 Version 1.0 feature
+3. Missing P1 Version 1.0 feature
+4. Missing specified spell, Skill, perk, Order, faction mechanic, creature
+   mechanic, building, artifact, specialty, or other content
+5. Missing UI required to exercise an implemented mechanic
+6. Basic correctness defects blocking implementation
+7. Deferred integration hardening
+8. Optimization
+9. Polish
+10. Numerical balance refinement
+
+Do not repeatedly revisit an implemented subsystem merely because more tests,
+refactoring, or polish could be added.
+
+Do not allow broad integration work to consume the implementation schedule while
+substantial Version 1.0 specification coverage remains absent.
+
+
+### Phase 1 feature completion
+
+A feature is complete enough to move on when:
+
+1. The intended mechanic exists in production code.
+2. Required registration/data/configuration exists.
+3. Its principal execution path works.
+4. Required UI or interaction hooks exist sufficiently to exercise it.
+5. It builds successfully.
+6. It does not introduce an obvious crash, corrupt state, corrupt saves, or
+   violate a foundational invariant.
+7. Focused tests or deterministic verification establish basic correctness.
+8. Known cross-system interactions that remain unverified are recorded for
+   Phase 2.
+
+Do not require exhaustive cross-system validation before moving to the next
+specified feature.
+
+
+### Phase 1 testing policy
+
+Testing remains mandatory, but it is scoped to implementation.
+
+Workers should run focused validation for their own changes.
+
+Testers should prefer the smallest deterministic test command that establishes
+whether the delegated behavior works.
+
+Continuously enforce fast gates such as:
+
+- build/compile success
+- focused unit tests
+- relevant existing tests
+- registration/data validation
+- basic serialization sanity
+- deterministic mechanic tests
+- smoke tests
+- crash detection
+- important invariants
+
+Do not normally run the entire repository integration suite after every bounded
+feature.
+
+Do not block Phase 1 implementation on:
+
+- exhaustive interaction matrices
+- unrelated failing integration tests
+- broad regression suites unrelated to the change
+- large AI simulations
+- balance assertions
+- cosmetic discrepancies
+- numerical tuning disagreements
+- edge cases involving systems that have not themselves been implemented yet
+
+Broad integration suites should be run periodically in batches, at meaningful
+integration checkpoints, rather than mechanically after every implementation
+task.
+
+Immediately stop and repair a problem when it indicates:
+
+- crashes
+- memory/state corruption
+- save corruption
+- foundational architectural breakage
+- pervasive deterministic failure
+- an abstraction that prevents continued implementation
+
+Otherwise, record the integration issue and continue increasing specification
+coverage.
+
+
+### Phase 1 delegation
+
+Use explorers when the relevant implementation surface is genuinely unclear.
+
+Do not repeatedly re-explore already mapped architecture without evidence that
+it has changed.
+
+Use workers aggressively for independent missing specification items when file
+ownership can be separated safely.
+
+Parallelize independent implementation workstreams.
+
+Examples:
+
+- separate spell implementations
+- independent Skills/perk families
+- unrelated UI components
+- different town/building mechanics
+- isolated creature mechanics
+
+Do not assign multiple workers overlapping ownership of the same files unless
+the root has explicitly partitioned responsibilities.
+
+The tester should validate implemented behavior, not turn every feature into a
+full-system certification exercise.
+
+The reviewer should look for material correctness, regression, integrity,
+compatibility, and high-value missing-test risks. Phase 1 review findings should
+be classified as either:
+
+BLOCKING:
+crash, corruption, foundational regression, incorrect core mechanic, or issue
+that prevents continued implementation.
+
+DEFERRED:
+cross-system edge case, broad regression coverage, optimization, polish,
+non-critical compatibility concern, or balance issue suitable for Phase 2/3.
+
+Deferred findings must be recorded but should not automatically prevent the next
+coverage task.
+
+
+### Phase 1 numerical policy
+
+Most numerical values in New Horizons are prototypes or experimental balance
+values.
+
+Do not spend substantial Phase 1 time repeatedly tuning:
+
+- Spell coefficients
+- Mana costs
+- Order coefficients
+- Leadership progression
+- creature Leadership requirements
+- Skill weights
+- Luck/Morale curves
+- creature growth
+- creature prices
+- economy values
+- artifact values
+- AI valuation constants
+
+unless the current value prevents meaningful functional testing.
+
+Implement the specified mechanic faithfully first.
+
+Balance later.
+
+
+### Phase 1 progress metric
+
+The principal project metric during this phase is implementation coverage.
+
+Report concrete coverage rather than using test count as the primary measure of
+progress.
+
+Example:
+
+Orders:             8 / 8
+Combat Spells:     54 / 66
+Adventure Spells:   5 / 5
+Generic Skills:    21 / 21
+Generic Perks:    176 / 210
+Faction Skills:     9 / 9
+Faction Perks:     61 / 90
+
+Use actual specification-derived totals. Do not invent totals.
+
+At the end of each substantial orchestration cycle report:
+
+1. Current development phase
+2. Specification items completed
+3. Coverage changes
+4. Focused validation performed
+5. Deferred integration issues discovered
+6. Blocking issues, if any
+7. Next highest-priority missing specification item
+
+The preferred outcome of a Phase 1 cycle is increased specification coverage,
+not merely increased test count.
+
+
+### Phase 1 exit condition
+
+Do not leave Phase 1 because the test suite has become comprehensive.
+
+Leave Phase 1 when Version 1.0 specification coverage is substantially complete.
+
+Before transition, perform a specification audit and report:
+
+- implemented items
+- partially implemented items
+- missing Version 1.0 items
+- intentionally deferred non-Version-1.0 work
+- deferred integration defects
+- known failing broad tests
+- unverified interaction classes
+- provisional balance areas
+
+Then explicitly transition to Phase 2.
+
+
+## Phase 2 — Stabilization and Integration
+
+Primary objective:
+
+Make the implemented Version 1.0 systems work correctly together.
+
+During this phase:
+
+Integration correctness > new feature development.
+
+Feature creation largely stops.
+
+Resolve the deferred integration backlog systematically.
+
+Construct high-value interaction coverage, including where applicable:
+
+- Spell × Magic Resistance
+- Spell × Magical Damage Reduction
+- Spell × Dispel
+- Spell × Spell Lock
+- Spell × Time Stop
+- Spell × School perk
+- Spell × Spellcraft
+- Spell × Wisdom
+- Spell × Faction Skill
+
+- Order × Command
+- Order × perk
+- Order × Warcasting
+- Order × Faction Skill
+
+- Creature ability × Spell
+- Creature ability × Order
+- Creature ability × status
+
+- Creature Activation × initiative
+- Creature Activation × Wait
+- Creature Activation × Morale
+- Creature Activation × Second Wind
+- Creature Activation × Seize Initiative
+- extra activation × extra activation restrictions
+
+- death × Resurrection
+- death × Re-animate
+- death × Disintegrate
+- death × Necromancy
+- death × Elemental Rebirth
+- casualty provenance × restoration
+
+- Leadership × recruitment
+- Leadership × army transfer
+- Leadership × upgrades
+- Leadership × Diplomacy
+
+- Siege × War Machines
+- Siege × fortifications
+- Siege × repairs
+- Siege × defensive towers
+
+- save/load × permanent state
+- save/load × combat state
+- save/load × temporary effects
+- save/load × town state
+
+- UI prediction × actual resolution
+- AI decision-making × newly implemented mechanics
+
+During Phase 2, use the tester and reviewer substantially more aggressively.
+
+Run broad regression suites frequently.
+
+Fix interaction ordering, effect lifecycles, targeting legality, serialization,
+initiative consistency, action economy, AI integration, and UI/result
+disagreement.
+
+Do not introduce substantial new mechanics while integration remains unstable.
+
+
+### Phase 2 priority
+
+1. Crash/corruption
+2. Save/load correctness
+3. Deterministically incorrect mechanics
+4. Hero Action / Creature Activation integrity
+5. Initiative and extra-activation integrity
+6. targeting legality
+7. status/effect lifecycle
+8. cross-system interactions
+9. AI use of implemented systems
+10. UI prediction/result consistency
+11. remaining regression coverage
+
+
+### Phase 2 exit condition
+
+Enter Phase 3 when:
+
+- Version 1.0 mechanics reliably interact
+- major integration matrices have useful automated coverage
+- broad regression tests are consistently healthy
+- save/load is reliable
+- AI can exercise major new systems
+- UI predictions generally match actual outcomes
+- remaining issues are mainly balance, usability, polish, or isolated edge cases
+
+
+## Phase 3 — Playtesting, Balance, Polish, Release Hardening
+
+Primary objective:
+
+Determine whether the completed game plays well.
+
+During this phase:
+
+Playtest evidence > theoretical balance assumptions.
+
+Now tune:
+
+- spell costs and coefficients
+- Order strength
+- Attribute conversion
+- Leadership
+- creature requirements
+- creature stats
+- growth
+- recruitment costs
+- dwelling costs
+- Skill weights
+- perks
+- Faction Skills
+- Luck and Morale probabilities
+- War Machines and Siege
+- artifacts
+- specialties
+- Recruitment
+- Diplomacy
+- buildings
+- economy
+- adventure Movement
+- Adventure Magic
+- AI valuation
+- pacing
+
+Use reproducible gameplay evidence, controlled scenarios, simulations where
+appropriate, and real human playtests.
+
+When changing a value, identify the gameplay problem the change is intended to
+solve.
+
+Prefer isolated changes.
+
+Use:
+
+Observe
+-> Reproduce
+-> Identify responsible mechanic
+-> Change smallest relevant rule/value
+-> Run relevant regression tests
+-> Replay scenario
+-> Compare
+-> Keep, revise, or revert
+
+Do not balance mechanics in isolation from the systems that determine their real
+value.
+
+
+### Phase 3 polish
+
+After mechanics and balance stabilize, address:
+
+- UI clarity
+- tooltips
+- targeting feedback
+- animation timing
+- sound
+- visual consistency
+- accessibility
+- error reporting
+- performance
+- loading
+- save compatibility
+- edge-case handling
+
+
+### Phase 3 exit condition
+
+Version 1.0 becomes a release candidate when:
+
+- intended specification coverage is complete
+- major integration defects are resolved
+- automated regression tests are healthy
+- representative games can be completed normally
+- AI can use the new systems
+- balance is acceptable for the release target
+- UI accurately communicates major mechanics
+- save/load is reliable
+- no known release blocker remains
+
+
+## Global anti-drift rule
+
+Before starting work, identify the current phase and ask:
+
+"What produces the greatest progress according to this phase's governing
+priority?"
+
+During Phase 1, another missing Spell, Skill, perk, creature mechanic, building,
+or required UI path is usually more valuable than another layer of tests around
+a feature that already has adequate focused verification.
+
+During Phase 2, fixing interactions is usually more valuable than adding another
+feature.
+
+During Phase 3, measured gameplay evidence is usually more valuable than
+speculative numerical redesign.
+
+Do not confuse engineering activity with progress.
