@@ -35,9 +35,15 @@ namespace newHorizonsMagic
 {
 constexpr int RULESET_VERSION = 1;
 constexpr int DIRECT_DAMAGE_RULESET_VERSION = 2;
+constexpr int SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION = 3;
+constexpr int CURRENT_RULESET_VERSION = SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 constexpr int SPELL_POINTS_RULESET_VERSION = 1;
 constexpr int MAGE_GUILD_GENERATION_RULESET_VERSION = 1;
 constexpr int SPELL_POINTS_INTELLIGENCE_MAXIMUM_PERCENT = 130;
+constexpr int BLESS_BASE_DURATION = 2;
+constexpr int BLESS_MAX_DURATION = 4;
+constexpr int BLESS_SPELL_POWER_DURATION_DIVISOR = 80;
+constexpr int CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3 = 5;
 constexpr int METAMAGIC_FORMULA_RESERVE_POINTS = 3;
 constexpr int METAMAGIC_SPELL_BUFFER_POINTS = 6;
 constexpr int DIRECT_DAMAGE_POWER_DIVISOR = 10;
@@ -57,6 +63,11 @@ inline constexpr std::string_view METAMAGIC_PERFECT_SEQUENCE = "new-horizons:met
 inline constexpr std::string_view HAVOC_STORMCALLER = "new-horizons:havocMagic.stormcaller";
 inline constexpr std::string_view HAVOC_CONDUCTOR = "new-horizons:havocMagic.conductor";
 inline constexpr std::string_view HAVOC_ANNIHILATOR = "new-horizons:havocMagic.annihilator";
+inline constexpr std::string_view LIGHT_MAGIC_SKILL = "new-horizons:lightMagic";
+inline constexpr std::string_view LIGHT_BENEDICTION = "new-horizons:lightMagic.benediction";
+inline constexpr std::string_view STORM_OF_DAGGERS_SPELL = "new-horizons:stormOfDaggers";
+constexpr int STORM_OF_DAGGERS_MAX_TARGETS = 5;
+constexpr int STORM_OF_DAGGERS_EXTRA_TARGET_DAMAGE_PERCENT = 15;
 
 struct DLL_LINKAGE AdventureSpellState
 {
@@ -87,6 +98,19 @@ DLL_LINKAGE int32_t spellPointsIntelligenceMaximumPercent(const JsonNode & rules
 /// This is intentionally state-backed; installed content alone must not alter
 /// legacy saves.
 DLL_LINKAGE bool rulesActive(const JsonNode & rules);
+/// True only for saved v3 New Horizons battles, where Berserk targets one
+/// enemy creature stack. Older profiles retain core LOCATION/area targeting.
+DLL_LINKAGE bool berserkUsesSingleCreatureTarget(const JsonNode & rules);
+/// True only for saved v3 battles, where Dispel uses New Horizons' friend-or-foe
+/// single-stack effect instead of core targeting and Expert obstacle removal.
+DLL_LINKAGE bool dispelUsesNewHorizonsRules(const JsonNode & rules);
+/// Applies the saved v3 fixed-five Chain Lightning target count while keeping
+/// the configured, mastery-dependent value for legacy/v1/v2 battles.
+DLL_LINKAGE int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configuredTargetCount);
+/// True when this v3 saved battle uses the New Horizons single-target Expert
+/// range for one of the 23 core spells whose vanilla Expert data is Mass.
+/// Legacy/v1/v2 snapshots and every other spell retain vanilla static spell data.
+DLL_LINKAGE bool expertRangeIsSingleTarget(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE bool mageGuildGenerationActive(const JsonNode & rules);
 DLL_LINKAGE int mageGuildSpellsAtLevel(const JsonNode & rules, int level);
 DLL_LINKAGE std::vector<SpellSchool> preferredSchools(const JsonNode & rules, FactionID faction);
@@ -96,6 +120,11 @@ DLL_LINKAGE int physicalDamageReductionCapPercent(const JsonNode & rules);
 /// gains one percentage point per hero level, capped at 90%.  The helper keeps
 /// the displayed value aligned with the authoritative Lua effect.
 DLL_LINKAGE int masterChainLightningRetentionPercent(int heroLevel);
+/// Applies Bless's ordinary v3 duration floor/cap to an already-scaled
+/// Spell-Power term. Duration bonuses and perks are added by the caller after
+/// this ordinary cap.
+DLL_LINKAGE int blessDurationFromPowerTerm(int64_t spellPowerTerm);
+DLL_LINKAGE bool hasBenedictionPerk(const CGHeroInstance * hero);
 /// Returns a hero-contextual spell description for presentation surfaces.
 /// Legacy saves and all other spells retain the ordinary static description.
 DLL_LINKAGE std::string spellDescriptionForHero(const CGHeroInstance * hero,
@@ -105,7 +134,15 @@ DLL_LINKAGE std::string spellDescriptionForHero(const CGHeroInstance * hero,
 DLL_LINKAGE std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, const std::string & scopedIdentity);
 /// Call only after checking explicit event overrides (including zero) and legacy
 /// nonzero caster overrides. This accessor does not choose override precedence.
-DLL_LINKAGE std::optional<int64_t> directDamageValue(const JsonNode & rules, const std::string & scopedIdentity, int32_t effectPower, int32_t divisor);
+DLL_LINKAGE std::optional<int64_t> directDamageValue(const JsonNode & rules, const std::string & scopedIdentity,
+	int32_t effectPower, int32_t divisor, int coefficientPercent = 100);
+/// Saved v3 school-rank Spell Power coefficient, or 100% for v1/v2 snapshots.
+/// Rank indexes are none=0, Basic=1, Advanced=2, Expert=3.
+DLL_LINKAGE int schoolRankPowerCoefficientPercent(const JsonNode & rules, int schoolRank);
+/// Percentage for the highest-ranked school on an ordinary spell in the saved
+/// roster. Multi-school spells use one highest rank; adventure spells, creature
+/// abilities, excluded spells and legacy snapshots retain 100%.
+DLL_LINKAGE int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell);
 /// New Horizons' detailed Sorcery rules make the existing Magic Arrow an
 /// adjustable spell.  The optional overcharge is deliberately enabled only
 /// for a saved roster which classifies the canonical core spell as Sorcery;
@@ -137,7 +174,8 @@ DLL_LINKAGE int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, i
 /// Returns the raw pre-resistance damage for a legal overcharge selection.
 /// The divisor is the caster's New Horizons primary-rating coefficient scale.
 DLL_LINKAGE std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
-	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers = {});
+	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers = {},
+	int coefficientPercent = 100);
 DLL_LINKAGE std::vector<SpellSchool> activeSchools(const JsonNode & rules);
 /// Returns the six canonical Magic School Skills captured by the saved rules.
 /// Legacy worlds have no New Horizons school-skill catalogue.

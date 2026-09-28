@@ -20,6 +20,7 @@ SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
     'new-horizons:focusMagic',
+    'new-horizons:holyWrath',
     'new-horizons:counterspell',
     'new-horizons:disintegrate',
     'new-horizons:masterChainLightning',
@@ -100,6 +101,7 @@ def legacy_rules(rules):
         result.pop('spellPoints', None)
         result.pop('mageGuildGeneration', None)
         result.pop('physicalDamageReductionCapPercent', None)
+        result.pop('schoolRankPowerCoefficientPercent', None)
         for faction in result.get('factions', {}).values():
             faction['major'] = faction.pop('preferredA')
             faction['minor'] = faction.pop('preferredB')
@@ -113,16 +115,20 @@ def legacy_rules(rules):
 def magic_validators():
     v1 = load('config/schemas/newHorizonsMagic.json')
     v2 = load('config/schemas/newHorizonsMagicV2.json')
+    v3 = load('config/schemas/newHorizonsMagicV3.json')
     registry = Registry().with_resources([
         ('vcmi:newHorizonsMagic', Resource.from_contents(v1)),
         ('vcmi:newHorizonsMagicV2', Resource.from_contents(v2)),
+        ('vcmi:newHorizonsMagicV3', Resource.from_contents(v3)),
     ])
-    return Draft4Validator(v1, registry=registry), Draft4Validator(v2, registry=registry)
+    return (Draft4Validator(v1, registry=registry), Draft4Validator(v2, registry=registry),
+            Draft4Validator(v3, registry=registry))
 
 
 def validate_rules(rules):
-    v1, v2 = magic_validators()
-    (v2 if rules.get('rulesetVersion') == 2 else v1).validate(rules)
+    v1, v2, v3 = magic_validators()
+    validator = {2: v2, 3: v3}.get(rules.get('rulesetVersion'), v1)
+    validator.validate(rules)
     if not rules:
         return
     if (set(rules['spells']) | set(rules.get('adventureSpells', {}))
@@ -153,6 +159,113 @@ def png_size(path):
 class NewHorizonsContentTest(unittest.TestCase):
     def setUp(self):
         self.rules = load('config/newHorizonsMagic.json')
+
+    def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
+        spell_id = 'new-horizons:holyWrath'
+        row = self.rules['spells'][spell_id]
+        self.assertEqual(row['schools'], ['new-horizons:light'])
+        self.assertEqual(row['level'], 3)
+        self.assertEqual(row['costs'], [11, 11, 11, 11])
+        self.assertEqual(row['directDamage'], {'base': 40, 'powerCoefficient': 2})
+
+        definition = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['holyWrath']
+        self.assertEqual(definition['name'], 'Holy Wrath')
+        self.assertEqual(definition['type'], 'combat')
+        self.assertEqual(definition['school'], {'new-horizons:light': True})
+        self.assertEqual(definition['level'], 3)
+        self.assertEqual(definition['targetType'], 'CREATURE')
+        self.assertEqual(definition['graphics']['iconBook'], 'NH_holyWrath_44.png')
+        self.assertEqual(definition['graphics']['iconScroll'], 'NH_holyWrath_44.png')
+        self.assertEqual(definition['graphics']['iconEffect'], 'NH_holyWrath_30.png')
+        self.assertEqual(definition['graphics']['iconImmune'], 'NH_holyWrath_30.png')
+        self.assertTrue((ROOT / 'Mods/new-horizons/Images/NH_holyWrath_44.png').is_file())
+        self.assertTrue((ROOT / 'Mods/new-horizons/Images/NH_holyWrath_30.png').is_file())
+        self.assertEqual(set(definition['levels']), {'none', 'basic', 'advanced', 'expert'})
+        for rank, level in definition['levels'].items():
+            with self.subTest(rank=rank):
+                self.assertEqual(level['range'], '0')
+                self.assertEqual(level['cost'], 11)
+                self.assertTrue(level['targetModifier']['smart'])
+                self.assertEqual(level['battleEffects']['directDamage'], {'type': 'damage'})
+                self.assertEqual(set(level['battleEffects']), {'directDamage'})
+                self.assertIn('one enemy stack', level['description'])
+                self.assertIn('150%', level['description'])
+                self.assertIn('Undead', level['description'])
+                self.assertIn('base faction is Inferno', level['description'])
+
+    def test_new_horizons_expert_mass_is_saved_ruleset_scoped_not_global_content(self):
+        overlay = load('Mods/new-horizons/Content/config/spells/iceBolt.json')
+        spell_overlays = {}
+        for path in sorted((ROOT / 'Mods/new-horizons/Content/config/spells').glob('*.json')):
+            spell_overlays.update(load(str(path.relative_to(ROOT))))
+        core = {}
+        for filename in ('adventure', 'offensive', 'other', 'timed'):
+            core.update({f'core:{spell}': definition
+                         for spell, definition in load(f'config/spells/{filename}.json').items()})
+        active_core = {spell_id for spell_id, spell in self.rules['spells'].items()
+                       if spell_id.startswith('core:') and spell.get('active', True)}
+        expert_wide = {spell_id for spell_id in active_core
+                       if core[spell_id]['targetType'] == 'CREATURE'
+                       and core[spell_id].get('levels', {}).get('expert', {}).get('range') == 'X'}
+        self.assertEqual(len(expert_wide), 23)
+        for spell_id in expert_wide:
+            with self.subTest(spell=spell_id):
+                self.assertEqual(core[spell_id]['levels']['expert']['range'], 'X')
+                expert_patch = overlay.get(spell_id, {}).get('levels', {}).get('expert', {})
+                self.assertNotIn('range', expert_patch)
+
+        # Berserk uses LOCATION targeting in core data, so it is not caught by
+        # the creature-range sweep. Its New Horizons shape is saved-profile
+        # mechanics and must not be merged into the shared CSpell content.
+        self.assertEqual(core['core:berserk']['targetType'], 'LOCATION')
+        self.assertFalse(core['core:berserk']['levels']['base']['targetModifier']['smart'])
+        self.assertEqual(core['core:berserk']['levels']['advanced']['range'], '0-1')
+        self.assertEqual(core['core:berserk']['levels']['expert']['range'], '0-2')
+        self.assertNotIn('core:berserk', overlay)
+
+        # Saved-profile Dispel behavior must not be merged into shared content:
+        # legacy v1/v2 worlds retain core targeting and Expert obstacle removal.
+        self.assertNotIn('core:dispel', spell_overlays)
+        self.assertTrue(core['core:dispel']['levels']['base']['targetModifier']['smart'])
+        self.assertFalse(core['core:dispel']['levels']['advanced']['targetModifier']['smart'])
+        self.assertFalse(core['core:dispel']['levels']['expert']['targetModifier']['smart'])
+        self.assertEqual(core['core:dispel']['levels']['expert']['range'], 'X')
+        core_expert_effects = core['core:dispel']['levels']['expert']['battleEffects']
+        self.assertTrue(core_expert_effects['dispel']['optional'])
+        self.assertIn('removeObstacle', core_expert_effects)
+
+        # The core spell keeps its original rank-dependent target count in
+        # shared content; New Horizons v3 resolves its fixed-five behavior from
+        # the saved battle profile instead of merging a global spell patch.
+        self.assertEqual(core['core:chainLightning']['levels']['base']['battleEffects']['directDamage']['chainLength'], 4)
+        self.assertEqual(core['core:chainLightning']['levels']['advanced']['battleEffects']['directDamage']['chainLength'], 5)
+        self.assertEqual(core['core:chainLightning']['levels']['expert']['battleEffects']['directDamage']['chainLength'], 5)
+        self.assertNotIn('core:chainLightning', overlay)
+
+        self.assertNotIn('core:bless', spell_overlays)
+        self.assertNotIn('core:curse', spell_overlays)
+        self.assertEqual(
+            overlay['core:iceBolt']['levels']['base']['battleEffects']['speedDebuff']
+            ['bonus']['stacksMovementRange']['val'], -2)
+        for spell_id, effect_name in (
+                ('core:bless', 'alwaysMaximumDamage'),
+                ('core:curse', 'alwaysMinimumDamage')):
+            with self.subTest(spell=spell_id, effect=effect_name):
+                # Core data remains unchanged for saved v1/v2 profiles. V3
+                # applies its endpoint-only value through saved battle mechanics.
+                self.assertEqual(core[spell_id]['levels']['base']['effects'][effect_name]['val'], 0)
+                for rank in ('advanced', 'expert'):
+                    self.assertEqual(core[spell_id]['levels'][rank]['effects'][effect_name]['val'], 1)
+
+        # Mass remains available as its distinct New Horizons perk, rather than
+        # being inherited automatically from Expert mastery.
+        perks = load('config/newHorizonsPerks.json')['skills']
+        perk_ids = {perk['id'] for skill in perks.values() for perk in skill.get('perks', [])}
+        self.assertTrue({
+            'new-horizons:lightMagic.litany',
+            'new-horizons:shadowMagic.grandMalediction',
+            'new-horizons:sorceryMagic.temporalField',
+        } <= perk_ids)
 
     def test_orders_keyboard_binding(self):
         bindings = load('config/keyBindingsConfig.json')
@@ -186,7 +299,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertRegex(shortcuts,
                          r'LIST_TOWN_BOTTOM,[\s\S]*BATTLE_OPEN_ORDERS,\s*AFTER_LAST')
 
-    def test_physical_reduction_cap_is_optional_bounded_and_v2_only(self):
+    def test_physical_reduction_cap_is_optional_bounded_and_v2_or_v3(self):
         self.assertEqual(self.rules['physicalDamageReductionCapPercent'], 80)
         rules = copy.deepcopy(self.rules)
         rules.pop('physicalDamageReductionCapPercent')
@@ -234,6 +347,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'core:meteorShower',
                               'new-horizons:masterChainLightning',
                               'new-horizons:disintegrate',
+                              'new-horizons:holyWrath',
                           })
         self.assertEqual(self.rules['spells']['core:fireball']['directDamage'],
                          {'base': 25, 'powerCoefficient': 8})
@@ -595,7 +709,10 @@ class NewHorizonsContentTest(unittest.TestCase):
             "hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, "
             "and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures "
             "its caster's Spell Power-derived penetration when cast, and each mark copies that "
-            "captured value: min(20%, 10% + 0.05% x Spell Power). Subsequent friendly ranged "
+            "value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved "
+            "v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and "
+            "145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. "
+            "Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged "
             "creature attacks ignore that much Creature Defense; Creature Defense is not reduced, "
             "and melee attacks gain no benefit."
         )
@@ -807,6 +924,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(magic_schema['anyOf'], [
             {'$ref': 'newHorizonsMagic.json'},
             {'$ref': 'newHorizonsMagicV2.json'},
+            {'$ref': 'newHorizonsMagicV3.json'},
         ])
         self.assertEqual(load('config/gameConfig.json')['settings']['magic']['newHorizons'], {})
 

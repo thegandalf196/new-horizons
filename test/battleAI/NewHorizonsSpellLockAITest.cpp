@@ -50,8 +50,8 @@ protected:
 		ASSERT_TRUE(spell.hasValue());
 		ASSERT_NE(spell.toSpell(), nullptr);
 
-		friendly.mockedSide = BattleSide::ATTACKER;
-		enemy.mockedSide = BattleSide::DEFENDER;
+		ON_CALL(friendly, unitSide()).WillByDefault(Return(BattleSide::ATTACKER));
+		ON_CALL(enemy, unitSide()).WillByDefault(Return(BattleSide::DEFENDER));
 		friendly.redirectBonusesToFake();
 		enemy.redirectBonusesToFake();
 		for(auto * stack : {&friendly, &enemy})
@@ -82,7 +82,7 @@ protected:
 		ON_CALL(mechanics, getCasterColor()).WillByDefault(Return(PlayerColor(0)));
 		ON_CALL(mechanics, getTargetTypes()).WillByDefault(Return(
 			std::vector<spells::AimType>{spells::AimType::CREATURE}));
-		ON_CALL(mechanics, getEffectDuration()).WillByDefault(Return(std::optional<int32_t>(3)));
+		ON_CALL(mechanics, getEffectDuration()).WillByDefault(Return(3));
 		ON_CALL(mechanics, canBeCastAt(_, _)).WillByDefault(Return(true));
 		ON_CALL(mechanics, isReceptive(_)).WillByDefault(Return(true));
 	}

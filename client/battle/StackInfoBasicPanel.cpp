@@ -29,6 +29,12 @@
 
 namespace
 {
+struct StackStatusEntry
+{
+	newHorizonsBattleStatus::StackStatusIconKind kind;
+	std::optional<SpellID> spell;
+};
+
 newHorizonsBattleStatus::DefendStatus currentDefendStatus(
 	const CStack * stack, const CPlayerBattleCallback * battleCallback)
 {
@@ -72,6 +78,60 @@ newHorizonsBattleStatus::DefendStatus currentDefendStatus(
 		newHorizonsBulwark::hasBogAmbush(hero), newHorizonsBulwark::hasThickHide(hero),
 		stack->bulwarkPreemptiveUsed, sharedCoverApplies,
 		newHorizonsBulwark::hasVengefulMire(hero));
+	return result;
+}
+
+newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
+	const CStack * stack, const CPlayerBattleCallback * battleCallback)
+{
+	newHorizonsBattleStatus::StackInfoStatusSnapshot result;
+	result.defend = currentDefendStatus(stack, battleCallback);
+	if(stack)
+	{
+		result.physicalPoison = newHorizonsBattleStatus::makePhysicalPoisonStatus(
+			stack->physicalPoisonBaseDamage,
+			stack->physicalPoisonActivationsRemaining,
+			newHorizonsBulwark::physicalPoisonTickDamage(stack));
+	}
+	return result;
+}
+
+newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
+{
+	const auto spellKey = effect.toSpell()->getJsonKey();
+	if(newHorizonsBattleStatus::isTimeStop(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::TIME_STOP;
+	if(newHorizonsBattleStatus::isSpellLock(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::SPELL_LOCK;
+	if(newHorizonsBattleStatus::isFocusMagic(spellKey) || newHorizonsBattleStatus::isArcaneBreach(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::FOCUS_OR_ARCANE;
+	return newHorizonsBattleStatus::StackStatusIconKind::ORDINARY;
+}
+
+std::string replaceStatusPlaceholder(std::string text, std::string_view token, const std::string & replacement)
+{
+	std::size_t position = 0;
+	while((position = text.find(token, position)) != std::string::npos)
+	{
+		text.replace(position, token.size(), replacement);
+		position += replacement.size();
+	}
+	return text;
+}
+
+std::string physicalPoisonTooltip(const newHorizonsBattleStatus::PhysicalPoisonStatus & status, std::size_t hiddenEffectCount)
+{
+	auto result = LIBRARY->generaltexth->translate("new-horizons.combat.physicalPoison.tooltip");
+	result = replaceStatusPlaceholder(result, "%LABEL",
+		LIBRARY->generaltexth->translate("new-horizons.combat.physicalPoison.label"));
+	result = replaceStatusPlaceholder(result, "%DAMAGE", std::to_string(status.nextTickDamage));
+	result = replaceStatusPlaceholder(result, "%ACTIVATIONS", std::to_string(status.activationsRemaining));
+	if(hiddenEffectCount > 0)
+	{
+		auto hidden = LIBRARY->generaltexth->translate("new-horizons.combat.physicalPoison.hiddenEffects");
+		hidden = replaceStatusPlaceholder(hidden, "%COUNT", std::to_string(hiddenEffectCount));
+		result += "\n" + hidden;
+	}
 	return result;
 }
 }
@@ -142,11 +202,11 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("IMRL22"), std::clamp(morale + 3, 0, 6), 0, 47, 131));
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("ILCK22"), std::clamp(luck + 3, 0, 6), 0, 47, 143));
 
-	displayedDefendStatus = currentDefendStatus(stack, battleCallback.get());
-	if(displayedDefendStatus.defending)
+	displayedStatus = currentStackInfoStatus(stack, battleCallback.get());
+	if(displayedStatus.defend.defending)
 	{
-		const auto badge = displayedDefendStatus.bulwark ? "BULWARK" : "DEFEND";
-		const auto tooltip = newHorizonsBattleStatus::defendStatusTooltip(displayedDefendStatus);
+		const auto badge = displayedStatus.defend.bulwark ? "BULWARK" : "DEFEND";
+		const auto tooltip = newHorizonsBattleStatus::defendStatusTooltip(displayedStatus.defend);
 		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW, badge));
 		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 153, 39, 13), tooltip, tooltip));
 	}
@@ -165,104 +225,123 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	for(int i = 0; i < 3; i++)
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), 78, 0, firstPos.x + offset.x * i, firstPos.y + offset.y * i));
 
-	int printed=0; //how many effect pics have been printed
 	std::vector<SpellID> spells = stack->activeSpells();
-	// Keep the New Horizons combat statuses visible when the compact panel reaches
-	// its two-effect display limit. stable_partition preserves their relative
-	// order and the existing order of all other effects.
-	const auto prioritizedEnd = std::stable_partition(spells.begin(), spells.end(), [](const SpellID effect)
-	{
-		const auto spellKey = effect.toSpell()->getJsonKey();
-		return newHorizonsBattleStatus::isTimeStop(spellKey)
-			|| newHorizonsBattleStatus::isSpellLock(spellKey)
-			|| newHorizonsBattleStatus::isFocusMagic(spellKey)
-			|| newHorizonsBattleStatus::isArcaneBreach(spellKey);
-	});
-	const auto afterTimeStop = std::stable_partition(spells.begin(), prioritizedEnd, [](const SpellID effect)
-	{
-		return newHorizonsBattleStatus::isTimeStop(effect.toSpell()->getJsonKey());
-	});
-	std::stable_partition(afterTimeStop, prioritizedEnd, [](const SpellID effect)
-	{
-		return newHorizonsBattleStatus::isSpellLock(effect.toSpell()->getJsonKey());
-	});
-	for(SpellID effect : spells)
+	std::vector<StackStatusEntry> statusEntries;
+	std::vector<newHorizonsBattleStatus::StackStatusIconKind> statusKinds;
+	for(const auto effect : spells)
 	{
 		//not all effects have graphics (for eg. Acid Breath)
 		//for modded spells iconEffect is added to SpellInt.def
 		const bool hasGraphics = (effect < SpellID::THUNDERBOLT) || (effect >= SpellID::AFTER_LAST);
 
-		if (hasGraphics)
-		{
-			//FIXME: support permanent duration
-			auto spellBonuses = stack->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(effect)));
-
-			if (spellBonuses->empty())
-				throw std::runtime_error("Failed to find effects for spell " + effect.toSpell()->getJsonKey());
-
-			int duration = spellBonuses->front()->turnsRemain;
-			const auto spellKey = effect.toSpell()->getJsonKey();
-			const bool timeStop = newHorizonsBattleStatus::isTimeStop(spellKey);
-			const bool spellLock = newHorizonsBattleStatus::isSpellLock(spellKey);
-			const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
-			const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
-			const auto lockStatus = spellLock
-				? newHorizonsBattleStatus::spellLockStatus(*spellBonuses)
-				: std::optional<newHorizonsBattleStatus::SpellLockStatus>{};
-			const auto arcaneStatus = arcaneBreach
-				? newHorizonsBattleStatus::arcaneBreachStatus(*spellBonuses)
-				: newHorizonsBattleStatus::ArcaneBreachStatus{};
-
-			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, firstPos.x + offset.x * printed, firstPos.y + offset.y * printed));
-			if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach)
-			{
-				const std::string badge = timeStop
-					? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
-					: spellLock ? std::string(newHorizonsBattleStatus::SPELL_LOCK_BADGE)
-					: arcaneBreach ? std::to_string(arcaneStatus.markCount()) : std::to_string(duration);
-				labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
-			}
-
-			if(timeStop)
-			{
-				const std::string tooltip = newHorizonsBattleStatus::timeStopTooltip(effect.toSpell()->getDescriptionTranslated(0));
-				statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(
-					Rect(firstPos.x + offset.x * printed, firstPos.y + offset.y * printed, 48, 36), tooltip, tooltip));
-			}
-			else if(spellLock)
-			{
-				const std::string tooltip = lockStatus
-					? newHorizonsBattleStatus::spellLockTooltip(effect.toSpell()->getDescriptionTranslated(0), *lockStatus)
-					: effect.toSpell()->getDescriptionTranslated(0);
-				statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(
-					Rect(firstPos.x + offset.x * printed, firstPos.y + offset.y * printed, 48, 36), tooltip, tooltip));
-			}
-			else if(focusMagic)
-			{
-				const auto tooltipStatus = newHorizonsBattleStatus::focusMagicStatus(*spellBonuses);
-				const std::string tooltip = tooltipStatus
-					? newHorizonsBattleStatus::focusMagicTooltip(effect.toSpell()->getDescriptionTranslated(0), *tooltipStatus)
-					: effect.toSpell()->getDescriptionTranslated(0);
-				statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(
-					Rect(firstPos.x + offset.x * printed, firstPos.y + offset.y * printed, 48, 36), tooltip, tooltip));
-			}
-			else if(arcaneBreach)
-			{
-				const std::string tooltip = newHorizonsBattleStatus::arcaneBreachTooltip(arcaneStatus);
-				statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(
-					Rect(firstPos.x + offset.x * printed, firstPos.y + offset.y * printed, 48, 36), tooltip, tooltip));
-			}
-
-			++printed;
-			if(printed >= 3 || (printed == 2 && spells.size() > 3)) // interface limit reached
-				break;
-		}
+		if(!hasGraphics)
+			continue;
+		const auto kind = statusIconKind(effect);
+		statusEntries.push_back({kind, effect});
+		statusKinds.push_back(kind);
 	}
 
-	if(spells.empty())
+	const auto physicalPoison = displayedStatus.physicalPoison;
+	if(physicalPoison.active())
+	{
+		statusEntries.push_back({newHorizonsBattleStatus::StackStatusIconKind::PHYSICAL_POISON, std::nullopt});
+		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::PHYSICAL_POISON);
+	}
+	const auto totalEffectCount = spells.size() + (physicalPoison.active() ? 1 : 0);
+	const auto displayPlan = newHorizonsBattleStatus::stackStatusDisplayPlan(statusKinds, totalEffectCount);
+	int printed = 0;
+	for(const auto entryIndex : displayPlan.visibleEntryIndices)
+	{
+		const auto & entry = statusEntries[entryIndex];
+		const auto slotX = firstPos.x + offset.x * printed;
+		const auto slotY = firstPos.y + offset.y * printed;
+		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::PHYSICAL_POISON)
+		{
+			// Physical Poison is a saved stack condition, not a magical Poison spell.
+			// Reuse the stock Poison frame without inserting a fake active-spell ID.
+			const auto poisonIconFrame = SpellID(SpellID::POISON).getNum() + 1;
+			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), poisonIconFrame, 0, slotX, slotY));
+			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE,
+				std::to_string(physicalPoison.activationsRemaining)));
+			const auto hiddenEffectCount = displayPlan.overflow ? totalEffectCount - displayPlan.visibleEntryIndices.size() : 0;
+			const auto tooltip = physicalPoisonTooltip(physicalPoison, hiddenEffectCount);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+			++printed;
+			continue;
+		}
+
+		const SpellID effect = *entry.spell;
+		//FIXME: support permanent duration
+		auto spellBonuses = stack->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(effect)));
+		if(spellBonuses->empty())
+			throw std::runtime_error("Failed to find effects for spell " + effect.toSpell()->getJsonKey());
+
+		int duration = spellBonuses->front()->turnsRemain;
+		const auto spellKey = effect.toSpell()->getJsonKey();
+		const bool timeStop = newHorizonsBattleStatus::isTimeStop(spellKey);
+		const bool spellLock = newHorizonsBattleStatus::isSpellLock(spellKey);
+		const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
+		const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
+		const auto lockStatus = spellLock
+			? newHorizonsBattleStatus::spellLockStatus(*spellBonuses)
+			: std::optional<newHorizonsBattleStatus::SpellLockStatus>{};
+		const auto arcaneStatus = arcaneBreach
+			? newHorizonsBattleStatus::arcaneBreachStatus(*spellBonuses)
+			: newHorizonsBattleStatus::ArcaneBreachStatus{};
+
+		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
+		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach)
+		{
+			const std::string badge = timeStop
+				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
+				: spellLock ? std::string(newHorizonsBattleStatus::SPELL_LOCK_BADGE)
+				: arcaneBreach ? std::to_string(arcaneStatus.markCount()) : std::to_string(duration);
+			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
+		}
+
+		if(timeStop)
+		{
+			const std::string tooltip = newHorizonsBattleStatus::timeStopTooltip(effect.toSpell()->getDescriptionTranslated(0));
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(spellLock)
+		{
+			const std::string tooltip = lockStatus
+				? newHorizonsBattleStatus::spellLockTooltip(effect.toSpell()->getDescriptionTranslated(0), *lockStatus)
+				: effect.toSpell()->getDescriptionTranslated(0);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(focusMagic)
+		{
+			const auto tooltipStatus = newHorizonsBattleStatus::focusMagicStatus(*spellBonuses);
+			const std::string tooltip = tooltipStatus
+				? newHorizonsBattleStatus::focusMagicTooltip(effect.toSpell()->getDescriptionTranslated(0), *tooltipStatus)
+				: effect.toSpell()->getDescriptionTranslated(0);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(arcaneBreach)
+		{
+			const std::string tooltip = newHorizonsBattleStatus::arcaneBreachTooltip(arcaneStatus);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+
+		++printed;
+	}
+
+	if(spells.empty() && !physicalPoison.active())
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x, firstPos.y, 48, 36), EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[674]));
-	if(spells.size() > 3)
+	if(displayPlan.ellipsisUsesSlot)
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x + offset.x * 2, firstPos.y + offset.y * 2 - 4, 48, 36), EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "..."));
+	else if(displayPlan.overflow && physicalPoison.active())
+	{
+		if(printed < 3)
+			labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x + offset.x * 2, firstPos.y + offset.y * 2 - 4, 48, 36), EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "..."));
+		else
+		{
+			// The narrow gutter to the right of the third SpellInt slot keeps the overflow mark off the status art.
+			labels.push_back(std::make_shared<CLabel>(66, firstPos.y + offset.y * 2 + 18, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "..."));
+		}
+	}
 }
 
 void StackInfoBasicPanel::update(const CStack * updatedInfo)
@@ -281,8 +360,8 @@ void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
 	if(!updatedInfo)
 		return;
 
-	const auto current = currentDefendStatus(updatedInfo, battleCallback.get());
-	if(current == displayedDefendStatus)
+	const auto current = currentStackInfoStatus(updatedInfo, battleCallback.get());
+	if(current == displayedStatus)
 		return;
 
 	update(updatedInfo);

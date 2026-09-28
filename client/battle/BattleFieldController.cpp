@@ -713,6 +713,27 @@ void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 			showHighlightedHex(canvas, cellUnitMovementHighlight, hex, false);
 		return;
 	}
+	// Storm of Daggers selects ordered enemy stack IDs on the battlefield. Keep
+	// selected stacks marked while the pointer moves and highlight only new,
+	// live enemy targets; final full-vector legality is checked on Confirm.
+	if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+	{
+		const auto battle = owner.getBattle();
+		for(const auto unitId : owner.actionsController->stormOfDaggersSelectedTargetIds())
+		{
+			const auto * selected = battle ? battle->battleGetUnitByID(unitId) : nullptr;
+			if(!selected)
+				continue;
+			showHighlightedHex(canvas, cellUnitMovementHighlight, selected->getPosition(), false);
+			if(selected->doubleWide())
+				showHighlightedHex(canvas, cellUnitMovementHighlight, selected->occupiedHex(), false);
+		}
+
+		const auto hovered = getHoveredHex();
+		if(hovered.isValid() && owner.actionsController->stormOfDaggersTargetHexIsLegal(hovered))
+			showHighlightedHex(canvas, cellUnitMovementHighlight, hovered, false);
+		return;
+	}
 
 	// Canonical New Horizons Fire Wall uses a two-click start/orientation
 	// selector.  Show legal starts first, then legal adjacent endpoints once a

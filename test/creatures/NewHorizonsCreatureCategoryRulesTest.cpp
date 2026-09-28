@@ -21,7 +21,7 @@ JsonNode categoryFixture()
 	// Structural fixture only, NOT an approved canonical roster or active config.
 	JsonNode rules;
 	rules["schemaVersion"].Integer() = 1;
-	rules["rulesetVersion"].Integer() = CREATURE_CATEGORY_RULESET_VERSION;
+	rules["rulesetVersion"].Integer() = 1;
 	rules["sourceRulesetId"].String() = "new-horizons:creatureCategories";
 	for(const std::string name : {"core", "elite", "champion"})
 	{
@@ -31,6 +31,17 @@ JsonNode categoryFixture()
 	rules["creatures"]["core:pixie"].String() = "core";
 	rules["creatures"]["core:airElemental"].String() = "elite";
 	rules["creatures"]["core:phoenix"].String() = "champion";
+	return rules;
+}
+
+JsonNode creatureRulesWithGrowthFixture()
+{
+	auto rules = categoryFixture();
+	rules["rulesetVersion"].Integer() = CREATURE_CATEGORY_RULESET_VERSION;
+	rules["sourceRulesetId"].String() = "new-horizons:creatureRules";
+	rules["growthLines"]["core:gnoll"]["weeklyBaseGrowth"].Integer() = 14;
+	rules["growthLines"]["core:gnoll"]["members"].Vector().emplace_back("core:gnoll");
+	rules["growthLines"]["core:gnoll"]["members"].Vector().emplace_back("core:gnollMarauder");
 	return rules;
 }
 }
@@ -44,7 +55,7 @@ TEST(NewHorizonsCreatureCategoryRulesTest, ExplicitRowsReturnCopiedNamedViews)
 	EXPECT_EQ(core->nameTextId, "new-horizons.category.core.name");
 	EXPECT_EQ(core->descriptionTextId, "new-horizons.category.core.description");
 	EXPECT_EQ(core->sourceRulesetId, "new-horizons:creatureCategories");
-	EXPECT_EQ(core->rulesetVersion, CREATURE_CATEGORY_RULESET_VERSION);
+	EXPECT_EQ(core->rulesetVersion, 1);
 	ASSERT_TRUE(rules.lookup("core:airElemental"));
 	EXPECT_EQ(rules.lookup("core:airElemental")->category, CreatureCategory::ELITE);
 	ASSERT_TRUE(rules.lookup("core:phoenix"));
@@ -104,6 +115,38 @@ TEST(NewHorizonsCreatureCategoryRulesTest, RejectsUnknownFieldsAndNumericTierAss
 	rules = categoryFixture();
 	rules["creatures"]["core:pixie"].String() = "tier2";
 	EXPECT_THROW(CreatureCategoryRules{rules}, std::runtime_error);
+}
+
+TEST(NewHorizonsCreatureCategoryRulesTest, VersionTwoGrowthLinesResolveTheSameBaseGrowthForUpgrades)
+{
+	const CreatureCategoryRules rules(creatureRulesWithGrowthFixture());
+	EXPECT_EQ(rules.getRulesetVersion(), CREATURE_CATEGORY_RULESET_VERSION);
+	EXPECT_EQ(rules.weeklyBaseGrowth("core:gnoll"), 14);
+	EXPECT_EQ(rules.weeklyBaseGrowth("core:gnollMarauder"), 14);
+	EXPECT_FALSE(rules.weeklyBaseGrowth("core:orc"));
+	EXPECT_FALSE(CreatureCategoryRules(categoryFixture()).weeklyBaseGrowth("core:gnoll"))
+		<< "Saved ruleset v1 retains installed creature growth";
+}
+
+TEST(NewHorizonsCreatureCategoryRulesTest, RejectsMalformedGrowthLinesAndAmbiguousMembership)
+{
+	auto rules = creatureRulesWithGrowthFixture();
+	rules["growthLines"]["core:gnoll"]["weeklyBaseGrowth"].Integer() = 0;
+	EXPECT_THROW(CreatureCategoryRules{rules}, std::runtime_error);
+	rules = creatureRulesWithGrowthFixture();
+	rules["growthLines"]["core:gnoll"]["members"].Vector().clear();
+	EXPECT_THROW(CreatureCategoryRules{rules}, std::runtime_error) << "The line must list its base creature";
+	rules = creatureRulesWithGrowthFixture();
+	rules["growthLines"]["core:gnoll"]["members"].Vector().emplace_back("core:gnollMarauder");
+	EXPECT_THROW(CreatureCategoryRules{rules}, std::runtime_error) << "A member cannot be repeated";
+	rules = creatureRulesWithGrowthFixture();
+	rules["growthLines"]["core:other"]["weeklyBaseGrowth"].Integer() = 9;
+	rules["growthLines"]["core:other"]["members"].Vector().emplace_back("core:other");
+	rules["growthLines"]["core:other"]["members"].Vector().emplace_back("core:gnollMarauder");
+	EXPECT_THROW(CreatureCategoryRules{rules}, std::runtime_error) << "A member cannot belong to two lines";
+	rules = categoryFixture();
+	rules["rulesetVersion"].Integer() = CREATURE_CATEGORY_RULESET_VERSION;
+	EXPECT_THROW(CreatureCategoryRules{rules}, std::runtime_error) << "Ruleset v2 requires growth lines";
 }
 
 TEST(NewHorizonsCreatureCategoryRulesTest, RejectsMissingDefinitionsTextAndUnqualifiedIdentifiers)

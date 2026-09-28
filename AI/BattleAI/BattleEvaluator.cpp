@@ -716,9 +716,32 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 		bool physicalDamage = true;
 		int attackCount = 1;
 		float beforePerAttack = 0.0f;
+		float afterFirstPerAttack = 0.0f;
 		float afterPerAttack = 0.0f;
+		std::optional<int32_t> immovableRoundBefore;
 	};
 	std::vector<IncomingThreat> threats;
+	struct SharedCoverThreat
+	{
+		const battle::Unit * ally = nullptr;
+		float beforeTotal = 0.0f;
+		float afterTotal = 0.0f;
+		bool immovableAvailable = false;
+	};
+	std::vector<SharedCoverThreat> sharedCoverThreats;
+	if(newHorizonsBulwark::hasSharedCover(hero))
+	{
+		for(const auto * ally : battle->battleAdjacentUnits(stack))
+			if(ally && ally->unitSide() == stack->unitSide() && ally->defended()
+				&& ally->alive() && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(ally))
+			{
+				const auto * allyHero = battle->battleGetOwnerHero(ally);
+				const auto allyState = ally->acquireState();
+				const bool immovableAvailable = newHorizonsBulwark::hasImmovable(allyHero) && allyState
+					&& allyState->bulwarkImmovableRound != battle->battleGetRound();
+				sharedCoverThreats.push_back({ally, 0.0f, 0.0f, immovableAvailable});
+			}
+	}
 	const auto enemies = battle->battleGetUnitsIf([&](const battle::Unit * enemy)
 	{
 		return enemy && enemy->alive()
@@ -726,6 +749,8 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 			&& !enemy->isGhost()
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(enemy);
 	});
+	bool immovableForecastAvailable = newHorizonsBulwark::hasImmovable(hero)
+		&& projectedTarget->bulwarkImmovableRound != battle->battleGetRound();
 	for(const auto * enemy : enemies)
 	{
 		bool canShoot = enemy->canShoot()
@@ -742,9 +767,6 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 						break;
 					}
 		}
-		if(!canShoot && !canMelee)
-			continue;
-
 		// An enemy that can either shoot or close to melee chooses one attack
 		// mode. Forecast the more damaging immediate option instead of counting
 		// the same stack as two separate threats.
@@ -766,14 +788,93 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 			if(count <= 0)
 				continue;
 			IncomingThreat candidate{enemy, shooting,
-				!shooting || !enemy->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK), count, before, after};
+				!shooting || !enemy->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK), count,
+				before, after, after, std::nullopt};
 			if(!selected || candidate.beforePerAttack * candidate.attackCount
 				> selected->beforePerAttack * selected->attackCount)
 				selected = candidate;
 		}
-		if(!selected)
-			continue;
-		threats.push_back(*selected);
+		if(selected)
+		{
+			threats.push_back(*selected);
+			auto & threat = threats.back();
+			if(immovableForecastAvailable && threat.physicalDamage)
+			{
+				// Keep the first hit at the enhanced value, then consume Immovable
+				// in this detached round projection before estimating follow-up hits.
+				threat.immovableRoundBefore = projectedTarget->bulwarkImmovableRound;
+				projectedTarget->bulwarkImmovableRound = battle->battleGetRound();
+				const auto * projectedEnemy = defendedPreview->battleGetUnitByID(enemy->unitId());
+				const BattleAttackInfo subsequentAttack(projectedEnemy, projectedTarget.get(), 0, threat.shooting);
+				threat.afterPerAttack = averageOrderDamage(
+					defendedPreview->battleEstimateDamage(subsequentAttack));
+				immovableForecastAvailable = false;
+			}
+		}
+
+		// Shared Cover only protects a neighboring stack that is already
+		// Defending. Forecast immediate shots and adjacent melee attacks here;
+		// avoid another reachable-hex search for every neighbor and enemy.
+		for(auto & sharedThreat : sharedCoverThreats)
+		{
+			bool allyCanShoot = enemy->canShoot();
+			if(allyCanShoot)
+			{
+				allyCanShoot = false;
+				for(const auto hex : sharedThreat.ally->getHexes())
+					if(battle->battleCanShoot(enemy, hex))
+					{
+						allyCanShoot = true;
+						break;
+					}
+			}
+			const bool allyCanMelee = enemy->isMeleeAttacker()
+				&& !battle->meleeAttackHexes(enemy, sharedThreat.ally, enemy->getPosition()).empty();
+			if(!allyCanShoot && !allyCanMelee)
+				continue;
+
+			std::optional<IncomingThreat> allyThreat;
+			for(const bool shooting : {false, true})
+			{
+				if((shooting && !allyCanShoot) || (!shooting && !allyCanMelee))
+					continue;
+				const BattleAttackInfo beforeAttack(enemy, sharedThreat.ally, 0, shooting);
+				const auto * projectedEnemy = defendedPreview->battleGetUnitByID(enemy->unitId());
+				const auto * projectedAlly = defendedPreview->battleGetUnitByID(sharedThreat.ally->unitId());
+				const BattleAttackInfo afterAttack(projectedEnemy, projectedAlly, 0, shooting);
+				const int count = std::max(0, AttackPossibility::getAttackCount(*enemy, shooting, *battle));
+				if(count <= 0)
+					continue;
+				const float after = averageOrderDamage(defendedPreview->battleEstimateDamage(afterAttack));
+				IncomingThreat candidate{enemy, shooting,
+					!shooting || !enemy->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK), count,
+					averageOrderDamage(battle->battleEstimateDamage(beforeAttack)),
+					after, after, std::nullopt};
+				if(!allyThreat || candidate.beforePerAttack * candidate.attackCount
+					> allyThreat->beforePerAttack * allyThreat->attackCount)
+					allyThreat = candidate;
+			}
+			if(allyThreat)
+			{
+				sharedThreat.beforeTotal += allyThreat->beforePerAttack * allyThreat->attackCount;
+				if(sharedThreat.immovableAvailable && allyThreat->physicalDamage)
+				{
+					auto projectedAlly = defendedPreview->getForUpdate(sharedThreat.ally->unitId());
+					projectedAlly->bulwarkImmovableRound = battle->battleGetRound();
+					const auto * projectedEnemy = defendedPreview->battleGetUnitByID(enemy->unitId());
+					const BattleAttackInfo subsequentAttack(projectedEnemy, projectedAlly.get(), 0,
+						allyThreat->shooting);
+					const float afterPerAttack = averageOrderDamage(
+						defendedPreview->battleEstimateDamage(subsequentAttack));
+					sharedThreat.afterTotal += allyThreat->afterFirstPerAttack
+						+ afterPerAttack * std::max(0, allyThreat->attackCount - 1);
+					sharedThreat.immovableAvailable = false;
+				}
+				else
+					sharedThreat.afterTotal += allyThreat->afterFirstPerAttack
+						+ allyThreat->afterPerAttack * std::max(0, allyThreat->attackCount - 1);
+			}
+		}
 	}
 
 	float preemptiveValue = 0.0f;
@@ -814,19 +915,35 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 				for(auto & projectedThreat : threats)
 					if(projectedThreat.enemy->unitId() == threat.enemy->unitId()
 						&& !projectedThreat.shooting)
+					{
+						projectedThreat.afterFirstPerAttack = 0.0f;
 						projectedThreat.afterPerAttack = 0.0f;
+					}
 			}
 			else
 			{
 				BattleAttackInfo afterReaction(projectedEnemy.get(), projectedTarget.get(), 0, false);
 				const float afterPerAttack = averageOrderDamage(
 					defendedPreview->battleEstimateDamage(afterReaction));
+				float afterFirstPerAttack = afterPerAttack;
+				if(threat.immovableRoundBefore)
+				{
+					const auto consumedRound = projectedTarget->bulwarkImmovableRound;
+					projectedTarget->bulwarkImmovableRound = *threat.immovableRoundBefore;
+					BattleAttackInfo firstAfterReaction(projectedEnemy.get(), projectedTarget.get(), 0, false);
+					afterFirstPerAttack = averageOrderDamage(
+						defendedPreview->battleEstimateDamage(firstAfterReaction));
+					projectedTarget->bulwarkImmovableRound = consumedRound;
+				}
 				// The attacker's damage count may change after the reaction, which
 				// also changes how much physical damage can be reflected.
 				for(auto & projectedThreat : threats)
 					if(projectedThreat.enemy->unitId() == threat.enemy->unitId()
 						&& !projectedThreat.shooting)
+					{
+						projectedThreat.afterFirstPerAttack = afterFirstPerAttack;
 						projectedThreat.afterPerAttack = afterPerAttack;
+					}
 			}
 			projectedTarget->bulwarkPreemptiveUsed = true;
 		}
@@ -836,7 +953,8 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	for(const auto & threat : threats)
 	{
 		incomingBeforeDefend += threat.beforePerAttack * threat.attackCount;
-		incomingAfterDefend += threat.afterPerAttack * threat.attackCount;
+		incomingAfterDefend += threat.afterFirstPerAttack
+			+ threat.afterPerAttack * std::max(0, threat.attackCount - 1);
 	}
 	const float currentHealth = static_cast<float>(stack->getAvailableHealth());
 	const float damagePrevented = std::max(0.0f,
@@ -844,18 +962,23 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 
 	int64_t remainingHealth = stack->getAvailableHealth();
 	int64_t reflectedDamage = 0;
+	int64_t swampRenewalDamage = 0;
 	for(const auto & threat : threats)
 	{
 		if(remainingHealth <= 0)
 			break;
-		const float proposed = threat.afterPerAttack * threat.attackCount;
+		const float proposed = threat.afterFirstPerAttack
+			+ threat.afterPerAttack * std::max(0, threat.attackCount - 1);
 		const int64_t received = std::min<int64_t>(remainingHealth,
 			static_cast<int64_t>(std::max(0.0f, proposed)));
 		remainingHealth -= received;
+		if(threat.physicalDamage)
+			swampRenewalDamage += received;
 		if(received <= 0 || !threat.physicalDamage)
 			continue;
 		const int basisPoints = newHorizonsBulwark::reflectionBasisPoints(bulwarkRank,
-			threat.shooting, newHorizonsBulwark::hasThickHide(hero));
+			threat.shooting, newHorizonsBulwark::hasThickHide(hero),
+			newHorizonsBulwark::hasVengefulMire(hero));
 		if(basisPoints <= 0)
 			continue;
 		const auto * projectedEnemy = defendedPreview->battleGetUnitByID(threat.enemy->unitId());
@@ -866,10 +989,23 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	}
 
 	const float defendValue = damagePrevented + preemptiveValue + reflectedDamage;
+	int64_t swampRenewalValue = 0;
+	if(newHorizonsBulwark::hasSwampRenewal(hero) && remainingHealth > 0 && swampRenewalDamage > 0)
+	{
+		const int64_t availableHealing = std::max<int64_t>(0,
+			stack->getTotalHealth() - remainingHealth);
+		swampRenewalValue = std::min(availableHealing, swampRenewalDamage / 10);
+	}
+	float sharedCoverDamagePrevented = 0.0f;
+	for(const auto & threat : sharedCoverThreats)
+		sharedCoverDamagePrevented += std::max(0.0f,
+			std::min<float>(threat.ally->getAvailableHealth(), threat.beforeTotal)
+			- std::min<float>(threat.ally->getAvailableHealth(), threat.afterTotal));
+	const float defendValueWithSharedCover = defendValue + sharedCoverDamagePrevented + swampRenewalValue;
 	// Require a visible benefit to beat the existing Wait fallback.  Damage
 	// prevented, the one available pre-emptive strike and reflected damage all
 	// use the same health-value scale.
-	return defendValue >= std::max<int64_t>(1, stack->getAvailableHealth() / 20);
+	return defendValueWithSharedCover >= std::max<int64_t>(1, stack->getAvailableHealth() / 20);
 }
 }
 
@@ -1478,6 +1614,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						candidateCast.setSelectiveDispel(selectiveDispel);
 						auto candidateMechanics = spell->battleMechanics(&candidateCast);
 						spells::detail::ProblemImpl problem;
+						const bool stormOfDaggers = candidateMechanics->isNewHorizonsStormOfDaggers();
+						if(stormOfDaggers
+							&& (!candidateMechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(target.size()))
+								|| !candidateMechanics->canBeCastAt(target, problem)))
+							continue;
 						if(!candidateMechanics->canBeCast(problem))
 							continue;
 
@@ -1497,6 +1638,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.spellSelectiveDispel = selectiveDispel;
 						ps.spellCureAffliction = cureAffliction;
 						ps.spellMassSlow = massSlow;
+						ps.spellStormOfDaggers = stormOfDaggers;
 						if(isCanonicalLandMine(*cb->getBattle(battleID), spell))
 							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::landMinePlacementValue(
 								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
@@ -1911,7 +2053,24 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					if(counterspell.wardActive)
 						cast.setCounterspell(counterspell.wardSide, counterspellNegated);
 					if(!counterspellNegated)
-						cast.castEval(state->getServerCallback(), candidateTarget);
+					{
+						auto mechanics = ps.spell->battleMechanics(&cast);
+						if(mechanics->isNewHorizonsStormOfDaggers())
+						{
+							// The selected subset size is part of this cast's shared damage
+							// context. Use the ordinary mechanics forecast after setting it so
+							// school scaling and target resistance follow the authoritative path.
+							if(!mechanics->setStormOfDaggersTargetCount(
+								static_cast<int32_t>(candidateTarget.size())))
+							{
+								ps.value = std::numeric_limits<float>::lowest();
+								continue;
+							}
+							mechanics->castEval(state->getServerCallback(), candidateTarget);
+						}
+						else
+							cast.castEval(state->getServerCallback(), candidateTarget);
+					}
 					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
 						counterspellNegated, *spellAllowance))
@@ -2070,6 +2229,14 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							state);
 						const bool ourUnit = state->battleGetOwner(unit) == playerID;
 						const bool goodEffect = newHealth > oldHealth;
+						if(ps.spellStormOfDaggers && !ourUnit && original)
+						{
+							// The authoritative cast independently resists each hostile
+							// target. castEval uses the shared ranked damage amount but leaves
+							// that random roll out, so value its expected hit probability here.
+							const int resistance = std::clamp(original->magicResistance(), 0, 100);
+							dpsReduce *= 1.0f - static_cast<float>(resistance) / 100.0f;
+						}
 
 						if(ourUnit == goodEffect)
 						{

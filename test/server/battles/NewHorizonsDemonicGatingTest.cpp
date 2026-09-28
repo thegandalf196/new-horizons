@@ -174,8 +174,8 @@ protected:
 
 	void addUntilGetsTurnBonus(const battle::Unit * unit)
 	{
-		Bonus bonus(BonusDuration::STACK_GETS_TURN, BonusType::STACKS_DEFENSE,
-			BonusSource::OTHER, 1, BonusSourceID());
+		Bonus bonus(BonusDuration::STACK_GETS_TURN, BonusType::PRIMARY_SKILL,
+			BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(PrimarySkill::DEFENSE));
 		SetStackEffect effect;
 		effect.battleID = BattleID(0);
 		effect.toAdd.emplace_back(unit->unitId(), std::vector<Bonus>{bonus});
@@ -426,7 +426,7 @@ TEST_F(NewHorizonsDemonicGatingTest, MasterGatePreservesTheFirstRegularGateActiv
 
 	EXPECT_TRUE(side.masterGateUsed);
 	EXPECT_EQ(battle()->getActiveStackID(), static_cast<int32_t>(unitId));
-	EXPECT_FALSE(active->movedThisRound);
+	EXPECT_FALSE(active->moved());
 	EXPECT_FALSE(active->getAllBonuses(Bonus::UntilActivationEnds)->empty());
 	EXPECT_FALSE(active->getAllBonuses(Bonus::UntilGetsTurn)->empty());
 	EXPECT_TRUE(fortune.speedUnits.contains(unitId));
@@ -460,7 +460,7 @@ TEST_F(NewHorizonsDemonicGatingTest, MasterGateContinuationMayOpenAnotherGateBut
 	firstGate.aimToHex(firstGateHex);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), firstGate));
 	ASSERT_TRUE(battle()->getSide(BattleSide::ATTACKER).masterGateUsed);
-	ASSERT_FALSE(active->movedThisRound);
+	ASSERT_FALSE(active->moved());
 
 	auto & side = battle()->getSide(BattleSide::ATTACKER);
 	side.demonicReserve[creatureByName("core:imp")] = 3;
@@ -478,7 +478,7 @@ TEST_F(NewHorizonsDemonicGatingTest, MasterGateContinuationMayOpenAnotherGateBut
 	EXPECT_TRUE(side.masterGateUsed);
 	EXPECT_EQ(side.pendingDemonicGates.size(), 2u);
 	EXPECT_TRUE(side.demonicReserve.empty());
-	EXPECT_TRUE(active->movedThisRound);
+	EXPECT_TRUE(active->moved());
 	EXPECT_TRUE(active->getAllBonuses(Bonus::UntilActivationEnds)->empty());
 	EXPECT_EQ(std::ranges::count_if(server.stackActivations, [](const auto & activation)
 	{
@@ -524,7 +524,7 @@ TEST_F(NewHorizonsDemonicGatingTest, SuccessfulMobileMasterGateRestoresItsStartA
 	EXPECT_EQ(side.pendingDemonicGates.front().position, gateHex);
 	EXPECT_EQ(battle()->getActiveStackID(), static_cast<int32_t>(unitId));
 	EXPECT_EQ(battle()->battleGetStackByID(unitId, false)->getPosition(), movement);
-	EXPECT_FALSE(active->movedThisRound);
+	EXPECT_FALSE(active->moved());
 	EXPECT_FALSE(active->getAllBonuses(Bonus::UntilActivationEnds)->empty());
 	EXPECT_FALSE(active->getAllBonuses(Bonus::UntilGetsTurn)->empty());
 	EXPECT_TRUE(fortune.speedUnits.contains(unitId));
@@ -579,7 +579,7 @@ TEST_F(NewHorizonsDemonicGatingTest, FailedPostMoveGateConsumesActivationWithout
 	const auto * stopped = battle()->battleGetStackByID(unitId, false);
 	ASSERT_NE(stopped, nullptr);
 	EXPECT_EQ(stopped->getPosition(), stoppingHex);
-	EXPECT_TRUE(stopped->movedThisRound);
+	EXPECT_TRUE(stopped->moved());
 	EXPECT_TRUE(stopped->getAllBonuses(Bonus::UntilActivationEnds)->empty());
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).masterGateUsed);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).demonicReserve.at(creatureByName("core:imp")), 12);
@@ -1715,16 +1715,16 @@ TEST(NewHorizonsDemonicGatingWire, ChainGateStateAndAttackMarkerRoundTripOnlyOnN
 	EXPECT_THROW(oldAccelerated.oser & acceleratedOnly, std::runtime_error);
 	EXPECT_TRUE(oldAccelerated.extractBuffer().empty());
 
-	SideInBattle legacySide;
+	SideInBattle legacySide(nullptr);
 	CMemorySerializer previousVersionSide;
 	previousVersionSide.oser.version = ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS;
 	previousVersionSide.iser.version = ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS;
 	ASSERT_NO_THROW(previousVersionSide.oser & legacySide);
-	SideInBattle restoredPreviousSide;
+	SideInBattle restoredPreviousSide(nullptr);
 	ASSERT_NO_THROW(previousVersionSide.iser & restoredPreviousSide);
 	EXPECT_FALSE(restoredPreviousSide.masterGateUsed);
 
-	SideInBattle usedMasterGateOnly;
+	SideInBattle usedMasterGateOnly(nullptr);
 	usedMasterGateOnly.masterGateUsed = true;
 	CMemorySerializer oldMasterGateSide;
 	oldMasterGateSide.oser.version = ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS;

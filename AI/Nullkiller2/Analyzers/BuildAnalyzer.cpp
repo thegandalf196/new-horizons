@@ -168,7 +168,7 @@ BuildingInfo::BuildingInfo(
 
 	if(creature)
 	{
-		creatureGrowth = creature->getGrowth();
+		creatureGrowth = town->creatureBaseGrowth(creature->getId());
 		creatureID = creature->getId();
 		baseCreatureID = baseCreature;
 		creatureUnitCost = creature->getFullRecruitCost();
@@ -182,7 +182,7 @@ BuildingInfo::BuildingInfo(
 		{
 			if(id.isDwelling())
 			{
-				creatureGrowth = creature->getGrowth();
+				creatureGrowth = town->creatureBaseGrowth(creature->getId());
 
 				if(town->hasBuilt(BuildingID::CASTLE))
 					creatureGrowth *= 2;
@@ -191,7 +191,7 @@ BuildingInfo::BuildingInfo(
 			}
 			else
 			{
-				creatureGrowth = creature->getHorde();
+				creatureGrowth = town->creatureHordeGrowth(creature->getId());
 			}
 		}
 

@@ -238,6 +238,145 @@ TEST_F(AttackResourceProjectionTest, FocusMagicMarksApplyBetweenShotsWithoutMuta
 	EXPECT_EQ(countMarks(defender), 0);
 }
 
+TEST_F(AttackResourceProjectionTest, SorceryRankCapturedMarkValueImprovesDetachedSecondShotProjection)
+{
+	const auto focus = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell",
+		std::string(newHorizonsSorcery::FOCUS_MAGIC_SPELL));
+	if(!focus)
+		GTEST_SKIP() << "Requires New Horizons Focus Magic content";
+	const auto trigger = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "script",
+		std::string(newHorizonsSorcery::FOCUS_MAGIC_TRIGGER));
+	const auto marker = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "script",
+		std::string(newHorizonsSorcery::ARCANE_BREACH_TRIGGER));
+	ASSERT_TRUE(trigger);
+	ASSERT_TRUE(marker);
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+
+	constexpr int32_t noRankMarkValue = 1015;
+	constexpr int32_t expertMarkValue = 1021;
+	constexpr int targetDefense = 2000;
+	const auto ignoredDefense = [](int32_t markValue)
+	{
+		return static_cast<int>(static_cast<int64_t>(markValue) * targetDefense / 10000);
+	};
+	ASSERT_LT(ignoredDefense(noRankMarkValue), ignoredDefense(expertMarkValue));
+
+	auto * noRankShooter = addStack(BattleSide::ATTACKER, creatureByName("core:grandElf"), BattleHex(3, 4), 10);
+	auto * expertShooter = addStack(BattleSide::ATTACKER, creatureByName("core:grandElf"), BattleHex(3, 6), 10);
+	auto * noRankDefender = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 4), 1000);
+	auto * expertDefender = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 6), 1000);
+	ASSERT_NE(noRankShooter, nullptr);
+	ASSERT_NE(expertShooter, nullptr);
+	ASSERT_NE(noRankDefender, nullptr);
+	ASSERT_NE(expertDefender, nullptr);
+
+	const auto setPrimarySkill = [](CStack * unit, PrimarySkill skill, int value)
+	{
+		const int current = skill == PrimarySkill::DEFENSE ? unit->getDefense(true) : unit->getAttack(true);
+		Bonus adjustment;
+		adjustment.type = BonusType::PRIMARY_SKILL;
+		adjustment.subtype = BonusSubtypeID(skill);
+		adjustment.val = value - current;
+		unit->addNewBonus(std::make_shared<Bonus>(adjustment));
+	};
+	const int noRankAttack = targetDefense - ignoredDefense(noRankMarkValue);
+	for(auto * defender : {noRankDefender, expertDefender})
+		setPrimarySkill(defender, PrimarySkill::DEFENSE, targetDefense);
+	setPrimarySkill(noRankShooter, PrimarySkill::ATTACK, noRankAttack);
+	setPrimarySkill(expertShooter, PrimarySkill::ATTACK, noRankAttack);
+	ASSERT_EQ(noRankDefender->getDefense(true), targetDefense);
+	ASSERT_EQ(expertDefender->getDefense(true), targetDefense);
+	ASSERT_EQ(noRankShooter->getAttack(true), noRankAttack);
+	ASSERT_EQ(expertShooter->getAttack(true), noRankAttack);
+	forceMaximumDamage(noRankShooter);
+	forceMaximumDamage(expertShooter);
+
+	const auto addFocusMagic = [&](CStack * shooter, int32_t markValue)
+	{
+		auto enchantment = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::COMBAT_EVENT_TRIGGER,
+			BonusSource::SPELL_EFFECT, markValue, BonusSourceID(SpellID(*focus)), BonusSubtypeID(ScriptID(*trigger)));
+		enchantment->turnsRemain = 3;
+		JsonNode parameters;
+		parameters["beneficiarySide"].Integer() = static_cast<int>(BattleSide::ATTACKER);
+		enchantment->parameters = std::make_shared<BonusParameters>(parameters);
+		shooter->addNewBonus(enchantment);
+	};
+	addFocusMagic(noRankShooter, noRankMarkValue);
+	addFocusMagic(expertShooter, expertMarkValue);
+	prepareModel();
+	const auto countMarks = [&](const battle::Unit * unit)
+	{
+		return unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER,
+			BonusSubtypeID(ScriptID(*marker)))->size();
+	};
+
+	const auto noRankInitialHealth = noRankDefender->getAvailableHealth();
+	const auto expertInitialHealth = expertDefender->getAvailableHealth();
+	const auto noRankInitialShots = noRankShooter->shots.available();
+	const auto expertInitialShots = expertShooter->shots.available();
+	const auto noRankProjectedDefender = model->getForUpdate(noRankDefender->unitId());
+	const auto expertProjectedDefender = model->getForUpdate(expertDefender->unitId());
+	const auto noRankProjectedShooter = model->getForUpdate(noRankShooter->unitId());
+	const auto expertProjectedShooter = model->getForUpdate(expertShooter->unitId());
+	const auto noRankProjectedInitialHealth = noRankProjectedDefender->getAvailableHealth();
+	const auto expertProjectedInitialHealth = expertProjectedDefender->getAvailableHealth();
+	const auto noRankProjectedInitialShots = noRankProjectedShooter->shots.available();
+	const auto expertProjectedInitialShots = expertProjectedShooter->shots.available();
+	const auto noRankInfo = BattleAttackInfo(noRankShooter, noRankDefender, 0, true);
+	const auto expertInfo = BattleAttackInfo(expertShooter, expertDefender, 0, true);
+	const auto noRankPrediction = AttackPossibility::evaluate(noRankInfo, noRankShooter->getPosition(), cache, model);
+	const auto expertPrediction = AttackPossibility::evaluate(expertInfo, expertShooter->getPosition(), cache, model);
+	ASSERT_NE(noRankPrediction.effectPreview, nullptr);
+	ASSERT_NE(expertPrediction.effectPreview, nullptr);
+	ASSERT_EQ(noRankPrediction.fortuneStrikes.size(), 2);
+	ASSERT_EQ(expertPrediction.fortuneStrikes.size(), 2);
+	ASSERT_FALSE(noRankPrediction.fortuneStrikes[0].hits.empty());
+	ASSERT_FALSE(expertPrediction.fortuneStrikes[0].hits.empty());
+	ASSERT_EQ(noRankPrediction.fortuneStrikes[1].hits.size(), 1);
+	ASSERT_EQ(expertPrediction.fortuneStrikes[1].hits.size(), 1);
+	const auto noRankFirstDamage = noRankPrediction.fortuneStrikes[0].hits[0].second;
+	const auto expertFirstDamage = expertPrediction.fortuneStrikes[0].hits[0].second;
+	EXPECT_EQ(noRankFirstDamage, expertFirstDamage);
+	EXPECT_EQ(noRankFirstDamage, model->battleExpectedLuckDamage(noRankInfo));
+	EXPECT_EQ(expertFirstDamage, model->battleExpectedLuckDamage(expertInfo));
+	EXPECT_GT(expertPrediction.fortuneStrikes[1].hits[0].second,
+		noRankPrediction.fortuneStrikes[1].hits[0].second);
+
+	const auto noRankPreviewMarks = noRankPrediction.effectPreview->getForUpdate(noRankDefender->unitId())
+		->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER, BonusSubtypeID(ScriptID(*marker)));
+	const auto expertPreviewMarks = expertPrediction.effectPreview->getForUpdate(expertDefender->unitId())
+		->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER, BonusSubtypeID(ScriptID(*marker)));
+	ASSERT_EQ(noRankPreviewMarks->size(), 2);
+	ASSERT_EQ(expertPreviewMarks->size(), 2);
+	EXPECT_EQ(noRankPreviewMarks->front()->val, noRankMarkValue);
+	EXPECT_EQ(expertPreviewMarks->front()->val, expertMarkValue);
+	EXPECT_EQ(countMarks(model->getForUpdate(noRankDefender->unitId()).get()), 0);
+	EXPECT_EQ(countMarks(model->getForUpdate(expertDefender->unitId()).get()), 0);
+	EXPECT_EQ(countMarks(noRankDefender), 0);
+	EXPECT_EQ(countMarks(expertDefender), 0);
+	EXPECT_EQ(noRankDefender->getAvailableHealth(), noRankInitialHealth);
+	EXPECT_EQ(expertDefender->getAvailableHealth(), expertInitialHealth);
+	EXPECT_EQ(noRankShooter->shots.available(), noRankInitialShots);
+	EXPECT_EQ(expertShooter->shots.available(), expertInitialShots);
+	EXPECT_EQ(noRankProjectedDefender->getAvailableHealth(), noRankProjectedInitialHealth);
+	EXPECT_EQ(expertProjectedDefender->getAvailableHealth(), expertProjectedInitialHealth);
+	EXPECT_EQ(noRankProjectedShooter->shots.available(), noRankProjectedInitialShots);
+	EXPECT_EQ(expertProjectedShooter->shots.available(), expertProjectedInitialShots);
+
+	BattleExchangeVariant exchange;
+	exchange.trackAttack(noRankPrediction, model, cache);
+	exchange.trackAttack(expertPrediction, model, cache);
+	EXPECT_EQ(countMarks(noRankProjectedDefender.get()), 2);
+	EXPECT_EQ(countMarks(expertProjectedDefender.get()), 2);
+	EXPECT_LT(expertProjectedDefender->getAvailableHealth(), noRankProjectedDefender->getAvailableHealth());
+	EXPECT_EQ(countMarks(noRankDefender), 0);
+	EXPECT_EQ(countMarks(expertDefender), 0);
+	EXPECT_EQ(noRankDefender->getAvailableHealth(), noRankInitialHealth);
+	EXPECT_EQ(expertDefender->getAvailableHealth(), expertInitialHealth);
+	EXPECT_EQ(noRankShooter->shots.available(), noRankInitialShots);
+	EXPECT_EQ(expertShooter->shots.available(), expertInitialShots);
+}
+
 TEST_F(AttackResourceProjectionTest, ArcaneAcquisitionProjectsTwoInitialMarksAndOneSubsequentMark)
 {
 	const auto focus = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell",

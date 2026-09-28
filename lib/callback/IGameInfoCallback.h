@@ -107,6 +107,12 @@ public:
 	virtual const JsonNode & getHeroMasteryRules() const;
 	virtual const JsonNode & getHeroPerkRules() const;
 	virtual const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const;
+	/// Weekly base growth from the saved New Horizons creature rules, or the
+	/// installed creature definition for legacy/unmapped worlds.
+	int getCreatureBaseGrowth(CreatureID creature) const;
+	/// Optional saved override for the legacy horde addition; absent preserves
+	/// the creature definition's value.
+	std::optional<int> getCreatureHordeGrowthOverride(CreatureID creature) const;
 	/// Actual saved world only; absent/unmapped creatures have no category.
 	virtual std::optional<newHorizonsCreatures::CreatureCategoryView> getCreatureCategory(CreatureID creature) const;
 	std::vector<SpellSchool> getActiveSpellSchools() const;

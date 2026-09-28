@@ -28,6 +28,9 @@
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/spells/Problem.h"
 
+#include <array>
+#include <utility>
+
 namespace
 {
 constexpr auto sorcerySkillKey = "new-horizons:sorceryMagic";
@@ -45,6 +48,7 @@ protected:
 	SpellID spell = SpellID::NONE;
 	ScriptID focusMagicTrigger;
 	ScriptID focusMagicEffect;
+	bool useV2MagicRules = false;
 	CStack * friendlyShooter = nullptr;
 	CStack * friendlyNonShooter = nullptr;
 	CStack * hostileShooter = nullptr;
@@ -81,17 +85,23 @@ protected:
 
 		auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		ASSERT_FALSE(magicRules["spells"][newHorizonsSorcery::FOCUS_MAGIC_SPELL].isNull());
+		if(useV2MagicRules)
+		{
+			magicRules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+			magicRules.Struct().erase("schoolRankPowerCoefficientPercent");
+		}
 		newHorizonsMagic::validateRules(magicRules);
 		// Exercise installed roster eligibility, not a test-only spell entry.
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 	}
 
-	bool configureCaster(CGHeroInstance * hero, int32_t spellPower)
+	bool configureCaster(CGHeroInstance * hero, int32_t spellPower,
+		MasteryLevel::Type sorceryMastery = MasteryLevel::EXPERT)
 	{
 		const auto sorcery = SecondarySkill::decode(sorcerySkillKey);
 		if(sorcery < 0)
 			return false;
-		hero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		hero->setSecSkillLevel(SecondarySkill(sorcery), sorceryMastery, ChangeValueMode::ABSOLUTE);
 		hero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 		hero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 		giveArtifact(hero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
@@ -212,9 +222,93 @@ TEST_F(FocusMagicSpellTest, RealCastTargetsFriendlyRangedCapableStackEvenWithout
 	EXPECT_FALSE(friendlyShooter->canShoot());
 
 	ASSERT_TRUE(castOnWithDiagnostics(attackerSideHero, friendlyShooter));
-	const auto expected = newHorizonsSorcery::arcaneBreachMarkBasisPoints(
-		attackerSideHero->getEffectPower(spell.toSpell()));
-	expectCapturedFocusMagic(friendlyShooter, expected, BattleSide::ATTACKER);
+	expectCapturedFocusMagic(friendlyShooter, 1145, BattleSide::ATTACKER);
+}
+
+TEST_F(FocusMagicSpellTest, RealCastScalesSpellPowerBySorceryRankAtLowPower)
+{
+	ASSERT_TRUE(prepare(3));
+	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(),
+		newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION);
+	const auto sorcery = SecondarySkill::decode(sorcerySkillKey);
+	ASSERT_GE(sorcery, 0);
+
+	const std::array<std::pair<MasteryLevel::Type, int32_t>, 4> cases = {{
+		{MasteryLevel::NONE, 1015},
+		{MasteryLevel::BASIC, 1017},
+		{MasteryLevel::ADVANCED, 1019},
+		{MasteryLevel::EXPERT, 1021}
+	}};
+	for(size_t index = 0; index < cases.size(); ++index)
+	{
+		if(index > 0)
+			advanceRound();
+		attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), cases[index].first,
+			ChangeValueMode::ABSOLUTE);
+		ASSERT_TRUE(castOnWithDiagnostics(attackerSideHero, friendlyShooter));
+		expectCapturedFocusMagic(friendlyShooter, cases[index].second, BattleSide::ATTACKER);
+	}
+}
+
+TEST_F(FocusMagicSpellTest, RealCastWithSavedV2ProfileUsesTheUnrankedPowerCoefficient)
+{
+	useV2MagicRules = true;
+	ASSERT_TRUE(prepare(3));
+	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(),
+		newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
+	EXPECT_FALSE(battle()->getMagicRules().Struct().contains("schoolRankPowerCoefficientPercent"));
+	ASSERT_TRUE(castOnWithDiagnostics(attackerSideHero, friendlyShooter));
+	expectCapturedFocusMagic(friendlyShooter, 1015, BattleSide::ATTACKER);
+}
+
+TEST_F(FocusMagicSpellTest, ContextualHelpShowsSavedSorceryRankAndOrdinaryMarkValue)
+{
+	ASSERT_TRUE(prepare(3));
+	const auto sorcery = SecondarySkill::decode(sorcerySkillKey);
+	ASSERT_GE(sorcery, 0);
+	ASSERT_EQ(attackerSideHero->getEffectPower(spell.toSpell()), 3);
+
+	struct HelpExpectation
+	{
+		MasteryLevel::Type rank;
+		const char * rankName;
+		int coefficientPercent;
+		const char * currentPenetration;
+	};
+	const std::array<HelpExpectation, 4> cases = {{
+		{MasteryLevel::NONE, "No Sorcery Rank", 100, "10.15"},
+		{MasteryLevel::BASIC, "Basic Sorcery", 115, "10.17"},
+		{MasteryLevel::ADVANCED, "Advanced Sorcery", 130, "10.19"},
+		{MasteryLevel::EXPERT, "Expert Sorcery", 145, "10.21"}
+	}};
+	for(const auto & expected : cases)
+	{
+		attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), expected.rank,
+			ChangeValueMode::ABSOLUTE);
+		const auto description = newHorizonsMagic::spellDescriptionForHero(
+			attackerSideHero, spell.toSpell(), 0);
+		EXPECT_NE(description.find("Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, "
+			"130% at Advanced, and 145% at Expert; it scales only the Spell Power term, "
+			"leaving the 10% base unchanged."), std::string::npos);
+		EXPECT_NE(description.find("Saved v1/v2 profiles use 100% at every Sorcery rank."), std::string::npos);
+		EXPECT_NE(description.find(std::string(expected.rankName) + ": "
+			+ std::to_string(expected.coefficientPercent) + "% coefficient on the Spell Power term."),
+			std::string::npos);
+		EXPECT_NE(description.find(std::string("Current ordinary per-mark penetration at Spell Power 3: ")
+			+ expected.currentPenetration + "% (before battle-only Warcasting)."), std::string::npos);
+	}
+}
+
+TEST_F(FocusMagicSpellTest, ContextualHelpKeepsSavedV2AtUnrankedCoefficient)
+{
+	useV2MagicRules = true;
+	ASSERT_TRUE(prepare(3));
+	// configureCaster leaves this hero at Expert, but v2 saved rules retain 100%.
+	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell.toSpell(), 0);
+	EXPECT_NE(description.find("Legacy profile: 100% coefficient on the Spell Power term; "
+		"Sorcery rank does not scale Focus Magic."), std::string::npos);
+	EXPECT_NE(description.find("Current ordinary per-mark penetration at Spell Power 3: "
+		"10.15% (before battle-only Warcasting)."), std::string::npos);
 }
 
 TEST_F(FocusMagicSpellTest, EchoedDurationExtendsOnlyTheActuallyAppliedAdditionalCast)
@@ -225,6 +319,7 @@ TEST_F(FocusMagicSpellTest, EchoedDurationExtendsOnlyTheActuallyAppliedAdditiona
 	const auto skill = SecondarySkill::decode(metamagic);
 	ASSERT_GE(skill, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(skill), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({metamagic, "new-horizons:metamagic.arcaneEconomy"});
 	attackerSideHero->applyPerkSelection({metamagic, std::string(newHorizonsMagic::METAMAGIC_ECHOED_DURATION)});
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(metamagic, std::string(newHorizonsMagic::METAMAGIC_ECHOED_DURATION)));
 	startBattle();
@@ -233,9 +328,9 @@ TEST_F(FocusMagicSpellTest, EchoedDurationExtendsOnlyTheActuallyAppliedAdditiona
 	beginCombat();
 	activate(shooter);
 	ASSERT_TRUE(castAtUnit(shooter));
-	expectCapturedFocusMagic(shooter, 1100, BattleSide::ATTACKER, 3);
+	expectCapturedFocusMagic(shooter, 1145, BattleSide::ATTACKER, 3);
 	ASSERT_TRUE(castAtUnit(shooter, true));
-	expectCapturedFocusMagic(shooter, 1100, BattleSide::ATTACKER, 4);
+	expectCapturedFocusMagic(shooter, 1145, BattleSide::ATTACKER, 4);
 }
 
 TEST_F(FocusMagicSpellTest, RealCastRejectsFriendlyNonShooterAndHostileShooter)
@@ -256,31 +351,29 @@ TEST_F(FocusMagicSpellTest, RealRecastReplacesSnapshotAndKeepsFixedThreeRoundDur
 	// remaining duration then proves that recasting refreshes it back to 3 rounds.
 	ASSERT_TRUE(castOnWithDiagnostics(attackerSideHero, friendlyShooter));
 	const auto firstPower = attackerSideHero->getEffectPower(spell.toSpell());
-	ASSERT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(firstPower), 1100);
-	expectCapturedFocusMagic(friendlyShooter, 1100, BattleSide::ATTACKER);
+	ASSERT_EQ(firstPower, 20);
+	expectCapturedFocusMagic(friendlyShooter, 1145, BattleSide::ATTACKER);
 
 	advanceRound();
-	expectCapturedFocusMagic(friendlyShooter, 1100, BattleSide::ATTACKER, 2);
+	expectCapturedFocusMagic(friendlyShooter, 1145, BattleSide::ATTACKER, 2);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	ASSERT_TRUE(castOnWithDiagnostics(attackerSideHero, friendlyShooter));
 	const auto secondPower = attackerSideHero->getEffectPower(spell.toSpell());
-	ASSERT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(secondPower), 1500);
-	expectCapturedFocusMagic(friendlyShooter, 1500, BattleSide::ATTACKER);
+	ASSERT_EQ(secondPower, 100);
+	expectCapturedFocusMagic(friendlyShooter, 1725, BattleSide::ATTACKER);
 }
 
 TEST_F(FocusMagicSpellTest, DefenderCastCapturesTheDefenderAsBeneficiary)
 {
 	ASSERT_TRUE(prepare());
 	ASSERT_TRUE(castOnWithDiagnostics(defenderSideHero, defenderShooter));
-	const auto expected = newHorizonsSorcery::arcaneBreachMarkBasisPoints(
-		defenderSideHero->getEffectPower(spell.toSpell()));
-	expectCapturedFocusMagic(defenderShooter, expected, BattleSide::DEFENDER);
+	expectCapturedFocusMagic(defenderShooter, 1145, BattleSide::DEFENDER);
 }
 
 TEST_F(FocusMagicSpellTest, WarcastingCastBoostsTheCapturedSpellPowerComponent)
 {
 	startGame();
-	if(!configureCaster(attackerSideHero, 100))
+	if(!configureCaster(attackerSideHero, 1, MasteryLevel::BASIC))
 		FAIL() << "New Horizons Sorcery skill is unavailable";
 	const auto warcasting = SecondarySkill::decode(warcastingSkillKey);
 	ASSERT_GE(warcasting, 0);
@@ -305,9 +398,18 @@ TEST_F(FocusMagicSpellTest, WarcastingCastBoostsTheCapturedSpellPowerComponent)
 	ASSERT_TRUE(canCastOnWithDiagnostics(attackerSideHero, shooter));
 	ASSERT_TRUE(castAtUnit(shooter));
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - newHorizonsSorcery::FOCUS_MAGIC_MANA);
-	// The basic Warcasting readiness scales the 5*Spell Power component (500)
-	// by 110%, while the fixed 1000-basis-point base remains unchanged.
-	expectCapturedFocusMagic(shooter, 1550, BattleSide::ATTACKER);
+	// Basic Sorcery (115%) and the saved Basic Warcasting readiness (110%) act
+	// on 5*Spell Power before one final floor: floor(5 * 1.15 * 1.10) = 6.
+	expectCapturedFocusMagic(shooter, 1006, BattleSide::ATTACKER);
+
+	advanceRound();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 200, ChangeValueMode::ABSOLUTE);
+	activate(shooter);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	advanceRound();
+	ASSERT_TRUE(canCastOnWithDiagnostics(attackerSideHero, shooter));
+	ASSERT_TRUE(castAtUnit(shooter));
+	expectCapturedFocusMagic(shooter, 2000, BattleSide::ATTACKER);
 }
 
 TEST_F(FocusMagicSpellTest, AuthoritativeDoubleShotAddsMarksBetweenHitsAndSelectiveDispelRemovesThem)
@@ -422,7 +524,7 @@ TEST_F(FocusMagicSpellTest, ArcaneAcquisitionSnapshotsMetamagicAndRechecksMarksB
 	ASSERT_NE(shooter, nullptr);
 	ASSERT_NE(target, nullptr);
 	ASSERT_NE(secondTarget, nullptr);
-	forceMaximumDamage(shooter);
+	forceMaximumDamage(const_cast<CStack *>(shooter));
 	beginCombat();
 	activate(shooter);
 	ASSERT_TRUE(castAtUnit(shooter));
@@ -430,7 +532,8 @@ TEST_F(FocusMagicSpellTest, ArcaneAcquisitionSnapshotsMetamagicAndRechecksMarksB
 	expectCapturedFocusMagic(shooter, 2000, BattleSide::ATTACKER,
 		newHorizonsSorcery::FOCUS_MAGIC_DURATION_ROUNDS, true);
 	auto restoredBattle = battleStartFixture::snapshot(*battle(), gameState().get());
-	const auto * restoredShooter = restoredBattle->getStack(shooter->unitId());
+	// BattleStart carries detached stack descriptors, not live unit health state.
+	const auto * restoredShooter = restoredBattle->getStack(shooter->unitId(), false);
 	ASSERT_NE(restoredShooter, nullptr);
 	expectCapturedFocusMagic(restoredShooter, 2000, BattleSide::ATTACKER,
 		newHorizonsSorcery::FOCUS_MAGIC_DURATION_ROUNDS, true);
@@ -458,6 +561,7 @@ TEST_F(FocusMagicSpellTest, ArcaneAcquisitionSnapshotsMetamagicAndRechecksMarksB
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		BattleAction::makeShotAttack(shooter, secondTarget)));
 	const auto secondTargetMarks = secondTarget->getBonuses(markSource);
-	EXPECT_EQ(secondTargetMarks->size(), 2u)
-		<< "Each distinct target is checked against its current Arcane Breach marks";
+	// Grand Elf resolves two shots separately: this unmarked target receives two
+	// marks on the first hit and one more after the second hit is rechecked.
+	EXPECT_EQ(secondTargetMarks->size(), 3u);
 }

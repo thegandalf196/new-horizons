@@ -413,6 +413,19 @@ public:
 		bool canAfford);
 };
 
+/// New Horizons' fixed, per-town Adventure Spell purchase list for the five
+/// Mage Guild tiers. It refreshes only from authoritative state notifications.
+class CMageGuildAdventureSpellWindow : public CWindowObject
+{
+	ObjectInstanceID townId;
+	std::vector<std::shared_ptr<CIntObject>> elements;
+	std::shared_ptr<CButton> closeButton;
+
+public:
+	CMageGuildAdventureSpellWindow(ObjectInstanceID townId);
+	void updateSpells(ObjectInstanceID townId);
+};
+
 /// The mage guild screen where you can see which spells you have
 class CMageGuildScreen : public CStatusbarWindow
 {
@@ -440,6 +453,8 @@ class CMageGuildScreen : public CStatusbarWindow
 
 	std::shared_ptr<CPicture> window;
 	std::shared_ptr<CButton> exit;
+	std::shared_ptr<CButton> adventureSpellsButton;
+	std::shared_ptr<CLabel> adventureSpellsLabel;
 	std::vector<std::shared_ptr<Scroll>> spells;
 	std::vector<std::shared_ptr<CAnimImage>> emptyScrolls;
 	std::vector<std::shared_ptr<ScrollAllSpells>> auroraBorealisScrolls;

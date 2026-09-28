@@ -16,13 +16,14 @@
 
 namespace newHorizonsWarcasting
 {
-/// Warcasting is an opt-in for battles created from the saved v2 magic profile.
+/// Warcasting is an opt-in for battles created from saved v2-or-later magic profiles.
 /// Missing, legacy, or malformed values remain inactive.
 inline bool enabled(const JsonNode & rules)
 {
 	return rules.isStruct()
 		&& rules["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
-		&& rules["rulesetVersion"].Integer() == newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION
+		&& rules["rulesetVersion"].Integer() >= newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION
+		&& rules["rulesetVersion"].Integer() <= newHorizonsMagic::CURRENT_RULESET_VERSION
 		&& rules["warcasting"].isBool()
 		&& rules["warcasting"].Bool();
 }

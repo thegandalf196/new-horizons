@@ -38,11 +38,13 @@
 #include "../widgets/CExchangeController.h"
 #include "render/Canvas.h"
 #include "render/CanvasImage.h"
+#include "render/Colors.h"
 #include "render/IImage.h"
 #include "render/IRenderHandler.h"
 #include "render/CAnimation.h"
 #include "render/ColorFilter.h"
 #include "render/IFont.h"
+#include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../adventureMap/AdventureMapInterface.h"
 #include "../adventureMap/CList.h"
 #include "../adventureMap/CResDataBar.h"
@@ -58,6 +60,7 @@
 #include "../../lib/gameState/NewHorizonsAstrology.h"
 #include "../../lib/gameState/UpgradeInfo.h"
 #include "../../lib/StartInfo.h"
+#include "../../lib/ResourceSet.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/campaign/CampaignState.h"
 #include "../../lib/entities/artifact/CArtifact.h"
@@ -2986,6 +2989,16 @@ CMageGuildScreen::CMageGuildScreen(CCastleInterface * owner, const ImagePath & i
 	statusbar = CGStatusBar::create(statusbarBackground);
 
 	exit = std::make_shared<CButton>(Point(748, 556), AnimationPath::builtin("TPMAGE1.DEF"), CButton::tooltip(LIBRARY->generaltexth->allTexts[593]), [&](){ close(); }, EShortcut::GLOBAL_RETURN);
+	if(newHorizonsMagic::adventureSpellRulesActive(GAME->interface()->cb->getMagicRules()))
+	{
+		adventureSpellsLabel = std::make_shared<CLabel>(610, 536, FONT_TINY, ETextAlignment::CENTER,
+			Colors::YELLOW, "Adventure Spells", 106);
+		adventureSpellsButton = std::make_shared<CButton>(Point(674, 510), AnimationPath::builtin("NH_spells_button"),
+			CButton::tooltip("Adventure Spells", "View and purchase the fixed Adventure Spell unlock for each Mage Guild tier."),
+			[this]() { ENGINE->windows().createAndPushWindow<CMageGuildAdventureSpellWindow>(townId); });
+		adventureSpellsButton->setHoverable(true);
+		adventureSpellsButton->setBorderColor(Colors::METALLIC_GOLD);
+	}
 
 	updateSpells(townId);
 }
@@ -2999,6 +3012,7 @@ void CMageGuildScreen::updateSpells(ObjectInstanceID tID)
 
 	spells.clear();
 	emptyScrolls.clear();
+	auroraBorealisScrolls.clear();
 
 	const CGTownInstance * town = GAME->interface()->cb->getTown(townId);
 
@@ -3034,6 +3048,185 @@ void CMageGuildScreen::updateSpells(ObjectInstanceID tID)
 	}
 
 	redraw();
+}
+
+namespace
+{
+std::string adventureSpellGuildLevelName(int guildLevel)
+{
+	static constexpr std::array<const char *, 5> names = {"I", "II", "III", "IV", "V"};
+	if(guildLevel < 1 || guildLevel > static_cast<int>(names.size()))
+		return std::to_string(guildLevel);
+	return names[static_cast<size_t>(guildLevel - 1)];
+}
+
+std::string adventureSpellUnlockCostText(const ResourceSet & cost)
+{
+	std::string result;
+	for(TResources::nziterator resource(cost); resource.valid(); resource++)
+	{
+		if(!result.empty())
+			result += " + ";
+		result += std::to_string(resource->resVal) + " " + resource->resType.toResource()->getNameTranslated();
+	}
+	return result;
+}
+
+class MageGuildAdventureSpellHelpArea final : public CHoverableArea
+{
+	std::string description;
+	std::shared_ptr<CComponent> component;
+
+public:
+	MageGuildAdventureSpellHelpArea(const Rect & area, std::string description_, SpellID spell)
+		: description(std::move(description_)), component(std::make_shared<CComponent>(ComponentType::SPELL, spell))
+	{
+		pos = area + pos.topLeft();
+		addUsedEvents(SHOW_POPUP);
+	}
+
+	void showPopupWindow(const Point &) override
+	{
+		CRClickPopup::createAndPush(description, component);
+	}
+};
+}
+
+CMageGuildAdventureSpellWindow::CMageGuildAdventureSpellWindow(ObjectInstanceID townId)
+	: CWindowObject(BORDERED, ImagePath::builtin("newHorizonsOrdersBackground.png")), townId(townId)
+{
+	updateSpells(townId);
+}
+
+void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)
+{
+	if(tID != townId)
+		return;
+
+	OBJECT_CONSTRUCTION;
+	elements.clear();
+	closeButton.reset();
+
+	const auto * town = GAME->interface()->cb->getTown(townId);
+	if(!town)
+		return;
+
+	elements.push_back(std::make_shared<CLabel>(320, 20, FONT_BIG, ETextAlignment::CENTER,
+		Colors::YELLOW, "Mage Guild Adventure Spells", 590));
+	elements.push_back(std::make_shared<CMultiLineLabel>(Rect(22, 49, 596, 27), FONT_SMALL,
+		ETextAlignment::CENTER, Colors::WHITE,
+		"Each Guild tier has one fixed spell. Unlocks stay with this town; visiting heroes learn unlocked spells."));
+
+	const auto & magicRules = GAME->interface()->cb->getMagicRules();
+	if(!newHorizonsMagic::adventureSpellRulesActive(magicRules))
+	{
+		elements.push_back(std::make_shared<CLabel>(320, 235, FONT_MEDIUM, ETextAlignment::CENTER,
+			Colors::WHITE, "Adventure Spell unlocks are not active in this saved game.", 540));
+	}
+	else
+	{
+		constexpr int rowLeft = 18;
+		constexpr int rowTop = 82;
+		constexpr int rowWidth = 604;
+		constexpr int rowHeight = 68;
+		constexpr int rowGap = 5;
+		const ColorRGBA rowFill(35, 21, 13, 92);
+		const ColorRGBA rowBorder(154, 119, 66, 255);
+		const auto resources = GAME->interface()->cb->getResourceAmount();
+		const bool ownsTown = town->getOwner() == GAME->interface()->playerID;
+		const bool turnIsActive = GAME->interface()->makingTurn;
+
+		for(int guildLevel = 1; guildLevel <= 5; ++guildLevel)
+		{
+			const auto spellId = newHorizonsMagic::adventureSpellForGuildLevel(magicRules, guildLevel);
+			const auto * spell = spellId == SpellID::NONE ? nullptr : spellId.toSpell();
+			if(!spell)
+				continue;
+
+			ResourceSet cost;
+			try
+			{
+				cost = newHorizonsMagic::adventureSpellUnlockCost(magicRules, spellId);
+			}
+			catch(const std::exception &)
+			{
+				logGlobal->error("Missing New Horizons unlock price for Mage Guild level %d", guildLevel);
+				continue;
+			}
+
+			const int rowY = rowTop + (guildLevel - 1) * (rowHeight + rowGap);
+			const Rect row(rowLeft, rowY, rowWidth, rowHeight);
+			const bool built = town->mageGuildLevel() >= guildLevel;
+			const bool unlocked = town->hasNewHorizonsAdventureSpellUnlocked(guildLevel);
+			const bool allowed = GAME->interface()->cb->isAllowed(spellId);
+			const bool canAfford = resources.canAfford(cost);
+			const bool canPurchase = built && !unlocked && allowed && canAfford && ownsTown && turnIsActive;
+			std::string status;
+			ColorRGBA statusColor = Colors::WHITE;
+			if(unlocked)
+			{
+				status = "Unlocked in this town — visiting heroes learn this spell.";
+				statusColor = Colors::GREEN;
+			}
+			else if(!allowed)
+				status = "Locked — unavailable in this scenario.";
+			else if(!built)
+				status = "Locked — build Mage Guild level " + adventureSpellGuildLevelName(guildLevel) + " first.";
+			else if(!ownsTown)
+				status = "Locked — only this town's owner can purchase it.";
+			else if(!turnIsActive)
+				status = "Locked — purchase is available during your turn.";
+			else if(!canAfford)
+				status = "Locked — current resources do not cover the cost.";
+			else
+			{
+				status = "Locked — ready to unlock for this town.";
+				statusColor = Colors::YELLOW;
+			}
+
+			elements.push_back(std::make_shared<TransparentFilledRectangle>(row, rowFill, rowBorder));
+			elements.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SPELLSCR"), spellId.getNum(),
+				Rect(rowLeft + 8, rowY + 10, 48, 48)));
+			elements.push_back(std::make_shared<CLabel>(rowLeft + 65, rowY + 5, FONT_MEDIUM,
+				ETextAlignment::TOPLEFT, Colors::YELLOW,
+				"Guild " + adventureSpellGuildLevelName(guildLevel) + " — " + spell->getNameTranslated(), 462));
+			elements.push_back(std::make_shared<CMultiLineLabel>(Rect(rowLeft + 65, rowY + 24, 470, 15),
+				FONT_TINY, ETextAlignment::TOPLEFT, statusColor, status));
+			const std::string costText = "Unlock cost: " + adventureSpellUnlockCostText(cost);
+			elements.push_back(std::make_shared<CLabel>(rowLeft + 65, rowY + 43, FONT_TINY,
+				ETextAlignment::TOPLEFT, Colors::WHITE, costText, 470));
+
+			const auto popupText = spell->getDescriptionTranslated(0) + "\n\n" + costText
+				+ ". Unlocking is permanent for this town. A visiting hero learns the spell from this town.";
+			elements.push_back(std::make_shared<MageGuildAdventureSpellHelpArea>(
+				Rect(rowLeft, rowY, 545, rowHeight), popupText, spellId));
+
+			if(built && !unlocked && allowed)
+			{
+				const std::string buyHelp = "Spend " + adventureSpellUnlockCostText(cost)
+					+ " to unlock " + spell->getNameTranslated() + " permanently for this town.";
+				auto buy = std::make_shared<CButton>(Point(rowLeft + 560, rowY + 19),
+					AnimationPath::builtin("IBUY30.DEF"), CButton::tooltip("Unlock", buyHelp),
+					[this, guildLevel]()
+					{
+						const auto * currentTown = GAME->interface()->cb->getTown(townId);
+						if(!currentTown || !GAME->interface()->cb->unlockNewHorizonsAdventureSpell(currentTown, guildLevel))
+							GAME->interface()->showInfoDialog("The Adventure Spell unlock request was not submitted. Check the town and its resources, then try again.");
+					});
+				buy->setTextOverlay("BUY", FONT_TINY, Colors::YELLOW);
+				buy->setBorderColor(Colors::METALLIC_GOLD);
+				buy->block(!canPurchase);
+				elements.push_back(buy);
+			}
+		}
+	}
+
+	elements.push_back(std::make_shared<CLabel>(22, 471, FONT_TINY, ETextAlignment::TOPLEFT,
+		Colors::WHITE, "Right-click a spell for its description and town purchase terms.", 490));
+	closeButton = std::make_shared<CButton>(Point(555, 462), AnimationPath::builtin("NH_cancel_button"),
+		CButton::tooltip("Close", "Return to the Mage Guild."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);
+	closeButton->setHoverable(true);
+	updateShadow();
 }
 
 CMageGuildScreen::ScrollAllSpells::ScrollAllSpells(Point position, const std::string & buildingName)

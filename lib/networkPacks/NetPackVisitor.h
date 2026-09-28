@@ -73,6 +73,7 @@ public:
 	virtual void visitNewObject(NewObject & pack) {}
 	virtual void visitSetAvailableArtifacts(SetAvailableArtifacts & pack) {}
 	virtual void visitSetHouseOfWisdomScrolls(SetHouseOfWisdomScrolls & pack) {}
+	virtual void visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizonsAdventureSpellUnlock & pack) {}
 	virtual void visitNewArtifact(NewArtifact & pack) {}
 	virtual void visitChangeStackCount(ChangeStackCount & pack) {}
 	virtual void visitSetStackType(SetStackType & pack) {}
@@ -149,6 +150,7 @@ public:
 	virtual void visitVisitTownBuilding(VisitTownBuilding & pack) {}
 	virtual void visitRazeStructure(RazeStructure & pack) {}
 	virtual void visitSpellResearch(SpellResearch & pack) {}
+	virtual void visitUnlockNewHorizonsAdventureSpell(UnlockNewHorizonsAdventureSpell & pack) {}
 	virtual void visitRecruitCreatures(RecruitCreatures & pack) {}
 	virtual void visitMusterCreatures(MusterCreatures & pack) {}
 	virtual void visitArrangeDemonicReserve(ArrangeDemonicReserve & pack) {}

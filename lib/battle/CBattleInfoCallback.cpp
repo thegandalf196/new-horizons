@@ -2171,13 +2171,34 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.defender)
 			&& (!info.shooting || !info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)))
 		{
+			const auto reductionForHero = [this](const CGHeroInstance * hero)
+			{
+				const auto terrain = getBattle()->getTerrainType();
+				const bool mireTerrain = newHorizonsBulwark::hasMireborn(hero)
+					&& (terrain == TerrainId::SWAMP || terrain == TerrainId::ROUGH);
+				return newHorizonsBulwark::reductionBasisPoints(
+					newHorizonsBulwark::rank(hero), hero ? hero->getPrimSkillLevel(PrimarySkill::DEFENSE) : 0, mireTerrain);
+			};
 			const auto * hero = battleGetOwnerHero(info.defender);
-			const int bulwarkRank = newHorizonsBulwark::rank(hero);
-			const auto terrain = getBattle()->getTerrainType();
-			const bool mireTerrain = newHorizonsBulwark::hasMireborn(hero)
-				&& (terrain == TerrainId::SWAMP || terrain == TerrainId::ROUGH);
-			payload.bulwarkDamageReductionBasisPoints = newHorizonsBulwark::reductionBasisPoints(
-				bulwarkRank, hero ? hero->getPrimSkillLevel(PrimarySkill::DEFENSE) : 0, mireTerrain);
+			const int baseReduction = reductionForHero(hero);
+			const auto defenderState = info.defender->acquireState();
+			if(newHorizonsBulwark::hasImmovable(hero) && defenderState
+				&& defenderState->bulwarkImmovableRound != battleGetRound())
+				payload.bulwarkImmovableFinalDamageMultiplier = 75;
+			payload.bulwarkDamageReductionBasisPoints = baseReduction;
+			if(baseReduction > 0 && newHorizonsBulwark::hasSharedCover(hero))
+			{
+				const auto friends = battleAdjacentUnits(info.defender);
+				for(const auto * friendUnit : friends)
+				{
+					if(friendUnit->unitSide() != info.defender->unitSide() || !friendUnit->defended()
+						|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(friendUnit))
+						continue;
+					payload.bulwarkDamageReductionBasisPoints = std::min(10000,
+						baseReduction + newHorizonsBulwark::sharedCoverBasisPoints(baseReduction));
+					break;
+				}
+			}
 		}
 	}
 	if(info.preemptiveDamagePercent > 0)

@@ -11,8 +11,10 @@
 #include "NewHorizonsMagic.h"
 
 #include "../ResourceSet.h"
+#include "../CStack.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "NewHorizonsSpellAvailability.h"
+#include "NewHorizonsSorcery.h"
 #include "CSpell.h"
 #include "CSpellHandler.h"
 #include "../constants/StringConstants.h"
@@ -153,12 +155,89 @@ bool sorceryMember(const SpellSchool school)
 {
 	return school.serializationKey() == "new-horizons:sorcery";
 }
+
+constexpr std::array<int, 4> SCHOOL_RANK_POWER_COEFFICIENT_PERCENT{100, 115, 130, 145};
+
+bool hasCanonicalSchoolRankPowerCoefficientPercent(const JsonNode & rules)
+{
+	const auto & factors = rules["schoolRankPowerCoefficientPercent"];
+	if(!factors.isVector() || factors.Vector().size() != SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.size())
+		return false;
+	for(size_t index = 0; index < SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.size(); ++index)
+	{
+		const auto & factor = factors.Vector()[index];
+		if(factor.getType() != JsonNode::JsonType::DATA_INTEGER
+			|| !integer(factor, SCHOOL_RANK_POWER_COEFFICIENT_PERCENT[index], SCHOOL_RANK_POWER_COEFFICIENT_PERCENT[index]))
+			return false;
+	}
+	return true;
+}
 }
 
 bool rulesActive(const JsonNode & rules)
 {
 	return !legacy(rules) && rules.isStruct()
-		&& integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION);
+		&& integer(rules["rulesetVersion"], RULESET_VERSION, CURRENT_RULESET_VERSION);
+}
+
+bool berserkUsesSingleCreatureTarget(const JsonNode & rules)
+{
+	return rulesActive(rules)
+		&& rules["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+}
+
+bool dispelUsesNewHorizonsRules(const JsonNode & rules)
+{
+	return rulesActive(rules)
+		&& rules["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+}
+
+int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configuredTargetCount)
+{
+	if(configuredTargetCount <= 1 || spell != SpellID(SpellID::CHAIN_LIGHTNING)
+		|| !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !spellAllowedBySavedRoster(rules, spell))
+		return configuredTargetCount;
+
+	return CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3;
+}
+
+bool expertRangeIsSingleTarget(const JsonNode & rules, SpellID spell)
+{
+	if(!rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		return false;
+
+	switch(spell.getNum())
+	{
+	case SpellID::CURE:
+	case SpellID::BLESS:
+	case SpellID::CURSE:
+	case SpellID::SLOW:
+	case SpellID::DISPEL:
+	case SpellID::SHIELD:
+	case SpellID::AIR_SHIELD:
+	case SpellID::PROTECTION_FROM_AIR:
+	case SpellID::PROTECTION_FROM_FIRE:
+	case SpellID::PROTECTION_FROM_WATER:
+	case SpellID::PROTECTION_FROM_EARTH:
+	case SpellID::BLOODLUST:
+	case SpellID::PRECISION:
+	case SpellID::WEAKNESS:
+	case SpellID::STONE_SKIN:
+	case SpellID::PRAYER:
+	case SpellID::MIRTH:
+	case SpellID::SORROW:
+	case SpellID::FORTUNE:
+	case SpellID::MISFORTUNE:
+	case SpellID::HASTE:
+	case SpellID::COUNTERSTRIKE:
+	case SpellID::FORGETFULNESS:
+		return true;
+	default:
+		return false;
+	}
 }
 
 bool mageGuildGenerationActive(const JsonNode & rules)
@@ -205,44 +284,238 @@ int masterChainLightningRetentionPercent(int heroLevel)
 	return std::min(90, 75 + std::max(0, heroLevel));
 }
 
+int blessDurationFromPowerTerm(int64_t spellPowerTerm)
+{
+	if(spellPowerTerm <= 0)
+		return BLESS_BASE_DURATION;
+	const int64_t remainingDuration = BLESS_MAX_DURATION - BLESS_BASE_DURATION;
+	if(spellPowerTerm >= remainingDuration)
+		return BLESS_MAX_DURATION;
+	return BLESS_BASE_DURATION + static_cast<int>(spellPowerTerm);
+}
+
+bool hasBenedictionPerk(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(LIGHT_MAGIC_SKILL), std::string(LIGHT_BENEDICTION));
+}
+
 std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::Spell * spell, int schoolLevel)
 {
 	if(!spell)
 		return {};
 
-	const auto description = [&spell, schoolLevel]()
+	std::string result = spell->getDescriptionTranslated(schoolLevel);
+	if(hero && spell->getId() == SpellID::BERSERK
+		&& berserkUsesSingleCreatureTarget(hero->getMagicRules()))
 	{
-		return spell->getDescriptionTranslated(schoolLevel);
-	};
+		result = "Target one enemy stack. It attacks the nearest creature until its next attack. "
+			"The ordinary cast targets only the selected stack at every mastery rank.";
+	}
+	else if(hero && spell->getId() == SpellID::DISPEL
+		&& dispelUsesNewHorizonsRules(hero->getMagicRules()))
+	{
+		result = "Target one friendly or enemy stack. Removes all temporary magical buffs and debuffs. "
+			"Does not remove Orders, innate creature states, poison, terrain, or summoned creatures. "
+			"Sorcery rank does not make Dispel affect multiple stacks.";
+	}
+	else if(hero && spell->getId() == SpellID::CHAIN_LIGHTNING
+		&& rulesActive(hero->getMagicRules())
+		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	{
+		result = "Select the first target. Lightning then jumps to the nearest eligible unstruck creature, "
+			"including friendly stacks. It can strike up to five different stacks at every mastery rank; "
+			"each later jump deals less damage.";
+	}
+
+	if(hero && rulesActive(hero->getMagicRules())
+		&& spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL)
+	{
+		const auto & rules = hero->getMagicRules();
+		const int coefficientPercent = spellPowerCoefficientPercent(rules, hero, spell->getId());
+		const int32_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
+		const bool chronomancer = hero->hasActivePerk(
+			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::CHRONOMANCER_PERK);
+		const int radius = newHorizonsSorcery::timeStopRadius(spellPower, chronomancer, coefficientPercent);
+		const int radiusCap = newHorizonsSorcery::TIME_STOP_BASE_MAX_RADIUS
+			+ (chronomancer ? newHorizonsSorcery::TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
+		const bool schoolRankRules = rules["rulesetVersion"].Integer()
+			>= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+
+		result = "Place the selected area outside time until the beginning of the caster's next Hero Action. ";
+		if(schoolRankRules)
+		{
+			result += "Under saved v3 rules, Sorcery rank scales only the Spell Power term: 100% with no rank, "
+				"115% at Basic, 130% at Advanced, and 145% at Expert. The radius is "
+				"min(" + std::to_string(radiusCap) + ", 1 + floor(" + std::to_string(coefficientPercent)
+				+ " x Spell Power / 10000)); Chronomancer raises the cap to 3 without "
+				"adding a free radius step. Current ordinary radius without battle-only Warcasting at Spell Power "
+				+ std::to_string(spellPower) + ": " + std::to_string(radius) + ". Warcasting also scales only this "
+				"Spell Power term when the shared cast scaler supplies its bonus. Duration and targeting do not "
+				"change with Sorcery rank.";
+		}
+		else
+		{
+			result += "Saved v1/v2 rules use a 100% Spell Power coefficient at every Sorcery rank. Radius is "
+				"min(" + std::to_string(radiusCap) + ", 1 + floor(Spell Power / 100)); Chronomancer raises "
+				"the cap to 3 without adding a free radius step. Current radius at Spell Power "
+				+ std::to_string(spellPower) + ": " + std::to_string(radius)
+				+ ". Warcasting also scales only this Spell Power term when the saved profile and shared cast scaler "
+				"supply its bonus. Duration and targeting are unchanged.";
+		}
+		result += " Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, "
+			"or lose duration from existing effects.";
+	}
 
 	if(hero && cureEnabled(hero->getMagicRules(), spell->getId()))
 	{
-		return "Targets one friendly living stack. Heals 25 + 1.5 \u00d7 Spell Power HP and cannot resurrect casualties. "
+		const int coefficientPercent = spellPowerCoefficientPercent(hero->getMagicRules(), hero, spell->getId());
+		const int coefficientThousandths = 15 * coefficientPercent;
+		std::string spellPowerCoefficient = std::to_string(coefficientThousandths / 1000) + "."
+			+ std::to_string((coefficientThousandths % 1000) / 100)
+			+ std::to_string((coefficientThousandths % 100) / 10)
+			+ std::to_string(coefficientThousandths % 10);
+		while(spellPowerCoefficient.back() == '0')
+			spellPowerCoefficient.pop_back();
+		result = "Targets one friendly living stack. Base healing is 25 + " + spellPowerCoefficient
+			+ " \u00d7 Spell Power HP and cannot resurrect casualties. "
 			"If the target has Poison or Disease, choose one physical affliction to remove. "
 			"Cure does not remove magical effects.";
 	}
 
-	if(!hero || !rulesActive(hero->getMagicRules())
-		|| spell->getJsonKey() != "new-horizons:masterChainLightning")
-		return description();
+	if(hero && rulesActive(hero->getMagicRules())
+		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& spell->getId() == SpellID::BLESS)
+	{
+		const int coefficientPercent = spellPowerCoefficientPercent(hero->getMagicRules(), hero, spell->getId());
+		const int64_t power = std::max<int32_t>(0, hero->getEffectPower(spell));
+		const int64_t termDivisor = static_cast<int64_t>(BLESS_SPELL_POWER_DURATION_DIVISOR) * 100;
+		const int64_t term = power * coefficientPercent / termDivisor;
+		const int ordinaryDuration = blessDurationFromPowerTerm(term);
+		const int64_t spellDurationModifier = static_cast<int64_t>(hero->valOfBonuses(
+			BonusType::SPELL_DURATION, BonusSubtypeID()))
+			+ hero->valOfBonuses(BonusType::SPELL_DURATION, BonusSubtypeID(SpellID(SpellID::BLESS)))
+			+ spellDurationBonus(hero, SpellID::BLESS);
+		const bool benediction = hasBenedictionPerk(hero);
+		const int64_t totalDuration = std::max<int64_t>(0, ordinaryDuration + spellDurationModifier
+			+ (benediction ? 1 : 0));
+		result += "\n\nCurrent ordinary duration: " + std::to_string(ordinaryDuration)
+			+ (ordinaryDuration == 1 ? " round" : " rounds") + " (Light School coefficient: "
+			+ std::to_string(coefficientPercent) + "%). Current total before battle-only adjustments: "
+			+ std::to_string(totalDuration) + (totalDuration == 1 ? " round." : " rounds.");
+		if(spellDurationModifier != 0)
+			result += " SPELL_DURATION modifier: " + std::to_string(spellDurationModifier) + ".";
+		if(benediction)
+			result += " Benediction adds 1 round.";
+	}
 
-	// Keep the translated base description complete for hero-independent help
-	// surfaces, then add the live value only where a hero context exists.
-	return description() + "\n\nCurrent retention: "
-		+ std::to_string(masterChainLightningRetentionPercent(hero->level)) + "%.";
+	if(hero && rulesActive(hero->getMagicRules())
+		&& spell->getJsonKey() == "new-horizons:masterChainLightning")
+	{
+		// Keep the translated base description complete for hero-independent help
+		// surfaces, then add the live value only where a hero context exists.
+		result += "\n\nCurrent retention: "
+			+ std::to_string(masterChainLightningRetentionPercent(hero->level)) + "%.";
+	}
+
+	if(hero && rulesActive(hero->getMagicRules())
+		&& hero->getMagicRules()["rulesetVersion"].Integer() >= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL)
+	{
+		const int coefficientPercent = spellPowerCoefficientPercent(hero->getMagicRules(), hero, spell->getId());
+		const bool spellbinder = hero->hasActivePerk(
+			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::SPELLBINDER_PERK);
+		const int duration = newHorizonsSorcery::spellLockDuration(
+			hero->getEffectPower(spell), spellbinder, coefficientPercent);
+		result += "\n\nCurrent Spell Power term: " + std::to_string(coefficientPercent)
+			+ "%; ordinary duration at current Spell Power: " + std::to_string(duration)
+			+ (duration == 1 ? " round." : " rounds.");
+	}
+
+	if(!hero || !rulesActive(hero->getMagicRules()))
+		return result;
+	const auto & savedMagicRules = hero->getMagicRules();
+	const bool focusMagicCoefficient = spell->getJsonKey() == newHorizonsSorcery::FOCUS_MAGIC_SPELL;
+	const bool hasSavedSchoolRankCoefficient = savedMagicRules["rulesetVersion"].Integer()
+		>= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+	if((!hasSavedSchoolRankCoefficient && !focusMagicCoefficient)
+		|| spellSchoolSkills(savedMagicRules, spell->getId()).empty())
+		return result;
+
+	const int coefficientPercent = spellPowerCoefficientPercent(savedMagicRules, hero, spell->getId());
+	const bool cureCoefficient = cureEnabled(hero->getMagicRules(), spell->getId());
+	const bool transfigureCoefficient = spell->getJsonKey() == "new-horizons:transfigureMatter";
+	const bool phantomCoefficient = spell->getJsonKey() == "new-horizons:phantomArmy";
+	const auto formula = spellDirectDamage(hero->getMagicRules(), spell->getJsonKey());
+	const bool damageCoefficient = spell->isDamage()
+		&& (spell->getBasePower() != 0 || (formula && formula->powerCoefficient != 0));
+	if(!focusMagicCoefficient && !cureCoefficient && !transfigureCoefficient && !phantomCoefficient && !damageCoefficient)
+		return result;
+
+	constexpr std::array<std::string_view, 4> rankNames{
+		"No School Rank", "Basic School", "Advanced School", "Expert School"};
+	if(focusMagicCoefficient)
+	{
+		if(hasSavedSchoolRankCoefficient)
+		{
+			const auto rank = std::find(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.begin(),
+				SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.end(), coefficientPercent);
+			if(rank == SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.end())
+				return result;
+			const auto rankIndex = static_cast<size_t>(std::distance(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.begin(), rank));
+			constexpr std::array<std::string_view, 4> sorceryRankNames{
+				"No Sorcery Rank", "Basic Sorcery", "Advanced Sorcery", "Expert Sorcery"};
+			result += "\n\n" + std::string(sorceryRankNames[rankIndex]) + ": "
+				+ std::to_string(coefficientPercent) + "% coefficient on the Spell Power term.";
+		}
+		else
+		{
+			result += "\n\nLegacy profile: 100% coefficient on the Spell Power term; "
+				"Sorcery rank does not scale Focus Magic.";
+		}
+
+		const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
+		const int64_t scaledTerm = spellPower * newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS
+			* coefficientPercent / 100;
+		const int64_t penetrationBasisPoints = std::min<int64_t>(
+			newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS,
+			newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS + scaledTerm);
+		const auto fraction = penetrationBasisPoints % 100;
+		result += "\nCurrent ordinary per-mark penetration at Spell Power " + std::to_string(spellPower)
+			+ ": " + std::to_string(penetrationBasisPoints / 100) + "."
+			+ (fraction < 10 ? "0" : "") + std::to_string(fraction)
+			+ "% (before battle-only Warcasting).";
+		return result;
+	}
+
+	const auto rank = std::find(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.begin(),
+		SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.end(), coefficientPercent);
+	if(rank == SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.end())
+		return result;
+	const auto rankIndex = static_cast<size_t>(std::distance(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.begin(), rank));
+	result += "\n\n" + std::string(rankNames[rankIndex]) + ": "
+		+ std::to_string(coefficientPercent)
+		+ (transfigureCoefficient ? "% Spell Power-derived golem HP."
+			: phantomCoefficient ? "% Spell Power-derived Phantom Integrity."
+			: cureCoefficient ? "% Spell Power-derived healing."
+			: "% Spell Power damage coefficient.");
+	return result;
 }
 
 void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
-	require(integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION), "rulesetVersion");
+	require(integer(rules["rulesetVersion"], RULESET_VERSION, CURRENT_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
+	if(version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		require(hasCanonicalSchoolRankPowerCoefficientPercent(rules), "canonical school-rank Spell Power coefficient factors");
+	else
+		require(!rules.Struct().contains("schoolRankPowerCoefficientPercent"), "school-rank coefficient factors require magic rules v3");
 	if(rules.Struct().contains("physicalDamageReductionCapPercent"))
 	{
-		require(version == DIRECT_DAMAGE_RULESET_VERSION, "Physical reduction requires magic rules v2");
+		require(version >= DIRECT_DAMAGE_RULESET_VERSION, "Physical reduction requires magic rules v2 or later");
 		const auto & cap = rules["physicalDamageReductionCapPercent"];
 		require(cap.getType() == JsonNode::JsonType::DATA_INTEGER && integer(cap, 0, 100),
 			"integer physicalDamageReductionCapPercent in [0,100]");
@@ -250,7 +523,7 @@ void validateRules(const JsonNode & rules)
 	if(rules.Struct().contains("spellPoints"))
 	{
 		const auto & spellPoints = rules["spellPoints"];
-		require(version == DIRECT_DAMAGE_RULESET_VERSION, "Spell Points require magic rules v2");
+		require(version >= DIRECT_DAMAGE_RULESET_VERSION, "Spell Points require magic rules v2 or later");
 		require(spellPoints.isStruct(), "Spell Points object");
 		fields(spellPoints, {"rulesetVersion", "intelligenceMaximumPercent"});
 		require(spellPoints["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
@@ -263,7 +536,7 @@ void validateRules(const JsonNode & rules)
 	if(rules.Struct().contains("mageGuildGeneration"))
 	{
 		const auto & generation = rules["mageGuildGeneration"];
-		require(version == DIRECT_DAMAGE_RULESET_VERSION, "Mage Guild generation requires magic rules v2");
+		require(version >= DIRECT_DAMAGE_RULESET_VERSION, "Mage Guild generation requires magic rules v2 or later");
 		require(generation.isStruct(), "Mage Guild generation object");
 		fields(generation, {"rulesetVersion", "nonPreferredSlots"});
 		require(integer(generation["rulesetVersion"], MAGE_GUILD_GENERATION_RULESET_VERSION,
@@ -277,10 +550,10 @@ void validateRules(const JsonNode & rules)
 	}
 	if(rules.Struct().contains("warcasting"))
 	{
-		require(version == DIRECT_DAMAGE_RULESET_VERSION, "Warcasting requires magic rules v2");
+		require(version >= DIRECT_DAMAGE_RULESET_VERSION, "Warcasting requires magic rules v2 or later");
 		require(rules["warcasting"].isBool(), "boolean Warcasting setting");
 	}
-	if(version == DIRECT_DAMAGE_RULESET_VERSION)
+	if(version >= DIRECT_DAMAGE_RULESET_VERSION)
 	{
 		require(rules["schemaVersion"].getType() == JsonNode::JsonType::DATA_INTEGER, "integer schemaVersion");
 		require(rules["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER, "integer rulesetVersion");
@@ -350,9 +623,9 @@ void validateRules(const JsonNode & rules)
 			fields(data, {"schools", "level", "costs"});
 		else
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions"});
-		if(version == DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("active"))
+		if(version >= DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("active"))
 			require(data["active"].isBool(), "spell active flag");
-		if(version == DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("cureAfflictions"))
+		if(version >= DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("cureAfflictions"))
 		{
 			require(name == "core:cure", "cureAfflictions is only valid for core:cure");
 			const auto & afflictions = data["cureAfflictions"];
@@ -379,9 +652,9 @@ void validateRules(const JsonNode & rules)
 		require(definition->getJsonKey() == name, "canonical spell identity required");
 		require(definition->isCommonHeroSpell(), "ability cannot be reclassified as hero spell");
 		if(name.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
-			require(version == DIRECT_DAMAGE_RULESET_VERSION, "NH common spells require ruleset version 2");
-		if(version == DIRECT_DAMAGE_RULESET_VERSION && name == "core:magicArrow")
-			require(directDamageFormula(data, version).has_value(), "Magic Arrow requires saved directDamage in ruleset version 2");
+			require(version >= DIRECT_DAMAGE_RULESET_VERSION, "NH common spells require ruleset version 2 or later");
+		if(version >= DIRECT_DAMAGE_RULESET_VERSION && name == "core:magicArrow")
+			require(directDamageFormula(data, version).has_value(), "Magic Arrow requires saved directDamage in ruleset version 2 or later");
 		require(data["schools"].isVector() && !data["schools"].Vector().empty(), "spell school list");
 		std::set<std::string> membership;
 		for(const auto & school : data["schools"].Vector())
@@ -440,7 +713,7 @@ void validateRules(const JsonNode & rules)
 
 int physicalDamageReductionCapPercent(const JsonNode & rules)
 {
-	if(!rulesActive(rules) || rules["rulesetVersion"].Integer() != DIRECT_DAMAGE_RULESET_VERSION)
+	if(!rulesActive(rules) || rules["rulesetVersion"].Integer() < DIRECT_DAMAGE_RULESET_VERSION)
 		return -1;
 	const auto & cap = rules["physicalDamageReductionCapPercent"];
 	return cap.getType() == JsonNode::JsonType::DATA_INTEGER && integer(cap, 0, 100)
@@ -452,7 +725,7 @@ bool spellPointRulesActive(const JsonNode & rules)
 	if(legacy(rules) || !rules.isStruct() || !rules["spellPoints"].isStruct())
 		return false;
 	if(rules["rulesetVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
-		|| !integer(rules["rulesetVersion"], DIRECT_DAMAGE_RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION))
+		|| !integer(rules["rulesetVersion"], DIRECT_DAMAGE_RULESET_VERSION, CURRENT_RULESET_VERSION))
 		return false;
 	const auto & spellPoints = rules["spellPoints"];
 	return spellPoints["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
@@ -477,9 +750,9 @@ std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, con
 		&& scopedIdentity.find(':', separator + 1) == std::string::npos, "canonical scoped spell identity required");
 	require(rules.isStruct() && rules["spells"].isStruct(), "saved spell roster required");
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
-	require(integer(rules["rulesetVersion"], RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION), "rulesetVersion");
+	require(integer(rules["rulesetVersion"], RULESET_VERSION, CURRENT_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
-	if(version == DIRECT_DAMAGE_RULESET_VERSION)
+	if(version >= DIRECT_DAMAGE_RULESET_VERSION)
 	{
 		require(rules["schemaVersion"].getType() == JsonNode::JsonType::DATA_INTEGER, "integer schemaVersion");
 		require(rules["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER, "integer rulesetVersion");
@@ -490,25 +763,53 @@ std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, con
 	return directDamageFormula(found->second, version);
 }
 
-std::optional<int64_t> directDamageValue(const JsonNode & rules, const std::string & scopedIdentity, int32_t effectPower, int32_t divisor)
+std::optional<int64_t> directDamageValue(const JsonNode & rules, const std::string & scopedIdentity,
+	int32_t effectPower, int32_t divisor, int coefficientPercent)
 {
 	const auto formula = spellDirectDamage(rules, scopedIdentity);
 	if(!formula)
 		return std::nullopt;
-	return formula->evaluate(effectPower, divisor);
+	return formula->evaluate(effectPower, divisor, coefficientPercent);
+}
+
+int schoolRankPowerCoefficientPercent(const JsonNode & rules, int schoolRank)
+{
+	if(schoolRank < 0 || schoolRank >= static_cast<int>(SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.size()))
+		throw std::invalid_argument("Invalid New Horizons school rank");
+	if(legacy(rules) || !rules.isStruct()
+		|| !integer(rules["rulesetVersion"], RULESET_VERSION, CURRENT_RULESET_VERSION)
+		|| rules["rulesetVersion"].Integer() < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		return SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.front();
+	require(hasCanonicalSchoolRankPowerCoefficientPercent(rules), "canonical school-rank Spell Power coefficient factors");
+	return static_cast<int>(rules["schoolRankPowerCoefficientPercent"].Vector().at(static_cast<size_t>(schoolRank)).Integer());
+}
+
+int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell)
+{
+	if(!hero || legacy(rules) || !rules.isStruct()
+		|| !integer(rules["rulesetVersion"], SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+			SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		|| !spell.hasValue() || !spell.toSpell() || !spell.toSpell()->isCommonHeroSpell()
+		|| !spellAllowedBySavedRoster(rules, spell) || isAdventureSpell(rules, spell))
+		return SCHOOL_RANK_POWER_COEFFICIENT_PERCENT.front();
+
+	int highestSchoolRank = 0;
+	for(const auto skill : spellSchoolSkills(rules, spell))
+		highestSchoolRank = std::max(highestSchoolRank, static_cast<int>(hero->getSecSkillLevel(skill)));
+	return schoolRankPowerCoefficientPercent(rules, highestSchoolRank);
 }
 
 bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spell)
 {
 	if(spell != SpellID(SpellID::MAGIC_ARROW) || legacy(rules))
 		return false;
-	if(!rules.isStruct() || !integer(rules["rulesetVersion"], DIRECT_DAMAGE_RULESET_VERSION, DIRECT_DAMAGE_RULESET_VERSION))
+	if(!rules.isStruct() || !integer(rules["rulesetVersion"], DIRECT_DAMAGE_RULESET_VERSION, CURRENT_RULESET_VERSION))
 		return false;
 
 	// Read the saved roster, rather than installed content.  This keeps old
 	// v1 saves on their old Magic Arrow semantics even when a newer module is
-	// installed.  The explicit v2 formula is the compatibility marker for the
-	// Sorcery overcharge contract; a v2 roster without it is not activated.
+	// installed.  The explicit v2+ formula is the compatibility marker for the
+	// Sorcery overcharge contract; a saved roster without it is not activated.
 	if(!spellAllowedBySavedRoster(rules, spell))
 		return false;
 	if(!spellDirectDamage(rules, spell.toSpell()->getJsonKey()))
@@ -545,7 +846,10 @@ std::vector<SpellID> cureAfflictions(const JsonNode & rules, const battle::Unit 
 			continue;
 		if(affliction != SpellID::POISON && affliction != SpellID::DISEASE)
 			continue;
-		if(unit->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(affliction))))
+		const auto * stack = dynamic_cast<const CStack *>(unit);
+		const bool hasPhysicalPoison = affliction == SpellID::POISON && stack
+			&& stack->physicalPoisonActivationsRemaining > 0;
+		if(hasPhysicalPoison || unit->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(affliction))))
 			result.push_back(affliction);
 	}
 	std::sort(result.begin(), result.end(), [](const SpellID & lhs, const SpellID & rhs)
@@ -590,7 +894,8 @@ int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spell
 }
 
 std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
-	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers)
+	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers,
+	int coefficientPercent)
 {
 	if(!magicArrowOverchargeEnabled(rules, spell))
 		return std::nullopt;
@@ -607,8 +912,8 @@ std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
 	// divisors remain deterministic if this helper is reused by tooling.
 	const auto savedFormula = spellDirectDamage(rules, spell.toSpell()->getJsonKey());
 	const int64_t baseDamage = savedFormula
-		? savedFormula->evaluate(spellPower, divisor)
-		: DirectDamageFormula{20, 20}.evaluate(spellPower, divisor);
+		? savedFormula->evaluate(spellPower, divisor, coefficientPercent)
+		: DirectDamageFormula{20, 20}.evaluate(spellPower, divisor, coefficientPercent);
 	return baseDamage * (1000 + modifiers.damagePercentTenths * overcharge) / 1000;
 }
 

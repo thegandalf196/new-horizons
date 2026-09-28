@@ -350,7 +350,7 @@ SetAvailableCreatures NewTurnProcessor::generateTownGrowth(const CGTownInstance 
 
 		if (firstDay)
 		{
-			creatureGrowth = cre->getGrowth();
+			creatureGrowth = t->creatureBaseGrowth(cre->getId());
 		}
 		else
 		{
@@ -405,7 +405,7 @@ void NewTurnProcessor::updateNeutralTownGarrison(const CGTownInstance * t, int c
 			return; // impossible?
 
 		int creaturesAvailable = t->creatures[tierToSubstract].first;
-		int creaturesRecruited = creatureID.toCreature()->getGrowth();
+		int creaturesRecruited = gameHandler->gameInfo().getCreatureBaseGrowth(creatureID);
 		int creaturesLeft = std::max(0, creaturesAvailable - creaturesRecruited);
 
 		if (creaturesLeft != creaturesAvailable)
@@ -445,8 +445,9 @@ void NewTurnProcessor::updateNeutralTownGarrison(const CGTownInstance * t, int c
 			continue;
 
 		StackLocation stackLocation(t->id, slot.first);
-		gameHandler->changeStackCount(stackLocation, creature->getGrowth(), ChangeValueMode::RELATIVE);
-		takeFromAvailable(creature->getGrowth());
+		const int growth = gameHandler->gameInfo().getCreatureBaseGrowth(creature->getId());
+		gameHandler->changeStackCount(stackLocation, growth, ChangeValueMode::RELATIVE);
+		takeFromAvailable(growth);
 
 		if (upgradeUnit && !creature->upgrades.empty())
 		{
@@ -474,13 +475,15 @@ void NewTurnProcessor::updateNeutralTownGarrison(const CGTownInstance * t, int c
 			if (upgradeUnit && !baseCreature.toCreature()->upgrades.empty())
 			{
 				CreatureID upgraded = *RandomGeneratorUtil::nextItem(baseCreature.toCreature()->upgrades, gameHandler->getRandomGenerator());
-				gameHandler->insertNewStack(stackLocation, upgraded.toCreature(), upgraded.toCreature()->getGrowth());
-				takeFromAvailable(upgraded.toCreature()->getGrowth());
+				const int growth = gameHandler->gameInfo().getCreatureBaseGrowth(upgraded);
+				gameHandler->insertNewStack(stackLocation, upgraded.toCreature(), growth);
+				takeFromAvailable(growth);
 			}
 			else
 			{
-				gameHandler->insertNewStack(stackLocation, baseCreature.toCreature(), baseCreature.toCreature()->getGrowth());
-				takeFromAvailable(baseCreature.toCreature()->getGrowth());
+				const int growth = gameHandler->gameInfo().getCreatureBaseGrowth(baseCreature);
+				gameHandler->insertNewStack(stackLocation, baseCreature.toCreature(), growth);
+				takeFromAvailable(growth);
 			}
 
 			return;

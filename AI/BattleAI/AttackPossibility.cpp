@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "AttackPossibility.h"
 #include "../../lib/CStack.h" // TODO: remove
+#include "../../lib/CSkillHandler.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
                               // Eventually only IBattleInfoCallback and battle::Unit should be used, 
                               // CUnitState should be private and CStack should be removed completely
@@ -63,12 +64,25 @@ int bulwarkReflectionBasisPoints(const battle::Unit * defender, const CBattleInf
 		return 0;
 	const auto * hero = state.battleGetOwnerHero(defender);
 	return newHorizonsBulwark::reflectionBasisPoints(newHorizonsBulwark::rank(hero), ranged,
-		newHorizonsBulwark::hasThickHide(hero));
+		newHorizonsBulwark::hasThickHide(hero), newHorizonsBulwark::hasVengefulMire(hero));
 }
 
 int32_t noQuarterMoraleActivations(const CBattleInfoCallback & battle, uint32_t targetUnitId)
 {
 	return battle.getBattle()->getActiveStackID() == static_cast<int32_t>(targetUnitId) ? 2 : 1;
+}
+
+int64_t projectedPhysicalPoisonDamage(const battle::CUnitState * state)
+{
+	if(!state || state->physicalPoisonBaseDamage <= 0 || state->physicalPoisonActivationsRemaining <= 0)
+		return 0;
+	const int64_t base = state->physicalPoisonBaseDamage;
+	const int remaining = state->physicalPoisonActivationsRemaining;
+	if(remaining >= 3)
+		return base * 4 + base / 2;
+	if(remaining == 2)
+		return base + base / 2 + base * 2;
+	return base * 2;
 }
 }
 
@@ -536,7 +550,41 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool mayReflectBulwarkDamage = attackInfo.physicalDamage && ordinaryAttacker
 			&& (bulwarkReflectionBasisPoints(defender, *state, attackInfo.shooting) > 0
 				|| bulwarkReflectionBasisPoints(requestedDefender, *state, attackInfo.shooting) > 0);
-		const bool projectsBulwarkEffects = mayReceiveBulwarkReaction || mayReflectBulwarkDamage;
+		const int bulwarkRound = state->battleGetRound();
+		const auto * defendedHero = state->battleGetOwnerHero(defender);
+		const auto defenderInitialState = defender->acquireState();
+		const bool projectsImmovable = attackInfo.physicalDamage && ordinaryAttacker
+			&& defender->defended() && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)
+			&& newHorizonsBulwark::hasImmovable(defendedHero) && defenderInitialState
+			&& defenderInitialState->bulwarkImmovableRound != bulwarkRound;
+		const bool projectsSwampRenewal = attackInfo.physicalDamage && ordinaryAttacker
+			&& defender->defended() && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)
+			&& newHorizonsBulwark::hasSwampRenewal(defendedHero);
+		const auto qualifiesForMireGrip = [&state](const battle::Unit * target)
+		{
+			return target && target->defended()
+				&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(target)
+				&& newHorizonsBulwark::hasMireGrip(state->battleGetOwnerHero(target));
+		};
+		const auto canBeHitByMireGripAttack = [&](const battle::Unit * primaryTarget)
+		{
+			if(!primaryTarget)
+				return false;
+			if(qualifiesForMireGrip(primaryTarget))
+				return true;
+			const auto possibleVictims = state->getAttackedBattleUnits(attacker, primaryTarget,
+				defHex, false, hex, primaryTarget->getPosition());
+			return std::ranges::any_of(possibleVictims, qualifiesForMireGrip);
+		};
+		const bool mireGripTargetCanBeHit = !attackInfo.shooting
+			&& (canBeHitByMireGripAttack(defender)
+				|| (projectsProtect && canBeHitByMireGripAttack(requestedDefender)));
+		const auto attackerInitialState = attacker->acquireState();
+		const bool projectsMireGrip = attackInfo.physicalDamage && !attackInfo.shooting
+			&& ordinaryAttacker && mireGripTargetCanBeHit && attackerInitialState
+			&& !attackerInitialState->bulwarkMireGripApplied;
+		const bool projectsBulwarkEffects = mayReceiveBulwarkReaction || mayReflectBulwarkDamage
+			|| projectsImmovable || projectsSwampRenewal || projectsMireGrip;
 		if(ap.perfectMoment || projectsMarks || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects)
@@ -779,6 +827,17 @@ AttackPossibility AttackPossibility::evaluate(
 				else
 					damageDealt = luckState.battleExpectedLuckDamage(victimAttack);
 				vstd::amin(damageDealt, defenderState->getAvailableHealth());
+				const auto * targetHero = state->battleGetOwnerHero(defenderState.get());
+				if(damageDealt > 0 && victimAttack.physicalDamage && ordinaryAttacker
+					&& defenderState->defended()
+					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defenderState.get())
+					&& newHorizonsBulwark::hasSwampRenewal(targetHero))
+				{
+					const auto currentDamage = defenderState->bulwarkDefendPhysicalDamage;
+					defenderState->bulwarkDefendPhysicalDamage = currentDamage
+						> std::numeric_limits<int64_t>::max() - damageDealt
+						? std::numeric_limits<int64_t>::max() : currentDamage + damageDealt;
+				}
 				auto retaliatorState = defenderState->acquireState();
 				int64_t projectedHit = damageDealt;
 				retaliatorState->damage(projectedHit);
@@ -800,6 +859,18 @@ AttackPossibility AttackPossibility::evaluate(
 
 				const bool wasAlive = defenderState->alive();
 				defenderState->damage(damageDealt);
+				if(victimAttack.physicalDamage && ordinaryAttacker && defenderState->defended()
+					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defenderState.get())
+					&& newHorizonsBulwark::hasImmovable(targetHero)
+					&& defenderState->bulwarkImmovableRound != bulwarkRound)
+					defenderState->bulwarkImmovableRound = bulwarkRound;
+				if(!ap.bulwarkMireGripTriggered && ordinaryAttacker
+					&& !ap.attackerState->bulwarkMireGripApplied && damageDealt > 0
+					&& victimAttack.physicalDamage && !attackInfo.shooting
+					&& defenderState->defended()
+					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defenderState.get())
+					&& newHorizonsBulwark::hasMireGrip(targetHero))
+					ap.bulwarkMireGripTriggered = true;
 				if(u->unitId() == strikeDefender->unitId() && damageDealt > 0
 					&& attackInfo.physicalDamage && ordinaryAttacker
 					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(ap.attackerState.get()))
@@ -877,10 +948,29 @@ AttackPossibility AttackPossibility::evaluate(
 				{
 					auto actualReflectedDamage = std::min(reflectedDamage,
 						ap.attackerState->getAvailableHealth());
-					const auto * reflectedFrom = defenderStates.at(strikeDefender->unitId()).get();
+					auto * reflectedFrom = defenderStates.at(strikeDefender->unitId()).get();
 					ap.attackerDamageReduce += calculateDamageReduce(reflectedFrom,
 						ap.attackerState.get(), actualReflectedDamage, damageCache, state);
 					ap.attackerState->damage(actualReflectedDamage);
+					const auto * bulwarkHero = state->battleGetOwnerHero(reflectedFrom);
+					if(!attackInfo.shooting && newHorizonsBulwark::hasToxicSpines(bulwarkHero)
+						&& reflectedFrom->bulwarkToxicSpinesRound != currentRound
+						&& actualReflectedDamage > 0 && ap.attackerState->alive())
+					{
+						reflectedFrom->bulwarkToxicSpinesRound = currentRound;
+						const auto previousPoisonDamage = projectedPhysicalPoisonDamage(ap.attackerState.get());
+						const auto poisonBase = newHorizonsBulwark::toxicSpinesPoisonBase(actualReflectedDamage);
+						if(newHorizonsBulwark::applyPhysicalPoison(ap.attackerState.get(), poisonBase,
+							static_cast<int32_t>(reflectedFrom->unitId())))
+						{
+							const auto projectedPoisonDamage = projectedPhysicalPoisonDamage(ap.attackerState.get());
+							const auto residualPoisonDamage = std::max<int64_t>(0,
+								projectedPoisonDamage - previousPoisonDamage);
+							if(residualPoisonDamage > 0)
+								ap.attackerDamageReduce += calculateDamageReduce(reflectedFrom,
+									ap.attackerState.get(), residualPoisonDamage, damageCache, state);
+						}
+					}
 				}
 			}
 			if(projectsSuppression && !projectedSuppressionSpent)
@@ -1193,6 +1283,14 @@ AttackPossibility AttackPossibility::evaluate(
 				fortune.recordStrike(attacker->unitId(), true, false);
 				fortunePreview->setSylvanLuckState(attackerSide, fortune);
 			}
+		}
+		if(ap.bulwarkMireGripTriggered && ap.attackerState->alive() && fortunePreview)
+		{
+			ap.attackerState->bulwarkMireGripApplied = true;
+			const auto bulwarkSkillId = SecondarySkill::decode(std::string(newHorizonsBulwark::SKILL_ID));
+			const Bonus slow(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
+				BonusSource::OTHER, -2, BonusSourceID(SecondarySkill(bulwarkSkillId)));
+			fortunePreview->addUnitBonus(ap.attackerState->unitId(), {slow});
 		}
 		if(projectsRainOfArrows && projectedRainPrimaryDamage > 0 && fortunePreview)
 		{

@@ -286,6 +286,11 @@ void SetHouseOfWisdomScrolls::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetHouseOfWisdomScrolls(*this);
 }
 
+void SetNewHorizonsAdventureSpellUnlock::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetNewHorizonsAdventureSpellUnlock(*this);
+}
+
 void NewArtifact::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitNewArtifact(*this);
@@ -655,6 +660,11 @@ void RazeStructure::visitTyped(ICPackVisitor & visitor)
 void SpellResearch::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitSpellResearch(*this);
+}
+
+void UnlockNewHorizonsAdventureSpell::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitUnlockNewHorizonsAdventureSpell(*this);
 }
 
 void RecruitCreatures::visitTyped(ICPackVisitor & visitor)

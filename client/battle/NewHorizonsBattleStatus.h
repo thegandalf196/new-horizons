@@ -15,6 +15,7 @@
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
+#include "StackInfoStatusPresentation.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -223,6 +224,14 @@ struct DefendStatus
 	std::optional<BulwarkStatus> bulwark;
 
 	bool operator==(const DefendStatus &) const = default;
+};
+
+struct StackInfoStatusSnapshot
+{
+	DefendStatus defend;
+	PhysicalPoisonStatus physicalPoison;
+
+	bool operator==(const StackInfoStatusSnapshot &) const = default;
 };
 
 inline std::string defendStatusTooltip(const DefendStatus & status)

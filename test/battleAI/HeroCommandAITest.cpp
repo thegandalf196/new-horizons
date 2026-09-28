@@ -236,7 +236,7 @@ protected:
 			BonusType::SIEGE_WEAPON, BonusSource::OTHER, 1, BonusSourceID()));
 		enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 			BonusType::SPELLCASTER, BonusSource::OTHER, 1, BonusSourceID(),
-			BonusSubtypeID(SpellID::MAGIC_ARROW)));
+			BonusSubtypeID(SpellID(SpellID::MAGIC_ARROW))));
 		enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 			BonusType::CASTS, BonusSource::OTHER, 1, BonusSourceID()));
 	}
@@ -402,7 +402,7 @@ TEST_F(CanonicalOrderAITest, VengeanceValuesSpentBeforeIssueRetaliationWithoutMu
 	const auto * projectedArrival = projected.battleGetUnitByID(lateArrival.id);
 	ASSERT_NE(projectedArrival, nullptr);
 	EXPECT_TRUE(newHorizonsOffense::hasVengeanceRetaliationBonus(projectedArrival));
-	EXPECT_EQ(projectedArrival->counterAttacks.total(), 2);
+	EXPECT_EQ(projectedArrival->acquireState()->counterAttacks.total(), 2);
 	EXPECT_EQ(battle()->getStack(lateArrival.id, false), nullptr)
 		<< "Projecting a summoned unit must not add it to the authoritative battle";
 }
@@ -444,9 +444,9 @@ TEST_F(CanonicalOrderAITest, IronDisciplineValuesVisibleCreatureSpellThreatWitho
 	EXPECT_FALSE(enemy->isMeleeAttacker())
 		<< "The Siege Weapon marker removes this test stack from ordinary Hold melee valuation";
 	ASSERT_TRUE(enemy->canCast());
-	ASSERT_TRUE(SpellID::MAGIC_ARROW.toSpell()->canBeCast(
+	ASSERT_TRUE(SpellID(SpellID::MAGIC_ARROW).toSpell()->canBeCast(
 		battle(), spells::Mode::CREATURE_ACTIVE, enemy));
-	ASSERT_GT(SpellID::MAGIC_ARROW.toSpell()->calculateDamage(enemy), 0);
+	ASSERT_GT(SpellID(SpellID::MAGIC_ARROW).toSpell()->calculateDamage(enemy), 0);
 	const auto prepared = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER,
 		HeroCommand::HOLD_THE_LINE, {});
 	ASSERT_TRUE(prepared);
@@ -510,9 +510,9 @@ TEST_F(CanonicalOrderAITest, IronDisciplineDoesNotAddMagicalThreatValueForNonHol
 		newHorizonsIronDiscipline::PERK));
 	EXPECT_FALSE(enemy->isMeleeAttacker());
 	ASSERT_TRUE(enemy->canCast());
-	ASSERT_TRUE(SpellID::MAGIC_ARROW.toSpell()->canBeCast(
+	ASSERT_TRUE(SpellID(SpellID::MAGIC_ARROW).toSpell()->canBeCast(
 		battle(), spells::Mode::CREATURE_ACTIVE, enemy));
-	ASSERT_GT(SpellID::MAGIC_ARROW.toSpell()->calculateDamage(enemy), 0);
+	ASSERT_GT(SpellID(SpellID::MAGIC_ARROW).toSpell()->calculateDamage(enemy), 0);
 	const auto prepared = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER,
 		HeroCommand::HOLD_THE_LINE, {});
 	ASSERT_TRUE(prepared);

@@ -1607,50 +1607,93 @@ AssetGenerator::CanvasPtr AssetGenerator::createDialogBackground(const Point & s
 
 AssetGenerator::CanvasPtr AssetGenerator::createSplitDialogBackground(PlayerColor color) const
 {
-	// Keep the classic split-dialog art, but extend its lower frame for the
-	// owner markers and controls. The installed GPUCRDIV image remains the
-	// source; no flattened copy of the original artwork is shipped.
+	// Keep the original ornate frame and creature panes, but compose the new
+	// controls on one continuous leather surface. Repeating a strip of GPUCRDIV
+	// here also repeats its baked-in gold rules, making the dialog look patched
+	// together instead of like a single Heroes III window.
 	constexpr int dialogWidth = 298;
 	constexpr int dialogHeight = 440;
-	constexpr int upperContentHeight = 186;
+	constexpr int upperContentHeight = 182;
 	constexpr int footerSourceTop = 300;
 	constexpr int footerHeight = 37;
 	constexpr int footerTop = dialogHeight - footerHeight;
 	constexpr int railWidth = 14;
-	constexpr int textureLeft = railWidth;
-	constexpr int textureWidth = dialogWidth - 2 * textureLeft;
-	constexpr int textureSourceTop = 14;
-	constexpr int textureTileHeight = 36;
+	constexpr int railSourceTop = 20;
+	constexpr int railSourceHeight = 32;
 
 	assert(color.isValidPlayer());
 	if(!color.isValidPlayer())
 		color = PlayerColor(1);
 
-	auto image = ENGINE->renderHandler().createImage(Point(dialogWidth, dialogHeight), CanvasScalingPolicy::IGNORE);
+	auto image = createDialogBackground(Point(dialogWidth, dialogHeight));
 	Canvas canvas = image->getCanvas();
-	canvas.fillTexture(ENGINE->renderHandler().loadImage(ImageLocator(ImagePath::builtin("DiBoxBck"), EImageBlitMode::OPAQUE)));
 
 	auto original = ENGINE->renderHandler().loadImage(ImageLocator(ImagePath::builtin("GPUCRDIV"), EImageBlitMode::OPAQUE));
 	original->playerColored(color);
 
-	// Preserve the complete title and creature-art area.
+	// Preserve the title, creature art and its original pane borders. Stop
+	// before the old slider rule, which otherwise becomes an orphaned divider.
 	canvas.draw(original, Point(0, 0), Rect(0, 0, dialogWidth, upperContentHeight));
+	canvas.draw(original, Point(18, upperContentHeight), Rect(18, upperContentHeight, 104, 4));
+	canvas.draw(original, Point(176, upperContentHeight), Rect(176, upperContentHeight, 105, 4));
 
-	// Continue the same leather texture between the creature panes and the
-	// controls. The sampled patch is intentionally clear of the baked-in boxes.
-	for(int y = upperContentHeight; y < footerTop; y += textureTileHeight)
+	// Extend only the decorative side rails; the center remains the same
+	// unbroken leather texture used by other dialogs.
+	for(int y = upperContentHeight; y < footerTop; y += railSourceHeight)
 	{
-		const int tileHeight = std::min(textureTileHeight, footerTop - y);
-		canvas.draw(original, Point(textureLeft, y), Rect(textureLeft, textureSourceTop, textureWidth, tileHeight));
+		const int height = std::min(railSourceHeight, footerTop - y);
+		canvas.draw(original, Point(0, y), Rect(0, railSourceTop, railWidth, height));
+		canvas.draw(original, Point(dialogWidth - railWidth, y),
+			Rect(dialogWidth - railWidth, railSourceTop, railWidth, height));
 	}
 
-	// Extend the original thin gold side rails into the new area.
-	const int railHeight = footerTop - upperContentHeight;
-	canvas.draw(original, Point(0, upperContentHeight), Rect(0, textureSourceTop, railWidth, railHeight));
-	canvas.draw(original, Point(dialogWidth - railWidth, upperContentHeight), Rect(dialogWidth - railWidth, textureSourceTop, railWidth, railHeight));
+	// The leather remains continuous between controls. Each panel gets its own
+	// dark recess and narrow warm bevel, instead of a horizontal rule spanning
+	// the dialog and making the lower controls read like a separate cutout.
+	const ColorRGBA shadow(28, 18, 11);
+	const ColorRGBA innerShadow(47, 31, 19);
+	const ColorRGBA rim(105, 75, 43);
+	const ColorRGBA highlight(174, 136, 78);
+	const ColorRGBA lowerEdge(20, 13, 8);
+	const auto inset = [&canvas, &shadow, &innerShadow, &rim, &highlight, &lowerEdge](const Rect & rect)
+	{
+		canvas.drawColorBlended(rect, ColorRGBA(0, 0, 0, 104));
+		canvas.drawBorder(rect, shadow);
+		canvas.drawBorder(Rect(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2), rim);
+		canvas.drawLine(Point(rect.x + 2, rect.y + 2), Point(rect.x + rect.w - 3, rect.y + 2), highlight, highlight);
+		canvas.drawLine(Point(rect.x + 2, rect.y + 2), Point(rect.x + 2, rect.y + rect.h - 3), highlight, highlight);
+		canvas.drawLine(Point(rect.x + 2, rect.y + rect.h - 3), Point(rect.x + rect.w - 3, rect.y + rect.h - 3), lowerEdge, lowerEdge);
+		canvas.drawLine(Point(rect.x + rect.w - 3, rect.y + 2), Point(rect.x + rect.w - 3, rect.y + rect.h - 3), lowerEdge, lowerEdge);
+		canvas.drawBorder(Rect(rect.x + 3, rect.y + 3, rect.w - 6, rect.h - 6), innerShadow);
+	};
+	const auto frame = [&canvas, &shadow, &innerShadow, &rim, &highlight, &lowerEdge](const Rect & rect)
+	{
+		canvas.drawBorder(rect, shadow);
+		canvas.drawBorder(Rect(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2), rim);
+		canvas.drawLine(Point(rect.x + 2, rect.y + 2), Point(rect.x + rect.w - 3, rect.y + 2), highlight, highlight);
+		canvas.drawLine(Point(rect.x + 2, rect.y + 2), Point(rect.x + 2, rect.y + rect.h - 3), highlight, highlight);
+		canvas.drawLine(Point(rect.x + 2, rect.y + rect.h - 3), Point(rect.x + rect.w - 3, rect.y + rect.h - 3), lowerEdge, lowerEdge);
+		canvas.drawLine(Point(rect.x + rect.w - 3, rect.y + 2), Point(rect.x + rect.w - 3, rect.y + rect.h - 3), lowerEdge, lowerEdge);
+		canvas.drawBorder(Rect(rect.x + 3, rect.y + 3, rect.w - 6, rect.h - 6), innerShadow);
+	};
+	// These bevels sit outside the native creature backdrops, making the two
+	// animated images feel mounted into the same framed leather window.
+	frame(Rect(17, 52, 108, 135));
+	frame(Rect(174, 52, 108, 135));
 
-	// Reuse the original ornate lower frame at the bottom, leaving a margin
-	// below the tallest button even when fallback owner labels are shown.
+	// Owner emblems, slider, amounts, and buttons are each given a separate
+	// recessed plate. The owner plaques remain wide enough for either crest or
+	// portrait while leaving fallback owner names in the leather below them.
+	inset(Rect(31, 189, 78, 72));
+	inset(Rect(188, 189, 78, 72));
+	inset(Rect(18, 279, 262, 31));
+	inset(Rect(18, 312, 104, 28));
+	inset(Rect(174, 312, 104, 28));
+	inset(Rect(18, 351, 106, 44));
+	inset(Rect(174, 351, 106, 44));
+
+	// One original lower frame closes the dialog; no gold rules cross the
+	// content between the owner markers and the controls.
 	canvas.draw(original, Point(0, footerTop), Rect(0, footerSourceTop, dialogWidth, footerHeight));
 
 	return image;

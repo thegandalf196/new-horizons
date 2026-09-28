@@ -597,6 +597,7 @@ function Script:calculate(battle, info)
 	local cleaveMultiplier = math.max(0, (info.cleaveFinalDamageMultiplier or 100) / 100)
 	local archeryRangedMultiplier = math.max(0, (info.archeryRangedDamageMultiplierPercent or 100) / 100)
 	local phantomDamageMultiplier = self:getPhantomDamageMultiplier(info)
+	local bulwarkImmovableMultiplier = math.max(0, (info.bulwarkImmovableFinalDamageMultiplier or 100) / 100)
 	local physicalDamageReductionMultiplier = usesPhysicalDamageReductionStage
 		and getPhysicalDamageReductionFactor(info) or 1.0
 
@@ -630,6 +631,7 @@ function Script:calculate(battle, info)
 
 	local damageFactor = raising * lowering * physicalDamageReductionMultiplier
 		* heroOrderMultiplier * cleaveMultiplier * archeryRangedMultiplier * phantomDamageMultiplier
+		* bulwarkImmovableMultiplier
 	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1
 	local damageMin = apply(baseMin, damageFactor, stabilizePdrRounding)
 	local damageMax = apply(baseMax, damageFactor, stabilizePdrRounding)

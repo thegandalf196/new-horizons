@@ -9,10 +9,13 @@
 
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
+#include "../../../lib/spells/BattleSpellMechanics.h"
+#include "../../../lib/spells/CSpell.h"
 
 namespace
 {
 constexpr auto sorcerySkill = "new-horizons:sorceryMagic";
+constexpr auto temporalistPerk = "new-horizons:sorceryMagic.temporalist";
 constexpr auto temporalFieldPerk = "new-horizons:sorceryMagic.temporalField";
 
 class TemporalFieldPerkTest : public HeroCommandFixture
@@ -32,7 +35,10 @@ protected:
 		ASSERT_GE(decoded, 0);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), rank, ChangeValueMode::ABSOLUTE);
 		if(selectPerk)
+		{
+			attackerSideHero->applyPerkSelection({sorcerySkill, temporalistPerk});
 			attackerSideHero->applyPerkSelection({sorcerySkill, temporalFieldPerk});
+		}
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(SpellID::SLOW);
 		setTestSpellPointTotal(attackerSideHero, mana);
@@ -138,6 +144,25 @@ TEST_F(TemporalFieldPerkTest, ExpertSlowWithoutPerkIsStillSingleTargetInNewHoriz
 	EXPECT_NE(slow(enemyA), nullptr);
 	EXPECT_EQ(slow(enemyB), nullptr);
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
+}
+
+TEST_F(TemporalFieldPerkTest, ExpertTemporalFieldMassKeepsItsExplicitTargetModeAndEffectRank)
+{
+	prepare(true, 100, 3);
+	const SpellID slow(SpellID::SLOW);
+	spells::BattleCast ordinary(battle(), attackerSideHero, spells::Mode::HERO, slow.toSpell());
+	spells::BattleCast mass(battle(), attackerSideHero, spells::Mode::HERO, slow.toSpell());
+	mass.setMassSlow(true);
+
+	const auto ordinaryMechanics = slow.toSpell()->battleMechanics(&ordinary);
+	const auto massMechanics = slow.toSpell()->battleMechanics(&mass);
+	EXPECT_EQ(ordinaryMechanics->getRangeLevel(), 2);
+	EXPECT_EQ(ordinaryMechanics->getEffectLevel(), 3);
+	EXPECT_FALSE(ordinaryMechanics->isMassive());
+	EXPECT_EQ(massMechanics->getRangeLevel(), 3);
+	EXPECT_EQ(massMechanics->getEffectLevel(), 3);
+	EXPECT_TRUE(massMechanics->isMassive())
+		<< "Temporal Field remains the explicit Expert Mass mode";
 }
 
 TEST_F(TemporalFieldPerkTest, MassMagnitudeScalesTheFinalSpecialistAdjustedSlow)

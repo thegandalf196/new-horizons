@@ -340,7 +340,8 @@ void CGDwelling::newTurn(IGameEventCallback & gameEvents, IGameRandomizer & game
 				creaturesAccumulate = cb->getSettings().getBoolean(EGameSettings::DWELLINGS_ACCUMULATE_WHEN_NEUTRAL);
 
 			const CCreature * cre =creatures[i].second[0].toCreature();
-			TQuantity amount = cre->getGrowth() * (1 + cre->valOfBonuses(BonusType::CREATURE_GROWTH_PERCENT)/100) + cre->valOfBonuses(BonusType::CREATURE_GROWTH, BonusCustomSubtype::creatureLevel(cre->getLevel()));
+			const int baseGrowth = cb->getCreatureBaseGrowth(cre->getId());
+			TQuantity amount = baseGrowth * (1 + cre->valOfBonuses(BonusType::CREATURE_GROWTH_PERCENT)/100) + cre->valOfBonuses(BonusType::CREATURE_GROWTH, BonusCustomSubtype::creatureLevel(cre->getLevel()));
 			if (creaturesAccumulate && ID != Obj::REFUGEE_CAMP) //camp should not try to accumulate different kinds of creatures
 				sac.creatures[i].first += amount;
 			else
@@ -417,7 +418,7 @@ void CGDwelling::updateGuards(IGameEventCallback & gameEvents) const
 				ChangeStackCount csc;
 				csc.army = this->id;
 				csc.slot = slot;
-				csc.count = crea->getGrowth() * 3;
+				csc.count = cb->getCreatureBaseGrowth(crea->getId()) * 3;
 				csc.mode = ChangeValueMode::ABSOLUTE;
 				gameEvents.sendAndApply(csc);
 			}
@@ -427,7 +428,7 @@ void CGDwelling::updateGuards(IGameEventCallback & gameEvents) const
 				ns.army = this->id;
 				ns.slot = slot;
 				ns.type = crea->getId();
-				ns.count = crea->getGrowth() * 3;
+				ns.count = cb->getCreatureBaseGrowth(crea->getId()) * 3;
 				gameEvents.sendAndApply(ns);
 			}
 		}

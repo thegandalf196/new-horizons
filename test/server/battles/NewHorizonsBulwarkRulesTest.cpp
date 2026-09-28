@@ -74,6 +74,21 @@ TEST(NewHorizonsBulwarkRules, ThickHideReflectsHalfTheNormalPercentageOnlyAgains
 	EXPECT_EQ(newHorizonsBulwark::reflectionBasisPoints(4, true, true), 0);
 }
 
+TEST(NewHorizonsBulwarkRules, VengefulMireAddsTwentyFivePointsToMeleeReflectionAndLeavesRangedUnchanged)
+{
+	EXPECT_EQ(newHorizonsBulwark::reflectionBasisPoints(2, false, false, true), 5000);
+	EXPECT_EQ(newHorizonsBulwark::reflectionBasisPoints(3, false, false, true), 7500);
+	EXPECT_EQ(newHorizonsBulwark::reflectionBasisPoints(3, true, true, true), 2500);
+	EXPECT_EQ(newHorizonsBulwark::reflectionBasisPoints(3, true, false, true), 0);
+}
+
+TEST(NewHorizonsBulwarkRules, SharedCoverHalvesTheCurrentReductionInBasisPoints)
+{
+	EXPECT_EQ(newHorizonsBulwark::sharedCoverBasisPoints(1405), 702);
+	EXPECT_EQ(newHorizonsBulwark::sharedCoverBasisPoints(0), 0);
+	EXPECT_EQ(newHorizonsBulwark::sharedCoverBasisPoints(-10), 0);
+}
+
 TEST(NewHorizonsBulwarkRules, ReflectedDamageUsesActualHealthLossAndClampsItsPercentage)
 {
 	EXPECT_EQ(newHorizonsBulwark::reflectedDamage(1000, 2500), 250);
@@ -84,4 +99,12 @@ TEST(NewHorizonsBulwarkRules, ReflectedDamageUsesActualHealthLossAndClampsItsPer
 	EXPECT_EQ(newHorizonsBulwark::reflectedDamage(200, 15000), 200);
 	EXPECT_EQ(newHorizonsBulwark::reflectedDamage(std::numeric_limits<int64_t>::max(), 5000),
 		std::numeric_limits<int64_t>::max() / 2);
+}
+
+TEST(NewHorizonsBulwarkRules, ToxicSpinesPoisonBaseUsesAQuarterAndMinimumOneAfterAnyReflection)
+{
+	EXPECT_EQ(newHorizonsBulwark::toxicSpinesPoisonBase(0), 0);
+	EXPECT_EQ(newHorizonsBulwark::toxicSpinesPoisonBase(1), 1);
+	EXPECT_EQ(newHorizonsBulwark::toxicSpinesPoisonBase(3), 1);
+	EXPECT_EQ(newHorizonsBulwark::toxicSpinesPoisonBase(8), 2);
 }

@@ -12,6 +12,7 @@
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/effects/Effect.h"
 
 namespace
@@ -19,6 +20,43 @@ namespace
 constexpr auto spellKey = "new-horizons:transfigureMatter";
 constexpr auto sorcerySkill = "new-horizons:sorceryMagic";
 constexpr auto matterShaperPerk = "new-horizons:sorceryMagic.matterShaper";
+
+JsonNode magicRulesForVersion(int version)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["rulesetVersion"].Integer() = version;
+	if(version < newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	if(version == newHorizonsMagic::RULESET_VERSION)
+	{
+		rules.Struct().erase("warcasting");
+		rules.Struct().erase("spellPoints");
+		rules.Struct().erase("mageGuildGeneration");
+		rules.Struct().erase("physicalDamageReductionCapPercent");
+		for(auto & [name, faction] : rules["factions"].Struct())
+		{
+			(void)name;
+			faction["major"] = faction["preferredA"];
+			faction["minor"] = faction["preferredB"];
+			faction.Struct().erase("preferredA");
+			faction.Struct().erase("preferredB");
+		}
+		for(auto & [name, spell] : rules["spells"].Struct())
+		{
+			(void)name;
+			spell.Struct().erase("active");
+			spell.Struct().erase("directDamage");
+			spell.Struct().erase("cureAfflictions");
+		}
+	}
+	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	return rules;
+}
+
+int64_t expectedHealthPool(int spellPower, int64_t footprint, int coefficientPercent)
+{
+	return 80LL + 2LL * spellPower * coefficientPercent / 100 + 50LL * footprint;
+}
 
 SpellID transfigureMatter()
 {
@@ -43,6 +81,8 @@ int obstacleID(std::string_view key)
 class TransfigureMatterPerkTest : public HeroCommandFixture
 {
 protected:
+	int magicRulesVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
+
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -54,13 +94,12 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRulesForVersion(magicRulesVersion));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
-	void prepare(bool selectMatterShaper, int spellPower, bool healthArtifact = false)
+	void prepare(bool selectMatterShaper, int spellPower, bool healthArtifact = false, int sorceryRank = 1)
 	{
 		startGame();
 
@@ -69,7 +108,7 @@ protected:
 		const auto sorcery = SecondarySkill::decode(sorcerySkill);
 		ASSERT_GE(sorcery, 0);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 1, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), sorceryRank, ChangeValueMode::ABSOLUTE);
 		if(selectMatterShaper)
 			attackerSideHero->applyPerkSelection({sorcerySkill, matterShaperPerk});
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
@@ -140,6 +179,29 @@ protected:
 		return result;
 	}
 
+	void expectLegacyMagicRulesKeepBasePowerTerm(int version)
+	{
+		magicRulesVersion = version;
+		constexpr int spellPower = 41;
+		prepare(false, spellPower, false, MasteryLevel::EXPERT);
+		const auto obstacle = addPhysicalObstacle(20, BattleHex(8, 5));
+		const auto footprint = static_cast<int64_t>(obstacle->getAffectedTiles().size());
+		const auto * spell = transfigureMatter().toSpell();
+		const auto coefficient = newHorizonsMagic::spellPowerCoefficientPercent(
+			battle()->getMagicRules(), attackerSideHero, spell->getId());
+		ASSERT_EQ(coefficient, 100);
+		const auto expectedHealth = expectedHealthPool(spellPower, footprint, coefficient);
+						const auto preview = battle()->getSpellEffectValue(spell, attackerSideHero, spells::Mode::HERO,
+							obstacle->getAffectedTiles().front());
+		ASSERT_NE(preview, nullptr);
+		EXPECT_EQ(preview->hpDelta, expectedHealth);
+
+		ASSERT_TRUE(castAt(obstacle->pos));
+		const auto golems = diamondGolems();
+		ASSERT_EQ(golems.size(), 1u);
+		EXPECT_EQ(golems.front()->getAvailableHealth(), expectedHealth);
+	}
+
 	CStack * active = nullptr;
 	CStack * enemy = nullptr;
 };
@@ -161,7 +223,10 @@ TEST_F(TransfigureMatterPerkTest, ConvertsPhysicalFootprintIntoExactTemporaryGol
 	const auto footprint = static_cast<int64_t>(obstacle->getAffectedTiles().size());
 	const auto spell = transfigureMatter();
 	ASSERT_EQ(attackerSideHero->getEffectPower(spell.toSpell()), spellPower);
-	const auto expectedHealth = 80LL + 2LL * spellPower + 50LL * footprint;
+	const auto coefficient = newHorizonsMagic::spellPowerCoefficientPercent(
+		battle()->getMagicRules(), attackerSideHero, spell);
+	ASSERT_EQ(coefficient, 115);
+	const auto expectedHealth = expectedHealthPool(spellPower, footprint, coefficient);
 	const auto maxHealth = static_cast<int64_t>(creatureByName("core:diamondGolem").toEntity(LIBRARY)->getMaxHealth());
 	const auto expectedCount = (expectedHealth + maxHealth - 1) / maxHealth;
 	const auto manaBefore = attackerSideHero->getManaAvailable();
@@ -181,13 +246,60 @@ TEST_F(TransfigureMatterPerkTest, ConvertsPhysicalFootprintIntoExactTemporaryGol
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 8);
 }
 
+TEST_F(TransfigureMatterPerkTest, SchoolRankScalesOnlySpellPowerTermAndPreviewMatchesCast)
+{
+	constexpr int spellPower = 41;
+	prepare(false, spellPower);
+	const auto obstacle = addPhysicalObstacle(20, BattleHex(8, 5));
+	const auto footprint = static_cast<int64_t>(obstacle->getAffectedTiles().size());
+	const auto * spell = transfigureMatter().toSpell();
+	const auto sorcery = SecondarySkill::decode(sorcerySkill);
+	ASSERT_GE(sorcery, 0);
+
+	for(int rank = MasteryLevel::NONE; rank <= MasteryLevel::EXPERT; ++rank)
+	{
+		attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), rank, ChangeValueMode::ABSOLUTE);
+		const auto rankCoefficient = newHorizonsMagic::schoolRankPowerCoefficientPercent(
+			battle()->getMagicRules(), rank);
+		const auto coefficient = newHorizonsMagic::spellPowerCoefficientPercent(
+			battle()->getMagicRules(), attackerSideHero, spell->getId());
+		ASSERT_EQ(coefficient, rankCoefficient);
+
+		const auto preview = battle()->getSpellEffectValue(spell, attackerSideHero, spells::Mode::HERO,
+			obstacle->getAffectedTiles().front());
+		ASSERT_NE(preview, nullptr);
+		EXPECT_EQ(preview->hpDelta, expectedHealthPool(spellPower, footprint, coefficient)) << "school rank " << rank;
+	}
+
+	const auto expertCoefficient = newHorizonsMagic::spellPowerCoefficientPercent(
+		battle()->getMagicRules(), attackerSideHero, spell->getId());
+	const auto expectedHealth = expectedHealthPool(spellPower, footprint, expertCoefficient);
+	ASSERT_TRUE(castAt(obstacle->pos));
+	const auto golems = diamondGolems();
+	ASSERT_EQ(golems.size(), 1u);
+	EXPECT_EQ(golems.front()->getAvailableHealth(), expectedHealth);
+	EXPECT_TRUE(battle()->obstacles.empty());
+}
+
+TEST_F(TransfigureMatterPerkTest, VersionOneSnapshotKeepsBasePowerTerm)
+{
+	expectLegacyMagicRulesKeepBasePowerTerm(newHorizonsMagic::RULESET_VERSION);
+}
+
+TEST_F(TransfigureMatterPerkTest, VersionTwoSnapshotKeepsBasePowerTerm)
+{
+	expectLegacyMagicRulesKeepBasePowerTerm(newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
+}
+
 TEST_F(TransfigureMatterPerkTest, MatterShaperAddsTwentyFivePercentWithIntegralRounding)
 {
 	constexpr int spellPower = 41;
 	prepare(true, spellPower);
 	const auto obstacle = addPhysicalObstacle(20, BattleHex(8, 5));
 	const auto footprint = static_cast<int64_t>(obstacle->getAffectedTiles().size());
-	const auto baseHealth = 80LL + 2LL * spellPower + 50LL * footprint;
+	const auto coefficient = newHorizonsMagic::spellPowerCoefficientPercent(
+		battle()->getMagicRules(), attackerSideHero, transfigureMatter());
+	const auto baseHealth = expectedHealthPool(spellPower, footprint, coefficient);
 	const auto expectedHealth = baseHealth * 5 / 4; // integer health uses floor rounding
 
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(sorcerySkill, matterShaperPerk));
@@ -204,8 +316,10 @@ TEST_F(TransfigureMatterPerkTest, HealthBonusesDoNotInflateCanonicalAggregatePoo
 	constexpr int spellPower = 40;
 	prepare(false, spellPower, true);
 	const auto obstacle = addPhysicalObstacle(20, BattleHex(8, 5));
-	const auto expectedHealth = 80LL + 2LL * spellPower
-		+ 50LL * static_cast<int64_t>(obstacle->getAffectedTiles().size());
+	const auto coefficient = newHorizonsMagic::spellPowerCoefficientPercent(
+		battle()->getMagicRules(), attackerSideHero, transfigureMatter());
+	const auto expectedHealth = expectedHealthPool(spellPower,
+		static_cast<int64_t>(obstacle->getAffectedTiles().size()), coefficient);
 	const auto * spell = transfigureMatter().toSpell();
 	const auto preview = battle()->getSpellEffectValue(spell, attackerSideHero, spells::Mode::HERO,
 		obstacle->getAffectedTiles().front());
@@ -231,7 +345,9 @@ TEST_F(TransfigureMatterPerkTest, AnchorExcludingObstacleUsesItsRealFootprintFor
 	const auto footprint = obstacle->getAffectedTiles();
 	ASSERT_EQ(footprint.size(), 3u);
 	ASSERT_FALSE(footprint.contains(obstacle->pos));
-	const auto expectedHealth = 80LL + 2LL * 40 + 50LL * static_cast<int64_t>(footprint.size());
+	const auto coefficient = newHorizonsMagic::spellPowerCoefficientPercent(
+		battle()->getMagicRules(), attackerSideHero, transfigureMatter());
+	const auto expectedHealth = expectedHealthPool(40, static_cast<int64_t>(footprint.size()), coefficient);
 
 	ASSERT_TRUE(castAt(footprint.back()));
 

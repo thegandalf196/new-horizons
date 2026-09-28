@@ -16,6 +16,7 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/CRandomGenerator.h"
 #include "SpellTargetsEvaluator.h"
 #include <vcmi/spells/Spell.h>
@@ -385,10 +386,101 @@ std::vector<Target> physicalObstacleTargets(const Mechanics * spellMechanics)
 
 	return result;
 }
+
+std::vector<Target> stormOfDaggersTargets(Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!spellMechanics || !spellMechanics->battle())
+		return result;
+
+	constexpr size_t maxTargets = 5;
+	std::vector<const battle::Unit *> enemies;
+	std::set<uint32_t> seenUnitIds;
+	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	{
+		if(!unit || !unit->alive() || !unit->isValidTarget(false)
+			|| spellMechanics->battle()->battleGetOwner(unit) == spellMechanics->getCasterColor()
+			|| !seenUnitIds.insert(unit->unitId()).second)
+			continue;
+		enemies.push_back(unit);
+	}
+	std::sort(enemies.begin(), enemies.end(), [](const battle::Unit * lhs, const battle::Unit * rhs)
+	{
+		return lhs->unitId() < rhs->unitId();
+	});
+
+	// Keep one best direct-damage subset for each target count. The shared
+	// mechanics supplies the ranked, target-adjusted damage for that count, and
+	// BattleAI's ordinary damage-reduction score ranks the independent targets.
+	// This is exact for the separable expected direct-health score at a fixed N:
+	// selecting the N highest individual values maximizes their sum. The full
+	// hypothetical pass compares at most five casts instead of projecting every
+	// combination (C(21, 1..5) = 27,895 at a full enemy stack count). Final AI
+	// valuation remains approximate for cross-target effects: castEval projects
+	// all targets as hits while MR discounts direct hostile-health score, omits
+	// reflection branches, and different kills can change the active stack's
+	// follow-up action. Record MR/reflection projection and kill/follow-up search
+	// as Phase 2 interactions.
+	const auto * battle = spellMechanics->battle();
+	auto battleState = std::shared_ptr<CBattleInfoCallback>(
+		const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
+	DamageCache damageCache;
+	struct Candidate
+	{
+		const battle::Unit * unit;
+		float value;
+	};
+	for(size_t targetCount = 1; targetCount <= std::min(maxTargets, enemies.size()); ++targetCount)
+	{
+		if(!spellMechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(targetCount)))
+			continue;
+
+		std::vector<Candidate> rankedEnemies;
+		rankedEnemies.reserve(enemies.size());
+		for(const auto * enemy : enemies)
+		{
+			// Filter individually before ranking: an illegal high-value target must
+			// not occupy a slot in the best-N set and hide legal alternatives.
+			Target singleton{Destination(enemy)};
+			detail::ProblemImpl singletonProblem;
+			if(!spellMechanics->canBeCastAt(singleton, singletonProblem))
+				continue;
+
+			const auto adjustedDamage = std::max<int64_t>(0, spellMechanics->adjustEffectValue(enemy));
+			const auto cappedDamage = std::min<uint64_t>(static_cast<uint64_t>(adjustedDamage),
+				static_cast<uint64_t>(std::max<int64_t>(0, enemy->getAvailableHealth())));
+			const auto damageValue = AttackPossibility::calculateDamageReduce(
+				nullptr, enemy, cappedDamage, damageCache, battleState);
+			const int resistance = std::clamp(enemy->magicResistance(), 0, 100);
+			const float expectedHitChance = 1.0f - static_cast<float>(resistance) / 100.0f;
+			rankedEnemies.push_back({enemy, damageValue * expectedHitChance});
+		}
+		if(rankedEnemies.size() < targetCount)
+			continue;
+		std::sort(rankedEnemies.begin(), rankedEnemies.end(), [](const Candidate & lhs, const Candidate & rhs)
+		{
+			if(lhs.value != rhs.value)
+				return lhs.value > rhs.value;
+			return lhs.unit->unitId() < rhs.unit->unitId();
+		});
+
+		Target selected;
+		selected.reserve(targetCount);
+		for(size_t index = 0; index < targetCount; ++index)
+			selected.emplace_back(rankedEnemies[index].unit);
+
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(selected, problem))
+			result.push_back(std::move(selected));
+	}
+	return result;
+}
 }
 
-std::vector<Target> SpellTargetEvaluator::getViableTargets(const Mechanics * spellMechanics)
+std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMechanics)
 {
+	if(spellMechanics && spellMechanics->isNewHorizonsStormOfDaggers())
+		return stormOfDaggersTargets(spellMechanics);
 	if(isCanonicalSpellLock(spellMechanics))
 		return canonicalSpellLockTargets(spellMechanics);
 	if(isCanonicalTimeStop(spellMechanics))
@@ -809,7 +901,15 @@ float SpellTargetEvaluator::spellLockPlacementValue(const Mechanics * spellMecha
 		}
 	}
 
-	const int rounds = std::clamp(spellMechanics->getEffectDuration(), 1, 5);
+	const auto * hero = spellMechanics->getHeroCaster();
+	const bool spellbinder = hero && hero->hasActivePerk(
+		newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::SPELLBINDER_PERK);
+	int rounds = newHorizonsSorcery::spellLockDuration(
+		std::max(0, spellMechanics->getEffectPower()), spellbinder,
+		spellMechanics->getSchoolRankPowerCoefficientPercent(),
+		spellMechanics->getWarcastingBonusPercent());
+	rounds = spellMechanics->adjustEffectDuration(rounds);
+	rounds = std::clamp(rounds, 1, 5);
 	return value * (0.7f + 0.1f * static_cast<float>(rounds));
 }
 

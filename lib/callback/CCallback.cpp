@@ -280,6 +280,18 @@ bool CCallback::visitTownBuilding(const CGTownInstance *town, BuildingID buildin
 	return true;
 }
 
+bool CCallback::unlockNewHorizonsAdventureSpell(const CGTownInstance * town, int guildLevel)
+{
+	if(!town || !getPlayerID() || town->tempOwner != *getPlayerID()
+		|| guildLevel < 1 || guildLevel > 5 || town->mageGuildLevel() < guildLevel
+		|| town->hasNewHorizonsAdventureSpellUnlocked(guildLevel))
+		return false;
+
+	UnlockNewHorizonsAdventureSpell pack(town->id, guildLevel);
+	sendRequest(pack);
+	return true;
+}
+
 void CCallback::spellResearch( const CGTownInstance *town, SpellID spellAtSlot, bool accepted )
 {
 	SpellResearch pack(town->id, spellAtSlot, accepted);

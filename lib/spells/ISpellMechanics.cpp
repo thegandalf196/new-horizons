@@ -11,6 +11,7 @@
 #include "StdInc.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsSpellAvailability.h"
 
 #include "BattleSpellMechanics.h"
 #include "TargetCondition.h"
@@ -58,11 +59,60 @@ int64_t multiplyDivideFloor(int64_t value, uint64_t multiplier, int64_t divisor)
 	}
 	return quotient;
 }
+
+int64_t checkedStormMultiply(int64_t left, int64_t right)
+{
+	if(left < 0 || right < 0
+		|| (right != 0 && left > std::numeric_limits<int64_t>::max() / right))
+		throw std::overflow_error("Storm of Daggers damage pool overflows");
+	return left * right;
 }
 
-int64_t scaleWarcastingSpellPowerComponent(const int64_t numerator, const int32_t divisor, const int32_t bonusPercent)
+int64_t stormOfDaggersRoundedDamage(int64_t base, int64_t powerCoefficient, int32_t effectPower,
+	int32_t powerDivisor, int32_t schoolCoefficientPercent, int32_t warcastingBonusPercent,
+	int32_t selectedTargetCount, bool total)
 {
-	if(numerator < 0 || divisor <= 0 || bonusPercent < 0)
+	if(base < 0 || powerCoefficient < 0 || effectPower < 0 || powerDivisor <= 0
+		|| schoolCoefficientPercent < 0 || warcastingBonusPercent < 0
+		|| selectedTargetCount < 1
+		|| selectedTargetCount > newHorizonsMagic::STORM_OF_DAGGERS_MAX_TARGETS)
+		return 0;
+
+	// Keep the authored fixed base and the full rational Spell Power component
+	// together until the final displayed-total or equal-target rounding. The
+	// generic direct-damage path truncates at the pool boundary, which differs
+	// from the Storm table at positive half values (for example, SP=1 yields 47).
+	const int64_t powerDenominator = checkedStormMultiply(powerDivisor, 10000);
+	int64_t spellPowerNumerator = checkedStormMultiply(powerCoefficient, effectPower);
+	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator, schoolCoefficientPercent);
+	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator,
+		100LL + warcastingBonusPercent);
+	const int64_t fixedNumerator = checkedStormMultiply(base, powerDenominator);
+	if(spellPowerNumerator > std::numeric_limits<int64_t>::max() - fixedNumerator)
+		throw std::overflow_error("Storm of Daggers damage pool overflows");
+	const int64_t poolNumerator = fixedNumerator + spellPowerNumerator;
+
+	const int64_t multiplierPercent = 100
+		+ newHorizonsMagic::STORM_OF_DAGGERS_EXTRA_TARGET_DAMAGE_PERCENT * (selectedTargetCount - 1);
+	const int64_t finalDivisor = (total ? 100LL : 100LL * selectedTargetCount);
+	const int64_t denominator = checkedStormMultiply(powerDenominator, finalDivisor);
+	const int64_t scaledNumerator = checkedStormMultiply(poolNumerator, multiplierPercent);
+	if(scaledNumerator > std::numeric_limits<int64_t>::max() - denominator / 2)
+		throw std::overflow_error("Storm of Daggers damage pool overflows");
+
+	// The authored reference values use ordinary positive half-up rounding for
+	// both the displayed total and the equal per-stack share, without first
+	// truncating a fractional Spell Power term at the pool boundary.
+	return (scaledNumerator + denominator / 2) / denominator;
+}
+}
+
+int64_t scaleWarcastingSpellPowerComponent(const int64_t numerator, const int64_t divisor, const int32_t bonusPercent)
+{
+	// The ranked caller multiplies an int32 spell divisor by at most 100.
+	// Keeping that bound also makes the quotient/remainder doubling below safe.
+	constexpr int64_t MAX_SCALED_DIVISOR = static_cast<int64_t>(std::numeric_limits<int32_t>::max()) * 100;
+	if(numerator < 0 || divisor <= 0 || divisor > MAX_SCALED_DIVISOR || bonusPercent < 0)
 		throw std::invalid_argument("Invalid Warcasting spell component inputs");
 	if(numerator == 0)
 		return 0;
@@ -84,7 +134,43 @@ int64_t scaleWarcastingSpellPowerComponent(const int64_t numerator, const int32_
 
 int64_t Mechanics::scaleSpellPowerComponent(const int64_t numerator, const int32_t divisor) const
 {
-	return scaleWarcastingSpellPowerComponent(numerator, divisor, getWarcastingBonusPercent());
+	return scaleSpellPowerComponentWithCoefficient(numerator, divisor, 100);
+}
+
+int64_t Mechanics::scaleSpellPowerComponentWithCoefficient(const int64_t numerator, const int32_t divisor,
+	const int32_t coefficientPercent) const
+{
+	if(numerator < 0 || divisor <= 0 || coefficientPercent < 0 || coefficientPercent > 1000)
+		throw std::invalid_argument("Invalid Spell Power coefficient inputs");
+	if(coefficientPercent == 0 || numerator == 0)
+		return 0;
+	if(numerator > std::numeric_limits<int64_t>::max() / coefficientPercent)
+		throw std::overflow_error("Spell Power coefficient overflows");
+	const int64_t scaledNumerator = numerator * coefficientPercent;
+	const int64_t scaledDivisor = static_cast<int64_t>(divisor) * 100;
+	return scaleWarcastingSpellPowerComponent(scaledNumerator, scaledDivisor, getWarcastingBonusPercent());
+}
+
+int32_t Mechanics::getSchoolRankPowerCoefficientPercent() const
+{
+	const auto * battleCallback = battle();
+	const auto * battleState = battleCallback ? battleCallback->getBattle() : nullptr;
+	if(!battleState)
+		return 100;
+
+	return newHorizonsMagic::spellPowerCoefficientPercent(
+		battleState->getMagicRules(), getHeroCaster(), getSpellId());
+}
+
+int32_t Mechanics::getEffectiveChainLength(const int32_t configuredLength) const
+{
+	const auto * battleCallback = battle();
+	const auto * battleState = battleCallback ? battleCallback->getBattle() : nullptr;
+	if(!battleState)
+		return configuredLength;
+
+	return newHorizonsMagic::chainLightningTargetCount(
+		battleState->getMagicRules(), getSpellId(), configuredLength);
 }
 
 static std::shared_ptr<TargetCondition> makeCondition(const CSpell * s)
@@ -495,17 +581,43 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		{
 			const auto * heroCaster = caster->getHeroCaster();
 			const auto * defendedTown = cb->battleGetDefendedTown();
-			if(heroCaster && newHorizonsMagic::rulesActive(heroCaster->getMagicRules()) && defendedTown
+			const bool v3Bless = mode == Mode::HERO && heroCaster && owner->getId() == SpellID::BLESS
+				&& cb->getBattle() && newHorizonsMagic::rulesActive(cb->getBattle()->getMagicRules())
+				&& cb->getBattle()->getMagicRules()["rulesetVersion"].Integer()
+					== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+			const bool infernoDurationBonus = heroCaster
+				&& newHorizonsMagic::rulesActive(heroCaster->getMagicRules()) && defendedTown
 				&& defendedTown->getFactionID() == FactionID::INFERNO
 				&& defendedTown->hasBuilt(BuildingID::SPECIAL_2)
-				&& cb->battleGetFightingHero(BattleSide::DEFENDER) == heroCaster
-				&& effectDuration <= std::numeric_limits<decltype(effectDuration)>::max() - 20)
-				effectDuration += 20;
+				&& cb->battleGetFightingHero(BattleSide::DEFENDER) == heroCaster;
 
 			const int bonus = newHorizonsMagic::spellDurationBonus(
 				dynamic_cast<const CGHeroInstance *>(caster), owner->getId());
-			if(effectDuration <= std::numeric_limits<decltype(effectDuration)>::max() - bonus)
-				effectDuration += bonus;
+			if(v3Bless)
+			{
+				const int32_t schoolCoefficient = getSchoolRankPowerCoefficientPercent();
+				const int64_t spellPowerTerm = scaleSpellPowerComponentWithCoefficient(
+					effectPower, newHorizonsMagic::BLESS_SPELL_POWER_DURATION_DIVISOR,
+					schoolCoefficient);
+				int64_t duration = newHorizonsMagic::blessDurationFromPowerTerm(spellPowerTerm);
+				duration += heroCaster->valOfBonuses(BonusType::SPELL_DURATION, BonusSubtypeID());
+				duration += heroCaster->valOfBonuses(BonusType::SPELL_DURATION,
+					BonusSubtypeID(SpellID(SpellID::BLESS)));
+				duration += bonus;
+				if(infernoDurationBonus)
+					duration += 20;
+				if(newHorizonsMagic::hasBenedictionPerk(heroCaster))
+					++duration;
+				effectDuration = static_cast<decltype(effectDuration)>(std::clamp<int64_t>(duration, 0,
+					std::numeric_limits<decltype(effectDuration)>::max()));
+			}
+			else
+			{
+				if(infernoDurationBonus && effectDuration <= std::numeric_limits<decltype(effectDuration)>::max() - 20)
+					effectDuration += 20;
+				if(effectDuration <= std::numeric_limits<decltype(effectDuration)>::max() - bonus)
+					effectDuration += bonus;
+			}
 
 			// Echoed Duration applies only to an additional cast and only when
 			// the spell did not provide an explicit duration override.
@@ -573,12 +685,16 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		else
 		{
 			const auto * battle = cb->getBattle();
+			const int schoolRankCoefficientPercent = battle
+				? newHorizonsMagic::spellPowerCoefficientPercent(battle->getMagicRules(), caster->getHeroCaster(), owner->getId())
+				: 100;
+			const int damageCoefficientPercent = owner->isDamage() ? schoolRankCoefficientPercent : 100;
 			if(battle && newHorizonsMagic::cureEnabled(battle->getMagicRules(), owner->getId()))
 			{
 				// The New Horizons Cure formula has a fixed component and a
 				// Spell-Power component. Target, school, and specialty modifiers
 				// still flow through the usual applySpellBonus call in heal.lua.
-				effectValue = 25 + scaleSpellPowerComponent(3LL * effectPower, 2);
+			effectValue = 25 + scaleSpellPowerComponentWithCoefficient(3LL * effectPower, 2, schoolRankCoefficientPercent);
 			}
 			else
 			{
@@ -586,7 +702,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 					dynamic_cast<const CGHeroInstance *>(caster));
 				auto magicArrowValue = battle
 					? newHorizonsMagic::magicArrowDamage(battle->getMagicRules(), owner->getId(), effectPower,
-						getEffectPowerDivisor(), getOvercharge(), modifiers)
+						getEffectPowerDivisor(), getOvercharge(), modifiers, damageCoefficientPercent)
 					: std::nullopt;
 				if(magicArrowValue && warcastingBonusPercent > 0)
 				{
@@ -594,13 +710,14 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 						.value_or(newHorizonsMagic::DirectDamageFormula{20, 20});
 					const int64_t powerNumerator = static_cast<int64_t>(formula.powerCoefficient) * effectPower;
 					const int64_t baseDamage = formula.base
-						+ scaleSpellPowerComponent(powerNumerator, getEffectPowerDivisor());
+						+ scaleSpellPowerComponentWithCoefficient(powerNumerator, getEffectPowerDivisor(), damageCoefficientPercent);
 					const int64_t overchargeMultiplier = 1000LL
 						+ static_cast<int64_t>(modifiers.damagePercentTenths) * getOvercharge();
 					magicArrowValue = baseDamage * overchargeMultiplier / 1000;
 				}
 				auto savedValue = battle && !magicArrowValue
-					? newHorizonsMagic::directDamageValue(battle->getMagicRules(), owner->getJsonKey(), effectPower, getEffectPowerDivisor())
+					? newHorizonsMagic::directDamageValue(battle->getMagicRules(), owner->getJsonKey(), effectPower,
+						getEffectPowerDivisor(), damageCoefficientPercent)
 					: std::nullopt;
 				if(savedValue && warcastingBonusPercent > 0)
 				{
@@ -608,18 +725,19 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 					if(formula)
 					{
 						const int64_t powerNumerator = static_cast<int64_t>(formula->powerCoefficient) * effectPower;
-						*savedValue = formula->base + scaleSpellPowerComponent(powerNumerator, getEffectPowerDivisor());
+						*savedValue = formula->base
+							+ scaleSpellPowerComponentWithCoefficient(powerNumerator, getEffectPowerDivisor(), damageCoefficientPercent);
 					}
 				}
 				if(magicArrowValue)
 					effectValue = *magicArrowValue;
 				else if(savedValue)
 					effectValue = *savedValue;
-				else if(warcastingBonusPercent > 0)
+				else if(warcastingBonusPercent > 0 || damageCoefficientPercent != 100)
 				{
 					const int64_t powerNumerator = static_cast<int64_t>(owner->getBasePower()) * effectPower;
-					effectValue = owner->getLevelPower(effectLevel)
-						+ scaleSpellPowerComponent(powerNumerator, getEffectPowerDivisor());
+						effectValue = owner->getLevelPower(effectLevel)
+							+ scaleSpellPowerComponentWithCoefficient(powerNumerator, getEffectPowerDivisor(), damageCoefficientPercent);
 				}
 				else
 					effectValue = owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
@@ -736,6 +854,12 @@ bool BaseMechanics::isSmart() const
 	if(forceNonSmartTargeting)
 		return false;
 
+	if(usesNewHorizonsDispelRules())
+		return false;
+
+	if(usesNewHorizonsBerserkTargeting())
+		return true;
+
 	// Selective Dispel explicitly lets the caster choose either a friendly or
 	// enemy stack.  The ordinary basic-level Dispel smart-target restriction
 	// would otherwise hide the enemy half of the perk.
@@ -748,7 +872,7 @@ bool BaseMechanics::isSmart() const
 
 bool BaseMechanics::isMassive() const
 {
-	if(isNewHorizonsCure())
+	if(isNewHorizonsCure() || usesNewHorizonsBerserkTargeting())
 		return false;
 
 	if(forceMassive || isMassSlow())
@@ -799,8 +923,27 @@ int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
 		newHorizonsMagic::hasAnnihilatorPerk(hero, owner) ? 20 : 0);
 	const int holdReductionBasisPoints = cb && owner->isMagical() && target
 		? cb->battleGetHoldTheLineMagicalReductionBasisPoints(target) : 0;
+	int finalDamageMultiplierPercent = 100;
+	if(target && owner->getJsonKey() == "new-horizons:holyWrath")
+	{
+		const auto * battleState = cb ? cb->getBattle() : nullptr;
+		if(battleState)
+		{
+			const auto & magicRules = battleState->getMagicRules();
+			if(newHorizonsMagic::rulesActive(magicRules)
+				&& magicRules["rulesetVersion"].Integer() == newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+				&& newHorizonsMagic::spellAllowedBySavedRoster(magicRules, owner->getId())
+				&& (target->hasBonusOfType(BonusType::UNDEAD)
+					|| target->getFactionID() == FactionID::INFERNO))
+			{
+				// Undead may be from any faction; Demonic currently means a base
+				// Inferno faction. A creature with both traits is still multiplied once.
+				finalDamageMultiplierPercent = 150;
+			}
+		}
+	}
 	return owner->adjustRawDamage(caster, target, getEffectValue(), ignoreReduction,
-		holdReductionBasisPoints);
+		holdReductionBasisPoints, finalDamageMultiplierPercent);
 }
 
 int64_t BaseMechanics::applySpellBonus(int64_t value, const battle::Unit * target) const
@@ -838,15 +981,31 @@ bool BaseMechanics::ownerMatches(const battle::Unit * unit, const bool sameOwner
 
 IBattleCast::Value BaseMechanics::getEffectLevel() const
 {
+	// Core Expert Dispel makes its status-removal effect optional and also adds
+	// obstacle removal. The v3 single-target spell uses the unchanged full
+	// Dispel effect from Advanced at every rank, without those inherited Expert
+	// side effects.
+	if(usesNewHorizonsDispelRules())
+		return std::min<IBattleCast::Value>(effectLevel, static_cast<IBattleCast::Value>(MasteryLevel::ADVANCED));
+
 	return effectLevel;
 }
 
 IBattleCast::Value BaseMechanics::getRangeLevel() const
 {
-	// Detailed New Horizons Cure is a one-unit cast at every mastery rank;
-	// retain the computed effect level while resolving the target with base range.
-	if(isNewHorizonsCure())
+	// New Horizons Cure and saved-v3 Berserk target one unit/stack at every
+	// mastery rank. Keep each spell's effect level independent from this range.
+	if(isNewHorizonsCure() || usesNewHorizonsBerserkTargeting())
 		return 0;
+
+	// V3 restores single-target Expert targeting for the 23 core spells whose
+	// vanilla static data is Mass. Keep this lookup saved-rule- and spell-specific
+	// so v1/v2 battle snapshots use vanilla static spell data. Effect
+	// mastery remains untouched, and isMassive() still honors explicit overrides.
+	if(!forceMassive && !isMassSlow() && cb->getBattle()
+		&& newHorizonsMagic::expertRangeIsSingleTarget(
+			cb->getBattle()->getMagicRules(), owner->getId()))
+		return std::min<IBattleCast::Value>(rangeLevel, 2);
 
 	// Temporal Field owns Slow's mass mode explicitly. At Expert mastery the
 	// legacy spell data would otherwise make the "Ordinary" branch a full-power,
@@ -895,6 +1054,13 @@ IBattleCast::Value BaseMechanics::adjustEffectDuration(IBattleCast::Value baseDu
 
 IBattleCast::Value64 BaseMechanics::getEffectValue() const
 {
+	if(isNewHorizonsStormOfDaggers())
+	{
+		if(stormOfDaggersTargetCount > 0)
+			return getStormOfDaggersDamagePerTarget(stormOfDaggersTargetCount);
+		return getStormOfDaggersTotalDamage(1);
+	}
+
 	return effectValue;
 }
 
@@ -924,6 +1090,18 @@ bool BaseMechanics::isNewHorizonsCure() const
 		&& newHorizonsMagic::cureEnabled(cb->getBattle()->getMagicRules(), owner->getId());
 }
 
+bool BaseMechanics::usesNewHorizonsBerserkTargeting() const
+{
+	return owner->getId() == SpellID::BERSERK && !forceMassive && cb && cb->getBattle()
+		&& newHorizonsMagic::berserkUsesSingleCreatureTarget(cb->getBattle()->getMagicRules());
+}
+
+bool BaseMechanics::usesNewHorizonsDispelRules() const
+{
+	return owner->getId() == SpellID::DISPEL && cb && cb->getBattle()
+		&& newHorizonsMagic::dispelUsesNewHorizonsRules(cb->getBattle()->getMagicRules());
+}
+
 SpellID BaseMechanics::getCureAffliction() const
 {
 	return cureAffliction;
@@ -932,6 +1110,57 @@ SpellID BaseMechanics::getCureAffliction() const
 bool BaseMechanics::isMassSlow() const
 {
 	return massSlow;
+}
+
+bool BaseMechanics::isNewHorizonsStormOfDaggers() const
+{
+	const auto * battleState = cb ? cb->getBattle() : nullptr;
+	return battleState
+		&& owner->getJsonKey() == newHorizonsMagic::STORM_OF_DAGGERS_SPELL
+		&& newHorizonsMagic::rulesActive(battleState->getMagicRules())
+		&& battleState->getMagicRules()["rulesetVersion"].Integer()
+			>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& newHorizonsMagic::spellAllowedBySavedRoster(battleState->getMagicRules(), owner->getId());
+}
+
+bool BaseMechanics::setStormOfDaggersTargetCount(int32_t selectedTargetCount)
+{
+	if(!isNewHorizonsStormOfDaggers() || selectedTargetCount < 1
+		|| selectedTargetCount > newHorizonsMagic::STORM_OF_DAGGERS_MAX_TARGETS)
+		return false;
+
+	stormOfDaggersTargetCount = selectedTargetCount;
+	return true;
+}
+
+int64_t BaseMechanics::getStormOfDaggersDamagePerTarget(int32_t selectedTargetCount) const
+{
+	const auto * battleState = cb ? cb->getBattle() : nullptr;
+	if(!isNewHorizonsStormOfDaggers() || !battleState)
+		return 0;
+
+	const auto formula = newHorizonsMagic::spellDirectDamage(
+		battleState->getMagicRules(), owner->getJsonKey());
+	if(!formula)
+		return 0;
+	return stormOfDaggersRoundedDamage(formula->base, formula->powerCoefficient,
+		getEffectPower(), getEffectPowerDivisor(), getSchoolRankPowerCoefficientPercent(),
+		getWarcastingBonusPercent(), selectedTargetCount, false);
+}
+
+int64_t BaseMechanics::getStormOfDaggersTotalDamage(int32_t selectedTargetCount) const
+{
+	const auto * battleState = cb ? cb->getBattle() : nullptr;
+	if(!isNewHorizonsStormOfDaggers() || !battleState)
+		return 0;
+
+	const auto formula = newHorizonsMagic::spellDirectDamage(
+		battleState->getMagicRules(), owner->getJsonKey());
+	if(!formula)
+		return 0;
+	return stormOfDaggersRoundedDamage(formula->base, formula->powerCoefficient,
+		getEffectPower(), getEffectPowerDivisor(), getSchoolRankPowerCoefficientPercent(),
+		getWarcastingBonusPercent(), selectedTargetCount, true);
 }
 
 bool BaseMechanics::isMetamagicFollowup() const
@@ -959,6 +1188,14 @@ bool BaseMechanics::usesNewHorizonsMagic() const
 	return cb->getBattle() && newHorizonsMagic::rulesActive(cb->getBattle()->getMagicRules());
 }
 
+bool BaseMechanics::usesNewHorizonsMagicV3() const
+{
+	const auto * battleState = cb ? cb->getBattle() : nullptr;
+	return battleState && newHorizonsMagic::rulesActive(battleState->getMagicRules())
+		&& battleState->getMagicRules()["rulesetVersion"].Integer()
+			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+}
+
 PlayerColor BaseMechanics::getCasterColor() const
 {
 	return caster->getCasterOwner();
@@ -980,7 +1217,8 @@ std::vector<AimType> BaseMechanics::getTargetTypes() const
 {
 	std::vector<AimType> ret;
 
-	auto spellTargetType = owner->getTargetType();
+	auto spellTargetType = usesNewHorizonsBerserkTargeting()
+		? AimType::CREATURE : owner->getTargetType();
 
 	if(isMassive())
 		spellTargetType = AimType::NOTHING;

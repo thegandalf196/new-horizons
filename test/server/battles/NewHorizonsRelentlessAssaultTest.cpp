@@ -2,12 +2,15 @@
  * NewHorizonsRelentlessAssaultTest.cpp, part of VCMI engine
  * License: GNU General Public License v2.0 or later; see license.txt
  */
+#include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "FullGameSnapshotTypes.h"
 
 #include "../../../lib/CSkillHandler.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/battle/NewHorizonsOffense.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
+#include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/serializer/ESerializationVersion.h"
 

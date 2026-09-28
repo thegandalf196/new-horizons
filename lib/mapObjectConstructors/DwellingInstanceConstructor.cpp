@@ -11,6 +11,7 @@
 #include "DwellingInstanceConstructor.h"
 
 #include "../CCreatureHandler.h"
+#include "../callback/IGameInfoCallback.h"
 #include "../texts/CGeneralTextHandler.h"
 #include "../json/JsonRandom.h"
 #include "../GameLibrary.h"
@@ -151,7 +152,7 @@ void DwellingInstanceConstructor::randomizeObject(CGDwelling * dwelling, IGameRa
 		for(auto creatureEntry : availableCreatures)
 		{
 			const CCreature * crea = creatureEntry.at(0);
-			dwelling->putStack(SlotID(dwelling->stacksCount()), std::make_unique<CStackInstance>(dwelling->cb, crea->getId(), crea->getGrowth() * 3));
+			dwelling->putStack(SlotID(dwelling->stacksCount()), std::make_unique<CStackInstance>(dwelling->cb, crea->getId(), dwelling->cb->getCreatureBaseGrowth(crea->getId()) * 3));
 		}
 	}
 }

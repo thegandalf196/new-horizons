@@ -240,6 +240,7 @@ set(vcmiclientcommon_HEADERS
 	battle/FocusFireTargetWindow.h
 	battle/NewHorizonsBattleStatus.h
 	battle/StackInfoPanelHoverState.h
+	battle/StackInfoStatusPresentation.h
 	battle/BattleInterface.h
 	battle/BattleObstacleController.h
 	battle/BattleOverlayLogVisualizer.h

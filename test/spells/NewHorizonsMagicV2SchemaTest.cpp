@@ -22,6 +22,7 @@ JsonNode v1Rules()
 	rules.Struct().erase("spellPoints");
 	rules.Struct().erase("mageGuildGeneration");
 	rules.Struct().erase("physicalDamageReductionCapPercent");
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	for(auto & [name, faction] : rules["factions"].Struct())
 	{
 		(void)name;
@@ -44,6 +45,15 @@ JsonNode v1Rules()
 JsonNode v2Rules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["rulesetVersion"].Integer() = 2;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	return rules;
+}
+
+JsonNode v3Rules()
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;
 }
@@ -57,6 +67,21 @@ bool v2(const JsonNode & rules)
 {
 	return named(rules, "vcmi:newHorizonsMagicV2");
 }
+
+bool v3(const JsonNode & rules)
+{
+	return named(rules, "vcmi:newHorizonsMagicV3");
+}
+
+JsonNode settingsWithCoreScopedMagicRoot(const JsonNode & rules)
+{
+	JsonNode settings;
+	settings["magic"]["newHorizons"] = rules;
+	settings.setModScope("core", false);
+	settings["magic"].setModScope("core", false);
+	settings["magic"]["newHorizons"].setModScope("core", false);
+	return settings;
+}
 }
 
 TEST(NewHorizonsMagicV2SchemaTest, ActualNamedVersionsRemainSeparate)
@@ -67,12 +92,41 @@ TEST(NewHorizonsMagicV2SchemaTest, ActualNamedVersionsRemainSeparate)
 	const auto current = v2Rules();
 	EXPECT_TRUE(v2(current));
 	EXPECT_FALSE(named(current, "vcmi:newHorizonsMagic"));
+	const auto currentV3 = v3Rules();
+	EXPECT_TRUE(v3(currentV3));
+	EXPECT_FALSE(v2(currentV3));
 	auto forbidden = current;
 	forbidden["rulesetVersion"].Integer() = 1;
 	EXPECT_FALSE(named(forbidden, "vcmi:newHorizonsMagic")) << "V1 still rejects directDamage";
 	auto optional = current;
 	optional["spells"]["core:magicArrow"].Struct().erase("directDamage");
 	EXPECT_TRUE(v2(optional)) << "The generic schema permits formulas only on spells that define them; runtime enforces the Magic Arrow contract";
+	EXPECT_FALSE(v3(current)) << "V3 requires its snapshotted school-rank factors";
+	EXPECT_FALSE(v2(currentV3)) << "V2 does not accept the v3 ruleset or its new factors";
+}
+
+TEST(NewHorizonsMagicV3SchemaTest, SchoolRankFactorsAreRequiredAndValidateAllFourRanks)
+{
+	auto current = v3Rules();
+	ASSERT_TRUE(v3(current));
+	const std::array<int, 4> expected{100, 115, 130, 145};
+	ASSERT_EQ(current["schoolRankPowerCoefficientPercent"].Vector().size(), expected.size());
+	for(size_t rank = 0; rank < expected.size(); ++rank)
+	{
+		EXPECT_EQ(current["schoolRankPowerCoefficientPercent"].Vector()[rank].Integer(), expected[rank]);
+		auto malformed = current;
+		malformed["schoolRankPowerCoefficientPercent"].Vector()[rank].Integer() = expected[rank] + 1;
+		EXPECT_FALSE(v3(malformed)) << "wrong factor at rank index " << rank;
+	}
+	auto missing = current;
+	missing.Struct().erase("schoolRankPowerCoefficientPercent");
+	EXPECT_FALSE(v3(missing));
+	auto shortArray = current;
+	shortArray["schoolRankPowerCoefficientPercent"].Vector().pop_back();
+	EXPECT_FALSE(v3(shortArray));
+	auto extra = current;
+	extra["schoolRankPowerCoefficientPercent"].Vector().push_back(JsonNode(160));
+	EXPECT_FALSE(v3(extra));
 }
 
 TEST(NewHorizonsMagicV2SchemaTest, FormulaObjectRejectsNullMissingAndExtraFields)
@@ -154,7 +208,7 @@ TEST(NewHorizonsMagicV2SchemaTest, MageGuildGenerationRequiresCanonicalFiveLevel
 	rules = v2Rules();
 	rules["factionWeights"]["major"].Integer() = 3;
 	rules["factionWeights"]["minor"].Integer() = 1;
-	EXPECT_FALSE(v2(rules)) << "Fixed-school generation and legacy faction weights are mutually exclusive";
+	EXPECT_TRUE(v2(rules)) << "Cross-mode compatibility is enforced by newHorizonsMagic::validateRules; required/not is scope-sensitive in merged settings";
 }
 
 TEST(NewHorizonsMagicV2SchemaTest, PhysicalReductionCapRequiresIntegerPercentageAndAllowsAbsence)
@@ -223,10 +277,18 @@ TEST(NewHorizonsMagicV2SchemaTest, RealCrossSchemaSchoolAndFactionReferencesReje
 
 TEST(NewHorizonsMagicV2SchemaTest, CurrentSettingsWrapperAcceptsBothSavedRulesVersions)
 {
-	JsonNode settings;
-	settings["magic"]["newHorizons"] = v1Rules();
-	settings.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
-	EXPECT_TRUE(named(settings, "vcmi:gameSettings"));
-	settings["magic"]["newHorizons"] = v2Rules();
-	EXPECT_TRUE(named(settings, "vcmi:gameSettings"));
+	const auto v1Settings = settingsWithCoreScopedMagicRoot(v1Rules());
+	EXPECT_EQ(v1Settings["magic"]["newHorizons"].getModScope(), "core");
+	EXPECT_EQ(v1Settings["magic"]["newHorizons"]["rulesetVersion"].getModScope(), GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	EXPECT_TRUE(named(v1Settings, "vcmi:gameSettings"));
+	const auto v2Settings = settingsWithCoreScopedMagicRoot(v2Rules());
+	EXPECT_TRUE(named(v2Settings, "vcmi:gameSettings"));
+	const auto v3Settings = settingsWithCoreScopedMagicRoot(v3Rules());
+	EXPECT_TRUE(named(v3Settings, "vcmi:gameSettings"));
+}
+
+TEST(NewHorizonsMagicV2SchemaTest, AuthoredMapMagicOverrideAcceptsV3Snapshot)
+{
+	EXPECT_TRUE(named(v2Rules(), "vcmi:newHorizonsMapMagicOverride"));
+	EXPECT_TRUE(named(v3Rules(), "vcmi:newHorizonsMapMagicOverride"));
 }

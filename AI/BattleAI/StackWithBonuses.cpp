@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "StackWithBonuses.h"
 #include "../../lib/battle/BattleInfo.h"
+#include "../../lib/CSkillHandler.h"
+#include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/TimeStopState.h"
@@ -1099,6 +1101,22 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		return;
 	if(battleBeginsActivation(unit.get(), reason))
 	{
+		auto poisonDamage = newHorizonsBulwark::physicalPoisonTickDamage(unit.get());
+		if(poisonDamage > 0)
+		{
+			unit->damage(poisonDamage);
+			newHorizonsBulwark::advancePhysicalPoison(unit.get());
+		}
+		if(unit->bulwarkMireGripApplied)
+		{
+			const int bulwarkSkillId = SecondarySkill::decode(std::string(newHorizonsBulwark::SKILL_ID));
+			if(bulwarkSkillId >= 0)
+				unit->removeUnitBonus(Selector::source(BonusSource::OTHER,
+					BonusSourceID(SecondarySkill(bulwarkSkillId))));
+			unit->bulwarkMireGripApplied = false;
+		}
+		if(unit->alive())
+			newHorizonsBulwark::applySwampRenewal(unit.get(), battleGetOwnerHero(unit.get()));
 		const auto side = playerToSide(battleGetOwner(unit.get()));
 		for(auto owner : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			fortuneStates.at(owner).beginActivation(unitId, side == owner);

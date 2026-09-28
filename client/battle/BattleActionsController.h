@@ -16,6 +16,7 @@
 
 #include <functional>
 #include <optional>
+#include <string>
 #include <vector>
 
 class BattleAction;
@@ -26,6 +27,25 @@ enum class Mode;
 }
 
 class BattleInterface;
+
+struct StormOfDaggersTargetPreview
+{
+	uint32_t unitId = 0;
+	std::string name;
+	std::optional<int64_t> projectedDamage;
+};
+
+struct StormOfDaggersSelectionPreview
+{
+	int32_t selectedTargetCount = 0;
+	int32_t maximumTargetCount = 5;
+	int64_t totalDamagePool = 0;
+	int64_t rawDamagePerTarget = 0;
+	bool poolAvailable = false;
+	bool canConfirm = false;
+	std::string status;
+	std::vector<StormOfDaggersTargetPreview> targets;
+};
 
 using MagicArrowOverchargeFactory = std::function<std::optional<MagicArrowOverchargeContext>(
 	const BattleAction &, const BattleHex &, const CStack *)>;
@@ -73,6 +93,15 @@ class BattleActionsController
 	/// order is preserved all the way into BattleAction::target; the server
 	/// still validates the complete request before applying it.
 	std::vector<BattleHex> landMineSelectedHexes;
+	/// Ordered unit identities for New Horizons Storm of Daggers.  This is a
+	/// presentation-only selection; all identities and full-vector legality are
+	/// checked again before the ordinary hero spell request is sent.
+	std::vector<uint32_t> stormOfDaggersSelectedUnitIds;
+	BattleID stormOfDaggersBattleID;
+	std::optional<PlayerColor> stormOfDaggersPlayer;
+	BattleSide stormOfDaggersSide = BattleSide::NONE;
+	int32_t stormOfDaggersRound = -1;
+	ObjectInstanceID stormOfDaggersHeroID = ObjectInstanceID::NONE;
 
 	/// Two-click selector state for canonical New Horizons Fire Wall.  The
 	/// first click chooses the line's start; the second click chooses one of
@@ -141,6 +170,11 @@ class BattleActionsController
 	void updateFireWallPlacementStatus(const BattleHex & hoveredHex);
 	void selectFireWallStartOrDirection(const BattleHex & clickedHex);
 	bool fireWallPlacementLineIsLegal(const BattleHex & start, BattleHex::EDir direction) const;
+	bool stormOfDaggersSelectionContextIsCurrent() const;
+	bool stormOfDaggersTargetIsLegal(uint32_t unitId) const;
+	bool stormOfDaggersTargetsAreLegal(const std::vector<uint32_t> & unitIds) const;
+	void updateStormOfDaggersSelectionStatus(const BattleHex & hoveredHex);
+	void selectStormOfDaggersTarget(const BattleHex & clickedHex);
 	bool heroOrderTargetingContextIsCurrent() const;
 	std::vector<uint32_t> heroOrderTargetIds() const;
 	bool heroOrderTargetIdIsLegal(uint32_t unitId) const;
@@ -170,6 +204,16 @@ public:
 	bool landMinePlacementHexIsSelected(const BattleHex & hex) const;
 	/// Return all currently legal empty placement candidates.
 	BattleHexArray getLandMinePlacementLegalHexes() const;
+
+	/// Storm of Daggers uses ordered live stack IDs, not hexes, to avoid
+	/// retargeting a moved stack if the battlefield changes during selection.
+	bool stormOfDaggersTargetSelectionModeActive() const;
+	const std::vector<uint32_t> & stormOfDaggersSelectedTargetIds() const;
+	int stormOfDaggersSelectionOrder(uint32_t unitId) const;
+	bool stormOfDaggersTargetHexIsLegal(const BattleHex & hex) const;
+	StormOfDaggersSelectionPreview getStormOfDaggersSelectionPreview() const;
+	void confirmStormOfDaggersTargets();
+	void undoStormOfDaggersTarget();
 
 	/// True only for the saved-ruleset canonical Fire Wall selector.
 	bool fireWallPlacementModeActive() const;

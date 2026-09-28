@@ -17,6 +17,7 @@ JsonNode activeRules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules["spells"]["core:magicArrow"]["directDamage"]["base"].Integer() = 20;
 	rules["spells"]["core:magicArrow"]["directDamage"]["powerCoefficient"].Integer() = 20;
 	return rules;
@@ -72,6 +73,7 @@ TEST(NewHorizonsMagicArrowTest, LegacyAndWrongSpellDoNotGainOvercharge)
 	JsonNode v1(JsonPath::builtin("config/newHorizonsMagic"));
 	v1["rulesetVersion"].Integer() = 1;
 	v1.Struct().erase("mageGuildGeneration");
+	v1.Struct().erase("schoolRankPowerCoefficientPercent");
 	for(auto & [factionId, faction] : v1["factions"].Struct())
 	{
 		(void)factionId;
@@ -98,6 +100,7 @@ TEST(NewHorizonsMagicArrowTest, V2WithoutSavedFormulaDoesNotActivate)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules["spells"]["core:magicArrow"].Struct().erase("directDamage");
 	const SpellID arrow(SpellID::MAGIC_ARROW);
 

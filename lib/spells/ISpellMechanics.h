@@ -75,7 +75,7 @@ namespace spells
 /// Applies a snapshotted Warcasting percentage to an already identified
 /// Spell-Power-derived numerator, then divides with integer truncation.
 /// The input must exclude any fixed spell base or level-power component.
-DLL_LINKAGE int64_t scaleWarcastingSpellPowerComponent(int64_t numerator, int32_t divisor, int32_t bonusPercent);
+DLL_LINKAGE int64_t scaleWarcastingSpellPowerComponent(int64_t numerator, int64_t divisor, int32_t bonusPercent);
 
 class DLL_LINKAGE IBattleCast
 {
@@ -288,6 +288,11 @@ public:
 
 	virtual IBattleCast::Value getEffectPower() const = 0;
 	virtual int32_t getEffectPowerDivisor() const { return 1; }
+	/// Effective saved-rules school-rank coefficient for this spell and caster.
+	int32_t getSchoolRankPowerCoefficientPercent() const;
+	/// Resolves a configured chain-effect target count against the saved battle
+	/// profile, shared by authoritative casts and target previews/evaluators.
+	int32_t getEffectiveChainLength(int32_t configuredLength) const;
 	/// Percentage captured from the matching pre-cast Warcasting readiness.
 	/// Non-hero casts and Metamagic follow-ups return zero.
 	virtual int32_t getWarcastingBonusPercent() const { return 0; }
@@ -298,11 +303,21 @@ public:
 	virtual bool isNewHorizonsCure() const { return false; }
 	virtual SpellID getCureAffliction() const { return SpellID::NONE; }
 	virtual bool isMassSlow() const { return false; }
+	/// True only for a saved v3 Storm of Daggers spell entry.
+	virtual bool isNewHorizonsStormOfDaggers() const { return false; }
+	/// Sets the selected stack count for shared cast/preview calculations. Returns
+	/// false when this is not the saved spell or the count is outside 1..5.
+	virtual bool setStormOfDaggersTargetCount(int32_t) { return false; }
+	/// Shared raw pool projections, before per-target resistance or mitigation.
+	virtual int64_t getStormOfDaggersDamagePerTarget(int32_t) const { return 0; }
+	virtual int64_t getStormOfDaggersTotalDamage(int32_t) const { return 0; }
 	/// True when this cast consumes an additional Metamagic Spell Action.
 	/// Exposed on the common Mechanics facade so Lua spell effects can preserve
 	/// authoritative cast provenance without depending on BaseMechanics.
 	virtual bool isMetamagicFollowup() const { return false; }
 	virtual bool usesNewHorizonsMagic() const { return false; }
+	/// True only for a saved New Horizons magic-rules v3 battle.
+	virtual bool usesNewHorizonsMagicV3() const { return false; }
 
 	virtual IBattleCast::Value64 getEffectValue() const = 0;
 
@@ -335,6 +350,8 @@ public:
 	/// Scales an explicitly Spell-Power-derived numerator before applying its divisor.
 	/// Fixed base terms must be added by the caller after this calculation.
 	int64_t scaleSpellPowerComponent(int64_t numerator, int32_t divisor = 1) const;
+	int64_t scaleSpellPowerComponentWithCoefficient(int64_t numerator, int32_t divisor,
+		int32_t coefficientPercent) const;
 	virtual Target canonicalizeTarget(const Target & aim) const = 0;
 
 	//Battle facade
@@ -386,11 +403,16 @@ public:
 	bool isSelectiveDispel() const override;
 	bool isNewHorizonsCure() const override;
 	bool isMassSlow() const override;
+	bool isNewHorizonsStormOfDaggers() const override;
+	bool setStormOfDaggersTargetCount(int32_t selectedTargetCount) override;
+	int64_t getStormOfDaggersDamagePerTarget(int32_t selectedTargetCount) const override;
+	int64_t getStormOfDaggersTotalDamage(int32_t selectedTargetCount) const override;
 	bool isMetamagicFollowup() const override;
 	bool isMetamagicGrand() const;
 	uint32_t getMetamagicTargetUnitId() const;
 	int32_t getMetamagicManaRefund() const;
 	bool usesNewHorizonsMagic() const override;
+	bool usesNewHorizonsMagicV3() const override;
 
 	PlayerColor getCasterColor() const override;
 	const CGHeroInstance * getHeroCaster() const override;
@@ -428,6 +450,8 @@ protected:
 	const CSpell * owner;
 	Mode mode;
 	bool forceNonSmartTargeting = false;
+	bool usesNewHorizonsBerserkTargeting() const;
+	bool usesNewHorizonsDispelRules() const;
 
 	BaseMechanics(const IBattleCast * event);
 
@@ -444,6 +468,7 @@ private:
 
 	///raw damage/heal amount
 	IBattleCast::Value64 effectValue;
+	int32_t stormOfDaggersTargetCount = 0;
 	///Additional mana selected for a spell-specific cast option.
 	IBattleCast::Value overcharge = 0;
 	SpellID cureAffliction = SpellID::NONE;

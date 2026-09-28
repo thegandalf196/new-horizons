@@ -11,8 +11,10 @@
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/constants/StringConstants.h"
+#include "../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -34,7 +36,9 @@ bool validCategorySettings(const JsonNode & rules)
 {
 	JsonNode settings;
 	settings["creatures"]["newHorizonsCategories"] = rules;
-	settings.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	settings.setModScope("core", false);
+	settings["creatures"].setModScope("core", false);
+	settings["creatures"]["newHorizonsCategories"].setModScope("core", false);
 	return JsonUtils::validate(settings, "vcmi:gameSettings", "native category settings wrapper proof");
 }
 
@@ -182,4 +186,12 @@ TEST(NewHorizonsCreatureCategorySchemaTest, SchemaShapeDoesNotClaimCanonicalEnti
 	// The schema verifies typed rows. Runtime capture independently rejects this
 	// unknown entity before publishing any row; see the actual world-state test.
 	EXPECT_TRUE(validCategories(rules));
+}
+
+TEST(NewHorizonsCreatureCategorySchemaTest, RuntimeRejectsMalformedGrowthMemberIdentifiers)
+{
+	auto rules = configuredCategories();
+	rules["growthLines"]["core:gnoll"]["members"].Vector()[1].String() = "core:gnoll:malformed";
+	EXPECT_TRUE(validCategories(rules)) << "JsonValidator does not implement string pattern; runtime owns identifier shape validation";
+	EXPECT_THROW(newHorizonsCreatures::CreatureCategoryRules{rules}, std::runtime_error);
 }

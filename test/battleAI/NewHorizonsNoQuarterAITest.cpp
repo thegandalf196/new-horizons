@@ -15,6 +15,7 @@
 #include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
+#include "../../server/CGameHandler.h"
 
 namespace
 {
@@ -133,7 +134,7 @@ TEST_F(NewHorizonsNoQuarterAITest, ProjectedHitSuppressesRetaliationAndReplaysWi
 	ASSERT_NE(projectedTarget, nullptr);
 	EXPECT_TRUE(newHorizonsOffense::belowNoQuarterThreshold(
 		projectedTarget->getAvailableHealth(), projectedTarget->getTotalHealth()));
-	EXPECT_FALSE(projectedTarget->counterAttacks.canUse());
+	EXPECT_FALSE(prediction.effectPreview->getForUpdate(defender->unitId())->counterAttacks.canUse());
 	EXPECT_EQ(prediction.effectPreview->getForUpdate(defender->unitId())->noQuarterMoraleActivationsRemaining, 1);
 	EXPECT_TRUE(hasNoQuarterMorale(projectedTarget));
 

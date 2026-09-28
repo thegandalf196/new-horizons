@@ -19,6 +19,7 @@
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/callback/GameRandomizer.h"
@@ -211,6 +212,9 @@ namespace
 				return true;
 		return false;
 	}
+
+	void applyStartOfActivationEffects(CGameHandler * gameHandler,
+		const CBattleInfoCallback & battle, const battle::Unit * stack);
 }
 
 BattleFlowProcessor::BattleFlowProcessor(BattleProcessor * owner, CGameHandler * newGameHandler)
@@ -1363,6 +1367,10 @@ bool BattleFlowProcessor::makeAutomaticAction(const CBattleInfoCallback & battle
 	bsa.stack = stack->unitId();
 	bsa.reason = BattleUnitTurnReason::AUTOMATIC_ACTION;
 	gameHandler->sendAndApply(bsa);
+	if(battle.battleBeginsActivation(stack, bsa.reason))
+		applyStartOfActivationEffects(gameHandler, battle, stack);
+	if(!stack->alive())
+		return true;
 	// Automatic actions still represent a fresh creature activation. Trigger
 	// passable Fire Wall footprints after the authoritative nextTurn packet so
 	// their activation serial is current and movement callbacks cannot repeat
@@ -1521,6 +1529,8 @@ void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 	sas.stack = stack->unitId();
 	sas.reason = reason;
 	gameHandler->sendAndApply(sas);
+	if(battle.battleBeginsActivation(stack, reason))
+		applyStartOfActivationEffects(gameHandler, battle, stack);
 	bool secondWindActivation = false;
 	if(reason == BattleUnitTurnReason::HERO_COMMAND)
 	{
@@ -1534,6 +1544,105 @@ void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::MORALE || secondWindActivation)
 		&& canonicalFireWallCoversUnit(battle, *stack))
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
+}
+
+namespace
+{
+void applyStartOfActivationEffects(CGameHandler * gameHandler,
+	const CBattleInfoCallback & battle, const battle::Unit * stack)
+{
+	const auto * creatureStack = dynamic_cast<const CStack *>(stack);
+	if(!creatureStack)
+		return;
+
+	const auto * hero = battle.battleGetOwnerHero(creatureStack);
+	auto state = creatureStack->acquireState();
+	const int64_t poisonTick = newHorizonsBulwark::physicalPoisonTickDamage(state.get());
+	if(creatureStack->alive() && state && poisonTick > 0)
+	{
+		const auto poisonSourceStackId = state->physicalPoisonSourceStackId;
+		newHorizonsBulwark::advancePhysicalPoison(state.get());
+		BattleStackAttacked hit;
+		hit.attackerID = poisonSourceStackId >= 0
+			? static_cast<ui32>(poisonSourceStackId) : creatureStack->unitId();
+		hit.stackAttacked = creatureStack->unitId();
+		hit.damageAmount = poisonTick;
+		CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), state);
+		if(!state->alive())
+		{
+			newHorizonsBulwark::clearPhysicalPoison(state.get());
+			hit.newState.data = state->save();
+		}
+		StacksInjured injury;
+		injury.battleID = battle.getBattle()->getBattleID();
+		injury.stacks.push_back(hit);
+		gameHandler->sendAndApply(injury);
+
+		if(hit.damageAmount > 0)
+		{
+			BattleLogMessage message;
+			message.battleID = battle.getBattle()->getBattleID();
+			MetaString line;
+			line.appendRawString("%s suffers ");
+			creatureStack->addNameReplacement(line, creatureStack->getCount());
+			line.appendNumber(hit.damageAmount);
+			line.appendRawString(" physical Poison damage.");
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+		}
+		state = creatureStack->acquireState();
+	}
+	if(state && state->bulwarkMireGripApplied)
+	{
+		const int skillId = SecondarySkill::decode(std::string(newHorizonsBulwark::SKILL_ID));
+		const auto sourceId = BonusSourceID(SecondarySkill(skillId));
+		const auto penalties = creatureStack->getAllBonuses(Selector::source(BonusSource::OTHER, sourceId));
+		if(penalties && !penalties->empty())
+		{
+			std::vector<Bonus> toRemove;
+			toRemove.reserve(penalties->size());
+			for(const auto & bonus : *penalties)
+				toRemove.push_back(*bonus);
+			SetStackEffect remove;
+			remove.battleID = battle.getBattle()->getBattleID();
+			remove.toRemove.emplace_back(creatureStack->unitId(), std::move(toRemove));
+			gameHandler->sendAndApply(remove);
+		}
+		state->bulwarkMireGripApplied = false;
+		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		BattleUnitsChanged changed;
+		changed.battleID = battle.getBattle()->getBattleID();
+		changed.changedStacks.push_back(std::move(update));
+		gameHandler->sendAndApply(changed);
+	}
+	if(creatureStack->alive() && state && state->bulwarkDefendPhysicalDamage > 0
+		&& newHorizonsBulwark::hasSwampRenewal(hero))
+	{
+		const int64_t healing = newHorizonsBulwark::applySwampRenewal(state.get(), hero);
+
+		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		update.healthDelta = healing;
+		BattleUnitsChanged changed;
+		changed.battleID = battle.getBattle()->getBattleID();
+		changed.changedStacks.push_back(std::move(update));
+		gameHandler->sendAndApply(changed);
+
+		if(healing > 0)
+		{
+			BattleLogMessage message;
+			message.battleID = battle.getBattle()->getBattleID();
+			MetaString line;
+			line.appendRawString("Swamp Renewal restores %s ");
+			creatureStack->addNameReplacement(line, creatureStack->getCount());
+			line.appendNumber(healing);
+			line.appendRawString(" Health.");
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+		}
+	}
+}
 }
 
 double BattleFlowProcessor::calculateTowerAttackValue(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * target) const

@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "NewHorizonsDirectDamage.h"
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 namespace newHorizonsMagic
@@ -25,26 +26,32 @@ int32_t parameter(const JsonNode & node)
 }
 }
 
-int64_t DirectDamageFormula::evaluate(int32_t effectPower, int32_t divisor) const
+int64_t DirectDamageFormula::evaluate(int32_t effectPower, int32_t divisor, int coefficientPercent) const
 {
 	// Also check directly constructed DTOs. Negative damage is not healing.
 	if(base < 0 || base > MAX_DIRECT_DAMAGE_PARAMETER || powerCoefficient < 0
-		|| powerCoefficient > MAX_DIRECT_DAMAGE_PARAMETER || effectPower < 0 || divisor <= 0)
+		|| powerCoefficient > MAX_DIRECT_DAMAGE_PARAMETER || effectPower < 0 || divisor <= 0
+		|| coefficientPercent < 0 || coefficientPercent > 1000)
 		throw std::runtime_error("Invalid New Horizons direct damage evaluation inputs");
-	return base + static_cast<int64_t>(powerCoefficient) * effectPower / divisor;
+	const int64_t coefficientPower = static_cast<int64_t>(powerCoefficient) * effectPower;
+	if(coefficientPercent != 0 && coefficientPower > std::numeric_limits<int64_t>::max() / coefficientPercent)
+		throw std::overflow_error("New Horizons direct damage coefficient overflows");
+	const int64_t scaledPower = coefficientPower * coefficientPercent
+		/ (static_cast<int64_t>(divisor) * 100);
+	return base + scaledPower;
 }
 
 std::optional<DirectDamageFormula> directDamageFormula(const JsonNode & spellRecord, int rulesetVersion)
 {
-	if(rulesetVersion != 1 && rulesetVersion != 2)
+	if(rulesetVersion < 1 || rulesetVersion > 3)
 		throw std::runtime_error("Unsupported New Horizons direct damage ruleset version");
 	if(!spellRecord.isStruct())
 		throw std::runtime_error("New Horizons direct damage requires a spell record");
 	const auto found = spellRecord.Struct().find("directDamage");
 	if(found == spellRecord.Struct().end())
 		return std::nullopt;
-	if(rulesetVersion != 2)
-		throw std::runtime_error("New Horizons direct damage requires ruleset version 2");
+	if(rulesetVersion < 2)
+		throw std::runtime_error("New Horizons direct damage requires ruleset version 2 or later");
 	const auto & node = found->second;
 	if(!node.isStruct() || node.Struct().size() != 2
 		|| !node.Struct().contains("base") || !node.Struct().contains("powerCoefficient"))

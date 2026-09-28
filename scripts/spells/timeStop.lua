@@ -5,6 +5,7 @@ Script.__index = Script
 local SPELL_KEY = "new-horizons:timeStop"
 local CHRONOMANCER_SKILL = "new-horizons:sorceryMagic"
 local CHRONOMANCER_PERK = "new-horizons:sorceryMagic.chronomancer"
+local BASE_RADIUS = 1
 local BASE_RADIUS_CAP = 2
 local CHRONOMANCER_RADIUS_CAP = 3
 local POWER_PER_EXTRA_RADIUS = 100
@@ -19,7 +20,10 @@ local function radius(mechanics)
 	local chronomancer = hero ~= nil
 		and hero:hasActivePerk(CHRONOMANCER_SKILL, CHRONOMANCER_PERK)
 	local cap = chronomancer and CHRONOMANCER_RADIUS_CAP or BASE_RADIUS_CAP
-	return math.min(cap, 1 + math.floor(mechanics:getEffectPower() / POWER_PER_EXTRA_RADIUS))
+	local scaledPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficient(
+		mechanics:getEffectPower(), POWER_PER_EXTRA_RADIUS,
+		mechanics:getSchoolRankPowerCoefficientPercent())
+	return math.min(cap, BASE_RADIUS + scaledPowerTerm)
 end
 
 local function hexKey(hex)

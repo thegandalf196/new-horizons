@@ -642,6 +642,32 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	}
 
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
+	if(!counterspellNegated && s->getId() == SpellID::CURE && ba.spellCureAffliction == SpellID::POISON
+		&& newHorizonsMagic::cureEnabled(h->getMagicRules(), s->getId()))
+	{
+		for(const auto & destination : target)
+		{
+			const auto * cureTarget = dynamic_cast<const CStack *>(destination.unitValue);
+			if(!cureTarget || cureTarget->physicalPoisonActivationsRemaining <= 0)
+				continue;
+			auto state = cureTarget->acquireState();
+			newHorizonsBulwark::clearPhysicalPoison(state.get());
+			BattleUnitsChanged changed;
+			changed.battleID = battle.getBattle()->getBattleID();
+			UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+			update.data = state->save();
+			changed.changedStacks.push_back(std::move(update));
+			gameHandler->sendAndApply(changed);
+
+			BattleLogMessage message;
+			message.battleID = battle.getBattle()->getBattleID();
+			MetaString line;
+			line.appendRawString("Cure removes physical Poison from %s.");
+			cureTarget->addNameReplacement(line, cureTarget->getCount());
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+		}
+	}
 	if(counterspellNegated)
 		counteringHero->spendMana(gameHandler->spellcastEnvironment(), counterspellCost);
 	gameHandler->useChargeBasedSpell(h->id, ba.spell);
@@ -2435,7 +2461,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	const int bulwarkReflectionBasisPoints = bulwarkHero
 		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
 		? newHorizonsBulwark::reflectionBasisPoints(newHorizonsBulwark::rank(bulwarkHero),
-			attack.ranged, newHorizonsBulwark::hasThickHide(bulwarkHero))
+			attack.ranged, newHorizonsBulwark::hasThickHide(bulwarkHero),
+			newHorizonsBulwark::hasVengefulMire(bulwarkHero))
 		: 0;
 
 	// Brace answers every qualifying incoming melee attack after the enemy has
@@ -2667,6 +2694,21 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			if(hit.stackAttacked == rainOfArrows->primaryTargetUnitId)
 				rainOfArrows->actualPrimaryDamage += hit.damageAmount;
 	}
+	const bool mireGripTriggered = !attack.ranged && !bat.spellLike()
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
+		&& !attackerState->bulwarkMireGripApplied
+		&& std::ranges::any_of(bat.bsa, [&battle](const BattleStackAttacked & hit)
+		{
+			if(hit.damageAmount <= 0)
+				return false;
+			const auto * target = dynamic_cast<const CStack *>(battle.battleGetUnitByID(hit.stackAttacked));
+			const auto * targetHero = target && target->defended()
+				? battle.battleGetOwnerHero(target) : nullptr;
+			return target && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(target)
+				&& newHorizonsBulwark::hasMireGrip(targetHero);
+		});
+	if(mireGripTriggered)
+		attackerState->bulwarkMireGripApplied = true;
 	std::optional<uint32_t> suppressedTargetId;
 	if(ordinaryPhysicalShot && !attack.counter && attackerHero && newHorizonsArchery::hasSuppression(attackerHero)
 		&& attackerState->archerySuppressionActivationSerial != currentActivationSerial)
@@ -2801,7 +2843,52 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			}
 		}
 	}
+	std::vector<const battle::Unit *> immovableTriggered;
+	if(!bat.spellLike() && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker))
+	{
+		for(const auto & hit : bat.bsa)
+		{
+			const auto * target = battle.battleGetUnitByID(hit.stackAttacked);
+			const auto * targetStack = dynamic_cast<const CStack *>(target);
+			const auto * targetHero = targetStack && targetStack->defended()
+				? battle.battleGetOwnerHero(targetStack) : nullptr;
+			const auto targetState = targetStack ? targetStack->acquireState() : nullptr;
+			if(targetStack && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(targetStack)
+				&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(targetStack)
+				&& newHorizonsBulwark::hasImmovable(targetHero) && targetState
+				&& targetState->bulwarkImmovableRound != battle.battleGetRound())
+				immovableTriggered.push_back(target);
+		}
+	}
 	gameHandler->sendAndApply(bat);
+	for(const auto * target : immovableTriggered)
+	{
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("Immovable reduces the first physical creature attack against %s by 25% while Defending.");
+		target->addNameReplacement(line, target->getCount());
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+	}
+	if(mireGripTriggered && attacker->alive())
+	{
+		SetStackEffect mireGrip;
+		mireGrip.battleID = battle.getBattle()->getBattleID();
+		const int bulwarkSkillId = SecondarySkill::decode(std::string(newHorizonsBulwark::SKILL_ID));
+		const Bonus slow(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
+			BonusSource::OTHER, -2, BonusSourceID(SecondarySkill(bulwarkSkillId)));
+		mireGrip.toAdd.emplace_back(attacker->unitId(), std::vector<Bonus>{slow});
+		gameHandler->sendAndApply(mireGrip);
+
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("Mire Grip reduces %s's Speed by 2 until its next activation.");
+		attacker->addNameReplacement(line, attacker->getCount());
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+	}
 	std::optional<MetaString> suppressionLogLine;
 	if(suppressedTargetId)
 	{
@@ -2903,9 +2990,44 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				hit.attackerID = defender->unitId();
 				hit.stackAttacked = attacker->unitId();
 				hit.damageAmount = reflected;
-				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), attacker->acquireState());
+				auto reflectedAttackerState = attacker->acquireState();
+				const auto * reflectedDefenderHero = battle.battleGetOwnerHero(defender);
+				auto reflectedDefenderState = defender->acquireState();
+				const int32_t currentRound = battle.battleGetRound();
+				const bool toxicSpinesEligible = !attack.ranged
+					&& newHorizonsBulwark::hasToxicSpines(reflectedDefenderHero)
+					&& reflectedDefenderState->bulwarkToxicSpinesRound != currentRound;
+				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), reflectedAttackerState);
+				const bool toxicSpinesConsumed = toxicSpinesEligible && hit.damageAmount > 0;
+				if(toxicSpinesConsumed)
+					reflectedDefenderState->bulwarkToxicSpinesRound = currentRound;
+				const bool poisonApplied = toxicSpinesConsumed
+					&& newHorizonsBulwark::applyPhysicalPoison(reflectedAttackerState.get(),
+						newHorizonsBulwark::toxicSpinesPoisonBase(hit.damageAmount),
+						static_cast<int32_t>(defender->unitId()));
+				if(poisonApplied)
+					hit.newState.data = reflectedAttackerState->save();
 				injury.stacks.push_back(hit);
 				gameHandler->sendAndApply(injury);
+				if(toxicSpinesConsumed)
+				{
+					BattleUnitsChanged markerUpdate;
+					markerUpdate.battleID = battle.getBattle()->getBattleID();
+					UnitChanges marker(defender->unitId(), UnitChanges::EOperation::UPDATE);
+					marker.data = reflectedDefenderState->save();
+					markerUpdate.changedStacks.push_back(std::move(marker));
+					gameHandler->sendAndApply(markerUpdate);
+				}
+				if(poisonApplied)
+				{
+					BattleLogMessage message;
+					message.battleID = battle.getBattle()->getBattleID();
+					MetaString line;
+					line.appendRawString("%s is poisoned by Toxic Spines for three activations.");
+					attacker->addNameReplacement(line, attacker->getCount());
+					message.lines.push_back(std::move(line));
+					gameHandler->sendAndApply(message);
+				}
 			}
 		}
 	}
@@ -3247,14 +3369,42 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	{
 		bsa.damageAmount = battle.getBattle()->getActualDamage(range.damage, attackerState->getCount(), gameHandler->getRandomGenerator());
 		auto defenderState = bai.defender->acquireState();
+		const int64_t healthBeforeAttack = def->getAvailableHealth();
 		CStack::prepareAttacked(bsa, gameHandler->getRandomGenerator(), defenderState); //calculate casualties
+		bool defenderStateChanged = false;
+		const auto * targetHero = battle.battleGetOwnerHero(def);
+		const bool ordinaryPhysicalCreatureAttack = !bat.spellLike()
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attackerState.get());
+		if(ordinaryPhysicalCreatureAttack && def->defended()
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(def)
+			&& newHorizonsBulwark::hasImmovable(targetHero)
+			&& defenderState->bulwarkImmovableRound != battle.battleGetRound())
+		{
+			defenderState->bulwarkImmovableRound = battle.battleGetRound();
+			defenderStateChanged = true;
+		}
+		if(bsa.damageAmount > 0 && !bat.spellLike() && def->defended()
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(def)
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attackerState.get())
+			&& newHorizonsBulwark::hasSwampRenewal(targetHero))
+		{
+			const auto actualLoss = std::min(bsa.damageAmount, healthBeforeAttack);
+			if(actualLoss > 0 && defenderState->bulwarkDefendPhysicalDamage
+				<= std::numeric_limits<int64_t>::max() - actualLoss)
+				defenderState->bulwarkDefendPhysicalDamage += actualLoss;
+			else if(actualLoss > 0)
+				defenderState->bulwarkDefendPhysicalDamage = std::numeric_limits<int64_t>::max();
+			defenderStateChanged = true;
+		}
 		if(bsa.damageAmount > 0 && !bat.spellLike()
 			&& newHorizonsArchery::isOrdinaryPhysicalShooter(attackerState.get()))
 		{
 			const auto shooterSide = battle.playerToSide(battle.battleGetOwner(attackerState.get()));
 			defenderState->archeryRecordCrossfireDamage(shooterSide, attackerState->unitId(), battle.battleGetRound());
-			bsa.newState.data = defenderState->save();
+			defenderStateChanged = true;
 		}
+		if(defenderStateChanged)
+			bsa.newState.data = defenderState->save();
 	}
 
 	bat.bsa.push_back(bsa); //add this stack to the list of victims after drain life has been calculated

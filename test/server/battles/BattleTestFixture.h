@@ -10,6 +10,7 @@
 #pragma once
 
 #include "mock/TinyMapGameTest.h"
+#include "FullGameSnapshotTypes.h"
 
 #include "../../../server/IGameServer.h"
 // every scenario reads the units it placed and the battle they are in, so the fixture brings both

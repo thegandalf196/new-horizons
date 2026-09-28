@@ -8,6 +8,7 @@
 #include "HeroCommandFixture.h"
 
 #include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 
 namespace
@@ -18,11 +19,20 @@ constexpr auto selectiveDispelPerk = "new-horizons:sorceryMagic.selectiveDispel"
 class SelectiveDispelPerkTest : public HeroCommandFixture
 {
 protected:
+	void SetUp() override
+	{
+		HeroCommandFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
 
 	void prepareDispel(bool selectPerk, int rank = 1)
@@ -135,15 +145,17 @@ TEST_F(SelectiveDispelPerkTest, ServerRejectsSelectiveModeWithoutActiveSavedPerk
 	EXPECT_TRUE(hasEffect(friendly, SpellID::CURSE));
 }
 
-TEST_F(SelectiveDispelPerkTest, ExpertSelectiveMassDispelFiltersEachSideIndependently)
+TEST_F(SelectiveDispelPerkTest, ExpertRankDoesNotGrantMassDispelInTheSavedV3Profile)
 {
 	prepareDispel(true, 3);
 	addOppositeEffects(friendly);
 	addOppositeEffects(enemy);
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 
-	ASSERT_TRUE(castMassDispel(true));
+	EXPECT_FALSE(castMassDispel(true));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_TRUE(hasEffect(friendly, SpellID::BLESS));
-	EXPECT_FALSE(hasEffect(friendly, SpellID::CURSE));
-	EXPECT_FALSE(hasEffect(enemy, SpellID::BLESS));
+	EXPECT_TRUE(hasEffect(friendly, SpellID::CURSE));
+	EXPECT_TRUE(hasEffect(enemy, SpellID::BLESS));
 	EXPECT_TRUE(hasEffect(enemy, SpellID::CURSE));
 }

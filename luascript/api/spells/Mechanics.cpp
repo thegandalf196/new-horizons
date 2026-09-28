@@ -74,10 +74,13 @@ int32_t MechanicsProxy::getArcaneBreachMarkBasisPoints(const spells::Mechanics &
 {
 	using namespace newHorizonsSorcery;
 	// Validate the same domain as the shared unmodified formula. Warcasting
-	// boosts only the Spell Power component, before the final per-mark cap.
-	arcaneBreachMarkBasisPoints(m.getEffectPower());
-	const auto component = m.scaleSpellPowerComponent(
-		static_cast<int64_t>(m.getEffectPower()) * ARCANE_BREACH_POWER_BASIS_POINTS);
+	// and the saved school-rank coefficient boost only the Spell Power component,
+	// before the final per-mark cap.
+	const auto effectPower = m.getEffectPower();
+	arcaneBreachMarkBasisPoints(effectPower);
+	const auto component = m.scaleSpellPowerComponentWithCoefficient(
+		static_cast<int64_t>(effectPower) * ARCANE_BREACH_POWER_BASIS_POINTS,
+		1, m.getSchoolRankPowerCoefficientPercent());
 	return static_cast<int32_t>(std::min<int64_t>(ARCANE_BREACH_CAP_BASIS_POINTS,
 		ARCANE_BREACH_BASE_BASIS_POINTS + component));
 }
@@ -108,6 +111,24 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the effective spell power applied to the magnitude calculation.");
 	R.method<&Mechanics::getEffectPowerDivisor>("getEffectPowerDivisor", {},
 		"Returns the saved caster power divisor; legacy and ordinary creature casts use one.");
+	R.method<&Mechanics::getSchoolRankPowerCoefficientPercent>("getSchoolRankPowerCoefficientPercent", {},
+		"Returns the effective school-rank Spell Power coefficient from the saved battle rules and caster; "
+		"v1/v2 and excluded spells use 100%.");
+	R.method<&Mechanics::getEffectiveChainLength>("getEffectiveChainLength",
+		{{"configuredLength", "Target count configured for this spell mastery."}}, {},
+		"Returns the chain-effect target count resolved against the saved battle rules. "
+		"New Horizons v3 fixes core Chain Lightning at five targets; legacy/v1/v2 retain content values.");
+	R.method<&Mechanics::isNewHorizonsStormOfDaggers>("isNewHorizonsStormOfDaggers", {},
+		"True when this cast uses the saved v3 New Horizons Storm of Daggers rules.");
+	R.method<&Mechanics::setStormOfDaggersTargetCount>("setStormOfDaggersTargetCount",
+		{{"selectedTargetCount", "Number of distinct enemy stacks selected, from one to five."}}, {},
+		"Sets the selection count for the shared Storm of Daggers preview value. Returns false for an invalid count or another spell.");
+	R.method<&Mechanics::getStormOfDaggersDamagePerTarget>("getStormOfDaggersDamagePerTarget",
+		{{"selectedTargetCount", "Number of distinct enemy stacks selected, from one to five."}}, {},
+		"Returns the raw, equal damage assigned to each selected stack before target-specific resistance or mitigation.");
+	R.method<&Mechanics::getStormOfDaggersTotalDamage>("getStormOfDaggersTotalDamage",
+		{{"selectedTargetCount", "Number of distinct enemy stacks selected, from one to five."}}, {},
+		"Returns the rounded raw Storm of Daggers total before target-specific resistance or mitigation.");
 	R.method<&Mechanics::getEffectDuration>("getEffectDuration", {},
 		"Returns the effect duration in turns.");
 	R.method<&Mechanics::adjustEffectDuration>("adjustEffectDuration",
@@ -125,6 +146,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True when this authoritative cast selected the Sorcery Temporal Field Mass Slow mode.");
 	R.method<&Mechanics::usesNewHorizonsMagic>("usesNewHorizonsMagic", {},
 		"True when the battle uses a saved New Horizons magic-rules snapshot.");
+	R.method<&Mechanics::usesNewHorizonsMagicV3>("usesNewHorizonsMagicV3", {},
+		"True when the battle uses a saved New Horizons magic-rules v3 snapshot.");
 	R.function<&MechanicsProxy::isNatureSpell>("isNatureSpell", {},
 		"True when the authoritative saved spell-school mapping classifies this cast as Nature.");
 	R.method<&Mechanics::getEffectValue>("getEffectValue", {},
@@ -152,7 +175,16 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 			{"numerator", "An explicitly Spell-Power-derived numerator, before applying its divisor."},
 			{"divisor", "Divisor applied after the optional Warcasting percentage; defaults to one."}
 		}, {},
-		"Applies this cast's snapshotted Warcasting percentage to a Spell-Power-derived component, then divides it with integer truncation. Fixed base and level-power terms must be added separately.");
+		"Applies this cast's snapshotted Warcasting percentage to an unranked Spell-Power-derived component, then divides "
+		"it with integer truncation. Fixed base and level-power terms must be added separately.");
+	R.method<&Mechanics::scaleSpellPowerComponentWithCoefficient>("scaleSpellPowerComponentWithCoefficient",
+		{
+			{"numerator", "An explicitly Spell-Power-derived numerator, before applying its divisor."},
+			{"divisor", "Divisor applied after the optional Warcasting percentage."},
+			{"coefficientPercent", "Saved school-rank Spell Power coefficient in percent."}
+		}, {},
+		"Applies the supplied percentage and this cast's snapshotted Warcasting percentage to a Spell-Power-derived component, "
+		"then divides it with integer truncation. Fixed base and level-power terms must be added separately.");
 	R.method<&Mechanics::applySpecificSpellBonus>("applySpecificSpellBonus",
 		{{"value", "Base value to which spell-specific modifiers are applied. Use 0 for default"}}, {},
 		"Applies any spell-specific bonus modifier and returns the resulting value.");

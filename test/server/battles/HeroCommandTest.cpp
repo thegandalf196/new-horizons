@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "FullGameSnapshotTypes.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/SideInBattle.h"
@@ -16,25 +17,7 @@
 #include "../../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../../lib/battle/Unit.h"
 #include "../../../lib/bonuses/Bonus.h"
-// Full game-state roundtrips instantiate serializers for the complete object graph.
-#include "../../../lib/CPlayerState.h"
-#include "../../../lib/gameState/CGameState.h"
-#include "../../../lib/bonuses/BonusParameters.h"
-#include "../../../lib/bonuses/Limiters.h"
-#include "../../../lib/bonuses/Propagators.h"
-#include "../../../lib/bonuses/Updaters.h"
-#include "../../../lib/campaign/CampaignState.h"
-#include "../../../lib/gameState/CGameStateCampaign.h"
-#include "../../../lib/gameState/TavernHeroesPool.h"
-#include "../../../lib/mapObjects/MiscObjects.h"
-#include "../../../lib/mapObjects/ObjectTemplate.h"
-#include "../../../lib/mapObjects/Quest.h"
-#include "../../../lib/mapObjects/CGTownInstance.h"
-#include "../../../lib/mapObjects/TownBuildingInstance.h"
-#include "../../../lib/mapping/CCastleEvent.h"
 #include "../../../lib/modding/CModHandler.h"
-#include "../../../lib/rmg/CMapGenOptions.h"
-#include "../../../lib/modding/ModScope.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
@@ -760,7 +743,7 @@ TEST_F(IronDisciplineTest, MagicalReductionStacksWithOrdinaryReductionAndMatches
 		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50, BonusSourceID(),
 		BonusSubtypeID(SpellSchool::ANY)));
 
-	const auto * spell = SpellID::MAGIC_ARROW.toSpell();
+	const auto * spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
 	spells::BattleCast event(battle(), defenderSideHero, spells::Mode::HERO, spell);
 	const auto mechanics = spell->battleMechanics(&event);
 	const auto savedStateBeforeForecast = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);

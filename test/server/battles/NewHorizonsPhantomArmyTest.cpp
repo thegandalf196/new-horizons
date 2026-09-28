@@ -19,12 +19,45 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
+#include "../../../lib/spells/effects/Effect.h"
 
 namespace
 {
 SpellID phantomArmySpell()
 {
 	return SpellID(SpellID::decode(newHorizonsSorcery::PHANTOM_ARMY_SPELL));
+}
+
+JsonNode magicRulesForVersion(int version)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["rulesetVersion"].Integer() = version;
+	if(version < newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	if(version == newHorizonsMagic::RULESET_VERSION)
+	{
+		rules.Struct().erase("warcasting");
+		rules.Struct().erase("spellPoints");
+		rules.Struct().erase("mageGuildGeneration");
+		rules.Struct().erase("physicalDamageReductionCapPercent");
+		for(auto & [name, faction] : rules["factions"].Struct())
+		{
+			(void)name;
+			faction["major"] = faction["preferredA"];
+			faction["minor"] = faction["preferredB"];
+			faction.Struct().erase("preferredA");
+			faction.Struct().erase("preferredB");
+		}
+		for(auto & [name, spell] : rules["spells"].Struct())
+		{
+			(void)name;
+			spell.Struct().erase("active");
+			spell.Struct().erase("directDamage");
+			spell.Struct().erase("cureAfflictions");
+		}
+	}
+	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	return rules;
 }
 
 std::shared_ptr<Bonus> timeStopMarker(BattleSide side)
@@ -47,6 +80,7 @@ protected:
 	bool useIllusionistPerkRules = false;
 	bool useEchoedDurationPerkRules = false;
 	bool startCombatBeforeCast = false;
+	int magicRulesVersion = 0;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -54,7 +88,10 @@ protected:
 		if(useIllusionistPerkRules || useEchoedDurationPerkRules)
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
-		if(useEchoedDurationPerkRules)
+		if(magicRulesVersion > 0)
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+				magicRulesForVersion(magicRulesVersion));
+		else if(useEchoedDurationPerkRules)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
@@ -68,7 +105,8 @@ protected:
 
 	bool startPhantomBattle(CStack *& source, CStack *& phantom, int32_t sourceCount = 1000,
 		bool sourceHasExtraHealth = false, bool selectIllusionist = false,
-		int32_t spellPower = 100, int64_t sourceDamageBeforeCast = 0, bool selectEchoedDuration = false)
+		int32_t spellPower = 100, int64_t sourceDamageBeforeCast = 0, bool selectEchoedDuration = false,
+		int sorceryRank = MasteryLevel::NONE)
 	{
 		const SpellID spell = phantomArmySpell();
 		if(spell == SpellID::NONE)
@@ -77,11 +115,12 @@ protected:
 		useIllusionistPerkRules = selectIllusionist;
 		useEchoedDurationPerkRules = selectEchoedDuration;
 		startGame();
+		const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
+		if(sorcery < 0)
+			return false;
+		attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), sorceryRank, ChangeValueMode::ABSOLUTE);
 		if(selectIllusionist)
 		{
-			const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
-			if(sorcery < 0)
-				return false;
 			attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 			attackerSideHero->applyPerkSelection({
 				"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.illusionist"});
@@ -227,6 +266,102 @@ TEST_F(NewHorizonsPhantomArmyTest, RealCastPreservesCountAndIntegrityAcrossUnitA
 		newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS);
 	EXPECT_EQ(restored->getCount(), source->getCount());
 	EXPECT_EQ(restored->getTotalHealth(), source->getTotalHealth());
+}
+
+TEST_F(NewHorizonsPhantomArmyTest, SchoolRankScalesOnlySpellPowerIntegrityAndPreviewMatchesCast)
+{
+	magicRulesVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
+	CStack * source = nullptr;
+	CStack * phantom = nullptr;
+	constexpr int32_t spellPower = 40;
+	ASSERT_TRUE(startPhantomBattle(source, phantom, 100, false, false, spellPower));
+	ASSERT_EQ(source->getAvailableHealth(), 1000);
+	const auto spell = phantomArmySpell();
+	const auto * definition = spell.toSpell();
+	ASSERT_NE(definition, nullptr);
+	const auto sorcery = SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	const std::array<int, 4> ranks{
+		MasteryLevel::NONE, MasteryLevel::BASIC, MasteryLevel::ADVANCED, MasteryLevel::EXPERT};
+	const std::array<int, 4> coefficients{100, 115, 130, 145};
+	const std::array<int64_t, 4> expectedIntegrity{260, 269, 278, 287};
+
+	ASSERT_EQ(attackerSideHero->getEffectPower(definition), spellPower);
+	for(size_t index = 0; index < ranks.size(); ++index)
+	{
+		attackerSideHero->setSecSkillLevel(sorcery, ranks[index], ChangeValueMode::ABSOLUTE);
+		EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(
+			battle()->getMagicRules(), attackerSideHero, spell), coefficients[index]);
+
+		const auto preview = battle()->getSpellEffectValue(definition, attackerSideHero,
+			spells::Mode::HERO, source->getPosition());
+		ASSERT_NE(preview, nullptr);
+		EXPECT_EQ(preview->hpDelta, expectedIntegrity[index]) << "school rank " << ranks[index];
+		EXPECT_EQ(preview->unitsDelta, source->getCount()) << "school rank " << ranks[index];
+
+		// startPhantomBattle already casts at no rank. Higher ranks use the same
+		// eligible source to prove the forecast and authoritative spawn agree.
+		if(index > 0)
+		{
+			ASSERT_TRUE(castOn(attackerSideHero, spell, source)) << "school rank " << ranks[index];
+		}
+
+		const auto matchingPhantoms = battle()->battleGetStacksIf([&](const CStack * unit)
+		{
+			return unit->getPhantomInitialIntegrity() == expectedIntegrity[index];
+		});
+		ASSERT_EQ(matchingPhantoms.size(), 1u) << "school rank " << ranks[index];
+		EXPECT_EQ(matchingPhantoms.front()->getCount(), source->getCount());
+		EXPECT_EQ(matchingPhantoms.front()->getPhantomIntegrity(), preview->hpDelta);
+	}
+
+	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, definition, 0);
+	EXPECT_NE(description.find("Expert School: 145% Spell Power-derived Phantom Integrity."), std::string::npos);
+}
+
+TEST_F(NewHorizonsPhantomArmyTest, BasicRankPreservesFractionalBasisPointsUntilFinalHealthFloor)
+{
+	magicRulesVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
+	CStack * source = nullptr;
+	CStack * phantom = nullptr;
+	constexpr int32_t spellPower = 1;
+	ASSERT_TRUE(startPhantomBattle(source, phantom, 10000, false, false, spellPower,
+		0, false, MasteryLevel::BASIC));
+	ASSERT_EQ(source->getAvailableHealth(), 100000);
+	ASSERT_EQ(attackerSideHero->getEffectPower(phantomArmySpell().toSpell()), spellPower);
+
+	const auto preview = battle()->getSpellEffectValue(phantomArmySpell().toSpell(), attackerSideHero,
+		spells::Mode::HERO, source->getPosition());
+	ASSERT_NE(preview, nullptr);
+	EXPECT_EQ(preview->hpDelta, 20172);
+	EXPECT_EQ(phantom->getPhantomIntegrity(), preview->hpDelta);
+}
+
+TEST_F(NewHorizonsPhantomArmyTest, VersionOneSnapshotKeepsSchoolRankUnapplied)
+{
+	magicRulesVersion = newHorizonsMagic::RULESET_VERSION;
+	CStack * source = nullptr;
+	CStack * phantom = nullptr;
+	ASSERT_TRUE(startPhantomBattle(source, phantom, 100, false, false, 40, 0, false, MasteryLevel::EXPERT));
+	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), newHorizonsMagic::RULESET_VERSION);
+	EXPECT_EQ(phantom->getPhantomIntegrity(), 260);
+	const auto preview = battle()->getSpellEffectValue(phantomArmySpell().toSpell(), attackerSideHero,
+		spells::Mode::HERO, source->getPosition());
+	ASSERT_NE(preview, nullptr);
+	EXPECT_EQ(preview->hpDelta, 260);
+}
+
+TEST_F(NewHorizonsPhantomArmyTest, VersionTwoSnapshotKeepsSchoolRankUnapplied)
+{
+	magicRulesVersion = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	CStack * source = nullptr;
+	CStack * phantom = nullptr;
+	ASSERT_TRUE(startPhantomBattle(source, phantom, 100, false, false, 40, 0, false, MasteryLevel::EXPERT));
+	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
+	EXPECT_EQ(phantom->getPhantomIntegrity(), 260);
+	const auto preview = battle()->getSpellEffectValue(phantomArmySpell().toSpell(), attackerSideHero,
+		spells::Mode::HERO, source->getPosition());
+	ASSERT_NE(preview, nullptr);
+	EXPECT_EQ(preview->hpDelta, 260);
 }
 
 TEST_F(NewHorizonsPhantomArmyTest, SourceHealthIntegrityMayExceedNominalHealthAndInvalidProfileIsAtomic)

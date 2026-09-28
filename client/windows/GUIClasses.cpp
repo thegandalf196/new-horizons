@@ -630,20 +630,19 @@ CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, i
 	const bool showOwnerLabels = sameHeroPortrait || sameGarrisonCrest;
 	const bool showLeftOwnerLabel = !leftOwnerMarker || showOwnerLabels;
 	const bool showRightOwnerLabel = !rightOwnerMarker || showOwnerLabels;
-	const int ownerLabelControlOffset = showLeftOwnerLabel || showRightOwnerLabel ? 12 : 0;
 
 	if(showLeftOwnerLabel && !leftOwnerInfo.label.empty())
-		leftOwnerLabel = std::make_shared<CSplitOwnerLabel>(Rect(5, 259, 130, 27), leftOwnerInfo.label);
+		leftOwnerLabel = std::make_shared<CSplitOwnerLabel>(Rect(5, 261, 130, 15), leftOwnerInfo.label);
 	if(showRightOwnerLabel && !rightOwnerInfo.label.empty())
-		rightOwnerLabel = std::make_shared<CSplitOwnerLabel>(Rect(162, 259, 130, 27), rightOwnerInfo.label);
+		rightOwnerLabel = std::make_shared<CSplitOwnerLabel>(Rect(162, 261, 130, 15), rightOwnerInfo.label);
 
-	ok = std::make_shared<CButton>(Point(20, 347 + ownerLabelControlOffset), AnimationPath::builtin("IOK6432"), CButton::tooltip(), std::bind(&CSplitWindow::apply, this), EShortcut::GLOBAL_ACCEPT);
-	cancel = std::make_shared<CButton>(Point(214, 347 + ownerLabelControlOffset), AnimationPath::builtin("ICN6432"), CButton::tooltip(), std::bind(&CSplitWindow::close, this), EShortcut::GLOBAL_CANCEL);
+	ok = std::make_shared<CButton>(Point(38, 355), AnimationPath::builtin("IOK6432"), CButton::tooltip(), std::bind(&CSplitWindow::apply, this), EShortcut::GLOBAL_ACCEPT);
+	cancel = std::make_shared<CButton>(Point(195, 355), AnimationPath::builtin("ICN6432"), CButton::tooltip(), std::bind(&CSplitWindow::close, this), EShortcut::GLOBAL_CANCEL);
 
 	int sliderPosition = total - leftMin - rightMin;
 
-	leftInput = std::make_shared<CTextInput>(Rect(20, 302 + ownerLabelControlOffset, 100, 36), FONT_BIG, ETextAlignment::CENTER, true);
-	rightInput = std::make_shared<CTextInput>(Rect(176, 302 + ownerLabelControlOffset, 100, 36), FONT_BIG, ETextAlignment::CENTER, true);
+	leftInput = std::make_shared<CTextInput>(Rect(20, 313, 100, 26), FONT_BIG, ETextAlignment::CENTER, true);
+	rightInput = std::make_shared<CTextInput>(Rect(176, 313, 100, 26), FONT_BIG, ETextAlignment::CENTER, true);
 
 	leftInput->setCallback(std::bind(&CSplitWindow::setAmountText, this, _1, true));
 	rightInput->setCallback(std::bind(&CSplitWindow::setAmountText, this, _1, false));
@@ -658,7 +657,7 @@ CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, i
 	animLeft = std::make_shared<CCreaturePic>(20, 54, creature, true, false);
 	animRight = std::make_shared<CCreaturePic>(177, 54,creature, true, false);
 
-	slider = std::make_shared<CSlider>(Point(21, 275 + ownerLabelControlOffset), 257, std::bind(&CSplitWindow::sliderMoved, this, _1), 0, sliderPosition, defaultRightAmount - rightMin, Orientation::HORIZONTAL);
+	slider = std::make_shared<CSlider>(Point(21, 284), 257, std::bind(&CSplitWindow::sliderMoved, this, _1), 0, sliderPosition, defaultRightAmount - rightMin, Orientation::HORIZONTAL);
 
 	MetaString titleStr = MetaString::createFromTextID("core.genrltxt.256");
 	titleStr.replaceNamePlural(creature->getId());

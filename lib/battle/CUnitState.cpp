@@ -399,6 +399,13 @@ CUnitState::CUnitState():
 	defensiveStanceMeleeBonus(0),
 	defensiveStanceRangedBonus(0),
 	bulwarkPreemptiveUsed(false),
+	bulwarkMireGripApplied(false),
+	bulwarkDefendPhysicalDamage(0),
+	bulwarkImmovableRound(-1),
+	bulwarkToxicSpinesRound(-1),
+	physicalPoisonBaseDamage(0),
+	physicalPoisonActivationsRemaining(0),
+	physicalPoisonSourceStackId(-1),
 	casts(this),
 	counterAttacks(this),
 	health(this),
@@ -448,6 +455,13 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	defensiveStanceMeleeBonus = other.defensiveStanceMeleeBonus;
 	defensiveStanceRangedBonus = other.defensiveStanceRangedBonus;
 	bulwarkPreemptiveUsed = other.bulwarkPreemptiveUsed;
+	bulwarkMireGripApplied = other.bulwarkMireGripApplied;
+	bulwarkDefendPhysicalDamage = other.bulwarkDefendPhysicalDamage;
+	bulwarkImmovableRound = other.bulwarkImmovableRound;
+	bulwarkToxicSpinesRound = other.bulwarkToxicSpinesRound;
+	physicalPoisonBaseDamage = other.physicalPoisonBaseDamage;
+	physicalPoisonActivationsRemaining = other.physicalPoisonActivationsRemaining;
+	physicalPoisonSourceStackId = other.physicalPoisonSourceStackId;
 	phantomInitialIntegrity = other.phantomInitialIntegrity;
 	phantomIntegrity = other.phantomIntegrity;
 	phantomRoundsRemaining = other.phantomRoundsRemaining;
@@ -980,6 +994,23 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("defensiveStanceMeleeBonus", defensiveStanceMeleeBonus, 0);
 	handler.serializeInt("defensiveStanceRangedBonus", defensiveStanceRangedBonus, 0);
 	handler.serializeBool("bulwarkPreemptiveUsed", bulwarkPreemptiveUsed);
+	handler.serializeBool("bulwarkMireGripApplied", bulwarkMireGripApplied);
+	handler.serializeInt("bulwarkDefendPhysicalDamage", bulwarkDefendPhysicalDamage, 0);
+	if(bulwarkDefendPhysicalDamage < 0)
+		throw std::runtime_error("Invalid negative Bulwark damage accumulator");
+	handler.serializeInt("bulwarkImmovableRound", bulwarkImmovableRound, -1);
+	if(bulwarkImmovableRound < -1)
+		throw std::runtime_error("Invalid Bulwark perk round marker");
+	handler.serializeInt("bulwarkToxicSpinesRound", bulwarkToxicSpinesRound, -1);
+	if(bulwarkToxicSpinesRound < -1)
+		throw std::runtime_error("Invalid Toxic Spines round marker");
+	handler.serializeInt("physicalPoisonBaseDamage", physicalPoisonBaseDamage, 0);
+	handler.serializeInt("physicalPoisonActivationsRemaining", physicalPoisonActivationsRemaining, 0);
+	handler.serializeInt("physicalPoisonSourceStackId", physicalPoisonSourceStackId, -1);
+	if(physicalPoisonBaseDamage < 0 || physicalPoisonActivationsRemaining < 0
+		|| physicalPoisonActivationsRemaining > 3
+		|| ((physicalPoisonBaseDamage == 0) != (physicalPoisonActivationsRemaining == 0)))
+		throw std::runtime_error("Invalid physical Poison state");
 	handler.serializeInt("phantomInitialIntegrity", phantomInitialIntegrity, 0);
 	handler.serializeInt("phantomIntegrity", phantomIntegrity, 0);
 	handler.serializeInt("phantomRoundsRemaining", phantomRoundsRemaining, 0);
@@ -1026,6 +1057,13 @@ void CUnitState::reset()
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
 	bulwarkPreemptiveUsed = false;
+	bulwarkMireGripApplied = false;
+	bulwarkDefendPhysicalDamage = 0;
+	bulwarkImmovableRound = -1;
+	bulwarkToxicSpinesRound = -1;
+	physicalPoisonBaseDamage = 0;
+	physicalPoisonActivationsRemaining = 0;
+	physicalPoisonSourceStackId = -1;
 	phantomInitialIntegrity = 0;
 	phantomIntegrity = 0;
 	phantomRoundsRemaining = 0;

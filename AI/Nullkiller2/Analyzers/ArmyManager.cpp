@@ -431,7 +431,7 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 
 		if(i < GameConstants::CREATURES_PER_TOWN && countGrowth)
 		{
-			ci.count += town ? town->creatureGrowth(i) : ci.creID.toCreature()->getGrowth();
+			ci.count += town ? town->creatureGrowth(i) : cpsic->getCreatureBaseGrowth(ci.creID);
 		}
 
 		if(!ci.count) continue;

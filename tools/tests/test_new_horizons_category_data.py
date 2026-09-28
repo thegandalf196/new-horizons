@@ -23,7 +23,8 @@ class CreatureCategoryDataTest(unittest.TestCase):
     def test_schema_presence_and_absence(self):
         for rules in (None, {}, self.rules):
             self.validator.validate(rules)
-        self.assertEqual(self.rules['sourceRulesetId'], 'new-horizons:creatureCategories')
+        self.assertEqual(self.rules['sourceRulesetId'], 'new-horizons:creatureRules')
+        self.assertEqual(self.rules['rulesetVersion'], 2)
         properties = load('config/schemas/gameSettings.json')['properties']['creatures']['properties']
         self.assertEqual(properties['newHorizonsCategories']['$ref'], 'newHorizonsCreatureCategories.json')
         self.assertEqual(load('config/gameConfig.json')['settings']['creatures']['newHorizonsCategories'], {})
@@ -42,6 +43,31 @@ class CreatureCategoryDataTest(unittest.TestCase):
         self.assertEqual(assignments['core:phoenix'], 'champion')
         self.assertEqual(set(self.rules['categories']), {'core', 'elite', 'champion'})
 
+    def test_fortress_weekly_base_growth_is_authored_once_per_line_and_inherited_by_upgrades(self):
+        expected = {
+            'gnoll': 14,
+            'lizardman': 9,
+            'serpentFly': 8,
+            'basilisk': 4,
+            'gorgon': 3,
+            'wyvern': 2,
+            'hydra': 1,
+        }
+        lines = self.rules['growthLines']
+        fortress = load('config/creatures/fortress.json')
+        self.assertEqual(set(lines), {f'core:{name}' for name in expected})
+        inherited_members = set()
+        for base_name, weekly_growth in expected.items():
+            with self.subTest(base_creature=base_name):
+                base_key = f'core:{base_name}'
+                line = lines[base_key]
+                self.assertEqual(line['weeklyBaseGrowth'], weekly_growth)
+                expected_members = [base_key] + [f'core:{name}' for name in fortress[base_name].get('upgrades', [])]
+                self.assertEqual(line['members'], expected_members)
+                self.assertTrue(set(line['members']) <= set(self.rules['creatures']))
+                inherited_members.update(line['members'])
+        self.assertEqual(len(inherited_members), 14)
+
     def test_texts_are_complete_and_separate(self):
         texts = load('config/newHorizonsCreatureCategoryTexts.json')
         ids = {value for definition in self.rules['categories'].values() for value in definition.values()}
@@ -58,7 +84,11 @@ class CreatureCategoryDataTest(unittest.TestCase):
             lambda r: r['creatures'].update({'core:pixie': 'boss'}),
             lambda r: r['categories'].pop('champion'),
             lambda r: r['categories']['core'].update(nameTextId=''),
-            lambda r: r['categories']['elite'].update(numericalTier=4)]
+            lambda r: r['categories']['elite'].update(numericalTier=4),
+            lambda r: r['growthLines']['core:gnoll'].update(weeklyBaseGrowth=0),
+            lambda r: r['growthLines']['core:gnoll'].update(members=[]),
+            lambda r: r.update(rulesetVersion=1),
+            lambda r: r.update(growthLines={})]
         for change in changes:
             rules = copy.deepcopy(self.rules)
             change(rules)

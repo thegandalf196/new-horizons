@@ -1445,6 +1445,20 @@ void GameStatePackVisitor::visitSetHouseOfWisdomScrolls(SetHouseOfWisdomScrolls 
 		logNetwork->error("Wrong House of Wisdom town id!");
 }
 
+void GameStatePackVisitor::visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizonsAdventureSpellUnlock & pack)
+{
+	if(pack.guildLevel < 1 || pack.guildLevel > 5)
+	{
+		logNetwork->error("Invalid New Horizons Adventure Spell Guild tier %d", pack.guildLevel);
+		return;
+	}
+
+	if(auto * town = gs.getTown(pack.townId))
+		town->setNewHorizonsAdventureSpellUnlocked(pack.guildLevel);
+	else
+		logNetwork->error("Wrong New Horizons Adventure Spell town id!");
+}
+
 void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 {
 	spellPointBonusGraphChanged = true;

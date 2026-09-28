@@ -6,11 +6,13 @@
 #include "StdInc.h"
 
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <string>
 #include <tuple>
 
 #include "../../lib/GameConstants.h"
 #include "../../lib/entities/hero/CHero.h"
+#include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGDwelling.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
@@ -20,6 +22,7 @@
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../server/CGameHandler.h"
 #include "../../server/IGameServer.h"
+#include "../../server/queries/QueriesProcessor.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../mock/TinyH3MBuilder.h"
 #include "../mock/TinyMapGameTest.h"
@@ -44,6 +47,19 @@ public:
 
 	void applyPack(CPackForClient & pack) override
 	{
+		if(const auto * ended = dynamic_cast<PlayerEndsGame *>(&pack))
+			playerEndsGamePacks.push_back(*ended);
+		if(const auto * ended = dynamic_cast<PlayerEndsTurn *>(&pack))
+			playerEndsTurnPacks.push_back(*ended);
+		if(const auto * dialog = dynamic_cast<BlockingDialog *>(&pack))
+			blockingDialogQuery = dialog->queryID;
+		if(const auto * dialog = dynamic_cast<GarrisonDialog *>(&pack))
+		{
+			++garrisonDialogs;
+			garrisonDialogQuery = dialog->queryID;
+			garrisonObject = dialog->objid;
+			garrisonHero = dialog->hid;
+		}
 		if(const auto * message = dynamic_cast<SystemMessage *>(&pack))
 		{
 			++systemMessages;
@@ -58,12 +74,32 @@ public:
 	{
 		if(const auto * applied = dynamic_cast<const PackageApplied *>(&pack))
 			responses.push_back(*applied);
+		if(const auto * message = dynamic_cast<const SystemMessage *>(&pack))
+			targetedSystemMessageTexts.push_back(message->text.toString(LIBRARY->generaltexth.get()));
 	}
 
 	std::vector<PackageApplied> responses;
+	std::vector<PlayerEndsGame> playerEndsGamePacks;
+	std::vector<PlayerEndsTurn> playerEndsTurnPacks;
 	std::vector<std::string> systemMessageTexts;
+	std::vector<std::string> targetedSystemMessageTexts;
+	QueryID blockingDialogQuery = QueryID::NONE;
+	QueryID garrisonDialogQuery = QueryID::NONE;
+	ObjectInstanceID garrisonObject = ObjectInstanceID::NONE;
+	ObjectInstanceID garrisonHero = ObjectInstanceID::NONE;
 	int systemMessages = 0;
 	int rebalancePacks = 0;
+	int garrisonDialogs = 0;
+
+	bool hasLeadershipLimitMessage() const
+	{
+		const auto isLeadershipLimitMessage = [](const std::string & text)
+		{
+			return text.find("Leadership limit exceeded") != std::string::npos;
+		};
+		return std::any_of(systemMessageTexts.begin(), systemMessageTexts.end(), isLeadershipLimitMessage)
+			|| std::any_of(targetedSystemMessageTexts.begin(), targetedSystemMessageTexts.end(), isLeadershipLimitMessage);
+	}
 
 private:
 	EServerState serverState = EServerState::GAMEPLAY;
@@ -85,8 +121,11 @@ protected:
         TinyMapGameTest::mapLoaded(loaded);
         loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
             JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-        loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
-            JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+        auto capabilities = JsonNode(JsonPath::builtin("config/newHorizonsCapabilities"));
+        // The reported runtime snapshot assigned Halflings a 60-Leadership
+        // requirement; keep that observed value local to this regression.
+        capabilities["leadership"]["creatureRequirements"]["core:halfling"] = JsonNode(60);
+        loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, capabilities);
     }
 
     static HeroTypeID heroType(const char * id)
@@ -195,6 +234,176 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, FreeTierOneDwellingKeepsUnitsAboveRem
 
     EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
     EXPECT_EQ(dwelling->creatures.front().first, 2u);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedWanderingFollowersKeepLeadershipRemainderInGarrison)
+{
+	const CreatureID halfling(CreatureID::decode("core:halfling"));
+	const PlayerColor player(0);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.hero({5, 5, 0}, heroType("core:christian"), player)
+		.monster({12, 12, 0}, halfling, 2, static_cast<int8_t>(CGCreature::Character::COMPLIANT));
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(player);
+	auto * wanderingFollowers = findFirst<CGCreature>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(wanderingFollowers, nullptr);
+	const ObjectInstanceID wanderingFollowersId = wanderingFollowers->id;
+	const auto capacity = hero->getLeadershipSlotCapacity(halfling);
+	ASSERT_TRUE(capacity);
+	ASSERT_GT(capacity->maximum, 0);
+	hero->clearSlots();
+	ASSERT_TRUE(hero->setCreature(SlotID(0), halfling, capacity->maximum));
+	ASSERT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 2);
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+
+	// Follow the actual visit/query path. Resolving the Followers offer calls
+	// CGCreature::blockingDialogAnswered and then the authoritative join handler.
+	gameHandler.objectVisited(wanderingFollowers, hero);
+	ASSERT_NE(server.blockingDialogQuery, QueryID::NONE);
+	ASSERT_TRUE(gameHandler.queryReply(server.blockingDialogQuery, 1, player));
+
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 2);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)) + wanderingFollowers->getStackCount(SlotID(0)), capacity->maximum + 2);
+	EXPECT_EQ(server.garrisonDialogs, 1);
+	EXPECT_EQ(server.garrisonObject, wanderingFollowers->id);
+	EXPECT_EQ(server.garrisonHero, hero->id);
+	EXPECT_TRUE(server.garrisonDialogQuery != QueryID::NONE);
+	EXPECT_FALSE(server.hasLeadershipLimitMessage());
+
+	// The garrison exchange can preserve the excess as a second legal stack
+	// instead of attempting to merge it beyond the full first stack's limit.
+	ArrangeStacks retainRemainder(1, SlotID(1), SlotID(0), hero->id, wanderingFollowers->id, 0);
+	retainRemainder.player = player;
+	retainRemainder.requestID = 71;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, retainRemainder);
+	ASSERT_FALSE(server.responses.empty());
+	ASSERT_EQ(server.responses.back().requestID, retainRemainder.requestID);
+	ASSERT_TRUE(server.responses.back().result);
+
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 2);
+	EXPECT_TRUE(wanderingFollowers->slotEmpty(SlotID(0)));
+	EXPECT_EQ(hero->getStackCount(SlotID(0)) + hero->getStackCount(SlotID(1)), capacity->maximum + 2);
+	EXPECT_FALSE(server.hasLeadershipLimitMessage());
+
+	EXPECT_TRUE(gameHandler.queryReply(server.garrisonDialogQuery, 0, player));
+	EXPECT_EQ(hero->getStackCount(SlotID(0)) + hero->getStackCount(SlotID(1)), capacity->maximum + 2);
+	EXPECT_EQ(gameState()->getObjInstance(wanderingFollowersId), nullptr);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedWanderingFollowersUseOneFreeLeadershipSlotAndKeepRemainder)
+{
+	const CreatureID halfling(CreatureID::decode("core:halfling"));
+	const PlayerColor player(0);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.hero({5, 5, 0}, heroType("core:christian"), player)
+		.monster({12, 12, 0}, halfling, 2, static_cast<int8_t>(CGCreature::Character::COMPLIANT));
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(player);
+	auto * wanderingFollowers = findFirst<CGCreature>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(wanderingFollowers, nullptr);
+	const ObjectInstanceID wanderingFollowersId = wanderingFollowers->id;
+	const auto capacity = hero->getLeadershipSlotCapacity(halfling);
+	ASSERT_TRUE(capacity);
+	ASSERT_GT(capacity->maximum, 1);
+	hero->clearSlots();
+	ASSERT_TRUE(hero->setCreature(SlotID(0), halfling, capacity->maximum - 1));
+	ASSERT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 2);
+	const TQuantity initialArmyCount = capacity->maximum + 1;
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+	gameHandler.objectVisited(wanderingFollowers, hero);
+	ASSERT_NE(server.blockingDialogQuery, QueryID::NONE);
+	ASSERT_TRUE(gameHandler.queryReply(server.blockingDialogQuery, 1, player));
+
+	ASSERT_EQ(gameState()->getObjInstance(wanderingFollowersId), wanderingFollowers);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 1);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)) + wanderingFollowers->getStackCount(SlotID(0)), initialArmyCount);
+	EXPECT_EQ(server.garrisonDialogs, 1);
+	EXPECT_EQ(server.garrisonObject, wanderingFollowersId);
+	EXPECT_EQ(server.garrisonHero, hero->id);
+	EXPECT_TRUE(server.garrisonDialogQuery != QueryID::NONE);
+	EXPECT_FALSE(server.hasLeadershipLimitMessage());
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedWanderingFollowersSingleRemainderCanSwapIntoEmptyHeroSlot)
+{
+	const CreatureID halfling(CreatureID::decode("core:halfling"));
+	const PlayerColor player(0);
+	const PlayerColor opponent(1);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.hero({5, 5, 0}, heroType("core:christian"), player)
+		.playerActive(opponent)
+		.hero({20, 20, 0}, heroType("core:valeska"), opponent)
+		.monster({12, 12, 0}, halfling, 2, static_cast<int8_t>(CGCreature::Character::COMPLIANT));
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(player);
+	auto * wanderingFollowers = findFirst<CGCreature>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(wanderingFollowers, nullptr);
+	const auto capacity = hero->getLeadershipSlotCapacity(halfling);
+	ASSERT_TRUE(capacity);
+	ASSERT_GT(capacity->maximum, 1);
+	hero->clearSlots();
+	ASSERT_TRUE(hero->setCreature(SlotID(0), halfling, capacity->maximum - 1));
+	ASSERT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 2);
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+	ASSERT_TRUE(vstd::contains(gameState()->actingPlayers, player));
+	gameHandler.objectVisited(wanderingFollowers, hero);
+	EXPECT_TRUE(vstd::contains(gameState()->actingPlayers, player)) << "object visit unexpectedly ended the player's active turn";
+	ASSERT_NE(server.blockingDialogQuery, QueryID::NONE);
+	ASSERT_TRUE(gameHandler.queryReply(server.blockingDialogQuery, 1, player));
+	EXPECT_TRUE(vstd::contains(gameState()->actingPlayers, player)) << "accepted offer unexpectedly ended the player's active turn";
+	EXPECT_TRUE(server.playerEndsGamePacks.empty());
+	EXPECT_TRUE(server.playerEndsTurnPacks.empty());
+
+	ASSERT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	ASSERT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 1);
+	auto topQuery = gameHandler.queries->topQuery(player);
+	ASSERT_NE(topQuery, nullptr);
+	ASSERT_EQ(topQuery->getType(), QueryType::GarrisonDialog);
+	ASSERT_EQ(server.garrisonObject, wanderingFollowers->id);
+	ASSERT_EQ(server.garrisonHero, hero->id);
+
+	const size_t systemMessageCountBeforeSwap = server.systemMessageTexts.size();
+	const size_t targetedMessageCountBeforeSwap = server.targetedSystemMessageTexts.size();
+	ArrangeStacks moveLastRemainder(1, SlotID(1), SlotID(0), hero->id, wanderingFollowers->id, 0);
+	moveLastRemainder.player = player;
+	moveLastRemainder.requestID = 72;
+	ASSERT_TRUE(vstd::contains(gameState()->actingPlayers, player));
+	ASSERT_FALSE(topQuery->blocksPack(&moveLastRemainder));
+	ASSERT_FALSE(gameHandler.isBlockedByQueries(&moveLastRemainder, player));
+	ASSERT_TRUE(gameHandler.isAllowedExchange(hero->id, wanderingFollowers->id));
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, moveLastRemainder);
+
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_EQ(server.responses.back().requestID, moveLastRemainder.requestID);
+	const bool packageApplied = server.responses.back().result;
+	EXPECT_TRUE(packageApplied);
+	EXPECT_EQ(server.systemMessageTexts.size(), systemMessageCountBeforeSwap);
+	EXPECT_EQ(server.targetedSystemMessageTexts.size(), targetedMessageCountBeforeSwap);
+	EXPECT_FALSE(server.hasLeadershipLimitMessage());
+	EXPECT_EQ(hero->getStackCount(SlotID(0)) + hero->getStackCount(SlotID(1)), capacity->maximum + 1);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
+	EXPECT_TRUE(wanderingFollowers->slotEmpty(SlotID(0)));
 }
 
 TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershipAndLeavesTheRemainder)

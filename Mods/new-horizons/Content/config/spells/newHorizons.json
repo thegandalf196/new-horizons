@@ -133,6 +133,152 @@
 		},
 		"targetCondition" : {}
 	},
+	"holyWrath" : {
+		"name" : "Holy Wrath",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:light" : true
+		},
+		"level" : 3,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "NH_holyWrath_44.png",
+			"iconScroll" : "NH_holyWrath_44.png",
+			"iconEffect" : "NH_holyWrath_30.png",
+			"iconImmune" : "NH_holyWrath_30.png",
+			"iconScenarioBonus" : "SPELLBON.def:0:15"
+		},
+		"animation" : {
+			"hit" : ["C18SPW0"]
+		},
+		"sounds" : {
+			"cast" : "MAGICBLT"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"cost" : 11,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"cost" : 11,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"cost" : 11,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+				"cost" : 11,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {
+			"offensive" : true,
+			"damage" : true,
+			"negative" : true
+		},
+		"targetCondition" : {}
+	},
+	"stormOfDaggers" : {
+		"name" : "Storm of Daggers",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:sorcery" : true
+		},
+		"level" : 2,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "NH_stormOfDaggers_44.png",
+			"iconScroll" : "NH_stormOfDaggers_44.png",
+			"iconEffect" : "NH_stormOfDaggers_30.png",
+			"iconImmune" : "NH_stormOfDaggers_30.png",
+			"iconScenarioBonus" : "NH_stormOfDaggers_32.png"
+		},
+		"animation" : {
+			"affect" : [{ "defName" : "NH_stormOfDaggersImpact" }]
+		},
+		"sounds" : {
+			"cast" : "MAGICBLT"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Select one to five distinct enemy stacks. Divide a damage pool of 45 + 1.5 x Spell Power, increased by 15% per additional selected stack, evenly across the targets. Cannot hit friendly stacks.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Select one to five distinct enemy stacks. Divide a damage pool of 45 + 1.5 x Spell Power, increased by 15% per additional selected stack, evenly across the targets. Cannot hit friendly stacks.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Select one to five distinct enemy stacks. Divide a damage pool of 45 + 1.5 x Spell Power, increased by 15% per additional selected stack, evenly across the targets. Cannot hit friendly stacks.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Select one to five distinct enemy stacks. Divide a damage pool of 45 + 1.5 x Spell Power, increased by 15% per additional selected stack, evenly across the targets. Cannot hit friendly stacks.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {
+			"offensive" : true,
+			"damage" : true,
+			"negative" : true
+		},
+		"targetCondition" : {}
+	},
 	"disintegrate" : {
 		"name" : "Disintegrate",
 		"type" : "combat",
@@ -252,7 +398,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources.",
+				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources. In newer rulesets, Sorcery rank strengthens only the Spell Power-derived Integrity term.",
 				"cost" : 15,
 				"power" : 0,
 				"battleEffects" : {
@@ -264,7 +410,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources.",
+				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources. In newer rulesets, Sorcery rank strengthens only the Spell Power-derived Integrity term.",
 				"cost" : 15,
 				"power" : 0,
 				"battleEffects" : {
@@ -276,7 +422,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources.",
+				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources. In newer rulesets, Sorcery rank strengthens only the Spell Power-derived Integrity term.",
 				"cost" : 15,
 				"power" : 0,
 				"battleEffects" : {
@@ -288,7 +434,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources.",
+				"description" : "Copy the entire current creature count of one friendly stack for two rounds. The phantom deals normal copied damage, has Phantom Integrity equal to current source health x min(40%, 20% + 0.15% x Spell Power), takes 25% physical damage and 200% magical damage, and leaves no remains or strategic resources. In newer rulesets, Sorcery rank strengthens only the Spell Power-derived Integrity term.",
 				"cost" : 15,
 				"power" : 0,
 				"battleEffects" : {
@@ -332,7 +478,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Radius is min(2, 1 + floor(Spell Power / 100)); creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
+				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Ordinary radius is min(2, 1 + floor(Spell Power / 100)); Chronomancer raises the cap to 3 without adding a free radius step. Under saved v3 rules, Sorcery rank scales only the Spell Power term by 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert. Without Warcasting, the first radius increase occurs at Spell Power 100 / 87 / 77 / 69, respectively; Chronomancer's second increase occurs at 200 / 174 / 154 / 138. Eligible Warcasting also scales only this Spell Power term. Saved v1/v2 rules use 100% at every rank. Effect mastery adds no separate radius or duration bonus. Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
 				"cost" : 23,
 				"power" : 0,
 				"battleEffects" : {
@@ -343,7 +489,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Radius is min(2, 1 + floor(Spell Power / 100)); creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
+				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Ordinary radius is min(2, 1 + floor(Spell Power / 100)); Chronomancer raises the cap to 3 without adding a free radius step. Under saved v3 rules, Sorcery rank scales only the Spell Power term by 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert. Without Warcasting, the first radius increase occurs at Spell Power 100 / 87 / 77 / 69, respectively; Chronomancer's second increase occurs at 200 / 174 / 154 / 138. Eligible Warcasting also scales only this Spell Power term. Saved v1/v2 rules use 100% at every rank. Effect mastery adds no separate radius or duration bonus. Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
 				"cost" : 23,
 				"power" : 0,
 				"battleEffects" : {
@@ -354,7 +500,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Radius is min(2, 1 + floor(Spell Power / 100)); creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
+				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Ordinary radius is min(2, 1 + floor(Spell Power / 100)); Chronomancer raises the cap to 3 without adding a free radius step. Under saved v3 rules, Sorcery rank scales only the Spell Power term by 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert. Without Warcasting, the first radius increase occurs at Spell Power 100 / 87 / 77 / 69, respectively; Chronomancer's second increase occurs at 200 / 174 / 154 / 138. Eligible Warcasting also scales only this Spell Power term. Saved v1/v2 rules use 100% at every rank. Effect mastery adds no separate radius or duration bonus. Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
 				"cost" : 23,
 				"power" : 0,
 				"battleEffects" : {
@@ -365,7 +511,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Radius is min(2, 1 + floor(Spell Power / 100)); creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
+				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Ordinary radius is min(2, 1 + floor(Spell Power / 100)); Chronomancer raises the cap to 3 without adding a free radius step. Under saved v3 rules, Sorcery rank scales only the Spell Power term by 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert. Without Warcasting, the first radius increase occurs at Spell Power 100 / 87 / 77 / 69, respectively; Chronomancer's second increase occurs at 200 / 174 / 154 / 138. Eligible Warcasting also scales only this Spell Power term. Saved v1/v2 rules use 100% at every rank. Effect mastery adds no separate radius or duration bonus. Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
 				"cost" : 23,
 				"power" : 0,
 				"battleEffects" : {
@@ -511,7 +657,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
+				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds; Sorcery rank strengthens only the Spell Power term. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
 				"cost" : 22,
 				"power" : 0,
 				"battleEffects" : {
@@ -522,7 +668,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
+				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds; Sorcery rank strengthens only the Spell Power term. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
 				"cost" : 22,
 				"power" : 0,
 				"battleEffects" : {
@@ -533,7 +679,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
+				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds; Sorcery rank strengthens only the Spell Power term. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
 				"cost" : 22,
 				"power" : 0,
 				"battleEffects" : {
@@ -544,7 +690,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
+				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds; Sorcery rank strengthens only the Spell Power term. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
 				"cost" : 22,
 				"power" : 0,
 				"battleEffects" : {
@@ -581,7 +727,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that captured value: min(20%, 10% + 0.05% x Spell Power). Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {
@@ -593,7 +739,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that captured value: min(20%, 10% + 0.05% x Spell Power). Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {
@@ -605,7 +751,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that captured value: min(20%, 10% + 0.05% x Spell Power). Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {
@@ -617,7 +763,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that captured value: min(20%, 10% + 0.05% x Spell Power). Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
 				"cost" : 11,
 				"power" : 0,
 				"battleEffects" : {

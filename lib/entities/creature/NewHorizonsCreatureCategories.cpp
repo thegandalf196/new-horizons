@@ -21,6 +21,23 @@ const newHorizonsCreatures::CreatureCategoryRules & IGameInfoCallback::getCreatu
 	return absent;
 }
 
+int IGameInfoCallback::getCreatureBaseGrowth(CreatureID creature) const
+{
+	const auto * entity = creature.toCreature();
+	if(!entity)
+		return 0;
+	const auto configured = getCreatureCategoryRules().weeklyBaseGrowth(entity->getJsonKey());
+	return configured.value_or(entity->getGrowth());
+}
+
+std::optional<int> IGameInfoCallback::getCreatureHordeGrowthOverride(CreatureID creature) const
+{
+	const auto * entity = creature.toCreature();
+	if(!entity)
+		return std::nullopt;
+	return getCreatureCategoryRules().hordeGrowthOverride(entity->getJsonKey());
+}
+
 std::optional<newHorizonsCreatures::CreatureCategoryView> IGameInfoCallback::getCreatureCategory(CreatureID creature) const
 {
 	return newHorizonsCreatures::creatureCategoryView(getCreatureCategoryRules(), creature);
@@ -41,15 +58,30 @@ void validateCreatureCategoryEntities(const CreatureCategoryRules & rules)
 		return;
 	if(!LIBRARY || !LIBRARY->creh)
 		throw std::runtime_error("Creature categories require a loaded entity registry");
+	std::map<std::string, const CCreature *, std::less<>> creaturesByKey;
+	for(const auto & creature : LIBRARY->creh->objects)
+		if(creature)
+			creaturesByKey.emplace(creature->getJsonKey(), creature.get());
+
 	for(const auto & [key, category] : snapshot["creatures"].Struct())
 	{
-		const auto & creatures = LIBRARY->creh->objects;
-		const bool canonical = std::any_of(creatures.begin(), creatures.end(), [&](const auto & creature)
-		{
-			return creature && creature->getJsonKey() == key;
-		});
-		if(!canonical)
+		if(!creaturesByKey.contains(key))
 			throw std::runtime_error("Unknown or noncanonical creature category identifier: " + key);
+	}
+
+	for(const auto & [baseKey, line] : rules.getGrowthLines())
+	{
+		const auto base = creaturesByKey.find(baseKey);
+		if(base == creaturesByKey.end())
+			throw std::runtime_error("Unknown or noncanonical creature growth-line base: " + baseKey);
+		for(const auto & memberKey : line.members)
+		{
+			const auto member = creaturesByKey.find(memberKey);
+			if(member == creaturesByKey.end())
+				throw std::runtime_error("Unknown or noncanonical creature growth-line member: " + memberKey);
+			if(memberKey != baseKey && !base->second->isMyDirectOrIndirectUpgrade(member->second))
+				throw std::runtime_error("Creature is not an upgrade of its growth-line base: " + memberKey);
+		}
 	}
 }
 

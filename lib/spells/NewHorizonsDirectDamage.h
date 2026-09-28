@@ -25,12 +25,12 @@ struct DLL_LINKAGE DirectDamageFormula
 	int32_t base = 0;
 	int32_t powerCoefficient = 0;
 
-	int64_t evaluate(int32_t effectPower, int32_t divisor) const;
+	int64_t evaluate(int32_t effectPower, int32_t divisor, int coefficientPercent = 100) const;
 	bool operator==(const DirectDamageFormula &) const = default;
 };
 
 /// Validate only the optional directDamage field within a spell record. Outer
 /// roster/schema validation remains separate. Present-null is malformed, not
-/// absence. V1 rejects the field; v2 may omit it for legacy-effect spells.
+/// absence. V1 rejects the field; v2/v3 may omit it for legacy-effect spells.
 DLL_LINKAGE std::optional<DirectDamageFormula> directDamageFormula(const JsonNode & spellRecord, int rulesetVersion);
 }

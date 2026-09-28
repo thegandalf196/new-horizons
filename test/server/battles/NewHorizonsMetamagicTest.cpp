@@ -47,6 +47,7 @@ class NewHorizonsMetamagicTest : public HeroCommandFixture
 {
 protected:
 	bool legacyCloneRoster = false;
+	bool legacySchoolRankRules = false;
 
 	void SetUp() override
 	{
@@ -59,6 +60,12 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		if(legacySchoolRankRules)
+		{
+			magicRules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+			magicRules.Struct().erase("schoolRankPowerCoefficientPercent");
+			newHorizonsMagic::validateRules(magicRules);
+		}
 		// Old saved rulesets treated a spell with no `active` marker as enabled.
 		// Keep that compatibility path narrowly scoped to the legacy Clone test.
 		if(legacyCloneRoster)
@@ -1381,6 +1388,50 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockScriptRetainsItsOrdinaryThreeRoundCapW
 	expectAppliedSpellLockDuration(defender, newHorizonsSorcery::SPELL_LOCK_BASE_DURATION_CAP);
 }
 
+TEST_F(NewHorizonsMetamagicTest, SpellLockScalesItsSpellPowerTermBySavedSchoolRankBeforeFloor)
+{
+	prepare(1);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 70, ChangeValueMode::ABSOLUTE);
+	applySpellLockScript(attacker);
+	expectAppliedSpellLockDuration(attacker, 1);
+
+	const auto sorcery = SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL);
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	applySpellLockScript(defender);
+	expectAppliedSpellLockDuration(defender, 2);
+}
+
+TEST_F(NewHorizonsMetamagicTest, SpellLockLegacyV2RulesKeepTheUnscaledPowerTerm)
+{
+	legacySchoolRankRules = true;
+	prepare(1);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 70, ChangeValueMode::ABSOLUTE);
+	const auto sorcery = SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL);
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+
+	applySpellLockScript(defender);
+	expectAppliedSpellLockDuration(defender, 1);
+}
+
+TEST_F(NewHorizonsMetamagicTest, SpellLockDynamicHelpShowsRankAndCurrentOrdinaryDuration)
+{
+	prepare(1);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 70, ChangeValueMode::ABSOLUTE);
+	const auto sorcery = SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL);
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	const auto description = newHorizonsMagic::spellDescriptionForHero(
+		attackerSideHero, spellLockSpell().toSpell(), 0);
+
+	EXPECT_NE(description.find("Current Spell Power term: 115%"), std::string::npos);
+	EXPECT_NE(description.find("ordinary duration at current Spell Power: 2 rounds."), std::string::npos);
+}
+
 TEST_F(NewHorizonsMetamagicTest, SpellbinderRaisesSpellLockOrdinaryDurationToFourRounds)
 {
 	prepare(1);
@@ -1587,13 +1638,14 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockFreezesOnlyPreservedMagicAndOtherRound
 		BonusSource::SPELL_EFFECT, 3, BonusSourceID(SpellID(SpellID::HASTE)));
 	haste->turnsRemain = 3;
 	attacker->addNewBonus(haste);
-	auto defense = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_DEFENSE,
-		BonusSource::OTHER, 1);
+	auto defense = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::PRIMARY_SKILL,
+		BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(PrimarySkill::DEFENSE));
 	defense->turnsRemain = 4;
 	attacker->addNewBonus(defense);
 	const SpellID bindSpell(SpellID::decode("core:bind"));
 	auto nonmagicalSpellEffect = std::make_shared<Bonus>(BonusDuration::N_TURNS,
-		BonusType::STACKS_DEFENSE, BonusSource::SPELL_EFFECT, 2, BonusSourceID(bindSpell));
+		BonusType::PRIMARY_SKILL, BonusSource::SPELL_EFFECT, 2, BonusSourceID(bindSpell),
+		BonusSubtypeID(PrimarySkill::DEFENSE));
 	nonmagicalSpellEffect->turnsRemain = 4;
 	attacker->addNewBonus(nonmagicalSpellEffect);
 	auto slow = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
@@ -1607,7 +1659,7 @@ TEST_F(NewHorizonsMetamagicTest, SpellLockFreezesOnlyPreservedMagicAndOtherRound
 	ASSERT_TRUE(battle()->getHeroOrderState(BattleSide::ATTACKER));
 	const auto nonmagicalTurns = [&]()
 	{
-		const auto bonuses = attacker->getBonuses(Selector::type()(BonusType::STACKS_DEFENSE));
+		const auto bonuses = attacker->getBonuses(Selector::type()(BonusType::PRIMARY_SKILL));
 		if(!bonuses)
 			return 0;
 		const auto timed = bonuses->getFirst(CSelector([](const Bonus * bonus)

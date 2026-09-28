@@ -7,17 +7,24 @@
 
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/bonuses/BonusEnum.h"
+#include "../../../lib/bonuses/BonusParameters.h"
+#include "../../../lib/bonuses/Propagators.h"
+#include "../../../lib/bonuses/Updaters.h"
 #include "../../../lib/CCreatureHandler.h"
 #include "../../../lib/entities/faction/CTown.h"
 #include "../../../lib/filesystem/ResourcePath.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
+#include "../../../lib/mapObjects/ObjectTemplate.h"
 #include "../../../lib/mapObjects/TownBuildingInstance.h"
+#include "../../../lib/mapping/CCastleEvent.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/CSpellHandler.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../lib/texts/CGeneralTextHandler.h"
 #include "../../../lib/CPlayerState.h"
 #include "../../../server/CGameHandler.h"
@@ -650,10 +657,12 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, MageGuildsUseFixedPreferredAndDist
 						&& vstd::contains(newHorizonsMagic::spellSchools(rules, candidate->getId()), preferredSchool);
 				});
 				if(hasEligibleSpell)
+				{
 					EXPECT_TRUE(std::any_of(spells.begin(), spells.end(), [&](SpellID selected)
 					{
 						return vstd::contains(newHorizonsMagic::spellSchools(rules, selected), preferredSchool);
 					})) << "An eligible preferred-school slot must not be left empty";
+				}
 			}
 		}
 	}
@@ -877,7 +886,7 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, MageGuildVisibleSlotsDefaultForOld
 	older.oser & sentinel;
 	town->newHorizonsMageGuildVisibleSpells = savedVisibleCounts;
 	town->newHorizonsMageGuildVisibleSpellSchools = savedVisibleSchools;
-	older.iser.cb = gameState();
+	older.iser.cb = gameState().get();
 	older.iser & *town;
 	uint32_t restoredSentinel = 0;
 	older.iser & restoredSentinel;

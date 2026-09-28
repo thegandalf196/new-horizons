@@ -27,6 +27,90 @@ namespace spells
 namespace effects
 {
 
+namespace
+{
+// Ice Bolt's historic New Horizons speed effect remains part of v1/v2
+// compatibility. The v3 design makes Ice Bolt damage-only, so wrap just that
+// effect and resolve its availability from the saved battle profile each time
+// mechanics inspect or apply it. The same gate therefore covers authoritative
+// casts and hypothetical casts used by the AI.
+class LegacyIceBoltSpeedEffect final : public Effect
+{
+	std::shared_ptr<Effect> legacyEffect;
+
+public:
+	explicit LegacyIceBoltSpeedEffect(std::shared_ptr<Effect> effect)
+		: legacyEffect(std::move(effect))
+	{
+		indirect = legacyEffect->indirect;
+		optional = legacyEffect->optional;
+		name = legacyEffect->name;
+		spellScope = legacyEffect->spellScope;
+		spellIdentifier = legacyEffect->spellIdentifier;
+	}
+
+	bool disabledForV3(const Mechanics * mechanics) const
+	{
+		return mechanics && mechanics->usesNewHorizonsMagicV3();
+	}
+
+	void adjustTargetTypes(std::vector<TargetType> & types, const Mechanics * mechanics) const override
+	{
+		if(!disabledForV3(mechanics))
+			legacyEffect->adjustTargetTypes(types, mechanics);
+	}
+
+	void adjustAffectedHexes(BattleHexArray & hexes, const Mechanics * mechanics, const Target & spellTarget) const override
+	{
+		if(!disabledForV3(mechanics))
+			legacyEffect->adjustAffectedHexes(hexes, mechanics, spellTarget);
+	}
+
+	bool applicableGeneral(Problem & problem, const Mechanics * mechanics) const override
+	{
+		return !disabledForV3(mechanics) && legacyEffect->applicableGeneral(problem, mechanics);
+	}
+
+	bool applicableTarget(Problem & problem, const Mechanics * mechanics, const Target & target) const override
+	{
+		return !disabledForV3(mechanics) && legacyEffect->applicableTarget(problem, mechanics, target);
+	}
+
+	void apply(ServerCallback * server, const Mechanics * mechanics, const Target & target) const override
+	{
+		if(!disabledForV3(mechanics))
+			legacyEffect->apply(server, mechanics, target);
+	}
+
+	Target filterTarget(const Mechanics * mechanics, const Target & target) const override
+	{
+		return disabledForV3(mechanics) ? Target{} : legacyEffect->filterTarget(mechanics, target);
+	}
+
+	Target transformTarget(const Mechanics * mechanics, const Target & aimPoint, const Target & spellTarget) const override
+	{
+		return disabledForV3(mechanics) ? Target{} : legacyEffect->transformTarget(mechanics, aimPoint, spellTarget);
+	}
+
+	SpellEffectValue getHealthChange(const Mechanics * mechanics, const Target & spellTarget) const override
+	{
+		return disabledForV3(mechanics) ? SpellEffectValue{} : legacyEffect->getHealthChange(mechanics, spellTarget);
+	}
+
+protected:
+	void initImpl(JsonNode data) override
+	{
+		legacyEffect->init(std::move(data));
+	}
+};
+
+bool disabledForV3(const Effect * effect, const Mechanics * mechanics)
+{
+	const auto * legacyIceBoltEffect = dynamic_cast<const LegacyIceBoltSpeedEffect *>(effect);
+	return legacyIceBoltEffect && legacyIceBoltEffect->disabledForV3(mechanics);
+}
+}
+
 bool Effects::applicable(Problem & problem, const Mechanics * m) const
 {
 	//stop on first problem
@@ -38,6 +122,9 @@ bool Effects::applicable(Problem & problem, const Mechanics * m) const
 
 	auto callback = [&](const Effect * e, bool & stop)
 	{
+		if(disabledForV3(e, m))
+			return;
+
 		if(e->applicableGeneral(problem, m))
 		{
 			oneEffectApplicable = true;
@@ -65,6 +152,9 @@ bool Effects::applicable(Problem & problem, const Mechanics * m, const Target & 
 
 	auto callback = [&](const Effect * e, bool & stop)
 	{
+		if(disabledForV3(e, m))
+			return;
+
 		if(e->indirect)
 			return;
 
@@ -103,6 +193,9 @@ Effects::EffectsToApply Effects::prepare(const Mechanics * m, const Target & aim
 
 	auto callback = [&](const Effect * e, bool & stop)
 	{
+		if(disabledForV3(e, m))
+			return;
+
 		bool applyThis = false;
 
 		//todo: find a better way to handle such special cases
@@ -158,6 +251,8 @@ Effects::EffectsMap Effects::loadJson(const JsonNode & effectMap, const std::str
 		effect->spellScope = spellScope;
 		effect->spellIdentifier = spellIdentifier;
 		effect->init(std::move(data));
+		if(spellScope == "core" && spellIdentifier == "iceBolt" && name == "speedDebuff")
+			effect = std::make_shared<LegacyIceBoltSpeedEffect>(std::move(effect));
 
 		result.try_emplace(name, std::move(effect));
 	}

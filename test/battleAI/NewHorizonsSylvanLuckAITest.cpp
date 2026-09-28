@@ -108,7 +108,8 @@ TEST_F(NewHorizonsSylvanLuckAITest, MasterGateContinuationPreservesProjectedActi
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 10);
 	source->addNewBonus(std::make_shared<Bonus>(BonusDuration::STACK_GETS_TURN,
-		BonusType::STACKS_DEFENSE, BonusSource::OTHER, 3, BonusSourceID()));
+		BonusType::PRIMARY_SKILL, BonusSource::OTHER, 3, BonusSourceID(),
+		BonusSubtypeID(PrimarySkill::DEFENSE)));
 
 	auto environment = std::make_shared<SylvanEnvironment>(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));

@@ -50,7 +50,7 @@ require(split_window_declaration, "std::shared_ptr<CAnimImage> leftOwnerMarker;"
 require(split_window_declaration, "std::shared_ptr<CAnimImage> rightOwnerMarker;", "split window must retain its right owner marker")
 require(SPLIT_CPP, 'AnimationPath::builtin("PortraitsLarge")', "hero sides must use their built-in portrait")
 require(SPLIT_CPP, 'AnimationPath::builtin("CREST58")', "owned garrison sides must use their player crest")
-require(SPLIT_CPP, "Rect(5, 259, 130, 27)", "fallback/ambiguous owner labels must sit below the creature art")
+require(SPLIT_CPP, "Rect(5, 261, 130, 15)", "fallback/ambiguous owner labels must sit below the creature art")
 require(SPLIT_CPP, "std::make_shared<CSplitOwnerLabel>", "ambiguous owner labels must use the bounded, interactive label")
 require(SPLIT_CPP, "constexpr int maxWidth = 122;", "fallback text must leave a horizontal inset within its fixed label box")
 require(SPLIT_CPP, "font->getStringWidth((displayText + ellipsis).c_str()) > maxWidth", "fallback names must be measured before truncation")
@@ -58,8 +58,8 @@ require(SPLIT_CPP, "TextOperations::trimRightUnicode(displayText);", "fallback t
 require(SPLIT_CPP, "addUsedEvents(HOVER | SHOW_POPUP);", "full owner names must be available through label hover and right-click")
 require(SPLIT_CPP, "ENGINE->statusbar()->write(fullText);", "hovering an abbreviated label must expose its full name")
 require(SPLIT_CPP, "CRClickPopup::createAndPush(fullText);", "right-clicking an abbreviated label must show its full name")
-require(SPLIT_CPP, "Point(21, 275 + ownerLabelControlOffset)", "slider must sit below the owner indicator row")
-require(SPLIT_CPP, "Rect(20, 302 + ownerLabelControlOffset, 100, 36)", "numeric amounts must remain below the slider")
+require(SPLIT_CPP, "Point(21, 284)", "slider must sit below the owner indicator row")
+require(SPLIT_CPP, "Rect(20, 313, 100, 26)", "numeric amounts must remain below the slider")
 require(SPLIT_CPP, "CWindowObject(0, splitDialogBackgroundImage())", "the split dialog must use its taller composed frame")
 require(ASSET_GENERATOR, '"newHorizonsSplitBackground-" + color.toString() + ".png"', "the split frame must retain per-player coloring")
 split_background = ASSET_GENERATOR.split("AssetGenerator::CanvasPtr AssetGenerator::createSplitDialogBackground", 1)[1].split(
@@ -72,15 +72,42 @@ require(split_background, "canvas.draw(original, Point(0, 0), Rect(0, 0, dialogW
         "the original title and creature panels must remain intact")
 require(split_background, "canvas.draw(original, Point(0, footerTop), Rect(0, footerSourceTop, dialogWidth, footerHeight));",
         "the expanded dialog must restore the original ornate lower frame")
+require(split_background, "auto image = createDialogBackground(Point(dialogWidth, dialogHeight));",
+        "the split dialog must keep one continuous leather field")
+require(split_background, "frame(Rect(17, 52, 108, 135));",
+		"the left creature backdrop must sit in its own native-style bevel")
+require(split_background, "frame(Rect(174, 52, 108, 135));",
+		"the right creature backdrop must sit in its own native-style bevel")
+require(split_background, "inset(Rect(31, 189, 78, 72));",
+		"the left owner marker must sit within a recessed plaque")
+require(split_background, "inset(Rect(188, 189, 78, 72));",
+		"the right owner marker must sit within a recessed plaque")
+require(split_background, "inset(Rect(18, 279, 262, 31));",
+		"the slider must sit within a recessed plate")
+require(split_background, "inset(Rect(18, 312, 104, 28));",
+		"the left amount field must sit within its own recessed plate")
+require(split_background, "inset(Rect(174, 312, 104, 28));",
+		"the right amount field must sit within its own recessed plate")
+require(split_background, "inset(Rect(18, 351, 106, 44));",
+		"the confirmation button must sit within its own recessed plate")
+require(split_background, "inset(Rect(174, 351, 106, 44));",
+		"the cancel button must sit within its own recessed plate")
+assert "textureTileHeight" not in split_background, "decorated source strips must not repeat across the lower dialog"
 button_layout = re.search(
-    r"ok = std::make_shared<CButton>\(Point\(20, (\d+) \+ ownerLabelControlOffset\), AnimationPath::builtin\(\"IOK(\d{2})(\d{2})\"",
-    SPLIT_CPP,
+	r"ok = std::make_shared<CButton>\(Point\((\d+), (\d+)\), AnimationPath::builtin\(\"IOK(\d{2})(\d{2})\"",
+	SPLIT_CPP,
 )
-label_offset = re.search(r"const int ownerLabelControlOffset = .*\? (\d+) : (\d+);", SPLIT_CPP)
-assert button_layout and label_offset, "button and fallback-label positions must remain tied to the split layout"
-button_y, _button_width, button_height = (int(value) for value in button_layout.groups())
-max_label_offset = max(int(value) for value in label_offset.groups())
-controls_bottom = button_y + max_label_offset + button_height
+assert button_layout, "the confirmation button must retain its native-size layout"
+button_x, button_y, _button_width, button_height = (int(value) for value in button_layout.groups())
+cancel_layout = re.search(
+	r"cancel = std::make_shared<CButton>\(Point\((\d+), (\d+)\), AnimationPath::builtin\(\"ICN(\d{2})(\d{2})\"",
+	SPLIT_CPP,
+)
+assert cancel_layout, "the cancel button must retain its native-size layout"
+cancel_x, cancel_y, _cancel_width, cancel_height = (int(value) for value in cancel_layout.groups())
+assert button_x == 38 and cancel_x == 195 and button_y == cancel_y == 355, "footer buttons must align within their matching side wells"
+assert 312 + 28 + 8 <= 351, "amount wells must leave a visible leather gap above the button wells"
+controls_bottom = button_y + button_height
 footer_top = dialog_height - footer_height
 assert controls_bottom + 10 <= footer_top, "the tallest split-dialog button must end above the lower frame with a margin"
 require(GARRISON, 'translate("core.tcommand.5")', "a one-creature last-stack no-op must explain the constraint")

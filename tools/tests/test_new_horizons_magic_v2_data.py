@@ -28,23 +28,50 @@ class MagicV2DataTest(unittest.TestCase):
     def setUp(self):
         self.v1 = load('config/schemas/newHorizonsMagic.json')
         self.v2 = load('config/schemas/newHorizonsMagicV2.json')
+        self.v3 = load('config/schemas/newHorizonsMagicV3.json')
         registry = Registry().with_resources([
             ('vcmi:newHorizonsMagic', Resource.from_contents(self.v1)),
             ('vcmi:newHorizonsMagicV2', Resource.from_contents(self.v2)),
+            ('vcmi:newHorizonsMagicV3', Resource.from_contents(self.v3)),
         ])
+        self.registry = registry
         self.old_validator = Draft4Validator(self.v1, registry=registry)
         self.validator = Draft4Validator(self.v2, registry=registry)
-        self.rules = load('config/newHorizonsMagic.json')
+        self.v3_rules = load('config/newHorizonsMagic.json')
+        self.rules = copy.deepcopy(self.v3_rules)
+        self.rules['rulesetVersion'] = 2
+        self.rules.pop('schoolRankPowerCoefficientPercent')
         self.old_rules = legacy_rules(self.rules)
         self.formula_spell = 'core:magicArrow'
 
     def test_named_schemas_and_valid_v2_formula(self):
         Draft4Validator.check_schema(self.v1)
         Draft4Validator.check_schema(self.v2)
+        Draft4Validator.check_schema(self.v3)
         self.validator.validate(self.rules)
+        Draft4Validator(self.v3, registry=self.registry).validate(self.v3_rules)
         self.old_validator.validate(self.old_rules)
         self.assertFalse(self.old_validator.is_valid(self.rules))
         self.assertFalse(self.validator.is_valid(self.old_rules))
+
+    def test_v3_requires_exact_school_rank_coefficients_and_v2_rejects_them(self):
+        v3_validator = Draft4Validator(self.v3, registry=self.registry)
+        v3_validator.validate(self.v3_rules)
+        self.assertFalse(self.validator.is_valid(self.v3_rules))
+        missing = copy.deepcopy(self.v3_rules)
+        missing.pop('schoolRankPowerCoefficientPercent')
+        self.assertFalse(v3_validator.is_valid(missing))
+        for rank, expected in enumerate((100, 115, 130, 145)):
+            with self.subTest(rank=rank):
+                self.assertEqual(self.v3_rules['schoolRankPowerCoefficientPercent'][rank], expected)
+                changed = copy.deepcopy(self.v3_rules)
+                changed['schoolRankPowerCoefficientPercent'][rank] = expected + 1
+                self.assertFalse(v3_validator.is_valid(changed))
+        for invalid in (None, [], [100, 115, 130], [100, 115, 130, 145, 160]):
+            with self.subTest(invalid=invalid):
+                changed = copy.deepcopy(self.v3_rules)
+                changed['schoolRankPowerCoefficientPercent'] = invalid
+                self.assertFalse(v3_validator.is_valid(changed))
 
     def test_v1_stays_strict_and_v2_is_not_an_empty_context(self):
         self.old_validator.validate({})

@@ -87,6 +87,9 @@ public:
 	/// authoritative and deterministic.
 	std::vector<SpellID> newHorizonsHouseOfWisdomScrolls;
 	bool newHorizonsHouseOfWisdomInitialized = false;
+	/// Guild tiers whose canonical New Horizons Adventure Spell has been
+	/// permanently unlocked for this town.
+	std::set<si32> newHorizonsAdventureSpellGuildLevelsUnlocked;
 	/// Map author supplied the initial army, including an explicitly empty army.
 	bool customInitialGarrison = false;
 
@@ -164,6 +167,18 @@ public:
 			newHorizonsHouseOfWisdomInitialized = false;
 		}
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ADVENTURE_SPELL_UNLOCKS))
+			h & newHorizonsAdventureSpellGuildLevelsUnlocked;
+		else if(h.saving && !newHorizonsAdventureSpellGuildLevelsUnlocked.empty())
+			throw std::runtime_error("Cannot discard New Horizons Adventure Spell unlocks");
+		else if(!h.saving)
+			newHorizonsAdventureSpellGuildLevelsUnlocked.clear();
+
+		if(!h.saving)
+			for(const auto guildLevel : newHorizonsAdventureSpellGuildLevelsUnlocked)
+				if(guildLevel < 1 || guildLevel > 5)
+					throw std::runtime_error("Invalid New Horizons Adventure Spell Guild tier in town state");
+
 		if(!h.saving)
 		{
 			postDeserialize();
@@ -220,8 +235,12 @@ public:
 	TownFortifications fortificationsLevel() const;
 	int hallLevel() const; // -1 - none, 0 - village, 1 - town, 2 - city, 3 - capitol
 	int mageGuildLevel() const; // -1 - none, 0 - village, 1 - town, 2 - city, 3 - capitol
+	bool hasNewHorizonsAdventureSpellUnlocked(int guildLevel) const;
+	void setNewHorizonsAdventureSpellUnlocked(int guildLevel);
 	int getHordeLevel(const int & HID) const; //HID - 0 or 1; returns creature level or -1 if that horde structure is not present
 	int creatureGrowth(const int & level) const;
+	int creatureBaseGrowth(CreatureID creature) const;
+	int creatureHordeGrowth(CreatureID creature) const;
 	GrowthInfo getGrowthInfo(int level) const;
 	bool hasFort() const;
 	bool hasCapitol() const;

@@ -14,6 +14,7 @@
 #include "Problem.h"
 #include "SpellSchoolHandler.h"
 #include "ISpellMechanics.h"
+#include "NewHorizonsMagic.h"
 #include "NewHorizonsSorcery.h"
 
 #include "../CBonusTypeHandler.h"
@@ -81,7 +82,25 @@ int64_t CSpell::calculateDamage(const spells::Caster * caster) const
 	//check if spell really does damage - if not, return 0
 	if(!isDamage())
 		return 0;
-	auto rawDamage = calculateRawEffectValue(caster->getEffectLevel(this), caster->getEffectPower(this), 1, caster->getEffectPowerDivisor(this));
+	const int effectLevel = caster->getEffectLevel(this);
+	const int effectPower = caster->getEffectPower(this);
+	const int divisor = caster->getEffectPowerDivisor(this);
+	auto rawDamage = calculateRawEffectValue(effectLevel, effectPower, 1, divisor);
+	const auto * hero = caster->getHeroCaster();
+	if(hero && newHorizonsMagic::rulesActive(hero->getMagicRules())
+		&& hero->getMagicRules()["rulesetVersion"].Integer() >= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	{
+		const int coefficientPercent = newHorizonsMagic::spellPowerCoefficientPercent(hero->getMagicRules(), hero, id);
+		if(const auto saved = newHorizonsMagic::directDamageValue(hero->getMagicRules(), getJsonKey(), effectPower,
+			divisor, coefficientPercent))
+			rawDamage = *saved;
+		else if(coefficientPercent != 100)
+		{
+			const int64_t powerNumerator = static_cast<int64_t>(getBasePower()) * effectPower;
+			rawDamage = getLevelPower(effectLevel)
+				+ spells::scaleWarcastingSpellPowerComponent(powerNumerator, divisor, coefficientPercent - 100);
+		}
+	}
 
 	return caster->getSpellBonus(this, rawDamage, nullptr);
 }
@@ -403,7 +422,8 @@ void CSpell::getEffects(std::vector<Bonus> & lst, const int schoolLevel, const b
 }
 
 int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage,
-	int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints) const
+	int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints,
+	int finalDamageMultiplierPercent) const
 {
 	auto ret = rawDamage;
 	ignoreSpellDamageReductionPercent = std::clamp(ignoreSpellDamageReductionPercent, 0, 100);
@@ -466,6 +486,13 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 	if(affectedCreature != nullptr && isMagical() && affectedCreature->getPhantomIntegrity() > 0)
 	{
 		ret = ret * newHorizonsSorcery::phantomArmyDamageTakenPercent(true) / 100;
+	}
+	// Apply spell-specific final damage bonuses before the per-creature cap so
+	// that capped targets cannot take more than their configured maximum.
+	if(finalDamageMultiplierPercent != 100)
+	{
+		const int multiplierPercent = std::max(0, finalDamageMultiplierPercent);
+		ret = ret / 100 * multiplierPercent + ret % 100 * multiplierPercent / 100;
 	}
 
 	//cap damage received per single creature (e.g. HotA war machines), same rule as melee/ranged damage

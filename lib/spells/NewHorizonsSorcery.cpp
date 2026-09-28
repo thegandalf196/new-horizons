@@ -72,18 +72,41 @@ int phantomArmyDamageTakenPercent(bool magical)
 
 int timeStopRadius(int32_t spellPower, bool chronomancer)
 {
-	validateSpellPower(spellPower);
-	const int maximumRadius = TIME_STOP_BASE_MAX_RADIUS
-		+ (chronomancer ? TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
-	return std::min(maximumRadius, TIME_STOP_BASE_RADIUS + spellPower / TIME_STOP_POWER_PER_EXTRA_RADIUS);
+	return timeStopRadius(spellPower, chronomancer, 100);
 }
 
-int spellLockDuration(int32_t spellPower, bool spellbinder)
+int timeStopRadius(int32_t spellPower, bool chronomancer, int32_t coefficientPercent)
 {
 	validateSpellPower(spellPower);
-	const int baseDuration = std::min(
+	if(coefficientPercent < 0 || coefficientPercent > 1000)
+		throw std::invalid_argument("Invalid Time Stop Spell Power coefficient");
+	const int maximumRadius = TIME_STOP_BASE_MAX_RADIUS
+		+ (chronomancer ? TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
+	const int64_t scaledPowerTerm = static_cast<int64_t>(spellPower) * coefficientPercent
+		/ (TIME_STOP_POWER_PER_EXTRA_RADIUS * 100);
+	return std::min(maximumRadius, TIME_STOP_BASE_RADIUS + static_cast<int>(scaledPowerTerm));
+}
+
+int spellLockDuration(int32_t spellPower, bool spellbinder, int32_t coefficientPercent,
+	int32_t warcastingBonusPercent)
+{
+	validateSpellPower(spellPower);
+	if(coefficientPercent < 0 || coefficientPercent > 1000 || warcastingBonusPercent < 0)
+		throw std::invalid_argument("Invalid Spell Lock Spell Power coefficient inputs");
+
+	// Match Mechanics::scaleSpellPowerComponentWithCoefficient exactly while
+	// avoiding a product of Spell Power, the rank coefficient, and Warcasting.
+	// int32 Spell Power times the bounded coefficient fits in int64; quotient/
+	// remainder scaling keeps the additional Warcasting multiplier overflow-safe.
+	constexpr int64_t denominator = static_cast<int64_t>(SPELL_LOCK_POWER_PER_EXTRA_ROUND) * 100 * 100;
+	const int64_t scaledNumerator = static_cast<int64_t>(spellPower) * coefficientPercent;
+	const int64_t multiplier = 100LL + warcastingBonusPercent;
+	const int64_t whole = scaledNumerator / denominator;
+	const int64_t remainder = scaledNumerator % denominator;
+	const int64_t scaledSpellPower = whole * multiplier + remainder * multiplier / denominator;
+	const int baseDuration = static_cast<int>(std::min<int64_t>(
 		SPELL_LOCK_BASE_DURATION_CAP,
-		1 + spellPower / SPELL_LOCK_POWER_PER_EXTRA_ROUND);
+		1 + scaledSpellPower));
 	if(!spellbinder)
 		return baseDuration;
 

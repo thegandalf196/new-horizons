@@ -90,7 +90,7 @@ end
 --- Builds the full list of affected units from the spell target.
 --- Dispatches to transformByChain or transformByRange based on chainLength parameter.
 function Script:transformTarget(mechanics, aimPoint, spellTarget)
-	local chainLength = self.chainLength or 0
+	local chainLength = mechanics:getEffectiveChainLength(self.chainLength or 0)
 	if chainLength > 1 then
 		return self:transformByChain(mechanics, aimPoint, spellTarget, chainLength)
 	else

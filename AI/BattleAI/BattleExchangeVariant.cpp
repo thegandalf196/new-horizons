@@ -11,7 +11,9 @@
 #include "BattleExchangeVariant.h"
 #include "BattleEvaluator.h"
 #include "../../lib/CStack.h"
+#include "../../lib/CSkillHandler.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 
@@ -223,6 +225,14 @@ float BattleExchangeVariant::trackAttack(
 
 	if(hb->getActiveStackID() == static_cast<int32_t>(attacker->unitId()))
 		attacker->consumeNoQuarterActivation();
+	if(ap.bulwarkMireGripTriggered && attacker->alive())
+	{
+		attacker->bulwarkMireGripApplied = true;
+		const int bulwarkSkillId = SecondarySkill::decode(std::string(newHorizonsBulwark::SKILL_ID));
+		const Bonus slow(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
+			BonusSource::OTHER, -2, BonusSourceID(SecondarySkill(bulwarkSkillId)));
+		attacker->addUnitBonus({slow});
+	}
 
 	for(auto affectedUnit : affectedUnits)
 	{
@@ -235,6 +245,13 @@ float BattleExchangeVariant::trackAttack(
 		unitToUpdate->battlecraftWaitBonusUsed = affectedUnit->battlecraftWaitBonusUsed;
 		unitToUpdate->cleaveUsedThisActivation = affectedUnit->cleaveUsedThisActivation;
 		unitToUpdate->bulwarkPreemptiveUsed = affectedUnit->bulwarkPreemptiveUsed;
+		unitToUpdate->bulwarkMireGripApplied = affectedUnit->bulwarkMireGripApplied;
+		unitToUpdate->bulwarkDefendPhysicalDamage = affectedUnit->bulwarkDefendPhysicalDamage;
+		unitToUpdate->bulwarkImmovableRound = affectedUnit->bulwarkImmovableRound;
+		unitToUpdate->bulwarkToxicSpinesRound = affectedUnit->bulwarkToxicSpinesRound;
+		unitToUpdate->physicalPoisonBaseDamage = affectedUnit->physicalPoisonBaseDamage;
+		unitToUpdate->physicalPoisonActivationsRemaining = affectedUnit->physicalPoisonActivationsRemaining;
+		unitToUpdate->physicalPoisonSourceStackId = affectedUnit->physicalPoisonSourceStackId;
 
 		if(unitToUpdate->unitSide() == attacker->unitSide())
 		{

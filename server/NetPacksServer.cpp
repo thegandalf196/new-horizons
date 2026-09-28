@@ -156,6 +156,14 @@ void ApplyGhNetPackVisitor::visitSpellResearch(SpellResearch & pack)
 	result = gh.spellResearch(pack.tid, pack.spellAtSlot, pack.accepted);
 }
 
+void ApplyGhNetPackVisitor::visitUnlockNewHorizonsAdventureSpell(UnlockNewHorizonsAdventureSpell & pack)
+{
+	gh.throwIfWrongOwner(connection, &pack, pack.townId);
+	gh.throwIfPlayerNotActive(connection, &pack);
+
+	result = gh.unlockNewHorizonsAdventureSpell(pack.townId, pack.guildLevel);
+}
+
 void ApplyGhNetPackVisitor::visitVisitTownBuilding(VisitTownBuilding & pack)
 {
 	gh.throwIfWrongOwner(connection, &pack, pack.tid);

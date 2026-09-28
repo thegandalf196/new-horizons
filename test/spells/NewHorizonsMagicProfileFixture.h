@@ -7,6 +7,7 @@
 #include "../../lib/GameSettings.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/filesystem/ResourcePath.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include <cstdlib>
 #include <stdexcept>
 
@@ -27,8 +28,10 @@ public:
 	MagicV1Baseline()
 	{
 		const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-		if(rules["rulesetVersion"].Integer() != 2 || rules["spells"].Struct().size() != 71)
-			throw std::runtime_error("Fixture requires the canonical v2/71 magic baseline");
+		if(rules["rulesetVersion"].Integer() < newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION
+			|| rules["rulesetVersion"].Integer() > newHorizonsMagic::CURRENT_RULESET_VERSION
+			|| rules["spells"].Struct().size() < 71)
+			throw std::runtime_error("Fixture requires the current canonical magic baseline");
 		auto full = LIBRARY->settingsHandler->getFullConfig();
 		full["magic"]["newHorizons"] = rules;
 		auto replacement = std::make_unique<GameSettings>();

@@ -991,6 +991,22 @@ struct DLL_LINKAGE SetHouseOfWisdomScrolls : public CPackForClient
 	}
 };
 
+/// Authoritative per-town New Horizons Adventure Spell unlock state. The
+/// saved magic rules resolve this Guild tier to its canonical spell identity.
+struct DLL_LINKAGE SetNewHorizonsAdventureSpellUnlock : public CPackForClient
+{
+	ObjectInstanceID townId;
+	int32_t guildLevel = 0;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		h & townId;
+		h & guildLevel;
+	}
+};
+
 struct DLL_LINKAGE CGarrisonOperationPack : CPackForClient
 {
 };

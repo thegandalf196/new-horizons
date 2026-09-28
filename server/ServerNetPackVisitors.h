@@ -45,6 +45,7 @@ public:
 	void visitDisbandCreature(DisbandCreature & pack) override;
 	void visitBuildStructure(BuildStructure & pack) override;
 	void visitSpellResearch(SpellResearch & pack) override;
+	void visitUnlockNewHorizonsAdventureSpell(UnlockNewHorizonsAdventureSpell & pack) override;
 	void visitVisitTownBuilding(VisitTownBuilding & pack) override;
 	void visitRecruitCreatures(RecruitCreatures & pack) override;
 	void visitMusterCreatures(MusterCreatures & pack) override;

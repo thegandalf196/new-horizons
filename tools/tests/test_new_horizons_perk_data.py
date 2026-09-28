@@ -18,10 +18,17 @@ ACTIVE_PERKS = {
     "new-horizons:bulwarkOfTheMire.mireborn",
     "new-horizons:bulwarkOfTheMire.thickHide",
     "new-horizons:bulwarkOfTheMire.bogAmbush",
+    "new-horizons:bulwarkOfTheMire.toxicSpines",
+    "new-horizons:bulwarkOfTheMire.swampRenewal",
+    "new-horizons:bulwarkOfTheMire.mireGrip",
+    "new-horizons:bulwarkOfTheMire.sharedCover",
+    "new-horizons:bulwarkOfTheMire.immovable",
+    "new-horizons:bulwarkOfTheMire.vengefulMire",
     "new-horizons:logistics.pathfinding",
     "new-horizons:logistics.navigation",
     "new-horizons:logistics.scouting",
     "new-horizons:wisdom.intelligence",
+    "new-horizons:lightMagic.benediction",
     "new-horizons:warcasting.martialChanneling",
     "new-horizons:warcasting.arcaneChanneling",
     "new-horizons:warcasting.tacticalWeaving",
@@ -355,6 +362,31 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             with self.subTest(perk=perk_id):
                 self.assertEqual(perks[perk_id]["requires"], rank)
                 self.assertEqual(perks[perk_id]["effect"]["status"], "active")
+
+    def test_six_implemented_bulwark_perks_are_active_and_deep_bulwark_stays_planned(self):
+        skill = self.rules["skills"]["new-horizons:bulwarkOfTheMire"]
+        perks = {perk["id"]: perk for perk in skill["perks"]}
+        canonical = {
+            "new-horizons:bulwarkOfTheMire.toxicSpines": "basic",
+            "new-horizons:bulwarkOfTheMire.swampRenewal": "advanced",
+            "new-horizons:bulwarkOfTheMire.mireGrip": "advanced",
+            "new-horizons:bulwarkOfTheMire.sharedCover": "advanced",
+            "new-horizons:bulwarkOfTheMire.immovable": "expert",
+            "new-horizons:bulwarkOfTheMire.vengefulMire": "expert",
+        }
+        self.assertEqual(set(canonical) | {"new-horizons:bulwarkOfTheMire.deepBulwark"}
+                         | {
+                             "new-horizons:bulwarkOfTheMire.mireborn",
+                             "new-horizons:bulwarkOfTheMire.thickHide",
+                             "new-horizons:bulwarkOfTheMire.bogAmbush",
+                         }, set(perks))
+        for perk_id, rank in canonical.items():
+            with self.subTest(perk=perk_id):
+                self.assertEqual(perks[perk_id]["requires"], rank)
+                self.assertEqual(perks[perk_id]["effect"]["status"], "active")
+        deep_bulwark = perks["new-horizons:bulwarkOfTheMire.deepBulwark"]
+        self.assertEqual(deep_bulwark["requires"], "advanced")
+        self.assertEqual(deep_bulwark["effect"]["status"], "planned")
 
     def test_perk_definitions_match_source_document(self):
         source_tables = source_perk_tables(ROOT / self.rules["sourceDocument"])

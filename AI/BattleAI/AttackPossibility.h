@@ -75,6 +75,7 @@ public:
 	std::vector<std::shared_ptr<battle::CUnitState>> affectedUnits;
 	std::vector<FortuneStrikeProjection> fortuneStrikes;
 	int64_t preAttackDamage = 0;
+	bool bulwarkMireGripTriggered = false;
 
 	float defenderDamageReduce = 0;
 	float attackerDamageReduce = 0; //usually by counter-attack

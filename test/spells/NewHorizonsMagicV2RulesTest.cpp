@@ -28,6 +28,7 @@ JsonNode legacyRules()
 	rules.Struct().erase("spellPoints");
 	rules.Struct().erase("mageGuildGeneration");
 	rules.Struct().erase("physicalDamageReductionCapPercent");
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("warcasting");
 	for(auto & [factionId, faction] : rules["factions"].Struct())
 	{
@@ -51,6 +52,7 @@ JsonNode formulaRules()
 {
 	auto rules = originalRules();
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	// Existing registered identity for rules-only tests; this does not alter the
 	// installed spell or activate the proposed new Magic Missile definition.
 	rules["spells"][arrowKey]["directDamage"]["base"].Integer() = 20;
@@ -90,7 +92,7 @@ TEST(NewHorizonsMagicV2RulesTest, V1StillRejectsFormulaAndUnsupportedEnvelopeFai
 	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
 	EXPECT_THROW(newHorizonsMagic::spellDirectDamage(rules, arrowKey), std::runtime_error);
 	rules = formulaRules();
-	rules["rulesetVersion"].Integer() = 3;
+	rules["rulesetVersion"].Integer() = 4;
 	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
 	rules = formulaRules();
 	rules["schemaVersion"].Integer() = 2;
@@ -99,6 +101,61 @@ TEST(NewHorizonsMagicV2RulesTest, V1StillRejectsFormulaAndUnsupportedEnvelopeFai
 	rules["rulesetVersion"].Float() = 2.0;
 	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
 	EXPECT_THROW(newHorizonsMagic::spellDirectDamage(rules, arrowKey), std::runtime_error);
+}
+
+TEST(NewHorizonsMagicV2RulesTest, V3SnapshotsSchoolFactorsAndV2KeepsOneHundredPercent)
+{
+	const auto current = originalRules();
+	EXPECT_EQ(current["rulesetVersion"].Integer(), newHorizonsMagic::CURRENT_RULESET_VERSION);
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(current));
+	const std::array<int, 4> expected{100, 115, 130, 145};
+	for(int rank = 0; rank < static_cast<int>(expected.size()); ++rank)
+		EXPECT_EQ(newHorizonsMagic::schoolRankPowerCoefficientPercent(current, rank), expected[rank]);
+	EXPECT_EQ(newHorizonsMagic::schoolRankPowerCoefficientPercent(formulaRules(), MasteryLevel::EXPERT), 100)
+		<< "Older v2 saves retain the unranked coefficient even when the installed module is newer";
+
+	auto missing = current;
+	missing.Struct().erase("schoolRankPowerCoefficientPercent");
+	EXPECT_THROW(newHorizonsMagic::validateRules(missing), std::runtime_error);
+	auto malformed = current;
+	malformed["schoolRankPowerCoefficientPercent"].Vector()[2].Integer() = 135;
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	malformed = current;
+	malformed["schoolRankPowerCoefficientPercent"].Vector()[3].Float() = 145.0;
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+
+	auto v2WithV3Field = formulaRules();
+	v2WithV3Field["schoolRankPowerCoefficientPercent"] = current["schoolRankPowerCoefficientPercent"];
+	EXPECT_THROW(newHorizonsMagic::validateRules(v2WithV3Field), std::runtime_error);
+}
+
+TEST(NewHorizonsMagicV2RulesTest, ExpertMassRangeOverrideIsSavedV3AndSpellSpecific)
+{
+	const auto v1 = legacyRules();
+	const auto v2 = formulaRules();
+	const auto v3 = originalRules();
+	const std::array affectedSpells{
+		SpellID(SpellID::CURE), SpellID(SpellID::BLESS), SpellID(SpellID::CURSE),
+		SpellID(SpellID::SLOW), SpellID(SpellID::DISPEL), SpellID(SpellID::SHIELD),
+		SpellID(SpellID::AIR_SHIELD), SpellID(SpellID::PROTECTION_FROM_AIR),
+		SpellID(SpellID::PROTECTION_FROM_FIRE), SpellID(SpellID::PROTECTION_FROM_WATER),
+		SpellID(SpellID::PROTECTION_FROM_EARTH), SpellID(SpellID::BLOODLUST),
+		SpellID(SpellID::PRECISION), SpellID(SpellID::WEAKNESS), SpellID(SpellID::STONE_SKIN),
+		SpellID(SpellID::PRAYER), SpellID(SpellID::MIRTH), SpellID(SpellID::SORROW),
+		SpellID(SpellID::FORTUNE), SpellID(SpellID::MISFORTUNE), SpellID(SpellID::HASTE),
+		SpellID(SpellID::COUNTERSTRIKE), SpellID(SpellID::FORGETFULNESS),
+	};
+	for(const auto spell : affectedSpells)
+	{
+		SCOPED_TRACE(spell.getNum());
+		EXPECT_FALSE(newHorizonsMagic::expertRangeIsSingleTarget(v1, spell));
+		EXPECT_FALSE(newHorizonsMagic::expertRangeIsSingleTarget(v2, spell));
+		EXPECT_TRUE(newHorizonsMagic::expertRangeIsSingleTarget(v3, spell));
+	}
+	EXPECT_FALSE(newHorizonsMagic::expertRangeIsSingleTarget(v3, SpellID(SpellID::MAGIC_ARROW)));
+	EXPECT_FALSE(newHorizonsMagic::expertRangeIsSingleTarget(v3, SpellID(SpellID::BERSERK)));
+	EXPECT_FALSE(newHorizonsMagic::expertRangeIsSingleTarget(v3, SpellID(SpellID::CHAIN_LIGHTNING)));
+	EXPECT_FALSE(newHorizonsMagic::expertRangeIsSingleTarget(JsonNode(), SpellID(SpellID::BLESS)));
 }
 
 TEST(NewHorizonsMagicV2RulesTest, V2RejectsMalformedFormulaBeforeUse)

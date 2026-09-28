@@ -18,20 +18,24 @@ class MapMagicSchemaTest(unittest.TestCase):
         self.schema = load('config/schemas/newHorizonsMapMagicOverride.json')
         registry = Registry().with_resources([
             ('vcmi:' + name, Resource.from_contents(load('config/schemas/' + name + '.json')))
-            for name in ('newHorizonsMagic', 'newHorizonsMagicV2')
+            for name in ('newHorizonsMagic', 'newHorizonsMagicV2', 'newHorizonsMagicV3')
         ])
         self.validator = Draft4Validator(self.schema, registry=registry)
-        self.v2 = load('config/newHorizonsMagic.json')
-        self.v1 = legacy_rules(self.v2)
+        self.v3 = load('config/newHorizonsMagic.json')
+        self.v2 = copy.deepcopy(self.v3)
+        self.v2['rulesetVersion'] = 2
+        self.v2.pop('schoolRankPowerCoefficientPercent')
+        self.v1 = legacy_rules(self.v3)
 
     def test_schema_and_explicit_legacy_contexts(self):
         Draft4Validator.check_schema(self.schema)
         self.validator.validate(None)
         self.validator.validate({})
 
-    def test_complete_v1_and_v2_shapes(self):
+    def test_complete_v1_v2_and_v3_shapes(self):
         self.validator.validate(self.v1)
         self.validator.validate(self.v2)
+        self.validator.validate(self.v3)
 
     def test_wrong_field_types(self):
         for value in (False, True, 0, 1.5, '', [], [self.v1]):

@@ -143,6 +143,24 @@ void BattleStacksController::collectRenderableObjects(BattleRenderer & renderer)
 				showStackAmountBox(renderer, stack);
 			});
 		}
+
+		if(owner.actionsController && owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+		{
+			const int selectionOrder = owner.actionsController->stormOfDaggersSelectionOrder(stack->unitId());
+			if(selectionOrder > 0)
+			{
+				renderer.insert(EBattleFieldLayer::STACK_AMOUNTS, location,
+					[this, stack, selectionOrder](BattleRenderer::RendererRef renderer)
+					{
+						const auto hexRect = owner.fieldController->hexPositionLocal(stack->getPosition());
+						const Rect badge(hexRect.x + 3, hexRect.y + 3, 18, 18);
+						renderer.drawColor(badge, ColorRGBA(32, 20, 12, 245));
+						renderer.drawBorder(badge, ColorRGBA(220, 184, 105, 255));
+						renderer.drawText(badge.center(), EFonts::FONT_TINY, Colors::YELLOW,
+							ETextAlignment::CENTER, std::to_string(selectionOrder));
+					});
+			}
+		}
 	}
 
 	// removed units are ghosts (excluded from battleGetAllStacks); keep drawing those still fading out

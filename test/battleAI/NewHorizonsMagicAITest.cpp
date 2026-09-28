@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../server/battles/HeroCommandFixture.h"
+#include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/PossibleSpellcast.h"
 #include "../../AI/BattleAI/PotentialTargets.h"
@@ -98,10 +99,16 @@ namespace
 {
 constexpr auto transfigureMatterKey = "new-horizons:transfigureMatter";
 constexpr auto matterShaperPerk = "new-horizons:sorceryMagic.matterShaper";
+constexpr auto stormOfDaggersKey = "new-horizons:stormOfDaggers";
 
 SpellID transfigureMatterSpell()
 {
 	return SpellID(SpellID::decode(transfigureMatterKey));
+}
+
+SpellID stormOfDaggersSpell()
+{
+	return SpellID(SpellID::decode(stormOfDaggersKey));
 }
 }
 
@@ -110,6 +117,7 @@ class NewHorizonsMagicAITest : public HeroCommandFixture
 protected:
 	bool useCurrentMagicRules = false;
 	bool useLegacyMagicRules = false;
+	bool useRealHeroScale = false;
 	bool neutralizeCommandEffects = false;
 	bool useSavedPerkRules = false;
 	bool useFocusMagic = false;
@@ -122,6 +130,8 @@ protected:
 		else if(useCurrentMagicRules)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		if(useRealHeroScale)
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
 		if(useFocusMagic)
 		{
 			JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
@@ -451,6 +461,71 @@ TEST_F(NewHorizonsMagicAITest, SpellLockCastEvaluationMatchesRealMechanicsAcross
 		{spells::Destination(lockedEnemy->getPosition())}, true);
 	EXPECT_EQ(lockedEnemy->getAvailableHealth(), lockedEnemyHealth);
 	EXPECT_LT(openEnemy->getAvailableHealth(), openEnemyHealth);
+}
+
+TEST_F(NewHorizonsMagicAITest, SpellLockAIUsesSavedRankSpellbinderAndEchoedDuration)
+{
+	useCurrentMagicRules = true;
+	useSavedPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	ASSERT_NE(spellLock, SpellID::NONE);
+	attackerSideHero->addSpellToSpellbook(spellLock);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 10);
+	ASSERT_NE(target, nullptr);
+	auto haste = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::SPELL_EFFECT, 3, BonusSourceID(SpellID(SpellID::HASTE)));
+	haste->turnsRemain = 3;
+	target->addNewBonus(haste);
+
+	const auto score = [&](bool followup)
+	{
+		spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spellLock.toSpell());
+		event.setSpellLevel(3);
+		event.setMetamagicFollowup(followup);
+		if(followup)
+			event.setMetamagicTargetUnitId(target->unitId());
+		const auto mechanics = spellLock.toSpell()->battleMechanics(&event);
+		return SpellTargetEvaluator::spellLockPlacementValue(
+			mechanics.get(), spells::Target{spells::Destination(target)});
+	};
+
+	const auto sorcery = SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL);
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 70, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::NONE,
+		ChangeValueMode::ABSOLUTE);
+	const float noRankValue = score(false);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	const float basicRankValue = score(false);
+	EXPECT_GT(basicRankValue, noRankValue)
+		<< "The saved Basic coefficient moves Spell Power 70 across the first duration threshold";
+
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 160, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::EXPERT,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({newHorizonsSorcery::SORCERY_MAGIC_SKILL,
+		newHorizonsSorcery::SPELLBINDER_PERK});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::SPELLBINDER_PERK));
+	const float spellbinderValue = score(false);
+
+	const auto metamagic = SecondarySkill::decode("new-horizons:metamagic");
+	ASSERT_GE(metamagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), MasteryLevel::ADVANCED,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic",
+		"new-horizons:metamagic.arcaneAcquisition"});
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic",
+		std::string(newHorizonsMagic::METAMAGIC_ECHOED_DURATION)});
+	ASSERT_TRUE(newHorizonsMagic::hasMetamagicPerk(
+		attackerSideHero, newHorizonsMagic::METAMAGIC_ECHOED_DURATION));
+	const float echoedValue = score(true);
+
+	EXPECT_GT(spellbinderValue, basicRankValue);
+	EXPECT_GT(echoedValue, spellbinderValue)
+		<< "Echoed Duration is applied after the Spellbinder 4-round cap";
 }
 
 TEST_F(NewHorizonsMagicAITest, SpellLockDoesNotBlockNonmagicalCreatureAbilityInRealOrForecast)
@@ -2021,6 +2096,166 @@ TEST_F(NewHorizonsMagicAITest, LandMineDoesNotOutrankImmediateMagicArrowOnTheSam
 	EXPECT_EQ(callback->submitted.front().spell, SpellID::MAGIC_ARROW);
 }
 
+TEST_F(NewHorizonsMagicAITest, V3MagicArrowAIProjectionAndAuthoritativeCastUseSchoolRankCoefficient)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+	const auto sorcery = SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto * arrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	ASSERT_NE(arrow, nullptr);
+	ASSERT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(battle()->getMagicRules(), attackerSideHero,
+		SpellID::MAGIC_ARROW), 145);
+	const auto expectedRaw = newHorizonsMagic::magicArrowDamage(battle()->getMagicRules(), SpellID::MAGIC_ARROW,
+		attackerSideHero->getEffectPower(arrow), attackerSideHero->getEffectPowerDivisor(arrow), 0,
+		newHorizonsMagic::magicArrowOverchargeModifiers(attackerSideHero), 145);
+	ASSERT_TRUE(expectedRaw.has_value());
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	const auto healthBefore = enemy->getAvailableHealth();
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	spells::BattleCast preview(projected.get(), attackerSideHero, spells::Mode::HERO, arrow);
+	spells::Target previewTarget;
+	previewTarget.emplace_back(projected->battleGetUnitByID(enemy->unitId()));
+	preview.castEval(projected->getServerCallback(), previewTarget);
+	EXPECT_EQ(healthBefore - projected->battleGetUnitByID(enemy->unitId())->getAvailableHealth(), *expectedRaw);
+	EXPECT_EQ(enemy->getAvailableHealth(), healthBefore);
+
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto action = callback->submitted.front();
+	EXPECT_EQ(action.spell, SpellID::MAGIC_ARROW);
+	const auto actionTarget = action.getTarget(battle());
+	ASSERT_EQ(actionTarget.size(), 1u);
+	ASSERT_NE(actionTarget.front().unitValue, nullptr);
+	EXPECT_EQ(actionTarget.front().unitValue->unitId(), enemy->unitId());
+	auto chosenProjection = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	spells::BattleCast chosenPreview(chosenProjection.get(), attackerSideHero, spells::Mode::HERO, arrow);
+	chosenPreview.setOvercharge(action.spellOvercharge);
+	spells::Target chosenTarget;
+	chosenTarget.emplace_back(chosenProjection->battleGetUnitByID(enemy->unitId()));
+	chosenPreview.castEval(chosenProjection->getServerCallback(), chosenTarget);
+	const auto projectedDamage = healthBefore
+		- chosenProjection->battleGetUnitByID(enemy->unitId())->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(healthBefore - enemy->getAvailableHealth(), projectedDamage)
+		<< "Battle AI projection and authoritative cast must share the v3 ranked formula";
+}
+
+TEST_F(NewHorizonsMagicAITest, V3BlessHypotheticalForecastMatchesTheSingleTargetAuthoritativeCast)
+{
+	useCommands = true;
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	useSavedPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const SpellID known : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(known);
+	const auto * bless = SpellID(SpellID::BLESS).toSpell();
+	ASSERT_NE(bless, nullptr);
+	attackerSideHero->addSpellToSpellbook(bless->getId());
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 160, ChangeValueMode::ABSOLUTE);
+	const auto light = SecondarySkill(SecondarySkill::decode("new-horizons:lightMagic"));
+	attackerSideHero->setSecSkillLevel(light, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:lightMagic", "new-horizons:lightMagic.benediction"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:lightMagic", "new-horizons:lightMagic.benediction"));
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * selected = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * otherFriendly = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(6, 5), 10);
+	addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 1);
+	ASSERT_NE(selected, nullptr);
+	ASSERT_NE(otherFriendly, nullptr);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto * projectedSelected = projected->battleGetUnitByID(selected->unitId());
+	auto * projectedOther = projected->battleGetUnitByID(otherFriendly->unitId());
+	ASSERT_NE(projectedSelected, nullptr);
+	ASSERT_NE(projectedOther, nullptr);
+	spells::BattleCast preview(projected.get(), attackerSideHero, spells::Mode::HERO, bless);
+	const auto mechanics = bless->battleMechanics(&preview);
+	EXPECT_EQ(mechanics->getRangeLevel(), 2);
+	EXPECT_FALSE(mechanics->isMassive());
+	const spells::Target previewTarget{spells::Destination(projectedSelected)};
+	ASSERT_TRUE(mechanics->canBeCastAt(previewTarget));
+	preview.castEval(projected->getServerCallback(), previewTarget);
+	const auto projectedBless = projected->getForUpdate(selected->unitId())->getAllBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS))));
+	ASSERT_FALSE(projectedBless->empty());
+	int predictedDuration = 0;
+	std::optional<int32_t> predictedEndpointValue;
+	for(const auto & bonus : *projectedBless)
+		if(bonus->type == BonusType::ALWAYS_MAXIMUM_DAMAGE)
+		{
+			predictedDuration = bonus->turnsRemain;
+			predictedEndpointValue = bonus->val;
+		}
+	EXPECT_EQ(predictedDuration, 5);
+	EXPECT_EQ(predictedEndpointValue, 0)
+		<< "the v3 hypothetical cast uses the saved endpoint-only Bless effect";
+	EXPECT_TRUE(projected->getForUpdate(otherFriendly->unitId())->getAllBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS))))->empty());
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::BLESS;
+	action.aimToUnit(selected);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	const auto actualBless = selected->getAllBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS))));
+	ASSERT_FALSE(actualBless->empty());
+	int actualDuration = 0;
+	std::optional<int32_t> actualEndpointValue;
+	for(const auto & bonus : *actualBless)
+		if(bonus->type == BonusType::ALWAYS_MAXIMUM_DAMAGE)
+		{
+			actualDuration = bonus->turnsRemain;
+			actualEndpointValue = bonus->val;
+		}
+	EXPECT_EQ(actualDuration, predictedDuration)
+		<< "AI hypothetical projection and authoritative Bless cast must agree";
+	EXPECT_EQ(actualEndpointValue, predictedEndpointValue)
+		<< "AI hypothetical projection and authoritative Bless cast must agree on the endpoint value";
+	EXPECT_TRUE(otherFriendly->getAllBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS))))->empty())
+		<< "Expert School does not convert the single-target spell into Mass Bless";
+}
+
 TEST_F(NewHorizonsMagicAITest, LandMineAILeavesLegacyNoTargetSelectionUntouched)
 {
 	useCommands = false;
@@ -2639,8 +2874,8 @@ TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 	// No magic-setting fixture override: actual curated module activation must
 	// supply these rules at ordinary new-game initialization.
 	prepareCommands(true);
-	ASSERT_EQ(gameState()->getMagicRules()["rulesetVersion"].Integer(), 2);
-	ASSERT_EQ(gameState()->getMagicRules()["spells"].Struct().size(), 71u);
+	ASSERT_EQ(gameState()->getMagicRules()["rulesetVersion"].Integer(), 3);
+	ASSERT_EQ(gameState()->getMagicRules()["spells"].Struct().size(), 72u);
 	ASSERT_EQ(battle()->battleGetActiveSpellSchools().size(), 6u);
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(71), 100);
@@ -2655,7 +2890,7 @@ TEST_F(NewHorizonsMagicAITest, RealEvaluatorUsesInstalledSavedHavocRankAndCost)
 		99 * attackerSideHero->getEffectPowerDivisor(spell), ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 3, ChangeValueMode::ABSOLUTE);
 	setTestSpellPointTotal(attackerSideHero, 1000);
-	ASSERT_EQ(spell->calculateDamage(attackerSideHero), 7725);
+	ASSERT_EQ(spell->calculateDamage(attackerSideHero), 11066);
 	SpellSchool best;
 	ASSERT_EQ(attackerSideHero->getSpellSchoolLevel(spell, &best), 3);
 	ASSERT_EQ(best, SpellSchool::fromSerializationKey("new-horizons:havoc"));
@@ -2870,4 +3105,216 @@ TEST_F(NewHorizonsMagicAITest, CanonicalInfernoIsPreferredForBroadEnemyCluster)
 	EXPECT_EQ(first->getAvailableHealth(), healthBefore[0]);
 	EXPECT_EQ(second->getAvailableHealth(), healthBefore[1]);
 	EXPECT_EQ(third->getAvailableHealth(), healthBefore[2]);
+}
+
+TEST_F(NewHorizonsMagicAITest, StormOfDaggersAISelectsFiveDistinctEnemyStacksWithoutFriendlyFire)
+{
+	useCommands = true;
+	neutralizeCommandEffects = true;
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const auto storm = stormOfDaggersSpell();
+	ASSERT_NE(storm, SpellID::NONE);
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(storm);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
+	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(5, 5), 10);
+	std::vector<CStack *> enemies;
+	for(int index = 0; index < 21; ++index)
+		enemies.push_back(addStack(BattleSide::DEFENDER, creatureByName("core:ogre"),
+			BattleHex(9 + index % 8, 2 + index / 8), 100));
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(friendly, nullptr);
+	ASSERT_EQ(enemies.size(), 21u);
+	ASSERT_TRUE(std::all_of(enemies.begin(), enemies.end(), [](const CStack * unit) { return unit != nullptr; }));
+
+	std::set<uint32_t> keepIds{active->unitId(), friendly->unitId()};
+	for(const auto * enemy : enemies)
+		keepIds.insert(enemy->unitId());
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	// Spell immunity makes the target illegal while leaving its ordinary damage
+	// forecast positive, so it would consume a best-N slot if legality were only
+	// checked after ranking.
+	enemies.front()->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_IMMUNITY, BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(storm)));
+	ASSERT_TRUE(enemies.front()->hasImmunity(storm));
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+
+	spells::BattleCast selectionProbe(battle(), attackerSideHero, spells::Mode::HERO, storm.toSpell());
+	const auto selectionMechanics = storm.toSpell()->battleMechanics(&selectionProbe);
+	ASSERT_TRUE(selectionMechanics->setStormOfDaggersTargetCount(1));
+	ASSERT_GT(selectionMechanics->adjustEffectValue(enemies.front()), 0);
+	ASSERT_EQ(enemies.front()->magicResistance(), 0);
+	const spells::Target invincibleTarget{spells::Destination(enemies.front())};
+	ASSERT_FALSE(selectionMechanics->canBeCastAt(invincibleTarget));
+	const auto legalSubsets = SpellTargetEvaluator::getViableTargets(selectionMechanics.get());
+	ASSERT_EQ(legalSubsets.size(), 5u)
+		<< "The full 21-stack target set is bounded to one candidate per legal target count, "
+		<< "even when the highest-ranked immune unit is illegal";
+	std::array<size_t, 6> subsetsBySize{};
+	for(const auto & subset : legalSubsets)
+	{
+		ASSERT_GE(subset.size(), 1u);
+		ASSERT_LE(subset.size(), 5u);
+		++subsetsBySize[subset.size()];
+		std::set<uint32_t> subsetIds;
+		for(const auto & destination : subset)
+		{
+			ASSERT_NE(destination.unitValue, nullptr);
+			EXPECT_NE(destination.unitValue, friendly);
+			EXPECT_NE(destination.unitValue, enemies.front())
+				<< "A high-ranked immune target must not suppress legal alternatives";
+			EXPECT_EQ(battle()->battleGetOwner(destination.unitValue), PlayerColor(1));
+			EXPECT_TRUE(subsetIds.insert(destination.unitValue->unitId()).second);
+		}
+	}
+	EXPECT_EQ((std::array<size_t, 6>{0, 1, 1, 1, 1, 1}), subsetsBySize);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	BattleEvaluator evaluator(environment, callback, active,
+		PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto action = callback->submitted.front();
+	EXPECT_EQ(action.spell, storm);
+	const auto target = action.getTarget(battle());
+	ASSERT_EQ(target.size(), 5u);
+	std::set<uint32_t> selected;
+	for(const auto & destination : target)
+	{
+		ASSERT_NE(destination.unitValue, nullptr);
+		EXPECT_NE(destination.unitValue, friendly);
+		EXPECT_EQ(battle()->battleGetOwner(destination.unitValue), PlayerColor(1));
+		EXPECT_TRUE(selected.insert(destination.unitValue->unitId()).second);
+	}
+	for(const auto * enemy : enemies)
+		EXPECT_EQ(battle()->battleGetOwner(enemy), PlayerColor(1));
+}
+
+TEST_F(NewHorizonsMagicAITest, StormOfDaggersAIValuesSavedSchoolRankAndMagicResistance)
+{
+	useCommands = true;
+	neutralizeCommandEffects = true;
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const auto storm = stormOfDaggersSpell();
+	ASSERT_NE(storm, SpellID::NONE);
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(storm);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	const auto sorcery = SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL);
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::EXPERT,
+		ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
+	auto * susceptible = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 3), 100);
+	auto * resistant = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 7), 100);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(susceptible, nullptr);
+	ASSERT_NE(resistant, nullptr);
+	resistant->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 100, BonusSourceID()));
+	ASSERT_EQ(resistant->magicResistance(), 100);
+
+	const std::set<uint32_t> keepIds{active->unitId(), susceptible->unitId(), resistant->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+
+	const auto * spell = storm.toSpell();
+	ASSERT_NE(spell, nullptr);
+	spells::BattleCast liveCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto liveMechanics = spell->battleMechanics(&liveCast);
+	ASSERT_TRUE(liveMechanics->isNewHorizonsStormOfDaggers());
+	EXPECT_EQ(liveMechanics->getSchoolRankPowerCoefficientPercent(), 145);
+	EXPECT_EQ(liveMechanics->getStormOfDaggersTotalDamage(1), 263);
+	EXPECT_EQ(liveMechanics->getStormOfDaggersDamagePerTarget(1), 263);
+	EXPECT_EQ(liveMechanics->getStormOfDaggersTotalDamage(2), 302);
+	EXPECT_EQ(liveMechanics->getStormOfDaggersDamagePerTarget(2), 151);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	const auto susceptibleHealth = susceptible->getAvailableHealth();
+	const auto resistantHealth = resistant->getAvailableHealth();
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto action = callback->submitted.front();
+	EXPECT_EQ(action.spell, storm)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	const auto actionTarget = action.getTarget(battle());
+	ASSERT_EQ(actionTarget.size(), 1u);
+	ASSERT_NE(actionTarget.front().unitValue, nullptr);
+	EXPECT_EQ(actionTarget.front().unitValue->unitId(), susceptible->unitId())
+		<< "The two-target cast loses value because its second stack resists with certainty";
+
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto * projectedSusceptible = projected->battleGetUnitByID(susceptible->unitId());
+	ASSERT_NE(projectedSusceptible, nullptr);
+	spells::BattleCast preview(projected.get(), attackerSideHero, spells::Mode::HERO, spell);
+	auto previewMechanics = spell->battleMechanics(&preview);
+	ASSERT_TRUE(previewMechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(actionTarget.size())));
+	const spells::Target previewTarget{spells::Destination(projectedSusceptible)};
+	ASSERT_TRUE(previewMechanics->canBeCastAt(previewTarget));
+	previewMechanics->castEval(projected->getServerCallback(), previewTarget);
+	const auto projectedDamage = susceptibleHealth
+		- projected->battleGetUnitByID(susceptible->unitId())->getAvailableHealth();
+	EXPECT_EQ(projectedDamage, liveMechanics->getStormOfDaggersDamagePerTarget(1));
+	EXPECT_EQ(susceptible->getAvailableHealth(), susceptibleHealth);
+	EXPECT_EQ(resistant->getAvailableHealth(), resistantHealth);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(susceptibleHealth - susceptible->getAvailableHealth(), projectedDamage)
+		<< "The BattleAI forecast and authoritative cast must share the saved-v3 per-target amount";
+	EXPECT_EQ(resistant->getAvailableHealth(), resistantHealth);
 }

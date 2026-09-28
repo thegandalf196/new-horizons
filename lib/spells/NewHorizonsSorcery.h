@@ -18,6 +18,9 @@ namespace newHorizonsSorcery
 inline constexpr const char * PHANTOM_ARMY_SPELL = "new-horizons:phantomArmy";
 inline constexpr const char * TIME_STOP_SPELL = "new-horizons:timeStop";
 inline constexpr const char * SPELL_LOCK_SPELL = "new-horizons:spellLock";
+inline constexpr const char * SORCERY_MAGIC_SKILL = "new-horizons:sorceryMagic";
+inline constexpr const char * CHRONOMANCER_PERK = "new-horizons:sorceryMagic.chronomancer";
+inline constexpr const char * SPELLBINDER_PERK = "new-horizons:sorceryMagic.spellbinder";
 inline constexpr const char * FOCUS_MAGIC_SPELL = "new-horizons:focusMagic";
 inline constexpr const char * ARCANE_BREACH_EFFECT = "new-horizons:arcaneBreach";
 inline constexpr const char * FOCUS_MAGIC_TRIGGER = "core:focusMagic";
@@ -74,8 +77,11 @@ constexpr int TIME_STOP_CHRONOMANCER_RADIUS_BONUS = 1;
 
 /// Radius around the selected battlefield hex.  The base spell caps at radius
 /// 2; Chronomancer raises that cap to radius 3 without changing the Spell
-/// Power threshold at which the radius grows.
+/// Power threshold at which the radius grows.  The coefficient scales only
+/// the Spell Power-derived radius term; saved v1/v2 profiles pass 100%.
 DLL_LINKAGE int timeStopRadius(int32_t spellPower, bool chronomancer = false);
+DLL_LINKAGE int timeStopRadius(int32_t spellPower, bool chronomancer,
+	int32_t coefficientPercent);
 
 constexpr int SPELL_LOCK_MANA = 22;
 constexpr int SPELL_LOCK_BASE_DURATION_CAP = 3;
@@ -83,9 +89,12 @@ constexpr int SPELL_LOCK_POWER_PER_EXTRA_ROUND = 80;
 constexpr int SPELL_LOCK_SPELLBINDER_DURATION_BONUS = 1;
 constexpr int SPELL_LOCK_SPELLBINDER_DURATION_CAP = 4;
 
-/// Number of rounds for which a stack remains sealed.  Spellbinder extends the
-/// canonical 3-round cap to 4 rounds.
-DLL_LINKAGE int spellLockDuration(int32_t spellPower, bool spellbinder = false);
+/// Number of rounds for which a stack remains sealed. Spell Power is scaled
+/// by the saved school coefficient and Warcasting percentage before flooring.
+/// Spellbinder extends the canonical 3-round cap to 4 rounds; Echoed Duration
+/// is applied separately to an eligible follow-up cast.
+DLL_LINKAGE int spellLockDuration(int32_t spellPower, bool spellbinder = false,
+	int32_t coefficientPercent = 100, int32_t warcastingBonusPercent = 0);
 
 struct DLL_LINKAGE SpellLockPolicy
 {

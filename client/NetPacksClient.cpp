@@ -197,6 +197,14 @@ void ApplyClientNetPackVisitor::visitSetNewHorizonsAdventureSpellState(SetNewHor
 	callAllInterfaces(cl, &CGameInterface::invalidatePaths);
 }
 
+void ApplyClientNetPackVisitor::visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizonsAdventureSpellUnlock & pack)
+{
+	for(const auto & win : ENGINE->windows().findWindows<CMageGuildScreen>())
+		win->updateSpells(pack.townId);
+	for(const auto & win : ENGINE->windows().findWindows<CMageGuildAdventureSpellWindow>())
+		win->updateSpells(pack.townId);
+}
+
 void ApplyClientNetPackVisitor::visitSetMovePoints(SetMovePoints & pack)
 {
 	const CGHeroInstance *h = cl.gameInfo().getHero(pack.hid);

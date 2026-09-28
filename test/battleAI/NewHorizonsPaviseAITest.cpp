@@ -10,8 +10,10 @@
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/CStack.h"
+#include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
+#include "../../server/CGameHandler.h"
 
 namespace
 {
@@ -130,6 +132,6 @@ TEST_F(NewHorizonsPaviseAITest, PaviseDoesNotReplaceWaitWhenUsefulMovementIsAvai
 	activeStack->waitedThisTurn = true;
 	ASSERT_TRUE(activeStack->waitedThisTurn);
 	const auto followup = choose(activeStack);
-	EXPECT_EQ(followup.actionType, EActionType::MOVE)
+	EXPECT_EQ(followup.actionType, EActionType::WALK)
 		<< "After waiting, the stack should still advance rather than Defend";
 }

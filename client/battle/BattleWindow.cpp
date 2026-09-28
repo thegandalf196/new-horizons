@@ -35,8 +35,10 @@
 #include "render/IFont.h"
 #include "render/IRenderHandler.h"
 #include "../widgets/Buttons.h"
+#include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../widgets/Images.h"
 #include "../widgets/TextControls.h"
+#include "../render/Colors.h"
 #include "../windows/CCreatureWindow.h"
 #include "../windows/CMarketWindow.h"
 #include "../windows/CMessage.h"
@@ -85,6 +87,131 @@ std::string warcastingIconName(AlternatingHeroActionState::Action action)
 	return {};
 }
 }
+
+class StormOfDaggersSelectionPanel final : public CIntObject
+{
+	BattleInterface & owner;
+	bool active = false;
+	std::vector<std::shared_ptr<CIntObject>> decoration;
+	std::shared_ptr<CLabel> heading;
+	std::shared_ptr<CMultiLineLabel> targetReadback;
+	std::shared_ptr<CButton> undoButton;
+	std::shared_ptr<CButton> cancelButton;
+	std::shared_ptr<CButton> confirmButton;
+
+	void refresh()
+	{
+		const auto * controller = owner.actionsController.get();
+		const bool shouldShow = controller && controller->stormOfDaggersTargetSelectionModeActive();
+		active = shouldShow;
+		if(!controller || !shouldShow)
+		{
+			undoButton->setEnabled(false);
+			cancelButton->setEnabled(false);
+			confirmButton->setEnabled(false);
+			return;
+		}
+
+		const auto preview = controller->getStormOfDaggersSelectionPreview();
+		std::string title = "Storm of Daggers  |  " + std::to_string(preview.selectedTargetCount)
+			+ "/" + std::to_string(preview.maximumTargetCount) + " targets";
+		if(preview.poolAvailable)
+			title += "  |  Pool " + std::to_string(preview.totalDamagePool)
+				+ " (" + std::to_string(preview.rawDamagePerTarget) + " each before resistance)";
+		if(heading->getText() != title)
+			heading->setText(title);
+
+		std::string readback;
+		for(size_t index = 0; index < preview.targets.size(); ++index)
+		{
+			const auto & target = preview.targets[index];
+			if(!readback.empty())
+				readback += ";  ";
+			readback += "#" + std::to_string(index + 1) + " " + target.name + ": ";
+			if(target.projectedDamage)
+				readback += "about " + std::to_string(*target.projectedDamage) + " damage";
+			else if(preview.poolAvailable)
+				readback += std::to_string(preview.rawDamagePerTarget) + " raw damage; estimate unavailable";
+			else
+				readback += "damage estimate unavailable";
+		}
+
+		if(readback.empty())
+			readback = preview.status;
+		else if(!preview.canConfirm)
+			readback += "; " + preview.status;
+		else if(preview.selectedTargetCount >= preview.maximumTargetCount)
+			readback += ". Target limit reached; Confirm, or use Undo to revise.";
+		else
+			readback += ". Click another enemy, or Confirm. Backspace undoes; Esc cancels.";
+
+		if(targetReadback->getText() != readback)
+			targetReadback->setText(readback);
+		undoButton->setEnabled(true);
+		undoButton->block(preview.selectedTargetCount == 0);
+		cancelButton->setEnabled(true);
+		confirmButton->setEnabled(true);
+		confirmButton->block(!preview.canConfirm);
+	}
+
+public:
+	explicit StormOfDaggersSelectionPanel(BattleInterface & owner_)
+		: CIntObject(0), owner(owner_)
+	{
+		pos = Rect(40, 4, 720, 62);
+		OBJECT_CONSTRUCTION;
+		// Match the battle hero/status compartments: one continuous DiBoxBck
+		// leather surface, a warm outer rim, and the red-and-brass inset frame.
+		decoration.push_back(std::make_shared<CFilledTexture>(ImagePath::builtin("DiBoxBck"), Rect(0, 0, 720, 62)));
+		const ColorRGBA transparent(0, 0, 0, 0);
+		decoration.push_back(std::make_shared<TransparentFilledRectangle>(Rect(0, 0, 720, 62),
+			transparent, ColorRGBA(213, 185, 117)));
+		decoration.push_back(std::make_shared<TransparentFilledRectangle>(Rect(1, 1, 718, 60),
+			transparent, ColorRGBA(145, 18, 12), 2));
+		decoration.push_back(std::make_shared<TransparentFilledRectangle>(Rect(3, 3, 714, 56),
+			transparent, ColorRGBA(120, 98, 56)));
+		// Recess the compact target forecast separately while leaving the
+		// surrounding leather uninterrupted behind the title and tactile buttons.
+		decoration.push_back(std::make_shared<TransparentFilledRectangle>(Rect(8, 24, 456, 32),
+			ColorRGBA(0, 0, 0, 75), ColorRGBA(82, 65, 40, 255)));
+		heading = std::make_shared<CLabel>(12, 7, FONT_SMALL, ETextAlignment::TOPLEFT,
+			Colors::YELLOW, "Storm of Daggers");
+		targetReadback = std::make_shared<CMultiLineLabel>(Rect(12, 25, 450, 32), FONT_TINY,
+			ETextAlignment::TOPLEFT, Colors::WHITE, "");
+
+		undoButton = std::make_shared<CButton>(Point(474, 15), AnimationPath::builtin("settingsWindow/button80"),
+			CButton::tooltip("Undo", "Remove the most recently selected enemy stack."), [this]
+			{
+				if(owner.actionsController)
+					owner.actionsController->undoStormOfDaggersTarget();
+			});
+		undoButton->setTextOverlay("Undo", FONT_SMALL, Colors::WHITE);
+		undoButton->setHoverable(true);
+
+		cancelButton = std::make_shared<CButton>(Point(554, 15), AnimationPath::builtin("settingsWindow/button80"),
+			CButton::tooltip("Cancel", "Cancel the spell without spending Mana or the Hero Action."), [this]
+			{
+				if(owner.actionsController)
+					owner.actionsController->endCastingSpell();
+			}, EShortcut::GLOBAL_CANCEL);
+		cancelButton->setTextOverlay("Cancel", FONT_SMALL, Colors::WHITE);
+		cancelButton->setHoverable(true);
+
+		confirmButton = std::make_shared<CButton>(Point(634, 15), AnimationPath::builtin("settingsWindow/button80"),
+			CButton::tooltip("Confirm", "Revalidate every selected enemy stack, then cast Storm of Daggers."), [this]
+			{
+				if(owner.actionsController)
+					owner.actionsController->confirmStormOfDaggersTargets();
+			});
+		confirmButton->setTextOverlay("Confirm", FONT_SMALL, Colors::WHITE);
+		confirmButton->setHoverable(true);
+		refresh();
+	}
+
+	void update() { refresh(); }
+	void show(Canvas & to) override { if(active) CIntObject::show(to); }
+	void showAll(Canvas & to) override { if(active) CIntObject::showAll(to); }
+};
 
 BattleWindow::BattleWindow(BattleInterface & Owner)
 	: owner(Owner)
@@ -143,11 +270,21 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 	addShortcut(EShortcut::BATTLE_USE_CREATURE_SPELL, [this](){ this->owner.actionsController->enterCreatureCastingMode(); });
 	addShortcut(EShortcut::GLOBAL_ACCEPT, [this](){
 		if(this->owner.actionsController)
-			this->owner.actionsController->confirmLandMinePlacement();
+		{
+			if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+				this->owner.actionsController->confirmStormOfDaggersTargets();
+			else
+				this->owner.actionsController->confirmLandMinePlacement();
+		}
 	});
 	addShortcut(EShortcut::GLOBAL_BACKSPACE, [this](){
 		if(this->owner.actionsController)
-			this->owner.actionsController->undoLandMinePlacement();
+		{
+			if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+				this->owner.actionsController->undoStormOfDaggersTarget();
+			else
+				this->owner.actionsController->undoLandMinePlacement();
+		}
 	});
 	addShortcut(EShortcut::GLOBAL_CANCEL, [this]()
 	{
@@ -176,6 +313,8 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		});
 	addWidget("nhLandMineConfirm", landMineConfirmButton);
 	landMineConfirmButton->setEnabled(false);
+	stormOfDaggersPanel = std::make_shared<StormOfDaggersSelectionPanel>(owner);
+	addWidget("nhStormOfDaggersSelection", stormOfDaggersPanel);
 	if(owner.getBattle()->battleUsesHeroCommands())
 	{
 		widget<CButton>("consoleUp")->moveBy(Point(-ordersControlPitch, 0));
@@ -1273,14 +1412,26 @@ void BattleWindow::updateLandMinePlacementControls()
 	const bool active = owner.actionsController && owner.actionsController->landMinePlacementModeActive();
 	const bool ready = active && owner.actionsController->landMinePlacementReady();
 	const bool canUndo = active && !owner.actionsController->landMinePlacementSelectedHexes().empty();
-	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, !ready);
-	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE, !canUndo);
+	const bool stormActive = owner.actionsController
+		&& owner.actionsController->stormOfDaggersTargetSelectionModeActive();
+	const bool stormCanConfirm = stormActive
+		&& !owner.actionsController->stormOfDaggersSelectedTargetIds().empty();
+	const bool stormCanUndo = stormCanConfirm;
+	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, !ready && !stormCanConfirm);
+	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE, !canUndo && !stormCanUndo);
+	widget<CButton>("wait")->setEnabled(!active && !stormActive);
 	if(landMineConfirmButton)
 	{
-		widget<CButton>("wait")->setEnabled(!active);
 		landMineConfirmButton->setEnabled(active);
 		landMineConfirmButton->block(!ready);
 	}
+	updateStormOfDaggersControls();
+}
+
+void BattleWindow::updateStormOfDaggersControls()
+{
+	if(stormOfDaggersPanel)
+		stormOfDaggersPanel->update();
 }
 
 void BattleWindow::bOpenActiveUnit()

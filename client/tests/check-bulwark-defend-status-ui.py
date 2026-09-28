@@ -2,6 +2,7 @@
 """Source guard for the visible, visibility-safe Bulwark Defend status."""
 
 from pathlib import Path
+import json
 import unittest
 
 
@@ -15,10 +16,13 @@ PANEL_H = (ROOT / "client/battle/StackInfoBasicPanel.h").read_text(encoding="utf
 WINDOW = (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
 STACKS = (ROOT / "client/battle/BattleStacksController.cpp").read_text(encoding="utf-8")
 STATUS_HEADER = ROOT / "client/battle/NewHorizonsBattleStatus.h"
+PRESENTATION = (ROOT / "client/battle/StackInfoStatusPresentation.h").read_text(encoding="utf-8")
 UNIT_STATE = (ROOT / "lib/battle/CUnitState.cpp").read_text(encoding="utf-8")
 HOVER_STATE = (ROOT / "client/battle/StackInfoPanelHoverState.h").read_text(encoding="utf-8")
 HOVER_STATE_TEST = (ROOT / "client/tests/StackInfoPanelHoverStateTest.cpp").read_text(encoding="utf-8")
 TEST_CMAKE = (ROOT / "test/CMakeLists.txt").read_text(encoding="utf-8")
+COMBAT_TEXTS = json.loads((ROOT / "config/newHorizonsCombatTexts.json").read_text(encoding="utf-8"))
+MODULE = json.loads((ROOT / "Mods/new-horizons/mod.json").read_text(encoding="utf-8"))
 
 
 class BulwarkDefendStatusUiTest(unittest.TestCase):
@@ -70,7 +74,7 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
 
     def test_help_shows_only_applicable_current_values(self):
         tooltip = STATUS[STATUS.index("inline std::string defendStatusTooltip"):STATUS.index("inline std::string beneficiarySideName")]
-        self.assertIn('"BULWARK" : "DEFEND"', PANEL)
+        self.assertIn('displayedStatus.defend.bulwark ? "BULWARK" : "DEFEND"', PANEL)
         self.assertIn("Physical creature damage reduction:", tooltip)
         self.assertIn("Pre-emptive strike:", tooltip)
         self.assertIn("bulwark.preemptiveReady", tooltip)
@@ -83,13 +87,46 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
         self.assertIn("Vengeful Mire (adds", tooltip)
 
     def test_hovered_status_refreshes_only_when_state_changes(self):
-        self.assertIn("if(current == displayedDefendStatus)", PANEL)
+        self.assertIn("if(current == displayedStatus)", PANEL)
         self.assertIn("panel->refreshDefendStatus(stack)", WINDOW)
         self.assertIn("stackInfoUnitId && stackInfoPanelRetention.retain(msPassed, cursorOverStackInfo)", STACKS)
         self.assertIn("battleGetStackByID(*stackInfoUnitId, false)", STACKS)
         self.assertIn("refreshHoveredStackStatus(stack)", STACKS)
-        self.assertIn("displayedDefendStatus.defending", PANEL)
-        self.assertIn("defendStatusTooltip(displayedDefendStatus)", PANEL)
+        self.assertIn("displayedStatus.defend.defending", PANEL)
+        self.assertIn("defendStatusTooltip(displayedStatus.defend)", PANEL)
+        self.assertIn("displayedStatus.physicalPoison", PANEL)
+        self.assertIn("currentStackInfoStatus(updatedInfo, battleCallback.get())", PANEL)
+
+    def test_physical_poison_uses_public_state_and_authoritative_next_tick(self):
+        status_source = PANEL[PANEL.index("currentStackInfoStatus("):PANEL.index("statusIconKind(")]
+        self.assertIn("stack->physicalPoisonBaseDamage", status_source)
+        self.assertIn("stack->physicalPoisonActivationsRemaining", status_source)
+        self.assertIn("newHorizonsBulwark::physicalPoisonTickDamage(stack)", status_source)
+        self.assertNotIn("battleGetFightingHero", status_source)
+        self.assertIn("SpellID(SpellID::POISON).getNum() + 1", PANEL)
+        self.assertIn("Physical Poison is a saved stack condition, not a magical Poison spell", PANEL)
+        self.assertIn("std::to_string(physicalPoison.activationsRemaining)", PANEL)
+        self.assertIn("new-horizons.combat.physicalPoison.tooltip", PANEL)
+        self.assertIn("%DAMAGE", COMBAT_TEXTS["new-horizons.combat.physicalPoison.tooltip"])
+        self.assertIn("%LABEL", COMBAT_TEXTS["new-horizons.combat.physicalPoison.tooltip"])
+        self.assertEqual(COMBAT_TEXTS["new-horizons.combat.physicalPoison.label"], "Physical Poison")
+        for key in (
+            "new-horizons.combat.physicalPoison.label",
+            "new-horizons.combat.physicalPoison.tooltip",
+            "new-horizons.combat.physicalPoison.hiddenEffects",
+        ):
+            self.assertEqual(MODULE["translations"][key], COMBAT_TEXTS[key])
+
+    def test_physical_poison_slot_priority_and_overflow_policy(self):
+        self.assertIn("stackStatusDisplayPlan(statusKinds, totalEffectCount)", PANEL)
+        self.assertIn("result.ellipsisUsesSlot = result.overflow && !hasPhysicalPoison", PRESENTATION)
+        self.assertIn("StackStatusIconKind::TIME_STOP: return 0", PRESENTATION)
+        self.assertIn("StackStatusIconKind::SPELL_LOCK: return 1", PRESENTATION)
+        self.assertIn("StackStatusIconKind::PHYSICAL_POISON: return 2", PRESENTATION)
+        self.assertIn("newHorizonsBattleStatus::stackStatusDisplayPlan(statusKinds, totalEffectCount)", PANEL)
+        self.assertIn("displayPlan.ellipsisUsesSlot", PANEL)
+        self.assertIn('"..."', PANEL)
+        self.assertIn("physicalPoison.hiddenEffects", PANEL)
 
     def test_defend_duration_matches_round_reset(self):
         status = STATUS_HEADER.read_text(encoding="utf-8")
@@ -119,6 +156,9 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
         self.assertIn("retention.retain(16, true)", HOVER_STATE_TEST)
         self.assertIn("retention.retain(1800, false)", HOVER_STATE_TEST)
         self.assertIn("!retention.retain(2000, false)", HOVER_STATE_TEST)
+        self.assertIn("strongerRefresh", HOVER_STATE_TEST)
+        self.assertIn("equalRefreshAfterTick", HOVER_STATE_TEST)
+        self.assertIn("poisonedPlan.visibleEntryIndices", HOVER_STATE_TEST)
 
 
 if __name__ == "__main__":

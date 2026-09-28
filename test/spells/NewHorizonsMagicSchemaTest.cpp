@@ -22,6 +22,7 @@ JsonNode fullV1Rules()
 	result.Struct().erase("spellPoints");
 	result.Struct().erase("mageGuildGeneration");
 	result.Struct().erase("physicalDamageReductionCapPercent");
+	result.Struct().erase("schoolRankPowerCoefficientPercent");
 	for(auto & [factionId, faction] : result["factions"].Struct())
 	{
 		(void)factionId;

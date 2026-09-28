@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema#",
-	"title": "Saved New Horizons creature classifications",
+	"title": "Saved New Horizons creature rules",
 	"anyOf": [
 		{"type": "null"},
 		{"type": "object", "maxProperties": 0},
@@ -8,9 +8,17 @@
 			"type": "object",
 			"additionalProperties": false,
 			"required": ["schemaVersion", "rulesetVersion", "sourceRulesetId", "categories", "creatures"],
+			"allOf": [
+				{
+					"oneOf": [
+						{"properties": {"rulesetVersion": {"enum": [1]}}, "not": {"required": ["growthLines"]}},
+						{"properties": {"rulesetVersion": {"enum": [2]}}, "required": ["growthLines"]}
+					]
+				}
+			],
 			"properties": {
 				"schemaVersion": {"enum": [1]},
-				"rulesetVersion": {"enum": [1]},
+				"rulesetVersion": {"enum": [1, 2]},
 				"sourceRulesetId": {"type": "string", "minLength": 1},
 				"categories": {
 					"type": "object",
@@ -26,6 +34,12 @@
 					"type": "object",
 					"minProperties": 1,
 					"additionalProperties": {"enum": ["core", "elite", "champion"]}
+				},
+				"growthLines": {
+					"description": "Version 2 saved weekly base growth by creature line. Every listed upgrade inherits the line value.",
+					"type": "object",
+					"minProperties": 1,
+					"additionalProperties": {"$ref": "#/definitions/growthLine"}
 				}
 			}
 		}
@@ -38,6 +52,25 @@
 			"properties": {
 				"nameTextId": {"type": "string", "minLength": 1},
 				"descriptionTextId": {"type": "string", "minLength": 1}
+			}
+		},
+		"growthLine": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["weeklyBaseGrowth", "members"],
+			"properties": {
+				"weeklyBaseGrowth": {"type": "integer", "minimum": 1, "maximum": 1000000},
+				"hordeGrowthOverride": {"description": "When present, replace the creature definition's horde addition; when absent, preserve it.", "type": "integer", "minimum": 0, "maximum": 1000000},
+				"members": {
+					"type": "array",
+					"minItems": 1,
+					"uniqueItems": true,
+					"items": {
+						"type": "string",
+						"minLength": 1,
+						"description": "A scoped creature identifier. Runtime validation requires exactly one non-edge colon."
+					}
+				}
 			}
 		}
 	}

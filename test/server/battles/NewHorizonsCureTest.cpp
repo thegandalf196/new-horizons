@@ -14,6 +14,8 @@
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSorcery.h"
+#include "../../../lib/spells/Problem.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/modding/CModHandler.h"
 
@@ -77,13 +79,14 @@ protected:
 		gameHandler->sendAndApply(remove);
 	}
 
-	void injure(int64_t damage)
+	void injure(int64_t damage, CStack * stack = nullptr)
 	{
-		auto state = target->acquireState();
+		CStack * injuredStack = stack ? stack : target;
+		auto state = injuredStack->acquireState();
 		state->damage(damage);
 		BattleUnitsChanged change;
 		change.battleID = BattleID(0);
-		change.changedStacks.emplace_back(target->unitId(), UnitChanges::EOperation::UPDATE);
+		change.changedStacks.emplace_back(injuredStack->unitId(), UnitChanges::EOperation::UPDATE);
 		change.changedStacks.back().data = state->save();
 		change.changedStacks.back().healthDelta = -damage;
 		gameHandler->sendAndApply(change);
@@ -105,6 +108,20 @@ protected:
 			BonusValueType::ADDITIVE_VALUE, BonusSubtypeID(PrimarySkill::ATTACK)));
 		target->addNewBonus(spellEffect(disease, BonusType::PRIMARY_SKILL, -2,
 			BonusValueType::ADDITIVE_VALUE, BonusSubtypeID(PrimarySkill::DEFENSE)));
+	}
+
+	void addPhysicalPoison(int64_t baseDamage = 5, int32_t ticks = 3)
+	{
+		auto state = target->acquireState();
+		state->physicalPoisonBaseDamage = baseDamage;
+		state->physicalPoisonActivationsRemaining = ticks;
+		state->physicalPoisonSourceStackId = 17;
+		BattleUnitsChanged update;
+		update.battleID = BattleID(0);
+		UnitChanges change(target->unitId(), UnitChanges::EOperation::UPDATE);
+		change.data = state->save();
+		update.changedStacks.push_back(std::move(change));
+		gameHandler->sendAndApply(update);
 	}
 
 	void addMagicalConditions()
@@ -243,6 +260,124 @@ TEST_F(NewHorizonsCureTest, FullHealthTargetCanBeCleansedBySelectingPoison)
 	EXPECT_FALSE(hasSource(SpellID::POISON));
 	EXPECT_EQ(target->getAvailableHealth(), health);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 4);
+}
+
+TEST_F(NewHorizonsCureTest, CureSelectsAndRemovesPhysicalOnlyPoison)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, "core:pikeman", 1));
+	addPhysicalPoison(5, 2);
+	ASSERT_GE(target->getAvailableHealth(), target->getTotalHealth());
+	const auto afflictions = newHorizonsMagic::cureAfflictions(
+		attackerSideHero->getMagicRules(), target);
+	ASSERT_TRUE(vstd::contains(afflictions, SpellID::POISON));
+	const auto health = target->getAvailableHealth();
+	const auto mana = attackerSideHero->getManaAvailable();
+
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		cureAction(target, SpellID::DISEASE)));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		cureAction(target, SpellID::POISON)));
+	EXPECT_EQ(target->physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(target->physicalPoisonActivationsRemaining, 0);
+	EXPECT_EQ(target->physicalPoisonSourceStackId, -1);
+	EXPECT_EQ(target->getAvailableHealth(), health);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 4);
+}
+
+TEST_F(NewHorizonsCureTest, CureRemovesBothMagicalAndPhysicalPoisonWhenSelected)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, "core:pikeman", 1));
+	addPoison();
+	addPhysicalPoison(5, 2);
+	const auto mana = attackerSideHero->getManaAvailable();
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		cureAction(target, SpellID::POISON)));
+	EXPECT_FALSE(hasSource(SpellID::POISON));
+	EXPECT_EQ(target->physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(target->physicalPoisonActivationsRemaining, 0);
+	EXPECT_EQ(target->physicalPoisonSourceStackId, -1);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 4);
+}
+
+TEST_F(NewHorizonsCureTest, FullHealthSurvivorIsNotHealableForItsCasualties)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, "core:pikeman", 2));
+	CStack * casualtyStack = target;
+	ASSERT_NO_FATAL_FAILURE(injure(casualtyStack->getMaxHealth()));
+	ASSERT_EQ(casualtyStack->getCount(), 1);
+	ASSERT_EQ(casualtyStack->getFirstHPleft(), casualtyStack->getMaxHealth());
+	ASSERT_LT(casualtyStack->getAvailableHealth(), casualtyStack->getTotalHealth());
+
+	auto * injuredAlly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(4, 5), 1);
+	ASSERT_NE(injuredAlly, nullptr);
+	ASSERT_NO_FATAL_FAILURE(injure(2, injuredAlly));
+
+	const auto * cure = SpellID(SpellID::CURE).toSpell();
+	ASSERT_NE(cure, nullptr);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, cure);
+	const auto mechanics = cure->battleMechanics(&cast);
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(mechanics->canBeCast(problem));
+	const auto mana = attackerSideHero->getManaAvailable();
+
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		cureAction(casualtyStack)));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+	EXPECT_EQ(casualtyStack->getCount(), 1);
+	EXPECT_EQ(casualtyStack->getFirstHPleft(), casualtyStack->getMaxHealth());
+}
+
+TEST_F(NewHorizonsCureTest, SpellLockedPhysicalPoisonTargetIsRejectedWithoutSpendingMana)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, "core:pikeman", 1));
+	addPhysicalPoison();
+	auto * injuredAlly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(4, 5), 1);
+	ASSERT_NE(injuredAlly, nullptr);
+	ASSERT_NO_FATAL_FAILURE(injure(2, injuredAlly));
+
+	const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	ASSERT_NE(spellLock, SpellID::NONE);
+	target->addNewBonus(spellEffect(spellLock, BonusType::MAGIC_RESISTANCE, 100));
+	const auto afflictions = newHorizonsMagic::cureAfflictions(
+		attackerSideHero->getMagicRules(), target);
+	ASSERT_TRUE(vstd::contains(afflictions, SpellID::POISON));
+
+	const auto * cure = SpellID(SpellID::CURE).toSpell();
+	ASSERT_NE(cure, nullptr);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, cure);
+	const auto mechanics = cure->battleMechanics(&cast);
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(mechanics->canBeCast(problem));
+	const auto mana = attackerSideHero->getManaAvailable();
+
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		cureAction(target, SpellID::POISON)));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+	EXPECT_EQ(target->physicalPoisonActivationsRemaining, 3);
+}
+
+TEST_F(NewHorizonsCureTest, OrdinaryDispelDoesNotRemovePhysicalPoison)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, "core:pikeman", 1));
+	addPoison();
+	addPhysicalPoison();
+	attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::DISPEL;
+	action.aimToUnit(target);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_FALSE(hasSource(SpellID::POISON));
+	EXPECT_EQ(target->physicalPoisonBaseDamage, 5);
+	EXPECT_EQ(target->physicalPoisonActivationsRemaining, 3);
 }
 
 TEST_F(NewHorizonsCureTest, PoisonHealthReductionIsRemovedBeforeHealing)

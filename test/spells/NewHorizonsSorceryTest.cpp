@@ -60,6 +60,25 @@ TEST(NewHorizonsSorceryTest, TimeStopRadiusUsesPowerThresholdAndChronomancerBonu
 	EXPECT_EQ(newHorizonsSorcery::timeStopRadius(100, true), 2);
 	EXPECT_EQ(newHorizonsSorcery::timeStopRadius(200, true), 3);
 	EXPECT_THROW(newHorizonsSorcery::timeStopRadius(-1), std::invalid_argument);
+	EXPECT_THROW(newHorizonsSorcery::timeStopRadius(1, false, 1001), std::invalid_argument);
+}
+
+TEST(NewHorizonsSorceryTest, TimeStopSchoolCoefficientsMoveBothRadiusThresholdsWithoutChangingCaps)
+{
+	const std::array<std::pair<int, int>, 4> rankThresholds{{
+		{100, 100}, {115, 87}, {130, 77}, {145, 69}}};
+	for(const auto & [coefficientPercent, firstThreshold] : rankThresholds)
+	{
+		EXPECT_EQ(newHorizonsSorcery::timeStopRadius(firstThreshold - 1, false, coefficientPercent), 1);
+		EXPECT_EQ(newHorizonsSorcery::timeStopRadius(firstThreshold, false, coefficientPercent), 2);
+
+		const int secondThreshold = (2 * newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS * 100
+			+ coefficientPercent - 1)
+			/ coefficientPercent;
+		EXPECT_EQ(newHorizonsSorcery::timeStopRadius(secondThreshold - 1, true, coefficientPercent), 2);
+		EXPECT_EQ(newHorizonsSorcery::timeStopRadius(secondThreshold, true, coefficientPercent), 3);
+		EXPECT_EQ(newHorizonsSorcery::timeStopRadius(10000, true, coefficientPercent), 3);
+	}
 }
 
 TEST(NewHorizonsSorceryTest, SpellLockDurationAndPolicyRespectTargetAlignment)
@@ -92,4 +111,31 @@ TEST(NewHorizonsSorceryTest, SpellLockDurationAndPolicyRespectTargetAlignment)
 	EXPECT_TRUE(enemy.freezeTimedEffects);
 	EXPECT_TRUE(enemy.blockFurtherMagic);
 	EXPECT_FALSE(enemy.affectsOrders);
+}
+
+TEST(NewHorizonsSorceryTest, SpellLockSchoolCoefficientScalesPowerBeforeFloorAndCapsSafely)
+{
+	// Check values immediately around each rank's first and second threshold.
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(69, false, 115), 1);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(70, false, 115), 2);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(61, false, 130), 1);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(62, false, 130), 2);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(55, false, 145), 1);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(56, false, 145), 2);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(139, false, 115), 2);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(140, false, 115), 3);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(123, false, 130), 2);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(124, false, 130), 3);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(110, false, 145), 2);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(111, false, 145), 3);
+
+	// Warcasting is another percentage on the Spell Power term before the floor.
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(69, false, 115, 10), 2);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(160, true, 145), 4);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(160, true, 145, 10), 4);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(std::numeric_limits<int32_t>::max(), true,
+		1000, std::numeric_limits<int32_t>::max()), 4);
+	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, -1), std::invalid_argument);
+	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, 1001), std::invalid_argument);
+	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, 100, -1), std::invalid_argument);
 }

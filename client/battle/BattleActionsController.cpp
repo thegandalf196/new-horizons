@@ -48,6 +48,8 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
+#include <set>
+
 struct TextReplacement
 {
 	std::string placeholder;
@@ -57,6 +59,13 @@ struct TextReplacement
 using TextReplacementList = std::vector<TextReplacement>;
 
 constexpr std::string_view transfigureMatterJsonKey = "new-horizons:transfigureMatter";
+constexpr std::string_view stormOfDaggersJsonKey = "new-horizons:stormOfDaggers";
+constexpr int32_t stormOfDaggersMaximumTargets = 5;
+
+bool isStormOfDaggersSpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == stormOfDaggersJsonKey;
+}
 
 bool isCanonicalLandMine(const CBattleInfoCallback & battle, const CSpell * spell)
 {
@@ -650,6 +659,289 @@ BattleHexArray BattleActionsController::getLandMinePlacementLegalHexes() const
 	return result;
 }
 
+bool BattleActionsController::stormOfDaggersTargetSelectionModeActive() const
+{
+	return heroSpellToCast && isStormOfDaggersSpell(heroSpellToCast->spell.toSpell());
+}
+
+const std::vector<uint32_t> & BattleActionsController::stormOfDaggersSelectedTargetIds() const
+{
+	return stormOfDaggersSelectedUnitIds;
+}
+
+int BattleActionsController::stormOfDaggersSelectionOrder(uint32_t unitId) const
+{
+	const auto found = std::ranges::find(stormOfDaggersSelectedUnitIds, unitId);
+	return found == stormOfDaggersSelectedUnitIds.end()
+		? 0 : static_cast<int>(std::distance(stormOfDaggersSelectedUnitIds.begin(), found)) + 1;
+}
+
+bool BattleActionsController::stormOfDaggersSelectionContextIsCurrent() const
+{
+	if(!stormOfDaggersTargetSelectionModeActive() || !owner.curInt || !owner.curInt->cb
+		|| CPlayerInterface::battleInt.get() != &owner || owner.getBattleID() != stormOfDaggersBattleID
+		|| !stormOfDaggersPlayer || owner.curInt->cb->getPlayerID() != *stormOfDaggersPlayer
+		|| !owner.getBattle() || !owner.getBattle()->getBattle()
+		|| owner.getBattle()->battleGetMySide() != stormOfDaggersSide
+		|| owner.getBattle()->battleGetRound() != stormOfDaggersRound
+		|| !owner.makingTurn() || owner.curInt->isAutoFightOn || owner.isInTacticsMode())
+		return false;
+
+	const auto * hero = owner.currentHero();
+	return hero && hero->id == stormOfDaggersHeroID;
+}
+
+bool BattleActionsController::stormOfDaggersTargetsAreLegal(const std::vector<uint32_t> & unitIds) const
+{
+	if(unitIds.empty() || unitIds.size() > stormOfDaggersMaximumTargets
+		|| !stormOfDaggersSelectionContextIsCurrent())
+		return false;
+
+	const auto battle = owner.getBattle();
+	const auto * hero = owner.currentHero();
+	const auto * spell = heroSpellToCast->spell.toSpell();
+	if(!battle || !battle->getBattle() || !hero || !isStormOfDaggersSpell(spell)
+		|| stormOfDaggersSide == BattleSide::NONE)
+		return false;
+
+	std::set<uint32_t> distinct;
+	spells::Target target;
+	const auto enemySide = battle->otherSide(stormOfDaggersSide);
+	for(const auto unitId : unitIds)
+	{
+		if(!distinct.insert(unitId).second)
+			return false;
+
+		const auto * unit = battle->battleGetUnitByID(unitId);
+		if(!unit || !unit->alive() || unit->unitSide() != enemySide)
+			return false;
+		target.emplace_back(unit, unit->getPosition());
+	}
+
+	spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
+	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
+	auto mechanics = spell->battleMechanics(&cast);
+	if(!mechanics || !mechanics->isNewHorizonsStormOfDaggers()
+		|| !mechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(unitIds.size())))
+		return false;
+
+	spells::detail::ProblemImpl problem;
+	return mechanics->canBeCast(problem) && mechanics->canBeCastAt(target, problem);
+}
+
+bool BattleActionsController::stormOfDaggersTargetIsLegal(uint32_t unitId) const
+{
+	if(stormOfDaggersSelectedUnitIds.size() >= stormOfDaggersMaximumTargets
+		|| std::ranges::find(stormOfDaggersSelectedUnitIds, unitId) != stormOfDaggersSelectedUnitIds.end())
+		return false;
+
+	auto candidate = stormOfDaggersSelectedUnitIds;
+	candidate.push_back(unitId);
+	return stormOfDaggersTargetsAreLegal(candidate);
+}
+
+bool BattleActionsController::stormOfDaggersTargetHexIsLegal(const BattleHex & hex) const
+{
+	if(!hex.isValid() || !stormOfDaggersSelectionContextIsCurrent())
+		return false;
+	const auto battle = owner.getBattle();
+	const CStack * target = battle ? battle->battleGetStackByPos(hex, true) : nullptr;
+	if(!target && battle)
+		target = battle->battleGetStackByPos(hex, false);
+	return target && stormOfDaggersTargetIsLegal(target->unitId());
+}
+
+StormOfDaggersSelectionPreview BattleActionsController::getStormOfDaggersSelectionPreview() const
+{
+	StormOfDaggersSelectionPreview result;
+	result.selectedTargetCount = static_cast<int32_t>(stormOfDaggersSelectedUnitIds.size());
+	result.maximumTargetCount = stormOfDaggersMaximumTargets;
+	if(!stormOfDaggersTargetSelectionModeActive())
+		return result;
+
+	if(!stormOfDaggersSelectionContextIsCurrent())
+	{
+		result.status = "Battle context changed. Cancel this spell and reopen it.";
+		return result;
+	}
+
+	const auto battle = owner.getBattle();
+	const auto * hero = owner.currentHero();
+	const auto * spell = heroSpellToCast->spell.toSpell();
+	if(!battle || !battle->getBattle() || !hero || !isStormOfDaggersSpell(spell))
+	{
+		result.status = "Battle context changed. Cancel this spell and reopen it.";
+		return result;
+	}
+
+	std::vector<const battle::Unit *> selectedUnits;
+	spells::Target fullAim;
+	bool allSelectedUnitsPresent = true;
+	for(const auto unitId : stormOfDaggersSelectedUnitIds)
+	{
+		const auto * unit = battle->battleGetUnitByID(unitId);
+		if(!unit)
+		{
+			allSelectedUnitsPresent = false;
+			continue;
+		}
+		selectedUnits.push_back(unit);
+		fullAim.emplace_back(unit, unit->getPosition());
+
+		StormOfDaggersTargetPreview targetPreview;
+		targetPreview.unitId = unitId;
+		targetPreview.name = unit->unitType()->getNamePluralTranslated();
+		result.targets.push_back(std::move(targetPreview));
+	}
+
+	result.canConfirm = stormOfDaggersTargetsAreLegal(stormOfDaggersSelectedUnitIds);
+	if(allSelectedUnitsPresent && !selectedUnits.empty() && result.canConfirm)
+	{
+		const int32_t targetCount = static_cast<int32_t>(selectedUnits.size());
+		spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
+		cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
+		auto mechanics = spell->battleMechanics(&cast);
+		if(mechanics && mechanics->isNewHorizonsStormOfDaggers()
+			&& mechanics->setStormOfDaggersTargetCount(targetCount))
+		{
+			result.totalDamagePool = mechanics->getStormOfDaggersTotalDamage(targetCount);
+			result.rawDamagePerTarget = mechanics->getStormOfDaggersDamagePerTarget(targetCount);
+			result.poolAvailable = true;
+
+			const auto canonicalTarget = mechanics->canonicalizeTarget(fullAim);
+			mechanics->forEachEffect([&](const spells::effects::Effect & effect)
+			{
+				if(effect.name != "directDamage")
+					return false;
+
+				const auto effectTarget = effect.transformTarget(mechanics.get(), fullAim, canonicalTarget);
+				for(const auto & destination : effectTarget)
+				{
+					if(!destination.unitValue)
+						continue;
+
+					auto targetPreview = std::ranges::find(result.targets, destination.unitValue->unitId(),
+						&StormOfDaggersTargetPreview::unitId);
+					if(targetPreview == result.targets.end())
+						continue;
+
+					spells::Target oneTarget;
+					oneTarget.emplace_back(destination);
+					const auto value = effect.getHealthChange(mechanics.get(), oneTarget);
+					targetPreview->projectedDamage = std::max<int64_t>(0, -value.hpDelta);
+				}
+				return true;
+			});
+		}
+	}
+
+	if(stormOfDaggersSelectedUnitIds.empty())
+		result.status = "Click one to five distinct enemy stacks. Backspace undoes; Esc cancels.";
+	else if(result.canConfirm)
+		result.status = "Selection is ready. Confirm to cast or add another enemy stack.";
+	else
+		result.status = "A selected stack is no longer legal. Undo or cancel.";
+	return result;
+}
+
+void BattleActionsController::updateStormOfDaggersSelectionStatus(const BattleHex & hoveredHex)
+{
+	if(!stormOfDaggersTargetSelectionModeActive())
+		return;
+
+	const auto preview = getStormOfDaggersSelectionPreview();
+	std::string message = "Storm of Daggers: " + std::to_string(preview.selectedTargetCount)
+		+ "/" + std::to_string(preview.maximumTargetCount) + " targets";
+	if(preview.poolAvailable)
+		message += ", pool " + std::to_string(preview.totalDamagePool)
+			+ " (" + std::to_string(preview.rawDamagePerTarget) + " each before resistance)";
+
+	if(!preview.status.empty())
+		message += ". " + preview.status;
+	if(hoveredHex.isValid())
+	{
+		const auto * target = getStackForHex(hoveredHex);
+		if(target && stormOfDaggersSelectionOrder(target->unitId()) != 0)
+			message += " Already selected; use Undo to remove the last target.";
+		else if(stormOfDaggersTargetHexIsLegal(hoveredHex))
+			message += " Click to select this enemy stack.";
+		else if(target && owner.getBattle() && target->unitSide() == owner.getBattle()->battleGetMySide())
+			message += " Friendly stacks cannot be targeted.";
+		else if(preview.selectedTargetCount >= preview.maximumTargetCount)
+			message += " Maximum target count reached.";
+		else
+			message += " Select a living enemy stack.";
+	}
+
+	if(!currentConsoleMsg.empty())
+		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
+	ENGINE->statusbar()->write(message);
+	currentConsoleMsg = std::move(message);
+}
+
+void BattleActionsController::selectStormOfDaggersTarget(const BattleHex & clickedHex)
+{
+	if(!stormOfDaggersTargetSelectionModeActive())
+		return;
+	if(!stormOfDaggersSelectionContextIsCurrent())
+	{
+		updateStormOfDaggersSelectionStatus(clickedHex);
+		return;
+	}
+
+	const auto * target = getStackForHex(clickedHex);
+	if(target && stormOfDaggersTargetIsLegal(target->unitId()))
+		stormOfDaggersSelectedUnitIds.push_back(target->unitId());
+
+	if(owner.windowObject)
+		owner.windowObject->updateLandMinePlacementControls();
+	updateStormOfDaggersSelectionStatus(clickedHex);
+	ENGINE->windows().totalRedraw();
+}
+
+void BattleActionsController::confirmStormOfDaggersTargets()
+{
+	if(!stormOfDaggersTargetSelectionModeActive())
+		return;
+
+	if(!stormOfDaggersTargetsAreLegal(stormOfDaggersSelectedUnitIds))
+	{
+		if(owner.windowObject)
+			owner.windowObject->updateLandMinePlacementControls();
+		updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
+		return;
+	}
+
+	BattleAction action = *heroSpellToCast;
+	action.target.clear();
+	for(const auto unitId : stormOfDaggersSelectedUnitIds)
+	{
+		const auto * target = owner.getBattle()->battleGetUnitByID(unitId);
+		if(!target)
+		{
+			updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
+			return;
+		}
+		action.aimToUnit(target);
+	}
+
+	owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
+	endCastingSpell();
+}
+
+void BattleActionsController::undoStormOfDaggersTarget()
+{
+	if(!stormOfDaggersTargetSelectionModeActive() || stormOfDaggersSelectedUnitIds.empty())
+		return;
+
+	stormOfDaggersSelectedUnitIds.pop_back();
+	if(owner.windowObject)
+		owner.windowObject->updateLandMinePlacementControls();
+	updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
+	ENGINE->fakeMouseMove();
+	ENGINE->windows().totalRedraw();
+}
+
 bool BattleActionsController::fireWallPlacementModeActive() const
 {
 	if(!heroSpellToCast || !owner.getBattle() || !owner.currentHero())
@@ -1060,6 +1352,7 @@ void BattleActionsController::endCastingSpell()
 	cancelHeroOrderTargeting();
 	const bool wasLandMinePlacement = landMinePlacementModeActive();
 	const bool wasFireWallPlacement = fireWallPlacementModeActive();
+	const bool wasStormOfDaggersSelection = stormOfDaggersTargetSelectionModeActive();
 	if(heroSpellToCast)
 	{
 		heroSpellToCast.reset();
@@ -1073,8 +1366,13 @@ void BattleActionsController::endCastingSpell()
 	}
 	monsterSpellTargets.clear();
 	landMineSelectedHexes.clear();
+	stormOfDaggersSelectedUnitIds.clear();
+	stormOfDaggersPlayer.reset();
+	stormOfDaggersSide = BattleSide::NONE;
+	stormOfDaggersRound = -1;
+	stormOfDaggersHeroID = ObjectInstanceID::NONE;
 	fireWallSelectedStart = BattleHex::INVALID;
-	if((wasLandMinePlacement || wasFireWallPlacement) && !currentConsoleMsg.empty())
+	if((wasLandMinePlacement || wasFireWallPlacement || wasStormOfDaggersSelection) && !currentConsoleMsg.empty())
 	{
 		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
 		currentConsoleMsg.clear();
@@ -1290,6 +1588,27 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	heroSpellToCast->side = battle->battleGetMySide();
 	heroSpellToCast->metamagicFollowup = heroSpellToCast->side != BattleSide::NONE
 		&& battle->battleCanUseMetamagicFollowup(heroSpellToCast->side);
+
+	// New Horizons Storm of Daggers selects ordered enemy unit identities. Keep
+	// this separate from the generic one-stack spell selector so every target is
+	// validated together and the exact IDs survive into BattleAction::target.
+	if(isStormOfDaggersSpell(heroSpellToCast->spell.toSpell()))
+	{
+		stormOfDaggersSelectedUnitIds.clear();
+		stormOfDaggersBattleID = owner.getBattleID();
+		stormOfDaggersPlayer = owner.curInt->cb->getPlayerID();
+		stormOfDaggersSide = battle->battleGetMySide();
+		stormOfDaggersRound = battle->battleGetRound();
+		stormOfDaggersHeroID = castingHero->id;
+		possibleActions.clear();
+		owner.windowObject->blockUI(true);
+		if(owner.windowObject)
+			owner.windowObject->updateStormOfDaggersControls();
+		updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
+		ENGINE->fakeMouseMove();
+		ENGINE->windows().totalRedraw();
+		return;
+	}
 
 	// Canonical New Horizons Land Mine is an ordered multi-hex action.  It must
 	// not enter the generic NO_TARGET path, which would immediately submit the
@@ -2351,6 +2670,16 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 		return;
 	}
 
+	if(stormOfDaggersTargetSelectionModeActive())
+	{
+		if(hoveredHex.isValid() && stormOfDaggersTargetHexIsLegal(hoveredHex))
+			ENGINE->cursor().set(Cursor::Spellcast::SPELL);
+		else
+			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		updateStormOfDaggersSelectionStatus(hoveredHex);
+		return;
+	}
+
 	if(fireWallPlacementModeActive())
 	{
 		if(hoveredHex == BattleHex::INVALID)
@@ -2431,6 +2760,13 @@ void BattleActionsController::onHoverEnded()
 		return;
 	}
 
+	if(stormOfDaggersTargetSelectionModeActive())
+	{
+		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
+		return;
+	}
+
 	if(fireWallPlacementModeActive())
 	{
 		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
@@ -2458,6 +2794,12 @@ void BattleActionsController::onHexLeftClicked(const BattleHex & clickedHex)
 	if(landMinePlacementModeActive())
 	{
 		selectOrUndoLandMineHex(clickedHex);
+		return;
+	}
+
+	if(stormOfDaggersTargetSelectionModeActive())
+	{
+		selectStormOfDaggersTarget(clickedHex);
 		return;
 	}
 

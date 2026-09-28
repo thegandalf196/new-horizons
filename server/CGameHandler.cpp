@@ -550,7 +550,10 @@ void CGameHandler::changeSecSkill(const CGHeroInstance * hero, SecondarySkill wh
 	sendAndApply(sss);
 
 	if (hero->getVisitedTown())
-		giveSpells(hero->getVisitedTown(), hero);
+	{
+		const auto * town = hero->getVisitedTown();
+		giveSpells(town, hero, hero == town->getVisitingHero());
+	}
 
 	// Our scouting range may have changed - update it
 	if (hero->getOwner().isValidPlayer())
@@ -762,11 +765,11 @@ void CGameHandler::setPortalDwelling(const CGTownInstance * town, bool forced=fa
 
 			if (clear)
 			{
-				ssi.creatures[town->getTown()->creatures.size()].first = std::max(1, (creatureId.toEntity(LIBRARY)->getGrowth())/2);
+				ssi.creatures[town->getTown()->creatures.size()].first = std::max(1, gameInfo().getCreatureBaseGrowth(creatureId) / 2);
 			}
 			else
 			{
-				ssi.creatures[town->getTown()->creatures.size()].first = creatureId.toEntity(LIBRARY)->getGrowth();
+				ssi.creatures[town->getTown()->creatures.size()].first = gameInfo().getCreatureBaseGrowth(creatureId);
 			}
 			ssi.creatures[town->getTown()->creatures.size()].second.push_back(creatureId);
 			sendAndApply(ssi);
@@ -931,10 +934,11 @@ void CGameHandler::tick(int millisecondsPassed)
 	turnTimerHandler->update(millisecondsPassed);
 }
 
-void CGameHandler::giveSpells(const CGTownInstance *t, const CGHeroInstance *h)
+void CGameHandler::giveSpells(const CGTownInstance *t, const CGHeroInstance *h, bool includeAdventureSpells)
 {
 	if (!h->hasSpellbook())
 		return; //hero hasn't spellbook
+	const auto & magicRules = gameInfo().getMagicRules();
 	ChangeSpells cs;
 	cs.hid = h->id;
 	cs.learn = true;
@@ -946,7 +950,7 @@ void CGameHandler::giveSpells(const CGTownInstance *t, const CGHeroInstance *h)
 			std::vector<SpellID> spells;
 			gameState().getAllowedSpells(spells, i+1);
 			for (const auto & spell : spells)
-				if(h->canLearnSpell(spell.toSpell()))
+				if(!newHorizonsMagic::isAdventureSpell(magicRules, spell) && h->canLearnSpell(spell.toSpell()))
 					cs.spells.insert(spell);
 		}
 	}
@@ -956,9 +960,23 @@ void CGameHandler::giveSpells(const CGTownInstance *t, const CGHeroInstance *h)
 		{
 			for (int j = 0; j < t->spellsAtLevel(i+1, true) && j < t->spells.at(i).size(); j++)
 			{
-				if(h->canLearnSpell(t->spells.at(i).at(j).toSpell()))
-					cs.spells.insert(t->spells.at(i).at(j));
+				const auto spellID = t->spells.at(i).at(j);
+				if(!newHorizonsMagic::isAdventureSpell(magicRules, spellID) && h->canLearnSpell(spellID.toSpell()))
+					cs.spells.insert(spellID);
 			}
+		}
+	}
+	if(includeAdventureSpells && newHorizonsMagic::adventureSpellRulesActive(gameInfo().getMagicRules()))
+	{
+		for(int guildLevel = 1; guildLevel <= 5; ++guildLevel)
+		{
+			if(!t->hasNewHorizonsAdventureSpellUnlocked(guildLevel))
+				continue;
+
+			const auto spellID = newHorizonsMagic::adventureSpellForGuildLevel(magicRules, guildLevel);
+			const auto * spell = spellID.toSpell();
+			if(spell && gameInfo().isAllowed(spellID) && h->canLearnSpell(spell))
+				cs.spells.insert(spellID);
 		}
 	}
 	if (!cs.spells.empty())
@@ -1633,7 +1651,7 @@ void CGameHandler::visitCastleObjects(const CGTownInstance * t, const std::vecto
 {
 	std::vector<BuildingID> buildingsToVisit;
 	for (auto const & hero : visitors)
-		giveSpells (t, hero);
+		giveSpells(t, hero, hero == t->getVisitingHero());
 
 	for (const auto & building : t->rewardableBuildings)
 	{
@@ -2702,7 +2720,7 @@ bool CGameHandler::buildStructure(ObjectInstanceID tid, BuildingID requestedID, 
 			ssi.tid = t->id;
 			ssi.creatures = t->creatures;
 			if (ssi.creatures[level].second.empty()) // first creature in a dwelling
-				ssi.creatures[level].first = crea->getGrowth();
+				ssi.creatures[level].first = gameInfo().getCreatureBaseGrowth(crea->getId());
 			ssi.creatures[level].second.push_back(crea->getId());
 			sendAndApply(ssi);
 		}
@@ -2788,9 +2806,9 @@ bool CGameHandler::buildStructure(ObjectInstanceID tid, BuildingID requestedID, 
 		if(isMageGuild || isLibrary || isAurora)
 		{
 			if(t->getVisitingHero())
-				giveSpells(t,t->getVisitingHero());
+				giveSpells(t, t->getVisitingHero(), true);
 			if(t->getGarrisonHero())
-				giveSpells(t,t->getGarrisonHero());
+				giveSpells(t, t->getGarrisonHero(), false);
 		}
 	};
 
@@ -2922,10 +2940,55 @@ bool CGameHandler::spellResearch(ObjectInstanceID tid, SpellID spellAtSlot, bool
 	if(accepted)
 	{
 		if(t->getVisitingHero())
-			giveSpells(t, t->getVisitingHero());
+			giveSpells(t, t->getVisitingHero(), true);
 		if(t->getGarrisonHero())
-			giveSpells(t, t->getGarrisonHero());
+			giveSpells(t, t->getGarrisonHero(), false);
 	}
+
+	return true;
+}
+
+bool CGameHandler::unlockNewHorizonsAdventureSpell(ObjectInstanceID townId, int32_t guildLevel)
+{
+	const auto * town = gameState().getTown(townId);
+	COMPLAIN_RET_FALSE_IF(!town, "Town for Adventure Spell unlock not found!");
+	COMPLAIN_RET_FALSE_IF(!town->getOwner().isValidPlayer(), "Neutral towns cannot unlock Adventure Spells!");
+	COMPLAIN_RET_FALSE_IF(guildLevel < 1 || guildLevel > 5, "Invalid Adventure Spell Guild tier!");
+	COMPLAIN_RET_FALSE_IF(town->mageGuildLevel() < guildLevel, "Build the matching Mage Guild tier first!");
+	COMPLAIN_RET_FALSE_IF(!newHorizonsMagic::adventureSpellRulesActive(gameInfo().getMagicRules()),
+		"New Horizons Adventure Spells are not enabled in this game!");
+	COMPLAIN_RET_FALSE_IF(town->hasNewHorizonsAdventureSpellUnlocked(guildLevel), "That Adventure Spell is already unlocked in this town!");
+
+	const auto & magicRules = gameInfo().getMagicRules();
+	const auto spellID = newHorizonsMagic::adventureSpellForGuildLevel(magicRules, guildLevel);
+	const auto * spell = spellID.toSpell();
+	const auto savedGuildLevel = newHorizonsMagic::adventureSpellGuildLevel(magicRules, spellID);
+	COMPLAIN_RET_FALSE_IF(!spell || !spell->isCommonHeroSpell() || !spell->isAdventure()
+		|| !savedGuildLevel || *savedGuildLevel != guildLevel || !gameInfo().isAllowed(spellID),
+		"The Adventure Spell for this Guild tier is not eligible in this game!");
+
+	ResourceSet unlockCost;
+	try
+	{
+		unlockCost = newHorizonsMagic::adventureSpellUnlockCost(magicRules, spellID);
+	}
+	catch(const std::exception &)
+	{
+		logGlobal->error("Saved New Horizons rules have no valid unlock price for Adventure Spell %s", spell->getJsonKey().c_str());
+		COMPLAIN_RET_FALSE_IF(true, "This Adventure Spell has no valid town unlock price!");
+	}
+
+	const auto * owner = gameInfo().getPlayerState(town->getOwner());
+	COMPLAIN_RET_FALSE_IF(!owner || !owner->resources.canAfford(unlockCost), "Your town cannot afford to unlock this Adventure Spell!");
+
+	SetNewHorizonsAdventureSpellUnlock unlock;
+	unlock.townId = townId;
+	unlock.guildLevel = guildLevel;
+	giveResources(town->getOwner(), -unlockCost);
+	sendAndApply(unlock);
+
+	if(town->getVisitingHero())
+		giveSpells(town, town->getVisitingHero(), true);
 
 	return true;
 }
@@ -3829,7 +3892,7 @@ bool CGameHandler::buyArtifact(ObjectInstanceID hid, ArtifactID aid)
 		giveResource(hero->getOwner(),EGameResID::GOLD,-GameConstants::SPELLBOOK_GOLD_COST);
 		giveHeroNewArtifact(hero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		assert(hero->getArt(ArtifactPosition::SPELLBOOK));
-		giveSpells(town,hero);
+		giveSpells(town, hero, hero == town->getVisitingHero());
 		return true;
 	}
 	else

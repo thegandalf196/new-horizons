@@ -15,7 +15,7 @@
 class SpellTargetEvaluator
 {
 public:
-	static std::vector<spells::Target> getViableTargets(const spells::Mechanics * spellMechanics);
+	static std::vector<spells::Target> getViableTargets(spells::Mechanics * spellMechanics);
 	/// Returns a deterministic pressure value for a canonical New Horizons Land
 	/// Mine placement.  The value is deliberately read-only and only considers
 	/// the live battle snapshot; it is used by BattleAI when a mine has no

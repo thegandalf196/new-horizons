@@ -189,6 +189,19 @@ public:
 	int32_t defensiveStanceRangedBonus;
 	/// Whether this Defend stance has already spent Bulwark's first-melee-attack reaction.
 	bool bulwarkPreemptiveUsed;
+	/// Whether Mire Grip has already applied its activation-scoped Speed penalty.
+	bool bulwarkMireGripApplied;
+	/// Physical creature damage received while Defending, pending Swamp Renewal.
+	/// Preserved across round boundaries until the stack's next activation.
+	int64_t bulwarkDefendPhysicalDamage;
+	/// Round in which this stack first received Immovable's Defend reduction.
+	int32_t bulwarkImmovableRound;
+	/// Round in which this Defending stack first reflected a melee hit for Toxic Spines.
+	int32_t bulwarkToxicSpinesRound;
+	/// Saved physical Poison potency and remaining real-activation ticks (not SPELL_EFFECT bonuses).
+	int64_t physicalPoisonBaseDamage;
+	int32_t physicalPoisonActivationsRemaining;
+	int32_t physicalPoisonSourceStackId;
 
 	CCasts casts;
 	CRetaliations counterAttacks;

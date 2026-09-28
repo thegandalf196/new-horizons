@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Focused contract checks for New Horizons speed/initiative content patches.
 
-The spell assertion composes the canonical Ice Bolt definition with the NH
-object patch before checking it.  This catches a patch that looks valid in
-isolation but would erase the base damage effect when the object is loaded.
+The Ice Bolt content effect is retained for saved v1/v2 compatibility and is
+gated off for v3 by the shared spell mechanics wrapper. Compose the core spell
+with the patch here so the legacy definition and its damage effect are checked
+together.
 """
 
 import copy
@@ -41,7 +42,7 @@ def merge_objects(base, patch):
 
 
 class NewHorizonsInitiativeContentTest(unittest.TestCase):
-    def test_ice_bolt_composes_speed_only_movement_effect(self):
+    def test_ice_bolt_legacy_effect_is_speed_only_and_preserves_damage(self):
         patch = load("Mods/new-horizons/Content/config/spells/iceBolt.json")["core:iceBolt"]
         base = load("config/spells/offensive.json")["iceBolt"]
         effective = copy.deepcopy(base)
@@ -62,6 +63,11 @@ class NewHorizonsInitiativeContentTest(unittest.TestCase):
             Draft4Validator(battle_effect_schema).validate(battle_effect)
         self.assertNotIn("STACKS_SPEED", json.dumps(effective))
         self.assertNotIn("STACKS_INITIATIVE", json.dumps(effective))
+        self.assertEqual(effects["directDamage"], {"type": "damage"})
+
+        wrapper = (ROOT / "lib/spells/effects/Effects.cpp").read_text(encoding="utf-8")
+        self.assertIn("LegacyIceBoltSpeedEffect", wrapper)
+        self.assertIn("usesNewHorizonsMagicV3()", wrapper)
 
     def test_slow_is_converted_to_initiative_by_new_horizons_timed_script(self):
         script = (ROOT / "scripts/spells/timed.lua").read_text(encoding="utf-8")

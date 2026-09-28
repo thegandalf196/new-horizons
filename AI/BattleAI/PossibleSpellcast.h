@@ -43,6 +43,9 @@ public:
 	SpellID spellCureAffliction = SpellID::NONE;
 	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
 	bool spellMassSlow = false;
+	/// Marks the canonical multi-target damage spell so its probabilistic magic
+	/// resistance is valued as expected damage after the shared cast forecast.
+	bool spellStormOfDaggers = false;
 	/// The cast is an immediate, non-chaining Tower Metamagic follow-up.
 	bool metamagicFollowup = false;
 	bool metamagicGrand = false; // projected automatic outcome, never a player request

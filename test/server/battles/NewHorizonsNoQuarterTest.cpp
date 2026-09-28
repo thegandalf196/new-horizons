@@ -5,6 +5,7 @@
 #include "StdInc.h"
 
 #include "BattleTestFixture.h"
+#include "FullGameSnapshotTypes.h"
 
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/IGameSettings.h"
@@ -20,6 +21,7 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/serializer/ESerializationVersion.h"
 #include "../../../server/CGameHandler.h"
+#include "../../../server/battles/BattleProcessor.h"
 
 namespace
 {

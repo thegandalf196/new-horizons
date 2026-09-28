@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "b9c3b35495bea2ba3f26d2b6d2529b6051bdd30a96c618df9f9071d28a250ee0",
+	"sourceSha256": "bc70b440ced11279915de2cfb1e48fc01e20f61ec041e7a68dae336ed86b33e4",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1071,24 +1071,24 @@
 			"description": "Light preserves: healing, blessing, divine protection, purification, restoration, and holy retaliation.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
 					}
 				}
 			},
@@ -1109,7 +1109,7 @@
 					"requires": "basic",
 					"description": "Bless lasts 1 additional round.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Bless lasts 1 additional round."
 					}
 				},
@@ -1203,24 +1203,24 @@
 			"description": "Shadow condemns: curses, stolen vitality, supernatural affliction, sacrifice, reanimation, and execution.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
 					}
 				}
 			},
@@ -1335,24 +1335,24 @@
 			"description": "Nature governs living systems and the physical world: regeneration, vegetation, venom, beasts, terrain, and elemental convergence.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
 					}
 				}
 			},
@@ -1467,24 +1467,24 @@
 			"description": "Havoc destroys through fire, frost, lightning, bombardment, traps, and catastrophic force.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
 					}
 				}
 			},
@@ -1599,24 +1599,24 @@
 			"description": "Sorcery manipulates magic and reality through technique: overcharge, dispelling, relocation, illusion, counterspells, gravity, time, and magical sealing.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
 					}
 				}
 			},
@@ -1731,24 +1731,24 @@
 			"description": "Chaos destabilizes probability, position, identity, control, and the relationship between beneficial and harmful magical states.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning.",
+					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning."
+						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
 					}
 				}
 			},
@@ -3901,7 +3901,7 @@
 					"requires": "basic",
 					"description": "Once per Defending Bulwark stack per round, the first melee attacker to suffer Bulwark reflection from that stack receives a physical Poison affliction. Base damage = max(1, floor(actual reflected HP damage / 4)). The affliction ticks on the target's next 3 real activations for base damage, floor(1.5 × base damage), and 2 × base damage. An equal- or stronger-damage reapplication replaces the affliction and restarts its duration; a weaker reapplication is ignored. Cure removes it; Dispel does not.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Once per Defending Bulwark stack per round, the first melee attacker to suffer Bulwark reflection from that stack receives a physical Poison affliction. Base damage = max(1, floor(actual reflected HP damage / 4)). The affliction ticks on the target's next 3 real activations for base damage, floor(1.5 × base damage), and 2 × base damage. An equal- or stronger-damage reapplication replaces the affliction and restarts its duration; a weaker reapplication is ignored. Cure removes it; Dispel does not."
 					}
 				},
@@ -3921,7 +3921,7 @@
 					"requires": "advanced",
 					"description": "At the beginning of the next activation after Defending, a surviving Bulwark stack restores 10% of physical creature damage suffered while Defending; casualties are not restored.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "At the beginning of the next activation after Defending, a surviving Bulwark stack restores 10% of physical creature damage suffered while Defending; casualties are not restored."
 					}
 				},
@@ -3931,7 +3931,7 @@
 					"requires": "advanced",
 					"description": "A melee attacker that damages a Bulwark stack loses 2 Speed until its next activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A melee attacker that damages a Bulwark stack loses 2 Speed until its next activation."
 					}
 				},
@@ -3941,7 +3941,7 @@
 					"requires": "advanced",
 					"description": "Adjacent friendly stacks that are also Defending receive half of this hero's Bulwark damage-reduction bonus.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Adjacent friendly stacks that are also Defending receive half of this hero's Bulwark damage-reduction bonus."
 					}
 				},
@@ -3951,7 +3951,7 @@
 					"requires": "expert",
 					"description": "While Defending, the first physical creature attack against each Bulwark stack each round deals an additional 25% less final damage.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "While Defending, the first physical creature attack against each Bulwark stack each round deals an additional 25% less final damage."
 					}
 				},
@@ -3961,7 +3961,7 @@
 					"requires": "expert",
 					"description": "Increase Bulwark's melee damage-reflection percentage by +25 percentage points, to a maximum of 75%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Increase Bulwark's melee damage-reflection percentage by +25 percentage points, to a maximum of 75%."
 					}
 				}

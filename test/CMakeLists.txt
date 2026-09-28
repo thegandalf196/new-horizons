@@ -231,6 +231,12 @@ set(test_SRCS
 		server/battles/NewHorizonsCombatSkillsTest.cpp
 		server/battles/NewHorizonsPhantomArmyTest.cpp
 		server/battles/NewHorizonsCureTest.cpp
+		server/battles/NewHorizonsHolyWrathTest.cpp
+		server/battles/NewHorizonsStormOfDaggersTest.cpp
+		server/battles/NewHorizonsBerserkProfileTest.cpp
+		server/battles/NewHorizonsDispelProfileTest.cpp
+		server/battles/NewHorizonsChainLightningProfileTest.cpp
+		server/battles/NewHorizonsBlessTest.cpp
 		server/battles/NewHorizonsWarcastingTest.cpp
 		server/battles/WarcastingScriptSpellTest.cpp
 		server/battles/NewHorizonsShroudTest.cpp
@@ -245,6 +251,7 @@ set(test_SRCS
 		server/queries/NewHorizonsPerkVerticalSliceTest.cpp
 		server/queries/NewHorizonsUniqueBuildingTrainingTest.cpp
 		server/queries/NewHorizonsMagicUniversityTest.cpp
+		server/queries/NewHorizonsAdventureSpellUnlockTest.cpp
 		server/NewHorizonsEconomyTest.cpp
 		server/NewHorizonsAstrologyTest.cpp
 		server/NewHorizonsLeadershipAdmissionTest.cpp
@@ -316,6 +323,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/DamageReductionControlTest.cpp
 		battleAI/FocusFireAITest.cpp
 		battleAI/NewHorizonsMagicAITest.cpp
+		battleAI/NewHorizonsHolyWrathAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp
 		battleAI/NewHorizonsHeroGrowthAITest.cpp
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp
@@ -354,6 +362,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/ArmyFormationLeadershipTest.cpp
 		nullkiller2/Helpers/ExplorationHelperTest.cpp
 		nullkiller2/Helpers/NewHorizonsMusterTest.cpp
+		nullkiller2/NewHorizonsAdventureSpellUnlockAITest.cpp
 		nullkiller2/Helpers/TinyH3MDimensionDoorExplorationTest.cpp
 		nullkiller2/Pathfinding/AIPathNodePoolTest.cpp
 		nullkiller2/Pathfinding/ArmyLossTest.cpp

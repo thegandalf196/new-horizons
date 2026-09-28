@@ -29,18 +29,23 @@
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/gameState/UpgradeInfo.h"
 #include "../../lib/serializer/CTypeList.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/PacksForServer.h"
 #include "../../lib/networkPacks/StackLocation.h"
+#include "../../lib/ResourceSet.h"
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/CPlayerState.h"
+#include "../../lib/spells/CSpell.h"
 
 #include "AIGateway.h"
 #include "Goals/Goals.h"
 #include "Helpers/ArmyFormation.h"
 #include "Helpers/NewHorizonsMuster.h"
+
+#include <array>
 
 namespace NK2AI
 {
@@ -996,6 +1001,51 @@ void AIGateway::performObjectInteraction(const CGObjectInstance * obj, HeroPtr h
 					cc->trade(visitedTown->getObjInstanceID(), EMarketMode::RESOURCE_SKILL,
 						GameResID(GameResID::GOLD), spell, 1, heroPtr.get());
 					break;
+				}
+			}
+
+			if(visitedTown && heroPtr->tempOwner == playerID && visitedTown->tempOwner == playerID
+				&& newHorizonsMagic::adventureSpellRulesActive(cc->getMagicRules()))
+			{
+				static constexpr std::array<BuildingID, 5> guildBuildings = {
+					BuildingID::MAGES_GUILD_1,
+					BuildingID::MAGES_GUILD_2,
+					BuildingID::MAGES_GUILD_3,
+					BuildingID::MAGES_GUILD_4,
+					BuildingID::MAGES_GUILD_5
+				};
+				auto availableResources = cc->getResourceAmount();
+
+				for(int guildLevel = 1; guildLevel <= static_cast<int>(guildBuildings.size()); ++guildLevel)
+				{
+					if(!visitedTown->hasBuilt(guildBuildings.at(static_cast<size_t>(guildLevel - 1)))
+						|| visitedTown->hasNewHorizonsAdventureSpellUnlocked(guildLevel))
+						continue;
+
+					const auto spellID = newHorizonsMagic::adventureSpellForGuildLevel(cc->getMagicRules(), guildLevel);
+					const auto * spell = spellID.toSpell();
+					if(!spell || !spell->isCommonHeroSpell() || !spell->isAdventure() || !cc->isAllowed(spellID))
+						continue;
+
+					ResourceSet unlockCost;
+					try
+					{
+						unlockCost = newHorizonsMagic::adventureSpellUnlockCost(cc->getMagicRules(), spellID);
+					}
+					catch(const std::exception & error)
+					{
+						logAi->warn("Skipping Adventure Spell unlock for guild tier %d: invalid saved price (%s)", guildLevel, error.what());
+						continue;
+					}
+
+					if(!availableResources.canAfford(unlockCost))
+						continue;
+
+					// The callback sends a validated server command. Reserve the submitted
+					// price locally so successive tier requests never overspend a stale
+					// resource snapshot while the resulting state update is in flight.
+					if(cc->unlockNewHorizonsAdventureSpell(visitedTown, guildLevel))
+						availableResources -= unlockCost;
 				}
 			}
 		}

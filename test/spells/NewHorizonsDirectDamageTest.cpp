@@ -43,6 +43,17 @@ TEST(NewHorizonsDirectDamageTest, MultiplyBeforeDivisionAndPreserveFixedTerm)
 	EXPECT_EQ(formula.evaluate(5, 1), 120) << "Legacy units use divisor1, not a second rating conversion";
 }
 
+TEST(NewHorizonsDirectDamageTest, SchoolRankScalesOnlyTheSpellPowerCoefficient)
+{
+	const DirectDamageFormula formula{100, 20};
+	EXPECT_EQ(formula.evaluate(0, 10, 145), 100) << "Every rank preserves the fixed base";
+	EXPECT_EQ(formula.evaluate(20, 10, 100), 140) << "No School Skill keeps the base coefficient";
+	EXPECT_EQ(formula.evaluate(20, 10, 115), 146) << "Basic multiplies only the Spell Power coefficient";
+	EXPECT_EQ(formula.evaluate(20, 10, 130), 152) << "Advanced multiplies only the Spell Power coefficient";
+	EXPECT_EQ(formula.evaluate(20, 10, 145), 158) << "Expert multiplies only the Spell Power coefficient";
+	EXPECT_THROW(formula.evaluate(20, 10, 1001), std::runtime_error);
+}
+
 TEST(NewHorizonsDirectDamageTest, V1RejectsFieldButBothVersionsPermitAbsence)
 {
 	const JsonNode absent(JsonMap{});
@@ -98,6 +109,7 @@ TEST(NewHorizonsDirectDamageTest, BoundedWideArithmeticAndZeroFormula)
 	EXPECT_EQ(largest.evaluate(std::numeric_limits<int32_t>::max(), 1), INT64_C(2147483648000000));
 	const DirectDamageFormula zero{0, 0};
 	EXPECT_EQ(zero.evaluate(std::numeric_limits<int32_t>::max(), 1), 0);
+	EXPECT_EQ(largest.evaluate(std::numeric_limits<int32_t>::max(), 1, 145), INT64_C(3113851289150000));
 }
 
 TEST(NewHorizonsDirectDamageTest, RejectsInvalidEvaluationInputsInsteadOfProducingHealing)

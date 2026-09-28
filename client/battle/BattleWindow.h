@@ -29,6 +29,7 @@ class HeroBattleStatusArea;
 class StackInfoBasicPanel;
 class QuickSpellPanel;
 class UnitActionPanel;
+class StormOfDaggersSelectionPanel;
 
 /// GUI object that handles functionality of panel at the bottom of combat screen
 class BattleWindow : public InterfaceObjectConfigurable
@@ -39,6 +40,7 @@ class BattleWindow : public InterfaceObjectConfigurable
 	std::shared_ptr<BattleConsole> console;
 	std::shared_ptr<CButton> ordersButton;
 	std::shared_ptr<CButton> landMineConfirmButton;
+	std::shared_ptr<StormOfDaggersSelectionPanel> stormOfDaggersPanel;
 	std::shared_ptr<HeroInfoBasicPanel> attackerHeroWindow;
 	std::shared_ptr<HeroInfoBasicPanel> defenderHeroWindow;
 	std::shared_ptr<HeroBattleStatusArea> attackerHeroStatus;
@@ -177,6 +179,8 @@ public:
 	/// Keep the explicit Land Mine confirmation/undo shortcuts synchronized
 	/// with the controller's current ordered selection.
 	void updateLandMinePlacementControls();
+	/// Refresh the compact non-modal Storm of Daggers target strip and shortcuts.
+	void updateStormOfDaggersControls();
 
 	/// ends battle with autocombat
 	void endWithAutocombat();

@@ -114,7 +114,7 @@
 			"type": "object",
 			"additionalProperties": false,
 			"properties": {
-				"newHorizons": { "anyOf": [{ "$ref": "newHorizonsMagic.json" }, { "$ref": "newHorizonsMagicV2.json" }] }
+				"newHorizons": { "anyOf": [{ "$ref": "newHorizonsMagic.json" }, { "$ref": "newHorizonsMagicV2.json" }, { "$ref": "newHorizonsMagicV3.json" }] }
 			}
 		},
 		"combat": {

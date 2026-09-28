@@ -43,8 +43,51 @@ JsonNode savedFormula(int base = 20, int coefficient = 20)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = 2;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules["spells"][arrowKey]["directDamage"]["base"].Integer() = base;
 	rules["spells"][arrowKey]["directDamage"]["powerCoefficient"].Integer() = coefficient;
+	return rules;
+}
+
+JsonNode savedV3Formula(int base = 20, int coefficient = 20)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["spells"][arrowKey]["directDamage"]["base"].Integer() = base;
+	rules["spells"][arrowKey]["directDamage"]["powerCoefficient"].Integer() = coefficient;
+	return rules;
+}
+
+JsonNode savedV1MagicRules()
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["rulesetVersion"].Integer() = newHorizonsMagic::RULESET_VERSION;
+	rules.Struct().erase("spellPoints");
+	rules.Struct().erase("mageGuildGeneration");
+	rules.Struct().erase("physicalDamageReductionCapPercent");
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("warcasting");
+	for(auto & [factionId, faction] : rules["factions"].Struct())
+	{
+		(void)factionId;
+		faction["major"] = faction["preferredA"];
+		faction["minor"] = faction["preferredB"];
+		faction.Struct().erase("preferredA");
+		faction.Struct().erase("preferredB");
+	}
+	for(auto & [spellId, spell] : rules["spells"].Struct())
+	{
+		(void)spellId;
+		spell.Struct().erase("active");
+		spell.Struct().erase("directDamage");
+		spell.Struct().erase("cureAfflictions");
+	}
+	for(auto it = rules["spells"].Struct().begin(); it != rules["spells"].Struct().end();)
+	{
+		if(it->first.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
+			it = rules["spells"].Struct().erase(it);
+		else
+			++it;
+	}
 	return rules;
 }
 
@@ -109,7 +152,7 @@ public:
 TEST(NewHorizonsHavocDirectDamage, CanonicalLevelOneRosterUsesSavedV2FormulasAndFiveMana)
 {
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	ASSERT_EQ(rules["rulesetVersion"].Integer(), 2);
+	ASSERT_EQ(rules["rulesetVersion"].Integer(), 3);
 	struct Expected
 	{
 		const char * id;
@@ -256,6 +299,69 @@ protected:
 		beginCombat();
 	}
 
+	void verifyIceBoltSavedProfile(bool legacySlow, int expectedVersion,
+		std::optional<int64_t> expectedDamage = std::nullopt)
+	{
+		forceRealHeroScale = true;
+		selectedSpellKey = "core:iceBolt";
+		prepare();
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
+		ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), expectedVersion);
+		ASSERT_EQ(attackerSideHero->getSpellCost(spell), 5);
+
+		auto * adjacent = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"),
+			BattleHex(rightHex - 1), 1000);
+		const auto targetHealthBefore = target->getAvailableHealth();
+		const auto adjacentHealthBefore = adjacent->getAvailableHealth();
+		const auto movementBefore = target->getMovementRange();
+		const auto initiativeBefore = target->getInitiative();
+		const auto manaBefore = attackerSideHero->getManaAvailable();
+		ASSERT_GE(movementBefore, 2u);
+
+		spells::Target aim;
+		aim.emplace_back(target);
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		DamageEnvironment environment(gameState(), nullptr);
+		HypotheticBattle predicted(&environment, callback);
+		const auto * projectedTarget = predicted.battleGetUnitByID(target->unitId());
+		ASSERT_NE(projectedTarget, nullptr);
+		spells::Target previewAim;
+		previewAim.emplace_back(projectedTarget);
+		spells::BattleCast preview(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+		auto mechanics = spell->battleMechanics(&preview);
+		const auto affected = mechanics->getAffectedStacks(previewAim);
+		ASSERT_EQ(affected.size(), 1u);
+		EXPECT_EQ(affected.front()->unitId(), target->unitId());
+		mechanics->castEval(predicted.getServerCallback(), previewAim);
+
+		projectedTarget = predicted.battleGetUnitByID(target->unitId());
+		ASSERT_NE(projectedTarget, nullptr);
+		const auto previewDamage = targetHealthBefore - projectedTarget->getAvailableHealth();
+		EXPECT_GT(previewDamage, 0);
+		if(expectedDamage)
+		{
+			EXPECT_EQ(previewDamage, *expectedDamage);
+		}
+		EXPECT_EQ(projectedTarget->getMovementRange(), movementBefore - (legacySlow ? 2u : 0u));
+		EXPECT_EQ(projectedTarget->getInitiative(), initiativeBefore);
+		EXPECT_EQ(target->getMovementRange(), movementBefore);
+		EXPECT_EQ(target->getInitiative(), initiativeBefore);
+		EXPECT_EQ(target->getAvailableHealth(), targetHealthBefore);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = spell->getId();
+		action.aimToUnit(target);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+		EXPECT_EQ(targetHealthBefore - target->getAvailableHealth(), previewDamage);
+		EXPECT_EQ(adjacent->getAvailableHealth(), adjacentHealthBefore);
+		EXPECT_EQ(target->getMovementRange(), movementBefore - (legacySlow ? 2u : 0u));
+		EXPECT_EQ(target->getInitiative(), initiativeBefore);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 5);
+	}
+
 	void configure(spells::BattleCast & cast, std::optional<int64_t> value)
 	{
 		cast.setSpellLevel(0);
@@ -364,26 +470,129 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuth
 	EXPECT_EQ(before - target->getAvailableHealth(), 68) << "Rejected second hero action must not apply damage";
 }
 
-TEST_F(NewHorizonsDirectDamageMechanicsTest, IceBoltUsesCanonicalDamageAndFiveManaInAuthoritativeCast)
+TEST_F(NewHorizonsDirectDamageMechanicsTest, V3SchoolRanksScaleOnlySavedCoefficientAndMultiSchoolUsesHighestOnce)
 {
 	forceRealHeroScale = true;
-	selectedSpellKey = "core:iceBolt";
+	authoredRules = savedV3Formula();
+	authoredRules["spells"][arrowKey]["schools"].Vector().push_back(JsonNode("new-horizons:havoc"));
 	prepare();
-	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
-	ASSERT_EQ(attackerSideHero->getSpellCost(spell), 5);
-	auto * adjacent = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex - 1), 1000);
-	const auto healthBefore = target->getAvailableHealth();
-	const auto adjacentBefore = adjacent->getAvailableHealth();
-	const auto manaBefore = attackerSideHero->getManaAvailable();
-	BattleAction action;
-	action.actionType = EActionType::HERO_SPELL;
-	action.side = BattleSide::ATTACKER;
-	action.spell = spell->getId();
-	action.aimToUnit(target);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(healthBefore - target->getAvailableHealth(), 65);
-	EXPECT_EQ(adjacent->getAvailableHealth(), adjacentBefore);
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 5);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	const SecondarySkill havoc(SecondarySkill::decode("new-horizons:havocMagic"));
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	const auto formula = newHorizonsMagic::spellDirectDamage(battle()->getMagicRules(), arrowKey);
+	ASSERT_TRUE(formula);
+	EXPECT_EQ(formula->base, 20);
+	EXPECT_EQ(formula->powerCoefficient, 20);
+
+	const std::array<int64_t, 4> expected{220, 250, 280, 310};
+	const std::array<int, 4> expectedPercent{100, 115, 130, 145};
+	for(int rank = MasteryLevel::NONE; rank <= MasteryLevel::EXPERT; ++rank)
+	{
+		attackerSideHero->setSecSkillLevel(sorcery, rank, ChangeValueMode::ABSOLUTE);
+		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
+		cast.setSpellLevel(0);
+		cast.setEffectPower(100);
+		EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(battle()->getMagicRules(), attackerSideHero, spell->getId()),
+			expectedPercent[static_cast<size_t>(rank)]);
+		EXPECT_EQ(spell->battleMechanics(&cast)->getEffectValue(), expected[static_cast<size_t>(rank)])
+			<< "No-rank/Basic/Advanced/Expert must leave the base at 20";
+		EXPECT_EQ(spell->calculateDamage(attackerSideHero), expected[static_cast<size_t>(rank)])
+			<< "The spellbook damage estimate must use the same ranked coefficient";
+	}
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(battle()->getMagicRules(), arrowKey, 100, 10, 145), 310);
+
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(battle()->getMagicRules(), attackerSideHero, spell->getId()), 145);
+	spells::BattleCast multiSchool(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
+	multiSchool.setSpellLevel(0);
+	multiSchool.setEffectPower(100);
+	EXPECT_EQ(spell->battleMechanics(&multiSchool)->getEffectValue(), 310);
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(battle()->getMagicRules(), attackerSideHero, spell->getId()), 145)
+		<< "Two Expert school memberships apply one factor, not two";
+	EXPECT_NE(newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell, 0).find("Expert School: 145% Spell Power damage coefficient."),
+		std::string::npos);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, GenericDamageFormulaUsesTheSameRankCoefficientWithoutMovingItsBase)
+{
+	forceRealHeroScale = true;
+	authoredRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	selectedSpellKey = "core:implosion";
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(spell->isDamage());
+	EXPECT_FALSE(newHorizonsMagic::spellDirectDamage(battle()->getMagicRules(), selectedSpellKey));
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
+	cast.setSpellLevel(0);
+	cast.setEffectPower(100);
+	const int divisor = attackerSideHero->getEffectPowerDivisor(spell);
+	const int64_t expected = spell->getLevelPower(0)
+		+ static_cast<int64_t>(spell->getBasePower()) * 100 * 145 / (static_cast<int64_t>(divisor) * 100);
+	EXPECT_EQ(spell->battleMechanics(&cast)->getEffectValue(), expected);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, CureScalesOnlyItsSpellPowerTermAndTooltipShowsRank)
+{
+	forceRealHeroScale = true;
+	authoredRules = savedV3Formula();
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	const auto * cure = SpellID(SpellID::CURE).toSpell();
+	ASSERT_NE(cure, nullptr);
+	const SecondarySkill light(SecondarySkill::decode("new-horizons:lightMagic"));
+	const std::array<int64_t, 4> expected{175, 197, 220, 242};
+	for(int rank = MasteryLevel::NONE; rank <= MasteryLevel::EXPERT; ++rank)
+	{
+		attackerSideHero->setSecSkillLevel(light, rank, ChangeValueMode::ABSOLUTE);
+		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::PASSIVE, cure);
+		cast.setSpellLevel(0);
+		cast.setEffectPower(100);
+		EXPECT_EQ(cure->battleMechanics(&cast)->getEffectValue(), expected[static_cast<size_t>(rank)])
+			<< "The fixed 25 HP remains unchanged";
+	}
+	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, cure, 0);
+	EXPECT_NE(description.find("Base healing is 25 + 2.175 \u00d7 Spell Power HP"), std::string::npos);
+	EXPECT_NE(description.find("Expert School: 145% Spell Power-derived healing."), std::string::npos);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, V2SavedDamageFormulaIgnoresInstalledSchoolRankFactors)
+{
+	forceRealHeroScale = true;
+	authoredRules = savedFormula();
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), 2);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
+	cast.setSpellLevel(0);
+	cast.setEffectPower(100);
+	EXPECT_EQ(spell->battleMechanics(&cast)->getEffectValue(), 220);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, V1IceBoltRetainsLegacySlowInAuthoritativeCastAndAiPreview)
+{
+	authoredRules = savedV1MagicRules();
+	verifyIceBoltSavedProfile(true, newHorizonsMagic::RULESET_VERSION);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, V2IceBoltRetainsLegacySlowInAuthoritativeCastAndAiPreview)
+{
+	authoredRules = savedFormula();
+	verifyIceBoltSavedProfile(true, newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, V3IceBoltIsDamageOnlyInAuthoritativeCastAndAiPreview)
+{
+	authoredRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	verifyIceBoltSavedProfile(false, newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION, 65);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, LightningBoltUsesCanonicalHighPowerDamageAndFiveMana)
@@ -495,8 +704,11 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, InfernoDamagesItsBroadRadiusWithCan
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePredictionAndAuthoritativeManaPath)
 {
 	forceRealHeroScale = true;
+	authoredRules = savedV3Formula();
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 
 	spells::Target destination;
 	destination.emplace_back(target);
@@ -506,7 +718,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	spells::detail::ProblemImpl problem;
 	ASSERT_TRUE(mechanics->canBeCast(problem));
 	ASSERT_TRUE(mechanics->canBeCastAt(destination, problem));
-	EXPECT_EQ(mechanics->getEffectValue(), 352);
+	EXPECT_EQ(mechanics->getEffectValue(), 496);
 
 	const auto before = target->getAvailableHealth();
 	const auto mana = attackerSideHero->getManaAvailable();
@@ -516,7 +728,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	spells::BattleCast prediction(&predicted, attackerSideHero, spells::Mode::HERO, spell);
 	prediction.setOvercharge(4);
 	prediction.castEval(predicted.getServerCallback(), destination);
-	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 352);
+	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 496);
 	EXPECT_EQ(target->getAvailableHealth(), before);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 
@@ -527,7 +739,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	action.spellOvercharge = 4;
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(before - target->getAvailableHealth(), 352);
+	EXPECT_EQ(before - target->getAvailableHealth(), 496);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 8);
 }
 
@@ -682,6 +894,11 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, ConductorUsesAuthoredPerJumpMultipl
 	const auto havoc = SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"));
 	ASSERT_TRUE(havoc.hasValue());
 	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	// PerkState requires one selection in every earlier tier. Stormcaller is the
+	// active Basic Havoc perk; its uniform Chain Lightning bonus does not change
+	// the jump-retention ratios measured below.
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:havocMagic", "new-horizons:havocMagic.stormcaller"});
 	attackerSideHero->applyPerkSelection({
 		"new-horizons:havocMagic", "new-horizons:havocMagic.conductor"});
 
@@ -729,6 +946,8 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, ConductorNeverReplacesBetterLevelSc
 	attackerSideHero->level = 12;
 	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->applyPerkSelection({
+		"new-horizons:havocMagic", "new-horizons:havocMagic.stormcaller"});
+	attackerSideHero->applyPerkSelection({
 		"new-horizons:havocMagic", "new-horizons:havocMagic.conductor"});
 
 	std::vector<CStack *> chained{target};
@@ -771,6 +990,12 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, AnnihilatorIgnoresTwentyPercentMagi
 	const auto havoc = SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"));
 	ASSERT_TRUE(havoc.hasValue());
 	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	// Build a valid Basic -> Advanced -> Expert selection history. Neither
+	// predecessor changes Disintegrate's Annihilator reduction override.
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:havocMagic", "new-horizons:havocMagic.stormcaller"});
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:havocMagic", "new-horizons:havocMagic.conductor"});
 
 	const auto reduction = std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::CREATURE_ABILITY, 50,

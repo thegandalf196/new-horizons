@@ -17,6 +17,14 @@ function Script:convertBonuses(mechanics)
 
 	for name, b in pairs(self.bonus or {}) do
 		local nb = self:deepCopyBonus(b)
+		if mechanics:usesNewHorizonsMagicV3() then
+			if (spellKey == "core:bless" and name == "alwaysMaximumDamage")
+				or (spellKey == "core:curse" and name == "alwaysMinimumDamage") then
+				-- New Horizons v3 collapses Bless/Curse onto the natural damage
+				-- endpoint; vanilla's rank-based +/-1 does not carry over.
+				nb.val = 0
+			end
+		end
 		if spellKey == "core:slow" and mechanics:usesNewHorizonsMagic() then
 			-- New Horizons separates turn-order Initiative from movement Speed.
 			-- STACKS_INITIATIVE stores a direct percentage delta consumed only by

@@ -108,6 +108,7 @@ public:
 	void visitNewObject(NewObject & pack) override;
 	void visitSetAvailableArtifacts(SetAvailableArtifacts & pack) override;
 	void visitSetHouseOfWisdomScrolls(SetHouseOfWisdomScrolls & pack) override;
+	void visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizonsAdventureSpellUnlock & pack) override;
 	void visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack) override;
 	void visitSetNewHorizonsCastleGateState(SetNewHorizonsCastleGateState & pack) override;
 	void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) override;

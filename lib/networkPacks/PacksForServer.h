@@ -320,6 +320,29 @@ struct DLL_LINKAGE SpellResearch : public CPackForServer
 	}
 };
 
+/// Requests that the authoritative server permanently unlock the canonical
+/// New Horizons Adventure Spell assigned to a town's Mage Guild tier.
+struct DLL_LINKAGE UnlockNewHorizonsAdventureSpell : public CPackForServer
+{
+	UnlockNewHorizonsAdventureSpell() = default;
+	UnlockNewHorizonsAdventureSpell(const ObjectInstanceID & townId, int32_t guildLevel)
+		: townId(townId)
+		, guildLevel(guildLevel)
+	{
+	}
+	ObjectInstanceID townId;
+	int32_t guildLevel = 0;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		h & static_cast<CPackForServer &>(*this);
+		h & townId;
+		h & guildLevel;
+	}
+};
+
 struct DLL_LINKAGE RecruitCreatures : public CPackForServer
 {
 	RecruitCreatures() = default;

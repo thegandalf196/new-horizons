@@ -97,7 +97,7 @@ public:
 
 	bool isBlockedByQueries(const CPackForServer *pack, PlayerColor player);
 	bool isAllowedExchange(ObjectInstanceID id1, ObjectInstanceID id2);
-	void giveSpells(const CGTownInstance *t, const CGHeroInstance *h);
+	void giveSpells(const CGTownInstance *t, const CGHeroInstance *h, bool includeAdventureSpells = false);
 
 	IGameInfoCallback & gameInfo();
 	const CGameState & gameState() const { return *gs; }
@@ -261,6 +261,7 @@ public:
 	bool visitTownBuilding(ObjectInstanceID tid, BuildingID bid);
 	bool razeStructure(ObjectInstanceID tid, BuildingID bid);
 	bool spellResearch(ObjectInstanceID tid, SpellID spellAtSlot, bool accepted);
+	bool unlockNewHorizonsAdventureSpell(ObjectInstanceID townId, int32_t guildLevel);
 	bool disbandCreature( ObjectInstanceID id, SlotID pos );
 	bool arrangeStacks( ObjectInstanceID id1, ObjectInstanceID id2, ui8 what, SlotID p1, SlotID p2, si32 val, PlayerColor player);
 	bool bulkMoveArmy(ObjectInstanceID srcArmy, ObjectInstanceID destArmy, SlotID srcSlot);

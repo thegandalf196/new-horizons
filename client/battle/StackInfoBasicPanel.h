@@ -30,7 +30,7 @@ private:
 	std::vector<std::shared_ptr<CAnimImage>> icons;
 	std::vector<std::shared_ptr<LRClickableAreaWText>> statusTooltips;
 	std::shared_ptr<CPlayerBattleCallback> battleCallback;
-	newHorizonsBattleStatus::DefendStatus displayedDefendStatus;
+	newHorizonsBattleStatus::StackInfoStatusSnapshot displayedStatus;
 
 public:
 	StackInfoBasicPanel(

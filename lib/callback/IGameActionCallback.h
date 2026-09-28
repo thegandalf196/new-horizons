@@ -46,6 +46,9 @@ public:
 	virtual void musterCreatures(const CGHeroInstance *hero, const CGTownInstance *town, CreatureID creature) {}
 	virtual void arrangeDemonicReserve(const CGHeroInstance * hero, SlotID activeSlot,
 		CreatureID creature, int32_t amount, bool toReserve) {}
+	/// Requests that the server unlock the Adventure Spell for this town Guild tier.
+	/// The return value only indicates whether the local callback submitted a request.
+	virtual bool unlockNewHorizonsAdventureSpell(const CGTownInstance * town, int guildLevel) { return false; }
 	virtual bool upgradeCreature(const CArmedInstance *obj, SlotID stackPos, CreatureID newID=CreatureID::NONE)=0; //if newID==-1 then best possible upgrade will be made
 	virtual void spellResearch(const CGTownInstance *town, SpellID spellAtSlot, bool accepted)=0;
 	virtual void swapGarrisonHero(const CGTownInstance *town)=0;

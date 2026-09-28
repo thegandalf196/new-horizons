@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "FullGameSnapshotTypes.h"
 
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/IGameSettings.h"

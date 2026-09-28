@@ -16,10 +16,22 @@
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/battle/AlternatingHeroActionState.h"
+#include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
 #include "../hero/NewHorizonsHeroRulesFixture.h"
+
+TEST(WarcastingSpellComponent, RemainsEnabledInSavedMagicRulesV3)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_EQ(rules["rulesetVersion"].Integer(), 3);
+	EXPECT_TRUE(newHorizonsWarcasting::enabled(rules));
+	rules["rulesetVersion"].Integer() = 2;
+	EXPECT_TRUE(newHorizonsWarcasting::enabled(rules));
+	rules["rulesetVersion"].Integer() = 1;
+	EXPECT_FALSE(newHorizonsWarcasting::enabled(rules));
+}
 
 TEST(WarcastingSpellComponent, ZeroBonusMatchesExistingIntegerDivision)
 {
@@ -55,6 +67,9 @@ TEST(WarcastingSpellComponent, RejectsInvalidInputs)
 	EXPECT_THROW(spells::scaleWarcastingSpellPowerComponent(-1, 1, 10), std::invalid_argument);
 	EXPECT_THROW(spells::scaleWarcastingSpellPowerComponent(1, 0, 10), std::invalid_argument);
 	EXPECT_THROW(spells::scaleWarcastingSpellPowerComponent(1, 1, -10), std::invalid_argument);
+	EXPECT_THROW(spells::scaleWarcastingSpellPowerComponent(
+		std::numeric_limits<int64_t>::max() - 100,
+		std::numeric_limits<int64_t>::max() / 100, 0), std::invalid_argument);
 }
 
 TEST(WarcastingSpellComponent, HandlesLargeIntermediatesAndReportsFinalOverflow)
@@ -141,6 +156,11 @@ TEST_F(WarcastingSpellComponentMechanicsTest, OrdinarySpellSnapshotsBoostedArrow
 	const auto followupMechanics = SpellID(SpellID::MAGIC_ARROW).toSpell()->battleMechanics(&followupArrow);
 	EXPECT_EQ(followupMechanics->getWarcastingBonusPercent(), 0);
 	EXPECT_EQ(followupMechanics->getEffectValue(), 68);
+	// A 100% School coefficient must preserve the pre-rank two-argument API.
+	// Applying a rank percentage adds exactly one percentage denominator.
+	EXPECT_EQ(followupMechanics->scaleSpellPowerComponent(82, 1), 82);
+	EXPECT_EQ(followupMechanics->scaleSpellPowerComponentWithCoefficient(82, 1, 100), 82);
+	EXPECT_EQ(followupMechanics->scaleSpellPowerComponentWithCoefficient(82, 1, 115), 94);
 
 	// The server's real cast path constructs its mechanics before BattleSpellCast
 	// records the action and consumes readiness. Verify it actually casts, then

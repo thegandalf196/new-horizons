@@ -105,6 +105,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// Bulwark reduction in basis points (one hundredth of one percentage point).
 	/// This preserves Advanced's half-percent base and 0.15% Defense coefficient.
 	int bulwarkDamageReductionBasisPoints = 0;
+	/// Immovable's post-reduction physical damage multiplier; 100 is neutral.
+	int bulwarkImmovableFinalDamageMultiplier = 100;
 	/// Fraction of the explicit Defend-state defense contribution ignored by a melee blow.
 	int defensiveStanceDamageReductionIgnorePercent = 0;
 	/// Defend's temporary Creature Defense contribution, before Breakthrough applies its
@@ -191,6 +193,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Physical damage reduction supplied by the defending canonical Order.");
 		s("bulwarkDamageReductionBasisPoints", bulwarkDamageReductionBasisPoints,
 			"Bulwark physical damage reduction in basis points.");
+		s("bulwarkImmovableFinalDamageMultiplier", bulwarkImmovableFinalDamageMultiplier,
+			"Immovable final physical damage multiplier; 100 is neutral.");
 		s("defensiveStanceDamageReductionIgnorePercent", defensiveStanceDamageReductionIgnorePercent,
 			"Percentage of the explicit Defend-state defense contribution ignored by this melee attack.");
 		s("defensiveStanceDefenseBonus", defensiveStanceDefenseBonus,

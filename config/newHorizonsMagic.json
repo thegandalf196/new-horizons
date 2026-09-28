@@ -1,6 +1,7 @@
 {
 	"schemaVersion": 1,
-	"rulesetVersion": 2,
+	"rulesetVersion": 3,
+	"schoolRankPowerCoefficientPercent": [100, 115, 130, 145],
 	"warcasting": true,
 	"physicalDamageReductionCapPercent": 80,
 	"spellPoints": {
@@ -219,6 +220,24 @@
 			"schools": ["new-horizons:sorcery"],
 			"level": 3,
 			"costs": [11, 11, 11, 11]
+		},
+		"new-horizons:holyWrath": {
+			"schools": ["new-horizons:light"],
+			"level": 3,
+			"costs": [11, 11, 11, 11],
+			"directDamage": {
+				"base": 40,
+				"powerCoefficient": 2
+			}
+		},
+		"new-horizons:stormOfDaggers": {
+			"schools": ["new-horizons:sorcery"],
+			"level": 2,
+			"costs": [8, 8, 8, 8],
+			"directDamage": {
+				"base": 45,
+				"powerCoefficient": 15
+			}
 		},
 		"new-horizons:counterspell": {
 			"schools": [

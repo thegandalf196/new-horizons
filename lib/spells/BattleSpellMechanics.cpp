@@ -666,6 +666,20 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	if(newHorizonsMagic::isCounterspell(owner))
 		return true;
 
+	if(isNewHorizonsStormOfDaggers())
+	{
+		if(mode != Mode::HERO || !castingHero)
+			return adaptGenericProblem(problem);
+
+		const auto availableTarget = std::ranges::any_of(battle()->battleGetAllUnits(false), [this](const battle::Unit * unit)
+		{
+			return unit && unit->alive() && unit->isValidTarget(false) && !unit->isInvincible()
+				&& unit->unitSide() == battle()->otherSide(casterSide) && !isSpellLocked(unit)
+				&& isReceptive(unit);
+		});
+		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+	}
+
 	// Spellbook/target-picker availability cannot know the eventual Cure choice.
 	// Accept the spell when some friendly living unit can be healed or has a
 	// supported affliction; canBeCastAt below validates the submitted selection
@@ -683,7 +697,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 				continue;
 
 			if(!newHorizonsMagic::cureAfflictions(rules, unit).empty()
-				|| unit->getAvailableHealth() < unit->getTotalHealth())
+				|| unit->getFirstHPleft() < unit->getMaxHealth())
 				return true;
 		}
 		return adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
@@ -743,8 +757,27 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	if(!canBeCast(problem))
 		return false;
 
+	const bool newHorizonsCure = isNewHorizonsCure();
 	Target spellTarget = transformSpellTarget(target);
-	if(isNewHorizonsCure())
+	if(isNewHorizonsStormOfDaggers())
+	{
+		if(mode != Mode::HERO || casterSide == BattleSide::NONE
+			|| target.size() < 1 || target.size() > newHorizonsMagic::STORM_OF_DAGGERS_MAX_TARGETS
+			|| spellTarget.size() != target.size())
+			return false;
+
+		std::set<uint32_t> selectedUnitIds;
+		for(const auto & destination : spellTarget)
+		{
+			const auto * unit = destination.unitValue;
+			if(!unit || !unit->alive() || !unit->isValidTarget(false) || unit->isInvincible()
+				|| unit->unitSide() != battle()->otherSide(casterSide) || isSpellLocked(unit)
+				|| !isReceptive(unit)
+				|| !selectedUnitIds.insert(unit->unitId()).second)
+				return false;
+		}
+	}
+	if(newHorizonsCure)
 	{
 		if(mode != Mode::HERO || target.size() != 1 || spellTarget.size() != 1)
 			return false;
@@ -759,7 +792,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		const auto selected = getCureAffliction();
 		if(selected == SpellID::NONE)
 		{
-			if(!afflictions.empty())
+			if(!afflictions.empty()
+				|| cureTarget->getFirstHPleft() >= cureTarget->getMaxHealth())
 				return false;
 		}
 		else if(!vstd::contains(afflictions, selected))
@@ -797,7 +831,10 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		if(!mainTarget || mainTarget != caster)
 			return false; // can't cast on others
 	}
-	if(newHorizonsMagic::isCounterspell(owner))
+	// Cure's target and selected affliction (or healing need) were validated
+	// above. Its legacy HEAL/DISPEL applicability checks do not recognize
+	// physical-only Poison, so do not let those checks reject a valid action.
+	if(newHorizonsCure || newHorizonsMagic::isCounterspell(owner))
 		return true;
 
 	return effects->applicable(problem, this, target, spellTarget);
@@ -834,6 +871,11 @@ std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(const Target
 
 void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {
+	if(isNewHorizonsStormOfDaggers()
+		&& (!setStormOfDaggersTargetCount(static_cast<int32_t>(target.size()))
+			|| !canBeCastAt(target)))
+		return;
+
 	BattleSpellCast sc;
 
 	// The authoritative battle state still contains the sequence that led to a
@@ -1483,6 +1525,10 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	affectedUnits.clear();
 	//TODO: evaluate caster updates (mana usage etc.)
 	//TODO: evaluate random values
+	if(isNewHorizonsStormOfDaggers()
+		&& (!setStormOfDaggersTargetCount(static_cast<int32_t>(target.size()))
+			|| !canBeCastAt(target)))
+		return;
 
 	Target spellTarget = transformSpellTarget(target);
 
@@ -1577,6 +1623,20 @@ BattleHexArray BattleSpellMechanics::spellRangeInHexes(const BattleHex & central
 Target BattleSpellMechanics::transformSpellTarget(const Target & aimPoint) const
 {
 	Target spellTarget;
+	if(isNewHorizonsStormOfDaggers())
+	{
+		spellTarget.reserve(aimPoint.size());
+		for(const auto & selected : aimPoint)
+		{
+			const auto * unit = selected.unitValue
+				? battle()->battleGetUnitByID(selected.unitValue->unitId()) : nullptr;
+			if(unit)
+				spellTarget.emplace_back(unit);
+			else
+				spellTarget.emplace_back(BattleHex::INVALID);
+		}
+		return spellTarget;
+	}
 
 	if(aimPoint.empty())
 	{

@@ -137,6 +137,18 @@ int CGTownInstance::mageGuildLevel() const
 	return 0;
 }
 
+bool CGTownInstance::hasNewHorizonsAdventureSpellUnlocked(int guildLevel) const
+{
+	return guildLevel >= 1 && guildLevel <= 5
+		&& newHorizonsAdventureSpellGuildLevelsUnlocked.contains(guildLevel);
+}
+
+void CGTownInstance::setNewHorizonsAdventureSpellUnlocked(int guildLevel)
+{
+	if(guildLevel >= 1 && guildLevel <= 5)
+		newHorizonsAdventureSpellGuildLevelsUnlocked.insert(guildLevel);
+}
+
 int CGTownInstance::getHordeLevel(const int & HID)  const//HID - 0 or 1; returns creature level or -1 if that horde structure is not present
 {
 	return getTown()->hordeLvl.at(HID);
@@ -145,6 +157,19 @@ int CGTownInstance::getHordeLevel(const int & HID)  const//HID - 0 or 1; returns
 int CGTownInstance::creatureGrowth(const int & level) const
 {
 	return getGrowthInfo(level).totalGrowth();
+}
+
+int CGTownInstance::creatureBaseGrowth(CreatureID creature) const
+{
+	return cb->getCreatureBaseGrowth(creature);
+}
+
+int CGTownInstance::creatureHordeGrowth(CreatureID creature) const
+{
+	const auto * entity = creature.toCreature();
+	if(!entity)
+		return 0;
+	return cb->getCreatureHordeGrowthOverride(creature).value_or(entity->getHorde());
 }
 
 GrowthInfo CGTownInstance::getGrowthInfo(int level) const
@@ -157,7 +182,7 @@ GrowthInfo CGTownInstance::getGrowthInfo(int level) const
 		return ret; //no dwelling
 
 	const Creature *creature = creatures[level].second.back().toEntity(LIBRARY);
-	const int base = creature->getGrowth();
+	const int base = creatureBaseGrowth(creature->getId());
 	int castleBonus = 0;
 
 	if(tempOwner.isValidPlayer())
@@ -177,11 +202,11 @@ GrowthInfo CGTownInstance::getGrowthInfo(int level) const
 
 	if(getTown()->hordeLvl.at(0) == level)//horde 1
 		if(hasBuilt(BuildingID::HORDE_1))
-			ret.entries.emplace_back(subID, BuildingID::HORDE_1, creature->getHorde());
+			ret.entries.emplace_back(subID, BuildingID::HORDE_1, creatureHordeGrowth(creature->getId()));
 
 	if(getTown()->hordeLvl.at(1) == level)//horde 2
 		if(hasBuilt(BuildingID::HORDE_2))
-			ret.entries.emplace_back(subID, BuildingID::HORDE_2, creature->getHorde());
+			ret.entries.emplace_back(subID, BuildingID::HORDE_2, creatureHordeGrowth(creature->getId()));
 
 	//statue-of-legion-like bonus: % to base+castle
 	TConstBonusListPtr bonuses2 = getBonusesOfType(BonusType::CREATURE_GROWTH_PERCENT);
