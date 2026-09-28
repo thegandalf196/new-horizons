@@ -99,6 +99,11 @@ optional unlicensed art, or claim that public availability grants reuse rights.
 
 ## Asset policy
 
+For every New Horizons UI layout or visual revision, follow the persistent
+[Heroes III UI style guide](NH_HOMM3_UI_STYLE_GUIDE.md). Build coherent panels
+from the outer frame inward and review them at native game resolution before
+calling a visual change complete.
+
 Maintain the [UI and asset status register](NH_UI_ASSET_STATUS.md) alongside
 runtime UI/asset changes. Its coverage is the live New Horizons content and UI,
 not just previously reported examples. Use **Not done**, **Provisional**, or
