@@ -121,6 +121,11 @@ bool isCanonicalHexOfPain(const CSpell * spell)
 	return spell && spell->getJsonKey() == newHorizonsHexOfPainAI::SPELL_ID;
 }
 
+bool isCanonicalFrailty(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:frailty";
+}
+
 bool isHexOfPainTriggerBonus(const Bonus * bonus)
 {
 	if(!bonus || bonus->type != BonusType::COMBAT_EVENT_TRIGGER
@@ -298,6 +303,65 @@ float BattleEvaluator::estimateProjectedCurseTargetValue(const battle::Unit * or
 	// Sorrow estimate's treatment of future activations.
 	const auto preventedAttackValue = expectedCurseTargetActivationValue(projected, damageCache, projectedBattle);
 	return preventedAttackValue * static_cast<float>(remainingRounds) * 0.5f;
+}
+
+float BattleEvaluator::estimateProjectedFrailtyTargetValue(const battle::Unit * original,
+	const battle::Unit * projected, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!original || !projected || !original->alive() || !projected->alive()
+		|| projected->getCount() <= 0 || projected->isGhost() || projected->isTurret()
+		|| !projectedBattle)
+		return 0.0f;
+
+	const auto availableHealth = std::max<int64_t>(0, projected->getAvailableHealth());
+	if(availableHealth <= 0)
+		return 0.0f;
+
+	int64_t increasedDamage = 0;
+	for(const auto * friendly : projectedBattle->battleGetAllUnits(false))
+	{
+		if(!friendly || !friendly->alive() || !friendly->isValidTarget(true)
+			|| friendly->isGhost() || friendly->isTurret()
+			|| friendly->unitSide() == projected->unitSide())
+			continue;
+
+		const bool shooting = projectedBattle->battleCanShoot(friendly, projected->getPosition());
+		const int attackCount = AttackPossibility::getAttackCount(*friendly, shooting, *projectedBattle);
+		if(attackCount <= 0)
+			continue;
+
+		// The child cache contains projected post-Frailty damage, while its parent
+		// retains the live pre-cast damage snapshot. Compare one activation from
+		// every allied stack, then cap their combined gain at this target's current
+		// available health. This deliberately uses no guessed effect duration.
+		const auto originalDamage = std::max<int64_t>(0,
+			damageCache.getOriginalDamage(friendly, projected, projectedBattle));
+		const auto projectedDamage = std::max<int64_t>(0,
+			damageCache.getDamage(friendly, projected, projectedBattle));
+		if(projectedDamage <= originalDamage)
+			continue;
+
+		const auto perAttackIncrease = projectedDamage - originalDamage;
+		const auto remainingHealth = availableHealth - increasedDamage;
+		const auto attacksNeededToFinish = remainingHealth / attackCount
+			+ (remainingHealth % attackCount == 0 ? 0 : 1);
+		if(perAttackIncrease >= attacksNeededToFinish)
+		{
+			increasedDamage = availableHealth;
+			break;
+		}
+
+		// The comparison above guarantees this product is below remainingHealth,
+		// so multiplying by the bounded attack count cannot overflow int64_t.
+		increasedDamage += perAttackIncrease * static_cast<int64_t>(attackCount);
+	}
+
+	if(increasedDamage <= 0)
+		return 0.0f;
+
+	return AttackPossibility::calculateDamageReduce(nullptr, projected,
+		static_cast<uint64_t>(increasedDamage), damageCache, projectedBattle);
 }
 
 float BattleEvaluator::estimateProjectedHexOfPainTargetValue(const battle::Unit * original,
@@ -2744,7 +2808,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				float damageToHostilesScore = 0;
 				float damageToFriendliesScore = 0;
 				float initiativeEffectScore = 0;
-				float timedMaledictionScore = 0;
+				float projectedDebuffScore = 0;
 				if(isCanonicalRegeneration(ps.spell))
 				{
 					const auto targets = improvedRegenerationTargets(
@@ -2815,11 +2879,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					if(ps.spell && original && state->battleGetOwner(unit) != playerID)
 					{
 						if(ps.spell->getId() == SpellID::SORROW)
-							timedMaledictionScore += estimateProjectedSorrowTargetValue(original, unit, innerCache, state);
+							projectedDebuffScore += estimateProjectedSorrowTargetValue(original, unit, innerCache, state);
 						else if(ps.spell->getId() == SpellID::CURSE)
-							timedMaledictionScore += estimateProjectedCurseTargetValue(original, unit, innerCache, state);
+							projectedDebuffScore += estimateProjectedCurseTargetValue(original, unit, innerCache, state);
 						else if(isCanonicalHexOfPain(ps.spell))
-							timedMaledictionScore += estimateProjectedHexOfPainTargetValue(original, unit, state);
+							projectedDebuffScore += estimateProjectedHexOfPainTargetValue(original, unit, state);
+						else if(isCanonicalFrailty(ps.spell) && unit->unitId() == targetId)
+							projectedDebuffScore += estimateProjectedFrailtyTargetValue(original, unit, innerCache, state);
 					}
 					const bool phantomArmyStack = phantomArmy && !original
 						&& state->battleGetOwner(unit) == playerID
@@ -2922,7 +2988,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 #endif
 					}
 				}
-				damageToHostilesScore += timedMaledictionScore * scoreEvaluator.getPositiveEffectMultiplier();
+				damageToHostilesScore += projectedDebuffScore * scoreEvaluator.getPositiveEffectMultiplier();
 
 				if (vstd::isAlmostEqual(stackActionScore, static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE)))
 				{

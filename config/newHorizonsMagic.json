@@ -217,6 +217,11 @@
 				10
 			]
 		},
+		"new-horizons:frailty": {
+			"schools": ["new-horizons:shadow"],
+			"level": 2,
+			"costs": [8, 8, 8, 8]
+		},
 		"new-horizons:focusMagic": {
 			"schools": ["new-horizons:sorcery"],
 			"level": 3,
@@ -836,6 +841,7 @@
 			"schools": [
 				"new-horizons:shadow"
 			],
+			"active": false,
 			"level": 2,
 			"costs": [
 				8,

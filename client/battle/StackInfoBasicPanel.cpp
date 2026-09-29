@@ -26,14 +26,89 @@
 #include "../../lib/texts/TextOperations.h"
 
 #include <algorithm>
+#include <string_view>
 
 namespace
 {
+constexpr std::string_view FRAILTY_SPELL_KEY = "new-horizons:frailty";
+
 struct StackStatusEntry
 {
 	newHorizonsBattleStatus::StackStatusIconKind kind;
 	std::optional<SpellID> spell;
 };
+
+struct FrailtyStatus
+{
+	int32_t accumulatedBasisPoints = 0;
+	int64_t defenseLoss = 0;
+	bool hasAccumulatedBasisPoints = false;
+};
+
+std::optional<FrailtyStatus> currentFrailtyStatus(const CStack * stack, std::string_view spellKey,
+	const TConstBonusListPtr & spellBonuses)
+{
+	if(spellKey != FRAILTY_SPELL_KEY || !stack || !spellBonuses)
+		return std::nullopt;
+
+	FrailtyStatus result;
+	bool hasFrailtyBonus = false;
+	for(const auto & bonus : *spellBonuses)
+	{
+		if(!bonus || bonus->type != BonusType::PRIMARY_SKILL
+			|| bonus->subtype != BonusSubtypeID(PrimarySkill::DEFENSE) || bonus->val > 0)
+			continue;
+
+		hasFrailtyBonus = true;
+		result.defenseLoss += -static_cast<int64_t>(bonus->val);
+		if(!bonus->parameters)
+			continue;
+
+		try
+		{
+			const auto basisPoints = bonus->parameters->toNumber();
+			if(basisPoints < 0 || basisPoints > 6000)
+				continue;
+
+			result.accumulatedBasisPoints = std::max(result.accumulatedBasisPoints, basisPoints);
+			result.hasAccumulatedBasisPoints = true;
+		}
+		catch(const std::exception &)
+		{
+			// Bonuses without the scalar addInfo still show their actual Defense penalty below.
+		}
+	}
+
+	if(!hasFrailtyBonus)
+		return std::nullopt;
+
+	if(!result.hasAccumulatedBasisPoints)
+	{
+		const auto baseDefense = LIBRARY->creatures()->getByIndex(stack->creatureIndex())->getDefense(stack->isShooter());
+		if(baseDefense > 0)
+		{
+			const auto basisPoints = (result.defenseLoss * 10000 + baseDefense / 2) / baseDefense;
+			result.accumulatedBasisPoints = static_cast<int32_t>(std::clamp<int64_t>(basisPoints, 0, 6000));
+			result.hasAccumulatedBasisPoints = true;
+		}
+	}
+
+	return result;
+}
+
+std::string frailtyTooltip(std::string_view spellDescription, const FrailtyStatus & status)
+{
+	std::string result(spellDescription);
+	if(status.hasAccumulatedBasisPoints)
+		result += "\n\nAccumulated reduction: " + newHorizonsBattleStatus::formatBasisPoints(status.accumulatedBasisPoints)
+			+ " of base Creature Defense.";
+	if(status.defenseLoss > 0)
+		result += "\nCurrent Creature Defense penalty: " + std::to_string(status.defenseLoss) + " points.";
+	if(!status.hasAccumulatedBasisPoints)
+		result += "\nThe current Defense penalty could not be normalized to base Creature Defense.";
+	result += "\nBattle-long; there is no duration counter. Dispel removes the accumulated effect.";
+	return result;
+}
 
 newHorizonsBattleStatus::DefendStatus currentDefendStatus(
 	const CStack * stack, const CPlayerBattleCallback * battleCallback)
@@ -300,6 +375,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool spellLock = newHorizonsBattleStatus::isSpellLock(spellKey);
 		const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
 		const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
+		const auto frailty = currentFrailtyStatus(stack, spellKey, spellBonuses);
 		const auto lockStatus = spellLock
 			? newHorizonsBattleStatus::spellLockStatus(*spellBonuses)
 			: std::optional<newHorizonsBattleStatus::SpellLockStatus>{};
@@ -308,12 +384,16 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach)
+		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty)
 		{
 			const std::string badge = timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
 				: spellLock ? std::string(newHorizonsBattleStatus::SPELL_LOCK_BADGE)
-				: arcaneBreach ? std::to_string(arcaneStatus.markCount()) : std::to_string(duration);
+				: arcaneBreach ? std::to_string(arcaneStatus.markCount())
+				: frailty ? (frailty->hasAccumulatedBasisPoints
+					? newHorizonsBattleStatus::formatBasisPoints(frailty->accumulatedBasisPoints)
+					: "-" + std::to_string(frailty->defenseLoss))
+				: std::to_string(duration);
 			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
 		}
 
@@ -346,6 +426,14 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		else if(arcaneBreach)
 		{
 			const std::string tooltip = newHorizonsBattleStatus::arcaneBreachTooltip(arcaneStatus);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(spellKey == FRAILTY_SPELL_KEY)
+		{
+			const std::string tooltip = frailty
+				? frailtyTooltip(effect.toSpell()->getDescriptionTranslated(0), *frailty)
+				: effect.toSpell()->getDescriptionTranslated(0)
+					+ "\n\nBattle-long; there is no duration counter. Dispel removes the accumulated effect.";
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 

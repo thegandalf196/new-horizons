@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "asset_id": "new-horizons:shadowMagic.witheringTouch",
+  "status": "Provisional",
+  "art_direction": "Withered leather gauntlet corroding a small steel buckler, distinct from the shield-dominant Frailty spell icon.",
+  "generator": "Host built-in image generator",
+  "style_reference": {
+    "guide": "homm3-art miniature modeled fantasy still-life guidance",
+    "local_reference_reviewed": "Mods/new-horizons/Images/NH_perk_malediction_normal.png",
+    "reference_usage": "Reviewed for the established active-perk finish and state binding; not supplied as an image-generation input. The first master was revised using its own draft as the edit target.",
+    "external_game_art_used": false
+  },
+  "generation_steps": [
+    {
+      "kind": "original image generation",
+      "prompt_file": "prompt-withering-touch.txt",
+      "output_master": "drafts/initial-master.png"
+    },
+    {
+      "kind": "composition revision",
+      "prompt_file": "revision-prompt-frame.txt",
+      "input_master": "drafts/initial-master.png",
+      "output_master": "exports/withering-touch/master.png"
+    }
+  ],
+  "master_dimensions": [1254, 1254],
+  "raster_exports": {
+    "method": "Pillow LANCZOS reduction from the selected square master",
+    "directory": "exports/withering-touch/",
+    "sizes": [44, 32],
+    "comparison_file": "exports/withering-touch/withering-touch-comparison.png",
+    "export_manifest": "exports/withering-touch/withering-touch-manifest.json"
+  },
+  "runtime_binding": {
+    "stem": "NH_withering_touch",
+    "descriptor": "Mods/new-horizons/Images/NH_withering_touch.json",
+    "frames": ["normal", "pressed", "disabled", "highlighted"],
+    "dimensions": [44, 44],
+    "state_manifest": "runtime-manifest.json"
+  },
+  "limitation": "Provisional art; no in-game visual review or final-art approval recorded."
+}

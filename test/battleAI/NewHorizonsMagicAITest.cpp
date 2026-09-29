@@ -4025,6 +4025,100 @@ TEST_F(NewHorizonsMagicAITest, HexOfPainLowersProjectedAttackValueAndMakesItsCas
 		<< "The hypothetical cast and its AI valuation must not mutate the live battle";
 }
 
+TEST_F(NewHorizonsMagicAITest, FrailtyValuesProjectedPhysicalDamageIncreaseAgainstHighDefenseTarget)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const SpellID frailty(SpellID::decode("new-horizons:frailty"));
+	ASSERT_NE(frailty.toSpell(), nullptr);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto known : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(frailty);
+	const auto shadowSkillId = SecondarySkill::decode("new-horizons:shadowMagic");
+	ASSERT_GE(shadowSkillId, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(shadowSkillId), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(2, 5), 10);
+	auto * hostile = addStack(BattleSide::DEFENDER, creatureByName("core:archangel"), BattleHex(12, 5), 100);
+	ASSERT_NE(friendly, nullptr);
+	ASSERT_NE(hostile, nullptr);
+	const int liveDefense = hostile->getDefense(false);
+	ASSERT_GE(liveDefense, 20) << "The test needs a target with substantial Creature Defense";
+	const int64_t liveHealth = hostile->getAvailableHealth();
+
+	const std::set<uint32_t> keepIds{friendly->unitId(), hostile->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto baseline = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto * baselineFriendly = baseline->battleGetUnitByID(friendly->unitId());
+	const auto * baselineHostile = baseline->battleGetUnitByID(hostile->unitId());
+	ASSERT_NE(baselineFriendly, nullptr);
+	ASSERT_NE(baselineHostile, nullptr);
+
+	DamageCache baselineDamage;
+	baselineDamage.buildDamageCache(baseline, BattleSide::ATTACKER);
+	const auto damageBefore = baselineDamage.getDamage(baselineFriendly, baselineHostile, baseline);
+
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto * projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+	ASSERT_NE(projectedHostile, nullptr);
+	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, frailty.toSpell());
+	const auto mechanics = frailty.toSpell()->battleMechanics(&cast);
+	const spells::Target aim{spells::Destination(projectedHostile)};
+	ASSERT_TRUE(mechanics->canBeCastAt(aim));
+	mechanics->castEval(projected->getServerCallback(), aim);
+
+	projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+	const auto * projectedFriendly = projected->battleGetUnitByID(friendly->unitId());
+	ASSERT_NE(projectedHostile, nullptr);
+	ASSERT_NE(projectedFriendly, nullptr);
+	EXPECT_LT(projectedHostile->getDefense(false), liveDefense)
+		<< "The hypothetical Frailty cast must expose its Defense loss to ordinary damage estimation";
+
+	DamageCache projectedDamage(&baselineDamage);
+	projectedDamage.buildDamageCache(projected, BattleSide::ATTACKER);
+	const auto cachedOriginalDamage = projectedDamage.getOriginalDamage(projectedFriendly, projectedHostile, projected);
+	const auto damageAfter = projectedDamage.getDamage(projectedFriendly, projectedHostile, projected);
+	EXPECT_EQ(cachedOriginalDamage, damageBefore)
+		<< "The projected cache retains the pre-cast physical-damage snapshot";
+	EXPECT_GT(damageAfter, damageBefore)
+		<< "Frailty should increase a Marksman's physical damage against the high-Defense target";
+
+	const bool shooting = projected->battleCanShoot(projectedFriendly, projectedHostile->getPosition());
+	const auto attackCount = AttackPossibility::getAttackCount(*projectedFriendly, shooting, *projected);
+	ASSERT_GT(attackCount, 1) << "Marksman's extra ranged attack must be included in the bounded forecast";
+	const auto perAttackIncrease = damageAfter - damageBefore;
+	const auto increasedDamage = std::min<int64_t>(projectedHostile->getAvailableHealth(),
+		perAttackIncrease * static_cast<int64_t>(attackCount));
+	const auto expectedValue = AttackPossibility::calculateDamageReduce(nullptr, projectedHostile,
+		static_cast<uint64_t>(increasedDamage), projectedDamage, projected);
+	const auto projectedValue = BattleEvaluator::estimateProjectedFrailtyTargetValue(
+		hostile, projectedHostile, projectedDamage, projected);
+	EXPECT_GT(projectedValue, 0.0f)
+		<< "The same bounded forecast used by spell-choice evaluation assigns Frailty positive value";
+	EXPECT_NEAR(projectedValue, expectedValue, 0.01f)
+		<< "The forecast scales the per-attack damage increase by the Marksman's attack count and caps it at target HP";
+
+	EXPECT_EQ(hostile->getDefense(false), liveDefense)
+		<< "Projecting and valuing Frailty must not modify the live stack";
+	EXPECT_EQ(hostile->getAvailableHealth(), liveHealth)
+		<< "Damage valuation must remain read-only for the live battle";
+}
+
 TEST_F(NewHorizonsMagicAITest, HexOfPainLethalSelfDamageKeepsAttackValuationFinite)
 {
 	useCommands = false;

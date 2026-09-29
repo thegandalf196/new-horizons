@@ -20,6 +20,7 @@ SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
     'new-horizons:focusMagic',
+    'new-horizons:frailty',
     'new-horizons:hexOfPain',
     'new-horizons:holyArmor',
     'new-horizons:holyWrath',
@@ -218,6 +219,25 @@ class NewHorizonsContentTest(unittest.TestCase):
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                 (size, size))
 
+    def test_frailty_has_roster_effect_and_purpose_made_art(self):
+        row = self.rules['spells']['new-horizons:frailty']
+        self.assertEqual(row['schools'], ['new-horizons:shadow'])
+        self.assertEqual((row['level'], row['costs']), (2, [8, 8, 8, 8]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['frailty']
+        self.assertEqual((spell['name'], spell['targetType']), ('Frailty', 'CREATURE'))
+        for level in spell['levels'].values():
+            self.assertEqual(level['cost'], 8)
+            self.assertEqual(level['battleEffects']['frailty']['type'],
+                             'core:frailtyEffect')
+        for role, size in (('iconBook', 44), ('iconScroll', 44),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_frailty_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+
     def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
         spell_id = 'new-horizons:holyWrath'
         row = self.rules['spells'][spell_id]
@@ -265,7 +285,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         expert_wide = {spell_id for spell_id in active_core
                        if core[spell_id]['targetType'] == 'CREATURE'
                        and core[spell_id].get('levels', {}).get('expert', {}).get('range') == 'X'}
-        self.assertEqual(len(expert_wide), 23)
+        self.assertEqual(len(expert_wide), 22)
         for spell_id in expert_wide:
             with self.subTest(spell=spell_id):
                 self.assertEqual(core[spell_id]['levels']['expert']['range'], 'X')

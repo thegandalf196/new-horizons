@@ -135,6 +135,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"frailtyEffect" : {
+		"implements" : "spellEffect",
+		"script" : "spells/frailty",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"sacrifice" : {
 		"implements" : "spellEffect",
 		"script" : "spells/sacrifice",

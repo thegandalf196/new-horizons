@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "asset": "Frailty spell icon",
+  "status": "Provisional",
+  "created": "2026-09-29",
+  "generation": {
+    "tool": "Host built-in image generator",
+    "prompt_file": "prompt-frailty.txt",
+    "master_file": "exports/frailty/master.png",
+    "master_dimensions": [1254, 1254],
+    "style_direction": "homm3-art miniature fantasy still-life guidance and local New Horizons shield icon references",
+    "style_references_reviewed": [
+      "assets/new-horizons/art-source/pavise-v1/exports/pavise/pavise-44.png",
+      "assets/new-horizons/art-source/shield-master-v1/exports/shield-master/shield-master-44.png"
+    ],
+    "reference_usage": "Reviewed as local style references; not supplied to the generator as image inputs.",
+    "external_game_art_used": false
+  },
+  "exports": {
+    "method": "Pillow LANCZOS reduction from the generated square master",
+    "directory": "exports/frailty/",
+    "sizes": [44, 32, 30],
+    "comparison_file": "exports/frailty/frailty-comparison.png",
+    "export_manifest": "exports/frailty/frailty-manifest.json"
+  },
+  "limitation": "No in-game visual review or final-art approval recorded."
+}

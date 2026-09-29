@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "provisional; not final user-approved artwork",
+  "asset_id": "new-horizons:shadowMagic.witheringTouch",
+  "stem": "NH_withering_touch",
+  "source_normal": "exports/withering-touch/withering-touch-44.png",
+  "state_roles": {
+    "normal": "Default active-perk button state; unchanged 44x44 export.",
+    "pressed": "Pressed button state; brightness 0.82.",
+    "disabled": "Disabled button state; saturation 0.15 then brightness 0.65.",
+    "highlighted": "Highlighted button state; brightness 1.13."
+  },
+  "descriptor": "Mods/new-horizons/Images/NH_withering_touch.json",
+  "files": {
+    "NH_withering_touch_normal.png": "3950fc165cfac609811bcd64e4ce81b2c77a399c42fc4e058a01e5eb42794f92",
+    "NH_withering_touch_pressed.png": "dc1c620786458e169c35881973bd64a0ce45a5544c5b58788cc1a51b02629987",
+    "NH_withering_touch_disabled.png": "2aca5a4ace60a91003a1185d5ec9778095a18eff11b6e31e3d6aea531e7d294a",
+    "NH_withering_touch_highlighted.png": "f8ad260de30ac6b6a107532b50dcc107aed5942f3d661fb8d3ee3a013a86ba54",
+    "NH_withering_touch.json": "9f650563b6aecdedead7ce950087e8c2307bed4d90726bebe54e5f2a1a6764b4"
+  }
+}

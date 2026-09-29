@@ -1261,7 +1261,7 @@
 					"requires": "basic",
 					"description": "Frailty strips an additional 5 percentage points of base Creature Defense per cast; its cumulative cap is unchanged.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Frailty strips an additional 5 percentage points of base Creature Defense per cast; its cumulative cap is unchanged."
 					}
 				},

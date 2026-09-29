@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "status": "Provisional",
+  "approval": "No in-game visual review or final-art approval recorded.",
+  "spell_id": "new-horizons:frailty",
+  "descriptor_role": "Art handoff metadata only; this file is not referenced by spell configuration.",
+  "icons": {
+    "spellbook": { "file": "NH_frailty_44.png", "dimensions": [44, 44] },
+    "scroll": { "file": "NH_frailty_44.png", "dimensions": [44, 44] },
+    "scenario_bonus": { "file": "NH_frailty_32.png", "dimensions": [32, 32] },
+    "battle_effect": { "file": "NH_frailty_30.png", "dimensions": [30, 30] }
+  },
+  "source": "assets/new-horizons/art-source/frailty-v1/"
+}

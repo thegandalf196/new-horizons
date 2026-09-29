@@ -22,10 +22,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 100/310 | 210 planned; active status alone does not certify behavior. Backstab has a selected-perk rear-attack damage path. |
+| Skill perks active | 101/310 | 209 planned; active status alone does not certify behavior. Withering Touch adds five percentage points to each Frailty cast. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 38/67 | 29 missing/inactive; Hex of Pain has focused authoritative and AI-valuation evidence, but rendered/playable delivery remains pending. |
+| Canonical combat-spell identities registered | 39/67 | 28 missing/inactive; Frailty has focused authoritative and AI-valuation evidence, but rendered/playable delivery remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -49,8 +49,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 100
-active perks, leaving nine ranks and 210 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 101
+active perks, leaving nine ranks and 209 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -163,7 +163,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 0/10 | Progression blocked |
 | Light Magic | 3/0 | 1/9 | Benediction active; nine perks missing |
-| Shadow Magic | 3/0 | 1/9 | Malediction has focused native and AI evidence; Basic selection opens Advanced progression. The other nine perks remain planned. |
+| Shadow Magic | 3/0 | 2/8 | Malediction and Withering Touch have focused native evidence. Withering Touch strengthens Frailty without raising its 60% battle cap; eight perks remain planned. |
 | Nature Magic | 3/0 | 1/9 | Herbalist active with Regeneration-focused runtime evidence; nine perks missing |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
@@ -197,9 +197,19 @@ opens the Shroud's ordinary Advanced-rank progression.
 The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
 spells. Rechecking the current saved roster after adding Holy Wrath, Storm
-of Daggers, Regeneration, Nature Poison, Holy Armor, Life Drain, and Hex of Pain shows 38 of the 67 combat identities with active settings rows and
-registered mod/core definitions, including Spell Lock; 29 are absent or inactive. An active
+of Daggers, Regeneration, Nature Poison, Holy Armor, Life Drain, Hex of Pain,
+and Frailty shows 39 of the 67 combat identities with active settings rows and
+registered mod/core definitions, including Spell Lock; 28 are absent or inactive. An active
 identity is not proof that its exact canonical effect is complete.
+
+Frailty replaces core Weakness in new saved-v3 acquisition while older saved
+rules retain Weakness. Its battle-long, Dispel-removable Defense reduction is
+calculated from intrinsic Creature Defense and accumulates to a 60% cap;
+Withering Touch adds five percentage points to each cast. Both Linux targets
+link and 6/6 authoritative plus 1/1 AI projection focused tests pass. Stack
+status text and purpose-made spell/perk icons are source-bound, but native
+rendering, save/load continuation, actual AI spell choice, and playable
+acceptance remain unverified Phase 2 work.
 
 Quicksand is among the active Nature identities. Its selected-placement path
 now has a saved-v3 opt-in marker, exact ordered caster selection, authoritative
@@ -216,7 +226,7 @@ from the active identity row.
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
-| Shadow | 12 | 4 | Frailty; Plague; Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
+| Shadow | 12 | 5 | Plague; Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
@@ -235,7 +245,7 @@ round-trip; the UI source guard passed. A rendered purchase journey and
 individual effect-completeness audit remain outstanding. These five spells
 are Summon Boat, Water Walk, Town Portal, Fly, and Dimension Door.
 
-Thirty-eight legacy core spells are still admitted despite not belonging to the
+Thirty-seven legacy core spells are still admitted despite not belonging to the
 detailed canonical combat rosters. The cleanup must disable their ordinary
 acquisition without breaking creature abilities or saved compatibility:
 
@@ -246,7 +256,7 @@ acquisition without breaking creature abilities or saved compatibility:
 `Mirth`, `Prayer`, `Precision`, `Protection from Air`, `Protection from Earth`,
 `Protection from Fire`, `Protection from Water`, `Remove Obstacle`, `Sacrifice`,
 `Scuttle Boat`, `Shield`, `Slayer`, `Stone Skin`, `View Air`, `View Earth`,
-`Visions`, `Water Elemental`, and `Weakness`.
+`Visions`, and `Water Elemental`.
 
 Sorrow's Shadow-school correction and exact saved-v3 Morale effect now have
 7/7 authoritative and 3/3 AI projected-score focused native passes. This
