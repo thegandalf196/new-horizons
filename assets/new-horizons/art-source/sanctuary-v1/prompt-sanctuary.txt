@@ -1,0 +1,14 @@
+Use case: stylized-concept
+Asset type: original Heroes III inspired game spell icon, high-resolution square master for reduction to 44×44, 32×32, and 30×30
+Primary request: create a compact, immediately readable image for Sanctuary, a Level-1 Light spell that makes one friendly creature stack untargetable by deliberate enemy attacks and hostile single-target spells while area and indirect effects still reach it.
+Scene/backdrop: subdued, finely textured dark umber and olive-brown surface, low detail behind the subject.
+Subject: a small, unmistakable ivory stone sanctuary shrine with one deep shadowed arched doorway, close view in three-quarter perspective. A single broad pale-gold ward arc curves over and around the shrine like a protective canopy, with a concentrated soft white-gold light glowing from the doorway. One small dark steel arrowhead glances away from the outside of the ward, never entering the protected space. The shrine is the dominant physical subject; the ward is a simple large readable shape.
+Style/medium: original late-1990s Western PC high-fantasy illustration; miniature modeled fantasy still-life painting, pre-rendered physical volume with painterly fantasy-book character, materially credible weathered stone and polished metal rather than photorealism.
+Composition/framing: square centered close-up emblematic still-life; shrine and ward fill most of the canvas while remaining fully inside a narrow safe inset. Preserve large clear value masses and a simple silhouette that survives reduction.
+Lighting/mood: theatrical chiaroscuro, warm pale-gold hero light on the shrine and one side of the ward, deep shadow opposite; one small concentrated magical highlight, no broad bloom.
+Color palette: warm ivory, restrained pale gold and cool steel against dark earthy umber and olive; keep the arch doorway dark enough to define the shrine.
+Materials/textures: modeled aged stone with small credible wear, a few restrained gold fittings, curved translucent magical light, dark steel arrowhead.
+Constraints: original artwork; no people; no additional props; designed to remain identifiable at 44×44, 32×32, and 30×30; no lettering, readable runes, symbols, interface, or frame. The arrowhead only suggests a focused attack being turned aside; do not imply area-effect immunity.
+Avoid: breastplate, handheld shield, castle silhouette, more than one arrowhead, large projectile, cross or heraldic emblem, clutter, ornamental border, UI chrome, text, neon glow, abundant particles, flat vectors, cartoon outline, intentional pixel art, dithering, plastic gloss, modern mobile-game aesthetic, watermark.
+
+Style reference: none supplied or used. Generation route: host built-in `image_gen` tool; no CLI/API fallback.

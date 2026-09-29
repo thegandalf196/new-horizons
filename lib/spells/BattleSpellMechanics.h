@@ -94,4 +94,8 @@ private:
 	bool canCastAtTarget(const battle::Unit * target) const;
 };
 
+/// True when a non-massive, single-creature spell directly selects an opposing Sanctified stack.
+/// Multi-target spell identities, location casts, and secondary effects remain unaffected.
+DLL_LINKAGE bool targetsSanctifiedStackDirectly(const Mechanics & mechanics, const Target & target);
+
 }

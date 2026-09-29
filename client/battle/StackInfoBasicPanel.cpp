@@ -568,6 +568,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool shadowGift = newHorizonsBattleStatus::isShadowGift(spellKey);
 		const bool vampirism = newHorizonsBattleStatus::isVampirism(spellKey);
 		const bool doom = newHorizonsBattleStatus::isDoom(spellKey);
+		const bool sanctuary = newHorizonsBattleStatus::isSanctuary(spellKey);
 		const auto doomEffect = doom ? newHorizonsBattleStatus::doomStatus(*spellBonuses)
 			: newHorizonsBattleStatus::DoomStatus{};
 		const auto frailty = currentFrailtyStatus(stack, spellKey, spellBonuses);
@@ -607,6 +608,13 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			const std::string tooltip = lockStatus
 				? newHorizonsBattleStatus::spellLockTooltip(effect.toSpell()->getDescriptionTranslated(0), *lockStatus)
 				: effect.toSpell()->getDescriptionTranslated(0);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(sanctuary)
+		{
+			// Keep the existing active-spell icon and expose its exact target and
+			// expiration rules on hover without adding another status-panel row.
+			const auto tooltip = effect.toSpell()->getDescriptionTranslated(0);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 		else if(newHorizonsBattleStatus::isRegeneration(spellKey))

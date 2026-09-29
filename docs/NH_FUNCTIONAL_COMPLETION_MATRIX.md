@@ -25,7 +25,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 105/310 | 205 planned; active status alone does not certify behavior. Reanimator adds 25% to Re-animate's casualty-restoration pool after surviving-creature wounds. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 46/67 | 21 missing/inactive; Doom completes Shadow's identity roster with focused server/AI evidence. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 47/67 | 20 missing/inactive; Sanctuary advances Light to 6/11 with focused server/AI evidence. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -318,8 +318,26 @@ curated-content suite passes 43/43. This is a Phase 1 source/native checkpoint,
 not a rendered or playable one. Phase 2 retains Dispel and save/load round trips,
 mixed flat Initiative/movement/Fortune bonuses, live AI cast-selection and
 combined resistance/exchange-score valuation. The next missing detailed-roster
-identity is Sanctuary in Light; its Wait/Defend lifecycle must not inherit the
-generic action-expiry behavior.
+identity after Sanctuary is Guardian Spirit in Light.
+
+Sanctuary is now the saved-v3 Level-1 Light, 5-Mana single-friendly-stack
+protection spell. Its spell-sourced, battle-duration marker excludes the stack
+from deliberate enemy primary creature attacks and hostile single-target
+spells, while area damage remains legal. Accepted movement, attacks, and
+offensive creature spells break protection before resolution; Wait and Defend
+preserve it. The existing active-spell status shows the purpose-made Provisional
+44/32/30 icon and help, and BattleAI can choose a threatened passive ally
+without treating collateral damage as prevented. Both Linux `vcmitest` and
+`vcmiclient` targets link. In a fresh isolated active-profile run, all 7/7
+authoritative and 2/2 AI Sanctuary cases pass with zero skips; the 44-case
+curated-content suite and module-mirror check pass. Independent source review
+found and prompted correction of the hostile-spell flag gate and found no
+remaining blocker in the repaired paths. This is source/native evidence, not
+rendered or playable acceptance. Phase 2 retains save/load and Dispel
+round-trips, unusual area/secondary creature attacks, and AI valuation when a
+protected stack acts before the projected threat. The exact expiration
+interpretation after a later Wait/Defend activation awaits user clarification;
+the current implementation preserves Sanctuary through those passive actions.
 
 Quicksand is among the active Nature identities. Its selected-placement path
 now has a saved-v3 opt-in marker, exact ordered caster selection, authoritative
@@ -335,7 +353,7 @@ from the active identity row.
 
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
-| Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
+| Light | 11 | 6 | Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |

@@ -124,6 +124,7 @@ class BattleActionProcessor : boost::noncopyable
 	};
 
 	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest); //returned value - travelled distance
+	void breakSanctuary(const CBattleInfoCallback & battle, const battle::Unit * stack);
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender,
 		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr,
 		RelentlessAssaultActionContext * relentlessAssault = nullptr,

@@ -358,6 +358,78 @@
 		},
 		"targetCondition" : {}
 	},
+	"sanctuary" : {
+		"name" : "Sanctuary",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:light" : true
+		},
+		"level" : 1,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "NH_spell_sanctuary_44.png",
+			"iconScroll" : "NH_spell_sanctuary_32.png",
+			"iconEffect" : "NH_spell_sanctuary_30.png",
+			"iconImmune" : "NH_spell_sanctuary_30.png",
+			"iconScenarioBonus" : "NH_spell_sanctuary_32.png"
+		},
+		"animation" : {
+			"affect" : ["C13SPE0"]
+		},
+		"sounds" : {
+			"cast" : "SHIELD"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Sanctify one friendly stack until it next acts. Enemy creatures cannot deliberately attack it and hostile single-target spells cannot select it; area and indirect effects still apply. Moving, attacking, or using an offensive active ability ends Sanctuary immediately. Wait and Defend preserve it.",
+				"cost" : 5,
+				"power" : 0,
+				"battleEffects" : {
+					"sanctuary" : {
+						"type" : "timed",
+						"bonus" : {
+							"sanctified" : {
+								"val" : 1,
+								"type" : "SANCTIFIED",
+								"duration" : "ONE_BATTLE"
+							}
+						}
+					}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Sanctify one friendly stack until it next acts. Enemy creatures cannot deliberately attack it and hostile single-target spells cannot select it; area and indirect effects still apply. Moving, attacking, or using an offensive active ability ends Sanctuary immediately. Wait and Defend preserve it.",
+				"cost" : 5,
+				"power" : 0,
+				"battleEffects" : {"sanctuary" : {"type" : "timed", "bonus" : {"sanctified" : {"val" : 1, "type" : "SANCTIFIED", "duration" : "ONE_BATTLE"}}}},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Sanctify one friendly stack until it next acts. Enemy creatures cannot deliberately attack it and hostile single-target spells cannot select it; area and indirect effects still apply. Moving, attacking, or using an offensive active ability ends Sanctuary immediately. Wait and Defend preserve it.",
+				"cost" : 5,
+				"power" : 0,
+				"battleEffects" : {"sanctuary" : {"type" : "timed", "bonus" : {"sanctified" : {"val" : 1, "type" : "SANCTIFIED", "duration" : "ONE_BATTLE"}}}},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Sanctify one friendly stack until it next acts. Enemy creatures cannot deliberately attack it and hostile single-target spells cannot select it; area and indirect effects still apply. Moving, attacking, or using an offensive active ability ends Sanctuary immediately. Wait and Defend preserve it.",
+				"cost" : 5,
+				"power" : 0,
+				"battleEffects" : {"sanctuary" : {"type" : "timed", "bonus" : {"sanctified" : {"val" : 1, "type" : "SANCTIFIED", "duration" : "ONE_BATTLE"}}}},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {"positive" : true},
+		"targetCondition" : {}
+	},
 	"holyArmor" : {
 		"name" : "Holy Armor",
 		"type" : "combat",

@@ -546,6 +546,11 @@ bool isCanonicalHolyArmor(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:holyArmor";
 }
 
+bool isCanonicalSanctuary(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:sanctuary";
+}
+
 struct HolyArmorProtection
 {
 	int reductionPercent = 0;
@@ -1213,6 +1218,64 @@ float holyArmorMitigationValue(BattleSide side,
 	const auto boundedHealthValue = static_cast<float>(std::min(
 		healthValue, static_cast<long double>(std::numeric_limits<float>::max())));
 	return boundedHealthValue;
+}
+
+namespace
+{
+/// Values only enemy attacks that deliberately name the Sanctified stack as
+/// their primary target. If it is merely collateral from an attack on another
+/// stack, Sanctuary does not prevent that damage and must not receive credit.
+float sanctuaryDirectAttackValue(uint32_t targetUnitId, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & battleState)
+{
+	if(!battleState)
+		return 0.0f;
+
+	const auto * target = battleState->battleGetUnitByID(targetUnitId);
+	if(!target || !target->alive() || target->getAvailableHealth() <= 0
+		|| target->hasBonusOfType(BonusType::SANCTIFIED))
+		return 0.0f;
+
+	int64_t incomingDirectDamage = 0;
+	for(const auto * attacker : battleState->battleGetAllUnits(false))
+	{
+		if(!attacker || !attacker->alive() || !attacker->isValidTarget()
+			|| attacker->isGhost() || attacker->isTurret()
+			|| !battleState->battleMatchOwner(attacker, target))
+			continue;
+
+		PotentialTargets potentialTargets(attacker, damageCache, battleState);
+		int64_t bestDirectDamage = 0;
+		for(const auto & attack : potentialTargets.possibleAttacks)
+		{
+			if(!attack.attack.defender || attack.attack.defender->unitId() != targetUnitId)
+				continue;
+
+			for(const auto & affected : attack.affectedUnits)
+			{
+				if(!affected || affected->unitId() != targetUnitId)
+					continue;
+
+				const auto damage = std::max<int64_t>(0,
+					target->getAvailableHealth() - affected->getAvailableHealth());
+				bestDirectDamage = std::max(bestDirectDamage, damage);
+			}
+		}
+
+		incomingDirectDamage += bestDirectDamage;
+		if(incomingDirectDamage >= target->getAvailableHealth())
+		{
+			incomingDirectDamage = target->getAvailableHealth();
+			break;
+		}
+	}
+
+	if(incomingDirectDamage <= 0)
+		return 0.0f;
+
+	return AttackPossibility::calculateDamageReduce(nullptr, target,
+		static_cast<uint64_t>(incomingDirectDamage), damageCache, battleState);
+}
 }
 
 /// Hero presence is exposed through InfoAboutHero even when the opposing
@@ -2862,6 +2925,31 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
 						counterspellNegated, *spellAllowance) || counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
+					continue;
+				}
+				// Sanctuary has no immediate health delta. Price only direct enemy
+				// attacks on this primary target; the attack projection keeps its
+				// normal collateral/area effects, which Sanctuary does not stop.
+				if(ps.command == HeroCommand::NONE && isCanonicalSanctuary(ps.spell))
+				{
+					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+
+					targetId = ps.dest.front().unitValue->unitId();
+					DamageCache sanctuaryDamageCache(&damageCache);
+					const auto protectionValue = sanctuaryDirectAttackValue(
+						targetId, sanctuaryDamageCache, state);
+					if(protectionValue <= 0.0f
+						|| counterspellNegated
+						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+							counterspellNegated, *spellAllowance))
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + protectionValue * scoreEvaluator.getPositiveEffectMultiplier();
 					continue;
 				}
 				// Shadow Gift's immediate sacrifice is a real cost, but its value is in

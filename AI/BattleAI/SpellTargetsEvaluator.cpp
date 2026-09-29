@@ -125,6 +125,39 @@ bool isCanonicalTimeStop(const Mechanics * spellMechanics)
 	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
 }
 
+bool isCanonicalSanctuary(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return spell && spell->getJsonKey() == "new-horizons:sanctuary";
+}
+
+std::vector<Target> canonicalSanctuaryTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!isCanonicalSanctuary(spellMechanics) || !spellMechanics->battle())
+		return result;
+
+	const auto * battle = spellMechanics->battle();
+	const auto * battleInfo = battle->getBattle();
+	if(!battleInfo || !newHorizonsMagic::rulesActive(battleInfo->getMagicRules()))
+		return result;
+
+	for(const auto * unit : battle->battleGetAllUnits(false))
+	{
+		if(!unit || !unit->alive() || !unit->isValidTarget(false) || unit->isGhost() || unit->isTurret()
+			|| unit->hasBonusOfType(BonusType::SANCTIFIED)
+			|| unit->unitSide() != spellMechanics->getCasterSide())
+			continue;
+
+		Target target{Destination(unit)};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
+	}
+
+	return result;
+}
+
 bool isCanonicalSpellLock(const Mechanics * spellMechanics)
 {
 	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
@@ -881,6 +914,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 			return {};
 		return canonicalLifeDrainTargets(spellMechanics);
 	}
+	if(isCanonicalSanctuary(spellMechanics))
+		return canonicalSanctuaryTargets(spellMechanics);
 	if(spellMechanics && spellMechanics->isNewHorizonsStormOfDaggers())
 		return stormOfDaggersTargets(spellMechanics);
 	if(isCanonicalSoulChain(spellMechanics))

@@ -39,6 +39,7 @@
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/AbilityCaster.h"
+#include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
@@ -116,6 +117,74 @@ static const char * heroOrderDisplayName(HeroCommand command)
 		case HeroCommand::FLANK: return "Flank";
 		case HeroCommand::SECOND_WIND: return "Second Wind";
 		default: return "Order";
+	}
+}
+
+static bool isSanctifiedHostileTarget(const CBattleInfoCallback & battle,
+	const battle::Unit * attacker, const battle::Unit * target)
+{
+	return attacker && target && target->hasBonusOfType(BonusType::SANCTIFIED)
+		&& battle.battleMatchOwner(attacker, target);
+}
+
+static bool creatureSpellDirectlyTargetsSanctified(const CBattleInfoCallback & battle,
+	const CStack * caster, SpellID spellID, const battle::Target & target, BonusType abilityType)
+{
+	if(!caster || !spellID.hasValue())
+		return false;
+
+	const auto ability = abilityType == BonusType::NONE
+		? std::shared_ptr<const Bonus>{}
+		: caster->getBonus(Selector::typeSubtype(abilityType, BonusSubtypeID(spellID)));
+	if(abilityType != BonusType::NONE && !ability)
+		return false;
+
+	const CSpell * spell = spellID.toSpell();
+	if(!spell)
+		return false;
+
+	spells::BattleCast cast(&battle, caster, spells::Mode::CREATURE_ACTIVE, spell);
+	int32_t spellLevel = ability ? std::max(0, ability->val) : 0;
+	if(abilityType == BonusType::SPELLCASTER)
+	{
+		if(const auto randomAbility = caster->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER)))
+			vstd::amax(spellLevel, randomAbility->val);
+	}
+	if(spell->getLevel() > 0)
+		vstd::amax(spellLevel, caster->valOfBonuses(BonusType::MAGIC_SCHOOL_SKILL, BonusSubtypeID(SpellSchool::ANY)));
+	cast.setSpellLevel(spellLevel);
+
+	const auto mechanics = spell->battleMechanics(&cast);
+	return mechanics && spells::targetsSanctifiedStackDirectly(*mechanics, target);
+}
+
+static bool actionDirectlyTargetsSanctified(const CBattleInfoCallback & battle,
+	const BattleAction & action, const CStack * stack)
+{
+	const auto target = action.getTarget(&battle);
+	switch(action.actionType)
+	{
+		case EActionType::WALK_AND_ATTACK:
+			return target.size() >= 2
+				&& isSanctifiedHostileTarget(battle, stack,
+					battle.battleGetStackByPos(target[1].hexValue, true));
+		case EActionType::SHOOT:
+			// These attacks are selected by location; Sanctified units remain valid area targets.
+			return !battle.battleCanTargetEmptyHex(stack) && !target.empty()
+				&& isSanctifiedHostileTarget(battle, stack,
+					battle.battleGetStackByPos(target.front().hexValue, true));
+		case EActionType::MONSTER_SPELL:
+			return creatureSpellDirectlyTargetsSanctified(battle, stack, action.spell, target, BonusType::SPELLCASTER);
+		case EActionType::WALK_AND_CAST:
+		{
+			if(target.size() < 2)
+				return false;
+			battle::Target spellTarget{target[1]};
+			return creatureSpellDirectlyTargetsSanctified(battle, stack, action.spell,
+				spellTarget, BonusType::ADJACENT_SPELLCASTER);
+		}
+		default:
+			return false;
 	}
 }
 
@@ -993,6 +1062,11 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		gameHandler->complain("Invalid target to attack");
 		return false;
 	}
+	if(isSanctifiedHostileTarget(battle, stack, destinationStack))
+	{
+		gameHandler->complain("A Sanctified stack cannot be selected for a direct attack.");
+		return false;
+	}
 
 	BattleHex startingPos = stack->getPosition();
 	int beforeAttackSpeed = stack->getMovementRange(0);
@@ -1057,6 +1131,8 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		gameHandler->complain("Attack cannot be performed!");
 		return false;
 	}
+	// Drop Sanctuary before any first strike or counterattack can be resolved.
+	breakSanctuary(battle, stack);
 	if(skirmisherShot)
 	{
 		auto rainOfArrows = beginRainOfArrows(battle, stack, destinationStack);
@@ -1420,6 +1496,8 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		gameHandler->complain("No target to shoot!");
 		return false;
 	}
+	// A ranged attack, including a valid area shot, is an offensive action.
+	breakSanctuary(battle, stack);
 	auto rainOfArrows = beginRainOfArrows(battle, stack, destinationStack);
 	RelentlessAssaultActionContext relentlessAssault;
 
@@ -1558,6 +1636,13 @@ bool BattleActionProcessor::doUnitSpellAction(const CBattleInfoCallback & battle
 	if(spell->getLevel() > 0)
 		vstd::amax(spellLvl, stack->valOfBonuses(BonusType::MAGIC_SCHOOL_SKILL, BonusSubtypeID(SpellSchool::ANY)));
 	parameters.setSpellLevel(spellLvl);
+	if(spells::targetsSanctifiedStackDirectly(*spell->battleMechanics(&parameters), target))
+	{
+		gameHandler->complain("A Sanctified stack cannot be selected by a hostile single-target spell.");
+		return false;
+	}
+	if(spell->isOffensive() || spell->isNegative() || spell->isDamage())
+		breakSanctuary(battle, stack);
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
 
 	processBattleEventTriggers(battle, CombatEventType::UNIT_SPELLCAST, stack, nullptr);
@@ -1642,6 +1727,14 @@ bool BattleActionProcessor::doWalkAndSpellcastAction(const CBattleInfoCallback &
 		gameHandler->complain("Creature cannot walk and spellcast.");
 		return false;
 	}
+	battle::Target spellTarget;
+	spellTarget.emplace_back(destinationStack);
+	if(creatureSpellDirectlyTargetsSanctified(battle, stack, spellID, spellTarget,
+		BonusType::ADJACENT_SPELLCASTER))
+	{
+		gameHandler->complain("A Sanctified stack cannot be selected by a hostile single-target spell.");
+		return false;
+	}
 
 	const auto movementResult = moveStack(battle, ba.stackNumber, movementDestinationTile);
 
@@ -1658,13 +1751,13 @@ bool BattleActionProcessor::doWalkAndSpellcastAction(const CBattleInfoCallback &
 
 	const CSpell * spell = spellID.toSpell();
 	spells::BattleCast parameters(&battle, stack, spells::Mode::CREATURE_ACTIVE, spell);
-	battle::Target spellTarget;
-	spellTarget.emplace_back(destinationStack);
 	int32_t spellLvl = std::max(0, bonus->val);
 	//Magic Plains raises level of spells cast by creatures; must match the client-side preview in BattleActionsController
 	if(spell->getLevel() > 0)
 		vstd::amax(spellLvl, stack->valOfBonuses(BonusType::MAGIC_SCHOOL_SKILL, BonusSubtypeID(SpellSchool::ANY)));
 	parameters.setSpellLevel(spellLvl);
+	if(spell->isOffensive() || spell->isNegative() || spell->isDamage())
+		breakSanctuary(battle, stack);
 	parameters.cast(gameHandler->spellcastEnvironment(), spellTarget);
 
 	processBattleEventTriggers(battle, CombatEventType::UNIT_SPELLCAST, stack, nullptr);
@@ -2082,6 +2175,11 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		return false;
 	}
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
+	if(stack && actionDirectlyTargetsSanctified(battle, ba, stack))
+	{
+		gameHandler->complain("A Sanctified stack cannot be selected by a direct attack or hostile single-target spell.");
+		return false;
+	}
 	// WAIT provenance is published by StartAction. Validate a repeated request
 	// against the pre-action snapshot, before that packet marks the first legal
 	// Wait as completed.
@@ -2150,6 +2248,24 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
 
 	return result;
+}
+
+void BattleActionProcessor::breakSanctuary(const CBattleInfoCallback & battle, const battle::Unit * stack)
+{
+	if(!stack)
+		return;
+	const auto markers = stack->getBonusesOfType(BonusType::SANCTIFIED);
+	if(markers->empty())
+		return;
+	removeBonuses(battle, stack, *markers);
+
+	BattleLogMessage message;
+	message.battleID = battle.getBattle()->getBattleID();
+	MetaString line;
+	line.appendRawString("Sanctuary ends for %s.");
+	stack->addNameReplacement(line);
+	message.lines.push_back(std::move(line));
+	gameHandler->sendAndApply(message);
 }
 
 BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest)
@@ -2274,6 +2390,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 			sm.tilesToMove = tiles;
 			sm.distance = pathDistance;
 			sm.teleporting = false;
+			breakSanctuary(battle, currentUnit);
 			gameHandler->sendAndApply(sm);
 		}
 	}
@@ -2395,6 +2512,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 				sm.distance = pathDistance;
 				sm.teleporting = false;
 				sm.tilesToMove = tiles;
+				breakSanctuary(battle, currentUnit);
 				gameHandler->sendAndApply(sm);
 				tiles.clear();
 			}

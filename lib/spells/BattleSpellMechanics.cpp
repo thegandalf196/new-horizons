@@ -530,6 +530,36 @@ namespace SRSLPraserHelpers
 	}
 }
 
+bool targetsSanctifiedStackDirectly(const Mechanics & mechanics, const Target & target)
+{
+	if(target.size() != 1 || mechanics.isMassive())
+		return false;
+	const auto * spell = mechanics.getSpell();
+	if(!spell || !(spell->isOffensive() || spell->isNegative() || spell->isDamage()))
+		return false;
+
+	const auto targetTypes = mechanics.getTargetTypes();
+	if(targetTypes != std::vector<AimType>{AimType::CREATURE})
+		return false;
+	if(mechanics.getSpellId() == SpellID::CHAIN_LIGHTNING || mechanics.isNewHorizonsStormOfDaggers())
+		return false;
+
+	const auto affectedStacks = mechanics.getAffectedStacks(target);
+	if(affectedStacks.size() != 1)
+		return false;
+
+	const auto * battle = mechanics.battle();
+	if(!battle)
+		return false;
+
+	const auto & destination = target.front();
+	const auto * unit = destination.unitValue;
+	if(!unit && destination.hexValue.isValid())
+		unit = battle->battleGetUnitByPos(destination.hexValue, true);
+
+	return unit && unit->hasBonusOfType(BonusType::SANCTIFIED) && mechanics.ownerMatches(unit, false);
+}
+
 BattleSpellMechanics::BattleSpellMechanics(const IBattleCast * event,
 										   std::shared_ptr<effects::Effects> effects_,
 										   std::shared_ptr<IReceptiveCheck> targetCondition_):
@@ -852,6 +882,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target) const
 bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem) const
 {
 	if(!canBeCast(problem))
+		return false;
+	if(targetsSanctifiedStackDirectly(*this, target))
 		return false;
 
 	const bool newHorizonsCure = isNewHorizonsCure();

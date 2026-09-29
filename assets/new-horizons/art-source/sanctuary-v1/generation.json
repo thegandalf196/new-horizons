@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "asset": "new-horizons:sanctuary",
+  "status": "provisional original concept art; runtime binding and in-game visual review pending",
+  "generation": {
+    "tool": "host built-in image_gen",
+    "mode": "generate",
+    "model": "not exposed",
+    "output_id": "exec-215d7fbc-ea7e-41a9-a524-bdf7add852c0",
+    "style_reference": "none",
+    "input_images": []
+  },
+  "master": {
+    "file": "exports/sanctuary/master.png",
+    "dimensions": [1254, 1254],
+    "mode": "RGB",
+    "sha256": "3b4c6e303ee6fe631d35877719369615eeff7e93925197a60cf5cadac9c4ccb2"
+  },
+  "prompt_file": "prompt-sanctuary.txt",
+  "exports": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "method": "LANCZOS reduction",
+    "native_sizes": [44, 32, 30],
+    "comparison_file": "exports/sanctuary/sanctuary-comparison.png",
+    "export_manifest": "exports/sanctuary/sanctuary-manifest.json"
+  },
+  "review": {
+    "44x44": "arched refuge and enclosing ward remain distinct at native size",
+    "32x32": "arched refuge and enclosing ward remain distinct at native size",
+    "30x30": "arched refuge and enclosing ward remain distinct at native size; inspected separately at 1:1",
+    "config_binding": "pending spell owner integration",
+    "in_game_rendering": "not reviewed",
+    "final_art_approval": "not recorded"
+  }
+}

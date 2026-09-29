@@ -223,6 +223,7 @@ class JsonNode;
 	BONUS_NAME(STACKS_INITIATIVE_FLAT) /*flat points added after percentage initiative modifiers*/ \
 	BONUS_NAME(MINIMUM_MORALE) /*minimum final morale while present; value is the floor*/ \
 	BONUS_NAME(SIEGE_RATING) /*additive New Horizons Siege rating; applied to machine output formulas*/ \
+	BONUS_NAME(SANCTIFIED) /*New Horizons Sanctuary: excludes this stack from deliberate direct targeting*/ \
 
 	/* end of list */
 

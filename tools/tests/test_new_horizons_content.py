@@ -33,6 +33,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:plague',
     'new-horizons:poison',
     'new-horizons:regeneration',
+    'new-horizons:sanctuary',
     'new-horizons:reanimate',
     'new-horizons:shadowGift',
     'new-horizons:soulChain',
@@ -403,6 +404,29 @@ class NewHorizonsContentTest(unittest.TestCase):
         texts = load('config/newHorizonsCombatTexts.json')
         self.assertIn('new-horizons.combat.doom.applied', texts)
         self.assertIn('new-horizons.combat.doom.refreshed', texts)
+
+    def test_sanctuary_is_a_light_single_stack_spell_with_original_art(self):
+        row = self.rules['spells']['new-horizons:sanctuary']
+        self.assertEqual(row['schools'], ['new-horizons:light'])
+        self.assertEqual((row['level'], row['costs']), (1, [5, 5, 5, 5]))
+        self.assertNotIn('directDamage', row)
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['sanctuary']
+        self.assertEqual((spell['name'], spell['targetType']), ('Sanctuary', 'CREATURE'))
+        self.assertTrue(spell['flags']['positive'])
+        self.assertFalse(spell['flags'].get('negative', False))
+        for level in spell['levels'].values():
+            self.assertEqual(level['cost'], 5)
+            marker = level['battleEffects']['sanctuary']['bonus']['sanctified']
+            self.assertEqual((marker['type'], marker['duration']), ('SANCTIFIED', 'ONE_BATTLE'))
+            self.assertTrue(level['targetModifier']['smart'])
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_spell_sanctuary_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
 
     def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
         spell_id = 'new-horizons:holyWrath'

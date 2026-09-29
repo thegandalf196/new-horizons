@@ -145,6 +145,11 @@ SpellID doomSpell()
 	return SpellID(SpellID::decode(std::string(newHorizonsMagic::SHADOW_DOOM_SPELL)));
 }
 
+SpellID sanctuarySpell()
+{
+	return SpellID(SpellID::decode("new-horizons:sanctuary"));
+}
+
 void addVampirismStatus(CStack * target, SpellID spell, int healBasisPoints, int turns)
 {
 	if(!target)
@@ -364,6 +369,19 @@ protected:
 		const SecondarySkill shadowMagic(shadowMagicId);
 		attackerSideHero->setSecSkillLevel(shadowMagic, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+	}
+
+	void prepareSanctuaryCaster()
+	{
+		ASSERT_NO_FATAL_FAILURE(startGame());
+		const auto sanctuary = sanctuarySpell();
+		ASSERT_NE(sanctuary, SpellID::NONE);
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		for(const auto known : attackerSideHero->getSpellsInSpellbook())
+			attackerSideHero->removeSpellFromSpellbook(known);
+		attackerSideHero->addSpellToSpellbook(sanctuary);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(attackerSideHero, 1000);
 	}
 };
@@ -5438,6 +5456,139 @@ TEST_F(NewHorizonsMagicAITest, SoulReaperAIDoesNotLeakIntoPreV3SavedRoster)
 	EXPECT_FALSE(evaluator.attemptCastingSpell(active))
 		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_TRUE(callback->submitted.empty());
+}
+
+TEST_F(NewHorizonsMagicAITest, SanctuaryAIValuesDirectThreatOnPassiveAllyAndExcludesSanctifiedPrimary)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareSanctuaryCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	auto * active = addStack(BattleSide::ATTACKER,
+		creatureByName("core:peasant"), BattleHex(1, 1), 1);
+	auto * passiveAlly = addStack(BattleSide::ATTACKER,
+		creatureByName("core:pikeman"), BattleHex(3, 5), 100);
+	auto * enemyShooter = addStack(BattleSide::DEFENDER,
+		creatureByName("core:marksman"), BattleHex(12, 5), 20);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(passiveAlly, nullptr);
+	ASSERT_NE(enemyShooter, nullptr);
+	ASSERT_TRUE(battle()->battleCanShoot(enemyShooter, passiveAlly->getPosition()));
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -passiveAlly->getMovementRange();
+	passiveAlly->addNewBonus(std::make_shared<Bonus>(immobilized));
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(action.spell, sanctuarySpell());
+	const auto selected = action.getTarget(battle());
+	ASSERT_EQ(selected.size(), 1u);
+	ASSERT_NE(selected.front().unitValue, nullptr);
+	EXPECT_EQ(selected.front().unitValue->unitId(), passiveAlly->unitId())
+		<< "The score should prefer the exposed passive army over the one-creature active stack";
+	EXPECT_FALSE(passiveAlly->hasBonusOfType(BonusType::SANCTIFIED))
+		<< "AI projection must not mutate the authoritative stack";
+
+	const auto hasPrimaryTarget = [&](const PotentialTargets & targets)
+	{
+		return std::any_of(targets.possibleAttacks.begin(), targets.possibleAttacks.end(), [&](const AttackPossibility & attack)
+		{
+			return attack.attack.defender
+				&& attack.attack.defender->unitId() == passiveAlly->unitId();
+		});
+	};
+	auto unprotectedModel = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache unprotectedDamage;
+	unprotectedDamage.buildDamageCache(unprotectedModel, BattleSide::DEFENDER);
+	const auto * projectedShooter = unprotectedModel->battleGetUnitByID(enemyShooter->unitId());
+	ASSERT_NE(projectedShooter, nullptr);
+	PotentialTargets unprotectedTargets(projectedShooter, unprotectedDamage, unprotectedModel);
+	EXPECT_TRUE(hasPrimaryTarget(unprotectedTargets));
+
+	const auto sanctuary = sanctuarySpell();
+	Bonus sanctified(BonusDuration::ONE_BATTLE, BonusType::SANCTIFIED,
+		BonusSource::SPELL_EFFECT, 1, BonusSourceID(sanctuary));
+	passiveAlly->addNewBonus(std::make_shared<Bonus>(sanctified));
+	auto protectedModel = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache protectedDamage;
+	protectedDamage.buildDamageCache(protectedModel, BattleSide::DEFENDER);
+	const auto * protectedShooter = protectedModel->battleGetUnitByID(enemyShooter->unitId());
+	ASSERT_NE(protectedShooter, nullptr);
+	PotentialTargets protectedTargets(protectedShooter, protectedDamage, protectedModel);
+	EXPECT_FALSE(hasPrimaryTarget(protectedTargets));
+}
+
+TEST_F(NewHorizonsMagicAITest, SanctuaryAIDoesNotCastAgainOnAnAlreadySanctifiedStack)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareSanctuaryCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	auto * active = addStack(BattleSide::ATTACKER,
+		creatureByName("core:pikeman"), BattleHex(3, 5), 20);
+	auto * enemyShooter = addStack(BattleSide::DEFENDER,
+		creatureByName("core:marksman"), BattleHex(12, 5), 20);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(enemyShooter, nullptr);
+	ASSERT_TRUE(battle()->battleCanShoot(enemyShooter, active->getPosition()));
+
+	const auto sanctuary = sanctuarySpell();
+	Bonus sanctified(BonusDuration::ONE_BATTLE, BonusType::SANCTIFIED,
+		BonusSource::SPELL_EFFECT, 1, BonusSourceID(sanctuary));
+	active->addNewBonus(std::make_shared<Bonus>(sanctified));
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_TRUE(active->hasBonusOfType(BonusType::SANCTIFIED));
 }
 
 TEST_F(NewHorizonsMagicAITest, VampirismAIChoosesWoundedAttackerWithForecastDamage)

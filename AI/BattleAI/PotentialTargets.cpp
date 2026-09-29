@@ -36,6 +36,13 @@ PotentialTargets::PotentialTargets(
 
 	for(auto defender : aliveUnits)
 	{
+		// Sanctuary bars this unit only as a deliberately selected enemy primary.
+		// Attacks whose primary is another stack may still include it as collateral.
+		const bool sanctuaryEnemy = defender->hasBonusOfType(BonusType::SANCTIFIED)
+			&& state->battleMatchOwner(attackerInfo, defender);
+		if(sanctuaryEnemy && !state->battleCanTargetEmptyHex(attackerInfo))
+			continue;
+
 		if(!isBerserk && !state->battleMatchOwner(attackerInfo, defender))
 			continue;
 
@@ -80,7 +87,7 @@ PotentialTargets::PotentialTargets(
 			if(canShootFromCurrentPosition)
 				possibleAttacks.push_back(GenerateAttackInfo(true, BattleHex::INVALID));
 
-			if(newHorizonsArchery::canUseSkirmisher(state->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
+			if(!sanctuaryEnemy && newHorizonsArchery::canUseSkirmisher(state->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
 			{
 				// Score every legal destination so the AI can trade movement, firing line,
 				// range, and Counterfire exposure instead of always choosing one nearest hex.
@@ -89,7 +96,7 @@ PotentialTargets::PotentialTargets(
 					possibleAttacks.push_back(GenerateAttackInfo(true, hex));
 			}
 
-			if(!canShootFromCurrentPosition)
+			if(!canShootFromCurrentPosition && !sanctuaryEnemy)
 			{
 				for(const BattleHex & hex : avHexes)
 				{

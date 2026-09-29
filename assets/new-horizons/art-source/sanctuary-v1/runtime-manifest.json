@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "asset": "new-horizons:sanctuary",
+  "status": "provisional; config binding pending",
+  "method": "homm3-art high-resolution master, square LANCZOS reductions",
+  "files": {
+    "assets/new-horizons/art-source/sanctuary-v1/runtime/NH_spell_sanctuary_44.png": {
+      "dimensions": [44, 44],
+      "sha256": "1246f2e00b07c0e2687d83a2cbae74172e71caa730f4509d233f8e1f5a924c23"
+    },
+    "Mods/new-horizons/Images/NH_spell_sanctuary_44.png": {
+      "dimensions": [44, 44],
+      "sha256": "1246f2e00b07c0e2687d83a2cbae74172e71caa730f4509d233f8e1f5a924c23"
+    },
+    "assets/new-horizons/art-source/sanctuary-v1/runtime/NH_spell_sanctuary_32.png": {
+      "dimensions": [32, 32],
+      "sha256": "e32e60e5431757f876f7222985279dac74e806293b24c4095075d7169b4a73df"
+    },
+    "Mods/new-horizons/Images/NH_spell_sanctuary_32.png": {
+      "dimensions": [32, 32],
+      "sha256": "e32e60e5431757f876f7222985279dac74e806293b24c4095075d7169b4a73df"
+    },
+    "assets/new-horizons/art-source/sanctuary-v1/runtime/NH_spell_sanctuary_30.png": {
+      "dimensions": [30, 30],
+      "sha256": "392d82f79375365e0945a49b6541e90a442273e316ee375b3bf54fa731e1ba24"
+    },
+    "Mods/new-horizons/Images/NH_spell_sanctuary_30.png": {
+      "dimensions": [30, 30],
+      "sha256": "392d82f79375365e0945a49b6541e90a442273e316ee375b3bf54fa731e1ba24"
+    }
+  }
+}

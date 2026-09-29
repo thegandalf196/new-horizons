@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "sanctuary",
+  "source": {
+    "path": "master.png",
+    "filename": "exec-215d7fbc-ea7e-41a9-a524-bdf7add852c0.png",
+    "byte_size": 2496710,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "3b4c6e303ee6fe631d35877719369615eeff7e93925197a60cf5cadac9c4ccb2"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "3b4c6e303ee6fe631d35877719369615eeff7e93925197a60cf5cadac9c4ccb2"
+    },
+    {
+      "file": "sanctuary-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "1246f2e00b07c0e2687d83a2cbae74172e71caa730f4509d233f8e1f5a924c23"
+    },
+    {
+      "file": "sanctuary-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "e32e60e5431757f876f7222985279dac74e806293b24c4095075d7169b4a73df"
+    },
+    {
+      "file": "sanctuary-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "392d82f79375365e0945a49b6541e90a442273e316ee375b3bf54fa731e1ba24"
+    },
+    {
+      "file": "sanctuary-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "e8e365b6d9141f8e4b6a4e54a4396eec13c788576a46c75d98950c23cbc5b217"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "sanctuary-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "sanctuary-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "sanctuary-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "sanctuary-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

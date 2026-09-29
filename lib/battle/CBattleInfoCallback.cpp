@@ -1812,7 +1812,8 @@ bool CBattleInfoCallback::battleCanAttackUnit(const battle::Unit * attacker, con
 	if (!attacker)
 		throw std::runtime_error("Undefined attacker in battleCanAttackUnit!");
 
-	if(!target || target->isInvincible())
+	if(!target || target->isInvincible()
+		|| (target->hasBonusOfType(BonusType::SANCTIFIED) && battleMatchOwner(attacker, target)))
 		return false;
 
 	if(attacker == target || !battleMatchOwner(attacker, target))
@@ -1867,6 +1868,8 @@ bool CBattleInfoCallback::battleCanTargetEmptyHex(const battle::Unit * attacker)
 BattleHexArray CBattleInfoCallback::meleeAttackHexes(const battle::Unit * attacker, const battle::Unit * defender, const BattleHex & attackerPosition, const BattleHex & defenderPosition) const
 {
 	BattleHexArray res;
+	if(!defender)
+		return res;
 
 	BattleHex attackerPos = attackerPosition.isValid() ? attackerPosition : attacker->getPosition();
 	BattleHex defenderPos = defenderPosition.isValid() ? defenderPosition : defender->getPosition();
@@ -1952,7 +1955,8 @@ bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, const Ba
 		if(!defender)
 			return false;
 
-		if(defender->isInvincible())
+		if(defender->isInvincible()
+			|| (defender->hasBonusOfType(BonusType::SANCTIFIED) && battleMatchOwner(attacker, defender)))
 			return false;
 	}
 

@@ -35,6 +35,7 @@ namespace newHorizonsBattleStatus
 inline constexpr std::string_view TIME_STOP_SPELL_KEY = "new-horizons:timeStop";
 inline constexpr std::string_view SPELL_LOCK_SPELL_KEY = "new-horizons:spellLock";
 inline constexpr std::string_view REGENERATION_SPELL_KEY = newHorizonsMagic::NATURE_REGENERATION_SPELL;
+inline constexpr std::string_view SANCTUARY_SPELL_KEY = "new-horizons:sanctuary";
 inline constexpr std::string_view SHADOW_GIFT_SPELL_KEY = "new-horizons:shadowGift";
 inline constexpr std::string_view SHADOW_GIFT_TRIGGER_KEY = "core:shadowGift";
 inline constexpr std::string_view VAMPIRISM_SPELL_KEY = "new-horizons:vampirism";
@@ -83,6 +84,11 @@ inline std::string timeStopTooltip(std::string_view spellDescription)
 inline bool isSpellLock(std::string_view spellKey)
 {
 	return spellKey == SPELL_LOCK_SPELL_KEY;
+}
+
+inline bool isSanctuary(std::string_view spellKey)
+{
+	return spellKey == SANCTUARY_SPELL_KEY;
 }
 
 struct SpellLockStatus
