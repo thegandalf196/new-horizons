@@ -5,6 +5,7 @@
 	"new-horizons.combat.arcaneBreach.side.defender": "defending",
 	"new-horizons.combat.spellLock.preserveBeneficial": "Spell Lock seals %s for %d rounds, removing hostile magic and preserving its beneficial magic. Its existing magic is frozen for the duration; no further magic can affect it, but Orders still can.",
 	"new-horizons.combat.spellLock.preserveHostile": "Spell Lock seals %s for %d rounds, removing beneficial magic and preserving its hostile magic. Its existing magic is frozen for the duration; no further magic can affect it, but Orders still can.",
+	"new-horizons.combat.lifeDrain.healed": "Life Drain restores %d health to %s.",
 	"new-horizons.combat.physicalPoison.label": "Physical Poison",
 	"new-horizons.combat.physicalPoison.tooltip": "%LABEL\nNext real activation tick: %DAMAGE physical damage.\n%ACTIVATIONS real activations remaining.",
 	"new-horizons.combat.physicalPoison.hiddenEffects": "%COUNT additional active effects are not shown."

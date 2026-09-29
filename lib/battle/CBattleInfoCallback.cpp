@@ -1053,7 +1053,8 @@ std::vector<PossiblePlayerBattleAction> CBattleInfoCallback::getClientActionsFor
 				{
 					const CSpell *spell = spellID.toSpell();
 					PossiblePlayerBattleAction act = getCasterAction(spell, stack, spells::Mode::CREATURE_ACTIVE);
-					allowedActionList.push_back(act);
+					if(act.get() != PossiblePlayerBattleAction::INVALID)
+						allowedActionList.push_back(act);
 				}
 			}
 			if(stack->hasBonusOfType(BonusType::RANDOM_SPELLCASTER))
@@ -1109,6 +1110,15 @@ PossiblePlayerBattleAction CBattleInfoCallback::getCasterAction(const CSpell * s
 	RETURN_IF_NOT_BATTLE(PossiblePlayerBattleAction::INVALID);
 
 	const spells::BattleCast cast(this, caster, mode, spell);
+	if(spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL)
+	{
+		// Life Drain is a human hero spell with an ordered enemy/friendly pair;
+		// it must not fall through to the legacy Sacrifice two-target selector.
+		if(mode == spells::Mode::HERO)
+			return PossiblePlayerBattleAction(PossiblePlayerBattleAction::LIFE_DRAIN, spell->id);
+		return PossiblePlayerBattleAction::INVALID;
+	}
+
 	auto targetTypes = spell->battleMechanics(&cast)->getTargetTypes();
 
 	if(targetTypes.empty() || targetTypes.front() == spells::AimType::NOTHING)

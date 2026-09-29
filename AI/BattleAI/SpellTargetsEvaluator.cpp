@@ -39,6 +39,53 @@ bool isTransfigureMatter(const Mechanics * spellMechanics)
 	return spell && spell->getJsonKey() == "new-horizons:transfigureMatter";
 }
 
+bool isCanonicalLifeDrain(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL;
+}
+
+std::vector<Target> canonicalLifeDrainTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!spellMechanics || !spellMechanics->battle())
+		return result;
+
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		return result;
+
+	std::vector<const battle::Unit *> enemies;
+	std::vector<const battle::Unit *> friendlies;
+	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	{
+		// Life Drain requires two surviving, targetable stacks. In particular, do
+		// not offer corpses to the healing half of the pair: this spell cannot
+		// restore dead creatures.
+		if(!unit || !unit->alive() || !unit->isValidTarget(false))
+			continue;
+
+		if(unit->unitSide() == casterSide)
+			friendlies.push_back(unit);
+		else if(unit->unitSide() == spellMechanics->battle()->otherSide(casterSide))
+			enemies.push_back(unit);
+	}
+
+	// Target order is part of the spell contract: the hostile source is first,
+	// then the friendly recipient. Validate only complete pairs because Life
+	// Drain has no meaningful one-creature prefix target.
+	for(const auto * enemy : enemies)
+		for(const auto * friendly : friendlies)
+		{
+			Target target{Destination(enemy), Destination(friendly)};
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem))
+				result.push_back(std::move(target));
+		}
+
+	return result;
+}
+
 bool isPhysicalObstacle(const CObstacleInstance & obstacle)
 {
 	// The curated effect deliberately admits ordinary scenery only. Absolute
@@ -511,6 +558,15 @@ std::vector<Target> stormOfDaggersTargets(Mechanics * spellMechanics)
 
 std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMechanics)
 {
+	// Handle this identity before the saved-profile helpers below query the
+	// numeric spell ID. The canonical New Horizons spell has a content key of
+	// its own and needs no legacy/core-ID translation for target enumeration.
+	if(isCanonicalLifeDrain(spellMechanics))
+	{
+		if(spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE, AimType::CREATURE})
+			return {};
+		return canonicalLifeDrainTargets(spellMechanics);
+	}
 	if(spellMechanics && spellMechanics->isNewHorizonsStormOfDaggers())
 		return stormOfDaggersTargets(spellMechanics);
 	if(isCanonicalNaturePoison(spellMechanics))

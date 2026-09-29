@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "effects/EffectFixture.h"
 #include "../../lib/spells/NewHorizonsDirectDamage.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include <limits>
@@ -148,4 +149,61 @@ TEST(NewHorizonsDirectDamageTest, DisintegrateUsesTheSavedDamageFormula)
 	EXPECT_EQ(formula->evaluate(0, 10), 180);
 	EXPECT_EQ(formula->evaluate(20, 10), 230);
 	EXPECT_EQ(newHorizonsMagic::directDamageValue(rules, "new-horizons:disintegrate", 24, 10), 240);
+}
+
+TEST(NewHorizonsDirectDamageTest, LifeDrainUsesItsCanonicalFixedAndSpellPowerTerms)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	const auto formula = spellDirectDamage(rules, "new-horizons:lifeDrain");
+	ASSERT_TRUE(formula);
+	EXPECT_EQ(formula->base, 25);
+	EXPECT_EQ(formula->powerCoefficient, 18);
+	EXPECT_EQ(formula->evaluateBasisPoints(100, 10, 10000), 205)
+		<< "SP 100 yields 25 + 1.8 x 100 with no rank coefficient";
+	EXPECT_EQ(formula->evaluateBasisPoints(100, 10, 11500), 232);
+	EXPECT_EQ(formula->evaluateBasisPoints(100, 10, 13000), 259);
+	EXPECT_EQ(formula->evaluateBasisPoints(100, 10, 14500), 286);
+
+	auto legacy = rules;
+	legacy["rulesetVersion"].Integer() = newHorizonsMagic::RULESET_VERSION;
+	legacy["spells"].Struct().erase("new-horizons:lifeDrain");
+	EXPECT_FALSE(spellDirectDamage(legacy, "new-horizons:lifeDrain"))
+		<< "Legacy saved rosters without the Life Drain entry do not activate its formula";
+}
+
+namespace test
+{
+class LifeDrainScriptTest : public ::testing::Test, public EffectFixture
+{
+public:
+	LifeDrainScriptTest() : EffectFixture("core:lifeDrainEffect") {}
+
+protected:
+	void SetUp() override
+	{
+		EffectFixture::setUp();
+		setupEffect(JsonNode());
+	}
+};
+
+TEST_F(LifeDrainScriptTest, AddsOrderedEnemyThenFriendlyCreatureTargets)
+{
+	std::vector<AimType> types{AimType::CREATURE};
+	subject->adjustTargetTypes(types, &mechanicsMock);
+	EXPECT_EQ(types, (std::vector<AimType>{AimType::CREATURE, AimType::CREATURE}));
+}
+
+TEST_F(LifeDrainScriptTest, LegacyMagicDoesNotExposeAnEffectOrPreview)
+{
+	EXPECT_CALL(mechanicsMock, adaptProblem(Eq(ESpellCastProblem::NO_APPROPRIATE_TARGET), Ref(problemMock)))
+		.WillOnce(Return(false));
+	EXPECT_FALSE(subject->applicableGeneral(problemMock, &mechanicsMock));
+
+	const auto preview = subject->getHealthChange(&mechanicsMock, {});
+	EXPECT_EQ(preview.hpDelta, 0);
+	EXPECT_EQ(preview.unitsDelta, 0);
+
+	// The script must remain a no-op for old snapshots even if invoked directly.
+	subject->apply(&serverMock, &mechanicsMock, {});
+}
 }

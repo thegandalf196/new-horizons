@@ -82,6 +82,7 @@ constexpr int SPELLCRAFT_EMPOWER_MANA_THRESHOLD = 12;
 constexpr int SPELLCRAFT_EMPOWER_BONUS_PERCENT = 25;
 inline constexpr std::string_view NATURE_POISON_SPELL = "new-horizons:poison";
 inline constexpr std::string_view NATURE_REGENERATION_SPELL = "new-horizons:regeneration";
+inline constexpr std::string_view SHADOW_LIFE_DRAIN_SPELL = "new-horizons:lifeDrain";
 inline constexpr std::string_view NATURE_MAGIC_SKILL = "new-horizons:natureMagic";
 inline constexpr std::string_view NATURE_HERBALIST = "new-horizons:natureMagic.herbalist";
 inline constexpr std::string_view STORM_OF_DAGGERS_SPELL = "new-horizons:stormOfDaggers";

@@ -15,6 +15,30 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+### September 29 local Life Drain native-gate incident
+
+- The first combined Linux `vcmitest`/`vcmiclient` build over `cf1af09ea`
+  plus the uncommitted Life Drain slice stopped in
+  `client/battle/BattleActionsController.cpp`: a `const` target-legality helper
+  called non-const `getStackForHex`, and the shared `battle::Unit` interface
+  does not provide `getName()`. The client owner repaired both, the isolated
+  controller object compiled, and the succeeding combined Linux build linked
+  both `vcmitest` and `vcmiclient`.
+- The first native Life Drain filter then rejected every valid enemy/friendly
+  cast at `canBeCast`: the generic scripted-effect availability check did not
+  establish a pair. The authoritative Life Drain branch now checks that both
+  sides have a living, receptive target; exact-pair validation still runs
+  before spending a Hero Action or Mana.
+- The next filter exposed a more serious registration error: `lifeDrain` was
+  already the core combat-event script identifier. Registering a spell effect
+  under the same identifier made lookup ambiguous, so the effect silently
+  disappeared and casts changed no health. The spell-effect script is now
+  `core:lifeDrainEffect`; the existing combat event remains unchanged. Its
+  dedicated script fixture, authoritative cast, and current-profile focused
+  filter pass **12/12 with zero skips** after the repair. The module mirror and
+  Linux `vcmitest`/`vcmiclient` targets pass. Rendered/playable acceptance is
+  not claimed. Keep script-kind identifiers unique across registries.
+
 ### September 29 local Malediction native-gate incidents
 
 - Initial `vcmitest` regeneration stopped before compilation because the

@@ -67,6 +67,11 @@ bool isStormOfDaggersSpell(const CSpell * spell)
 	return spell && spell->getJsonKey() == stormOfDaggersJsonKey;
 }
 
+bool isLifeDrainSpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL;
+}
+
 bool isCanonicalLandMine(const CBattleInfoCallback & battle, const CSpell * spell)
 {
 	return spell && newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
@@ -962,6 +967,198 @@ void BattleActionsController::undoStormOfDaggersTarget()
 	ENGINE->windows().totalRedraw();
 }
 
+bool BattleActionsController::lifeDrainTargetSelectionModeActive() const
+{
+	return heroSpellToCast && isLifeDrainSpell(heroSpellToCast->spell.toSpell());
+}
+
+bool BattleActionsController::lifeDrainSelectionContextIsCurrent() const
+{
+	if(!lifeDrainTargetSelectionModeActive() || !owner.curInt || !owner.curInt->cb
+		|| CPlayerInterface::battleInt.get() != &owner || owner.getBattleID() != lifeDrainBattleID
+		|| !lifeDrainPlayer || owner.curInt->cb->getPlayerID() != *lifeDrainPlayer
+		|| !owner.getBattle() || !owner.getBattle()->getBattle()
+		|| owner.getBattle()->battleGetMySide() != lifeDrainSide
+		|| owner.getBattle()->battleGetRound() != lifeDrainRound
+		|| !owner.makingTurn() || owner.curInt->isAutoFightOn || owner.isInTacticsMode())
+		return false;
+
+	const auto * hero = owner.currentHero();
+	return hero && hero->id == lifeDrainHeroID;
+}
+
+bool BattleActionsController::lifeDrainTargetsAreLegal(const std::vector<uint32_t> & unitIds) const
+{
+	if(unitIds.empty() || unitIds.size() > 2 || !lifeDrainSelectionContextIsCurrent())
+		return false;
+
+	const auto battle = owner.getBattle();
+	const auto * hero = owner.currentHero();
+	const auto * spell = heroSpellToCast->spell.toSpell();
+	if(!battle || !battle->getBattle() || !hero || !isLifeDrainSpell(spell)
+		|| lifeDrainSide == BattleSide::NONE)
+		return false;
+
+	const auto * enemy = battle->battleGetUnitByID(unitIds.front());
+	if(!enemy || !enemy->alive() || !enemy->isValidTarget(false) || enemy->isInvincible()
+		|| enemy->unitSide() != battle->otherSide(lifeDrainSide))
+		return false;
+
+	spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
+	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
+	auto mechanics = spell->battleMechanics(&cast);
+	if(!mechanics)
+		return false;
+
+	spells::detail::ProblemImpl problem;
+	if(!mechanics->canBeCast(problem))
+		return false;
+
+	// The server requires an exact pair, so do not send a one-target prefix
+	// through canBeCastAt. Locally validate the first hostile target only; the
+	// complete pair goes through the ordinary mechanics legality check below.
+	if(unitIds.size() == 1)
+		return mechanics->isReceptive(enemy);
+
+	const auto * friendly = battle->battleGetUnitByID(unitIds[1]);
+	if(!friendly || !friendly->alive() || !friendly->isValidTarget(false)
+		|| friendly->unitSide() != lifeDrainSide)
+		return false;
+
+	spells::Target pair;
+	pair.emplace_back(enemy, enemy->getPosition());
+	pair.emplace_back(friendly, friendly->getPosition());
+	return mechanics->canBeCastAt(pair, problem);
+}
+
+bool BattleActionsController::lifeDrainTargetIsLegal(uint32_t unitId) const
+{
+	if(lifeDrainSelectedUnitIds.size() >= 2
+		|| std::ranges::find(lifeDrainSelectedUnitIds, unitId) != lifeDrainSelectedUnitIds.end())
+		return false;
+
+	auto candidate = lifeDrainSelectedUnitIds;
+	candidate.push_back(unitId);
+	return lifeDrainTargetsAreLegal(candidate);
+}
+
+bool BattleActionsController::lifeDrainTargetHexIsLegal(const BattleHex & hex) const
+{
+	if(!hex.isValid() || !lifeDrainSelectionContextIsCurrent())
+		return false;
+	const auto * target = owner.getBattle()->battleGetUnitByPos(hex, true);
+	return target && lifeDrainTargetIsLegal(target->unitId());
+}
+
+void BattleActionsController::updateLifeDrainSelectionStatus(const BattleHex & hoveredHex)
+{
+	if(!lifeDrainTargetSelectionModeActive())
+		return;
+
+	std::string message = "Life Drain: ";
+	if(!lifeDrainSelectionContextIsCurrent())
+		message += "battle context changed. Cancel and reopen the spell.";
+	else if(lifeDrainSelectedUnitIds.empty())
+		message += "choose a living enemy stack first. Esc cancels.";
+	else
+	{
+		const auto battle = owner.getBattle();
+		const auto * enemy = battle ? battle->battleGetUnitByID(lifeDrainSelectedUnitIds.front()) : nullptr;
+		if(!enemy || !enemy->alive())
+			message += "the selected enemy is no longer available. Esc cancels.";
+		else
+			message += "enemy selected. Choose a living friendly stack; any creature type can receive healing. Esc cancels.";
+	}
+
+	if(hoveredHex.isValid() && lifeDrainSelectionContextIsCurrent())
+	{
+		const auto * target = getStackForHex(hoveredHex);
+		if(!target)
+			message += " Hover a living stack.";
+		else if(std::ranges::find(lifeDrainSelectedUnitIds, target->unitId()) != lifeDrainSelectedUnitIds.end())
+			message += " Enemy already selected; choose a friendly stack.";
+		else if(lifeDrainTargetHexIsLegal(hoveredHex))
+			message += lifeDrainSelectedUnitIds.empty()
+				? " Click to select this enemy stack."
+				: " Click to complete the enemy/friendly pair and cast.";
+		else if(!target->alive() || !target->isValidTarget(false))
+			message += " Dead or invalid stacks cannot be selected.";
+		else
+		{
+			const auto battle = owner.getBattle();
+			const auto expectedSide = lifeDrainSelectedUnitIds.empty()
+				? battle->otherSide(lifeDrainSide)
+				: lifeDrainSide;
+			if(target->unitSide() != expectedSide)
+				message += lifeDrainSelectedUnitIds.empty()
+					? " The first target must be an enemy stack."
+					: " The second target must be a friendly stack.";
+			else
+				message += lifeDrainSelectedUnitIds.empty()
+					? " This enemy cannot be targeted by Life Drain."
+					: " This friendly stack cannot receive Life Drain healing.";
+		}
+	}
+
+	if(!currentConsoleMsg.empty())
+		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
+	ENGINE->statusbar()->write(message);
+	currentConsoleMsg = std::move(message);
+}
+
+void BattleActionsController::selectLifeDrainTarget(const BattleHex & clickedHex)
+{
+	if(!lifeDrainTargetSelectionModeActive())
+		return;
+	if(!lifeDrainSelectionContextIsCurrent())
+	{
+		updateLifeDrainSelectionStatus(clickedHex);
+		return;
+	}
+
+	const auto * target = getStackForHex(clickedHex);
+	if(!target || !lifeDrainTargetHexIsLegal(clickedHex))
+	{
+		updateLifeDrainSelectionStatus(clickedHex);
+		return;
+	}
+
+	if(lifeDrainSelectedUnitIds.empty())
+	{
+		lifeDrainSelectedUnitIds.push_back(target->unitId());
+		updateLifeDrainSelectionStatus(clickedHex);
+		ENGINE->fakeMouseMove();
+		ENGINE->windows().totalRedraw();
+		return;
+	}
+
+	auto selected = lifeDrainSelectedUnitIds;
+	selected.push_back(target->unitId());
+	if(!lifeDrainTargetsAreLegal(selected))
+	{
+		updateLifeDrainSelectionStatus(clickedHex);
+		return;
+	}
+
+	BattleAction action = *heroSpellToCast;
+	action.target.clear();
+	for(const auto unitId : selected)
+	{
+		const auto * chosen = owner.getBattle()->battleGetUnitByID(unitId);
+		if(!chosen)
+		{
+			updateLifeDrainSelectionStatus(BattleHex::INVALID);
+			return;
+		}
+		action.aimToUnit(chosen);
+	}
+
+	if(!owner.curInt || !owner.curInt->cb)
+		return;
+	owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
+	endCastingSpell();
+}
+
 bool BattleActionsController::fireWallPlacementModeActive() const
 {
 	if(!heroSpellToCast || !owner.getBattle() || !owner.currentHero())
@@ -1376,6 +1573,7 @@ void BattleActionsController::endCastingSpell()
 	const bool wasRepeatedPlacement = repeatedPlacementModeActive();
 	const bool wasFireWallPlacement = fireWallPlacementModeActive();
 	const bool wasStormOfDaggersSelection = stormOfDaggersTargetSelectionModeActive();
+	const bool wasLifeDrainSelection = lifeDrainTargetSelectionModeActive();
 	if(heroSpellToCast)
 	{
 		heroSpellToCast.reset();
@@ -1394,8 +1592,14 @@ void BattleActionsController::endCastingSpell()
 	stormOfDaggersSide = BattleSide::NONE;
 	stormOfDaggersRound = -1;
 	stormOfDaggersHeroID = ObjectInstanceID::NONE;
+	lifeDrainSelectedUnitIds.clear();
+	lifeDrainPlayer.reset();
+	lifeDrainSide = BattleSide::NONE;
+	lifeDrainRound = -1;
+	lifeDrainHeroID = ObjectInstanceID::NONE;
 	fireWallSelectedStart = BattleHex::INVALID;
-	if((wasRepeatedPlacement || wasFireWallPlacement || wasStormOfDaggersSelection) && !currentConsoleMsg.empty())
+	if((wasRepeatedPlacement || wasFireWallPlacement || wasStormOfDaggersSelection || wasLifeDrainSelection)
+		&& !currentConsoleMsg.empty())
 	{
 		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
 		currentConsoleMsg.clear();
@@ -1517,6 +1721,7 @@ void BattleActionsController::reorderPossibleActionsPriority(const CStack * stac
 			case PossiblePlayerBattleAction::FREE_LOCATION:
 			case PossiblePlayerBattleAction::OBSTACLE:
 			case PossiblePlayerBattleAction::SACRIFICE:
+			case PossiblePlayerBattleAction::LIFE_DRAIN:
 				if(!stack->hasBonusOfType(BonusType::NO_SPELLCAST_BY_DEFAULT) && targetStack != nullptr)
 				{
 					PlayerColor stackOwner = owner.getBattle()->battleGetOwner(targetStack);
@@ -1628,6 +1833,27 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 		if(owner.windowObject)
 			owner.windowObject->updateBattleTargetSelectionControls();
 		updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
+		ENGINE->fakeMouseMove();
+		ENGINE->windows().totalRedraw();
+		return;
+	}
+
+	// Life Drain requires one enemy stack followed by one allied stack. Keep
+	// both explicit identities together and avoid the generic single-target
+	// path (or Sacrifice's corpse-first interaction).
+	if(isLifeDrainSpell(heroSpellToCast->spell.toSpell())
+		&& battle->getCasterAction(heroSpellToCast->spell.toSpell(), castingHero, spells::Mode::HERO).get()
+			== PossiblePlayerBattleAction::LIFE_DRAIN)
+	{
+		lifeDrainSelectedUnitIds.clear();
+		lifeDrainBattleID = owner.getBattleID();
+		lifeDrainPlayer = owner.curInt->cb ? std::optional<PlayerColor>(owner.curInt->cb->getPlayerID()) : std::nullopt;
+		lifeDrainSide = battle->battleGetMySide();
+		lifeDrainRound = battle->battleGetRound();
+		lifeDrainHeroID = castingHero->id;
+		possibleActions.clear();
+		owner.windowObject->blockUI(true);
+		updateLifeDrainSelectionStatus(BattleHex::INVALID);
 		ENGINE->fakeMouseMove();
 		ENGINE->windows().totalRedraw();
 		return;
@@ -1850,6 +2076,7 @@ void BattleActionsController::actionSetCursor(PossiblePlayerBattleAction action,
 		case PossiblePlayerBattleAction::RANDOM_GENIE_SPELL:
 		case PossiblePlayerBattleAction::FREE_LOCATION:
 		case PossiblePlayerBattleAction::OBSTACLE:
+		case PossiblePlayerBattleAction::LIFE_DRAIN:
 			ENGINE->cursor().set(Cursor::Spellcast::SPELL);
 			return;
 
@@ -1893,6 +2120,7 @@ void BattleActionsController::actionSetCursorBlocked(PossiblePlayerBattleAction 
 		case PossiblePlayerBattleAction::RANDOM_GENIE_SPELL:
 		case PossiblePlayerBattleAction::TELEPORT:
 		case PossiblePlayerBattleAction::SACRIFICE:
+		case PossiblePlayerBattleAction::LIFE_DRAIN:
 		case PossiblePlayerBattleAction::FREE_LOCATION:
 			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
 			return;
@@ -2046,6 +2274,11 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			return prepareSpellEffectText(27, *spellEffectValue, spell->getNameTranslated(), targetStack->getName());
 		}
 
+		case PossiblePlayerBattleAction::LIFE_DRAIN:
+			return lifeDrainSelectedUnitIds.empty()
+				? "Life Drain: choose a living enemy stack."
+				: "Life Drain: choose a living friendly stack to receive healing.";
+
 		case PossiblePlayerBattleAction::ANY_LOCATION:
 		{
 			const CSpell * spell = action.spell().toSpell();
@@ -2169,6 +2402,7 @@ std::string BattleActionsController::actionGetStatusMessageBlocked(PossiblePlaye
 	{
 		case PossiblePlayerBattleAction::AIMED_SPELL_CREATURE:
 		case PossiblePlayerBattleAction::RANDOM_GENIE_SPELL:
+		case PossiblePlayerBattleAction::LIFE_DRAIN:
 			return LIBRARY->generaltexth->allTexts[23];
 			break;
 		case PossiblePlayerBattleAction::TELEPORT:
@@ -2338,6 +2572,9 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 
 		case PossiblePlayerBattleAction::AIMED_SPELL_CREATURE:
 			return !selectedStack && targetStack && isCastingPossibleHere(action.spell().toSpell(), nullptr, targetHex);
+
+		case PossiblePlayerBattleAction::LIFE_DRAIN:
+			return lifeDrainTargetHexIsLegal(targetHex);
 
 		case PossiblePlayerBattleAction::RANDOM_GENIE_SPELL:
 			if(targetStack && targetStackOwned && targetStack != owner.stacksController->getActiveStack() && targetStack->alive()) //only positive spells for other allied creatures
@@ -2519,6 +2756,10 @@ void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, c
 
 			return;
 		}
+
+		case PossiblePlayerBattleAction::LIFE_DRAIN:
+			selectLifeDrainTarget(targetHex);
+			return;
 
 		case PossiblePlayerBattleAction::SACRIFICE:
 		{
@@ -2703,6 +2944,16 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 		return;
 	}
 
+	if(lifeDrainTargetSelectionModeActive())
+	{
+		if(hoveredHex.isValid() && lifeDrainTargetHexIsLegal(hoveredHex))
+			ENGINE->cursor().set(Cursor::Spellcast::SPELL);
+		else
+			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		updateLifeDrainSelectionStatus(hoveredHex);
+		return;
+	}
+
 	if(fireWallPlacementModeActive())
 	{
 		if(hoveredHex == BattleHex::INVALID)
@@ -2790,6 +3041,13 @@ void BattleActionsController::onHoverEnded()
 		return;
 	}
 
+	if(lifeDrainTargetSelectionModeActive())
+	{
+		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		updateLifeDrainSelectionStatus(BattleHex::INVALID);
+		return;
+	}
+
 	if(fireWallPlacementModeActive())
 	{
 		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
@@ -2823,6 +3081,12 @@ void BattleActionsController::onHexLeftClicked(const BattleHex & clickedHex)
 	if(stormOfDaggersTargetSelectionModeActive())
 	{
 		selectStormOfDaggersTarget(clickedHex);
+		return;
+	}
+
+	if(lifeDrainTargetSelectionModeActive())
+	{
+		selectLifeDrainTarget(clickedHex);
 		return;
 	}
 

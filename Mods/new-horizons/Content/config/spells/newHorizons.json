@@ -473,6 +473,79 @@
 		},
 		"targetCondition" : {}
 	},
+	"lifeDrain" : {
+		"name" : "Life Drain",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:shadow" : true
+		},
+		"level" : 1,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "NH_spell_life_drain_44.png",
+			"iconScroll" : "NH_spell_life_drain_32.png",
+			"iconEffect" : "NH_spell_life_drain_30.png",
+			"iconImmune" : "NH_spell_life_drain_30.png",
+			"iconScenarioBonus" : "NH_spell_life_drain_32.png"
+		},
+		"animation" : {
+			"hit" : ["C18SPW0"]
+		},
+		"sounds" : {
+			"cast" : "MAGICBLT"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Deal 25 + 1.8 x Spell Power Shadow damage to one enemy stack, then heal one friendly stack for 60% of actual damage dealt. Healing affects surviving creatures only; all creature types are valid. Blood Drinker raises the healing to 75%.",
+				"cost" : 5,
+				"power" : 0,
+				"battleEffects" : {
+					"lifeDrain" : {"type" : "core:lifeDrainEffect"}
+				},
+				"targetModifier" : {"smart" : false}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Deal 25 + 1.8 x Spell Power Shadow damage to one enemy stack, then heal one friendly stack for 60% of actual damage dealt. Healing affects surviving creatures only; all creature types are valid. Blood Drinker raises the healing to 75%.",
+				"cost" : 5,
+				"power" : 0,
+				"battleEffects" : {
+					"lifeDrain" : {"type" : "core:lifeDrainEffect"}
+				},
+				"targetModifier" : {"smart" : false}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Deal 25 + 1.8 x Spell Power Shadow damage to one enemy stack, then heal one friendly stack for 60% of actual damage dealt. Healing affects surviving creatures only; all creature types are valid. Blood Drinker raises the healing to 75%.",
+				"cost" : 5,
+				"power" : 0,
+				"battleEffects" : {
+					"lifeDrain" : {"type" : "core:lifeDrainEffect"}
+				},
+				"targetModifier" : {"smart" : false}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Deal 25 + 1.8 x Spell Power Shadow damage to one enemy stack, then heal one friendly stack for 60% of actual damage dealt. Healing affects surviving creatures only; all creature types are valid. Blood Drinker raises the healing to 75%.",
+				"cost" : 5,
+				"power" : 0,
+				"battleEffects" : {
+					"lifeDrain" : {"type" : "core:lifeDrainEffect"}
+				},
+				"targetModifier" : {"smart" : false}
+			}
+		},
+		"flags" : {
+			"offensive" : true,
+			"damage" : true,
+			"negative" : true
+		},
+		"targetCondition" : {}
+	},
 	"stormOfDaggers" : {
 		"name" : "Storm of Daggers",
 		"type" : "combat",

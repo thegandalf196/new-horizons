@@ -56,6 +56,12 @@ bool isNewHorizonsRegenerationSpell(const CSpell * spell, const JsonNode & saved
 		&& newHorizonsMagic::spellAllowedBySavedRoster(savedRules, spell->getId());
 }
 
+bool isNewHorizonsLifeDrainSpell(const CSpell * spell, const JsonNode & savedRules)
+{
+	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL
+		&& newHorizonsMagic::spellAllowedBySavedRoster(savedRules, spell->getId());
+}
+
 bool isRegenerationTarget(const battle::Unit * unit)
 {
 	return isLivingCureTarget(unit) && !unit->isClone() && unit->getPhantomInitialIntegrity() <= 0;
@@ -614,7 +620,9 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	const bool massSlow = isMassSlow();
 	const auto * castingHero = dynamic_cast<const CGHeroInstance *>(caster);
 	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
-	battle()->getBattle()->getMagicRules());
+		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	if(selectiveDispel && (mode != Mode::HERO || owner->getId() != SpellID::DISPEL || !castingHero
 		|| !castingHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel")))
 		return adaptGenericProblem(problem);
@@ -704,6 +712,26 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 				&& isReceptive(unit);
 		});
 		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+	}
+
+	if(newHorizonsLifeDrain)
+	{
+		if(mode != Mode::HERO || !castingHero || casterSide == BattleSide::NONE)
+			return adaptGenericProblem(problem);
+		bool availableEnemy = false;
+		bool availableFriend = false;
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+		{
+			if(!unit || !unit->alive() || !unit->isValidTarget(false) || isSpellLocked(unit)
+				|| !isReceptive(unit))
+				continue;
+			if(unit->unitSide() == battle()->otherSide(casterSide) && !unit->isInvincible())
+				availableEnemy = true;
+			else if(unit->unitSide() == casterSide)
+				availableFriend = true;
+		}
+		return availableEnemy && availableFriend
+			? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
 	}
 
 	if(isNewHorizonsStormOfDaggers())
@@ -802,7 +830,26 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
 	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
 		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	Target spellTarget = transformSpellTarget(target);
+	if(newHorizonsLifeDrain)
+	{
+		if(mode != Mode::HERO || casterSide == BattleSide::NONE
+			|| target.size() != 2 || spellTarget.size() != 2)
+			return false;
+
+		const auto * enemy = spellTarget[0].unitValue;
+		const auto * ally = spellTarget[1].unitValue;
+		if(!enemy || !ally || enemy == ally
+			|| !enemy->alive() || !ally->alive()
+			|| !enemy->isValidTarget(false) || !ally->isValidTarget(false)
+			|| enemy->unitSide() != battle()->otherSide(casterSide)
+			|| ally->unitSide() != casterSide
+			|| enemy->isInvincible() || isSpellLocked(enemy) || isSpellLocked(ally)
+			|| !isReceptive(enemy) || !isReceptive(ally))
+			return false;
+	}
 	if(isNewHorizonsStormOfDaggers())
 	{
 		if(mode != Mode::HERO || casterSide == BattleSide::NONE
@@ -901,7 +948,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	// Cure's target and selected affliction (or healing need) were validated
 	// above. Its legacy HEAL/DISPEL applicability checks do not recognize
 	// physical-only Poison, so do not let those checks reject a valid action.
-	if(newHorizonsCure || newHorizonsRegeneration || newHorizonsPhysicalPoison
+	if(newHorizonsCure || newHorizonsRegeneration || newHorizonsPhysicalPoison || newHorizonsLifeDrain
 		|| newHorizonsMagic::isCounterspell(owner))
 		return true;
 
@@ -943,11 +990,14 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
 	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
 		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	if(isNewHorizonsStormOfDaggers()
 		&& (!setStormOfDaggersTargetCount(static_cast<int32_t>(target.size()))
 			|| !canBeCastAt(target)))
 		return;
-	if((newHorizonsRegeneration || newHorizonsPhysicalPoison) && !canBeCastAt(target))
+	if((newHorizonsRegeneration || newHorizonsPhysicalPoison || newHorizonsLifeDrain)
+		&& !canBeCastAt(target))
 		return;
 
 	BattleSpellCast sc;
@@ -1460,6 +1510,12 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 				resistantUnitIds.insert(unit->unitId());
 				continue;
 			}
+			// Life Drain has a hostile damage target and a friendly healing target.
+			// The latter is not resisting a hostile effect; Spell Lock above still
+			// blocks either half of the paired spell.
+			if(isNewHorizonsLifeDrainSpell(owner, battle()->getBattle()->getMagicRules())
+				&& unit->unitSide() == casterSide)
+				continue;
 			const int prob = std::min(unit->magicResistance(), 100); //probability of resistance in %
 			if(rng.nextInt(0, 99) < prob)
 				resistantUnitIds.insert(unit->unitId());
@@ -1724,7 +1780,8 @@ BattleHexArray BattleSpellMechanics::spellRangeInHexes(const BattleHex & central
 Target BattleSpellMechanics::transformSpellTarget(const Target & aimPoint) const
 {
 	Target spellTarget;
-	if(isNewHorizonsStormOfDaggers())
+	if(isNewHorizonsStormOfDaggers()
+		|| isNewHorizonsLifeDrainSpell(owner, battle()->getBattle()->getMagicRules()))
 	{
 		spellTarget.reserve(aimPoint.size());
 		for(const auto & selected : aimPoint)

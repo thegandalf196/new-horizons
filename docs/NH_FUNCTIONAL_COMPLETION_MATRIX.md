@@ -25,7 +25,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 99/310 | 211 planned; active status alone does not certify behavior. Malediction has focused authoritative and projected-AI evidence. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 43/90 | 47 planned perks. |
-| Canonical combat-spell identities registered | 36/67 | 31 missing/inactive; Holy Armor has focused authoritative/damage/AI execution evidence, but rendered/playable delivery remains pending. |
+| Canonical combat-spell identities registered | 37/67 | 30 missing/inactive; Life Drain joins Holy Armor with focused authoritative and AI-target evidence, but rendered/playable delivery remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -197,8 +197,8 @@ Mandate, Shroud of Malassa, and Elemental Rebirth.
 The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
 spells. Rechecking the current saved roster after adding Holy Wrath, Storm
-of Daggers, Regeneration, Nature Poison, and Holy Armor shows 36 of the 67 combat identities with active settings rows and
-registered mod/core definitions, including Spell Lock; 31 are absent or inactive. An active
+of Daggers, Regeneration, Nature Poison, Holy Armor, and Life Drain shows 37 of the 67 combat identities with active settings rows and
+registered mod/core definitions, including Spell Lock; 30 are absent or inactive. An active
 identity is not proof that its exact canonical effect is complete.
 
 Quicksand is among the active Nature identities. Its selected-placement path
@@ -216,7 +216,7 @@ from the active identity row.
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
-| Shadow | 12 | 2 | Life Drain; Hex of Pain; Frailty; Plague; Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
+| Shadow | 12 | 3 | Hex of Pain; Frailty; Plague; Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
@@ -252,6 +252,15 @@ Sorrow's Shadow-school correction and exact saved-v3 Morale effect now have
 7/7 authoritative and 3/3 AI projected-score focused native passes. This
 improves effect/rank coverage without adding an identity to the 36/67 total.
 Full AI cast selection and playable/rendered acceptance remain unverified.
+Life Drain now has an active saved-v3 Shadow identity, complete ordered
+enemy-then-friendly targeting, damage derived from its canonical formula,
+healing from actual damage dealt without resurrection, and a combat-log heal
+line. The principal server path, legacy script gate, and AI pair enumeration
+pass 12/12 focused native tests with zero skips; both Linux targets link.
+Its icon is provisional and the human target picker has a source guard, not
+rendered/playable evidence. AI healing valuation, Magic Mirror's single-target
+reflection seam, friendly resistance, Blood Drinker execution, and broader
+cross-system battle behavior remain Phase 2 checks.
 Malediction extends saved-v3 Curse and Sorrow from three to four rounds,
 refreshes on recast, and leaves v1/v2 duration behavior untouched. The focused
 active-profile server and AI filters pass 8/8 and 5/5 respectively, with no

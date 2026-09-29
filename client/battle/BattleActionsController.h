@@ -102,6 +102,13 @@ class BattleActionsController
 	BattleSide stormOfDaggersSide = BattleSide::NONE;
 	int32_t stormOfDaggersRound = -1;
 	ObjectInstanceID stormOfDaggersHeroID = ObjectInstanceID::NONE;
+	/// Ordered enemy/friendly identities selected for New Horizons Life Drain.
+	std::vector<uint32_t> lifeDrainSelectedUnitIds;
+	BattleID lifeDrainBattleID;
+	std::optional<PlayerColor> lifeDrainPlayer;
+	BattleSide lifeDrainSide = BattleSide::NONE;
+	int32_t lifeDrainRound = -1;
+	ObjectInstanceID lifeDrainHeroID = ObjectInstanceID::NONE;
 
 	/// Two-click selector state for canonical New Horizons Fire Wall.  The
 	/// first click chooses the line's start; the second click chooses one of
@@ -175,6 +182,13 @@ class BattleActionsController
 	bool stormOfDaggersTargetsAreLegal(const std::vector<uint32_t> & unitIds) const;
 	void updateStormOfDaggersSelectionStatus(const BattleHex & hoveredHex);
 	void selectStormOfDaggersTarget(const BattleHex & clickedHex);
+	bool lifeDrainTargetSelectionModeActive() const;
+	bool lifeDrainSelectionContextIsCurrent() const;
+	bool lifeDrainTargetsAreLegal(const std::vector<uint32_t> & unitIds) const;
+	bool lifeDrainTargetIsLegal(uint32_t unitId) const;
+	bool lifeDrainTargetHexIsLegal(const BattleHex & hex) const;
+	void updateLifeDrainSelectionStatus(const BattleHex & hoveredHex);
+	void selectLifeDrainTarget(const BattleHex & clickedHex);
 	bool heroOrderTargetingContextIsCurrent() const;
 	std::vector<uint32_t> heroOrderTargetIds() const;
 	bool heroOrderTargetIdIsLegal(uint32_t unitId) const;

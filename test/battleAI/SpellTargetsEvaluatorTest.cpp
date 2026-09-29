@@ -16,6 +16,7 @@
 #include "lib/CStack.h"
 #include "lib/battle/CBattleInfoCallback.h"
 #include "lib/battle/CObstacleInstance.h"
+#include "lib/spells/CSpell.h"
 
 namespace test
 {
@@ -93,6 +94,15 @@ public:
 		if(!isSuspectible)
 			ON_CALL(mechMock, canBeCastAt(Contains(Field(&Destination::hexValue, position)), _)).WillByDefault(Return(false));
 		return stack;
+	}
+
+	void configureTargetableUnit(const battle::Unit * unit, bool targetable, BattleSide side)
+	{
+		auto * mock = const_cast<UnitMock *>(dynamic_cast<const UnitMock *>(unit));
+		ASSERT_NE(mock, nullptr);
+		ON_CALL(*mock, alive()).WillByDefault(Return(targetable));
+		ON_CALL(*mock, isValidTarget(false)).WillByDefault(Return(targetable));
+		ON_CALL(*mock, unitSide()).WillByDefault(Return(side));
 	}
 
 	void setAffectedStacksForCast(BattleHex position, std::vector<const CStack *> stacks)
@@ -218,6 +228,60 @@ TEST_F(SpellTargetEvaluatorTest, SacrificeDoesNotReturnAnEligiblePrefixWithoutAC
 	ON_CALL(mechMock, canBeCastAt(_, _)).WillByDefault(Invoke(
 		[](const Target & target, Problem &) -> bool { return target.size() == 1; }));
 	EXPECT_TRUE(SpellTargetEvaluator::getViableTargets(&mechMock).empty());
+}
+
+TEST_F(SpellTargetEvaluatorTest, LifeDrainEnumeratesOnlyLegalEnemyThenLivingFriendlyPairs)
+{
+	spellTargetTypes({AimType::CREATURE, AimType::CREATURE});
+	CSpell lifeDrain;
+	lifeDrain.modScope = "new-horizons";
+	lifeDrain.identifier = "lifeDrain";
+	ON_CALL(mechMock, getSpell()).WillByDefault(Return(&lifeDrain));
+
+	// Put allied units before enemies in the battle list to prove the target
+	// vector still follows the canonical hostile-source / friendly-recipient
+	// order. Dead stacks remain present in battleGetAllUnits(false).
+	addStack(BattleHex(90), casterSide);
+	const auto * firstAlly = allUnits.back();
+	addStack(BattleHex(71), enemySide);
+	const auto * firstEnemy = allUnits.back();
+	addStack(BattleHex(90), casterSide);
+	const auto * deadAlly = allUnits.back();
+	addStack(BattleHex(72), enemySide);
+	const auto * secondEnemy = allUnits.back();
+	addStack(BattleHex(88), casterSide);
+	const auto * secondAlly = allUnits.back();
+	addStack(BattleHex(73), enemySide);
+	const auto * deadEnemy = allUnits.back();
+
+	configureTargetableUnit(firstAlly, true, casterSide);
+	configureTargetableUnit(firstEnemy, true, enemySide);
+	configureTargetableUnit(deadAlly, false, casterSide);
+	configureTargetableUnit(secondEnemy, true, enemySide);
+	configureTargetableUnit(secondAlly, true, casterSide);
+	configureTargetableUnit(deadEnemy, false, enemySide);
+	ON_CALL(battleMock, battleGetAllUnits(false)).WillByDefault(Return(allUnits));
+
+	EXPECT_CALL(mechMock, canBeCastAt(_, _)).Times(4).WillRepeatedly(Invoke(
+		[&](const Target & target, Problem &)
+		{
+			EXPECT_EQ(target.size(), 2u) << "Life Drain must validate complete pairs only";
+			if(target.size() != 2)
+				return false;
+			return (target[0].unitValue == firstEnemy && target[1].unitValue == secondAlly)
+				|| (target[0].unitValue == secondEnemy && target[1].unitValue == firstAlly);
+		}));
+
+	const auto result = SpellTargetEvaluator::getViableTargets(&mechMock);
+	ASSERT_EQ(result.size(), 2u);
+	ASSERT_EQ(result[0].size(), 2u);
+	EXPECT_EQ(result[0][0].unitValue, firstEnemy);
+	EXPECT_EQ(result[0][1].unitValue, secondAlly);
+	ASSERT_EQ(result[1].size(), 2u);
+	EXPECT_EQ(result[1][0].unitValue, secondEnemy);
+	EXPECT_EQ(result[1][1].unitValue, firstAlly);
+	EXPECT_NE(result[0][0].unitValue, deadEnemy);
+	EXPECT_NE(result[0][1].unitValue, deadAlly);
 }
 
 TEST_F(SpellTargetEvaluatorTest, TeleportEnumeratesOnlyValidatedLandingsForAnEligibleExactUnit)

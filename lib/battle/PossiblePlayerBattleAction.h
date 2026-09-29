@@ -42,6 +42,7 @@ public:
 		FREE_LOCATION,        // used with Force Field and Fire Wall - all tiles affected by spell must be free
 		AIMED_SPELL_CREATURE, // spell targeted at creature
 		SKIRMISHER_ATTACK,    // player-selected two-step move-and-shoot action (not a wire action)
+		LIFE_DRAIN,           // New Horizons: ordered enemy-then-friendly two-stack spell selection
 	};
 
 private:
@@ -52,7 +53,8 @@ public:
 	bool spellcast() const
 	{
 		return action == ANY_LOCATION || action == NO_LOCATION || action == OBSTACLE || action == TELEPORT ||
-			   action == SACRIFICE || action == FREE_LOCATION || action == AIMED_SPELL_CREATURE || action == WALK_AND_SPELLCAST;
+			   action == SACRIFICE || action == FREE_LOCATION || action == AIMED_SPELL_CREATURE ||
+			   action == WALK_AND_SPELLCAST || action == LIFE_DRAIN;
 	}
 
 	Actions get() const
