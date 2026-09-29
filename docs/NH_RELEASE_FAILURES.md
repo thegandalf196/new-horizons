@@ -15,6 +15,25 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+### September 29 local Sorcery Slow native-gate incidents
+
+- The first combined Linux build stopped in the new Slow test file because its
+  bonus reader accepted `CStack *` while a hypothetical battle returns the
+  shared `battle::Unit *` interface. Widening the test helper to `Unit` let
+  `vcmitest` and `vcmiclient` link; no production object failed compilation.
+- The first active-profile preview assertions read a pre-cast pointer after
+  hypothetical battle copy-on-write, then assumed Slow always costs four
+  Mana. Refetching the projected unit by ID and reading the hero's actual
+  Wisdom-adjusted cost repaired the fixtures. The final focused Slow and
+  Temporal Field filter passes 19/19, zero skips, including help and v1/v2
+  fallback checks.
+- A deliberately broad `*Slow*` filter also ran four unrelated existing
+  cases that fail under current rules: two old Ice Bolt test-rule builders
+  leave the `selectedPlacement` field in v1/v2, and two AI Temporal Field
+  fixtures attempt a perk selection without its earlier tier. These are
+  recorded for Phase 2; they are not green and are not counted in the focused
+  Slow result.
+
 ### September 29 local Life Drain native-gate incident
 
 - The first combined Linux `vcmitest`/`vcmiclient` build over `cf1af09ea`

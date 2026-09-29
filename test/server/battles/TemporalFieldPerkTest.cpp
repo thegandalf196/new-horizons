@@ -9,6 +9,8 @@
 
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
+#include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/constants/StringConstants.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 
@@ -21,19 +23,31 @@ constexpr auto temporalFieldPerk = "new-horizons:sorceryMagic.temporalField";
 class TemporalFieldPerkTest : public HeroCommandFixture
 {
 protected:
+	void SetUp() override
+	{
+		HeroCommandFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons content module";
+	}
+
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
 
-	void prepare(bool selectPerk, int mana = 100, int rank = 2)
+	void prepare(bool selectPerk, int mana = 100, int rank = 2, int spellPower = 50)
 	{
 		startGame();
 		const auto decoded = SecondarySkill::decode(sorcerySkill);
 		ASSERT_GE(decoded, 0);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), rank, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 		if(selectPerk)
 		{
 			attackerSideHero->applyPerkSelection({sorcerySkill, temporalistPerk});
@@ -48,6 +62,7 @@ protected:
 		enemyA = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(10, 5), 10);
 		enemyB = addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 5), 10);
 		beginCombat();
+		ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), 3);
 		ASSERT_EQ(attackerSideHero->hasActivePerk(sorcerySkill, temporalFieldPerk), selectPerk);
 	}
 
@@ -86,11 +101,12 @@ TEST_F(TemporalFieldPerkTest, MassSlowAffectsEveryEligibleEnemyAtSixtyPercentAnd
 	ASSERT_TRUE(castSlow(true));
 	ASSERT_NE(slow(enemyA), nullptr);
 	ASSERT_NE(slow(enemyB), nullptr);
-	EXPECT_EQ(slow(enemyA)->val, -30);
-	EXPECT_EQ(slow(enemyB)->val, -30);
+	EXPECT_EQ(slow(enemyA)->val, -19);
+	EXPECT_EQ(slow(enemyB)->val, -19);
+	EXPECT_EQ(slow(enemyA)->turnsRemain, 3);
 	EXPECT_EQ(slow(friendly), nullptr);
 	EXPECT_EQ(enemyA->getMovementRange(), movementBefore);
-	EXPECT_LT(enemyA->getInitiative(), initiativeBefore);
+	EXPECT_EQ(enemyA->getInitiative(), initiativeBefore * 81 / 100);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 9);
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
 }
@@ -117,7 +133,8 @@ TEST_F(TemporalFieldPerkTest, OrdinarySlowKeepsFullMagnitudeAndDoesNotConsumeTem
 
 	ASSERT_TRUE(castSlow(false, enemyA));
 	ASSERT_NE(slow(enemyA), nullptr);
-	EXPECT_EQ(slow(enemyA)->val, -50);
+	EXPECT_EQ(slow(enemyA)->val, -33);
+	EXPECT_EQ(slow(enemyA)->turnsRemain, 3);
 	EXPECT_EQ(slow(enemyB), nullptr);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 3);
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
@@ -130,7 +147,8 @@ TEST_F(TemporalFieldPerkTest, ExpertOrdinarySlowCannotBypassTemporalFieldTradeof
 
 	ASSERT_TRUE(castSlow(false, enemyA));
 	ASSERT_NE(slow(enemyA), nullptr);
-	EXPECT_EQ(slow(enemyA)->val, -50);
+	EXPECT_EQ(slow(enemyA)->val, -34);
+	EXPECT_EQ(slow(enemyA)->turnsRemain, 3);
 	EXPECT_EQ(slow(enemyB), nullptr);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 3);
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
@@ -142,6 +160,8 @@ TEST_F(TemporalFieldPerkTest, ExpertSlowWithoutPerkIsStillSingleTargetInNewHoriz
 
 	ASSERT_TRUE(castSlow(false, enemyA));
 	EXPECT_NE(slow(enemyA), nullptr);
+	EXPECT_EQ(slow(enemyA)->val, -34);
+	EXPECT_EQ(slow(enemyA)->turnsRemain, 2);
 	EXPECT_EQ(slow(enemyB), nullptr);
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
 }
@@ -176,7 +196,19 @@ TEST_F(TemporalFieldPerkTest, MassMagnitudeScalesTheFinalSpecialistAdjustedSlow)
 
 	ASSERT_TRUE(castSlow(true));
 	ASSERT_NE(slow(enemyA), nullptr);
-	EXPECT_EQ(slow(enemyA)->val, -36); // 60% of the ordinary specialist value -60.
+	EXPECT_EQ(slow(enemyA)->val, -25); // ceil(60% of the specialist-adjusted ordinary value -43).
+}
+
+TEST_F(TemporalFieldPerkTest, MassSlowAppliesSixtyPercentAfterTheOrdinaryFiftyPercentCap)
+{
+	prepare(true, 100, 3, 300);
+
+	ASSERT_TRUE(castSlow(true));
+	ASSERT_NE(slow(enemyA), nullptr);
+	ASSERT_NE(slow(enemyB), nullptr);
+	EXPECT_EQ(slow(enemyA)->val, -30);
+	EXPECT_EQ(slow(enemyB)->val, -30);
+	EXPECT_EQ(slow(enemyA)->turnsRemain, 3);
 }
 
 TEST_F(TemporalFieldPerkTest, MissingPerkAndInsufficientManaRejectAtomically)

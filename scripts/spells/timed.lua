@@ -5,6 +5,10 @@ Script.__index = Script
 local HOLY_ARMOR_SPELL = "new-horizons:holyArmor"
 local HOLY_ARMOR_SPELL_POWER_DIVISOR = 5
 local HOLY_ARMOR_MAX_REDUCTION_PERCENT = 60
+local SLOW_SPELL = "core:slow"
+local SLOW_BASE_REDUCTION_PERCENT = 20
+local SLOW_SPELL_POWER_DIVISOR = 5
+local SLOW_MAX_REDUCTION_PERCENT = 50
 
 function Script:deepCopyBonus(b)
 	local copy = {}
@@ -17,10 +21,23 @@ end
 function Script:convertBonuses(mechanics)
 	local duration = mechanics:getEffectDuration()
 	local spellKey = mechanics:getSpell():getJsonKey()
+	local newHorizonsSlowReduction = nil
+	if spellKey == SLOW_SPELL and mechanics:usesNewHorizonsMagicV3() then
+		local spellPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+			mechanics:getEffectPower(), SLOW_SPELL_POWER_DIVISOR,
+			mechanics:getSpellPowerCoefficientBasisPoints())
+		newHorizonsSlowReduction = -math.min(SLOW_MAX_REDUCTION_PERCENT,
+			SLOW_BASE_REDUCTION_PERCENT + spellPowerTerm)
+	end
 	local converted = {}
 
 	for name, b in pairs(self.bonus or {}) do
 		local nb = self:deepCopyBonus(b)
+		if name == "stacksSpeed" and newHorizonsSlowReduction ~= nil then
+			-- New Horizons v3 keeps Slow's fixed 20% base outside the school-rank
+			-- coefficient and caps the ordinary magnitude before specialties apply.
+			nb.val = newHorizonsSlowReduction
+		end
 		if mechanics:usesNewHorizonsMagicV3() then
 			if (spellKey == "core:bless" and name == "alwaysMaximumDamage")
 				or (spellKey == "core:curse" and name == "alwaysMinimumDamage") then
@@ -29,7 +46,7 @@ function Script:convertBonuses(mechanics)
 				nb.val = 0
 			end
 		end
-		if spellKey == "core:slow" and mechanics:usesNewHorizonsMagic() then
+		if spellKey == SLOW_SPELL and mechanics:usesNewHorizonsMagic() then
 			-- New Horizons separates turn-order Initiative from movement Speed.
 			-- STACKS_INITIATIVE stores a direct percentage delta consumed only by
 			-- CUnitState::getInitiative; movement range remains unchanged.
@@ -50,7 +67,7 @@ function Script:convertBonuses(mechanics)
 end
 
 function Script:applyTemporalFieldScale(mechanics, buffer, spellKey)
-	if not mechanics:isMassSlow() or spellKey ~= "core:slow" then return end
+	if not mechanics:isMassSlow() or spellKey ~= SLOW_SPELL then return end
 	for _, nb in pairs(buffer) do
 		-- Apply after every target-specific hero specialty so Temporal Field is
 		-- exactly 60% of the ordinary Slow magnitude that target would receive.

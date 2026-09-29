@@ -427,7 +427,37 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		return {};
 
 	std::string result = spell->getDescriptionTranslated(schoolLevel);
-	if(hero && physicalPoisonEnabled(hero->getMagicRules(), spell->getId()))
+	if(hero && spell->getId() == SpellID::SLOW
+		&& rulesActive(hero->getMagicRules())
+		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
+	{
+		const auto & rules = hero->getMagicRules();
+		int schoolRank = MasteryLevel::NONE;
+		for(const auto skill : spellSchoolSkills(rules, spell->getId()))
+			schoolRank = std::max(schoolRank, static_cast<int>(hero->getSecSkillLevel(skill)));
+		const int schoolCoefficientPercent = spellPowerCoefficientPercent(rules, hero, spell->getId());
+		const int combinedCoefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
+		const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
+		const int64_t powerReduction = spellPower * combinedCoefficientBasisPoints
+			/ (5LL * SPELL_POWER_COEFFICIENT_BASIS_POINTS);
+		const int initiativeReduction = std::min(50, 20 + static_cast<int>(powerReduction));
+		constexpr std::array<std::string_view, 4> rankNames{"No rank", "Basic", "Advanced", "Expert"};
+		const auto rankName = rankNames.at(static_cast<size_t>(std::clamp(schoolRank,
+			static_cast<int>(MasteryLevel::NONE), static_cast<int>(MasteryLevel::EXPERT))));
+
+		result = "Target one enemy stack. Reduces Initiative only, not Speed or movement. Fixed base duration: "
+			+ std::to_string(SLOW_BASE_DURATION_ROUNDS) + " rounds before Temporalist, other Spell Duration bonuses, "
+			"and eligible cast-specific extensions. Current Sorcery rank: "
+			+ std::string(rankName) + " (School factor " + std::to_string(schoolCoefficientPercent)
+			+ "%, combined School and Spellcraft factor " + percentFromBasisPoints(combinedCoefficientBasisPoints)
+			+ "). Initiative reduction = min(50%, 20% + floor(Spell Power x combined coefficient / 5)); "
+			"current reduction before target-specific specialties at Spell Power "
+			+ std::to_string(spellPower) + ": " + std::to_string(initiativeReduction)
+			+ "%. This estimate excludes battle-only Warcasting and the Inferno defender's Brimstone Stormclouds "
+			"+20 Spell Power bonus, which can further affect the battle cast.";
+	}
+	else if(hero && physicalPoisonEnabled(hero->getMagicRules(), spell->getId()))
 	{
 		result = "Target one enemy living stack. It suffers physical Poison damage on its next three activations: "
 			"20 + 0.5 x Spell Power, then 1.5x and 2x that amount. Nature rank scales only the Spell Power term. "

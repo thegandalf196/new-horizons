@@ -40,6 +40,7 @@
 namespace
 {
 constexpr auto arrowKey = "core:magicArrow";
+constexpr auto slowKey = "core:slow";
 JsonNode savedFormula(int base = 20, int coefficient = 20)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
@@ -58,6 +59,71 @@ JsonNode savedV3Formula(int base = 20, int coefficient = 20)
 	rules["spells"][arrowKey]["directDamage"]["powerCoefficient"].Integer() = coefficient;
 	return rules;
 }
+
+JsonNode magicRulesForVersion(int version)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	if(version == newHorizonsMagic::CURRENT_RULESET_VERSION)
+		return rules;
+
+	rules["rulesetVersion"].Integer() = version;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
+	for(auto & [spellId, spell] : rules["spells"].Struct())
+	{
+		(void)spellId;
+		spell.Struct().erase("selectedPlacement");
+	}
+	if(version == newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION)
+	{
+		newHorizonsMagic::validateRules(rules);
+		return rules;
+	}
+
+	rules.Struct().erase("spellPoints");
+	rules.Struct().erase("mageGuildGeneration");
+	rules.Struct().erase("physicalDamageReductionCapPercent");
+	rules.Struct().erase("warcasting");
+	for(auto & [factionId, faction] : rules["factions"].Struct())
+	{
+		(void)factionId;
+		faction["major"] = faction["preferredA"];
+		faction["minor"] = faction["preferredB"];
+		faction.Struct().erase("preferredA");
+		faction.Struct().erase("preferredB");
+	}
+	for(auto & [spellId, spell] : rules["spells"].Struct())
+	{
+		(void)spellId;
+		spell.Struct().erase("active");
+		spell.Struct().erase("directDamage");
+		spell.Struct().erase("cureAfflictions");
+	}
+	for(auto it = rules["spells"].Struct().begin(); it != rules["spells"].Struct().end();)
+	{
+		if(it->first.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
+			it = rules["spells"].Struct().erase(it);
+		else
+			++it;
+	}
+	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	newHorizonsMagic::validateRules(rules);
+	return rules;
+}
+
+struct SlowRankCase
+{
+	int rank;
+	int expectedCoefficientPercent;
+	int expectedMagnitude;
+	const char * name;
+};
+
+struct SlowLegacyCase
+{
+	int version;
+	const char * name;
+};
 
 JsonNode savedV1MagicRules()
 {
@@ -309,6 +375,30 @@ protected:
 		beginCombat();
 	}
 
+	void prepareSlow(int magicVersion, int sorceryRank, int spellPower, bool selectTemporalist = false)
+	{
+		forceRealHeroScale = true;
+		usePerks = true;
+		authoredRules = magicRulesForVersion(magicVersion);
+		selectedSpellKey = slowKey;
+		prepare();
+		ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), magicVersion);
+		const int sorceryMagic = SecondarySkill::decode("new-horizons:sorceryMagic");
+		ASSERT_GE(sorceryMagic, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(sorceryMagic), sorceryRank,
+			ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower,
+			ChangeValueMode::ABSOLUTE);
+		if(selectTemporalist)
+			attackerSideHero->applyPerkSelection({"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalist"});
+	}
+
+	std::shared_ptr<const Bonus> slowBonus(const battle::Unit * unit) const
+	{
+		return unit->getBonus(Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(SpellID(SpellID::SLOW))));
+	}
+
 	void selectSpellPenetration()
 	{
 		const auto spellcraftId = SecondarySkill::decode("new-horizons:spellcraft");
@@ -525,6 +615,181 @@ protected:
 		return before - target->getAvailableHealth();
 	}
 };
+
+class NewHorizonsSlowRankTest : public NewHorizonsDirectDamageMechanicsTest,
+	public ::testing::WithParamInterface<SlowRankCase>
+{};
+
+class NewHorizonsSlowLegacyProfileTest : public NewHorizonsDirectDamageMechanicsTest,
+	public ::testing::WithParamInterface<SlowLegacyCase>
+{};
+
+INSTANTIATE_TEST_SUITE_P(V3SchoolRank, NewHorizonsSlowRankTest,
+	::testing::Values(
+		SlowRankCase{0, 100, -30, "NoSchoolRank"},
+		SlowRankCase{1, 115, -31, "Basic"},
+		SlowRankCase{2, 130, -33, "Advanced"},
+		SlowRankCase{3, 145, -34, "Expert"}),
+	[](const ::testing::TestParamInfo<SlowRankCase> & info)
+	{
+		return std::string(info.param.name);
+	});
+
+INSTANTIATE_TEST_SUITE_P(SavedLegacyRules, NewHorizonsSlowLegacyProfileTest,
+	::testing::Values(
+		SlowLegacyCase{newHorizonsMagic::RULESET_VERSION, "V1"},
+		SlowLegacyCase{newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION, "V2"}),
+	[](const ::testing::TestParamInfo<SlowLegacyCase> & info)
+	{
+		return std::string(info.param.name);
+	});
+
+TEST_P(NewHorizonsSlowRankTest, SavedV3MagnitudeDurationPreviewAndAuthoritativeCastAgree)
+{
+	const auto rank = GetParam();
+	prepareSlow(newHorizonsMagic::CURRENT_RULESET_VERSION, rank.rank, 50);
+	ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell), 10);
+	ASSERT_EQ(attackerSideHero->getEffectPower(spell), 50);
+	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell, rank.rank);
+	EXPECT_NE(description.find("Fixed base duration: 2 rounds"), std::string::npos);
+	EXPECT_NE(description.find("before target-specific specialties"), std::string::npos);
+	EXPECT_NE(description.find(std::to_string(-rank.expectedMagnitude) + "%"), std::string::npos);
+
+	const int32_t movementBefore = target->getMovementRange();
+	const int32_t initiativeBefore = target->getInitiative();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto spellCost = attackerSideHero->getSpellCost(spell);
+	const auto originalSlow = slowBonus(target);
+	EXPECT_EQ(originalSlow, nullptr);
+
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	DamageEnvironment environment(gameState(), nullptr);
+	HypotheticBattle predicted(&environment, callback);
+	auto * projectedTarget = predicted.battleGetUnitByID(target->unitId());
+	ASSERT_NE(projectedTarget, nullptr);
+	spells::Target projectedAim;
+	projectedAim.emplace_back(projectedTarget);
+	spells::BattleCast preview(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+	auto previewMechanics = spell->battleMechanics(&preview);
+	EXPECT_EQ(previewMechanics->getSchoolRankPowerCoefficientPercent(), rank.expectedCoefficientPercent);
+	EXPECT_EQ(previewMechanics->getEffectDuration(), 2);
+	const auto affected = previewMechanics->getAffectedStacks(projectedAim);
+	ASSERT_EQ(affected.size(), 1u);
+	EXPECT_EQ(affected.front()->unitId(), target->unitId());
+	previewMechanics->castEval(predicted.getServerCallback(), projectedAim);
+	projectedTarget = predicted.battleGetUnitByID(target->unitId());
+	ASSERT_NE(projectedTarget, nullptr);
+
+	const auto previewSlow = slowBonus(projectedTarget);
+	ASSERT_NE(previewSlow, nullptr);
+	EXPECT_EQ(previewSlow->type, BonusType::STACKS_INITIATIVE);
+	EXPECT_EQ(previewSlow->valType, BonusValueType::ADDITIVE_VALUE);
+	EXPECT_EQ(previewSlow->val, rank.expectedMagnitude);
+	EXPECT_EQ(previewSlow->turnsRemain, 2);
+	EXPECT_EQ(projectedTarget->getMovementRange(), movementBefore);
+	EXPECT_EQ(projectedTarget->getInitiative(), initiativeBefore * (100 + rank.expectedMagnitude) / 100);
+	EXPECT_EQ(target->getMovementRange(), movementBefore);
+	EXPECT_EQ(target->getInitiative(), initiativeBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	const auto authoritativeSlow = slowBonus(target);
+	ASSERT_NE(authoritativeSlow, nullptr);
+	EXPECT_EQ(authoritativeSlow->type, BonusType::STACKS_INITIATIVE);
+	EXPECT_EQ(authoritativeSlow->valType, BonusValueType::ADDITIVE_VALUE);
+	EXPECT_EQ(authoritativeSlow->val, rank.expectedMagnitude);
+	EXPECT_EQ(authoritativeSlow->turnsRemain, 2);
+	EXPECT_EQ(target->getMovementRange(), movementBefore);
+	EXPECT_EQ(target->getInitiative(), initiativeBefore * (100 + rank.expectedMagnitude) / 100);
+	EXPECT_EQ(target->getInitiative(), projectedTarget->getInitiative());
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - spellCost);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, SavedV3SlowCapsAtFiftyPercentInItsAppliedInitiativeBonus)
+{
+	prepareSlow(newHorizonsMagic::CURRENT_RULESET_VERSION, MasteryLevel::EXPERT, 300);
+	ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell), 10);
+
+	const auto initiativeBefore = target->getInitiative();
+	const auto movementBefore = target->getMovementRange();
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	const auto applied = slowBonus(target);
+	ASSERT_NE(applied, nullptr);
+	EXPECT_EQ(applied->val, -50);
+	EXPECT_EQ(applied->turnsRemain, 2);
+	EXPECT_EQ(target->getInitiative(), initiativeBefore / 2);
+	EXPECT_EQ(target->getMovementRange(), movementBefore);
+}
+
+TEST_P(NewHorizonsSlowLegacyProfileTest, SavedV1AndV2KeepConfiguredRankMagnitudeAndPowerDuration)
+{
+	const auto profile = GetParam();
+	prepareSlow(profile.version, MasteryLevel::ADVANCED, 50);
+	ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell), 10);
+	EXPECT_EQ(newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell, MasteryLevel::ADVANCED)
+		.find("Current Sorcery rank:"), std::string::npos);
+
+	spells::BattleCast preview(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const int legacyDuration = attackerSideHero->getEnchantPower(spell);
+	const auto previewMechanics = spell->battleMechanics(&preview);
+	EXPECT_EQ(previewMechanics->getSchoolRankPowerCoefficientPercent(), 100);
+	EXPECT_EQ(previewMechanics->getEffectDuration(), legacyDuration);
+	const auto initiativeBefore = target->getInitiative();
+	const auto movementBefore = target->getMovementRange();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto spellCost = attackerSideHero->getSpellCost(spell);
+	const auto baseDuration = spell->battleMechanics(&preview)->getEffectDuration();
+	EXPECT_EQ(baseDuration, legacyDuration);
+
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	DamageEnvironment environment(gameState(), nullptr);
+	HypotheticBattle predicted(&environment, callback);
+	auto * projectedTarget = predicted.battleGetUnitByID(target->unitId());
+	ASSERT_NE(projectedTarget, nullptr);
+	spells::Target projectedAim;
+	projectedAim.emplace_back(projectedTarget);
+	spells::BattleCast prediction(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+	auto predictionMechanics = spell->battleMechanics(&prediction);
+	EXPECT_EQ(predictionMechanics->getEffectDuration(), legacyDuration);
+	predictionMechanics->castEval(predicted.getServerCallback(), projectedAim);
+	projectedTarget = predicted.battleGetUnitByID(target->unitId());
+	ASSERT_NE(projectedTarget, nullptr);
+	const auto previewSlow = slowBonus(projectedTarget);
+	ASSERT_NE(previewSlow, nullptr);
+	EXPECT_EQ(previewSlow->val, -50);
+	EXPECT_EQ(previewSlow->turnsRemain, legacyDuration);
+	EXPECT_EQ(projectedTarget->getMovementRange(), movementBefore);
+	EXPECT_EQ(projectedTarget->getInitiative(), initiativeBefore / 2);
+	EXPECT_EQ(target->getInitiative(), initiativeBefore);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	const auto applied = slowBonus(target);
+	ASSERT_NE(applied, nullptr);
+	EXPECT_EQ(applied->val, -50);
+	EXPECT_EQ(applied->turnsRemain, legacyDuration);
+	EXPECT_EQ(target->getInitiative(), initiativeBefore / 2);
+	EXPECT_EQ(target->getInitiative(), projectedTarget->getInitiative());
+	EXPECT_EQ(target->getMovementRange(), movementBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - spellCost);
+}
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuthoritativeActionAgree)
 {
@@ -1286,37 +1551,31 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellPenetrationDoesNotBypassMagicR
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, TemporalistExtendsOnlyOrdinaryHeroSlowDuration)
 {
-	forceRealHeroScale = true;
-	usePerks = true;
-	prepare();
-	const auto * slow = SpellID(SpellID::SLOW).toSpell();
-	attackerSideHero->addSpellToSpellbook(slow->getId());
-	attackerSideHero->setSecSkillLevel(
-		SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 1, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection(
-		{"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalist"});
-	const int ordinaryDuration = attackerSideHero->getEnchantPower(slow);
+	prepareSlow(newHorizonsMagic::CURRENT_RULESET_VERSION, MasteryLevel::BASIC, 50, true);
+	const auto * slow = spell;
+	const int v3SlowDuration = 2;
 
 	spells::BattleCast ordinary(battle(), attackerSideHero, spells::Mode::HERO, slow);
-	EXPECT_EQ(slow->battleMechanics(&ordinary)->getEffectDuration(), ordinaryDuration + 1);
+	EXPECT_EQ(slow->battleMechanics(&ordinary)->getEffectDuration(), v3SlowDuration + 1);
 
 	spells::BattleCast explicitDuration(battle(), attackerSideHero, spells::Mode::HERO, slow);
-	explicitDuration.setEffectDuration(ordinaryDuration + 7);
-	EXPECT_EQ(slow->battleMechanics(&explicitDuration)->getEffectDuration(), ordinaryDuration + 7);
+	explicitDuration.setEffectDuration(v3SlowDuration + 7);
+	EXPECT_EQ(slow->battleMechanics(&explicitDuration)->getEffectDuration(), v3SlowDuration + 7);
 
 	ControlledCaster nonHero(attackerSideHero);
 	spells::BattleCast passive(battle(), &nonHero, spells::Mode::PASSIVE, slow);
-	EXPECT_EQ(slow->battleMechanics(&passive)->getEffectDuration(), ordinaryDuration);
+	EXPECT_EQ(slow->battleMechanics(&passive)->getEffectDuration(), attackerSideHero->getEnchantPower(slow));
 
 	attackerSideHero->setSecSkillLevel(
 		SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 0, ChangeValueMode::ABSOLUTE);
 	spells::BattleCast rankLost(battle(), attackerSideHero, spells::Mode::HERO, slow);
-	EXPECT_EQ(slow->battleMechanics(&rankLost)->getEffectDuration(), ordinaryDuration);
+	EXPECT_EQ(slow->battleMechanics(&rankLost)->getEffectDuration(), v3SlowDuration);
 	attackerSideHero->setSecSkillLevel(
 		SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 1, ChangeValueMode::ABSOLUTE);
 
-	spells::BattleCast otherSpell(battle(), attackerSideHero, spells::Mode::HERO, spell);
-	EXPECT_EQ(spell->battleMechanics(&otherSpell)->getEffectDuration(), attackerSideHero->getEnchantPower(spell));
+	const auto * haste = SpellID(SpellID::HASTE).toSpell();
+	spells::BattleCast otherSpell(battle(), attackerSideHero, spells::Mode::HERO, haste);
+	EXPECT_EQ(haste->battleMechanics(&otherSpell)->getEffectDuration(), attackerSideHero->getEnchantPower(haste));
 
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -1327,7 +1586,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, TemporalistExtendsOnlyOrdinaryHeroS
 	const auto slowBonuses = target->getAllBonuses(Selector::source(
 		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SLOW))));
 	ASSERT_FALSE(slowBonuses->empty());
-	EXPECT_EQ(slowBonuses->front()->turnsRemain, ordinaryDuration + 1);
+	EXPECT_EQ(slowBonuses->front()->turnsRemain, v3SlowDuration + 1);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, PlannedTemporalistInAnOlderSnapshotStaysInactive)

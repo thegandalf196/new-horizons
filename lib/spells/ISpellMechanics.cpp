@@ -657,7 +657,12 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			const auto * heroCaster = caster->getHeroCaster();
 			const auto * defendedTown = cb->battleGetDefendedTown();
 			const auto * battleState = cb->getBattle();
-			if(mode == Mode::HERO && heroCaster && battleState
+			const bool v3Slow = mode == Mode::HERO && heroCaster && battleState
+				&& owner->getId() == SpellID::SLOW
+				&& newHorizonsMagic::rulesActive(battleState->getMagicRules())
+				&& battleState->getMagicRules()["rulesetVersion"].Integer()
+					== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+			if(!v3Slow && mode == Mode::HERO && heroCaster && battleState
 				&& newHorizonsMagic::rulesActive(battleState->getMagicRules())
 				&& battleState->getMagicRules()["rulesetVersion"].Integer()
 					== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
@@ -689,7 +694,19 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 
 			const int bonus = newHorizonsMagic::spellDurationBonus(
 				dynamic_cast<const CGHeroInstance *>(caster), owner->getId());
-			if(v3Bless)
+			if(v3Slow)
+			{
+				int64_t duration = newHorizonsMagic::SLOW_BASE_DURATION_ROUNDS;
+				duration += heroCaster->valOfBonuses(BonusType::SPELL_DURATION, BonusSubtypeID());
+				duration += heroCaster->valOfBonuses(BonusType::SPELL_DURATION,
+					BonusSubtypeID(SpellID(SpellID::SLOW)));
+				duration += bonus;
+				if(infernoDurationBonus)
+					duration += 20;
+				effectDuration = static_cast<decltype(effectDuration)>(std::clamp<int64_t>(duration, 0,
+					std::numeric_limits<decltype(effectDuration)>::max()));
+			}
+			else if(v3Bless)
 			{
 				const int64_t spellPowerTerm = scaleSpellPowerComponentWithCoefficientBasisPoints(
 					effectPower, newHorizonsMagic::BLESS_SPELL_POWER_DURATION_DIVISOR,

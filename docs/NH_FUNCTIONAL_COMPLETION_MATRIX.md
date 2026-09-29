@@ -269,6 +269,17 @@ mirror pass. The purpose-made provisional icon has a verified unique binding
 and four 44×44 states; the global art guard remains red on 21 unrelated
 pre-existing active-icon gaps. Rendered/playable delivery and full AI cast
 choice remain unverified.
+
+Sorcery Slow now has an authored saved-v3 Initiative-only magnitude:
+`min(50%, 20% + floor(scaled Spell Power / 5))`, with School rank affecting
+the Spell Power term rather than the fixed base. Hero casts last two rounds
+before Temporalist and existing duration extensions; explicit Mass Slow still
+scales the final ordinary penalty to 60%. Older v1/v2 profiles retain their
+configured magnitude and duration. The same timed-effect execution path
+feeds hypothetical AI previews and authoritative casts. Both Linux targets
+link, and the focused active-profile filter passed 19/19 with zero skips;
+rendered/playable feedback and broader combination cases remain open.
+
 Additional roster corrections: Implosion belongs to Sorcery rather than Havoc;
 Earthquake belongs to Nature rather than Havoc; Counterspell is not in the
 current canonical roster; Master Chain Lightning is Solmyr's specialty and
