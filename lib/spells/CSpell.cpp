@@ -90,15 +90,16 @@ int64_t CSpell::calculateDamage(const spells::Caster * caster) const
 	if(hero && newHorizonsMagic::rulesActive(hero->getMagicRules())
 		&& hero->getMagicRules()["rulesetVersion"].Integer() >= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 	{
-		const int coefficientPercent = newHorizonsMagic::spellPowerCoefficientPercent(hero->getMagicRules(), hero, id);
-		if(const auto saved = newHorizonsMagic::directDamageValue(hero->getMagicRules(), getJsonKey(), effectPower,
-			divisor, coefficientPercent))
-			rawDamage = *saved;
-		else if(coefficientPercent != 100)
+		const int coefficientBasisPoints = newHorizonsMagic::spellPowerCoefficientBasisPoints(
+			hero->getMagicRules(), hero, id);
+		if(const auto formula = newHorizonsMagic::spellDirectDamage(hero->getMagicRules(), getJsonKey()))
+			rawDamage = formula->evaluateBasisPoints(effectPower, divisor, coefficientBasisPoints);
+		else if(coefficientBasisPoints != 10000)
 		{
 			const int64_t powerNumerator = static_cast<int64_t>(getBasePower()) * effectPower;
 			rawDamage = getLevelPower(effectLevel)
-				+ spells::scaleWarcastingSpellPowerComponent(powerNumerator, divisor, coefficientPercent - 100);
+				+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+					powerNumerator, divisor, coefficientBasisPoints);
 		}
 	}
 

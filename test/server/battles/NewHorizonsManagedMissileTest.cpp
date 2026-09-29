@@ -58,6 +58,8 @@ JsonNode current70()
 {
 	auto rules = old69();
 	rules["rulesetVersion"].Integer() = 2;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	auto & row = rules["spells"][GameConstants::NEW_HORIZONS_MAGIC_MISSILE];
 	row["schools"].Vector().push_back(JsonNode("new-horizons:sorcery"));
 	row["level"].Integer() = 1;

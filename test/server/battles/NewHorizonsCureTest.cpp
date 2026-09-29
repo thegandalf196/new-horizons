@@ -64,6 +64,7 @@ protected:
 		{
 			rules["rulesetVersion"].Integer() = magicVersion;
 			rules.Struct().erase("schoolRankPowerCoefficientPercent");
+			rules.Struct().erase("spellcraftEfficiencyPercent");
 		}
 		if(!optIntoNewCure)
 			rules["spells"][cureKey].Struct().erase("cureAfflictions");
@@ -234,13 +235,14 @@ TEST_F(NewHorizonsCureTest, OldV2RosterWithoutTheNewPoisonSpellDoesNotAcquireIt)
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	rules["spells"].Struct().erase(std::string(newHorizonsMagic::NATURE_POISON_SPELL));
 	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
 	EXPECT_FALSE(newHorizonsMagic::spellAllowedBySavedRoster(rules, naturePoisonSpell()));
 	EXPECT_FALSE(newHorizonsMagic::physicalPoisonEnabled(rules, naturePoisonSpell()));
 }
 
-TEST_F(NewHorizonsCureTest, V3PoisonCastAppliesTheRankScaledPhysicalThreeActivationState)
+TEST_F(NewHorizonsCureTest, V3PoisonUsesTheComposedSchoolAndSpellcraftCoefficient)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1));
 	const auto poison = naturePoisonSpell();
@@ -249,6 +251,12 @@ TEST_F(NewHorizonsCureTest, V3PoisonCastAppliesTheRankScaledPhysicalThreeActivat
 	ASSERT_GE(natureMagicId, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(natureMagicId), MasteryLevel::BASIC,
 		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft")),
+		MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(
+		battle()->getMagicRules(), attackerSideHero, poison), 12650);
+	EXPECT_EQ(newHorizonsMagic::poisonBaseDamageBasisPoints(0, 12650), 20)
+		<< "Spellcraft leaves Poison's fixed 20 damage unchanged";
 	const int manaBefore = attackerSideHero->getManaAvailable();
 	const auto healthBefore = poisonEnemy->getAvailableHealth();
 
@@ -261,10 +269,10 @@ TEST_F(NewHorizonsCureTest, V3PoisonCastAppliesTheRankScaledPhysicalThreeActivat
 
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		poisonAction(poisonEnemy)));
-	EXPECT_EQ(poisonEnemy->physicalPoisonBaseDamage, 77);
+	EXPECT_EQ(poisonEnemy->physicalPoisonBaseDamage, 83);
 	EXPECT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 3);
 	EXPECT_EQ(poisonEnemy->physicalPoisonSourceStackId, -1);
-	EXPECT_EQ(newHorizonsBulwark::physicalPoisonTickDamage(poisonEnemy->acquireState().get()), 77);
+	EXPECT_EQ(newHorizonsBulwark::physicalPoisonTickDamage(poisonEnemy->acquireState().get()), 83);
 	EXPECT_TRUE(poisonEnemy->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
 		BonusSourceID(poison)))->empty());
 	EXPECT_EQ(poisonEnemy->getAvailableHealth(), healthBefore);
@@ -509,6 +517,28 @@ TEST_F(NewHorizonsCureTest, HealsByTwentyFivePlusFloorOnePointFiveSpellPower)
 	EXPECT_EQ(target->getAvailableHealth() - before, 56);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 4);
 	EXPECT_EQ(target->getCount(), 10);
+}
+
+TEST_F(NewHorizonsCureTest, BasicSchoolAndSpellcraftScaleOnlyCuresSpellPowerTerm)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(23, "core:archangel", 10));
+	const SecondarySkill light(SecondarySkill::decode("new-horizons:lightMagic"));
+	const SecondarySkill spellcraft(SecondarySkill::decode("new-horizons:spellcraft"));
+	attackerSideHero->setSecSkillLevel(light, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_NO_FATAL_FAILURE(injure(100));
+
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(
+		battle()->getMagicRules(), attackerSideHero, SpellID::CURE), 12650);
+	const auto * spell = SpellID(SpellID::CURE).toSpell();
+	ASSERT_NE(spell, nullptr);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	EXPECT_EQ(spell->battleMechanics(&cast)->getEffectValue(), 68)
+		<< "The fixed 25 HP remains unchanged while the 1.5 × Spell Power term uses 126.5%";
+
+	const auto before = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), cureAction(target)));
+	EXPECT_EQ(target->getAvailableHealth() - before, 68);
 }
 
 TEST_F(NewHorizonsCureTest, FullHealthTargetCanBeCleansedBySelectingPoison)

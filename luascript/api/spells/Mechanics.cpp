@@ -74,13 +74,13 @@ int32_t MechanicsProxy::getArcaneBreachMarkBasisPoints(const spells::Mechanics &
 {
 	using namespace newHorizonsSorcery;
 	// Validate the same domain as the shared unmodified formula. Warcasting
-	// and the saved school-rank coefficient boost only the Spell Power component,
+	// and the saved School x Spellcraft coefficient boost only the Spell Power component,
 	// before the final per-mark cap.
 	const auto effectPower = m.getEffectPower();
 	arcaneBreachMarkBasisPoints(effectPower);
-	const auto component = m.scaleSpellPowerComponentWithCoefficient(
+	const auto component = m.scaleSpellPowerComponentWithCoefficientBasisPoints(
 		static_cast<int64_t>(effectPower) * ARCANE_BREACH_POWER_BASIS_POINTS,
-		1, m.getSchoolRankPowerCoefficientPercent());
+		1, m.getSpellPowerCoefficientBasisPoints());
 	return static_cast<int32_t>(std::min<int64_t>(ARCANE_BREACH_CAP_BASIS_POINTS,
 		ARCANE_BREACH_BASE_BASIS_POINTS + component));
 }
@@ -184,6 +184,17 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 			{"coefficientPercent", "Saved school-rank Spell Power coefficient in percent."}
 		}, {},
 		"Applies the supplied percentage and this cast's snapshotted Warcasting percentage to a Spell-Power-derived component, "
+		"then divides it with integer truncation. Fixed base and level-power terms must be added separately.");
+	R.method<&Mechanics::getSpellPowerCoefficientBasisPoints>("getSpellPowerCoefficientBasisPoints", {},
+		"Returns the composed Spellcraft and school-rank coefficient in basis points from the saved battle rules and caster. "
+		"10000 basis points means 100%; legacy profiles and excluded spells use 10000.");
+	R.method<&Mechanics::scaleSpellPowerComponentWithCoefficientBasisPoints>("scaleSpellPowerComponentWithCoefficientBasisPoints",
+		{
+			{"numerator", "An explicitly Spell-Power-derived numerator, before applying its divisor."},
+			{"divisor", "Divisor applied after the composed coefficient and optional Warcasting percentage."},
+			{"coefficientBasisPoints", "Saved composed Spell Power coefficient in basis points; 10000 means 100%."}
+		}, {},
+		"Applies the supplied basis-point coefficient and this cast's snapshotted Warcasting percentage to a Spell-Power-derived component, "
 		"then divides it with integer truncation. Fixed base and level-power terms must be added separately.");
 	R.method<&Mechanics::applySpecificSpellBonus>("applySpecificSpellBonus",
 		{{"value", "Base value to which spell-specific modifiers are applied. Use 0 for default"}}, {},

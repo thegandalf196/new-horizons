@@ -950,9 +950,9 @@ float SpellTargetEvaluator::spellLockPlacementValue(const Mechanics * spellMecha
 	const auto * hero = spellMechanics->getHeroCaster();
 	const bool spellbinder = hero && hero->hasActivePerk(
 		newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::SPELLBINDER_PERK);
-	int rounds = newHorizonsSorcery::spellLockDuration(
+	int rounds = newHorizonsSorcery::spellLockDurationBasisPoints(
 		std::max(0, spellMechanics->getEffectPower()), spellbinder,
-		spellMechanics->getSchoolRankPowerCoefficientPercent(),
+		spellMechanics->getSpellPowerCoefficientBasisPoints(),
 		spellMechanics->getWarcastingBonusPercent());
 	rounds = spellMechanics->adjustEffectDuration(rounds);
 	rounds = std::clamp(rounds, 1, 5);
@@ -974,9 +974,9 @@ float SpellTargetEvaluator::naturePoisonPlacementValue(const Mechanics * spellMe
 	if(!liveTarget)
 		return 0.0f;
 
-	const int64_t baseDamage = newHorizonsMagic::poisonBaseDamage(
+	const int64_t baseDamage = newHorizonsMagic::poisonBaseDamageBasisPoints(
 		std::max(0, spellMechanics->getEffectPower()),
-		spellMechanics->getSchoolRankPowerCoefficientPercent());
+		spellMechanics->getSpellPowerCoefficientBasisPoints());
 	if(baseDamage <= 0)
 		return 0.0f;
 

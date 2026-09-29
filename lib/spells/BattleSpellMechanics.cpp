@@ -1132,8 +1132,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		const bool herbalist = hero && hero->hasActivePerk(
 			std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
 			std::string(newHorizonsMagic::NATURE_HERBALIST));
-		const int32_t regenerationRate = newHorizonsMagic::regenerationRateMillionths(
-			std::max<int32_t>(0, getEffectPower()), getSchoolRankPowerCoefficientPercent(),
+		const int32_t regenerationRate = newHorizonsMagic::regenerationRateMillionthsBasisPoints(
+			std::max<int32_t>(0, getEffectPower()), getSpellPowerCoefficientBasisPoints(),
 			herbalist, getWarcastingBonusPercent());
 		for(const auto * unit : affectedUnits)
 		{

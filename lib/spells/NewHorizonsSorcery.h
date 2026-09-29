@@ -96,6 +96,12 @@ constexpr int SPELL_LOCK_SPELLBINDER_DURATION_CAP = 4;
 DLL_LINKAGE int spellLockDuration(int32_t spellPower, bool spellbinder = false,
 	int32_t coefficientPercent = 100, int32_t warcastingBonusPercent = 0);
 
+/// Like spellLockDuration, but accepts the composed School x Spellcraft
+/// coefficient in basis points so fractional percentages survive until the
+/// Spell Power-derived duration term is rounded.
+DLL_LINKAGE int spellLockDurationBasisPoints(int32_t spellPower, bool spellbinder,
+	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent = 0);
+
 struct DLL_LINKAGE SpellLockPolicy
 {
 	bool removeBeneficial = false;

@@ -44,6 +44,7 @@ JsonNode savedFormula(int base = 20, int coefficient = 20)
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = 2;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	rules["spells"][arrowKey]["directDamage"]["base"].Integer() = base;
 	rules["spells"][arrowKey]["directDamage"]["powerCoefficient"].Integer() = coefficient;
 	return rules;
@@ -65,6 +66,7 @@ JsonNode savedV1MagicRules()
 	rules.Struct().erase("mageGuildGeneration");
 	rules.Struct().erase("physicalDamageReductionCapPercent");
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	rules.Struct().erase("warcasting");
 	for(auto & [factionId, faction] : rules["factions"].Struct())
 	{
@@ -516,6 +518,64 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, V3SchoolRanksScaleOnlySavedCoeffici
 		<< "Two Expert school memberships apply one factor, not two";
 	EXPECT_NE(newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell, 0).find("Expert School: 145% Spell Power damage coefficient."),
 		std::string::npos);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellcraftComposesWithSchoolRanksInBasisPointsAndLeavesTheBaseFixed)
+{
+	forceRealHeroScale = true;
+	authoredRules = savedV3Formula();
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	const SecondarySkill spellcraft(SecondarySkill::decode("new-horizons:spellcraft"));
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+
+	const auto formula = newHorizonsMagic::spellDirectDamage(battle()->getMagicRules(), arrowKey);
+	ASSERT_TRUE(formula);
+	EXPECT_EQ(formula->base, 20);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(
+		battle()->getMagicRules(), attackerSideHero, spell->getId()), 12650);
+	EXPECT_EQ(formula->evaluateBasisPoints(0, 10, 12650), 20)
+		<< "Basic School × Basic Spellcraft must not multiply the fixed base";
+
+	spells::BattleCast basicCast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
+	basicCast.setSpellLevel(0);
+	basicCast.setEffectPower(100);
+	EXPECT_EQ(spell->battleMechanics(&basicCast)->getEffectValue(), 273);
+	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 273)
+		<< "Spellbook forecast and cast effect must use the same fractional coefficient";
+
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(
+		battle()->getMagicRules(), attackerSideHero, spell->getId()), 18850);
+	spells::BattleCast expertCast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
+	expertCast.setSpellLevel(0);
+	expertCast.setEffectPower(100);
+	EXPECT_EQ(spell->battleMechanics(&expertCast)->getEffectValue(), 397);
+	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 397);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, OldV3SnapshotWithoutSpellcraftFieldKeepsSchoolOnlyCoefficient)
+{
+	forceRealHeroScale = true;
+	authoredRules = savedV3Formula();
+	authoredRules.Struct().erase("spellcraftEfficiencyPercent");
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(
+		battle()->getMagicRules(), attackerSideHero, spell->getId()), 14500);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
+	cast.setSpellLevel(0);
+	cast.setEffectPower(100);
+	EXPECT_EQ(spell->battleMechanics(&cast)->getEffectValue(), 310);
+	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 310);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, GenericDamageFormulaUsesTheSameRankCoefficientWithoutMovingItsBase)

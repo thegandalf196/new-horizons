@@ -33,7 +33,10 @@ JsonNode magicRulesForVersion(int version)
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = version;
 	if(version < newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	{
 		rules.Struct().erase("schoolRankPowerCoefficientPercent");
+		rules.Struct().erase("spellcraftEfficiencyPercent");
+	}
 	if(version == newHorizonsMagic::RULESET_VERSION)
 	{
 		rules.Struct().erase("warcasting");

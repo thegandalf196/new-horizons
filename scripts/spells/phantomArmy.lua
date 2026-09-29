@@ -45,12 +45,13 @@ local function validSource(mechanics, unit)
 end
 
 local function integrityPool(mechanics, source)
-	-- Keep fractional basis points so school rank and Warcasting are both
-	-- applied before the single final health floor.
+	-- Keep fractional basis points so Spellcraft, school rank, and Warcasting
+	-- are applied before the single final health floor.
 	local basisPointFractions = math.min(INTEGRITY_CAP_PERCENT * 100 * INTEGRITY_PRECISION,
-		BASE_INTEGRITY_PERCENT * 100 * INTEGRITY_PRECISION + mechanics:scaleSpellPowerComponentWithCoefficient(
-			INTEGRITY_BASIS_POINTS_PER_POWER * mechanics:getEffectPower() * INTEGRITY_PRECISION, 1,
-			mechanics:getSchoolRankPowerCoefficientPercent()))
+		BASE_INTEGRITY_PERCENT * 100 * INTEGRITY_PRECISION + mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+			INTEGRITY_BASIS_POINTS_PER_POWER * mechanics:getEffectPower() * INTEGRITY_PRECISION,
+			1,
+			mechanics:getSpellPowerCoefficientBasisPoints()))
 	local multiplier = 100
 	local hero = mechanics:getHeroCaster()
 	if hero ~= nil and hero:hasActivePerk(ILLUSIONIST_SKILL, ILLUSIONIST_PERK) then

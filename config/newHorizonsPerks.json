@@ -1865,7 +1865,7 @@
 				"basic": {
 					"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency."
 					}
 				},

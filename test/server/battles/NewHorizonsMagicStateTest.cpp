@@ -35,6 +35,7 @@ JsonNode magicRulesForVersion(int version)
 
 	rules["rulesetVersion"].Integer() = version;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	if(version == newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION)
 	{
 		newHorizonsMagic::validateRules(rules);

@@ -21,6 +21,8 @@ protected:
 		if(useFormula)
 		{
 			rules["rulesetVersion"].Integer() = 2;
+			rules.Struct().erase("schoolRankPowerCoefficientPercent");
+			rules.Struct().erase("spellcraftEfficiencyPercent");
 			auto & formula = rules["spells"][SpellID(SpellID::FIREBALL).toSpell()->getJsonKey()]["directDamage"];
 			formula["base"].Integer() = 20;
 			formula["powerCoefficient"].Integer() = 20;

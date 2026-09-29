@@ -29,6 +29,7 @@ JsonNode legacyMagicRules(int version)
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = version;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	if(version == newHorizonsMagic::RULESET_VERSION)
 	{
 		rules.Struct().erase("spellPoints");

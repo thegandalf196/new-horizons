@@ -23,6 +23,7 @@ JsonNode v1Rules()
 	rules.Struct().erase("mageGuildGeneration");
 	rules.Struct().erase("physicalDamageReductionCapPercent");
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	for(auto & [name, faction] : rules["factions"].Struct())
 	{
 		(void)name;
@@ -47,6 +48,7 @@ JsonNode v2Rules()
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = 2;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;
 }
@@ -127,6 +129,41 @@ TEST(NewHorizonsMagicV3SchemaTest, SchoolRankFactorsAreRequiredAndValidateAllFou
 	auto extra = current;
 	extra["schoolRankPowerCoefficientPercent"].Vector().push_back(JsonNode(160));
 	EXPECT_FALSE(v3(extra));
+}
+
+TEST(NewHorizonsMagicV3SchemaTest, SpellcraftFactorsAreOptionalAndValidateAllFourRanks)
+{
+	auto current = v3Rules();
+	ASSERT_TRUE(v3(current));
+	const std::array<int, 4> expected{100, 110, 120, 130};
+	ASSERT_EQ(current["spellcraftEfficiencyPercent"].Vector().size(), expected.size());
+	for(size_t rank = 0; rank < expected.size(); ++rank)
+	{
+		EXPECT_EQ(current["spellcraftEfficiencyPercent"].Vector()[rank].Integer(), expected[rank]);
+		auto malformed = current;
+		malformed["spellcraftEfficiencyPercent"].Vector()[rank].Integer() = expected[rank] + 1;
+		EXPECT_FALSE(v3(malformed)) << "wrong Spellcraft factor at rank index " << rank;
+	}
+
+	auto oldV3 = current;
+	oldV3.Struct().erase("spellcraftEfficiencyPercent");
+	EXPECT_TRUE(v3(oldV3)) << "Older v3 snapshots remain valid without the optional Spellcraft contract";
+	auto fractional = current;
+	fractional["spellcraftEfficiencyPercent"].Vector()[1].Float() = 110.0;
+	EXPECT_FALSE(v3(fractional));
+	auto shortArray = current;
+	shortArray["spellcraftEfficiencyPercent"].Vector().pop_back();
+	EXPECT_FALSE(v3(shortArray));
+	auto extra = current;
+	extra["spellcraftEfficiencyPercent"].Vector().push_back(JsonNode(140));
+	EXPECT_FALSE(v3(extra));
+
+	auto v2WithField = v2Rules();
+	v2WithField["spellcraftEfficiencyPercent"] = current["spellcraftEfficiencyPercent"];
+	EXPECT_FALSE(v2(v2WithField)) << "The v2 schema rejects the v3-only Spellcraft field";
+	auto v1WithField = v1Rules();
+	v1WithField["spellcraftEfficiencyPercent"] = current["spellcraftEfficiencyPercent"];
+	EXPECT_FALSE(named(v1WithField, "vcmi:newHorizonsMagic"));
 }
 
 TEST(NewHorizonsMagicV2SchemaTest, FormulaObjectRejectsNullMissingAndExtraFields)

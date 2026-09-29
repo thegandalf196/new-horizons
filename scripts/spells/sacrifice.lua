@@ -107,8 +107,9 @@ end
 function Script:calculateHealValue(mechanics, victim)
 	local count = victim:getCount()
 	local fixedPerCreature = victim:getMaxHealth() + mechanics:calculateRawEffectValue(0, 1)
-	local scaledPowerForStack = mechanics:scaleSpellPowerComponent(
-		mechanics:getEffectPower() * count, mechanics:getEffectPowerDivisor())
+	local scaledPowerForStack = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+		mechanics:getEffectPower() * count, mechanics:getEffectPowerDivisor(),
+		mechanics:getSpellPowerCoefficientBasisPoints())
 	return fixedPerCreature * count + scaledPowerForStack
 end
 

@@ -138,4 +138,8 @@ TEST(NewHorizonsSorceryTest, SpellLockSchoolCoefficientScalesPowerBeforeFloorAnd
 	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, -1), std::invalid_argument);
 	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, 1001), std::invalid_argument);
 	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, 100, -1), std::invalid_argument);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(63, false, 12650), 1);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(64, false, 12650), 2);
+	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(43, false, 18850), 2);
+	EXPECT_THROW(newHorizonsSorcery::spellLockDurationBasisPoints(1, false, 100001), std::invalid_argument);
 }

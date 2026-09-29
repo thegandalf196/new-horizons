@@ -77,6 +77,12 @@ namespace spells
 /// The input must exclude any fixed spell base or level-power component.
 DLL_LINKAGE int64_t scaleWarcastingSpellPowerComponent(int64_t numerator, int64_t divisor, int32_t bonusPercent);
 
+/// Scales an identified Spell-Power-derived numerator by an absolute
+/// basis-point coefficient and the snapshotted Warcasting percentage. Fixed
+/// spell bases and level-power components must stay outside the input.
+DLL_LINKAGE int64_t scaleSpellPowerComponentWithCoefficientBasisPoints(int64_t numerator, int32_t divisor,
+	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent = 0);
+
 class DLL_LINKAGE IBattleCast
 {
 public:
@@ -290,6 +296,8 @@ public:
 	virtual int32_t getEffectPowerDivisor() const { return 1; }
 	/// Effective saved-rules school-rank coefficient for this spell and caster.
 	int32_t getSchoolRankPowerCoefficientPercent() const;
+	/// Effective saved-rules School × Spellcraft coefficient, in basis points.
+	int32_t getSpellPowerCoefficientBasisPoints() const;
 	/// Resolves a configured chain-effect target count against the saved battle
 	/// profile, shared by authoritative casts and target previews/evaluators.
 	int32_t getEffectiveChainLength(int32_t configuredLength) const;
@@ -352,6 +360,8 @@ public:
 	int64_t scaleSpellPowerComponent(int64_t numerator, int32_t divisor = 1) const;
 	int64_t scaleSpellPowerComponentWithCoefficient(int64_t numerator, int32_t divisor,
 		int32_t coefficientPercent) const;
+	int64_t scaleSpellPowerComponentWithCoefficientBasisPoints(int64_t numerator, int32_t divisor,
+		int32_t coefficientBasisPoints) const;
 	virtual Target canonicalizeTarget(const Target & aim) const = 0;
 
 	//Battle facade

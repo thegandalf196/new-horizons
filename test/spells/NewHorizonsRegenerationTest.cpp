@@ -20,7 +20,10 @@ JsonNode magicRulesForVersion(const int version)
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = version;
 	if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	{
 		rules.Struct().erase("schoolRankPowerCoefficientPercent");
+		rules.Struct().erase("spellcraftEfficiencyPercent");
+	}
 	return rules;
 }
 }

@@ -32,6 +32,7 @@ JsonNode savedV1MagicRules()
 	rules.Struct().erase("mageGuildGeneration");
 	rules.Struct().erase("physicalDamageReductionCapPercent");
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	for(auto & [factionId, faction] : rules["factions"].Struct())
 	{
 		(void)factionId;
@@ -79,6 +80,7 @@ protected:
 		{
 			rules["rulesetVersion"].Integer() = magicRulesVersion;
 			rules.Struct().erase("schoolRankPowerCoefficientPercent");
+			rules.Struct().erase("spellcraftEfficiencyPercent");
 			rules["spells"].Struct().erase(holyWrathKey);
 		}
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);

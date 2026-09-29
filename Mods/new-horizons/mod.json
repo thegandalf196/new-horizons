@@ -368,6 +368,12 @@
 					130,
 					145
 				],
+				"spellcraftEfficiencyPercent": [
+					100,
+					110,
+					120,
+					130
+				],
 				"warcasting": true,
 				"physicalDamageReductionCapPercent": 80,
 				"spellPoints": {
@@ -4460,7 +4466,7 @@
 							"basic": {
 								"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency."
 								}
 							},

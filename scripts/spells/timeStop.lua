@@ -20,9 +20,9 @@ local function radius(mechanics)
 	local chronomancer = hero ~= nil
 		and hero:hasActivePerk(CHRONOMANCER_SKILL, CHRONOMANCER_PERK)
 	local cap = chronomancer and CHRONOMANCER_RADIUS_CAP or BASE_RADIUS_CAP
-	local scaledPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficient(
+	local scaledPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
 		mechanics:getEffectPower(), POWER_PER_EXTRA_RADIUS,
-		mechanics:getSchoolRankPowerCoefficientPercent())
+		mechanics:getSpellPowerCoefficientBasisPoints())
 	return math.min(cap, BASE_RADIUS + scaledPowerTerm)
 end
 

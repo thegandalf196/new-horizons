@@ -131,9 +131,9 @@ void projectRegenerationRateSnapshot(HypotheticBattle & projectedBattle,
 	const bool herbalist = hero && hero->hasActivePerk(
 		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
 		std::string(newHorizonsMagic::NATURE_HERBALIST));
-	targetState->regenerationRateMillionths = newHorizonsMagic::regenerationRateMillionths(
+	targetState->regenerationRateMillionths = newHorizonsMagic::regenerationRateMillionthsBasisPoints(
 		std::max<int32_t>(0, mechanics.getEffectPower()),
-		mechanics.getSchoolRankPowerCoefficientPercent(), herbalist,
+		mechanics.getSpellPowerCoefficientBasisPoints(), herbalist,
 		mechanics.getWarcastingBonusPercent());
 }
 

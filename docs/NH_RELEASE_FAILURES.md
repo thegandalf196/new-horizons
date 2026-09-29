@@ -15,6 +15,23 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+### September 28/29 local Basic Spellcraft native-gate incidents
+
+- The first coordinated `vcmitest`/`vcmiclient` build stopped on a test-only
+  `SecondarySkill::decode(string_view)` call in `FocusMagicSpellTest`; this API
+  requires `std::string`. The incremental build linked after explicit conversion.
+- The first active-mod 15-case filter failed only the new Cure fixture: 100
+  damage to 100 Pikemen left no surviving wound, so Cure correctly rejected
+  an attempted resurrection. The fixture now uses a wounded Archangel stack;
+  the resumed 15/15 run passes.
+- A broader 32-case saved-rules/Focus Magic filter found a stale synthetic v1
+  fixture retaining New Horizons common spells (v1 forbids them), plus two
+  Regeneration expectations copied with a 100000-millionth base rather than the
+  actual 250000 base. Corrected fixture/expectations pass 32/32. The offline
+  perk-data gate also lacked the previously activated Herbalist in its expected
+  set; correcting that inventory restores its 64-case bundle. These were
+  fixture/expectation errors, not a claim of playable delivery.
+
 ### September 28 local Nature Poison native-gate incidents
 
 - Failure ID/stage: local `vcmitest -j12` over committed base `e6545354a` plus

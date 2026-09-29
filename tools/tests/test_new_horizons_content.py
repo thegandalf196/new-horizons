@@ -105,6 +105,7 @@ def legacy_rules(rules):
         result.pop('mageGuildGeneration', None)
         result.pop('physicalDamageReductionCapPercent', None)
         result.pop('schoolRankPowerCoefficientPercent', None)
+        result.pop('spellcraftEfficiencyPercent', None)
         for faction in result.get('factions', {}).values():
             faction['major'] = faction.pop('preferredA')
             faction['minor'] = faction.pop('preferredB')

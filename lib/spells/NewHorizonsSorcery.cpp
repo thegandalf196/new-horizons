@@ -90,16 +90,25 @@ int timeStopRadius(int32_t spellPower, bool chronomancer, int32_t coefficientPer
 int spellLockDuration(int32_t spellPower, bool spellbinder, int32_t coefficientPercent,
 	int32_t warcastingBonusPercent)
 {
+	if(coefficientPercent < 0 || coefficientPercent > 1000)
+		throw std::invalid_argument("Invalid Spell Lock Spell Power coefficient inputs");
+	return spellLockDurationBasisPoints(spellPower, spellbinder,
+		coefficientPercent * 100, warcastingBonusPercent);
+}
+
+int spellLockDurationBasisPoints(int32_t spellPower, bool spellbinder,
+	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent)
+{
 	validateSpellPower(spellPower);
-	if(coefficientPercent < 0 || coefficientPercent > 1000 || warcastingBonusPercent < 0)
+	if(coefficientBasisPoints < 0 || coefficientBasisPoints > 100000 || warcastingBonusPercent < 0)
 		throw std::invalid_argument("Invalid Spell Lock Spell Power coefficient inputs");
 
 	// Match Mechanics::scaleSpellPowerComponentWithCoefficient exactly while
 	// avoiding a product of Spell Power, the rank coefficient, and Warcasting.
 	// int32 Spell Power times the bounded coefficient fits in int64; quotient/
 	// remainder scaling keeps the additional Warcasting multiplier overflow-safe.
-	constexpr int64_t denominator = static_cast<int64_t>(SPELL_LOCK_POWER_PER_EXTRA_ROUND) * 100 * 100;
-	const int64_t scaledNumerator = static_cast<int64_t>(spellPower) * coefficientPercent;
+	constexpr int64_t denominator = static_cast<int64_t>(SPELL_LOCK_POWER_PER_EXTRA_ROUND) * 10000 * 100;
+	const int64_t scaledNumerator = static_cast<int64_t>(spellPower) * coefficientBasisPoints;
 	const int64_t multiplier = 100LL + warcastingBonusPercent;
 	const int64_t whole = scaledNumerator / denominator;
 	const int64_t remainder = scaledNumerator % denominator;

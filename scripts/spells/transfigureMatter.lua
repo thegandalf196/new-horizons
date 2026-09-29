@@ -130,9 +130,9 @@ end
 function Script:hpPool(mechanics, obstacle)
 	local hexes = obstacle:getHexes()
 	local spellPower = mechanics:getEffectPower()
-	local schoolRankCoefficientPercent = mechanics:getSchoolRankPowerCoefficientPercent()
-	local scaledSpellPower = mechanics:scaleSpellPowerComponentWithCoefficient(
-		2 * spellPower, 1, schoolRankCoefficientPercent)
+	local coefficientBasisPoints = mechanics:getSpellPowerCoefficientBasisPoints()
+	local scaledSpellPower = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+		2 * spellPower, 1, coefficientBasisPoints)
 	local pool = 80 + scaledSpellPower + 50 * hexes:size()
 
 	local hero = mechanics:getHeroCaster()

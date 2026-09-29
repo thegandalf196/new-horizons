@@ -2,6 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 3,
 	"schoolRankPowerCoefficientPercent": [100, 115, 130, 145],
+	"spellcraftEfficiencyPercent": [100, 110, 120, 130],
 	"warcasting": true,
 	"physicalDamageReductionCapPercent": 80,
 	"spellPoints": {

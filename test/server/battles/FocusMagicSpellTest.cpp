@@ -89,6 +89,7 @@ protected:
 		{
 			magicRules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 			magicRules.Struct().erase("schoolRankPowerCoefficientPercent");
+			magicRules.Struct().erase("spellcraftEfficiencyPercent");
 		}
 		newHorizonsMagic::validateRules(magicRules);
 		// Exercise installed roster eligibility, not a test-only spell entry.
@@ -248,6 +249,26 @@ TEST_F(FocusMagicSpellTest, RealCastScalesSpellPowerBySorceryRankAtLowPower)
 		ASSERT_TRUE(castOnWithDiagnostics(attackerSideHero, friendlyShooter));
 		expectCapturedFocusMagic(friendlyShooter, cases[index].second, BattleSide::ATTACKER);
 	}
+}
+
+TEST_F(FocusMagicSpellTest, SpellcraftAndSorceryScaleOnlyTheFocusMagicPowerTerm)
+{
+	ASSERT_TRUE(prepare(100));
+	const auto sorcery = SecondarySkill::decode(sorcerySkillKey);
+	const auto spellcraft = SecondarySkill::decode(std::string(newHorizonsMagic::SPELLCRAFT_SKILL));
+	ASSERT_GE(sorcery, 0);
+	ASSERT_GE(spellcraft, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(spellcraft), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(castOnWithDiagnostics(attackerSideHero, friendlyShooter));
+	// 10% fixed base plus floor(5 basis points x 100 SP x 1.265) = 16.32%.
+	expectCapturedFocusMagic(friendlyShooter, 1632, BattleSide::ATTACKER);
+	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell.toSpell(), 0);
+	EXPECT_NE(description.find("Spellcraft efficiency: 110%"), std::string::npos);
+	EXPECT_NE(description.find("Current ordinary per-mark penetration at Spell Power 100: 16.32%"),
+		std::string::npos);
 }
 
 TEST_F(FocusMagicSpellTest, RealCastWithSavedV2ProfileUsesTheUnrankedPowerCoefficient)

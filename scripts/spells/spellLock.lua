@@ -12,9 +12,9 @@ local PRESERVE_FRIENDLY_TEXT = "new-horizons.combat.spellLock.preserveBeneficial
 local PRESERVE_HOSTILE_TEXT = "new-horizons.combat.spellLock.preserveHostile"
 
 local function duration(mechanics)
-	local scaledSpellPower = mechanics:scaleSpellPowerComponentWithCoefficient(
+	local scaledSpellPower = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
 		mechanics:getEffectPower(), POWER_PER_EXTRA_ROUND,
-		mechanics:getSchoolRankPowerCoefficientPercent())
+		mechanics:getSpellPowerCoefficientBasisPoints())
 	local base = math.min(BASE_DURATION_CAP,
 		1 + scaledSpellPower)
 	local hero = mechanics:getHeroCaster()

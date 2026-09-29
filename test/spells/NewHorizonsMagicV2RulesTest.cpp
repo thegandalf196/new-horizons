@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -29,6 +30,7 @@ JsonNode legacyRules()
 	rules.Struct().erase("mageGuildGeneration");
 	rules.Struct().erase("physicalDamageReductionCapPercent");
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	rules.Struct().erase("warcasting");
 	for(auto & [factionId, faction] : rules["factions"].Struct())
 	{
@@ -38,12 +40,19 @@ JsonNode legacyRules()
 		faction.Struct().erase("preferredA");
 		faction.Struct().erase("preferredB");
 	}
-	for(auto & [name, spell] : rules["spells"].Struct())
+	auto & savedSpells = rules["spells"].Struct();
+	for(auto it = savedSpells.begin(); it != savedSpells.end();)
 	{
-		(void)name;
+		if(it->first.starts_with("new-horizons:"))
+		{
+			it = savedSpells.erase(it);
+			continue;
+		}
+		auto & spell = it->second;
 		spell.Struct().erase("active");
 		spell.Struct().erase("directDamage");
 		spell.Struct().erase("cureAfflictions");
+		++it;
 	}
 	return rules;
 }
@@ -53,6 +62,7 @@ JsonNode formulaRules()
 	auto rules = originalRules();
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	// Existing registered identity for rules-only tests; this does not alter the
 	// installed spell or activate the proposed new Magic Missile definition.
 	rules["spells"][arrowKey]["directDamage"]["base"].Integer() = 20;
@@ -127,6 +137,128 @@ TEST(NewHorizonsMagicV2RulesTest, V3SnapshotsSchoolFactorsAndV2KeepsOneHundredPe
 	auto v2WithV3Field = formulaRules();
 	v2WithV3Field["schoolRankPowerCoefficientPercent"] = current["schoolRankPowerCoefficientPercent"];
 	EXPECT_THROW(newHorizonsMagic::validateRules(v2WithV3Field), std::runtime_error);
+	v2WithV3Field = formulaRules();
+	v2WithV3Field["spellcraftEfficiencyPercent"] = current["spellcraftEfficiencyPercent"];
+	EXPECT_THROW(newHorizonsMagic::validateRules(v2WithV3Field), std::runtime_error);
+	auto v1WithSpellcraftField = legacyRules();
+	v1WithSpellcraftField["spellcraftEfficiencyPercent"] = current["spellcraftEfficiencyPercent"];
+	EXPECT_THROW(newHorizonsMagic::validateRules(v1WithSpellcraftField), std::runtime_error);
+}
+
+TEST(NewHorizonsMagicV2RulesTest, OptionalSavedSpellcraftEfficiencyKeepsOlderV3AtOneHundredPercent)
+{
+	const auto current = originalRules();
+	const std::array<int, 4> expected{100, 110, 120, 130};
+	ASSERT_EQ(current["spellcraftEfficiencyPercent"].Vector().size(), expected.size());
+	for(int rank = 0; rank < static_cast<int>(expected.size()); ++rank)
+		EXPECT_EQ(newHorizonsMagic::spellcraftEfficiencyPercent(current, rank), expected[static_cast<size_t>(rank)]);
+
+	auto oldV3 = current;
+	oldV3.Struct().erase("spellcraftEfficiencyPercent");
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(oldV3));
+	for(int rank = 0; rank < static_cast<int>(expected.size()); ++rank)
+		EXPECT_EQ(newHorizonsMagic::spellcraftEfficiencyPercent(oldV3, rank), 100);
+	EXPECT_EQ(newHorizonsMagic::spellcraftEfficiencyPercent(formulaRules(), MasteryLevel::EXPERT), 100)
+		<< "V2 saves cannot acquire Spellcraft efficiency from installed rules";
+
+	auto malformed = current;
+	malformed["spellcraftEfficiencyPercent"].Vector().pop_back();
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	malformed = current;
+	malformed["spellcraftEfficiencyPercent"].Vector()[2].Integer() = 125;
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	malformed = current;
+	malformed["spellcraftEfficiencyPercent"].Vector()[3].Float() = 130.0;
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+}
+
+TEST(NewHorizonsMagicV2RulesTest, SchoolAndSpellcraftFactorsComposeAsExactBasisPoints)
+{
+	const auto current = originalRules();
+	const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+	ASSERT_NE(spellcraft, SecondarySkill::NONE);
+	const auto arrow = SpellID(SpellID::decode(arrowKey));
+	ASSERT_NE(arrow, SpellID::NONE);
+	const auto arrowSchools = newHorizonsMagic::spellSchoolSkills(current, arrow);
+	ASSERT_EQ(arrowSchools.size(), 1u);
+
+	CGHeroInstance hero(nullptr);
+	const std::array<int, 4> schoolFactors{100, 115, 130, 145};
+	const std::array<int, 4> spellcraftFactors{100, 110, 120, 130};
+	for(int schoolRank = 0; schoolRank < 4; ++schoolRank)
+	{
+		for(int spellcraftRank = 0; spellcraftRank < 4; ++spellcraftRank)
+		{
+			hero.secSkills.clear();
+			hero.secSkills.emplace_back(arrowSchools.front(), schoolRank);
+			hero.secSkills.emplace_back(spellcraft, spellcraftRank);
+			EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(current, &hero, arrow),
+				schoolFactors[static_cast<size_t>(schoolRank)] * spellcraftFactors[static_cast<size_t>(spellcraftRank)])
+				<< "school rank " << schoolRank << ", Spellcraft rank " << spellcraftRank;
+		}
+	}
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(current, nullptr, arrow),
+		newHorizonsMagic::SPELL_POWER_COEFFICIENT_BASIS_POINTS);
+	hero.secSkills.clear();
+	hero.secSkills.emplace_back(arrowSchools.front(), MasteryLevel::EXPERT);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(current, &hero, arrow), 14'500)
+		<< "A School Skill rank does not stand in for the separate Spellcraft Skill";
+	hero.secSkills.clear();
+	hero.secSkills.emplace_back(spellcraft, MasteryLevel::BASIC);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(current, &hero, arrow), 11'000)
+		<< "Spellcraft reads the actual registered Skill rank independently of School rank";
+
+	const auto multiSchoolSpell = SpellID(SpellID::decode("core:airElemental"));
+	ASSERT_NE(multiSchoolSpell, SpellID::NONE);
+	const auto multiSchoolSkills = newHorizonsMagic::spellSchoolSkills(current, multiSchoolSpell);
+	ASSERT_EQ(multiSchoolSkills.size(), 2u);
+	hero.secSkills.clear();
+	hero.secSkills.emplace_back(multiSchoolSkills[0], MasteryLevel::EXPERT);
+	hero.secSkills.emplace_back(multiSchoolSkills[1], MasteryLevel::BASIC);
+	hero.secSkills.emplace_back(spellcraft, MasteryLevel::EXPERT);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(current, &hero, multiSchoolSpell), 18'850)
+		<< "The highest school rank is used once, then multiplied by Spellcraft once";
+
+	auto oldV3 = current;
+	oldV3.Struct().erase("spellcraftEfficiencyPercent");
+	hero.secSkills.clear();
+	hero.secSkills.emplace_back(arrowSchools.front(), MasteryLevel::BASIC);
+	hero.secSkills.emplace_back(spellcraft, MasteryLevel::EXPERT);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(oldV3, &hero, arrow), 11'500)
+		<< "An older v3 snapshot applies only its saved School factor";
+}
+
+TEST(NewHorizonsMagicV2RulesTest, AdventureSpellsAndCreatureAbilitiesExcludeBothRankFactors)
+{
+	const auto current = originalRules();
+	const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+	ASSERT_NE(spellcraft, SecondarySkill::NONE);
+	CGHeroInstance hero(nullptr);
+	hero.secSkills.emplace_back(spellcraft, MasteryLevel::EXPERT);
+
+	const auto adventureSpell = SpellID(SpellID::decode("core:summonBoat"));
+	ASSERT_NE(adventureSpell, SpellID::NONE);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(current, &hero, adventureSpell), 10'000);
+
+	const auto creatureAbility = SpellID(SpellID::decode("core:stoneGaze"));
+	ASSERT_NE(creatureAbility, SpellID::NONE);
+	ASSERT_TRUE(creatureAbility.toSpell());
+	EXPECT_FALSE(creatureAbility.toSpell()->isCommonHeroSpell());
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(current, &hero, creatureAbility), 10'000);
+}
+
+TEST(NewHorizonsMagicV2RulesTest, BasisPointSpellPowerTermsKeepFractionalFactorsUntilFinalFloor)
+{
+	EXPECT_EQ(newHorizonsMagic::regenerationRateMillionthsBasisPoints(1, 10'000, false),
+		newHorizonsMagic::regenerationRateMillionths(1, 100, false));
+	EXPECT_EQ(newHorizonsMagic::regenerationRateMillionthsBasisPoints(1, 12'650, false), 251'897)
+		<< "The combined 126.5% factor is applied once before the final rate floor";
+	EXPECT_EQ(newHorizonsMagic::regenerationRateMillionthsBasisPoints(1, 12'650, false, 20), 252'277)
+		<< "Warcasting composes before the same final integer floor";
+	EXPECT_EQ(newHorizonsMagic::poisonBaseDamageBasisPoints(3, 10'000),
+		newHorizonsMagic::poisonBaseDamage(3, 100));
+	EXPECT_EQ(newHorizonsMagic::poisonBaseDamageBasisPoints(3, 12'650), 21)
+		<< "Poison preserves the combined fractional factor until final integer damage";
 }
 
 TEST(NewHorizonsMagicV2RulesTest, ExpertMassRangeOverrideIsSavedV3AndSpellSpecific)

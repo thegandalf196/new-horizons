@@ -164,6 +164,19 @@ TEST_F(NewHorizonsRegenerationBattleTest, RealCastSnapshotsSavedSchoolRankAndHer
 	EXPECT_EQ(target->regenerationPendingMicroHealth, 0);
 }
 
+TEST_F(NewHorizonsRegenerationBattleTest, BasicSchoolAndSpellcraftScaleOnlyTheSpellPowerRateTerm)
+{
+	prepare(40, MasteryLevel::BASIC, false);
+	const SecondarySkill spellcraft(SecondarySkill::decode("new-horizons:spellcraft"));
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(castRegeneration(target));
+
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(
+		battle()->getMagicRules(), attackerSideHero, regenerationSpell()), 12650);
+	EXPECT_EQ(target->regenerationRateMillionths, 325'900)
+		<< "The 250,000 base rate remains fixed; only 15 × Spell Power uses 126.5%";
+}
+
 TEST_F(NewHorizonsRegenerationBattleTest, RecastRetainsMarksAndNextActivationHealsOnlyCurrentWounds)
 {
 	prepare(40, MasteryLevel::BASIC, true);

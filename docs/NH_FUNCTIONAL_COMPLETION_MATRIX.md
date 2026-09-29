@@ -21,11 +21,11 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Specification area | Current coverage | Principal remaining work |
 |---|---:|---|
 | Skills registered | 31/31 | Four Skills have no active rank effects; many registered Skills lack working perk progression. |
-| Skill rank effects active | 81/93 | Spellcraft, Diplomacy, Divine Mandate, and Elemental Rebirth account for the 12 planned ranks. |
+| Skill rank effects active | 82/93 | Basic Spellcraft now works and is registered active; its Advanced/Expert ranks plus Diplomacy, Divine Mandate, and Elemental Rebirth account for the 11 planned ranks. |
 | Skill perks active | 96/310 | 214 planned; active status alone does not certify behavior. Basic Herbalist is registered with Regeneration. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 43/90 | 47 planned perks. |
-| Canonical combat-spell identities registered | 35/67 | 32 missing/inactive; Nature Poison has a registered hero-spell identity and linked source, but focused active-profile runtime execution remains pending. |
+| Canonical combat-spell identities registered | 35/67 | 32 missing/inactive; Nature Poison has focused active-profile cast/tick/AI execution evidence, but rendered/playable delivery remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -169,7 +169,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 0/10 | Progression blocked |
-| Spellcraft | 0/3 | 0/10 | Ranks and progression missing |
+| Spellcraft | 1/2 | 0/10 | Basic efficiency is active with saved-v3 factors, authoritative/AI paths, live spell help and focused execution. Advanced/Expert are formula-tested but cannot normally be reached until Basic/Advanced perks work. |
 | Wisdom | 3/0 | 1/9 | Nine perks missing |
 | Warcasting | 3/0 | 4/6 | Six perks missing |
 | Logistics | 3/0 | 3/7 | Seven perks missing |

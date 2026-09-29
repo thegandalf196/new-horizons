@@ -39,6 +39,7 @@ constexpr int SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION = 3;
 constexpr int CURRENT_RULESET_VERSION = SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 constexpr int SPELL_POINTS_RULESET_VERSION = 1;
 constexpr int MAGE_GUILD_GENERATION_RULESET_VERSION = 1;
+constexpr int SPELL_POWER_COEFFICIENT_BASIS_POINTS = 10'000;
 constexpr int SPELL_POINTS_INTELLIGENCE_MAXIMUM_PERCENT = 130;
 constexpr int BLESS_BASE_DURATION = 2;
 constexpr int BLESS_MAX_DURATION = 4;
@@ -65,6 +66,7 @@ inline constexpr std::string_view HAVOC_CONDUCTOR = "new-horizons:havocMagic.con
 inline constexpr std::string_view HAVOC_ANNIHILATOR = "new-horizons:havocMagic.annihilator";
 inline constexpr std::string_view LIGHT_MAGIC_SKILL = "new-horizons:lightMagic";
 inline constexpr std::string_view LIGHT_BENEDICTION = "new-horizons:lightMagic.benediction";
+inline constexpr std::string_view SPELLCRAFT_SKILL = "new-horizons:spellcraft";
 inline constexpr std::string_view NATURE_POISON_SPELL = "new-horizons:poison";
 inline constexpr std::string_view NATURE_REGENERATION_SPELL = "new-horizons:regeneration";
 inline constexpr std::string_view NATURE_MAGIC_SKILL = "new-horizons:natureMagic";
@@ -147,13 +149,24 @@ DLL_LINKAGE std::optional<int64_t> directDamageValue(const JsonNode & rules, con
 /// Saved v3 school-rank Spell Power coefficient, or 100% for v1/v2 snapshots.
 /// Rank indexes are none=0, Basic=1, Advanced=2, Expert=3.
 DLL_LINKAGE int schoolRankPowerCoefficientPercent(const JsonNode & rules, int schoolRank);
-/// Percentage for the highest-ranked school on an ordinary spell in the saved
-/// roster. Multi-school spells use one highest rank; adventure spells, creature
-/// abilities, excluded spells and legacy snapshots retain 100%.
+/// Optional saved-v3 Spellcraft efficiency by the actual registered Skill's
+/// rank. Omission in an older v3 snapshot, or use with v1/v2 rules, means 100%.
+DLL_LINKAGE int spellcraftEfficiencyPercent(const JsonNode & rules, int spellcraftRank);
+/// School-only percentage for the highest-ranked school on an ordinary spell
+/// in the saved roster. Multi-school spells use one highest rank; adventure
+/// spells, creature abilities, excluded spells and legacy snapshots retain 100%.
 DLL_LINKAGE int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell);
+/// Exact School × Spellcraft coefficient in basis points for the Spell-Power-
+/// derived term: 10000 is 100%. No rounding is done while composing factors.
+/// Spellcraft is read from the hero's registered new-horizons:spellcraft Skill.
+DLL_LINKAGE int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell);
 /// Regeneration's saved-rate snapshot. School rank and Warcasting affect only
 /// the Spell Power term; Herbalist adds ten percentage points before the cap.
 DLL_LINKAGE int32_t regenerationRateMillionths(int32_t spellPower, int schoolRankCoefficientPercent,
+	bool herbalist, int warcastingBonusPercent = 0);
+/// Basis-point counterpart preserving fractional School × Spellcraft products
+/// until the Regeneration rate's final integer floor.
+DLL_LINKAGE int32_t regenerationRateMillionthsBasisPoints(int32_t spellPower, int coefficientBasisPoints,
 	bool herbalist, int warcastingBonusPercent = 0);
 /// Resolve fixed-point Regeneration marks into healable surviving creature wounds.
 DLL_LINKAGE int64_t regenerationHealAmount(int64_t pendingMicroHealth, int64_t survivingWounds);
@@ -172,6 +185,9 @@ DLL_LINKAGE bool physicalPoisonEnabled(const JsonNode & rules, SpellID spell);
 /// Poison's fixed 20 base plus half of the saved-rank-scaled Spell Power term.
 /// Integer damage truncates fractional health down, matching the combat damage pipeline.
 DLL_LINKAGE int64_t poisonBaseDamage(int32_t spellPower, int schoolRankCoefficientPercent);
+/// Basis-point counterpart preserving fractional School × Spellcraft products
+/// until Poison's final integer damage floor.
+DLL_LINKAGE int64_t poisonBaseDamageBasisPoints(int32_t spellPower, int coefficientBasisPoints);
 /// Saved Cure source identities whose complete SPELL_EFFECT source groups are
 /// currently present on this unit. Results are sorted by SpellID for stable UI
 /// and AI enumeration; legacy/unspecified Cure profiles return no candidates.

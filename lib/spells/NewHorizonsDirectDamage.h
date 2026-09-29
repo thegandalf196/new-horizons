@@ -26,6 +26,7 @@ struct DLL_LINKAGE DirectDamageFormula
 	int32_t powerCoefficient = 0;
 
 	int64_t evaluate(int32_t effectPower, int32_t divisor, int coefficientPercent = 100) const;
+	int64_t evaluateBasisPoints(int32_t effectPower, int32_t divisor, int32_t coefficientBasisPoints = 10000) const;
 	bool operator==(const DirectDamageFormula &) const = default;
 };
 

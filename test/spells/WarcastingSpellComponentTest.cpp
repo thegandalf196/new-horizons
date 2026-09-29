@@ -28,6 +28,8 @@ TEST(WarcastingSpellComponent, RemainsEnabledInSavedMagicRulesV3)
 	ASSERT_EQ(rules["rulesetVersion"].Integer(), 3);
 	EXPECT_TRUE(newHorizonsWarcasting::enabled(rules));
 	rules["rulesetVersion"].Integer() = 2;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
 	EXPECT_TRUE(newHorizonsWarcasting::enabled(rules));
 	rules["rulesetVersion"].Integer() = 1;
 	EXPECT_FALSE(newHorizonsWarcasting::enabled(rules));

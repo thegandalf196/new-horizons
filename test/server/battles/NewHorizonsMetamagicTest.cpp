@@ -64,6 +64,7 @@ protected:
 		{
 			magicRules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 			magicRules.Struct().erase("schoolRankPowerCoefficientPercent");
+			magicRules.Struct().erase("spellcraftEfficiencyPercent");
 			newHorizonsMagic::validateRules(magicRules);
 		}
 		// Old saved rulesets treated a spell with no `active` marker as enabled.

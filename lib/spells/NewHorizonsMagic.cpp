@@ -157,6 +157,7 @@ bool sorceryMember(const SpellSchool school)
 }
 
 constexpr std::array<int, 4> SCHOOL_RANK_POWER_COEFFICIENT_PERCENT{100, 115, 130, 145};
+constexpr std::array<int, 4> SPELLCRAFT_EFFICIENCY_PERCENT{100, 110, 120, 130};
 
 bool hasCanonicalSchoolRankPowerCoefficientPercent(const JsonNode & rules)
 {
@@ -171,6 +172,61 @@ bool hasCanonicalSchoolRankPowerCoefficientPercent(const JsonNode & rules)
 			return false;
 	}
 	return true;
+}
+
+bool hasCanonicalSpellcraftEfficiencyPercent(const JsonNode & rules)
+{
+	const auto & factors = rules["spellcraftEfficiencyPercent"];
+	if(!factors.isVector() || factors.Vector().size() != SPELLCRAFT_EFFICIENCY_PERCENT.size())
+		return false;
+	for(size_t index = 0; index < SPELLCRAFT_EFFICIENCY_PERCENT.size(); ++index)
+	{
+		const auto & factor = factors.Vector()[index];
+		if(factor.getType() != JsonNode::JsonType::DATA_INTEGER
+			|| !integer(factor, SPELLCRAFT_EFFICIENCY_PERCENT[index], SPELLCRAFT_EFFICIENCY_PERCENT[index]))
+			return false;
+	}
+	return true;
+}
+
+int registeredSpellcraftRank(const CGHeroInstance * hero)
+{
+	if(!hero || !LIBRARY || !LIBRARY->identifiers())
+		return 0;
+	const auto skillId = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(),
+		SecondarySkill::entityType(), std::string(newHorizonsMagic::SPELLCRAFT_SKILL));
+	if(!skillId || *skillId < 0)
+		return 0;
+	return std::clamp<int>(hero->getSecSkillLevel(SecondarySkill(*skillId)), 0, MasteryLevel::EXPERT);
+}
+
+std::string percentFromBasisPoints(int basisPoints)
+{
+	const int wholePercent = basisPoints / 100;
+	int hundredths = basisPoints % 100;
+	if(hundredths == 0)
+		return std::to_string(wholePercent) + "%";
+	if(hundredths < 10)
+		return std::to_string(wholePercent) + ".0" + std::to_string(hundredths) + "%";
+	if(hundredths % 10 == 0)
+		return std::to_string(wholePercent) + "." + std::to_string(hundredths / 10) + "%";
+	return std::to_string(wholePercent) + "." + std::to_string(hundredths) + "%";
+}
+
+std::string fixedPointFromScaledValue(int64_t scaledValue, int decimalPlaces)
+{
+	int64_t scale = 1;
+	for(int index = 0; index < decimalPlaces; ++index)
+		scale *= 10;
+	const int64_t whole = scaledValue / scale;
+	int64_t fractional = scaledValue % scale;
+	if(fractional == 0)
+		return std::to_string(whole);
+	std::string fractionalText = std::to_string(fractional);
+	fractionalText.insert(0, static_cast<size_t>(decimalPlaces) - fractionalText.size(), '0');
+	while(!fractionalText.empty() && fractionalText.back() == '0')
+		fractionalText.pop_back();
+	return std::to_string(whole) + "." + fractionalText;
 }
 }
 
@@ -337,13 +393,17 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		&& spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL)
 	{
 		const auto & rules = hero->getMagicRules();
-		const int coefficientPercent = spellPowerCoefficientPercent(rules, hero, spell->getId());
+		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
 		const int32_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
 		const bool chronomancer = hero->hasActivePerk(
 			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::CHRONOMANCER_PERK);
-		const int radius = newHorizonsSorcery::timeStopRadius(spellPower, chronomancer, coefficientPercent);
 		const int radiusCap = newHorizonsSorcery::TIME_STOP_BASE_MAX_RADIUS
 			+ (chronomancer ? newHorizonsSorcery::TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
+		const int64_t radiusThreshold = static_cast<int64_t>(newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS)
+			* SPELL_POWER_COEFFICIENT_BASIS_POINTS;
+		const int64_t scaledPowerTerm = static_cast<int64_t>(spellPower) * coefficientBasisPoints / radiusThreshold;
+		const int radius = std::min(radiusCap,
+			newHorizonsSorcery::TIME_STOP_BASE_RADIUS + static_cast<int>(scaledPowerTerm));
 		const bool schoolRankRules = rules["rulesetVersion"].Integer()
 			>= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 
@@ -351,9 +411,11 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		if(schoolRankRules)
 		{
 			result += "Under saved v3 rules, Sorcery rank scales only the Spell Power term: 100% with no rank, "
-				"115% at Basic, 130% at Advanced, and 145% at Expert. The radius is "
-				"min(" + std::to_string(radiusCap) + ", 1 + floor(" + std::to_string(coefficientPercent)
-				+ " x Spell Power / 10000)); Chronomancer raises the cap to 3 without "
+				"115% at Basic, 130% at Advanced, and 145% at Expert. Spellcraft efficiency multiplies that School factor; "
+				"the current combined coefficient is " + percentFromBasisPoints(coefficientBasisPoints) + ". The radius is min("
+				+ std::to_string(radiusCap) + ", 1 + floor(" + std::to_string(coefficientBasisPoints)
+				+ " x Spell Power / (10000 x " + std::to_string(newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS)
+				+ "))); Chronomancer raises the cap to 3 without "
 				"adding a free radius step. Current ordinary radius without battle-only Warcasting at Spell Power "
 				+ std::to_string(spellPower) + ": " + std::to_string(radius) + ". Warcasting also scales only this "
 				"Spell Power term when the shared cast scaler supplies its bonus. Duration and targeting do not "
@@ -361,8 +423,9 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		}
 		else
 		{
-			result += "Saved v1/v2 rules use a 100% Spell Power coefficient at every Sorcery rank. Radius is "
-				"min(" + std::to_string(radiusCap) + ", 1 + floor(Spell Power / 100)); Chronomancer raises "
+			result += "Saved v1/v2 rules use a 100% Spell Power coefficient at every rank. Radius is min("
+				+ std::to_string(radiusCap) + ", 1 + floor(Spell Power / "
+				+ std::to_string(newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS) + ")); Chronomancer raises "
 				"the cap to 3 without adding a free radius step. Current radius at Spell Power "
 				+ std::to_string(spellPower) + ": " + std::to_string(radius)
 				+ ". Warcasting also scales only this Spell Power term when the saved profile and shared cast scaler "
@@ -374,14 +437,10 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 
 	if(hero && cureEnabled(hero->getMagicRules(), spell->getId()))
 	{
-		const int coefficientPercent = spellPowerCoefficientPercent(hero->getMagicRules(), hero, spell->getId());
-		const int coefficientThousandths = 15 * coefficientPercent;
-		std::string spellPowerCoefficient = std::to_string(coefficientThousandths / 1000) + "."
-			+ std::to_string((coefficientThousandths % 1000) / 100)
-			+ std::to_string((coefficientThousandths % 100) / 10)
-			+ std::to_string(coefficientThousandths % 10);
-		while(spellPowerCoefficient.back() == '0')
-			spellPowerCoefficient.pop_back();
+		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
+		const int64_t coefficientTenThousandths = 15'000LL * coefficientBasisPoints
+			/ SPELL_POWER_COEFFICIENT_BASIS_POINTS;
+		const std::string spellPowerCoefficient = fixedPointFromScaledValue(coefficientTenThousandths, 4);
 		result = "Targets one friendly living stack. Base healing is 25 + " + spellPowerCoefficient
 			+ " \u00d7 Spell Power HP and cannot resurrect casualties. "
 			"If the target has Poison or Disease, choose one physical affliction to remove. "
@@ -392,10 +451,11 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		&& spell->getId() == SpellID::BLESS)
 	{
-		const int coefficientPercent = spellPowerCoefficientPercent(hero->getMagicRules(), hero, spell->getId());
+		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
 		const int64_t power = std::max<int32_t>(0, hero->getEffectPower(spell));
-		const int64_t termDivisor = static_cast<int64_t>(BLESS_SPELL_POWER_DURATION_DIVISOR) * 100;
-		const int64_t term = power * coefficientPercent / termDivisor;
+		const int64_t termDivisor = static_cast<int64_t>(BLESS_SPELL_POWER_DURATION_DIVISOR)
+			* SPELL_POWER_COEFFICIENT_BASIS_POINTS;
+		const int64_t term = power * coefficientBasisPoints / termDivisor;
 		const int ordinaryDuration = blessDurationFromPowerTerm(term);
 		const int64_t spellDurationModifier = static_cast<int64_t>(hero->valOfBonuses(
 			BonusType::SPELL_DURATION, BonusSubtypeID()))
@@ -405,8 +465,8 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		const int64_t totalDuration = std::max<int64_t>(0, ordinaryDuration + spellDurationModifier
 			+ (benediction ? 1 : 0));
 		result += "\n\nCurrent ordinary duration: " + std::to_string(ordinaryDuration)
-			+ (ordinaryDuration == 1 ? " round" : " rounds") + " (Light School coefficient: "
-			+ std::to_string(coefficientPercent) + "%). Current total before battle-only adjustments: "
+			+ (ordinaryDuration == 1 ? " round" : " rounds") + " (combined Spell Power coefficient: "
+			+ percentFromBasisPoints(coefficientBasisPoints) + "). Current total before battle-only adjustments: "
 			+ std::to_string(totalDuration) + (totalDuration == 1 ? " round." : " rounds.");
 		if(spellDurationModifier != 0)
 			result += " SPELL_DURATION modifier: " + std::to_string(spellDurationModifier) + ".";
@@ -427,14 +487,27 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		&& hero->getMagicRules()["rulesetVersion"].Integer() >= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		&& spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL)
 	{
-		const int coefficientPercent = spellPowerCoefficientPercent(hero->getMagicRules(), hero, spell->getId());
+		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
 		const bool spellbinder = hero->hasActivePerk(
 			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::SPELLBINDER_PERK);
-		const int duration = newHorizonsSorcery::spellLockDuration(
-			hero->getEffectPower(spell), spellbinder, coefficientPercent);
-		result += "\n\nCurrent Spell Power term: " + std::to_string(coefficientPercent)
-			+ "%; ordinary duration at current Spell Power: " + std::to_string(duration)
+		const int duration = newHorizonsSorcery::spellLockDurationBasisPoints(
+			hero->getEffectPower(spell), spellbinder, coefficientBasisPoints);
+		result += "\n\nCurrent combined Spell Power coefficient: "
+			+ percentFromBasisPoints(coefficientBasisPoints) + "; ordinary duration at current Spell Power: " + std::to_string(duration)
 			+ (duration == 1 ? " round." : " rounds.");
+	}
+
+	if(hero && rulesActive(hero->getMagicRules())
+		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& hero->getMagicRules().Struct().contains("spellcraftEfficiencyPercent")
+		&& registeredSpellcraftRank(hero) > MasteryLevel::NONE
+		&& spell->isCommonHeroSpell() && spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId())
+		&& !isAdventureSpell(hero->getMagicRules(), spell->getId())
+		&& !spellSchoolSkills(hero->getMagicRules(), spell->getId()).empty())
+	{
+		const int efficiencyPercent = spellcraftEfficiencyPercent(hero->getMagicRules(), registeredSpellcraftRank(hero));
+		result += "\n\nSpellcraft efficiency: " + std::to_string(efficiencyPercent)
+			+ "% on Spell Power-derived terms, multiplying with School rank.";
 	}
 
 	if(!hero || !rulesActive(hero->getMagicRules()))
@@ -448,6 +521,7 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		return result;
 
 	const int coefficientPercent = spellPowerCoefficientPercent(savedMagicRules, hero, spell->getId());
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(savedMagicRules, hero, spell->getId());
 	const bool cureCoefficient = cureEnabled(hero->getMagicRules(), spell->getId());
 	const bool transfigureCoefficient = spell->getJsonKey() == "new-horizons:transfigureMatter";
 	const bool phantomCoefficient = spell->getJsonKey() == "new-horizons:phantomArmy";
@@ -481,7 +555,7 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 
 		const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
 		const int64_t scaledTerm = spellPower * newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS
-			* coefficientPercent / 100;
+			* coefficientBasisPoints / SPELL_POWER_COEFFICIENT_BASIS_POINTS;
 		const int64_t penetrationBasisPoints = std::min<int64_t>(
 			newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS,
 			newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS + scaledTerm);
@@ -511,7 +585,7 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], RULESET_VERSION, CURRENT_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
@@ -519,6 +593,12 @@ void validateRules(const JsonNode & rules)
 		require(hasCanonicalSchoolRankPowerCoefficientPercent(rules), "canonical school-rank Spell Power coefficient factors");
 	else
 		require(!rules.Struct().contains("schoolRankPowerCoefficientPercent"), "school-rank coefficient factors require magic rules v3");
+	if(rules.Struct().contains("spellcraftEfficiencyPercent"))
+	{
+		require(version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+			"Spellcraft efficiency factors require magic rules v3");
+		require(hasCanonicalSpellcraftEfficiencyPercent(rules), "canonical Spellcraft efficiency factors");
+	}
 	if(rules.Struct().contains("physicalDamageReductionCapPercent"))
 	{
 		require(version >= DIRECT_DAMAGE_RULESET_VERSION, "Physical reduction requires magic rules v2 or later");
@@ -790,6 +870,19 @@ int schoolRankPowerCoefficientPercent(const JsonNode & rules, int schoolRank)
 	return static_cast<int>(rules["schoolRankPowerCoefficientPercent"].Vector().at(static_cast<size_t>(schoolRank)).Integer());
 }
 
+int spellcraftEfficiencyPercent(const JsonNode & rules, int spellcraftRank)
+{
+	if(spellcraftRank < 0 || spellcraftRank >= static_cast<int>(SPELLCRAFT_EFFICIENCY_PERCENT.size()))
+		throw std::invalid_argument("Invalid New Horizons Spellcraft rank");
+	if(legacy(rules) || !rules.isStruct()
+		|| !integer(rules["rulesetVersion"], SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+			SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		|| !rules.Struct().contains("spellcraftEfficiencyPercent"))
+		return SPELLCRAFT_EFFICIENCY_PERCENT.front();
+	require(hasCanonicalSpellcraftEfficiencyPercent(rules), "canonical Spellcraft efficiency factors");
+	return static_cast<int>(rules["spellcraftEfficiencyPercent"].Vector().at(static_cast<size_t>(spellcraftRank)).Integer());
+}
+
 int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell)
 {
 	if(!hero || legacy(rules) || !rules.isStruct()
@@ -805,6 +898,20 @@ int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * 
 	return schoolRankPowerCoefficientPercent(rules, highestSchoolRank);
 }
 
+int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell)
+{
+	if(!hero || legacy(rules) || !rules.isStruct()
+		|| !integer(rules["rulesetVersion"], SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+			SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		|| !spell.hasValue() || !spell.toSpell() || !spell.toSpell()->isCommonHeroSpell()
+		|| !spellAllowedBySavedRoster(rules, spell) || isAdventureSpell(rules, spell))
+		return SPELL_POWER_COEFFICIENT_BASIS_POINTS;
+
+	const int schoolCoefficientPercent = spellPowerCoefficientPercent(rules, hero, spell);
+	const int spellcraftCoefficientPercent = spellcraftEfficiencyPercent(rules, registeredSpellcraftRank(hero));
+	return schoolCoefficientPercent * spellcraftCoefficientPercent;
+}
+
 int32_t regenerationRateMillionths(const int32_t spellPower, const int schoolRankCoefficientPercent,
 	const bool herbalist, const int warcastingBonusPercent)
 {
@@ -817,6 +924,23 @@ int32_t regenerationRateMillionths(const int32_t spellPower, const int schoolRan
 	// do not lose fractional marks to per-hit rounding.
 	const int64_t spellPowerTerm = static_cast<int64_t>(15) * spellPower
 		* schoolRankCoefficientPercent * (100 + warcastingBonusPercent) / 100;
+	const int64_t base = REGENERATION_BASE_RATE_MILLIONTHS;
+	const int64_t herbalistBonus = herbalist ? REGENERATION_HERBALIST_BONUS_MILLIONTHS : 0;
+	return static_cast<int32_t>(std::min<int64_t>(REGENERATION_MAX_RATE_MILLIONTHS,
+		base + spellPowerTerm + herbalistBonus));
+}
+
+int32_t regenerationRateMillionthsBasisPoints(const int32_t spellPower, const int coefficientBasisPoints,
+	const bool herbalist, const int warcastingBonusPercent)
+{
+	if(spellPower < 0 || coefficientBasisPoints < 0 || coefficientBasisPoints > 100'000
+		|| warcastingBonusPercent < 0 || warcastingBonusPercent > 1000)
+		throw std::invalid_argument("Invalid Regeneration basis-point inputs");
+
+	// 10000 basis points is 100%. Keep the exact School × Spellcraft product
+	// until the same final integer floor used by the percent-based helper.
+	const int64_t spellPowerTerm = static_cast<int64_t>(15) * spellPower
+		* coefficientBasisPoints * (100 + warcastingBonusPercent) / 10'000;
 	const int64_t base = REGENERATION_BASE_RATE_MILLIONTHS;
 	const int64_t herbalistBonus = herbalist ? REGENERATION_HERBALIST_BONUS_MILLIONTHS : 0;
 	return static_cast<int32_t>(std::min<int64_t>(REGENERATION_MAX_RATE_MILLIONTHS,
@@ -872,6 +996,13 @@ int64_t poisonBaseDamage(const int32_t spellPower, const int schoolRankCoefficie
 	if(spellPower < 0 || schoolRankCoefficientPercent < 0 || schoolRankCoefficientPercent > 1000)
 		throw std::invalid_argument("Invalid Poison formula inputs");
 	return 20 + static_cast<int64_t>(spellPower) * schoolRankCoefficientPercent / 200;
+}
+
+int64_t poisonBaseDamageBasisPoints(const int32_t spellPower, const int coefficientBasisPoints)
+{
+	if(spellPower < 0 || coefficientBasisPoints < 0 || coefficientBasisPoints > 100'000)
+		throw std::invalid_argument("Invalid Poison basis-point inputs");
+	return 20 + static_cast<int64_t>(spellPower) * coefficientBasisPoints / 20'000;
 }
 
 std::vector<SpellID> cureAfflictions(const JsonNode & rules, const battle::Unit * unit)

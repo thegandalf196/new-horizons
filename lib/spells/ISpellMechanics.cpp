@@ -45,7 +45,7 @@ int64_t multiplyDivideFloor(int64_t value, uint64_t multiplier, int64_t divisor)
 {
 	// value is smaller than divisor. This bitwise quotient/remainder loop avoids
 	// forming value * multiplier, which may overflow even when the final quotient
-	// is small. The multiplier is at most INT32_MAX + 100.
+	// is small. Spell Power basis-point scaling bounds it below 2^31.
 	int64_t quotient = 0;
 	int64_t remainder = 0;
 	for(int bit = 31; bit >= 0; --bit)
@@ -69,11 +69,12 @@ int64_t checkedStormMultiply(int64_t left, int64_t right)
 }
 
 int64_t stormOfDaggersRoundedDamage(int64_t base, int64_t powerCoefficient, int32_t effectPower,
-	int32_t powerDivisor, int32_t schoolCoefficientPercent, int32_t warcastingBonusPercent,
+	int32_t powerDivisor, int32_t spellPowerCoefficientBasisPoints, int32_t warcastingBonusPercent,
 	int32_t selectedTargetCount, bool total)
 {
 	if(base < 0 || powerCoefficient < 0 || effectPower < 0 || powerDivisor <= 0
-		|| schoolCoefficientPercent < 0 || warcastingBonusPercent < 0
+		|| spellPowerCoefficientBasisPoints < 0 || spellPowerCoefficientBasisPoints > 100000
+		|| warcastingBonusPercent < 0
 		|| selectedTargetCount < 1
 		|| selectedTargetCount > newHorizonsMagic::STORM_OF_DAGGERS_MAX_TARGETS)
 		return 0;
@@ -82,9 +83,9 @@ int64_t stormOfDaggersRoundedDamage(int64_t base, int64_t powerCoefficient, int3
 	// together until the final displayed-total or equal-target rounding. The
 	// generic direct-damage path truncates at the pool boundary, which differs
 	// from the Storm table at positive half values (for example, SP=1 yields 47).
-	const int64_t powerDenominator = checkedStormMultiply(powerDivisor, 10000);
+	const int64_t powerDenominator = checkedStormMultiply(powerDivisor, 1000000);
 	int64_t spellPowerNumerator = checkedStormMultiply(powerCoefficient, effectPower);
-	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator, schoolCoefficientPercent);
+	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator, spellPowerCoefficientBasisPoints);
 	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator,
 		100LL + warcastingBonusPercent);
 	const int64_t fixedNumerator = checkedStormMultiply(base, powerDenominator);
@@ -132,6 +133,33 @@ int64_t scaleWarcastingSpellPowerComponent(const int64_t numerator, const int64_
 	return scaledWhole + scaledRemainder;
 }
 
+int64_t scaleSpellPowerComponentWithCoefficientBasisPoints(const int64_t numerator, const int32_t divisor,
+	const int32_t coefficientBasisPoints, const int32_t warcastingBonusPercent)
+{
+	if(numerator < 0 || divisor <= 0 || coefficientBasisPoints < 0 || coefficientBasisPoints > 100000
+		|| warcastingBonusPercent < 0 || warcastingBonusPercent > 1000)
+		throw std::invalid_argument("Invalid Spell Power basis-point coefficient inputs");
+	if(coefficientBasisPoints == 0 || numerator == 0)
+		return 0;
+
+	// Keep coefficient, Warcasting, and the divisor in one rational expression
+	// until the final floor. Quotient/remainder scaling avoids multiplying a
+	// potentially large Spell Power numerator by both modifiers directly.
+	const int64_t denominator = static_cast<int64_t>(divisor) * 1000000;
+	const uint64_t multiplier = static_cast<uint64_t>(coefficientBasisPoints)
+		* (100LL + warcastingBonusPercent);
+	const int64_t whole = numerator / denominator;
+	const int64_t remainder = numerator % denominator;
+	const int64_t maximum = std::numeric_limits<int64_t>::max();
+	if(whole > maximum / static_cast<int64_t>(multiplier))
+		throw std::overflow_error("Spell Power basis-point coefficient overflows");
+	const int64_t scaledWhole = whole * static_cast<int64_t>(multiplier);
+	const int64_t scaledRemainder = multiplyDivideFloor(remainder, multiplier, denominator);
+	if(scaledWhole > maximum - scaledRemainder)
+		throw std::overflow_error("Spell Power basis-point coefficient overflows");
+	return scaledWhole + scaledRemainder;
+}
+
 int64_t Mechanics::scaleSpellPowerComponent(const int64_t numerator, const int32_t divisor) const
 {
 	return scaleSpellPowerComponentWithCoefficient(numerator, divisor, 100);
@@ -142,13 +170,15 @@ int64_t Mechanics::scaleSpellPowerComponentWithCoefficient(const int64_t numerat
 {
 	if(numerator < 0 || divisor <= 0 || coefficientPercent < 0 || coefficientPercent > 1000)
 		throw std::invalid_argument("Invalid Spell Power coefficient inputs");
-	if(coefficientPercent == 0 || numerator == 0)
-		return 0;
-	if(numerator > std::numeric_limits<int64_t>::max() / coefficientPercent)
-		throw std::overflow_error("Spell Power coefficient overflows");
-	const int64_t scaledNumerator = numerator * coefficientPercent;
-	const int64_t scaledDivisor = static_cast<int64_t>(divisor) * 100;
-	return scaleWarcastingSpellPowerComponent(scaledNumerator, scaledDivisor, getWarcastingBonusPercent());
+	return this->scaleSpellPowerComponentWithCoefficientBasisPoints(
+		numerator, divisor, coefficientPercent * 100);
+}
+
+int64_t Mechanics::scaleSpellPowerComponentWithCoefficientBasisPoints(const int64_t numerator,
+	const int32_t divisor, const int32_t coefficientBasisPoints) const
+{
+	return spells::scaleSpellPowerComponentWithCoefficientBasisPoints(numerator, divisor,
+		coefficientBasisPoints, getWarcastingBonusPercent());
 }
 
 int32_t Mechanics::getSchoolRankPowerCoefficientPercent() const
@@ -159,6 +189,17 @@ int32_t Mechanics::getSchoolRankPowerCoefficientPercent() const
 		return 100;
 
 	return newHorizonsMagic::spellPowerCoefficientPercent(
+		battleState->getMagicRules(), getHeroCaster(), getSpellId());
+}
+
+int32_t Mechanics::getSpellPowerCoefficientBasisPoints() const
+{
+	const auto * battleCallback = battle();
+	const auto * battleState = battleCallback ? battleCallback->getBattle() : nullptr;
+	if(!battleState)
+		return 10000;
+
+	return newHorizonsMagic::spellPowerCoefficientBasisPoints(
 		battleState->getMagicRules(), getHeroCaster(), getSpellId());
 }
 
@@ -595,10 +636,9 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				dynamic_cast<const CGHeroInstance *>(caster), owner->getId());
 			if(v3Bless)
 			{
-				const int32_t schoolCoefficient = getSchoolRankPowerCoefficientPercent();
-				const int64_t spellPowerTerm = scaleSpellPowerComponentWithCoefficient(
+				const int64_t spellPowerTerm = scaleSpellPowerComponentWithCoefficientBasisPoints(
 					effectPower, newHorizonsMagic::BLESS_SPELL_POWER_DURATION_DIVISOR,
-					schoolCoefficient);
+					getSpellPowerCoefficientBasisPoints());
 				int64_t duration = newHorizonsMagic::blessDurationFromPowerTerm(spellPowerTerm);
 				duration += heroCaster->valOfBonuses(BonusType::SPELL_DURATION, BonusSubtypeID());
 				duration += heroCaster->valOfBonuses(BonusType::SPELL_DURATION,
@@ -685,40 +725,60 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		else
 		{
 			const auto * battle = cb->getBattle();
-			const int schoolRankCoefficientPercent = battle
-				? newHorizonsMagic::spellPowerCoefficientPercent(battle->getMagicRules(), caster->getHeroCaster(), owner->getId())
-				: 100;
-			const int damageCoefficientPercent = owner->isDamage() ? schoolRankCoefficientPercent : 100;
+			const int spellPowerCoefficientBasisPoints = battle
+				? newHorizonsMagic::spellPowerCoefficientBasisPoints(
+					battle->getMagicRules(), caster->getHeroCaster(), owner->getId())
+				: 10000;
+			const int damageCoefficientBasisPoints = owner->isDamage() ? spellPowerCoefficientBasisPoints : 10000;
 			if(battle && newHorizonsMagic::cureEnabled(battle->getMagicRules(), owner->getId()))
 			{
 				// The New Horizons Cure formula has a fixed component and a
 				// Spell-Power component. Target, school, and specialty modifiers
 				// still flow through the usual applySpellBonus call in heal.lua.
-			effectValue = 25 + scaleSpellPowerComponentWithCoefficient(3LL * effectPower, 2, schoolRankCoefficientPercent);
+				effectValue = 25 + scaleSpellPowerComponentWithCoefficientBasisPoints(
+					3LL * effectPower, 2, spellPowerCoefficientBasisPoints);
 			}
 			else
 			{
 				const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(
 					dynamic_cast<const CGHeroInstance *>(caster));
-				auto magicArrowValue = battle
-					? newHorizonsMagic::magicArrowDamage(battle->getMagicRules(), owner->getId(), effectPower,
-						getEffectPowerDivisor(), getOvercharge(), modifiers, damageCoefficientPercent)
-					: std::nullopt;
+				std::optional<int64_t> magicArrowValue;
+				if(battle && newHorizonsMagic::magicArrowOverchargeEnabled(battle->getMagicRules(), owner->getId()))
+				{
+					const int maximumOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(
+						battle->getMagicRules(), owner->getId(), effectPower, modifiers);
+					if(getOvercharge() >= 0 && getOvercharge() <= maximumOvercharge)
+					{
+						const auto formula = newHorizonsMagic::spellDirectDamage(
+							battle->getMagicRules(), owner->getJsonKey())
+							.value_or(newHorizonsMagic::DirectDamageFormula{20, 20});
+						const int64_t baseDamage = formula.evaluateBasisPoints(
+							effectPower, getEffectPowerDivisor(), damageCoefficientBasisPoints);
+						const int64_t overchargeMultiplier = 1000LL
+							+ static_cast<int64_t>(modifiers.damagePercentTenths) * getOvercharge();
+						magicArrowValue = baseDamage * overchargeMultiplier / 1000;
+					}
+				}
 				if(magicArrowValue && warcastingBonusPercent > 0)
 				{
 					const auto formula = newHorizonsMagic::spellDirectDamage(battle->getMagicRules(), owner->getJsonKey())
 						.value_or(newHorizonsMagic::DirectDamageFormula{20, 20});
 					const int64_t powerNumerator = static_cast<int64_t>(formula.powerCoefficient) * effectPower;
 					const int64_t baseDamage = formula.base
-						+ scaleSpellPowerComponentWithCoefficient(powerNumerator, getEffectPowerDivisor(), damageCoefficientPercent);
+						+ scaleSpellPowerComponentWithCoefficientBasisPoints(
+							powerNumerator, getEffectPowerDivisor(), damageCoefficientBasisPoints);
 					const int64_t overchargeMultiplier = 1000LL
 						+ static_cast<int64_t>(modifiers.damagePercentTenths) * getOvercharge();
 					magicArrowValue = baseDamage * overchargeMultiplier / 1000;
 				}
-				auto savedValue = battle && !magicArrowValue
-					? newHorizonsMagic::directDamageValue(battle->getMagicRules(), owner->getJsonKey(), effectPower,
-						getEffectPowerDivisor(), damageCoefficientPercent)
-					: std::nullopt;
+				std::optional<int64_t> savedValue;
+				if(battle && !magicArrowValue)
+				{
+					if(const auto formula = newHorizonsMagic::spellDirectDamage(
+						battle->getMagicRules(), owner->getJsonKey()))
+						savedValue = formula->evaluateBasisPoints(
+							effectPower, getEffectPowerDivisor(), damageCoefficientBasisPoints);
+				}
 				if(savedValue && warcastingBonusPercent > 0)
 				{
 					const auto formula = newHorizonsMagic::spellDirectDamage(battle->getMagicRules(), owner->getJsonKey());
@@ -726,18 +786,20 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 					{
 						const int64_t powerNumerator = static_cast<int64_t>(formula->powerCoefficient) * effectPower;
 						*savedValue = formula->base
-							+ scaleSpellPowerComponentWithCoefficient(powerNumerator, getEffectPowerDivisor(), damageCoefficientPercent);
+							+ scaleSpellPowerComponentWithCoefficientBasisPoints(
+								powerNumerator, getEffectPowerDivisor(), damageCoefficientBasisPoints);
 					}
 				}
 				if(magicArrowValue)
 					effectValue = *magicArrowValue;
 				else if(savedValue)
 					effectValue = *savedValue;
-				else if(warcastingBonusPercent > 0 || damageCoefficientPercent != 100)
+				else if(warcastingBonusPercent > 0 || damageCoefficientBasisPoints != 10000)
 				{
 					const int64_t powerNumerator = static_cast<int64_t>(owner->getBasePower()) * effectPower;
-						effectValue = owner->getLevelPower(effectLevel)
-							+ scaleSpellPowerComponentWithCoefficient(powerNumerator, getEffectPowerDivisor(), damageCoefficientPercent);
+					effectValue = owner->getLevelPower(effectLevel)
+						+ scaleSpellPowerComponentWithCoefficientBasisPoints(
+							powerNumerator, getEffectPowerDivisor(), damageCoefficientBasisPoints);
 				}
 				else
 					effectValue = owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
@@ -1147,7 +1209,7 @@ int64_t BaseMechanics::getStormOfDaggersDamagePerTarget(int32_t selectedTargetCo
 	if(!formula)
 		return 0;
 	return stormOfDaggersRoundedDamage(formula->base, formula->powerCoefficient,
-		getEffectPower(), getEffectPowerDivisor(), getSchoolRankPowerCoefficientPercent(),
+		getEffectPower(), getEffectPowerDivisor(), getSpellPowerCoefficientBasisPoints(),
 		getWarcastingBonusPercent(), selectedTargetCount, false);
 }
 
@@ -1162,7 +1224,7 @@ int64_t BaseMechanics::getStormOfDaggersTotalDamage(int32_t selectedTargetCount)
 	if(!formula)
 		return 0;
 	return stormOfDaggersRoundedDamage(formula->base, formula->powerCoefficient,
-		getEffectPower(), getEffectPowerDivisor(), getSchoolRankPowerCoefficientPercent(),
+		getEffectPower(), getEffectPowerDivisor(), getSpellPowerCoefficientBasisPoints(),
 		getWarcastingBonusPercent(), selectedTargetCount, true);
 }
 
