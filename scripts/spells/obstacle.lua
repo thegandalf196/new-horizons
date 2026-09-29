@@ -50,6 +50,15 @@ local function isNewHorizonsFireWall(mechanics)
 		and mechanics:getSpell():getJsonKey() == "core:fireWall"
 end
 
+local function isNewHorizonsQuicksand(mechanics)
+	return mechanics:usesNewHorizonsMagicV3()
+		and mechanics:getSpell():getJsonKey() == "core:quicksand"
+end
+
+local function newHorizonsQuicksandPatchCount(mechanics)
+	return mechanics:getNewHorizonsQuicksandPatchCount()
+end
+
 local function newHorizonsLandMineCount(mechanics)
 	local power = mechanics:getEffectPower()
 	if power < 100 then return 2 end
@@ -281,6 +290,9 @@ function Script:apply(mechanics, server, target)
 	local patchCount = self.patchCount or 0
 	local newMine = isNewHorizonsLandMine(mechanics)
 	local newFireWall = isNewHorizonsFireWall(mechanics)
+	if isNewHorizonsQuicksand(mechanics) then
+		patchCount = newHorizonsQuicksandPatchCount(mechanics)
+	end
 
 	local destinations = {}
 

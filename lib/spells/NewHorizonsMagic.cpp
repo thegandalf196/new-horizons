@@ -390,6 +390,24 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 			"each later jump deals less damage.";
 	}
 
+	if(hero && spell->getId() == SpellID(SpellID::QUICKSAND)
+		&& rulesActive(hero->getMagicRules())
+		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	{
+		const auto & rules = hero->getMagicRules();
+		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
+		const auto patchCount = quicksandPatchCount(rules, hero, spell->getId(),
+			std::max<int32_t>(0, hero->getEffectPower(spell)),
+			std::max<int32_t>(1, hero->getEffectPowerDivisor(spell)), 0, empowerBonusPercent);
+		if(patchCount)
+		{
+			result = "Places " + std::to_string(*patchCount)
+				+ " concealed Quicksand patches on legal empty ground hexes. The saved v3 base count is min(5, "
+				+ "2 + floor(Spell Power / 60)); Nature rank, Spellcraft, and Empower strengthen only the Spell Power term. "
+				+ "The current count excludes battle-only Warcasting, which may further strengthen the Spell Power term.";
+		}
+	}
+
 	if(hero && rulesActive(hero->getMagicRules())
 		&& spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL)
 	{
@@ -921,6 +939,28 @@ int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstanc
 	const int schoolCoefficientPercent = spellPowerCoefficientPercent(rules, hero, spell);
 	const int spellcraftCoefficientPercent = spellcraftEfficiencyPercent(rules, registeredSpellcraftRank(hero));
 	return schoolCoefficientPercent * spellcraftCoefficientPercent;
+}
+
+std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,
+	const SpellID spell, const int32_t spellPower, const int32_t spellPowerDivisor,
+	const int warcastingBonusPercent, const int empowerBonusPercent)
+{
+	if(!rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| spell != SpellID(SpellID::QUICKSAND)
+		|| !spellAllowedBySavedRoster(rules, spell))
+		return std::nullopt;
+
+	if(spellPower < 0 || spellPowerDivisor <= 0
+		|| spellPowerDivisor > std::numeric_limits<int32_t>::max() / QUICKSAND_SPELL_POWER_PER_PATCH_V3)
+		throw std::invalid_argument("Invalid Quicksand Spell Power inputs");
+
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell);
+	const int32_t divisor = spellPowerDivisor * QUICKSAND_SPELL_POWER_PER_PATCH_V3;
+	const int64_t spellPowerPatches = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		spellPower, divisor, coefficientBasisPoints, warcastingBonusPercent, empowerBonusPercent);
+	return QUICKSAND_BASE_PATCH_COUNT_V3 + static_cast<int>(std::min<int64_t>(
+		QUICKSAND_MAX_PATCH_COUNT_V3 - QUICKSAND_BASE_PATCH_COUNT_V3, spellPowerPatches));
 }
 
 int empowerSpellBonusPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell,

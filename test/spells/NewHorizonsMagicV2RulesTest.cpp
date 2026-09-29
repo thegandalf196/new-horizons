@@ -17,6 +17,7 @@
 namespace
 {
 constexpr auto arrowKey = "core:magicArrow";
+constexpr auto quicksandKey = "core:quicksand";
 JsonNode originalRules()
 {
 	return JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
@@ -226,6 +227,61 @@ TEST(NewHorizonsMagicV2RulesTest, SchoolAndSpellcraftFactorsComposeAsExactBasisP
 	hero.secSkills.emplace_back(spellcraft, MasteryLevel::EXPERT);
 	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(oldV3, &hero, arrow), 11'500)
 		<< "An older v3 snapshot applies only its saved School factor";
+}
+
+TEST(NewHorizonsMagicV2RulesTest, QuicksandPatchCountUsesSavedSchoolAndSpellcraftOnPowerTermOnly)
+{
+	const auto current = originalRules();
+	const auto quicksand = SpellID(SpellID::decode(quicksandKey));
+	ASSERT_NE(quicksand, SpellID::NONE);
+	const auto schoolSkills = newHorizonsMagic::spellSchoolSkills(current, quicksand);
+	ASSERT_EQ(schoolSkills.size(), 1u);
+	const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+	ASSERT_NE(spellcraft, SecondarySkill::NONE);
+
+	CGHeroInstance hero(nullptr);
+	const std::array<int, 7> power{0, 59, 60, 119, 120, 180, 1000};
+	const std::array<int, 7> expected{2, 2, 3, 3, 4, 5, 5};
+	for(size_t index = 0; index < power.size(); ++index)
+	{
+		auto count = newHorizonsMagic::quicksandPatchCount(current, &hero, quicksand, power[index]);
+		ASSERT_TRUE(count);
+		EXPECT_EQ(*count, expected[index]) << "Spell Power " << power[index];
+	}
+
+	hero.secSkills.emplace_back(schoolSkills.front(), MasteryLevel::BASIC);
+	auto rankedCount = newHorizonsMagic::quicksandPatchCount(current, &hero, quicksand, 59);
+	ASSERT_TRUE(rankedCount);
+	EXPECT_EQ(*rankedCount, 3) << "Basic Nature scales the Spell Power term past the first threshold";
+	auto zeroPowerCount = newHorizonsMagic::quicksandPatchCount(current, &hero, quicksand, 0);
+	ASSERT_TRUE(zeroPowerCount);
+	EXPECT_EQ(*zeroPowerCount, newHorizonsMagic::QUICKSAND_BASE_PATCH_COUNT_V3)
+		<< "School rank does not scale the fixed base patches";
+
+	hero.secSkills.clear();
+	hero.secSkills.emplace_back(spellcraft, MasteryLevel::EXPERT);
+	const auto spellcraftCount = newHorizonsMagic::quicksandPatchCount(current, &hero, quicksand, 48);
+	ASSERT_TRUE(spellcraftCount);
+	EXPECT_EQ(*spellcraftCount, 3) << "Expert Spellcraft scales only the Spell Power term";
+
+	hero.secSkills.clear();
+	const auto unmodifiedCount = newHorizonsMagic::quicksandPatchCount(current, &hero, quicksand, 48);
+	ASSERT_TRUE(unmodifiedCount);
+	EXPECT_EQ(*unmodifiedCount, 2) << "48 Spell Power is below the first patch threshold without modifiers";
+	const auto empoweredCount = newHorizonsMagic::quicksandPatchCount(current, &hero, quicksand, 48,
+		1, 0, 25);
+	ASSERT_TRUE(empoweredCount);
+	EXPECT_EQ(*empoweredCount, 3) << "Empower alone can cross the first patch threshold";
+	const auto warcastCount = newHorizonsMagic::quicksandPatchCount(current, &hero, quicksand, 48,
+		1, 25, 0);
+	ASSERT_TRUE(warcastCount);
+	EXPECT_EQ(*warcastCount, 3) << "Warcasting alone can cross the first patch threshold";
+
+	const auto v1 = legacyRules();
+	const auto v2 = formulaRules();
+	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(v1, &hero, quicksand, 180));
+	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(v2, &hero, quicksand, 180));
+	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(current, &hero, SpellID(SpellID::HASTE), 180));
 }
 
 TEST(NewHorizonsMagicV2RulesTest, AdventureSpellsAndCreatureAbilitiesExcludeBothRankFactors)

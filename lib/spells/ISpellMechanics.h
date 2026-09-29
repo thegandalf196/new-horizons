@@ -298,6 +298,9 @@ public:
 	int32_t getSchoolRankPowerCoefficientPercent() const;
 	/// Effective saved-rules School × Spellcraft coefficient, in basis points.
 	int32_t getSpellPowerCoefficientBasisPoints() const;
+	/// Saved-v3 Quicksand's authoritative patch count, or zero for legacy rules
+	/// and every other spell.
+	int32_t getNewHorizonsQuicksandPatchCount() const;
 	/// Empower Spell's +25% applies only to the power-derived term.
 	int32_t getEmpowerSpellBonusPercent() const;
 	/// Resolves a configured chain-effect target count against the saved battle

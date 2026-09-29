@@ -202,6 +202,13 @@ of Daggers, Regeneration, and Nature Poison shows 35 of the 67 combat identities
 registered mod/core definitions, including Spell Lock; 32 are absent or inactive. An active
 identity is not proof that its exact canonical effect is complete.
 
+Quicksand is among the active Nature identities but is not effect-complete.
+The saved-v3 Spell Power-derived patch count passes 31/31 adjacent native
+tests including actual Lua obstacle application; exact sequential
+caster placement, authoritative target validation, corresponding battle UI,
+and deliberate AI trap placement still remain. Do not count its identity row
+as full spell-specification coverage.
+
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 4 | Sanctuary; Guardian Spirit; Holy Armor; Heavenly Gale; Divine Retribution; Purify; Crusade! |

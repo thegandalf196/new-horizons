@@ -188,6 +188,9 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::getSpellPowerCoefficientBasisPoints>("getSpellPowerCoefficientBasisPoints", {},
 		"Returns the composed Spellcraft and school-rank coefficient in basis points from the saved battle rules and caster. "
 		"10000 basis points means 100%; legacy profiles and excluded spells use 10000.");
+	R.method<&Mechanics::getNewHorizonsQuicksandPatchCount>("getNewHorizonsQuicksandPatchCount", {},
+		"Returns the authoritative saved-v3 Quicksand patch count with School, Spellcraft, "
+		"Warcasting, and Empower scaling; returns zero for legacy profiles and other spells.");
 	R.method<&Mechanics::scaleSpellPowerComponentWithCoefficientBasisPoints>("scaleSpellPowerComponentWithCoefficientBasisPoints",
 		{
 			{"numerator", "An explicitly Spell-Power-derived numerator, before applying its divisor."},

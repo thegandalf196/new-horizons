@@ -45,6 +45,9 @@ constexpr int BLESS_BASE_DURATION = 2;
 constexpr int BLESS_MAX_DURATION = 4;
 constexpr int BLESS_SPELL_POWER_DURATION_DIVISOR = 80;
 constexpr int CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3 = 5;
+constexpr int QUICKSAND_BASE_PATCH_COUNT_V3 = 2;
+constexpr int QUICKSAND_MAX_PATCH_COUNT_V3 = 5;
+constexpr int QUICKSAND_SPELL_POWER_PER_PATCH_V3 = 60;
 constexpr int METAMAGIC_FORMULA_RESERVE_POINTS = 3;
 constexpr int METAMAGIC_SPELL_BUFFER_POINTS = 6;
 constexpr int DIRECT_DAMAGE_POWER_DIVISOR = 10;
@@ -163,6 +166,11 @@ DLL_LINKAGE int spellPowerCoefficientPercent(const JsonNode & rules, const CGHer
 /// derived term: 10000 is 100%. No rounding is done while composing factors.
 /// Spellcraft is read from the hero's registered new-horizons:spellcraft Skill.
 DLL_LINKAGE int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell);
+/// Saved-v3 Quicksand count, or nullopt for any other spell/profile. School,
+/// Spellcraft, Warcasting, and Empower scale only the Spell-Power term.
+DLL_LINKAGE std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,
+	SpellID spell, int32_t spellPower, int32_t spellPowerDivisor = 1,
+	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0);
 /// Empower Spell's additive multiplier for this saved ordinary hero cast. The
 /// threshold uses only listed cost × the explicit variant × Wisdom, before
 /// battle creature auras, Metamagic reductions, or Overcharge are applied.

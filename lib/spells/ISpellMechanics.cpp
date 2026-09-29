@@ -210,6 +210,19 @@ int32_t Mechanics::getSpellPowerCoefficientBasisPoints() const
 		battleState->getMagicRules(), getHeroCaster(), getSpellId());
 }
 
+int32_t Mechanics::getNewHorizonsQuicksandPatchCount() const
+{
+	const auto * battleCallback = battle();
+	const auto * battleState = battleCallback ? battleCallback->getBattle() : nullptr;
+	if(!battleState)
+		return 0;
+
+	const auto patchCount = newHorizonsMagic::quicksandPatchCount(battleState->getMagicRules(),
+		getHeroCaster(), getSpellId(), getEffectPower(), getEffectPowerDivisor(),
+		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
+	return patchCount.value_or(0);
+}
+
 int32_t Mechanics::getEmpowerSpellBonusPercent() const
 {
 	const auto * battleCallback = battle();

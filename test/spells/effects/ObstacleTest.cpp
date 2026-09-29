@@ -13,7 +13,9 @@
 
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/json/JsonNode.h"
+#include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 
 #include "../../mock/mock_CStack.h"
 
@@ -172,6 +174,107 @@ protected:
 		EffectFixture::setUp();
 	}
 };
+
+class SavedMagicRulesBattleFake final : public battle::BattleFake
+{
+public:
+	JsonNode magicRules;
+
+	const JsonNode & getMagicRules() const override
+	{
+		return magicRules;
+	}
+};
+
+class NewHorizonsMagicMechanicsMock : public MechanicsMock
+{
+public:
+	NewHorizonsMagicMechanicsMock()
+	{
+		casterSide = BattleSide::ATTACKER;
+	}
+
+	bool usesNewHorizonsMagicV3() const override
+	{
+		const auto * battleCallback = battle();
+		const auto * battleState = battleCallback ? battleCallback->getBattle() : nullptr;
+		return battleState && newHorizonsMagic::rulesActive(battleState->getMagicRules())
+			&& battleState->getMagicRules()["rulesetVersion"].Integer()
+				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+	}
+};
+
+TEST_F(ObstacleApplyTest, SavedV3QuicksandUsesCanonicalPowerAndSchoolRankPatchCount)
+{
+	JsonNode config;
+	config["patchCount"].Integer() = 4;
+	setupEffect(config);
+
+	auto savedBattle = std::make_shared<SavedMagicRulesBattleFake>();
+	savedBattle->setUp();
+	savedBattle->setupEmptyBattlefield();
+	savedBattle->magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	EXPECT_CALL(*savedBattle, getScriptContextPool()).WillRepeatedly(ReturnRef(*pool));
+	ON_CALL(*savedBattle, getUnitsIf(_)).WillByDefault(Invoke(&unitsFake, &battle::UnitsFake::getUnitsIf));
+	EXPECT_CALL(*savedBattle, getUnitsIf(_)).Times(AtLeast(0));
+
+	const SpellID quicksand(SpellID::QUICKSAND);
+	const auto schoolSkills = newHorizonsMagic::spellSchoolSkills(savedBattle->magicRules, quicksand);
+	ASSERT_EQ(schoolSkills.size(), 1u);
+	CGHeroInstance hero(nullptr);
+
+	StrictMock<NewHorizonsMagicMechanicsMock> mechanics;
+	EXPECT_CALL(mechanics, battle()).Times(AnyNumber()).WillRepeatedly(Return(savedBattle.get()));
+	EXPECT_CALL(mechanics, getHeroCaster()).Times(AnyNumber()).WillRepeatedly(Return(&hero));
+	EXPECT_CALL(mechanics, getSpellId()).Times(AnyNumber()).WillRepeatedly(Return(quicksand));
+	EXPECT_CALL(mechanics, getEffectPower()).Times(AnyNumber()).WillRepeatedly(Return(59));
+	EXPECT_CALL(mechanics, getEffectLevel()).Times(AnyNumber()).WillRepeatedly(Return(2));
+	EXPECT_CALL(mechanics, getSpell()).Times(AnyNumber()).WillRepeatedly(Return(&spellStub));
+	EXPECT_CALL(mechanics, isMassive()).Times(AnyNumber()).WillRepeatedly(Return(true));
+	EXPECT_CALL(spellStub, getId()).Times(AnyNumber()).WillRepeatedly(Return(quicksand));
+	EXPECT_CALL(spellStub, getJsonKey()).Times(AnyNumber()).WillRepeatedly(Return("core:quicksand"));
+
+	battleFake = savedBattle;
+	captureObstaclePack();
+	setupDefaultRNG();
+
+	const std::array<std::pair<int, size_t>, 2> natureCases{{
+		{MasteryLevel::NONE, 2u},
+		{MasteryLevel::BASIC, 3u}}};
+	for(const auto & [natureRank, expectedPatches] : natureCases)
+	{
+		hero.secSkills.clear();
+		if(natureRank > MasteryLevel::NONE)
+			hero.secSkills.emplace_back(schoolSkills.front(), natureRank);
+		capturedChanges.clear();
+
+		subject->apply(&serverMock, &mechanics, Target());
+
+		EXPECT_EQ(capturedChanges.size(), expectedPatches)
+			<< "Nature rank " << natureRank << " must alter only the Spell Power term";
+		for(const auto & change : capturedChanges)
+			EXPECT_EQ(change.operation, BattleChanges::EOperation::ADD);
+	}
+
+	const JsonNode v3Rules = savedBattle->magicRules;
+	for(const int version : {newHorizonsMagic::RULESET_VERSION, newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION})
+	{
+		savedBattle->magicRules = v3Rules;
+		savedBattle->magicRules["rulesetVersion"].Integer() = version;
+		for(const int configuredPatches : {4, 6, 8})
+		{
+			JsonNode legacyConfig;
+			legacyConfig["patchCount"].Integer() = configuredPatches;
+			setupEffect(legacyConfig);
+			capturedChanges.clear();
+
+			subject->apply(&serverMock, &mechanics, Target());
+
+			EXPECT_EQ(capturedChanges.size(), static_cast<size_t>(configuredPatches))
+				<< "Saved v" << version << " Quicksand keeps its configured mastery count";
+		}
+	}
+}
 
 TEST_F(ObstacleApplyTest, PlacesSingleObstacleAtTarget)
 {
