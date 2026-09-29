@@ -331,6 +331,8 @@ public:
 	virtual bool usesNewHorizonsMagic() const { return false; }
 	/// True only for a saved New Horizons magic-rules v3 battle.
 	virtual bool usesNewHorizonsMagicV3() const { return false; }
+	/// True only when the saved spell roster contains the Holy Armor feature marker.
+	virtual bool usesNewHorizonsMultiplicativeMDR() const { return false; }
 
 	virtual IBattleCast::Value64 getEffectValue() const = 0;
 
@@ -428,6 +430,7 @@ public:
 	int32_t getMetamagicManaRefund() const;
 	bool usesNewHorizonsMagic() const override;
 	bool usesNewHorizonsMagicV3() const override;
+	bool usesNewHorizonsMultiplicativeMDR() const override;
 
 	PlayerColor getCasterColor() const override;
 	const CGHeroInstance * getHeroCaster() const override;

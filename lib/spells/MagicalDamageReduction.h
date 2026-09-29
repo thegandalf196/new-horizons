@@ -29,4 +29,9 @@ struct DLL_LINKAGE MagicalDamageReductionResult
 /// after the complete product is evaluated.
 DLL_LINKAGE MagicalDamageReductionResult calculateMagicalDamageReduction(
 	int64_t rawDamage, const std::vector<int> & independentReductionsPercent, int penetrationPercent);
+
+/// Basis-point counterpart. Use this when a reduction source carries fractional
+/// percentage points, such as Iron Discipline's captured magical reduction.
+DLL_LINKAGE MagicalDamageReductionResult calculateMagicalDamageReductionBasisPoints(
+	int64_t rawDamage, const std::vector<int> & independentReductionsBasisPoints, int penetrationPercent);
 }

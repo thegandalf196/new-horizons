@@ -108,6 +108,46 @@ bool isCanonicalRegeneration(const CSpell * spell)
 	return spell && spell->getJsonKey() == newHorizonsMagic::NATURE_REGENERATION_SPELL;
 }
 
+bool isCanonicalHolyArmor(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:holyArmor";
+}
+
+struct HolyArmorProtection
+{
+	int reductionPercent = 0;
+	int rounds = 0;
+
+	int exposurePercentRounds() const
+	{
+		return reductionPercent * rounds;
+	}
+};
+
+HolyArmorProtection holyArmorProtection(const battle::Unit * unit, SpellID spell)
+{
+	HolyArmorProtection result;
+	if(!unit)
+		return result;
+
+	const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell))
+		.And(Selector::type()(BonusType::SPELL_DAMAGE_REDUCTION)));
+	if(!bonuses)
+		return result;
+	for(const auto & bonus : *bonuses)
+	{
+		if(!bonus || !Bonus::NTurns(bonus.get()) || bonus->turnsRemain <= 0)
+			continue;
+
+		const HolyArmorProtection current{
+			std::clamp(bonus->val, 0, 100),
+			std::clamp(static_cast<int>(bonus->turnsRemain), 0, 2)};
+		if(current.exposurePercentRounds() > result.exposurePercentRounds())
+			result = current;
+	}
+	return result;
+}
+
 void projectRegenerationRateSnapshot(HypotheticBattle & projectedBattle,
 	const spells::Mechanics & mechanics, const CSpell * spell,
 	const spells::Target & acceptedTarget)
@@ -570,12 +610,15 @@ float averageOrderDamage(const DamageEstimation & damage)
 }
 
 /// Estimate visible creature spell pressure without querying a concealed enemy
-/// hero or asking a random-spellcaster to choose an ability.  Spellcaster
+/// hero or asking a random-spellcaster to choose an ability. Spellcaster
 /// bonuses are part of the visible creature stack; each stack contributes its
-/// strongest currently castable direct-damage spell once.  This is a bounded,
-/// read-only proxy for the magical half of Hold the Line's value.
-float visibleCreatureSpellThreat(const CBattleInfoCallback & battle,
-	const std::vector<const battle::Unit *> & enemyUnits)
+/// strongest available direct-damage spell once. `magicalOnly` is for defenses
+/// that reduce magical damage but do not affect physical attacks. Do not call
+/// `canBeCast` here: a player-specific callback may refuse to answer for an
+/// opposing side, which is not evidence that its visible spellcaster is inert.
+/// `canCast()` and explicit visible SPELLCASTER bonuses bound this estimate.
+float visibleCreatureSpellThreat(
+	const std::vector<const battle::Unit *> & enemyUnits, bool magicalOnly = false)
 {
 	float totalThreat = 0.0f;
 	for(const auto * enemy : enemyUnits)
@@ -591,15 +634,76 @@ float visibleCreatureSpellThreat(const CBattleInfoCallback & battle,
 			if(!bonus || bonus->parameters || !bonus->subtype.as<SpellID>().hasValue())
 				continue;
 			const auto * spell = bonus->subtype.as<SpellID>().toSpell();
-			if(!spell || !spell->isCombat() || !spell->isOffensive() || spell->isCreatureAbility()
-				|| !spell->canBeCast(&battle, spells::Mode::CREATURE_ACTIVE, enemy))
+			if(!spell || !spell->isCombat()
+				|| (!spell->isOffensive() && !spell->isDamage())
+				|| spell->isCreatureAbility()
+				|| (magicalOnly && !spell->isMagical()))
 				continue;
-			bestSpellDamage = std::max(bestSpellDamage,
-				static_cast<float>(std::max<int64_t>(0, spell->calculateDamage(enemy))));
+			const auto spellDamage = static_cast<float>(std::max<int64_t>(0, spell->calculateDamage(enemy)));
+			bestSpellDamage = std::max(bestSpellDamage, spellDamage);
 		}
 		totalThreat += bestSpellDamage;
 	}
 	return totalThreat;
+}
+
+float holyArmorMitigationValue(BattleSide side,
+	const battle::Unit * liveTarget, const battle::Unit * projectedTarget, SpellID spell,
+	int64_t friendlyHealth, float visibleMagicalThreat, DamageCache & damageCache,
+	std::shared_ptr<CBattleInfoCallback> projectedBattle)
+{
+	if(!liveTarget || !projectedTarget || !liveTarget->alive() || !projectedTarget->alive()
+		|| liveTarget->unitSide() != side || visibleMagicalThreat <= 0.0f || friendlyHealth <= 0)
+		return 0.0f;
+
+	const auto targetHealth = liveTarget->getAvailableHealth();
+	if(targetHealth <= 0)
+		return 0.0f;
+
+	const auto before = holyArmorProtection(liveTarget, spell);
+	const auto after = holyArmorProtection(projectedTarget, spell);
+	const int addedExposure = after.exposurePercentRounds() - before.exposurePercentRounds();
+	if(addedExposure <= 0)
+		return 0.0f;
+
+	// Spread the visible creature-caster volley across allied health as a bounded
+	// target-priority estimate. The detached cast supplies the actual Holy Armor
+	// reduction and duration; the threat side deliberately uses one best spell
+	// per visible caster and does not infer anything from an enemy hero's book.
+	const long double targetShare = static_cast<long double>(targetHealth)
+		/ static_cast<long double>(friendlyHealth);
+	const long double estimatedSavedDamage = std::min(
+		static_cast<long double>(targetHealth),
+		static_cast<long double>(visibleMagicalThreat) * targetShare
+			* static_cast<long double>(addedExposure) / 100.0L);
+	if(!std::isfinite(estimatedSavedDamage) || estimatedSavedDamage <= 0.0L)
+		return 0.0f;
+
+	const auto savedDamage = static_cast<uint64_t>(std::floor(estimatedSavedDamage));
+	if(savedDamage == 0)
+		return 0.0f;
+
+	const auto retainedAttackValue = AttackPossibility::calculateDamageReduce(
+		nullptr, liveTarget, savedDamage, damageCache, std::move(projectedBattle));
+	if(retainedAttackValue > 0.0f)
+		return retainedAttackValue;
+	const auto maxHealth = liveTarget->getMaxHealth();
+	const auto creatureValue = liveTarget->unitType()->getAIValue();
+	if(maxHealth <= 0 || creatureValue <= 0)
+		return std::max(0.0f, retainedAttackValue);
+
+	// The usual damage-reduction value reflects the attacks the saved stack can
+	// still make. That can be zero for a distant or temporarily immobilized unit,
+	// even though preserving its health is useful. Fall back to a bounded share
+	// of the stack's creature value so defensive spells are not treated as no-ops.
+	const long double healthValue = static_cast<long double>(savedDamage)
+		* static_cast<long double>(creatureValue) / static_cast<long double>(maxHealth);
+	if(!std::isfinite(healthValue) || healthValue <= 0.0L)
+		return std::max(0.0f, retainedAttackValue);
+
+	const auto boundedHealthValue = static_cast<float>(std::min(
+		healthValue, static_cast<long double>(std::numeric_limits<float>::max())));
+	return boundedHealthValue;
 }
 
 /// Hero presence is exposed through InfoAboutHero even when the opposing
@@ -746,7 +850,7 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 			const auto prepared = battle.battlePrepareHeroOrderState(side, command, {});
 			if(prepared && prepared->holdMagicalReductionBasisPoints > 0)
 			{
-				const auto visibleCreatureThreat = visibleCreatureSpellThreat(battle, enemyUnits);
+				const auto visibleCreatureThreat = visibleCreatureSpellThreat(enemyUnits, true);
 				const auto publicHeroThreat = publicEnemyHeroSpellThreat(battle, side, ownUnits);
 				const auto magicalThreat = std::max(visibleCreatureThreat, publicHeroThreat);
 				value += magicalThreat * static_cast<float>(prepared->holdMagicalReductionBasisPoints) / 10000.0f;
@@ -1726,6 +1830,29 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	LOGFL("I know how %d of them works.", possibleSpells.size());
 
+	const auto battleCallback = cb->getBattle(battleID);
+	const bool hasHolyArmor = std::any_of(possibleSpells.begin(), possibleSpells.end(), [](const SpellOption & option)
+	{
+		return isCanonicalHolyArmor(option.spell);
+	});
+	std::vector<const battle::Unit *> visibleEnemyUnits;
+	int64_t friendlyAvailableHealth = 0;
+	float visibleMagicalSpellThreat = 0.0f;
+	if(hasHolyArmor)
+	{
+		for(const auto * unit : battleCallback->battleGetAllUnits(false))
+		{
+			if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret())
+				continue;
+
+			if(unit->unitSide() == side)
+				friendlyAvailableHealth += std::max<int64_t>(0, unit->getAvailableHealth());
+			else
+				visibleEnemyUnits.push_back(unit);
+		}
+		visibleMagicalSpellThreat = visibleCreatureSpellThreat(visibleEnemyUnits, true);
+	}
+
 	//Get viable spell-target pairs
 	std::vector<PossibleSpellcast> possibleCasts;
 	for(const auto & spellOption : possibleSpells)
@@ -1873,6 +2000,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							if(ps.spellNaturePoisonValue <= 0.0f)
 								continue;
 						}
+		if(isCanonicalHolyArmor(spell))
+		{
+			if(visibleMagicalSpellThreat <= 0.0f || friendlyAvailableHealth <= 0
+				|| ps.dest.size() != 1 || !ps.dest.front().unitValue
+				|| ps.dest.front().unitValue->unitSide() != side)
+				continue;
+		}
 						possibleCasts.push_back(ps);
 					}
 				}
@@ -2361,6 +2495,14 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						scoreEvaluator.getPositiveEffectMultiplier());
 					damageToHostilesScore += regenerationValue;
 				}
+				if(isCanonicalHolyArmor(ps.spell) && targetId != std::numeric_limits<uint32_t>::max())
+				{
+					const auto * liveTarget = battleCallback->battleGetUnitByID(targetId);
+					const auto * projectedTarget = state->battleGetUnitByID(targetId);
+					const auto mitigationValue = holyArmorMitigationValue(side, liveTarget, projectedTarget,
+						ps.spell->getId(), friendlyAvailableHealth, visibleMagicalSpellThreat, innerCache, state);
+					damageToHostilesScore += mitigationValue * scoreEvaluator.getPositiveEffectMultiplier();
+				}
 
 				const auto modelActive = state->getForUpdate(activeStack->unitId());
 				if(modelActive->alive() && (needFullEval || !cachedAttack.ap))
@@ -2519,7 +2661,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				}
 				else
 				{
-					ps.value = stackActionScore + damageToFriendliesScore + damageToHostilesScore + initiativeEffectScore;
+				ps.value = stackActionScore + damageToFriendliesScore + damageToHostilesScore + initiativeEffectScore;
 				}
 #if BATTLE_TRACE_LEVEL >= 1
 				logAi->trace("Total score for %s: %2f (action: %2f, friedly damage: %2f, hostile damage: %2f)", ps.name(), ps.value, stackActionScore, damageToFriendliesScore, damageToHostilesScore);

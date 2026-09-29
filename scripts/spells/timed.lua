@@ -2,6 +2,10 @@ local Base = require("spells/unitEffect")
 local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
+local HOLY_ARMOR_SPELL = "new-horizons:holyArmor"
+local HOLY_ARMOR_SPELL_POWER_DIVISOR = 5
+local HOLY_ARMOR_MAX_REDUCTION_PERCENT = 60
+
 function Script:deepCopyBonus(b)
 	local copy = {}
 	for k, v in pairs(b) do
@@ -122,12 +126,41 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	if not hero then return end
 
 	local spellKey = mechanics:getSpell():getJsonKey()
+	-- Holy Armor has a fixed canonical base; Light rank, Warcasting, and Empower
+	-- affect only its Spell Power-derived term. It has no configured spell
+	-- specialty that should rewrite the fixed percentage.
+	if spellKey == HOLY_ARMOR_SPELL then return end
 	local tier = math.max(unit:creatureLevel(), 1)
 
 	self:applySpellScaling(mechanics, hero, buffer, tier, spellKey)
 	self:applyPeculiarEnchant(mechanics, hero, buffer, tier, spellKey)
 	self:applyAddValueEnchant(mechanics, hero, buffer, tier, spellKey)
 	self:applyFixedValueEnchant(mechanics, hero, buffer, tier, spellKey)
+end
+
+--- Aegis will adjust this Spell Power-derived component when its perk has
+--- registered art and runtime support. Keep the hook neutral until then.
+function Script:adjustHolyArmorPowerTerm(mechanics, spellPowerTerm)
+	return spellPowerTerm
+end
+
+function Script:applyHolyArmorPower(mechanics, buffer, spellKey)
+	if spellKey ~= HOLY_ARMOR_SPELL then return end
+
+	local spellPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+		mechanics:getEffectPower(), HOLY_ARMOR_SPELL_POWER_DIVISOR,
+		mechanics:getSpellPowerCoefficientBasisPoints())
+	spellPowerTerm = self:adjustHolyArmorPowerTerm(mechanics, spellPowerTerm)
+
+	for _, nb in pairs(buffer) do
+		if nb.type == "SPELL_DAMAGE_REDUCTION" then
+			-- The fixed 30% base remains unchanged; the common scaler applies the
+			-- saved Light/Spellcraft coefficient plus Warcasting and Empower only
+			-- to the Spell Power term. Preserve this as one independent source.
+			nb.val = math.min(HOLY_ARMOR_MAX_REDUCTION_PERCENT,
+				(nb.val or 0) + spellPowerTerm)
+		end
+	end
 end
 
 function Script:describeEffect(server, battle, unit, bonuses)
@@ -172,6 +205,7 @@ function Script:apply(mechanics, server, target)
 		end
 
 		self:applyHeroSpecialty(mechanics, buffer, unit)
+		self:applyHolyArmorPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyTemporalFieldScale(mechanics, buffer, mechanics:getSpell():getJsonKey())
 
 		if describe then

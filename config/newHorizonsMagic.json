@@ -231,6 +231,11 @@
 				"powerCoefficient": 2
 			}
 		},
+		"new-horizons:holyArmor": {
+			"schools": ["new-horizons:light"],
+			"level": 2,
+			"costs": [8, 8, 8, 8]
+		},
 		"new-horizons:stormOfDaggers": {
 			"schools": ["new-horizons:sorcery"],
 			"level": 2,

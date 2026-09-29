@@ -41,6 +41,8 @@ namespace spells
 
 namespace
 {
+constexpr auto HOLY_ARMOR_SAVED_ROSTER_KEY = "new-horizons:holyArmor";
+
 int64_t multiplyDivideFloor(int64_t value, uint64_t multiplier, int64_t divisor)
 {
 	// value is smaller than divisor. This bitwise quotient/remainder loop avoids
@@ -1049,10 +1051,11 @@ int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
 		spellPenetration ? 20 : 0);
 	const int holdReductionBasisPoints = cb && owner->isMagical() && target
 		? cb->battleGetHoldTheLineMagicalReductionBasisPoints(target) : 0;
+	const auto * battleState = cb ? cb->getBattle() : nullptr;
+	const bool useIndependentMagicalDamageReduction = usesNewHorizonsMultiplicativeMDR();
 	int finalDamageMultiplierPercent = 100;
 	if(target && owner->getJsonKey() == "new-horizons:holyWrath")
 	{
-		const auto * battleState = cb ? cb->getBattle() : nullptr;
 		if(battleState)
 		{
 			const auto & magicRules = battleState->getMagicRules();
@@ -1069,7 +1072,7 @@ int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
 		}
 	}
 	return owner->adjustRawDamage(caster, target, getEffectValue(), ignoreReduction,
-		holdReductionBasisPoints, finalDamageMultiplierPercent);
+		holdReductionBasisPoints, finalDamageMultiplierPercent, useIndependentMagicalDamageReduction);
 }
 
 int64_t BaseMechanics::applySpellBonus(int64_t value, const battle::Unit * target) const
@@ -1323,6 +1326,17 @@ bool BaseMechanics::usesNewHorizonsMagicV3() const
 	return battleState && newHorizonsMagic::rulesActive(battleState->getMagicRules())
 		&& battleState->getMagicRules()["rulesetVersion"].Integer()
 			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+}
+
+bool BaseMechanics::usesNewHorizonsMultiplicativeMDR() const
+{
+	const auto * battleState = cb ? cb->getBattle() : nullptr;
+	if(!battleState)
+		return false;
+	const auto & magicRules = battleState->getMagicRules();
+	return newHorizonsMagic::rulesActive(magicRules)
+		&& magicRules["spells"].isStruct()
+		&& magicRules["spells"].Struct().contains(HOLY_ARMOR_SAVED_ROSTER_KEY);
 }
 
 PlayerColor BaseMechanics::getCasterColor() const

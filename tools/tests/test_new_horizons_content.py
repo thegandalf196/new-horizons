@@ -20,6 +20,7 @@ SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
     'new-horizons:focusMagic',
+    'new-horizons:holyArmor',
     'new-horizons:holyWrath',
     'new-horizons:counterspell',
     'new-horizons:disintegrate',

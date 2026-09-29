@@ -16,6 +16,7 @@
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsSorcery.h"
+#include "MagicalDamageReduction.h"
 
 #include "../CBonusTypeHandler.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -427,7 +428,7 @@ void CSpell::getEffects(std::vector<Bonus> & lst, const int schoolLevel, const b
 
 int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage,
 	int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints,
-	int finalDamageMultiplierPercent) const
+	int finalDamageMultiplierPercent, bool useIndependentMagicalDamageReduction) const
 {
 	auto ret = rawDamage;
 	ignoreSpellDamageReductionPercent = std::clamp(ignoreSpellDamageReductionPercent, 0, 100);
@@ -435,42 +436,88 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 	if(nullptr != affectedCreature)
 	{
 		const auto * bearer = affectedCreature->getBonusBearer();
-		//applying protections - when spell has more then one elements, only one protection should be applied (I think)
-		forEachSchool([&](const SpellSchool & cnf, bool & stop)
+		if(useIndependentMagicalDamageReduction && isMagical())
 		{
-			if(bearer->hasBonusOfType(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf)))
+			std::vector<int> reductionSourcesBasisPoints;
+
+			// Preserve the existing multi-school rule: the first matching school
+			// supplies school-specific sources; each bonus for that school remains
+			// an independent reduction source.
+			forEachSchool([&](const SpellSchool & school, bool & stop)
 			{
-				const int reduction = bearer->valOfBonuses(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf));
+				const BonusSubtypeID subtype(school);
+				const auto schoolReductions = bearer->getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, subtype);
+				if(!schoolReductions->empty())
+				{
+					for(const auto & bonus : *schoolReductions)
+					{
+						const int reduction = std::clamp(bonus->val, 0, 100);
+						if(reduction > 0)
+							reductionSourcesBasisPoints.push_back(reduction * 100);
+					}
+					stop = true;
+				}
+			});
+
+			const CSelector selector = Selector::typeSubtype(
+				BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(SpellSchool::ANY));
+			const auto anySchoolReductions = bearer->getBonuses(
+				selector, "type_SPELL_DAMAGE_REDUCTION_s_ANY");
+			for(const auto & bonus : *anySchoolReductions)
+			{
+				const int reduction = std::clamp(bonus->val, 0, 100);
+				if(reduction > 0)
+					reductionSourcesBasisPoints.push_back(reduction * 100);
+			}
+
+			// Hold the Line's saved Iron Discipline value is an independent magical
+			// reduction. Keep its fractional percentage points exact.
+			if(magicalDamageReductionBasisPoints > 0)
+				reductionSourcesBasisPoints.push_back(std::clamp(magicalDamageReductionBasisPoints, 0, 10000));
+
+			ret = spells::calculateMagicalDamageReductionBasisPoints(
+				ret, reductionSourcesBasisPoints, ignoreSpellDamageReductionPercent).damageWithPenetration;
+		}
+		else
+		{
+			// Legacy school-specific reduction semantics: when a spell has multiple
+			// schools, only the first matching school's aggregate is applied.
+			forEachSchool([&](const SpellSchool & cnf, bool & stop)
+			{
+				if(bearer->hasBonusOfType(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf)))
+				{
+					const int reduction = bearer->valOfBonuses(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf));
+					const int effectiveReduction = reduction * (100 - ignoreSpellDamageReductionPercent) / 100;
+					ret *= 100 - effectiveReduction;
+					ret /= 100;
+					stop = true; //only bonus from one school is used
+				}
+			});
+
+			CSelector selector = Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(SpellSchool::ANY));
+			auto cachingStr = "type_SPELL_DAMAGE_REDUCTION_s_ANY";
+
+			//general spell dmg reduction, works only on magical effects
+			if(bearer->hasBonus(selector, cachingStr) && isMagical())
+			{
+				const int reduction = bearer->valOfBonuses(selector, cachingStr);
 				const int effectiveReduction = reduction * (100 - ignoreSpellDamageReductionPercent) / 100;
 				ret *= 100 - effectiveReduction;
 				ret /= 100;
-				stop = true; //only bonus from one school is used
 			}
-		});
 
-		CSelector selector = Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(SpellSchool::ANY));
-		auto cachingStr = "type_SPELL_DAMAGE_REDUCTION_s_ANY";
-
-		//general spell dmg reduction, works only on magical effects
-		if(bearer->hasBonus(selector, cachingStr) && isMagical())
-		{
-			const int reduction = bearer->valOfBonuses(selector, cachingStr);
-			const int effectiveReduction = reduction * (100 - ignoreSpellDamageReductionPercent) / 100;
-			ret *= 100 - effectiveReduction;
-			ret /= 100;
-		}
-
-		// Hold the Line's saved Iron Discipline value is an independent magical
-		// reduction. Basis points preserve the exact half of an odd physical value.
-		if(isMagical() && magicalDamageReductionBasisPoints > 0)
-		{
-			const int boundedReductionBasisPoints = std::clamp(magicalDamageReductionBasisPoints, 0, 10000);
-			const int effectiveReductionBasisPoints = boundedReductionBasisPoints
-				* (100 - ignoreSpellDamageReductionPercent) / 100;
-			const int remainingDamageBasisPoints = 10000
-				- std::clamp(effectiveReductionBasisPoints, 0, 10000);
-			ret = ret / 10000 * remainingDamageBasisPoints
-				+ ret % 10000 * remainingDamageBasisPoints / 10000;
+			// Hold the Line's saved Iron Discipline value is an independent magical
+			// reduction. Basis points preserve the exact half of an odd physical value.
+			if(isMagical() && magicalDamageReductionBasisPoints > 0)
+			{
+				const int boundedReductionBasisPoints = std::clamp(magicalDamageReductionBasisPoints, 0, 10000);
+				const int effectiveReductionBasisPoints = boundedReductionBasisPoints
+					* (100 - ignoreSpellDamageReductionPercent) / 100;
+				const int remainingDamageBasisPoints = 10000
+					- std::clamp(effectiveReductionBasisPoints, 0, 10000);
+				ret = ret / 10000 * remainingDamageBasisPoints
+					+ ret % 10000 * remainingDamageBasisPoints / 10000;
+			}
 		}
 
 		//dmg increasing

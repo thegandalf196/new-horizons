@@ -198,8 +198,8 @@ Mandate, Shroud of Malassa, and Elemental Rebirth.
 The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
 spells. Rechecking the current saved roster after adding Holy Wrath, Storm
-of Daggers, Regeneration, and Nature Poison shows 35 of the 67 combat identities with active settings rows and
-registered mod/core definitions, including Spell Lock; 32 are absent or inactive. An active
+of Daggers, Regeneration, Nature Poison, and Holy Armor shows 36 of the 67 combat identities with active settings rows and
+registered mod/core definitions, including Spell Lock; 31 are absent or inactive. An active
 identity is not proof that its exact canonical effect is complete.
 
 Quicksand is among the active Nature identities but is not effect-complete.
@@ -211,7 +211,7 @@ as full spell-specification coverage.
 
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
-| Light | 11 | 4 | Sanctuary; Guardian Spirit; Holy Armor; Heavenly Gale; Divine Retribution; Purify; Crusade! |
+| Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
 | Shadow | 12 | 2 | Life Drain; Hex of Pain; Frailty; Plague; Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |

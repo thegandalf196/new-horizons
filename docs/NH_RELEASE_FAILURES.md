@@ -15,6 +15,31 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+### September 29 local Holy Armor native-gate incidents
+
+- The first Linux `vcmitest`/`vcmiclient` build over committed
+  `c0fcec5d6` plus the uncommitted Holy Armor slice stopped in
+  `AI/BattleAI/BattleEvaluator.cpp`: `std::clamp` received a `si16`
+  duration with `int` bounds. Explicitly converting the duration to `int`
+  repaired that production compile error.
+- The incremental test build then stopped in
+  `NewHorizonsMagicalDamageReductionTest.cpp`: a raw
+  `SpellIDBase::Type` enum was passed to `BonusSubtypeID`, which requires a
+  `SpellID` value. The explicit wrapper repaired the test fixture. Both Linux
+  targets then linked.
+- The first curated active-profile 25-case filter passed 24 and failed the
+  positive Holy Armor AI choice. Instrumentation established that the
+  player-specific battle callback rejected `canBeCast(CREATURE_ACTIVE)` for
+  a visible opposing creature on the friendly turn, even though its public
+  SPELLCASTER/CASTS bonuses identified a magical damaging spell. The threat
+  forecast no longer asks whether that enemy can cast *now*; it uses visible
+  remaining casts and spell traits. It also accepts damaging spells lacking
+  the older `offensive` flag. A bounded health-value fallback makes protection
+  of a temporarily nonattacking stack worth considering. Temporary diagnostics
+  were removed. The final curated filter passed 25/25; 39 focused Python
+  tests and the generated-module check pass. Windows compilation, visual
+  rendering, Fire Shield interaction, and playable delivery are not claimed.
+
 ### September 29 local Empower Spell native-gate incident
 
 - The first Linux `vcmitest`/`vcmiclient` build over committed head

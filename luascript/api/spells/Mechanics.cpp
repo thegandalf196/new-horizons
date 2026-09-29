@@ -148,6 +148,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True when the battle uses a saved New Horizons magic-rules snapshot.");
 	R.method<&Mechanics::usesNewHorizonsMagicV3>("usesNewHorizonsMagicV3", {},
 		"True when the battle uses a saved New Horizons magic-rules v3 snapshot.");
+	R.method<&Mechanics::usesNewHorizonsMultiplicativeMDR>("usesNewHorizonsMultiplicativeMDR", {},
+		"True when the saved New Horizons spell roster contains the Holy Armor marker and uses independent multiplicative magical damage reduction.");
 	R.function<&MechanicsProxy::isNatureSpell>("isNatureSpell", {},
 		"True when the authoritative saved spell-school mapping classifies this cast as Nature.");
 	R.method<&Mechanics::getEffectValue>("getEffectValue", {},

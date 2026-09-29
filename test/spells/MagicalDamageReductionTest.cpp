@@ -14,6 +14,7 @@
 
 using spells::MagicalDamageReductionResult;
 using spells::calculateMagicalDamageReduction;
+using spells::calculateMagicalDamageReductionBasisPoints;
 
 TEST(MagicalDamageReductionTest, IndependentSourcesMultiply)
 {
@@ -91,6 +92,14 @@ TEST(MagicalDamageReductionTest, FloorsOnlyAfterTheExactCombinedFraction)
 	const auto exactProduct = calculateMagicalDamageReduction(7, {33, 33}, 0);
 	EXPECT_EQ(exactProduct.damageWithoutPenetration, 3);
 	EXPECT_EQ(exactProduct.damageWithPenetration, 3);
+}
+
+TEST(MagicalDamageReductionTest, BasisPointSourcesRemainExactThroughPenetration)
+{
+	const auto result = calculateMagicalDamageReductionBasisPoints(100, {5050}, 20);
+	EXPECT_EQ(result.damageWithoutPenetration, 49);
+	EXPECT_EQ(result.damageWithPenetration, 59)
+		<< "50.50% MDR becomes 40.40% after 20% relative penetration";
 }
 
 TEST(MagicalDamageReductionTest, HandlesZeroMaximumAndManyFactorInputs)

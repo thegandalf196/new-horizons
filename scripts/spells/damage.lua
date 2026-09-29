@@ -28,8 +28,15 @@ end
 
 function Script:isReceptive(mechanics, unit)
 	local spell = mechanics:getSpell()
+	local useIndependentMagicalDamageReduction = spell:isMagical()
+		and mechanics:usesNewHorizonsMultiplicativeMDR()
 	if spell:isMagical() then
-		if unit:getBonusesValue({type = "SPELL_DAMAGE_REDUCTION", subtype = "any"}) >= 100 then
+		-- New Horizons' saved roster applies each ANY-subtype bonus as an
+		-- independent magical-damage reduction, capped together at 95%. Do not
+		-- turn their additive sum into immunity before CSpell can apply that rule.
+		-- Legacy profiles retain the original 100% reduction shortcut.
+		if not useIndependentMagicalDamageReduction
+			and unit:getBonusesValue({type = "SPELL_DAMAGE_REDUCTION", subtype = "any"}) >= 100 then
 			return false
 		end
 	end
@@ -46,7 +53,7 @@ function Script:isReceptive(mechanics, unit)
 		for i = 1, matching:size() do
 			total = total + matching:getBonus(i):getVal()
 		end
-		if total >= 100 then
+		if total >= 100 and not useIndependentMagicalDamageReduction then
 			return false
 		end
 	end
