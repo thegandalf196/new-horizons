@@ -15,6 +15,34 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+### September 29 local Malediction native-gate incidents
+
+- Initial `vcmitest` regeneration stopped before compilation because the
+  activated perk row had not yet been copied into generated
+  `Mods/new-horizons/mod.json`. Regenerating the curated module repaired this
+  gate; the subsequent Linux native target linked.
+- The first broader Bless filter found a pre-existing assertion expecting
+  `Light School coefficient`, while unchanged production help describes the
+  `combined Spell Power coefficient`. This is an adjacent stale fixture, not
+  evidence that the new Malediction cast failed; retain it for the next
+  appropriate fixture cleanup. The focused Curse/Sorrow/Malediction and saved
+  v1/v2 server filter passes 8/8 with no skips.
+- The perk registry data test initially expected all Shadow perks to remain
+  planned. Its explicit active-perk list now includes Malediction; the focused
+  17-test data-contract suite passes. Do not interpret its first 300/310
+  aggregate count after an early subtest assertion as ten missing definitions.
+- The first two new AI cases failed fixture setup, not valuation: the fixture
+  lacked castable spellbook/Mana state. After that repair, they read a stale
+  unit pointer from before hypothetical cast copy-on-write. Refetching by
+  unit ID repaired the test. The final focused active-profile AI filter passes
+  5/5 with zero skips; it proves projected 3-to-4-round value, not full
+  end-to-end spell selection.
+- The global active-perk art checker remains red on 21 existing neutral-icon
+  gaps (Archery, Bulwark, Benediction, Herbalist). Malediction has its own
+  named binding, unique 44x44 normal image and four distinct state hashes;
+  do not treat the unrelated global failure as this icon's failure or claim
+  that the global guard passed.
+
 ### September 29 local Shadow Sorrow native-gate incident
 
 - The first Linux `vcmitest` build of the new Sorrow test stopped on two

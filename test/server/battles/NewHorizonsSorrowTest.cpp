@@ -92,6 +92,8 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		const JsonNode rules = magicVersion == newHorizonsMagic::CURRENT_RULESET_VERSION
 			? JsonNode(JsonPath::builtin("config/newHorizonsMagic")) : legacyMagicRules(magicVersion);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
@@ -127,6 +129,15 @@ protected:
 		BattleNextRound next;
 		next.battleID = BattleID(0);
 		gameHandler->sendAndApply(next);
+	}
+
+	void selectMalediction()
+	{
+		const auto skill = SecondarySkill(SecondarySkill::decode(shadowMagic));
+		if(attackerSideHero->getSecSkillLevel(skill) < MasteryLevel::BASIC)
+			attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({shadowMagic, "new-horizons:shadowMagic.malediction"});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(shadowMagic, "new-horizons:shadowMagic.malediction"));
 	}
 
 	bool castSorrow(CStack * unit)
@@ -320,6 +331,53 @@ TEST_F(NewHorizonsSorrowTest, StrongerRecastReplacesPenaltyWithoutStackingAndRef
 	}
 }
 
+TEST_F(NewHorizonsSorrowTest, MaledictionExtendsSorrowAndRefreshesOneNonstackingMoraleEffect)
+{
+	prepare(10, MasteryLevel::BASIC);
+	selectMalediction();
+	const auto & rules = battle()->getBattle()->getMagicRules();
+	const auto duration = newHorizonsMagic::sorrowDurationRounds(rules, attackerSideHero, SpellID::SORROW);
+	ASSERT_TRUE(duration.has_value());
+	EXPECT_EQ(*duration, 4);
+
+	const auto description = newHorizonsMagic::spellDescriptionForHero(
+		attackerSideHero, SpellID(SpellID::SORROW).toSpell(), MasteryLevel::BASIC);
+	EXPECT_NE(description.find("for 4 rounds"), std::string::npos);
+	EXPECT_NE(description.find("Malediction extends the duration by one round"), std::string::npos);
+
+	ASSERT_TRUE(castSorrow(target));
+	ASSERT_NE(sorrowMorale(target), nullptr);
+	EXPECT_EQ(sorrowMorale(target)->turnsRemain, 4);
+
+	// The setup-to-round-one transition does not age effects. The next round
+	// leaves three rounds, which the recast must replace and refresh to four.
+	while(battle()->getRound() == 0)
+		advanceRound();
+	advanceRound();
+	ASSERT_NE(sorrowMorale(target), nullptr);
+	EXPECT_EQ(sorrowMorale(target)->turnsRemain, 3);
+	ASSERT_TRUE(castSorrow(target));
+	const auto currentSorrow = target->getBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SORROW)))
+		.And(Selector::type()(BonusType::MORALE)));
+	ASSERT_NE(currentSorrow, nullptr);
+	ASSERT_EQ(currentSorrow->size(), 1u);
+	ASSERT_NE(sorrowMorale(target), nullptr);
+	EXPECT_EQ(sorrowMorale(target)->turnsRemain, 4);
+
+	for(int remaining = 3; remaining >= 0; --remaining)
+	{
+		advanceRound();
+		if(remaining == 0)
+			EXPECT_EQ(sorrowMorale(target), nullptr);
+		else
+		{
+			ASSERT_NE(sorrowMorale(target), nullptr);
+			EXPECT_EQ(sorrowMorale(target)->turnsRemain, remaining);
+		}
+	}
+}
+
 TEST_F(NewHorizonsSorrowTest, LegacyV2ExpertCastKeepsTheConfiguredMassAndTierPenalty)
 {
 	magicVersion = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
@@ -328,6 +386,11 @@ TEST_F(NewHorizonsSorrowTest, LegacyV2ExpertCastKeepsTheConfiguredMassAndTierPen
 	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
 	EXPECT_FALSE(newHorizonsMagic::sorrowRulesEnabled(rules, SpellID::SORROW));
 	EXPECT_FALSE(newHorizonsMagic::sorrowMoralePenalty(rules, attackerSideHero, SpellID::SORROW, 20).has_value());
+	selectMalediction();
+	EXPECT_FALSE(newHorizonsMagic::sorrowDurationRounds(rules, attackerSideHero, SpellID::SORROW).has_value());
+	const auto * spell = SpellID(SpellID::SORROW).toSpell();
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const int legacyDuration = spell->battleMechanics(&cast)->getEffectDuration();
 
 	ASSERT_TRUE(castSorrow(target));
 	const auto * applied = sorrowMorale(target);
@@ -335,8 +398,8 @@ TEST_F(NewHorizonsSorrowTest, LegacyV2ExpertCastKeepsTheConfiguredMassAndTierPen
 	EXPECT_EQ(applied->val, -2);
 	EXPECT_NE(sorrowMorale(secondTarget), nullptr)
 		<< "the saved v2 Expert spell retains its inherited Mass range";
-	EXPECT_NE(applied->turnsRemain, newHorizonsMagic::SORROW_BASE_DURATION_ROUNDS)
-		<< "legacy duration still comes from the saved caster's enchant power";
+	EXPECT_EQ(applied->turnsRemain, legacyDuration)
+		<< "Malediction does not alter the v2 caster's inherited enchant duration";
 }
 
 TEST_F(NewHorizonsSorrowTest, HistoricalV1CastKeepsTheConfiguredMassAndTierPenalty)
@@ -348,11 +411,17 @@ TEST_F(NewHorizonsSorrowTest, HistoricalV1CastKeepsTheConfiguredMassAndTierPenal
 	EXPECT_FALSE(newHorizonsMagic::sorrowRulesEnabled(rules, SpellID::SORROW));
 	EXPECT_FALSE(newHorizonsMagic::sorrowMoralePenalty(rules, attackerSideHero, SpellID::SORROW, 140).has_value());
 	EXPECT_FALSE(newHorizonsMagic::expertRangeIsSingleTarget(rules, SpellID::SORROW));
+	selectMalediction();
+	EXPECT_FALSE(newHorizonsMagic::sorrowDurationRounds(rules, attackerSideHero, SpellID::SORROW).has_value());
+	const auto * spell = SpellID(SpellID::SORROW).toSpell();
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const int legacyDuration = spell->battleMechanics(&cast)->getEffectDuration();
 
 	ASSERT_TRUE(castSorrow(target));
 	const auto * applied = sorrowMorale(target);
 	ASSERT_NE(applied, nullptr);
 	EXPECT_EQ(applied->val, -2);
 	EXPECT_NE(sorrowMorale(secondTarget), nullptr);
-	EXPECT_NE(applied->turnsRemain, newHorizonsMagic::SORROW_BASE_DURATION_ROUNDS);
+	EXPECT_EQ(applied->turnsRemain, legacyDuration)
+		<< "Malediction does not alter the v1 caster's inherited enchant duration";
 }

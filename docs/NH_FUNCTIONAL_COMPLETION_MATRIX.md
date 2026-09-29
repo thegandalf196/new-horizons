@@ -22,7 +22,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 98/310 | 212 planned; active status alone does not certify behavior. Spell Penetration and Empower Spell have authoritative and prediction evidence. |
+| Skill perks active | 99/310 | 211 planned; active status alone does not certify behavior. Malediction has focused authoritative and projected-AI evidence. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 43/90 | 47 planned perks. |
 | Canonical combat-spell identities registered | 36/67 | 31 missing/inactive; Holy Armor has focused authoritative/damage/AI execution evidence, but rendered/playable delivery remains pending. |
@@ -49,8 +49,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 98
-active perks, leaving nine ranks and 212 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 99
+active perks, leaving nine ranks and 211 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -163,7 +163,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 0/10 | Progression blocked |
 | Light Magic | 3/0 | 1/9 | Benediction active; nine perks missing |
-| Shadow Magic | 3/0 | 0/10 | Progression blocked |
+| Shadow Magic | 3/0 | 1/9 | Malediction has focused native and AI evidence; Basic selection opens Advanced progression. The other nine perks remain planned. |
 | Nature Magic | 3/0 | 1/9 | Herbalist active with Regeneration-focused runtime evidence; nine perks missing |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
@@ -187,8 +187,8 @@ interactions, and rendered/playable acceptance remain separate.
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
-rank. Eleven Skills therefore cannot normally advance beyond Basic because they
-have no active Basic perk: War Machines, Command, Shadow Magic,
+rank. Ten Skills therefore cannot normally advance beyond Basic because they
+have no active Basic perk: War Machines, Command,
 Chaos Magic, Diplomacy, Estates, Learning, Luck, Divine
 Mandate, Shroud of Malassa, and Elemental Rebirth.
 
@@ -252,6 +252,14 @@ Sorrow's Shadow-school correction and exact saved-v3 Morale effect now have
 7/7 authoritative and 3/3 AI projected-score focused native passes. This
 improves effect/rank coverage without adding an identity to the 36/67 total.
 Full AI cast selection and playable/rendered acceptance remain unverified.
+Malediction extends saved-v3 Curse and Sorrow from three to four rounds,
+refreshes on recast, and leaves v1/v2 duration behavior untouched. The focused
+active-profile server and AI filters pass 8/8 and 5/5 respectively, with no
+skips. Both Linux targets link, and the 17-case perk-data suite and module
+mirror pass. The purpose-made provisional icon has a verified unique binding
+and four 44×44 states; the global art guard remains red on 21 unrelated
+pre-existing active-icon gaps. Rendered/playable delivery and full AI cast
+choice remain unverified.
 Additional roster corrections: Implosion belongs to Sorcery rather than Havoc;
 Earthquake belongs to Nature rather than Havoc; Counterspell is not in the
 current canonical roster; Master Chain Lightning is Solmyr's specialty and

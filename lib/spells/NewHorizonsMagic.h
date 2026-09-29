@@ -46,6 +46,7 @@ constexpr int SPELL_POINTS_INTELLIGENCE_MAXIMUM_PERCENT = 130;
 constexpr int BLESS_BASE_DURATION = 2;
 constexpr int BLESS_MAX_DURATION = 4;
 constexpr int BLESS_SPELL_POWER_DURATION_DIVISOR = 80;
+constexpr int CURSE_BASE_DURATION_ROUNDS = 3;
 constexpr int SORROW_BASE_DURATION_ROUNDS = 3;
 constexpr int SORROW_SPELL_POWER_PER_MORALE = 70;
 constexpr int SORROW_BASE_MORALE_PENALTY = 1;
@@ -126,9 +127,18 @@ DLL_LINKAGE bool berserkUsesSingleCreatureTarget(const JsonNode & rules);
 /// True only for saved v3 battles, where Dispel uses New Horizons' friend-or-foe
 /// single-stack effect instead of core targeting and Expert obstacle removal.
 DLL_LINKAGE bool dispelUsesNewHorizonsRules(const JsonNode & rules);
+/// True only when the saved-v3 roster contains canonical Level-1 Shadow Curse
+/// at its canonical mastery costs. Earlier snapshots keep their recorded spell.
+DLL_LINKAGE bool curseRulesEnabled(const JsonNode & rules, SpellID spell);
 /// True only when the saved-v3 roster contains canonical Level-1 Shadow Sorrow
 /// at its fixed four-Mana cost. Earlier snapshots keep their recorded spell.
 DLL_LINKAGE bool sorrowRulesEnabled(const JsonNode & rules, SpellID spell);
+/// Canonical saved-v3 Curse / Sorrow durations, including Malediction when
+/// selected. Legacy, missing, or non-canonical saved spell rows return nullopt.
+DLL_LINKAGE std::optional<int> curseDurationRounds(const JsonNode & rules, const CGHeroInstance * hero,
+	SpellID spell);
+DLL_LINKAGE std::optional<int> sorrowDurationRounds(const JsonNode & rules, const CGHeroInstance * hero,
+	SpellID spell);
 /// Applies the saved v3 fixed-five Chain Lightning target count while keeping
 /// the configured, mastery-dependent value for legacy/v1/v2 battles.
 DLL_LINKAGE int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configuredTargetCount);

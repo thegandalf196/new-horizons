@@ -190,6 +190,42 @@ bool hasCanonicalSpellcraftEfficiencyPercent(const JsonNode & rules)
 	return true;
 }
 
+bool canonicalShadowStatusSpellRulesEnabled(const JsonNode & rules, SpellID spell,
+	SpellID expectedSpell, const char * identity, const std::array<int, 4> & expectedCosts)
+{
+	if(spell != expectedSpell || !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !rules["spells"].isStruct())
+		return false;
+
+	const auto found = rules["spells"].Struct().find(identity);
+	if(found == rules["spells"].Struct().end() || !found->second.isStruct())
+		return false;
+
+	const auto & row = found->second;
+	if(!integer(row["level"], 1, 1)
+		|| !row["schools"].isVector() || row["schools"].Vector().size() != 1
+		|| !row["schools"].Vector().front().isString()
+		|| row["schools"].Vector().front().String() != "new-horizons:shadow"
+		|| !row["costs"].isVector() || row["costs"].Vector().size() != expectedCosts.size()
+		|| (!row["active"].isNull() && !row["active"].isBool()))
+		return false;
+
+	if(!spellAllowedBySavedRoster(rules, spell))
+		return false;
+
+	for(size_t index = 0; index < expectedCosts.size(); ++index)
+		if(!integer(row["costs"].Vector()[index], expectedCosts[index], expectedCosts[index]))
+			return false;
+
+	return true;
+}
+
+bool hasMaledictionPerk(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.malediction");
+}
+
 int registeredSpellcraftRank(const CGHeroInstance * hero)
 {
 	if(!hero || !LIBRARY || !LIBRARY->identifiers())
@@ -251,30 +287,30 @@ bool dispelUsesNewHorizonsRules(const JsonNode & rules)
 
 bool sorrowRulesEnabled(const JsonNode & rules, const SpellID spell)
 {
-	if(spell != SpellID(SpellID::SORROW)
-		|| !rulesActive(rules)
-		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		|| !rules["spells"].isStruct())
-		return false;
+	constexpr std::array<int, 4> expectedCosts{4, 4, 4, 4};
+	return canonicalShadowStatusSpellRulesEnabled(
+		rules, spell, SpellID(SpellID::SORROW), "core:sorrow", expectedCosts);
+}
 
-	const auto found = rules["spells"].Struct().find("core:sorrow");
-	if(found == rules["spells"].Struct().end() || !found->second.isStruct())
-		return false;
+bool curseRulesEnabled(const JsonNode & rules, const SpellID spell)
+{
+	constexpr std::array<int, 4> expectedCosts{4, 4, 3, 3};
+	return canonicalShadowStatusSpellRulesEnabled(
+		rules, spell, SpellID(SpellID::CURSE), "core:curse", expectedCosts);
+}
 
-	const auto & row = found->second;
-	if(!row.isStruct() || !integer(row["level"], 1, 1)
-		|| !row["schools"].isVector() || row["schools"].Vector().size() != 1
-		|| !row["schools"].Vector().front().isString()
-		|| row["schools"].Vector().front().String() != "new-horizons:shadow"
-		|| !row["costs"].isVector() || row["costs"].Vector().size() != 4
-		|| (!row["active"].isNull() && !row["active"].isBool()))
-		return false;
+std::optional<int> curseDurationRounds(const JsonNode & rules, const CGHeroInstance * hero, const SpellID spell)
+{
+	if(!curseRulesEnabled(rules, spell))
+		return std::nullopt;
+	return CURSE_BASE_DURATION_ROUNDS + (hasMaledictionPerk(hero) ? 1 : 0);
+}
 
-	return spellAllowedBySavedRoster(rules, spell)
-		&& std::ranges::all_of(row["costs"].Vector(), [](const JsonNode & cost)
-	{
-		return integer(cost, 4, 4);
-	});
+std::optional<int> sorrowDurationRounds(const JsonNode & rules, const CGHeroInstance * hero, const SpellID spell)
+{
+	if(!sorrowRulesEnabled(rules, spell))
+		return std::nullopt;
+	return SORROW_BASE_DURATION_ROUNDS + (hasMaledictionPerk(hero) ? 1 : 0);
 }
 
 int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configuredTargetCount)
@@ -418,6 +454,16 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 			"including friendly stacks. It can strike up to five different stacks at every mastery rank; "
 			"each later jump deals less damage.";
 	}
+	else if(hero && curseRulesEnabled(hero->getMagicRules(), spell->getId()))
+	{
+		const auto duration = curseDurationRounds(hero->getMagicRules(), hero, spell->getId())
+			.value_or(CURSE_BASE_DURATION_ROUNDS);
+		result = "Targets one enemy stack for " + std::to_string(duration)
+			+ (duration == 1 ? " round. " : " rounds. ")
+			+ "It always rolls the minimum value of its normal creature damage range and changes no other statistic.";
+		if(duration > CURSE_BASE_DURATION_ROUNDS)
+			result += " Malediction extends the duration by one round.";
+	}
 	else if(hero && sorrowRulesEnabled(hero->getMagicRules(), spell->getId()))
 	{
 		const auto & rules = hero->getMagicRules();
@@ -426,8 +472,11 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		const int combinedCoefficient = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
 		const auto penalty = sorrowMoralePenalty(rules, hero, spell->getId(), spellPower)
 			.value_or(SORROW_BASE_MORALE_PENALTY);
-		result = "Targets one enemy stack for " + std::to_string(SORROW_BASE_DURATION_ROUNDS)
-			+ " rounds. Morale penalty = min(3, 1 + floor(scaled raw Hero Spell Power / 70)). "
+		const auto duration = sorrowDurationRounds(rules, hero, spell->getId())
+			.value_or(SORROW_BASE_DURATION_ROUNDS);
+		result = "Targets one enemy stack for " + std::to_string(duration)
+			+ (duration == 1 ? " round. " : " rounds. ")
+			+ "Morale penalty = min(3, 1 + floor(scaled raw Hero Spell Power / 70)). "
 			"Saved v3 Shadow rank scales the Spell Power term by 100% / 115% / 130% / 145% at no rank / Basic / "
 			"Advanced / Expert; Spellcraft efficiency multiplies the School factor. The ordinary cast is single-target "
 			"at every rank. Current Shadow School factor: "
@@ -435,6 +484,8 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 			+ percentFromBasisPoints(combinedCoefficient) + ". At Spell Power " + std::to_string(spellPower)
 			+ ", the ordinary penalty is -" + std::to_string(penalty) + " Morale before battle-only Warcasting. "
 			"Morale remains subject to the global legal range.";
+		if(duration > SORROW_BASE_DURATION_ROUNDS)
+			result += " Malediction extends the duration by one round.";
 	}
 
 	if(hero && spell->getId() == SpellID(SpellID::QUICKSAND)

@@ -132,6 +132,16 @@ const Bonus * sorrowMoraleBonus(const battle::Unit * unit)
 	return bonuses && !bonuses->empty() ? bonuses->front().get() : nullptr;
 }
 
+const Bonus * curseMinimumDamageBonus(const battle::Unit * unit)
+{
+	if(!unit)
+		return nullptr;
+	const auto bonuses = unit->getBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::CURSE)))
+		.And(Selector::type()(BonusType::ALWAYS_MINIMUM_DAMAGE)));
+	return bonuses && !bonuses->empty() ? bonuses->front().get() : nullptr;
+}
+
 JsonNode legacyMagicRules(int version)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
@@ -3927,6 +3937,232 @@ TEST_F(NewHorizonsMagicAITest, CanonicalShadowSorrowAIUsesProjectedRankedMoraleT
 	EXPECT_EQ(lowMoraleThreat->moraleVal(), lowMoraleBefore);
 	EXPECT_EQ(sorrowMoraleBonus(highMoraleThreat), nullptr);
 	EXPECT_EQ(sorrowMoraleBonus(lowMoraleThreat), nullptr);
+}
+
+TEST_F(NewHorizonsMagicAITest, MaledictionMakesCurseAIValueItsProjectedExtraRound)
+{
+	useCommands = true;
+	useCurrentMagicRules = true;
+	useSavedPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const SpellID curse(SpellID::CURSE);
+	const auto shadowSkillId = SecondarySkill::decode("new-horizons:shadowMagic");
+	ASSERT_GE(shadowSkillId, 0);
+	const SecondarySkill shadowMagic(shadowSkillId);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto known : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(curse);
+	attackerSideHero->setSecSkillLevel(shadowMagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1000);
+	auto * hostile = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 100);
+	ASSERT_NE(friendly, nullptr);
+	ASSERT_NE(hostile, nullptr);
+
+	const std::set<uint32_t> keepIds{friendly->unitId(), hostile->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto baseline = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache baselineDamage;
+	baselineDamage.buildDamageCache(baseline, BattleSide::ATTACKER);
+	const auto * originalHostile = battle()->battleGetUnitByID(hostile->unitId());
+	ASSERT_NE(originalHostile, nullptr);
+	const auto * baselineHostile = baseline->battleGetUnitByID(hostile->unitId());
+	const auto * baselineFriendly = baseline->battleGetUnitByID(friendly->unitId());
+	ASSERT_NE(baselineHostile, nullptr);
+	ASSERT_NE(baselineFriendly, nullptr);
+	const auto unhexedDamage = baselineDamage.getDamage(baselineHostile, baselineFriendly, baseline);
+
+	struct CurseForecast
+	{
+		int rounds = 0;
+		int64_t expectedDamage = 0;
+		float value = 0.0f;
+	};
+	const auto projectCurse = [&]()
+	{
+		CurseForecast result;
+		auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+		const auto * projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+		if(!projectedHostile)
+		{
+			ADD_FAILURE() << "the hypothetical battle must contain the target stack";
+			return result;
+		}
+		spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, curse.toSpell());
+		const auto mechanics = curse.toSpell()->battleMechanics(&cast);
+		if(!mechanics)
+		{
+			ADD_FAILURE() << "Curse must expose its shared battle mechanics";
+			return result;
+		}
+		const spells::Target aim{spells::Destination(projectedHostile)};
+		if(!mechanics->canBeCastAt(aim))
+		{
+			ADD_FAILURE() << "Curse must accept the selected hostile target";
+			return result;
+		}
+		mechanics->castEval(projected->getServerCallback(), aim);
+		projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+		if(!projectedHostile)
+		{
+			ADD_FAILURE() << "the hypothetical cast must preserve the target stack";
+			return result;
+		}
+
+		const auto * effect = curseMinimumDamageBonus(projectedHostile);
+		if(!effect)
+		{
+			ADD_FAILURE() << "the projected cast must expose Curse's timed damage effect";
+			return result;
+		}
+		result.rounds = effect->turnsRemain;
+		const auto * projectedFriendly = projected->battleGetUnitByID(friendly->unitId());
+		if(!projectedFriendly)
+		{
+			ADD_FAILURE() << "the hypothetical battle must contain the friendly stack";
+			return result;
+		}
+		DamageCache projectedDamage(&baselineDamage);
+		projectedDamage.buildDamageCache(projected, BattleSide::ATTACKER);
+		result.expectedDamage = projectedDamage.getDamage(projectedHostile, projectedFriendly, projected);
+		result.value = BattleEvaluator::estimateProjectedCurseTargetValue(
+			originalHostile, projectedHostile, projectedDamage, projected);
+		return result;
+	};
+
+	const auto withoutMalediction = projectCurse();
+	ASSERT_EQ(withoutMalediction.rounds, 3);
+	EXPECT_LT(withoutMalediction.expectedDamage, unhexedDamage)
+		<< "The projected Curse effect changes damage through the shared combat damage path";
+	EXPECT_GT(withoutMalediction.value, 0.0f);
+
+	attackerSideHero->applyPerkSelection({"new-horizons:shadowMagic", "new-horizons:shadowMagic.malediction"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.malediction"));
+	const auto withMalediction = projectCurse();
+	EXPECT_EQ(withMalediction.rounds, 4);
+	EXPECT_EQ(withMalediction.expectedDamage, withoutMalediction.expectedDamage)
+		<< "Malediction extends duration without changing Curse's per-attack effect";
+	EXPECT_NEAR(withMalediction.value, withoutMalediction.value * (4.0f / 3.0f), 0.01f)
+		<< "AI values the authoritative projected damage reduction for each remaining round";
+	EXPECT_EQ(curseMinimumDamageBonus(hostile), nullptr)
+		<< "hypothetical casts must not mutate the live battle";
+}
+
+TEST_F(NewHorizonsMagicAITest, MaledictionMakesSorrowAIValueItsProjectedExtraRound)
+{
+	useCommands = true;
+	useCurrentMagicRules = true;
+	useSavedPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const SpellID sorrow(SpellID::SORROW);
+	const auto shadowSkillId = SecondarySkill::decode("new-horizons:shadowMagic");
+	ASSERT_GE(shadowSkillId, 0);
+	const SecondarySkill shadowMagic(shadowSkillId);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto known : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(sorrow);
+	attackerSideHero->setSecSkillLevel(shadowMagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1000);
+	auto * hostile = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 100);
+	ASSERT_NE(friendly, nullptr);
+	ASSERT_NE(hostile, nullptr);
+	setMorale(hostile, 1);
+
+	const std::set<uint32_t> keepIds{friendly->unitId(), hostile->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto baseline = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache baselineDamage;
+	baselineDamage.buildDamageCache(baseline, BattleSide::ATTACKER);
+	const auto * originalHostile = battle()->battleGetUnitByID(hostile->unitId());
+	ASSERT_NE(originalHostile, nullptr);
+
+	struct SorrowForecast
+	{
+		int rounds = 0;
+		float value = 0.0f;
+	};
+	const auto projectSorrow = [&]()
+	{
+		SorrowForecast result;
+		auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+		const auto * projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+		if(!projectedHostile)
+		{
+			ADD_FAILURE() << "the hypothetical battle must contain the target stack";
+			return result;
+		}
+		spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, sorrow.toSpell());
+		const auto mechanics = sorrow.toSpell()->battleMechanics(&cast);
+		if(!mechanics || mechanics->isMassive())
+		{
+			ADD_FAILURE() << "v3 Sorrow must use its single-target battle mechanics";
+			return result;
+		}
+		const spells::Target aim{spells::Destination(projectedHostile)};
+		if(!mechanics->canBeCastAt(aim))
+		{
+			ADD_FAILURE() << "Sorrow must accept the selected hostile target";
+			return result;
+		}
+		mechanics->castEval(projected->getServerCallback(), aim);
+		projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+		if(!projectedHostile)
+		{
+			ADD_FAILURE() << "the hypothetical cast must preserve the target stack";
+			return result;
+		}
+
+		const auto * effect = sorrowMoraleBonus(projectedHostile);
+		if(!effect)
+		{
+			ADD_FAILURE() << "the projected cast must expose Sorrow's timed Morale effect";
+			return result;
+		}
+		result.rounds = effect->turnsRemain;
+		DamageCache projectedDamage(&baselineDamage);
+		projectedDamage.buildDamageCache(projected, BattleSide::ATTACKER);
+		result.value = BattleEvaluator::estimateProjectedSorrowTargetValue(
+			originalHostile, projectedHostile, projectedDamage, projected);
+		return result;
+	};
+
+	const auto withoutMalediction = projectSorrow();
+	ASSERT_EQ(withoutMalediction.rounds, 3);
+	EXPECT_GT(withoutMalediction.value, 0.0f);
+
+	attackerSideHero->applyPerkSelection({"new-horizons:shadowMagic", "new-horizons:shadowMagic.malediction"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.malediction"));
+	const auto withMalediction = projectSorrow();
+	EXPECT_EQ(withMalediction.rounds, 4);
+	EXPECT_NEAR(withMalediction.value, withoutMalediction.value * (4.0f / 3.0f), 0.01f)
+		<< "AI uses the projected Sorrow penalty and duration rather than reimplementing either formula";
+	EXPECT_EQ(sorrowMoraleBonus(hostile), nullptr)
+		<< "hypothetical casts must not mutate the live battle";
 }
 
 TEST_P(NewHorizonsLegacySorrowAITest, SavedV1AndV2AIStillValuesLegacyMassSorrow)

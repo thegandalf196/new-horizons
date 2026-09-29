@@ -2,6 +2,7 @@
   "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
   "status": "provisional; not final user-approved artwork",
   "assets": [
+    "NH_perk_malediction",
     "NH_perk_arcane_acquisition",
     "NH_perk_spell_buffer_v2",
     "NH_perk_stormcaller_v2",
@@ -25,6 +26,11 @@
     "NH_perk_endless_legion"
   ],
   "files": {
+    "NH_perk_malediction_normal.png": "d484b2d96e02d537eeeea4169f45e448ee38aebfaae748825b42409e6d286ddf",
+    "NH_perk_malediction_pressed.png": "0d6fe53c6604a0a4bf775416e0894f50d07d555dc9ef50014d6224effa846243",
+    "NH_perk_malediction_disabled.png": "356481fabd7c4a5dc7edbf4540e9654d7d79fc24c83408d8add7ef61e160eb3a",
+    "NH_perk_malediction_highlighted.png": "e546e241d2209bf25bee234de26764847a1ee0fcd1f99df7da584355db95aed9",
+    "NH_perk_malediction.json": "4ef63561afab7ab33f4ee6f85d041f7853d757b5b14296a6a4bf22ce3d1fd6df",
     "NH_perk_arcane_acquisition_normal.png": "58315d1c24ff11439af1b75698d929ce1a7856d02a8ebdaedd4697f032037f54",
     "NH_perk_arcane_acquisition_pressed.png": "cc3b3eb0de419bb477e2b7f03b2367ddb978471a43c7e4404f860cefef525c52",
     "NH_perk_arcane_acquisition_disabled.png": "6d5e3c851e217f48828981ea25ad6f0be54ba260e1e8957521d4a900604298e0",

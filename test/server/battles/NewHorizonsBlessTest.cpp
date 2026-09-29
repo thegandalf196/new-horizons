@@ -23,6 +23,8 @@ namespace
 {
 constexpr auto lightMagicSkill = "new-horizons:lightMagic";
 constexpr auto benedictionPerk = "new-horizons:lightMagic.benediction";
+constexpr auto shadowMagicSkill = "new-horizons:shadowMagic";
+constexpr auto maledictionPerk = "new-horizons:shadowMagic.malediction";
 
 JsonNode legacyMagicRules(int version)
 {
@@ -30,6 +32,11 @@ JsonNode legacyMagicRules(int version)
 	rules["rulesetVersion"].Integer() = version;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
+	for(auto & [name, spell] : rules["spells"].Struct())
+	{
+		(void)name;
+		spell.Struct().erase("selectedPlacement");
+	}
 	if(version == newHorizonsMagic::RULESET_VERSION)
 	{
 		rules.Struct().erase("spellPoints");
@@ -142,6 +149,16 @@ protected:
 		return 0;
 	}
 
+	int appliedCurseDuration(const CStack * unit) const
+	{
+		const auto bonuses = unit->getAllBonuses(Selector::source(
+			BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::CURSE))));
+		for(const auto & bonus : *bonuses)
+			if(bonus->type == BonusType::ALWAYS_MINIMUM_DAMAGE)
+				return bonus->turnsRemain;
+		return 0;
+	}
+
 	std::optional<int32_t> appliedEndpointValue(const CStack * unit, SpellID spell, BonusType type) const
 	{
 		const auto bonuses = unit->getAllBonuses(Selector::source(
@@ -165,8 +182,24 @@ protected:
 	void setCurseExpert()
 	{
 		attackerSideHero->setSecSkillLevel(
-			SecondarySkill(SecondarySkill::decode("new-horizons:shadowMagic")),
+			SecondarySkill(SecondarySkill::decode(shadowMagicSkill)),
 			MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	}
+
+	void selectMalediction()
+	{
+		const auto skill = SecondarySkill(SecondarySkill::decode(shadowMagicSkill));
+		if(attackerSideHero->getSecSkillLevel(skill) < MasteryLevel::BASIC)
+			attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({shadowMagicSkill, maledictionPerk});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(shadowMagicSkill, maledictionPerk));
+	}
+
+	void advanceRound()
+	{
+		BattleNextRound next;
+		next.battleID = BattleID(0);
+		gameHandler->sendAndApply(next);
 	}
 
 	void addDurationBonus(int value, BonusSubtypeID subtype)
@@ -284,6 +317,43 @@ TEST_F(NewHorizonsBlessTest, V3ExpertCurseUsesTheNaturalMinimumWithoutLoweringEf
 	EXPECT_EQ(mechanics->getEffectLevel(), MasteryLevel::EXPERT);
 	castOn(SpellID::CURSE, hostileTarget);
 	EXPECT_EQ(appliedEndpointValue(hostileTarget, SpellID(SpellID::CURSE), BonusType::ALWAYS_MINIMUM_DAMAGE), 0);
+	EXPECT_EQ(appliedCurseDuration(hostileTarget), newHorizonsMagic::CURSE_BASE_DURATION_ROUNDS);
+}
+
+TEST_F(NewHorizonsBlessTest, V3MaledictionExtendsCurseAndRefreshesOneTimedEffect)
+{
+	prepare(80, MasteryLevel::NONE);
+	selectMalediction();
+	const auto & rules = battle()->getBattle()->getMagicRules();
+	const auto duration = newHorizonsMagic::curseDurationRounds(rules, attackerSideHero, SpellID::CURSE);
+	ASSERT_TRUE(duration.has_value());
+	EXPECT_EQ(*duration, 4);
+
+	const auto description = newHorizonsMagic::spellDescriptionForHero(
+		attackerSideHero, SpellID(SpellID::CURSE).toSpell(), MasteryLevel::BASIC);
+	EXPECT_NE(description.find("for 4 rounds"), std::string::npos);
+	EXPECT_NE(description.find("Malediction extends the duration by one round"), std::string::npos);
+
+	castOn(SpellID::CURSE, hostileTarget);
+	EXPECT_EQ(appliedCurseDuration(hostileTarget), 4);
+	EXPECT_EQ(appliedEndpointValue(hostileTarget, SpellID(SpellID::CURSE), BonusType::ALWAYS_MINIMUM_DAMAGE), 0);
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Curse forces") != std::string::npos && line.find("for 4 rounds") != std::string::npos;
+	}));
+
+	while(battle()->getRound() == 0)
+		advanceRound();
+	advanceRound();
+	EXPECT_EQ(appliedCurseDuration(hostileTarget), 3);
+	castOn(SpellID::CURSE, hostileTarget);
+
+	const auto currentCurse = hostileTarget->getBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::CURSE)))
+		.And(Selector::type()(BonusType::ALWAYS_MINIMUM_DAMAGE)));
+	ASSERT_NE(currentCurse, nullptr);
+	ASSERT_EQ(currentCurse->size(), 1u);
+	EXPECT_EQ(appliedCurseDuration(hostileTarget), 4);
 }
 
 TEST_F(NewHorizonsBlessTest, V2RetainsVanillaExpertMassTargetAndExpertEffect)
@@ -305,8 +375,14 @@ TEST_F(NewHorizonsBlessTest, V2RetainsTheExpertCurseMinusOneBonus)
 	magicVersion = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 	ASSERT_NO_FATAL_FAILURE(prepare(80, MasteryLevel::NONE));
 	setCurseExpert();
+	selectMalediction();
+	const auto & rules = battle()->getBattle()->getMagicRules();
+	EXPECT_FALSE(newHorizonsMagic::curseDurationRounds(rules, attackerSideHero, SpellID::CURSE).has_value());
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, curse);
+	const int legacyDuration = curse->battleMechanics(&cast)->getEffectDuration();
 	castOn(SpellID::CURSE, hostileTarget);
 	EXPECT_EQ(appliedEndpointValue(hostileTarget, SpellID(SpellID::CURSE), BonusType::ALWAYS_MINIMUM_DAMAGE), 1);
+	EXPECT_EQ(appliedCurseDuration(hostileTarget), legacyDuration);
 }
 
 TEST_F(NewHorizonsBlessTest, V1RetainsTheExpertBlessPlusOneBonus)
@@ -322,8 +398,14 @@ TEST_F(NewHorizonsBlessTest, V1RetainsTheExpertCurseMinusOneBonus)
 	magicVersion = newHorizonsMagic::RULESET_VERSION;
 	ASSERT_NO_FATAL_FAILURE(prepare(80, MasteryLevel::NONE));
 	setCurseExpert();
+	selectMalediction();
+	const auto & rules = battle()->getBattle()->getMagicRules();
+	EXPECT_FALSE(newHorizonsMagic::curseDurationRounds(rules, attackerSideHero, SpellID::CURSE).has_value());
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, curse);
+	const int legacyDuration = curse->battleMechanics(&cast)->getEffectDuration();
 	castOn(SpellID::CURSE, hostileTarget);
 	EXPECT_EQ(appliedEndpointValue(hostileTarget, SpellID(SpellID::CURSE), BonusType::ALWAYS_MINIMUM_DAMAGE), 1);
+	EXPECT_EQ(appliedCurseDuration(hostileTarget), legacyDuration);
 }
 
 TEST_F(NewHorizonsBlessTest, V1KeepsLegacyEnchantDuration)

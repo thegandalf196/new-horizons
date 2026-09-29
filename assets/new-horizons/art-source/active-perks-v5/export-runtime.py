@@ -11,6 +11,7 @@ from PIL import Image, ImageEnhance
 
 
 ASSETS = (
+    ("malediction", "NH_perk_malediction"),
     ("arcane-acquisition", "NH_perk_arcane_acquisition"),
     ("spell-buffer", "NH_perk_spell_buffer_v2"),
     ("stormcaller", "NH_perk_stormcaller_v2"),

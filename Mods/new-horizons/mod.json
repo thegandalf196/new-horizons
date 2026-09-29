@@ -3852,7 +3852,7 @@
 								"requires": "basic",
 								"description": "Curse and Sorrow last 1 additional round.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Curse and Sorrow last 1 additional round."
 								}
 							},

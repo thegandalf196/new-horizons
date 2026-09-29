@@ -32,6 +32,7 @@ ACTIVE_PERKS = {
     "new-horizons:logistics.scouting",
     "new-horizons:wisdom.intelligence",
     "new-horizons:lightMagic.benediction",
+    "new-horizons:shadowMagic.malediction",
     "new-horizons:warcasting.martialChanneling",
     "new-horizons:warcasting.arcaneChanneling",
     "new-horizons:warcasting.tacticalWeaving",

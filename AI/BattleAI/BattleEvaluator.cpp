@@ -138,14 +138,13 @@ float expectedMoraleActivationChange(const battle::Unit * unit)
 	return sign * static_cast<float>(chance) / static_cast<float>(diceSize);
 }
 
-int sorrowEffectRounds(const battle::Unit * unit)
+int timedSpellEffectRounds(const battle::Unit * unit, SpellID spell, BonusType effectType)
 {
 	if(!unit)
 		return 0;
 
-	const auto effects = unit->getBonuses(Selector::source(
-		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SORROW)))
-		.And(Selector::type()(BonusType::MORALE)));
+	const auto effects = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell))
+		.And(Selector::type()(effectType)));
 	if(!effects)
 		return 0;
 
@@ -154,6 +153,16 @@ int sorrowEffectRounds(const battle::Unit * unit)
 		if(effect && Bonus::NTurns(effect.get()))
 			rounds = std::max(rounds, static_cast<int>(effect->turnsRemain));
 	return std::max(0, rounds);
+}
+
+int sorrowEffectRounds(const battle::Unit * unit)
+{
+	return timedSpellEffectRounds(unit, SpellID(SpellID::SORROW), BonusType::MORALE);
+}
+
+int curseEffectRounds(const battle::Unit * unit)
+{
+	return timedSpellEffectRounds(unit, SpellID(SpellID::CURSE), BonusType::ALWAYS_MINIMUM_DAMAGE);
 }
 
 float expectedSorrowTargetActivationValue(const battle::Unit * target,
@@ -190,6 +199,45 @@ float expectedSorrowTargetActivationValue(const battle::Unit * target,
 	return bestActionValue;
 }
 
+float expectedCurseTargetActivationValue(const battle::Unit * target,
+	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!target || !target->alive() || target->getCount() <= 0
+		|| target->isGhost() || target->isTurret() || !projectedBattle)
+		return 0.0f;
+
+	float bestActionValue = 0.0f;
+	for(const auto * friendly : projectedBattle->battleGetAllUnits(false))
+	{
+		if(!friendly || !friendly->alive() || !friendly->isValidTarget(true)
+			|| friendly->isGhost() || friendly->isTurret()
+			|| friendly->unitSide() == target->unitSide())
+			continue;
+
+		const bool shooting = projectedBattle->battleCanShoot(target, friendly->getPosition());
+		const int attackCount = AttackPossibility::getAttackCount(*target, shooting, *projectedBattle);
+		if(attackCount <= 0)
+			continue;
+
+		const auto availableHealth = std::max<int64_t>(0, friendly->getAvailableHealth());
+		const auto originalPerAttackDamage = std::max<int64_t>(0,
+			damageCache.getOriginalDamage(target, friendly, projectedBattle));
+		const auto projectedPerAttackDamage = std::max<int64_t>(0,
+			damageCache.getDamage(target, friendly, projectedBattle));
+		const auto originalAttackDamage = std::min(availableHealth,
+			originalPerAttackDamage * static_cast<int64_t>(attackCount));
+		const auto projectedAttackDamage = std::min(availableHealth,
+			projectedPerAttackDamage * static_cast<int64_t>(attackCount));
+		if(originalAttackDamage <= projectedAttackDamage)
+			continue;
+
+		const auto preventedDamage = originalAttackDamage - projectedAttackDamage;
+		bestActionValue = std::max(bestActionValue, static_cast<float>(AttackPossibility::calculateDamageReduce(
+			nullptr, friendly, static_cast<uint64_t>(preventedDamage), damageCache, projectedBattle)));
+	}
+	return bestActionValue;
+}
+
 float BattleEvaluator::estimateProjectedSorrowTargetValue(const battle::Unit * original, const battle::Unit * projected,
 	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle)
 {
@@ -217,6 +265,24 @@ float BattleEvaluator::estimateProjectedSorrowTargetValue(const battle::Unit * o
 	// remain Phase-2 integration work.
 	const auto activationValue = expectedSorrowTargetActivationValue(projected, damageCache, projectedBattle);
 	return lostExpectedActivations * static_cast<float>(remainingRounds) * activationValue * 0.5f;
+}
+
+float BattleEvaluator::estimateProjectedCurseTargetValue(const battle::Unit * original, const battle::Unit * projected,
+	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!original || !projected || !original->alive() || !projected->alive())
+		return 0.0f;
+
+	const auto remainingRounds = curseEffectRounds(projected);
+	if(remainingRounds <= 0)
+		return 0.0f;
+
+	// The projected Curse bonus drives the shared expected-damage calculator;
+	// this estimator does not reproduce Curse's damage-range rule. One best
+	// hostile attack is a bounded proxy for each remaining round, matching the
+	// Sorrow estimate's treatment of future activations.
+	const auto preventedAttackValue = expectedCurseTargetActivationValue(projected, damageCache, projectedBattle);
+	return preventedAttackValue * static_cast<float>(remainingRounds) * 0.5f;
 }
 
 bool isCanonicalHolyArmor(const CSpell * spell)
@@ -2604,7 +2670,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				float damageToHostilesScore = 0;
 				float damageToFriendliesScore = 0;
 				float initiativeEffectScore = 0;
-				float moraleEffectScore = 0;
+				float timedMaledictionScore = 0;
 				if(isCanonicalRegeneration(ps.spell))
 				{
 					const auto targets = improvedRegenerationTargets(
@@ -2672,9 +2738,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					auto newHealth = unit->getAvailableHealth();
 					auto oldHealth = vstd::find_or(healthOfStack, unit->unitId(), 0); // old health value may not exist for newly summoned units
 					auto original = cb->getBattle(battleID)->battleGetUnitByID(unit->unitId());
-					if(ps.spell && ps.spell->getId() == SpellID::SORROW
-						&& original && state->battleGetOwner(unit) != playerID)
-						moraleEffectScore += estimateProjectedSorrowTargetValue(original, unit, innerCache, state);
+					if(ps.spell && original && state->battleGetOwner(unit) != playerID)
+					{
+						if(ps.spell->getId() == SpellID::SORROW)
+							timedMaledictionScore += estimateProjectedSorrowTargetValue(original, unit, innerCache, state);
+						else if(ps.spell->getId() == SpellID::CURSE)
+							timedMaledictionScore += estimateProjectedCurseTargetValue(original, unit, innerCache, state);
+					}
 					const bool phantomArmyStack = phantomArmy && !original
 						&& state->battleGetOwner(unit) == playerID
 						&& phantomArmyInitialIntegrity(unit, ps.spell->getId()) > 0;
@@ -2776,7 +2846,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 #endif
 					}
 				}
-				damageToHostilesScore += moraleEffectScore * scoreEvaluator.getPositiveEffectMultiplier();
+				damageToHostilesScore += timedMaledictionScore * scoreEvaluator.getPositiveEffectMultiplier();
 
 				if (vstd::isAlmostEqual(stackActionScore, static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE)))
 				{

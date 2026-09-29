@@ -53,6 +53,9 @@ public:
 	/// Shared projected value for one Sorrow target; public for deterministic AI-focused tests.
 	static float estimateProjectedSorrowTargetValue(const battle::Unit * original, const battle::Unit * projected,
 		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle);
+	/// Shared projected value for one Curse target; public for deterministic AI-focused tests.
+	static float estimateProjectedCurseTargetValue(const battle::Unit * original, const battle::Unit * projected,
+		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle);
 	void print(const std::string & text) const;
 	BattleAction moveOrAttack(const CStack * stack, const BattleHex & hex, const PotentialTargets & targets);
 
