@@ -286,7 +286,15 @@ struct BattleStackAttacked
 	ui32 killedAmount = 0;
 	int64_t damageAmount = 0;
 	UnitChanges newState;
-	enum EFlags { KILLED = 1, SECONDARY = 2, REBIRTH = 4, CLONE_KILLED = 8, SPELL_EFFECT = 16, };
+	enum EFlags
+	{
+		KILLED = 1,
+		SECONDARY = 2,
+		REBIRTH = 4,
+		CLONE_KILLED = 8,
+		SPELL_EFFECT = 16,
+		GUARDIAN_SPIRIT_EXHAUSTED = 32,
+	};
 	ui32 flags = 0; //uses EFlags (above)
 	SpellID spellID = SpellID::NONE; //only if flag SPELL_EFFECT is set
 

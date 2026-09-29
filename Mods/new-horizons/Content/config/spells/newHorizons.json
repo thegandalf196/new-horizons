@@ -430,6 +430,61 @@
 		"flags" : {"positive" : true},
 		"targetCondition" : {}
 	},
+	"guardianSpirit" : {
+		"name" : "Guardian Spirit",
+		"type" : "combat",
+		"school" : {"new-horizons:light" : true},
+		"level" : 2,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "NH_spell_guardian_spirit_44.png",
+			"iconScroll" : "NH_spell_guardian_spirit_32.png",
+			"iconEffect" : "NH_spell_guardian_spirit_30.png",
+			"iconImmune" : "NH_spell_guardian_spirit_30.png",
+			"iconScenarioBonus" : "NH_spell_guardian_spirit_32.png"
+		},
+		"animation" : {"affect" : ["C13SPE0"]},
+		"sounds" : {"cast" : "SHIELD"},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Grant one friendly stack a separate pool of 50 + 2 x Spell Power protective HP for 2 rounds. It absorbs physical creature damage before creature HP, but spells bypass it. Light rank strengthens only the Spell Power term.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {"guardianSpirit" : {"type" : "timed", "bonus" : {"guardianSpirit" : {"val" : 1, "type" : "GUARDIAN_SPIRIT", "duration" : "N_TURNS", "turns" : 2}}}},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Grant one friendly stack a separate pool of 50 + 2 x Spell Power protective HP for 2 rounds. It absorbs physical creature damage before creature HP, but spells bypass it. Light rank strengthens only the Spell Power term.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {"guardianSpirit" : {"type" : "timed", "bonus" : {"guardianSpirit" : {"val" : 1, "type" : "GUARDIAN_SPIRIT", "duration" : "N_TURNS", "turns" : 2}}}},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Grant one friendly stack a separate pool of 50 + 2 x Spell Power protective HP for 2 rounds. It absorbs physical creature damage before creature HP, but spells bypass it. Light rank strengthens only the Spell Power term.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {"guardianSpirit" : {"type" : "timed", "bonus" : {"guardianSpirit" : {"val" : 1, "type" : "GUARDIAN_SPIRIT", "duration" : "N_TURNS", "turns" : 2}}}},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Grant one friendly stack a separate pool of 50 + 2 x Spell Power protective HP for 2 rounds. It absorbs physical creature damage before creature HP, but spells bypass it. Light rank strengthens only the Spell Power term.",
+				"cost" : 8,
+				"power" : 0,
+				"battleEffects" : {"guardianSpirit" : {"type" : "timed", "bonus" : {"guardianSpirit" : {"val" : 1, "type" : "GUARDIAN_SPIRIT", "duration" : "N_TURNS", "turns" : 2}}}},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {"positive" : true},
+		"targetCondition" : {}
+	},
 	"holyArmor" : {
 		"name" : "Holy Armor",
 		"type" : "combat",

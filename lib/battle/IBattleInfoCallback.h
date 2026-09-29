@@ -62,6 +62,10 @@ struct DLL_LINKAGE DamageEstimation
 	int archeryCrossfireDamagePercent = 0;
 	bool archeryDeadeye = false;
 	bool archeryHighArc = false;
+	/// Actual Guardian Spirit absorption during a resolved creature hit; transient feedback only.
+	int64_t guardianSpiritAbsorbedDamage = 0;
+	/// Incoming portion left after Guardian Spirit absorption, before Health caps it.
+	int64_t guardianSpiritOverflowDamage = 0;
 };
 
 class DLL_LINKAGE IBattleInfoCallback : public IConstBonusProvider, public scripting::ApiRawPointer<IBattleInfoCallback>

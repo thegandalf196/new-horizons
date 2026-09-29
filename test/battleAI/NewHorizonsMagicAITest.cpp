@@ -24,6 +24,7 @@
 #include "../../lib/constants/StringConstants.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
@@ -148,6 +149,11 @@ SpellID doomSpell()
 SpellID sanctuarySpell()
 {
 	return SpellID(SpellID::decode("new-horizons:sanctuary"));
+}
+
+SpellID guardianSpiritSpell()
+{
+	return SpellID(SpellID::decode("new-horizons:guardianSpirit"));
 }
 
 void addVampirismStatus(CStack * target, SpellID spell, int healBasisPoints, int turns)
@@ -381,6 +387,19 @@ protected:
 		for(const auto known : attackerSideHero->getSpellsInSpellbook())
 			attackerSideHero->removeSpellFromSpellbook(known);
 		attackerSideHero->addSpellToSpellbook(sanctuary);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+	}
+
+	void prepareGuardianSpiritCaster()
+	{
+		ASSERT_NO_FATAL_FAILURE(startGame());
+		const auto guardianSpirit = guardianSpiritSpell();
+		ASSERT_NE(guardianSpirit, SpellID::NONE);
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		for(const auto known : attackerSideHero->getSpellsInSpellbook())
+			attackerSideHero->removeSpellFromSpellbook(known);
+		attackerSideHero->addSpellToSpellbook(guardianSpirit);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(attackerSideHero, 1000);
 	}
@@ -5542,6 +5561,162 @@ TEST_F(NewHorizonsMagicAITest, SanctuaryAIValuesDirectThreatOnPassiveAllyAndExcl
 	ASSERT_NE(protectedShooter, nullptr);
 	PotentialTargets protectedTargets(protectedShooter, protectedDamage, protectedModel);
 	EXPECT_FALSE(hasPrimaryTarget(protectedTargets));
+}
+
+TEST_F(NewHorizonsMagicAITest, GuardianSpiritAIChoosesAllyUnderPhysicalCreatureThreat)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareGuardianSpiritCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	auto * active = addStack(BattleSide::ATTACKER,
+		creatureByName("core:peasant"), BattleHex(1, 1), 1);
+	auto * threatenedAlly = addStack(BattleSide::ATTACKER,
+		creatureByName("core:pikeman"), BattleHex(3, 5), 100);
+	auto * enemyShooter = addStack(BattleSide::DEFENDER,
+		creatureByName("core:marksman"), BattleHex(12, 5), 20);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(threatenedAlly, nullptr);
+	ASSERT_NE(enemyShooter, nullptr);
+	ASSERT_TRUE(battle()->battleCanShoot(enemyShooter, threatenedAlly->getPosition()));
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(action.spell, guardianSpiritSpell());
+	const auto selected = action.getTarget(battle());
+	ASSERT_EQ(selected.size(), 1u);
+	ASSERT_NE(selected.front().unitValue, nullptr);
+	EXPECT_EQ(selected.front().unitValue->unitId(), threatenedAlly->unitId());
+	EXPECT_EQ(threatenedAlly->guardianSpiritHitPoints, 0)
+		<< "candidate projection must not mutate the live shield";
+
+	const auto spell = guardianSpiritSpell();
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto projectedAlly = projected->getForUpdate(threatenedAlly->unitId());
+	spells::BattleCast projectedCast(projected.get(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto projectedMechanics = spell.toSpell()->battleMechanics(&projectedCast);
+	const spells::Target projectedTarget{spells::Destination(projectedAlly.get())};
+	ASSERT_TRUE(projectedMechanics->canBeCastAt(projectedTarget));
+	projectedMechanics->castEval(projected->getServerCallback(), projectedTarget);
+	EXPECT_GT(projectedAlly->guardianSpiritHitPoints, 0)
+		<< "SetStackEffect projection should carry the computed protective pool";
+	EXPECT_EQ(projectedAlly->guardianSpiritRoundsRemaining, 2);
+}
+
+TEST_F(NewHorizonsMagicAITest, GuardianSpiritAIDoesNotCastForSpellLikeOnlyThreat)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareGuardianSpiritCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	auto * active = addStack(BattleSide::ATTACKER,
+		creatureByName("core:peasant"), BattleHex(1, 1), 1);
+	auto * ally = addStack(BattleSide::ATTACKER,
+		creatureByName("core:pikeman"), BattleHex(3, 5), 100);
+	auto * magicalShooter = addStack(BattleSide::DEFENDER,
+		creatureByName("core:magog"), BattleHex(12, 5), 20);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(ally, nullptr);
+	ASSERT_NE(magicalShooter, nullptr);
+	ASSERT_TRUE(magicalShooter->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+	ASSERT_TRUE(battle()->battleCanShoot(magicalShooter, ally->getPosition()));
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -magicalShooter->getMovementRange();
+	magicalShooter->addNewBonus(std::make_shared<Bonus>(immobilized));
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_EQ(ally->guardianSpiritHitPoints, 0);
+}
+
+TEST_F(NewHorizonsMagicAITest, GuardianSpiritAIDoesNotRefreshFullShieldAgainstCoveredThreat)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareGuardianSpiritCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	auto * active = addStack(BattleSide::ATTACKER,
+		creatureByName("core:pikeman"), BattleHex(3, 5), 100);
+	auto * enemyShooter = addStack(BattleSide::DEFENDER,
+		creatureByName("core:marksman"), BattleHex(12, 5), 2);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(enemyShooter, nullptr);
+	ASSERT_TRUE(battle()->battleCanShoot(enemyShooter, active->getPosition()));
+
+	active->guardianSpiritHitPoints = 50;
+	active->guardianSpiritRoundsRemaining = 2;
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_EQ(active->guardianSpiritHitPoints, 50);
+	EXPECT_EQ(active->guardianSpiritRoundsRemaining, 2);
 }
 
 TEST_F(NewHorizonsMagicAITest, SanctuaryAIDoesNotCastAgainOnAnAlreadySanctifiedStack)

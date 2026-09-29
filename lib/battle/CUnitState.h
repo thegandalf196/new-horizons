@@ -213,6 +213,9 @@ public:
 	int64_t physicalPoisonBaseDamage;
 	int32_t physicalPoisonActivationsRemaining;
 	int32_t physicalPoisonSourceStackId;
+	/// Separate Guardian Spirit buffer; only physical creature damage can consume it.
+	int64_t guardianSpiritHitPoints = 0;
+	int32_t guardianSpiritRoundsRemaining = 0;
 
 	CCasts casts;
 	CRetaliations counterAttacks;
@@ -290,6 +293,8 @@ public:
 	int64_t getShadowGiftMaximumHealthLost() const override;
 	int64_t getPhantomIntegrity() const override;
 	int64_t getPhantomInitialIntegrity() const override;
+	int64_t getGuardianSpiritHitPoints() const override;
+	int32_t getGuardianSpiritRoundsRemaining() const override;
 	uint32_t getMaxHealth() const override;
 
 	/// Install the transient Phantom Army durability profile after the stack has
@@ -332,6 +337,7 @@ public:
 
 	void damage(int64_t & amount) override;
 	void damage(int64_t & amount, bool destroyRemains);
+	void damage(int64_t & amount, bool destroyRemains, DamageProvenance provenance);
 	void damageShadowGiftSacrifice(int64_t & amount);
 	void addShadowGiftMaximumHealthLoss(int64_t amount);
 	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power) override;
@@ -367,7 +373,8 @@ public:
 	void onRemoved();
 
 private:
-	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints);
+	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
+		DamageProvenance provenance = DamageProvenance::OTHER);
 	const IUnitEnvironment * env;
 	int64_t phantomInitialIntegrity = 0;
 	int64_t phantomIntegrity = 0;

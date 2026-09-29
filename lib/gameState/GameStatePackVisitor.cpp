@@ -207,6 +207,30 @@ void refreshBloodrageLivingUnits(BattleInfo & battle, const std::vector<BattleSt
 	}
 }
 
+void removeExhaustedGuardianSpirit(BattleInfo & battle, const BattleStackAttacked & hit)
+{
+	if((hit.flags & BattleStackAttacked::GUARDIAN_SPIRIT_EXHAUSTED) == 0)
+		return;
+
+	auto * stack = battle.getStack(hit.stackAttacked, false);
+	if(!stack)
+		return;
+	const auto markers = stack->getBonuses(Selector::type()(BonusType::GUARDIAN_SPIRIT));
+	std::vector<Bonus> markersToRemove;
+	if(markers)
+		for(const auto & marker : *markers)
+			if(marker)
+				markersToRemove.push_back(*marker);
+
+	if(markersToRemove.empty())
+	{
+		stack->guardianSpiritHitPoints = 0;
+		stack->guardianSpiritRoundsRemaining = 0;
+		return;
+	}
+	battle.removeUnitBonus(hit.stackAttacked, markersToRemove);
+}
+
 bool chainGateKillQualifies(BattleInfo & battle, uint32_t attackerId,
 	const std::vector<BattleStackAttacked> & hits)
 {
@@ -1835,7 +1859,10 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	pack.attackerChanges.visit(*this);
 
 	for(BattleStackAttacked & stack : pack.bsa)
+	{
 		battle->updateUnit(stack.newState.id, stack.newState.data, stack.newState.healthDelta);
+		removeExhaustedGuardianSpirit(*battle, stack);
+	}
 	if(pack.relentlessAssaultState)
 		battle->setRelentlessAssaultState(pack.relentlessAssaultSide, *pack.relentlessAssaultState);
 	recordBloodrageDeaths(*battle, bloodrageCandidates);
@@ -2354,6 +2381,8 @@ void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 			injuredStack->removeBonusesRecursive(Bonus::UntilTakingIndirectDamage);
 	}
 	pack.visitTyped(battleVisitor);
+	for(const auto & hit : pack.stacks)
+		removeExhaustedGuardianSpirit(*battle, hit);
 	recordBloodrageDeaths(*battle, bloodrageCandidates);
 	refreshBloodrageLivingUnits(*battle, pack.stacks);
 	for(const auto side : chainGateSides)

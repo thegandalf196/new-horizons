@@ -26,6 +26,7 @@
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpellHandler.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
 #include "../../lib/battle/CUnitState.h"
@@ -549,6 +550,18 @@ bool isCanonicalHolyArmor(const CSpell * spell)
 bool isCanonicalSanctuary(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == "new-horizons:sanctuary";
+}
+
+bool isCanonicalGuardianSpirit(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:guardianSpirit";
+}
+
+bool guardianSpiritAvailableInSavedRules(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	return isCanonicalGuardianSpirit(spell)
+		&& newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::spellAllowedBySavedRoster(battle.getBattle()->getMagicRules(), spell->getId());
 }
 
 struct HolyArmorProtection
@@ -1121,6 +1134,154 @@ bool commandTargetIsLegal(const Battle & battle, BattleSide side, HeroCommand co
 float averageOrderDamage(const DamageEstimation & damage)
 {
 	return static_cast<float>(std::max<int64_t>(0, damage.damage.min + damage.damage.max) / 2);
+}
+
+struct GuardianSpiritShield
+{
+	int64_t hitPoints = 0;
+	int roundsRemaining = 0;
+};
+
+GuardianSpiritShield guardianSpiritShield(const battle::Unit * unit)
+{
+	if(!unit)
+		return {};
+
+	const auto state = unit->acquireState();
+	if(!state)
+		return {};
+
+	return {
+		std::max<int64_t>(0, state->guardianSpiritHitPoints),
+		std::clamp(state->guardianSpiritRoundsRemaining, 0, 2)};
+}
+
+/// Estimate physical creature damage that can reach this one target during the
+/// shield's remaining exposure. Only visible enemy stacks and direct melee or
+/// ranged attacks are considered; spell-like shots, siege weapons, turrets, and
+/// hidden enemy-hero spellbooks are deliberately outside Guardian Spirit's scope.
+float guardianSpiritPhysicalThreat(const battle::Unit * target,
+	const CBattleInfoCallback & battle, int roundsRemaining)
+{
+	if(!target || !target->alive() || target->isGhost() || target->isTurret()
+		|| roundsRemaining <= 0)
+		return 0.0f;
+
+	const int rounds = std::clamp(roundsRemaining, 0, 2);
+	float damagePerRound = 0.0f;
+	for(const auto * attacker : battle.battleGetAllUnits(false))
+	{
+		if(!attacker || !attacker->alive() || !attacker->isValidTarget()
+			|| attacker->isGhost() || attacker->isTurret()
+			|| attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+			|| !battle.battleMatchOwner(attacker, target))
+			continue;
+
+		bool canShootTarget = false;
+		if(attacker->canShoot())
+			for(const auto & targetHex : target->getHexes())
+				if(battle.battleCanShoot(attacker, targetHex))
+				{
+					canShootTarget = true;
+					break;
+				}
+
+		bool canMeleeTarget = false;
+		if(attacker->isMeleeAttacker())
+		{
+			canMeleeTarget = !battle.meleeAttackHexes(attacker, target,
+				attacker->getPosition()).empty();
+			if(!canMeleeTarget)
+				for(const auto & position : battle.battleGetAvailableHexes(attacker, false))
+					if(!battle.meleeAttackHexes(attacker, target, position).empty())
+					{
+						canMeleeTarget = true;
+						break;
+					}
+		}
+
+		float bestAttackThreat = 0.0f;
+		for(const bool shooting : {false, true})
+		{
+			if((shooting && !canShootTarget) || (!shooting && !canMeleeTarget))
+				continue;
+
+			const BattleAttackInfo attack(attacker, target, 0, shooting);
+			if(!attack.physicalDamage)
+				continue;
+
+			const float perAttackDamage = averageOrderDamage(battle.battleEstimateDamage(attack));
+			if(perAttackDamage <= 0.0f)
+				continue;
+
+			const int availableAttacks = std::max(0,
+				AttackPossibility::getAttackCount(*attacker, shooting, battle));
+			int attacksPerFutureActivation = std::max(1, attacker->getTotalAttacks(shooting));
+			if(shooting)
+				if(const auto * attackerState = dynamic_cast<const battle::CUnitState *>(attacker);
+					attackerState && attackerState->shots.isLimited()
+						&& attackerState->shots.available() <= availableAttacks)
+					attacksPerFutureActivation = 0;
+			const float attackEquivalents = static_cast<float>(availableAttacks)
+				+ (rounds > 1 ? 0.5f * static_cast<float>(attacksPerFutureActivation) : 0.0f);
+			bestAttackThreat = std::max(bestAttackThreat, perAttackDamage * attackEquivalents);
+		}
+
+		// A stack chooses either its shot or melee attack, not both. Keep its
+		// strongest relevant mode once, then aggregate independent enemy stacks.
+		damagePerRound += bestAttackThreat;
+	}
+
+	return damagePerRound;
+}
+
+float guardianSpiritMitigationValue(const battle::Unit * liveTarget,
+	const battle::Unit * projectedTarget, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!liveTarget || !projectedTarget || !liveTarget->alive() || !projectedTarget->alive()
+		|| liveTarget->getAvailableHealth() <= 0 || !projectedBattle)
+		return 0.0f;
+
+	const auto before = guardianSpiritShield(liveTarget);
+	const auto after = guardianSpiritShield(projectedTarget);
+	const auto incomingBefore = guardianSpiritPhysicalThreat(projectedTarget, *projectedBattle,
+		before.roundsRemaining);
+	const auto incomingAfter = guardianSpiritPhysicalThreat(projectedTarget, *projectedBattle,
+		after.roundsRemaining);
+	const auto absorbedBefore = std::min(static_cast<long double>(before.hitPoints),
+		static_cast<long double>(incomingBefore));
+	const auto absorbedAfter = std::min(static_cast<long double>(after.hitPoints),
+		static_cast<long double>(incomingAfter));
+	const auto newlyAbsorbed = absorbedAfter - absorbedBefore;
+	if(!std::isfinite(newlyAbsorbed) || newlyAbsorbed <= 0.0L)
+		return 0.0f;
+
+	const auto savedDamage = static_cast<uint64_t>(std::floor(newlyAbsorbed));
+	if(savedDamage == 0)
+		return 0.0f;
+
+	const auto retainedAttackValue = AttackPossibility::calculateDamageReduce(
+		nullptr, projectedTarget, savedDamage, damageCache, projectedBattle);
+	if(retainedAttackValue > 0.0f)
+		return retainedAttackValue;
+
+	const auto maxHealth = liveTarget->getMaxHealth();
+	const auto * creature = liveTarget->unitType();
+	const auto creatureValue = creature ? creature->getAIValue() : 0;
+	if(maxHealth <= 0 || creatureValue <= 0)
+		return std::max(0.0f, retainedAttackValue);
+
+	// A shield still preserves a stack that cannot currently attack. Bound its
+	// fallback value by the target's ordinary creature-health value.
+	const long double healthValue = static_cast<long double>(savedDamage)
+		* static_cast<long double>(creatureValue) / static_cast<long double>(maxHealth);
+	if(!std::isfinite(healthValue) || healthValue <= 0.0L)
+		return std::max(0.0f, retainedAttackValue);
+
+	return static_cast<float>(std::min(healthValue,
+		static_cast<long double>(std::numeric_limits<float>::max())));
 }
 
 /// Estimate visible creature spell pressure without querying a concealed enemy
@@ -2412,7 +2573,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			&& !isCanonicalSoulReaper(*battleCallback, option.spell);
 		const bool unavailableDoom = isCanonicalDoom(option.spell)
 			&& !canonicalDoomAvailableInSavedRules(battleCallback->getBattle()->getMagicRules(), option.spell);
-		return unavailableReanimate || unavailableSoulReaper || unavailableDoom;
+		const bool unavailableGuardianSpirit = isCanonicalGuardianSpirit(option.spell)
+			&& !guardianSpiritAvailableInSavedRules(*battleCallback, option.spell);
+		return unavailableReanimate || unavailableSoulReaper || unavailableDoom
+			|| unavailableGuardianSpirit;
 	});
 
 	LOGFL("I know how %d of them works.", possibleSpells.size());
@@ -2627,6 +2791,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								|| ps.dest.front().unitValue->unitSide() != side)
 								continue;
 						}
+						if(isCanonicalGuardianSpirit(spell)
+							&& (ps.dest.size() != 1 || !ps.dest.front().unitValue
+								|| ps.dest.front().unitValue->unitSide() != side))
+							continue;
 						possibleCasts.push_back(ps);
 					}
 				}
@@ -3181,6 +3349,19 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					const auto * projectedTarget = state->battleGetUnitByID(targetId);
 					const auto mitigationValue = holyArmorMitigationValue(side, liveTarget, projectedTarget,
 						ps.spell->getId(), friendlyAvailableHealth, visibleMagicalSpellThreat, innerCache, state);
+					damageToHostilesScore += mitigationValue * scoreEvaluator.getPositiveEffectMultiplier();
+				}
+				if(isCanonicalGuardianSpirit(ps.spell) && targetId != std::numeric_limits<uint32_t>::max())
+				{
+					const auto * liveTarget = battleCallback->battleGetUnitByID(targetId);
+					const auto * projectedTarget = state->battleGetUnitByID(targetId);
+					const auto mitigationValue = guardianSpiritMitigationValue(liveTarget,
+						projectedTarget, innerCache, state);
+					if(counterspellNegated || mitigationValue <= 0.0f)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
 					damageToHostilesScore += mitigationValue * scoreEvaluator.getPositiveEffectMultiplier();
 				}
 

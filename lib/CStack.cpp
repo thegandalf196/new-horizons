@@ -82,6 +82,29 @@ void CStack::localInit(BattleInfo * battleInfo)
 void CStack::afterNewRound(bool isFirstRound)
 {
 	battle::CUnitState::afterNewRound(isFirstRound);
+	const auto guardianSpiritBonuses = getBonuses(Selector::type()(BonusType::GUARDIAN_SPIRIT));
+	if(!guardianSpiritBonuses || guardianSpiritBonuses->empty())
+	{
+		guardianSpiritHitPoints = 0;
+		guardianSpiritRoundsRemaining = 0;
+	}
+	else
+	{
+		int64_t markerHitPoints = 0;
+		int32_t roundsRemaining = 0;
+		for(const auto & bonus : *guardianSpiritBonuses)
+		{
+			if(!bonus)
+				continue;
+			markerHitPoints = std::max<int64_t>(markerHitPoints, bonus->val);
+			roundsRemaining = std::max<int32_t>(roundsRemaining, bonus->turnsRemain);
+		}
+		// A new or loaded marker initializes a missing pool; otherwise preserve
+		// its partially consumed saved value and only mirror timed expiry.
+		if(guardianSpiritHitPoints == 0)
+			guardianSpiritHitPoints = markerHitPoints;
+		guardianSpiritRoundsRemaining = roundsRemaining;
+	}
 	removeBonusesRecursive(CSelector([](const Bonus * bonus)
 	{
 		return newHorizonsOffense::isNoQuarterRetaliationBonus(bonus);
@@ -188,23 +211,27 @@ std::string CStack::nodeName() const
 	return oss.str();
 }
 
-void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, bool destroyRemains) const
+void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, bool destroyRemains,
+	battle::DamageProvenance provenance) const
 {
 	auto newState = acquireState();
-	prepareAttacked(bsa, rand, newState, destroyRemains);
+	prepareAttacked(bsa, rand, newState, destroyRemains, false, provenance);
 }
 
 void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand,
 	const std::shared_ptr<battle::CUnitState> & customState, bool destroyRemains,
-	const bool bypassTemporaryHitPoints)
+	const bool bypassTemporaryHitPoints, battle::DamageProvenance provenance)
 {
 	auto initialCount = customState->getCount();
+	const auto guardianSpiritBefore = customState->guardianSpiritHitPoints;
 
 	// compute damage and update bsa.damageAmount
 	if(bypassTemporaryHitPoints)
 		customState->damageShadowGiftSacrifice(bsa.damageAmount);
 	else
-		customState->damage(bsa.damageAmount, destroyRemains);
+		customState->damage(bsa.damageAmount, destroyRemains, provenance);
+	if(guardianSpiritBefore > 0 && customState->guardianSpiritHitPoints == 0)
+		bsa.flags |= BattleStackAttacked::GUARDIAN_SPIRIT_EXHAUSTED;
 
 	bsa.killedAmount = initialCount - customState->getCount();
 

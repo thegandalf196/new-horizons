@@ -503,6 +503,8 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	physicalPoisonBaseDamage = other.physicalPoisonBaseDamage;
 	physicalPoisonActivationsRemaining = other.physicalPoisonActivationsRemaining;
 	physicalPoisonSourceStackId = other.physicalPoisonSourceStackId;
+	guardianSpiritHitPoints = other.guardianSpiritHitPoints;
+	guardianSpiritRoundsRemaining = other.guardianSpiritRoundsRemaining;
 	phantomInitialIntegrity = other.phantomInitialIntegrity;
 	phantomIntegrity = other.phantomIntegrity;
 	phantomRoundsRemaining = other.phantomRoundsRemaining;
@@ -775,6 +777,16 @@ int64_t CUnitState::getPhantomIntegrity() const
 int64_t CUnitState::getPhantomInitialIntegrity() const
 {
 	return phantomInitialIntegrity;
+}
+
+int64_t CUnitState::getGuardianSpiritHitPoints() const
+{
+	return guardianSpiritHitPoints;
+}
+
+int32_t CUnitState::getGuardianSpiritRoundsRemaining() const
+{
+	return guardianSpiritRoundsRemaining;
 }
 
 void CUnitState::initializePhantomProfile(int64_t integrity, int32_t duration)
@@ -1090,6 +1102,11 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 		|| physicalPoisonActivationsRemaining > 3
 		|| ((physicalPoisonBaseDamage == 0) != (physicalPoisonActivationsRemaining == 0)))
 		throw std::runtime_error("Invalid physical Poison state");
+	handler.serializeInt("guardianSpiritHitPoints", guardianSpiritHitPoints, 0);
+	handler.serializeInt("guardianSpiritRoundsRemaining", guardianSpiritRoundsRemaining, 0);
+	if(guardianSpiritHitPoints < 0 || guardianSpiritRoundsRemaining < 0
+		|| ((guardianSpiritHitPoints == 0) != (guardianSpiritRoundsRemaining == 0)))
+		throw std::runtime_error("Invalid Guardian Spirit state");
 	handler.serializeInt("phantomInitialIntegrity", phantomInitialIntegrity, 0);
 	handler.serializeInt("phantomIntegrity", phantomIntegrity, 0);
 	handler.serializeInt("phantomRoundsRemaining", phantomRoundsRemaining, 0);
@@ -1149,6 +1166,8 @@ void CUnitState::reset()
 	physicalPoisonBaseDamage = 0;
 	physicalPoisonActivationsRemaining = 0;
 	physicalPoisonSourceStackId = -1;
+	guardianSpiritHitPoints = 0;
+	guardianSpiritRoundsRemaining = 0;
 	phantomInitialIntegrity = 0;
 	phantomIntegrity = 0;
 	phantomRoundsRemaining = 0;
@@ -1213,6 +1232,8 @@ void CUnitState::load(const JsonNode & data)
 	JsonDeserializer deser(nullptr, data);
 	deser.serializeStruct("state", *this);
 	if(phantomInitialIntegrity < 0 || phantomIntegrity < 0 || phantomRoundsRemaining < 0
+		|| guardianSpiritHitPoints < 0 || guardianSpiritRoundsRemaining < 0
+		|| ((guardianSpiritHitPoints == 0) != (guardianSpiritRoundsRemaining == 0))
 		|| regenerationRateMillionths < 0
 		|| regenerationRateMillionths > newHorizonsMagic::REGENERATION_MAX_RATE_MILLIONTHS
 		|| regenerationPendingMicroHealth < 0
@@ -1233,15 +1254,21 @@ void CUnitState::damage(int64_t & amount)
 
 void CUnitState::damage(int64_t & amount, bool destroyRemains)
 {
-	damageInternal(amount, destroyRemains, false);
+	damageInternal(amount, destroyRemains, false, DamageProvenance::OTHER);
+}
+
+void CUnitState::damage(int64_t & amount, bool destroyRemains, DamageProvenance provenance)
+{
+	damageInternal(amount, destroyRemains, false, provenance);
 }
 
 void CUnitState::damageShadowGiftSacrifice(int64_t & amount)
 {
-	damageInternal(amount, false, true);
+	damageInternal(amount, false, true, DamageProvenance::OTHER);
 }
 
-void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints)
+void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
+	DamageProvenance provenance)
 {
 	if(isTimeStopped())
 	{
@@ -1251,6 +1278,15 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	const int32_t firstHPleftBefore = health.getFirstHPleft();
 	const int32_t countBefore = health.getCount();
 	const int32_t maximumCreatureHealth = getMaxHealth();
+	if(amount > 0 && provenance == DamageProvenance::PHYSICAL_CREATURE
+		&& guardianSpiritHitPoints > 0 && guardianSpiritRoundsRemaining > 0)
+	{
+		const auto absorbed = std::min(amount, guardianSpiritHitPoints);
+		amount -= absorbed;
+		guardianSpiritHitPoints -= absorbed;
+		if(guardianSpiritHitPoints == 0)
+			guardianSpiritRoundsRemaining = 0;
+	}
 
 	if(cloned)
 	{
@@ -1283,6 +1319,8 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 
 	if(!alive())
 	{
+		guardianSpiritHitPoints = 0;
+		guardianSpiritRoundsRemaining = 0;
 		// Marks belong to surviving wounds only and must never carry through death.
 		regenerationRateMillionths = 0;
 		regenerationPendingMicroHealth = 0;
@@ -1449,6 +1487,8 @@ void CUnitState::makeGhost()
 {
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
+	guardianSpiritHitPoints = 0;
+	guardianSpiritRoundsRemaining = 0;
 	phantomIntegrity = 0;
 	phantomRoundsRemaining = 0;
 	health.reset();
@@ -1462,6 +1502,8 @@ void CUnitState::onRemoved()
 	// is assembled; clearing the ledger here would make those direct-hit
 	// casualties look like ordinary Necromancy-eligible deaths.
 	health.reset(false);
+	guardianSpiritHitPoints = 0;
+	guardianSpiritRoundsRemaining = 0;
 	phantomIntegrity = 0;
 	phantomRoundsRemaining = 0;
 	ghostPending = false;

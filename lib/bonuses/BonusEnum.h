@@ -224,6 +224,7 @@ class JsonNode;
 	BONUS_NAME(MINIMUM_MORALE) /*minimum final morale while present; value is the floor*/ \
 	BONUS_NAME(SIEGE_RATING) /*additive New Horizons Siege rating; applied to machine output formulas*/ \
 	BONUS_NAME(SANCTIFIED) /*New Horizons Sanctuary: excludes this stack from deliberate direct targeting*/ \
+	BONUS_NAME(GUARDIAN_SPIRIT) /*New Horizons Guardian Spirit: timed physical-damage shield marker; pool lives in battle state*/ \
 
 	/* end of list */
 

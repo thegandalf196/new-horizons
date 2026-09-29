@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "status": "candidate copies; unbound",
+  "copies": [
+    {
+      "source": "guardian-spirit-44.png",
+      "runtime": "Mods/new-horizons/Images/NH_spell_guardian_spirit_44.png",
+      "dimensions": [44, 44],
+      "sha256": "25547da27b1295804e98c878275d74b2607316cd26f9a6b35bd91fd50b3fcd47"
+    },
+    {
+      "source": "guardian-spirit-32.png",
+      "runtime": "Mods/new-horizons/Images/NH_spell_guardian_spirit_32.png",
+      "dimensions": [32, 32],
+      "sha256": "c342877491bc1fabbc4c5fa213e83f9df2f48e428099baa1538ba47a5defbdf0"
+    },
+    {
+      "source": "guardian-spirit-30.png",
+      "runtime": "Mods/new-horizons/Images/NH_spell_guardian_spirit_30.png",
+      "dimensions": [30, 30],
+      "sha256": "bb997e00c878d472e6ac3ec3c575d5c724905a9a12eef71def5323cd9424e142"
+    }
+  ]
+}

@@ -3,6 +3,10 @@ local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
 local HOLY_ARMOR_SPELL = "new-horizons:holyArmor"
+local GUARDIAN_SPIRIT_SPELL = "new-horizons:guardianSpirit"
+local LIGHT_MAGIC_SKILL = "new-horizons:lightMagic"
+local HEALER_PERK = "new-horizons:lightMagic.healer"
+local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
 local HOLY_ARMOR_SPELL_POWER_DIVISOR = 5
 local HOLY_ARMOR_MAX_REDUCTION_PERCENT = 60
 local SLOW_SPELL = "core:slow"
@@ -146,7 +150,7 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	-- Holy Armor has a fixed canonical base; Light rank, Warcasting, and Empower
 	-- affect only its Spell Power-derived term. It has no configured spell
 	-- specialty that should rewrite the fixed percentage.
-	if spellKey == HOLY_ARMOR_SPELL then return end
+	if spellKey == HOLY_ARMOR_SPELL or spellKey == GUARDIAN_SPIRIT_SPELL then return end
 	local tier = math.max(unit:creatureLevel(), 1)
 
 	self:applySpellScaling(mechanics, hero, buffer, tier, spellKey)
@@ -176,6 +180,29 @@ function Script:applyHolyArmorPower(mechanics, buffer, spellKey)
 			-- to the Spell Power term. Preserve this as one independent source.
 			nb.val = math.min(HOLY_ARMOR_MAX_REDUCTION_PERCENT,
 				(nb.val or 0) + spellPowerTerm)
+		end
+	end
+end
+
+function Script:applyGuardianSpiritPower(mechanics, buffer, spellKey)
+	if spellKey ~= GUARDIAN_SPIRIT_SPELL then return end
+
+	local powerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+		2 * mechanics:getEffectPower(), 1,
+		mechanics:getSpellPowerCoefficientBasisPoints())
+	local hero = mechanics:getHeroCaster()
+	if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, HEALER_PERK) then
+		powerTerm = math.floor(powerTerm * 120 / 100)
+	end
+	local pool = 50 + powerTerm
+	if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, GUARDIAN_PERK) then
+		pool = math.floor(pool * 125 / 100)
+	end
+	for _, nb in pairs(buffer) do
+		if nb.type == "GUARDIAN_SPIRIT" then
+			-- The timed marker carries the initial pool through SetStackEffect;
+			-- the authoritative battle state stores its remaining HP separately.
+			nb.val = pool
 		end
 	end
 end
@@ -223,6 +250,7 @@ function Script:apply(mechanics, server, target)
 
 		self:applyHeroSpecialty(mechanics, buffer, unit)
 		self:applyHolyArmorPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
+		self:applyGuardianSpiritPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyTemporalFieldScale(mechanics, buffer, mechanics:getSpell():getJsonKey())
 
 		if describe then

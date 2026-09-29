@@ -42,6 +42,15 @@ namespace BattlePhases
 	};
 }
 
+/// Damage origin is explicit because some defensive effects apply only to
+/// physical creature damage, not every hit that eventually reduces Health.
+enum class DamageProvenance : uint8_t
+{
+	OTHER,
+	PHYSICAL_CREATURE,
+	SPELL,
+};
+
 // Healed HP (also drained life) and resurrected units info
 struct HealInfo
 {
@@ -143,6 +152,10 @@ public:
 	virtual int64_t getPhantomIntegrity() const { return 0; }
 	/// Initial separate durability pool for a Phantom Army stack, or zero for ordinary units.
 	virtual int64_t getPhantomInitialIntegrity() const { return 0; }
+	/// Remaining separate Guardian Spirit pool for a protected stack.
+	virtual int64_t getGuardianSpiritHitPoints() const { return 0; }
+	/// Remaining rounds on the active Guardian Spirit marker, or zero when inactive.
+	virtual int32_t getGuardianSpiritRoundsRemaining() const { return 0; }
 
 	virtual int getTotalAttacks(bool ranged) const = 0;
 	/// Creature Defense with the temporary bonus granted by the Defend action removed.

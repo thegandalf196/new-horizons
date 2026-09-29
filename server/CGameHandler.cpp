@@ -1977,7 +1977,8 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		hit.spellID = soulChainSpell;
 		const auto primaryCreatureId = primary->creatureId();
 		const int32_t primaryCountBeforeEcho = primary->getCount();
-		CStack::prepareAttacked(hit, getRandomGenerator(), primary->acquireState());
+		CStack::prepareAttacked(hit, getRandomGenerator(), primary->acquireState(),
+			false, false, battle::DamageProvenance::SPELL);
 
 		StacksInjured injury;
 		injury.battleID = echo.battleID;

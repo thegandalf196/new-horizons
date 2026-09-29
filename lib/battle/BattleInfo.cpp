@@ -1415,6 +1415,23 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 			&& one.effectRange == b->effectRange;
 		};
 		sta->removeBonusesRecursive(selector);
+		if(one.type == BonusType::GUARDIAN_SPIRIT)
+		{
+			const auto remaining = sta->getBonuses(Selector::type()(BonusType::GUARDIAN_SPIRIT));
+			if(!remaining || remaining->empty())
+			{
+				sta->guardianSpiritHitPoints = 0;
+				sta->guardianSpiritRoundsRemaining = 0;
+			}
+			else
+			{
+				sta->guardianSpiritRoundsRemaining = 0;
+				for(const auto & marker : *remaining)
+					if(marker)
+						sta->guardianSpiritRoundsRemaining = std::max<int32_t>(
+							sta->guardianSpiritRoundsRemaining, marker->turnsRemain);
+			}
+		}
 	}
 }
 
@@ -1513,6 +1530,20 @@ void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool fo
 	if(sta->isTimeStopped() && !timeStopState::isStateBonus(value))
 	{
 		logNetwork->warn("Ignoring new effect on Time Stop unit %d", sta->unitId());
+		return;
+	}
+	if(value.type == BonusType::GUARDIAN_SPIRIT)
+	{
+		if(value.val <= 0 || !Bonus::NTurns(&value) || value.turnsRemain <= 0)
+			throw std::runtime_error("Invalid Guardian Spirit bonus pool or duration");
+
+		// Guardian Spirit is a refreshable pool, not a stackable bonus. The
+		// marker carries the cast-time maximum while the saved unit state carries
+		// the remaining pool consumed by physical damage.
+		sta->removeBonusesRecursive(Selector::type()(BonusType::GUARDIAN_SPIRIT));
+		sta->addNewBonus(std::make_shared<Bonus>(value));
+		sta->guardianSpiritHitPoints = value.val;
+		sta->guardianSpiritRoundsRemaining = value.turnsRemain;
 		return;
 	}
 

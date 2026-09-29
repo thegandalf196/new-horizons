@@ -8,6 +8,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -45,6 +46,7 @@ class NewHorizonsCureTest : public HeroCommandFixture
 {
 protected:
 	bool optIntoNewCure = true;
+	bool enableHealerPerkRules = false;
 	int magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
 	CStack * target = nullptr;
 	CStack * poisonEnemy = nullptr;
@@ -59,6 +61,12 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
+		if(enableHealerPerkRules)
+		{
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		}
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 		if(magicVersion != newHorizonsMagic::CURRENT_RULESET_VERSION)
 		{
@@ -539,6 +547,27 @@ TEST_F(NewHorizonsCureTest, BasicSchoolAndSpellcraftScaleOnlyCuresSpellPowerTerm
 	const auto before = target->getAvailableHealth();
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), cureAction(target)));
 	EXPECT_EQ(target->getAvailableHealth() - before, 68);
+}
+
+TEST_F(NewHorizonsCureTest, HealerPerkRaisesOnlyCuresSpellPowerHealing)
+{
+	enableHealerPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(20, "core:archangel", 10));
+	const auto lightSkill = SecondarySkill(SecondarySkill::decode("new-horizons:lightMagic"));
+	attackerSideHero->setSecSkillLevel(lightSkill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	const auto * spell = SpellID(SpellID::CURE).toSpell();
+	ASSERT_NE(spell, nullptr);
+	spells::BattleCast before(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto ordinaryHealing = spell->battleMechanics(&before)->getEffectValue();
+	ASSERT_EQ(ordinaryHealing, 59);
+
+	attackerSideHero->applyPerkSelection(
+		{"new-horizons:lightMagic", "new-horizons:lightMagic.healer"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:lightMagic", "new-horizons:lightMagic.healer"));
+	spells::BattleCast withPerk(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	EXPECT_EQ(spell->battleMechanics(&withPerk)->getEffectValue(), 65)
+		<< "Only the 34 HP Spell Power-derived component gains 20%; the fixed 25 stays 25";
 }
 
 TEST_F(NewHorizonsCureTest, FullHealthTargetCanBeCleansedBySelectingPoison)

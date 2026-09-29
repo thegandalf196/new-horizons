@@ -172,6 +172,8 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 			stack->physicalPoisonBaseDamage,
 			stack->physicalPoisonActivationsRemaining,
 			newHorizonsBulwark::physicalPoisonTickDamage(stack));
+		result.guardianSpirit = {stack->guardianSpiritHitPoints,
+			stack->guardianSpiritRoundsRemaining};
 		for(const auto effect : stack->activeSpells())
 		{
 			const auto * spell = effect.toSpell();
@@ -317,6 +319,8 @@ newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
 		return newHorizonsBattleStatus::StackStatusIconKind::SPELL_LOCK;
 	if(newHorizonsBattleStatus::isDoom(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::DOOM;
+	if(newHorizonsBattleStatus::isGuardianSpirit(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::GUARDIAN_SPIRIT;
 	if(newHorizonsBattleStatus::isRegeneration(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::REGENERATION;
 	if(newHorizonsBattleStatus::isShadowGift(spellKey))
@@ -569,6 +573,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool vampirism = newHorizonsBattleStatus::isVampirism(spellKey);
 		const bool doom = newHorizonsBattleStatus::isDoom(spellKey);
 		const bool sanctuary = newHorizonsBattleStatus::isSanctuary(spellKey);
+		const bool guardianSpirit = newHorizonsBattleStatus::isGuardianSpirit(spellKey);
 		const auto doomEffect = doom ? newHorizonsBattleStatus::doomStatus(*spellBonuses)
 			: newHorizonsBattleStatus::DoomStatus{};
 		const auto frailty = currentFrailtyStatus(stack, spellKey, spellBonuses);
@@ -580,7 +585,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || vampirism || doom)
+		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || vampirism || doom || guardianSpirit)
 		{
 			const std::string badge = timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
@@ -592,6 +597,8 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 				: doom && doomEffect.active()
 					? newHorizonsBattleStatus::formatBasisPoints(
 						static_cast<int64_t>(doomEffect.damagePenaltyPercent) * 100)
+				: guardianSpirit
+					? TextOperations::formatMetric(displayedStatus.guardianSpirit.remainingHitPoints, 4)
 				: vampirism && displayedStatus.vampirism.active()
 					? newHorizonsBattleStatus::formatBasisPoints(displayedStatus.vampirism.lifestealBasisPoints)
 				: std::to_string(duration);
@@ -615,6 +622,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			// Keep the existing active-spell icon and expose its exact target and
 			// expiration rules on hover without adding another status-panel row.
 			const auto tooltip = effect.toSpell()->getDescriptionTranslated(0);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(guardianSpirit)
+		{
+			const auto tooltip = newHorizonsBattleStatus::guardianSpiritTooltip(
+				effect.toSpell()->getDescriptionTranslated(0), displayedStatus.guardianSpirit);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 		else if(newHorizonsBattleStatus::isRegeneration(spellKey))

@@ -233,6 +233,7 @@ set(test_SRCS
 		server/battles/NewHorizonsBulwarkRulesTest.cpp
 		server/battles/NewHorizonsBulwarkRuntimeTest.cpp
 		server/battles/NewHorizonsBattlecraftTest.cpp
+		server/battles/NewHorizonsGuardianSpiritTest.cpp
 		server/battles/NewHorizonsCommandTest.cpp
 		server/battles/NewHorizonsCombatSkillsTest.cpp
 		server/battles/NewHorizonsPhantomArmyTest.cpp

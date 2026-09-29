@@ -36,6 +36,7 @@ inline constexpr std::string_view TIME_STOP_SPELL_KEY = "new-horizons:timeStop";
 inline constexpr std::string_view SPELL_LOCK_SPELL_KEY = "new-horizons:spellLock";
 inline constexpr std::string_view REGENERATION_SPELL_KEY = newHorizonsMagic::NATURE_REGENERATION_SPELL;
 inline constexpr std::string_view SANCTUARY_SPELL_KEY = "new-horizons:sanctuary";
+inline constexpr std::string_view GUARDIAN_SPIRIT_SPELL_KEY = "new-horizons:guardianSpirit";
 inline constexpr std::string_view SHADOW_GIFT_SPELL_KEY = "new-horizons:shadowGift";
 inline constexpr std::string_view SHADOW_GIFT_TRIGGER_KEY = "core:shadowGift";
 inline constexpr std::string_view VAMPIRISM_SPELL_KEY = "new-horizons:vampirism";
@@ -89,6 +90,29 @@ inline bool isSpellLock(std::string_view spellKey)
 inline bool isSanctuary(std::string_view spellKey)
 {
 	return spellKey == SANCTUARY_SPELL_KEY;
+}
+
+inline bool isGuardianSpirit(std::string_view spellKey)
+{
+	return spellKey == GUARDIAN_SPIRIT_SPELL_KEY;
+}
+
+struct GuardianSpiritStatus
+{
+	int64_t remainingHitPoints = 0;
+	int32_t remainingRounds = 0;
+
+	bool active() const { return remainingHitPoints > 0 && remainingRounds > 0; }
+	bool operator==(const GuardianSpiritStatus &) const = default;
+};
+
+inline std::string guardianSpiritTooltip(std::string_view spellDescription, const GuardianSpiritStatus & status)
+{
+	std::string result(spellDescription);
+	result += "\n\nGuardian Spirit: " + std::to_string(status.remainingHitPoints)
+		+ " protective HP; " + std::to_string(status.remainingRounds) + " rounds remaining.";
+	result += "\nAbsorbs physical creature damage before creature HP. Spell damage bypasses it.";
+	return result;
 }
 
 struct SpellLockStatus
@@ -454,6 +478,7 @@ struct StackInfoStatusSnapshot
 	PhysicalPoisonStatus physicalPoison;
 	TemporaryCreatureStatus temporaryCreatures;
 	RegenerationStatus regeneration;
+	GuardianSpiritStatus guardianSpirit;
 	ShadowGiftStatus shadowGift;
 	VampirismStatus vampirism;
 	DoomStatus doom;

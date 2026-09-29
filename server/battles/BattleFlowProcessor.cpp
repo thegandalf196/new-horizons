@@ -594,7 +594,8 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 				hit.stackAttacked = enemy->unitId();
 				hit.damageAmount = damagePerEnemy;
 				hit.flags |= BattleStackAttacked::SPELL_EFFECT;
-				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), enemy->acquireState());
+				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), enemy->acquireState(),
+					false, false, battle::DamageProvenance::SPELL);
 				MetaString hellfireLine = MetaString::createFromRawString("Hellfire from ");
 				hellfireLine.appendNumber(gated->getCount());
 				hellfireLine.appendRawString(" ");
@@ -1264,7 +1265,8 @@ void applyPlagueEndOfActivation(CGameHandler * gameHandler, const CBattleInfoCal
 		hit.damageAmount = adjustedDamage;
 		hit.flags = BattleStackAttacked::SPELL_EFFECT;
 		hit.spellID = plagueRuntimeSpellId();
-		CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), state);
+		CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), state,
+			false, false, battle::DamageProvenance::SPELL);
 		actualDamage = hit.damageAmount;
 		StacksInjured injury;
 		injury.battleID = battle.getBattle()->getBattleID();
@@ -1778,6 +1780,7 @@ void applyStartOfActivationEffects(CGameHandler * gameHandler,
 	const int64_t poisonTick = newHorizonsBulwark::physicalPoisonTickDamage(state.get());
 	if(creatureStack->alive() && state && poisonTick > 0)
 	{
+		const int64_t guardianSpiritBefore = state->guardianSpiritHitPoints;
 		const auto poisonSourceStackId = state->physicalPoisonSourceStackId;
 		newHorizonsBulwark::advancePhysicalPoison(state.get());
 		BattleStackAttacked hit;
@@ -1785,7 +1788,12 @@ void applyStartOfActivationEffects(CGameHandler * gameHandler,
 			? static_cast<ui32>(poisonSourceStackId) : creatureStack->unitId();
 		hit.stackAttacked = creatureStack->unitId();
 		hit.damageAmount = poisonTick;
-		CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), state);
+		CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), state,
+			false, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+		const int64_t guardianSpiritAbsorbed = std::max<int64_t>(
+			0, guardianSpiritBefore - state->guardianSpiritHitPoints);
+		const int64_t guardianSpiritOverflow = guardianSpiritAbsorbed > 0
+			? std::max<int64_t>(0, poisonTick - guardianSpiritAbsorbed) : 0;
 		if(!state->alive())
 		{
 			newHorizonsBulwark::clearPhysicalPoison(state.get());
@@ -1796,15 +1804,33 @@ void applyStartOfActivationEffects(CGameHandler * gameHandler,
 		injury.stacks.push_back(hit);
 		gameHandler->sendAndApply(injury);
 
-		if(hit.damageAmount > 0)
+		if(hit.damageAmount > 0 || guardianSpiritAbsorbed > 0)
 		{
 			BattleLogMessage message;
 			message.battleID = battle.getBattle()->getBattleID();
 			MetaString line;
-			line.appendRawString("%s suffers ");
-			creatureStack->addNameReplacement(line, creatureStack->getCount());
-			line.appendNumber(hit.damageAmount);
-			line.appendRawString(" physical Poison damage.");
+			if(guardianSpiritAbsorbed > 0)
+			{
+				line.appendRawString("Physical Poison hits %s; Guardian Spirit absorbs ");
+				creatureStack->addNameReplacement(line, creatureStack->getCount());
+				line.appendNumber(guardianSpiritAbsorbed);
+				line.appendRawString(" physical damage");
+				if(guardianSpiritOverflow > 0)
+				{
+					line.appendRawString(" and ");
+					line.appendNumber(guardianSpiritOverflow);
+					line.appendRawString(" damage passes through.");
+				}
+				else
+					line.appendRawString("; no damage passes through.");
+			}
+			else
+			{
+				line.appendRawString("%s suffers ");
+				creatureStack->addNameReplacement(line, creatureStack->getCount());
+				line.appendNumber(hit.damageAmount);
+				line.appendRawString(" physical Poison damage.");
+			}
 			message.lines.push_back(std::move(line));
 			gameHandler->sendAndApply(message);
 		}

@@ -837,8 +837,10 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		const auto & rules = hero->getMagicRules();
 		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
 		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
-		const int64_t coefficientTenThousandths = 15'000LL * coefficientBasisPoints
+		int64_t coefficientTenThousandths = 15'000LL * coefficientBasisPoints
 			* (100 + empowerBonusPercent) / (SPELL_POWER_COEFFICIENT_BASIS_POINTS * 100LL);
+		if(hero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.healer"))
+			coefficientTenThousandths = coefficientTenThousandths * 120 / 100;
 		const std::string spellPowerCoefficient = fixedPointFromScaledValue(coefficientTenThousandths, 4);
 		result = "Targets one friendly living stack. Base healing is 25 + " + spellPowerCoefficient
 			+ " \u00d7 Spell Power HP and cannot resurrect casualties. "

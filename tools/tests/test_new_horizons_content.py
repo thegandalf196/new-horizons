@@ -21,6 +21,7 @@ RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
     'new-horizons:focusMagic',
     'new-horizons:frailty',
+    'new-horizons:guardianSpirit',
     'new-horizons:hexOfPain',
     'new-horizons:holyArmor',
     'new-horizons:holyWrath',
@@ -424,6 +425,29 @@ class NewHorizonsContentTest(unittest.TestCase):
                            ('iconImmune', 30)):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_sanctuary_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+
+    def test_guardian_spirit_is_a_timed_light_physical_shield(self):
+        row = self.rules['spells']['new-horizons:guardianSpirit']
+        self.assertEqual((row['schools'], row['level'], row['costs']),
+                         (['new-horizons:light'], 2, [8, 8, 8, 8]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['guardianSpirit']
+        self.assertEqual((spell['name'], spell['targetType']), ('Guardian Spirit', 'CREATURE'))
+        self.assertTrue(spell['flags']['positive'])
+        self.assertFalse(spell['flags'].get('damage', False))
+        for level in spell['levels'].values():
+            self.assertEqual(level['cost'], 8)
+            marker = level['battleEffects']['guardianSpirit']['bonus']['guardianSpirit']
+            self.assertEqual((marker['type'], marker['duration'], marker['turns']),
+                             ('GUARDIAN_SPIRIT', 'N_TURNS', 2))
+            self.assertTrue(level['targetModifier']['smart'])
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_spell_guardian_spirit_{size}.png')
             self.assertEqual(struct.unpack('>II',
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                 (size, size))

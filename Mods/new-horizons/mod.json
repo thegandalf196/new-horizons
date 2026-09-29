@@ -759,6 +759,18 @@
 							5
 						]
 					},
+					"new-horizons:guardianSpirit": {
+						"schools": [
+							"new-horizons:light"
+						],
+						"level": 2,
+						"costs": [
+							8,
+							8,
+							8,
+							8
+						]
+					},
 					"new-horizons:lifeDrain": {
 						"schools": [
 							"new-horizons:shadow"
@@ -3862,7 +3874,7 @@
 								"requires": "basic",
 								"description": "Cure and Guardian Spirit receive +20% to their Spell Power-derived healing or temporary-HP component.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Cure and Guardian Spirit receive +20% to their Spell Power-derived healing or temporary-HP component."
 								}
 							},
@@ -3892,7 +3904,7 @@
 								"requires": "basic",
 								"description": "Guardian Spirit creates 25% more temporary HP.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Guardian Spirit creates 25% more temporary HP."
 								}
 							},

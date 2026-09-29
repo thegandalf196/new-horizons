@@ -1440,7 +1440,14 @@ void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & batt
 			hit.attackerID = attacker->unitId();
 			hit.stackAttacked = secondary->unitId();
 			hit.damageAmount = proposedDamage;
-			CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), secondary->acquireState());
+			auto secondaryState = secondary->acquireState();
+			const int64_t guardianSpiritBefore = secondaryState->guardianSpiritHitPoints;
+			CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), secondaryState,
+				false, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+			const int64_t guardianSpiritAbsorbed = std::max<int64_t>(
+				0, guardianSpiritBefore - secondaryState->guardianSpiritHitPoints);
+			const int64_t guardianSpiritOverflow = guardianSpiritAbsorbed > 0
+				? std::max<int64_t>(0, proposedDamage - guardianSpiritAbsorbed) : 0;
 			StacksInjured injury;
 			injury.battleID = battle.getBattle()->getBattleID();
 			injury.stacks.push_back(hit);
@@ -1457,6 +1464,20 @@ void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & batt
 				line.appendRawString(" ");
 				line.appendNumber(hit.killedAmount);
 				line.appendRawString(hit.killedAmount == 1 ? " creature perishes." : " creatures perish.");
+			}
+			if(guardianSpiritAbsorbed > 0)
+			{
+				line.appendRawString(" Guardian Spirit absorbs ");
+				line.appendNumber(guardianSpiritAbsorbed);
+				line.appendRawString(" physical damage");
+				if(guardianSpiritOverflow > 0)
+				{
+					line.appendRawString("; ");
+					line.appendNumber(guardianSpiritOverflow);
+					line.appendRawString(" damage passes through.");
+				}
+				else
+					line.appendRawString(" and blocks the entire hit.");
 			}
 		}
 	}
@@ -2781,7 +2802,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		HeroCommand defender = HeroCommand::NONE;
 	};
 	std::vector<ResolvedOrderCauses> resolvedOrderCauses;
-	std::vector<MetaString> archeryFeedbackLogLines;
+	std::vector<MetaString> combatFeedbackLogLines;
 	const auto appendArcheryFeedback = [&](const DamageEstimation & estimation, const battle::Unit * target)
 	{
 		if(!target || !attack.ranged || bat.spellLike())
@@ -2791,7 +2812,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			MetaString line;
 			line.appendRawString("Deadeye rolls maximum creature damage and ignores 25% Creature Defense against %s.");
 			target->addNameReplacement(line, target->getCount());
-			archeryFeedbackLogLines.push_back(std::move(line));
+			combatFeedbackLogLines.push_back(std::move(line));
 		}
 		if(estimation.archeryDefenseIgnorePercent > (estimation.archeryDeadeye
 			? newHorizonsArchery::DEADEYE_DEFENSE_IGNORE_PERCENT : 0))
@@ -2799,18 +2820,37 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			MetaString line;
 			line.appendRawString("Armor-Piercing Shot ignores 20% of Creature Defense against %s.");
 			target->addNameReplacement(line, target->getCount());
-			archeryFeedbackLogLines.push_back(std::move(line));
+			combatFeedbackLogLines.push_back(std::move(line));
 		}
 		if(estimation.archeryCrossfireDamagePercent > 0)
 		{
 			MetaString line;
 			line.appendRawString("Crossfire adds +15% ranged damage against %s.");
 			target->addNameReplacement(line, target->getCount());
-			archeryFeedbackLogLines.push_back(std::move(line));
+			combatFeedbackLogLines.push_back(std::move(line));
 		}
 		if(estimation.archeryHighArc)
-			archeryFeedbackLogLines.push_back(MetaString::createFromRawString(
+			combatFeedbackLogLines.push_back(MetaString::createFromRawString(
 				"High Arc ignores obstacle penalties and halves distance penalties for this ranged attack."));
+	};
+	const auto appendGuardianSpiritFeedback = [&](const DamageEstimation & estimation, const battle::Unit * target)
+	{
+		if(!target || estimation.guardianSpiritAbsorbedDamage <= 0)
+			return;
+		MetaString line;
+		line.appendRawString("Guardian Spirit absorbs ");
+		line.appendNumber(estimation.guardianSpiritAbsorbedDamage);
+		line.appendRawString(" physical damage for %s");
+		target->addNameReplacement(line, target->getCount());
+		if(estimation.guardianSpiritOverflowDamage > 0)
+		{
+			line.appendRawString("; ");
+			line.appendNumber(estimation.guardianSpiritOverflowDamage);
+			line.appendRawString(" damage passes through.");
+		}
+		else
+			line.appendRawString(" and blocks the entire hit.");
+		combatFeedbackLogLines.push_back(std::move(line));
 	};
 	// Brace's pre-emptive strike is dispatched through the counterattack path so
 	// that it happens before the incoming blow, but it must not consume the
@@ -2891,6 +2931,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
 			attack.archeryRangedDamageMultiplierPercent);
 		appendArcheryFeedback(estimation, defender);
+		appendGuardianSpiritFeedback(estimation, defender);
 		if(relentlessAssault && relentlessAssault->eligible
 			&& relentlessAssault->lastRecordedTargetUnitId != defender->unitId()
 			&& std::ranges::any_of(bat.bsa, [defender](const auto & hit)
@@ -2940,6 +2981,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
 			attack.archeryRangedDamageMultiplierPercent);
 		appendArcheryFeedback(estimation, unit);
+		appendGuardianSpiritFeedback(estimation, unit);
 		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
 			resolvedOrderCauses.push_back({unit->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
 		if(!unit->isTimeStopped())
@@ -3268,7 +3310,16 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				const bool toxicSpinesEligible = !attack.ranged
 					&& newHorizonsBulwark::hasToxicSpines(reflectedDefenderHero)
 					&& reflectedDefenderState->bulwarkToxicSpinesRound != currentRound;
-				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), reflectedAttackerState);
+				const int64_t guardianSpiritBefore = reflectedAttackerState->guardianSpiritHitPoints;
+				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), reflectedAttackerState,
+					false, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+				const auto guardianSpiritAbsorbed = std::max<int64_t>(
+					0, guardianSpiritBefore - reflectedAttackerState->guardianSpiritHitPoints);
+				DamageEstimation reflectionFeedback;
+				reflectionFeedback.guardianSpiritAbsorbedDamage = guardianSpiritAbsorbed;
+				reflectionFeedback.guardianSpiritOverflowDamage = guardianSpiritAbsorbed > 0
+					? std::max<int64_t>(0, reflected - guardianSpiritAbsorbed) : 0;
+				appendGuardianSpiritFeedback(reflectionFeedback, attacker);
 				const bool toxicSpinesConsumed = toxicSpinesEligible && hit.damageAmount > 0;
 				if(toxicSpinesConsumed)
 					reflectedDefenderState->bulwarkToxicSpinesRound = currentRound;
@@ -3364,12 +3415,12 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				line.appendRawString("%.");
 				blm.lines.push_back(std::move(line));
 			}
-			for(auto & line : archeryFeedbackLogLines)
-				blm.lines.push_back(std::move(line));
 			if(suppressionLogLine)
 				blm.lines.push_back(std::move(*suppressionLogLine));
 		}
 	}
+	for(auto & line : combatFeedbackLogLines)
+		blm.lines.push_back(std::move(line));
 
 	// sent before the triggers below so that anything they log lands after the attack description
 	gameHandler->sendAndApply(blm);
@@ -3640,8 +3691,23 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	{
 		bsa.damageAmount = battle.getBattle()->getActualDamage(range.damage, attackerState->getCount(), gameHandler->getRandomGenerator());
 		auto defenderState = bai.defender->acquireState();
+		const int64_t incomingDamage = bsa.damageAmount;
+		const int64_t guardianSpiritBefore = defenderState->guardianSpiritHitPoints;
 		const int64_t healthBeforeAttack = def->getAvailableHealth();
-		CStack::prepareAttacked(bsa, gameHandler->getRandomGenerator(), defenderState); //calculate casualties
+		const bool physicalCreatureAttack = bai.physicalDamage
+			&& !attackerState->isTurret()
+			&& !attackerState->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& attackerState->unitSlot() != SlotID::WAR_MACHINES_SLOT;
+		const auto damageProvenance = !bai.physicalDamage
+			? battle::DamageProvenance::SPELL
+			: physicalCreatureAttack ? battle::DamageProvenance::PHYSICAL_CREATURE
+				: battle::DamageProvenance::OTHER;
+		CStack::prepareAttacked(bsa, gameHandler->getRandomGenerator(), defenderState,
+			false, false, damageProvenance); //calculate casualties
+		range.guardianSpiritAbsorbedDamage = std::max<int64_t>(
+			0, guardianSpiritBefore - defenderState->guardianSpiritHitPoints);
+		range.guardianSpiritOverflowDamage = range.guardianSpiritAbsorbedDamage > 0
+			? std::max<int64_t>(0, incomingDamage - range.guardianSpiritAbsorbedDamage) : 0;
 		bool defenderStateChanged = false;
 		const auto * targetHero = battle.battleGetOwnerHero(def);
 		const bool ordinaryPhysicalCreatureAttack = !bat.spellLike()

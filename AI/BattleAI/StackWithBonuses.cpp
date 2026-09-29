@@ -47,6 +47,58 @@ bool timedProjectionEffect(const Bonus * bonus)
 	return Bonus::NTurns(bonus) && projectedEffect(bonus);
 }
 
+bool isGuardianSpiritBonus(const Bonus * bonus)
+{
+	return bonus && bonus->type == BonusType::GUARDIAN_SPIRIT;
+}
+
+const CSelector & guardianSpiritSelector()
+{
+	static const CSelector selector([](const Bonus * bonus)
+	{
+		return isGuardianSpiritBonus(bonus);
+	});
+	return selector;
+}
+
+void applyGuardianSpiritBonus(StackWithBonuses & unit, const Bonus & bonus)
+{
+	if(!isGuardianSpiritBonus(&bonus))
+		return;
+
+	const int32_t rounds = Bonus::NTurns(&bonus) ? std::max<int32_t>(0, bonus.turnsRemain) : 0;
+	unit.guardianSpiritHitPoints = rounds > 0 ? std::max<int64_t>(0, bonus.val) : 0;
+	unit.guardianSpiritRoundsRemaining = rounds;
+}
+
+void applyGuardianSpiritBonuses(StackWithBonuses & unit, const std::vector<Bonus> & bonuses)
+{
+	for(const auto & bonus : bonuses)
+		applyGuardianSpiritBonus(unit, bonus);
+}
+
+void restoreGuardianSpiritFromExistingBonuses(StackWithBonuses & unit)
+{
+	const auto bonuses = unit.getBonuses(guardianSpiritSelector());
+	const Bonus * strongest = nullptr;
+	for(const auto & bonus : *bonuses)
+		if(bonus && (!strongest || bonus->val > strongest->val))
+			strongest = bonus.get();
+
+	if(!strongest)
+	{
+		unit.guardianSpiritHitPoints = 0;
+		unit.guardianSpiritRoundsRemaining = 0;
+		return;
+	}
+
+	const auto rounds = Bonus::NTurns(strongest)
+		? std::max<int32_t>(0, strongest->turnsRemain) : 0;
+	unit.guardianSpiritRoundsRemaining = rounds;
+	if(rounds == 0)
+		unit.guardianSpiritHitPoints = 0;
+}
+
 ui8 timeStopSideMask(BattleSide side)
 {
 	if(side == BattleSide::ATTACKER)
@@ -271,6 +323,7 @@ int32_t StackWithBonuses::getTreeVersion() const
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 {
 	vstd::concatenate(bonusesToAdd, bonus);
+	applyGuardianSpiritBonuses(*this, bonus);
 	treeVersionLocal++;
 }
 
@@ -279,6 +332,7 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 	// Preserve operation order: a preceding local ADD must be visible to refresh.
 	captureEffects();
 	vstd::concatenate(bonusesToUpdate, bonus);
+	applyGuardianSpiritBonuses(*this, bonus);
 	treeVersionLocal++;
 }
 
@@ -305,6 +359,10 @@ void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 {
+	const auto guardianSpiritBonuses = getBonuses(guardianSpiritSelector());
+	const bool removesGuardianSpirit = std::ranges::any_of(*guardianSpiritBonuses,
+		[&](const auto & bonus) { return bonus && selector(bonus.get()); });
+
 	// Parent models materialize fresh bonus pointers. Capture effect values before
 	// suppressing them, including non-timed spells and legacy battle-long effects.
 	captureEffects();
@@ -317,8 +375,9 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 	vstd::erase_if(bonusesToUpdate, [&](const Bonus & b){return selector(&b);});
 	if(projectedEffects)
 		vstd::erase_if(*projectedEffects, [&](const Bonus & b){return selector(&b);});
-
-	treeVersionLocal++;
+	++treeVersionLocal;
+	if(removesGuardianSpirit)
+		restoreGuardianSpiritFromExistingBonuses(*this);
 }
 
 void StackWithBonuses::applyNoQuarter(int32_t moraleActivationsRemaining)
@@ -394,6 +453,7 @@ void StackWithBonuses::advanceTimedRound()
 	age(bonusesToAdd);
 	age(bonusesToUpdate);
 	++treeVersionLocal;
+	restoreGuardianSpiritFromExistingBonuses(*this);
 }
 
 std::string StackWithBonuses::getDescription() const

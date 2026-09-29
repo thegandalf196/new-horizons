@@ -846,8 +846,12 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				// The New Horizons Cure formula has a fixed component and a
 				// Spell-Power component. Target, school, and specialty modifiers
 				// still flow through the usual applySpellBonus call in heal.lua.
-				effectValue = 25 + scaleSpellPowerComponentWithCoefficientBasisPoints(
+				auto powerHealing = scaleSpellPowerComponentWithCoefficientBasisPoints(
 					3LL * effectPower, 2, spellPowerCoefficientBasisPoints);
+				if(const auto * hero = caster->getHeroCaster(); hero && hero->hasActivePerk(
+					"new-horizons:lightMagic", "new-horizons:lightMagic.healer"))
+					powerHealing = powerHealing * 120 / 100;
+				effectValue = 25 + powerHealing;
 			}
 			else
 			{
