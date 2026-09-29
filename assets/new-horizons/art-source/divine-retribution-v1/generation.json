@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "asset": "Provisional Divine Retribution combat spell icon",
+  "generator": "host built-in image_gen",
+  "operation": "new original generation with style references",
+  "source_master": "generation-master.png",
+  "source_dimensions": [1254, 1254],
+  "source_mode": "RGB",
+  "prompt_file": "prompt-divine-retribution.txt",
+  "style_references": [
+    {
+      "file": "assets/new-horizons/art-source/guardian-spirit-v1/master.png",
+      "role": "style only",
+      "note": "Project-created spell art inspected for modeled late-1990s fantasy rendering and material lighting."
+    },
+    {
+      "file": "assets/new-horizons/art-source/holy-armor-v1/exports/master.png",
+      "role": "style only",
+      "note": "Project-created spell art inspected for dramatic metal highlights and an earthy palette."
+    }
+  ],
+  "provenance": "Original generated artwork. The style references are existing project-created art; no original Heroes III artwork or proprietary game asset was used as an input.",
+  "status": "Provisional; native raster inspection performed, in-game review not established."
+}

@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <optional>
 #include <string>
@@ -44,6 +45,7 @@ inline constexpr std::string_view VAMPIRISM_SPELL_KEY = "new-horizons:vampirism"
 inline constexpr std::string_view VAMPIRISM_TRIGGER_KEY = "core:vampirism";
 inline constexpr std::string_view DOOM_SPELL_KEY = "new-horizons:doom";
 inline constexpr std::string_view REANIMATE_SPELL_KEY = "new-horizons:reanimate";
+inline constexpr std::string_view DIVINE_RETRIBUTION_SPELL_KEY = "new-horizons:divineRetribution";
 
 inline bool isRegeneration(std::string_view spellKey)
 {
@@ -68,6 +70,11 @@ inline bool isDoom(std::string_view spellKey)
 inline bool isReanimate(std::string_view spellKey)
 {
 	return spellKey == REANIMATE_SPELL_KEY;
+}
+
+inline bool isDivineRetribution(std::string_view spellKey)
+{
+	return spellKey == DIVINE_RETRIBUTION_SPELL_KEY;
 }
 
 inline bool isTimeStop(std::string_view spellKey)
@@ -221,6 +228,91 @@ inline bool isStatusTrigger(const Bonus & bonus, std::string_view spellKey, std:
 	{
 		return false;
 	}
+}
+
+inline std::optional<int64_t> divineRetributionIntegerParameter(const Bonus & bonus, std::string_view key)
+{
+	if(!bonus.parameters)
+		return std::nullopt;
+
+	try
+	{
+		const auto & parameters = bonus.parameters->toCustom<JsonNode>();
+		if(!parameters.isStruct())
+			return std::nullopt;
+
+		const auto value = parameters.Struct().find(std::string(key));
+		if(value == parameters.Struct().end() || !value->second.isNumber())
+			return std::nullopt;
+
+		return value->second.Integer();
+	}
+	catch(const std::exception &)
+	{
+		return std::nullopt;
+	}
+}
+
+template<typename BonusRange>
+inline DivineRetributionProtectionStatus divineRetributionProtectionStatus(const BonusRange & bonuses)
+{
+	DivineRetributionProtectionStatus result;
+	for(const auto & bonus : bonuses)
+	{
+		if(!bonus || bonus->type != BonusType::DIVINE_RETRIBUTION
+			|| bonus->source != BonusSource::SPELL_EFFECT || bonus->duration != BonusDuration::N_TURNS
+			|| bonus->turnsRemain <= 0 || bonus->val <= 0)
+			continue;
+
+		try
+		{
+			if(bonus->sid.toString() != DIVINE_RETRIBUTION_SPELL_KEY)
+				continue;
+		}
+		catch(const std::exception &)
+		{
+			continue;
+		}
+
+		const auto savedPercent = divineRetributionIntegerParameter(*bonus, "retributionistPercent");
+		const auto retributionistPercent = savedPercent
+			? static_cast<int32_t>(std::clamp<int64_t>(*savedPercent, 100, 120)) : 100;
+		const DivineRetributionProtectionStatus candidate{
+			bonus->val, bonus->turnsRemain, retributionistPercent};
+		if(!result.active() || candidate.rawCap > result.rawCap
+			|| (candidate.rawCap == result.rawCap && candidate.remainingRounds > result.remainingRounds))
+			result = candidate;
+	}
+	return result;
+}
+
+template<typename BonusRange>
+inline DivineRetributionJudgedStatus divineRetributionJudgedStatus(const BonusRange & bonuses)
+{
+	DivineRetributionJudgedStatus result;
+	for(const auto & bonus : bonuses)
+	{
+		if(!bonus || bonus->type != BonusType::DIVINE_RETRIBUTION_JUDGED)
+			continue;
+
+		const auto round = divineRetributionIntegerParameter(*bonus, "round");
+		const auto protectedUnitId = divineRetributionIntegerParameter(*bonus, "protectedUnitId");
+		const auto actualHpDamage = divineRetributionIntegerParameter(*bonus, "actualHpDamage");
+		const auto rawCap = divineRetributionIntegerParameter(*bonus, "rawCap");
+		const auto retributionistPercent = divineRetributionIntegerParameter(*bonus, "retributionistPercent");
+		if(!round || !protectedUnitId || !actualHpDamage || !rawCap || !retributionistPercent
+			|| *round < 0 || *protectedUnitId < 0 || *actualHpDamage < 0 || *rawCap < 0)
+			continue;
+
+		const auto boundedCap = static_cast<int32_t>(std::clamp<int64_t>(*rawCap, 0,
+			std::numeric_limits<int32_t>::max()));
+		const auto boundedPercent = static_cast<int32_t>(std::clamp<int64_t>(*retributionistPercent, 100, 120));
+		result.pendingHolyDamage += divineRetributionPendingHolyDamage(*actualHpDamage,
+			boundedCap, boundedPercent);
+		if(result.judgmentCount < std::numeric_limits<int32_t>::max())
+			++result.judgmentCount;
+	}
+	return result;
 }
 
 struct ShadowGiftStatus
@@ -448,6 +540,31 @@ inline std::string roundsRemaining(int rounds)
 	return std::to_string(rounds) + (rounds == 1 ? " round remaining" : " rounds remaining");
 }
 
+inline std::string divineRetributionProtectionTooltip(std::string_view spellDescription,
+	const DivineRetributionProtectionStatus & status)
+{
+	std::string result(spellDescription);
+	if(!status.active())
+		return result;
+
+	result += "\n\nProtection: this stack returns Holy damage equal to 30% of actual HP damage taken this round, capped at ";
+	result += std::to_string(status.rawCap) + " HP.";
+	if(status.retributionistPercent > 100)
+		result += " Retributionist increases the capped amount by 20%.";
+	result += "\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
+	return result;
+}
+
+inline std::string divineRetributionJudgedTooltip(const DivineRetributionJudgedStatus & status)
+{
+	std::string result = "Divine Retribution - Judged\nPending Holy damage: ";
+	result += std::to_string(status.pendingHolyDamage) + " HP.";
+	result += "\n" + std::to_string(status.judgmentCount)
+		+ (status.judgmentCount == 1 ? " saved damage record awaits resolution." : " saved damage records await resolution.");
+	result += "\nPayout per record: floor(min(floor(actualHpDamage * 30 / 100), rawCap) * retributionistPercent / 100).";
+	return result;
+}
+
 inline std::string regenerationTooltip(std::string_view spellDescription, const RegenerationStatus & status)
 {
 	std::string result(spellDescription);
@@ -521,6 +638,8 @@ struct StackInfoStatusSnapshot
 	DefendStatus defend;
 	PhysicalPoisonStatus physicalPoison;
 	TemporaryCreatureStatus temporaryCreatures;
+	DivineRetributionProtectionStatus divineRetribution;
+	DivineRetributionJudgedStatus divineRetributionJudged;
 	RegenerationStatus regeneration;
 	GuardianSpiritStatus guardianSpirit;
 	ShadowGiftStatus shadowGift;

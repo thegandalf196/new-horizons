@@ -759,6 +759,18 @@
 							13
 						]
 					},
+					"new-horizons:divineRetribution": {
+						"schools": [
+							"new-horizons:light"
+						],
+						"level": 4,
+						"costs": [
+							16,
+							16,
+							16,
+							16
+						]
+					},
 					"new-horizons:sanctuary": {
 						"schools": [
 							"new-horizons:light"
@@ -3956,7 +3968,7 @@
 								"requires": "advanced",
 								"description": "Divine Retribution deals +20% reactive damage.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Divine Retribution deals +20% reactive damage."
 								}
 							},

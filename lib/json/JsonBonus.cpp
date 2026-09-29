@@ -225,8 +225,9 @@ static TBonusParametersPtr loadBonusAddInfo(BonusType type, const JsonNode & val
 			break;
 		}
 		case BonusType::COMBAT_EVENT_TRIGGER:
+		case BonusType::DIVINE_RETRIBUTION:
 		{
-			// the whole addInfo is the script payload - which script runs is the bonus subtype
+			// These effects retain structured script/reactive payloads across battle packets and saves.
 			var = BonusParameters(value);
 			break;
 		}

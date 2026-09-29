@@ -226,6 +226,8 @@ class JsonNode;
 	BONUS_NAME(SANCTIFIED) /*New Horizons Sanctuary: excludes this stack from deliberate direct targeting*/ \
 	BONUS_NAME(GUARDIAN_SPIRIT) /*New Horizons Guardian Spirit: timed physical-damage shield marker; pool lives in battle state*/ \
 	BONUS_NAME(HEAVENLY_GALE) /*New Horizons Heavenly Gale: timed physical projectile reduction in basis points*/ \
+	BONUS_NAME(DIVINE_RETRIBUTION) /*New Horizons Divine Retribution: timed reactive-damage marker on one protected stack*/ \
+	BONUS_NAME(DIVINE_RETRIBUTION_JUDGED) /*New Horizons Divine Retribution: saved per-round attacker judgment and actual HP damage accumulator*/ \
 
 	/* end of list */
 

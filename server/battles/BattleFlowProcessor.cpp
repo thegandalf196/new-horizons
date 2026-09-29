@@ -214,6 +214,12 @@ namespace
 		return false;
 	}
 
+	SpellID divineRetributionSpellID()
+	{
+		static const SpellID id(SpellID::decode("new-horizons:divineRetribution"));
+		return id;
+	}
+
 	void applyStartOfActivationEffects(CGameHandler * gameHandler,
 		const CBattleInfoCallback & battle, const battle::Unit * stack);
 }
@@ -339,6 +345,8 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		if(const auto * hero = battle.battleGetFightingHero(side))
 			spellPointSnapshots.push_back({hero, hero->getNormalSpellPoints(), hero->getBufferSpellPoints()});
+	if(!isFirstRound)
+		resolveDivineRetribution(battle);
 	BattleNextRound bnr;
 	bnr.battleID = battle.getBattle()->getBattleID();
 	logGlobal->debug("Next round starts");
@@ -386,6 +394,108 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 			if(stack->alive() && !stack->isTimeStopped())
 				owner->processBattleEventTriggers(battle, CombatEventType::ROUND_START, stack, nullptr);
 	}
+}
+
+void BattleFlowProcessor::resolveDivineRetribution(const CBattleInfoCallback & battle)
+{
+	const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle());
+	const SpellID spell = divineRetributionSpellID();
+	if(!concrete || !spell.hasValue())
+		return;
+
+	const auto selector = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell))
+		.And(Selector::type()(BonusType::DIVINE_RETRIBUTION_JUDGED));
+	const auto stacks = concrete->getStacksIf([](const CStack *) { return true; });
+	SetStackEffect cleanup;
+	cleanup.battleID = battle.getBattle()->getBattleID();
+
+	for(const auto * stack : stacks)
+	{
+		if(!stack)
+			continue;
+
+		const auto judgments = stack->getBonuses(selector);
+		if(!judgments || judgments->empty())
+			continue;
+
+		std::vector<Bonus> toRemove;
+		for(const auto & judgment : *judgments)
+		{
+			if(!judgment)
+				continue;
+			toRemove.emplace_back(*judgment);
+
+			int64_t judgmentRound = -1;
+			int64_t protectedUnitId = -1;
+			int64_t actualHpDamage = 0;
+			int64_t rawCap = 0;
+			int64_t retributionistPercent = 100;
+			if(judgment->parameters)
+			{
+				try
+				{
+					const auto parameters = judgment->parameters->toCustom<JsonNode>();
+					judgmentRound = parameters["round"].Integer();
+					protectedUnitId = parameters["protectedUnitId"].Integer();
+					actualHpDamage = parameters["actualHpDamage"].Integer();
+					rawCap = parameters["rawCap"].Integer();
+					retributionistPercent = parameters["retributionistPercent"].Integer();
+				}
+				catch(const std::exception &)
+				{
+					// Malformed saved judgments expire without producing damage.
+				}
+			}
+
+			if(judgmentRound != battle.battleGetRound() || actualHpDamage <= 0 || rawCap <= 0
+				|| protectedUnitId < 0
+				|| protectedUnitId > std::numeric_limits<uint32_t>::max())
+				continue;
+			if(retributionistPercent != 120)
+				retributionistPercent = 100;
+			if(!stack->alive())
+				continue;
+
+			const int64_t thirtyPercent = (actualHpDamage / 100) * 30 + (actualHpDamage % 100) * 30 / 100;
+			const int64_t cappedDamage = std::min(thirtyPercent, rawCap);
+			const int64_t payout = cappedDamage * retributionistPercent / 100;
+			if(payout <= 0)
+				continue;
+
+			BattleStackAttacked hit;
+			const auto protectedId = static_cast<uint32_t>(protectedUnitId);
+			hit.attackerID = protectedId;
+			hit.stackAttacked = stack->unitId();
+			hit.damageAmount = payout;
+			hit.flags = BattleStackAttacked::SPELL_EFFECT;
+			hit.spellID = spell;
+			CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), stack->acquireState(),
+				false, false, battle::DamageProvenance::SPELL);
+			if(hit.damageAmount <= 0)
+				continue;
+
+			StacksInjured injury;
+			injury.battleID = battle.getBattle()->getBattleID();
+			injury.stacks.push_back(hit);
+			gameHandler->sendAndApply(injury);
+
+			BattleLogMessage log;
+			log.battleID = injury.battleID;
+			MetaString line;
+			line.appendRawString("Divine Retribution deals ");
+			line.appendNumber(hit.damageAmount);
+			line.appendRawString(" Holy damage to %s.");
+			stack->addNameReplacement(line, stack->getCount());
+			log.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(log);
+		}
+
+		if(!toRemove.empty())
+			cleanup.toRemove.emplace_back(stack->unitId(), std::move(toRemove));
+	}
+
+	if(!cleanup.toRemove.empty())
+		gameHandler->sendAndApply(cleanup);
 }
 
 void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle, bool endOfRoundPhase)

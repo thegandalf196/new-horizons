@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: original square Heroes III-inspired combat spell icon, high-resolution master for reduction to 44×44, 32×32, and 30×30
+Primary request: Provisional Divine Retribution — a miniature fantasy still-life emblem of holy judgment and a punishment held until the turn's end
+Input images: Image 1 and Image 2 are style references only. Use their late-1990s painterly fantasy rendering, modeled materials, earthy backgrounds, and dramatic light/shadow. Do not copy their figures, armor, shield shape, poses, or compositions.
+Scene/backdrop: low-detail dark umber and muted blue-green textured background
+Subject: one substantial antique-gold balance scale of justice, an instantly recognizable physical object with a thick central pillar, broad crossbeam, two sturdy short chains, and two wide shallow pans. Tilt the scale clearly: one pan is raised and empty; the other hangs low, holding one dark broken iron attacker’s blade. A tiny concentrated ivory-white and warm-gold holy flame has just kindled on the black blade, with a bright point of contact and restrained sparks, as if sentence has been passed and the punishment is beginning. Keep the scale itself dominant and its silhouette bold.
+Style/medium: original late-1990s Western PC high-fantasy illustration; miniature modeled still-life painting with pre-rendered physical volume and painterly fantasy-book character, tactile worn metal, not photorealistic
+Composition/framing: close-up centered emblematic composition; the complete scale fills most of the square inside a narrow safe inset, with broad shapes and a clean silhouette designed to remain recognizable at native 44, 32, and 30 pixels
+Lighting/mood: theatrical chiaroscuro, warm bright highlights on one side of the brass and deep shadow on the other; sacred light concentrated at the blade, no broad bloom
+Color palette: antique gold, dark iron, small ivory-white light, earthy umber, subdued blue-green; saturated but never neon
+Materials/textures: convincingly reflective worn brass and charred iron, subtle surface wear, soft modeled contours defined by values and light
+Constraints: original art; one integrated physical scale-and-blade subject; no people or creatures; no shield, armor, angel, wings, bolt, shrine, or architectural setting; no lettering, readable runes, symbols, interface, frame, watermark, photorealism, flat vectors, cartoon outlines, intentional pixel art, dithering, plastic surfaces, mobile-game gloss, neon bloom, or abundant particles

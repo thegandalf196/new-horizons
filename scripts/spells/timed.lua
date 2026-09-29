@@ -5,15 +5,20 @@ Script.__index = Script
 local HOLY_ARMOR_SPELL = "new-horizons:holyArmor"
 local HEAVENLY_GALE_SPELL = "new-horizons:heavenlyGale"
 local GUARDIAN_SPIRIT_SPELL = "new-horizons:guardianSpirit"
+local DIVINE_RETRIBUTION_SPELL = "new-horizons:divineRetribution"
 local LIGHT_MAGIC_SKILL = "new-horizons:lightMagic"
 local HEALER_PERK = "new-horizons:lightMagic.healer"
 local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
 local AEGIS_PERK = "new-horizons:lightMagic.aegis"
+local RETRIBUTIONIST_PERK = "new-horizons:lightMagic.retributionist"
 local HOLY_ARMOR_SPELL_POWER_DIVISOR = 5
 local HOLY_ARMOR_MAX_REDUCTION_PERCENT = 60
 local HEAVENLY_GALE_BASE_REDUCTION_BASIS_POINTS = 5000
 local HEAVENLY_GALE_SPELL_POWER_COEFFICIENT_BASIS_POINTS = 15
 local HEAVENLY_GALE_MAX_REDUCTION_BASIS_POINTS = 8000
+local DIVINE_RETRIBUTION_BASE_DAMAGE = 25
+local DIVINE_RETRIBUTION_POWER_NUMERATOR = 125
+local DIVINE_RETRIBUTION_POWER_DIVISOR = 100
 local SLOW_SPELL = "core:slow"
 local SLOW_BASE_REDUCTION_PERCENT = 20
 local SLOW_SPELL_POWER_DIVISOR = 5
@@ -155,7 +160,8 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	-- These New Horizons effects have authored power terms and no configured
 	-- spell specialty that should rewrite their fixed or derived components.
 	if spellKey == HOLY_ARMOR_SPELL or spellKey == HEAVENLY_GALE_SPELL
-		or spellKey == GUARDIAN_SPIRIT_SPELL then return end
+		or spellKey == GUARDIAN_SPIRIT_SPELL
+		or spellKey == DIVINE_RETRIBUTION_SPELL then return end
 	local tier = math.max(unit:creatureLevel(), 1)
 
 	self:applySpellScaling(mechanics, hero, buffer, tier, spellKey)
@@ -235,6 +241,29 @@ function Script:applyGuardianSpiritPower(mechanics, buffer, spellKey)
 	end
 end
 
+function Script:applyDivineRetributionPower(mechanics, buffer, spellKey)
+	if spellKey ~= DIVINE_RETRIBUTION_SPELL then return end
+
+	local spellPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+		DIVINE_RETRIBUTION_POWER_NUMERATOR * math.max(0, mechanics:getEffectPower()),
+		DIVINE_RETRIBUTION_POWER_DIVISOR,
+		mechanics:getSpellPowerCoefficientBasisPoints())
+	local cap = DIVINE_RETRIBUTION_BASE_DAMAGE + spellPowerTerm
+	local hero = mechanics:getHeroCaster()
+	local retributionistPercent = hero
+		and hero:hasActivePerk(LIGHT_MAGIC_SKILL, RETRIBUTIONIST_PERK) and 120 or 100
+
+	for _, nb in pairs(buffer) do
+		if nb.type == "DIVINE_RETRIBUTION" then
+			-- The fixed 25 stays outside the saved School/Spellcraft/Warcasting/
+			-- Empower coefficient. Retributionist is snapshotted separately so its
+			-- 20% applies after the end-of-round 30%/cap calculation.
+			nb.val = cap
+			nb.addInfo = { retributionistPercent = retributionistPercent }
+		end
+	end
+end
+
 function Script:describeEffect(server, battle, unit, bonuses)
 	-- Age spell: STACK_HEALTH bonus with negative val gets a custom message
 	for _, nb in pairs(bonuses) do
@@ -266,6 +295,7 @@ function Script:apply(mechanics, server, target)
 	local battle   = mechanics:getBattle()
 	local describe = server:describeChanges()
 	local converted = self:convertBonuses(mechanics)
+	local spellKey = mechanics:getSpell():getJsonKey()
 
 	for _, dest in ipairs(target) do
 		local unit = dest.unit
@@ -280,10 +310,21 @@ function Script:apply(mechanics, server, target)
 		self:applyHolyArmorPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyHeavenlyGalePower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyGuardianSpiritPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
+		self:applyDivineRetributionPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyTemporalFieldScale(mechanics, buffer, mechanics:getSpell():getJsonKey())
 
 		if describe then
 			self:describeEffect(server, battle, unit, buffer)
+		end
+
+		if spellKey == DIVINE_RETRIBUTION_SPELL then
+			local previous = unit:getBonuses({ type = "DIVINE_RETRIBUTION" }):filter(function(bonus)
+				return bonus:getSource() == ENUM.BonusSource.spellEffect
+					and bonus:getSourceID() == spellKey
+			end)
+			if previous:size() > 0 then
+				server:removeUnitBonuses(battle, unit, previous)
+			end
 		end
 
 		for _, nb in pairs(buffer) do

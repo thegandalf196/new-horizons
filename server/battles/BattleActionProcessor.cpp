@@ -29,6 +29,7 @@
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
+#include "../../lib/json/JsonNode.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/scripting/ScriptService.h"
 #include "../../lib/combatScripts/ICombatEventScript.h"
@@ -56,6 +57,109 @@ static AttackedTarget unitAboutToBeAttacked(const battle::Unit * unit)
 	target.unit = unit;
 	target.healthBeforeAttack = unit->getAvailableHealth();
 	return target;
+}
+
+static SpellID divineRetributionSpellID()
+{
+	static const SpellID id(SpellID::decode("new-horizons:divineRetribution"));
+	return id;
+}
+
+static void recordDivineRetributionDamage(const CBattleInfoCallback & battle, CGameHandler & gameHandler,
+	const battle::Unit * attacker, const battle::Unit * protectedUnit, int64_t actualHpDamage)
+{
+	if(actualHpDamage <= 0 || !attacker || !protectedUnit || attacker->unitSide() == protectedUnit->unitSide())
+		return;
+
+	const SpellID spell = divineRetributionSpellID();
+	if(!spell.hasValue())
+		return;
+
+	const auto protections = protectedUnit->getBonuses(Selector::type()(BonusType::DIVINE_RETRIBUTION));
+	if(!protections || protections->empty())
+		return;
+
+	SetStackEffect updates;
+	updates.battleID = battle.getBattle()->getBattleID();
+	const auto protectedUnitId = static_cast<int32_t>(protectedUnit->unitId());
+	const auto protectedSubtype = BonusSubtypeID(BonusCustomSubtype(protectedUnitId));
+	const auto round = battle.battleGetRound();
+
+	for(const auto & protection : *protections)
+	{
+		if(!protection || protection->source != BonusSource::SPELL_EFFECT
+			|| protection->sid.as<SpellID>() != spell || protection->turnsRemain <= 0 || protection->val <= 0)
+			continue;
+
+		int32_t retributionistPercent = 100;
+		if(protection->parameters)
+		{
+			try
+			{
+				const auto parameters = protection->parameters->toCustom<JsonNode>();
+				retributionistPercent = static_cast<int32_t>(parameters["retributionistPercent"].Integer());
+			}
+			catch(const std::exception &)
+			{
+				// Legacy or malformed markers retain the unmodified payout.
+			}
+		}
+		if(retributionistPercent != 120)
+			retributionistPercent = 100;
+
+		const auto existing = attacker->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(spell)).And(Selector::typeSubtype(BonusType::DIVINE_RETRIBUTION_JUDGED,
+				protectedSubtype)));
+		int64_t accumulatedDamage = actualHpDamage;
+		std::vector<Bonus> removed;
+		if(existing)
+		{
+			for(const auto & judgment : *existing)
+			{
+				if(!judgment)
+					continue;
+				removed.emplace_back(*judgment);
+				if(judgment->parameters)
+				{
+					try
+					{
+						const auto previous = judgment->parameters->toCustom<JsonNode>();
+						if(previous["round"].Integer() == round)
+						{
+							const auto previousDamage = std::max<int64_t>(0, previous["actualHpDamage"].Integer());
+							if(previousDamage > std::numeric_limits<int64_t>::max() - accumulatedDamage)
+								accumulatedDamage = std::numeric_limits<int64_t>::max();
+							else
+								accumulatedDamage += previousDamage;
+						}
+					}
+					catch(const std::exception &)
+					{
+						// An unreadable marker starts a fresh per-round accumulator.
+					}
+				}
+			}
+		}
+
+		JsonNode parameters;
+		parameters["round"].Integer() = round;
+		parameters["protectedUnitId"].Integer() = protectedUnitId;
+		parameters["actualHpDamage"].Integer() = accumulatedDamage;
+		parameters["rawCap"].Integer() = protection->val;
+		parameters["retributionistPercent"].Integer() = retributionistPercent;
+
+		Bonus judgment(BonusDuration::N_TURNS, BonusType::DIVINE_RETRIBUTION_JUDGED,
+			BonusSource::SPELL_EFFECT, 1, BonusSourceID(spell), protectedSubtype);
+		judgment.turnsRemain = 1;
+		judgment.parameters = std::make_shared<BonusParameters>(parameters);
+
+		if(!removed.empty())
+			updates.toRemove.emplace_back(attacker->unitId(), std::move(removed));
+		updates.toAdd.emplace_back(attacker->unitId(), std::vector<Bonus>{std::move(judgment)});
+	}
+
+	if(!updates.toAdd.empty())
+		gameHandler.sendAndApply(updates);
 }
 
 static bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle,
@@ -3704,6 +3808,8 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 				: battle::DamageProvenance::OTHER;
 		CStack::prepareAttacked(bsa, gameHandler->getRandomGenerator(), defenderState,
 			false, false, damageProvenance); //calculate casualties
+		if(physicalCreatureAttack && attackerState->unitSide() != def->unitSide())
+			recordDivineRetributionDamage(battle, *gameHandler, attackerState.get(), def, bsa.damageAmount);
 		range.guardianSpiritAbsorbedDamage = std::max<int64_t>(
 			0, guardianSpiritBefore - defenderState->guardianSpiritHitPoints);
 		range.guardianSpiritOverflowDamage = range.guardianSpiritAbsorbedDamage > 0

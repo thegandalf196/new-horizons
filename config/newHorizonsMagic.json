@@ -291,6 +291,11 @@
 			"level": 3,
 			"costs": [13, 13, 13, 13]
 		},
+		"new-horizons:divineRetribution": {
+			"schools": ["new-horizons:light"],
+			"level": 4,
+			"costs": [16, 16, 16, 16]
+		},
 		"new-horizons:sanctuary": {
 			"schools": ["new-horizons:light"],
 			"level": 1,

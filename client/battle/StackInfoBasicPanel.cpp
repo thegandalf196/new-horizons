@@ -167,6 +167,16 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	{
 		result.temporaryCreatures = newHorizonsBattleStatus::makeTemporaryCreatureStatus(
 			stack->health.getResurrected());
+		const auto retributionProtectionBonuses = stack->getBonuses(
+			Selector::type()(BonusType::DIVINE_RETRIBUTION));
+		if(retributionProtectionBonuses)
+			result.divineRetribution = newHorizonsBattleStatus::divineRetributionProtectionStatus(
+				*retributionProtectionBonuses);
+		const auto retributionJudgedBonuses = stack->getBonuses(
+			Selector::type()(BonusType::DIVINE_RETRIBUTION_JUDGED));
+		if(retributionJudgedBonuses)
+			result.divineRetributionJudged = newHorizonsBattleStatus::divineRetributionJudgedStatus(
+				*retributionJudgedBonuses);
 		result.shadowGift.maximumHealthLost = stack->getShadowGiftMaximumHealthLost();
 		result.physicalPoison = newHorizonsBattleStatus::makePhysicalPoisonStatus(
 			stack->physicalPoisonBaseDamage,
@@ -319,6 +329,8 @@ newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
 		return newHorizonsBattleStatus::StackStatusIconKind::SPELL_LOCK;
 	if(newHorizonsBattleStatus::isDoom(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::DOOM;
+	if(newHorizonsBattleStatus::isDivineRetribution(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::DIVINE_RETRIBUTION;
 	if(newHorizonsBattleStatus::isGuardianSpirit(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::GUARDIAN_SPIRIT;
 	if(newHorizonsBattleStatus::isHeavenlyGale(spellKey))
@@ -463,6 +475,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	std::vector<StackStatusEntry> statusEntries;
 	std::vector<newHorizonsBattleStatus::StackStatusIconKind> statusKinds;
 	std::size_t hiddenReanimateSpellEffects = 0;
+	std::size_t hiddenJudgedSpellEffects = 0;
 	for(const auto effect : spells)
 	{
 		//not all effects have graphics (for eg. Acid Breath)
@@ -477,6 +490,13 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			// One-battle resurrected creatures are shown once as a generic temporary
 			// count below, rather than as both a spell and a creature-status icon.
 			++hiddenReanimateSpellEffects;
+			continue;
+		}
+		if(spell && newHorizonsBattleStatus::isDivineRetribution(spell->getJsonKey())
+			&& !displayedStatus.divineRetribution.active())
+		{
+			// Judged carries the spell source ID, but is not protection on this stack.
+			++hiddenJudgedSpellEffects;
 			continue;
 		}
 		const auto kind = statusIconKind(effect);
@@ -495,6 +515,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		statusEntries.push_back({newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_CAP, std::nullopt});
 		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_CAP);
 	}
+	const auto retributionJudged = displayedStatus.divineRetributionJudged;
+	if(retributionJudged.active())
+	{
+		statusEntries.push_back({newHorizonsBattleStatus::StackStatusIconKind::DIVINE_RETRIBUTION_JUDGED, std::nullopt});
+		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::DIVINE_RETRIBUTION_JUDGED);
+	}
 	const auto temporaryCreatures = displayedStatus.temporaryCreatures;
 	if(temporaryCreatures.active())
 	{
@@ -503,9 +529,10 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		statusEntries.insert(statusEntries.begin(), temporaryEntry);
 		statusKinds.insert(statusKinds.begin(), newHorizonsBattleStatus::StackStatusIconKind::TEMPORARY_CREATURES);
 	}
-	const auto totalEffectCount = spells.size() - hiddenReanimateSpellEffects
+	const auto totalEffectCount = spells.size() - hiddenReanimateSpellEffects - hiddenJudgedSpellEffects
 		+ (temporaryCreatures.active() ? 1 : 0) + (physicalPoison.active() ? 1 : 0)
-		+ (displayedStatus.shadowGift.hasMaximumHealthLoss() ? 1 : 0);
+		+ (displayedStatus.shadowGift.hasMaximumHealthLoss() ? 1 : 0)
+		+ (retributionJudged.active() ? 1 : 0);
 	const auto displayPlan = newHorizonsBattleStatus::stackStatusDisplayPlan(statusKinds, totalEffectCount);
 	int printed = 0;
 	for(const auto entryIndex : displayPlan.visibleEntryIndices)
@@ -556,6 +583,21 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			++printed;
 			continue;
 		}
+		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::DIVINE_RETRIBUTION_JUDGED)
+		{
+			const SpellID divineRetributionId = SpellID::decode(
+				std::string(newHorizonsBattleStatus::DIVINE_RETRIBUTION_SPELL_KEY));
+			const auto divineRetributionFrame = divineRetributionId.getNum() + 1;
+			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"),
+				divineRetributionFrame, 0, slotX, slotY));
+			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
+				ETextAlignment::BOTTOMRIGHT, Colors::YELLOW,
+				TextOperations::formatMetric(retributionJudged.pendingHolyDamage, 4)));
+			const auto tooltip = newHorizonsBattleStatus::divineRetributionJudgedTooltip(retributionJudged);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+			++printed;
+			continue;
+		}
 
 		const SpellID effect = *entry.spell;
 		//FIXME: support permanent duration
@@ -572,6 +614,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool plague = spellKey == PLAGUE_SPELL_KEY;
 		const bool soulChain = spellKey == newHorizonsSoulChain::SPELL_ID;
 		const bool shadowGift = newHorizonsBattleStatus::isShadowGift(spellKey);
+		const bool divineRetribution = newHorizonsBattleStatus::isDivineRetribution(spellKey);
 		const bool vampirism = newHorizonsBattleStatus::isVampirism(spellKey);
 		const bool doom = newHorizonsBattleStatus::isDoom(spellKey);
 		const bool sanctuary = newHorizonsBattleStatus::isSanctuary(spellKey);
@@ -591,11 +634,13 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || vampirism || doom || guardianSpirit || heavenlyGale)
+		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale)
 		{
 			const std::string badge = timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
 				: spellLock ? std::string(newHorizonsBattleStatus::SPELL_LOCK_BADGE)
+				: divineRetribution && displayedStatus.divineRetribution.active()
+					? std::to_string(displayedStatus.divineRetribution.remainingRounds)
 				: arcaneBreach ? std::to_string(arcaneStatus.markCount())
 				: frailty ? (frailty->hasAccumulatedBasisPoints
 					? newHorizonsBattleStatus::formatBasisPoints(frailty->accumulatedBasisPoints)
@@ -623,6 +668,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			const std::string tooltip = lockStatus
 				? newHorizonsBattleStatus::spellLockTooltip(effect.toSpell()->getDescriptionTranslated(0), *lockStatus)
 				: effect.toSpell()->getDescriptionTranslated(0);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(divineRetribution)
+		{
+			const auto tooltip = newHorizonsBattleStatus::divineRetributionProtectionTooltip(
+				effect.toSpell()->getDescriptionTranslated(0), displayedStatus.divineRetribution);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 		else if(sanctuary)
@@ -706,8 +757,9 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		++printed;
 	}
 
-	if(spells.size() == hiddenReanimateSpellEffects && !temporaryCreatures.active()
-		&& !physicalPoison.active() && !displayedStatus.shadowGift.hasMaximumHealthLoss())
+	if(spells.size() == hiddenReanimateSpellEffects + hiddenJudgedSpellEffects && !temporaryCreatures.active()
+		&& !physicalPoison.active() && !displayedStatus.shadowGift.hasMaximumHealthLoss()
+		&& !retributionJudged.active())
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x, firstPos.y, 48, 36), EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[674]));
 	if(displayPlan.ellipsisUsesSlot)
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x + offset.x * 2, firstPos.y + offset.y * 2 - 4, 48, 36), EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "..."));

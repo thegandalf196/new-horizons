@@ -1169,7 +1169,7 @@
 					"requires": "advanced",
 					"description": "Divine Retribution deals +20% reactive damage.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Divine Retribution deals +20% reactive damage."
 					}
 				},

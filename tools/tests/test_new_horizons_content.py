@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
+    'new-horizons:divineRetribution',
     'new-horizons:focusMagic',
     'new-horizons:frailty',
     'new-horizons:guardianSpirit',
@@ -476,6 +477,34 @@ class NewHorizonsContentTest(unittest.TestCase):
                            ('iconImmune', 30)):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_heavenly_gale_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+
+    def test_divine_retribution_is_rostered_delayed_light_protection(self):
+        row = self.rules['spells']['new-horizons:divineRetribution']
+        self.assertEqual((row['schools'], row['level'], row['costs']),
+                         (['new-horizons:light'], 4, [16, 16, 16, 16]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['divineRetribution']
+        self.assertEqual((spell['name'], spell['targetType']),
+                         ('Divine Retribution', 'CREATURE'))
+        self.assertTrue(spell['flags']['positive'])
+        self.assertFalse(spell['flags'].get('damage', False))
+        light_perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:lightMagic']['perks']
+        retributionist = next(perk for perk in light_perks
+                               if perk['id'] == 'new-horizons:lightMagic.retributionist')
+        self.assertEqual(retributionist['effect']['status'], 'active')
+        for level in spell['levels'].values():
+            self.assertEqual((level['range'], level['cost']), ('0', 16))
+            marker = level['battleEffects']['divineRetribution']['bonus']['judgment']
+            self.assertEqual((marker['type'], marker['val'], marker['duration'], marker['turns']),
+                             ('DIVINE_RETRIBUTION', 25, 'N_TURNS', 2))
+            self.assertTrue(level['targetModifier']['smart'])
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_spell_divine_retribution_{size}.png')
             self.assertEqual(struct.unpack('>II',
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                 (size, size))
