@@ -249,6 +249,34 @@ bool dispelUsesNewHorizonsRules(const JsonNode & rules)
 		&& rules["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 }
 
+bool sorrowRulesEnabled(const JsonNode & rules, const SpellID spell)
+{
+	if(spell != SpellID(SpellID::SORROW)
+		|| !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !rules["spells"].isStruct())
+		return false;
+
+	const auto found = rules["spells"].Struct().find("core:sorrow");
+	if(found == rules["spells"].Struct().end() || !found->second.isStruct())
+		return false;
+
+	const auto & row = found->second;
+	if(!row.isStruct() || !integer(row["level"], 1, 1)
+		|| !row["schools"].isVector() || row["schools"].Vector().size() != 1
+		|| !row["schools"].Vector().front().isString()
+		|| row["schools"].Vector().front().String() != "new-horizons:shadow"
+		|| !row["costs"].isVector() || row["costs"].Vector().size() != 4
+		|| (!row["active"].isNull() && !row["active"].isBool()))
+		return false;
+
+	return spellAllowedBySavedRoster(rules, spell)
+		&& std::ranges::all_of(row["costs"].Vector(), [](const JsonNode & cost)
+	{
+		return integer(cost, 4, 4);
+	});
+}
+
 int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configuredTargetCount)
 {
 	if(configuredTargetCount <= 1 || spell != SpellID(SpellID::CHAIN_LIGHTNING)
@@ -265,6 +293,8 @@ bool expertRangeIsSingleTarget(const JsonNode & rules, SpellID spell)
 	if(!rulesActive(rules)
 		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 		return false;
+	if(spell == SpellID(SpellID::SORROW))
+		return sorrowRulesEnabled(rules, spell);
 
 	switch(spell.getNum())
 	{
@@ -285,7 +315,6 @@ bool expertRangeIsSingleTarget(const JsonNode & rules, SpellID spell)
 	case SpellID::STONE_SKIN:
 	case SpellID::PRAYER:
 	case SpellID::MIRTH:
-	case SpellID::SORROW:
 	case SpellID::FORTUNE:
 	case SpellID::MISFORTUNE:
 	case SpellID::HASTE:
@@ -388,6 +417,24 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		result = "Select the first target. Lightning then jumps to the nearest eligible unstruck creature, "
 			"including friendly stacks. It can strike up to five different stacks at every mastery rank; "
 			"each later jump deals less damage.";
+	}
+	else if(hero && sorrowRulesEnabled(hero->getMagicRules(), spell->getId()))
+	{
+		const auto & rules = hero->getMagicRules();
+		const int32_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
+		const int schoolCoefficient = spellPowerCoefficientPercent(rules, hero, spell->getId());
+		const int combinedCoefficient = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
+		const auto penalty = sorrowMoralePenalty(rules, hero, spell->getId(), spellPower)
+			.value_or(SORROW_BASE_MORALE_PENALTY);
+		result = "Targets one enemy stack for " + std::to_string(SORROW_BASE_DURATION_ROUNDS)
+			+ " rounds. Morale penalty = min(3, 1 + floor(scaled raw Hero Spell Power / 70)). "
+			"Saved v3 Shadow rank scales the Spell Power term by 100% / 115% / 130% / 145% at no rank / Basic / "
+			"Advanced / Expert; Spellcraft efficiency multiplies the School factor. The ordinary cast is single-target "
+			"at every rank. Current Shadow School factor: "
+			+ std::to_string(schoolCoefficient) + "%; combined School and Spellcraft factor: "
+			+ percentFromBasisPoints(combinedCoefficient) + ". At Spell Power " + std::to_string(spellPower)
+			+ ", the ordinary penalty is -" + std::to_string(penalty) + " Morale before battle-only Warcasting. "
+			"Morale remains subject to the global legal range.";
 	}
 
 	if(hero && spell->getId() == SpellID(SpellID::QUICKSAND)
@@ -948,6 +995,23 @@ int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstanc
 	const int schoolCoefficientPercent = spellPowerCoefficientPercent(rules, hero, spell);
 	const int spellcraftCoefficientPercent = spellcraftEfficiencyPercent(rules, registeredSpellcraftRank(hero));
 	return schoolCoefficientPercent * spellcraftCoefficientPercent;
+}
+
+std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInstance * hero,
+	const SpellID spell, const int32_t rawSpellPower, const int warcastingBonusPercent,
+	const int empowerBonusPercent)
+{
+	if(!sorrowRulesEnabled(rules, spell))
+		return std::nullopt;
+	if(rawSpellPower < 0)
+		throw std::invalid_argument("Invalid Sorrow raw Spell Power input");
+
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell);
+	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		rawSpellPower, SORROW_SPELL_POWER_PER_MORALE, coefficientBasisPoints,
+		warcastingBonusPercent, empowerBonusPercent);
+	return SORROW_BASE_MORALE_PENALTY + static_cast<int>(std::min<int64_t>(
+		SORROW_MAX_MORALE_PENALTY - SORROW_BASE_MORALE_PENALTY, scaledPowerTerm));
 }
 
 std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,

@@ -49,12 +49,11 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. After activating the remaining six Archery perks,
-Bulwark's first three Basic perks and six further implemented perks, and Light
-Magic's Benediction and Nature Magic's Herbalist, 81 ranks and 96 perks are marked active, with 12 ranks
-and 214 perks still planned. No
-entry yet has the whole
-UP-023 evidence chain recorded here. The Basic Bulwark source head
+requirements in total. The current registry has 84 active rank effects and 98
+active perks, leaving nine ranks and 212 perks planned. These counts were
+rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
+registration coverage, not proof that every active mechanic has the whole
+UP-023 evidence chain. The Basic Bulwark source head
 `40628d29d92ab0d47282321fd411f5d079f38844` passed Windows build run
 `36360403677` (artifact `10945274902`), but native tests and in-game validation
 are still pending. Deep Bulwark remains planned;
@@ -249,28 +248,28 @@ acquisition without breaking creature abilities or saved compatibility:
 `Scuttle Boat`, `Shield`, `Slayer`, `Stone Skin`, `View Air`, `View Earth`,
 `Visions`, `Water Elemental`, and `Weakness`.
 
-Additional roster corrections: Sorrow belongs to Shadow rather than Chaos;
-Implosion belongs to Sorcery rather than Havoc; Earthquake belongs to Nature
-rather than Havoc; Counterspell is not in the current canonical roster; Master
-Chain Lightning is Solmyr's specialty and must not become an ordinary Guild
-spell. Ice Bolt must not retain its legacy Speed/Initiative reduction.
+Sorrow's Shadow-school correction and exact saved-v3 Morale effect now have
+7/7 authoritative and 3/3 AI projected-score focused native passes. This
+improves effect/rank coverage without adding an identity to the 36/67 total.
+Full AI cast selection and playable/rendered acceptance remain unverified.
+Additional roster corrections: Implosion belongs to Sorcery rather than Havoc;
+Earthquake belongs to Nature rather than Havoc; Counterspell is not in the
+current canonical roster; Master Chain Lightning is Solmyr's specialty and
+must not become an ordinary Guild spell. Ice Bolt must not retain its legacy
+Speed/Initiative reduction.
 
 ## Active slices
 
-1. **Spell Lock:** complete the already implemented canonical mechanic across
-   roster admission, acquisition, AI, feedback and focused evidence.
-2. **Archery:** all four Basic and six Advanced/Expert perks are active.
-   Authoritative mechanics, AI projection, progression, and combat logs are
-   implemented; focused C++ source syntax checks and the 15-case perk-data test
-   pass. Native test execution remains pending: `cmake --build
-   build/new-horizons-linux --target vcmitest -j4` stops during reconfigure at
-   `CMakeLists.txt:846` with `Stale curated module settings: run python3
-   tools/update-new-horizons-module.py`. The generator was not run; unrelated
-   category/bonus mirror drift is preserved. Record native/runtime evidence
-   separately while preserving all three rank effects.
-3. **Bulwark of the Mire:** next full Skill slice after Spell Lock and Archery;
-   validate all three rank effects and implement all ten perks, including turning
-   the existing inaccessible Mireborn hook into a complete selectable mechanic.
+1. **Spell Lock:** the canonical mechanic has source and focused evidence;
+   rendered/playable validation and remaining cross-system cases are separate
+   Phase 2 or delivery work.
+2. **Archery:** all ten perks are active in committed source. The earlier
+   module-reconfigure blocker was cleared before the 2026-09-29 Linux target
+   links; retain the focused perk-data evidence and do not infer rendered or
+   playable acceptance from the build.
+3. **Bulwark of the Mire:** nine perks are active; Deep Bulwark remains planned
+   because the required nonmagical forced-displacement producer is absent.
+   Existing focused native checks do not close its rendered/playable evidence.
 
 Next slices are selected by dependency leverage: remove progression deadlocks,
 reuse generic infrastructure across multiple requirements, and never activate a

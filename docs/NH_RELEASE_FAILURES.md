@@ -15,6 +15,43 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+### September 29 local Shadow Sorrow native-gate incident
+
+- The first Linux `vcmitest` build of the new Sorrow test stopped on two
+  test-fixture type errors: raw `SpellID::SORROW` was passed where
+  `BonusSourceID` needs a wrapped `SpellID`, and a `MasteryLevel` parameter
+  shadowed a non-type identifier. The fixture now wraps the ID and renames the
+  parameter; the later integrated rebuild and curated focused filter passed.
+  No production-code diagnostic appeared in that first pass.
+- The next integrated `vcmitest` compile reached the concurrently edited
+  BattleAI Sorrow valuation and found the same raw-ID-to-`BonusSourceID`
+  conversion at `AI/BattleAI/BattleEvaluator.cpp:147`. The AI owner wrapped
+  the `SpellID`. The following compile reached
+  `NewHorizonsMagicAITest.cpp:3897`, where a local `MasteryLevel` name made a
+  lambda's intended type resolve as a non-type. The AI owner corrected the
+  fixture. After those repairs, the integrated Linux `vcmitest` target linked.
+  The first default-profile Sorrow filter self-skipped because it requires the
+  curated New Horizons profile; the subsequent active-profile run executed.
+- The first active-profile run showed the new Sorrow effect wrapper was not
+  reached: the inherited core effect is registered under `timed`, not
+  `morale`. The worker stopped an expensive sibling AI case after the runtime
+  failures appeared, corrected the wrapper binding and fixture assumptions,
+  and reran the runtime-only filter with a bounded timeout: 7/7 active-profile
+  Sorrow cases passed in 1.61 seconds. No result from the skipped or
+  interrupted run is counted as a pass.
+- The first active-profile v3 AI Sorrow case consumed 45 seconds of CPU and
+  hit its strict timeout (exit 124) without an assertion; the saved-v1 AI case
+  did likewise, and the v2 case was stopped early. Bounded stage probes found
+  the hang before projection or valuation: both fixtures erased spellbook
+  entries while iterating the same spell container. The fixtures no longer do
+  that invalidating clear. A further v3 fixture failure came from not adding
+  Sorrow back to the hero's spellbook, then from an overly strict full-action
+  assertion where a different action could legitimately win. The final bounded
+  active-profile filter checks the real hypothetical effect and production AI
+  target scorer: v3 plus saved v1/v2 pass 3/3 in 1.00 second, with no skips.
+  Full `attemptCastingSpell` selection is recorded for Phase 2, not claimed
+  here. No unbounded rerun was accepted.
+
 ### September 29 local Quicksand native-gate incidents
 
 - An early isolated object build stopped at CMake regeneration because the

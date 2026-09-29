@@ -23,6 +23,7 @@
 #include "../../json/JsonNode.h"
 #include "../../modding/IdentifierStorage.h"
 #include "../../networkPacks/PacksForClientBattle.h"
+#include "../../networkPacks/SetStackEffect.h"
 #include "../../scripting/ScriptService.h"
 #include "../../texts/TextIdentifier.h"
 
@@ -232,6 +233,131 @@ protected:
 	}
 };
 
+class NewHorizonsSorrowEffect final : public Effect
+{
+	std::shared_ptr<Effect> legacyEffect;
+
+	bool enabledForSavedV3(const Mechanics * mechanics) const
+	{
+		if(!mechanics || !mechanics->usesNewHorizonsMagicV3())
+			return false;
+		const auto * battle = mechanics->battle();
+		return battle && battle->getBattle() && newHorizonsMagic::sorrowRulesEnabled(
+			battle->getBattle()->getMagicRules(), mechanics->getSpellId());
+	}
+
+public:
+	explicit NewHorizonsSorrowEffect(std::shared_ptr<Effect> effect)
+		: legacyEffect(std::move(effect))
+	{
+		indirect = legacyEffect->indirect;
+		optional = legacyEffect->optional;
+		name = legacyEffect->name;
+		spellScope = legacyEffect->spellScope;
+		spellIdentifier = legacyEffect->spellIdentifier;
+	}
+
+	void adjustTargetTypes(std::vector<TargetType> & types, const Mechanics * mechanics) const override
+	{
+		legacyEffect->adjustTargetTypes(types, mechanics);
+	}
+
+	void adjustAffectedHexes(BattleHexArray & hexes, const Mechanics * mechanics, const Target & spellTarget) const override
+	{
+		legacyEffect->adjustAffectedHexes(hexes, mechanics, spellTarget);
+	}
+
+	bool applicableGeneral(Problem & problem, const Mechanics * mechanics) const override
+	{
+		return legacyEffect->applicableGeneral(problem, mechanics);
+	}
+
+	bool applicableTarget(Problem & problem, const Mechanics * mechanics, const Target & target) const override
+	{
+		return legacyEffect->applicableTarget(problem, mechanics, target);
+	}
+
+	void apply(ServerCallback * server, const Mechanics * mechanics, const Target & target) const override
+	{
+		if(!enabledForSavedV3(mechanics))
+		{
+			legacyEffect->apply(server, mechanics, target);
+			return;
+		}
+
+		const auto * battle = mechanics->battle();
+		const auto * hero = mechanics->getHeroCaster();
+		const auto penalty = newHorizonsMagic::sorrowMoralePenalty(
+			battle->getBattle()->getMagicRules(), hero, mechanics->getSpellId(), mechanics->getEffectPower(),
+			mechanics->getWarcastingBonusPercent(), mechanics->getEmpowerSpellBonusPercent());
+		if(!penalty)
+			return;
+
+		for(const auto & destination : target)
+		{
+			const auto * stack = dynamic_cast<const CStack *>(destination.unitValue);
+			if(!stack || !stack->alive())
+				continue;
+
+			Bonus morale(BonusDuration::N_TURNS, BonusType::MORALE, BonusSource::SPELL_EFFECT,
+				-*penalty, BonusSourceID(mechanics->getSpellId()));
+			morale.turnsRemain = newHorizonsMagic::SORROW_BASE_DURATION_ROUNDS;
+			morale.description.appendRawString("Shadow's Sorrow");
+
+			SetStackEffect effects;
+			effects.battleID = mechanics->getBattleID();
+			const auto previousSorrow = stack->getBonuses(Selector::source(
+				BonusSource::SPELL_EFFECT, BonusSourceID(mechanics->getSpellId()))
+				.And(Selector::type()(BonusType::MORALE)));
+			if(previousSorrow && !previousSorrow->empty())
+			{
+				std::vector<Bonus> previousBonuses;
+				previousBonuses.reserve(previousSorrow->size());
+				for(const auto & previous : *previousSorrow)
+					if(previous)
+						previousBonuses.push_back(*previous);
+				if(!previousBonuses.empty())
+					effects.toRemove.emplace_back(stack->unitId(), std::move(previousBonuses));
+			}
+			effects.toAdd.emplace_back(stack->unitId(), std::vector<Bonus>{std::move(morale)});
+			server->apply(effects);
+
+			BattleLogMessage message;
+			message.battleID = mechanics->getBattleID();
+			MetaString line;
+			line.appendRawString("Sorrow reduces %s Morale by ");
+			line.appendNumber(*penalty);
+			line.appendRawString(" for ");
+			line.appendNumber(newHorizonsMagic::SORROW_BASE_DURATION_ROUNDS);
+			line.appendRawString(" rounds.");
+			stack->addNameReplacement(line, stack->getCount());
+			message.lines.push_back(std::move(line));
+			server->apply(message);
+		}
+	}
+
+	Target filterTarget(const Mechanics * mechanics, const Target & target) const override
+	{
+		return legacyEffect->filterTarget(mechanics, target);
+	}
+
+	Target transformTarget(const Mechanics * mechanics, const Target & aimPoint, const Target & spellTarget) const override
+	{
+		return legacyEffect->transformTarget(mechanics, aimPoint, spellTarget);
+	}
+
+	SpellEffectValue getHealthChange(const Mechanics * mechanics, const Target & spellTarget) const override
+	{
+		return legacyEffect->getHealthChange(mechanics, spellTarget);
+	}
+
+protected:
+	void initImpl(JsonNode data) override
+	{
+		legacyEffect->init(std::move(data));
+	}
+};
+
 bool disabledForV3(const Effect * effect, const Mechanics * mechanics)
 {
 	const auto * legacyIceBoltEffect = dynamic_cast<const LegacyIceBoltSpeedEffect *>(effect);
@@ -383,6 +509,9 @@ Effects::EffectsMap Effects::loadJson(const JsonNode & effectMap, const std::str
 			effect = std::make_shared<LegacyIceBoltSpeedEffect>(std::move(effect));
 		else if(spellScope == "new-horizons" && spellIdentifier == "poison" && name == "poisoning")
 			effect = std::make_shared<NewHorizonsPhysicalPoisonEffect>(std::move(effect));
+		else if(spellScope == "core" && spellIdentifier == "sorrow"
+			&& (name == "morale" || name == "timed"))
+			effect = std::make_shared<NewHorizonsSorrowEffect>(std::move(effect));
 
 		result.try_emplace(name, std::move(effect));
 	}

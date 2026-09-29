@@ -110,6 +110,83 @@ SpellID stormOfDaggersSpell()
 {
 	return SpellID(SpellID::decode(stormOfDaggersKey));
 }
+
+void setMorale(CStack * stack, int value)
+{
+	if(!stack)
+		return;
+	const int difference = value - stack->moraleVal();
+	if(difference == 0)
+		return;
+	stack->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MORALE, BonusSource::OTHER, difference, BonusSourceID()));
+}
+
+const Bonus * sorrowMoraleBonus(const battle::Unit * unit)
+{
+	if(!unit)
+		return nullptr;
+	const auto bonuses = unit->getBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SORROW)))
+		.And(Selector::type()(BonusType::MORALE)));
+	return bonuses && !bonuses->empty() ? bonuses->front().get() : nullptr;
+}
+
+JsonNode legacyMagicRules(int version)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["rulesetVersion"].Integer() = version;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
+	for(auto & [name, spell] : rules["spells"].Struct())
+	{
+		(void)name;
+		spell.Struct().erase("selectedPlacement");
+	}
+	if(version < newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	{
+		// Saved v1/v2 Sorrow was a Chaos spell with stock level/cost. Preserve
+		// that roster snapshot rather than deriving it from the new v3 row.
+		auto & sorrow = rules["spells"]["core:sorrow"];
+		sorrow.Struct().erase("level");
+		sorrow.Struct().erase("costs");
+		sorrow["schools"].Vector().clear();
+		sorrow["schools"].Vector().emplace_back(std::string("new-horizons:chaos"));
+	}
+
+	if(version == newHorizonsMagic::RULESET_VERSION)
+	{
+		rules.Struct().erase("spellPoints");
+		rules.Struct().erase("mageGuildGeneration");
+		rules.Struct().erase("physicalDamageReductionCapPercent");
+		rules.Struct().erase("warcasting");
+		auto & spells = rules["spells"].Struct();
+		for(auto it = spells.begin(); it != spells.end();)
+		{
+			if(it->first.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
+				it = spells.erase(it);
+			else
+				++it;
+		}
+		for(auto & [factionId, faction] : rules["factions"].Struct())
+		{
+			(void)factionId;
+			faction["major"] = faction["preferredA"];
+			faction["minor"] = faction["preferredB"];
+			faction.Struct().erase("preferredA");
+			faction.Struct().erase("preferredB");
+		}
+		for(auto & [name, spell] : rules["spells"].Struct())
+		{
+			(void)name;
+			spell.Struct().erase("active");
+			spell.Struct().erase("directDamage");
+			spell.Struct().erase("cureAfflictions");
+		}
+	}
+	newHorizonsMagic::validateRules(rules);
+	return rules;
+}
 }
 
 class NewHorizonsMagicAITest : public HeroCommandFixture
@@ -121,12 +198,15 @@ protected:
 	bool neutralizeCommandEffects = false;
 	bool useSavedPerkRules = false;
 	bool useFocusMagic = false;
+	int savedMagicRulesVersion = 0;
 
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		if(useLegacyMagicRules)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		else if(savedMagicRulesVersion > 0)
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, legacyMagicRules(savedMagicRulesVersion));
 		else if(useCurrentMagicRules)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
@@ -168,6 +248,11 @@ protected:
 };
 
 class NewHorizonsDenseMagicAITest : public NewHorizonsMagicAITest, public ::testing::WithParamInterface<bool>
+{
+};
+
+class NewHorizonsLegacySorrowAITest : public NewHorizonsMagicAITest,
+	public ::testing::WithParamInterface<int>
 {
 };
 
@@ -3713,3 +3798,218 @@ TEST_F(NewHorizonsMagicAITest, StormOfDaggersAIValuesSavedSchoolRankAndMagicResi
 		<< "The BattleAI forecast and authoritative cast must share the saved-v3 per-target amount";
 	EXPECT_EQ(resistant->getAvailableHealth(), resistantHealth);
 }
+
+TEST_F(NewHorizonsMagicAITest, CanonicalShadowSorrowAIUsesProjectedRankedMoraleToRankLegalTargets)
+{
+	useCommands = true;
+	neutralizeCommandEffects = true;
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const SpellID sorrow(SpellID::SORROW);
+	const auto shadowSkillId = SecondarySkill::decode("new-horizons:shadowMagic");
+	ASSERT_GE(shadowSkillId, 0);
+	const SecondarySkill shadowMagic(shadowSkillId);
+	attackerSideHero->addSpellToSpellbook(sorrow);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1000);
+	ASSERT_NE(active, nullptr);
+	const auto adjacentHexes = BattleHexArray::getNeighbouringTiles(active->getPosition());
+	ASSERT_GE(adjacentHexes.size(), 2u);
+	auto adjacent = adjacentHexes.begin();
+	auto * highMoraleThreat = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), *adjacent++, 19);
+	auto * lowMoraleThreat = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), *adjacent, 12);
+	ASSERT_NE(highMoraleThreat, nullptr);
+	ASSERT_NE(lowMoraleThreat, nullptr);
+	setMorale(highMoraleThreat, 3);
+	setMorale(lowMoraleThreat, 1);
+
+	const std::set<uint32_t> keepIds{active->unitId(), highMoraleThreat->unitId(), lowMoraleThreat->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	ASSERT_EQ(highMoraleThreat->moraleVal(), 3);
+	ASSERT_EQ(lowMoraleThreat->moraleVal(), 1);
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	const auto highMoraleBefore = highMoraleThreat->moraleVal();
+	const auto lowMoraleBefore = lowMoraleThreat->moraleVal();
+
+	// Spell mechanics apply saved-rules School rank in each hypothetical cast;
+	// score each legal projection with the production AI helper to assert its
+	// rank-sensitive target ordering. End-to-end action selection against the
+	// ordinary active-stack baseline remains deferred to Phase 2.
+	const std::array<uint32_t, 2> targetIds{highMoraleThreat->unitId(), lowMoraleThreat->unitId()};
+	std::array<std::array<float, 2>, 2> targetScores{};
+	std::array<std::array<int, 2>, 2> projectedMorale{};
+	std::array<std::array<int, 2>, 2> projectedPenalty{};
+	std::array<int32_t, 2> effectPowerByRank{};
+	std::array<int32_t, 2> effectPowerDivisorByRank{};
+	for(const auto [rankIndex, rank] : {std::pair{0, MasteryLevel::NONE}, std::pair{1, MasteryLevel::EXPERT}})
+	{
+		attackerSideHero->setSecSkillLevel(shadowMagic, rank, ChangeValueMode::ABSOLUTE);
+		for(size_t targetIndex = 0; targetIndex < targetIds.size(); ++targetIndex)
+		{
+			auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+			const auto * castTarget = projected->battleGetUnitByID(targetIds[targetIndex]);
+			ASSERT_NE(castTarget, nullptr);
+			spells::BattleCast preview(projected.get(), attackerSideHero, spells::Mode::HERO, sorrow.toSpell());
+			auto mechanics = sorrow.toSpell()->battleMechanics(&preview);
+			ASSERT_FALSE(mechanics->isMassive());
+			effectPowerByRank[rankIndex] = mechanics->getEffectPower();
+			effectPowerDivisorByRank[rankIndex] = mechanics->getEffectPowerDivisor();
+			const spells::Target aim{spells::Destination(castTarget)};
+			ASSERT_TRUE(mechanics->canBeCastAt(aim));
+			mechanics->castEval(projected->getServerCallback(), aim);
+			const auto * projectedTarget = projected->battleGetUnitByID(targetIds[targetIndex]);
+			ASSERT_NE(projectedTarget, nullptr);
+			projectedMorale[rankIndex][targetIndex] = projectedTarget->moraleVal();
+			const auto * effect = sorrowMoraleBonus(projectedTarget);
+			ASSERT_NE(effect, nullptr);
+			EXPECT_EQ(effect->turnsRemain, 3);
+			projectedPenalty[rankIndex][targetIndex] = -effect->val;
+
+			DamageCache projectedDamage;
+			projectedDamage.buildDamageCache(projected, BattleSide::ATTACKER);
+			const auto * originalTarget = battle()->battleGetUnitByID(targetIds[targetIndex]);
+			ASSERT_NE(originalTarget, nullptr);
+			targetScores[rankIndex][targetIndex] = BattleEvaluator::estimateProjectedSorrowTargetValue(
+				originalTarget, projectedTarget, projectedDamage, projected);
+		}
+	}
+	EXPECT_EQ(effectPowerByRank[0], 100);
+	EXPECT_EQ(effectPowerByRank[0], effectPowerByRank[1]);
+	EXPECT_GT(effectPowerDivisorByRank[0], 0);
+	EXPECT_EQ(effectPowerDivisorByRank[0], effectPowerDivisorByRank[1]);
+	EXPECT_EQ(projectedPenalty[0][0], 2)
+		<< "raw effect power " << effectPowerByRank[0] << ", legacy divisor " << effectPowerDivisorByRank[0];
+	EXPECT_EQ(projectedPenalty[1][0], 3)
+		<< "raw effect power " << effectPowerByRank[1] << ", legacy divisor " << effectPowerDivisorByRank[1];
+	EXPECT_EQ(projectedPenalty[0][1], 2);
+	EXPECT_EQ(projectedPenalty[1][1], 3);
+	EXPECT_EQ(projectedMorale[0][0], 1);
+	EXPECT_EQ(projectedMorale[1][0], 0)
+		<< "At 100 raw Spell Power, saved-v3 Expert Shadow crosses the next penalty threshold";
+	EXPECT_EQ(projectedMorale[0][1], -1);
+	EXPECT_EQ(projectedMorale[1][1], -2);
+
+	spells::BattleCast liveCast(battle(), attackerSideHero, spells::Mode::HERO, sorrow.toSpell());
+	const auto liveMechanics = sorrow.toSpell()->battleMechanics(&liveCast);
+	const auto viableTargets = SpellTargetEvaluator::getViableTargets(liveMechanics.get());
+	ASSERT_EQ(viableTargets.size(), 2u);
+	for(const auto & target : viableTargets)
+	{
+		ASSERT_EQ(target.size(), 1u);
+		ASSERT_NE(target.front().unitValue, nullptr);
+		EXPECT_TRUE(target.front().unitValue->unitId() == highMoraleThreat->unitId()
+			|| target.front().unitValue->unitId() == lowMoraleThreat->unitId());
+	}
+
+	// At no rank the larger +3-Morale stack has the higher expected activation
+	// loss. Expert rank pushes the +1-Morale stack farther into negative Morale,
+	// making its projected Sorrow score higher and flipping the legal-target pick.
+	EXPECT_GT(targetScores[0][0], targetScores[0][1]);
+	EXPECT_GT(targetScores[1][1], targetScores[1][0]);
+
+	EXPECT_EQ(highMoraleThreat->moraleVal(), highMoraleBefore);
+	EXPECT_EQ(lowMoraleThreat->moraleVal(), lowMoraleBefore);
+	EXPECT_EQ(sorrowMoraleBonus(highMoraleThreat), nullptr);
+	EXPECT_EQ(sorrowMoraleBonus(lowMoraleThreat), nullptr);
+}
+
+TEST_P(NewHorizonsLegacySorrowAITest, SavedV1AndV2AIStillValuesLegacyMassSorrow)
+{
+	useCommands = true;
+	neutralizeCommandEffects = true;
+	useRealHeroScale = true;
+	savedMagicRulesVersion = GetParam();
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), GetParam());
+
+	const SpellID sorrow(SpellID::SORROW);
+	const auto chaosSkillId = SecondarySkill::decode("new-horizons:chaosMagic");
+	ASSERT_GE(chaosSkillId, 0);
+	const SecondarySkill chaosMagic(chaosSkillId);
+	attackerSideHero->addSpellToSpellbook(sorrow);
+	attackerSideHero->setSecSkillLevel(chaosMagic, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1000);
+	auto * firstEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 3), 10);
+	auto * secondEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 7), 10);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(firstEnemy, nullptr);
+	ASSERT_NE(secondEnemy, nullptr);
+	setMorale(firstEnemy, 1);
+	setMorale(secondEnemy, 1);
+
+	const std::set<uint32_t> keepIds{active->unitId(), firstEnemy->unitId(), secondEnemy->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	const auto * spell = sorrow.toSpell();
+	ASSERT_NE(spell, nullptr);
+	spells::BattleCast liveCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto liveMechanics = spell->battleMechanics(&liveCast);
+	EXPECT_TRUE(liveMechanics->isMassive());
+	const auto viableTargets = SpellTargetEvaluator::getViableTargets(liveMechanics.get());
+	ASSERT_EQ(viableTargets.size(), 1u);
+	EXPECT_TRUE(viableTargets.front().empty());
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto firstMoraleBefore = firstEnemy->moraleVal();
+	const auto secondMoraleBefore = secondEnemy->moraleVal();
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	spells::BattleCast preview(projected.get(), attackerSideHero, spells::Mode::HERO, spell);
+	auto projectedMechanics = spell->battleMechanics(&preview);
+	const auto projectedTargets = SpellTargetEvaluator::getViableTargets(projectedMechanics.get());
+	ASSERT_EQ(projectedTargets.size(), 1u);
+	projectedMechanics->castEval(projected->getServerCallback(), projectedTargets.front());
+	const auto * projectedFirst = projected->battleGetUnitByID(firstEnemy->unitId());
+	const auto * projectedSecond = projected->battleGetUnitByID(secondEnemy->unitId());
+	ASSERT_NE(projectedFirst, nullptr);
+	ASSERT_NE(projectedSecond, nullptr);
+	ASSERT_NE(sorrowMoraleBonus(projectedFirst), nullptr);
+	ASSERT_NE(sorrowMoraleBonus(projectedSecond), nullptr);
+	EXPECT_LT(projectedFirst->moraleVal(), firstEnemy->moraleVal());
+	EXPECT_LT(projectedSecond->moraleVal(), secondEnemy->moraleVal());
+
+	// Legacy v1/v2 still use their saved mass-target effect. Score each applied
+	// target with the same production AI value helper used by candidate scoring.
+	DamageCache projectedDamage;
+	projectedDamage.buildDamageCache(projected, BattleSide::ATTACKER);
+	const float legacyMassSorrowValue = BattleEvaluator::estimateProjectedSorrowTargetValue(
+		firstEnemy, projectedFirst, projectedDamage, projected)
+		+ BattleEvaluator::estimateProjectedSorrowTargetValue(secondEnemy, projectedSecond, projectedDamage, projected);
+	EXPECT_GT(legacyMassSorrowValue, 0.0f);
+
+	EXPECT_EQ(firstEnemy->moraleVal(), firstMoraleBefore);
+	EXPECT_EQ(secondEnemy->moraleVal(), secondMoraleBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(sorrowMoraleBonus(firstEnemy), nullptr);
+	EXPECT_EQ(sorrowMoraleBonus(secondEnemy), nullptr);
+}
+
+INSTANTIATE_TEST_SUITE_P(SavedProfiles, NewHorizonsLegacySorrowAITest,
+	::testing::Values(newHorizonsMagic::RULESET_VERSION,
+		newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION));

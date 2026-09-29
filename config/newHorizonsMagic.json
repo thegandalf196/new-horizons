@@ -745,7 +745,14 @@
 		},
 		"core:sorrow": {
 			"schools": [
-				"new-horizons:chaos"
+				"new-horizons:shadow"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				4,
+				4
 			]
 		},
 		"core:stoneSkin": {

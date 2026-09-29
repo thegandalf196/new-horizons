@@ -46,6 +46,10 @@ constexpr int SPELL_POINTS_INTELLIGENCE_MAXIMUM_PERCENT = 130;
 constexpr int BLESS_BASE_DURATION = 2;
 constexpr int BLESS_MAX_DURATION = 4;
 constexpr int BLESS_SPELL_POWER_DURATION_DIVISOR = 80;
+constexpr int SORROW_BASE_DURATION_ROUNDS = 3;
+constexpr int SORROW_SPELL_POWER_PER_MORALE = 70;
+constexpr int SORROW_BASE_MORALE_PENALTY = 1;
+constexpr int SORROW_MAX_MORALE_PENALTY = 3;
 constexpr int CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3 = 5;
 constexpr int QUICKSAND_BASE_PATCH_COUNT_V3 = 2;
 constexpr int QUICKSAND_MAX_PATCH_COUNT_V3 = 5;
@@ -122,6 +126,9 @@ DLL_LINKAGE bool berserkUsesSingleCreatureTarget(const JsonNode & rules);
 /// True only for saved v3 battles, where Dispel uses New Horizons' friend-or-foe
 /// single-stack effect instead of core targeting and Expert obstacle removal.
 DLL_LINKAGE bool dispelUsesNewHorizonsRules(const JsonNode & rules);
+/// True only when the saved-v3 roster contains canonical Level-1 Shadow Sorrow
+/// at its fixed four-Mana cost. Earlier snapshots keep their recorded spell.
+DLL_LINKAGE bool sorrowRulesEnabled(const JsonNode & rules, SpellID spell);
 /// Applies the saved v3 fixed-five Chain Lightning target count while keeping
 /// the configured, mastery-dependent value for legacy/v1/v2 battles.
 DLL_LINKAGE int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configuredTargetCount);
@@ -168,6 +175,13 @@ DLL_LINKAGE int spellPowerCoefficientPercent(const JsonNode & rules, const CGHer
 /// derived term: 10000 is 100%. No rounding is done while composing factors.
 /// Spellcraft is read from the hero's registered new-horizons:spellcraft Skill.
 DLL_LINKAGE int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell);
+/// Saved-v3 Sorrow's positive Morale penalty magnitude, or nullopt for legacy,
+/// missing, or non-canonical saved spell rows. The School × Spellcraft factors,
+/// Warcasting, and Empower scale raw Hero Spell Power before the final /70
+/// floor. Sorrow deliberately ignores the legacy primary-growth divisor.
+DLL_LINKAGE std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInstance * hero,
+	SpellID spell, int32_t rawSpellPower, int warcastingBonusPercent = 0,
+	int empowerSpellBonusPercent = 0);
 /// Saved-v3 Quicksand count, or nullopt for any other spell/profile. School,
 /// Spellcraft, Warcasting, and Empower scale only the Spell-Power term.
 DLL_LINKAGE std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,

@@ -50,6 +50,9 @@ public:
 	std::vector<BattleHex> getBrokenWallMoatHexes() const;
 	bool hasWorkingTowers() const;
 	void evaluateCreatureSpellcast(const CStack * stack, PossibleSpellcast & ps); //for offensive damaging spells only
+	/// Shared projected value for one Sorrow target; public for deterministic AI-focused tests.
+	static float estimateProjectedSorrowTargetValue(const battle::Unit * original, const battle::Unit * projected,
+		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle);
 	void print(const std::string & text) const;
 	BattleAction moveOrAttack(const CStack * stack, const BattleHex & hex, const PotentialTargets & targets);
 
