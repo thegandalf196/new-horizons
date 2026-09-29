@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../../lib/battle/CBattleInfoCallback.h"
+#include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "MagicArrowOverchargeWindow.h"
 #include "SelectiveDispelWindow.h"
 #include "TemporalFieldWindow.h"
@@ -45,6 +46,21 @@ struct StormOfDaggersSelectionPreview
 	bool canConfirm = false;
 	std::string status;
 	std::vector<StormOfDaggersTargetPreview> targets;
+};
+
+struct SoulChainTargetPreview
+{
+	uint32_t unitId = 0;
+	std::string name;
+};
+
+struct SoulChainSelectionPreview
+{
+	int32_t selectedTargetCount = 0;
+	int32_t maximumTargetCount = newHorizonsSoulChain::MAX_TARGETS;
+	bool canConfirm = false;
+	std::string status;
+	std::vector<SoulChainTargetPreview> targets;
 };
 
 using MagicArrowOverchargeFactory = std::function<std::optional<MagicArrowOverchargeContext>(
@@ -102,6 +118,14 @@ class BattleActionsController
 	BattleSide stormOfDaggersSide = BattleSide::NONE;
 	int32_t stormOfDaggersRound = -1;
 	ObjectInstanceID stormOfDaggersHeroID = ObjectInstanceID::NONE;
+	/// Ordered player selection for canonical New Horizons Soul Chain. The first
+	/// live unit identity is the primary; following IDs are optional secondaries.
+	std::vector<uint32_t> soulChainSelectedUnitIds;
+	BattleID soulChainBattleID;
+	std::optional<PlayerColor> soulChainPlayer;
+	BattleSide soulChainSide = BattleSide::NONE;
+	int32_t soulChainRound = -1;
+	ObjectInstanceID soulChainHeroID = ObjectInstanceID::NONE;
 	/// Ordered enemy/friendly identities selected for New Horizons Life Drain.
 	std::vector<uint32_t> lifeDrainSelectedUnitIds;
 	BattleID lifeDrainBattleID;
@@ -182,6 +206,11 @@ class BattleActionsController
 	bool stormOfDaggersTargetsAreLegal(const std::vector<uint32_t> & unitIds) const;
 	void updateStormOfDaggersSelectionStatus(const BattleHex & hoveredHex);
 	void selectStormOfDaggersTarget(const BattleHex & clickedHex);
+	bool soulChainSelectionContextIsCurrent() const;
+	bool soulChainTargetsAreLegal(const std::vector<uint32_t> & unitIds) const;
+	bool soulChainTargetIsLegal(uint32_t unitId) const;
+	void updateSoulChainSelectionStatus(const BattleHex & hoveredHex);
+	void selectSoulChainTarget(const BattleHex & clickedHex);
 	bool lifeDrainTargetSelectionModeActive() const;
 	bool lifeDrainSelectionContextIsCurrent() const;
 	bool lifeDrainTargetsAreLegal(const std::vector<uint32_t> & unitIds) const;
@@ -235,6 +264,14 @@ public:
 	StormOfDaggersSelectionPreview getStormOfDaggersSelectionPreview() const;
 	void confirmStormOfDaggersTargets();
 	void undoStormOfDaggersTarget();
+	/// Soul Chain selects an ordered primary followed by up to two secondary IDs.
+	bool soulChainTargetSelectionModeActive() const;
+	const std::vector<uint32_t> & soulChainSelectedTargetIds() const;
+	int soulChainSelectionOrder(uint32_t unitId) const;
+	bool soulChainTargetHexIsLegal(const BattleHex & hex) const;
+	SoulChainSelectionPreview getSoulChainSelectionPreview() const;
+	void confirmSoulChainTargets();
+	void undoSoulChainTarget();
 
 	/// True only for the saved-ruleset canonical Fire Wall selector.
 	bool fireWallPlacementModeActive() const;

@@ -199,5 +199,20 @@
 			"additionalProperties" : false
 		},
 		"description" : "Inert spell-status marker; Plague resolution is authoritative in the battle flow."
+	},
+	"soulChainStatus" : {
+		"implements" : "combatEvent",
+		"script" : "combat/soulChainStatus",
+		"patches" : [ ],
+		"priority" : 0,
+		"schema" : {
+			"required" : ["primaryUnitId", "casterSide"],
+			"properties" : {
+				"primaryUnitId" : { "type" : "number", "description" : "linked primary enemy unit" },
+				"casterSide" : { "type" : "integer", "enum" : [0, 1], "description" : "battle side whose hero cast Soul Chain" }
+			},
+			"additionalProperties" : false
+		},
+		"description" : "Inert Soul Chain link marker; echo resolution is authoritative in battle damage packets."
 	}
 }

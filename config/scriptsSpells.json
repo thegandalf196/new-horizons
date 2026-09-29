@@ -148,6 +148,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"soulChainEffect" : {
+		"implements" : "spellEffect",
+		"script" : "spells/soulChain",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"frailtyEffect" : {
 		"implements" : "spellEffect",
 		"script" : "spells/frailty",

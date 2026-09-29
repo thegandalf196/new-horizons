@@ -13,6 +13,7 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "AttackPossibility.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
@@ -147,6 +148,41 @@ bool isCanonicalPlague(const Mechanics * spellMechanics)
 		&& spell->getJsonKey() == newHorizonsPlague::SPELL_ID;
 }
 
+bool isSpellLocked(const battle::Unit * unit);
+
+bool isCanonicalSoulChain(const Mechanics * spellMechanics)
+{
+	const auto * battleCallback = spellMechanics ? spellMechanics->battle() : nullptr;
+	const auto * battle = battleCallback ? battleCallback->getBattle() : nullptr;
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return battle && spell
+		&& spell->getJsonKey() == newHorizonsSoulChain::SPELL_ID
+		&& newHorizonsSoulChain::isEnabled(battle->getMagicRules());
+}
+
+float spellApplicationChance(const Mechanics * spellMechanics, const battle::Unit * unit)
+{
+	if(!spellMechanics || !unit || !spellMechanics->isNegativeSpell() || !spellMechanics->isMagicalEffect())
+		return 1.0f;
+	return 1.0f - static_cast<float>(std::clamp(unit->magicResistance(), 0, 100)) / 100.0f;
+}
+
+bool isSoulChainTargetUnit(const Mechanics * spellMechanics, const battle::Unit * unit)
+{
+	if(!isCanonicalSoulChain(spellMechanics) || !unit || !unit->alive()
+		|| !unit->isValidTarget(false) || unit->isInvincible()
+		|| isSpellLocked(unit)
+		|| !spellMechanics->isReceptive(unit)
+		|| unit->hasImmunity(spellMechanics->getSpellId())
+		|| unit->hasAbsoluteImmunity(spellMechanics->getSpellId()))
+		return false;
+
+	const auto casterSide = spellMechanics->getCasterSide();
+	const auto * battle = spellMechanics->battle();
+	const battle::Target singleton{battle::Destination(unit)};
+	return battle && newHorizonsSoulChain::validEnemyTargetSet(*battle, casterSide, singleton);
+}
+
 bool isNaturePoisonTarget(const Mechanics * spellMechanics, const battle::Unit * unit)
 {
 	return isCanonicalNaturePoison(spellMechanics)
@@ -274,6 +310,102 @@ int distanceToUnit(const BattleHex & hex, const battle::Unit * unit)
 		if(occupied.isValid())
 			result = std::min(result, static_cast<int>(BattleHex::getDistance(hex, occupied)));
 	return result;
+}
+
+int64_t projectedSoulChainTriggerDamage(const Mechanics * spellMechanics,
+	const battle::Unit * secondary, DamageCache & damageCache,
+	const std::shared_ptr<CBattleInfoCallback> & battleState)
+{
+	if(!spellMechanics || !secondary || !secondary->alive() || !secondary->isValidTarget(false))
+		return 0;
+
+	const auto * battle = spellMechanics->battle();
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(!battle || (casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER))
+		return 0;
+
+	double expectedDamage = 0.0;
+	for(const auto * attacker : battle->battleGetAllUnits(false))
+	{
+		if(!attacker || attacker->unitSide() != casterSide || !attacker->alive()
+			|| !attacker->isValidTarget(false) || attacker->isGhost() || attacker->isTurret()
+			|| (!attacker->willMove() && !attacker->willMove(1)))
+			continue;
+
+		const bool shooting = battle->battleCanShoot(attacker, secondary->getPosition());
+		const auto attackCount = AttackPossibility::getAttackCount(*attacker, shooting, *battleState);
+		const auto damage = damageCache.getDamage(attacker, secondary, battleState);
+		if(damage <= 0 || attackCount <= 0)
+			continue;
+
+		float attackLikelihood = 0.0f;
+		if(shooting)
+			attackLikelihood = 0.75f;
+		else
+		{
+			const int distance = distanceToUnit(secondary->getPosition(), attacker);
+			const int movement = std::max(0, static_cast<int>(attacker->getMovementRange(0)));
+			if(distance <= 1)
+				attackLikelihood = 0.90f;
+			else if(distance <= movement + 1)
+				attackLikelihood = 0.60f;
+			else if(distance <= movement + 3)
+				attackLikelihood = 0.25f;
+		}
+		const auto damagePerActivation = static_cast<double>(damage) * attackCount;
+		for(const int turn : {0, 1})
+			if(attacker->willMove(turn))
+				expectedDamage += damagePerActivation * attackLikelihood;
+	}
+
+	// A stack may be attacked several times, but expected incoming damage cannot
+	// exceed its remaining health over Soul Chain's two-round window.
+	expectedDamage = std::min(expectedDamage,
+		static_cast<double>(std::max<int64_t>(0, secondary->getAvailableHealth())));
+	const auto applicationChance = spellApplicationChance(spellMechanics, secondary);
+	const auto resistedExpectedDamage = expectedDamage * applicationChance;
+	return static_cast<int64_t>(std::llround(resistedExpectedDamage));
+}
+
+int32_t soulChainEchoBasisPoints(const Mechanics * spellMechanics)
+{
+	const auto * hero = spellMechanics ? spellMechanics->getHeroCaster() : nullptr;
+	const bool soulBinder = hero && hero->hasActivePerk(
+		"new-horizons:shadowMagic", "new-horizons:shadowMagic.soulBinder");
+	return spellMechanics
+		? newHorizonsSoulChain::echoPercentBasisPoints(
+			std::max(0, spellMechanics->getEffectPower()),
+			spellMechanics->getSpellPowerCoefficientBasisPoints(), soulBinder)
+		: 0;
+}
+
+float expectedSoulChainEchoValue(const Mechanics * spellMechanics,
+	const battle::Unit * primary, const battle::Unit * secondary, int64_t expectedSecondaryDamage,
+	int32_t echoBasisPoints, DamageCache & damageCache,
+	const std::shared_ptr<CBattleInfoCallback> & battleState)
+{
+	if(!spellMechanics || !primary || !secondary || expectedSecondaryDamage <= 0
+		|| !primary->alive() || !secondary->alive())
+		return 0.0f;
+
+	const auto * battle = spellMechanics->battle();
+	if(!battle)
+		return 0.0f;
+
+	auto projectedPrimary = primary->acquireState();
+	const auto adjustedEcho = newHorizonsSoulChain::adjustedEchoDamage(
+		*battle, spellMechanics->getCasterSide(), projectedPrimary.get(),
+		expectedSecondaryDamage, echoBasisPoints);
+	const auto primaryApplicationChance = spellApplicationChance(spellMechanics, primary);
+	const auto expectedEcho = static_cast<int64_t>(std::llround(
+		static_cast<double>(adjustedEcho) * primaryApplicationChance));
+	const auto actualEcho = std::min<int64_t>(
+		std::max<int64_t>(0, expectedEcho), std::max<int64_t>(0, projectedPrimary->getAvailableHealth()));
+	if(actualEcho <= 0)
+		return 0.0f;
+
+	return AttackPossibility::calculateDamageReduce(nullptr, projectedPrimary.get(),
+		static_cast<uint64_t>(actualEcho), damageCache, battleState);
 }
 
 int distanceToFootprint(const spells::Target & target, const battle::Unit * unit)
@@ -566,6 +698,126 @@ std::vector<Target> stormOfDaggersTargets(Mechanics * spellMechanics)
 	}
 	return result;
 }
+
+std::vector<Target> enumerateSoulChainTargets(Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!isCanonicalSoulChain(spellMechanics) || !spellMechanics->battle())
+		return result;
+
+	const auto casterSide = spellMechanics->getCasterSide();
+	const auto * battle = spellMechanics->battle();
+	std::vector<const battle::Unit *> enemies;
+	for(const auto * unit : battle->battleGetAllUnits(false))
+	{
+		if(!isSoulChainTargetUnit(spellMechanics, unit))
+			continue;
+		enemies.push_back(unit);
+	}
+	std::sort(enemies.begin(), enemies.end(), [](const battle::Unit * lhs, const battle::Unit * rhs)
+	{
+		return lhs->unitId() < rhs->unitId();
+	});
+	if(enemies.empty())
+		return result;
+
+	auto battleState = std::shared_ptr<CBattleInfoCallback>(
+		const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
+	DamageCache damageCache;
+	std::map<uint32_t, int64_t> expectedTriggerDamage;
+	for(const auto * enemy : enemies)
+		expectedTriggerDamage.emplace(enemy->unitId(), projectedSoulChainTriggerDamage(
+			spellMechanics, enemy, damageCache, battleState));
+
+	const auto echoBasisPoints = soulChainEchoBasisPoints(spellMechanics);
+	const auto completeTargetIsLegal = [&](const Target & target)
+	{
+		if(!newHorizonsSoulChain::validEnemyTargetSet(*battle, casterSide, target))
+			return false;
+		detail::ProblemImpl problem;
+		return spellMechanics->canBeCastAt(target, problem);
+	};
+
+	struct SecondaryCandidate
+	{
+		const battle::Unit * unit = nullptr;
+		float value = 0.0f;
+	};
+	constexpr size_t MAX_SECONDARY_CANDIDATES_PER_PRIMARY = 6;
+
+	for(const auto * primary : enemies)
+	{
+		Target primaryOnly{Destination(primary)};
+		if(!completeTargetIsLegal(primaryOnly))
+			continue;
+
+		// Runtime permits one primary with no secondary; it is intentionally a
+		// zero-value option, but keeping it here reflects the canonical 1–3 shape.
+		result.push_back(primaryOnly);
+
+		std::vector<SecondaryCandidate> rankedSecondaries;
+		for(const auto * secondary : enemies)
+		{
+			if(secondary->unitId() == primary->unitId())
+				continue;
+			const auto triggerDamage = expectedTriggerDamage.at(secondary->unitId());
+			if(triggerDamage <= 0)
+				continue;
+
+			const float value = expectedSoulChainEchoValue(spellMechanics, primary, secondary,
+				triggerDamage, echoBasisPoints, damageCache, battleState);
+			if(value > 0.0f)
+				rankedSecondaries.push_back({secondary, value});
+		}
+		std::sort(rankedSecondaries.begin(), rankedSecondaries.end(), [](const auto & lhs, const auto & rhs)
+		{
+			if(lhs.value != rhs.value)
+				return lhs.value > rhs.value;
+			return lhs.unit->unitId() < rhs.unit->unitId();
+		});
+
+		// Retain only the best legal one-secondary set for each primary. This
+		// keeps BattleEvaluator from projecting every ordered pair.
+		for(const auto & candidate : rankedSecondaries)
+		{
+			Target selected{Destination(primary), Destination(candidate.unit)};
+			if(completeTargetIsLegal(selected))
+			{
+				result.push_back(std::move(selected));
+				break;
+			}
+		}
+
+		// The two-secondary value is separable before the primary's health cap,
+		// so the strongest individual echo contributions supply the best pair.
+		// Search a small fallback prefix in case spell-specific validation rejects
+		// the first combination; candidate count remains bounded by 3*N.
+		const auto fallbackCount = std::min(MAX_SECONDARY_CANDIDATES_PER_PRIMARY,
+			rankedSecondaries.size());
+		float bestPairValue = 0.0f;
+		Target bestPair;
+		for(size_t first = 0; first < fallbackCount; ++first)
+			for(size_t second = first + 1; second < fallbackCount; ++second)
+			{
+				Target selected{Destination(primary), Destination(rankedSecondaries[first].unit),
+					Destination(rankedSecondaries[second].unit)};
+				const float value = rankedSecondaries[first].value + rankedSecondaries[second].value;
+				if(value <= bestPairValue || !completeTargetIsLegal(selected))
+					continue;
+				bestPairValue = value;
+				bestPair = std::move(selected);
+			}
+		if(!bestPair.empty())
+			result.push_back(std::move(bestPair));
+	}
+
+	return result;
+}
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalSoulChainTargets(Mechanics * spellMechanics)
+{
+	return enumerateSoulChainTargets(spellMechanics);
 }
 
 std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMechanics)
@@ -581,6 +833,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 	}
 	if(spellMechanics && spellMechanics->isNewHorizonsStormOfDaggers())
 		return stormOfDaggersTargets(spellMechanics);
+	if(isCanonicalSoulChain(spellMechanics))
+		return canonicalSoulChainTargets(spellMechanics);
 	if(isCanonicalNaturePoison(spellMechanics))
 		return canonicalNaturePoisonTargets(spellMechanics);
 	if(isCanonicalSpellLock(spellMechanics))
@@ -1300,6 +1554,66 @@ float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMech
 		applicationChance -= static_cast<float>(std::clamp(liveTarget->magicResistance(), 0, 100)) / 100.0f;
 
 	return totalValue * applicationChance;
+}
+
+float SpellTargetEvaluator::soulChainDelayedDamageValue(const Mechanics * spellMechanics,
+	const Target & target, std::shared_ptr<CBattleInfoCallback> battleState)
+{
+	if(!isCanonicalSoulChain(spellMechanics) || target.size() < 2
+		|| target.size() > static_cast<size_t>(newHorizonsSoulChain::MAX_TARGETS))
+		return 0.0f;
+
+	const auto * battle = spellMechanics->battle();
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(!battle || !newHorizonsSoulChain::validEnemyTargetSet(*battle, casterSide, target))
+		return 0.0f;
+
+	for(const auto & destination : target)
+		if(!isSoulChainTargetUnit(spellMechanics, destination.unitValue))
+			return 0.0f;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return 0.0f;
+
+	if(!battleState)
+	{
+		battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
+	}
+
+	const auto * primary = target.front().unitValue;
+	auto projectedPrimary = primary->acquireState();
+	const auto echoBasisPoints = soulChainEchoBasisPoints(spellMechanics);
+	const auto primaryApplicationChance = spellApplicationChance(spellMechanics, primary);
+	DamageCache damageCache;
+	float value = 0.0f;
+
+	for(size_t index = 1; index < target.size() && projectedPrimary->alive(); ++index)
+	{
+		const auto * secondary = target[index].unitValue;
+		const auto expectedSecondaryDamage = projectedSoulChainTriggerDamage(
+			spellMechanics, secondary, damageCache, battleState);
+		if(expectedSecondaryDamage <= 0)
+			continue;
+
+		const auto adjustedEcho = newHorizonsSoulChain::adjustedEchoDamage(
+			*battle, casterSide, projectedPrimary.get(), expectedSecondaryDamage, echoBasisPoints);
+		const auto expectedEcho = static_cast<int64_t>(std::llround(
+			static_cast<double>(adjustedEcho) * primaryApplicationChance));
+		const auto actualEcho = std::min<int64_t>(
+			std::max<int64_t>(0, expectedEcho),
+			std::max<int64_t>(0, projectedPrimary->getAvailableHealth()));
+		if(actualEcho <= 0)
+			continue;
+
+		value += AttackPossibility::calculateDamageReduce(nullptr, projectedPrimary.get(),
+			static_cast<uint64_t>(actualEcho), damageCache, battleState);
+		auto damage = actualEcho;
+		projectedPrimary->damage(damage);
+	}
+
+	return value;
 }
 
 std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)

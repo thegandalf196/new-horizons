@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: original square Heroes III-inspired spell icon master
+Primary request: Depict Soul Chain as a captive silver-and-black soul reliquary with two spectral chains converging into it.
+Scene/backdrop: a subdued, textured, near-black umber Shadow-magic ground, fully filling the square.
+Subject: One compact, centered reliquary: a dark oval or faceted black-steel cage around a dim captive violet soul core, bound by tarnished silver bands. Two clearly separate spectral chains enter from opposite upper sides and converge at the reliquary's small fastening rings. Keep their narrow linked silhouettes distinct against the dark background and slightly exaggerated so they remain visible when reduced to 44 pixels.
+Style/medium: miniature modeled fantasy still-life painting in late-1990s Western PC fantasy illustration, richly modeled metal and controlled painterly contours; original asset, not copied from an existing game image.
+Composition/framing: square, close and emblematic, object group fills most of the canvas with a narrow safe inset and no clipping. The reliquary is the visual anchor, chains visibly lead into it.
+Lighting/mood: theatrical chiaroscuro, small concentrated lavender-white soul glint and silver highlights against deep shadows; ominous, restrained.
+Color palette: muted Shadow violet, blackened steel, tarnished silver, and dark umber. Keep violet localized, never neon.
+Materials/textures: worn polished steel, dark forged iron, faintly translucent soul-light, subtle earthy texture.
+Constraints: high-resolution square master designed for deterministic reduction to a legible 44×44 game icon. Preserve exactly one reliquary and two chains.
+Avoid: lettering, readable runes, symbols, border, interface chrome, extra chains, extra objects, figures, broad empty space, neon bloom, plastic gloss, vector outlines, cartoon style, intentional pixel art or dithering, watermark.

@@ -1,0 +1,16 @@
+{
+  "asset": "Soul Binder perk icon",
+  "version": 1,
+  "status": "Provisional; pending in-game rendering and user approval",
+  "generator": "host built-in image_gen",
+  "generated_at": "2026-09-29",
+  "style_reference_used": false,
+  "raw_output": "$HOME/.codex/generated_images/01a0ed09-3261-72d3-b02b-57680e9d6c4c/exec-3cdf47be-563d-4f05-a2ff-48931bfc960b.png",
+  "prompt_file": "prompt.txt",
+  "selected_master": "exports/soul-binder/master.png",
+  "master_dimensions": [1254, 1254],
+  "export_method": "homm3-art export_art.py; deterministic LANCZOS reduction",
+  "export_sizes": [44],
+  "comparison_sheet": "exports/soul-binder/soul-binder-comparison.png",
+  "raster_manifest": "exports/soul-binder/soul-binder-manifest.json"
+}

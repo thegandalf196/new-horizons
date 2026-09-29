@@ -173,6 +173,7 @@ set(test_SRCS
 		server/battles/FocusMagicSpellTest.cpp
 		server/battles/NewHorizonsHexOfPainTest.cpp
 		server/battles/NewHorizonsPlagueTest.cpp
+		server/battles/NewHorizonsSoulChainTest.cpp
 		server/battles/NewHorizonsFrailtyTest.cpp
 		server/battles/LifeDrainTest.cpp
 		server/battles/SoulStealTest.cpp

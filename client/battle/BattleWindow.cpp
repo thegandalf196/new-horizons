@@ -104,7 +104,8 @@ class BattleTargetSelectionPanel final : public CIntObject
 		const auto * controller = owner.actionsController.get();
 		const bool repeatedPlacement = controller && controller->repeatedPlacementModeActive();
 		const bool stormOfDaggers = controller && controller->stormOfDaggersTargetSelectionModeActive();
-		const bool shouldShow = repeatedPlacement || stormOfDaggers;
+		const bool soulChain = controller && controller->soulChainTargetSelectionModeActive();
+		const bool shouldShow = repeatedPlacement || stormOfDaggers || soulChain;
 		active = shouldShow;
 		if(!controller || !shouldShow)
 		{
@@ -155,6 +156,46 @@ class BattleTargetSelectionPanel final : public CIntObject
 			cancelButton->setEnabled(true);
 			confirmButton->setEnabled(true);
 			confirmButton->block(!controller->repeatedPlacementReady());
+			return;
+		}
+
+		if(soulChain)
+		{
+			const auto preview = controller->getSoulChainSelectionPreview();
+			std::string title = "Soul Chain  |  ";
+			if(preview.selectedTargetCount == 0)
+				title += "select primary enemy (0/3)";
+			else
+				title += "primary + " + std::to_string(preview.selectedTargetCount - 1) + "/2 secondary";
+			if(heading->getText() != title)
+				heading->setText(title);
+
+			std::string readback;
+			if(preview.targets.empty())
+				readback = "Select a primary enemy, then up to two linked enemies.";
+			else
+			{
+				readback = "Primary: " + preview.targets.front().name;
+				if(preview.targets.size() > 1)
+				{
+					readback += " | Linked: ";
+					for(size_t index = 1; index < preview.targets.size(); ++index)
+					{
+						if(index > 1)
+							readback += ", ";
+						readback += preview.targets[index].name;
+					}
+				}
+			}
+			readback += "\nConfirm to cast / Undo last / Esc cancels";
+
+			if(targetReadback->getText() != readback)
+				targetReadback->setText(readback);
+			undoButton->setEnabled(preview.selectedTargetCount > 0);
+			undoButton->block(preview.selectedTargetCount == 0);
+			cancelButton->setEnabled(true);
+			confirmButton->setEnabled(true);
+			confirmButton->block(!preview.canConfirm);
 			return;
 		}
 
@@ -232,6 +273,8 @@ public:
 				{
 					if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 						owner.actionsController->undoStormOfDaggersTarget();
+					else if(owner.actionsController->soulChainTargetSelectionModeActive())
+						owner.actionsController->undoSoulChainTarget();
 					else
 						owner.actionsController->undoRepeatedPlacement();
 				}
@@ -255,6 +298,8 @@ public:
 				{
 					if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 						owner.actionsController->confirmStormOfDaggersTargets();
+					else if(owner.actionsController->soulChainTargetSelectionModeActive())
+						owner.actionsController->confirmSoulChainTargets();
 					else
 						owner.actionsController->confirmRepeatedPlacement();
 				}
@@ -329,6 +374,8 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		{
 			if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 				this->owner.actionsController->confirmStormOfDaggersTargets();
+			else if(this->owner.actionsController->soulChainTargetSelectionModeActive())
+				this->owner.actionsController->confirmSoulChainTargets();
 			else
 				this->owner.actionsController->confirmRepeatedPlacement();
 		}
@@ -338,6 +385,8 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		{
 			if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 				this->owner.actionsController->undoStormOfDaggersTarget();
+			else if(this->owner.actionsController->soulChainTargetSelectionModeActive())
+				this->owner.actionsController->undoSoulChainTarget();
 			else
 				this->owner.actionsController->undoRepeatedPlacement();
 		}
@@ -1461,9 +1510,14 @@ void BattleWindow::updateBattleTargetSelectionControls()
 	const bool stormCanConfirm = stormActive
 		&& !owner.actionsController->stormOfDaggersSelectedTargetIds().empty();
 	const bool stormCanUndo = stormCanConfirm;
-	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, !ready && !stormCanConfirm);
-	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE, !canUndo && !stormCanUndo);
-	widget<CButton>("wait")->setEnabled(!active && !stormActive);
+	const bool soulChainActive = owner.actionsController
+		&& owner.actionsController->soulChainTargetSelectionModeActive();
+	const bool soulChainCanConfirm = soulChainActive
+		&& !owner.actionsController->soulChainSelectedTargetIds().empty();
+	const bool soulChainCanUndo = soulChainCanConfirm;
+	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, !ready && !stormCanConfirm && !soulChainCanConfirm);
+	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE, !canUndo && !stormCanUndo && !soulChainCanUndo);
+	widget<CButton>("wait")->setEnabled(!active && !stormActive && !soulChainActive);
 	if(battleTargetSelectionPanel)
 		battleTargetSelectionPanel->update();
 }

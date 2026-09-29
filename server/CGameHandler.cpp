@@ -38,6 +38,7 @@
 #include "../lib/int3.h"
 
 #include "../lib/battle/BattleInfo.h"
+#include "../lib/battle/NewHorizonsSoulChain.h"
 #include "../lib/bonuses/BonusParameters.h"
 #include "../lib/callback/GameRandomizer.h"
 #include "../lib/campaign/CampaignState.h"
@@ -80,6 +81,8 @@
 
 #include "../lib/networkPacks/StackLocation.h"
 #include "../lib/networkPacks/PacksForClient.h"
+#include "../lib/networkPacks/PacksForClientBattle.h"
+#include "../lib/CStack.h"
 
 #include "../lib/pathfinder/CPathfinder.h"
 #include "../lib/pathfinder/PathfinderOptions.h"
@@ -1893,7 +1896,108 @@ void CGameHandler::heroExchange(ObjectInstanceID hero1, ObjectInstanceID hero2)
 
 void CGameHandler::sendAndApply(CPackForClient & pack)
 {
+	struct SoulChainEcho
+	{
+		BattleID battleID = BattleID::NONE;
+		uint32_t primaryUnitId = 0;
+		BattleSide casterSide = BattleSide::NONE;
+		BattleSide victimSide = BattleSide::NONE;
+		int32_t echoBasisPoints = 0;
+		int64_t actualSecondaryDamage = 0;
+	};
+	std::vector<SoulChainEcho> echoes;
+
+	auto captureSoulChainTriggers = [&](const BattleID & battleID,
+		const std::vector<BattleStackAttacked> & hits)
+	{
+		const auto * battleInfo = gameState().getBattle(battleID);
+		if(!battleInfo || !newHorizonsSoulChain::isEnabled(battleInfo->getMagicRules()))
+			return;
+
+		for(const auto & hit : hits)
+		{
+			if(hit.damageAmount <= 0 || newHorizonsSoulChain::isEchoHit(hit))
+				continue;
+
+			const auto * secondary = battleInfo->battleGetUnitByID(hit.stackAttacked);
+			const auto link = newHorizonsSoulChain::linkFor(secondary);
+			if(!secondary || !link || link->primaryUnitId == secondary->unitId()
+				|| link->casterSide == secondary->unitSide())
+				continue;
+
+			echoes.push_back({battleID, link->primaryUnitId, link->casterSide,
+				secondary->unitSide(), link->echoBasisPoints, hit.damageAmount});
+		}
+	};
+
+	// These are the two authoritative hit-bearing packet types. At present the
+	// only BattleUnitsChanged::healthDelta producer is the debug victory path;
+	// it is not an ordinary damage event and intentionally does not trigger this
+	// combat reaction.
+	if(const auto * attack = dynamic_cast<const BattleAttack *>(&pack))
+		captureSoulChainTriggers(attack->battleID, attack->bsa);
+	else if(const auto * injured = dynamic_cast<const StacksInjured *>(&pack))
+		captureSoulChainTriggers(injured->battleID, injured->stacks);
+
 	gameServer().applyPack(pack);
+
+	if(echoes.empty())
+		return;
+
+	static const SpellID soulChainSpell(SpellID::decode(std::string(newHorizonsSoulChain::SPELL_ID)));
+	for(const auto & echo : echoes)
+	{
+		const auto * battleInfo = gameState().getBattle(echo.battleID);
+		if(!battleInfo || soulChainSpell == SpellID::NONE)
+			continue;
+
+		const auto * primary = battleInfo->battleGetUnitByID(echo.primaryUnitId);
+		if(!primary || !primary->alive() || primary->unitSide() != echo.victimSide
+			|| echo.casterSide == echo.victimSide)
+			continue;
+
+		const int64_t adjustedDamage = newHorizonsSoulChain::adjustedEchoDamage(*battleInfo,
+			echo.casterSide, primary, echo.actualSecondaryDamage, echo.echoBasisPoints);
+		if(adjustedDamage <= 0)
+			continue;
+
+		uint32_t sourceUnitId = primary->unitId();
+		for(const auto * candidate : battleInfo->battleGetAllStacks(true))
+			if(candidate && candidate->unitSide() == echo.casterSide)
+			{
+				sourceUnitId = candidate->unitId();
+				break;
+			}
+
+		BattleStackAttacked hit;
+		hit.attackerID = sourceUnitId;
+		hit.stackAttacked = primary->unitId();
+		hit.damageAmount = adjustedDamage;
+		hit.flags = BattleStackAttacked::SPELL_EFFECT;
+		hit.spellID = soulChainSpell;
+		const auto primaryCreatureId = primary->creatureId();
+		const int32_t primaryCountBeforeEcho = primary->getCount();
+		CStack::prepareAttacked(hit, getRandomGenerator(), primary->acquireState());
+
+		StacksInjured injury;
+		injury.battleID = echo.battleID;
+		injury.stacks.push_back(hit);
+		// Re-enter this bounded hook with an explicit spell-tagged packet; the
+		// capture path above rejects it before another echo can be scheduled.
+		sendAndApply(injury);
+
+		BattleLogMessage log;
+		log.battleID = echo.battleID;
+		MetaString line = MetaString::createFromRawString("Soul Chain echoes ");
+		line.appendNumber(hit.damageAmount);
+		line.appendRawString(" Shadow damage onto ");
+		line.appendNumber(primaryCountBeforeEcho);
+		line.appendRawString(" ");
+		line.appendName(primaryCreatureId, primaryCountBeforeEcho);
+		line.appendRawString(".");
+		log.lines.push_back(std::move(line));
+		sendAndApply(log);
+	}
 }
 
 void CGameHandler::sendQueryResolved(QueryID queryID)

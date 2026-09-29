@@ -32,6 +32,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:plague',
     'new-horizons:poison',
     'new-horizons:regeneration',
+    'new-horizons:soulChain',
     'new-horizons:spellLock',
     'new-horizons:stormOfDaggers',
     'new-horizons:timeStop',
@@ -235,6 +236,25 @@ class NewHorizonsContentTest(unittest.TestCase):
                            ('iconImmune', 30)):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_frailty_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+
+    def test_soul_chain_has_roster_effect_and_purpose_made_art(self):
+        row = self.rules['spells']['new-horizons:soulChain']
+        self.assertEqual(row['schools'], ['new-horizons:shadow'])
+        self.assertEqual((row['level'], row['costs']), (3, [12, 12, 12, 12]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['soulChain']
+        self.assertEqual((spell['name'], spell['targetType']), ('Soul Chain', 'CREATURE'))
+        for level in spell['levels'].values():
+            self.assertEqual(level['cost'], 12)
+            self.assertEqual(level['battleEffects']['soulChain']['type'],
+                             'core:soulChainEffect')
+        for role, size in (('iconBook', 44), ('iconScroll', 44),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_spell_soul_chain_{size}.png')
             self.assertEqual(struct.unpack('>II',
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                 (size, size))

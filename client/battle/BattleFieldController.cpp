@@ -733,6 +733,26 @@ void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 			showHighlightedHex(canvas, cellUnitMovementHighlight, hovered, false);
 		return;
 	}
+	// Soul Chain has one designated primary and optional ordered secondaries.
+	// Keep all selected stacks marked while the cursor previews only new enemy IDs.
+	if(owner.actionsController->soulChainTargetSelectionModeActive())
+	{
+		const auto battle = owner.getBattle();
+		for(const auto unitId : owner.actionsController->soulChainSelectedTargetIds())
+		{
+			const auto * selected = battle ? battle->battleGetUnitByID(unitId) : nullptr;
+			if(!selected)
+				continue;
+			showHighlightedHex(canvas, cellUnitMovementHighlight, selected->getPosition(), false);
+			if(selected->doubleWide())
+				showHighlightedHex(canvas, cellUnitMovementHighlight, selected->occupiedHex(), false);
+		}
+
+		const auto hovered = getHoveredHex();
+		if(hovered.isValid() && owner.actionsController->soulChainTargetHexIsLegal(hovered))
+			showHighlightedHex(canvas, cellUnitMovementHighlight, hovered, false);
+		return;
+	}
 
 	// Canonical New Horizons Fire Wall uses a two-click start/orientation
 	// selector.  Show legal starts first, then legal adjacent endpoints once a

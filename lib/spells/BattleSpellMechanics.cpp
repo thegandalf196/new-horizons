@@ -20,6 +20,7 @@
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/CUnitState.h"
+#include "../battle/NewHorizonsSoulChain.h"
 #include "../battle/NewHorizonsWarcasting.h"
 #include "../battle/Unit.h"
 #include "../bonuses/Updaters.h"
@@ -60,6 +61,12 @@ bool isNewHorizonsLifeDrainSpell(const CSpell * spell, const JsonNode & savedRul
 {
 	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL
 		&& newHorizonsMagic::spellAllowedBySavedRoster(savedRules, spell->getId());
+}
+
+bool isNewHorizonsSoulChainSpell(const CSpell * spell, const JsonNode & savedRules)
+{
+	return spell && spell->getJsonKey() == newHorizonsSoulChain::SPELL_ID
+		&& newHorizonsSoulChain::isEnabled(savedRules);
 }
 
 bool isRegenerationTarget(const battle::Unit * unit)
@@ -623,6 +630,8 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
 		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	if(selectiveDispel && (mode != Mode::HERO || owner->getId() != SpellID::DISPEL || !castingHero
 		|| !castingHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel")))
 		return adaptGenericProblem(problem);
@@ -734,6 +743,20 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 			? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
 	}
 
+	if(newHorizonsSoulChain)
+	{
+		if(mode != Mode::HERO || !castingHero || casterSide == BattleSide::NONE)
+			return adaptGenericProblem(problem);
+
+		const auto availableTarget = std::ranges::any_of(battle()->battleGetAllUnits(false), [this](const battle::Unit * unit)
+		{
+			return unit && unit->alive() && !isSpellLocked(unit) && isReceptive(unit)
+				&& newHorizonsSoulChain::validEnemyTargetSet(*battle(), casterSide,
+					Target{Destination(unit)});
+		});
+		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+	}
+
 	if(isNewHorizonsStormOfDaggers())
 	{
 		if(mode != Mode::HERO || !castingHero)
@@ -832,6 +855,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
 		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	Target spellTarget = transformSpellTarget(target);
 	if(newHorizonsLifeDrain)
 	{
@@ -865,6 +890,25 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 				|| unit->unitSide() != battle()->otherSide(casterSide) || isSpellLocked(unit)
 				|| !isReceptive(unit)
 				|| !selectedUnitIds.insert(unit->unitId()).second)
+				return false;
+		}
+	}
+	if(newHorizonsSoulChain)
+	{
+		if(mode != Mode::HERO || casterSide == BattleSide::NONE
+			|| target.size() < 1 || target.size() > newHorizonsSoulChain::MAX_TARGETS
+			|| spellTarget.size() != target.size()
+			|| !newHorizonsSoulChain::validEnemyTargetSet(*battle(), casterSide, target)
+			|| !newHorizonsSoulChain::validEnemyTargetSet(*battle(), casterSide, spellTarget))
+			return false;
+
+		// This spell's ordered selection is its relationship contract. Never let a
+		// generic effect transform substitute, reorder, or silently drop a unit.
+		for(size_t index = 0; index < target.size(); ++index)
+		{
+			const auto * unit = target[index].unitValue;
+			if(!unit || spellTarget[index].unitValue != unit
+				|| isSpellLocked(unit) || !isReceptive(unit))
 				return false;
 		}
 	}
@@ -949,6 +993,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	// above. Its legacy HEAL/DISPEL applicability checks do not recognize
 	// physical-only Poison, so do not let those checks reject a valid action.
 	if(newHorizonsCure || newHorizonsRegeneration || newHorizonsPhysicalPoison || newHorizonsLifeDrain
+		|| newHorizonsSoulChain
 		|| newHorizonsMagic::isCounterspell(owner))
 		return true;
 
@@ -992,9 +1037,13 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
 		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	if(isNewHorizonsStormOfDaggers()
 		&& (!setStormOfDaggersTargetCount(static_cast<int32_t>(target.size()))
 			|| !canBeCastAt(target)))
+		return;
+	if(newHorizonsSoulChain && !canBeCastAt(target))
 		return;
 	if((newHorizonsRegeneration || newHorizonsPhysicalPoison || newHorizonsLifeDrain)
 		&& !canBeCastAt(target))
@@ -1494,6 +1543,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, const Target & target)
 {
 	affectedUnits.clear();
+	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
+		battle()->getBattle()->getMagicRules());
 
 	Target spellTarget = transformSpellTarget(target);
 
@@ -1571,6 +1622,12 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 			return vstd::contains(resisted, d.unitValue);
 		});
 	}
+	// Soul Chain is an ordered relationship, not a generic area effect. If the
+	// primary resists, discard the entire effect so a remaining secondary can
+	// never slide into the primary slot. Resisted secondaries are simply omitted.
+	if(newHorizonsSoulChain && !target.empty() && target.front().unitValue
+		&& vstd::contains(resisted, target.front().unitValue))
+		effectsToApply.clear();
 
 	for(const auto * unit : resisted)
 		sc.resistedCres.insert(unit->unitId());
@@ -1781,7 +1838,8 @@ Target BattleSpellMechanics::transformSpellTarget(const Target & aimPoint) const
 {
 	Target spellTarget;
 	if(isNewHorizonsStormOfDaggers()
-		|| isNewHorizonsLifeDrainSpell(owner, battle()->getBattle()->getMagicRules()))
+		|| isNewHorizonsLifeDrainSpell(owner, battle()->getBattle()->getMagicRules())
+		|| isNewHorizonsSoulChainSpell(owner, battle()->getBattle()->getMagicRules()))
 	{
 		spellTarget.reserve(aimPoint.size());
 		for(const auto & selected : aimPoint)

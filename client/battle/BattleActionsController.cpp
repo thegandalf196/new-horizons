@@ -67,6 +67,11 @@ bool isStormOfDaggersSpell(const CSpell * spell)
 	return spell && spell->getJsonKey() == stormOfDaggersJsonKey;
 }
 
+bool isSoulChainSpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsSoulChain::SPELL_ID;
+}
+
 bool isLifeDrainSpell(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL;
@@ -967,6 +972,236 @@ void BattleActionsController::undoStormOfDaggersTarget()
 	ENGINE->windows().totalRedraw();
 }
 
+bool BattleActionsController::soulChainTargetSelectionModeActive() const
+{
+	return heroSpellToCast && isSoulChainSpell(heroSpellToCast->spell.toSpell());
+}
+
+const std::vector<uint32_t> & BattleActionsController::soulChainSelectedTargetIds() const
+{
+	return soulChainSelectedUnitIds;
+}
+
+int BattleActionsController::soulChainSelectionOrder(uint32_t unitId) const
+{
+	const auto found = std::ranges::find(soulChainSelectedUnitIds, unitId);
+	return found == soulChainSelectedUnitIds.end()
+		? 0 : static_cast<int>(std::distance(soulChainSelectedUnitIds.begin(), found)) + 1;
+}
+
+bool BattleActionsController::soulChainSelectionContextIsCurrent() const
+{
+	if(!soulChainTargetSelectionModeActive() || !owner.curInt || !owner.curInt->cb
+		|| CPlayerInterface::battleInt.get() != &owner || owner.getBattleID() != soulChainBattleID
+		|| !soulChainPlayer || owner.curInt->cb->getPlayerID() != *soulChainPlayer
+		|| !owner.getBattle() || !owner.getBattle()->getBattle()
+		|| owner.getBattle()->battleGetMySide() != soulChainSide
+		|| owner.getBattle()->battleGetRound() != soulChainRound
+		|| !owner.makingTurn() || owner.curInt->isAutoFightOn || owner.isInTacticsMode())
+		return false;
+
+	const auto * hero = owner.currentHero();
+	return hero && hero->id == soulChainHeroID;
+}
+
+bool BattleActionsController::soulChainTargetsAreLegal(const std::vector<uint32_t> & unitIds) const
+{
+	if(unitIds.empty() || unitIds.size() > newHorizonsSoulChain::MAX_TARGETS || !soulChainSelectionContextIsCurrent())
+		return false;
+
+	const auto battle = owner.getBattle();
+	const auto * hero = owner.currentHero();
+	const auto * spell = heroSpellToCast->spell.toSpell();
+	if(!battle || !battle->getBattle() || !hero || !isSoulChainSpell(spell) || soulChainSide == BattleSide::NONE)
+		return false;
+
+	std::set<uint32_t> distinct;
+	spells::Target target;
+	for(const auto unitId : unitIds)
+	{
+		if(!distinct.insert(unitId).second)
+			return false;
+
+		const auto * unit = battle->battleGetUnitByID(unitId);
+		if(!unit)
+			return false;
+		target.emplace_back(unit, unit->getPosition());
+	}
+	if(!newHorizonsSoulChain::validEnemyTargetSet(*battle, soulChainSide, target))
+		return false;
+
+	spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
+	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
+	auto mechanics = spell->battleMechanics(&cast);
+	if(!mechanics)
+		return false;
+
+	spells::detail::ProblemImpl problem;
+	return mechanics->canBeCast(problem) && mechanics->canBeCastAt(target, problem);
+}
+
+bool BattleActionsController::soulChainTargetIsLegal(uint32_t unitId) const
+{
+	if(soulChainSelectedUnitIds.size() >= newHorizonsSoulChain::MAX_TARGETS
+		|| std::ranges::find(soulChainSelectedUnitIds, unitId) != soulChainSelectedUnitIds.end())
+		return false;
+
+	auto candidate = soulChainSelectedUnitIds;
+	candidate.push_back(unitId);
+	return soulChainTargetsAreLegal(candidate);
+}
+
+bool BattleActionsController::soulChainTargetHexIsLegal(const BattleHex & hex) const
+{
+	if(!hex.isValid() || !soulChainSelectionContextIsCurrent())
+		return false;
+
+	const auto battle = owner.getBattle();
+	const CStack * target = battle ? battle->battleGetStackByPos(hex, true) : nullptr;
+	if(!target && battle)
+		target = battle->battleGetStackByPos(hex, false);
+	return target && soulChainTargetIsLegal(target->unitId());
+}
+
+SoulChainSelectionPreview BattleActionsController::getSoulChainSelectionPreview() const
+{
+	SoulChainSelectionPreview result;
+	result.selectedTargetCount = static_cast<int32_t>(soulChainSelectedUnitIds.size());
+	result.maximumTargetCount = newHorizonsSoulChain::MAX_TARGETS;
+	if(!soulChainTargetSelectionModeActive())
+		return result;
+
+	if(!soulChainSelectionContextIsCurrent())
+	{
+		result.status = "Battle context changed. Cancel this spell and reopen it.";
+		return result;
+	}
+
+	const auto battle = owner.getBattle();
+	for(const auto unitId : soulChainSelectedUnitIds)
+	{
+		const auto * unit = battle ? battle->battleGetUnitByID(unitId) : nullptr;
+		if(!unit)
+			continue;
+		result.targets.push_back({unitId, unit->unitType()->getNamePluralTranslated()});
+	}
+
+	result.canConfirm = soulChainTargetsAreLegal(soulChainSelectedUnitIds);
+	if(soulChainSelectedUnitIds.empty())
+		result.status = "Select one primary enemy. You may add up to two secondary enemies; Confirm after the primary to cast. Backspace undoes; Esc cancels.";
+	else if(result.canConfirm && result.selectedTargetCount == 1)
+		result.status = "Primary selected. Add up to two distinct secondary enemies, or Confirm to cast now. Backspace undoes; Esc cancels.";
+	else if(result.canConfirm && result.selectedTargetCount < result.maximumTargetCount)
+		result.status = "Primary and secondary targets are ready. Add another enemy, or Confirm. Backspace undoes; Esc cancels.";
+	else if(result.canConfirm)
+		result.status = "Primary and two secondary targets selected. Confirm to cast, or Undo to revise.";
+	else
+		result.status = "A selected stack is no longer legal. Undo or cancel.";
+	return result;
+}
+
+void BattleActionsController::updateSoulChainSelectionStatus(const BattleHex & hoveredHex)
+{
+	if(!soulChainTargetSelectionModeActive())
+		return;
+
+	const auto preview = getSoulChainSelectionPreview();
+	std::string message = "Soul Chain: ";
+	if(preview.selectedTargetCount == 0)
+		message += "select one primary enemy";
+	else
+		message += std::to_string(preview.selectedTargetCount) + "/" + std::to_string(preview.maximumTargetCount)
+			+ " selected; #1 is the primary, later targets are secondary";
+	if(!preview.status.empty())
+		message += ". " + preview.status;
+
+	if(hoveredHex.isValid())
+	{
+		const auto * target = getStackForHex(hoveredHex);
+		if(target && soulChainSelectionOrder(target->unitId()) != 0)
+			message += " Already selected as #" + std::to_string(soulChainSelectionOrder(target->unitId()))
+				+ "; use Undo to remove the last target.";
+		else if(soulChainTargetHexIsLegal(hoveredHex))
+			message += preview.selectedTargetCount == 0
+				? " Click to select this primary enemy."
+				: " Click to add this secondary enemy.";
+		else if(target && owner.getBattle() && target->unitSide() == owner.getBattle()->battleGetMySide())
+			message += " Friendly stacks cannot be selected.";
+		else if(preview.selectedTargetCount >= preview.maximumTargetCount)
+			message += " Maximum target count reached.";
+		else
+			message += " Select a living enemy stack.";
+	}
+
+	if(!currentConsoleMsg.empty())
+		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
+	ENGINE->statusbar()->write(message);
+	currentConsoleMsg = std::move(message);
+}
+
+void BattleActionsController::selectSoulChainTarget(const BattleHex & clickedHex)
+{
+	if(!soulChainTargetSelectionModeActive())
+		return;
+	if(!soulChainSelectionContextIsCurrent())
+	{
+		updateSoulChainSelectionStatus(clickedHex);
+		return;
+	}
+
+	const auto * target = getStackForHex(clickedHex);
+	if(target && soulChainTargetIsLegal(target->unitId()))
+		soulChainSelectedUnitIds.push_back(target->unitId());
+
+	if(owner.windowObject)
+		owner.windowObject->updateBattleTargetSelectionControls();
+	updateSoulChainSelectionStatus(clickedHex);
+	ENGINE->windows().totalRedraw();
+}
+
+void BattleActionsController::confirmSoulChainTargets()
+{
+	if(!soulChainTargetSelectionModeActive())
+		return;
+
+	if(!soulChainTargetsAreLegal(soulChainSelectedUnitIds))
+	{
+		if(owner.windowObject)
+			owner.windowObject->updateBattleTargetSelectionControls();
+		updateSoulChainSelectionStatus(BattleHex::INVALID);
+		return;
+	}
+
+	BattleAction action = *heroSpellToCast;
+	action.target.clear();
+	for(const auto unitId : soulChainSelectedUnitIds)
+	{
+		const auto * target = owner.getBattle()->battleGetUnitByID(unitId);
+		if(!target)
+		{
+			updateSoulChainSelectionStatus(BattleHex::INVALID);
+			return;
+		}
+		action.aimToUnit(target);
+	}
+
+	owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
+	endCastingSpell();
+}
+
+void BattleActionsController::undoSoulChainTarget()
+{
+	if(!soulChainTargetSelectionModeActive() || soulChainSelectedUnitIds.empty())
+		return;
+
+	soulChainSelectedUnitIds.pop_back();
+	if(owner.windowObject)
+		owner.windowObject->updateBattleTargetSelectionControls();
+	updateSoulChainSelectionStatus(BattleHex::INVALID);
+	ENGINE->fakeMouseMove();
+	ENGINE->windows().totalRedraw();
+}
+
 bool BattleActionsController::lifeDrainTargetSelectionModeActive() const
 {
 	return heroSpellToCast && isLifeDrainSpell(heroSpellToCast->spell.toSpell());
@@ -1573,6 +1808,7 @@ void BattleActionsController::endCastingSpell()
 	const bool wasRepeatedPlacement = repeatedPlacementModeActive();
 	const bool wasFireWallPlacement = fireWallPlacementModeActive();
 	const bool wasStormOfDaggersSelection = stormOfDaggersTargetSelectionModeActive();
+	const bool wasSoulChainSelection = soulChainTargetSelectionModeActive();
 	const bool wasLifeDrainSelection = lifeDrainTargetSelectionModeActive();
 	if(heroSpellToCast)
 	{
@@ -1592,13 +1828,18 @@ void BattleActionsController::endCastingSpell()
 	stormOfDaggersSide = BattleSide::NONE;
 	stormOfDaggersRound = -1;
 	stormOfDaggersHeroID = ObjectInstanceID::NONE;
+	soulChainSelectedUnitIds.clear();
+	soulChainPlayer.reset();
+	soulChainSide = BattleSide::NONE;
+	soulChainRound = -1;
+	soulChainHeroID = ObjectInstanceID::NONE;
 	lifeDrainSelectedUnitIds.clear();
 	lifeDrainPlayer.reset();
 	lifeDrainSide = BattleSide::NONE;
 	lifeDrainRound = -1;
 	lifeDrainHeroID = ObjectInstanceID::NONE;
 	fireWallSelectedStart = BattleHex::INVALID;
-	if((wasRepeatedPlacement || wasFireWallPlacement || wasStormOfDaggersSelection || wasLifeDrainSelection)
+	if((wasRepeatedPlacement || wasFireWallPlacement || wasStormOfDaggersSelection || wasSoulChainSelection || wasLifeDrainSelection)
 		&& !currentConsoleMsg.empty())
 	{
 		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
@@ -1833,6 +2074,26 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 		if(owner.windowObject)
 			owner.windowObject->updateBattleTargetSelectionControls();
 		updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
+		ENGINE->fakeMouseMove();
+		ENGINE->windows().totalRedraw();
+		return;
+	}
+
+	// Soul Chain keeps the primary first and optional secondaries after it. The
+	// exact ordered stack IDs remain in the normal spell request until Confirm.
+	if(isSoulChainSpell(heroSpellToCast->spell.toSpell()))
+	{
+		soulChainSelectedUnitIds.clear();
+		soulChainBattleID = owner.getBattleID();
+		soulChainPlayer = owner.curInt->cb->getPlayerID();
+		soulChainSide = battle->battleGetMySide();
+		soulChainRound = battle->battleGetRound();
+		soulChainHeroID = castingHero->id;
+		possibleActions.clear();
+		owner.windowObject->blockUI(true);
+		if(owner.windowObject)
+			owner.windowObject->updateBattleTargetSelectionControls();
+		updateSoulChainSelectionStatus(BattleHex::INVALID);
 		ENGINE->fakeMouseMove();
 		ENGINE->windows().totalRedraw();
 		return;
@@ -2944,6 +3205,16 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 		return;
 	}
 
+	if(soulChainTargetSelectionModeActive())
+	{
+		if(hoveredHex.isValid() && soulChainTargetHexIsLegal(hoveredHex))
+			ENGINE->cursor().set(Cursor::Spellcast::SPELL);
+		else
+			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		updateSoulChainSelectionStatus(hoveredHex);
+		return;
+	}
+
 	if(lifeDrainTargetSelectionModeActive())
 	{
 		if(hoveredHex.isValid() && lifeDrainTargetHexIsLegal(hoveredHex))
@@ -3041,6 +3312,13 @@ void BattleActionsController::onHoverEnded()
 		return;
 	}
 
+	if(soulChainTargetSelectionModeActive())
+	{
+		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		updateSoulChainSelectionStatus(BattleHex::INVALID);
+		return;
+	}
+
 	if(lifeDrainTargetSelectionModeActive())
 	{
 		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
@@ -3081,6 +3359,12 @@ void BattleActionsController::onHexLeftClicked(const BattleHex & clickedHex)
 	if(stormOfDaggersTargetSelectionModeActive())
 	{
 		selectStormOfDaggersTarget(clickedHex);
+		return;
+	}
+
+	if(soulChainTargetSelectionModeActive())
+	{
+		selectSoulChainTarget(clickedHex);
 		return;
 	}
 

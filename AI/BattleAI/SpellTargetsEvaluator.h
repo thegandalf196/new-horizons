@@ -56,6 +56,11 @@ public:
 	static float plagueDelayedDamageValue(const spells::Mechanics * spellMechanics,
 		const spells::Target & target,
 		std::shared_ptr<CBattleInfoCallback> battleState = {});
+	/// Estimates delayed Soul Chain echo damage from likely friendly attacks over
+	/// its two-round duration. One-target casts are legal but intentionally score zero.
+	static float soulChainDelayedDamageValue(const spells::Mechanics * spellMechanics,
+		const spells::Target & target,
+		std::shared_ptr<CBattleInfoCallback> battleState = {});
 
 private:
 	enum Compare
@@ -75,6 +80,7 @@ private:
 	static std::vector<spells::Target> canonicalTimeStopTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalSpellLockTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalNaturePoisonTargets(const spells::Mechanics * spellMechanics);
+	static std::vector<spells::Target> canonicalSoulChainTargets(spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> allTargetableCreatures(const spells::Mechanics * spellMechanics, bool exactUnit);
 	static std::vector<spells::Target> theBestLocationCasts(const spells::Mechanics * spellMechanics);
 	static Compare compareAffectedStacks(

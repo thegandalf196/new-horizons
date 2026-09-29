@@ -1,0 +1,13 @@
+{
+  "method": "homm3-art high-resolution master, deterministic LANCZOS reduction",
+  "status": "provisional; pending in-game rendering and user approval",
+  "assets": [
+    "NH_spell_soul_chain"
+  ],
+  "files": {
+    "Mods/new-horizons/Images/NH_spell_soul_chain_44.png": "ee89018f24802ddd6de4a1dab797ec8036b019b6839376085758f059d0be2d70",
+    "Mods/new-horizons/Images/NH_spell_soul_chain_32.png": "1e538ddef65f2a3d51a09257474578757a766119c8b2f4619d87af663036ec6f",
+    "Mods/new-horizons/Images/NH_spell_soul_chain_30.png": "10846eb839237b4444e1e5772ebef0bcc43a955720fb6003d84184a7090556fa",
+    "Mods/new-horizons/Images/NH_spell_soul_chain.json": "36361da2877ad2624307cd36f4c0fdec77fc658f4f95fa91279699feff1dc280"
+  }
+}

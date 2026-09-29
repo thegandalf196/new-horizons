@@ -1281,7 +1281,7 @@
 					"requires": "advanced",
 					"description": "Soul Chain echoes an additional 15 percentage points of secondary-victim damage into the primary target.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Soul Chain echoes an additional 15 percentage points of secondary-victim damage into the primary target."
 					}
 				},

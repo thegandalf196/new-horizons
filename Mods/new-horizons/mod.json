@@ -642,6 +642,18 @@
 							11
 						]
 					},
+					"new-horizons:soulChain": {
+						"schools": [
+							"new-horizons:shadow"
+						],
+						"level": 3,
+						"costs": [
+							12,
+							12,
+							12,
+							12
+						]
+					},
 					"new-horizons:holyWrath": {
 						"schools": [
 							"new-horizons:light"
@@ -3955,7 +3967,7 @@
 								"requires": "advanced",
 								"description": "Soul Chain echoes an additional 15 percentage points of secondary-victim damage into the primary target.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Soul Chain echoes an additional 15 percentage points of secondary-victim damage into the primary target."
 								}
 							},

@@ -1,0 +1,14 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; pending in-game rendering and user approval",
+  "assets": [
+    "NH_perk_soul_binder"
+  ],
+  "files": {
+    "Mods/new-horizons/Images/NH_perk_soul_binder_normal.png": "8d6bfb0c6b515a31b3795d8f0d2c1a862aed7cb9dc876b646f0d10e7b9adfe14",
+    "Mods/new-horizons/Images/NH_perk_soul_binder_pressed.png": "d771aaefd75cf019a0c61cf44b0d82ff512a33a5e12274e1e871c3e01a6140af",
+    "Mods/new-horizons/Images/NH_perk_soul_binder_disabled.png": "7fdaaf739a7b11fcdfc2111c1cb1886eda27083497f1079e0ac5874a3cb88c9a",
+    "Mods/new-horizons/Images/NH_perk_soul_binder_highlighted.png": "cc45583ac0f8655ea2f8175861b052da03331e15ea29a391c64000fddea12620",
+    "Mods/new-horizons/Images/NH_perk_soul_binder.json": "7fbd5fbcf2039394b9e92c9c693ad28dd7ba6de95e38ff90a5d400d253a8c69f"
+  }
+}

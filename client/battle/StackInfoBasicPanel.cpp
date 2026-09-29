@@ -20,6 +20,7 @@
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
@@ -188,6 +189,103 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	return result;
 }
 
+struct SoulChainIncomingStatus
+{
+	uint32_t secondaryUnitId = 0;
+	std::string secondaryName;
+	newHorizonsSoulChain::Link link;
+	int32_t remainingRounds = 0;
+};
+
+int32_t soulChainRemainingRounds(const CStack * stack)
+{
+	if(!stack)
+		return 0;
+
+	for(const auto effect : stack->activeSpells())
+	{
+		const auto * spell = effect.toSpell();
+		if(!spell || spell->getJsonKey() != newHorizonsSoulChain::SPELL_ID)
+			continue;
+
+		const auto bonuses = stack->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(effect)));
+		return bonuses->empty() ? 0 : std::max<int32_t>(0, bonuses->front()->turnsRemain);
+	}
+	return 0;
+}
+
+std::vector<SoulChainIncomingStatus> soulChainIncomingLinks(
+	const CStack * primary, const CPlayerBattleCallback * battleCallback)
+{
+	std::vector<SoulChainIncomingStatus> result;
+	if(!primary || !battleCallback)
+		return result;
+
+	for(const auto * candidate : battleCallback->battleGetAllStacks())
+	{
+		const auto link = newHorizonsSoulChain::linkFor(candidate);
+		if(!link || link->primaryUnitId != primary->unitId())
+			continue;
+
+		result.push_back({candidate->unitId(), candidate->unitType()->getNamePluralTranslated(),
+			*link, soulChainRemainingRounds(candidate)});
+	}
+	return result;
+}
+
+std::string soulChainSecondaryTooltip(
+	std::string_view spellDescription, const CStack * secondary, const CPlayerBattleCallback * battleCallback)
+{
+	std::string result(spellDescription);
+	const auto link = newHorizonsSoulChain::linkFor(secondary);
+	if(!link)
+		return result;
+
+	const auto * primary = battleCallback ? battleCallback->battleGetUnitByID(link->primaryUnitId) : nullptr;
+	const auto primaryName = primary ? primary->unitType()->getNamePluralTranslated() : std::string("the primary stack");
+	result += "\n\nSoul Chain: this is a secondary target. Damage it suffers echoes as Shadow damage to "
+		+ primaryName + " at " + newHorizonsBattleStatus::formatBasisPoints(link->echoBasisPoints) + ".";
+	result += "\n" + newHorizonsBattleStatus::roundsRemaining(soulChainRemainingRounds(secondary)) + ".";
+	result += "\nDamage from the echo cannot trigger Soul Chain again.";
+	return result;
+}
+
+std::string soulChainPrimaryTooltip(const std::vector<SoulChainIncomingStatus> & links)
+{
+	std::string result = "Soul Chain: this is the primary target. Echoed damage from linked secondary stacks is applied here as Shadow damage.";
+	for(const auto & link : links)
+	{
+		result += "\n" + link.secondaryName + ": "
+			+ newHorizonsBattleStatus::formatBasisPoints(link.link.echoBasisPoints) + " echo, "
+			+ newHorizonsBattleStatus::roundsRemaining(link.remainingRounds) + ".";
+	}
+	result += "\nDamage from an echo cannot trigger Soul Chain again.";
+	return result;
+}
+
+std::string soulChainStatusSignature(const CStack * stack, const CPlayerBattleCallback * battleCallback)
+{
+	if(!stack)
+		return {};
+
+	std::string result;
+	if(const auto link = newHorizonsSoulChain::linkFor(stack))
+	{
+		result = "secondary:" + std::to_string(link->primaryUnitId) + ":"
+			+ std::to_string(static_cast<int>(link->casterSide)) + ":"
+			+ std::to_string(link->echoBasisPoints) + ":"
+			+ std::to_string(soulChainRemainingRounds(stack));
+	}
+	for(const auto & link : soulChainIncomingLinks(stack, battleCallback))
+	{
+		result += "|primary:" + std::to_string(link.secondaryUnitId) + ":"
+			+ std::to_string(static_cast<int>(link.link.casterSide)) + ":"
+			+ std::to_string(link.link.echoBasisPoints) + ":"
+			+ std::to_string(link.remainingRounds);
+	}
+	return result;
+}
+
 newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
 {
 	const auto spellKey = effect.toSpell()->getJsonKey();
@@ -297,12 +395,20 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("ILCK22"), std::clamp(luck + 3, 0, 6), 0, 47, 143));
 
 	displayedStatus = currentStackInfoStatus(stack, battleCallback.get());
+	displayedSoulChainSignature = soulChainStatusSignature(stack, battleCallback.get());
 	if(displayedStatus.defend.defending)
 	{
 		const auto badge = displayedStatus.defend.bulwark ? "BULWARK" : "DEFEND";
 		const auto tooltip = newHorizonsBattleStatus::defendStatusTooltip(displayedStatus.defend);
 		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW, badge));
 		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 153, 39, 13), tooltip, tooltip));
+	}
+	const auto incomingSoulChain = soulChainIncomingLinks(stack, battleCallback.get());
+	if(!incomingSoulChain.empty())
+	{
+		const auto tooltip = soulChainPrimaryTooltip(incomingSoulChain);
+		labels.push_back(std::make_shared<CLabel>(47, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW, "SOUL"));
+		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(46, 153, 28, 13), tooltip, tooltip));
 	}
 
 	//extra information
@@ -377,6 +483,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
 		const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
 		const bool plague = spellKey == PLAGUE_SPELL_KEY;
+		const bool soulChain = spellKey == newHorizonsSoulChain::SPELL_ID;
 		const auto frailty = currentFrailtyStatus(stack, spellKey, spellBonuses);
 		const auto lockStatus = spellLock
 			? newHorizonsBattleStatus::spellLockStatus(*spellBonuses)
@@ -386,7 +493,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague)
+		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain)
 		{
 			const std::string badge = timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
@@ -444,6 +551,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 				+ "\n\n" + std::to_string(duration) + " rounds remaining. Plague damages this stack at the end of its turn, then may spread to an adjacent uninfected stack on either side.";
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
+		else if(soulChain)
+		{
+			const std::string tooltip = soulChainSecondaryTooltip(
+				effect.toSpell()->getDescriptionTranslated(0), stack, battleCallback.get());
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
 
 		++printed;
 	}
@@ -481,7 +594,8 @@ void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
 		return;
 
 	const auto current = currentStackInfoStatus(updatedInfo, battleCallback.get());
-	if(current == displayedStatus)
+	const auto soulChainSignature = soulChainStatusSignature(updatedInfo, battleCallback.get());
+	if(current == displayedStatus && soulChainSignature == displayedSoulChainSignature)
 		return;
 
 	update(updatedInfo);

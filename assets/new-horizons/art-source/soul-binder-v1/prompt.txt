@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: original square Heroes III-inspired perk icon master
+Primary request: Depict Soul Binder as a blackened steel gauntlet grasping exactly three dark, soul-linked rings.
+Scene/backdrop: subdued textured near-black umber Shadow-magic ground filling the square.
+Subject: One clearly recognizable armored hand, rising from the lower center in a firm curled grasp. Its worn black leather palm and tarnished steel finger plates hold exactly three large dark iron rings connected by short fine chains; arrange the rings as a compact triangular cluster above the fingers so all three loops are individually visible. A faint muted violet soul-light glints within the ring openings, localized and restrained.
+Style/medium: miniature modeled fantasy still-life painting in late-1990s Western PC fantasy illustration, richly modeled leather and steel with painterly value transitions; original asset, not copied from existing game imagery.
+Composition/framing: square, close emblematic crop; gauntlet and ring cluster fill most of the canvas with a narrow safe inset, fully visible and unclipped. The silhouette must read immediately as a hand gripping three rings, distinct from a cage, reliquary, or dangling pair of chains.
+Lighting/mood: theatrical chiaroscuro, a focused cool steel highlight on the knuckles and three small lavender reflections, deep shadow side, ominous restrained Shadow tone.
+Color palette: muted blackened steel, tarnished silver, dark umber, and subdued violet. No neon.
+Materials/textures: worn leather, forged iron rings, small linked chain segments, polished but aged steel plates.
+Constraints: high-resolution square master designed for deterministic reduction to a legible 44×44 game icon. Preserve one gauntlet and exactly three rings.
+Avoid: reliquary, orb, cage, extra rings, extra hands, figures, lettering, readable runes, border, interface chrome, broad empty space, neon bloom, plastic gloss, flat vector shapes, cartoon outlines, intentional pixel art or dithering, watermark.

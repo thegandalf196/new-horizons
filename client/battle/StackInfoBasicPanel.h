@@ -12,6 +12,8 @@
 #include "BattleSidePanel.h"
 #include "NewHorizonsBattleStatus.h"
 
+#include <string>
+
 class CStack;
 class CPlayerBattleCallback;
 
@@ -31,6 +33,7 @@ private:
 	std::vector<std::shared_ptr<LRClickableAreaWText>> statusTooltips;
 	std::shared_ptr<CPlayerBattleCallback> battleCallback;
 	newHorizonsBattleStatus::StackInfoStatusSnapshot displayedStatus;
+	std::string displayedSoulChainSignature;
 
 public:
 	StackInfoBasicPanel(

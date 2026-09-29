@@ -37,6 +37,7 @@
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
+#include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/CRandomGenerator.h"
@@ -2330,6 +2331,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							if(ps.spellPlacementHeuristicValue <= 0.0f)
 								continue;
 						}
+						if(spell->getJsonKey() == newHorizonsSoulChain::SPELL_ID)
+						{
+							ps.spellSoulChainDelayedValue = SpellTargetEvaluator::soulChainDelayedDamageValue(
+								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
+							if(ps.spellSoulChainDelayedValue <= 0.0f)
+								continue;
+						}
 						if(isCanonicalHolyArmor(spell))
 						{
 							if(visibleMagicalSpellThreat <= 0.0f || friendlyAvailableHealth <= 0
@@ -2663,6 +2671,19 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellNaturePoisonValue;
+					continue;
+				}
+				// Soul Chain changes future damage relationships without an immediate
+				// health delta. Its detached forecast was valued during target generation,
+				// so do not collapse the cast to zero through generic castEval scoring.
+				if(ps.command == HeroCommand::NONE && ps.spellSoulChainDelayedValue > 0.0f)
+				{
+					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+						counterspellNegated, *spellAllowance) || counterspellNegated)
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + ps.spellSoulChainDelayedValue;
 					continue;
 				}
 				// Contextual Orders have no faithful projection in the old

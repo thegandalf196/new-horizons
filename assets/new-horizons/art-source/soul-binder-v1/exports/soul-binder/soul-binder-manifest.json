@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "name": "soul-binder",
+  "source": {
+    "path": "$HOME/.codex/generated_images/01a0ed09-3261-72d3-b02b-57680e9d6c4c/exec-3cdf47be-563d-4f05-a2ff-48931bfc960b.png",
+    "filename": "exec-3cdf47be-563d-4f05-a2ff-48931bfc960b.png",
+    "byte_size": 2403117,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "80ed5d94e64d5283023dddfbea974dd2e07dea55c0b78ae01e3ccd4400867274"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "80ed5d94e64d5283023dddfbea974dd2e07dea55c0b78ae01e3ccd4400867274"
+    },
+    {
+      "file": "soul-binder-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "1b18c2ad633eb9af804d150ab02c88a5d38be45f5d34190302242885d4c689c2"
+    },
+    {
+      "file": "soul-binder-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "c37f8e11ff0829c3b70d81903769671afe2b0a82e5aa3f4b5527fe0846d27f87"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "soul-binder-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "soul-binder-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": null,
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": null,
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

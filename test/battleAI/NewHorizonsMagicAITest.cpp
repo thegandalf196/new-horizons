@@ -25,6 +25,7 @@
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
+#include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
@@ -111,6 +112,11 @@ SpellID transfigureMatterSpell()
 SpellID stormOfDaggersSpell()
 {
 	return SpellID(SpellID::decode(stormOfDaggersKey));
+}
+
+SpellID soulChainSpell()
+{
+	return SpellID(SpellID::decode(std::string(newHorizonsSoulChain::SPELL_ID)));
 }
 
 void setMorale(CStack * stack, int value)
@@ -3838,6 +3844,143 @@ TEST_F(NewHorizonsMagicAITest, StormOfDaggersAISelectsFiveDistinctEnemyStacksWit
 	}
 	for(const auto * enemy : enemies)
 		EXPECT_EQ(battle()->battleGetOwner(enemy), PlayerColor(1));
+}
+
+TEST_F(NewHorizonsMagicAITest, SoulChainAIUsesBoundedOrderedEnemyTargetsAndValuesDelayedEchoes)
+{
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+
+	const auto soulChain = soulChainSpell();
+	ASSERT_NE(soulChain, SpellID::NONE);
+	ASSERT_NE(soulChain.toSpell(), nullptr);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	for(const auto spell : attackerSideHero->getSpellsInSpellbook())
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	attackerSideHero->addSpellToSpellbook(soulChain);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	const auto shadowSkillId = SecondarySkill::decode("new-horizons:shadowMagic");
+	ASSERT_GE(shadowSkillId, 0);
+	const SecondarySkill shadowMagic(shadowSkillId);
+	attackerSideHero->setSecSkillLevel(shadowMagic, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
+	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:grandElf"), BattleHex(5, 5), 12);
+	std::vector<CStack *> enemies;
+	for(int index = 0; index < 4; ++index)
+		enemies.push_back(addStack(BattleSide::DEFENDER, creatureByName("core:ogre"),
+			BattleHex(12, 3 + index * 2), 10));
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(shooter, nullptr);
+	ASSERT_EQ(enemies.size(), 4u);
+
+	std::set<uint32_t> keepIds{active->unitId(), shooter->unitId()};
+	for(const auto * enemy : enemies)
+		keepIds.insert(enemy->unitId());
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+
+	ASSERT_TRUE(newHorizonsSoulChain::isEnabled(battle()->getMagicRules()));
+	spells::BattleCast probe(battle(), attackerSideHero, spells::Mode::HERO, soulChain.toSpell());
+	const auto mechanics = soulChain.toSpell()->battleMechanics(&probe);
+	ASSERT_NE(mechanics, nullptr);
+	EXPECT_GT(mechanics->getSpellPowerCoefficientBasisPoints(), 0);
+	const auto viableTargets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_FALSE(viableTargets.empty());
+	EXPECT_LE(viableTargets.size(), enemies.size() * newHorizonsSoulChain::MAX_TARGETS)
+		<< "AI target projections are bounded to one candidate per legal target count and primary";
+	std::array<size_t, newHorizonsSoulChain::MAX_TARGETS + 1> targetsBySize{};
+	std::map<uint32_t, std::array<size_t, newHorizonsSoulChain::MAX_TARGETS + 1>> targetsByPrimary;
+	for(const auto & target : viableTargets)
+	{
+		ASSERT_GE(target.size(), 1u);
+		ASSERT_LE(target.size(), static_cast<size_t>(newHorizonsSoulChain::MAX_TARGETS));
+		++targetsBySize[target.size()];
+		++targetsByPrimary[target.front().unitValue->unitId()][target.size()];
+		std::set<uint32_t> selectedIds;
+		for(const auto & destination : target)
+		{
+			ASSERT_NE(destination.unitValue, nullptr);
+			EXPECT_EQ(destination.unitValue->unitSide(), BattleSide::DEFENDER);
+			EXPECT_TRUE(selectedIds.insert(destination.unitValue->unitId()).second);
+		}
+		if(target.size() == 1)
+			EXPECT_EQ(SpellTargetEvaluator::soulChainDelayedDamageValue(mechanics.get(), target), 0.0f);
+		else
+			EXPECT_GT(SpellTargetEvaluator::soulChainDelayedDamageValue(mechanics.get(), target), 0.0f);
+	}
+	EXPECT_GT(targetsBySize[1], 0u);
+	EXPECT_GT(targetsBySize[2], 0u);
+	EXPECT_GT(targetsBySize[3], 0u);
+	for(const auto & [primary, arityCounts] : targetsByPrimary)
+	{
+		static_cast<void>(primary);
+		for(size_t arity = 1; arity <= newHorizonsSoulChain::MAX_TARGETS; ++arity)
+			EXPECT_LE(arityCounts[arity], 1u);
+	}
+	const auto multiTarget = std::find_if(viableTargets.begin(), viableTargets.end(),
+		[](const auto & target) { return target.size() == 3; });
+	ASSERT_NE(multiTarget, viableTargets.end());
+	const auto baseRankValue = SpellTargetEvaluator::soulChainDelayedDamageValue(
+		mechanics.get(), *multiTarget);
+	EXPECT_EQ(mechanics->getSpellPowerCoefficientBasisPoints(), 10'000);
+	attackerSideHero->setSecSkillLevel(shadowMagic, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	spells::BattleCast expertRankProbe(battle(), attackerSideHero, spells::Mode::HERO, soulChain.toSpell());
+	const auto expertRankMechanics = soulChain.toSpell()->battleMechanics(&expertRankProbe);
+	ASSERT_NE(expertRankMechanics, nullptr);
+	EXPECT_EQ(expertRankMechanics->getSpellPowerCoefficientBasisPoints(), 14'500);
+	EXPECT_GT(SpellTargetEvaluator::soulChainDelayedDamageValue(expertRankMechanics.get(), *multiTarget),
+		baseRankValue) << "Soul Chain echo valuation must use the saved-v3 Shadow School coefficient";
+
+	const std::array initialHealth{active->getAvailableHealth(), shooter->getAvailableHealth(),
+		enemies[0]->getAvailableHealth(), enemies[1]->getAvailableHealth(),
+		enemies[2]->getAvailableHealth(), enemies[3]->getAvailableHealth()};
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	const auto action = callback->submitted.front();
+	EXPECT_EQ(action.spell, soulChain)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	const auto selected = action.getTarget(battle());
+	ASSERT_GE(selected.size(), 2u) << "An inert one-target Soul Chain cast must not be selected";
+	ASSERT_LE(selected.size(), static_cast<size_t>(newHorizonsSoulChain::MAX_TARGETS));
+	std::set<uint32_t> selectedIds;
+	for(const auto & destination : selected)
+	{
+		ASSERT_NE(destination.unitValue, nullptr);
+		EXPECT_EQ(destination.unitValue->unitSide(), BattleSide::DEFENDER);
+		EXPECT_TRUE(selectedIds.insert(destination.unitValue->unitId()).second);
+	}
+	EXPECT_EQ(active->getAvailableHealth(), initialHealth[0]);
+	EXPECT_EQ(shooter->getAvailableHealth(), initialHealth[1]);
+	for(size_t index = 0; index < enemies.size(); ++index)
+		EXPECT_EQ(enemies[index]->getAvailableHealth(), initialHealth[index + 2]);
 }
 
 TEST_F(NewHorizonsMagicAITest, StormOfDaggersAIValuesSavedSchoolRankAndMagicResistance)

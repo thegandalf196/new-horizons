@@ -144,9 +144,13 @@ void BattleStacksController::collectRenderableObjects(BattleRenderer & renderer)
 			});
 		}
 
-		if(owner.actionsController && owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+		if(owner.actionsController
+			&& (owner.actionsController->stormOfDaggersTargetSelectionModeActive()
+				|| owner.actionsController->soulChainTargetSelectionModeActive()))
 		{
-			const int selectionOrder = owner.actionsController->stormOfDaggersSelectionOrder(stack->unitId());
+			const int selectionOrder = owner.actionsController->stormOfDaggersTargetSelectionModeActive()
+				? owner.actionsController->stormOfDaggersSelectionOrder(stack->unitId())
+				: owner.actionsController->soulChainSelectionOrder(stack->unitId());
 			if(selectionOrder > 0)
 			{
 				renderer.insert(EBattleFieldLayer::STACK_AMOUNTS, location,

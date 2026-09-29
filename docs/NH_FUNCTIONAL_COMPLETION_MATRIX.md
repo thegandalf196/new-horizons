@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-09-29
-Canonical source SHA-256: `bc70b440ced11279915de2cfb1e48fc01e20f61ec041e7a68dae336ed86b33e4`
+Canonical source SHA-256: `3ee09e33c66f4e401102e226d56deea29c32b41b949e2aeb4f6f51263a392885`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -22,10 +22,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 101/310 | 209 planned; active status alone does not certify behavior. Withering Touch adds five percentage points to each Frailty cast. |
+| Skill perks active | 102/310 | 208 planned; active status alone does not certify behavior. Soul Binder adds 15 percentage points to Soul Chain's capped echo. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 40/67 | 27 missing/inactive; Plague has focused authoritative and AI-valuation evidence, but rendered/playable delivery remains pending. |
+| Canonical combat-spell identities registered | 41/67 | 26 missing/inactive; Soul Chain has focused authoritative and AI-cast evidence, but rendered/playable delivery remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -49,8 +49,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 101
-active perks, leaving nine ranks and 209 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 102
+active perks, leaving nine ranks and 208 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -163,7 +163,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 0/10 | Progression blocked |
 | Light Magic | 3/0 | 1/9 | Benediction active; nine perks missing |
-| Shadow Magic | 3/0 | 2/8 | Malediction and Withering Touch have focused native evidence. Withering Touch strengthens Frailty without raising its 60% battle cap; eight perks remain planned. |
+| Shadow Magic | 3/0 | 3/7 | Malediction, Withering Touch, and Soul Binder have focused native evidence. Soul Binder adds 15 points after Soul Chain's 40% base cap; seven perks remain planned. |
 | Nature Magic | 3/0 | 1/9 | Herbalist active with Regeneration-focused runtime evidence; nine perks missing |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
@@ -198,8 +198,8 @@ The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
 spells. Rechecking the current saved roster after adding Holy Wrath, Storm
 of Daggers, Regeneration, Nature Poison, Holy Armor, Life Drain, Hex of Pain,
-Frailty, and Plague shows 40 of the 67 combat identities with active settings rows and
-registered mod/core definitions, including Spell Lock; 27 are absent or inactive. An active
+Frailty, Plague, and Soul Chain shows 41 of the 67 combat identities with active settings rows and
+registered mod/core definitions, including Spell Lock; 26 are absent or inactive. An active
 identity is not proof that its exact canonical effect is complete.
 
 Frailty replaces core Weakness in new saved-v3 acquisition while older saved
@@ -222,6 +222,21 @@ Plaguebearer's undefined normal spread limit remains an open design decision;
 delayed Spell Penetration/Annihilator interactions, multi-hop AI valuation,
 native rendering, and playable acceptance remain unverified/deferred.
 
+Soul Chain is a Level-3 Shadow spell with an ordered primary and up to two
+secondary enemy targets. Its saved two-round status links secondary damage to
+the primary without recursive echoes; the fixed 20% base is unchanged by
+School rank, while the Spell-Power term uses saved School/Spellcraft scaling.
+Soul Binder adds 15 percentage points after the ordinary 40% cap. Both Linux
+targets link. The active-profile runtime filter passes 5/5 with no skips,
+covering target legality, status serialization/Dispel, indirect and attack
+damage, and the recursion guard; the focused AI cast-choice filter passes 1/1.
+The module mirror and 38/38 content checks pass. Spell/Perk icons are
+purpose-made but Provisional, and the selection/status UI has source-only
+review. Native rendering, playable delivery, whole-battle save continuation,
+active-link attack forecasting, Spell Lock versus new echo damage, primary
+Dispel semantics, and triggering-hit versus echo log order remain Phase 2 or
+delivery checks rather than completed evidence.
+
 Quicksand is among the active Nature identities. Its selected-placement path
 now has a saved-v3 opt-in marker, exact ordered caster selection, authoritative
 pre-spend and pre-effect validation, a matching Lua obstacle effect, concealed
@@ -237,7 +252,7 @@ from the active identity row.
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
-| Shadow | 12 | 6 | Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
+| Shadow | 12 | 7 | Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
