@@ -85,6 +85,12 @@ int32_t MechanicsProxy::getArcaneBreachMarkBasisPoints(const spells::Mechanics &
 		ARCANE_BREACH_BASE_BASIS_POINTS + component));
 }
 
+int32_t MechanicsProxy::getBattleRound(const spells::Mechanics & m)
+{
+	const auto * battle = m.battle();
+	return battle ? battle->battleGetRound() : -1;
+}
+
 void MechanicsProxy::registerMethods(MethodRegistrar & R)
 {
 	R.method<&Mechanics::isPositiveSpell>("isPositive", {},
@@ -131,6 +137,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the rounded raw Storm of Daggers total before target-specific resistance or mitigation.");
 	R.method<&Mechanics::getEffectDuration>("getEffectDuration", {},
 		"Returns the effect duration in turns.");
+	R.function<&MechanicsProxy::getBattleRound>("getBattleRound", {},
+		"Returns the current battle round, or -1 when the cast has no battle context.");
 	R.method<&Mechanics::adjustEffectDuration>("adjustEffectDuration",
 		{{"baseDuration", "Base effect duration in turns."}}, {},
 		"Returns the base duration adjusted by cast-specific duration mechanics.");

@@ -50,6 +50,12 @@ public:
 	static float naturePoisonPlacementValue(const spells::Mechanics * spellMechanics,
 		const spells::Target & target,
 		std::shared_ptr<CBattleInfoCallback> battleState = {});
+	/// Estimates canonical Plague's signed, delayed value from three ticks on
+	/// the selected stack and the first deterministic adjacent spread recipient.
+	/// All projected damage uses detached states and the shared runtime helpers.
+	static float plagueDelayedDamageValue(const spells::Mechanics * spellMechanics,
+		const spells::Target & target,
+		std::shared_ptr<CBattleInfoCallback> battleState = {});
 
 private:
 	enum Compare

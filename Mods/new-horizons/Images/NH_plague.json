@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "status": "Provisional",
+  "approval": "No in-game visual review or final-art approval recorded.",
+  "spell_id": "new-horizons:plague",
+  "descriptor_role": "Art handoff metadata only; this file is not referenced by spell configuration.",
+  "icons": {
+    "spellbook": { "file": "NH_plague_44.png", "dimensions": [44, 44] },
+    "scroll": { "file": "NH_plague_32.png", "dimensions": [32, 32] },
+    "scenario_bonus": { "file": "NH_plague_32.png", "dimensions": [32, 32] },
+    "battle_effect": { "file": "NH_plague_30.png", "dimensions": [30, 30] },
+    "immunity": { "file": "NH_plague_30.png", "dimensions": [30, 30] }
+  },
+  "source": "assets/new-horizons/art-source/plague-v1/"
+}

@@ -31,6 +31,7 @@
 namespace
 {
 constexpr std::string_view FRAILTY_SPELL_KEY = "new-horizons:frailty";
+constexpr std::string_view PLAGUE_SPELL_KEY = "new-horizons:plague";
 
 struct StackStatusEntry
 {
@@ -375,6 +376,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool spellLock = newHorizonsBattleStatus::isSpellLock(spellKey);
 		const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
 		const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
+		const bool plague = spellKey == PLAGUE_SPELL_KEY;
 		const auto frailty = currentFrailtyStatus(stack, spellKey, spellBonuses);
 		const auto lockStatus = spellLock
 			? newHorizonsBattleStatus::spellLockStatus(*spellBonuses)
@@ -384,7 +386,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty)
+		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague)
 		{
 			const std::string badge = timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
@@ -434,6 +436,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 				? frailtyTooltip(effect.toSpell()->getDescriptionTranslated(0), *frailty)
 				: effect.toSpell()->getDescriptionTranslated(0)
 					+ "\n\nBattle-long; there is no duration counter. Dispel removes the accumulated effect.";
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(plague)
+		{
+			const std::string tooltip = effect.toSpell()->getDescriptionTranslated(0)
+				+ "\n\n" + std::to_string(duration) + " rounds remaining. Plague damages this stack at the end of its turn, then may spread to an adjacent uninfected stack on either side.";
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 

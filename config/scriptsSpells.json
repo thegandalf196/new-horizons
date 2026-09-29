@@ -135,6 +135,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"plagueEffect" : {
+		"implements" : "spellEffect",
+		"script" : "spells/plague",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"frailtyEffect" : {
 		"implements" : "spellEffect",
 		"script" : "spells/frailty",

@@ -188,5 +188,16 @@
 			"additionalProperties" : false
 		},
 		"description" : ""
+	},
+	"plagueStatus" : {
+		"implements" : "combatEvent",
+		"script" : "combat/plagueStatus",
+		"patches" : [ ],
+		"priority" : 0,
+		"schema" : {
+			"properties" : {},
+			"additionalProperties" : false
+		},
+		"description" : "Inert spell-status marker; Plague resolution is authoritative in the battle flow."
 	}
 }

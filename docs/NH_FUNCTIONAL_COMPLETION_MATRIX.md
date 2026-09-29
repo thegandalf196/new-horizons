@@ -25,7 +25,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 101/310 | 209 planned; active status alone does not certify behavior. Withering Touch adds five percentage points to each Frailty cast. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 39/67 | 28 missing/inactive; Frailty has focused authoritative and AI-valuation evidence, but rendered/playable delivery remains pending. |
+| Canonical combat-spell identities registered | 40/67 | 27 missing/inactive; Plague has focused authoritative and AI-valuation evidence, but rendered/playable delivery remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -198,8 +198,8 @@ The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
 spells. Rechecking the current saved roster after adding Holy Wrath, Storm
 of Daggers, Regeneration, Nature Poison, Holy Armor, Life Drain, Hex of Pain,
-and Frailty shows 39 of the 67 combat identities with active settings rows and
-registered mod/core definitions, including Spell Lock; 28 are absent or inactive. An active
+Frailty, and Plague shows 40 of the 67 combat identities with active settings rows and
+registered mod/core definitions, including Spell Lock; 27 are absent or inactive. An active
 identity is not proof that its exact canonical effect is complete.
 
 Frailty replaces core Weakness in new saved-v3 acquisition while older saved
@@ -210,6 +210,17 @@ link and 6/6 authoritative plus 1/1 AI projection focused tests pass. Stack
 status text and purpose-made spell/perk icons are source-bound, but native
 rendering, save/load continuation, actual AI spell choice, and playable
 acceptance remain unverified Phase 2 work.
+
+Plague is a Level-3 Shadow magical affliction with a saved three-round marker.
+Its end-of-turn tick uses captured raw Spell Power and the saved School
+coefficient, and it can spread deterministically to either side without a
+biological-type filter. WAIT does not tick; extra activations do not tick more
+than once in a round. All six focused authoritative tests and the focused AI
+valuation/selection test pass under the active New Horizons profile; both
+Linux targets link. The purpose-made icon and battle status are Provisional.
+Plaguebearer's undefined normal spread limit remains an open design decision;
+delayed Spell Penetration/Annihilator interactions, multi-hop AI valuation,
+native rendering, and playable acceptance remain unverified/deferred.
 
 Quicksand is among the active Nature identities. Its selected-placement path
 now has a saved-v3 opt-in marker, exact ordered caster selection, authoritative
@@ -226,7 +237,7 @@ from the active identity row.
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
-| Shadow | 12 | 5 | Plague; Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
+| Shadow | 12 | 6 | Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |

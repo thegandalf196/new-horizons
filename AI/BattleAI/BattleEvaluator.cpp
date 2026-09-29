@@ -36,6 +36,7 @@
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/CRandomGenerator.h"
@@ -2322,13 +2323,20 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							if(ps.spellNaturePoisonValue <= 0.0f)
 								continue;
 						}
-		if(isCanonicalHolyArmor(spell))
-		{
-			if(visibleMagicalSpellThreat <= 0.0f || friendlyAvailableHealth <= 0
-				|| ps.dest.size() != 1 || !ps.dest.front().unitValue
-				|| ps.dest.front().unitValue->unitSide() != side)
-				continue;
-		}
+						if(spell->getJsonKey() == newHorizonsPlague::SPELL_ID)
+						{
+							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::plagueDelayedDamageValue(
+								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
+							if(ps.spellPlacementHeuristicValue <= 0.0f)
+								continue;
+						}
+						if(isCanonicalHolyArmor(spell))
+						{
+							if(visibleMagicalSpellThreat <= 0.0f || friendlyAvailableHealth <= 0
+								|| ps.dest.size() != 1 || !ps.dest.front().unitValue
+								|| ps.dest.front().unitValue->unitSide() != side)
+								continue;
+						}
 						possibleCasts.push_back(ps);
 					}
 				}
@@ -2626,17 +2634,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = std::numeric_limits<float>::lowest();
 					continue;
 				}
-				// Canonical Land Mine deliberately has no immediate unit-health delta:
-				// its value is the pressure it places on hostile ground approaches.
-				// Keep that deterministic live-snapshot score instead of allowing the
-				// generic hypothetical cast path to collapse every legal placement to
-				// zero merely because the mine has not triggered yet.
+				// Canonical delayed spells such as Land Mine, Fire Wall, and Plague may
+				// have no immediate unit-health delta. Keep their deterministic
+				// live-snapshot value instead of allowing the generic hypothetical cast
+				// path to collapse a legal delayed effect to zero before it triggers.
 				if(ps.command == HeroCommand::NONE && ps.spellPlacementHeuristicValue > 0.0f)
 				{
-					// A delayed mine still consumes the hero exchange; preserve the
-					// same valid best-attack baseline used by contextual Orders so a
-					// placement heuristic is compared against an ordinary action on
-					// the shared BattleAI scale.
+					// A delayed spell still consumes the hero exchange; preserve the
+					// same best-attack baseline used by contextual Orders so its
+					// placement heuristic is compared on the shared BattleAI scale.
 					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
 						counterspellNegated, *spellAllowance) || counterspellNegated)

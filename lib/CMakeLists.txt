@@ -57,6 +57,7 @@ set(lib_MAIN_SRCS
 	battle/TimeStopState.cpp
 	battle/NewHorizonsBloodrage.cpp
 	battle/NewHorizonsBulwark.cpp
+	battle/NewHorizonsPlague.cpp
 	battle/NewHorizonsBattlecraft.cpp
 	battle/NewHorizonsArchery.cpp
 	battle/NewHorizonsCombatSkills.cpp

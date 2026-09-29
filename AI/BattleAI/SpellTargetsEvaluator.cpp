@@ -18,6 +18,7 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
+#include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/CRandomGenerator.h"
 #include "SpellTargetsEvaluator.h"
@@ -133,6 +134,17 @@ bool isCanonicalNaturePoison(const Mechanics * spellMechanics)
 	const auto * battleCallback = spellMechanics ? spellMechanics->battle() : nullptr;
 	const auto * battle = battleCallback ? battleCallback->getBattle() : nullptr;
 	return battle && newHorizonsMagic::physicalPoisonEnabled(battle->getMagicRules(), spellMechanics->getSpellId());
+}
+
+bool isCanonicalPlague(const Mechanics * spellMechanics)
+{
+	const auto * battleCallback = spellMechanics ? spellMechanics->battle() : nullptr;
+	const auto * battle = battleCallback ? battleCallback->getBattle() : nullptr;
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return battle
+		&& newHorizonsMagic::rulesActive(battle->getMagicRules())
+		&& spell
+		&& spell->getJsonKey() == newHorizonsPlague::SPELL_ID;
 }
 
 bool isNaturePoisonTarget(const Mechanics * spellMechanics, const battle::Unit * unit)
@@ -1181,6 +1193,113 @@ float SpellTargetEvaluator::naturePoisonPlacementValue(const Mechanics * spellMe
 		applicationChance -= static_cast<float>(std::clamp(liveTarget->magicResistance(), 0, 100)) / 100.0f;
 
 	return incrementalValue * applicationChance;
+}
+
+float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMechanics,
+	const Target & target, std::shared_ptr<CBattleInfoCallback> battleState)
+{
+	if(!isCanonicalPlague(spellMechanics) || target.size() != 1 || !target.front().unitValue)
+		return 0.0f;
+
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		return 0.0f;
+
+	const auto * liveTarget = target.front().unitValue;
+	if(!liveTarget->alive() || !liveTarget->isValidTarget(false) || liveTarget->isInvincible()
+		|| newHorizonsPlague::hasPlague(liveTarget) || !spellMechanics->isReceptive(liveTarget))
+		return 0.0f;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return 0.0f;
+
+	const auto * liveState = dynamic_cast<const battle::CUnitState *>(liveTarget);
+	if(!liveState)
+		return 0.0f;
+
+	// getEffectPower() is the captured raw cast Spell Power. The hero's separate
+	// effect-power divisor is for legacy effect formulas and must not reduce
+	// Plague's canonical raw-SP term.
+	const auto rawDamage = newHorizonsPlague::rawTickDamage(
+		std::max(0, spellMechanics->getEffectPower()),
+		spellMechanics->getSpellPowerCoefficientBasisPoints());
+	if(rawDamage <= 0)
+		return 0.0f;
+
+	const auto * battleCallback = spellMechanics->battle();
+	if(!battleCallback)
+		return 0.0f;
+	if(!battleState)
+	{
+		battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(battleCallback), [](CBattleInfoCallback *) {});
+	}
+
+	DamageCache damageCache;
+	const auto projectedTicksValue = [&](const battle::Unit * unit)
+	{
+		const auto * unitState = dynamic_cast<const battle::CUnitState *>(unit);
+		if(!unitState || !unitState->alive())
+			return 0.0f;
+
+		auto projectedState = unitState->acquireState();
+		float value = 0.0f;
+		for(int tick = 0; tick < 3 && projectedState->alive(); ++tick)
+		{
+			const auto adjustedDamage = newHorizonsPlague::adjustedTickDamage(
+				*battleCallback, casterSide, unit, rawDamage);
+			const auto actualDamage = std::min<int64_t>(
+				std::max<int64_t>(0, adjustedDamage),
+				std::max<int64_t>(0, projectedState->getAvailableHealth()));
+			if(actualDamage > 0)
+			{
+				value += AttackPossibility::calculateDamageReduce(nullptr, projectedState.get(),
+					static_cast<uint64_t>(actualDamage), damageCache, battleState);
+				auto appliedDamage = actualDamage;
+				projectedState->damage(appliedDamage);
+			}
+		}
+		return value;
+	};
+
+	const auto signedValue = [&](const battle::Unit * unit, float value)
+	{
+		if(unit->unitSide() == casterSide)
+			return -value;
+		if(unit->unitSide() == battleCallback->otherSide(casterSide))
+			return value;
+		return 0.0f;
+	};
+
+	float totalValue = signedValue(liveTarget, projectedTicksValue(liveTarget));
+	// Runtime ticks apply damage first and then attempt spread, even if that
+	// tick killed the afflicted stack; its occupied battlefield position still
+	// supplies the deterministic adjacency source for this propagation.
+	{
+		const auto acceptsSpread = [&](const battle::Unit * recipient)
+		{
+			return newHorizonsPlague::isSpreadRecipientReceptive(
+				*battleCallback, casterSide, recipient);
+		};
+		const auto spreadTargetId = newHorizonsPlague::selectNextSpreadTarget(
+			*battleCallback, liveTarget, acceptsSpread);
+		if(spreadTargetId)
+		{
+			const auto * spreadTarget = battleCallback->battleGetUnitByID(*spreadTargetId);
+			if(spreadTarget)
+				totalValue += signedValue(spreadTarget, projectedTicksValue(spreadTarget));
+		}
+	}
+
+	// The initial hostile magical application can be resisted. Automatic spread
+	// is a propagation event, so it uses the runtime's receptor filter without a
+	// second probabilistic resistance roll.
+	float applicationChance = 1.0f;
+	if(spellMechanics->isNegativeSpell() && spellMechanics->isMagicalEffect())
+		applicationChance -= static_cast<float>(std::clamp(liveTarget->magicResistance(), 0, 100)) / 100.0f;
+
+	return totalValue * applicationChance;
 }
 
 std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)

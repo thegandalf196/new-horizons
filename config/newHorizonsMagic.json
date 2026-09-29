@@ -232,6 +232,11 @@
 			"level": 2,
 			"costs": [8, 8, 8, 8]
 		},
+		"new-horizons:plague": {
+			"schools": ["new-horizons:shadow"],
+			"level": 3,
+			"costs": [11, 11, 11, 11]
+		},
 		"new-horizons:holyWrath": {
 			"schools": ["new-horizons:light"],
 			"level": 3,

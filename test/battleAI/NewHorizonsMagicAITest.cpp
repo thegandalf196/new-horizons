@@ -24,6 +24,7 @@
 #include "../../lib/constants/StringConstants.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
@@ -2362,6 +2363,137 @@ TEST_F(NewHorizonsMagicAITest, V3NaturePoisonAIValuesRankScaledMarginalTicksAgai
 	EXPECT_EQ(selectedTarget.front().unitValue, enemy);
 	EXPECT_EQ(enemy->physicalPoisonBaseDamage, 0);
 	EXPECT_EQ(enemy->physicalPoisonActivationsRemaining, 0);
+}
+
+TEST_F(NewHorizonsMagicAITest, V3PlagueAIValuesRawSpellPowerSpreadFriendlyFireAndLegalGenericTargets)
+{
+	useCommands = true;
+	neutralizeCommandEffects = true;
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const SpellID plague(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)));
+	ASSERT_NE(plague, SpellID::NONE);
+	ASSERT_NE(plague.toSpell(), nullptr);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto known : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(plague);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(3, 5), 100);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 100);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(enemy, nullptr);
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, plague.toSpell());
+	auto mechanics = plague.toSpell()->battleMechanics(&cast);
+	ASSERT_EQ(mechanics->getEffectPower(), 100);
+	EXPECT_EQ(newHorizonsPlague::rawTickDamage(mechanics->getEffectPower(),
+		mechanics->getSpellPowerCoefficientBasisPoints()), 105);
+
+	const auto legalTargets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	EXPECT_TRUE(std::ranges::any_of(legalTargets, [&](const spells::Target & target)
+	{
+		return target.size() == 1 && target.front().unitValue == enemy;
+	}));
+	const spells::Target enemyTarget{spells::Destination(enemy)};
+	const float directOnlyValue = SpellTargetEvaluator::plagueDelayedDamageValue(
+		mechanics.get(), enemyTarget);
+	EXPECT_GT(directOnlyValue, 0.0f);
+	EXPECT_FALSE(newHorizonsPlague::hasPlague(enemy));
+
+	BattleHex adjacentHex = BattleHex::INVALID;
+	for(const auto & hex : enemy->getSurroundingHexes())
+		if(hex.isAvailable() && !battle()->battleGetUnitByPos(hex, true))
+		{
+			adjacentHex = hex;
+			break;
+		}
+	ASSERT_TRUE(adjacentHex.isValid());
+
+	// A nonliving Diamond Golem remains a legal target and spread recipient;
+	// Plague is magical corruption, not biological Poison.
+	const auto diamondGolem = creatureByName("core:diamondGolem");
+	const auto * diamondGolemCreature = diamondGolem.toCreature();
+	ASSERT_NE(diamondGolemCreature, nullptr);
+	EXPECT_FALSE(diamondGolemCreature->isLiving());
+	auto * enemyConstruct = addStack(BattleSide::DEFENDER, diamondGolem, adjacentHex, 100);
+	ASSERT_NE(enemyConstruct, nullptr);
+	const auto spreadTarget = newHorizonsPlague::selectNextSpreadTarget(*battle(), enemy,
+		[&](const battle::Unit * recipient)
+		{
+			return newHorizonsPlague::isSpreadRecipientReceptive(
+				*battle(), BattleSide::ATTACKER, recipient);
+		});
+	ASSERT_TRUE(spreadTarget.has_value());
+	EXPECT_EQ(*spreadTarget, enemyConstruct->unitId());
+	const auto targetsWithConstruct = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	EXPECT_TRUE(std::ranges::any_of(targetsWithConstruct, [&](const spells::Target & target)
+	{
+		return target.size() == 1 && target.front().unitValue == enemyConstruct;
+	}));
+	const float enemySpreadValue = SpellTargetEvaluator::plagueDelayedDamageValue(
+		mechanics.get(), enemyTarget);
+	EXPECT_GT(enemySpreadValue, directOnlyValue);
+	EXPECT_EQ(enemy->getAvailableHealth(), 100 * enemy->getMaxHealth());
+	EXPECT_FALSE(newHorizonsPlague::hasPlague(enemy));
+
+	BattleUnitsChanged removeConstruct;
+	removeConstruct.battleID = BattleID(0);
+	removeConstruct.changedStacks.emplace_back(enemyConstruct->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(removeConstruct);
+	auto * friendlyNeighbor = addStack(BattleSide::ATTACKER,
+		creatureByName("core:ogre"), adjacentHex, 100);
+	ASSERT_NE(friendlyNeighbor, nullptr);
+	const auto friendlyHealthBefore = friendlyNeighbor->getAvailableHealth();
+	const float friendlyFireValue = SpellTargetEvaluator::plagueDelayedDamageValue(
+		mechanics.get(), enemyTarget);
+	EXPECT_LT(friendlyFireValue, directOnlyValue);
+	EXPECT_EQ(friendlyNeighbor->getAvailableHealth(), friendlyHealthBefore);
+	EXPECT_FALSE(newHorizonsPlague::hasPlague(friendlyNeighbor));
+
+	BattleUnitsChanged removeFriendly;
+	removeFriendly.battleID = BattleID(0);
+	removeFriendly.changedStacks.emplace_back(friendlyNeighbor->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(removeFriendly);
+
+	// The full BattleAI path finds and submits the legal enemy cast while the
+	// valuation pass itself leaves HP, Plague markers, and mana unchanged.
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	const auto healthBefore = enemy->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.spell, plague);
+	const auto selectedTarget = action.getTarget(battle());
+	ASSERT_EQ(selectedTarget.size(), 1u);
+	EXPECT_EQ(selectedTarget.front().unitValue, enemy);
+	EXPECT_EQ(enemy->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_FALSE(newHorizonsPlague::hasPlague(enemy));
 }
 
 TEST_F(NewHorizonsMagicAITest, V3BlessHypotheticalForecastMatchesTheSingleTargetAuthoritativeCast)

@@ -11,6 +11,7 @@
 #include "BattleInfo.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsOffense.h"
+#include "NewHorizonsPlague.h"
 #include "TimeStopState.h"
 
 #include "BattleLayout.h"
@@ -1013,6 +1014,13 @@ void BattleInfo::nextRound()
 		sides.at(side).warcastingState = sides.at(side).warcastingState.clearedIfExpired(round);
 	}
 
+	const auto plagueMarker = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)))))
+		.And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER));
+	// Plague's three-round countdown is advanced only after its end-of-stack-turn
+	// tick, so a cast made after the target already acted still receives all three
+	// scheduled ticks instead of expiring at the next round boundary.
+	const auto roundTimedEffects = CSelector(Bonus::NTurns).And(plagueMarker.Not());
 	for(auto & s : stacks)
 	{
 		// new turn effects
@@ -1025,10 +1033,10 @@ void BattleInfo::nextRound()
 				{
 					return isPreservedSpellLockEffect(bonus, *preserveBeneficial);
 				});
-				s->reduceBonusDurations(CSelector(Bonus::NTurns).And(preservedMagic.Not()));
+				s->reduceBonusDurations(roundTimedEffects.And(preservedMagic.Not()));
 			}
 			else
-				s->reduceBonusDurations(Bonus::NTurns);
+				s->reduceBonusDurations(roundTimedEffects);
 		}
 
 		s->afterNewRound(isFirstRound);

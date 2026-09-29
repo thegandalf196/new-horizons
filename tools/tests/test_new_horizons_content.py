@@ -29,6 +29,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:disintegrate',
     'new-horizons:masterChainLightning',
     'new-horizons:phantomArmy',
+    'new-horizons:plague',
     'new-horizons:poison',
     'new-horizons:regeneration',
     'new-horizons:spellLock',

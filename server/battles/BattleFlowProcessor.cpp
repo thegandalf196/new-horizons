@@ -20,8 +20,9 @@
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
-#include "../../lib/bonuses/BonusSelector.h"
+#include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/entities/building/TownFortifications.h"
 #include "../../lib/gameState/CGameState.h"
@@ -1185,6 +1186,183 @@ bool BattleFlowProcessor::rollGoodMorale(const CBattleInfoCallback & battle, con
 	return false;
 }
 
+namespace
+{
+SpellID plagueRuntimeSpellId()
+{
+	static const SpellID id(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)));
+	return id;
+}
+
+std::shared_ptr<const Bonus> plagueStatusBonus(const battle::Unit * unit)
+{
+	if(!unit)
+		return {};
+	const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(plagueRuntimeSpellId())).And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER)));
+	return bonuses->empty() ? std::shared_ptr<const Bonus>{} : bonuses->front();
+}
+
+void applyPlagueEndOfActivation(CGameHandler * gameHandler, const CBattleInfoCallback & battle, const CStack * stack)
+{
+	if(!gameHandler || !stack)
+		return;
+	const auto marker = plagueStatusBonus(stack);
+	if(!marker)
+		return; // Dispel or natural completion has removed the authoritative status.
+
+	BattleSide casterSide = stack->unitSide();
+	int32_t spreadAttempts = 0;
+	int32_t lastProcessedRound = -1;
+	int32_t sourceUnitId = -1;
+	JsonNode parameters;
+	if(marker->parameters)
+	{
+		try
+		{
+			parameters = marker->parameters->toCustom<JsonNode>();
+			if(parameters.isStruct())
+			{
+				if(parameters["casterSide"].isNumber())
+					casterSide = static_cast<BattleSide>(parameters["casterSide"].Integer());
+				if(parameters["spreadAttempts"].isNumber())
+					spreadAttempts = std::max<int32_t>(0, parameters["spreadAttempts"].Integer());
+				if(parameters["lastProcessedRound"].isNumber())
+					lastProcessedRound = parameters["lastProcessedRound"].Integer();
+				if(parameters["sourceUnitId"].isNumber())
+					sourceUnitId = parameters["sourceUnitId"].Integer();
+			}
+		}
+		catch(const std::exception &)
+		{
+			// A legacy or malformed marker retains the safe defaults above.
+		}
+	}
+	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		casterSide = stack->unitSide();
+	const auto currentRound = battle.battleGetRound();
+	if(lastProcessedRound >= currentRound)
+		return; // Morale/Second Wind and other extra activations still tick once per round.
+
+	const auto rawDamage = std::max<int64_t>(0, marker->val);
+	const auto adjustedDamage = newHorizonsPlague::adjustedTickDamage(battle, casterSide, stack, rawDamage);
+	int64_t actualDamage = 0;
+	if(stack->alive() && adjustedDamage > 0)
+	{
+		auto state = stack->acquireState();
+		BattleStackAttacked hit;
+		const auto * source = sourceUnitId >= 0 ? battle.battleGetUnitByID(static_cast<uint32_t>(sourceUnitId)) : nullptr;
+		if(!source || source->unitSide() != casterSide)
+			for(const auto * candidate : battle.battleGetAllStacks(true))
+				if(candidate && candidate->unitSide() == casterSide)
+				{
+					source = candidate;
+					break;
+				}
+		hit.attackerID = source ? source->unitId() : stack->unitId();
+		hit.stackAttacked = stack->unitId();
+		hit.damageAmount = adjustedDamage;
+		hit.flags = BattleStackAttacked::SPELL_EFFECT;
+		hit.spellID = plagueRuntimeSpellId();
+		CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), state);
+		actualDamage = hit.damageAmount;
+		StacksInjured injury;
+		injury.battleID = battle.getBattle()->getBattleID();
+		injury.stacks.push_back(hit);
+		gameHandler->sendAndApply(injury);
+	}
+
+	BattleLogMessage tickLog;
+	tickLog.battleID = battle.getBattle()->getBattleID();
+	MetaString tickLine;
+	tickLine.appendRawString("Plague deals ");
+	tickLine.appendNumber(actualDamage);
+	tickLine.appendRawString(" magical damage to %s.");
+	stack->addNameReplacement(tickLine, stack->getCount());
+	tickLog.lines.push_back(std::move(tickLine));
+	gameHandler->sendAndApply(tickLog);
+
+	// Canonical order is damage, then one deterministic spread attempt. A lethal
+	// final tick still propagates before its source status is discarded.
+	const auto spreadTargetId = newHorizonsPlague::selectNextSpreadTarget(battle, stack,
+		[&battle, casterSide](const battle::Unit * candidate)
+		{
+			return newHorizonsPlague::isSpreadRecipientReceptive(battle, casterSide, candidate);
+		});
+	if(spreadTargetId)
+	{
+		const auto * spreadTarget = battle.battleGetUnitByID(*spreadTargetId);
+		if(spreadTarget)
+		{
+			Bonus infection(*marker);
+			infection.turnsRemain = 3;
+			const auto infectionRound = battle.battleGetRound();
+			if(infection.parameters)
+			{
+				try
+				{
+					JsonNode spreadParameters = infection.parameters->toCustom<JsonNode>();
+					spreadParameters["spreadAttempts"].Integer() = 0;
+					spreadParameters["lastProcessedRound"].Integer() = infectionRound - 1;
+					infection.parameters = std::make_shared<BonusParameters>(spreadParameters);
+				}
+				catch(const std::exception &)
+				{
+					// Keep inherited parameters when loading a malformed legacy marker.
+				}
+			}
+			SetStackEffect addInfection;
+			addInfection.battleID = battle.getBattle()->getBattleID();
+			addInfection.toAdd.emplace_back(spreadTarget->unitId(), std::vector<Bonus>{infection});
+			gameHandler->sendAndApply(addInfection);
+
+			BattleLogMessage spreadLog;
+			spreadLog.battleID = battle.getBattle()->getBattleID();
+			MetaString spreadLine;
+			spreadLine.appendRawString(casterSide == spreadTarget->unitSide()
+				? "Plague spreads to a friendly stack, %s."
+				: "Plague spreads to an enemy stack, %s.");
+			spreadTarget->addNameReplacement(spreadLine, spreadTarget->getCount());
+			spreadLog.lines.push_back(std::move(spreadLine));
+			gameHandler->sendAndApply(spreadLog);
+		}
+	}
+
+	SetStackEffect statusUpdate;
+	statusUpdate.battleID = battle.getBattle()->getBattleID();
+	if(stack->alive() && marker->turnsRemain > 1)
+	{
+		Bonus nextStatus(*marker);
+		nextStatus.turnsRemain = marker->turnsRemain - 1;
+		JsonNode nextParameters;
+		if(marker->parameters)
+		{
+			try
+			{
+				nextParameters = marker->parameters->toCustom<JsonNode>();
+			}
+			catch(const std::exception &)
+			{
+			}
+		}
+		nextParameters["casterSide"].Integer() = static_cast<int32_t>(casterSide);
+		nextParameters["spreadAttempts"].Integer() = spreadAttempts < std::numeric_limits<int32_t>::max()
+			? spreadAttempts + 1 : spreadAttempts;
+		nextParameters["lastProcessedRound"].Integer() = currentRound;
+		if(sourceUnitId >= 0)
+			nextParameters["sourceUnitId"].Integer() = sourceUnitId;
+		nextStatus.parameters = std::make_shared<BonusParameters>(nextParameters);
+		// updateUnitBonus only extends turnsRemain and leaves parameters untouched.
+		// Remove+add is therefore required to persist the round marker and countdown.
+		statusUpdate.toRemove.emplace_back(stack->unitId(), std::vector<Bonus>{*marker});
+		statusUpdate.toAdd.emplace_back(stack->unitId(), std::vector<Bonus>{std::move(nextStatus)});
+	}
+	else
+		statusUpdate.toRemove.emplace_back(stack->unitId(), std::vector<Bonus>{*marker});
+	gameHandler->sendAndApply(statusUpdate);
+}
+}
+
 void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const BattleAction &ba,
 	bool masterGateActivationContinuation, bool pursuitActivationContinuation)
 {
@@ -1298,6 +1476,18 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 				const auto side = actedStack->unitSide();
 				if(const_cast<BattleInfo *>(stateInfo)->setHeroOrderSecondWindActive(side, false))
 					publishHeroOrderState(battle, side);
+			}
+		}
+
+		if(ba.actionType != EActionType::WAIT)
+		{
+			applyPlagueEndOfActivation(gameHandler, battle, actedStack);
+			if(owner->checkBattleStateChanges(battle))
+				return;
+			if(!actedStack->alive())
+			{
+				activateNextStack(battle);
+				return;
 			}
 		}
 
