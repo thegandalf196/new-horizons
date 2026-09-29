@@ -92,6 +92,22 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 			stack->physicalPoisonBaseDamage,
 			stack->physicalPoisonActivationsRemaining,
 			newHorizonsBulwark::physicalPoisonTickDamage(stack));
+		for(const auto effect : stack->activeSpells())
+		{
+			const auto * spell = effect.toSpell();
+			if(!spell || !newHorizonsBattleStatus::isRegeneration(spell->getJsonKey()))
+				continue;
+
+			const auto spellBonuses = stack->getBonuses(
+				Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(effect)));
+			const auto remainingRounds = spellBonuses->empty()
+				? 0 : std::max<int>(0, spellBonuses->front()->turnsRemain);
+			result.regeneration = {
+				stack->regenerationRateMillionths,
+				stack->regenerationProjectedHeal(),
+				remainingRounds};
+			break;
+		}
 	}
 	return result;
 }
@@ -103,6 +119,8 @@ newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
 		return newHorizonsBattleStatus::StackStatusIconKind::TIME_STOP;
 	if(newHorizonsBattleStatus::isSpellLock(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::SPELL_LOCK;
+	if(newHorizonsBattleStatus::isRegeneration(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::REGENERATION;
 	if(newHorizonsBattleStatus::isFocusMagic(spellKey) || newHorizonsBattleStatus::isArcaneBreach(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::FOCUS_OR_ARCANE;
 	return newHorizonsBattleStatus::StackStatusIconKind::ORDINARY;
@@ -309,6 +327,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			const std::string tooltip = lockStatus
 				? newHorizonsBattleStatus::spellLockTooltip(effect.toSpell()->getDescriptionTranslated(0), *lockStatus)
 				: effect.toSpell()->getDescriptionTranslated(0);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(newHorizonsBattleStatus::isRegeneration(spellKey))
+		{
+			const std::string tooltip = newHorizonsBattleStatus::regenerationTooltip(
+				effect.toSpell()->getDescriptionTranslated(0), displayedStatus.regeneration);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 		else if(focusMagic)

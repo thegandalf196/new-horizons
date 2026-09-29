@@ -20,7 +20,10 @@
 #include "Pathfinding/AIPathfinder.h"
 #include "Engine/Nullkiller.h"
 
+#include <map>
 #include <mutex>
+#include <optional>
+#include <set>
 
 class AsyncRunner;
 
@@ -89,6 +92,10 @@ public:
 	};
 	mutable std::mutex musterMutex;
 	mutable std::vector<PendingMuster> pendingMusters;
+	bool warMachinePurchaseBudgetInitialized = false;
+	si64 warMachinePurchaseBudgetRemaining = 0;
+	std::map<ObjectInstanceID, std::set<ArtifactID>> requestedWarMachineArtifacts;
+	std::map<ObjectInstanceID, std::set<ArtifactPosition>> reservedWarMachineSlots;
 
 	AIGateway();
 	~AIGateway();
@@ -186,6 +193,12 @@ public:
 	/// Submit a garrison swap only after the AI-side whole-army Leadership
 	/// preflight. The server remains authoritative and validates the request.
 	void swapGarrisonHero(const CGTownInstance * town);
+	/// Buy useful, affordable machines from the current saved-rules shop offers
+	/// for our heroes who visit or end their turn visiting one of our towns.
+	void purchaseUsefulWarMachines(
+		const CGTownInstance * onlyTown = nullptr,
+		const CGHeroInstance * onlyHero = nullptr,
+		std::optional<si64> availableGold = std::nullopt);
 	void performObjectInteraction(const CGObjectInstance * obj, HeroPtr heroPtr);
 	bool makePossibleUpgrades(const CArmedInstance * obj);
 

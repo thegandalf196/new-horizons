@@ -175,6 +175,10 @@ public:
 	/// Number of accepted activations remaining before No Quarter's morale penalty ends.
 	int32_t noQuarterMoraleActivationsRemaining;
 	bool timeStopTurnConsumedFlag;
+	/// Cast-time Regeneration mark rate in millionths; 1,000,000 is 100%.
+	int32_t regenerationRateMillionths;
+	/// Fixed-point HP marked for Regeneration, preserving fractions across hits.
+	int64_t regenerationPendingMicroHealth;
 	bool summoned;
 	bool natureSummoned;
 	bool waiting;
@@ -335,6 +339,13 @@ public:
 	void afterNewRound(bool isFirstRound = false);
 
 	void afterGetsTurn(BattleUnitTurnReason reason);
+
+	/// Non-mutating near-term Regeneration forecast, clamped to surviving wounds.
+	int64_t regenerationProjectedHeal() const;
+	/// Mark actual new wounds on the top surviving creature using the saved rate.
+	void recordRegenerationWounds(int64_t newWoundHealth);
+	/// Consume all marks at activation start, returning only healable surviving wounds.
+	int64_t consumeRegenerationMarks();
 
 	bool archeryCrossfireAvailable(BattleSide side, uint32_t currentShooter, int32_t round) const;
 	void archeryRecordCrossfireDamage(BattleSide side, uint32_t shooter, int32_t round);

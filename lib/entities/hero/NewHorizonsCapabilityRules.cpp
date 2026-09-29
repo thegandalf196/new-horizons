@@ -12,6 +12,7 @@
 #include "NewHorizonsHeroRules.h"
 #include "CHeroClass.h"
 #include "CHeroClassHandler.h"
+#include "../faction/CFaction.h"
 #include "../../GameLibrary.h"
 #include "../../callback/IGameInfoCallback.h"
 #include "../../modding/IdentifierStorage.h"
@@ -70,12 +71,63 @@ int resolveCreature(const std::string & key)
 	return *id;
 }
 
+ArtifactID resolveArtifact(const std::string & key)
+{
+	const auto separator = key.find(':');
+	require(separator != std::string::npos && separator > 0 && separator + 1 < key.size(), "scoped artifact");
+	const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), ArtifactID::entityType(), key, true);
+	require(id.has_value() && *id >= 0, "unknown artifact " + key);
+	return ArtifactID(*id);
+}
+
+int resolveFaction(const std::string & key)
+{
+	const auto separator = key.find(':');
+	require(separator != std::string::npos && separator > 0 && separator + 1 < key.size(), "scoped faction");
+	const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), FactionID::entityType(), key, true);
+	require(id.has_value() && *id >= 0, "unknown faction " + key);
+	return *id;
+}
+
 void rankValues(const JsonNode & node, int minimum, int maximum, int untrained)
 {
 	require(node.isVector() && node.Vector().size() == 4, "four skill rank values required");
 	for(const auto & value : node.Vector())
 		require(integer(value, minimum, maximum), "skill rank value");
 	require(node.Vector().front().Integer() == untrained, "untrained skill value");
+}
+
+const std::array<ArtifactID, 3> & ordinaryWarMachineInventory()
+{
+	static const std::array<ArtifactID, 3> result = {
+		ArtifactID::BALLISTA,
+		ArtifactID::AMMO_CART,
+		ArtifactID::FIRST_AID_TENT
+	};
+	return result;
+}
+
+void validateWarMachineShop(const JsonNode & node)
+{
+	fields(node, {"inventory", "discountPercent", "roundingGold", "favoredMachineByFaction"});
+	require(node["inventory"].isVector() && node["inventory"].Vector().size() == ordinaryWarMachineInventory().size(),
+		"ordinary war machine inventory");
+	for(size_t index = 0; index < ordinaryWarMachineInventory().size(); ++index)
+		require(resolveArtifact(node["inventory"].Vector()[index].String()) == ordinaryWarMachineInventory()[index],
+			"ordinary war machine inventory must be Ballista, Ammo Cart, First Aid Tent in order");
+	require(integer(node["discountPercent"], 1, 100), "favored machine discountPercent");
+	require(integer(node["roundingGold"], 1, 100000), "favored machine roundingGold");
+
+	const auto & favored = node["favoredMachineByFaction"];
+	require(favored.isStruct() && favored.Struct().size() == 9, "favored machine mapping must cover all nine towns");
+	std::set<int> seenFactions;
+	for(const auto & [factionKey, artifactValue] : favored.Struct())
+	{
+		require(seenFactions.insert(resolveFaction(factionKey)).second, "duplicate resolved faction in favored machine mapping");
+		const auto artifact = resolveArtifact(artifactValue.String());
+		require(std::find(ordinaryWarMachineInventory().begin(), ordinaryWarMachineInventory().end(), artifact)
+			!= ordinaryWarMachineInventory().end(), "favored artifact is outside ordinary inventory");
+	}
 }
 
 void common(const JsonNode & rules)
@@ -122,6 +174,10 @@ void common(const JsonNode & rules)
 		}
 		rankValues(rules["siege"]["directControlChance"], 0, 100, 0);
 	}
+	if(rules["rulesetVersion"].Integer() < 4)
+		require(rules["warMachineShop"].isNull(), "legacy rules cannot contain warMachineShop");
+	else
+		validateWarMachineShop(rules["warMachineShop"]);
 }
 
 void profile(const JsonNode & node)
@@ -143,7 +199,7 @@ void validateCapabilityRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege", "warMachineShop"});
 	common(rules);
 	require(rules["classProfiles"].isStruct() && !rules["classProfiles"].Struct().empty(), "class profiles");
 	std::set<int> seen;
@@ -162,7 +218,7 @@ void validateResolvedCapabilityRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop"});
 	common(rules);
 	profile(rules["profile"]);
 }
@@ -175,6 +231,8 @@ JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass)
 	JsonNode result;
 	for(const auto * key : {"schemaVersion", "rulesetVersion", "leadership", "siege"})
 		result[key] = rules[key];
+	if(rules["rulesetVersion"].Integer() >= 4)
+		result["warMachineShop"] = rules["warMachineShop"];
 	for(const auto & [key, value] : rules["classProfiles"].Struct())
 		if(resolveClass(key) == heroClass.getNum())
 			result["profile"] = value;
@@ -283,5 +341,42 @@ int capabilitySiegeOutput(const JsonNode & rules, int siegeRating, const std::st
 int capabilityDirectControlChance(const JsonNode & rules, int warMachinesRank)
 {
 	return v3SiegeValue(rules, warMachinesRank, "directControlChance");
+}
+
+std::vector<ArtifactID> capabilityWarMachineShopInventory(const JsonNode & rules)
+{
+	if(!usesRules(rules))
+		return {};
+	validateCapabilityRules(rules, false);
+	if(rules["rulesetVersion"].Integer() < 4)
+		return {};
+
+	std::vector<ArtifactID> result;
+	for(const auto & artifact : rules["warMachineShop"]["inventory"].Vector())
+		result.push_back(resolveArtifact(artifact.String()));
+	return result;
+}
+
+std::optional<int> capabilityWarMachineShopPrice(
+	const JsonNode & rules, FactionID faction, ArtifactID artifact, int ordinaryPrice)
+{
+	const auto inventory = capabilityWarMachineShopInventory(rules);
+	if(inventory.empty() || !vstd::contains(inventory, artifact))
+		return std::nullopt;
+	require(faction.hasValue() && faction.toFaction(), "valid town faction required for shop price");
+	require(ordinaryPrice >= 0, "ordinary war machine price must be nonnegative");
+
+	const auto & shop = rules["warMachineShop"];
+	const auto favored = shop["favoredMachineByFaction"][faction.toFaction()->getJsonKey()];
+	if(favored.isNull() || resolveArtifact(favored.String()) != artifact)
+		return ordinaryPrice;
+
+	const int64_t rounding = shop["roundingGold"].Integer();
+	const int64_t percent = shop["discountPercent"].Integer();
+	const int64_t denominator = 100 * rounding;
+	const int64_t discounted = static_cast<int64_t>(ordinaryPrice) * percent;
+	const int64_t rounded = ((discounted + denominator / 2) / denominator) * rounding;
+	require(rounded <= std::numeric_limits<int>::max(), "favored machine price overflow");
+	return static_cast<int>(rounded);
 }
 }

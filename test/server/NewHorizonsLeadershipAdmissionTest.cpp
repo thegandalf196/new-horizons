@@ -11,6 +11,8 @@
 #include <tuple>
 
 #include "../../lib/GameConstants.h"
+#include "../../lib/CPlayerState.h"
+#include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGDwelling.h"
@@ -148,6 +150,70 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode());
 	}
 };
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, StrongholdBlacksmithUsesSavedOffersAndBallistaYardRefreshesSiege)
+{
+	const PlayerColor player(0);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.town({12, 12, 0}, FactionID::STRONGHOLD, player)
+		.hero({5, 5, 0}, heroType("core:christian"), player)
+		.heroGarrison({{CreatureID(0), 1}});
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(player);
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(town, nullptr);
+	town->addBuilding(BuildingID::BLACKSMITH);
+	town->addBuilding(BuildingID::SPECIAL_3);
+
+	const auto offers = town->getWarMachineShopOffers();
+	ASSERT_EQ(offers.size(), 3u);
+	EXPECT_EQ(offers[0].artifact, ArtifactID::BALLISTA);
+	EXPECT_EQ(offers[1].artifact, ArtifactID::AMMO_CART);
+	EXPECT_EQ(offers[2].artifact, ArtifactID::FIRST_AID_TENT);
+	EXPECT_FALSE(std::any_of(offers.begin(), offers.end(),
+		[](const auto & offer) { return offer.artifact == ArtifactID::CATAPULT; }));
+
+	const int ordinaryAmmoCartPrice = ArtifactID(ArtifactID::AMMO_CART).toArtifact()->getPrice();
+	const int favoredPrice = static_cast<int>(((static_cast<int64_t>(ordinaryAmmoCartPrice) * 75 + 2500) / 5000) * 50);
+	EXPECT_EQ(offers[1].price, favoredPrice);
+
+	town->setVisitingHero(hero);
+	grantResources(player, GameResID(EGameResID::GOLD), 10000);
+	const auto goldAvailable = gameState()->getPlayerState(player)->resources[EGameResID::GOLD];
+	GameHandlerTestServer server(gameState(), player);
+	CGameHandler gameHandler(server, gameState());
+	EXPECT_FALSE(gameHandler.buyArtifact(hero->id, ArtifactID::CATAPULT));
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources[EGameResID::GOLD], goldAvailable);
+	ASSERT_TRUE(gameHandler.buyArtifact(hero->id, ArtifactID::AMMO_CART));
+	EXPECT_TRUE(hero->hasArt(ArtifactID::AMMO_CART));
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources[EGameResID::GOLD], goldAvailable - favoredPrice);
+
+	hero->pos = town->visitablePos() - hero->getVisitableOffset();
+	town->onHeroVisit(gameHandler, hero);
+	auto countSiegeBonuses = [hero]()
+	{
+		return std::count_if(hero->getExportedBonusList().begin(), hero->getExportedBonusList().end(),
+			[](const auto & bonus) { return bonus->type == BonusType::SIEGE_RATING; });
+	};
+	ASSERT_EQ(countSiegeBonuses(), 1);
+	ASSERT_TRUE(hero->getSiegeCapabilities());
+	EXPECT_EQ(hero->getSiegeCapabilities()->siegeRating, 20);
+	auto bonus = *std::find_if(hero->getExportedBonusList().begin(), hero->getExportedBonusList().end(),
+		[](const auto & candidate) { return candidate->type == BonusType::SIEGE_RATING; });
+	const auto calendar = gameState()->getCalendar();
+	const int remainingDays = calendar.getDaysInWeek() + 1 - calendar.getDayOfWeek();
+	bonus->turnsRemain = remainingDays - 1;
+	town->onHeroVisit(gameHandler, hero);
+	EXPECT_EQ(countSiegeBonuses(), 1);
+	auto refreshedBonus = *std::find_if(hero->getExportedBonusList().begin(), hero->getExportedBonusList().end(),
+		[](const auto & candidate) { return candidate->type == BonusType::SIEGE_RATING; });
+	EXPECT_EQ(refreshedBonus->val, 20);
+	EXPECT_EQ(refreshedBonus->turnsRemain, remainingDays);
+	EXPECT_EQ(hero->getSiegeCapabilities()->siegeRating, 20);
 }
 
 TEST_F(NewHorizonsLeadershipAdmissionTest, JoiningArmyClampsDuplicateStacksAndLeavesFullArmyRemainder)

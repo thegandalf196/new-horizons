@@ -222,6 +222,7 @@ class JsonNode;
 	BONUS_NAME(STACKS_MOVEMENT_RANGE) /*additive movement range; never contributes to battle initiative*/ \
 	BONUS_NAME(STACKS_INITIATIVE_FLAT) /*flat points added after percentage initiative modifiers*/ \
 	BONUS_NAME(MINIMUM_MORALE) /*minimum final morale while present; value is the floor*/ \
+	BONUS_NAME(SIEGE_RATING) /*additive New Horizons Siege rating; applied to machine output formulas*/ \
 
 	/* end of list */
 

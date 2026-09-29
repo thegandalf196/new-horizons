@@ -15,6 +15,13 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+### September 28 local Phase 1 Blacksmith/Regeneration build
+
+- Failure ID: local `cmake --build build/new-horizons-linux --target vcmitest vcmiclient -j12` over source head `82567abae` plus the uncommitted UP-024/Regeneration checkpoint.
+- Observed stage/error: compilation stopped at `AI/Nullkiller2/AIGateway.cpp:91`; `const auto * stack = slot.second` could not deduce a pointer from `std::unique_ptr<CStackInstance>`. No linked target or runtime test result was produced by this attempt.
+- Confirmed cause/fix: the new AI machine-utility scan iterated an army map whose values are owning pointers; use `slot.second.get()` to inspect the stack without transferring ownership.
+- Guard/result: the exact AI translation unit compiled in the resumed build, and both Linux `vcmiclient` and `vcmitest` linked successfully. The focused AI source guard passes, but it did not catch this C++ type error; native compilation remains the necessary gate. The subsequent focused runtime filters are recorded separately from this build repair.
+
 - Full34089398757 passed the real CRT gate, then MSVC rejected the level snapshot's
   unsigned-to-int brace conversion (C2397). GCC's permissive build had not made it
   fatal.35119d534 changes only that field to the actual hero level type, ui32.

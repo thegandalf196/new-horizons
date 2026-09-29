@@ -22,10 +22,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Four Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 81/93 | Spellcraft, Diplomacy, Divine Mandate, and Elemental Rebirth account for the 12 planned ranks. |
-| Skill perks active | 95/310 | 215 planned; active status alone does not certify behavior. |
+| Skill perks active | 96/310 | 214 planned; active status alone does not certify behavior. Basic Herbalist is registered with Regeneration. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 43/90 | 47 planned perks. |
-| Canonical combat-spell identities registered | 32/67 | 35 missing/inactive; Spell Lock has a mod spell definition and an active-profile native test resolving its runtime ID. |
+| Canonical combat-spell identities registered | 34/67 | 33 missing/inactive; Spell Lock, Storm of Daggers, and Regeneration have active definitions and focused runtime evidence. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -51,8 +51,8 @@ remain separately tracked rather than silently assumed.
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
 requirements in total. After activating the remaining six Archery perks,
 Bulwark's first three Basic perks and six further implemented perks, and Light
-Magic's Benediction, 81 ranks and 95 perks are marked active, with 12 ranks
-and 215 perks still planned. No
+Magic's Benediction and Nature Magic's Herbalist, 81 ranks and 96 perks are marked active, with 12 ranks
+and 214 perks still planned. No
 entry yet has the whole
 UP-023 evidence chain recorded here. The Basic Bulwark source head
 `40628d29d92ab0d47282321fd411f5d079f38844` passed Windows build run
@@ -150,7 +150,7 @@ this does not close the broader spell or Skill coverage gaps.
 | Command | 3/0 | 0/10 | Progression blocked |
 | Light Magic | 3/0 | 1/9 | Benediction active; nine perks missing |
 | Shadow Magic | 3/0 | 0/10 | Progression blocked |
-| Nature Magic | 3/0 | 0/10 | Progression blocked |
+| Nature Magic | 3/0 | 1/9 | Herbalist active with Regeneration-focused runtime evidence; nine perks missing |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 0/10 | Progression blocked |
@@ -173,9 +173,9 @@ this does not close the broader spell or Skill coverage gaps.
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
-rank. Thirteen Skills therefore cannot normally advance beyond Basic because they
+rank. Twelve Skills therefore cannot normally advance beyond Basic because they
 have no active Basic perk: War Machines, Command, Shadow Magic,
-Nature Magic, Chaos Magic, Spellcraft, Diplomacy, Estates, Learning, Luck, Divine
+Chaos Magic, Spellcraft, Diplomacy, Estates, Learning, Luck, Divine
 Mandate, Shroud of Malassa, and Elemental Rebirth.
 
 ## Spell baseline
@@ -193,7 +193,7 @@ identity is not proof that its exact canonical effect is complete.
 | Shadow | 12 | 2 | Life Drain; Hex of Pain; Frailty; Plague; Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
-| Nature | 11 | 2 | Regeneration; Entangle; Vengeful Vines; Poison; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
+| Nature | 11 | 3 | Entangle; Vengeful Vines; Poison; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 
 All five Adventure spell effects have partial or substantial runtime support,

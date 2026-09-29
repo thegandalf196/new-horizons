@@ -8,8 +8,15 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/bonuses/Bonus.h"
+#include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/bonuses/Propagators.h"
+#include "../../lib/bonuses/Updaters.h"
+#include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../lib/json/JsonUtils.h"
+#include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/serializer/ESerializationVersion.h"
 
 #include <limits>
 #include <stdexcept>
@@ -37,6 +44,7 @@ TEST(NewHorizonsCapabilityRules, ActualCanonicalDataHasFullDeclaredMightAndMagic
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsCapabilities", "canonical capability data"));
 	ASSERT_NO_THROW(newHorizonsHeroes::validateCapabilityRules(rules, true));
+	EXPECT_EQ(rules["rulesetVersion"].Integer(), 4);
 	ASSERT_EQ(rules["classProfiles"].Struct().size(), 18u);
 	struct ExpectedProfile
 	{
@@ -109,6 +117,82 @@ TEST(NewHorizonsCapabilityRules, CanonicalSiegeOutputsUseExactRatingFormulas)
 	}
 }
 
+TEST(NewHorizonsCapabilityRules, SavedBlacksmithInventoryPricesAndLegacyFallbackAreDataDriven)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const auto inventory = newHorizonsHeroes::capabilityWarMachineShopInventory(rules);
+	const std::array<ArtifactID, 3> expectedInventory = {
+		ArtifactID::BALLISTA, ArtifactID::AMMO_CART, ArtifactID::FIRST_AID_TENT};
+	ASSERT_EQ(inventory.size(), expectedInventory.size());
+	EXPECT_EQ(inventory, std::vector<ArtifactID>(expectedInventory.begin(), expectedInventory.end()));
+	EXPECT_FALSE(vstd::contains(inventory, ArtifactID::CATAPULT));
+
+	struct FavoredMachine
+	{
+		const char * faction;
+		ArtifactID artifact;
+	};
+	const std::array<FavoredMachine, 9> factions{{
+		{"core:castle", ArtifactID::BALLISTA}, {"core:dungeon", ArtifactID::BALLISTA},
+		{"core:conflux", ArtifactID::BALLISTA}, {"core:tower", ArtifactID::AMMO_CART},
+		{"core:inferno", ArtifactID::AMMO_CART}, {"core:stronghold", ArtifactID::AMMO_CART},
+		{"core:rampart", ArtifactID::FIRST_AID_TENT}, {"core:necropolis", ArtifactID::FIRST_AID_TENT},
+		{"core:fortress", ArtifactID::FIRST_AID_TENT}}};
+	for(const auto & entry : factions)
+	{
+		const FactionID faction(FactionID::decode(entry.faction));
+		ASSERT_TRUE(faction.hasValue());
+		EXPECT_EQ(rules["warMachineShop"]["favoredMachineByFaction"][entry.faction].String(),
+			ArtifactID::encode(entry.artifact.getNum()));
+		for(const auto artifact : inventory)
+		{
+			const auto * entity = artifact.toArtifact();
+			ASSERT_NE(entity, nullptr);
+			const int basePrice = entity->getPrice();
+			const auto price = newHorizonsHeroes::capabilityWarMachineShopPrice(rules,
+				faction, artifact, basePrice);
+			ASSERT_TRUE(price);
+			const int expectedPrice = artifact == entry.artifact
+				? static_cast<int>(((static_cast<int64_t>(basePrice) * 75 + 2500) / 5000) * 50)
+				: basePrice;
+			EXPECT_EQ(*price, expectedPrice);
+		}
+	}
+
+	// A .75 multiplier exactly halfway between 50-Gold increments rounds up.
+	const auto tie = newHorizonsHeroes::capabilityWarMachineShopPrice(rules,
+		FactionID(FactionID::decode("core:castle")), ArtifactID::BALLISTA, 100);
+	ASSERT_TRUE(tie);
+	EXPECT_EQ(*tie, 100);
+
+	JsonNode legacy = rules;
+	legacy["rulesetVersion"].Integer() = 3;
+	legacy.Struct().erase("warMachineShop");
+	EXPECT_TRUE(newHorizonsHeroes::capabilityWarMachineShopInventory(legacy).empty());
+	EXPECT_FALSE(newHorizonsHeroes::capabilityWarMachineShopPrice(
+		legacy, FactionID(FactionID::decode("core:castle")), ArtifactID::BALLISTA, 2500));
+
+	const auto resolved = newHorizonsHeroes::resolveCapabilityRules(rules,
+		HeroClassID(HeroClassID::decode("core:knight")));
+	EXPECT_EQ(resolved["warMachineShop"]["favoredMachineByFaction"]["core:castle"].String(), "core:ballista");
+}
+
+TEST(NewHorizonsCapabilityRules, SiegeRatingBonusCannotBeSilentlyDroppedByOlderSaves)
+{
+	Bonus bonus(BonusDuration::ONE_WEEK, BonusType::SIEGE_RATING,
+		BonusSource::TOWN_STRUCTURE, 20, BonusSourceID(ObjectInstanceID(1)));
+
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_ADVENTURE_SPELL_UNLOCKS;
+	EXPECT_THROW(old.oser & bonus, std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+
+	CMemorySerializer current;
+	current.oser.version = ESerializationVersion::CURRENT;
+	EXPECT_NO_THROW(current.oser & bonus);
+	EXPECT_FALSE(current.extractBuffer().empty());
+}
+
 TEST(NewHorizonsCapabilityRules, LegacySnapshotsCannotAcquireCanonicalSiegeOutputs)
 {
 	const auto legacy = resolvedCapabilities();
@@ -134,7 +218,7 @@ TEST(NewHorizonsCapabilityRules, NamedSchemaAndRealSettingsWrapperAcceptFullAndE
 	EXPECT_TRUE(wrapped(original));
 	EXPECT_TRUE(valid(JsonNode(JsonMap{})));
 	EXPECT_TRUE(wrapped(JsonNode(JsonMap{})));
-	std::vector<JsonNode> invalid(7, original);
+	std::vector<JsonNode> invalid(10, original);
 	invalid[0]["schemaVersion"].Integer() = 2;
 	invalid[1]["classProfiles"].Struct().begin()->second["base"].Integer() = 0;
 	invalid[2]["classProfiles"].Struct().begin()->second["perLevel"].Float() = 2.5;
@@ -142,6 +226,9 @@ TEST(NewHorizonsCapabilityRules, NamedSchemaAndRealSettingsWrapperAcceptFullAndE
 	invalid[4]["leadership"]["upgradeMultiplierPercent"].Integer() = 0;
 	invalid[5]["leadership"]["creatureRequirements"].Struct().begin()->second.Integer() = 0;
 	invalid[6]["siege"]["ballistaDamageMultiplier"].Vector()[3].Integer() = 101;
+	invalid[7]["warMachineShop"]["inventory"].Vector()[0].String() = "core:catapult";
+	invalid[8]["warMachineShop"]["favoredMachineByFaction"].Struct().erase("core:stronghold");
+	invalid[9]["warMachineShop"]["favoredMachineByFaction"]["core:castle"].String() = "core:catapult";
 	for(const auto & bad : invalid)
 	{
 		EXPECT_FALSE(valid(bad));

@@ -1377,6 +1377,13 @@ void CCastleBuildings::enterBlacksmith(BuildingID building, ArtifactID artifactI
 		GAME->interface()->showInfoDialog(message.toString(&GAME->translator()));
 		return;
 	}
+	const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
+	if(newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 4)
+	{
+		ENGINE->windows().createAndPushWindow<CBlacksmithDialog>(town->id, hero->id, artifactID);
+		return;
+	}
+
 	auto art = artifactID.toArtifact();
 
 	int price = art->getPrice();
@@ -3395,4 +3402,135 @@ CBlacksmithDialog::CBlacksmithDialog(bool possible, ArtifactID aid, ArtifactID e
 		buy->block(true);
 
 	costIcon = std::make_shared<CAnimImage>(AnimationPath::builtin("RESOURCE"), GameResID(EGameResID::GOLD).getNum(), 0, 148, 244);
+}
+
+CBlacksmithDialog::CBlacksmithDialog(ObjectInstanceID townId, ObjectInstanceID hid, ArtifactID preferredArtifact):
+	CWindowObject(BORDERED, ImagePath::builtin("newHorizonsOrdersBackground.png"))
+{
+	OBJECT_CONSTRUCTION;
+
+	const CGTownInstance * town = GAME->interface()->cb->getTown(townId);
+	const CGHeroInstance * hero = GAME->interface()->cb->getHero(hid);
+	const auto offers = town ? town->getWarMachineShopOffers() : std::vector<CGTownInstance::WarMachineShopOffer>{};
+	const int currentGold = GAME->interface()->cb->getResourceAmount(EGameResID::GOLD);
+
+	const ColorRGBA shopRecess(35, 21, 13, 112);
+	const ColorRGBA shopFrame(154, 119, 66, 255);
+	const ColorRGBA rowDivider(110, 78, 48, 210);
+	elements.push_back(std::make_shared<CLabel>(320, 21, FONT_BIG, ETextAlignment::CENTER,
+		Colors::YELLOW, "War Machine Shop", 580));
+	elements.push_back(std::make_shared<CLabel>(320, 49, FONT_SMALL, ETextAlignment::CENTER,
+		Colors::WHITE, "Choose an ordinary war machine. Shared shop offers appear once at their lowest town price.", 596));
+
+	constexpr int shopLeft = 18;
+	constexpr int shopTop = 78;
+	constexpr int shopWidth = 604;
+	constexpr int shopHeight = 352;
+	elements.push_back(std::make_shared<TransparentFilledRectangle>(Rect(shopLeft, shopTop, shopWidth, shopHeight), shopRecess, shopFrame));
+
+	if(offers.empty())
+	{
+		elements.push_back(std::make_shared<CMultiLineLabel>(Rect(38, 215, 564, 46), FONT_MEDIUM,
+			ETextAlignment::CENTER, Colors::WHITE,
+			"No ordinary war machines are available from this town's completed shops."));
+	}
+	else
+	{
+		constexpr int firstRowTop = 86;
+		constexpr int iconLeft = 34;
+		constexpr int labelLeft = 102;
+		constexpr int buyLeft = 535;
+		const int visibleOfferCount = static_cast<int>(offers.size());
+		const int rowHeight = (shopHeight - 16) / visibleOfferCount;
+
+		for(int index = 0; index < visibleOfferCount; ++index)
+		{
+			const auto & offer = offers[static_cast<size_t>(index)];
+			const int rowTop = firstRowTop + index * rowHeight;
+			const int contentTop = rowTop + std::max(0, (rowHeight - 92) / 2);
+			const auto * artifact = offer.artifact.toArtifact();
+			if(!artifact)
+				continue;
+
+			auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin("artifact"), offer.artifact.getNum(),
+				Rect(iconLeft, contentTop + 20, 52, 52));
+			elements.push_back(icon);
+
+			const std::string machineName = artifact->getNameTranslated();
+			elements.push_back(std::make_shared<CLabel>(labelLeft, contentTop + 12, FONT_MEDIUM,
+				ETextAlignment::TOPLEFT, Colors::YELLOW, machineName, 392));
+			elements.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("RESOURCE"),
+				GameResID(EGameResID::GOLD).getNum(), 0, labelLeft, contentTop + 42));
+			elements.push_back(std::make_shared<CLabel>(labelLeft + 28, contentTop + 44, FONT_SMALL,
+				ETextAlignment::TOPLEFT, Colors::WHITE, std::to_string(offer.price), 120));
+
+			const ArtifactID existingArtifact = hero ? hero->getReplacedWarMachine(offer.artifact) : ArtifactID::NONE;
+			const bool alreadyEquipped = existingArtifact.hasValue() && existingArtifact == offer.artifact;
+			const bool canAfford = currentGold >= offer.price;
+			const bool canBuy = hero && !alreadyEquipped && canAfford;
+			const std::string availability = alreadyEquipped ? "Already equipped"
+				: (!hero ? "No visiting hero" : (canAfford ? "Ready to buy" : "Not enough Gold"));
+			const ColorRGBA availabilityColor = alreadyEquipped ? Colors::YELLOW
+				: (hero && canAfford ? Colors::GREEN : Colors::WHITE);
+			elements.push_back(std::make_shared<CLabel>(labelLeft, contentTop + 68, FONT_TINY,
+				ETextAlignment::TOPLEFT, availabilityColor, availability, 220));
+
+			MetaString buyText;
+			buyText.appendTextID("core.genrltxt.595");
+			buyText.replaceTextID(artifact->getNameTextID());
+			auto buyButton = std::make_shared<CButton>(Point(buyLeft, contentTop + 24),
+				AnimationPath::builtin("IBUY30.DEF"), CButton::tooltip(buyText.toString(&GAME->translator()),
+					"Purchase for " + std::to_string(offer.price) + " Gold."), [this]() { close(); },
+			offer.artifact == preferredArtifact ? EShortcut::GLOBAL_ACCEPT
+				: vstd::next(EShortcut::SELECT_INDEX_1, index));
+			if(canBuy)
+			{
+				if(existingArtifact.hasValue())
+				{
+					MetaString message;
+					message.appendTextID("vcmi.townWindow.blacksmith.replaceWarMachine");
+					message.replaceName(existingArtifact);
+					message.replaceName(offer.artifact);
+					const std::string replacementWarning = message.toString(&GAME->translator());
+					buyButton->addCallback([hid, artifactId = offer.artifact, replacementWarning]()
+					{
+						GAME->interface()->showYesNoDialog(replacementWarning,
+							[hid, artifactId]()
+							{
+								GAME->interface()->cb->buyArtifact(GAME->interface()->cb->getHero(hid), artifactId);
+							}, nullptr);
+					});
+				}
+				else
+					buyButton->addCallback([hid, artifactId = offer.artifact]()
+					{
+						GAME->interface()->cb->buyArtifact(GAME->interface()->cb->getHero(hid), artifactId);
+					});
+			}
+			else
+				buyButton->block(true);
+			elements.push_back(buyButton);
+
+			const std::string help = artifact->getDescriptionTranslated() + "\n\nTown price: "
+				+ std::to_string(offer.price) + " Gold. " + availability + ".";
+			elements.push_back(std::make_shared<LRClickableAreaWText>(Rect(iconLeft, rowTop + 4, 472, rowHeight - 8),
+				"Right-click or click for " + machineName + " help.", help));
+
+			if(index + 1 < visibleOfferCount)
+				elements.push_back(std::make_shared<TransparentFilledRectangle>(
+					Rect(shopLeft + 12, rowTop + rowHeight - 1, shopWidth - 42, 1), rowDivider));
+		}
+	}
+
+	elements.push_back(std::make_shared<CLabel>(20, 443, FONT_TINY, ETextAlignment::TOPLEFT,
+		Colors::WHITE, "Prices use the lowest configured town offer; duplicate machines appear once.", 510));
+	cancel = std::make_shared<CButton>(Point(555, 433), AnimationPath::builtin("NH_cancel_button"),
+		CButton::tooltip("Close", "Return to the town."), [this]() { close(); }, EShortcut::GLOBAL_CANCEL);
+	cancel->setHoverable(true);
+	elements.push_back(cancel);
+
+	Rect barRect(8, pos.h - 21, pos.w - 120, 18);
+	auto statusbarBackground = std::make_shared<CPicture>(background->getSurface(), barRect, 8, pos.h - 21);
+	statusbar = CGStatusBar::create(statusbarBackground);
+	updateShadow();
 }

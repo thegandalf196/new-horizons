@@ -32,6 +32,8 @@
 #include "../callback/IGameRandomizer.h"
 #include "../entities/building/CBuilding.h"
 #include "../entities/faction/CTownHandler.h"
+#include "../entities/hero/NewHorizonsCapabilityRules.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/ResourceTypeHandler.h"
 #include "../mapObjectConstructors/AObjectTypeHandler.h"
 #include "../mapObjectConstructors/CObjectClassesHandler.h"
@@ -1162,6 +1164,7 @@ void CGTownInstance::battleFinished(IGameEventCallback & gameEvents, const CGHer
 	{
 		clearArmy(gameEvents);
 		onTownCaptured(gameEvents, hero->getOwner());
+		grantBallistaYardSiegeBonus(gameEvents, hero);
 	}
 }
 
@@ -1344,6 +1347,86 @@ bool CGTownInstance::isWarMachineAvailable(ArtifactID warMachine) const
 		return true;
 
 	return false;
+}
+
+std::vector<CGTownInstance::WarMachineShopOffer> CGTownInstance::getWarMachineShopOffers() const
+{
+	std::map<ArtifactID, si32> prices;
+	const auto & capabilityRules = cb->getHeroCapabilityRules();
+	const bool universalBlacksmith = newHorizonsHeroes::usesRules(capabilityRules)
+		&& capabilityRules["rulesetVersion"].Integer() >= 4;
+
+	auto addOffer = [&prices](ArtifactID artifact, si32 price)
+	{
+		if(!artifact.hasValue() || artifact == ArtifactID::CATAPULT)
+			return;
+		const auto * entity = artifact.toArtifact();
+		if(!entity || entity->getWarMachine() == CreatureID::NONE)
+			return;
+
+		auto [entry, inserted] = prices.emplace(artifact, price);
+		if(!inserted)
+			entry->second = std::min(entry->second, price);
+	};
+
+	for(const auto & building : builtBuildings)
+	{
+		const auto artifact = getWarMachineInBuilding(building);
+		if(artifact.hasValue() && artifact != ArtifactID::CATAPULT)
+			if(const auto * entity = artifact.toArtifact())
+				addOffer(artifact, entity->getPrice());
+	}
+
+	if(universalBlacksmith && hasBuilt(BuildingID::BLACKSMITH))
+	{
+		for(const auto artifact : newHorizonsHeroes::capabilityWarMachineShopInventory(capabilityRules))
+		{
+			const auto * entity = artifact.toArtifact();
+			if(!entity)
+				continue;
+			const auto price = newHorizonsHeroes::capabilityWarMachineShopPrice(
+				capabilityRules, getFactionID(), artifact, entity->getPrice());
+			addOffer(artifact, price.value_or(entity->getPrice()));
+		}
+	}
+
+	std::vector<WarMachineShopOffer> result;
+	result.reserve(prices.size());
+	for(const auto artifact : {ArtifactID::BALLISTA, ArtifactID::AMMO_CART, ArtifactID::FIRST_AID_TENT})
+		if(const auto offer = prices.find(artifact); offer != prices.end())
+			result.push_back({offer->first, offer->second});
+	for(const auto & [artifact, price] : prices)
+		if(artifact != ArtifactID::BALLISTA && artifact != ArtifactID::AMMO_CART && artifact != ArtifactID::FIRST_AID_TENT)
+			result.push_back({artifact, price});
+	return result;
+}
+
+void CGTownInstance::grantBallistaYardSiegeBonus(IGameEventCallback & gameEvents, const CGHeroInstance * hero) const
+{
+	if(!hero || hero->getOwner() != getOwner() || getFactionID() != FactionID::STRONGHOLD
+		|| !hasBuilt(BuildingID::SPECIAL_3))
+		return;
+
+	const auto & capabilityRules = cb->getHeroCapabilityRules();
+	if(!newHorizonsHeroes::usesRules(capabilityRules) || capabilityRules["rulesetVersion"].Integer() < 4)
+		return;
+
+	const auto * building = getTown()->buildings.at(BuildingID::SPECIAL_3).get();
+	if(!building)
+		return;
+	const BonusSourceID source(building->getUniqueTypeID());
+
+	RemoveBonus remove;
+	remove.whoID = hero->id;
+	remove.source = BonusSource::TOWN_STRUCTURE;
+	remove.id = source;
+	gameEvents.sendAndApply(remove);
+
+	GiveBonus grant;
+	grant.id = hero->id;
+	grant.bonus = Bonus(BonusDuration::ONE_WEEK, BonusType::SIEGE_RATING,
+		BonusSource::TOWN_STRUCTURE, 20, source);
+	gameEvents.giveHeroBonus(&grant);
 }
 
 GrowthInfo::Entry::Entry(const std::string &format, int _count)

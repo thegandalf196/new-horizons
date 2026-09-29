@@ -305,6 +305,8 @@ std::optional<newHorizonsHeroes::SiegeCapabilities> CGHeroInstance::getSiegeCapa
 			: 0;
 		result.warMachinesRank = rank;
 		result.siegeRating = newHorizonsHeroes::capabilitySiegeRating(capabilityRules, rank);
+		if(capabilityRules["rulesetVersion"].Integer() >= 4)
+			result.siegeRating = std::max(0, result.siegeRating + valOfBonuses(BonusType::SIEGE_RATING));
 		result.ballistaDamage = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "ballistaDamage");
 		result.catapultStructuralDamage = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "catapultStructuralDamage");
 		result.firstAidHealing = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "firstAidHealing");

@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema",
-	"title": "Saved New Horizons leadership and siege rules",
-	"description": "Saved Leadership and Siege rules. Ruleset v1 preserves the retired aggregate soft-cap preview; v2 uses the canonical independent per-slot creature limit; v3 adds the canonical War Machines rank tables.",
+	"title": "Saved New Horizons hero capability rules",
+	"description": "Saved Leadership, Siege, and War Machine shop rules. Ruleset v1 preserves the retired aggregate soft-cap preview; v2 uses independent per-slot creature limits; v3 adds canonical War Machines rank tables; v4 adds the saved universal Blacksmith inventory and faction prices.",
 	"type": "object",
 	"oneOf": [
 		{"maxProperties": 0},
@@ -11,6 +11,7 @@
 			"allOf": [{
 				"oneOf": [
 					{
+						"not": {"required": ["warMachineShop"]},
 						"properties": {
 							"rulesetVersion": {"enum": [1]},
 							"leadership": {"required": ["skillBonusPercent"]},
@@ -18,6 +19,7 @@
 						}
 					},
 					{
+						"not": {"required": ["warMachineShop"]},
 						"properties": {
 							"rulesetVersion": {"enum": [2]},
 							"leadership": {"required": ["creatureRequirements"]},
@@ -25,8 +27,17 @@
 						}
 					},
 					{
+						"not": {"required": ["warMachineShop"]},
 						"properties": {
 							"rulesetVersion": {"enum": [3]},
+							"leadership": {"required": ["creatureRequirements"]},
+							"siege": {"required": ["outputs", "siegeRating", "directControlChance"]}
+						}
+					},
+					{
+						"required": ["warMachineShop"],
+						"properties": {
+							"rulesetVersion": {"enum": [4]},
 							"leadership": {"required": ["creatureRequirements"]},
 							"siege": {"required": ["outputs", "siegeRating", "directControlChance"]}
 						}
@@ -35,7 +46,7 @@
 			}],
 			"properties": {
 				"schemaVersion": {"type": "integer", "enum": [1]},
-				"rulesetVersion": {"type": "integer", "enum": [1, 2, 3]},
+				"rulesetVersion": {"type": "integer", "enum": [1, 2, 3, 4]},
 				"classProfiles": {
 					"type": "object", "minProperties": 1,
 					"additionalProperties": {
@@ -107,11 +118,29 @@
 							}
 						}
 					]
-				}
+				},
+				"warMachineShop": {"$ref": "#/definitions/warMachineShop"}
 			}
 		}
 	],
 	"definitions": {
+		"warMachineShop": {
+			"type": "object",
+			"required": ["inventory", "discountPercent", "roundingGold", "favoredMachineByFaction"],
+			"additionalProperties": false,
+			"properties": {
+				"inventory": {
+					"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true,
+					"items": {"type": "string", "enum": ["core:ballista", "core:ammoCart", "core:firstAidTent"]}
+				},
+				"discountPercent": {"type": "integer", "minimum": 1, "maximum": 100},
+				"roundingGold": {"type": "integer", "minimum": 1, "maximum": 100000},
+				"favoredMachineByFaction": {
+					"type": "object", "minProperties": 9, "maxProperties": 9,
+					"additionalProperties": {"type": "string", "enum": ["core:ballista", "core:ammoCart", "core:firstAidTent"]}
+				}
+			}
+		},
 		"siegeFormula": {
 			"type": "object", "required": ["base", "siegeCoefficientHalf"], "additionalProperties": false,
 			"properties": {

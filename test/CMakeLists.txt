@@ -130,6 +130,7 @@ set(test_SRCS
 		spells/NewHorizonsSpellAvailabilityTest.cpp
 		spells/NewHorizonsModCompatibilityTest.cpp
 		spells/NewHorizonsSorceryTest.cpp
+		spells/NewHorizonsRegenerationTest.cpp
  		spells/TargetConditionTest.cpp
 
 		spells/effects/EffectFixture.cpp
@@ -233,6 +234,7 @@ set(test_SRCS
 		server/battles/NewHorizonsCureTest.cpp
 		server/battles/NewHorizonsHolyWrathTest.cpp
 		server/battles/NewHorizonsStormOfDaggersTest.cpp
+		server/battles/NewHorizonsRegenerationTest.cpp
 		server/battles/NewHorizonsBerserkProfileTest.cpp
 		server/battles/NewHorizonsDispelProfileTest.cpp
 		server/battles/NewHorizonsChainLightningProfileTest.cpp

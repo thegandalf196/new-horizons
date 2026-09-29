@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "NH_regeneration",
+  "source": {
+    "path": "$HOME/.codex/generated_images/01a0ea4d-f341-7881-8e9d-2d158fc97a66/exec-ed72bc3a-b594-4d04-b646-fe83fdeebf75.png",
+    "filename": "exec-ed72bc3a-b594-4d04-b646-fe83fdeebf75.png",
+    "byte_size": 2381595,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "39346833881f4b36ec59bfdb98fb05376b4bfebe456df1f56f85ea676949c783"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "39346833881f4b36ec59bfdb98fb05376b4bfebe456df1f56f85ea676949c783"
+    },
+    {
+      "file": "NH_regeneration-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "3496f584dbad27a9dbbdbe590ed97139c0bbdc222d52cc025cc8f98070b15d71"
+    },
+    {
+      "file": "NH_regeneration-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "23c37b5a3820cc5332a3f9ae7e06a1cba1f8f83cf03131275ed5eeae8bfcd6f9"
+    },
+    {
+      "file": "NH_regeneration-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "c0c664a66e569d1f7b5fe3335cb5ed8aceef4521c98093c378eb546df5325da8"
+    },
+    {
+      "file": "NH_regeneration-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "6e32a6613e826d9ac50546c17dd222ac6cb999887ef17dbe2cf10908dc0f4b25"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "NH_regeneration-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "NH_regeneration-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "NH_regeneration-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "NH_regeneration-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

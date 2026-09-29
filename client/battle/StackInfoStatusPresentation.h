@@ -29,6 +29,20 @@ struct PhysicalPoisonStatus
 	bool operator==(const PhysicalPoisonStatus &) const = default;
 };
 
+struct RegenerationStatus
+{
+	int32_t rateMillionths = 0;
+	int64_t healablePendingHealth = 0;
+	int32_t remainingRounds = 0;
+
+	bool active() const
+	{
+		return rateMillionths > 0 && remainingRounds > 0;
+	}
+
+	bool operator==(const RegenerationStatus &) const = default;
+};
+
 inline PhysicalPoisonStatus makePhysicalPoisonStatus(int64_t baseDamage, int32_t activationsRemaining, int64_t nextTickDamage)
 {
 	if(baseDamage <= 0 || activationsRemaining <= 0 || nextTickDamage <= 0)
@@ -42,6 +56,7 @@ enum class StackStatusIconKind
 	TIME_STOP,
 	SPELL_LOCK,
 	PHYSICAL_POISON,
+	REGENERATION,
 	FOCUS_OR_ARCANE,
 	ORDINARY
 };
@@ -60,8 +75,9 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 		case StackStatusIconKind::TIME_STOP: return 0;
 		case StackStatusIconKind::SPELL_LOCK: return 1;
 		case StackStatusIconKind::PHYSICAL_POISON: return 2;
-		case StackStatusIconKind::FOCUS_OR_ARCANE: return 3;
-		case StackStatusIconKind::ORDINARY: return 4;
+		case StackStatusIconKind::REGENERATION: return 3;
+		case StackStatusIconKind::FOCUS_OR_ARCANE: return 4;
+		case StackStatusIconKind::ORDINARY: return 5;
 	}
 	return 4;
 }

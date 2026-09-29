@@ -103,7 +103,7 @@ class CapabilityDataTest(unittest.TestCase):
 
     def test_exact_canonical_class_profiles(self):
         self.assertEqual(self.rules['schemaVersion'], 1)
-        self.assertEqual(self.rules['rulesetVersion'], 3)
+        self.assertEqual(self.rules['rulesetVersion'], 4)
         self.assertEqual(self.rules['classProfiles'], CANONICAL_CLASS_PROFILES)
 
     def test_canonical_per_slot_leadership_requirements(self):

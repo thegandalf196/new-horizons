@@ -1650,6 +1650,9 @@ void CGameHandler::visitCastleObjects(const CGTownInstance * t, const CGHeroInst
 void CGameHandler::visitCastleObjects(const CGTownInstance * t, const std::vector<const CGHeroInstance * > & visitors)
 {
 	std::vector<BuildingID> buildingsToVisit;
+	// The Yard is an automatic town visit, so a hero already in town also receives
+	// its effect when the building completes and this common visit path runs.
+	t->grantBallistaYardSiegeBonus(*this, t->getVisitingHero());
 	for (auto const & hero : visitors)
 		giveSpells(t, hero, hero == t->getVisitingHero());
 
@@ -3900,28 +3903,28 @@ bool CGameHandler::buyArtifact(ObjectInstanceID hid, ArtifactID aid)
 		const CArtifact * art = aid.toArtifact();
 		COMPLAIN_RET_FALSE_IF(nullptr == art, "Invalid artifact index to buy");
 		COMPLAIN_RET_FALSE_IF(art->getWarMachine() == CreatureID::NONE, "War machine artifact required");
+		COMPLAIN_RET_FALSE_IF(aid == ArtifactID::CATAPULT, "Catapult cannot be purchased as an ordinary war machine!");
 		COMPLAIN_RET_FALSE_IF(hero->hasArt(aid),"Hero already has this machine!");
-		const int price = art->getPrice();
+		const auto offers = town->getWarMachineShopOffers();
+		const auto offer = std::find_if(offers.begin(), offers.end(), [aid](const auto & entry)
+			{ return entry.artifact == aid; });
+		COMPLAIN_RET_FALSE_IF(offer == offers.end(), "This machine is unavailable here!");
+		const int price = offer->price;
 		COMPLAIN_RET_FALSE_IF(gameInfo().getPlayerState(hero->getOwner())->resources[EGameResID::GOLD] < price, "Not enough gold!");
 
-		if(town->isWarMachineAvailable(aid))
+		bool hasFreeSlot = false;
+		for(auto slot : art->getPossibleSlots().at(ArtBearer::HERO))
+			if (hero->getArt(slot) == nullptr)
+				hasFreeSlot = true;
+
+		if (!hasFreeSlot)
 		{
-			bool hasFreeSlot = false;
-			for(auto slot : art->getPossibleSlots().at(ArtBearer::HERO))
-				if (hero->getArt(slot) == nullptr)
-					hasFreeSlot = true;
-
-			if (!hasFreeSlot)
-			{
-				auto slot = art->getPossibleSlots().at(ArtBearer::HERO).front();
-				removeArtifact(ArtifactLocation(hero->id, slot));
-			}
-
-			giveResource(hero->getOwner(),EGameResID::GOLD,-price);
-			return giveHeroNewArtifact(hero, aid, ArtifactPosition::FIRST_AVAILABLE);
+			auto slot = art->getPossibleSlots().at(ArtBearer::HERO).front();
+			removeArtifact(ArtifactLocation(hero->id, slot));
 		}
-		else
-			COMPLAIN_RET("This machine is unavailable here!");
+
+		giveResource(hero->getOwner(),EGameResID::GOLD,-price);
+		return giveHeroNewArtifact(hero, aid, ArtifactPosition::FIRST_AVAILABLE);
 	}
 }
 

@@ -81,6 +81,9 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(h.saving && type == BonusType::TIME_STOP
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP))
 			throw std::runtime_error("Cannot discard New Horizons Time Stop state");
+		if(h.saving && type == BonusType::SIEGE_RATING
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SIEGE_RATING))
+			throw std::runtime_error("Cannot discard New Horizons Siege rating state");
 		h & duration;
 		h & type;
 		h & subtype;

@@ -114,12 +114,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_IRON_DISCIPLINE, // saved Hold the Line magical reduction snapshot
 	NEW_HORIZONS_ARCHERY_SKIRMISHER, // explicit player/AI-selected move-and-shoot action metadata
 	NEW_HORIZONS_ADVENTURE_SPELL_UNLOCKS, // persistent per-town Adventure Spell Guild unlocks
+	NEW_HORIZONS_SIEGE_RATING, // timed Stronghold Ballista Yard Siege rating bonus
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_ADVENTURE_SPELL_UNLOCKS,
+	CURRENT = NEW_HORIZONS_SIEGE_RATING,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -144,6 +145,7 @@ static_assert(ESerializationVersion::NEW_HORIZONS_SHIELD_MASTER > ESerialization
 static_assert(ESerializationVersion::NEW_HORIZONS_IRON_DISCIPLINE > ESerializationVersion::NEW_HORIZONS_SHIELD_MASTER);
 static_assert(ESerializationVersion::NEW_HORIZONS_ARCHERY_SKIRMISHER > ESerializationVersion::NEW_HORIZONS_IRON_DISCIPLINE);
 static_assert(ESerializationVersion::NEW_HORIZONS_ADVENTURE_SPELL_UNLOCKS > ESerializationVersion::NEW_HORIZONS_ARCHERY_SKIRMISHER);
+static_assert(ESerializationVersion::NEW_HORIZONS_SIEGE_RATING > ESerializationVersion::NEW_HORIZONS_ADVENTURE_SPELL_UNLOCKS);
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION > ESerializationVersion::NEW_HORIZONS_WARCASTING);
 static_assert(ESerializationVersion::NEW_HORIZONS_HERO_ACTION_ALLOWANCES > ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTERIES > ESerializationVersion::NEW_HORIZONS_CAPABILITIES);

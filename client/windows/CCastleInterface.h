@@ -13,6 +13,7 @@
 #include "../widgets/Images.h"
 
 #include <array>
+#include <vector>
 
 class CBuilding;
 class CGTownInstance;
@@ -471,6 +472,7 @@ public:
 /// The blacksmith window where you can buy available in town war machine
 class CBlacksmithDialog : public CStatusbarWindow
 {
+	std::vector<std::shared_ptr<CIntObject>> elements;
 	std::shared_ptr<CButton> buy;
 	std::shared_ptr<CButton> cancel;
 	std::shared_ptr<CPicture> animBG;
@@ -482,4 +484,5 @@ class CBlacksmithDialog : public CStatusbarWindow
 
 public:
 	CBlacksmithDialog(bool possible, ArtifactID newArtifact, ArtifactID existingArtifact, ObjectInstanceID hid);
+	CBlacksmithDialog(ObjectInstanceID townId, ObjectInstanceID hid, ArtifactID preferredArtifact);
 };

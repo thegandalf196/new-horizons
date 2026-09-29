@@ -15,7 +15,7 @@
 
 namespace newHorizonsHeroes
 {
-constexpr int CAPABILITY_RULESET_VERSION = 3;
+constexpr int CAPABILITY_RULESET_VERSION = 4;
 
 struct DLL_LINKAGE SiegeCapabilities
 {
@@ -69,4 +69,9 @@ DLL_LINKAGE int capabilityBallistaMultiplier(const JsonNode & resolvedRules, int
 DLL_LINKAGE int capabilitySiegeRating(const JsonNode & resolvedRules, int warMachinesRank);
 DLL_LINKAGE int capabilitySiegeOutput(const JsonNode & resolvedRules, int siegeRating, const std::string & output);
 DLL_LINKAGE int capabilityDirectControlChance(const JsonNode & resolvedRules, int warMachinesRank);
+/// Saved ruleset v4 shop inventory. Legacy snapshots return an empty vector.
+DLL_LINKAGE std::vector<ArtifactID> capabilityWarMachineShopInventory(const JsonNode & rules);
+/// Returns a saved-rules shop price only for an artifact in the v4 ordinary inventory.
+DLL_LINKAGE std::optional<int> capabilityWarMachineShopPrice(
+	const JsonNode & rules, FactionID faction, ArtifactID artifact, int ordinaryPrice);
 }

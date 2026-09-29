@@ -14,6 +14,7 @@
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "StackInfoStatusPresentation.h"
 
@@ -33,6 +34,12 @@ namespace newHorizonsBattleStatus
 /// thing without adding a second runtime state API to the client.
 inline constexpr std::string_view TIME_STOP_SPELL_KEY = "new-horizons:timeStop";
 inline constexpr std::string_view SPELL_LOCK_SPELL_KEY = "new-horizons:spellLock";
+inline constexpr std::string_view REGENERATION_SPELL_KEY = newHorizonsMagic::NATURE_REGENERATION_SPELL;
+
+inline bool isRegeneration(std::string_view spellKey)
+{
+	return spellKey == REGENERATION_SPELL_KEY;
+}
 
 inline bool isTimeStop(std::string_view spellKey)
 {
@@ -173,6 +180,21 @@ inline std::string roundsRemaining(int rounds)
 	return std::to_string(rounds) + (rounds == 1 ? " round remaining" : " rounds remaining");
 }
 
+inline std::string regenerationTooltip(std::string_view spellDescription, const RegenerationStatus & status)
+{
+	std::string result(spellDescription);
+	result += "\n\nCurrent regeneration rate: ";
+	result += formatBasisPoints((static_cast<int64_t>(status.rateMillionths) + 50) / 100);
+	result += " of eligible damage suffered while the effect is active.";
+	result += "\nCurrently healable marked wounds at the next activation: ";
+	result += std::to_string(status.healablePendingHealth);
+	result += " HP.";
+	result += "\nRegeneration restores wounds among surviving creatures; it does not revive casualties.";
+	if(status.remainingRounds > 0)
+		result += "\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
+	return result;
+}
+
 struct BulwarkStatus
 {
 	int32_t damageReductionBasisPoints = 0;
@@ -230,6 +252,7 @@ struct StackInfoStatusSnapshot
 {
 	DefendStatus defend;
 	PhysicalPoisonStatus physicalPoison;
+	RegenerationStatus regeneration;
 
 	bool operator==(const StackInfoStatusSnapshot &) const = default;
 };

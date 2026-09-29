@@ -1101,6 +1101,16 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		return;
 	if(battleBeginsActivation(unit.get(), reason))
 	{
+		// Match the authoritative BattleFlowProcessor activation-start order:
+		// Regeneration consumes only marks already recorded for this survivor,
+		// before poison or any other start-of-activation damage can occur.
+		if(unit->alive() && !unit->isTimeStopped() && unit->regenerationPendingMicroHealth > 0)
+		{
+			auto healing = unit->consumeRegenerationMarks();
+			if(healing > 0)
+				unit->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+		}
+
 		auto poisonDamage = newHorizonsBulwark::physicalPoisonTickDamage(unit.get());
 		if(poisonDamage > 0)
 		{

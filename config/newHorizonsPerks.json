@@ -1363,7 +1363,7 @@
 					"requires": "basic",
 					"description": "Regeneration marks an additional 10 percentage points of eligible damage as Regenerable, subject to its normal cap.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Regeneration marks an additional 10 percentage points of eligible damage as Regenerable, subject to its normal cap."
 					}
 				},

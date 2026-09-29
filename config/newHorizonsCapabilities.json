@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"rulesetVersion": 3,
+	"rulesetVersion": 4,
 	"classProfiles": {
 		"core:knight": {"base": 1025, "perLevel": 55},
 		"core:cleric": {"base": 725, "perLevel": 35},
@@ -47,5 +47,21 @@
 			"defensiveTowerDamage": {"base": 60, "siegeCoefficientHalf": 3}
 		},
 		"directControlChance": [0, 100, 100, 100]
+	},
+	"warMachineShop": {
+		"inventory": ["core:ballista", "core:ammoCart", "core:firstAidTent"],
+		"discountPercent": 75,
+		"roundingGold": 50,
+		"favoredMachineByFaction": {
+			"core:castle": "core:ballista",
+			"core:dungeon": "core:ballista",
+			"core:conflux": "core:ballista",
+			"core:tower": "core:ammoCart",
+			"core:inferno": "core:ammoCart",
+			"core:stronghold": "core:ammoCart",
+			"core:rampart": "core:firstAidTent",
+			"core:necropolis": "core:firstAidTent",
+			"core:fortress": "core:firstAidTent"
+		}
 	}
 }

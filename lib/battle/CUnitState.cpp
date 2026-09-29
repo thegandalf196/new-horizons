@@ -17,6 +17,7 @@
 #include "../spells/CSpell.h"
 
 #include "../bonuses/BonusParameters.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "../spells/NewHorizonsSorcery.h"
 #include "../serializer/JsonDeserializer.h"
 #include "../serializer/JsonSerializer.h"
@@ -391,6 +392,8 @@ CUnitState::CUnitState():
 	cleaveUsedThisActivation(false),
 	noQuarterMoraleActivationsRemaining(0),
 	timeStopTurnConsumedFlag(false),
+	regenerationRateMillionths(0),
+	regenerationPendingMicroHealth(0),
 	summoned(false),
 	natureSummoned(false),
 	waiting(false),
@@ -447,6 +450,8 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	archeryCrossfireDefenders = other.archeryCrossfireDefenders;
 	noQuarterMoraleActivationsRemaining = other.noQuarterMoraleActivationsRemaining;
 	timeStopTurnConsumedFlag = other.timeStopTurnConsumedFlag;
+	regenerationRateMillionths = other.regenerationRateMillionths;
+	regenerationPendingMicroHealth = other.regenerationPendingMicroHealth;
 	summoned = other.summoned;
 	natureSummoned = other.natureSummoned;
 	waiting = other.waiting;
@@ -986,6 +991,12 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	if(noQuarterMoraleActivationsRemaining < 0 || noQuarterMoraleActivationsRemaining > 2)
 		throw std::runtime_error("Invalid No Quarter morale lifetime");
 	handler.serializeBool("timeStopTurnConsumed", timeStopTurnConsumedFlag);
+	handler.serializeInt("regenerationRateMillionths", regenerationRateMillionths, 0);
+	handler.serializeInt("regenerationPendingMicroHealth", regenerationPendingMicroHealth, 0);
+	if(regenerationRateMillionths < 0
+		|| regenerationRateMillionths > newHorizonsMagic::REGENERATION_MAX_RATE_MILLIONTHS
+		|| regenerationPendingMicroHealth < 0)
+		throw std::runtime_error("Invalid saved Regeneration state");
 	handler.serializeBool("summoned", summoned);
 	handler.serializeBool("natureSummoned", natureSummoned);
 	handler.serializeBool("waiting", waiting);
@@ -1048,6 +1059,8 @@ void CUnitState::reset()
 	ghostPending = false;
 	movedThisRound = false;
 	timeStopTurnConsumedFlag = false;
+	regenerationRateMillionths = 0;
+	regenerationPendingMicroHealth = 0;
 	noQuarterMoraleActivationsRemaining = 0;
 	summoned = false;
 	natureSummoned = false;
@@ -1127,6 +1140,9 @@ void CUnitState::load(const JsonNode & data)
 	JsonDeserializer deser(nullptr, data);
 	deser.serializeStruct("state", *this);
 	if(phantomInitialIntegrity < 0 || phantomIntegrity < 0 || phantomRoundsRemaining < 0
+		|| regenerationRateMillionths < 0
+		|| regenerationRateMillionths > newHorizonsMagic::REGENERATION_MAX_RATE_MILLIONTHS
+		|| regenerationPendingMicroHealth < 0
 		|| phantomIntegrity > phantomInitialIntegrity
 		|| phantomRoundsRemaining > newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS
 		|| (phantomInitialIntegrity == 0 && (phantomIntegrity != 0 || phantomRoundsRemaining != 0))
@@ -1149,6 +1165,9 @@ void CUnitState::damage(int64_t & amount, bool destroyRemains)
 		amount = 0;
 		return;
 	}
+	const int32_t firstHPleftBefore = health.getFirstHPleft();
+	const int32_t countBefore = health.getCount();
+	const int32_t maximumCreatureHealth = getMaxHealth();
 
 	if(cloned)
 	{
@@ -1178,6 +1197,73 @@ void CUnitState::damage(int64_t & amount, bool destroyRemains)
 	bool disintegrate = hasBonusOfType(BonusType::DISINTEGRATE);
 	if(health.available() <= 0 && (cloned || summoned || disintegrate))
 		ghostPending = true;
+
+	if(!alive())
+	{
+		// Marks belong to surviving wounds only and must never carry through death.
+		regenerationRateMillionths = 0;
+		regenerationPendingMicroHealth = 0;
+		return;
+	}
+	const bool previousTopCreatureDied = health.getCount() < countBefore;
+	if(previousTopCreatureDied)
+	{
+		// Previously marked wounds belonged to the old top creature. If it dies,
+		// those marks cannot transfer to the next survivor, even after the spell
+		// duration has expired.
+		regenerationPendingMicroHealth = 0;
+	}
+
+	if(regenerationRateMillionths <= 0 || maximumCreatureHealth <= 0)
+		return;
+	static const SpellID regenerationSpell(SpellID::decode(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL)));
+	const auto regenerationMarker = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(regenerationSpell))
+		.And(Selector::type()(BonusType::HP_REGENERATION));
+	if(!hasBonus(regenerationMarker))
+		return;
+
+	const int64_t woundsBefore = std::max<int64_t>(0,
+		static_cast<int64_t>(maximumCreatureHealth) - firstHPleftBefore);
+	const int64_t woundsAfter = std::max<int64_t>(0,
+		static_cast<int64_t>(maximumCreatureHealth) - health.getFirstHPleft());
+	// If the previous top creature died, its old wound count is irrelevant to
+	// the new top survivor: all of this survivor's current missing HP came from
+	// this hit. Otherwise only the increase in its existing wound is eligible.
+	const int64_t newlyWoundedHealth = previousTopCreatureDied
+		? woundsAfter
+		: std::max<int64_t>(0, woundsAfter - woundsBefore);
+	if(newlyWoundedHealth > 0)
+		recordRegenerationWounds(newlyWoundedHealth);
+}
+
+int64_t CUnitState::regenerationProjectedHeal() const
+{
+	const int64_t survivingWounds = alive()
+		? std::max<int64_t>(0, static_cast<int64_t>(getMaxHealth()) - health.getFirstHPleft())
+		: 0;
+	return newHorizonsMagic::regenerationHealAmount(regenerationPendingMicroHealth, survivingWounds);
+}
+
+void CUnitState::recordRegenerationWounds(const int64_t newWoundHealth)
+{
+	if(newWoundHealth <= 0 || regenerationRateMillionths <= 0)
+		return;
+	const int64_t maximum = std::numeric_limits<int64_t>::max();
+	const int64_t rate = std::min<int64_t>(regenerationRateMillionths,
+		newHorizonsMagic::REGENERATION_MAX_RATE_MILLIONTHS);
+	const int64_t marked = newWoundHealth > maximum / rate
+		? maximum
+		: newWoundHealth * rate;
+	regenerationPendingMicroHealth = regenerationPendingMicroHealth > maximum - marked
+		? maximum
+		: regenerationPendingMicroHealth + marked;
+}
+
+int64_t CUnitState::consumeRegenerationMarks()
+{
+	const int64_t result = regenerationProjectedHeal();
+	regenerationPendingMicroHealth = 0;
+	return result;
 }
 
 HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)

@@ -19,6 +19,7 @@
 
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
+#include "../battle/CUnitState.h"
 #include "../battle/NewHorizonsWarcasting.h"
 #include "../battle/Unit.h"
 #include "../bonuses/Updaters.h"
@@ -42,6 +43,26 @@ bool isLivingCureTarget(const battle::Unit * unit)
 		&& !unit->hasBonusOfType(BonusType::NON_LIVING)
 		&& !unit->hasBonusOfType(BonusType::MECHANICAL)
 		&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
+}
+
+bool isNewHorizonsRegenerationSpell(const CSpell * spell, const JsonNode & savedRules)
+{
+	return spell && spell->getJsonKey() == newHorizonsMagic::NATURE_REGENERATION_SPELL
+		&& newHorizonsMagic::spellAllowedBySavedRoster(savedRules, spell->getId());
+}
+
+bool isRegenerationTarget(const battle::Unit * unit)
+{
+	return isLivingCureTarget(unit) && !unit->isClone() && unit->getPhantomInitialIntegrity() <= 0;
+}
+
+bool hasRegenerationMarker(const battle::Unit * unit)
+{
+	if(!unit)
+		return false;
+	static const SpellID regenerationSpell(SpellID::decode(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL)));
+	return unit->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(regenerationSpell))
+		.And(Selector::type()(BonusType::HP_REGENERATION)));
 }
 
 bool isSpellLocked(const battle::Unit * unit)
@@ -587,6 +608,8 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	const bool selectiveDispel = isSelectiveDispel();
 	const bool massSlow = isMassSlow();
 	const auto * castingHero = dynamic_cast<const CGHeroInstance *>(caster);
+	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
+	battle()->getBattle()->getMagicRules());
 	if(selectiveDispel && (mode != Mode::HERO || owner->getId() != SpellID::DISPEL || !castingHero
 		|| !castingHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel")))
 		return adaptGenericProblem(problem);
@@ -665,6 +688,18 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	// the valid no-target action look unusable to both the server and BattleAI.
 	if(newHorizonsMagic::isCounterspell(owner))
 		return true;
+
+	if(newHorizonsRegeneration)
+	{
+		if(mode != Mode::HERO || !castingHero)
+			return adaptGenericProblem(problem);
+		const bool availableTarget = std::ranges::any_of(battle()->battleGetAllUnits(false), [this](const battle::Unit * unit)
+		{
+			return isRegenerationTarget(unit) && ownerMatches(unit, true) && !isSpellLocked(unit)
+				&& isReceptive(unit);
+		});
+		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+	}
 
 	if(isNewHorizonsStormOfDaggers())
 	{
@@ -758,6 +793,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		return false;
 
 	const bool newHorizonsCure = isNewHorizonsCure();
+	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	Target spellTarget = transformSpellTarget(target);
 	if(isNewHorizonsStormOfDaggers())
 	{
@@ -801,6 +838,17 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 			return false;
 		}
 	}
+	if(newHorizonsRegeneration)
+	{
+		if(mode != Mode::HERO || target.size() != 1 || spellTarget.size() != 1)
+			return false;
+		const auto * regenerationTarget = spellTarget.front().unitValue;
+		if(!isRegenerationTarget(regenerationTarget)
+			|| !ownerMatches(regenerationTarget, true)
+			|| isSpellLocked(regenerationTarget)
+			|| !isReceptive(regenerationTarget))
+			return false;
+	}
 
 	const battle::Unit * mainTarget = nullptr;
 
@@ -834,7 +882,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	// Cure's target and selected affliction (or healing need) were validated
 	// above. Its legacy HEAL/DISPEL applicability checks do not recognize
 	// physical-only Poison, so do not let those checks reject a valid action.
-	if(newHorizonsCure || newHorizonsMagic::isCounterspell(owner))
+	if(newHorizonsCure || newHorizonsRegeneration || newHorizonsMagic::isCounterspell(owner))
 		return true;
 
 	return effects->applicable(problem, this, target, spellTarget);
@@ -871,9 +919,13 @@ std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(const Target
 
 void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {
+	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	if(isNewHorizonsStormOfDaggers()
 		&& (!setStormOfDaggersTargetCount(static_cast<int32_t>(target.size()))
 			|| !canBeCastAt(target)))
+		return;
+	if(newHorizonsRegeneration && !canBeCastAt(target))
 		return;
 
 	BattleSpellCast sc;
@@ -1051,6 +1103,33 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	{
 		for(auto & p : effectsToApply)
 			p.first->apply(&effectRecorder, this, p.second);
+	}
+	if(newHorizonsRegeneration && !isCounterspellNegated())
+	{
+		const auto * hero = getHeroCaster();
+		const bool herbalist = hero && hero->hasActivePerk(
+			std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
+			std::string(newHorizonsMagic::NATURE_HERBALIST));
+		const int32_t regenerationRate = newHorizonsMagic::regenerationRateMillionths(
+			std::max<int32_t>(0, getEffectPower()), getSchoolRankPowerCoefficientPercent(),
+			herbalist, getWarcastingBonusPercent());
+		for(const auto * unit : affectedUnits)
+		{
+			if(!unit || !hasRegenerationMarker(unit))
+				continue;
+			const auto * stack = battle()->battleGetStackByID(unit->unitId(), false);
+			if(!stack)
+				continue;
+			auto state = stack->acquireState();
+			state->regenerationRateMillionths = regenerationRate;
+
+			UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+			update.data = state->save();
+			BattleUnitsChanged changed;
+			changed.battleID = battle()->getBattle()->getBattleID();
+			changed.changedStacks.push_back(std::move(update));
+			effectRecorder.apply(changed);
+		}
 	}
 
 	if(logMetamagicFollowup)

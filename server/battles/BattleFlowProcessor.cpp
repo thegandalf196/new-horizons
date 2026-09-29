@@ -1557,6 +1557,34 @@ void applyStartOfActivationEffects(CGameHandler * gameHandler,
 
 	const auto * hero = battle.battleGetOwnerHero(creatureStack);
 	auto state = creatureStack->acquireState();
+	if(creatureStack->alive() && !creatureStack->isTimeStopped() && state
+		&& state->regenerationPendingMicroHealth > 0)
+	{
+		int64_t healing = state->consumeRegenerationMarks();
+		if(healing > 0)
+			healing = state->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT).healedHealthPoints;
+
+		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		update.healthDelta = healing;
+		BattleUnitsChanged changed;
+		changed.battleID = battle.getBattle()->getBattleID();
+		changed.changedStacks.push_back(std::move(update));
+		gameHandler->sendAndApply(changed);
+
+		if(healing > 0)
+		{
+			BattleLogMessage message;
+			message.battleID = battle.getBattle()->getBattleID();
+			MetaString line;
+			line.appendRawString("Regeneration restores %s ");
+			creatureStack->addNameReplacement(line, creatureStack->getCount());
+			line.appendNumber(healing);
+			line.appendRawString(" Health.");
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+		}
+	}
 	const int64_t poisonTick = newHorizonsBulwark::physicalPoisonTickDamage(state.get());
 	if(creatureStack->alive() && state && poisonTick > 0)
 	{

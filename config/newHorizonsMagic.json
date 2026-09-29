@@ -263,6 +263,18 @@
 				15
 			]
 		},
+		"new-horizons:regeneration": {
+			"schools": [
+				"new-horizons:nature"
+			],
+			"level": 1,
+			"costs": [
+				4,
+				4,
+				4,
+				4
+			]
+		},
 		"core:counterstrike": {
 			"schools": [
 				"new-horizons:light"

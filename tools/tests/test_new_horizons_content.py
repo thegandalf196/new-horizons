@@ -25,7 +25,9 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:disintegrate',
     'new-horizons:masterChainLightning',
     'new-horizons:phantomArmy',
+    'new-horizons:regeneration',
     'new-horizons:spellLock',
+    'new-horizons:stormOfDaggers',
     'new-horizons:timeStop',
     'new-horizons:transfigureMatter',
 }
@@ -348,6 +350,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'new-horizons:masterChainLightning',
                               'new-horizons:disintegrate',
                               'new-horizons:holyWrath',
+                              'new-horizons:stormOfDaggers',
                           })
         self.assertEqual(self.rules['spells']['core:fireball']['directDamage'],
                          {'base': 25, 'powerCoefficient': 8})

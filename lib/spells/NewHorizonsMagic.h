@@ -65,7 +65,14 @@ inline constexpr std::string_view HAVOC_CONDUCTOR = "new-horizons:havocMagic.con
 inline constexpr std::string_view HAVOC_ANNIHILATOR = "new-horizons:havocMagic.annihilator";
 inline constexpr std::string_view LIGHT_MAGIC_SKILL = "new-horizons:lightMagic";
 inline constexpr std::string_view LIGHT_BENEDICTION = "new-horizons:lightMagic.benediction";
+inline constexpr std::string_view NATURE_REGENERATION_SPELL = "new-horizons:regeneration";
+inline constexpr std::string_view NATURE_MAGIC_SKILL = "new-horizons:natureMagic";
+inline constexpr std::string_view NATURE_HERBALIST = "new-horizons:natureMagic.herbalist";
 inline constexpr std::string_view STORM_OF_DAGGERS_SPELL = "new-horizons:stormOfDaggers";
+constexpr int REGENERATION_MARK_SCALE = 1'000'000;
+constexpr int REGENERATION_BASE_RATE_MILLIONTHS = 250'000;
+constexpr int REGENERATION_MAX_RATE_MILLIONTHS = 500'000;
+constexpr int REGENERATION_HERBALIST_BONUS_MILLIONTHS = 100'000;
 constexpr int STORM_OF_DAGGERS_MAX_TARGETS = 5;
 constexpr int STORM_OF_DAGGERS_EXTRA_TARGET_DAMAGE_PERCENT = 15;
 
@@ -143,6 +150,12 @@ DLL_LINKAGE int schoolRankPowerCoefficientPercent(const JsonNode & rules, int sc
 /// roster. Multi-school spells use one highest rank; adventure spells, creature
 /// abilities, excluded spells and legacy snapshots retain 100%.
 DLL_LINKAGE int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell);
+/// Regeneration's saved-rate snapshot. School rank and Warcasting affect only
+/// the Spell Power term; Herbalist adds ten percentage points before the cap.
+DLL_LINKAGE int32_t regenerationRateMillionths(int32_t spellPower, int schoolRankCoefficientPercent,
+	bool herbalist, int warcastingBonusPercent = 0);
+/// Resolve fixed-point Regeneration marks into healable surviving creature wounds.
+DLL_LINKAGE int64_t regenerationHealAmount(int64_t pendingMicroHealth, int64_t survivingWounds);
 /// New Horizons' detailed Sorcery rules make the existing Magic Arrow an
 /// adjustable spell.  The optional overcharge is deliberately enabled only
 /// for a saved roster which classifies the canonical core spell as Sorcery;

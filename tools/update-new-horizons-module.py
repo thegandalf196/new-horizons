@@ -88,7 +88,7 @@ def main():
                        'power coefficient 20). Faction Skills are assigned to every new hero '
                        'from its faction; Magic heroes replace Wisdom and Might heroes preserve '
                        'their class signature while replacing an optional starting skill. '
-                       'Storm of Daggers, Transfigure Matter, Disintegrate and Phantom Army are registered functional new spells. '
+                       'Storm of Daggers, Regeneration, Transfigure Matter, Disintegrate and Phantom Army are registered functional new spells. '
                        'Storm of Daggers selects one to five distinct enemy stacks and splits a saved-rules damage pool across them. '
                        'Phantom Army is active in the Sorcery roster; Clone remains in saved rules but is disabled '
                        'for new games. Other planned spells, including Magic Missile, are not registered. '

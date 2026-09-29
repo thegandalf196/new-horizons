@@ -57,6 +57,11 @@ private:
 	ObjectInstanceID visitingHero;
 public:
 	enum EFortLevel {NONE = 0, FORT = 1, CITADEL = 2, CASTLE = 3};
+	struct WarMachineShopOffer
+	{
+		ArtifactID artifact = ArtifactID::NONE;
+		si32 price = 0;
+	};
 
 	CBonusSystemNode townAndVis;
 	si32 built; //how many buildings have been built this turn
@@ -286,6 +291,10 @@ public:
 	ArtifactID getWarMachineInBuilding(BuildingID) const;
 	/// Returns true if provided war machine is available in any of built buildings of this town
 	bool isWarMachineAvailable(ArtifactID) const;
+	/// Returns the saved-rules shop inventory for built machine-selling buildings, deduplicated by artifact.
+	std::vector<WarMachineShopOffer> getWarMachineShopOffers() const;
+	/// Applies the saved Stronghold Ballista Yard visit effect to the visiting hero, refreshing rather than stacking.
+	void grantBallistaYardSiegeBonus(IGameEventCallback & gameEvents, const CGHeroInstance * hero) const;
 
 	CGTownInstance(IGameInfoCallback *cb);
 	virtual ~CGTownInstance();

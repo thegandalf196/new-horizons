@@ -799,6 +799,31 @@ int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * 
 	return schoolRankPowerCoefficientPercent(rules, highestSchoolRank);
 }
 
+int32_t regenerationRateMillionths(const int32_t spellPower, const int schoolRankCoefficientPercent,
+	const bool herbalist, const int warcastingBonusPercent)
+{
+	if(spellPower < 0 || schoolRankCoefficientPercent < 0 || schoolRankCoefficientPercent > 1000
+		|| warcastingBonusPercent < 0 || warcastingBonusPercent > 1000)
+		throw std::invalid_argument("Invalid Regeneration rate inputs");
+
+	// 0.15% x Spell Power becomes 15 x Spell Power millionths of the
+	// fractional rate. Keep the exact school-rank product so successive hits
+	// do not lose fractional marks to per-hit rounding.
+	const int64_t spellPowerTerm = static_cast<int64_t>(15) * spellPower
+		* schoolRankCoefficientPercent * (100 + warcastingBonusPercent) / 100;
+	const int64_t base = REGENERATION_BASE_RATE_MILLIONTHS;
+	const int64_t herbalistBonus = herbalist ? REGENERATION_HERBALIST_BONUS_MILLIONTHS : 0;
+	return static_cast<int32_t>(std::min<int64_t>(REGENERATION_MAX_RATE_MILLIONTHS,
+		base + spellPowerTerm + herbalistBonus));
+}
+
+int64_t regenerationHealAmount(const int64_t pendingMicroHealth, const int64_t survivingWounds)
+{
+	if(pendingMicroHealth < 0 || survivingWounds < 0)
+		throw std::invalid_argument("Invalid Regeneration healing inputs");
+	return std::min<int64_t>(pendingMicroHealth / REGENERATION_MARK_SCALE, survivingWounds);
+}
+
 bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spell)
 {
 	if(spell != SpellID(SpellID::MAGIC_ARROW) || legacy(rules))

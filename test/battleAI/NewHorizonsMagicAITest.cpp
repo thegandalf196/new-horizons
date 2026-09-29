@@ -2711,6 +2711,219 @@ TEST_F(NewHorizonsMagicAITest, CureAISelectsAndSubmitsAValidAfflictionThroughHyp
 		BonusSourceID(SpellID(SpellID::DISEASE)))));
 }
 
+TEST_F(NewHorizonsMagicAITest, HerbalistRegenerationAIValuesProjectedWoundsWithoutHealingAtCastTime)
+{
+	useCurrentMagicRules = true;
+	useSavedPerkRules = true;
+	neutralizeCommandEffects = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const SpellID regeneration(SpellID::decode(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL)));
+	ASSERT_NE(regeneration, SpellID::NONE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto knownSpell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(knownSpell);
+	attackerSideHero->addSpellToSpellbook(regeneration);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	const auto natureMagic = SecondarySkill::decode(std::string(newHorizonsMagic::NATURE_MAGIC_SKILL));
+	ASSERT_GE(natureMagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(natureMagic), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({
+		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
+		std::string(newHorizonsMagic::NATURE_HERBALIST)});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
+		std::string(newHorizonsMagic::NATURE_HERBALIST)));
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 1);
+	auto * selected = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(7, 5), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(8, 5), 10);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(selected, nullptr);
+	ASSERT_NE(enemy, nullptr);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto healthBeforeEvaluation = selected->getAvailableHealth();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	const auto action = callback->submitted.front();
+	EXPECT_EQ(action.spell, regeneration);
+	const auto selectedTarget = action.getTarget(battle());
+	ASSERT_EQ(selectedTarget.size(), 1u);
+	EXPECT_EQ(selectedTarget.front().unitValue, selected);
+	EXPECT_EQ(selected->getAvailableHealth(), healthBeforeEvaluation)
+		<< "AI valuation must project future wounds; evaluating the spell cannot heal live battle state";
+	EXPECT_EQ(selected->regenerationRateMillionths, 0);
+	EXPECT_FALSE(selected->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(regeneration))));
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(selected->getAvailableHealth(), healthBeforeEvaluation)
+		<< "Regeneration marks damage for the next activation instead of curing current wounds";
+	EXPECT_EQ(selected->regenerationRateMillionths, 350'000)
+		<< "Basic Herbalist adds ten percentage points to the 25% base rate at zero Spell Power";
+	EXPECT_TRUE(selected->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(regeneration))));
+}
+
+TEST_F(NewHorizonsMagicAITest, RegenerationAIDoesNotTreatExistingWoundsAsImmediateHealing)
+{
+	useCurrentMagicRules = true;
+	neutralizeCommandEffects = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const SpellID regeneration(SpellID::decode(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL)));
+	ASSERT_NE(regeneration, SpellID::NONE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto knownSpell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(knownSpell);
+	attackerSideHero->addSpellToSpellbook(regeneration);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 1);
+	auto * wounded = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(7, 5), 1);
+	auto * distantEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(13, 5), 1);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(wounded, nullptr);
+	ASSERT_NE(distantEnemy, nullptr);
+
+	auto woundState = wounded->acquireState();
+	int64_t damage = 40;
+	woundState->damage(damage);
+	BattleUnitsChanged injury;
+	injury.battleID = BattleID(0);
+	injury.changedStacks.emplace_back(wounded->unitId(), UnitChanges::EOperation::UPDATE);
+	injury.changedStacks.back().data = woundState->save();
+	injury.changedStacks.back().healthDelta = -damage;
+	gameHandler->sendAndApply(injury);
+
+	for(auto * stack : {active, distantEnemy})
+	{
+		Bonus immobilized;
+		immobilized.type = BonusType::STACKS_SPEED;
+		immobilized.duration = BonusDuration::ONE_BATTLE;
+		immobilized.val = -stack->getMovementRange();
+		stack->addNewBonus(std::make_shared<Bonus>(immobilized));
+	}
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_EQ(wounded->getAvailableHealth(), wounded->getMaxHealth() - damage);
+	EXPECT_EQ(wounded->regenerationRateMillionths, 0);
+}
+
+TEST_F(NewHorizonsMagicAITest, RegenerationForecastConsumesMarksOnceAndSkipsDeniedActivations)
+{
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * wounded = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(7, 5), 1);
+	ASSERT_NE(wounded, nullptr);
+
+	const SpellID regeneration(SpellID::decode(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL)));
+	auto state = wounded->acquireState();
+	int64_t damage = 80;
+	state->damage(damage);
+	state->regenerationRateMillionths = 500'000;
+	state->regenerationPendingMicroHealth = 40'000'000;
+	BattleUnitsChanged injury;
+	injury.battleID = BattleID(0);
+	injury.changedStacks.emplace_back(wounded->unitId(), UnitChanges::EOperation::UPDATE);
+	injury.changedStacks.back().data = state->save();
+	injury.changedStacks.back().healthDelta = -damage;
+	gameHandler->sendAndApply(injury);
+
+	Bonus marker(BonusDuration::N_TURNS, BonusType::HP_REGENERATION,
+		BonusSource::SPELL_EFFECT, 0, BonusSourceID(regeneration));
+	marker.turnsRemain = 3;
+	wounded->addNewBonus(std::make_shared<Bonus>(marker));
+
+	const auto liveHealth = wounded->getAvailableHealth();
+	const auto livePending = wounded->regenerationPendingMicroHealth;
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto forecast = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto forecastStack = forecast->getForUpdate(wounded->unitId());
+	const auto initialForecastHealth = forecastStack->getAvailableHealth();
+	ASSERT_EQ(forecastStack->regenerationProjectedHeal(), 40);
+
+	forecast->nextTurn(wounded->unitId(), BattleUnitTurnReason::ACTION_REJECTED);
+	EXPECT_EQ(forecastStack->getAvailableHealth(), initialForecastHealth);
+	EXPECT_EQ(forecastStack->regenerationPendingMicroHealth, livePending);
+	EXPECT_TRUE(forecast->battleBeginsActivation(forecastStack.get(), BattleUnitTurnReason::TURN_QUEUE));
+
+	forecast->nextTurn(wounded->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_EQ(forecastStack->getAvailableHealth(), initialForecastHealth + 40);
+	EXPECT_EQ(forecastStack->regenerationPendingMicroHealth, 0);
+	forecast->nextTurn(wounded->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_EQ(forecastStack->getAvailableHealth(), initialForecastHealth + 40)
+		<< "consumed marks must not be valued or applied again on later projected activations";
+
+	auto stoppedForecast = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	Bonus timeStop(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
+		BonusSource::OTHER, 0, BonusSourceID(regeneration));
+	stoppedForecast->addUnitBonus(wounded->unitId(), {timeStop});
+	auto stoppedStack = stoppedForecast->getForUpdate(wounded->unitId());
+	ASSERT_TRUE(stoppedStack->isTimeStopped());
+	EXPECT_FALSE(stoppedForecast->battleBeginsActivation(stoppedStack.get(), BattleUnitTurnReason::TURN_QUEUE));
+	stoppedForecast->nextTurn(wounded->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_EQ(stoppedStack->getAvailableHealth(), liveHealth);
+	EXPECT_EQ(stoppedStack->regenerationPendingMicroHealth, livePending);
+
+	EXPECT_EQ(wounded->getAvailableHealth(), liveHealth);
+	EXPECT_EQ(wounded->regenerationPendingMicroHealth, livePending)
+		<< "projected activation processing must not mutate authoritative battle state";
+}
+
 TEST_F(NewHorizonsMagicAITest, TemporalFieldAIRespectsConsumedBudget)
 {
 	useCommands = false;
