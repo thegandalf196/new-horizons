@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleExchangeVariant.h"
 #include "BattleEvaluator.h"
+#include "NewHorizonsHexOfPain.h"
 #include "../../lib/CStack.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/GameLibrary.h"
@@ -122,10 +123,6 @@ float BattleExchangeVariant::trackAttack(
 	if(!ap.fortuneStrikes.empty())
 	{
 		int64_t projectedAttackerDamage = 0;
-		for(const auto & strike : ap.fortuneStrikes)
-			for(const auto & [unitId, damage] : strike.hits)
-				if(unitId == attacker->unitId())
-					projectedAttackerDamage += std::max<int64_t>(0, damage);
 		const auto attackerDamage = finalDamage[attacker->unitId()];
 		if(ap.preAttackDamage > 0)
 		{
@@ -149,6 +146,8 @@ float BattleExchangeVariant::trackAttack(
 				auto target = hb->getForUpdate(unitId);
 				auto actualDamage = std::min<int64_t>(std::max<int64_t>(0, damage),
 					target->getAvailableHealth());
+				if(unitId == attacker->unitId())
+					projectedAttackerDamage += actualDamage;
 				actualHits.emplace_back(unitId, actualDamage);
 				if(actualDamage > 0)
 				{
@@ -180,6 +179,11 @@ float BattleExchangeVariant::trackAttack(
 			}
 			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled);
 			hb->projectRangedMarkStrike(projectedAttack, actualHits);
+			const auto healthBeforeHexOfPain = projectedAttacker->getAvailableHealth();
+			hb->projectHexOfPainStrike(projectedAttack, actualHits, strike.attackIndex);
+			if(projectedAttacker->unitId() == attacker->unitId())
+				projectedAttackerDamage += std::max<int64_t>(0,
+					healthBeforeHexOfPain - projectedAttacker->getAvailableHealth());
 			// Protect applies to the captured primary target of each blow, not
 			// once to the whole multi-attack action. AttackPossibility snapshots
 			// the redirected ID before damage, so a killed Protector still records
@@ -352,6 +356,7 @@ float BattleExchangeVariant::trackAttack(
 	projectedAttack.protectIntercepted = protectIntercepted;
 
 	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
+	const int64_t actualDamage = std::min<int64_t>(attackDamage, defender->getAvailableHealth());
 	float defenderDamageReduce = AttackPossibility::calculateDamageReduce(attacker.get(), defender.get(), attackDamage, damageCache, hb);
 	float attackerDamageReduce = 0;
 	const bool defenderWasAlive = defender->alive();
@@ -382,7 +387,6 @@ float BattleExchangeVariant::trackAttack(
 		else
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
-		const int64_t actualDamage = std::min<int64_t>(attackDamage, defender->getAvailableHealth());
 		defender->damage(attackDamage);
 		projectNoQuarterAfterHit(*hb, projectedAttack, *defender);
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
@@ -393,12 +397,52 @@ float BattleExchangeVariant::trackAttack(
 			projectRelentlessAssaultAttack(*hb, requestedAttack, relentlessAssaultTargetUnitId);
 	}
 	projectedAttacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
+	const auto projectHexOfPain = [&](const battle::Unit * actor, const battle::Unit * target,
+		bool isShooting, bool isCounter, const std::vector<std::pair<uint32_t, int64_t>> & hits)
+	{
+		if(!actor || !newHorizonsHexOfPainAI::hasEffect(actor) || hits.empty())
+			return int64_t{0};
+
+		auto eventBattle = evaluateOnly
+			? std::make_shared<HypotheticBattle>(hb->env, hb)
+			: hb;
+		auto eventActor = eventBattle->getForUpdate(actor->unitId());
+		auto eventTarget = target ? eventBattle->getForUpdate(target->unitId()) : nullptr;
+		BattleAttackInfo eventAttack(eventActor.get(), eventTarget.get(), 0, isShooting);
+		eventAttack.retaliation = isCounter;
+		return eventBattle->projectHexOfPainStrike(eventAttack, hits);
+	};
+	const auto recordHexOfPain = [&](const battle::Unit * actorBeforeTrigger, int64_t damage)
+	{
+		if(!actorBeforeTrigger || damage <= 0)
+			return;
+
+		const auto value = AttackPossibility::calculateDamageReduce(nullptr, actorBeforeTrigger,
+			static_cast<uint64_t>(damage), damageCache, hb);
+		const bool sameSideAsMainAttacker = hb->battleMatchOwner(attacker.get(), actorBeforeTrigger, true);
+		if(sameSideAsMainAttacker)
+			attackerDamageReduce += value;
+		else
+			defenderDamageReduce += value;
+
+		const bool actorOnOurSide = sameSideAsMainAttacker == isOurAttack;
+		if(actorOnOurSide)
+			dpsScore.ourDamageReduce += value;
+		else
+			dpsScore.enemyDamageReduce += value;
+		attackerValue[actorBeforeTrigger->unitId()].value -= value;
+	};
+	const auto mainHexScoringActor = projectedAttacker->acquireState();
+	const auto mainHexDamage = projectHexOfPain(projectedAttacker.get(), defender.get(), shooting, false,
+		{{defender->unitId(), actualDamage}});
+	recordHexOfPain(mainHexScoringActor.get(), mainHexDamage);
 
 	const bool projectedEnemyKill = defenderWasAlive && !defenderMayRebirth
 		&& (evaluateOnly
 			? attackDamage > 0 && (defender->isClone() || attackDamage >= defenderHealthBeforeAttack)
 			: !defender->alive());
-	if(!shooting && projectedEnemyKill && hb->battleMatchOwner(attacker.get(), defender.get())
+	if(!shooting && projectedAttacker->alive() && projectedEnemyKill
+		&& hb->battleMatchOwner(attacker.get(), defender.get())
 		&& hb->battleCanTriggerCleave(projectedAttacker.get()))
 	{
 		if(const auto * selected = hb->battleSelectCleaveTarget(projectedAttacker.get(), defender.get()))
@@ -437,11 +481,16 @@ float BattleExchangeVariant::trackAttack(
 					targetWasAlive && !target->alive() && hb->battleMatchOwner(attacker.get(), target.get()));
 				hb->projectRangedMarkStrike(cleaveAttack, {{target->unitId(), cleaveDamage}});
 			}
-			projectedAttacker->afterAttack(false, false, cleaveAttack.physicalDamage);
-		}
+				projectedAttacker->afterAttack(false, false, cleaveAttack.physicalDamage);
+				const auto cleaveHexScoringActor = projectedAttacker->acquireState();
+				const auto cleaveHexDamage = projectHexOfPain(projectedAttacker.get(), targetUnit,
+					false, false, {{targetUnit->unitId(), cleaveDamage}});
+				recordHexOfPain(cleaveHexScoringActor.get(), cleaveHexDamage);
+			}
 	}
 
-	if(!evaluateOnly && allowRetaliation && defender->alive() && defender->ableToRetaliate() && !counterAttacksBlocked && !shooting
+	if(!evaluateOnly && allowRetaliation && attacker->alive() && defender->alive()
+		&& defender->ableToRetaliate() && !counterAttacksBlocked && !shooting
 		&& (!hb->battleShroudDeniesRetaliation(projectedAttack) || defender->hasBonus(firstStrikeSelector)))
 	{
 		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
@@ -477,6 +526,10 @@ float BattleExchangeVariant::trackAttack(
 		hb->projectFortuneStrike(retaliationAttack, {{attacker->unitId(), actualDamage}}, defender.get(),
 			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()));
 		defender->afterAttack(false, true, retaliationAttack.physicalDamage);
+		const auto retaliationHexScoringActor = defender->acquireState();
+		const auto retaliationHexDamage = projectHexOfPain(defender.get(), attacker.get(), false, true,
+			{{attacker->unitId(), actualDamage}});
+		recordHexOfPain(retaliationHexScoringActor.get(), retaliationHexDamage);
 	}
 	if(!evaluateOnly && hb->getActiveStackID() == static_cast<int32_t>(attacker->unitId()))
 		attacker->consumeNoQuarterActivation();

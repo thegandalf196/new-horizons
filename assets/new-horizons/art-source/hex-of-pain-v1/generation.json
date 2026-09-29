@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-29",
+  "generator": "OpenAI built-in image generator",
+  "method": "Original generated raster artwork; no reference images or existing game pixels were used. The retained master is reduced with homm3-art export_art.py using Pillow LANCZOS resampling.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "style_guide": "homm3-art/references/style-guide.md (miniature fantasy still-lifes)",
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32, 30],
+    "resampling": "LANCZOS",
+    "runtime_files": {
+      "book": "NH_hex_of_pain_44.png",
+      "scroll": "NH_hex_of_pain_32.png",
+      "scenario_bonus": "NH_hex_of_pain_32.png",
+      "battle_effect": "NH_hex_of_pain_30.png",
+      "immunity": "NH_hex_of_pain_30.png"
+    }
+  },
+  "prompt_file": "prompt-hex-of-pain.txt",
+  "assets": [
+    {
+      "id": "new-horizons:hexOfPain",
+      "name": "Hex of Pain",
+      "key": "NH_hex_of_pain",
+      "master": "exports/hex-of-pain/master.png",
+      "generated_output": "Retained master is an exact copy of the generated output; original generator cache copy was left in place.",
+      "prompt_file": "prompt-hex-of-pain.txt",
+      "dimensions": [1254, 1254],
+      "source_sha256": "9bbb670a53c9cf1198b793e2507d281cd247e126a6459e1df66aad5bcb513345",
+      "style_reference": null
+    }
+  ]
+}

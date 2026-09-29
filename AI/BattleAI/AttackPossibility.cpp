@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "AttackPossibility.h"
+#include "NewHorizonsHexOfPain.h"
 #include "../../lib/CStack.h" // TODO: remove
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -537,8 +538,10 @@ AttackPossibility AttackPossibility::evaluate(
 			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
 			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
 			&& attackInfo.physicalDamage && state->battleCanTriggerCleave(attacker);
-		const bool projectsMarks = attackInfo.shooting
-			&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
+	const bool projectsMarks = attackInfo.shooting
+		&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
+	const bool projectsHexOfPain = newHorizonsHexOfPainAI::hasEffect(attacker)
+		|| (!attackInfo.shooting && newHorizonsHexOfPainAI::hasEffect(defender));
 		const bool projectsProtect = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
 		const bool ordinaryAttacker = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker);
@@ -585,18 +588,30 @@ AttackPossibility AttackPossibility::evaluate(
 			&& !attackerInitialState->bulwarkMireGripApplied;
 		const bool projectsBulwarkEffects = mayReceiveBulwarkReaction || mayReflectBulwarkDamage
 			|| projectsImmovable || projectsSwampRenewal || projectsMireGrip;
-		if(ap.perfectMoment || projectsMarks || projectsCleave || projectsProtect || projectsSkirmisher
+	if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
-		if(projectsMarks || projectsCleave || projectsProtect || projectsSkirmisher
+	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects)
 			ap.effectPreview = fortunePreview;
-		const CBattleInfoCallback & luckState = fortunePreview
-			? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
-		ap.attackerState = ap.effectPreview
+	const CBattleInfoCallback & luckState = fortunePreview
+		? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
+	const auto scoreHexPain = [&](battle::CUnitState * recipient, int64_t damage)
+	{
+		if(!recipient || damage <= 0)
+			return;
+
+		const auto value = calculateDamageReduce(nullptr, recipient,
+			static_cast<uint64_t>(damage), damageCache, state);
+		if(state->battleMatchOwner(attacker, recipient, true))
+			ap.attackerDamageReduce += value;
+		else
+			ap.defenderDamageReduce += value;
+	};
+	ap.attackerState = ap.effectPreview
 			? std::static_pointer_cast<battle::CUnitState>(ap.effectPreview->getForUpdate(attacker->unitId()))
 			: attacker->acquireState();
 		ap.shootersBlockedDmg = bestAp.shootersBlockedDmg;
@@ -747,11 +762,13 @@ AttackPossibility AttackPossibility::evaluate(
 				: 0;
 
 			FortuneStrikeProjection strike;
-			strike.attackerId = ap.attackerState->unitId();
-			strike.defenderId = strikeDefender->unitId();
-			strike.shooting = attackInfo.shooting;
-			strike.perfectMoment = ap.perfectMoment && i == 0;
-			strike.protectIntercepted = projectsProtect
+		strike.attackerId = ap.attackerState->unitId();
+		strike.defenderId = strikeDefender->unitId();
+		strike.shooting = attackInfo.shooting;
+		strike.retaliation = attackInfo.retaliation;
+		strike.perfectMoment = ap.perfectMoment && i == 0;
+		strike.attackIndex = attackInfo.retaliation ? 0 : i;
+		strike.protectIntercepted = projectsProtect
 				&& strikeDefender->unitId() != requestedDefender->unitId();
 			// The authoritative server consumes immediately after resolving the
 			// redirected recipient, before reactions or damage. Mirror that timing
@@ -894,6 +911,7 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliation->attackerId = retaliatorState->unitId();
 					retaliation->defenderId = attacker->unitId();
 					retaliation->retaliation = true;
+					retaliation->attackIndex = 0;
 					for(auto retaliated : retaliatedUnits)
 					{
 						if(retaliated->unitId() == attacker->unitId())
@@ -1003,7 +1021,19 @@ AttackPossibility AttackPossibility::evaluate(
 				ap.attackerState->archeryDeadeyeRound = currentRound;
 			if(projectsRainOfArrows && ap.attackerState->archeryRainOfArrowsActivationSerial != currentActivationSerial)
 				ap.attackerState->archeryRainOfArrowsActivationSerial = currentActivationSerial;
-
+			// The trigger runs after the attacker commits this blow's updated
+			// resource state, before responses and follow-up attacks.
+			ap.attackerState->afterAttack(attackInfo.shooting, false, attackInfo.physicalDamage);
+			if(projectsHexOfPain && fortunePreview && !strike.hits.empty())
+			{
+				const auto preHexState = ap.attackerState->acquireState();
+				BattleAttackInfo projectedAttack(ap.attackerState.get(),
+					defenderStates.at(strike.defenderId).get(), 0, strike.shooting);
+				projectedAttack.retaliation = strike.retaliation;
+				const auto painDamage = fortunePreview->projectHexOfPainStrike(
+					projectedAttack, strike.hits, strike.attackIndex);
+				scoreHexPain(preHexState.get(), painDamage);
+			}
 			// Counterfire is an immediate, once-per-round answer to physical creature
 			// ranged damage. Include it in the exchange value so the AI does not price
 			// a shot as if the marked shooter could not return fire.
@@ -1053,7 +1083,6 @@ AttackPossibility AttackPossibility::evaluate(
 			// Authority consumes the physical attack's once-per-activation effects
 			// before the Cleave follow-up is resolved. In particular, a waited
 			// Battlecraft bonus belongs to the triggering blow only.
-			ap.attackerState->afterAttack(attackInfo.shooting, false, attackInfo.physicalDamage);
 			// Recovery is part of the triggering attack and resolves before an
 			// automatic Cleave strike can select or damage its target.
 			if(!attackInfo.shooting && !strike.hits.empty())
@@ -1082,7 +1111,7 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 			}
 
-			if(projectsCleave && ap.effectPreview
+			if(projectsCleave && ap.attackerState->alive() && ap.effectPreview
 				&& ap.effectPreview->battleCanTriggerCleave(ap.attackerState.get())
 				&& !destroyedEnemyUnits.empty())
 			{
@@ -1137,6 +1166,7 @@ AttackPossibility AttackPossibility::evaluate(
 					cleave.emplace();
 					cleave->attackerId = ap.attackerState->unitId();
 					cleave->defenderId = targetState->unitId();
+					cleave->attackIndex = 0;
 					cleave->cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
 					cleave->hits.emplace_back(targetState->unitId(), cleaveDamage);
 					targetState->damage(cleaveDamage);
@@ -1153,6 +1183,13 @@ AttackPossibility AttackPossibility::evaluate(
 					if(targetState->unitId() == defender->unitId())
 						ap.defenderDead = !targetState->alive();
 					ap.attackerState->afterAttack(false, false, true);
+					if(projectsHexOfPain && fortunePreview)
+					{
+						const auto preHexState = ap.attackerState->acquireState();
+						const auto painDamage = fortunePreview->projectHexOfPainStrike(
+							cleaveAttack, cleave->hits, cleave->attackIndex);
+						scoreHexPain(preHexState.get(), painDamage);
+					}
 					break;
 				}
 			}
@@ -1162,7 +1199,7 @@ AttackPossibility AttackPossibility::evaluate(
 			// metadata together when Cleave destroys that stack.
 			if(retaliation)
 			{
-				if(!defenderStates.at(retaliation->attackerId)->alive())
+				if(!defenderStates.at(retaliation->attackerId)->alive() || !ap.attackerState->alive())
 				{
 					retaliation.reset();
 					pendingRetaliationDamage.clear();
@@ -1213,10 +1250,12 @@ AttackPossibility AttackPossibility::evaluate(
 				ap.effectPreview->projectRangedMarkStrike(projectedAttack, strike.hits);
 			}
 			int64_t retaliationActualDamage = 0;
+			std::vector<std::pair<uint32_t, int64_t>> retaliationActualHits;
 			for(auto & [targetState, rawDamage] : pendingRetaliationDamage)
 			{
 				auto actualDamage = std::min(rawDamage, targetState->getAvailableHealth());
 				targetState->damage(actualDamage);
+				retaliationActualHits.emplace_back(targetState->unitId(), actualDamage);
 				if(retaliation && fortunePreview && targetState->alive())
 				{
 					auto retaliatorState = defenderStates.at(retaliation->attackerId);
@@ -1241,6 +1280,15 @@ AttackPossibility AttackPossibility::evaluate(
 			{
 				auto retaliatorState = defenderStates.at(retaliation->attackerId);
 				retaliatorState->afterAttack(attackInfo.shooting, true, attackInfo.physicalDamage);
+				if(projectsHexOfPain && fortunePreview)
+				{
+					const auto preHexState = retaliatorState->acquireState();
+					BattleAttackInfo retaliationAttack(retaliatorState.get(), ap.attackerState.get(), 0, false);
+					retaliationAttack.retaliation = true;
+					const auto painDamage = fortunePreview->projectHexOfPainStrike(
+						retaliationAttack, retaliationActualHits, retaliation->attackIndex);
+					scoreHexPain(preHexState.get(), painDamage);
+				}
 			}
 			if(retaliation && retaliationActualDamage > 0)
 			{

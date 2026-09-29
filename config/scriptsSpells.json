@@ -122,6 +122,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"hexOfPainEffect" : {
+		"implements" : "spellEffect",
+		"script" : "spells/hexOfPain",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"sacrifice" : {
 		"implements" : "spellEffect",
 		"script" : "spells/sacrifice",

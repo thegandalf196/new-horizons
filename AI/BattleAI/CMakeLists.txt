@@ -19,6 +19,7 @@ set(battleAI_HEADERS
 		BattleEvaluator.h
 		PotentialTargets.h
 		PossibleSpellcast.h
+		NewHorizonsHexOfPain.h
 		StackWithBonuses.h
 		SpellTargetsEvaluator.h
 		TacticsHandler.h

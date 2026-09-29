@@ -25,7 +25,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 100/310 | 210 planned; active status alone does not certify behavior. Backstab has a selected-perk rear-attack damage path. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 37/67 | 30 missing/inactive; Life Drain joins Holy Armor with focused authoritative and AI-target evidence, but rendered/playable delivery remains pending. |
+| Canonical combat-spell identities registered | 38/67 | 29 missing/inactive; Hex of Pain has focused authoritative and AI-valuation evidence, but rendered/playable delivery remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -187,18 +187,18 @@ interactions, and rendered/playable acceptance remain separate.
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
-rank. Ten Skills therefore cannot normally advance beyond Basic because they
-have no active Basic perk: War Machines, Command,
-Chaos Magic, Diplomacy, Estates, Learning, Luck, Divine
-Mandate, Shroud of Malassa, and Elemental Rebirth.
+rank. Nine Skills therefore cannot normally advance beyond Basic because they
+have no active Basic perk: War Machines, Command, Chaos Magic, Diplomacy,
+Estates, Learning, Luck, Divine Mandate, and Elemental Rebirth. Backstab now
+opens the Shroud's ordinary Advanced-rank progression.
 
 ## Spell baseline
 
 The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
 spells. Rechecking the current saved roster after adding Holy Wrath, Storm
-of Daggers, Regeneration, Nature Poison, Holy Armor, and Life Drain shows 37 of the 67 combat identities with active settings rows and
-registered mod/core definitions, including Spell Lock; 30 are absent or inactive. An active
+of Daggers, Regeneration, Nature Poison, Holy Armor, Life Drain, and Hex of Pain shows 38 of the 67 combat identities with active settings rows and
+registered mod/core definitions, including Spell Lock; 29 are absent or inactive. An active
 identity is not proof that its exact canonical effect is complete.
 
 Quicksand is among the active Nature identities. Its selected-placement path
@@ -216,7 +216,7 @@ from the active identity row.
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
-| Shadow | 12 | 3 | Hex of Pain; Frailty; Plague; Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
+| Shadow | 12 | 4 | Frailty; Plague; Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |

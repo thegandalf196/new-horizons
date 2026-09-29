@@ -20,8 +20,10 @@ SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
     'new-horizons:focusMagic',
+    'new-horizons:hexOfPain',
     'new-horizons:holyArmor',
     'new-horizons:holyWrath',
+    'new-horizons:lifeDrain',
     'new-horizons:counterspell',
     'new-horizons:disintegrate',
     'new-horizons:masterChainLightning',
@@ -114,6 +116,7 @@ def legacy_rules(rules):
             spell.pop('directDamage', None)
             spell.pop('active', None)
             spell.pop('cureAfflictions', None)
+            spell.pop('selectedPlacement', None)
     return result
 
 
@@ -195,6 +198,25 @@ class NewHorizonsContentTest(unittest.TestCase):
                 self.assertEqual(struct.unpack('>II',
                     (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                     (size, size))
+
+    def test_hex_of_pain_has_roster_effect_and_purpose_made_art(self):
+        row = self.rules['spells']['new-horizons:hexOfPain']
+        self.assertEqual(row['schools'], ['new-horizons:shadow'])
+        self.assertEqual((row['level'], row['costs']), (2, [8, 8, 8, 8]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['hexOfPain']
+        self.assertEqual((spell['name'], spell['targetType']), ('Hex of Pain', 'CREATURE'))
+        for level in spell['levels'].values():
+            self.assertEqual(level['cost'], 8)
+            self.assertEqual(level['battleEffects']['hexOfPain']['type'],
+                             'core:hexOfPainEffect')
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_hex_of_pain_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
 
     def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
         spell_id = 'new-horizons:holyWrath'
@@ -384,6 +406,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'new-horizons:masterChainLightning',
                               'new-horizons:disintegrate',
                               'new-horizons:holyWrath',
+                              'new-horizons:lifeDrain',
                               'new-horizons:stormOfDaggers',
                           })
         self.assertEqual(self.rules['spells']['core:fireball']['directDamage'],

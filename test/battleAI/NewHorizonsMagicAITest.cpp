@@ -11,6 +11,7 @@
 #include "../server/battles/HeroCommandFixture.h"
 #include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/NewHorizonsHexOfPain.h"
 #include "../../AI/BattleAI/PossibleSpellcast.h"
 #include "../../AI/BattleAI/PotentialTargets.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
@@ -3937,6 +3938,162 @@ TEST_F(NewHorizonsMagicAITest, CanonicalShadowSorrowAIUsesProjectedRankedMoraleT
 	EXPECT_EQ(lowMoraleThreat->moraleVal(), lowMoraleBefore);
 	EXPECT_EQ(sorrowMoraleBonus(highMoraleThreat), nullptr);
 	EXPECT_EQ(sorrowMoraleBonus(lowMoraleThreat), nullptr);
+}
+
+TEST_F(NewHorizonsMagicAITest, HexOfPainLowersProjectedAttackValueAndMakesItsCastValuable)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const SpellID hexOfPain(SpellID::decode("new-horizons:hexOfPain"));
+	ASSERT_NE(hexOfPain.toSpell(), nullptr);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto known : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(hexOfPain);
+	const auto shadowSkillId = SecondarySkill::decode("new-horizons:shadowMagic");
+	ASSERT_GE(shadowSkillId, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(shadowSkillId), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 5);
+	auto * threatenedAlly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(10, 5), 5);
+	auto * hostile = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(11, 5), 1);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(threatenedAlly, nullptr);
+	ASSERT_NE(hostile, nullptr);
+
+	const std::set<uint32_t> keepIds{active->unitId(), threatenedAlly->unitId(), hostile->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto * projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+	const auto * projectedAlly = projected->battleGetUnitByID(threatenedAlly->unitId());
+	ASSERT_NE(projectedHostile, nullptr);
+	ASSERT_NE(projectedAlly, nullptr);
+
+	DamageCache baselineDamage;
+	baselineDamage.buildDamageCache(projected, BattleSide::ATTACKER);
+	const BattleAttackInfo baselineAttack(projectedHostile, projectedAlly, 0, false);
+	const auto unhexedAttack = AttackPossibility::evaluate(baselineAttack,
+		projectedHostile->getPosition(), baselineDamage, projected);
+
+	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, hexOfPain.toSpell());
+	const auto mechanics = hexOfPain.toSpell()->battleMechanics(&cast);
+	const spells::Target aim{spells::Destination(projectedHostile)};
+	ASSERT_TRUE(mechanics->canBeCastAt(aim));
+	mechanics->castEval(projected->getServerCallback(), aim);
+	projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+	ASSERT_NE(projectedHostile, nullptr);
+	ASSERT_TRUE(newHorizonsHexOfPainAI::hasEffect(projectedHostile));
+
+	DamageCache hexedDamage;
+	hexedDamage.buildDamageCache(projected, BattleSide::ATTACKER);
+	const BattleAttackInfo hexedAttackInfo(projectedHostile, projectedAlly, 0, false);
+	const auto hexedAttack = AttackPossibility::evaluate(hexedAttackInfo,
+		projectedHostile->getPosition(), hexedDamage, projected);
+	EXPECT_LT(hexedAttack.attackValue(), unhexedAttack.attackValue())
+		<< "The afflicted unit's own reactive Shadow damage reduces its projected attack value";
+
+	const auto * originalHostile = battle()->battleGetUnitByID(hostile->unitId());
+	ASSERT_NE(originalHostile, nullptr);
+	// This exact per-target forecast is added to each legal Hex candidate before
+	// comparing casts with the normal action baseline. Keep the focused assertion
+	// at that seam; end-to-end hero-action selection runs in the shared integration
+	// suite because its full candidate search is substantially more expensive.
+	const auto castBenefit = BattleEvaluator::estimateProjectedHexOfPainTargetValue(
+		originalHostile, projectedHostile, projected);
+	EXPECT_GT(castBenefit, 0.0f)
+		<< "The same forecast used by spell-choice evaluation assigns Hex of Pain positive future value";
+	EXPECT_FALSE(newHorizonsHexOfPainAI::hasEffect(originalHostile))
+		<< "The hypothetical cast and its AI valuation must not mutate the live battle";
+}
+
+TEST_F(NewHorizonsMagicAITest, HexOfPainLethalSelfDamageKeepsAttackValuationFinite)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const SpellID hexOfPain(SpellID::decode("new-horizons:hexOfPain"));
+	ASSERT_NE(hexOfPain.toSpell(), nullptr);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto known : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(hexOfPain);
+	const auto shadowSkillId = SecondarySkill::decode("new-horizons:shadowMagic");
+	ASSERT_GE(shadowSkillId, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(shadowSkillId), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 1000, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 5);
+	auto * threatenedAlly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(10, 5), 30);
+	auto * hostile = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(11, 5), 1);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(threatenedAlly, nullptr);
+	ASSERT_NE(hostile, nullptr);
+
+	const std::set<uint32_t> keepIds{active->unitId(), threatenedAlly->unitId(), hostile->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto * projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+	const auto * projectedAlly = projected->battleGetUnitByID(threatenedAlly->unitId());
+	ASSERT_NE(projectedHostile, nullptr);
+	ASSERT_NE(projectedAlly, nullptr);
+
+	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, hexOfPain.toSpell());
+	const auto mechanics = hexOfPain.toSpell()->battleMechanics(&cast);
+	const spells::Target aim{spells::Destination(projectedHostile)};
+	ASSERT_TRUE(mechanics->canBeCastAt(aim));
+	mechanics->castEval(projected->getServerCallback(), aim);
+	projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+	ASSERT_NE(projectedHostile, nullptr);
+	ASSERT_TRUE(newHorizonsHexOfPainAI::hasEffect(projectedHostile));
+
+	DamageCache damageCache;
+	damageCache.buildDamageCache(projected, BattleSide::ATTACKER);
+	PotentialTargets projectedAttacks(projectedHostile, damageCache, projected);
+	ASSERT_FALSE(projectedAttacks.possibleAttacks.empty());
+	const auto & lethalHexAttack = projectedAttacks.bestAction();
+	EXPECT_FALSE(lethalHexAttack.attackerState->alive())
+		<< "The snapshotted flat Hex damage should kill this single-creature attacker after its strike";
+	EXPECT_TRUE(std::isfinite(lethalHexAttack.attackValue()))
+		<< "Scoring uses the actor's pre-trigger state rather than dividing by its post-Hex zero count";
+
+	BattleExchangeVariant exchange;
+	const auto exchangeValue = exchange.trackAttack(projected->getForUpdate(hostile->unitId()),
+		projected->getForUpdate(threatenedAlly->unitId()), false, false, damageCache, projected, true, false);
+	EXPECT_TRUE(std::isfinite(exchangeValue))
+		<< "The direct projected-exchange scoring path remains finite when reactive damage is lethal";
+	EXPECT_TRUE(hostile->alive())
+		<< "Forecasting the lethal trigger must not mutate the live battle";
 }
 
 TEST_F(NewHorizonsMagicAITest, MaledictionMakesCurseAIValueItsProjectedExtraRound)

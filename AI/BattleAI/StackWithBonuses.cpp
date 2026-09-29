@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "StackWithBonuses.h"
+#include "NewHorizonsHexOfPain.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
@@ -54,6 +55,45 @@ ui8 timeStopSideMask(BattleSide side)
 		return 2u;
 	return 0u;
 }
+
+bool isHexOfPainBonus(const Bonus & bonus)
+{
+	if(bonus.type != BonusType::COMBAT_EVENT_TRIGGER || bonus.source != BonusSource::SPELL_EFFECT
+		|| !bonus.parameters || bonus.sid.toString() != newHorizonsHexOfPainAI::SPELL_ID)
+		return false;
+
+	if(bonus.subtype.toString() != newHorizonsHexOfPainAI::TRIGGER_ID)
+		return false;
+
+	const auto & parameters = bonus.parameters->toCustom<JsonNode>();
+	return parameters["damageSharePercent"].isNumber()
+		&& !parameters["casterSide"].isNull();
+}
+}
+
+bool newHorizonsHexOfPainAI::hasEffect(const battle::Unit * unit)
+{
+	if(!unit)
+		return false;
+
+	const auto triggers = unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	return std::ranges::any_of(*triggers, [](const auto & bonus)
+	{
+		return bonus && isHexOfPainBonus(*bonus);
+	});
+}
+
+int newHorizonsHexOfPainAI::effectRounds(const battle::Unit * unit)
+{
+	if(!unit)
+		return 0;
+
+	int rounds = 0;
+	const auto triggers = unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	for(const auto & bonus : *triggers)
+		if(bonus && isHexOfPainBonus(*bonus) && Bonus::NTurns(bonus.get()))
+			rounds = std::max(rounds, static_cast<int>(bonus->turnsRemain));
+	return std::max(0, rounds);
 }
 
 void actualizeEffect(TBonusListPtr target, const Bonus & ef)
@@ -1434,8 +1474,6 @@ void HypotheticBattle::projectRangedMarkStrike(const BattleAttackInfo & attack,
 			|| bonus->sid.toString() != newHorizonsSorcery::FOCUS_MAGIC_SPELL)
 			continue;
 		const auto scriptId = bonus->subtype.as<ScriptID>();
-		if(!scriptId.hasValue())
-			continue;
 		const auto & script = LIBRARY->scriptTypes()->getById(scriptId);
 		if(script.scriptId != newHorizonsSorcery::FOCUS_MAGIC_TRIGGER || !script.combatEventScript)
 			continue;
@@ -1444,6 +1482,57 @@ void HypotheticBattle::projectRangedMarkStrike(const BattleAttackInfo & attack,
 		script.combatEventScript->run(getServerCallback(), *this, CombatEventType::AFTER_ATTACK,
 			attacker.get(), battleGetUnitByID(attack.defender->unitId()), parameters, payload);
 	}
+}
+
+int64_t HypotheticBattle::projectHexOfPainStrike(const BattleAttackInfo & attack,
+	const std::vector<std::pair<uint32_t, int64_t>> & hits, int32_t attackIndex)
+{
+	if(!attack.attacker || hits.empty())
+		return 0;
+
+	const auto attacker = getForUpdate(attack.attacker->unitId());
+	const auto healthBefore = attacker->getAvailableHealth();
+	CombatEventPayload payload;
+	payload.ranged = attack.shooting;
+	payload.isCounter = attack.retaliation;
+	payload.attackIndex = attackIndex;
+	for(const auto & [unitId, damage] : hits)
+	{
+		const auto * target = battleGetUnitByID(unitId);
+		if(!target)
+			continue;
+
+		AttackedTarget hit;
+		hit.unit = target;
+		hit.damage = std::max<int64_t>(0, damage);
+		// `hits` already contains post-cap damage from the projected attack. Keep
+		// the script's health cap meaningful without needing a second health
+		// snapshot at this post-attack callback boundary.
+		hit.healthBeforeAttack = hit.damage;
+		payload.targets.push_back(hit);
+	}
+	if(payload.targets.empty())
+		return 0;
+
+	const auto triggers = attacker->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	for(const auto & bonus : *triggers)
+	{
+		if(!bonus || !isHexOfPainBonus(*bonus))
+			continue;
+
+		const auto scriptId = bonus->subtype.as<ScriptID>();
+		const auto & script = LIBRARY->scriptTypes()->getById(scriptId);
+		if(!script.combatEventScript)
+			continue;
+
+		JsonNode parameters = bonus->parameters->toCustom<JsonNode>();
+		parameters["val"].Integer() = bonus->val;
+		script.combatEventScript->run(getServerCallback(), *this, CombatEventType::AFTER_ATTACK,
+			attacker.get(), attack.defender ? battleGetUnitByID(attack.defender->unitId()) : nullptr,
+			parameters, payload);
+	}
+
+	return std::max<int64_t>(0, healthBefore - attacker->getAvailableHealth());
 }
 
 ServerCallback * HypotheticBattle::getServerCallback()

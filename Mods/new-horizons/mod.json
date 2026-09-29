@@ -606,6 +606,18 @@
 							11
 						]
 					},
+					"new-horizons:hexOfPain": {
+						"schools": [
+							"new-horizons:shadow"
+						],
+						"level": 2,
+						"costs": [
+							8,
+							8,
+							8,
+							8
+						]
+					},
 					"new-horizons:holyWrath": {
 						"schools": [
 							"new-horizons:light"

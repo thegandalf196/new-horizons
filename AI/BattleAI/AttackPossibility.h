@@ -26,6 +26,7 @@ struct FortuneStrikeProjection
 	bool perfectMoment = false;
 	bool protectIntercepted = false;
 	bool relentlessAssaultEligible = false;
+	int32_t attackIndex = 0;
 	int cleaveDamagePercent = 0;
 	std::vector<std::pair<uint32_t, int64_t>> hits;
 	/// Targets receiving No Quarter after these hits, paired with remaining

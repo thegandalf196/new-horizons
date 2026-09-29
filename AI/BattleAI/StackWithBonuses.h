@@ -267,6 +267,10 @@ public:
 	void projectFortuneStrike(const BattleAttackInfo & attack,
 		const std::vector<std::pair<uint32_t, int64_t>> & hits,
 		battle::CUnitState * attackerState, bool enemyStackKilled);
+	/// Project only New Horizons Hex of Pain's registered AFTER_ATTACK trigger.
+	/// Other COMBAT_EVENT_TRIGGER effects are intentionally outside this model.
+	int64_t projectHexOfPainStrike(const BattleAttackInfo & attack,
+		const std::vector<std::pair<uint32_t, int64_t>> & hits, int32_t attackIndex = 0);
 
 	battle::Units getUnitsIf(const battle::UnitFilter & predicate) const override;
 

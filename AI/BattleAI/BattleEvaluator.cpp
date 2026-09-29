@@ -12,6 +12,7 @@
 #include "BattleExchangeVariant.h"
 
 #include "StackWithBonuses.h"
+#include "NewHorizonsHexOfPain.h"
 #include "tbb/parallel_for.h"
 #include "SpellTargetsEvaluator.h"
 #include "../../lib/CStopWatch.h"
@@ -113,6 +114,20 @@ bool isPhantomArmy(const CSpell * spell)
 bool isCanonicalRegeneration(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsMagic::NATURE_REGENERATION_SPELL;
+}
+
+bool isCanonicalHexOfPain(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsHexOfPainAI::SPELL_ID;
+}
+
+bool isHexOfPainTriggerBonus(const Bonus * bonus)
+{
+	if(!bonus || bonus->type != BonusType::COMBAT_EVENT_TRIGGER
+		|| bonus->source != BonusSource::SPELL_EFFECT || bonus->sid.toString() != newHorizonsHexOfPainAI::SPELL_ID)
+		return false;
+
+	return bonus->subtype.toString() == newHorizonsHexOfPainAI::TRIGGER_ID;
 }
 
 float expectedMoraleActivationChange(const battle::Unit * unit)
@@ -283,6 +298,65 @@ float BattleEvaluator::estimateProjectedCurseTargetValue(const battle::Unit * or
 	// Sorrow estimate's treatment of future activations.
 	const auto preventedAttackValue = expectedCurseTargetActivationValue(projected, damageCache, projectedBattle);
 	return preventedAttackValue * static_cast<float>(remainingRounds) * 0.5f;
+}
+
+float BattleEvaluator::estimateProjectedHexOfPainTargetValue(const battle::Unit * original,
+	const battle::Unit * projected, const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!original || !projected || !original->alive() || !projected->alive()
+		|| projected->getCount() <= 0 || projected->isGhost() || projected->isTurret()
+		|| !projectedBattle || !newHorizonsHexOfPainAI::hasEffect(projected))
+		return 0.0f;
+
+	const auto remainingRounds = newHorizonsHexOfPainAI::effectRounds(projected);
+	if(remainingRounds <= 0)
+		return 0.0f;
+
+	const auto bestAttackValue = [&](DamageCache & cache)
+	{
+		const auto * actor = projectedBattle->battleGetUnitByID(projected->unitId());
+		if(!actor || !actor->alive())
+			return 0.0f;
+
+		PotentialTargets targets(actor, cache, projectedBattle);
+		if(targets.possibleAttacks.empty())
+			return 0.0f;
+		return std::max(0.0f, targets.possibleAttacks.front().attackValue());
+	};
+
+	// Compare the same projected position, health, and other spell effects with
+	// just this registered trigger removed. The attack preview executes the Hex
+	// script after each projected strike/retaliation, so this estimates the value
+	// of the curse's reactive self-damage without inventing generic trigger rules.
+	DamageCache hexedDamage;
+	hexedDamage.buildDamageCache(projectedBattle, projected->unitSide());
+	const auto hexedActionValue = bestAttackValue(hexedDamage);
+
+	std::vector<Bonus> removedBonuses;
+	const auto triggers = projected->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	for(const auto & bonus : *triggers)
+		if(bonus && isHexOfPainTriggerBonus(bonus.get()))
+			removedBonuses.emplace_back(*bonus);
+	if(removedBonuses.empty())
+		return 0.0f;
+
+	const auto triggerSelector = CSelector([](const Bonus * bonus)
+	{
+		return isHexOfPainTriggerBonus(bonus);
+	});
+	const auto targetState = projectedBattle->getForUpdate(projected->unitId());
+	targetState->removeUnitBonus(triggerSelector);
+
+	DamageCache unhexedDamage;
+	unhexedDamage.buildDamageCache(projectedBattle, projected->unitSide());
+	const auto unhexedActionValue = bestAttackValue(unhexedDamage);
+
+	// Forecasting is observational: restore the exact captured bonus objects so
+	// later candidate scoring sees the accepted hypothetical cast unchanged.
+	targetState->addUnitBonus(removedBonuses);
+
+	const auto preventedActionValue = std::max(0.0f, unhexedActionValue - hexedActionValue);
+	return preventedActionValue * static_cast<float>(remainingRounds) * 0.5f;
 }
 
 bool isCanonicalHolyArmor(const CSpell * spell)
@@ -2744,6 +2818,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							timedMaledictionScore += estimateProjectedSorrowTargetValue(original, unit, innerCache, state);
 						else if(ps.spell->getId() == SpellID::CURSE)
 							timedMaledictionScore += estimateProjectedCurseTargetValue(original, unit, innerCache, state);
+						else if(isCanonicalHexOfPain(ps.spell))
+							timedMaledictionScore += estimateProjectedHexOfPainTargetValue(original, unit, state);
 					}
 					const bool phantomArmyStack = phantomArmy && !original
 						&& state->battleGetOwner(unit) == playerID

@@ -104,6 +104,21 @@
 		},
 		"description" : ""
 	},
+	"hexOfPain" : {
+		"implements" : "combatEvent",
+		"script" : "combat/hexOfPain",
+		"patches" : [ ],
+		"priority" : 50,
+		"schema" : {
+			"required" : ["damageSharePercent", "casterSide"],
+			"properties" : {
+				"damageSharePercent" : { "type" : "integer", "enum" : [10], "description" : "share of the attack's actual damage the bearer suffers" },
+				"casterSide" : { "type" : "integer", "enum" : [0, 1], "description" : "battle side whose hero cast Hex of Pain (0=attacker, 1=defender)" }
+			},
+			"additionalProperties" : false
+		},
+		"description" : "After this unit attacks or retaliates, it suffers ${val} + ${damageSharePercent}% of the damage it inflicted as Shadow damage."
+	},
 	"deathStare" : {
 		"implements" : "combatEvent",
 		"script" : "combat/deathStare",
