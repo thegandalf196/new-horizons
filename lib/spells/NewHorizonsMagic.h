@@ -19,6 +19,8 @@
 #include "NewHorizonsDirectDamage.h"
 
 class CGHeroInstance;
+class CBattleInfoCallback;
+class BattleHex;
 class ResourceSet;
 
 namespace battle
@@ -171,6 +173,12 @@ DLL_LINKAGE int spellPowerCoefficientBasisPoints(const JsonNode & rules, const C
 DLL_LINKAGE std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,
 	SpellID spell, int32_t spellPower, int32_t spellPowerDivisor = 1,
 	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0);
+/// True only when the saved v3 spell row opts into player-selected Quicksand
+/// placement. Markerless v3 snapshots retain their random legacy placement.
+DLL_LINKAGE bool quicksandSelectedPlacementEnabled(const JsonNode & rules, SpellID spell);
+/// Checks whether an available battlefield hex is empty, accessible ground
+/// suitable for an authoritative Quicksand patch placement.
+DLL_LINKAGE bool quicksandPlacementHexIsLegal(const CBattleInfoCallback & battle, const BattleHex & hex);
 /// Empower Spell's additive multiplier for this saved ordinary hero cast. The
 /// threshold uses only listed cost × the explicit variant × Wisdom, before
 /// battle creature auras, Metamagic reductions, or Overcharge are applied.

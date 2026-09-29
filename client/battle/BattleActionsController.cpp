@@ -603,9 +603,23 @@ bool BattleActionsController::landMinePlacementModeActive() const
 	return isCanonicalLandMine(*owner.getBattle(), heroSpellToCast->spell.toSpell());
 }
 
-int BattleActionsController::landMinePlacementRequiredHexes() const
+bool BattleActionsController::quicksandPlacementModeActive() const
 {
-	if(!landMinePlacementModeActive())
+	if(!heroSpellToCast || !owner.getBattle() || !owner.getBattle()->getBattle() || !owner.currentHero())
+		return false;
+
+	return newHorizonsMagic::quicksandSelectedPlacementEnabled(
+		owner.getBattle()->getBattle()->getMagicRules(), heroSpellToCast->spell);
+}
+
+bool BattleActionsController::repeatedPlacementModeActive() const
+{
+	return landMinePlacementModeActive() || quicksandPlacementModeActive();
+}
+
+int BattleActionsController::repeatedPlacementRequiredHexes() const
+{
+	if(!repeatedPlacementModeActive())
 		return 0;
 
 	const auto * spell = heroSpellToCast->spell.toSpell();
@@ -616,44 +630,50 @@ int BattleActionsController::landMinePlacementRequiredHexes() const
 	if(!mechanics)
 		return 0;
 
+	if(quicksandPlacementModeActive())
+		return mechanics->getNewHorizonsQuicksandPatchCount();
+
 	return newHorizonsMagic::landMineHexCount(mechanics->getEffectPower());
 }
 
-bool BattleActionsController::landMinePlacementReady() const
+bool BattleActionsController::repeatedPlacementReady() const
 {
-	const int required = landMinePlacementRequiredHexes();
-	return required > 0 && static_cast<int>(landMineSelectedHexes.size()) == required;
+	const int required = repeatedPlacementRequiredHexes();
+	return required > 0 && static_cast<int>(repeatedPlacementSelectedHexes.size()) == required;
 }
 
-const std::vector<BattleHex> & BattleActionsController::landMinePlacementSelectedHexes() const
+const std::vector<BattleHex> & BattleActionsController::getRepeatedPlacementSelectedHexes() const
 {
-	return landMineSelectedHexes;
+	return repeatedPlacementSelectedHexes;
 }
 
-bool BattleActionsController::landMinePlacementHexIsLegal(const BattleHex & hex) const
+bool BattleActionsController::repeatedPlacementHexIsLegal(const BattleHex & hex) const
 {
-	if(!landMinePlacementModeActive() || !owner.getBattle())
+	if(!repeatedPlacementModeActive() || !owner.getBattle())
 		return false;
+
+	if(quicksandPlacementModeActive())
+		return newHorizonsMagic::quicksandPlacementHexIsLegal(*owner.getBattle(), hex);
 
 	return canonicalLandMineHexIsEmpty(*owner.getBattle(), hex);
 }
 
-bool BattleActionsController::landMinePlacementHexIsSelected(const BattleHex & hex) const
+bool BattleActionsController::repeatedPlacementHexIsSelected(const BattleHex & hex) const
 {
-	return std::find(landMineSelectedHexes.begin(), landMineSelectedHexes.end(), hex)
-		!= landMineSelectedHexes.end();
+	return std::find(repeatedPlacementSelectedHexes.begin(), repeatedPlacementSelectedHexes.end(), hex)
+		!= repeatedPlacementSelectedHexes.end();
 }
 
-BattleHexArray BattleActionsController::getLandMinePlacementLegalHexes() const
+BattleHexArray BattleActionsController::getRepeatedPlacementLegalHexes() const
 {
 	BattleHexArray result;
-	if(!landMinePlacementModeActive())
+	if(!repeatedPlacementModeActive())
 		return result;
 
 	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 	{
 		const BattleHex hex(index);
-		if(landMinePlacementHexIsLegal(hex))
+		if(repeatedPlacementHexIsLegal(hex))
 			result.insert(hex);
 	}
 	return result;
@@ -894,7 +914,7 @@ void BattleActionsController::selectStormOfDaggersTarget(const BattleHex & click
 		stormOfDaggersSelectedUnitIds.push_back(target->unitId());
 
 	if(owner.windowObject)
-		owner.windowObject->updateLandMinePlacementControls();
+		owner.windowObject->updateBattleTargetSelectionControls();
 	updateStormOfDaggersSelectionStatus(clickedHex);
 	ENGINE->windows().totalRedraw();
 }
@@ -907,7 +927,7 @@ void BattleActionsController::confirmStormOfDaggersTargets()
 	if(!stormOfDaggersTargetsAreLegal(stormOfDaggersSelectedUnitIds))
 	{
 		if(owner.windowObject)
-			owner.windowObject->updateLandMinePlacementControls();
+			owner.windowObject->updateBattleTargetSelectionControls();
 		updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
 		return;
 	}
@@ -936,7 +956,7 @@ void BattleActionsController::undoStormOfDaggersTarget()
 
 	stormOfDaggersSelectedUnitIds.pop_back();
 	if(owner.windowObject)
-		owner.windowObject->updateLandMinePlacementControls();
+		owner.windowObject->updateBattleTargetSelectionControls();
 	updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
 	ENGINE->fakeMouseMove();
 	ENGINE->windows().totalRedraw();
@@ -1117,58 +1137,60 @@ void BattleActionsController::selectFireWallStartOrDirection(const BattleHex & c
 	}
 }
 
-void BattleActionsController::updateLandMinePlacementStatus(const BattleHex & hoveredHex)
+void BattleActionsController::updateRepeatedPlacementStatus(const BattleHex & hoveredHex)
 {
-	if(!landMinePlacementModeActive())
+	if(!repeatedPlacementModeActive())
 		return;
 
-	const int required = landMinePlacementRequiredHexes();
-	std::string message = "Land Mine " + std::to_string(landMineSelectedHexes.size())
-		+ "/" + std::to_string(required) + ".";
+	const int required = repeatedPlacementRequiredHexes();
+	const std::string placementName = quicksandPlacementModeActive() ? "Quicksand patches" : "Land Mine mines";
+	const int remaining = std::max(0, required - static_cast<int>(repeatedPlacementSelectedHexes.size()));
+	std::string message = placementName + " " + std::to_string(repeatedPlacementSelectedHexes.size())
+		+ "/" + std::to_string(required) + " selected; " + std::to_string(remaining) + " remaining.";
 
-	if(!landMineSelectedHexes.empty())
+	if(!repeatedPlacementSelectedHexes.empty())
 	{
 		message += " ";
-		for(size_t index = 0; index < landMineSelectedHexes.size(); ++index)
+		for(size_t index = 0; index < repeatedPlacementSelectedHexes.size(); ++index)
 		{
 			if(index != 0)
 				message += " ";
 			message += "#" + std::to_string(index + 1) + "="
-				+ std::to_string(landMineSelectedHexes[index].toInt());
+				+ std::to_string(repeatedPlacementSelectedHexes[index].toInt());
 		}
 	}
 
 	if(hoveredHex.isValid())
 	{
-		const bool selected = std::find(landMineSelectedHexes.begin(), landMineSelectedHexes.end(), hoveredHex)
-			!= landMineSelectedHexes.end();
+		const bool selected = std::find(repeatedPlacementSelectedHexes.begin(), repeatedPlacementSelectedHexes.end(), hoveredHex)
+			!= repeatedPlacementSelectedHexes.end();
 		if(selected)
 		{
-			if(landMinePlacementHexIsLegal(hoveredHex))
+			if(repeatedPlacementHexIsLegal(hoveredHex))
 				message += " Click selected hex to undo.";
 			else
 				message += " Selection changed; undo it.";
 		}
-		else if(!landMinePlacementHexIsLegal(hoveredHex))
+		else if(!repeatedPlacementHexIsLegal(hoveredHex))
 		{
 			message += " Hex unavailable.";
 		}
-		else if(landMinePlacementReady())
+		else if(repeatedPlacementReady())
 		{
-			message += " Click Place Mines or press Enter.";
+			message += " Click Confirm or press Enter.";
 		}
 		else
 		{
-			message += " Click empty hex.";
+			message += " Click an empty legal hex.";
 		}
 	}
-	else if(landMinePlacementReady())
+	else if(repeatedPlacementReady())
 	{
-		message += " Click Place Mines or press Enter.";
+		message += " Click Confirm or press Enter.";
 	}
 	else
 	{
-		message += " Select empty hexes. Backspace undo; Esc cancels.";
+		message += " Select legal hexes in order. Backspace undoes the last; Esc cancels.";
 	}
 
 	if(!currentConsoleMsg.empty())
@@ -1177,42 +1199,43 @@ void BattleActionsController::updateLandMinePlacementStatus(const BattleHex & ho
 	currentConsoleMsg = std::move(message);
 }
 
-void BattleActionsController::selectOrUndoLandMineHex(const BattleHex & clickedHex)
+void BattleActionsController::selectOrUndoRepeatedPlacementHex(const BattleHex & clickedHex)
 {
-	if(!landMinePlacementModeActive())
+	if(!repeatedPlacementModeActive())
 		return;
 
-	const auto selected = std::find(landMineSelectedHexes.begin(), landMineSelectedHexes.end(), clickedHex);
-	if(selected != landMineSelectedHexes.end())
+	const auto selected = std::find(repeatedPlacementSelectedHexes.begin(), repeatedPlacementSelectedHexes.end(), clickedHex);
+	if(selected != repeatedPlacementSelectedHexes.end())
 	{
-		landMineSelectedHexes.erase(selected);
+		repeatedPlacementSelectedHexes.erase(selected);
 	}
-	else if(landMinePlacementHexIsLegal(clickedHex)
-		&& static_cast<int>(landMineSelectedHexes.size()) < landMinePlacementRequiredHexes())
+	else if(repeatedPlacementHexIsLegal(clickedHex)
+		&& static_cast<int>(repeatedPlacementSelectedHexes.size()) < repeatedPlacementRequiredHexes())
 	{
-		landMineSelectedHexes.push_back(clickedHex);
+		repeatedPlacementSelectedHexes.push_back(clickedHex);
 	}
 
 	if(owner.windowObject)
-		owner.windowObject->updateLandMinePlacementControls();
-	updateLandMinePlacementStatus(clickedHex);
+		owner.windowObject->updateBattleTargetSelectionControls();
+	updateRepeatedPlacementStatus(clickedHex);
 	ENGINE->windows().totalRedraw();
 }
 
-bool BattleActionsController::landMinePlacementTargetsValid() const
+bool BattleActionsController::repeatedPlacementTargetsValid() const
 {
-	if(!landMinePlacementReady() || !owner.getBattle() || !owner.currentHero())
+	if(!repeatedPlacementReady() || !owner.getBattle() || !owner.currentHero())
 		return false;
 
 	std::set<int> selected;
-	for(const auto & hex : landMineSelectedHexes)
+	for(const auto & hex : repeatedPlacementSelectedHexes)
 	{
-		if(!selected.insert(hex.toInt()).second || !landMinePlacementHexIsLegal(hex))
+		if(!selected.insert(hex.toInt()).second || !repeatedPlacementHexIsLegal(hex))
 			return false;
 	}
 
 	const auto * spell = heroSpellToCast->spell.toSpell();
 	spells::BattleCast cast(owner.getBattle().get(), owner.currentHero(), spells::Mode::HERO, spell);
+	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return false;
@@ -1222,28 +1245,28 @@ bool BattleActionsController::landMinePlacementTargetsValid() const
 		return false;
 
 	battle::Target target;
-	for(const auto & hex : landMineSelectedHexes)
+	for(const auto & hex : repeatedPlacementSelectedHexes)
 		target.emplace_back(hex);
 	return mechanics->canBeCastAt(target, problem);
 }
 
-void BattleActionsController::confirmLandMinePlacement()
+void BattleActionsController::confirmRepeatedPlacement()
 {
-	if(!landMinePlacementModeActive())
+	if(!repeatedPlacementModeActive())
 		return;
 
-	if(!landMinePlacementReady())
+	if(!repeatedPlacementReady())
 	{
-		updateLandMinePlacementStatus(BattleHex::INVALID);
+		updateRepeatedPlacementStatus(BattleHex::INVALID);
 		return;
 	}
 
 	// The battlefield may have changed while the player was choosing.  Re-run
 	// the same live-snapshot checks as the generic mechanics before creating a
 	// request; the server remains the final authority on this packet.
-	if(!landMinePlacementTargetsValid())
+	if(!repeatedPlacementTargetsValid())
 	{
-		updateLandMinePlacementStatus(BattleHex::INVALID);
+		updateRepeatedPlacementStatus(BattleHex::INVALID);
 		currentConsoleMsg += ". Selection is no longer legal; undo or cancel.";
 		ENGINE->statusbar()->write(currentConsoleMsg);
 		return;
@@ -1251,7 +1274,7 @@ void BattleActionsController::confirmLandMinePlacement()
 
 	BattleAction action = *heroSpellToCast;
 	action.target.clear();
-	for(const auto & hex : landMineSelectedHexes)
+	for(const auto & hex : repeatedPlacementSelectedHexes)
 		action.aimToHex(hex);
 
 	if(!owner.curInt || !owner.curInt->cb)
@@ -1260,14 +1283,14 @@ void BattleActionsController::confirmLandMinePlacement()
 	endCastingSpell();
 }
 
-void BattleActionsController::undoLandMinePlacement()
+void BattleActionsController::undoRepeatedPlacement()
 {
-	if(!landMinePlacementModeActive() || landMineSelectedHexes.empty())
+	if(!repeatedPlacementModeActive() || repeatedPlacementSelectedHexes.empty())
 		return;
 
-	landMineSelectedHexes.pop_back();
+	repeatedPlacementSelectedHexes.pop_back();
 	if(owner.windowObject)
-		owner.windowObject->updateLandMinePlacementControls();
+		owner.windowObject->updateBattleTargetSelectionControls();
 	ENGINE->fakeMouseMove();
 	ENGINE->windows().totalRedraw();
 }
@@ -1350,7 +1373,7 @@ void BattleActionsController::endCastingSpell()
 	// The battle's Escape shortcut also reaches this method outside spell mode.
 	owner.clearPerfectMoment();
 	cancelHeroOrderTargeting();
-	const bool wasLandMinePlacement = landMinePlacementModeActive();
+	const bool wasRepeatedPlacement = repeatedPlacementModeActive();
 	const bool wasFireWallPlacement = fireWallPlacementModeActive();
 	const bool wasStormOfDaggersSelection = stormOfDaggersTargetSelectionModeActive();
 	if(heroSpellToCast)
@@ -1365,14 +1388,14 @@ void BattleActionsController::endCastingSpell()
 		owner.stacksController->activateStack();
 	}
 	monsterSpellTargets.clear();
-	landMineSelectedHexes.clear();
+	repeatedPlacementSelectedHexes.clear();
 	stormOfDaggersSelectedUnitIds.clear();
 	stormOfDaggersPlayer.reset();
 	stormOfDaggersSide = BattleSide::NONE;
 	stormOfDaggersRound = -1;
 	stormOfDaggersHeroID = ObjectInstanceID::NONE;
 	fireWallSelectedStart = BattleHex::INVALID;
-	if((wasLandMinePlacement || wasFireWallPlacement || wasStormOfDaggersSelection) && !currentConsoleMsg.empty())
+	if((wasRepeatedPlacement || wasFireWallPlacement || wasStormOfDaggersSelection) && !currentConsoleMsg.empty())
 	{
 		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
 		currentConsoleMsg.clear();
@@ -1603,25 +1626,25 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 		possibleActions.clear();
 		owner.windowObject->blockUI(true);
 		if(owner.windowObject)
-			owner.windowObject->updateStormOfDaggersControls();
+			owner.windowObject->updateBattleTargetSelectionControls();
 		updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
 		ENGINE->fakeMouseMove();
 		ENGINE->windows().totalRedraw();
 		return;
 	}
 
-	// Canonical New Horizons Land Mine is an ordered multi-hex action.  It must
-	// not enter the generic NO_TARGET path, which would immediately submit the
-	// legacy/random obstacle action.  Leave all other spells on the existing
-	// selector unchanged.
-	if(landMinePlacementModeActive())
+	// Canonical Land Mine and saved-marker Quicksand are ordered multi-hex
+	// actions. They must not enter the generic NO_TARGET path, which would
+	// immediately submit the legacy/random obstacle action. Markerless Quicksand
+	// snapshots keep that existing path.
+	if(landMinePlacementModeActive() || quicksandPlacementModeActive())
 	{
-		landMineSelectedHexes.clear();
+		repeatedPlacementSelectedHexes.clear();
 		possibleActions.clear();
 		owner.windowObject->blockUI(true);
 		if(owner.windowObject)
-			owner.windowObject->updateLandMinePlacementControls();
-		updateLandMinePlacementStatus(BattleHex::INVALID);
+			owner.windowObject->updateBattleTargetSelectionControls();
+		updateRepeatedPlacementStatus(BattleHex::INVALID);
 		ENGINE->fakeMouseMove();
 		ENGINE->windows().totalRedraw();
 		return;
@@ -2657,16 +2680,16 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 		return;
 	}
 
-	if(landMinePlacementModeActive())
+	if(repeatedPlacementModeActive())
 	{
 		if(hoveredHex == BattleHex::INVALID)
 			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
-		else if(landMinePlacementHexIsLegal(hoveredHex))
+		else if(repeatedPlacementHexIsLegal(hoveredHex))
 			ENGINE->cursor().set(Cursor::Spellcast::SPELL);
 		else
 			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
 
-		updateLandMinePlacementStatus(hoveredHex);
+		updateRepeatedPlacementStatus(hoveredHex);
 		return;
 	}
 
@@ -2753,10 +2776,10 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 
 void BattleActionsController::onHoverEnded()
 {
-	if(landMinePlacementModeActive())
+	if(repeatedPlacementModeActive())
 	{
 		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
-		updateLandMinePlacementStatus(BattleHex::INVALID);
+		updateRepeatedPlacementStatus(BattleHex::INVALID);
 		return;
 	}
 
@@ -2791,9 +2814,9 @@ void BattleActionsController::onHoverEnded()
 
 void BattleActionsController::onHexLeftClicked(const BattleHex & clickedHex)
 {
-	if(landMinePlacementModeActive())
+	if(repeatedPlacementModeActive())
 	{
-		selectOrUndoLandMineHex(clickedHex);
+		selectOrUndoRepeatedPlacementHex(clickedHex);
 		return;
 	}
 
@@ -2977,7 +3000,7 @@ void BattleActionsController::onHexRightClicked(const BattleHex & clickedHex)
 		CRClickPopup::createAndPush("Order target selection cancelled.");
 		return;
 	}
-	if(landMinePlacementModeActive())
+	if(repeatedPlacementModeActive())
 	{
 		endCastingSpell();
 		CRClickPopup::createAndPush(LIBRARY->generaltexth->translate("core.genrltxt.731")); // spell cancelled

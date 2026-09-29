@@ -2375,6 +2375,91 @@ TEST_F(NewHorizonsMagicAITest, LandMineAILeavesLegacyNoTargetSelectionUntouched)
 	EXPECT_EQ(SpellTargetEvaluator::landMinePlacementValue(mechanics.get(), targets.front()), 0.0f);
 }
 
+TEST_F(NewHorizonsMagicAITest, QuicksandAISelectsExactLegalGroundAndValuesHostileApproach)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	attackerSideHero->addSpellToSpellbook(SpellID::QUICKSAND);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 60, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * ally = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != ally && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	const auto * spell = SpellID(SpellID::QUICKSAND).toSpell();
+	ASSERT_NE(spell, nullptr);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	ASSERT_TRUE(newHorizonsMagic::quicksandSelectedPlacementEnabled(
+		battle()->getMagicRules(), spell->getId()));
+	const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_EQ(targets.size(), 1u);
+	ASSERT_EQ(targets.front().size(), static_cast<size_t>(mechanics->getNewHorizonsQuicksandPatchCount()));
+	std::set<int> selected;
+	for(const auto & destination : targets.front())
+	{
+		ASSERT_EQ(destination.unitValue, nullptr);
+		EXPECT_TRUE(selected.insert(destination.hexValue.toInt()).second);
+		EXPECT_TRUE(newHorizonsMagic::quicksandPlacementHexIsLegal(*battle(), destination.hexValue));
+	}
+	EXPECT_TRUE(mechanics->canBeCastAt(targets.front()));
+	EXPECT_GT(SpellTargetEvaluator::quicksandPlacementValue(mechanics.get(), targets.front()), 0.0f);
+	const auto first = targets.front();
+	const auto second = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_EQ(second.size(), 1u);
+	for(size_t index = 0; index < first.size(); ++index)
+		EXPECT_EQ(first[index].hexValue, second.front()[index].hexValue);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -static_cast<int32_t>(ally->getMovementRange());
+	ally->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = ally->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto recordingCallback = std::make_shared<MagicCallback>();
+	recordingCallback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, recordingCallback, ally, PlayerColor(0),
+		BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(ally);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(ally));
+	ASSERT_EQ(recordingCallback->submitted.size(), 1u);
+	EXPECT_EQ(recordingCallback->submitted.front().spell, SpellID::QUICKSAND);
+	EXPECT_EQ(recordingCallback->submitted.front().target.size(), first.size());
+}
+
+TEST_F(NewHorizonsMagicAITest, QuicksandAIKeepsLegacyNoTargetSelection)
+{
+	useCommands = false;
+	useLegacyMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	attackerSideHero->addSpellToSpellbook(SpellID::QUICKSAND);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	const auto * spell = SpellID(SpellID::QUICKSAND).toSpell();
+	ASSERT_NE(spell, nullptr);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	ASSERT_FALSE(newHorizonsMagic::quicksandSelectedPlacementEnabled(
+		battle()->getMagicRules(), spell->getId()));
+	const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_EQ(targets.size(), 1u);
+	EXPECT_TRUE(targets.front().empty());
+	EXPECT_EQ(SpellTargetEvaluator::quicksandPlacementValue(mechanics.get(), targets.front()), 0.0f);
+}
+
 TEST_F(NewHorizonsMagicAITest, ForceFieldCastEvaluationCreatesIsolatedBlockingObstacle)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));

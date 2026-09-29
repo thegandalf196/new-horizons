@@ -81,6 +81,12 @@ bool isCanonicalLandMine(const CBattleInfoCallback & battle, const CSpell * spel
 		&& newHorizonsMagic::isLandMine(spell->getId());
 }
 
+bool isSelectedQuicksand(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	return spell && newHorizonsMagic::quicksandSelectedPlacementEnabled(
+		battle.getBattle()->getMagicRules(), spell->getId());
+}
+
 bool isCanonicalFireWall(const CBattleInfoCallback & battle, const CSpell * spell)
 {
 	return spell
@@ -1958,6 +1964,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						if(isCanonicalLandMine(*cb->getBattle(battleID), spell))
 							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::landMinePlacementValue(
 								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
+						if(isSelectedQuicksand(*cb->getBattle(battleID), spell))
+						{
+							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::quicksandPlacementValue(
+								candidateMechanics.get(), ps.dest);
+							if(ps.spellPlacementHeuristicValue <= 0.0f)
+								continue;
+						}
 						if(isCanonicalFireWall(*cb->getBattle(battleID), spell))
 						{
 							ps.spellFireWallDirection = fireWallDirection(ps.dest);

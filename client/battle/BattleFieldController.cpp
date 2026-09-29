@@ -695,21 +695,20 @@ void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 			showHighlightedHex(canvas, cellUnitMovementHighlight, hovered, false);
 		return;
 	}
-	// Canonical New Horizons Land Mine uses a dedicated ordered placement
-	// selector.  Keep its candidates and selected cells visually distinct from
-	// movement/attack shadows, and keep rendering alive even when the pointer
-	// is outside the battlefield so the selection is never lost visually.
-	if(owner.actionsController->landMinePlacementModeActive())
+	// Canonical Land Mine and saved-marker Quicksand share an ordered placement
+	// selector. Keep candidates and selected cells visually distinct from
+	// movement/attack shadows, including when the pointer leaves the battlefield.
+	if(owner.actionsController->repeatedPlacementModeActive())
 	{
-		for(const auto & hex : owner.actionsController->getLandMinePlacementLegalHexes())
+		for(const auto & hex : owner.actionsController->getRepeatedPlacementLegalHexes())
 			showHighlightedHex(canvas, cellShade, hex, true);
 
 		const auto hoveredHex = getHoveredHex();
-		if(hoveredHex.isValid() && owner.actionsController->landMinePlacementHexIsLegal(hoveredHex)
-			&& !owner.actionsController->landMinePlacementHexIsSelected(hoveredHex))
+		if(hoveredHex.isValid() && owner.actionsController->repeatedPlacementHexIsLegal(hoveredHex)
+			&& !owner.actionsController->repeatedPlacementHexIsSelected(hoveredHex))
 			showHighlightedHex(canvas, cellShade, hoveredHex, false);
 
-		for(const auto & hex : owner.actionsController->landMinePlacementSelectedHexes())
+		for(const auto & hex : owner.actionsController->getRepeatedPlacementSelectedHexes())
 			showHighlightedHex(canvas, cellUnitMovementHighlight, hex, false);
 		return;
 	}

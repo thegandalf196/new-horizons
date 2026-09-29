@@ -53,6 +53,7 @@ JsonNode legacyRules()
 		spell.Struct().erase("active");
 		spell.Struct().erase("directDamage");
 		spell.Struct().erase("cureAfflictions");
+		spell.Struct().erase("selectedPlacement");
 		++it;
 	}
 	return rules;
@@ -64,6 +65,7 @@ JsonNode formulaRules()
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
+	rules["spells"][quicksandKey].Struct().erase("selectedPlacement");
 	// Existing registered identity for rules-only tests; this does not alter the
 	// installed spell or activate the proposed new Magic Missile definition.
 	rules["spells"][arrowKey]["directDamage"]["base"].Integer() = 20;
@@ -282,6 +284,33 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandPatchCountUsesSavedSchoolAndSpellcraf
 	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(v1, &hero, quicksand, 180));
 	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(v2, &hero, quicksand, 180));
 	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(current, &hero, SpellID(SpellID::HASTE), 180));
+}
+
+TEST(NewHorizonsMagicV2RulesTest, QuicksandSelectedPlacementIsStrictSavedV3OptIn)
+{
+	const auto quicksand = SpellID(SpellID::decode(quicksandKey));
+	ASSERT_NE(quicksand, SpellID::NONE);
+	auto current = originalRules();
+	EXPECT_TRUE(newHorizonsMagic::quicksandSelectedPlacementEnabled(current, quicksand));
+	EXPECT_FALSE(newHorizonsMagic::quicksandSelectedPlacementEnabled(current, SpellID(SpellID::HASTE)));
+
+	auto markerlessV3 = current;
+	markerlessV3["spells"][quicksandKey].Struct().erase("selectedPlacement");
+	EXPECT_FALSE(newHorizonsMagic::quicksandSelectedPlacementEnabled(markerlessV3, quicksand));
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(markerlessV3));
+
+	EXPECT_FALSE(newHorizonsMagic::quicksandSelectedPlacementEnabled(formulaRules(), quicksand));
+	EXPECT_FALSE(newHorizonsMagic::quicksandSelectedPlacementEnabled(legacyRules(), quicksand));
+
+	auto malformed = current;
+	malformed["spells"][quicksandKey]["selectedPlacement"].String() = "true";
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	malformed = current;
+	malformed["spells"]["core:haste"]["selectedPlacement"].Bool() = true;
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	malformed = formulaRules();
+	malformed["spells"][quicksandKey]["selectedPlacement"].Bool() = true;
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
 }
 
 TEST(NewHorizonsMagicV2RulesTest, AdventureSpellsAndCreatureAbilitiesExcludeBothRankFactors)

@@ -23,6 +23,10 @@ public:
 	static float landMinePlacementValue(const spells::Mechanics * spellMechanics,
 		const spells::Target & target,
 		std::shared_ptr<CBattleInfoCallback> battleState = {});
+	/// Values selected Quicksand as delayed movement denial, including friendly
+	/// ground exposure. A non-positive result is not worth a Hero Action.
+	static float quicksandPlacementValue(const spells::Mechanics * spellMechanics,
+		const spells::Target & target);
 	/// Returns the delayed expected value of a canonical Fire Wall footprint.
 	/// The value includes a strong friendly-ground exposure penalty because the
 	/// authoritative trigger affects both sides.  Zero means the line is not a
@@ -60,6 +64,7 @@ private:
 	static std::vector<spells::Target> creatureLocationTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> defaultLocationSpellHeuristics(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalLandMineTargets(const spells::Mechanics * spellMechanics);
+	static std::vector<spells::Target> canonicalQuicksandTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalFireWallTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalTimeStopTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalSpellLockTargets(const spells::Mechanics * spellMechanics);

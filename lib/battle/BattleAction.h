@@ -147,6 +147,9 @@ public:
 		if(h.saving && spell == SpellID(SpellID::LAND_MINE)
 			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE))
 			throw std::runtime_error("Cannot serialize multi-hex Land Mine action to an older protocol");
+		if(h.saving && spell == SpellID(SpellID::QUICKSAND)
+			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_QUICKSAND))
+			throw std::runtime_error("Cannot serialize multi-hex Quicksand action to an older protocol");
 		if(h.saving && archerySkirmisherAttack
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_ARCHERY_SKIRMISHER))
 			throw std::runtime_error("Cannot serialize Skirmisher attack metadata to an older protocol");
@@ -251,6 +254,9 @@ public:
 		if(!h.saving && spell == SpellID(SpellID::LAND_MINE)
 			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE))
 			throw std::runtime_error("Multi-hex Land Mine action requires the new protocol");
+		if(!h.saving && spell == SpellID(SpellID::QUICKSAND)
+			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_QUICKSAND))
+			throw std::runtime_error("Multi-hex Quicksand action requires the new protocol");
 		if(!h.saving && (command == HeroCommand::RIPOSTE || command == HeroCommand::BRACE
 			|| command == HeroCommand::PROTECT || command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS))

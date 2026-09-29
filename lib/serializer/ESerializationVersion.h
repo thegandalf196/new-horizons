@@ -115,12 +115,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_ARCHERY_SKIRMISHER, // explicit player/AI-selected move-and-shoot action metadata
 	NEW_HORIZONS_ADVENTURE_SPELL_UNLOCKS, // persistent per-town Adventure Spell Guild unlocks
 	NEW_HORIZONS_SIEGE_RATING, // timed Stronghold Ballista Yard Siege rating bonus
+	NEW_HORIZONS_QUICKSAND, // player-selected canonical Quicksand action vectors
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_SIEGE_RATING,
+	CURRENT = NEW_HORIZONS_QUICKSAND,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -146,6 +147,8 @@ static_assert(ESerializationVersion::NEW_HORIZONS_IRON_DISCIPLINE > ESerializati
 static_assert(ESerializationVersion::NEW_HORIZONS_ARCHERY_SKIRMISHER > ESerializationVersion::NEW_HORIZONS_IRON_DISCIPLINE);
 static_assert(ESerializationVersion::NEW_HORIZONS_ADVENTURE_SPELL_UNLOCKS > ESerializationVersion::NEW_HORIZONS_ARCHERY_SKIRMISHER);
 static_assert(ESerializationVersion::NEW_HORIZONS_SIEGE_RATING > ESerializationVersion::NEW_HORIZONS_ADVENTURE_SPELL_UNLOCKS);
+static_assert(ESerializationVersion::NEW_HORIZONS_QUICKSAND > ESerializationVersion::NEW_HORIZONS_SIEGE_RATING,
+	"New Horizons Quicksand action vectors must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION > ESerializationVersion::NEW_HORIZONS_WARCASTING);
 static_assert(ESerializationVersion::NEW_HORIZONS_HERO_ACTION_ALLOWANCES > ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTERIES > ESerializationVersion::NEW_HORIZONS_CAPABILITIES);

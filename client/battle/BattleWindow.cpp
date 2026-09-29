@@ -88,7 +88,7 @@ std::string warcastingIconName(AlternatingHeroActionState::Action action)
 }
 }
 
-class StormOfDaggersSelectionPanel final : public CIntObject
+class BattleTargetSelectionPanel final : public CIntObject
 {
 	BattleInterface & owner;
 	bool active = false;
@@ -102,13 +102,59 @@ class StormOfDaggersSelectionPanel final : public CIntObject
 	void refresh()
 	{
 		const auto * controller = owner.actionsController.get();
-		const bool shouldShow = controller && controller->stormOfDaggersTargetSelectionModeActive();
+		const bool repeatedPlacement = controller && controller->repeatedPlacementModeActive();
+		const bool stormOfDaggers = controller && controller->stormOfDaggersTargetSelectionModeActive();
+		const bool shouldShow = repeatedPlacement || stormOfDaggers;
 		active = shouldShow;
 		if(!controller || !shouldShow)
 		{
 			undoButton->setEnabled(false);
 			cancelButton->setEnabled(false);
 			confirmButton->setEnabled(false);
+			return;
+		}
+
+		if(repeatedPlacement)
+		{
+			const auto & selectedHexes = controller->getRepeatedPlacementSelectedHexes();
+			const int required = controller->repeatedPlacementRequiredHexes();
+			const int remaining = std::max(0, required - static_cast<int>(selectedHexes.size()));
+			const std::string placementName = controller->quicksandPlacementModeActive()
+				? "Quicksand patches" : "Land Mine mines";
+			const std::string title = placementName + "  |  " + std::to_string(selectedHexes.size())
+				+ "/" + std::to_string(required) + " selected, " + std::to_string(remaining) + " remaining";
+			if(heading->getText() != title)
+				heading->setText(title);
+
+			std::string readback;
+			for(size_t index = 0; index < selectedHexes.size(); ++index)
+			{
+				if(!readback.empty())
+					readback += ";  ";
+				readback += "#" + std::to_string(index + 1) + " hex "
+					+ std::to_string(selectedHexes[index].toInt());
+			}
+
+			if(!controller->repeatedPlacementReady())
+			{
+				if(!readback.empty())
+					readback += ".  ";
+				readback += "Click legal empty hexes in order; Backspace removes the last; Esc cancels.";
+			}
+			else
+			{
+				if(!readback.empty())
+					readback += ".  ";
+				readback += "All placements selected. Confirm to cast, or Undo to revise.";
+			}
+
+			if(targetReadback->getText() != readback)
+				targetReadback->setText(readback);
+			undoButton->setEnabled(!selectedHexes.empty());
+			undoButton->block(selectedHexes.empty());
+			cancelButton->setEnabled(true);
+			confirmButton->setEnabled(true);
+			confirmButton->block(!controller->repeatedPlacementReady());
 			return;
 		}
 
@@ -155,7 +201,7 @@ class StormOfDaggersSelectionPanel final : public CIntObject
 	}
 
 public:
-	explicit StormOfDaggersSelectionPanel(BattleInterface & owner_)
+	explicit BattleTargetSelectionPanel(BattleInterface & owner_)
 		: CIntObject(0), owner(owner_)
 	{
 		pos = Rect(40, 4, 720, 62);
@@ -180,16 +226,21 @@ public:
 			ETextAlignment::TOPLEFT, Colors::WHITE, "");
 
 		undoButton = std::make_shared<CButton>(Point(474, 15), AnimationPath::builtin("settingsWindow/button80"),
-			CButton::tooltip("Undo", "Remove the most recently selected enemy stack."), [this]
+			CButton::tooltip("Undo", "Remove the most recent placement or target."), [this]
 			{
 				if(owner.actionsController)
-					owner.actionsController->undoStormOfDaggersTarget();
+				{
+					if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+						owner.actionsController->undoStormOfDaggersTarget();
+					else
+						owner.actionsController->undoRepeatedPlacement();
+				}
 			});
 		undoButton->setTextOverlay("Undo", FONT_SMALL, Colors::WHITE);
 		undoButton->setHoverable(true);
 
 		cancelButton = std::make_shared<CButton>(Point(554, 15), AnimationPath::builtin("settingsWindow/button80"),
-			CButton::tooltip("Cancel", "Cancel the spell without spending Mana or the Hero Action."), [this]
+			CButton::tooltip("Cancel", "Cancel this selection without spending Mana or the Hero Action."), [this]
 			{
 				if(owner.actionsController)
 					owner.actionsController->endCastingSpell();
@@ -198,10 +249,15 @@ public:
 		cancelButton->setHoverable(true);
 
 		confirmButton = std::make_shared<CButton>(Point(634, 15), AnimationPath::builtin("settingsWindow/button80"),
-			CButton::tooltip("Confirm", "Revalidate every selected enemy stack, then cast Storm of Daggers."), [this]
+			CButton::tooltip("Confirm", "Revalidate the complete selection, then cast the spell."), [this]
 			{
 				if(owner.actionsController)
-					owner.actionsController->confirmStormOfDaggersTargets();
+				{
+					if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+						owner.actionsController->confirmStormOfDaggersTargets();
+					else
+						owner.actionsController->confirmRepeatedPlacement();
+				}
 			});
 		confirmButton->setTextOverlay("Confirm", FONT_SMALL, Colors::WHITE);
 		confirmButton->setHoverable(true);
@@ -274,7 +330,7 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 			if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 				this->owner.actionsController->confirmStormOfDaggersTargets();
 			else
-				this->owner.actionsController->confirmLandMinePlacement();
+				this->owner.actionsController->confirmRepeatedPlacement();
 		}
 	});
 	addShortcut(EShortcut::GLOBAL_BACKSPACE, [this](){
@@ -283,7 +339,7 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 			if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 				this->owner.actionsController->undoStormOfDaggersTarget();
 			else
-				this->owner.actionsController->undoLandMinePlacement();
+				this->owner.actionsController->undoRepeatedPlacement();
 		}
 	});
 	addShortcut(EShortcut::GLOBAL_CANCEL, [this]()
@@ -298,23 +354,11 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 			GAME->interface()->proposeQuickLoadingGame(); });
 
 	build(config);
-	// Non-modal mouse/touch confirmation for ordered Land Mine placement.  The
-	// battlefield must remain clickable, so this is a lightweight child of the
-	// battle window rather than a dialog.  Existing artwork is an intentional
-	// placeholder until the dedicated placement controls are polished.
-	// Reuse the command-panel Wait slot while placement blocks normal unit
-	// actions.  This keeps the control outside the battlefield's event region
-	// and prevents one click from also selecting an underlying hex.
-	landMineConfirmButton = std::make_shared<CButton>(Point(697, 560), AnimationPath::builtin("icm005"),
-		CButton::tooltip("Place mines", "Confirm the selected Land Mine hexes."), [this]()
-		{
-			if(owner.actionsController)
-				owner.actionsController->confirmLandMinePlacement();
-		});
-	addWidget("nhLandMineConfirm", landMineConfirmButton);
-	landMineConfirmButton->setEnabled(false);
-	stormOfDaggersPanel = std::make_shared<StormOfDaggersSelectionPanel>(owner);
-	addWidget("nhStormOfDaggersSelection", stormOfDaggersPanel);
+	// Share one coherent leather selection strip across ordered targeting and
+	// repeated spell placement. Its inset readback leaves the battlefield open
+	// while native button faces provide Undo, Cancel, and Confirm.
+	battleTargetSelectionPanel = std::make_shared<BattleTargetSelectionPanel>(owner);
+	addWidget("nhBattleTargetSelection", battleTargetSelectionPanel);
 	if(owner.getBattle()->battleUsesHeroCommands())
 	{
 		widget<CButton>("consoleUp")->moveBy(Point(-ordersControlPitch, 0));
@@ -1401,17 +1445,17 @@ void BattleWindow::blockUI(bool on)
 	setShortcutBlocked(EShortcut::BATTLE_TACTICS_NEXT, on || !tacticsMode);
 	setShortcutBlocked(EShortcut::BATTLE_CONSOLE_DOWN, on && !tacticsMode);
 	setShortcutBlocked(EShortcut::BATTLE_CONSOLE_UP, on && !tacticsMode);
-	updateLandMinePlacementControls();
+	updateBattleTargetSelectionControls();
 
 	quickSpellWindow->setInputEnabled(!on);
 	unitActionWindow->setInputEnabled(!on);
 }
 
-void BattleWindow::updateLandMinePlacementControls()
+void BattleWindow::updateBattleTargetSelectionControls()
 {
-	const bool active = owner.actionsController && owner.actionsController->landMinePlacementModeActive();
-	const bool ready = active && owner.actionsController->landMinePlacementReady();
-	const bool canUndo = active && !owner.actionsController->landMinePlacementSelectedHexes().empty();
+	const bool active = owner.actionsController && owner.actionsController->repeatedPlacementModeActive();
+	const bool ready = active && owner.actionsController->repeatedPlacementReady();
+	const bool canUndo = active && !owner.actionsController->getRepeatedPlacementSelectedHexes().empty();
 	const bool stormActive = owner.actionsController
 		&& owner.actionsController->stormOfDaggersTargetSelectionModeActive();
 	const bool stormCanConfirm = stormActive
@@ -1420,18 +1464,8 @@ void BattleWindow::updateLandMinePlacementControls()
 	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, !ready && !stormCanConfirm);
 	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE, !canUndo && !stormCanUndo);
 	widget<CButton>("wait")->setEnabled(!active && !stormActive);
-	if(landMineConfirmButton)
-	{
-		landMineConfirmButton->setEnabled(active);
-		landMineConfirmButton->block(!ready);
-	}
-	updateStormOfDaggersControls();
-}
-
-void BattleWindow::updateStormOfDaggersControls()
-{
-	if(stormOfDaggersPanel)
-		stormOfDaggersPanel->update();
+	if(battleTargetSelectionPanel)
+		battleTargetSelectionPanel->update();
 }
 
 void BattleWindow::bOpenActiveUnit()

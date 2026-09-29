@@ -202,6 +202,14 @@ public:
 			&& battleState->getMagicRules()["rulesetVersion"].Integer()
 				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 	}
+
+	bool usesNewHorizonsQuicksandSelectedPlacement() const override
+	{
+		const auto * battleCallback = battle();
+		const auto * battleState = battleCallback ? battleCallback->getBattle() : nullptr;
+		return battleState && newHorizonsMagic::quicksandSelectedPlacementEnabled(
+			battleState->getMagicRules(), getSpellId());
+	}
 };
 
 TEST_F(ObstacleApplyTest, SavedV3QuicksandUsesCanonicalPowerAndSchoolRankPatchCount)
@@ -214,6 +222,8 @@ TEST_F(ObstacleApplyTest, SavedV3QuicksandUsesCanonicalPowerAndSchoolRankPatchCo
 	savedBattle->setUp();
 	savedBattle->setupEmptyBattlefield();
 	savedBattle->magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	// Older v3 snapshots have the new count formula but retain random placement.
+	savedBattle->magicRules["spells"]["core:quicksand"].Struct().erase("selectedPlacement");
 	EXPECT_CALL(*savedBattle, getScriptContextPool()).WillRepeatedly(ReturnRef(*pool));
 	ON_CALL(*savedBattle, getUnitsIf(_)).WillByDefault(Invoke(&unitsFake, &battle::UnitsFake::getUnitsIf));
 	EXPECT_CALL(*savedBattle, getUnitsIf(_)).Times(AtLeast(0));
@@ -273,6 +283,57 @@ TEST_F(ObstacleApplyTest, SavedV3QuicksandUsesCanonicalPowerAndSchoolRankPatchCo
 			EXPECT_EQ(capturedChanges.size(), static_cast<size_t>(configuredPatches))
 				<< "Saved v" << version << " Quicksand keeps its configured mastery count";
 		}
+	}
+}
+
+TEST_F(ObstacleApplyTest, SelectedV3QuicksandPassesOrderedTargetsAndNeverRandomizesOrShortens)
+{
+	setupEffect(JsonNode());
+	auto savedBattle = std::make_shared<SavedMagicRulesBattleFake>();
+	savedBattle->setUp();
+	savedBattle->setupEmptyBattlefield();
+	savedBattle->magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	EXPECT_CALL(*savedBattle, getScriptContextPool()).WillRepeatedly(ReturnRef(*pool));
+	ON_CALL(*savedBattle, getUnitsIf(_)).WillByDefault(Invoke(&unitsFake, &battle::UnitsFake::getUnitsIf));
+	EXPECT_CALL(*savedBattle, getUnitsIf(_)).Times(AtLeast(0));
+
+	const SpellID quicksand(SpellID::QUICKSAND);
+	CGHeroInstance hero(nullptr);
+	StrictMock<NewHorizonsMagicMechanicsMock> mechanics;
+	EXPECT_CALL(mechanics, battle()).Times(AnyNumber()).WillRepeatedly(Return(savedBattle.get()));
+	EXPECT_CALL(mechanics, getHeroCaster()).Times(AnyNumber()).WillRepeatedly(Return(&hero));
+	EXPECT_CALL(mechanics, getSpellId()).Times(AnyNumber()).WillRepeatedly(Return(quicksand));
+	EXPECT_CALL(mechanics, getEffectPower()).Times(AnyNumber()).WillRepeatedly(Return(0));
+	EXPECT_CALL(mechanics, getEffectLevel()).Times(AnyNumber()).WillRepeatedly(Return(2));
+	EXPECT_CALL(mechanics, getSpell()).Times(AnyNumber()).WillRepeatedly(Return(&spellStub));
+	EXPECT_CALL(mechanics, isMassive()).Times(AnyNumber()).WillRepeatedly(Return(true));
+	EXPECT_CALL(spellStub, getId()).Times(AnyNumber()).WillRepeatedly(Return(quicksand));
+	EXPECT_CALL(spellStub, getJsonKey()).Times(AnyNumber()).WillRepeatedly(Return("core:quicksand"));
+
+	battleFake = savedBattle;
+	captureObstaclePack();
+	setupDefaultRNG();
+
+	Target underfilled;
+	underfilled.emplace_back(BattleHex(70));
+	subject->apply(&serverMock, &mechanics, underfilled);
+	EXPECT_TRUE(capturedChanges.empty()) << "selected Quicksand must never top up or randomize a short vector";
+
+	Target selected;
+	selected.emplace_back(BattleHex(70));
+	selected.emplace_back(BattleHex(71));
+	subject->apply(&serverMock, &mechanics, selected);
+
+	ASSERT_EQ(capturedChanges.size(), 2u);
+	const std::array expected{BattleHex(70), BattleHex(71)};
+	for(size_t index = 0; index < expected.size(); ++index)
+	{
+		SpellCreatedObstacle patch;
+		patch.fromInfo(capturedChanges[index]);
+		EXPECT_EQ(patch.ID, quicksand);
+		EXPECT_EQ(patch.pos, expected[index]);
+		EXPECT_TRUE(patch.hidden);
+		EXPECT_FALSE(patch.nativeVisible);
 	}
 }
 

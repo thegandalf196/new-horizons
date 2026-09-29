@@ -736,8 +736,17 @@ void validateRules(const JsonNode & rules)
 	{
 		if(version == RULESET_VERSION)
 			fields(data, {"schools", "level", "costs"});
-		else
+		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions"});
+		else
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement"});
+		if(data.Struct().contains("selectedPlacement"))
+		{
+			const auto & selectedPlacement = data["selectedPlacement"];
+			require(version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+				&& name == "core:quicksand" && selectedPlacement.isBool() && selectedPlacement.Bool(),
+				"selectedPlacement is only true for core:quicksand in magic rules v3");
+		}
 		if(version >= DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("active"))
 			require(data["active"].isBool(), "spell active flag");
 		if(version >= DIRECT_DAMAGE_RULESET_VERSION && data.Struct().contains("cureAfflictions"))
@@ -961,6 +970,48 @@ std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInsta
 		spellPower, divisor, coefficientBasisPoints, warcastingBonusPercent, empowerBonusPercent);
 	return QUICKSAND_BASE_PATCH_COUNT_V3 + static_cast<int>(std::min<int64_t>(
 		QUICKSAND_MAX_PATCH_COUNT_V3 - QUICKSAND_BASE_PATCH_COUNT_V3, spellPowerPatches));
+}
+
+bool quicksandSelectedPlacementEnabled(const JsonNode & rules, const SpellID spell)
+{
+	if(spell != SpellID(SpellID::QUICKSAND)
+		|| !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !rules["spells"].isStruct()
+		|| !spellAllowedBySavedRoster(rules, spell))
+		return false;
+
+	const auto found = rules["spells"].Struct().find("core:quicksand");
+	return found != rules["spells"].Struct().end() && found->second.isStruct()
+		&& found->second["selectedPlacement"].isBool()
+		&& found->second["selectedPlacement"].Bool();
+}
+
+bool quicksandPlacementHexIsLegal(const CBattleInfoCallback & battle, const BattleHex & hex)
+{
+	if(!hex.isAvailable())
+		return false;
+
+	const auto accessibility = battle.getAccessibility();
+	if(accessibility[hex.toInt()] != EAccessibility::ACCESSIBLE
+		|| battle.battleGetUnitByPos(hex, true)
+		|| !battle.battleGetAllObstaclesOnPos(hex, false).empty())
+		return false;
+
+	if(!battle.hasFortifications())
+		return true;
+
+	const auto wallPart = battle.battleHexToWallPart(hex);
+	if(wallPart == EWallPart::INVALID)
+		return true;
+	if(wallPart == EWallPart::INDESTRUCTIBLE_PART
+		|| wallPart == EWallPart::INDESTRUCTIBLE_PART_OF_GATE
+		|| wallPart == EWallPart::BOTTOM_TOWER
+		|| wallPart == EWallPart::UPPER_TOWER)
+		return false;
+
+	const auto wallState = battle.battleGetWallState(wallPart);
+	return wallState == EWallState::NONE || wallState == EWallState::DESTROYED;
 }
 
 int empowerSpellBonusPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell,

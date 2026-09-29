@@ -290,6 +290,24 @@ static bool validateCanonicalLandMineTargets(const CBattleInfoCallback & battle,
 	return true;
 }
 
+static bool validateCanonicalQuicksandTargets(const CBattleInfoCallback & battle,
+	const spells::Mechanics & mechanics, const battle::Target & target)
+{
+	const int required = mechanics.getNewHorizonsQuicksandPatchCount();
+	if(required <= 0 || static_cast<int>(target.size()) != required)
+		return false;
+
+	std::set<int> selected;
+	for(const auto & destination : target)
+	{
+		if(destination.unitValue != nullptr
+			|| !selected.insert(destination.hexValue.toInt()).second
+			|| !newHorizonsMagic::quicksandPlacementHexIsLegal(battle, destination.hexValue))
+			return false;
+	}
+	return true;
+}
+
 static bool canonicalFireWallDirection(BattleHex::EDir direction)
 {
 	return direction >= BattleHex::TOP_LEFT && direction <= BattleHex::LEFT;
@@ -533,6 +551,10 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 		&& newHorizonsMagic::isLandMine(spell->getId())
 		&& !validateCanonicalLandMineTargets(battle, *mechanics, target))
 		return false;
+	if(newHorizonsMagic::quicksandSelectedPlacementEnabled(
+		battle.getBattle()->getMagicRules(), spell->getId())
+		&& !validateCanonicalQuicksandTargets(battle, *mechanics, target))
+		return false;
 
 	return mechanics->canBeCast(problem) && !target.empty() && mechanics->canBeCastAt(target, problem);
 }
@@ -593,6 +615,13 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		&& !validateCanonicalLandMineTargets(battle, *m, target))
 	{
 		gameHandler->complain("New Horizons Land Mine requires the exact number of unique empty hexes");
+		return false;
+	}
+	if(newHorizonsMagic::quicksandSelectedPlacementEnabled(
+		battle.getBattle()->getMagicRules(), s->getId())
+		&& !validateCanonicalQuicksandTargets(battle, *m, target))
+	{
+		gameHandler->complain("New Horizons Quicksand requires the exact number of unique empty hexes");
 		return false;
 	}
 
@@ -1953,7 +1982,18 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	// for these events client does not expects StartAction/EndAction wrapper
 	if (!ba.isBattleEndAction())
 	{
-		StartAction startAction(effectiveAction);
+		BattleAction presentationAction = effectiveAction;
+		if(ba.actionType == EActionType::HERO_SPELL)
+		{
+			const auto & savedMagicRules = battle.getBattle()->getMagicRules();
+			const bool concealedQuicksand = newHorizonsMagic::quicksandSelectedPlacementEnabled(
+				savedMagicRules, ba.spell);
+			const bool canonicalLandMine = newHorizonsMagic::rulesActive(savedMagicRules)
+				&& ba.spell == SpellID(SpellID::LAND_MINE);
+			if(concealedQuicksand || canonicalLandMine)
+				presentationAction.target.clear();
+		}
+		StartAction startAction(std::move(presentationAction));
 		startAction.battleID = battle.getBattle()->getBattleID();
 		startAction.focusFire = preparedFocusFire;
 		startAction.orderState = preparedOrderState;

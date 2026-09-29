@@ -42,6 +42,7 @@ class MagicV2DataTest(unittest.TestCase):
         self.rules['rulesetVersion'] = 2
         self.rules.pop('schoolRankPowerCoefficientPercent')
         self.rules.pop('spellcraftEfficiencyPercent')
+        self.rules['spells']['core:quicksand'].pop('selectedPlacement')
         self.old_rules = legacy_rules(self.rules)
         self.formula_spell = 'core:magicArrow'
 

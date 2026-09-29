@@ -1328,6 +1328,13 @@ bool BaseMechanics::usesNewHorizonsMagicV3() const
 			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 }
 
+bool BaseMechanics::usesNewHorizonsQuicksandSelectedPlacement() const
+{
+	const auto * battleState = cb ? cb->getBattle() : nullptr;
+	return battleState && newHorizonsMagic::quicksandSelectedPlacementEnabled(
+		battleState->getMagicRules(), getSpellId());
+}
+
 bool BaseMechanics::usesNewHorizonsMultiplicativeMDR() const
 {
 	const auto * battleState = cb ? cb->getBattle() : nullptr;

@@ -25,7 +25,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 98/310 | 212 planned; active status alone does not certify behavior. Spell Penetration and Empower Spell have authoritative and prediction evidence. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 43/90 | 47 planned perks. |
-| Canonical combat-spell identities registered | 35/67 | 32 missing/inactive; Nature Poison has focused active-profile cast/tick/AI execution evidence, but rendered/playable delivery remains pending. |
+| Canonical combat-spell identities registered | 36/67 | 31 missing/inactive; Holy Armor has focused authoritative/damage/AI execution evidence, but rendered/playable delivery remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -202,12 +202,17 @@ of Daggers, Regeneration, Nature Poison, and Holy Armor shows 36 of the 67 comba
 registered mod/core definitions, including Spell Lock; 31 are absent or inactive. An active
 identity is not proof that its exact canonical effect is complete.
 
-Quicksand is among the active Nature identities but is not effect-complete.
-The saved-v3 Spell Power-derived patch count passes 31/31 adjacent native
-tests including actual Lua obstacle application; exact sequential
-caster placement, authoritative target validation, corresponding battle UI,
-and deliberate AI trap placement still remain. Do not count its identity row
-as full spell-specification coverage.
+Quicksand is among the active Nature identities. Its selected-placement path
+now has a saved-v3 opt-in marker, exact ordered caster selection, authoritative
+pre-spend and pre-effect validation, a matching Lua obstacle effect, concealed
+presentation, client count/undo/confirm feedback, and deliberate AI target
+selection. Markerless v3 and v1/v2 snapshots keep random placement. The
+focused native Quicksand filter passes 9/9, both Linux targets link, and the
+two client source guards pass. This is a Phase 1 source/native checkpoint, not
+graphical or playable acceptance. Trap lifecycle, hidden-obstacle collision,
+network packet confidentiality, and Mire Shaper's unresolved cap interaction
+remain outside that evidence; do not infer full spell-specification acceptance
+from the active identity row.
 
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|

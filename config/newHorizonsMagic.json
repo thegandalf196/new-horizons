@@ -674,6 +674,7 @@
 				"new-horizons:nature"
 			],
 			"level": 4,
+			"selectedPlacement": true,
 			"costs": [
 				16,
 				16,

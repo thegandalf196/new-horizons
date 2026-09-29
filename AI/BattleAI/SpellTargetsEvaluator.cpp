@@ -54,6 +54,14 @@ bool isCanonicalLandMine(const Mechanics * spellMechanics)
 		&& newHorizonsMagic::isLandMine(spellMechanics->getSpellId());
 }
 
+bool isSelectedQuicksand(const Mechanics * spellMechanics)
+{
+	const auto * callback = spellMechanics ? spellMechanics->battle() : nullptr;
+	const auto * battle = callback ? callback->getBattle() : nullptr;
+	return battle && newHorizonsMagic::quicksandSelectedPlacementEnabled(
+		battle->getMagicRules(), spellMechanics->getSpellId());
+}
+
 bool isCanonicalFireWall(const Mechanics * spellMechanics)
 {
 	return spellMechanics
@@ -515,6 +523,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 		return canonicalFireWallTargets(spellMechanics);
 	if(isCanonicalLandMine(spellMechanics))
 		return canonicalLandMineTargets(spellMechanics);
+	if(isSelectedQuicksand(spellMechanics))
+		return canonicalQuicksandTargets(spellMechanics);
 
 	std::vector<Target> result;
 	std::vector<AimType> targetTypes = spellMechanics->getTargetTypes();
@@ -701,6 +711,93 @@ std::vector<Target> SpellTargetEvaluator::canonicalLandMineTargets(const Mechani
 		return {};
 
 	return {std::move(result)};
+}
+
+namespace
+{
+float quicksandHexPressure(const Mechanics * mechanics, const BattleHex & hex)
+{
+	float pressure = 0.0f;
+	for(const auto * unit : mechanics->battle()->battleGetAllUnits(false))
+	{
+		if(!isGroundHostile(mechanics, unit) && !isGroundAlly(mechanics, unit))
+			continue;
+
+		const int distance = distanceToUnit(hex, unit);
+		if(distance == std::numeric_limits<int>::max())
+			continue;
+		const int movement = std::max(0, static_cast<int>(unit->getMovementRange(0)));
+		const float likelihood = distance <= 1 ? 0.75f
+			: distance <= movement + 1 ? 0.40f
+			: distance <= movement + 3 ? 0.15f : 0.0f;
+		const float unitValue = std::max<int64_t>(1, unit->getAvailableHealth())
+			* likelihood * (unit->willMove() ? 1.0f : 0.5f);
+		pressure += isGroundHostile(mechanics, unit) ? unitValue : -1.5f * unitValue;
+	}
+	return pressure;
+}
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalQuicksandTargets(const Mechanics * spellMechanics)
+{
+	const int required = spellMechanics->getNewHorizonsQuicksandPatchCount();
+	if(!isSelectedQuicksand(spellMechanics) || required <= 0)
+		return {};
+
+	std::vector<std::pair<float, BattleHex>> candidates;
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(newHorizonsMagic::quicksandPlacementHexIsLegal(*spellMechanics->battle(), hex))
+			candidates.emplace_back(quicksandHexPressure(spellMechanics, hex), hex);
+	}
+	if(candidates.size() < static_cast<size_t>(required))
+		return {};
+	std::sort(candidates.begin(), candidates.end(), [](const auto & left, const auto & right)
+	{
+		return left.first == right.first
+			? left.second.toInt() < right.second.toInt()
+			: left.first > right.first;
+	});
+	if(candidates.front().first <= 0.0f)
+		return {};
+
+	Target result;
+	result.reserve(required);
+	for(int index = 0; index < required; ++index)
+		result.emplace_back(candidates[index].second);
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(result, problem))
+		return {};
+	return {std::move(result)};
+}
+
+float SpellTargetEvaluator::quicksandPlacementValue(const Mechanics * spellMechanics,
+	const Target & target)
+{
+	if(!isSelectedQuicksand(spellMechanics)
+		|| static_cast<int>(target.size()) != spellMechanics->getNewHorizonsQuicksandPatchCount())
+		return 0.0f;
+
+	std::set<int> seen;
+	float pressure = 0.0f;
+	for(const auto & destination : target)
+	{
+		if(destination.unitValue != nullptr
+			|| !destination.hexValue.isValid()
+			|| !seen.insert(destination.hexValue.toInt()).second
+			|| !newHorizonsMagic::quicksandPlacementHexIsLegal(*spellMechanics->battle(), destination.hexValue))
+			return 0.0f;
+		pressure += quicksandHexPressure(spellMechanics, destination.hexValue);
+	}
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return 0.0f;
+	// The same delayed-effect discount applies to every patch, keeping this
+	// comparable to a direct attack without pretending that it deals damage.
+	return std::max(0.0f, pressure * 0.20f);
 }
 
 float SpellTargetEvaluator::landMinePlacementValue(const Mechanics * spellMechanics,

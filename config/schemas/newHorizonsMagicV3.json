@@ -170,7 +170,8 @@
 					"minItems": 1,
 					"uniqueItems": true,
 					"items": {"type": "string", "enum": ["core:poison", "core:disease"]}
-				}
+				},
+				"selectedPlacement": {"type": "boolean", "enum": [true]}
 			}
 		},
 		"directDamage": {

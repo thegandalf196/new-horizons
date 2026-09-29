@@ -15,6 +15,28 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+### September 29 local Quicksand native-gate incidents
+
+- An early isolated object build stopped at CMake regeneration because the
+  edited `config/newHorizonsMagic.json` had not yet been copied into the
+  generated `Mods/new-horizons/mod.json`. Regenerating with
+  `tools/update-new-horizons-module.py` restored the module-consistency gate;
+  the subsequent Linux `vcmitest` build linked.
+- Independent source review found two pre-build blockers: the obstacle Lua
+  script called an unregistered selected-Quicksand Mechanics method, and the
+  client controller called a renamed window-control method that did not
+  exist. Registering the Lua method and using the existing window update API
+  repaired both. The first client compile then exposed a same-name data member
+  and accessor, `repeatedPlacementSelectedHexes`; renaming the accessor to
+  `getRepeatedPlacementSelectedHexes` resolved that C++ collision. The resumed
+  Linux `vcmiclient` build linked.
+- The first nine-case focused native run passed eight tests. The synthetic
+  selected-placement obstacle fixture omitted the ordinary content `hidden`
+  setting, exposing that canonical Quicksand did not force concealment in its
+  effect descriptor. The selected mode now stores `hidden=true` irrespective
+  of that content default; the same focused filter passes 9/9. This is not
+  rendered/playable acceptance.
+
 ### September 29 local Holy Armor native-gate incidents
 
 - The first Linux `vcmitest`/`vcmiclient` build over committed

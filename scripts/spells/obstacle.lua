@@ -55,6 +55,11 @@ local function isNewHorizonsQuicksand(mechanics)
 		and mechanics:getSpell():getJsonKey() == "core:quicksand"
 end
 
+local function isNewHorizonsSelectedQuicksand(mechanics)
+	return mechanics:usesNewHorizonsQuicksandSelectedPlacement()
+		and mechanics:getSpell():getJsonKey() == "core:quicksand"
+end
+
 local function newHorizonsQuicksandPatchCount(mechanics)
 	return mechanics:getNewHorizonsQuicksandPatchCount()
 end
@@ -101,7 +106,8 @@ local function isHexAvailable(battle, hex, mustBeClear)
 end
 
 function Script:applicableGeneral(mechanics, problem)
-	if self.hidden and self.hideNative and not isNewHorizonsLandMine(mechanics) then
+	if self.hidden and self.hideNative and not isNewHorizonsLandMine(mechanics)
+		and not isNewHorizonsSelectedQuicksand(mechanics) then
 		local battle = mechanics:getBattle()
 		if battle:hasNativeStack(otherSide(mechanics:getCasterSide())) then
 			problem:addStandard(mechanics, ENUM.SpellCastProblem.noAppropriateTarget)
@@ -120,6 +126,26 @@ function Script:applicableTarget(mechanics, problem, target)
 	if isNewHorizonsLandMine(mechanics) then
 		local required = newHorizonsLandMineCount(mechanics)
 		if #target ~= required then return noRoomToPlace(mechanics, problem) end
+
+		local battle = mechanics:getBattle()
+		local seen = {}
+		for _, dest in ipairs(target) do
+			local hex = dest.hex
+			if dest.unit ~= nil or not hex:isAvailable() then
+				return noRoomToPlace(mechanics, problem)
+			end
+			local key = hex:getY() * 17 + hex:getX()
+			if seen[key] or not isHexAvailable(battle, hex, true) then
+				return noRoomToPlace(mechanics, problem)
+			end
+			seen[key] = true
+		end
+		return true
+	end
+
+	if isNewHorizonsSelectedQuicksand(mechanics) then
+		local required = newHorizonsQuicksandPatchCount(mechanics)
+		if required <= 0 or #target ~= required then return noRoomToPlace(mechanics, problem) end
 
 		local battle = mechanics:getBattle()
 		local seen = {}
@@ -176,10 +202,10 @@ function Script:applicableTarget(mechanics, problem, target)
 end
 
 function Script:transformTarget(mechanics, aimPoint, spellTarget)
-	if isNewHorizonsLandMine(mechanics) then
+	if isNewHorizonsLandMine(mechanics) or isNewHorizonsSelectedQuicksand(mechanics) then
 		-- BattleSpellMechanics deliberately leaves a massive spell's normal
-		-- transformed target empty.  Land Mine opts into the original action
-		-- vector here so every selected hex reaches validation and apply().
+		-- transformed target empty. These selected-placement spells opt into the
+		-- original action vector so every chosen hex reaches validation and apply().
 		return aimPoint
 	end
 	if isNewHorizonsFireWall(mechanics) then
@@ -222,6 +248,8 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 	local opts  = sideOptions(self, side)
 	local newMine = isNewHorizonsLandMine(mechanics)
 	local newFireWall = isNewHorizonsFireWall(mechanics)
+	local selectedQuicksand = isNewHorizonsSelectedQuicksand(mechanics)
+	local hideNative = self.hideNative or selectedQuicksand
 	local snapshotDamage = newMine or newFireWall
 	local turnsRemaining = self.turnsRemaining or -1
 	if newFireWall then
@@ -247,12 +275,12 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 		-- eligible Metamagic follow-up before the authoritative descriptor is
 		-- stored, without changing legacy content semantics.
 		turnsRemaining   = turnsRemaining,
-		hidden           = self.hidden or false,
+		hidden           = selectedQuicksand or self.hidden or false,
 		passable         = self.passable or false,
 		-- Avoid Lua's `a and false or b` pitfall: when `newMine` is true the
 		-- intermediate false would select `b` and accidentally reveal mines to
 		-- native enemy armies.
-		nativeVisible    = not (snapshotDamage or self.hideNative or false),
+		nativeVisible    = not (snapshotDamage or hideNative or false),
 		trap             = self.trap or false,
 		removeOnTrigger  = self.removeOnTrigger or false,
 		trigger          = self.triggerAbility or "",
@@ -290,6 +318,7 @@ function Script:apply(mechanics, server, target)
 	local patchCount = self.patchCount or 0
 	local newMine = isNewHorizonsLandMine(mechanics)
 	local newFireWall = isNewHorizonsFireWall(mechanics)
+	local selectedQuicksand = isNewHorizonsSelectedQuicksand(mechanics)
 	if isNewHorizonsQuicksand(mechanics) then
 		patchCount = newHorizonsQuicksandPatchCount(mechanics)
 	end
@@ -303,6 +332,20 @@ function Script:apply(mechanics, server, target)
 		if #target ~= newHorizonsLandMineCount(mechanics) then return end
 		for _, dest in ipairs(target) do
 			destinations[#destinations+1] = dest.hex
+		end
+	elseif selectedQuicksand then
+		-- The server validates this exact ordered vector before StartAction and
+		-- again before the effect. Preserve it verbatim; selected Quicksand never
+		-- shuffles, supplements, or silently shortens a placement request.
+		if patchCount <= 0 or #target ~= patchCount then return end
+		local seen = {}
+		for _, dest in ipairs(target) do
+			local hex = dest.hex
+			if dest.unit ~= nil or not hex:isAvailable() then return end
+			local key = hex:getY() * 17 + hex:getX()
+			if seen[key] or not isHexAvailable(battle, hex, true) then return end
+			seen[key] = true
+			destinations[#destinations + 1] = hex
 		end
 	elseif newFireWall then
 		-- Fire Wall is one passable obstacle with a canonical three-hex

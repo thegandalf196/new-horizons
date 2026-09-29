@@ -89,10 +89,10 @@ class BattleActionsController
 	/// stack that has been selected as first target for multi-target spells (Teleport & Sacrifice)
 	const CStack * selectedStack;
 
-	/// Ordered player selection for the canonical New Horizons Land Mine.  The
+	/// Ordered player selection for canonical repeated-placement spells. The
 	/// order is preserved all the way into BattleAction::target; the server
 	/// still validates the complete request before applying it.
-	std::vector<BattleHex> landMineSelectedHexes;
+	std::vector<BattleHex> repeatedPlacementSelectedHexes;
 	/// Ordered unit identities for New Horizons Storm of Daggers.  This is a
 	/// presentation-only selection; all identities and full-vector legality are
 	/// checked again before the ordinary hero spell request is sent.
@@ -164,9 +164,9 @@ class BattleActionsController
 	/// returns true if current stack is a spellcaster
 	bool isActiveStackSpellcaster() const;
 
-	bool landMinePlacementTargetsValid() const;
-	void updateLandMinePlacementStatus(const BattleHex & hoveredHex);
-	void selectOrUndoLandMineHex(const BattleHex & clickedHex);
+	bool repeatedPlacementTargetsValid() const;
+	void updateRepeatedPlacementStatus(const BattleHex & hoveredHex);
+	void selectOrUndoRepeatedPlacementHex(const BattleHex & clickedHex);
 	void updateFireWallPlacementStatus(const BattleHex & hoveredHex);
 	void selectFireWallStartOrDirection(const BattleHex & clickedHex);
 	bool fireWallPlacementLineIsLegal(const BattleHex & start, BattleHex::EDir direction) const;
@@ -192,18 +192,25 @@ public:
 	/// True only for the state-backed canonical New Horizons Land Mine.  Legacy
 	/// Land Mine continues to use the ordinary generic spell selector.
 	bool landMinePlacementModeActive() const;
-	/// Number of hexes required by the active canonical Land Mine cast.
-	int landMinePlacementRequiredHexes() const;
+	/// True only for a saved-v3 Quicksand row carrying the selected-placement
+	/// marker. Markerless v1/v2 and v3 battles keep the legacy random cast.
+	bool quicksandPlacementModeActive() const;
+	/// True while the human is choosing exact hexes for Land Mine or selected
+	/// mode Quicksand.
+	bool repeatedPlacementModeActive() const;
+	/// Number of hexes required by the active repeated-placement spell.
+	int repeatedPlacementRequiredHexes() const;
 	/// Number-only readiness gate for the explicit confirmation shortcut.
-	bool landMinePlacementReady() const;
+	bool repeatedPlacementReady() const;
 	/// Current ordered selection, for battlefield presentation and tests.
-	const std::vector<BattleHex> & landMinePlacementSelectedHexes() const;
-	/// Return whether a hex is currently an empty legal placement candidate.
-	bool landMinePlacementHexIsLegal(const BattleHex & hex) const;
+	const std::vector<BattleHex> & getRepeatedPlacementSelectedHexes() const;
+	/// Return whether a hex is currently an empty legal placement candidate for
+	/// the active repeated-placement spell.
+	bool repeatedPlacementHexIsLegal(const BattleHex & hex) const;
 	/// Return whether a hex is already in the ordered selection.
-	bool landMinePlacementHexIsSelected(const BattleHex & hex) const;
+	bool repeatedPlacementHexIsSelected(const BattleHex & hex) const;
 	/// Return all currently legal empty placement candidates.
-	BattleHexArray getLandMinePlacementLegalHexes() const;
+	BattleHexArray getRepeatedPlacementLegalHexes() const;
 
 	/// Storm of Daggers uses ordered live stack IDs, not hexes, to avoid
 	/// retargeting a moved stack if the battlefield changes during selection.
@@ -236,9 +243,9 @@ public:
 	void cancelHeroOrderTargeting();
 
 	/// Confirm the exact selection after revalidating the live battle snapshot.
-	void confirmLandMinePlacement();
+	void confirmRepeatedPlacement();
 	/// Remove the most recently selected hex without spending the hero action.
-	void undoLandMinePlacement();
+	void undoRepeatedPlacement();
 	/// returns true if UI is currently in "F" hotkey creature spell target selection mode
 	bool creatureSpellcastingModeActive() const;
 
