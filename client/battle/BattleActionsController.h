@@ -13,6 +13,7 @@
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "MagicArrowOverchargeWindow.h"
 #include "SelectiveDispelWindow.h"
+#include "ShadowGiftWindow.h"
 #include "TemporalFieldWindow.h"
 
 #include <functional>
@@ -65,6 +66,8 @@ struct SoulChainSelectionPreview
 
 using MagicArrowOverchargeFactory = std::function<std::optional<MagicArrowOverchargeContext>(
 	const BattleAction &, const BattleHex &, const CStack *)>;
+using ShadowGiftFactory = std::function<std::optional<ShadowGiftContext>(
+	const BattleAction &, const BattleHex &, const CStack *)>;
 using SelectiveDispelFactory = std::function<std::optional<SelectiveDispelContext>(const BattleAction &, const CStack *)>;
 using TemporalFieldFactory = std::function<std::optional<TemporalFieldContext>(const BattleAction &)>;
 
@@ -83,6 +86,7 @@ class BattleActionsController
 	/// Optional New Horizons adapter.  Empty preserves the legacy generic cast
 	/// path; Runtime installs it only for an admitted V2 Magic Arrow battle.
 	MagicArrowOverchargeFactory magicArrowOverchargeFactory;
+	ShadowGiftFactory shadowGiftFactory;
 	/// Optional post-target Selective Dispel prompt.
 	SelectiveDispelFactory selectiveDispelFactory;
 	std::function<bool(const BattleAction &, const CStack *)> cureAfflictionPicker;
@@ -323,6 +327,7 @@ public:
 	/// this controller only decides when the normal targeted cast may pause for
 	/// the compact overcharge window.
 	void setMagicArrowOverchargeFactory(MagicArrowOverchargeFactory factory);
+	void setShadowGiftFactory(ShadowGiftFactory factory);
 	void setSelectiveDispelFactory(SelectiveDispelFactory factory);
 	void setCureAfflictionPicker(std::function<bool(const BattleAction &, const CStack *)> picker);
 	uint64_t getCastingSession() const { return castingSession; }

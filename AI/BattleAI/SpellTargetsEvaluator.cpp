@@ -13,6 +13,7 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "AttackPossibility.h"
 #include "../../lib/spells/Problem.h"
@@ -158,6 +159,39 @@ bool isCanonicalSoulChain(const Mechanics * spellMechanics)
 	return battle && spell
 		&& spell->getJsonKey() == newHorizonsSoulChain::SPELL_ID
 		&& newHorizonsSoulChain::isEnabled(battle->getMagicRules());
+}
+
+bool isCanonicalShadowGift(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	const auto * callback = spellMechanics ? spellMechanics->battle() : nullptr;
+	const auto * battle = callback ? callback->getBattle() : nullptr;
+	if(!battle || !spell || spell->getJsonKey() != newHorizonsShadowGift::SPELL_ID)
+		return false;
+	const auto & magicRules = battle->getMagicRules();
+	return newHorizonsMagic::shadowGiftEnabled(magicRules, spell->getId());
+}
+
+int distanceToUnit(const BattleHex & hex, const battle::Unit * unit);
+
+float shadowGiftAttackLikelihood(const Mechanics * spellMechanics, const battle::Unit * attacker,
+	const battle::Unit * defender)
+{
+	const auto * battle = spellMechanics ? spellMechanics->battle() : nullptr;
+	if(!battle || !attacker || !defender)
+		return 0.0f;
+	if(battle->battleCanShoot(attacker, defender->getPosition()))
+		return 0.7f;
+
+	const int distance = distanceToUnit(defender->getPosition(), attacker);
+	const int movement = std::max(0, static_cast<int>(attacker->getMovementRange(0)));
+	if(distance <= 1)
+		return 0.8f;
+	if(distance <= movement + 1)
+		return 0.55f;
+	if(distance <= movement + 3)
+		return 0.2f;
+	return 0.0f;
 }
 
 float spellApplicationChance(const Mechanics * spellMechanics, const battle::Unit * unit)
@@ -1614,6 +1648,130 @@ float SpellTargetEvaluator::soulChainDelayedDamageValue(const Mechanics * spellM
 	}
 
 	return value;
+}
+
+float SpellTargetEvaluator::shadowGiftTradeValue(const Mechanics * spellMechanics,
+	const Target & target, int32_t sacrificePercent, std::shared_ptr<CBattleInfoCallback> battleState)
+{
+	if(!isCanonicalShadowGift(spellMechanics) || target.size() != 1
+		|| !target.front().unitValue
+		|| !newHorizonsShadowGift::isValidSacrificePercent(sacrificePercent))
+		return 0.0f;
+
+	const auto * battle = spellMechanics->battle();
+	const auto * recipient = target.front().unitValue;
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(!battle || !recipient->alive() || !recipient->isValidTarget(false)
+		|| recipient->isClone() || recipient->isTimeStopped()
+		|| recipient->unitSide() != casterSide
+		|| !spellMechanics->isReceptive(recipient))
+		return 0.0f;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return 0.0f;
+
+	if(!battleState)
+		battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
+
+	const auto * hero = spellMechanics->getHeroCaster();
+	const bool darkGift = hero && hero->hasActivePerk(
+		"new-horizons:shadowMagic", "new-horizons:shadowMagic.darkGift");
+	const auto costBasisPoints = newHorizonsShadowGift::getSacrificeCostBasisPoints(
+		sacrificePercent, darkGift);
+	const auto currentHealth = std::max<int64_t>(0, recipient->getShadowGiftCurrentHealth());
+	const auto maximumHealth = std::max<int64_t>(0, recipient->getShadowGiftMaximumHealth());
+	const auto sacrificedHealth = newHorizonsShadowGift::getSacrificeHealthAmount(
+		currentHealth, costBasisPoints);
+	if(sacrificedHealth <= 0 || sacrificedHealth >= currentHealth || sacrificedHealth >= maximumHealth)
+		return 0.0f;
+
+	// The authoritative sacrifice removes this same amount from current and
+	// aggregate maximum HP. Price the real current-HP loss once; charging the
+	// coincident cap reduction a second time would double count it. A later
+	// healing opportunity limited by the temporary cap remains a Phase 2 case.
+	DamageCache costCache;
+	float healthCost = AttackPossibility::calculateDamageReduce(
+		nullptr, recipient, static_cast<uint64_t>(sacrificedHealth), costCache, battleState);
+	if(recipient->getPhantomInitialIntegrity() > 0)
+	{
+		// Partial Phantom Army integrity loss does not remove creatures, so the
+		// ordinary damage-reduction scorer prices it as zero until lethal. For a
+		// sacrifice, value the lost durability as the same fraction of the copy's
+		// kill value; otherwise Shadow Gift would treat integrity as free.
+		DamageCache fullIntegrityCache;
+		const float fullIntegrityValue = AttackPossibility::calculateDamageReduce(
+			nullptr, recipient, static_cast<uint64_t>(currentHealth), fullIntegrityCache, battleState);
+		healthCost = fullIntegrityValue * static_cast<float>(sacrificedHealth)
+			/ static_cast<float>(currentHealth);
+	}
+	const auto * liveRecipient = dynamic_cast<const battle::CUnitState *>(recipient);
+	if(!liveRecipient)
+		return 0.0f;
+	auto projectedRecipient = liveRecipient->acquireState();
+	auto projectedSacrifice = sacrificedHealth;
+	projectedRecipient->damageShadowGiftSacrifice(projectedSacrifice);
+	if(!projectedRecipient->alive())
+		return 0.0f;
+
+	DamageCache originalDamageCache;
+	DamageCache projectedDamageCache;
+	const auto damageBonusBasisPoints = newHorizonsShadowGift::getDamageBonusBasisPoints(
+		sacrificePercent,
+		std::max(0, spellMechanics->getEffectPower()),
+		spellMechanics->getSpellPowerCoefficientBasisPoints(),
+		spellMechanics->getWarcastingBonusPercent(),
+		spellMechanics->getEmpowerSpellBonusPercent());
+	if(damageBonusBasisPoints <= 0)
+		return 0.0f;
+
+	float bestExpectedBenefit = 0.0f;
+	for(const auto * enemy : battle->battleGetAllUnits(false))
+	{
+		if(!enemy || !enemy->alive() || !enemy->isValidTarget(false)
+			|| enemy->unitSide() == casterSide || enemy->isInvincible())
+			continue;
+
+		const auto originalPerActivationDamage = originalDamageCache.getDamage(recipient, enemy, battleState);
+		const auto projectedPerActivationDamage = projectedDamageCache.getDamage(
+			projectedRecipient.get(), enemy, battleState);
+		if(originalPerActivationDamage <= 0 || projectedPerActivationDamage <= 0)
+			continue;
+
+		const int attackCount = AttackPossibility::getAttackCount(
+			*projectedRecipient, battle->battleCanShoot(recipient, enemy->getPosition()), *battleState);
+		if(attackCount <= 0)
+			continue;
+
+		const float likelihood = shadowGiftAttackLikelihood(spellMechanics, projectedRecipient.get(), enemy);
+		if(likelihood <= 0.0f)
+			continue;
+
+		float projectedAttacks = 0.0f;
+		for(int round = 0; round < 3; ++round)
+			projectedAttacks += static_cast<float>(attackCount)
+				* likelihood * (recipient->willMove(round) ? 1.0f : (round == 0 ? 0.0f : 0.65f));
+		const auto enemyHealth = static_cast<float>(std::max<int64_t>(0, enemy->getAvailableHealth()));
+		const float normalDamage = std::min(enemyHealth,
+			static_cast<float>(originalPerActivationDamage) * projectedAttacks);
+		const float giftedDamage = std::min(enemyHealth,
+			static_cast<float>(projectedPerActivationDamage) * projectedAttacks
+				* (1.0f + static_cast<float>(damageBonusBasisPoints) / 10'000.0f));
+		const auto extraDamage = static_cast<uint64_t>(std::max(0.0f, giftedDamage - normalDamage));
+		if(extraDamage == 0)
+			continue;
+
+		// This is a bounded health forecast. It uses the expected Shadow bonus
+		// after the target's physical damage projection, but does not model each
+		// enemy's Shadow-specific mitigation/resistance pipeline; record that as a
+		// Phase 2 interaction rather than implying exact cast parity.
+		const float expectedBenefit = AttackPossibility::calculateDamageReduce(
+			projectedRecipient.get(), enemy, extraDamage, projectedDamageCache, battleState);
+		bestExpectedBenefit = std::max(bestExpectedBenefit, expectedBenefit);
+	}
+
+	return std::max(0.0f, bestExpectedBenefit - healthCost);
 }
 
 std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)

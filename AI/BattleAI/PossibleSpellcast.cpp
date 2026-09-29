@@ -35,6 +35,8 @@ std::string PossibleSpellcast::name() const
 	}
 	if(spellMassSlow)
 		return spell->getNameTranslated() + " (Mass)";
+	if(spellShadowGiftSacrificePercent > 0)
+		return spell->getNameTranslated() + " (" + std::to_string(spellShadowGiftSacrificePercent) + "%)";
 	if(spellOvercharge == 0)
 		return spell->getNameTranslated();
 	return spell->getNameTranslated() + " (Overcharge +" + std::to_string(spellOvercharge) + ")";

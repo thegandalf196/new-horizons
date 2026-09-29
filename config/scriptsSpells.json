@@ -161,6 +161,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"shadowGiftEffect" : {
+		"implements" : "spellEffect",
+		"script" : "spells/shadowGift",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"frailtyEffect" : {
 		"implements" : "spellEffect",
 		"script" : "spells/frailty",

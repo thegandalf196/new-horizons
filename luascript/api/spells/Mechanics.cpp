@@ -152,6 +152,12 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the selected Cure affliction source key, or an empty string for heal-only.");
 	R.method<&Mechanics::isMassSlow>("isMassSlow", {},
 		"True when this authoritative cast selected the Sorcery Temporal Field Mass Slow mode.");
+	R.method<&Mechanics::getShadowGiftSacrificePercent>("getShadowGiftSacrificePercent", {},
+		"Returns the selected saved-v3 Shadow Gift sacrifice tier (10, 20 or 30), or zero when absent.");
+	R.method<&Mechanics::getShadowGiftSacrificeCostBasisPoints>("getShadowGiftSacrificeCostBasisPoints", {},
+		"Returns the actual current/max HP sacrifice percentage in basis points, including Dark Gift's cost reduction.");
+	R.method<&Mechanics::getShadowGiftDamageBonusBasisPoints>("getShadowGiftDamageBonusBasisPoints", {},
+		"Returns the selected Shadow Gift damage bonus in basis points, with only the Spell Power term scaled by saved School, Spellcraft, Warcasting and Empower.");
 	R.method<&Mechanics::usesNewHorizonsMagic>("usesNewHorizonsMagic", {},
 		"True when the battle uses a saved New Horizons magic-rules snapshot.");
 	R.method<&Mechanics::usesNewHorizonsMagicV3>("usesNewHorizonsMagicV3", {},

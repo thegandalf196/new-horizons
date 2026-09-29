@@ -36,6 +36,7 @@
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
@@ -106,6 +107,13 @@ bool isCanonicalTimeStop(const CSpell * spell)
 bool isCanonicalSpellLock(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL;
+}
+
+bool isCanonicalShadowGift(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	const auto & magicRules = battle.getBattle()->getMagicRules();
+	return spell && spell->getJsonKey() == newHorizonsShadowGift::SPELL_ID
+		&& newHorizonsMagic::shadowGiftEnabled(magicRules, spell->getId());
 }
 
 bool isPhantomArmy(const CSpell * spell)
@@ -2217,6 +2225,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			});
 		}
 
+		const std::vector<int32_t> shadowGiftChoices = isCanonicalShadowGift(*cb->getBattle(battleID), spell)
+			? std::vector<int32_t>{10, 20, 30} : std::vector<int32_t>{0};
+		for(const auto shadowGiftSacrificePercent : shadowGiftChoices)
 		for(const auto cureAffliction : cureAfflictionChoices)
 		for(const bool massSlow : {false, true})
 		{
@@ -2231,6 +2242,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				temp.setMetamagicGrand(metamagicGrandChoice);
 				temp.setCureAffliction(cureAffliction);
 				temp.setMassSlow(massSlow);
+				temp.setShadowGiftSacrificePercent(shadowGiftSacrificePercent);
 				temp.setSelectiveDispel(selectiveDispel);
 				for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
 				{
@@ -2244,6 +2256,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							candidateCast.setMetamagicTargetUnitId(target.front().unitValue->unitId());
 						candidateCast.setOvercharge(overcharge);
 						candidateCast.setMassSlow(massSlow);
+						candidateCast.setShadowGiftSacrificePercent(shadowGiftSacrificePercent);
 						candidateCast.setSelectiveDispel(selectiveDispel);
 						auto candidateMechanics = spell->battleMechanics(&candidateCast);
 						spells::detail::ProblemImpl problem;
@@ -2272,6 +2285,14 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.spellCureAffliction = cureAffliction;
 						ps.spellMassSlow = massSlow;
 						ps.spellStormOfDaggers = stormOfDaggers;
+						ps.spellShadowGiftSacrificePercent = shadowGiftSacrificePercent;
+						if(isCanonicalShadowGift(*cb->getBattle(battleID), spell))
+						{
+							ps.spellShadowGiftHeuristicValue = SpellTargetEvaluator::shadowGiftTradeValue(
+								candidateMechanics.get(), ps.dest, shadowGiftSacrificePercent, cb->getBattle(battleID));
+							if(ps.spellShadowGiftHeuristicValue <= 0.0f)
+								continue;
+						}
 						if(isCanonicalLandMine(*cb->getBattle(battleID), spell))
 							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::landMinePlacementValue(
 								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
@@ -2640,6 +2661,19 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
 						counterspellNegated, *spellAllowance) || counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
+					continue;
+				}
+				// Shadow Gift's immediate sacrifice is a real cost, but its value is in
+				// a bounded three-round attack projection. Use the signed snapshot score
+				// instead of generic cast evaluation, which cannot price future attacks.
+				if(ps.command == HeroCommand::NONE && ps.spellShadowGiftHeuristicValue > 0.0f)
+				{
+					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+						counterspellNegated, *spellAllowance) || counterspellNegated)
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + ps.spellShadowGiftHeuristicValue;
 					continue;
 				}
 				// Canonical delayed spells such as Land Mine, Fire Wall, and Plague may
@@ -3100,6 +3134,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		spellcast.spellSelectiveDispel = castToPerform.spellSelectiveDispel;
 		spellcast.spellCureAffliction = castToPerform.spellCureAffliction;
 		spellcast.spellMassSlow = castToPerform.spellMassSlow;
+		spellcast.spellShadowGiftSacrificePercent = castToPerform.spellShadowGiftSacrificePercent;
 		spellcast.metamagicFollowup = castToPerform.metamagicFollowup;
 		if(isCanonicalFireWall(*cb->getBattle(battleID), castToPerform.spell)
 			&& castToPerform.spellFireWallDirection != BattleHex::NONE

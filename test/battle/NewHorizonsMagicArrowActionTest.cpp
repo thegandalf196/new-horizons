@@ -10,9 +10,34 @@
 #include "StdInc.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/SideInBattle.h"
+#include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+
+TEST(NewHorizonsShadowGiftMechanicsTest, SharedTierFormulaAndNoFreeSacrifice)
+{
+	using namespace newHorizonsShadowGift;
+	EXPECT_TRUE(isValidSacrificePercent(10));
+	EXPECT_TRUE(isValidSacrificePercent(20));
+	EXPECT_TRUE(isValidSacrificePercent(30));
+	EXPECT_FALSE(isValidSacrificePercent(0));
+	EXPECT_FALSE(isValidSacrificePercent(15));
+
+	EXPECT_EQ(getSacrificeCostBasisPoints(10, false), 1000);
+	EXPECT_EQ(getSacrificeCostBasisPoints(10, true), 750);
+	EXPECT_EQ(getSacrificeHealthAmount(1000, 1000), 100);
+	EXPECT_EQ(getSacrificeHealthAmount(1000, 750), 75);
+	EXPECT_EQ(getSacrificeHealthAmount(9, 750), 1);
+	EXPECT_EQ(getSacrificeHealthAmount(1, 1000), 0);
+	EXPECT_EQ(getSacrificeHealthAmount(2, 10000), 1);
+
+	EXPECT_EQ(getDamageBonusBasisPoints(10, 0, 10000), 1250);
+	EXPECT_EQ(getDamageBonusBasisPoints(10, 100, 10000), 1750);
+	EXPECT_EQ(getDamageBonusBasisPoints(10, 100, 14500), 1975);
+	EXPECT_EQ(getDamageBonusBasisPoints(10, 100, 14500, 50, 25), 2609);
+	EXPECT_THROW(getDamageBonusBasisPoints(15, 100, 10000), std::invalid_argument);
+}
 
 TEST(NewHorizonsMagicArrowActionTest, OverchargeRoundTripsOnlyOnTheNewProtocol)
 {
@@ -106,6 +131,43 @@ TEST(NewHorizonsMagicArrowActionTest, TemporalFieldRoundTripsOnlyOnItsProtocol)
 	BattleAction oldDecoded;
 	ASSERT_NO_THROW(oldDefault.iser & oldDecoded);
 	EXPECT_FALSE(oldDecoded.spellMassSlow);
+}
+
+TEST(NewHorizonsShadowGiftMechanicsTest, SelectedTierRoundTripsOnlyOnItsProtocol)
+{
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::SLOW; // The serializer transports the optional tier; server validates spell identity.
+	action.spellShadowGiftSacrificePercent = 20;
+
+	CMemorySerializer current;
+	current.oser.version = ESerializationVersion::CURRENT;
+	current.iser.version = ESerializationVersion::CURRENT;
+	ASSERT_NO_THROW(current.oser & action);
+	BattleAction restored;
+	ASSERT_NO_THROW(current.iser & restored);
+	EXPECT_EQ(restored.spellShadowGiftSacrificePercent, 20);
+
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_QUICKSAND;
+	EXPECT_THROW(old.oser & action, std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+
+	action.spellShadowGiftSacrificePercent = 0;
+	CMemorySerializer oldDefault;
+	oldDefault.oser.version = ESerializationVersion::NEW_HORIZONS_QUICKSAND;
+	oldDefault.iser.version = ESerializationVersion::NEW_HORIZONS_QUICKSAND;
+	ASSERT_NO_THROW(oldDefault.oser & action);
+	BattleAction oldDecoded;
+	ASSERT_NO_THROW(oldDefault.iser & oldDecoded);
+	EXPECT_EQ(oldDecoded.spellShadowGiftSacrificePercent, 0);
+
+	action.spellShadowGiftSacrificePercent = 15;
+	CMemorySerializer invalid;
+	invalid.oser.version = ESerializationVersion::CURRENT;
+	EXPECT_THROW(invalid.oser & action, std::runtime_error);
+	EXPECT_TRUE(invalid.extractBuffer().empty());
 }
 
 TEST(NewHorizonsMagicArrowActionTest, TemporalFieldConsumptionStateRoundTripsAndRejectsLossyWrites)

@@ -35,10 +35,17 @@ namespace newHorizonsBattleStatus
 inline constexpr std::string_view TIME_STOP_SPELL_KEY = "new-horizons:timeStop";
 inline constexpr std::string_view SPELL_LOCK_SPELL_KEY = "new-horizons:spellLock";
 inline constexpr std::string_view REGENERATION_SPELL_KEY = newHorizonsMagic::NATURE_REGENERATION_SPELL;
+inline constexpr std::string_view SHADOW_GIFT_SPELL_KEY = "new-horizons:shadowGift";
+inline constexpr std::string_view SHADOW_GIFT_TRIGGER_KEY = "core:shadowGift";
 
 inline bool isRegeneration(std::string_view spellKey)
 {
 	return spellKey == REGENERATION_SPELL_KEY;
+}
+
+inline bool isShadowGift(std::string_view spellKey)
+{
+	return spellKey == SHADOW_GIFT_SPELL_KEY;
 }
 
 inline bool isTimeStop(std::string_view spellKey)
@@ -121,6 +128,69 @@ inline bool isStatusTrigger(const Bonus & bonus, std::string_view spellKey, std:
 	{
 		return false;
 	}
+}
+
+struct ShadowGiftStatus
+{
+	int64_t maximumHealthLost = 0;
+	int32_t damageBonusBasisPoints = 0;
+	int32_t remainingRounds = 0;
+
+	bool hasTimedBuff() const
+	{
+		return damageBonusBasisPoints > 0 && remainingRounds > 0;
+	}
+
+	bool hasMaximumHealthLoss() const
+	{
+		return maximumHealthLost > 0;
+	}
+
+	bool operator==(const ShadowGiftStatus &) const = default;
+};
+
+inline std::string formatBasisPoints(int64_t basisPoints);
+inline std::string roundsRemaining(int rounds);
+
+template<typename BonusRange>
+inline ShadowGiftStatus shadowGiftStatus(const BonusRange & bonuses, int64_t maximumHealthLost)
+{
+	ShadowGiftStatus result;
+	result.maximumHealthLost = std::max<int64_t>(0, maximumHealthLost);
+	for(const auto & bonus : bonuses)
+	{
+		if(!bonus || bonus->type != BonusType::COMBAT_EVENT_TRIGGER || bonus->source != BonusSource::SPELL_EFFECT
+			|| bonus->duration != BonusDuration::N_TURNS || bonus->turnsRemain <= 0 || bonus->val <= 0)
+			continue;
+		try
+		{
+			if(bonus->sid.toString() != SHADOW_GIFT_SPELL_KEY || bonus->subtype.toString() != SHADOW_GIFT_TRIGGER_KEY)
+				continue;
+		}
+		catch(const std::exception &)
+		{
+			continue;
+		}
+
+		result.damageBonusBasisPoints = bonus->val;
+		result.remainingRounds = bonus->turnsRemain;
+		break;
+	}
+	return result;
+}
+
+inline std::string shadowGiftBuffTooltip(const ShadowGiftStatus & status)
+{
+	return "Shadow Gift - Offensive enchantment\nShadow damage bonus: "
+		+ formatBasisPoints(status.damageBonusBasisPoints)
+		+ ".\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
+}
+
+inline std::string shadowGiftCapTooltip(const ShadowGiftStatus & status)
+{
+	return "Shadow Gift - Battle-long vitality sacrifice\nMaximum aggregate HP permanently lost: "
+		+ std::to_string(status.maximumHealthLost)
+		+ " HP. This cap loss remains after the three-round damage enchantment expires and cannot be dispelled.";
 }
 
 inline std::optional<int32_t> beneficiarySide(const Bonus & bonus)
@@ -253,6 +323,7 @@ struct StackInfoStatusSnapshot
 	DefendStatus defend;
 	PhysicalPoisonStatus physicalPoison;
 	RegenerationStatus regeneration;
+	ShadowGiftStatus shadowGift;
 
 	bool operator==(const StackInfoStatusSnapshot &) const = default;
 };

@@ -43,6 +43,9 @@ public:
 	SpellID spellCureAffliction = SpellID::NONE;
 	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
 	bool spellMassSlow = false;
+	/// Canonical New Horizons Shadow Gift sacrifice tier (10, 20, or 30).
+	/// Zero is reserved for every other cast.
+	int32_t spellShadowGiftSacrificePercent = 0;
 	/// Marks the canonical multi-target damage spell so its probabilistic magic
 	/// resistance is valued as expected damage after the shared cast forecast.
 	bool spellStormOfDaggers = false;
@@ -59,6 +62,8 @@ public:
 	/// Expected two-round echo value for canonical Soul Chain, whose cast adds
 	/// relationships but does not immediately change unit health.
 	float spellSoulChainDelayedValue = 0.0f;
+	/// Net three-round offense minus real HP cost for canonical Shadow Gift.
+	float spellShadowGiftHeuristicValue = 0.0f;
 	/// Canonical New Horizons Fire Wall placement direction.  The target vector
 	/// used during AI evaluation contains the complete three-hex footprint, but
 	/// the authoritative action protocol carries only its start hex and this

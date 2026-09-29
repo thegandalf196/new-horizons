@@ -46,6 +46,9 @@ public:
 	/// target contains the selected start hex; the server derives and validates
 	/// the remaining two line hexes from this direction before casting.
 	BattleHex::EDir spellFireWallDirection = BattleHex::NONE;
+	/// Canonical New Horizons Shadow Gift sacrifice tier (10, 20 or 30 percent).
+	/// Zero means no tier was selected and is invalid for an authoritative Gift cast.
+	si32 spellShadowGiftSacrificePercent = 0;
 	/// Requests the immediate additional spell granted by Tower Metamagic.  The
 	/// server accepts this only while its saved battle snapshot has a pending
 	/// sequence; it never buys another Hero Action or chains recursively.
@@ -153,6 +156,13 @@ public:
 		if(h.saving && archerySkirmisherAttack
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_ARCHERY_SKIRMISHER))
 			throw std::runtime_error("Cannot serialize Skirmisher attack metadata to an older protocol");
+		if(h.saving && spellShadowGiftSacrificePercent != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SHADOW_GIFT))
+			throw std::runtime_error("Cannot serialize Shadow Gift choice to an older protocol");
+		if(h.saving && spellShadowGiftSacrificePercent != 0
+			&& spellShadowGiftSacrificePercent != 10 && spellShadowGiftSacrificePercent != 20
+			&& spellShadowGiftSacrificePercent != 30)
+			throw std::runtime_error("Invalid Shadow Gift sacrifice choice");
 		h & side;
 		h & stackNumber;
 		h & actionType;
@@ -248,6 +258,10 @@ public:
 			h & archerySkirmisherAttack;
 		else if(!h.saving)
 			archerySkirmisherAttack = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SHADOW_GIFT))
+			h & spellShadowGiftSacrificePercent;
+		else if(!h.saving)
+			spellShadowGiftSacrificePercent = 0;
 		if(!h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Targeted command requires the new protocol");
@@ -257,6 +271,10 @@ public:
 		if(!h.saving && spell == SpellID(SpellID::QUICKSAND)
 			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_QUICKSAND))
 			throw std::runtime_error("Multi-hex Quicksand action requires the new protocol");
+		if(!h.saving && spellShadowGiftSacrificePercent != 0
+			&& spellShadowGiftSacrificePercent != 10 && spellShadowGiftSacrificePercent != 20
+			&& spellShadowGiftSacrificePercent != 30)
+			throw std::runtime_error("Invalid Shadow Gift sacrifice choice");
 		if(!h.saving && (command == HeroCommand::RIPOSTE || command == HeroCommand::BRACE
 			|| command == HeroCommand::PROTECT || command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS))

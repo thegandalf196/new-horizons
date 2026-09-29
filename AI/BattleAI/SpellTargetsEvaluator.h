@@ -61,6 +61,12 @@ public:
 	static float soulChainDelayedDamageValue(const spells::Mechanics * spellMechanics,
 		const spells::Target & target,
 		std::shared_ptr<CBattleInfoCallback> battleState = {});
+	/// Values canonical Shadow Gift as three rounds of expected offensive benefit
+	/// minus the real sacrificed HP. The forecast reads only the supplied battle.
+	static float shadowGiftTradeValue(const spells::Mechanics * spellMechanics,
+		const spells::Target & target,
+		int32_t sacrificePercent,
+		std::shared_ptr<CBattleInfoCallback> battleState = {});
 
 private:
 	enum Compare

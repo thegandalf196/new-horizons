@@ -65,6 +65,7 @@ public:
 	static int healUnit(lua_State * L);
 	static int changeUnit(lua_State * L); // args: battle, unitState, [healthDelta=0]
 	static int damageUnit(lua_State * L); // args: battle, unit, damageAmount, optional destroyRemains, optional source Unit; returns: actualDamage, killedAmount
+	static int damageUnitAsSpell(lua_State * L); // args: battle, unit, damageAmount, spell, source Unit; returns: actualDamage, killedAmount
 };
 
 }

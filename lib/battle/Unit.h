@@ -131,6 +131,14 @@ public:
 
 	/// returns total health that unit had initially
 	virtual int64_t getTotalHealth() const = 0;
+	/// Shadow Gift's creature HP resource excludes temporary hit points. Phantom
+	/// Army units expose their current integrity pool instead.
+	virtual int64_t getShadowGiftCurrentHealth() const { return getAvailableHealth(); }
+	/// Effective Shadow Gift maximum for this battle, separate from per-creature
+	/// STACK_HEALTH. Phantom Army units expose their integrity cap instead.
+	virtual int64_t getShadowGiftMaximumHealth() const { return getTotalHealth(); }
+	/// Cumulative absolute maximum-HP cap removed by Shadow Gift this battle.
+	virtual int64_t getShadowGiftMaximumHealthLost() const { return 0; }
 	/// Current separate durability pool for a Phantom Army stack, or zero for ordinary units.
 	virtual int64_t getPhantomIntegrity() const { return 0; }
 	/// Initial separate durability pool for a Phantom Army stack, or zero for ordinary units.

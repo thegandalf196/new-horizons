@@ -449,6 +449,38 @@ TEST_F(UnitStateTest, destroyRemainsIsSerializedAndLegacyDamageDoesNotMarkIt)
 	EXPECT_EQ(restored.getUnusableRemains(), 0);
 }
 
+TEST_F(UnitStateTest, shadowGiftCapLossAndCreatureSacrificeRoundTripThroughStackSave)
+{
+	setDefaultExpectations();
+	initUnit();
+	const int64_t originalMaximum = static_cast<int64_t>(DEFAULT_HP) * DEFAULT_AMOUNT;
+
+	subject.addShadowGiftMaximumHealthLoss(500);
+	int64_t sacrifice = 1000;
+	subject.damageShadowGiftSacrifice(sacrifice);
+	ASSERT_EQ(sacrifice, 1000);
+	EXPECT_EQ(subject.getShadowGiftCurrentHealth(), originalMaximum - 1000);
+	EXPECT_EQ(subject.getShadowGiftMaximumHealth(), originalMaximum - 500);
+	EXPECT_EQ(subject.getShadowGiftMaximumHealthLost(), 500);
+
+	const auto saved = subject.save();
+	ASSERT_EQ(saved["state"]["health"]["shadowGiftMaximumHealthLost"].Integer(), 500);
+	battle::CUnitStateDetached restored(&infoMock, &bonusMock);
+	restored.localInit(&envMock);
+	restored.load(saved);
+	EXPECT_EQ(restored.getShadowGiftCurrentHealth(), originalMaximum - 1000);
+	EXPECT_EQ(restored.getShadowGiftMaximumHealth(), originalMaximum - 500);
+	EXPECT_EQ(restored.getShadowGiftMaximumHealthLost(), 500);
+
+	// Pre-feature saves omit the cap ledger while preserving ordinary casualty HP.
+	auto legacySaved = saved;
+	legacySaved["state"]["health"].Struct().erase("shadowGiftMaximumHealthLost");
+	restored.load(legacySaved);
+	EXPECT_EQ(restored.getShadowGiftCurrentHealth(), originalMaximum - 1000);
+	EXPECT_EQ(restored.getShadowGiftMaximumHealth(), originalMaximum);
+	EXPECT_EQ(restored.getShadowGiftMaximumHealthLost(), 0);
+}
+
 TEST_F(UnitStateTest, removedGhostRetainsDestroyedRemainsForBattleResult)
 {
 	setDefaultExpectations();

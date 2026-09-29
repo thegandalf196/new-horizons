@@ -128,6 +128,52 @@ TEST_F(HealthTest, damage)
 	checkEmptyHealth(health, mock);
 }
 
+TEST_F(HealthTest, shadowGiftSacrificeBypassesTemporaryHitPointsAndReducesResurrectionCap)
+{
+	setDefaultExpectations();
+	health.init();
+	health.addTemporaryHitPoints(300);
+
+	const int64_t originalMaximum = static_cast<int64_t>(mock.getMaxHealth()) * mock.unitBaseAmount();
+	int64_t sacrifice = 1234;
+	health.damage(sacrifice, false, true);
+	EXPECT_EQ(sacrifice, 1234);
+	EXPECT_EQ(health.getTemporaryHitPoints(), 300);
+	EXPECT_EQ(health.getCreatureHealthAvailable(), originalMaximum - sacrifice);
+
+	health.addShadowGiftMaximumHealthLoss(1000);
+	EXPECT_EQ(health.total(), originalMaximum - 1000);
+	int64_t healing = originalMaximum;
+	health.heal(healing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
+	EXPECT_EQ(healing, 234);
+	EXPECT_EQ(health.getCreatureHealthAvailable(), originalMaximum - 1000);
+	EXPECT_EQ(health.total(), originalMaximum - 1000);
+}
+
+TEST_F(HealthTest, shadowGiftCapBlocksHealOfSacrificedHealth)
+{
+	UnitMock singleUnit;
+	BonusBearerMock singleBonuses;
+	singleBonuses.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, UNIT_HEALTH, BonusSourceID()));
+	EXPECT_CALL(singleUnit, getAllBonuses(_, _)).WillRepeatedly(Invoke(&singleBonuses, &BonusBearerMock::getAllBonuses));
+	EXPECT_CALL(singleUnit, getTreeVersion()).WillRepeatedly(Return(1));
+	EXPECT_CALL(singleUnit, unitBaseAmount()).WillRepeatedly(Return(1));
+
+	CHealth singleHealth(&singleUnit);
+	singleHealth.init();
+	singleHealth.addShadowGiftMaximumHealthLoss(10);
+	int64_t sacrifice = 10;
+	singleHealth.damage(sacrifice, false, true);
+	ASSERT_EQ(singleHealth.total(), UNIT_HEALTH - 10);
+	ASSERT_EQ(singleHealth.getCreatureHealthAvailable(), UNIT_HEALTH - 10);
+
+	int64_t healing = 10;
+	singleHealth.heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+	EXPECT_EQ(healing, 0);
+	EXPECT_EQ(singleHealth.getCreatureHealthAvailable(), UNIT_HEALTH - 10);
+}
+
 TEST_F(HealthTest, heal)
 {
 	setDefaultExpectations();

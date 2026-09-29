@@ -89,6 +89,16 @@ void ServerCallbackProxy::registerMethods(MethodRegistrar & R)
 		},
 		{"integer, integer", "Damage actually dealt, and the count of killed creatures."},
 		"Damages the unit, returning the actual damage dealt and the number of killed creatures. An optional source unit attributes the hit to that unit; omitted damage remains unattributed.");
+	R.cfunction<&ServerCallbackProxy::damageUnitAsSpell>("damageUnitAsSpell",
+		{
+			{"battle", "Battle", "Battle in which spell damage is dealt."},
+			{"unit", "Unit", "Target unit."},
+			{"damage", "integer", "Spell-adjusted damage points to deal."},
+			{"spell", "Spell", "Spell identity used to type the injury packet."},
+			{"source", "Unit", "Unit credited with this spell damage; it must belong to this battle."}
+		},
+		{"integer, integer", "Damage actually dealt, and the count of killed creatures."},
+		"Damages the unit and marks the injury as damage from the given spell. The caller is responsible for applying the spell's damage modifiers first.");
 	R.function<&ServerCallbackProxy::removeUnit>("removeUnit",
 		{
 			{"battle", "Battle the unit belongs to."},
@@ -534,6 +544,51 @@ int ServerCallbackProxy::damageUnit(lua_State * L)
 	bsa.attackerID = source ? source->unitId() : -1;
 	auto newState = unit->acquireState();
 	CStack::prepareAttacked(bsa, *object->getRNG(), newState, destroyRemains);
+
+	StacksInjured si;
+	si.battleID = battle->getBattle()->getBattleID();
+	si.stacks.push_back(bsa);
+	object->apply(si);
+
+	S.clear();
+	S.push(bsa.damageAmount);
+	S.push(static_cast<int64_t>(bsa.killedAmount));
+	return 2;
+}
+
+int ServerCallbackProxy::damageUnitAsSpell(lua_State * L)
+{
+	LuaStack S(L);
+
+	ServerCallback * object = nullptr;
+	const IBattleInfoCallback * battle = nullptr;
+	const battle::Unit * unit = nullptr;
+	int64_t damageAmount = 0;
+	const ::spells::Spell * spell = nullptr;
+	const battle::Unit * source = nullptr;
+
+	S.get(1, object);
+	S.getNonNull(2, battle);
+	S.getNonNull(3, unit);
+	S.get(4, damageAmount);
+	S.getNonNull(5, spell);
+	S.getNonNull(6, source);
+
+	const auto * unitInBattle = battle->battleGetUnitByID(unit->unitId());
+	if(unitInBattle != unit)
+		throw std::runtime_error("Damage target must be a unit in the given battle");
+	const auto * sourceInBattle = battle->battleGetUnitByID(source->unitId());
+	if(sourceInBattle != source)
+		throw std::runtime_error("Damage source must be a unit in the given battle");
+
+	BattleStackAttacked bsa;
+	bsa.damageAmount = damageAmount;
+	bsa.stackAttacked = unit->unitId();
+	bsa.attackerID = source->unitId();
+	auto newState = unit->acquireState();
+	CStack::prepareAttacked(bsa, *object->getRNG(), newState);
+	bsa.flags |= BattleStackAttacked::SPELL_EFFECT;
+	bsa.spellID = spell->getId();
 
 	StacksInjured si;
 	si.battleID = battle->getBattle()->getBattleID();

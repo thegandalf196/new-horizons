@@ -57,6 +57,8 @@ enum class StackStatusIconKind
 	SPELL_LOCK,
 	PHYSICAL_POISON,
 	REGENERATION,
+	SHADOW_GIFT_BUFF,
+	SHADOW_GIFT_CAP,
 	FOCUS_OR_ARCANE,
 	ORDINARY
 };
@@ -76,8 +78,10 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 		case StackStatusIconKind::SPELL_LOCK: return 1;
 		case StackStatusIconKind::PHYSICAL_POISON: return 2;
 		case StackStatusIconKind::REGENERATION: return 3;
-		case StackStatusIconKind::FOCUS_OR_ARCANE: return 4;
-		case StackStatusIconKind::ORDINARY: return 5;
+		case StackStatusIconKind::SHADOW_GIFT_BUFF: return 4;
+		case StackStatusIconKind::SHADOW_GIFT_CAP: return 5;
+		case StackStatusIconKind::FOCUS_OR_ARCANE: return 6;
+		case StackStatusIconKind::ORDINARY: return 7;
 	}
 	return 4;
 }

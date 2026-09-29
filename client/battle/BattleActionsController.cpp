@@ -60,6 +60,7 @@ using TextReplacementList = std::vector<TextReplacement>;
 
 constexpr std::string_view transfigureMatterJsonKey = "new-horizons:transfigureMatter";
 constexpr std::string_view stormOfDaggersJsonKey = "new-horizons:stormOfDaggers";
+constexpr std::string_view shadowGiftJsonKey = "new-horizons:shadowGift";
 constexpr int32_t stormOfDaggersMaximumTargets = 5;
 
 bool isStormOfDaggersSpell(const CSpell * spell)
@@ -75,6 +76,11 @@ bool isSoulChainSpell(const CSpell * spell)
 bool isLifeDrainSpell(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL;
+}
+
+bool isShadowGiftSpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == shadowGiftJsonKey;
 }
 
 bool isCanonicalLandMine(const CBattleInfoCallback & battle, const CSpell * spell)
@@ -1794,6 +1800,11 @@ void BattleActionsController::setCureAfflictionPicker(std::function<bool(const B
 	cureAfflictionPicker = std::move(picker);
 }
 
+void BattleActionsController::setShadowGiftFactory(ShadowGiftFactory factory)
+{
+	shadowGiftFactory = std::move(factory);
+}
+
 void BattleActionsController::setTemporalFieldFactory(TemporalFieldFactory factory)
 {
 	temporalFieldFactory = std::move(factory);
@@ -3088,11 +3099,24 @@ void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, c
 				}
 			}
 
-			// Magic Arrow is the one New Horizons spell whose optional cost is
-			// chosen only after the generic target selector has accepted a legal
-			// enemy stack.  Runtime supplies the adapter only for the saved V2
-			// ruleset; all legacy games and every other spell follow the existing
-			// request path unchanged.
+			// Shadow Gift's sacrifice is chosen only after the generic selector
+			// accepts a friendly stack. Runtime installs this adapter only for
+			// the saved v3 spell roster.
+			if(action.get() == PossiblePlayerBattleAction::AIMED_SPELL_CREATURE
+				&& heroSpellToCast
+				&& isShadowGiftSpell(heroSpellToCast->spell.toSpell())
+				&& shadowGiftFactory)
+			{
+				const BattleAction pending = *heroSpellToCast;
+				if(const auto context = shadowGiftFactory(pending, targetHex, targetStack))
+				{
+					ENGINE->windows().createAndPushWindow<ShadowGiftWindow>(*context);
+					return;
+				}
+			}
+
+			// Magic Arrow's optional Overcharge is chosen only after its generic
+			// target selector accepts a legal enemy stack.
 			if(action.get() == PossiblePlayerBattleAction::AIMED_SPELL_CREATURE
 				&& heroSpellToCast
 				&& heroSpellToCast->spell == SpellID(SpellID::MAGIC_ARROW)

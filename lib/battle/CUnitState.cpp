@@ -182,6 +182,7 @@ CHealth & CHealth::operator=(const CHealth & other)
 	resurrected = other.resurrected;
 	unusableRemains = other.unusableRemains;
 	temporaryHitPoints = other.temporaryHitPoints;
+	shadowGiftMaximumHealthLost = other.shadowGiftMaximumHealthLost;
 	return *this;
 }
 
@@ -219,14 +220,26 @@ int64_t CHealth::creatureHealthAvailable() const
 
 int64_t CHealth::total() const
 {
-	return static_cast<int64_t>(owner->getMaxHealth()) * owner->unitBaseAmount();
+	const int64_t originalMaximum = static_cast<int64_t>(owner->getMaxHealth()) * owner->unitBaseAmount();
+	return std::max<int64_t>(0, originalMaximum - shadowGiftMaximumHealthLost);
 }
 
 void CHealth::damage(int64_t & amount)
 {
+	damage(amount, false, false);
+}
+
+void CHealth::damage(int64_t & amount, const bool destroyRemains)
+{
+	damage(amount, destroyRemains, false);
+}
+
+void CHealth::damage(int64_t & amount, const bool destroyRemains, const bool bypassTemporaryHitPoints)
+{
 	const int32_t oldCount = getCount();
-	amount = std::clamp<int64_t>(amount, 0, available());
-	const int64_t absorbed = std::min(amount, temporaryHitPoints);
+	const int64_t eligibleHealth = bypassTemporaryHitPoints ? creatureHealthAvailable() : available();
+	amount = std::clamp<int64_t>(amount, 0, eligibleHealth);
+	const int64_t absorbed = bypassTemporaryHitPoints ? 0 : std::min(amount, temporaryHitPoints);
 	temporaryHitPoints -= absorbed;
 	int64_t creatureDamage = amount - absorbed;
 
@@ -249,12 +262,6 @@ void CHealth::damage(int64_t & amount)
 	}
 
 	addResurrected(getCount() - oldCount);
-}
-
-void CHealth::damage(int64_t & amount, bool destroyRemains)
-{
-	const int32_t oldCount = getCount();
-	damage(amount);
 
 	if(destroyRemains)
 		addUnusableRemains(oldCount - getCount());
@@ -271,6 +278,8 @@ HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 	{
 	case EHealLevel::HEAL:
 		maxHeal = std::max(0, unitHealth - firstHPleft);
+		if(shadowGiftMaximumHealthLost > 0)
+			maxHeal = std::min(maxHeal, total() - creatureHealthAvailable());
 		break;
 	case EHealLevel::RESURRECT:
 		maxHeal = total() - creatureHealthAvailable();
@@ -278,6 +287,10 @@ HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 		break;
 	default:
 		assert(level == EHealLevel::OVERHEAL);
+		// Preserve legacy Overheal behaviour for ordinary units. Once Shadow Gift
+		// has reduced this stack's battle cap, healing cannot grow it past that cap.
+		if(shadowGiftMaximumHealthLost > 0)
+			maxHeal = total() - creatureHealthAvailable();
 		break;
 	}
 
@@ -319,6 +332,7 @@ void CHealth::reset(bool clearUnusableRemains)
 	firstHPleft = 0;
 	resurrected = 0;
 	temporaryHitPoints = 0;
+	shadowGiftMaximumHealthLost = 0;
 	if(clearUnusableRemains)
 		unusableRemains = 0;
 }
@@ -354,6 +368,24 @@ void CHealth::addTemporaryHitPoints(int64_t amount)
 		temporaryHitPoints += amount;
 }
 
+int64_t CHealth::getCreatureHealthAvailable() const
+{
+	return creatureHealthAvailable();
+}
+
+int64_t CHealth::getShadowGiftMaximumHealthLost() const
+{
+	return shadowGiftMaximumHealthLost;
+}
+
+void CHealth::addShadowGiftMaximumHealthLoss(const int64_t amount)
+{
+	if(amount < 0)
+		throw std::invalid_argument("Negative Shadow Gift maximum-health loss");
+	const int64_t originalMaximum = static_cast<int64_t>(owner->getMaxHealth()) * owner->unitBaseAmount();
+	shadowGiftMaximumHealthLost += std::min(amount, std::max<int64_t>(0, originalMaximum - shadowGiftMaximumHealthLost));
+}
+
 void CHealth::takeResurrected()
 {
 	if(resurrected != 0)
@@ -374,6 +406,10 @@ void CHealth::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("resurrected", resurrected, 0);
 	handler.serializeInt("unusableRemains", unusableRemains, 0);
 	handler.serializeInt("temporaryHitPoints", temporaryHitPoints, 0);
+	handler.serializeInt("shadowGiftMaximumHealthLost", shadowGiftMaximumHealthLost, 0);
+	const int64_t originalMaximum = static_cast<int64_t>(owner->getMaxHealth()) * owner->unitBaseAmount();
+	if(shadowGiftMaximumHealthLost < 0 || shadowGiftMaximumHealthLost > originalMaximum)
+		throw std::runtime_error("Invalid Shadow Gift maximum-health loss");
 }
 
 ///CUnitState
@@ -470,6 +506,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	phantomInitialIntegrity = other.phantomInitialIntegrity;
 	phantomIntegrity = other.phantomIntegrity;
 	phantomRoundsRemaining = other.phantomRoundsRemaining;
+	phantomShadowGiftMaximumHealthLost = other.phantomShadowGiftMaximumHealthLost;
 	casts = other.casts;
 	counterAttacks = other.counterAttacks;
 	shots = other.shots;
@@ -697,6 +734,37 @@ int64_t CUnitState::getAvailableHealth() const
 int64_t CUnitState::getTotalHealth() const
 {
 	return health.total();
+}
+
+int64_t CUnitState::getShadowGiftCurrentHealth() const
+{
+	return phantomInitialIntegrity > 0 ? phantomIntegrity : health.getCreatureHealthAvailable();
+}
+
+int64_t CUnitState::getShadowGiftMaximumHealth() const
+{
+	return phantomInitialIntegrity > 0
+		? std::max<int64_t>(0, phantomInitialIntegrity - phantomShadowGiftMaximumHealthLost)
+		: health.total();
+}
+
+int64_t CUnitState::getShadowGiftMaximumHealthLost() const
+{
+	return health.getShadowGiftMaximumHealthLost() + phantomShadowGiftMaximumHealthLost;
+}
+
+void CUnitState::addShadowGiftMaximumHealthLoss(const int64_t amount)
+{
+	if(amount < 0)
+		throw std::invalid_argument("Negative Shadow Gift maximum-health loss");
+	if(phantomInitialIntegrity > 0)
+	{
+		const int64_t effectiveMaximum = getShadowGiftMaximumHealth();
+		const int64_t actualLoss = std::min(amount, effectiveMaximum);
+		phantomShadowGiftMaximumHealthLost += actualLoss;
+		return;
+	}
+	health.addShadowGiftMaximumHealthLoss(amount);
 }
 
 int64_t CUnitState::getPhantomIntegrity() const
@@ -1025,6 +1093,10 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("phantomInitialIntegrity", phantomInitialIntegrity, 0);
 	handler.serializeInt("phantomIntegrity", phantomIntegrity, 0);
 	handler.serializeInt("phantomRoundsRemaining", phantomRoundsRemaining, 0);
+	handler.serializeInt("phantomShadowGiftMaximumHealthLost", phantomShadowGiftMaximumHealthLost, 0);
+	if(phantomShadowGiftMaximumHealthLost < 0
+		|| phantomShadowGiftMaximumHealthLost > phantomInitialIntegrity)
+		throw std::runtime_error("Invalid Phantom Army Shadow Gift cap loss");
 
 	handler.serializeStruct("casts", casts);
 	handler.serializeStruct("counterAttacks", counterAttacks);
@@ -1080,6 +1152,7 @@ void CUnitState::reset()
 	phantomInitialIntegrity = 0;
 	phantomIntegrity = 0;
 	phantomRoundsRemaining = 0;
+	phantomShadowGiftMaximumHealthLost = 0;
 
 	casts.reset();
 	counterAttacks.reset();
@@ -1143,7 +1216,7 @@ void CUnitState::load(const JsonNode & data)
 		|| regenerationRateMillionths < 0
 		|| regenerationRateMillionths > newHorizonsMagic::REGENERATION_MAX_RATE_MILLIONTHS
 		|| regenerationPendingMicroHealth < 0
-		|| phantomIntegrity > phantomInitialIntegrity
+		|| phantomIntegrity > phantomInitialIntegrity - phantomShadowGiftMaximumHealthLost
 		|| phantomRoundsRemaining > newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS
 		|| (phantomInitialIntegrity == 0 && (phantomIntegrity != 0 || phantomRoundsRemaining != 0))
 		|| (phantomInitialIntegrity > 0 && (!summoned || natureSummoned || cloned))
@@ -1159,6 +1232,16 @@ void CUnitState::damage(int64_t & amount)
 }
 
 void CUnitState::damage(int64_t & amount, bool destroyRemains)
+{
+	damageInternal(amount, destroyRemains, false);
+}
+
+void CUnitState::damageShadowGiftSacrifice(int64_t & amount)
+{
+	damageInternal(amount, false, true);
+}
+
+void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints)
 {
 	if(isTimeStopped())
 	{
@@ -1191,7 +1274,7 @@ void CUnitState::damage(int64_t & amount, bool destroyRemains)
 	}
 	else
 	{
-		health.damage(amount, destroyRemains);
+		health.damage(amount, destroyRemains, bypassTemporaryHitPoints);
 	}
 
 	bool disintegrate = hasBonusOfType(BonusType::DISINTEGRATE);

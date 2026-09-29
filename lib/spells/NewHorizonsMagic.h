@@ -84,6 +84,9 @@ constexpr int SPELLCRAFT_EMPOWER_BONUS_PERCENT = 25;
 inline constexpr std::string_view NATURE_POISON_SPELL = "new-horizons:poison";
 inline constexpr std::string_view NATURE_REGENERATION_SPELL = "new-horizons:regeneration";
 inline constexpr std::string_view SHADOW_LIFE_DRAIN_SPELL = "new-horizons:lifeDrain";
+inline constexpr std::string_view SHADOW_GIFT_SPELL = "new-horizons:shadowGift";
+inline constexpr std::string_view SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic";
+inline constexpr std::string_view SHADOW_DARK_GIFT_PERK = "new-horizons:shadowMagic.darkGift";
 inline constexpr std::string_view NATURE_MAGIC_SKILL = "new-horizons:natureMagic";
 inline constexpr std::string_view NATURE_HERBALIST = "new-horizons:natureMagic.herbalist";
 inline constexpr std::string_view STORM_OF_DAGGERS_SPELL = "new-horizons:stormOfDaggers";
@@ -135,6 +138,9 @@ DLL_LINKAGE bool curseRulesEnabled(const JsonNode & rules, SpellID spell);
 /// True only when the saved-v3 roster contains canonical Level-1 Shadow Sorrow
 /// at its fixed four-Mana cost. Earlier snapshots keep their recorded spell.
 DLL_LINKAGE bool sorrowRulesEnabled(const JsonNode & rules, SpellID spell);
+/// True only when the saved-v3 roster contains canonical Shadow Gift.
+/// Legacy snapshots never acquire newly installed Shadow Gift content.
+DLL_LINKAGE bool shadowGiftEnabled(const JsonNode & rules, SpellID spell);
 /// Canonical saved-v3 Curse / Sorrow durations, including Malediction when
 /// selected. Legacy, missing, or non-canonical saved spell rows return nullopt.
 DLL_LINKAGE std::optional<int> curseDurationRounds(const JsonNode & rules, const CGHeroInstance * hero,
@@ -162,6 +168,8 @@ DLL_LINKAGE int masterChainLightningRetentionPercent(int heroLevel);
 /// this ordinary cap.
 DLL_LINKAGE int blessDurationFromPowerTerm(int64_t spellPowerTerm);
 DLL_LINKAGE bool hasBenedictionPerk(const CGHeroInstance * hero);
+/// Dark Gift reduces Shadow Gift's actual HP sacrifice, never its selected damage tier.
+DLL_LINKAGE bool hasDarkGiftPerk(const CGHeroInstance * hero);
 /// Returns a hero-contextual spell description for presentation surfaces.
 /// Legacy saves and all other spells retain the ordinary static description.
 DLL_LINKAGE std::string spellDescriptionForHero(const CGHeroInstance * hero,

@@ -165,6 +165,7 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	result.defend = currentDefendStatus(stack, battleCallback);
 	if(stack)
 	{
+		result.shadowGift.maximumHealthLost = stack->getShadowGiftMaximumHealthLost();
 		result.physicalPoison = newHorizonsBattleStatus::makePhysicalPoisonStatus(
 			stack->physicalPoisonBaseDamage,
 			stack->physicalPoisonActivationsRemaining,
@@ -172,11 +173,20 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 		for(const auto effect : stack->activeSpells())
 		{
 			const auto * spell = effect.toSpell();
-			if(!spell || !newHorizonsBattleStatus::isRegeneration(spell->getJsonKey()))
+			if(!spell)
 				continue;
 
 			const auto spellBonuses = stack->getBonuses(
 				Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(effect)));
+			if(newHorizonsBattleStatus::isShadowGift(spell->getJsonKey()))
+			{
+				result.shadowGift = newHorizonsBattleStatus::shadowGiftStatus(
+					*spellBonuses, result.shadowGift.maximumHealthLost);
+				continue;
+			}
+			if(!newHorizonsBattleStatus::isRegeneration(spell->getJsonKey()))
+				continue;
+
 			const auto remainingRounds = spellBonuses->empty()
 				? 0 : std::max<int>(0, spellBonuses->front()->turnsRemain);
 			result.regeneration = {
@@ -295,6 +305,8 @@ newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
 		return newHorizonsBattleStatus::StackStatusIconKind::SPELL_LOCK;
 	if(newHorizonsBattleStatus::isRegeneration(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::REGENERATION;
+	if(newHorizonsBattleStatus::isShadowGift(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_BUFF;
 	if(newHorizonsBattleStatus::isFocusMagic(spellKey) || newHorizonsBattleStatus::isArcaneBreach(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::FOCUS_OR_ARCANE;
 	return newHorizonsBattleStatus::StackStatusIconKind::ORDINARY;
@@ -447,7 +459,13 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		statusEntries.push_back({newHorizonsBattleStatus::StackStatusIconKind::PHYSICAL_POISON, std::nullopt});
 		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::PHYSICAL_POISON);
 	}
-	const auto totalEffectCount = spells.size() + (physicalPoison.active() ? 1 : 0);
+	if(displayedStatus.shadowGift.hasMaximumHealthLoss())
+	{
+		statusEntries.push_back({newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_CAP, std::nullopt});
+		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_CAP);
+	}
+	const auto totalEffectCount = spells.size() + (physicalPoison.active() ? 1 : 0)
+		+ (displayedStatus.shadowGift.hasMaximumHealthLoss() ? 1 : 0);
 	const auto displayPlan = newHorizonsBattleStatus::stackStatusDisplayPlan(statusKinds, totalEffectCount);
 	int printed = 0;
 	for(const auto entryIndex : displayPlan.visibleEntryIndices)
@@ -469,6 +487,19 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			++printed;
 			continue;
 		}
+		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_CAP)
+		{
+			const SpellID shadowGiftId = SpellID::decode(std::string(newHorizonsBattleStatus::SHADOW_GIFT_SPELL_KEY));
+			const auto shadowGiftFrame = shadowGiftId.getNum() + 1;
+			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), shadowGiftFrame, 0, slotX, slotY));
+			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
+				ETextAlignment::BOTTOMRIGHT, Colors::YELLOW,
+				"-" + TextOperations::formatMetric(displayedStatus.shadowGift.maximumHealthLost, 4)));
+			const auto tooltip = newHorizonsBattleStatus::shadowGiftCapTooltip(displayedStatus.shadowGift);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+			++printed;
+			continue;
+		}
 
 		const SpellID effect = *entry.spell;
 		//FIXME: support permanent duration
@@ -484,6 +515,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
 		const bool plague = spellKey == PLAGUE_SPELL_KEY;
 		const bool soulChain = spellKey == newHorizonsSoulChain::SPELL_ID;
+		const bool shadowGift = newHorizonsBattleStatus::isShadowGift(spellKey);
 		const auto frailty = currentFrailtyStatus(stack, spellKey, spellBonuses);
 		const auto lockStatus = spellLock
 			? newHorizonsBattleStatus::spellLockStatus(*spellBonuses)
@@ -493,7 +525,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain)
+		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift)
 		{
 			const std::string badge = timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
@@ -557,11 +589,18 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 				effect.toSpell()->getDescriptionTranslated(0), stack, battleCallback.get());
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
+		else if(shadowGift)
+		{
+			const auto tooltip = displayedStatus.shadowGift.hasTimedBuff()
+				? newHorizonsBattleStatus::shadowGiftBuffTooltip(displayedStatus.shadowGift)
+				: effect.toSpell()->getDescriptionTranslated(0);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
 
 		++printed;
 	}
 
-	if(spells.empty() && !physicalPoison.active())
+	if(spells.empty() && !physicalPoison.active() && !displayedStatus.shadowGift.hasMaximumHealthLoss())
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x, firstPos.y, 48, 36), EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[674]));
 	if(displayPlan.ellipsisUsesSlot)
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x + offset.x * 2, firstPos.y + offset.y * 2 - 4, 48, 36), EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "..."));

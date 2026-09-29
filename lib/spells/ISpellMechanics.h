@@ -112,6 +112,7 @@ public:
 	virtual bool getForceNonSmartTargeting() const { return false; }
 	virtual bool getSelectiveDispel() const { return false; }
 	virtual bool getMassSlow() const { return false; }
+	virtual int32_t getShadowGiftSacrificePercent() const { return 0; }
 	/// An immediate additional cast granted by Tower Metamagic.  This is an
 	/// authoritative action flag, not a client-side effect hint.
 	virtual bool isMetamagicFollowup() const { return false; }
@@ -154,6 +155,7 @@ public:
 	bool getForceNonSmartTargeting() const override;
 	bool getSelectiveDispel() const override;
 	bool getMassSlow() const override;
+	int32_t getShadowGiftSacrificePercent() const override;
 	bool isMetamagicFollowup() const override;
 	bool isMetamagicGrand() const override;
 	uint32_t getMetamagicTargetUnitId() const override;
@@ -174,6 +176,7 @@ public:
 	void setForceNonSmartTargeting(bool value);
 	void setSelectiveDispel(bool value);
 	void setMassSlow(bool value);
+	void setShadowGiftSacrificePercent(int32_t value);
 	void setMetamagicFollowup(bool value);
 	void setMetamagicGrand(bool value);
 	void setMetamagicTargetUnitId(uint32_t value);
@@ -212,6 +215,7 @@ private:
 	bool forceNonSmartTargeting = false;
 	bool selectiveDispel = false;
 	bool massSlow = false;
+	int32_t shadowGiftSacrificePercent = 0;
 	bool metamagicFollowup = false;
 	bool metamagicGrand = false;
 	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();
@@ -316,6 +320,11 @@ public:
 	virtual bool isNewHorizonsCure() const { return false; }
 	virtual SpellID getCureAffliction() const { return SpellID::NONE; }
 	virtual bool isMassSlow() const { return false; }
+	/// Selected Shadow Gift tier and shared preview calculations. Invalid or
+	/// legacy casts return zero and cannot acquire the saved-v3 mechanic.
+	virtual int32_t getShadowGiftSacrificePercent() const { return 0; }
+	int32_t getShadowGiftSacrificeCostBasisPoints() const;
+	int32_t getShadowGiftDamageBonusBasisPoints() const;
 	/// True only for a saved v3 Storm of Daggers spell entry.
 	virtual bool isNewHorizonsStormOfDaggers() const { return false; }
 	/// Sets the selected stack count for shared cast/preview calculations. Returns
@@ -422,6 +431,7 @@ public:
 	bool isSelectiveDispel() const override;
 	bool isNewHorizonsCure() const override;
 	bool isMassSlow() const override;
+	int32_t getShadowGiftSacrificePercent() const override;
 	bool isNewHorizonsStormOfDaggers() const override;
 	bool setStormOfDaggersTargetCount(int32_t selectedTargetCount) override;
 	int64_t getStormOfDaggersDamagePerTarget(int32_t selectedTargetCount) const override;
@@ -497,6 +507,7 @@ private:
 	bool counterspellNegated = false;
 	bool selectiveDispel = false;
 	bool massSlow = false;
+	int32_t shadowGiftSacrificePercent = 0;
 	bool metamagicFollowup = false;
 	bool metamagicGrand = false;
 	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();

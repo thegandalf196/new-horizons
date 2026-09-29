@@ -63,6 +63,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsArchery.cpp
 	battle/NewHorizonsCombatSkills.cpp
 	battle/NewHorizonsShroud.cpp
+	battle/NewHorizonsShadowGift.cpp
 	battle/BattleLayout.cpp
 	battle/BattleProxy.cpp
 	battle/BattleStateInfoForRetreat.cpp

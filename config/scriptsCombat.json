@@ -214,5 +214,19 @@
 			"additionalProperties" : false
 		},
 		"description" : "Inert Soul Chain link marker; echo resolution is authoritative in battle damage packets."
+	},
+	"shadowGift" : {
+		"implements" : "combatEvent",
+		"script" : "combat/shadowGift",
+		"patches" : [ ],
+		"priority" : 50,
+		"schema" : {
+			"required" : ["casterSide"],
+			"properties" : {
+				"casterSide" : { "type" : "integer", "enum" : [0, 1], "description" : "battle side whose hero cast Shadow Gift" }
+			},
+			"additionalProperties" : false
+		},
+		"description" : "Shadow Gift attack trigger. Its bonus value is the extra Shadow-damage fraction in basis points (1750 means 17.5%)."
 	}
 }

@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "shadow-gift",
+  "source": {
+    "path": "$HOME/.codex/generated_images/01a0ed3c-48ff-70c3-adfa-7f0cdb44aa31/exec-78407eec-0e9f-476e-a2cf-d5e707b800e7.png",
+    "filename": "exec-78407eec-0e9f-476e-a2cf-d5e707b800e7.png",
+    "byte_size": 2050274,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "900c287fc10afa69c1bfee69674791dd366b096032103ad7361281913546e351"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "900c287fc10afa69c1bfee69674791dd366b096032103ad7361281913546e351"
+    },
+    {
+      "file": "shadow-gift-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "f8d85530382e43c0823c674c5577c00d07d089b28bd07f1ebcb0cfa8d0e26b6b"
+    },
+    {
+      "file": "shadow-gift-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "639223d649adb952c24af07923ed0d44fedf93bbc8bed43092010fc535494e08"
+    },
+    {
+      "file": "shadow-gift-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "f01f2a80b47472aa9779181e04e95058593e0c79c38815af1bfbe8b5e67e280c"
+    },
+    {
+      "file": "shadow-gift-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "1f8d04b56b913a804b83dc0f75109eef683385c0532b1804c15960572c4053bb"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "shadow-gift-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "shadow-gift-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "shadow-gift-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "shadow-gift-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

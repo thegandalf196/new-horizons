@@ -292,6 +292,33 @@ bool sorrowRulesEnabled(const JsonNode & rules, const SpellID spell)
 		rules, spell, SpellID(SpellID::SORROW), "core:sorrow", expectedCosts);
 }
 
+bool shadowGiftEnabled(const JsonNode & rules, const SpellID spell)
+{
+	const auto * definition = spell.toSpell();
+	if(!definition || definition->getJsonKey() != SHADOW_GIFT_SPELL || !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !rules["spells"].isStruct())
+		return false;
+
+	constexpr std::array<int, 4> expectedCosts{12, 12, 12, 12};
+	const auto found = rules["spells"].Struct().find(std::string(SHADOW_GIFT_SPELL));
+	if(found == rules["spells"].Struct().end() || !found->second.isStruct())
+		return false;
+	const auto & row = found->second;
+	if(!integer(row["level"], 3, 3)
+		|| !row["schools"].isVector() || row["schools"].Vector().size() != 1
+		|| !row["schools"].Vector().front().isString()
+		|| row["schools"].Vector().front().String() != "new-horizons:shadow"
+		|| !row["costs"].isVector() || row["costs"].Vector().size() != expectedCosts.size()
+		|| (!row["active"].isNull() && !row["active"].isBool())
+		|| !spellAllowedBySavedRoster(rules, spell))
+		return false;
+	for(size_t index = 0; index < expectedCosts.size(); ++index)
+		if(!integer(row["costs"].Vector()[index], expectedCosts[index], expectedCosts[index]))
+			return false;
+	return true;
+}
+
 bool curseRulesEnabled(const JsonNode & rules, const SpellID spell)
 {
 	constexpr std::array<int, 4> expectedCosts{4, 4, 3, 3};
@@ -419,6 +446,11 @@ int blessDurationFromPowerTerm(int64_t spellPowerTerm)
 bool hasBenedictionPerk(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(LIGHT_MAGIC_SKILL), std::string(LIGHT_BENEDICTION));
+}
+
+bool hasDarkGiftPerk(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SHADOW_MAGIC_SKILL), std::string(SHADOW_DARK_GIFT_PERK));
 }
 
 std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::Spell * spell, int schoolLevel)

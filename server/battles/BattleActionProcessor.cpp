@@ -14,6 +14,7 @@
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
+#include "../../lib/battle/NewHorizonsShadowGift.h"
 
 #include "BattleProcessor.h"
 
@@ -308,6 +309,89 @@ static bool validateCanonicalQuicksandTargets(const CBattleInfoCallback & battle
 	return true;
 }
 
+static bool validateShadowGiftAction(const CBattleInfoCallback & battle, const BattleAction & action,
+	const CGHeroInstance * hero, const CSpell * spell, const battle::Target & target)
+{
+	const bool isShadowGift = spell && spell->getJsonKey() == newHorizonsShadowGift::SPELL_ID;
+	if(!isShadowGift)
+		return action.spellShadowGiftSacrificePercent == 0;
+
+	const auto * battleState = battle.getBattle();
+	if(!battleState || !hero
+		|| !newHorizonsMagic::shadowGiftEnabled(battleState->getMagicRules(), spell->getId())
+		|| !newHorizonsShadowGift::isValidSacrificePercent(action.spellShadowGiftSacrificePercent)
+		|| target.size() != 1 || !target.front().unitValue)
+		return false;
+
+	const auto * recipient = dynamic_cast<const CStack *>(target.front().unitValue);
+	if(!recipient || recipient->unitSide() != action.side || !recipient->alive()
+		|| !recipient->isValidTarget() || recipient->isClone() || recipient->isTimeStopped())
+		return false;
+
+	const bool darkGift = newHorizonsMagic::hasDarkGiftPerk(hero);
+	const int32_t costBasisPoints = newHorizonsShadowGift::getSacrificeCostBasisPoints(
+		action.spellShadowGiftSacrificePercent, darkGift);
+	return newHorizonsShadowGift::getSacrificeHealthAmount(
+		recipient->getShadowGiftCurrentHealth(), costBasisPoints) > 0
+		&& newHorizonsShadowGift::getSacrificeHealthAmount(
+			recipient->getShadowGiftMaximumHealth(), costBasisPoints) > 0;
+}
+
+static void applyShadowGiftSacrifice(CGameHandler & handler, const CBattleInfoCallback & battle,
+	const BattleAction & action, const CStack & recipient, const int32_t costBasisPoints)
+{
+	const int64_t currentCost = newHorizonsShadowGift::getSacrificeHealthAmount(
+		recipient.getShadowGiftCurrentHealth(), costBasisPoints);
+	const int64_t maximumCost = newHorizonsShadowGift::getSacrificeHealthAmount(
+		recipient.getShadowGiftMaximumHealth(), costBasisPoints);
+	if(currentCost <= 0 || maximumCost <= 0)
+		throw std::logic_error("Validated Shadow Gift cast has no payable health cost");
+
+	auto state = recipient.acquireState();
+	state->addShadowGiftMaximumHealthLoss(maximumCost);
+
+	BattleStackAttacked hit;
+	hit.attackerID = recipient.unitId();
+	hit.stackAttacked = recipient.unitId();
+	hit.damageAmount = currentCost;
+	hit.flags |= BattleStackAttacked::SPELL_EFFECT;
+	hit.spellID = action.spell;
+	CStack::prepareAttacked(hit, handler.getRandomGenerator(), state, false, true);
+
+	StacksInjured injury;
+	injury.battleID = battle.getBattle()->getBattleID();
+	injury.stacks.push_back(std::move(hit));
+	handler.sendAndApply(injury);
+}
+
+static std::vector<std::shared_ptr<Bonus>> activeShadowGiftStatusBonuses(
+	const CStack & recipient, const SpellID spell)
+{
+	static const ScriptID shadowGiftStatusSubtype(ScriptID::decode("core:shadowGift"));
+	const auto selector = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell))
+		.And(Selector::typeSubtype(BonusType::COMBAT_EVENT_TRIGGER, BonusSubtypeID(shadowGiftStatusSubtype)));
+	const auto bonuses = recipient.getBonuses(selector);
+	std::vector<std::shared_ptr<Bonus>> active;
+	std::copy_if(bonuses->begin(), bonuses->end(), std::back_inserter(active), [](const auto & bonus)
+	{
+		return bonus && bonus->val > 0 && bonus->turnsRemain > 0;
+	});
+	return active;
+}
+
+static bool hasNewActiveShadowGiftStatus(const CStack & recipient, const SpellID spell,
+	const std::vector<std::shared_ptr<Bonus>> & previous)
+{
+	const auto current = activeShadowGiftStatusBonuses(recipient, spell);
+	return std::any_of(current.begin(), current.end(), [&](const auto & bonus)
+	{
+		return std::none_of(previous.begin(), previous.end(), [&](const auto & oldBonus)
+		{
+			return bonus.get() == oldBonus.get();
+		});
+	});
+}
+
 static bool canonicalFireWallDirection(BattleHex::EDir direction)
 {
 	return direction >= BattleHex::TOP_LEFT && direction <= BattleHex::LEFT;
@@ -531,6 +615,7 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 	parameters.setSelectiveDispel(ba.spellSelectiveDispel);
 	parameters.setCureAffliction(ba.spellCureAffliction);
 	parameters.setMassSlow(ba.spellMassSlow);
+	parameters.setShadowGiftSacrificePercent(ba.spellShadowGiftSacrificePercent);
 	parameters.setMetamagicFollowup(ba.metamagicFollowup);
 	parameters.setMetamagicGrand(shouldActivateGrandMetamagic(battle, ba.side, hero, ba.metamagicFollowup));
 	if(ba.metamagicFollowup && !ba.target.empty() && ba.target.front().unitValue >= 0)
@@ -554,6 +639,8 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 	if(newHorizonsMagic::quicksandSelectedPlacementEnabled(
 		battle.getBattle()->getMagicRules(), spell->getId())
 		&& !validateCanonicalQuicksandTargets(battle, *mechanics, target))
+		return false;
+	if(!validateShadowGiftAction(battle, ba, hero, spell, target))
 		return false;
 
 	return mechanics->canBeCast(problem) && !target.empty() && mechanics->canBeCastAt(target, problem);
@@ -584,6 +671,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	parameters.setSelectiveDispel(ba.spellSelectiveDispel);
 	parameters.setCureAffliction(ba.spellCureAffliction);
 	parameters.setMassSlow(ba.spellMassSlow);
+	parameters.setShadowGiftSacrificePercent(ba.spellShadowGiftSacrificePercent);
 	parameters.setMetamagicFollowup(ba.metamagicFollowup);
 	const bool grandActivation = shouldActivateGrandMetamagic(battle, ba.side, h, ba.metamagicFollowup);
 	parameters.setMetamagicGrand(grandActivation);
@@ -622,6 +710,11 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		&& !validateCanonicalQuicksandTargets(battle, *m, target))
 	{
 		gameHandler->complain("New Horizons Quicksand requires the exact number of unique empty hexes");
+		return false;
+	}
+	if(!validateShadowGiftAction(battle, ba, h, s, target))
+	{
+		gameHandler->complain("Shadow Gift requires one eligible allied stack and a valid 10/20/30 percent sacrifice choice");
 		return false;
 	}
 
@@ -670,7 +763,27 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		parameters.setCounterspell(counteringSide, counterspellNegated);
 	}
 
+	const auto * shadowGiftRecipient = s->getJsonKey() == newHorizonsShadowGift::SPELL_ID
+		&& target.size() == 1 ? dynamic_cast<const CStack *>(target.front().unitValue) : nullptr;
+	// Keep prior status objects alive across the cast so a resisted recast that
+	// leaves an older Gift in place cannot be mistaken for a successful refresh.
+	const auto previousShadowGiftStatuses = shadowGiftRecipient
+		? activeShadowGiftStatusBonuses(*shadowGiftRecipient, s->getId())
+		: std::vector<std::shared_ptr<Bonus>>{};
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
+	if(!counterspellNegated && s->getJsonKey() == newHorizonsShadowGift::SPELL_ID)
+	{
+		// Pay only after the script published the timed status. This keeps the
+		// separate permanent cap/casualty cost from charging an immune or otherwise
+		// suppressed cast that did not actually grant Shadow Gift.
+		if(shadowGiftRecipient && hasNewActiveShadowGiftStatus(
+			*shadowGiftRecipient, s->getId(), previousShadowGiftStatuses))
+		{
+			const int32_t costBasisPoints = newHorizonsShadowGift::getSacrificeCostBasisPoints(
+				ba.spellShadowGiftSacrificePercent, newHorizonsMagic::hasDarkGiftPerk(h));
+			applyShadowGiftSacrifice(*gameHandler, battle, ba, *shadowGiftRecipient, costBasisPoints);
+		}
+	}
 	if(!counterspellNegated && s->getId() == SpellID::CURE && ba.spellCureAffliction == SpellID::POISON
 		&& newHorizonsMagic::cureEnabled(h->getMagicRules(), s->getId()))
 	{

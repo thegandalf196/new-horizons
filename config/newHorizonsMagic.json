@@ -242,6 +242,11 @@
 			"level": 3,
 			"costs": [12, 12, 12, 12]
 		},
+		"new-horizons:shadowGift": {
+			"schools": ["new-horizons:shadow"],
+			"level": 3,
+			"costs": [12, 12, 12, 12]
+		},
 		"new-horizons:holyWrath": {
 			"schools": ["new-horizons:light"],
 			"level": 3,

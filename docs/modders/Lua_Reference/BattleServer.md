@@ -43,6 +43,19 @@ Damages the unit, returning the actual damage dealt and the number of killed cre
 
 - returns `integer, integer` — Damage actually dealt, and the count of killed creatures.
 
+### damageUnitAsSpell
+
+Damages a unit and marks the injury packet with the spell identity. The caller
+must apply the spell's damage modifiers before calling this method.
+
+- param `battle`: [`Battle`](Battle.md) — Battle in which spell damage is dealt.
+- param `unit`: [`Unit`](Unit.md) — Target unit.
+- param `damage`: `integer` — Spell-adjusted damage points to deal.
+- param `spell`: [`Spell`](Spell.md) — Spell identity used to type the injury packet.
+- param `source`: [`Unit`](Unit.md) — Unit credited with the damage; it must belong to `battle`.
+
+- returns `integer, integer` — Damage actually dealt, and the count of killed creatures.
+
 ### removeUnit
 
 Removes the unit or its corpse from the battlefield.

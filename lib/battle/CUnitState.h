@@ -106,6 +106,9 @@ public:
 	/// usable remains.  The default damage path intentionally keeps the legacy
 	/// behaviour and does not mark the new ledger.
 	void damage(int64_t & amount, bool destroyRemains);
+	/// Shadow Gift sacrifices creature HP directly and cannot be absorbed by
+	/// temporary hit points. Other damage paths retain their normal semantics.
+	void damage(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints);
 	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power);
 
 	int32_t getCount() const;
@@ -116,6 +119,9 @@ public:
 	/// Battle-only hit points consumed before the stack's creature health.
 	int64_t getTemporaryHitPoints() const;
 	void addTemporaryHitPoints(int64_t amount);
+	int64_t getCreatureHealthAvailable() const;
+	int64_t getShadowGiftMaximumHealthLost() const;
+	void addShadowGiftMaximumHealthLoss(int64_t amount);
 
 	/// returns total remaining health
 	int64_t available() const;
@@ -138,6 +144,7 @@ private:
 	int32_t resurrected;
 	int32_t unusableRemains;
 	int64_t temporaryHitPoints;
+	int64_t shadowGiftMaximumHealthLost = 0;
 };
 
 class DLL_LINKAGE CUnitState : public Unit
@@ -278,6 +285,9 @@ public:
 	int32_t getUnusableRemains() const override;
 	int64_t getAvailableHealth() const override;
 	int64_t getTotalHealth() const override;
+	int64_t getShadowGiftCurrentHealth() const override;
+	int64_t getShadowGiftMaximumHealth() const override;
+	int64_t getShadowGiftMaximumHealthLost() const override;
 	int64_t getPhantomIntegrity() const override;
 	int64_t getPhantomInitialIntegrity() const override;
 	uint32_t getMaxHealth() const override;
@@ -322,6 +332,8 @@ public:
 
 	void damage(int64_t & amount) override;
 	void damage(int64_t & amount, bool destroyRemains);
+	void damageShadowGiftSacrifice(int64_t & amount);
+	void addShadowGiftMaximumHealthLoss(int64_t amount);
 	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power) override;
 
 	void localInit(const IUnitEnvironment * env_);
@@ -355,10 +367,12 @@ public:
 	void onRemoved();
 
 private:
+	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints);
 	const IUnitEnvironment * env;
 	int64_t phantomInitialIntegrity = 0;
 	int64_t phantomIntegrity = 0;
 	int32_t phantomRoundsRemaining = 0;
+	int64_t phantomShadowGiftMaximumHealthLost = 0;
 
 	BonusCachePerTurn initiativeBasePerTurn;
 	BonusCachePerTurn initiativeBasePresencePerTurn;

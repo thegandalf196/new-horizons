@@ -194,12 +194,17 @@ void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, bool d
 	prepareAttacked(bsa, rand, newState, destroyRemains);
 }
 
-void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, const std::shared_ptr<battle::CUnitState> & customState, bool destroyRemains)
+void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand,
+	const std::shared_ptr<battle::CUnitState> & customState, bool destroyRemains,
+	const bool bypassTemporaryHitPoints)
 {
 	auto initialCount = customState->getCount();
 
 	// compute damage and update bsa.damageAmount
-	customState->damage(bsa.damageAmount, destroyRemains);
+	if(bypassTemporaryHitPoints)
+		customState->damageShadowGiftSacrifice(bsa.damageAmount);
+	else
+		customState->damage(bsa.damageAmount, destroyRemains);
 
 	bsa.killedAmount = initialCount - customState->getCount();
 

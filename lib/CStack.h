@@ -67,7 +67,8 @@ public:
 	static void prepareAttacked(BattleStackAttacked & bsa,
 								vstd::RNG & rand,
 								const std::shared_ptr<battle::CUnitState> & customState,
-								bool destroyRemains = false); //requires bsa.damageAmount filled
+								bool destroyRemains = false,
+								bool bypassTemporaryHitPoints = false); //requires bsa.damageAmount filled
 
 	const CCreature * unitType() const override;
 	int32_t unitBaseAmount() const override;

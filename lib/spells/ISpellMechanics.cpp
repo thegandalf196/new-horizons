@@ -11,6 +11,7 @@
 #include "StdInc.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
+#include "../battle/NewHorizonsShadowGift.h"
 #include "NewHorizonsSpellAvailability.h"
 
 #include "BattleSpellMechanics.h"
@@ -225,6 +226,30 @@ int32_t Mechanics::getNewHorizonsQuicksandPatchCount() const
 	return patchCount.value_or(0);
 }
 
+int32_t Mechanics::getShadowGiftSacrificeCostBasisPoints() const
+{
+	const auto * battleCallback = battle();
+	const auto * battleState = battleCallback ? battleCallback->getBattle() : nullptr;
+	if(!battleState || !newHorizonsMagic::shadowGiftEnabled(battleState->getMagicRules(), getSpellId())
+		|| !newHorizonsShadowGift::isValidSacrificePercent(getShadowGiftSacrificePercent()))
+		return 0;
+
+	return newHorizonsShadowGift::getSacrificeCostBasisPoints(
+		getShadowGiftSacrificePercent(), newHorizonsMagic::hasDarkGiftPerk(getHeroCaster()));
+}
+
+int32_t Mechanics::getShadowGiftDamageBonusBasisPoints() const
+{
+	const auto * battleCallback = battle();
+	const auto * battleState = battleCallback ? battleCallback->getBattle() : nullptr;
+	if(!battleState || !newHorizonsMagic::shadowGiftEnabled(battleState->getMagicRules(), getSpellId())
+		|| !newHorizonsShadowGift::isValidSacrificePercent(getShadowGiftSacrificePercent()))
+		return 0;
+
+	return newHorizonsShadowGift::getDamageBonusBasisPoints(getShadowGiftSacrificePercent(), getEffectPower(),
+		getSpellPowerCoefficientBasisPoints(), getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
+}
+
 int32_t Mechanics::getEmpowerSpellBonusPercent() const
 {
 	const auto * battleCallback = battle();
@@ -422,6 +447,11 @@ bool BattleCast::getMassSlow() const
 	return massSlow;
 }
 
+int32_t BattleCast::getShadowGiftSacrificePercent() const
+{
+	return shadowGiftSacrificePercent;
+}
+
 bool BattleCast::isMetamagicFollowup() const
 {
 	return metamagicFollowup;
@@ -500,6 +530,11 @@ void BattleCast::setSelectiveDispel(bool value)
 void BattleCast::setMassSlow(bool value)
 {
 	massSlow = value;
+}
+
+void BattleCast::setShadowGiftSacrificePercent(const int32_t value)
+{
+	shadowGiftSacrificePercent = value;
 }
 
 void BattleCast::setMetamagicFollowup(bool value)
@@ -610,6 +645,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	caster = event->getCaster();
 	metamagicFollowup = event->isMetamagicFollowup();
 	massSlow = event->getMassSlow();
+	shadowGiftSacrificePercent = event->getShadowGiftSacrificePercent();
 
 	casterSide = cb->playerToSide(caster->getCasterOwner());
 	if(mode == Mode::HERO && dynamic_cast<const CGHeroInstance *>(caster) && !event->isMetamagicFollowup()
@@ -1259,6 +1295,11 @@ SpellID BaseMechanics::getCureAffliction() const
 bool BaseMechanics::isMassSlow() const
 {
 	return massSlow;
+}
+
+int32_t BaseMechanics::getShadowGiftSacrificePercent() const
+{
+	return shadowGiftSacrificePercent;
 }
 
 bool BaseMechanics::isNewHorizonsStormOfDaggers() const

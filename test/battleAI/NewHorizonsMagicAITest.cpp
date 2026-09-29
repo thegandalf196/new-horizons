@@ -25,6 +25,7 @@
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
+#include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/spells/CSpell.h"
@@ -117,6 +118,11 @@ SpellID stormOfDaggersSpell()
 SpellID soulChainSpell()
 {
 	return SpellID(SpellID::decode(std::string(newHorizonsSoulChain::SPELL_ID)));
+}
+
+SpellID shadowGiftSpell()
+{
+	return SpellID(SpellID::decode(std::string(newHorizonsShadowGift::SPELL_ID)));
 }
 
 void setMorale(CStack * stack, int value)
@@ -3844,6 +3850,169 @@ TEST_F(NewHorizonsMagicAITest, StormOfDaggersAISelectsFiveDistinctEnemyStacksWit
 	}
 	for(const auto * enemy : enemies)
 		EXPECT_EQ(battle()->battleGetOwner(enemy), PlayerColor(1));
+}
+
+TEST_F(NewHorizonsMagicAITest, ShadowGiftAIEnumeratesSacrificeTiersAndValuesThreeRoundsAgainstRealHP)
+{
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	useCommands = true;
+	neutralizeCommandEffects = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	const auto spell = shadowGiftSpell();
+	ASSERT_NE(spell, SpellID::NONE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	for(const auto known : attackerSideHero->getSpellsInSpellbook())
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(spell);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 1000, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * recipient = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(3, 5), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(6, 5), 1000);
+	ASSERT_NE(recipient, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != recipient && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto woundedRecipient = recipient->acquireState();
+	int64_t priorWounds = 50;
+	woundedRecipient->damage(priorWounds);
+	BattleUnitsChanged injure;
+	injure.battleID = BattleID(0);
+	injure.changedStacks.emplace_back(recipient->unitId(), UnitChanges::EOperation::UPDATE);
+	injure.changedStacks.back().data = woundedRecipient->save();
+	injure.changedStacks.back().healthDelta = -priorWounds;
+	gameHandler->sendAndApply(injure);
+	ASSERT_LT(recipient->getAvailableHealth(), recipient->getTotalHealth());
+	recipient->health.addTemporaryHitPoints(120);
+	ASSERT_GT(recipient->getAvailableHealth(), recipient->getShadowGiftCurrentHealth())
+		<< "Temporary HP must not enter Shadow Gift's creature-health sacrifice pool";
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = recipient->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto initialHealth = recipient->getAvailableHealth();
+	const auto initialMaximum = recipient->getTotalHealth();
+	const auto initialGiftHealth = recipient->getShadowGiftCurrentHealth();
+	const auto initialGiftMaximum = recipient->getShadowGiftMaximumHealth();
+	const auto initialGiftMaximumLost = recipient->getShadowGiftMaximumHealthLost();
+	ASSERT_LT(initialGiftHealth, initialGiftMaximum)
+		<< "The sacrifice cost is based on current creature HP while the same loss also lowers the cap";
+	for(const int32_t sacrificePercent : {10, 20, 30})
+	{
+		spells::BattleCast probe(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+		probe.setShadowGiftSacrificePercent(sacrificePercent);
+		const auto mechanics = spell.toSpell()->battleMechanics(&probe);
+		ASSERT_NE(mechanics, nullptr);
+		const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+		ASSERT_EQ(targets.size(), 1u);
+		ASSERT_EQ(targets.front().size(), 1u);
+		EXPECT_EQ(targets.front().front().unitValue, recipient);
+		EXPECT_GT(SpellTargetEvaluator::shadowGiftTradeValue(
+			mechanics.get(), targets.front(), sacrificePercent), 0.0f);
+	}
+	spells::BattleCast invalidTargetProbe(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	invalidTargetProbe.setShadowGiftSacrificePercent(30);
+	const auto invalidTargetMechanics = spell.toSpell()->battleMechanics(&invalidTargetProbe);
+	ASSERT_NE(invalidTargetMechanics, nullptr);
+	const spells::Target recipientTarget{spells::Destination(recipient)};
+	recipient->cloned = true;
+	EXPECT_EQ(SpellTargetEvaluator::shadowGiftTradeValue(
+		invalidTargetMechanics.get(), recipientTarget, 30), 0.0f);
+	recipient->cloned = false;
+	auto timeStop = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::TIME_STOP, BonusSource::OTHER, 0, BonusSourceID());
+	recipient->addNewBonus(timeStop);
+	EXPECT_EQ(SpellTargetEvaluator::shadowGiftTradeValue(
+		invalidTargetMechanics.get(), recipientTarget, 30), 0.0f);
+		recipient->removeBonus(timeStop);
+
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	BattleEvaluator evaluator(environment, callback, recipient, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(recipient);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(recipient));
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	const auto action = callback->submitted.front();
+	EXPECT_EQ(action.spell, spell);
+	EXPECT_EQ(action.spellShadowGiftSacrificePercent, 30);
+	const auto selected = action.getTarget(battle());
+	ASSERT_EQ(selected.size(), 1u);
+	EXPECT_EQ(selected.front().unitValue, recipient);
+	EXPECT_EQ(recipient->getAvailableHealth(), initialHealth)
+		<< "BattleAI must score on its snapshot without paying the sacrifice itself";
+	EXPECT_EQ(recipient->getTotalHealth(), initialMaximum);
+	EXPECT_EQ(recipient->getShadowGiftCurrentHealth(), initialGiftHealth);
+	EXPECT_EQ(recipient->getShadowGiftMaximumHealth(), initialGiftMaximum);
+	EXPECT_EQ(recipient->getShadowGiftMaximumHealthLost(), initialGiftMaximumLost);
+	EXPECT_EQ(recipient->health.getTemporaryHitPoints(), 120);
+}
+
+TEST_F(NewHorizonsMagicAITest, ShadowGiftAIPricesPhantomIntegrityWithoutMutatingTheLiveCopy)
+{
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	useCommands = true;
+	neutralizeCommandEffects = true;
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	const auto spell = shadowGiftSpell();
+	ASSERT_NE(spell, SpellID::NONE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	for(const auto known : attackerSideHero->getSpellsInSpellbook())
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(spell);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 1000, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	auto * recipient = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(3, 5), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:archangel"), BattleHex(6, 5), 100);
+	ASSERT_NE(recipient, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != recipient && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	recipient->summoned = true;
+	recipient->initializePhantomProfile(250, 3);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = recipient->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto initialIntegrity = recipient->getPhantomIntegrity();
+	const auto initialCapLoss = recipient->getShadowGiftMaximumHealthLost();
+	spells::BattleCast probe(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	probe.setShadowGiftSacrificePercent(30);
+	const auto mechanics = spell.toSpell()->battleMechanics(&probe);
+	ASSERT_NE(mechanics, nullptr);
+	const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_EQ(targets.size(), 1u);
+	ASSERT_EQ(targets.front().size(), 1u);
+	EXPECT_EQ(targets.front().front().unitValue, recipient);
+	// In this one-copy matchup, the integrity sacrificed is not recovered by
+	// the bounded damage forecast. Declining the cast must not mutate the copy.
+	EXPECT_EQ(SpellTargetEvaluator::shadowGiftTradeValue(
+		mechanics.get(), targets.front(), 30), 0.0f);
+	EXPECT_EQ(recipient->getPhantomIntegrity(), initialIntegrity);
+	EXPECT_EQ(recipient->getShadowGiftCurrentHealth(), initialIntegrity);
+	EXPECT_EQ(recipient->getShadowGiftMaximumHealth(), initialIntegrity);
+	EXPECT_EQ(recipient->getShadowGiftMaximumHealthLost(), initialCapLoss);
 }
 
 TEST_F(NewHorizonsMagicAITest, SoulChainAIUsesBoundedOrderedEnemyTargetsAndValuesDelayedEchoes)

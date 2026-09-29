@@ -22,10 +22,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 102/310 | 208 planned; active status alone does not certify behavior. Soul Binder adds 15 percentage points to Soul Chain's capped echo. |
+| Skill perks active | 103/310 | 207 planned; active status alone does not certify behavior. Dark Gift discounts Shadow Gift's actual HP sacrifice by 25%. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 41/67 | 26 missing/inactive; Soul Chain has focused authoritative and AI-cast evidence, but rendered/playable delivery remains pending. |
+| Canonical combat-spell identities registered | 42/67 | 25 missing/inactive; Shadow Gift has focused authoritative and AI-cast evidence, but rendered/playable delivery remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -237,6 +237,23 @@ active-link attack forecasting, Spell Lock versus new echo damage, primary
 Dispel semantics, and triggering-hit versus echo log order remain Phase 2 or
 delivery checks rather than completed evidence.
 
+Shadow Gift is a Level-3 Shadow spell with an explicit 10/20/30% sacrifice
+choice. The server validates the choice and friendly recipient, pays real
+current HP and a battle-long aggregate maximum-HP loss only after the
+three-round status lands, and emits per-victim spell-typed Shadow damage on
+attacks. Dark Gift discounts the HP cost without reducing the damage bonus.
+The cap survives stack-state serialization and now blocks ordinary healing as
+well as resurrection above the reduced maximum. A compact choice modal and
+separate timed/cap-loss status cues are present in client source. Both Linux
+targets link; the active-profile focused Shadow Gift filter passes 8/8 without
+skips, including an authoritative cast/attack, cap/save checks, AI's 30% tier
+choice and conservative Phantom-integrity pricing. The module mirror and
+39/39 content checks pass. Art is purpose-made but Provisional; native
+rendering and playable delivery remain pending. Phase 2 should check recast
+valuation against an already-active gift, Shadow-specific mitigation in AI
+forecasts, Dispel/Spell Lock interactions, whole-battle save continuation,
+multi-target damage/log order, and postbattle casualty accounting.
+
 Quicksand is among the active Nature identities. Its selected-placement path
 now has a saved-v3 opt-in marker, exact ordered caster selection, authoritative
 pre-spend and pre-effect validation, a matching Lua obstacle effect, concealed
@@ -252,7 +269,7 @@ from the active identity row.
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
-| Shadow | 12 | 7 | Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
+| Shadow | 12 | 8 | Vampirism; Re-animate; Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |

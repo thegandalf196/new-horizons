@@ -21,6 +21,7 @@ set(vcmiclientcommon_SRCS
 	battle/BattleHero.cpp
 	battle/BattleHeroActionWindow.cpp
 	battle/MagicArrowOverchargeWindow.cpp
+	battle/ShadowGiftWindow.cpp
 	battle/SelectiveDispelWindow.cpp
 	battle/TemporalFieldWindow.cpp
 	battle/FocusFireTargetWindow.cpp

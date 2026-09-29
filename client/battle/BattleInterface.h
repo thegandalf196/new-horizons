@@ -128,6 +128,7 @@ class BattleInterface
 	void playIntroSoundAndUnlockInterface();
 	void onIntroSoundPlayed();
 	void installMagicArrowOverchargeUI();
+	void installShadowGiftUI();
 	void installSelectiveDispelUI();
 	void installCureAfflictionUI();
 	void installTemporalFieldUI();

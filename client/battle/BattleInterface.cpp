@@ -48,6 +48,7 @@
 #include "../../lib/TerrainHandler.h"
 #include "../../lib/UnlockGuard.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
@@ -104,6 +105,7 @@ BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *
 	effectsController.reset(new BattleEffectsController(*this));
 	obstacleController.reset(new BattleObstacleController(*this));
 	installMagicArrowOverchargeUI();
+	installShadowGiftUI();
 	installSelectiveDispelUI();
 	installCureAfflictionUI();
 	installTemporalFieldUI();
@@ -267,6 +269,119 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				action.target.clear();
 				action.aimToUnit(target);
 				action.spellOvercharge = overcharge;
+				curInt->cb->battleMakeSpellAction(localBattleID, action);
+				if(actionsController)
+					actionsController->endCastingSpell();
+				return true;
+			};
+			context.cancel = [this]
+			{
+				if(actionsController)
+					actionsController->endCastingSpell();
+			};
+			return context;
+		});
+}
+
+void BattleInterface::installShadowGiftUI()
+{
+	if(!actionsController)
+		return;
+
+	actionsController->setShadowGiftFactory(
+		[this](const BattleAction & pending, const BattleHex &, const CStack * initialTarget)
+			-> std::optional<ShadowGiftContext>
+		{
+			if(!curInt || !curInt->cb || !initialTarget)
+				return std::nullopt;
+
+			const BattleID localBattleID = getBattleID();
+			const auto initialCallback = curInt->cb->getBattle(localBattleID);
+			const auto * spell = pending.spell.toSpell();
+			const auto * hero = currentHero();
+			if(!initialCallback || !initialCallback->getBattle() || !spell || !hero
+				|| !newHorizonsMagic::shadowGiftEnabled(initialCallback->getBattle()->getMagicRules(), spell->id))
+				return std::nullopt;
+
+			const uint32_t targetUnitID = initialTarget->unitId();
+			const bool metamagicFollowup = pending.metamagicFollowup;
+			const auto evaluate = [this, localBattleID, targetUnitID, spell, metamagicFollowup](int sacrificePercent)
+				-> ShadowGiftValues
+			{
+				ShadowGiftValues values;
+				values.sacrificePercent = sacrificePercent;
+				if(!curInt || !curInt->cb)
+					return values;
+				const auto callback = curInt->cb->getBattle(localBattleID);
+				const auto * hero = currentHero();
+				if(!callback || !callback->getBattle() || !hero
+					|| !newHorizonsMagic::shadowGiftEnabled(callback->getBattle()->getMagicRules(), spell->id))
+					return values;
+
+				const auto * target = callback->battleGetUnitByID(targetUnitID);
+				if(!target || !target->alive() || target->isClone() || target->isTimeStopped()
+					|| target->unitSide() != callback->battleGetMySide())
+					return values;
+
+				values.targetDescription = std::to_string(target->getCount()) + " "
+					+ target->unitType()->getNamePluralTranslated();
+				values.currentHealth = target->getShadowGiftCurrentHealth();
+				values.maximumHealth = target->getShadowGiftMaximumHealth();
+
+				spells::BattleCast cast(callback.get(), hero, spells::Mode::HERO, spell);
+				cast.setMetamagicFollowup(metamagicFollowup);
+				cast.setShadowGiftSacrificePercent(sacrificePercent);
+				auto mechanics = spell->battleMechanics(&cast);
+				if(!mechanics)
+					return values;
+
+				const bool hasDarkGift = newHorizonsMagic::hasDarkGiftPerk(mechanics->getHeroCaster());
+				const int32_t costBasisPoints = newHorizonsShadowGift::getSacrificeCostBasisPoints(
+					sacrificePercent, hasDarkGift);
+				const int64_t healthCost = newHorizonsShadowGift::getSacrificeHealthAmount(
+					values.currentHealth, costBasisPoints);
+				const int64_t maximumHealthCost = newHorizonsShadowGift::getSacrificeHealthAmount(
+					values.maximumHealth, costBasisPoints);
+				values.currentHealthAfter = values.currentHealth - healthCost;
+				values.maximumHealthAfter = values.maximumHealth - maximumHealthCost;
+				values.damageBonusBasisPoints = newHorizonsShadowGift::getDamageBonusBasisPoints(
+					sacrificePercent, mechanics->getEffectPower(), mechanics->getSpellPowerCoefficientBasisPoints(),
+					mechanics->getWarcastingBonusPercent(), mechanics->getEmpowerSpellBonusPercent());
+
+				spells::detail::ProblemImpl problem;
+				spells::Target targetCheck;
+				targetCheck.emplace_back(target, target->getPosition());
+				values.legal = healthCost > 0 && maximumHealthCost > 0
+					&& values.currentHealthAfter > 0 && values.maximumHealthAfter > 0
+					&& mechanics->canBeCast(problem) && mechanics->canBeCastAt(targetCheck, problem);
+				return values;
+			};
+
+			ShadowGiftContext context;
+			context.initial = evaluate(10);
+			context.evaluate = evaluate;
+			context.confirm = [this, localBattleID, targetUnitID, pending, spell, evaluate](int sacrificePercent)
+				-> bool
+			{
+				if(!curInt || !curInt->cb)
+					return false;
+				const auto callback = curInt->cb->getBattle(localBattleID);
+				if(!callback || !callback->getBattle()
+					|| !newHorizonsMagic::shadowGiftEnabled(callback->getBattle()->getMagicRules(), spell->id)
+					|| !newHorizonsShadowGift::isValidSacrificePercent(sacrificePercent))
+					return false;
+				if(!evaluate(sacrificePercent).legal)
+					return false;
+
+				const auto * target = callback->battleGetUnitByID(targetUnitID);
+				if(!target || !target->alive() || target->isClone() || target->isTimeStopped()
+					|| target->unitSide() != callback->battleGetMySide())
+					return false;
+
+				BattleAction action = pending;
+				action.target.clear();
+				action.aimToUnit(target);
+				action.spellShadowGiftSacrificePercent = sacrificePercent;
 				curInt->cb->battleMakeSpellAction(localBattleID, action);
 				if(actionsController)
 					actionsController->endCastingSpell();

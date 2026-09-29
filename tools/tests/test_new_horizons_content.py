@@ -32,6 +32,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:plague',
     'new-horizons:poison',
     'new-horizons:regeneration',
+    'new-horizons:shadowGift',
     'new-horizons:soulChain',
     'new-horizons:spellLock',
     'new-horizons:stormOfDaggers',
@@ -258,6 +259,30 @@ class NewHorizonsContentTest(unittest.TestCase):
             self.assertEqual(struct.unpack('>II',
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                 (size, size))
+
+    def test_shadow_gift_has_roster_effect_dark_gift_and_purpose_made_art(self):
+        row = self.rules['spells']['new-horizons:shadowGift']
+        self.assertEqual(row['schools'], ['new-horizons:shadow'])
+        self.assertEqual((row['level'], row['costs']), (3, [12, 12, 12, 12]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['shadowGift']
+        self.assertEqual((spell['name'], spell['targetType']), ('Shadow Gift', 'CREATURE'))
+        self.assertTrue(spell['flags']['positive'])
+        for level in spell['levels'].values():
+            self.assertEqual(level['cost'], 12)
+            self.assertEqual(level['battleEffects']['shadowGift']['type'],
+                             'core:shadowGiftEffect')
+        for role, size in (('iconBook', 44), ('iconScroll', 44),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_spell_shadow_gift_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+        shadow_perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:shadowMagic']['perks']
+        dark_gift = next(perk for perk in shadow_perks
+                         if perk['id'] == 'new-horizons:shadowMagic.darkGift')
+        self.assertEqual(dark_gift['effect']['status'], 'active')
 
     def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
         spell_id = 'new-horizons:holyWrath'

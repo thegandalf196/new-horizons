@@ -654,6 +654,18 @@
 							12
 						]
 					},
+					"new-horizons:shadowGift": {
+						"schools": [
+							"new-horizons:shadow"
+						],
+						"level": 3,
+						"costs": [
+							12,
+							12,
+							12,
+							12
+						]
+					},
 					"new-horizons:holyWrath": {
 						"schools": [
 							"new-horizons:light"
@@ -3977,7 +3989,7 @@
 								"requires": "advanced",
 								"description": "Shadow Gift requires 25% less sacrificed HP for the same offensive effect.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Shadow Gift requires 25% less sacrificed HP for the same offensive effect."
 								}
 							},
