@@ -301,6 +301,18 @@ protected:
 		beginCombat();
 	}
 
+	void selectSpellPenetration()
+	{
+		const auto spellcraftId = SecondarySkill::decode("new-horizons:spellcraft");
+		ASSERT_GE(spellcraftId, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(spellcraftId), MasteryLevel::BASIC,
+			ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({
+			"new-horizons:spellcraft", "new-horizons:spellcraft.spellPenetration"});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(
+			"new-horizons:spellcraft", "new-horizons:spellcraft.spellPenetration"));
+	}
+
 	void verifyIceBoltSavedProfile(bool legacySlow, int expectedVersion,
 		std::optional<int64_t> expectedDamage = std::nullopt)
 	{
@@ -545,6 +557,15 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellcraftComposesWithSchoolRanksIn
 	EXPECT_EQ(spell->battleMechanics(&basicCast)->getEffectValue(), 273);
 	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 273)
 		<< "Spellbook forecast and cast effect must use the same fractional coefficient";
+
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(
+		battle()->getMagicRules(), attackerSideHero, spell->getId()), 13800);
+	spells::BattleCast advancedCast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
+	advancedCast.setSpellLevel(0);
+	advancedCast.setEffectPower(100);
+	EXPECT_EQ(spell->battleMechanics(&advancedCast)->getEffectValue(), 296);
+	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 296);
 
 	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
@@ -1077,6 +1098,89 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, AnnihilatorIgnoresTwentyPercentMagi
 	const auto actual = apply(caster);
 	EXPECT_EQ(predicted, actual);
 	EXPECT_EQ(actual, 144);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellPenetrationIgnoresTwentyPercentOfHostileTargetReductionAndMatchesPrediction)
+{
+	forceRealHeroScale = true;
+	usePerks = true;
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 24, ChangeValueMode::ABSOLUTE);
+
+	const auto reduction = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::CREATURE_ABILITY, 50,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY));
+	target->addNewBonus(reduction);
+
+	spells::BattleCast withoutPerk(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	EXPECT_EQ(spell->battleMechanics(&withoutPerk)->adjustEffectValue(target), 34);
+	const auto spellCostBefore = attackerSideHero->getSpellCost(spell);
+
+	selectSpellPenetration();
+	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"),
+		BattleHex(leftHex - 1), 1000);
+	ASSERT_NE(friendly, nullptr);
+	friendly->addNewBonus(std::make_shared<Bonus>(*reduction));
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	EXPECT_EQ(mechanics->getEffectValue(), 68);
+	EXPECT_EQ(mechanics->adjustEffectValue(target), 40);
+	EXPECT_EQ(mechanics->adjustEffectValue(friendly), 34)
+		<< "Spell Penetration applies only to hostile targets";
+	ASSERT_EQ(attackerSideHero->getSpellCost(spell), spellCostBefore)
+		<< "Spell Penetration must not alter the Mana cost";
+
+	const auto targetHealthBefore = target->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	DamageEnvironment environment(gameState(), nullptr);
+	HypotheticBattle predicted(&environment, callback);
+	const auto * projectedTarget = predicted.battleGetUnitByID(target->unitId());
+	ASSERT_NE(projectedTarget, nullptr);
+	spells::BattleCast prediction(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+	auto predictedMechanics = spell->battleMechanics(&prediction);
+	EXPECT_EQ(predictedMechanics->adjustEffectValue(projectedTarget), 40);
+	spells::Target predictedAim;
+	predictedAim.emplace_back(projectedTarget);
+	predictedMechanics->castEval(predicted.getServerCallback(), predictedAim);
+	EXPECT_EQ(targetHealthBefore - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 40);
+	EXPECT_EQ(target->getAvailableHealth(), targetHealthBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(targetHealthBefore - target->getAvailableHealth(), 40);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - spellCostBefore);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellPenetrationDoesNotBypassMagicResistanceOrSpellImmunity)
+{
+	forceRealHeroScale = true;
+	usePerks = true;
+	prepare();
+	selectSpellPenetration();
+
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_RESISTANCE, BonusSource::CREATURE_ABILITY, 100, BonusSourceID()));
+	spells::BattleCast resistanceCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto resistanceMechanics = spell->battleMechanics(&resistanceCast);
+	EXPECT_FALSE(resistanceMechanics->isReceptive(target));
+	EXPECT_FALSE(resistanceMechanics->canBeCastAt(spells::Target{spells::Destination(target)}));
+
+	auto * immune = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"),
+		BattleHex(rightHex - 1), 1000);
+	ASSERT_NE(immune, nullptr);
+	immune->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_IMMUNITY, BonusSource::CREATURE_ABILITY, 1, BonusSourceID(),
+		BonusSubtypeID(spell->getId())));
+	spells::BattleCast immunityCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto immunityMechanics = spell->battleMechanics(&immunityCast);
+	EXPECT_FALSE(immunityMechanics->isReceptive(immune));
+	EXPECT_FALSE(immunityMechanics->canBeCastAt(spells::Target{spells::Destination(immune)}));
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, TemporalistExtendsOnlyOrdinaryHeroSlowDuration)

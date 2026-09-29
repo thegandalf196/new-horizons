@@ -4473,7 +4473,7 @@
 							"advanced": {
 								"description": "Spell Power-derived components operate at 120%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Spell Power-derived components operate at 120%."
 								}
 							},
@@ -4502,7 +4502,7 @@
 								"requires": "basic",
 								"description": "Hostile spells ignore 20% of the target's Magical Damage Reduction.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Hostile spells ignore 20% of the target's Magical Damage Reduction."
 								}
 							},

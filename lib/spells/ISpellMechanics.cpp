@@ -978,11 +978,18 @@ bool BaseMechanics::isMagicalEffect() const
 int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
 {
 	const auto * hero = caster ? caster->getHeroCaster() : nullptr;
+	const bool spellPenetration = mode == Mode::HERO && isNegativeSpell() && target
+		&& !ownerMatches(target, true) && hero
+		&& newHorizonsMagic::rulesActive(hero->getMagicRules())
+		&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+			"new-horizons:spellcraft.spellPenetration");
 	const int ignoreReduction = std::max(
-		metamagicFollowup && isNegativeSpell() && target
-		&& metamagicFocusedPairingEligible && target->unitId() == metamagicFirstTargetUnitId
-		? 20 : 0,
-		newHorizonsMagic::hasAnnihilatorPerk(hero, owner) ? 20 : 0);
+		std::max(
+			metamagicFollowup && isNegativeSpell() && target
+			&& metamagicFocusedPairingEligible && target->unitId() == metamagicFirstTargetUnitId
+			? 20 : 0,
+			newHorizonsMagic::hasAnnihilatorPerk(hero, owner) ? 20 : 0),
+		spellPenetration ? 20 : 0);
 	const int holdReductionBasisPoints = cb && owner->isMagical() && target
 		? cb->battleGetHoldTheLineMagicalReductionBasisPoints(target) : 0;
 	int finalDamageMultiplierPercent = 100;

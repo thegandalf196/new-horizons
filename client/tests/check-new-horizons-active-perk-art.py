@@ -22,6 +22,7 @@ SOURCE_COUNTERCHARGE = ROOT / "assets/new-horizons/art-source/countercharge-v1"
 SOURCE_SHIELD_MASTER = ROOT / "assets/new-horizons/art-source/shield-master-v1"
 SOURCE_IRON_DISCIPLINE = ROOT / "assets/new-horizons/art-source/iron-discipline-v1"
 SOURCE_PAVISE = ROOT / "assets/new-horizons/art-source/pavise-v1"
+SOURCE_SPELL_PENETRATION = ROOT / "assets/new-horizons/art-source/spell-penetration-v1"
 IMAGES = ROOT / "Mods/new-horizons/Images"
 ICONS = ROOT / "client/windows/NewHorizonsPerkIcons.h"
 DEFINITIONS = ROOT / "config/newHorizonsPerks.json"
@@ -174,6 +175,12 @@ PAVISE_EXPECTED = {
         "pavise",
     ),
 }
+SPELL_PENETRATION_EXPECTED = {
+    "new-horizons:spellcraft.spellPenetration": (
+        "NH_perk_spell_penetration",
+        "spell-penetration",
+    ),
+}
 EXPECTED = (
     V2_EXPECTED
     | V3_EXPECTED
@@ -185,6 +192,7 @@ EXPECTED = (
     | SHIELD_MASTER_EXPECTED
     | IRON_DISCIPLINE_EXPECTED
     | PAVISE_EXPECTED
+    | SPELL_PENETRATION_EXPECTED
 )
 
 
@@ -210,6 +218,7 @@ def main() -> None:
         (SOURCE_SHIELD_MASTER, SHIELD_MASTER_EXPECTED),
         (SOURCE_IRON_DISCIPLINE, IRON_DISCIPLINE_EXPECTED),
         (SOURCE_PAVISE, PAVISE_EXPECTED),
+        (SOURCE_SPELL_PENETRATION, SPELL_PENETRATION_EXPECTED),
     ):
         generation = json.loads((source / "generation.json").read_text(encoding="utf-8"))
         by_id = {asset["id"]: asset for asset in generation["assets"]}
@@ -242,6 +251,7 @@ def main() -> None:
                 "new-horizons:armorer.shieldMaster",
                 "new-horizons:armorer.ironDiscipline",
                 "new-horizons:armorer.pavise",
+                "new-horizons:spellcraft.spellPenetration",
             }:
                 export_manifest = json.loads(
                     (export / f"{slug}-manifest.json").read_text(encoding="utf-8")
@@ -372,6 +382,26 @@ def main() -> None:
         if manifest_path.startswith("Mods/") and filename.endswith(".png"):
             live_state_hashes.add(expected_hash)
     assert len(live_state_hashes) == 4, "Pavise runtime states must have distinct hashes"
+
+    spell_penetration_manifest = json.loads(
+        (SOURCE_SPELL_PENETRATION / "runtime-manifest.json").read_text(encoding="utf-8")
+    )
+    assert spell_penetration_manifest["status"].startswith("provisional")
+    assert spell_penetration_manifest["assets"] == ["NH_perk_spell_penetration"]
+    live_state_hashes = set()
+    for manifest_path, expected_hash in spell_penetration_manifest["files"].items():
+        filename = Path(manifest_path).name
+        if manifest_path.startswith("source/"):
+            path = SOURCE_SPELL_PENETRATION / "runtime" / filename
+        elif manifest_path.startswith("Mods/"):
+            path = IMAGES / filename
+        else:
+            raise AssertionError(f"unexpected Spell Penetration runtime manifest path: {manifest_path}")
+        assert path.is_file(), path
+        assert digest(path) == expected_hash, (manifest_path, "runtime export hash")
+        if manifest_path.startswith("Mods/") and filename.endswith(".png"):
+            live_state_hashes.add(expected_hash)
+    assert len(live_state_hashes) == 4, "Spell Penetration runtime states must have distinct hashes"
 
     definitions = json.loads(DEFINITIONS.read_text(encoding="utf-8"))
     active = {

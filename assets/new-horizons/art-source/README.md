@@ -11,6 +11,9 @@ the small RGBA PNGs under `Mods/new-horizons/Images/`:
 - `active-perks-v2/` contains the three newly active provisional perk paintings
   (Inspirational Leader, Wild Chance, and Perfect Moment), their exact prompts,
   44x44/32x32 reductions, comparisons, and reproducible runtime export.
+- `spell-penetration-v1/` contains the purpose-made provisional Spell
+  Penetration painting, exact prompt and generator output identifier,
+  44x44/32x32 reductions, comparison, and reproducible four-state runtime art.
 
 Prompts:
 

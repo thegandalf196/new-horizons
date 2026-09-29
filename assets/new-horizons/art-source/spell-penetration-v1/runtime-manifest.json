@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_spell_penetration"
+  ],
+  "files": {
+    "source/NH_perk_spell_penetration_normal.png": "70de9bc43a777193625b55ef6dd857c6708410635d2b9aa69914b9b8bab2bdcd",
+    "Mods/NH_perk_spell_penetration_normal.png": "70de9bc43a777193625b55ef6dd857c6708410635d2b9aa69914b9b8bab2bdcd",
+    "source/NH_perk_spell_penetration_pressed.png": "bfa4484bfa16270429c505e28e88e9ea7e9e6fb6967c74344ff86480457e9088",
+    "Mods/NH_perk_spell_penetration_pressed.png": "bfa4484bfa16270429c505e28e88e9ea7e9e6fb6967c74344ff86480457e9088",
+    "source/NH_perk_spell_penetration_disabled.png": "720006421a365e88ecdbfef4bb2c099cf8d2c19bd50f03572d090a5ed9ac1764",
+    "Mods/NH_perk_spell_penetration_disabled.png": "720006421a365e88ecdbfef4bb2c099cf8d2c19bd50f03572d090a5ed9ac1764",
+    "source/NH_perk_spell_penetration_highlighted.png": "02b0eeebccfbcaffb4642fd103fb24098568d701b710706f431368af27a08a7b",
+    "Mods/NH_perk_spell_penetration_highlighted.png": "02b0eeebccfbcaffb4642fd103fb24098568d701b710706f431368af27a08a7b",
+    "source/NH_perk_spell_penetration.json": "ce4ae5b8a0676efae8ca184770929cc59c73bdcfb3d4093a31d82ab8d315aaab",
+    "Mods/NH_perk_spell_penetration.json": "ce4ae5b8a0676efae8ca184770929cc59c73bdcfb3d4093a31d82ab8d315aaab"
+  }
+}

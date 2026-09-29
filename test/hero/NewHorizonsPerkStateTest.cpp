@@ -91,6 +91,19 @@ TEST(NewHorizonsPerkState, OrdinaryRanksAndPerksAlternateWhilePerkTiersStayOrder
 	EXPECT_TRUE(saved.prepareOffer(noRank, 14).empty());
 }
 
+TEST(NewHorizonsPerkState, SpellPenetrationOpensNormalAdvancedSpellcraftProgression)
+{
+	auto saved = state();
+	constexpr auto SKILL = "new-horizons:spellcraft";
+	constexpr auto PERK = "new-horizons:spellcraft.spellPenetration";
+
+	EXPECT_FALSE(saved.canAdvanceSkillNormally(SKILL, 1));
+	saved.select(SKILL, PERK, 1);
+	EXPECT_TRUE(saved.hasSelection(SKILL, PERK));
+	EXPECT_TRUE(saved.canAdvanceSkillNormally(SKILL, 1));
+	EXPECT_FALSE(saved.canAdvanceSkillNormally(SKILL, 2));
+}
+
 TEST(NewHorizonsPerkState, OccupiedTierOnlyBlocksAlternativesFromTheSameSkill)
 {
 	auto saved = state();

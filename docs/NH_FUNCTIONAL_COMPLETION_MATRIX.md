@@ -1,6 +1,6 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-09-28
+Updated: 2026-09-29
 Canonical source SHA-256: `bc70b440ced11279915de2cfb1e48fc01e20f61ec041e7a68dae336ed86b33e4`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
@@ -21,8 +21,8 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Specification area | Current coverage | Principal remaining work |
 |---|---:|---|
 | Skills registered | 31/31 | Four Skills have no active rank effects; many registered Skills lack working perk progression. |
-| Skill rank effects active | 82/93 | Basic Spellcraft now works and is registered active; its Advanced/Expert ranks plus Diplomacy, Divine Mandate, and Elemental Rebirth account for the 11 planned ranks. |
-| Skill perks active | 96/310 | 214 planned; active status alone does not certify behavior. Basic Herbalist is registered with Regeneration. |
+| Skill rank effects active | 83/93 | Basic and Advanced Spellcraft now work and are registered active; Expert Spellcraft plus Diplomacy, Divine Mandate, and Elemental Rebirth account for the 10 planned ranks. |
+| Skill perks active | 97/310 | 213 planned; active status alone does not certify behavior. Basic Spell Penetration now has authoritative and prediction evidence. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 43/90 | 47 planned perks. |
 | Canonical combat-spell identities registered | 35/67 | 32 missing/inactive; Nature Poison has focused active-profile cast/tick/AI execution evidence, but rendered/playable delivery remains pending. |
@@ -169,7 +169,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 0/10 | Progression blocked |
-| Spellcraft | 1/2 | 0/10 | Basic efficiency is active with saved-v3 factors, authoritative/AI paths, live spell help and focused execution. Advanced/Expert are formula-tested but cannot normally be reached until Basic/Advanced perks work. |
+| Spellcraft | 2/1 | 1/9 | Spell Penetration ignores 20% of hostile-target Magical Damage Reduction in authoritative and predicted casts; its Basic selection opens normal Advanced rank progression. Advanced efficiency uses the existing saved-v3 120% formula. Expert still needs an Advanced perk. |
 | Wisdom | 3/0 | 1/9 | Nine perks missing |
 | Warcasting | 3/0 | 4/6 | Six perks missing |
 | Logistics | 3/0 | 3/7 | Seven perks missing |
@@ -188,9 +188,9 @@ interactions, and rendered/playable acceptance remain separate.
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
-rank. Twelve Skills therefore cannot normally advance beyond Basic because they
+rank. Eleven Skills therefore cannot normally advance beyond Basic because they
 have no active Basic perk: War Machines, Command, Shadow Magic,
-Chaos Magic, Spellcraft, Diplomacy, Estates, Learning, Luck, Divine
+Chaos Magic, Diplomacy, Estates, Learning, Luck, Divine
 Mandate, Shroud of Malassa, and Elemental Rebirth.
 
 ## Spell baseline
