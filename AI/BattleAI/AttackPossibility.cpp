@@ -24,6 +24,7 @@
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 
 #include "../../lib/GameLibrary.h"
 
@@ -84,6 +85,50 @@ int64_t projectedPhysicalPoisonDamage(const battle::CUnitState * state)
 	if(remaining == 2)
 		return base + base / 2 + base * 2;
 	return base * 2;
+}
+
+int32_t vampirismHealBasisPoints(const battle::Unit * unit)
+{
+	if(!unit)
+		return 0;
+
+	const auto triggers = unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	int32_t result = 0;
+	for(const auto & bonus : *triggers)
+	{
+		if(!bonus || bonus->source != BonusSource::SPELL_EFFECT
+			|| bonus->sid.toString() != newHorizonsMagic::SHADOW_VAMPIRISM_SPELL
+			|| bonus->subtype.toString() != newHorizonsMagic::SHADOW_VAMPIRISM_STATUS
+			|| !Bonus::NTurns(bonus.get()) || bonus->turnsRemain <= 0)
+			continue;
+
+		result = std::max(result, std::clamp(bonus->val, 0,
+			newHorizonsMagic::VAMPIRISM_MAX_HEAL_BASIS_POINTS));
+	}
+	return result;
+}
+
+void projectVampirismHealing(battle::CUnitState * attacker, int64_t actualDamage,
+	std::vector<std::pair<uint32_t, int64_t>> & healingByUnit)
+{
+	if(!attacker || !attacker->alive() || actualDamage <= 0)
+		return;
+
+	const auto basisPoints = vampirismHealBasisPoints(attacker);
+	if(basisPoints <= 0)
+		return;
+
+	// Split before multiplying so a large multi-target attack cannot overflow.
+	const auto healingRequest = (actualDamage / 10'000) * basisPoints
+		+ ((actualDamage % 10'000) * basisPoints) / 10'000;
+	if(healingRequest <= 0)
+		return;
+
+	auto remainingHealing = healingRequest;
+	const auto healed = attacker->heal(remainingHealing, EHealLevel::HEAL,
+		EHealPower::PERMANENT).healedHealthPoints;
+	if(healed > 0)
+		healingByUnit.emplace_back(attacker->unitId(), healed);
 }
 }
 
@@ -1024,6 +1069,11 @@ AttackPossibility AttackPossibility::evaluate(
 			// The trigger runs after the attacker commits this blow's updated
 			// resource state, before responses and follow-up attacks.
 			ap.attackerState->afterAttack(attackInfo.shooting, false, attackInfo.physicalDamage);
+			int64_t actualStrikeDamage = 0;
+			for(const auto & hit : strike.hits)
+				actualStrikeDamage += std::max<int64_t>(0, hit.second);
+			projectVampirismHealing(ap.attackerState.get(), actualStrikeDamage,
+				ap.vampirismHealingByUnit);
 			if(projectsHexOfPain && fortunePreview && !strike.hits.empty())
 			{
 				const auto preHexState = ap.attackerState->acquireState();
@@ -1065,6 +1115,8 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.attackerDamageReduce += calculateDamageReduce(counterShooter.get(), ap.attackerState.get(),
 						counterfireDamage, damageCache, state);
 					ap.attackerState->damage(counterfireDamage);
+					projectVampirismHealing(counterShooter.get(), counterfireDamage,
+						ap.vampirismHealingByUnit);
 					if(counterfireDamage > 0 && attackInfo.physicalDamage
 						&& newHorizonsArchery::isOrdinaryPhysicalShooter(counterShooter.get()))
 					{
@@ -1183,6 +1235,8 @@ AttackPossibility AttackPossibility::evaluate(
 					if(targetState->unitId() == defender->unitId())
 						ap.defenderDead = !targetState->alive();
 					ap.attackerState->afterAttack(false, false, true);
+					projectVampirismHealing(ap.attackerState.get(), cleaveDamage,
+						ap.vampirismHealingByUnit);
 					if(projectsHexOfPain && fortunePreview)
 					{
 						const auto preHexState = ap.attackerState->acquireState();
@@ -1280,6 +1334,11 @@ AttackPossibility AttackPossibility::evaluate(
 			{
 				auto retaliatorState = defenderStates.at(retaliation->attackerId);
 				retaliatorState->afterAttack(attackInfo.shooting, true, attackInfo.physicalDamage);
+				int64_t actualRetaliationDamage = 0;
+				for(const auto & hit : retaliationActualHits)
+					actualRetaliationDamage += std::max<int64_t>(0, hit.second);
+				projectVampirismHealing(retaliatorState.get(), actualRetaliationDamage,
+					ap.vampirismHealingByUnit);
 				if(projectsHexOfPain && fortunePreview)
 				{
 					const auto preHexState = retaliatorState->acquireState();

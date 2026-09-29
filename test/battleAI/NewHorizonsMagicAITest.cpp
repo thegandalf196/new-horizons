@@ -125,6 +125,37 @@ SpellID shadowGiftSpell()
 	return SpellID(SpellID::decode(std::string(newHorizonsShadowGift::SPELL_ID)));
 }
 
+SpellID vampirismSpell()
+{
+	return SpellID(SpellID::decode(std::string(newHorizonsMagic::SHADOW_VAMPIRISM_SPELL)));
+}
+
+void addVampirismStatus(CStack * target, SpellID spell, int healBasisPoints, int turns)
+{
+	if(!target)
+		return;
+
+	Bonus status(BonusDuration::N_TURNS, BonusType::COMBAT_EVENT_TRIGGER,
+		BonusSource::SPELL_EFFECT, healBasisPoints, BonusSourceID(spell),
+		BonusSubtypeID(ScriptID(ScriptID::decode(std::string(newHorizonsMagic::SHADOW_VAMPIRISM_STATUS)))));
+	status.turnsRemain = turns;
+	target->addNewBonus(std::make_shared<Bonus>(status));
+}
+
+const Bonus * vampirismStatus(const battle::Unit * target)
+{
+	if(!target)
+		return nullptr;
+
+	const auto statuses = target->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER,
+		BonusSubtypeID(ScriptID(ScriptID::decode(std::string(newHorizonsMagic::SHADOW_VAMPIRISM_STATUS)))));
+	for(const auto & status : *statuses)
+		if(status && status->source == BonusSource::SPELL_EFFECT
+			&& status->sid.toString() == newHorizonsMagic::SHADOW_VAMPIRISM_SPELL)
+			return status.get();
+	return nullptr;
+}
+
 void setMorale(CStack * stack, int value)
 {
 	if(!stack)
@@ -268,6 +299,23 @@ protected:
 		HeroCommandFixture::SetUp();
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires separate native curated preset";
+	}
+
+	void prepareVampirismCaster()
+	{
+		ASSERT_NO_FATAL_FAILURE(startGame());
+		const auto vampirism = vampirismSpell();
+		ASSERT_NE(vampirism, SpellID::NONE);
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		for(const auto known : attackerSideHero->getSpellsInSpellbook())
+			attackerSideHero->removeSpellFromSpellbook(known);
+		attackerSideHero->addSpellToSpellbook(vampirism);
+		const auto shadowMagicId = SecondarySkill::decode(std::string(newHorizonsMagic::SHADOW_MAGIC_SKILL));
+		ASSERT_GE(shadowMagicId, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(shadowMagicId), MasteryLevel::EXPERT,
+			ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(attackerSideHero, 1000);
 	}
 };
 
@@ -4858,6 +4906,191 @@ TEST_F(NewHorizonsMagicAITest, MaledictionMakesSorrowAIValueItsProjectedExtraRou
 		<< "AI uses the projected Sorrow penalty and duration rather than reimplementing either formula";
 	EXPECT_EQ(sorrowMoraleBonus(hostile), nullptr)
 		<< "hypothetical casts must not mutate the live battle";
+}
+
+TEST_F(NewHorizonsMagicAITest, VampirismAIChoosesWoundedAttackerWithForecastDamage)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareVampirismCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * woundedAttacker = addStack(BattleSide::ATTACKER,
+		creatureByName("core:grandElf"), BattleHex(3, 5), 20);
+	auto * fullHealthAlly = addStack(BattleSide::ATTACKER,
+		creatureByName("core:peasant"), BattleHex(3, 7), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER,
+		creatureByName("core:ogre"), BattleHex(12, 5), 1000);
+	ASSERT_NE(woundedAttacker, nullptr);
+	ASSERT_NE(fullHealthAlly, nullptr);
+	ASSERT_NE(enemy, nullptr);
+
+	int64_t initialWounds = 100;
+	auto woundState = woundedAttacker->acquireState();
+	woundState->damage(initialWounds);
+	ASSERT_TRUE(woundState->alive());
+	BattleUnitsChanged injury;
+	injury.battleID = BattleID(0);
+	injury.changedStacks.emplace_back(woundedAttacker->unitId(), UnitChanges::EOperation::UPDATE);
+	injury.changedStacks.back().data = woundState->save();
+	injury.changedStacks.back().healthDelta = -initialWounds;
+	gameHandler->sendAndApply(injury);
+
+	Bonus immobilePeasant;
+	immobilePeasant.type = BonusType::STACKS_SPEED;
+	immobilePeasant.duration = BonusDuration::ONE_BATTLE;
+	immobilePeasant.val = -fullHealthAlly->getMovementRange();
+	fullHealthAlly->addNewBonus(std::make_shared<Bonus>(immobilePeasant));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = woundedAttacker->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto vampirism = vampirismSpell();
+	ASSERT_TRUE(newHorizonsMagic::vampirismEnabled(battle()->getMagicRules(), vampirism));
+	const auto healthBefore = woundedAttacker->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, woundedAttacker, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(woundedAttacker);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(woundedAttacker))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(action.spell, vampirism);
+	const auto selected = action.getTarget(battle());
+	ASSERT_EQ(selected.size(), 1u);
+	ASSERT_NE(selected.front().unitValue, nullptr);
+	EXPECT_EQ(selected.front().unitValue->unitId(), woundedAttacker->unitId())
+		<< "the full-health, immobilized ally has no projected attack damage to convert into healing";
+	EXPECT_EQ(woundedAttacker->getAvailableHealth(), healthBefore)
+		<< "the forecast must heal only its detached battle copy";
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(vampirismStatus(woundedAttacker), nullptr);
+}
+
+TEST_F(NewHorizonsMagicAITest, VampirismAIDoesNotCastForFullHealthTargetsWithoutIncomingThreats)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareVampirismCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * active = addStack(BattleSide::ATTACKER,
+		creatureByName("core:grandElf"), BattleHex(3, 5), 20);
+	auto * passiveAlly = addStack(BattleSide::ATTACKER,
+		creatureByName("core:peasant"), BattleHex(3, 7), 1);
+	auto * passiveEnemy = addStack(BattleSide::DEFENDER,
+		creatureByName("core:pikeman"), BattleHex(12, 5), 1);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(passiveAlly, nullptr);
+	ASSERT_NE(passiveEnemy, nullptr);
+
+	for(auto * stack : {passiveAlly, passiveEnemy})
+	{
+		Bonus immobilized;
+		immobilized.type = BonusType::STACKS_SPEED;
+		immobilized.duration = BonusDuration::ONE_BATTLE;
+		immobilized.val = -stack->getMovementRange();
+		stack->addNewBonus(std::make_shared<Bonus>(immobilized));
+	}
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto healthBefore = active->getAvailableHealth();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_EQ(active->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(vampirismStatus(active), nullptr);
+}
+
+TEST_F(NewHorizonsMagicAITest, VampirismAIAvoidsRefreshingAnAlreadyFullDurationStatus)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareVampirismCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * active = addStack(BattleSide::ATTACKER,
+		creatureByName("core:grandElf"), BattleHex(3, 5), 20);
+	auto * enemy = addStack(BattleSide::DEFENDER,
+		creatureByName("core:pikeman"), BattleHex(12, 5), 1);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(enemy, nullptr);
+
+	int64_t initialWounds = 100;
+	auto woundState = active->acquireState();
+	woundState->damage(initialWounds);
+	ASSERT_TRUE(woundState->alive());
+	BattleUnitsChanged injury;
+	injury.battleID = BattleID(0);
+	injury.changedStacks.emplace_back(active->unitId(), UnitChanges::EOperation::UPDATE);
+	injury.changedStacks.back().data = woundState->save();
+	injury.changedStacks.back().healthDelta = -initialWounds;
+	gameHandler->sendAndApply(injury);
+	const auto vampirism = vampirismSpell();
+	addVampirismStatus(active, vampirism, newHorizonsMagic::VAMPIRISM_BASE_HEAL_BASIS_POINTS,
+		newHorizonsMagic::VAMPIRISM_BASE_DURATION_ROUNDS);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -enemy->getMovementRange();
+	enemy->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto healthBefore = active->getAvailableHealth();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_EQ(active->getAvailableHealth(), healthBefore);
+	const auto * status = vampirismStatus(active);
+	ASSERT_NE(status, nullptr);
+	EXPECT_EQ(status->turnsRemain, newHorizonsMagic::VAMPIRISM_BASE_DURATION_ROUNDS);
 }
 
 TEST_P(NewHorizonsLegacySorrowAITest, SavedV1AndV2AIStillValuesLegacyMassSorrow)

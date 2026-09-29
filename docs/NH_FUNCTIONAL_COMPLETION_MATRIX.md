@@ -22,10 +22,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 103/310 | 207 planned; active status alone does not certify behavior. Dark Gift discounts Shadow Gift's actual HP sacrifice by 25%. |
+| Skill perks active | 104/310 | 206 planned; active status alone does not certify behavior. Night Feeder adds 15 percentage points to Vampirism's capped base lifesteal. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 42/67 | 25 missing/inactive; Shadow Gift has focused authoritative and AI-cast evidence, but rendered/playable delivery remains pending. |
+| Canonical combat-spell identities registered | 43/67 | 24 missing/inactive; Vampirism's authoritative and AI evidence is being integrated, while rendered/playable delivery remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -49,8 +49,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 102
-active perks, leaving nine ranks and 208 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 104
+active perks, leaving nine ranks and 206 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -163,7 +163,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 0/10 | Progression blocked |
 | Light Magic | 3/0 | 1/9 | Benediction active; nine perks missing |
-| Shadow Magic | 3/0 | 3/7 | Malediction, Withering Touch, and Soul Binder have focused native evidence. Soul Binder adds 15 points after Soul Chain's 40% base cap; seven perks remain planned. |
+| Shadow Magic | 3/0 | 5/5 | Malediction, Withering Touch, Soul Binder, Dark Gift, and Night Feeder are active. Dark Gift and Night Feeder are part of their respective Shadow spell slices; five perks remain planned. |
 | Nature Magic | 3/0 | 1/9 | Herbalist active with Regeneration-focused runtime evidence; nine perks missing |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
@@ -198,8 +198,9 @@ The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
 spells. Rechecking the current saved roster after adding Holy Wrath, Storm
 of Daggers, Regeneration, Nature Poison, Holy Armor, Life Drain, Hex of Pain,
-Frailty, Plague, and Soul Chain shows 41 of the 67 combat identities with active settings rows and
-registered mod/core definitions, including Spell Lock; 26 are absent or inactive. An active
+Frailty, Plague, Soul Chain, Shadow Gift, and Vampirism shows 43 of the 67
+combat identities with active settings rows and registered mod/core definitions,
+including Spell Lock; 24 are absent or inactive. An active
 identity is not proof that its exact canonical effect is complete.
 
 Frailty replaces core Weakness in new saved-v3 acquisition while older saved
@@ -254,6 +255,21 @@ valuation against an already-active gift, Shadow-specific mitigation in AI
 forecasts, Dispel/Spell Lock interactions, whole-battle save continuation,
 multi-target damage/log order, and postbattle casualty accounting.
 
+Vampirism is the next Level-4 Shadow identity: a 15-Mana, three-round friendly
+enchantment that heals surviving creatures from the enchanted stack's actual
+attack or retaliation damage. The saved-v3 School coefficient scales its raw
+Spell Power term; Night Feeder adds 15 percentage points after the ordinary
+50% lifesteal cap. The registered timed combat trigger, heal-only packet,
+focused AI forecast, stack-status readback, and purpose-made Provisional spell
+and perk icons form the Phase 1 source path. The Linux `vcmitest` target links;
+all 15 focused runtime/AI cases pass under an active New Horizons profile with
+zero skips, and `vcmiclient` also links. Offline content and UI source checks
+pass. Playable acceptance is tracked separately in UP-023.
+Independent source review found no blocking defect. Phase 2 should cover
+ordinary AI attack-choice valuation of healing, third-round expiry, overkill
+clamping, legacy live-cast rejection, and live-status save/load continuation.
+Native-resolution rendering and playable delivery remain separate.
+
 Quicksand is among the active Nature identities. Its selected-placement path
 now has a saved-v3 opt-in marker, exact ordered caster selection, authoritative
 pre-spend and pre-effect validation, a matching Lua obstacle effect, concealed
@@ -269,7 +285,7 @@ from the active identity row.
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
-| Shadow | 12 | 8 | Vampirism; Re-animate; Soul Reaper; Doom |
+| Shadow | 12 | 9 | Re-animate; Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |

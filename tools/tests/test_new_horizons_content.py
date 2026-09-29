@@ -34,6 +34,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:regeneration',
     'new-horizons:shadowGift',
     'new-horizons:soulChain',
+    'new-horizons:vampirism',
     'new-horizons:spellLock',
     'new-horizons:stormOfDaggers',
     'new-horizons:timeStop',
@@ -283,6 +284,36 @@ class NewHorizonsContentTest(unittest.TestCase):
         dark_gift = next(perk for perk in shadow_perks
                          if perk['id'] == 'new-horizons:shadowMagic.darkGift')
         self.assertEqual(dark_gift['effect']['status'], 'active')
+
+    def test_vampirism_has_roster_effect_night_feeder_and_purpose_made_art(self):
+        row = self.rules['spells']['new-horizons:vampirism']
+        self.assertEqual(row['schools'], ['new-horizons:shadow'])
+        self.assertEqual((row['level'], row['costs']), (4, [15, 15, 15, 15]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['vampirism']
+        self.assertEqual((spell['name'], spell['targetType']), ('Vampirism', 'CREATURE'))
+        self.assertTrue(spell['flags']['positive'])
+        for level in spell['levels'].values():
+            self.assertEqual(level['cost'], 15)
+            self.assertEqual(level['battleEffects']['vampirism']['type'],
+                             'core:vampirismEffect')
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertIn('vampirism', filename)
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+        shadow_perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:shadowMagic']['perks']
+        night_feeder = next(perk for perk in shadow_perks
+                            if perk['id'] == 'new-horizons:shadowMagic.nightFeeder')
+        self.assertEqual(night_feeder['effect']['status'], 'active')
+        scripts = load('config/scriptsSpells.json')
+        combat = load('config/scriptsCombat.json')
+        self.assertEqual(scripts['vampirismEffect']['script'], 'spells/vampirism')
+        self.assertEqual(combat['vampirism']['script'], 'combat/vampirism')
+        texts = load('config/newHorizonsCombatTexts.json')
+        self.assertIn('new-horizons.combat.vampirism.healed', texts)
 
     def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
         spell_id = 'new-horizons:holyWrath'

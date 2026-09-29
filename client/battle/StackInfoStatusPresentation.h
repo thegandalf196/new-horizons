@@ -55,6 +55,7 @@ enum class StackStatusIconKind
 {
 	TIME_STOP,
 	SPELL_LOCK,
+	VAMPIRISM,
 	PHYSICAL_POISON,
 	REGENERATION,
 	SHADOW_GIFT_BUFF,
@@ -76,14 +77,15 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 	{
 		case StackStatusIconKind::TIME_STOP: return 0;
 		case StackStatusIconKind::SPELL_LOCK: return 1;
-		case StackStatusIconKind::PHYSICAL_POISON: return 2;
-		case StackStatusIconKind::REGENERATION: return 3;
-		case StackStatusIconKind::SHADOW_GIFT_BUFF: return 4;
-		case StackStatusIconKind::SHADOW_GIFT_CAP: return 5;
-		case StackStatusIconKind::FOCUS_OR_ARCANE: return 6;
-		case StackStatusIconKind::ORDINARY: return 7;
+		case StackStatusIconKind::VAMPIRISM: return 2;
+		case StackStatusIconKind::PHYSICAL_POISON: return 3;
+		case StackStatusIconKind::REGENERATION: return 4;
+		case StackStatusIconKind::SHADOW_GIFT_BUFF: return 5;
+		case StackStatusIconKind::SHADOW_GIFT_CAP: return 6;
+		case StackStatusIconKind::FOCUS_OR_ARCANE: return 7;
+		case StackStatusIconKind::ORDINARY: return 8;
 	}
-	return 4;
+	return 9;
 }
 
 inline StackStatusDisplayPlan stackStatusDisplayPlan(const std::vector<StackStatusIconKind> & visibleEntryKinds,

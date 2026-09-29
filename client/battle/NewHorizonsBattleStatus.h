@@ -37,6 +37,8 @@ inline constexpr std::string_view SPELL_LOCK_SPELL_KEY = "new-horizons:spellLock
 inline constexpr std::string_view REGENERATION_SPELL_KEY = newHorizonsMagic::NATURE_REGENERATION_SPELL;
 inline constexpr std::string_view SHADOW_GIFT_SPELL_KEY = "new-horizons:shadowGift";
 inline constexpr std::string_view SHADOW_GIFT_TRIGGER_KEY = "core:shadowGift";
+inline constexpr std::string_view VAMPIRISM_SPELL_KEY = "new-horizons:vampirism";
+inline constexpr std::string_view VAMPIRISM_TRIGGER_KEY = "core:vampirism";
 
 inline bool isRegeneration(std::string_view spellKey)
 {
@@ -46,6 +48,11 @@ inline bool isRegeneration(std::string_view spellKey)
 inline bool isShadowGift(std::string_view spellKey)
 {
 	return spellKey == SHADOW_GIFT_SPELL_KEY;
+}
+
+inline bool isVampirism(std::string_view spellKey)
+{
+	return spellKey == VAMPIRISM_SPELL_KEY;
 }
 
 inline bool isTimeStop(std::string_view spellKey)
@@ -149,6 +156,19 @@ struct ShadowGiftStatus
 	bool operator==(const ShadowGiftStatus &) const = default;
 };
 
+struct VampirismStatus
+{
+	int32_t lifestealBasisPoints = 0;
+	int32_t remainingRounds = 0;
+
+	bool active() const
+	{
+		return lifestealBasisPoints > 0 && remainingRounds > 0;
+	}
+
+	bool operator==(const VampirismStatus &) const = default;
+};
+
 inline std::string formatBasisPoints(int64_t basisPoints);
 inline std::string roundsRemaining(int rounds);
 
@@ -179,6 +199,29 @@ inline ShadowGiftStatus shadowGiftStatus(const BonusRange & bonuses, int64_t max
 	return result;
 }
 
+template<typename BonusRange>
+inline VampirismStatus vampirismStatus(const BonusRange & bonuses)
+{
+	for(const auto & bonus : bonuses)
+	{
+		if(!bonus || bonus->type != BonusType::COMBAT_EVENT_TRIGGER || bonus->source != BonusSource::SPELL_EFFECT
+			|| bonus->duration != BonusDuration::N_TURNS || bonus->turnsRemain <= 0 || bonus->val <= 0)
+			continue;
+		try
+		{
+			if(bonus->sid.toString() != VAMPIRISM_SPELL_KEY || bonus->subtype.toString() != VAMPIRISM_TRIGGER_KEY)
+				continue;
+		}
+		catch(const std::exception &)
+		{
+			continue;
+		}
+
+		return {bonus->val, bonus->turnsRemain};
+	}
+	return {};
+}
+
 inline std::string shadowGiftBuffTooltip(const ShadowGiftStatus & status)
 {
 	return "Shadow Gift - Offensive enchantment\nShadow damage bonus: "
@@ -191,6 +234,16 @@ inline std::string shadowGiftCapTooltip(const ShadowGiftStatus & status)
 	return "Shadow Gift - Battle-long vitality sacrifice\nMaximum aggregate HP permanently lost: "
 		+ std::to_string(status.maximumHealthLost)
 		+ " HP. This cap loss remains after the three-round damage enchantment expires and cannot be dispelled.";
+}
+
+inline std::string vampirismTooltip(std::string_view spellDescription, const VampirismStatus & status)
+{
+	std::string result(spellDescription);
+	result += "\n\nCurrent lifesteal: " + formatBasisPoints(status.lifestealBasisPoints)
+		+ " of actual attack damage dealt, including retaliation.";
+	result += "\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
+	result += "\nHealing restores surviving creatures and cannot revive casualties.";
+	return result;
 }
 
 inline std::optional<int32_t> beneficiarySide(const Bonus & bonus)
@@ -324,6 +377,7 @@ struct StackInfoStatusSnapshot
 	PhysicalPoisonStatus physicalPoison;
 	RegenerationStatus regeneration;
 	ShadowGiftStatus shadowGift;
+	VampirismStatus vampirism;
 
 	bool operator==(const StackInfoStatusSnapshot &) const = default;
 };

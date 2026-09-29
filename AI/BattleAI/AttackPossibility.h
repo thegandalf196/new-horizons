@@ -75,6 +75,9 @@ public:
 
 	std::vector<std::shared_ptr<battle::CUnitState>> affectedUnits;
 	std::vector<FortuneStrikeProjection> fortuneStrikes;
+	/// Actual HP restored by the canonical New Horizons Vampirism trigger during
+	/// this exchange, grouped by the living stack that received the healing.
+	std::vector<std::pair<uint32_t, int64_t>> vampirismHealingByUnit;
 	int64_t preAttackDamage = 0;
 	bool bulwarkMireGripTriggered = false;
 

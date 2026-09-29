@@ -184,6 +184,11 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 					*spellBonuses, result.shadowGift.maximumHealthLost);
 				continue;
 			}
+			if(newHorizonsBattleStatus::isVampirism(spell->getJsonKey()))
+			{
+				result.vampirism = newHorizonsBattleStatus::vampirismStatus(*spellBonuses);
+				continue;
+			}
 			if(!newHorizonsBattleStatus::isRegeneration(spell->getJsonKey()))
 				continue;
 
@@ -307,6 +312,8 @@ newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
 		return newHorizonsBattleStatus::StackStatusIconKind::REGENERATION;
 	if(newHorizonsBattleStatus::isShadowGift(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_BUFF;
+	if(newHorizonsBattleStatus::isVampirism(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::VAMPIRISM;
 	if(newHorizonsBattleStatus::isFocusMagic(spellKey) || newHorizonsBattleStatus::isArcaneBreach(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::FOCUS_OR_ARCANE;
 	return newHorizonsBattleStatus::StackStatusIconKind::ORDINARY;
@@ -516,6 +523,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool plague = spellKey == PLAGUE_SPELL_KEY;
 		const bool soulChain = spellKey == newHorizonsSoulChain::SPELL_ID;
 		const bool shadowGift = newHorizonsBattleStatus::isShadowGift(spellKey);
+		const bool vampirism = newHorizonsBattleStatus::isVampirism(spellKey);
 		const auto frailty = currentFrailtyStatus(stack, spellKey, spellBonuses);
 		const auto lockStatus = spellLock
 			? newHorizonsBattleStatus::spellLockStatus(*spellBonuses)
@@ -525,7 +533,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift)
+		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || vampirism)
 		{
 			const std::string badge = timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
@@ -534,6 +542,8 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 				: frailty ? (frailty->hasAccumulatedBasisPoints
 					? newHorizonsBattleStatus::formatBasisPoints(frailty->accumulatedBasisPoints)
 					: "-" + std::to_string(frailty->defenseLoss))
+				: vampirism && displayedStatus.vampirism.active()
+					? newHorizonsBattleStatus::formatBasisPoints(displayedStatus.vampirism.lifestealBasisPoints)
 				: std::to_string(duration);
 			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
 		}
@@ -594,6 +604,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			const auto tooltip = displayedStatus.shadowGift.hasTimedBuff()
 				? newHorizonsBattleStatus::shadowGiftBuffTooltip(displayedStatus.shadowGift)
 				: effect.toSpell()->getDescriptionTranslated(0);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(vampirism && displayedStatus.vampirism.active())
+		{
+			const auto tooltip = newHorizonsBattleStatus::vampirismTooltip(
+				effect.toSpell()->getDescriptionTranslated(0), displayedStatus.vampirism);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 

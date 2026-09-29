@@ -126,6 +126,12 @@ bool isCanonicalRegeneration(const CSpell * spell)
 	return spell && spell->getJsonKey() == newHorizonsMagic::NATURE_REGENERATION_SPELL;
 }
 
+bool isCanonicalVampirism(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_VAMPIRISM_SPELL
+		&& newHorizonsMagic::vampirismEnabled(battle.getBattle()->getMagicRules(), spell->getId());
+}
+
 bool isCanonicalHexOfPain(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsHexOfPainAI::SPELL_ID;
@@ -654,6 +660,82 @@ float projectedRegenerationValue(
 	}
 
 	return score;
+}
+
+float projectedVampirismValue(
+	const Environment * environment,
+	const std::shared_ptr<CBattleInfoCallback> & beforeCast,
+	const std::shared_ptr<HypotheticBattle> & afterCast,
+	const std::vector<battle::Units> & turnOrder,
+	uint32_t targetId,
+	DamageCache & damageCache,
+	BattleSide ourSide,
+	PlayerColor ourPlayer,
+	float positiveEffectMultiplier)
+{
+	if(targetId == std::numeric_limits<uint32_t>::max())
+		return 0.0f;
+
+	const auto valueVampirismHealing = [&](const std::shared_ptr<HypotheticBattle> & forecast,
+		DamageCache & forecastDamage)
+	{
+		float value = 0.0f;
+		bool firstRound = true;
+		for(const auto & round : turnOrder)
+		{
+			if(!firstRound)
+				forecast->nextRound();
+			firstRound = false;
+
+			for(const auto * queuedUnit : round)
+			{
+				auto * unit = queuedUnit
+					? forecast->getForUpdate(queuedUnit->unitId()).get() : nullptr;
+				if(!unit || !unit->alive())
+					continue;
+
+				const bool beginsActivation = forecast->battleBeginsActivation(
+					unit, BattleUnitTurnReason::TURN_QUEUE);
+				forecast->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+				unit = forecast->getForUpdate(queuedUnit->unitId()).get();
+				if(beginsActivation && unit->alive())
+				{
+					PotentialTargets potentialTargets(unit, forecastDamage, forecast);
+					if(!potentialTargets.possibleAttacks.empty())
+					{
+						auto action = potentialTargets.bestAction();
+						for(const auto & [healedUnitId, healedHealth] : action.vampirismHealingByUnit)
+						{
+							if(healedUnitId != targetId || healedHealth <= 0)
+								continue;
+
+							const auto * recipient = forecast->battleGetUnitByID(healedUnitId);
+							if(!recipient || !recipient->alive()
+								|| forecast->battleGetOwner(recipient) != ourPlayer)
+								continue;
+							value += AttackPossibility::calculateDamageReduce(nullptr, recipient,
+								static_cast<uint64_t>(healedHealth), forecastDamage, forecast)
+								* positiveEffectMultiplier;
+						}
+						applyProjectedBestAction(*forecast, unit, action);
+					}
+				}
+
+				forecast->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
+			}
+		}
+		return value;
+	};
+
+	auto forecast = std::make_shared<HypotheticBattle>(environment, afterCast);
+	auto baseline = std::make_shared<HypotheticBattle>(environment, beforeCast);
+	DamageCache forecastDamage(&damageCache);
+	DamageCache baselineDamage(&damageCache);
+	forecastDamage.buildDamageCache(forecast, ourSide);
+	baselineDamage.buildDamageCache(baseline, ourSide);
+	return std::max(0.0f,
+		valueVampirismHealing(forecast, forecastDamage)
+		- valueVampirismHealing(baseline, baselineDamage));
 }
 
 template<typename Unit>
@@ -2577,6 +2659,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	cb->getBattle(battleID)->battleGetTurnOrder(turnOrder, amount, 2); //no more than 1 turn after current, each unit at least once
 	std::vector<battle::Units> regenerationTurnOrder;
 	cb->getBattle(battleID)->battleGetTurnOrder(regenerationTurnOrder, 0, 4);
+	std::vector<battle::Units> vampirismTurnOrder;
+	cb->getBattle(battleID)->battleGetTurnOrder(vampirismTurnOrder, 0,
+		newHorizonsMagic::VAMPIRISM_BASE_DURATION_ROUNDS);
 
 	{
 		bool enemyHadTurn = false;
@@ -2813,6 +2898,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						counterspellNegated, *spellAllowance))
 					{
 						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					if(isCanonicalVampirism(*cb->getBattle(battleID), ps.spell))
+					{
+						ps.value = baseline + projectedVampirismValue(env.get(), cb->getBattle(battleID),
+							state, vampirismTurnOrder, targetId, damageCache, side, playerID,
+							scoreEvaluator.getPositiveEffectMultiplier());
 						continue;
 					}
 				}

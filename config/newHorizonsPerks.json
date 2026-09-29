@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "bc70b440ced11279915de2cfb1e48fc01e20f61ec041e7a68dae336ed86b33e4",
+	"sourceSha256": "3ee09e33c66f4e401102e226d56deea29c32b41b949e2aeb4f6f51263a392885",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1301,7 +1301,7 @@
 					"requires": "advanced",
 					"description": "Vampirism returns an additional 15 percentage points of damage as healing.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Vampirism returns an additional 15 percentage points of damage as healing."
 					}
 				},

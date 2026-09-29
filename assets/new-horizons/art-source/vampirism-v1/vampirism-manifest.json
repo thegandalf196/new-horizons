@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "vampirism",
+  "source": {
+    "path": "master.png",
+    "filename": "master.png",
+    "byte_size": 2354471,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "86d1a98e94cbd329f2cf3fd8c73b533a6ba0ea511d8975f6135e8674ce38f860"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "86d1a98e94cbd329f2cf3fd8c73b533a6ba0ea511d8975f6135e8674ce38f860"
+    },
+    {
+      "file": "vampirism-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "203b6fe164ab0f7e86b8959ff2fbca5d7092879b268358c00632961fa2b30e33"
+    },
+    {
+      "file": "vampirism-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "efe317a740305c2f104b2d4f9c9351eb3a8851e49b39a0e73566c4907b32a55f"
+    },
+    {
+      "file": "vampirism-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "6d552b418d698d7a76c4690a3724a493626b4a0c851ded9486ec16d6fa8887df"
+    },
+    {
+      "file": "vampirism-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "ad6f63ef4d3343b15bf074bc908402caa5f975b69e52c367fed9557893f91a79"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "vampirism-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "vampirism-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "vampirism-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "vampirism-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

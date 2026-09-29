@@ -59,6 +59,7 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:shadowMagic.malediction", "NH_perk_malediction"},
 		{"new-horizons:shadowMagic.witheringTouch", "NH_withering_touch"},
 		{"new-horizons:shadowMagic.soulBinder", "NH_perk_soul_binder"},
+		{"new-horizons:shadowMagic.nightFeeder", "NH_perk_night_feeder"},
 		{"new-horizons:havocMagic.stormcaller", "NH_perk_stormcaller_v2"},
 		// Provisional but distinct bindings for the newly playable higher-rank
 		// Havoc perks.  Dedicated Havoc paintings can replace these asset keys

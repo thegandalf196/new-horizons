@@ -1521,6 +1521,77 @@
 		},
 		"targetCondition" : {}
 	},
+	"vampirism" : {
+		"name" : "Vampirism",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:shadow" : true
+		},
+		"level" : 4,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "NH_spell_vampirism_44.png",
+			"iconScroll" : "NH_spell_vampirism_32.png",
+			"iconEffect" : "NH_spell_vampirism_30.png",
+			"iconImmune" : "NH_spell_vampirism_30.png",
+			"iconScenarioBonus" : "NH_spell_vampirism_32.png"
+		},
+		"animation" : {
+			"affect" : ["C13SPE0"]
+		},
+		"sounds" : {
+			"cast" : "DRAINLIF"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "For 3 rounds, one friendly stack heals surviving creatures for a share of actual attack damage it deals, including retaliation. Lifesteal is min(50%, 25% + 0.15% x Spell Power). Shadow School rank strengthens only the Spell Power term. Night Feeder adds 15 percentage points after the base cap. All creature types can receive the enchantment; it cannot resurrect casualties.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {
+					"vampirism" : {"type" : "core:vampirismEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "For 3 rounds, one friendly stack heals surviving creatures for a share of actual attack damage it deals, including retaliation. Lifesteal is min(50%, 25% + 0.15% x Spell Power). Shadow School rank strengthens only the Spell Power term. Night Feeder adds 15 percentage points after the base cap. All creature types can receive the enchantment; it cannot resurrect casualties.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {
+					"vampirism" : {"type" : "core:vampirismEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "For 3 rounds, one friendly stack heals surviving creatures for a share of actual attack damage it deals, including retaliation. Lifesteal is min(50%, 25% + 0.15% x Spell Power). Shadow School rank strengthens only the Spell Power term. Night Feeder adds 15 percentage points after the base cap. All creature types can receive the enchantment; it cannot resurrect casualties.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {
+					"vampirism" : {"type" : "core:vampirismEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "For 3 rounds, one friendly stack heals surviving creatures for a share of actual attack damage it deals, including retaliation. Lifesteal is min(50%, 25% + 0.15% x Spell Power). Shadow School rank strengthens only the Spell Power term. Night Feeder adds 15 percentage points after the base cap. All creature types can receive the enchantment; it cannot resurrect casualties.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {
+					"vampirism" : {"type" : "core:vampirismEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {
+			"positive" : true
+		},
+		"targetCondition" : {}
+	},
 	"frailty" : {
 		"name" : "Frailty",
 		"type" : "combat",

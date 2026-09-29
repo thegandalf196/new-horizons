@@ -52,6 +52,12 @@ constexpr int SORROW_BASE_DURATION_ROUNDS = 3;
 constexpr int SORROW_SPELL_POWER_PER_MORALE = 70;
 constexpr int SORROW_BASE_MORALE_PENALTY = 1;
 constexpr int SORROW_MAX_MORALE_PENALTY = 3;
+constexpr int VAMPIRISM_BASE_DURATION_ROUNDS = 3;
+constexpr int VAMPIRISM_BASE_HEAL_BASIS_POINTS = 2'500;
+constexpr int VAMPIRISM_MAX_BASE_HEAL_BASIS_POINTS = 5'000;
+constexpr int VAMPIRISM_NIGHT_FEEDER_BONUS_BASIS_POINTS = 1'500;
+constexpr int VAMPIRISM_MAX_HEAL_BASIS_POINTS = 6'500;
+constexpr int VAMPIRISM_SPELL_POWER_BASIS_POINTS_PER_POINT = 15;
 constexpr int CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3 = 5;
 constexpr int QUICKSAND_BASE_PATCH_COUNT_V3 = 2;
 constexpr int QUICKSAND_MAX_PATCH_COUNT_V3 = 5;
@@ -85,8 +91,11 @@ inline constexpr std::string_view NATURE_POISON_SPELL = "new-horizons:poison";
 inline constexpr std::string_view NATURE_REGENERATION_SPELL = "new-horizons:regeneration";
 inline constexpr std::string_view SHADOW_LIFE_DRAIN_SPELL = "new-horizons:lifeDrain";
 inline constexpr std::string_view SHADOW_GIFT_SPELL = "new-horizons:shadowGift";
+inline constexpr std::string_view SHADOW_VAMPIRISM_SPELL = "new-horizons:vampirism";
+inline constexpr std::string_view SHADOW_VAMPIRISM_STATUS = "core:vampirism";
 inline constexpr std::string_view SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic";
 inline constexpr std::string_view SHADOW_DARK_GIFT_PERK = "new-horizons:shadowMagic.darkGift";
+inline constexpr std::string_view SHADOW_NIGHT_FEEDER_PERK = "new-horizons:shadowMagic.nightFeeder";
 inline constexpr std::string_view NATURE_MAGIC_SKILL = "new-horizons:natureMagic";
 inline constexpr std::string_view NATURE_HERBALIST = "new-horizons:natureMagic.herbalist";
 inline constexpr std::string_view STORM_OF_DAGGERS_SPELL = "new-horizons:stormOfDaggers";
@@ -147,6 +156,15 @@ DLL_LINKAGE std::optional<int> curseDurationRounds(const JsonNode & rules, const
 	SpellID spell);
 DLL_LINKAGE std::optional<int> sorrowDurationRounds(const JsonNode & rules, const CGHeroInstance * hero,
 	SpellID spell);
+/// Saved-v3 canonical Vampirism identity gate. Older profiles cannot acquire
+/// this new spell from installed content alone.
+DLL_LINKAGE bool vampirismEnabled(const JsonNode & rules, SpellID spell);
+/// Returns Vampirism lifesteal in basis points, including saved School ×
+/// Spellcraft, cast-specific Warcasting/Empower, and Night Feeder after the
+/// ordinary 50% cap. Returns null for legacy or non-canonical spell rows.
+DLL_LINKAGE std::optional<int> vampirismHealBasisPoints(const JsonNode & rules,
+	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower,
+	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0);
 /// Applies the saved v3 fixed-five Chain Lightning target count while keeping
 /// the configured, mastery-dependent value for legacy/v1/v2 battles.
 DLL_LINKAGE int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configuredTargetCount);

@@ -319,6 +319,58 @@ bool shadowGiftEnabled(const JsonNode & rules, const SpellID spell)
 	return true;
 }
 
+bool vampirismEnabled(const JsonNode & rules, const SpellID spell)
+{
+	const auto * definition = spell.toSpell();
+	if(!definition || definition->getJsonKey() != SHADOW_VAMPIRISM_SPELL || !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !rules["spells"].isStruct())
+		return false;
+
+	const auto found = rules["spells"].Struct().find(std::string(SHADOW_VAMPIRISM_SPELL));
+	if(found == rules["spells"].Struct().end() || !found->second.isStruct())
+		return false;
+
+	const auto & row = found->second;
+	if(!integer(row["level"], 4, 4)
+		|| !row["schools"].isVector() || row["schools"].Vector().size() != 1
+		|| !row["schools"].Vector().front().isString()
+		|| row["schools"].Vector().front().String() != "new-horizons:shadow"
+		|| !row["costs"].isVector() || row["costs"].Vector().size() != 4
+		|| (!row["active"].isNull() && !row["active"].isBool())
+		|| !spellAllowedBySavedRoster(rules, spell))
+		return false;
+
+	for(const auto & cost : row["costs"].Vector())
+		if(!integer(cost, 15, 15))
+			return false;
+
+	return true;
+}
+
+std::optional<int> vampirismHealBasisPoints(const JsonNode & rules, const CGHeroInstance * hero,
+	const SpellID spell, const int32_t rawSpellPower, const int warcastingBonusPercent,
+	const int empowerBonusPercent)
+{
+	if(!vampirismEnabled(rules, spell))
+		return std::nullopt;
+	if(rawSpellPower < 0)
+		throw std::invalid_argument("Invalid Vampirism raw Spell Power input");
+
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell);
+	const int64_t scaledPowerBasisPoints = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		static_cast<int64_t>(rawSpellPower) * VAMPIRISM_SPELL_POWER_BASIS_POINTS_PER_POINT, 1,
+		coefficientBasisPoints, warcastingBonusPercent, empowerBonusPercent);
+	const int baseHealBasisPoints = VAMPIRISM_BASE_HEAL_BASIS_POINTS + static_cast<int>(
+		std::min<int64_t>(VAMPIRISM_MAX_BASE_HEAL_BASIS_POINTS - VAMPIRISM_BASE_HEAL_BASIS_POINTS,
+			scaledPowerBasisPoints));
+	if(!hero || !hero->hasActivePerk(std::string(SHADOW_MAGIC_SKILL), std::string(SHADOW_NIGHT_FEEDER_PERK)))
+		return baseHealBasisPoints;
+
+	return std::min(VAMPIRISM_MAX_HEAL_BASIS_POINTS,
+		baseHealBasisPoints + VAMPIRISM_NIGHT_FEEDER_BONUS_BASIS_POINTS);
+}
+
 bool curseRulesEnabled(const JsonNode & rules, const SpellID spell)
 {
 	constexpr std::array<int, 4> expectedCosts{4, 4, 3, 3};

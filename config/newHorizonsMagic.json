@@ -247,6 +247,11 @@
 			"level": 3,
 			"costs": [12, 12, 12, 12]
 		},
+		"new-horizons:vampirism": {
+			"schools": ["new-horizons:shadow"],
+			"level": 4,
+			"costs": [15, 15, 15, 15]
+		},
 		"new-horizons:holyWrath": {
 			"schools": ["new-horizons:light"],
 			"level": 3,
