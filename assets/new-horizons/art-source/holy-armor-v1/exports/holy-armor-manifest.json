@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "holy-armor",
+  "source": {
+    "path": "assets/new-horizons/art-source/holy-armor-v1/exports/master.png",
+    "filename": "master.png",
+    "byte_size": 2631384,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "c4629e46b0372a4608e8be84c72636e6c09955b7fc90dda283677fe72fbbc9f7"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "c4629e46b0372a4608e8be84c72636e6c09955b7fc90dda283677fe72fbbc9f7"
+    },
+    {
+      "file": "holy-armor-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "51f25e332b2ddf887c43c52018d1d8eef6a141ac0d5d750a03303be7b451c1ff"
+    },
+    {
+      "file": "holy-armor-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "8262589893069d5de0fdec9df57975185b4d2b1afefe431d521fb1bd80dbf542"
+    },
+    {
+      "file": "holy-armor-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "34b49d7c4d6d3ea1b1491d6d68b1fab3529cf3e4c99537767ad63ec2cbf6b33b"
+    },
+    {
+      "file": "holy-armor-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "6a23722386cf63de0cf591b6208d1452bbdcc9c7fc6d969390104e57a5855cf0"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "holy-armor-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "holy-armor-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "holy-armor-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "holy-armor-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}
