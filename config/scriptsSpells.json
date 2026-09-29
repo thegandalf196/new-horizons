@@ -444,6 +444,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"purify" : {
+		"implements" : "spellEffect",
+		"script" : "spells/purify",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"spellLock" : {
 		"implements" : "spellEffect",
 		"script" : "spells/spellLock",

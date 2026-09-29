@@ -595,6 +595,57 @@
 		"flags" : {"positive" : true},
 		"targetCondition" : {}
 	},
+	"purify" : {
+		"name" : "Purify",
+		"type" : "combat",
+		"school" : {"new-horizons:light" : true},
+		"level" : 4,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "LOCATION",
+		"graphics" : {
+			"iconBook" : "NH_spell_purify_44.png",
+			"iconScroll" : "NH_spell_purify_32.png",
+			"iconEffect" : "NH_spell_purify_30.png",
+			"iconImmune" : "NH_spell_purify_30.png",
+			"iconScenarioBonus" : "NH_spell_purify_32.png"
+		},
+		"animation" : {"hit" : ["C18SPW0"]},
+		"sounds" : {"cast" : "DISPEL"},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Cleanse friendly stacks within 2 hexes of the selected point. Choose up to min(2, 1 + floor(Spell Power / 120)) temporary negative effects to remove from each affected stack. Purifier also removes one physical affliction from each affected stack. Does not heal or remove positive effects.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {"purify" : {"type" : "core:purify"}}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Cleanse friendly stacks within 2 hexes of the selected point. Choose up to min(2, 1 + floor(Spell Power / 120)) temporary negative effects to remove from each affected stack. Purifier also removes one physical affliction from each affected stack. Does not heal or remove positive effects.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {"purify" : {"type" : "core:purify"}}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Cleanse friendly stacks within 2 hexes of the selected point. Choose up to min(2, 1 + floor(Spell Power / 120)) temporary negative effects to remove from each affected stack. Purifier also removes one physical affliction from each affected stack. Does not heal or remove positive effects.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {"purify" : {"type" : "core:purify"}}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Cleanse friendly stacks within 2 hexes of the selected point. Choose up to min(2, 1 + floor(Spell Power / 120)) temporary negative effects to remove from each affected stack. Purifier also removes one physical affliction from each affected stack. Does not heal or remove positive effects.",
+				"cost" : 15,
+				"power" : 0,
+				"battleEffects" : {"purify" : {"type" : "core:purify"}}
+			}
+		},
+		"flags" : {"positive" : true},
+		"targetCondition" : {}
+	},
 	"holyArmor" : {
 		"name" : "Holy Armor",
 		"type" : "combat",

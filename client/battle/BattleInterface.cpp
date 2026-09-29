@@ -25,6 +25,7 @@
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
 #include "CreatureAnimation.h"
+#include "PurifyWindow.h"
 #include "TemporalFieldWindow.h"
 
 #include "../CPlayerInterface.h"
@@ -56,6 +57,7 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/effects/Effect.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
@@ -108,6 +110,7 @@ BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *
 	installShadowGiftUI();
 	installSelectiveDispelUI();
 	installCureAfflictionUI();
+	installPurifyUI();
 	installTemporalFieldUI();
 
 	adventureInt->onAudioPaused();
@@ -534,6 +537,166 @@ void BattleInterface::installCureAfflictionUI()
 				actionsController->endCastingSpell();
 		};
 		ENGINE->windows().pushWindow(window);
+		return true;
+	});
+}
+
+void BattleInterface::installPurifyUI()
+{
+	if(!actionsController)
+		return;
+
+	actionsController->setPurifyPicker([this](const BattleAction & pending, const BattleHex & center)
+	{
+		const BattleID localBattleID = getBattleID();
+		const auto callback = curInt && curInt->cb ? curInt->cb->getBattle(localBattleID) : nullptr;
+		const auto * hero = currentHero();
+		const auto * spell = pending.spell.toSpell();
+		if(!callback || !callback->getBattle() || !hero || !spell || !center.isValid()
+			|| pending.side != callback->battleGetMySide()
+			|| !newHorizonsPurify::enabled(callback->getBattle()->getMagicRules(), pending.spell))
+		{
+			if(actionsController)
+				actionsController->endCastingSpell();
+			if(curInt)
+				curInt->showInfoDialog("Purify is no longer available in this battle.");
+			return true;
+		}
+
+		const bool purifierPerk = newHorizonsPurify::hasPurifierPerk(hero);
+		const int32_t spellPower = hero->getEffectPower(spell);
+		const int32_t maximumChoices = newHorizonsPurify::maximumSpellEffectChoices(spellPower);
+		const BattleSide casterSide = callback->battleGetMySide();
+		const auto eligibleStacks = newHorizonsPurify::eligibleStacks(
+			*callback, casterSide, center, spellPower, purifierPerk);
+
+		PurifyContext context;
+		context.center = center;
+		context.maximumSpellEffectChoices = maximumChoices;
+		context.stacks.reserve(eligibleStacks.size());
+		for(const auto & eligible : eligibleStacks)
+		{
+			const auto * unit = callback->battleGetUnitByID(static_cast<uint32_t>(eligible.unitId));
+			if(!unit || !unit->alive() || unit->unitSide() != casterSide || !unit->unitType())
+				continue;
+
+			PurifyStackChoices display;
+			display.unitId = eligible.unitId;
+			display.stackName = std::to_string(unit->getCount()) + " "
+				+ (unit->getCount() == 1 ? unit->unitType()->getNameSingularTranslated()
+					: unit->unitType()->getNamePluralTranslated());
+			display.maximumSpellEffectChoices = eligible.maximumSpellEffectChoices;
+			display.physicalPoisonAutomaticallyCleared = eligible.physicalPoisonAutomaticallyCleared;
+			if(eligible.physicalPoison && !eligible.physicalPoisonAutomaticallyCleared)
+				display.eligibleEffects.emplace_back(newHorizonsPurify::physicalPoisonChoiceID(), "Physical Poison");
+			for(const auto sourceSpell : eligible.spellEffectGroups)
+			{
+				const auto * source = sourceSpell.toSpell();
+				if(source)
+					display.eligibleEffects.emplace_back(sourceSpell, source->getNameTranslated());
+			}
+			context.purifierWillClearPhysicalPoison |= display.physicalPoisonAutomaticallyCleared;
+			context.stacks.push_back(std::move(display));
+		}
+
+		const bool hasSelectableEffects = std::ranges::any_of(context.stacks, [](const PurifyStackChoices & stack)
+		{
+			return !stack.eligibleEffects.empty();
+		});
+		if(!hasSelectableEffects && !context.purifierWillClearPhysicalPoison)
+		{
+			if(actionsController)
+				actionsController->endCastingSpell();
+			curInt->showInfoDialog("No eligible negative magical or bodily effects are within two hexes.");
+			return true;
+		}
+
+		const auto heroID = hero->id;
+		const auto session = actionsController->getCastingSession();
+		context.confirm = [this, pending, localBattleID, center, heroID, session](const PurifyEffectSelection & choices)
+			-> bool
+		{
+			if(!actionsController || actionsController->getCastingSession() != session
+				|| !actionsController->heroSpellcastingModeActive() || !makingTurn() || !curInt || !curInt->cb)
+				return false;
+
+			const auto callback = curInt->cb->getBattle(localBattleID);
+			const auto * hero = currentHero();
+			const auto * spell = pending.spell.toSpell();
+			if(!callback || !callback->getBattle() || !hero || hero->id != heroID || !spell
+				|| !newHorizonsPurify::enabled(callback->getBattle()->getMagicRules(), pending.spell))
+				return false;
+
+			const bool purifierPerk = newHorizonsPurify::hasPurifierPerk(hero);
+			const int32_t spellPower = hero->getEffectPower(spell);
+			const BattleSide casterSide = callback->battleGetMySide();
+			if(pending.side != casterSide)
+				return false;
+			const auto currentEligible = newHorizonsPurify::eligibleStacks(
+				*callback, casterSide, center, spellPower, purifierPerk);
+
+			PurifyEffectSelection accepted;
+			accepted.reserve(choices.size());
+			for(size_t index = 0; index < choices.size(); ++index)
+			{
+				const auto & choice = choices[index];
+				if(std::ranges::find(accepted, choice) != accepted.end())
+					return false;
+
+				const auto stack = std::ranges::find_if(currentEligible, [&choice](const auto & eligible)
+				{
+					return eligible.unitId == choice.first;
+				});
+				if(stack == currentEligible.end())
+					return false;
+				if(choice.second == newHorizonsPurify::physicalPoisonChoiceID())
+				{
+					if(!stack->physicalPoison || stack->physicalPoisonAutomaticallyCleared)
+						return false;
+				}
+				else if(std::ranges::find(stack->spellEffectGroups, choice.second) == stack->spellEffectGroups.end())
+					return false;
+
+				const auto countForStack = std::ranges::count_if(choices, [&choice](const auto & selected)
+				{
+					return selected.first == choice.first;
+				});
+				if(countForStack > stack->maximumSpellEffectChoices)
+					return false;
+				accepted.push_back(choice);
+			}
+
+			const bool clearsPhysicalPoison = std::ranges::any_of(currentEligible, [](const auto & eligible)
+			{
+				return eligible.physicalPoisonAutomaticallyCleared;
+			});
+			if(accepted.empty() && !clearsPhysicalPoison)
+				return false;
+
+			spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
+			preview.setMetamagicFollowup(pending.metamagicFollowup);
+			auto mechanics = spell->battleMechanics(&preview);
+			spells::detail::ProblemImpl problem;
+			battle::Target targetCheck;
+			targetCheck.emplace_back(center);
+			if(!mechanics || !mechanics->canBeCast(problem) || !mechanics->canBeCastAt(targetCheck, problem))
+				return false;
+
+			BattleAction action = pending;
+			action.target.clear();
+			action.aimToHex(center);
+			action.spellPurifyChoices = std::move(accepted);
+			curInt->cb->battleMakeSpellAction(localBattleID, action);
+			actionsController->endCastingSpell();
+			return true;
+		};
+		context.cancel = [this]
+		{
+			if(actionsController)
+				actionsController->endCastingSpell();
+		};
+
+		ENGINE->windows().createAndPushWindow<PurifyWindow>(std::move(context));
 		return true;
 	});
 }

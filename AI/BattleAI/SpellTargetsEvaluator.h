@@ -12,10 +12,23 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include <vcmi/spells/Magic.h>
 
+#include <utility>
+
 class SpellTargetEvaluator
 {
 public:
+	struct PurifySelection
+	{
+		std::vector<std::pair<int32_t, SpellID>> spellEffectGroups;
+		std::vector<int32_t> physicalPoisonStackIds;
+		float value = 0.0f;
+	};
+
 	static std::vector<spells::Target> getViableTargets(spells::Mechanics * spellMechanics);
+	/// Selects the most valuable legal negative source groups for each friendly
+	/// stack around a canonical Purify center. The result is a read-only snapshot.
+	static PurifySelection purifySelection(const spells::Mechanics * spellMechanics,
+		const spells::Target & target);
 	/// Returns a deterministic pressure value for a canonical New Horizons Land
 	/// Mine placement.  The value is deliberately read-only and only considers
 	/// the live battle snapshot; it is used by BattleAI when a mine has no

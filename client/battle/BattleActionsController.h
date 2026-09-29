@@ -69,6 +69,7 @@ using MagicArrowOverchargeFactory = std::function<std::optional<MagicArrowOverch
 using ShadowGiftFactory = std::function<std::optional<ShadowGiftContext>(
 	const BattleAction &, const BattleHex &, const CStack *)>;
 using SelectiveDispelFactory = std::function<std::optional<SelectiveDispelContext>(const BattleAction &, const CStack *)>;
+using PurifyPicker = std::function<bool(const BattleAction &, const BattleHex &)>;
 using TemporalFieldFactory = std::function<std::optional<TemporalFieldContext>(const BattleAction &)>;
 
 /// Class that controls actions that can be performed by player, e.g. moving stacks, attacking, etc
@@ -89,6 +90,8 @@ class BattleActionsController
 	ShadowGiftFactory shadowGiftFactory;
 	/// Optional post-target Selective Dispel prompt.
 	SelectiveDispelFactory selectiveDispelFactory;
+	/// Optional post-center Purify effect-group picker.
+	PurifyPicker purifyPicker;
 	std::function<bool(const BattleAction &, const CStack *)> cureAfflictionPicker;
 	uint64_t castingSession = 0;
 	/// Optional pre-target Temporal Field choice for Sorcery Slow.
@@ -329,6 +332,7 @@ public:
 	void setMagicArrowOverchargeFactory(MagicArrowOverchargeFactory factory);
 	void setShadowGiftFactory(ShadowGiftFactory factory);
 	void setSelectiveDispelFactory(SelectiveDispelFactory factory);
+	void setPurifyPicker(PurifyPicker picker);
 	void setCureAfflictionPicker(std::function<bool(const BattleAction &, const CStack *)> picker);
 	uint64_t getCastingSession() const { return castingSession; }
 	void setTemporalFieldFactory(TemporalFieldFactory factory);

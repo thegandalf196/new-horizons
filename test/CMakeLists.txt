@@ -248,6 +248,7 @@ set(test_SRCS
 		server/battles/NewHorizonsHolyArmorTest.cpp
 		server/battles/NewHorizonsHeavenlyGaleTest.cpp
 		server/battles/NewHorizonsDivineRetributionTest.cpp
+		server/battles/NewHorizonsPurifyTest.cpp
 		server/battles/NewHorizonsMagicalDamageReductionTest.cpp
 		server/battles/NewHorizonsStormOfDaggersTest.cpp
 		server/battles/NewHorizonsSanctuaryTest.cpp
@@ -347,6 +348,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsHolyArmorAITest.cpp
 		battleAI/NewHorizonsHeavenlyGaleAITest.cpp
 		battleAI/NewHorizonsDivineRetributionAITest.cpp
+		battleAI/NewHorizonsPurifyAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp
 		battleAI/NewHorizonsHeroGrowthAITest.cpp
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp

@@ -43,6 +43,7 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
@@ -769,6 +770,150 @@ bool BattleActionProcessor::doSurrenderAction(const CBattleInfoCallback & battle
 	return true;
 }
 
+static bool validatePurifyAction(const CBattleInfoCallback & battle, const BattleAction & action,
+	const CGHeroInstance * hero, const battle::Target & target)
+{
+	constexpr int32_t invalidUnitId = -1000;
+	if(!hero || action.actionType != EActionType::HERO_SPELL
+		|| action.spell != newHorizonsPurify::spellID()
+		|| (action.side != BattleSide::ATTACKER && action.side != BattleSide::DEFENDER)
+		|| action.target.size() != 1 || action.target.front().unitValue != invalidUnitId
+		|| target.size() != 1 || target.front().unitValue != nullptr
+		|| !target.front().hexValue.isAvailable())
+		return false;
+
+	const auto * state = battle.getBattle();
+	if(!state || !newHorizonsPurify::enabled(state->getMagicRules(), action.spell))
+		return false;
+
+	const bool purifier = newHorizonsPurify::hasPurifierPerk(hero);
+	const auto eligible = newHorizonsPurify::eligibleStacks(battle, action.side,
+		target.front().hexValue, hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), purifier);
+	std::map<int32_t, const newHorizonsPurify::EligibleStack *> byUnit;
+	for(const auto & stack : eligible)
+		byUnit.emplace(stack.unitId, &stack);
+
+	std::set<std::pair<int32_t, SpellID>> uniqueChoices;
+	std::map<int32_t, int> choiceCount;
+	for(const auto & [unitId, sourceSpell] : action.spellPurifyChoices)
+	{
+		if(!uniqueChoices.emplace(unitId, sourceSpell).second)
+			return false;
+
+		const auto found = byUnit.find(unitId);
+		if(found == byUnit.end())
+			return false;
+		if(sourceSpell == newHorizonsPurify::physicalPoisonChoiceID())
+		{
+			if(!found->second->physicalPoison)
+				return false;
+		}
+		else if(!vstd::contains(found->second->spellEffectGroups, sourceSpell))
+			return false;
+
+		if(++choiceCount[unitId] > found->second->maximumSpellEffectChoices)
+			return false;
+	}
+
+	const bool clearsPhysicalPoison = vstd::contains_if(eligible, [](const auto & stack)
+	{
+		return stack.physicalPoisonAutomaticallyCleared;
+	});
+	return !action.spellPurifyChoices.empty() || clearsPhysicalPoison;
+}
+
+static void applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
+	const BattleAction & action, const CGHeroInstance * hero)
+{
+	if(action.target.size() != 1 || action.target.front().unitValue != -1000)
+		return;
+
+	const BattleHex center = action.target.front().hexValue;
+	const bool purifier = newHorizonsPurify::hasPurifierPerk(hero);
+	const auto eligible = newHorizonsPurify::eligibleStacks(battle, action.side, center,
+		hero ? hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER) : 0, purifier);
+
+	std::map<int32_t, std::vector<Bonus>> removalsByUnit;
+	std::set<int32_t> manuallySelectedPhysicalPoison;
+	for(const auto & [unitId, sourceSpell] : action.spellPurifyChoices)
+	{
+		if(sourceSpell == newHorizonsPurify::physicalPoisonChoiceID())
+		{
+			manuallySelectedPhysicalPoison.insert(unitId);
+			continue;
+		}
+		const auto * unit = battle.battleGetStackByID(unitId, false);
+		if(!unit)
+			continue;
+		auto bonuses = newHorizonsPurify::spellEffectGroupBonuses(unit, sourceSpell);
+		if(!bonuses.empty())
+		{
+			auto & selected = removalsByUnit[unitId];
+			selected.insert(selected.end(), std::make_move_iterator(bonuses.begin()),
+				std::make_move_iterator(bonuses.end()));
+		}
+	}
+
+	const BattleID battleId = battle.getBattle()->getBattleID();
+	if(!removalsByUnit.empty())
+	{
+		SetStackEffect removedEffects;
+		removedEffects.battleID = battleId;
+		for(auto & [unitId, bonuses] : removalsByUnit)
+			removedEffects.toRemove.emplace_back(static_cast<ui32>(unitId), std::move(bonuses));
+		gameHandler.sendAndApply(removedEffects);
+
+		BattleLogMessage message;
+		message.battleID = battleId;
+		for(const auto & removal : removalsByUnit)
+		{
+			const auto * unit = battle.battleGetStackByID(removal.first, false);
+			if(!unit)
+				continue;
+			MetaString line;
+			line.appendRawString("Purify removes negative spell effects from %s.");
+			unit->addNameReplacement(line, unit->getCount());
+			message.lines.push_back(std::move(line));
+		}
+		if(!message.lines.empty())
+			gameHandler.sendAndApply(message);
+	}
+
+	BattleUnitsChanged physicalPoisonUpdates;
+	physicalPoisonUpdates.battleID = battleId;
+	BattleLogMessage physicalPoisonLog;
+	physicalPoisonLog.battleID = battleId;
+	for(const auto & stack : eligible)
+	{
+		if(!manuallySelectedPhysicalPoison.contains(stack.unitId)
+			&& !stack.physicalPoisonAutomaticallyCleared)
+			continue;
+		const auto * unit = battle.battleGetStackByID(stack.unitId, false);
+		if(!unit)
+			continue;
+
+		auto state = unit->acquireState();
+		if(!newHorizonsPurify::clearPhysicalPoison(state.get()))
+			continue;
+
+		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		physicalPoisonUpdates.changedStacks.push_back(std::move(update));
+
+		MetaString line;
+		line.appendRawString(stack.physicalPoisonAutomaticallyCleared
+			? "Purifier removes physical Poison from %s."
+			: "Purify removes physical Poison from %s.");
+		unit->addNameReplacement(line, unit->getCount());
+		physicalPoisonLog.lines.push_back(std::move(line));
+	}
+
+	if(!physicalPoisonUpdates.changedStacks.empty())
+		gameHandler.sendAndApply(physicalPoisonUpdates);
+	if(!physicalPoisonLog.lines.empty())
+		gameHandler.sendAndApply(physicalPoisonLog);
+}
+
 bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
 	if(ba.metamagicGrand)
@@ -814,6 +959,13 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 		&& !validateCanonicalQuicksandTargets(battle, *mechanics, target))
 		return false;
 	if(!validateShadowGiftAction(battle, ba, hero, spell, target))
+		return false;
+	if(spell->getId() == newHorizonsPurify::spellID())
+	{
+		if(!validatePurifyAction(battle, ba, hero, target))
+			return false;
+	}
+	else if(!ba.spellPurifyChoices.empty())
 		return false;
 
 	return mechanics->canBeCast(problem) && !target.empty() && mechanics->canBeCastAt(target, problem);
@@ -890,6 +1042,19 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		gameHandler->complain("Shadow Gift requires one eligible allied stack and a valid 10/20/30 percent sacrifice choice");
 		return false;
 	}
+	if(s->getId() == newHorizonsPurify::spellID())
+	{
+		if(!validatePurifyAction(battle, ba, h, target))
+		{
+			gameHandler->complain("Purify selections no longer match eligible effects in the selected area");
+			return false;
+		}
+	}
+	else if(!ba.spellPurifyChoices.empty())
+	{
+		gameHandler->complain("Purify selections are only valid for the Purify Hero Spell action");
+		return false;
+	}
 
 	if(!m->canBeCast(problem))
 	{
@@ -944,6 +1109,8 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		? activeShadowGiftStatusBonuses(*shadowGiftRecipient, s->getId())
 		: std::vector<std::shared_ptr<Bonus>>{};
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
+	if(!counterspellNegated && s->getId() == newHorizonsPurify::spellID())
+		applyPurifyAction(*gameHandler, battle, ba, h);
 	if(!counterspellNegated && s->getJsonKey() == newHorizonsShadowGift::SPELL_ID)
 	{
 		// Pay only after the script published the timed status. This keeps the
@@ -3920,6 +4087,12 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 	}
 	if (ba.side != BattleSide::ATTACKER && ba.side != BattleSide::DEFENDER && gameHandler->complain("Can not make action - invalid battle side!"))
 		return false;
+	if(!ba.spellPurifyChoices.empty()
+		&& (ba.actionType != EActionType::HERO_SPELL || ba.spell != newHorizonsPurify::spellID()))
+	{
+		gameHandler->complain("Purify selections are only valid for the Purify Hero Spell action");
+		return false;
+	}
 
 	if(battle.battleGetTacticDist() != 0)
 	{

@@ -20,6 +20,7 @@ SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
     'new-horizons:divineRetribution',
+    'new-horizons:purify',
     'new-horizons:focusMagic',
     'new-horizons:frailty',
     'new-horizons:guardianSpirit',
@@ -505,6 +506,30 @@ class NewHorizonsContentTest(unittest.TestCase):
                            ('iconImmune', 30)):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_divine_retribution_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+
+    def test_purify_is_rostered_area_light_cleanse(self):
+        row = self.rules['spells']['new-horizons:purify']
+        self.assertEqual((row['schools'], row['level'], row['costs']),
+                         (['new-horizons:light'], 4, [15, 15, 15, 15]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['purify']
+        self.assertEqual((spell['name'], spell['targetType']), ('Purify', 'LOCATION'))
+        self.assertTrue(spell['flags']['positive'])
+        self.assertFalse(spell['flags'].get('damage', False))
+        light_perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:lightMagic']['perks']
+        purifier = next(perk for perk in light_perks
+                        if perk['id'] == 'new-horizons:lightMagic.purifier')
+        self.assertEqual(purifier['effect']['status'], 'active')
+        for level in spell['levels'].values():
+            self.assertEqual((level['range'], level['cost']), ('0', 15))
+            self.assertEqual(level['battleEffects']['purify']['type'], 'core:purify')
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_spell_purify_{size}.png')
             self.assertEqual(struct.unpack('>II',
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                 (size, size))

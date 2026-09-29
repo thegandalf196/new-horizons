@@ -12,6 +12,8 @@
 #include "HeroCommand.h"
 #include "../GameConstants.h"
 
+#include <utility>
+
 class CBattleInfoCallback;
 
 namespace battle
@@ -37,6 +39,10 @@ public:
 	/// Selects a saved New Horizons Cure affliction by its SPELL_EFFECT source
 	/// identity. NONE means heal-only and is validated against current target state.
 	SpellID spellCureAffliction = SpellID::NONE;
+	/// Player-selected Purify effects. Each pair is (unit ID, source SpellID); SpellID::NONE
+	/// is the named physical-Poison choice sentinel. Other IDs select complete SPELL_EFFECT groups.
+	/// Repeated units are allowed up to the caster's per-stack Spell Power cap.
+	std::vector<std::pair<int32_t, SpellID>> spellPurifyChoices;
 	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
 	/// The server validates perk ownership, availability and cost.
 	bool spellMassSlow = false;
@@ -130,6 +136,9 @@ public:
 		if(h.saving && spellCureAffliction != SpellID::NONE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CURE_AFFLICTION))
 			throw std::runtime_error("Cannot serialize Cure affliction selection to an older protocol");
+		if(h.saving && !spellPurifyChoices.empty()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PURIFY))
+			throw std::runtime_error("Cannot serialize Purify effect selection to an older protocol");
 		if(h.saving && spellMassSlow
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
 			throw std::runtime_error("Cannot serialize Temporal Field to an older protocol");
@@ -262,6 +271,10 @@ public:
 			h & spellShadowGiftSacrificePercent;
 		else if(!h.saving)
 			spellShadowGiftSacrificePercent = 0;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PURIFY))
+			h & spellPurifyChoices;
+		else if(!h.saving)
+			spellPurifyChoices.clear();
 		if(!h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Targeted command requires the new protocol");

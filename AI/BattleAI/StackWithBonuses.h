@@ -100,6 +100,8 @@ public:
 	void addUnitBonus(const std::vector<Bonus> & bonus);
 	void updateUnitBonus(const std::vector<Bonus> & bonus);
 	void removeUnitBonus(const std::vector<Bonus> & bonus);
+	/// Projects an already selected Purify payload onto this detached state.
+	bool applyPurifySelection(const std::vector<SpellID> & spellEffectGroups, bool clearPhysicalPoison);
 
 	void removeUnitBonus(const CSelector & selector);
 	void applyNoQuarter(int32_t moraleActivationsRemaining);

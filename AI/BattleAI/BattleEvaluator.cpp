@@ -26,6 +26,7 @@
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpellHandler.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
@@ -109,6 +110,12 @@ bool isCanonicalTimeStop(const CSpell * spell)
 bool isCanonicalSpellLock(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL;
+}
+
+bool isCanonicalPurify(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsPurify::SPELL_ID
+		&& spell->getId() == newHorizonsPurify::spellID();
 }
 
 bool isCanonicalShadowGift(const CBattleInfoCallback & battle, const CSpell * spell)
@@ -2993,8 +3000,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			&& !heavenlyGaleAvailableInSavedRules(*battleCallback, option.spell);
 		const bool unavailableDivineRetribution = isCanonicalDivineRetribution(option.spell)
 			&& !divineRetributionAvailableInSavedRules(*battleCallback, option.spell);
+		const bool unavailablePurify = isCanonicalPurify(option.spell)
+			&& !newHorizonsPurify::enabled(battleCallback->getBattle()->getMagicRules(), option.spell->getId());
 		return unavailableReanimate || unavailableSoulReaper || unavailableDoom
-			|| unavailableGuardianSpirit || unavailableHeavenlyGale || unavailableDivineRetribution;
+			|| unavailableGuardianSpirit || unavailableHeavenlyGale || unavailableDivineRetribution
+			|| unavailablePurify;
 	});
 
 	LOGFL("I know how %d of them works.", possibleSpells.size());
@@ -3129,6 +3139,16 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.spellMassSlow = massSlow;
 						ps.spellStormOfDaggers = stormOfDaggers;
 						ps.spellShadowGiftSacrificePercent = shadowGiftSacrificePercent;
+						if(isCanonicalPurify(spell))
+						{
+							const auto selection = SpellTargetEvaluator::purifySelection(
+								candidateMechanics.get(), ps.dest);
+							if(selection.value <= 0.0f)
+								continue;
+							ps.spellPurifyChoices = selection.spellEffectGroups;
+							ps.spellPurifyPhysicalTargets = selection.physicalPoisonStackIds;
+							ps.spellPurifyHeuristicValue = selection.value;
+						}
 						if(isCanonicalShadowGift(*cb->getBattle(battleID), spell))
 						{
 							ps.spellShadowGiftHeuristicValue = SpellTargetEvaluator::shadowGiftTradeValue(
@@ -3542,6 +3562,76 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + protectionValue * scoreEvaluator.getPositiveEffectMultiplier();
+					continue;
+				}
+				// Purify's selected source groups are action metadata rather than a
+				// BattleCast variant. Apply those exact groups to the detached unit
+				// snapshots before valuing the accepted Hero Action; never mutate the
+				// live callback state during candidate evaluation.
+				if(ps.command == HeroCommand::NONE && isCanonicalPurify(ps.spell)
+					&& ps.spellPurifyHeuristicValue > 0.0f)
+				{
+					std::map<uint32_t, std::vector<SpellID>> groupsByUnit;
+					std::set<uint32_t> physicalPoisonUnits;
+					std::set<uint32_t> selectedUnits;
+					for(const auto & [unitId, sourceSpell] : ps.spellPurifyChoices)
+					{
+						const auto id = static_cast<uint32_t>(unitId);
+						groupsByUnit[id].push_back(sourceSpell);
+						selectedUnits.insert(id);
+					}
+					for(const auto unitId : ps.spellPurifyPhysicalTargets)
+					{
+						const auto id = static_cast<uint32_t>(unitId);
+						physicalPoisonUnits.insert(id);
+						selectedUnits.insert(id);
+					}
+
+					bool selectionProjected = !selectedUnits.empty();
+					for(const auto id : selectedUnits)
+					{
+						auto projectedUnit = state->getForUpdate(id);
+						if(!projectedUnit || !projectedUnit->alive())
+						{
+							selectionProjected = false;
+							break;
+						}
+						const auto foundGroups = groupsByUnit.find(id);
+						if(foundGroups != groupsByUnit.end())
+							for(const auto sourceSpell : foundGroups->second)
+							{
+								if(sourceSpell == newHorizonsPurify::physicalPoisonChoiceID())
+								{
+									if(!newHorizonsPurify::hasPhysicalPoison(projectedUnit.get()))
+										selectionProjected = false;
+									continue;
+								}
+								if(newHorizonsPurify::spellEffectGroupBonuses(projectedUnit.get(), sourceSpell).empty())
+									selectionProjected = false;
+							}
+						if(physicalPoisonUnits.contains(id)
+							&& !newHorizonsPurify::hasPhysicalPoison(projectedUnit.get()))
+							selectionProjected = false;
+						if(!selectionProjected)
+							break;
+
+						const auto groups = foundGroups == groupsByUnit.end()
+							? std::vector<SpellID>{} : foundGroups->second;
+						if(!projectedUnit->applyPurifySelection(groups, physicalPoisonUnits.contains(id)))
+						{
+							selectionProjected = false;
+							break;
+						}
+					}
+
+					if(!selectionProjected
+						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+							counterspellNegated, *spellAllowance)
+						|| counterspellNegated)
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + ps.spellPurifyHeuristicValue;
 					continue;
 				}
 				// Shadow Gift's immediate sacrifice is a real cost, but its value is in
@@ -3998,7 +4088,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	// Use this same baseline for casts and their projected continuations.
 	const auto noCastBaseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
 		? cachedAttack.score : 0.0f;
-
 	// Re-evaluate a granted continuation against the actual post-cast battlefield
 	// on the next decision. Do not add a second copy of a pre-cast damage score:
 	// the first spell may remove its target or spend the mana the second needs.
@@ -4060,6 +4149,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		spellcast.spellOvercharge = castToPerform.spellOvercharge;
 		spellcast.spellSelectiveDispel = castToPerform.spellSelectiveDispel;
 		spellcast.spellCureAffliction = castToPerform.spellCureAffliction;
+		spellcast.spellPurifyChoices = castToPerform.spellPurifyChoices;
 		spellcast.spellMassSlow = castToPerform.spellMassSlow;
 		spellcast.spellShadowGiftSacrificePercent = castToPerform.spellShadowGiftSacrificePercent;
 		spellcast.metamagicFollowup = castToPerform.metamagicFollowup;

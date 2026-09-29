@@ -19,6 +19,7 @@
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
 #include "TemporalFieldWindow.h"
+#include "PurifyWindow.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -43,6 +44,7 @@
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/effects/Effect.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
@@ -1795,6 +1797,11 @@ void BattleActionsController::setSelectiveDispelFactory(SelectiveDispelFactory f
 	selectiveDispelFactory = std::move(factory);
 }
 
+void BattleActionsController::setPurifyPicker(PurifyPicker picker)
+{
+	purifyPicker = std::move(picker);
+}
+
 void BattleActionsController::setCureAfflictionPicker(std::function<bool(const BattleAction &, const CStack *)> picker)
 {
 	cureAfflictionPicker = std::move(picker);
@@ -3073,6 +3080,18 @@ void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, c
 		case PossiblePlayerBattleAction::OBSTACLE:
 		case PossiblePlayerBattleAction::FREE_LOCATION:
 		{
+			if(action.get() == PossiblePlayerBattleAction::ANY_LOCATION
+				&& heroSpellToCast
+				&& heroSpellToCast->spell == newHorizonsPurify::spellID()
+				&& purifyPicker)
+			{
+				BattleAction pending = *heroSpellToCast;
+				pending.target.clear();
+				pending.aimToHex(targetHex);
+				if(purifyPicker(pending, targetHex))
+					return;
+			}
+
 			if(action.get() == PossiblePlayerBattleAction::AIMED_SPELL_CREATURE
 				&& heroSpellToCast && targetStack && cureAfflictionPicker)
 			{

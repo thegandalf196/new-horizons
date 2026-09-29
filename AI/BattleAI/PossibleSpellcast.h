@@ -10,6 +10,9 @@
 
 #pragma once
 
+#include <utility>
+#include <vector>
+
 #include <vcmi/spells/Magic.h>
 #include "../../lib/constants/EntityIdentifiers.h"
 
@@ -41,6 +44,11 @@ public:
 	int32_t spellOvercharge = 0;
 	bool spellSelectiveDispel = false;
 	SpellID spellCureAffliction = SpellID::NONE;
+	/// Selected source-spell groups for canonical New Horizons Purify. Physical
+	/// Poison is automatic and is tracked separately for detached evaluation.
+	std::vector<std::pair<int32_t, SpellID>> spellPurifyChoices;
+	std::vector<int32_t> spellPurifyPhysicalTargets;
+	float spellPurifyHeuristicValue = 0.0f;
 	/// Requests the once-per-combat Sorcery Temporal Field variant of Slow.
 	bool spellMassSlow = false;
 	/// Canonical New Horizons Shadow Gift sacrifice tier (10, 20, or 30).

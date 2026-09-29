@@ -19,6 +19,7 @@
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -162,6 +163,16 @@ bool isCanonicalSpellLock(const Mechanics * spellMechanics)
 {
 	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
 	return spell && spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL;
+}
+
+bool isCanonicalPurify(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	const auto * callback = spellMechanics ? spellMechanics->battle() : nullptr;
+	const auto * battle = callback ? callback->getBattle() : nullptr;
+	return spell && battle
+		&& spell->getJsonKey() == newHorizonsPurify::SPELL_ID
+		&& newHorizonsPurify::enabled(battle->getMagicRules(), spell->getId());
 }
 
 bool isCanonicalNaturePoison(const Mechanics * spellMechanics)
@@ -916,6 +927,23 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 	}
 	if(isCanonicalSanctuary(spellMechanics))
 		return canonicalSanctuaryTargets(spellMechanics);
+	if(isCanonicalPurify(spellMechanics))
+	{
+		std::vector<Target> purifyTargets;
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+		{
+			const BattleHex center(index);
+			if(!center.isValid())
+				continue;
+
+			Target target{Destination(center)};
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem)
+				&& purifySelection(spellMechanics, target).value > 0.0f)
+				purifyTargets.push_back(std::move(target));
+		}
+		return purifyTargets;
+	}
 	if(spellMechanics && spellMechanics->isNewHorizonsStormOfDaggers())
 		return stormOfDaggersTargets(spellMechanics);
 	if(isCanonicalSoulChain(spellMechanics))
@@ -965,6 +993,139 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 		default:
 			return result;
 	}
+}
+
+SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection(
+	const Mechanics * spellMechanics, const Target & target)
+{
+	PurifySelection selection;
+	if(!isCanonicalPurify(spellMechanics) || target.size() != 1
+		|| target.front().unitValue != nullptr || !target.front().hexValue.isValid())
+		return selection;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return selection;
+
+	const auto * callback = spellMechanics->battle();
+	const auto * hero = spellMechanics->getHeroCaster();
+	const int32_t spellPower = hero
+		? std::max<int32_t>(0, hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER))
+		: std::max<int32_t>(0, spellMechanics->getEffectPower());
+	const bool purifierPerk = newHorizonsPurify::hasPurifierPerk(hero);
+	const auto eligibleStacks = newHorizonsPurify::eligibleStacks(*callback,
+		spellMechanics->getCasterSide(), target.front().hexValue, spellPower, purifierPerk);
+	auto battleState = std::shared_ptr<CBattleInfoCallback>(
+		const_cast<CBattleInfoCallback *>(callback), [](CBattleInfoCallback *) {});
+	DamageCache damageCache;
+
+	struct RankedGroup
+	{
+		SpellID spell = SpellID::NONE;
+		float value = 0.0f;
+	};
+
+	for(const auto & eligible : eligibleStacks)
+	{
+		const auto * unit = callback->battleGetUnitByID(static_cast<uint32_t>(eligible.unitId));
+		if(!unit || !unit->alive() || unit->unitSide() != spellMechanics->getCasterSide())
+			continue;
+
+		float physicalPoisonValue = 0.0f;
+		if(eligible.physicalPoison || eligible.physicalPoisonAutomaticallyCleared)
+		{
+			const auto * liveState = dynamic_cast<const battle::CUnitState *>(unit);
+			if(liveState)
+			{
+				auto poisonState = liveState->acquireState();
+				int64_t remainingHealth = std::max<int64_t>(0, unit->getAvailableHealth());
+				int64_t preventedDamage = 0;
+				while(remainingHealth > 0 && poisonState->physicalPoisonActivationsRemaining > 0)
+				{
+					const auto tick = newHorizonsBulwark::physicalPoisonTickDamage(poisonState.get());
+					const auto applied = std::min(remainingHealth, tick);
+					preventedDamage += applied;
+					remainingHealth -= applied;
+					newHorizonsBulwark::advancePhysicalPoison(poisonState.get());
+				}
+				if(preventedDamage > 0)
+				{
+					physicalPoisonValue = AttackPossibility::calculateDamageReduce(nullptr, unit,
+						static_cast<uint64_t>(preventedDamage), damageCache, battleState);
+					if(physicalPoisonValue <= 0.0f)
+						physicalPoisonValue = static_cast<float>(preventedDamage);
+				}
+			}
+		}
+		if(eligible.physicalPoisonAutomaticallyCleared && physicalPoisonValue > 0.0f)
+		{
+			selection.value += physicalPoisonValue;
+			selection.physicalPoisonStackIds.push_back(eligible.unitId);
+		}
+
+		std::vector<RankedGroup> groups;
+		if(eligible.physicalPoison && !eligible.physicalPoisonAutomaticallyCleared
+			&& physicalPoisonValue > 0.0f)
+			groups.push_back({newHorizonsPurify::physicalPoisonChoiceID(), physicalPoisonValue});
+		for(const auto effectSpell : eligible.spellEffectGroups)
+		{
+			const auto * statusSpell = effectSpell.toSpell();
+			if(!statusSpell || !statusSpell->isMagical() || !statusSpell->isNegative())
+				continue;
+
+			const auto bonuses = newHorizonsPurify::spellEffectGroupBonuses(unit, effectSpell);
+			if(bonuses.empty())
+				continue;
+
+			int remainingRounds = 0;
+			bool timed = false;
+			for(const auto & bonus : bonuses)
+				if(Bonus::NTurns(&bonus))
+				{
+					timed = true;
+					remainingRounds = std::max(remainingRounds,
+						std::max<int32_t>(0, bonus.turnsRemain));
+				}
+
+			// Reuse Spell Lock's stack-health scale, then prioritize higher-rank and
+			// longer-lived groups when a stack has more eligible effects than its cap.
+			const float health = static_cast<float>(std::max<int64_t>(1, unit->getAvailableHealth()));
+			const float levelFactor = 0.75f + 0.05f
+				* static_cast<float>(std::clamp(statusSpell->getLevel(), 1, 5));
+			const float durationFactor = timed
+				? std::clamp(0.4f + 0.2f * static_cast<float>(remainingRounds), 0.4f, 1.0f)
+				: 1.0f;
+			groups.push_back({effectSpell, health * 0.9f * levelFactor * durationFactor});
+		}
+		std::sort(groups.begin(), groups.end(), [](const RankedGroup & lhs, const RankedGroup & rhs)
+		{
+			if(lhs.value != rhs.value)
+				return lhs.value > rhs.value;
+			return lhs.spell.getNum() < rhs.spell.getNum();
+		});
+
+		const auto choiceCount = std::min<size_t>(
+			static_cast<size_t>(std::max(0, eligible.maximumSpellEffectChoices)), groups.size());
+		for(size_t index = 0; index < choiceCount; ++index)
+		{
+			selection.spellEffectGroups.emplace_back(eligible.unitId, groups[index].spell);
+			selection.value += groups[index].value;
+			if(groups[index].spell == newHorizonsPurify::physicalPoisonChoiceID())
+				selection.physicalPoisonStackIds.push_back(eligible.unitId);
+		}
+	}
+
+	std::sort(selection.spellEffectGroups.begin(), selection.spellEffectGroups.end(),
+		[](const auto & lhs, const auto & rhs)
+		{
+			if(lhs.first != rhs.first)
+				return lhs.first < rhs.first;
+			return lhs.second.getNum() < rhs.second.getNum();
+		});
+	std::sort(selection.physicalPoisonStackIds.begin(), selection.physicalPoisonStackIds.end());
+	selection.physicalPoisonStackIds.erase(std::unique(selection.physicalPoisonStackIds.begin(),
+		selection.physicalPoisonStackIds.end()), selection.physicalPoisonStackIds.end());
+	return selection;
 }
 
 std::vector<Target> SpellTargetEvaluator::canonicalNaturePoisonTargets(const Mechanics * spellMechanics)

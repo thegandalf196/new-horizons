@@ -22,10 +22,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 109/310 | 201 planned; active status alone does not certify behavior. Retributionist strengthens Divine Retribution's final capped reactive damage by 20%. |
+| Skill perks active | 110/310 | 200 planned; active status alone does not certify behavior. Purifier adds one physical-affliction removal to Purify. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 50/67 | 17 missing/inactive; Divine Retribution advances Light to 9/11 with focused server/AI evidence. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 51/67 | 16 missing/inactive; Purify advances Light to 10/11 with focused server/AI evidence. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -49,8 +49,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 105
-active perks, leaving nine ranks and 205 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 110
+active perks, leaving nine ranks and 200 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -351,7 +351,7 @@ module-mirror check pass. This is source/native evidence, not rendered or
 playable acceptance. Phase 2 retains exhaustive magical-beam and area-shot
 classification, AI valuation under combined physical-damage caps, AI mass
 projection logging, Dispel and save/load round trips, and live AI submission.
-The next missing detailed-roster combat spell is Purify in Light.
+The next missing detailed-roster combat spell is Crusade! in Light.
 
 Divine Retribution is now the saved-v3 Level-4 Light, 16-Mana single-ally
 reactive spell. Its two-round marker records each qualifying creature
@@ -368,6 +368,26 @@ bound. This is source/native evidence, not rendered or playable acceptance.
 Phase 2 retains full save/load and Dispel round-trips, area/secondary-attack
 classification, Holy mitigation and AI valuation under mixed threats, and
 unusual shield or repeated-hit packet interactions.
+
+Purify is now the saved-v3 Level-4 Light, 15-Mana battlefield-area cleanse.
+After selecting a center hex, the player chooses up to
+`min(2, 1 + floor(Spell Power / 120))` temporary negative effects per friendly
+stack within radius 2. One spell-source group counts as one choice; physical
+Poison is separately selectable and cannot be removed by ordinary Dispel.
+Purifier removes one physical affliction automatically in addition to the
+ordinary choices. Positive effects and Order-sourced effects survive, while
+forged, stale, over-cap and no-op selections fail before spending Mana or a
+Hero Action. The client picker, BattleAI target/choice projection, serialized
+action payload, script registration and purpose-made Provisional 44/32/30 art
+are bound. Both Linux targets link; 10/10 isolated active-profile focused
+server/helper/AI tests pass without skips, the 48-case curated-content suite,
+module-mirror check, and Purify picker source guard pass. This is source/native
+evidence, not rendered or playable acceptance. Phase 2 retains a hypnosis
+ownership interaction: authoritative eligibility uses current stack ownership,
+while the picker and BattleAI also check original side, so controlled hostile
+stacks may be omitted from those consumers. Full save/load, Dispel interaction,
+other future physical afflictions, rendered layout and live play remain
+unverified.
 
 Sanctuary is now the saved-v3 Level-1 Light, 5-Mana single-friendly-stack
 protection spell. Its spell-sourced, battle-duration marker excludes the stack
@@ -402,7 +422,7 @@ from the active identity row.
 
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
-| Light | 11 | 9 | Purify; Crusade! |
+| Light | 11 | 10 | Crusade! |
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |

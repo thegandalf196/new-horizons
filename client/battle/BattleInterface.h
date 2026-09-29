@@ -131,6 +131,7 @@ class BattleInterface
 	void installShadowGiftUI();
 	void installSelectiveDispelUI();
 	void installCureAfflictionUI();
+	void installPurifyUI();
 	void installTemporalFieldUI();
 public:
 	/// copy of initial armies (for result window)

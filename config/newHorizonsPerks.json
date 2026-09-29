@@ -1159,7 +1159,7 @@
 					"requires": "advanced",
 					"description": "Purify also removes one physical affliction from each affected friendly stack.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Purify also removes one physical affliction from each affected friendly stack."
 					}
 				},

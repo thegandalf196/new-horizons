@@ -20,6 +20,7 @@
 #include "../../lib/battle/SiegeInfo.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -355,6 +356,31 @@ void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 
 		removeUnitBonus(selector);
 	}
+}
+
+bool StackWithBonuses::applyPurifySelection(const std::vector<SpellID> & spellEffectGroups,
+	bool clearPhysicalPoisonState)
+{
+	bool changed = false;
+	bool removePhysicalPoison = clearPhysicalPoisonState;
+	for(const auto sourceSpell : spellEffectGroups)
+	{
+		if(sourceSpell == newHorizonsPurify::physicalPoisonChoiceID())
+		{
+			removePhysicalPoison = true;
+			continue;
+		}
+
+		auto group = newHorizonsPurify::spellEffectGroupBonuses(this, sourceSpell);
+		if(group.empty())
+			continue;
+
+		removeUnitBonus(group);
+		changed = true;
+	}
+	if(removePhysicalPoison)
+		changed = newHorizonsPurify::clearPhysicalPoison(this) || changed;
+	return changed;
 }
 
 void StackWithBonuses::removeUnitBonus(const CSelector & selector)

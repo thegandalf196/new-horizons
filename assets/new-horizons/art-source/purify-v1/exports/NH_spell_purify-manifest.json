@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "NH_spell_purify",
+  "source": {
+    "path": "assets/new-horizons/art-source/purify-v1/master.png",
+    "filename": "master.png",
+    "byte_size": 2669543,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "88b2a5d4eb04a17c332744cfa95ce84b7204729cc64f12a53c9fd8829867e7ad"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "88b2a5d4eb04a17c332744cfa95ce84b7204729cc64f12a53c9fd8829867e7ad"
+    },
+    {
+      "file": "NH_spell_purify-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "dd99abfca13ede5762ddd74951fb02fe9c5b66305fd11d178c18d35d4d0b2935"
+    },
+    {
+      "file": "NH_spell_purify-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "b45d00c3b3f6c72819b936e8354dc84a5031b64af0b58ab3049fc20761ee0dc7"
+    },
+    {
+      "file": "NH_spell_purify-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "1511b0f9d9684019cfc1d688df5b2c156f5eac8ba9eed4753b9b0dc28196f866"
+    },
+    {
+      "file": "NH_spell_purify-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "ce0bd6d683fd65fd46801f4ebb0363f535cb70d437007c46082fc9027f4b2639"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "NH_spell_purify-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "NH_spell_purify-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "NH_spell_purify-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "NH_spell_purify-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}
