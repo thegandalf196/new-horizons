@@ -35,6 +35,12 @@ int flankingDamagePercent(int value)
 	}
 }
 
+int backstabDamagePercent(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(BACKSTAB_PERK_ID))
+		? BACKSTAB_DAMAGE_PERCENT : 0;
+}
+
 bool deniesRetaliation(int value)
 {
 	return value >= 3;

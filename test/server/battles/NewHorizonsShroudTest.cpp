@@ -63,6 +63,54 @@ TEST_F(NewHorizonsShroudTest, RankDamagePremiumAppliesOnlyFromRear)
 	EXPECT_EQ(rearDamage, frontDamage * 160 / 100);
 }
 
+TEST_F(NewHorizonsShroudTest, BackstabAddsFifteenPercentOnlyToRearFlankingAttacks)
+{
+	startGame();
+	attackerSideHero->setSecSkillLevel(shroud(), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsShroud::SKILL_ID),
+		std::string(newHorizonsShroud::BACKSTAB_PERK_ID)});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(std::string(newHorizonsShroud::SKILL_ID),
+		std::string(newHorizonsShroud::BACKSTAB_PERK_ID)));
+	startBattle();
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(81), 100);
+	auto * front = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(80), 100);
+	auto * rear = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(82), 100);
+	forceMaximumDamage(front);
+	forceMaximumDamage(rear);
+
+	const BattleAttackInfo frontAttack(front, defender, 0, false);
+	const BattleAttackInfo rearAttack(rear, defender, 0, false);
+	EXPECT_FALSE(battle()->battleIsShroudFlankingAttack(frontAttack));
+	EXPECT_TRUE(battle()->battleIsShroudFlankingAttack(rearAttack));
+	const auto frontDamage = battle()->calculateDmgRange(frontAttack).damage.max;
+	const auto rearDamage = battle()->calculateDmgRange(rearAttack).damage.max;
+	ASSERT_GT(frontDamage, 0);
+	EXPECT_EQ(rearDamage, frontDamage * 175 / 100);
+}
+
+TEST_F(NewHorizonsShroudTest, BasicBackstabAddsFifteenPointsToTheRankBonus)
+{
+	startGame();
+	attackerSideHero->setSecSkillLevel(shroud(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsShroud::SKILL_ID),
+		std::string(newHorizonsShroud::BACKSTAB_PERK_ID)});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(std::string(newHorizonsShroud::SKILL_ID),
+		std::string(newHorizonsShroud::BACKSTAB_PERK_ID)));
+	startBattle();
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(81), 100);
+	auto * rear = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(82), 100);
+	forceMaximumDamage(rear);
+
+	const BattleAttackInfo rearAttack(rear, defender, 0, false);
+	EXPECT_TRUE(battle()->battleIsShroudFlankingAttack(rearAttack));
+	auto * front = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(80), 100);
+	forceMaximumDamage(front);
+	const auto unmodifiedDamage = battle()->calculateDmgRange(BattleAttackInfo(front, defender, 0, false)).damage.max;
+	const auto backstabDamage = battle()->calculateDmgRange(rearAttack).damage.max;
+	ASSERT_GT(unmodifiedDamage, 0);
+	EXPECT_EQ(backstabDamage, unmodifiedDamage * 140 / 100);
+}
+
 TEST_F(NewHorizonsShroudTest, ExpertRearAttackDeniesOnlyNormalRetaliation)
 {
 	startGame();

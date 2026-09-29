@@ -22,9 +22,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 99/310 | 211 planned; active status alone does not certify behavior. Malediction has focused authoritative and projected-AI evidence. |
+| Skill perks active | 100/310 | 210 planned; active status alone does not certify behavior. Backstab has a selected-perk rear-attack damage path. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 43/90 | 47 planned perks. |
+| Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 37/67 | 30 missing/inactive; Life Drain joins Holy Armor with focused authoritative and AI-target evidence, but rendered/playable delivery remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
@@ -49,8 +49,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 99
-active perks, leaving nine ranks and 211 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 100
+active perks, leaving nine ranks and 210 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -179,7 +179,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
-| Shroud of Malassa | 3/0 | 0/10 | Progression blocked |
+| Shroud of Malassa | 3/0 | 1/9 | Basic Backstab is active; the other nine perks remain planned. |
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |
 | Necromancy | 3/0 | 3/7 | Seven perks missing; one inert hook |
 | Bloodrage | 3/0 | 1/9 | Nine perks missing |
@@ -279,6 +279,18 @@ configured magnitude and duration. The same timed-effect execution path
 feeds hypothetical AI previews and authoritative casts. Both Linux targets
 link, and the focused active-profile filter passed 19/19 with zero skips;
 rendered/playable feedback and broader combination cases remain open.
+
+Shroud of Malassa's Basic Backstab perk is active. A selected perk adds 15
+percentage points to the existing rear-facing physical melee flanking bonus,
+using the shared authoritative/forecast damage path. Basic and Expert rear
+attacks therefore receive +40% and +75% respectively; front attacks and an
+unselected perk retain their previous values. Existing saved perk selections
+carry the effect without a new state field. The Linux test and client targets link,
+the isolated active-profile Shroud filter passes 5/5 with zero skips, the
+perk/UI-inventory checks pass 19/19, and the generated-module check passes.
+Independent review found no Phase 1 blocker. Purpose-made four-state art is
+Provisional; rendered/playable icon review, save round-trip, unusual facing,
+and broader ranged/collateral interaction tests remain Phase 2/delivery work.
 
 Additional roster corrections: Implosion belongs to Sorcery rather than Havoc;
 Earthquake belongs to Nature rather than Havoc; Counterspell is not in the

@@ -5990,7 +5990,7 @@
 								"requires": "basic",
 								"description": "A melee attack from the target's rear-facing side gains an additional +15% damage.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "A melee attack from the target's rear-facing side gains an additional +15% damage."
 								}
 							},

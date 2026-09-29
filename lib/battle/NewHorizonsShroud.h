@@ -12,8 +12,11 @@ class CGHeroInstance;
 namespace newHorizonsShroud
 {
 constexpr std::string_view SKILL_ID = "new-horizons:shroudOfMalassa";
+constexpr std::string_view BACKSTAB_PERK_ID = "new-horizons:shroudOfMalassa.backstab";
+constexpr int BACKSTAB_DAMAGE_PERCENT = 15;
 
 DLL_LINKAGE int rank(const CGHeroInstance * hero);
 DLL_LINKAGE int flankingDamagePercent(int rank);
+DLL_LINKAGE int backstabDamagePercent(const CGHeroInstance * hero);
 DLL_LINKAGE bool deniesRetaliation(int rank);
 }
