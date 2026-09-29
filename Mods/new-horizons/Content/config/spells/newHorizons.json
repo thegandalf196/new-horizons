@@ -646,6 +646,239 @@
 		"flags" : {"positive" : true},
 		"targetCondition" : {}
 	},
+	"crusade" : {
+		"name": "Crusade!",
+		"type": "combat",
+		"school": {
+			"new-horizons:light": true
+		},
+		"level": 5,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:48",
+			"iconScroll": "SPELLSCR.def:0:48",
+			"iconEffect": "SPELLINT.def:0:49",
+			"iconImmune": "SPELLINT.def:0:49",
+			"iconScenarioBonus": "SPELLBON.def:0:48"
+		},
+		"animation": {
+			"affect": [
+				{
+					"defName": "C10SPW",
+					"verticalPosition": "bottom",
+					"transparency": 0.5
+				}
+			]
+		},
+		"sounds": {
+			"cast": "PRAYER"
+		},
+		"levels": {
+			"none": {
+				"range": "X",
+				"description": "Empower the friendly army for 3 rounds: Attack and Defense min(6, 3 + floor(Spell Power / 75)); flat Initiative min(3, 1 + floor(Spell Power / 100)); Magical Damage Reduction min(25%, 12% + 0.065% x Spell Power), combining multiplicatively with other sources. Negative Morale is treated as 0. Light rank strengthens only the Spell Power terms. Crusader adds 1 round.",
+				"cost": 24,
+				"power": 0,
+				"battleEffects": {
+					"crusade": {
+						"type": "timed",
+						"bonus": {
+							"attack": {
+								"val": 3,
+								"type": "PRIMARY_SKILL",
+								"subtype": "attack",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"defense": {
+								"val": 3,
+								"type": "PRIMARY_SKILL",
+								"subtype": "defence",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"initiative": {
+								"val": 1,
+								"type": "STACKS_INITIATIVE_FLAT",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"magicalDamageReduction": {
+								"val": 1200,
+								"type": "SPELL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"subtype": "any",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"moraleFloor": {
+								"val": 0,
+								"type": "MINIMUM_MORALE",
+								"duration": "N_TURNS",
+								"turns": 3
+							}
+						}
+					}
+				},
+				"targetModifier": {
+					"smart": true
+				}
+			},
+			"basic": {
+				"range": "X",
+				"description": "Empower the friendly army for 3 rounds: Attack and Defense min(6, 3 + floor(Spell Power / 75)); flat Initiative min(3, 1 + floor(Spell Power / 100)); Magical Damage Reduction min(25%, 12% + 0.065% x Spell Power), combining multiplicatively with other sources. Negative Morale is treated as 0. Light rank strengthens only the Spell Power terms. Crusader adds 1 round.",
+				"cost": 24,
+				"power": 0,
+				"battleEffects": {
+					"crusade": {
+						"type": "timed",
+						"bonus": {
+							"attack": {
+								"val": 3,
+								"type": "PRIMARY_SKILL",
+								"subtype": "attack",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"defense": {
+								"val": 3,
+								"type": "PRIMARY_SKILL",
+								"subtype": "defence",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"initiative": {
+								"val": 1,
+								"type": "STACKS_INITIATIVE_FLAT",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"magicalDamageReduction": {
+								"val": 1200,
+								"type": "SPELL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"subtype": "any",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"moraleFloor": {
+								"val": 0,
+								"type": "MINIMUM_MORALE",
+								"duration": "N_TURNS",
+								"turns": 3
+							}
+						}
+					}
+				},
+				"targetModifier": {
+					"smart": true
+				}
+			},
+			"advanced": {
+				"range": "X",
+				"description": "Empower the friendly army for 3 rounds: Attack and Defense min(6, 3 + floor(Spell Power / 75)); flat Initiative min(3, 1 + floor(Spell Power / 100)); Magical Damage Reduction min(25%, 12% + 0.065% x Spell Power), combining multiplicatively with other sources. Negative Morale is treated as 0. Light rank strengthens only the Spell Power terms. Crusader adds 1 round.",
+				"cost": 24,
+				"power": 0,
+				"battleEffects": {
+					"crusade": {
+						"type": "timed",
+						"bonus": {
+							"attack": {
+								"val": 3,
+								"type": "PRIMARY_SKILL",
+								"subtype": "attack",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"defense": {
+								"val": 3,
+								"type": "PRIMARY_SKILL",
+								"subtype": "defence",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"initiative": {
+								"val": 1,
+								"type": "STACKS_INITIATIVE_FLAT",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"magicalDamageReduction": {
+								"val": 1200,
+								"type": "SPELL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"subtype": "any",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"moraleFloor": {
+								"val": 0,
+								"type": "MINIMUM_MORALE",
+								"duration": "N_TURNS",
+								"turns": 3
+							}
+						}
+					}
+				},
+				"targetModifier": {
+					"smart": true
+				}
+			},
+			"expert": {
+				"range": "X",
+				"description": "Empower the friendly army for 3 rounds: Attack and Defense min(6, 3 + floor(Spell Power / 75)); flat Initiative min(3, 1 + floor(Spell Power / 100)); Magical Damage Reduction min(25%, 12% + 0.065% x Spell Power), combining multiplicatively with other sources. Negative Morale is treated as 0. Light rank strengthens only the Spell Power terms. Crusader adds 1 round.",
+				"cost": 24,
+				"power": 0,
+				"battleEffects": {
+					"crusade": {
+						"type": "timed",
+						"bonus": {
+							"attack": {
+								"val": 3,
+								"type": "PRIMARY_SKILL",
+								"subtype": "attack",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"defense": {
+								"val": 3,
+								"type": "PRIMARY_SKILL",
+								"subtype": "defence",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"initiative": {
+								"val": 1,
+								"type": "STACKS_INITIATIVE_FLAT",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"magicalDamageReduction": {
+								"val": 1200,
+								"type": "SPELL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"subtype": "any",
+								"duration": "N_TURNS",
+								"turns": 3
+							},
+							"moraleFloor": {
+								"val": 0,
+								"type": "MINIMUM_MORALE",
+								"duration": "N_TURNS",
+								"turns": 3
+							}
+						}
+					}
+				},
+				"targetModifier": {
+					"smart": true
+				}
+			}
+		},
+		"flags": {
+			"positive": true
+		},
+		"targetCondition": {}
+	},
 	"holyArmor" : {
 		"name" : "Holy Armor",
 		"type" : "combat",

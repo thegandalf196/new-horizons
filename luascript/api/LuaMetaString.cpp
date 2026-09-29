@@ -21,6 +21,8 @@ MetaString LuaMetaString::toMetaString() const
 	MetaString result;
 	for(const auto & textID : append)
 		result.appendTextID(textID);
+	for(const auto & text : appendRaw)
+		result.appendRawString(text);
 	for(const auto & textID : replaceStrings)
 		result.replaceTextID(textID);
 	for(int64_t number : replaceNumbers)

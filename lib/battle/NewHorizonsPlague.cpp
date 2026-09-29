@@ -8,12 +8,14 @@
 #include "NewHorizonsPlague.h"
 
 #include "CBattleInfoCallback.h"
+#include "IBattleState.h"
 #include "Unit.h"
 #include "BattleHex.h"
 #include "../CStack.h"
 #include "../spells/BattleSpellMechanics.h"
 #include "../spells/CSpell.h"
 #include "../spells/ISpellMechanics.h"
+#include "../spells/NewHorizonsMagic.h"
 
 namespace
 {
@@ -128,6 +130,9 @@ int64_t adjustedTickDamage(const CBattleInfoCallback & battle, BattleSide caster
 		return rawDamage;
 
 	return spell->adjustRawDamage(caster, target, rawDamage, 0,
-		battle.battleGetHoldTheLineMagicalReductionBasisPoints(target), 100, true);
+		battle.battleGetHoldTheLineMagicalReductionBasisPoints(target), 100, true,
+		newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+			&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
+				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION);
 }
 }

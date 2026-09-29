@@ -560,6 +560,11 @@ bool isCanonicalHeavenlyGale(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:heavenlyGale";
 }
 
+bool isCanonicalCrusade(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:crusade";
+}
+
 bool isCanonicalSanctuary(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == "new-horizons:sanctuary";
@@ -587,6 +592,16 @@ bool heavenlyGaleAvailableInSavedRules(const CBattleInfoCallback & battle, const
 	return isCanonicalHeavenlyGale(spell)
 		&& newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 		&& newHorizonsMagic::spellAllowedBySavedRoster(battle.getBattle()->getMagicRules(), spell->getId());
+}
+
+bool crusadeAvailableInSavedRules(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	const auto & magicRules = battle.getBattle()->getMagicRules();
+	return isCanonicalCrusade(spell)
+		&& newHorizonsMagic::rulesActive(magicRules)
+		&& magicRules["rulesetVersion"].Integer()
+			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spell->getId());
 }
 
 bool divineRetributionAvailableInSavedRules(const CBattleInfoCallback & battle, const CSpell * spell)
@@ -1487,6 +1502,160 @@ float heavenlyGaleMitigationValue(BattleSide side,
 			bestAttackerValue = std::max(bestAttackerValue, value);
 		}
 		totalValue += bestAttackerValue;
+	}
+
+	return std::isfinite(totalValue) ? totalValue : 0.0f;
+}
+
+struct CrusadeProjection
+{
+	int attack = 0;
+	int defense = 0;
+	int initiative = 0;
+	int magicalDamageReductionBasisPoints = 0;
+	bool preventsNegativeMorale = false;
+	int roundsRemaining = 0;
+
+	bool hasCombatEffect() const
+	{
+		return attack > 0 || defense > 0 || initiative > 0
+			|| magicalDamageReductionBasisPoints > 0 || preventsNegativeMorale;
+	}
+};
+
+CrusadeProjection crusadeProjection(const battle::Unit * unit, SpellID spell)
+{
+	CrusadeProjection result;
+	if(!unit)
+		return result;
+
+	const auto effects = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)));
+	if(!effects)
+		return result;
+
+	for(const auto & effect : *effects)
+	{
+		if(!effect || !Bonus::NTurns(effect.get()) || effect->turnsRemain <= 0)
+			continue;
+
+		result.roundsRemaining = std::max(result.roundsRemaining, static_cast<int>(effect->turnsRemain));
+		if(effect->type == BonusType::PRIMARY_SKILL
+			&& effect->subtype == BonusSubtypeID(PrimarySkill::ATTACK))
+			result.attack = std::max(result.attack, effect->val);
+		else if(effect->type == BonusType::PRIMARY_SKILL
+			&& effect->subtype == BonusSubtypeID(PrimarySkill::DEFENSE))
+			result.defense = std::max(result.defense, effect->val);
+		else if(effect->type == BonusType::STACKS_INITIATIVE_FLAT)
+			result.initiative = std::max(result.initiative, effect->val);
+		else if(effect->type == BonusType::MINIMUM_MORALE && effect->val >= 0)
+			result.preventsNegativeMorale = true;
+		else if(effect->type == BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS)
+			result.magicalDamageReductionBasisPoints = std::max(
+				result.magicalDamageReductionBasisPoints, effect->val);
+	}
+	return result;
+}
+
+std::optional<bool> crusadeAttackMode(const battle::Unit * attacker,
+	const battle::Unit * target, const CBattleInfoCallback & battle)
+{
+	if(!attacker || !target || !attacker->alive() || !target->alive()
+		|| attacker->isGhost() || target->isGhost() || attacker->isTurret() || target->isTurret())
+		return std::nullopt;
+
+	for(const auto & targetHex : target->getHexes())
+		if(targetHex.isValid() && battle.battleCanShoot(attacker, targetHex))
+			return true;
+
+	for(const auto & attackerHex : attacker->getHexes())
+	{
+		if(!attackerHex.isValid())
+			continue;
+		for(const auto & targetHex : target->getHexes())
+			if(targetHex.isValid() && BattleHex::getDistance(attackerHex, targetHex) == 1)
+				return false;
+	}
+
+	return std::nullopt;
+}
+
+/// Value only the real projected Crusade bonuses. Damage estimates include
+/// Attack, Defense, and magical reduction together; marker duration and
+/// presence come from the detached timed effects, not a second copy of the
+/// spell's Spell Power formula. Each visible attacker contributes its best
+/// currently legal direct attack against the opposing army.
+float crusadeArmyValue(BattleSide side, uint32_t activeUnitId,
+	const CBattleInfoCallback & liveBattle, const std::shared_ptr<HypotheticBattle> & projectedBattle,
+	SpellID spell, DamageCache & damageCache)
+{
+	if(!projectedBattle)
+		return 0.0f;
+
+	float totalValue = 0.0f;
+	const auto visibleUnits = liveBattle.battleGetAllUnits(true);
+	for(const auto * attacker : visibleUnits)
+	{
+		if(!attacker || !attacker->alive() || !attacker->isValidTarget()
+			|| attacker->isGhost() || attacker->isTurret())
+			continue;
+
+		const bool friendlyAttacker = attacker->unitSide() == side;
+		if(friendlyAttacker && attacker->unitId() == activeUnitId)
+			continue; // The active stack's projected exchange is already in stackActionScore.
+
+		const auto * projectedAttacker = projectedBattle->battleGetUnitByID(attacker->unitId());
+		if(!projectedAttacker || !projectedAttacker->alive())
+			continue;
+
+		float bestAttackValue = 0.0f;
+		for(const auto * target : visibleUnits)
+		{
+			if(!target || !target->alive() || !target->isValidTarget()
+				|| target->unitSide() == attacker->unitSide()
+				|| target->isGhost() || target->isTurret())
+				continue;
+
+			const auto attackMode = crusadeAttackMode(attacker, target, liveBattle);
+			if(!attackMode)
+				continue;
+
+			const auto * projectedTarget = projectedBattle->battleGetUnitByID(target->unitId());
+			if(!projectedTarget || !projectedTarget->alive())
+				continue;
+
+			const auto * blessedUnit = friendlyAttacker ? projectedAttacker : projectedTarget;
+			const auto effect = crusadeProjection(blessedUnit, spell);
+			if(effect.roundsRemaining <= 0 || !effect.hasCombatEffect())
+				continue;
+
+			const auto attacksPerActivation = std::max(1, attacker->getTotalAttacks(*attackMode));
+			const float activationExposure = static_cast<float>(effect.roundsRemaining) * 0.5f;
+			if(activationExposure <= 0.0f)
+				continue;
+
+			const BattleAttackInfo beforeAttack(attacker, target, 0, *attackMode);
+			const BattleAttackInfo afterAttack(projectedAttacker, projectedTarget, 0, *attackMode);
+			const float beforeDamage = averageOrderDamage(liveBattle.battleEstimateDamage(beforeAttack));
+			const float afterDamage = averageOrderDamage(projectedBattle->battleEstimateDamage(afterAttack));
+			const float damageDeltaPerActivation = friendlyAttacker
+				? afterDamage - beforeDamage : beforeDamage - afterDamage;
+			if(damageDeltaPerActivation <= 0.0f)
+				continue;
+
+			const auto availableHealth = std::max<int64_t>(0, target->getAvailableHealth());
+			const long double projectedDelta = std::min(static_cast<long double>(availableHealth),
+				static_cast<long double>(damageDeltaPerActivation)
+					* static_cast<long double>(attacksPerActivation)
+					* static_cast<long double>(activationExposure));
+			if(!std::isfinite(projectedDelta) || projectedDelta <= 0.0L)
+				continue;
+
+			const auto affectedDamage = static_cast<uint64_t>(std::floor(projectedDelta));
+			const auto value = heavenlyGaleSavedDamageValue(projectedTarget,
+				affectedDamage, damageCache, projectedBattle);
+			bestAttackValue = std::max(bestAttackValue, value);
+		}
+		totalValue += bestAttackValue;
 	}
 
 	return std::isfinite(totalValue) ? totalValue : 0.0f;
@@ -2998,12 +3167,14 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			&& !guardianSpiritAvailableInSavedRules(*battleCallback, option.spell);
 		const bool unavailableHeavenlyGale = isCanonicalHeavenlyGale(option.spell)
 			&& !heavenlyGaleAvailableInSavedRules(*battleCallback, option.spell);
+		const bool unavailableCrusade = isCanonicalCrusade(option.spell)
+			&& !crusadeAvailableInSavedRules(*battleCallback, option.spell);
 		const bool unavailableDivineRetribution = isCanonicalDivineRetribution(option.spell)
 			&& !divineRetributionAvailableInSavedRules(*battleCallback, option.spell);
 		const bool unavailablePurify = isCanonicalPurify(option.spell)
 			&& !newHorizonsPurify::enabled(battleCallback->getBattle()->getMagicRules(), option.spell->getId());
 		return unavailableReanimate || unavailableSoulReaper || unavailableDoom
-			|| unavailableGuardianSpirit || unavailableHeavenlyGale || unavailableDivineRetribution
+			|| unavailableGuardianSpirit || unavailableHeavenlyGale || unavailableCrusade || unavailableDivineRetribution
 			|| unavailablePurify;
 	});
 
@@ -3848,6 +4019,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				float damageToFriendliesScore = 0;
 				float initiativeEffectScore = 0;
 				float projectedDebuffScore = 0;
+				float projectedCrusadeBonusScore = 0;
 				if(isCanonicalRegeneration(ps.spell))
 				{
 					const auto targets = improvedRegenerationTargets(
@@ -3888,6 +4060,17 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						continue;
 					}
 					damageToHostilesScore += mitigationValue * scoreEvaluator.getPositiveEffectMultiplier();
+				}
+				if(isCanonicalCrusade(ps.spell))
+				{
+					const auto armyValue = crusadeArmyValue(side, activeStack->unitId(),
+						*battleCallback, state, ps.spell->getId(), innerCache);
+					if(counterspellNegated)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					damageToHostilesScore += armyValue * scoreEvaluator.getPositiveEffectMultiplier();
 				}
 				if(isCanonicalDivineRetribution(ps.spell) && targetId != std::numeric_limits<uint32_t>::max())
 				{
@@ -3998,6 +4181,29 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						initiativeEffectScore += stackValue * static_cast<float>(signedDelta)
 							/ static_cast<float>(oldInitiative) * 0.01f;
 					}
+					if(isCanonicalCrusade(ps.spell) && original && original->alive() && unit->alive()
+						&& state->battleGetOwner(unit) == playerID && unit->unitType())
+					{
+						const auto effect = crusadeProjection(unit, ps.spell->getId());
+						const auto rounds = static_cast<float>(effect.roundsRemaining);
+						if(rounds > 0.0f && effect.initiative > 0)
+						{
+							const int oldInitiative = std::max(1, original->getInitiative());
+							const int initiativeDelta = unit->getInitiative() - original->getInitiative();
+							const float stackValue = static_cast<float>(unit->getCount())
+								* unit->unitType()->getAIValue();
+							initiativeEffectScore += stackValue * static_cast<float>(initiativeDelta)
+								/ static_cast<float>(oldInitiative) * 0.01f * rounds * 0.5f;
+						}
+						if(rounds > 0.0f && effect.preventsNegativeMorale)
+						{
+							const float recoveredMoraleActivations = expectedMoraleActivationChange(unit)
+								- expectedMoraleActivationChange(original);
+							if(recoveredMoraleActivations > 0.0f)
+								projectedCrusadeBonusScore += recoveredMoraleActivations * rounds * 0.5f
+								* expectedTargetActivationValue(unit, innerCache, state);
+						}
+					}
 
 					if(oldHealth != newHealth)
 					{
@@ -4067,6 +4273,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					}
 				}
 				damageToHostilesScore += projectedDebuffScore * scoreEvaluator.getPositiveEffectMultiplier();
+				damageToHostilesScore += projectedCrusadeBonusScore
+					* scoreEvaluator.getPositiveEffectMultiplier();
 
 				if (vstd::isAlmostEqual(stackActionScore, static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE)))
 				{
@@ -4164,7 +4372,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			spellcast.aimToHex(castToPerform.dest.front().hexValue);
 			spellcast.spellFireWallDirection = castToPerform.spellFireWallDirection;
 		}
-		else if(isCanonicalHeavenlyGale(castToPerform.spell))
+		else if(isCanonicalHeavenlyGale(castToPerform.spell)
+			|| isCanonicalCrusade(castToPerform.spell))
 			// Mass spells use AimType::NOTHING in mechanics and are enumerated as
 			// an empty candidate. The action protocol still requires one destination
 			// entry; INVALID is the shared NO_LOCATION sentinel, not a unit target.

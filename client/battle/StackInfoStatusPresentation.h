@@ -120,6 +120,7 @@ enum class StackStatusIconKind
 	DIVINE_RETRIBUTION,
 	GUARDIAN_SPIRIT,
 	HEAVENLY_GALE,
+	CRUSADE,
 	REGENERATION,
 	SHADOW_GIFT_BUFF,
 	SHADOW_GIFT_CAP,
@@ -148,6 +149,7 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 		case StackStatusIconKind::DIVINE_RETRIBUTION: return 2;
 		case StackStatusIconKind::GUARDIAN_SPIRIT: return 4;
 		case StackStatusIconKind::HEAVENLY_GALE: return 4;
+		case StackStatusIconKind::CRUSADE: return 2;
 		case StackStatusIconKind::REGENERATION: return 5;
 		case StackStatusIconKind::SHADOW_GIFT_BUFF: return 5;
 		case StackStatusIconKind::SHADOW_GIFT_CAP: return 6;

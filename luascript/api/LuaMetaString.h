@@ -29,6 +29,7 @@ struct LuaMetaString final : ApiSerializable<LuaMetaString>
 		"such as battle log and spell-problem messages. In case of multiplayer, string is translated on each client according to their language settings";
 
 	std::vector<std::string> append;
+	std::vector<std::string> appendRaw;
 	std::vector<std::string> replaceStrings;
 	std::vector<int64_t>     replaceNumbers;
 
@@ -38,6 +39,7 @@ struct LuaMetaString final : ApiSerializable<LuaMetaString>
 	void serializeScript(Serializer & s)
 	{
 		s("append",         append,         "Sequence of text-ID tokens to concatenate.");
+		s("appendRaw",      appendRaw,      "Sequence of untranslated strings to concatenate.");
 		s("replaceStrings", replaceStrings, "Values that fill %s placeholders in the appended tokens, in order.");
 		s("replaceNumbers", replaceNumbers, "Values that fill %d placeholders in the appended tokens, in order.");
 	}

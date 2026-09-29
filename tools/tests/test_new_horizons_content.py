@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
+    'new-horizons:crusade',
     'new-horizons:divineRetribution',
     'new-horizons:purify',
     'new-horizons:focusMagic',
@@ -509,6 +510,30 @@ class NewHorizonsContentTest(unittest.TestCase):
             self.assertEqual(struct.unpack('>II',
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                 (size, size))
+
+    def test_crusade_is_rostered_full_army_light_empowerment(self):
+        row = self.rules['spells']['new-horizons:crusade']
+        self.assertEqual((row['schools'], row['level'], row['costs']),
+                         (['new-horizons:light'], 5, [24, 24, 24, 24]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['crusade']
+        self.assertEqual((spell['name'], spell['targetType']), ('Crusade!', 'CREATURE'))
+        self.assertTrue(spell['flags']['positive'])
+        perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:lightMagic']['perks']
+        self.assertEqual(next(p for p in perks if p['id'].endswith('.crusader'))
+                         ['effect']['status'], 'active')
+        for level in spell['levels'].values():
+            self.assertEqual((level['range'], level['cost']), ('X', 24))
+            self.assertTrue(level['targetModifier']['smart'])
+            bonuses = level['battleEffects']['crusade']['bonus']
+            self.assertEqual(len(bonuses), 5)
+            self.assertEqual(bonuses['initiative']['type'], 'STACKS_INITIATIVE_FLAT')
+            self.assertEqual((bonuses['magicalDamageReduction']['type'],
+                              bonuses['magicalDamageReduction']['val']),
+                             ('SPELL_DAMAGE_REDUCTION_BASIS_POINTS', 1200))
+            self.assertEqual((bonuses['moraleFloor']['type'], bonuses['moraleFloor']['val']),
+                             ('MINIMUM_MORALE', 0))
+            self.assertTrue(all(b['duration'] == 'N_TURNS' and b['turns'] == 3
+                                for b in bonuses.values()))
 
     def test_purify_is_rostered_area_light_cleanse(self):
         row = self.rules['spells']['new-horizons:purify']

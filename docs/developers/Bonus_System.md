@@ -85,3 +85,14 @@ The following example shows an artifact providing a bonus based on the level of 
        ]
    }
 ```
+
+# Fractional magical damage reduction
+
+`SPELL_DAMAGE_REDUCTION_BASIS_POINTS` stores an independent reduction source
+in basis points: 100 equals 1%, and values are bounded to 0–10000 at damage
+resolution. Its subtype follows `SPELL_DAMAGE_REDUCTION` (a Spell School or
+`any`). New Horizons magic-rules v3 combines these sources multiplicatively
+with percent-based reduction sources; it does not sum their percentages.
+Timed spell applications use ordinary `SPELL_EFFECT` source IDs and `N_TURNS`
+lifetimes, so refresh and Dispel use the existing spell-bonus lifecycle.
+Legacy rule snapshots retain their original damage-reduction behavior.

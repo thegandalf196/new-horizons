@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-09-29
-Canonical source SHA-256: `3ee09e33c66f4e401102e226d56deea29c32b41b949e2aeb4f6f51263a392885`
+Canonical source SHA-256: `42c1653d9b34002ae7ef01c516ce613f89f71da6692409d2bee3a632886a7e9d`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -22,10 +22,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 110/310 | 200 planned; active status alone does not certify behavior. Purifier adds one physical-affliction removal to Purify. |
+| Skill perks active | 111/310 | 199 planned; active status alone does not certify behavior. Crusader's duration extension has focused native evidence. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 51/67 | 16 missing/inactive; Purify advances Light to 10/11 with focused server/AI evidence. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 52/67 | 15 missing/inactive; Crusade! has focused native evidence and advances Light identity registration to 11/11. Identity coverage is not mechanic certification. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -49,8 +49,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 110
-active perks, leaving nine ranks and 200 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 111
+active perks, leaving nine ranks and 199 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -162,7 +162,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Discipline | 3/0 | 1/9 | Nine perks missing |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 0/10 | Progression blocked |
-| Light Magic | 3/0 | 5/5 | Benediction, Healer, Guardian, Aegis, and Retributionist active; five perks missing |
+| Light Magic | 3/0 | 7/3 | Benediction, Healer, Guardian, Aegis, Purifier, Retributionist, and Crusader active; Sanctuary Keeper, Litany and Miracle Worker remain planned. Crusader has focused native evidence. |
 | Shadow Magic | 3/0 | 6/4 | Malediction, Withering Touch, Soul Binder, Dark Gift, Night Feeder, and Reanimator are active. Reanimator's casualty-only pool has focused authoritative evidence; four perks remain planned. |
 | Nature Magic | 3/0 | 1/9 | Herbalist active with Regeneration-focused runtime evidence; nine perks missing |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
@@ -351,7 +351,7 @@ module-mirror check pass. This is source/native evidence, not rendered or
 playable acceptance. Phase 2 retains exhaustive magical-beam and area-shot
 classification, AI valuation under combined physical-damage caps, AI mass
 projection logging, Dispel and save/load round trips, and live AI submission.
-The next missing detailed-roster combat spell is Crusade! in Light.
+The remaining missing Light identity at that checkpoint was Crusade!.
 
 Divine Retribution is now the saved-v3 Level-4 Light, 16-Mana single-ally
 reactive spell. Its two-round marker records each qualifying creature
@@ -389,6 +389,31 @@ stacks may be omitted from those consumers. Full save/load, Dispel interaction,
 other future physical afflictions, rendered layout and live play remain
 unverified.
 
+Crusade! is now the saved-v3 Level-5 Light, 24-Mana whole-friendly-army
+empowerment. It applies capped Attack/Defense, flat Initiative rather than
+movement Speed, fractional independent Magical Damage Reduction, and a
+negative-Morale floor. School rank strengthens only the Spell Power-derived
+terms. The five timed bonuses refresh rather than stack. Crusader adds one
+round to the fixed three-round base, and Echoed Duration adjusts a Metamagic
+cast once before that extension. BattleAI projects the actual detached effects
+and submits the shared no-location mass action. The existing stack-status
+surface shows applied values and remaining rounds; appropriate original Prayer
+icons, animation and sound are used by reference, without copying purchaser
+pixels. Both Linux targets link; all 19/19 isolated active-profile Crusade
+cases pass with zero skips, including actual AI submission and cast parity,
+recast/expiry, rank/cap formulas, independent mitigation, Echoed Duration
+and Crusader stacking, status readback, and current bonus serialization with
+downsave rejection. The 49-case content suite, two perk-inventory checks,
+two UI wiring checks, module mirror and diff checks pass. Independent review
+has no remaining blocking finding. These are source/native results, not
+rendered or playable acceptance.
+Phase 2 retains full combat save/reload and Dispel interaction, generic
+`SPELL_DURATION` artifact interactions, hypnosis/original-side AI classification,
+AI valuation beyond immediate legal attacks, and random creature-casting-pool
+inclusion. Rendered/playable acceptance and bespoke art approval remain open.
+Light has 11/11 registered identities, not blanket mechanic certification.
+The next missing detailed-roster combat spell is Entangle in Nature.
+
 Sanctuary is now the saved-v3 Level-1 Light, 5-Mana single-friendly-stack
 protection spell. Its spell-sourced, battle-duration marker excludes the stack
 from deliberate enemy primary creature attacks and hostile single-target
@@ -422,7 +447,7 @@ from the active identity row.
 
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
-| Light | 11 | 10 | Crusade! |
+| Light | 11 | 11 | No missing identity; Crusade! has focused runtime/native evidence. Rendered/playable and broader interaction evidence remain open. |
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |

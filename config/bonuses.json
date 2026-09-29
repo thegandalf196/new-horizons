@@ -695,5 +695,8 @@
 	"UNIT_DEFENDING" : {},
 	"UNLIMITED_MOVEMENT" : {},
 	"WHIRLPOOL_PROTECTION" : {},
-	"MINIMUM_MORALE" : {}
+	"MINIMUM_MORALE" : {},
+	"SPELL_DAMAGE_REDUCTION_BASIS_POINTS" : {
+		"description" : "Independent magical damage reduction in basis points (100 = 1%)"
+	}
 }

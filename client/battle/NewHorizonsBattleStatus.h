@@ -39,6 +39,7 @@ inline constexpr std::string_view REGENERATION_SPELL_KEY = newHorizonsMagic::NAT
 inline constexpr std::string_view SANCTUARY_SPELL_KEY = "new-horizons:sanctuary";
 inline constexpr std::string_view GUARDIAN_SPIRIT_SPELL_KEY = "new-horizons:guardianSpirit";
 inline constexpr std::string_view HEAVENLY_GALE_SPELL_KEY = "new-horizons:heavenlyGale";
+inline constexpr std::string_view CRUSADE_SPELL_KEY = "new-horizons:crusade";
 inline constexpr std::string_view SHADOW_GIFT_SPELL_KEY = "new-horizons:shadowGift";
 inline constexpr std::string_view SHADOW_GIFT_TRIGGER_KEY = "core:shadowGift";
 inline constexpr std::string_view VAMPIRISM_SPELL_KEY = "new-horizons:vampirism";
@@ -110,7 +111,13 @@ inline bool isHeavenlyGale(std::string_view spellKey)
 	return spellKey == HEAVENLY_GALE_SPELL_KEY;
 }
 
+inline bool isCrusade(std::string_view spellKey)
+{
+	return spellKey == CRUSADE_SPELL_KEY;
+}
+
 inline std::string formatBasisPoints(int64_t basisPoints);
+inline std::string roundsRemaining(int rounds);
 
 struct HeavenlyGaleStatus
 {
@@ -145,6 +152,99 @@ inline std::string heavenlyGaleTooltip(std::string_view spellDescription, const 
 	result += formatBasisPoints(status.reductionBasisPoints);
 	result += ". Remaining: " + std::to_string(status.remainingRounds) + " rounds.";
 	result += "\nIncludes physical siege shots; excludes melee, spells, magical beams, and explosions.";
+	return result;
+}
+
+struct CrusadeStatus
+{
+	int32_t attackBonus = 0;
+	int32_t defenseBonus = 0;
+	int32_t initiativeBonus = 0;
+	int32_t magicalDamageReductionBasisPoints = 0;
+	int32_t remainingRounds = 0;
+	bool protectsMoraleFromNegative = false;
+
+	bool active() const
+	{
+		return remainingRounds > 0 && (attackBonus != 0 || defenseBonus != 0 || initiativeBonus != 0
+			|| magicalDamageReductionBasisPoints != 0 || protectsMoraleFromNegative);
+	}
+};
+
+template<typename BonusRange>
+inline CrusadeStatus crusadeStatus(const BonusRange & bonuses)
+{
+	CrusadeStatus result;
+	bool hasTimedCrusadeBonus = false;
+	for(const auto & bonus : bonuses)
+	{
+		if(!bonus || bonus->source != BonusSource::SPELL_EFFECT
+			|| bonus->duration != BonusDuration::N_TURNS || bonus->turnsRemain <= 0)
+			continue;
+
+		try
+		{
+			if(bonus->sid.toString() != CRUSADE_SPELL_KEY)
+				continue;
+		}
+		catch(const std::exception &)
+		{
+			continue;
+		}
+
+		switch(bonus->type)
+		{
+			case BonusType::PRIMARY_SKILL:
+				if(bonus->subtype == BonusSubtypeID(PrimarySkill::ATTACK))
+					result.attackBonus += bonus->val;
+				else if(bonus->subtype == BonusSubtypeID(PrimarySkill::DEFENSE))
+					result.defenseBonus += bonus->val;
+				else
+					continue;
+				break;
+			case BonusType::STACKS_INITIATIVE_FLAT:
+				result.initiativeBonus += bonus->val;
+				break;
+			case BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS:
+				if(bonus->subtype != BonusSubtypeID(SpellSchool::ANY))
+					continue;
+				result.magicalDamageReductionBasisPoints += bonus->val;
+				break;
+			case BonusType::MINIMUM_MORALE:
+				if(bonus->val != 0)
+					continue;
+				result.protectsMoraleFromNegative = true;
+				break;
+			default:
+				continue;
+		}
+
+		if(!hasTimedCrusadeBonus)
+		{
+			result.remainingRounds = bonus->turnsRemain;
+			hasTimedCrusadeBonus = true;
+		}
+		else
+			result.remainingRounds = std::min(result.remainingRounds, static_cast<int32_t>(bonus->turnsRemain));
+	}
+	return result;
+}
+
+inline std::string crusadeTooltip(std::string_view spellDescription, const CrusadeStatus & status)
+{
+	std::string result(spellDescription);
+	if(!status.active())
+		return result;
+
+	result += "\n\nCurrent Crusade bonuses:";
+	result += "\nAttack: +" + std::to_string(status.attackBonus) + ".";
+	result += "\nDefense: +" + std::to_string(status.defenseBonus) + ".";
+	result += "\nInitiative: +" + std::to_string(status.initiativeBonus) + " flat points.";
+	result += "\nCrusade's independent Magical Damage Reduction: ";
+	result += formatBasisPoints(status.magicalDamageReductionBasisPoints) + ".";
+	if(status.protectsMoraleFromNegative)
+		result += "\nMorale cannot fall below 0 while Crusade is active.";
+	result += "\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
 	return result;
 }
 

@@ -6,11 +6,13 @@ local HOLY_ARMOR_SPELL = "new-horizons:holyArmor"
 local HEAVENLY_GALE_SPELL = "new-horizons:heavenlyGale"
 local GUARDIAN_SPIRIT_SPELL = "new-horizons:guardianSpirit"
 local DIVINE_RETRIBUTION_SPELL = "new-horizons:divineRetribution"
+local CRUSADE_SPELL = "new-horizons:crusade"
 local LIGHT_MAGIC_SKILL = "new-horizons:lightMagic"
 local HEALER_PERK = "new-horizons:lightMagic.healer"
 local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
 local AEGIS_PERK = "new-horizons:lightMagic.aegis"
 local RETRIBUTIONIST_PERK = "new-horizons:lightMagic.retributionist"
+local CRUSADER_PERK = "new-horizons:lightMagic.crusader"
 local HOLY_ARMOR_SPELL_POWER_DIVISOR = 5
 local HOLY_ARMOR_MAX_REDUCTION_PERCENT = 60
 local HEAVENLY_GALE_BASE_REDUCTION_BASIS_POINTS = 5000
@@ -19,6 +21,15 @@ local HEAVENLY_GALE_MAX_REDUCTION_BASIS_POINTS = 8000
 local DIVINE_RETRIBUTION_BASE_DAMAGE = 25
 local DIVINE_RETRIBUTION_POWER_NUMERATOR = 125
 local DIVINE_RETRIBUTION_POWER_DIVISOR = 100
+local CRUSADE_BASE_ATTRIBUTE_BONUS = 3
+local CRUSADE_ATTRIBUTE_POWER_DIVISOR = 75
+local CRUSADE_BASE_INITIATIVE_BONUS = 1
+local CRUSADE_INITIATIVE_POWER_DIVISOR = 100
+local CRUSADE_BASE_REDUCTION_BASIS_POINTS = 1200
+local CRUSADE_REDUCTION_POWER_BASIS_POINTS_NUMERATOR = 13
+local CRUSADE_REDUCTION_POWER_DIVISOR = 2
+local CRUSADE_MAX_REDUCTION_BASIS_POINTS = 2500
+local CRUSADE_BASE_DURATION = 3
 local SLOW_SPELL = "core:slow"
 local SLOW_BASE_REDUCTION_PERCENT = 20
 local SLOW_SPELL_POWER_DIVISOR = 5
@@ -33,8 +44,21 @@ function Script:deepCopyBonus(b)
 end
 
 function Script:convertBonuses(mechanics)
-	local duration = mechanics:getEffectDuration()
 	local spellKey = mechanics:getSpell():getJsonKey()
+	local duration = nil
+	local crusadeDuration = nil
+	if spellKey == CRUSADE_SPELL and mechanics:usesNewHorizonsMagicV3() then
+		-- Crusade authors a fixed three-round buff, independent of Spell Power. Apply
+		-- cast-specific duration mechanics exactly once to that literal base, then
+		-- add Crusader's separate round below.
+		crusadeDuration = mechanics:adjustEffectDuration(CRUSADE_BASE_DURATION)
+		local hero = mechanics:getHeroCaster()
+		if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, CRUSADER_PERK) then
+			crusadeDuration = crusadeDuration + 1
+		end
+	else
+		duration = mechanics:getEffectDuration()
+	end
 	local newHorizonsSlowReduction = nil
 	if spellKey == SLOW_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		local spellPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
@@ -67,7 +91,9 @@ function Script:convertBonuses(mechanics)
 			nb.type = "STACKS_INITIATIVE"
 			nb.valueType = "ADDITIVE_VALUE"
 		end
-		if not nb.turns or nb.turns == 0 then
+		if crusadeDuration ~= nil then
+			nb.turns = crusadeDuration
+		elseif not nb.turns or nb.turns == 0 then
 			nb.turns = duration
 		end
 
@@ -161,7 +187,8 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	-- spell specialty that should rewrite their fixed or derived components.
 	if spellKey == HOLY_ARMOR_SPELL or spellKey == HEAVENLY_GALE_SPELL
 		or spellKey == GUARDIAN_SPIRIT_SPELL
-		or spellKey == DIVINE_RETRIBUTION_SPELL then return end
+		or spellKey == DIVINE_RETRIBUTION_SPELL
+		or spellKey == CRUSADE_SPELL then return end
 	local tier = math.max(unit:creatureLevel(), 1)
 
 	self:applySpellScaling(mechanics, hero, buffer, tier, spellKey)
@@ -264,6 +291,49 @@ function Script:applyDivineRetributionPower(mechanics, buffer, spellKey)
 	end
 end
 
+function Script:applyCrusadePower(mechanics, buffer, spellKey)
+	if spellKey ~= CRUSADE_SPELL or not mechanics:usesNewHorizonsMagicV3() then return end
+
+	local spellPower = math.max(0, mechanics:getEffectPower())
+	local coefficient = mechanics:getSpellPowerCoefficientBasisPoints()
+	local attributePowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+		spellPower, CRUSADE_ATTRIBUTE_POWER_DIVISOR, coefficient)
+	local initiativePowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+		spellPower, CRUSADE_INITIATIVE_POWER_DIVISOR, coefficient)
+	local reductionPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+		CRUSADE_REDUCTION_POWER_BASIS_POINTS_NUMERATOR * spellPower,
+		CRUSADE_REDUCTION_POWER_DIVISOR, coefficient)
+	local attackAndDefense = math.min(6, CRUSADE_BASE_ATTRIBUTE_BONUS + attributePowerTerm)
+	local initiative = math.min(3, CRUSADE_BASE_INITIATIVE_BONUS + initiativePowerTerm)
+	local reduction = math.min(CRUSADE_MAX_REDUCTION_BASIS_POINTS,
+		CRUSADE_BASE_REDUCTION_BASIS_POINTS + reductionPowerTerm)
+
+	for _, nb in pairs(buffer) do
+		if nb.type == "PRIMARY_SKILL" then
+			nb.val = attackAndDefense
+		elseif nb.type == "STACKS_INITIATIVE_FLAT" then
+			nb.val = initiative
+		elseif nb.type == "SPELL_DAMAGE_REDUCTION_BASIS_POINTS" then
+			nb.val = reduction
+		end
+	end
+end
+
+function Script:describeCrusadeEffect(server, battle, bonuses)
+	local attack = bonuses.attack and bonuses.attack.val or 0
+	local defense = bonuses.defense and bonuses.defense.val or 0
+	local initiative = bonuses.initiative and bonuses.initiative.val or 0
+	local reduction = bonuses.magicalDamageReduction and bonuses.magicalDamageReduction.val or 0
+	local duration = bonuses.attack and bonuses.attack.turns or CRUSADE_BASE_DURATION
+	local percent = math.floor(reduction / 100)
+	local fractionalPercent = reduction % 100
+	server:appendLog(battle, {
+		appendRaw = { string.format(
+			"Crusade! grants +%d Attack, +%d Defense, +%d flat Initiative, and %d.%02d%% independent Magical Damage Reduction to the friendly army for %d rounds; affected creatures cannot suffer negative Morale.",
+			attack, defense, initiative, percent, fractionalPercent, duration) }
+	})
+end
+
 function Script:describeEffect(server, battle, unit, bonuses)
 	-- Age spell: STACK_HEALTH bonus with negative val gets a custom message
 	for _, nb in pairs(bonuses) do
@@ -294,8 +364,10 @@ end
 function Script:apply(mechanics, server, target)
 	local battle   = mechanics:getBattle()
 	local describe = server:describeChanges()
-	local converted = self:convertBonuses(mechanics)
 	local spellKey = mechanics:getSpell():getJsonKey()
+	if spellKey == CRUSADE_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
+	local converted = self:convertBonuses(mechanics)
+	local describedCrusade = false
 
 	for _, dest in ipairs(target) do
 		local unit = dest.unit
@@ -311,10 +383,18 @@ function Script:apply(mechanics, server, target)
 		self:applyHeavenlyGalePower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyGuardianSpiritPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyDivineRetributionPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
+		self:applyCrusadePower(mechanics, buffer, spellKey)
 		self:applyTemporalFieldScale(mechanics, buffer, mechanics:getSpell():getJsonKey())
 
 		if describe then
-			self:describeEffect(server, battle, unit, buffer)
+			if spellKey == CRUSADE_SPELL then
+				if not describedCrusade then
+					self:describeCrusadeEffect(server, battle, buffer)
+					describedCrusade = true
+				end
+			else
+				self:describeEffect(server, battle, unit, buffer)
+			end
 		end
 
 		if spellKey == DIVINE_RETRIBUTION_SPELL then

@@ -96,6 +96,7 @@ EntityTypeEnum bonusSubtypeEntityType(BonusType type)
 		case BonusType::SPELL_DAMAGE:
 		case BonusType::SPELLS_OF_SCHOOL:
 		case BonusType::SPELL_DAMAGE_REDUCTION:
+		case BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS:
 		case BonusType::SPELL_SCHOOL_IMMUNITY:
 		case BonusType::NEGATIVE_EFFECTS_IMMUNITY:
 			return EntityTypeEnum::SPELL_SCHOOL;

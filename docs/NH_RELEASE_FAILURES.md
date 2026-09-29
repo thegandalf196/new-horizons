@@ -2,6 +2,71 @@
 
 ## Purpose
 
+### 2026-09-29 Crusade development build — incomplete battle-info type
+
+The local incremental Linux client/test build failed in
+`lib/battle/NewHorizonsPlague.cpp:133–134`: the new fractional-reduction
+flag accessed `IBattleInfo::getMagicRules()` with only a forward declaration
+available. This is a compile blocker, not a gameplay failure. Repair by
+including the declaring `IBattleState.h` directly and checking other updated
+`adjustRawDamage` callers for the same dependency. At this failure, rebuild
+success was pending; passing offline checks did not prove compilation.
+
+The next retry passed the repaired Plague/SoulChain files, then failed in
+`AI/BattleAI/BattleEvaluator.cpp`: the new Crusade scoring block called
+`.get()` on `unit`, which is already a `const battle::Unit *`. Pass that
+pointer directly in the three new calls. Compile the actual evaluator and
+focused native AI test; whitespace checks alone do not establish API/type
+correctness. Full target-build success was still pending at that retry.
+
+The following retry compiled the client and runtime, but stopped in the new
+Crusade fixture: `SpellID::MAGIC_ARROW` is an enum constant, not a `SpellID`
+object, so `.toSpell()` requires `SpellID(SpellID::MAGIC_ARROW)`. Repair the
+fixture, rebuild the actual test target, and run the active-profile filter;
+this is a test compile failure, not evidence of spell damage misbehavior.
+
+The next retry passed the repaired server fixture and stopped in
+`test/battleAI/NewHorizonsCrusadeAITest.cpp`: its `HypotheticBattle.h` include
+used the wrong subsystem directory. Use the existing BattleAI header and
+compile the fixture itself before counting native AI evidence. Full target
+success was still pending at that retry.
+
+Compiling that corrected fixture then exposed a missing direct include for
+`newHorizonsMagic::spellAllowedBySavedRoster`. Its declaration belongs to
+`NewHorizonsSpellAvailability.h`, not `NewHorizonsMagic.h`. Include the
+declaring header explicitly rather than depending on an incidental transitive
+include.
+
+First succeeding local target gate: the final incremental
+`cmake --build build/new-horizons-linux --target vcmitest vcmiclient -j8`
+completed with exit 0 after all these repairs, linking both targets over
+parent `997388ccd` plus this Crusade working-tree slice. Native execution is
+a separate gate and remained pending at build completion. No CI or playable
+snapshot success is inferred from this local build.
+
+The first active-profile Crusade run exposed two fixture errors. Pikeman
+Morale already included +1, so adding -2 produced -1 rather than the assumed
+-2; use a controlled strong negative precondition. Recast immediately
+refreshed the effect to three turns correctly, but the test assumed an extra
+grace round after a round-two recast. Actual later durations were two, one,
+then expired. Its next unchecked null bonus dereference caused exit 139.
+Correct the round-boundary assertions and guard bonus presence before reading
+it. This failure must not be reported as a production Crusade crash or a
+passing native gate. Rerun the complete focused filter after repair.
+
+Before rerunning, source review also corrected the AI fixture's magical
+reduction lookup to explicit `BonusSubtypeID(SpellSchool::ANY)`. A default
+`BonusSubtypeID` stores a different variant alternative and is not equal to
+that school subtype; integer coincidence is not identifier equality. This
+was a fixture correction, not a production reduction change.
+
+Final repaired gate: both Linux targets link and the complete isolated
+`NewHorizonsCrusade*` filter passes 19/19 with zero skips and exit 0. This
+includes refresh/expiry, negative-Morale protection, both Echoed Duration
+combinations, and actual BattleAI submission/casting. The 49-case content
+suite, two perk-inventory checks, two UI wiring checks, module mirror and
+diff checks pass. No rendered, CI, or promoted-snapshot result is claimed.
+
 User requested durable notes after successive Windows release failures. New agents
 must read this with [NH_DELIVERY_PIPELINE.md](NH_DELIVERY_PIPELINE.md) before
 changing packaging or dispatching CI. This is an incident/regression index, not a

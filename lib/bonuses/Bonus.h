@@ -84,6 +84,9 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(h.saving && type == BonusType::SIEGE_RATING
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SIEGE_RATING))
 			throw std::runtime_error("Cannot discard New Horizons Siege rating state");
+		if(h.saving && type == BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CRUSADE_MAGIC_REDUCTION))
+			throw std::runtime_error("Cannot discard New Horizons Crusade magical reduction state");
 		h & duration;
 		h & type;
 		h & subtype;

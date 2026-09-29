@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "3ee09e33c66f4e401102e226d56deea29c32b41b949e2aeb4f6f51263a392885",
+	"sourceSha256": "42c1653d9b34002ae7ef01c516ce613f89f71da6692409d2bee3a632886a7e9d",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1189,7 +1189,7 @@
 					"requires": "expert",
 					"description": "Crusade! lasts 1 additional round and affected creatures cannot suffer negative Morale while it remains active.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Crusade! lasts 1 additional round and affected creatures cannot suffer negative Morale while it remains active."
 					}
 				}

@@ -8,6 +8,7 @@
 #include "NewHorizonsSoulChain.h"
 
 #include "CBattleInfoCallback.h"
+#include "IBattleState.h"
 #include "Unit.h"
 #include "../CStack.h"
 #include "../bonuses/Bonus.h"
@@ -174,6 +175,9 @@ int64_t adjustedEchoDamage(const CBattleInfoCallback & battle, const BattleSide 
 		return rawDamage;
 
 	return definition->adjustRawDamage(caster, primary, rawDamage, 0,
-		battle.battleGetHoldTheLineMagicalReductionBasisPoints(primary), 100, true);
+		battle.battleGetHoldTheLineMagicalReductionBasisPoints(primary), 100, true,
+		newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+			&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
+				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION);
 }
 }

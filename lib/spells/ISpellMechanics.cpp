@@ -1152,7 +1152,8 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 		}
 	}
 	int64_t adjustedDamage = owner->adjustRawDamage(caster, target, rawDamage, ignoreReduction,
-		holdReductionBasisPoints, finalDamageMultiplierPercent, useIndependentMagicalDamageReduction);
+		holdReductionBasisPoints, finalDamageMultiplierPercent, useIndependentMagicalDamageReduction,
+		usesNewHorizonsMagicV3());
 	if(applyExecution && target && battleState && newHorizonsMagic::soulReaperEnabled(
 		battleState->getMagicRules(), owner->getId()))
 		adjustedDamage = newHorizonsMagic::soulReaperDamageAfterExecution(
