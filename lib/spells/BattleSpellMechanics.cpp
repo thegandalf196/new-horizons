@@ -1134,7 +1134,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			std::string(newHorizonsMagic::NATURE_HERBALIST));
 		const int32_t regenerationRate = newHorizonsMagic::regenerationRateMillionthsBasisPoints(
 			std::max<int32_t>(0, getEffectPower()), getSpellPowerCoefficientBasisPoints(),
-			herbalist, getWarcastingBonusPercent());
+			herbalist, getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
 		for(const auto * unit : affectedUnits)
 		{
 			if(!unit || !hasRegenerationMarker(unit))

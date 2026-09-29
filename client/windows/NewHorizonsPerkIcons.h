@@ -55,6 +55,7 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 		{"new-horizons:sorceryMagic.chronomancer", "NH_perk_chronomancer"},
 		{"new-horizons:sorceryMagic.spellbinder", "NH_perk_spellbinder"},
 		{"new-horizons:spellcraft.spellPenetration", "NH_perk_spell_penetration"},
+		{"new-horizons:spellcraft.empowerSpell", "NH_perk_empower_spell"},
 		{"new-horizons:havocMagic.stormcaller", "NH_perk_stormcaller_v2"},
 		// Provisional but distinct bindings for the newly playable higher-rank
 		// Havoc perks.  Dedicated Havoc paintings can replace these asset keys

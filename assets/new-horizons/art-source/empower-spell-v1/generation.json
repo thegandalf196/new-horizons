@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-28",
+  "generator": "OpenAI built-in image generator via homm3-art skill",
+  "method": "Original generated raster artwork. The retained master is reduced with homm3-art export_art.py; runtime states use brightness/color-only transforms.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "style_guide": "homm3-art/references/style-guide.md (secondary-skill icons)",
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "assets": [
+    {
+      "id": "new-horizons:spellcraft.empowerSpell",
+      "name": "Empower Spell",
+      "requires": "expert",
+      "key": "NH_perk_empower_spell",
+      "master": "exports/empower-spell/master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "ac21eaebf3043fec9ae1929795cf18ca065478486597ebb2167b843e85f10c08",
+      "style_reference": null,
+      "prompt_file": "prompt-empower-spell.txt",
+      "generated_output_id": "01a0eafb-5b4d-7473-9c63-fa2056819496/exec-2cfd8f7c-f30e-4c5c-92e4-f0da6d1fa26f.png",
+      "concept": "A single cobalt focus crystal in a worn bronze and steel cradle takes in a narrow magical stream and concentrates it into a brighter beam."
+    }
+  ]
+}

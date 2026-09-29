@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsDirectDamage.h"
+#include "ISpellMechanics.h"
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -34,26 +35,19 @@ int64_t DirectDamageFormula::evaluate(int32_t effectPower, int32_t divisor, int 
 }
 
 int64_t DirectDamageFormula::evaluateBasisPoints(int32_t effectPower, int32_t divisor,
-	int32_t coefficientBasisPoints) const
+	int32_t coefficientBasisPoints, int32_t empowerSpellBonusPercent) const
 {
 	// Also check directly constructed DTOs. Negative damage is not healing.
 	if(base < 0 || base > MAX_DIRECT_DAMAGE_PARAMETER || powerCoefficient < 0
 		|| powerCoefficient > MAX_DIRECT_DAMAGE_PARAMETER || effectPower < 0 || divisor <= 0
-		|| coefficientBasisPoints < 0 || coefficientBasisPoints > 100000)
+		|| coefficientBasisPoints < 0 || coefficientBasisPoints > 100000
+		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
 		throw std::runtime_error("Invalid New Horizons direct damage evaluation inputs");
-	const int64_t coefficientPower = static_cast<int64_t>(powerCoefficient) * effectPower;
-	const int64_t denominator = static_cast<int64_t>(divisor) * 10000;
-	const int64_t whole = coefficientPower / denominator;
-	const int64_t remainder = coefficientPower % denominator;
-	const int64_t maximum = std::numeric_limits<int64_t>::max();
-	if(coefficientBasisPoints != 0 && whole > maximum / coefficientBasisPoints)
-		throw std::overflow_error("New Horizons direct damage coefficient overflows");
-	const int64_t scaledWhole = whole * coefficientBasisPoints;
-	const int64_t scaledRemainder = remainder * coefficientBasisPoints / denominator;
-	if(scaledWhole > maximum - scaledRemainder
-		|| scaledWhole + scaledRemainder > maximum - base)
+	const int64_t scaledPower = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		static_cast<int64_t>(powerCoefficient) * effectPower, divisor,
+		coefficientBasisPoints, 0, empowerSpellBonusPercent);
+	if(scaledPower > std::numeric_limits<int64_t>::max() - base)
 		throw std::overflow_error("New Horizons direct damage result overflows");
-	const int64_t scaledPower = scaledWhole + scaledRemainder;
 	return base + scaledPower;
 }
 

@@ -35,6 +35,7 @@
 #include "../../../server/ServerSpellCastEnvironment.h"
 #include <vcmi/Environment.h>
 #include <iostream>
+#include <limits>
 
 namespace
 {
@@ -183,6 +184,13 @@ TEST(NewHorizonsHavocDirectDamage, CanonicalLevelOneRosterUsesSavedV2FormulasAnd
 		newHorizonsMagic::directDamageValue(rules, "core:iceBolt", 100, 10));
 }
 
+TEST(NewHorizonsDirectDamage, RegenerationBasisPointMaximumInputsSaturateWithoutOverflow)
+{
+	EXPECT_EQ(newHorizonsMagic::regenerationRateMillionthsBasisPoints(
+		std::numeric_limits<int32_t>::max(), 100'000, true, 1000, 1000),
+		newHorizonsMagic::REGENERATION_MAX_RATE_MILLIONTHS);
+}
+
 TEST(NewHorizonsHavocDirectDamage, CanonicalFrostRingAndInfernoUseDetailedRosterValues)
 {
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
@@ -311,6 +319,78 @@ protected:
 			"new-horizons:spellcraft", "new-horizons:spellcraft.spellPenetration"});
 		ASSERT_TRUE(attackerSideHero->hasActivePerk(
 			"new-horizons:spellcraft", "new-horizons:spellcraft.spellPenetration"));
+	}
+
+	void selectEmpowerSpell()
+	{
+		selectSpellPenetration();
+		const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+		ASSERT_TRUE(spellcraft.hasValue());
+		attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::ADVANCED,
+			ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({
+			"new-horizons:spellcraft", "new-horizons:spellcraft.empowerSpell"});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(
+			"new-horizons:spellcraft", "new-horizons:spellcraft.empowerSpell"));
+	}
+
+	void verifyEmpowerSpellCostThreshold(int listedCost, int expectedWisdomCost,
+		int64_t expectedDamage, int expectedEmpowerBonus)
+	{
+		forceRealHeroScale = true;
+		usePerks = true;
+		authoredRules = savedV3Formula();
+		for(auto & cost : authoredRules["spells"][arrowKey]["costs"].Vector())
+			cost.Integer() = listedCost;
+		prepare();
+		selectEmpowerSpell();
+
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+		const auto wisdom = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
+		ASSERT_TRUE(wisdom.hasValue());
+		attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		ASSERT_EQ(attackerSideHero->getListedSpellCost(spell), listedCost);
+		ASSERT_EQ(attackerSideHero->getSpellCost(spell), expectedWisdomCost);
+		EXPECT_EQ(newHorizonsMagic::empowerSpellBonusPercent(
+			battle()->getMagicRules(), attackerSideHero, spell->getId()), expectedEmpowerBonus);
+
+		spells::Target aim;
+		aim.emplace_back(target);
+		spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, spell);
+		auto mechanics = spell->battleMechanics(&legal);
+		spells::detail::ProblemImpl problem;
+		ASSERT_TRUE(mechanics->canBeCast(problem));
+		ASSERT_TRUE(mechanics->canBeCastAt(aim, problem));
+		EXPECT_EQ(mechanics->getEffectValue(), expectedDamage);
+		EXPECT_EQ(spell->calculateDamage(attackerSideHero), expectedDamage)
+			<< "CSpell's damage estimate should use the same eligible Empower bonus";
+
+		const auto healthBefore = target->getAvailableHealth();
+		const auto manaBefore = attackerSideHero->getManaAvailable();
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		DamageEnvironment environment(gameState(), nullptr);
+		HypotheticBattle predicted(&environment, callback);
+		const auto * projectedTarget = predicted.battleGetUnitByID(target->unitId());
+		ASSERT_NE(projectedTarget, nullptr);
+		spells::Target projectedAim;
+		projectedAim.emplace_back(projectedTarget);
+		spells::BattleCast prediction(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+		auto predictedMechanics = spell->battleMechanics(&prediction);
+		EXPECT_EQ(predictedMechanics->getEffectValue(), expectedDamage);
+		predictedMechanics->castEval(predicted.getServerCallback(), projectedAim);
+		EXPECT_EQ(healthBefore - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(),
+			expectedDamage);
+		EXPECT_EQ(target->getAvailableHealth(), healthBefore);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = spell->getId();
+		action.aimToUnit(target);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+		EXPECT_EQ(healthBefore - target->getAvailableHealth(), expectedDamage);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - expectedWisdomCost);
 	}
 
 	void verifyIceBoltSavedProfile(bool legacySlow, int expectedVersion,
@@ -578,6 +658,20 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellcraftComposesWithSchoolRanksIn
 	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 397);
 }
 
+TEST_F(NewHorizonsDirectDamageMechanicsTest, EmpowerSpellUsesFinalWisdomAdjustedCostThresholdOfTwelve)
+{
+	// Basic Wisdom turns listed cost 12 into 11 (not eligible) and listed cost
+	// 13 into 12 (eligible). The two cases exercise the boundary through saved
+	// perk selection, the cast mechanics, the CSpell estimate, AI preview, and
+	// authoritative application.
+	verifyEmpowerSpellCostThreshold(12, 11, 260, 0);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, EmpowerSpellAppliesAtWisdomAdjustedCostTwelve)
+{
+	verifyEmpowerSpellCostThreshold(13, 12, 320, 25);
+}
+
 TEST_F(NewHorizonsDirectDamageMechanicsTest, OldV3SnapshotWithoutSpellcraftFieldKeepsSchoolOnlyCoefficient)
 {
 	forceRealHeroScale = true;
@@ -597,6 +691,13 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, OldV3SnapshotWithoutSpellcraftField
 	cast.setEffectPower(100);
 	EXPECT_EQ(spell->battleMechanics(&cast)->getEffectValue(), 310);
 	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 310);
+
+	const auto * slow = SpellID(SpellID::SLOW).toSpell();
+	ASSERT_NE(slow, nullptr);
+	const int ordinaryDuration = attackerSideHero->getEnchantPower(slow);
+	spells::BattleCast oldProfileDuration(battle(), attackerSideHero, spells::Mode::HERO, slow);
+	EXPECT_EQ(slow->battleMechanics(&oldProfileDuration)->getEffectDuration(), ordinaryDuration)
+		<< "An older v3 profile without Spellcraft coefficients must keep its original duration formula";
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, GenericDamageFormulaUsesTheSameRankCoefficientWithoutMovingItsBase)

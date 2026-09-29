@@ -172,7 +172,8 @@ public:
 		}
 
 		const int64_t baseDamage = newHorizonsMagic::poisonBaseDamageBasisPoints(
-			mechanics->getEffectPower(), mechanics->getSpellPowerCoefficientBasisPoints());
+			mechanics->getEffectPower(), mechanics->getSpellPowerCoefficientBasisPoints(),
+			mechanics->getEmpowerSpellBonusPercent());
 		for(const auto & destination : target)
 		{
 			const auto * stack = dynamic_cast<const CStack *>(destination.unitValue);

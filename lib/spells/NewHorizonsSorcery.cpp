@@ -11,6 +11,7 @@
 #include "NewHorizonsSorcery.h"
 
 #include <algorithm>
+#include <array>
 #include <stdexcept>
 
 namespace newHorizonsSorcery
@@ -77,13 +78,20 @@ int timeStopRadius(int32_t spellPower, bool chronomancer)
 
 int timeStopRadius(int32_t spellPower, bool chronomancer, int32_t coefficientPercent)
 {
+	return timeStopRadius(spellPower, chronomancer, coefficientPercent, 0);
+}
+
+int timeStopRadius(int32_t spellPower, bool chronomancer, int32_t coefficientPercent,
+	int32_t empowerSpellBonusPercent)
+{
 	validateSpellPower(spellPower);
-	if(coefficientPercent < 0 || coefficientPercent > 1000)
+	if(coefficientPercent < 0 || coefficientPercent > 1000
+		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
 		throw std::invalid_argument("Invalid Time Stop Spell Power coefficient");
 	const int maximumRadius = TIME_STOP_BASE_MAX_RADIUS
 		+ (chronomancer ? TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
 	const int64_t scaledPowerTerm = static_cast<int64_t>(spellPower) * coefficientPercent
-		/ (TIME_STOP_POWER_PER_EXTRA_RADIUS * 100);
+		* (100 + empowerSpellBonusPercent) / (TIME_STOP_POWER_PER_EXTRA_RADIUS * 100 * 100);
 	return std::min(maximumRadius, TIME_STOP_BASE_RADIUS + static_cast<int>(scaledPowerTerm));
 }
 
@@ -97,22 +105,39 @@ int spellLockDuration(int32_t spellPower, bool spellbinder, int32_t coefficientP
 }
 
 int spellLockDurationBasisPoints(int32_t spellPower, bool spellbinder,
-	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent)
+	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent, int32_t empowerSpellBonusPercent)
 {
 	validateSpellPower(spellPower);
-	if(coefficientBasisPoints < 0 || coefficientBasisPoints > 100000 || warcastingBonusPercent < 0)
+	if(coefficientBasisPoints < 0 || coefficientBasisPoints > 100000
+		|| warcastingBonusPercent < 0
+		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
 		throw std::invalid_argument("Invalid Spell Lock Spell Power coefficient inputs");
 
-	// Match Mechanics::scaleSpellPowerComponentWithCoefficient exactly while
-	// avoiding a product of Spell Power, the rank coefficient, and Warcasting.
-	// int32 Spell Power times the bounded coefficient fits in int64; quotient/
-	// remainder scaling keeps the additional Warcasting multiplier overflow-safe.
-	constexpr int64_t denominator = static_cast<int64_t>(SPELL_LOCK_POWER_PER_EXTRA_ROUND) * 10000 * 100;
-	const int64_t scaledNumerator = static_cast<int64_t>(spellPower) * coefficientBasisPoints;
-	const int64_t multiplier = 100LL + warcastingBonusPercent;
-	const int64_t whole = scaledNumerator / denominator;
-	const int64_t remainder = scaledNumerator % denominator;
-	const int64_t scaledSpellPower = whole * multiplier + remainder * multiplier / denominator;
+	// Only 0, 1, and 2 Spell Power units can affect the capped duration. Clamp
+	// the exact numerator at the threshold for 2 before multiplying large
+	// accepted Warcasting percentages, preserving the historical nonnegative
+	// int32 range without overflowing an intermediate.
+	constexpr int64_t denominator = static_cast<int64_t>(SPELL_LOCK_POWER_PER_EXTRA_ROUND)
+		* 10000 * 100 * 100;
+	constexpr int64_t saturationThreshold = 2 * denominator;
+	int64_t scaledNumerator = spellPower;
+	const std::array<int64_t, 3> factors{
+		coefficientBasisPoints, 100LL + warcastingBonusPercent, 100LL + empowerSpellBonusPercent};
+	for(const int64_t factor : factors)
+	{
+		if(factor == 0)
+		{
+			scaledNumerator = 0;
+			break;
+		}
+		if(scaledNumerator > (saturationThreshold - 1) / factor)
+		{
+			scaledNumerator = saturationThreshold;
+			break;
+		}
+		scaledNumerator *= factor;
+	}
+	const int64_t scaledSpellPower = std::min<int64_t>(2, scaledNumerator / denominator);
 	const int baseDuration = static_cast<int>(std::min<int64_t>(
 		SPELL_LOCK_BASE_DURATION_CAP,
 		1 + scaledSpellPower));

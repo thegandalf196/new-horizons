@@ -1879,7 +1879,7 @@
 				"expert": {
 					"description": "Spell Power-derived components operate at 130%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Spell Power-derived components operate at 130%."
 					}
 				}
@@ -1951,7 +1951,7 @@
 					"requires": "advanced",
 					"description": "Spells whose final Wisdom-adjusted Mana cost is 12 or higher receive +25% to their Spell Power-derived numerical component.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Spells whose final Wisdom-adjusted Mana cost is 12 or higher receive +25% to their Spell Power-derived numerical component."
 					}
 				},

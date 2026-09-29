@@ -23,6 +23,7 @@ SOURCE_SHIELD_MASTER = ROOT / "assets/new-horizons/art-source/shield-master-v1"
 SOURCE_IRON_DISCIPLINE = ROOT / "assets/new-horizons/art-source/iron-discipline-v1"
 SOURCE_PAVISE = ROOT / "assets/new-horizons/art-source/pavise-v1"
 SOURCE_SPELL_PENETRATION = ROOT / "assets/new-horizons/art-source/spell-penetration-v1"
+SOURCE_EMPOWER_SPELL = ROOT / "assets/new-horizons/art-source/empower-spell-v1"
 IMAGES = ROOT / "Mods/new-horizons/Images"
 ICONS = ROOT / "client/windows/NewHorizonsPerkIcons.h"
 DEFINITIONS = ROOT / "config/newHorizonsPerks.json"
@@ -181,6 +182,12 @@ SPELL_PENETRATION_EXPECTED = {
         "spell-penetration",
     ),
 }
+EMPOWER_SPELL_EXPECTED = {
+    "new-horizons:spellcraft.empowerSpell": (
+        "NH_perk_empower_spell",
+        "empower-spell",
+    ),
+}
 EXPECTED = (
     V2_EXPECTED
     | V3_EXPECTED
@@ -193,6 +200,7 @@ EXPECTED = (
     | IRON_DISCIPLINE_EXPECTED
     | PAVISE_EXPECTED
     | SPELL_PENETRATION_EXPECTED
+    | EMPOWER_SPELL_EXPECTED
 )
 
 
@@ -219,6 +227,7 @@ def main() -> None:
         (SOURCE_IRON_DISCIPLINE, IRON_DISCIPLINE_EXPECTED),
         (SOURCE_PAVISE, PAVISE_EXPECTED),
         (SOURCE_SPELL_PENETRATION, SPELL_PENETRATION_EXPECTED),
+        (SOURCE_EMPOWER_SPELL, EMPOWER_SPELL_EXPECTED),
     ):
         generation = json.loads((source / "generation.json").read_text(encoding="utf-8"))
         by_id = {asset["id"]: asset for asset in generation["assets"]}
@@ -252,6 +261,7 @@ def main() -> None:
                 "new-horizons:armorer.ironDiscipline",
                 "new-horizons:armorer.pavise",
                 "new-horizons:spellcraft.spellPenetration",
+                "new-horizons:spellcraft.empowerSpell",
             }:
                 export_manifest = json.loads(
                     (export / f"{slug}-manifest.json").read_text(encoding="utf-8")
@@ -402,6 +412,26 @@ def main() -> None:
         if manifest_path.startswith("Mods/") and filename.endswith(".png"):
             live_state_hashes.add(expected_hash)
     assert len(live_state_hashes) == 4, "Spell Penetration runtime states must have distinct hashes"
+
+    empower_spell_manifest = json.loads(
+        (SOURCE_EMPOWER_SPELL / "runtime-manifest.json").read_text(encoding="utf-8")
+    )
+    assert empower_spell_manifest["status"].startswith("provisional")
+    assert empower_spell_manifest["assets"] == ["NH_perk_empower_spell"]
+    live_state_hashes = set()
+    for manifest_path, expected_hash in empower_spell_manifest["files"].items():
+        filename = Path(manifest_path).name
+        if manifest_path.startswith("source/"):
+            path = SOURCE_EMPOWER_SPELL / "runtime" / filename
+        elif manifest_path.startswith("Mods/"):
+            path = IMAGES / filename
+        else:
+            raise AssertionError(f"unexpected Empower Spell runtime manifest path: {manifest_path}")
+        assert path.is_file(), path
+        assert digest(path) == expected_hash, (manifest_path, "runtime export hash")
+        if manifest_path.startswith("Mods/") and filename.endswith(".png"):
+            live_state_hashes.add(expected_hash)
+    assert len(live_state_hashes) == 4, "Empower Spell runtime states must have distinct hashes"
 
     definitions = json.loads(DEFINITIONS.read_text(encoding="utf-8"))
     active = {

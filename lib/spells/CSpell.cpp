@@ -92,14 +92,17 @@ int64_t CSpell::calculateDamage(const spells::Caster * caster) const
 	{
 		const int coefficientBasisPoints = newHorizonsMagic::spellPowerCoefficientBasisPoints(
 			hero->getMagicRules(), hero, id);
+		const int empowerBonusPercent = newHorizonsMagic::empowerSpellBonusPercent(
+			hero->getMagicRules(), hero, id);
 		if(const auto formula = newHorizonsMagic::spellDirectDamage(hero->getMagicRules(), getJsonKey()))
-			rawDamage = formula->evaluateBasisPoints(effectPower, divisor, coefficientBasisPoints);
-		else if(coefficientBasisPoints != 10000)
+			rawDamage = formula->evaluateBasisPoints(effectPower, divisor, coefficientBasisPoints,
+				empowerBonusPercent);
+		else if(coefficientBasisPoints != 10000 || empowerBonusPercent > 0)
 		{
 			const int64_t powerNumerator = static_cast<int64_t>(getBasePower()) * effectPower;
 			rawDamage = getLevelPower(effectLevel)
 				+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-					powerNumerator, divisor, coefficientBasisPoints);
+					powerNumerator, divisor, coefficientBasisPoints, 0, empowerBonusPercent);
 		}
 	}
 

@@ -104,6 +104,21 @@ TEST(NewHorizonsPerkState, SpellPenetrationOpensNormalAdvancedSpellcraftProgress
 	EXPECT_FALSE(saved.canAdvanceSkillNormally(SKILL, 2));
 }
 
+TEST(NewHorizonsPerkState, EmpowerSpellOpensNormalExpertSpellcraftProgression)
+{
+	auto saved = state();
+	constexpr auto SKILL = "new-horizons:spellcraft";
+	constexpr auto BASIC_PERK = "new-horizons:spellcraft.spellPenetration";
+	constexpr auto ADVANCED_PERK = "new-horizons:spellcraft.empowerSpell";
+
+	saved.select(SKILL, BASIC_PERK, 1);
+	EXPECT_TRUE(saved.canAdvanceSkillNormally(SKILL, 1));
+	EXPECT_FALSE(saved.canAdvanceSkillNormally(SKILL, 2));
+	saved.select(SKILL, ADVANCED_PERK, 2);
+	EXPECT_TRUE(saved.hasSelection(SKILL, ADVANCED_PERK));
+	EXPECT_TRUE(saved.canAdvanceSkillNormally(SKILL, 2));
+}
+
 TEST(NewHorizonsPerkState, OccupiedTierOnlyBlocksAlternativesFromTheSameSkill)
 {
 	auto saved = state();

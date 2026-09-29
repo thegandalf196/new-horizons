@@ -14,6 +14,9 @@ the small RGBA PNGs under `Mods/new-horizons/Images/`:
 - `spell-penetration-v1/` contains the purpose-made provisional Spell
   Penetration painting, exact prompt and generator output identifier,
   44x44/32x32 reductions, comparison, and reproducible four-state runtime art.
+- `empower-spell-v1/` contains the purpose-made provisional Empower Spell
+  crystal painting, exact prompt and generator output identifier, 44x44/32x32
+  reductions, comparison, and reproducible four-state runtime art.
 
 Prompts:
 

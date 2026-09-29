@@ -67,6 +67,9 @@ inline constexpr std::string_view HAVOC_ANNIHILATOR = "new-horizons:havocMagic.a
 inline constexpr std::string_view LIGHT_MAGIC_SKILL = "new-horizons:lightMagic";
 inline constexpr std::string_view LIGHT_BENEDICTION = "new-horizons:lightMagic.benediction";
 inline constexpr std::string_view SPELLCRAFT_SKILL = "new-horizons:spellcraft";
+inline constexpr std::string_view SPELLCRAFT_EMPOWER_SPELL = "new-horizons:spellcraft.empowerSpell";
+constexpr int SPELLCRAFT_EMPOWER_MANA_THRESHOLD = 12;
+constexpr int SPELLCRAFT_EMPOWER_BONUS_PERCENT = 25;
 inline constexpr std::string_view NATURE_POISON_SPELL = "new-horizons:poison";
 inline constexpr std::string_view NATURE_REGENERATION_SPELL = "new-horizons:regeneration";
 inline constexpr std::string_view NATURE_MAGIC_SKILL = "new-horizons:natureMagic";
@@ -160,6 +163,11 @@ DLL_LINKAGE int spellPowerCoefficientPercent(const JsonNode & rules, const CGHer
 /// derived term: 10000 is 100%. No rounding is done while composing factors.
 /// Spellcraft is read from the hero's registered new-horizons:spellcraft Skill.
 DLL_LINKAGE int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell);
+/// Empower Spell's additive multiplier for this saved ordinary hero cast. The
+/// threshold uses only listed cost × the explicit variant × Wisdom, before
+/// battle creature auras, Metamagic reductions, or Overcharge are applied.
+DLL_LINKAGE int empowerSpellBonusPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell,
+	int listedCostMultiplier = 1);
 /// Regeneration's saved-rate snapshot. School rank and Warcasting affect only
 /// the Spell Power term; Herbalist adds ten percentage points before the cap.
 DLL_LINKAGE int32_t regenerationRateMillionths(int32_t spellPower, int schoolRankCoefficientPercent,
@@ -167,7 +175,7 @@ DLL_LINKAGE int32_t regenerationRateMillionths(int32_t spellPower, int schoolRan
 /// Basis-point counterpart preserving fractional School × Spellcraft products
 /// until the Regeneration rate's final integer floor.
 DLL_LINKAGE int32_t regenerationRateMillionthsBasisPoints(int32_t spellPower, int coefficientBasisPoints,
-	bool herbalist, int warcastingBonusPercent = 0);
+	bool herbalist, int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0);
 /// Resolve fixed-point Regeneration marks into healable surviving creature wounds.
 DLL_LINKAGE int64_t regenerationHealAmount(int64_t pendingMicroHealth, int64_t survivingWounds);
 /// New Horizons' detailed Sorcery rules make the existing Magic Arrow an
@@ -187,7 +195,8 @@ DLL_LINKAGE bool physicalPoisonEnabled(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE int64_t poisonBaseDamage(int32_t spellPower, int schoolRankCoefficientPercent);
 /// Basis-point counterpart preserving fractional School × Spellcraft products
 /// until Poison's final integer damage floor.
-DLL_LINKAGE int64_t poisonBaseDamageBasisPoints(int32_t spellPower, int coefficientBasisPoints);
+DLL_LINKAGE int64_t poisonBaseDamageBasisPoints(int32_t spellPower, int coefficientBasisPoints,
+	int empowerSpellBonusPercent = 0);
 /// Saved Cure source identities whose complete SPELL_EFFECT source groups are
 /// currently present on this unit. Results are sorted by SpellID for stable UI
 /// and AI enumeration; legacy/unspecified Cure profiles return no candidates.
@@ -211,7 +220,7 @@ DLL_LINKAGE int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, i
 /// The divisor is the caster's New Horizons primary-rating coefficient scale.
 DLL_LINKAGE std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
 	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers = {},
-	int coefficientPercent = 100);
+	int coefficientPercent = 100, int empowerSpellBonusPercent = 0);
 DLL_LINKAGE std::vector<SpellSchool> activeSchools(const JsonNode & rules);
 /// Returns the six canonical Magic School Skills captured by the saved rules.
 /// Legacy worlds have no New Horizons school-skill catalogue.

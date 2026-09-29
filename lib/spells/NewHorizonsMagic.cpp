@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMagic.h"
+#include "ISpellMechanics.h"
 
 #include "../ResourceSet.h"
 #include "../CStack.h"
@@ -394,6 +395,7 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 	{
 		const auto & rules = hero->getMagicRules();
 		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
+		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
 		const int32_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
 		const bool chronomancer = hero->hasActivePerk(
 			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::CHRONOMANCER_PERK);
@@ -401,7 +403,8 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 			+ (chronomancer ? newHorizonsSorcery::TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
 		const int64_t radiusThreshold = static_cast<int64_t>(newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS)
 			* SPELL_POWER_COEFFICIENT_BASIS_POINTS;
-		const int64_t scaledPowerTerm = static_cast<int64_t>(spellPower) * coefficientBasisPoints / radiusThreshold;
+		const int64_t scaledPowerTerm = static_cast<int64_t>(spellPower) * coefficientBasisPoints
+			* (100 + empowerBonusPercent) / (radiusThreshold * 100);
 		const int radius = std::min(radiusCap,
 			newHorizonsSorcery::TIME_STOP_BASE_RADIUS + static_cast<int>(scaledPowerTerm));
 		const bool schoolRankRules = rules["rulesetVersion"].Integer()
@@ -437,9 +440,11 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 
 	if(hero && cureEnabled(hero->getMagicRules(), spell->getId()))
 	{
-		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
+		const auto & rules = hero->getMagicRules();
+		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
+		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
 		const int64_t coefficientTenThousandths = 15'000LL * coefficientBasisPoints
-			/ SPELL_POWER_COEFFICIENT_BASIS_POINTS;
+			* (100 + empowerBonusPercent) / (SPELL_POWER_COEFFICIENT_BASIS_POINTS * 100LL);
 		const std::string spellPowerCoefficient = fixedPointFromScaledValue(coefficientTenThousandths, 4);
 		result = "Targets one friendly living stack. Base healing is 25 + " + spellPowerCoefficient
 			+ " \u00d7 Spell Power HP and cannot resurrect casualties. "
@@ -451,11 +456,13 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		&& spell->getId() == SpellID::BLESS)
 	{
-		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
+		const auto & rules = hero->getMagicRules();
+		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
+		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
 		const int64_t power = std::max<int32_t>(0, hero->getEffectPower(spell));
 		const int64_t termDivisor = static_cast<int64_t>(BLESS_SPELL_POWER_DURATION_DIVISOR)
-			* SPELL_POWER_COEFFICIENT_BASIS_POINTS;
-		const int64_t term = power * coefficientBasisPoints / termDivisor;
+			* SPELL_POWER_COEFFICIENT_BASIS_POINTS * 100;
+		const int64_t term = power * coefficientBasisPoints * (100 + empowerBonusPercent) / termDivisor;
 		const int ordinaryDuration = blessDurationFromPowerTerm(term);
 		const int64_t spellDurationModifier = static_cast<int64_t>(hero->valOfBonuses(
 			BonusType::SPELL_DURATION, BonusSubtypeID()))
@@ -487,13 +494,17 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		&& hero->getMagicRules()["rulesetVersion"].Integer() >= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		&& spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL)
 	{
-		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
+		const auto & rules = hero->getMagicRules();
+		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
+		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
 		const bool spellbinder = hero->hasActivePerk(
 			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::SPELLBINDER_PERK);
 		const int duration = newHorizonsSorcery::spellLockDurationBasisPoints(
-			hero->getEffectPower(spell), spellbinder, coefficientBasisPoints);
+			hero->getEffectPower(spell), spellbinder, coefficientBasisPoints, 0, empowerBonusPercent);
 		result += "\n\nCurrent combined Spell Power coefficient: "
-			+ percentFromBasisPoints(coefficientBasisPoints) + "; ordinary duration at current Spell Power: " + std::to_string(duration)
+			+ percentFromBasisPoints(coefficientBasisPoints)
+			+ (empowerBonusPercent > 0 ? " with Empower Spell +25%; ordinary duration at current Spell Power: "
+				: "; ordinary duration at current Spell Power: ") + std::to_string(duration)
 			+ (duration == 1 ? " round." : " rounds.");
 	}
 
@@ -912,6 +923,27 @@ int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstanc
 	return schoolCoefficientPercent * spellcraftCoefficientPercent;
 }
 
+int empowerSpellBonusPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell,
+	const int listedCostMultiplier)
+{
+	if(listedCostMultiplier < 1)
+		throw std::invalid_argument("Spell cost multiplier must be positive");
+	if(!hero || legacy(rules) || !rules.isStruct()
+		|| !integer(rules["rulesetVersion"], SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+			SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		|| !spell.hasValue() || !spell.toSpell() || !spell.toSpell()->isCommonHeroSpell()
+		|| !spellAllowedBySavedRoster(rules, spell) || isAdventureSpell(rules, spell)
+		|| !hero->hasActivePerk(std::string(SPELLCRAFT_SKILL), std::string(SPELLCRAFT_EMPOWER_SPELL)))
+		return 0;
+
+	const int listedCost = hero->getListedSpellCost(spell.toSpell());
+	const int wisdom = wisdomRank(hero);
+	const int wisdomAdjustedCost = newHorizonsMagic::wisdomAdjustedCost(
+		listedCost, listedCostMultiplier, wisdom);
+	return wisdomAdjustedCost >= SPELLCRAFT_EMPOWER_MANA_THRESHOLD
+		? SPELLCRAFT_EMPOWER_BONUS_PERCENT : 0;
+}
+
 int32_t regenerationRateMillionths(const int32_t spellPower, const int schoolRankCoefficientPercent,
 	const bool herbalist, const int warcastingBonusPercent)
 {
@@ -931,16 +963,18 @@ int32_t regenerationRateMillionths(const int32_t spellPower, const int schoolRan
 }
 
 int32_t regenerationRateMillionthsBasisPoints(const int32_t spellPower, const int coefficientBasisPoints,
-	const bool herbalist, const int warcastingBonusPercent)
+	const bool herbalist, const int warcastingBonusPercent, const int empowerSpellBonusPercent)
 {
 	if(spellPower < 0 || coefficientBasisPoints < 0 || coefficientBasisPoints > 100'000
-		|| warcastingBonusPercent < 0 || warcastingBonusPercent > 1000)
+		|| warcastingBonusPercent < 0 || warcastingBonusPercent > 1000
+		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
 		throw std::invalid_argument("Invalid Regeneration basis-point inputs");
 
-	// 10000 basis points is 100%. Keep the exact School × Spellcraft product
-	// until the same final integer floor used by the percent-based helper.
-	const int64_t spellPowerTerm = static_cast<int64_t>(15) * spellPower
-		* coefficientBasisPoints * (100 + warcastingBonusPercent) / 10'000;
+	// 10000 basis points is 100%. Keep the exact School × Spellcraft product,
+	// Warcasting, and Empower multipliers until the final rate floor.
+	const int64_t spellPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		1500LL * spellPower, 1, coefficientBasisPoints,
+		warcastingBonusPercent, empowerSpellBonusPercent);
 	const int64_t base = REGENERATION_BASE_RATE_MILLIONTHS;
 	const int64_t herbalistBonus = herbalist ? REGENERATION_HERBALIST_BONUS_MILLIONTHS : 0;
 	return static_cast<int32_t>(std::min<int64_t>(REGENERATION_MAX_RATE_MILLIONTHS,
@@ -998,11 +1032,14 @@ int64_t poisonBaseDamage(const int32_t spellPower, const int schoolRankCoefficie
 	return 20 + static_cast<int64_t>(spellPower) * schoolRankCoefficientPercent / 200;
 }
 
-int64_t poisonBaseDamageBasisPoints(const int32_t spellPower, const int coefficientBasisPoints)
+int64_t poisonBaseDamageBasisPoints(const int32_t spellPower, const int coefficientBasisPoints,
+	const int empowerSpellBonusPercent)
 {
-	if(spellPower < 0 || coefficientBasisPoints < 0 || coefficientBasisPoints > 100'000)
+	if(spellPower < 0 || coefficientBasisPoints < 0 || coefficientBasisPoints > 100'000
+		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
 		throw std::invalid_argument("Invalid Poison basis-point inputs");
-	return 20 + static_cast<int64_t>(spellPower) * coefficientBasisPoints / 20'000;
+	return 20 + static_cast<int64_t>(spellPower) * coefficientBasisPoints
+		* (100 + empowerSpellBonusPercent) / 2'000'000;
 }
 
 std::vector<SpellID> cureAfflictions(const JsonNode & rules, const battle::Unit * unit)
@@ -1072,11 +1109,12 @@ int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spell
 
 std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
 	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers,
-	int coefficientPercent)
+	int coefficientPercent, int empowerSpellBonusPercent)
 {
 	if(!magicArrowOverchargeEnabled(rules, spell))
 		return std::nullopt;
-	if(spellPower < 0 || divisor <= 0)
+	if(spellPower < 0 || divisor <= 0 || coefficientPercent < 0 || coefficientPercent > 1000
+		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
 		return std::nullopt;
 
 	const int maxOvercharge = magicArrowMaxOvercharge(rules, spell, spellPower, modifiers);
@@ -1089,8 +1127,10 @@ std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
 	// divisors remain deterministic if this helper is reused by tooling.
 	const auto savedFormula = spellDirectDamage(rules, spell.toSpell()->getJsonKey());
 	const int64_t baseDamage = savedFormula
-		? savedFormula->evaluate(spellPower, divisor, coefficientPercent)
-		: DirectDamageFormula{20, 20}.evaluate(spellPower, divisor, coefficientPercent);
+		? savedFormula->evaluateBasisPoints(spellPower, divisor, coefficientPercent * 100,
+			empowerSpellBonusPercent)
+		: DirectDamageFormula{20, 20}.evaluateBasisPoints(spellPower, divisor, coefficientPercent * 100,
+			empowerSpellBonusPercent);
 	return baseDamage * (1000 + modifiers.damagePercentTenths * overcharge) / 1000;
 }
 

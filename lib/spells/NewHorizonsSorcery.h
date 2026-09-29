@@ -82,6 +82,8 @@ constexpr int TIME_STOP_CHRONOMANCER_RADIUS_BONUS = 1;
 DLL_LINKAGE int timeStopRadius(int32_t spellPower, bool chronomancer = false);
 DLL_LINKAGE int timeStopRadius(int32_t spellPower, bool chronomancer,
 	int32_t coefficientPercent);
+DLL_LINKAGE int timeStopRadius(int32_t spellPower, bool chronomancer,
+	int32_t coefficientPercent, int32_t empowerSpellBonusPercent);
 
 constexpr int SPELL_LOCK_MANA = 22;
 constexpr int SPELL_LOCK_BASE_DURATION_CAP = 3;
@@ -100,7 +102,8 @@ DLL_LINKAGE int spellLockDuration(int32_t spellPower, bool spellbinder = false,
 /// coefficient in basis points so fractional percentages survive until the
 /// Spell Power-derived duration term is rounded.
 DLL_LINKAGE int spellLockDurationBasisPoints(int32_t spellPower, bool spellbinder,
-	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent = 0);
+	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent = 0,
+	int32_t empowerSpellBonusPercent = 0);
 
 struct DLL_LINKAGE SpellLockPolicy
 {

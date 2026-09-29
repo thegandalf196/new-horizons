@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_empower_spell"
+  ],
+  "files": {
+    "source/NH_perk_empower_spell_normal.png": "9cc8ad010bae044b8b99a291beb94e717840068c467b322ddf715464a24a6b23",
+    "Mods/NH_perk_empower_spell_normal.png": "9cc8ad010bae044b8b99a291beb94e717840068c467b322ddf715464a24a6b23",
+    "source/NH_perk_empower_spell_pressed.png": "9b12ff6c435c2fc5117221c1a79980f18d3589d3961b70addc7d5bb5e2a9ddd5",
+    "Mods/NH_perk_empower_spell_pressed.png": "9b12ff6c435c2fc5117221c1a79980f18d3589d3961b70addc7d5bb5e2a9ddd5",
+    "source/NH_perk_empower_spell_disabled.png": "073867609c136567c1cbaf93706be5e947260e30500a0e9e46fe62b6f3a95f55",
+    "Mods/NH_perk_empower_spell_disabled.png": "073867609c136567c1cbaf93706be5e947260e30500a0e9e46fe62b6f3a95f55",
+    "source/NH_perk_empower_spell_highlighted.png": "1ff8b884d8a0edd1b82abf9104e7ddf0833d8aa0056e1a7079c2eb6e3bc7b394",
+    "Mods/NH_perk_empower_spell_highlighted.png": "1ff8b884d8a0edd1b82abf9104e7ddf0833d8aa0056e1a7079c2eb6e3bc7b394",
+    "source/NH_perk_empower_spell.json": "5327fe5da20a7d16f36146ae4c9a0830000302cddf2166117b76ffc990c1a4c7",
+    "Mods/NH_perk_empower_spell.json": "5327fe5da20a7d16f36146ae4c9a0830000302cddf2166117b76ffc990c1a4c7"
+  }
+}

@@ -15,6 +15,27 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+### September 29 local Empower Spell native-gate incident
+
+- The first Linux `vcmitest`/`vcmiclient` build over committed head
+  `603a68db3` plus the uncommitted Empower slice reached
+  `lib/spells/ISpellMechanics.cpp` and reported a five-argument call resolving
+  to the three-argument `Mechanics` member scaler. The build was stopped after
+  independent review also found a potential signed-overflow product in the
+  Regeneration rate and generic duration changes leaking into old snapshots.
+- The repair uses the contextual three-argument member call, the checked
+  rational scaler for Regeneration's `1500 × Spell Power` term, and a saved-v3
+  Spellcraft-field gate for generic duration rescaling. A maximum-input
+  arithmetic test and older-v3 duration assertion now cover the defects.
+  The resumed Linux build linked both targets. A further adjacent filter
+  exposed Spell Lock saturation arithmetic overflow under a maximum-int32
+  Warcasting input; the repair caps the positive product before multiplication,
+  preserving the existing duration cap. A narrow independent review found no
+  blocker, and the final focused/adjacent spell filter passed 69/69 cases.
+  These results do not prove
+  Windows compilation, Mass Slow interaction, broad Lua parity, or playable
+  rendering.
+
 ### September 28/29 local Basic Spellcraft native-gate incidents
 
 - The first coordinated `vcmitest`/`vcmiclient` build stopped on a test-only
