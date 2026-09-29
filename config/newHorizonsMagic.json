@@ -286,6 +286,11 @@
 			"level": 2,
 			"costs": [8, 8, 8, 8]
 		},
+		"new-horizons:heavenlyGale": {
+			"schools": ["new-horizons:light"],
+			"level": 3,
+			"costs": [13, 13, 13, 13]
+		},
 		"new-horizons:sanctuary": {
 			"schools": ["new-horizons:light"],
 			"level": 1,

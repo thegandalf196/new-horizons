@@ -1139,7 +1139,7 @@
 					"requires": "advanced",
 					"description": "Holy Armor and Heavenly Gale receive +20% to their Spell Power-derived protection component.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Holy Armor and Heavenly Gale receive +20% to their Spell Power-derived protection component."
 					}
 				},

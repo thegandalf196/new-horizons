@@ -2023,6 +2023,17 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	const auto * currentBattle = getBattle();
 	if(currentBattle)
 		payload.physicalDamageReductionCapPercent = newHorizonsMagic::physicalDamageReductionCapPercent(currentBattle->getMagicRules());
+	if(currentBattle && info.physicalDamage && info.shooting && info.defender
+		&& newHorizonsMagic::rulesActive(currentBattle->getMagicRules()))
+	{
+		const auto galeBonuses = info.defender->getBonusesOfType(BonusType::HEAVENLY_GALE);
+		if(galeBonuses && !galeBonuses->empty())
+		{
+			for(const auto & bonus : *galeBonuses)
+				payload.heavenlyGaleDamageReductionBasisPoints = std::max(
+					payload.heavenlyGaleDamageReductionBasisPoints, bonus->val);
+		}
+	}
 	if(currentBattle && info.physicalDamage && info.shooting && info.attacker && info.defender
 		&& info.defender->alive() && !info.defender->isGhost()
 		&& newHorizonsMagic::rulesActive(currentBattle->getMagicRules()))

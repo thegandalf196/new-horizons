@@ -39,6 +39,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	bool physicalDamage = true;
 	/// -1 retains legacy reduction factors; nonnegative opts into independent capped PDR.
 	int physicalDamageReductionCapPercent = -1;
+	/// Heavenly Gale's independent ranged physical reduction in basis points (10000 = 100%).
+	int heavenlyGaleDamageReductionBasisPoints = 0;
 	bool luckyStrike = false;
 	bool unluckyStrike = false;
 	bool deathBlow = false;
@@ -147,6 +149,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("physicalDamage", physicalDamage, "Whether this attack deals physical creature damage.");
 		s("physicalDamageReductionCapPercent", physicalDamageReductionCapPercent,
 			"Combined independent physical reduction cap; -1 preserves legacy calculations.");
+		s("heavenlyGaleDamageReductionBasisPoints", heavenlyGaleDamageReductionBasisPoints,
+			"Heavenly Gale's independent ranged physical reduction in basis points.");
 		s("targetedRangedCommandPercent", targetedRangedCommandPercent, "Target-specific additive ranged premium.");
 		s("targetedRangedCommand", targetedRangedCommand, "Whether Focus Fire halves range and obstacle penalties for this primary shot.");
 		s("archeryIgnoreObstaclePenalty", archeryIgnoreObstaclePenalty,

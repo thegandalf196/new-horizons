@@ -37,6 +37,7 @@ inline constexpr std::string_view SPELL_LOCK_SPELL_KEY = "new-horizons:spellLock
 inline constexpr std::string_view REGENERATION_SPELL_KEY = newHorizonsMagic::NATURE_REGENERATION_SPELL;
 inline constexpr std::string_view SANCTUARY_SPELL_KEY = "new-horizons:sanctuary";
 inline constexpr std::string_view GUARDIAN_SPIRIT_SPELL_KEY = "new-horizons:guardianSpirit";
+inline constexpr std::string_view HEAVENLY_GALE_SPELL_KEY = "new-horizons:heavenlyGale";
 inline constexpr std::string_view SHADOW_GIFT_SPELL_KEY = "new-horizons:shadowGift";
 inline constexpr std::string_view SHADOW_GIFT_TRIGGER_KEY = "core:shadowGift";
 inline constexpr std::string_view VAMPIRISM_SPELL_KEY = "new-horizons:vampirism";
@@ -95,6 +96,49 @@ inline bool isSanctuary(std::string_view spellKey)
 inline bool isGuardianSpirit(std::string_view spellKey)
 {
 	return spellKey == GUARDIAN_SPIRIT_SPELL_KEY;
+}
+
+inline bool isHeavenlyGale(std::string_view spellKey)
+{
+	return spellKey == HEAVENLY_GALE_SPELL_KEY;
+}
+
+inline std::string formatBasisPoints(int64_t basisPoints);
+
+struct HeavenlyGaleStatus
+{
+	int32_t reductionBasisPoints = 0;
+	int32_t remainingRounds = 0;
+
+	bool active() const { return reductionBasisPoints > 0 && remainingRounds > 0; }
+};
+
+template<typename BonusRange>
+inline HeavenlyGaleStatus heavenlyGaleStatus(const BonusRange & bonuses)
+{
+	HeavenlyGaleStatus result;
+	for(const auto & bonus : bonuses)
+	{
+		if(!bonus || bonus->type != BonusType::HEAVENLY_GALE
+			|| bonus->source != BonusSource::SPELL_EFFECT
+			|| bonus->duration != BonusDuration::N_TURNS || bonus->turnsRemain <= 0)
+			continue;
+		result.reductionBasisPoints = std::max(result.reductionBasisPoints, bonus->val);
+		result.remainingRounds = std::max(result.remainingRounds, static_cast<int32_t>(bonus->turnsRemain));
+	}
+	return result;
+}
+
+inline std::string heavenlyGaleTooltip(std::string_view spellDescription, const HeavenlyGaleStatus & status)
+{
+	std::string result(spellDescription);
+	if(!status.active())
+		return result;
+	result += "\n\nPhysical ranged projectile damage reduction: ";
+	result += formatBasisPoints(status.reductionBasisPoints);
+	result += ". Remaining: " + std::to_string(status.remainingRounds) + " rounds.";
+	result += "\nIncludes physical siege shots; excludes melee, spells, magical beams, and explosions.";
+	return result;
 }
 
 struct GuardianSpiritStatus

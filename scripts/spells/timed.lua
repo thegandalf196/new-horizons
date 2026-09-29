@@ -3,12 +3,17 @@ local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
 local HOLY_ARMOR_SPELL = "new-horizons:holyArmor"
+local HEAVENLY_GALE_SPELL = "new-horizons:heavenlyGale"
 local GUARDIAN_SPIRIT_SPELL = "new-horizons:guardianSpirit"
 local LIGHT_MAGIC_SKILL = "new-horizons:lightMagic"
 local HEALER_PERK = "new-horizons:lightMagic.healer"
 local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
+local AEGIS_PERK = "new-horizons:lightMagic.aegis"
 local HOLY_ARMOR_SPELL_POWER_DIVISOR = 5
 local HOLY_ARMOR_MAX_REDUCTION_PERCENT = 60
+local HEAVENLY_GALE_BASE_REDUCTION_BASIS_POINTS = 5000
+local HEAVENLY_GALE_SPELL_POWER_COEFFICIENT_BASIS_POINTS = 15
+local HEAVENLY_GALE_MAX_REDUCTION_BASIS_POINTS = 8000
 local SLOW_SPELL = "core:slow"
 local SLOW_BASE_REDUCTION_PERCENT = 20
 local SLOW_SPELL_POWER_DIVISOR = 5
@@ -147,10 +152,10 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	if not hero then return end
 
 	local spellKey = mechanics:getSpell():getJsonKey()
-	-- Holy Armor has a fixed canonical base; Light rank, Warcasting, and Empower
-	-- affect only its Spell Power-derived term. It has no configured spell
-	-- specialty that should rewrite the fixed percentage.
-	if spellKey == HOLY_ARMOR_SPELL or spellKey == GUARDIAN_SPIRIT_SPELL then return end
+	-- These New Horizons effects have authored power terms and no configured
+	-- spell specialty that should rewrite their fixed or derived components.
+	if spellKey == HOLY_ARMOR_SPELL or spellKey == HEAVENLY_GALE_SPELL
+		or spellKey == GUARDIAN_SPIRIT_SPELL then return end
 	local tier = math.max(unit:creatureLevel(), 1)
 
 	self:applySpellScaling(mechanics, hero, buffer, tier, spellKey)
@@ -159,19 +164,24 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	self:applyFixedValueEnchant(mechanics, hero, buffer, tier, spellKey)
 end
 
---- Aegis will adjust this Spell Power-derived component when its perk has
---- registered art and runtime support. Keep the hook neutral until then.
-function Script:adjustHolyArmorPowerTerm(mechanics, spellPowerTerm)
-	return spellPowerTerm
+function Script:scaleAegisPowerTerm(mechanics, numerator, divisor, coefficientBasisPoints)
+	local hero = mechanics:getHeroCaster()
+	if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, AEGIS_PERK) then
+		-- Fold Aegis into the ratio before the shared scaler's final floor so
+		-- fractional School/Spellcraft/Warcasting/Empower products are retained.
+		numerator = numerator * 120
+		divisor = divisor * 100
+	end
+	return mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+		numerator, divisor, coefficientBasisPoints)
 end
 
 function Script:applyHolyArmorPower(mechanics, buffer, spellKey)
 	if spellKey ~= HOLY_ARMOR_SPELL then return end
 
-	local spellPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+	local spellPowerTerm = self:scaleAegisPowerTerm(mechanics,
 		mechanics:getEffectPower(), HOLY_ARMOR_SPELL_POWER_DIVISOR,
 		mechanics:getSpellPowerCoefficientBasisPoints())
-	spellPowerTerm = self:adjustHolyArmorPowerTerm(mechanics, spellPowerTerm)
 
 	for _, nb in pairs(buffer) do
 		if nb.type == "SPELL_DAMAGE_REDUCTION" then
@@ -180,6 +190,24 @@ function Script:applyHolyArmorPower(mechanics, buffer, spellKey)
 			-- to the Spell Power term. Preserve this as one independent source.
 			nb.val = math.min(HOLY_ARMOR_MAX_REDUCTION_PERCENT,
 				(nb.val or 0) + spellPowerTerm)
+		end
+	end
+end
+
+function Script:applyHeavenlyGalePower(mechanics, buffer, spellKey)
+	if spellKey ~= HEAVENLY_GALE_SPELL then return end
+
+	local spellPowerTerm = self:scaleAegisPowerTerm(mechanics,
+		HEAVENLY_GALE_SPELL_POWER_COEFFICIENT_BASIS_POINTS * mechanics:getEffectPower(), 1,
+		mechanics:getSpellPowerCoefficientBasisPoints())
+	local reduction = math.min(HEAVENLY_GALE_MAX_REDUCTION_BASIS_POINTS,
+		HEAVENLY_GALE_BASE_REDUCTION_BASIS_POINTS + spellPowerTerm)
+
+	for _, nb in pairs(buffer) do
+		if nb.type == "HEAVENLY_GALE" then
+			-- Keep the fixed 50% separate from School, Spellcraft, Warcasting,
+			-- Empower, and Aegis, all of which scale only the Spell Power term.
+			nb.val = reduction
 		end
 	end
 end
@@ -250,6 +278,7 @@ function Script:apply(mechanics, server, target)
 
 		self:applyHeroSpecialty(mechanics, buffer, unit)
 		self:applyHolyArmorPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
+		self:applyHeavenlyGalePower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyGuardianSpiritPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyTemporalFieldScale(mechanics, buffer, mechanics:getSpell():getJsonKey())
 

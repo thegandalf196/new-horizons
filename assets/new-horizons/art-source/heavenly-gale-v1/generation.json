@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "asset": "Heavenly Gale spell icon",
+  "status": "provisional",
+  "recorded_at_utc": "2026-09-29T20:27:22Z",
+  "generation_tool": {
+    "name": "built-in image_gen",
+    "mode": "generate and edit",
+    "transparent_background": false,
+    "no_external_api_or_extracted_art": true
+  },
+  "final_master": {
+    "file": "master.png",
+    "generated_image_path": "master.png",
+    "dimensions_pixels": [1254, 1254],
+    "color_mode": "RGB",
+    "alpha_channel": false,
+    "sha256": "7c2ed17d11ed223110e7e11ee81f9557413566bfc5461f235ecb63236d1a1815"
+  },
+  "generation_history": [
+    {
+      "imagegen_output_id": "exec-35bec7b1-a1fa-4dd6-a658-07b56118e4e1",
+      "operation": "generate",
+      "generated_image_reference": "exec-35bec7b1-a1fa-4dd6-a658-07b56118e4e1",
+      "prompt_file": "prompt-original.txt",
+      "style_references": [
+        {
+          "path": "Mods/new-horizons/Images/NH_spell_guardian_spirit_44.png",
+          "sha256": "25547da27b1295804e98c878275d74b2607316cd26f9a6b35bd91fd50b3fcd47"
+        },
+        {
+          "path": "Mods/new-horizons/Images/NH_spell_holy_armor_44.png",
+          "sha256": "51f25e332b2ddf887c43c52018d1d8eef6a141ac0d5d750a03303be7b451c1ff"
+        }
+      ]
+    },
+    {
+      "imagegen_output_id": "exec-d3c0f722-cad4-4fd0-ba7c-42c5d1f39e8b",
+      "operation": "edit",
+      "generated_image_reference": "exec-d3c0f722-cad4-4fd0-ba7c-42c5d1f39e8b",
+      "input_generated_image_reference": "exec-35bec7b1-a1fa-4dd6-a658-07b56118e4e1",
+      "prompt_file": "prompt-arrow-direction.txt",
+      "style_references": [
+        "Mods/new-horizons/Images/NH_spell_guardian_spirit_44.png",
+        "Mods/new-horizons/Images/NH_spell_holy_armor_44.png"
+      ]
+    },
+    {
+      "imagegen_output_id": "exec-11b240a8-ef2b-4230-809f-22773317a2ca",
+      "operation": "edit",
+      "generated_image_reference": "exec-11b240a8-ef2b-4230-809f-22773317a2ca",
+      "input_generated_image_reference": "exec-d3c0f722-cad4-4fd0-ba7c-42c5d1f39e8b",
+      "prompt_file": "prompt-single-arrow-safe-inset.txt",
+      "style_references": [
+        "Mods/new-horizons/Images/NH_spell_guardian_spirit_44.png",
+        "Mods/new-horizons/Images/NH_spell_holy_armor_44.png"
+      ]
+    },
+    {
+      "imagegen_output_id": "exec-5d9206fe-71e4-4209-93ab-b34b49ebe59f",
+      "operation": "edit",
+      "generated_image_reference": "exec-5d9206fe-71e4-4209-93ab-b34b49ebe59f",
+      "input_generated_image_path": "master.png",
+      "prompt_file": "prompt-30px-readability.txt",
+      "style_references": [
+        "Mods/new-horizons/Images/NH_spell_guardian_spirit_44.png",
+        "Mods/new-horizons/Images/NH_spell_holy_armor_44.png"
+      ],
+      "edit_focus": "Increase projectile silhouette size and contrast for 30x30 readability."
+    }
+  ],
+  "export": {
+    "script": "homm3-art/scripts/export_art.py",
+    "reduction": "Pillow LANCZOS from the preserved 1254x1254 master",
+    "manifest": "heavenly-gale-manifest.json",
+    "comparison": "heavenly-gale-comparison.png",
+    "runtime_exports": [
+      {
+        "file": "Mods/new-horizons/Images/NH_spell_heavenly_gale_44.png",
+        "dimensions_pixels": [44, 44],
+        "sha256": "48d6dd0ae77b36467c04d1ba3d622c380031824fbe0288f6bf2df99379c625ce"
+      },
+      {
+        "file": "Mods/new-horizons/Images/NH_spell_heavenly_gale_32.png",
+        "dimensions_pixels": [32, 32],
+        "sha256": "b520a0262dba176cec26718785ed296ffb019634d0d9c919966d92e5f7592113"
+      },
+      {
+        "file": "Mods/new-horizons/Images/NH_spell_heavenly_gale_30.png",
+        "dimensions_pixels": [30, 30],
+        "sha256": "fb44f9bb754b893c0d4787a785fd2f60c5c4b6205727b4a797b06edc33d92138"
+      }
+    ]
+  }
+}

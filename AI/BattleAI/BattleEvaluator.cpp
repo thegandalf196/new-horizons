@@ -547,6 +547,11 @@ bool isCanonicalHolyArmor(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:holyArmor";
 }
 
+bool isCanonicalHeavenlyGale(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:heavenlyGale";
+}
+
 bool isCanonicalSanctuary(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == "new-horizons:sanctuary";
@@ -560,6 +565,13 @@ bool isCanonicalGuardianSpirit(const CSpell * spell)
 bool guardianSpiritAvailableInSavedRules(const CBattleInfoCallback & battle, const CSpell * spell)
 {
 	return isCanonicalGuardianSpirit(spell)
+		&& newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::spellAllowedBySavedRoster(battle.getBattle()->getMagicRules(), spell->getId());
+}
+
+bool heavenlyGaleAvailableInSavedRules(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	return isCanonicalHeavenlyGale(spell)
 		&& newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 		&& newHorizonsMagic::spellAllowedBySavedRoster(battle.getBattle()->getMagicRules(), spell->getId());
 }
@@ -1282,6 +1294,180 @@ float guardianSpiritMitigationValue(const battle::Unit * liveTarget,
 
 	return static_cast<float>(std::min(healthValue,
 		static_cast<long double>(std::numeric_limits<float>::max())));
+}
+
+struct HeavenlyGaleProtection
+{
+	int reductionBasisPoints = 0;
+	int roundsRemaining = 0;
+
+	int exposureBasisPoints() const
+	{
+		return reductionBasisPoints * roundsRemaining;
+	}
+};
+
+HeavenlyGaleProtection heavenlyGaleProtection(const battle::Unit * unit, SpellID spell)
+{
+	HeavenlyGaleProtection result;
+	if(!unit)
+		return result;
+
+	const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell))
+		.And(Selector::type()(BonusType::HEAVENLY_GALE)));
+	if(!bonuses)
+		return result;
+
+	for(const auto & bonus : *bonuses)
+	{
+		if(!bonus || !Bonus::NTurns(bonus.get()) || bonus->turnsRemain <= 0)
+			continue;
+
+		const HeavenlyGaleProtection current{
+			std::clamp(bonus->val, 0, 8000),
+			std::clamp(static_cast<int>(bonus->turnsRemain), 0, 2)};
+		if(current.exposureBasisPoints() > result.exposureBasisPoints())
+			result = current;
+	}
+	return result;
+}
+
+float heavenlyGaleAttackEquivalents(const battle::Unit * attacker,
+	const CBattleInfoCallback & battle, int roundsRemaining)
+{
+	if(!attacker || roundsRemaining <= 0)
+		return 0.0f;
+
+	const int availableAttacks = std::max(0, AttackPossibility::getAttackCount(*attacker, true, battle));
+	int attacksPerFutureActivation = std::max(1, attacker->getTotalAttacks(true));
+	if(const auto * attackerState = dynamic_cast<const battle::CUnitState *>(attacker);
+		attackerState && attackerState->shots.isLimited()
+			&& attackerState->shots.available() <= availableAttacks)
+		attacksPerFutureActivation = 0;
+
+	return static_cast<float>(availableAttacks)
+		+ (roundsRemaining > 1 ? 0.5f * static_cast<float>(attacksPerFutureActivation) : 0.0f);
+}
+
+float heavenlyGaleSavedDamageValue(const battle::Unit * target, uint64_t savedDamage,
+	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!target || savedDamage == 0 || !projectedBattle)
+		return 0.0f;
+
+	const auto retainedAttackValue = AttackPossibility::calculateDamageReduce(
+		nullptr, target, savedDamage, damageCache, projectedBattle);
+	if(retainedAttackValue > 0.0f)
+		return retainedAttackValue;
+
+	const auto maxHealth = target->getMaxHealth();
+	const auto * creature = target->unitType();
+	const auto creatureValue = creature ? creature->getAIValue() : 0;
+	if(maxHealth <= 0 || creatureValue <= 0)
+		return std::max(0.0f, retainedAttackValue);
+
+	const long double healthValue = static_cast<long double>(savedDamage)
+		* static_cast<long double>(creatureValue) / static_cast<long double>(maxHealth);
+	if(!std::isfinite(healthValue) || healthValue <= 0.0L)
+		return std::max(0.0f, retainedAttackValue);
+
+	return static_cast<float>(std::min(healthValue,
+		static_cast<long double>(std::numeric_limits<float>::max())));
+}
+
+/// Estimate the army-wide value from the actual projected Heavenly Gale marker.
+/// Each visible ranged attacker contributes only its best threatened ally, so a
+/// single shooter's same volley is not counted once for every stack. Siege
+/// weapons and towers are included; spell-like projectiles are filtered through
+/// BattleAttackInfo::physicalDamage. No opposing hero book is inspected.
+float heavenlyGaleMitigationValue(BattleSide side,
+	const CBattleInfoCallback & liveBattle, const std::shared_ptr<HypotheticBattle> & projectedBattle,
+	SpellID spell, DamageCache & damageCache)
+{
+	if(!projectedBattle)
+		return 0.0f;
+
+	float totalValue = 0.0f;
+	const auto visibleUnits = liveBattle.battleGetAllUnits(true);
+	for(const auto * attacker : visibleUnits)
+	{
+		if(!attacker || !attacker->alive() || attacker->isGhost() || attacker->unitSide() == side
+			|| !attacker->canShoot())
+			continue;
+
+		const auto * projectedAttacker = projectedBattle->battleGetUnitByID(attacker->unitId());
+		if(!projectedAttacker || !projectedAttacker->alive())
+			continue;
+
+		float bestAttackerValue = 0.0f;
+		for(const auto * liveTarget : liveBattle.battleGetAllUnits(false))
+		{
+			if(!liveTarget || !liveTarget->alive() || !liveTarget->isValidTarget(false)
+				|| liveTarget->isGhost() || liveTarget->unitSide() != side)
+				continue;
+
+			const auto * projectedTarget = projectedBattle->battleGetUnitByID(liveTarget->unitId());
+			if(!projectedTarget || !projectedTarget->alive())
+				continue;
+
+			const auto before = heavenlyGaleProtection(liveTarget, spell);
+			const auto after = heavenlyGaleProtection(projectedTarget, spell);
+			if(after.roundsRemaining <= 0 || after.reductionBasisPoints <= 0
+				|| after.exposureBasisPoints() <= before.exposureBasisPoints())
+				continue;
+
+			bool canShootTarget = false;
+			for(const auto & targetHex : liveTarget->getHexes())
+				if(liveBattle.battleCanShoot(attacker, targetHex))
+				{
+					canShootTarget = true;
+					break;
+				}
+			if(!canShootTarget)
+				continue;
+
+			const BattleAttackInfo beforeAttack(attacker, liveTarget, 0, true);
+			if(!beforeAttack.physicalDamage)
+				continue;
+
+			const BattleAttackInfo afterAttack(projectedAttacker, projectedTarget, 0, true);
+			if(!afterAttack.physicalDamage)
+				continue;
+
+			const auto beforePerAttackDamage = std::max(0.0f,
+				averageOrderDamage(liveBattle.battleEstimateDamage(beforeAttack)));
+			const auto afterPerAttackDamage = std::max(0.0f,
+				averageOrderDamage(projectedBattle->battleEstimateDamage(afterAttack)));
+			const long double beforeDamageScale = std::max<int>(1, 10000 - before.reductionBasisPoints);
+			const long double afterDamageScale = std::max<int>(1, 10000 - after.reductionBasisPoints);
+			const long double rawPerAttackDamage = std::max(
+				static_cast<long double>(beforePerAttackDamage) * 10000.0L / beforeDamageScale,
+				static_cast<long double>(afterPerAttackDamage) * 10000.0L / afterDamageScale);
+			if(!std::isfinite(rawPerAttackDamage) || rawPerAttackDamage <= 0.0L)
+				continue;
+
+			const auto beforeExposure = static_cast<long double>(before.reductionBasisPoints)
+				* heavenlyGaleAttackEquivalents(attacker, liveBattle, before.roundsRemaining);
+			const auto afterExposure = static_cast<long double>(after.reductionBasisPoints)
+				* heavenlyGaleAttackEquivalents(attacker, liveBattle, after.roundsRemaining);
+			const auto targetHealth = std::max<int64_t>(0, liveTarget->getAvailableHealth());
+			const auto beforePrevented = std::min(static_cast<long double>(targetHealth),
+				rawPerAttackDamage * beforeExposure / 10000.0L);
+			const auto afterPrevented = std::min(static_cast<long double>(targetHealth),
+				rawPerAttackDamage * afterExposure / 10000.0L);
+			const auto addedProtection = afterPrevented - beforePrevented;
+			if(!std::isfinite(addedProtection) || addedProtection <= 0.0L)
+				continue;
+
+			const auto savedDamage = static_cast<uint64_t>(std::floor(addedProtection));
+			const auto value = heavenlyGaleSavedDamageValue(projectedTarget, savedDamage,
+				damageCache, projectedBattle);
+			bestAttackerValue = std::max(bestAttackerValue, value);
+		}
+		totalValue += bestAttackerValue;
+	}
+
+	return std::isfinite(totalValue) ? totalValue : 0.0f;
 }
 
 /// Estimate visible creature spell pressure without querying a concealed enemy
@@ -2575,8 +2761,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			&& !canonicalDoomAvailableInSavedRules(battleCallback->getBattle()->getMagicRules(), option.spell);
 		const bool unavailableGuardianSpirit = isCanonicalGuardianSpirit(option.spell)
 			&& !guardianSpiritAvailableInSavedRules(*battleCallback, option.spell);
+		const bool unavailableHeavenlyGale = isCanonicalHeavenlyGale(option.spell)
+			&& !heavenlyGaleAvailableInSavedRules(*battleCallback, option.spell);
 		return unavailableReanimate || unavailableSoulReaper || unavailableDoom
-			|| unavailableGuardianSpirit;
+			|| unavailableGuardianSpirit || unavailableHeavenlyGale;
 	});
 
 	LOGFL("I know how %d of them works.", possibleSpells.size());
@@ -2791,6 +2979,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								|| ps.dest.front().unitValue->unitSide() != side)
 								continue;
 						}
+						if(isCanonicalHeavenlyGale(spell) && !ps.dest.empty())
+							continue;
 						if(isCanonicalGuardianSpirit(spell)
 							&& (ps.dest.size() != 1 || !ps.dest.front().unitValue
 								|| ps.dest.front().unitValue->unitSide() != side))
@@ -3364,6 +3554,17 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					}
 					damageToHostilesScore += mitigationValue * scoreEvaluator.getPositiveEffectMultiplier();
 				}
+				if(isCanonicalHeavenlyGale(ps.spell))
+				{
+					const auto mitigationValue = heavenlyGaleMitigationValue(side, *battleCallback,
+						state, ps.spell->getId(), innerCache);
+					if(counterspellNegated || mitigationValue <= 0.0f)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					damageToHostilesScore += mitigationValue * scoreEvaluator.getPositiveEffectMultiplier();
+				}
 
 				const auto modelActive = state->getForUpdate(activeStack->unitId());
 				if(modelActive->alive() && (needFullEval || !cachedAttack.ap))
@@ -3626,6 +3827,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			spellcast.aimToHex(castToPerform.dest.front().hexValue);
 			spellcast.spellFireWallDirection = castToPerform.spellFireWallDirection;
 		}
+		else if(isCanonicalHeavenlyGale(castToPerform.spell))
+			// Mass spells use AimType::NOTHING in mechanics and are enumerated as
+			// an empty candidate. The action protocol still requires one destination
+			// entry; INVALID is the shared NO_LOCATION sentinel, not a unit target.
+			spellcast.aimToHex(BattleHex::INVALID);
 		else
 			spellcast.setTarget(castToPerform.dest);
 		spellcast.side = side;

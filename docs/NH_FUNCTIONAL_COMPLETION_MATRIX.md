@@ -22,10 +22,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 107/310 | 203 planned; active status alone does not certify behavior. Healer modifies the Spell Power-derived component of Cure and Guardian Spirit; Guardian strengthens the Guardian Spirit pool. |
+| Skill perks active | 108/310 | 202 planned; active status alone does not certify behavior. Aegis strengthens only the Spell Power-derived protection component of Holy Armor and Heavenly Gale. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 48/67 | 19 missing/inactive; Guardian Spirit advances Light to 7/11 with focused server/AI evidence. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 49/67 | 18 missing/inactive; Heavenly Gale advances Light to 8/11 with focused server/AI evidence. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -162,7 +162,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Discipline | 3/0 | 1/9 | Nine perks missing |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 0/10 | Progression blocked |
-| Light Magic | 3/0 | 3/7 | Benediction, Healer, and Guardian active; seven perks missing |
+| Light Magic | 3/0 | 4/6 | Benediction, Healer, Guardian, and Aegis active; six perks missing |
 | Shadow Magic | 3/0 | 6/4 | Malediction, Withering Touch, Soul Binder, Dark Gift, Night Feeder, and Reanimator are active. Reanimator's casualty-only pool has focused authoritative evidence; four perks remain planned. |
 | Nature Magic | 3/0 | 1/9 | Herbalist active with Regeneration-focused runtime evidence; nine perks missing |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
@@ -334,7 +334,24 @@ passes 7/7 focused Guardian/Healer/server/AI checks with zero skips. The
 source/native checkpoint, not rendered or playable acceptance. Phase 2 retains
 physical-attack exchange prediction, legacy scripted ability provenance,
 full combat save/reload, Dispel, and broader cross-system interaction checks.
-The next missing detailed-roster combat spell is Heavenly Gale in Light.
+The next missing detailed-roster combat spell after Guardian Spirit was Heavenly
+Gale in Light.
+
+Heavenly Gale is now the saved-v3 Level-3 Light, 13-Mana whole-friendly-army
+protection spell. Its two-round timed marker reduces physical ranged projectile
+damage, including physical siege shots, by `min(80%, 50% + 0.15% × Spell Power)`.
+Fractional percentages use basis points; Light rank, Spellcraft, Warcasting,
+Empower, and the active Aegis perk scale only the Spell Power term. Aegis also
+scales Holy Armor's corresponding term before final rounding. Melee, spell-like
+shots, and spell damage are excluded in the focused native paths. A stack
+status, BattleAI choice/valuation, and purpose-made Provisional 44/32/30 icons
+are bound. Both Linux targets link; the isolated active-profile server/AI
+filter passes 15/15 with zero skips. The 46-case curated-content suite and
+module-mirror check pass. This is source/native evidence, not rendered or
+playable acceptance. Phase 2 retains exhaustive magical-beam and area-shot
+classification, AI valuation under combined physical-damage caps, AI mass
+projection logging, Dispel and save/load round trips, and live AI submission.
+The next missing detailed-roster combat spell is Divine Retribution in Light.
 
 Sanctuary is now the saved-v3 Level-1 Light, 5-Mana single-friendly-stack
 protection spell. Its spell-sourced, battle-duration marker excludes the stack
@@ -369,7 +386,7 @@ from the active identity row.
 
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
-| Light | 11 | 7 | Heavenly Gale; Divine Retribution; Purify; Crusade! |
+| Light | 11 | 8 | Divine Retribution; Purify; Crusade! |
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |

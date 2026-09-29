@@ -321,6 +321,8 @@ newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
 		return newHorizonsBattleStatus::StackStatusIconKind::DOOM;
 	if(newHorizonsBattleStatus::isGuardianSpirit(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::GUARDIAN_SPIRIT;
+	if(newHorizonsBattleStatus::isHeavenlyGale(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::HEAVENLY_GALE;
 	if(newHorizonsBattleStatus::isRegeneration(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::REGENERATION;
 	if(newHorizonsBattleStatus::isShadowGift(spellKey))
@@ -574,6 +576,10 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool doom = newHorizonsBattleStatus::isDoom(spellKey);
 		const bool sanctuary = newHorizonsBattleStatus::isSanctuary(spellKey);
 		const bool guardianSpirit = newHorizonsBattleStatus::isGuardianSpirit(spellKey);
+		const bool heavenlyGale = newHorizonsBattleStatus::isHeavenlyGale(spellKey);
+		const auto galeStatus = heavenlyGale
+			? newHorizonsBattleStatus::heavenlyGaleStatus(*spellBonuses)
+			: newHorizonsBattleStatus::HeavenlyGaleStatus{};
 		const auto doomEffect = doom ? newHorizonsBattleStatus::doomStatus(*spellBonuses)
 			: newHorizonsBattleStatus::DoomStatus{};
 		const auto frailty = currentFrailtyStatus(stack, spellKey, spellBonuses);
@@ -585,7 +591,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || vampirism || doom || guardianSpirit)
+		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || vampirism || doom || guardianSpirit || heavenlyGale)
 		{
 			const std::string badge = timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
@@ -599,6 +605,8 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 						static_cast<int64_t>(doomEffect.damagePenaltyPercent) * 100)
 				: guardianSpirit
 					? TextOperations::formatMetric(displayedStatus.guardianSpirit.remainingHitPoints, 4)
+				: heavenlyGale && galeStatus.active()
+					? newHorizonsBattleStatus::formatBasisPoints(galeStatus.reductionBasisPoints)
 				: vampirism && displayedStatus.vampirism.active()
 					? newHorizonsBattleStatus::formatBasisPoints(displayedStatus.vampirism.lifestealBasisPoints)
 				: std::to_string(duration);
@@ -628,6 +636,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		{
 			const auto tooltip = newHorizonsBattleStatus::guardianSpiritTooltip(
 				effect.toSpell()->getDescriptionTranslated(0), displayedStatus.guardianSpirit);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(heavenlyGale)
+		{
+			const auto tooltip = newHorizonsBattleStatus::heavenlyGaleTooltip(
+				effect.toSpell()->getDescriptionTranslated(0), galeStatus);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 		else if(newHorizonsBattleStatus::isRegeneration(spellKey))

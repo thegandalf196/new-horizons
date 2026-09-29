@@ -77,6 +77,7 @@ enum class StackStatusIconKind
 	VAMPIRISM,
 	PHYSICAL_POISON,
 	GUARDIAN_SPIRIT,
+	HEAVENLY_GALE,
 	REGENERATION,
 	SHADOW_GIFT_BUFF,
 	SHADOW_GIFT_CAP,
@@ -102,6 +103,7 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 		case StackStatusIconKind::TEMPORARY_CREATURES: return 2;
 		case StackStatusIconKind::PHYSICAL_POISON: return 3;
 		case StackStatusIconKind::GUARDIAN_SPIRIT: return 4;
+		case StackStatusIconKind::HEAVENLY_GALE: return 4;
 		case StackStatusIconKind::REGENERATION: return 5;
 		case StackStatusIconKind::SHADOW_GIFT_BUFF: return 5;
 		case StackStatusIconKind::SHADOW_GIFT_CAP: return 6;

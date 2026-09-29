@@ -22,6 +22,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:focusMagic',
     'new-horizons:frailty',
     'new-horizons:guardianSpirit',
+    'new-horizons:heavenlyGale',
     'new-horizons:hexOfPain',
     'new-horizons:holyArmor',
     'new-horizons:holyWrath',
@@ -448,6 +449,33 @@ class NewHorizonsContentTest(unittest.TestCase):
                            ('iconImmune', 30)):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_guardian_spirit_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+
+    def test_heavenly_gale_is_army_wide_fractional_ranged_protection(self):
+        row = self.rules['spells']['new-horizons:heavenlyGale']
+        self.assertEqual((row['schools'], row['level'], row['costs']),
+                         (['new-horizons:light'], 3, [13, 13, 13, 13]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['heavenlyGale']
+        self.assertEqual((spell['name'], spell['targetType']), ('Heavenly Gale', 'CREATURE'))
+        self.assertTrue(spell['flags']['positive'])
+        self.assertFalse(spell['flags'].get('damage', False))
+        light_perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:lightMagic']['perks']
+        aegis = next(perk for perk in light_perks
+                     if perk['id'] == 'new-horizons:lightMagic.aegis')
+        self.assertEqual(aegis['effect']['status'], 'active')
+        for level in spell['levels'].values():
+            self.assertEqual((level['range'], level['cost']), ('X', 13))
+            marker = level['battleEffects']['heavenlyGale']['bonus']['rangedProjectileReduction']
+            self.assertEqual((marker['type'], marker['val'], marker['duration'], marker['turns']),
+                             ('HEAVENLY_GALE', 5000, 'N_TURNS', 2))
+            self.assertTrue(level['targetModifier']['smart'])
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_spell_heavenly_gale_{size}.png')
             self.assertEqual(struct.unpack('>II',
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                 (size, size))
