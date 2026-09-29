@@ -258,6 +258,15 @@
 			"level": 4,
 			"costs": [16, 16, 16, 16]
 		},
+		"new-horizons:soulReaper": {
+			"schools": ["new-horizons:shadow"],
+			"level": 5,
+			"costs": [21, 21, 21, 21],
+			"directDamage": {
+				"base": 60,
+				"powerCoefficient": 14
+			}
+		},
 		"new-horizons:holyWrath": {
 			"schools": ["new-horizons:light"],
 			"level": 3,

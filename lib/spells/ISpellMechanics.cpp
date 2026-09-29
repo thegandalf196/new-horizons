@@ -1089,6 +1089,16 @@ bool BaseMechanics::isMagicalEffect() const
 
 int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
 {
+	return adjustEffectValueImpl(target, true);
+}
+
+int64_t BaseMechanics::adjustEffectValueBeforeExecution(const battle::Unit * target) const
+{
+	return adjustEffectValueImpl(target, false);
+}
+
+int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const bool applyExecution) const
+{
 	const auto * hero = caster ? caster->getHeroCaster() : nullptr;
 	const bool spellPenetration = mode == Mode::HERO && isNegativeSpell() && target
 		&& !ownerMatches(target, true) && hero
@@ -1124,8 +1134,26 @@ int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
 			}
 		}
 	}
-	return owner->adjustRawDamage(caster, target, getEffectValue(), ignoreReduction,
+	int64_t rawDamage = getEffectValue();
+	if(target && battleState)
+	{
+		const auto & magicRules = battleState->getMagicRules();
+		if(const auto missingHealthDamage = newHorizonsMagic::soulReaperMissingHealthDamage(
+			magicRules, owner->getId(), target->getShadowGiftMaximumHealth(), target->getAvailableHealth()))
+		{
+			if(*missingHealthDamage > 0 && rawDamage > std::numeric_limits<int64_t>::max() - *missingHealthDamage)
+				rawDamage = std::numeric_limits<int64_t>::max();
+			else
+				rawDamage += *missingHealthDamage;
+		}
+	}
+	int64_t adjustedDamage = owner->adjustRawDamage(caster, target, rawDamage, ignoreReduction,
 		holdReductionBasisPoints, finalDamageMultiplierPercent, useIndependentMagicalDamageReduction);
+	if(applyExecution && target && battleState && newHorizonsMagic::soulReaperEnabled(
+		battleState->getMagicRules(), owner->getId()))
+		adjustedDamage = newHorizonsMagic::soulReaperDamageAfterExecution(
+			target->getShadowGiftMaximumHealth(), target->getAvailableHealth(), adjustedDamage);
+	return adjustedDamage;
 }
 
 int64_t BaseMechanics::applySpellBonus(int64_t value, const battle::Unit * target) const

@@ -138,6 +138,12 @@ bool isCanonicalReanimate(const CBattleInfoCallback & battle, const CSpell * spe
 		&& newHorizonsMagic::reanimateEnabled(battle.getBattle()->getMagicRules(), spell->getId());
 }
 
+bool isCanonicalSoulReaper(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
+		&& newHorizonsMagic::soulReaperEnabled(battle.getBattle()->getMagicRules(), spell->getId());
+}
+
 bool isCanonicalHexOfPain(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsHexOfPainAI::SPELL_ID;
@@ -2242,11 +2248,16 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		if(spellType(option.spell) != SpellTypes::BATTLE && !isCounterspell(option.spell))
 			return true;
 
-		// A New Horizons spell may be present in installed content when evaluating
+		// New Horizons spells may be present in installed content when evaluating
 		// a legacy battle. Do not let that content leak into the saved roster's AI
 		// decisions; the authoritative cast path uses the same saved-v3 identity gate.
-		return option.spell && option.spell->getJsonKey() == newHorizonsMagic::SHADOW_REANIMATE_SPELL
+		const bool unavailableReanimate = option.spell
+			&& option.spell->getJsonKey() == newHorizonsMagic::SHADOW_REANIMATE_SPELL
 			&& !isCanonicalReanimate(*battleCallback, option.spell);
+		const bool unavailableSoulReaper = option.spell
+			&& option.spell->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
+			&& !isCanonicalSoulReaper(*battleCallback, option.spell);
+		return unavailableReanimate || unavailableSoulReaper;
 	});
 
 	LOGFL("I know how %d of them works.", possibleSpells.size());

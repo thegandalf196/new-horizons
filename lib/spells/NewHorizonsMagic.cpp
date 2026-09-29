@@ -400,6 +400,69 @@ bool reanimateEnabled(const JsonNode & rules, const SpellID spell)
 	return true;
 }
 
+bool soulReaperEnabled(const JsonNode & rules, const SpellID spell)
+{
+	const auto * definition = spell.toSpell();
+	if(!definition || definition->getJsonKey() != SHADOW_SOUL_REAPER_SPELL || !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !rules["spells"].isStruct())
+		return false;
+
+	const auto found = rules["spells"].Struct().find(std::string(SHADOW_SOUL_REAPER_SPELL));
+	if(found == rules["spells"].Struct().end() || !found->second.isStruct())
+		return false;
+
+	const auto & row = found->second;
+	const auto & damage = row["directDamage"];
+	if(!integer(row["level"], 5, 5)
+		|| !row["schools"].isVector() || row["schools"].Vector().size() != 1
+		|| !row["schools"].Vector().front().isString()
+		|| row["schools"].Vector().front().String() != "new-horizons:shadow"
+		|| !row["costs"].isVector() || row["costs"].Vector().size() != 4
+		|| (!row["active"].isNull() && !row["active"].isBool())
+		|| !damage.isStruct() || damage.Struct().size() != 2
+		|| !integer(damage["base"], 60, 60)
+		|| !integer(damage["powerCoefficient"], 14, 14)
+		|| !spellAllowedBySavedRoster(rules, spell))
+		return false;
+
+	for(const auto & cost : row["costs"].Vector())
+		if(!integer(cost, 21, 21))
+			return false;
+
+	return true;
+}
+
+std::optional<int64_t> soulReaperMissingHealthDamage(const JsonNode & rules, const SpellID spell,
+	const int64_t effectiveMaximumHP, const int64_t currentHP)
+{
+	if(!soulReaperEnabled(rules, spell))
+		return std::nullopt;
+	if(effectiveMaximumHP < 0 || currentHP < 0)
+		throw std::invalid_argument("Invalid Soul Reaper health inputs");
+
+	const int64_t missingHP = std::max<int64_t>(0, effectiveMaximumHP - std::min(effectiveMaximumHP, currentHP));
+	// 40% = 2/5. Splitting before multiplication avoids overflowing when a
+	// valid aggregate stack HP is close to the int64 limit.
+	return (missingHP / 5) * 2 + (missingHP % 5) * 2 / 5;
+}
+
+int64_t soulReaperDamageAfterExecution(const int64_t effectiveMaximumHP,
+	const int64_t currentHP, const int64_t postMitigationDamage)
+{
+	if(effectiveMaximumHP < 0 || currentHP < 0)
+		throw std::invalid_argument("Invalid Soul Reaper execution health inputs");
+	if(postMitigationDamage <= 0)
+		return postMitigationDamage;
+	if(postMitigationDamage >= currentHP)
+		return postMitigationDamage;
+
+	const int64_t remainingHP = currentHP - postMitigationDamage;
+	if(remainingHP <= effectiveMaximumHP / 10)
+		return currentHP;
+	return postMitigationDamage;
+}
+
 bool hasReanimatorPerk(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(SHADOW_MAGIC_SKILL), std::string(SHADOW_REANIMATOR_PERK));

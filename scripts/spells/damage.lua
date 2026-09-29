@@ -5,6 +5,7 @@ Script.__index = Script
 
 local HAVOC_CONDUCTOR_SKILL = "new-horizons:havocMagic"
 local HAVOC_CONDUCTOR_PERK = "new-horizons:havocMagic.conductor"
+local SOUL_REAPER_SPELL = "new-horizons:soulReaper"
 
 local function conductorMultiplier(mechanics, targetIndex)
 	if targetIndex <= 0 then return nil end
@@ -107,6 +108,19 @@ function Script:damageForTarget(targetIndex, mechanics, unit)
 	return base
 end
 
+local function damageBeforeSoulReaperExecution(mechanics, unit)
+	if mechanics:getSpell():getJsonKey() ~= SOUL_REAPER_SPELL then return nil end
+
+	local copy = unit:copy()
+	local healthBefore = copy:getAvailableHealth()
+	local countBefore = copy:getCount()
+	copy:damage(mechanics:adjustEffectValueBeforeExecution(unit))
+	return {
+		damage = healthBefore - copy:getAvailableHealth(),
+		killed = countBefore - copy:getCount()
+	}
+end
+
 function Script:getHealthChange(mechanics, spellTarget)
 	local result = { hpDelta = 0, unitsDelta = 0 }
 	for i, dest in ipairs(spellTarget) do
@@ -128,11 +142,13 @@ function Script:apply(mechanics, server, target)
 	local battle   = mechanics:getBattle()
 	local describe = server:describeChanges()
 	local firstUnit, totalDamage, totalKilled, multiple = nil, 0, 0, false
+	local ordinaryDamage, ordinaryKilled, executedKilled = 0, 0, 0
 
 	for i, dest in ipairs(target) do
 		local unit = dest.unit
 		if unit and unit:isAlive() then
 			local amount = self:damageForTarget(i - 1, mechanics, unit)
+			local soulReaperBaseline = describe and damageBeforeSoulReaperExecution(mechanics, unit) or nil
 			-- Creature casts expose their battle Unit; hero and environmental casts return nil and
 			-- intentionally remain unattributed.
 			local dmg, killed = server:damageUnit(
@@ -141,16 +157,26 @@ function Script:apply(mechanics, server, target)
 				if firstUnit then multiple = true else firstUnit = unit end
 				totalDamage = totalDamage + dmg
 				totalKilled = totalKilled + killed
+				if soulReaperBaseline then
+					local additionalKilled = math.max(0, killed - soulReaperBaseline.killed)
+					if additionalKilled > 0 then
+						ordinaryDamage = ordinaryDamage + soulReaperBaseline.damage
+						ordinaryKilled = ordinaryKilled + soulReaperBaseline.killed
+						executedKilled = executedKilled + additionalKilled
+					end
+				end
 			end
 		end
 	end
 
 	if describe and firstUnit and totalDamage > 0 then
-		self:describeEffect(server, battle, mechanics, firstUnit, totalKilled, totalDamage, multiple)
+		self:describeEffect(server, battle, mechanics, firstUnit, totalKilled, totalDamage, multiple,
+			ordinaryKilled, ordinaryDamage, executedKilled)
 	end
 end
 
-function Script:describeEffect(server, battle, mechanics, firstUnit, kills, damage, multiple)
+function Script:describeEffect(server, battle, mechanics, firstUnit, kills, damage, multiple,
+	ordinaryKills, ordinaryDamage, executedKills)
 	local spell    = mechanics:getSpell()
 	local spellKey = spell:getJsonKey()
 
@@ -186,6 +212,16 @@ function Script:describeEffect(server, battle, mechanics, firstUnit, kills, dama
 		server:appendLog(battle, {
 			append         = { "core.genrltxt.343" },
 			replaceNumbers = { damage }
+		})
+
+	elseif spellKey == SOUL_REAPER_SPELL and executedKills > 0 and not multiple then
+		BattleLog.spellDamage(server, battle, spell, firstUnit, ordinaryDamage, ordinaryKills)
+		local textID = mechanics:getPluralFormTextID(
+			"new-horizons.combat.soulReaper.execute", executedKills)
+		server:appendLog(battle, {
+			append         = { textID },
+			replaceStrings = { firstUnit:getCreature():getNameTextID(executedKills) },
+			replaceNumbers = { executedKills }
 		})
 
 	else

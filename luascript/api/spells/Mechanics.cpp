@@ -240,6 +240,9 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::adjustEffectValue>("adjustEffectValue",
 		{{"target", "Unit against which per-target adjustments are computed."}}, {},
 		"Applies all per-target adjustments to the raw effect value.");
+	R.method<&Mechanics::adjustEffectValueBeforeExecution>("adjustEffectValueBeforeExecution",
+		{{"target", "Unit against which per-target adjustments are computed."}}, {},
+		"Applies per-target damage adjustments before an execute-style threshold override. Mechanics without such an override return their ordinary adjusted value.");
 	R.function<&MechanicsProxy::getPluralFormTextID>("getPluralFormTextID",
 		{
 			{"baseTextID", "Base text ID used as the lookup base."},

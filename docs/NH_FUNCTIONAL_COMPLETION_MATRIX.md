@@ -25,7 +25,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 105/310 | 205 planned; active status alone does not certify behavior. Reanimator adds 25% to Re-animate's casualty-restoration pool after surviving-creature wounds. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 44/67 | 23 missing/inactive; Re-animate has active-profile runtime/AI evidence. Soul Reaper and Doom are the remaining missing Shadow identities. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 45/67 | 22 missing/inactive; Soul Reaper has active-profile runtime/AI evidence. Doom is the remaining missing Shadow identity. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -49,8 +49,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 104
-active perks, leaving nine ranks and 206 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 105
+active perks, leaving nine ranks and 205 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -288,7 +288,24 @@ one-battle restorations, spell-blocking effects, and live save/load continuation
 The current focused cleanup check directly exercises the same
 `CHealth::takeResurrected` primitive called by `BattleResultProcessor` rather
 than claiming a full result-dialog path. The old Animate Dead sound/impact is
-provisional effect reuse. The next missing Shadow identity is Soul Reaper.
+provisional effect reuse. The subsequent Soul Reaper slice is recorded below.
+
+2026-09-29 Soul Reaper Phase 1 checkpoint: the Level-5 Shadow spell is
+registered at 21 Mana with target-specific `60 + 1.4 × SP + 40% of missing
+aggregate HP` damage. Saved-v3 Shadow School and Spellcraft rank scale only
+the Spell Power component. A post-mitigation hit that leaves a stack at or
+below 10% of effective maximum HP executes its survivors; ordinary casualties,
+usable remains, and Rebirth processing are preserved. Authoritative cast,
+detached preview/AI evaluation, and the execution combat-log line use the same
+damage path. Old v1/v2 snapshots cannot cast the new identity, including a
+synthetic v2 snapshot containing its roster row. Both Linux `vcmitest` and
+`vcmiclient` targets link; all 9/9 focused server/AI tests pass in the active
+profile, alongside 42/42 curated-content tests and the module-mirror check.
+Purpose-made Provisional 44/32/30 spell icons are bound. Phase 2 retains
+partial-Magic-Resistance AI valuation, unusual temporary-HP/status mixtures,
+full save/load continuation, and 32×32 versus 58×64 scenario-icon consumer
+review; native rendering and playable acceptance are unverified. Doom is now
+the next missing Shadow identity.
 
 Quicksand is among the active Nature identities. Its selected-placement path
 now has a saved-v3 opt-in marker, exact ordered caster selection, authoritative
@@ -305,7 +322,7 @@ from the active identity row.
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
-| Shadow | 12 | 10 | Soul Reaper; Doom |
+| Shadow | 12 | 11 | Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |

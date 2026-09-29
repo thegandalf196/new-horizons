@@ -691,6 +691,22 @@
 							16
 						]
 					},
+					"new-horizons:soulReaper": {
+						"schools": [
+							"new-horizons:shadow"
+						],
+						"level": 5,
+						"costs": [
+							21,
+							21,
+							21,
+							21
+						],
+						"directDamage": {
+							"base": 60,
+							"powerCoefficient": 14
+						}
+					},
 					"new-horizons:holyWrath": {
 						"schools": [
 							"new-horizons:light"
@@ -8844,6 +8860,9 @@
 		"new-horizons.combat.vampirism.healed": "Vampirism restores %d health to %s.",
 		"new-horizons.combat.reanimate.restored": "Re-animate restores %d health and %d temporary creatures to %s. They disappear after battle.",
 		"new-horizons.combat.reanimate.healed": "Re-animate heals %d health on %s; no creatures are restored.",
+		"new-horizons.combat.soulReaper.execute.0": "Soul Reaper executes %s, destroying %d additional creatures.",
+		"new-horizons.combat.soulReaper.execute.1": "Soul Reaper executes %s, destroying %d additional creature.",
+		"new-horizons.combat.soulReaper.execute.2": "Soul Reaper executes %s, destroying %d additional creatures.",
 		"new-horizons.combat.physicalPoison.label": "Physical Poison",
 		"new-horizons.combat.physicalPoison.tooltip": "%LABEL\nNext real activation tick: %DAMAGE physical damage.\n%ACTIVATIONS real activations remaining.",
 		"new-horizons.combat.physicalPoison.hiddenEffects": "%COUNT additional active effects are not shown.",

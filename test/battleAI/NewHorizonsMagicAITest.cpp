@@ -135,6 +135,11 @@ SpellID reanimateSpell()
 	return SpellID(SpellID::decode(std::string(newHorizonsMagic::SHADOW_REANIMATE_SPELL)));
 }
 
+SpellID soulReaperSpell()
+{
+	return SpellID(SpellID::decode(std::string(newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL)));
+}
+
 void addVampirismStatus(CStack * target, SpellID spell, int healBasisPoints, int turns)
 {
 	if(!target)
@@ -336,6 +341,23 @@ protected:
 		ASSERT_GE(shadowMagicId, 0);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(shadowMagicId), MasteryLevel::EXPERT,
 			ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+	}
+
+	void prepareSoulReaperCaster()
+	{
+		ASSERT_NO_FATAL_FAILURE(startGame());
+		const auto soulReaper = soulReaperSpell();
+		ASSERT_NE(soulReaper, SpellID::NONE);
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		for(const auto known : attackerSideHero->getSpellsInSpellbook())
+			attackerSideHero->removeSpellFromSpellbook(known);
+		attackerSideHero->addSpellToSpellbook(soulReaper);
+		const auto shadowMagicId = SecondarySkill::decode(std::string(newHorizonsMagic::SHADOW_MAGIC_SKILL));
+		ASSERT_GE(shadowMagicId, 0);
+		const SecondarySkill shadowMagic(shadowMagicId);
+		attackerSideHero->setSecSkillLevel(shadowMagic, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(attackerSideHero, 1000);
 	}
@@ -5140,6 +5162,169 @@ TEST_F(NewHorizonsMagicAITest, ReanimateAIDoesNotOfferFullHealthOrUnusableRemain
 		BattleSide::ATTACKER, 1.0f, 2);
 	evaluator.selectStackAction(fullHealthAlly);
 	EXPECT_FALSE(evaluator.attemptCastingSpell(fullHealthAlly))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_TRUE(callback->submitted.empty());
+}
+
+TEST_F(NewHorizonsMagicAITest, SoulReaperAIPrefersWoundedTargetAndForecastsExecutionWithoutMutation)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareSoulReaperCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
+	auto * wounded = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 3), 100);
+	auto * healthy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 7), 100);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(wounded, nullptr);
+	ASSERT_NE(healthy, nullptr);
+
+	const std::set<uint32_t> keepIds{active->unitId(), wounded->unitId(), healthy->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto spell = soulReaperSpell();
+	ASSERT_TRUE(newHorizonsMagic::soulReaperEnabled(battle()->getMagicRules(), spell));
+	spells::BattleCast probe(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto mechanics = spell.toSpell()->battleMechanics(&probe);
+	ASSERT_NE(mechanics, nullptr);
+	const auto maximumHealth = wounded->getTotalHealth();
+	const auto baseDamage = mechanics->getEffectValue();
+	ASSERT_GT(maximumHealth, 0);
+	ASSERT_GT(baseDamage, 0);
+
+	// Pick a health value where the ordinary hit is nonlethal but leaves at most
+	// 10% of the stack's maximum HP. The execution clause should finish it.
+	int64_t woundedHealth = 0;
+	int64_t rawDamage = 0;
+	for(int64_t current = 1; current < maximumHealth; ++current)
+	{
+		const auto missingDamage = newHorizonsMagic::soulReaperMissingHealthDamage(
+			battle()->getMagicRules(), spell, maximumHealth, current);
+		ASSERT_TRUE(missingDamage.has_value());
+		const auto candidateRawDamage = baseDamage + *missingDamage;
+		const auto remainingAfterRawDamage = current - candidateRawDamage;
+		if(candidateRawDamage > 0 && remainingAfterRawDamage > 0
+			&& remainingAfterRawDamage <= maximumHealth / 10)
+		{
+			woundedHealth = current;
+			rawDamage = candidateRawDamage;
+			break;
+		}
+	}
+	ASSERT_GT(woundedHealth, rawDamage)
+		<< "the test needs a nonlethal raw hit that enters the execution band";
+	ASSERT_LE(woundedHealth - rawDamage, maximumHealth / 10);
+	EXPECT_EQ(mechanics->adjustEffectValue(healthy), baseDamage);
+
+	auto healthToRemove = wounded->getAvailableHealth() - woundedHealth;
+	ASSERT_GT(healthToRemove, 0);
+	auto woundedState = wounded->acquireState();
+	woundedState->damage(healthToRemove);
+	ASSERT_EQ(woundedState->getAvailableHealth(), woundedHealth);
+	BattleUnitsChanged injury;
+	injury.battleID = BattleID(0);
+	injury.changedStacks.emplace_back(wounded->unitId(), UnitChanges::EOperation::UPDATE);
+	injury.changedStacks.back().data = woundedState->save();
+	injury.changedStacks.back().healthDelta = -healthToRemove;
+	gameHandler->sendAndApply(injury);
+	ASSERT_EQ(wounded->getAvailableHealth(), woundedHealth);
+	ASSERT_EQ(healthy->getAvailableHealth(), maximumHealth);
+	EXPECT_EQ(mechanics->adjustEffectValue(wounded), woundedHealth)
+		<< "the projected damage adjustment must include the ≤10% execution clause";
+
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.spell, spell);
+	const auto selected = action.getTarget(battle());
+	ASSERT_EQ(selected.size(), 1u);
+	ASSERT_NE(selected.front().unitValue, nullptr);
+	EXPECT_EQ(selected.front().unitValue->unitId(), wounded->unitId())
+		<< "the missing-HP component and projected execution should favor the wounded stack";
+
+	// The same castEval path used by BattleEvaluator projects the kill on a
+	// detached battle. Evaluating candidates must leave both live stacks intact.
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto projectedWounded = projected->getForUpdate(wounded->unitId());
+	ASSERT_NE(projectedWounded, nullptr);
+	spells::BattleCast projectedCast(projected.get(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto projectedMechanics = spell.toSpell()->battleMechanics(&projectedCast);
+	const spells::Target projectedTarget{spells::Destination(projectedWounded.get())};
+	ASSERT_TRUE(projectedMechanics->canBeCastAt(projectedTarget));
+	projectedMechanics->castEval(projected->getServerCallback(), projectedTarget);
+	EXPECT_FALSE(projected->battleGetUnitByID(wounded->unitId())->alive());
+	EXPECT_EQ(projected->battleGetUnitByID(healthy->unitId())->getAvailableHealth(), maximumHealth);
+	EXPECT_EQ(wounded->getAvailableHealth(), woundedHealth);
+	EXPECT_EQ(healthy->getAvailableHealth(), maximumHealth);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+}
+
+TEST_F(NewHorizonsMagicAITest, SoulReaperAIDoesNotLeakIntoPreV3SavedRoster)
+{
+	useCommands = false;
+	savedMagicRulesVersion = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	ASSERT_NO_FATAL_FAILURE(prepareSoulReaperCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	const std::set<uint32_t> keepIds{active->unitId(), enemy->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto spell = soulReaperSpell();
+	ASSERT_FALSE(newHorizonsMagic::soulReaperEnabled(battle()->getMagicRules(), spell));
+	spells::BattleCast probe(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto mechanics = spell.toSpell()->battleMechanics(&probe);
+	EXPECT_TRUE(SpellTargetEvaluator::getViableTargets(mechanics.get()).empty());
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active))
 		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_TRUE(callback->submitted.empty());
 }

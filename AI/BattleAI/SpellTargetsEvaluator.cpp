@@ -867,6 +867,9 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 		if(spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_REANIMATE_SPELL
 			&& (!battle || !newHorizonsMagic::reanimateEnabled(battle->getMagicRules(), spell->getId())))
 			return {};
+		if(spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
+			&& (!battle || !newHorizonsMagic::soulReaperEnabled(battle->getMagicRules(), spell->getId())))
+			return {};
 	}
 
 	// Handle this identity before the saved-profile helpers below query the

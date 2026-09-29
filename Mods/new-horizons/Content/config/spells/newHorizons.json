@@ -1664,6 +1664,79 @@
 		},
 		"targetCondition" : {}
 	},
+	"soulReaper" : {
+		"name" : "Soul Reaper",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:shadow" : true
+		},
+		"level" : 5,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "NH_spell_soul_reaper_44.png",
+			"iconScroll" : "NH_spell_soul_reaper_32.png",
+			"iconEffect" : "NH_spell_soul_reaper_30.png",
+			"iconImmune" : "NH_spell_soul_reaper_30.png",
+			"iconScenarioBonus" : "NH_spell_soul_reaper_32.png"
+		},
+		"animation" : {
+			"hit" : ["C18SPW0"]
+		},
+		"sounds" : {
+			"cast" : "MAGICBLT"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Deal 60 + 1.4 x Spell Power + 40% of one enemy stack's missing aggregate Health as Shadow damage. Shadow School and Spellcraft ranks strengthen only the Spell Power term. If the stack remains at or below 10% of its maximum aggregate Health after damage, destroy its surviving creatures.",
+				"cost" : 21,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : false}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Deal 60 + 1.4 x Spell Power + 40% of one enemy stack's missing aggregate Health as Shadow damage. Shadow School and Spellcraft ranks strengthen only the Spell Power term. If the stack remains at or below 10% of its maximum aggregate Health after damage, destroy its surviving creatures.",
+				"cost" : 21,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : false}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Deal 60 + 1.4 x Spell Power + 40% of one enemy stack's missing aggregate Health as Shadow damage. Shadow School and Spellcraft ranks strengthen only the Spell Power term. If the stack remains at or below 10% of its maximum aggregate Health after damage, destroy its surviving creatures.",
+				"cost" : 21,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : false}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Deal 60 + 1.4 x Spell Power + 40% of one enemy stack's missing aggregate Health as Shadow damage. Shadow School and Spellcraft ranks strengthen only the Spell Power term. If the stack remains at or below 10% of its maximum aggregate Health after damage, destroy its surviving creatures.",
+				"cost" : 21,
+				"power" : 0,
+				"battleEffects" : {
+					"directDamage" : {"type" : "damage"}
+				},
+				"targetModifier" : {"smart" : false}
+			}
+		},
+		"flags" : {
+			"offensive" : true,
+			"damage" : true,
+			"negative" : true
+		},
+		"targetCondition" : {}
+	},
 	"frailty" : {
 		"name" : "Frailty",
 		"type" : "combat",

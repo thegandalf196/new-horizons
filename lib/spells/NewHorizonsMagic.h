@@ -97,6 +97,7 @@ inline constexpr std::string_view SHADOW_GIFT_SPELL = "new-horizons:shadowGift";
 inline constexpr std::string_view SHADOW_VAMPIRISM_SPELL = "new-horizons:vampirism";
 inline constexpr std::string_view SHADOW_VAMPIRISM_STATUS = "core:vampirism";
 inline constexpr std::string_view SHADOW_REANIMATE_SPELL = "new-horizons:reanimate";
+inline constexpr std::string_view SHADOW_SOUL_REAPER_SPELL = "new-horizons:soulReaper";
 inline constexpr std::string_view SHADOW_REANIMATOR_PERK = "new-horizons:shadowMagic.reanimator";
 inline constexpr std::string_view SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic";
 inline constexpr std::string_view SHADOW_DARK_GIFT_PERK = "new-horizons:shadowMagic.darkGift";
@@ -180,6 +181,19 @@ DLL_LINKAGE bool hasReanimatorPerk(const CGHeroInstance * hero);
 /// the base pool's final HP floor; legacy/non-canonical rows return nullopt.
 DLL_LINKAGE std::optional<int64_t> reanimateHealingPool(const JsonNode & rules,
 	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower, int64_t survivorWounds);
+/// Saved-v3 canonical Soul Reaper identity gate. Older snapshots never acquire
+/// the newly registered Shadow spell from installed content alone.
+DLL_LINKAGE bool soulReaperEnabled(const JsonNode & rules, SpellID spell);
+/// Soul Reaper's 40% missing-effective-HP component. Current HP includes any
+/// temporary hit points; missing HP is clamped to zero when current exceeds max.
+DLL_LINKAGE std::optional<int64_t> soulReaperMissingHealthDamage(const JsonNode & rules,
+	SpellID spell, int64_t effectiveMaximumHP, int64_t currentHP);
+/// Increase a positive post-mitigation hit to lethal damage when the target
+/// would otherwise remain at or below 10% effective maximum HP. The caller
+/// supplies current HP including temporary hit points. This is ordinary
+/// damage and does not mark the casualties as unusable remains.
+DLL_LINKAGE int64_t soulReaperDamageAfterExecution(int64_t effectiveMaximumHP,
+	int64_t currentHP, int64_t postMitigationDamage);
 /// Applies the saved v3 fixed-five Chain Lightning target count while keeping
 /// the configured, mastery-dependent value for legacy/v1/v2 battles.
 DLL_LINKAGE int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configuredTargetCount);

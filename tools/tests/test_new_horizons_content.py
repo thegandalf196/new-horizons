@@ -35,6 +35,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:reanimate',
     'new-horizons:shadowGift',
     'new-horizons:soulChain',
+    'new-horizons:soulReaper',
     'new-horizons:vampirism',
     'new-horizons:spellLock',
     'new-horizons:stormOfDaggers',
@@ -349,6 +350,32 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertIn('new-horizons.combat.reanimate.restored', texts)
         self.assertIn('new-horizons.combat.reanimate.healed', texts)
 
+    def test_soul_reaper_has_shadow_finisher_data_and_original_art(self):
+        row = self.rules['spells']['new-horizons:soulReaper']
+        self.assertEqual(row['schools'], ['new-horizons:shadow'])
+        self.assertEqual((row['level'], row['costs']), (5, [21, 21, 21, 21]))
+        self.assertEqual(row['directDamage'], {'base': 60, 'powerCoefficient': 14})
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['soulReaper']
+        self.assertEqual((spell['name'], spell['targetType']), ('Soul Reaper', 'CREATURE'))
+        self.assertEqual(spell['targetCondition'], {})
+        self.assertTrue(all(spell['flags'][flag]
+                            for flag in ('offensive', 'damage', 'negative')))
+        for level in spell['levels'].values():
+            self.assertEqual(level['cost'], 21)
+            self.assertEqual(level['battleEffects']['directDamage']['type'], 'damage')
+            self.assertFalse(level['targetModifier']['smart'])
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_spell_soul_reaper_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+        texts = load('config/newHorizonsCombatTexts.json')
+        for form in (0, 1, 2):
+            self.assertIn(f'new-horizons.combat.soulReaper.execute.{form}', texts)
+
     def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
         spell_id = 'new-horizons:holyWrath'
         row = self.rules['spells'][spell_id]
@@ -539,6 +566,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'new-horizons:disintegrate',
                               'new-horizons:holyWrath',
                               'new-horizons:lifeDrain',
+                              'new-horizons:soulReaper',
                               'new-horizons:stormOfDaggers',
                           })
         self.assertEqual(self.rules['spells']['core:fireball']['directDamage'],

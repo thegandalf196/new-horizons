@@ -370,6 +370,12 @@ public:
 	virtual bool isMagicalEffect() const = 0;
 
 	virtual int64_t adjustEffectValue(const battle::Unit * target) const = 0;
+	/// Returns target-adjusted damage before an execute-style threshold override.
+	/// Mechanics without such an override use their ordinary adjusted value.
+	virtual int64_t adjustEffectValueBeforeExecution(const battle::Unit * target) const
+	{
+		return adjustEffectValue(target);
+	}
 	virtual int64_t applySpellBonus(int64_t value, const battle::Unit * target) const = 0;
 	virtual int64_t applySpecificSpellBonus(int64_t value) const = 0;
 	virtual int64_t calculateRawEffectValue(int32_t basePowerMultiplier, int32_t levelPowerMultiplier) const = 0;
@@ -460,6 +466,7 @@ public:
 	bool isMagicalEffect() const override;
 
 	int64_t adjustEffectValue(const battle::Unit * target) const override;
+	int64_t adjustEffectValueBeforeExecution(const battle::Unit * target) const override;
 	int64_t applySpellBonus(int64_t value, const battle::Unit * target) const override;
 	int64_t applySpecificSpellBonus(int64_t value) const override;
 	int64_t calculateRawEffectValue(int32_t basePowerMultiplier, int32_t levelPowerMultiplier) const override;
@@ -480,6 +487,7 @@ public:
 protected:
 	const CSpell * owner;
 	Mode mode;
+	int64_t adjustEffectValueImpl(const battle::Unit * target, bool applyExecution) const;
 	bool forceNonSmartTargeting = false;
 	bool usesNewHorizonsBerserkTargeting() const;
 	bool usesNewHorizonsDispelRules() const;
