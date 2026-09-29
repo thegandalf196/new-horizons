@@ -856,6 +856,19 @@ std::vector<Target> SpellTargetEvaluator::canonicalSoulChainTargets(Mechanics * 
 
 std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMechanics)
 {
+	// Installed spell content must not broaden a pre-v3 saved battle's target
+	// roster. For active v3 casts, let the authoritative heal effect decide which
+	// friendly stacks have usable remains, wounds, and an accessible corpse hex.
+	if(spellMechanics)
+	{
+		const auto * spell = spellMechanics->getSpell();
+		const auto * callback = spellMechanics->battle();
+		const auto * battle = callback ? callback->getBattle() : nullptr;
+		if(spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_REANIMATE_SPELL
+			&& (!battle || !newHorizonsMagic::reanimateEnabled(battle->getMagicRules(), spell->getId())))
+			return {};
+	}
+
 	// Handle this identity before the saved-profile helpers below query the
 	// numeric spell ID. The canonical New Horizons spell has a content key of
 	// its own and needs no legacy/core-ID translation for target enumeration.

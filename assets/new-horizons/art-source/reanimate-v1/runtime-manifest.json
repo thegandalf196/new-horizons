@@ -1,0 +1,17 @@
+{
+  "method": "homm3-art high-resolution master, square LANCZOS reductions",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_spell_reanimate_44",
+    "NH_spell_reanimate_32",
+    "NH_spell_reanimate_30"
+  ],
+  "files": {
+    "source/NH_spell_reanimate_44.png": "bbd2f6e2eab3ff56ab42931610b75d56caff188ad1fd83680c9b606ebee26f3c",
+    "Mods/NH_spell_reanimate_44.png": "bbd2f6e2eab3ff56ab42931610b75d56caff188ad1fd83680c9b606ebee26f3c",
+    "source/NH_spell_reanimate_32.png": "24b30e98a4e2b1d298fd5852c915adf27b3cb13ad7083cfa6a229f7a877f283b",
+    "Mods/NH_spell_reanimate_32.png": "24b30e98a4e2b1d298fd5852c915adf27b3cb13ad7083cfa6a229f7a877f283b",
+    "source/NH_spell_reanimate_30.png": "1b435a310fdcca5f6fd2e361386f73250f3c4fde77efdf67a359f1dd5b3d743b",
+    "Mods/NH_spell_reanimate_30.png": "1b435a310fdcca5f6fd2e361386f73250f3c4fde77efdf67a359f1dd5b3d743b"
+  }
+}

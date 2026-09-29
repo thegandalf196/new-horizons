@@ -32,6 +32,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:plague',
     'new-horizons:poison',
     'new-horizons:regeneration',
+    'new-horizons:reanimate',
     'new-horizons:shadowGift',
     'new-horizons:soulChain',
     'new-horizons:vampirism',
@@ -40,6 +41,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:timeStop',
     'new-horizons:transfigureMatter',
 }
+INACTIVE_CORE_SPELLS = {'core:animateDead'}
 ADVENTURE_SPELLS = {
     'core:summonBoat': (1, 20),
     'core:waterWalk': (2, 30),
@@ -315,6 +317,38 @@ class NewHorizonsContentTest(unittest.TestCase):
         texts = load('config/newHorizonsCombatTexts.json')
         self.assertIn('new-horizons.combat.vampirism.healed', texts)
 
+    def test_reanimate_replaces_legacy_animate_dead_in_v3(self):
+        row = self.rules['spells']['new-horizons:reanimate']
+        self.assertEqual(row['schools'], ['new-horizons:shadow'])
+        self.assertEqual((row['level'], row['costs']), (4, [16, 16, 16, 16]))
+        self.assertFalse(self.rules['spells']['core:animateDead']['active'])
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['reanimate']
+        self.assertEqual((spell['name'], spell['targetType']), ('Re-animate', 'CREATURE'))
+        self.assertTrue(spell['flags']['rising'])
+        self.assertTrue(spell['flags']['positive'])
+        self.assertEqual(spell['targetCondition'], {})
+        for level in spell['levels'].values():
+            self.assertEqual(level['cost'], 16)
+            self.assertEqual(level['battleEffects']['reanimate']['type'],
+                             'core:reanimateEffect')
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_spell_reanimate_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+        shadow_perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:shadowMagic']['perks']
+        reanimator = next(perk for perk in shadow_perks
+                          if perk['id'] == 'new-horizons:shadowMagic.reanimator')
+        self.assertEqual(reanimator['effect']['status'], 'active')
+        scripts = load('config/scriptsSpells.json')
+        self.assertEqual(scripts['reanimateEffect']['script'], 'spells/reanimate')
+        texts = load('config/newHorizonsCombatTexts.json')
+        self.assertIn('new-horizons.combat.reanimate.restored', texts)
+        self.assertIn('new-horizons.combat.reanimate.healed', texts)
+
     def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
         spell_id = 'new-horizons:holyWrath'
         row = self.rules['spells'][spell_id]
@@ -471,6 +505,7 @@ class NewHorizonsContentTest(unittest.TestCase):
 
     def test_complete_existing_spell_inventory_and_legacy_schema(self):
         self.assertEqual(len(common_spells()), 69)
+        self.assertEqual(INACTIVE_CORE_SPELLS, {'core:animateDead'})
         self.assertEqual(set(self.rules['spells']) - common_spells(),
                          NEW_HORIZONS_SPELLS)
         self.assertEqual(set(self.rules['adventureSpells']), set(ADVENTURE_SPELLS))

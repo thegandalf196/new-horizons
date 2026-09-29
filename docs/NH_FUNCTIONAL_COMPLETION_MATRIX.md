@@ -22,10 +22,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 104/310 | 206 planned; active status alone does not certify behavior. Night Feeder adds 15 percentage points to Vampirism's capped base lifesteal. |
+| Skill perks active | 105/310 | 205 planned; active status alone does not certify behavior. Reanimator adds 25% to Re-animate's casualty-restoration pool after surviving-creature wounds. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 43/67 | 24 missing/inactive; Vampirism's authoritative and AI evidence is being integrated, while rendered/playable delivery remains pending. |
+| Canonical combat-spell identities registered | 44/67 | 23 missing/inactive; Re-animate has active-profile runtime/AI evidence. Soul Reaper and Doom are the remaining missing Shadow identities. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -163,7 +163,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 0/10 | Progression blocked |
 | Light Magic | 3/0 | 1/9 | Benediction active; nine perks missing |
-| Shadow Magic | 3/0 | 5/5 | Malediction, Withering Touch, Soul Binder, Dark Gift, and Night Feeder are active. Dark Gift and Night Feeder are part of their respective Shadow spell slices; five perks remain planned. |
+| Shadow Magic | 3/0 | 6/4 | Malediction, Withering Touch, Soul Binder, Dark Gift, Night Feeder, and Reanimator are active. Reanimator's casualty-only pool has focused authoritative evidence; four perks remain planned. |
 | Nature Magic | 3/0 | 1/9 | Herbalist active with Regeneration-focused runtime evidence; nine perks missing |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
@@ -270,6 +270,26 @@ ordinary AI attack-choice valuation of healing, third-round expiry, overkill
 clamping, legacy live-cast rejection, and live-status save/load continuation.
 Native-resolution rendering and playable delivery remain separate.
 
+Re-animate is the Level-4, 16-Mana Shadow temporary-restoration spell. Its
+authoritative one-battle restoration uses the engine's serialized resurrected
+ledger, accepts usable remains regardless of creature species, heals wounded
+survivors first, and excludes Disintegrated remains. Reanimator adds 25% only
+to the remaining casualty-restoration HP pool, rounded down. The saved-v3
+School/Spellcraft coefficient scales the raw Spell Power term; legacy Animate
+Dead stays classified but inactive in new v3 snapshots, preserving validation
+and old-save semantics. The Linux `vcmitest` and `vcmiclient` targets link;
+11/11 active-profile focused runtime/AI cases pass with no skips. The 58/58
+content/perk-data tests, 5/5 UI source checks, module mirror and diff checks
+also pass. A purpose-made Provisional icon set and a generic Temporary stack
+count are bound in source. This is Phase 1 implementation evidence, not a
+rendered/playable acceptance claim. Phase 2 should verify end-to-end battle
+result accounting with a real army-backed stack, interactions with other
+one-battle restorations, spell-blocking effects, and live save/load continuation.
+The current focused cleanup check directly exercises the same
+`CHealth::takeResurrected` primitive called by `BattleResultProcessor` rather
+than claiming a full result-dialog path. The old Animate Dead sound/impact is
+provisional effect reuse. The next missing Shadow identity is Soul Reaper.
+
 Quicksand is among the active Nature identities. Its selected-placement path
 now has a saved-v3 opt-in marker, exact ordered caster selection, authoritative
 pre-spend and pre-effect validation, a matching Lua obstacle effect, concealed
@@ -285,7 +305,7 @@ from the active identity row.
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
-| Shadow | 12 | 9 | Re-animate; Soul Reaper; Doom |
+| Shadow | 12 | 10 | Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |

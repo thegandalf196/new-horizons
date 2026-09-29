@@ -58,6 +58,9 @@ constexpr int VAMPIRISM_MAX_BASE_HEAL_BASIS_POINTS = 5'000;
 constexpr int VAMPIRISM_NIGHT_FEEDER_BONUS_BASIS_POINTS = 1'500;
 constexpr int VAMPIRISM_MAX_HEAL_BASIS_POINTS = 6'500;
 constexpr int VAMPIRISM_SPELL_POWER_BASIS_POINTS_PER_POINT = 15;
+constexpr int REANIMATE_BASE_HEALING_HP = 220;
+constexpr int REANIMATE_SPELL_POWER_HP_PER_POINT = 5;
+constexpr int REANIMATOR_BONUS_PERCENT = 25;
 constexpr int CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3 = 5;
 constexpr int QUICKSAND_BASE_PATCH_COUNT_V3 = 2;
 constexpr int QUICKSAND_MAX_PATCH_COUNT_V3 = 5;
@@ -93,6 +96,8 @@ inline constexpr std::string_view SHADOW_LIFE_DRAIN_SPELL = "new-horizons:lifeDr
 inline constexpr std::string_view SHADOW_GIFT_SPELL = "new-horizons:shadowGift";
 inline constexpr std::string_view SHADOW_VAMPIRISM_SPELL = "new-horizons:vampirism";
 inline constexpr std::string_view SHADOW_VAMPIRISM_STATUS = "core:vampirism";
+inline constexpr std::string_view SHADOW_REANIMATE_SPELL = "new-horizons:reanimate";
+inline constexpr std::string_view SHADOW_REANIMATOR_PERK = "new-horizons:shadowMagic.reanimator";
 inline constexpr std::string_view SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic";
 inline constexpr std::string_view SHADOW_DARK_GIFT_PERK = "new-horizons:shadowMagic.darkGift";
 inline constexpr std::string_view SHADOW_NIGHT_FEEDER_PERK = "new-horizons:shadowMagic.nightFeeder";
@@ -165,6 +170,16 @@ DLL_LINKAGE bool vampirismEnabled(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE std::optional<int> vampirismHealBasisPoints(const JsonNode & rules,
 	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower,
 	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0);
+/// Saved-v3 canonical Re-animate identity gate. Older snapshots never acquire
+/// the newly registered Shadow spell from installed content alone.
+DLL_LINKAGE bool reanimateEnabled(const JsonNode & rules, SpellID spell);
+/// True only when the hero has selected Reanimator at its registered rank.
+DLL_LINKAGE bool hasReanimatorPerk(const CGHeroInstance * hero);
+/// Integer Re-animate HP pool, including Reanimator's 25% bonus after
+/// satisfying surviving-unit wounds. School × Spellcraft is kept exact until
+/// the base pool's final HP floor; legacy/non-canonical rows return nullopt.
+DLL_LINKAGE std::optional<int64_t> reanimateHealingPool(const JsonNode & rules,
+	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower, int64_t survivorWounds);
 /// Applies the saved v3 fixed-five Chain Lightning target count while keeping
 /// the configured, mastery-dependent value for legacy/v1/v2 battles.
 DLL_LINKAGE int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configuredTargetCount);

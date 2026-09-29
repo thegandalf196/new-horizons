@@ -1,0 +1,13 @@
+Use case: stylized-concept
+Asset type: original square Heroes III Shadow Magic skill-perk icon master, to be reduced to a 44×44 four-state VCMI perk button and inspected at native size.
+Primary request: portray Reanimator, an Expert Shadow Magic perk that restores 25% more temporary casualties with Re-animate. Show practiced control that returns a larger group to the battle, while remaining species-neutral.
+Scene/backdrop: dark umber and muted oxblood battlefield workshop shadow, closely cropped and quiet.
+Subject: one dominant physical group: a heavy, worn blackened-steel revival clasp with a central amethyst-violet soul stone; three small, intact closed steel helmets rise together in a tight arc on fine silver-violet strands above a compact battered shield. The helmets are plain and face-obscuring, with no species-specific anatomy. Make the clasp and three lifted helmet silhouettes read as a single emblem of a skilled caster bringing more fallen combatants back.
+Style/medium: miniature modeled fantasy still-life painting in late-1990s Western PC fantasy illustration character; rich material realism without photorealism, tactile steel, dark leather and gemstone, softly modeled contours.
+Composition/framing: square 1:1, compact centered composition filling most of the frame with a narrow safe inset; preserve the clear clasp, gemstone, and grouped helmets at 44×44.
+Lighting/mood: theatrical chiaroscuro; warm highlight along one edge of the steel clasp, deep shadow on the opposite side, intense but small violet light at the gem and strands.
+Color palette: aged silver-black steel, muted violet and amethyst, a restrained warm amber glint, dark umber and oxblood.
+Materials/textures: worn polished steel, old dark leather wrapping, a faceted gemstone, scuffed shield metal; distinct surfaces.
+Text (verbatim): none.
+Constraints: purpose-made provisional game art; no external or game-asset imitation; no text, readable runes, lettering, border, frame, interface chrome, watermark, or logo.
+Avoid: skeletons, bones, skulls, corpses, rot, zombies, tombstones, grave markers, ghost faces, fangs, horns, wings, species-specific anatomy, a human hand or visible creature face, extra characters, scattered particles, flat vectors, cartoon outlines, deliberate pixel art, dithering, plastic gloss, neon bloom, modern mobile-game gradients.

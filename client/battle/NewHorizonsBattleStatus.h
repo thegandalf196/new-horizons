@@ -39,6 +39,7 @@ inline constexpr std::string_view SHADOW_GIFT_SPELL_KEY = "new-horizons:shadowGi
 inline constexpr std::string_view SHADOW_GIFT_TRIGGER_KEY = "core:shadowGift";
 inline constexpr std::string_view VAMPIRISM_SPELL_KEY = "new-horizons:vampirism";
 inline constexpr std::string_view VAMPIRISM_TRIGGER_KEY = "core:vampirism";
+inline constexpr std::string_view REANIMATE_SPELL_KEY = "new-horizons:reanimate";
 
 inline bool isRegeneration(std::string_view spellKey)
 {
@@ -53,6 +54,11 @@ inline bool isShadowGift(std::string_view spellKey)
 inline bool isVampirism(std::string_view spellKey)
 {
 	return spellKey == VAMPIRISM_SPELL_KEY;
+}
+
+inline bool isReanimate(std::string_view spellKey)
+{
+	return spellKey == REANIMATE_SPELL_KEY;
 }
 
 inline bool isTimeStop(std::string_view spellKey)
@@ -168,6 +174,15 @@ struct VampirismStatus
 
 	bool operator==(const VampirismStatus &) const = default;
 };
+
+inline std::string temporaryCreatureTooltip(int32_t remainingCount)
+{
+	const auto count = std::max<int32_t>(0, remainingCount);
+	std::string result = "Temporary\n" + std::to_string(count)
+		+ (count == 1 ? " temporary creature remains in this stack." : " temporary creatures remain in this stack.");
+	result += "\nThey fight normally during this battle and disappear when the battle ends.";
+	return result;
+}
 
 inline std::string formatBasisPoints(int64_t basisPoints);
 inline std::string roundsRemaining(int rounds);
@@ -375,6 +390,7 @@ struct StackInfoStatusSnapshot
 {
 	DefendStatus defend;
 	PhysicalPoisonStatus physicalPoison;
+	TemporaryCreatureStatus temporaryCreatures;
 	RegenerationStatus regeneration;
 	ShadowGiftStatus shadowGift;
 	VampirismStatus vampirism;

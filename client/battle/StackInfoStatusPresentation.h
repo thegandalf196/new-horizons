@@ -43,6 +43,23 @@ struct RegenerationStatus
 	bool operator==(const RegenerationStatus &) const = default;
 };
 
+struct TemporaryCreatureStatus
+{
+	int32_t remainingCount = 0;
+
+	bool active() const
+	{
+		return remainingCount > 0;
+	}
+
+	bool operator==(const TemporaryCreatureStatus &) const = default;
+};
+
+inline TemporaryCreatureStatus makeTemporaryCreatureStatus(int32_t resurrectedCount)
+{
+	return {std::max<int32_t>(0, resurrectedCount)};
+}
+
 inline PhysicalPoisonStatus makePhysicalPoisonStatus(int64_t baseDamage, int32_t activationsRemaining, int64_t nextTickDamage)
 {
 	if(baseDamage <= 0 || activationsRemaining <= 0 || nextTickDamage <= 0)
@@ -55,6 +72,7 @@ enum class StackStatusIconKind
 {
 	TIME_STOP,
 	SPELL_LOCK,
+	TEMPORARY_CREATURES,
 	VAMPIRISM,
 	PHYSICAL_POISON,
 	REGENERATION,
@@ -78,6 +96,7 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 		case StackStatusIconKind::TIME_STOP: return 0;
 		case StackStatusIconKind::SPELL_LOCK: return 1;
 		case StackStatusIconKind::VAMPIRISM: return 2;
+		case StackStatusIconKind::TEMPORARY_CREATURES: return 2;
 		case StackStatusIconKind::PHYSICAL_POISON: return 3;
 		case StackStatusIconKind::REGENERATION: return 4;
 		case StackStatusIconKind::SHADOW_GIFT_BUFF: return 5;

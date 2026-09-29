@@ -471,6 +471,7 @@
 						"schools": [
 							"new-horizons:shadow"
 						],
+						"active": false,
 						"level": 3,
 						"costs": [
 							12,
@@ -676,6 +677,18 @@
 							15,
 							15,
 							15
+						]
+					},
+					"new-horizons:reanimate": {
+						"schools": [
+							"new-horizons:shadow"
+						],
+						"level": 4,
+						"costs": [
+							16,
+							16,
+							16,
+							16
 						]
 					},
 					"new-horizons:holyWrath": {
@@ -4021,7 +4034,7 @@
 								"requires": "expert",
 								"description": "Re-animate restores 25% more temporary casualties.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Re-animate restores 25% more temporary casualties."
 								}
 							},
@@ -8829,6 +8842,8 @@
 		"new-horizons.combat.spellLock.preserveHostile": "Spell Lock seals %s for %d rounds, removing beneficial magic and preserving its hostile magic. Its existing magic is frozen for the duration; no further magic can affect it, but Orders still can.",
 		"new-horizons.combat.lifeDrain.healed": "Life Drain restores %d health to %s.",
 		"new-horizons.combat.vampirism.healed": "Vampirism restores %d health to %s.",
+		"new-horizons.combat.reanimate.restored": "Re-animate restores %d health and %d temporary creatures to %s. They disappear after battle.",
+		"new-horizons.combat.reanimate.healed": "Re-animate heals %d health on %s; no creatures are restored.",
 		"new-horizons.combat.physicalPoison.label": "Physical Poison",
 		"new-horizons.combat.physicalPoison.tooltip": "%LABEL\nNext real activation tick: %DAMAGE physical damage.\n%ACTIVATIONS real activations remaining.",
 		"new-horizons.combat.physicalPoison.hiddenEffects": "%COUNT additional active effects are not shown.",

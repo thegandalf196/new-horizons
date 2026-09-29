@@ -20,6 +20,7 @@ class CPlayerBattleCallback;
 class CLabel;
 class CMultiLineLabel;
 class CAnimImage;
+class CPicture;
 class LRClickableAreaWText;
 
 class StackInfoBasicPanel : public BattleSidePanel
@@ -30,6 +31,7 @@ private:
 	std::vector<std::shared_ptr<CLabel>> labels;
 	std::vector<std::shared_ptr<CMultiLineLabel>> labelsMultiline;
 	std::vector<std::shared_ptr<CAnimImage>> icons;
+	std::vector<std::shared_ptr<CPicture>> temporaryCreatureIcons;
 	std::vector<std::shared_ptr<LRClickableAreaWText>> statusTooltips;
 	std::shared_ptr<CPlayerBattleCallback> battleCallback;
 	newHorizonsBattleStatus::StackInfoStatusSnapshot displayedStatus;

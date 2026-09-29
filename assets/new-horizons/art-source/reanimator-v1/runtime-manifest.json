@@ -1,0 +1,19 @@
+{
+  "method": "homm3-art high-resolution master, LANCZOS reduction, brightness/color-only runtime states",
+  "status": "provisional; not final user-approved artwork",
+  "assets": [
+    "NH_perk_reanimator"
+  ],
+  "files": {
+    "source/NH_perk_reanimator_normal.png": "60e0026297333fa0c77d845e68968c85e1addba4b904e3f00f0d29182ffda887",
+    "Mods/NH_perk_reanimator_normal.png": "60e0026297333fa0c77d845e68968c85e1addba4b904e3f00f0d29182ffda887",
+    "source/NH_perk_reanimator_pressed.png": "4021fc1be1bd2834a0515a668c18274082f1a58c90639e6f159f5417997083b0",
+    "Mods/NH_perk_reanimator_pressed.png": "4021fc1be1bd2834a0515a668c18274082f1a58c90639e6f159f5417997083b0",
+    "source/NH_perk_reanimator_disabled.png": "6b98e13134b1a9033266eaa5fc04ffe702802500ab5e72a262b74c6525026cef",
+    "Mods/NH_perk_reanimator_disabled.png": "6b98e13134b1a9033266eaa5fc04ffe702802500ab5e72a262b74c6525026cef",
+    "source/NH_perk_reanimator_highlighted.png": "0d98321aa9e6c406d1bf3782bcd0ab748e958c0485c1ba456e9fc47897b99692",
+    "Mods/NH_perk_reanimator_highlighted.png": "0d98321aa9e6c406d1bf3782bcd0ab748e958c0485c1ba456e9fc47897b99692",
+    "source/NH_perk_reanimator.json": "405e215ebc48e7930fdea005c64fc43423ee81ca81b1267a17aa578d3d9e2c6c",
+    "Mods/NH_perk_reanimator.json": "405e215ebc48e7930fdea005c64fc43423ee81ca81b1267a17aa578d3d9e2c6c"
+  }
+}

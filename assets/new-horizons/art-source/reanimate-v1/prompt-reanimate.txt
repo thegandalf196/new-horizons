@@ -1,0 +1,13 @@
+Use case: stylized-concept
+Asset type: original square Heroes III Shadow battle-spell icon master, to be reduced into 44×44 spellbook, 32×32 scroll/scenario, and 30×30 battle-effect/immunity images.
+Primary request: portray the canonical Re-animate spell: Shadow magic temporarily returns a fallen combatant to the current battle. The image must be species-neutral and must not imply that only Undead can return.
+Scene/backdrop: close-cropped, shadowed battlefield rubble in dark umber and muted oxblood, with no graveyard or tomb.
+Subject: one large, generic fully armored combatant rising from a fallen kneeling position, face hidden by a plain closed steel helm. A compact indigo-violet current of shadow magic rises from the rubble through a warm amber soul-light at the chest and lifts an intact shield and gauntlet back into a ready pose. Keep armor complete and clean enough to suggest a combatant restored to action, not a corpse or newly created creature. Use no anatomy, costume, or silhouette that identifies a human, elf, orc, animal, or any one creature species.
+Style/medium: miniature modeled fantasy still-life painting in late-1990s Western PC fantasy illustration character; rich material realism without photorealism; soft contours formed by painted values and light, not hard outlines.
+Composition/framing: square 1:1, close, one integrated central silhouette filling most of the frame with a narrow safe inset; major shapes simple enough to remain legible when reduced to 30 pixels.
+Lighting/mood: theatrical chiaroscuro, warm bright highlights on one side of aged steel and a small amber chest-glow, deep shadow on the other side; magical light localized, not a broad neon bloom.
+Color palette: restrained indigo-violet and silver-blue magic, aged steel, small amber-gold soul light, earthy umber and oxblood.
+Materials/textures: worn polished steel, dark leather straps, scuffed shield, finely modeled rubble.
+Text (verbatim): none.
+Constraints: purpose-made provisional game art; no external or game-asset imitation; no text, readable runes, lettering, border, frame, interface chrome, watermark, logo, or scenario UI.
+Avoid: skeletons, bones, skulls, exposed dead flesh, rot, zombies, tombstones, grave markers, ghost-only wisps, fangs, horns, wings, species-specific anatomy, extra characters, scattered particle clouds, flat vectors, cartoon outlines, deliberate pixel art, dithering, plastic gloss, modern mobile-game gradients.

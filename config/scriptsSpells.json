@@ -187,6 +187,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"reanimateEffect" : {
+		"implements" : "spellEffect",
+		"script" : "spells/reanimate",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"frailtyEffect" : {
 		"implements" : "spellEffect",
 		"script" : "spells/frailty",

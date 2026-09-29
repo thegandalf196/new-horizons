@@ -130,6 +130,11 @@ SpellID vampirismSpell()
 	return SpellID(SpellID::decode(std::string(newHorizonsMagic::SHADOW_VAMPIRISM_SPELL)));
 }
 
+SpellID reanimateSpell()
+{
+	return SpellID(SpellID::decode(std::string(newHorizonsMagic::SHADOW_REANIMATE_SPELL)));
+}
+
 void addVampirismStatus(CStack * target, SpellID spell, int healBasisPoints, int turns)
 {
 	if(!target)
@@ -315,6 +320,23 @@ protected:
 		attackerSideHero->setSecSkillLevel(SecondarySkill(shadowMagicId), MasteryLevel::EXPERT,
 			ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+	}
+
+	void prepareReanimateCaster()
+	{
+		ASSERT_NO_FATAL_FAILURE(startGame());
+		const auto reanimate = reanimateSpell();
+		ASSERT_NE(reanimate, SpellID::NONE);
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		for(const auto known : attackerSideHero->getSpellsInSpellbook())
+			attackerSideHero->removeSpellFromSpellbook(known);
+		attackerSideHero->addSpellToSpellbook(reanimate);
+		const auto shadowMagicId = SecondarySkill::decode(std::string(newHorizonsMagic::SHADOW_MAGIC_SKILL));
+		ASSERT_GE(shadowMagicId, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(shadowMagicId), MasteryLevel::EXPERT,
+			ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(attackerSideHero, 1000);
 	}
 };
@@ -4906,6 +4928,220 @@ TEST_F(NewHorizonsMagicAITest, MaledictionMakesSorrowAIValueItsProjectedExtraRou
 		<< "AI uses the projected Sorrow penalty and duration rather than reimplementing either formula";
 	EXPECT_EQ(sorrowMoraleBonus(hostile), nullptr)
 		<< "hypothetical casts must not mutate the live battle";
+}
+
+TEST_F(NewHorizonsMagicAITest, ReanimateAICastsForUsableCasualtiesAndProjectsTemporaryHealing)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	useSavedPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareReanimateCaster());
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsMagic::SHADOW_MAGIC_SKILL),
+		"new-horizons:shadowMagic.malediction"});
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsMagic::SHADOW_MAGIC_SKILL),
+		std::string(newHorizonsMagic::SHADOW_NIGHT_FEEDER_PERK)});
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsMagic::SHADOW_MAGIC_SKILL),
+		std::string(newHorizonsMagic::SHADOW_REANIMATOR_PERK)});
+	ASSERT_TRUE(newHorizonsMagic::hasReanimatorPerk(attackerSideHero));
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * casualties = addStack(BattleSide::ATTACKER,
+		creatureByName("core:ogre"), BattleHex(3, 5), 100);
+	auto * fullHealthAlly = addStack(BattleSide::ATTACKER,
+		creatureByName("core:peasant"), BattleHex(3, 7), 1);
+	auto * usableRemains = addStack(BattleSide::ATTACKER,
+		creatureByName("core:ogre"), BattleHex(2, 6), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER,
+		creatureByName("core:peasant"), BattleHex(12, 5), 1);
+	ASSERT_NE(casualties, nullptr);
+	ASSERT_NE(fullHealthAlly, nullptr);
+	ASSERT_NE(usableRemains, nullptr);
+	ASSERT_NE(enemy, nullptr);
+
+	const auto maxHealth = casualties->getMaxHealth();
+	int64_t damage = 30LL * maxHealth + 37;
+	auto damagedState = casualties->acquireState();
+	damagedState->damage(damage);
+	ASSERT_TRUE(damagedState->alive());
+	BattleUnitsChanged injury;
+	injury.battleID = BattleID(0);
+	injury.changedStacks.emplace_back(casualties->unitId(), UnitChanges::EOperation::UPDATE);
+	injury.changedStacks.back().data = damagedState->save();
+	injury.changedStacks.back().healthDelta = -damage;
+	gameHandler->sendAndApply(injury);
+
+	const auto remainsMaxHealth = usableRemains->getMaxHealth();
+	auto remainsState = usableRemains->acquireState();
+	int64_t lethalDamage = usableRemains->getAvailableHealth();
+	remainsState->damage(lethalDamage);
+	ASSERT_FALSE(remainsState->alive());
+	ASSERT_EQ(remainsState->getUnusableRemains(), 0);
+	BattleUnitsChanged kill;
+	kill.battleID = BattleID(0);
+	kill.changedStacks.emplace_back(usableRemains->unitId(), UnitChanges::EOperation::UPDATE);
+	kill.changedStacks.back().data = remainsState->save();
+	kill.changedStacks.back().healthDelta = -lethalDamage;
+	gameHandler->sendAndApply(kill);
+	ASSERT_FALSE(usableRemains->alive());
+	ASSERT_EQ(usableRemains->getUnusableRemains(), 0);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -casualties->getMovementRange();
+	casualties->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = casualties->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto spell = reanimateSpell();
+	ASSERT_TRUE(newHorizonsMagic::reanimateEnabled(battle()->getMagicRules(), spell));
+	const auto healthBefore = casualties->getAvailableHealth();
+	const auto countBefore = casualties->getCount();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto survivorWounds = std::max<int64_t>(0, maxHealth - casualties->getFirstHPleft());
+	const auto rawSpellPower = attackerSideHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+	const auto expectedHealing = newHorizonsMagic::reanimateHealingPool(battle()->getMagicRules(),
+		attackerSideHero, spell, rawSpellPower, survivorWounds);
+	ASSERT_TRUE(expectedHealing);
+	ASSERT_GT(casualties->getTotalHealth() - healthBefore, *expectedHealing);
+	spells::BattleCast targetCast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto targetMechanics = spell.toSpell()->battleMechanics(&targetCast);
+	const auto viableTargets = SpellTargetEvaluator::getViableTargets(targetMechanics.get());
+	EXPECT_TRUE(vstd::contains_if(viableTargets, [&](const spells::Target & target)
+	{
+		return !target.empty() && target.front().unitValue
+			&& target.front().unitValue->unitId() == usableRemains->unitId();
+	})) << "Re-animate must preserve exact targets for dead stacks with usable remains";
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, casualties, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(casualties);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(casualties))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(action.spell, spell);
+	const auto selected = action.getTarget(battle());
+	ASSERT_EQ(selected.size(), 1u);
+	ASSERT_NE(selected.front().unitValue, nullptr);
+	EXPECT_EQ(selected.front().unitValue->unitId(), casualties->unitId())
+		<< "the full-health ally is not a legal Re-animate recipient";
+	EXPECT_EQ(casualties->getAvailableHealth(), healthBefore)
+		<< "AI valuation must not heal the live stack";
+	EXPECT_EQ(casualties->getCount(), countBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+
+	// Run the same cast on a detached battle state to prove the engine-provided
+	// healing pool (including Reanimator after survivor wounds) is what AI can
+	// observe, while the accepted live state remains untouched.
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto projectedCasualties = projected->getForUpdate(casualties->unitId());
+	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto mechanics = spell.toSpell()->battleMechanics(&cast);
+	const spells::Target target{spells::Destination(projectedCasualties.get())};
+	ASSERT_TRUE(mechanics->canBeCastAt(target));
+	mechanics->castEval(projected->getServerCallback(), target);
+	EXPECT_EQ(projectedCasualties->getAvailableHealth() - healthBefore, *expectedHealing);
+	EXPECT_GT(projectedCasualties->getCount(), countBefore);
+	EXPECT_EQ(projectedCasualties->health.getResurrected(),
+		projectedCasualties->getCount() - countBefore)
+		<< "restored creatures are temporary and must remain in the one-battle resurrection ledger";
+
+	// Dead stacks with usable remains follow the same generic hypothetical path;
+	// they are not converted into permanent army survivors.
+	auto projectedRemainsBattle = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	auto projectedRemains = projectedRemainsBattle->getForUpdate(usableRemains->unitId());
+	spells::BattleCast remainsCast(projectedRemainsBattle.get(), attackerSideHero,
+		spells::Mode::HERO, spell.toSpell());
+	const auto remainsMechanics = spell.toSpell()->battleMechanics(&remainsCast);
+	const spells::Target remainsTarget{spells::Destination(projectedRemains.get())};
+	ASSERT_TRUE(remainsMechanics->canBeCastAt(remainsTarget));
+	remainsMechanics->castEval(projectedRemainsBattle->getServerCallback(), remainsTarget);
+	EXPECT_EQ(projectedRemains->getCount(), 1);
+	EXPECT_EQ(projectedRemains->getAvailableHealth(), remainsMaxHealth);
+	EXPECT_EQ(projectedRemains->health.getResurrected(), 1)
+		<< "a dead eligible stack is restored as a temporary one-battle casualty";
+	EXPECT_FALSE(usableRemains->alive());
+	EXPECT_EQ(usableRemains->getAvailableHealth(), 0);
+	EXPECT_EQ(casualties->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+}
+
+TEST_F(NewHorizonsMagicAITest, ReanimateAIDoesNotOfferFullHealthOrUnusableRemains)
+{
+	useCommands = false;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareReanimateCaster());
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * fullHealthAlly = addStack(BattleSide::ATTACKER,
+		creatureByName("core:pikeman"), BattleHex(3, 5), 2);
+	auto * noRemains = addStack(BattleSide::ATTACKER,
+		creatureByName("core:ogre"), BattleHex(3, 7), 2);
+	auto * enemy = addStack(BattleSide::DEFENDER,
+		creatureByName("core:peasant"), BattleHex(12, 5), 1);
+	ASSERT_NE(fullHealthAlly, nullptr);
+	ASSERT_NE(noRemains, nullptr);
+	ASSERT_NE(enemy, nullptr);
+
+	auto destroyedState = noRemains->acquireState();
+	int64_t lethalDamage = noRemains->getAvailableHealth();
+	destroyedState->damage(lethalDamage, true);
+	ASSERT_FALSE(destroyedState->alive());
+	ASSERT_EQ(destroyedState->getUnusableRemains(), noRemains->unitBaseAmount());
+	BattleUnitsChanged destroy;
+	destroy.battleID = BattleID(0);
+	destroy.changedStacks.emplace_back(noRemains->unitId(), UnitChanges::EOperation::UPDATE);
+	destroy.changedStacks.back().data = destroyedState->save();
+	destroy.changedStacks.back().healthDelta = -lethalDamage;
+	gameHandler->sendAndApply(destroy);
+	ASSERT_EQ(noRemains->getUnusableRemains(), noRemains->unitBaseAmount());
+
+	const auto spell = reanimateSpell();
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto mechanics = spell.toSpell()->battleMechanics(&cast);
+	EXPECT_TRUE(SpellTargetEvaluator::getViableTargets(mechanics.get()).empty())
+		<< "full-health stacks have no healing need and disintegrated/no-remains casualties cannot be restored";
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -fullHealthAlly->getMovementRange();
+	fullHealthAlly->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = fullHealthAlly->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, fullHealthAlly, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(fullHealthAlly);
+	EXPECT_FALSE(evaluator.attemptCastingSpell(fullHealthAlly))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	EXPECT_TRUE(callback->submitted.empty());
 }
 
 TEST_F(NewHorizonsMagicAITest, VampirismAIChoosesWoundedAttackerWithForecastDamage)

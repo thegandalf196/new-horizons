@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-29",
+  "generator": "OpenAI built-in image generator via homm3-art skill",
+  "method": "Original generated raster artwork. The retained master is reduced with homm3-art export_art.py; runtime button states use brightness/color-only transforms.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "style_guide": "homm3-art/references/style-guide.md (secondary-skill/perk icons)",
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32],
+    "resampling": "LANCZOS",
+    "runtime_normal_size": [44, 44],
+    "runtime_states": ["normal", "pressed", "disabled", "highlighted"]
+  },
+  "assets": [
+    {
+      "id": "new-horizons:shadowMagic.reanimator",
+      "name": "Reanimator",
+      "key": "NH_perk_reanimator",
+      "master": "master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "902c59ff4941b1e32476321eb7718a843bb6b26523eacba5fdf4c44be504f80d",
+      "style_reference": null,
+      "prompt_file": "prompt-reanimator.txt",
+      "generated_output_id": "01a0eca9-df6f-7691-98fa-7b4a8b5785be/exec-25442ee1-aa0c-4d1f-8fe2-bf27e3e11f84.png",
+      "concept": "A practiced Shadow caster's revival clasp gathers three intact, species-neutral combatant helms above a small shield, evoking the Re-animate perk restoring a larger group."
+    }
+  ]
+}

@@ -94,6 +94,7 @@
 			"schools": [
 				"new-horizons:shadow"
 			],
+			"active": false,
 			"level": 3,
 			"costs": [
 				12,
@@ -251,6 +252,11 @@
 			"schools": ["new-horizons:shadow"],
 			"level": 4,
 			"costs": [15, 15, 15, 15]
+		},
+		"new-horizons:reanimate": {
+			"schools": ["new-horizons:shadow"],
+			"level": 4,
+			"costs": [16, 16, 16, 16]
 		},
 		"new-horizons:holyWrath": {
 			"schools": ["new-horizons:light"],

@@ -132,6 +132,12 @@ bool isCanonicalVampirism(const CBattleInfoCallback & battle, const CSpell * spe
 		&& newHorizonsMagic::vampirismEnabled(battle.getBattle()->getMagicRules(), spell->getId());
 }
 
+bool isCanonicalReanimate(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_REANIMATE_SPELL
+		&& newHorizonsMagic::reanimateEnabled(battle.getBattle()->getMagicRules(), spell->getId());
+}
+
 bool isCanonicalHexOfPain(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsHexOfPainAI::SPELL_ID;
@@ -2230,14 +2236,21 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	LOGFL("I can cast %d spells.", possibleSpells.size());
 
-	vstd::erase_if(possibleSpells, [](const SpellOption & option)
+	const auto battleCallback = cb->getBattle(battleID);
+	vstd::erase_if(possibleSpells, [&](const SpellOption & option)
 	{
-		return spellType(option.spell) != SpellTypes::BATTLE && !isCounterspell(option.spell);
+		if(spellType(option.spell) != SpellTypes::BATTLE && !isCounterspell(option.spell))
+			return true;
+
+		// A New Horizons spell may be present in installed content when evaluating
+		// a legacy battle. Do not let that content leak into the saved roster's AI
+		// decisions; the authoritative cast path uses the same saved-v3 identity gate.
+		return option.spell && option.spell->getJsonKey() == newHorizonsMagic::SHADOW_REANIMATE_SPELL
+			&& !isCanonicalReanimate(*battleCallback, option.spell);
 	});
 
 	LOGFL("I know how %d of them works.", possibleSpells.size());
 
-	const auto battleCallback = cb->getBattle(battleID);
 	const bool hasHolyArmor = std::any_of(possibleSpells.begin(), possibleSpells.end(), [](const SpellOption & option)
 	{
 		return isCanonicalHolyArmor(option.spell);

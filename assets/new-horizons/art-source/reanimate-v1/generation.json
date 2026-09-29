@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "generated": "2026-09-29",
+  "generator": "OpenAI built-in image generator via homm3-art skill",
+  "method": "Original generated raster artwork. The retained master is reduced with homm3-art export_art.py using LANCZOS.",
+  "status": "provisional; not final user-approved artwork",
+  "license": "CC0-1.0",
+  "style_references": [],
+  "style_guide": "homm3-art/references/style-guide.md (spell icons)",
+  "export": {
+    "helper": "homm3-art/scripts/export_art.py",
+    "sizes": [44, 32, 30],
+    "resampling": "LANCZOS",
+    "runtime_files": [
+      "NH_spell_reanimate_44.png",
+      "NH_spell_reanimate_32.png",
+      "NH_spell_reanimate_30.png"
+    ]
+  },
+  "assets": [
+    {
+      "id": "new-horizons:reanimate",
+      "name": "Re-animate",
+      "key": "NH_spell_reanimate",
+      "master": "master.png",
+      "dimensions": [1254, 1254],
+      "source_sha256": "4bae108e831dfa6917ab58179c543e24f8d55a13c8aff4ada0df01624898ffea",
+      "style_reference": null,
+      "prompt_file": "prompt-reanimate.txt",
+      "generated_output_id": "01a0eca9-df6f-7691-98fa-7b4a8b5785be/exec-0f122937-d760-48ad-b05c-9716b1ebfdcd.png",
+      "concept": "A generic intact armored combatant is raised from the battlefield by concentrated violet Shadow magic, with a warm chest-light and shield signaling return to the current fight rather than Undead creation."
+    }
+  ]
+}

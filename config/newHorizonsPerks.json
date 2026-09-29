@@ -1311,7 +1311,7 @@
 					"requires": "expert",
 					"description": "Re-animate restores 25% more temporary casualties.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Re-animate restores 25% more temporary casualties."
 					}
 				},

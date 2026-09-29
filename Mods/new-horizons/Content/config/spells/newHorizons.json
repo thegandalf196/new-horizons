@@ -1592,6 +1592,78 @@
 		},
 		"targetCondition" : {}
 	},
+	"reanimate" : {
+		"name" : "Re-animate",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:shadow" : true
+		},
+		"level" : 4,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "NH_spell_reanimate_44.png",
+			"iconScroll" : "NH_spell_reanimate_32.png",
+			"iconEffect" : "NH_spell_reanimate_30.png",
+			"iconImmune" : "NH_spell_reanimate_30.png",
+			"iconScenarioBonus" : "NH_spell_reanimate_32.png"
+		},
+		"animation" : {
+			"affect" : [{ "defName" : "C01SPE0", "transparency" : 0.5 }]
+		},
+		"sounds" : {
+			"cast" : "ANIMDEAD"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Heals one friendly stack and temporarily restores creatures from usable remains, regardless of species. Restored creatures fight normally but disappear after battle. Healing is 220 + 5 x raw Spell Power; Shadow School rank strengthens the Spell Power term. Reanimator restores 25% more temporary casualties.",
+				"cost" : 16,
+				"power" : 0,
+				"battleEffects" : {
+					"reanimate" : {"type" : "core:reanimateEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Heals one friendly stack and temporarily restores creatures from usable remains, regardless of species. Restored creatures fight normally but disappear after battle. Healing is 220 + 5 x raw Spell Power; Shadow School rank strengthens the Spell Power term. Reanimator restores 25% more temporary casualties.",
+				"cost" : 16,
+				"power" : 0,
+				"battleEffects" : {
+					"reanimate" : {"type" : "core:reanimateEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Heals one friendly stack and temporarily restores creatures from usable remains, regardless of species. Restored creatures fight normally but disappear after battle. Healing is 220 + 5 x raw Spell Power; Shadow School rank strengthens the Spell Power term. Reanimator restores 25% more temporary casualties.",
+				"cost" : 16,
+				"power" : 0,
+				"battleEffects" : {
+					"reanimate" : {"type" : "core:reanimateEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Heals one friendly stack and temporarily restores creatures from usable remains, regardless of species. Restored creatures fight normally but disappear after battle. Healing is 220 + 5 x raw Spell Power; Shadow School rank strengthens the Spell Power term. Reanimator restores 25% more temporary casualties.",
+				"cost" : 16,
+				"power" : 0,
+				"battleEffects" : {
+					"reanimate" : {"type" : "core:reanimateEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {
+			"rising" : true,
+			"positive" : true
+		},
+		"targetCondition" : {}
+	},
 	"frailty" : {
 		"name" : "Frailty",
 		"type" : "combat",

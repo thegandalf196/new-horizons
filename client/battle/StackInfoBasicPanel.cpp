@@ -165,6 +165,8 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	result.defend = currentDefendStatus(stack, battleCallback);
 	if(stack)
 	{
+		result.temporaryCreatures = newHorizonsBattleStatus::makeTemporaryCreatureStatus(
+			stack->health.getResurrected());
 		result.shadowGift.maximumHealthLost = stack->getShadowGiftMaximumHealthLost();
 		result.physicalPoison = newHorizonsBattleStatus::makePhysicalPoisonStatus(
 			stack->physicalPoisonBaseDamage,
@@ -447,6 +449,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	std::vector<SpellID> spells = stack->activeSpells();
 	std::vector<StackStatusEntry> statusEntries;
 	std::vector<newHorizonsBattleStatus::StackStatusIconKind> statusKinds;
+	std::size_t hiddenReanimateSpellEffects = 0;
 	for(const auto effect : spells)
 	{
 		//not all effects have graphics (for eg. Acid Breath)
@@ -455,6 +458,14 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 
 		if(!hasGraphics)
 			continue;
+		const auto * spell = effect.toSpell();
+		if(spell && newHorizonsBattleStatus::isReanimate(spell->getJsonKey()))
+		{
+			// One-battle resurrected creatures are shown once as a generic temporary
+			// count below, rather than as both a spell and a creature-status icon.
+			++hiddenReanimateSpellEffects;
+			continue;
+		}
 		const auto kind = statusIconKind(effect);
 		statusEntries.push_back({kind, effect});
 		statusKinds.push_back(kind);
@@ -471,7 +482,16 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		statusEntries.push_back({newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_CAP, std::nullopt});
 		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_CAP);
 	}
-	const auto totalEffectCount = spells.size() + (physicalPoison.active() ? 1 : 0)
+	const auto temporaryCreatures = displayedStatus.temporaryCreatures;
+	if(temporaryCreatures.active())
+	{
+		const StackStatusEntry temporaryEntry{
+			newHorizonsBattleStatus::StackStatusIconKind::TEMPORARY_CREATURES, std::nullopt};
+		statusEntries.insert(statusEntries.begin(), temporaryEntry);
+		statusKinds.insert(statusKinds.begin(), newHorizonsBattleStatus::StackStatusIconKind::TEMPORARY_CREATURES);
+	}
+	const auto totalEffectCount = spells.size() - hiddenReanimateSpellEffects
+		+ (temporaryCreatures.active() ? 1 : 0) + (physicalPoison.active() ? 1 : 0)
 		+ (displayedStatus.shadowGift.hasMaximumHealthLoss() ? 1 : 0);
 	const auto displayPlan = newHorizonsBattleStatus::stackStatusDisplayPlan(statusKinds, totalEffectCount);
 	int printed = 0;
@@ -503,6 +523,22 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 				ETextAlignment::BOTTOMRIGHT, Colors::YELLOW,
 				"-" + TextOperations::formatMetric(displayedStatus.shadowGift.maximumHealthLost, 4)));
 			const auto tooltip = newHorizonsBattleStatus::shadowGiftCapTooltip(displayedStatus.shadowGift);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+			++printed;
+			continue;
+		}
+		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::TEMPORARY_CREATURES)
+		{
+			// Use the authored Re-animate art at its 30px battle-status size, centered
+			// in the existing SpellInt slot. The count and generic label explain the
+			// shared one-battle resurrection state without inventing a new frame.
+			temporaryCreatureIcons.push_back(std::make_shared<CPicture>(
+				ImagePath::builtin("NH_spell_reanimate_30.png"), Point(slotX + 9, slotY + 3)));
+			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
+				ETextAlignment::BOTTOMRIGHT, Colors::WHITE,
+				TextOperations::formatMetric(temporaryCreatures.remainingCount, 4)));
+			const auto tooltip = newHorizonsBattleStatus::temporaryCreatureTooltip(
+				temporaryCreatures.remainingCount);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 			++printed;
 			continue;
@@ -616,7 +652,8 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		++printed;
 	}
 
-	if(spells.empty() && !physicalPoison.active() && !displayedStatus.shadowGift.hasMaximumHealthLoss())
+	if(spells.size() == hiddenReanimateSpellEffects && !temporaryCreatures.active()
+		&& !physicalPoison.active() && !displayedStatus.shadowGift.hasMaximumHealthLoss())
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x, firstPos.y, 48, 36), EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[674]));
 	if(displayPlan.ellipsisUsesSlot)
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x + offset.x * 2, firstPos.y + offset.y * 2 - 4, 48, 36), EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "..."));
@@ -635,6 +672,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 void StackInfoBasicPanel::update(const CStack * updatedInfo)
 {
 	icons.clear();
+	temporaryCreatureIcons.clear();
 	labels.clear();
 	labelsMultiline.clear();
 	statusTooltips.clear();

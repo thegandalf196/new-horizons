@@ -371,6 +371,63 @@ std::optional<int> vampirismHealBasisPoints(const JsonNode & rules, const CGHero
 		baseHealBasisPoints + VAMPIRISM_NIGHT_FEEDER_BONUS_BASIS_POINTS);
 }
 
+bool reanimateEnabled(const JsonNode & rules, const SpellID spell)
+{
+	const auto * definition = spell.toSpell();
+	if(!definition || definition->getJsonKey() != SHADOW_REANIMATE_SPELL || !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !rules["spells"].isStruct())
+		return false;
+
+	const auto found = rules["spells"].Struct().find(std::string(SHADOW_REANIMATE_SPELL));
+	if(found == rules["spells"].Struct().end() || !found->second.isStruct())
+		return false;
+
+	const auto & row = found->second;
+	if(!integer(row["level"], 4, 4)
+		|| !row["schools"].isVector() || row["schools"].Vector().size() != 1
+		|| !row["schools"].Vector().front().isString()
+		|| row["schools"].Vector().front().String() != "new-horizons:shadow"
+		|| !row["costs"].isVector() || row["costs"].Vector().size() != 4
+		|| (!row["active"].isNull() && !row["active"].isBool())
+		|| !spellAllowedBySavedRoster(rules, spell))
+		return false;
+
+	for(const auto & cost : row["costs"].Vector())
+		if(!integer(cost, 16, 16))
+			return false;
+
+	return true;
+}
+
+bool hasReanimatorPerk(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SHADOW_MAGIC_SKILL), std::string(SHADOW_REANIMATOR_PERK));
+}
+
+std::optional<int64_t> reanimateHealingPool(const JsonNode & rules, const CGHeroInstance * hero,
+	const SpellID spell, const int32_t rawSpellPower, const int64_t survivorWounds)
+{
+	if(!reanimateEnabled(rules, spell))
+		return std::nullopt;
+	if(rawSpellPower < 0 || survivorWounds < 0)
+		throw std::invalid_argument("Invalid Re-animate healing-pool input");
+
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell);
+	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		static_cast<int64_t>(REANIMATE_SPELL_POWER_HP_PER_POINT) * rawSpellPower, 1,
+		coefficientBasisPoints);
+	const int64_t basePool = REANIMATE_BASE_HEALING_HP + scaledPowerTerm;
+	if(!hasReanimatorPerk(hero))
+		return basePool;
+
+	// The ordinary pool first repairs the one partially wounded survivor. The
+	// perk only increases HP still available to restore casualties and rounds
+	// that bonus down once at integral battle HP precision.
+	const int64_t remainingAfterSurvivorWounds = std::max<int64_t>(0, basePool - survivorWounds);
+	return basePool + remainingAfterSurvivorWounds / (100 / REANIMATOR_BONUS_PERCENT);
+}
+
 bool curseRulesEnabled(const JsonNode & rules, const SpellID spell)
 {
 	constexpr std::array<int, 4> expectedCosts{4, 4, 3, 3};
