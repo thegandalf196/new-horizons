@@ -140,6 +140,11 @@ SpellID soulReaperSpell()
 	return SpellID(SpellID::decode(std::string(newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL)));
 }
 
+SpellID doomSpell()
+{
+	return SpellID(SpellID::decode(std::string(newHorizonsMagic::SHADOW_DOOM_SPELL)));
+}
+
 void addVampirismStatus(CStack * target, SpellID spell, int healBasisPoints, int turns)
 {
 	if(!target)
@@ -368,6 +373,11 @@ class NewHorizonsDenseMagicAITest : public NewHorizonsMagicAITest, public ::test
 };
 
 class NewHorizonsLegacySorrowAITest : public NewHorizonsMagicAITest,
+	public ::testing::WithParamInterface<int>
+{
+};
+
+class NewHorizonsLegacyDoomAITest : public NewHorizonsMagicAITest,
 	public ::testing::WithParamInterface<int>
 {
 };
@@ -4561,6 +4571,107 @@ TEST_F(NewHorizonsMagicAITest, HexOfPainLowersProjectedAttackValueAndMakesItsCas
 		<< "The hypothetical cast and its AI valuation must not mutate the live battle";
 }
 
+TEST_F(NewHorizonsMagicAITest, DoomValuesProjectedAttacksAndAppliesPartialResistanceOnce)
+{
+	useCommands = true;
+	neutralizeCommandEffects = true;
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const auto doom = doomSpell();
+	ASSERT_NE(doom.toSpell(), nullptr);
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto known : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(doom);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(10, 5), 1000);
+	auto * hostile = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(11, 5), 100);
+	ASSERT_NE(friendly, nullptr);
+	ASSERT_NE(hostile, nullptr);
+
+	const std::set<uint32_t> keepIds{friendly->unitId(), hostile->unitId()};
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(!keepIds.contains(unit->unitId()))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	ASSERT_TRUE(newHorizonsMagic::doomRulesEnabled(battle()->getMagicRules(), doom));
+	const int64_t liveHealth = hostile->getAvailableHealth();
+	const int liveMorale = hostile->moraleVal();
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+
+	auto baseline = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache baselineDamage;
+	baselineDamage.buildDamageCache(baseline, BattleSide::ATTACKER);
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto * projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+	const auto * projectedFriendly = projected->battleGetUnitByID(friendly->unitId());
+	ASSERT_NE(projectedHostile, nullptr);
+	ASSERT_NE(projectedFriendly, nullptr);
+
+	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, doom.toSpell());
+	const auto mechanics = doom.toSpell()->battleMechanics(&cast);
+	const spells::Target aim{spells::Destination(projectedHostile)};
+	ASSERT_TRUE(mechanics->canBeCastAt(aim));
+	mechanics->castEval(projected->getServerCallback(), aim);
+
+	projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+	ASSERT_NE(projectedHostile, nullptr);
+	const auto doomBonuses = projectedHostile->getBonuses(
+		Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(doom)));
+	ASSERT_FALSE(doomBonuses->empty());
+	const auto attackReduction = projectedHostile->getBonuses(
+		Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(doom))
+			.And(Selector::type()(BonusType::GENERAL_ATTACK_REDUCTION)));
+	ASSERT_FALSE(attackReduction->empty());
+	const auto moralePenalty = projectedHostile->getBonuses(
+		Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(doom))
+			.And(Selector::type()(BonusType::MORALE)));
+	ASSERT_FALSE(moralePenalty->empty());
+	EXPECT_EQ(attackReduction->front()->turnsRemain, 3);
+	EXPECT_EQ(moralePenalty->front()->val, -3);
+	const auto formulaPercent = newHorizonsMagic::doomCripplingPenaltyPercent(
+		battle()->getMagicRules(), attackerSideHero, doom,
+		attackerSideHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER));
+	ASSERT_TRUE(formulaPercent);
+	EXPECT_EQ(attackReduction->front()->val, *formulaPercent)
+		<< "AI reads the actual projected spell bonus, not a second copy of Doom's formula";
+
+	DamageCache projectedDamage(&baselineDamage);
+	projectedDamage.buildDamageCache(projected, BattleSide::ATTACKER);
+	const auto originalDamage = projectedDamage.getOriginalDamage(projectedHostile, projectedFriendly, projected);
+	const auto afterDoomDamage = projectedDamage.getDamage(projectedHostile, projectedFriendly, projected);
+	EXPECT_GT(originalDamage, afterDoomDamage)
+		<< "The authoritative projected attack penalty must reduce damage from a healthy threatening stack";
+	const auto fullApplicationValue = BattleEvaluator::estimateProjectedDoomTargetValue(
+		hostile, projectedHostile, projectedDamage, projected);
+	EXPECT_GT(fullApplicationValue, 0.0f)
+		<< "A no-damage Doom cast still gains value from its projected offensive and Morale debuffs";
+
+	const auto partialResistance = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 50, BonusSourceID());
+	hostile->addNewBonus(partialResistance);
+	EXPECT_EQ(hostile->magicResistance(), 50);
+	const auto resistedValue = BattleEvaluator::estimateProjectedDoomTargetValue(
+		hostile, projectedHostile, projectedDamage, projected);
+	EXPECT_NEAR(resistedValue, fullApplicationValue * 0.5f, 0.01f)
+		<< "One 50% resistance chance halves the complete projected Doom value exactly once";
+	hostile->removeBonus(partialResistance);
+
+	EXPECT_EQ(hostile->getAvailableHealth(), liveHealth);
+	EXPECT_EQ(hostile->moraleVal(), liveMorale);
+	EXPECT_TRUE(hostile->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(doom)))->empty())
+		<< "Projecting and valuing Doom must not mutate the live battle";
+}
+
 TEST_F(NewHorizonsMagicAITest, FrailtyValuesProjectedPhysicalDamageIncreaseAgainstHighDefenseTarget)
 {
 	useCommands = false;
@@ -5595,6 +5706,20 @@ TEST_P(NewHorizonsLegacySorrowAITest, SavedV1AndV2AIStillValuesLegacyMassSorrow)
 	EXPECT_EQ(sorrowMoraleBonus(secondEnemy), nullptr);
 }
 
+TEST_P(NewHorizonsLegacyDoomAITest, SavedV1AndV2CandidateGateExcludesDoom)
+{
+	const auto doom = doomSpell();
+	ASSERT_NE(doom.toSpell(), nullptr);
+	const auto savedRules = legacyMagicRules(GetParam());
+	EXPECT_FALSE(newHorizonsMagic::doomRulesEnabled(savedRules, doom));
+	EXPECT_FALSE(BattleEvaluator::canonicalDoomAvailableInSavedRules(savedRules, doom.toSpell()))
+		<< "The AI candidate gate must exclude installed Doom content from a saved pre-v3 battle";
+}
+
 INSTANTIATE_TEST_SUITE_P(SavedProfiles, NewHorizonsLegacySorrowAITest,
+	::testing::Values(newHorizonsMagic::RULESET_VERSION,
+		newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION));
+
+INSTANTIATE_TEST_SUITE_P(SavedProfiles, NewHorizonsLegacyDoomAITest,
 	::testing::Values(newHorizonsMagic::RULESET_VERSION,
 		newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION));

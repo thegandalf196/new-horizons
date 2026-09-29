@@ -242,6 +242,7 @@ set(test_SRCS
 		server/battles/NewHorizonsVampirismTest.cpp
 		server/battles/NewHorizonsReanimateTest.cpp
 		server/battles/NewHorizonsSoulReaperTest.cpp
+		server/battles/NewHorizonsDoomTest.cpp
 		server/battles/NewHorizonsHolyWrathTest.cpp
 		server/battles/NewHorizonsHolyArmorTest.cpp
 		server/battles/NewHorizonsMagicalDamageReductionTest.cpp

@@ -72,6 +72,7 @@ enum class StackStatusIconKind
 {
 	TIME_STOP,
 	SPELL_LOCK,
+	DOOM,
 	TEMPORARY_CREATURES,
 	VAMPIRISM,
 	PHYSICAL_POISON,
@@ -95,6 +96,7 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 	{
 		case StackStatusIconKind::TIME_STOP: return 0;
 		case StackStatusIconKind::SPELL_LOCK: return 1;
+		case StackStatusIconKind::DOOM: return 0;
 		case StackStatusIconKind::VAMPIRISM: return 2;
 		case StackStatusIconKind::TEMPORARY_CREATURES: return 2;
 		case StackStatusIconKind::PHYSICAL_POISON: return 3;
@@ -117,7 +119,19 @@ inline StackStatusDisplayPlan stackStatusDisplayPlan(const std::vector<StackStat
 
 	std::stable_sort(orderedIndices.begin(), orderedIndices.end(), [&visibleEntryKinds](std::size_t left, std::size_t right)
 	{
-		return stackStatusPriority(visibleEntryKinds[left]) < stackStatusPriority(visibleEntryKinds[right]);
+		const auto leftPriority = stackStatusPriority(visibleEntryKinds[left]);
+		const auto rightPriority = stackStatusPriority(visibleEntryKinds[right]);
+		if(leftPriority != rightPriority)
+			return leftPriority < rightPriority;
+		if(visibleEntryKinds[left] == visibleEntryKinds[right])
+			return false;
+		if(visibleEntryKinds[left] == StackStatusIconKind::TIME_STOP
+			|| visibleEntryKinds[right] == StackStatusIconKind::TIME_STOP)
+			return visibleEntryKinds[left] == StackStatusIconKind::TIME_STOP;
+		if(visibleEntryKinds[left] == StackStatusIconKind::DOOM
+			|| visibleEntryKinds[right] == StackStatusIconKind::DOOM)
+			return visibleEntryKinds[left] == StackStatusIconKind::DOOM;
+		return false;
 	});
 
 	const bool hasPhysicalPoison = std::find(visibleEntryKinds.begin(), visibleEntryKinds.end(), StackStatusIconKind::PHYSICAL_POISON)

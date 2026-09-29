@@ -16,6 +16,7 @@
 class CSpell;
 class CBattleCallback;
 class BattleAction;
+class JsonNode;
 
 struct CachedAttack
 {
@@ -62,6 +63,12 @@ public:
 	/// Shared projected value for one Hex of Pain target's reduced future attack value.
 	static float estimateProjectedHexOfPainTargetValue(const battle::Unit * original,
 		const battle::Unit * projected, const std::shared_ptr<HypotheticBattle> & projectedBattle);
+	/// Shared projected value for Doom's reduced future attacks and Morale activations.
+	static float estimateProjectedDoomTargetValue(const battle::Unit * original,
+		const battle::Unit * projected, DamageCache & damageCache,
+		const std::shared_ptr<HypotheticBattle> & projectedBattle);
+	/// Saved-profile candidate gate shared by Doom discovery and focused AI tests.
+	static bool canonicalDoomAvailableInSavedRules(const JsonNode & magicRules, const CSpell * spell);
 	void print(const std::string & text) const;
 	BattleAction moveOrAttack(const CStack * stack, const BattleHex & hex, const PotentialTargets & targets);
 

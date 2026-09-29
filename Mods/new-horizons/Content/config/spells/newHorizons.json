@@ -1737,6 +1737,78 @@
 		},
 		"targetCondition" : {}
 	},
+	"doom" : {
+		"name" : "Doom",
+		"type" : "combat",
+		"school" : {
+			"new-horizons:shadow" : true
+		},
+		"level" : 5,
+		"power" : 0,
+		"defaultGainChance" : 0,
+		"gainChance" : {},
+		"targetType" : "CREATURE",
+		"graphics" : {
+			"iconBook" : "NH_spell_doom_44.png",
+			"iconScroll" : "NH_spell_doom_32.png",
+			"iconEffect" : "NH_spell_doom_30.png",
+			"iconImmune" : "NH_spell_doom_30.png",
+			"iconScenarioBonus" : "NH_spell_doom_32.png"
+		},
+		"animation" : {
+			"hit" : ["C18SPW0"]
+		},
+		"sounds" : {
+			"cast" : "MAGICBLT"
+		},
+		"levels" : {
+			"none" : {
+				"range" : "0",
+				"description" : "Cripple one enemy stack for 3 rounds. Reduce its damage, retaliation damage, Initiative, and battlefield movement by min(60%, 35% + 0.15% x Spell Power); Shadow School and Spellcraft strengthen only the Spell Power term. Also reduce Morale by 3. Defense is unchanged.",
+				"cost" : 25,
+				"power" : 0,
+				"battleEffects" : {
+					"doom" : {"type" : "core:doomEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"basic" : {
+				"range" : "0",
+				"description" : "Cripple one enemy stack for 3 rounds. Reduce its damage, retaliation damage, Initiative, and battlefield movement by min(60%, 35% + 0.15% x Spell Power); Shadow School and Spellcraft strengthen only the Spell Power term. Also reduce Morale by 3. Defense is unchanged.",
+				"cost" : 25,
+				"power" : 0,
+				"battleEffects" : {
+					"doom" : {"type" : "core:doomEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"advanced" : {
+				"range" : "0",
+				"description" : "Cripple one enemy stack for 3 rounds. Reduce its damage, retaliation damage, Initiative, and battlefield movement by min(60%, 35% + 0.15% x Spell Power); Shadow School and Spellcraft strengthen only the Spell Power term. Also reduce Morale by 3. Defense is unchanged.",
+				"cost" : 25,
+				"power" : 0,
+				"battleEffects" : {
+					"doom" : {"type" : "core:doomEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			},
+			"expert" : {
+				"range" : "0",
+				"description" : "Cripple one enemy stack for 3 rounds. Reduce its damage, retaliation damage, Initiative, and battlefield movement by min(60%, 35% + 0.15% x Spell Power); Shadow School and Spellcraft strengthen only the Spell Power term. Also reduce Morale by 3. Defense is unchanged.",
+				"cost" : 25,
+				"power" : 0,
+				"battleEffects" : {
+					"doom" : {"type" : "core:doomEffect"}
+				},
+				"targetModifier" : {"smart" : true}
+			}
+		},
+		"flags" : {
+			"offensive" : true,
+			"negative" : true
+		},
+		"targetCondition" : {}
+	},
 	"frailty" : {
 		"name" : "Frailty",
 		"type" : "combat",

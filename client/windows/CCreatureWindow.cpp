@@ -246,12 +246,17 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 	{
 		const auto spellKey = effect.toSpell()->getJsonKey();
 		return newHorizonsBattleStatus::isTimeStop(spellKey)
+			|| newHorizonsBattleStatus::isDoom(spellKey)
 			|| newHorizonsBattleStatus::isFocusMagic(spellKey)
 			|| newHorizonsBattleStatus::isArcaneBreach(spellKey);
 	});
-	std::stable_partition(spells.begin(), prioritizedEnd, [](const SpellID effect)
+	const auto timeStopEnd = std::stable_partition(spells.begin(), prioritizedEnd, [](const SpellID effect)
 	{
 		return newHorizonsBattleStatus::isTimeStop(effect.toSpell()->getJsonKey());
+	});
+	std::stable_partition(timeStopEnd, prioritizedEnd, [](const SpellID effect)
+	{
+		return newHorizonsBattleStatus::isDoom(effect.toSpell()->getJsonKey());
 	});
 	for(SpellID effect : spells)
 	{
@@ -272,6 +277,9 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 			const bool timeStop = newHorizonsBattleStatus::isTimeStop(spellKey);
 			const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
 			const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
+			const bool doom = newHorizonsBattleStatus::isDoom(spellKey);
+			const auto doomEffect = doom ? newHorizonsBattleStatus::doomStatus(*spellBonuses)
+				: newHorizonsBattleStatus::DoomStatus{};
 			const auto arcaneStatus = arcaneBreach
 				? newHorizonsBattleStatus::arcaneBreachStatus(*spellBonuses)
 				: newHorizonsBattleStatus::ArcaneBreachStatus{};
@@ -300,7 +308,14 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 			spellIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect + 1, 0, firstPos.x + offset.x * printed, firstPos.y + offset.y * printed));
 			const std::string badge = timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
-				: arcaneBreach ? std::to_string(arcaneStatus.markCount()) : std::to_string(duration);
+				: arcaneBreach ? std::to_string(arcaneStatus.markCount())
+				: doom && doomEffect.active()
+					? newHorizonsBattleStatus::formatBasisPoints(
+						static_cast<int64_t>(doomEffect.damagePenaltyPercent) * 100)
+					: std::to_string(duration);
+			if(doom && doomEffect.active())
+				spellDescription = newHorizonsBattleStatus::doomTooltip(
+					spell->getDescriptionTranslated(0), doomEffect);
 			labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
 			clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(firstPos + offset * printed, Point(50, 38)), spellDescription, spellDescription));
 			if(++printed >= 8) // interface limit reached

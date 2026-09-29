@@ -39,6 +39,7 @@ inline constexpr std::string_view SHADOW_GIFT_SPELL_KEY = "new-horizons:shadowGi
 inline constexpr std::string_view SHADOW_GIFT_TRIGGER_KEY = "core:shadowGift";
 inline constexpr std::string_view VAMPIRISM_SPELL_KEY = "new-horizons:vampirism";
 inline constexpr std::string_view VAMPIRISM_TRIGGER_KEY = "core:vampirism";
+inline constexpr std::string_view DOOM_SPELL_KEY = "new-horizons:doom";
 inline constexpr std::string_view REANIMATE_SPELL_KEY = "new-horizons:reanimate";
 
 inline bool isRegeneration(std::string_view spellKey)
@@ -54,6 +55,11 @@ inline bool isShadowGift(std::string_view spellKey)
 inline bool isVampirism(std::string_view spellKey)
 {
 	return spellKey == VAMPIRISM_SPELL_KEY;
+}
+
+inline bool isDoom(std::string_view spellKey)
+{
+	return spellKey == DOOM_SPELL_KEY;
 }
 
 inline bool isReanimate(std::string_view spellKey)
@@ -175,6 +181,43 @@ struct VampirismStatus
 	bool operator==(const VampirismStatus &) const = default;
 };
 
+struct DoomStatus
+{
+	int32_t damagePenaltyPercent = 0;
+	int32_t moralePenalty = 0;
+	int32_t remainingRounds = 0;
+
+	bool active() const
+	{
+		return damagePenaltyPercent > 0 && remainingRounds > 0;
+	}
+
+	bool operator==(const DoomStatus &) const = default;
+};
+
+template<typename BonusRange>
+inline DoomStatus doomStatus(const BonusRange & bonuses)
+{
+	DoomStatus result;
+	for(const auto & bonus : bonuses)
+	{
+		if(!bonus || bonus->source != BonusSource::SPELL_EFFECT
+			|| bonus->sid.toString() != DOOM_SPELL_KEY)
+			continue;
+
+		if(bonus->type == BonusType::GENERAL_ATTACK_REDUCTION
+			&& bonus->duration == BonusDuration::N_TURNS && bonus->turnsRemain > 0 && bonus->val > 0)
+		{
+			result.damagePenaltyPercent = std::max(result.damagePenaltyPercent, bonus->val);
+			result.remainingRounds = std::max(result.remainingRounds,
+				static_cast<int32_t>(bonus->turnsRemain));
+		}
+		else if(bonus->type == BonusType::MORALE && bonus->val < 0)
+			result.moralePenalty = std::min(result.moralePenalty, bonus->val);
+	}
+	return result;
+}
+
 inline std::string temporaryCreatureTooltip(int32_t remainingCount)
 {
 	const auto count = std::max<int32_t>(0, remainingCount);
@@ -258,6 +301,19 @@ inline std::string vampirismTooltip(std::string_view spellDescription, const Vam
 		+ " of actual attack damage dealt, including retaliation.";
 	result += "\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
 	result += "\nHealing restores surviving creatures and cannot revive casualties.";
+	return result;
+}
+
+inline std::string doomTooltip(std::string_view spellDescription, const DoomStatus & status)
+{
+	std::string result(spellDescription);
+	result += "\n\nCurrent outgoing damage, including retaliation damage, is reduced by "
+		+ std::to_string(status.damagePenaltyPercent) + "% per hit.";
+	result += "\nInitiative and battlefield movement are also reduced by "
+		+ std::to_string(status.damagePenaltyPercent) + "%.";
+	result += "\nMorale penalty: " + std::to_string(status.moralePenalty) + ".";
+	result += "\nCreature Defense is unchanged.";
+	result += "\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
 	return result;
 }
 
@@ -394,6 +450,7 @@ struct StackInfoStatusSnapshot
 	RegenerationStatus regeneration;
 	ShadowGiftStatus shadowGift;
 	VampirismStatus vampirism;
+	DoomStatus doom;
 
 	bool operator==(const StackInfoStatusSnapshot &) const = default;
 };

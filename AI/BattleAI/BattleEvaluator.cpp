@@ -154,6 +154,17 @@ bool isCanonicalFrailty(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:frailty";
 }
 
+bool isCanonicalDoom(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_DOOM_SPELL;
+}
+
+bool BattleEvaluator::canonicalDoomAvailableInSavedRules(const JsonNode & magicRules, const CSpell * spell)
+{
+	return isCanonicalDoom(spell)
+		&& newHorizonsMagic::doomRulesEnabled(magicRules, spell->getId());
+}
+
 bool isHexOfPainTriggerBonus(const Bonus * bonus)
 {
 	if(!bonus || bonus->type != BonusType::COMBAT_EVENT_TRIGGER
@@ -213,7 +224,7 @@ int curseEffectRounds(const battle::Unit * unit)
 	return timedSpellEffectRounds(unit, SpellID(SpellID::CURSE), BonusType::ALWAYS_MINIMUM_DAMAGE);
 }
 
-float expectedSorrowTargetActivationValue(const battle::Unit * target,
+float expectedTargetActivationValue(const battle::Unit * target,
 	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle)
 {
 	if(!target || !target->alive() || target->getCount() <= 0
@@ -311,7 +322,7 @@ float BattleEvaluator::estimateProjectedSorrowTargetValue(const battle::Unit * o
 	// spell's real timed bonus supplies the duration; exact activation timing,
 	// eligibility gates, special non-damage actions, and per-army bias history
 	// remain Phase-2 integration work.
-	const auto activationValue = expectedSorrowTargetActivationValue(projected, damageCache, projectedBattle);
+	const auto activationValue = expectedTargetActivationValue(projected, damageCache, projectedBattle);
 	return lostExpectedActivations * static_cast<float>(remainingRounds) * activationValue * 0.5f;
 }
 
@@ -449,6 +460,85 @@ float BattleEvaluator::estimateProjectedHexOfPainTargetValue(const battle::Unit 
 
 	const auto preventedActionValue = std::max(0.0f, unhexedActionValue - hexedActionValue);
 	return preventedActionValue * static_cast<float>(remainingRounds) * 0.5f;
+}
+
+float BattleEvaluator::estimateProjectedDoomTargetValue(const battle::Unit * original,
+	const battle::Unit * projected, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!original || !projected || !original->alive() || !projected->alive()
+		|| projected->getCount() <= 0 || projected->isGhost() || projected->isTurret()
+		|| !projectedBattle)
+		return 0.0f;
+
+	const SpellID doom(SpellID::decode(std::string(newHorizonsMagic::SHADOW_DOOM_SPELL)));
+	const auto attackReductionBonuses = projected->getBonuses(
+		Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(doom))
+			.And(Selector::type()(BonusType::GENERAL_ATTACK_REDUCTION)));
+	if(!attackReductionBonuses)
+		return 0.0f;
+
+	int damagePenaltyPercent = 0;
+	int remainingRounds = 0;
+	for(const auto & bonus : *attackReductionBonuses)
+	{
+		if(!bonus || !Bonus::NTurns(bonus.get()) || bonus->turnsRemain <= 0 || bonus->val <= 0)
+			continue;
+		damagePenaltyPercent = std::max(damagePenaltyPercent, bonus->val);
+		remainingRounds = std::max(remainingRounds, static_cast<int>(bonus->turnsRemain));
+	}
+	if(damagePenaltyPercent <= 0 || remainingRounds <= 0)
+		return 0.0f;
+
+	float bestPreventedAttackValue = 0.0f;
+	for(const auto * friendly : projectedBattle->battleGetAllUnits(false))
+	{
+		if(!friendly || !friendly->alive() || !friendly->isValidTarget(true)
+			|| friendly->isGhost() || friendly->isTurret()
+			|| friendly->unitSide() == projected->unitSide())
+			continue;
+
+		const bool shooting = projectedBattle->battleCanShoot(projected, friendly->getPosition());
+		const int attackCount = AttackPossibility::getAttackCount(*projected, shooting, *projectedBattle);
+		if(attackCount <= 0)
+			continue;
+
+		const auto availableHealth = std::max<int64_t>(0, friendly->getAvailableHealth());
+		const auto originalPerAttackDamage = std::max<int64_t>(0,
+			damageCache.getOriginalDamage(projected, friendly, projectedBattle));
+		const auto projectedPerAttackDamage = std::max<int64_t>(0,
+			damageCache.getDamage(projected, friendly, projectedBattle));
+		const auto originalAttackDamage = std::min(availableHealth,
+			originalPerAttackDamage * static_cast<int64_t>(attackCount));
+		const auto projectedAttackDamage = std::min(availableHealth,
+			projectedPerAttackDamage * static_cast<int64_t>(attackCount));
+		if(originalAttackDamage <= projectedAttackDamage)
+			continue;
+
+		const auto preventedDamage = originalAttackDamage - projectedAttackDamage;
+		bestPreventedAttackValue = std::max(bestPreventedAttackValue,
+			static_cast<float>(AttackPossibility::calculateDamageReduce(nullptr, friendly,
+				static_cast<uint64_t>(preventedDamage), damageCache, projectedBattle)));
+	}
+
+	// The projected GENERAL_ATTACK_REDUCTION bonus is authoritative for both
+	// normal and retaliation damage. This bounded forecast uses one ordinary
+	// attack delta; do not multiply by Doom's percentage again or add another
+	// copy of that same prospective hit as a retaliation estimate.
+	const float expectedFutureAttackValue = bestPreventedAttackValue * static_cast<float>(remainingRounds) * 0.5f;
+	const auto lostExpectedActivations = expectedMoraleActivationChange(original)
+		- expectedMoraleActivationChange(projected);
+	const float moraleValue = lostExpectedActivations > 0.0f
+		? lostExpectedActivations * static_cast<float>(remainingRounds) * 0.5f
+			* expectedTargetActivationValue(projected, damageCache, projectedBattle)
+		: 0.0f;
+
+	// Projected spell mechanics intentionally do not roll resistance. Weight the
+	// whole status forecast by application chance exactly once, using the live
+	// target's authoritative resistance rather than modifying the projection.
+	const int resistance = std::clamp(original->magicResistance(), 0, 100);
+	const float applicationChance = 1.0f - static_cast<float>(resistance) / 100.0f;
+	return (expectedFutureAttackValue + moraleValue) * applicationChance;
 }
 
 bool isCanonicalHolyArmor(const CSpell * spell)
@@ -2257,7 +2347,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		const bool unavailableSoulReaper = option.spell
 			&& option.spell->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
 			&& !isCanonicalSoulReaper(*battleCallback, option.spell);
-		return unavailableReanimate || unavailableSoulReaper;
+		const bool unavailableDoom = isCanonicalDoom(option.spell)
+			&& !canonicalDoomAvailableInSavedRules(battleCallback->getBattle()->getMagicRules(), option.spell);
+		return unavailableReanimate || unavailableSoulReaper || unavailableDoom;
 	});
 
 	LOGFL("I know how %d of them works.", possibleSpells.size());
@@ -3063,6 +3155,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							projectedDebuffScore += estimateProjectedHexOfPainTargetValue(original, unit, state);
 						else if(isCanonicalFrailty(ps.spell) && unit->unitId() == targetId)
 							projectedDebuffScore += estimateProjectedFrailtyTargetValue(original, unit, innerCache, state);
+						else if(isCanonicalDoom(ps.spell) && unit->unitId() == targetId)
+							projectedDebuffScore += estimateProjectedDoomTargetValue(original, unit, innerCache, state);
 					}
 					const bool phantomArmyStack = phantomArmy && !original
 						&& state->battleGetOwner(unit) == playerID

@@ -200,6 +200,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"doomEffect" : {
+		"implements" : "spellEffect",
+		"script" : "spells/doom",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"frailtyEffect" : {
 		"implements" : "spellEffect",
 		"script" : "spells/frailty",

@@ -267,6 +267,11 @@
 				"powerCoefficient": 14
 			}
 		},
+		"new-horizons:doom": {
+			"schools": ["new-horizons:shadow"],
+			"level": 5,
+			"costs": [25, 25, 25, 25]
+		},
 		"new-horizons:holyWrath": {
 			"schools": ["new-horizons:light"],
 			"level": 3,

@@ -49,6 +49,11 @@ constexpr int BLESS_SPELL_POWER_DURATION_DIVISOR = 80;
 constexpr int SLOW_BASE_DURATION_ROUNDS = 2;
 constexpr int CURSE_BASE_DURATION_ROUNDS = 3;
 constexpr int SORROW_BASE_DURATION_ROUNDS = 3;
+constexpr int DOOM_BASE_DURATION_ROUNDS = 3;
+constexpr int DOOM_BASE_CRIPPLING_PERCENT = 35;
+constexpr int DOOM_MAX_CRIPPLING_PERCENT = 60;
+constexpr int DOOM_SPELL_POWER_TERM_NUMERATOR = 3;
+constexpr int DOOM_SPELL_POWER_TERM_DIVISOR = 20;
 constexpr int SORROW_SPELL_POWER_PER_MORALE = 70;
 constexpr int SORROW_BASE_MORALE_PENALTY = 1;
 constexpr int SORROW_MAX_MORALE_PENALTY = 3;
@@ -98,6 +103,7 @@ inline constexpr std::string_view SHADOW_VAMPIRISM_SPELL = "new-horizons:vampiri
 inline constexpr std::string_view SHADOW_VAMPIRISM_STATUS = "core:vampirism";
 inline constexpr std::string_view SHADOW_REANIMATE_SPELL = "new-horizons:reanimate";
 inline constexpr std::string_view SHADOW_SOUL_REAPER_SPELL = "new-horizons:soulReaper";
+inline constexpr std::string_view SHADOW_DOOM_SPELL = "new-horizons:doom";
 inline constexpr std::string_view SHADOW_REANIMATOR_PERK = "new-horizons:shadowMagic.reanimator";
 inline constexpr std::string_view SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic";
 inline constexpr std::string_view SHADOW_DARK_GIFT_PERK = "new-horizons:shadowMagic.darkGift";
@@ -184,6 +190,14 @@ DLL_LINKAGE std::optional<int64_t> reanimateHealingPool(const JsonNode & rules,
 /// Saved-v3 canonical Soul Reaper identity gate. Older snapshots never acquire
 /// the newly registered Shadow spell from installed content alone.
 DLL_LINKAGE bool soulReaperEnabled(const JsonNode & rules, SpellID spell);
+/// Saved-v3 canonical Doom identity and cost gate. Earlier snapshots cannot
+/// acquire the newly registered Shadow spell from installed content alone.
+DLL_LINKAGE bool doomRulesEnabled(const JsonNode & rules, SpellID spell);
+/// Doom's capped integer crippling magnitude. Only the Spell Power-derived
+/// term receives saved School × Spellcraft scaling; invalid/legacy spell rows
+/// return nullopt.
+DLL_LINKAGE std::optional<int> doomCripplingPenaltyPercent(const JsonNode & rules,
+	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower);
 /// Soul Reaper's 40% missing-effective-HP component. Current HP includes any
 /// temporary hit points; missing HP is clamped to zero when current exceeds max.
 DLL_LINKAGE std::optional<int64_t> soulReaperMissingHealthDamage(const JsonNode & rules,

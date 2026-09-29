@@ -433,6 +433,50 @@ bool soulReaperEnabled(const JsonNode & rules, const SpellID spell)
 	return true;
 }
 
+bool doomRulesEnabled(const JsonNode & rules, const SpellID spell)
+{
+	const auto * definition = spell.toSpell();
+	if(!definition || definition->getJsonKey() != SHADOW_DOOM_SPELL || !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !rules["spells"].isStruct())
+		return false;
+
+	const auto found = rules["spells"].Struct().find(std::string(SHADOW_DOOM_SPELL));
+	if(found == rules["spells"].Struct().end() || !found->second.isStruct())
+		return false;
+
+	const auto & row = found->second;
+	if(!integer(row["level"], 5, 5)
+		|| !row["schools"].isVector() || row["schools"].Vector().size() != 1
+		|| !row["schools"].Vector().front().isString()
+		|| row["schools"].Vector().front().String() != "new-horizons:shadow"
+		|| !row["costs"].isVector() || row["costs"].Vector().size() != 4
+		|| row.Struct().contains("directDamage")
+		|| (!row["active"].isNull() && !row["active"].isBool())
+		|| !spellAllowedBySavedRoster(rules, spell))
+		return false;
+
+	for(const auto & cost : row["costs"].Vector())
+		if(!integer(cost, 25, 25))
+			return false;
+
+	return true;
+}
+
+std::optional<int> doomCripplingPenaltyPercent(const JsonNode & rules, const CGHeroInstance * hero,
+	const SpellID spell, const int32_t rawSpellPower)
+{
+	if(!doomRulesEnabled(rules, spell))
+		return std::nullopt;
+
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell);
+	const int64_t spellPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		static_cast<int64_t>(std::max(0, rawSpellPower)) * DOOM_SPELL_POWER_TERM_NUMERATOR,
+		DOOM_SPELL_POWER_TERM_DIVISOR, coefficientBasisPoints);
+	return static_cast<int>(std::min<int64_t>(DOOM_MAX_CRIPPLING_PERCENT,
+		DOOM_BASE_CRIPPLING_PERCENT + spellPowerTerm));
+}
+
 std::optional<int64_t> soulReaperMissingHealthDamage(const JsonNode & rules, const SpellID spell,
 	const int64_t effectiveMaximumHP, const int64_t currentHP)
 {

@@ -27,6 +27,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:lifeDrain',
     'new-horizons:counterspell',
     'new-horizons:disintegrate',
+    'new-horizons:doom',
     'new-horizons:masterChainLightning',
     'new-horizons:phantomArmy',
     'new-horizons:plague',
@@ -375,6 +376,33 @@ class NewHorizonsContentTest(unittest.TestCase):
         texts = load('config/newHorizonsCombatTexts.json')
         for form in (0, 1, 2):
             self.assertIn(f'new-horizons.combat.soulReaper.execute.{form}', texts)
+
+    def test_doom_has_shadow_malediction_data_and_original_art(self):
+        row = self.rules['spells']['new-horizons:doom']
+        self.assertEqual(row['schools'], ['new-horizons:shadow'])
+        self.assertEqual((row['level'], row['costs']), (5, [25, 25, 25, 25]))
+        self.assertNotIn('directDamage', row)
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['doom']
+        self.assertEqual((spell['name'], spell['targetType']), ('Doom', 'CREATURE'))
+        self.assertEqual(spell['targetCondition'], {})
+        self.assertTrue(spell['flags']['offensive'])
+        self.assertTrue(spell['flags']['negative'])
+        self.assertFalse(spell['flags'].get('damage', False))
+        for level in spell['levels'].values():
+            self.assertEqual(level['cost'], 25)
+            self.assertEqual(level['battleEffects']['doom']['type'], 'core:doomEffect')
+            self.assertTrue(level['targetModifier']['smart'])
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            self.assertEqual(filename, f'NH_spell_doom_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (size, size))
+        texts = load('config/newHorizonsCombatTexts.json')
+        self.assertIn('new-horizons.combat.doom.applied', texts)
+        self.assertIn('new-horizons.combat.doom.refreshed', texts)
 
     def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
         spell_id = 'new-horizons:holyWrath'

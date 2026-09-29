@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: original square Heroes III-inspired Shadow spellbook icon master
+Primary request: Create an original icon for Doom, an ultimate single-target compound curse that cripples a dangerous enemy rather than dealing damage.
+Scene/backdrop: A dark, subdued, textured umber and black-violet background, kept low in value.
+Subject: One battered iron war-mask with a stern, nonhuman-but-not-skeletal face, tightly bound and visibly compressed by several heavy blackened iron chains crossing the brow, cheeks, and closed mouth. The mask is the unmistakable focal object; chains read as restraints that suppress strength, speed, response, and morale. A small ember-dim garnet glint inside one eye slit, almost smothered.
+Style/medium: Late-1990s Western PC fantasy-game illustration, a miniature modeled still-life painting with painterly fantasy-book character; materially distinct aged iron, dark chain links, and tiny restrained garnet light. Dramatic chiaroscuro, one softly lit steel side, deep shadow on the other, localized highlights on the chain links, no neon bloom or glossy mobile-game polish.
+Composition/framing: Square high-resolution master, close three-quarter view, integrated group fills most of the canvas with a narrow safe inset; clear broad silhouette and value masses designed to remain recognizable when reduced to 44×44 and 32×32.
+Lighting/mood: Oppressive, cold and ominous; a faint muted wine-red and violet shadow glow is localized around the bound mask, not a large energy effect.
+Color palette: Blackened steel, charcoal violet, muted oxblood/garnet, and earthy umber; avoid bright cyan or blue.
+Materials/textures: Pitted forged iron, worn chain, subtle soot and leather-dark background.
+Constraints: Make Doom visually distinct from a hooked blade drawing out a pale spectral soul: no scythe, hook, floating spirit, skull, bones, or cyan soul-light. No damage/explosion imagery; this is a curse, not a direct attack. One dominant object, no extra creatures or props.
+Avoid: lettering, readable runes, border, frame, UI chrome, vector shapes, cartoon outlines, intentional pixel clusters, dithering, plastic surfaces, watermark.

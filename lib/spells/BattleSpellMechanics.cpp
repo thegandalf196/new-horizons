@@ -611,6 +611,9 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	if(owner->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
 		&& !newHorizonsMagic::soulReaperEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
 		return adaptGenericProblem(problem);
+	if(owner->getJsonKey() == newHorizonsMagic::SHADOW_DOOM_SPELL
+		&& !newHorizonsMagic::doomRulesEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
+		return adaptGenericProblem(problem);
 
 	// Overcharge is an action parameter, not a client-side damage hint.  Keep
 	// the legality gate in the authoritative mechanics path so malformed or

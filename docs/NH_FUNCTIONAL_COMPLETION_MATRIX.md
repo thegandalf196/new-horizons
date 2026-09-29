@@ -25,7 +25,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 105/310 | 205 planned; active status alone does not certify behavior. Reanimator adds 25% to Re-animate's casualty-restoration pool after surviving-creature wounds. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 45/67 | 22 missing/inactive; Soul Reaper has active-profile runtime/AI evidence. Doom is the remaining missing Shadow identity. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 46/67 | 21 missing/inactive; Doom completes Shadow's identity roster with focused server/AI evidence. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -196,12 +196,10 @@ opens the Shroud's ordinary Advanced-rank progression.
 
 The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
-spells. Rechecking the current saved roster after adding Holy Wrath, Storm
-of Daggers, Regeneration, Nature Poison, Holy Armor, Life Drain, Hex of Pain,
-Frailty, Plague, Soul Chain, Shadow Gift, and Vampirism shows 43 of the 67
-combat identities with active settings rows and registered mod/core definitions,
-including Spell Lock; 24 are absent or inactive. An active
-identity is not proof that its exact canonical effect is complete.
+spells. The current saved roster has 46 of 67 combat identities with active
+settings rows and registered mod/core definitions, including Spell Lock and
+the newly registered Doom; 21 are absent or inactive. This count describes
+identity registration, not exact-effect or AI completion.
 
 Frailty replaces core Weakness in new saved-v3 acquisition while older saved
 rules retain Weakness. Its battle-long, Dispel-removable Defense reduction is
@@ -304,8 +302,24 @@ profile, alongside 42/42 curated-content tests and the module-mirror check.
 Purpose-made Provisional 44/32/30 spell icons are bound. Phase 2 retains
 partial-Magic-Resistance AI valuation, unusual temporary-HP/status mixtures,
 full save/load continuation, and 32×32 versus 58×64 scenario-icon consumer
-review; native rendering and playable acceptance are unverified. Doom is now
-the next missing Shadow identity.
+review; native rendering and playable acceptance are unverified.
+
+Doom is now registered as the saved-v3 Level-5 Shadow malediction at 25 Mana.
+Its authoritative timed spell-source bonuses impose the capped 35% + 0.15% ×
+raw Spell Power penalty on damage (including retaliation once), Initiative,
+and battlefield movement for three rounds, with fixed −3 Morale and no Defense
+loss. Shadow School and Spellcraft scale only the Spell Power term. Recasting
+refreshes the effect; old saved v1/v2 rules cannot cast the new identity.
+Purpose-made Provisional 44/32/30 icons, application/refresh combat logs,
+stack status, and projected BattleAI valuation are bound. Both Linux targets
+link, the current private active New Horizons profile passes 8/8 focused
+server/AI cases with zero skips, the Doom UI source guard passes 3/3, and the
+curated-content suite passes 43/43. This is a Phase 1 source/native checkpoint,
+not a rendered or playable one. Phase 2 retains Dispel and save/load round trips,
+mixed flat Initiative/movement/Fortune bonuses, live AI cast-selection and
+combined resistance/exchange-score valuation. The next missing detailed-roster
+identity is Sanctuary in Light; its Wait/Defend lifecycle must not inherit the
+generic action-expiry behavior.
 
 Quicksand is among the active Nature identities. Its selected-placement path
 now has a saved-v3 opt-in marker, exact ordered caster selection, authoritative
@@ -322,7 +336,7 @@ from the active identity row.
 | School | Canonical | Active identity coverage | Missing canonical spells |
 |---|---:|---:|---|
 | Light | 11 | 5 | Sanctuary; Guardian Spirit; Heavenly Gale; Divine Retribution; Purify; Crusade! |
-| Shadow | 12 | 11 | Doom |
+| Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |

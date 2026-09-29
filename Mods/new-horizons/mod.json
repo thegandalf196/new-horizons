@@ -707,6 +707,18 @@
 							"powerCoefficient": 14
 						}
 					},
+					"new-horizons:doom": {
+						"schools": [
+							"new-horizons:shadow"
+						],
+						"level": 5,
+						"costs": [
+							25,
+							25,
+							25,
+							25
+						]
+					},
 					"new-horizons:holyWrath": {
 						"schools": [
 							"new-horizons:light"
@@ -8863,6 +8875,8 @@
 		"new-horizons.combat.soulReaper.execute.0": "Soul Reaper executes %s, destroying %d additional creatures.",
 		"new-horizons.combat.soulReaper.execute.1": "Soul Reaper executes %s, destroying %d additional creature.",
 		"new-horizons.combat.soulReaper.execute.2": "Soul Reaper executes %s, destroying %d additional creatures.",
+		"new-horizons.combat.doom.applied": "Doom cripples %s for %d rounds: -%d% damage, retaliation damage, Initiative, and movement; -3 Morale.",
+		"new-horizons.combat.doom.refreshed": "Doom on %s is refreshed for %d rounds: -%d% damage, retaliation damage, Initiative, and movement; -3 Morale.",
 		"new-horizons.combat.physicalPoison.label": "Physical Poison",
 		"new-horizons.combat.physicalPoison.tooltip": "%LABEL\nNext real activation tick: %DAMAGE physical damage.\n%ACTIVATIONS real activations remaining.",
 		"new-horizons.combat.physicalPoison.hiddenEffects": "%COUNT additional active effects are not shown.",
