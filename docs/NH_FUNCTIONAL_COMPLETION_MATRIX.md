@@ -291,6 +291,9 @@ perk/UI-inventory checks pass 19/19, and the generated-module check passes.
 Independent review found no Phase 1 blocker. Purpose-made four-state art is
 Provisional; rendered/playable icon review, save round-trip, unusual facing,
 and broader ranged/collateral interaction tests remain Phase 2/delivery work.
+The legacy repository-wide `nh-new-art-audit.py` still stops at its SVG/PNG
+inventory equality check; Backstab's four runtime frames were checked directly
+as 44×44 RGBA, and this broad mixed-art audit is deferred for the art lane.
 
 Additional roster corrections: Implosion belongs to Sorcery rather than Havoc;
 Earthquake belongs to Nature rather than Havoc; Counterspell is not in the
