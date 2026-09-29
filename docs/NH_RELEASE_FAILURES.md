@@ -15,6 +15,30 @@ listed below is a coverage location, not a claim that the latest CI passed it.
 
 ## Growth release follow-up
 
+### September 28 local Nature Poison native-gate incidents
+
+- Failure ID/stage: local `vcmitest -j12` over committed base `e6545354a` plus
+  the uncommitted Nature Poison slice. The first compile stopped in
+  `NewHorizonsCureTest.cpp` because a test called non-public
+  `newHorizonsMagic::spellAllowedBySavedRoster`; a later incremental compile
+  stopped in `NewHorizonsMagicAITest.cpp` because `SecondarySkill::decode`
+  needs `std::string`, not the `string_view` constant. Both were test-only API
+  errors. The owners switched to the public availability header and explicit
+  string conversion; the incremental `vcmitest` target then linked.
+- Focused execution initially discovered nine tests but skipped all nine
+  because two existing TEST presets omitted `new-horizons`. A fresh isolated
+  `testModSettings.json` with `core`, `vcmi`, `vcmi-test`, and `new-horizons`
+  is required; ordinary `modSettings.json` is not enough for `vcmitest`.
+  Never count a zero-failure run with all cases skipped.
+- The first active-profile eight-case run passed five and failed three. Two
+  recast fixtures expected Basic Nature's 77-damage base without giving the
+  hero Basic Nature; the real unranked base is 70. The AI fixture enabled
+  expanded hero ratings while disabling required hero-command rules. Repairs
+  changed only fixture setup. The subsequent incremental link and active-
+  profile focused run passed 8/8 with zero skips; saved-v2 roster exclusion
+  and adjacent Magic Arrow AI cases each passed 1/1. No playable or Windows
+  target result follows from this local native gate.
+
 ### September 28 local Phase 1 Blacksmith/Regeneration build
 
 - Failure ID: local `cmake --build build/new-horizons-linux --target vcmitest vcmiclient -j12` over source head `82567abae` plus the uncommitted UP-024/Regeneration checkpoint.

@@ -11,6 +11,8 @@
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/CObstacleInstance.h"
+#include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/NewHorizonsBulwark.h"
 #include "AttackPossibility.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
@@ -69,6 +71,28 @@ bool isCanonicalSpellLock(const Mechanics * spellMechanics)
 {
 	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
 	return spell && spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL;
+}
+
+bool isCanonicalNaturePoison(const Mechanics * spellMechanics)
+{
+	const auto * battleCallback = spellMechanics ? spellMechanics->battle() : nullptr;
+	const auto * battle = battleCallback ? battleCallback->getBattle() : nullptr;
+	return battle && newHorizonsMagic::physicalPoisonEnabled(battle->getMagicRules(), spellMechanics->getSpellId());
+}
+
+bool isNaturePoisonTarget(const Mechanics * spellMechanics, const battle::Unit * unit)
+{
+	return isCanonicalNaturePoison(spellMechanics)
+		&& unit
+		&& unit->alive()
+		&& unit->isValidTarget(false)
+		&& !unit->isInvincible()
+		&& (spellMechanics->getCasterSide() == BattleSide::ATTACKER
+			|| spellMechanics->getCasterSide() == BattleSide::DEFENDER)
+		&& unit->unitSide() != spellMechanics->getCasterSide()
+		&& spellMechanics->isReceptive(unit)
+		&& !unit->hasImmunity(spellMechanics->getSpellId())
+		&& !unit->hasAbsoluteImmunity(spellMechanics->getSpellId());
 }
 
 bool isSpellLocked(const battle::Unit * unit)
@@ -481,6 +505,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 {
 	if(spellMechanics && spellMechanics->isNewHorizonsStormOfDaggers())
 		return stormOfDaggersTargets(spellMechanics);
+	if(isCanonicalNaturePoison(spellMechanics))
+		return canonicalNaturePoisonTargets(spellMechanics);
 	if(isCanonicalSpellLock(spellMechanics))
 		return canonicalSpellLockTargets(spellMechanics);
 	if(isCanonicalTimeStop(spellMechanics))
@@ -522,6 +548,26 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 		default:
 			return result;
 	}
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalNaturePoisonTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!isCanonicalNaturePoison(spellMechanics))
+		return result;
+
+	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	{
+		if(!isNaturePoisonTarget(spellMechanics, unit))
+			continue;
+
+		Target target{Destination(unit)};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
+	}
+
+	return result;
 }
 
 std::vector<Target> SpellTargetEvaluator::canonicalSpellLockTargets(const Mechanics * spellMechanics)
@@ -911,6 +957,77 @@ float SpellTargetEvaluator::spellLockPlacementValue(const Mechanics * spellMecha
 	rounds = spellMechanics->adjustEffectDuration(rounds);
 	rounds = std::clamp(rounds, 1, 5);
 	return value * (0.7f + 0.1f * static_cast<float>(rounds));
+}
+
+float SpellTargetEvaluator::naturePoisonPlacementValue(const Mechanics * spellMechanics,
+	const Target & target, std::shared_ptr<CBattleInfoCallback> battleState)
+{
+	if(!isCanonicalNaturePoison(spellMechanics) || target.size() != 1
+		|| !isNaturePoisonTarget(spellMechanics, target.front().unitValue))
+		return 0.0f;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return 0.0f;
+
+	const auto * liveTarget = dynamic_cast<const battle::CUnitState *>(target.front().unitValue);
+	if(!liveTarget)
+		return 0.0f;
+
+	const int64_t baseDamage = newHorizonsMagic::poisonBaseDamage(
+		std::max(0, spellMechanics->getEffectPower()),
+		spellMechanics->getSchoolRankPowerCoefficientPercent());
+	if(baseDamage <= 0)
+		return 0.0f;
+
+	// CUnitState disables value-copy construction because it owns bonus and
+	// environment proxies. acquireState() creates detached states that can be
+	// projected without touching the authoritative battle.
+	auto currentPoison = liveTarget->acquireState();
+	auto appliedPoison = liveTarget->acquireState();
+	if(!newHorizonsBulwark::applyPhysicalPoison(appliedPoison.get(), baseDamage, -1))
+		return 0.0f;
+
+	if(!battleState)
+	{
+		const auto * battle = spellMechanics->battle();
+		battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
+	}
+
+	DamageCache damageCache;
+	const auto projectedPoisonValue = [&](const std::shared_ptr<battle::CUnitState> & state)
+	{
+		float value = 0.0f;
+		for(int activation = 0; activation < 3 && state->alive(); ++activation)
+		{
+			const auto tickDamage = newHorizonsBulwark::physicalPoisonTickDamage(state.get());
+			const auto damage = std::min<int64_t>(tickDamage, state->getAvailableHealth());
+			if(damage > 0)
+			{
+				value += AttackPossibility::calculateDamageReduce(
+					nullptr, state.get(), static_cast<uint64_t>(damage), damageCache, battleState);
+				auto appliedDamage = damage;
+				state->damage(appliedDamage);
+			}
+			newHorizonsBulwark::advancePhysicalPoison(state.get());
+		}
+		return value;
+	};
+
+	const float currentValue = projectedPoisonValue(currentPoison);
+	const float refreshedValue = projectedPoisonValue(appliedPoison);
+	const float incrementalValue = std::max(0.0f, refreshedValue - currentValue);
+
+	// The authoritative cast uses the ordinary negative magical spell
+	// resistance roll before applying this physical status. Existing Poison
+	// continues regardless of this cast's outcome, so discount only the
+	// incremental candidate value.
+	float applicationChance = 1.0f;
+	if(spellMechanics->isNegativeSpell() && spellMechanics->isMagicalEffect())
+		applicationChance -= static_cast<float>(std::clamp(liveTarget->magicResistance(), 0, 100)) / 100.0f;
+
+	return incrementalValue * applicationChance;
 }
 
 std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)

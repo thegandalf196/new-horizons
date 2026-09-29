@@ -995,7 +995,10 @@ IBattleCast::Value BaseMechanics::getRangeLevel() const
 {
 	// New Horizons Cure and saved-v3 Berserk target one unit/stack at every
 	// mastery rank. Keep each spell's effect level independent from this range.
-	if(isNewHorizonsCure() || usesNewHorizonsBerserkTargeting())
+	const auto * battleState = cb ? cb->getBattle() : nullptr;
+	const bool newHorizonsPhysicalPoison = caster && caster->getHeroCaster() && battleState
+		&& newHorizonsMagic::physicalPoisonEnabled(battleState->getMagicRules(), owner->getId());
+	if(isNewHorizonsCure() || usesNewHorizonsBerserkTargeting() || newHorizonsPhysicalPoison)
 		return 0;
 
 	// V3 restores single-target Expert targeting for the 23 core spells whose

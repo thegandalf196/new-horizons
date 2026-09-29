@@ -1865,6 +1865,14 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							if(ps.spellPlacementHeuristicValue <= 0.0f)
 								continue;
 						}
+						if(newHorizonsMagic::physicalPoisonEnabled(
+							cb->getBattle(battleID)->getBattle()->getMagicRules(), spell->getId()))
+						{
+							ps.spellNaturePoisonValue = SpellTargetEvaluator::naturePoisonPlacementValue(
+								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
+							if(ps.spellNaturePoisonValue <= 0.0f)
+								continue;
+						}
 						possibleCasts.push_back(ps);
 					}
 				}
@@ -2179,6 +2187,20 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellPlacementHeuristicValue;
+					continue;
+				}
+				// Canonical Nature Poison changes only the target's physical
+				// Poison state. Its detached, three-activation marginal value was
+				// forecast during target enumeration, so avoid a second generic
+				// effect projection that has no immediate health delta.
+				if(ps.command == HeroCommand::NONE && ps.spellNaturePoisonValue > 0.0f)
+				{
+					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+						counterspellNegated, *spellAllowance) || counterspellNegated)
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + ps.spellNaturePoisonValue;
 					continue;
 				}
 				// Contextual Orders have no faithful projection in the old

@@ -2098,7 +2098,8 @@ TEST_F(NewHorizonsMagicAITest, LandMineDoesNotOutrankImmediateMagicArrowOnTheSam
 
 TEST_F(NewHorizonsMagicAITest, V3MagicArrowAIProjectionAndAuthoritativeCastUseSchoolRankCoefficient)
 {
-	useCommands = false;
+	useCommands = true;
+	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	useRealHeroScale = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
@@ -2169,6 +2170,102 @@ TEST_F(NewHorizonsMagicAITest, V3MagicArrowAIProjectionAndAuthoritativeCastUseSc
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(healthBefore - enemy->getAvailableHealth(), projectedDamage)
 		<< "Battle AI projection and authoritative cast must share the v3 ranked formula";
+}
+
+TEST_F(NewHorizonsMagicAITest, V3NaturePoisonAIValuesRankScaledMarginalTicksAgainstLegalEnemies)
+{
+	useCommands = true;
+	neutralizeCommandEffects = true;
+	useCurrentMagicRules = true;
+	useRealHeroScale = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto known : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(known);
+	const SpellID poison(SpellID::decode(std::string(newHorizonsMagic::NATURE_POISON_SPELL)));
+	ASSERT_NE(poison, SpellID::NONE);
+	ASSERT_NE(poison.toSpell(), nullptr);
+	attackerSideHero->addSpellToSpellbook(poison);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+	ASSERT_TRUE(newHorizonsMagic::physicalPoisonEnabled(battle()->getMagicRules(), poison));
+
+	const SecondarySkill nature(SecondarySkill::decode(std::string(newHorizonsMagic::NATURE_MAGIC_SKILL)));
+	ASSERT_NE(nature, SecondarySkill(SecondarySkill::NONE));
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 100);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(enemy, nullptr);
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != active && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	std::vector<float> rankValues;
+	for(const auto rank : {MasteryLevel::NONE, MasteryLevel::BASIC,
+		MasteryLevel::ADVANCED, MasteryLevel::EXPERT})
+	{
+		attackerSideHero->setSecSkillLevel(nature, rank, ChangeValueMode::ABSOLUTE);
+		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, poison.toSpell());
+		auto mechanics = poison.toSpell()->battleMechanics(&cast);
+		const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+		ASSERT_EQ(targets.size(), 1u);
+		ASSERT_EQ(targets.front().size(), 1u);
+		EXPECT_EQ(targets.front().front().unitValue, enemy);
+		rankValues.push_back(SpellTargetEvaluator::naturePoisonPlacementValue(mechanics.get(), targets.front()));
+		EXPECT_EQ(enemy->physicalPoisonBaseDamage, 0);
+		EXPECT_EQ(enemy->physicalPoisonActivationsRemaining, 0);
+	}
+	ASSERT_EQ(rankValues.size(), 4u);
+	EXPECT_GT(rankValues[0], 0.0f);
+	EXPECT_GT(rankValues[1], rankValues[0]);
+	EXPECT_GT(rankValues[2], rankValues[1]);
+	EXPECT_GT(rankValues[3], rankValues[2]);
+
+	// A weaker cast must not receive value while a stronger physical affliction
+	// remains active. The read-only evaluator preserves the live status fields.
+	enemy->physicalPoisonBaseDamage = 1000;
+	enemy->physicalPoisonActivationsRemaining = 3;
+	enemy->physicalPoisonSourceStackId = -1;
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, poison.toSpell());
+	auto mechanics = poison.toSpell()->battleMechanics(&cast);
+	const spells::Target enemyTarget{spells::Destination(enemy)};
+	EXPECT_EQ(SpellTargetEvaluator::naturePoisonPlacementValue(mechanics.get(), enemyTarget), 0.0f);
+	EXPECT_EQ(enemy->physicalPoisonBaseDamage, 1000);
+	EXPECT_EQ(enemy->physicalPoisonActivationsRemaining, 3);
+
+	// Once that affliction expires, the complete BattleAI path recognizes the
+	// spell, selects the legal enemy, and leaves live battle state untouched.
+	enemy->physicalPoisonBaseDamage = 0;
+	enemy->physicalPoisonActivationsRemaining = 0;
+	enemy->physicalPoisonSourceStackId = -1;
+	attackerSideHero->setSecSkillLevel(nature, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	EXPECT_EQ(action.spell, poison);
+	const auto selectedTarget = action.getTarget(battle());
+	ASSERT_EQ(selectedTarget.size(), 1u);
+	EXPECT_EQ(selectedTarget.front().unitValue, enemy);
+	EXPECT_EQ(enemy->physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(enemy->physicalPoisonActivationsRemaining, 0);
 }
 
 TEST_F(NewHorizonsMagicAITest, V3BlessHypotheticalForecastMatchesTheSingleTargetAuthoritativeCast)

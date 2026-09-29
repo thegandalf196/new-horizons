@@ -25,13 +25,13 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 96/310 | 214 planned; active status alone does not certify behavior. Basic Herbalist is registered with Regeneration. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 43/90 | 47 planned perks. |
-| Canonical combat-spell identities registered | 34/67 | 33 missing/inactive; Spell Lock, Storm of Daggers, and Regeneration have active definitions and focused runtime evidence. |
+| Canonical combat-spell identities registered | 35/67 | 32 missing/inactive; Nature Poison has a registered hero-spell identity and linked source, but focused active-profile runtime execution remains pending. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
 | Creature base-line Leadership requirements | 64/64 | Data coverage only; individual creature mechanics remain unaudited. |
 | Creature category forms | 126/126 | 50 Core, 58 Elite, 18 Champion are registered; this is not creature-ability coverage. |
-| Siege output formula families | 4/4 | Ballista, Catapult, Tent and defensive tower outputs have data; universal shop access and Ballista Yard remain missing. |
+| Siege output formula families | 4/4 | Ballista, Catapult, Tent and defensive tower outputs have data; universal Blacksmith access and Ballista Yard's weekly Siege effect are implemented with focused native tests. Rendered/playable acceptance remains open. |
 | Recruitment perks active | 4/10 | Six planned; Muster has server and AI paths. |
 | Diplomacy ranks/perks active | 0/3 ranks, 0/10 perks | Deterministic Diplomacy and its UI remain missing. |
 
@@ -138,6 +138,21 @@ damage-cap fix. Ordinary guild acquisition, save roundtrip, rendered icon
 presentation and playable delivery remain unverified Phase 2/delivery work;
 this does not close the broader spell or Skill coverage gaps.
 
+2026-09-28 Nature Poison source checkpoint: the distinct
+`new-horizons:poison` Level-2 hero spell is registered in the saved-v3 Nature
+roster at 7 Mana. `core:poison` remains the older creature ability and the
+physical-affliction marker recognized by Cure; reclassifying it as a hero spell
+would be invalid. The cast path uses the existing serialized physical-Poison
+state, School-rank-scaled Spell Power term, three escalating activation ticks,
+and equal/stronger refresh rules. Provisional purpose-made art is bound.
+Both Linux `vcmitest` and `vcmiclient` link, and the offline content suite
+passes 47/47. A fresh isolated
+TEST preset activating New Horizons passed eight authoritative/AI Poison cases
+with zero skips; the saved-v2 roster exclusion and adjacent Magic Arrow AI
+regression each pass 1/1. Earlier runs that skipped every case under stale
+presets are not counted. Hero-source kill attribution, broader save/dispel
+interactions, and rendered/playable acceptance remain separate.
+
 | Skill | Active/planned ranks | Active/planned perks | Immediate state |
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Evidence audit required |
@@ -169,7 +184,7 @@ this does not close the broader spell or Skill coverage gaps.
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |
 | Necromancy | 3/0 | 3/7 | Seven perks missing; one inert hook |
 | Bloodrage | 3/0 | 1/9 | Nine perks missing |
-| Bulwark of the Mire | 3/0 | 9/1 | Six further perks active in uncommitted source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |
+| Bulwark of the Mire | 3/0 | 9/1 | Nine perks are active in committed source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
@@ -182,9 +197,9 @@ Mandate, Shroud of Malassa, and Elemental Rebirth.
 
 The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
-spells. Rechecking the current saved roster after adding Holy Wrath and Storm
-of Daggers shows 33 of the 67 combat identities with active settings rows and
-registered mod/core definitions, including Spell Lock; 34 are absent or inactive. An active
+spells. Rechecking the current saved roster after adding Holy Wrath, Storm
+of Daggers, Regeneration, and Nature Poison shows 35 of the 67 combat identities with active settings rows and
+registered mod/core definitions, including Spell Lock; 32 are absent or inactive. An active
 identity is not proof that its exact canonical effect is complete.
 
 | School | Canonical | Active identity coverage | Missing canonical spells |
@@ -193,7 +208,7 @@ identity is not proof that its exact canonical effect is complete.
 | Shadow | 12 | 2 | Life Drain; Hex of Pain; Frailty; Plague; Soul Chain; Shadow Gift; Vampirism; Re-animate; Soul Reaper; Doom |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
-| Nature | 11 | 3 | Entangle; Vengeful Vines; Poison; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
+| Nature | 11 | 4 | Entangle; Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 
 All five Adventure spell effects have partial or substantial runtime support,

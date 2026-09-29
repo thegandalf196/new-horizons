@@ -305,7 +305,13 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		return {};
 
 	std::string result = spell->getDescriptionTranslated(schoolLevel);
-	if(hero && spell->getId() == SpellID::BERSERK
+	if(hero && physicalPoisonEnabled(hero->getMagicRules(), spell->getId()))
+	{
+		result = "Target one enemy living stack. It suffers physical Poison damage on its next three activations: "
+			"20 + 0.5 x Spell Power, then 1.5x and 2x that amount. Nature rank scales only the Spell Power term. "
+			"The affliction does not spread; Cure removes it, while Dispel does not.";
+	}
+	else if(hero && spell->getId() == SpellID::BERSERK
 		&& berserkUsesSingleCreatureTarget(hero->getMagicRules()))
 	{
 		result = "Target one enemy stack. It attacks the nearest creature until its next attack. "
@@ -851,6 +857,21 @@ bool cureEnabled(const JsonNode & rules, SpellID spell)
 		&& rules["spells"]["core:cure"].isStruct()
 		&& rules["spells"]["core:cure"].Struct().contains("cureAfflictions")
 		&& rules["spells"]["core:cure"]["cureAfflictions"].isVector();
+}
+
+bool physicalPoisonEnabled(const JsonNode & rules, SpellID spell)
+{
+	const auto * definition = spell.toSpell();
+	return definition && definition->getJsonKey() == NATURE_POISON_SPELL && rulesActive(rules)
+		&& rules["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& spellAllowedBySavedRoster(rules, spell);
+}
+
+int64_t poisonBaseDamage(const int32_t spellPower, const int schoolRankCoefficientPercent)
+{
+	if(spellPower < 0 || schoolRankCoefficientPercent < 0 || schoolRankCoefficientPercent > 1000)
+		throw std::invalid_argument("Invalid Poison formula inputs");
+	return 20 + static_cast<int64_t>(spellPower) * schoolRankCoefficientPercent / 200;
 }
 
 std::vector<SpellID> cureAfflictions(const JsonNode & rules, const battle::Unit * unit)

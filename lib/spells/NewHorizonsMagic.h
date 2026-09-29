@@ -65,6 +65,7 @@ inline constexpr std::string_view HAVOC_CONDUCTOR = "new-horizons:havocMagic.con
 inline constexpr std::string_view HAVOC_ANNIHILATOR = "new-horizons:havocMagic.annihilator";
 inline constexpr std::string_view LIGHT_MAGIC_SKILL = "new-horizons:lightMagic";
 inline constexpr std::string_view LIGHT_BENEDICTION = "new-horizons:lightMagic.benediction";
+inline constexpr std::string_view NATURE_POISON_SPELL = "new-horizons:poison";
 inline constexpr std::string_view NATURE_REGENERATION_SPELL = "new-horizons:regeneration";
 inline constexpr std::string_view NATURE_MAGIC_SKILL = "new-horizons:natureMagic";
 inline constexpr std::string_view NATURE_HERBALIST = "new-horizons:natureMagic.herbalist";
@@ -165,6 +166,12 @@ DLL_LINKAGE bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spe
 /// single-target, selected-physical-affliction behavior. Missing settings keep
 /// older snapshots on the original Cure mechanics.
 DLL_LINKAGE bool cureEnabled(const JsonNode & rules, SpellID spell);
+/// True only for the saved v3 New Horizons hero Poison row. It applies the
+/// shared physical-affliction state; the core creature ability is unchanged.
+DLL_LINKAGE bool physicalPoisonEnabled(const JsonNode & rules, SpellID spell);
+/// Poison's fixed 20 base plus half of the saved-rank-scaled Spell Power term.
+/// Integer damage truncates fractional health down, matching the combat damage pipeline.
+DLL_LINKAGE int64_t poisonBaseDamage(int32_t spellPower, int schoolRankCoefficientPercent);
 /// Saved Cure source identities whose complete SPELL_EFFECT source groups are
 /// currently present on this unit. Results are sorted by SpellID for stable UI
 /// and AI enumeration; legacy/unspecified Cure profiles return no candidates.

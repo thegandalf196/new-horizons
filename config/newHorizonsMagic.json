@@ -626,6 +626,18 @@
 				"new-horizons:light"
 			]
 		},
+		"new-horizons:poison": {
+			"schools": [
+				"new-horizons:nature"
+			],
+			"level": 2,
+			"costs": [
+				7,
+				7,
+				7,
+				7
+			]
+		},
 		"core:precision": {
 			"schools": [
 				"new-horizons:sorcery"

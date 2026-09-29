@@ -14,7 +14,9 @@
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
+#include "../../../lib/battle/NewHorizonsBulwark.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -22,6 +24,12 @@
 namespace
 {
 constexpr auto cureKey = "core:cure";
+
+SpellID naturePoisonSpell()
+{
+	static const SpellID poison(SpellID::decode(std::string(newHorizonsMagic::NATURE_POISON_SPELL)));
+	return poison;
+}
 
 std::shared_ptr<Bonus> spellEffect(SpellID source, BonusType type, int value,
 	BonusValueType valueType = BonusValueType::ADDITIVE_VALUE,
@@ -37,7 +45,9 @@ class NewHorizonsCureTest : public HeroCommandFixture
 {
 protected:
 	bool optIntoNewCure = true;
+	int magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
 	CStack * target = nullptr;
+	CStack * poisonEnemy = nullptr;
 
 	void SetUp() override
 	{
@@ -50,12 +60,18 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+		if(magicVersion != newHorizonsMagic::CURRENT_RULESET_VERSION)
+		{
+			rules["rulesetVersion"].Integer() = magicVersion;
+			rules.Struct().erase("schoolRankPowerCoefficientPercent");
+		}
 		if(!optIntoNewCure)
 			rules["spells"][cureKey].Struct().erase("cureAfflictions");
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 	}
 
-	void prepare(int spellPower = 20, const std::string & creature = "core:pikeman", int count = 100)
+	void prepare(int spellPower = 20, const std::string & creature = "core:pikeman", int count = 100,
+		int poisonEnemyCount = 1)
 	{
 		startGame();
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
@@ -65,9 +81,10 @@ protected:
 		startBattle();
 		removeDeployedUnits();
 		target = addStack(BattleSide::ATTACKER, creatureByName(creature), BattleHex(3, 5), count);
-		addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 1);
+		poisonEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), poisonEnemyCount);
 		beginCombat();
 		ASSERT_NE(target, nullptr);
+		ASSERT_NE(poisonEnemy, nullptr);
 	}
 
 	void removeDeployedUnits()
@@ -110,15 +127,17 @@ protected:
 			BonusValueType::ADDITIVE_VALUE, BonusSubtypeID(PrimarySkill::DEFENSE)));
 	}
 
-	void addPhysicalPoison(int64_t baseDamage = 5, int32_t ticks = 3)
+	void addPhysicalPoison(int64_t baseDamage = 5, int32_t ticks = 3,
+		CStack * stack = nullptr, int32_t sourceStackId = 17)
 	{
-		auto state = target->acquireState();
+		CStack * poisonedStack = stack ? stack : target;
+		auto state = poisonedStack->acquireState();
 		state->physicalPoisonBaseDamage = baseDamage;
 		state->physicalPoisonActivationsRemaining = ticks;
-		state->physicalPoisonSourceStackId = 17;
+		state->physicalPoisonSourceStackId = sourceStackId;
 		BattleUnitsChanged update;
 		update.battleID = BattleID(0);
-		UnitChanges change(target->unitId(), UnitChanges::EOperation::UPDATE);
+		UnitChanges change(poisonedStack->unitId(), UnitChanges::EOperation::UPDATE);
 		change.data = state->save();
 		update.changedStacks.push_back(std::move(change));
 		gameHandler->sendAndApply(update);
@@ -148,7 +167,252 @@ protected:
 		action.aimToUnit(unit);
 		return action;
 	}
+
+	BattleAction poisonAction(const CStack * unit) const
+	{
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = naturePoisonSpell();
+		action.aimToUnit(unit);
+		return action;
+	}
+
+	bool advanceUntilPhysicalPoisonActivation(CStack * stack, int32_t remainingBefore)
+	{
+		const size_t maximumActions = battle()->stacks.size() * 8 + 8;
+		for(size_t actionIndex = 0; actionIndex < maximumActions; ++actionIndex)
+		{
+			if(stack->physicalPoisonActivationsRemaining < remainingBefore)
+				return true;
+
+			const auto * active = battle()->battleActiveUnit();
+			if(!active)
+				return false;
+			const BattleAction defend = BattleAction::makeDefend(active);
+			if(!gameHandler->battles->makePlayerBattleAction(BattleID(0),
+				battle()->sideToPlayer(active->unitSide()), defend))
+				return false;
+		}
+		return stack->physicalPoisonActivationsRemaining < remainingBefore;
+	}
 };
+}
+
+TEST_F(NewHorizonsCureTest, CanonicalPoisonIsAvailableAsLevelTwoNatureAtSevenMana)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	const SpellID poison = naturePoisonSpell();
+	ASSERT_TRUE(newHorizonsMagic::physicalPoisonEnabled(rules, poison));
+	EXPECT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(rules, poison));
+	EXPECT_FALSE(newHorizonsMagic::physicalPoisonEnabled(rules, SpellID(SpellID::POISON)));
+	const auto * originalAbility = SpellID(SpellID::POISON).toSpell();
+	ASSERT_NE(originalAbility, nullptr);
+	EXPECT_TRUE(originalAbility->isCreatureAbility());
+	EXPECT_FALSE(originalAbility->isCommonHeroSpell());
+	EXPECT_EQ(newHorizonsMagic::spellLevel(rules, poison), 2);
+	const auto schools = newHorizonsMagic::spellSchools(rules, poison);
+	ASSERT_EQ(schools.size(), 1u);
+	EXPECT_EQ(SpellSchool::encode(schools.front().getNum()), "new-horizons:nature");
+	EXPECT_GT(newHorizonsMagic::factionSpellWeight(rules, FactionID::RAMPART, poison), 0);
+	for(int rank = 0; rank < 4; ++rank)
+		EXPECT_EQ(newHorizonsMagic::spellCost(rules, poison, rank), 7);
+
+	constexpr std::array<int, 4> coefficients{100, 115, 130, 145};
+	constexpr std::array<int64_t, 4> baseDamage{70, 77, 85, 92};
+	for(int rank = 0; rank < 4; ++rank)
+	{
+		EXPECT_EQ(newHorizonsMagic::schoolRankPowerCoefficientPercent(rules, rank), coefficients[rank]);
+		EXPECT_EQ(newHorizonsMagic::poisonBaseDamage(100, coefficients[rank]), baseDamage[rank]);
+	}
+	EXPECT_EQ(newHorizonsMagic::poisonBaseDamage(101, 115), 78);
+}
+
+TEST_F(NewHorizonsCureTest, OldV2RosterWithoutTheNewPoisonSpellDoesNotAcquireIt)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules["spells"].Struct().erase(std::string(newHorizonsMagic::NATURE_POISON_SPELL));
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedBySavedRoster(rules, naturePoisonSpell()));
+	EXPECT_FALSE(newHorizonsMagic::physicalPoisonEnabled(rules, naturePoisonSpell()));
+}
+
+TEST_F(NewHorizonsCureTest, V3PoisonCastAppliesTheRankScaledPhysicalThreeActivationState)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1));
+	const auto poison = naturePoisonSpell();
+	attackerSideHero->addSpellToSpellbook(poison);
+	const int natureMagicId = SecondarySkill::decode(std::string(newHorizonsMagic::NATURE_MAGIC_SKILL));
+	ASSERT_GE(natureMagicId, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(natureMagicId), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	const int manaBefore = attackerSideHero->getManaAvailable();
+	const auto healthBefore = poisonEnemy->getAvailableHealth();
+
+	const auto * spell = poison.toSpell();
+	ASSERT_NE(spell, nullptr);
+	spells::BattleCast parameters(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&parameters);
+	EXPECT_EQ(mechanics->getRangeLevel(), 0);
+	EXPECT_FALSE(mechanics->isMassive());
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		poisonAction(poisonEnemy)));
+	EXPECT_EQ(poisonEnemy->physicalPoisonBaseDamage, 77);
+	EXPECT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 3);
+	EXPECT_EQ(poisonEnemy->physicalPoisonSourceStackId, -1);
+	EXPECT_EQ(newHorizonsBulwark::physicalPoisonTickDamage(poisonEnemy->acquireState().get()), 77);
+	EXPECT_TRUE(poisonEnemy->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(poison)))->empty());
+	EXPECT_EQ(poisonEnemy->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), 7);
+}
+
+TEST_F(NewHorizonsCureTest, V3PoisonCastTicksOnThreeRealActivationsAndExpires)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1000, 1000));
+	const auto poison = naturePoisonSpell();
+	attackerSideHero->addSpellToSpellbook(poison);
+	const int natureMagicId = SecondarySkill::decode(std::string(newHorizonsMagic::NATURE_MAGIC_SKILL));
+	ASSERT_GE(natureMagicId, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(natureMagicId), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		poisonAction(poisonEnemy)));
+	ASSERT_EQ(poisonEnemy->physicalPoisonBaseDamage, 77);
+	ASSERT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 3);
+	const auto initialHealth = poisonEnemy->getAvailableHealth();
+	const auto firstInjuryIndex = server.injuries.size();
+	constexpr std::array<int64_t, 3> expectedDamage{77, 115, 154};
+	int64_t totalDamage = 0;
+
+	for(size_t activation = 0; activation < expectedDamage.size(); ++activation)
+	{
+		ASSERT_TRUE(advanceUntilPhysicalPoisonActivation(poisonEnemy,
+			static_cast<int32_t>(expectedDamage.size() - activation)));
+		ASSERT_GE(server.injuries.size(), firstInjuryIndex);
+		std::vector<int64_t> poisonHits;
+		for(size_t injuryIndex = firstInjuryIndex; injuryIndex < server.injuries.size(); ++injuryIndex)
+			for(const auto & hit : server.injuries[injuryIndex].stacks)
+				if(hit.stackAttacked == poisonEnemy->unitId())
+					poisonHits.push_back(hit.damageAmount);
+
+		ASSERT_EQ(poisonHits.size(), activation + 1);
+		EXPECT_EQ(poisonHits.back(), expectedDamage[activation]);
+		totalDamage += expectedDamage[activation];
+		EXPECT_EQ(poisonEnemy->getAvailableHealth(), initialHealth - totalDamage);
+		EXPECT_EQ(poisonEnemy->physicalPoisonActivationsRemaining,
+			static_cast<int32_t>(expectedDamage.size() - activation - 1));
+	}
+
+	EXPECT_EQ(poisonEnemy->physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 0);
+	EXPECT_EQ(poisonEnemy->physicalPoisonSourceStackId, -1);
+}
+
+TEST_F(NewHorizonsCureTest, V3EqualPotencyPoisonCastRefreshesTheActivationCount)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1));
+	attackerSideHero->addSpellToSpellbook(naturePoisonSpell());
+	const int natureMagicId = SecondarySkill::decode(std::string(newHorizonsMagic::NATURE_MAGIC_SKILL));
+	ASSERT_GE(natureMagicId, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(natureMagicId), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	addPhysicalPoison(77, 2, poisonEnemy, 15);
+	ASSERT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 2);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		poisonAction(poisonEnemy)));
+	EXPECT_EQ(poisonEnemy->physicalPoisonBaseDamage, 77);
+	EXPECT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 3);
+	EXPECT_EQ(poisonEnemy->physicalPoisonSourceStackId, -1);
+}
+
+TEST_F(NewHorizonsCureTest, V3StrongerPoisonCastRefreshesTheCurrentAffliction)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1));
+	attackerSideHero->addSpellToSpellbook(naturePoisonSpell());
+	const int natureMagicId = SecondarySkill::decode(std::string(newHorizonsMagic::NATURE_MAGIC_SKILL));
+	ASSERT_GE(natureMagicId, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(natureMagicId), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	addPhysicalPoison(70, 2, poisonEnemy, 15);
+	ASSERT_EQ(poisonEnemy->physicalPoisonBaseDamage, 70);
+	ASSERT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 2);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		poisonAction(poisonEnemy)));
+	EXPECT_EQ(poisonEnemy->physicalPoisonBaseDamage, 77);
+	EXPECT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 3);
+	EXPECT_EQ(poisonEnemy->physicalPoisonSourceStackId, -1);
+}
+
+TEST_F(NewHorizonsCureTest, V3WeakerPoisonCastLeavesTheStrongerCurrentAfflictionUntouched)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, "core:pikeman", 1));
+	attackerSideHero->addSpellToSpellbook(naturePoisonSpell());
+	addPhysicalPoison(70, 2, poisonEnemy, 15);
+	ASSERT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 2);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		poisonAction(poisonEnemy)));
+	EXPECT_EQ(poisonEnemy->physicalPoisonBaseDamage, 70);
+	EXPECT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 2);
+	EXPECT_EQ(poisonEnemy->physicalPoisonSourceStackId, 15);
+}
+
+TEST_F(NewHorizonsCureTest, V3PoisonRejectsFriendlyAndNonLivingTargetsWithoutSpendingTheCast)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1));
+	attackerSideHero->addSpellToSpellbook(naturePoisonSpell());
+	const int manaBefore = attackerSideHero->getManaAvailable();
+
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		poisonAction(target)));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+
+	poisonEnemy->addNewBonus(spellEffect(SpellID::POISON, BonusType::UNDEAD, 0));
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		poisonAction(poisonEnemy)));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+	EXPECT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 0);
+}
+
+TEST_F(NewHorizonsCureTest, V3PoisonRejectsDeadTargetsWithoutSpendingTheCast)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1));
+	attackerSideHero->addSpellToSpellbook(naturePoisonSpell());
+	const int manaBefore = attackerSideHero->getManaAvailable();
+	ASSERT_NO_FATAL_FAILURE(injure(poisonEnemy->getAvailableHealth(), poisonEnemy));
+	ASSERT_FALSE(poisonEnemy->alive());
+
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		poisonAction(poisonEnemy)));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+	EXPECT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 0);
+}
+
+TEST_F(NewHorizonsCureTest, V2RosterCustomPoisonUsesTheFallbackTimedEffect)
+{
+	magicVersion = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1));
+	attackerSideHero->addSpellToSpellbook(naturePoisonSpell());
+	EXPECT_FALSE(newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(),
+		naturePoisonSpell()));
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		poisonAction(poisonEnemy)));
+	EXPECT_FALSE(poisonEnemy->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(naturePoisonSpell())))->empty());
+	EXPECT_EQ(poisonEnemy->physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(poisonEnemy->physicalPoisonActivationsRemaining, 0);
 }
 
 TEST_F(NewHorizonsCureTest, CanonicalProfileOptsIntoOnlyPoisonAndDiseaseAtFourManaEveryRank)

@@ -25,6 +25,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:disintegrate',
     'new-horizons:masterChainLightning',
     'new-horizons:phantomArmy',
+    'new-horizons:poison',
     'new-horizons:regeneration',
     'new-horizons:spellLock',
     'new-horizons:stormOfDaggers',
@@ -161,6 +162,37 @@ def png_size(path):
 class NewHorizonsContentTest(unittest.TestCase):
     def setUp(self):
         self.rules = load('config/newHorizonsMagic.json')
+
+    def test_nature_poison_is_a_distinct_hero_spell_with_provisional_art(self):
+        spell_id = 'new-horizons:poison'
+        row = self.rules['spells'][spell_id]
+        self.assertEqual(row['schools'], ['new-horizons:nature'])
+        self.assertEqual(row['level'], 2)
+        self.assertEqual(row['costs'], [7, 7, 7, 7])
+        self.assertNotIn('core:poison', self.rules['spells'])
+        self.assertIn('core:poison', self.rules['spells']['core:cure']['cureAfflictions'])
+
+        definitions = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        self.assertNotIn('core:poison', definitions)
+        spell = definitions['poison']
+        self.assertEqual(spell['name'], 'Poison')
+        self.assertEqual(spell['school'], {'new-horizons:nature': True})
+        self.assertEqual(spell['level'], 2)
+        self.assertEqual(spell['targetType'], 'CREATURE')
+        self.assertEqual(set(spell['levels']), {'none', 'basic', 'advanced', 'expert'})
+        for rank, level in spell['levels'].items():
+            with self.subTest(rank=rank):
+                self.assertEqual(level['range'], '0')
+                self.assertEqual(level['cost'], 7)
+        for role, size in (('iconBook', 44), ('iconScroll', 32),
+                           ('iconScenarioBonus', 32), ('iconEffect', 30),
+                           ('iconImmune', 30)):
+            filename = spell['graphics'][role]
+            with self.subTest(role=role):
+                self.assertTrue(filename.startswith('NH_nature_poison_'))
+                self.assertEqual(struct.unpack('>II',
+                    (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                    (size, size))
 
     def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
         spell_id = 'new-horizons:holyWrath'

@@ -45,6 +45,11 @@ bool isLivingCureTarget(const battle::Unit * unit)
 		&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
 }
 
+bool isLivingPhysicalPoisonTarget(const battle::Unit * unit)
+{
+	return isLivingCureTarget(unit);
+}
+
 bool isNewHorizonsRegenerationSpell(const CSpell * spell, const JsonNode & savedRules)
 {
 	return spell && spell->getJsonKey() == newHorizonsMagic::NATURE_REGENERATION_SPELL
@@ -793,6 +798,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		return false;
 
 	const bool newHorizonsCure = isNewHorizonsCure();
+	const bool newHorizonsPhysicalPoison = mode == Mode::HERO && getHeroCaster()
+		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
 	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	Target spellTarget = transformSpellTarget(target);
@@ -849,6 +856,18 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 			|| !isReceptive(regenerationTarget))
 			return false;
 	}
+	if(newHorizonsPhysicalPoison)
+	{
+		if(target.size() != 1 || spellTarget.size() != 1 || casterSide == BattleSide::NONE)
+			return false;
+
+		const auto * poisonTarget = spellTarget.front().unitValue;
+		if(!isLivingPhysicalPoisonTarget(poisonTarget)
+			|| poisonTarget->unitSide() != battle()->otherSide(casterSide)
+			|| poisonTarget->isInvincible()
+			|| !isReceptive(poisonTarget))
+			return false;
+	}
 
 	const battle::Unit * mainTarget = nullptr;
 
@@ -882,7 +901,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	// Cure's target and selected affliction (or healing need) were validated
 	// above. Its legacy HEAL/DISPEL applicability checks do not recognize
 	// physical-only Poison, so do not let those checks reject a valid action.
-	if(newHorizonsCure || newHorizonsRegeneration || newHorizonsMagic::isCounterspell(owner))
+	if(newHorizonsCure || newHorizonsRegeneration || newHorizonsPhysicalPoison
+		|| newHorizonsMagic::isCounterspell(owner))
 		return true;
 
 	return effects->applicable(problem, this, target, spellTarget);
@@ -919,13 +939,15 @@ std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(const Target
 
 void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {
+	const bool newHorizonsPhysicalPoison = mode == Mode::HERO && getHeroCaster()
+		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
 	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	if(isNewHorizonsStormOfDaggers()
 		&& (!setStormOfDaggersTargetCount(static_cast<int32_t>(target.size()))
 			|| !canBeCastAt(target)))
 		return;
-	if(newHorizonsRegeneration && !canBeCastAt(target))
+	if((newHorizonsRegeneration || newHorizonsPhysicalPoison) && !canBeCastAt(target))
 		return;
 
 	BattleSpellCast sc;

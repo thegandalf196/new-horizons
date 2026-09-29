@@ -40,6 +40,12 @@ public:
 	/// Zero means the stack is already locked, unreceptive, or not worth sealing.
 	static float spellLockPlacementValue(const spells::Mechanics * spellMechanics,
 		const spells::Target & target);
+	/// Estimates the marginal value of a canonical Nature Poison application by
+	/// projecting its three real-activation ticks against the target's current
+	/// physical Poison state. The projection uses detached unit states only.
+	static float naturePoisonPlacementValue(const spells::Mechanics * spellMechanics,
+		const spells::Target & target,
+		std::shared_ptr<CBattleInfoCallback> battleState = {});
 
 private:
 	enum Compare
@@ -57,6 +63,7 @@ private:
 	static std::vector<spells::Target> canonicalFireWallTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalTimeStopTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalSpellLockTargets(const spells::Mechanics * spellMechanics);
+	static std::vector<spells::Target> canonicalNaturePoisonTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> allTargetableCreatures(const spells::Mechanics * spellMechanics, bool exactUnit);
 	static std::vector<spells::Target> theBestLocationCasts(const spells::Mechanics * spellMechanics);
 	static Compare compareAffectedStacks(

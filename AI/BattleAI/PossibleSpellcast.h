@@ -53,6 +53,9 @@ public:
 	/// not change unit health during hypothetical cast evaluation, so the
 	/// targeting evaluator supplies this read-only pressure score explicitly.
 	float spellPlacementHeuristicValue = 0.0f;
+	/// Marginal three-activation physical Poison value for canonical Nature
+	/// Poison, whose immediate cast does not change health.
+	float spellNaturePoisonValue = 0.0f;
 	/// Canonical New Horizons Fire Wall placement direction.  The target vector
 	/// used during AI evaluation contains the complete three-hex footprint, but
 	/// the authoritative action protocol carries only its start hex and this
