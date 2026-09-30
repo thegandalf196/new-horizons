@@ -14,6 +14,14 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-065 user-playtest defect: Toxic Spines is registered as a Basic perk but its
+application requires actual Bulwark reflection, which is zero at Basic rank.
+The latest battle log confirms Basic rank and Defend. Existing positive AI
+coverage uses Expert and does not establish Basic functionality. Registry counts
+remain descriptive; Toxic Spines is not functionally complete at acquisition.
+A user decision is pending between perk-provided first-hit reflection at Basic
+and moving acquisition to Advanced; do not alter canonical potency silently.
+
 UP-063 Shield of Chaos / Paradox Shield are source/native verified. The neutral
 single-target spell installs four timed
 bonuses: -10 Morale, -10 Luck and distinct fractional physical/magical reductions.
