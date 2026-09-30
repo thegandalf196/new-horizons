@@ -30,9 +30,13 @@
 #include "../../../lib/networkPacks/StackLocation.h"
 #include "../../../lib/entities/hero/CHeroHandler.h"
 #include "../../../lib/entities/hero/CHeroClass.h"
+#include "../../../lib/entities/hero/NewHorizonsPerkState.h"
+#include "../../../lib/entities/hero/NewHorizonsPrimaryGrowth.h"
 #include "../../../lib/CPlayerState.h"
+#include "../../../lib/CSkillHandler.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
+#include "../../../lib/filesystem/ResourcePath.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/bonuses/Limiters.h"
 #include "../../../lib/bonuses/Propagators.h"
@@ -49,6 +53,9 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/rmg/CMapGenOptions.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+
+#include <functional>
+#include <string_view>
 
 class NewHorizonsHeroGrowthTest : public HeroCommandFixture
 {
@@ -92,6 +99,7 @@ protected:
 			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
 		}
 	}
+
 };
 
 class NewHorizonsVersionThreeHeroGrowthTest : public NewHorizonsHeroGrowthTest
@@ -139,8 +147,120 @@ TEST_F(NewHorizonsVersionThreeHeroGrowthTest, GuaranteedConfiguredSkillBonusesRe
 	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero), (std::array<int, 4>{6, 9, 2, 3}));
 }
 
+namespace
+{
+constexpr auto WISDOM_SKILL_ID = "new-horizons:wisdom";
+constexpr auto DEEP_KNOWLEDGE_ID = "new-horizons:wisdom.deepKnowledge";
+
+bool setDeepKnowledgeStatus(JsonNode & rules, std::string_view status)
+{
+	auto & perks = rules["skills"][WISDOM_SKILL_ID]["perks"].Vector();
+	const auto deepKnowledge = std::find_if(perks.begin(), perks.end(), [](const JsonNode & perk)
+	{
+		return perk["id"].String() == DEEP_KNOWLEDGE_ID;
+	});
+	if(deepKnowledge == perks.end())
+		return false;
+	(*deepKnowledge)["effect"]["status"].String() = std::string(status);
+	return true;
+}
+
+int growthChance(const newHorizonsHeroes::PrimaryGrowthView & view, SecondarySkill skill)
+{
+	const auto opportunity = std::find_if(view.extraGrowth.begin(), view.extraGrowth.end(), [skill](const auto & entry)
+	{
+		return entry.skill == skill;
+	});
+	return opportunity == view.extraGrowth.end() ? -1 : opportunity->chancePercent;
+}
+}
+
 class NewHorizonsInstalledSkillGrowthTest : public HeroCommandFixture
 {
+	protected:
+	bool wisdomGrowthChanceAtHundred = false;
+
+	void mapLoaded(CMap * map) override
+	{
+		HeroCommandFixture::mapLoaded(map);
+		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
+
+		if(wisdomGrowthChanceAtHundred)
+		{
+			JsonNode growthRules(JsonPath::builtin("config/newHorizonsHeroes"));
+			auto & opportunities = growthRules["extraGrowth"].Vector();
+			const auto wisdom = std::find_if(opportunities.begin(), opportunities.end(), [](const JsonNode & entry)
+			{
+				return entry["skill"].String() == WISDOM_SKILL_ID;
+			});
+			if(wisdom == opportunities.end())
+				throw std::runtime_error("Missing Wisdom growth opportunity in installed hero rules");
+			for(int rank = 1; rank <= 3; ++rank)
+				(*wisdom)["chances"].Vector().at(static_cast<size_t>(rank)).Integer() = 100;
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, growthRules);
+		}
+	}
+
+	void startGameWithWizard()
+	{
+		const CreatureID token(0);
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:solmyr")), PlayerColor(0))
+			.heroGarrison({{token, 1}})
+			.hero({7, 7, 0}, HeroTypeID(1), PlayerColor(1))
+			.heroGarrison({{token, 1}});
+		startWithMap(std::move(builder));
+
+		server.gameState = gameState();
+		gameHandler = std::make_shared<CGameHandler>(server, gameState());
+		gameHandler->randomizer->setSeed(seed);
+		attackerSideHero = findHeroByOwner(PlayerColor(0));
+		ASSERT_NE(attackerSideHero, nullptr);
+		ASSERT_EQ(attackerSideHero->getHeroClass()->getJsonKey(), "core:wizard");
+	}
+
+	SecondarySkill wisdomSkill() const
+	{
+		const auto decoded = SecondarySkill::decode(WISDOM_SKILL_ID);
+		return decoded < 0 ? SecondarySkill::NONE : SecondarySkill(decoded);
+	}
+
+	bool chooseOfferedPerk(CGHeroInstance * hero, const std::function<bool(const newHorizonsHeroes::PerkOfferCandidate &)> & matches)
+	{
+		const auto rankLookup = [hero](const std::string & skillId)
+		{
+			return hero->getPerkSkillRank(skillId);
+		};
+		for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
+		{
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, offerSeed);
+			const auto candidate = std::find_if(offer.begin(), offer.end(), matches);
+			if(candidate == offer.end())
+				continue;
+			const auto choice = static_cast<size_t>(std::distance(offer.begin(), candidate));
+			gameHandler->levelUpHero(hero, offer, choice, offerSeed, false);
+			return true;
+		}
+		return false;
+	}
+
+	bool chooseBasicWisdomPerk(CGHeroInstance * hero)
+	{
+		return chooseOfferedPerk(hero, [](const auto & candidate)
+		{
+			return candidate.selection.skillId == WISDOM_SKILL_ID && candidate.requiredRank == 1;
+		});
+	}
+
+	bool chooseDeepKnowledge(CGHeroInstance * hero)
+	{
+		return chooseOfferedPerk(hero, [](const auto & candidate)
+		{
+			return candidate.selection.perkId == DEEP_KNOWLEDGE_ID;
+		});
+	}
 };
 
 TEST_F(NewHorizonsInstalledSkillGrowthTest, ScopedSkillRanksUseInstalledGrowthMappings)
@@ -247,6 +367,273 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, ScopedSkillGrowthRandomizerContinues
 	}
 	EXPECT_TRUE(sawFixedOnlyRoll) << "10% skill chances should also preserve failed rolls";
 	EXPECT_TRUE(sawBonusRoll) << "10% skill chances should produce successful rolls";
+}
+
+TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesLegalWisdomRanksAndCapturedSavedPerkState)
+{
+	const auto rules = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
+	if(!newHorizonsHeroes::usesRules(rules))
+		GTEST_SKIP() << "Requires the activated New Horizons preset";
+
+	startGameWithWizard();
+	auto * hero = attackerSideHero;
+	ASSERT_NE(hero, nullptr);
+	const auto wisdom = wisdomSkill();
+	ASSERT_NE(wisdom, SecondarySkill::NONE);
+
+	for(const auto * id : {"new-horizons:offense", "new-horizons:archery", "new-horizons:armorer",
+		"new-horizons:spellcraft", WISDOM_SKILL_ID})
+	{
+		const auto decoded = SecondarySkill::decode(id);
+		ASSERT_GE(decoded, 0) << id;
+		hero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	}
+
+	const auto rankLookup = [hero](const std::string & skillId)
+	{
+		return hero->getPerkSkillRank(skillId);
+	};
+	const auto wisdomRules = hero->getPerkState().rules["skills"][WISDOM_SKILL_ID]["perks"].Vector();
+	const auto deepDefinition = std::find_if(wisdomRules.begin(), wisdomRules.end(), [](const JsonNode & perk)
+	{
+		return perk["id"].String() == DEEP_KNOWLEDGE_ID;
+	});
+	ASSERT_NE(deepDefinition, wisdomRules.end());
+	ASSERT_EQ((*deepDefinition)["effect"]["status"].String(), "active");
+
+	const auto initialView = hero->getPrimaryGrowthView();
+	ASSERT_TRUE(initialView);
+	ASSERT_EQ(initialView->extraGrowth.size(), 5u);
+	EXPECT_EQ(growthChance(*initialView, wisdom), 10);
+	EXPECT_FALSE(hero->getPerkState().canAdvanceSkillNormally(WISDOM_SKILL_ID, MasteryLevel::BASIC));
+	const auto basicOffer = hero->getPerkState().prepareOffer(rankLookup, 0);
+	EXPECT_FALSE(std::any_of(basicOffer.begin(), basicOffer.end(), [](const auto & candidate)
+	{
+		return candidate.selection.perkId == DEEP_KNOWLEDGE_ID;
+	}));
+
+	ASSERT_TRUE(chooseBasicWisdomPerk(hero)) << "A Basic Wisdom perk should be selectable through the ordinary offer";
+	EXPECT_TRUE(hero->getPerkState().canAdvanceSkillNormally(WISDOM_SKILL_ID, MasteryLevel::BASIC));
+	gameHandler->levelUpHero(hero, wisdom, false);
+	EXPECT_EQ(hero->getPerkSkillRank(WISDOM_SKILL_ID), MasteryLevel::ADVANCED);
+	EXPECT_FALSE(hero->getPerkState().canAdvanceSkillNormally(WISDOM_SKILL_ID, MasteryLevel::ADVANCED));
+
+	const auto advancedView = hero->getPrimaryGrowthView();
+	ASSERT_TRUE(advancedView);
+	ASSERT_EQ(advancedView->extraGrowth.size(), initialView->extraGrowth.size());
+	EXPECT_EQ(growthChance(*advancedView, wisdom), 20);
+	ASSERT_TRUE(chooseDeepKnowledge(hero)) << "Deep Knowledge should be offered after Basic perk selection and Advanced Wisdom";
+	EXPECT_TRUE(hero->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
+	EXPECT_TRUE(hero->getPerkState().canAdvanceSkillNormally(WISDOM_SKILL_ID, MasteryLevel::ADVANCED));
+
+	const auto deepView = hero->getPrimaryGrowthView();
+	ASSERT_TRUE(deepView);
+	ASSERT_EQ(deepView->extraGrowth.size(), advancedView->extraGrowth.size());
+	EXPECT_EQ(deepView->profile.growth, advancedView->profile.growth);
+	for(size_t index = 0; index < deepView->extraGrowth.size(); ++index)
+	{
+		const auto & before = advancedView->extraGrowth[index];
+		const auto & after = deepView->extraGrowth[index];
+		EXPECT_EQ(after.skill, before.skill) << "row " << index;
+		EXPECT_EQ(after.attribute, before.attribute) << "row " << index;
+		EXPECT_EQ(after.chancePercent, before.chancePercent + (before.skill == wisdom ? 10 : 0)) << "row " << index;
+	}
+	EXPECT_EQ(growthChance(*deepView, wisdom), 30);
+
+	gameHandler->levelUpHero(hero, wisdom, false);
+	EXPECT_EQ(hero->getPerkSkillRank(WISDOM_SKILL_ID), MasteryLevel::EXPERT);
+	ASSERT_TRUE(hero->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 40);
+
+	CMemorySerializer memory;
+	memory.oser & *gameState();
+	CGameState restored;
+	memory.iser.cb = &restored;
+	memory.iser.loadingGamestate = true;
+	memory.iser & restored;
+	auto * loaded = restored.getHero(hero->id);
+	ASSERT_NE(loaded, nullptr);
+	ASSERT_TRUE(loaded->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
+	ASSERT_TRUE(loaded->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 40);
+
+	loaded->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	EXPECT_FALSE(loaded->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
+	ASSERT_TRUE(loaded->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 10);
+	loaded->setSecSkillLevel(wisdom, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	EXPECT_TRUE(loaded->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
+	ASSERT_TRUE(loaded->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 30);
+
+	EXPECT_TRUE(std::any_of(loaded->getPerkState().selected.begin(), loaded->getPerkState().selected.end(),
+		[](const auto & selection) { return selection.skillId == WISDOM_SKILL_ID && selection.perkId != DEEP_KNOWLEDGE_ID; }));
+	auto plannedState = loaded->getPerkState();
+	ASSERT_TRUE(setDeepKnowledgeStatus(plannedState.rules, "planned"));
+	std::erase_if(plannedState.selected, [](const auto & selection)
+	{
+		return selection.perkId == DEEP_KNOWLEDGE_ID;
+	});
+	const auto plannedOffer = plannedState.prepareOffer([loaded](const std::string & skillId)
+	{
+		return loaded->getPerkSkillRank(skillId);
+	}, 7);
+	EXPECT_FALSE(std::any_of(plannedOffer.begin(), plannedOffer.end(), [](const auto & candidate)
+	{
+		return candidate.selection.perkId == DEEP_KNOWLEDGE_ID;
+	}));
+	plannedState.selected.push_back({WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID});
+	const_cast<newHorizonsHeroes::PerkState &>(loaded->getPerkState()) = std::move(plannedState);
+	EXPECT_FALSE(loaded->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
+	ASSERT_TRUE(loaded->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 20)
+		<< "a saved selected identity does not activate when its captured rules mark it planned";
+}
+
+TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesExactThirtyAndFortyPercentDrawBoundaries)
+{
+	const auto rules = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
+	if(!newHorizonsHeroes::usesRules(rules))
+		GTEST_SKIP() << "Requires the activated New Horizons preset";
+
+	startGameWithWizard();
+	auto * hero = attackerSideHero;
+	ASSERT_NE(hero, nullptr);
+	const auto wisdom = wisdomSkill();
+	ASSERT_NE(wisdom, SecondarySkill::NONE);
+	for(const auto * id : {"new-horizons:offense", "new-horizons:archery", "new-horizons:armorer",
+		"new-horizons:spellcraft"})
+	{
+		const auto decoded = SecondarySkill::decode(id);
+		ASSERT_GE(decoded, 0) << id;
+		hero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	}
+	hero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(chooseBasicWisdomPerk(hero));
+	gameHandler->levelUpHero(hero, wisdom, false);
+	ASSERT_TRUE(chooseDeepKnowledge(hero));
+
+	const auto verifyBoundary = [&](int chance, int successfulDraw, int failedDraw)
+	{
+		const auto view = hero->getPrimaryGrowthView();
+		ASSERT_TRUE(view);
+		ASSERT_EQ(view->extraGrowth.size(), 1u);
+		ASSERT_EQ(growthChance(*view, wisdom), chance);
+		std::vector<newHorizonsHeroes::ExtraPrimaryRoll> opportunities;
+		std::vector<int> draws;
+		for(const auto & opportunity : view->extraGrowth)
+		{
+			opportunities.push_back({opportunity.attribute, opportunity.chancePercent});
+			draws.push_back(opportunity.chancePercent);
+		}
+		const auto wisdomIndex = static_cast<size_t>(std::distance(view->extraGrowth.begin(),
+			std::find_if(view->extraGrowth.begin(), view->extraGrowth.end(), [wisdom](const auto & opportunity)
+			{
+				return opportunity.skill == wisdom;
+			})));
+		ASSERT_LT(wisdomIndex, draws.size());
+		const auto fixedGrowth = view->profile.growth;
+		auto expectedWithKnowledge = fixedGrowth;
+		++expectedWithKnowledge[PrimarySkill(PrimarySkill::KNOWLEDGE).getNum()];
+		draws[wisdomIndex] = successfulDraw;
+		EXPECT_EQ(newHorizonsHeroes::calculatePrimaryGrowth(view->profile, opportunities, draws), expectedWithKnowledge);
+		draws[wisdomIndex] = failedDraw;
+		EXPECT_EQ(newHorizonsHeroes::calculatePrimaryGrowth(view->profile, opportunities, draws), fixedGrowth);
+	};
+
+	verifyBoundary(30, 29, 30);
+	gameHandler->levelUpHero(hero, wisdom, false);
+	verifyBoundary(40, 39, 40);
+}
+
+TEST_F(NewHorizonsInstalledSkillGrowthTest, AuthoritativeLevelUpUsesPreOfferViewAndNextRollUsesSelectedDeepKnowledge)
+{
+	const auto rules = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
+	if(!newHorizonsHeroes::usesRules(rules))
+		GTEST_SKIP() << "Requires the activated New Horizons preset";
+
+	startGameWithWizard();
+	auto * hero = attackerSideHero;
+	ASSERT_NE(hero, nullptr);
+	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
+		hero->setSecSkillLevel(SecondarySkill(index), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	const auto wisdom = wisdomSkill();
+	ASSERT_NE(wisdom, SecondarySkill::NONE);
+	hero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(chooseBasicWisdomPerk(hero));
+	gameHandler->levelUpHero(hero, wisdom, false);
+	ASSERT_TRUE(hero->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 20);
+
+	const auto owner = hero->getOwner();
+	hero->setExperience(LIBRARY->heroh->reqExp(hero->level + 1), ChangeValueMode::ABSOLUTE);
+	CMemorySerializer beforeLevelUp;
+	beforeLevelUp.oser & *gameHandler->randomizer;
+	GameRandomizer expectedBeforeChoice(*gameState());
+	beforeLevelUp.iser & expectedBeforeChoice;
+	const auto expectedPrimaryGains = expectedBeforeChoice.rollPrimarySkillsForLevelup(hero);
+
+	gameHandler->levelUpHero(hero);
+	gameHandler->onAdvInterfaceReady(owner);
+	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gameHandler->queries->topQuery(owner));
+	ASSERT_NE(query, nullptr);
+	const auto deepKnowledge = std::find_if(query->hlu.perks.begin(), query->hlu.perks.end(), [](const auto & candidate)
+	{
+		return candidate.selection.perkId == DEEP_KNOWLEDGE_ID;
+	});
+	ASSERT_NE(deepKnowledge, query->hlu.perks.end());
+	ASSERT_EQ(query->hlu.primaryGains, expectedPrimaryGains)
+		<< "the authoritative primary roll is captured before the level-up perk offer";
+	const auto gainsBeforePerkChoice = query->hlu.primaryGains;
+
+	CMemorySerializer atChoice;
+	atChoice.oser & *gameHandler->randomizer;
+	GameRandomizer expectedNextRoll(*gameState());
+	atChoice.iser & expectedNextRoll;
+	const auto choice = query->hlu.skills.size()
+		+ static_cast<size_t>(std::distance(query->hlu.perks.begin(), deepKnowledge));
+	ASSERT_TRUE(gameHandler->queryReply(query->queryID, static_cast<int32_t>(choice), owner));
+	EXPECT_TRUE(hero->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
+	ASSERT_TRUE(hero->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 30);
+	EXPECT_EQ(hero->getPrimaryGrowthView()->lastGains, gainsBeforePerkChoice);
+	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(hero),
+		expectedNextRoll.rollPrimarySkillsForLevelup(hero));
+}
+
+TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeCapsCustomHundredPercentWisdomChance)
+{
+	wisdomGrowthChanceAtHundred = true;
+	const auto rules = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
+	if(!newHorizonsHeroes::usesRules(rules))
+		GTEST_SKIP() << "Requires the activated New Horizons preset";
+
+	startGameWithWizard();
+	auto * hero = attackerSideHero;
+	ASSERT_NE(hero, nullptr);
+	for(const auto * id : {"new-horizons:offense", "new-horizons:archery", "new-horizons:armorer",
+		"new-horizons:spellcraft"})
+	{
+		const auto decoded = SecondarySkill::decode(id);
+		ASSERT_GE(decoded, 0) << id;
+		hero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	}
+	const auto wisdom = wisdomSkill();
+	ASSERT_NE(wisdom, SecondarySkill::NONE);
+	hero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(chooseBasicWisdomPerk(hero));
+	gameHandler->levelUpHero(hero, wisdom, false);
+	ASSERT_TRUE(hero->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 100);
+	ASSERT_TRUE(chooseDeepKnowledge(hero));
+	ASSERT_TRUE(hero->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 100)
+		<< "Deep Knowledge must saturate a valid 100% configured chance instead of creating 110%";
+	ASSERT_EQ(hero->getPrimaryGrowthView()->extraGrowth.size(), 1u);
+	auto expected = hero->getPrimaryGrowthView()->profile.growth;
+	++expected[PrimarySkill(PrimarySkill::KNOWLEDGE).getNum()];
+	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(hero), expected)
+		<< "the authoritative helper must treat a capped 100% Wisdom roll as guaranteed Knowledge";
 }
 
 class NewHorizonsVersionTwoHeroGrowthTest : public NewHorizonsHeroGrowthTest

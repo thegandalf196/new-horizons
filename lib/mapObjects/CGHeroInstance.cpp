@@ -955,6 +955,21 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 	}
 	result.extraGrowth = newHorizonsHeroes::skillGrowthChances(primaryGrowthRules,
 		[this](SecondarySkill skill) { return getSecSkillLevel(skill); });
+	if(hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.deepKnowledge"))
+	{
+		const int wisdomSkillID = SecondarySkill::decode("new-horizons:wisdom");
+		if(wisdomSkillID >= 0)
+		{
+			for(auto & opportunity : result.extraGrowth)
+			{
+				if(opportunity.skill == SecondarySkill(wisdomSkillID))
+				{
+					opportunity.chancePercent = std::min(100, opportunity.chancePercent + 10);
+					break;
+				}
+			}
+		}
+	}
 	result.lastGains = lastPrimaryGains;
 	result.powerDivisor = primaryGrowthRules["powerDivisor"].Integer();
 	result.maximumPrimary = primaryGrowthRules["maxPrimary"].Integer();

@@ -2,6 +2,34 @@
 
 ## Purpose
 
+### 2026-09-30 Deep Knowledge probability saturation review
+
+Independent source review found a valid-input regression before native runs:
+saved growth rules permit a 100% Wisdom opportunity, but adding ten without a
+ceiling produces 110%, rejected by `calculatePrimaryGrowth`. Saturate the
+adjusted existing chance at 100%; canonical Advanced 30% and Expert 40% remain
+unchanged, as do row order and draw count. Add a focused 100%-row guard. Initial
+client build 43182 passed compilation but does not establish this boundary;
+the repaired candidate requires its own build/native evidence.
+
+Repaired client 98557 and test build 23322 pass. The first isolated native run
+77666 passes 12/13, zero skips, on binary
+`f89f7f0b98ad019d9ee9c6847c5ccbfc7d24911663e46bd9d6b7f0ffd715f6a6`.
+The saved-selection fixture assumes the first selected perk is Wisdom, but
+real Solmyr already has an authored Havoc selection. Search for the legally
+selected Wisdom identity instead of assuming vector position; preserve the
+planned captured-state assertions and all production behavior. Reports
+`NewHorizonsDeepKnowledge-growth-guards.log`/`.xml` are retained. The actual
+query timing, exact 30/40% boundaries and 100% authoritative roll already pass.
+Rebuild and use a new report name for the corrected fixture.
+
+Test retry 8638 passes; native retry 96534 passes 13/13, zero skips, on binary
+`c9b9cdfd304e9b9db3ef679da3d3d13352a73af892f519d88084d97c3dccac88`.
+The four new cases now all pass, including the previously interrupted captured
+planned-state guard. Reports are `NewHorizonsDeepKnowledge-retry1-growth-guards`
+log/XML; first reports remain preserved. Independent review accepts the
+identity lookup fix and finds no remaining blocker.
+
 ### 2026-09-30 Prepared Caster creature fixture identifier repair
 
 The first Linux client/test build (session 91012) stops in the new Prepared

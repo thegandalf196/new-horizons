@@ -4992,7 +4992,7 @@
 								"requires": "advanced",
 								"description": "Wisdom's chance to grant +1 Knowledge at level-up increases by 10 percentage points.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Wisdom's chance to grant +1 Knowledge at level-up increases by 10 percentage points."
 								}
 							},
