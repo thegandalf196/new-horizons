@@ -364,6 +364,20 @@
 			"additionalProperties" : false
 		}
 	},
+	"verdantPrison" : {
+		"implements" : "spellEffect",
+		"script" : "spells/verdantPrison",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {},
+				"id" : { "type" : "string" }
+			},
+			"additionalProperties" : false
+		}
+	},
 	"transfigureMatter" : {
 		"implements" : "spellEffect",
 		"script" : "spells/transfigureMatter",

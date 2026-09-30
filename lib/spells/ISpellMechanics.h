@@ -345,6 +345,8 @@ public:
 	virtual bool usesNewHorizonsQuicksandSelectedPlacement() const { return false; }
 	/// True only when the saved spell roster contains the Holy Armor feature marker.
 	virtual bool usesNewHorizonsMultiplicativeMDR() const { return false; }
+	/// True only when resolving the effect target selected by ordinary Magic Mirror.
+	virtual bool isMagicMirror() const { return false; }
 
 	virtual IBattleCast::Value64 getEffectValue() const = 0;
 
@@ -455,6 +457,7 @@ public:
 	bool usesNewHorizonsMagicV3() const override;
 	bool usesNewHorizonsQuicksandSelectedPlacement() const override;
 	bool usesNewHorizonsMultiplicativeMDR() const override;
+	bool isMagicMirror() const override;
 
 	PlayerColor getCasterColor() const override;
 	const CGHeroInstance * getHeroCaster() const override;

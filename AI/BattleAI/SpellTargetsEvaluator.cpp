@@ -50,6 +50,43 @@ bool isCanonicalSummonTrolls(const Mechanics * spellMechanics)
 	return spell && spell->getJsonKey() == "new-horizons:summonTrolls";
 }
 
+bool isCanonicalVerdantPrison(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return spell && spell->getJsonKey() == "new-horizons:verdantPrison";
+}
+
+std::vector<Target> canonicalVerdantPrisonTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!isCanonicalVerdantPrison(spellMechanics) || !spellMechanics->battle()
+		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
+		return result;
+
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		return result;
+
+	const auto enemySide = spellMechanics->battle()->otherSide(casterSide);
+	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	{
+		if(!unit || unit->unitSide() != enemySide || !unit->alive() || !unit->isValidTarget(false))
+			continue;
+
+		// The shared spell mechanics consult Verdant Prison's canonical ring
+		// placement when answering canBeCastAt. This keeps the AI's candidate list
+		// aligned with execution and rejects targets whose ring has no legal hexes.
+		if(spellMechanics->rangeInHexes(unit->getPosition()).empty())
+			continue;
+
+		Target target{Destination(unit)};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
+	}
+	return result;
+}
+
 std::vector<Target> canonicalSummonTrollsTargets(const Mechanics * spellMechanics)
 {
 	std::vector<Target> result;
@@ -1036,6 +1073,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 			return {};
 		return canonicalLifeDrainTargets(spellMechanics);
 	}
+	if(isCanonicalVerdantPrison(spellMechanics))
+		return canonicalVerdantPrisonTargets(spellMechanics);
 	if(isCanonicalSanctuary(spellMechanics))
 		return canonicalSanctuaryTargets(spellMechanics);
 	if(isVengefulVines(spellMechanics))

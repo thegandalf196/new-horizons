@@ -82,6 +82,11 @@ bool isCanonicalSummonTrolls(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:summonTrolls";
 }
 
+bool isCanonicalVerdantPrison(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:verdantPrison";
+}
+
 bool isCounterspell(const CSpell * spell)
 {
 	return newHorizonsMagic::isCounterspell(spell);
@@ -3790,6 +3795,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				HypotheticBattle::ProjectedCounterspellOutcome counterspell;
 				bool counterspellNegated = false;
 				uint32_t targetId = std::numeric_limits<uint32_t>::max();
+				size_t verdantPrisonDendroidStackCount = 0;
 
 				if(ps.command == HeroCommand::NONE)
 				{
@@ -4054,6 +4060,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					if(!counterspellNegated)
 					{
 						auto mechanics = ps.spell->battleMechanics(&cast);
+						if(isCanonicalVerdantPrison(ps.spell))
+						{
+							const auto * liveTarget = battleCallback->battleGetUnitByID(targetId);
+							if(!liveTarget || !liveTarget->alive() || !liveTarget->unitType())
+							{
+								ps.value = std::numeric_limits<float>::lowest();
+								continue;
+							}
+						}
 						if(mechanics->isNewHorizonsStormOfDaggers())
 						{
 							// The selected subset size is part of this cast's shared damage
@@ -4119,6 +4134,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				const bool transfigureMatter = isTransfigureMatter(ps.spell);
 				const bool phantomArmy = isPhantomArmy(ps.spell);
 				const bool summonTrolls = isCanonicalSummonTrolls(ps.spell);
+				const bool verdantPrison = isCanonicalVerdantPrison(ps.spell);
 
 				auto needFullEval = ps.command == HeroCommand::FOCUS_FIRE
 					|| state->hasObstacleChanges() || state->hasWallChanges()
@@ -4237,7 +4253,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(isCanonicalNatureEntangle(ps.spell))
 					damageToHostilesScore += entangleMovementValue
 						* scoreEvaluator.getPositiveEffectMultiplier();
-
 				const auto modelActive = state->getForUpdate(activeStack->unitId());
 				if(modelActive->alive() && (needFullEval || !cachedAttack.ap))
 				{
@@ -4333,6 +4348,24 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							// Troll stacks are magical summons and are skipped by the generic
 							// health-delta score below.  Value their exact projected HP here,
 							// including the partial health on the final Troll.
+							const auto maxHealth = std::max<int64_t>(1, unit->getMaxHealth());
+							damageToHostilesScore += static_cast<float>(newHealth)
+								* static_cast<float>(unit->unitType()->getAIValue())
+								/ static_cast<float>(maxHealth);
+						}
+					}
+					if(verdantPrison && !original && unit->unitType()
+						&& unit->unitType()->getJsonKey() == "core:dendroidGuard"
+						&& unit->isSummoned()
+						&& state->battleGetOwner(unit) == playerID && newHealth > 0)
+					{
+						const auto unitState = unit->acquireState();
+						if(unitState && unitState->natureSummoned)
+						{
+							++verdantPrisonDendroidStackCount;
+							// Verdant Prison's temporary Dendroids are excluded from the
+							// generic magical-summon health delta. Value only the exact HP
+							// created by this cast, including the wounded final creatures.
 							const auto maxHealth = std::max<int64_t>(1, unit->getMaxHealth());
 							damageToHostilesScore += static_cast<float>(newHealth)
 								* static_cast<float>(unit->unitType()->getAIValue())
@@ -4439,6 +4472,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								newHealth);
 						}
 #endif
+					}
+				}
+				if(verdantPrison && verdantPrisonDendroidStackCount > 0)
+				{
+					const auto * liveTarget = battleCallback->battleGetUnitByID(targetId);
+					if(liveTarget && liveTarget->alive() && liveTarget->unitType())
+					{
+						// More actual Dendroid stacks mean fewer open ground routes
+						// around this enemy. Keep this small beside the value of the
+						// exact summoned HP, and discount flying targets.
+						const float enemyStackValue = static_cast<float>(liveTarget->getCount())
+							* static_cast<float>(liveTarget->unitType()->getAIValue());
+						const float ringCoverageBonus = std::min(0.24f,
+							0.04f * static_cast<float>(verdantPrisonDendroidStackCount));
+						const float escapeFactor = liveTarget->hasBonusOfType(BonusType::FLYING) ? 0.15f : 1.0f;
+						damageToHostilesScore += enemyStackValue * ringCoverageBonus * escapeFactor
+							* scoreEvaluator.getPositiveEffectMultiplier();
 					}
 				}
 				damageToHostilesScore += projectedDebuffScore * scoreEvaluator.getPositiveEffectMultiplier();

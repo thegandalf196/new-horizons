@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "caa2a7db9ca20a7f552aaf8511e49e05dd63cc7b9528013bef2ee9075170c0c9",
+	"sourceSha256": "54094171842df90e55acfb2ab61e9bf419e9434e81b4d692bb67f4b47b7cf08a",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1403,7 +1403,7 @@
 					"requires": "advanced",
 					"description": "Dendroids created by Verdant Prison receive 25% more HP.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Dendroids created by Verdant Prison receive 25% more HP."
 					}
 				},

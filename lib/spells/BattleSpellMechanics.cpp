@@ -39,6 +39,7 @@ namespace
 {
 
 constexpr std::string_view NEW_HORIZONS_SUMMON_TROLLS_SPELL = "new-horizons:summonTrolls";
+constexpr std::string_view NEW_HORIZONS_VERDANT_PRISON_SPELL = "new-horizons:verdantPrison";
 
 bool isLivingCureTarget(const battle::Unit * unit)
 {
@@ -666,6 +667,11 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	// temporary Nature-summon state. Reject stale requests before resources or a
 	// Hero Action can be spent; its Lua guard alone would only prevent the effect.
 	if(owner->getJsonKey() == NEW_HORIZONS_SUMMON_TROLLS_SPELL && !usesNewHorizonsMagicV3())
+		return adaptGenericProblem(problem);
+	// Verdant Prison's shared pool, Warden bonus, and legal spawn ring are
+	// defined by the saved-v3 snapshot. Reject stale casts before any resources
+	// or Hero Action can be spent.
+	if(owner->getJsonKey() == NEW_HORIZONS_VERDANT_PRISON_SPELL && !usesNewHorizonsMagicV3())
 		return adaptGenericProblem(problem);
 	if(owner->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
 		&& !newHorizonsMagic::soulReaperEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
@@ -1421,21 +1427,35 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			const auto addedUnits = effectRecorder.addedUnits();
 			const bool phantomArmy = owner->getJsonKey() == newHorizonsSorcery::PHANTOM_ARMY_SPELL;
 			const bool summonTrolls = owner->getJsonKey() == NEW_HORIZONS_SUMMON_TROLLS_SPELL;
+			const bool verdantPrison = owner->getJsonKey() == NEW_HORIZONS_VERDANT_PRISON_SPELL;
 			const bool ordinarySummon = getSpellId() == SpellID::SUMMON_FIRE_ELEMENTAL
 				|| getSpellId() == SpellID::SUMMON_EARTH_ELEMENTAL
 				|| getSpellId() == SpellID::SUMMON_WATER_ELEMENTAL
 				|| getSpellId() == SpellID::SUMMON_AIR_ELEMENTAL;
-			if(ordinarySummon || getSpellId() == SpellID::CLONE || phantomArmy || summonTrolls)
+			if(ordinarySummon || getSpellId() == SpellID::CLONE || phantomArmy || summonTrolls || verdantPrison)
 			{
 				bool wroteAddedUnit = false;
+				int32_t verdantStackCount = 0;
+				int32_t verdantCreatureCount = 0;
+				int64_t verdantAggregateHealth = 0;
+				std::optional<CreatureID> verdantCreature;
 				for(const auto & added : addedUnits)
 				{
 					if(getSpellId() == SpellID::CLONE && !added.clone)
 						continue;
 					if(phantomArmy && added.phantomInitialIntegrity <= 0)
 						continue;
-					if(summonTrolls && !added.natureSummoned)
+					if((summonTrolls || verdantPrison) && !added.natureSummoned)
 						continue;
+					if(verdantPrison)
+					{
+						verdantCreature = added.creature;
+						++verdantStackCount;
+						verdantCreatureCount += added.count;
+						verdantAggregateHealth += added.availableHealth;
+						wroteAddedUnit = true;
+						continue;
+					}
 					if(wroteAddedUnit)
 						line.appendRawString("; ");
 					else
@@ -1464,6 +1484,18 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 						line.appendRawString(" rounds");
 					}
 					wroteAddedUnit = true;
+				}
+				if(verdantStackCount > 0)
+				{
+					line.appendRawString(", summoning ");
+					line.appendNumber(verdantCreatureCount);
+					line.appendRawString(" ");
+					line.appendName(*verdantCreature, verdantCreatureCount);
+					line.appendRawString(" across ");
+					line.appendNumber(verdantStackCount);
+					line.appendRawString(verdantStackCount == 1 ? " stack with " : " stacks with ");
+					line.appendNumber(static_cast<int32_t>(verdantAggregateHealth));
+					line.appendRawString(" aggregate HP as temporary Nature summons");
 				}
 				if(wroteAddedUnit)
 				{
@@ -1594,7 +1626,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		metamagicDescription.lines.push_back(std::move(line));
 		server->apply(metamagicDescription);
 	}
-	else if(mode == Mode::HERO && owner->getJsonKey() == NEW_HORIZONS_SUMMON_TROLLS_SPELL
+	else if((mode == Mode::HERO || mode == Mode::MAGIC_MIRROR)
+		&& (owner->getJsonKey() == NEW_HORIZONS_SUMMON_TROLLS_SPELL
+			|| owner->getJsonKey() == NEW_HORIZONS_VERDANT_PRISON_SPELL)
 		&& !isCounterspellNegated())
 	{
 		const auto addedUnits = effectRecorder.addedUnits();
@@ -1602,10 +1636,23 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		summonDescription.battleID = battle()->getBattle()->getBattleID();
 		MetaString line;
 		bool wroteSummon = false;
+		const bool verdantPrison = owner->getJsonKey() == NEW_HORIZONS_VERDANT_PRISON_SPELL;
+		int32_t verdantStackCount = 0;
+		int32_t verdantCreatureCount = 0;
+		int64_t verdantAggregateHealth = 0;
+		std::optional<CreatureID> verdantCreature;
 		for(const auto & added : addedUnits)
 		{
 			if(!added.natureSummoned)
 				continue;
+			if(verdantPrison)
+			{
+				verdantCreature = added.creature;
+				++verdantStackCount;
+				verdantCreatureCount += added.count;
+				verdantAggregateHealth += added.availableHealth;
+				continue;
+			}
 			if(!wroteSummon)
 			{
 				line.appendTextID(caster->getCasterNameTextID());
@@ -1619,6 +1666,20 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			line.appendRawString(" with ");
 			line.appendNumber(added.availableHealth);
 			line.appendRawString(" aggregate HP as a temporary Nature summon");
+			wroteSummon = true;
+		}
+		if(verdantStackCount > 0)
+		{
+			line.appendTextID(caster->getCasterNameTextID());
+			line.appendRawString(" summons ");
+			line.appendNumber(verdantCreatureCount);
+			line.appendRawString(" ");
+			line.appendName(*verdantCreature, verdantCreatureCount);
+			line.appendRawString(" across ");
+			line.appendNumber(verdantStackCount);
+			line.appendRawString(verdantStackCount == 1 ? " stack with " : " stacks with ");
+			line.appendNumber(static_cast<int32_t>(verdantAggregateHealth));
+			line.appendRawString(" aggregate HP as temporary Nature summons");
 			wroteSummon = true;
 		}
 		if(wroteSummon)

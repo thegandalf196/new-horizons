@@ -601,6 +601,96 @@ already exists. Use this list as the readiness review before the next dispatch:
 
 ## How to append an incident
 
+### 2026-09-29 — Verdant Prison pre-build review
+
+First Linux build over `dd73972b7` stopped in the new runtime fixture at
+line 243: the School coefficient helper expects `SpellID`, but the fixture
+passed `const CSpell *` from `spell.toSpell()`. Pass the existing typed ID
+directly. The production shared library and Lua binding had already linked;
+the test/client build is not successful until the retry exits zero.
+The first retry exposed the same incorrect argument in the Warden case at
+line 410. Correct both coefficient calls and check all occurrences in the
+new fixture before retrying; the first repair was incomplete.
+The second retry builds and links both `vcmitest` and `vcmiclient`, exit 0.
+The isolated runtime/AI filter is the next gate; compilation alone does not
+establish ring geometry, pool allocation or reflected-cast correctness.
+
+First isolated native run: 11 cases, six pass, five fail, zero skips, exit 1.
+The wide-target fixture used a Green Dragon immune to this Level-3 spell;
+Warden selection used Basic Nature despite requiring Advanced; and the MR
+fixture expected a paid cast against 100% resistance, which the ordinary
+negative-spell target condition correctly rejects before spending. Repair
+these fixture assumptions without weakening immunity, perk eligibility or
+resistance guards. Two actual AI submission cases also declined to cast;
+their production/fixture cause is under investigation. Logs and XML are
+`build/new-horizons-linux/guardian-active-5jftEx/runner/NewHorizonsVerdantPrison-focused.*`.
+The conditional Trolls guard was not run after this failing gate.
+Runtime fixtures now use nonimmune wide Centaurs, legitimate Advanced Nature
+for Warden (`13000` basis points, still exactly 229 HP at SP 1), and pre-cost
+rejection for full resistance. Lua behavior is unchanged. AI diagnosis and
+the focused retry remain pending; do not increment completed coverage yet.
+After the fresh fixture build, retry3 runs 11 cases: seven pass, four fail,
+zero skips. Both AI cases now prove detached exact ring/HP creation before
+failing actual action selection. Full-resistance pre-cost rejection and
+reflected-friendly ring placement pass. Wide head/tail previews agree, but
+the rear-hex authoritative cast still rejects; Warden setup additionally
+needs a legitimate earlier-tier perk. Preserve progression and rear-hex
+acceptance requirements while repairing these paths. Retry3 logs/XML are
+retained alongside the initial failures; the conditional Trolls guard remains
+unrun while this gate fails.
+Further fixture repairs preserve actual rear-hex targeting while explicitly
+giving the attacker its turn (the Centaur otherwise acts first), and select
+Rootcaller at Basic before Advanced Warden. The rear-hex lookup path showed
+no source defect. AI baseline investigation also found the existing sensible
+early-decline guard when allied blockers can kill a lone Peasant before it
+acts; verify a nontrivial surviving enemy fixture before changing production
+selection logic. Native evidence for these repairs remains pending.
+Retry4 passes nine of 11, zero skips: actual rear-hex casting and both
+positive AI submission/forecast-resolution cases now pass. Remaining failures
+are assertion errors: measuring the legal ring after summons occupy it, and
+forbidding all AI Hero Actions when only Verdant Prison is unavailable.
+Capture Warden's ring before spawning and assert no Verdant Prison submission
+while permitting legal Orders. Keep exact HP, target viability, unchanged
+live Mana and absence of summons assertions. Retry4 logs/XML are preserved.
+First complete succeeding native gate: retry5 passes 11/11 Verdant cases and
+10/10 Summon Trolls shared-path guard cases, zero skips, both exit 0. Both
+Linux targets link, content/inventory passes 55/55, module mirror and targeting
+source guard pass. Independent review has no remaining production blocker.
+Earlier failure logs/XML remain alongside `NewHorizonsVerdantPrison-focused-retry5.*`
+and `NewHorizonsSummonTrolls-shared-guard-retry5.*` in the isolated runner.
+Rendered/playable, full combat save/load and broad interactions are not proven
+by this gate and remain tracked separately for Phase 2.
+
+The first proposed reflection binding called `Mechanics::getMode()`, but that
+method belongs to `IBattleCast`, not the shared effect facade. Review caught
+this before compilation. Add a narrow read-only `isMagicMirror()` facade
+with a BaseMechanics override; do not expose mutable cast mode or bypass
+ordinary resistance/reflection. Source review verifies the corrected binding;
+native compilation and focused reflected-cast execution remain separate gates.
+
+Candidate base: `dd73972b7`, UP-040 working slice; not a playable/published
+head. Independent review caught premature integer rounding in the initial
+pool draft: at SP 1, Basic Nature and Verdant Warden, rounding the scaled SP
+term first gives 228 HP instead of the canonical final-floor result 229.
+Require hundredths precision through the whole-pool modifier, as in Summon
+Trolls, plus a hardcoded 229-HP regression rather than an expected-value helper
+that could repeat the same bug. No passing native gate is claimed yet.
+The reviewer also flagged stale raw-unit precedence during target resolution;
+resolve from the current battle/target rather than trusting a stale pointer.
+Runtime and AI work are still in progress; subsequent findings, repairs and
+first successful build/native evidence must be appended to this checkpoint.
+
+Review found a second core-path mismatch: transforming the enemy into only
+empty ring locations bypasses the ordinary affected-unit Magic Resistance
+filter, while generic Magic Mirror redirects to a friendly anchor that the
+draft rejected, producing a paid no-op. Preserve the resolved unit anchor
+through transform/filter and derive placements in apply/preview instead.
+The standard resistance/Spell Lock/Mirror pipeline then filters the actual
+target; allow a caster-side anchor only for a reflected cast via a tiny
+read-only Lua mode binding. The battlefield overlay still obtains the same
+shared ring from `adjustAffectedHexes`. Do not disable resistance or mark the
+spell nonmagical to mask this issue. Focused native evidence remains pending.
+
 ### 2026-09-29 — Summon Trolls pre-build review and content fixture repairs
 
 Candidate base: `4805d2c7c`, UP-039 working slice; not a published/playable head.

@@ -64,6 +64,7 @@ using TextReplacementList = std::vector<TextReplacement>;
 
 constexpr std::string_view transfigureMatterJsonKey = "new-horizons:transfigureMatter";
 constexpr std::string_view summonTrollsJsonKey = "new-horizons:summonTrolls";
+constexpr std::string_view verdantPrisonJsonKey = "new-horizons:verdantPrison";
 constexpr std::string_view stormOfDaggersJsonKey = "new-horizons:stormOfDaggers";
 constexpr std::string_view shadowGiftJsonKey = "new-horizons:shadowGift";
 constexpr int32_t stormOfDaggersMaximumTargets = 5;
@@ -360,6 +361,48 @@ static std::string prepareSummonTrollsText(const CSpell * spell, const spells::e
 		details.push_back("total HP: " + std::to_string(value.hpDelta));
 
 	details.push_back("footprint: 1 hex");
+
+	if(!details.empty())
+	{
+		result += " (";
+		for(size_t index = 0; index < details.size(); ++index)
+		{
+			if(index != 0)
+				result += ", ";
+			result += details[index];
+		}
+		result += ")";
+	}
+
+	return result;
+}
+
+static std::string prepareVerdantPrisonText(
+	const CSpell * spell,
+	const spells::effects::SpellEffectValue & value,
+	const std::string & targetName,
+	size_t legalRingHexCount)
+{
+	if(!spell)
+		return {};
+
+	auto templateText = MetaString::createFromTextID("core.genrltxt", 27);
+	templateText.replaceRawString(spell->getNameTranslated());
+	if(!targetName.empty())
+		templateText.replaceRawString(targetName);
+	std::string result = templateText.toString(&GAME->translator());
+	std::vector<std::string> details;
+
+	if(value.unitsDelta > 0)
+	{
+		const auto unitName = value.unitType ? value.unitType->getNamePluralTranslated() : "Dendroids";
+		details.push_back("temporary " + unitName + " count: " + std::to_string(value.unitsDelta));
+	}
+
+	if(value.hpDelta > 0)
+		details.push_back("aggregate HP: " + std::to_string(value.hpDelta));
+
+	details.push_back("legal ring footprint: " + std::to_string(legalRingHexCount) + " hexes");
 
 	if(!details.empty())
 	{
@@ -2134,6 +2177,11 @@ bool BattleActionsController::isSummonTrollsSpell(const CSpell * spell)
 	return spell && spell->getJsonKey() == summonTrollsJsonKey;
 }
 
+bool BattleActionsController::isVerdantPrisonSpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == verdantPrisonJsonKey;
+}
+
 bool BattleActionsController::isValidTransfigureMatterTarget(const BattleHex & targetHex) const
 {
 	if(!targetHex.isValid())
@@ -2194,6 +2242,22 @@ BattleHexArray BattleActionsController::getSummonTrollsTargetHexes(const CSpell 
 			result.insert(hex);
 	}
 	return result;
+}
+
+BattleHexArray BattleActionsController::getVerdantPrisonTargetHexes(const CSpell * spell, const BattleHex & targetHex)
+{
+	if(!isVerdantPrisonSpell(spell) || !owner.getBattle() || !heroSpellcastingModeActive()
+		|| !targetHex.isValid() || !isCastingPossibleHere(spell, nullptr, targetHex))
+		return {};
+
+	spells::BattleCast cast(owner.getBattle().get(), getCurrentSpellcaster(), getCurrentCastMode(), spell);
+	const auto * battle = owner.getBattle().get();
+	const auto side = battle->battleGetMySide();
+	const bool followup = side != BattleSide::NONE && battle->battleCanUseMetamagicFollowup(side);
+	cast.setMetamagicFollowup(followup);
+
+	const auto mechanics = spell->battleMechanics(&cast);
+	return mechanics ? mechanics->rangeInHexes(targetHex) : BattleHexArray{};
 }
 
 void BattleActionsController::setMagicArrowOverchargeFactory(MagicArrowOverchargeFactory factory)
@@ -2995,6 +3059,9 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 
 			auto spellEffectValue =
 					owner.getBattle()->getSpellEffectValue(spell, getCurrentSpellcaster(), getCurrentCastMode(), targetHex);
+			if(isVerdantPrisonSpell(spell))
+				return prepareVerdantPrisonText(spell, *spellEffectValue,
+					targetStack ? targetStack->getName() : "", getVerdantPrisonTargetHexes(spell, targetHex).size());
 
 			// "Cast %s on %s" plus dmg and kills info or how many units are risen/summoned
 			return prepareSpellEffectText(27, *spellEffectValue, spell->getNameTranslated(), targetStack->getName());

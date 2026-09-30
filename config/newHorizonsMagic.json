@@ -306,6 +306,11 @@
 			"level": 2,
 			"costs": [9, 9, 9, 9]
 		},
+		"new-horizons:verdantPrison": {
+			"schools": ["new-horizons:nature"],
+			"level": 3,
+			"costs": [12, 12, 12, 12]
+		},
 		"new-horizons:vengefulVines": {
 			"schools": ["new-horizons:nature"],
 			"level": 1,

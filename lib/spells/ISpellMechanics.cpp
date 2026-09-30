@@ -1468,6 +1468,11 @@ bool BaseMechanics::usesNewHorizonsMultiplicativeMDR() const
 		&& magicRules["spells"].Struct().contains(HOLY_ARMOR_SAVED_ROSTER_KEY);
 }
 
+bool BaseMechanics::isMagicMirror() const
+{
+	return mode == Mode::MAGIC_MIRROR;
+}
+
 PlayerColor BaseMechanics::getCasterColor() const
 {
 	return caster->getCasterOwner();

@@ -411,6 +411,11 @@ public:
 	static bool isSummonTrollsSpell(const CSpell * spell);
 	BattleHexArray getSummonTrollsTargetHexes(const CSpell * spell);
 
+	/// New Horizons Verdant Prison previews the legal spawned ring returned by
+	/// the shared spell effect geometry for the currently hovered enemy stack.
+	static bool isVerdantPrisonSpell(const CSpell * spell);
+	BattleHexArray getVerdantPrisonTargetHexes(const CSpell * spell, const BattleHex & targetHex);
+
 	/// methods to work with array of possible actions, needed to control special creatures abilities
 	const std::vector<PossiblePlayerBattleAction> & getPossibleActions() const;
 	

@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-09-29
-Canonical source SHA-256: `caa2a7db9ca20a7f552aaf8511e49e05dd63cc7b9528013bef2ee9075170c0c9`
+Canonical source SHA-256: `54094171842df90e55acfb2ab61e9bf419e9434e81b4d692bb67f4b47b7cf08a`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -14,11 +14,12 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-Summon Trolls checkpoint: exact aggregate HP, Beastcaller, chosen legal empty
-hex, count/HP preview, AI targeting, registration and original Provisional
-artwork are present. Both Linux targets link; the isolated active-profile
-filter passes 10/10, zero skips, plus two existing AI guards. This is
-source/native evidence, not rendered or playable delivery.
+Verdant Prison checkpoint: exact shared HP allocation across legal Dendroid
+ring placements, Verdant Warden, wide-footprint targeting, preview, AI,
+registration and original Provisional artwork are present. Both Linux targets
+link; the isolated active-profile filter passes 11/11, zero skips, and the
+Summon Trolls shared-path guard passes 10/10. This is source/native evidence,
+not rendered or playable delivery.
 
 The counts below describe coverage, not release readiness. `Active` is a
 registry/source status unless a focused execution result is cited. Areas
@@ -28,10 +29,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 113/310 | 197 planned; Beastcaller is the newest activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 114/310 | 196 planned; Verdant Warden is the newest activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 55/67 | 12 missing/inactive; Summon Trolls is the newest identity. Light is 11/11 and Nature is 7/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 56/67 | 11 missing/inactive; Verdant Prison is the newest identity. Light is 11/11 and Nature is 8/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -55,8 +56,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 113
-active perks, leaving nine ranks and 197 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 114
+active perks, leaving nine ranks and 196 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -170,7 +171,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Command | 3/0 | 0/10 | Progression blocked |
 | Light Magic | 3/0 | 7/3 | Benediction, Healer, Guardian, Aegis, Purifier, Retributionist, and Crusader active; Sanctuary Keeper, Litany and Miracle Worker remain planned. Crusader has focused native evidence. |
 | Shadow Magic | 3/0 | 6/4 | Malediction, Withering Touch, Soul Binder, Dark Gift, Night Feeder, and Reanimator are active. Reanimator's casualty-only pool has focused authoritative evidence; four perks remain planned. |
-| Nature Magic | 3/0 | 3/7 | Herbalist, Rootcaller and Beastcaller active; seven perks missing. |
+| Nature Magic | 3/0 | 4/6 | Herbalist, Rootcaller, Beastcaller and Verdant Warden active; six perks missing. |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 0/10 | Progression blocked |
@@ -504,7 +505,7 @@ from the active identity row.
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
-| Nature | 11 | 7 | Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
+| Nature | 11 | 8 | Hydra's Vitality; Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 
 All five Adventure spell effects have partial or substantial runtime support,

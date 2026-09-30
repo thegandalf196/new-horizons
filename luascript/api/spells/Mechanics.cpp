@@ -97,6 +97,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True if the spell mechanics classify this cast as a positive effect.");
 	R.method<&Mechanics::isNegativeSpell>("isNegative", {},
 		"True if the spell mechanics classify this cast as a negative effect.");
+	R.method<&Mechanics::isMagicMirror>("isMagicMirror", {},
+		"True when this spell effect is being resolved after Magic Mirror reflection.");
 	R.method<&Mechanics::isSmart>("isSmart", {},
 		"True if the spell only affects friendly or enemy targets (vs. anyone in range).");
 	R.method<&Mechanics::isMassive>("isMassive", {},

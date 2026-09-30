@@ -503,6 +503,9 @@ BattleHexArray BattleFieldController::getHighlightedHexesForSpellRange()
 		if(BattleActionsController::isSummonTrollsSpell(spell))
 			return owner.actionsController->getSummonTrollsTargetHexes(spell);
 
+		if(BattleActionsController::isVerdantPrisonSpell(spell))
+			return owner.actionsController->getVerdantPrisonTargetHexes(spell, hoveredHex);
+
 		if(BattleActionsController::isTransfigureMatterSpell(spell))
 			return owner.actionsController->getTransfigureMatterTargetHexes(spell);
 
