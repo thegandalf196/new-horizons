@@ -119,6 +119,7 @@ protected:
 	ArcaneMemoryFixtureMode arcaneMemoryFixtureMode = ArcaneMemoryFixtureMode::ProductionStatus;
 	bool useMagic = true;
 	int magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
+	bool captureOldHavocSpellSchools = false;
 	std::unique_ptr<newHorizonsTest::MagicV1Baseline> baseline;
 
 	void SetUp() override
@@ -140,7 +141,18 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode rules;
 		if(useMagic)
+		{
 			rules = magicRulesForVersion(magicVersion);
+			if(captureOldHavocSpellSchools)
+			{
+				for(const auto * spell : {"core:earthquake", "core:implosion"})
+				{
+					auto & schools = rules["spells"][spell]["schools"].Vector();
+					schools.clear();
+					schools.emplace_back(std::string("new-horizons:havoc"));
+				}
+			}
+		}
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
@@ -243,6 +255,37 @@ protected:
 		for(const SpellID spell : {SpellID(SpellID::BERSERK), SpellID(SpellID::DISPEL),
 			SpellID(SpellID::CHAIN_LIGHTNING), SpellID(SpellID::ICE_BOLT)})
 			attackerSideHero->addSpellToSpellbook(spell);
+		if(captureOldHavocSpellSchools)
+		{
+			const SpellID earthquake(SpellID::EARTHQUAKE);
+			const SpellID implosion(SpellID::IMPLOSION);
+
+			const auto havoc = SpellSchool::fromSerializationKey("new-horizons:havoc");
+			EXPECT_EQ(attackerSideHero->getSpellSchools(earthquake.toSpell()), std::vector<SpellSchool>{havoc});
+			EXPECT_EQ(attackerSideHero->getSpellSchools(implosion.toSpell()), std::vector<SpellSchool>{havoc});
+
+			const auto sorcerySkillId = SecondarySkill::decode("new-horizons:sorceryMagic");
+			const auto havocSkillId = SecondarySkill::decode("new-horizons:havocMagic");
+			ASSERT_GE(sorcerySkillId, 0);
+			ASSERT_GE(havocSkillId, 0);
+			attackerSideHero->setSecSkillLevel(SecondarySkill(sorcerySkillId), MasteryLevel::EXPERT,
+				ChangeValueMode::ABSOLUTE);
+			EXPECT_EQ(attackerSideHero->getSpellSchoolLevel(earthquake.toSpell()), 0);
+			EXPECT_EQ(attackerSideHero->getSpellSchoolLevel(implosion.toSpell()), 0);
+			EXPECT_FALSE(attackerSideHero->canLearnSpell(earthquake.toSpell()));
+			EXPECT_FALSE(attackerSideHero->canLearnSpell(implosion.toSpell()));
+
+			attackerSideHero->setSecSkillLevel(SecondarySkill(havocSkillId), MasteryLevel::BASIC,
+				ChangeValueMode::ABSOLUTE);
+			EXPECT_EQ(attackerSideHero->getSpellSchoolLevel(earthquake.toSpell()), 1);
+			EXPECT_EQ(attackerSideHero->getSpellSchoolLevel(implosion.toSpell()), 1);
+			EXPECT_TRUE(attackerSideHero->canLearnSpell(earthquake.toSpell()));
+			EXPECT_FALSE(attackerSideHero->canLearnSpell(implosion.toSpell()));
+			attackerSideHero->setSecSkillLevel(SecondarySkill(havocSkillId), MasteryLevel::ADVANCED,
+				ChangeValueMode::ABSOLUTE);
+			EXPECT_EQ(attackerSideHero->getSpellSchoolLevel(implosion.toSpell()), 2);
+			EXPECT_TRUE(attackerSideHero->canLearnSpell(implosion.toSpell()));
+		}
 		setTestSpellPointTotal(attackerSideHero, 100);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 
@@ -253,6 +296,20 @@ protected:
 		restoredWorld->preInit(LIBRARY);
 		restoredWorld->loadFromMemory(saveBytes);
 		ASSERT_EQ(restoredWorld->getMagicRules(), rules);
+		if(captureOldHavocSpellSchools)
+		{
+			const auto * restoredProfileHero = restoredWorld->getHero(attackerSideHero->id);
+			ASSERT_NE(restoredProfileHero, nullptr);
+			const SpellID earthquake(SpellID::EARTHQUAKE);
+			const SpellID implosion(SpellID::IMPLOSION);
+			const auto havoc = SpellSchool::fromSerializationKey("new-horizons:havoc");
+			EXPECT_EQ(restoredProfileHero->getSpellSchools(earthquake.toSpell()), std::vector<SpellSchool>{havoc});
+			EXPECT_EQ(restoredProfileHero->getSpellSchools(implosion.toSpell()), std::vector<SpellSchool>{havoc});
+			EXPECT_EQ(restoredProfileHero->getSpellSchoolLevel(earthquake.toSpell()), 2);
+			EXPECT_EQ(restoredProfileHero->getSpellSchoolLevel(implosion.toSpell()), 2);
+			EXPECT_TRUE(restoredProfileHero->canLearnSpell(earthquake.toSpell()));
+			EXPECT_TRUE(restoredProfileHero->canLearnSpell(implosion.toSpell()));
+		}
 
 		startBattle();
 		BattleUnitsChanged remove;
@@ -308,6 +365,14 @@ protected:
 		const auto * restoredBattle = restoredWorld->getBattle(BattleID(0));
 		ASSERT_NE(restoredBattle, nullptr);
 		ASSERT_EQ(restoredBattle->getMagicRules(), rules);
+		if(captureOldHavocSpellSchools)
+		{
+			const auto havoc = SpellSchool::fromSerializationKey("new-horizons:havoc");
+			EXPECT_EQ(restoredBattle->battleGetSpellSchools(SpellID(SpellID::EARTHQUAKE)),
+				std::vector<SpellSchool>{havoc});
+			EXPECT_EQ(restoredBattle->battleGetSpellSchools(SpellID(SpellID::IMPLOSION)),
+				std::vector<SpellSchool>{havoc});
+		}
 
 		// BattleStart::localInit reconstructs the original army stacks from the
 		// separately loaded world. They are fixture defaults, not part of the
@@ -460,7 +525,8 @@ protected:
 		const auto targetMovementBefore = restoredTarget->getMovementRange();
 		const auto targetInitiativeBefore = restoredTarget->getInitiative();
 		const auto manaBefore = restoredHero->getManaAvailable();
-		EXPECT_EQ(restoredHero->getSpellSchoolLevel(iceBolt), MasteryLevel::NONE);
+		EXPECT_EQ(restoredHero->getSpellSchoolLevel(iceBolt),
+			captureOldHavocSpellSchools ? MasteryLevel::ADVANCED : MasteryLevel::NONE);
 		ASSERT_GE(targetMovementBefore, 2u);
 		BattleAction action;
 		action.actionType = EActionType::HERO_SPELL;
@@ -545,6 +611,45 @@ TEST_F(NewHorizonsMagicStateTest, ActualSchoolRankCostAndServerCastUseSavedClass
 	EXPECT_FALSE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
 	EXPECT_EQ(haste->schools, originalSchools);
 	EXPECT_EQ(haste->getLevel(), originalLevel);
+}
+
+TEST_F(NewHorizonsMagicStateTest, FreshProfileImplosionAndEarthquakeSchoolsGateActualLearning)
+{
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	giveArtifact(hero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+
+	const SpellID earthquake(SpellID::EARTHQUAKE);
+	const SpellID implosion(SpellID::IMPLOSION);
+	const auto nature = SpellSchool::fromSerializationKey("new-horizons:nature");
+	const auto sorcery = SpellSchool::fromSerializationKey("new-horizons:sorcery");
+	const auto havocSkillId = SecondarySkill::decode("new-horizons:havocMagic");
+	const auto natureSkillId = SecondarySkill::decode("new-horizons:natureMagic");
+	const auto sorcerySkillId = SecondarySkill::decode("new-horizons:sorceryMagic");
+	ASSERT_GE(havocSkillId, 0);
+	ASSERT_GE(natureSkillId, 0);
+	ASSERT_GE(sorcerySkillId, 0);
+
+	EXPECT_EQ(hero->getSpellLevel(earthquake.toSpell()), 3);
+	EXPECT_EQ(hero->getSpellLevel(implosion.toSpell()), 4);
+	EXPECT_EQ(hero->getSpellSchools(earthquake.toSpell()), std::vector<SpellSchool>{nature});
+	EXPECT_EQ(hero->getSpellSchools(implosion.toSpell()), std::vector<SpellSchool>{sorcery});
+	hero->setSecSkillLevel(SecondarySkill(havocSkillId), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(hero->getSpellSchoolLevel(earthquake.toSpell()), 0);
+	EXPECT_EQ(hero->getSpellSchoolLevel(implosion.toSpell()), 0);
+	EXPECT_FALSE(hero->canLearnSpell(earthquake.toSpell()));
+	EXPECT_FALSE(hero->canLearnSpell(implosion.toSpell()));
+
+	hero->setSecSkillLevel(SecondarySkill(natureSkillId), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(hero->getSpellSchoolLevel(earthquake.toSpell()), 1);
+	EXPECT_TRUE(hero->canLearnSpell(earthquake.toSpell()));
+	hero->setSecSkillLevel(SecondarySkill(sorcerySkillId), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(hero->getSpellSchoolLevel(implosion.toSpell()), 1);
+	EXPECT_FALSE(hero->canLearnSpell(implosion.toSpell()));
+	hero->setSecSkillLevel(SecondarySkill(sorcerySkillId), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(hero->getSpellSchoolLevel(implosion.toSpell()), 2);
+	EXPECT_TRUE(hero->canLearnSpell(implosion.toSpell()));
 }
 
 TEST_F(NewHorizonsMagicStateTest, StartingRanksConvertAndNewSkillsCanBeOffered)
@@ -645,6 +750,13 @@ TEST_F(NewHorizonsMagicStateTest, Version2MagicSaveAndBattlePacketRetainLegacySp
 TEST_F(NewHorizonsMagicStateTest, Version3MagicSaveAndBattlePacketKeepNewSpellBehavior)
 {
 	magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
+	roundTripMagicProfileBattle();
+}
+
+TEST_F(NewHorizonsMagicStateTest, CapturedHavocSchoolAssignmentsSurviveWorldAndBattleRoundTrips)
+{
+	magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
+	captureOldHavocSpellSchools = true;
 	roundTripMagicProfileBattle();
 }
 

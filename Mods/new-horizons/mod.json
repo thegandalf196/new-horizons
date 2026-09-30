@@ -1059,7 +1059,7 @@
 					},
 					"core:earthquake": {
 						"schools": [
-							"new-horizons:havoc"
+							"new-horizons:nature"
 						]
 					},
 					"core:fireElemental": {
@@ -1190,7 +1190,7 @@
 					},
 					"core:implosion": {
 						"schools": [
-							"new-horizons:havoc"
+							"new-horizons:sorcery"
 						],
 						"level": 4,
 						"costs": [

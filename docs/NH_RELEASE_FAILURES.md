@@ -2,6 +2,25 @@
 
 ## Purpose
 
+### 2026-09-30 canonical School snapshot fixture baseline
+
+UP-058 client/test build 74940 succeeds and 75 offline gates pass. Native
+97607 passes 3/4, zero skips, binary
+`52d3548dfbf70f47c773dc7fbfdcfc5166a3084b2f55bb9f43c03d1427150097`.
+Fresh Sorcery/Nature acquisition, shared saved-classification casting and
+the updated Archmage AI submission pass. The old captured-Havoc round-trip
+helper grants Advanced Havoc, then incorrectly retains its previous Ice Bolt
+unranked assertion; actual rank is two. Repair that conditional fixture
+baseline, not production School policy. Preserve
+`NewHorizonsCanonicalSchools-initial-focused.log`/`.xml`; final evidence pending.
+
+First succeeding School checkpoint: test rebuild 76420 and native 76202 succeed,
+4/4, zero skips, on
+`d492ad73bae4a628efb7f91dfdf49f18328722339a55bbebbbcff61d6b23f37f`.
+The corrected conditional baseline preserves the old captured School/rank
+assertions. Retain `NewHorizonsCanonicalSchools-retry1-focused.log`/`.xml`
+alongside the failed first run. No production rule was relaxed for the fixture.
+
 ### 2026-09-30 Archmage fixture review corrections before native execution
 
 Independent UP-055 review found two fixture errors before the first test build:

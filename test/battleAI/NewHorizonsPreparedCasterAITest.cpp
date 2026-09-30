@@ -27,7 +27,7 @@ constexpr auto WISDOM_SKILL = "new-horizons:wisdom";
 constexpr auto PREPARED_CASTER_PERK = "new-horizons:wisdom.preparedCaster";
 constexpr auto DEEP_KNOWLEDGE_PERK = "new-horizons:wisdom.deepKnowledge";
 constexpr auto ARCHMAGE_PERK = "new-horizons:wisdom.archmage";
-constexpr auto HAVOC_MAGIC_SKILL = "new-horizons:havocMagic";
+constexpr auto SORCERY_MAGIC_SKILL = "new-horizons:sorceryMagic";
 
 class PreparedCasterEnvironment final : public Environment
 {
@@ -136,9 +136,9 @@ protected:
 			gameHandler->levelUpHero(attackerSideHero, wisdom, false);
 			ASSERT_EQ(attackerSideHero->getSecSkillLevel(wisdom), MasteryLevel::EXPERT);
 			ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(ARCHMAGE_PERK));
-			const auto havoc = SecondarySkill(SecondarySkill::decode(HAVOC_MAGIC_SKILL));
-			ASSERT_TRUE(havoc.hasValue());
-			attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+			const auto sorcery = SecondarySkill(SecondarySkill::decode(SORCERY_MAGIC_SKILL));
+			ASSERT_TRUE(sorcery.hasValue());
+			attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 		}
 		else
 		{

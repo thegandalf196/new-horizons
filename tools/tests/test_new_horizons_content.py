@@ -866,6 +866,12 @@ class NewHorizonsContentTest(unittest.TestCase):
         validate_rules(legacy_rules(self.rules))
         validate_rules(self.rules)
 
+    def test_canonical_implosion_and_earthquake_school_assignments(self):
+        implosion = self.rules['spells']['core:implosion']
+        earthquake = self.rules['spells']['core:earthquake']
+        self.assertEqual(implosion['schools'], ['new-horizons:sorcery'])
+        self.assertEqual(earthquake['schools'], ['new-horizons:nature'])
+
     def test_active_v2_direct_damage_formulas_match_canonical_spell_families(self):
         arrow = self.rules['spells']['core:magicArrow']
         self.assertEqual(arrow['schools'], ['new-horizons:sorcery'])

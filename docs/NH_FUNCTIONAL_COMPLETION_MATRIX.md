@@ -14,6 +14,13 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+School data correction: fresh Implosion now uses Sorcery and Earthquake Nature
+(UP-058). Both targets build; four focused native cases pass, including old
+captured-Havoc world/BattleStart preservation and updated Archmage AI submission.
+Offline gates pass 75/75. Identity/rank/perk counts are unchanged: this corrects
+classification and acquisition policy, not their still-incomplete spell effects.
+The adjacent noncanonical Counterspell/specialty-only Guild gap is UP-059.
+
 Archmage checkpoint: Expert Wisdom's first accepted Level 4 or 5 combat spell
 costs three less after Wisdom and Prepared Caster, minimum one. Saved-level
 completion history persists across rounds and saves and is copied/updated only
@@ -715,8 +722,8 @@ The legacy repository-wide `nh-new-art-audit.py` still stops at its SVG/PNG
 inventory equality check; Backstab's four runtime frames were checked directly
 as 44×44 RGBA, and this broad mixed-art audit is deferred for the art lane.
 
-Additional roster corrections: Implosion belongs to Sorcery rather than Havoc;
-Earthquake belongs to Nature rather than Havoc; Counterspell is not in the
+Roster correction status: fresh Implosion/Sorcery and Earthquake/Nature are now
+implemented with focused saved-profile evidence (UP-058). Counterspell is not in the
 current canonical roster; Master Chain Lightning is Solmyr's specialty and
 must not become an ordinary Guild spell. Ice Bolt must not retain its legacy
 Speed/Initiative reduction.
