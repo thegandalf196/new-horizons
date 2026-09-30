@@ -199,6 +199,9 @@ void ApplyClientNetPackVisitor::visitSetNewHorizonsAdventureSpellState(SetNewHor
 
 void ApplyClientNetPackVisitor::visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizonsAdventureSpellUnlock & pack)
 {
+	if(settings["session"]["headless"].Bool())
+		return;
+
 	for(const auto & win : ENGINE->windows().findWindows<CMageGuildScreen>())
 		win->updateSpells(pack.townId);
 	for(const auto & win : ENGINE->windows().findWindows<CMageGuildAdventureSpellWindow>())
