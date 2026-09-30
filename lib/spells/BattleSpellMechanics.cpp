@@ -40,6 +40,7 @@ namespace
 
 constexpr std::string_view NEW_HORIZONS_SUMMON_TROLLS_SPELL = "new-horizons:summonTrolls";
 constexpr std::string_view NEW_HORIZONS_VERDANT_PRISON_SPELL = "new-horizons:verdantPrison";
+constexpr std::string_view NEW_HORIZONS_HYDRAS_VITALITY_SPELL = "new-horizons:hydrasVitality";
 
 bool isLivingCureTarget(const battle::Unit * unit)
 {
@@ -673,6 +674,10 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	// or Hero Action can be spent.
 	if(owner->getJsonKey() == NEW_HORIZONS_VERDANT_PRISON_SPELL && !usesNewHorizonsMagicV3())
 		return adaptGenericProblem(problem);
+	// Hydra's Vitality relies on the saved-v3 max-health basis and compact
+	// survivor ledger. Reject legacy snapshots before any resource/action cost.
+	if(owner->getJsonKey() == NEW_HORIZONS_HYDRAS_VITALITY_SPELL && !usesNewHorizonsMagicV3())
+		return adaptGenericProblem(problem);
 	if(owner->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
 		&& !newHorizonsMagic::soulReaperEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
 		return adaptGenericProblem(problem);
@@ -699,6 +704,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	const auto * castingHero = dynamic_cast<const CGHeroInstance *>(caster);
 	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
 		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsHydrasVitality = owner->getJsonKey() == NEW_HORIZONS_HYDRAS_VITALITY_SPELL;
 	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
@@ -794,6 +800,18 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
 	}
 
+	if(newHorizonsHydrasVitality)
+	{
+		if(mode != Mode::HERO || !castingHero)
+			return adaptGenericProblem(problem);
+		const bool availableTarget = std::ranges::any_of(battle()->battleGetAllUnits(false), [this](const battle::Unit * unit)
+		{
+			return isRegenerationTarget(unit) && ownerMatches(unit, true) && !isSpellLocked(unit)
+				&& isReceptive(unit);
+		});
+		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+	}
+
 	if(newHorizonsLifeDrain)
 	{
 		if(mode != Mode::HERO || !castingHero || casterSide == BattleSide::NONE)
@@ -874,7 +892,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 				continue;
 
 			if(!newHorizonsMagic::cureAfflictions(rules, unit).empty()
-				|| unit->getFirstHPleft() < unit->getMaxHealth())
+				|| unit->getSurvivingMissingHealth() > 0)
 				return true;
 		}
 		return adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
@@ -937,6 +955,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		return false;
 
 	const bool newHorizonsCure = isNewHorizonsCure();
+	const bool newHorizonsHydrasVitality = owner->getJsonKey() == NEW_HORIZONS_HYDRAS_VITALITY_SPELL;
 	const bool newHorizonsPhysicalPoison = mode == Mode::HERO && getHeroCaster()
 		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
 	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
@@ -1039,13 +1058,56 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		if(selected == SpellID::NONE)
 		{
 			if(!afflictions.empty()
-				|| cureTarget->getFirstHPleft() >= cureTarget->getMaxHealth())
+				|| cureTarget->getSurvivingMissingHealth() <= 0)
 				return false;
 		}
 		else if(!vstd::contains(afflictions, selected))
 		{
 			return false;
 		}
+	}
+	if(newHorizonsHydrasVitality)
+	{
+		if(mode != Mode::HERO || target.size() != 1)
+			return false;
+
+		// Human creature targeting can arrive as a hex-only destination. Generic
+		// transformSpellTarget intentionally retains that hex for effect scripts;
+		// resolve only this spell's selected footprint here so the pre-cost
+		// eligibility and overflow checks see the same wide stack as Lua.
+		const battle::Unit * vitalityTarget = nullptr;
+		std::set<uint32_t> resolvedTargetIds;
+		for(const auto & destination : spellTarget)
+		{
+			const battle::Unit * candidate = destination.unitValue;
+			if(!candidate && destination.hexValue.isValid())
+				candidate = battle()->battleGetUnitByPos(destination.hexValue, true);
+			if(!candidate || !resolvedTargetIds.insert(candidate->unitId()).second)
+				continue;
+			if(resolvedTargetIds.size() > 1)
+				return false;
+			vitalityTarget = candidate;
+		}
+		if(!vitalityTarget)
+			return false;
+		if(!isRegenerationTarget(vitalityTarget)
+			|| !ownerMatches(vitalityTarget, true)
+			|| isSpellLocked(vitalityTarget)
+			|| !isReceptive(vitalityTarget))
+			return false;
+
+		// The script effect also rejects an unrepresentable bonus value, but
+		// spell-target applicability runs before resources are charged. Keep this
+		// guard here as well so the action cannot consume mana before a Lua
+		// transform filters the target out.
+		const auto vitalityState = vitalityTarget->acquireState();
+		const int64_t referenceMaximum = vitalityState->getCapacityHealthReferenceMax();
+		const int64_t effectPercentMillionths = std::clamp<int64_t>(getEffectValue(),
+			25'000'000, 50'000'000);
+		const int64_t targetMaximum = referenceMaximum
+			* (100'000'000 + effectPercentMillionths) / 100'000'000;
+		if(referenceMaximum <= 0 || targetMaximum > std::numeric_limits<int32_t>::max())
+			return false;
 	}
 	if(newHorizonsRegeneration)
 	{
@@ -1103,7 +1165,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	// Cure's target and selected affliction (or healing need) were validated
 	// above. Its legacy HEAL/DISPEL applicability checks do not recognize
 	// physical-only Poison, so do not let those checks reject a valid action.
-	if(newHorizonsCure || newHorizonsRegeneration || newHorizonsPhysicalPoison || newHorizonsLifeDrain
+	if(newHorizonsCure || newHorizonsRegeneration || newHorizonsHydrasVitality
+		|| newHorizonsPhysicalPoison || newHorizonsLifeDrain
 		|| newHorizonsSoulChain || vengefulVinesEnabled
 		|| newHorizonsMagic::isCounterspell(owner))
 		return true;
@@ -1146,6 +1209,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
 	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
 		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsHydrasVitality = owner->getJsonKey() == NEW_HORIZONS_HYDRAS_VITALITY_SPELL;
 	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
@@ -1156,7 +1220,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		return;
 	if(newHorizonsSoulChain && !canBeCastAt(target))
 		return;
-	if((newHorizonsRegeneration || newHorizonsPhysicalPoison || newHorizonsLifeDrain)
+	if((newHorizonsRegeneration || newHorizonsHydrasVitality
+		|| newHorizonsPhysicalPoison || newHorizonsLifeDrain)
 		&& !canBeCastAt(target))
 		return;
 

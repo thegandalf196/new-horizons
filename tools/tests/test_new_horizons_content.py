@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
+    'new-horizons:hydrasVitality',
     'new-horizons:verdantPrison',
     'new-horizons:summonTrolls',
     'new-horizons:vengefulVines',
@@ -558,6 +559,32 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(next(p for p in perks if p['id'].endswith('.beastcaller'))
                          ['effect']['status'], 'active')
         self.assertEqual(spell['sounds']['cast'], 'SUMNELM')
+
+    def test_hydras_vitality_registers_single_target_capacity_effect(self):
+        row = self.rules['spells']['new-horizons:hydrasVitality']
+        self.assertEqual((row['schools'], row['level'], row['costs']),
+                         (['new-horizons:nature'], 4, [16] * 4))
+        self.assertNotIn('directDamage', row)
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['hydrasVitality']
+        # Shared effect values use millionths of one percent so School
+        # scaling is not rounded before the final creature-HP calculation.
+        self.assertEqual(spell['power'], 150000)
+        self.assertEqual(spell['targetType'], 'CREATURE')
+        self.assertEqual(spell['flags'], {'positive': True})
+        base = spell['levels']['base']
+        self.assertEqual((base['range'], base['cost']), ('0', 16))
+        self.assertEqual(base['power'], 25000000)
+        self.assertEqual(base['battleEffects'],
+                         {'hydrasVitality': {'type': 'core:hydrasVitality'}})
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            self.assertEqual(spell['levels'][rank], {})
+        self.assertEqual(load('config/scriptsSpells.json')['hydrasVitality']['script'],
+                         'spells/hydrasVitality')
+        for size, key in ((44, 'iconBook'), (32, 'iconScroll'), (30, 'iconEffect')):
+            self.assertEqual(spell['graphics'][key], f'NH_spell_hydras_vitality_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / spell['graphics'][key]).read_bytes()[16:24]),
+                (size, size))
 
     def test_verdant_prison_uses_temporary_ring_effect_and_purpose_made_art(self):
         row = self.rules['spells']['new-horizons:verdantPrison']

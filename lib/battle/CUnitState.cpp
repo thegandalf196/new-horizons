@@ -24,6 +24,24 @@
 
 namespace battle
 {
+namespace
+{
+void addCapacityCount(int32_t & current, const int32_t amount)
+{
+	if(amount < 0 || static_cast<int64_t>(current) + amount > std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Capacity health count overflow");
+	current += amount;
+}
+
+int32_t checkedHealthCapacity(const battle::Unit * unit)
+{
+	const uint32_t maximum = unit->getMaxHealth();
+	if(maximum == 0 || maximum > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
+		throw std::runtime_error("Creature health capacity is outside the supported range");
+	return static_cast<int32_t>(maximum);
+}
+}
+
 ///CAmmo
 CAmmo::CAmmo(const battle::Unit * Owner, CSelector totalSelector):
 	used(0),
@@ -183,6 +201,9 @@ CHealth & CHealth::operator=(const CHealth & other)
 	unusableRemains = other.unusableRemains;
 	temporaryHitPoints = other.temporaryHitPoints;
 	shadowGiftMaximumHealthLost = other.shadowGiftMaximumHealthLost;
+	capacityHealthTracking = other.capacityHealthTracking;
+	capacityHealthMax = other.capacityHealthMax;
+	capacityHealthCohorts = other.capacityHealthCohorts;
 	return *this;
 }
 
@@ -215,7 +236,11 @@ int64_t CHealth::available() const
 
 int64_t CHealth::creatureHealthAvailable() const
 {
-	return static_cast<int64_t>(firstHPleft) + owner->getMaxHealth() * fullUnits;
+	int64_t result = static_cast<int64_t>(firstHPleft)
+		+ static_cast<int64_t>(owner->getMaxHealth()) * fullUnits;
+	for(const auto & cohort : capacityHealthCohorts)
+		result += static_cast<int64_t>(cohort.hitPoints) * cohort.count;
+	return result;
 }
 
 int64_t CHealth::total() const
@@ -243,7 +268,11 @@ void CHealth::damage(int64_t & amount, const bool destroyRemains, const bool byp
 	temporaryHitPoints -= absorbed;
 	int64_t creatureDamage = amount - absorbed;
 
-	if(creatureDamage >= firstHPleft && creatureDamage > 0)
+	if(capacityHealthTracking && creatureDamage > 0)
+	{
+		damageCapacityHealth(creatureDamage);
+	}
+	else if(creatureDamage >= firstHPleft && creatureDamage > 0)
 	{
 		int64_t totalHealth = creatureHealthAvailable() - creatureDamage;
 		if(totalHealth <= 0)
@@ -269,7 +298,7 @@ void CHealth::damage(int64_t & amount, const bool destroyRemains, const bool byp
 
 HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 {
-	const int32_t unitHealth = owner->getMaxHealth();
+	const int32_t unitHealth = checkedHealthCapacity(owner);
 	const int32_t oldCount = getCount();
 
 	int64_t maxHeal = std::numeric_limits<int64_t>::max();
@@ -277,7 +306,9 @@ HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 	switch(level)
 	{
 	case EHealLevel::HEAL:
-		maxHeal = std::max(0, unitHealth - firstHPleft);
+		maxHeal = capacityHealthTracking
+			? static_cast<int64_t>(getCount()) * unitHealth - creatureHealthAvailable()
+			: (getCount() > 0 ? std::max(0, unitHealth - firstHPleft) : 0);
 		if(shadowGiftMaximumHealthLost > 0)
 			maxHeal = std::min(maxHeal, total() - creatureHealthAvailable());
 		break;
@@ -299,6 +330,15 @@ HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 
 	if(amount == 0)
 		return {};
+	if(capacityHealthTracking)
+	{
+		healCapacityHealth(amount, level);
+		if(power == EHealPower::ONE_BATTLE)
+			addResurrected(getCount() - oldCount);
+		else
+			assert(power == EHealPower::PERMANENT);
+		return HealInfo(amount, getCount() - oldCount);
+	}
 
 	int64_t availableHealth = creatureHealthAvailable();
 
@@ -333,13 +373,21 @@ void CHealth::reset(bool clearUnusableRemains)
 	resurrected = 0;
 	temporaryHitPoints = 0;
 	shadowGiftMaximumHealthLost = 0;
+	capacityHealthTracking = false;
+	capacityHealthMax = 0;
+	capacityHealthCohorts.clear();
 	if(clearUnusableRemains)
 		unusableRemains = 0;
 }
 
 int32_t CHealth::getCount() const
 {
-	return fullUnits + (firstHPleft > 0 ? 1 : 0);
+	int64_t result = static_cast<int64_t>(fullUnits) + (firstHPleft > 0 ? 1 : 0);
+	for(const auto & cohort : capacityHealthCohorts)
+		result += cohort.count;
+	if(result < 0 || result > std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Capacity health count overflow");
+	return static_cast<int32_t>(result);
 }
 
 int32_t CHealth::getFirstHPleft() const
@@ -390,13 +438,309 @@ void CHealth::takeResurrected()
 {
 	if(resurrected != 0)
 	{
-		int64_t totalHealth = creatureHealthAvailable();
-
-		totalHealth -= resurrected * owner->getMaxHealth();
-		vstd::amax(totalHealth, 0);
-		setFromTotal(totalHealth);
+		if(capacityHealthTracking)
+		{
+			int32_t toRemove = std::min(resurrected, getCount());
+			int64_t restoredHealth = 0;
+			if(toRemove > 0 && firstHPleft > 0)
+			{
+				restoredHealth += firstHPleft;
+				--toRemove;
+			}
+			if(toRemove > 0)
+			{
+				for(const auto & cohort : capacityHealthCohorts)
+				{
+					const int32_t selected = std::min(toRemove, cohort.count);
+					restoredHealth += static_cast<int64_t>(selected) * cohort.hitPoints;
+					toRemove -= selected;
+					if(toRemove == 0)
+						break;
+				}
+			}
+			if(toRemove > 0)
+				restoredHealth += static_cast<int64_t>(toRemove) * capacityHealthMax;
+			damageCapacityHealth(restoredHealth);
+		}
+		else
+		{
+			int64_t totalHealth = creatureHealthAvailable();
+			totalHealth -= static_cast<int64_t>(resurrected) * owner->getMaxHealth();
+			vstd::amax(totalHealth, 0);
+			setFromTotal(totalHealth);
+		}
 		resurrected = 0;
 	}
+}
+
+void CHealth::CapacityHealthCohort::serializeJson(JsonSerializeFormat & handler)
+{
+	handler.serializeInt("hitPoints", hitPoints, 0);
+	handler.serializeInt("count", count, 0);
+}
+
+void CHealth::addCapacityHealth(const int32_t hitPoints, const int32_t count)
+{
+	if(hitPoints <= 0 || count <= 0)
+		return;
+	capacityHealthCohorts.push_back({hitPoints, count});
+}
+
+void CHealth::normalizeCapacityHealthCohorts()
+{
+	std::sort(capacityHealthCohorts.begin(), capacityHealthCohorts.end(), [](const auto & left, const auto & right)
+	{
+		return left.hitPoints < right.hitPoints;
+	});
+	std::vector<CapacityHealthCohort> merged;
+	merged.reserve(capacityHealthCohorts.size());
+	for(const auto & cohort : capacityHealthCohorts)
+	{
+		if(cohort.hitPoints <= 0 || cohort.count <= 0)
+			continue;
+		if(!merged.empty() && merged.back().hitPoints == cohort.hitPoints)
+			addCapacityCount(merged.back().count, cohort.count);
+		else
+			merged.push_back(cohort);
+	}
+	capacityHealthCohorts = std::move(merged);
+}
+
+void CHealth::promoteCapacityHealthFront()
+{
+	if(firstHPleft > 0)
+		return;
+	if(fullUnits > 0)
+	{
+		addCapacityHealth(owner->getMaxHealth(), fullUnits);
+		fullUnits = 0;
+	}
+	normalizeCapacityHealthCohorts();
+	if(capacityHealthCohorts.empty())
+		return;
+	auto & front = capacityHealthCohorts.front();
+	firstHPleft = front.hitPoints;
+	if(--front.count == 0)
+		capacityHealthCohorts.erase(capacityHealthCohorts.begin());
+}
+
+void CHealth::damageCapacityHealth(int64_t amount)
+{
+	if(amount <= 0)
+		return;
+	if(firstHPleft > 0)
+	{
+		if(amount < firstHPleft)
+		{
+			firstHPleft -= static_cast<int32_t>(amount);
+			return;
+		}
+		amount -= firstHPleft;
+		firstHPleft = 0;
+	}
+	if(fullUnits > 0)
+	{
+		addCapacityHealth(capacityHealthMax, fullUnits);
+		fullUnits = 0;
+	}
+	normalizeCapacityHealthCohorts();
+
+	std::vector<CapacityHealthCohort> survivors;
+	survivors.reserve(capacityHealthCohorts.size() + 1);
+	for(const auto & cohort : capacityHealthCohorts)
+	{
+		if(amount <= 0)
+		{
+			survivors.push_back(cohort);
+			continue;
+		}
+		const int64_t killed = std::min<int64_t>(cohort.count, amount / cohort.hitPoints);
+		amount -= killed * cohort.hitPoints;
+		const int32_t remainingCount = cohort.count - static_cast<int32_t>(killed);
+		if(remainingCount > 0 && amount > 0)
+		{
+			const int32_t woundedHealth = cohort.hitPoints - static_cast<int32_t>(amount);
+			survivors.push_back({woundedHealth, 1});
+			if(remainingCount > 1)
+				survivors.push_back({cohort.hitPoints, remainingCount - 1});
+			amount = 0;
+		}
+		else if(remainingCount > 0)
+		{
+			survivors.push_back({cohort.hitPoints, remainingCount});
+		}
+	}
+	capacityHealthCohorts = std::move(survivors);
+	normalizeCapacityHealthCohorts();
+	promoteCapacityHealthFront();
+}
+
+void CHealth::preserveCapacityHealth()
+{
+	if(!capacityHealthTracking)
+	{
+		capacityHealthMax = checkedHealthCapacity(owner);
+		capacityHealthTracking = true;
+	}
+	if(capacityHealthMax <= 0)
+		throw std::runtime_error("Cannot preserve health with non-positive creature capacity");
+	if(fullUnits > 0)
+		addCapacityHealth(capacityHealthMax, fullUnits);
+	fullUnits = 0;
+	normalizeCapacityHealthCohorts();
+}
+
+void CHealth::normalizeCapacityHealth(const bool preserveCapacityTracking)
+{
+	if(!capacityHealthTracking)
+		return;
+	const int32_t newMaximum = checkedHealthCapacity(owner);
+	if(newMaximum <= 0 || capacityHealthMax <= 0)
+		throw std::runtime_error("Invalid tracked creature health capacity");
+	if(capacityHealthMax != newMaximum)
+	{
+		// Full units are full at the previous capacity. Convert them before reading
+		// the new maximum, otherwise a capacity decrease would rewrite their HP.
+		if(fullUnits > 0)
+			addCapacityHealth(capacityHealthMax, fullUnits);
+		fullUnits = 0;
+		firstHPleft = std::min(firstHPleft, newMaximum);
+		for(auto & cohort : capacityHealthCohorts)
+			cohort.hitPoints = std::min(cohort.hitPoints, newMaximum);
+		capacityHealthMax = newMaximum;
+	}
+	normalizeCapacityHealthCohorts();
+	for(auto it = capacityHealthCohorts.begin(); it != capacityHealthCohorts.end();)
+	{
+		if(it->hitPoints == newMaximum)
+		{
+			addCapacityCount(fullUnits, it->count);
+			it = capacityHealthCohorts.erase(it);
+		}
+		else
+			++it;
+	}
+	if(!preserveCapacityTracking
+		&& std::ranges::all_of(capacityHealthCohorts, [newMaximum](const auto & cohort)
+		{
+			return cohort.hitPoints == newMaximum;
+		}))
+	{
+		capacityHealthCohorts.clear();
+		capacityHealthTracking = false;
+		capacityHealthMax = 0;
+	}
+}
+
+int64_t CHealth::capacityRegenerationProjectedHeal(const int32_t perCreatureHeal) const
+{
+	if(!capacityHealthTracking || perCreatureHeal <= 0)
+		return 0;
+	const int32_t maximum = checkedHealthCapacity(owner);
+	int64_t result = 0;
+	if(firstHPleft > 0)
+		result += std::min(perCreatureHeal, maximum - firstHPleft);
+	for(const auto & cohort : capacityHealthCohorts)
+		result += static_cast<int64_t>(std::min(perCreatureHeal, maximum - cohort.hitPoints)) * cohort.count;
+	return result;
+}
+
+int64_t CHealth::consumeCapacityRegeneration(const int32_t perCreatureHeal)
+{
+	const int64_t actualHeal = capacityRegenerationProjectedHeal(perCreatureHeal);
+	addCapacityHealthHealing(perCreatureHeal);
+	return actualHeal;
+}
+
+bool CHealth::isCapacityHealthTracking() const
+{
+	return capacityHealthTracking;
+}
+
+void CHealth::addCapacityHealthHealing(const int32_t perCreatureHeal)
+{
+	if(perCreatureHeal <= 0)
+		return;
+	const int32_t maximum = checkedHealthCapacity(owner);
+	if(firstHPleft > 0)
+		firstHPleft = static_cast<int32_t>(std::min<int64_t>(maximum,
+			static_cast<int64_t>(firstHPleft) + perCreatureHeal));
+	std::vector<CapacityHealthCohort> updated;
+	updated.reserve(capacityHealthCohorts.size());
+	for(const auto & cohort : capacityHealthCohorts)
+		updated.push_back({static_cast<int32_t>(std::min<int64_t>(maximum,
+			static_cast<int64_t>(cohort.hitPoints) + perCreatureHeal)), cohort.count});
+	capacityHealthCohorts = std::move(updated);
+	for(auto it = capacityHealthCohorts.begin(); it != capacityHealthCohorts.end();)
+	{
+		if(it->hitPoints == maximum)
+		{
+			addCapacityCount(fullUnits, it->count);
+			it = capacityHealthCohorts.erase(it);
+		}
+		else
+			++it;
+	}
+	normalizeCapacityHealthCohorts();
+}
+
+void CHealth::healCapacityHealth(int64_t & amount, const EHealLevel level)
+{
+	const int32_t maximum = checkedHealthCapacity(owner);
+	int64_t remaining = amount;
+	if(firstHPleft > 0 && remaining > 0)
+	{
+		const int32_t healed = static_cast<int32_t>(std::min<int64_t>(remaining, maximum - firstHPleft));
+		firstHPleft += healed;
+		remaining -= healed;
+	}
+	if(remaining > 0)
+	{
+		std::vector<CapacityHealthCohort> updated;
+		updated.reserve(capacityHealthCohorts.size() + 1);
+		for(const auto & cohort : capacityHealthCohorts)
+		{
+			const int32_t missing = maximum - cohort.hitPoints;
+			if(remaining <= 0 || missing <= 0)
+			{
+				updated.push_back(cohort);
+				continue;
+			}
+			const int64_t fullyHealed = std::min<int64_t>(cohort.count, remaining / missing);
+			if(fullyHealed > 0)
+			{
+				if(fullyHealed > std::numeric_limits<int32_t>::max())
+					throw std::runtime_error("Capacity health count overflow");
+				addCapacityCount(fullUnits, static_cast<int32_t>(fullyHealed));
+				remaining -= fullyHealed * missing;
+			}
+			int32_t notFullyHealed = cohort.count - static_cast<int32_t>(fullyHealed);
+			if(notFullyHealed > 0 && remaining > 0)
+			{
+				const int32_t partial = static_cast<int32_t>(std::min<int64_t>(remaining, missing));
+				updated.push_back({cohort.hitPoints + partial, 1});
+				remaining -= partial;
+				--notFullyHealed;
+			}
+			if(notFullyHealed > 0)
+				updated.push_back({cohort.hitPoints, notFullyHealed});
+		}
+		capacityHealthCohorts = std::move(updated);
+	}
+	if(level != EHealLevel::HEAL && remaining > 0)
+	{
+		const int64_t restoredFullUnits = remaining / maximum;
+		if(restoredFullUnits > std::numeric_limits<int32_t>::max())
+			throw std::runtime_error("Capacity health count overflow");
+		addCapacityCount(fullUnits, static_cast<int32_t>(restoredFullUnits));
+		const int32_t partial = static_cast<int32_t>(remaining % maximum);
+		if(partial > 0)
+			addCapacityHealth(partial, 1);
+		remaining = 0;
+	}
+	amount -= remaining;
+	normalizeCapacityHealthCohorts();
+	promoteCapacityHealthFront();
 }
 
 void CHealth::serializeJson(JsonSerializeFormat & handler)
@@ -407,9 +751,36 @@ void CHealth::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("unusableRemains", unusableRemains, 0);
 	handler.serializeInt("temporaryHitPoints", temporaryHitPoints, 0);
 	handler.serializeInt("shadowGiftMaximumHealthLost", shadowGiftMaximumHealthLost, 0);
+	handler.serializeBool("capacityHealthTracking", capacityHealthTracking, false);
+	handler.serializeInt("capacityHealthMax", capacityHealthMax, 0);
+	handler.enterArray("capacityHealthCohorts").serializeStruct(capacityHealthCohorts);
 	const int64_t originalMaximum = static_cast<int64_t>(owner->getMaxHealth()) * owner->unitBaseAmount();
 	if(shadowGiftMaximumHealthLost < 0 || shadowGiftMaximumHealthLost > originalMaximum)
 		throw std::runtime_error("Invalid Shadow Gift maximum-health loss");
+	if(!capacityHealthTracking && (capacityHealthMax != 0 || !capacityHealthCohorts.empty()))
+		throw std::runtime_error("Invalid inactive capacity health ledger");
+	if(capacityHealthTracking && capacityHealthMax <= 0)
+		throw std::runtime_error("Invalid capacity health maximum");
+	int64_t cohortCount = 0;
+	int32_t previousHitPoints = 0;
+	for(const auto & cohort : capacityHealthCohorts)
+	{
+		if(cohort.hitPoints <= 0 || cohort.count <= 0 || cohort.hitPoints > capacityHealthMax
+			|| cohort.hitPoints <= previousHitPoints)
+			throw std::runtime_error("Invalid capacity health cohort");
+		previousHitPoints = cohort.hitPoints;
+		cohortCount += cohort.count;
+		if(cohortCount > std::numeric_limits<int32_t>::max())
+			throw std::runtime_error("Capacity health cohort count overflow");
+	}
+	const int64_t expectedCount = static_cast<int64_t>(fullUnits)
+		+ (firstHPleft > 0 ? 1 : 0) + cohortCount;
+	if(firstHPleft < 0 || fullUnits < 0 || resurrected < 0 || unusableRemains < 0
+		|| unusableRemains > owner->unitBaseAmount()
+		|| (capacityHealthTracking && firstHPleft > capacityHealthMax)
+		|| (capacityHealthTracking && firstHPleft == 0 && expectedCount > 0)
+		|| expectedCount > std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Invalid capacity health count state");
 }
 
 ///CUnitState
@@ -485,6 +856,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	archeryCrossfireAttackers = other.archeryCrossfireAttackers;
 	archeryCrossfireDefenders = other.archeryCrossfireDefenders;
 	noQuarterMoraleActivationsRemaining = other.noQuarterMoraleActivationsRemaining;
+	capacityRegenerationRemainderTenths = other.capacityRegenerationRemainderTenths;
 	timeStopTurnConsumedFlag = other.timeStopTurnConsumedFlag;
 	regenerationRateMillionths = other.regenerationRateMillionths;
 	regenerationPendingMicroHealth = other.regenerationPendingMicroHealth;
@@ -509,6 +881,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	phantomIntegrity = other.phantomIntegrity;
 	phantomRoundsRemaining = other.phantomRoundsRemaining;
 	phantomShadowGiftMaximumHealthLost = other.phantomShadowGiftMaximumHealthLost;
+	capacityHealthReferenceMax = other.capacityHealthReferenceMax;
 	casts = other.casts;
 	counterAttacks = other.counterAttacks;
 	shots = other.shots;
@@ -731,6 +1104,14 @@ int64_t CUnitState::getAvailableHealth() const
 		return phantomIntegrity;
 
 	return health.available();
+}
+
+int64_t CUnitState::getSurvivingMissingHealth() const
+{
+	if(phantomInitialIntegrity > 0 || health.getCount() <= 0)
+		return 0;
+	const int64_t survivorCapacity = static_cast<int64_t>(health.getCount()) * getMaxHealth();
+	return std::max<int64_t>(0, survivorCapacity - health.getCreatureHealthAvailable());
 }
 
 int64_t CUnitState::getTotalHealth() const
@@ -1070,6 +1451,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("noQuarterMoraleActivationsRemaining", noQuarterMoraleActivationsRemaining, 0);
 	if(noQuarterMoraleActivationsRemaining < 0 || noQuarterMoraleActivationsRemaining > 2)
 		throw std::runtime_error("Invalid No Quarter morale lifetime");
+	handler.serializeInt("capacityRegenerationRemainderTenths", capacityRegenerationRemainderTenths, 0);
+	if(capacityRegenerationRemainderTenths < 0 || capacityRegenerationRemainderTenths > 9)
+		throw std::runtime_error("Invalid capacity regeneration remainder");
 	handler.serializeBool("timeStopTurnConsumed", timeStopTurnConsumedFlag);
 	handler.serializeInt("regenerationRateMillionths", regenerationRateMillionths, 0);
 	handler.serializeInt("regenerationPendingMicroHealth", regenerationPendingMicroHealth, 0);
@@ -1119,6 +1503,11 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeStruct("counterAttacks", counterAttacks);
 	handler.serializeStruct("health", health);
 	handler.serializeStruct("shots", shots);
+	handler.serializeInt("capacityHealthReferenceMax", capacityHealthReferenceMax, 0);
+	if(capacityHealthReferenceMax < 0
+		|| (capacityHealthReferenceMax > 0 && !health.isCapacityHealthTracking())
+		|| (capacityHealthReferenceMax == 0 && capacityRegenerationRemainderTenths != 0))
+		throw std::runtime_error("Invalid capacity health reference state");
 
 	handler.serializeInt("cloneID", cloneID);
 
@@ -1151,6 +1540,7 @@ void CUnitState::reset()
 	regenerationRateMillionths = 0;
 	regenerationPendingMicroHealth = 0;
 	noQuarterMoraleActivationsRemaining = 0;
+	capacityRegenerationRemainderTenths = 0;
 	summoned = false;
 	natureSummoned = false;
 	waiting = false;
@@ -1172,6 +1562,7 @@ void CUnitState::reset()
 	phantomIntegrity = 0;
 	phantomRoundsRemaining = 0;
 	phantomShadowGiftMaximumHealthLost = 0;
+	capacityHealthReferenceMax = 0;
 
 	casts.reset();
 	counterAttacks.reset();
@@ -1311,6 +1702,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	else
 	{
 		health.damage(amount, destroyRemains, bypassTemporaryHitPoints);
+		normalizeCapacityHealth();
 	}
 
 	bool disintegrate = hasBonusOfType(BonusType::DISINTEGRATE);
@@ -1387,6 +1779,54 @@ int64_t CUnitState::consumeRegenerationMarks()
 	return result;
 }
 
+void CUnitState::preserveCreatureHealthOnCapacityIncrease()
+{
+	if(capacityHealthReferenceMax == 0)
+	{
+		capacityHealthReferenceMax = static_cast<int32_t>(getMaxHealth());
+		capacityRegenerationRemainderTenths = 0;
+	}
+	health.preserveCapacityHealth();
+}
+
+void CUnitState::normalizeCapacityHealth()
+{
+	health.normalizeCapacityHealth(capacityHealthReferenceMax > 0);
+}
+
+int64_t CUnitState::capacityRegenerationProjectedHeal() const
+{
+	if(!alive() || capacityHealthReferenceMax <= 0 || !health.isCapacityHealthTracking())
+		return 0;
+	const int64_t numerator = static_cast<int64_t>(getMaxHealth()) + capacityRegenerationRemainderTenths;
+	const auto perCreatureHeal = static_cast<int32_t>(numerator / 10);
+	return health.capacityRegenerationProjectedHeal(perCreatureHeal);
+}
+
+int64_t CUnitState::consumeCapacityRegeneration()
+{
+	if(!alive() || capacityHealthReferenceMax <= 0 || !health.isCapacityHealthTracking())
+		return 0;
+	const int64_t numerator = static_cast<int64_t>(getMaxHealth()) + capacityRegenerationRemainderTenths;
+	const auto perCreatureHeal = static_cast<int32_t>(numerator / 10);
+	capacityRegenerationRemainderTenths = static_cast<int32_t>(numerator % 10);
+	return health.consumeCapacityRegeneration(perCreatureHeal);
+}
+
+int32_t CUnitState::getCapacityHealthReferenceMax() const
+{
+	return capacityHealthReferenceMax > 0
+		? capacityHealthReferenceMax
+		: static_cast<int32_t>(getMaxHealth());
+}
+
+void CUnitState::clearCapacityHealthReference()
+{
+	capacityHealthReferenceMax = 0;
+	capacityRegenerationRemainderTenths = 0;
+	normalizeCapacityHealth();
+}
+
 HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)
 {
 	if(isTimeStopped())
@@ -1406,7 +1846,11 @@ HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)
 	else if(cloned)
 		logGlobal->error("Attempt to heal clone");
 	else
-		return health.heal(amount, level, power);
+	{
+		auto result = health.heal(amount, level, power);
+		normalizeCapacityHealth();
+		return result;
+	}
 
 	return {};
 }
@@ -1491,6 +1935,8 @@ void CUnitState::makeGhost()
 	guardianSpiritRoundsRemaining = 0;
 	phantomIntegrity = 0;
 	phantomRoundsRemaining = 0;
+	capacityHealthReferenceMax = 0;
+	capacityRegenerationRemainderTenths = 0;
 	health.reset();
 	ghostPending = true;
 }
@@ -1502,6 +1948,8 @@ void CUnitState::onRemoved()
 	// is assembled; clearing the ledger here would make those direct-hit
 	// casualties look like ordinary Necromancy-eligible deaths.
 	health.reset(false);
+	capacityHealthReferenceMax = 0;
+	capacityRegenerationRemainderTenths = 0;
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	phantomIntegrity = 0;

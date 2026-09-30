@@ -409,7 +409,38 @@ float AttackPossibility::calculateDamageReduce(
 		return static_cast<float>(copiedStackDamage);
 	}
 
-	auto maxHealth = defender->getMaxHealth();
+	const auto * capacityTrackedDefender = dynamic_cast<const battle::CUnitState *>(defender);
+	const auto capacityReferenceMax = capacityTrackedDefender
+		? capacityTrackedDefender->getCapacityHealthReferenceMax() : 0;
+	const auto maxHealth = defender->getMaxHealth();
+	if(capacityTrackedDefender && capacityTrackedDefender->health.isCapacityHealthTracking())
+	{
+		// A capacity change can leave survivors with different current HP, even
+		// after the effect expires. The first-creature-plus-full-rear-units formula
+		// cannot represent those cohorts, so apply the projected damage to a
+		// detached copy and use its actual health/count deltas.
+		const auto damageProjection = defender->acquireState();
+		if(!damageProjection || damageProjection->getCount() <= 0)
+			return 0.0f;
+
+		const auto healthBefore = damageProjection->getAvailableHealth();
+		const auto countBefore = damageProjection->getCount();
+		damageDealt = std::min<uint64_t>(damageDealt, static_cast<uint64_t>(std::max<int64_t>(0, healthBefore)));
+		int64_t projectedDamage = static_cast<int64_t>(damageDealt);
+		damageProjection->damage(projectedDamage);
+
+		const auto healthAfter = damageProjection->getAvailableHealth();
+		const auto actualDamage = std::max<int64_t>(0, healthBefore - healthAfter);
+		const auto enemiesKilled = std::max(0, countBefore - damageProjection->getCount());
+		const auto enemyDamageBeforeAttack = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state);
+		const auto damagePerEnemy = enemyDamageBeforeAttack / static_cast<double>(countBefore);
+		const auto woundHealth = static_cast<float>(actualDamage) / std::max(1, capacityReferenceMax);
+		const auto hpValue = std::min(woundHealth, static_cast<float>(countBefore));
+
+		return static_cast<float>(damagePerEnemy
+			* (enemiesKilled * KILL_BOUNTY + hpValue * HEALTH_BOUNTY));
+	}
+
 	auto availableHealth = defender->getFirstHPleft() + ((defender->getCount() - 1) * maxHealth);
 
 	vstd::amin(damageDealt, availableHealth);

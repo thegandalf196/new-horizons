@@ -515,6 +515,20 @@ void StackWithBonuses::advanceTimedRound()
 	age(bonusesToUpdate);
 	++treeVersionLocal;
 	restoreGuardianSpiritFromExistingBonuses(*this);
+	if(health.isCapacityHealthTracking() && getCapacityHealthReferenceMax() > 0)
+	{
+		// Match the authoritative round-expiry hook for Hydra's Vitality. Timed
+		// capacity effects disappear inside round aging rather than via a bonus
+		// pack, so clamp each survivor before exposing the projected state.
+		static const SpellID hydrasVitalitySpell(SpellID::decode("new-horizons:hydrasVitality"));
+		const auto capacitySelector = Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::STACK_HEALTH));
+		const auto regenerationSelector = Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::HP_REGENERATION));
+		normalizeCapacityHealth();
+		if(!hasBonus(capacitySelector) && !hasBonus(regenerationSelector))
+			clearCapacityHealthReference();
+	}
 }
 
 std::string StackWithBonuses::getDescription() const
@@ -1271,6 +1285,14 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 			if(healing > 0)
 				unit->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
 		}
+		static const SpellID hydrasVitalitySpell(SpellID::decode("new-horizons:hydrasVitality"));
+		const auto hydrasVitalityMarker = Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::HP_REGENERATION));
+		if(unit->alive() && !unit->isTimeStopped()
+			&& unit->getCapacityHealthReferenceMax() > 0
+			&& unit->health.isCapacityHealthTracking()
+			&& unit->hasBonus(hydrasVitalityMarker))
+			unit->consumeCapacityRegeneration();
 
 		auto poisonDamage = newHorizonsBulwark::physicalPoisonTickDamage(unit.get());
 		if(poisonDamage > 0)

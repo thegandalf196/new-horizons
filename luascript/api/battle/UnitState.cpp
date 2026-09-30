@@ -68,6 +68,10 @@ void LuaUnitStateProxy::registerMethods(MethodRegistrar & R)
 		"Returns the total hit points across all creatures in the stack, including dead.");
 	R.method<&LuaUnitState::getAvailableHealth>("getAvailableHealth", {},
 		"Returns the current hit points of living creatures of this unit.");
+	R.method<&LuaUnitState::getSurvivingMissingHealth>("getSurvivingMissingHealth", {},
+		"Returns missing HP across living creatures, excluding temporary hit points and casualties.");
+	R.method<&LuaUnitState::getCapacityHealthReferenceMax>("getCapacityHealthReferenceMax", {},
+		"Returns the original per-creature max HP captured for a temporary capacity effect, or current max otherwise.");
 	R.method<&LuaUnitState::getCount>("getCount", {},
 		"Returns the number of creatures currently alive in the stack.");
 	R.method<&LuaUnitState::getMaxHealth>("getMaxHealth", {},
@@ -136,6 +140,8 @@ void LuaUnitStateProxy::registerMethods(MethodRegistrar & R)
 		{{"amount", "Damage to apply; will be clamped to remaining health."}},
 		{"Damage value actually applied (may be less than requested if the stack was killed)."},
 		"Deals damage to the stack, clamped to available health.");
+	R.method<&LuaUnitState::preserveCreatureHealthOnCapacityIncrease>("preserveCreatureHealthOnCapacityIncrease", {},
+		"Enables compact exact-health tracking before a capacity increase without healing or resurrecting creatures.");
 	R.cfunction<&LuaUnitStateProxy::heal>("heal",
 		{
 			{"amount", "integer",     "Hit points to restore."},
@@ -172,6 +178,8 @@ SlotID      LuaUnitState::getSlot()      const { return state->unitSlot(); }
 BattleHex   LuaUnitState::getPosition()  const { return state->getPosition(); }
 int64_t     LuaUnitState::getTotalHealth()    const { return state->getTotalHealth(); }
 int64_t     LuaUnitState::getAvailableHealth() const { return state->getAvailableHealth(); }
+int64_t     LuaUnitState::getSurvivingMissingHealth() const { return state->getSurvivingMissingHealth(); }
+int32_t     LuaUnitState::getCapacityHealthReferenceMax() const { return state->getCapacityHealthReferenceMax(); }
 int32_t     LuaUnitState::getCount()         const { return state->getCount(); }
 uint32_t    LuaUnitState::getMaxHealth()     const { return state->getMaxHealth(); }
 bool        LuaUnitState::coversPos(BattleHex pos) const { return state->coversPos(pos); }
@@ -197,6 +205,11 @@ int64_t LuaUnitState::damage(int64_t amount)
 {
 	state->damage(amount);
 	return amount;
+}
+
+void LuaUnitState::preserveCreatureHealthOnCapacityIncrease()
+{
+	state->preserveCreatureHealthOnCapacityIncrease();
 }
 
 // --- LuaUnitStateProxy static methods ---

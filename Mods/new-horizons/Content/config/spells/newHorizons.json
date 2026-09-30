@@ -646,6 +646,40 @@
 		"flags" : {"positive" : true},
 		"targetCondition" : {}
 	},
+	"hydrasVitality": {
+		"name": "Hydra's Vitality",
+		"type": "combat",
+		"school": {"new-horizons:nature": true},
+		"level": 4,
+		"power": 150000,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "NH_spell_hydras_vitality_44.png",
+			"iconScroll": "NH_spell_hydras_vitality_32.png",
+			"iconScenarioBonus": "NH_spell_hydras_vitality_32.png",
+			"iconEffect": "NH_spell_hydras_vitality_30.png",
+			"iconImmune": "NH_spell_hydras_vitality_30.png"
+		},
+		"animation": {"hit": ["C18SPW0"]},
+		"sounds": {"cast": "STONSKIN"},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "For 3 rounds, one friendly living creature stack gains maximum HP per creature by min(50%, 25% + 0.15% x Spell Power). Empty capacity is not healed when cast. Each surviving creature regenerates 10% of its enhanced maximum HP at the start of each activation, without restoring casualties. Nature rank strengthens only the Spell Power component; no mass version. Expiry removes body HP above ordinary capacity.",
+				"cost": 16,
+				"power": 25000000,
+				"battleEffects": {"hydrasVitality": {"type": "core:hydrasVitality"}}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"positive": true},
+		"targetCondition": {}
+	},
 	"verdantPrison": {
 		"name": "Verdant Prison",
 		"type": "combat",

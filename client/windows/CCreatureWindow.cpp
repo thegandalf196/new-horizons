@@ -1319,8 +1319,25 @@ void CStackWindow::initBonusesList()
 	? static_cast<const IBonusBearer*>(info->stack)  // Use CStack in battle
 	: static_cast<const IBonusBearer*>(info->stackNode);  // Use CStackInstance outside of battle
 
-	auto bonusToString = [bonusSource](const std::shared_ptr<Bonus> & bonus) -> std::string
+	const auto hydrasVitalityStatusText = [battleStack = info->stack](const Bonus & marker) -> std::string
 	{
+		if(!battleStack)
+			return {};
+		const auto state = battleStack->acquireState();
+		if(!state)
+			return {};
+		return "Hydra's Vitality: " + std::to_string(battleStack->getMaxHealth())
+			+ " max HP/creature; +" + std::to_string(state->capacityRegenerationProjectedHeal())
+			+ " aggregate HP next activation; " + std::to_string(marker.turnsRemain) + " rounds left.";
+	};
+
+	auto bonusToString = [bonusSource, hydrasVitalityStatusText](const std::shared_ptr<Bonus> & bonus) -> std::string
+	{
+		if(bonus->type == BonusType::HP_REGENERATION
+			&& bonus->source == BonusSource::SPELL_EFFECT
+			&& bonus->sid.toString() == "new-horizons:hydrasVitality")
+			return hydrasVitalityStatusText(*bonus);
+
 		if(!bonus->description.empty())
 			return bonus->description.toString(&GAME->translator());
 		else
@@ -1403,6 +1420,33 @@ void CStackWindow::initBonusesList()
 		// For example, orb of vulnerability on unit without any resistances
 		if (!usedGroup.empty())
 			visibleBonuses.push_back(usedGroup.front());
+	}
+
+	if(info->stack)
+	{
+		const SpellID hydrasVitalityId = SpellID::decode("new-horizons:hydrasVitality");
+		const auto hydrasVitalityMarkers = info->stack->getBonuses(
+			Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(hydrasVitalityId))
+				.And(Selector::type()(BonusType::HP_REGENERATION)));
+		const bool hydraMarkerAlreadySelected = std::any_of(visibleBonuses.begin(), visibleBonuses.end(), [](const auto & bonus)
+		{
+			return !bonus->hidden
+				&& bonus->type == BonusType::HP_REGENERATION
+				&& bonus->source == BonusSource::SPELL_EFFECT
+				&& bonus->sid.toString() == "new-horizons:hydrasVitality";
+		});
+		if(!hydrasVitalityMarkers->empty() && !hydraMarkerAlreadySelected)
+		{
+			BonusInfo status;
+			status.description = hydrasVitalityStatusText(*hydrasVitalityMarkers->front());
+			if(!status.description.empty())
+			{
+				if(info->stackNode)
+					status.imagePath = info->stackNode->bonusToGraphics(hydrasVitalityMarkers->front());
+				status.bonusSource = BonusSource::SPELL_EFFECT;
+				activeBonuses.push_back(std::move(status));
+			}
+		}
 	}
 
 	std::sort(visibleBonuses.begin(), visibleBonuses.end(), bonusSortingPredicate);

@@ -790,7 +790,123 @@ verified the copied binary and refreshed resources while preserving its
 profile-only test mod. No GUI, purchaser assets or normal play profile changed.
 This closes the focused gate, not rendered/playable or full save/reload gates.
 
-Add a row and a short checkpoint to the existing Build handoff containing:
+2026-09-29 Hydra independent source review found a pre-build compile defect:
+the new shared effect-value override referenced a School coefficient declared
+inside a preceding `else` block. Move Hydra's formula into that existing shared
+scope, before Cure, preserving the explicit event/caster-value override
+contract. No failed native build is claimed for this source finding. A fresh
+build and focused cast/preview checks remain required. Review also identified
+cohort-incompatible AI health reconstruction in `calculateDamageReduce` and
+an unset projected Metamagic target ID; the AI owner has the bounded repairs.
+Broad forecast quality and full interaction matrices remain Phase 2.
+
+The first compact-health review additionally found an exact count-integrity
+defect in temporary resurrection cleanup: `takeResurrected` used
+`resurrected * maximumHP` as damage against partially filled health cohorts,
+which can remove more than that many creatures. Although initially described
+as deferred reward integration, root classified known troop deletion as
+BLOCKING. The runtime owner must remove the exact recorded number of survivors
+and verify the principal cleanup case before this slice can be delivered.
+No native failure is claimed yet; this is a concrete source-review finding.
+
+2026-09-29 Hydra registration checkpoint: the content test command again used
+the nonexistent `test_new_horizons_perk_inventory` module. The correct
+`test_new_horizons_ui_perk_inventory` pair passes 56/56; no product assertions
+were weakened. A separate `test_new_horizons_perk_data` run exposed its stale
+explicit activation inventory: six already implemented Light perks and three
+already implemented Nature perks still expected `planned`. This also caused a
+misleading 291/310 count because each subtest stopped before appending all IDs.
+Update the explicit expected set to the nine previously delivered activations;
+retain canonical roster, rank, description, count and source-hash assertions.
+This is a test-maintenance repair, not a new perk activation or coverage gain.
+The repaired content, UI inventory and canonical perk-data checks pass 73/73;
+the module-mirror check and diff check also pass. These are source/data checks,
+not a Hydra runtime or native-build result.
+
+Hydra's initial Lua target transformation accepted only destinations already
+containing a unit pointer. Human hex-only selections require the shared
+`unitEffect` range resolver before single-target eligibility checks. Root also
+found side-based friendliness disagreed with authoritative controller-aware
+ownership, and the oversized-capacity rejection occurred after cast costs.
+The runtime owner is repairing target resolution and pre-cost validation and
+adding a raw-hex cast guard. These are pre-build source findings, not observed
+playable failures; native verification remains required.
+
+Root's detached-state audit found two principal AI omissions: the hypothetical
+activation path lacked the capacity-regeneration tick, and bonus-change
+normalization used the legacy `getStacksIf` surface, which hypothetical battles
+delegate to original stacks. Read projected units through `getUnitsIf` instead
+and keep activation healing inside the same genuine-activation gate as the
+authoritative flow. Otherwise forecasting can omit healing or overwrite the
+detached health ledger with original state. The runtime owner has both repairs;
+the focused AI forecast/resolution test must verify them before delivery.
+Also widen per-creature regeneration additions before clamping to avoid signed
+32-bit overflow at high valid capacities. These remain source findings until
+the native suite is built and executed.
+
+The first Hydra Linux client/test build stops at `CCreatureWindow.cpp:1445`:
+`bonusToGraphics` accepts a `shared_ptr<Bonus>`, but the new fallback status row
+passed `.get()`. Pass the shared pointer itself, preserving the existing API.
+Core library/AI objects linked before this client error; neither complete client
+nor test success is claimed. Restart the stopped build after this one-line
+repair, also recompiling the pre-cost and fixture fixes that landed during the
+first pass. The focused data/UI-source guards do not replace this compile gate.
+
+The repaired Linux build passes both client/test targets; the incremental
+follow-up also exits 0. The isolated refreshed Hydra filter runs 8 cases,
+zero skips: 5 pass and 3 fail. The raw wide-tail hex action is rejected; the
+saved-v2 fixture throws `unknown field selectedPlacement`; and actual AI
+submits a Hero Order rather than Hydra. Preserve the raw-hex and actual AI
+submission assertions. Root confirmed the hex failure: generic target
+transformation intentionally leaves raw hexes unresolved, but the Hydra C++
+eligibility guard requires a unit pointer before Lua resolution can run.
+Resolve a living occupant only in the Hydra guard; do not globally redirect
+other creature spells or corpse selections. Runtime also owns removal of the
+v3-only field from the v2 fixture; AI owns its selection/forecast diagnosis.
+No production AI cause is inferred from the fallback action alone.
+The separate existing health/Regeneration/Cure guards pass 16/16, zero skips.
+Logs/XML are retained as `NewHorizonsHydrasVitality-focused` and
+`NewHorizonsHydrasVitality-health-guards-focused` in the isolated runner.
+The tester verifies identical build/runner binaries and refreshed resources,
+preserving profile-only test content. Repair, rebuild and rerun before
+delivery or coverage changes.
+
+2026-09-30 Hydra retry2: the corrected client/test build passes. Refreshed
+isolated binaries/resources match; all six server cases now pass, including
+raw-tail targeting and saved-v2 pre-cost rejection. The invalid-target AI case
+passes, but actual friendly spell selection still submits an Order (`0F`)
+rather than a Spell (`04`), so the filter is 7/8, zero skips. Reducing the
+distant enemy fixture from 100 Peasants to one did not resolve that assertion.
+Do not infer that reach-unaware Order valuation alone explains the failure;
+collect actual candidate/forecast scores before changing implementation or
+the strict submission assertion. Existing health/Regeneration/Cure guards
+again pass 16/16. Retained evidence is `NewHorizonsHydrasVitality-retry2` and
+`NewHorizonsHydrasVitality-health-guards-retry2` (log/XML). No Hydra delivery
+or coverage increase is claimed yet.
+
+The stderr diagnostic run resolves the remaining selection cause: Hydra
+forecasts two genuine 50-HP healing ticks, each worth 9.9, for score 19.8;
+Brace receives 55 and wins. Hold the Line is only 0.1 with one Peasant.
+The forecast is not missing, and the strict fixture's melee-heavy composition
+does not establish that Hydra is the best legal action. Retain all legal
+Orders and use a stationary opposing stack in the favourable selection
+scenario, removing Brace's actual advancing/preemptive opportunity. Changing
+to a shooter would not solve this reliably: `isMeleeAttacker()` includes all
+non-siege units. Keep exact submission, detached/live immutability and real
+activation parity assertions. Temporary diagnostic output is removed before
+the final build; no production scoring was changed for this fixture repair.
+Evidence: `hydra-ai-diagnostic-stderr.log`/XML, one failing test, zero skips.
+Reach/path-aware Order valuation remains explicitly deferred Phase 2.
+
+Final focused gate, 2026-09-30: the corrected client/test build passes;
+`NewHorizonsHydrasVitality*` passes 8/8 and the existing health guards pass
+16/16, zero skips. Refreshed build/runner binaries match SHA-256
+`81d50a90ca12a5a83845dfc5cdd36c118b054331359d117734e0de2761065354`.
+Resources match, profile-only test fixtures are preserved, and temporary
+diagnostics are absent. Retained log/XML pairs are
+`NewHorizonsHydrasVitality-final-focused` and
+`NewHorizonsHydrasVitality-final-health-guards`. This closes the focused
+principal gate, not full save/load, rendered/playable or tactical-quality gates.
 
 ```text
 Failure ID / CI run or local command / frozen source identity:

@@ -50,6 +50,8 @@ public:
 	BattleHex getPosition() const;
 	int64_t getTotalHealth() const;
 	int64_t getAvailableHealth() const;
+	int64_t getSurvivingMissingHealth() const;
+	int32_t getCapacityHealthReferenceMax() const;
 	int32_t getCount() const;
 	uint32_t getMaxHealth() const;
 	bool coversPos(BattleHex pos) const;
@@ -75,6 +77,7 @@ public:
 
 	// Mutable — health via public CUnitState API
 	int64_t damage(int64_t amount); // clamps to available health, returns actual damage dealt
+	void preserveCreatureHealthOnCapacityIncrease();
 };
 
 class LuaUnitStateProxy : public CopyableWrapper<LuaUnitState, LuaUnitStateProxy>

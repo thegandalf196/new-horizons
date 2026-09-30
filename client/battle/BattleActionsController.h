@@ -416,6 +416,10 @@ public:
 	static bool isVerdantPrisonSpell(const CSpell * spell);
 	BattleHexArray getVerdantPrisonTargetHexes(const CSpell * spell, const BattleHex & targetHex);
 
+	/// New Horizons Hydra's Vitality reports its shared mechanics value in
+	/// percent-millionths; it is never previewed as immediate healing.
+	static bool isHydrasVitalitySpell(const CSpell * spell);
+
 	/// methods to work with array of possible actions, needed to control special creatures abilities
 	const std::vector<PossiblePlayerBattleAction> & getPossibleActions() const;
 	

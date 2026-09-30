@@ -364,6 +364,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"hydrasVitality" : {
+		"implements" : "spellEffect",
+		"script" : "spells/hydrasVitality",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"verdantPrison" : {
 		"implements" : "spellEffect",
 		"script" : "spells/verdantPrison",

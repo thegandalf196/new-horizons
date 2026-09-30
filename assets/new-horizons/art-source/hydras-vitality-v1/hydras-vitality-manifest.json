@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "hydras-vitality",
+  "source": {
+    "path": "master.png",
+    "filename": "exec-02dceb98-8e31-415d-bc9c-d8c54d7eedb6.png",
+    "byte_size": 2922612,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "da5e58857bc20213e444f9d2da95c028c36b215332b92fb060f3d76b1980ac90"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "da5e58857bc20213e444f9d2da95c028c36b215332b92fb060f3d76b1980ac90"
+    },
+    {
+      "file": "hydras-vitality-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "ff7431f3a6f13261d03e3b4fd62963e5e830c14621e4084fc73a933178c7783a"
+    },
+    {
+      "file": "hydras-vitality-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "9246cd7dcae2b6429e3aae73635a05343fd454eaf177f7f19ceef09c9e1e6489"
+    },
+    {
+      "file": "hydras-vitality-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "55c9697d87b1356b50cdb8b058d6b07de095b180901db868d425426a9316abb0"
+    },
+    {
+      "file": "hydras-vitality-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "4b0dc2f75f50151faccda7e34b8a57f3e37a1682aeaf3ab0af90dda04bef1588"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "hydras-vitality-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "hydras-vitality-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "hydras-vitality-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "hydras-vitality-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

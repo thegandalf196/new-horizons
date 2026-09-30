@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-09-29
-Canonical source SHA-256: `54094171842df90e55acfb2ab61e9bf419e9434e81b4d692bb67f4b47b7cf08a`
+Updated: 2026-09-30
+Canonical source SHA-256: `bba2265dd05d3ace1fb18738eb71b2350e524c5151b2153489f957ed96a8875b`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -14,12 +14,14 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-Verdant Prison checkpoint: exact shared HP allocation across legal Dendroid
-ring placements, Verdant Warden, wide-footprint targeting, preview, AI,
-registration and original Provisional artwork are present. Both Linux targets
-link; the isolated active-profile filter passes 11/11, zero skips, and the
-Summon Trolls shared-path guard passes 10/10. This is source/native evidence,
-not rendered or playable delivery.
+Hydra's Vitality checkpoint: capacity-safe compact health cohorts preserve
+current HP/count on cast, genuine per-survivor activation regeneration,
+casualty-safe ordinary healing, exact temporary resurrection cleanup and
+expiry/recast normalization. Target preview/status, registration, Provisional
+art and actual AI submission with detached/authoritative activation parity
+are present. Both Linux targets link; the isolated Hydra filter passes 8/8
+and existing health/Regeneration/Cure guards pass 16/16, zero skips. This is
+source/native evidence, not rendered or playable delivery.
 
 The counts below describe coverage, not release readiness. `Active` is a
 registry/source status unless a focused execution result is cited. Areas
@@ -32,7 +34,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 114/310 | 196 planned; Verdant Warden is the newest activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 56/67 | 11 missing/inactive; Verdant Prison is the newest identity. Light is 11/11 and Nature is 8/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 57/67 | 10 missing/inactive; Hydra's Vitality is the newest identity. Light is 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -505,7 +507,7 @@ from the active identity row.
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
-| Nature | 11 | 8 | Hydra's Vitality; Nature's Wrath; Elemental Convergence |
+| Nature | 11 | 9 | Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 
 All five Adventure spell effects have partial or substantial runtime support,

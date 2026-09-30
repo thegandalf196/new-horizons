@@ -56,6 +56,39 @@ bool isCanonicalVerdantPrison(const Mechanics * spellMechanics)
 	return spell && spell->getJsonKey() == "new-horizons:verdantPrison";
 }
 
+bool isCanonicalHydrasVitality(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return spell && spell->getJsonKey() == "new-horizons:hydrasVitality";
+}
+
+std::vector<Target> canonicalHydrasVitalityTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!isCanonicalHydrasVitality(spellMechanics) || !spellMechanics->battle()
+		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
+		return result;
+
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		return result;
+
+	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	{
+		if(!unit || !unit->alive() || !unit->isValidTarget(false))
+			continue;
+
+		// Shared mechanics owns the living/organic target rules. Keep candidates
+		// aligned with execution instead of duplicating creature tags here.
+		Target target{Destination(unit)};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
+	}
+
+	return result;
+}
+
 std::vector<Target> canonicalVerdantPrisonTargets(const Mechanics * spellMechanics)
 {
 	std::vector<Target> result;
@@ -1073,6 +1106,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 			return {};
 		return canonicalLifeDrainTargets(spellMechanics);
 	}
+	if(isCanonicalHydrasVitality(spellMechanics))
+		return canonicalHydrasVitalityTargets(spellMechanics);
 	if(isCanonicalVerdantPrison(spellMechanics))
 		return canonicalVerdantPrisonTargets(spellMechanics);
 	if(isCanonicalSanctuary(spellMechanics))

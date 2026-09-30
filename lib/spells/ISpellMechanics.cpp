@@ -872,7 +872,19 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				? newHorizonsMagic::empowerSpellBonusPercent(
 					battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), isMassSlow() ? 3 : 1)
 				: 0;
-			if(battle && newHorizonsMagic::cureEnabled(battle->getMagicRules(), owner->getId()))
+			if(battle && owner->getJsonKey() == "new-horizons:hydrasVitality"
+				&& newHorizonsMagic::rulesActive(battle->getMagicRules())
+				&& battle->getMagicRules()["rulesetVersion"].Integer()
+					>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+			{
+				// Millionths of one percent preserve fractional School scaling
+				// until the effect rounds the resulting creature HP. Capacity uses
+				// the canonical raw attribute, not the legacy divisor.
+				effectValue = std::min<int64_t>(50'000'000, 25'000'000
+					+ scaleSpellPowerComponentWithCoefficientBasisPoints(
+						150'000LL * std::max(effectPower, 0), 1, spellPowerCoefficientBasisPoints));
+			}
+			else if(battle && newHorizonsMagic::cureEnabled(battle->getMagicRules(), owner->getId()))
 			{
 				// The New Horizons Cure formula has a fixed component and a
 				// Spell-Power component. Target, school, and specialty modifiers

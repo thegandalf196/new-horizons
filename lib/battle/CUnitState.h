@@ -93,6 +93,17 @@ private:
 class DLL_LINKAGE CHealth final
 {
 public:
+	/// Compact group of surviving creatures with the same current hit points.
+	/// Used only when a changing per-creature capacity makes the legacy
+	/// first-creature-plus-full-rear-units representation lossy.
+	struct DLL_LINKAGE CapacityHealthCohort
+	{
+		int32_t hitPoints = 0;
+		int32_t count = 0;
+
+		void serializeJson(JsonSerializeFormat & handler);
+	};
+
 	explicit CHealth(const battle::Unit * Owner);
 	CHealth(const CHealth & other) = default;
 
@@ -131,12 +142,24 @@ public:
 
 	void takeResurrected();
 
+	void preserveCapacityHealth();
+	void normalizeCapacityHealth(bool preserveCapacityTracking);
+	int64_t capacityRegenerationProjectedHeal(int32_t perCreatureHeal) const;
+	int64_t consumeCapacityRegeneration(int32_t perCreatureHeal);
+	bool isCapacityHealthTracking() const;
+
 	void serializeJson(JsonSerializeFormat & handler);
 private:
 	void addResurrected(int32_t amount);
 	void addUnusableRemains(int32_t amount);
 	int64_t creatureHealthAvailable() const;
 	void setFromTotal(const int64_t totalHealth);
+	void damageCapacityHealth(int64_t amount);
+	void addCapacityHealth(int32_t hitPoints, int32_t count);
+	void normalizeCapacityHealthCohorts();
+	void promoteCapacityHealthFront();
+	void healCapacityHealth(int64_t & amount, EHealLevel level);
+	void addCapacityHealthHealing(int32_t perCreatureHeal);
 	const battle::Unit * owner;
 
 	int32_t firstHPleft;
@@ -145,6 +168,9 @@ private:
 	int32_t unusableRemains;
 	int64_t temporaryHitPoints;
 	int64_t shadowGiftMaximumHealthLost = 0;
+	bool capacityHealthTracking = false;
+	int32_t capacityHealthMax = 0;
+	std::vector<CapacityHealthCohort> capacityHealthCohorts;
 };
 
 class DLL_LINKAGE CUnitState : public Unit
@@ -181,6 +207,8 @@ public:
 	std::vector<uint32_t> archeryCrossfireDefenders;
 	/// Number of accepted activations remaining before No Quarter's morale penalty ends.
 	int32_t noQuarterMoraleActivationsRemaining;
+	/// Tenths of a hit point per creature carried between capacity-regeneration activations.
+	int32_t capacityRegenerationRemainderTenths = 0;
 	bool timeStopTurnConsumedFlag;
 	/// Cast-time Regeneration mark rate in millionths; 1,000,000 is 100%.
 	int32_t regenerationRateMillionths;
@@ -287,6 +315,7 @@ public:
 	int32_t getFirstHPleft() const override;
 	int32_t getUnusableRemains() const override;
 	int64_t getAvailableHealth() const override;
+	int64_t getSurvivingMissingHealth() const override;
 	int64_t getTotalHealth() const override;
 	int64_t getShadowGiftCurrentHealth() const override;
 	int64_t getShadowGiftMaximumHealth() const override;
@@ -360,6 +389,19 @@ public:
 
 	/// Non-mutating near-term Regeneration forecast, clamped to surviving wounds.
 	int64_t regenerationProjectedHeal() const;
+	/// Preserve current creature HP when a per-creature health capacity is raised.
+	/// Rear survivors become grouped health cohorts; this never heals or resurrects.
+	void preserveCreatureHealthOnCapacityIncrease();
+	/// Normalize tracked health after a capacity bonus changes or expires.
+	void normalizeCapacityHealth();
+	/// Exact aggregate HP the next genuine capacity-regeneration activation would restore.
+	int64_t capacityRegenerationProjectedHeal() const;
+	/// Apply the same projected capacity-regeneration tick and advance its tenths carry.
+	int64_t consumeCapacityRegeneration();
+	/// Original max HP captured for an active capacity effect, or current max when inactive.
+	int32_t getCapacityHealthReferenceMax() const;
+	/// Clear the non-compounding max-health baseline after its source effects are gone.
+	void clearCapacityHealthReference();
 	/// Mark actual new wounds on the top surviving creature using the saved rate.
 	void recordRegenerationWounds(int64_t newWoundHealth);
 	/// Consume all marks at activation start, returning only healable surviving wounds.
@@ -380,6 +422,7 @@ private:
 	int64_t phantomIntegrity = 0;
 	int32_t phantomRoundsRemaining = 0;
 	int64_t phantomShadowGiftMaximumHealthLost = 0;
+	int32_t capacityHealthReferenceMax = 0;
 
 	BonusCachePerTurn initiativeBasePerTurn;
 	BonusCachePerTurn initiativeBasePresencePerTurn;

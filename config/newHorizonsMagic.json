@@ -306,6 +306,11 @@
 			"level": 2,
 			"costs": [9, 9, 9, 9]
 		},
+		"new-horizons:hydrasVitality": {
+			"schools": ["new-horizons:nature"],
+			"level": 4,
+			"costs": [16, 16, 16, 16]
+		},
 		"new-horizons:verdantPrison": {
 			"schools": ["new-horizons:nature"],
 			"level": 3,

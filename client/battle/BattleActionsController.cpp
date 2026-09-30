@@ -65,6 +65,7 @@ using TextReplacementList = std::vector<TextReplacement>;
 constexpr std::string_view transfigureMatterJsonKey = "new-horizons:transfigureMatter";
 constexpr std::string_view summonTrollsJsonKey = "new-horizons:summonTrolls";
 constexpr std::string_view verdantPrisonJsonKey = "new-horizons:verdantPrison";
+constexpr std::string_view hydrasVitalityJsonKey = "new-horizons:hydrasVitality";
 constexpr std::string_view stormOfDaggersJsonKey = "new-horizons:stormOfDaggers";
 constexpr std::string_view shadowGiftJsonKey = "new-horizons:shadowGift";
 constexpr int32_t stormOfDaggersMaximumTargets = 5;
@@ -416,6 +417,43 @@ static std::string prepareVerdantPrisonText(
 		result += ")";
 	}
 
+	return result;
+}
+
+static std::string formatPercentMillionths(int64_t percentMillionths)
+{
+	constexpr int64_t percentMillionthsPerPercent = 1'000'000;
+	const auto wholePercent = percentMillionths / percentMillionthsPerPercent;
+	const auto fractionalPercentMillionths = percentMillionths % percentMillionthsPerPercent;
+	if(fractionalPercentMillionths == 0)
+		return std::to_string(wholePercent) + "%";
+
+	std::string fraction = std::to_string(fractionalPercentMillionths);
+	const auto fractionWidth = std::to_string(percentMillionthsPerPercent - 1).size();
+	fraction.insert(fraction.begin(), fractionWidth - fraction.size(), '0');
+	while(!fraction.empty() && fraction.back() == '0')
+		fraction.pop_back();
+	return std::to_string(wholePercent) + "." + fraction + "%";
+}
+
+static std::string prepareHydrasVitalityText(
+	const CSpell * spell,
+	const std::string & targetName,
+	int64_t capacityIncreasePercentMillionths,
+	int32_t durationRounds)
+{
+	if(!spell)
+		return {};
+
+	auto templateText = MetaString::createFromTextID("core.genrltxt", 27);
+	templateText.replaceRawString(spell->getNameTranslated());
+	if(!targetName.empty())
+		templateText.replaceRawString(targetName);
+	std::string result = templateText.toString(&GAME->translator());
+	result += " (maximum HP +" + formatPercentMillionths(capacityIncreasePercentMillionths) + " for "
+		+ std::to_string(durationRounds) + " rounds; "
+		"no immediate healing or casualty restoration; at each genuine activation start, regenerates 10% of "
+		"enhanced maximum HP per surviving creature)";
 	return result;
 }
 
@@ -2182,6 +2220,11 @@ bool BattleActionsController::isVerdantPrisonSpell(const CSpell * spell)
 	return spell && spell->getJsonKey() == verdantPrisonJsonKey;
 }
 
+bool BattleActionsController::isHydrasVitalitySpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == hydrasVitalityJsonKey;
+}
+
 bool BattleActionsController::isValidTransfigureMatterTarget(const BattleHex & targetHex) const
 {
 	if(!targetHex.isValid())
@@ -3059,6 +3102,19 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 
 			auto spellEffectValue =
 					owner.getBattle()->getSpellEffectValue(spell, getCurrentSpellcaster(), getCurrentCastMode(), targetHex);
+			if(isHydrasVitalitySpell(spell))
+			{
+				spells::BattleCast cast(owner.getBattle().get(), getCurrentSpellcaster(), getCurrentCastMode(), spell);
+				const auto * battle = owner.getBattle().get();
+				const auto side = battle->battleGetMySide();
+				const bool followup = side != BattleSide::NONE && battle->battleCanUseMetamagicFollowup(side);
+				cast.setMetamagicFollowup(followup);
+				const auto mechanics = spell->battleMechanics(&cast);
+				const auto capacityIncreasePercentMillionths = mechanics ? mechanics->getEffectValue() : 0;
+				return prepareHydrasVitalityText(spell,
+					targetStack ? targetStack->getName() : "", capacityIncreasePercentMillionths,
+					mechanics ? mechanics->adjustEffectDuration(3) : 3);
+			}
 			if(isVerdantPrisonSpell(spell))
 				return prepareVerdantPrisonText(spell, *spellEffectValue,
 					targetStack ? targetStack->getName() : "", getVerdantPrisonTargetHexes(spell, targetHex).size());

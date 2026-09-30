@@ -347,10 +347,51 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 			spellPointSnapshots.push_back({hero, hero->getNormalSpellPoints(), hero->getBufferSpellPoints()});
 	if(!isFirstRound)
 		resolveDivineRetribution(battle);
+	// Timed bonuses are decremented inside BattleNextRound rather than through a
+	// SetStackEffect pack. Record only Hydra capacity effects that are about to
+	// expire so their compact survivor HP can be clamped immediately afterward.
+	static const SpellID hydrasVitalitySpell(SpellID::decode("new-horizons:hydrasVitality"));
+	const auto hydrasCapacitySelector = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::STACK_HEALTH));
+	std::vector<uint32_t> expiringHydrasVitalityStacks;
+	for(const auto * unit : battle.battleGetAllUnits(false))
+	{
+		if(!unit || unit->isTimeStopped())
+			continue;
+		const auto capacityBonuses = unit->getBonuses(hydrasCapacitySelector);
+		if(capacityBonuses && std::ranges::any_of(*capacityBonuses, [](const auto & bonus)
+			{
+				return bonus && Bonus::NTurns(bonus.get()) && bonus->turnsRemain == 1;
+			}))
+			expiringHydrasVitalityStacks.push_back(unit->unitId());
+	}
 	BattleNextRound bnr;
 	bnr.battleID = battle.getBattle()->getBattleID();
 	logGlobal->debug("Next round starts");
 	gameHandler->sendAndApply(bnr);
+	const auto hydrasRegenerationSelector = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::HP_REGENERATION));
+	for(const auto stackId : expiringHydrasVitalityStacks)
+	{
+		const auto * stack = battle.battleGetStackByID(stackId, false);
+		if(!stack)
+			continue;
+		auto state = stack->acquireState();
+		if(!state->health.isCapacityHealthTracking())
+			continue;
+		state->normalizeCapacityHealth();
+		const bool capacityRemains = stack->hasBonus(hydrasCapacitySelector);
+		const bool regenerationRemains = stack->hasBonus(hydrasRegenerationSelector);
+		if(capacityRemains || regenerationRemains)
+			continue;
+		state->clearCapacityHealthReference();
+		UnitChanges update(stackId, UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		BattleUnitsChanged normalized;
+		normalized.battleID = bnr.battleID;
+		normalized.changedStacks.push_back(std::move(update));
+		gameHandler->sendAndApply(normalized);
+	}
 	BattleLogMessage rewards;
 	rewards.battleID = bnr.battleID;
 	for(const auto & snapshot : spellPointSnapshots)
@@ -1880,6 +1921,35 @@ void applyStartOfActivationEffects(CGameHandler * gameHandler,
 			message.battleID = battle.getBattle()->getBattleID();
 			MetaString line;
 			line.appendRawString("Regeneration restores %s ");
+			creatureStack->addNameReplacement(line, creatureStack->getCount());
+			line.appendNumber(healing);
+			line.appendRawString(" Health.");
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+		}
+	}
+	static const SpellID hydrasVitalitySpell(SpellID::decode("new-horizons:hydrasVitality"));
+	const auto hydrasVitalityMarker = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(hydrasVitalitySpell)).And(Selector::type()(BonusType::HP_REGENERATION));
+	if(creatureStack->alive() && !creatureStack->isTimeStopped() && state
+		&& state->health.isCapacityHealthTracking()
+		&& creatureStack->hasBonus(hydrasVitalityMarker))
+	{
+		const int64_t healing = state->consumeCapacityRegeneration();
+		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		update.healthDelta = healing;
+		BattleUnitsChanged changed;
+		changed.battleID = battle.getBattle()->getBattleID();
+		changed.changedStacks.push_back(std::move(update));
+		gameHandler->sendAndApply(changed);
+
+		if(healing > 0)
+		{
+			BattleLogMessage message;
+			message.battleID = battle.getBattle()->getBattleID();
+			MetaString line;
+			line.appendRawString("Hydra's Vitality restores %s ");
 			creatureStack->addNameReplacement(line, creatureStack->getCount());
 			line.appendNumber(healing);
 			line.appendRawString(" Health.");

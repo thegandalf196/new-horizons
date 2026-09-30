@@ -145,6 +145,11 @@ bool isCanonicalRegeneration(const CSpell * spell)
 	return spell && spell->getJsonKey() == newHorizonsMagic::NATURE_REGENERATION_SPELL;
 }
 
+bool isCanonicalHydrasVitality(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:hydrasVitality";
+}
+
 bool isCanonicalVampirism(const CBattleInfoCallback & battle, const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_VAMPIRISM_SPELL
@@ -853,6 +858,113 @@ float projectedRegenerationValue(
 		}
 	}
 
+	return score;
+}
+
+float projectedCapacityRegenerationValue(
+	const Environment * environment,
+	const std::shared_ptr<CBattleInfoCallback> & beforeCast,
+	const std::shared_ptr<HypotheticBattle> & afterCast,
+	const std::vector<battle::Units> & turnOrder,
+	uint32_t targetId,
+	DamageCache & damageCache,
+	BattleSide ourSide,
+	PlayerColor ourPlayer,
+	float positiveEffectMultiplier)
+{
+	if(!afterCast || targetId == std::numeric_limits<uint32_t>::max())
+		return 0.0f;
+
+	auto forecast = std::make_shared<HypotheticBattle>(environment, afterCast);
+	auto baseline = std::make_shared<HypotheticBattle>(environment, beforeCast);
+	DamageCache forecastDamage(&damageCache);
+	DamageCache baselineDamage(&damageCache);
+	forecastDamage.buildDamageCache(forecast, ourSide);
+	baselineDamage.buildDamageCache(baseline, ourSide);
+	float score = 0.0f;
+	bool firstRound = true;
+	int targetQueueOccurrences = 0;
+	int targetActivationOccurrences = 0;
+	int forecastRound = 0;
+
+	for(const auto & round : turnOrder)
+	{
+		if(!firstRound)
+		{
+			forecast->nextRound();
+			baseline->nextRound();
+			++forecastRound;
+		}
+		firstRound = false;
+
+		for(const auto * queuedUnit : round)
+		{
+			if(!queuedUnit)
+				continue;
+
+			const auto unitId = queuedUnit->unitId();
+			auto * unit = forecast->getForUpdate(unitId).get();
+			auto * baselineUnit = baseline->getForUpdate(unitId).get();
+			const bool startsActivation = unit
+				&& forecast->battleBeginsActivation(unit, BattleUnitTurnReason::TURN_QUEUE);
+			if(unitId == targetId)
+			{
+				++targetQueueOccurrences;
+				if(startsActivation)
+					++targetActivationOccurrences;
+			}
+			const int64_t forecastHealthBefore = unit
+				? static_cast<int64_t>(unit->getAvailableHealth()) : 0;
+			const int64_t baselineHealthBefore = baselineUnit
+				? static_cast<int64_t>(baselineUnit->getAvailableHealth()) : 0;
+
+			if(unit && unit->alive())
+				forecast->nextTurn(unitId, BattleUnitTurnReason::TURN_QUEUE);
+			if(baselineUnit && baselineUnit->alive())
+				baseline->nextTurn(unitId, BattleUnitTurnReason::TURN_QUEUE);
+
+			const auto * currentForecastUnit = forecast->battleGetUnitByID(unitId);
+			const auto * currentBaselineUnit = baseline->battleGetUnitByID(unitId);
+			if(startsActivation && unitId == targetId && currentForecastUnit
+				&& forecast->battleGetOwner(currentForecastUnit) == ourPlayer)
+			{
+				const int64_t forecastHealthAfter = static_cast<int64_t>(currentForecastUnit->getAvailableHealth());
+				const int64_t baselineHealthAfter = currentBaselineUnit
+					? static_cast<int64_t>(currentBaselineUnit->getAvailableHealth()) : baselineHealthBefore;
+				// Value only HP that the shared activation hook actually restored.
+				// The capacity increase itself remains an empty health reserve until
+				// this point and is never counted as a cast-time heal.
+				const auto additionalHealth = std::max<int64_t>(0,
+					(forecastHealthAfter - forecastHealthBefore)
+					- (baselineHealthAfter - baselineHealthBefore));
+				if(additionalHealth > 0)
+				{
+					const auto healedValue = AttackPossibility::calculateDamageReduce(
+						nullptr, currentForecastUnit, static_cast<uint64_t>(additionalHealth),
+						forecastDamage, forecast);
+					const auto weightedValue = healedValue * positiveEffectMultiplier;
+					score += weightedValue;
+				}
+			}
+
+			if(currentForecastUnit && currentForecastUnit->alive())
+			{
+				PotentialTargets potentialTargets(currentForecastUnit, forecastDamage, forecast);
+				if(!potentialTargets.possibleAttacks.empty())
+					applyProjectedBestAction(*forecast, currentForecastUnit, potentialTargets.bestAction());
+			}
+			if(currentForecastUnit)
+				forecast->getForUpdate(unitId)->removeUnitBonus(Bonus::UntilActivationEnds);
+			if(currentBaselineUnit && currentBaselineUnit->alive())
+			{
+				PotentialTargets potentialTargets(currentBaselineUnit, baselineDamage, baseline);
+				if(!potentialTargets.possibleAttacks.empty())
+					applyProjectedBestAction(*baseline, currentBaselineUnit, potentialTargets.bestAction());
+			}
+			if(currentBaselineUnit)
+				baseline->getForUpdate(unitId)->removeUnitBonus(Bonus::UntilActivationEnds);
+		}
+	}
 	return score;
 }
 
@@ -3331,6 +3443,17 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	}
 
 	//Get viable spell-target pairs
+	std::vector<battle::Units> regenerationTurnOrder;
+	bool regenerationTurnOrderPrepared = false;
+	auto getRegenerationTurnOrder = [&]() -> const std::vector<battle::Units> &
+	{
+		if(!regenerationTurnOrderPrepared)
+		{
+			cb->getBattle(battleID)->battleGetTurnOrder(regenerationTurnOrder, 0, 4);
+			regenerationTurnOrderPrepared = true;
+		}
+		return regenerationTurnOrder;
+	};
 	std::vector<PossibleSpellcast> possibleCasts;
 	for(const auto & spellOption : possibleSpells)
 	{
@@ -3521,6 +3644,35 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							if(ps.spellSoulChainDelayedValue <= 0.0f)
 								continue;
 						}
+						if(isCanonicalHydrasVitality(spell))
+						{
+							if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
+								continue;
+
+							const auto targetId = ps.dest.front().unitValue->unitId();
+							auto projected = std::make_shared<HypotheticBattle>(env.get(), battleCallback);
+							const auto * projectedUnit = projected->battleGetUnitByID(targetId);
+							if(!projectedUnit)
+								continue;
+
+							spells::Target projectedTarget{spells::Destination(projectedUnit)};
+							spells::BattleCast projectedCast(projected.get(), hero, spells::Mode::HERO, spell);
+							projectedCast.setMetamagicFollowup(metamagicFollowup);
+							projectedCast.setMetamagicGrand(metamagicGrandChoice);
+							projectedCast.setOvercharge(overcharge);
+							projectedCast.setMetamagicTargetUnitId(targetId);
+							auto projectedMechanics = spell->battleMechanics(&projectedCast);
+							spells::detail::ProblemImpl projectedProblem;
+							if(!projectedMechanics->canBeCastAt(projectedTarget, projectedProblem))
+								continue;
+							projectedMechanics->castEval(projected->getServerCallback(), projectedTarget);
+
+							ps.spellPlacementHeuristicValue = projectedCapacityRegenerationValue(
+								env.get(), battleCallback, projected, getRegenerationTurnOrder(), targetId,
+								damageCache, side, playerID, scoreEvaluator.getPositiveEffectMultiplier());
+							if(ps.spellPlacementHeuristicValue <= 0.0f)
+								continue;
+						}
 						if(isCanonicalHolyArmor(spell))
 						{
 							if(visibleMagicalSpellThreat <= 0.0f || friendlyAvailableHealth <= 0
@@ -3615,6 +3767,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	{
 		return false;
 	}
+	if(!regenerationTurnOrderPrepared && std::any_of(possibleCasts.begin(), possibleCasts.end(),
+		[](const PossibleSpellcast & candidate)
+		{
+			return isCanonicalRegeneration(candidate.spell);
+		}))
+		getRegenerationTurnOrder();
 
 	using ValueMap = PossibleSpellcast::ValueMap;
 
@@ -3751,8 +3909,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	std::vector<battle::Units> turnOrder;
 
 	cb->getBattle(battleID)->battleGetTurnOrder(turnOrder, amount, 2); //no more than 1 turn after current, each unit at least once
-	std::vector<battle::Units> regenerationTurnOrder;
-	cb->getBattle(battleID)->battleGetTurnOrder(regenerationTurnOrder, 0, 4);
 	std::vector<battle::Units> vampirismTurnOrder;
 	cb->getBattle(battleID)->battleGetTurnOrder(vampirismTurnOrder, 0,
 		newHorizonsMagic::VAMPIRISM_BASE_DURATION_ROUNDS);
@@ -3949,6 +4105,27 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellShadowGiftHeuristicValue;
+					continue;
+				}
+				// Hydra's Vitality has no cast-time HP delta: its value comes only
+				// from health restored by the shared projected activation lifecycle.
+				// Preserve that detached forecast while still rejecting a countered cast.
+				if(ps.command == HeroCommand::NONE && isCanonicalHydrasVitality(ps.spell)
+					&& ps.spellPlacementHeuristicValue > 0.0f)
+				{
+					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					targetId = ps.dest.front().unitValue->unitId();
+					if(counterspellNegated
+						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+							counterspellNegated, *spellAllowance))
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + ps.spellPlacementHeuristicValue;
 					continue;
 				}
 				// Canonical delayed spells such as Land Mine, Fire Wall, and Plague may

@@ -14,6 +14,8 @@
 #include <vcmi/scripting/ApiTags.h>
 #include <vcmi/spells/Caster.h>
 
+#include <algorithm>
+
 #include "../bonuses/Bonus.h"
 #include "../bonuses/IBonusBearer.h"
 
@@ -137,6 +139,11 @@ public:
 
 	/// returns total health that unit still has
 	virtual int64_t getAvailableHealth() const = 0;
+	/// Total missing HP across living creatures, excluding temporary battle hit points.
+	virtual int64_t getSurvivingMissingHealth() const
+	{
+		return std::max<int64_t>(0, static_cast<int64_t>(getCount()) * getMaxHealth() - getAvailableHealth());
+	}
 
 	/// returns total health that unit had initially
 	virtual int64_t getTotalHealth() const = 0;
