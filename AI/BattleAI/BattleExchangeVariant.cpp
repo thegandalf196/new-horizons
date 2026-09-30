@@ -671,6 +671,22 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 	std::shared_ptr<HypotheticBattle> hb)
 {
 	MoveTarget result;
+	if(targets.berserk)
+	{
+		// A detached forecast must retain Berserk's selected path. Do not replace
+		// its forced destination with the ordinary tactical target chooser.
+		for(const auto & forcedAction : targets.forcedBerserkActions)
+			if(forcedAction.type == EActionType::WALK && forcedAction.position.isValid())
+				result.positions.insert(forcedAction.position);
+
+		if(!result.positions.empty())
+		{
+			result.score = 0.0f;
+			result.turnsToReach = 1;
+		}
+		return result;
+	}
+
 	BattleExchangeVariant ev;
 
 	logAi->trace("Find move towards unreachable. Enemies count %d", targets.unreachableEnemies.size());

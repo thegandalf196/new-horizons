@@ -23,11 +23,13 @@ PotentialTargets::PotentialTargets(
 	auto avHexes = state->battleGetAvailableHexes(reachability, attackerInfo, false);
 
 	//FIXME: this should part of battleGetAvailableHexes
-	bool isBerserk = attackerInfo->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE);
-	ForcedAction forcedAction = {};
-
-	if(isBerserk)
-		forcedAction = state->getBerserkForcedAction(attackerInfo);
+	berserk = attackerInfo->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE);
+	if(berserk)
+	{
+		forcedBerserkActions = state->getBerserkForcedActions(attackerInfo);
+		if(forcedBerserkActions.empty())
+			forcedBerserkActions.push_back({EActionType::NO_ACTION, attackerInfo->getPosition(), nullptr});
+	}
 
 	auto aliveUnits = state->battleGetUnitsIf([=](const battle::Unit * unit)
 	{
@@ -43,7 +45,7 @@ PotentialTargets::PotentialTargets(
 		if(sanctuaryEnemy && !state->battleCanTargetEmptyHex(attackerInfo))
 			continue;
 
-		if(!isBerserk && !state->battleMatchOwner(attackerInfo, defender))
+		if(!berserk && !state->battleMatchOwner(attackerInfo, defender))
 			continue;
 
 		auto GenerateAttackInfo = [&](bool shooting, const BattleHex & hex) -> AttackPossibility
@@ -55,7 +57,7 @@ PotentialTargets::PotentialTargets(
 				bai.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT;
 
 			auto ordinary = AttackPossibility::evaluate(bai, hex, damageCache, state);
-			if(!isBerserk && state->battleCanUsePerfectMoment(attackerInfo))
+			if(!berserk && state->battleCanUsePerfectMoment(attackerInfo))
 			{
 				auto declared = AttackPossibility::evaluate(bai, hex, damageCache, state, true);
 				// Save the single use when it changes no material outcome. This
@@ -67,18 +69,22 @@ PotentialTargets::PotentialTargets(
 			return ordinary;
 		};
 
-		if(isBerserk)
+		if(berserk)
 		{
-			bool isActionAttack = forcedAction.type == EActionType::WALK_AND_ATTACK || forcedAction.type == EActionType::SHOOT;
-			if (isActionAttack && defender->unitId() == forcedAction.target->unitId())
+			for(const auto & forcedAction : forcedBerserkActions)
 			{
-				bool rangeAttack = forcedAction.type == EActionType::SHOOT;
-				BattleHex hex = forcedAction.type == EActionType::WALK_AND_ATTACK ? forcedAction.position : BattleHex::INVALID;
-				possibleAttacks.push_back(GenerateAttackInfo(rangeAttack, hex));
-			}
-			else
-			{
-				unreachableEnemies.push_back(defender);
+				if(!forcedAction.target || forcedAction.target->unitId() != defender->unitId())
+					continue;
+
+				if(forcedAction.type == EActionType::WALK_AND_ATTACK || forcedAction.type == EActionType::SHOOT)
+				{
+					const bool rangeAttack = forcedAction.type == EActionType::SHOOT;
+					const BattleHex hex = forcedAction.type == EActionType::WALK_AND_ATTACK
+						? forcedAction.position : BattleHex::INVALID;
+					possibleAttacks.push_back(GenerateAttackInfo(rangeAttack, hex));
+				}
+				else if(forcedAction.type == EActionType::WALK)
+					unreachableEnemies.push_back(defender);
 			}
 		}
 		else
@@ -128,10 +134,50 @@ int64_t PotentialTargets::bestActionValue() const
 	return bestAction().attackValue();
 }
 
+float PotentialTargets::expectedBerserkActionValue() const
+{
+	if(!berserk || forcedBerserkActions.empty())
+		return 0.0f;
+
+	float totalValue = 0.0f;
+	for(const auto & forcedAction : forcedBerserkActions)
+	{
+		if(!forcedAction.target
+			|| (forcedAction.type != EActionType::WALK_AND_ATTACK && forcedAction.type != EActionType::SHOOT))
+			continue;
+
+		const auto attack = std::ranges::find_if(possibleAttacks, [&](const AttackPossibility & candidate)
+		{
+			return candidate.attack.defender
+				&& candidate.attack.defender->unitId() == forcedAction.target->unitId()
+				&& candidate.attack.shooting == (forcedAction.type == EActionType::SHOOT)
+				&& (forcedAction.type != EActionType::WALK_AND_ATTACK || candidate.from == forcedAction.position);
+		});
+		if(attack != possibleAttacks.end())
+			totalValue += attack->attackValue();
+	}
+
+	return totalValue / static_cast<float>(forcedBerserkActions.size());
+}
+
 const AttackPossibility & PotentialTargets::bestAction() const
 {
 	if(possibleAttacks.empty())
 		throw std::runtime_error("No best action, since we don't have any actions");
+
+	if(berserk && !forcedBerserkActions.empty())
+	{
+		const auto & forcedAction = forcedBerserkActions.front();
+		const auto attack = std::ranges::find_if(possibleAttacks, [&](const AttackPossibility & candidate)
+		{
+			return candidate.attack.defender && forcedAction.target
+				&& candidate.attack.defender->unitId() == forcedAction.target->unitId()
+				&& candidate.attack.shooting == (forcedAction.type == EActionType::SHOOT)
+				&& (forcedAction.type != EActionType::WALK_AND_ATTACK || candidate.from == forcedAction.position);
+		});
+		if(attack != possibleAttacks.end())
+			return *attack;
+	}
 
 	return possibleAttacks.front();
 }

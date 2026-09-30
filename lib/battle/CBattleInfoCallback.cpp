@@ -2984,6 +2984,9 @@ BattleHex CBattleInfoCallback::getClosestHexToTargetInRange(const ReachabilityIn
 	if (unit.hasBonusOfType(BonusType::FLYING))
 	{
 		BattleHexArray reachableHexes = battleGetAvailableHexes(cache, &unit, false);
+		if(reachableHexes.empty())
+			return BattleHex::INVALID;
+
 		return std::ranges::min_element(reachableHexes, [&targetHex](const BattleHex & lhs, const BattleHex & rhs)
 		{
 			return BattleHex::getDistance(lhs, targetHex) < BattleHex::getDistance(rhs, targetHex);
@@ -3013,87 +3016,129 @@ BattleHex CBattleInfoCallback::getClosestHexToTargetInRange(const ReachabilityIn
 	});
 }
 
-ForcedAction CBattleInfoCallback::getBerserkForcedAction(const battle::Unit * berserker) const
+std::vector<ForcedAction> CBattleInfoCallback::getBerserkForcedActions(const battle::Unit * berserker) const
 {
 	logGlobal->trace("Handle Berserk effect");
-	auto targets = battleGetUnitsIf([&berserker](const battle::Unit * u)
+	if(!berserker || !getBattle())
+		return {};
+
+	const bool canonicalBerserk = newHorizonsMagic::berserkUsesSingleCreatureTarget(getBattle()->getMagicRules());
+	auto targets = battleGetUnitsIf([this, berserker, canonicalBerserk](const battle::Unit * u)
 	{
-		return u->isValidTarget(false) && u->unitId() != berserker->unitId();
+		if(!u->isValidTarget(false) || u->unitId() == berserker->unitId())
+			return false;
+		if(!canonicalBerserk)
+			return true;
+
+		// V3 forces a melee attack. Exclude only targets rejected by the same
+		// authoritative melee legality checks; Berserk still includes allies.
+		return !u->isInvincible()
+			&& !(u->hasBonusOfType(BonusType::SANCTIFIED) && battleMatchOwner(berserker, u));
 	});
+	if(targets.empty())
+		return {};
+
 	auto cache = getReachability(berserker);
 
-	if (battleCanShoot(berserker))
+	// Saved v1/v2 and ordinary battles retain vanilla Berserk's ranged attack.
+	if(!canonicalBerserk && battleCanShoot(berserker))
 	{
 		const auto target = std::ranges::min_element(targets, [&berserker](const battle::Unit * lhs, const battle::Unit * rhs)
 		{
 			return BattleHex::getDistance(berserker->getPosition(), lhs->getPosition()) < BattleHex::getDistance(berserker->getPosition(), rhs->getPosition());
-		})[0];
+		});
 		ForcedAction result = {
 			EActionType::SHOOT,
 			berserker->getPosition(),
-			target
+			*target
 		};
-		return result;
+		return {result};
 	}
-	else
+
+	struct TargetData
 	{
-		struct TargetData
-		{
-			const battle::Unit * target;
-			BattleHex closestAttackableHex;
-			uint32_t distance;
-		};
+		const battle::Unit * target;
+		BattleHex closestAttackableHex;
+		uint32_t distance;
+	};
 
-		std::vector<TargetData> targetData;
-		targetData.reserve(targets.size());
-		for (const battle::Unit * uTarget : targets)
+	std::vector<TargetData> targetData;
+	targetData.reserve(targets.size());
+	for (const battle::Unit * target : targets)
+	{
+		const auto attackableHexes = target->getAttackableHexes(berserker);
+		if(attackableHexes.empty())
+			continue;
+
+		BattleHex closestAttackableHex = BattleHex::INVALID;
+		uint32_t distance = ReachabilityInfo::INFINITE_DIST;
+		for(const auto & hex : attackableHexes)
 		{
-			BattleHexArray attackableHexes = uTarget->getAttackableHexes(berserker);
-			auto closestAttackableHex = std::ranges::min_element(attackableHexes, [&cache](const BattleHex & lhs, const BattleHex & rhs)
+			if(!cache.isReachable(hex))
+				continue;
+
+			const auto hexDistance = cache.distances[hex.toInt()];
+			if(hexDistance < distance)
 			{
-				return cache.distances[lhs.toInt()] < cache.distances[rhs.toInt()];
-			})[0];
-			uint32_t distance = cache.distances[closestAttackableHex.toInt()];
-			TargetData temp = {uTarget, closestAttackableHex, distance};
-			targetData.push_back(temp);
+				distance = hexDistance;
+				closestAttackableHex = hex;
+			}
 		}
+		if(closestAttackableHex.isValid())
+			targetData.push_back({target, closestAttackableHex, distance});
+	}
 
-		auto closestUnit = std::ranges::min_element(targetData, [](const TargetData & lhs, const TargetData & rhs)
-		{
-			return lhs.distance < rhs.distance;
-		})[0];
+	if(targetData.empty())
+		return {};
 
-		if (closestUnit.distance <= berserker->getMovementRange())
+	const auto closestDistance = std::ranges::min_element(targetData, [](const TargetData & lhs, const TargetData & rhs)
+	{
+		return lhs.distance < rhs.distance;
+	})->distance;
+	const auto movementRange = berserker->getMovementRange();
+	std::vector<ForcedAction> actions;
+	for(const auto & closestUnit : targetData)
+	{
+		if(closestUnit.distance != closestDistance)
+			continue;
+		if(!canonicalBerserk && !actions.empty())
+			break;
+
+		if(closestUnit.distance <= movementRange)
 		{
-			ForcedAction result = {
+			actions.push_back({
 				EActionType::WALK_AND_ATTACK,
 				closestUnit.closestAttackableHex,
 				closestUnit.target
-			};
-			return result;
+			});
 		}
-		else if (closestUnit.distance != ReachabilityInfo::INFINITE_DIST && berserker->getMovementRange() > 0)
+		else if(movementRange > 0)
 		{
-			BattleHex intermediaryHex = getClosestHexToTargetInRange(cache, *berserker, closestUnit.closestAttackableHex);
+			const BattleHex intermediaryHex = getClosestHexToTargetInRange(cache, *berserker, closestUnit.closestAttackableHex);
+			if(!intermediaryHex.isValid())
+				continue;
 
-			ForcedAction result = {
+			actions.push_back({
 				EActionType::WALK,
 				intermediaryHex,
 				closestUnit.target
-			};
-			return result;
-		}
-		else
-		{
-			logGlobal->trace("No target found or unit cannot move");
-			ForcedAction result = {
-				EActionType::NO_ACTION,
-				berserker->getPosition(),
-				nullptr
-			};
-			return result;
+			});
 		}
 	}
+	return actions;
+}
+
+ForcedAction CBattleInfoCallback::getBerserkForcedAction(const battle::Unit * berserker) const
+{
+	const auto candidates = getBerserkForcedActions(berserker);
+	if(!candidates.empty())
+		return candidates.front();
+
+	return {
+		EActionType::NO_ACTION,
+		berserker ? berserker->getPosition() : BattleHex::INVALID,
+		nullptr
+	};
 }
 
 BattleHex CBattleInfoCallback::getAvailableHex(const Creature * creature, BattleSide side, BattleHex initialPos) const

@@ -730,6 +730,8 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		&& berserkUsesSingleCreatureTarget(hero->getMagicRules()))
 	{
 		result = "Target one enemy stack. It attacks the nearest creature until its next attack. "
+			"Nearest is determined by battlefield movement cost, regardless of allegiance; tied stacks are chosen randomly. "
+			"Shooters are forced into melee. If out of range, the stack approaches the selected target. "
 			"The ordinary cast targets only the selected stack at every mastery rank.";
 	}
 	else if(hero && spell->getId() == SpellID::DISPEL

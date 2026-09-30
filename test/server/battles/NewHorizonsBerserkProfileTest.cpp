@@ -25,6 +25,11 @@ JsonNode magicRulesForVersion(int version)
 	rules["rulesetVersion"].Integer() = version;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
+	for(auto & [name, spell] : rules["spells"].Struct())
+	{
+		(void)name;
+		spell.Struct().erase("selectedPlacement");
+	}
 	if(version == newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION)
 	{
 		newHorizonsMagic::validateRules(rules);
@@ -213,6 +218,9 @@ TEST_F(NewHorizonsBerserkProfileTest, V3UsesSingleSmartCreatureAimAtEveryMastery
 
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, berserk, MasteryLevel::EXPERT);
 	EXPECT_NE(description.find("Target one enemy stack"), std::string::npos);
+	EXPECT_NE(description.find("battlefield movement cost"), std::string::npos);
+	EXPECT_NE(description.find("tied stacks are chosen randomly"), std::string::npos);
+	EXPECT_NE(description.find("Shooters are forced into melee"), std::string::npos);
 	EXPECT_NE(description.find("ordinary cast targets only the selected stack at every mastery rank"), std::string::npos);
 
 	BattleAction action;

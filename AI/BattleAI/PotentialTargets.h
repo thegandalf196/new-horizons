@@ -15,6 +15,8 @@ class PotentialTargets
 public:
 	std::vector<AttackPossibility> possibleAttacks;
 	battle::Units unreachableEnemies;
+	std::vector<ForcedAction> forcedBerserkActions;
+	bool berserk = false;
 
 	PotentialTargets(){};
 	PotentialTargets(
@@ -24,4 +26,8 @@ public:
 
 	const AttackPossibility & bestAction() const;
 	int64_t bestActionValue() const;
+	/// Expected immediate action value across the deterministic tied Berserk candidates,
+	/// measured from the berserker's side in AttackPossibility damage-reduction units.
+	/// WALK and NO_ACTION contribute zero.
+	float expectedBerserkActionValue() const;
 };

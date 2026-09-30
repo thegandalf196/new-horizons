@@ -305,6 +305,41 @@ float expectedTargetActivationValue(const battle::Unit * target,
 	return bestActionValue;
 }
 
+float expectedBerserkActivationValue(const battle::Unit * original, const battle::Unit * projected,
+	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle,
+	const Environment * environment, PlayerColor valuedPlayer)
+{
+	if(!original || !projected || !projectedBattle || !original->alive() || !projected->alive()
+		|| projected->getCount() <= 0 || projected->isGhost() || projected->isTurret()
+		|| original->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
+		|| !projected->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE))
+		return 0.0f;
+
+	// Berserk resolves one forced action at the target's next activation. Score
+	// every tied nearest target as an equally likely outcome, with no live RNG and
+	// no optimistic choice of the candidate that happens to have the best damage.
+	PotentialTargets candidates(projected, damageCache, projectedBattle);
+	const auto forcedOwnerValue = candidates.expectedBerserkActionValue();
+
+	// Price only the change in its next action. In particular, an archer normally
+	// able to shoot our troops loses that productive shot when Berserk forces a
+	// melee attack on a nearby creature or a move toward one.
+	auto baseline = std::make_shared<HypotheticBattle>(environment, projectedBattle);
+	auto baselineTarget = baseline->getForUpdate(projected->unitId());
+	baselineTarget->removeUnitBonus(Selector::type()(BonusType::ATTACKS_NEAREST_CREATURE));
+	DamageCache baselineDamage(&damageCache);
+	baselineDamage.buildDamageCache(baseline, projected->unitSide());
+	PotentialTargets ordinaryCandidates(baselineTarget.get(), baselineDamage, baseline);
+	const float ordinaryOwnerValue = ordinaryCandidates.possibleAttacks.empty()
+		? 0.0f : ordinaryCandidates.possibleAttacks.front().attackValue();
+	const float ownerValueDelta = forcedOwnerValue - ordinaryOwnerValue;
+	const auto signedValue = projectedBattle->battleGetOwner(projected) == valuedPlayer
+		? ownerValueDelta : -ownerValueDelta;
+	const int resistance = std::clamp(original->magicResistance(), 0, 100);
+	const float applicationChance = 1.0f - static_cast<float>(resistance) / 100.0f;
+	return signedValue * applicationChance;
+}
+
 float expectedCurseTargetActivationValue(const battle::Unit * target,
 	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle)
 {
@@ -4217,7 +4252,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					}
 				}
 
-				auto bav = potentialTargets.bestActionValue();
+				float bav = potentialTargets.berserk
+					? potentialTargets.expectedBerserkActionValue()
+					: static_cast<float>(potentialTargets.bestActionValue());
 
 				//best action is from effective owner`s point if view, we need to convert to our point if view
 				if(state->battleGetOwner(unit) != playerID)
@@ -4720,6 +4757,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					{
 						auto original = cb->getBattle(battleID)->battleGetUnitByID(u->unitId());
 						return !original || u->getMovementRange() != original->getMovementRange()
+							|| (u->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
+								!= original->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE))
 							|| (ps.spell && ps.spell->getId() == SpellID::SLOW
 								&& u->getInitiative() != original->getInitiative())
 							|| u->getPosition() != original->getPosition()
@@ -4882,7 +4921,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					auto original = cb->getBattle(battleID)->battleGetUnitByID(unit->unitId());
 					if(ps.spell && original && state->battleGetOwner(unit) != playerID)
 					{
-						if(ps.spell->getId() == SpellID::SORROW)
+						if(ps.spell->getId() == SpellID::BERSERK && unit->unitId() == targetId)
+							projectedDebuffScore += expectedBerserkActivationValue(
+								original, unit, innerCache, state, env.get(), playerID);
+						else if(ps.spell->getId() == SpellID::SORROW)
 							projectedDebuffScore += estimateProjectedSorrowTargetValue(original, unit, innerCache, state);
 						else if(ps.spell->getId() == SpellID::CURSE)
 							projectedDebuffScore += estimateProjectedCurseTargetValue(original, unit, innerCache, state);

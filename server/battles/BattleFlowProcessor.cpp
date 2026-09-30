@@ -937,7 +937,12 @@ bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & 
 {
 	if (next->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)) //while in berserk
 	{
-		ForcedAction forcedAction = battle.getBerserkForcedAction(next);
+		const auto candidates = battle.getBerserkForcedActions(next);
+		// Inspection and AI projection enumerate ties without consuming RNG.
+		// Only the authoritative activation chooses the actual target.
+		const ForcedAction forcedAction = candidates.size() > 1
+			? *RandomGeneratorUtil::nextItem(candidates, gameHandler->getRandomGenerator())
+			: candidates.empty() ? ForcedAction{} : candidates.front();
 		if (forcedAction.type == EActionType::SHOOT)
 		{
 			BattleAction rangeAttack;
@@ -960,6 +965,7 @@ bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & 
 		{
 			BattleAction movement;
 			movement.actionType = EActionType::WALK;
+			movement.side = next->unitSide();
 			movement.stackNumber = next->unitId();
 			movement.aimToHex(forcedAction.position);
 			makeAutomaticAction(battle, next, movement);

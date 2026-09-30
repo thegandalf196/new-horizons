@@ -218,6 +218,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSpellRewardFilterTest.cpp
 		server/battles/NewHorizonsDirectDamageMechanicsTest.cpp
 		battle/NewHorizonsMagicArrowActionTest.cpp
+		battle/NewHorizonsBerserkForcedActionTest.cpp
 		battle/NewHorizonsCounterspellActionTest.cpp
 		server/battles/NewHorizonsSpellRosterContextTest.cpp
 		server/battles/NewHorizonsSpellRosterConsumerTest.cpp
@@ -270,6 +271,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSanctuaryTest.cpp
 		server/battles/NewHorizonsRegenerationTest.cpp
 		server/battles/NewHorizonsBerserkProfileTest.cpp
+		server/battles/NewHorizonsBerserkActivationTest.cpp
 		server/battles/NewHorizonsDispelProfileTest.cpp
 		server/battles/NewHorizonsChainLightningProfileTest.cpp
 		server/battles/NewHorizonsBlessTest.cpp
@@ -363,6 +365,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsHolyWrathAITest.cpp
 		battleAI/NewHorizonsHandOfFateAITest.cpp
 		battleAI/NewHorizonsMisfortuneAITest.cpp
+		battleAI/NewHorizonsBerserkAITest.cpp
 		battleAI/NewHorizonsHolyArmorAITest.cpp
 		battleAI/NewHorizonsHeavenlyGaleAITest.cpp
 		battleAI/NewHorizonsDivineRetributionAITest.cpp

@@ -2,6 +2,55 @@
 
 ## Purpose
 
+### 2026-09-30 Berserk initial native compile
+
+UP-062 build `58076` fails in BattleEvaluator: the new floating-point expected
+action value was declared const, but the existing ownership conversion negates
+it in place. Independent review identified the same compile blocker. Root
+retains the float expectation and makes the local mutable; no gameplay rule is
+relaxed. Preserve `UP062-berserk-foundation-initial-build.log`. Retry evidence
+is pending. Phase 2 review also records that the multi-activation forecast
+advances one tied attack branch while scoring immediate expected value, and
+does not apply forced WALK in that broader turn loop. The bounded movement
+selection and next-action caster estimate do not certify that wider integration.
+
+Retry build `34487` compiles the runtime, client objects and shared callback
+tests, then fails in the new AI fixture: `acquireState()` returns CUnitState,
+not a bonus-bearing node, so its `addNewBonus` call is invalid. The AI worker
+repairs only that fixture to use the supported bonus path, preserving the
+stationary/no-reposition assertions. Preserve
+`UP062-berserk-foundation-retry1-build.log`; succeeding build/native evidence
+is pending. Do not describe this test setup error as a production crash.
+
+Retry build `16036` links both targets; native `62554` passes the first seven
+callback cases then crashes in the legacy shooter fixture. Isolated gdb `92206`
+attributes the null dereference to the fixture's unconfigured `unitType()` in
+the existing `Unit::isCatapult` check, not to a real creature or a v3 cast.
+Preserve the initial focused log and `UP062-berserk-foundation-legacy-fixture-crash-gdb.log`.
+The separate movement-only gdb check `57237` exits normally; it is not evidence
+for the crash cause. Worker repairs the creature mock without changing production.
+Isolated runtime/AI run `86507` passes all eight v3/activation/AI cases, including
+seeded authoritative target selection, own-side movement and accepted/read-only
+AI cast, but four historical profile fixtures fail before casting: their synthetic
+downgrade retained v3-only Quicksand `selectedPlacement`. Root removes that field
+only when constructing v1/v2 fixtures; no production schema is loosened.
+Preserve `UP062-berserk-foundation-runtime-ai-focused.log`/`.xml`. Final retry
+evidence remains pending; no complete 21-case pass is claimed yet.
+
+Fixture retry build `86914` fails because `CreatureID::IMP` is an enum, not
+the identifier wrapper exposing `toCreature()`. Root constructs
+`CreatureID(CreatureID::IMP)` before the lookup. Preserve
+`UP062-berserk-foundation-fixture-retry3-build.log`; no runtime rule changes.
+
+Final build `27932` succeeds for both targets, followed by native `9314`:
+21/21, zero skips, binary
+`83356a9a474e1300cbe78c66616e4dd004ef9fcab7305d44310b813f8e1bdee3`.
+Preserve `UP062-berserk-foundation-fixture-retry4-build.log` and
+`UP062-berserk-foundation-final-focused.log`/`.xml`. The real creature type,
+correct legacy fixture schema and supported detached-bonus path are verified.
+Review's compile blocker is repaired; its broader forecast findings remain
+explicitly deferred rather than represented as covered by this focused gate.
+
 ### 2026-09-30 Hand of Fate initial native compile
 
 UP-057 build 2773 failed in BattleAI before linking: the new score branch

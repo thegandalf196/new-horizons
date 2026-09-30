@@ -60,10 +60,10 @@ struct DLL_LINKAGE BattleClientInterfaceData
 	ui8 tacticsMode;
 };
 
-struct ForcedAction {
+struct DLL_LINKAGE ForcedAction {
 	EActionType type = EActionType::NO_ACTION;
 	BattleHex position;
-	const battle::Unit * target;
+	const battle::Unit * target = nullptr;
 };
 
 using SpellEffectValUptr = std::unique_ptr<spells::effects::SpellEffectValue>;
@@ -282,6 +282,8 @@ public:
 	AccessibilityInfo getAccessibility() const;
 	AccessibilityInfo getAccessibility(const battle::Unit * stack) const; //Hexes occupied by stack will be marked as accessible.
 	AccessibilityInfo getAccessibility(const BattleHexArray & accessibleHexes) const; //given hexes will be marked as accessible
+	/// Returns tied nearest v3 Berserk candidates without RNG, one deterministic legacy action, or empty when none is reachable/legal.
+	std::vector<ForcedAction> getBerserkForcedActions(const battle::Unit * berserker) const;
 	ForcedAction getBerserkForcedAction(const battle::Unit * berserker) const;
 	BattleHex getClosestHexToTargetInRange(const ReachabilityInfo& cache, const battle::Unit& unit, const BattleHex& targetHex) const;
 

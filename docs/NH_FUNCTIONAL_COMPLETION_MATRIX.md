@@ -14,6 +14,23 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-062 Berserk targeting foundation is source/native verified: v3 forces
+shooters into melee, chooses nearest legal targets by movement cost and draws
+uniform equal-cost ties only at authoritative activation. Detached BattleAI
+retains exact forced movement/no-action and values the expected next action
+against ordinary freedom, including allied harm and resistance. Legacy shooting
+and first-nearest melee remain isolated. Both Linux targets build (27932), and
+native 9314 passes 21/21, zero skips, including obstacle-path targeting, seeded
+server ties, defender movement, saved-profile casts and actual/read-only AI.
+Reports `UP062-berserk-foundation-final-focused.log`/`.xml`, binary
+`83356a9a474e1300cbe78c66616e4dd004ef9fcab7305d44310b813f8e1bdee3`.
+All 77 offline checks and module/diff gates pass; review has no remaining blocker.
+Next-activation expiry, negative-Morale consumption and Frenzied Curse remain
+missing Phase 1 clauses; all-blocked fallback is not certified. Wider tied-branch
+multi-activation projection and forced movement in that longer forecast loop
+remain Phase 2 findings. No identity/rank/perk count changes: 59/67 combat
+identities, 84/93 ranks and 126/310 active perks (184 planned). No GUI/promotion.
+
 Summon Boat clause checkpoint (UP-056): captured New Horizons rules now summon
 existing unoccupied sailing boats only. No-boat admission rejects before Mana
 or daily completion; shared creation policy is used by authoritative casting
