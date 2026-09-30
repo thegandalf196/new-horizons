@@ -1424,8 +1424,11 @@ si32 CGHeroInstance::manaRegain() const
 	int percentageRegeneration = valOfBonuses(BonusType::MANA_PERCENTAGE_REGENERATION);
 	const int64_t regeneratedByPercentage = static_cast<int64_t>(manaLimit()) * percentageRegeneration / 100;
 	const int64_t regeneratedByValue = valOfBonuses(BonusType::MANA_REGENERATION);
+	int64_t regeneration = std::max(regeneratedByValue, regeneratedByPercentage);
+	if(hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.mysticism"))
+		regeneration = std::max(regeneration, std::max<int64_t>(5, static_cast<int64_t>(manaLimit()) / 10));
 
-	return static_cast<si32>(std::clamp<int64_t>(std::max(regeneratedByValue, regeneratedByPercentage),
+	return static_cast<si32>(std::clamp<int64_t>(regeneration,
 		std::numeric_limits<si32>::min(), std::numeric_limits<si32>::max()));
 }
 

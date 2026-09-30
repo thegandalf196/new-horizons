@@ -23,6 +23,7 @@
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForClient.h"
@@ -30,15 +31,21 @@
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../server/CGameHandler.h"
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <limits>
+#include <memory>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 
 namespace
 {
 using KnowledgeArtifact = std::pair<ArtifactID, ArtifactPosition>;
+
+constexpr auto WISDOM_SKILL_ID = "new-horizons:wisdom";
+constexpr auto MYSTICISM_PERK_ID = "new-horizons:wisdom.mysticism";
 
 const std::array<KnowledgeArtifact, 4> & knowledgeArtifacts()
 {
@@ -62,7 +69,7 @@ protected:
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons content module for its saved spell-point rules";
 
-		startGame();
+		startGame(startsWithFortifiedTown());
 		ASSERT_TRUE(newHorizonsMagic::spellPointRulesActive(attackerSideHero->getMagicRules()));
 	}
 
@@ -75,6 +82,11 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
+
+	virtual bool startsWithFortifiedTown() const
+	{
+		return false;
 	}
 
 	void setKnowledge(CGHeroInstance * hero, int32_t value)
@@ -91,6 +103,47 @@ protected:
 	{
 		SetMana change(hero->id, SetMana::Operation::SET_NORMAL, value);
 		gameState()->apply(change);
+	}
+
+	void setWisdomRank(CGHeroInstance * hero, int32_t rank)
+	{
+		// Wisdom is Magic-exclusive. Use a real Wizard hero for the normal perk-offer path.
+		const auto solmyr = HeroTypeID(HeroTypeID::decode("core:solmyr"));
+		ASSERT_NE(solmyr, HeroTypeID::NONE);
+		hero->setHeroType(solmyr);
+		const int wisdomId = SecondarySkill::decode(WISDOM_SKILL_ID);
+		ASSERT_GE(wisdomId, 0);
+		SetSecSkill change;
+		change.id = hero->id;
+		change.which = SecondarySkill(wisdomId);
+		change.val = rank;
+		change.mode = ChangeValueMode::ABSOLUTE;
+		gameState()->apply(change);
+	}
+
+	bool selectMysticismThroughLegalOffer(CGHeroInstance * hero)
+	{
+		setWisdomRank(hero, MasteryLevel::BASIC);
+		const auto rankLookup = [hero](const std::string & skillId)
+		{
+			return hero->getPerkSkillRank(skillId);
+		};
+
+		for(uint64_t seed = 0; seed < 256; ++seed)
+		{
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto selected = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
+			{
+				return candidate.selection.perkId == MYSTICISM_PERK_ID;
+			});
+			if(selected == offer.end())
+				continue;
+
+			const auto choice = static_cast<size_t>(std::distance(offer.begin(), selected));
+			gameHandler->levelUpHero(hero, offer, choice, seed, false);
+			return hero->hasActivePerk(WISDOM_SKILL_ID, MYSTICISM_PERK_ID);
+		}
+		return false;
 	}
 
 	void grantBuffer(CGHeroInstance * hero, int32_t value)
@@ -128,6 +181,44 @@ protected:
 		EXPECT_EQ(hero->manaLimit(), maximum);
 		EXPECT_EQ(hero->getManaAvailable(), static_cast<int64_t>(normal) + buffer);
 	}
+};
+
+class SpellPointCapacityPlannedMysticismTest : public SpellPointCapacityTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		SpellPointCapacityTest::mapLoaded(loaded);
+		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		for(auto & perk : perks["skills"][WISDOM_SKILL_ID]["perks"].Vector())
+		{
+			if(perk["id"].String() == MYSTICISM_PERK_ID)
+				perk["effect"]["status"].String() = "planned";
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+	}
+};
+
+class SpellPointCapacityMageGuildTest : public SpellPointCapacityTest
+{
+protected:
+	bool startsWithFortifiedTown() const override
+	{
+		return true;
+	}
+};
+
+class NewTurnRecordingGameServer final : public RecordingGameServer
+{
+public:
+	void applyPack(CPackForClient & pack) override
+	{
+		if(const auto * turn = dynamic_cast<const NewTurn *>(&pack))
+			lastNewTurn = *turn;
+		RecordingGameServer::applyPack(pack);
+	}
+
+	std::optional<NewTurn> lastNewTurn;
 };
 }
 
@@ -242,6 +333,147 @@ TEST_F(SpellPointCapacityTest, IntelligenceRaisesKnowledgeCapacityByThirtyPercen
 	rank.val = 0;
 	gameState()->apply(rank);
 	expectPools(attackerSideHero, 120, 37, 120);
+}
+
+TEST_F(SpellPointCapacityTest, WisdomMysticismUsesFiveMinimumTenPercentAndOnlyRestoresNormalMana)
+{
+	setKnowledge(attackerSideHero, 20);
+	setNormal(attackerSideHero, 0);
+	grantBuffer(attackerSideHero, 13);
+	setWisdomRank(attackerSideHero, MasteryLevel::BASIC);
+
+	// The Wisdom rank alone does not grant the perk effect.
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, MYSTICISM_PERK_ID));
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(), 1); // Ordinary daily regeneration remains.
+	expectPools(attackerSideHero, 0, 13, 20);
+
+	ASSERT_TRUE(selectMysticismThroughLegalOffer(attackerSideHero));
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(), 5); // floor(20 / 10) is below the minimum.
+	expectPools(attackerSideHero, 0, 13, 20); // Forecasting must not mutate either pool.
+
+	setKnowledge(attackerSideHero, 100);
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(), 10);
+	expectPools(attackerSideHero, 0, 13, 100);
+	setKnowledge(attackerSideHero, 109);
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(), 10); // The 10% term is floored.
+	expectPools(attackerSideHero, 0, 13, 109);
+
+	setNormal(attackerSideHero, 106);
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(), 109); // Recovery is capped at Normal capacity.
+	expectPools(attackerSideHero, 106, 13, 109);
+}
+
+TEST_F(SpellPointCapacityTest, MysticismIsARegenerationFloorAndStrongerExistingRegenerationWins)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 0);
+	ASSERT_EQ(attackerSideHero->manaRegain(), 1);
+	ASSERT_TRUE(selectMysticismThroughLegalOffer(attackerSideHero));
+
+	auto ordinaryRegeneration = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MANA_REGENERATION, BonusSource::OTHER, 1, BonusSourceID());
+	attackerSideHero->addNewBonus(ordinaryRegeneration);
+	EXPECT_EQ(attackerSideHero->manaRegain(), 10); // Mysticism is a floor over the +1 source.
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(), 10);
+	attackerSideHero->removeBonus(ordinaryRegeneration);
+
+	auto strongerRegeneration = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MANA_REGENERATION, BonusSource::OTHER, 25, BonusSourceID());
+	attackerSideHero->addNewBonus(strongerRegeneration);
+	EXPECT_EQ(attackerSideHero->manaRegain(), 26); // Existing +1 and new +25, not another Mysticism grant.
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(), 26);
+	attackerSideHero->removeBonus(strongerRegeneration);
+}
+
+TEST_F(SpellPointCapacityTest, BasicWisdomCanSelectMysticismLegallyAndSelectionSurvivesSaveLoad)
+{
+	setKnowledge(attackerSideHero, 40);
+	setNormal(attackerSideHero, 0);
+	grantBuffer(attackerSideHero, 7);
+	ASSERT_TRUE(selectMysticismThroughLegalOffer(attackerSideHero));
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode(WISDOM_SKILL_ID))),
+		MasteryLevel::BASIC);
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_TRUE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, MYSTICISM_PERK_ID));
+	EXPECT_EQ(restoredHero->getManaNewTurn(), 5);
+	EXPECT_EQ(restoredHero->getNormalSpellPoints(), 0);
+	EXPECT_EQ(restoredHero->getBufferSpellPoints(), 7);
+
+	setWisdomRank(attackerSideHero, 0);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, MYSTICISM_PERK_ID));
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(), 1);
+}
+
+TEST_F(SpellPointCapacityPlannedMysticismTest, SavedPlannedSnapshotDoesNotOfferOrApplyDailyRecovery)
+{
+	setKnowledge(attackerSideHero, 20);
+	setNormal(attackerSideHero, 0);
+	grantBuffer(attackerSideHero, 9);
+	setWisdomRank(attackerSideHero, MasteryLevel::BASIC);
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	const auto offer = restoredHero->getPerkState().prepareOffer([restoredHero](const std::string & skillId)
+	{
+		return restoredHero->getPerkSkillRank(skillId);
+	}, 42);
+	EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
+	{
+		return candidate.selection.perkId == MYSTICISM_PERK_ID;
+	}));
+	EXPECT_FALSE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, MYSTICISM_PERK_ID));
+	EXPECT_EQ(restoredHero->getManaNewTurn(), 1);
+	EXPECT_EQ(restoredHero->getNormalSpellPoints(), 0);
+	EXPECT_EQ(restoredHero->getBufferSpellPoints(), 9);
+}
+
+TEST_F(SpellPointCapacityTest, NewTurnPacketAppliesDailyMysticismRecoveryToNormalPoolOnly)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 40);
+	grantBuffer(attackerSideHero, 11);
+	ASSERT_TRUE(selectMysticismThroughLegalOffer(attackerSideHero));
+
+	NewTurnRecordingGameServer dayStartServer;
+	dayStartServer.gameState = gameState();
+	CGameHandler dayStartHandler(dayStartServer, gameState());
+	dayStartHandler.onNewTurn();
+
+	ASSERT_TRUE(dayStartServer.lastNewTurn.has_value());
+	const auto mana = std::find_if(dayStartServer.lastNewTurn->heroesMana.begin(),
+		dayStartServer.lastNewTurn->heroesMana.end(), [this](const auto & change)
+		{
+			return change.hid == attackerSideHero->id;
+		});
+	ASSERT_NE(mana, dayStartServer.lastNewTurn->heroesMana.end());
+	EXPECT_EQ(mana->operation, SetMana::Operation::SET_NORMAL);
+	EXPECT_EQ(mana->amount, 50);
+	expectPools(attackerSideHero, 50, 11, 100);
+}
+
+TEST_F(SpellPointCapacityMageGuildTest, MageGuildFullRefillTakesPrecedenceOverMysticism)
+{
+	const auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	auto * town = towns.front();
+	town->addBuilding(BuildingID::MAGES_GUILD_1);
+	defenderSideHero->setVisitedTown(town, false);
+	setKnowledge(defenderSideHero, 100);
+	setNormal(defenderSideHero, 2);
+	ASSERT_TRUE(selectMysticismThroughLegalOffer(defenderSideHero));
+
+	EXPECT_EQ(defenderSideHero->getManaNewTurn(), 100);
+	expectPools(defenderSideHero, 2, 0, 100);
 }
 
 TEST_F(SpellPointCapacityTest, AcknowledgementsDoNotScheduleCapacityReconciliation)

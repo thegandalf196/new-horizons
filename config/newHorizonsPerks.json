@@ -2033,7 +2033,7 @@
 					"requires": "basic",
 					"description": "At the start of each day, recover Mana equal to the greater of 5 or 10% of maximum Mana.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "At the start of each day, recover Mana equal to the greater of 5 or 10% of maximum Mana."
 					}
 				},

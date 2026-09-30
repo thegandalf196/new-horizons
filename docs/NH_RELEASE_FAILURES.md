@@ -2,6 +2,33 @@
 
 ## Purpose
 
+### 2026-09-30 Mysticism registration description alignment
+
+The first 74-case offline gate fails its canonical-description comparison after
+the registry description was expanded without a matching specification edit.
+Keeping canonical perk text but only expanding effect text then fails the
+required description/effect-description equality; the apparent 301-perk count
+is a cascading early-loop assertion, not missing registry entries. Restore both
+texts to the canonical wording and retain Normal/Buffer semantics in runtime
+and focused tests. The third invocation passes 74/74. Do not weaken the
+canonical registry guard to accommodate an implementation-only clarification.
+
+The first isolated six-case native run passes 2/6, with zero skips, on binary
+`d63df8df340b09b4749b71b548c22b13bfb55d254beb01b5262b0c195cdc931e`.
+Actual day-start packet application and Mage Guild precedence pass. Four
+fixtures omit the existing universal +1 daily regeneration: inactive recovery
+is 1, not 0, and an additional +25 regeneration source totals 26. Correct those
+expectations and assert the baseline explicitly; no production tuning. Preserve
+`NewHorizonsMysticism-focused.*` and use a new retry report.
+
+Final test build 92352 passes; the isolated retry with directly relevant
+capacity/pool guards passes 36/36 (six Mysticism cases), zero skips, on binary
+`0b565de19b837c0f2a3bc476c59009f61c99f570ba15c507d3737df7912be080`.
+Passing reports are `NewHorizonsMysticism-retry1-capacity-guards.*`; the initial
+failure reports remain. Client build 55027 also passes. No production value
+was tuned to satisfy the fixtures; independent review confirms the baseline
+corrections and has no blocking finding.
+
 ### 2026-09-30 Combined Arms AI callback type repair
 
 Linux build session 90955 fails at `BattleEvaluator.cpp:3935`: `getBattle`
