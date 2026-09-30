@@ -55,6 +55,10 @@ public:
 	{
 		return subject->getBattle()->hasCompletedHeroSpellCast(side);
 	}
+	bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const override
+	{
+		return subject->getBattle()->hasCompletedHeroSpellLevel(side, level);
+	}
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override
 	{
 		return subject->getBattle()->getWarcastingState(side);

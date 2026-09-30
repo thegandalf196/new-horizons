@@ -144,6 +144,31 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	RelentlessAssaultState relentlessAssault;
 	// Accepted hero-cast completion persists for the whole battle, not one round.
 	bool heroSpellCastCompleted = false;
+	// Bit (level - 1) records that an accepted hero cast of that saved spell
+	// level completed during this battle. Only the five ordinary spell levels
+	// are tracked; creature spells do not enter this history.
+	uint8_t completedHeroSpellLevels = 0;
+
+	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
+		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
+
+	static uint8_t completedHeroSpellLevelBit(int32_t level)
+	{
+		if(level < 1 || level > GameConstants::SPELL_LEVELS)
+			return 0;
+		return static_cast<uint8_t>(1u << (level - 1));
+	}
+
+	bool hasCompletedHeroSpellLevel(int32_t level) const
+	{
+		const auto bit = completedHeroSpellLevelBit(level);
+		return bit != 0 && (completedHeroSpellLevels & bit) != 0;
+	}
+
+	void recordCompletedHeroSpellLevel(int32_t level)
+	{
+		completedHeroSpellLevels |= completedHeroSpellLevelBit(level);
+	}
 
 	bool hasChainGateState() const
 	{
@@ -175,6 +200,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && heroSpellCastCompleted
 			&& !h.hasFeature(Handler::Version::BATTLE_COMPLETED_HERO_SPELL))
 			throw std::runtime_error("Cannot discard completed hero spell battle state");
+		if(h.saving && completedHeroSpellLevels != 0
+			&& !h.hasFeature(Handler::Version::BATTLE_COMPLETED_HERO_SPELL_LEVELS))
+			throw std::runtime_error("Cannot discard completed hero spell level battle state");
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
 			h & sylvanLuck;
 		else if(!h.saving)
@@ -348,6 +376,14 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & heroSpellCastCompleted;
 		else if(!h.saving)
 			heroSpellCastCompleted = false;
+		if(h.hasFeature(Handler::Version::BATTLE_COMPLETED_HERO_SPELL_LEVELS))
+		{
+			h & completedHeroSpellLevels;
+			if(!h.saving && (completedHeroSpellLevels & static_cast<uint8_t>(~COMPLETED_HERO_SPELL_LEVELS_MASK)) != 0)
+				throw std::runtime_error("Invalid saved completed hero spell levels");
+		}
+		else if(!h.saving)
+			completedHeroSpellLevels = 0;
 	}
 
 	void clearMetamagicSequence()

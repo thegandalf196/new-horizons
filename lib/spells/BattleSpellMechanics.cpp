@@ -2088,7 +2088,7 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		p.first->apply(server, this, p.second);
 
 	if(completedHeroProjection)
-		server->recordCompletedHeroSpellCast(casterSide);
+		server->recordCompletedHeroSpellCast(casterSide, battle()->battleGetSpellLevel(getSpellId()));
 }
 
 battle::Units BattleSpellMechanics::collectTargets() const

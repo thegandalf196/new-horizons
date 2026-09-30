@@ -2103,7 +2103,7 @@
 					"requires": "expert",
 					"description": "After Wisdom calculates its percentage discount, the first Level 4 or Level 5 spell cast in each combat costs 3 additional Mana less, to a minimum of 1.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After Wisdom calculates its percentage discount, the first Level 4 or Level 5 spell cast in each combat costs 3 additional Mana less, to a minimum of 1."
 					}
 				},

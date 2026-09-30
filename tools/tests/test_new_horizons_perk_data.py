@@ -18,6 +18,7 @@ ACTIVE_PERKS = {
     "new-horizons:wisdom.meditation",
     "new-horizons:wisdom.deepKnowledge",
     "new-horizons:wisdom.preparedCaster",
+    "new-horizons:wisdom.archmage",
     "new-horizons:wisdom.mysticism",
     "new-horizons:command.combinedArms",
     "new-horizons:command.aggressiveCommander",

@@ -3595,15 +3595,25 @@ int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const 
 	int32_t ret = wisdom == MasteryLevel::NONE ? listedCost * listedCostMultiplier
 		: newHorizonsMagic::wisdomAdjustedCost(listedCost, listedCostMultiplier, wisdom);
 	const bool newHorizonsOrdinarySpell = newHorizonsMagic::rulesActive(caster->getMagicRules())
-		&& sp->isCommonHeroSpell() && !sp->isAdventure();
+		&& sp->isCommonHeroSpell() && sp->isCombat() && !sp->isAdventure();
 	const BattleSide casterSide = playerToSide(caster->tempOwner);
-	const bool preparedCaster = newHorizonsOrdinarySpell
+	const bool ordinarySideHero = newHorizonsOrdinarySpell
 		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
-		&& getBattle()->getSideHero(casterSide) == caster
+		&& getBattle()->getSideHero(casterSide) == caster;
+	const bool preparedCaster = ordinarySideHero
 		&& caster->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.preparedCaster")
 		&& !getBattle()->hasCompletedHeroSpellCast(casterSide);
 	if(preparedCaster)
 		ret = std::max(1, ret - 2);
+
+	const int spellLevel = battleGetSpellLevel(sp->getId());
+	const bool archmage = ordinarySideHero
+		&& (spellLevel == 4 || spellLevel == 5)
+		&& caster->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.archmage")
+		&& !getBattle()->hasCompletedHeroSpellLevel(casterSide, 4)
+		&& !getBattle()->hasCompletedHeroSpellLevel(casterSide, 5);
+	if(archmage)
+		ret = std::max(1, ret - 3);
 
 	//checking for friendly stacks reducing cost of the spell and
 	//enemy stacks increasing it

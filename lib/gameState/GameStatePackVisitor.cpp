@@ -2359,6 +2359,7 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		// This marker is set only after every accepted-cast validation above has
 		// succeeded; creature casts and rejected hero requests never consume it.
 		casterSide.heroSpellCastCompleted = true;
+		casterSide.recordCompletedHeroSpellLevel(battle->battleGetSpellLevel(pack.spellID));
 	}
 }
 

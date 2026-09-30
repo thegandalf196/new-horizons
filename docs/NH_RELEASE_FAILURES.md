@@ -2,6 +2,88 @@
 
 ## Purpose
 
+### 2026-09-30 Archmage fixture review corrections before native execution
+
+Independent UP-055 review found two fixture errors before the first test build:
+the rank-loss case retained the Expert Wisdom cost after demotion to Advanced,
+and the Expert selection helper/offer case omitted Basic and Advanced perk
+selections. Recompute the Advanced baseline and prepare legal prerequisite
+tiers (Mysticism or Prepared Caster, then Deep Knowledge, then Archmage).
+Do not relax production progression or rank gating. Client build 43488 runs
+against frozen production bytes; fixture-only corrections remain permitted
+before the later serialized test build. No native result is claimed yet.
+
+Client 43488 and test 78105 build successfully. First native filter 20838
+selects 20 runtime/AI cases, passes seven, then exits 139 in
+`FirstHighSpellConsumesSharedLevelFourOrFiveGate`; remaining cases are not
+executed and XML completion is not claimed. Frozen binary SHA-256:
+`0edf16337d01d460f7e011277a5a4f60986ebd13a9443914aaabb283ad5bc329`.
+Retain `NewHorizonsArchmage-initial-principal-focused.log`. Root traces the
+single failure with gdb before attributing the crash to fixture or production;
+no verified coverage increase or delivery claim is made.
+
+The isolated gdb captures now establish a dead active stack: stack ID 0,
+`DEFEND`, alive-only lookup null, and both active-unit and unfiltered stack
+`alive()` false. The request path admitted that unit action before `StartAction`,
+whose visitor dereferenced the null stack. Add authoritative live-stack rejection
+before publication and cover it explicitly; do not merely hide the crash by
+changing a fixture. The cross-round Archmage fixture also needs a surviving
+attacker army after Chain Lightning. Preserve the initial trace and lifetime
+logs. A subsequent debugger-invoked `battleIsFinished()` call itself signaled;
+that is not independent gameplay evidence and must not be attributed to the
+original crash. Repair/build/native evidence remains pending.
+
+Crash-repair build 22317 succeeds for client and test targets. Native 62809
+passes 19/21 with zero skips on
+`ddc9d9ee75803636b28e91eed5e6afecff3f760ea9c79e2da7b4fe0763f08ee8`.
+The original crash is gone and the stale-dead request regression passes.
+Two principal checks remain failing: the next-round Armageddon request is
+rejected, and the AI scenario selects Magic Arrow rather than its expected
+Implosion. Preserve `NewHorizonsArchmage-crash-repair-focused.log`/`.xml`;
+repair the fixtures from admission/ranking evidence, without forcing production
+legality or AI preference to satisfy their assumptions. No coverage increase yet.
+
+Fixture tracing confirms that Armageddon requires the client no-location
+request, not `aimToUnit`; the Initiative-4 attacker/defender tie also left
+ambiguous turn ownership. Use a durable fast attacker, assert attacker control,
+and submit the existing invalid-hex global request. The AI's SP 9900 scenario
+let overcharged Magic Arrow reach the same capped enemy-health score as
+Implosion. SP 100 retains Magic Arrow and Order competition without that cap
+tie. These are fixture-only corrections; casting admission and AI valuation
+remain unchanged. Three direct Time Stop/Pursuit guards pass on the repaired
+production binary. Preserve the failing reports; retry evidence is pending.
+
+Fixture-only build 26076 succeeds. Native 38685 passes 23/24, zero skips,
+on `cbb9c5e3a029d73f48fc2b233865ed7043e0d8e648d5855b36f902dabbd3d2de`.
+All runtime, save-mask and direct guard cases now pass, including accepted
+next-round Armageddon. The AI at SP 100 legitimately prefers an Order for its
+100-Angel army; the fixture still does not establish its asserted Level 4
+submission. Preserve `NewHorizonsArchmage-final-focused.log`/`.xml` despite its
+name; it is a failed attempt, not final acceptance. Use a scenario where the
+spell offers greater actual value than the competing Orders without changing
+production evaluation, then rerun the focused gate.
+
+Build 21018 succeeds, but native 6567 still passes only 23/24 on
+`18cc920669c1fd412551ac39a455739186a470be7167c6db765f0446602935e1`:
+one allied Angel alone does not remove the Order preference. A bounded gdb
+inspection establishes actual scores: Implosion 303.3685, Hold the Line
+454.6875, Riposte 204.6875, strongest Magic Arrow 50.1675. The no-cast baseline
+is -45.3125. Preserve `NewHorizonsArchmage-scenario-retry3-focused.log`/`.xml`
+and `NewHorizonsArchmage-ai-values-trace.log`. Use SP 2500, where legacy
+Implosion can defeat the 20,000-HP target and overcharged Magic Arrow cannot.
+This proves the shared discount hook against the current saved Level 4 spell,
+not canonical Implosion's still-incomplete formula/School mechanics.
+
+First succeeding checkpoint: test-only build 13005 succeeds; native 18779
+passes 24/24, zero skips, binary
+`8e2222981acf90654d38166321ece81af245860deaf55a38680af0cc10dece52`.
+The accepted Level 4 evaluator submission now passes alongside all runtime,
+serialization and direct lifecycle guards. Reports
+`NewHorizonsArchmage-score-retry4-focused.log`/`.xml` are retained separately
+from every failed attempt. Client production already built successfully in
+22317. Remaining broad result-query/automatic-action lifecycle interactions
+are deferred; no gameplay or graphical acceptance is inferred.
+
 ### 2026-09-30 Arcane Memory Tome fixture constness repair
 
 Initial focused test build 22635 fails in the new

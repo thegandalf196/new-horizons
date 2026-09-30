@@ -35,6 +35,7 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/CStack.h"
 #include "../../lib/gameState/GameStatePackVisitor.h"
+#include "../../lib/constants/NumericConstants.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 
@@ -587,6 +588,10 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
 		heroSpellCastCompletedStates[side] = realBattle->getBattle()->hasCompletedHeroSpellCast(side);
+		completedHeroSpellLevelMasks[side] = 0;
+		for(int32_t level = 1; level <= GameConstants::SPELL_LEVELS; ++level)
+			if(realBattle->getBattle()->hasCompletedHeroSpellLevel(side, level))
+				completedHeroSpellLevelMasks[side] |= static_cast<std::uint8_t>(1u << (level - 1));
 		counterspellArmedStates[side] = realBattle->getBattle()->getCounterspellArmed(side);
 		countersequenceArmedStates[side] = realBattle->getBattle()->getMetamagicCountersequenceArmed(side);
 		auto & meta = metamagicStates[side];
@@ -605,6 +610,16 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 
 	localEnvironment.reset(new HypotheticEnvironment(this, env));
 	serverCallback.reset(new HypotheticServerCallback(this));
+}
+
+bool HypotheticBattle::hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const
+{
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| level < 1 || level > GameConstants::SPELL_LEVELS)
+		return false;
+
+	const auto bit = static_cast<std::uint8_t>(1u << (level - 1));
+	return (completedHeroSpellLevelMasks.at(side) & bit) != 0;
 }
 
 bool HypotheticBattle::unitHasAmmoCart(const battle::Unit * unit) const
@@ -1720,8 +1735,17 @@ bool HypotheticBattle::HypotheticServerCallback::describeChanges() const
 
 void HypotheticBattle::HypotheticServerCallback::recordCompletedHeroSpellCast(BattleSide side)
 {
+	recordCompletedHeroSpellCast(side, 0);
+}
+
+void HypotheticBattle::HypotheticServerCallback::recordCompletedHeroSpellCast(BattleSide side, int32_t spellLevel)
+{
 	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+	{
 		owner->heroSpellCastCompletedStates.at(side) = true;
+		if(spellLevel >= 1 && spellLevel <= GameConstants::SPELL_LEVELS)
+			owner->completedHeroSpellLevelMasks.at(side) |= static_cast<std::uint8_t>(1u << (spellLevel - 1));
+	}
 }
 
 vstd::RNG * HypotheticBattle::HypotheticServerCallback::getRNG()

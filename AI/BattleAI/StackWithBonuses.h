@@ -10,6 +10,7 @@
 #pragma once
 
 #include <vstd/RNG.h>
+#include <cstdint>
 #include <memory>
 #include <optional>
 
@@ -165,6 +166,7 @@ public:
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override;
 	bool hasCompletedHeroSpellCast(BattleSide side) const override { return heroSpellCastCompletedStates.at(side); }
+	bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const override;
 	bool getCounterspellArmed(BattleSide side) const override { return counterspellArmedStates.at(side); }
 	int32_t getMetamagicPendingCount(BattleSide side) const override { return metamagicStates.at(side).pending; }
 	int32_t getMetamagicUsesConsumed(BattleSide side) const override { return metamagicStates.at(side).uses; }
@@ -336,6 +338,7 @@ private:
 	BattleSideArray<AlternatingHeroActionState> warcastingStates;
 	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;
 	BattleSideArray<bool> heroSpellCastCompletedStates;
+	BattleSideArray<std::uint8_t> completedHeroSpellLevelMasks;
 	BattleSideArray<bool> counterspellArmedStates;
 	BattleSideArray<bool> countersequenceArmedStates;
 	ui8 pendingTimeStopHeroActionSides = 0;
@@ -367,6 +370,7 @@ private:
 		void complain(const std::string & problem) override;
 		bool describeChanges() const override;
 		void recordCompletedHeroSpellCast(BattleSide side) override;
+		void recordCompletedHeroSpellCast(BattleSide side, int32_t spellLevel) override;
 
 		vstd::RNG * getRNG() override;
 		bool rollCombatAbility(const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance) override;

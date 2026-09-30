@@ -61,4 +61,11 @@ public:
 
 	/// Records a completed hero spell in a detached projection; live callbacks do not mutate battle state.
 	virtual void recordCompletedHeroSpellCast(BattleSide side) { (void)side; }
+	/// Records the saved level of a completed hero spell in a detached projection.
+	/// The default preserves older callbacks while remaining a no-op for live state.
+	virtual void recordCompletedHeroSpellCast(BattleSide side, int32_t spellLevel)
+	{
+		(void)spellLevel;
+		recordCompletedHeroSpellCast(side);
+	}
 };

@@ -4124,6 +4124,13 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			gameHandler->complain("No active unit in battle!");
 			return false;
 		}
+		// A completed battle may remain loaded while result queries are resolved.
+		// Never publish StartAction for the dead stack left in its active slot.
+		if(ba.isUnitAction() && !battle.battleGetStackByID(active->unitId()))
+		{
+			gameHandler->complain("Can not make actions - active stack is no longer alive!");
+			return false;
+		}
 
 		if (ba.isUnitAction() && ba.stackNumber != active->unitId())
 		{

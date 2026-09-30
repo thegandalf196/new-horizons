@@ -120,12 +120,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_PURIFY, // player-selected negative effect source groups carried by Purify actions
 	NEW_HORIZONS_CRUSADE_MAGIC_REDUCTION, // timed fractional Magical Damage Reduction bonus type
 	BATTLE_COMPLETED_HERO_SPELL, // per-side battle-long completion gate for the first hero spell discount
+	BATTLE_COMPLETED_HERO_SPELL_LEVELS, // per-side accepted hero spell levels completed during battle
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = BATTLE_COMPLETED_HERO_SPELL,
+	CURRENT = BATTLE_COMPLETED_HERO_SPELL_LEVELS,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -161,6 +162,8 @@ static_assert(ESerializationVersion::NEW_HORIZONS_CRUSADE_MAGIC_REDUCTION > ESer
 	"New Horizons Crusade magical reduction must remain append-only");
 static_assert(ESerializationVersion::BATTLE_COMPLETED_HERO_SPELL > ESerializationVersion::NEW_HORIZONS_CRUSADE_MAGIC_REDUCTION,
 	"Completed hero spell state must remain append-only");
+static_assert(ESerializationVersion::BATTLE_COMPLETED_HERO_SPELL_LEVELS > ESerializationVersion::BATTLE_COMPLETED_HERO_SPELL,
+	"Completed hero spell level state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION > ESerializationVersion::NEW_HORIZONS_WARCASTING);
 static_assert(ESerializationVersion::NEW_HORIZONS_HERO_ACTION_ALLOWANCES > ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTERIES > ESerializationVersion::NEW_HORIZONS_CAPABILITIES);

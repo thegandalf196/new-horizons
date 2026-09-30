@@ -14,6 +14,20 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Archmage checkpoint: Expert Wisdom's first accepted Level 4 or 5 combat spell
+costs three less after Wisdom and Prepared Caster, minimum one. Saved-level
+completion history persists across rounds and saves and is copied/updated only
+in detached AI projections during evaluation. Rejected and creature casts do
+not consume it. Both Linux targets build; 21 runtime/AI cases plus three direct
+Time Stop/Pursuit guards pass 24/24, zero skips. The crash exposed during
+validation is repaired with authoritative dead-active unit-action rejection.
+Offline gates pass 74/74. Coverage advances to 125/310 active perks, 185 planned,
+Wisdom 7/3; ranks remain 84/93 and combat identities 58/67. Broader lifecycle,
+Counterspell/resistance/Metamagic interactions, full save-world journeys and
+playable acceptance remain Phase 2/delivery work. Bespoke art is Not done.
+The AI case proves discount/history submission for the current saved Level 4,
+not canonical Implosion's incomplete School/formula mechanics (UP-058).
+
 Arcane Memory checkpoint: reviewed source builds and passes nine feature cases
 plus two direct guards (11/11, zero skips). Exact equipped scroll provenance,
 permanent-source priority, reusable scroll retention, accepted completion and
@@ -149,7 +163,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 124/310 | 186 planned; Arcane Reservoir is the newest activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 125/310 | 185 planned; Archmage is the newest activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 58/67 | 9 missing/inactive; Blink is the newest identity. Chaos is 4/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -296,7 +310,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 1/9 | Blinkmaster opens ordinary Advanced progression; nine perks remain planned. |
 | Spellcraft | 3/0 | 2/8 | Spell Penetration opens normal Advanced progression. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold and scales Spell Power-derived terms without moving fixed bases; its Advanced selection opens Expert progression. Basic/Advanced/Expert rank efficiency is 110/120/130% under saved v3 rules. |
-| Wisdom | 3/0 | 6/4 | Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. Three other perks remain missing. Broader interactions and playable acceptance remain open. |
+| Wisdom | 3/0 | 7/3 | Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. Two other perks remain missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 4/6 | Six perks missing |
 | Logistics | 3/0 | 3/7 | Seven perks missing |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |

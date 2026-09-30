@@ -435,6 +435,12 @@ public:
 			return false;
 		return getSide(side).heroSpellCastCompleted;
 	}
+	bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return false;
+		return getSide(side).hasCompletedHeroSpellLevel(level);
+	}
 	int32_t getCastSpells(BattleSide side) const override;
 	int32_t getEnchanterCounter(BattleSide side) const override;
 	bool getTemporalFieldUsed(BattleSide side) const override;
