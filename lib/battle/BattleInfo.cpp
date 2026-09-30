@@ -26,8 +26,10 @@
 #include "../entities/building/TownFortifications.h"
 #include "../filesystem/Filesystem.h"
 #include "../GameLibrary.h"
+#include "../modding/IdentifierStorage.h"
 #include "../IGameSettings.h"
 #include "../mapObjects/CGTownInstance.h"
+#include "../modding/ModScope.h"
 #include "../spells/CSpell.h"
 #include "../spells/NewHorizonsSorcery.h"
 #include "../texts/CGeneralTextHandler.h"
@@ -95,6 +97,16 @@ bool isPreservedSpellLockEffect(const Bonus * bonus, bool preserveBeneficial)
 	// Spell Lock removes only the opposing polarity. Neutral magical effects
 	// survive either alignment and their timers are frozen as well.
 	return preserveBeneficial ? !sourceSpell->isNegative() : !sourceSpell->isPositive();
+}
+
+std::optional<SpellID> entangleSpellId()
+{
+	if(!LIBRARY || !LIBRARY->identifiers())
+		return std::nullopt;
+	const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell", "new-horizons:entangle", true);
+	if(!id || *id < 0)
+		return std::nullopt;
+	return SpellID(*id);
 }
 }
 
@@ -1207,6 +1219,16 @@ void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
 	}
 	if(sta->getPosition() != destination)
 	{
+		// Entangle is a position effect: an accepted forced move or teleport
+		// removes only Entangle's own root marker. Unrelated BIND_EFFECT sources
+		// (including classic Bind) keep their original lifecycle.
+		if(sta->hasBonusOfType(BonusType::BIND_EFFECT))
+		{
+			if(const auto entangleSpell = entangleSpellId())
+				sta->removeBonusesRecursive(Selector::type()(BonusType::BIND_EFFECT)
+					.And(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(*entangleSpell))));
+		}
+
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		{
 			auto & state = sides.at(side).orderState;

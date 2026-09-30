@@ -771,6 +771,18 @@
 							16
 						]
 					},
+					"new-horizons:entangle": {
+						"schools": [
+							"new-horizons:nature"
+						],
+						"level": 1,
+						"costs": [
+							4,
+							4,
+							4,
+							4
+						]
+					},
 					"new-horizons:crusade": {
 						"schools": [
 							"new-horizons:light"
@@ -2825,7 +2837,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "42c1653d9b34002ae7ef01c516ce613f89f71da6692409d2bee3a632886a7e9d",
+				"sourceSha256": "24a57104bf9968e3e6e90350034e10f2ef893e3087c878ab78608acf0d0eb9df",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -4196,7 +4208,7 @@
 								"requires": "basic",
 								"description": "Entangle lasts 1 additional round, to a maximum of 3 rounds.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Entangle lasts 1 additional round, to a maximum of 3 rounds."
 								}
 							},

@@ -43,6 +43,18 @@ struct RegenerationStatus
 	bool operator==(const RegenerationStatus &) const = default;
 };
 
+struct EntangleStatus
+{
+	int32_t remainingRounds = 0;
+
+	bool active() const
+	{
+		return remainingRounds > 0;
+	}
+
+	bool operator==(const EntangleStatus &) const = default;
+};
+
 struct TemporaryCreatureStatus
 {
 	int32_t remainingCount = 0;
@@ -111,6 +123,7 @@ inline PhysicalPoisonStatus makePhysicalPoisonStatus(int64_t baseDamage, int32_t
 enum class StackStatusIconKind
 {
 	TIME_STOP,
+	ENTANGLE,
 	SPELL_LOCK,
 	DOOM,
 	DIVINE_RETRIBUTION_JUDGED,
@@ -140,6 +153,7 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 	switch(kind)
 	{
 		case StackStatusIconKind::TIME_STOP: return 0;
+		case StackStatusIconKind::ENTANGLE: return 1;
 		case StackStatusIconKind::SPELL_LOCK: return 1;
 		case StackStatusIconKind::DOOM: return 0;
 		case StackStatusIconKind::DIVINE_RETRIBUTION_JUDGED: return 1;

@@ -646,6 +646,53 @@
 		"flags" : {"positive" : true},
 		"targetCondition" : {}
 	},
+	"entangle" : {
+		"name": "Entangle",
+		"type": "combat",
+		"school": {"new-horizons:nature": true},
+		"level": 1,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "NH_spell_entangle_44.png",
+			"iconScroll": "NH_spell_entangle_32.png",
+			"iconScenarioBonus": "NH_spell_entangle_32.png",
+			"iconEffect": "NH_spell_entangle_30.png",
+			"iconImmune": "NH_spell_entangle_30.png"
+		},
+		"animation": {"affect": ["SP02_"]},
+		"sounds": {"cast": "BIND"},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Root one enemy ground stack for min(2, 1 + floor(Spell Power / 100)) rounds. Voluntary movement becomes 0; Initiative is unchanged. Adjacent attacks, retaliation, shooting, Wait, Defend and nonmovement abilities remain available. Actual displacement or teleportation breaks the roots. Nature rank strengthens only the Spell Power term. Rootcaller adds 1 round, capped at 3 before Echoed Duration.",
+				"cost": 4,
+				"power": 0,
+				"targetModifier": {"smart": true},
+				"battleEffects": {
+					"entangle": {
+						"type": "timed",
+						"bonus": {
+							"root": {
+								"type": "BIND_EFFECT",
+								"val": 0,
+								"duration": "N_TURNS",
+								"turns": 1
+							}
+						}
+					}
+				}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"negative": true, "offensive": true},
+		"targetCondition": {"noneOf": {"bonus.FLYING": "absolute"}}
+	},
 	"crusade" : {
 		"name": "Crusade!",
 		"type": "combat",

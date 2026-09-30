@@ -296,6 +296,11 @@
 			"level": 4,
 			"costs": [16, 16, 16, 16]
 		},
+		"new-horizons:entangle": {
+			"schools": ["new-horizons:nature"],
+			"level": 1,
+			"costs": [4, 4, 4, 4]
+		},
 		"new-horizons:crusade": {
 			"schools": ["new-horizons:light"],
 			"level": 5,

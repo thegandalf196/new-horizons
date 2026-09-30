@@ -7,12 +7,15 @@ local HEAVENLY_GALE_SPELL = "new-horizons:heavenlyGale"
 local GUARDIAN_SPIRIT_SPELL = "new-horizons:guardianSpirit"
 local DIVINE_RETRIBUTION_SPELL = "new-horizons:divineRetribution"
 local CRUSADE_SPELL = "new-horizons:crusade"
+local ENTANGLE_SPELL = "new-horizons:entangle"
 local LIGHT_MAGIC_SKILL = "new-horizons:lightMagic"
 local HEALER_PERK = "new-horizons:lightMagic.healer"
 local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
 local AEGIS_PERK = "new-horizons:lightMagic.aegis"
 local RETRIBUTIONIST_PERK = "new-horizons:lightMagic.retributionist"
 local CRUSADER_PERK = "new-horizons:lightMagic.crusader"
+local NATURE_MAGIC_SKILL = "new-horizons:natureMagic"
+local ROOTCALLER_PERK = "new-horizons:natureMagic.rootcaller"
 local HOLY_ARMOR_SPELL_POWER_DIVISOR = 5
 local HOLY_ARMOR_MAX_REDUCTION_PERCENT = 60
 local HEAVENLY_GALE_BASE_REDUCTION_BASIS_POINTS = 5000
@@ -30,6 +33,10 @@ local CRUSADE_REDUCTION_POWER_BASIS_POINTS_NUMERATOR = 13
 local CRUSADE_REDUCTION_POWER_DIVISOR = 2
 local CRUSADE_MAX_REDUCTION_BASIS_POINTS = 2500
 local CRUSADE_BASE_DURATION = 3
+local ENTANGLE_BASE_DURATION = 1
+local ENTANGLE_SPELL_POWER_DIVISOR = 100
+local ENTANGLE_MAX_BASE_DURATION = 2
+local ENTANGLE_MAX_ROOTCALLER_DURATION = 3
 local SLOW_SPELL = "core:slow"
 local SLOW_BASE_REDUCTION_PERCENT = 20
 local SLOW_SPELL_POWER_DIVISOR = 5
@@ -47,6 +54,7 @@ function Script:convertBonuses(mechanics)
 	local spellKey = mechanics:getSpell():getJsonKey()
 	local duration = nil
 	local crusadeDuration = nil
+	local entangleDuration = nil
 	if spellKey == CRUSADE_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		-- Crusade authors a fixed three-round buff, independent of Spell Power. Apply
 		-- cast-specific duration mechanics exactly once to that literal base, then
@@ -56,6 +64,19 @@ function Script:convertBonuses(mechanics)
 		if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, CRUSADER_PERK) then
 			crusadeDuration = crusadeDuration + 1
 		end
+	elseif spellKey == ENTANGLE_SPELL and mechanics:usesNewHorizonsMagicV3() then
+		-- School rank strengthens only the Spell Power term. Rootcaller extends
+		-- the capped base before Echoed Duration adds its separate cast round.
+		local spellPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+			math.max(0, mechanics:getEffectPower()), ENTANGLE_SPELL_POWER_DIVISOR,
+			mechanics:getSpellPowerCoefficientBasisPoints())
+		local rootDuration = math.min(ENTANGLE_MAX_BASE_DURATION,
+			ENTANGLE_BASE_DURATION + spellPowerTerm)
+		local hero = mechanics:getHeroCaster()
+		if hero and hero:hasActivePerk(NATURE_MAGIC_SKILL, ROOTCALLER_PERK) then
+			rootDuration = math.min(ENTANGLE_MAX_ROOTCALLER_DURATION, rootDuration + 1)
+		end
+		entangleDuration = mechanics:adjustEffectDuration(rootDuration)
 	else
 		duration = mechanics:getEffectDuration()
 	end
@@ -91,7 +112,9 @@ function Script:convertBonuses(mechanics)
 			nb.type = "STACKS_INITIATIVE"
 			nb.valueType = "ADDITIVE_VALUE"
 		end
-		if crusadeDuration ~= nil then
+		if entangleDuration ~= nil then
+			nb.turns = entangleDuration
+		elseif crusadeDuration ~= nil then
 			nb.turns = crusadeDuration
 		elseif not nb.turns or nb.turns == 0 then
 			nb.turns = duration
@@ -188,7 +211,7 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	if spellKey == HOLY_ARMOR_SPELL or spellKey == HEAVENLY_GALE_SPELL
 		or spellKey == GUARDIAN_SPIRIT_SPELL
 		or spellKey == DIVINE_RETRIBUTION_SPELL
-		or spellKey == CRUSADE_SPELL then return end
+		or spellKey == CRUSADE_SPELL or spellKey == ENTANGLE_SPELL then return end
 	local tier = math.max(unit:creatureLevel(), 1)
 
 	self:applySpellScaling(mechanics, hero, buffer, tier, spellKey)
@@ -334,6 +357,21 @@ function Script:describeCrusadeEffect(server, battle, bonuses)
 	})
 end
 
+function Script:describeEntangleEffect(server, battle, bonuses)
+	local duration = ENTANGLE_BASE_DURATION
+	for _, bonus in pairs(bonuses) do
+		if bonus.type == "BIND_EFFECT" then
+			duration = bonus.turns or duration
+			break
+		end
+	end
+	server:appendLog(battle, {
+		appendRaw = { string.format(
+			"Entangle roots a stack for %d round(s). It prevents voluntary movement only; attacks, retaliation, shooting, Wait, Defend, and nonmovement abilities remain available.",
+			duration) }
+	})
+end
+
 function Script:describeEffect(server, battle, unit, bonuses)
 	-- Age spell: STACK_HEALTH bonus with negative val gets a custom message
 	for _, nb in pairs(bonuses) do
@@ -366,6 +404,7 @@ function Script:apply(mechanics, server, target)
 	local describe = server:describeChanges()
 	local spellKey = mechanics:getSpell():getJsonKey()
 	if spellKey == CRUSADE_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
+	if spellKey == ENTANGLE_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
 	local converted = self:convertBonuses(mechanics)
 	local describedCrusade = false
 
@@ -392,6 +431,8 @@ function Script:apply(mechanics, server, target)
 					self:describeCrusadeEffect(server, battle, buffer)
 					describedCrusade = true
 				end
+			elseif spellKey == ENTANGLE_SPELL then
+				self:describeEntangleEffect(server, battle, buffer)
 			else
 				self:describeEffect(server, battle, unit, buffer)
 			end

@@ -580,6 +580,11 @@ bool isCanonicalDivineRetribution(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:divineRetribution";
 }
 
+bool isCanonicalNatureEntangle(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:entangle";
+}
+
 bool guardianSpiritAvailableInSavedRules(const CBattleInfoCallback & battle, const CSpell * spell)
 {
 	return isCanonicalGuardianSpirit(spell)
@@ -611,6 +616,16 @@ bool divineRetributionAvailableInSavedRules(const CBattleInfoCallback & battle, 
 		&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
 			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		&& newHorizonsMagic::spellAllowedBySavedRoster(battle.getBattle()->getMagicRules(), spell->getId());
+}
+
+bool natureEntangleAvailableInSavedRules(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	const auto & magicRules = battle.getBattle()->getMagicRules();
+	return isCanonicalNatureEntangle(spell)
+		&& newHorizonsMagic::rulesActive(magicRules)
+		&& magicRules["rulesetVersion"].Integer()
+			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spell->getId());
 }
 
 struct HolyArmorProtection
@@ -1183,6 +1198,107 @@ bool commandTargetIsLegal(const Battle & battle, BattleSide side, HeroCommand co
 float averageOrderDamage(const DamageEstimation & damage)
 {
 	return static_cast<float>(std::max<int64_t>(0, damage.damage.min + damage.damage.max) / 2);
+}
+
+/// Values at most one immediately available melee action that a rooted unit
+/// would otherwise make after walking to an allied target. This intentionally
+/// ignores shooters and targets already adjacent to any ally: Entangle does not
+/// stop their attack. The active stack is excluded so this forecast cannot
+/// duplicate the exchange already used to score its current action.
+float entangleMovementThreatValue(const battle::Unit * liveTarget,
+	const battle::Unit * projectedTarget, uint32_t activeStackId, BattleSide ourSide,
+	const CBattleInfoCallback & liveBattle,
+	const std::shared_ptr<HypotheticBattle> & projectedBattle, DamageCache & damageCache)
+{
+	if(!liveTarget || !projectedTarget || !liveTarget->alive() || !projectedTarget->alive()
+		|| liveTarget->unitSide() == ourSide || !liveTarget->willMove()
+		|| !liveTarget->isMeleeAttacker() || liveTarget->isShooter()
+		|| liveTarget->getMovementRange() <= 0 || projectedTarget->getMovementRange() != 0
+		|| !projectedBattle)
+		return 0.0f;
+
+	const auto attackCount = std::max(0, AttackPossibility::getAttackCount(*liveTarget, false, liveBattle));
+	if(attackCount <= 0)
+		return 0.0f;
+
+	const auto availableHexes = liveBattle.battleGetAvailableHexes(liveTarget, false);
+	const auto reachability = liveBattle.getReachability(liveTarget);
+	if(availableHexes.empty())
+		return 0.0f;
+
+	const auto friendlyUnits = liveBattle.battleGetAllUnits(false);
+	// Rooting must not receive credit when the target could keep attacking
+	// without moving. This conservative check also avoids estimating a target's
+	// next choice between an adjacent attack and a movement-dependent one.
+	BattleHexArray stationaryPosition;
+	stationaryPosition.insert(liveTarget->getPosition());
+	for(const auto * friendly : friendlyUnits)
+	{
+		if(!friendly || !friendly->alive() || friendly->unitSide() != ourSide
+			|| !friendly->isValidTarget() || friendly->isGhost() || friendly->isTurret())
+			continue;
+		if(!liveBattle.battleCanAttackUnit(liveTarget, friendly))
+			continue;
+		for(const auto & defenderHex : friendly->getHexes())
+			for(int direction = 0; direction < 8; ++direction)
+				if(liveBattle.battleCanAttackHex(stationaryPosition, liveTarget,
+					defenderHex, static_cast<BattleHex::EDir>(direction)))
+					return 0.0f;
+	}
+
+	float bestThreatValue = 0.0f;
+	for(const auto * friendly : friendlyUnits)
+	{
+		if(!friendly || friendly->unitId() == activeStackId || !friendly->alive()
+			|| friendly->unitSide() != ourSide || !friendly->isValidTarget()
+			|| friendly->isGhost() || friendly->isTurret()
+			|| !liveBattle.battleCanAttackUnit(liveTarget, friendly))
+			continue;
+
+		int64_t bestDamage = 0;
+		for(const auto & defenderHex : friendly->getHexes())
+		{
+			if(!defenderHex.isValid())
+				continue;
+
+			for(int direction = 0; direction < 8; ++direction)
+			{
+				const auto attackDirection = static_cast<BattleHex::EDir>(direction);
+				if(!liveBattle.battleCanAttackHex(availableHexes, liveTarget,
+					defenderHex, attackDirection))
+					continue;
+
+				const auto attackFrom = liveBattle.fromWhichHexAttack(liveTarget,
+					defenderHex, attackDirection);
+				if(!attackFrom.isValid() || attackFrom == liveTarget->getPosition())
+					continue;
+				const auto movementDistance = reachability.distances[attackFrom.toInt()];
+				if(movementDistance >= ReachabilityInfo::INFINITE_DIST)
+					continue;
+
+				BattleAttackInfo attack(liveTarget, friendly,
+					static_cast<int>(movementDistance), false);
+				attack.attackerPos = attackFrom;
+				attack.defenderPos = defenderHex;
+				bestDamage = std::max(bestDamage,
+					static_cast<int64_t>(averageOrderDamage(liveBattle.battleEstimateDamage(attack))));
+			}
+		}
+
+		if(bestDamage <= 0)
+			continue;
+		const auto availableHealth = std::max<int64_t>(0, friendly->getAvailableHealth());
+		const auto attackDamage = std::min(availableHealth,
+			bestDamage * static_cast<int64_t>(attackCount));
+		if(attackDamage <= 0)
+			continue;
+
+		const auto value = AttackPossibility::calculateDamageReduce(nullptr, friendly,
+			static_cast<uint64_t>(attackDamage), damageCache, projectedBattle);
+		bestThreatValue = std::max(bestThreatValue, value);
+	}
+
+	return bestThreatValue;
 }
 
 struct GuardianSpiritShield
@@ -3171,11 +3287,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			&& !crusadeAvailableInSavedRules(*battleCallback, option.spell);
 		const bool unavailableDivineRetribution = isCanonicalDivineRetribution(option.spell)
 			&& !divineRetributionAvailableInSavedRules(*battleCallback, option.spell);
+		const bool unavailableEntangle = isCanonicalNatureEntangle(option.spell)
+			&& !natureEntangleAvailableInSavedRules(*battleCallback, option.spell);
 		const bool unavailablePurify = isCanonicalPurify(option.spell)
 			&& !newHorizonsPurify::enabled(battleCallback->getBattle()->getMagicRules(), option.spell->getId());
 		return unavailableReanimate || unavailableSoulReaper || unavailableDoom
 			|| unavailableGuardianSpirit || unavailableHeavenlyGale || unavailableCrusade || unavailableDivineRetribution
-			|| unavailablePurify;
+			|| unavailableEntangle || unavailablePurify;
 	});
 
 	LOGFL("I know how %d of them works.", possibleSpells.size());
@@ -3409,6 +3527,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						if(isCanonicalDivineRetribution(spell)
 							&& (ps.dest.size() != 1 || !ps.dest.front().unitValue
 								|| ps.dest.front().unitValue->unitSide() != side))
+							continue;
+						if(isCanonicalNatureEntangle(spell)
+							&& (ps.dest.size() != 1 || !ps.dest.front().unitValue
+								|| ps.dest.front().unitValue->unitSide() == side))
 							continue;
 						possibleCasts.push_back(ps);
 					}
@@ -4009,6 +4131,27 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 				innerCache.buildDamageCache(state, side);
 
+				float entangleMovementValue = 0.0f;
+				if(isCanonicalNatureEntangle(ps.spell))
+				{
+					const auto * liveTarget = battleCallback->battleGetUnitByID(targetId);
+					const auto * projectedTarget = state->battleGetUnitByID(targetId);
+					const auto movementThreat = counterspellNegated ? 0.0f
+						: entangleMovementThreatValue(liveTarget, projectedTarget,
+							activeStack->unitId(), side, *battleCallback, state, innerCache);
+					const int resistance = liveTarget
+						? std::clamp(liveTarget->magicResistance(), 0, 100) : 100;
+					const auto applicationChance = 1.0f - static_cast<float>(resistance) / 100.0f;
+					if(movementThreat <= 0.0f || applicationChance <= 0.0f)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					// Entangle's status is projected as applied; fold the target's
+					// authoritative resistance into this one bounded forecast once.
+					entangleMovementValue = movementThreat * applicationChance;
+				}
+
 				if(cachedAttack.ap && cachedAttack.waited)
 				{
 					state->makeWait(activeStack);
@@ -4085,6 +4228,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					}
 					damageToHostilesScore += responseValue * scoreEvaluator.getPositiveEffectMultiplier();
 				}
+				if(isCanonicalNatureEntangle(ps.spell))
+					damageToHostilesScore += entangleMovementValue
+						* scoreEvaluator.getPositiveEffectMultiplier();
 
 				const auto modelActive = state->getForUpdate(activeStack->unitId());
 				if(modelActive->alive() && (needFullEval || !cachedAttack.ap))

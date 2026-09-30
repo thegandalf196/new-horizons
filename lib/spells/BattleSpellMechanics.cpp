@@ -638,6 +638,11 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 
 	if(!newHorizonsMagic::spellAllowedByBattleRoster(*battle(), owner->getId()))
 		return adaptGenericProblem(problem);
+	// Entangle's movement-only duration contract belongs to saved-v3 rules.
+	// Reject stale requests before spending resources, rather than allowing
+	// the Lua effect's defensive version guard to turn a cast into a no-op.
+	if(owner->getJsonKey() == "new-horizons:entangle" && !usesNewHorizonsMagicV3())
+		return adaptGenericProblem(problem);
 	if(owner->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
 		&& !newHorizonsMagic::soulReaperEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
 		return adaptGenericProblem(problem);

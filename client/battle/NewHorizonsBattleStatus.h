@@ -35,6 +35,7 @@ namespace newHorizonsBattleStatus
 /// thing without adding a second runtime state API to the client.
 inline constexpr std::string_view TIME_STOP_SPELL_KEY = "new-horizons:timeStop";
 inline constexpr std::string_view SPELL_LOCK_SPELL_KEY = "new-horizons:spellLock";
+inline constexpr std::string_view ENTANGLE_SPELL_KEY = "new-horizons:entangle";
 inline constexpr std::string_view REGENERATION_SPELL_KEY = newHorizonsMagic::NATURE_REGENERATION_SPELL;
 inline constexpr std::string_view SANCTUARY_SPELL_KEY = "new-horizons:sanctuary";
 inline constexpr std::string_view GUARDIAN_SPIRIT_SPELL_KEY = "new-horizons:guardianSpirit";
@@ -47,6 +48,9 @@ inline constexpr std::string_view VAMPIRISM_TRIGGER_KEY = "core:vampirism";
 inline constexpr std::string_view DOOM_SPELL_KEY = "new-horizons:doom";
 inline constexpr std::string_view REANIMATE_SPELL_KEY = "new-horizons:reanimate";
 inline constexpr std::string_view DIVINE_RETRIBUTION_SPELL_KEY = "new-horizons:divineRetribution";
+
+inline std::string formatBasisPoints(int64_t basisPoints);
+inline std::string roundsRemaining(int rounds);
 
 inline bool isRegeneration(std::string_view spellKey)
 {
@@ -96,6 +100,50 @@ inline bool isSpellLock(std::string_view spellKey)
 	return spellKey == SPELL_LOCK_SPELL_KEY;
 }
 
+inline bool isEntangle(std::string_view spellKey)
+{
+	return spellKey == ENTANGLE_SPELL_KEY;
+}
+
+template<typename BonusRange>
+inline EntangleStatus entangleStatus(const BonusRange & bonuses)
+{
+	EntangleStatus result;
+	for(const auto & bonus : bonuses)
+	{
+		if(!bonus || bonus->type != BonusType::BIND_EFFECT || bonus->source != BonusSource::SPELL_EFFECT
+			|| bonus->duration != BonusDuration::N_TURNS || bonus->turnsRemain <= 0 || bonus->parameters)
+			continue;
+
+		try
+		{
+			if(bonus->sid.toString() != ENTANGLE_SPELL_KEY)
+				continue;
+		}
+		catch(const std::exception &)
+		{
+			continue;
+		}
+
+		result.remainingRounds = std::max(result.remainingRounds, static_cast<int32_t>(bonus->turnsRemain));
+	}
+	return result;
+}
+
+inline std::string entangleTooltip(std::string_view spellDescription, const EntangleStatus & status)
+{
+	std::string result(spellDescription);
+	if(!status.active())
+		return result;
+
+	result += "\n\nEntangle - Rooted. Voluntary movement is unavailable, but Initiative and activation timing are unchanged.";
+	result += "\nUnlike Time Stop, the stack is not placed in stasis and can still take its normal activation.";
+	result += "\nIt may attack adjacent enemies, retaliate, shoot, Wait, Defend, and use abilities that do not require movement.";
+	result += "\nForced displacement or teleportation removes the roots.";
+	result += "\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
+	return result;
+}
+
 inline bool isSanctuary(std::string_view spellKey)
 {
 	return spellKey == SANCTUARY_SPELL_KEY;
@@ -115,9 +163,6 @@ inline bool isCrusade(std::string_view spellKey)
 {
 	return spellKey == CRUSADE_SPELL_KEY;
 }
-
-inline std::string formatBasisPoints(int64_t basisPoints);
-inline std::string roundsRemaining(int rounds);
 
 struct HeavenlyGaleStatus
 {
@@ -738,6 +783,7 @@ struct StackInfoStatusSnapshot
 	DefendStatus defend;
 	PhysicalPoisonStatus physicalPoison;
 	TemporaryCreatureStatus temporaryCreatures;
+	EntangleStatus entangle;
 	DivineRetributionProtectionStatus divineRetribution;
 	DivineRetributionJudgedStatus divineRetributionJudged;
 	RegenerationStatus regeneration;

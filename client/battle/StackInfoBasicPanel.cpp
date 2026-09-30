@@ -192,6 +192,11 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 
 			const auto spellBonuses = stack->getBonuses(
 				Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(effect)));
+			if(newHorizonsBattleStatus::isEntangle(spell->getJsonKey()))
+			{
+				result.entangle = newHorizonsBattleStatus::entangleStatus(*spellBonuses);
+				continue;
+			}
 			if(newHorizonsBattleStatus::isShadowGift(spell->getJsonKey()))
 			{
 				result.shadowGift = newHorizonsBattleStatus::shadowGiftStatus(
@@ -325,6 +330,8 @@ newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
 	const auto spellKey = effect.toSpell()->getJsonKey();
 	if(newHorizonsBattleStatus::isTimeStop(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::TIME_STOP;
+	if(newHorizonsBattleStatus::isEntangle(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::ENTANGLE;
 	if(newHorizonsBattleStatus::isSpellLock(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::SPELL_LOCK;
 	if(newHorizonsBattleStatus::isDoom(spellKey))
@@ -610,6 +617,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		int duration = spellBonuses->front()->turnsRemain;
 		const auto spellKey = effect.toSpell()->getJsonKey();
 		const bool timeStop = newHorizonsBattleStatus::isTimeStop(spellKey);
+		const bool entangle = newHorizonsBattleStatus::isEntangle(spellKey);
 		const bool spellLock = newHorizonsBattleStatus::isSpellLock(spellKey);
 		const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
 		const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
@@ -640,10 +648,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale || crusade)
+		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || (entangle && displayedStatus.entangle.active()) || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale || crusade)
 		{
 			const std::string badge = timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
+				: entangle && displayedStatus.entangle.active()
+					? std::to_string(displayedStatus.entangle.remainingRounds)
 				: spellLock ? std::string(newHorizonsBattleStatus::SPELL_LOCK_BADGE)
 				: divineRetribution && displayedStatus.divineRetribution.active()
 					? std::to_string(displayedStatus.divineRetribution.remainingRounds)
@@ -669,6 +679,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		if(timeStop)
 		{
 			const std::string tooltip = newHorizonsBattleStatus::timeStopTooltip(effect.toSpell()->getDescriptionTranslated(0));
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(entangle && displayedStatus.entangle.active())
+		{
+			const auto tooltip = newHorizonsBattleStatus::entangleTooltip(
+				effect.toSpell()->getDescriptionTranslated(0), displayedStatus.entangle);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 		else if(spellLock)

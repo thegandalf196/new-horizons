@@ -23,6 +23,8 @@
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/modding/IdentifierStorage.h"
+#include "../../lib/modding/ModScope.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/combatScripts/ICombatEventScript.h"
 #include "../../lib/scripting/ScriptService.h"
@@ -51,6 +53,16 @@ bool timedProjectionEffect(const Bonus * bonus)
 bool isGuardianSpiritBonus(const Bonus * bonus)
 {
 	return bonus && bonus->type == BonusType::GUARDIAN_SPIRIT;
+}
+
+std::optional<SpellID> entangleSpellId()
+{
+	if(!LIBRARY || !LIBRARY->identifiers())
+		return std::nullopt;
+	const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "spell", "new-horizons:entangle", true);
+	if(!id || *id < 0)
+		return std::nullopt;
+	return SpellID(*id);
 }
 
 const CSelector & guardianSpiritSelector()
@@ -1309,6 +1321,12 @@ void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 {
 	std::shared_ptr<StackWithBonuses> changed = getForUpdate(id);
+	if(changed->position != destination && changed->hasBonusOfType(BonusType::BIND_EFFECT))
+	{
+		if(const auto entangleSpell = entangleSpellId())
+			changed->removeUnitBonus(Selector::type()(BonusType::BIND_EFFECT)
+				.And(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(*entangleSpell))));
+	}
 	changed->position = destination;
 }
 

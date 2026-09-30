@@ -2,6 +2,71 @@
 
 ## Purpose
 
+### 2026-09-29 Entangle pre-build review — classic lookup and stale rules
+
+Independent review found two blocking source defects before native execution.
+The real and hypothetical move paths decoded a module-scoped spell on every
+position change; decoding throws if New Horizons is not loaded. Use exact,
+silent optional identifier lookup and do nothing when the spell is absent.
+The authoritative cast admission also accepted a v2 roster that retained
+Entangle while Lua discarded the unsupported effect. Reject that request
+before spending Mana or actions. Focused regression evidence and the first
+succeeding target build remain pending. These findings are not observed
+playable crashes and must not be described as passing native tests.
+
+The first local Entangle build over parent `326fd24ad` stopped in both move
+helpers: `CIdentifierStorage` was only forward-declared by `GameLibrary.h`.
+Include `modding/IdentifierStorage.h` directly in each translation unit.
+The other changed runtime, AI and client objects compiled; the full target
+and native execution gates were still pending at this failure.
+
+The retry compiled the repaired production helpers and Entangle AI/UI tests,
+but stopped in the server fixture. Its direct `CGameHandler` calls need the
+declaring header, and `BonusSubtypeID` requires a `SpellID` object rather than
+the `SpellID::MAGIC_ARROW` enum constant. Add the direct include and typed
+identifier; rebuild before claiming native verification.
+
+The next fixture compilation found `.empty()` on a shared bonus-list pointer
+in the adjacent-attack assertion. Use `->empty()`. This is a fixture API
+error, not evidence of production root behavior; full target success remains
+pending until the retry finishes.
+
+First succeeding target gate: the incremental Linux `vcmitest` and
+`vcmiclient` build over parent `326fd24ad` plus the Entangle slice completed
+with exit 0 after these repairs. Focused native execution remains a separate
+gate; no GUI, CI or promoted-snapshot success is inferred.
+
+First active-profile Entangle execution exited 1: 17 cases, six passed,
+11 failed, zero skips. Nine server-fixture casts were rejected despite
+target-legality checks passing; inspect fixture turn ownership before
+changing production validation. Both AI cases used the nonexistent
+case-sensitive creature key `core:hellhound`; the real key is
+`core:hellHound`. Four status and two legacy-roster cases passed. These
+partial results do not establish a passing native gate; rebuild repaired
+fixtures and rerun the entire focused filter.
+
+The rejected v3 casts were fixture turn ownership: the defender Phoenix
+acted first, while the fixture attempted an attacker hero cast. Advance via
+bounded legal Defend actions until the requested side is active, then submit
+the real hero action. Legacy rejection checks now use that valid turn and
+cast allowed Haste afterward to prove the rejected request preserved its
+Hero Action. The AI creature key is corrected. Rerun evidence is pending.
+
+The second active-profile run exited 1: 17 cases, 13 passed, four failed,
+zero skips. Actual AI choice/submission now passes. The remaining fixture
+assumptions need correction: Echoed Duration applies to a Metamagic follow-up,
+not an ordinary cast; the shooter was adjacent to an enemy (ordinary shot
+blocking); Teleport needs a destination as its second target; and recasting
+must occur after a real round's Hero Action reset. Inspect and repair those
+preconditions without weakening production rules, then rerun the full filter.
+
+Final repaired gate: both Linux targets link and the complete isolated
+`NewHorizonsEntangle*` filter passes 17/17, zero skips, exit 0. All four
+fixture corrections now exercise the intended execution paths, including a
+live root broken by actual Teleport and an actual Metamagic follow-up.
+Content passes 50/50, perk inventory 2/2, status wiring 4/4, module mirror
+and diff checks pass. No rendered, CI or promoted-snapshot result is claimed.
+
 ### 2026-09-29 Crusade development build — incomplete battle-info type
 
 The local incremental Linux client/test build failed in

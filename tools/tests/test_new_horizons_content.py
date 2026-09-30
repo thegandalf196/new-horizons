@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
+    'new-horizons:entangle',
     'new-horizons:crusade',
     'new-horizons:divineRetribution',
     'new-horizons:purify',
@@ -510,6 +511,27 @@ class NewHorizonsContentTest(unittest.TestCase):
             self.assertEqual(struct.unpack('>II',
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                 (size, size))
+
+    def test_entangle_is_ground_enemy_root_with_independent_movement(self):
+        row = self.rules['spells']['new-horizons:entangle']
+        self.assertEqual((row['schools'], row['level'], row['costs']),
+                         (['new-horizons:nature'], 1, [4, 4, 4, 4]))
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['entangle']
+        self.assertEqual((spell['name'], spell['targetType']), ('Entangle', 'CREATURE'))
+        self.assertTrue(spell['flags']['negative'])
+        self.assertEqual(spell['targetCondition']['noneOf']['bonus.FLYING'], 'absolute')
+        base = spell['levels']['base']
+        self.assertEqual((base['range'], base['cost']), ('0', 4))
+        self.assertTrue(base['targetModifier']['smart'])
+        bonuses = base['battleEffects']['entangle']['bonus']
+        self.assertEqual(list(bonuses), ['root'])
+        self.assertEqual((bonuses['root']['type'], bonuses['root']['duration']),
+                         ('BIND_EFFECT', 'N_TURNS'))
+        self.assertNotIn('addInfo', bonuses['root'])
+        self.assertNotIn('parameters', bonuses['root'])
+        perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:natureMagic']['perks']
+        self.assertEqual(next(p for p in perks if p['id'].endswith('.rootcaller'))
+                         ['effect']['status'], 'active')
 
     def test_crusade_is_rostered_full_army_light_empowerment(self):
         row = self.rules['spells']['new-horizons:crusade']

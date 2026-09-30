@@ -76,6 +76,7 @@ set(test_SRCS
 		hero/SpellPointRewardTest.cpp
 		hero/SpellPointPresentationTest.cpp
 		client/NewHorizonsCrusadeStatusTest.cpp
+		client/NewHorizonsEntangleStatusTest.cpp
 		hero/NewHorizonsLeadershipTest.cpp
 		hero/NewHorizonsMovementRulesTest.cpp
 		hero/NewHorizonsCapabilityRulesTest.cpp
@@ -251,6 +252,7 @@ set(test_SRCS
 		server/battles/NewHorizonsDivineRetributionTest.cpp
 		server/battles/NewHorizonsPurifyTest.cpp
 		server/battles/NewHorizonsCrusadeTest.cpp
+		server/battles/NewHorizonsEntangleTest.cpp
 		server/battles/NewHorizonsMagicalDamageReductionTest.cpp
 		server/battles/NewHorizonsStormOfDaggersTest.cpp
 		server/battles/NewHorizonsSanctuaryTest.cpp
@@ -352,6 +354,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsDivineRetributionAITest.cpp
 		battleAI/NewHorizonsPurifyAITest.cpp
 		battleAI/NewHorizonsCrusadeAITest.cpp
+		battleAI/NewHorizonsEntangleAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp
 		battleAI/NewHorizonsHeroGrowthAITest.cpp
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp
