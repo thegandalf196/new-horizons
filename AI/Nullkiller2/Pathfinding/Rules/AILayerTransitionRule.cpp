@@ -200,7 +200,7 @@ namespace AIPathfinding
 					continue;
 
 				const bool usesNewHorizonsDailyAllowance = newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), spell->id);
-				const bool canCreateReliableBoat = effect->canCreateNewBoat() && effect->getSuccessChance(hero) == 100;
+				const bool canCreateReliableBoat = effect->canCreateNewBoat(hero) && effect->getSuccessChance(hero) == 100;
 				const bool canSummonKnownBoat = usesNewHorizonsDailyAllowance
 					&& hasKnownUnoccupiedBoat
 					&& effect->getSuccessChance(hero) == 100;

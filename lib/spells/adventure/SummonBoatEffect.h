@@ -21,10 +21,12 @@ class DLL_LINKAGE SummonBoatEffect final : public IAdventureSpellEffect
 public:
 	SummonBoatEffect(const CSpell * s, const JsonNode & config);
 
-	bool canCreateNewBoat() const;
+	bool canCreateNewBoat(const spells::Caster * caster) const;
 	int getSuccessChance(const spells::Caster * caster) const;
 
 private:
+	bool requiresExistingBoat(const spells::Caster * caster) const;
+	ESpellCastResult beginCast(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters, const AdventureSpellMechanics & mechanics) const final;
 	bool canBeCastImpl(spells::Problem & problem, const IGameInfoCallback * cb, const spells::Caster * caster) const final;
 	ESpellCastResult applyAdventureEffects(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const final;
 };

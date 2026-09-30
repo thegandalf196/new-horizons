@@ -20,6 +20,7 @@
 #include "../../../lib/entities/hero/CHeroClass.h"
 #include "../../../lib/entities/artifact/CArtifactInstance.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
+#include "../../../lib/mapObjects/MiscObjects.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -223,6 +224,43 @@ protected:
 		auto * result = counting.get();
 		gameHandler->spellEnv = std::move(counting);
 		return result;
+	}
+
+	void prepareSummonBoatCast(bool withNewHorizonsRules)
+	{
+		useMagic = withNewHorizonsRules;
+		startGame();
+
+		const SpellID summonBoat(SpellID::SUMMON_BOAT);
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		attackerSideHero->addSpellToSpellbook(summonBoat);
+		setTestSpellPointTotal(attackerSideHero, 200);
+		// The Sea Captain's Hat grants Expert Summon Boat in the legacy rules;
+		// reproduce its spell-specific level without changing spell probability logic.
+		attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::SPELL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(summonBoat)));
+
+		const int3 heroPosition = attackerSideHero->visitablePos();
+		for(int dx = -1; dx <= 1; ++dx)
+		{
+			for(int dy = -1; dy <= 1; ++dy)
+			{
+				if(dx == 0 && dy == 0)
+					continue;
+				gameState()->getMap().getTile(heroPosition + int3(dx, dy, 0)).terrainType = ETerrainId::WATER;
+			}
+		}
+		ASSERT_EQ(attackerSideHero->getSpellSchoolLevel(summonBoat.toSpell()), 3);
+	}
+
+	bool castSummonBoat()
+	{
+		AdventureSpellCastParameters parameters;
+		parameters.caster = attackerSideHero;
+		parameters.pos = int3();
+		auto * environment = dynamic_cast<SpellCastEnvironment *>(gameHandler->spellcastEnvironment());
+		EXPECT_NE(environment, nullptr);
+		return SpellID(SpellID::SUMMON_BOAT).toSpell()->adventureCast(environment, parameters);
 	}
 
 	BattleAction heroSpellAction(SpellID spell, const CStack * target) const
@@ -818,6 +856,57 @@ TEST_F(NewHorizonsMagicStateTest, AdventureSpellUsesOneSharedDailyOpportunityAnd
 	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
 	EXPECT_TRUE(cast(waterWalk));
 	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(NewHorizonsMagicStateTest, SummonBoatRejectsMissingBoatBeforeManaOrDailyStateInSavedNewHorizonsRules)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSummonBoatCast(true));
+	const auto summonBoat = SpellID(SpellID::SUMMON_BOAT);
+	ASSERT_TRUE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), summonBoat));
+	ASSERT_GE(attackerSideHero->bestLocation().x, 0);
+	ASSERT_TRUE(gameState()->getMap().getObjects<CGBoat>().empty());
+
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	EXPECT_FALSE(castSummonBoat());
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_TRUE(gameState()->getMap().getObjects<CGBoat>().empty());
+}
+
+TEST_F(NewHorizonsMagicStateTest, SummonBoatMovesAnExistingBoatUnderSavedNewHorizonsRules)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSummonBoatCast(true));
+	const auto summonPosition = attackerSideHero->bestLocation();
+	ASSERT_GE(summonPosition.x, 0);
+	const int3 remoteWater(20, 20, 0);
+	gameState()->getMap().getTile(remoteWater).terrainType = ETerrainId::WATER;
+	gameHandler->createBoat(remoteWater, BoatId::NECROPOLIS, PlayerColor(0));
+	ASSERT_EQ(gameState()->getMap().getObjects<CGBoat>().size(), 1u);
+
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(castSummonBoat());
+
+	const auto boats = gameState()->getMap().getObjects<CGBoat>();
+	ASSERT_EQ(boats.size(), 1u);
+	EXPECT_EQ(boats.front()->visitablePos(), summonPosition);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - attackerSideHero->getSpellCost(SpellID(SpellID::SUMMON_BOAT).toSpell()));
+	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(NewHorizonsMagicStateTest, LegacyExpertSummonBoatStillCreatesConfiguredBoat)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSummonBoatCast(false));
+	ASSERT_FALSE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), SpellID(SpellID::SUMMON_BOAT)));
+	const auto summonPosition = attackerSideHero->bestLocation();
+	ASSERT_GE(summonPosition.x, 0);
+	ASSERT_TRUE(gameState()->getMap().getObjects<CGBoat>().empty());
+
+	ASSERT_TRUE(castSummonBoat());
+
+	const auto boats = gameState()->getMap().getObjects<CGBoat>();
+	ASSERT_EQ(boats.size(), 1u);
+	EXPECT_EQ(boats.front()->visitablePos(), summonPosition);
+	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
 }
 
 TEST_F(NewHorizonsMagicStateTest, WizardCanChooseArcaneMemoryFromTheBasicWisdomOffer)

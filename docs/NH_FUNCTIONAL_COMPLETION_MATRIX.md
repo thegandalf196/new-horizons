@@ -14,6 +14,29 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Summon Boat clause checkpoint (UP-056): captured New Horizons rules now summon
+existing unoccupied sailing boats only. No-boat admission rejects before Mana
+or daily completion; shared creation policy is used by authoritative casting
+and actual Nullkiller virtual-boat paths. Legacy Expert creation is retained.
+Both Linux targets build; 13 focused native tests pass, zero skips, and 77
+offline checks pass. Independent review has no blocker. Adventure identities
+remain 5/5 acquired, but no full-effect count increases: adjacent legal target
+selection/preview remains missing Phase 1 functionality. Other Adventure
+clauses, broad boat eligibility/selection scenarios and playable acceptance
+remain separately open; combat identities 59/67, ranks 84/93, perks 125/310.
+
+Next mapped foundational gap: Misfortune remains only a legacy -1/-2 Luck
+timed effect plus canonical single-stack targeting. It does not yet suppress
+positive Luck entirely or scale favorable random creature effects. Misfortune
+Weaver remains planned. Canonical normal multiplier is
+`max(25%, 75% - 0.25% * SP)`; Weaver subtracts ten percentage points before the
+same floor. Direct attack flags, attack-triggered casting and Death Stare use
+separate rolls; hypothetical combat ability handling is not a shared expected-
+probability forecast. Implement the unambiguous positive-Luck suppression and
+shared chance policy before claiming this registered identity effect-complete.
+The eligible creature-effect classification requires an explicit bounded audit;
+do not blanket-reduce every RNG operation or include hero effects implicitly.
+
 Hand of Fate (UP-057): Level 3 Chaos primary damage and uniformly selected
 secondary spill are implemented. Half the primary's actual HP loss is reduced
 by the recipient's own defenses without reroll or repeated caster bonuses.
@@ -67,8 +90,9 @@ the positive fixtures explicitly enable it. No active-perk count increment.
 See UP-054 and the failure ledger for retry identities and final gate state.
 
 Adventure-effect audit (UP-056): five identities/acquisition paths exist,
-but all five retain missing canonical effect clauses. Summon Boat still creates
-boats at higher mastery; Water Walk end-day land legality is unestablished;
+but all five retain missing canonical effect/UI clauses. Summon Boat's existing-
+only rule now passes native tests, but adjacent-target choice/preview is missing;
+Water Walk end-day land legality is unestablished;
 Town Portal still allows selected towns and fixed Movement expenditure;
 Fly protected-barrier enforcement is unestablished; Dimension Door still lacks
 visible range-eight/full-Movement/protected-barrier enforcement. Shared 1.5x

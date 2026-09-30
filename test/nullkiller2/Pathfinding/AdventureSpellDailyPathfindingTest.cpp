@@ -22,7 +22,10 @@
 #include "lib/GameConstants.h"
 #include "lib/IGameSettings.h"
 #include "lib/bonuses/Bonus.h"
+#include "lib/mapObjectConstructors/AObjectTypeHandler.h"
+#include "lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "lib/mapObjects/CGHeroInstance.h"
+#include "lib/mapObjects/MiscObjects.h"
 #include "lib/modding/CModHandler.h"
 #include "lib/pathfinder/PathfinderOptions.h"
 #include "lib/spells/NewHorizonsMagic.h"
@@ -140,6 +143,25 @@ protected:
 		hero->addNewBonus(std::make_shared<Bonus>(
 			BonusDuration::ONE_DAY, type, BonusSource::SPELL_EFFECT, 40, BonusSourceID()));
 	}
+
+	void makeSummonBoatSuccessCertain(CGHeroInstance * hero)
+	{
+		const auto summonBoat = spell("core:summonBoat");
+		hero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::SPELL, BonusSource::OTHER, 3, BonusSourceID(), BonusSubtypeID(summonBoat)));
+	}
+
+	void addAvailableBoat(const int3 & position)
+	{
+		const auto handler = LIBRARY->objtypeh->getHandlerFor(Obj::BOAT, BoatId::NECROPOLIS);
+		const auto templates = handler->getTemplates();
+		ASSERT_FALSE(templates.empty());
+		auto boat = handler->create(gameState().get(), templates.front());
+		ASSERT_NE(boat, nullptr);
+		boat->setAnchorPos(position);
+		map()->generateUniqueInstanceName(boat.get());
+		map()->addNewObject(std::move(boat));
+	}
 };
 }
 
@@ -203,6 +225,50 @@ TEST_F(AdventureSpellDailyPathfindingTest, InitialSpentFlagBlocksAllOtherAdventu
 	NK2AI::AIPathfinding::TownPortalAction townPortal(nullptr, spell("core:townPortal"), true);
 	EXPECT_FALSE(townPortal.canAct(nullptr, &source, 0));
 	EXPECT_TRUE(townPortal.canAct(nullptr, &source, 1));
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsSummonBoatDoesNotForecastCreatingAnUnavailableBoat)
+{
+	const SpellID summonBoatSpell = spell("core:summonBoat");
+	auto * hero = startHeroWithSpells(true, {summonBoatSpell});
+	ASSERT_NE(hero, nullptr);
+	makeSummonBoatSuccessCertain(hero);
+
+	const int3 source = hero->visitablePos();
+	surroundWithWater(source);
+	const int3 target = source + int3(0, -1, 0);
+	const auto gateway = makeGateway(PLAYER);
+	const auto paths = pathsTo(*gateway, hero, target);
+
+	EXPECT_FALSE(std::ranges::any_of(paths, [](const NK2AI::AIPath & path)
+	{
+		return hasAvailableActionOnTurn<NK2AI::AIPathfinding::SummonBoatAction>(path, 0);
+	}));
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsSummonBoatPathUsesAKnownAvailableBoat)
+{
+	const SpellID summonBoatSpell = spell("core:summonBoat");
+	auto * hero = startHeroWithSpells(true, {summonBoatSpell});
+	ASSERT_NE(hero, nullptr);
+	makeSummonBoatSuccessCertain(hero);
+
+	const int3 source = hero->visitablePos();
+	surroundWithWater(source);
+	const int3 boatPosition = source + int3(2, 1, 0);
+	map()->getTile(boatPosition).terrainType = ETerrainId::WATER;
+	ASSERT_NO_FATAL_FAILURE(addAvailableBoat(boatPosition));
+	const int3 target = source + int3(0, -1, 0);
+	const auto gateway = makeGateway(PLAYER);
+	const auto boats = gameState()->getMap().getObjects<CGBoat>();
+	ASSERT_EQ(boats.size(), 1u);
+	ASSERT_TRUE(vstd::contains(gateway->nullkiller->memory->visitableObjs, boats.front()->id));
+	const auto paths = pathsTo(*gateway, hero, target);
+
+	EXPECT_TRUE(std::ranges::any_of(paths, [](const NK2AI::AIPath & path)
+	{
+		return hasAvailableActionOnTurn<NK2AI::AIPathfinding::SummonBoatAction>(path, 0);
+	}));
 }
 
 TEST_F(AdventureSpellDailyPathfindingTest, DimensionDoorRevalidationUsesThePlannedSpellDay)
