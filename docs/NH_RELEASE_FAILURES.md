@@ -2,6 +2,106 @@
 
 ## Purpose
 
+### 2026-09-30 Blink native fixture compilation and tie-order review
+
+The Linux client build passes, but the first test-target build (session 35688)
+fails in `NewHorizonsChaosBlinkAITest.cpp`: `const auto * liveRng` makes the
+pointed-to generator const, while its saving serializer requires a nonconst
+reference. Keep the original mutable pointer returned by the game handler;
+saving the RNG state does not advance it. No gameplay failure is inferred.
+Independent review also catches an incorrect distribution assertion: the
+equal-distance endpoints have IDs `{59,127,95}`, so lower-hex tie selection
+gives weights `{5,1,3}` in the fixture's supplied vector order, not `{5,3,1}`.
+Repair the fixture rather than changing correct production tie-breaking.
+The first succeeding test-target/native gate remains pending.
+
+The repaired test target builds (session 43106), but the first isolated Blink
+run fails 5/11 with zero skips (binary SHA-256
+`7c4a4e8b4772faa5e12e979347d04160a69c2c6eb61cf668015f6ae1f699db81`).
+The footprint fixture incorrectly uses the single-wide Angel as a double-wide
+unit; use the real Centaur footprint and assert it. Both 100%-resistance cast
+fixtures are rejected, whereas hostile Mirror relocation succeeds: investigate
+pre-cost immunity/resistance admission before changing casting rules. Both
+actual AI submission fixtures find legal targets but decline to submit Blink;
+trace candidate score/allowance/Order selection rather than claiming passing
+AI support or disabling competing Orders. Logs/XML remain under the isolated
+runner as `NewHorizonsChaosBlink-focused.*`. Runtime and AI owners are
+diagnosing separately; no passing execution gate is claimed.
+
+The resistance cause is the default `ResistanceCondition` admission predicate:
+negative magic at 100% Resistance is non-receptive before cost. That ordinary
+hostile behavior remains unchanged. Friendly saved-v3 Blink now skips only that
+default Resistance predicate while retaining absolute, elemental, configured
+immunity and Spell Lock checks. Add an explicit absolute-immunity guard, fix
+the double-wide fixture to Centaur and correct hostile 100% Resistance to
+expect rejection without cost. The AI owner adds temporary candidate/allowance/
+winner diagnostics for a bounded two-case rerun; remove them before delivery.
+
+Build session 30535 links both targets. Retry2 runs 12 cases: all ten runtime/
+rule cases pass, both AI cases fail, zero skips (binary `8063bf25d8b5087f7f2995536d49e066c98c58ace8351a79825b2ccb39ce6d21`).
+Candidate diagnostics show legal positive Blink values, but evaluation never
+reaches allowance or winner scoring. Inspection identifies the earlier
+forecasted-battle-finish gate: the large friendly Pikeman can already walk to
+and kill the only Peasant enemy before the enemy acts. The fixture immobilized
+the active Golem and enemy, not that Pikeman. Immobilize the friendly target
+too so Blink creates an actual melee opportunity while ordinary movement does
+not. Keep all Orders and the legitimate no-need-to-cast production gate.
+This diagnosis needs the repaired actual-submission rerun; remove diagnostics
+before final build and preserve `NewHorizonsChaosBlink-retry2.*` evidence.
+
+The diagnostic-free repaired build (session 35699) passes both targets.
+`NewHorizonsChaosBlink-final-focused.*` still reports 10/12 passing, zero
+skips, but now both AI cases actually submit a Hero action: an Order rather
+than Blink. The battle-finish precondition is repaired; the competing action
+ranking must be inspected before modifying the fixture again. Preserve the
+strict `HERO_SPELL` assertion and legal Orders; do not count ordinary Order
+submission as Blink coverage or inflate its production score just to pass.
+
+The bounded ranking run (`NewHorizonsChaosBlink-ai-ranking.*`, session 89021
+test build) confirms baseline 0 and two positive Blink candidates at about
+1.21–1.53. Existing Order heuristics score Hold the Line 1.7, Riposte 6.2 and
+Flank 8.8, so Flank wins. Keep that evidence rather than interpreting this
+fixture as missing Blink registration or failed legal targeting. The next
+fixture must give relocation a genuinely favorable tactical opportunity;
+production spell/Order tuning is not a test-fix shortcut.
+
+The Grand Elf/Arch Devil escape-and-shoot fixture also fails both actual AI
+submission assertions after clean full build session 10235. The isolated
+`NewHorizonsChaosBlink-final-retry2.*` run passes 10/12, zero skips, on binary
+`b59553d04e8f2984ba9b7049258e09100739980bdd4454b55057666cc17d4f8e`;
+both remaining actions are still Orders. Runtime coverage passes, but actual
+Blink AI submission remains unverified. Reassign the bounded ranking/fixture
+diagnosis to the AI owner; retain legal Order competition and strict spell
+submission assertions. Do not increment the verified coverage snapshot yet.
+
+The bounded `NewHorizonsChaosBlink-ai-ranking2.*` diagnostic (test build
+session 98001) confirms that shooter escape is valued: Blink scores about
+17.41 normally and 19.15 with Blinkmaster. Hold the Line scores 35 and wins;
+Riposte scores 17.5. Detached shooting is not lost to the old occupied hex.
+Inspect the inherited hero command attributes and use an ordinary low-command
+magic specialist fixture if appropriate; do not boost the spell score or
+disable competing actions. Temporary diagnostics must again be removed.
+
+The clean 5/5 Attack/Defense fixture build (session 29935) links both targets,
+but `NewHorizonsChaosBlink-final-retry3.*` remains 10/12 passing, zero skips
+(binary `645766143b3f16ad19b9a703ee16ce77542d616593d6fc01bf9f863ddc743267`).
+The base battle fixture already resets attributes to zero, so 5/5 does not
+reduce its inherited command strength. The next bounded adjustment increases
+the shooter's army size to create a materially stronger relocation opportunity,
+without changing production valuation or disabling Orders. Preserve the failed
+submission evidence and rerun before declaring completion.
+
+First complete succeeding gate: test build session 90047 succeeds after the
+fixture-only shooter-count change; production source is unchanged from the
+successful clean client/test build 29935. Final binary
+`d5e161815ab6ab3ce33c82a43b9de49ebe5962d9fb7f32f071df1950653baa68`
+passes `NewHorizonsChaosBlink-final-retry4.*` 12/12 and its focused immunity/
+Entangle guards 24/24, zero skips. Actual AI spell submission, live-state/RNG
+immutability and authoritative legal landings are now verified. All ordinary
+Orders remain enabled; no production score inflation or assertion weakening.
+Temporary diagnostics are absent. Broader tactical quality and cross-system
+interactions remain Phase 2 rather than expanding this focused gate.
+
 ### 2026-09-29 Vengeful Vines content coefficient encoding
 
 The initial 51-case content check failed two schema validations because

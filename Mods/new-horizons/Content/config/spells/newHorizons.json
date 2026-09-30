@@ -646,6 +646,40 @@
 		"flags" : {"positive" : true},
 		"targetCondition" : {}
 	},
+	"blink": {
+		"name": "Blink",
+		"type": "combat",
+		"school": {"new-horizons:chaos": true},
+		"level": 1,
+		"power": 1,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "NH_spell_blink_44.png",
+			"iconScroll": "NH_spell_blink_32.png",
+			"iconScenarioBonus": "NH_spell_blink_32.png",
+			"iconEffect": "NH_spell_blink_30.png",
+			"iconImmune": "NH_spell_blink_30.png"
+		},
+		"sounds": {"cast": "TELPTOUT"},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Teleport one friendly or enemy stack to a random legal position within min(4, 2 + floor(Spell Power / 100)) hexes, excluding its origin and fitting its whole footprint. Intervening blockers and Zones of Control do not matter. No new action, retaliation, Initiative or voluntary-movement benefit. Chaos rank strengthens only the Spell Power term. Blinkmaster draws two independent legal destinations and automatically chooses the farther, breaking equal-distance ties by hex order. No legal destination means no Mana or Hero Action is spent.",
+				"cost": 4,
+				"power": 2,
+				"targetModifier": {"smart": false},
+				"battleEffects": {"blink": {"type": "core:blink"}}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"negative": true},
+		"targetCondition": {}
+	},
 	"hydrasVitality": {
 		"name": "Hydra's Vitality",
 		"type": "combat",

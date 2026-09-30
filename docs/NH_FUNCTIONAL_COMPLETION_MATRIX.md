@@ -14,6 +14,18 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Blink/Blinkmaster checkpoint: both Linux targets compile; all 12 focused
+rules/runtime/actual-AI cases and 24 existing immunity/Entangle guards pass,
+zero skips. Shared legal landing geometry, School-scaled radius, authoritative
+uniform draws, automatic two-draw Blinkmaster resolution, pre-cost rejection,
+friendly versus hostile resistance/Mirror handling, registration, preview and
+Provisional art are implemented. Actual AI submission preserves live position,
+health, Mana and RNG during evaluation and resolves to a legal endpoint.
+Coverage advances to 58/67 combat identities and 115/310 active perks. This
+is source/native evidence, not rendered or playable acceptance. Full save/load,
+broader status/obstacle interactions, tactical AI fidelity and native hover
+legibility remain Phase 2 work.
+
 Hydra's Vitality checkpoint: capacity-safe compact health cohorts preserve
 current HP/count on cast, genuine per-survivor activation regeneration,
 casualty-safe ordinary healing, exact temporary resurrection cleanup and
@@ -31,10 +43,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 114/310 | 196 planned; Verdant Warden is the newest activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 115/310 | 195 planned; Blinkmaster is the newest activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 57/67 | 10 missing/inactive; Hydra's Vitality is the newest identity. Light is 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 58/67 | 9 missing/inactive; Blink is the newest identity. Chaos is 4/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -58,9 +70,9 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 114
-active perks, leaving nine ranks and 196 perks planned. These counts were
-rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
+requirements in total. The current registry has 84 active rank effects and 115
+active perks, leaving nine ranks and 195 perks planned. These counts were
+rechecked directly from `config/newHorizonsPerks.json` on 2026-09-30; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
 `40628d29d92ab0d47282321fd411f5d079f38844` passed Windows build run
@@ -176,7 +188,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Nature Magic | 3/0 | 4/6 | Herbalist, Rootcaller, Beastcaller and Verdant Warden active; six perks missing. |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
-| Chaos Magic | 3/0 | 0/10 | Progression blocked |
+| Chaos Magic | 3/0 | 1/9 | Blinkmaster opens ordinary Advanced progression; nine perks remain planned. |
 | Spellcraft | 3/0 | 2/8 | Spell Penetration opens normal Advanced progression. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold and scales Spell Power-derived terms without moving fixed bases; its Advanced selection opens Expert progression. Basic/Advanced/Expert rank efficiency is 110/120/130% under saved v3 rules. |
 | Wisdom | 3/0 | 1/9 | Nine perks missing |
 | Warcasting | 3/0 | 4/6 | Six perks missing |
@@ -196,10 +208,10 @@ interactions, and rendered/playable acceptance remain separate.
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
-rank. Nine Skills therefore cannot normally advance beyond Basic because they
-have no active Basic perk: War Machines, Command, Chaos Magic, Diplomacy,
+rank. Eight Skills therefore cannot normally advance beyond Basic because they
+have no active Basic perk: War Machines, Command, Diplomacy,
 Estates, Learning, Luck, Divine Mandate, and Elemental Rebirth. Backstab now
-opens the Shroud's ordinary Advanced-rank progression.
+opens the Shroud's ordinary Advanced-rank progression; Blinkmaster opens Chaos.
 
 ## Spell baseline
 
@@ -506,7 +518,7 @@ from the active identity row.
 | Light | 11 | 11 | No missing identity; Crusade! has focused runtime/native evidence. Rendered/playable and broader interaction evidence remain open. |
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
-| Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
+| Chaos | 11 | 4 | Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 9 | Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 

@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
+    'new-horizons:blink',
     'new-horizons:hydrasVitality',
     'new-horizons:verdantPrison',
     'new-horizons:summonTrolls',
@@ -559,6 +560,28 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(next(p for p in perks if p['id'].endswith('.beastcaller'))
                          ['effect']['status'], 'active')
         self.assertEqual(spell['sounds']['cast'], 'SUMNELM')
+
+    def test_blink_registers_random_single_stack_relocation(self):
+        row = self.rules['spells']['new-horizons:blink']
+        self.assertEqual((row['schools'], row['level'], row['costs']),
+                         (['new-horizons:chaos'], 1, [4] * 4))
+        self.assertNotIn('directDamage', row)
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['blink']
+        self.assertEqual(spell['targetType'], 'CREATURE')
+        self.assertEqual(spell['flags'], {'negative': True})
+        base = spell['levels']['base']
+        self.assertEqual((base['range'], base['cost']), ('0', 4))
+        self.assertEqual(base['targetModifier'], {'smart': False})
+        self.assertEqual(base['battleEffects'], {'blink': {'type': 'core:blink'}})
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            self.assertEqual(spell['levels'][rank], {})
+        self.assertEqual(load('config/scriptsSpells.json')['blink']['script'], 'spells/blink')
+        self.assertEqual(spell['sounds']['cast'], 'TELPTOUT')
+        for size, key in ((44, 'iconBook'), (32, 'iconScroll'), (30, 'iconEffect')):
+            self.assertEqual(spell['graphics'][key], f'NH_spell_blink_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / spell['graphics'][key]).read_bytes()[16:24]),
+                (size, size))
 
     def test_hydras_vitality_registers_single_target_capacity_effect(self):
         row = self.rules['spells']['new-horizons:hydrasVitality']

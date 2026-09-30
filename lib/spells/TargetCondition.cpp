@@ -454,6 +454,19 @@ bool TargetCondition::isReceptive(const Mechanics * m, const battle::Unit * targ
 	return check(normal, m, target);
 }
 
+bool TargetCondition::isReceptiveIgnoringMagicResistance(const Mechanics * m, const battle::Unit * target) const
+{
+	if(!check(absolute, m, target, true))
+		return false;
+
+	for(const auto & item : negation)
+	{
+		if(item->isReceptive(m, target))
+			return true;
+	}
+	return check(normal, m, target, true);
+}
+
 void TargetCondition::serializeJson(JsonSerializeFormat & handler, const ItemFactory * itemFactory)
 {
 	if(handler.saving)
@@ -491,13 +504,17 @@ void TargetCondition::serializeJson(JsonSerializeFormat & handler, const ItemFac
 	}
 }
 
-bool TargetCondition::check(const ItemVector & condition, const Mechanics * m, const battle::Unit * target) const
+bool TargetCondition::check(const ItemVector & condition, const Mechanics * m, const battle::Unit * target,
+	const bool ignoreMagicResistance) const
 {
 	bool nonExclusiveCheck = false;
 	bool nonExclusiveExits = false;
 
 	for(const auto & item : condition)
 	{
+		if(ignoreMagicResistance && dynamic_cast<const ResistanceCondition *>(item.get()))
+			continue;
+
 		if(item->isExclusive())
 		{
 			if(!item->isReceptive(m, target))

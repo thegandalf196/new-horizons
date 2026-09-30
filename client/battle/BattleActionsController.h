@@ -16,6 +16,8 @@
 #include "ShadowGiftWindow.h"
 #include "TemporalFieldWindow.h"
 
+#include "lib/spells/NewHorizonsBlink.h"
+
 #include <functional>
 #include <optional>
 #include <string>
@@ -419,6 +421,13 @@ public:
 	/// New Horizons Hydra's Vitality reports its shared mechanics value in
 	/// percent-millionths; it is never previewed as immediate healing.
 	static bool isHydrasVitalitySpell(const CSpell * spell);
+
+	/// Blink uses the Runtime-owned legal destination set for a read-only
+	/// battlefield preview. The ordinary spell click still targets the hovered
+	/// creature stack; these destinations are never player-selectable landings.
+	static bool isBlinkSpell(const CSpell * spell);
+	std::optional<newHorizonsBlink::Preview> getBlinkDestinationPreview(
+		const CSpell * spell, const BattleHex & targetHex);
 
 	/// methods to work with array of possible actions, needed to control special creatures abilities
 	const std::vector<PossiblePlayerBattleAction> & getPossibleActions() const;

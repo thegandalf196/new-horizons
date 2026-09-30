@@ -500,6 +500,20 @@ BattleHexArray BattleFieldController::getHighlightedHexesForSpellRange()
 
 	if(caster && spell) //when casting spell
 	{
+		// Blink uses shared possible-destination geometry rather than the generic
+		// spell effect radius. Every highlighted hex is a possible landing, not a
+		// player-selected destination or a promise of the random result.
+		if(BattleActionsController::isBlinkSpell(spell))
+		{
+			const auto preview = owner.actionsController->getBlinkDestinationPreview(spell, hoveredHex);
+			if(!preview)
+				return result;
+
+			for(const auto & destination : preview->legalDestinations)
+				result.insert(destination);
+			return result;
+		}
+
 		if(BattleActionsController::isSummonTrollsSpell(spell))
 			return owner.actionsController->getSummonTrollsTargetHexes(spell);
 

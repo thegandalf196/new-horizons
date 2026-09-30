@@ -306,6 +306,11 @@
 			"level": 2,
 			"costs": [9, 9, 9, 9]
 		},
+		"new-horizons:blink": {
+			"schools": ["new-horizons:chaos"],
+			"level": 1,
+			"costs": [4, 4, 4, 4]
+		},
 		"new-horizons:hydrasVitality": {
 			"schools": ["new-horizons:nature"],
 			"level": 4,

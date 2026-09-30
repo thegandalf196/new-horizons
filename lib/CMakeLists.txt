@@ -304,6 +304,7 @@ set(lib_MAIN_SRCS
 	spells/BonusCaster.cpp
 	spells/CSpell.cpp
 	spells/CSpellHandler.cpp
+	spells/NewHorizonsBlink.cpp
 	spells/NewHorizonsDirectDamage.cpp
 	spells/NewHorizonsMagic.cpp
 	spells/NewHorizonsPurify.cpp
@@ -824,6 +825,7 @@ set(lib_MAIN_HEADERS
 	spells/BonusCaster.h
 	spells/CSpell.h
 	spells/CSpellHandler.h
+	spells/NewHorizonsBlink.h
 	spells/NewHorizonsDirectDamage.h
 	spells/NewHorizonsMagic.h
 	spells/NewHorizonsPurify.h

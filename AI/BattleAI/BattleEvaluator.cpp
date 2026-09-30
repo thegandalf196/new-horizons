@@ -26,6 +26,7 @@
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpellHandler.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsBlink.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
@@ -47,6 +48,7 @@
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/IGameSettings.h"
+
 
 // TODO: remove
 // Eventually only IBattleInfoCallback and battle::Unit should be used,
@@ -148,6 +150,11 @@ bool isCanonicalRegeneration(const CSpell * spell)
 bool isCanonicalHydrasVitality(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == "new-horizons:hydrasVitality";
+}
+
+bool isCanonicalChaosBlink(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsBlink::SPELL_ID;
 }
 
 bool isCanonicalVampirism(const CBattleInfoCallback & battle, const CSpell * spell)
@@ -1320,6 +1327,112 @@ bool commandTargetIsLegal(const Battle & battle, BattleSide side, HeroCommand co
 float averageOrderDamage(const DamageEstimation & damage)
 {
 	return static_cast<float>(std::max<int64_t>(0, damage.damage.min + damage.damage.max) / 2);
+}
+
+/// Values one immediately available direct attack from the chosen landing.
+/// This intentionally omits full-battle rollouts and movement/path simulation;
+/// it is only a bounded tactical signal for whether Blink changes direct reach.
+float blinkDirectAttackValue(const battle::Unit * attacker, const battle::Unit * defender,
+	const CBattleInfoCallback & battle, const std::shared_ptr<CBattleInfoCallback> & battleState,
+	DamageCache & damageCache, bool includeShooting = true)
+{
+	if(!attacker || !defender || !attacker->alive() || !defender->alive()
+		|| !battle.battleCanAttackUnit(attacker, defender))
+		return 0.0f;
+
+	const auto availableHealth = std::max<int64_t>(0, defender->getAvailableHealth());
+	if(availableHealth <= 0)
+		return 0.0f;
+
+	float bestValue = 0.0f;
+	const auto valueForAttackMode = [&](bool shooting)
+	{
+		const auto attackCount = std::max(0, AttackPossibility::getAttackCount(*attacker, shooting, battle));
+		if(attackCount <= 0)
+			return 0.0f;
+
+		const BattleAttackInfo attack(attacker, defender, 0, shooting);
+		const auto perAttackDamage = static_cast<int64_t>(averageOrderDamage(battle.battleEstimateDamage(attack)));
+		if(perAttackDamage <= 0)
+			return 0.0f;
+
+		const auto totalDamage = std::min(availableHealth, perAttackDamage * static_cast<int64_t>(attackCount));
+		return AttackPossibility::calculateDamageReduce(attacker, defender,
+			static_cast<uint64_t>(totalDamage), damageCache, battleState);
+	};
+
+	if(includeShooting && battle.battleCanShoot(attacker, defender->getPosition()))
+		bestValue = std::max(bestValue, valueForAttackMode(true));
+	if(battle.isMeleeAttackPossible(attacker, defender) || battle.isLongWeaponAttack(attacker, defender))
+		bestValue = std::max(bestValue, valueForAttackMode(false));
+	return bestValue;
+}
+
+/// Signed direct-attack pressure involving a stack at one endpoint. Attacks by
+/// the relocated stack are limited to its single best target; attacks by other
+/// stacks are accumulated because they represent independent future activations.
+float blinkLandingPositionValue(const battle::Unit * original, const BattleHex & landing,
+	PlayerColor player, const CBattleInfoCallback & battle,
+	const std::shared_ptr<CBattleInfoCallback> & battleState, DamageCache & damageCache)
+{
+	if(!original || !original->alive() || !landing.isValid())
+		return 0.0f;
+
+	auto relocated = original->acquireState();
+	if(!relocated)
+		return 0.0f;
+	relocated->setPosition(landing);
+
+	float bestOutgoing = 0.0f;
+	float signedIncoming = 0.0f;
+	for(const auto * other : battle.battleGetAllUnits(false))
+	{
+		if(!other || !other->alive() || other->unitId() == original->unitId()
+			|| other->isGhost() || other->isTurret())
+			continue;
+
+		bestOutgoing = std::max(bestOutgoing,
+			blinkDirectAttackValue(relocated.get(), other, battle, battleState, damageCache));
+
+		// The battle callback resolves a shot's target by occupied hex; a detached
+		// relocation is deliberately not installed into that live occupancy map.
+		// Keep the positional forecast symmetric by valuing direct incoming melee
+		// pressure here while outgoing shots still use the live enemy occupancy.
+		const auto incoming = blinkDirectAttackValue(other, relocated.get(), battle, battleState,
+			damageCache, false);
+		if(incoming > 0.0f)
+			signedIncoming += battle.battleGetOwner(other) == player ? incoming : -incoming;
+	}
+
+	const float outgoingSign = battle.battleGetOwner(original) == player ? 1.0f : -1.0f;
+	return outgoingSign * bestOutgoing + signedIncoming;
+}
+
+/// Returns the exact expected marginal direct-attack pressure for one Blink
+/// target. The shared distribution handles normal uniform destinations and
+/// Blinkmaster's two independent draws with replacement; this code consumes no RNG.
+float blinkExpectedPositionValue(const battle::Unit * target,
+	const newHorizonsBlink::Preview & preview, PlayerColor player,
+	const CBattleInfoCallback & battle, const std::shared_ptr<CBattleInfoCallback> & battleState,
+	DamageCache & damageCache)
+{
+	if(!target || preview.legalDestinations.empty())
+		return 0.0f;
+
+	const auto origin = target->getPosition();
+	const auto outcomes = newHorizonsBlink::outcomeDistribution(preview, origin);
+	if(outcomes.empty() || outcomes.front().totalWeight == 0)
+		return 0.0f;
+
+	const auto before = blinkLandingPositionValue(target, origin, player, battle, battleState, damageCache);
+	long double weightedDelta = 0.0L;
+	for(const auto & outcome : outcomes)
+	{
+		const auto after = blinkLandingPositionValue(target, outcome.hex, player, battle, battleState, damageCache);
+		weightedDelta += static_cast<long double>(after - before) * outcome.weight;
+	}
+
+	return static_cast<float>(weightedDelta / outcomes.front().totalWeight);
 }
 
 /// Values at most one immediately available melee action that a rooted unit
@@ -3516,10 +3629,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				temp.setMetamagicFollowup(metamagicFollowup);
 				temp.setMetamagicGrand(metamagicGrandChoice);
 				temp.setCureAffliction(cureAffliction);
-				temp.setMassSlow(massSlow);
-				temp.setShadowGiftSacrificePercent(shadowGiftSacrificePercent);
-				temp.setSelectiveDispel(selectiveDispel);
-				for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
+			temp.setMassSlow(massSlow);
+			temp.setShadowGiftSacrificePercent(shadowGiftSacrificePercent);
+			temp.setSelectiveDispel(selectiveDispel);
+			for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
 				{
 					for(int overcharge = 0; overcharge <= maxOvercharge; ++overcharge)
 					{
@@ -3673,6 +3786,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							if(ps.spellPlacementHeuristicValue <= 0.0f)
 								continue;
 						}
+						if(isCanonicalChaosBlink(spell))
+						{
+							if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
+								continue;
+
+							const auto blinkPreview = newHorizonsBlink::preview(
+								*candidateMechanics, ps.dest.front().unitValue);
+							if(!blinkPreview)
+								continue;
+
+							ps.spellPlacementHeuristicValue = blinkExpectedPositionValue(
+								ps.dest.front().unitValue, *blinkPreview, playerID,
+								*battleCallback, battleCallback, damageCache)
+								* scoreEvaluator.getPositiveEffectMultiplier();
+							if(ps.spellPlacementHeuristicValue <= 0.0f)
+								continue;
+						}
 						if(isCanonicalHolyArmor(spell))
 						{
 							if(visibleMagicalSpellThreat <= 0.0f || friendlyAvailableHealth <= 0
@@ -3764,9 +3894,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	}
 	LOGFL("Found %d spell-target combinations.", possibleCasts.size());
 	if(possibleCasts.empty())
-	{
 		return false;
-	}
 	if(!regenerationTurnOrderPrepared && std::any_of(possibleCasts.begin(), possibleCasts.end(),
 		[](const PossibleSpellcast & candidate)
 		{
@@ -4111,6 +4239,27 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				// from health restored by the shared projected activation lifecycle.
 				// Preserve that detached forecast while still rejecting a countered cast.
 				if(ps.command == HeroCommand::NONE && isCanonicalHydrasVitality(ps.spell)
+					&& ps.spellPlacementHeuristicValue > 0.0f)
+				{
+					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					targetId = ps.dest.front().unitValue->unitId();
+					if(counterspellNegated
+						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+							counterspellNegated, *spellAllowance))
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + ps.spellPlacementHeuristicValue;
+					continue;
+				}
+				// Blink has no deterministic landing at cast time. Preserve its exact
+				// shared-helper expectation (including the Blinkmaster distribution)
+				// instead of projecting RNGStub's midpoint as if it were authoritative.
+				if(ps.command == HeroCommand::NONE && isCanonicalChaosBlink(ps.spell)
 					&& ps.spellPlacementHeuristicValue > 0.0f)
 				{
 					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
@@ -4713,7 +4862,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		LOGL("No beneficial hero action; retaining the Spell Action for this round.");
 		return false;
 	}
-
 	if(metamagicFollowup || (castToPerform.value > noCastBaseline && !vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
 		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);

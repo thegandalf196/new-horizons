@@ -45,6 +45,7 @@
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
+#include "lib/spells/NewHorizonsBlink.h"
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
 #include "../../lib/spells/OrientedSpellPattern.h"
 #include "../../lib/spells/effects/Effect.h"
@@ -2225,6 +2226,37 @@ bool BattleActionsController::isHydrasVitalitySpell(const CSpell * spell)
 	return spell && spell->getJsonKey() == hydrasVitalityJsonKey;
 }
 
+bool BattleActionsController::isBlinkSpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsBlink::SPELL_ID;
+}
+
+std::optional<newHorizonsBlink::Preview> BattleActionsController::getBlinkDestinationPreview(
+	const CSpell * spell, const BattleHex & targetHex)
+{
+	if(!isBlinkSpell(spell) || !heroSpellcastingModeActive() || !targetHex.isValid())
+		return std::nullopt;
+
+	const auto battle = owner.getBattle();
+	const auto * target = battle ? battle->battleGetStackByPos(targetHex, true) : nullptr;
+	if(!target && battle)
+		target = battle->battleGetStackByPos(targetHex, false);
+	if(!battle || !target || !isCastingPossibleHere(spell, nullptr, targetHex))
+		return std::nullopt;
+
+	const auto * caster = getCurrentSpellcaster();
+	if(!caster || !heroSpellToCast)
+		return std::nullopt;
+
+	spells::BattleCast cast(battle.get(), caster, getCurrentCastMode(), spell);
+	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
+	const auto mechanics = spell->battleMechanics(&cast);
+	if(!mechanics)
+		return std::nullopt;
+
+	return newHorizonsBlink::preview(*mechanics, target);
+}
+
 bool BattleActionsController::isValidTransfigureMatterTarget(const BattleHex & targetHex) const
 {
 	if(!targetHex.isValid())
@@ -3099,6 +3131,26 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 		case PossiblePlayerBattleAction::AIMED_SPELL_CREATURE:
 		{
 			const CSpell * spell = action.spell().toSpell();
+			if(isBlinkSpell(spell))
+			{
+				const auto preview = getBlinkDestinationPreview(spell, targetHex);
+				if(preview)
+				{
+					const auto destinationCount = preview->legalDestinations.size();
+					std::string message = spell->getNameTranslated() + ": " + targetStack->getName()
+						+ " is randomly relocated within radius " + std::to_string(preview->radius)
+						+ " (" + std::to_string(destinationCount) + " legal destination"
+						+ (destinationCount == 1 ? ")" : "s)");
+					if(destinationCount == 0)
+						message += ". No legal destination; the cast is rejected before Mana or Hero Action is spent.";
+					else
+						message += ". Highlighted hexes show possible landings; the actual landing remains random.";
+
+					if(preview->blinkmaster)
+						message += " Blinkmaster automatically uses the farther of two random legal destinations; ties use hex order.";
+					return message;
+				}
+			}
 
 			auto spellEffectValue =
 					owner.getBattle()->getSpellEffectValue(spell, getCurrentSpellcaster(), getCurrentCastMode(), targetHex);

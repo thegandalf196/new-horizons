@@ -68,12 +68,17 @@ public:
 	ItemVector negation;
 
 	bool isReceptive(const Mechanics * m, const battle::Unit * target) const override;
+	/// Checks all ordinary immunity and target limits while ignoring only the
+	/// default Magic Resistance gate. Used by effects such as friendly Blink,
+	/// which are not hostile magical effects despite their spell polarity.
+	bool isReceptiveIgnoringMagicResistance(const Mechanics * m, const battle::Unit * target) const;
 
 	void serializeJson(JsonSerializeFormat & handler, const ItemFactory * itemFactory);
 protected:
 
 private:
-	bool check(const ItemVector & condition, const Mechanics * m, const battle::Unit * target) const;
+	bool check(const ItemVector & condition, const Mechanics * m, const battle::Unit * target,
+		bool ignoreMagicResistance = false) const;
 
 	void loadConditions(const JsonNode & source, bool exclusive, bool inverted, const ItemFactory * itemFactory);
 };

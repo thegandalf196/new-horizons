@@ -34,6 +34,9 @@ namespace scripting::api
 		static std::string getCureAfflictionSource(const ::spells::Mechanics & m);
 		static int32_t getArcaneBreachMarkBasisPoints(const ::spells::Mechanics & m);
 		static int32_t getBattleRound(const ::spells::Mechanics & m);
+		static int getBlinkPreview(lua_State * L);
+		static BattleHex chooseBlinkmasterDestination(const ::spells::Mechanics & m,
+			const battle::Unit & unit, BattleHex first, BattleHex second);
 	};
 
 }

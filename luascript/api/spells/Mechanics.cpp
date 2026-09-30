@@ -22,6 +22,7 @@
 
 #include "../../../lib/battle/CBattleInfoCallback.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/NewHorizonsBlink.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/battle/Unit.h"
@@ -91,6 +92,45 @@ int32_t MechanicsProxy::getBattleRound(const spells::Mechanics & m)
 	return battle ? battle->battleGetRound() : -1;
 }
 
+int MechanicsProxy::getBlinkPreview(lua_State * L)
+{
+	LuaStack S(L);
+	const Mechanics * mechanics;
+	const battle::Unit * unit;
+	S.getNonNull(1, mechanics);
+	S.getNonNull(2, unit);
+	S.clear();
+
+	const auto result = newHorizonsBlink::preview(*mechanics, unit);
+	if(!result)
+	{
+		S.pushNil();
+		return 1;
+	}
+
+	lua_newtable(L);
+	const int tableIndex = S.absindex(-1);
+	S.push(result->radius);
+	lua_setfield(L, tableIndex, "radius");
+	S.push(result->legalDestinations);
+	lua_setfield(L, tableIndex, "legalDestinations");
+	S.push(result->blinkmaster);
+	lua_setfield(L, tableIndex, "blinkmaster");
+	return 1;
+}
+
+BattleHex MechanicsProxy::chooseBlinkmasterDestination(const Mechanics & m, const battle::Unit & unit,
+	BattleHex first, BattleHex second)
+{
+	const auto result = newHorizonsBlink::preview(m, &unit);
+	if(!result || !vstd::contains(result->legalDestinations, first)
+		|| !vstd::contains(result->legalDestinations, second))
+		return BattleHex::INVALID;
+	if(!result->blinkmaster)
+		return first;
+	return newHorizonsBlink::fartherDestination(unit.getPosition(), first, second);
+}
+
 void MechanicsProxy::registerMethods(MethodRegistrar & R)
 {
 	R.method<&Mechanics::isPositiveSpell>("isPositive", {},
@@ -141,6 +181,17 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the effect duration in turns.");
 	R.function<&MechanicsProxy::getBattleRound>("getBattleRound", {},
 		"Returns the current battle round, or -1 when the cast has no battle context.");
+	R.cfunction<&MechanicsProxy::getBlinkPreview>("getBlinkPreview",
+		{{"unit", "Unit", "Creature stack whose landing radius is previewed."}},
+		{"table | nil", "A table containing radius, legalDestinations, and blinkmaster, or nil when this cast/target has no legal Blink preview."},
+		"Returns the shared saved-v3 Blink radius and sorted legal landing hexes without consuming random state.");
+	R.function<&MechanicsProxy::chooseBlinkmasterDestination>("chooseBlinkmasterDestination",
+		{
+			{"unit", "Creature stack whose origin hex is used."},
+			{"first", "First legal destination drawn by the authoritative RNG."},
+			{"second", "Second independent legal destination drawn with replacement."}
+		}, {},
+		"Resolves the farther of two Blinkmaster destinations, using lower BattleHex id for equal-distance ties.");
 	R.method<&Mechanics::adjustEffectDuration>("adjustEffectDuration",
 		{{"baseDuration", "Base effect duration in turns."}}, {},
 		"Returns the base duration adjusted by cast-specific duration mechanics.");

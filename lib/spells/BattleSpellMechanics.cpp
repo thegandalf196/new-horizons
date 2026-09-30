@@ -15,8 +15,10 @@
 #include "CSpell.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsBlink.h"
 #include "NewHorizonsSorcery.h"
 #include "NewHorizonsVengefulVines.h"
+#include "TargetCondition.h"
 
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -66,6 +68,11 @@ bool isNewHorizonsLifeDrainSpell(const CSpell * spell, const JsonNode & savedRul
 {
 	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL
 		&& newHorizonsMagic::spellAllowedBySavedRoster(savedRules, spell->getId());
+}
+
+bool isNewHorizonsBlinkSpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsBlink::SPELL_ID;
 }
 
 bool isNewHorizonsSoulChainSpell(const CSpell * spell, const JsonNode & savedRules)
@@ -652,6 +659,10 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 
 	if(!newHorizonsMagic::spellAllowedByBattleRoster(*battle(), owner->getId()))
 		return adaptGenericProblem(problem);
+	// Blink's target geometry and School-scaled radius are defined by the saved
+	// v3 snapshot. Do not let a legacy-profile cast spend resources as a no-op.
+	if(isNewHorizonsBlinkSpell(owner) && !usesNewHorizonsMagicV3())
+		return adaptGenericProblem(problem);
 	// Vengeful Vines exists only in the saved v3 roster. Reject stale requests
 	// before any mana or hero-action state can be committed.
 	const auto * battleState = battle()->getBattle();
@@ -796,6 +807,20 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 		{
 			return isRegenerationTarget(unit) && ownerMatches(unit, true) && !isSpellLocked(unit)
 				&& isReceptive(unit);
+		});
+		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+	}
+
+	if(isNewHorizonsBlinkSpell(owner))
+	{
+		if(mode != Mode::HERO || !castingHero || casterSide == BattleSide::NONE)
+			return adaptGenericProblem(problem);
+
+		const bool availableTarget = std::ranges::any_of(battle()->battleGetAllUnits(false), [this](const battle::Unit * unit)
+		{
+			return unit && unit->alive() && unit->isValidTarget(false)
+				&& !unit->isInvincible() && !isSpellLocked(unit) && isReceptive(unit)
+				&& newHorizonsBlink::preview(*this, unit).has_value();
 		});
 		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
 	}
@@ -962,11 +987,31 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
 		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsBlink = isNewHorizonsBlinkSpell(owner);
 	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	const bool vengefulVinesEnabled = isNewHorizonsVengefulVinesSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	Target spellTarget = transformSpellTarget(target);
+	if(newHorizonsBlink)
+	{
+		if(mode != Mode::HERO || target.size() != 1)
+			return false;
+
+		const battle::Unit * blinkTarget = target.front().unitValue;
+		if(!blinkTarget && target.front().hexValue.isValid())
+			blinkTarget = battle()->battleGetUnitByPos(target.front().hexValue, true);
+		if(!blinkTarget && spellTarget.size() == 1)
+			blinkTarget = spellTarget.front().unitValue;
+		if(!blinkTarget || !blinkTarget->alive() || !blinkTarget->isValidTarget(false)
+			|| blinkTarget->isGhost() || blinkTarget->isInvincible() || isSpellLocked(blinkTarget)
+			|| !isReceptive(blinkTarget))
+			return false;
+
+		// This same shared preview is consumed by the Lua effect, UI, and AI.
+		// Empty landing rings fail before mana or Hero Action are committed.
+		return newHorizonsBlink::preview(*this, blinkTarget).has_value();
+	}
 	if(vengefulVinesEnabled)
 	{
 		const auto path = newHorizonsVengefulVines::footprint(target);
@@ -1841,6 +1886,10 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 			if(isNewHorizonsLifeDrainSpell(owner, battle()->getBattle()->getMagicRules())
 				&& unit->unitSide() == casterSide)
 				continue;
+			// Friendly Blink is ordinary negative magic for target immunity, but
+			// an ally is not resisting a hostile magical effect.
+			if(isNewHorizonsBlinkSpell(owner) && unit->unitSide() == casterSide)
+				continue;
 			const int prob = std::min(unit->magicResistance(), 100); //probability of resistance in %
 			if(rng.nextInt(0, 99) < prob)
 				resistantUnitIds.insert(unit->unitId());
@@ -1977,7 +2026,9 @@ bool BattleSpellMechanics::isReflected(const battle::Unit * unit, vstd::RNG & rn
 	bool isDirectSpell = !isMassive() && owner -> getLevelInfo(getRangeLevel()).range == directSpellRange;
 	bool spellIsReflectable = isDirectSpell && (mode == Mode::HERO || mode == Mode::MAGIC_MIRROR) && isNegativeSpell();
 	bool targetCanReflectSpell = spellIsReflectable && unit->getAllBonuses(Selector::type()(BonusType::MAGIC_MIRROR))->size()>0;
-	return targetCanReflectSpell && rng.nextInt(0, 99) < unit->valOfBonuses(BonusType::MAGIC_MIRROR);
+	const bool friendlyBlink = isNewHorizonsBlinkSpell(owner) && unit->unitSide() == casterSide;
+	return targetCanReflectSpell && !friendlyBlink
+		&& rng.nextInt(0, 99) < unit->valOfBonuses(BonusType::MAGIC_MIRROR);
 }
 
 void BattleSpellMechanics::reflect(BattleSpellCast & sc, vstd::RNG & rng, const battle::Unit * unit)
@@ -2200,6 +2251,16 @@ std::vector<AimType> BattleSpellMechanics::getTargetTypes() const
 
 bool BattleSpellMechanics::isReceptive(const battle::Unit * target) const
 {
+	if(target && isNewHorizonsBlinkSpell(owner) && usesNewHorizonsMagicV3()
+		&& target->unitSide() == casterSide)
+	{
+		if(isMagicalEffect() && isSpellLocked(target))
+			return false;
+
+		if(const auto * conditions = dynamic_cast<const TargetCondition *>(targetCondition.get()))
+			return conditions->isReceptiveIgnoringMagicResistance(this, target);
+	}
+
 	return target && (!isMagicalEffect() || !isSpellLocked(target))
 		&& targetCondition->isReceptive(this, target);
 }

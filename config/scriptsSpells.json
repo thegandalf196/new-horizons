@@ -364,6 +364,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"blink" : {
+		"implements" : "spellEffect",
+		"script" : "spells/blink",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+		"additionalProperties" : false
+		}
+	},
 	"hydrasVitality" : {
 		"implements" : "spellEffect",
 		"script" : "spells/hydrasVitality",

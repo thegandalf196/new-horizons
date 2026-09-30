@@ -795,6 +795,18 @@
 							9
 						]
 					},
+					"new-horizons:blink": {
+						"schools": [
+							"new-horizons:chaos"
+						],
+						"level": 1,
+						"costs": [
+							4,
+							4,
+							4,
+							4
+						]
+					},
 					"new-horizons:hydrasVitality": {
 						"schools": [
 							"new-horizons:nature"
@@ -4656,7 +4668,7 @@
 								"requires": "basic",
 								"description": "Blink generates two random legal destinations and automatically uses the destination farther from the target's origin hex. Ties use deterministic hex order.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Blink generates two random legal destinations and automatically uses the destination farther from the target's origin hex. Ties use deterministic hex order."
 								}
 							},
