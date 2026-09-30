@@ -169,6 +169,12 @@ void CNecromancyQuery::onRemoval(PlayerColor)
 	callback(choices.at(static_cast<size_t>(*answer - 1)));
 }
 
+void CNecromancyQuery::onExposure(QueryPtr)
+{
+	if(answer)
+		owner->popIfTop(*this);
+}
+
 void CBattleDialogQuery::onRemoval(PlayerColor color)
 {
 	// answer to this query was already processed when handling 1st player

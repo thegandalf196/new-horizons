@@ -20,6 +20,7 @@
 #include "processors/NewTurnProcessor.h"
 #include "processors/PlayerMessageProcessor.h"
 #include "processors/TurnOrderProcessor.h"
+#include "queries/BattleQueries.h"
 #include "queries/QueriesProcessor.h"
 #include "queries/LuaScriptQuery.h"
 #include "queries/MapQueries.h"
@@ -4386,7 +4387,13 @@ bool CGameHandler::queryReply(QueryID qid, std::optional<int32_t> answer, Player
 		if(currentQuery != nullptr && vstd::contains(currentQuery->players, player)
 			&& currentQuery->getType() != CHeroMasteryDialogQuery::TYPE
 			&& currentQuery->endsByPlayerAnswer() && currentQuery->isValidReply(answer))
+		{
 			currentQuery->setReply(answer);
+			// Necromancy can be answered while a post-battle level-up query is above it.
+			// Keep it pending until exposure pops it and runs the choice callback.
+			if(currentQuery->getType() == CNecromancyQuery::TYPE)
+				return true;
+		}
 
 		COMPLAIN_RET("This player top query has different ID!"); //topQuery->queryID != qid
 	}

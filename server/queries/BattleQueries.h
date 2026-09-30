@@ -77,4 +77,5 @@ public:
 	bool isValidReply(std::optional<int32_t> reply) const override;
 	void setReply(std::optional<int32_t> reply) override;
 	void onRemoval(PlayerColor color) override;
+	void onExposure(QueryPtr topQuery) override;
 };

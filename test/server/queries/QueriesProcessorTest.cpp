@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include "../../../server/queries/BattleQueries.h"
 #include "../../../server/queries/CQuery.h"
 #include "../../../server/queries/MapQueries.h"
 #include "../../../server/battles/BattleProcessor.h"
@@ -1213,4 +1214,101 @@ TEST_F(QueriesProcessorTest, foreignPlayerCannotPreseedReplyOnAnotherPlayersNonT
 	EXPECT_FALSE(gh.queryReply(foreign->queryID, 7, PlayerColor(0)));
 	queries.popQuery(foreign);
 	EXPECT_FALSE(captured.has_value());
+}
+
+TEST_F(QueriesProcessorTest, necromancyReplyCanBeDeferredUntilItsQueryIsExposed)
+{
+	const auto firstChoice = CreatureID(1);
+	const auto secondChoice = CreatureID(2);
+	std::optional<CreatureID> selected;
+	int callbackCount = 0;
+	auto necromancy = std::make_shared<CNecromancyQuery>(&gh, PlayerColor(0),
+		std::vector<CreatureID>{firstChoice, secondChoice}, [&](std::optional<CreatureID> choice)
+		{
+			++callbackCount;
+			selected = choice;
+		});
+	auto blocker = std::make_shared<CGenericQuery>(&gh, PlayerColor(0), [](std::optional<int32_t>) {});
+	queries.addQuery(necromancy);
+	queries.addQuery(blocker);
+
+	EXPECT_TRUE(gh.queryReply(necromancy->queryID, 2, PlayerColor(0)));
+	EXPECT_EQ(queries.topQuery(PlayerColor(0)), blocker);
+	EXPECT_EQ(queries.getQuery(necromancy->queryID), necromancy);
+	EXPECT_EQ(callbackCount, 0);
+	EXPECT_FALSE(selected.has_value());
+
+	ASSERT_TRUE(gh.queryReply(blocker->queryID, 1, PlayerColor(0)));
+	EXPECT_EQ(queries.getQuery(necromancy->queryID), nullptr);
+	EXPECT_EQ(callbackCount, 1);
+	EXPECT_EQ(selected, secondChoice);
+
+	queries.popQuery(necromancy);
+	EXPECT_EQ(callbackCount, 1);
+}
+
+TEST_F(QueriesProcessorTest, invalidBuriedNecromancyReplyDoesNotCompleteOnExposure)
+{
+	int callbackCount = 0;
+	auto necromancy = std::make_shared<CNecromancyQuery>(&gh, PlayerColor(0),
+		std::vector<CreatureID>{CreatureID(1), CreatureID(2)}, [&](std::optional<CreatureID>)
+		{
+			++callbackCount;
+		});
+	auto blocker = std::make_shared<CGenericQuery>(&gh, PlayerColor(0), [](std::optional<int32_t>) {});
+	queries.addQuery(necromancy);
+	queries.addQuery(blocker);
+
+	EXPECT_FALSE(gh.queryReply(necromancy->queryID, 3, PlayerColor(0)));
+	EXPECT_EQ(queries.topQuery(PlayerColor(0)), blocker);
+	ASSERT_TRUE(gh.queryReply(blocker->queryID, 1, PlayerColor(0)));
+	EXPECT_EQ(queries.topQuery(PlayerColor(0)), necromancy);
+	EXPECT_EQ(queries.getQuery(necromancy->queryID), necromancy);
+	EXPECT_EQ(callbackCount, 0);
+
+	queries.popQuery(necromancy);
+	EXPECT_EQ(callbackCount, 0);
+}
+
+TEST_F(QueriesProcessorTest, foreignPlayerCannotPreseedNecromancyAndOtherBuriedRepliesKeepLegacyBehavior)
+{
+	int necromancyCallbackCount = 0;
+	auto necromancy = std::make_shared<CNecromancyQuery>(&gh, PlayerColor(0),
+		std::vector<CreatureID>{CreatureID(1), CreatureID(2)}, [&](std::optional<CreatureID>)
+		{
+			++necromancyCallbackCount;
+		});
+	auto playerZeroBlocker = std::make_shared<CGenericQuery>(&gh, PlayerColor(0), [](std::optional<int32_t>) {});
+	std::optional<int32_t> foreignReply;
+	auto playerOneTop = std::make_shared<CGenericQuery>(&gh, PlayerColor(1), [&](std::optional<int32_t> reply)
+		{
+			foreignReply = reply;
+		});
+	queries.addQuery(necromancy);
+	queries.addQuery(playerZeroBlocker);
+	queries.addQuery(playerOneTop);
+
+	EXPECT_FALSE(gh.queryReply(necromancy->queryID, 2, PlayerColor(1)));
+	EXPECT_EQ(queries.topQuery(PlayerColor(1)), playerOneTop);
+	EXPECT_TRUE(gh.queryReply(playerOneTop->queryID, 1, PlayerColor(1)));
+	EXPECT_EQ(foreignReply, 1);
+	ASSERT_TRUE(gh.queryReply(playerZeroBlocker->queryID, 1, PlayerColor(0)));
+	EXPECT_EQ(queries.topQuery(PlayerColor(0)), necromancy);
+	EXPECT_EQ(necromancyCallbackCount, 0);
+	queries.popQuery(necromancy);
+	EXPECT_EQ(necromancyCallbackCount, 0);
+
+	std::optional<int32_t> genericReply;
+	auto buriedGeneric = std::make_shared<CGenericQuery>(&gh, PlayerColor(0), [&](std::optional<int32_t> reply)
+		{
+			genericReply = reply;
+		});
+	auto genericBlocker = std::make_shared<CGenericQuery>(&gh, PlayerColor(0), [](std::optional<int32_t>) {});
+	queries.addQuery(buriedGeneric);
+	queries.addQuery(genericBlocker);
+	EXPECT_FALSE(gh.queryReply(buriedGeneric->queryID, 7, PlayerColor(0)));
+	ASSERT_TRUE(gh.queryReply(genericBlocker->queryID, 1, PlayerColor(0)));
+	EXPECT_EQ(queries.topQuery(PlayerColor(0)), buriedGeneric);
+	queries.popQuery(buriedGeneric);
+	EXPECT_EQ(genericReply, 7);
 }
