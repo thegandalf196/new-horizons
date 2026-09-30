@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
+    'new-horizons:shieldOfChaos',
     'new-horizons:blink',
     'new-horizons:hydrasVitality',
     'new-horizons:verdantPrison',
@@ -650,6 +651,28 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][key]
             self.assertEqual(struct.unpack('>II',
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]), (size, size))
+
+    def test_shield_of_chaos_is_neutral_single_target_with_separate_defenses(self):
+        row = self.rules['spells']['new-horizons:shieldOfChaos']
+        self.assertEqual(row['schools'], ['new-horizons:chaos'])
+        self.assertEqual(row['level'], 5)
+        self.assertEqual(row['costs'], [23] * 4)
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['shieldOfChaos']
+        self.assertEqual(spell['targetType'], 'CREATURE')
+        self.assertFalse(spell['flags'].get('positive', False))
+        self.assertFalse(spell['flags'].get('negative', False))
+        for level in spell['levels'].values():
+            self.assertEqual(level['range'], '0')
+            self.assertFalse(level['targetModifier']['smart'])
+            bonuses = level['battleEffects']['shieldOfChaos']['bonus']
+            self.assertEqual(bonuses['physicalDamageReduction']['type'],
+                             'PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS')
+            self.assertEqual(bonuses['magicalDamageReduction']['type'],
+                             'SPELL_DAMAGE_REDUCTION_BASIS_POINTS')
+            self.assertEqual(bonuses['magicalDamageReduction']['subtype'], 'any')
+            self.assertEqual(bonuses['morale']['val'], -10)
+            self.assertEqual(bonuses['luck']['val'], -10)
+            self.assertTrue(all(b['duration'] == 'N_TURNS' for b in bonuses.values()))
 
     def test_crusade_is_rostered_full_army_light_empowerment(self):
         row = self.rules['spells']['new-horizons:crusade']
@@ -1473,7 +1496,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'newHorizonsMasteries': load('config/newHorizonsMasteries.json'),
                               'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
-        self.assertEqual(module['version'], '0.14.0')
+        self.assertEqual(module['version'], load('config/newHorizonsVersion.json')['version'])
         self.assertEqual(module['heroes'], [
             'config/heroes/biographies.json',
             'config/heroes/fafner.json',

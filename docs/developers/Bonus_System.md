@@ -97,6 +97,22 @@ Timed spell applications use ordinary `SPELL_EFFECT` source IDs and `N_TURNS`
 lifetimes, so refresh and Dispel use the existing spell-bonus lifecycle.
 Legacy rule snapshots retain their original damage-reduction behavior.
 
+## Fractional physical damage reduction
+
+`PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS` stores an independent physical
+reduction source: 100 equals 1%. The captured New Horizons physical mitigation
+stage groups bonuses by source type and source ID, retains each group's bonus
+value-type rules, and multiplies distinct sources with the other explicit
+physical reductions. The captured global physical cap applies after stacking;
+this bonus does not bypass it. Creature Defense is a separate earlier layer.
+It affects melee and ranged physical damage, not magical damage or spell
+targeting. Legacy profiles without that mitigation stage do not consume it.
+
+Timed spells use ordinary `SPELL_EFFECT` source IDs and `N_TURNS` lifetimes;
+recast/Dispel therefore use the existing effect lifecycle. The append-only type
+requires `NEW_HORIZONS_SHIELD_OF_CHAOS_PHYSICAL_REDUCTION` serialization support;
+down-saving its state to an older format is rejected.
+
 ## Favorable creature probability modifiers
 
 `FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS` multiplies explicitly

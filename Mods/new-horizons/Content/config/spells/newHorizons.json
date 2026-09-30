@@ -285,6 +285,193 @@
 		},
 		"targetCondition" : {}
 	},
+	"shieldOfChaos": {
+		"name": "Shield of Chaos",
+		"type": "combat",
+		"school": {
+			"new-horizons:chaos": true
+		},
+		"level": 5,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:27",
+			"iconScroll": "SPELLS.def:0:27",
+			"iconEffect": "SPELLINT.def:0:27",
+			"iconImmune": "SPELLINT.def:0:27",
+			"iconScenarioBonus": "SPELLBON.def:0:27"
+		},
+		"animation": {
+			"affect": [
+				"C13SPE0"
+			]
+		},
+		"sounds": {
+			"cast": "SHIELD"
+		},
+		"levels": {
+			"none": {
+				"range": "0",
+				"description": "Protect one friendly or enemy stack for 2 rounds, but reduce its Morale and Luck by 10. Physical and magical damage reduction = min(80%, 50% + 0.15% x Spell Power); Chaos rank and Spellcraft scale only the Spell Power term. Paradox Shield adds 10 percentage points; total physical reduction remains capped at 80%, while this spell's magical reduction can reach 90%. Protection does not block non-damaging magic.",
+				"cost": 23,
+				"power": 0,
+				"battleEffects": {
+					"shieldOfChaos": {
+						"type": "timed",
+						"bonus": {
+							"physicalDamageReduction": {
+								"type": "PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"val": 5000,
+								"valueType": "INDEPENDENT_MAX",
+								"duration": "N_TURNS"
+							},
+							"magicalDamageReduction": {
+								"type": "SPELL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"subtype": "any",
+								"val": 5000,
+								"valueType": "INDEPENDENT_MAX",
+								"duration": "N_TURNS"
+							},
+							"morale": {
+								"type": "MORALE",
+								"val": -10,
+								"duration": "N_TURNS"
+							},
+							"luck": {
+								"type": "LUCK",
+								"val": -10,
+								"duration": "N_TURNS"
+							}
+						}
+					}
+				},
+				"targetModifier": {
+					"smart": false
+				}
+			},
+			"basic": {
+				"range": "0",
+				"description": "Protect one friendly or enemy stack for 2 rounds, but reduce its Morale and Luck by 10. Physical and magical damage reduction = min(80%, 50% + 0.15% x Spell Power); Chaos rank and Spellcraft scale only the Spell Power term. Paradox Shield adds 10 percentage points; total physical reduction remains capped at 80%, while this spell's magical reduction can reach 90%. Protection does not block non-damaging magic.",
+				"cost": 23,
+				"power": 0,
+				"battleEffects": {
+					"shieldOfChaos": {
+						"type": "timed",
+						"bonus": {
+							"physicalDamageReduction": {
+								"type": "PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"val": 5000,
+								"valueType": "INDEPENDENT_MAX",
+								"duration": "N_TURNS"
+							},
+							"magicalDamageReduction": {
+								"type": "SPELL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"subtype": "any",
+								"val": 5000,
+								"valueType": "INDEPENDENT_MAX",
+								"duration": "N_TURNS"
+							},
+							"morale": {
+								"type": "MORALE",
+								"val": -10,
+								"duration": "N_TURNS"
+							},
+							"luck": {
+								"type": "LUCK",
+								"val": -10,
+								"duration": "N_TURNS"
+							}
+						}
+					}
+				},
+				"targetModifier": {
+					"smart": false
+				}
+			},
+			"advanced": {
+				"range": "0",
+				"description": "Protect one friendly or enemy stack for 2 rounds, but reduce its Morale and Luck by 10. Physical and magical damage reduction = min(80%, 50% + 0.15% x Spell Power); Chaos rank and Spellcraft scale only the Spell Power term. Paradox Shield adds 10 percentage points; total physical reduction remains capped at 80%, while this spell's magical reduction can reach 90%. Protection does not block non-damaging magic.",
+				"cost": 23,
+				"power": 0,
+				"battleEffects": {
+					"shieldOfChaos": {
+						"type": "timed",
+						"bonus": {
+							"physicalDamageReduction": {
+								"type": "PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"val": 5000,
+								"valueType": "INDEPENDENT_MAX",
+								"duration": "N_TURNS"
+							},
+							"magicalDamageReduction": {
+								"type": "SPELL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"subtype": "any",
+								"val": 5000,
+								"valueType": "INDEPENDENT_MAX",
+								"duration": "N_TURNS"
+							},
+							"morale": {
+								"type": "MORALE",
+								"val": -10,
+								"duration": "N_TURNS"
+							},
+							"luck": {
+								"type": "LUCK",
+								"val": -10,
+								"duration": "N_TURNS"
+							}
+						}
+					}
+				},
+				"targetModifier": {
+					"smart": false
+				}
+			},
+			"expert": {
+				"range": "0",
+				"description": "Protect one friendly or enemy stack for 2 rounds, but reduce its Morale and Luck by 10. Physical and magical damage reduction = min(80%, 50% + 0.15% x Spell Power); Chaos rank and Spellcraft scale only the Spell Power term. Paradox Shield adds 10 percentage points; total physical reduction remains capped at 80%, while this spell's magical reduction can reach 90%. Protection does not block non-damaging magic.",
+				"cost": 23,
+				"power": 0,
+				"battleEffects": {
+					"shieldOfChaos": {
+						"type": "timed",
+						"bonus": {
+							"physicalDamageReduction": {
+								"type": "PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"val": 5000,
+								"valueType": "INDEPENDENT_MAX",
+								"duration": "N_TURNS"
+							},
+							"magicalDamageReduction": {
+								"type": "SPELL_DAMAGE_REDUCTION_BASIS_POINTS",
+								"subtype": "any",
+								"val": 5000,
+								"valueType": "INDEPENDENT_MAX",
+								"duration": "N_TURNS"
+							},
+							"morale": {
+								"type": "MORALE",
+								"val": -10,
+								"duration": "N_TURNS"
+							},
+							"luck": {
+								"type": "LUCK",
+								"val": -10,
+								"duration": "N_TURNS"
+							}
+						}
+					}
+				},
+				"targetModifier": {
+					"smart": false
+				}
+			}
+		},
+		"flags": {},
+		"targetCondition": {}
+	},
 	"handOfFate" : {
 		"name" : "Hand of Fate",
 		"type" : "combat",

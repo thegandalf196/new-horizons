@@ -3,9 +3,10 @@
 The live New Horizons product/module version has one authoring value:
 [`config/newHorizonsVersion.json`](../config/newHorizonsVersion.json). The main
 menu reads that root config through VCMI's built-in `JsonPath` filesystem, and
-the live module generator reads the same file. The current value remains
-`0.14.0`; this change does not claim a new feature checkpoint or a completed
-release.
+the live module generator reads the same file. The current source checkpoint is
+`0.15.0`: Shield of Chaos and Paradox Shield have production runtime/AI paths,
+successful Linux builds and focused native verification. This is not a completed
+1.0 release or evidence that the selected playable snapshot has been updated.
 
 The version is independent of the upstream VCMI engine version, save-schema or
 serialization versions, and the exact Git revision. Change save versions only

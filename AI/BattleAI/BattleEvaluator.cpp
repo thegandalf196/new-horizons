@@ -763,6 +763,11 @@ bool isCanonicalCrusade(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:crusade";
 }
 
+bool isCanonicalShieldOfChaos(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:shieldOfChaos";
+}
+
 bool isCanonicalSanctuary(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == "new-horizons:sanctuary";
@@ -801,6 +806,16 @@ bool crusadeAvailableInSavedRules(const CBattleInfoCallback & battle, const CSpe
 {
 	const auto & magicRules = battle.getBattle()->getMagicRules();
 	return isCanonicalCrusade(spell)
+		&& newHorizonsMagic::rulesActive(magicRules)
+		&& magicRules["rulesetVersion"].Integer()
+			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spell->getId());
+}
+
+bool shieldOfChaosAvailableInSavedRules(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	const auto & magicRules = battle.getBattle()->getMagicRules();
+	return isCanonicalShieldOfChaos(spell)
 		&& newHorizonsMagic::rulesActive(magicRules)
 		&& magicRules["rulesetVersion"].Integer()
 			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
@@ -2186,6 +2201,242 @@ float crusadeArmyValue(BattleSide side, uint32_t activeUnitId,
 	}
 
 	return std::isfinite(totalValue) ? totalValue : 0.0f;
+}
+
+int shieldOfChaosRounds(const battle::Unit * unit, SpellID spell)
+{
+	if(!unit)
+		return 0;
+
+	const auto effects = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)));
+	if(!effects)
+		return 0;
+
+	int rounds = 0;
+	for(const auto & effect : *effects)
+		if(effect && Bonus::NTurns(effect.get()) && effect->turnsRemain > 0)
+			rounds = std::max(rounds, static_cast<int>(effect->turnsRemain));
+	return rounds;
+}
+
+float shieldOfChaosAttackEquivalents(const battle::Unit * attacker,
+	const CBattleInfoCallback & battle, bool shooting, int roundsRemaining, uint32_t activeUnitId)
+{
+	if(!attacker || roundsRemaining <= 0)
+		return 0.0f;
+
+	const int availableAttacks = std::max(0, AttackPossibility::getAttackCount(*attacker, shooting, battle));
+	int attacksPerFutureActivation = std::max(1, attacker->getTotalAttacks(shooting));
+	if(shooting)
+		if(const auto * attackerState = dynamic_cast<const battle::CUnitState *>(attacker);
+			attackerState && attackerState->shots.isLimited()
+				&& attackerState->shots.available() <= availableAttacks)
+			attacksPerFutureActivation = 0;
+
+	// The active stack's immediate exchange is already included in stackActionScore.
+	const int immediateAttacks = attacker->unitId() == activeUnitId ? 0 : availableAttacks;
+	return static_cast<float>(immediateAttacks)
+		+ (roundsRemaining > 1 ? 0.5f * static_cast<float>(attacksPerFutureActivation) : 0.0f);
+}
+
+float expectedVisibleCreatureSpellDamage(const CBattleInfoCallback & battle,
+	const battle::Unit * caster, const battle::Unit * target)
+{
+	if(!caster || !target || !caster->canCast())
+		return 0.0f;
+
+	const auto spellcasters = caster->getBonuses(Selector::type()(BonusType::SPELLCASTER));
+	if(!spellcasters)
+		return 0.0f;
+
+	float bestSpellDamage = 0.0f;
+	for(const auto & bonus : *spellcasters)
+	{
+		if(!bonus || bonus->parameters || !bonus->subtype.as<SpellID>().hasValue())
+			continue;
+
+		const auto * spell = bonus->subtype.as<SpellID>().toSpell();
+		if(!spell || !spell->isCombat() || (!spell->isOffensive() && !spell->isDamage())
+			|| !spell->isMagical() || spell->isCreatureAbility())
+			continue;
+
+		spells::BattleCast cast(&battle, caster, spells::Mode::CREATURE_ACTIVE, spell);
+		const auto mechanics = spell->battleMechanics(&cast);
+		if(!mechanics || !mechanics->isReceptive(target))
+			continue;
+
+		spells::Target aim{spells::Destination(target)};
+		spells::detail::ProblemImpl problem;
+		if(!mechanics->canBeCastAt(aim, problem))
+			continue;
+
+		float applicationChance = 1.0f;
+		if(mechanics->isNegativeSpell() && mechanics->isMagicalEffect())
+			applicationChance -= static_cast<float>(std::clamp(target->magicResistance(), 0, 100)) / 100.0f;
+
+		const auto adjustedDamage = std::max<int64_t>(0, mechanics->adjustEffectValue(target));
+		bestSpellDamage = std::max(bestSpellDamage,
+			static_cast<float>(adjustedDamage) * applicationChance);
+	}
+	return bestSpellDamage;
+}
+
+float shieldOfChaosIncomingDamageValue(uint32_t activeUnitId,
+	const battle::Unit * liveTarget, const battle::Unit * projectedTarget,
+	const CBattleInfoCallback & liveBattle, const std::shared_ptr<HypotheticBattle> & projectedBattle,
+	SpellID spell, DamageCache & damageCache)
+{
+	if(!liveTarget || !projectedTarget || !liveTarget->alive() || !projectedTarget->alive()
+		|| liveTarget->isGhost() || liveTarget->isTurret() || !projectedBattle)
+		return 0.0f;
+
+	const int rounds = shieldOfChaosRounds(projectedTarget, spell);
+	if(rounds <= 0)
+		return 0.0f;
+
+	long double savedDamage = 0.0L;
+	for(const auto * attacker : liveBattle.battleGetAllUnits(false))
+	{
+		if(!attacker || !attacker->alive() || !attacker->isValidTarget()
+			|| attacker->isGhost() || attacker->isTurret()
+			|| attacker->unitSide() == liveTarget->unitSide())
+			continue;
+
+		const auto attackMode = crusadeAttackMode(attacker, liveTarget, liveBattle);
+		if(!attackMode)
+			continue;
+
+		const auto * projectedAttacker = projectedBattle->battleGetUnitByID(attacker->unitId());
+		if(!projectedAttacker || !projectedAttacker->alive())
+			continue;
+
+		const float attackEquivalents = shieldOfChaosAttackEquivalents(
+			attacker, liveBattle, *attackMode, rounds, activeUnitId);
+		if(attackEquivalents <= 0.0f)
+			continue;
+
+		const auto beforeDamage = std::max<int64_t>(0,
+			damageCache.getOriginalDamage(attacker, liveTarget, projectedBattle));
+		const auto afterDamage = std::max<int64_t>(0,
+			damageCache.getDamage(projectedAttacker, projectedTarget, projectedBattle));
+		if(beforeDamage > afterDamage)
+			savedDamage += static_cast<long double>(beforeDamage - afterDamage) * attackEquivalents;
+	}
+
+	// Price visible creature spellcasters through the actual projected spell
+	// damage path. Their hidden or randomized spell choices are never inspected.
+	for(const auto * caster : liveBattle.battleGetAllUnits(false))
+	{
+		if(!caster || !caster->alive() || caster->isGhost() || caster->isTurret()
+			|| caster->unitSide() == liveTarget->unitSide())
+			continue;
+
+		const auto * projectedCaster = projectedBattle->battleGetUnitByID(caster->unitId());
+		if(!projectedCaster || !projectedCaster->alive())
+			continue;
+
+		const auto beforeDamage = expectedVisibleCreatureSpellDamage(liveBattle, caster, liveTarget);
+		const auto afterDamage = expectedVisibleCreatureSpellDamage(*projectedBattle,
+			projectedCaster, projectedTarget);
+		if(beforeDamage > afterDamage)
+			savedDamage += static_cast<long double>(beforeDamage - afterDamage)
+				* static_cast<long double>(rounds) * 0.5L;
+	}
+
+	const auto availableHealth = std::max<int64_t>(0, liveTarget->getAvailableHealth());
+	savedDamage = std::clamp(savedDamage, 0.0L, static_cast<long double>(availableHealth));
+	if(!std::isfinite(savedDamage) || savedDamage < 1.0L)
+		return 0.0f;
+
+	return heavenlyGaleSavedDamageValue(projectedTarget,
+		static_cast<uint64_t>(std::floor(savedDamage)), damageCache, projectedBattle);
+}
+
+float shieldOfChaosLuckOutputDelta(uint32_t activeUnitId,
+	const battle::Unit * liveTarget, const battle::Unit * projectedTarget,
+	const CBattleInfoCallback & liveBattle, const std::shared_ptr<HypotheticBattle> & projectedBattle,
+	int roundsRemaining, DamageCache & damageCache)
+{
+	if(!liveTarget || !projectedTarget || !liveTarget->alive() || !projectedTarget->alive()
+		|| liveTarget->isGhost() || liveTarget->isTurret() || !projectedBattle
+		|| roundsRemaining <= 0)
+		return 0.0f;
+
+	float bestBeforeValue = 0.0f;
+	float bestAfterValue = 0.0f;
+	for(const auto * victim : liveBattle.battleGetAllUnits(false))
+	{
+		if(!victim || !victim->alive() || !victim->isValidTarget(true)
+			|| victim->isGhost() || victim->isTurret()
+			|| victim->unitSide() == liveTarget->unitSide())
+			continue;
+
+		const auto attackMode = crusadeAttackMode(liveTarget, victim, liveBattle);
+		if(!attackMode)
+			continue;
+
+		const auto * projectedVictim = projectedBattle->battleGetUnitByID(victim->unitId());
+		if(!projectedVictim || !projectedVictim->alive())
+			continue;
+
+		const float attackEquivalents = shieldOfChaosAttackEquivalents(
+			liveTarget, liveBattle, *attackMode, roundsRemaining, activeUnitId);
+		if(attackEquivalents <= 0.0f)
+			continue;
+
+		const auto availableHealth = std::max<int64_t>(0, victim->getAvailableHealth());
+		if(availableHealth <= 0)
+			continue;
+
+		const BattleAttackInfo beforeAttack(liveTarget, victim, 0, *attackMode);
+		const BattleAttackInfo afterAttack(projectedTarget, projectedVictim, 0, *attackMode);
+		const auto beforeDamage = std::min<long double>(availableHealth,
+			static_cast<long double>(std::max<int64_t>(0, liveBattle.battleExpectedLuckDamage(beforeAttack)))
+				* attackEquivalents);
+		const auto afterDamage = std::min<long double>(availableHealth,
+			static_cast<long double>(std::max<int64_t>(0, projectedBattle->battleExpectedLuckDamage(afterAttack)))
+				* attackEquivalents);
+
+		if(beforeDamage > 0.0L)
+			bestBeforeValue = std::max(bestBeforeValue, heavenlyGaleSavedDamageValue(
+				victim, static_cast<uint64_t>(std::floor(beforeDamage)), damageCache, projectedBattle));
+		if(afterDamage > 0.0L)
+			bestAfterValue = std::max(bestAfterValue, heavenlyGaleSavedDamageValue(
+				projectedVictim, static_cast<uint64_t>(std::floor(afterDamage)), damageCache, projectedBattle));
+	}
+
+	return bestAfterValue - bestBeforeValue;
+}
+
+float shieldOfChaosTargetValue(uint32_t activeUnitId, BattleSide scoringSide,
+	const battle::Unit * liveTarget, const battle::Unit * projectedTarget,
+	const CBattleInfoCallback & liveBattle, const std::shared_ptr<HypotheticBattle> & projectedBattle,
+	SpellID spell, DamageCache & damageCache)
+{
+	if(!liveTarget || !projectedTarget || !liveTarget->alive() || !projectedTarget->alive())
+		return 0.0f;
+
+	const int rounds = shieldOfChaosRounds(projectedTarget, spell);
+	if(rounds <= 0)
+		return 0.0f;
+
+	const float targetSign = liveTarget->unitSide() == scoringSide ? 1.0f : -1.0f;
+	const auto protection = shieldOfChaosIncomingDamageValue(activeUnitId, liveTarget,
+		projectedTarget, liveBattle, projectedBattle, spell, damageCache);
+	const auto luckOutputDelta = shieldOfChaosLuckOutputDelta(activeUnitId, liveTarget,
+		projectedTarget, liveBattle, projectedBattle, rounds, damageCache);
+
+	// This is an expected activation delta from the configured chance table, not
+	// the battlefield's seeded morale roll. A bounded best-attack value converts
+	// that probability to the same stack-value scale as the damage terms above.
+	const float moraleActivationDelta = expectedMoraleActivationChange(projectedTarget)
+		- expectedMoraleActivationChange(liveTarget);
+	const float moraleOutputDelta = moraleActivationDelta
+		* expectedTargetActivationValue(projectedTarget, damageCache, projectedBattle)
+		* static_cast<float>(rounds) * 0.5f;
+
+	const float value = targetSign * (protection + luckOutputDelta + moraleOutputDelta);
+	return std::isfinite(value) ? value : 0.0f;
 }
 
 struct DivineRetributionProtection
@@ -3759,6 +4010,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			&& !heavenlyGaleAvailableInSavedRules(*battleCallback, option.spell);
 		const bool unavailableCrusade = isCanonicalCrusade(option.spell)
 			&& !crusadeAvailableInSavedRules(*battleCallback, option.spell);
+		const bool unavailableShieldOfChaos = isCanonicalShieldOfChaos(option.spell)
+			&& !shieldOfChaosAvailableInSavedRules(*battleCallback, option.spell);
 		const bool unavailableDivineRetribution = isCanonicalDivineRetribution(option.spell)
 			&& !divineRetributionAvailableInSavedRules(*battleCallback, option.spell);
 		const bool unavailableEntangle = isCanonicalNatureEntangle(option.spell)
@@ -3766,7 +4019,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		const bool unavailablePurify = isCanonicalPurify(option.spell)
 			&& !newHorizonsPurify::enabled(battleCallback->getBattle()->getMagicRules(), option.spell->getId());
 		return unavailableReanimate || unavailableSoulReaper || unavailableDoom
-			|| unavailableGuardianSpirit || unavailableHeavenlyGale || unavailableCrusade || unavailableDivineRetribution
+			|| unavailableGuardianSpirit || unavailableHeavenlyGale || unavailableCrusade
+			|| unavailableShieldOfChaos || unavailableDivineRetribution
 			|| unavailableEntangle || unavailablePurify;
 	});
 
@@ -4853,6 +5107,28 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						continue;
 					}
 					damageToHostilesScore += armyValue * scoreEvaluator.getPositiveEffectMultiplier();
+				}
+				if(isCanonicalShieldOfChaos(ps.spell))
+				{
+					if(counterspellNegated || targetId == std::numeric_limits<uint32_t>::max())
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					const auto * liveTarget = battleCallback->battleGetUnitByID(targetId);
+					const auto * projectedTarget = state->battleGetUnitByID(targetId);
+					const auto signedTargetValue = shieldOfChaosTargetValue(activeStack->unitId(), side,
+						liveTarget, projectedTarget, *battleCallback, state, ps.spell->getId(), innerCache);
+					if(signedTargetValue <= 0.0f)
+					{
+						// Shield is neutral-polarity: the target's real damage protection
+						// must outweigh its Morale/Luck output loss from our perspective.
+						// A zero or harmful net effect should not spend the Hero Action.
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					damageToHostilesScore += signedTargetValue
+						* scoreEvaluator.getPositiveEffectMultiplier();
 				}
 				if(isCanonicalDivineRetribution(ps.spell) && targetId != std::numeric_limits<uint32_t>::max())
 				{

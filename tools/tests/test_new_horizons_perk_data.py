@@ -15,6 +15,7 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:chaosMagic.paradoxShield",
     "new-horizons:wisdom.meditation",
     "new-horizons:wisdom.deepKnowledge",
     "new-horizons:wisdom.preparedCaster",
@@ -539,7 +540,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
 
     def test_default_module_carries_canonical_registry(self):
         module = load("Mods/new-horizons/mod.json")
-        self.assertEqual(module["version"], "0.14.0")
+        self.assertEqual(module["version"], load("config/newHorizonsVersion.json")["version"])
         self.assertEqual(module["settings"]["heroes"]["newHorizonsPerks"], self.rules)
 
 

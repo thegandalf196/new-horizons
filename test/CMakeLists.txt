@@ -252,6 +252,7 @@ set(test_SRCS
 		server/battles/NewHorizonsHolyWrathTest.cpp
 		server/battles/NewHorizonsHandOfFateTest.cpp
 		server/battles/NewHorizonsMisfortuneTest.cpp
+		server/battles/NewHorizonsShieldOfChaosTest.cpp
 		server/battles/NewHorizonsHolyArmorTest.cpp
 		server/battles/NewHorizonsHeavenlyGaleTest.cpp
 		server/battles/NewHorizonsDivineRetributionTest.cpp
@@ -365,6 +366,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsHolyWrathAITest.cpp
 		battleAI/NewHorizonsHandOfFateAITest.cpp
 		battleAI/NewHorizonsMisfortuneAITest.cpp
+		battleAI/NewHorizonsShieldOfChaosAITest.cpp
 		battleAI/NewHorizonsBerserkAITest.cpp
 		battleAI/NewHorizonsHolyArmorAITest.cpp
 		battleAI/NewHorizonsHeavenlyGaleAITest.cpp

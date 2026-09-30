@@ -273,6 +273,11 @@
 			"level": 5,
 			"costs": [25, 25, 25, 25]
 		},
+		"new-horizons:shieldOfChaos": {
+			"schools": ["new-horizons:chaos"],
+			"level": 5,
+			"costs": [23, 23, 23, 23]
+		},
 		"new-horizons:handOfFate": {
 			"schools": ["new-horizons:chaos"],
 			"level": 3,

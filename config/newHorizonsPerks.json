@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "a1997e4d22630c31987708f4abda01de2bf64b8cb5e43a5eee72b06f3369999f",
+	"sourceSha256": "3bac56d888f6e89f2e924bb0447745cbd76c1e803d85333f931eaae997c12dfd",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1849,7 +1849,7 @@
 					"requires": "expert",
 					"description": "Shield of Chaos gains +10 percentage points to both damage resistances, without changing the -10 Morale and -10 Luck penalties.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Shield of Chaos gains +10 percentage points to both damage resistances, without changing the -10 Morale and -10 Luck penalties."
 					}
 				}

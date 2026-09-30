@@ -2,6 +2,131 @@
 
 ## Purpose
 
+### 2026-09-30 clean Linux delivery — headless Mage Guild notification crash
+
+Clean committed source `574f0571df32359a1b41bded8a8ccfddac8aa013`
+builds successfully in Release with twelve parallel jobs. Its first frozen
+All for One headless smoke exits 139 during a day-2 AI turn. Preserve the
+private `committed-linux-574f0571d/build-client.log` and `headless-smoke.log`.
+The candidate remains unselected. A corrected GDB replay reproduces SIGSEGV
+at `GameEngine::windows()` from
+`ApplyClientNetPackVisitor::visitSetNewHorizonsAdventureSpellUnlock`:
+this notification dereferences ENGINE, which headless mode does not create.
+Guard only the graphical refresh, preserving authoritative packet/state
+application. Retain `headless-debug-fixed.log`; succeeding replay is pending.
+
+The first debugger wrapper also produced a missing-Complete-data fatal dialog
+by invoking the inferior outside the launcher's asset-link runtime directory.
+This was a diagnostic setup error, not evidence of missing purchaser data.
+The corrected wrapper keeps the inferior in that runtime directory and unsets
+DISPLAY/WAYLAND_DISPLAY. Preserve `headless-debug.log` separately rather than
+mistaking its normal exit for successful validation of the original crash.
+
+After the guarded client rebuild, `headless-fixed-smoke.log` records nineteen
+turn starts and multiple Mage Guild builds without that crash, then stalls on a
+Necromancy reply. Full private runtime trace proves query 804 (Necromancy) was
+covered by query 805 (Hero level-up); the valid lower reply was stored but ACKed
+as failed, and CNecromancyQuery lacked an answered-query exposure continuation.
+This is not passing promotion evidence. Repair only the Necromancy deferred
+reply/continuation path, preserve ownership and index checks, and test covered,
+invalid and foreign replies before repeating the frozen-candidate smoke.
+
+The cached shared-tree native build fails in an unrelated unfinished Shield AI
+fixture (`problem` undeclared). Preserve
+`UP064-delivery-query-fix-native-build.log`. Do not repair or include that slice
+in this delivery. Native query verification moves to the separate committed
+checkout plus only the bounded delivery fixes, using the installed googletest
+source; the candidate remains isolated from all unfinished Shield changes.
+
+Succeeding clean both-target build passes. Four focused QueriesProcessor tests
+pass, covering deferred success, exactly-once callback, invalid/foreign replies
+and preserved generic-query behavior; independent review has no blocker.
+Fixes are committed/pushed in `7e1a50ecc` and `41d44ee49`. Final committed client
+rebuild and 35-second All for One smoke pass the bounded startup gate with 36
+turn starts through day 12 and no forbidden errors. Preserve
+`build-final-committed.log`, `query-fix-native.log`/`.xml` and
+`headless-final-smoke.log`. The final run repeats `Stack ammo overuse` diagnostics;
+retain that non-blocking AI forecast/integration finding for Phase 2 rather
+than claim a warning-free full-game acceptance. Snapshot `a96183639bbc0dba…`
+is selected for the normal launcher; manual graphical acceptance remains open.
+
+### 2026-09-30 Shield activation inventory preflight
+
+Continuation build `9744` succeeds for both Linux targets after adding the
+missing `Problem.h` include to the Shield AI fixture. First focused invocation
+used incorrect nested XDG paths and skipped twelve mechanic cases; retain
+`UP063-shield-final-focused.log`/`.xml` as invalid gate evidence, not a pass.
+Corrected isolated-profile run `53765` executes all thirteen without skips:
+twelve pass, friendly protection fails because its ordinary shooter still kills
+the target even after reduction (both HP-capped losses are 6000). Retain
+`UP063-shield-final-retry-focused.log`/`.xml`; adjust only the intended threat
+fixture to demonstrate preventable damage, preserving actual AI choice and
+authoritative submission assertions. Coverage remains unadvanced until retry.
+
+That initial lethal-volley interpretation is not established: retry2 still
+reports identical raw 10000 damage after increasing target HP. Inspection finds
+the helper retains the pre-cast target pointer while HypotheticBattle creates a
+new detached bonus-bearing unit on mutation. Re-fetch the target after castEval
+and assert its actual reduction bonus before estimating damage. The production
+evaluator already fetches the target after mutation. Preserve both failed runs
+rather than treating a larger fixture as a mechanic repair.
+
+Final retry `41010` builds both targets. Corrected native `61362` passes 13/13,
+zero skips, retaining real AI choice/submission and live-state/RNG assertions.
+Keep `UP063-shield-final-retry3-focused.log`/`.xml`; binary SHA-256
+`afce95331c80f72b18d79ccf9ea3a2ce72b1d516facd57d6cd857d72af7994ca`.
+The ordinary 1000-Skeleton fixture is restored. Independent final review has
+no blocker; full in-battle save/reload, broader forecasts and graphical delivery
+remain explicitly separate gates.
+
+The 0.15.0 feature checkpoint exposed two stale hard-coded 0.14.0 assertions
+in the content/perk tests and two incorrectly named test-module invocations.
+The assertions now compare the generated module to the single authoritative
+product-version config. The corrected four-module gate passes 85/85 including
+menu/title/version checks; generated module and diff gates pass. This is a
+test/data contract correction, not another gameplay feature.
+
+Initial both-target build `23934` fails in the new Shield Haste-legality fixture:
+`SpellID::HASTE` is an enum, not a wrapper with `toSpell()`. Wrap it in `SpellID`
+before accessing the spell. Retain `UP063-shield-initial-build.log`; retry the
+same serialized build after this bounded test-only correction. No production
+mechanic or validation requirement is weakened.
+
+Build retry `12359` and final warning-cleanup build `20774` succeed. Initial
+native `21434` completes 13 cases: 11 pass, two fail. Binary
+`c3fc356de4320859a17668a1d5bfe4ad8355ac506c602e35b9fc6d7cc31f587b`;
+retain `UP063-shield-initial-focused.log`/`.xml`. The Haste-legality preview ran
+after Shield had spent the Hero Action: canBeCastAt first checks canBeCast.
+Move that preview after the existing explicit round advance, while asserting
+Shield remains active, preserving both casting-budget and non-immunity checks.
+The actual AI friendly-protection choice returns false; investigate its signed
+valuation and scenario rather than relaxing the requirement. Enemy choice,
+no-threat decline and saved-version exclusion already pass. Not a completed
+native checkpoint until the full corrected filter passes.
+
+Isolated score debugger `9121` confirms all three original friendly-scenario
+candidate scores are zero; its driver exits zero but the inferior test still
+fails. Retain `UP063-shield-friendly-score-gdb.log`; this is diagnostic evidence,
+not a passing test. Source mapping identifies the only incoming threat as a
+Lich's spell-like Death Cloud: BattleAttackInfo marks spell-like shots nonphysical,
+while the ability is nonMagical. Neither reduction channel is exercised by that
+fixture. Replace the intended physical-shooter threat with an ordinary shooter
+and establish actual projected mitigation, without requiring an unprofitable
+cast or changing shared classification silently. Audit nonmagical spell-like
+primary/splash damage classification in Phase 2; this is not permission to
+declare every creature attack covered or encode a permanent Death Cloud exception.
+
+UP-063 first offline gate runs 78 checks and fails the Paradox Shield inventory
+row: runtime registry status was activated while the CSV still said Planned.
+Update that one row to Active, retaining Not done art and the neutral fallback.
+The unchanged focused command then passes 78/78; module and diff checks pass.
+This is an inventory correction, not native or graphical acceptance.
+Source review also catches a fixture sequencing hazard before native execution:
+beginCombat already starts round one, so a second cast must advance one real
+round rather than loop only while round zero. Repair the fixture and retain
+actual two-round refresh/expiry assertions and null guards; do not weaken the
+production Hero Action requirement.
+
 ### 2026-09-30 Berserk initial native compile
 
 UP-062 build `58076` fails in BattleEvaluator: the new floating-point expected

@@ -91,6 +91,9 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			|| type == BonusType::FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS))
 			throw std::runtime_error("Cannot discard New Horizons creature probability modifier state");
+		if(h.saving && type == BonusType::PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SHIELD_OF_CHAOS_PHYSICAL_REDUCTION))
+			throw std::runtime_error("Cannot discard New Horizons Shield of Chaos physical reduction state");
 		h & duration;
 		h & type;
 		h & subtype;

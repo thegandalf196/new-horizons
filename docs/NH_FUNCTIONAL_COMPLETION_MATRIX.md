@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-09-30
-Canonical source SHA-256: `a1997e4d22630c31987708f4abda01de2bf64b8cb5e43a5eee72b06f3369999f`
+Canonical source SHA-256: `3bac56d888f6e89f2e924bb0447745cbd76c1e803d85333f931eaae997c12dfd`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -13,6 +13,28 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP-063 Shield of Chaos / Paradox Shield are source/native verified. The neutral
+single-target spell installs four timed
+bonuses: -10 Morale, -10 Luck and distinct fractional physical/magical reductions.
+Paradox adds ten points after the base cap; the user retained the global physical
+80% cap, while magical protection can reach 90%. The generic physical basis-point
+bonus is append-only and rejects unsupported downsaves. BattleAI compares actual
+detached protection with expected Luck/Morale costs for targets on both sides.
+Both Linux targets build (final `41010`); native `61362` passes 13/13, zero
+skips, including real friendly/enemy AI choices and authoritative submission,
+two-round refresh/expiry, ordinary Dispel, fractional physical/magical damage,
+caps, saved-v2 exclusion and bonus roundtrip/downsave rejection. Reports:
+`UP063-shield-final-retry3-focused.log`/`.xml`; binary SHA-256
+`afce95331c80f72b18d79ccf9ea3a2ce72b1d516facd57d6cd857d72af7994ca`.
+The current focused data/perk gate passes 76/76 and module/diff gates pass.
+Independent final review finds no blocker. Combat identities advance 59→60/67
+(Chaos 5→6/11), active perks 126→127/310 (183 planned); ranks remain 84/93.
+This is not rendered/playable acceptance or promotion.
+Phase 2 review findings: opposing hero-spell pressure is not forecast; future
+attacker exposure is bounded and may overvalue protection; recast valuation does
+not value protection retained beyond the old expiry. These do not block the
+principal source implementation. Bespoke spell/perk art remains Not done.
 
 UP-062 Berserk targeting foundation is source/native verified: v3 forces
 shooters into melee, chooses nearest legal targets by movement cost and draws
@@ -241,10 +263,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 126/310 | 184 planned; Misfortune Weaver is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 127/310 | 183 planned; Paradox Shield is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 59/67 | 8 missing/inactive; Hand of Fate is the newest identity. Chaos is 5/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -268,8 +290,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 126
-active perks, leaving nine ranks and 184 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 127
+active perks, leaving nine ranks and 183 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-30; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head

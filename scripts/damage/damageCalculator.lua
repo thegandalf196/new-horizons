@@ -164,6 +164,16 @@ local function getPhysicalDamageReductionFactor(info)
 		end
 	end
 
+	if hasBonusOfType(info.defenderBonuses, "PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS") then
+		local physicalBonuses = info.defender:getBonuses({
+			type = "PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS",
+			shooting = info.shooting
+		})
+		for _, value in ipairs(getBonusValuesBySourceAndID(physicalBonuses)) do
+			table.insert(reductions, { value, 10000 })
+		end
+	end
+
 	if info.shooting then
 		table.insert(reductions, { info.heavenlyGaleDamageReductionBasisPoints or 0, 10000 })
 	end
@@ -658,7 +668,8 @@ for _, type in ipairs({
 	"ALWAYS_MINIMUM_DAMAGE", "ALWAYS_MAXIMUM_DAMAGE", "IN_FRENZY", "KING", "SLAYER",
 	"ENEMY_DEFENCE_REDUCTION", "PERCENTAGE_DAMAGE_BOOST", "GENERAL_DAMAGE_PREMY", "JOUSTING",
 	"CHARGE_IMMUNITY", "BONUS_DAMAGE_PERCENTAGE", "HATE", "GENERAL_DAMAGE_REDUCTION",
-	"NO_MELEE_PENALTY", "GENERAL_ATTACK_REDUCTION", "FORGETFULL", "LUCKY_STRIKE_DAMAGE_PERCENTAGE"
+	"NO_MELEE_PENALTY", "GENERAL_ATTACK_REDUCTION", "FORGETFULL", "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
+	"PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS"
 }) do
 	Script:declareBonus(type)
 end

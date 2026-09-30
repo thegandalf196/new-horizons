@@ -49,6 +49,13 @@ local MISFORTUNE_BASE_CHANCE_MULTIPLIER_BASIS_POINTS = 7500
 local MISFORTUNE_SPELL_POWER_REDUCTION_BASIS_POINTS = 25
 local MISFORTUNE_WEAVER_REDUCTION_BASIS_POINTS = 1000
 local MISFORTUNE_MIN_CHANCE_MULTIPLIER_BASIS_POINTS = 2500
+local SHIELD_OF_CHAOS_SPELL = "new-horizons:shieldOfChaos"
+local PARADOX_SHIELD_PERK = "new-horizons:chaosMagic.paradoxShield"
+local SHIELD_OF_CHAOS_BASE_REDUCTION_BASIS_POINTS = 5000
+local SHIELD_OF_CHAOS_SPELL_POWER_REDUCTION_BASIS_POINTS = 15
+local SHIELD_OF_CHAOS_MAX_REDUCTION_BASIS_POINTS = 8000
+local PARADOX_SHIELD_BONUS_BASIS_POINTS = 1000
+local SHIELD_OF_CHAOS_BASE_DURATION = 2
 local SLOW_SPELL = "core:slow"
 local SLOW_BASE_REDUCTION_PERCENT = 20
 local SLOW_SPELL_POWER_DIVISOR = 5
@@ -69,8 +76,11 @@ function Script:convertBonuses(mechanics)
 	local entangleDuration = nil
 	local vengefulVinesDuration = nil
 	local misfortuneDuration = nil
+	local shieldOfChaosDuration = nil
 	local misfortuneChanceMultiplierBasisPoints = nil
-	if spellKey == CRUSADE_SPELL and mechanics:usesNewHorizonsMagicV3() then
+	if spellKey == SHIELD_OF_CHAOS_SPELL and mechanics:usesNewHorizonsMagicV3() then
+		shieldOfChaosDuration = mechanics:adjustEffectDuration(SHIELD_OF_CHAOS_BASE_DURATION)
+	elseif spellKey == CRUSADE_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		-- Crusade authors a fixed three-round buff, independent of Spell Power. Apply
 		-- cast-specific duration mechanics exactly once to that literal base, then
 		-- add Crusader's separate round below.
@@ -165,6 +175,8 @@ function Script:convertBonuses(mechanics)
 			nb.turns = vengefulVinesDuration
 		elseif crusadeDuration ~= nil then
 			nb.turns = crusadeDuration
+		elseif shieldOfChaosDuration ~= nil then
+			nb.turns = shieldOfChaosDuration
 		elseif not nb.turns or nb.turns == 0 then
 			nb.turns = duration
 		end
@@ -330,6 +342,29 @@ function Script:applyHeavenlyGalePower(mechanics, buffer, spellKey)
 	end
 end
 
+function Script:applyShieldOfChaosPower(mechanics, buffer, spellKey)
+	if spellKey ~= SHIELD_OF_CHAOS_SPELL or not mechanics:usesNewHorizonsMagicV3() then return end
+
+	local powerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+		SHIELD_OF_CHAOS_SPELL_POWER_REDUCTION_BASIS_POINTS * math.max(0, mechanics:getEffectPower()), 1,
+		mechanics:getSpellPowerCoefficientBasisPoints())
+	local reduction = math.min(SHIELD_OF_CHAOS_MAX_REDUCTION_BASIS_POINTS,
+		SHIELD_OF_CHAOS_BASE_REDUCTION_BASIS_POINTS + powerTerm)
+	local hero = mechanics:getHeroCaster()
+	if hero and hero:hasActivePerk(CHAOS_MAGIC_SKILL, PARADOX_SHIELD_PERK) then
+		-- Paradox Shield is added after the base formula's 80% cap. The shared physical
+		-- damage stage still applies its saved global 80% aggregate cap.
+		reduction = reduction + PARADOX_SHIELD_BONUS_BASIS_POINTS
+	end
+
+	for _, nb in pairs(buffer) do
+		if nb.type == "PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS"
+			or nb.type == "SPELL_DAMAGE_REDUCTION_BASIS_POINTS" then
+			nb.val = reduction
+		end
+	end
+end
+
 function Script:applyGuardianSpiritPower(mechanics, buffer, spellKey)
 	if spellKey ~= GUARDIAN_SPIRIT_SPELL then return end
 
@@ -419,6 +454,22 @@ function Script:describeCrusadeEffect(server, battle, bonuses)
 	})
 end
 
+function Script:describeShieldOfChaosEffect(server, battle, unit, bonuses)
+	local physicalReduction = bonuses.physicalDamageReduction and bonuses.physicalDamageReduction.val or 0
+	local magicalReduction = bonuses.magicalDamageReduction and bonuses.magicalDamageReduction.val or 0
+	local duration = bonuses.physicalDamageReduction and bonuses.physicalDamageReduction.turns
+		or SHIELD_OF_CHAOS_BASE_DURATION
+	local targetName = unit:getCreature():getNameTextID(unit:getCount())
+	local message = string.format(
+		"Shield of Chaos grants %d.%02d%% physical damage reduction before caps (the global physical cap is 80%%) and %d.%02d%% magical damage reduction for %d rounds; it imposes -10 Morale and -10 Luck",
+		math.floor(physicalReduction / 100), physicalReduction % 100,
+		math.floor(magicalReduction / 100), magicalReduction % 100, duration) .. " on %s."
+	server:appendLog(battle, {
+		appendRaw = { message },
+		replaceStrings = { targetName }
+	})
+end
+
 function Script:describeEntangleEffect(server, battle, bonuses)
 	local duration = ENTANGLE_BASE_DURATION
 	for _, bonus in pairs(bonuses) do
@@ -483,10 +534,12 @@ function Script:apply(mechanics, server, target)
 	local describe = server:describeChanges()
 	local spellKey = mechanics:getSpell():getJsonKey()
 	if spellKey == CRUSADE_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
+	if spellKey == SHIELD_OF_CHAOS_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
 	if spellKey == ENTANGLE_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
 	if spellKey == VENGEFUL_VINES_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
 	local converted = self:convertBonuses(mechanics)
 	local describedCrusade = false
+	local describedShieldOfChaos = false
 
 	for _, dest in ipairs(target) do
 		local unit = dest.unit
@@ -500,6 +553,7 @@ function Script:apply(mechanics, server, target)
 		self:applyHeroSpecialty(mechanics, buffer, unit)
 		self:applyHolyArmorPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyHeavenlyGalePower(mechanics, buffer, mechanics:getSpell():getJsonKey())
+		self:applyShieldOfChaosPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyGuardianSpiritPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyDivineRetributionPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
 		self:applyCrusadePower(mechanics, buffer, spellKey)
@@ -510,6 +564,11 @@ function Script:apply(mechanics, server, target)
 				if not describedCrusade then
 					self:describeCrusadeEffect(server, battle, buffer)
 					describedCrusade = true
+				end
+			elseif spellKey == SHIELD_OF_CHAOS_SPELL then
+				if not describedShieldOfChaos then
+					self:describeShieldOfChaosEffect(server, battle, unit, buffer)
+					describedShieldOfChaos = true
 				end
 			elseif spellKey == ENTANGLE_SPELL then
 				self:describeEntangleEffect(server, battle, buffer)
