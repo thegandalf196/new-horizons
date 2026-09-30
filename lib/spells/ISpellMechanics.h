@@ -380,6 +380,9 @@ public:
 	virtual bool isMagicalEffect() const = 0;
 
 	virtual int64_t adjustEffectValue(const battle::Unit * target) const = 0;
+	/// Applies only recipient damage modifiers to an already resolved raw hit.
+	/// Does not repeat the caster's power, offensive bonuses, or execution rules.
+	int64_t adjustRecipientDamage(const battle::Unit * target, int64_t rawDamage) const;
 	/// Returns target-adjusted damage before an execute-style threshold override.
 	/// Mechanics without such an override use their ordinary adjusted value.
 	virtual int64_t adjustEffectValueBeforeExecution(const battle::Unit * target) const

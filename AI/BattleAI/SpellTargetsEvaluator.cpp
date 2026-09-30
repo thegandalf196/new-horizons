@@ -26,6 +26,7 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/CRandomGenerator.h"
 #include "SpellTargetsEvaluator.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include <vcmi/spells/Spell.h>
 
 #include <set>
@@ -60,6 +61,52 @@ bool isCanonicalHydrasVitality(const Mechanics * spellMechanics)
 {
 	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
 	return spell && spell->getJsonKey() == "new-horizons:hydrasVitality";
+}
+
+bool isHandOfFateSpell(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return spell && spell->getJsonKey() == "new-horizons:handOfFate";
+}
+
+bool isCanonicalHandOfFate(const Mechanics * spellMechanics)
+{
+	if(!isHandOfFateSpell(spellMechanics))
+		return false;
+
+	const auto * callback = spellMechanics->battle();
+	const auto * battleInfo = callback ? callback->getBattle() : nullptr;
+	if(!battleInfo)
+		return false;
+
+	const auto & magicRules = battleInfo->getMagicRules();
+	return newHorizonsMagic::rulesActive(magicRules)
+		&& newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spellMechanics->getSpellId());
+}
+
+std::vector<Target> canonicalHandOfFateTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!isCanonicalHandOfFate(spellMechanics) || !spellMechanics->battle()
+		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
+		return result;
+
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		return result;
+
+	const auto enemySide = spellMechanics->battle()->otherSide(casterSide);
+	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	{
+		if(!unit || unit->unitSide() != enemySide || !unit->alive() || !unit->isValidTarget(false))
+			continue;
+
+		Target target{Destination(unit)};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
+	}
+	return result;
 }
 
 std::vector<Target> canonicalHydrasVitalityTargets(const Mechanics * spellMechanics)
@@ -1106,6 +1153,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 			return {};
 		return canonicalLifeDrainTargets(spellMechanics);
 	}
+	if(isHandOfFateSpell(spellMechanics))
+		return canonicalHandOfFateTargets(spellMechanics);
 	if(isCanonicalHydrasVitality(spellMechanics))
 		return canonicalHydrasVitalityTargets(spellMechanics);
 	if(isCanonicalVerdantPrison(spellMechanics))
@@ -2173,6 +2222,109 @@ float SpellTargetEvaluator::shadowGiftTradeValue(const Mechanics * spellMechanic
 	}
 
 	return std::max(0.0f, bestExpectedBenefit - healthCost);
+}
+
+std::optional<SpellTargetEvaluator::HandOfFateExpectedDamageValue>
+SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMechanics,
+	const Target & target, PlayerColor scoringPlayer, std::shared_ptr<CBattleInfoCallback> battleState)
+{
+	if(!isCanonicalHandOfFate(spellMechanics) || target.size() != 1 || !target.front().unitValue
+		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
+		return std::nullopt;
+
+	const auto * battle = spellMechanics->battle();
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(!battle || (casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER))
+		return std::nullopt;
+
+	if(!battleState)
+		battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
+
+	const auto * primary = target.front().unitValue;
+	if(primary->unitSide() != battle->otherSide(casterSide)
+		|| !primary->alive() || !primary->isValidTarget(false))
+		return std::nullopt;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return std::nullopt;
+
+	// Spell resistance is resolved once for the selected target by the regular
+	// cast path.  Forecast its probability without drawing from the live RNG.
+	const float primaryApplicationChance = spellApplicationChance(spellMechanics, primary);
+	const auto primaryDamage = std::max<int64_t>(0, spellMechanics->adjustEffectValue(primary));
+	auto projectedPrimary = primary->acquireState();
+	const auto primaryHealthBefore = projectedPrimary->getAvailableHealth();
+	auto primaryDamageToApply = primaryDamage;
+	projectedPrimary->damage(primaryDamageToApply);
+	const auto actualPrimaryDamage = std::max<int64_t>(0,
+		primaryHealthBefore - projectedPrimary->getAvailableHealth());
+
+	DamageCache damageCache;
+	HandOfFateExpectedDamageValue result;
+	if(actualPrimaryDamage > 0 && primaryApplicationChance > 0.0f)
+	{
+		result.hostileDamageValue += AttackPossibility::calculateDamageReduce(nullptr, primary,
+			static_cast<uint64_t>(actualPrimaryDamage), damageCache, battleState) * primaryApplicationChance;
+	}
+
+	// Every living, on-field, non-turret stack remains in the uniform pool,
+	// including stacks that will reject the secondary packet (for example, a
+	// Time Stopped or immune stack).  Rejection contributes zero value but never
+	// changes the probability of another recipient being chosen.
+	std::vector<const battle::Unit *> collateralPool;
+	for(const auto * unit : battle->battleGetAllUnits(false))
+	{
+		if(!unit || unit == primary || !unit->alive() || !unit->getPosition().isValid() || unit->isTurret())
+			continue;
+		collateralPool.push_back(unit);
+	}
+
+	const auto spillRawDamage = actualPrimaryDamage / 2;
+	if(collateralPool.empty() || spillRawDamage <= 0 || primaryApplicationChance <= 0.0f)
+		return result;
+
+	float expectedHostileSpillValue = 0.0f;
+	float expectedFriendlySpillValue = 0.0f;
+	for(const auto * recipient : collateralPool)
+	{
+		// This check is deliberately after pool construction: an invalid or
+		// unreceptive recipient absorbs its share of the random selection chance.
+		if(!recipient->isValidTarget(false) || recipient->isInvincible()
+			|| recipient->hasImmunity(spellMechanics->getSpellId())
+			|| recipient->hasAbsoluteImmunity(spellMechanics->getSpellId())
+			|| !spellMechanics->isReceptive(recipient))
+			continue;
+
+		const auto adjustedDamage = std::max<int64_t>(0,
+			spellMechanics->adjustRecipientDamage(recipient, spillRawDamage));
+		if(adjustedDamage <= 0)
+			continue;
+
+		auto projectedRecipient = recipient->acquireState();
+		const auto recipientHealthBefore = projectedRecipient->getAvailableHealth();
+		auto recipientDamageToApply = adjustedDamage;
+		projectedRecipient->damage(recipientDamageToApply);
+		const auto actualRecipientDamage = std::max<int64_t>(0,
+			recipientHealthBefore - projectedRecipient->getAvailableHealth());
+		if(actualRecipientDamage <= 0)
+			continue;
+
+		const float recipientValue = AttackPossibility::calculateDamageReduce(nullptr, recipient,
+			static_cast<uint64_t>(actualRecipientDamage), damageCache, battleState)
+			* spellApplicationChance(spellMechanics, recipient);
+		if(battle->battleGetOwner(recipient) == scoringPlayer)
+			expectedFriendlySpillValue += recipientValue;
+		else
+			expectedHostileSpillValue += recipientValue;
+	}
+
+	const auto primaryHitProbability = primaryApplicationChance
+		/ static_cast<float>(collateralPool.size());
+	result.hostileDamageValue += expectedHostileSpillValue * primaryHitProbability;
+	result.friendlyDamageValue += expectedFriendlySpillValue * primaryHitProbability;
+	return result;
 }
 
 std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)

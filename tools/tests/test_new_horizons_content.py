@@ -35,6 +35,7 @@ NEW_HORIZONS_SPELLS = {
     'new-horizons:hexOfPain',
     'new-horizons:holyArmor',
     'new-horizons:holyWrath',
+    'new-horizons:handOfFate',
     'new-horizons:lifeDrain',
     'new-horizons:counterspell',
     'new-horizons:disintegrate',
@@ -698,6 +699,23 @@ class NewHorizonsContentTest(unittest.TestCase):
                 (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
                 (size, size))
 
+    def test_hand_of_fate_is_a_rostered_chaos_spell_with_recipient_only_spill(self):
+        row = self.rules['spells']['new-horizons:handOfFate']
+        self.assertEqual(row['schools'], ['new-horizons:chaos'])
+        self.assertEqual(row['level'], 3)
+        self.assertEqual(row['costs'], [12] * 4)
+        self.assertEqual(row['directDamage'], {'base': 70, 'powerCoefficient': 25})
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['handOfFate']
+        self.assertEqual(spell['targetType'], 'CREATURE')
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            level = spell['levels'][rank]
+            self.assertEqual(level['cost'], 12)
+            self.assertEqual(level['range'], '0')
+            self.assertEqual(level['battleEffects']['directDamage'],
+                             {'type': 'damage', 'handOfFate': True})
+            self.assertIn('actual HP loss', level['description'])
+            self.assertIn('not rerolled', level['description'])
+
     def test_holy_wrath_is_a_rostered_single_target_light_damage_spell(self):
         spell_id = 'new-horizons:holyWrath'
         row = self.rules['spells'][spell_id]
@@ -900,6 +918,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'new-horizons:masterChainLightning',
                               'new-horizons:disintegrate',
                               'new-horizons:holyWrath',
+                              'new-horizons:handOfFate',
                               'new-horizons:lifeDrain',
                               'new-horizons:soulReaper',
                               'new-horizons:stormOfDaggers',

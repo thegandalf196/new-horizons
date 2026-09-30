@@ -429,7 +429,7 @@ void CSpell::getEffects(std::vector<Bonus> & lst, const int schoolLevel, const b
 int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage,
 	int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints,
 	int finalDamageMultiplierPercent, bool useIndependentMagicalDamageReduction,
-	bool useFractionalMagicalDamageReduction) const
+	bool useFractionalMagicalDamageReduction, bool applyCasterBonuses) const
 {
 	auto ret = rawDamage;
 	ignoreSpellDamageReductionPercent = std::clamp(ignoreSpellDamageReductionPercent, 0, 100);
@@ -557,7 +557,8 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 		if(affectedCreature->isInvincible())
 			ret = 0;
 	}
-	ret = caster->getSpellBonus(this, ret, affectedCreature);
+	if(applyCasterBonuses)
+		ret = caster->getSpellBonus(this, ret, affectedCreature);
 	// Some magical damage sources (for example Fire Shield reflection) are
 	// represented by positive timed spells and do not carry the DAMAGE flag.
 	if(affectedCreature != nullptr && isMagical() && affectedCreature->getPhantomIntegrity() > 0)

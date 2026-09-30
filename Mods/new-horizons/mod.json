@@ -720,6 +720,22 @@
 							25
 						]
 					},
+					"new-horizons:handOfFate": {
+						"schools": [
+							"new-horizons:chaos"
+						],
+						"level": 3,
+						"costs": [
+							12,
+							12,
+							12,
+							12
+						],
+						"directDamage": {
+							"base": 70,
+							"powerCoefficient": 25
+						}
+					},
 					"new-horizons:holyWrath": {
 						"schools": [
 							"new-horizons:light"
@@ -2903,7 +2919,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "bba2265dd05d3ace1fb18738eb71b2350e524c5151b2153489f957ed96a8875b",
+				"sourceSha256": "08cfaada6fd4881a7e7f1e6c82a5f488e9ca1b99ea65ebd432b72aff58f8080c",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -9012,6 +9028,8 @@
 		"new-horizons.muster.chooseRow": "Choose a dwelling row.",
 		"new-horizons.muster.noTargets": "No legal Core, Elite, or Champion dwelling row is available in this town.",
 		"new-horizons.muster.rankOnlyNote": "Choose one town dwelling to reinforce.",
+		"new-horizons.combat.handOfFate.collateral": "Hand of Fate's spill chooses %s: %d base damage becomes %d after defenses, dealing %d actual damage.",
+		"new-horizons.combat.handOfFate.blocked": "Hand of Fate's spill selects %s for %d base damage, but no spill damage is dealt (0 actual damage). No replacement target is chosen.",
 		"new-horizons.combat.arcaneBreach.applied": "Arcane Breach on %s is now at %d of 3 total marks for %d rounds. Together, the %s side's marks let its ranged attacks ignore %d.%d%d% of the target's Creature Defense.",
 		"new-horizons.combat.arcaneBreach.refreshed": "Arcane Breach on %s is refreshed at %d of 3 total marks for %d rounds. Together, the %s side's marks let its ranged attacks ignore %d.%d%d% of the target's Creature Defense.",
 		"new-horizons.combat.arcaneBreach.side.attacker": "attacking",

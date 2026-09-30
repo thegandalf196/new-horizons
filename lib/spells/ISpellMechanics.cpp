@@ -1134,6 +1134,19 @@ bool BaseMechanics::isMagicalEffect() const
 	return owner->isMagical();
 }
 
+int64_t Mechanics::adjustRecipientDamage(const battle::Unit * target, int64_t rawDamage) const
+{
+	const auto * spell = dynamic_cast<const CSpell *>(getSpell());
+	if(!spell || !target || rawDamage <= 0)
+		return 0;
+	const auto * callback = battle();
+	const int holdReductionBasisPoints = callback && spell->isMagical()
+		? callback->battleGetHoldTheLineMagicalReductionBasisPoints(target) : 0;
+	return spell->adjustRawDamage(caster, target, rawDamage, 0,
+		holdReductionBasisPoints, 100, usesNewHorizonsMultiplicativeMDR(),
+		usesNewHorizonsMagicV3(), false);
+}
+
 int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
 {
 	return adjustEffectValueImpl(target, true);

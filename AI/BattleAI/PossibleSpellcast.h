@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -64,6 +65,11 @@ public:
 	/// not change unit health during hypothetical cast evaluation, so the
 	/// targeting evaluator supplies this read-only pressure score explicitly.
 	float spellPlacementHeuristicValue = 0.0f;
+	/// Expected signed battle value for canonical Hand of Fate.  This is
+	/// precomputed across every possible spill recipient so generic castEval does
+	/// not score RNGStub's single hypothetical recipient as though it were the
+	/// authoritative random result.
+	std::optional<float> spellHandOfFateExpectedValue;
 	/// Marginal three-activation physical Poison value for canonical Nature
 	/// Poison, whose immediate cast does not change health.
 	float spellNaturePoisonValue = 0.0f;

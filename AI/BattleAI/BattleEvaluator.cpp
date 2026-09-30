@@ -89,6 +89,16 @@ bool isCanonicalVerdantPrison(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:verdantPrison";
 }
 
+bool isCanonicalHandOfFate(const CBattleInfoCallback & battle, const CSpell * spell)
+{
+	if(!spell || spell->getJsonKey() != "new-horizons:handOfFate" || !battle.getBattle())
+		return false;
+
+	const auto & magicRules = battle.getBattle()->getMagicRules();
+	return newHorizonsMagic::rulesActive(magicRules)
+		&& newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spell->getId());
+}
+
 bool isCounterspell(const CSpell * spell)
 {
 	return newHorizonsMagic::isCounterspell(spell);
@@ -3754,6 +3764,17 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							if(ps.spellShadowGiftHeuristicValue <= 0.0f)
 								continue;
 						}
+						if(isCanonicalHandOfFate(*cb->getBattle(battleID), spell))
+						{
+							const auto expectedDamage = SpellTargetEvaluator::handOfFateExpectedDamageValue(
+								candidateMechanics.get(), ps.dest, playerID, cb->getBattle(battleID));
+							if(!expectedDamage)
+								continue;
+							ps.spellHandOfFateExpectedValue = expectedDamage->hostileDamageValue
+								* scoreEvaluator.getPositiveEffectMultiplier()
+								- 4.0f * expectedDamage->friendlyDamageValue
+									* scoreEvaluator.getNegativeEffectMultiplier();
+						}
 						if(isCanonicalLandMine(*cb->getBattle(battleID), spell))
 							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::landMinePlacementValue(
 								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
@@ -4204,6 +4225,27 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
 						counterspellNegated, *spellAllowance) || counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
+					continue;
+				}
+				// Hand of Fate's secondary recipient is random by design. Its signed
+				// expected value was computed across the complete pool during target
+				// enumeration; never replace that expectation with castEval's one
+				// RNGStub-selected recipient.
+				if(ps.command == HeroCommand::NONE && ps.spellHandOfFateExpectedValue.has_value())
+				{
+					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					targetId = ps.dest.front().unitValue->unitId();
+					if(counterspellNegated
+						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+							counterspellNegated, *spellAllowance))
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + *ps.spellHandOfFateExpectedValue;
 					continue;
 				}
 				// Sanctuary has no immediate health delta. Price only direct enemy

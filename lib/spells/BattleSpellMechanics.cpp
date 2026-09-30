@@ -1446,6 +1446,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		for(auto & p : effectsToApply)
 			p.first->apply(&effectRecorder, this, p.second);
 	}
+	resistantUnitIds.clear();
 	if(newHorizonsRegeneration && !isCounterspellNegated())
 	{
 		const auto * hero = getHeroCaster();
@@ -1955,7 +1956,8 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 	for(const auto * unit : resisted)
 		sc.resistedCres.insert(unit->unitId());
 
-	resistantUnitIds.clear();
+	// Scripted secondary hits must observe these same rolls during application.
+	// The cast clears this transient set after all effects have resolved.
 }
 
 battle::Units BattleSpellMechanics::filterSpellLockedEffects(const Target & aimPoint)

@@ -2,6 +2,46 @@
 
 ## Purpose
 
+### 2026-09-30 Hand of Fate initial native compile
+
+UP-057 build 2773 failed in BattleAI before linking: the new score branch
+dereferenced scalar float effect multipliers, and SpellTargetsEvaluator lacked
+the direct NewHorizonsSpellAvailability include for saved-roster admission.
+Root removes the erroneous unary dereferences and adds direct includes in both
+the evaluator and the runtime fixture (same helper consumer). No gameplay rule
+is relaxed. Preserve `UP057-hand-of-fate-initial-build.log`; retry evidence is
+pending. Review must distinguish algorithm inspection from compile evidence.
+
+Retry build 28001 successfully links both client and test. Native 77437 passes
+16/19, zero skips, on binary
+`925142dcbef1c1220da968f69b7a9b892478b1ddff50a5c8c355c309d42ff632`.
+All six new Hand of Fate runtime cases, eight current-profile Holy Wrath cases,
+and two existing AI guards pass. The new AI scenario submits a Hero Order rather
+than the asserted spell; worker performs a bounded valuation/fixture review,
+without forcing production preference. Two historical Holy Wrath fixtures also
+fail validation because they mechanically downgrade the current rules while
+retaining Quicksand's v3 `selectedPlacement` field. This is a stale fixture,
+not evidence that the Hand of Fate runtime corrupts saved rules. Record that
+non-blocking fixture hardening for Phase 2 and preserve both failures in
+`UP057-hand-of-fate-initial-focused.log`/`.xml`.
+
+AI fixture retries 53527, admission trace and player-view trace still selected
+an Order; their uniquely named retry2/retry3/retry4 build and focused logs remain
+preserved. Read-only debugger inspection finally established actual candidate
+scores: Hand of Fate 852.056/801.586, Hold the Line 1215. Admission, expected
+valuation and accepted projection were working; the fixture incorrectly assumed
+the spell must outrank a separate Order heuristic. Do not force a production
+preference to satisfy such a test. Following the existing Holy Wrath pattern,
+neutralize only competing Order coefficients in the submission fixture while
+retaining EV, defenses, live-state/RNG and authoritative acceptance assertions.
+Build 90769 and native 54761 succeed: 17/17, zero skips, binary
+`3ac2c0c602cb277c228164144ff86b2d448257b45cac526294c72cccdd7c09fd`.
+Preserve `UP057-hand-of-fate-isolated-ai-retry5-build.log` and
+`UP057-hand-of-fate-isolated-ai-retry5-focused.log`/`.xml`. The two stale
+historical Holy Wrath fixtures are explicitly excluded from this final gate,
+not silently repaired or reported passing. Broad Order-versus-spell tactical
+ranking and legacy Clone projection parity remain Phase 2 findings.
+
 ### 2026-09-30 canonical School snapshot fixture baseline
 
 UP-058 client/test build 74940 succeeds and 75 offline gates pass. Native

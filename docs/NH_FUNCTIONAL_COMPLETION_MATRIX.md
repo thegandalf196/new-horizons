@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-09-30
-Canonical source SHA-256: `bba2265dd05d3ace1fb18738eb71b2350e524c5151b2153489f957ed96a8875b`
+Canonical source SHA-256: `08cfaada6fd4881a7e7f1e6c82a5f488e9ca1b99ea65ebd432b72aff58f8080c`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -13,6 +13,17 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+Hand of Fate (UP-057): Level 3 Chaos primary damage and uniformly selected
+secondary spill are implemented. Half the primary's actual HP loss is reduced
+by the recipient's own defenses without reroll or repeated caster bonuses.
+Both Linux targets build; 17 focused native tests pass, zero skips, including
+accepted AI submission and read-only expected collateral valuation. All 77
+offline checks and generated-module gates pass. Coverage advances to 59/67
+combat identities, Chaos 5/11; ranks 84/93 and perks 125/310 are unchanged.
+Legacy Clone projection parity, explicit Time Stop/caster-bonus interaction
+tests, full save/load and rendered/playable acceptance remain deferred. Fate
+Dealer remains planned; borrowed art is Not done, not provisional authored art.
 
 Ordinary acquisition correction (UP-059): specialty-only Master Chain Lightning
 stays known/castable for Solmyr but is excluded from ordinary learning, Guild
@@ -185,7 +196,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 125/310 | 185 planned; Archmage is the newest activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 58/67 | 9 missing/inactive; Blink is the newest identity. Chaos is 4/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 59/67 | 8 missing/inactive; Hand of Fate is the newest identity. Chaos is 5/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -657,7 +668,7 @@ from the active identity row.
 | Light | 11 | 11 | No missing identity; Crusade! has focused runtime/native evidence. Rendered/playable and broader interaction evidence remain open. |
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
-| Chaos | 11 | 4 | Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
+| Chaos | 11 | 5 | Confusion; Polymorph; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
 | Nature | 11 | 9 | Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 

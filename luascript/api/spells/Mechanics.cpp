@@ -298,6 +298,10 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::adjustEffectValue>("adjustEffectValue",
 		{{"target", "Unit against which per-target adjustments are computed."}}, {},
 		"Applies all per-target adjustments to the raw effect value.");
+	R.method<&Mechanics::adjustRecipientDamage>("adjustRecipientDamage",
+		{{"target", "Recipient of an already resolved raw hit."},
+		 {"rawDamage", "Damage before this recipient's own modifiers."}}, {},
+		"Applies recipient damage modifiers without repeating caster bonuses or execution rules.");
 	R.method<&Mechanics::adjustEffectValueBeforeExecution>("adjustEffectValueBeforeExecution",
 		{{"target", "Unit against which per-target adjustments are computed."}}, {},
 		"Applies per-target damage adjustments before an execute-style threshold override. Mechanics without such an override return their ordinary adjusted value.");

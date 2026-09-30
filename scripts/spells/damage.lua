@@ -6,6 +6,8 @@ Script.__index = Script
 local HAVOC_CONDUCTOR_SKILL = "new-horizons:havocMagic"
 local HAVOC_CONDUCTOR_PERK = "new-horizons:havocMagic.conductor"
 local SOUL_REAPER_SPELL = "new-horizons:soulReaper"
+local HAND_OF_FATE_COLLATERAL_TEXT = "new-horizons.combat.handOfFate.collateral"
+local HAND_OF_FATE_BLOCKED_TEXT = "new-horizons.combat.handOfFate.blocked"
 
 local function conductorMultiplier(mechanics, targetIndex)
 	if targetIndex <= 0 then return nil end
@@ -121,6 +123,61 @@ local function damageBeforeSoulReaperExecution(mechanics, unit)
 	}
 end
 
+local function handOfFateCandidates(battle, primary)
+	local primaryID = primary:unitID()
+	return battle:getUnitsIf(function(unit)
+		-- Fate chooses from every living stack still on the battlefield. Keep
+		-- spell-immune, resistant, invincible, and temporarily untargetable
+		-- stacks in the pool; their defenses are resolved only after selection.
+		return unit:isAlive()
+			and unit:unitID() ~= primaryID
+			and unit:getPosition():isValid()
+			and not unit:isTurret()
+	end)
+end
+
+local function applyHandOfFateCollateral(self, mechanics, server, battle, primary, actualPrimaryDamage)
+	local candidates = handOfFateCandidates(battle, primary)
+	if #candidates == 0 then return 0, 0 end
+
+	-- Draw before inspecting defenses: immunity or spell resistance cannot
+	-- change who Fate chose, and a rejected hit never causes a reroll.
+	local recipient = candidates[server:rngInt(1, #candidates)]
+	local spillBase = math.floor(actualPrimaryDamage / 2)
+	local recipientName = recipient:getCreature():getNameTextID(recipient:getCount())
+	if not self:isValidTarget(mechanics, recipient)
+		or not self:isReceptive(mechanics, recipient)
+		or mechanics:wouldResist(recipient) then
+		server:appendLog(battle, {
+			append = { HAND_OF_FATE_BLOCKED_TEXT },
+			replaceStrings = { recipientName },
+			replaceNumbers = { spillBase }
+		})
+		return 0, 0
+	end
+
+	-- The base is half the primary's actual HP loss. Only the selected stack's
+	-- defenses apply here; the primary's caster-side damage bonuses are already
+	-- included in the actual loss and must not be applied a second time.
+	local adjustedDamage = mechanics:adjustRecipientDamage(recipient, spillBase)
+	if adjustedDamage <= 0 then
+		server:appendLog(battle, {
+			append = { HAND_OF_FATE_BLOCKED_TEXT },
+			replaceStrings = { recipientName },
+			replaceNumbers = { spillBase }
+		})
+		return 0, 0
+	end
+	local actualDamage, killed = server:damageUnit(battle, recipient, adjustedDamage, self.destroyRemains == true,
+		mechanics:getUnitCaster())
+	server:appendLog(battle, {
+		append = { HAND_OF_FATE_COLLATERAL_TEXT },
+		replaceStrings = { recipientName },
+		replaceNumbers = { spillBase, adjustedDamage, actualDamage }
+	})
+	return actualDamage, killed
+end
+
 function Script:getHealthChange(mechanics, spellTarget)
 	local result = { hpDelta = 0, unitsDelta = 0 }
 	for i, dest in ipairs(spellTarget) do
@@ -153,10 +210,16 @@ function Script:apply(mechanics, server, target)
 			-- intentionally remain unattributed.
 			local dmg, killed = server:damageUnit(
 				battle, unit, amount, self.destroyRemains == true, mechanics:getUnitCaster())
+			local collateralDamage, collateralKilled = 0, 0
+			if self.handOfFate then
+				collateralDamage, collateralKilled = applyHandOfFateCollateral(
+					self, mechanics, server, battle, unit, dmg)
+			end
 			if describe then
 				if firstUnit then multiple = true else firstUnit = unit end
-				totalDamage = totalDamage + dmg
-				totalKilled = totalKilled + killed
+				totalDamage = totalDamage + dmg + collateralDamage
+				totalKilled = totalKilled + killed + collateralKilled
+				if collateralDamage > 0 then multiple = true end
 				if soulReaperBaseline then
 					local additionalKilled = math.max(0, killed - soulReaperBaseline.killed)
 					if additionalKilled > 0 then

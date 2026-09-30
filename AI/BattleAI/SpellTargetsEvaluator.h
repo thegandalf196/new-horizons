@@ -12,6 +12,7 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include <vcmi/spells/Magic.h>
 
+#include <optional>
 #include <utility>
 
 class SpellTargetEvaluator
@@ -22,6 +23,11 @@ public:
 		std::vector<std::pair<int32_t, SpellID>> spellEffectGroups;
 		std::vector<int32_t> physicalPoisonStackIds;
 		float value = 0.0f;
+	};
+	struct HandOfFateExpectedDamageValue
+	{
+		float hostileDamageValue = 0.0f;
+		float friendlyDamageValue = 0.0f;
 	};
 
 	static std::vector<spells::Target> getViableTargets(spells::Mechanics * spellMechanics);
@@ -79,6 +85,14 @@ public:
 	static float shadowGiftTradeValue(const spells::Mechanics * spellMechanics,
 		const spells::Target & target,
 		int32_t sacrificePercent,
+		std::shared_ptr<CBattleInfoCallback> battleState = {});
+	/// Estimates direct plus expected spill damage for canonical Hand of Fate.
+	/// The random recipient pool is kept intact while each recipient's actual
+	/// spell defenses and magic-resistance probability are applied to its value.
+	static std::optional<HandOfFateExpectedDamageValue> handOfFateExpectedDamageValue(
+		const spells::Mechanics * spellMechanics,
+		const spells::Target & target,
+		PlayerColor scoringPlayer,
 		std::shared_ptr<CBattleInfoCallback> battleState = {});
 
 private:

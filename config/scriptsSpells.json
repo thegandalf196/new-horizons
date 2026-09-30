@@ -51,6 +51,7 @@
 				"chainFactorMaximum" : { "type" : "number" },
 				"killByPercentage" : { "type" : "boolean" },
 				"killByCount" : { "type" : "boolean" },
+				"handOfFate" : { "type" : "boolean" },
 				"destroyRemains" : { "type" : "boolean" }
 			},
 			"additionalProperties" : false
