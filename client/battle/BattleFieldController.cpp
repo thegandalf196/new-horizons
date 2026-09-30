@@ -774,6 +774,37 @@ void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 		return;
 	}
 
+	// Vengeful Vines previews the shared, complete six-hex winding while the
+	// player chooses an orientation. The origin may be occupied or obstructed;
+	// only playable geometry and spell target legality affect confirmation.
+	if(owner.actionsController->vengefulVinesTargetSelectionModeActive())
+	{
+		if(!owner.actionsController->vengefulVinesOriginSelected())
+		{
+			for(const auto & hex : owner.actionsController->getVengefulVinesLegalStartHexes())
+				showHighlightedHex(canvas, cellShade, hex, true);
+
+			const auto hovered = getHoveredHex();
+			if(hovered.isValid() && owner.actionsController->vengefulVinesOriginIsLegal(hovered))
+				showHighlightedHex(canvas, cellUnitMovementHighlight, hovered, false);
+		}
+		else
+		{
+			showHighlightedHex(canvas, cellUnitMovementHighlight,
+				owner.actionsController->vengefulVinesSelectedOrigin(), false);
+			for(const auto & endpoint : owner.actionsController->getVengefulVinesRotationHexes())
+				showHighlightedHex(canvas, cellShade, endpoint, true);
+
+			for(const auto & hex : owner.actionsController->getVengefulVinesPreviewFootprint())
+				showHighlightedHex(canvas, cellShade, hex, true);
+
+			const auto hovered = getHoveredHex();
+			if(hovered.isValid() && owner.actionsController->vengefulVinesEndpointIsLegal(hovered))
+				showHighlightedHex(canvas, cellUnitMovementHighlight, hovered, false);
+		}
+		return;
+	}
+
 	// Targeted Orders use the same battlefield as creature actions.  Their
 	// candidates are presentation-only highlights; the callback is queried
 	// again on click and remains authoritative for the submitted unit IDs.

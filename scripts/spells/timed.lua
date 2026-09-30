@@ -8,6 +8,7 @@ local GUARDIAN_SPIRIT_SPELL = "new-horizons:guardianSpirit"
 local DIVINE_RETRIBUTION_SPELL = "new-horizons:divineRetribution"
 local CRUSADE_SPELL = "new-horizons:crusade"
 local ENTANGLE_SPELL = "new-horizons:entangle"
+local VENGEFUL_VINES_SPELL = "new-horizons:vengefulVines"
 local LIGHT_MAGIC_SKILL = "new-horizons:lightMagic"
 local HEALER_PERK = "new-horizons:lightMagic.healer"
 local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
@@ -37,6 +38,7 @@ local ENTANGLE_BASE_DURATION = 1
 local ENTANGLE_SPELL_POWER_DIVISOR = 100
 local ENTANGLE_MAX_BASE_DURATION = 2
 local ENTANGLE_MAX_ROOTCALLER_DURATION = 3
+local VENGEFUL_VINES_BASE_DURATION = 2
 local SLOW_SPELL = "core:slow"
 local SLOW_BASE_REDUCTION_PERCENT = 20
 local SLOW_SPELL_POWER_DIVISOR = 5
@@ -55,6 +57,7 @@ function Script:convertBonuses(mechanics)
 	local duration = nil
 	local crusadeDuration = nil
 	local entangleDuration = nil
+	local vengefulVinesDuration = nil
 	if spellKey == CRUSADE_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		-- Crusade authors a fixed three-round buff, independent of Spell Power. Apply
 		-- cast-specific duration mechanics exactly once to that literal base, then
@@ -77,6 +80,10 @@ function Script:convertBonuses(mechanics)
 			rootDuration = math.min(ENTANGLE_MAX_ROOTCALLER_DURATION, rootDuration + 1)
 		end
 		entangleDuration = mechanics:adjustEffectDuration(rootDuration)
+	elseif spellKey == VENGEFUL_VINES_SPELL and mechanics:usesNewHorizonsMagicV3() then
+		-- Vengeful Vines has a fixed two-round Speed penalty. Apply only the
+		-- common cast-specific Echoed Duration extension to that literal base.
+		vengefulVinesDuration = mechanics:adjustEffectDuration(VENGEFUL_VINES_BASE_DURATION)
 	else
 		duration = mechanics:getEffectDuration()
 	end
@@ -114,6 +121,8 @@ function Script:convertBonuses(mechanics)
 		end
 		if entangleDuration ~= nil then
 			nb.turns = entangleDuration
+		elseif vengefulVinesDuration ~= nil then
+			nb.turns = vengefulVinesDuration
 		elseif crusadeDuration ~= nil then
 			nb.turns = crusadeDuration
 		elseif not nb.turns or nb.turns == 0 then
@@ -211,7 +220,8 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	if spellKey == HOLY_ARMOR_SPELL or spellKey == HEAVENLY_GALE_SPELL
 		or spellKey == GUARDIAN_SPIRIT_SPELL
 		or spellKey == DIVINE_RETRIBUTION_SPELL
-		or spellKey == CRUSADE_SPELL or spellKey == ENTANGLE_SPELL then return end
+		or spellKey == CRUSADE_SPELL or spellKey == ENTANGLE_SPELL
+		or spellKey == VENGEFUL_VINES_SPELL then return end
 	local tier = math.max(unit:creatureLevel(), 1)
 
 	self:applySpellScaling(mechanics, hero, buffer, tier, spellKey)
@@ -372,6 +382,23 @@ function Script:describeEntangleEffect(server, battle, bonuses)
 	})
 end
 
+function Script:describeVengefulVinesEffect(server, battle, unit, bonuses)
+	local duration = VENGEFUL_VINES_BASE_DURATION
+	local speedPenalty = 2
+	for _, bonus in pairs(bonuses) do
+		if bonus.type == "STACKS_MOVEMENT_RANGE" then
+			duration = bonus.turns or duration
+			speedPenalty = math.abs(bonus.val or -speedPenalty)
+			break
+		end
+	end
+	server:appendLog(battle, {
+		appendRaw = { "Vengeful Vines reduces the movement Speed of %s by %d for %d rounds; Initiative is unchanged." },
+		replaceStrings = { unit:getCreature():getNameTextID(unit:getCount()) },
+		replaceNumbers = { speedPenalty, duration }
+	})
+end
+
 function Script:describeEffect(server, battle, unit, bonuses)
 	-- Age spell: STACK_HEALTH bonus with negative val gets a custom message
 	for _, nb in pairs(bonuses) do
@@ -405,6 +432,7 @@ function Script:apply(mechanics, server, target)
 	local spellKey = mechanics:getSpell():getJsonKey()
 	if spellKey == CRUSADE_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
 	if spellKey == ENTANGLE_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
+	if spellKey == VENGEFUL_VINES_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
 	local converted = self:convertBonuses(mechanics)
 	local describedCrusade = false
 
@@ -433,6 +461,8 @@ function Script:apply(mechanics, server, target)
 				end
 			elseif spellKey == ENTANGLE_SPELL then
 				self:describeEntangleEffect(server, battle, buffer)
+			elseif spellKey == VENGEFUL_VINES_SPELL then
+				self:describeVengefulVinesEffect(server, battle, unit, buffer)
 			else
 				self:describeEffect(server, battle, unit, buffer)
 			end

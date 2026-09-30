@@ -783,6 +783,22 @@
 							4
 						]
 					},
+					"new-horizons:vengefulVines": {
+						"schools": [
+							"new-horizons:nature"
+						],
+						"level": 1,
+						"costs": [
+							5,
+							5,
+							5,
+							5
+						],
+						"directDamage": {
+							"base": 20,
+							"powerCoefficient": 11
+						}
+					},
 					"new-horizons:crusade": {
 						"schools": [
 							"new-horizons:light"
@@ -2837,7 +2853,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "24a57104bf9968e3e6e90350034e10f2ef893e3087c878ab78608acf0d0eb9df",
+				"sourceSha256": "0b4baa18ae81f6f55f5200ca245a0b95fc48c3b4b479b78fd6eb4bf15e2d1f5b",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,

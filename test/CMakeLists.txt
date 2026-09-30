@@ -123,6 +123,7 @@ set(test_SRCS
 		spells/NewHorizonsDirectDamageTest.cpp
 		spells/NewHorizonsAdventureMagicTest.cpp
 		spells/NewHorizonsMagicTest.cpp
+		spells/OrientedSpellPatternTest.cpp
 		spells/MagicalDamageReductionTest.cpp
 		spells/NewHorizonsMagicArrowTest.cpp
 		spells/NewHorizonsMagicSchemaTest.cpp
@@ -253,6 +254,7 @@ set(test_SRCS
 		server/battles/NewHorizonsPurifyTest.cpp
 		server/battles/NewHorizonsCrusadeTest.cpp
 		server/battles/NewHorizonsEntangleTest.cpp
+		server/battles/NewHorizonsVengefulVinesTest.cpp
 		server/battles/NewHorizonsMagicalDamageReductionTest.cpp
 		server/battles/NewHorizonsStormOfDaggersTest.cpp
 		server/battles/NewHorizonsSanctuaryTest.cpp
@@ -355,6 +357,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsPurifyAITest.cpp
 		battleAI/NewHorizonsCrusadeAITest.cpp
 		battleAI/NewHorizonsEntangleAITest.cpp
+		battleAI/NewHorizonsVengefulVinesAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp
 		battleAI/NewHorizonsHeroGrowthAITest.cpp
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp

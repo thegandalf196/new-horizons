@@ -2,6 +2,59 @@
 
 ## Purpose
 
+### 2026-09-29 Vengeful Vines content coefficient encoding
+
+The initial 51-case content check failed two schema validations because
+`powerCoefficient: 1.1` is not an integer in the saved direct-damage model.
+This model already divides raw Spell Power by 10; coefficient 11 therefore
+implements the canonical 1.1 multiplier without a new schema or precision path.
+Correct the data and add an explicit encoding assertion. The repeated content
+suite passes 51/51, exit 0. Native formula execution remains a separate gate.
+
+Independent pre-build review found a core UI mismatch: hovering another
+orientation changed the displayed six-hex footprint, while Enter submitted
+the stored orientation. Keep preview/status on the committed orientation;
+hover may highlight a rotation control but changes the path only after click
+or Rotate. The focused source guard passes after repair, and independent
+final-source review has no remaining blocker. Both Linux client/test targets
+then compiled and linked on the first native build attempt, exit 0. The
+focused runtime filter and rendered keyboard acceptance are separate gates.
+
+First focused native run: 13 cases, 10 passed, three failed, zero skips,
+exit 1. Two actual server casts reduced Initiative from 4 to 2 alongside
+Speed, contradicting the canonical separation. Investigate the Initiative
+fallback rather than weakening those assertions. The AI fixture's legacy
+`CSpell::calculateDamage` call returned 1109 instead of the saved-rules 130;
+use the canonical BattleSpellMechanics forecast and retain actual projected
+versus resolved damage assertions. These failures block this slice's commit
+until repaired and the complete focused filter passes.
+
+Cause/repair: creatures without explicit Initiative retain the classic
+Speed-based fallback, so a STACKS_SPEED penalty also changed Initiative.
+Vines now uses the existing STACKS_MOVEMENT_RANGE additive bonus, already
+defined to affect movement only; retain classic fallback behavior unchanged.
+Creature UI's Speed readout uses getMovementRange and therefore displays the
+penalty. Native fixtures check that accessor alongside unchanged Initiative.
+The AI fixture removes the legacy calculation shortcut but retains real
+hypothetical damage and authoritative-resolution parity assertions.
+
+First retry: 13 cases, 12 passed, zero skips, exit 1. Movement/Initiative
+separation now passes. The AI projection still wipes both enemy stacks instead
+of dealing 130. The fixture set `useCommands=false`, which explicitly disables
+New Horizons primary profiles in HeroCommandFixture; the hero consequently
+uses divisor 1, not the canonical divisor 10, and forecasts 1120 damage.
+Restore the active primary/command configuration and assert divisor 10 plus
+the saved-rule effect value before projection. This is a fixture configuration
+error, not evidence of duplicate hits or a production projection failure.
+
+First complete succeeding native gate: both Linux targets link after the
+bounded repairs; the isolated New Horizons active-profile retry2 filter passes
+13/13, zero skips, exit 0. Actual AI selection/submission, hypothetical damage
+and authoritative resolution match. The 51-case content suite, two perk
+inventory tests, UI source guard, module mirror and diff checks pass.
+Independent review finds no remaining blocker. Full save/load, combined
+movement effects and rendered keyboard acceptance remain outside this gate.
+
 ### 2026-09-29 Entangle pre-build review — classic lookup and stale rules
 
 Independent review found two blocking source defects before native execution.

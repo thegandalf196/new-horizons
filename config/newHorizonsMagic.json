@@ -301,6 +301,12 @@
 			"level": 1,
 			"costs": [4, 4, 4, 4]
 		},
+		"new-horizons:vengefulVines": {
+			"schools": ["new-horizons:nature"],
+			"level": 1,
+			"costs": [5, 5, 5, 5],
+			"directDamage": {"base": 20, "powerCoefficient": 11}
+		},
 		"new-horizons:crusade": {
 			"schools": ["new-horizons:light"],
 			"level": 5,

@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-09-29
-Canonical source SHA-256: `24a57104bf9968e3e6e90350034e10f2ef893e3087c878ab78608acf0d0eb9df`
+Canonical source SHA-256: `0b4baa18ae81f6f55f5200ca245a0b95fc48c3b4b479b78fd6eb4bf15e2d1f5b`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -14,6 +14,11 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Vengeful Vines checkpoint: runtime, full-footprint preview/rotation/confirmation,
+AI targeting, registration and original Provisional artwork are present.
+Both Linux targets link and the isolated active-profile filter passes 13/13,
+zero skips. This is source/native evidence, not rendered or playable delivery.
+
 The counts below describe coverage, not release readiness. `Active` is a
 registry/source status unless a focused execution result is cited. Areas
 without a defensible item-level denominator remain explicitly uncounted.
@@ -25,7 +30,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 112/310 | 198 planned; Rootcaller has focused native evidence. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 53/67 | 14 missing/inactive; Entangle passes its focused native gate. Light is 11/11 and Nature is 5/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 54/67 | 13 missing/inactive; Vengeful Vines passes its focused native gate. Light is 11/11 and Nature is 6/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -424,8 +429,24 @@ inventory 2/2 and status wiring 4/4; module mirror and diff checks pass.
 Independent review has no remaining blocker. The HoMM3 art workflow produced original Provisional
 44/32/30 icons, retaining the master, prompt, manifest and comparison.
 Phase 2 retains combined classic Bind lifecycle, full save/load/Dispel,
-wider AI forecasts, rendering and playable acceptance. The next missing
-Nature identity after this gate is Vengeful Vines.
+wider AI forecasts, rendering and playable acceptance.
+
+Vengeful Vines now has the saved-v3 Level-1 Nature, 5-Mana winding attack.
+Shared geometry enforces a full six-hex S-bend for execution, client preview
+and AI candidates. Intersected enemies take `20 + 1.1 × SP` damage once per
+stack and lose two movement Speed for two rounds without changing Initiative;
+the existing movement-only bonus preserves even classic Initiative fallback.
+School rank scales only the damage power term. Both Linux targets link, and
+the isolated active-profile geometry/runtime/AI filter passes 13/13 with zero
+skips. It includes actual AI submission and forecast/resolution parity,
+duration/Echoed Duration, immunity/resistance and pre-cost malformed/stale
+request rejection. Content passes 51/51, perk inventory 2/2, UI source guard,
+module mirror and diff checks pass; independent review has no remaining
+blocker. Original Provisional art retains master, exact prompt, exports and
+native-size comparison. Full save/load, Dispel, combined movement statuses,
+hypnosis ownership, wider AI horizons and rendered keyboard/visual acceptance
+remain Phase 2 work. No playable snapshot is promoted. Next Nature identity:
+Summon Trolls.
 
 Sanctuary is now the saved-v3 Level-1 Light, 5-Mana single-friendly-stack
 protection spell. Its spell-sourced, battle-duration marker excludes the stack
@@ -464,7 +485,7 @@ from the active identity row.
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
-| Nature | 11 | 5 | Vengeful Vines; Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
+| Nature | 11 | 6 | Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 
 All five Adventure spell effects have partial or substantial runtime support,

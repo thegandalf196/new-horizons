@@ -21,6 +21,7 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
+#include "../../lib/spells/NewHorizonsVengefulVines.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/CRandomGenerator.h"
@@ -130,6 +131,73 @@ bool isCanonicalSanctuary(const Mechanics * spellMechanics)
 {
 	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
 	return spell && spell->getJsonKey() == "new-horizons:sanctuary";
+}
+
+bool isVengefulVines(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return spell && spell->getJsonKey() == newHorizonsVengefulVines::SPELL_KEY;
+}
+
+std::vector<Target> canonicalVengefulVinesTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!spellMechanics || !spellMechanics->battle()
+		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::LOCATION, AimType::LOCATION})
+		return result;
+
+	const auto * battle = spellMechanics->battle();
+	const auto * battleInfo = battle->getBattle();
+	if(!battleInfo || !newHorizonsVengefulVines::enabled(battleInfo->getMagicRules(), spellMechanics->getSpellId()))
+		return result;
+
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		return result;
+
+	const auto enemySide = battle->otherSide(casterSide);
+	std::set<BattleHex> enemyOccupiedHexes;
+	for(const auto * unit : battle->battleGetAllUnits(false))
+	{
+		if(!unit || !unit->alive() || !unit->isValidTarget(false) || unit->isInvincible()
+			|| unit->unitSide() != enemySide || !spellMechanics->isReceptive(unit))
+			continue;
+
+		for(const auto & hex : unit->getHexes())
+			enemyOccupiedHexes.insert(hex);
+	}
+	if(enemyOccupiedHexes.empty())
+		return result;
+
+	const auto directions = BattleHex::hexagonalDirections();
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex origin(index);
+		if(!origin.isAvailable())
+			continue;
+
+		for(const auto direction : directions)
+		{
+			const auto footprint = newHorizonsVengefulVines::footprint(origin, direction);
+			if(footprint.size() != 6)
+				continue;
+
+			const bool intersectsEnemy = std::any_of(footprint.begin(), footprint.end(), [&](const BattleHex & hex)
+			{
+				return enemyOccupiedHexes.contains(hex);
+			});
+			if(!intersectsEnemy)
+				continue;
+
+			const BattleHex endpoint = origin.cloneInDirection(direction, false);
+			Target target{Destination(origin), Destination(endpoint)};
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem))
+				result.push_back(std::move(target));
+		}
+	}
+
+	return result;
 }
 
 std::vector<Target> canonicalSanctuaryTargets(const Mechanics * spellMechanics)
@@ -927,6 +995,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 	}
 	if(isCanonicalSanctuary(spellMechanics))
 		return canonicalSanctuaryTargets(spellMechanics);
+	if(isVengefulVines(spellMechanics))
+		return canonicalVengefulVinesTargets(spellMechanics);
 	if(isCanonicalPurify(spellMechanics))
 	{
 		std::vector<Target> purifyTargets;

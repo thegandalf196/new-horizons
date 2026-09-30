@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
+    'new-horizons:vengefulVines',
     'new-horizons:entangle',
     'new-horizons:crusade',
     'new-horizons:divineRetribution',
@@ -533,6 +534,26 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(next(p for p in perks if p['id'].endswith('.rootcaller'))
                          ['effect']['status'], 'active')
 
+    def test_vengeful_vines_is_oriented_damage_with_fixed_movement_penalty(self):
+        row = self.rules['spells']['new-horizons:vengefulVines']
+        self.assertEqual((row['schools'], row['level'], row['costs']),
+                         (['new-horizons:nature'], 1, [5, 5, 5, 5]))
+        # The shared raw-Spell-Power divisor is 10: 11 / 10 = 1.1.
+        self.assertEqual(row['directDamage'], {'base': 20, 'powerCoefficient': 11})
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['vengefulVines']
+        self.assertEqual(spell['targetType'], 'LOCATION')
+        self.assertTrue(spell['flags']['damage'])
+        base = spell['levels']['base']
+        self.assertEqual((base['cost'], base['range']), (5, '0'))
+        self.assertTrue(base['targetModifier']['smart'])
+        self.assertEqual(base['battleEffects']['directDamage'], {'type': 'damage'})
+        self.assertEqual(base['battleEffects']['slowingVines']['bonus']['speed'],
+                         {'type': 'STACKS_MOVEMENT_RANGE', 'val': -2, 'duration': 'N_TURNS', 'turns': 2})
+        for size, key in ((44, 'iconBook'), (32, 'iconScroll'), (30, 'iconEffect')):
+            filename = spell['graphics'][key]
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]), (size, size))
+
     def test_crusade_is_rostered_full_army_light_empowerment(self):
         row = self.rules['spells']['new-horizons:crusade']
         self.assertEqual((row['schools'], row['level'], row['costs']),
@@ -773,6 +794,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'new-horizons:lifeDrain',
                               'new-horizons:soulReaper',
                               'new-horizons:stormOfDaggers',
+                              'new-horizons:vengefulVines',
                           })
         self.assertEqual(self.rules['spells']['core:fireball']['directDamage'],
                          {'base': 25, 'powerCoefficient': 8})

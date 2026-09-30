@@ -16,6 +16,7 @@
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsSorcery.h"
+#include "NewHorizonsVengefulVines.h"
 
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -67,6 +68,11 @@ bool isNewHorizonsSoulChainSpell(const CSpell * spell, const JsonNode & savedRul
 {
 	return spell && spell->getJsonKey() == newHorizonsSoulChain::SPELL_ID
 		&& newHorizonsSoulChain::isEnabled(savedRules);
+}
+
+bool isNewHorizonsVengefulVinesSpell(const CSpell * spell, const JsonNode & savedRules)
+{
+	return spell && newHorizonsVengefulVines::enabled(savedRules, spell->getId());
 }
 
 bool isRegenerationTarget(const battle::Unit * unit)
@@ -638,6 +644,13 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 
 	if(!newHorizonsMagic::spellAllowedByBattleRoster(*battle(), owner->getId()))
 		return adaptGenericProblem(problem);
+	// Vengeful Vines exists only in the saved v3 roster. Reject stale requests
+	// before any mana or hero-action state can be committed.
+	const auto * battleState = battle()->getBattle();
+	const auto & savedRules = battleState->getMagicRules();
+	if(owner->getJsonKey() == newHorizonsVengefulVines::SPELL_KEY
+		&& !newHorizonsVengefulVines::enabled(savedRules, owner->getId()))
+		return adaptGenericProblem(problem);
 	// Entangle's movement-only duration contract belongs to saved-v3 rules.
 	// Reject stale requests before spending resources, rather than allowing
 	// the Lua effect's defensive version guard to turn a cast into a no-op.
@@ -812,6 +825,21 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
 	}
 
+	if(isNewHorizonsVengefulVinesSpell(owner, savedRules))
+	{
+		if(mode != Mode::HERO || !castingHero || casterSide == BattleSide::NONE)
+			return adaptGenericProblem(problem);
+
+		const auto enemySide = battle()->otherSide(casterSide);
+		const bool availableTarget = std::ranges::any_of(battle()->battleGetAllUnits(false),
+			[this, enemySide](const battle::Unit * unit)
+		{
+			return unit && unit->alive() && unit->isValidTarget(false) && !unit->isInvincible()
+				&& unit->unitSide() == enemySide && !isSpellLocked(unit) && isReceptive(unit);
+		});
+		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+	}
+
 	// Spellbook/target-picker availability cannot know the eventual Cure choice.
 	// Accept the spell when some friendly living unit can be healed or has a
 	// supported affliction; canBeCastAt below validates the submitted selection
@@ -900,7 +928,30 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
 		battle()->getBattle()->getMagicRules());
+	const bool vengefulVinesEnabled = isNewHorizonsVengefulVinesSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	Target spellTarget = transformSpellTarget(target);
+	if(vengefulVinesEnabled)
+	{
+		const auto path = newHorizonsVengefulVines::footprint(target);
+		if(mode != Mode::HERO || casterSide == BattleSide::NONE || path.size() != 6
+			|| spellTarget.size() != path.size())
+			return false;
+
+		const auto enemySide = battle()->otherSide(casterSide);
+		const bool affectedEnemy = std::ranges::any_of(battle()->battleGetAllUnits(false),
+			[this, enemySide, &path](const battle::Unit * unit)
+			{
+				return unit && unit->alive() && unit->isValidTarget(false) && !unit->isInvincible()
+					&& unit->unitSide() == enemySide && !isSpellLocked(unit) && isReceptive(unit)
+					&& std::ranges::any_of(path, [unit](const BattleHex & hex)
+					{
+						return unit->coversPos(hex);
+					});
+			});
+		if(!affectedEnemy)
+			return false;
+	}
 	if(newHorizonsLifeDrain)
 	{
 		if(mode != Mode::HERO || casterSide == BattleSide::NONE
@@ -1005,11 +1056,11 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 
 	const battle::Unit * mainTarget = nullptr;
 
-	if(spellTarget.front().unitValue)
+	if(!vengefulVinesEnabled && spellTarget.front().unitValue)
 	{
 		mainTarget = spellTarget.front().unitValue;
 	}
-	else if(spellTarget.front().hexValue.isValid())
+	else if(!vengefulVinesEnabled && spellTarget.front().hexValue.isValid())
 	{
 		mainTarget = battle()->battleGetUnitByPos(target.front().hexValue, true);
 	}
@@ -1036,7 +1087,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	// above. Its legacy HEAL/DISPEL applicability checks do not recognize
 	// physical-only Poison, so do not let those checks reject a valid action.
 	if(newHorizonsCure || newHorizonsRegeneration || newHorizonsPhysicalPoison || newHorizonsLifeDrain
-		|| newHorizonsSoulChain
+		|| newHorizonsSoulChain || vengefulVinesEnabled
 		|| newHorizonsMagic::isCounterspell(owner))
 		return true;
 
@@ -1880,6 +1931,19 @@ BattleHexArray BattleSpellMechanics::spellRangeInHexes(const BattleHex & central
 Target BattleSpellMechanics::transformSpellTarget(const Target & aimPoint) const
 {
 	Target spellTarget;
+	if(battle() && battle()->getBattle()
+		&& isNewHorizonsVengefulVinesSpell(owner, battle()->getBattle()->getMagicRules()))
+	{
+		const auto path = newHorizonsVengefulVines::footprint(aimPoint);
+		if(path.size() != 6)
+			return {};
+
+		spellTarget.reserve(path.size());
+		for(const auto & hex : path)
+			spellTarget.emplace_back(hex);
+		return spellTarget;
+	}
+
 	if(isNewHorizonsStormOfDaggers()
 		|| isNewHorizonsLifeDrainSpell(owner, battle()->getBattle()->getMagicRules())
 		|| isNewHorizonsSoulChainSpell(owner, battle()->getBattle()->getMagicRules()))
@@ -1936,6 +2000,10 @@ Target BattleSpellMechanics::transformSpellTarget(const Target & aimPoint) const
 
 std::vector<AimType> BattleSpellMechanics::getTargetTypes() const
 {
+	if(battle() && battle()->getBattle()
+		&& isNewHorizonsVengefulVinesSpell(owner, battle()->getBattle()->getMagicRules()))
+		return {AimType::LOCATION, AimType::LOCATION};
+
 	auto ret = BaseMechanics::getTargetTypes();
 
 	if(!ret.empty())

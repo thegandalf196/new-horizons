@@ -86,6 +86,20 @@ std::string warcastingIconName(AlternatingHeroActionState::Action action)
 		return "NH_perk_martial_channeling_normal.png";
 	return {};
 }
+
+const char * vengefulVinesDirectionName(BattleHex::EDir direction)
+{
+	switch(direction)
+	{
+	case BattleHex::TOP_LEFT: return "top-left";
+	case BattleHex::TOP_RIGHT: return "top-right";
+	case BattleHex::RIGHT: return "right";
+	case BattleHex::BOTTOM_RIGHT: return "bottom-right";
+	case BattleHex::BOTTOM_LEFT: return "bottom-left";
+	case BattleHex::LEFT: return "left";
+	default: return "invalid";
+	}
+}
 }
 
 class BattleTargetSelectionPanel final : public CIntObject
@@ -98,21 +112,35 @@ class BattleTargetSelectionPanel final : public CIntObject
 	std::shared_ptr<CButton> undoButton;
 	std::shared_ptr<CButton> cancelButton;
 	std::shared_ptr<CButton> confirmButton;
+	std::string undoButtonText = "Undo";
 
 	void refresh()
 	{
 		const auto * controller = owner.actionsController.get();
 		const bool repeatedPlacement = controller && controller->repeatedPlacementModeActive();
+		const bool vengefulVines = controller && controller->vengefulVinesTargetSelectionModeActive();
 		const bool stormOfDaggers = controller && controller->stormOfDaggersTargetSelectionModeActive();
 		const bool soulChain = controller && controller->soulChainTargetSelectionModeActive();
-		const bool shouldShow = repeatedPlacement || stormOfDaggers || soulChain;
+		const bool shouldShow = repeatedPlacement || vengefulVines || stormOfDaggers || soulChain;
 		active = shouldShow;
 		if(!controller || !shouldShow)
 		{
+			if(undoButtonText != "Undo")
+			{
+				undoButtonText = "Undo";
+				undoButton->setTextOverlay(undoButtonText, FONT_SMALL, Colors::WHITE);
+			}
 			undoButton->setEnabled(false);
 			cancelButton->setEnabled(false);
 			confirmButton->setEnabled(false);
 			return;
+		}
+
+		const std::string nextUndoText = vengefulVines ? "Rotate" : "Undo";
+		if(undoButtonText != nextUndoText)
+		{
+			undoButtonText = nextUndoText;
+			undoButton->setTextOverlay(undoButtonText, FONT_SMALL, Colors::WHITE);
 		}
 
 		if(repeatedPlacement)
@@ -156,6 +184,29 @@ class BattleTargetSelectionPanel final : public CIntObject
 			cancelButton->setEnabled(true);
 			confirmButton->setEnabled(true);
 			confirmButton->block(!controller->repeatedPlacementReady());
+			return;
+		}
+
+		if(vengefulVines)
+		{
+			const auto preview = controller->getVengefulVinesSelectionPreview();
+			std::string title = "Vengeful Vines  |  ";
+			if(!preview.originSelected)
+				title += "select origin (right)";
+			else
+				title += std::string(vengefulVinesDirectionName(preview.orientation))
+					+ "  |  " + std::to_string(preview.affectedEnemyStacks)
+					+ (preview.affectedEnemyStacks == 1 ? " enemy stack" : " enemy stacks");
+			if(heading->getText() != title)
+				heading->setText(title);
+
+			if(targetReadback->getText() != preview.status)
+				targetReadback->setText(preview.status);
+			undoButton->setEnabled(preview.originSelected);
+			undoButton->block(!preview.originSelected);
+			cancelButton->setEnabled(true);
+			confirmButton->setEnabled(true);
+			confirmButton->block(!preview.canConfirm);
 			return;
 		}
 
@@ -267,11 +318,13 @@ public:
 			ETextAlignment::TOPLEFT, Colors::WHITE, "");
 
 		undoButton = std::make_shared<CButton>(Point(474, 15), AnimationPath::builtin("settingsWindow/button80"),
-			CButton::tooltip("Undo", "Remove the most recent placement or target."), [this]
+			CButton::tooltip("Undo / Rotate", "Undo the latest selection, or cycle Vengeful Vines through six directions."), [this]
 			{
 				if(owner.actionsController)
 				{
-					if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+					if(owner.actionsController->vengefulVinesTargetSelectionModeActive())
+						owner.actionsController->rotateVengefulVinesOrientation();
+					else if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 						owner.actionsController->undoStormOfDaggersTarget();
 					else if(owner.actionsController->soulChainTargetSelectionModeActive())
 						owner.actionsController->undoSoulChainTarget();
@@ -296,7 +349,9 @@ public:
 			{
 				if(owner.actionsController)
 				{
-					if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+					if(owner.actionsController->vengefulVinesTargetSelectionModeActive())
+						owner.actionsController->confirmVengefulVines();
+					else if(owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 						owner.actionsController->confirmStormOfDaggersTargets();
 					else if(owner.actionsController->soulChainTargetSelectionModeActive())
 						owner.actionsController->confirmSoulChainTargets();
@@ -372,7 +427,9 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 	addShortcut(EShortcut::GLOBAL_ACCEPT, [this](){
 		if(this->owner.actionsController)
 		{
-			if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+			if(this->owner.actionsController->vengefulVinesTargetSelectionModeActive())
+				this->owner.actionsController->confirmVengefulVines();
+			else if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 				this->owner.actionsController->confirmStormOfDaggersTargets();
 			else if(this->owner.actionsController->soulChainTargetSelectionModeActive())
 				this->owner.actionsController->confirmSoulChainTargets();
@@ -383,7 +440,9 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 	addShortcut(EShortcut::GLOBAL_BACKSPACE, [this](){
 		if(this->owner.actionsController)
 		{
-			if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
+			if(this->owner.actionsController->vengefulVinesTargetSelectionModeActive())
+				this->owner.actionsController->rotateVengefulVinesOrientation();
+			else if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 				this->owner.actionsController->undoStormOfDaggersTarget();
 			else if(this->owner.actionsController->soulChainTargetSelectionModeActive())
 				this->owner.actionsController->undoSoulChainTarget();
@@ -1505,6 +1564,12 @@ void BattleWindow::updateBattleTargetSelectionControls()
 	const bool active = owner.actionsController && owner.actionsController->repeatedPlacementModeActive();
 	const bool ready = active && owner.actionsController->repeatedPlacementReady();
 	const bool canUndo = active && !owner.actionsController->getRepeatedPlacementSelectedHexes().empty();
+	const bool vengefulVinesActive = owner.actionsController
+		&& owner.actionsController->vengefulVinesTargetSelectionModeActive();
+	const auto vengefulVinesPreview = vengefulVinesActive
+		? owner.actionsController->getVengefulVinesSelectionPreview() : VengefulVinesSelectionPreview{};
+	const bool vengefulVinesCanConfirm = vengefulVinesActive && vengefulVinesPreview.canConfirm;
+	const bool vengefulVinesCanRotate = vengefulVinesActive && vengefulVinesPreview.originSelected;
 	const bool stormActive = owner.actionsController
 		&& owner.actionsController->stormOfDaggersTargetSelectionModeActive();
 	const bool stormCanConfirm = stormActive
@@ -1515,9 +1580,11 @@ void BattleWindow::updateBattleTargetSelectionControls()
 	const bool soulChainCanConfirm = soulChainActive
 		&& !owner.actionsController->soulChainSelectedTargetIds().empty();
 	const bool soulChainCanUndo = soulChainCanConfirm;
-	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, !ready && !stormCanConfirm && !soulChainCanConfirm);
-	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE, !canUndo && !stormCanUndo && !soulChainCanUndo);
-	widget<CButton>("wait")->setEnabled(!active && !stormActive && !soulChainActive);
+	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT,
+		!ready && !vengefulVinesCanConfirm && !stormCanConfirm && !soulChainCanConfirm);
+	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE,
+		!canUndo && !vengefulVinesCanRotate && !stormCanUndo && !soulChainCanUndo);
+	widget<CButton>("wait")->setEnabled(!active && !vengefulVinesActive && !stormActive && !soulChainActive);
 	if(battleTargetSelectionPanel)
 		battleTargetSelectionPanel->update();
 }
