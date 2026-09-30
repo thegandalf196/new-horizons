@@ -31,6 +31,7 @@ class JsonNode;
 class CStack;
 class CGObjectInstance;
 class CGHeroInstance;
+class Creature;
 class IAdventureSpellEffect;
 class MetaString;
 
@@ -358,6 +359,10 @@ public:
 	virtual std::string getSpellName() const = 0;
 	virtual std::string getCasterNameTextID() const = 0;
 	virtual int32_t getSpellLevel() const = 0;
+	/// Returns the effective max health of a hypothetical temporary summoned stack,
+	/// evaluated with the normal creature/hero bonus and limiter graph without
+	/// attaching a live child to either source node.
+	int32_t getSummonedCreatureMaxHealth(const Creature * creature, bool natureSummoned) const;
 
 	virtual bool isSmart() const = 0;
 	virtual bool isMassive() const = 0;

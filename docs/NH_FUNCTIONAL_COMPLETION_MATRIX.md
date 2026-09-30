@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-09-29
-Canonical source SHA-256: `0b4baa18ae81f6f55f5200ca245a0b95fc48c3b4b479b78fd6eb4bf15e2d1f5b`
+Canonical source SHA-256: `caa2a7db9ca20a7f552aaf8511e49e05dd63cc7b9528013bef2ee9075170c0c9`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -14,10 +14,11 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-Vengeful Vines checkpoint: runtime, full-footprint preview/rotation/confirmation,
-AI targeting, registration and original Provisional artwork are present.
-Both Linux targets link and the isolated active-profile filter passes 13/13,
-zero skips. This is source/native evidence, not rendered or playable delivery.
+Summon Trolls checkpoint: exact aggregate HP, Beastcaller, chosen legal empty
+hex, count/HP preview, AI targeting, registration and original Provisional
+artwork are present. Both Linux targets link; the isolated active-profile
+filter passes 10/10, zero skips, plus two existing AI guards. This is
+source/native evidence, not rendered or playable delivery.
 
 The counts below describe coverage, not release readiness. `Active` is a
 registry/source status unless a focused execution result is cited. Areas
@@ -27,10 +28,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 112/310 | 198 planned; Rootcaller has focused native evidence. Active status alone does not certify every mechanic. |
+| Skill perks active | 113/310 | 197 planned; Beastcaller is the newest activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
-| Canonical combat-spell identities registered | 54/67 | 13 missing/inactive; Vengeful Vines passes its focused native gate. Light is 11/11 and Nature is 6/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 55/67 | 12 missing/inactive; Summon Trolls is the newest identity. Light is 11/11 and Nature is 7/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -54,8 +55,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 112
-active perks, leaving nine ranks and 198 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 113
+active perks, leaving nine ranks and 197 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-29; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -169,7 +170,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Command | 3/0 | 0/10 | Progression blocked |
 | Light Magic | 3/0 | 7/3 | Benediction, Healer, Guardian, Aegis, Purifier, Retributionist, and Crusader active; Sanctuary Keeper, Litany and Miracle Worker remain planned. Crusader has focused native evidence. |
 | Shadow Magic | 3/0 | 6/4 | Malediction, Withering Touch, Soul Binder, Dark Gift, Night Feeder, and Reanimator are active. Reanimator's casualty-only pool has focused authoritative evidence; four perks remain planned. |
-| Nature Magic | 3/0 | 2/8 | Herbalist and Rootcaller active with focused native evidence; eight perks missing |
+| Nature Magic | 3/0 | 3/7 | Herbalist, Rootcaller and Beastcaller active; seven perks missing. |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 0/10 | Progression blocked |
@@ -201,9 +202,9 @@ opens the Shroud's ordinary Advanced-rank progression.
 
 The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
-spells. The current saved roster has 46 of 67 combat identities with active
-settings rows and registered mod/core definitions, including Spell Lock and
-the newly registered Doom; 21 are absent or inactive. This count describes
+spells. The current saved roster has 55 of 67 combat identities with active
+settings rows and registered mod/core definitions; 12 are absent or inactive.
+Summon Trolls is the newest registered identity. This count describes
 identity registration, not exact-effect or AI completion.
 
 Frailty replaces core Weakness in new saved-v3 acquisition while older saved
@@ -446,7 +447,25 @@ blocker. Original Provisional art retains master, exact prompt, exports and
 native-size comparison. Full save/load, Dispel, combined movement statuses,
 hypnosis ownership, wider AI horizons and rendered keyboard/visual acceptance
 remain Phase 2 work. No playable snapshot is promoted. Next Nature identity:
-Summon Trolls.
+Summon Trolls (now implemented below).
+
+Summon Trolls implements the saved-v3 Level-2 Nature, 9-Mana independent
+temporary stack at a chosen legal empty hex. It floors the whole modified
+`100 + 2.5 × SP` pool once and wounds the final Troll to preserve exact HP;
+School rank scales only SP and Beastcaller increases the whole pool by 25%.
+Legal-placement overlay and HP/count preview reuse authoritative mechanics.
+Prospective and hypothetical stacks inherit ordinary army/creature health
+bonuses without live graph attachment; the Elixir case agrees on 54 max HP,
+five Trolls and 242 aggregate HP. Both Linux targets link and the ten focused
+runtime/AI cases pass with zero skips, including actual AI destination
+submission, pre-cost rejection, independent recasts and spawn/state JSON
+roundtrips with authoritative UPDATE replay. The two existing Phantom Army/
+Transfigure Matter AI guards also pass. Content/inventory passes 54/54, and
+the module mirror, UI source guard and diff checks pass. Independent review
+has no remaining blocker. Full mid-combat binary save/reload, broader reward/
+effect interactions, tactical placement quality and rendered/playable evidence
+remain Phase 2 work. Original spell art is Provisional; Beastcaller art is
+Not done. No launcher promotion. Next: Verdant Prison and Verdant Warden.
 
 Sanctuary is now the saved-v3 Level-1 Light, 5-Mana single-friendly-stack
 protection spell. Its spell-sourced, battle-duration marker excludes the stack
@@ -485,7 +504,7 @@ from the active identity row.
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 3 | Blink; Confusion; Polymorph; Hand of Fate; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
-| Nature | 11 | 6 | Summon Trolls; Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
+| Nature | 11 | 7 | Verdant Prison; Hydra's Vitality; Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 
 All five Adventure spell effects have partial or substantial runtime support,

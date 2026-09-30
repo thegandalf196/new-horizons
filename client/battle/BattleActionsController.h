@@ -406,6 +406,11 @@ public:
 	bool isValidTransfigureMatterTarget(const BattleHex & targetHex) const;
 	BattleHexArray getTransfigureMatterTargetHexes(const CSpell * spell);
 
+	/// New Horizons Summon Trolls targets one legal empty battlefield hex.
+	/// Use mechanics validation for the selectable placement overlay.
+	static bool isSummonTrollsSpell(const CSpell * spell);
+	BattleHexArray getSummonTrollsTargetHexes(const CSpell * spell);
+
 	/// methods to work with array of possible actions, needed to control special creatures abilities
 	const std::vector<PossiblePlayerBattleAction> & getPossibleActions() const;
 	

@@ -43,7 +43,8 @@ public:
 	BattleHex initialPosition; //position on battlefield; -2 - keep, -3 - lower tower, -4 - upper tower
 
 	CStack(const CStackInstance * base, const PlayerColor & O, int I, BattleSide Side, const SlotID & S);
-	CStack(const CStackBasicDescriptor * stack, const PlayerColor & O, int I, BattleSide Side, const SlotID & S = SlotID(255));
+	CStack(const CStackBasicDescriptor * stack, const PlayerColor & O, int I, BattleSide Side,
+		const SlotID & S = SlotID(255), bool hypothetical = false);
 	CStack();
 	~CStack();
 

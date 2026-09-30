@@ -500,6 +500,9 @@ BattleHexArray BattleFieldController::getHighlightedHexesForSpellRange()
 
 	if(caster && spell) //when casting spell
 	{
+		if(BattleActionsController::isSummonTrollsSpell(spell))
+			return owner.actionsController->getSummonTrollsTargetHexes(spell);
+
 		if(BattleActionsController::isTransfigureMatterSpell(spell))
 			return owner.actionsController->getTransfigureMatterTargetHexes(spell);
 

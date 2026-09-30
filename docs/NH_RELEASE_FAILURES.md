@@ -601,6 +601,105 @@ already exists. Use this list as the readiness review before the next dispatch:
 
 ## How to append an incident
 
+### 2026-09-29 — Summon Trolls pre-build review and content fixture repairs
+
+Candidate base: `4805d2c7c`, UP-039 working slice; not a published/playable head.
+Independent review caught a Lua selected-hex helper using unbound `self`, which
+would fail target checks. The worker threaded the instance into the helper.
+Review also identified that adding flat hero `STACK_HEALTH` to base creature HP
+does not model percentage/limited health artifacts, including Elixir of Life.
+The slice must use a prospective stack's ordinary bonus evaluation, not an
+artifact-name exception or an incorrect count preview. Native evidence is
+pending while that repair is integrated.
+
+The content dimension assertion initially used a legacy RGBA-only helper for
+the purpose-made opaque RGB spell exports; the 54-check content/inventory run
+failed with `Expected authored eight-bit RGBA artwork`. Replaced only that
+new dimension assertion with PNG IHDR dimensions, as used by Vengeful Vines;
+the unrelated RGBA helper remains unchanged. The same focused command then
+passes 54/54 (52 content plus two perk-inventory checks). Runtime copies are
+non-interlaced 44/32/30 RGB, and their hashes match retained exports. This is
+content evidence, not native or rendered acceptance.
+
+The first Linux client/test build stopped in `BattleSpellMechanics.cpp` because
+the recorder accessed `natureSummoned` on abstract `battle::Unit`; that flag
+belongs to `CUnitState`. The same access in the new AI slice was identified
+before its object compiled. Repair uses the existing acquired unit state and
+public `isSummoned()` interface, without inventing new saved fields. Rebuild and
+native execution remain pending; log: `summon-trolls-build.log` under the local
+build directory.
+
+Follow-up source review found a foundational detached-AI mismatch: newly
+created `StackWithBonuses(UnitInfo)` inherited only its creature template,
+not the army graph. With Elixir and SP 57, a count of five Trolls projected
+200 HP instead of the authoritative 242. This is not deferred as tactical
+polish: the ordinary army-bonus inheritance and owned bearer lifetime must
+be repaired for new hypothetical units, with an Elixir projection/resolution
+case. Existing builds/runs remain serialized while the repair is prepared;
+no passing baseline result may conceal this known variant failure.
+
+The second Linux build linked the shared library and client library, then
+stopped in the new runtime fixture: `CStack::getCreature()` is not an engine
+API (`unitType()` is), and a restored abstract `battle::Unit` was again queried
+for its state-only Nature flag. Only the new fixture accesses are repaired;
+the test contract is not weakened. Log: `summon-trolls-build-retry.log`.
+No baseline native result is claimed from this interrupted build. The next
+candidate also includes the reviewed hypothetical-army inheritance repair.
+
+The third build compiled the repaired production paths but stopped in the new
+AI fixture's two hypothetical-battle constructors. Its
+`shared_ptr<CPlayerBattleCallback>` could not convert to the base callback
+because the concrete callback type was incomplete in that translation unit.
+Repair adds the missing concrete callback header, matching the existing
+Vengeful Vines fixture; no explicit unsafe cast or assertion removal is used.
+Log: `summon-trolls-build-retry2.log`. Native evidence is still pending.
+
+The fourth build passes both client/test targets. The first active-profile
+Troll filter runs ten cases with zero skips, but only one passes. Inspection
+isolates two fixture assumptions: `BattleTestFixture::addStack` deploys its
+baseline Troll through `BattleInfo::addUnit` at the summoned slot placeholder
+(even though its `UnitInfo.summoned` flag is false), and `Unit::isSummoned()`
+tests that slot identity. The result finder must therefore also require
+Nature-summon provenance; and Elixir's component artifacts really do contribute
+four flat HP, giving a living Troll 54 max HP, not the assumed 50. Both AI
+projection and authoritative resolution already agree on 54 max HP and the
+242 aggregate pool. Repair changes the fixture finder and exact expected
+health, not production behavior or the core assertions. This corrects the
+earlier unverified explanation that component metadata did not add bonuses.
+The two existing targeted Phantom Army/Transfigure Matter AI guards pass 2/2,
+zero skips. Logs: `NewHorizonsSummonTrolls-focused.log` and
+`NewHorizonsSummonTrolls-ai-guard-focused.log` in the isolated local runner.
+The Troll filter still requires a fresh passing rerun before closure.
+
+The fifth build passes both targets; the refreshed Troll filter passes 9/10,
+zero skips. Its only remaining failure expected mutable health and Nature
+provenance from `CMemorySerializer::deepCopy(BattleInfo)`. Independent review
+confirmed `CStack::serialize` explicitly omits runtime unit state. The real
+spawn/update contract is `UnitInfo` JSON plus `CUnitState::save/load` JSON,
+also exercised by the existing Phantom Army tests. Replace the wrong-layer
+assertion with those two roundtrips and an authoritative `BattleUnitsChanged`
+UPDATE replay, retaining exact HP, count, position and provenance assertions.
+No production serialization redesign is inferred from this fixture failure.
+Full mid-combat binary save/reload remains separately unverified Phase 2 work.
+Log: `NewHorizonsSummonTrolls-focused-retry.log`. The corrected test still
+requires a fresh build and native rerun before claiming success.
+
+A root validation rerun mistyped the perk-inventory module as
+`test_new_horizons_perk_inventory`, producing one import error after 52 content
+checks passed. The actual module is `test_new_horizons_ui_perk_inventory`;
+rerunning the correct content/inventory pair passes 54/54. This was a command
+error, not a product or test-suite failure; no assertion was changed.
+
+The sixth build explicitly exits 0 for both Linux client/test targets after
+compiling the corrected JSON roundtrip fixture. The fresh isolated active-profile
+`NewHorizonsSummonTrolls*` rerun passes 10/10, zero skips; both targeted
+Phantom Army/Transfigure Matter AI guards pass again, 2/2, zero skips.
+Logs: `NewHorizonsSummonTrolls-focused-retry5.log` and
+`NewHorizonsSummonTrolls-ai-guard-retry5.log` in the local runner. The tester
+verified the copied binary and refreshed resources while preserving its
+profile-only test mod. No GUI, purchaser assets or normal play profile changed.
+This closes the focused gate, not rendered/playable or full save/reload gates.
+
 Add a row and a short checkpoint to the existing Build handoff containing:
 
 ```text

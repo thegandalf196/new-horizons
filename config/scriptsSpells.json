@@ -350,6 +350,20 @@
 			"additionalProperties" : false
 		}
 	},
+	"summonTrolls" : {
+		"implements" : "spellEffect",
+		"script" : "spells/summonTrolls",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {},
+				"id" : { "type" : "string" }
+			},
+			"additionalProperties" : false
+		}
+	},
 	"transfigureMatter" : {
 		"implements" : "spellEffect",
 		"script" : "spells/transfigureMatter",

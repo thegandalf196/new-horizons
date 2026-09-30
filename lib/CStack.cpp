@@ -45,8 +45,9 @@ CStack::CStack():
 {
 }
 
-CStack::CStack(const CStackBasicDescriptor * stack, const PlayerColor & O, int I, BattleSide Side, const SlotID & S):
-	CBonusSystemNode(BonusNodeType::STACK_BATTLE),
+CStack::CStack(const CStackBasicDescriptor * stack, const PlayerColor & O, int I, BattleSide Side,
+	const SlotID & S, const bool hypothetical):
+	CBonusSystemNode(BonusNodeType::STACK_BATTLE, hypothetical),
 	ID(I),
 	typeID(stack->getId()),
 	baseAmount(stack->getCount()),

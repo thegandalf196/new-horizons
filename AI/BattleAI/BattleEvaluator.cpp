@@ -77,6 +77,11 @@ bool isTransfigureMatter(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:transfigureMatter";
 }
 
+bool isCanonicalSummonTrolls(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:summonTrolls";
+}
+
 bool isCounterspell(const CSpell * spell)
 {
 	return newHorizonsMagic::isCounterspell(spell);
@@ -4113,6 +4118,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return !u->isTurret(); });
 				const bool transfigureMatter = isTransfigureMatter(ps.spell);
 				const bool phantomArmy = isPhantomArmy(ps.spell);
+				const bool summonTrolls = isCanonicalSummonTrolls(ps.spell);
 
 				auto needFullEval = ps.command == HeroCommand::FOCUS_FIRE
 					|| state->hasObstacleChanges() || state->hasWallChanges()
@@ -4315,6 +4321,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						damageToHostilesScore += static_cast<float>(newHealth)
 							* static_cast<float>(unit->unitType()->getAIValue())
 							/ static_cast<float>(maxHealth);
+					}
+					if(summonTrolls && !original && unit->unitType()
+						&& unit->unitType()->getJsonKey() == "core:troll"
+						&& unit->isSummoned()
+						&& state->battleGetOwner(unit) == playerID && newHealth > 0)
+					{
+						const auto unitState = unit->acquireState();
+						if(unitState && unitState->natureSummoned)
+						{
+							// Troll stacks are magical summons and are skipped by the generic
+							// health-delta score below.  Value their exact projected HP here,
+							// including the partial health on the final Troll.
+							const auto maxHealth = std::max<int64_t>(1, unit->getMaxHealth());
+							damageToHostilesScore += static_cast<float>(newHealth)
+								* static_cast<float>(unit->unitType()->getAIValue())
+								/ static_cast<float>(maxHealth);
+						}
 					}
 					if(ps.spell && ps.spell->getId() == SpellID::SLOW
 						&& original && original->alive() && unit->alive())

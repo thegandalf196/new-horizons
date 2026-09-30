@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
+    'new-horizons:summonTrolls',
     'new-horizons:vengefulVines',
     'new-horizons:entangle',
     'new-horizons:crusade',
@@ -533,6 +534,29 @@ class NewHorizonsContentTest(unittest.TestCase):
         perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:natureMagic']['perks']
         self.assertEqual(next(p for p in perks if p['id'].endswith('.rootcaller'))
                          ['effect']['status'], 'active')
+
+    def test_summon_trolls_uses_selected_placement_and_exact_health_effect(self):
+        row = self.rules['spells']['new-horizons:summonTrolls']
+        self.assertEqual(row['schools'], ['new-horizons:nature'])
+        self.assertEqual(row['level'], 2)
+        self.assertEqual(row['costs'], [9] * 4)
+        self.assertNotIn('directDamage', row)
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['summonTrolls']
+        self.assertEqual(spell['targetType'], 'LOCATION')
+        self.assertEqual(spell['flags'], {'indifferent': True})
+        effect = spell['levels']['base']['battleEffects']['summonTrolls']
+        self.assertEqual(effect, {'type': 'core:summonTrolls', 'id': 'core:troll'})
+        registration = load('config/scriptsSpells.json')['summonTrolls']
+        self.assertEqual(registration['script'], 'spells/summonTrolls')
+        for size, key in ((44, 'iconBook'), (32, 'iconScroll'), (30, 'iconEffect')):
+            self.assertEqual(spell['graphics'][key], f'NH_spell_summon_trolls_{size}.png')
+            self.assertEqual(struct.unpack('>II',
+                (ROOT / 'Mods/new-horizons/Images' / spell['graphics'][key]).read_bytes()[16:24]),
+                (size, size))
+        perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:natureMagic']['perks']
+        self.assertEqual(next(p for p in perks if p['id'].endswith('.beastcaller'))
+                         ['effect']['status'], 'active')
+        self.assertEqual(spell['sounds']['cast'], 'SUMNELM')
 
     def test_vengeful_vines_is_oriented_damage_with_fixed_movement_penalty(self):
         row = self.rules['spells']['new-horizons:vengefulVines']

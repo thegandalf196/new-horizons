@@ -301,6 +301,11 @@
 			"level": 1,
 			"costs": [4, 4, 4, 4]
 		},
+		"new-horizons:summonTrolls": {
+			"schools": ["new-horizons:nature"],
+			"level": 2,
+			"costs": [9, 9, 9, 9]
+		},
 		"new-horizons:vengefulVines": {
 			"schools": ["new-horizons:nature"],
 			"level": 1,

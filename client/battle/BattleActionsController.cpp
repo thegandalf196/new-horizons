@@ -63,6 +63,7 @@ struct TextReplacement
 using TextReplacementList = std::vector<TextReplacement>;
 
 constexpr std::string_view transfigureMatterJsonKey = "new-horizons:transfigureMatter";
+constexpr std::string_view summonTrollsJsonKey = "new-horizons:summonTrolls";
 constexpr std::string_view stormOfDaggersJsonKey = "new-horizons:stormOfDaggers";
 constexpr std::string_view shadowGiftJsonKey = "new-horizons:shadowGift";
 constexpr int32_t stormOfDaggersMaximumTargets = 5;
@@ -321,6 +322,44 @@ static std::string prepareTransfigureMatterText(const CSpell * spell, const spel
 
 	if(value.hpDelta > 0)
 		details.push_back("total HP: " + std::to_string(value.hpDelta));
+
+	if(!details.empty())
+	{
+		result += " (";
+		for(size_t index = 0; index < details.size(); ++index)
+		{
+			if(index != 0)
+				result += ", ";
+			result += details[index];
+		}
+		result += ")";
+	}
+
+	return result;
+}
+
+static std::string prepareSummonTrollsText(const CSpell * spell, const spells::effects::SpellEffectValue & value)
+{
+	if(!spell)
+		return {};
+
+	auto templateText = MetaString::createFromTextID("core.genrltxt", 26);
+	templateText.replaceRawString(spell->getNameTranslated());
+	std::string result = templateText.toString(&GAME->translator());
+	std::vector<std::string> details;
+
+	if(value.unitsDelta > 0 && value.unitType)
+	{
+		const auto unitName = value.unitsDelta == 1
+			? value.unitType->getNameSingularTranslated()
+			: value.unitType->getNamePluralTranslated();
+		details.push_back("temporary Troll stack: + " + std::to_string(value.unitsDelta) + " " + unitName);
+	}
+
+	if(value.hpDelta > 0)
+		details.push_back("total HP: " + std::to_string(value.hpDelta));
+
+	details.push_back("footprint: 1 hex");
 
 	if(!details.empty())
 	{
@@ -2090,6 +2129,11 @@ bool BattleActionsController::isTransfigureMatterSpell(const CSpell * spell)
 	return spell && spell->getJsonKey() == transfigureMatterJsonKey;
 }
 
+bool BattleActionsController::isSummonTrollsSpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == summonTrollsJsonKey;
+}
+
 bool BattleActionsController::isValidTransfigureMatterTarget(const BattleHex & targetHex) const
 {
 	if(!targetHex.isValid())
@@ -2134,6 +2178,21 @@ BattleHexArray BattleActionsController::getTransfigureMatterTargetHexes(const CS
 				result.insert(hex);
 	}
 
+	return result;
+}
+
+BattleHexArray BattleActionsController::getSummonTrollsTargetHexes(const CSpell * spell)
+{
+	BattleHexArray result;
+	if(!isSummonTrollsSpell(spell) || !owner.getBattle() || !heroSpellcastingModeActive())
+		return result;
+
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(hex.isAvailable() && isCastingPossibleHere(spell, nullptr, hex))
+			result.insert(hex);
+	}
 	return result;
 }
 
@@ -2958,6 +3017,8 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			// "Cast %s" plus dmg and kills info
 			if(isTransfigureMatterSpell(spell))
 				return prepareTransfigureMatterText(spell, *spellEffectValue);
+			if(isSummonTrollsSpell(spell))
+				return prepareSummonTrollsText(spell, *spellEffectValue);
 			return prepareSpellEffectText(26, *spellEffectValue, spell->getNameTranslated(), "");
 		}
 
@@ -3018,6 +3079,14 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 
 		case PossiblePlayerBattleAction::FREE_LOCATION:
 		{
+			const CSpell * spell = action.spell().toSpell();
+			if(isSummonTrollsSpell(spell))
+			{
+				auto spellEffectValue = owner.getBattle()->getSpellEffectValue(
+					spell, getCurrentSpellcaster(), getCurrentCastMode(), targetHex);
+				return prepareSummonTrollsText(spell, *spellEffectValue);
+			}
+
 			MetaString text = MetaString::createFromTextID("core.genrltxt.26"); //Cast %s
 			text.replaceName(action.spell());
 			return text.toString(&GAME->translator());

@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "summon-trolls",
+  "source": {
+    "path": "master.png",
+    "filename": "master.png",
+    "byte_size": 2734342,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "18107748b9ccc743f429eff033522c712c27bcf918cdb35939d8894109897c45"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "18107748b9ccc743f429eff033522c712c27bcf918cdb35939d8894109897c45"
+    },
+    {
+      "file": "summon-trolls-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "3e936408f0f5204d1320ab2988a4b774ffdeabb25e3ba361205b6d129a93788e"
+    },
+    {
+      "file": "summon-trolls-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "d38ca4467ca68ad67fbce0cf98e6e0decee011dc71fd17c01d643cb71574254d"
+    },
+    {
+      "file": "summon-trolls-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGB",
+      "method": "LANCZOS",
+      "sha256": "990fb5386b7f64ec9e6795818b5c700398e3dc03cdb954e723401486c94c4726"
+    },
+    {
+      "file": "summon-trolls-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "d4bf33dbbc1c2c7bc86fdd4cc991e43603a582b70cd796c4144fe4f6f49811e4"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "summon-trolls-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "summon-trolls-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "summon-trolls-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "summon-trolls-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

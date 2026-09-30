@@ -10,6 +10,7 @@
 #pragma once
 
 #include <vstd/RNG.h>
+#include <memory>
 #include <optional>
 
 #include <vcmi/Environment.h>
@@ -22,6 +23,7 @@
 
 class HypotheticBattle;
 class CSpell;
+class CStack;
 
 ///Fake random generator, used by AI to evaluate random server behavior
 class RNGStub final : public vstd::RNG
@@ -64,7 +66,8 @@ public:
 	}
 };
 
-class StackWithBonuses : public battle::CUnitState, public virtual IBonusBearer
+class StackWithBonuses : public battle::CUnitState, public virtual IBonusBearer,
+	public std::enable_shared_from_this<StackWithBonuses>
 {
 public:
 	std::vector<Bonus> bonusesToAdd;
@@ -113,10 +116,17 @@ public:
 	std::string getDescription() const override;
 
 private:
+	void setOriginalBearer(const IBonusBearer * bearer);
+
 	// Value snapshots survive nested models whose bonus queries create fresh pointers.
 	// Include all spell/command durations for removal; only N_TURNS are aged.
 	std::optional<std::vector<Bonus>> projectedEffects;
 	void captureEffects();
+	// New hypothetical units own a detached CStack as their creature/army bonus
+	// provenance. Descendant projections retain the projected bearer that they
+	// wrap so origBearer never points into a destroyed hypothetical battle.
+	std::shared_ptr<CStack> ownedBearer;
+	std::shared_ptr<const StackWithBonuses> projectedBearer;
 	const IBonusBearer * origBearer;
 	const HypotheticBattle * owner;
 

@@ -38,6 +38,8 @@ namespace spells
 namespace
 {
 
+constexpr std::string_view NEW_HORIZONS_SUMMON_TROLLS_SPELL = "new-horizons:summonTrolls";
+
 bool isLivingCureTarget(const battle::Unit * unit)
 {
 	return unit && unit->isValidTarget(false) && unit->alive()
@@ -142,6 +144,8 @@ public:
 		uint32_t unitId;
 		CreatureID creature;
 		int32_t count;
+		int64_t availableHealth;
+		bool natureSummoned;
 		bool clone;
 		int64_t phantomInitialIntegrity;
 		int64_t phantomIntegrity;
@@ -205,7 +209,9 @@ public:
 			{
 				return entry.first == unitId;
 			});
-			result.push_back({unitId, unit->creatureId(), unit->getCount(), unit->isClone(),
+			const auto state = unit->acquireState();
+			result.push_back({unitId, unit->creatureId(), unit->getCount(), unit->getAvailableHealth(),
+				state && state->natureSummoned, unit->isClone(),
 				unit->getPhantomInitialIntegrity(), unit->getPhantomIntegrity(),
 				duration == addedUnitDurations.end() ? 0 : duration->second});
 		}
@@ -655,6 +661,11 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	// Reject stale requests before spending resources, rather than allowing
 	// the Lua effect's defensive version guard to turn a cast into a no-op.
 	if(owner->getJsonKey() == "new-horizons:entangle" && !usesNewHorizonsMagicV3())
+		return adaptGenericProblem(problem);
+	// Summon Trolls uses the saved-v3 School-rank Spell Power formula and
+	// temporary Nature-summon state. Reject stale requests before resources or a
+	// Hero Action can be spent; its Lua guard alone would only prevent the effect.
+	if(owner->getJsonKey() == NEW_HORIZONS_SUMMON_TROLLS_SPELL && !usesNewHorizonsMagicV3())
 		return adaptGenericProblem(problem);
 	if(owner->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
 		&& !newHorizonsMagic::soulReaperEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
@@ -1409,11 +1420,12 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			bool wroteCreation = false;
 			const auto addedUnits = effectRecorder.addedUnits();
 			const bool phantomArmy = owner->getJsonKey() == newHorizonsSorcery::PHANTOM_ARMY_SPELL;
+			const bool summonTrolls = owner->getJsonKey() == NEW_HORIZONS_SUMMON_TROLLS_SPELL;
 			const bool ordinarySummon = getSpellId() == SpellID::SUMMON_FIRE_ELEMENTAL
 				|| getSpellId() == SpellID::SUMMON_EARTH_ELEMENTAL
 				|| getSpellId() == SpellID::SUMMON_WATER_ELEMENTAL
 				|| getSpellId() == SpellID::SUMMON_AIR_ELEMENTAL;
-			if(ordinarySummon || getSpellId() == SpellID::CLONE || phantomArmy)
+			if(ordinarySummon || getSpellId() == SpellID::CLONE || phantomArmy || summonTrolls)
 			{
 				bool wroteAddedUnit = false;
 				for(const auto & added : addedUnits)
@@ -1421,6 +1433,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 					if(getSpellId() == SpellID::CLONE && !added.clone)
 						continue;
 					if(phantomArmy && added.phantomInitialIntegrity <= 0)
+						continue;
+					if(summonTrolls && !added.natureSummoned)
 						continue;
 					if(wroteAddedUnit)
 						line.appendRawString("; ");
@@ -1433,7 +1447,13 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 					line.appendNumber(added.count);
 					line.appendRawString(" ");
 					line.appendName(added.creature, added.count);
-					if(phantomArmy)
+					if(summonTrolls)
+					{
+						line.appendRawString(" with ");
+						line.appendNumber(added.availableHealth);
+						line.appendRawString(" aggregate HP as a temporary Nature summon");
+					}
+					else if(phantomArmy)
 					{
 						line.appendRawString(" with ");
 						line.appendNumber(added.phantomIntegrity);
@@ -1573,6 +1593,40 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		line.appendRawString(".");
 		metamagicDescription.lines.push_back(std::move(line));
 		server->apply(metamagicDescription);
+	}
+	else if(mode == Mode::HERO && owner->getJsonKey() == NEW_HORIZONS_SUMMON_TROLLS_SPELL
+		&& !isCounterspellNegated())
+	{
+		const auto addedUnits = effectRecorder.addedUnits();
+		BattleLogMessage summonDescription;
+		summonDescription.battleID = battle()->getBattle()->getBattleID();
+		MetaString line;
+		bool wroteSummon = false;
+		for(const auto & added : addedUnits)
+		{
+			if(!added.natureSummoned)
+				continue;
+			if(!wroteSummon)
+			{
+				line.appendTextID(caster->getCasterNameTextID());
+				line.appendRawString(" summons ");
+			}
+			else
+				line.appendRawString("; ");
+			line.appendNumber(added.count);
+			line.appendRawString(" ");
+			line.appendName(added.creature, added.count);
+			line.appendRawString(" with ");
+			line.appendNumber(added.availableHealth);
+			line.appendRawString(" aggregate HP as a temporary Nature summon");
+			wroteSummon = true;
+		}
+		if(wroteSummon)
+		{
+			line.appendRawString(".");
+			summonDescription.lines.push_back(std::move(line));
+			server->apply(summonDescription);
+		}
 	}
 
 	if(sc.activeCast)

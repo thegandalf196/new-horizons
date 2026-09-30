@@ -44,6 +44,49 @@ bool isTransfigureMatter(const Mechanics * spellMechanics)
 	return spell && spell->getJsonKey() == "new-horizons:transfigureMatter";
 }
 
+bool isCanonicalSummonTrolls(const Mechanics * spellMechanics)
+{
+	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
+	return spell && spell->getJsonKey() == "new-horizons:summonTrolls";
+}
+
+std::vector<Target> canonicalSummonTrollsTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!isCanonicalSummonTrolls(spellMechanics) || !spellMechanics->battle()
+		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::LOCATION})
+		return result;
+
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(!hex.isAvailable())
+			continue;
+
+		Target target{Destination(hex)};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
+	}
+
+	// The placement value is independent of the chosen hex, but BattleEvaluator
+	// still projects every candidate through the full hypothetical battle. Sample
+	// the ordered legal set across the whole field so that turn cost stays bounded
+	// without preferring one edge of the battlefield.
+	constexpr size_t MAX_PLACEMENT_CANDIDATES = 12;
+	if(result.size() <= MAX_PLACEMENT_CANDIDATES)
+		return result;
+
+	std::vector<Target> sampled;
+	sampled.reserve(MAX_PLACEMENT_CANDIDATES);
+	for(size_t index = 0; index < MAX_PLACEMENT_CANDIDATES; ++index)
+	{
+		const auto sourceIndex = index * (result.size() - 1) / (MAX_PLACEMENT_CANDIDATES - 1);
+		sampled.push_back(std::move(result[sourceIndex]));
+	}
+	return sampled;
+}
+
 bool isCanonicalLifeDrain(const Mechanics * spellMechanics)
 {
 	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
@@ -1035,6 +1078,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 	std::vector<AimType> targetTypes = spellMechanics->getTargetTypes();
 	if(isTransfigureMatter(spellMechanics))
 		return physicalObstacleTargets(spellMechanics);
+	if(isCanonicalSummonTrolls(spellMechanics))
+		return canonicalSummonTrollsTargets(spellMechanics);
 
 	if(targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::LOCATION})
 		return creatureLocationTargets(spellMechanics);

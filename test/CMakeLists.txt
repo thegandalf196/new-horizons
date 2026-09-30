@@ -255,6 +255,7 @@ set(test_SRCS
 		server/battles/NewHorizonsCrusadeTest.cpp
 		server/battles/NewHorizonsEntangleTest.cpp
 		server/battles/NewHorizonsVengefulVinesTest.cpp
+		server/battles/NewHorizonsSummonTrollsTest.cpp
 		server/battles/NewHorizonsMagicalDamageReductionTest.cpp
 		server/battles/NewHorizonsStormOfDaggersTest.cpp
 		server/battles/NewHorizonsSanctuaryTest.cpp
@@ -358,6 +359,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsCrusadeAITest.cpp
 		battleAI/NewHorizonsEntangleAITest.cpp
 		battleAI/NewHorizonsVengefulVinesAITest.cpp
+		battleAI/NewHorizonsSummonTrollsAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp
 		battleAI/NewHorizonsHeroGrowthAITest.cpp
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp

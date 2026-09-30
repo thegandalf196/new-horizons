@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "0b4baa18ae81f6f55f5200ca245a0b95fc48c3b4b479b78fd6eb4bf15e2d1f5b",
+	"sourceSha256": "caa2a7db9ca20a7f552aaf8511e49e05dd63cc7b9528013bef2ee9075170c0c9",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1393,7 +1393,7 @@
 					"requires": "basic",
 					"description": "Summon Trolls creates 25% more Troll HP.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Summon Trolls creates 25% more Troll HP."
 					}
 				},

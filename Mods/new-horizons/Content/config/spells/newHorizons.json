@@ -646,6 +646,42 @@
 		"flags" : {"positive" : true},
 		"targetCondition" : {}
 	},
+	"summonTrolls": {
+		"name": "Summon Trolls",
+		"type": "combat",
+		"school": {"new-horizons:nature": true},
+		"level": 2,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "LOCATION",
+		"graphics": {
+			"iconBook": "NH_spell_summon_trolls_44.png",
+			"iconScroll": "NH_spell_summon_trolls_32.png",
+			"iconScenarioBonus": "NH_spell_summon_trolls_32.png",
+			"iconEffect": "NH_spell_summon_trolls_30.png",
+			"iconImmune": "NH_spell_summon_trolls_30.png"
+		},
+		"animation": {"hit": ["C18SPW0"]},
+		"sounds": {"cast": "SUMNELM"},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Choose a legal empty hex to summon temporary Trolls with 100 + 2.5 x Spell Power total HP. Nature rank strengthens only the Spell Power term; Beastcaller grants 25% more total HP. The final Troll starts wounded if needed, preserving the exact pool. Trolls retain regeneration and ordinary Initiative, disappear after combat, and cannot become permanent troops or generate strategic resources.",
+				"cost": 9,
+				"power": 0,
+				"battleEffects": {
+					"summonTrolls": {"type": "core:summonTrolls", "id": "core:troll"}
+				}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"indifferent": true},
+		"targetCondition": {}
+	},
 	"vengefulVines": {
 		"name": "Vengeful Vines",
 		"type": "combat",

@@ -178,9 +178,22 @@ void actualizeEffect(TBonusListPtr target, const Bonus & ef)
 	}
 }
 
+void StackWithBonuses::setOriginalBearer(const IBonusBearer * bearer)
+{
+	origBearer = bearer;
+	const auto * projected = dynamic_cast<const StackWithBonuses *>(bearer);
+	if(!projected)
+		return;
+
+	projectedBearer = projected->weak_from_this().lock();
+	ownedBearer = projected->ownedBearer;
+	if(projectedBearer)
+		origBearer = projectedBearer.get();
+}
+
 StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle::CUnitState * Stack)
 	: battle::CUnitState(),
-	origBearer(Stack->getBonusBearer()),
+	origBearer(nullptr),
 	owner(Owner),
 	type(Stack->unitType()),
 	baseAmount(Stack->unitBaseAmount()),
@@ -190,6 +203,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	slot(Stack->unitSlot()),
 	treeVersionLocal(0)
 {
+	setOriginalBearer(Stack->getBonusBearer());
 	localInit(Owner);
 
 	battle::CUnitState::operator=(*Stack);
@@ -197,7 +211,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 
 StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle::Unit * Stack)
 	: battle::CUnitState(),
-	origBearer(Stack->getBonusBearer()),
+	origBearer(nullptr),
 	owner(Owner),
 	type(Stack->unitType()),
 	baseAmount(Stack->unitBaseAmount()),
@@ -207,6 +221,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	slot(Stack->unitSlot()),
 	treeVersionLocal(0)
 {
+	setOriginalBearer(Stack->getBonusBearer());
 	localInit(Owner);
 
 	auto state = Stack->acquireState();
@@ -224,9 +239,17 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	treeVersionLocal(0)
 {
 	type = info.type.toCreature();
-	origBearer = type;
-
 	player = Owner->getSidePlayer(side);
+	CStackBasicDescriptor descriptor(info.type, info.count);
+	ownedBearer = std::make_shared<CStack>(&descriptor, player, static_cast<int>(id), side,
+		SlotID::SUMMONED_SLOT_PLACEHOLDER, true);
+	ownedBearer->summoned = info.summoned;
+	ownedBearer->natureSummoned = info.natureSummoned;
+	ownedBearer->initialPosition = info.position;
+	origBearer = ownedBearer.get();
+	if(const auto * army = Owner->getSideArmy(side))
+		ownedBearer->attachToSource(*army);
+	ownedBearer->attachToSource(*type);
 
 	localInit(Owner);
 
