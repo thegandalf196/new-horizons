@@ -46,6 +46,7 @@ class CMenuScreen : public CWindowObject
 	std::shared_ptr<CPicture> background;
 	std::shared_ptr<VideoWidget> videoPlayer;
 	std::vector<std::shared_ptr<CPicture>> images;
+	std::shared_ptr<CLabel> versionLabel;
 
 	std::shared_ptr<CIntObject> createTab(size_t index);
 
@@ -154,12 +155,14 @@ public:
 	static const CMainMenuConfig & get();
 	const JsonNode & getConfig() const;
 	const JsonNode & getCampaigns() const;
+	std::string getProductVersion() const;
 
 private:
 	CMainMenuConfig();
 
 	const JsonNode campaignSets;
 	const JsonNode config;
+	const JsonNode productVersionConfig;
 };
 
 /// Handles background screen, loads graphics for victory/loss condition and random town or hero selection

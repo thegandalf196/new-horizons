@@ -11,6 +11,13 @@
 
 #include "ImageLocator.h"
 
+#include <cstdint>
+#include <map>
+#include <mutex>
+#include <optional>
+#include <string>
+#include <vector>
+
 class PlayerColor;
 
 class ISharedImage;
@@ -45,6 +52,15 @@ public:
 	AnimationLayoutMap createAdventureOptionsButton(const ImagePath & overlay);
 
 private:
+	struct MenuTitleArtReplacement
+	{
+		std::string resource;
+		std::uint32_t crc32 = 0;
+		std::string image;
+		int x = 0;
+		int y = 0;
+	};
+
 	struct PaletteAnimation
 	{
 		/// index of first color to cycle
@@ -55,7 +71,16 @@ private:
 
 	std::map<ImagePath, ImageGenerationFunctor> imageFiles;
 	std::map<AnimationPath, AnimationLayoutMap> animationFiles;
+	mutable std::mutex menuTitleArtMutex;
+	mutable bool menuTitleArtMetadataLoaded = false;
+	mutable std::vector<MenuTitleArtReplacement> menuTitleArtReplacements;
+	mutable std::map<std::string, std::optional<ResourcePath>> menuTitleSourcePaths;
+	mutable std::map<std::string, std::optional<std::uint32_t>> menuTitleSourceCrc32;
 
+	CanvasPtr createNewHorizonsMenuTitleImage(const std::string & resource) const;
+	void loadMenuTitleArtMetadata() const;
+	std::optional<ResourcePath> resolveMenuTitleSourcePath(const std::string & resource) const;
+	std::optional<std::uint32_t> getMenuTitleSourceCrc32(const ResourcePath & sourcePath) const;
 	CanvasPtr createAdventureOptionsCleanBackground() const;
 	CanvasPtr createBigSpellBook() const;
 	CanvasPtr createPlayerColoredBackground(const PlayerColor & player) const;

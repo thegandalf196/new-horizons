@@ -32,6 +32,19 @@ Implementation is Final only when the intended UI behavior and its presentation 
 
 ## Current status summary
 
+UP-064 main-menu branding: eight bounded HoMM3-skill reference-based subtitle
+patches cover the available Complete/Armageddon's Blade main, scenario-selection
+and loading illustrations. Native 800×600 private compositions were inspected;
+their generated gold lettering remains Provisional, not user-final art. Full
+reference backgrounds are not shipped. Runtime bindings select by the exact
+installed payload CRC and fall back visibly for unsupported variants. The user
+accepted using these available references; a distinct Shadow of Death title is
+not included. A passive native small-yellow product-version label uses the same
+authoring version as the live module. Client compilation and nine focused checks
+pass; actual in-game rendering remains pending. Neither source bindings nor
+composited previews are playable
+acceptance. See UP-064 and `assets/new-horizons/art-source/menu-titles-v1/`.
+
 Grand Metamagic no longer has an activation button in the battle strip or
 spellbook. Its automatic continuation uses the existing Spell Action count;
 no new artwork or permanent skill-resource slot is introduced. This control

@@ -30,11 +30,26 @@
 #include "../../lib/RoadHandler.h"
 #include "../../lib/TerrainHandler.h"
 
+#include <cmath>
+#include <limits>
+
 void AssetGenerator::initialize()
 {
 	// clear to avoid non updated sprites after mod change (if base imnages are used)
 	if(boost::filesystem::is_directory(VCMIDirs::get().userDataPath() / "Generated"))
 		boost::filesystem::remove_all(VCMIDirs::get().userDataPath() / "Generated");
+	{
+		std::lock_guard<std::mutex> lock(menuTitleArtMutex);
+		menuTitleArtMetadataLoaded = false;
+		menuTitleArtReplacements.clear();
+		menuTitleSourcePaths.clear();
+		menuTitleSourceCrc32.clear();
+	}
+
+	imageFiles[ImagePath::builtin("NH_MENU_GAMSELBK")] = [this](){ return createNewHorizonsMenuTitleImage("GAMSELBK"); };
+	imageFiles[ImagePath::builtin("NH_MENU_GAMSELB0")] = [this](){ return createNewHorizonsMenuTitleImage("GAMSELB0"); };
+	imageFiles[ImagePath::builtin("NH_MENU_GAMSELB1")] = [this](){ return createNewHorizonsMenuTitleImage("GAMSELB1"); };
+	imageFiles[ImagePath::builtin("NH_MENU_LOADBAR")] = [this](){ return createNewHorizonsMenuTitleImage("LOADBAR"); };
 
 	imageFiles[ImagePath::builtin("AdventureOptionsBackgroundClear.png")] = [this](){ return createAdventureOptionsCleanBackground();};
 	imageFiles[ImagePath::builtin("SpellBookLarge.png")] = [this](){ return createBigSpellBook();};
@@ -171,7 +186,10 @@ void AssetGenerator::initialize()
 std::shared_ptr<ISharedImage> AssetGenerator::generateImage(const ImagePath & image)
 {
 	if (imageFiles.count(image))
-		return imageFiles.at(image)()->toSharedImage(); // TODO: cache?
+	{
+		const auto generated = imageFiles.at(image)();
+		return generated ? generated->toSharedImage() : nullptr; // TODO: cache?
+	}
 	else
 		return nullptr;
 }
@@ -181,7 +199,11 @@ std::map<ImagePath, std::shared_ptr<ISharedImage>> AssetGenerator::generateAllIm
 	std::map<ImagePath, std::shared_ptr<ISharedImage>> result;
 
 	for (const auto & entry : imageFiles)
-		result[entry.first] = entry.second()->toSharedImage();
+	{
+		const auto generated = entry.second();
+		if(generated)
+			result[entry.first] = generated->toSharedImage();
+	}
 
 	return result;
 }
@@ -189,6 +211,226 @@ std::map<ImagePath, std::shared_ptr<ISharedImage>> AssetGenerator::generateAllIm
 std::map<AnimationPath, AssetGenerator::AnimationLayoutMap> AssetGenerator::generateAllAnimations()
 {
 	return animationFiles;
+}
+
+void AssetGenerator::loadMenuTitleArtMetadata() const
+{
+	std::lock_guard<std::mutex> lock(menuTitleArtMutex);
+	if(menuTitleArtMetadataLoaded)
+		return;
+
+	menuTitleArtMetadataLoaded = true;
+	const auto metadataPath = JsonPath::builtin("config/newHorizonsMenuArt.json");
+	if(!CResourceHandler::get()->existsResource(metadataPath))
+	{
+		logGlobal->warn("New Horizons menu title art metadata is missing; original menu backgrounds will be used");
+		return;
+	}
+
+	try
+	{
+		const JsonNode metadata(metadataPath);
+		const JsonNode & replacements = metadata["replacements"];
+		if(!replacements.isVector())
+		{
+			logGlobal->warn("New Horizons menu title art metadata has no replacement list; original menu backgrounds will be used");
+			return;
+		}
+
+		for(const JsonNode & entry : replacements.Vector())
+		{
+			if(!entry.isStruct())
+			{
+				logGlobal->warn("Ignoring malformed New Horizons menu title art replacement entry");
+				continue;
+			}
+
+			const JsonNode & resourceNode = entry["resource"];
+			const JsonNode & crcNode = entry["crc32"];
+			const JsonNode & imageNode = entry["image"];
+			const JsonNode & xNode = entry["x"];
+			const JsonNode & yNode = entry["y"];
+			if(!resourceNode.isString() || !crcNode.isNumber() || !imageNode.isString() || !xNode.isNumber() || !yNode.isNumber())
+			{
+				logGlobal->warn("Ignoring incomplete New Horizons menu title art replacement entry");
+				continue;
+			}
+
+			const double crcValue = crcNode.Float();
+			const double xValue = xNode.Float();
+			const double yValue = yNode.Float();
+			if(!std::isfinite(crcValue) || std::floor(crcValue) != crcValue || crcValue < 0 || crcValue > std::numeric_limits<std::uint32_t>::max()
+				|| !std::isfinite(xValue) || std::floor(xValue) != xValue || xValue < 0 || xValue > std::numeric_limits<int>::max()
+				|| !std::isfinite(yValue) || std::floor(yValue) != yValue || yValue < 0 || yValue > std::numeric_limits<int>::max()
+				|| resourceNode.String().empty() || imageNode.String().empty())
+			{
+				logGlobal->warn("Ignoring invalid New Horizons menu title art replacement entry");
+				continue;
+			}
+
+			MenuTitleArtReplacement replacement;
+			replacement.resource = resourceNode.String();
+			replacement.crc32 = static_cast<std::uint32_t>(crcValue);
+			replacement.image = imageNode.String();
+			replacement.x = static_cast<int>(xValue);
+			replacement.y = static_cast<int>(yValue);
+			menuTitleArtReplacements.push_back(std::move(replacement));
+		}
+	}
+	catch(const std::exception & error)
+	{
+		menuTitleArtReplacements.clear();
+		logGlobal->warn("Failed to read New Horizons menu title art metadata; original menu backgrounds will be used: %s", error.what());
+	}
+}
+
+std::optional<ResourcePath> AssetGenerator::resolveMenuTitleSourcePath(const std::string & resource) const
+{
+	std::lock_guard<std::mutex> lock(menuTitleArtMutex);
+	const auto cached = menuTitleSourcePaths.find(resource);
+	if(cached != menuTitleSourcePaths.end())
+		return cached->second;
+
+	const std::array<std::string, 3> pathPrefixes = { "SPRITES/", "DATA/", "" };
+	for(const auto & prefix : pathPrefixes)
+	{
+		const ResourcePath candidate(prefix + resource, EResType::IMAGE);
+		if(CResourceHandler::get()->existsResource(candidate))
+		{
+			menuTitleSourcePaths.emplace(resource, candidate);
+			return candidate;
+		}
+	}
+
+	menuTitleSourcePaths.emplace(resource, std::nullopt);
+	logGlobal->warn("New Horizons menu title source %s is missing from SPRITES/, DATA/, and the resource root", resource);
+	return std::nullopt;
+}
+
+std::optional<std::uint32_t> AssetGenerator::getMenuTitleSourceCrc32(const ResourcePath & sourcePath) const
+{
+	std::lock_guard<std::mutex> lock(menuTitleArtMutex);
+	const std::string cacheKey = sourcePath.getName();
+	const auto cached = menuTitleSourceCrc32.find(cacheKey);
+	if(cached != menuTitleSourceCrc32.end())
+		return cached->second;
+
+	try
+	{
+		const auto sourceStream = CResourceHandler::get()->load(sourcePath);
+		if(!sourceStream)
+		{
+			menuTitleSourceCrc32.emplace(cacheKey, std::nullopt);
+			logGlobal->warn("Failed to open New Horizons menu title source %s; original menu background will be used", sourcePath.getName());
+			return std::nullopt;
+		}
+
+		const std::uint32_t crc32 = sourceStream->calculateCRC32();
+		menuTitleSourceCrc32.emplace(cacheKey, crc32);
+		return crc32;
+	}
+	catch(const std::exception & error)
+	{
+		menuTitleSourceCrc32.emplace(cacheKey, std::nullopt);
+		logGlobal->warn("Failed to read New Horizons menu title source %s; original menu background will be used: %s", sourcePath.getName(), error.what());
+		return std::nullopt;
+	}
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsMenuTitleImage(const std::string & resource) const
+{
+	const auto resolvedSourcePath = resolveMenuTitleSourcePath(resource);
+	if(!resolvedSourcePath)
+		return nullptr;
+
+	// RenderHandler resolves this base resource in the same SPRITES/, DATA/, root order cached above.
+	ImageLocator originalLocator(ImagePath::builtin(resource), EImageBlitMode::OPAQUE);
+	originalLocator.scalingFactor = 1;
+	const auto original = ENGINE->renderHandler().loadImage(originalLocator);
+	if(!original)
+	{
+		logGlobal->warn("Unable to load original New Horizons menu background %s", resource);
+		return nullptr;
+	}
+
+	auto result = ENGINE->renderHandler().createImage(Point(original->width(), original->height()), CanvasScalingPolicy::IGNORE);
+	Canvas canvas = result->getCanvas();
+	canvas.draw(original, Point(0, 0), Rect(0, 0, original->width(), original->height()));
+
+	loadMenuTitleArtMetadata();
+	std::vector<MenuTitleArtReplacement> replacements;
+	{
+		std::lock_guard<std::mutex> lock(menuTitleArtMutex);
+		replacements = menuTitleArtReplacements;
+	}
+
+	const bool hasResourceEntry = std::any_of(replacements.begin(), replacements.end(), [&](const MenuTitleArtReplacement & replacement)
+	{
+		return replacement.resource == resource;
+	});
+	if(!hasResourceEntry)
+	{
+		logGlobal->warn("No New Horizons menu title art entry for %s; original menu background will be used", resource);
+		return result;
+	}
+
+	const auto sourceCrc32 = getMenuTitleSourceCrc32(*resolvedSourcePath);
+	if(!sourceCrc32)
+		return result;
+
+	const MenuTitleArtReplacement * match = nullptr;
+	for(const auto & replacement : replacements)
+	{
+		if(replacement.resource != resource || replacement.crc32 != *sourceCrc32)
+			continue;
+
+		if(match)
+		{
+			logGlobal->warn("Ambiguous New Horizons menu title art entries for %s CRC %u; original menu background will be used", resource, *sourceCrc32);
+			return result;
+		}
+		match = &replacement;
+	}
+	if(!match)
+	{
+		logGlobal->warn("Unknown New Horizons menu title source variant %s CRC %u; original menu background will be used", resource, *sourceCrc32);
+		return result;
+	}
+
+	const auto patchPath = ImagePath::builtin("SPRITES/" + match->image);
+	if(!CResourceHandler::get()->existsResource(patchPath))
+	{
+		logGlobal->warn("New Horizons menu title patch %s for %s is missing; original menu background will be used", match->image, resource);
+		return result;
+	}
+
+	ImageLocator patchLocator(patchPath, EImageBlitMode::SIMPLE);
+	patchLocator.scalingFactor = 1;
+	std::shared_ptr<IImage> patch;
+	try
+	{
+		patch = ENGINE->renderHandler().loadImage(patchLocator);
+	}
+	catch(const std::exception & error)
+	{
+		logGlobal->warn("Unable to load New Horizons menu title patch %s for %s; original menu background will be used: %s", match->image, resource, error.what());
+		return result;
+	}
+
+	if(!patch)
+	{
+		logGlobal->warn("Unable to load New Horizons menu title patch %s for %s; original menu background will be used", match->image, resource);
+		return result;
+	}
+	if(match->x > original->width() || match->y > original->height()
+		|| patch->width() > original->width() - match->x || patch->height() > original->height() - match->y)
+	{
+		logGlobal->warn("New Horizons menu title patch %s for %s is outside the %dx%d source canvas; original menu background will be used", match->image, resource, original->width(), original->height());
+		return result;
+	}
+
+	canvas.draw(patch, Point(match->x, match->y), Rect(0, 0, patch->width(), patch->height()));
+	return result;
 }
 
 void AssetGenerator::addImageFile(const ImagePath & path, ImageGenerationFunctor & img)

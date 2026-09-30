@@ -5,7 +5,7 @@
 	// Images used in game selection screen
 	"scenario-selection" :
 	{
-		"background" : ["gamselb0", "gamselb1"],
+		"background" : ["NH_MENU_GAMSELB0", "NH_MENU_GAMSELB1"],
 		
 		// Additional images
 		//"images": 
@@ -17,7 +17,7 @@
 	
 	"loading" :
 	{
-		"background" : ["loadbar"],
+		"background" : ["NH_MENU_LOADBAR"],
 		
 		"loadbar" : {
 			"name": ["loadprog"],
@@ -46,7 +46,7 @@
 	{
 		//"scalable" : true, // Background will be scaled to screen size
 		
-		"background" : ["gamselbk"],
+		"background" : ["NH_MENU_GAMSELBK"],
 
 		//"video" :    {"x": 8, "y": 105, "name":"CREDITS.SMK" }, // Floating WoG logo. Disabled due to different position in various versions of H3.
 		

@@ -108,6 +108,18 @@ CMenuScreen::CMenuScreen(const JsonNode & configNode)
 	if(config["video"].isNull())
 		tabs->setRedrawParent(true);
 
+	constexpr int versionLabelInset = 12;
+	constexpr int versionLabelBottomInset = 4;
+	const int versionLabelMaxWidth = std::max(1, background->pos.w - 2 * versionLabelInset);
+	versionLabel = std::make_shared<CLabel>(
+		versionLabelInset,
+		background->pos.h - versionLabelBottomInset,
+		FONT_SMALL,
+		ETextAlignment::BOTTOMLEFT,
+		Colors::YELLOW,
+		"New Horizons " + CMainMenuConfig::get().getProductVersion(),
+		versionLabelMaxWidth);
+
 }
 
 std::shared_ptr<CIntObject> CMenuScreen::createTab(size_t index)
@@ -320,11 +332,15 @@ CMenuEntry::CMenuEntry(CMenuScreen * parent, const JsonNode & config)
 CMainMenuConfig::CMainMenuConfig()
 	: campaignSets(JsonUtils::assembleFromFiles("config/campaignSets.json"))
 	, config(JsonPath::builtin("config/mainmenu.json"))
+	, productVersionConfig(JsonPath::builtin("config/newHorizonsVersion.json"))
 {
 	if (!config["scenario-selection"].isStruct())
 		// Fallback for 1.6 mods
 		if (config["game-select"].Vector().empty())
 			handleFatalError("The main menu configuration file mainmenu.json is invalid or corrupted. Please check the file for errors, verify your mod setup, or reinstall VCMI to resolve the issue.", false);
+
+	if (!productVersionConfig["version"].isString() || productVersionConfig["version"].String().empty())
+		handleFatalError("The New Horizons product version file newHorizonsVersion.json is invalid or corrupted.", false);
 }
 
 const CMainMenuConfig & CMainMenuConfig::get()
@@ -341,6 +357,11 @@ const JsonNode & CMainMenuConfig::getConfig() const
 const JsonNode & CMainMenuConfig::getCampaigns() const
 {
 	return campaignSets;
+}
+
+std::string CMainMenuConfig::getProductVersion() const
+{
+	return productVersionConfig["version"].String();
 }
 
 CMainMenu::CMainMenu()

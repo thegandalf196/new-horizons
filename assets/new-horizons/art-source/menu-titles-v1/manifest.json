@@ -1,0 +1,167 @@
+{
+  "workflow": "HoMM3 art skill; built-in image tool; reference-based text edit",
+  "rights": "Reference-based title patches. Original game artwork and trademarks retain their original rights. No rights-cleared or CC0 claim.",
+  "full_masters": "Retained privately under ignored output/homm3/menu-titles-v1/masters; not distributed.",
+  "variants": [
+    {
+      "variant": "complete_main",
+      "reference_archive": "H3bitmap.lod",
+      "reference_resource": "GAMSELBK.PCX",
+      "reference_sha256": "77d0ce72ffb5dbc1daf9c51375fd051deab6ef9acedca827557051080933fdb1",
+      "generated_master": "H3bitmap-GAMSELBK.png",
+      "master_size": [
+        1448,
+        1086
+      ],
+      "master_sha256": "30899bed611e86611b0dc38e815aa9473b163e36e4ea6d5bcac1e75720455d32",
+      "patch_sha256": "68e40b04df8a9b636a48b51d98b254975ee2b3a7259c2184b288810959a233a4",
+      "bounds": [
+        8,
+        120,
+        432,
+        65
+      ],
+      "approval": "Provisional"
+    },
+    {
+      "variant": "complete_scenario0",
+      "reference_archive": "H3bitmap.lod",
+      "reference_resource": "GAMSELB0.PCX",
+      "reference_sha256": "6a1ce21644fdf6f7001cabdfd1377f32eba0dce2893e975dd9c7eb78a4d14de8",
+      "generated_master": "H3bitmap-GAMSELB0.png",
+      "master_size": [
+        1448,
+        1086
+      ],
+      "master_sha256": "b897d7c553d13b87d98f61d636873abac9136e92d2ff96ce0c5f381115f0c1ee",
+      "patch_sha256": "9f8de510f615d160c8761b94632b05d459636bfd006de14513cfb4fd9e7027ef",
+      "bounds": [
+        10,
+        92,
+        385,
+        57
+      ],
+      "approval": "Provisional"
+    },
+    {
+      "variant": "complete_scenario1",
+      "reference_archive": "H3bitmap.lod",
+      "reference_resource": "GAMSELB1.PCX",
+      "reference_sha256": "60726165a7898cf3e5fa6310e567fdf5f94e257b27cb46b67d35d45935c3c85e",
+      "generated_master": "H3bitmap-GAMSELB1.png",
+      "master_size": [
+        1448,
+        1086
+      ],
+      "master_sha256": "189a675abe167ec08cba4f87c9b9554c5ab23fbe740d14ac9b20ae7404b36d45",
+      "patch_sha256": "d90084bc5d5890cba741e48923c88f2751789c87a76ad9b0c138f85819e2a168",
+      "bounds": [
+        10,
+        92,
+        385,
+        57
+      ],
+      "approval": "Provisional"
+    },
+    {
+      "variant": "complete_loading",
+      "reference_archive": "H3bitmap.lod",
+      "reference_resource": "LOADBAR.PCX",
+      "reference_sha256": "853f6f9afc2ae1faea61f45858ddf3e78a5bbf8beb32a980815a44b306a4dba3",
+      "generated_master": "H3bitmap-LOADBAR.png",
+      "master_size": [
+        1448,
+        1086
+      ],
+      "master_sha256": "2ae086508d5bf23a32e927b828aff7e7a6828565a7008863d3383220d2769546",
+      "patch_sha256": "89b83123b7a1f958b0a432cbe6d253bf875fadc1703cf32ef064fabe778aa7db",
+      "bounds": [
+        140,
+        116,
+        466,
+        70
+      ],
+      "approval": "Provisional"
+    },
+    {
+      "variant": "ab_main",
+      "reference_archive": "H3ab_bmp.lod",
+      "reference_resource": "GAMSELBK.PCX",
+      "reference_sha256": "74c48a0279e7cb2adb17c4db2b8702922b432777da454e9910130d0e53588d8b",
+      "generated_master": "H3ab_bmp-GAMSELBK.png",
+      "master_size": [
+        1448,
+        1086
+      ],
+      "master_sha256": "5dd2fabbabda89e3ecd7d451d03023749e236c9aaa66e940a2112a11d9fe75db",
+      "patch_sha256": "7cb9428c4b1bd77b311c25153ea8b6e9355091c6589323e0abb7d23a69838808",
+      "bounds": [
+        12,
+        106,
+        458,
+        46
+      ],
+      "approval": "Provisional"
+    },
+    {
+      "variant": "ab_scenario0",
+      "reference_archive": "H3ab_bmp.lod",
+      "reference_resource": "GAMSELB0.PCX",
+      "reference_sha256": "1189afdeb37c5465cbf385ed8433fdbbe0bafdaff3131bab52e0b731c800c470",
+      "generated_master": "H3ab_bmp-GAMSELB0.png",
+      "master_size": [
+        1448,
+        1086
+      ],
+      "master_sha256": "bbdb477d612df4c92bac197ce6347fd33ad171a77d41927ba486463546daba37",
+      "patch_sha256": "73d2da39baca44f74a4cf85234cf5dd960ed564828a78eba84efb78001230027",
+      "bounds": [
+        18,
+        82,
+        370,
+        40
+      ],
+      "approval": "Provisional"
+    },
+    {
+      "variant": "ab_scenario1",
+      "reference_archive": "H3ab_bmp.lod",
+      "reference_resource": "GAMSELB1.PCX",
+      "reference_sha256": "de9c6f4bff4ef258b77c645edd0da943148bb7795c2c36eb366ce8aab6351f23",
+      "generated_master": "H3ab_bmp-GAMSELB1.png",
+      "master_size": [
+        1448,
+        1086
+      ],
+      "master_sha256": "3be431ce32a966cc75d6a1b2e5515879dc4f87db3a548e95fdb133f2b8a21363",
+      "patch_sha256": "bf8c566393e1b7d8267f0d08a19224fe51927c87981cd61cfd80dfeeba2e8ba9",
+      "bounds": [
+        18,
+        82,
+        370,
+        40
+      ],
+      "approval": "Provisional"
+    },
+    {
+      "variant": "ab_loading",
+      "reference_archive": "H3ab_bmp.lod",
+      "reference_resource": "LOADBAR.PCX",
+      "reference_sha256": "449c1c4afca2ebd11f10922fecc75e5a3ec571859140dcf7d1f5e4df21130656",
+      "generated_master": "H3ab_bmp-LOADBAR.png",
+      "master_size": [
+        1448,
+        1086
+      ],
+      "master_sha256": "dec394bf9da0d31a7214d40e0cb81d3c5a710351924f0348e700383640e7fba6",
+      "patch_sha256": "73c110c34a8f4691055a272ab00fcbbade0922f1c8e95d87e3a7de90b1c9f3cd",
+      "bounds": [
+        10,
+        112,
+        460,
+        47
+      ],
+      "approval": "Provisional"
+    }
+  ]
+}

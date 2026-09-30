@@ -1,0 +1,76 @@
+{
+	"replacements": [
+		{
+			"resource": "GAMSELBK",
+			"crc32": 768338213,
+			"image": "NH_menu_complete_main",
+			"x": 8,
+			"y": 120,
+			"width": 432,
+			"height": 65
+		},
+		{
+			"resource": "GAMSELB0",
+			"crc32": 3193207774,
+			"image": "NH_menu_complete_scenario0",
+			"x": 10,
+			"y": 92,
+			"width": 385,
+			"height": 57
+		},
+		{
+			"resource": "GAMSELB1",
+			"crc32": 3653370809,
+			"image": "NH_menu_complete_scenario1",
+			"x": 10,
+			"y": 92,
+			"width": 385,
+			"height": 57
+		},
+		{
+			"resource": "LOADBAR",
+			"crc32": 78987791,
+			"image": "NH_menu_complete_loading",
+			"x": 140,
+			"y": 116,
+			"width": 466,
+			"height": 70
+		},
+		{
+			"resource": "GAMSELBK",
+			"crc32": 3882180678,
+			"image": "NH_menu_ab_main",
+			"x": 12,
+			"y": 106,
+			"width": 458,
+			"height": 46
+		},
+		{
+			"resource": "GAMSELB0",
+			"crc32": 501462061,
+			"image": "NH_menu_ab_scenario0",
+			"x": 18,
+			"y": 82,
+			"width": 370,
+			"height": 40
+		},
+		{
+			"resource": "GAMSELB1",
+			"crc32": 3897961312,
+			"image": "NH_menu_ab_scenario1",
+			"x": 18,
+			"y": 82,
+			"width": 370,
+			"height": 40
+		},
+		{
+			"resource": "LOADBAR",
+			"crc32": 1566987993,
+			"image": "NH_menu_ab_loading",
+			"x": 10,
+			"y": 112,
+			"width": 460,
+			"height": 47
+		}
+	]
+}
