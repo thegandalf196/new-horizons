@@ -2900,7 +2900,8 @@ void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, 
 		}
 	}
 
-	if (gameHandler->randomizer->rollCombatAbility(ownerArmy, attacker->valOfBonuses(BonusType::DOUBLE_DAMAGE_CHANCE)))
+	if (gameHandler->randomizer->rollFavorableCreatureAbility(
+		ownerArmy, *attacker, attacker->valOfBonuses(BonusType::DOUBLE_DAMAGE_CHANCE)))
 		bat.flags |= BattleAttack::DEATH_BLOW;
 
 	const auto * ownerHero = battle.battleGetFightingHero(attacker->unitSide());
@@ -3858,7 +3859,7 @@ void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bo
 				continue;
 
 			//check if spell should be cast (probability handling)
-			if (!gameHandler->randomizer->rollCombatAbility(ownerArmy, chance))
+			if (!gameHandler->randomizer->rollFavorableCreatureAbility(ownerArmy, *attacker, chance))
 				continue;
 
 			//casting

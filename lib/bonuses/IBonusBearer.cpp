@@ -13,6 +13,17 @@
 #include "IBonusBearer.h"
 #include "BonusList.h"
 
+int IBonusBearer::favorableCreatureAbilityChanceBasisPoints(int basePercentage) const
+{
+	if(basePercentage <= 0)
+		return 0;
+	if(basePercentage >= 100)
+		return 10000;
+	const auto type = BonusType::FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS;
+	const int multiplier = hasBonusOfType(type) ? std::clamp(valOfBonuses(type), 0, 10000) : 10000;
+	return basePercentage * multiplier / 100;
+}
+
 int IBonusBearer::valOfBonuses(const CSelector &selector, const std::string &cachingStr, int baseValue) const
 {
 	TConstBonusListPtr hlp = getAllBonuses(selector, cachingStr);

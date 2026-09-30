@@ -705,6 +705,21 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 			+ "%. This estimate excludes battle-only Warcasting and the Inferno defender's Brimstone Stormclouds "
 			"+20 Spell Power bonus, which can further affect the battle cast.";
 	}
+	else if(hero && spell->getId() == SpellID::MISFORTUNE
+		&& rulesActive(hero->getMagicRules())
+		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
+	{
+		result = "Target one enemy stack. Positive Luck cannot trigger; negative Luck is unchanged. "
+			"Favorable random creature abilities use max(25%, 75% - 0.25% x scaled Spell Power) "
+			"of their normal probability. Deterministic abilities remain deterministic. "
+			"Ordinary duration is min(4, 2 + floor(scaled Spell Power / 80)) rounds, "
+			"before eligible cast-specific duration extensions. School rank and Spellcraft scale "
+			"only the Spell Power terms, not the fixed base or the 25% floor.";
+		if(hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.misfortuneWeaver"))
+			result += " Misfortune Weaver subtracts another ten percentage points from the probability "
+				"multiplier, retaining the 25% floor.";
+	}
 	else if(hero && physicalPoisonEnabled(hero->getMagicRules(), spell->getId()))
 	{
 		result = "Target one enemy living stack. It suffers physical Poison damage on its next three activations: "

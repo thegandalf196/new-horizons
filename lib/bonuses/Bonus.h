@@ -87,6 +87,10 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(h.saving && type == BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CRUSADE_MAGIC_REDUCTION))
 			throw std::runtime_error("Cannot discard New Horizons Crusade magical reduction state");
+		if(h.saving && (type == BonusType::MAXIMUM_LUCK
+			|| type == BonusType::FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS))
+			throw std::runtime_error("Cannot discard New Horizons creature probability modifier state");
 		h & duration;
 		h & type;
 		h & subtype;

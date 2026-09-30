@@ -48,7 +48,7 @@ vstd::RNG * ServerSpellCastEnvironment::getRNG()
 bool ServerSpellCastEnvironment::rollCombatAbility(const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance)
 {
 	const auto * army = battle.getBattle()->getSideArmy(actor.unitSide());
-	return gh->randomizer->rollCombatAbility(army->id, percentageChance);
+	return gh->randomizer->rollFavorableCreatureAbility(army->id, actor, percentageChance);
 }
 
 std::function<void()> ServerSpellCastEnvironment::prepareAdventureSpellCastCompletion(const spells::Caster * caster, SpellID spell)

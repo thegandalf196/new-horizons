@@ -33,6 +33,8 @@ public:
 	bool hasBonusOfType(BonusType type, BonusSubtypeID subtype) const;//determines if hero has a bonus of given type (and optionally subtype)
 	bool hasBonusFrom(BonusSource source) const;
 	bool hasBonusFrom(BonusSource source, BonusSourceID sourceID) const;
+	// A deterministic (100% or greater) ability is not converted into a random one.
+	int favorableCreatureAbilityChanceBasisPoints(int basePercentage) const;
 
 	TConstBonusListPtr getBonusesFrom(BonusSource source) const;
 	TConstBonusListPtr getBonusesOfType(BonusType type) const;

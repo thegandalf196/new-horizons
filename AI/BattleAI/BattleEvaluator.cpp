@@ -265,6 +265,12 @@ int curseEffectRounds(const battle::Unit * unit)
 	return timedSpellEffectRounds(unit, SpellID(SpellID::CURSE), BonusType::ALWAYS_MINIMUM_DAMAGE);
 }
 
+int misfortuneEffectRounds(const battle::Unit * unit)
+{
+	return timedSpellEffectRounds(unit, SpellID(SpellID::MISFORTUNE),
+		BonusType::FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS);
+}
+
 float expectedTargetActivationValue(const battle::Unit * target,
 	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle)
 {
@@ -336,6 +342,131 @@ float expectedCurseTargetActivationValue(const battle::Unit * target,
 			nullptr, friendly, static_cast<uint64_t>(preventedDamage), damageCache, projectedBattle)));
 	}
 	return bestActionValue;
+}
+
+float expectedMisfortuneLuckTargetActivationValue(const battle::Unit * original,
+	const battle::Unit * projected, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!original || !projected || !original->alive() || !projected->alive()
+		|| projected->getCount() <= 0 || projected->isGhost() || projected->isTurret() || !projectedBattle)
+		return 0.0f;
+
+	float bestActionValue = 0.0f;
+	for(const auto * friendly : projectedBattle->battleGetAllUnits(false))
+	{
+		if(!friendly || !friendly->alive() || !friendly->isValidTarget(true)
+			|| friendly->isGhost() || friendly->isTurret()
+			|| friendly->unitSide() == projected->unitSide())
+			continue;
+
+		const bool shooting = projectedBattle->battleCanShoot(projected, friendly->getPosition());
+		const int attackCount = AttackPossibility::getAttackCount(*projected, shooting, *projectedBattle);
+		if(attackCount <= 0)
+			continue;
+
+		// Both values use the shared expected-Luck damage path. The original stack
+		// supplies the pre-cast Luck state; the detached projected stack supplies
+		// Misfortune's final Luck cap. This is one bounded future action proxy, not
+		// a roll from the server's seeded RandomizationBias stream.
+		const BattleAttackInfo originalAttack(original, friendly, 0, shooting);
+		const BattleAttackInfo projectedAttack(projected, friendly, 0, shooting);
+		const auto originalDamage = std::max<int64_t>(0,
+			projectedBattle->battleExpectedLuckDamage(originalAttack));
+		const auto projectedDamage = std::max<int64_t>(0,
+			projectedBattle->battleExpectedLuckDamage(projectedAttack));
+		if(originalDamage <= projectedDamage)
+			continue;
+
+		const auto availableHealth = std::max<int64_t>(0, friendly->getAvailableHealth());
+		const auto perActionDamage = std::min(availableHealth,
+			(originalDamage - projectedDamage) * static_cast<int64_t>(attackCount));
+		if(perActionDamage <= 0)
+			continue;
+
+		bestActionValue = std::max(bestActionValue, static_cast<float>(AttackPossibility::calculateDamageReduce(
+			nullptr, friendly, static_cast<uint64_t>(perActionDamage), damageCache, projectedBattle)));
+	}
+	return bestActionValue;
+}
+
+float expectedMisfortuneDeathBlowTargetActivationValue(const battle::Unit * original,
+	const battle::Unit * projected, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!original || !projected || !original->alive() || !projected->alive()
+		|| projected->getCount() <= 0 || projected->isGhost() || projected->isTurret() || !projectedBattle)
+		return 0.0f;
+
+	const int baseChance = std::clamp(original->valOfBonuses(BonusType::DOUBLE_DAMAGE_CHANCE), 0, 100);
+	const int originalChance = original->favorableCreatureAbilityChanceBasisPoints(baseChance);
+	const int projectedChance = projected->favorableCreatureAbilityChanceBasisPoints(baseChance);
+	const int chanceReduction = std::max(0, originalChance - projectedChance);
+	if(chanceReduction <= 0)
+		return 0.0f;
+
+	float bestActionValue = 0.0f;
+	for(const auto * friendly : projectedBattle->battleGetAllUnits(false))
+	{
+		if(!friendly || !friendly->alive() || !friendly->isValidTarget(true)
+			|| friendly->isGhost() || friendly->isTurret()
+			|| friendly->unitSide() == projected->unitSide())
+			continue;
+
+		const bool shooting = projectedBattle->battleCanShoot(projected, friendly->getPosition());
+		const int attackCount = AttackPossibility::getAttackCount(*projected, shooting, *projectedBattle);
+		if(attackCount <= 0)
+			continue;
+
+		// Isolate only the expected extra damage of a successful Death Blow.
+		// Both estimates include the same projected Luck state, so this does not
+		// re-count the positive-Luck reduction valued above.
+		BattleAttackInfo ordinaryAttack(projected, friendly, 0, shooting);
+		BattleAttackInfo deathBlowAttack = ordinaryAttack;
+		deathBlowAttack.deathBlow = true;
+		const auto ordinaryDamage = std::max<int64_t>(0,
+			projectedBattle->battleExpectedLuckDamage(ordinaryAttack));
+		const auto deathBlowDamage = std::max<int64_t>(0,
+			projectedBattle->battleExpectedLuckDamage(deathBlowAttack));
+		if(deathBlowDamage <= ordinaryDamage)
+			continue;
+
+		const auto availableHealth = std::max<int64_t>(0, friendly->getAvailableHealth());
+		const auto conditionalDamage = std::min(availableHealth,
+			(deathBlowDamage - ordinaryDamage) * static_cast<int64_t>(attackCount));
+		if(conditionalDamage <= 0)
+			continue;
+
+		const auto conditionalValue = AttackPossibility::calculateDamageReduce(
+			nullptr, friendly, static_cast<uint64_t>(conditionalDamage), damageCache, projectedBattle);
+		const auto expectedPreventedValue = conditionalValue * static_cast<float>(chanceReduction) / 10000.0f;
+		bestActionValue = std::max(bestActionValue, expectedPreventedValue);
+	}
+	return bestActionValue;
+}
+
+float estimateProjectedMisfortuneTargetValue(const battle::Unit * original,
+	const battle::Unit * projected, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!original || !projected || !projected->alive())
+		return 0.0f;
+
+	const auto remainingRounds = misfortuneEffectRounds(projected);
+	if(remainingRounds <= 0)
+		return 0.0f;
+
+	// This forecast is intentionally bounded to the implemented generic
+	// positive-Luck damage path and DOUBLE_DAMAGE_CHANCE (Death Blow). Other
+	// favorable proc families, including attack spell effects and script-driven
+	// abilities, still need effect-specific expected-value models. Never consume
+	// battle RNG or use the server's seeded rollCombatAbility threshold here.
+	const auto preventedLuckValue = expectedMisfortuneLuckTargetActivationValue(
+		original, projected, damageCache, projectedBattle);
+	const auto preventedDeathBlowValue = expectedMisfortuneDeathBlowTargetActivationValue(
+		original, projected, damageCache, projectedBattle);
+	return (preventedLuckValue + preventedDeathBlowValue)
+		* static_cast<float>(remainingRounds) * 0.5f;
 }
 
 float BattleEvaluator::estimateProjectedSorrowTargetValue(const battle::Unit * original, const battle::Unit * projected,
@@ -4755,6 +4886,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							projectedDebuffScore += estimateProjectedSorrowTargetValue(original, unit, innerCache, state);
 						else if(ps.spell->getId() == SpellID::CURSE)
 							projectedDebuffScore += estimateProjectedCurseTargetValue(original, unit, innerCache, state);
+						else if(ps.spell->getId() == SpellID::MISFORTUNE && unit->unitId() == targetId)
+							projectedDebuffScore += estimateProjectedMisfortuneTargetValue(original, unit, innerCache, state);
 						else if(isCanonicalHexOfPain(ps.spell))
 							projectedDebuffScore += estimateProjectedHexOfPainTargetValue(original, unit, state);
 						else if(isCanonicalFrailty(ps.spell) && unit->unitId() == targetId)

@@ -28,6 +28,10 @@ class BonusBearerBindings
 public:
 	static void registerMethods(MethodRegistrar & R)
 	{
+		R.template function<&favorableCreatureAbilityChanceBasisPoints>("favorableCreatureAbilityChanceBasisPoints",
+			{{"basePercentage", "The creature ability's ordinary trigger chance in percent."}},
+			{"Effective trigger chance in basis points; 10000 represents certainty."},
+			"Applies explicitly authored favorable-creature probability modifiers. Deterministic abilities remain deterministic.");
 		R.template function<&getBonuses>("getBonuses",
 			{{"filter", "Which bonuses to collect. An empty filter collects every one of them."}},
 			{"Bonuses of the bearer the filter describes."},
@@ -49,6 +53,11 @@ public:
 	}
 
 private:
+	static int favorableCreatureAbilityChanceBasisPoints(const Leaf & bearer, int basePercentage)
+	{
+		return bearer.favorableCreatureAbilityChanceBasisPoints(basePercentage);
+	}
+
 	static const std::pair<CSelector, std::string> & compile(const BonusFilter & filter)
 	{
 		// Compiling a filter resolves identifiers, which is a sweep of every mod scope. The answer

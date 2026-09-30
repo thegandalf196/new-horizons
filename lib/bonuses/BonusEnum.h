@@ -229,6 +229,8 @@ class JsonNode;
 	BONUS_NAME(DIVINE_RETRIBUTION) /*New Horizons Divine Retribution: timed reactive-damage marker on one protected stack*/ \
 	BONUS_NAME(DIVINE_RETRIBUTION_JUDGED) /*New Horizons Divine Retribution: saved per-round attacker judgment and actual HP damage accumulator*/ \
 	BONUS_NAME(SPELL_DAMAGE_REDUCTION_BASIS_POINTS) /*New Horizons: independent magical damage reduction in basis points*/ \
+	BONUS_NAME(MAXIMUM_LUCK) /*maximum final attack Luck; zero suppresses positive Luck without removing negative Luck*/ \
+	BONUS_NAME(FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS) /*multiplier for explicitly classified random creature procs; 10000 is unchanged*/ \
 
 	/* end of list */
 

@@ -9,6 +9,7 @@ local DIVINE_RETRIBUTION_SPELL = "new-horizons:divineRetribution"
 local CRUSADE_SPELL = "new-horizons:crusade"
 local ENTANGLE_SPELL = "new-horizons:entangle"
 local VENGEFUL_VINES_SPELL = "new-horizons:vengefulVines"
+local MISFORTUNE_SPELL = "core:misfortune"
 local LIGHT_MAGIC_SKILL = "new-horizons:lightMagic"
 local HEALER_PERK = "new-horizons:lightMagic.healer"
 local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
@@ -17,6 +18,8 @@ local RETRIBUTIONIST_PERK = "new-horizons:lightMagic.retributionist"
 local CRUSADER_PERK = "new-horizons:lightMagic.crusader"
 local NATURE_MAGIC_SKILL = "new-horizons:natureMagic"
 local ROOTCALLER_PERK = "new-horizons:natureMagic.rootcaller"
+local CHAOS_MAGIC_SKILL = "new-horizons:chaosMagic"
+local MISFORTUNE_WEAVER_PERK = "new-horizons:chaosMagic.misfortuneWeaver"
 local HOLY_ARMOR_SPELL_POWER_DIVISOR = 5
 local HOLY_ARMOR_MAX_REDUCTION_PERCENT = 60
 local HEAVENLY_GALE_BASE_REDUCTION_BASIS_POINTS = 5000
@@ -39,6 +42,13 @@ local ENTANGLE_SPELL_POWER_DIVISOR = 100
 local ENTANGLE_MAX_BASE_DURATION = 2
 local ENTANGLE_MAX_ROOTCALLER_DURATION = 3
 local VENGEFUL_VINES_BASE_DURATION = 2
+local MISFORTUNE_BASE_DURATION = 2
+local MISFORTUNE_MAX_DURATION = 4
+local MISFORTUNE_SPELL_POWER_DURATION_DIVISOR = 80
+local MISFORTUNE_BASE_CHANCE_MULTIPLIER_BASIS_POINTS = 7500
+local MISFORTUNE_SPELL_POWER_REDUCTION_BASIS_POINTS = 25
+local MISFORTUNE_WEAVER_REDUCTION_BASIS_POINTS = 1000
+local MISFORTUNE_MIN_CHANCE_MULTIPLIER_BASIS_POINTS = 2500
 local SLOW_SPELL = "core:slow"
 local SLOW_BASE_REDUCTION_PERCENT = 20
 local SLOW_SPELL_POWER_DIVISOR = 5
@@ -58,6 +68,8 @@ function Script:convertBonuses(mechanics)
 	local crusadeDuration = nil
 	local entangleDuration = nil
 	local vengefulVinesDuration = nil
+	local misfortuneDuration = nil
+	local misfortuneChanceMultiplierBasisPoints = nil
 	if spellKey == CRUSADE_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		-- Crusade authors a fixed three-round buff, independent of Spell Power. Apply
 		-- cast-specific duration mechanics exactly once to that literal base, then
@@ -84,6 +96,26 @@ function Script:convertBonuses(mechanics)
 		-- Vengeful Vines has a fixed two-round Speed penalty. Apply only the
 		-- common cast-specific Echoed Duration extension to that literal base.
 		vengefulVinesDuration = mechanics:adjustEffectDuration(VENGEFUL_VINES_BASE_DURATION)
+	elseif spellKey == MISFORTUNE_SPELL and mechanics:usesNewHorizonsMagicV3() then
+		-- Misfortune's fixed duration and chance floor stay outside the saved
+		-- School/Spellcraft coefficient. Only the Spell Power terms are scaled.
+		local spellPower = math.max(0, mechanics:getEffectPower())
+		local coefficient = mechanics:getSpellPowerCoefficientBasisPoints()
+		local durationPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+			spellPower, MISFORTUNE_SPELL_POWER_DURATION_DIVISOR, coefficient)
+		local ordinaryDuration = math.min(MISFORTUNE_MAX_DURATION,
+			MISFORTUNE_BASE_DURATION + durationPowerTerm)
+		misfortuneDuration = mechanics:adjustEffectDuration(ordinaryDuration)
+
+		local powerChanceReduction = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+			MISFORTUNE_SPELL_POWER_REDUCTION_BASIS_POINTS * spellPower, 1, coefficient)
+		local chanceMultiplier = MISFORTUNE_BASE_CHANCE_MULTIPLIER_BASIS_POINTS - powerChanceReduction
+		local hero = mechanics:getHeroCaster()
+		if hero and hero:hasActivePerk(CHAOS_MAGIC_SKILL, MISFORTUNE_WEAVER_PERK) then
+			chanceMultiplier = chanceMultiplier - MISFORTUNE_WEAVER_REDUCTION_BASIS_POINTS
+		end
+		misfortuneChanceMultiplierBasisPoints = math.max(
+			MISFORTUNE_MIN_CHANCE_MULTIPLIER_BASIS_POINTS, chanceMultiplier)
 	else
 		duration = mechanics:getEffectDuration()
 	end
@@ -99,6 +131,12 @@ function Script:convertBonuses(mechanics)
 
 	for name, b in pairs(self.bonus or {}) do
 		local nb = self:deepCopyBonus(b)
+		if misfortuneDuration ~= nil and name == "luck" then
+			-- New Horizons Misfortune suppresses only positive Luck. The timed
+			-- zero cap leaves negative Luck and the stack's ordinary bonuses intact.
+			nb.type = "MAXIMUM_LUCK"
+			nb.val = 0
+		end
 		if name == "stacksSpeed" and newHorizonsSlowReduction ~= nil then
 			-- New Horizons v3 keeps Slow's fixed 20% base outside the school-rank
 			-- coefficient and caps the ordinary magnitude before specialties apply.
@@ -119,7 +157,9 @@ function Script:convertBonuses(mechanics)
 			nb.type = "STACKS_INITIATIVE"
 			nb.valueType = "ADDITIVE_VALUE"
 		end
-		if entangleDuration ~= nil then
+		if misfortuneDuration ~= nil then
+			nb.turns = misfortuneDuration
+		elseif entangleDuration ~= nil then
 			nb.turns = entangleDuration
 		elseif vengefulVinesDuration ~= nil then
 			nb.turns = vengefulVinesDuration
@@ -133,6 +173,18 @@ function Script:convertBonuses(mechanics)
 		nb.sourceID = spellKey
 
 		converted[name] = nb
+	end
+
+	if misfortuneChanceMultiplierBasisPoints ~= nil then
+		converted.favorableCreatureChanceMultiplier = {
+			type = "FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS",
+			duration = ENUM.BonusDuration.nTurns,
+			val = misfortuneChanceMultiplierBasisPoints,
+			valueType = "INDEPENDENT_MIN",
+			turns = misfortuneDuration,
+			sourceType = "SPELL_EFFECT",
+			sourceID = spellKey
+		}
 	end
 
 	return converted

@@ -1412,6 +1412,86 @@ Offline gates pass 76/76; module/diff checks pass; review has no blocker.
 No playable/profile promotion or Windows completion claim follows from this
 Linux native gate.
 
+### UP-061 activation inventory gate, 2026-09-30
+
+Initial offline command: `python3 -m unittest tools.tests.test_new_horizons_perk_data
+tools.tests.test_new_horizons_content tools.tests.test_new_horizons_ui_perk_inventory`.
+On the Misfortune working tree above base `4e6bb51e2`, 77 cases ran with three
+failures: expected planned status for Weaver, a consequent incomplete collected
+perk count, and the stale planned UI inventory row. This is activation-manifest
+drift, not a discovered gameplay failure. Add Weaver to the explicit active
+allowlist and mark its inventory active with bespoke art still Not done.
+The repaired offline gate passes 77/77; native/build results remain separate.
+
+### UP-061 initial native compile, 2026-09-30
+
+Build session 61712 fails in the new probability fixture: direct Bonus
+serialization instantiates forward-declared BonusParameters, limiters,
+propagators and updaters. Preserve `UP061-misfortune-initial-build.log`.
+Add their direct headers to the fixture, as required by the existing native
+Bonus round-trip tests. Production objects compiled up to this point; neither
+target's successful link or native execution is claimed. Retry both targets
+with a uniquely named log and record the succeeding gate.
+
+Header retry 63744 compiles the Bonus round-trip fixture, then finds the runtime
+fixture also dereferences a forward-declared CGameHandler. Add its direct header
+in `NewHorizonsMisfortuneTest.cpp`; preserve
+`UP061-misfortune-headers-retry1-build.log`. This is a second distinct fixture
+include failure, not a production mechanic relaxation. Retry remaining objects
+and both target links before native execution.
+
+Handler retry 40475 compiles the runtime fixture, then fails in the AI fixture:
+wire `BattleAction::DestinationInfo::unitValue` is an integer ID, unlike the
+pointer-valued spell-mechanics Destination; the fixture also lacked the direct
+CSpell header. Compare the wire ID directly, include CSpell, and use the actual
+battle cost callback rather than the hero-only cost helper. Preserve
+`UP061-misfortune-handler-retry2-build.log`. No production rule is changed.
+
+AI fixture retry 22804 links both targets successfully. Root then adds missing
+v3 spellbook help so the new effect is not described as legacy -Luck. The new
+help assertion exposes the same required direct CSpell include in the runtime
+fixture (build 58455); preserve `UP061-misfortune-help-final-build.log` and add
+that header. No successful native run is claimed until the final help build.
+
+Final help/header build 86586 links both targets. Native initial 30712 runs
+23 cases on `7418a515fcde769d7dba1106d750281681143d698a4b7d4e2bb73560cf76f203`:
+20 pass, three fail, zero skips. The new favorable-chance marker lacks explicit
+`N_TURNS` duration and defaults to PERMANENT despite its turns field: a real
+production lifetime defect. Set its Lua duration explicitly; keep the cast,
+Dispel and expiry assertions. The other failures are fixture admission:
+the positive/negative Luck case attempts a second hero cast without a fresh
+Hero Action, and the defender Dispel setup lacks its spellbook. The direct
+`canBeCast` path does not impose an active-stack-side check; no artificial
+active-side override is needed. A bounded runtime worker repairs only those fixture setups without
+loosening casting rules. Actual detached/accepted AI, Death Stare and seven
+existing guards pass. Preserve `UP061-misfortune-initial-focused.log`/`.xml`
+and rerun the complete focused filter on the corrected candidate.
+
+Lifetime fixture rebuild 63595 links both targets. Native retry 31261 on
+`ce80cbac04aabb114ee1d0115f7a964b51a888dddcdd595da9a2916522a118e4`
+passes the formula, chance, Luck and Dispel cases, then exits with signal 11
+in `OrdinaryExpiryRemovesBothTimedEffects` before the remaining filter finishes.
+Preserve `UP061-misfortune-lifetime-retry1-focused.log`; the interrupted XML is
+not a passing report. Diagnose with the isolated `UP061-misfortune-expiry-crash-gdb.log`
+before attributing the crash to runtime or claiming native completion.
+
+Isolated gdb 16088 identifies the crash at the fixture's unchecked null Bonus
+pointer, not inside game processing. `beginCombat()` already starts round one;
+two legal `endRound()` calls correctly expire a two-round effect, whereas the
+fixture assumed a setup-to-round-one transition that no longer occurs.
+Assert the starting/current rounds, check each pointer before dereferencing,
+verify one remaining turn after the first legal round and expiry after the
+second. Preserve the debugger trace and repeat the complete focused filter.
+
+Final rebuild 84281 succeeds and native 42389 passes the complete filter:
+25/25, zero skips, binary
+`01f92c0564da87a2d21e2a471f692f2f95c6af4ce86df7370dbddcba9589629e`.
+Retain `UP061-misfortune-expiry-retry2-focused.log`/`.xml`. This proves the
+timed-marker repair and legal expiry/Dispel rather than suppressing the failing
+assertions. Offline gates pass 77/77; module/diff checks and bounded repair
+review pass. Current native gate has no blocker; recorded Phase 2 breadth and
+the unanswered innate-resistance classification remain separate.
+
 ```text
 Failure ID / CI run or local command / frozen source identity:
 Observed error and affected stage:

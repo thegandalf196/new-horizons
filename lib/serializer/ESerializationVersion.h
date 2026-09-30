@@ -121,12 +121,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_CRUSADE_MAGIC_REDUCTION, // timed fractional Magical Damage Reduction bonus type
 	BATTLE_COMPLETED_HERO_SPELL, // per-side battle-long completion gate for the first hero spell discount
 	BATTLE_COMPLETED_HERO_SPELL_LEVELS, // per-side accepted hero spell levels completed during battle
+	NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS, // timed final Luck ceiling and favorable creature proc multiplier
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = BATTLE_COMPLETED_HERO_SPELL_LEVELS,
+	CURRENT = NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -164,6 +165,8 @@ static_assert(ESerializationVersion::BATTLE_COMPLETED_HERO_SPELL > ESerializatio
 	"Completed hero spell state must remain append-only");
 static_assert(ESerializationVersion::BATTLE_COMPLETED_HERO_SPELL_LEVELS > ESerializationVersion::BATTLE_COMPLETED_HERO_SPELL,
 	"Completed hero spell level state must remain append-only");
+static_assert(ESerializationVersion::NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS > ESerializationVersion::BATTLE_COMPLETED_HERO_SPELL_LEVELS,
+	"Creature probability modifier state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION > ESerializationVersion::NEW_HORIZONS_WARCASTING);
 static_assert(ESerializationVersion::NEW_HORIZONS_HERO_ACTION_ALLOWANCES > ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTERIES > ESerializationVersion::NEW_HORIZONS_CAPABILITIES);

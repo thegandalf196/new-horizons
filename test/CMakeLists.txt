@@ -46,6 +46,7 @@ set(test_SRCS
 		battle/battle_UnitTest.cpp
 
 		bonus/BonusSystemTest.cpp
+		bonus/NewHorizonsCreatureProbabilityTest.cpp
 
 		combatScripts/CombatScriptDescriptionTest.cpp
 
@@ -249,6 +250,7 @@ set(test_SRCS
 		server/battles/NewHorizonsDoomTest.cpp
 		server/battles/NewHorizonsHolyWrathTest.cpp
 		server/battles/NewHorizonsHandOfFateTest.cpp
+		server/battles/NewHorizonsMisfortuneTest.cpp
 		server/battles/NewHorizonsHolyArmorTest.cpp
 		server/battles/NewHorizonsHeavenlyGaleTest.cpp
 		server/battles/NewHorizonsDivineRetributionTest.cpp
@@ -360,6 +362,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsMagicAITest.cpp
 		battleAI/NewHorizonsHolyWrathAITest.cpp
 		battleAI/NewHorizonsHandOfFateAITest.cpp
+		battleAI/NewHorizonsMisfortuneAITest.cpp
 		battleAI/NewHorizonsHolyArmorAITest.cpp
 		battleAI/NewHorizonsHeavenlyGaleAITest.cpp
 		battleAI/NewHorizonsDivineRetributionAITest.cpp

@@ -25,6 +25,7 @@ ACTIVE_PERKS = {
     "new-horizons:command.defensiveCommander",
     "new-horizons:command.veteranCommander",
     "new-horizons:chaosMagic.blinkmaster",
+    "new-horizons:chaosMagic.misfortuneWeaver",
     "new-horizons:shroudOfMalassa.backstab",
     "new-horizons:spellcraft.empowerSpell",
     "new-horizons:spellcraft.spellPenetration",

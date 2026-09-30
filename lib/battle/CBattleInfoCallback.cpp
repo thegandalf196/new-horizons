@@ -443,6 +443,8 @@ bool CBattleInfoCallback::battleCanUsePerfectMoment(const battle::Unit * attacke
 	if(!attacker || !getBattle() || battleTacticDist() || !attacker->alive() || attacker->isGhost()
 		|| attacker->isTimeStopped() || attacker->isTurret() || attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
 		|| attacker->hasBonusOfType(BonusType::NO_LUCK) || attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
+		|| (attacker->hasBonusOfType(BonusType::MAXIMUM_LUCK)
+			&& attacker->valOfBonuses(BonusType::MAXIMUM_LUCK) <= 0)
 		|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
 		|| getBattle()->getActiveStackID() != attacker->unitId())
 		return false;
@@ -508,18 +510,23 @@ int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, cons
 	const auto rules = battleLuckRules(*getBattle());
 	const int maximum = static_cast<int>(rules.goodChance.size());
 	const int minimum = -static_cast<int>(rules.badChance.size());
+	const auto cap = [attacker](int luck)
+	{
+		return attacker->hasBonusOfType(BonusType::MAXIMUM_LUCK)
+			? std::min(luck, attacker->valOfBonuses(BonusType::MAXIMUM_LUCK)) : luck;
+	};
 	if(attacker->hasBonusOfType(BonusType::MAX_LUCK))
-		return maximum;
+		return cap(maximum);
 	if(attacker->hasBonusOfType(BonusType::NO_LUCK))
 		return 0;
 	const int baseLuck = std::clamp(attacker->valOfBonuses(BonusType::LUCK), minimum, maximum);
 	const auto side = playerToSide(battleGetOwner(attacker));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return baseLuck;
+		return cap(baseLuck);
 	const auto mark = battleGetFocusFireState(side);
 	const bool focused = shooting && target && battleIsFocusFireRecipient(attacker, side)
 		&& battleIsFocusFireTargetActive(side) && mark && mark->targetUnitId == target->unitId();
-	return std::clamp(getBattle()->getSylvanLuckState(side).chanceLuck(baseLuck, attacker->unitId(), focused), minimum, maximum);
+	return cap(std::clamp(getBattle()->getSylvanLuckState(side).chanceLuck(baseLuck, attacker->unitId(), focused), minimum, maximum));
 }
 
 int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & attack) const

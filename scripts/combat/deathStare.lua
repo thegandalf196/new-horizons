@@ -33,12 +33,14 @@ end
 --- the share of the stack that could have rolled it dies, so a lucky roll cannot run away.
 function Script:rolledKills(server, unit)
 	local chance = self.val or 0
+	local chanceBasisPoints = unit:favorableCreatureAbilityChanceBasisPoints(chance)
 
-	if chance <= 0 then return 0 end
+	if chanceBasisPoints <= 0 then return 0 end
 
 	local count = unit:getCount()
-	local killed = server:rngBinomial(count, math.min(chance, 100) / 100)
-	local cap = math.ceil(count * chance / 100)
+	local probability = chanceBasisPoints / 10000
+	local killed = server:rngBinomial(count, probability)
+	local cap = math.ceil(count * probability)
 
 	return math.min(killed, cap)
 end

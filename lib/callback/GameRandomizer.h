@@ -15,6 +15,7 @@
 enum class EGameSettings;
 
 class CGHeroInstance;
+class IBonusBearer;
 
 class DLL_LINKAGE RandomizationBias
 {
@@ -111,6 +112,7 @@ public:
 	bool rollBadLuck(ObjectInstanceID actor, int luckValue);
 
 	bool rollCombatAbility(ObjectInstanceID actor, int percentageChance);
+	bool rollFavorableCreatureAbility(ObjectInstanceID actor, const IBonusBearer & unit, int percentageChance);
 
 	CreatureID rollCreature() override;
 	CreatureID rollCreature(int tier) override;

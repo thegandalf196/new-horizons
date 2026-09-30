@@ -96,3 +96,27 @@ with percent-based reduction sources; it does not sum their percentages.
 Timed spell applications use ordinary `SPELL_EFFECT` source IDs and `N_TURNS`
 lifetimes, so refresh and Dispel use the existing spell-bonus lifecycle.
 Legacy rule snapshots retain their original damage-reduction behavior.
+
+## Favorable creature probability modifiers
+
+`FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS` multiplies explicitly
+classified favorable random creature procs. 10000 means unchanged probability;
+use `INDEPENDENT_MIN` for a timed penalty. The shared
+`favorableCreatureAbilityChanceBasisPoints(basePercentage)` getter returns
+basis points, preserving fractional percentages. Zero chances stay zero and
+deterministic abilities (base chance at least 100%) stay deterministic.
+This is not a global RNG modifier: hero-owned machine bonuses, harmful Fear
+rolls and random selection among deterministic outcomes are not consumers.
+
+Authoritative percentage-biased rolls use `rollFavorableCreatureAbility`.
+Fractional percentages are stochastically rounded before the existing roll;
+the persistent bias stream retains its percentage-sized dice and unchanged
+chances retain their original RNG path. Binomial mechanics such as Death Stare
+instead consume the exact basis-point probability directly.
+
+`MAXIMUM_LUCK` caps final attack Luck, including positive Luck transformations.
+A zero cap prevents positive Luck without removing negative Luck. It also
+prevents the Perfect Moment forced-positive-Luck action. Timed spell markers
+use the existing spell-effect expiry and Dispel lifecycle. Both bonus types
+require serialization feature `NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS`;
+down-saving either to an older format is rejected rather than losing state.

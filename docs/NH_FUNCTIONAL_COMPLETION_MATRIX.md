@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-09-30
-Canonical source SHA-256: `08cfaada6fd4881a7e7f1e6c82a5f488e9ca1b99ea65ebd432b72aff58f8080c`
+Canonical source SHA-256: `a1997e4d22630c31987708f4abda01de2bf64b8cb5e43a5eee72b06f3369999f`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -25,17 +25,24 @@ selection/preview remains missing Phase 1 functionality. Other Adventure
 clauses, broad boat eligibility/selection scenarios and playable acceptance
 remain separately open; combat identities 59/67, ranks 84/93, perks 125/310.
 
-Next mapped foundational gap: Misfortune remains only a legacy -1/-2 Luck
-timed effect plus canonical single-stack targeting. It does not yet suppress
-positive Luck entirely or scale favorable random creature effects. Misfortune
-Weaver remains planned. Canonical normal multiplier is
-`max(25%, 75% - 0.25% * SP)`; Weaver subtracts ten percentage points before the
-same floor. Direct attack flags, attack-triggered casting and Death Stare use
-separate rolls; hypothetical combat ability handling is not a shared expected-
-probability forecast. Implement the unambiguous positive-Luck suppression and
-shared chance policy before claiming this registered identity effect-complete.
-The eligible creature-effect classification requires an explicit bounded audit;
-do not blanket-reduce every RNG operation or include hero effects implicitly.
+UP-061 probability foundation is source/native verified (2026-09-30):
+Misfortune now suppresses final positive Luck while preserving negative Luck,
+and supplies a shared timed favorable-creature probability multiplier.
+Explicit runtime consumers are Death Blow, attack-triggered spells,
+destruction/transmutation and Death Stare. Deterministic abilities, hero-owned
+machine chances and harmful Fear rolls remain unchanged. Weaver is activated
+and verified, reducing the multiplier ten percentage points before its 25%
+floor; registry counts are 126/310 active, 184 planned, Chaos 2/8. AI projects
+Luck and Death Blow expectations without live RNG. Both worker implementations
+are integrated; independent review has no remaining blocker and offline gates
+pass 77/77. Both targets build; final rebuild 84281 and native 42389 pass
+25/25, zero skips: 18 new runtime/AI/helper cases plus seven direct guards.
+Reports `UP061-misfortune-expiry-retry2-focused.log`/`.xml`, binary SHA-256
+`01f92c0564da87a2d21e2a471f692f2f95c6af4ce86df7370dbddcba9589629e`.
+The missing lifetime flag is repaired and legal expiry/Dispel now pass.
+Native evidence is not playable acceptance. Innate creature resistance scope is
+pending; broader proc-family valuation, custom specialty, fractional seeded
+roll and Sylvan/Perfect Moment execution interactions are recorded for Phase 2.
 
 Hand of Fate (UP-057): Level 3 Chaos primary damage and uniformly selected
 secondary spill are implemented. Half the primary's actual HP loss is reduced
@@ -217,7 +224,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 125/310 | 185 planned; Archmage is the newest activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 126/310 | 184 planned; Misfortune Weaver is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 59/67 | 8 missing/inactive; Hand of Fate is the newest identity. Chaos is 5/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -244,8 +251,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 124
-active perks, leaving nine ranks and 189 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 126
+active perks, leaving nine ranks and 184 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-30; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head

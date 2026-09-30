@@ -16,6 +16,7 @@
 #include "../GameLibrary.h"
 #include "../CCreatureHandler.h"
 #include "../CSkillHandler.h"
+#include "../bonuses/IBonusBearer.h"
 #include "../IGameSettings.h"
 #include "../entities/artifact/CArtHandler.h"
 #include "../entities/artifact/EArtifactClass.h"
@@ -98,6 +99,22 @@ bool GameRandomizer::rollGoodLuck(ObjectInstanceID actor, int luckValue)
 bool GameRandomizer::rollBadLuck(ObjectInstanceID actor, int luckValue)
 {
 	return rollMoraleLuck(badLuckSeed, actor, luckValue, EGameSettings::COMBAT_LUCK_BIAS, EGameSettings::COMBAT_LUCK_DICE_SIZE, EGameSettings::COMBAT_BAD_LUCK_CHANCE);
+}
+
+bool GameRandomizer::rollFavorableCreatureAbility(ObjectInstanceID actor, const IBonusBearer & unit, int percentageChance)
+{
+	const int chance = unit.favorableCreatureAbilityChanceBasisPoints(percentageChance);
+	if(chance == std::clamp(percentageChance, 0, 100) * 100)
+		return rollCombatAbility(actor, percentageChance);
+
+	// Keep the existing percentage-sized biased stream. Changing its dice scale
+	// would reinterpret accumulated bias when this timed modifier expires.
+	// Stochastic rounding retains fractional percentages in expectation, without
+	// any extra draw when the effective chance is an integer percentage.
+	int roundedChance = chance / 100;
+	if(chance % 100 && getDefault().nextInt(0, 99) < chance % 100)
+		++roundedChance;
+	return rollCombatAbility(actor, roundedChance);
 }
 
 bool GameRandomizer::rollCombatAbility(ObjectInstanceID actor, int percentageChance)
