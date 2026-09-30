@@ -19,6 +19,13 @@ namespace heroCommands
 {
 namespace
 {
+constexpr char COMMAND_SKILL[] = "new-horizons:command";
+constexpr char AGGRESSIVE_COMMANDER_PERK[] = "new-horizons:command.aggressiveCommander";
+constexpr char DEFENSIVE_COMMANDER_PERK[] = "new-horizons:command.defensiveCommander";
+constexpr char VETERAN_COMMANDER_PERK[] = "new-horizons:command.veteranCommander";
+constexpr int BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT = 20;
+constexpr int VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT = 25;
+
 int exactBoundedCoefficient(const std::array<double, 3> & terms, const std::array<int, 3> & factors)
 {
 	// Only the overflow fallback uses exact arithmetic. Keep the ordinary double
@@ -81,6 +88,24 @@ int boundedCoefficient(const std::array<double, 3> & terms, const std::array<int
 		return exactBoundedCoefficient(terms, factors);
 	return static_cast<int>(std::lround(std::clamp(value,
 		static_cast<double>(MIN_EFFECT_PERCENT), static_cast<double>(MAX_EFFECT_PERCENT))));
+}
+
+int heroCoefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent,
+	bool includeCommanderPerks)
+{
+	const int commonEfficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100);
+	int attackEfficiency = commonEfficiency;
+	int defenseEfficiency = commonEfficiency;
+	if(includeCommanderPerks)
+	{
+		if(hero.hasActivePerk(COMMAND_SKILL, AGGRESSIVE_COMMANDER_PERK))
+			attackEfficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
+		if(hero.hasActivePerk(COMMAND_SKILL, DEFENSIVE_COMMANDER_PERK))
+			defenseEfficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
+	}
+	return boundedCoefficient({effect["base"].Float(), effect["attack"].Float() * attackEfficiency / 100.0,
+		effect["defense"].Float() * defenseEfficiency / 100.0},
+		{1, hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE)});
 }
 
 bool legacyVersionOne(const JsonNode & value)
@@ -401,10 +426,7 @@ int coefficient(const JsonNode & effect, const CGHeroInstance & hero)
 
 int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent)
 {
-	const int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100);
-	return boundedCoefficient({effect["base"].Float(), effect["attack"].Float() * efficiency / 100.0,
-		effect["defense"].Float() * efficiency / 100.0},
-		{1, hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE)});
+	return heroCoefficient(effect, hero, warcastingBonusPercent, true);
 }
 
 int efficiencyPercent(const CGHeroInstance & hero)
@@ -422,7 +444,10 @@ int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent)
 	int64_t leadership = 0;
 	if(const auto capacity = hero.getLeadershipCapacity())
 		leadership = capacity->capacity;
-	const int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100);
+	const int veteranCommanderBonus = hero.hasActivePerk(COMMAND_SKILL, VETERAN_COMMANDER_PERK)
+		? VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT : 0;
+	const int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100)
+		+ veteranCommanderBonus;
 	const double leadershipComponent = 0.015 * static_cast<double>(leadership) * efficiency / 100.0;
 	return std::clamp(50 + static_cast<int>(std::lround(leadershipComponent)), 0, 100);
 }
@@ -446,7 +471,10 @@ std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CG
 		bonus.source = BonusSource::HERO_COMMAND;
 		bonus.duration = BonusDuration::N_TURNS;
 		bonus.turnsRemain = 1;
-		bonus.val = coefficient(formula, hero);
+		// Saved v1-v3 rules do not gain perks added to the current canonical
+		// Orders profile. Keep their historic rank scaling while excluding the
+		// attribute-specific Commander bonuses introduced with the canonical rules.
+		bonus.val = heroCoefficient(formula, hero, 0, false);
 		bonus.description.appendRawString("New Horizons: " + key(command));
 		if(effect == "speedPercent")
 		{

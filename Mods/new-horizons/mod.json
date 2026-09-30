@@ -3866,7 +3866,7 @@
 								"requires": "basic",
 								"description": "Attack-derived components of Orders receive an additional +20 percentage points of Command Efficiency.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Attack-derived components of Orders receive an additional +20 percentage points of Command Efficiency."
 								}
 							},
@@ -3876,7 +3876,7 @@
 								"requires": "basic",
 								"description": "Defense-derived components of Orders receive an additional +20 percentage points of Command Efficiency.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Defense-derived components of Orders receive an additional +20 percentage points of Command Efficiency."
 								}
 							},
@@ -3906,7 +3906,7 @@
 								"requires": "advanced",
 								"description": "Leadership-derived components of Orders receive an additional +25 percentage points of Command Efficiency.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Leadership-derived components of Orders receive an additional +25 percentage points of Command Efficiency."
 								}
 							},

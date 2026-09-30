@@ -2,6 +2,20 @@
 
 ## Purpose
 
+### 2026-09-30 Command efficiency fixture compile repair
+
+Linux build session 67452 stops in the new AI fixture: `MAGIC_ARROW` is an
+enum constant, not a `SpellID` object, so `.toSpell()` cannot be called on it.
+Construct `SpellID(SpellID::MAGIC_ARROW)` before lookup. Production coefficient
+and runtime fixtures compile; no gameplay failure is inferred. Preserve the
+focused build/native gate rather than counting registry activation as proof.
+The repaired build (session 52410) links both client/test targets. The isolated
+`NewHorizonsCommandEfficiency-focused.*` run passes 11/11 with zero skips on
+binary `e228836aac3189c35ed63b803c2facd57ec22b5c006161537054ee860a13a2a3`.
+The first offline invocation also named a nonexistent inventory test module;
+rerunning the actual `test_new_horizons_ui_perk_inventory` module alongside
+content/perk checks passes 74/74. Neither invocation failure is hidden.
+
 ### 2026-09-30 Blink native fixture compilation and tie-order review
 
 The Linux client build passes, but the first test-target build (session 35688)

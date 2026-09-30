@@ -119,6 +119,25 @@ TEST(NewHorizonsPerkState, EmpowerSpellOpensNormalExpertSpellcraftProgression)
 	EXPECT_TRUE(saved.canAdvanceSkillNormally(SKILL, 2));
 }
 
+TEST(NewHorizonsPerkState, CommanderPerksOpenNormalAdvancedAndExpertCommandProgression)
+{
+	constexpr auto COMMAND = "new-horizons:command";
+	constexpr auto VETERAN = "new-horizons:command.veteranCommander";
+	for(const auto * basic : {"new-horizons:command.aggressiveCommander",
+		"new-horizons:command.defensiveCommander"})
+	{
+		SCOPED_TRACE(basic);
+		auto saved = state();
+		EXPECT_FALSE(saved.canAdvanceSkillNormally(COMMAND, 1));
+		saved.select(COMMAND, basic, 1);
+		EXPECT_TRUE(saved.canAdvanceSkillNormally(COMMAND, 1));
+		EXPECT_FALSE(saved.canAdvanceSkillNormally(COMMAND, 2));
+		saved.select(COMMAND, VETERAN, 2);
+		EXPECT_TRUE(saved.canAdvanceSkillNormally(COMMAND, 2));
+		EXPECT_EQ(saved.selected.size(), 2u);
+	}
+}
+
 TEST(NewHorizonsPerkState, OccupiedTierOnlyBlocksAlternativesFromTheSameSkill)
 {
 	auto saved = state();
