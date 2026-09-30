@@ -70,7 +70,7 @@ public:
 	std::shared_ptr<CGHeroInstance> takeHeroFromPool(HeroTypeID hero);
 
 	/// reset mana and movement points for all heroes in pool
-	void onNewDay();
+	void onNewDay(bool completedDay = true);
 
 	void addHeroToPool(HeroTypeID hero);
 

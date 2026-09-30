@@ -1515,7 +1515,7 @@ void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 	for(auto & movePack : pack.heroesMovement)
 		movePack.visit(*this);
 
-	gs.heroesPool->onNewDay();
+	gs.heroesPool->onNewDay(pack.day > 1);
 
 	for(auto & entry : pack.playerIncome)
 	{

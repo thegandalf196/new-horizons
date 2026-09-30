@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 
 class CHero;
@@ -221,7 +222,8 @@ public:
 		const CCreatureSet * projectedArmy = nullptr) const;
 	int getLowestCreatureSpeed() const;
 	si32 manaRegain() const; //how many points of mana can hero regain "naturally" in one day
-	si32 getManaNewTurn() const; //calculate how much mana this hero is going to have the next day
+	/// Calculate next-day mana, optionally using the Movement limit captured before pool bonus expiry.
+	si32 getManaNewTurn(bool completedDay = true, std::optional<int> previousMovementLimit = std::nullopt) const;
 	int getCurrentLuck(int stack=-1, bool town=false) const;
 	const JsonNode & getMagicRules() const;
 	std::vector<SpellSchool> getSpellSchools(const spells::Spell * spell) const;

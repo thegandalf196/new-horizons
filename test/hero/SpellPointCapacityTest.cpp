@@ -19,11 +19,14 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/gameState/GameStatePackVisitor.h"
+#include "../../lib/gameState/TavernHeroesPool.h"
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/army/CSimpleArmy.h"
+#include "../../lib/mapping/CMap.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForClient.h"
@@ -38,6 +41,7 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 namespace
@@ -46,6 +50,8 @@ using KnowledgeArtifact = std::pair<ArtifactID, ArtifactPosition>;
 
 constexpr auto WISDOM_SKILL_ID = "new-horizons:wisdom";
 constexpr auto MYSTICISM_PERK_ID = "new-horizons:wisdom.mysticism";
+constexpr auto INTELLIGENCE_PERK_ID = "new-horizons:wisdom.intelligence";
+constexpr auto MEDITATION_PERK_ID = "new-horizons:wisdom.meditation";
 
 const std::array<KnowledgeArtifact, 4> & knowledgeArtifacts()
 {
@@ -105,6 +111,12 @@ protected:
 		gameState()->apply(change);
 	}
 
+	void setMovement(CGHeroInstance * hero, int32_t value)
+	{
+		SetMovePoints change(hero->id, value);
+		gameState()->apply(change);
+	}
+
 	void setWisdomRank(CGHeroInstance * hero, int32_t rank)
 	{
 		// Wisdom is Magic-exclusive. Use a real Wizard hero for the normal perk-offer path.
@@ -121,27 +133,71 @@ protected:
 		gameState()->apply(change);
 	}
 
-	bool selectMysticismThroughLegalOffer(CGHeroInstance * hero)
+	bool selectWisdomPerkThroughLegalOffer(CGHeroInstance * hero, const std::string & perkId)
 	{
-		setWisdomRank(hero, MasteryLevel::BASIC);
 		const auto rankLookup = [hero](const std::string & skillId)
 		{
 			return hero->getPerkSkillRank(skillId);
 		};
 
-		for(uint64_t seed = 0; seed < 256; ++seed)
+		for(uint64_t seed = 0; seed < 4096; ++seed)
 		{
 			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
-			const auto selected = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
+			const auto selected = std::find_if(offer.begin(), offer.end(), [&perkId](const auto & candidate)
 			{
-				return candidate.selection.perkId == MYSTICISM_PERK_ID;
+				return candidate.selection.perkId == perkId;
 			});
 			if(selected == offer.end())
 				continue;
 
 			const auto choice = static_cast<size_t>(std::distance(offer.begin(), selected));
 			gameHandler->levelUpHero(hero, offer, choice, seed, false);
-			return hero->hasActivePerk(WISDOM_SKILL_ID, MYSTICISM_PERK_ID);
+			return hero->hasActivePerk(WISDOM_SKILL_ID, perkId);
+		}
+		return false;
+	}
+
+	bool advanceWisdomAndSelectPerkThroughLegalOffers(CGHeroInstance * hero,
+		const std::string & basicPerkId, const std::string & advancedPerkId)
+	{
+		setWisdomRank(hero, MasteryLevel::BASIC);
+		if(!selectWisdomPerkThroughLegalOffer(hero, basicPerkId))
+			return false;
+
+		const int wisdomId = SecondarySkill::decode(WISDOM_SKILL_ID);
+		if(wisdomId < 0)
+			return false;
+		const auto wisdom = SecondarySkill(wisdomId);
+		gameHandler->levelUpHero(hero, wisdom, false);
+		return hero->getSecSkillLevel(wisdom) == MasteryLevel::ADVANCED
+			&& selectWisdomPerkThroughLegalOffer(hero, advancedPerkId);
+	}
+
+	bool selectMysticismThroughLegalOffer(CGHeroInstance * hero)
+	{
+		setWisdomRank(hero, MasteryLevel::BASIC);
+		return selectWisdomPerkThroughLegalOffer(hero, MYSTICISM_PERK_ID);
+	}
+
+	bool selectWisdomPerkFromPoolOffer(CGHeroInstance * hero, const std::string & perkId)
+	{
+		const auto rankLookup = [hero](const std::string & skillId)
+		{
+			return hero->getPerkSkillRank(skillId);
+		};
+
+		for(uint64_t seed = 0; seed < 4096; ++seed)
+		{
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto selected = std::find_if(offer.begin(), offer.end(), [&perkId](const auto & candidate)
+			{
+				return candidate.selection.perkId == perkId;
+			});
+			if(selected == offer.end())
+				continue;
+
+			hero->applyPerkSelection(selected->selection);
+			return hero->hasActivePerk(WISDOM_SKILL_ID, perkId);
 		}
 		return false;
 	}
@@ -193,6 +249,22 @@ protected:
 		for(auto & perk : perks["skills"][WISDOM_SKILL_ID]["perks"].Vector())
 		{
 			if(perk["id"].String() == MYSTICISM_PERK_ID)
+				perk["effect"]["status"].String() = "planned";
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+	}
+};
+
+class SpellPointCapacityPlannedMeditationTest : public SpellPointCapacityTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		SpellPointCapacityTest::mapLoaded(loaded);
+		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		for(auto & perk : perks["skills"][WISDOM_SKILL_ID]["perks"].Vector())
+		{
+			if(perk["id"].String() == MEDITATION_PERK_ID)
 				perk["effect"]["status"].String() = "planned";
 		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
@@ -459,6 +531,211 @@ TEST_F(SpellPointCapacityTest, NewTurnPacketAppliesDailyMysticismRecoveryToNorma
 	EXPECT_EQ(mana->operation, SetMana::Operation::SET_NORMAL);
 	EXPECT_EQ(mana->amount, 50);
 	expectPools(attackerSideHero, 50, 11, 100);
+}
+
+TEST_F(SpellPointCapacityTest, MeditationUsesExactMovementThresholdAddsToBaselineAndCapsMissingNormal)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 0);
+	grantBuffer(attackerSideHero, 23);
+	ASSERT_TRUE(advanceWisdomAndSelectPerkThroughLegalOffers(attackerSideHero,
+		INTELLIGENCE_PERK_ID, MEDITATION_PERK_ID));
+	ASSERT_EQ(attackerSideHero->manaLimit(), 130);
+
+	// The optional prior limit is the same snapshot used for heroes whose
+	// Movement maximum changes as the tavern pool expires daily bonuses.
+	setMovement(attackerSideHero, 49);
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 200), 1);
+	setMovement(attackerSideHero, 50);
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 200), 20); // 1 base + floor(130 * 15%).
+	expectPools(attackerSideHero, 0, 23, 130); // Forecasting changes neither pool.
+
+	setNormal(attackerSideHero, 125);
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 200), 130);
+	expectPools(attackerSideHero, 125, 23, 130); // Only missing Normal is restored; Buffer is untouched.
+}
+
+TEST_F(SpellPointCapacityTest, NewTurnPacketExcludesInitialDayAndAddsMeditationAfterMysticismAndStrongerRegen)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 0);
+	grantBuffer(attackerSideHero, 11);
+	ASSERT_TRUE(advanceWisdomAndSelectPerkThroughLegalOffers(attackerSideHero,
+		MYSTICISM_PERK_ID, MEDITATION_PERK_ID));
+	ASSERT_EQ(attackerSideHero->manaRegain(), 10);
+
+	const int movementLimit = attackerSideHero->movementPointsLimit();
+	ASSERT_GT(movementLimit, 0);
+	const int atLeastQuarterMovement = (movementLimit + 3) / 4;
+	setMovement(attackerSideHero, atLeastQuarterMovement);
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(true), 25); // Completed-day forecast includes both perks.
+
+	NewTurnRecordingGameServer dayStartServer;
+	dayStartServer.gameState = gameState();
+	CGameHandler dayStartHandler(dayStartServer, gameState());
+	ASSERT_EQ(gameState()->day, 0u);
+	dayStartHandler.onNewTurn();
+	ASSERT_TRUE(dayStartServer.lastNewTurn.has_value());
+	ASSERT_EQ(dayStartServer.lastNewTurn->day, 1u);
+	auto findMana = [this](const NewTurn & turn)
+	{
+		return std::find_if(turn.heroesMana.begin(), turn.heroesMana.end(), [this](const auto & change)
+		{
+			return change.hid == attackerSideHero->id;
+		});
+	};
+	const auto firstDayMana = findMana(*dayStartServer.lastNewTurn);
+	ASSERT_NE(firstDayMana, dayStartServer.lastNewTurn->heroesMana.end());
+	EXPECT_EQ(firstDayMana->amount, 10); // Day zero has no completed Movement day for Meditation.
+	EXPECT_EQ(firstDayMana->operation, SetMana::Operation::SET_NORMAL);
+
+	setNormal(attackerSideHero, 0);
+	setMovement(attackerSideHero, atLeastQuarterMovement);
+	auto strongerRegeneration = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MANA_REGENERATION, BonusSource::OTHER, 25, BonusSourceID());
+	attackerSideHero->addNewBonus(strongerRegeneration);
+	ASSERT_EQ(attackerSideHero->manaRegain(), 26);
+	dayStartHandler.onNewTurn();
+	ASSERT_TRUE(dayStartServer.lastNewTurn.has_value());
+	ASSERT_EQ(dayStartServer.lastNewTurn->day, 2u);
+	const auto secondDayMana = findMana(*dayStartServer.lastNewTurn);
+	ASSERT_NE(secondDayMana, dayStartServer.lastNewTurn->heroesMana.end());
+	EXPECT_EQ(secondDayMana->amount, 41); // Previous Movement qualifies before day-start refresh.
+	EXPECT_EQ(secondDayMana->operation, SetMana::Operation::SET_NORMAL);
+	expectPools(attackerSideHero, 41, 11, 100);
+	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), attackerSideHero->movementPointsLimit());
+}
+
+TEST_F(SpellPointCapacityTest, AdvancedMeditationSelectionSurvivesSaveAndRankLossDisablesIt)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 0);
+	grantBuffer(attackerSideHero, 11);
+	ASSERT_TRUE(advanceWisdomAndSelectPerkThroughLegalOffers(attackerSideHero,
+		INTELLIGENCE_PERK_ID, MEDITATION_PERK_ID));
+	setMovement(attackerSideHero, 50);
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_TRUE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, MEDITATION_PERK_ID));
+	EXPECT_EQ(restoredHero->getManaNewTurn(true, 200), 20);
+	EXPECT_EQ(restoredHero->getNormalSpellPoints(), 0);
+	EXPECT_EQ(restoredHero->getBufferSpellPoints(), 11);
+
+	setWisdomRank(attackerSideHero, MasteryLevel::BASIC);
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 200), 1); // The saved choice needs current Advanced Wisdom.
+	expectPools(attackerSideHero, 0, 11, 130);
+}
+
+TEST_F(SpellPointCapacityTest, TavernPoolRecoveryUsesPreExpiryMovementLimitBeforeRefreshingPoints)
+{
+	const int wisdomId = SecondarySkill::decode(WISDOM_SKILL_ID);
+	ASSERT_GE(wisdomId, 0);
+	const auto wisdom = SecondarySkill(wisdomId);
+	HeroTypeID pooledWisdomHero = HeroTypeID::NONE;
+	for(const auto heroType : gameState()->getMap().getHeroesInPool())
+	{
+		auto * candidate = gameState()->getMap().tryGetFromHeroPool(heroType);
+		if(candidate && (candidate->getSecSkillLevel(wisdom) > 0 || candidate->canLearnSkill(wisdom)))
+		{
+			pooledWisdomHero = heroType;
+			break;
+		}
+	}
+	ASSERT_NE(pooledWisdomHero, HeroTypeID::NONE);
+	auto * pooledHero = gameState()->getMap().tryGetFromHeroPool(pooledWisdomHero);
+	ASSERT_NE(pooledHero, nullptr);
+
+	// Pool heroes are not map objects, so build both choices from their own
+	// legal offers and apply those selected candidates directly to that pool entry.
+	pooledHero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(selectWisdomPerkFromPoolOffer(pooledHero, INTELLIGENCE_PERK_ID));
+	pooledHero->setSecSkillLevel(wisdom, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(selectWisdomPerkFromPoolOffer(pooledHero, MEDITATION_PERK_ID));
+	pooledHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+	pooledHero->initializeSpellPoints(0, 17);
+	ASSERT_EQ(pooledHero->manaLimit(), 130);
+
+	const int unmodifiedMovementLimit = pooledHero->movementPointsLimit();
+	ASSERT_GT(unmodifiedMovementLimit, 0);
+	const auto landMovement = BonusSubtypeID(BonusCustomSubtype::heroMovementLand);
+	const auto addExpiringMovementPenalty = [pooledHero, landMovement]()
+	{
+		auto penalty = std::make_shared<Bonus>(BonusDuration::ONE_DAY, BonusType::MOVEMENT,
+			BonusSource::OTHER, -50, BonusSourceID(), landMovement, BonusValueType::PERCENT_TO_BASE);
+		pooledHero->addNewBonus(penalty);
+	};
+
+	addExpiringMovementPenalty();
+	const int previousMovementLimit = pooledHero->movementPointsLimit();
+	ASSERT_GT(previousMovementLimit, 0);
+	ASSERT_LT(previousMovementLimit, unmodifiedMovementLimit);
+	const int exactQuarter = (previousMovementLimit + 3) / 4;
+	ASSERT_LT(exactQuarter, (unmodifiedMovementLimit + 3) / 4);
+	pooledHero->setMovementPoints(exactQuarter);
+
+	CSimpleArmy noArmy;
+	gameState()->heroesPool->setHeroForPlayer(PlayerColor(0), TavernHeroSlot::RANDOM,
+		pooledWisdomHero, noArmy, TavernSlotRole::SINGLE_UNIT, false);
+	gameState()->heroesPool->onNewDay(true);
+	EXPECT_EQ(pooledHero->getNormalSpellPoints(), 20); // Prior max qualifies after its one-day penalty expires.
+	EXPECT_EQ(pooledHero->getBufferSpellPoints(), 17);
+	EXPECT_EQ(pooledHero->movementPointsLimit(), unmodifiedMovementLimit);
+	EXPECT_EQ(pooledHero->movementPointsRemaining(), unmodifiedMovementLimit);
+
+	// If the pool refreshed Movement before calculating Mana, a spent-out
+	// hero would incorrectly satisfy Meditation against the freshly filled pool.
+	pooledHero->setNormalSpellPoints(0);
+	addExpiringMovementPenalty();
+	pooledHero->setMovementPoints(0);
+	gameState()->heroesPool->onNewDay(true);
+	EXPECT_EQ(pooledHero->getNormalSpellPoints(), 1);
+	EXPECT_EQ(pooledHero->getBufferSpellPoints(), 17);
+	EXPECT_EQ(pooledHero->movementPointsLimit(), unmodifiedMovementLimit);
+	EXPECT_EQ(pooledHero->movementPointsRemaining(), unmodifiedMovementLimit);
+}
+
+TEST_F(SpellPointCapacityPlannedMeditationTest, SavedPlannedMeditationCannotBeOfferedOrApplied)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 0);
+	grantBuffer(attackerSideHero, 9);
+	setWisdomRank(attackerSideHero, MasteryLevel::BASIC);
+	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, INTELLIGENCE_PERK_ID));
+	const int wisdomId = SecondarySkill::decode(WISDOM_SKILL_ID);
+	ASSERT_GE(wisdomId, 0);
+	const auto wisdom = SecondarySkill(wisdomId);
+	gameHandler->levelUpHero(attackerSideHero, wisdom, false);
+	ASSERT_EQ(attackerSideHero->getSecSkillLevel(wisdom), MasteryLevel::ADVANCED);
+	const auto rankLookup = [this](const std::string & skillId)
+	{
+		return attackerSideHero->getPerkSkillRank(skillId);
+	};
+	for(uint64_t seed = 0; seed < 128; ++seed)
+	{
+		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
+		{
+			return candidate.selection.perkId == MEDITATION_PERK_ID;
+		}));
+	}
+	EXPECT_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL_ID, MEDITATION_PERK_ID}), std::runtime_error);
+	setMovement(attackerSideHero, 50);
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_FALSE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, MEDITATION_PERK_ID));
+	EXPECT_EQ(restoredHero->getManaNewTurn(true, 200), 1);
+	EXPECT_EQ(restoredHero->getNormalSpellPoints(), 0);
+	EXPECT_EQ(restoredHero->getBufferSpellPoints(), 9);
 }
 
 TEST_F(SpellPointCapacityMageGuildTest, MageGuildFullRefillTakesPrecedenceOverMysticism)

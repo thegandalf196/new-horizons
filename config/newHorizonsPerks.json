@@ -2073,7 +2073,7 @@
 					"requires": "advanced",
 					"description": "If the hero ends the day with at least 25% of maximum Movement unspent, recover an additional 15% of maximum Mana.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "If the hero ends the day with at least 25% of maximum Movement unspent, recover an additional 15% of maximum Mana."
 					}
 				},

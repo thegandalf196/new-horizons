@@ -1432,16 +1432,25 @@ si32 CGHeroInstance::manaRegain() const
 		std::numeric_limits<si32>::min(), std::numeric_limits<si32>::max()));
 }
 
-si32 CGHeroInstance::getManaNewTurn() const
+si32 CGHeroInstance::getManaNewTurn(bool completedDay, std::optional<int> previousMovementLimit) const
 {
 	const int32_t normal = getNormalSpellPoints();
+	const int32_t maximumMana = manaLimit();
 	if(getVisitedTown() && getVisitedTown()->hasBuilt(BuildingID::MAGES_GUILD_1))
 	{
 		//if hero starts turn in town with mage guild - restore Normal to capacity
-		return std::max(normal, manaLimit());
+		return std::max(normal, maximumMana);
 	}
-	int64_t res = static_cast<int64_t>(normal) + manaRegain();
-	res = std::min<int64_t>(res, manaLimit());
+	int64_t regeneration = manaRegain();
+	if(completedDay && hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.meditation"))
+	{
+		const int movementLimit = previousMovementLimit ? *previousMovementLimit : movementPointsLimit();
+		if(movementLimit > 0
+			&& static_cast<int64_t>(movementPointsRemaining()) * 4 >= static_cast<int64_t>(movementLimit))
+			regeneration += static_cast<int64_t>(maximumMana) * 15 / 100;
+	}
+	int64_t res = static_cast<int64_t>(normal) + regeneration;
+	res = std::min<int64_t>(res, maximumMana);
 	res = std::max<int64_t>(res, normal);
 	res = std::max<int64_t>(res, 0);
 	return static_cast<si32>(std::min<int64_t>(res, std::numeric_limits<si32>::max()));
