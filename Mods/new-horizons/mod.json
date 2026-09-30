@@ -3916,7 +3916,7 @@
 								"requires": "advanced",
 								"description": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Flank! grants friendly ranged attacks 50% of its Attack-derived damage bonus; shooters do not add Flank sides.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Flank! grants friendly ranged attacks 50% of its Attack-derived damage bonus; shooters do not add Flank sides."
 								}
 							},

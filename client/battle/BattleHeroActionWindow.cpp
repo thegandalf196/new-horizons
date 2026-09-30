@@ -72,6 +72,17 @@ bool isTargeted(HeroCommand command)
 		|| command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND;
 }
 
+std::string combinedArmsHelp(const JsonNode & rules, HeroCommand command, const CGHeroInstance * hero)
+{
+	if(!heroCommands::isCanonicalRules(rules) || !heroCommands::hasCombinedArms(hero))
+		return {};
+	if(command == HeroCommand::FOCUS_FIRE)
+		return "\n\nCombined Arms: eligible friendly melee attacks gain half the damage bonus against the marked target. Shooting-only penalty reductions and Target Caller do not apply to melee.";
+	if(command == HeroCommand::FLANK)
+		return "\n\nCombined Arms: friendly ranged attacks gain half the Attack-derived damage bonus against the marked target, without the flat base or extra-side bonuses. Ranged attacks do not add Flank sides.";
+	return {};
+}
+
 std::string percentText(int value)
 {
 	return (value > 0 ? "+" : "") + std::to_string(value) + "%";
@@ -361,6 +372,7 @@ void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const J
 			: "\n\nThe authority applies the Order to eligible current troops; later summons and clones do not inherit it.";
 		commands[i].second->setHelp(CButton::tooltip(display.name,
 			std::string(display.description) + (effects.empty() ? "" : "\n\nCurrent effect: " + effects)
+			+ combinedArmsHelp(rules, commands[i].first, &hero)
 			+ "\nOne shared hero action; no mana." + coverage));
 	}
 }
@@ -465,6 +477,7 @@ void BattleHeroActionWindow::refresh()
 		const auto & display = commandDisplay(entry.first);
 		entry.second->setHelp(CButton::tooltip(display.name,
 			std::string(display.description) + (reason.empty() ? "\n\nReady: choose this Order." : "\n\nDisabled: " + reason)
+			+ combinedArmsHelp(rules, entry.first, hero)
 			+ "\nOne shared hero action; no mana."));
 		if(protectPairUnavailable)
 			entry.second->setBorderColor(Colors::ORANGE);

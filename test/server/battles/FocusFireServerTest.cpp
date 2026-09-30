@@ -286,11 +286,13 @@ TEST_F(FocusFireServerTest, TargetCallerAddsFivePointsAndExplainsItsObstacleBene
 		std::string(newHorizonsArchery::TARGET_CALLER)});
 	ASSERT_TRUE(newHorizonsArchery::hasTargetCaller(attackerSideHero));
 	prepareFocusBattle();
+	BattleAttackInfo info(shooter, target, 0, true);
+	EXPECT_EQ(battle()->calculateDmgRange(info).damage.max, 160)
+		<< "Basic NH Archery adds 10 points to the fixture's 50-point ranged premium";
 
 	ASSERT_TRUE(submit(focusAction(target->unitId())));
-	BattleAttackInfo info(shooter, target, 0, true);
 	EXPECT_EQ(battle()->battleTargetedRangedCommandPercent(shooter, target, true), 30);
-	EXPECT_EQ(battle()->calculateDmgRange(info).damage.max, 185)
+	EXPECT_EQ(battle()->calculateDmgRange(info).damage.max, 195)
 		<< "Target Caller adds five percentage points to the existing 30-point Focus Fire premium";
 
 	server.battleLogLines.clear();

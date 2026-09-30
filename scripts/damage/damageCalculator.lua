@@ -390,6 +390,7 @@ function Script:getOffenseArcheryFactor(info)
 	local targetedPremium = info.shooting and (info.targetedRangedCommandPercent or 0) or 0
 	return (getBonusValueOfSubtype(info.attacker, info.attackerBonuses, "PERCENTAGE_DAMAGE_BOOST", subtype)
 		+ targetedPremium + (info.executionerDamagePercent or 0) + (info.heroOrderDamagePercent or 0)
+		+ (info.combinedArmsDamagePercent or 0)
 		+ (info.bloodrageDamagePercent or 0) + (info.shroudFlankingDamagePercent or 0)
 		+ (info.newHorizonsArcheryDamagePercent or 0) + (info.battlecraftWaitDamagePercent or 0)
 		+ (info.relentlessAssaultDamagePercent or 0) + (info.archeryCrossfireDamagePercent or 0)) / 100

@@ -14,6 +14,19 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Combined Arms checkpoint: Focus Fire's frozen damage bonus applies at half
+strength to eligible melee attacks, with melee-only admission; Flank ranged
+attacks receive half only the Attack-derived term and never record sides.
+Fractional values survive the shared C++/Lua path (fixed 5,375-damage endpoint).
+Both Linux targets build; five focused runtime/actual-AI cases and 37 directly
+affected Command/Focus Fire guards pass, zero skips. Content/perk/inventory
+passes 74/74. Both AI cases isolate other Order coefficients while retaining
+legal Magic Arrow; normal tactical ranking is not certified. Coverage is now
+119/310 active perks, 191 planned, Command 4/6 active/planned. Combat identities
+remain 58/67 and active ranks 84/93. Generic help/log feedback exists; bespoke
+art, rendered/playable acceptance, broad interactions and inherited Flank
+reachability/remaining-activation valuation remain Phase 2 work.
+
 Command efficiency checkpoint: Aggressive (+20 points only Attack-derived
 terms), Defensive (+20 only Defense-derived) and Veteran (+25 only
 Leadership-derived) are implemented and active. Flat bases and capacity remain
@@ -53,7 +66,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 118/310 | 192 planned; Aggressive, Defensive and Veteran Commander are the newest activations. Active status alone does not certify every mechanic. |
+| Skill perks active | 119/310 | 191 planned; Combined Arms is the newest activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 58/67 | 9 missing/inactive; Blink is the newest identity. Chaos is 4/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -80,8 +93,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 118
-active perks, leaving nine ranks and 192 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 119
+active perks, leaving nine ranks and 191 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-30; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -192,7 +205,7 @@ interactions, and rendered/playable acceptance remain separate.
 | War Machines | 3/0 | 0/10 | Progression blocked |
 | Discipline | 3/0 | 1/9 | Nine perks missing |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
-| Command | 3/0 | 3/7 | Aggressive/Defensive and Veteran implemented with focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Seven perks remain planned. |
+| Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
 | Light Magic | 3/0 | 7/3 | Benediction, Healer, Guardian, Aegis, Purifier, Retributionist, and Crusader active; Sanctuary Keeper, Litany and Miracle Worker remain planned. Crusader has focused native evidence. |
 | Shadow Magic | 3/0 | 6/4 | Malediction, Withering Touch, Soul Binder, Dark Gift, Night Feeder, and Reanimator are active. Reanimator's casualty-only pool has focused authoritative evidence; four perks remain planned. |
 | Nature Magic | 3/0 | 4/6 | Herbalist, Rootcaller, Beastcaller and Verdant Warden active; six perks missing. |

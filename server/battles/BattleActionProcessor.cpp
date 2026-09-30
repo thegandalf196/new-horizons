@@ -411,7 +411,11 @@ static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSid
 		case HeroCommand::FOCUS_FIRE:
 			line.appendRawString(" Target:");
 			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
-			line.appendRawString(". Allied shooters concentrate fire this round.");
+			if(heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
+				&& heroCommands::hasCombinedArms(hero))
+				line.appendRawString(". Allied shooters concentrate fire; melee stacks included when issuing gain half this damage bonus against this target this round.");
+			else
+				line.appendRawString(". Allied shooters concentrate fire this round.");
 			break;
 		case HeroCommand::RIPOSTE:
 			line.appendRawString(" Allied stacks take less melee damage and retaliate more fiercely this round.");
@@ -433,7 +437,11 @@ static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSid
 		case HeroCommand::FLANK:
 			line.appendRawString(" Target:");
 			appendHeroOrderTarget(line, battle, state.primaryTargetUnitId);
-			line.appendRawString(". Allied melee attackers exploit new sides this round.");
+			if(heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
+				&& heroCommands::hasCombinedArms(hero))
+				line.appendRawString(". Allied melee attackers exploit new sides; ranged attacks gain half the Attack-derived damage bonus without adding sides this round.");
+			else
+				line.appendRawString(". Allied melee attackers exploit new sides this round.");
 			break;
 		case HeroCommand::SECOND_WIND:
 			line.appendRawString(" Target:");

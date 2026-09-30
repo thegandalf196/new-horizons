@@ -313,5 +313,13 @@ DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero);
 /// Warcasting scales only Second Wind's Leadership-derived part; its base 50%
 /// damage component remains flat.
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent);
+/// True when the hero currently has the active Advanced Command perk.
+DLL_LINKAGE bool hasCombinedArms(const CGHeroInstance * hero);
+/// Half of Focus Fire's snapshotted Order bonus, preserving a half percentage point.
+DLL_LINKAGE double combinedArmsFocusFirePercent(int rangedDamagePercent, const CGHeroInstance & hero);
+/// Half of only Flank's Attack-derived component. The returned fractional percentage is
+/// applied by the damage calculator so normal damage rounding remains the final rounding step.
+DLL_LINKAGE double combinedArmsFlankPercent(const JsonNode & meleeDamageFormula,
+	const CGHeroInstance & hero, int warcastingBonusPercent = 0);
 DLL_LINKAGE std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero);
 }

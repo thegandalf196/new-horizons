@@ -2404,7 +2404,8 @@ float publicEnemyHeroSpellThreat(const CBattleInfoCallback & battle, BattleSide 
 }
 
 float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide side,
-	HeroCommand command, const std::vector<uint32_t> & targetIds)
+	HeroCommand command, const std::vector<uint32_t> & targetIds,
+	std::optional<int> focusFireSnapshotPercent = std::nullopt)
 {
 	const auto perspective = battle.battleGetMySide();
 	const bool heroKnown = perspective == BattleSide::ALL_KNOWING || perspective == side;
@@ -2424,6 +2425,9 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	}
 
 	const auto & commandRules = battle.getBattle()->getHeroCommandRules()["commands"];
+	const bool combinedArmsEnabled = hero
+		&& heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
+		&& heroCommands::hasCombinedArms(hero);
 	const int warcastingBonus = hero && newHorizonsWarcasting::enabled(battle.getBattle()->getMagicRules())
 		? newHorizonsWarcasting::orderBonus(battle.getBattle()->getWarcastingState(side), battle.battleGetRound()) : 0;
 	const auto coefficient = [&](const char * commandKey, const char * effectKey)
@@ -2479,16 +2483,35 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 		const auto * target = battle.battleGetUnitByID(targetIds.front());
 		if(!target || !target->alive() || battle.battleGetOwner(target) == battle.sideToPlayer(side))
 			return 0.0f;
-		const auto rangedPercent = coefficient("focusFire", "rangedDamagePercent");
-		float rangedPotential = 0.0f;
+		// The prepared snapshot is shared with the runtime, so Combined Arms uses
+		// precisely half of the Order's ranged coefficient (not a recomputed
+		// shooter-only extension such as Target Caller).
+		const auto rangedPercent = focusFireSnapshotPercent.value_or(
+			static_cast<int>(coefficient("focusFire", "rangedDamagePercent")));
+		const auto combinedArmsMeleePercent = combinedArmsEnabled
+			? static_cast<float>(heroCommands::combinedArmsFocusFirePercent(rangedPercent, *hero)) : 0.0f;
+		float potential = 0.0f;
 		for(const auto * unit : ownUnits)
 		{
-			if(!unit->isShooter() || unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-				|| !unit->willMove(0) || !battle.battleCanShoot(unit, target->getPosition()))
+			if(!unit->willMove(0))
 				continue;
-			rangedPotential += anyDamage(unit, target);
+			const bool canReceiveRangedBonus = unit->isShooter() && !unit->isTurret()
+				&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+				&& battle.battleCanShoot(unit, target->getPosition());
+			const float rangedValue = canReceiveRangedBonus
+				? anyDamage(unit, target) * static_cast<float>(rangedPercent) / 100.0f : 0.0f;
+			const bool canReceiveMeleeBonus = combinedArmsMeleePercent > 0.0f
+				&& isEligibleOrderUnit(battle, side, unit)
+				&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+				&& unit->isMeleeAttacker();
+			const float meleeValue = canReceiveMeleeBonus
+				? meleeDamage(unit, target) * combinedArmsMeleePercent / 100.0f : 0.0f;
+			// A stack chooses one attack mode during its activation.  If a shooter
+			// can also make a melee attack, value the better Focus Fire benefit rather
+			// than counting the same stack twice.
+			potential += std::max(rangedValue, meleeValue);
 		}
-		return rangedPotential * rangedPercent / 100.0f;
+		return potential;
 	}
 	const auto chargePercent = coefficient("charge", "meleeDamagePercent");
 	const auto holdPercent = coefficient("holdTheLine", "damageReductionPercent");
@@ -2497,6 +2520,10 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	const auto braceDamage = coefficient("brace", "preemptiveDamagePercent");
 	const auto protectReduction = coefficient("protect", "interceptedDamageReductionPercent");
 	const auto flankDamage = coefficient("flank", "meleeDamagePercent");
+	const auto & flankFormula = commandRules["flank"]["effects"]["meleeDamagePercent"];
+	const auto combinedArmsRangedPercent = combinedArmsEnabled
+		? static_cast<float>(heroCommands::combinedArmsFlankPercent(flankFormula, *hero, warcastingBonus))
+		: 0.0f;
 
 	if(command == HeroCommand::CHARGE)
 	{
@@ -2639,8 +2666,44 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 			++distinctSides;
 		const int additionalSides = std::max(0, distinctSides - 1);
 		const int additionalSidePercent = battle.battleHeroOrderFlankAdditionalSidePercent(side, warcastingBonus);
-		return bestOwnMeleeDamage(target)
+		const auto meleeOrderValue = bestOwnMeleeDamage(target)
 			* (flankDamage + additionalSides * additionalSidePercent) / 100.0f;
+		if(combinedArmsRangedPercent <= 0.0f)
+			return meleeOrderValue;
+
+		const battle::Unit * bestMeleeAttacker = nullptr;
+		float bestMeleeDamage = 0.0f;
+		for(const auto * unit : ownUnits)
+		{
+			const auto value = meleeDamage(unit, target);
+			if(value > bestMeleeDamage)
+			{
+				bestMeleeDamage = value;
+				bestMeleeAttacker = unit;
+			}
+		}
+		float rangedOpportunity = 0.0f;
+		float overlappingMeleeAttackerRangedOpportunity = 0.0f;
+		for(const auto * unit : ownUnits)
+		{
+			if(!isEligibleOrderUnit(battle, side, unit)
+				|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+				|| !unit->willMove(0) || !newHorizonsArchery::isOrdinaryPhysicalShooter(unit)
+				|| !battle.battleCanShoot(unit, target->getPosition()))
+				continue;
+			const auto opportunity = anyDamage(unit, target) * combinedArmsRangedPercent / 100.0f;
+			if(unit == bestMeleeAttacker)
+				overlappingMeleeAttackerRangedOpportunity = opportunity;
+			else
+				rangedOpportunity += opportunity;
+		}
+		// The leading melee attacker cannot both shoot and strike in the same
+		// activation. Preserve its existing melee valuation and only add ranged
+		// value where that alternative is better; other shooters remain separate
+		// future attacks.
+		rangedOpportunity += std::max(0.0f,
+			overlappingMeleeAttackerRangedOpportunity - meleeOrderValue);
+		return meleeOrderValue + rangedOpportunity;
 	}
 
 	if(command == secondWindCommand() && targetIds.size() == 1)
@@ -3869,16 +3932,32 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				candidate.focusFire = cb->getBattle(battleID)->battlePrepareFocusFireState(side, targetIds.front());
 				if(!candidate.focusFire)
 					continue;
+				const auto battleView = cb->getBattle(battleID);
 				const auto & recipients = candidate.focusFire->recipientUnitIds;
 				const bool hasRemainingShooter = std::any_of(recipients.begin(), recipients.end(), [&](uint32_t id)
 				{
-					const auto * unit = cb->getBattle(battleID)->battleGetUnitByID(id);
+					const auto * unit = battleView->battleGetUnitByID(id);
 					return unit && unit->willMove(0) && unit->canShoot();
 				});
-				if(!hasRemainingShooter)
+				const bool canonicalRules = heroCommands::isCanonicalRules(
+					battleView->getBattle()->getHeroCommandRules());
+				// This is the evaluator's own side. Combined Arms may admit a living
+				// melee recipient even when no ordinary shooter remains; legacy
+				// snapshots retain their historical shooter-only candidate filter.
+				const auto * ownHero = canonicalRules ? battleView->battleGetFightingHero(side) : nullptr;
+				const bool hasRemainingCombinedArmsMelee = canonicalRules
+					&& heroCommands::hasCombinedArms(ownHero)
+					&& std::any_of(recipients.begin(), recipients.end(), [&](uint32_t id)
+					{
+						const auto * unit = battleView->battleGetUnitByID(id);
+						return isEligibleOrderUnit(*battleView, side, unit)
+							&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+							&& unit->willMove(0) && unit->isMeleeAttacker();
+					});
+				if(!hasRemainingShooter && !hasRemainingCombinedArmsMelee)
 					continue;
 				candidate.commandHeuristicValue = canonicalOrderHeuristic(
-					*cb->getBattle(battleID), side, command, targetIds);
+					*battleView, side, command, targetIds, candidate.focusFire->rangedDamagePercent);
 				if(candidate.commandHeuristicValue <= 0.0f)
 					continue;
 			}

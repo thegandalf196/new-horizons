@@ -2,6 +2,44 @@
 
 ## Purpose
 
+### 2026-09-30 Combined Arms AI callback type repair
+
+Linux build session 90955 fails at `BattleEvaluator.cpp:3935`: `getBattle`
+returns a `shared_ptr<CPlayerBattleCallback>`, not a raw pointer, so
+`const auto *` cannot deduce its type. Keep the returned shared pointer with
+`const auto`; member access and reference consumers retain their existing
+semantics. This is a compile failure, not gameplay evidence. The succeeding
+build/native gate remains pending; do not count activation as execution proof.
+
+The repaired client/test build passes (3217, then test-only 89505). The first
+Combined Arms native run passes 4/5 with zero skips on binary
+`7a4318405af9da53d491281cbdee27d24c54d3bd605ab6a9b84dafdeb663b4fe`.
+All three runtime cases and melee-only Focus Fire actual-AI/fractional endpoint
+pass; the Flank fixture expects Flank but the evaluator selects Hold the Line.
+That scenario contains a large melee ally and normal competing Order scores;
+this is not evidence that Flank's runtime effect is broken. Isolate the bounded
+Order consumer fixture, retaining legal Magic Arrow competition; do not tune
+production ranking to satisfy a forced expectation. Preserve the first
+`NewHorizonsCombinedArms-focused.*` reports and use a new retry filename.
+
+The direct guard run passes 36/37 with zero skips. The old Target Caller fixture
+expects 185 damage but receives 195: selecting Basic NH Archery legitimately
+adds its already implemented +10% rank premium (`archeryDamagePercent(rank)`),
+in addition to the fixture's 50%, Focus Fire's 30%, and Target Caller's 5%.
+Repair the stale expected value to 195 and assert the pre-Order baseline of
+160, so the independent 35-point Order/Target Caller contribution remains
+checked. No production rule is changed. Preserve
+`NewHorizonsCombinedArms-guards.*` and use a new retry report.
+
+The final test-only build (11676) succeeds. The isolated retry passes 5/5
+Combined Arms cases and 37/37 direct guards, zero skips, on binary
+`9100b7e059bbe7822bc1b8df362b444a95e660f672ea40864ce35dc65bac2a5d`.
+Reports are `NewHorizonsCombinedArms-retry1.*` and
+`NewHorizonsCombinedArms-guards-retry1.*`; the initial failing reports remain.
+Both actual-AI fixtures isolate nonselected Order coefficients, retain legal
+Magic Arrow, and use melee-only/shooter-only armies respectively. Production
+AI scores are unchanged by these fixture repairs; full ranking remains Phase 2.
+
 ### 2026-09-30 Command efficiency fixture compile repair
 
 Linux build session 67452 stops in the new AI fixture: `MAGIC_ARROW` is an

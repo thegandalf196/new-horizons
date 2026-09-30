@@ -23,6 +23,7 @@ constexpr char COMMAND_SKILL[] = "new-horizons:command";
 constexpr char AGGRESSIVE_COMMANDER_PERK[] = "new-horizons:command.aggressiveCommander";
 constexpr char DEFENSIVE_COMMANDER_PERK[] = "new-horizons:command.defensiveCommander";
 constexpr char VETERAN_COMMANDER_PERK[] = "new-horizons:command.veteranCommander";
+constexpr char COMBINED_ARMS_PERK[] = "new-horizons:command.combinedArms";
 constexpr int BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT = 20;
 constexpr int VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT = 25;
 
@@ -90,19 +91,41 @@ int boundedCoefficient(const std::array<double, 3> & terms, const std::array<int
 		static_cast<double>(MIN_EFFECT_PERCENT), static_cast<double>(MAX_EFFECT_PERCENT))));
 }
 
+int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribute,
+	int warcastingBonusPercent, bool includeCommanderPerks)
+{
+	int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100);
+	if(includeCommanderPerks && attribute == PrimarySkill::ATTACK
+		&& hero.hasActivePerk(COMMAND_SKILL, AGGRESSIVE_COMMANDER_PERK))
+		efficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
+	if(includeCommanderPerks && attribute == PrimarySkill::DEFENSE
+		&& hero.hasActivePerk(COMMAND_SKILL, DEFENSIVE_COMMANDER_PERK))
+		efficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
+	return efficiency;
+}
+
+double boundedCoefficientComponent(double coefficient, double factor)
+{
+	if(!std::isfinite(coefficient) || !std::isfinite(factor))
+		throw std::runtime_error("Invalid New Horizons command coefficient component");
+	if(coefficient == 0 || factor == 0)
+		return 0;
+	const bool positive = std::signbit(coefficient) == std::signbit(factor);
+	const double limit = positive ? MAX_EFFECT_PERCENT : -MIN_EFFECT_PERCENT;
+	const double magnitudeFactor = std::abs(factor);
+	if(std::abs(coefficient) > limit / magnitudeFactor)
+		return positive ? MAX_EFFECT_PERCENT : MIN_EFFECT_PERCENT;
+	return std::clamp(coefficient * factor,
+		static_cast<double>(MIN_EFFECT_PERCENT), static_cast<double>(MAX_EFFECT_PERCENT));
+}
+
 int heroCoefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent,
 	bool includeCommanderPerks)
 {
-	const int commonEfficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100);
-	int attackEfficiency = commonEfficiency;
-	int defenseEfficiency = commonEfficiency;
-	if(includeCommanderPerks)
-	{
-		if(hero.hasActivePerk(COMMAND_SKILL, AGGRESSIVE_COMMANDER_PERK))
-			attackEfficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
-		if(hero.hasActivePerk(COMMAND_SKILL, DEFENSIVE_COMMANDER_PERK))
-			defenseEfficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
-	}
+	const int attackEfficiency = attributeEfficiencyPercent(hero, PrimarySkill::ATTACK,
+		warcastingBonusPercent, includeCommanderPerks);
+	const int defenseEfficiency = attributeEfficiencyPercent(hero, PrimarySkill::DEFENSE,
+		warcastingBonusPercent, includeCommanderPerks);
 	return boundedCoefficient({effect["base"].Float(), effect["attack"].Float() * attackEfficiency / 100.0,
 		effect["defense"].Float() * defenseEfficiency / 100.0},
 		{1, hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE)});
@@ -450,6 +473,28 @@ int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent)
 		+ veteranCommanderBonus;
 	const double leadershipComponent = 0.015 * static_cast<double>(leadership) * efficiency / 100.0;
 	return std::clamp(50 + static_cast<int>(std::lround(leadershipComponent)), 0, 100);
+}
+
+bool hasCombinedArms(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(COMMAND_SKILL, COMBINED_ARMS_PERK);
+}
+
+double combinedArmsFocusFirePercent(int rangedDamagePercent, const CGHeroInstance & hero)
+{
+	if(!hasCombinedArms(&hero))
+		return 0;
+	return static_cast<double>(rangedDamagePercent) / 2.0;
+}
+
+double combinedArmsFlankPercent(const JsonNode & meleeDamageFormula, const CGHeroInstance & hero,
+	int warcastingBonusPercent)
+{
+	if(!hasCombinedArms(&hero))
+		return 0;
+	const double attackFactor = static_cast<double>(hero.getPrimSkillLevel(PrimarySkill::ATTACK))
+		* attributeEfficiencyPercent(hero, PrimarySkill::ATTACK, warcastingBonusPercent, true) / 100.0;
+	return boundedCoefficientComponent(meleeDamageFormula["attack"].Float(), attackFactor) / 2.0;
 }
 
 std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero)

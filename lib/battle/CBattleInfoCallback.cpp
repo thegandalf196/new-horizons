@@ -296,10 +296,21 @@ bool CBattleInfoCallback::battleCanConfirmHeroCommand(BattleSide side, HeroComma
 	if(!target || target->isGhost() || !target->isValidTarget() || target->isInvincible()
 		|| battleGetOwner(target) == sideToPlayer(side))
 		return false;
+	const auto * hero = battleGetFightingHero(side);
+	const bool combinedArms = getBattle()
+		&& heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
+		&& heroCommands::hasCombinedArms(hero);
 	for(const auto * unit : battleAliveUnits())
 	{
 		// Shot legality is static: already-acted units do not disable issuing.
 		if(battleIsFocusFireRecipient(unit, side) && battleCanShoot(unit, target->getPosition()))
+			return true;
+		// Combined Arms also lets a melee-only army mark an enemy. Keep the
+		// same ordinary-unit exclusions as the saved cohort below.
+		if(combinedArms && unit && unit->alive() && !unit->isGhost() && unit->isMeleeAttacker()
+			&& battleGetOwner(unit) == sideToPlayer(side) && !unit->isTurret()
+			&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER)
 			return true;
 	}
 	return false;
@@ -360,9 +371,16 @@ std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(B
 	const auto warcastingBonus = newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
 		? newHorizonsWarcasting::orderBonus(getBattle()->getWarcastingState(side), result.issuedRound) : 0;
 	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero, warcastingBonus);
-	const auto recipients = battleGetUnitsIf([this, side](const battle::Unit * unit)
+	const bool includeMeleeRecipients = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
+		&& heroCommands::hasCombinedArms(hero);
+	const auto recipients = battleGetUnitsIf([this, side, includeMeleeRecipients](const battle::Unit * unit)
 	{
-		return battleIsFocusFireRecipient(unit, side);
+		if(battleIsFocusFireRecipient(unit, side))
+			return true;
+		return includeMeleeRecipients && unit && unit->alive() && !unit->isGhost()
+			&& unit->isMeleeAttacker() && battleGetOwner(unit) == sideToPlayer(side)
+			&& !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
 	});
 	for(const auto * unit : recipients)
 		result.recipientUnitIds.push_back(unit->unitId());
@@ -825,6 +843,8 @@ bool CBattleInfoCallback::battleIsTargetedRangedCommand(const battle::Unit * att
 		|| !defender->alive() || defender->isGhost() || battleGetOwner(attacker) == battleGetOwner(defender))
 		return false;
 	const auto side = playerToSide(battleGetOwner(attacker));
+	if(!battleIsFocusFireRecipient(attacker, side))
+		return false;
 	const auto mark = battleGetFocusFireState(side);
 	return mark && mark->issuedRound == battleGetRound() && mark->targetUnitId == defender->unitId()
 		&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), attacker->unitId());
@@ -2260,6 +2280,26 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		{
 			switch(attackerState->command)
 			{
+			case HeroCommand::FOCUS_FIRE:
+				if(eligibleOrderUnit(info.attacker) && info.attacker->isMeleeAttacker()
+					&& !info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+					&& info.physicalDamage && !info.shooting && !info.secondaryAttack
+					&& info.defender->alive() && battleGetOwner(info.attacker) != battleGetOwner(info.defender)
+					&& attackerState->primaryTargetUnitId == info.defender->unitId()
+					&& battleIsFocusFireTargetActive(attackerSide))
+				{
+					const auto mark = battleGetFocusFireState(attackerSide);
+					if(mark && mark->issuedRound == battleGetRound()
+						&& mark->targetUnitId == info.defender->unitId()
+						&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), info.attacker->unitId()))
+					{
+						payload.combinedArmsDamagePercent = heroCommands::combinedArmsFocusFirePercent(
+							mark->rangedDamagePercent, *attack);
+						if(payload.combinedArmsDamagePercent > 0)
+							attackerOrderCause = HeroCommand::FOCUS_FIRE;
+					}
+				}
+				break;
 			case HeroCommand::CHARGE:
 				if(eligibleOrderUnit(info.attacker) && !info.shooting && !info.secondaryAttack && info.chargeDistance >= 3
 					&& !attackerState->containsConsumed(info.attacker->unitId()))
@@ -2287,22 +2327,36 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 						coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"], attack, &*attackerState), attack);
 				break;
 			case HeroCommand::FLANK:
-				if(eligibleOrderUnit(info.attacker) && !info.shooting
+				if(eligibleOrderUnit(info.attacker)
 					&& attackerState->primaryTargetUnitId == info.defender->unitId())
 				{
-					const auto sideMask = battleHeroOrderFlankSide(info.attacker, info.defender);
-					if(const auto * flank = attackerState->flankFor(info.defender->unitId()))
+					if(!info.shooting)
 					{
-						int distinct = 0;
-						for(auto bits = flank->sideMask; bits; bits &= static_cast<uint8_t>(bits - 1))
-							++distinct;
-						for(auto bits = static_cast<uint8_t>(sideMask & ~flank->sideMask); bits; bits &= static_cast<uint8_t>(bits - 1))
-							++distinct; // each newly contacting side established by this blow counts once
-						const int additionalSides = std::max(0, distinct - 1);
-						payload.heroOrderDamagePercent = coefficientFor(rules["flank"]["effects"]["meleeDamagePercent"], attack, &*attackerState)
-							+ additionalSides * battleHeroOrderFlankAdditionalSidePercent(
-								attackerSide, attackerState->warcastingBonusPercent);
-						if(payload.heroOrderDamagePercent > 0)
+						const auto sideMask = battleHeroOrderFlankSide(info.attacker, info.defender);
+						if(const auto * flank = attackerState->flankFor(info.defender->unitId()))
+						{
+							int distinct = 0;
+							for(auto bits = flank->sideMask; bits; bits &= static_cast<uint8_t>(bits - 1))
+								++distinct;
+							for(auto bits = static_cast<uint8_t>(sideMask & ~flank->sideMask); bits; bits &= static_cast<uint8_t>(bits - 1))
+								++distinct; // each newly contacting side established by this blow counts once
+							const int additionalSides = std::max(0, distinct - 1);
+							payload.heroOrderDamagePercent = coefficientFor(rules["flank"]["effects"]["meleeDamagePercent"], attack, &*attackerState)
+								+ additionalSides * battleHeroOrderFlankAdditionalSidePercent(
+									attackerSide, attackerState->warcastingBonusPercent);
+							if(payload.heroOrderDamagePercent > 0)
+								attackerOrderCause = HeroCommand::FLANK;
+						}
+					}
+					else if(info.physicalDamage && info.defender->alive()
+						&& battleGetOwner(info.attacker) != battleGetOwner(info.defender)
+						&& newHorizonsArchery::isOrdinaryPhysicalShooter(info.attacker)
+						&& attackerState->flankFor(info.defender->unitId()))
+					{
+						payload.combinedArmsDamagePercent = heroCommands::combinedArmsFlankPercent(
+							rules["flank"]["effects"]["meleeDamagePercent"], *attack,
+							attackerState->warcastingBonusPercent);
+						if(payload.combinedArmsDamagePercent > 0)
 							attackerOrderCause = HeroCommand::FLANK;
 					}
 				}

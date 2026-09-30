@@ -86,6 +86,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int executionerDamagePercent = 0;
 	/// Additive direct damage component from a canonical New Horizons Order.
 	int heroOrderDamagePercent = 0;
+	/// Fractional Combined Arms premium; kept separate so half-percent values survive to final damage rounding.
+	double combinedArmsDamagePercent = 0.0;
 	/// Battle-long additive creature attack/retaliation damage from Bloodrage.
 	int bloodrageDamagePercent = 0;
 	/// Additive melee premium from a positional Shroud of Malassa flank.
@@ -177,6 +179,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("executionerDamagePercent", executionerDamagePercent,
 			"Conditional melee damage premium supplied by the active Executioner perk.");
 		s("heroOrderDamagePercent", heroOrderDamagePercent, "Direct damage component from the active canonical Order.");
+		s("combinedArmsDamagePercent", combinedArmsDamagePercent,
+			"Fractional damage component supplied by the active Combined Arms perk.");
 		s("bloodrageDamagePercent", bloodrageDamagePercent,
 			"Battle-long additive creature attack and retaliation damage from Bloodrage.");
 		s("shroudFlankingDamagePercent", shroudFlankingDamagePercent,
