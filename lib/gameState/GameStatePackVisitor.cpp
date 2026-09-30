@@ -2356,6 +2356,9 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 				newHorizonsWarcasting::readinessLifetimeRounds(hero));
 			casterSide.warcastingState = std::move(next);
 		}
+		// This marker is set only after every accepted-cast validation above has
+		// succeeded; creature casts and rejected hero requests never consume it.
+		casterSide.heroSpellCastCompleted = true;
 	}
 }
 

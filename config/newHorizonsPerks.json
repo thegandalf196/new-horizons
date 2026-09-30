@@ -2053,7 +2053,7 @@
 					"requires": "basic",
 					"description": "After Wisdom calculates the spell's percentage discount, the first spell cast in each combat costs 2 additional Mana less, to a minimum of 1.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After Wisdom calculates the spell's percentage discount, the first spell cast in each combat costs 2 additional Mana less, to a minimum of 1."
 					}
 				},

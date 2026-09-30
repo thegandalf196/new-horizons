@@ -429,6 +429,12 @@ public:
 	int32_t getWallStructuralHP(EWallPart partOfWall) const override;
 	EGateState getGateState() const override;
 
+	bool hasCompletedHeroSpellCast(BattleSide side) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return false;
+		return getSide(side).heroSpellCastCompleted;
+	}
 	int32_t getCastSpells(BattleSide side) const override;
 	int32_t getEnchanterCounter(BattleSide side) const override;
 	bool getTemporalFieldUsed(BattleSide side) const override;

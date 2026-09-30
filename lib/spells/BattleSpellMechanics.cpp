@@ -2068,6 +2068,9 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		&& (!setStormOfDaggersTargetCount(static_cast<int32_t>(target.size()))
 			|| !canBeCastAt(target)))
 		return;
+	const bool completedHeroProjection = server && mode == Mode::HERO
+		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
+		&& getHeroCaster() && canBeCastAt(target);
 
 	Target spellTarget = transformSpellTarget(target);
 
@@ -2083,6 +2086,9 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 
 	for(auto & p : effectsToApply)
 		p.first->apply(server, this, p.second);
+
+	if(completedHeroProjection)
+		server->recordCompletedHeroSpellCast(casterSide);
 }
 
 battle::Units BattleSpellMechanics::collectTargets() const

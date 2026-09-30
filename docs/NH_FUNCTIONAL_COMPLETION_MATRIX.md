@@ -14,6 +14,22 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Prepared Caster checkpoint: the first accepted combat hero cast costs two less
+after Wisdom's percentage discount, minimum one, before battlefield modifiers.
+Overcharge and Empower Spell eligibility retain their separate formulas.
+A generic per-side accepted-cast marker persists across rounds/save-load and
+is copied/updated only in detached AI forecasts. Rejected/creature casts and
+previews do not spend it; the shared callback serves ordinary spellbook costs.
+Both Linux targets build. All ten new runtime/actual-AI cases pass, zero skips;
+20/21 direct guards pass, with one unchanged synthetic v2 fixture carrying
+Quicksand's v3-only `selectedPlacement` rejected during setup. Its fixture repair
+is deferred to Phase 2, not a production cost adjustment. Offline checks pass
+74/74; review has no production blocker. Coverage becomes 121/310 active perks,
+189 planned, Wisdom 3/7 active/planned. Ranks and combat identities are unchanged.
+Old saves intentionally initialize completion false; a dedicated Adventure
+exclusion case, broader interactions, bespoke art and rendered/playable
+acceptance remain deferred. Meditation's day-start/tavern timing map is ready.
+
 Mysticism checkpoint: the missing Wisdom Basic perk is implemented in shared
 daily regeneration and authoritative `SET_NORMAL`, with minimum/percentage
 floor, missing-Normal cap and unchanged Buffer. Captured active selection and
@@ -77,7 +93,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 120/310 | 190 planned; Mysticism is the newest activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 121/310 | 189 planned; Prepared Caster is the newest activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 58/67 | 9 missing/inactive; Blink is the newest identity. Chaos is 4/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -104,8 +120,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 120
-active perks, leaving nine ranks and 190 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 121
+active perks, leaving nine ranks and 189 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-30; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -224,7 +240,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 1/9 | Blinkmaster opens ordinary Advanced progression; nine perks remain planned. |
 | Spellcraft | 3/0 | 2/8 | Spell Penetration opens normal Advanced progression. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold and scales Spell Power-derived terms without moving fixed bases; its Advanced selection opens Expert progression. Basic/Advanced/Expert rank efficiency is 110/120/130% under saved v3 rules. |
-| Wisdom | 3/0 | 2/8 | Mysticism daily Normal recovery and Intelligence capacity are implemented. Eight perks remain missing; broader interactions and playable acceptance remain open. |
+| Wisdom | 3/0 | 3/7 | Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Seven perks remain missing; Meditation is next. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 4/6 | Six perks missing |
 | Logistics | 3/0 | 3/7 | Seven perks missing |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |

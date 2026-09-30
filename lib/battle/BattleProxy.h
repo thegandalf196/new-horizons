@@ -51,6 +51,10 @@ public:
 
 	const JsonNode & getHeroCommandRules() const override { return subject->getBattle()->getHeroCommandRules(); }
 	const JsonNode & getMagicRules() const override { return subject->getBattle()->getMagicRules(); }
+	bool hasCompletedHeroSpellCast(BattleSide side) const override
+	{
+		return subject->getBattle()->hasCompletedHeroSpellCast(side);
+	}
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override
 	{
 		return subject->getBattle()->getWarcastingState(side);

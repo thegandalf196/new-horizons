@@ -142,6 +142,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// Expert Offense's target streak is shared across all ordinary allied
 	// creature activations for this hero side.
 	RelentlessAssaultState relentlessAssault;
+	// Accepted hero-cast completion persists for the whole battle, not one round.
+	bool heroSpellCastCompleted = false;
 
 	bool hasChainGateState() const
 	{
@@ -170,6 +172,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && relentlessAssault.hasState()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_RELENTLESS_ASSAULT))
 			throw std::runtime_error("Cannot discard Relentless Assault battle state");
+		if(h.saving && heroSpellCastCompleted
+			&& !h.hasFeature(Handler::Version::BATTLE_COMPLETED_HERO_SPELL))
+			throw std::runtime_error("Cannot discard completed hero spell battle state");
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
 			h & sylvanLuck;
 		else if(!h.saving)
@@ -339,6 +344,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & masterGateUsed;
 		else if(!h.saving)
 			masterGateUsed = false;
+		if(h.hasFeature(Handler::Version::BATTLE_COMPLETED_HERO_SPELL))
+			h & heroSpellCastCompleted;
+		else if(!h.saving)
+			heroSpellCastCompleted = false;
 	}
 
 	void clearMetamagicSequence()

@@ -164,6 +164,7 @@ public:
 	bool consumeHeroOrderProtectInterception(uint32_t wardUnitId, uint32_t protectorUnitId);
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override;
+	bool hasCompletedHeroSpellCast(BattleSide side) const override { return heroSpellCastCompletedStates.at(side); }
 	bool getCounterspellArmed(BattleSide side) const override { return counterspellArmedStates.at(side); }
 	int32_t getMetamagicPendingCount(BattleSide side) const override { return metamagicStates.at(side).pending; }
 	int32_t getMetamagicUsesConsumed(BattleSide side) const override { return metamagicStates.at(side).uses; }
@@ -334,6 +335,7 @@ private:
 	BattleSideArray<std::optional<HeroOrderState>> heroOrderStates;
 	BattleSideArray<AlternatingHeroActionState> warcastingStates;
 	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;
+	BattleSideArray<bool> heroSpellCastCompletedStates;
 	BattleSideArray<bool> counterspellArmedStates;
 	BattleSideArray<bool> countersequenceArmedStates;
 	ui8 pendingTimeStopHeroActionSides = 0;
@@ -364,6 +366,7 @@ private:
 
 		void complain(const std::string & problem) override;
 		bool describeChanges() const override;
+		void recordCompletedHeroSpellCast(BattleSide side) override;
 
 		vstd::RNG * getRNG() override;
 		bool rollCombatAbility(const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance) override;

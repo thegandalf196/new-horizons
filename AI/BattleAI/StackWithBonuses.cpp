@@ -586,6 +586,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
+		heroSpellCastCompletedStates[side] = realBattle->getBattle()->hasCompletedHeroSpellCast(side);
 		counterspellArmedStates[side] = realBattle->getBattle()->getCounterspellArmed(side);
 		countersequenceArmedStates[side] = realBattle->getBattle()->getMetamagicCountersequenceArmed(side);
 		auto & meta = metamagicStates[side];
@@ -1715,6 +1716,12 @@ void HypotheticBattle::HypotheticServerCallback::complain(const std::string & pr
 bool HypotheticBattle::HypotheticServerCallback::describeChanges() const
 {
 	return false;
+}
+
+void HypotheticBattle::HypotheticServerCallback::recordCompletedHeroSpellCast(BattleSide side)
+{
+	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		owner->heroSpellCastCompletedStates.at(side) = true;
 }
 
 vstd::RNG * HypotheticBattle::HypotheticServerCallback::getRNG()

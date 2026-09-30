@@ -104,6 +104,7 @@ public:
 	virtual HeroCommand getActiveOrder(BattleSide side) const { return HeroCommand::NONE; }
 	virtual std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const { return {}; }
 	virtual std::optional<FocusFireState> getFocusFireState(BattleSide side) const { return {}; }
+	virtual bool hasCompletedHeroSpellCast(BattleSide side) const { (void)side; return false; }
 	virtual int32_t getCastSpells(BattleSide side) const = 0;
 	virtual int32_t getEnchanterCounter(BattleSide side) const = 0;
 	virtual bool getTemporalFieldUsed(BattleSide side) const { return false; }

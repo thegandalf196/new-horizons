@@ -2,6 +2,52 @@
 
 ## Purpose
 
+### 2026-09-30 Prepared Caster creature fixture identifier repair
+
+The first Linux client/test build (session 91012) stops in the new Prepared
+Caster runtime fixture. `BonusSubtypeID` is a variant of typed identifiers;
+the bare `SpellID::MAGIC_ARROW` enum cannot construct its `SpellID` alternative.
+Wrap it as `SpellID(SpellID::MAGIC_ARROW)`. The related enum `.toSpell()` calls
+were caught and corrected during review before this build, but the subtype
+constructor requires the same explicit typing. Do not change production
+discount or Bonus types to satisfy a fixture. The shared library already links;
+the remaining client/test build and native gates are pending.
+
+Retry build 9949 reveals a second fixture compile error: `SideInBattle` inherits
+an explicit callback-holder constructor and has no default constructor.
+Initialize these pointer-free serialization fixtures with `nullptr`, following
+existing SideInBattle wire tests, instead of adding a production default
+constructor. Preserve `PreparedCaster-build-retry1.log`; the next build uses a
+new log name. No production assertion or compatibility contract is relaxed.
+
+Retry build 55809 succeeds for both targets. The first focused native run
+26183 passes 9/10, zero skips, on binary
+`64625e7ebf3e0b4dc5ea942423d4497aa7f6bd46c61735970136618002992ca8`.
+The first-cast fixture assumes combat starts at round zero; this fixture starts
+at round one, so `endRound()` correctly advances to two. Assert an increment
+relative to the captured first round, retaining the later accepted-cast/Mana
+assertions. All four projection/actual-AI cases and the other five runtime
+cases pass. Preserve `NewHorizonsPreparedCaster-focused.*` and use a new retry
+report. No production timing or cost is tuned to satisfy the fixture.
+
+The final test-only rebuild 56500 succeeds. Native retry 48019 runs 31 cases
+on binary `ea8e481c14da2395f288408bece79ae470d0d2ad9534398c57e1bb37f5e815a0`:
+all ten new Prepared Caster cases and 20 of 21 existing guards pass, zero skips.
+The remaining existing `WisdomDiscountsMagicArrowBaseButNotOverchargeSurcharge`
+fixture fails during setup, before casting: its `savedFormula()` changes live
+v3 data to ruleset v2 without removing Quicksand's v3-only `selectedPlacement`.
+The unchanged validator correctly rejects that synthetic snapshot. This helper
+was not modified by Prepared Caster; record its migration repair for Phase 2,
+not a production cost change or reason to hold the Phase 1 coverage loop.
+Preserve `NewHorizonsPreparedCaster-retry1-guards.*`; run the new ten-case
+filter independently for a clean principal-path result without hiding the guard
+failure. Adventure exclusion is source-reviewed but lacks a dedicated new
+Prepared Caster native case. Older saves intentionally load completion false.
+
+The independent principal filter 78487 passes 10/10, zero skips, on that same
+final binary. Reports are `NewHorizonsPreparedCaster-retry2-principal.*`.
+Do not describe the earlier 31-case guard run as green or overwrite its report.
+
 ### 2026-09-30 Mysticism registration description alignment
 
 The first 74-case offline gate fails its canonical-description comparison after

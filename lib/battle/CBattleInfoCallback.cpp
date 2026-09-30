@@ -3596,6 +3596,14 @@ int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const 
 		: newHorizonsMagic::wisdomAdjustedCost(listedCost, listedCostMultiplier, wisdom);
 	const bool newHorizonsOrdinarySpell = newHorizonsMagic::rulesActive(caster->getMagicRules())
 		&& sp->isCommonHeroSpell() && !sp->isAdventure();
+	const BattleSide casterSide = playerToSide(caster->tempOwner);
+	const bool preparedCaster = newHorizonsOrdinarySpell
+		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
+		&& getBattle()->getSideHero(casterSide) == caster
+		&& caster->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.preparedCaster")
+		&& !getBattle()->hasCompletedHeroSpellCast(casterSide);
+	if(preparedCaster)
+		ret = std::max(1, ret - 2);
 
 	//checking for friendly stacks reducing cost of the spell and
 	//enemy stacks increasing it

@@ -261,6 +261,7 @@ set(test_SRCS
 		server/battles/NewHorizonsChaosBlinkTest.cpp
 		server/battles/NewHorizonsCommandEfficiencyTest.cpp
 		server/battles/NewHorizonsCombinedArmsTest.cpp
+		server/battles/NewHorizonsPreparedCasterTest.cpp
 		server/battles/NewHorizonsMagicalDamageReductionTest.cpp
 		server/battles/NewHorizonsStormOfDaggersTest.cpp
 		server/battles/NewHorizonsSanctuaryTest.cpp
@@ -370,6 +371,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsChaosBlinkAITest.cpp
 		battleAI/NewHorizonsCommandEfficiencyAITest.cpp
 		battleAI/NewHorizonsCombinedArmsAITest.cpp
+		battleAI/NewHorizonsPreparedCasterAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp
 		battleAI/NewHorizonsHeroGrowthAITest.cpp
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp

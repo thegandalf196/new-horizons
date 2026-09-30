@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "scripting/ApiTags.h"
 
 namespace vstd
@@ -23,6 +25,7 @@ namespace battle
 }
 
 class IBattleInfoCallback;
+enum class BattleSide : int8_t;
 
 struct CPackForClient;
 struct BattleLogMessage;
@@ -55,4 +58,7 @@ public:
 	virtual void apply(StacksInjured & pack) = 0;
 	virtual void apply(BattleObstaclesChanged & pack) = 0;
 	virtual void apply(CatapultAttack & pack) = 0;
+
+	/// Records a completed hero spell in a detached projection; live callbacks do not mutate battle state.
+	virtual void recordCompletedHeroSpellCast(BattleSide side) { (void)side; }
 };
