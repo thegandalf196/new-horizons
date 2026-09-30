@@ -22,10 +22,18 @@ namespace newHorizonsMagic
 /// disables an entry; old rows without the marker remain enabled. This is not
 /// a replacement for map bans, targeting, mana or authoritative validation.
 DLL_LINKAGE bool spellBelongsToRules(const JsonNode & rules, const std::string & scopedIdentity, bool commonHeroSpell);
+/// Saved ordinary-acquisition policy for a common hero spell. Missing
+/// ordinaryAcquisition markers preserve old snapshots as eligible; the saved
+/// roster's active marker still controls whether the spell exists in that world.
+DLL_LINKAGE bool spellAvailableForOrdinaryAcquisition(const JsonNode & rules,
+	const std::string & scopedIdentity, bool commonHeroSpell);
 /// Copied admission only: no map bans, possession, mana or targeting decisions.
 /// Invalid/out-of-range/null definitions fail before dereference. Callers supply
 /// validated snapshots; registry content is used only for identity and spell kind.
 DLL_LINKAGE bool spellAllowedBySavedRoster(const JsonNode & rules, SpellID spell);
+/// Spell-ID form rejects non-common abilities. It does not replace
+/// spellAllowedBySavedRoster for casting or other world membership.
+DLL_LINKAGE bool spellAvailableForOrdinaryAcquisition(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE bool spellAllowedByWorldRoster(const IGameInfoCallback & world, SpellID spell);
 /// No actual battle returns false. An actual absent battle roster uses legacy
 /// admission, never the world or installed rules.

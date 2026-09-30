@@ -1285,6 +1285,9 @@ bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned
 {
 	if(!spell || !newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spell->getId()))
 		return false;
+	if(spell->isCommonHeroSpell()
+		&& !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(getMagicRules(), spell->getId()))
+		return false;
 	if(isNewHorizonsSpellExcluded(spell->getId()))
 		return false;
 	if(!hasSpellbook())

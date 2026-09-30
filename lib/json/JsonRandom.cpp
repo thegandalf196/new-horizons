@@ -306,8 +306,14 @@ SpellID JsonRandom::loadSpell(const JsonNode & value, const Variables & variable
 {
 	std::set<SpellID> defaultSpells;
 	for(const auto & spell : LIBRARY->spellh->objects)
-		if(spell && cb->isAllowed(spell->getId()) && !spell->isSpecial())
-			defaultSpells.insert(spell->getId());
+	{
+		if(!spell || !cb->isAllowed(spell->getId()) || spell->isSpecial())
+			continue;
+		if(spell->isCommonHeroSpell()
+			&& !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(cb->getMagicRules(), spell->getId()))
+			continue;
+		defaultSpells.insert(spell->getId());
+	}
 
 	std::set<SpellID> potentialPicks = jsonKeyExtractor.filterKeys(value, defaultSpells, variables);
 	// Named keys intentionally override map bans in the extractor. They cannot

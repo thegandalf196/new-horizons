@@ -10,16 +10,30 @@
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/GameSettings.h"
 #include "../../../lib/json/JsonRandom.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include <stdexcept>
 #include "../../../lib/modding/ModScope.h"
 #include "../../../lib/rewardable/Info.h"
 #include "../../../lib/rewardable/Configuration.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/gameState/CGameState.h"
+#include <optional>
 
-class NewHorizonsSpellArraySafetyTest : public HeroCommandFixture {};
+class NewHorizonsSpellArraySafetyTest : public HeroCommandFixture
+{
+protected:
+	std::optional<JsonNode> magicRulesOverride;
+
+	void mapLoaded(CMap * map) override
+	{
+		HeroCommandFixture::mapLoaded(map);
+		const auto magicRules = magicRulesOverride.value_or(JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+	}
+};
 
 TEST_F(NewHorizonsSpellArraySafetyTest, ScalarAbsenceIsNoneButArrayAbsenceCannotWeakenRequirements)
 {
@@ -39,6 +53,64 @@ TEST_F(NewHorizonsSpellArraySafetyTest, ScalarAbsenceIsNoneButArrayAbsenceCannot
 	JsonNode named("core:magicArrow");
 	named.setModScope(ModScope::scopeBuiltin());
 	EXPECT_EQ(json.loadSpell(named, {}), arrow) << "Named legacy map-ban override remains intentional";
+}
+
+TEST_F(NewHorizonsSpellArraySafetyTest, DefaultSpellPoolHonorsOrdinaryAcquisitionEligibility)
+{
+	startGame();
+	const SpellID masterChainLightning(SpellID::decode("new-horizons:masterChainLightning"));
+	const SpellID magicArrow(SpellID::MAGIC_ARROW);
+	ASSERT_TRUE(masterChainLightning.hasValue());
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(gameState()->getMagicRules(), masterChainLightning));
+	ASSERT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(gameState()->getMagicRules(), masterChainLightning));
+
+	gameState()->getMap().allowedSpells = {masterChainLightning, magicArrow};
+	GameRandomizer randomizer(*gameState());
+	JsonRandom json(gameState().get(), randomizer);
+	const JsonNode defaultSelector(JsonMap{});
+	EXPECT_EQ(json.loadSpell(defaultSelector, {}), magicArrow);
+
+	gameState()->getMap().allowedSpells = {masterChainLightning};
+	EXPECT_EQ(json.loadSpell(defaultSelector, {}), SpellID(SpellID::NONE));
+}
+
+TEST_F(NewHorizonsSpellArraySafetyTest, ExplicitNamedSpecialtySpellKeepsIdentityAndExistingCasting)
+{
+	startGame();
+	const SpellID masterChainLightning(SpellID::decode("new-horizons:masterChainLightning"));
+	const SpellID magicArrow(SpellID::MAGIC_ARROW);
+	ASSERT_TRUE(masterChainLightning.hasValue());
+	gameState()->getMap().allowedSpells = {magicArrow};
+
+	GameRandomizer randomizer(*gameState());
+	JsonRandom json(gameState().get(), randomizer);
+	JsonNode named("masterChainLightning");
+	named.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	EXPECT_EQ(json.loadSpell(named, {}), masterChainLightning)
+		<< "Explicit names keep their existing map-ban override and saved-roster gate";
+
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const SecondarySkill havoc(SecondarySkill::decode("new-horizons:havocMagic"));
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(masterChainLightning.toSpell(), true));
+	attackerSideHero->addSpellToSpellbook(masterChainLightning);
+	EXPECT_TRUE(attackerSideHero->canCastThisSpell(masterChainLightning.toSpell()));
+}
+
+TEST_F(NewHorizonsSpellArraySafetyTest, HistoricalDefaultPoolWithoutOrdinaryMarkerRetainsSpecialtySpell)
+{
+	magicRulesOverride = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	(*magicRulesOverride)["spells"]["new-horizons:masterChainLightning"].Struct().erase("ordinaryAcquisition");
+	startGame();
+	const SpellID masterChainLightning(SpellID::decode("new-horizons:masterChainLightning"));
+	ASSERT_TRUE(masterChainLightning.hasValue());
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(gameState()->getMagicRules(), masterChainLightning));
+	ASSERT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(gameState()->getMagicRules(), masterChainLightning));
+	gameState()->getMap().allowedSpells = {masterChainLightning};
+
+	GameRandomizer randomizer(*gameState());
+	JsonRandom json(gameState().get(), randomizer);
+	EXPECT_EQ(json.loadSpell(JsonNode(JsonMap{}), {}), masterChainLightning);
 }
 
 TEST_F(NewHorizonsSpellArraySafetyTest, ActualRewardAndLimiterArrayConsumersFailClosed)

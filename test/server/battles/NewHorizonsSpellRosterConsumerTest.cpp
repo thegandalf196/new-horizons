@@ -461,6 +461,45 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, MageGuildGrantUsesSchoolProficiencyBe
 	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(armageddon));
 }
 
+TEST_F(NewHorizonsSpellRosterConsumerTest, OrdinaryAcquisitionPolicyRejectsFreshSpecialtyAndRemovedSpells)
+{
+	startGame(true);
+	attackerSideHero->removeAllSpells();
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto masterChainLightning = spellNamed("new-horizons:masterChainLightning");
+	const auto counterspell = spellNamed("new-horizons:counterspell");
+	const auto & rules = gameState()->getMagicRules();
+	const SecondarySkill havoc(SecondarySkill::decode("new-horizons:havocMagic"));
+	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+
+	for(const auto spell : {masterChainLightning, counterspell})
+	{
+		ASSERT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(rules, spell));
+		EXPECT_FALSE(attackerSideHero->canLearnSpell(spell.toSpell(), true))
+			<< spell.toSpell()->getJsonKey();
+	}
+	const auto summonBoat = spellNamed("core:summonBoat");
+	ASSERT_TRUE(summonBoat.toSpell()->isAdventure());
+	ASSERT_FALSE(attackerSideHero->spellbookContainsSpell(summonBoat));
+	EXPECT_TRUE(attackerSideHero->canLearnSpell(summonBoat.toSpell()))
+		<< "Adventure Spell acquisition follows the fixed Guild unlock rules, not the school-spell policy";
+
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(town, nullptr);
+	town->addBuilding(BuildingID::MAGES_GUILD_5);
+	town->spells.assign(GameConstants::SPELL_LEVELS, {});
+	town->spells[2] = {counterspell};
+	town->spells[3] = {masterChainLightning};
+
+	// Even a fully qualified hero cannot learn ordinary offers disabled by the
+	// saved eligibility profile. Explicit known spells are handled separately.
+	gameHandler->giveSpells(town, attackerSideHero);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(masterChainLightning));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(counterspell));
+}
+
 TEST_F(NewHorizonsSpellRosterConsumerTest, ScholarGrantUsesSchoolProficiencyBeforeApplyingChangeSpells)
 {
 	prepareHero();

@@ -64,7 +64,8 @@ std::vector<SpellID> houseOfWisdomCandidates(const JsonNode & magicRules)
 	for(const auto & spell : LIBRARY->spellh->objects)
 	{
 		if(!spell || !spell->isCommonHeroSpell() || spell->isAdventure() || spell->getLevel() <= 0
-			|| !newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spell->getId()))
+			|| !newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spell->getId())
+			|| !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(magicRules, spell->getId()))
 			continue;
 		result.push_back(spell->getId());
 	}

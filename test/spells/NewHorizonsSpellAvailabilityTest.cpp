@@ -50,6 +50,50 @@ TEST(NewHorizonsSpellAvailabilityTest, ActiveMarkerExcludesOnlyTheSavedRow)
 	EXPECT_FALSE(spellBelongsToRules(oldNewHorizons, "new-horizons:phantomArmy", true));
 }
 
+TEST(NewHorizonsSpellAvailabilityTest, OrdinaryAcquisitionDefaultsTrueForOlderRows)
+{
+	const JsonNode legacy;
+	JsonNode oldProfile;
+	oldProfile["spells"]["core:clone"] = JsonNode(JsonMap{});
+
+	EXPECT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(legacy, "core:haste", true));
+	EXPECT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(oldProfile, "core:clone", true));
+	EXPECT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(legacy, "new-horizons:disease", true));
+
+	JsonNode adventureProfile;
+	adventureProfile["spells"] = JsonNode(JsonMap{});
+	adventureProfile["adventureSpells"]["core:townPortal"] = JsonNode(JsonMap{});
+	EXPECT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(
+		adventureProfile, "core:townPortal", true));
+}
+
+TEST(NewHorizonsSpellAvailabilityTest, OrdinaryAcquisitionPolicyIsSeparateFromSavedSpellAvailability)
+{
+	JsonNode current;
+	current["spells"]["new-horizons:masterChainLightning"] = JsonNode(JsonMap{});
+	current["spells"]["new-horizons:masterChainLightning"]["ordinaryAcquisition"].Bool() = false;
+	current["spells"]["new-horizons:counterspell"] = JsonNode(JsonMap{});
+	current["spells"]["new-horizons:counterspell"]["active"].Bool() = false;
+
+	EXPECT_TRUE(spellBelongsToRules(current, "new-horizons:masterChainLightning", true));
+	EXPECT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(
+		current, "new-horizons:masterChainLightning", true));
+	EXPECT_FALSE(spellBelongsToRules(current, "new-horizons:counterspell", true));
+	EXPECT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(
+		current, "new-horizons:counterspell", true));
+}
+
+TEST(NewHorizonsSpellAvailabilityTest, InvalidOrdinaryAcquisitionMarkerRejects)
+{
+	JsonNode invalid;
+	invalid["spells"]["core:clone"] = JsonNode(JsonMap{});
+	invalid["spells"]["core:clone"]["ordinaryAcquisition"] = JsonNode();
+	EXPECT_THROW(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(invalid, "core:clone", true), std::runtime_error);
+
+	invalid["spells"]["core:clone"]["ordinaryAcquisition"].String() = "false";
+	EXPECT_THROW(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(invalid, "core:clone", true), std::runtime_error);
+}
+
 TEST(NewHorizonsSpellAvailabilityTest, InvalidActiveMarkerRejectsInsteadOfSilentlyActivating)
 {
 	JsonNode invalid;

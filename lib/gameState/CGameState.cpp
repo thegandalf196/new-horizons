@@ -1039,6 +1039,8 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 				continue;
 			if(!newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spellID))
 				continue;
+			if(!newHorizonsMagic::spellAvailableForOrdinaryAcquisition(magicRules, spellID))
+				continue;
 			if(fixedMageGuildGeneration && !isAllowed(spellID))
 				continue;
 			const auto level = getSpellLevel(spellID);
@@ -1052,6 +1054,8 @@ void CGameState::initTowns(vstd::RNG & randomGenerator)
 		vstd::erase_if(vti->possibleSpells, [&](const SpellID & spellID)
 		{
 			if(!newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spellID))
+				return true;
+			if(!newHorizonsMagic::spellAvailableForOrdinaryAcquisition(magicRules, spellID))
 				return true;
 			const auto * spell = spellID.toSpell();
 

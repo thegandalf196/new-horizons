@@ -65,6 +65,7 @@ public:
 class NewHorizonsWarcastingTest : public HeroCommandFixture
 {
 protected:
+	bool historicalCounterspell = false;
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -76,6 +77,8 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+		if(historicalCounterspell)
+			magicRules["spells"][counterspellKey].Struct().erase("active");
 		magicRules["warcasting"] = JsonNode(true);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 
@@ -1241,6 +1244,7 @@ TEST_F(NewHorizonsWarcastingTest, PlayerViewKeepsHiddenArmedCounterspellUnresolv
 
 TEST_F(NewHorizonsWarcastingTest, TypedCounterspellReplacesOldCountersequenceProvenance)
 {
+	historicalCounterspell = true;
 	prepareWarcasting();
 	const auto round = battle()->battleGetRound();
 	battle()->getSide(BattleSide::ATTACKER).heroActionAllowances.grantAllowance(

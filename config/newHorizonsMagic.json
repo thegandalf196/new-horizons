@@ -200,6 +200,7 @@
 				17,
 				17
 			],
+			"ordinaryAcquisition": false,
 			"directDamage": {
 				"base": 130,
 				"powerCoefficient": 18
@@ -366,6 +367,7 @@
 			}
 		},
 		"new-horizons:counterspell": {
+			"active": false,
 			"schools": [
 				"new-horizons:sorcery"
 			],

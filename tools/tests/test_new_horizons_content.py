@@ -872,6 +872,13 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(implosion['schools'], ['new-horizons:sorcery'])
         self.assertEqual(earthquake['schools'], ['new-horizons:nature'])
 
+    def test_specialty_spell_is_not_an_ordinary_acquisition_and_counterspell_is_removed(self):
+        master = self.rules['spells']['new-horizons:masterChainLightning']
+        self.assertFalse(master['ordinaryAcquisition'])
+        self.assertTrue(master.get('active', True))
+        self.assertFalse(self.rules['spells']['new-horizons:counterspell']['active'])
+        validate_rules(self.rules)
+
     def test_active_v2_direct_damage_formulas_match_canonical_spell_families(self):
         arrow = self.rules['spells']['core:magicArrow']
         self.assertEqual(arrow['schools'], ['new-horizons:sorcery'])

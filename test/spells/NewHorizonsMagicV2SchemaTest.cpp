@@ -11,6 +11,8 @@
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/constants/StringConstants.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 
 namespace
 {
@@ -38,6 +40,7 @@ JsonNode v1Rules()
 		spell.Struct().erase("active");
 		spell.Struct().erase("directDamage");
 		spell.Struct().erase("cureAfflictions");
+		spell.Struct().erase("selectedPlacement");
 	}
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;
@@ -49,6 +52,11 @@ JsonNode v2Rules()
 	rules["rulesetVersion"].Integer() = 2;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
+	for(auto & [name, spell] : rules["spells"].Struct())
+	{
+		(void)name;
+		spell.Struct().erase("selectedPlacement");
+	}
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;
 }
@@ -194,6 +202,56 @@ TEST(NewHorizonsMagicV2SchemaTest, ActiveFlagIsOptionalAndBoolean)
 	EXPECT_FALSE(v2(rules));
 	rules["spells"]["core:clone"]["active"].String() = "false";
 	EXPECT_FALSE(v2(rules));
+}
+
+TEST(NewHorizonsMagicV2SchemaTest, OrdinaryAcquisitionMarkerIsOptionalBooleanAcrossSavedVersions)
+{
+	const std::array profiles{
+		std::pair{v1Rules(), std::string("vcmi:newHorizonsMagic")},
+		std::pair{v2Rules(), std::string("vcmi:newHorizonsMagicV2")},
+		std::pair{v3Rules(), std::string("vcmi:newHorizonsMagicV3")}
+	};
+
+	for(const auto & [profile, schema] : profiles)
+	{
+		SCOPED_TRACE(schema);
+		ASSERT_TRUE(named(profile, schema));
+		EXPECT_FALSE(profile["spells"]["new-horizons:masterChainLightning"]["ordinaryAcquisition"].Bool());
+
+		auto oldProfile = profile;
+		for(auto & [name, spell] : oldProfile["spells"].Struct())
+		{
+			(void)name;
+			spell.Struct().erase("ordinaryAcquisition");
+		}
+		EXPECT_TRUE(named(oldProfile, schema)) << "Older snapshots omit the field and keep default eligibility";
+
+		auto nullMarker = profile;
+		nullMarker["spells"]["core:magicArrow"]["ordinaryAcquisition"] = JsonNode();
+		EXPECT_FALSE(named(nullMarker, schema));
+		auto nonBooleanMarker = profile;
+		nonBooleanMarker["spells"]["core:magicArrow"]["ordinaryAcquisition"].String() = "false";
+		EXPECT_FALSE(named(nonBooleanMarker, schema));
+	}
+}
+
+TEST(NewHorizonsMagicV2SchemaTest, RuntimeRejectsNullOrdinaryAcquisitionMarkers)
+{
+	auto rules = v3Rules();
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	rules["spells"]["core:magicArrow"]["ordinaryAcquisition"] = JsonNode();
+	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+}
+
+TEST(NewHorizonsMagicV2SchemaTest, CurrentProfileKeepsMasterActiveButRemovesCounterspell)
+{
+	const auto rules = v3Rules();
+	const auto masterChainLightning = "new-horizons:masterChainLightning";
+	const auto counterspell = "new-horizons:counterspell";
+
+	EXPECT_TRUE(newHorizonsMagic::spellBelongsToRules(rules, masterChainLightning, true));
+	EXPECT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(rules, masterChainLightning, true));
+	EXPECT_FALSE(newHorizonsMagic::spellBelongsToRules(rules, counterspell, true));
 }
 
 TEST(NewHorizonsMagicV2SchemaTest, WarcastingOptInRequiresBooleanAndAllowsAbsence)

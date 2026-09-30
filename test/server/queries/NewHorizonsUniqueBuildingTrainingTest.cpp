@@ -39,6 +39,7 @@ class NewHorizonsUniqueBuildingTrainingTest : public TinyMapGameTest
 {
 protected:
 	std::optional<std::set<SpellID>> allowedSpellsOverride;
+	std::optional<JsonNode> magicRulesOverride;
 	std::vector<SpellID> obligatoryTownSpells;
 	bool enableSpellResearch = false;
 	bool useLegacySpellResearchRules = false;
@@ -57,7 +58,7 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
-		auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+		auto magicRules = magicRulesOverride.value_or(JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		if(useLegacySpellResearchRules)
 		{
 			magicRules.Struct().erase("mageGuildGeneration");
@@ -653,6 +654,7 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, MageGuildsUseFixedPreferredAndDist
 				{
 					return candidate && candidate->isCommonHeroSpell()
 						&& newHorizonsMagic::spellAllowedBySavedRoster(rules, candidate->getId())
+						&& newHorizonsMagic::spellAvailableForOrdinaryAcquisition(rules, candidate->getId())
 						&& newHorizonsMagic::spellLevel(rules, candidate->getId()) == level
 						&& vstd::contains(newHorizonsMagic::spellSchools(rules, candidate->getId()), preferredSchool);
 				});
@@ -666,6 +668,94 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, MageGuildsUseFixedPreferredAndDist
 			}
 		}
 	}
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, FreshMageGuildsExcludeSpecialtyOnlyAndRemovedSpellsFromAllPools)
+{
+	const SpellID masterChainLightning(SpellID::decode("new-horizons:masterChainLightning"));
+	const SpellID counterspell(SpellID::decode("new-horizons:counterspell"));
+	ASSERT_TRUE(masterChainLightning.hasValue());
+	ASSERT_TRUE(counterspell.hasValue());
+	const JsonNode freshRules(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(freshRules, masterChainLightning));
+	ASSERT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(freshRules, counterspell));
+
+	allowedSpellsOverride = std::set<SpellID>{masterChainLightning, counterspell};
+	obligatoryTownSpells = {masterChainLightning, counterspell};
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::TOWER, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	const auto * town = towns.front();
+	for(int level = 1; level <= GameConstants::SPELL_LEVELS; ++level)
+	{
+		EXPECT_TRUE(town->spells.at(level - 1).empty()) << "level " << level;
+		EXPECT_EQ(town->spellsAtLevel(level, false), 0) << "level " << level;
+	}
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, HistoricalMageGuildSnapshotWithoutOrdinaryMarkerRetainsSavedSpells)
+{
+	const SpellID masterChainLightning(SpellID::decode("new-horizons:masterChainLightning"));
+	const SpellID counterspell(SpellID::decode("new-horizons:counterspell"));
+	ASSERT_TRUE(masterChainLightning.hasValue());
+	ASSERT_TRUE(counterspell.hasValue());
+
+	magicRulesOverride = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	auto & savedSpells = (*magicRulesOverride)["spells"];
+	savedSpells["new-horizons:masterChainLightning"].Struct().erase("ordinaryAcquisition");
+	savedSpells["new-horizons:counterspell"].Struct().erase("ordinaryAcquisition");
+	// Before the fresh-roster correction this row had no active marker, which
+	// means old saved rules retain the spell even though new games disable it.
+	savedSpells["new-horizons:counterspell"].Struct().erase("active");
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(*magicRulesOverride, masterChainLightning));
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(*magicRulesOverride, counterspell));
+	ASSERT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(*magicRulesOverride, masterChainLightning));
+	ASSERT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(*magicRulesOverride, counterspell));
+
+	allowedSpellsOverride = std::set<SpellID>{masterChainLightning, counterspell};
+	obligatoryTownSpells = {masterChainLightning, counterspell};
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::TOWER, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	const auto * town = towns.front();
+	EXPECT_TRUE(vstd::contains(town->spells.at(2), counterspell));
+	EXPECT_TRUE(vstd::contains(town->spells.at(3), masterChainLightning));
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, HouseOfWisdomScrollGenerationExcludesOrdinaryIneligibleSpells)
+{
+	const SpellID masterChainLightning(SpellID::decode("new-horizons:masterChainLightning"));
+	const SpellID counterspell(SpellID::decode("new-horizons:counterspell"));
+	ASSERT_TRUE(masterChainLightning.hasValue());
+	ASSERT_TRUE(counterspell.hasValue());
+
+	magicRulesOverride = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	for(auto & [identity, definition] : (*magicRulesOverride)["spells"].Struct())
+	{
+		(void)identity;
+		definition["active"].Bool() = false;
+	}
+	(*magicRulesOverride)["spells"]["new-horizons:masterChainLightning"]["active"].Bool() = true;
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(*magicRulesOverride, masterChainLightning));
+	ASSERT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(*magicRulesOverride, masterChainLightning));
+	ASSERT_FALSE(newHorizonsMagic::spellAllowedBySavedRoster(*magicRulesOverride, counterspell));
+
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0))
+		.town({12, 12, 0}, FactionID::CONFLUX, PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	const auto towns = findAll<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1u);
+	EXPECT_TRUE(towns.front()->getHouseOfWisdomScrolls().empty());
 }
 
 TEST_F(NewHorizonsUniqueBuildingTrainingTest, MageGuildConstrainedMultiSchoolPoolNeverDuplicatesOrSubstitutes)

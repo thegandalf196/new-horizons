@@ -85,6 +85,7 @@ TEST_F(NewHorizonsMagicUniversityTest, HouseOfWisdomOffersSpellScrollsAndNoSecon
 		const auto spell = offer.as<SpellID>();
 		EXPECT_TRUE(spell.hasValue());
 		EXPECT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(gameState()->getMagicRules(), spell));
+		EXPECT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(gameState()->getMagicRules(), spell));
 		EXPECT_FALSE(offer.as<SecondarySkill>().hasValue());
 	}
 	for(const auto school : newHorizonsMagic::schoolSkills(gameState()->getMagicRules()))
@@ -106,6 +107,25 @@ TEST_F(NewHorizonsMagicUniversityTest, PurchaseDeductsGoldGrantsScrollAndRemoves
 	EXPECT_EQ(town->availableItemsIds(EMarketMode::RESOURCE_SKILL).size(), 5u);
 	for(const auto school : newHorizonsMagic::schoolSkills(gameState()->getMagicRules()))
 		EXPECT_EQ(hero->getSecSkillLevel(school), MasteryLevel::NONE);
+}
+
+TEST_F(NewHorizonsMagicUniversityTest, SpecialtyAndRemovedScrollOffersAreRejectedWithoutCharging)
+{
+	startGame();
+	const auto before = gameState()->getPlayerState(PlayerColor(0))->resources;
+	GameHandlerTestServer server(gameState());
+	CGameHandler handler(server, gameState());
+	for(const auto * identity : {"new-horizons:masterChainLightning", "new-horizons:counterspell"})
+	{
+		const SpellID spell(SpellID::decode(identity));
+		ASSERT_TRUE(spell.hasValue());
+		// An adversarial stale offer must not bypass authoritative eligibility.
+		town->setHouseOfWisdomScrolls({spell});
+		EXPECT_FALSE(handler.buyHouseOfWisdomScroll(town, hero, spell));
+		EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, before);
+		EXPECT_FALSE(hero->hasScroll(spell, false));
+		EXPECT_EQ(town->getHouseOfWisdomScrolls(), std::vector<SpellID>{spell});
+	}
 }
 
 TEST_F(NewHorizonsMagicUniversityTest, InsufficientGoldDoesNotPartiallyCharge)

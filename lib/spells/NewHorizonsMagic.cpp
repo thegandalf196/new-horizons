@@ -1113,11 +1113,13 @@ void validateRules(const JsonNode & rules)
 	for(const auto & [name, data] : rules["spells"].Struct())
 	{
 		if(version == RULESET_VERSION)
-			fields(data, {"schools", "level", "costs"});
+			fields(data, {"schools", "level", "costs", "ordinaryAcquisition"});
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition"});
+		if(data.Struct().contains("ordinaryAcquisition"))
+			require(data["ordinaryAcquisition"].isBool(), "ordinaryAcquisition spell flag");
 		if(data.Struct().contains("selectedPlacement"))
 		{
 			const auto & selectedPlacement = data["selectedPlacement"];

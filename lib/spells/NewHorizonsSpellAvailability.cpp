@@ -47,6 +47,34 @@ bool spellBelongsToRules(const JsonNode & rules, const std::string & scopedIdent
 		&& rules["adventureSpells"].Struct().contains(scopedIdentity);
 }
 
+bool spellAvailableForOrdinaryAcquisition(const JsonNode & rules,
+	const std::string & scopedIdentity, bool commonHeroSpell)
+{
+	if(!commonHeroSpell)
+		return false;
+
+	bool ordinaryAcquisition = true;
+	if(rules.isStruct() && rules["spells"].isStruct())
+	{
+		const auto found = rules["spells"].Struct().find(scopedIdentity);
+		if(found != rules["spells"].Struct().end())
+		{
+			if(!found->second.isStruct())
+				throw std::runtime_error("Saved spell roster entry must be an object");
+			const auto marker = found->second.Struct().find("ordinaryAcquisition");
+			if(marker != found->second.Struct().end())
+			{
+				if(!marker->second.isBool())
+					throw std::runtime_error("Saved spell roster ordinaryAcquisition marker must be boolean");
+				ordinaryAcquisition = marker->second.Bool();
+			}
+		}
+	}
+
+	return spellBelongsToRules(rules, scopedIdentity, commonHeroSpell)
+		&& ordinaryAcquisition;
+}
+
 bool spellAllowedBySavedRoster(const JsonNode & rules, SpellID spell)
 {
 	const auto id = spell.getNum();
@@ -54,6 +82,16 @@ bool spellAllowedBySavedRoster(const JsonNode & rules, SpellID spell)
 		return false;
 	const auto & definition = LIBRARY->spellh->objects.at(id);
 	return definition && spellBelongsToRules(rules, definition->getJsonKey(), definition->isCommonHeroSpell());
+}
+
+bool spellAvailableForOrdinaryAcquisition(const JsonNode & rules, SpellID spell)
+{
+	const auto id = spell.getNum();
+	if(id < 0 || !LIBRARY || !LIBRARY->spellh || static_cast<size_t>(id) >= LIBRARY->spellh->objects.size())
+		return false;
+	const auto & definition = LIBRARY->spellh->objects.at(id);
+	return definition && definition->isCommonHeroSpell()
+		&& spellAvailableForOrdinaryAcquisition(rules, definition->getJsonKey(), true);
 }
 
 bool spellAllowedByWorldRoster(const IGameInfoCallback & world, SpellID spell)

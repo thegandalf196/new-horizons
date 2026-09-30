@@ -1337,6 +1337,41 @@ diagnostics are absent. Retained log/XML pairs are
 `NewHorizonsHydrasVitality-final-health-guards`. This closes the focused
 principal gate, not full save/load, rendered/playable or tactical-quality gates.
 
+### 2026-09-30 UP-059 acquisition compile admission
+
+Local client/test build 4073 (`UP059-acquisition-build.log`) stopped at the new
+purchase guard's missing availability header and two unqualified test helper
+calls. Root added the explicit header; the reviewer's namespace finding was
+repaired by qualifying both calls. No runtime failure is implied by this compile
+failure. Retry 64057 builds both targets successfully. The final historical-data
+test clarification then exposed the same missing direct header in its own test
+file (62149, `UP059-acquisition-test-final-build.log`); that include is now
+explicit too. Final test retry/native execution remain pending; preserve both
+initial failure logs rather than treating the intervening successful link as
+proof of the final test source.
+
+Final build 30330 succeeds. Initial focused native 75561 runs 31 cases, with
+29 passing and two fixture failures: the new actual Guild test used the no-town
+fixture, and historical Countermage selected Advanced without its Basic perk.
+Use `startGame(true)` for an actual town and select Basic before Advanced.
+No production admission defect was exposed. Preserve `UP059-acquisition-focused`
+log/XML and retry the corrected cases plus the full scoped filter.
+
+Fixture rebuild 18175 succeeds; native 3064 passes 36/36, zero skips, on
+`dd7c39ce4bea3388621a149a7d6bcc8562f52b3c53925b77a42513e3ce05825b`.
+Retain `UP059-acquisition-fixtures-retry1-focused.log`/`.xml`. This proves
+the existing bounded admission and compatibility slice; the subsequently
+identified random-reward default-pool gate still needs its own build/run.
+
+Final random-pool/client/test build 73711 succeeds. Native 27381 passes 42/42,
+zero skips, on
+`e5a3ed12075a54ed827d1acb60c84b2b647263528ff33fc90eb17592f068f14e`.
+Retain `UP059-acquisition-final-focused.log`/`.xml`; the default pool excludes
+specialty spells while explicit names and historical admission remain intact.
+Offline gates pass 76/76; module/diff checks pass; review has no blocker.
+No playable/profile promotion or Windows completion claim follows from this
+Linux native gate.
+
 ```text
 Failure ID / CI run or local command / frozen source identity:
 Observed error and affected stage:

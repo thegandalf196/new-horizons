@@ -14,12 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Ordinary acquisition correction (UP-059): specialty-only Master Chain Lightning
+stays known/castable for Solmyr but is excluded from ordinary learning, Guild
+and generated scroll/random reward pools. Fresh Counterspell is inactive;
+historical captured profiles retain their previous admission/casting.
+Shared saved eligibility is independent of casting and defaults true when absent.
+Both Linux targets build; 42 focused native cases pass, zero skips, with 76
+offline checks and module/diff gates passing. Review has no remaining blocker.
+Counts remain ranks 84/93, active perks 125/310, combat identities 58/67;
+these repairs do not certify missing spell effects. Wider teacher/scroll/save
+journeys and rendered/playable acceptance remain Phase 2/delivery work.
+
 School data correction: fresh Implosion now uses Sorcery and Earthquake Nature
 (UP-058). Both targets build; four focused native cases pass, including old
 captured-Havoc world/BattleStart preservation and updated Archmage AI submission.
 Offline gates pass 75/75. Identity/rank/perk counts are unchanged: this corrects
 classification and acquisition policy, not their still-incomplete spell effects.
-The adjacent noncanonical Counterspell/specialty-only Guild gap is UP-059.
+The adjacent noncanonical Counterspell/specialty-only Guild gap is repaired
+with focused source/native evidence in UP-059.
 
 Archmage checkpoint: Expert Wisdom's first accepted Level 4 or 5 combat spell
 costs three less after Wisdom and Prepared Caster, minimum one. Saved-level

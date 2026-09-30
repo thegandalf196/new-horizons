@@ -95,6 +95,7 @@
 
 #include "../lib/spells/CSpell.h"
 #include "../lib/spells/NewHorizonsMagic.h"
+#include "../lib/spells/NewHorizonsSpellAvailability.h"
 
 #include <vstd/RNG.h>
 #include <vstd/CLoggerBase.h>
@@ -4141,6 +4142,8 @@ bool CGameHandler::buyHouseOfWisdomScroll(const IMarket *m, const CGHeroInstance
 
 	const auto * definition = spell.toSpell();
 	COMPLAIN_RET_FALSE_IF(!definition || !definition->isCommonHeroSpell() || definition->isAdventure(), "That spell cannot be sold as a scroll!");
+	COMPLAIN_RET_FALSE_IF(!newHorizonsMagic::spellAvailableForOrdinaryAcquisition(gameInfo().getMagicRules(), spell),
+		"That spell is not available for ordinary acquisition!");
 
 	const auto price = newHorizonsHouseOfWisdom::price(spell);
 	const auto & resources = gameInfo().getPlayerState(h->tempOwner)->resources;

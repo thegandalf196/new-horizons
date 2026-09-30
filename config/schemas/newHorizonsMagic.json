@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema",
 	"title": "Saved New Horizons six-school magic rules",
-	"description": "Empty object retains legacy magic. Registration, complete common-hero-spell coverage, memberships and scoped skill identities are also checked by the runtime validator. Provisional mappings and costs are versioned, not global spell patches.",
+	"description": "Empty object retains legacy magic. Optional ordinaryAcquisition spell-row markers default to true when absent, preserving older saved profiles. Registration, complete common-hero-spell coverage, memberships and scoped skill identities are also checked by the runtime validator. Provisional mappings and costs are versioned, not global spell patches.",
 	"type": "object",
 	"oneOf": [
 		{
@@ -249,6 +249,11 @@
 						"minimum": 0,
 						"maximum": 1000000
 					}
+				},
+				"ordinaryAcquisition": {
+					"type": "boolean",
+					"not": {"type": "null"},
+					"description": "Whether this spell may be learned through ordinary acquisition. Omission defaults to true for compatibility with older saved profiles."
 				}
 			},
 			"dependencies": {

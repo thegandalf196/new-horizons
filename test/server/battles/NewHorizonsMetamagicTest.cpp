@@ -48,6 +48,7 @@ class NewHorizonsMetamagicTest : public HeroCommandFixture
 protected:
 	bool legacyCloneRoster = false;
 	bool legacySchoolRankRules = false;
+	bool historicalCounterspell = false;
 
 	void SetUp() override
 	{
@@ -60,6 +61,8 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		if(historicalCounterspell)
+			magicRules["spells"]["new-horizons:counterspell"].Struct().erase("active");
 		if(legacySchoolRankRules)
 		{
 			magicRules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
@@ -1344,6 +1347,7 @@ TEST_F(NewHorizonsMetamagicTest, SplitFocusAddsPowerOnlyForTheOtherTarget)
 
 TEST_F(NewHorizonsMetamagicTest, SplitFocusNeedsAValidFirstTarget)
 {
+	historicalCounterspell = true;
 	prepare(2, {newHorizonsMagic::METAMAGIC_SPLIT_FOCUS.data()});
 	const auto counterspell = SpellID(SpellID::decode("new-horizons:counterspell"));
 	BattleAction first;

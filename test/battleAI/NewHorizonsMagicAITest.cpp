@@ -279,6 +279,7 @@ protected:
 	bool neutralizeCommandEffects = false;
 	bool useSavedPerkRules = false;
 	bool useFocusMagic = false;
+	bool historicalCounterspell = false;
 	int savedMagicRulesVersion = 0;
 
 	void mapLoaded(CMap * loaded) override
@@ -289,8 +290,12 @@ protected:
 		else if(savedMagicRulesVersion > 0)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, legacyMagicRules(savedMagicRulesVersion));
 		else if(useCurrentMagicRules)
-			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		{
+			JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+			if(historicalCounterspell)
+				rules["spells"]["new-horizons:counterspell"].Struct().erase("active");
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+		}
 		if(useRealHeroScale)
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
 		if(useFocusMagic)
@@ -1203,6 +1208,7 @@ TEST_F(NewHorizonsMagicAITest, PhantomArmyValuesTemporaryCombatPowerAndChoosesTh
 
 TEST_F(NewHorizonsMagicAITest, CounterspellAIArmsAThreatWardAndSkipsAnAlreadyArmedWard)
 {
+	historicalCounterspell = true;
 	useCommands = false;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
@@ -1296,6 +1302,7 @@ TEST_F(NewHorizonsMagicAITest, CounterspellAIArmsAThreatWardAndSkipsAnAlreadyArm
 
 TEST_F(NewHorizonsMagicAITest, CounterspellAIRecognizesEnemyHatOnlyLevelFiveSpellThreat)
 {
+	historicalCounterspell = true;
 	useCommands = false;
 	useCurrentMagicRules = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());

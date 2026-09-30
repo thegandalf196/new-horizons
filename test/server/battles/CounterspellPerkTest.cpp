@@ -13,6 +13,7 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 
 namespace
 {
@@ -51,8 +52,11 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		// Retained Counterspell execution belongs to captured historical rosters,
+		// not the fresh canonical spell list.
+		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		magicRules["spells"][counterspellKey].Struct().erase("active");
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
@@ -75,7 +79,10 @@ protected:
 				defenderSideHero->setSecSkillLevel(SecondarySkill(metamagic), 1, ChangeValueMode::ABSOLUTE);
 		}
 		if(selectCountermage)
+		{
+			attackerSideHero->applyPerkSelection({sorcerySkill, "new-horizons:sorceryMagic.overcharger"});
 			attackerSideHero->applyPerkSelection({sorcerySkill, countermagePerk});
+		}
 
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
@@ -178,11 +185,13 @@ protected:
 	}
 };
 
-TEST_F(CounterspellPerkTest, CanonicalSpellAndCountermageDataAreActive)
+TEST_F(CounterspellPerkTest, HistoricalCounterspellDataAndIndependentCountermageRemainAvailable)
 {
-	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	const auto spell = counterspell();
 	ASSERT_NE(spell, SpellID::NONE);
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedBySavedRoster(rules, spell));
+	rules["spells"][counterspellKey].Struct().erase("active");
 	EXPECT_EQ(spell.toSpell()->getJsonKey(), counterspellKey);
 	EXPECT_EQ(newHorizonsMagic::spellLevel(rules, spell), 3);
 	for(int mastery = 0; mastery < 4; ++mastery)
