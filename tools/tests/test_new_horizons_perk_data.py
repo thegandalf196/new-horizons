@@ -41,6 +41,7 @@ ACTIVE_PERKS = {
     "new-horizons:logistics.navigation",
     "new-horizons:logistics.scouting",
     "new-horizons:wisdom.intelligence",
+    "new-horizons:wisdom.arcaneReservoir",
     "new-horizons:lightMagic.benediction",
     "new-horizons:lightMagic.healer",
     "new-horizons:lightMagic.guardian",

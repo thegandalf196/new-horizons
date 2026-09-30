@@ -52,6 +52,8 @@ constexpr auto WISDOM_SKILL_ID = "new-horizons:wisdom";
 constexpr auto MYSTICISM_PERK_ID = "new-horizons:wisdom.mysticism";
 constexpr auto INTELLIGENCE_PERK_ID = "new-horizons:wisdom.intelligence";
 constexpr auto MEDITATION_PERK_ID = "new-horizons:wisdom.meditation";
+constexpr auto DEEP_KNOWLEDGE_PERK_ID = "new-horizons:wisdom.deepKnowledge";
+constexpr auto ARCANE_RESERVOIR_PERK_ID = "new-horizons:wisdom.arcaneReservoir";
 
 const std::array<KnowledgeArtifact, 4> & knowledgeArtifacts()
 {
@@ -173,6 +175,26 @@ protected:
 			&& selectWisdomPerkThroughLegalOffer(hero, advancedPerkId);
 	}
 
+	bool advanceWisdomToExpertWithDeepKnowledge(CGHeroInstance * hero)
+	{
+		if(!advanceWisdomAndSelectPerkThroughLegalOffers(hero,
+			INTELLIGENCE_PERK_ID, DEEP_KNOWLEDGE_PERK_ID))
+			return false;
+
+		const int wisdomId = SecondarySkill::decode(WISDOM_SKILL_ID);
+		if(wisdomId < 0)
+			return false;
+		const auto wisdom = SecondarySkill(wisdomId);
+		gameHandler->levelUpHero(hero, wisdom, false);
+		return hero->getSecSkillLevel(wisdom) == MasteryLevel::EXPERT;
+	}
+
+	bool selectArcaneReservoirThroughLegalExpertOffer(CGHeroInstance * hero)
+	{
+		return advanceWisdomToExpertWithDeepKnowledge(hero)
+			&& selectWisdomPerkThroughLegalOffer(hero, ARCANE_RESERVOIR_PERK_ID);
+	}
+
 	bool selectMysticismThroughLegalOffer(CGHeroInstance * hero)
 	{
 		setWisdomRank(hero, MasteryLevel::BASIC);
@@ -265,6 +287,22 @@ protected:
 		for(auto & perk : perks["skills"][WISDOM_SKILL_ID]["perks"].Vector())
 		{
 			if(perk["id"].String() == MEDITATION_PERK_ID)
+				perk["effect"]["status"].String() = "planned";
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+	}
+};
+
+class SpellPointCapacityPlannedArcaneReservoirTest : public SpellPointCapacityTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		SpellPointCapacityTest::mapLoaded(loaded);
+		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		for(auto & perk : perks["skills"][WISDOM_SKILL_ID]["perks"].Vector())
+		{
+			if(perk["id"].String() == ARCANE_RESERVOIR_PERK_ID)
 				perk["effect"]["status"].String() = "planned";
 		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
@@ -405,6 +443,97 @@ TEST_F(SpellPointCapacityTest, IntelligenceRaisesKnowledgeCapacityByThirtyPercen
 	rank.val = 0;
 	gameState()->apply(rank);
 	expectPools(attackerSideHero, 120, 37, 120);
+}
+
+TEST_F(SpellPointCapacityTest, ExpertArcaneReservoirAddsTwentyFiveAfterIntelligenceWithoutRefilling)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 64);
+	grantBuffer(attackerSideHero, 17);
+
+	ASSERT_TRUE(selectArcaneReservoirThroughLegalExpertOffer(attackerSideHero));
+	const int wisdomId = SecondarySkill::decode(WISDOM_SKILL_ID);
+	ASSERT_GE(wisdomId, 0);
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(wisdomId)), MasteryLevel::EXPERT);
+	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID));
+	expectPools(attackerSideHero, 64, 17, 155); // floor(1.30 * 100) + 25; capacity does not refill.
+}
+
+TEST_F(SpellPointCapacityTest, LosingExpertWisdomClampsNormalCapacityAndPreservesBuffer)
+{
+	setKnowledge(attackerSideHero, 100);
+	ASSERT_TRUE(selectArcaneReservoirThroughLegalExpertOffer(attackerSideHero));
+	setNormal(attackerSideHero, 155);
+	grantBuffer(attackerSideHero, 23);
+	expectPools(attackerSideHero, 155, 23, 155);
+
+	setWisdomRank(attackerSideHero, MasteryLevel::ADVANCED);
+
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID));
+	expectPools(attackerSideHero, 130, 23, 130); // The authoritative rank-change event clamps Normal only.
+}
+
+TEST_F(SpellPointCapacityTest, ExpertArcaneReservoirSelectionSurvivesSaveLoad)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 48);
+	grantBuffer(attackerSideHero, 12);
+	ASSERT_TRUE(selectArcaneReservoirThroughLegalExpertOffer(attackerSideHero));
+	expectPools(attackerSideHero, 48, 12, 155);
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_TRUE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID));
+	expectPools(restoredHero, 48, 12, 155);
+}
+
+TEST_F(SpellPointCapacityPlannedArcaneReservoirTest, SavedPlannedSnapshotCannotOfferOrApplyCapacity)
+{
+	setKnowledge(attackerSideHero, 100);
+	setNormal(attackerSideHero, 48);
+	grantBuffer(attackerSideHero, 9);
+	ASSERT_TRUE(advanceWisdomToExpertWithDeepKnowledge(attackerSideHero));
+	expectPools(attackerSideHero, 48, 9, 130);
+
+	const auto rankLookup = [this](const std::string & skillId)
+	{
+		return attackerSideHero->getPerkSkillRank(skillId);
+	};
+	for(uint64_t seed = 0; seed < 128; ++seed)
+	{
+		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
+		{
+			return candidate.selection.perkId == ARCANE_RESERVOIR_PERK_ID;
+		}));
+	}
+	EXPECT_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID}), std::runtime_error);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID));
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_FALSE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID));
+	expectPools(restoredHero, 48, 9, 130);
+	const auto restoredRankLookup = [restoredHero](const std::string & skillId)
+	{
+		return restoredHero->getPerkSkillRank(skillId);
+	};
+	for(uint64_t seed = 0; seed < 128; ++seed)
+	{
+		const auto offer = restoredHero->getPerkState().prepareOffer(restoredRankLookup, seed);
+		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
+		{
+			return candidate.selection.perkId == ARCANE_RESERVOIR_PERK_ID;
+		}));
+	}
 }
 
 TEST_F(SpellPointCapacityTest, WisdomMysticismUsesFiveMinimumTenPercentAndOnlyRestoresNormalMana)

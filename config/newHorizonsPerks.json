@@ -2113,7 +2113,7 @@
 					"requires": "expert",
 					"description": "Maximum Mana increases by a flat 25 in addition to Knowledge and other modifiers.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Maximum Mana increases by a flat 25 in addition to Knowledge and other modifiers."
 					}
 				}

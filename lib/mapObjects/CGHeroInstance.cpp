@@ -1578,7 +1578,11 @@ si32 CGHeroInstance::manaLimit() const
 		const int32_t percent = intelligence
 			? newHorizonsMagic::spellPointsIntelligenceMaximumPercent(getMagicRules())
 			: 100;
-		return static_cast<si32>(std::min<int64_t>(knowledge * percent / 100, std::numeric_limits<si32>::max()));
+		const int64_t knowledgeCapacity = knowledge * percent / 100;
+		const int64_t arcaneReservoirBonus = hasActivePerk(
+			"new-horizons:wisdom", "new-horizons:wisdom.arcaneReservoir") ? 25 : 0;
+		return static_cast<si32>(std::min<int64_t>(
+			knowledgeCapacity + arcaneReservoirBonus, std::numeric_limits<si32>::max()));
 	}
 
 	// Existing cache has a 1000% (ten mana/Knowledge) base. Normalize that
