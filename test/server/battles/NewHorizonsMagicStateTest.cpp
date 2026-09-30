@@ -11,9 +11,15 @@
 #include "HeroCommandFixture.h"
 #include "../../spells/NewHorizonsMagicProfileFixture.h"
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/CPlayerState.h"
+#include "../../../lib/CSkillHandler.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/modding/ActiveModsInSaveList.h"
 #include "../../../lib/modding/ModDescription.h"
+#include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/entities/hero/CHeroClass.h"
+#include "../../../lib/entities/artifact/CArtifactInstance.h"
+#include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -24,9 +30,35 @@
 #include "../../../lib/bonuses/Limiters.h"
 #include "../../../lib/bonuses/Propagators.h"
 #include "../../../lib/bonuses/Updaters.h"
+#include "../../../server/ServerSpellCastEnvironment.h"
+#include "../../../server/queries/QueriesProcessor.h"
 
 namespace
 {
+class CountingServerSpellCastEnvironment final : public ServerSpellCastEnvironment
+{
+public:
+	explicit CountingServerSpellCastEnvironment(CGameHandler * gameHandler)
+		: ServerSpellCastEnvironment(gameHandler)
+	{}
+
+	int prepared = 0;
+	int completed = 0;
+
+	std::function<void()> prepareAdventureSpellCastCompletion(const spells::Caster * caster, SpellID spell) override
+	{
+		auto completion = ServerSpellCastEnvironment::prepareAdventureSpellCastCompletion(caster, spell);
+		++prepared;
+
+		return [this, completion = std::move(completion)]() mutable
+		{
+			++completed;
+			if(completion)
+				completion();
+		};
+	}
+};
+
 JsonNode magicRulesForVersion(int version)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
@@ -77,6 +109,14 @@ JsonNode magicRulesForVersion(int version)
 class NewHorizonsMagicStateTest : public HeroCommandFixture
 {
 protected:
+	static constexpr auto WISDOM_SKILL = "new-horizons:wisdom";
+	static constexpr auto ARCANE_MEMORY = "new-horizons:wisdom.arcaneMemory";
+	enum class ArcaneMemoryFixtureMode
+	{
+		ProductionStatus,
+		ActiveForTest
+	};
+	ArcaneMemoryFixtureMode arcaneMemoryFixtureMode = ArcaneMemoryFixtureMode::ProductionStatus;
 	bool useMagic = true;
 	int magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
 	std::unique_ptr<newHorizonsTest::MagicV1Baseline> baseline;
@@ -102,6 +142,85 @@ protected:
 		if(useMagic)
 			rules = magicRulesForVersion(magicVersion);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+
+		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(arcaneMemoryFixtureMode == ArcaneMemoryFixtureMode::ActiveForTest)
+		{
+			for(auto & perk : perkRules["skills"][WISDOM_SKILL]["perks"].Vector())
+			{
+				if(perk["id"].String() == ARCANE_MEMORY)
+				{
+					perk["effect"]["status"].String() = "active";
+					break;
+				}
+			}
+		}
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
+	}
+
+	void startGameWithWizard(bool withGuildTown = false)
+	{
+		const CreatureID token(0);
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).name("ArcaneMemoryTest")
+			.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:solmyr")), PlayerColor(0))
+			.heroGarrison({{token, 1}})
+			.hero({7, 7, 0}, HeroTypeID(1), PlayerColor(1))
+			.heroGarrison({{token, 1}});
+		if(withGuildTown)
+			builder.town({24, 24, 0}, FactionID::CONFLUX, PlayerColor(0)).townGarrison({});
+		startWithMap(std::move(builder));
+
+		server.gameState = gameState();
+		gameHandler = std::make_shared<CGameHandler>(server, gameState());
+		gameHandler->randomizer->setSeed(seed);
+		attackerSideHero = findHeroByOwner(PlayerColor(0));
+		defenderSideHero = findHeroByOwner(PlayerColor(1));
+		ASSERT_NE(attackerSideHero, nullptr);
+		ASSERT_NE(defenderSideHero, nullptr);
+		ASSERT_EQ(attackerSideHero->getHeroClass()->getJsonKey(), "core:wizard");
+	}
+
+	SecondarySkill wisdomSkill() const
+	{
+		const int decoded = SecondarySkill::decode(WISDOM_SKILL);
+		EXPECT_GE(decoded, 0);
+		return SecondarySkill(decoded);
+	}
+
+	void activateArcaneMemoryForTest()
+	{
+		arcaneMemoryFixtureMode = ArcaneMemoryFixtureMode::ActiveForTest;
+	}
+
+	void prepareWizardWithArcaneMemory(bool withGuildTown = false)
+	{
+		activateArcaneMemoryForTest();
+		startGameWithWizard(withGuildTown);
+		attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({WISDOM_SKILL, ARCANE_MEMORY});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCANE_MEMORY));
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+	}
+
+	CountingServerSpellCastEnvironment * installCountingSpellEnvironment()
+	{
+		auto counting = std::make_unique<CountingServerSpellCastEnvironment>(gameHandler.get());
+		auto * result = counting.get();
+		gameHandler->spellEnv = std::move(counting);
+		return result;
+	}
+
+	BattleAction heroSpellAction(SpellID spell, const CStack * target) const
+	{
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = spell;
+		action.aimToUnit(target);
+		return action;
 	}
 
 	void startSkilledHero()
@@ -587,4 +706,341 @@ TEST_F(NewHorizonsMagicStateTest, AdventureSpellUsesOneSharedDailyOpportunityAnd
 	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
 	EXPECT_TRUE(cast(waterWalk));
 	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(NewHorizonsMagicStateTest, WizardCanChooseArcaneMemoryFromTheBasicWisdomOffer)
+{
+	activateArcaneMemoryForTest();
+	startGameWithWizard();
+	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
+		attackerSideHero->setSecSkillLevel(SecondarySkill(index), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+
+	const auto rankLookup = [this](const std::string & skillId)
+	{
+		return attackerSideHero->getPerkSkillRank(skillId);
+	};
+	bool selectedThroughOffer = false;
+	for(uint64_t offerSeed = 0; offerSeed < 4096 && !selectedThroughOffer; ++offerSeed)
+	{
+		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, offerSeed);
+		const auto arcaneMemory = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
+		{
+			return candidate.selection.perkId == ARCANE_MEMORY;
+		});
+		if(arcaneMemory == offer.end())
+			continue;
+
+		const auto choice = static_cast<size_t>(std::distance(offer.begin(), arcaneMemory));
+		gameHandler->levelUpHero(attackerSideHero, offer, choice, offerSeed, false);
+		selectedThroughOffer = true;
+	}
+	ASSERT_TRUE(selectedThroughOffer) << "Arcane Memory should be a legal Basic Wisdom perk offer for a Wizard";
+	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCANE_MEMORY));
+}
+
+TEST_F(NewHorizonsMagicStateTest, PlannedArcaneMemoryIsNotOfferedOrActivatable)
+{
+	arcaneMemoryFixtureMode = ArcaneMemoryFixtureMode::ProductionStatus;
+	startGameWithWizard();
+	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+
+	const auto & savedPerks = attackerSideHero->getPerkState().rules["skills"][WISDOM_SKILL]["perks"].Vector();
+	const auto arcaneMemory = std::find_if(savedPerks.begin(), savedPerks.end(), [](const auto & perk)
+	{
+		return perk["id"].String() == ARCANE_MEMORY;
+	});
+	ASSERT_NE(arcaneMemory, savedPerks.end());
+	EXPECT_EQ((*arcaneMemory)["effect"]["status"].String(), "planned");
+
+	const auto rankLookup = [this](const std::string & skillId)
+	{
+		return attackerSideHero->getPerkSkillRank(skillId);
+	};
+	for(uint64_t offerSeed = 0; offerSeed < 128; ++offerSeed)
+	{
+		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, offerSeed);
+		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
+		{
+			return candidate.selection.perkId == ARCANE_MEMORY;
+		}));
+	}
+	EXPECT_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL, ARCANE_MEMORY}), std::runtime_error);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCANE_MEMORY));
+}
+
+TEST_F(NewHorizonsMagicStateTest, AcceptedCombatScrollCastLearnsAndPersistsWithoutConsuming)
+{
+	prepareWizardWithArcaneMemory();
+	const SpellID magicArrow(SpellID::MAGIC_ARROW);
+	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, magicArrow, ArtifactPosition::MISC1));
+	ASSERT_TRUE(attackerSideHero->hasScroll(magicArrow, false));
+	ASSERT_FALSE(attackerSideHero->spellbookContainsSpell(magicArrow));
+	ASSERT_TRUE(attackerSideHero->canLearnSpell(magicArrow.toSpell()));
+
+	startBattle();
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(rightHex), 10);
+	ASSERT_NE(target, nullptr);
+	beginCombat();
+	const auto action = heroSpellAction(magicArrow, target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+
+	EXPECT_TRUE(attackerSideHero->hasScroll(magicArrow, false));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(magicArrow));
+	const auto saved = gameState()->saveToMemory();
+	auto restored = std::make_shared<CGameState>();
+	restored->preInit(LIBRARY);
+	restored->loadFromMemory(saved);
+	const auto * restoredHero = restored->getHero(attackerSideHero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_TRUE(restoredHero->spellbookContainsSpell(magicArrow));
+	EXPECT_TRUE(restoredHero->hasScroll(magicArrow, false));
+}
+
+TEST_F(NewHorizonsMagicStateTest, SpellbookSourceTakesPriorityOverMatchingScroll)
+{
+	prepareWizardWithArcaneMemory();
+	const SpellID magicArrow(SpellID::MAGIC_ARROW);
+	attackerSideHero->addSpellToSpellbook(magicArrow);
+	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, magicArrow, ArtifactPosition::MISC1));
+	const auto * spellbook = attackerSideHero->getArt(ArtifactPosition::SPELLBOOK);
+	const auto * scroll = attackerSideHero->getArt(ArtifactPosition::MISC1);
+	ASSERT_NE(spellbook, nullptr);
+	ASSERT_NE(scroll, nullptr);
+	const auto scrollId = scroll->getId();
+	const auto spellSources = attackerSideHero->getSourcesForSpell(magicArrow);
+	EXPECT_NE(std::find(spellSources.begin(), spellSources.end(), BonusSourceID(spellbook->getId())), spellSources.end());
+	EXPECT_NE(std::find(spellSources.begin(), spellSources.end(), BonusSourceID(scrollId)), spellSources.end());
+
+	startBattle();
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(rightHex), 10);
+	ASSERT_NE(enemy, nullptr);
+	beginCombat();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		heroSpellAction(magicArrow, enemy)));
+	EXPECT_TRUE(attackerSideHero->hasScroll(magicArrow, false));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(magicArrow));
+	ASSERT_NE(attackerSideHero->getArt(ArtifactPosition::MISC1), nullptr);
+	EXPECT_EQ(attackerSideHero->getArt(ArtifactPosition::MISC1)->getId(), scrollId);
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(SpellID(SpellID::MAGIC_ARROW).toSpell()))
+		<< "A spell already in the book is not a new Arcane Memory acquisition";
+}
+
+
+TEST_F(NewHorizonsMagicStateTest, EquippedTomeSourceTakesPriorityOverMatchingScroll)
+{
+	prepareWizardWithArcaneMemory();
+	const SpellID haste(SpellID::HASTE);
+	ASSERT_TRUE(gameHandler->giveHeroNewArtifact(attackerSideHero,
+		ArtifactID(ArtifactID::decode("core:tomeOfAirMagic")), ArtifactPosition::MISC2));
+	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, haste, ArtifactPosition::MISC3));
+	const auto * tomeSlot = attackerSideHero->getArt(ArtifactPosition::MISC2);
+	ASSERT_NE(tomeSlot, nullptr);
+	auto * tome = gameState()->getMap().getArtifactInstance(tomeSlot->getId());
+	ASSERT_NE(tome, nullptr);
+	const auto sorcery = SpellSchool::fromSerializationKey("new-horizons:sorcery");
+	// Synthetic non-charge-source coverage only: legacy Tomes are intentionally excluded until
+	// six-school replacement artifacts are authored; this does not claim shipped Tome support.
+	tome->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::SPELLS_OF_SCHOOL,
+		BonusSource::ARTIFACT, 0, BonusSourceID(tome->getId()), BonusSubtypeID(sorcery)));
+	const auto * scrollSlot = attackerSideHero->getArt(ArtifactPosition::MISC3);
+	ASSERT_NE(scrollSlot, nullptr);
+
+	startBattle();
+	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(leftHex), 10);
+	ASSERT_NE(friendly, nullptr);
+	beginCombat();
+	ASSERT_TRUE(attackerSideHero->canCastThisSpell(haste.toSpell()));
+	const auto hasteSources = attackerSideHero->getSourcesForSpell(haste);
+	EXPECT_NE(std::find(hasteSources.begin(), hasteSources.end(), BonusSourceID(tome->getId())), hasteSources.end());
+	EXPECT_NE(std::find(hasteSources.begin(), hasteSources.end(), BonusSourceID(scrollSlot->getId())), hasteSources.end());
+	const auto * activeStack = battle()->battleActiveUnit();
+	ASSERT_NE(activeStack, nullptr);
+	EXPECT_EQ(battle()->battleGetOwner(activeStack), PlayerColor(0));
+	EXPECT_FALSE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		heroSpellAction(haste, friendly)));
+	EXPECT_TRUE(attackerSideHero->hasScroll(haste, false));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(haste));
+	ASSERT_NE(attackerSideHero->getArt(ArtifactPosition::MISC3), nullptr);
+	EXPECT_EQ(attackerSideHero->getArt(ArtifactPosition::MISC3)->getId(), scrollSlot->getId());
+}
+
+TEST_F(NewHorizonsMagicStateTest, CombatScrollDoesNotBypassSchoolRequirement)
+{
+	prepareWizardWithArcaneMemory();
+	const SpellID hypnotize(SpellID::HYPNOTIZE);
+	const auto chaosSkillId = SecondarySkill::decode("new-horizons:chaosMagic");
+	ASSERT_GE(chaosSkillId, 0);
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(chaosSkillId)), MasteryLevel::NONE);
+	ASSERT_FALSE(attackerSideHero->canLearnSpell(hypnotize.toSpell()));
+	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, hypnotize, ArtifactPosition::MISC1));
+
+	startBattle();
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(rightHex), 1);
+	ASSERT_NE(target, nullptr);
+	beginCombat();
+	EXPECT_FALSE(attackerSideHero->canCastThisSpell(hypnotize.toSpell()));
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		heroSpellAction(hypnotize, target)));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_TRUE(attackerSideHero->hasScroll(hypnotize, false));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(hypnotize));
+
+	// With the required School rank supplied, this covers the map-roster canLearnSpell gate.
+	// Direct injection of a retired spell source is deferred to the broader Phase 2 matrix.
+	attackerSideHero->setSecSkillLevel(SecondarySkill(chaosSkillId), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	EXPECT_TRUE(attackerSideHero->canLearnSpell(hypnotize.toSpell()));
+	ASSERT_TRUE(gameState()->getMap().allowedSpells.count(hypnotize));
+	gameState()->getMap().allowedSpells.erase(hypnotize);
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(hypnotize.toSpell()));
+}
+
+TEST_F(NewHorizonsMagicStateTest, AcceptedAdventureScrollCastSettlesFromCompletedEffect)
+{
+	prepareWizardWithArcaneMemory();
+	const SpellID fly(SpellID::FLY);
+	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, fly, ArtifactPosition::MISC1));
+	ASSERT_TRUE(attackerSideHero->hasScroll(fly, false));
+	const auto cost = attackerSideHero->getSpellCost(fly.toSpell());
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	auto * environment = installCountingSpellEnvironment();
+
+	AdventureSpellCastParameters parameters;
+	parameters.caster = attackerSideHero;
+	parameters.pos = int3();
+	// The return value is not the completion signal: the assertions below use
+	// the authoritative mana, daily-state, and scroll state after effects settle.
+	const bool adventureCastReturned = fly.toSpell()->adventureCast(environment, parameters);
+	(void)adventureCastReturned;
+
+	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - cost);
+	EXPECT_TRUE(attackerSideHero->hasScroll(fly, false));
+	EXPECT_EQ(environment->prepared, 1);
+	EXPECT_EQ(environment->completed, 1);
+}
+
+TEST_F(NewHorizonsMagicStateTest, DimensionDoorRejectedWithoutMovementLeavesScrollUntouched)
+{
+	prepareWizardWithArcaneMemory();
+	const SpellID dimensionDoor(SpellID::DIMENSION_DOOR);
+	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, dimensionDoor, ArtifactPosition::MISC1));
+	ASSERT_TRUE(attackerSideHero->canCastThisSpell(dimensionDoor.toSpell()));
+	attackerSideHero->setMovementPoints(0);
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	auto * environment = installCountingSpellEnvironment();
+
+	AdventureSpellCastParameters parameters;
+	parameters.caster = attackerSideHero;
+	parameters.pos = int3();
+	EXPECT_FALSE(dimensionDoor.toSpell()->adventureCast(environment, parameters));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), 0u);
+	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_TRUE(attackerSideHero->hasScroll(dimensionDoor, false));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(dimensionDoor));
+	EXPECT_EQ(environment->prepared, 0);
+	EXPECT_EQ(environment->completed, 0);
+}
+
+TEST_F(NewHorizonsMagicStateTest, TownPortalQueryCancelThenGuildVisitRetainsTheOriginalScroll)
+{
+	prepareWizardWithArcaneMemory(true);
+	auto * destination = findFirst<CGTownInstance>();
+	ASSERT_NE(destination, nullptr);
+	for(const auto building : {BuildingID::MAGES_GUILD_1, BuildingID::MAGES_GUILD_2, BuildingID::MAGES_GUILD_3})
+		destination->addBuilding(building);
+
+	const SpellID townPortal(SpellID::TOWN_PORTAL);
+	const auto unlockCost = newHorizonsMagic::adventureSpellUnlockCost(gameState()->getMagicRules(), townPortal);
+	const std::array<GameResID, 7> resources = {
+		GameResID(EGameResID::WOOD), GameResID(EGameResID::MERCURY), GameResID(EGameResID::ORE),
+		GameResID(EGameResID::SULFUR), GameResID(EGameResID::CRYSTAL), GameResID(EGameResID::GEMS),
+		GameResID(EGameResID::GOLD)
+	};
+	const auto currentResources = gameState()->getPlayerState(PlayerColor(0))->resources;
+	for(const auto resource : resources)
+	{
+		const auto deficit = unlockCost[resource] - currentResources[resource];
+		if(deficit > 0)
+			grantResources(PlayerColor(0), resource, static_cast<int>(deficit));
+	}
+	ASSERT_TRUE(gameHandler->unlockNewHorizonsAdventureSpell(destination->id, 3));
+	ASSERT_TRUE(destination->hasNewHorizonsAdventureSpellUnlocked(3));
+
+	// Legacy generic completion compatibility setup: Advanced mastery allows this
+	// destination-query path. This is not canonical NH nearest-town acceptance.
+	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_SCHOOL_SKILL, BonusSource::OTHER, MasteryLevel::ADVANCED,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	attackerSideHero->setMovementPoints(1500);
+	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, townPortal, ArtifactPosition::MISC1));
+	ASSERT_TRUE(attackerSideHero->canLearnSpell(townPortal.toSpell()));
+	auto * environment = installCountingSpellEnvironment();
+
+	auto castForTownChoice = [&]()
+	{
+		AdventureSpellCastParameters parameters;
+		parameters.caster = attackerSideHero;
+		parameters.pos = int3(-1);
+		const bool returned = townPortal.toSpell()->adventureCast(environment, parameters);
+		(void)returned;
+	};
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto movementBefore = attackerSideHero->movementPointsRemaining();
+	const auto dailyStateBefore = attackerSideHero->hasNewHorizonsAdventureSpellCastToday();
+
+	// An in-map non-town tile passes target validation but fails during effect resolution.
+	// The completion hook is prepared before effects, but must not settle this failed cast.
+	AdventureSpellCastParameters failedParameters;
+	failedParameters.caster = attackerSideHero;
+	failedParameters.pos = int3(0, 0, 0);
+	const bool failedCastReturned = townPortal.toSpell()->adventureCast(environment, failedParameters);
+	(void)failedCastReturned;
+	EXPECT_EQ(environment->prepared, 1);
+	EXPECT_EQ(environment->completed, 0);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), movementBefore);
+	EXPECT_EQ(attackerSideHero->hasNewHorizonsAdventureSpellCastToday(), dailyStateBefore);
+	EXPECT_TRUE(attackerSideHero->hasScroll(townPortal, false));
+
+	castForTownChoice();
+	auto pending = gameHandler->queries->topQuery(PlayerColor(0));
+	ASSERT_NE(pending, nullptr);
+	ASSERT_EQ(pending->getType(), QueryType::Generic);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), movementBefore);
+	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_TRUE(attackerSideHero->hasScroll(townPortal, false));
+	EXPECT_EQ(environment->prepared, 1);
+	EXPECT_EQ(environment->completed, 0);
+	ASSERT_TRUE(gameHandler->queryReply(pending->queryID, std::nullopt, PlayerColor(0)));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), movementBefore);
+	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_TRUE(attackerSideHero->hasScroll(townPortal, false));
+	EXPECT_EQ(environment->prepared, 1);
+	EXPECT_EQ(environment->completed, 0);
+
+	castForTownChoice();
+	pending = gameHandler->queries->topQuery(PlayerColor(0));
+	ASSERT_NE(pending, nullptr);
+	ASSERT_EQ(pending->getType(), QueryType::Generic);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_TRUE(attackerSideHero->hasScroll(townPortal, false));
+	EXPECT_EQ(environment->prepared, 1);
+	EXPECT_EQ(environment->completed, 0);
+	ASSERT_TRUE(gameHandler->queryReply(pending->queryID, destination->id.getNum(), PlayerColor(0)));
+
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - attackerSideHero->getSpellCost(townPortal.toSpell()));
+	EXPECT_LT(attackerSideHero->movementPointsRemaining(), movementBefore);
+	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+	EXPECT_TRUE(attackerSideHero->hasScroll(townPortal, false));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(townPortal));
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(townPortal.toSpell()));
+	EXPECT_EQ(environment->prepared, 2);
+	EXPECT_EQ(environment->completed, 1);
 }

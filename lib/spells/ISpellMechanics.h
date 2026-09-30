@@ -68,6 +68,9 @@ public:
 	virtual void showGarrisonDialog(ObjectInstanceID upobj, ObjectInstanceID hid, bool removableUnits, const MetaString & customTitle) = 0;
 
 	virtual void genericQuery(Query * request, PlayerColor color, std::function<void(std::optional<int32_t>)> callback) = 0;//TODO: type safety on query, use generic query packet when implemented
+	/// Prepares a per-cast completion callback. It is invoked only if the
+	/// adventure spell's effects complete successfully.
+	virtual std::function<void()> prepareAdventureSpellCastCompletion(const spells::Caster *, SpellID) { return {}; }
 };
 
 namespace spells

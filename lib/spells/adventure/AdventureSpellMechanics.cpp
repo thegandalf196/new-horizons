@@ -210,6 +210,7 @@ void AdventureSpellMechanics::performCast(SpellCastEnvironment * env, const Adve
 	if(hero && newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), owner->id)
 		&& hero->hasNewHorizonsAdventureSpellCastToday())
 		return;
+	auto completeAcceptedCast = env->prepareAdventureSpellCastCompletion(parameters.caster, owner->id);
 	const auto cost = hero ? hero->getSpellCost(owner) : owner->getCost(level);
 
 	AdvmapSpellCast asc;
@@ -231,5 +232,7 @@ void AdventureSpellMechanics::performCast(SpellCastEnvironment * env, const Adve
 			state.castToday = true;
 			env->apply(state);
 		}
+		if(completeAcceptedCast)
+			completeAcceptedCast();
 	}
 }

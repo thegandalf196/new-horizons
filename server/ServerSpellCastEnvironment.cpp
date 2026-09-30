@@ -22,6 +22,7 @@
 #include "../lib/mapObjects/army/CArmedInstance.h"
 #include "../lib/networkPacks/PacksForClientBattle.h"
 #include "../lib/networkPacks/SetStackEffect.h"
+#include "../lib/spells/ExternalCaster.h"
 
 ///ServerSpellCastEnvironment
 ServerSpellCastEnvironment::ServerSpellCastEnvironment(CGameHandler * gh)
@@ -48,6 +49,17 @@ bool ServerSpellCastEnvironment::rollCombatAbility(const IBattleInfoCallback & b
 {
 	const auto * army = battle.getBattle()->getSideArmy(actor.unitSide());
 	return gh->randomizer->rollCombatAbility(army->id, percentageChance);
+}
+
+std::function<void()> ServerSpellCastEnvironment::prepareAdventureSpellCastCompletion(const spells::Caster * caster, SpellID spell)
+{
+	if(!caster || dynamic_cast<const spells::ExternalCaster *>(caster))
+		return {};
+
+	if(const auto * hero = caster->getHeroCaster())
+		return gh->prepareChargeBasedSpellCompletion(hero->id, spell);
+
+	return {};
 }
 
 void ServerSpellCastEnvironment::apply(CPackForClient & pack)

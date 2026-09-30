@@ -1818,8 +1818,30 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 	if(hasSpellbook() && spellbookContainsSpell(spellId))
 		sources.emplace_back(getArt(ArtifactPosition::SPELLBOOK)->getId());
 
+	const BonusSourceID legacyScrollSource{ArtifactID(ArtifactID::SPELL_SCROLL)};
 	for(const auto & bonus : *getBonusesOfType(BonusType::SPELL, spellId))
-		sources.emplace_back(bonus->sid);
+	{
+		if(bonus->source == BonusSource::ARTIFACT_INSTANCE && bonus->sid == legacyScrollSource)
+		{
+			// Scroll bonuses use the shared legacy artifact type as their source ID,
+			// not the ID of the artifact instance that owns the bonus. Resolve that
+			// marker to equipped matching scrolls so callers can retain provenance.
+			for(const auto & slot : artifactsWorn)
+			{
+				const auto * artifact = slot.second.getArt();
+				if(!artifact || !artifact->isScroll() || artifact->getScrollSpellID() != spellId)
+					continue;
+
+				const BonusSourceID instanceSource{artifact->getId()};
+				if(!vstd::contains(sources, instanceSource))
+					sources.emplace_back(instanceSource);
+			}
+		}
+		else
+		{
+			sources.emplace_back(bonus->sid);
+		}
+	}
 
 	bool tomesGrantBannedSpells = cb->getSettings().getBoolean(EGameSettings::SPELLS_TOMES_GRANT_BANNED_SPELLS);
 

@@ -5155,15 +5155,6 @@ void CGameHandler::castSpell(const spells::Caster * caster, SpellID spellID, con
 
 	const CSpell * s = spellID.toSpell();
 	s->adventureCast(spellEnv.get(), p);
-
-	// FIXME: hack to avoid attempts to use charges when spell is casted externally
-	// For example, town gates map object in hota/wog
-	// Proper fix would be to instead spend charges similar to existing caster::spendMana call
-	if (dynamic_cast<const spells::ExternalCaster*>(caster) == nullptr)
-	{
-		if(const auto * hero = caster->getHeroCaster())
-			useChargeBasedSpell(hero->id, spellID);
-	}
 }
 
 bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & sl2)
@@ -5662,36 +5653,167 @@ void CGameHandler::startBattle(const CArmedInstance *army1, const CArmedInstance
 
 void CGameHandler::useChargeBasedSpell(const ObjectInstanceID & heroObjectID, const SpellID & spellID)
 {
+	auto completeCast = prepareChargeBasedSpellCompletion(heroObjectID, spellID);
+	if(completeCast)
+		completeCast();
+}
+
+std::function<void()> CGameHandler::prepareChargeBasedSpellCompletion(const ObjectInstanceID & heroObjectID, const SpellID & spellID)
+{
 	const auto * hero = gameInfo().getHero(heroObjectID);
 	assert(hero);
 	assert(hero->canCastThisSpell(spellID.toSpell()));
+	const bool arcaneMemoryActive = newHorizonsMagic::rulesActive(hero->getMagicRules())
+		&& hero->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.arcaneMemory");
 
-	// Check if hero used charge based spell
-	// Try to find other sources of the spell besides the charged artifacts. If there are any, we use them.
-	std::optional<std::tuple<ArtifactPosition, ArtifactInstanceID, uint16_t>> chargedArt;
+	// Preserve permanent spell sources ahead of scrolls. A reusable spell scroll
+	// is a valid learning source even though it has no charge cost.
+	std::optional<std::pair<ArtifactInstanceID, uint16_t>> chargedArtifact;
+	std::optional<std::pair<ArtifactInstanceID, SpellID>> chargedScrollSource;
+	std::optional<std::pair<ArtifactInstanceID, SpellID>> reusableScrollSource;
+	bool hasInvalidChargedScroll = false;
 	for(const auto & source : hero->getSourcesForSpell(spellID))
 	{
 		if(const auto * artInst = hero->getArtByInstanceId(source.as<ArtifactInstanceID>()))
 		{
 			const auto * artType = artInst->getType();
 			const auto spellCost = artType->getChargeCost(spellID);
+			if(artInst->getTypeId() == ArtifactID::SPELL_SCROLL)
+			{
+				const auto scrollSpell = artInst->getScrollSpellID();
+				if(scrollSpell != spellID)
+				{
+					hasInvalidChargedScroll = true;
+					continue;
+				}
+
+				if(!spellCost.has_value())
+				{
+					if(!reusableScrollSource)
+						reusableScrollSource.emplace(artInst->getId(), scrollSpell);
+					continue;
+				}
+
+				if(spellCost.value() <= artInst->getCharges()
+					&& artType->getDischargeCondition() == DischargeArtifactCondition::SPELLCAST)
+				{
+					chargedArtifact.emplace(artInst->getId(), spellCost.value());
+					chargedScrollSource.emplace(artInst->getId(), scrollSpell);
+				}
+				else
+				{
+					hasInvalidChargedScroll = true;
+				}
+				continue;
+			}
+
 			if(spellCost.has_value() && spellCost.value() <= artInst->getCharges() && artType->getDischargeCondition() == DischargeArtifactCondition::SPELLCAST)
 			{
-				chargedArt.emplace(hero->getArtPos(artInst), artInst->getId(), spellCost.value());
+				chargedArtifact.emplace(artInst->getId(), spellCost.value());
+				chargedScrollSource.reset();
 			}
 			else
 			{
-				return;
+				return {};
 			}
 		}
 		else
 		{
-			return;
+			return {};
 		}
 	}
 
-	assert(chargedArt.has_value());
-	DischargeArtifact msg(std::get<1>(chargedArt.value()), std::get<2>(chargedArt.value()));
-	msg.artLoc.emplace(hero->id, std::get<0>(chargedArt.value()));
-	sendAndApply(msg);
+	const bool selectedReusableScroll = reusableScrollSource.has_value();
+	if(!selectedReusableScroll && hasInvalidChargedScroll)
+		return {};
+
+	std::optional<ArtifactInstanceID> selectedArtifactId;
+	std::optional<uint16_t> selectedChargeCost;
+	std::optional<std::pair<ArtifactInstanceID, SpellID>> selectedScrollSource;
+	if(selectedReusableScroll)
+	{
+		selectedArtifactId = reusableScrollSource->first;
+		selectedScrollSource = reusableScrollSource;
+	}
+	else
+	{
+		assert(chargedArtifact.has_value());
+		if(!chargedArtifact)
+			return {};
+		selectedArtifactId = chargedArtifact->first;
+		selectedChargeCost = chargedArtifact->second;
+		selectedScrollSource = chargedScrollSource;
+	}
+
+	if(selectedReusableScroll && !arcaneMemoryActive)
+		return {};
+
+	return [this, heroObjectID, spellID, selectedArtifactId, selectedChargeCost, arcaneMemoryActive, selectedScrollSource]()
+	{
+		const auto * currentHero = gameInfo().getHero(heroObjectID);
+		if(!currentHero)
+			return;
+
+		// Resolve this exact source again; an effect may have moved or removed it.
+		const auto * selectedArtifact = currentHero->getArtByInstanceId(*selectedArtifactId);
+		if(!selectedArtifact)
+			return;
+		if(selectedScrollSource
+			&& (selectedScrollSource->second != spellID
+				|| selectedArtifact->getTypeId() != ArtifactID::SPELL_SCROLL
+				|| selectedArtifact->getScrollSpellID() != spellID))
+			return;
+
+		bool sourceSettled = false;
+		if(selectedChargeCost)
+		{
+			const auto * artifactType = selectedArtifact->getType();
+			const auto currentChargeCost = artifactType->getChargeCost(spellID);
+			if(!currentChargeCost || *currentChargeCost != *selectedChargeCost
+				|| *selectedChargeCost > selectedArtifact->getCharges()
+				|| artifactType->getDischargeCondition() != DischargeArtifactCondition::SPELLCAST)
+				return;
+
+			DischargeArtifact message(*selectedArtifactId, *selectedChargeCost);
+			message.artLoc.emplace(heroObjectID, currentHero->getArtPos(selectedArtifact));
+			sendAndApply(message);
+			sourceSettled = true;
+		}
+		else if(selectedScrollSource && !selectedArtifact->getType()->getChargeCost(spellID))
+		{
+			// Ordinary scrolls are reusable sources in this design; do not invent
+			// a depletion rule just to trigger Arcane Memory.
+			sourceSettled = true;
+		}
+
+		if(!sourceSettled || !arcaneMemoryActive || !selectedScrollSource)
+			return;
+
+		const auto * learner = gameInfo().getHero(heroObjectID);
+		if(learner && newHorizonsMagic::rulesActive(learner->getMagicRules())
+			&& learner->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.arcaneMemory"))
+		{
+			const auto * spellToLearn = selectedScrollSource->second.toSpell();
+			if(spellToLearn && learner->canLearnSpell(spellToLearn))
+			{
+				std::optional<BattleID> battleID;
+				if(learner->battle)
+					battleID = learner->battle->getBattleID();
+				MetaString line = MetaString::createFromRawString("%s learns ");
+				line.replaceTextID(learner->getNameTextID());
+				line.appendName(selectedScrollSource->second);
+				line.appendRawString(" from a scroll using Arcane Memory.");
+
+				changeSpells(learner, true, std::set<SpellID>{selectedScrollSource->second});
+
+				if(battleID)
+				{
+					BattleLogMessage message;
+					message.battleID = *battleID;
+					message.lines.push_back(std::move(line));
+					sendAndApply(message);
+				}
+			}
+		}
+	};
 }

@@ -193,6 +193,7 @@ public:
 	
 	void castSpell(const spells::Caster * caster, SpellID spellID, const int3 &pos) override;
 	void useChargeBasedSpell(const ObjectInstanceID & heroObjectID, const SpellID & spellID);
+	std::function<void()> prepareChargeBasedSpellCompletion(const ObjectInstanceID & heroObjectID, const SpellID & spellID);
 
 	/// Returns hero that is currently visiting this object, or nullptr if no visit is active
 	const CGHeroInstance * getVisitingHero(const CGObjectInstance *obj);

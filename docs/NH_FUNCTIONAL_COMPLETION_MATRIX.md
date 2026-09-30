@@ -14,6 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Arcane Memory checkpoint: reviewed source builds and passes nine feature cases
+plus two direct guards (11/11, zero skips). Exact equipped scroll provenance,
+permanent-source priority, reusable scroll retention, accepted completion and
+learned-spell persistence are exercised. Neutral Adventure acquisition policy
+is awaiting user clarification, so production activation remains planned and
+the positive fixtures explicitly enable it. No active-perk count increment.
+See UP-054 and the failure ledger for retry identities and final gate state.
+
+Adventure-effect audit (UP-056): five identities/acquisition paths exist,
+but all five retain missing canonical effect clauses. Summon Boat still creates
+boats at higher mastery; Water Walk end-day land legality is unestablished;
+Town Portal still allows selected towns and fixed Movement expenditure;
+Fly protected-barrier enforcement is unestablished; Dimension Door still lacks
+visible range-eight/full-Movement/protected-barrier enforcement. Shared 1.5x
+Water Walk/Fly step costs already exist. These are missing Phase 1 effects,
+not coverage established by the 5/5 acquisition count. Next: shared Town Portal
+policy, preserving deterministic existing distance unless evidence demands more.
+
 Arcane Reservoir checkpoint: the Expert Wisdom perk adds 25 Maximum Normal
 Spell Points after Knowledge/Intelligence rounding, without filling new
 capacity or changing Buffer. Existing authoritative rank-loss reconciliation
@@ -135,7 +153,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 58/67 | 9 missing/inactive; Blink is the newest identity. Chaos is 4/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
-| Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. Existing spell effects still need their own effect-completeness audit; rendered/playable purchase remains unverified. |
+| Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
 | Creature base-line Leadership requirements | 64/64 | Data coverage only; individual creature mechanics remain unaudited. |
@@ -278,7 +296,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 1/9 | Blinkmaster opens ordinary Advanced progression; nine perks remain planned. |
 | Spellcraft | 3/0 | 2/8 | Spell Penetration opens normal Advanced progression. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold and scales Spell Power-derived terms without moving fixed bases; its Advanced selection opens Expert progression. Basic/Advanced/Expert rank efficiency is 110/120/130% under saved v3 rules. |
-| Wisdom | 3/0 | 6/4 | Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Four perks remain missing; Arcane Memory is next. Broader interactions and playable acceptance remain open. |
+| Wisdom | 3/0 | 6/4 | Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. Three other perks remain missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 4/6 | Six perks missing |
 | Logistics | 3/0 | 3/7 | Seven perks missing |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |

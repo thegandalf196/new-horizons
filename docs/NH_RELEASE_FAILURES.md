@@ -2,6 +2,81 @@
 
 ## Purpose
 
+### 2026-09-30 Arcane Memory Tome fixture constness repair
+
+Initial focused test build 22635 fails in the new
+`BookAndTomeSpellSourcesLeaveMatchingScrollsUnused` case at
+`NewHorizonsMagicStateTest.cpp:762`: `getArt` returns a read-only artifact,
+so attaching a test-only matching School bonus directly discards constness.
+Use the authoritative map's mutable `getArtifactInstance` lookup for that
+same instance ID. Do not weaken production constness or change shipped Tome
+school data to accommodate a synthetic source-priority fixture. Preserve
+`ArcaneMemory-initial-test-build.log`; repaired build/native evidence is
+pending. The repaired production client build 57887 already succeeds.
+
+Independent review also found and repaired the initial adventure source-scan
+ordering defect before native verification: Town Portal may teach its own
+spell at a destination Guild before completion. Capture the source before
+effects, settle the exact instance only after success, and require discharge
+before Arcane Memory learning. The focused Guild/query regression remains
+pending, not implicitly established by source review or compilation.
+
+Test retry 28356 succeeds. First native run 94687 executes the four new cases
+plus two direct saved-profile/adventure guards: 4/6 pass, zero skips, binary
+`49c29fdd1feeba5b216e9092e6ae21d153187ac5d5af609f9c46044b9cf8d42c`.
+Reports `NewHorizonsArcaneMemory-initial-focused.log`/`.xml` are preserved.
+The accepted scroll neither learned nor disappeared; the priority fixture's
+second Haste action was rejected. Source tracing identifies a root design
+assumption error: ordinary scrolls are reusable, with no charge cost, while
+Arcane Memory's canonical rule requires learning from an accepted scroll cast
+and says nothing about consuming it. The helper wrongly treated such a scroll
+as a permanent non-scroll source and returned without learning. Correct source
+classification and retain the scroll; preserve discharge only for actually
+charged artifacts. Repair fixture consumption assertions, investigate the
+Haste rejection, and keep this run's evidence rather than relaxing legality.
+Native/build retry evidence remains pending.
+
+Reusable-scroll client retry 56261 succeeds. Test retry 4749 fails in the
+Town Portal fixture because `MAGIC_SCHOOL_LEVEL` is not a Bonus type; use the
+existing `MAGIC_SCHOOL_SKILL` bonus. Preserve
+`ArcaneMemory-reusable-test-retry2-build.log`. Review additionally identifies
+an impossible fixture expectation: current casting rules reject an unknown
+scroll spell below the required School rank, while a map ban does not remove
+direct scroll sources. Correct those assertions without changing casting
+policy. Adventure Mana/day/retained-scroll assertions alone do not prove the
+new completion hook; add a small forwarding counting server environment to
+exercise actual success, effects failure, pending query and cancellation.
+Neutral Adventure permanent acquisition remains a separate policy question.
+
+Test retry 37686 succeeds. Native retry 2974 runs nine new cases and two guards:
+8/11 pass, zero skips, binary
+`9b5402487c70305226128901da8d5b125e12e594dcc60d1c41bce945118724d9`.
+Preserve `NewHorizonsArcaneMemory-reusable-retry1-focused.log`/`.xml`.
+The remaining three failures share scroll source identity: `CMap::createArtifact`
+stores a scroll SPELL bonus with `ARTIFACT_INSTANCE` source but a typed
+`ArtifactID::SPELL_SCROLL` source ID, not the scroll's actual instance ID.
+The shared getter returns that obsolete type token, so settlement can resolve
+unrelated gear or no artifact. Normalize only that precise legacy scroll source
+in `CGHeroInstance::getSourcesForSpell` to matching equipped scroll instance
+IDs, deduplicated. Preserve other bonus sources and backpack exclusion; do not
+rewrite serialized bonuses or only fix newly created scrolls. Existing tests'
+explicit instance-ID assertions are valid regressions, not assertions to relax.
+The bounded getter repair builds both client and test targets (4257).
+Native retry 53830 passes 11/11, zero skips, binary
+`7efa81f126a237daaf9a48bb0e47382b1de7aa9e26036a8e2de86df7f272b9bc`.
+Retain `NewHorizonsArcaneMemory-provenance-retry2-focused.log`/`.xml`.
+The first failed runs remain above. The generic Town Portal completion case
+uses a forced legacy selection branch, not canonical nearest-town acceptance.
+Neutral Adventure acquisition policy remains unanswered; production activation
+is withheld, with positive feature cases explicitly enabling test-only settings.
+The final dormant-registry build 89441 succeeds; native 18008 passes 11/11,
+zero skips, on `1928e181a8d676e4e9fcf8a0c5dceff75c7c8c0f194de4d963fb6f1f1d7f7002`.
+Retain `NewHorizonsArcaneMemory-dormant-policy-final-focused.log`/`.xml`.
+74 offline cases and mirror/diff checks pass. Production stays planned;
+the positive fixture override does not alter other perk entries. Independent
+review finds no blocker. This closes the focused repair, not the unresolved
+acquisition choice, broader interactions or playable acceptance.
+
 ### 2026-09-30 Deep Knowledge probability saturation review
 
 Independent source review found a valid-input regression before native runs:
