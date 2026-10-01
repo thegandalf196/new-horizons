@@ -58,6 +58,18 @@ int estateNetworkWeeklyIncome(const PlayerState & state)
 
 	return resourcesPerHolder * activeHolders;
 }
+
+int financierWeeklyIncome(const PlayerState & state)
+{
+	const TResourceCap currentGold = std::max<TResourceCap>(0, state.resources[EGameResID::GOLD]);
+	const int interestPerHolder = static_cast<int>(std::min<TResourceCap>(1000, currentGold / 100));
+	int activeHolders = 0;
+	for(const auto * hero : state.getHeroes())
+		if(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.financier"))
+			++activeHolders;
+
+	return interestPerHolder * activeHolders;
+}
 }
 
 NewTurnProcessor::NewTurnProcessor(CGameHandler * gameHandler)
@@ -830,20 +842,22 @@ NewTurn NewTurnProcessor::generateNewTurnPack()
 			n.playerIncome[player.first] = generatePlayerIncome(player.first, newWeek, n.newHorizonsMysticPondResults);
 	}
 
-	// Estate Network is a fixed weekly resource grant. Apply it after regular
-	// income, handicap, and AI income adjustments so the perk's amount is exact.
-	// The initial turn skips ordinary daily income, but day zero -> one is still
-	// the start of the first week and must receive this weekly effect.
+	// Estate Network and Financier are fixed weekly grants. Apply them after
+	// regular income, handicap, and AI income adjustments so their amounts are
+	// exact. The initial turn skips ordinary daily income, but day zero -> one is
+	// still the start of the first week and must receive these weekly effects.
 	if(newWeek)
 	{
 		for(const auto & [playerID, state] : gameHandler->gameState().players)
 		{
 			const int weeklyResources = estateNetworkWeeklyIncome(state);
-			if(weeklyResources == 0)
-				continue;
+			if(weeklyResources != 0)
+			{
+				n.playerIncome[playerID][EGameResID::WOOD] += weeklyResources;
+				n.playerIncome[playerID][EGameResID::ORE] += weeklyResources;
+			}
 
-			n.playerIncome[playerID][EGameResID::WOOD] += weeklyResources;
-			n.playerIncome[playerID][EGameResID::ORE] += weeklyResources;
+			n.playerIncome[playerID][EGameResID::GOLD] += financierWeeklyIncome(state);
 		}
 	}
 

@@ -14,6 +14,11 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-106 Financier is in the weekly income processor and independently source-
+reviewed with no blocker. Build71297 and a legal-offer/actual-resource fixture
+are pending. Registration remains planned and coverage154/310 unchanged; a
+source edit alone does not establish the principal weekly payout path.
+
 Current verified checkpoint: UP-102 Roadmaster and Wayfarer are active. The
 shared rational movement formula applies the terrain cap after Pathfinding and
 the extra road reduction before one final ceiling. TurnInfo caches saved active
