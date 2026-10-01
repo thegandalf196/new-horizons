@@ -14,6 +14,20 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-080 Fortune's Favor is source/native verified. Accepted Luck selection,
+rank changes and reconstruction derive exactly one permanent +25
+LUCKY_STRIKE_DAMAGE_PERCENTAGE bonus from existing saved perk state; no polling,
+additional combat state or new damage formula. Positive Lucky Strikes gain
++0.25x; ordinary and negative damage remain unchanged. Shared expected-damage
+calculation agrees on detached AI units. Both targets build56878 exit0;
+native69200 passes4/4 (three new cases plus ordinary Luck-rank regression)
+with zero skips in1.398s, reports `UP080-final.log`/`.xml`.
+Binary SHA-256 `08679d27b7f2e6055824309b8aca67e7133233b7739e2c4c6428b3703b714e04`.
+Data/inventory19/19 pass. Coverage136→137 active perks, planned174→173; Luck1/9
+active/planned, opening normal Advanced progression. Save roundtrips, explicit
+ranged/retaliation/reaction combinations and wider Sylvan coexistence remain
+Phase2; no art approval or playable promotion is implied.
+
 UP-078 Veteran is source/native verified. At genuine activation start the shared
 helper consumes actual physical creature HP-loss history and restores floor15%,
 capped to surviving wounds. Temporary/Guardian absorption, magical damage,
@@ -447,7 +461,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 136/310 | 174 planned; Veteran is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 137/310 | 173 planned; Fortune's Favor is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -474,8 +488,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 136
-active perks, leaving nine ranks and 174 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 137
+active perks, leaving nine ranks and 173 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -600,7 +614,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
 | Estates | 3/0 | 2/8 | Tax Collector and Estate Network supply working Basic/Advanced perks and open ordinary Expert-rank progression. Daily income, weekly Wood/Ore and AI receipt/selection are native verified. |
 | Learning | 3/0 | 2/8 | Mentor and Quick Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
-| Luck | 3/0 | 0/10 | Progression blocked |
+| Luck | 3/0 | 1/9 | Fortune's Favor source/native verified; Advanced progression open |
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
@@ -612,9 +626,9 @@ interactions, and rendered/playable acceptance remain separate.
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
-rank. Five Skills therefore cannot normally advance beyond Basic because they
+rank. Four Skills therefore cannot normally advance beyond Basic because they
 have no active Basic perk: War Machines, Diplomacy,
-Luck, Divine Mandate, and Elemental Rebirth. Tax Collector opens Estates and
+Divine Mandate, and Elemental Rebirth. Fortune's Favor opens Luck; Tax Collector opens Estates and
 Mentor opens Learning. Backstab now
 opens the Shroud's ordinary Advanced-rank progression; Blinkmaster opens Chaos.
 

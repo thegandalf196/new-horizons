@@ -5774,7 +5774,7 @@
 								"requires": "basic",
 								"description": "Positive Lucky Strike damage multipliers increase by +0.25x.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Positive Lucky Strike damage multipliers increase by +0.25x."
 								}
 							},

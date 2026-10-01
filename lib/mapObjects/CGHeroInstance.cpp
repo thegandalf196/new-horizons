@@ -930,6 +930,14 @@ void CGHeroInstance::updateSkillBonus(const SecondarySkill & which, int val)
 		for(const auto& b : skillBonus)
 			addNewBonus(std::make_shared<Bonus>(*b));
 	}
+
+	const int luckSkillIndex = SecondarySkill::decode("new-horizons:luck");
+	if(luckSkillIndex >= 0 && which == SecondarySkill(luckSkillIndex)
+		&& hasActivePerk("new-horizons:luck", "new-horizons:luck.fortuneSFavor"))
+	{
+		addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE, BonusSource::SECONDARY_SKILL, 25, BonusSourceID(which)));
+	}
 }
 
 void CGHeroInstance::setPropertyDer(ObjProperty what, ObjPropertyID identifier)
@@ -2098,6 +2106,12 @@ int CGHeroInstance::getNewHorizonsNecromancyRank() const
 void CGHeroInstance::applyPerkSelection(const newHorizonsHeroes::PerkSelection & selection)
 {
 	perkState.select(selection.skillId, selection.perkId, getPerkSkillRank(selection.skillId));
+	if(selection.skillId == "new-horizons:luck")
+	{
+		const int luckSkillIndex = SecondarySkill::decode(selection.skillId);
+		if(luckSkillIndex >= 0)
+			updateSkillBonus(SecondarySkill(luckSkillIndex), getPerkSkillRank(selection.skillId));
+	}
 	// Perks can affect derived capacity without adding a bonus node.
 	spellPointCapacityRevision.reset();
 }

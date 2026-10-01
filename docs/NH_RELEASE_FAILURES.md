@@ -2,6 +2,18 @@
 
 ## Purpose
 
+### 2026-10-01 Fortune's Favor — detached-unit test pointer comparison
+
+UP080 strengthened its AI test to use `HypotheticBattle::getForUpdate` units
+instead of live stacks. Both-target build7003 failed because GTest compared
+unrelated derived pointer types (`StackWithBonuses*` and `CStack*`) directly.
+Log: `build/new-horizons-linux/UP080-final-build.log`. Compare both through their
+common `const battle::Unit*` interface; do not remove the detached-unit assertion
+or revert to a live-unit forecast. Repaired both-target56878 exits0; native69200
+passes4/4 with zero skips in1.398s (`UP080-final.log`/`.xml`). Earlier build2508 and native48561 passed four tests, but that AI
+case did not yet establish detached bonus-bearer parity. Production compilation
+and perk logic were not implicated by this fixture-only failure.
+
 ### 2026-10-01 Veteran — AI Guardian Spirit absorption
 
 Independent source review finds a blocking integration defect before native
