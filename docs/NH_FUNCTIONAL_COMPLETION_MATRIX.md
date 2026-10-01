@@ -14,6 +14,19 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Current next-item audit: UP-101 Quartermaster is being mapped as an independent
+unblocked candidate. Required coverage is an immediate genuine extra activation
+with half output, not a same-activation second attack. Runtime and consumer maps
+must cover Ballista, Tent and Catapult paths, activation lifecycle and once-per-
+combat Ammo Cart survival. No new active count or execution evidence yet.
+Maps completed: Tent output must be halved before missing-HP cap; Catapult uses
+the authoritative Lua callback's structural conversion; Ballista uses shared
+damage actual/forecast. Side-owned versioned extra-activation state avoids
+depending on omitted CUnitState binary fields. Root found that current
+afterGetsTurn does not generally reset moved/wait flags: implementation must
+refresh those explicitly for the new genuine reason, preserve continuations and
+exclude Morale recursion. The next step is implementation, not repeated mapping.
+
 Next-item audit: UP-100 Field Workshop remains planned. Independent maps identify
 shared Tent target/output admission, a new structural repair update and cached
 wall-sprite refresh as required production seams. Destroyed machine/fortification
