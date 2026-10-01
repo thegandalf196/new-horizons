@@ -104,6 +104,10 @@ public:
 	{
 		return subject->getBattle()->getSylvanLuckState(side);
 	}
+	AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override
+	{
+		return subject->getBattle()->getAdverseCombatRerollState(side);
+	}
 	LuckRollRules getLuckRollRules() const override { return subject->getBattle()->getLuckRollRules(); }
 
 	const IBonusBearer * getBonusBearer() const override;

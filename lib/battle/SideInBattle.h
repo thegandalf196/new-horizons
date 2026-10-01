@@ -17,6 +17,7 @@
 #include "HeroCommand.h"
 #include "FocusFireState.h"
 #include "SylvanLuckState.h"
+#include "AdverseCombatRerollState.h"
 #include "AlternatingHeroActionState.h"
 #include "HeroActionAllowanceState.h"
 #include "RelentlessAssaultState.h"
@@ -151,6 +152,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// Gross Mana paid for accepted hero spells and accepted Counterspell wards.
 	// Separate Mana refunds and drains do not change this battle-long ledger.
 	int64_t acceptedHeroManaSpent = 0;
+	// Expert Luck's once-per-combat adverse stochastic reroll belongs to the
+	// harmed side and is independent of attack-strike fortune snapshots.
+	AdverseCombatRerollState adverseCombatReroll;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -397,6 +401,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			throw std::runtime_error("Cannot discard battle hero Mana expenditure");
 		else if(!h.saving)
 			acceptedHeroManaSpent = 0;
+		h & adverseCombatReroll;
 	}
 
 	void clearMetamagicSequence()

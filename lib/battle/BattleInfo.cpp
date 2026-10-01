@@ -121,6 +121,13 @@ SideInBattle & BattleInfo::getSide(BattleSide side)
 	return sides.at(side);
 }
 
+void BattleInfo::setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state)
+{
+	if(state.used && !state.enabled)
+		throw std::runtime_error("Adverse combat reroll expenditure without an enabled perk");
+	sides.at(side).adverseCombatReroll = state;
+}
+
 const AlternatingHeroActionState & BattleInfo::getWarcastingState(BattleSide side) const
 {
 	static const AlternatingHeroActionState empty;
@@ -404,6 +411,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 		currentBattle->sides[i].init(heroes[i], armies[i], i == BattleSide::RIGHT_SIDE ? town : nullptr);
 		if(heroes[i])
 		{
+			currentBattle->sides[i].adverseCombatReroll.enabled = heroes[i]->hasActivePerk(
+				"new-horizons:luck", "new-horizons:luck.twistOfFate");
 			auto & fortune = currentBattle->sides[i].sylvanLuck;
 			fortune.secondChance = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.secondChance");
 			fortune.gambler = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.gambler");

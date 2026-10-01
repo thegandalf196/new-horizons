@@ -133,6 +133,7 @@ public:
 	void visitEndAction(EndAction & pack) override;
 	void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) override;
 	void visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack) override;
+	void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) override;
 	void visitSetRewardableConfiguration(SetRewardableConfiguration & pack) override;
 	void visitBattleSetStackProperty(BattleSetStackProperty & pack) override;
 	void visitBattleNextRound(BattleNextRound & pack) override;
@@ -158,4 +159,5 @@ public:
 	void visitCatapultAttack(CatapultAttack & pack) override;
 	void visitBattleStackMoved(BattleStackMoved & pack) override;
 	void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) override;
+	void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) override;
 };

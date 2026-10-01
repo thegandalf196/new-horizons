@@ -174,6 +174,11 @@ public:
 	{
 		return delegate.rollCombatAbility(battle, actor, percentageChance);
 	}
+	bool resolveAdverseCombatRoll(const BattleID & battleID, BattleSide affectedSide,
+		bool stochastic, bool adverseOnTrue, const std::function<bool()> & draw) override
+	{
+		return delegate.resolveAdverseCombatRoll(battleID, affectedSide, stochastic, adverseOnTrue, draw);
+	}
 
 	void apply(CPackForClient & pack) override
 	{

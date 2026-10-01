@@ -2214,6 +2214,16 @@ void GameStatePackVisitor::visitBattleDemonicGatingStateChanged(BattleDemonicGat
 		battle->getStack(*pack.masterGateContinuationUnitId)->movedThisRound = false;
 }
 
+void GameStatePackVisitor::visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Missing battle for adverse combat reroll state update");
+	pack.validateShape();
+	pack.validateTransitionFrom(battle->getAdverseCombatRerollState(pack.side));
+	battle->setAdverseCombatRerollState(pack.side, pack.state);
+}
+
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
 	if(pack.paidHeroManaCost < 0 || pack.paidCounterspellManaCost < 0
@@ -2728,6 +2738,15 @@ void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderSta
 	else if(battleState.getActiveOrder(pack.side) != HeroCommand::NONE)
 		throw std::runtime_error("Canonical Hero Order state update would clear an active Order");
 	battleState.setHeroOrderState(pack.side, pack.state);
+}
+
+void BattleStatePackVisitor::visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack)
+{
+	if(pack.battleID != battleState.getBattleID())
+		throw std::runtime_error("Adverse combat reroll state update targets another battle");
+	pack.validateShape();
+	pack.validateTransitionFrom(battleState.getAdverseCombatRerollState(pack.side));
+	battleState.setAdverseCombatRerollState(pack.side, pack.state);
 }
 
 void BattleStatePackVisitor::visitCatapultAttack(CatapultAttack & pack)

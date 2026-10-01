@@ -50,6 +50,39 @@ BattleProcessor::BattleProcessor(CGameHandler * gameHandler)
 
 BattleProcessor::~BattleProcessor() = default;
 
+bool BattleProcessor::resolveAdverseCombatRoll(const BattleID & battleID, BattleSide affectedSide,
+	bool stochastic, bool adverseOnTrue, const std::function<bool()> & draw)
+{
+	const auto * battle = gameHandler->gameState().getBattle(battleID);
+	if(!battle)
+		throw std::runtime_error("Adverse combat roll references a missing battle");
+	const bool firstResult = draw();
+	if(affectedSide != BattleSide::ATTACKER && affectedSide != BattleSide::DEFENDER)
+		return firstResult;
+	auto state = battle->getAdverseCombatRerollState(affectedSide);
+	if(!state.consume(stochastic, firstResult == adverseOnTrue))
+		return firstResult;
+
+	BattleAdverseRerollStateChanged changed;
+	changed.battleID = battleID;
+	changed.side = affectedSide;
+	changed.state = state;
+	gameHandler->sendAndApply(changed);
+
+	BattleLogMessage feedback;
+	feedback.battleID = battleID;
+	MetaString line;
+	if(const auto * hero = battle->getSideHero(affectedSide))
+	{
+		line.appendTextID(hero->getNameTextID());
+		line.appendRawString(": ");
+	}
+	line.appendRawString("Twist of Fate rerolls an adverse combat result once. The reroll is final.");
+	feedback.lines.push_back(std::move(line));
+	gameHandler->sendAndApply(feedback);
+	return draw();
+}
+
 void BattleProcessor::engageIntoBattle(PlayerColor player)
 {
 	//notify interfaces

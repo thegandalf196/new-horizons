@@ -24,6 +24,8 @@ public:
 
 	vstd::RNG * getRNG() override;
 	bool rollCombatAbility(const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance) override;
+	bool resolveAdverseCombatRoll(const BattleID & battleID, BattleSide affectedSide,
+		bool stochastic, bool adverseOnTrue, const std::function<bool()> & draw) override;
 	std::function<void()> prepareAdventureSpellCastCompletion(const spells::Caster * caster, SpellID spell) override;
 
 	void apply(CPackForClient & pack) override;

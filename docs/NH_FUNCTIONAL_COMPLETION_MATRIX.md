@@ -14,6 +14,20 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-089 Twist of Fate infrastructure is source/native verified, not a completed
+perk. Independent side allowance, append-only save/packet287, monotonic state
+application, authoritative one-final-redraw resolver, spell callback bridge and
+detached nested-branch isolation are implemented. Both-target1364 exits0
+(`UP089-infrastructure-build.log`); native73236 passes32/32, zero skips in8.536s
+(`UP089-infrastructure.log`/`.xml`), six new infrastructure cases plus26 Luck
+regressions. Binary SHA-256
+`adefcb23c6001b687c0f425d29dafbc69ff9fbe749edbb31063a5c86275b08b8`.
+Data/inventory19/19 pass; independent review has no blocker. Registration remains
+planned until actual Luck/Morale/hostile-proc/resistance interception and minimum
+AI forecasts are wired and verified. Coverage stays141/310,169 planned; Luck5/5.
+Deferred direct assertions: invalid-side resolver fallback and malformed current
+state decoding. No playable promotion or purpose-art approval is implied.
+
 UP-087 Chain of Fortune is source/native verified. A positive friendly strike
 arms one+1 Luck benefit for the next different friendly stack's attack. Same
 source follow-ups retain it; unused benefits carry across rounds. Consumption

@@ -287,6 +287,16 @@ public:
 	int32_t getBloodrageDamagePercent(BattleSide side) const override;
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return fortuneStates.at(side); }
 	void setSylvanLuckState(BattleSide side, const SylvanLuckState & state) { fortuneStates.at(side) = state; }
+	AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override
+	{
+		return adverseRerollStates.at(side);
+	}
+	void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override
+	{
+		if(state.used && !state.enabled)
+			throw std::runtime_error("Adverse combat reroll expenditure without an enabled perk");
+		adverseRerollStates.at(side) = state;
+	}
 	void endFortuneActivation() { for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER}) fortuneStates.at(side).endActivation(); }
 	LuckRollRules getLuckRollRules() const override { return fortuneRollRules; }
 
@@ -377,6 +387,7 @@ private:
 	BattleSideArray<int32_t> bloodrageDamagePercents;
 	std::set<uint32_t> bloodrageDestroyedUnits;
 	BattleSideArray<SylvanLuckState> fortuneStates;
+	BattleSideArray<AdverseCombatRerollState> adverseRerollStates;
 	LuckRollRules fortuneRollRules;
 
 	class HypotheticServerCallback : public ServerCallback

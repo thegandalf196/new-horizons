@@ -327,4 +327,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetNewHorizonsAdventureSpellUnlock>(284);
 	s.template registerType<UnlockNewHorizonsAdventureSpell>(285);
 	s.template registerType<SetNewHorizonsLearningMentorState>(286);
+	s.template registerType<BattleAdverseRerollStateChanged>(287);
 }

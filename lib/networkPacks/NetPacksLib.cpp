@@ -502,6 +502,11 @@ void BattleDemonicGatingStateChanged::visitTyped(ICPackVisitor & visitor)
 	visitor.visitBattleDemonicGatingStateChanged(*this);
 }
 
+void BattleAdverseRerollStateChanged::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleAdverseRerollStateChanged(*this);
+}
+
 void EndAction::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitEndAction(*this);

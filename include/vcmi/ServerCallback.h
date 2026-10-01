@@ -11,6 +11,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 #include "scripting/ApiTags.h"
 
@@ -25,6 +26,7 @@ namespace battle
 }
 
 class IBattleInfoCallback;
+class BattleID;
 enum class BattleSide : int8_t;
 
 struct CPackForClient;
@@ -48,6 +50,13 @@ public:
 
 	/// Rolls a chance-based combat ability of the given unit
 	virtual bool rollCombatAbility(const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance) = 0;
+	/// Resolve a classified adverse result for its affected army. Older callbacks
+	/// keep a single draw; authoritative battle callbacks may spend a reroll.
+	virtual bool resolveAdverseCombatRoll(const BattleID &, BattleSide, bool, bool,
+		const std::function<bool()> & draw)
+	{
+		return draw();
+	}
 
 	virtual void apply(CPackForClient & pack) = 0;
 

@@ -633,6 +633,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		meta.sequence = realBattle->getBattle()->getMetamagicSequenceSpells(side);
 		focusFireStates[side] = realBattle->battleGetFocusFireState(side);
 		fortuneStates[side] = realBattle->getBattle()->getSylvanLuckState(side);
+		adverseRerollStates[side] = realBattle->getBattle()->getAdverseCombatRerollState(side);
 		bloodrageRanks[side] = realBattle->getBattle()->getBloodrageRank(side);
 		bloodrageDamagePercents[side] = realBattle->getBattle()->getBloodrageDamagePercent(side);
 	}

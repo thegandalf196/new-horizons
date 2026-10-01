@@ -12,6 +12,7 @@
 #include "../../lib/constants/EntityIdentifiers.h"
 #include "../../lib/constants/Enumerations.h"
 #include "../../lib/battle/BattleSide.h"
+#include <functional>
 
 class CGHeroInstance;
 class CGTownInstance;
@@ -70,6 +71,10 @@ public:
 	/// Restart ongoing battle and end previous battle
 	void restartBattle(const BattleID & battleID, const CArmedInstance *army1, const CArmedInstance *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, const BattleLayout & layout, const CGTownInstance *town);
 	void tryLearnEnemySpellsPreBattle(const BattleInfo * battle, BattleSide side);
+	/// Resolve one classified roll, spending the harmed army's allowance before
+	/// a single final redraw. Deterministic and non-adverse results never spend it.
+	bool resolveAdverseCombatRoll(const BattleID & battleID, BattleSide affectedSide,
+		bool stochastic, bool adverseOnTrue, const std::function<bool()> & draw);
 
 	/// Processing of incoming battle action netpack
 	bool makePlayerBattleAction(const BattleID & battleID, PlayerColor player, const BattleAction & ba);

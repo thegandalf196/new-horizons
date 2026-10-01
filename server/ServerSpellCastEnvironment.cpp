@@ -11,6 +11,7 @@
 #include "ServerSpellCastEnvironment.h"
 
 #include "CGameHandler.h"
+#include "battles/BattleProcessor.h"
 #include "queries/QueriesProcessor.h"
 #include "queries/CQuery.h"
 
@@ -60,6 +61,12 @@ std::function<void()> ServerSpellCastEnvironment::prepareAdventureSpellCastCompl
 		return gh->prepareChargeBasedSpellCompletion(hero->id, spell);
 
 	return {};
+}
+
+bool ServerSpellCastEnvironment::resolveAdverseCombatRoll(const BattleID & battleID, BattleSide affectedSide,
+	bool stochastic, bool adverseOnTrue, const std::function<bool()> & draw)
+{
+	return gh->battles->resolveAdverseCombatRoll(battleID, affectedSide, stochastic, adverseOnTrue, draw);
 }
 
 void ServerSpellCastEnvironment::apply(CPackForClient & pack)

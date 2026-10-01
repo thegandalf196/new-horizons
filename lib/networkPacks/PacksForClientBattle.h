@@ -17,6 +17,7 @@
 #include "BattleChanges.h"
 #include "PacksForClient.h"
 #include "../battle/BattleAction.h"
+#include "../battle/AdverseCombatRerollState.h"
 #include "../battle/BattleInfo.h"
 #include "../battle/BattleHexArray.h"
 #include "../battle/BattleUnitTurnReason.h"
@@ -120,6 +121,47 @@ struct DLL_LINKAGE BattleDemonicGatingStateChanged : public CPackForClient
 			masterGateUsed = false;
 			masterGateContinuationUnitId.reset();
 		}
+	}
+};
+
+/// Replicates one authorized consumption of a side's adverse combat reroll.
+/// The perk is enabled in the battle snapshot; this pack can only mark its
+/// single available allowance as used.
+struct DLL_LINKAGE BattleAdverseRerollStateChanged : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	AdverseCombatRerollState state;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	void validateShape() const
+	{
+		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			|| !state.enabled || !state.used)
+			throw std::runtime_error("Invalid adverse combat reroll state update");
+	}
+
+	void validateTransitionFrom(const AdverseCombatRerollState & previous) const
+	{
+		validateShape();
+		// validateShape guarantees an enabled, spent snapshot. The only valid
+		// prior state is enabled: either the first consumption advances unused to
+		// used, or a replay repeats the already-used snapshot idempotently.
+		if(!previous.enabled)
+			throw std::runtime_error("Adverse combat reroll update enables or resets its allowance");
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_ADVERSE_COMBAT_REROLL))
+			throw std::runtime_error(h.saving
+				? "Cannot serialize adverse combat reroll update to an older format"
+				: "Cannot deserialize adverse combat reroll update from an older format");
+		h & battleID;
+		h & side;
+		h & state;
+		validateShape();
 	}
 };
 
