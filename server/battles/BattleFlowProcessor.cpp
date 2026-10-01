@@ -20,6 +20,7 @@
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -1859,20 +1860,42 @@ void BattleFlowProcessor::stackTurnTrigger(const CBattleInfoCallback & battle, c
 		}
 		if (st->hasBonusOfType(BonusType::FEARFUL))
 		{
-			int chance = st->valOfBonuses(BonusType::FEARFUL);
-			ObjectInstanceID opponentArmyID = battle.battleGetArmyObject(battle.otherSide(st->unitSide()))->id;
-			const auto affectedSide = battle.playerToSide(battle.battleGetOwner(st));
-			const auto drawFearful = [this, opponentArmyID, chance]()
+			const int chance = battle.battleGetFearChance(st);
+			const auto * controllerHero = battle.battleGetOwnerHero(st);
+			const bool fearlessCanceledFear = newHorizonsDiscipline::hasFearless(controllerHero)
+				&& chance <= 0 && st->valOfBonuses(BonusType::FEARFUL) > 0;
+			if(fearlessCanceledFear)
 			{
-				return gameHandler->randomizer->rollCombatAbility(opponentArmyID, chance);
-			};
-			const bool fearful = owner->resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), affectedSide,
-				chance > 0 && chance < 100, true, drawFearful);
+				BattleLogMessage feedback;
+				feedback.battleID = battle.getBattle()->getBattleID();
+				MetaString line;
+				if(controllerHero)
+				{
+					line.appendTextID(controllerHero->getNameTextID());
+					line.appendRawString(": ");
+				}
+				line.appendRawString("Discipline: Fearless protects ");
+				line.appendName(st->creatureId(), st->getCount());
+				line.appendRawString(" from a non-magical fear check.");
+				feedback.lines.push_back(std::move(line));
+				gameHandler->sendAndApply(feedback);
+			}
+			else
+			{
+				ObjectInstanceID opponentArmyID = battle.battleGetArmyObject(battle.otherSide(st->unitSide()))->id;
+				const auto affectedSide = battle.playerToSide(battle.battleGetOwner(st));
+				const auto drawFearful = [this, opponentArmyID, chance]()
+				{
+					return gameHandler->randomizer->rollCombatAbility(opponentArmyID, chance);
+				};
+				const bool fearful = owner->resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), affectedSide,
+					chance > 0 && chance < 100, true, drawFearful);
 
-			if(fearful)
-			{
-				bte.effect = BonusType::FEARFUL;
-				gameHandler->sendAndApply(bte);
+				if(fearful)
+				{
+					bte.effect = BonusType::FEARFUL;
+					gameHandler->sendAndApply(bte);
+				}
 			}
 		}
 		BonusList bl = *(st->getBonuses(Selector::type()(BonusType::ENCHANTER)));

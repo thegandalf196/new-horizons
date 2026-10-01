@@ -24,6 +24,7 @@
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsShroud.h"
 #include "NewHorizonsWarcasting.h"
+#include "NewHorizonsDiscipline.h"
 #include "IGameSettings.h"
 #include "PossiblePlayerBattleAction.h"
 #include "../bonuses/BonusParameters.h"
@@ -695,6 +696,27 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 	}
 
 	return unit->moraleVal();
+}
+
+int CBattleInfoCallback::battleGetFearChance(const battle::Unit * affected) const
+{
+	if(!affected)
+		return 0;
+
+	const auto * controllerHero = battleGetOwnerHero(affected);
+	if(!newHorizonsDiscipline::hasFearless(controllerHero))
+		return affected->valOfBonuses(BonusType::FEARFUL);
+
+	// Fearless filters only the current native turn-start fear family. FEARFUL
+	// currently has no shared stacking key across source families, so the normal
+	// BonusList aggregation preserves spell and unclassified contributions.
+	const CSelector survivingFear = CSelector([](const Bonus * bonus)
+	{
+		return bonus->type == BonusType::FEARFUL
+			&& !(bonus->source == BonusSource::CREATURE_ABILITY && bonus->val > 0);
+	});
+	const auto bonuses = affected->getBonuses(survivingFear);
+	return bonuses ? bonuses->totalValue() : 0;
 }
 
 bool CBattleInfoCallback::battleShroudDeniesRetaliation(const BattleAttackInfo & attack) const

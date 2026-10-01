@@ -28,6 +28,11 @@ bool hasHoldFast(const CGHeroInstance * hero)
 	return hero && hero->hasActivePerk(std::string(SKILL), std::string(HOLD_FAST));
 }
 
+bool hasFearless(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL), std::string(FEARLESS));
+}
+
 Bonus holdFastMoraleFloorBonus()
 {
 	Bonus bonus(BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION, BonusType::MINIMUM_MORALE,

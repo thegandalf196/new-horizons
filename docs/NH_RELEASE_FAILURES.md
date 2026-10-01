@@ -2323,6 +2323,19 @@ Native26641 passes39/39 with no skips (`UP089-scripted-regressions.log`/`.xml`);
 the new scripted test file is not yet part of this candidate. Keep the failed
 attempt as interface-contract evidence rather than attributing it to gameplay.
 
+### UP-093 Fearless principal fixture perspective
+
+Both-target36048 and frozen follow-up build exit0. Principal46396 fails1/5:
+the detached controller fixture queried defender Fearless through Player0's
+visibility-limited callback. BattleProxy correctly withholds the opposing hero;
+live current-controller behavior and the other four cases pass. Preserve
+`UP093-principal.log`/`.xml`. Repair the fixture to use the protected controller's
+Player1 perspective and assert visible ownership. Do not remove hero visibility
+checks or weaken controller/branch-isolation assertions. Repaired24535 builds
+both targets; principal13527 passes5/5. Activated30226 passes27/27 with no skips
+in9.008s; data/inventory19/19 pass. The changed branch asserts ownership and that
+the opposing hero remains hidden, rather than requiring a hidden hero pointer.
+
 No credentials, workstation paths, purchaser content or raw research dumps in
 these notes. Keep historical failures even after repair, but label their scope.
 Do not claim the pipeline is future-proof: tests reduce recurrence and catch more

@@ -753,7 +753,7 @@
 					"requires": "advanced",
 					"description": "Friendly stacks are immune to explicitly non-magical fear effects.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly stacks are immune to explicitly non-magical fear effects."
 					}
 				},

@@ -304,7 +304,15 @@ float expectedTargetActivationValue(const battle::Unit * target,
 		bestActionValue = std::max(bestActionValue, static_cast<float>(AttackPossibility::calculateDamageReduce(
 			nullptr, friendly, static_cast<uint64_t>(attackDamage), damageCache, projectedBattle)));
 	}
-	return bestActionValue;
+
+	// Forecast the expected value of one activation after the same source-aware
+	// Fearless query used by the server's turn-start fear roll. This is a nominal
+	// chance estimate; seeded combat-ability bias and Twist of Fate history are
+	// not projected here.
+	const int fearChance = target->hasBonusOfType(BonusType::FEARFUL)
+		? std::clamp(projectedBattle->battleGetFearChance(target), 0, 100)
+		: 0;
+	return bestActionValue * static_cast<float>(100 - fearChance) / 100.0f;
 }
 
 float holdFastMoraleGrantValue(const CBattleInfoCallback & battle, const battle::Unit * original,

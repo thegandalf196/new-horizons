@@ -17,8 +17,10 @@ namespace newHorizonsDiscipline
 {
 inline constexpr const char * SKILL = "new-horizons:discipline";
 inline constexpr const char * HOLD_FAST = "new-horizons:discipline.holdFast";
+inline constexpr const char * FEARLESS = "new-horizons:discipline.fearless";
 
 DLL_LINKAGE bool hasHoldFast(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasFearless(const CGHeroInstance * hero);
 DLL_LINKAGE Bonus holdFastMoraleFloorBonus();
 DLL_LINKAGE bool isHoldFastMoraleFloorBonus(const Bonus * bonus);
 DLL_LINKAGE CSelector holdFastMoraleFloorBonusSelector();
