@@ -2,6 +2,17 @@
 
 ## Purpose
 
+### 2026-10-01 Financier — mastery namespace in fixture signature
+
+Both-target25033 exits1 (`UP106-fixture-build.log`): the new fixture uses
+`MasteryLevel` as a parameter type, but it is a namespace and its enum type is
+`MasteryLevel::Type`. Production and client link; the fixture owner is repairing
+the signature before retry. No assertions are weakened and no principal native
+pass or Financier activation is claimed. Use the declared enum type in helpers.
+Repaired both-target21766 exits0 (`UP106-fixture-repaired-build.log`). Principal
+39424 passes3/3 in58.108s; activated95915 passes15/15 in61.975s, zero skips.
+The same fixture assertions remain intact; data/inventory19/19 also pass.
+
 ### 2026-10-01 Quartermaster — terminal battle lifetime review
 
 Before compilation, independent review identified a new use-after-free risk:

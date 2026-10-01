@@ -14,10 +14,23 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-UP-106 Financier is in the weekly income processor and independently source-
-reviewed with no blocker. Build71297 and a legal-offer/actual-resource fixture
-are pending. Registration remains planned and coverage154/310 unchanged; a
-source edit alone does not establish the principal weekly payout path.
+UP-106 Financier is active and focused native verified. The existing weekly
+income event grants floor(max(0, pre-turn Gold)/100), capped1000 per selected
+active Expert holder, from the same treasury snapshot for every holder. Day0→1
+is a week start; ordinary days have no interest. No new saved counter or polling
+is introduced. Both-target21766 exits0 after the recorded fixture type repair;
+principal39424 passes3/3 in58.108s and activated95915 passes15/15 in61.975s,
+zero skips (`UP106-principal` and `UP106-activated` log/XML pairs). Legal offers,
+accepted selection, exact packet/treasury receipts, flooring/cap/noncompounding,
+ordinary daily income and actual callback resource receipt are covered.
+Data/inventory19/19 and module drift check pass. Coverage154→155/310;
+planned156→155; Estates3active/7planned. Binary SHA-256:
+`072c9e6ca11a5f0b5c956a0b00fe240039a77c8e44aeba92dc014c51399b47b9`.
+Independent production/fixture reviews have no blocker. Phase2 retains selected
+holder rank-loss/planned-snapshot runtime suppression, broad calendar/save/client
+fan-out interactions and strategic AI weekly forecasting. Generic offer UI is
+provisional; authored art Not done; no GUI or playable promotion. UP-107 Land
+Surveyor is the next independent missing item, currently read-only mapping.
 
 Current verified checkpoint: UP-102 Roadmaster and Wayfarer are active. The
 shared rational movement formula applies the terrain cap after Pathfinding and
@@ -812,7 +825,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 154/310 | 156 planned; Roadmaster and Wayfarer are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
+| Skill perks active | 155/310 | 155 planned; Financier is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -839,8 +852,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 154
-active perks, leaving nine ranks and 156 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 155
+active perks, leaving nine ranks and 155 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -963,7 +976,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Warcasting | 3/0 | 4/6 | Six perks missing |
 | Logistics | 3/0 | 5/5 | Five perks missing; Roadmaster/Wayfarer native verified |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
-| Estates | 3/0 | 2/8 | Tax Collector and Estate Network supply working Basic/Advanced perks and open ordinary Expert-rank progression. Daily income, weekly Wood/Ore and AI receipt/selection are native verified. |
+| Estates | 3/0 | 3/7 | Tax Collector, Estate Network and Financier supply working Basic/Advanced/Expert perks. Daily income, weekly Wood/Ore, weekly treasury interest and AI resource receipt/selection are native verified. |
 | Learning | 3/0 | 2/8 | Mentor and Quick Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
 | Luck | 3/0 | 6/4 | Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate source/native verified; four perks remain planned. |
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |

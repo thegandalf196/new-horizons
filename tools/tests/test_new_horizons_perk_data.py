@@ -24,6 +24,7 @@ ACTIVE_PERKS = {
     "new-horizons:spellcraft.grandFormula",
     "new-horizons:estates.taxCollector",
     "new-horizons:estates.estateNetwork",
+    "new-horizons:estates.financier",
     "new-horizons:learning.mentor",
     "new-horizons:learning.quickStudy",
     "new-horizons:chaosMagic.paradoxShield",

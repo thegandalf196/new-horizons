@@ -2631,7 +2631,7 @@
 					"requires": "expert",
 					"description": "At the start of each week, gain 1% of the current Gold treasury as interest, capped at 1,000 Gold.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "At the start of each week, gain 1% of the current Gold treasury as interest, capped at 1,000 Gold."
 					}
 				},
