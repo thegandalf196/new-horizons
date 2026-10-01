@@ -310,6 +310,8 @@ function Script:getDefenseIgnored(info, reducer, present, defense, targetDefense
 	if targetDefense and info.shooting and info.physicalDamage then
 		ignored = ignored + math.floor((info.rangedDefenseIgnoreBasisPoints or 0) * math.max(0, defense) / 10000)
 		ignored = ignored + math.floor((info.archeryRangedDefenseIgnorePercent or 0) * math.max(0, defense) / 100)
+		-- Piercing Bolts is a distinct War Machines contribution; it composes with the above.
+		ignored = ignored + math.floor((info.warMachinesPiercingBoltsDefenseIgnorePercent or 0) * math.max(0, defense) / 100)
 	end
 
 	-- Shock Assault is carried by the exact Charge attack selected by the

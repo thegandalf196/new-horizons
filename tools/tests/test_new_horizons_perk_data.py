@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:warMachines.surgeon",
+    "new-horizons:warMachines.piercingBolts",
     "new-horizons:spellcraft.arcaneFocus",
     "new-horizons:spellcraft.grandFormula",
     "new-horizons:estates.taxCollector",

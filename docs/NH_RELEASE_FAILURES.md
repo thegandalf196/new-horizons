@@ -2336,6 +2336,19 @@ both targets; principal13527 passes5/5. Activated30226 passes27/27 with no skips
 in9.008s; data/inventory19/19 pass. The changed branch asserts ownership and that
 the opposing hero remains hidden, rather than requiring a hidden hero pointer.
 
+### UP-096 focused integration findings
+
+Client70423 and combined42241 exit0. Principal18354 passes4/4. Activated21661
+runs11 cases,9 pass; two existing Archery fixtures throw before their damage
+assertions: ArmorPiercingAndHighArcModifyOnlyTheirAuthoredRangedTerms and
+NullkillerProjectsDeadeyeForOnlyTheFirstMarksmanStrike report "Earlier New
+Horizons perk tier is still required". Their setup directly selects Advanced/
+Expert perks without prerequisite earlier-tier perks; UP-096 does not change
+perk-selection validation. Retain the failed log/XML. Record coherent legal
+progression fixture repair for Phase2 rather than weakening the rule or calling
+this entire batch green. All4 new Piercing Bolts cases and4 Surgeon cases pass
+in this activated run; coverage of those paths is separate from the two failures.
+
 ### UP-095 physical-affliction foundation compile gate
 
 Repaired both-target67115 exits0. Principal native90035 exits139 in the first

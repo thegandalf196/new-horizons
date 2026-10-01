@@ -3540,7 +3540,7 @@
 								"requires": "advanced",
 								"description": "Ballista attacks ignore 50% of the target's Creature Defense.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Ballista attacks ignore 50% of the target's Creature Defense."
 								}
 							},

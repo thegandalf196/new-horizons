@@ -53,6 +53,7 @@ constexpr int SHOCK_ASSAULT_DEFENSE_IGNORE_PERCENT = 25;
 constexpr int EXECUTIONER_DAMAGE_PERCENT = 20;
 constexpr int ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT = 20;
 constexpr int BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT = 50;
+constexpr int PIERCING_BOLTS_DEFENSE_IGNORE_PERCENT = 50;
 
 LuckRollRules battleLuckRules(const IBattleInfo & battle)
 {
@@ -2239,6 +2240,13 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		payload.archeryIgnoreObstaclePenalty = true;
 	}
 	const auto * archeryHero = info.attacker ? battleGetOwnerHero(info.attacker) : nullptr;
+	if(info.physicalDamage && info.shooting && info.attacker && info.attacker->isBallista() && info.defender)
+	{
+		const auto * controllerHero = battleGetOwnerHero(info.attacker);
+		if(controllerHero && controllerHero->hasActivePerk(
+			"new-horizons:warMachines", "new-horizons:warMachines.piercingBolts"))
+			payload.warMachinesPiercingBoltsDefenseIgnorePercent = PIERCING_BOLTS_DEFENSE_IGNORE_PERCENT;
+	}
 	const bool ordinaryArcheryShot = info.physicalDamage && info.shooting
 		&& newHorizonsArchery::isOrdinaryPhysicalShooter(info.attacker) && archeryHero;
 	if(ordinaryArcheryShot)

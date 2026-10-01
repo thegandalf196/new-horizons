@@ -14,7 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-Current verified checkpoint: UP-095 War Machines Surgeon is active and Phase1
+Current verified checkpoint: UP-096 Piercing Bolts is active and Phase1 complete.
+Physical Ballista shots ignore50% target Creature Defense through the shared
+damage callback/script payload, using the current controlling hero's saved perk.
+Actual/UI/detached AI use the same calculation; hero PDR, Frenzy's own-Defense
+trade, melee, nonphysical and non-Ballista attacks are unaffected. Client70423
+and combined42241 exit0. Principal18354 passes4/4 in1.560s, zero skips. Activated
+21661 passes all4 new and4 Surgeon cases plus spell-like damage classification;
+the11-case batch has9 passes and2 existing Archery fixture prerequisite failures,
+recorded for Phase2, not described as a green batch. Data/inventory19/19 pass.
+Independent production/fixture reviews have no blocker. Binary:
+`bcd78c12f52089a2b50a24b8628c58eb82373dd4b9da4095d9446504b7cae427`.
+Coverage148→149/310, planned162→161; War Machines2/8. Phase2 retains actual
+controller-transfer interactions and legal prerequisite setup for the two named
+Archery tests. No new persistent state; existing perk saves apply. Art Not done,
+no GUI or playable promotion. Battlefield Medic is mapped; persistence after
+combat awaits clarification before implementation.
+
+Previous verified checkpoint: UP-095 War Machines Surgeon is active and Phase1
 complete. Actual friendly Tent HP gain removes exactly one shared physical
 affliction: Poison → Disease → Bleeding → other eligible groups by application
 order. Stored physical Poison uses authoritative unit-state updates; marked groups
@@ -705,7 +722,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 148/310 | 162 planned; Surgeon is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 149/310 | 161 planned; Piercing Bolts is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -732,8 +749,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 148
-active perks, leaving nine ranks and 162 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 149
+active perks, leaving nine ranks and 161 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -841,7 +858,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Armorer | 3/0 | 6/4 | Formation Fighting and Veteran have focused live/detached damage evidence. Four perks missing; Last Stand awaits design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
-| War Machines | 3/0 | 1/9 | Surgeon active with actual Tent, shared affliction lifecycle and AI evidence. Nine perks remain planned; ordinary Advanced progression opens. |
+| War Machines | 3/0 | 2/8 | Surgeon and Piercing Bolts have focused live/detached evidence. Eight perks remain planned; ordinary Expert progression opens. Battlefield Medic persistence awaits clarification. |
 | Discipline | 3/0 | 5/5 | Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless active with focused authoritative and detached evidence. Five perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
