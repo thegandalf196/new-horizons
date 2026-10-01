@@ -18,6 +18,7 @@ ACTIVE_PERKS = {
     "new-horizons:spellcraft.arcaneFocus",
     "new-horizons:spellcraft.grandFormula",
     "new-horizons:estates.taxCollector",
+    "new-horizons:learning.mentor",
     "new-horizons:chaosMagic.paradoxShield",
     "new-horizons:wisdom.meditation",
     "new-horizons:wisdom.manaConservation",

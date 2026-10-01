@@ -300,6 +300,7 @@ set(test_SRCS
 		server/queries/NewHorizonsMagicUniversityTest.cpp
 		server/queries/NewHorizonsAdventureSpellUnlockTest.cpp
 		server/NewHorizonsEconomyTest.cpp
+		server/NewHorizonsLearningMentorTest.cpp
 		server/NewHorizonsAstrologyTest.cpp
 		server/NewHorizonsLeadershipAdmissionTest.cpp
 		server/NewHorizonsBattleFormResultTest.cpp
@@ -433,6 +434,8 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Helpers/NewHorizonsMusterTest.cpp
 		nullkiller2/NewHorizonsAdventureSpellUnlockAITest.cpp
 		nullkiller2/NewHorizonsEstatesIncomeAITest.cpp
+		nullkiller2/NewHorizonsMarketSelectionAITest.cpp
+		nullkiller2/NewHorizonsLearningMentorAITest.cpp
 		nullkiller2/Helpers/TinyH3MDimensionDoorExplorationTest.cpp
 		nullkiller2/Pathfinding/AIPathNodePoolTest.cpp
 		nullkiller2/Pathfinding/ArmyLossTest.cpp

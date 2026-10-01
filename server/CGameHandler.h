@@ -336,6 +336,20 @@ public:
 
 	friend class CVCMIServer;
 private:
+	struct LearningMentorAward
+	{
+		ObjectInstanceID mentorId;
+		ObjectInstanceID recipientId;
+		int32_t mentorLevelAtMeeting = 0;
+		int32_t recipientLevelAtMeeting = 0;
+		int32_t week = -1;
+		TExpType experience = 0;
+	};
+
+	std::optional<LearningMentorAward> prepareLearningMentorAward(
+		const CGHeroInstance * first, const CGHeroInstance * second);
+	void grantLearningMentorAward(const std::optional<LearningMentorAward> & award);
+
 	void getVictoryLossMessage(PlayerColor player, const EVictoryLossCheckResult & victoryLossCheckResult, InfoWindow & out) const;
 	bool validateLeadershipStack(const CArmedInstance * destination, CreatureID creature, int64_t resultingCount);
 	bool validateLeadershipArmyAddition(const CGHeroInstance * destination, const CCreatureSet & incoming);

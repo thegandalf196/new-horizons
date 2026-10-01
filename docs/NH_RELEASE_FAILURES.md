@@ -2,6 +2,31 @@
 
 ## Purpose
 
+### 2026-10-01 Learning Mentor — fixture query header
+
+Native build `85716` fails because the new server fixture calls
+QueriesProcessor methods with only CGameHandler's forward declaration visible.
+Preserve `UP073-mentor-test-build.log`; include QueriesProcessor.h directly.
+Client build `93948` already passes. This is a fixture compile repair, not a
+production gameplay failure. Both-target retry `42943` fails in the AI loopback
+fixture because IClient is incomplete at inheritance. Include IClient.h directly;
+independent review also identified explicit QueriesProcessor.h and CHeroHandler.h
+requirements. Keep `UP073-mentor-final-build.log`; focused execution is pending.
+
+Repair build `58230` passes both targets. Native `85399` runs25 tests, zero
+skips:23 pass. Mentor's enemy gate assumes the generated enemy starts at zero
+Experience, but it starts at83; snapshot its initial XP and assert unchanged.
+The unrelated existing Muster perk fixture clears earlier selected tiers before
+selecting Advanced/Expert perks and throws the existing strict-tier validation.
+Record that fixture integration finding for Phase2, not as Mentor regression.
+Preserve `UP073-mentor-focused.log`/`.xml`; Mentor repair/retry remains pending.
+
+Fixture-repair both-target build81553 passes. Focused retry52779 passes24/24,
+zero skips, retaining all new Mentor/market cases and the economy/Muster weekly
+guards. `UP073-mentor-focused-repaired.log`/`.xml` are the first succeeding
+native evidence; the failing unrelated Muster higher-tier case remains recorded
+above, not silently claimed repaired. No production repair was needed.
+
 ### 2026-10-01 Grand Formula / Tax Collector — fixture rank type
 
 Native build `65937` fails in NewHorizonsEconomyTest.cpp:155/162 because

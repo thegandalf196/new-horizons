@@ -1809,6 +1809,27 @@ struct DLL_LINKAGE SetNewHorizonsMusterState : public CPackForClient
 	}
 };
 
+/// Authoritative weekly Learning Mentor use for one hero.
+struct DLL_LINKAGE SetNewHorizonsLearningMentorState : public CPackForClient
+{
+	ObjectInstanceID heroId;
+	int32_t lastUseWeek = -1;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_MENTOR))
+			throw std::runtime_error("New Horizons Learning Mentor packet requires the new wire format");
+
+		h & heroId;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_MENTOR))
+			h & lastUseWeek;
+		else if(!h.saving)
+			lastUseWeek = -1;
+	}
+};
+
 /// Complete authoritative Demonic Reserve snapshot for one Inferno hero.
 /// Active-army mutations use the ordinary stack packets; this packet keeps the
 /// off-army owned troop pool identical on the server and every client.

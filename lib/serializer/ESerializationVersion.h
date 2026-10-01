@@ -125,15 +125,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_SHIELD_OF_CHAOS_PHYSICAL_REDUCTION, // timed fractional physical damage reduction bonus type
 	BATTLE_UNIT_FORM_STATE, // battle-local creature forms and original-species HP provenance
 	BATTLE_HERO_MANA_EXPENDITURE, // accepted hero spell and Counterspell costs spent during combat
+	NEW_HORIZONS_LEARNING_MENTOR, // replicated weekly Mentor meeting usage
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = BATTLE_HERO_MANA_EXPENDITURE,
+	CURRENT = NEW_HORIZONS_LEARNING_MENTOR,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_LEARNING_MENTOR > ESerializationVersion::BATTLE_HERO_MANA_EXPENDITURE,
+	"Mentor weekly state must remain append-only");
 static_assert(ESerializationVersion::CURRENT >= ESerializationVersion::NEW_HORIZONS_MASTERIES);
 static_assert(ESerializationVersion::NEW_HORIZONS_CASTLE_GATE > ESerializationVersion::NEW_HORIZONS_HOUSE_OF_WISDOM);
 static_assert(ESerializationVersion::NEW_HORIZONS_MUSTER > ESerializationVersion::NEW_HORIZONS_CASTLE_GATE);

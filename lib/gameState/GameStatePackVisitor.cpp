@@ -514,6 +514,12 @@ void GameStatePackVisitor::visitSetNewHorizonsMusterState(SetNewHorizonsMusterSt
 		target->markNewHorizonsMusterUsed(pack.lastUseWeek);
 }
 
+void GameStatePackVisitor::visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack)
+{
+	if(auto * hero = gs.getHero(pack.heroId))
+		hero->markNewHorizonsLearningMentorUsed(pack.lastUseWeek);
+}
+
 void GameStatePackVisitor::visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack)
 {
 	if(auto * hero = gs.getHero(pack.heroId))

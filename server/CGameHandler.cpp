@@ -1638,10 +1638,14 @@ void CGameHandler::heroVisitCastle(const CGTownInstance * obj, const CGHeroInsta
 		vc.startVisit = true;
 		sendAndApply(vc);
 	}
+	// Snapshot the meeting before visiting buildings, since those visits may
+	// award experience or otherwise change a hero's level before Mentor resolves.
+	auto learningMentorAward = prepareLearningMentorAward(obj->getVisitingHero(), obj->getGarrisonHero());
 	visitCastleObjects(obj, hero);
 
 	if (obj->getVisitingHero() && obj->getGarrisonHero())
 		useScholarSkill(obj->getVisitingHero()->id, obj->getGarrisonHero()->id);
+	grantLearningMentorAward(learningMentorAward);
 	checkVictoryLossConditionsForPlayer(hero->tempOwner); //transported artifact?
 }
 
@@ -1883,6 +1887,7 @@ void CGameHandler::heroExchange(ObjectInstanceID hero1, ObjectInstanceID hero2)
 
 	if (gameInfo().getPlayerRelations(h1->getOwner(), h2->getOwner()) != PlayerRelations::ENEMIES)
 	{
+		auto learningMentorAward = prepareLearningMentorAward(h1, h2);
 		auto exchange = std::make_shared<CGarrisonDialogQuery>(this, h1, h2);
 		ExchangeDialog hex;
 		hex.queryID = exchange->queryID;
@@ -1893,7 +1898,70 @@ void CGameHandler::heroExchange(ObjectInstanceID hero1, ObjectInstanceID hero2)
 
 		useScholarSkill(hero1,hero2);
 		queries->addQuery(exchange);
+		// Keep the exchange beneath any level-up caused by Mentor's award.
+		grantLearningMentorAward(learningMentorAward);
 	}
+}
+
+std::optional<CGameHandler::LearningMentorAward> CGameHandler::prepareLearningMentorAward(
+	const CGHeroInstance * first, const CGHeroInstance * second)
+{
+	if(!first || !second || first == second || first->id == second->id)
+		return std::nullopt;
+	if(gameInfo().getPlayerRelations(first->getOwner(), second->getOwner()) == PlayerRelations::ENEMIES)
+		return std::nullopt;
+
+	const std::string learningSkillId = "new-horizons:learning";
+	const std::string mentorPerkId = "new-horizons:learning.mentor";
+	const auto week = newHorizonsMuster::absoluteWeek(gameInfo().getCalendar().getCurrentDay(),
+		gameInfo().getCalendar().getDaysInWeek());
+	constexpr TExpType baseExperiencePerMentorLevel = 250;
+
+	const auto tryMentor = [&](const CGHeroInstance * mentor, const CGHeroInstance * recipient)
+		-> std::optional<LearningMentorAward>
+	{
+		const int32_t mentorLevel = mentor->level;
+		const int32_t recipientLevel = recipient->level;
+		if(mentorLevel <= recipientLevel)
+			return std::nullopt;
+		if(mentor->getPerkSkillRank(learningSkillId) <= 0
+			|| !mentor->hasActivePerk(learningSkillId, mentorPerkId)
+			|| mentor->hasUsedNewHorizonsLearningMentor(week))
+			return std::nullopt;
+
+		const auto baseExperience = baseExperiencePerMentorLevel * mentorLevel;
+		return LearningMentorAward{
+			mentor->id,
+			recipient->id,
+			mentorLevel,
+			recipientLevel,
+			week,
+			recipient->calculateXp(baseExperience)
+		};
+	};
+
+	if(auto award = tryMentor(first, second))
+		return award;
+	return tryMentor(second, first);
+}
+
+void CGameHandler::grantLearningMentorAward(const std::optional<LearningMentorAward> & award)
+{
+	if(!award || award->mentorLevelAtMeeting <= award->recipientLevelAtMeeting)
+		return;
+
+	const auto * mentor = gameInfo().getHero(award->mentorId);
+	const auto * recipient = gameInfo().getHero(award->recipientId);
+	if(!mentor || !recipient || mentor->hasUsedNewHorizonsLearningMentor(award->week))
+		return;
+
+	SetNewHorizonsLearningMentorState state;
+	state.heroId = award->mentorId;
+	state.lastUseWeek = award->week;
+	// Mark before Experience is applied so nested encounter paths cannot spend
+	// the same weekly use again while a level-up query is being created.
+	sendAndApply(state);
+	giveExperience(recipient, award->experience);
 }
 
 void CGameHandler::sendAndApply(CPackForClient & pack)

@@ -5642,7 +5642,7 @@
 								"requires": "basic",
 								"description": "The first lower-level allied hero met each week automatically gains Experience equal to 250 times the mentor's level.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first lower-level allied hero met each week automatically gains Experience equal to 250 times the mentor's level."
 								}
 							},

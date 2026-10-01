@@ -10,6 +10,8 @@
 
 #include "Nullkiller.h"
 
+#include <vector>
+
 namespace NK2AI
 {
 
@@ -19,6 +21,9 @@ public:
 	// TODO: Mircea: Maybe include based on how close danger is: X as default + proportion of close danger or something around that
 	static constexpr float ARMY_GOLD_RATIO_PER_MAKE_TURN_PASS = 0.1f;
 	static constexpr float EXPENDABLE_BULK_RATIO = 0.5f;
+
+	/// Select the best resource exchange market, preserving input order for tied rates.
+	static const IMarket * selectBestResourceMarket(const std::vector<const IMarket *> & markets);
 
 	static bool trade(BuildAnalyzer & buildAnalyzer, CCallback & cc, const TResources & freeResources);
 	static bool tradeHelper(

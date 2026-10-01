@@ -281,6 +281,9 @@ public:
 		newHorizonsMusterLastWeek = week;
 		newHorizonsMusterUsesThisWeek = std::clamp<int32_t>(usesThisWeek, 0, 2);
 	}
+	int32_t getNewHorizonsLearningMentorLastWeek() const { return newHorizonsLearningMentorLastWeek; }
+	bool hasUsedNewHorizonsLearningMentor(int32_t week) const { return newHorizonsLearningMentorLastWeek == week; }
+	void markNewHorizonsLearningMentorUsed(int32_t week) { newHorizonsLearningMentorLastWeek = week < 0 ? -1 : week; }
 	int getPerkSkillRank(const std::string & skillId) const;
 	bool hasActivePerk(const std::string & skillId, const std::string & perkId) const;
 	/// New Horizons Necromancy is a separate saved-rules path.  Legacy heroes
@@ -454,6 +457,7 @@ private:
 	int32_t newHorizonsCastleGateLastUseDay = -1;
 	int32_t newHorizonsMusterLastWeek = -1;
 	int32_t newHorizonsMusterUsesThisWeek = 0;
+	int32_t newHorizonsLearningMentorLastWeek = -1;
 	DemonicReserve demonicReserve;
 	std::array<int, GameConstants::PRIMARY_SKILLS> lastPrimaryGains{};
 	void levelUpAutomatically(IGameRandomizer & gameRandomizer);
@@ -577,6 +581,13 @@ public:
 			// weekly marker. Treat an authored marker as one use when loading
 			// those saves; this cannot create a second use retroactively.
 			newHorizonsMusterUsesThisWeek = newHorizonsMusterLastWeek == -1 ? 0 : 1;
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_MENTOR))
+			h & newHorizonsLearningMentorLastWeek;
+		else if(h.saving && newHorizonsLearningMentorLastWeek != -1)
+			throw std::runtime_error("New Horizons Learning Mentor state requires the new save format");
+		else if(!h.saving)
+			newHorizonsLearningMentorLastWeek = -1;
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DEMONIC_RESERVE))
 			h & demonicReserve;

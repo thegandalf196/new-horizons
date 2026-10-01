@@ -14,6 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-073 Mentor is source/native verified. The first strictly lower-level allied
+hero met each absolute week receives250×the mentor's captured level, composed
+with the recipient's ordinary Learning. Both field and town visitor/garrison
+meetings record a replicated, saved per-mentor weekly marker before XP; field
+level-up queries sit above the exchange. Real Nullkiller selects the legal perk
+and the authoritative AI-owned meeting awards the shared amount. AI resource
+trading now chooses the best eligible owned-town effectiveness rather than the
+first town; this prerequisite does not activate Merchant Prince. Both-target
+build81553 and focused native52779 pass24/24, zero skips, in7.070s; reports
+`UP073-mentor-focused-repaired.log`/`.xml`. Data/inventory final checks19/19
+pass (the earlier broader content/inventory checkpoint passed78/78).
+Perks131→132/310, planned179→178; Learning0/10→1/9. Ranks84/93 and combat
+identities60/67 remain unchanged. Phase2 retains nested town-building XP,
+mixed-owner allied meetings, mid-prompt reload, comparative AI perk valuation
+and proactive meeting planning. The existing Muster higher-tier fixture fails
+because it omits earlier selected tiers; retain that unrelated finding in
+NH_RELEASE_FAILURES.md. No launcher promotion or new artwork is claimed.
+
 UP-069 Grand Formula and UP-070 Tax Collector are source/native verified.
 Grand Formula snapshots the first accepted Level 4-or-5 hero-cast gate from
 existing serialized history, multiplying only the SP-derived numerical term
@@ -376,7 +394,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 131/310 | 179 planned; Grand Formula and Tax Collector are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
+| Skill perks active | 132/310 | 178 planned; Mentor is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -403,8 +421,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 131
-active perks, leaving nine ranks and 179 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 132
+active perks, leaving nine ranks and 178 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -528,7 +546,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Logistics | 3/0 | 3/7 | Seven perks missing |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
 | Estates | 3/0 | 1/9 | Tax Collector supplies the first working Basic perk; Advanced perks remain missing. Shared daily payout and AI income forecast are native verified. |
-| Learning | 3/0 | 0/10 | Progression blocked |
+| Learning | 3/0 | 1/9 | Mentor supplies the first working Basic perk and opens ordinary Advanced-rank progression. Field/town awards, weekly persistence and AI selection are native verified; Academic Study is mapped next. |
 | Luck | 3/0 | 0/10 | Progression blocked |
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
@@ -541,18 +559,19 @@ interactions, and rendered/playable acceptance remain separate.
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
-rank. Seven Skills therefore cannot normally advance beyond Basic because they
+rank. Five Skills therefore cannot normally advance beyond Basic because they
 have no active Basic perk: War Machines, Diplomacy,
-Estates, Learning, Luck, Divine Mandate, and Elemental Rebirth. Backstab now
+Luck, Divine Mandate, and Elemental Rebirth. Tax Collector opens Estates and
+Mentor opens Learning. Backstab now
 opens the Shroud's ordinary Advanced-rank progression; Blinkmaster opens Chaos.
 
 ## Spell baseline
 
 The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
-spells. The current saved roster has 58 of 67 combat identities with active
-settings rows and registered mod/core definitions; nine are absent or inactive.
-Blink is the newest registered identity. This count describes
+spells. The current saved roster has 60 of 67 combat identities with active
+settings rows and registered mod/core definitions; seven are absent or inactive.
+Shield of Chaos is the newest registered identity. This count describes
 identity registration, not exact-effect or AI completion.
 
 Frailty replaces core Weakness in new saved-v3 acquisition while older saved

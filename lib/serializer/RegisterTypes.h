@@ -326,4 +326,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<BattleDemonicGatingStateChanged>(283);
 	s.template registerType<SetNewHorizonsAdventureSpellUnlock>(284);
 	s.template registerType<UnlockNewHorizonsAdventureSpell>(285);
+	s.template registerType<SetNewHorizonsLearningMentorState>(286);
 }

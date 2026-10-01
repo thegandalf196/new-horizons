@@ -134,6 +134,7 @@ public:
 	virtual void visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack) {}
 	virtual void visitSetNewHorizonsCastleGateState(SetNewHorizonsCastleGateState & pack) {}
 	virtual void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) {}
+	virtual void visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack) {}
 	virtual void visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack) {}
 	virtual void visitShowWorldViewEx(ShowWorldViewEx & pack) {}
 	virtual void visitEndTurn(EndTurn & pack) {}

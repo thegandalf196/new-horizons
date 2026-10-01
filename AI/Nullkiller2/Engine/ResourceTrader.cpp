@@ -11,34 +11,39 @@
 
 namespace NK2AI
 {
-bool ResourceTrader::trade(BuildAnalyzer & buildAnalyzer, CCallback & cc, const TResources & freeResources)
+const IMarket * ResourceTrader::selectBestResourceMarket(const std::vector<const IMarket *> & markets)
 {
-	bool haveTraded = false;
-	ObjectInstanceID marketId;
+	const IMarket * bestMarket = nullptr;
+	double bestEffectiveness = 0.0;
 
-	// TODO: Mircea: What about outside town markets that have better rates than a single town for example?
-	// Are those used anywhere? To inspect.
-	for(const auto * const town : cc.getTownsInfo())
+	for(const auto * market : markets)
 	{
-		if(town->hasBuiltResourceMarketplace())
+		if(!market || !market->allowsTrade(EMarketMode::RESOURCE_RESOURCE))
+			continue;
+
+		const double effectiveness = market->getMarketExchangeEffectiveness();
+		if(!bestMarket || effectiveness > bestEffectiveness)
 		{
-			marketId = town->id;
-			break;
+			bestMarket = market;
+			bestEffectiveness = effectiveness;
 		}
 	}
 
-	if(!marketId.hasValue())
+	return bestMarket;
+}
+
+bool ResourceTrader::trade(BuildAnalyzer & buildAnalyzer, CCallback & cc, const TResources & freeResources)
+{
+	bool haveTraded = false;
+	std::vector<const IMarket *> markets;
+	// TODO: Mircea: What about outside town markets that have better rates than a single town for example?
+	// Are those used anywhere? To inspect.
+	for(const auto * const town : cc.getTownsInfo())
+		markets.push_back(cc.getMarket(town->id));
+
+	const auto * market = selectBestResourceMarket(markets);
+	if(!market)
 		return false;
-
-	const CGObjectInstance * obj = cc.getObj(marketId, false);
-	assert(obj);
-	// if (!obj)
-	// return false;
-
-	const auto * market = dynamic_cast<const IMarket *>(obj);
-	assert(market);
-	// if (!market)
-	// return false;
 
 	bool shouldTryToTrade = true;
 	while(shouldTryToTrade)
