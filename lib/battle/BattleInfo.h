@@ -77,6 +77,7 @@ public:
 			|| sides[BattleSide::DEFENDER].hasChainGateState();
 	}
 	bool hasPursuitState() const;
+	bool hasBattleFormState() const;
 	bool hasCleaveState() const;
 	bool hasNoQuarterState() const;
 	bool hasRelentlessAssaultState() const
@@ -134,6 +135,11 @@ public:
 	{
 		if(h.saving)
 		{
+			// CStack's binary payload deliberately omits CUnitState. Form state
+			// round-trips through UnitChanges JSON, but cannot silently survive a
+			// binary battle snapshot until that broader contract is implemented.
+			if(hasBattleFormState())
+				throw std::runtime_error("Cannot discard battle creature form state in a binary battle snapshot");
 			if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE)
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES))
 				throw std::runtime_error("Cannot save typed Hero Action budgets in an older format");

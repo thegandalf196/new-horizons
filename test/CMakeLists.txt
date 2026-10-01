@@ -36,6 +36,8 @@ set(test_SRCS
 		battle/HeroActionAllowanceStateTest.cpp
 		battle/HeroSpellAllowanceTransitionTest.cpp
  		battle/BattleHexTest.cpp
+		battle/BattleFormAccessibilityTest.cpp
+		battle/NewHorizonsBattleFormHealthTest.cpp
  		battle/CBattleInfoCallbackTest.cpp
  		battle/CHealthTest.cpp
 		battle/CUnitStateTest.cpp
@@ -369,6 +371,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsMisfortuneAITest.cpp
 		battleAI/NewHorizonsShieldOfChaosAITest.cpp
 		battleAI/NewHorizonsArcaneFocusAITest.cpp
+		battleAI/NewHorizonsBattleFormAITest.cpp
 		battleAI/NewHorizonsBerserkAITest.cpp
 		battleAI/NewHorizonsHolyArmorAITest.cpp
 		battleAI/NewHorizonsHeavenlyGaleAITest.cpp

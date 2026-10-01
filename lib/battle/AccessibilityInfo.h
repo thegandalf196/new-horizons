@@ -10,6 +10,7 @@
 #pragma once
 #include "BattleHex.h"
 #include "../GameConstants.h"
+#include <optional>
 
 namespace battle
 {
@@ -42,6 +43,9 @@ struct DLL_LINKAGE AccessibilityInfo : TAccessibilityArray
 	public:
 		bool accessible(const BattleHex & tile, const battle::Unit * stack) const; //checks for both tiles if stack is double wide
 		bool accessible(const BattleHex & tile, bool doubleWide, BattleSide side) const; //checks for both tiles if stack is double wide
+		/// Magical relocation, not walking/pathfinding. Equal-distance anchors use
+		/// stable battlefield order; an entirely blocked field returns no position.
+		std::optional<BattleHex> nearestLegalPosition(const BattleHex & origin, bool doubleWide, BattleSide side) const;
 		bool accessibleForDemonicGateArrival(const BattleHex & tile, bool doubleWide, BattleSide side,
 			const BattleHex & reservedPosition, bool reservedDoubleWide) const;
 		void reserveDemonicGateFootprint(const BattleHex & position, bool doubleWide, BattleSide side);

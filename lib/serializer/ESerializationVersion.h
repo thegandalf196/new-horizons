@@ -123,12 +123,13 @@ enum class ESerializationVersion : int32_t
 	BATTLE_COMPLETED_HERO_SPELL_LEVELS, // per-side accepted hero spell levels completed during battle
 	NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS, // timed final Luck ceiling and favorable creature proc multiplier
 	NEW_HORIZONS_SHIELD_OF_CHAOS_PHYSICAL_REDUCTION, // timed fractional physical damage reduction bonus type
+	BATTLE_UNIT_FORM_STATE, // battle-local creature forms and original-species HP provenance
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_SHIELD_OF_CHAOS_PHYSICAL_REDUCTION,
+	CURRENT = BATTLE_UNIT_FORM_STATE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -170,6 +171,8 @@ static_assert(ESerializationVersion::NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS
 	"Creature probability modifier state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_SHIELD_OF_CHAOS_PHYSICAL_REDUCTION > ESerializationVersion::NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS,
 	"Shield of Chaos physical reduction state must remain append-only");
+static_assert(ESerializationVersion::BATTLE_UNIT_FORM_STATE > ESerializationVersion::NEW_HORIZONS_SHIELD_OF_CHAOS_PHYSICAL_REDUCTION,
+	"Battle form state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION > ESerializationVersion::NEW_HORIZONS_WARCASTING);
 static_assert(ESerializationVersion::NEW_HORIZONS_HERO_ACTION_ALLOWANCES > ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION);
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTERIES > ESerializationVersion::NEW_HORIZONS_CAPABILITIES);

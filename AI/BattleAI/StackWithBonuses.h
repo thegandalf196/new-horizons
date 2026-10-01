@@ -118,6 +118,7 @@ public:
 
 private:
 	void setOriginalBearer(const IBonusBearer * bearer);
+	void onBattleFormChanged() override;
 
 	// Value snapshots survive nested models whose bonus queries create fresh pointers.
 	// Include all spell/command durations for removal; only N_TURNS are aged.
@@ -131,7 +132,11 @@ private:
 	const IBonusBearer * origBearer;
 	const HypotheticBattle * owner;
 
+	// Immutable creature identity used as the native-bonus source when this view
+	// reverts. sourceCreatureType is the species already exposed by origBearer;
+	// nested projections must suppress it as well as the original species.
 	const CCreature * type;
+	CreatureID sourceCreatureType;
 	ui32 baseAmount;
 	uint32_t id;
 	BattleSide side;

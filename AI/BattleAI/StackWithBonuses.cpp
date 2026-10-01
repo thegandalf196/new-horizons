@@ -197,6 +197,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	origBearer(nullptr),
 	owner(Owner),
 	type(Stack->unitType()),
+	sourceCreatureType(Stack->unitType()->getId()),
 	baseAmount(Stack->unitBaseAmount()),
 	id(Stack->unitId()),
 	side(Stack->unitSide()),
@@ -215,6 +216,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	origBearer(nullptr),
 	owner(Owner),
 	type(Stack->unitType()),
+	sourceCreatureType(Stack->unitType()->getId()),
 	baseAmount(Stack->unitBaseAmount()),
 	id(Stack->unitId()),
 	side(Stack->unitSide()),
@@ -233,13 +235,14 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	: battle::CUnitState(),
 	origBearer(nullptr),
 	owner(Owner),
+	type(info.type.toCreature()),
+	sourceCreatureType(info.type),
 	baseAmount(info.count),
 	id(info.id),
 	side(info.side),
 	slot(SlotID::SUMMONED_SLOT_PLACEHOLDER),
 	treeVersionLocal(0)
 {
-	type = info.type.toCreature();
 	player = Owner->getSidePlayer(side);
 	CStackBasicDescriptor descriptor(info.type, info.count);
 	ownedBearer = std::make_shared<CStack>(&descriptor, player, static_cast<int>(id), side,
@@ -271,7 +274,7 @@ StackWithBonuses & StackWithBonuses::operator=(const battle::CUnitState & other)
 
 const CCreature * StackWithBonuses::unitType() const
 {
-	return type;
+	return hasBattleFormState() ? battleFormCreature().toCreature() : type;
 }
 
 int32_t StackWithBonuses::unitBaseAmount() const
@@ -302,6 +305,8 @@ SlotID StackWithBonuses::unitSlot() const
 TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {
 	auto ret = std::make_shared<BonusList>();
+	const CreatureID effectiveCreature = battleFormCreature();
+	const bool replaceNativeCreatureBonuses = effectiveCreature != sourceCreatureType;
 	// Refresh changes duration, not value. Filtering before merging can hide the
 	// existing identity and incorrectly turn a refresh into a new effect.
 	const auto & mergeSelector = bonusesToUpdate.empty() ? selector : Selector::all;
@@ -313,6 +318,12 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 		return !vstd::contains(bonusesToRemove, b)
 			&& !(projectedEffects && projectedEffect(b.get()));
 	});
+	if(replaceNativeCreatureBonuses)
+		ret->remove_if(CSelector([this](const Bonus * bonus)
+		{
+			return isBattleFormNativeBonus(bonus, battleFormOriginalCreature())
+				|| isBattleFormNativeBonus(bonus, sourceCreatureType);
+		}));
 
 	if(projectedEffects)
 		for(const auto & bonus : *projectedEffects)
@@ -341,6 +352,22 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 		if(mergeSelector(b.get()))
 			ret->push_back(b);
 	}
+	if(replaceNativeCreatureBonuses)
+	{
+		const CStack * sourceStack = nullptr;
+		for(const StackWithBonuses * projected = this; projected && !sourceStack;
+			projected = projected->projectedBearer.get())
+			sourceStack = dynamic_cast<const CStack *>(projected->origBearer);
+		if(!sourceStack && owner)
+			sourceStack = dynamic_cast<const CStack *>(owner->battleGetUnitByID(id));
+		if(!sourceStack)
+			sourceStack = ownedBearer.get();
+		const CArmedInstance * fallbackArmy = owner ? owner->getSideArmy(side) : nullptr;
+		const auto effectiveBonuses = getBattleFormNativeBonuses(*this, sourceStack, fallbackArmy, mergeSelector);
+		for(const auto & bonus : *effectiveBonuses)
+			ret->push_back(std::make_shared<Bonus>(*bonus));
+		ret->stackBonuses();
+	}
 	if(!bonusesToUpdate.empty())
 		ret->remove_if([&](const Bonus * bonus){ return !selector(bonus); });
 	//TODO limiters?
@@ -350,11 +377,12 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 int32_t StackWithBonuses::getTreeVersion() const
 {
 	auto result = owner->getTreeVersion();
+	return result + treeVersionLocal + getBattleFormViewRevision();
+}
 
-	if(bonusesToAdd.empty() && bonusesToUpdate.empty() && bonusesToRemove.empty() && !projectedEffects)
-		return result;
-	else
-		return result + treeVersionLocal;
+void StackWithBonuses::onBattleFormChanged()
+{
+	battle::CUnitState::onBattleFormChanged();
 }
 
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)

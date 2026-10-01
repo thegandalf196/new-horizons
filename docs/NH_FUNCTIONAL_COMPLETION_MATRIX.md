@@ -14,6 +14,22 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-066 shared form/HP foundation is source/native verified, not a completed
+Polymorph identity. Original army species/count stay immutable; shared state
+replaces effective creature abilities through evaluated native sources, keeps
+exact creature HP separate from temporary HP and active source-species
+casualty/remains/resurrection provenance, and restores that provenance on expiry.
+Acquired-CStack JSON state and nested detached AI retain the form and rank
+context. Nearest magical placement uses strict occupancy/obstacle/gate-reservation
+legality with stable distance ties. Binary battle snapshots cannot discard the
+state silently and fail closed. Both targets build (`85599` final), native retry
+passes 21/21 with zero skips, module/diff checks pass and independent review has
+no remaining blocker. Binary SHA-256:
+`86640d13acb1d17f121c8fe91ccab088ef0c75b70e6b50c72dc591d0b763aba8`.
+Full Polymorph cast/result/expiry-footprint/UI/AI selection, clone/Phantom
+admission and active capacity/Time Stop/conditional-bonus interactions remain
+unfinished. No spell/perk/rank counts or playable delivery advance here.
+
 UP-067 Arcane Focus is source/native verified: the first accepted hero spell
 captures +20% to its Spell Power-derived numerical component before completion
 publication. Fixed bases do not change; creature/rejected casts do not consume
@@ -29,8 +45,9 @@ review has no remaining blocker. Active perks advance 127→128/310 (182 planned
 Spellcraft 2→3/10; ranks remain 84/93 and combat identities 60/67. Broader perk
 interactions, full battle save/load and graphical preview/playable acceptance
 are Phase 2/delivery gates, not established by these focused tests. Polymorph's
-approved nearest-legal-position relocation is canonical but its form foundation
-is not yet implemented. No launcher promotion occurred.
+approved nearest-legal-position relocation is canonical; its source/native
+foundation is recorded above, while the full spell remains unfinished.
+No launcher promotion occurred.
 
 UP-065 user-playtest defect: Toxic Spines is registered as a Basic perk but its
 application requires actual Bulwark reflection, which is zero at Basic rank.

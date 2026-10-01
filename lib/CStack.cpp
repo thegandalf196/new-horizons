@@ -114,6 +114,11 @@ void CStack::afterNewRound(bool isFirstRound)
 
 bool CStack::acceptsBonus(const Bonus & bonus) const
 {
+	if(hasBattleForm() && battleFormCreature() != battleFormOriginalCreature()
+		&& bonus.sid == BonusSourceID(battleFormOriginalCreature())
+		&& (bonus.source == BonusSource::CREATURE_ABILITY || bonus.source == BonusSource::STACK_EXPERIENCE))
+		return false;
+
 	// Temporary summons do not inherit Sylvan Luck rank effects unless they
 	// carry Nature-spell provenance and their hero owns Wild Chance.  Filtering
 	// by source skill preserves native creature Luck and unrelated bonuses.
@@ -305,7 +310,8 @@ void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand,
 
 std::string CStack::getName() const
 {
-	return (getCount() == 1) ? typeID.toEntity(LIBRARY)->getNameSingularTranslated() : typeID.toEntity(LIBRARY)->getNamePluralTranslated(); //War machines can't use base
+	const auto * type = unitType();
+	return (getCount() == 1) ? type->getNameSingularTranslated() : type->getNamePluralTranslated(); //War machines can't use base
 }
 
 bool CStack::canBeHealed() const
@@ -325,7 +331,94 @@ TerrainId CStack::getCurrentTerrain() const
 
 const CCreature * CStack::unitType() const
 {
+	if(hasBattleForm())
+		return battleFormCreature().toCreature();
 	return typeID.toCreature();
+}
+
+void CStack::onBattleFormChanged()
+{
+	battle::CUnitState::onBattleFormChanged();
+
+	const CCreature * desiredBonusSource = nullptr;
+	if(hasBattleForm() && battleFormCreature() != typeID)
+		desiredBonusSource = battleFormCreature().toCreature();
+
+	if(formBonusSource != desiredBonusSource)
+	{
+		if(formBonusSource)
+			detachFromSource(*formBonusSource);
+		formBonusSource = desiredBonusSource;
+		if(formBonusSource)
+			attachToSource(*formBonusSource);
+	}
+
+	doubleWideCached = unitType()->isDoubleWide();
+	nodeHasChanged();
+}
+
+bool isBattleFormNativeBonus(const Bonus * bonus, const CreatureID creature)
+{
+	return bonus
+		&& (bonus->source == BonusSource::CREATURE_ABILITY || bonus->source == BonusSource::STACK_EXPERIENCE)
+		&& bonus->sid == BonusSourceID(creature);
+}
+
+TConstBonusListPtr getBattleFormNativeBonuses(
+	const battle::CUnitState & formState,
+	const CStack * sourceStack,
+	const CArmedInstance * fallbackArmy,
+	const CSelector & selector)
+{
+	const CreatureID originalCreature = formState.battleFormOriginalCreature();
+	const CreatureID effectiveCreature = formState.battleFormCreature();
+	if(!originalCreature.hasValue() || !effectiveCreature.hasValue())
+		return std::make_shared<BonusList>();
+
+	CStackBasicDescriptor descriptor(originalCreature, formState.unitBaseAmount());
+	CStack evaluator(&descriptor, formState.unitOwner(), static_cast<int>(formState.unitId()),
+		formState.unitSide(), formState.unitSlot(), true);
+	if(sourceStack)
+		evaluator.base = sourceStack->base;
+
+	if(sourceStack && sourceStack->getBattle())
+	{
+		evaluator.localInit(const_cast<BattleInfo *>(sourceStack->getBattle()));
+	}
+	else if(sourceStack && sourceStack->base)
+	{
+		evaluator.attachTo(const_cast<CStackInstance &>(*sourceStack->base));
+	}
+	else if(sourceStack)
+	{
+		bool originalSourceAttached = false;
+		bool armySourceAttached = false;
+		for(const auto * parent : sourceStack->getParentNodes())
+		{
+			evaluator.attachToSource(*parent);
+			originalSourceAttached = originalSourceAttached || parent == originalCreature.toCreature();
+			armySourceAttached = armySourceAttached || parent == fallbackArmy;
+		}
+		if(fallbackArmy && !armySourceAttached)
+			evaluator.attachToSource(*fallbackArmy);
+		if(!originalSourceAttached)
+			evaluator.attachToSource(*originalCreature.toCreature());
+	}
+	else
+	{
+		if(fallbackArmy)
+			evaluator.attachToSource(*fallbackArmy);
+		evaluator.attachToSource(*originalCreature.toCreature());
+	}
+
+	// Establish the requested form only after the evaluator has its real context.
+	// It remains hypothetical throughout, so source attachment is read-only.
+	static_cast<battle::CUnitState &>(evaluator) = formState;
+	const CSelector nativeSelector([effectiveCreature, &selector](const Bonus * bonus)
+	{
+		return isBattleFormNativeBonus(bonus, effectiveCreature) && selector(bonus);
+	});
+	return evaluator.getAllBonuses(nativeSelector);
 }
 
 int32_t CStack::unitBaseAmount() const

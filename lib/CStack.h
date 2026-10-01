@@ -19,6 +19,7 @@
 
 struct BattleStackAttacked;
 class BattleInfo;
+class CArmedInstance;
 
 //Represents STACK_BATTLE nodes
 class DLL_LINKAGE CStack : public CBonusSystemNode, public battle::CUnitState, public battle::IUnitEnvironment
@@ -34,6 +35,7 @@ private:
 	SlotID slot;  //slot - position in garrison (may be 255 for neutrals/called creatures)
 
 	bool doubleWideCached = false;
+	const CCreature * formBonusSource = nullptr; // transient effective native source while polymorphed
 
 public:
 	void postDeserialize(const CArmedInstance * army);
@@ -114,5 +116,19 @@ public:
 	}
 
 private:
-	const BattleInfo * battle; //do not serialize
+	void onBattleFormChanged() override;
+
+	const BattleInfo * battle = nullptr; //do not serialize
 };
+
+/// Returns effective creature-native bonuses evaluated in a detached, read-only stack context.
+/// The source stack supplies rank and battle/army context when available; fallbackArmy supports
+/// hypothetical units without a concrete source stack.
+DLL_LINKAGE TConstBonusListPtr getBattleFormNativeBonuses(
+	const battle::CUnitState & formState,
+	const CStack * sourceStack,
+	const CArmedInstance * fallbackArmy,
+	const CSelector & selector);
+
+/// True for a creature-owned native bonus whose source identity is that creature.
+DLL_LINKAGE bool isBattleFormNativeBonus(const Bonus * bonus, CreatureID creature);

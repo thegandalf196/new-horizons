@@ -982,6 +982,7 @@ void CCreatureHandler::loadStackExperience(CCreature * creature, const JsonNode 
 					// leading to unset identifier values in copies
 					auto bonus = JsonUtils::parseBonus (exp["bonus"]);
 					bonus->source = BonusSource::STACK_EXPERIENCE;
+					bonus->sid = BonusSourceID(creature->getId());
 					bonus->duration = BonusDuration::PERMANENT;
 					bonus->addLimiter(std::make_shared<RankRangeLimiter>(lowerLimit));
 					creature->addNewBonus (bonus);
@@ -1002,6 +1003,7 @@ void CCreatureHandler::loadStackExperience(CCreature * creature, const JsonNode 
 
 					auto bonus = JsonUtils::parseBonus (bonusInput);
 					bonus->source = BonusSource::STACK_EXPERIENCE;
+					bonus->sid = BonusSourceID(creature->getId());
 					bonus->duration = BonusDuration::PERMANENT;
 					bonus->addLimiter(std::make_shared<RankRangeLimiter>(lowerLimit));
 					creature->addNewBonus (bonus);

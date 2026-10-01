@@ -131,8 +131,19 @@ public:
 	int64_t getTemporaryHitPoints() const;
 	void addTemporaryHitPoints(int64_t amount);
 	int64_t getCreatureHealthAvailable() const;
+	int64_t getTotalHealthOverride() const;
 	int64_t getShadowGiftMaximumHealthLost() const;
 	void addShadowGiftMaximumHealthLoss(int64_t amount);
+	/// Repartition surviving creature HP to a new battle-form capacity without
+	/// changing the separate temporary hit-point pool or total HP.
+	void repartitionForBattleForm(int32_t newMaximum, int64_t originalTotalHealth, int64_t remainingHealth);
+	/// Freeze this ledger at the source creature capacity for casualty, one-battle
+	/// resurrection, and unusable-remains provenance.
+	void preserveBattleFormProvenance(int32_t sourceMaximum);
+	/// Resume ordinary capacity tracking after restoring the source health ledger.
+	void releaseBattleFormProvenance(bool preserveCapacityTracking);
+	void setTemporaryHitPoints(int64_t amount);
+	bool isBattleFormProvenance() const;
 
 	/// returns total remaining health
 	int64_t available() const;
@@ -160,6 +171,7 @@ private:
 	void promoteCapacityHealthFront();
 	void healCapacityHealth(int64_t & amount, EHealLevel level);
 	void addCapacityHealthHealing(int32_t perCreatureHeal);
+	int32_t maximumPerCreature() const;
 	const battle::Unit * owner;
 
 	int32_t firstHPleft;
@@ -170,6 +182,8 @@ private:
 	int64_t shadowGiftMaximumHealthLost = 0;
 	bool capacityHealthTracking = false;
 	int32_t capacityHealthMax = 0;
+	bool capacityHealthMaxFixed = false;
+	int64_t totalHealthOverride = 0;
 	std::vector<CapacityHealthCohort> capacityHealthCohorts;
 };
 
@@ -330,6 +344,20 @@ public:
 	/// completed normal battlefield initialization.
 	void initializePhantomProfile(int64_t integrity, int32_t duration);
 
+	/// True while a replacement creature form is active.
+	bool hasBattleForm() const;
+	/// Effective battle creature, falling back to the stable source species.
+	CreatureID battleFormCreature() const;
+	/// Original source creature identity, retained after form expiry.
+	CreatureID battleFormOriginalCreature() const;
+	/// True when this state has form/provenance payload requiring the new save contract.
+	bool hasBattleFormState() const;
+	void beginBattleForm(CreatureID creature, int32_t rounds);
+	void endBattleForm();
+	/// Synchronous invalidation hook for effective creature bonuses and caches.
+	virtual void onBattleFormChanged();
+	int32_t getBattleFormViewRevision() const;
+
 	BattleHex getPosition() const override;
 	void setPosition(const BattleHex & hex) override;
 	int32_t getInitiative(int turn = 0) const override;
@@ -423,6 +451,17 @@ private:
 	int32_t phantomRoundsRemaining = 0;
 	int64_t phantomShadowGiftMaximumHealthLost = 0;
 	int32_t capacityHealthReferenceMax = 0;
+	CHealth battleFormOriginalHealth;
+	CreatureID battleFormCreatureId = CreatureID(-1);
+	CreatureID battleFormOriginalCreatureId = CreatureID(-1);
+	int32_t battleFormRoundsRemaining = 0;
+	int32_t battleFormOriginalMaxHealth = 0;
+	int32_t battleFormOriginalCount = 0;
+	int32_t battleFormInitiativeSnapshot = 0;
+	bool battleFormInitiativeSnapshotActive = false;
+	int32_t battleFormOriginalCapacityHealthReferenceMax = 0;
+	int32_t battleFormOriginalCapacityRegenerationRemainderTenths = 0;
+	int32_t battleFormViewRevision = 0;
 
 	BonusCachePerTurn initiativeBasePerTurn;
 	BonusCachePerTurn initiativeBasePresencePerTurn;

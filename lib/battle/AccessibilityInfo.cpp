@@ -53,6 +53,34 @@ bool AccessibilityInfo::accessible(const BattleHex & tile, bool doubleWide, Batt
 	return accessibleImpl(tile, doubleWide, side, BattleHex::INVALID, false);
 }
 
+std::optional<BattleHex> AccessibilityInfo::nearestLegalPosition(const BattleHex & origin, bool doubleWide, BattleSide side) const
+{
+	if(!origin.isAvailable() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return std::nullopt;
+
+	// Reachability may allow walking through an enemy that the AI expects to
+	// destroy first. A placement effect cannot make that prediction: the hex
+	// must already be vacant at the moment of relocation.
+	AccessibilityInfo placement = *this;
+	placement.destructibleEnemyTurns.reset();
+	std::optional<BattleHex> nearest;
+	int nearestDistance = std::numeric_limits<int>::max();
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex candidate(static_cast<si16>(index));
+		if(!candidate.isAvailable() || !placement.accessible(candidate, doubleWide, side))
+			continue;
+
+		const int distance = BattleHex::getDistance(origin, candidate);
+		if(distance < nearestDistance)
+		{
+			nearest = candidate;
+			nearestDistance = distance;
+		}
+	}
+	return nearest;
+}
+
 bool AccessibilityInfo::accessibleForDemonicGateArrival(const BattleHex & tile, bool doubleWide, BattleSide side,
 	const BattleHex & reservedPosition, bool reservedDoubleWide) const
 {

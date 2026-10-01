@@ -13,7 +13,9 @@
 
 #include <vcmi/spells/Spell.h>
 
+#include "../CStack.h"
 #include "../CCreatureHandler.h"
+#include "../mapObjects/army/CArmedInstance.h"
 #include "../spells/CSpell.h"
 
 #include "../bonuses/BonusParameters.h"
@@ -203,6 +205,8 @@ CHealth & CHealth::operator=(const CHealth & other)
 	shadowGiftMaximumHealthLost = other.shadowGiftMaximumHealthLost;
 	capacityHealthTracking = other.capacityHealthTracking;
 	capacityHealthMax = other.capacityHealthMax;
+	capacityHealthMaxFixed = other.capacityHealthMaxFixed;
+	totalHealthOverride = other.totalHealthOverride;
 	capacityHealthCohorts = other.capacityHealthCohorts;
 	return *this;
 }
@@ -236,8 +240,9 @@ int64_t CHealth::available() const
 
 int64_t CHealth::creatureHealthAvailable() const
 {
+	const auto unitHealth = capacityHealthMaxFixed ? capacityHealthMax : owner->getMaxHealth();
 	int64_t result = static_cast<int64_t>(firstHPleft)
-		+ static_cast<int64_t>(owner->getMaxHealth()) * fullUnits;
+		+ static_cast<int64_t>(unitHealth) * fullUnits;
 	for(const auto & cohort : capacityHealthCohorts)
 		result += static_cast<int64_t>(cohort.hitPoints) * cohort.count;
 	return result;
@@ -245,8 +250,17 @@ int64_t CHealth::creatureHealthAvailable() const
 
 int64_t CHealth::total() const
 {
-	const int64_t originalMaximum = static_cast<int64_t>(owner->getMaxHealth()) * owner->unitBaseAmount();
+	if(totalHealthOverride > 0)
+		return std::max<int64_t>(0, totalHealthOverride - shadowGiftMaximumHealthLost);
+	const int64_t originalMaximum = static_cast<int64_t>(maximumPerCreature()) * owner->unitBaseAmount();
 	return std::max<int64_t>(0, originalMaximum - shadowGiftMaximumHealthLost);
+}
+
+int32_t CHealth::maximumPerCreature() const
+{
+	if(capacityHealthMaxFixed)
+		return capacityHealthMax;
+	return checkedHealthCapacity(owner);
 }
 
 void CHealth::damage(int64_t & amount)
@@ -298,7 +312,7 @@ void CHealth::damage(int64_t & amount, const bool destroyRemains, const bool byp
 
 HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 {
-	const int32_t unitHealth = checkedHealthCapacity(owner);
+	const int32_t unitHealth = maximumPerCreature();
 	const int32_t oldCount = getCount();
 
 	int64_t maxHeal = std::numeric_limits<int64_t>::max();
@@ -375,6 +389,8 @@ void CHealth::reset(bool clearUnusableRemains)
 	shadowGiftMaximumHealthLost = 0;
 	capacityHealthTracking = false;
 	capacityHealthMax = 0;
+	capacityHealthMaxFixed = false;
+	totalHealthOverride = 0;
 	capacityHealthCohorts.clear();
 	if(clearUnusableRemains)
 		unusableRemains = 0;
@@ -421,6 +437,11 @@ int64_t CHealth::getCreatureHealthAvailable() const
 	return creatureHealthAvailable();
 }
 
+int64_t CHealth::getTotalHealthOverride() const
+{
+	return totalHealthOverride;
+}
+
 int64_t CHealth::getShadowGiftMaximumHealthLost() const
 {
 	return shadowGiftMaximumHealthLost;
@@ -430,8 +451,76 @@ void CHealth::addShadowGiftMaximumHealthLoss(const int64_t amount)
 {
 	if(amount < 0)
 		throw std::invalid_argument("Negative Shadow Gift maximum-health loss");
-	const int64_t originalMaximum = static_cast<int64_t>(owner->getMaxHealth()) * owner->unitBaseAmount();
+	const int64_t originalMaximum = totalHealthOverride > 0
+		? totalHealthOverride + shadowGiftMaximumHealthLost
+		: static_cast<int64_t>(maximumPerCreature()) * owner->unitBaseAmount();
 	shadowGiftMaximumHealthLost += std::min(amount, std::max<int64_t>(0, originalMaximum - shadowGiftMaximumHealthLost));
+}
+
+void CHealth::repartitionForBattleForm(const int32_t newMaximum, const int64_t originalTotalHealth,
+	const int64_t remainingHealth)
+{
+	if(newMaximum <= 0 || originalTotalHealth < 0 || remainingHealth < 0)
+		throw std::invalid_argument("Invalid battle-form health capacity");
+	capacityHealthTracking = false;
+	capacityHealthMax = 0;
+	capacityHealthMaxFixed = false;
+	capacityHealthCohorts.clear();
+	shadowGiftMaximumHealthLost = 0;
+	unusableRemains = 0;
+	resurrected = 0;
+	totalHealthOverride = originalTotalHealth;
+	firstHPleft = static_cast<int32_t>(remainingHealth % newMaximum);
+	fullUnits = static_cast<int32_t>(remainingHealth / newMaximum);
+	if(firstHPleft == 0 && fullUnits > 0)
+	{
+		firstHPleft = newMaximum;
+		--fullUnits;
+	}
+}
+
+void CHealth::preserveBattleFormProvenance(const int32_t sourceMaximum)
+{
+	if(sourceMaximum <= 0)
+		throw std::invalid_argument("Invalid battle-form provenance capacity");
+	if(fullUnits > 0)
+		addCapacityHealth(sourceMaximum, fullUnits);
+	fullUnits = 0;
+	capacityHealthTracking = true;
+	capacityHealthMax = sourceMaximum;
+	capacityHealthMaxFixed = true;
+	normalizeCapacityHealthCohorts();
+	for(auto it = capacityHealthCohorts.begin(); it != capacityHealthCohorts.end();)
+	{
+		if(it->hitPoints == sourceMaximum)
+		{
+			addCapacityCount(fullUnits, it->count);
+			it = capacityHealthCohorts.erase(it);
+		}
+		else
+			++it;
+	}
+	promoteCapacityHealthFront();
+}
+
+void CHealth::releaseBattleFormProvenance(const bool preserveCapacityTracking)
+{
+	if(!capacityHealthMaxFixed)
+		return;
+	capacityHealthMaxFixed = false;
+	normalizeCapacityHealth(preserveCapacityTracking);
+}
+
+void CHealth::setTemporaryHitPoints(const int64_t amount)
+{
+	if(amount < 0)
+		throw std::invalid_argument("Negative temporary hit points");
+	temporaryHitPoints = amount;
+}
+
+bool CHealth::isBattleFormProvenance() const
+{
+	return capacityHealthMaxFixed;
 }
 
 void CHealth::takeResurrected()
@@ -512,7 +601,7 @@ void CHealth::promoteCapacityHealthFront()
 		return;
 	if(fullUnits > 0)
 	{
-		addCapacityHealth(owner->getMaxHealth(), fullUnits);
+		addCapacityHealth(capacityHealthMaxFixed ? capacityHealthMax : owner->getMaxHealth(), fullUnits);
 		fullUnits = 0;
 	}
 	normalizeCapacityHealthCohorts();
@@ -592,7 +681,7 @@ void CHealth::preserveCapacityHealth()
 
 void CHealth::normalizeCapacityHealth(const bool preserveCapacityTracking)
 {
-	if(!capacityHealthTracking)
+	if(!capacityHealthTracking || capacityHealthMaxFixed)
 		return;
 	const int32_t newMaximum = checkedHealthCapacity(owner);
 	if(newMaximum <= 0 || capacityHealthMax <= 0)
@@ -634,7 +723,7 @@ void CHealth::normalizeCapacityHealth(const bool preserveCapacityTracking)
 
 int64_t CHealth::capacityRegenerationProjectedHeal(const int32_t perCreatureHeal) const
 {
-	if(!capacityHealthTracking || perCreatureHeal <= 0)
+	if(!capacityHealthTracking || capacityHealthMaxFixed || perCreatureHeal <= 0)
 		return 0;
 	const int32_t maximum = checkedHealthCapacity(owner);
 	int64_t result = 0;
@@ -661,7 +750,7 @@ void CHealth::addCapacityHealthHealing(const int32_t perCreatureHeal)
 {
 	if(perCreatureHeal <= 0)
 		return;
-	const int32_t maximum = checkedHealthCapacity(owner);
+	const int32_t maximum = maximumPerCreature();
 	if(firstHPleft > 0)
 		firstHPleft = static_cast<int32_t>(std::min<int64_t>(maximum,
 			static_cast<int64_t>(firstHPleft) + perCreatureHeal));
@@ -686,7 +775,7 @@ void CHealth::addCapacityHealthHealing(const int32_t perCreatureHeal)
 
 void CHealth::healCapacityHealth(int64_t & amount, const EHealLevel level)
 {
-	const int32_t maximum = checkedHealthCapacity(owner);
+	const int32_t maximum = maximumPerCreature();
 	int64_t remaining = amount;
 	if(firstHPleft > 0 && remaining > 0)
 	{
@@ -753,14 +842,22 @@ void CHealth::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("shadowGiftMaximumHealthLost", shadowGiftMaximumHealthLost, 0);
 	handler.serializeBool("capacityHealthTracking", capacityHealthTracking, false);
 	handler.serializeInt("capacityHealthMax", capacityHealthMax, 0);
+	handler.serializeBool("capacityHealthMaxFixed", capacityHealthMaxFixed, false);
+	handler.serializeInt("totalHealthOverride", totalHealthOverride, 0);
 	handler.enterArray("capacityHealthCohorts").serializeStruct(capacityHealthCohorts);
-	const int64_t originalMaximum = static_cast<int64_t>(owner->getMaxHealth()) * owner->unitBaseAmount();
+	const int64_t originalMaximum = totalHealthOverride > 0
+		? totalHealthOverride + shadowGiftMaximumHealthLost
+		: static_cast<int64_t>(maximumPerCreature()) * owner->unitBaseAmount();
 	if(shadowGiftMaximumHealthLost < 0 || shadowGiftMaximumHealthLost > originalMaximum)
 		throw std::runtime_error("Invalid Shadow Gift maximum-health loss");
 	if(!capacityHealthTracking && (capacityHealthMax != 0 || !capacityHealthCohorts.empty()))
 		throw std::runtime_error("Invalid inactive capacity health ledger");
 	if(capacityHealthTracking && capacityHealthMax <= 0)
 		throw std::runtime_error("Invalid capacity health maximum");
+	if(capacityHealthMaxFixed && !capacityHealthTracking)
+		throw std::runtime_error("Invalid fixed battle-form provenance capacity");
+	if(totalHealthOverride < 0 || (totalHealthOverride > 0 && capacityHealthMaxFixed))
+		throw std::runtime_error("Invalid battle-form health total override");
 	int64_t cohortCount = 0;
 	int32_t previousHitPoints = 0;
 	for(const auto & cohort : capacityHealthCohorts)
@@ -786,6 +883,7 @@ void CHealth::serializeJson(JsonSerializeFormat & handler)
 ///CUnitState
 CUnitState::CUnitState():
 	env(nullptr),
+	battleFormOriginalHealth(this),
 	cloned(false),
 	defending(false),
 	drainedMana(false),
@@ -836,6 +934,8 @@ CUnitState::CUnitState():
 CUnitState & CUnitState::operator=(const CUnitState & other)
 {
 	//do not change unit and bonus info
+	const CreatureID previousEffectiveCreature = battleFormCreature();
+	const CreatureID previousOriginalCreature = battleFormOriginalCreature();
 
 	cloned = other.cloned;
 	defending = other.defending;
@@ -882,12 +982,25 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	phantomRoundsRemaining = other.phantomRoundsRemaining;
 	phantomShadowGiftMaximumHealthLost = other.phantomShadowGiftMaximumHealthLost;
 	capacityHealthReferenceMax = other.capacityHealthReferenceMax;
+	battleFormOriginalHealth = other.battleFormOriginalHealth;
+	battleFormCreatureId = other.battleFormCreatureId;
+	battleFormOriginalCreatureId = other.battleFormOriginalCreatureId;
+	battleFormRoundsRemaining = other.battleFormRoundsRemaining;
+	battleFormOriginalMaxHealth = other.battleFormOriginalMaxHealth;
+	battleFormOriginalCount = other.battleFormOriginalCount;
+	battleFormInitiativeSnapshot = other.battleFormInitiativeSnapshot;
+	battleFormInitiativeSnapshotActive = other.battleFormInitiativeSnapshotActive;
+	battleFormOriginalCapacityHealthReferenceMax = other.battleFormOriginalCapacityHealthReferenceMax;
+	battleFormOriginalCapacityRegenerationRemainderTenths = other.battleFormOriginalCapacityRegenerationRemainderTenths;
 	casts = other.casts;
 	counterAttacks = other.counterAttacks;
 	shots = other.shots;
 	health = other.health;
 	cloneID = other.cloneID;
 	position = other.position;
+	if(previousEffectiveCreature != battleFormCreature()
+		|| previousOriginalCreature != battleFormOriginalCreature())
+		onBattleFormChanged();
 	return *this;
 }
 
@@ -898,32 +1011,32 @@ int32_t CUnitState::creatureIndex() const
 
 CreatureID CUnitState::creatureId() const
 {
-	return unitType()->getId();
+	return battleFormCreature();
 }
 
 int32_t CUnitState::creatureLevel() const
 {
-	return static_cast<int32_t>(unitType()->getLevel());
+	return static_cast<int32_t>(battleFormCreature().toCreature()->getLevel());
 }
 
 bool CUnitState::doubleWide() const
 {
-	return unitType()->isDoubleWide();
+	return battleFormCreature().toCreature()->isDoubleWide();
 }
 
 int32_t CUnitState::creatureCost() const
 {
-	return unitType()->getRecruitCost(EGameResID::GOLD);
+	return battleFormCreature().toCreature()->getRecruitCost(EGameResID::GOLD);
 }
 
 int32_t CUnitState::creatureIconIndex() const
 {
-	return unitType()->getIconIndex();
+	return battleFormCreature().toCreature()->getIconIndex();
 }
 
 FactionID CUnitState::getFactionID() const
 {
-	return unitType()->getFactionID();
+	return battleFormCreature().toCreature()->getFactionID();
 }
 
 int32_t CUnitState::getCasterUnitId() const
@@ -1078,7 +1191,10 @@ bool CUnitState::isShooter() const
 
 int32_t CUnitState::getKilled() const
 {
-	int32_t res = unitBaseAmount() - health.getCount() + health.getResurrected();
+	const auto & provenanceHealth = battleFormOriginalHealth.isBattleFormProvenance()
+		? battleFormOriginalHealth
+		: health;
+	int32_t res = unitBaseAmount() - provenanceHealth.getCount() + provenanceHealth.getResurrected();
 	vstd::amax(res, 0);
 	return res;
 }
@@ -1095,7 +1211,9 @@ int32_t CUnitState::getFirstHPleft() const
 
 int32_t CUnitState::getUnusableRemains() const
 {
-	return health.getUnusableRemains();
+	return battleFormOriginalHealth.isBattleFormProvenance()
+		? battleFormOriginalHealth.getUnusableRemains()
+		: health.getUnusableRemains();
 }
 
 int64_t CUnitState::getAvailableHealth() const
@@ -1116,7 +1234,9 @@ int64_t CUnitState::getSurvivingMissingHealth() const
 
 int64_t CUnitState::getTotalHealth() const
 {
-	return health.total();
+	return battleFormOriginalHealth.isBattleFormProvenance()
+		? battleFormOriginalHealth.total()
+		: health.total();
 }
 
 int64_t CUnitState::getShadowGiftCurrentHealth() const
@@ -1128,12 +1248,16 @@ int64_t CUnitState::getShadowGiftMaximumHealth() const
 {
 	return phantomInitialIntegrity > 0
 		? std::max<int64_t>(0, phantomInitialIntegrity - phantomShadowGiftMaximumHealthLost)
-		: health.total();
+		: (battleFormOriginalHealth.isBattleFormProvenance()
+			? battleFormOriginalHealth.total()
+			: health.total());
 }
 
 int64_t CUnitState::getShadowGiftMaximumHealthLost() const
 {
-	return health.getShadowGiftMaximumHealthLost() + phantomShadowGiftMaximumHealthLost;
+	return (battleFormOriginalHealth.isBattleFormProvenance()
+		? battleFormOriginalHealth.getShadowGiftMaximumHealthLost()
+		: health.getShadowGiftMaximumHealthLost()) + phantomShadowGiftMaximumHealthLost;
 }
 
 void CUnitState::addShadowGiftMaximumHealthLoss(const int64_t amount)
@@ -1147,7 +1271,18 @@ void CUnitState::addShadowGiftMaximumHealthLoss(const int64_t amount)
 		phantomShadowGiftMaximumHealthLost += actualLoss;
 		return;
 	}
-	health.addShadowGiftMaximumHealthLoss(amount);
+	if(battleFormOriginalHealth.isBattleFormProvenance())
+	{
+		const int64_t oldLoss = battleFormOriginalHealth.getShadowGiftMaximumHealthLost();
+		battleFormOriginalHealth.addShadowGiftMaximumHealthLoss(amount);
+		const int64_t addedLoss = battleFormOriginalHealth.getShadowGiftMaximumHealthLost() - oldLoss;
+		if(addedLoss > 0)
+			health.addShadowGiftMaximumHealthLoss(addedLoss);
+	}
+	else
+	{
+		health.addShadowGiftMaximumHealthLoss(amount);
+	}
 }
 
 int64_t CUnitState::getPhantomIntegrity() const
@@ -1184,6 +1319,132 @@ void CUnitState::initializePhantomProfile(int64_t integrity, int32_t duration)
 	phantomRoundsRemaining = duration;
 }
 
+bool CUnitState::hasBattleForm() const
+{
+	return battleFormRoundsRemaining > 0 && battleFormCreatureId.hasValue();
+}
+
+CreatureID CUnitState::battleFormCreature() const
+{
+	if(hasBattleForm())
+		return battleFormCreatureId;
+	if(battleFormOriginalCreatureId.hasValue())
+		return battleFormOriginalCreatureId;
+	return unitType()->getId();
+}
+
+CreatureID CUnitState::battleFormOriginalCreature() const
+{
+	if(battleFormOriginalCreatureId.hasValue())
+		return battleFormOriginalCreatureId;
+	return unitType()->getId();
+}
+
+bool CUnitState::hasBattleFormState() const
+{
+	return hasBattleForm()
+		|| battleFormCreatureId.hasValue()
+		|| battleFormOriginalCreatureId.hasValue()
+		|| battleFormOriginalHealth.isBattleFormProvenance()
+		|| battleFormRoundsRemaining != 0
+		|| battleFormOriginalMaxHealth != 0
+		|| battleFormOriginalCount != 0;
+}
+
+void CUnitState::beginBattleForm(const CreatureID creature, const int32_t rounds)
+{
+	if(rounds <= 0 || !creature.hasValue() || creature.toEntity(LIBRARY) == nullptr)
+		throw std::invalid_argument("Invalid battle-form target or duration");
+	if(cloned || phantomInitialIntegrity > 0 || !alive())
+		throw std::logic_error("This unit cannot receive a battle form");
+
+	const CreatureID previousForm = battleFormCreature();
+	const bool wasActive = hasBattleForm();
+	const int32_t currentInitiative = getInitiative(0);
+	const int64_t currentCreatureHealth = health.getCreatureHealthAvailable();
+	if(!battleFormOriginalHealth.isBattleFormProvenance())
+	{
+		if(!battleFormOriginalCreatureId.hasValue())
+			battleFormOriginalCreatureId = unitType()->getId();
+		battleFormOriginalMaxHealth = static_cast<int32_t>(getMaxHealth());
+		battleFormOriginalCount = unitBaseAmount();
+		battleFormOriginalCapacityHealthReferenceMax = capacityHealthReferenceMax;
+		battleFormOriginalCapacityRegenerationRemainderTenths = capacityRegenerationRemainderTenths;
+		battleFormOriginalHealth = health;
+		battleFormOriginalHealth.setTemporaryHitPoints(0);
+		battleFormOriginalHealth.preserveBattleFormProvenance(battleFormOriginalMaxHealth);
+	}
+
+	if(health.getCreatureHealthAvailable() != battleFormOriginalHealth.getCreatureHealthAvailable())
+		throw std::logic_error("Battle-form HP diverged from source-species provenance");
+
+	battleFormCreatureId = creature;
+	battleFormRoundsRemaining = rounds;
+	battleFormInitiativeSnapshot = currentInitiative;
+	battleFormInitiativeSnapshotActive = true;
+	capacityHealthReferenceMax = 0;
+	capacityRegenerationRemainderTenths = 0;
+	if(!wasActive || previousForm != creature)
+	{
+		onBattleFormChanged();
+		health.repartitionForBattleForm(static_cast<int32_t>(getMaxHealth()),
+			battleFormOriginalHealth.total(), currentCreatureHealth);
+	}
+}
+
+void CUnitState::endBattleForm()
+{
+	if(!hasBattleForm())
+		return;
+	if(!battleFormOriginalHealth.isBattleFormProvenance())
+		throw std::logic_error("Cannot restore a battle form without source HP provenance");
+	if(health.getCreatureHealthAvailable() != battleFormOriginalHealth.getCreatureHealthAvailable())
+		throw std::logic_error("Battle-form HP diverged from source-species provenance");
+
+	const CreatureID activeCreature = battleFormCreatureId;
+	const int32_t activeRoundsRemaining = battleFormRoundsRemaining;
+	const int32_t activeInitiativeSnapshot = battleFormInitiativeSnapshot;
+	const bool activeInitiativeSnapshotEnabled = battleFormInitiativeSnapshotActive;
+	const int64_t temporaryHitPoints = health.getTemporaryHitPoints();
+	battleFormCreatureId = CreatureID(-1);
+	battleFormRoundsRemaining = 0;
+	battleFormInitiativeSnapshot = 0;
+	battleFormInitiativeSnapshotActive = false;
+	onBattleFormChanged();
+
+	CHealth restoredHealth = battleFormOriginalHealth;
+	restoredHealth.setTemporaryHitPoints(temporaryHitPoints);
+	restoredHealth.releaseBattleFormProvenance(battleFormOriginalCapacityHealthReferenceMax > 0);
+	if(restoredHealth.getCreatureHealthAvailable() != battleFormOriginalHealth.getCreatureHealthAvailable())
+	{
+		battleFormCreatureId = activeCreature;
+		battleFormRoundsRemaining = activeRoundsRemaining;
+		battleFormInitiativeSnapshot = activeInitiativeSnapshot;
+		battleFormInitiativeSnapshotActive = activeInitiativeSnapshotEnabled;
+		onBattleFormChanged();
+		throw std::logic_error("Restoring a battle form changed source-species HP");
+	}
+
+	health = restoredHealth;
+	capacityHealthReferenceMax = battleFormOriginalCapacityHealthReferenceMax;
+	capacityRegenerationRemainderTenths = battleFormOriginalCapacityRegenerationRemainderTenths;
+	battleFormOriginalHealth.reset();
+	battleFormOriginalMaxHealth = 0;
+	battleFormOriginalCount = 0;
+	battleFormOriginalCapacityHealthReferenceMax = 0;
+	battleFormOriginalCapacityRegenerationRemainderTenths = 0;
+}
+
+void CUnitState::onBattleFormChanged()
+{
+	++battleFormViewRevision;
+}
+
+int32_t CUnitState::getBattleFormViewRevision() const
+{
+	return battleFormViewRevision;
+}
+
 uint32_t CUnitState::getMaxHealth() const
 {
 	return std::max(1, bonusCache.getBonusValue(UnitBonusValuesProxy::STACK_HEALTH));
@@ -1201,6 +1462,8 @@ void CUnitState::setPosition(const BattleHex & hex)
 
 int32_t CUnitState::getInitiative(int turn) const
 {
+	if(turn == 0 && hasBattleForm() && battleFormInitiativeSnapshotActive)
+		return battleFormInitiativeSnapshot;
 	const int64_t speed = stackSpeedPerTurn.getValue(turn) + (turn == 0 && env ? env->unitFortuneSpeed(this) : 0);
 	const int64_t baseInitiative = initiativeBasePresencePerTurn.getValue(turn)
 		? initiativeBasePerTurn.getValue(turn)
@@ -1501,15 +1764,50 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 
 	handler.serializeStruct("casts", casts);
 	handler.serializeStruct("counterAttacks", counterAttacks);
-	handler.serializeStruct("health", health);
 	handler.serializeStruct("shots", shots);
 	handler.serializeInt("capacityHealthReferenceMax", capacityHealthReferenceMax, 0);
+	handler.serializeInt("cloneID", cloneID);
+	handler.serializeId("battleFormCreature", battleFormCreatureId, CreatureID(-1));
+	handler.serializeId("battleFormOriginalCreature", battleFormOriginalCreatureId, CreatureID(-1));
+	handler.serializeInt("battleFormRoundsRemaining", battleFormRoundsRemaining, 0);
+	handler.serializeInt("battleFormOriginalMaxHealth", battleFormOriginalMaxHealth, 0);
+	handler.serializeInt("battleFormOriginalCount", battleFormOriginalCount, 0);
+	handler.serializeInt("battleFormInitiativeSnapshot", battleFormInitiativeSnapshot, 0);
+	handler.serializeBool("battleFormInitiativeSnapshotActive", battleFormInitiativeSnapshotActive, false);
+	handler.serializeInt("battleFormOriginalCapacityHealthReferenceMax", battleFormOriginalCapacityHealthReferenceMax, 0);
+	handler.serializeInt("battleFormOriginalCapacityRegenerationRemainderTenths", battleFormOriginalCapacityRegenerationRemainderTenths, 0);
+	handler.serializeStruct("battleFormOriginalHealth", battleFormOriginalHealth);
+	if(!handler.saving && hasBattleFormState())
+		onBattleFormChanged();
+	handler.serializeStruct("health", health);
 	if(capacityHealthReferenceMax < 0
 		|| (capacityHealthReferenceMax > 0 && !health.isCapacityHealthTracking())
 		|| (capacityHealthReferenceMax == 0 && capacityRegenerationRemainderTenths != 0))
 		throw std::runtime_error("Invalid capacity health reference state");
-
-	handler.serializeInt("cloneID", cloneID);
+	if(battleFormRoundsRemaining < 0 || battleFormOriginalMaxHealth < 0 || battleFormOriginalCount < 0
+		|| battleFormOriginalCapacityHealthReferenceMax < 0
+		|| battleFormOriginalCapacityRegenerationRemainderTenths < 0
+		|| battleFormOriginalCapacityRegenerationRemainderTenths > 9)
+		throw std::runtime_error("Invalid battle-form metadata");
+	if(hasBattleForm())
+	{
+		if(!battleFormOriginalCreatureId.hasValue()
+			|| battleFormOriginalMaxHealth <= 0 || battleFormOriginalCount != unitBaseAmount()
+			|| !battleFormOriginalHealth.isBattleFormProvenance()
+			|| battleFormOriginalHealth.getTemporaryHitPoints() != 0
+			|| capacityHealthReferenceMax != 0 || capacityRegenerationRemainderTenths != 0
+			|| health.total() != battleFormOriginalHealth.total()
+			|| health.getCreatureHealthAvailable() != battleFormOriginalHealth.getCreatureHealthAvailable())
+			throw std::runtime_error("Invalid active battle-form health state");
+	}
+	else if(battleFormCreatureId.hasValue() || battleFormRoundsRemaining != 0
+		|| battleFormInitiativeSnapshotActive
+		|| battleFormOriginalMaxHealth != 0 || battleFormOriginalCount != 0
+		|| battleFormOriginalCapacityHealthReferenceMax != 0
+		|| battleFormOriginalCapacityRegenerationRemainderTenths != 0
+		|| battleFormOriginalHealth.isBattleFormProvenance()
+		|| health.getTotalHealthOverride() != 0)
+		throw std::runtime_error("Invalid inactive battle-form state");
 
 	si16 posValue = position.toInt();
 	handler.serializeInt("position", posValue);
@@ -1563,6 +1861,16 @@ void CUnitState::reset()
 	phantomRoundsRemaining = 0;
 	phantomShadowGiftMaximumHealthLost = 0;
 	capacityHealthReferenceMax = 0;
+	battleFormOriginalHealth.reset();
+	battleFormCreatureId = CreatureID(-1);
+	battleFormOriginalCreatureId = CreatureID(-1);
+	battleFormRoundsRemaining = 0;
+	battleFormOriginalMaxHealth = 0;
+	battleFormOriginalCount = 0;
+	battleFormInitiativeSnapshot = 0;
+	battleFormInitiativeSnapshotActive = false;
+	battleFormOriginalCapacityHealthReferenceMax = 0;
+	battleFormOriginalCapacityRegenerationRemainderTenths = 0;
 
 	casts.reset();
 	counterAttacks.reset();
@@ -1619,7 +1927,10 @@ JsonNode CUnitState::save()
 void CUnitState::load(const JsonNode & data)
 {
 	//TODO: use instance resolver
+	const bool previousBattleFormState = hasBattleFormState();
 	reset();
+	if(previousBattleFormState)
+		onBattleFormChanged();
 	JsonDeserializer deser(nullptr, data);
 	deser.serializeStruct("state", *this);
 	if(phantomInitialIntegrity < 0 || phantomIntegrity < 0 || phantomRoundsRemaining < 0
@@ -1701,8 +2012,25 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	}
 	else
 	{
-		health.damage(amount, destroyRemains, bypassTemporaryHitPoints);
+		const int64_t creatureHealthBefore = health.getCreatureHealthAvailable();
+		const bool activeBattleForm = battleFormOriginalHealth.isBattleFormProvenance();
+		health.damage(amount, activeBattleForm ? false : destroyRemains, bypassTemporaryHitPoints);
 		normalizeCapacityHealth();
+		if(activeBattleForm)
+		{
+			const int64_t creatureHealthAfter = health.getCreatureHealthAvailable();
+			if(creatureHealthAfter < creatureHealthBefore)
+			{
+				int64_t provenanceDamage = creatureHealthBefore - creatureHealthAfter;
+				battleFormOriginalHealth.damage(provenanceDamage, destroyRemains, true);
+				if(provenanceDamage != creatureHealthBefore - creatureHealthAfter)
+					throw std::logic_error("Battle-form source HP provenance rejected applied damage");
+			}
+			else if(creatureHealthAfter > creatureHealthBefore)
+			{
+				throw std::logic_error("Damage resolution unexpectedly increased creature HP");
+			}
+		}
 	}
 
 	bool disintegrate = hasBonusOfType(BonusType::DISINTEGRATE);
@@ -1847,6 +2175,32 @@ HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)
 		logGlobal->error("Attempt to heal clone");
 	else
 	{
+		if(battleFormOriginalHealth.isBattleFormProvenance())
+		{
+			CHealth sourceProbe = battleFormOriginalHealth;
+			CHealth effectiveProbe = health;
+			int64_t sourceAllowed = amount;
+			int64_t effectiveAllowed = amount;
+			sourceProbe.heal(sourceAllowed, level, power);
+			effectiveProbe.heal(effectiveAllowed, level, power);
+			const int64_t accepted = std::min(sourceAllowed, effectiveAllowed);
+
+			CHealth nextSource = battleFormOriginalHealth;
+			CHealth nextEffective = health;
+			int64_t sourceAmount = accepted;
+			int64_t effectiveAmount = accepted;
+			nextSource.heal(sourceAmount, level, power);
+			const HealInfo result = nextEffective.heal(effectiveAmount, level, power);
+			if(sourceAmount != accepted || effectiveAmount != accepted)
+				throw std::logic_error("Battle-form health ledgers disagree on accepted healing");
+
+			battleFormOriginalHealth = nextSource;
+			health = nextEffective;
+			amount = accepted;
+			normalizeCapacityHealth();
+			return result;
+		}
+
 		auto result = health.heal(amount, level, power);
 		normalizeCapacityHealth();
 		return result;
@@ -1881,6 +2235,17 @@ void CUnitState::afterWait()
 
 void CUnitState::afterNewRound(bool isFirstRound)
 {
+	if(!isFirstRound && hasBattleForm())
+	{
+		if(battleFormRoundsRemaining <= 1)
+			endBattleForm();
+		else
+		{
+			--battleFormRoundsRemaining;
+			battleFormInitiativeSnapshotActive = false;
+		}
+	}
+
 	if(!isFirstRound && phantomInitialIntegrity > 0 && phantomIntegrity > 0
 		&& phantomRoundsRemaining > 0 && !isTimeStopped())
 	{
@@ -1929,6 +2294,7 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 
 void CUnitState::makeGhost()
 {
+	endBattleForm();
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
 	guardianSpiritHitPoints = 0;
@@ -1943,6 +2309,7 @@ void CUnitState::makeGhost()
 
 void CUnitState::onRemoved()
 {
+	endBattleForm();
 	// Keep the remains ledger on a ghost until the battle result is captured.
 	// Ghost stacks can be removed from the battlefield before the final result
 	// is assembled; clearing the ledger here would make those direct-hit
@@ -1966,12 +2333,43 @@ CUnitStateDetached::CUnitStateDetached(const IUnitInfo * unit_, const IBonusBear
 
 TConstBonusListPtr CUnitStateDetached::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {
-	return bonus->getAllBonuses(selector, cachingStr);
+	const CreatureID sourceCreature = unit->unitType()->getId();
+	const CreatureID effectiveCreature = battleFormCreature();
+	TConstBonusListPtr originalBonuses = bonus->getAllBonuses(selector, cachingStr);
+	if(effectiveCreature == sourceCreature)
+		return originalBonuses;
+
+	auto result = std::make_shared<BonusList>();
+	for(const auto & bonus : *originalBonuses)
+	{
+		if(isBattleFormNativeBonus(bonus.get(), battleFormOriginalCreature())
+			|| isBattleFormNativeBonus(bonus.get(), sourceCreature))
+			continue;
+		result->push_back(bonus);
+	}
+
+	const IUnitInfo * sourceUnitInfo = unit;
+	while(const auto * detached = dynamic_cast<const CUnitStateDetached *>(sourceUnitInfo))
+		sourceUnitInfo = detached->unit;
+	const IBonusBearer * sourceBonusBearer = bonus;
+	while(const auto * detached = dynamic_cast<const CUnitStateDetached *>(sourceBonusBearer))
+		sourceBonusBearer = detached->bonus;
+	const auto * sourceStack = dynamic_cast<const CStack *>(sourceUnitInfo);
+	if(!sourceStack)
+		sourceStack = dynamic_cast<const CStack *>(sourceBonusBearer);
+	const auto * fallbackArmy = dynamic_cast<const CArmedInstance *>(sourceBonusBearer);
+	if(!fallbackArmy)
+		fallbackArmy = dynamic_cast<const CArmedInstance *>(sourceUnitInfo);
+	const auto effectiveNativeBonuses = getBattleFormNativeBonuses(*this, sourceStack, fallbackArmy, selector);
+	for(const auto & bonus : *effectiveNativeBonuses)
+		result->push_back(bonus);
+	result->stackBonuses();
+	return result;
 }
 
 int32_t CUnitStateDetached::getTreeVersion() const
 {
-	return bonus->getTreeVersion();
+	return bonus->getTreeVersion() + getBattleFormViewRevision();
 }
 
 CUnitStateDetached & CUnitStateDetached::operator=(const CUnitState & other)
@@ -1992,7 +2390,7 @@ BattleSide CUnitStateDetached::unitSide() const
 
 const CCreature * CUnitStateDetached::unitType() const
 {
-	return unit->unitType();
+	return hasBattleFormState() ? battleFormCreature().toCreature() : unit->unitType();
 }
 
 PlayerColor CUnitStateDetached::unitOwner() const

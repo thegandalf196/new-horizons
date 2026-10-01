@@ -2,6 +2,47 @@
 
 ## Purpose
 
+### 2026-09-30 battle-form foundation — first compiler probe
+
+Both-target Linux compiler probe `21374` (twelve jobs) fails in
+`CUnitState.cpp`: form JSON validation reads private
+`CHealth::totalHealthOverride` at two sites. Preserve
+`UP066-battle-form-build.log`; this was a probe during worker implementation,
+not a final frozen candidate. Repair with a narrow read-only accessor or
+validation method rather than widening state mutability. The succeeding final
+build and focused native evidence remain pending. Polymorph is not activated,
+counted or promoted by this checkpoint.
+
+Retry `15032` reveals a second private-field access: the detached resolver's
+environment fallback reads private `CUnitState::env`. Remove that unnecessary
+fallback; nested detached unit/bearer links already unwrap to the concrete
+stack. Preserve `UP066-battle-form-build-retry.log`. Final native/build evidence
+is still pending; source review is not a compiler pass.
+
+Build `71635` exposes two further compile-contract errors: the qualified
+`evaluator.battle::CUnitState` assignment collides with CStack's `battle` member,
+and `vstd::erase_if` assumes iterator erasure unsupported by `BonusList`.
+Use an explicit base-reference assignment and `BonusList::remove_if` with its
+native selector. Preserve `UP066-battle-form-build-final.log`; final success
+remains pending.
+
+Both-target build `53784` passes. The first focused native run executes 21
+cases, zero skips: 19 pass and two new fixtures fail. Preserve
+`UP066-battle-form-focused.log`/`.xml`. The health fixture expects a destroyed
+temporary resurrection to add a second permanent casualty, contrary to the
+existing source-species ledger; correct those three assertions to one. The AI
+fixture calls `Bonus::addLimiter` on a stack-owned Bonus, which requires shared
+ownership and throws `bad_weak_ptr`; initialize its public limiter before making
+the shared export. Production mechanics are unchanged by these fixture repairs.
+The succeeding rebuild/native retry remains pending.
+
+Final cached both-target rebuild `85599` succeeds. Native retry executes all
+21 cases successfully, zero skips; preserve
+`UP066-battle-form-build-native-retry.log` and
+`UP066-battle-form-focused-retry.log`/`.xml`. Existing Health/Shadow Gift guards,
+real acquired-state native/JSON behavior and nested AI rank eligibility pass.
+This validates the bounded foundation, not full Polymorph or playable delivery.
+
 ### 2026-09-30 Arcane Focus — first native selection fixture
 
 Both Linux targets build successfully (`84362`, twelve jobs). The first isolated
