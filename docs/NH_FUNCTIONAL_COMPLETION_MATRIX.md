@@ -14,6 +14,20 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Current verified checkpoint: UP-102 Roadmaster and Wayfarer are active. The
+shared rational movement formula applies the terrain cap after Pathfinding and
+the extra road reduction before one final ceiling. TurnInfo caches saved active
+perk flags once; authority, player forecasts and Nullkiller routes use the same
+helper. Both-target20420 exits0; activated28363 passes25/25, zero skips in4.827s
+(`UP102-activated.log`/`.xml`), including legal perk offers, accepted movement,
+planned-snapshot/blocked guards and actual AI routes/cache refresh. Data/inventory
+19/19 and module drift check pass. Coverage152→154/310; planned158→156;
+Logistics5active/5planned. Binary SHA-256:
+`72dcd031ee08bc4342b2a472372608965f97c6f18cc46e7e82a2d7d8d898cfc2`.
+Independent production review reports no blocker. Phase2 retains end-to-end
+client visitor fan-out, broader multi-day/movement-mode/perk interactions and
+full old-save loading evidence. Art Not done; no GUI or playable promotion.
+
 Current verified checkpoint: UP-101 Quartermaster is active. Ballista/Tent/
 Catapult accepted actions prove the genuine50% extra activation, once/cart guards,
 versioned state and shared detached forecasts; a production Tent AI action is
@@ -793,7 +807,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 152/310 | 158 planned; Quartermaster is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 154/310 | 156 planned; Roadmaster and Wayfarer are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -820,8 +834,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 152
-active perks, leaving nine ranks and 158 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 154
+active perks, leaving nine ranks and 156 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -942,7 +956,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 4/6 | Six perks missing |
-| Logistics | 3/0 | 3/7 | Seven perks missing |
+| Logistics | 3/0 | 5/5 | Five perks missing; Roadmaster/Wayfarer native verified |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
 | Estates | 3/0 | 2/8 | Tax Collector and Estate Network supply working Basic/Advanced perks and open ordinary Expert-rank progression. Daily income, weekly Wood/Ore and AI receipt/selection are native verified. |
 | Learning | 3/0 | 2/8 | Mentor and Quick Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll and query/RNG parity are native verified. Academic Study awaits first-visit timing. |

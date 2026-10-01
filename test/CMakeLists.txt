@@ -96,6 +96,7 @@ set(test_SRCS
 		hero/NewHorizonsHalonInitializationTest.cpp
 		hero/NewHorizonsHeroRulesFixture.h
 		game/MovementCostTest.cpp
+		game/NewHorizonsLogisticsMovementPerksTest.cpp
 
 		json/JsonTests.cpp
 
@@ -449,6 +450,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Behaviors/RecruitHeroBehaviorTest.cpp
 		nullkiller2/Engine/PriorityEvaluatorTest.cpp
 		nullkiller2/Engine/TaskFailureTest.cpp
+		nullkiller2/Engine/NewHorizonsLogisticsMovementAITest.cpp
 		nullkiller2/Goals/BuyArmyTest.cpp
 		nullkiller2/Goals/CompositionTest.cpp
 		nullkiller2/Goals/ExploreNeighbourTileTest.cpp

@@ -86,6 +86,40 @@ TEST(NewHorizonsMovementRules, NativeAffinityOverridesNonNativeAndDesertSurcharg
 	EXPECT_EQ(stepCost(false, false, true, false), 18);
 }
 
+TEST(NewHorizonsMovementRules, RoadmasterAddsAQuarterReductionToRoadCostsOnly)
+{
+	using newHorizonsMovement::stepCost;
+	EXPECT_EQ(stepCost(false, true, false, false, false, false, true), 10);
+	EXPECT_EQ(stepCost(true, true, false, false, false, false, true), 14);
+	EXPECT_EQ(stepCost(false, true, false, true), 7);
+	EXPECT_EQ(stepCost(false, true, false, true, false, false, true), 6);
+	EXPECT_EQ(stepCost(true, true, false, true), 10);
+	EXPECT_EQ(stepCost(true, true, false, true, false, false, true), 8);
+	EXPECT_EQ(stepCost(false, false, false, true, false, false, true), 8);
+}
+
+TEST(NewHorizonsMovementRules, WayfarerCapsTerrainBeforeRoadAndTravelMultipliers)
+{
+	using newHorizonsMovement::stepCost;
+	EXPECT_EQ(stepCost(false, false, false, false), 14);
+	EXPECT_EQ(stepCost(true, false, false, false), 20);
+	EXPECT_EQ(stepCost(false, false, false, false, false, false, false, true), 13);
+	EXPECT_EQ(stepCost(true, false, true, false, false, false, false, true), 18);
+	EXPECT_EQ(stepCost(false, false, true, false, false, false, false, true), 13);
+	EXPECT_EQ(stepCost(false, false, true, false, false, true, false, true), 13);
+	EXPECT_EQ(stepCost(false, false, false, false, false, true, false, true), 12);
+	EXPECT_EQ(stepCost(true, false, false, false, false, true, false, true), 17);
+	EXPECT_EQ(stepCost(true, true, true, false, false, false, false, true), 14);
+	EXPECT_EQ(stepCost(false, false, true, true, false, false, false, true), 9);
+	EXPECT_EQ(stepCost(false, false, true, false, true, false, false, true), 19);
+}
+
+TEST(NewHorizonsMovementRules, RoadmasterAndWayfarerComposeBeforeTheSingleFinalCeiling)
+{
+	EXPECT_EQ(newHorizonsMovement::stepCost(false, false, true, true, false, false, true, true), 7);
+	EXPECT_EQ(newHorizonsMovement::stepCost(true, false, true, true, true, true, true, true), 14);
+}
+
 TEST(NewHorizonsMovementRules, ExtremePercentagesAreWidenedAndSafelyClamped)
 {
 	EXPECT_EQ(newHorizonsMovement::maximumDailyMovement(-101), 0);

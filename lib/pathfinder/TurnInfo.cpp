@@ -326,6 +326,10 @@ TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, i
 		&& target->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.pathfinding");
 	newHorizonsNavigation = newHorizonsMovement
 		&& target->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.navigation");
+	newHorizonsRoadmaster = newHorizonsMovement
+		&& target->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.roadmaster");
+	newHorizonsWayfarer = newHorizonsMovement
+		&& target->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.wayfarer");
 
 	int lowestSpeed = 10;
 	if(!newHorizonsMovement)

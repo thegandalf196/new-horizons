@@ -2327,7 +2327,7 @@
 					"requires": "advanced",
 					"description": "Movement cost while travelling on roads is reduced by an additional 25% relative to the normal road cost.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Movement cost while travelling on roads is reduced by an additional 25% relative to the normal road cost."
 					}
 				},
@@ -2367,7 +2367,7 @@
 					"requires": "expert",
 					"description": "Passable terrain can never cost more than 125% of its base clear-terrain movement cost.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Passable terrain can never cost more than 125% of its base clear-terrain movement cost."
 					}
 				},

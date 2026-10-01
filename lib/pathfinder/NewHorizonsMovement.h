@@ -36,5 +36,5 @@ DLL_LINKAGE int maximumDailyMovement(std::int64_t baseValue,
 /// special-travel multipliers are represented as exact rational constants and
 /// rounded up only after all modifiers have been applied.
 DLL_LINKAGE int stepCost(bool diagonal, bool terrainAffinity, bool desert, bool road,
-	bool specialTravel = false, bool pathfinding = false);
+	bool specialTravel = false, bool pathfinding = false, bool roadmaster = false, bool wayfarer = false);
 }

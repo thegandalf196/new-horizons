@@ -67,6 +67,8 @@ private:
 	bool freeShipBoardingTest;
 	bool newHorizonsPathfinding;
 	bool newHorizonsNavigation;
+	bool newHorizonsRoadmaster;
+	bool newHorizonsWayfarer;
 
 public:
 	int hasWaterWalking() const;
@@ -84,6 +86,8 @@ public:
 	bool usesNewHorizonsMovement() const;
 	bool hasNewHorizonsPathfinding() const { return newHorizonsPathfinding; }
 	bool hasNewHorizonsNavigation() const { return newHorizonsNavigation; }
+	bool hasNewHorizonsRoadmaster() const { return newHorizonsRoadmaster; }
+	bool hasNewHorizonsWayfarer() const { return newHorizonsWayfarer; }
 
 	TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, int Turn,
 		const CCreatureSet * projectedArmy = nullptr);

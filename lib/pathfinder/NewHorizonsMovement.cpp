@@ -89,7 +89,7 @@ int maximumDailyMovement(const int64_t baseValue, const int64_t percentageToBase
 }
 
 int stepCost(const bool diagonal, const bool terrainAffinity, const bool desert, const bool road,
-	const bool specialTravel, const bool pathfinding)
+	const bool specialTravel, const bool pathfinding, const bool roadmaster, const bool wayfarer)
 {
 	const int base = diagonal ? DIAGONAL_STEP_COST : ORTHOGONAL_STEP_COST;
 
@@ -99,10 +99,25 @@ int stepCost(const bool diagonal, const bool terrainAffinity, const bool desert,
 	// default faction data contains no sand-native faction, while scenarios can
 	// explicitly provide one through the normal native-terrain data.
 	// Pathfinding halves only the surcharge: 40% becomes 20%, 80% becomes 40%.
-	const int terrainNumerator = terrainAffinity ? 5 : 5 + (desert ? 4 : 2) / (pathfinding ? 2 : 1);
-	const int terrainDenominator = 5;
-	const int roadNumerator = road ? 67 : 1;
-	const int roadDenominator = road ? 100 : 1;
+	int terrainNumerator = terrainAffinity ? 5 : 5 + (desert ? 4 : 2) / (pathfinding ? 2 : 1);
+	int terrainDenominator = 5;
+	if(wayfarer && terrainNumerator * 4 > terrainDenominator * 5)
+	{
+		// Cap the terrain multiplier at 125% after Pathfinding has reduced its
+		// surcharge. Keep it rational so roads and travel modes still participate
+		// in the same final ceiling.
+		terrainNumerator = 5;
+		terrainDenominator = 4;
+	}
+	int roadNumerator = road ? 67 : 1;
+	int roadDenominator = road ? 100 : 1;
+	if(road && roadmaster)
+	{
+		// Roadmaster reduces the already discounted normal road factor by a
+		// further 25%: 67/100 * 3/4 = 201/400.
+		roadNumerator *= 3;
+		roadDenominator *= 4;
+	}
 	const int travelNumerator = specialTravel ? 3 : 1;
 	const int travelDenominator = specialTravel ? 2 : 1;
 

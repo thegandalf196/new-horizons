@@ -761,10 +761,11 @@ int CPathfinderHelper::getMovementCost(
 	const bool ordinaryWater = isSailLayer || isWaterLayer || srcTile->isWater();
 	int movementCost = usesNewHorizonsMovement
 		? newHorizonsMovement::stepCost(diagonal,
-			ordinaryWater || ti->hasNoTerrainPenalty(srcTile->getTerrainID()),
-			!ordinaryWater && srcTile->getTerrainID() == ETerrainId::SAND,
-			!ordinaryWater && srcTile->hasRoad() && dstTile->hasRoad(),
-			isSpecialTravel, ti->hasNewHorizonsPathfinding())
+				ordinaryWater || ti->hasNoTerrainPenalty(srcTile->getTerrainID()),
+				!ordinaryWater && srcTile->getTerrainID() == ETerrainId::SAND,
+				!ordinaryWater && srcTile->hasRoad() && dstTile->hasRoad(),
+				isSpecialTravel, ti->hasNewHorizonsPathfinding(),
+				ti->hasNewHorizonsRoadmaster(), ti->hasNewHorizonsWayfarer())
 		: getTileMovementCost(*dstTile, *srcTile, ti);
 	if(isSailLayer)
 	{
