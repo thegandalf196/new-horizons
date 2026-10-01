@@ -552,6 +552,11 @@ TEST_F(NewHorizonsSylvanLuckTest, AuthoritativeMultiTargetStrikeRecordsOnce)
 
 TEST_F(NewHorizonsSylvanLuckTest, ProvidenceSuppressesOnlyFirstBadStrikePerRound)
 {
+	const SecondarySkill skill(SecondarySkill::decode("new-horizons:sylvanLuck"));
+	ASSERT_GE(skill.getNum(), 0);
+	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"));
 	perks({"natureSProvidence"});
 	startBattle();
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
@@ -572,6 +577,11 @@ TEST_F(NewHorizonsSylvanLuckTest, ProvidenceSuppressesOnlyFirstBadStrikePerRound
 
 TEST_F(NewHorizonsSylvanLuckTest, CurrentSaveAndHypotheticalCopyPreserveIsolatedHistory)
 {
+	const SecondarySkill skill(SecondarySkill::decode("new-horizons:sylvanLuck"));
+	ASSERT_GE(skill.getNum(), 0);
+	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"));
 	perks({"natureSProvidence"});
 	startBattle();
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 10);

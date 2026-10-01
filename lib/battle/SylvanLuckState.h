@@ -30,7 +30,7 @@ struct DLL_LINKAGE LuckRollRules
 	}
 };
 
-/// Battle-start snapshot: old battles default to an inert state. Only the
+/// Shared army Luck effects: old battles default to an inert state. Only the
 /// authoritative strike roll changes history; damage targets never roll luck.
 struct DLL_LINKAGE SylvanLuckState
 {
@@ -49,8 +49,15 @@ struct DLL_LINKAGE SylvanLuckState
 	bool cascadingPending = false;
 	bool perfectMoment = false;
 	bool perfectMomentUsed = false;
+	bool secondChance = false;
+	bool secondChanceUsed = false;
 
-	bool active() const { return serendipity || naturesProvidence || fortunateAim || extendedActive() || perfectMoment; }
+	bool active() const { return serendipity || naturesProvidence || fortunateAim || extendedActive() || perfectMoment || secondChance; }
+	bool canIgnoreNegativeLuck(bool secondChanceEligible = true) const
+	{
+		return (naturesProvidence && !negativeLuckIgnored)
+			|| (secondChanceEligible && secondChance && !secondChanceUsed);
+	}
 	bool canUsePerfectMoment() const { return perfectMoment && !perfectMomentUsed; }
 	bool consumePerfectMoment()
 	{
@@ -72,18 +79,24 @@ struct DLL_LINKAGE SylvanLuckState
 	}
 	/// Returns whether a rolled bad-luck result is suppressed. Positive and
 	/// negative outcomes are mutually exclusive and applied once per strike.
-	bool recordStrike(uint32_t unitId, bool positive, bool negative)
+	bool recordStrike(uint32_t unitId, bool positive, bool negative, bool secondChanceEligible = true)
 	{
 		if(!active())
 			return false;
 		if(positive && positiveLuckUnits.insert(unitId).second && forestsFavor)
 			speedUnits.insert(unitId);
+		bool ignored = false;
 		if(negative && naturesProvidence && !negativeLuckIgnored)
 		{
 			negativeLuckIgnored = true;
-			return true;
+			ignored = true;
 		}
-		return false;
+		if(negative && secondChanceEligible && secondChance && !secondChanceUsed)
+		{
+			secondChanceUsed = true;
+			ignored = true;
+		}
+		return ignored;
 	}
 	/// Called once after all victims of a positive strike have been resolved.
 	/// Adjacency and enemy-kill classification are supplied by the battle query.
@@ -120,6 +133,8 @@ struct DLL_LINKAGE SylvanLuckState
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_SECOND_CHANCE) && (secondChance || secondChanceUsed))
+			throw std::runtime_error("Cannot downgrade Second Chance state");
 		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_PERFECT_MOMENT) && (perfectMoment || perfectMomentUsed))
 			throw std::runtime_error("Cannot downgrade Perfect Moment state");
 		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS) && extendedActive())
@@ -154,6 +169,15 @@ struct DLL_LINKAGE SylvanLuckState
 		}
 		else if(!h.saving)
 			perfectMoment = perfectMomentUsed = false;
+		if(h.hasFeature(ESerializationVersion::NEW_HORIZONS_SECOND_CHANCE))
+		{
+			h & secondChance;
+			h & secondChanceUsed;
+		}
+		else if(!h.saving)
+			secondChance = secondChanceUsed = false;
+		if(!h.saving && secondChanceUsed && !secondChance)
+			throw std::runtime_error("Second Chance expenditure without perk");
 		if(!h.saving && perfectMomentUsed && !perfectMoment)
 			throw std::runtime_error("Perfect Moment expenditure without perk");
 		if(!h.saving && ((!forestsFavor && !speedUnits.empty()) || (!sharedFortune && !sharedUnits.empty())

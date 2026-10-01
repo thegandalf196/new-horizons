@@ -111,6 +111,7 @@ ACTIVE_PERKS = {
     "new-horizons:armorer.veteran",
     "new-horizons:luck.fortuneSFavor",
     "new-horizons:luck.luckyAim",
+    "new-horizons:luck.secondChance",
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.matterShaper",
     "new-horizons:sorceryMagic.selectiveDispel",

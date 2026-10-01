@@ -2877,6 +2877,13 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 
 void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const
 {
+	// Match BattleAttackInfo: any ranged SPELL_LIKE_ATTACK is nonphysical even
+	// before the attack-hit flags are marked. A melee blow remains physical when
+	// it deals physical damage, even if the creature has a spell-like bonus.
+	const bool physicalDamage = !bat.spellLike()
+		&& !(bat.shot() && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+	const bool physicalCreatureLuckAttack = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(
+		attacker, physicalDamage);
 	const int attackerLuck = battle.battleGetAttackLuck(attacker, defender, bat.shot());
 	ObjectInstanceID ownerArmy = battle.getBattle()->getSideArmy(attacker->unitSide())->id;
 
@@ -2894,7 +2901,7 @@ void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, 
 		{
 			if(perfectMoment)
 				fortune.consumePerfectMoment();
-			if(fortune.recordStrike(attacker->unitId(), bat.lucky(), bat.unlucky()))
+			if(fortune.recordStrike(attacker->unitId(), bat.lucky(), bat.unlucky(), physicalCreatureLuckAttack))
 				bat.flags &= ~BattleAttack::UNLUCKY;
 			bat.fortuneSide = side;
 			bat.fortuneState = std::move(fortune);
@@ -3201,7 +3208,26 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	const bool perfectMoment = attack.perfectMomentSide != BattleSide::NONE && !attack.counter && !attack.brace
 		&& attack.attackIndex == 0 && battle.playerToSide(battle.battleGetOwner(attacker)) == attack.perfectMomentSide
 		&& defender && battle.battleMatchOwner(attacker, defender) && battle.battleCanUsePerfectMoment(attacker);
+	const auto luckSide = battle.playerToSide(battle.battleGetOwner(attacker));
+	bool secondChanceWasAvailable = false;
+	if(luckSide == BattleSide::ATTACKER || luckSide == BattleSide::DEFENDER)
+	{
+		const auto fortuneBeforeAttack = battle.getBattle()->getSylvanLuckState(luckSide);
+		secondChanceWasAvailable = fortuneBeforeAttack.secondChance && !fortuneBeforeAttack.secondChanceUsed;
+	}
 	rollAttackFlags(battle, attacker, defender, bat, perfectMoment);
+	if(secondChanceWasAvailable && bat.fortuneState && bat.fortuneState->secondChanceUsed && !bat.unlucky())
+	{
+		MetaString line;
+		if(const auto * hero = battle.battleGetFightingHero(luckSide))
+		{
+			line.appendTextID(hero->getNameTextID());
+			line.appendRawString("'s ");
+		}
+		line.appendRawString("Second Chance suppresses a negative Luck trigger for %s this combat.");
+		attacker->addNameReplacement(line, attacker->getCount());
+		combatFeedbackLogLines.push_back(std::move(line));
+	}
 
 	// only primary target
 	if(defender && defender->alive())

@@ -404,6 +404,7 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 		if(heroes[i])
 		{
 			auto & fortune = currentBattle->sides[i].sylvanLuck;
+			fortune.secondChance = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.secondChance");
 			fortune.serendipity = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.serendipity");
 			fortune.naturesProvidence = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.natureSProvidence");
 			fortune.fortunateAim = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.fortunateAim");

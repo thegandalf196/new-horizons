@@ -2,6 +2,53 @@
 
 ## Purpose
 
+### 2026-10-01 Second Chance — fixture processor header
+
+Both-target build26224 exits1 at the new fixture's accepted shot submission:
+`CGameHandler.h` only forward-declares `BattleProcessor`, so invoking
+`gameHandler->battles->makePlayerBattleAction` requires the direct processor
+header. Preserve `UP084-build.log`; add that include to the fixture without
+altering runtime behavior. Rebuild both targets and run the six new cases plus
+the scoped Luck/Providence regressions before claiming native completion.
+
+Repaired build15358 exits0. Native59247 passes12/14 with zero skips: all six
+new Second Chance cases and six Fortune's Favor/Lucky Aim regressions pass.
+The two older Providence guards fail before combat with `Earlier New Horizons
+perk tier is still required`; each selected its Advanced perk without a Basic
+perk. Retain `UP084-focused.log`/`.xml`. Add legal Basic Fortunate Aim before
+Nature's Providence in only those two setups; it does not alter these melee
+cases. Do not weaken production prerequisites or omit the failing guards.
+Repeat both-target compilation and the complete14-case filter.
+
+Final-build77313 passes, but native64576 again passes12/14: those two setups
+now reject `Unavailable New Horizons perk selection`. Root's suggested
+Fortunate Aim prerequisite was incorrect: the actual registry requires Advanced
+rank for it as well. Preserve `UP084-final.log`/`.xml`; replace only the new
+prerequisite selections with verified Basic Elven Precision, whose ranged-only
+Defense ignore cannot affect these melee cases. Inspect actual registration
+before assigning a prerequisite; do not infer its rank from its name. Rebuild
+and repeat the same filter, keeping both failed runs.
+
+Verified prerequisite build23927 exits0. Native6011 passes the same14/14 filter,
+zero skips in3.859s; preserve `UP084-verified.log`/`.xml`. Six new Second Chance
+cases, six recent Luck guards and both legal Providence guards pass on binary
+`8a34b62c978fa1842b571c9d1e0c5344583d18aa4678e6c5f73f5d61cd553f5f`.
+No production prerequisite, damage or existing Providence rule was relaxed.
+
+### 2026-10-01 Second Chance — pre-build detached AI review repairs
+
+Independent review and root inspection caught two blocking defects before the
+first build. Retaliation recording looked up its primary target in a map that
+deliberately excludes the main attacker; use the detached attacker state for
+that ID and the map only for collateral targets. Fortune projection also
+inferred a negative outcome from negative base Luck even when the strike was
+explicitly guaranteed positive. Gate negative inference with `!positive`,
+matching authoritative mutually exclusive outcomes. No failing native run is
+claimed for these pre-build findings. Add focused melee-retaliation and
+forced-positive-under-negative-Luck regressions before accepting the slice.
+Exact probabilistic multihit distributions and explicit stochastic-result
+replay remain Phase 2 work, not silently certified by certain-roll tests.
+
 ### 2026-10-01 Lucky Aim — calculator fixture shot geometry
 
 Native65046 passes4/8 and fails the three new Lucky Aim cases plus the older

@@ -696,14 +696,16 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	const int luck = battleGetAttackLuck(attack.attacker, attack.defender, attack.shooting);
 	const auto rules = getLuckRollRules();
 	const bool positive = attack.luckyStrike || (luck > 0 && fortuneStrikeIsCertain(attack));
-	const bool negative = attack.unluckyStrike || (luck < 0 && fortuneStrikeIsCertain(attack));
+	const bool negative = !positive && (attack.unluckyStrike
+		|| (luck < 0 && fortuneStrikeIsCertain(attack)));
 	if(!positive && !negative)
 		return;
 
 	// Negative Providence history is committed as well, but it has no
 	// aftermath to project.  recordStrike returns true when that bad result was
 	// suppressed by Providence, exactly as it does in the authoritative path.
-	if(fortune.recordStrike(attack.attacker->unitId(), positive, negative))
+	if(fortune.recordStrike(attack.attacker->unitId(), positive, negative,
+		newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attack.attacker, attack.physicalDamage)))
 		return;
 	if(!positive)
 		return;

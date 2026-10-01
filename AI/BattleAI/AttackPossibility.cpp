@@ -250,6 +250,12 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		? hb->battleGetFightingHero(raSide) : nullptr;
 	const bool hasRelentlessAssault = raHero
 		&& raHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT);
+	const bool shooting = hb->battleCanShoot(attacker, defender->getPosition());
+	BattleAttackInfo attack(attacker, defender, 0, shooting);
+	const auto fortune = raSide == BattleSide::ATTACKER || raSide == BattleSide::DEFENDER
+		? hb->getBattle()->getSylvanLuckState(raSide) : SylvanLuckState{};
+	const bool hasSecondChance = fortune.secondChance
+		&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker, attack.physicalDamage);
 	// IDs alone cannot key a target/controller/round-sensitive premium. Preserve
 	// original-damage snapshots for comparison, but recompute current v2 damage.
 	// Remember marked targets so expiry/Dispel cannot revive a cached premium.
@@ -258,12 +264,11 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE)
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
 		|| hasRelentlessAssault
+		|| hasSecondChance
 		|| tracksRangedMarks(defender->unitId()))
 	{
 		if(!attacker->alive())
 			return 0;
-		const bool shooting = hb->battleCanShoot(attacker, defender->getPosition());
-		BattleAttackInfo attack(attacker, defender, 0, shooting);
 		const auto * primaryTarget = hb->battleResolveHeroOrderTarget(attacker, defender, shooting);
 		attack.defender = primaryTarget ? primaryTarget : defender;
 		attack.protectIntercepted = attack.defender->unitId() != defender->unitId();
@@ -607,6 +612,17 @@ AttackPossibility AttackPossibility::evaluate(
 		std::shared_ptr<HypotheticBattle> fortunePreview;
 		BattleAttackInfo potentialRetaliation(defender, attacker, 0, false);
 		potentialRetaliation.retaliation = true;
+		const auto hasSecondChanceFor = [&state](const battle::Unit * unit, bool physicalDamage)
+		{
+			if(!unit || !state->getBattle()
+				|| !newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(unit, physicalDamage))
+				return false;
+			const auto side = state->playerToSide(state->battleGetOwner(unit));
+			return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+				&& state->getBattle()->getSylvanLuckState(side).secondChance;
+		};
+		const bool projectsSecondChance = hasSecondChanceFor(attacker, attackInfo.physicalDamage)
+			|| hasSecondChanceFor(defender, potentialRetaliation.physicalDamage);
 		const bool projectsNoQuarter = !attackInfo.shooting && attackInfo.physicalDamage
 			&& (state->battleCanTriggerNoQuarter(attackInfo)
 				|| state->battleCanTriggerNoQuarter(potentialRetaliation));
@@ -666,15 +682,32 @@ AttackPossibility AttackPossibility::evaluate(
 			|| projectsImmovable || projectsSwampRenewal || projectsMireGrip;
 	if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
-			|| projectsBulwarkEffects)
+			|| projectsBulwarkEffects || projectsSecondChance)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
-			|| projectsBulwarkEffects)
+			|| projectsBulwarkEffects || projectsSecondChance)
 			ap.effectPreview = fortunePreview;
 	const CBattleInfoCallback & luckState = fortunePreview
 		? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
+	const auto recordCertainNegativeLuck = [&fortunePreview](const BattleAttackInfo & attack,
+		const std::vector<std::pair<uint32_t, int64_t>> & hits,
+		battle::CUnitState * attackerState)
+	{
+		if(!fortunePreview || !attack.attacker || !attack.defender)
+			return false;
+		const int luck = fortunePreview->battleGetAttackLuck(attack.attacker, attack.defender, attack.shooting);
+		const bool certainNegative = attack.unluckyStrike
+			|| (!attack.luckyStrike && luck < 0 && fortunePreview->fortuneStrikeIsCertain(attack));
+		if(!certainNegative)
+			return false;
+
+		// The use is consumed by the resolved negative roll, even when its damage
+		// is zero or every point is absorbed by a shield.
+		fortunePreview->projectFortuneStrike(attack, hits, attackerState, false);
+		return true;
+	};
 	const auto scoreHexPain = [&](battle::CUnitState * recipient, int64_t damage)
 	{
 		if(!recipient || damage <= 0)
@@ -826,12 +859,29 @@ AttackPossibility AttackPossibility::evaluate(
 					auto preemptiveDamage = luckState.battleExpectedLuckDamage(preemptive);
 					const auto preemptiveProvenance = battleAIDamageProvenance(
 						strikeDefenderState->second.get(), preemptive.physicalDamage);
+					const auto requestedPreemptiveDamage = preemptiveDamage;
+					auto appliedPreemptiveDamage = requestedPreemptiveDamage;
 					const auto projectedPreemptiveDamage = battleAIProjectDamage(
-						ap.attackerState.get(), preemptiveDamage, preemptiveProvenance);
+						ap.attackerState.get(), requestedPreemptiveDamage, preemptiveProvenance);
 					ap.attackerDamageReduce += calculateDamageReduce(strikeDefenderState->second.get(),
 						ap.attackerState.get(), projectedPreemptiveDamage.healthLoss, damageCache, state);
-					ap.attackerState->damage(preemptiveDamage, false,
+					ap.attackerState->damage(appliedPreemptiveDamage, false,
 						preemptiveProvenance);
+					if(fortunePreview)
+					{
+						FortuneStrikeProjection preemptiveStrike;
+						preemptiveStrike.attackerId = strikeDefenderState->second->unitId();
+						preemptiveStrike.defenderId = ap.attackerState->unitId();
+						preemptiveStrike.retaliation = true;
+						preemptiveStrike.damageProvenance = preemptiveProvenance;
+						preemptiveStrike.hits.emplace_back(ap.attackerState->unitId(), requestedPreemptiveDamage);
+						preemptiveStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), appliedPreemptiveDamage);
+						recordCertainNegativeLuck(preemptive, preemptiveStrike.hits,
+							strikeDefenderState->second.get());
+						// Preserve the reaction's position in the resolved sequence for the
+						// detached branch replay, including a zero-damage Luck result.
+						ap.fortuneStrikes.push_back(std::move(preemptiveStrike));
+					}
 				}
 			}
 			if(!ap.attackerState->alive())
@@ -882,6 +932,7 @@ AttackPossibility AttackPossibility::evaluate(
 				&& state->battleMatchOwner(attacker, strikeDefender);
 			std::optional<FortuneStrikeProjection> retaliation;
 			std::optional<FortuneStrikeProjection> cleave;
+			std::vector<FortuneStrikeProjection> counterfireStrikes;
 			int64_t bulwarkPrimaryHealthLoss = 0;
 			int bulwarkReflectionRate = 0;
 			std::vector<std::pair<std::shared_ptr<battle::CUnitState>, int64_t>> pendingRetaliationDamage;
@@ -1044,6 +1095,19 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.defenderDead = !defenderState->alive();
 				}
 			}
+			auto projectedStrikeAttack = ap.attack;
+			projectedStrikeAttack.attacker = ap.attackerState.get();
+			projectedStrikeAttack.defender = strikeDefenderState->second.get();
+			projectedStrikeAttack.shooting = attackInfo.shooting;
+			projectedStrikeAttack.physicalDamage = attackInfo.physicalDamage;
+			projectedStrikeAttack.retaliation = attackInfo.retaliation;
+			projectedStrikeAttack.secondaryAttack = attackInfo.secondaryAttack;
+			projectedStrikeAttack.luckyStrike = strike.perfectMoment || attackInfo.luckyStrike;
+			projectedStrikeAttack.unluckyStrike = attackInfo.unluckyStrike;
+			projectedStrikeAttack.attackerPos = ap.attackerState->getPosition();
+			projectedStrikeAttack.defenderPos = strikeDefenderState->second->getPosition();
+			const bool recordedNegativeLuck = recordCertainNegativeLuck(
+				projectedStrikeAttack, strike.hits, ap.attackerState.get());
 			// The server resolves every victim of a breath/splash strike before it
 			// applies Bulwark's direct reflection. Deferring this hit also keeps the
 			// attacker count stable while collateral damage is forecast.
@@ -1156,6 +1220,7 @@ AttackPossibility AttackPossibility::evaluate(
 					BattleAttackInfo counterfire(counterShooter.get(), ap.attackerState.get(), 0, true);
 					counterfire.archeryRangedDamageMultiplierPercent = newHorizonsArchery::COUNTERFIRE_DAMAGE_PERCENT;
 					int64_t counterfireDamage = luckState.battleExpectedLuckDamage(counterfire);
+					const auto requestedCounterfireDamage = counterfireDamage;
 					if(newHorizonsArchery::hasDeadeye(counterHero)
 						&& counterShooter->archeryDeadeyeRound != currentRound)
 						counterShooter->archeryDeadeyeRound = currentRound;
@@ -1167,6 +1232,18 @@ AttackPossibility AttackPossibility::evaluate(
 						projectedCounterfireDamage.healthLoss, damageCache, state);
 					ap.attackerState->damage(counterfireDamage, false,
 						counterfireProvenance);
+					if(fortunePreview)
+					{
+						FortuneStrikeProjection counterfireStrike;
+						counterfireStrike.attackerId = counterShooter->unitId();
+						counterfireStrike.defenderId = ap.attackerState->unitId();
+						counterfireStrike.shooting = true;
+						counterfireStrike.damageProvenance = counterfireProvenance;
+						counterfireStrike.hits.emplace_back(ap.attackerState->unitId(), requestedCounterfireDamage);
+						counterfireStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), counterfireDamage);
+						recordCertainNegativeLuck(counterfire, counterfireStrike.hits, counterShooter.get());
+						counterfireStrikes.push_back(std::move(counterfireStrike));
+					}
 					projectVampirismHealing(counterShooter.get(), counterfireDamage,
 						ap.vampirismHealingByUnit);
 					if(counterfireDamage > 0 && attackInfo.physicalDamage
@@ -1279,6 +1356,7 @@ AttackPossibility AttackPossibility::evaluate(
 					cleave->hits.emplace_back(targetState->unitId(), cleaveDamage);
 					targetState->damage(cleaveDamage, false, cleave->damageProvenance);
 					cleave->resolvedHits.emplace_back(targetState->unitId(), cleaveDamage);
+					recordCertainNegativeLuck(cleaveAttack, cleave->hits, ap.attackerState.get());
 					if(cleaveDamage > 0 && state->battleCanTriggerNoQuarter(cleaveAttack) && !targetState->isTimeStopped()
 						&& state->battleMatchOwner(ap.attackerState.get(), targetState.get())
 						&& targetState->alive()
@@ -1334,7 +1412,7 @@ AttackPossibility AttackPossibility::evaluate(
 						retaliationAttack.attackerPos = ap.attack.defenderPos;
 						retaliationAttack.defenderPos = retaliationAttack.secondaryAttack
 							? targetState->getPosition() : ap.attack.attackerPos;
-						rawDamage = state->battleExpectedLuckDamage(retaliationAttack);
+						rawDamage = luckState.battleExpectedLuckDamage(retaliationAttack);
 						retaliation->hits.emplace_back(targetState->unitId(), rawDamage);
 
 						const auto projectedRetaliationDamage = battleAIProjectDamage(
@@ -1354,6 +1432,17 @@ AttackPossibility AttackPossibility::evaluate(
 							ap.collateralDamageReduce += damageReduce;
 					}
 				}
+			}
+			if(retaliation && fortunePreview)
+			{
+				auto retaliatorState = defenderStates.at(retaliation->attackerId);
+			auto * retaliationTarget = retaliation->defenderId == attacker->unitId()
+				? ap.attackerState.get() : defenderStates.at(retaliation->defenderId).get();
+				BattleAttackInfo retaliationAttack(retaliatorState.get(), retaliationTarget, 0, false);
+				retaliationAttack.retaliation = true;
+				retaliationAttack.attackerPos = retaliatorState->getPosition();
+				retaliationAttack.defenderPos = retaliationTarget->getPosition();
+				recordCertainNegativeLuck(retaliationAttack, retaliation->hits, retaliatorState.get());
 			}
 
 			if(ap.effectPreview)
@@ -1436,8 +1525,10 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 			}
 
-			if(!strike.hits.empty())
+			if(!strike.hits.empty() || recordedNegativeLuck)
 				ap.fortuneStrikes.push_back(std::move(strike));
+			for(auto & counterfireStrike : counterfireStrikes)
+				ap.fortuneStrikes.push_back(std::move(counterfireStrike));
 			if(cleave && !cleave->hits.empty())
 				ap.fortuneStrikes.push_back(std::move(*cleave));
 			if(retaliation && !retaliation->hits.empty())

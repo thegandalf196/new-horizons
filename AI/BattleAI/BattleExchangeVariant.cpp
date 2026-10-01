@@ -170,6 +170,11 @@ float BattleExchangeVariant::trackAttack(
 			}
 
 			BattleAttackInfo projectedAttack(projectedAttacker.get(), projectedDefender.get(), 0, strike.shooting);
+			// The projection records the resolved physical-creature provenance;
+			// preserve that explicit context for Second Chance eligibility instead
+			// of re-inferring it from the detached unit's bonuses.
+			projectedAttack.physicalDamage = strike.damageProvenance
+				== battle::DamageProvenance::PHYSICAL_CREATURE;
 			projectedAttack.retaliation = strike.retaliation;
 			projectedAttack.cleaveDamagePercent = strike.cleaveDamagePercent;
 			if(strike.cleaveDamagePercent > 0)

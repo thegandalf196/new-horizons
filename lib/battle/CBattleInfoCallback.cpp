@@ -542,7 +542,10 @@ int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & a
 		return normal;
 	const auto fortune = getBattle()->getSylvanLuckState(side);
 	const int luck = battleGetAttackLuck(attack.attacker, attack.defender, attack.shooting);
-	if(luck == 0 || (luck < 0 && fortune.naturesProvidence && !fortune.negativeLuckIgnored))
+	if(luck == 0)
+		return normal;
+	if(luck < 0 && fortune.canIgnoreNegativeLuck(
+		newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attack.attacker, attack.physicalDamage)))
 		return normal;
 	const auto rules = battleLuckRules(*getBattle());
 	if(luck > 0 && attack.secondaryAttack && !rules.affectsAllTargets)

@@ -127,15 +127,18 @@ enum class ESerializationVersion : int32_t
 	BATTLE_HERO_MANA_EXPENDITURE, // accepted hero spell and Counterspell costs spent during combat
 	NEW_HORIZONS_LEARNING_MENTOR, // replicated weekly Mentor meeting usage
 	NEW_HORIZONS_ARMORER_VETERAN, // replicated physical damage interval for Veteran recovery
+	NEW_HORIZONS_SECOND_CHANCE, // battle-long negative Luck suppression
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_ARMORER_VETERAN,
+	CURRENT = NEW_HORIZONS_SECOND_CHANCE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_SECOND_CHANCE > ESerializationVersion::NEW_HORIZONS_ARMORER_VETERAN,
+	"Second Chance expenditure must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_ARMORER_VETERAN > ESerializationVersion::NEW_HORIZONS_LEARNING_MENTOR,
 	"Veteran damage history must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_LEARNING_MENTOR > ESerializationVersion::BATTLE_HERO_MANA_EXPENDITURE,

@@ -52,6 +52,12 @@ bool isOrdinaryCreatureAttacker(const battle::Unit * attacker)
 		&& attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
 }
 
+bool isPhysicalCreatureLuckAttack(const battle::Unit * attacker, bool physicalDamage)
+{
+	return physicalDamage && isOrdinaryCreatureAttacker(attacker)
+		&& attacker->unitSlot() != SlotID::WAR_MACHINES_SLOT;
+}
+
 int paviseReductionPercent(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(ARMORER_SKILL_ID), std::string(PAVISE_PERK_ID))

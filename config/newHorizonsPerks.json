@@ -2825,7 +2825,7 @@
 					"requires": "basic",
 					"description": "The first negative Luck trigger against the army each combat is ignored.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first negative Luck trigger against the army each combat is ignored."
 					}
 				},

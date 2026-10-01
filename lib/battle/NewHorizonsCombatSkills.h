@@ -32,6 +32,8 @@ DLL_LINKAGE int armorerReductionPercent(int rank);
 DLL_LINKAGE int formationFightingReductionPercent(const CGHeroInstance * hero);
 /// Whether an attacker qualifies for ordinary creature-attack skill hit modifiers.
 DLL_LINKAGE bool isOrdinaryCreatureAttacker(const battle::Unit * attacker);
+/// Whether an attack can trigger creature Luck perks that require a physical creature attack.
+DLL_LINKAGE bool isPhysicalCreatureLuckAttack(const battle::Unit * attacker, bool physicalDamage);
 /// Independent ranged-physical reduction while the target is Defending.
 DLL_LINKAGE int paviseReductionPercent(const CGHeroInstance * hero);
 /// Consume the current physical-damage interval and apply Veteran's surviving-wound recovery.
