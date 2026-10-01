@@ -306,9 +306,16 @@ public:
 	int32_t getSchoolRankPowerCoefficientPercent() const;
 	/// Effective saved-rules School × Spellcraft coefficient, in basis points.
 	int32_t getSpellPowerCoefficientBasisPoints() const;
+	/// Arcane Focus percentage snapshotted for this hero-cast context. Non-hero
+	/// casts and casts after a completed hero spell return zero.
+	virtual int32_t getArcaneFocusBonusPercent() const { return 0; }
 	/// Saved-v3 Quicksand's authoritative patch count, or zero for legacy rules
 	/// and every other spell.
 	int32_t getNewHorizonsQuicksandPatchCount() const;
+	/// New Horizons Land Mine's authoritative selected-hex count, or zero
+	/// outside the New Horizons Land Mine profile. Pre-v3 snapshots retain raw
+	/// Spell Power; v3 uses the composed saved coefficient.
+	int32_t getNewHorizonsLandMinePatchCount() const;
 	/// Empower Spell's +25% applies only to the power-derived term.
 	int32_t getEmpowerSpellBonusPercent() const;
 	/// Resolves a configured chain-effect target count against the saved battle
@@ -440,6 +447,7 @@ public:
 	IBattleCast::Value getEffectPower() const override;
 	int32_t getEffectPowerDivisor() const override;
 	int32_t getWarcastingBonusPercent() const override;
+	int32_t getArcaneFocusBonusPercent() const override;
 	IBattleCast::Value getEffectDuration() const override;
 	IBattleCast::Value adjustEffectDuration(IBattleCast::Value baseDuration) const override;
 	IBattleCast::Value64 getEffectValue() const override;
@@ -516,6 +524,8 @@ private:
 	IBattleCast::Value effectPower;
 	///Matching ordinary-hero Spell Warcasting empowerment captured before cast consumption.
 	int32_t warcastingBonusPercent = 0;
+	/// First-cast Arcane Focus captured before BattleSpellCast marks completion.
+	int32_t arcaneFocusBonusPercent = 0;
 	///actual spell-power affecting effect duration
 	IBattleCast::Value effectDuration;
 

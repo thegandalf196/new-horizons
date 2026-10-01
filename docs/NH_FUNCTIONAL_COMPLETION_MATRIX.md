@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-09-30
-Canonical source SHA-256: `3bac56d888f6e89f2e924bb0447745cbd76c1e803d85333f931eaae997c12dfd`
+Canonical source SHA-256: `c39881d1bb9dc6bd9a37650a596ff6939af6bdd548d56133ca37f862cd04d0ec`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -13,6 +13,24 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP-067 Arcane Focus is source/native verified: the first accepted hero spell
+captures +20% to its Spell Power-derived numerical component before completion
+publication. Fixed bases do not change; creature/rejected casts do not consume
+the shared history and round advancement does not renew it. Damage, timed and
+direct numerical helpers share the snapshot. Land Mine count now uses one
+coefficient-aware calculation in runtime, Lua, client placement and AI; pre-v3
+profiles preserve raw thresholds. Both Linux targets build (`55273` final
+retry), and native `49925` passes 27/27 with zero skips. Reports:
+`UP067-arcane-focus-focused-retry.log`/`.xml`; binary SHA-256
+`77775ed6fea734223b0587f438b820ece223438d2a66785bb5d1c82c96682327`.
+Content/perk checks pass 76/76; placement, module and diff checks pass; independent
+review has no remaining blocker. Active perks advance 127→128/310 (182 planned),
+Spellcraft 2→3/10; ranks remain 84/93 and combat identities 60/67. Broader perk
+interactions, full battle save/load and graphical preview/playable acceptance
+are Phase 2/delivery gates, not established by these focused tests. Polymorph's
+approved nearest-legal-position relocation is canonical but its form foundation
+is not yet implemented. No launcher promotion occurred.
 
 UP-065 user-playtest defect: Toxic Spines is registered as a Basic perk but its
 application requires actual Bulwark reflection, which is zero at Basic rank.
@@ -271,7 +289,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 127/310 | 183 planned; Paradox Shield is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 128/310 | 182 planned; Arcane Focus is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -298,8 +316,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 127
-active perks, leaving nine ranks and 183 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 128
+active perks, leaving nine ranks and 182 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-30; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -416,8 +434,8 @@ interactions, and rendered/playable acceptance remain separate.
 | Nature Magic | 3/0 | 4/6 | Herbalist, Rootcaller, Beastcaller and Verdant Warden active; six perks missing. |
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
-| Chaos Magic | 3/0 | 1/9 | Blinkmaster opens ordinary Advanced progression; nine perks remain planned. |
-| Spellcraft | 3/0 | 2/8 | Spell Penetration opens normal Advanced progression. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold and scales Spell Power-derived terms without moving fixed bases; its Advanced selection opens Expert progression. Basic/Advanced/Expert rank efficiency is 110/120/130% under saved v3 rules. |
+| Chaos Magic | 3/0 | 3/7 | Blinkmaster, Weaver and Paradox Shield are active with focused evidence recorded above; seven perks remain planned. |
+| Spellcraft | 3/0 | 3/7 | Arcane Focus scales the first accepted hero spell's SP term; Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
 | Wisdom | 3/0 | 7/3 | Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. Two other perks remain missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 4/6 | Six perks missing |
 | Logistics | 3/0 | 3/7 | Seven perks missing |

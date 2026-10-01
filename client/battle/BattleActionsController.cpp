@@ -789,7 +789,7 @@ int BattleActionsController::repeatedPlacementRequiredHexes() const
 	if(quicksandPlacementModeActive())
 		return mechanics->getNewHorizonsQuicksandPatchCount();
 
-	return newHorizonsMagic::landMineHexCount(mechanics->getEffectPower());
+	return mechanics->getNewHorizonsLandMinePatchCount();
 }
 
 bool BattleActionsController::repeatedPlacementReady() const

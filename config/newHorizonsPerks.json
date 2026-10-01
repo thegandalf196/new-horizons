@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "3bac56d888f6e89f2e924bb0447745cbd76c1e803d85333f931eaae997c12dfd",
+	"sourceSha256": "c39881d1bb9dc6bd9a37650a596ff6939af6bdd548d56133ca37f862cd04d0ec",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1921,7 +1921,7 @@
 					"requires": "basic",
 					"description": "The first spell cast in each combat receives +20% to its Spell Power-derived numerical component.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first spell cast in each combat receives +20% to its Spell Power-derived numerical component."
 					}
 				},

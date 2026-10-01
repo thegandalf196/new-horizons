@@ -2,6 +2,30 @@
 
 ## Purpose
 
+### 2026-09-30 Arcane Focus — first native selection fixture
+
+Both Linux targets build successfully (`84362`, twelve jobs). The first isolated
+focused run (`67682`) executes 27 cases without skips: 26 pass, including first
+Sorrow, rejected/creature casts, mine-count parity, detached first/second spell
+history and direct guards. Arcane Focus's actual AI-selection case expects
+HERO_SPELL but the evaluator selects an Order (action type 0x0F). Preserve
+`UP067-arcane-focus-build.log` and `UP067-arcane-focus-focused.log`/`.xml`.
+Inspect the fixture's spell-versus-Order utility before classifying a production
+defect; do not bypass selection or weaken the accepted-action assertion.
+Coverage remains unadvanced until a succeeding focused run.
+
+Repair: fixture Spell Power 10 made focused Magic Arrow only 46 damage and
+allowed a sensible Order to win. Raise fixture Spell Power to 200 (548 damage
+before Overcharge) while retaining real evaluator choice, accepted submission,
+and live-state/RNG assertions. Cached both-target rebuild `55273` succeeds;
+native retry `49925` passes all 27 without skips. Preserve
+`UP067-arcane-focus-build-retry.log` and `UP067-arcane-focus-focused-retry.log`/
+`.xml`. No AI production valuation was weakened to pass the fixture.
+After the user-approved canonical Polymorph amendment, the offline source-hash
+guard correctly fails until config sourceSha256 and generated module match.
+Retain `UP067-arcane-focus-offline.log`; repaired retry passes 76/76 in
+`UP067-arcane-focus-offline-retry.log`.
+
 ### 2026-09-30 clean Linux delivery — headless Mage Guild notification crash
 
 Clean committed source `574f0571df32359a1b41bded8a8ccfddac8aa013`

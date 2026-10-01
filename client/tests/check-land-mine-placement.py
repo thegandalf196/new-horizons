@@ -26,7 +26,7 @@ def between(source: str, start: str, end: str) -> str:
 # this selector only through the state-backed saved marker helper.
 assert "newHorizonsMagic::rulesActive" in CONTROLLER
 assert "newHorizonsMagic::isLandMine" in CONTROLLER
-assert "newHorizonsMagic::landMineHexCount" in CONTROLLER
+assert "getNewHorizonsLandMinePatchCount" in CONTROLLER
 assert "newHorizonsMagic::quicksandSelectedPlacementEnabled" in CONTROLLER
 assert "legacy/random obstacle action" in CONTROLLER
 

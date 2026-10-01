@@ -42,6 +42,7 @@ constexpr int CURRENT_RULESET_VERSION = SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VE
 constexpr int SPELL_POINTS_RULESET_VERSION = 1;
 constexpr int MAGE_GUILD_GENERATION_RULESET_VERSION = 1;
 constexpr int SPELL_POWER_COEFFICIENT_BASIS_POINTS = 10'000;
+constexpr int SPELLCRAFT_ARCANE_FOCUS_BONUS_PERCENT = 20;
 constexpr int SPELL_POINTS_INTELLIGENCE_MAXIMUM_PERCENT = 130;
 constexpr int BLESS_BASE_DURATION = 2;
 constexpr int BLESS_MAX_DURATION = 4;
@@ -92,6 +93,7 @@ inline constexpr std::string_view HAVOC_ANNIHILATOR = "new-horizons:havocMagic.a
 inline constexpr std::string_view LIGHT_MAGIC_SKILL = "new-horizons:lightMagic";
 inline constexpr std::string_view LIGHT_BENEDICTION = "new-horizons:lightMagic.benediction";
 inline constexpr std::string_view SPELLCRAFT_SKILL = "new-horizons:spellcraft";
+inline constexpr std::string_view SPELLCRAFT_ARCANE_FOCUS = "new-horizons:spellcraft.arcaneFocus";
 inline constexpr std::string_view SPELLCRAFT_EMPOWER_SPELL = "new-horizons:spellcraft.empowerSpell";
 constexpr int SPELLCRAFT_EMPOWER_MANA_THRESHOLD = 12;
 constexpr int SPELLCRAFT_EMPOWER_BONUS_PERCENT = 25;
@@ -176,7 +178,8 @@ DLL_LINKAGE bool vampirismEnabled(const JsonNode & rules, SpellID spell);
 /// ordinary 50% cap. Returns null for legacy or non-canonical spell rows.
 DLL_LINKAGE std::optional<int> vampirismHealBasisPoints(const JsonNode & rules,
 	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower,
-	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0);
+	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0,
+	int additionalSpellPowerComponentPercent = 0);
 /// Saved-v3 canonical Re-animate identity gate. Older snapshots never acquire
 /// the newly registered Shadow spell from installed content alone.
 DLL_LINKAGE bool reanimateEnabled(const JsonNode & rules, SpellID spell);
@@ -186,7 +189,8 @@ DLL_LINKAGE bool hasReanimatorPerk(const CGHeroInstance * hero);
 /// satisfying surviving-unit wounds. School × Spellcraft is kept exact until
 /// the base pool's final HP floor; legacy/non-canonical rows return nullopt.
 DLL_LINKAGE std::optional<int64_t> reanimateHealingPool(const JsonNode & rules,
-	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower, int64_t survivorWounds);
+	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower, int64_t survivorWounds,
+	int additionalSpellPowerComponentPercent = 0);
 /// Saved-v3 canonical Soul Reaper identity gate. Older snapshots never acquire
 /// the newly registered Shadow spell from installed content alone.
 DLL_LINKAGE bool soulReaperEnabled(const JsonNode & rules, SpellID spell);
@@ -197,7 +201,8 @@ DLL_LINKAGE bool doomRulesEnabled(const JsonNode & rules, SpellID spell);
 /// term receives saved School × Spellcraft scaling; invalid/legacy spell rows
 /// return nullopt.
 DLL_LINKAGE std::optional<int> doomCripplingPenaltyPercent(const JsonNode & rules,
-	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower);
+	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower,
+	int additionalSpellPowerComponentPercent = 0);
 /// Soul Reaper's 40% missing-effective-HP component. Current HP includes any
 /// temporary hit points; missing HP is clamped to zero when current exceeds max.
 DLL_LINKAGE std::optional<int64_t> soulReaperMissingHealthDamage(const JsonNode & rules,
@@ -255,19 +260,23 @@ DLL_LINKAGE int spellPowerCoefficientPercent(const JsonNode & rules, const CGHer
 /// Exact School × Spellcraft coefficient in basis points for the Spell-Power-
 /// derived term: 10000 is 100%. No rounding is done while composing factors.
 /// Spellcraft is read from the hero's registered new-horizons:spellcraft Skill.
-DLL_LINKAGE int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell);
+/// The final optional percentage (0..100) applies after both saved factors and
+/// affects only the Spell-Power-derived term (for example, Arcane Focus).
+DLL_LINKAGE int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero,
+	SpellID spell, int additionalSpellPowerComponentPercent = 0);
 /// Saved-v3 Sorrow's positive Morale penalty magnitude, or nullopt for legacy,
 /// missing, or non-canonical saved spell rows. The School × Spellcraft factors,
 /// Warcasting, and Empower scale raw Hero Spell Power before the final /70
 /// floor. Sorrow deliberately ignores the legacy primary-growth divisor.
 DLL_LINKAGE std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInstance * hero,
 	SpellID spell, int32_t rawSpellPower, int warcastingBonusPercent = 0,
-	int empowerSpellBonusPercent = 0);
+	int empowerSpellBonusPercent = 0, int additionalSpellPowerComponentPercent = 0);
 /// Saved-v3 Quicksand count, or nullopt for any other spell/profile. School,
 /// Spellcraft, Warcasting, and Empower scale only the Spell-Power term.
 DLL_LINKAGE std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,
 	SpellID spell, int32_t spellPower, int32_t spellPowerDivisor = 1,
-	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0);
+	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0,
+	int additionalSpellPowerComponentPercent = 0);
 /// True only when the saved v3 spell row opts into player-selected Quicksand
 /// placement. Markerless v3 snapshots retain their random legacy placement.
 DLL_LINKAGE bool quicksandSelectedPlacementEnabled(const JsonNode & rules, SpellID spell);
@@ -386,8 +395,11 @@ DLL_LINKAGE bool isLandMine(SpellID spell);
 /// intentionally limited to stable spell identity checks.
 DLL_LINKAGE bool isFireWall(SpellID spell);
 /// Number of player-selected empty hexes required by canonical NH Land Mine.
+/// School, Spellcraft, and cast-specific Arcane Focus scale only the Spell
+/// Power term through the supplied coefficient; fixed minimum and cap remain.
 /// The caller must only use this while a saved NH magic roster is active.
-DLL_LINKAGE int landMineHexCount(int32_t spellPower);
+DLL_LINKAGE int landMineHexCount(int32_t spellPower,
+	int coefficientBasisPoints = SPELL_POWER_COEFFICIENT_BASIS_POINTS);
 /// True only for the saved New Horizons Counterspell identity.  The identity
 /// check is deliberately content-based so installed spell indices remain
 /// irrelevant to saved battles.

@@ -213,7 +213,7 @@ int32_t Mechanics::getSpellPowerCoefficientBasisPoints() const
 		return 10000;
 
 	return newHorizonsMagic::spellPowerCoefficientBasisPoints(
-		battleState->getMagicRules(), getHeroCaster(), getSpellId());
+		battleState->getMagicRules(), getHeroCaster(), getSpellId(), getArcaneFocusBonusPercent());
 }
 
 int32_t Mechanics::getNewHorizonsQuicksandPatchCount() const
@@ -225,8 +225,16 @@ int32_t Mechanics::getNewHorizonsQuicksandPatchCount() const
 
 	const auto patchCount = newHorizonsMagic::quicksandPatchCount(battleState->getMagicRules(),
 		getHeroCaster(), getSpellId(), getEffectPower(), getEffectPowerDivisor(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
+		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), getArcaneFocusBonusPercent());
 	return patchCount.value_or(0);
+}
+
+int32_t Mechanics::getNewHorizonsLandMinePatchCount() const
+{
+	if(!usesNewHorizonsMagic() || !newHorizonsMagic::isLandMine(getSpellId()))
+		return 0;
+
+	return newHorizonsMagic::landMineHexCount(getEffectPower(), getSpellPowerCoefficientBasisPoints());
 }
 
 int32_t Mechanics::getShadowGiftSacrificeCostBasisPoints() const
@@ -679,13 +687,21 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	shadowGiftSacrificePercent = event->getShadowGiftSacrificePercent();
 
 	casterSide = cb->playerToSide(caster->getCasterOwner());
-	if(mode == Mode::HERO && dynamic_cast<const CGHeroInstance *>(caster) && !event->isMetamagicFollowup()
+	if(mode == Mode::HERO && dynamic_cast<const CGHeroInstance *>(caster)
 		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER))
 	{
 		const auto * battleInfo = cb->getBattle();
-		if(battleInfo && newHorizonsWarcasting::enabled(battleInfo->getMagicRules()))
+		if(battleInfo && !event->isMetamagicFollowup()
+			&& newHorizonsWarcasting::enabled(battleInfo->getMagicRules()))
 			warcastingBonusPercent = battleInfo->getWarcastingState(casterSide).bonusFor(
 				AlternatingHeroActionState::Action::SPELL, battleInfo->getRound());
+
+		const auto * hero = dynamic_cast<const CGHeroInstance *>(caster);
+		if(battleInfo && hero && battleInfo->getSideHero(casterSide) == hero
+			&& !battleInfo->hasCompletedHeroSpellCast(casterSide)
+			&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+				std::string(newHorizonsMagic::SPELLCRAFT_ARCANE_FOCUS)))
+			arcaneFocusBonusPercent = newHorizonsMagic::SPELLCRAFT_ARCANE_FOCUS_BONUS_PERCENT;
 	}
 
 	{
@@ -862,12 +878,12 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			effectValue = casterValue; // Legacy numeric caster zero means absence.
 		else
 		{
-			const auto * battle = cb->getBattle();
-			const int spellPowerCoefficientBasisPoints = battle
-				? newHorizonsMagic::spellPowerCoefficientBasisPoints(
-					battle->getMagicRules(), caster->getHeroCaster(), owner->getId())
-				: 10000;
-			const int damageCoefficientBasisPoints = owner->isDamage() ? spellPowerCoefficientBasisPoints : 10000;
+		const auto * battle = cb->getBattle();
+		const int spellPowerCoefficientBasisPoints = battle
+			? newHorizonsMagic::spellPowerCoefficientBasisPoints(
+				battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), arcaneFocusBonusPercent)
+			: 10000;
+		const int damageCoefficientBasisPoints = owner->isDamage() ? spellPowerCoefficientBasisPoints : 10000;
 			const int empowerBonusPercent = battle
 				? newHorizonsMagic::empowerSpellBonusPercent(
 					battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), isMassSlow() ? 3 : 1)
@@ -1307,6 +1323,11 @@ IBattleCast::Value BaseMechanics::getEffectPower() const
 int32_t BaseMechanics::getWarcastingBonusPercent() const
 {
 	return warcastingBonusPercent;
+}
+
+int32_t BaseMechanics::getArcaneFocusBonusPercent() const
+{
+	return arcaneFocusBonusPercent;
 }
 
 IBattleCast::Value BaseMechanics::getEffectDuration() const

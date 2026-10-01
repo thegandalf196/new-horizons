@@ -350,14 +350,15 @@ bool vampirismEnabled(const JsonNode & rules, const SpellID spell)
 
 std::optional<int> vampirismHealBasisPoints(const JsonNode & rules, const CGHeroInstance * hero,
 	const SpellID spell, const int32_t rawSpellPower, const int warcastingBonusPercent,
-	const int empowerBonusPercent)
+	const int empowerBonusPercent, const int additionalSpellPowerComponentPercent)
 {
 	if(!vampirismEnabled(rules, spell))
 		return std::nullopt;
 	if(rawSpellPower < 0)
 		throw std::invalid_argument("Invalid Vampirism raw Spell Power input");
 
-	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell);
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
+		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int64_t scaledPowerBasisPoints = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		static_cast<int64_t>(rawSpellPower) * VAMPIRISM_SPELL_POWER_BASIS_POINTS_PER_POINT, 1,
 		coefficientBasisPoints, warcastingBonusPercent, empowerBonusPercent);
@@ -464,12 +465,13 @@ bool doomRulesEnabled(const JsonNode & rules, const SpellID spell)
 }
 
 std::optional<int> doomCripplingPenaltyPercent(const JsonNode & rules, const CGHeroInstance * hero,
-	const SpellID spell, const int32_t rawSpellPower)
+	const SpellID spell, const int32_t rawSpellPower, const int additionalSpellPowerComponentPercent)
 {
 	if(!doomRulesEnabled(rules, spell))
 		return std::nullopt;
 
-	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell);
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
+		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int64_t spellPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		static_cast<int64_t>(std::max(0, rawSpellPower)) * DOOM_SPELL_POWER_TERM_NUMERATOR,
 		DOOM_SPELL_POWER_TERM_DIVISOR, coefficientBasisPoints);
@@ -513,14 +515,16 @@ bool hasReanimatorPerk(const CGHeroInstance * hero)
 }
 
 std::optional<int64_t> reanimateHealingPool(const JsonNode & rules, const CGHeroInstance * hero,
-	const SpellID spell, const int32_t rawSpellPower, const int64_t survivorWounds)
+	const SpellID spell, const int32_t rawSpellPower, const int64_t survivorWounds,
+	const int additionalSpellPowerComponentPercent)
 {
 	if(!reanimateEnabled(rules, spell))
 		return std::nullopt;
 	if(rawSpellPower < 0 || survivorWounds < 0)
 		throw std::invalid_argument("Invalid Re-animate healing-pool input");
 
-	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell);
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
+		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		static_cast<int64_t>(REANIMATE_SPELL_POWER_HP_PER_POINT) * rawSpellPower, 1,
 		coefficientBasisPoints);
@@ -1333,8 +1337,12 @@ int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * 
 	return schoolRankPowerCoefficientPercent(rules, highestSchoolRank);
 }
 
-int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell)
+int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell,
+	const int additionalSpellPowerComponentPercent)
 {
+	if(additionalSpellPowerComponentPercent < 0 || additionalSpellPowerComponentPercent > 100)
+		throw std::invalid_argument("Invalid additional Spell Power component percentage");
+
 	if(!hero || legacy(rules) || !rules.isStruct()
 		|| !integer(rules["rulesetVersion"], SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
 			SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
@@ -1344,19 +1352,21 @@ int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstanc
 
 	const int schoolCoefficientPercent = spellPowerCoefficientPercent(rules, hero, spell);
 	const int spellcraftCoefficientPercent = spellcraftEfficiencyPercent(rules, registeredSpellcraftRank(hero));
-	return schoolCoefficientPercent * spellcraftCoefficientPercent;
+	const int combinedCoefficientBasisPoints = schoolCoefficientPercent * spellcraftCoefficientPercent;
+	return combinedCoefficientBasisPoints * (100 + additionalSpellPowerComponentPercent) / 100;
 }
 
 std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInstance * hero,
 	const SpellID spell, const int32_t rawSpellPower, const int warcastingBonusPercent,
-	const int empowerBonusPercent)
+	const int empowerBonusPercent, const int additionalSpellPowerComponentPercent)
 {
 	if(!sorrowRulesEnabled(rules, spell))
 		return std::nullopt;
 	if(rawSpellPower < 0)
 		throw std::invalid_argument("Invalid Sorrow raw Spell Power input");
 
-	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell);
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
+		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		rawSpellPower, SORROW_SPELL_POWER_PER_MORALE, coefficientBasisPoints,
 		warcastingBonusPercent, empowerBonusPercent);
@@ -1366,7 +1376,8 @@ std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInsta
 
 std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,
 	const SpellID spell, const int32_t spellPower, const int32_t spellPowerDivisor,
-	const int warcastingBonusPercent, const int empowerBonusPercent)
+	const int warcastingBonusPercent, const int empowerBonusPercent,
+	const int additionalSpellPowerComponentPercent)
 {
 	if(!rulesActive(rules)
 		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
@@ -1378,7 +1389,8 @@ std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInsta
 		|| spellPowerDivisor > std::numeric_limits<int32_t>::max() / QUICKSAND_SPELL_POWER_PER_PATCH_V3)
 		throw std::invalid_argument("Invalid Quicksand Spell Power inputs");
 
-	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell);
+	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
+		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int32_t divisor = spellPowerDivisor * QUICKSAND_SPELL_POWER_PER_PATCH_V3;
 	const int64_t spellPowerPatches = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		spellPower, divisor, coefficientBasisPoints, warcastingBonusPercent, empowerBonusPercent);
@@ -1913,13 +1925,17 @@ bool isFireWall(SpellID spell)
 	return spell == SpellID(SpellID::FIRE_WALL);
 }
 
-int landMineHexCount(int32_t spellPower)
+int landMineHexCount(const int32_t spellPower, const int coefficientBasisPoints)
 {
 	if(spellPower < 0)
 		throw std::invalid_argument("Land Mine spell power cannot be negative");
-	if(spellPower < LAND_MINE_THREE_HEX_POWER)
+	if(coefficientBasisPoints < 0 || coefficientBasisPoints > 100'000)
+		throw std::invalid_argument("Invalid Land Mine Spell Power coefficient");
+
+	const int64_t scaledSpellPower = static_cast<int64_t>(spellPower) * coefficientBasisPoints;
+	if(scaledSpellPower < static_cast<int64_t>(LAND_MINE_THREE_HEX_POWER) * SPELL_POWER_COEFFICIENT_BASIS_POINTS)
 		return 2;
-	if(spellPower < LAND_MINE_FOUR_HEX_POWER)
+	if(scaledSpellPower < static_cast<int64_t>(LAND_MINE_FOUR_HEX_POWER) * SPELL_POWER_COEFFICIENT_BASIS_POINTS)
 		return 3;
 	return 4;
 }

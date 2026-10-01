@@ -1461,7 +1461,7 @@ std::vector<Target> SpellTargetEvaluator::canonicalFireWallTargets(const Mechani
 
 std::vector<Target> SpellTargetEvaluator::canonicalLandMineTargets(const Mechanics * spellMechanics)
 {
-	const int required = newHorizonsMagic::landMineHexCount(spellMechanics->getEffectPower());
+	const int required = spellMechanics->getNewHorizonsLandMinePatchCount();
 	auto candidates = legalLandMineHexes(spellMechanics);
 	if(candidates.size() < static_cast<size_t>(required))
 		return {};
@@ -1611,7 +1611,7 @@ float SpellTargetEvaluator::landMinePlacementValue(const Mechanics * spellMechan
 {
 	if(!isCanonicalLandMine(spellMechanics)
 		|| target.empty()
-		|| static_cast<int>(target.size()) != newHorizonsMagic::landMineHexCount(spellMechanics->getEffectPower())
+		|| static_cast<int>(target.size()) != spellMechanics->getNewHorizonsLandMinePatchCount()
 		|| !targetUsesDistinctLegalLandMineHexes(spellMechanics, target))
 		return 0.0f;
 

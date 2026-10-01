@@ -65,10 +65,7 @@ local function newHorizonsQuicksandPatchCount(mechanics)
 end
 
 local function newHorizonsLandMineCount(mechanics)
-	local power = mechanics:getEffectPower()
-	if power < 100 then return 2 end
-	if power < 200 then return 3 end
-	return 4
+	return mechanics:getNewHorizonsLandMinePatchCount()
 end
 
 local function shapesFor(opts)
