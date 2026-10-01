@@ -44,6 +44,8 @@ public:
 	 For now, uses range from EGameSettings
 	*/
 	int moraleVal() const;
+	/// Returns morale after applying an additional flat value before morale caps and minimums.
+	int moraleValWithBonus(int32_t additionalMorale) const;
 	/**
 	 Returns luck of creature or hero. Taking absolute bonuses into account.
 	 For now, uses range from EGameSettings
@@ -58,4 +60,7 @@ public:
 	int luckValAndBonusList(std::shared_ptr<const BonusList> & bonusList) const;
 
 	bool unaffectedByMorale() const;
+
+private:
+	int moraleValAndBonusList(std::shared_ptr<const BonusList> & bonusList, int32_t additionalMorale) const;
 };

@@ -82,6 +82,8 @@ public:
 	bool battleCanBeginHeroCommand(BattleSide side, HeroCommand command) const;
 	/// Shared real/hypothetical ammunition policy, including the off-field bank artifact.
 	bool battleUnitHasAmmoCart(const battle::Unit * unit) const;
+	/// Effective Morale for the current battle, including dynamic Standard Bearer adjacency.
+	int battleGetMorale(const battle::Unit * unit) const;
 	bool battleCanConfirmHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId) const;
 	std::vector<uint32_t> battleGetHeroCommandTargets(BattleSide side, HeroCommand command) const;
 	std::optional<FocusFireState> battlePrepareFocusFireState(BattleSide side, uint32_t targetUnitId) const;

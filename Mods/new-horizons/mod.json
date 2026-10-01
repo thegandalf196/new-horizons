@@ -3672,7 +3672,7 @@
 								"requires": "advanced",
 								"description": "A friendly stack adjacent to at least one other friendly stack receives +1 Morale. This bonus does not stack with itself.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "A friendly stack adjacent to at least one other friendly stack receives +1 Morale. This bonus does not stack with itself."
 								}
 							},

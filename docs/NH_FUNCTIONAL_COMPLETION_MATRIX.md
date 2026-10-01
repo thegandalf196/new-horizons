@@ -14,7 +14,23 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-Current verified checkpoint: Battlecraft Reserve is active and Phase1 complete.
+Current verified checkpoint: Discipline Standard Bearer is active and Phase1
+complete. Shared contextual Morale adds one+1 before caps/MIN, preserving immune
+and MAX handling. It queries live or candidate occupied footprints/current control
+without cached sibling-dependent bonuses. Both real Morale gates, four AI status
+valuation families and the existing compact-panel display/refresh use the query.
+Both-target42607 exits0; principal82873 passes4/4; activated native74455 passes
+39/39, zero skips in10.603s (`UP091-standard-bearer-activated.log`/`.xml`). Binary:
+`f12c0d80bf4aa73ec033bfc80c6b68aa0bb36fed2fd7e92665e2a646ce10d261`.
+Data/inventory19/19 pass. Independent production and fixture-repair reviews have
+no blocker. Coverage144→145/310 active, planned166→165; Discipline3/7.
+Phase2: explicit double-wide rear-hex and supporter death/resurrection evidence;
+Sorrow/Doom retain their existing detached-context helper signatures (no topology
+change). No new stored state/counter; existing perk persistence remains the
+contract. Art Not done; source UI hook is not playable visual acceptance.
+Next: Hold Fast's generic genuine-activation expiry, mapped in UP-092.
+
+Previous verified checkpoint: Battlecraft Reserve is active and Phase1 complete.
 Only a delayed waited TURN_QUEUE activation grants +2 movement; Initiative is
 unchanged, continuations preserve it and terminal activation cleanup clears it.
 Current-controller selection and detached Wait candidates share the helper.
@@ -639,7 +655,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 144/310 | 166 planned; Reserve is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 145/310 | 165 planned; Standard Bearer is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -776,7 +792,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
 | War Machines | 3/0 | 0/10 | Progression blocked |
-| Discipline | 3/0 | 2/8 | Inspirational Leader and Rally active. Rally cancels the first actual bad-Morale trigger once per combat before Twist, with focused native/state/AI evidence. Eight perks remain planned. Esprit de Corps awaits composition-penalty scope clarification. |
+| Discipline | 3/0 | 3/7 | Inspirational Leader, Rally and Standard Bearer active. Standard Bearer has real positive/negative Morale, current-control and branch-local adjacency evidence. Seven perks remain planned; Hold Fast is next. Esprit de Corps awaits composition-penalty scope clarification. |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
 | Light Magic | 3/0 | 7/3 | Benediction, Healer, Guardian, Aegis, Purifier, Retributionist, and Crusader active; Sanctuary Keeper, Litany and Miracle Worker remain planned. Crusader has focused native evidence. |

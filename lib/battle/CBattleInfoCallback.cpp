@@ -666,6 +666,34 @@ bool CBattleInfoCallback::battleHasFormationFightingProtection(const battle::Uni
 	return false;
 }
 
+int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
+{
+	if(!unit)
+		return 0;
+
+	if(!getBattle() || !unit->alive() || unit->isGhost())
+		return unit->moraleVal();
+
+	const auto * hero = battleGetOwnerHero(unit);
+	if(!hero || !hero->hasActivePerk("new-horizons:discipline", "new-horizons:discipline.standardBearer"))
+		return unit->moraleVal();
+
+	const auto owner = battleGetOwner(unit);
+	for(const auto * supporter : battleGetUnitsIf([](const battle::Unit * candidate)
+		{
+			return candidate->alive() && !candidate->isGhost();
+		}))
+	{
+		if(supporter->unitId() == unit->unitId() || battleGetOwner(supporter) != owner)
+			continue;
+
+		if(orderUnitsAdjacent(unit, supporter))
+			return unit->moraleValWithBonus(1);
+	}
+
+	return unit->moraleVal();
+}
+
 bool CBattleInfoCallback::battleShroudDeniesRetaliation(const BattleAttackInfo & attack) const
 {
 	return battleIsShroudFlankingAttack(attack)

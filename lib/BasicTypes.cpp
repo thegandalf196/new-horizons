@@ -71,6 +71,11 @@ bool AFactionMember::unaffectedByMorale() const
 
 int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList) const
 {
+	return moraleValAndBonusList(bonusList, 0);
+}
+
+int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList, int32_t additionalMorale) const
+{
 	int32_t maxGoodMorale = LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE).size();
 	int32_t maxBadMorale = - (int32_t) LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE).size();
 
@@ -90,7 +95,8 @@ int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList) const
 
 	bonusList = getBonusBearer()->getBonusesOfType(BonusType::MORALE);
 
-	int result = std::clamp(bonusList->totalValue(), maxBadMorale, maxGoodMorale);
+	const int64_t rawMorale = static_cast<int64_t>(bonusList->totalValue()) + additionalMorale;
+	int result = static_cast<int>(std::clamp<int64_t>(rawMorale, maxBadMorale, maxGoodMorale));
 	if(getBonusBearer()->hasBonusOfType(BonusType::MINIMUM_MORALE))
 		result = std::max(result, getBonusBearer()->valOfBonuses(BonusType::MINIMUM_MORALE));
 	return std::clamp(result, maxBadMorale, maxGoodMorale);
@@ -124,6 +130,12 @@ int AFactionMember::moraleVal() const
 {
 	TConstBonusListPtr tmp = nullptr;
 	return moraleValAndBonusList(tmp);
+}
+
+int AFactionMember::moraleValWithBonus(int32_t additionalMorale) const
+{
+	TConstBonusListPtr tmp = nullptr;
+	return moraleValAndBonusList(tmp, additionalMorale);
 }
 
 int AFactionMember::luckVal() const

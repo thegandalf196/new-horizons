@@ -433,7 +433,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	auto defense = std::to_string(LIBRARY->creatures()->getByIndex(stack->creatureIndex())->getDefense(stack->isShooter())) + "(" + std::to_string(stack->getDefense(stack->isShooter())) + ")";
 	auto damage = std::to_string(damageMultiplier * stack->getMinDamage(stack->isShooter())) + "-" + std::to_string(damageMultiplier * stack->getMaxDamage(stack->isShooter()));
 	auto health = stack->getMaxHealth();
-	auto morale = stack->moraleVal();
+	auto morale = battleCallback ? battleCallback->battleGetMorale(stack) : stack->moraleVal();
 	auto luck = stack->luckVal();
 
 	auto killed = stack->getKilled();
@@ -459,6 +459,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("IMRL22"), std::clamp(morale + 3, 0, 6), 0, 47, 131));
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("ILCK22"), std::clamp(luck + 3, 0, 6), 0, 47, 143));
 
+	displayedMorale = morale;
 	displayedStatus = currentStackInfoStatus(stack, battleCallback.get());
 	displayedSoulChainSignature = soulChainStatusSignature(stack, battleCallback.get());
 	if(displayedStatus.defend.defending)
@@ -854,7 +855,10 @@ void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
 
 	const auto current = currentStackInfoStatus(updatedInfo, battleCallback.get());
 	const auto soulChainSignature = soulChainStatusSignature(updatedInfo, battleCallback.get());
-	if(current == displayedStatus && soulChainSignature == displayedSoulChainSignature)
+	const auto currentMorale = battleCallback
+		? battleCallback->battleGetMorale(updatedInfo) : updatedInfo->moraleVal();
+	if(current == displayedStatus && soulChainSignature == displayedSoulChainSignature
+		&& currentMorale == displayedMorale)
 		return;
 
 	update(updatedInfo);

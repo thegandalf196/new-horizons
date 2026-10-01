@@ -216,12 +216,12 @@ bool isHexOfPainTriggerBonus(const Bonus * bonus)
 	return bonus->subtype.toString() == newHorizonsHexOfPainAI::TRIGGER_ID;
 }
 
-float expectedMoraleActivationChange(const battle::Unit * unit)
+float expectedMoraleActivationChange(const CBattleInfoCallback & battle, const battle::Unit * unit)
 {
 	if(!unit || !unit->alive() || unit->unaffectedByMorale())
 		return 0.0f;
 
-	const int morale = unit->moraleVal();
+	const int morale = battle.battleGetMorale(unit);
 	if(morale == 0)
 		return 0.0f;
 
@@ -522,7 +522,7 @@ float BattleEvaluator::estimateProjectedSorrowTargetValue(const battle::Unit * o
 	// Use the configured raw chance table and projected Morale delta instead of
 	// recomputing Sorrow's saved-rules School-rank formula.
 	const auto lostExpectedActivations = -projectedBattle->projectMoraleActivationDelta(original, projected,
-		expectedMoraleActivationChange(original), expectedMoraleActivationChange(projected),
+		expectedMoraleActivationChange(*projectedBattle, original), expectedMoraleActivationChange(*projectedBattle, projected),
 		static_cast<float>(remainingRounds) * 0.5f);
 	if(lostExpectedActivations <= 0.0f)
 		return 0.0f;
@@ -736,7 +736,7 @@ float BattleEvaluator::estimateProjectedDoomTargetValue(const battle::Unit * ori
 	// copy of that same prospective hit as a retaliation estimate.
 	const float expectedFutureAttackValue = bestPreventedAttackValue * static_cast<float>(remainingRounds) * 0.5f;
 	const auto lostExpectedActivations = -projectedBattle->projectMoraleActivationDelta(original, projected,
-		expectedMoraleActivationChange(original), expectedMoraleActivationChange(projected),
+		expectedMoraleActivationChange(*projectedBattle, original), expectedMoraleActivationChange(*projectedBattle, projected),
 		static_cast<float>(remainingRounds) * 0.5f);
 	const float moraleValue = lostExpectedActivations > 0.0f
 		? lostExpectedActivations * expectedTargetActivationValue(projected, damageCache, projectedBattle)
@@ -2432,7 +2432,8 @@ float shieldOfChaosTargetValue(uint32_t activeUnitId, BattleSide scoringSide,
 	// the battlefield's seeded morale roll. A bounded best-attack value converts
 	// that probability to the same stack-value scale as the damage terms above.
 	const float moraleActivationDelta = projectedBattle->projectMoraleActivationDelta(liveTarget, projectedTarget,
-		expectedMoraleActivationChange(liveTarget), expectedMoraleActivationChange(projectedTarget),
+		expectedMoraleActivationChange(liveBattle, liveTarget),
+		expectedMoraleActivationChange(*projectedBattle, projectedTarget),
 		static_cast<float>(rounds) * 0.5f);
 	const float moraleOutputDelta = moraleActivationDelta
 		* expectedTargetActivationValue(projectedTarget, damageCache, projectedBattle);
@@ -5331,7 +5332,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						if(rounds > 0.0f && effect.preventsNegativeMorale)
 						{
 							const float recoveredMoraleActivations = state->projectMoraleActivationDelta(original, unit,
-								expectedMoraleActivationChange(original), expectedMoraleActivationChange(unit), rounds * 0.5f);
+								expectedMoraleActivationChange(*battleCallback, original),
+								expectedMoraleActivationChange(*state, unit), rounds * 0.5f);
 							if(recoveredMoraleActivations > 0.0f)
 								projectedCrusadeBonusScore += recoveredMoraleActivations
 								* expectedTargetActivationValue(unit, innerCache, state);

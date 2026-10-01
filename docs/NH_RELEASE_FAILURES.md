@@ -2,6 +2,21 @@
 
 ## Purpose
 
+### 2026-10-01 Standard Bearer — configured Morale caps
+
+Both-target68249 exits0 (`UP091-standard-bearer-build.log`). Native17745 passes
+3/4 (`UP091-standard-bearer-principal.log`/`.xml`): both actual Morale gates and
+branch-local adjacency pass. The caps fixture assumes ±10 from its map-level
+chance arrays, but AFactionMember uses the existing engine-level chance-vector
+sizes (±3 in this profile). Derive the expected clamp/MAX bounds from the same
+configured engine settings; preserve the raw-before-cap assertion and production
+behavior. Do not activate the perk before the repaired focused gate passes.
+
+Independent Astra repair review confirms the dynamic bounds/raw-before-cap test.
+Repaired both-target42607 exits0; principal82873 passes4/4, then activated74455
+passes39/39 with zero skips in10.603s. The original caps failure is retained above;
+production needed no repair. Standard Bearer registration is now active.
+
 ### 2026-10-01 Reserve — fixture compile and portable sidecar
 
 Both-target build25950 exits1 (`UP091-build.log`). The new fixture used an

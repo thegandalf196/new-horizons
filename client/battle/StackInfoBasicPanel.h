@@ -36,6 +36,7 @@ private:
 	std::shared_ptr<CPlayerBattleCallback> battleCallback;
 	newHorizonsBattleStatus::StackInfoStatusSnapshot displayedStatus;
 	std::string displayedSoulChainSignature;
+	int displayedMorale = 0;
 
 public:
 	StackInfoBasicPanel(

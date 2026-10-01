@@ -915,7 +915,7 @@ bool BattleFlowProcessor::tryMakeAutomaticAction(const CBattleInfoCallback & bat
 bool BattleFlowProcessor::tryActivateMoralePenalty(const CBattleInfoCallback & battle, const CStack * next)
 {
 	// check for bad morale => freeze
-	int nextStackMorale = next->moraleVal();
+	int nextStackMorale = battle.battleGetMorale(next);
 	if(!next->hadMorale && !next->waited() && nextStackMorale < 0)
 	{
 		ObjectInstanceID ownerArmy = battle.getBattle()->getSideArmy(next->unitSide())->id;
@@ -1340,7 +1340,7 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfFirstAidTent(const CBattleInfo
 bool BattleFlowProcessor::rollGoodMorale(const CBattleInfoCallback & battle, const CStack * next)
 {
 	//check for good morale
-	auto nextStackMorale = next->moraleVal();
+	auto nextStackMorale = battle.battleGetMorale(next);
 	if(    !next->hadMorale
 		&& !next->defending
 		&& !next->waited()
