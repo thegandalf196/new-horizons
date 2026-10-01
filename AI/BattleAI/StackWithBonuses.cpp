@@ -13,6 +13,7 @@
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/TimeStopState.h"
@@ -1320,6 +1321,11 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		return;
 	if(battleBeginsActivation(unit.get(), reason))
 	{
+		const auto activationSide = playerToSide(battleGetOwner(unit.get()));
+		const auto * veteranHero = activationSide == BattleSide::ATTACKER || activationSide == BattleSide::DEFENDER
+			? battleGetFightingHero(activationSide) : nullptr;
+		newHorizonsCombatSkills::applyVeteran(unit.get(), veteranHero);
+
 		// Match the authoritative BattleFlowProcessor activation-start order:
 		// Regeneration consumes only marks already recorded for this survivor,
 		// before poison or any other start-of-activation damage can occur.
@@ -1341,7 +1347,7 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		auto poisonDamage = newHorizonsBulwark::physicalPoisonTickDamage(unit.get());
 		if(poisonDamage > 0)
 		{
-			unit->damage(poisonDamage);
+			unit->damage(poisonDamage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 			newHorizonsBulwark::advancePhysicalPoison(unit.get());
 		}
 		if(unit->bulwarkMireGripApplied)

@@ -970,6 +970,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	bulwarkPreemptiveUsed = other.bulwarkPreemptiveUsed;
 	bulwarkMireGripApplied = other.bulwarkMireGripApplied;
 	bulwarkDefendPhysicalDamage = other.bulwarkDefendPhysicalDamage;
+	veteranPhysicalDamageSinceActivation = other.veteranPhysicalDamageSinceActivation;
 	bulwarkImmovableRound = other.bulwarkImmovableRound;
 	bulwarkToxicSpinesRound = other.bulwarkToxicSpinesRound;
 	physicalPoisonBaseDamage = other.physicalPoisonBaseDamage;
@@ -1736,6 +1737,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("bulwarkDefendPhysicalDamage", bulwarkDefendPhysicalDamage, 0);
 	if(bulwarkDefendPhysicalDamage < 0)
 		throw std::runtime_error("Invalid negative Bulwark damage accumulator");
+	handler.serializeInt("veteranPhysicalDamageSinceActivation", veteranPhysicalDamageSinceActivation, 0);
+	if(veteranPhysicalDamageSinceActivation < 0)
+		throw std::runtime_error("Invalid negative Veteran damage accumulator");
 	handler.serializeInt("bulwarkImmovableRound", bulwarkImmovableRound, -1);
 	if(bulwarkImmovableRound < -1)
 		throw std::runtime_error("Invalid Bulwark perk round marker");
@@ -1849,6 +1853,7 @@ void CUnitState::reset()
 	bulwarkPreemptiveUsed = false;
 	bulwarkMireGripApplied = false;
 	bulwarkDefendPhysicalDamage = 0;
+	veteranPhysicalDamageSinceActivation = 0;
 	bulwarkImmovableRound = -1;
 	bulwarkToxicSpinesRound = -1;
 	physicalPoisonBaseDamage = 0;
@@ -2020,9 +2025,9 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 		const bool activeBattleForm = battleFormOriginalHealth.isBattleFormProvenance();
 		health.damage(amount, activeBattleForm ? false : destroyRemains, bypassTemporaryHitPoints);
 		normalizeCapacityHealth();
+		const int64_t creatureHealthAfter = health.getCreatureHealthAvailable();
 		if(activeBattleForm)
 		{
-			const int64_t creatureHealthAfter = health.getCreatureHealthAvailable();
 			if(creatureHealthAfter < creatureHealthBefore)
 			{
 				int64_t provenanceDamage = creatureHealthBefore - creatureHealthAfter;
@@ -2035,6 +2040,15 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 				throw std::logic_error("Damage resolution unexpectedly increased creature HP");
 			}
 		}
+		if(provenance == DamageProvenance::PHYSICAL_CREATURE && creatureHealthAfter < creatureHealthBefore)
+		{
+			const int64_t actualCreatureDamage = creatureHealthBefore - creatureHealthAfter;
+			const auto maximum = std::numeric_limits<int64_t>::max();
+			if(veteranPhysicalDamageSinceActivation > maximum - actualCreatureDamage)
+				veteranPhysicalDamageSinceActivation = maximum;
+			else
+				veteranPhysicalDamageSinceActivation += actualCreatureDamage;
+		}
 	}
 
 	bool disintegrate = hasBonusOfType(BonusType::DISINTEGRATE);
@@ -2043,6 +2057,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 
 	if(!alive())
 	{
+		veteranPhysicalDamageSinceActivation = 0;
 		guardianSpiritHitPoints = 0;
 		guardianSpiritRoundsRemaining = 0;
 		// Marks belong to surviving wounds only and must never carry through death.
@@ -2304,6 +2319,7 @@ void CUnitState::makeGhost()
 	endBattleForm();
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
+	veteranPhysicalDamageSinceActivation = 0;
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	phantomIntegrity = 0;

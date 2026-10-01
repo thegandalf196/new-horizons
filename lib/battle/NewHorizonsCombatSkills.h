@@ -5,11 +5,13 @@
  */
 #pragma once
 
+#include <cstdint>
 #include <string_view>
 
 class CGHeroInstance;
 namespace battle
 {
+class CUnitState;
 class Unit;
 }
 
@@ -19,8 +21,10 @@ constexpr std::string_view ARMORER_SKILL_ID = "new-horizons:armorer";
 constexpr std::string_view COUNTERCHARGE_PERK_ID = "new-horizons:armorer.countercharge";
 constexpr std::string_view FORMATION_FIGHTING_PERK_ID = "new-horizons:armorer.formationFighting";
 constexpr std::string_view PAVISE_PERK_ID = "new-horizons:armorer.pavise";
+constexpr std::string_view VETERAN_PERK_ID = "new-horizons:armorer.veteran";
 constexpr int PAVISE_REDUCTION_PERCENT = 25;
 constexpr int FORMATION_FIGHTING_REDUCTION_PERCENT = 10;
+constexpr int VETERAN_RECOVERY_PERCENT = 15;
 
 DLL_LINKAGE int armorerRank(const CGHeroInstance * hero);
 DLL_LINKAGE int armorerReductionPercent(int rank);
@@ -30,6 +34,8 @@ DLL_LINKAGE int formationFightingReductionPercent(const CGHeroInstance * hero);
 DLL_LINKAGE bool isOrdinaryCreatureAttacker(const battle::Unit * attacker);
 /// Independent ranged-physical reduction while the target is Defending.
 DLL_LINKAGE int paviseReductionPercent(const CGHeroInstance * hero);
+/// Consume the current physical-damage interval and apply Veteran's surviving-wound recovery.
+DLL_LINKAGE std::int64_t applyVeteran(battle::CUnitState * state, const CGHeroInstance * hero);
 DLL_LINKAGE int archeryRank(const CGHeroInstance * hero);
 DLL_LINKAGE int archeryDamagePercent(int rank);
 /// Apply Countercharge to Brace's Order-snapshot coefficient only. Other

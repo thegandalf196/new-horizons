@@ -19,6 +19,7 @@
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -1906,6 +1907,34 @@ void applyStartOfActivationEffects(CGameHandler * gameHandler,
 
 	const auto * hero = battle.battleGetOwnerHero(creatureStack);
 	auto state = creatureStack->acquireState();
+	if(state)
+	{
+		const int64_t pendingPhysicalDamage = state->veteranPhysicalDamageSinceActivation;
+		const int64_t healing = newHorizonsCombatSkills::applyVeteran(state.get(), hero);
+		if(pendingPhysicalDamage > 0 || healing > 0)
+		{
+			UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+			update.data = state->save();
+			update.healthDelta = healing;
+			BattleUnitsChanged changed;
+			changed.battleID = battle.getBattle()->getBattleID();
+			changed.changedStacks.push_back(std::move(update));
+			gameHandler->sendAndApply(changed);
+
+			if(healing > 0)
+			{
+				BattleLogMessage message;
+				message.battleID = battle.getBattle()->getBattleID();
+				MetaString line;
+				line.appendRawString("Veteran restores %s ");
+				creatureStack->addNameReplacement(line, creatureStack->getCount());
+				line.appendNumber(healing);
+				line.appendRawString(" Health.");
+				message.lines.push_back(std::move(line));
+				gameHandler->sendAndApply(message);
+			}
+		}
+	}
 	if(creatureStack->alive() && !creatureStack->isTimeStopped() && state
 		&& state->regenerationPendingMicroHealth > 0)
 	{

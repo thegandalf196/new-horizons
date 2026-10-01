@@ -144,15 +144,19 @@ float BattleExchangeVariant::trackAttack(
 			for(const auto & [unitId, damage] : strike.hits)
 			{
 				auto target = hb->getForUpdate(unitId);
-				auto actualDamage = std::min<int64_t>(std::max<int64_t>(0, damage),
-					target->getAvailableHealth());
+				auto appliedDamage = std::max<int64_t>(0, damage);
+				const auto wasAlive = target->alive();
+				const auto healthBefore = target->getAvailableHealth();
+				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
+					strike.damageProvenance);
+				target->damage(appliedDamage, false, strike.damageProvenance);
+				const auto healthLoss = std::max<int64_t>(0,
+					healthBefore - target->getAvailableHealth());
 				if(unitId == attacker->unitId())
-					projectedAttackerDamage += actualDamage;
-				actualHits.emplace_back(unitId, actualDamage);
-				if(actualDamage > 0)
+					projectedAttackerDamage += healthLoss;
+				actualHits.emplace_back(unitId, appliedDamage);
+				if(projectedDamage.healthLoss > 0)
 				{
-					const bool wasAlive = target->alive();
-					target->damage(actualDamage);
 					for(const auto & [noQuarterTargetId, moraleActivations] : strike.noQuarterTargets)
 						if(noQuarterTargetId == unitId)
 							target->applyNoQuarter(moraleActivations);
@@ -256,6 +260,13 @@ float BattleExchangeVariant::trackAttack(
 		unitToUpdate->physicalPoisonBaseDamage = affectedUnit->physicalPoisonBaseDamage;
 		unitToUpdate->physicalPoisonActivationsRemaining = affectedUnit->physicalPoisonActivationsRemaining;
 		unitToUpdate->physicalPoisonSourceStackId = affectedUnit->physicalPoisonSourceStackId;
+		unitToUpdate->guardianSpiritHitPoints = affectedUnit->guardianSpiritHitPoints;
+		unitToUpdate->guardianSpiritRoundsRemaining = affectedUnit->guardianSpiritRoundsRemaining;
+		// The detached forecast records explicitly classified hits and reactions
+		// even when they are not represented by a Fortune strike. Copy its total
+		// interval rather than guessing that residual HP loss was physical.
+		unitToUpdate->veteranPhysicalDamageSinceActivation =
+			affectedUnit->veteranPhysicalDamageSinceActivation;
 
 		if(unitToUpdate->unitSide() == attacker->unitSide())
 		{
@@ -356,8 +367,13 @@ float BattleExchangeVariant::trackAttack(
 	projectedAttack.protectIntercepted = protectIntercepted;
 
 	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
-	const int64_t actualDamage = std::min<int64_t>(attackDamage, defender->getAvailableHealth());
-	float defenderDamageReduce = AttackPossibility::calculateDamageReduce(attacker.get(), defender.get(), attackDamage, damageCache, hb);
+	const auto attackDamageProvenance = battleAIDamageProvenance(
+		attacker.get(), projectedAttack.physicalDamage);
+	const auto projectedAttackDamage = battleAIProjectDamage(
+		defender.get(), attackDamage, attackDamageProvenance);
+	const int64_t actualDamage = projectedAttackDamage.appliedDamage;
+	float defenderDamageReduce = AttackPossibility::calculateDamageReduce(attacker.get(), defender.get(),
+		projectedAttackDamage.healthLoss, damageCache, hb);
 	float attackerDamageReduce = 0;
 	const bool defenderWasAlive = defender->alive();
 	const int64_t defenderHealthBeforeAttack = defender->getAvailableHealth();
@@ -387,8 +403,9 @@ float BattleExchangeVariant::trackAttack(
 		else
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
-		defender->damage(attackDamage);
-		projectNoQuarterAfterHit(*hb, projectedAttack, *defender);
+		defender->damage(attackDamage, false, attackDamageProvenance);
+		if(actualDamage > 0)
+			projectNoQuarterAfterHit(*hb, projectedAttack, *defender);
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
@@ -439,7 +456,7 @@ float BattleExchangeVariant::trackAttack(
 
 	const bool projectedEnemyKill = defenderWasAlive && !defenderMayRebirth
 		&& (evaluateOnly
-			? attackDamage > 0 && (defender->isClone() || attackDamage >= defenderHealthBeforeAttack)
+			? projectedAttackDamage.healthLoss >= defenderHealthBeforeAttack
 			: !defender->alive());
 	if(!shooting && projectedAttacker->alive() && projectedEnemyKill
 		&& hb->battleMatchOwner(attacker.get(), defender.get())
@@ -455,13 +472,17 @@ float BattleExchangeVariant::trackAttack(
 			cleaveAttack.attackerPos = projectedAttacker->getPosition();
 			cleaveAttack.defenderPos = targetUnit->getPosition();
 			cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
+			const auto cleaveProvenance = battleAIDamageProvenance(
+				projectedAttacker.get(), cleaveAttack.physicalDamage);
 			projectedAttacker->cleaveUsedThisActivation = true;
 
 			int64_t cleaveDamage = hb->battleExpectedLuckDamage(cleaveAttack);
-			vstd::amin(cleaveDamage, targetUnit->getAvailableHealth());
+			const auto projectedCleaveDamage = battleAIProjectDamage(
+				targetUnit, cleaveDamage, cleaveProvenance);
 			const float cleaveDamageReduce = AttackPossibility::calculateDamageReduce(
-				projectedAttacker.get(), targetUnit, cleaveDamage, damageCache, hb);
+				projectedAttacker.get(), targetUnit, projectedCleaveDamage.healthLoss, damageCache, hb);
 			defenderDamageReduce += cleaveDamageReduce;
+			int64_t resolvedCleaveDamage = projectedCleaveDamage.appliedDamage;
 
 			if(!evaluateOnly)
 			{
@@ -474,8 +495,10 @@ float BattleExchangeVariant::trackAttack(
 					dpsScore.ourDamageReduce += cleaveDamageReduce;
 
 				const bool targetWasAlive = target->alive();
-				target->damage(cleaveDamage);
-				projectNoQuarterAfterHit(*hb, cleaveAttack, *target);
+				target->damage(cleaveDamage, false, cleaveProvenance);
+				resolvedCleaveDamage = cleaveDamage;
+				if(resolvedCleaveDamage > 0)
+					projectNoQuarterAfterHit(*hb, cleaveAttack, *target);
 				hb->recordBloodrageTransition(target, targetWasAlive);
 				hb->projectFortuneStrike(cleaveAttack, {{target->unitId(), cleaveDamage}}, attacker.get(),
 					targetWasAlive && !target->alive() && hb->battleMatchOwner(attacker.get(), target.get()));
@@ -484,7 +507,7 @@ float BattleExchangeVariant::trackAttack(
 				projectedAttacker->afterAttack(false, false, cleaveAttack.physicalDamage);
 				const auto cleaveHexScoringActor = projectedAttacker->acquireState();
 				const auto cleaveHexDamage = projectHexOfPain(projectedAttacker.get(), targetUnit,
-					false, false, {{targetUnit->unitId(), cleaveDamage}});
+					false, false, {{targetUnit->unitId(), resolvedCleaveDamage}});
 				recordHexOfPain(cleaveHexScoringActor.get(), cleaveHexDamage);
 			}
 	}
@@ -496,7 +519,12 @@ float BattleExchangeVariant::trackAttack(
 		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
 		retaliationAttack.retaliation = true;
 		auto retaliationDamage = hb->battleExpectedLuckDamage(retaliationAttack);
-		attackerDamageReduce = AttackPossibility::calculateDamageReduce(defender.get(), attacker.get(), retaliationDamage, damageCache, hb);
+		const auto retaliationProvenance = battleAIDamageProvenance(
+			defender.get(), retaliationAttack.physicalDamage);
+		const auto projectedRetaliationDamage = battleAIProjectDamage(
+			attacker.get(), retaliationDamage, retaliationProvenance);
+		attackerDamageReduce = AttackPossibility::calculateDamageReduce(defender.get(), attacker.get(),
+			projectedRetaliationDamage.healthLoss, damageCache, hb);
 
 #if BATTLE_TRACE_LEVEL>=1
 		logAi->trace(
@@ -518,10 +546,11 @@ float BattleExchangeVariant::trackAttack(
 			attackerValue[defender->unitId()].value += attackerDamageReduce;
 		}
 
-		const int64_t actualDamage = std::min<int64_t>(retaliationDamage, attacker->getAvailableHealth());
+		const int64_t actualDamage = projectedRetaliationDamage.appliedDamage;
 		const bool attackerWasAlive = attacker->alive();
-		attacker->damage(retaliationDamage);
-		projectNoQuarterAfterHit(*hb, retaliationAttack, *attacker);
+		attacker->damage(retaliationDamage, false, retaliationProvenance);
+		if(actualDamage > 0)
+			projectNoQuarterAfterHit(*hb, retaliationAttack, *attacker);
 		hb->recordBloodrageTransition(attacker, attackerWasAlive);
 		hb->projectFortuneStrike(retaliationAttack, {{attacker->unitId(), actualDamage}}, defender.get(),
 			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()));

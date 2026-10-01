@@ -247,6 +247,8 @@ public:
 	/// Physical creature damage received while Defending, pending Swamp Renewal.
 	/// Preserved across round boundaries until the stack's next activation.
 	int64_t bulwarkDefendPhysicalDamage;
+	/// Actual creature HP lost to physical creature damage since this stack's last activation.
+	int64_t veteranPhysicalDamageSinceActivation = 0;
 	/// Round in which this stack first received Immovable's Defend reduction.
 	int32_t bulwarkImmovableRound;
 	/// Round in which this Defending stack first reflected a melee hit for Toxic Spines.

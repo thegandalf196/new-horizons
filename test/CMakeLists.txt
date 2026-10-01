@@ -246,6 +246,7 @@ set(test_SRCS
 		server/battles/NewHorizonsCommandTest.cpp
 		server/battles/NewHorizonsCombatSkillsTest.cpp
 		server/battles/NewHorizonsFormationFightingTest.cpp
+		server/battles/NewHorizonsArmorerVeteranTest.cpp
 		server/battles/NewHorizonsPhantomArmyTest.cpp
 		server/battles/NewHorizonsCureTest.cpp
 		server/battles/NewHorizonsSorrowTest.cpp
@@ -411,6 +412,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsNoQuarterAITest.cpp
 		battleAI/NewHorizonsRelentlessAssaultAITest.cpp
 		battleAI/NewHorizonsBulwarkAITest.cpp
+		battleAI/NewHorizonsArmorerVeteranAITest.cpp
 		battleAI/NewHorizonsPaviseAITest.cpp
 		battleAI/NewHorizonsArcheryAITest.cpp
 	)

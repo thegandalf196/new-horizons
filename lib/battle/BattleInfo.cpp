@@ -1798,6 +1798,14 @@ bool BattleInfo::hasBattleFormState() const
 	});
 }
 
+bool BattleInfo::hasVeteranDamageHistory() const
+{
+	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
+	{
+		return stack && stack->veteranPhysicalDamageSinceActivation != 0;
+	});
+}
+
 bool CMP_stack::operator()(const battle::Unit * a, const battle::Unit * b) const
 {
 	switch(phase)

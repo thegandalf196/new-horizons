@@ -2,6 +2,51 @@
 
 ## Purpose
 
+### 2026-10-01 Veteran — AI Guardian Spirit absorption
+
+Independent source review finds a blocking integration defect before native
+execution: newly classified physical preview hits absorb Guardian Spirit, but
+the primary/collateral strike payload stores the post-absorption amount and
+replay absorbs it again. Pre-clamping incoming hits to creature HP also ignores
+the buffer, allowing lethal hits to become nonlethal. Preserve incoming payload
+damage separately from actual HP loss and apply absorption exactly once before
+the health cap. Focused regression must compare forecast versus committed HP,
+Guardian Spirit buffer and Veteran history together. Client build12894 is the
+pre-repair compile checkpoint, not verification of this behavior; repair and
+first succeeding native run remain pending.
+
+Both-target50025 compiles after the repair and duplicate-declaration cleanup.
+Native68335 runs14 cases, zero skips:12 pass and2 new AI fixture assertions
+fail because `effectPreview` is optional and absent when no separate Fortune/
+mark hook needs it. Ordinary attack forecasts retain the target in affectedUnits;
+inspect that actual snapshot rather than adding unrelated perks or changing
+production to manufacture a preview object. Preserve `UP078-focused.log`/`.xml`.
+All five new server cases, owner-scoped detached activation, three Guardian and
+three Bulwark guards pass. Focused repaired retry remains pending.
+
+Both-target27203 passes; native99360 passes13/14, zero skips. Preserve
+`UP078-focused-repaired.log`/`.xml`. Remaining fixture expects one hit but sees
+two because it gives BLOCKS_RETALIATION to the target rather than the attacker.
+Move the helper call to the attacker in both Guardian fixtures; retain the
+single-hit and state-parity assertions. Buffered overkill already passes.
+
+Both-target60339 passes; native11688 passes13/14, zero skips. Preserve
+`UP078-focused-final.log`/`.xml`. The sole failure is the authoritative buffer
+expected40 but observed0 after the projection; the fixture grants an unmarked
+buffer before beginCombat can clear it. Both fixtures must grant after combat
+initialization and assert the actual pool before evaluation. Do not weaken the
+no-live-mutation assertion or count buffered-overkill evidence without a
+positive-buffer precondition. Preview/commit HP, pool and history comparisons
+otherwise pass; final meaningful retry remains pending.
+
+Both-target8101 passes after real-marker/post-initialization buffer setup.
+Native19447 passes14/14, zero skips, in4.124s; first fully succeeding reports
+`UP078-focused-buffer.log`/`.xml`. Binary SHA-256
+`ef35142a822610a400a5f9dad60f358fb21645a2cb15736ce325a84f0428dca8`.
+All original failed logs remain retained. Independent source review closes the
+logic/compile blockers; final buffer preconditions make the two AI regressions
+meaningful. No separate broad-suite or playable acceptance is claimed.
+
 ### 2026-10-01 Formation Fighting — inventory columns
 
 Initial UP-077 offline check runs19 tests,18 pass. Root reverses the CSV

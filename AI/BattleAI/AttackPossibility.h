@@ -8,10 +8,53 @@
  *
  */
 #pragma once
+#include <algorithm>
 #include "../../lib/battle/CUnitState.h"
 #include "StackWithBonuses.h"
 
 #define BATTLE_TRACE_LEVEL 0
+
+/// Match BattleActionProcessor's physical-creature provenance rule for a
+/// projected attack. Physical hits from turrets and siege/war-machine stacks
+/// are not eligible for mechanics which track ordinary creature damage.
+inline battle::DamageProvenance battleAIDamageProvenance(const battle::Unit * attacker, bool physicalDamage)
+{
+	if(!physicalDamage)
+		return battle::DamageProvenance::SPELL;
+	if(!attacker || attacker->isTurret() || attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| attacker->unitSlot() == SlotID::WAR_MACHINES_SLOT)
+		return battle::DamageProvenance::OTHER;
+	return battle::DamageProvenance::PHYSICAL_CREATURE;
+}
+
+struct BattleAIDamageProjection
+{
+	/// Damage amount remaining after Guardian Spirit and the stack's health cap.
+	/// This is the value exposed to projected post-hit combat effects.
+	int64_t appliedDamage = 0;
+	/// Health value removed by the hit for attack scoring. A clone loses its
+	/// entire health pool when any post-Guardian damage reaches it.
+	int64_t healthLoss = 0;
+};
+
+inline BattleAIDamageProjection battleAIProjectDamage(const battle::Unit * target,
+	int64_t incomingDamage, battle::DamageProvenance provenance)
+{
+	if(!target || incomingDamage <= 0 || target->isTimeStopped())
+		return {};
+
+	if(provenance == battle::DamageProvenance::PHYSICAL_CREATURE
+		&& target->getGuardianSpiritRoundsRemaining() > 0)
+		incomingDamage -= std::min(incomingDamage, target->getGuardianSpiritHitPoints());
+
+	if(incomingDamage <= 0)
+		return {};
+	if(target->isClone())
+		return {0, target->getAvailableHealth()};
+
+	const auto appliedDamage = std::min(incomingDamage, target->getAvailableHealth());
+	return {appliedDamage, appliedDamage};
+}
 
 /// One physical attack (or its retaliation) in the read-only attack preview.
 /// Keeping these deltas lets a committed preview replay Fortune aftermath at
@@ -23,12 +66,16 @@ struct FortuneStrikeProjection
 	uint32_t defenderId = 0;
 	bool shooting = false;
 	bool retaliation = false;
+	battle::DamageProvenance damageProvenance = battle::DamageProvenance::OTHER;
 	bool perfectMoment = false;
 	bool protectIntercepted = false;
 	bool relentlessAssaultEligible = false;
 	int32_t attackIndex = 0;
 	int cleaveDamagePercent = 0;
+	/// Damage requests are preserved before shields/health caps for faithful replay.
 	std::vector<std::pair<uint32_t, int64_t>> hits;
+	/// Post-defence damage amounts used by the preview's combat event effects.
+	std::vector<std::pair<uint32_t, int64_t>> resolvedHits;
 	/// Targets receiving No Quarter after these hits, paired with remaining
 	/// accepted activations before the projected Morale penalty expires.
 	std::vector<std::pair<uint32_t, int32_t>> noQuarterTargets;

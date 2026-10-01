@@ -235,7 +235,7 @@
 					"requires": "advanced",
 					"description": "At the beginning of its activation, a stack restores 15% of physical creature damage suffered since its previous activation, limited to surviving creatures.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "At the beginning of its activation, a stack restores 15% of physical creature damage suffered since its previous activation, limited to surviving creatures."
 					}
 				},

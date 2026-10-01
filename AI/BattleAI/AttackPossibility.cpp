@@ -824,10 +824,14 @@ AttackPossibility AttackPossibility::evaluate(
 					preemptive.attackerPos = strikeDefenderState->second->getPosition();
 					preemptive.defenderPos = ap.attackerState->getPosition();
 					auto preemptiveDamage = luckState.battleExpectedLuckDamage(preemptive);
-					vstd::amin(preemptiveDamage, ap.attackerState->getAvailableHealth());
+					const auto preemptiveProvenance = battleAIDamageProvenance(
+						strikeDefenderState->second.get(), preemptive.physicalDamage);
+					const auto projectedPreemptiveDamage = battleAIProjectDamage(
+						ap.attackerState.get(), preemptiveDamage, preemptiveProvenance);
 					ap.attackerDamageReduce += calculateDamageReduce(strikeDefenderState->second.get(),
-						ap.attackerState.get(), preemptiveDamage, damageCache, state);
-					ap.attackerState->damage(preemptiveDamage);
+						ap.attackerState.get(), projectedPreemptiveDamage.healthLoss, damageCache, state);
+					ap.attackerState->damage(preemptiveDamage, false,
+						preemptiveProvenance);
 				}
 			}
 			if(!ap.attackerState->alive())
@@ -842,6 +846,7 @@ AttackPossibility AttackPossibility::evaluate(
 		strike.defenderId = strikeDefender->unitId();
 		strike.shooting = attackInfo.shooting;
 		strike.retaliation = attackInfo.retaliation;
+		strike.damageProvenance = battleAIDamageProvenance(ap.attackerState.get(), attackInfo.physicalDamage);
 		strike.perfectMoment = ap.perfectMoment && i == 0;
 		strike.attackIndex = attackInfo.retaliation ? 0 : i;
 		strike.protectIntercepted = projectsProtect
@@ -919,28 +924,34 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 				else
 					damageDealt = luckState.battleExpectedLuckDamage(victimAttack);
-				vstd::amin(damageDealt, defenderState->getAvailableHealth());
+				const auto incomingDamage = damageDealt;
+				const auto damageProvenance = battleAIDamageProvenance(
+					victimAttack.attacker, victimAttack.physicalDamage);
+				const auto projectedDamage = battleAIProjectDamage(
+					defenderState.get(), incomingDamage, damageProvenance);
 				const auto * targetHero = state->battleGetOwnerHero(defenderState.get());
-				if(damageDealt > 0 && victimAttack.physicalDamage && ordinaryAttacker
+				if(projectedDamage.appliedDamage > 0 && victimAttack.physicalDamage && ordinaryAttacker
 					&& defenderState->defended()
 					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defenderState.get())
 					&& newHorizonsBulwark::hasSwampRenewal(targetHero))
 				{
 					const auto currentDamage = defenderState->bulwarkDefendPhysicalDamage;
 					defenderState->bulwarkDefendPhysicalDamage = currentDamage
-						> std::numeric_limits<int64_t>::max() - damageDealt
-						? std::numeric_limits<int64_t>::max() : currentDamage + damageDealt;
+						> std::numeric_limits<int64_t>::max() - projectedDamage.appliedDamage
+						? std::numeric_limits<int64_t>::max() : currentDamage + projectedDamage.appliedDamage;
 				}
 				auto retaliatorState = defenderState->acquireState();
-				int64_t projectedHit = damageDealt;
-				retaliatorState->damage(projectedHit);
+				int64_t projectedHit = incomingDamage;
+				retaliatorState->damage(projectedHit, false,
+					damageProvenance);
 
 				// Later strikes must score casualties against the current copied health,
 				// not repeat the first strike's original-victim bounty.
 				defenderDamageReduce = calculateDamageReduce(ap.attackerState.get(), defenderState.get(),
-					damageDealt, damageCache, state);
+					projectedDamage.healthLoss, damageCache, state);
 
 				const bool appliesNoQuarter = fortunePreview
+					&& projectedDamage.appliedDamage > 0
 					&& state->battleCanTriggerNoQuarter(victimAttack)
 					&& !u->isTimeStopped()
 					&& state->battleMatchOwner(ap.attackerState.get(), u)
@@ -951,24 +962,27 @@ AttackPossibility AttackPossibility::evaluate(
 					? noQuarterMoraleActivations(*state, u->unitId()) : 0;
 
 				const bool wasAlive = defenderState->alive();
-				defenderState->damage(damageDealt);
+				strike.hits.emplace_back(u->unitId(), incomingDamage);
+				defenderState->damage(damageDealt, false,
+					damageProvenance);
+				strike.resolvedHits.emplace_back(u->unitId(), damageDealt);
 				if(victimAttack.physicalDamage && ordinaryAttacker && defenderState->defended()
 					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defenderState.get())
 					&& newHorizonsBulwark::hasImmovable(targetHero)
 					&& defenderState->bulwarkImmovableRound != bulwarkRound)
 					defenderState->bulwarkImmovableRound = bulwarkRound;
 				if(!ap.bulwarkMireGripTriggered && ordinaryAttacker
-					&& !ap.attackerState->bulwarkMireGripApplied && damageDealt > 0
+					&& !ap.attackerState->bulwarkMireGripApplied && projectedDamage.appliedDamage > 0
 					&& victimAttack.physicalDamage && !attackInfo.shooting
 					&& defenderState->defended()
 					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defenderState.get())
 					&& newHorizonsBulwark::hasMireGrip(targetHero))
 					ap.bulwarkMireGripTriggered = true;
-				if(u->unitId() == strikeDefender->unitId() && damageDealt > 0
+				if(u->unitId() == strikeDefender->unitId() && projectedDamage.appliedDamage > 0
 					&& attackInfo.physicalDamage && ordinaryAttacker
 					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(ap.attackerState.get()))
 				{
-					bulwarkPrimaryHealthLoss = damageDealt;
+					bulwarkPrimaryHealthLoss = projectedDamage.appliedDamage;
 					bulwarkReflectionRate = bulwarkReflectionBasisPoints(
 						defenderState.get(), *state, attackInfo.shooting);
 				}
@@ -987,6 +1001,7 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliation->attackerId = retaliatorState->unitId();
 					retaliation->defenderId = attacker->unitId();
 					retaliation->retaliation = true;
+					retaliation->damageProvenance = battleAIDamageProvenance(retaliatorState.get(), true);
 					retaliation->attackIndex = 0;
 					for(auto retaliated : retaliatedUnits)
 					{
@@ -1007,7 +1022,6 @@ AttackPossibility AttackPossibility::evaluate(
 				if(attackerSide == u->unitSide())
 					ap.collateralDamageReduce += defenderDamageReduce;
 
-				strike.hits.emplace_back(u->unitId(), damageDealt);
 				if(damageDealt > 0 && attackInfo.physicalDamage
 					&& newHorizonsArchery::isOrdinaryPhysicalShooter(ap.attackerState.get()))
 				{
@@ -1040,12 +1054,15 @@ AttackPossibility AttackPossibility::evaluate(
 					bulwarkPrimaryHealthLoss, bulwarkReflectionRate);
 				if(reflectedDamage > 0)
 				{
-					auto actualReflectedDamage = std::min(reflectedDamage,
-						ap.attackerState->getAvailableHealth());
+					auto actualReflectedDamage = reflectedDamage;
 					auto * reflectedFrom = defenderStates.at(strikeDefender->unitId()).get();
+					const auto reflectedProvenance = battleAIDamageProvenance(reflectedFrom, true);
+					const auto projectedReflection = battleAIProjectDamage(
+						ap.attackerState.get(), actualReflectedDamage, reflectedProvenance);
 					ap.attackerDamageReduce += calculateDamageReduce(reflectedFrom,
-						ap.attackerState.get(), actualReflectedDamage, damageCache, state);
-					ap.attackerState->damage(actualReflectedDamage);
+						ap.attackerState.get(), projectedReflection.healthLoss, damageCache, state);
+					ap.attackerState->damage(actualReflectedDamage, false,
+						reflectedProvenance);
 					const auto * bulwarkHero = state->battleGetOwnerHero(reflectedFrom);
 					if(!attackInfo.shooting && newHorizonsBulwark::hasToxicSpines(bulwarkHero)
 						&& reflectedFrom->bulwarkToxicSpinesRound != currentRound
@@ -1069,18 +1086,18 @@ AttackPossibility AttackPossibility::evaluate(
 			}
 			if(projectsSuppression && !projectedSuppressionSpent)
 			{
-				const auto primaryHit = std::ranges::find_if(strike.hits,
+				const auto primaryHit = std::ranges::find_if(strike.resolvedHits,
 					[&strike](const auto & hit)
 					{
 						return hit.first == strike.defenderId && hit.second > 0;
 					});
-				const auto firstDamaged = primaryHit != strike.hits.end() ? primaryHit
-					: std::ranges::find_if(strike.hits,
+				const auto firstDamaged = primaryHit != strike.resolvedHits.end() ? primaryHit
+					: std::ranges::find_if(strike.resolvedHits,
 						[&strike](const auto & hit)
 						{
 							return hit.first != strike.defenderId && hit.second > 0;
 						});
-				if(firstDamaged != strike.hits.end())
+				if(firstDamaged != strike.resolvedHits.end())
 				{
 					projectedSuppressionSpent = true;
 					ap.attackerState->archerySuppressionActivationSerial = currentActivationSerial;
@@ -1101,18 +1118,18 @@ AttackPossibility AttackPossibility::evaluate(
 			// resource state, before responses and follow-up attacks.
 			ap.attackerState->afterAttack(attackInfo.shooting, false, attackInfo.physicalDamage);
 			int64_t actualStrikeDamage = 0;
-			for(const auto & hit : strike.hits)
+			for(const auto & hit : strike.resolvedHits)
 				actualStrikeDamage += std::max<int64_t>(0, hit.second);
 			projectVampirismHealing(ap.attackerState.get(), actualStrikeDamage,
 				ap.vampirismHealingByUnit);
-			if(projectsHexOfPain && fortunePreview && !strike.hits.empty())
+			if(projectsHexOfPain && fortunePreview && !strike.resolvedHits.empty())
 			{
 				const auto preHexState = ap.attackerState->acquireState();
 				BattleAttackInfo projectedAttack(ap.attackerState.get(),
 					defenderStates.at(strike.defenderId).get(), 0, strike.shooting);
 				projectedAttack.retaliation = strike.retaliation;
 				const auto painDamage = fortunePreview->projectHexOfPainStrike(
-					projectedAttack, strike.hits, strike.attackIndex);
+					projectedAttack, strike.resolvedHits, strike.attackIndex);
 				scoreHexPain(preHexState.get(), painDamage);
 			}
 			// Counterfire is an immediate, once-per-round answer to physical creature
@@ -1121,7 +1138,7 @@ AttackPossibility AttackPossibility::evaluate(
 			if(attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
 				&& ap.attackerState->alive())
 			{
-				for(const auto & [hitUnitId, damageDealt] : strike.hits)
+				for(const auto & [hitUnitId, damageDealt] : strike.resolvedHits)
 				{
 					if(damageDealt <= 0)
 						continue;
@@ -1142,10 +1159,14 @@ AttackPossibility AttackPossibility::evaluate(
 					if(newHorizonsArchery::hasDeadeye(counterHero)
 						&& counterShooter->archeryDeadeyeRound != currentRound)
 						counterShooter->archeryDeadeyeRound = currentRound;
-					vstd::amin(counterfireDamage, ap.attackerState->getAvailableHealth());
+					const auto counterfireProvenance = battleAIDamageProvenance(
+						counterShooter.get(), counterfire.physicalDamage);
+					const auto projectedCounterfireDamage = battleAIProjectDamage(
+						ap.attackerState.get(), counterfireDamage, counterfireProvenance);
 					ap.attackerDamageReduce += calculateDamageReduce(counterShooter.get(), ap.attackerState.get(),
-						counterfireDamage, damageCache, state);
-					ap.attackerState->damage(counterfireDamage);
+						projectedCounterfireDamage.healthLoss, damageCache, state);
+					ap.attackerState->damage(counterfireDamage, false,
+						counterfireProvenance);
 					projectVampirismHealing(counterShooter.get(), counterfireDamage,
 						ap.vampirismHealingByUnit);
 					if(counterfireDamage > 0 && attackInfo.physicalDamage
@@ -1185,7 +1206,7 @@ AttackPossibility AttackPossibility::evaluate(
 					if(fortune.luckyRecovery && certainlyLucky && ap.attackerState->alive())
 					{
 						int64_t actualDamage = 0;
-						for(const auto & [unitId, damage] : strike.hits)
+						for(const auto & [unitId, damage] : strike.resolvedHits)
 							if(unitId == strike.defenderId || rules.affectsAllTargets)
 								actualDamage += std::max<int64_t>(0, damage);
 						auto healing = SylvanLuckState::recoveryAmount(actualDamage);
@@ -1242,18 +1263,23 @@ AttackPossibility AttackPossibility::evaluate(
 					cleaveAttack.defenderPos = targetState->getPosition();
 					cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
 					int64_t cleaveDamage = luckState.battleExpectedLuckDamage(cleaveAttack);
-					vstd::amin(cleaveDamage, targetState->getAvailableHealth());
+					const auto cleaveProvenance = battleAIDamageProvenance(
+						ap.attackerState.get(), cleaveAttack.physicalDamage);
+					const auto projectedCleaveDamage = battleAIProjectDamage(
+						targetState.get(), cleaveDamage, cleaveProvenance);
 					ap.defenderDamageReduce += calculateDamageReduce(ap.attackerState.get(), targetState.get(),
-						cleaveDamage, damageCache, state);
+						projectedCleaveDamage.healthLoss, damageCache, state);
 
 					cleave.emplace();
 					cleave->attackerId = ap.attackerState->unitId();
 					cleave->defenderId = targetState->unitId();
+					cleave->damageProvenance = cleaveProvenance;
 					cleave->attackIndex = 0;
 					cleave->cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
 					cleave->hits.emplace_back(targetState->unitId(), cleaveDamage);
-					targetState->damage(cleaveDamage);
-					if(state->battleCanTriggerNoQuarter(cleaveAttack) && !targetState->isTimeStopped()
+					targetState->damage(cleaveDamage, false, cleave->damageProvenance);
+					cleave->resolvedHits.emplace_back(targetState->unitId(), cleaveDamage);
+					if(cleaveDamage > 0 && state->battleCanTriggerNoQuarter(cleaveAttack) && !targetState->isTimeStopped()
 						&& state->battleMatchOwner(ap.attackerState.get(), targetState.get())
 						&& targetState->alive()
 						&& newHorizonsOffense::belowNoQuarterThreshold(
@@ -1272,7 +1298,7 @@ AttackPossibility AttackPossibility::evaluate(
 					{
 						const auto preHexState = ap.attackerState->acquireState();
 						const auto painDamage = fortunePreview->projectHexOfPainStrike(
-							cleaveAttack, cleave->hits, cleave->attackIndex);
+							cleaveAttack, cleave->resolvedHits, cleave->attackIndex);
 						scoreHexPain(preHexState.get(), painDamage);
 					}
 					break;
@@ -1293,6 +1319,7 @@ AttackPossibility AttackPossibility::evaluate(
 				{
 					auto retaliatorState = defenderStates.at(retaliation->attackerId)->acquireState();
 					retaliation->hits.clear();
+					retaliation->resolvedHits.clear();
 					for(auto & [targetState, rawDamage] : pendingRetaliationDamage)
 					{
 						if(!targetState->alive())
@@ -1310,9 +1337,10 @@ AttackPossibility AttackPossibility::evaluate(
 						rawDamage = state->battleExpectedLuckDamage(retaliationAttack);
 						retaliation->hits.emplace_back(targetState->unitId(), rawDamage);
 
-						const auto actualDamage = std::min(rawDamage, targetState->getAvailableHealth());
+						const auto projectedRetaliationDamage = battleAIProjectDamage(
+							targetState.get(), rawDamage, retaliation->damageProvenance);
 						const auto damageReduce = calculateDamageReduce(retaliatorState.get(), targetState.get(),
-							actualDamage, damageCache, state);
+							projectedRetaliationDamage.healthLoss, damageCache, state);
 						if(targetState->unitId() == attacker->unitId())
 							ap.attackerDamageReduce += damageReduce;
 						else if(retaliatorState->unitSide() == targetState->unitSide())
@@ -1332,16 +1360,19 @@ AttackPossibility AttackPossibility::evaluate(
 			{
 				BattleAttackInfo projectedAttack(ap.attackerState.get(),
 					defenderStates.at(defender->unitId()).get(), 0, true);
-				ap.effectPreview->projectRangedMarkStrike(projectedAttack, strike.hits);
+				ap.effectPreview->projectRangedMarkStrike(projectedAttack, strike.resolvedHits);
 			}
 			int64_t retaliationActualDamage = 0;
 			std::vector<std::pair<uint32_t, int64_t>> retaliationActualHits;
 			for(auto & [targetState, rawDamage] : pendingRetaliationDamage)
 			{
-				auto actualDamage = std::min(rawDamage, targetState->getAvailableHealth());
-				targetState->damage(actualDamage);
+				auto actualDamage = rawDamage;
+				targetState->damage(actualDamage, false,
+					retaliation ? retaliation->damageProvenance : battle::DamageProvenance::OTHER);
 				retaliationActualHits.emplace_back(targetState->unitId(), actualDamage);
-				if(retaliation && fortunePreview && targetState->alive())
+				if(retaliation)
+					retaliation->resolvedHits.emplace_back(targetState->unitId(), actualDamage);
+				if(retaliation && actualDamage > 0 && fortunePreview && targetState->alive())
 				{
 					auto retaliatorState = defenderStates.at(retaliation->attackerId);
 					BattleAttackInfo retaliationAttack(retaliatorState.get(), targetState.get(), 0, false);
@@ -1471,10 +1502,15 @@ AttackPossibility AttackPossibility::evaluate(
 			if(secondary && proposedDamage > 0)
 			{
 				auto secondaryState = fortunePreview->getForUpdate(secondary->unitId());
-				int64_t actualDamage = std::min(proposedDamage, secondaryState->getAvailableHealth());
+				int64_t actualDamage = proposedDamage;
+				const auto rainProvenance = battleAIDamageProvenance(
+					ap.attackerState.get(), attackInfo.physicalDamage);
+				const auto projectedRainDamage = battleAIProjectDamage(
+					secondaryState.get(), actualDamage, rainProvenance);
 				ap.defenderDamageReduce += calculateDamageReduce(ap.attackerState.get(), secondaryState.get(),
-					actualDamage, damageCache, state);
-				secondaryState->damage(actualDamage);
+					projectedRainDamage.healthLoss, damageCache, state);
+				secondaryState->damage(actualDamage, false,
+					rainProvenance);
 				if(!vstd::contains_if(ap.affectedUnits, [secondaryState](const auto & affected)
 					{ return affected->unitId() == secondaryState->unitId(); }))
 					ap.affectedUnits.push_back(std::move(secondaryState));

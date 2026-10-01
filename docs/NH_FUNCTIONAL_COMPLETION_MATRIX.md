@@ -14,6 +14,25 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-078 Veteran is source/native verified. At genuine activation start the shared
+helper consumes actual physical creature HP-loss history and restores floor15%,
+capped to surviving wounds. Temporary/Guardian absorption, magical damage,
+clones and Phantom Integrity do not qualify; no resurrection or polling.
+JSON unit updates preserve the interval and reject older writers that would
+drop it. Unsupported binary battle snapshots reject pending history; ordinary
+combat saving is already blocked. Owner-scoped AI uses the same helper and
+explicit physical provenance. Guardian preview/replay now retains incoming
+damage separately from resolved HP damage, avoiding double absorption and
+pre-buffer HP caps. Both-target8101 passes; native19447 passes14/14, zero skips,
+in4.124s. Reports `UP078-focused-buffer.log`/`.xml`; binary SHA-256
+`ef35142a822610a400a5f9dad60f358fb21645a2cb15736ce325a84f0428dca8`.
+Data/inventory19/19 pass; independent review blockers repaired. Coverage135→136
+active perks, planned175→174; Armorer6/4 active/planned. Ranks84/93 and combat
+identities60/67 unchanged. Phase2 retains fully absorbed multistrikes and
+Guardian reaction/Rain combinations. No purpose-made art or playable promotion.
+Last Stand awaits two design answers; Fortune's Favor is the next unblocked
+Basic foundation to open Luck progression, using the existing bonus multiplier.
+
 UP-077 Formation Fighting is source/native verified. Shared current-controller
 and projected-footprint adjacency prevents Shroud damage/retaliation and Flank
 melee/history, retaining Combined Arms ranged benefits. Independent10% physical
@@ -428,7 +447,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 135/310 | 175 planned; Formation Fighting is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 136/310 | 174 planned; Veteran is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -455,8 +474,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 135
-active perks, leaving nine ranks and 175 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 136
+active perks, leaving nine ranks and 174 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -561,7 +580,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Skill | Active/planned ranks | Active/planned perks | Immediate state |
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Evidence audit required |
-| Armorer | 3/0 | 5/5 | Formation Fighting has focused live/detached geometry and damage evidence. Five perks missing. |
+| Armorer | 3/0 | 6/4 | Formation Fighting and Veteran have focused live/detached damage evidence. Four perks missing; Last Stand awaits design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 1/9 | Nine perks missing |
 | War Machines | 3/0 | 0/10 | Progression blocked |
