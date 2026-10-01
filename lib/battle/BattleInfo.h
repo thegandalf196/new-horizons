@@ -63,6 +63,11 @@ public:
 		return sides.at(side).adverseCombatReroll;
 	}
 	void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override;
+	MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override
+	{
+		return sides.at(side).moraleSuppression;
+	}
+	void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override;
 	LuckRollRules getLuckRollRules() const override { return luckRollRules; }
 	const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const override
 	{

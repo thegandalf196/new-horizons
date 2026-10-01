@@ -521,8 +521,9 @@ float BattleEvaluator::estimateProjectedSorrowTargetValue(const battle::Unit * o
 	// future morale eligibility gates (e.g. waited/defended/fear/canMove/hadMorale).
 	// Use the configured raw chance table and projected Morale delta instead of
 	// recomputing Sorrow's saved-rules School-rank formula.
-	const auto lostExpectedActivations = expectedMoraleActivationChange(original)
-		- expectedMoraleActivationChange(projected);
+	const auto lostExpectedActivations = -projectedBattle->projectMoraleActivationDelta(original, projected,
+		expectedMoraleActivationChange(original), expectedMoraleActivationChange(projected),
+		static_cast<float>(remainingRounds) * 0.5f);
 	if(lostExpectedActivations <= 0.0f)
 		return 0.0f;
 
@@ -531,7 +532,7 @@ float BattleEvaluator::estimateProjectedSorrowTargetValue(const battle::Unit * o
 	// eligibility gates, special non-damage actions, and per-army bias history
 	// remain Phase-2 integration work.
 	const auto activationValue = expectedTargetActivationValue(projected, damageCache, projectedBattle);
-	return lostExpectedActivations * static_cast<float>(remainingRounds) * activationValue * 0.5f;
+	return lostExpectedActivations * activationValue;
 }
 
 float BattleEvaluator::estimateProjectedCurseTargetValue(const battle::Unit * original, const battle::Unit * projected,
@@ -734,11 +735,11 @@ float BattleEvaluator::estimateProjectedDoomTargetValue(const battle::Unit * ori
 	// attack delta; do not multiply by Doom's percentage again or add another
 	// copy of that same prospective hit as a retaliation estimate.
 	const float expectedFutureAttackValue = bestPreventedAttackValue * static_cast<float>(remainingRounds) * 0.5f;
-	const auto lostExpectedActivations = expectedMoraleActivationChange(original)
-		- expectedMoraleActivationChange(projected);
+	const auto lostExpectedActivations = -projectedBattle->projectMoraleActivationDelta(original, projected,
+		expectedMoraleActivationChange(original), expectedMoraleActivationChange(projected),
+		static_cast<float>(remainingRounds) * 0.5f);
 	const float moraleValue = lostExpectedActivations > 0.0f
-		? lostExpectedActivations * static_cast<float>(remainingRounds) * 0.5f
-			* expectedTargetActivationValue(projected, damageCache, projectedBattle)
+		? lostExpectedActivations * expectedTargetActivationValue(projected, damageCache, projectedBattle)
 		: 0.0f;
 
 	// Projected spell mechanics intentionally do not roll resistance. Weight the
@@ -2430,11 +2431,11 @@ float shieldOfChaosTargetValue(uint32_t activeUnitId, BattleSide scoringSide,
 	// This is an expected activation delta from the configured chance table, not
 	// the battlefield's seeded morale roll. A bounded best-attack value converts
 	// that probability to the same stack-value scale as the damage terms above.
-	const float moraleActivationDelta = expectedMoraleActivationChange(projectedTarget)
-		- expectedMoraleActivationChange(liveTarget);
+	const float moraleActivationDelta = projectedBattle->projectMoraleActivationDelta(liveTarget, projectedTarget,
+		expectedMoraleActivationChange(liveTarget), expectedMoraleActivationChange(projectedTarget),
+		static_cast<float>(rounds) * 0.5f);
 	const float moraleOutputDelta = moraleActivationDelta
-		* expectedTargetActivationValue(projectedTarget, damageCache, projectedBattle)
-		* static_cast<float>(rounds) * 0.5f;
+		* expectedTargetActivationValue(projectedTarget, damageCache, projectedBattle);
 
 	const float value = targetSign * (protection + luckOutputDelta + moraleOutputDelta);
 	return std::isfinite(value) ? value : 0.0f;
@@ -5329,10 +5330,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						}
 						if(rounds > 0.0f && effect.preventsNegativeMorale)
 						{
-							const float recoveredMoraleActivations = expectedMoraleActivationChange(unit)
-								- expectedMoraleActivationChange(original);
+							const float recoveredMoraleActivations = state->projectMoraleActivationDelta(original, unit,
+								expectedMoraleActivationChange(original), expectedMoraleActivationChange(unit), rounds * 0.5f);
 							if(recoveredMoraleActivations > 0.0f)
-								projectedCrusadeBonusScore += recoveredMoraleActivations * rounds * 0.5f
+								projectedCrusadeBonusScore += recoveredMoraleActivations
 								* expectedTargetActivationValue(unit, innerCache, state);
 						}
 					}

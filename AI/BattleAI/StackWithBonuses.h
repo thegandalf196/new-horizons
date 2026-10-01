@@ -298,6 +298,20 @@ public:
 		adverseRerollStates.at(side) = state;
 	}
 	void endFortuneActivation() { for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER}) fortuneStates.at(side).endActivation(); }
+	MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override
+	{
+		return moraleSuppressionStates.at(side);
+	}
+	void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override
+	{
+		if(state.used && !state.enabled)
+			throw std::runtime_error("Morale suppression expenditure without an enabled perk");
+		moraleSuppressionStates.at(side) = state;
+	}
+	/// Bounded expected activation delta: Rally protects one prospective event,
+	/// not every stack or every round in the evaluated spell's duration.
+	float projectMoraleActivationDelta(const battle::Unit * original, const battle::Unit * projected,
+		float before, float after, float horizon);
 	LuckRollRules getLuckRollRules() const override { return fortuneRollRules; }
 
 	/// Apply Luck history in an isolated or selected branch, never live state.
@@ -388,6 +402,7 @@ private:
 	std::set<uint32_t> bloodrageDestroyedUnits;
 	BattleSideArray<SylvanLuckState> fortuneStates;
 	BattleSideArray<AdverseCombatRerollState> adverseRerollStates;
+	BattleSideArray<MoraleSuppressionState> moraleSuppressionStates;
 	LuckRollRules fortuneRollRules;
 
 	class HypotheticServerCallback : public ServerCallback

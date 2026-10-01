@@ -18,6 +18,7 @@
 #include "PacksForClient.h"
 #include "../battle/BattleAction.h"
 #include "../battle/AdverseCombatRerollState.h"
+#include "../battle/MoraleSuppressionState.h"
 #include "../battle/BattleInfo.h"
 #include "../battle/BattleHexArray.h"
 #include "../battle/BattleUnitTurnReason.h"
@@ -158,6 +159,45 @@ struct DLL_LINKAGE BattleAdverseRerollStateChanged : public CPackForClient
 			throw std::runtime_error(h.saving
 				? "Cannot serialize adverse combat reroll update to an older format"
 				: "Cannot deserialize adverse combat reroll update from an older format");
+		h & battleID;
+		h & side;
+		h & state;
+		validateShape();
+	}
+};
+
+/// Replicates one authorized cancellation of a side's first negative Morale trigger.
+/// The perk is enabled in the battle snapshot; this pack can only mark its allowance as used.
+struct DLL_LINKAGE BattleMoraleSuppressionStateChanged : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	MoraleSuppressionState state;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	void validateShape() const
+	{
+		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			|| !state.enabled || !state.used)
+			throw std::runtime_error("Invalid Rally Morale suppression state update");
+	}
+
+	void validateTransitionFrom(const MoraleSuppressionState & previous) const
+	{
+		validateShape();
+		// The only valid transition starts with Rally enabled; repeated spent
+		// snapshots remain idempotent while disabled/reset states are rejected.
+		if(!previous.enabled)
+			throw std::runtime_error("Rally Morale suppression update enables or resets its allowance");
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RALLY))
+			throw std::runtime_error(h.saving
+				? "Cannot serialize Rally Morale suppression update to an older format"
+				: "Cannot deserialize Rally Morale suppression update from an older format");
 		h & battleID;
 		h & side;
 		h & state;

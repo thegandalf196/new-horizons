@@ -496,6 +496,7 @@ set(lib_MAIN_HEADERS
 	battle/FocusFireState.h
 	battle/SylvanLuckState.h
 	battle/AdverseCombatRerollState.h
+	battle/MoraleSuppressionState.h
 	battle/AlternatingHeroActionState.h
 	battle/HeroActionAllowanceState.h
 	battle/RelentlessAssaultState.h

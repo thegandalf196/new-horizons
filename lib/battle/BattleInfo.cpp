@@ -128,6 +128,13 @@ void BattleInfo::setAdverseCombatRerollState(BattleSide side, const AdverseComba
 	sides.at(side).adverseCombatReroll = state;
 }
 
+void BattleInfo::setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state)
+{
+	if(state.used && !state.enabled)
+		throw std::runtime_error("Rally Morale suppression used without an enabled perk");
+	sides.at(side).moraleSuppression = state;
+}
+
 const AlternatingHeroActionState & BattleInfo::getWarcastingState(BattleSide side) const
 {
 	static const AlternatingHeroActionState empty;
@@ -413,6 +420,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 		{
 			currentBattle->sides[i].adverseCombatReroll.enabled = heroes[i]->hasActivePerk(
 				"new-horizons:luck", "new-horizons:luck.twistOfFate");
+			currentBattle->sides[i].moraleSuppression.enabled = heroes[i]->hasActivePerk(
+				"new-horizons:discipline", "new-horizons:discipline.rally");
 			auto & fortune = currentBattle->sides[i].sylvanLuck;
 			fortune.secondChance = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.secondChance");
 			fortune.gambler = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.gambler");

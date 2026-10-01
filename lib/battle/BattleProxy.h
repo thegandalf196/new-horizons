@@ -108,6 +108,10 @@ public:
 	{
 		return subject->getBattle()->getAdverseCombatRerollState(side);
 	}
+	MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override
+	{
+		return subject->getBattle()->getMoraleSuppressionState(side);
+	}
 	LuckRollRules getLuckRollRules() const override { return subject->getBattle()->getLuckRollRules(); }
 
 	const IBonusBearer * getBonusBearer() const override;

@@ -18,6 +18,7 @@
 #include "FocusFireState.h"
 #include "SylvanLuckState.h"
 #include "AdverseCombatRerollState.h"
+#include "MoraleSuppressionState.h"
 #include "AlternatingHeroActionState.h"
 #include "HeroActionAllowanceState.h"
 #include "RelentlessAssaultState.h"
@@ -155,6 +156,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// Expert Luck's once-per-combat adverse stochastic reroll belongs to the
 	// harmed side and is independent of attack-strike fortune snapshots.
 	AdverseCombatRerollState adverseCombatReroll;
+	// Discipline's Rally cancels the first negative Morale trigger for this side.
+	MoraleSuppressionState moraleSuppression;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -402,6 +405,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		else if(!h.saving)
 			acceptedHeroManaSpent = 0;
 		h & adverseCombatReroll;
+		h & moraleSuppression;
 	}
 
 	void clearMetamagicSequence()

@@ -2224,6 +2224,16 @@ void GameStatePackVisitor::visitBattleAdverseRerollStateChanged(BattleAdverseRer
 	battle->setAdverseCombatRerollState(pack.side, pack.state);
 }
 
+void GameStatePackVisitor::visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Missing battle for Rally Morale suppression state update");
+	pack.validateShape();
+	pack.validateTransitionFrom(battle->getMoraleSuppressionState(pack.side));
+	battle->setMoraleSuppressionState(pack.side, pack.state);
+}
+
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
 	if(pack.paidHeroManaCost < 0 || pack.paidCounterspellManaCost < 0
@@ -2747,6 +2757,15 @@ void BattleStatePackVisitor::visitBattleAdverseRerollStateChanged(BattleAdverseR
 	pack.validateShape();
 	pack.validateTransitionFrom(battleState.getAdverseCombatRerollState(pack.side));
 	battleState.setAdverseCombatRerollState(pack.side, pack.state);
+}
+
+void BattleStatePackVisitor::visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack)
+{
+	if(pack.battleID != battleState.getBattleID())
+		throw std::runtime_error("Rally Morale suppression state update targets another battle");
+	pack.validateShape();
+	pack.validateTransitionFrom(battleState.getMoraleSuppressionState(pack.side));
+	battleState.setMoraleSuppressionState(pack.side, pack.state);
 }
 
 void BattleStatePackVisitor::visitCatapultAttack(CatapultAttack & pack)

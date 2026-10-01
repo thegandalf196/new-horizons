@@ -634,6 +634,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		focusFireStates[side] = realBattle->battleGetFocusFireState(side);
 		fortuneStates[side] = realBattle->getBattle()->getSylvanLuckState(side);
 		adverseRerollStates[side] = realBattle->getBattle()->getAdverseCombatRerollState(side);
+		moraleSuppressionStates[side] = realBattle->getBattle()->getMoraleSuppressionState(side);
 		bloodrageRanks[side] = realBattle->getBattle()->getBloodrageRank(side);
 		bloodrageDamagePercents[side] = realBattle->getBattle()->getBloodrageDamagePercent(side);
 	}
@@ -1288,6 +1289,26 @@ void HypotheticBattle::setFocusFireState(BattleSide side, const FocusFireState &
 int32_t HypotheticBattle::getActiveStackID() const
 {
 	return activeUnitId;
+}
+
+float HypotheticBattle::projectMoraleActivationDelta(const battle::Unit * original,
+	const battle::Unit * projected, float before, float after, float horizon)
+{
+	const float delta = after - before;
+	if(!original || !projected || horizon <= 0.0f || delta == 0.0f)
+		return delta * std::max(0.0f, horizon);
+	const auto side = playerToSide(battleGetOwner(projected));
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| playerToSide(battleGetOwner(original)) != side)
+		return delta * horizon;
+	auto & suppression = moraleSuppressionStates.at(side);
+	if(!suppression.consume(before < 0.0f || after < 0.0f))
+		return delta * horizon;
+
+	// Approximate one prospective activation in this candidate branch. The rest
+	// of the horizon remains exposed; actual first-trigger ordering is unknown.
+	const float protectedDelta = std::max(0.0f, after) - std::max(0.0f, before);
+	return delta * horizon + (protectedDelta - delta) * std::min(1.0f, horizon);
 }
 
 int32_t HypotheticBattle::getRound() const

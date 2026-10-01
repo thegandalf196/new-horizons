@@ -14,7 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-Current verified checkpoint: Twist of Fate is active and Phase1 complete.
+Current verified checkpoint: Discipline Rally is active and Phase1 complete.
+Independent side-long suppression, save/packet288, current-controller ownership,
+cached first RNG draw, cancellation before Twist, ordinary activation and
+hero-named log feedback are implemented. Detached AI copies/spends only its local
+allowance; four Morale-status valuation paths protect one prospective event,
+not every stack or every round. Build93251 exits0 for both targets; principal3559
+passes4/4 and activated native7731 passes47/47, zero skips in13.611s
+(`UP090-activated-verified.log`/`.xml`); binary SHA-256
+`f012740b9bf1a26fc50ea0a16a8fa4ae9b759401e3c972d812ff8d47ed5b1d2b`.
+Data/inventory19/19 pass. Independent production review has no blocker; its
+stochastic-precedence and numerical-AI fixture findings were strengthened before
+the passing gate. Coverage142→143/310 active, planned168→167; Discipline2/8.
+Ranks84/93 and combat60/67 unchanged. Deferred: exact cross-stack first-trigger
+ordering, future eligibility and multi-round probability correlation in AI;
+future Unbreakable coexistence requires a suppression-precedence decision.
+Purpose-made art Not done; playable delivery unpromoted.
+
+Previous verified checkpoint: Twist of Fate is active and Phase1 complete.
 Independent side allowance, save/packet transition, current-controller adverse
 Luck/Morale/procs/resistance, one final redraw, scripted binomial result and
 minimum branch-local AI hooks are implemented. Late Hand of Fate collateral
@@ -743,7 +760,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 1/9 | Nine perks missing |
 | War Machines | 3/0 | 0/10 | Progression blocked |
-| Discipline | 3/0 | 1/9 | Nine perks missing |
+| Discipline | 3/0 | 2/8 | Inspirational Leader and Rally active. Rally cancels the first actual bad-Morale trigger once per combat before Twist, with focused native/state/AI evidence. Eight perks remain planned. Esprit de Corps awaits composition-penalty scope clarification. |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
 | Light Magic | 3/0 | 7/3 | Benediction, Healer, Guardian, Aegis, Purifier, Retributionist, and Crusader active; Sanctuary Keeper, Litany and Miracle Worker remain planned. Crusader has focused native evidence. |

@@ -3652,7 +3652,7 @@
 								"requires": "basic",
 								"description": "Once per combat, the first negative Morale trigger affecting a friendly stack is automatically canceled.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Once per combat, the first negative Morale trigger affecting a friendly stack is automatically canceled."
 								}
 							},

@@ -507,6 +507,11 @@ void BattleAdverseRerollStateChanged::visitTyped(ICPackVisitor & visitor)
 	visitor.visitBattleAdverseRerollStateChanged(*this);
 }
 
+void BattleMoraleSuppressionStateChanged::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleMoraleSuppressionStateChanged(*this);
+}
+
 void EndAction::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitEndAction(*this);

@@ -924,8 +924,44 @@ bool BattleFlowProcessor::tryActivateMoralePenalty(const CBattleInfoCallback & b
 		{
 			return gameHandler->randomizer->rollBadMorale(ownerArmy, -nextStackMorale);
 		};
+		const bool firstBadMorale = drawBadMorale();
+		if(affectedSide == BattleSide::ATTACKER || affectedSide == BattleSide::DEFENDER)
+		{
+			auto suppression = battle.getBattle()->getMoraleSuppressionState(affectedSide);
+			if(suppression.consume(firstBadMorale))
+			{
+				BattleMoraleSuppressionStateChanged changed;
+				changed.battleID = battle.getBattle()->getBattleID();
+				changed.side = affectedSide;
+				changed.state = suppression;
+				gameHandler->sendAndApply(changed);
+
+				BattleLogMessage feedback;
+				feedback.battleID = changed.battleID;
+				MetaString line;
+				if(const auto * hero = battle.getBattle()->getSideHero(affectedSide))
+				{
+					line.appendTextID(hero->getNameTextID());
+					line.appendRawString(": ");
+				}
+				line.appendRawString("Rally cancels the first negative Morale trigger this combat. The stack acts normally.");
+				feedback.lines.push_back(std::move(line));
+				gameHandler->sendAndApply(feedback);
+				return false;
+			}
+		}
+		// Preserve the original first draw for Twist; only its final reroll draws again.
+		auto cachedDraw = [drawBadMorale, firstBadMorale, firstDraw = true]() mutable
+		{
+			if(firstDraw)
+			{
+				firstDraw = false;
+				return firstBadMorale;
+			}
+			return drawBadMorale();
+		};
 		const bool badMorale = owner->resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), affectedSide,
-			gameHandler->randomizer->isBadMoraleRollStochastic(-nextStackMorale), true, drawBadMorale);
+			gameHandler->randomizer->isBadMoraleRollStochastic(-nextStackMorale), true, cachedDraw);
 		if(badMorale)
 		{
 			//unit loses its turn - empty freeze action
