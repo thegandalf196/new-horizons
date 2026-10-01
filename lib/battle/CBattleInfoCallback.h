@@ -74,6 +74,8 @@ public:
 
 	/// Battle snapshot only; never falls back to world or installed settings.
 	std::optional<newHorizonsCreatures::CreatureCategoryView> battleGetCreatureCategory(CreatureID creature) const;
+	/// Whether a living, actual defensive tower is controlled by the saved Fortification Engineer perk.
+	bool battleCanUseFortificationEngineer(const battle::Unit * turret) const;
 	std::vector<SpellSchool> battleGetActiveSpellSchools() const;
 	std::vector<SpellSchool> battleGetSpellSchools(SpellID spell) const;
 	int battleGetSpellLevel(SpellID spell) const;

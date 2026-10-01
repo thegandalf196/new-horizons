@@ -3580,7 +3580,7 @@
 								"requires": "expert",
 								"description": "When defending a fortified town, defensive towers use 125% of the hero's Siege rating and may be manually targeted.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When defending a fortified town, defensive towers use 125% of the hero's Siege rating and may be manually targeted."
 								}
 							},

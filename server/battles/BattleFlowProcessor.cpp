@@ -1046,7 +1046,10 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfRangedUnit(const CBattleInfoCa
 	const CGHeroInstance * curOwner = battle.battleGetOwnerHero(next);
 	const CreatureID stackCreatureId = next->unitType()->getId();
 
-	const auto canonicalControl = canonicalWarMachineControl(curOwner, stackCreatureId);
+	const bool fortificationEngineerControl = battle.battleCanUseFortificationEngineer(next);
+	const auto canonicalControl = fortificationEngineerControl
+		? std::optional<bool>(true)
+		: canonicalWarMachineControl(curOwner, stackCreatureId);
 	const bool manualControl = curOwner && (canonicalControl
 		? *canonicalControl
 		: gameHandler->randomizer->rollCombatAbility(curOwner->id,

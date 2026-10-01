@@ -2,6 +2,18 @@
 
 ## Purpose
 
+### 2026-10-01 Fortification Engineer — fixture registry nesting
+
+Independent source review caught the new fixture's activation helper indexing
+the full perk registry without its `skills` level. That would fail setup before
+any siege assertion. The fixture owner repaired the lookup before native
+execution; no failed native run is claimed. Both-target19393 is running with
+12 jobs (`UP098-build.log`). Keep ordinary-control activation breadth deferred
+without weakening the accepted manual shot and exact Siege-output assertions.
+Both-target19393 subsequently exits0. Principal2955 passes4/4 and activated75235
+passes12/12, zero skips; data/inventory19/19 pass. The schema correction is
+verified without bypassing normal perk offers or authoritative build/shot paths.
+
 ### 2026-10-01 Hold Fast — fixture callback type
 
 Both-target77264 exits1 (`UP092-build.log`). Production compiles; the new fixture

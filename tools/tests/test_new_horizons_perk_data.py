@@ -17,6 +17,7 @@ RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:warMachines.surgeon",
     "new-horizons:warMachines.piercingBolts",
+    "new-horizons:warMachines.fortificationEngineer",
     "new-horizons:spellcraft.arcaneFocus",
     "new-horizons:spellcraft.grandFormula",
     "new-horizons:estates.taxCollector",

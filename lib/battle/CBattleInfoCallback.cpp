@@ -29,6 +29,7 @@
 #include "PossiblePlayerBattleAction.h"
 #include "../bonuses/BonusParameters.h"
 #include "../entities/building/TownFortifications.h"
+#include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/artifact/CArtifactInstance.h"
 #include "../GameLibrary.h"
 #include "../combatScripts/IDamageCalculatorScript.h"
@@ -54,6 +55,7 @@ constexpr int EXECUTIONER_DAMAGE_PERCENT = 20;
 constexpr int ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT = 20;
 constexpr int BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT = 50;
 constexpr int PIERCING_BOLTS_DEFENSE_IGNORE_PERCENT = 50;
+constexpr int FORTIFICATION_ENGINEER_SIEGE_PERCENT = 125;
 
 LuckRollRules battleLuckRules(const IBattleInfo & battle)
 {
@@ -118,6 +120,25 @@ std::optional<newHorizonsCreatures::CreatureCategoryView> CBattleInfoCallback::b
 	if(!battle)
 		return std::nullopt;
 	return newHorizonsCreatures::creatureCategoryView(battle->getCreatureCategoryRules(), creature);
+}
+
+bool CBattleInfoCallback::battleCanUseFortificationEngineer(const battle::Unit * turret) const
+{
+	if(!turret || !getBattle() || !turret->alive() || turret->isGhost() || !turret->isTurret()
+		|| turret->unitSlot() != SlotID::ARROW_TOWERS_SLOT || turret->unitSide() != BattleSide::DEFENDER
+		|| playerToSide(battleGetOwner(turret)) != BattleSide::DEFENDER)
+		return false;
+
+	const auto * town = battleGetDefendedTown();
+	if(!town || !town->hasFort() || !hasFortifications())
+		return false;
+
+	const auto * hero = battleGetOwnerHero(turret);
+	if(!hero || !newHorizonsHeroes::usesRules(hero->getCapabilityRules())
+		|| hero->getCapabilityRules()["rulesetVersion"].Integer() < 3)
+		return false;
+
+	return hero->hasActivePerk("new-horizons:warMachines", "new-horizons:warMachines.fortificationEngineer");
 }
 
 static BattleHex lineToWallHex(int line) //returns hex with wall in given line (y coordinate)
@@ -2534,12 +2555,25 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		if(const auto * hero = battleGetOwnerHero(info.attacker))
 			if(const auto siege = hero->getSiegeCapabilities())
 			{
-				if(hero->getCapabilityRules()["rulesetVersion"].Integer() >= 3)
+				const auto & capabilityRules = hero->getCapabilityRules();
+				if(capabilityRules["rulesetVersion"].Integer() >= 3)
 				{
 					if(info.attacker->isBallista())
 						payload.machineBaseDamage = siege->ballistaDamage;
 					else if(info.attacker->isTurret())
-						payload.machineBaseDamage = siege->defensiveTowerDamage;
+					{
+						int towerSiegeRating = siege->siegeRating;
+						if(battleCanUseFortificationEngineer(info.attacker))
+						{
+							const int64_t boostedRating = static_cast<int64_t>(siege->siegeRating)
+								* FORTIFICATION_ENGINEER_SIEGE_PERCENT / 100;
+							const auto clampedRating = std::clamp<int64_t>(boostedRating, 0,
+								static_cast<int64_t>(std::numeric_limits<int>::max()));
+							towerSiegeRating = static_cast<int>(clampedRating);
+						}
+						payload.machineBaseDamage = newHorizonsHeroes::capabilitySiegeOutput(
+							capabilityRules, towerSiegeRating, "defensiveTowerDamage");
+					}
 				}
 				else
 					payload.siegeSkillMultiplier = siege->ballistaDamageMultiplier;

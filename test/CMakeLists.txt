@@ -304,6 +304,7 @@ set(test_SRCS
 		server/battles/NewHorizonsFearlessTest.cpp
 		server/battles/NewHorizonsSurgeonTest.cpp
 		server/battles/NewHorizonsPiercingBoltsTest.cpp
+		server/battles/NewHorizonsFortificationEngineerTest.cpp
 		server/battles/NewHorizonsTwistScriptedTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp
 		server/battles/NewHorizonsQuicksandTest.cpp
