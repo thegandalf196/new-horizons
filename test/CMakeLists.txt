@@ -80,6 +80,7 @@ set(test_SRCS
 		hero/SpellPointPresentationTest.cpp
 		client/NewHorizonsCrusadeStatusTest.cpp
 		client/NewHorizonsEntangleStatusTest.cpp
+		client/NewHorizonsBattleFormStatusTest.cpp
 		hero/NewHorizonsLeadershipTest.cpp
 		hero/NewHorizonsMovementRulesTest.cpp
 		hero/NewHorizonsCapabilityRulesTest.cpp

@@ -12,7 +12,11 @@
 #include "../../lib/Color.h"
 #include "StackInfoPanelHoverState.h"
 
+#include "../../lib/constants/EntityIdentifiers.h"
+
+#include <map>
 #include <optional>
+#include <set>
 
 class BattleHex;
 class BattleHexArray;
@@ -64,6 +68,10 @@ class BattleStacksController
 
 	/// animations of creatures from fighting armies (order by BattleInfo's stacks' ID)
 	std::map<int32_t, std::shared_ptr<CreatureAnimation>> stackAnimation;
+	/// effective creature identity used to load each unit's current sprite
+	std::map<uint32_t, CreatureID> stackAnimationCreature;
+	/// unit IDs whose form sprite will be refreshed after the current animation sequence
+	std::set<uint32_t> stackAnimationsAwaitingFormRefresh;
 
 	/// <creatureID, if false reverse creature's animation> //TODO: move it to battle callback
 	std::map<int, bool> stackFacingRight;
@@ -121,6 +129,7 @@ class BattleStacksController
 	std::vector<const CStack *> selectHoveredStacks();
 
 	bool shouldAttackFacingRight(const CStack * attacker, const CStack * defender);
+	void applyStackCreatureFormRefresh(const CStack * stack);
 
 public:
 	BattleStacksController(BattleInterface & owner);
@@ -129,6 +138,8 @@ public:
 	bool facingRight(const CStack * stack) const;
 
 	void stackReset(const CStack * stack);
+	void refreshStackCreatureForm(const CStack * stack);
+	void refreshAllStackCreatureForms();
 	void stackAdded(const CStack * stack, bool instant); //new stack appeared on battlefield
 	void stackRemoved(uint32_t stackID); //stack disappeared from batlefiled
 	void stackActivated(const CStack *stack); //active stack has been changed

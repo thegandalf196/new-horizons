@@ -194,6 +194,7 @@ void BattleStacksController::stackReset(const CStack * stack)
 	fadingStacks.erase(stack->unitId()); // a reset/resurrect makes it eligible to fade out again if killed later
 
 	auto animation = iter->second;
+	refreshStackCreatureForm(stack);
 
 	if(stack->alive() && animation->isDeadOrDying())
 	{
@@ -202,6 +203,115 @@ void BattleStacksController::stackReset(const CStack * stack)
 			addNewAnim(new ResurrectionAnimation(owner, stack));
 		});
 	}
+}
+
+void BattleStacksController::refreshStackCreatureForm(const CStack * stack)
+{
+	if(!stack || (stack->initialPosition.isTower() && stack->isTurret()))
+		return;
+
+	const uint32_t unitID = stack->unitId();
+	auto loadedCreature = stackAnimationCreature.find(unitID);
+	if(loadedCreature == stackAnimationCreature.end() || loadedCreature->second == stack->unitType()->getId())
+		return;
+
+	if(!stackAnimationsAwaitingFormRefresh.insert(unitID).second)
+		return;
+
+	// Keep the current animation object alive through all staged combat effects.
+	// The callback resolves the latest state by unit ID, since multiple updates
+	// can arrive before the animation sequence drains.
+	owner.addToAnimationStage(EAnimationEvents::AFTER_HIT, [this, unitID]()
+	{
+		stackAnimationsAwaitingFormRefresh.erase(unitID);
+
+		const auto battle = owner.getBattle();
+		const CStack * currentStack = battle ? battle->battleGetStackByID(unitID, false) : nullptr;
+		if(currentStack)
+			applyStackCreatureFormRefresh(currentStack);
+	});
+}
+
+void BattleStacksController::refreshAllStackCreatureForms()
+{
+	const auto battle = owner.getBattle();
+	if(!battle)
+		return;
+
+	// Include dead and fading ghost units as well as living stacks. Turret
+	// entries are filtered by refreshStackCreatureForm, which preserves their
+	// dedicated siege animation.
+	for(const auto & entry : stackAnimationCreature)
+	{
+		const CStack * stack = battle->battleGetStackByID(entry.first, false);
+		if(stack)
+			refreshStackCreatureForm(stack);
+	}
+}
+
+void BattleStacksController::applyStackCreatureFormRefresh(const CStack * stack)
+{
+	if(!stack || (stack->initialPosition.isTower() && stack->isTurret()))
+		return;
+
+	const uint32_t unitID = stack->unitId();
+	auto animation = stackAnimation.find(unitID);
+	auto loadedCreature = stackAnimationCreature.find(unitID);
+	if(animation == stackAnimation.end() || loadedCreature == stackAnimationCreature.end())
+		return;
+
+	const CCreature * creature = stack->unitType();
+	const CreatureID effectiveCreature = creature->getId();
+	if(loadedCreature->second == effectiveCreature)
+		return;
+
+	const auto previousAnimation = animation->second;
+	auto replacement = AnimationControls::getAnimation(creature);
+
+	const Point position = getStackPositionAtHex(stack->getPosition(), stack);
+	replacement->pos.x = position.x;
+	replacement->pos.y = position.y;
+	replacement->pos.h = replacement->getHeight();
+	replacement->pos.w = replacement->getWidth();
+
+	ECreatureAnimType animationType = ECreatureAnimType::HOLDING;
+	if(!stack->alive())
+	{
+		animationType = previousAnimation->getType() == ECreatureAnimType::DEAD_RANGED
+			&& replacement->framesInGroup(ECreatureAnimType::DEAD_RANGED) > 0
+			? ECreatureAnimType::DEAD_RANGED
+			: ECreatureAnimType::DEAD;
+	}
+	else if(stack->isFrozen())
+	{
+		animationType = ECreatureAnimType::FROZEN;
+	}
+	else if(previousAnimation->getType() == ECreatureAnimType::MOUSEON
+		&& replacement->framesInGroup(ECreatureAnimType::MOUSEON) > 0)
+	{
+		animationType = ECreatureAnimType::MOUSEON;
+	}
+
+	std::weak_ptr<CreatureAnimation> weakAnimation = replacement;
+	replacement->onAnimationReset += std::bind(&onAnimationFinished, stack, weakAnimation);
+	replacement->setType(animationType);
+
+	if(vstd::contains(mouseHoveredStacks, stack))
+		replacement->setBorderColor(AnimationControls::getBlueBorder());
+	else if(activeStack && activeStack->unitId() == unitID)
+		replacement->setBorderColor(AnimationControls::getGoldBorder());
+	else
+		replacement->setBorderColor(AnimationControls::getNoBorder());
+
+	animation->second = std::move(replacement);
+	loadedCreature->second = effectiveCreature;
+
+	// The info panel is keyed by unit ID, so retain the inspected stack while
+	// rebuilding its contents from the new effective creature type.
+	if(stackInfoUnitId && *stackInfoUnitId == unitID && owner.windowObject)
+		owner.windowObject->updateStackInfoWindow(stack);
+
+	ENGINE->windows().totalRedraw();
 }
 
 void BattleStacksController::stackAdded(const CStack * stack, bool instant)
@@ -220,6 +330,7 @@ void BattleStacksController::stackAdded(const CStack * stack, bool instant)
 		const CCreature *turretCreature = owner.siegeController->getTurretCreature(stack->initialPosition);
 
 		stackAnimation[stack->unitId()] = AnimationControls::getAnimation(turretCreature);
+		stackAnimationCreature[stack->unitId()] = turretCreature->getId();
 		stackAnimation[stack->unitId()]->pos.h = turretCreatureAnimationHeight;
 		stackAnimation[stack->unitId()]->pos.w = stackAnimation[stack->unitId()]->getWidth();
 
@@ -231,7 +342,9 @@ void BattleStacksController::stackAdded(const CStack * stack, bool instant)
 	}
 	else
 	{
-		stackAnimation[stack->unitId()] = AnimationControls::getAnimation(stack->unitType());
+		const CCreature *creature = stack->unitType();
+		stackAnimation[stack->unitId()] = AnimationControls::getAnimation(creature);
+		stackAnimationCreature[stack->unitId()] = creature->getId();
 		stackAnimation[stack->unitId()]->onAnimationReset += std::bind(&onAnimationFinished, stack, stackAnimation[stack->unitId()]);
 		stackAnimation[stack->unitId()]->pos.h = stackAnimation[stack->unitId()]->getHeight();
 		stackAnimation[stack->unitId()]->pos.w = stackAnimation[stack->unitId()]->getWidth();

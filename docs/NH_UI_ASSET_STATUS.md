@@ -97,7 +97,7 @@ removal does not change the provisional approval status of the perk icon.
 | Shadow Magic Night Feeder perk icon | Provisional | Provisional | A purpose-made 44×44 medallion painting has four runtime states, a named perk binding, and retained master/prompt/provenance/export manifests under `assets/new-horizons/art-source/night-feeder-v1/`. Native-size inspection passed; in-game rendering and user-final approval remain open. |
 | Shadow Magic Reanimator perk icon | Provisional | Provisional | A purpose-made three-helm painting has four native 44×44 runtime states, a named perk binding, and retained master/prompt/provenance/export manifests under `assets/new-horizons/art-source/reanimator-v1/`. Native-size comparison passed; in-game rendering and user-final approval remain open. |
 | Physical Poison battle status | Provisional | Provisional | The stack panel reads public physical-Poison state, displays remaining activations and next tick, and updates without moving the cursor when the state changes. The Linux client and native focused UI test pass; independent source review found no blocker. It reuses the classic Poison SpellInt frame as a temporary status icon, not as Toxic Spines perk art. Native-resolution inspection, especially overflow dots, remains pending. |
-| Planned perk definitions (184) | Not done | Not done | Planned entries are not active gameplay. The row-level CSV's perk activation labels are checked against the registry after each activation; the neutral fallback is not artwork. |
+| Planned perk definitions (182) | Not done | Not done | Planned entries are not active gameplay. The current registry has 128 active and 182 planned perks; the row-level CSV's perk activation labels are checked against the registry after each activation. The neutral fallback is not artwork. |
 | Eight Order icons and action controls | Provisional | Provisional | Eight action-window descriptors and order icons are present and referenced by BattleHeroActionWindow.cpp. No user-final art approval or recorded in-game review is present. |
 | Hero attributes, capabilities, growth/mastery and category icons | Provisional | Provisional | NH images are present and bound from hero/growth/town UI source. Their actual rendered layouts have not been accepted in a GUI pass. Leadership, Siege and Movement are called out in the CSV. |
 | Split/transfer dialog owner indicators | Provisional | Final | [GUIClasses.cpp](../client/windows/GUIClasses.cpp) places built-in `PortraitsLarge` hero portraits and `CREST58` player crests below both creature panels; bounded name fallbacks cover missing or ambiguous markers, with full text available on hover/right-click. The generated 298×440 frame in [AssetGenerator.cpp](../client/render/AssetGenerator.cpp) preserves the installed `GPUCRDIV` top, side rails and ornate lower edge while extending the leather panel; it is player-colored and expands/recenters the window. The tallest fallback-layout button ends at y391, with the lower frame beginning at y403. Source guard checks containment and fallback bounds; actual game-scale rendering and interaction remain unverified. No extracted artwork is included. |
@@ -108,6 +108,18 @@ removal does not change the provisional approval status of the perk icon.
 | Quick-save/load controls and creature-status icons | Provisional | Provisional | The mod contains button states and ten new status icons under Mods/new-horizons/Images. These are user-authorized UI additions but no final-art or graphical acceptance evidence is recorded here. See [NH_USER_FEEDBACK.md](NH_USER_FEEDBACK.md) and the source files linked by the CSV. |
 
 ## UI surface coverage
+
+UP-066's generic battle-form presentation is source/native verified:
+the existing stack-status panel reads effective/original species, exact aggregate
+creature HP and remaining form rounds. Its icon references the original creature's
+native `CPRSMALL` portrait, not unrelated spell art or a fake spell marker.
+Creature sprite replacement references the effective species' native animation
+and is queued from unit-update/round events, preserving facing and inspected unit
+identity. Both Linux targets build and four pure status/overflow checks pass
+within the 51-case native retry. This is **Provisional** implementation with native-resolution rendering
+and playable acceptance still pending. No newly created artwork or Final art
+claim is involved. Purpose-made Polymorph spell artwork remains **Not done**, and
+the spell is not enabled by this generic presentation slice.
 
 The companion CSV has grouped rows for the main New Horizons surfaces requested for review: level-up skill/perk selection; the hero skill-odds pane; the parent-skill context shown by perk help; creature Speed, Initiative, Leadership requirement/capacity and stack-size readout; Orders selection/background/read-only tooltips; hero active effects and the typed Hero/Spell/Order action panel; battle log; Demonic Reserve and Gate indicators; and the main spellbook. Those implementation classifications are source-only, Provisional pending rendered review unless specifically marked Not done. The parent-skill help currently provides a text identity, not a separate custom parent-skill icon binding.
 

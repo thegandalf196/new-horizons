@@ -165,6 +165,16 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	result.defend = currentDefendStatus(stack, battleCallback);
 	if(stack)
 	{
+		if(stack->hasBattleForm())
+		{
+			const auto currentCreature = stack->battleFormCreature();
+			const auto originalCreature = stack->battleFormOriginalCreature();
+			result.battleForm = newHorizonsBattleStatus::makeBattleFormStatus(true,
+				currentCreature.getNum(), originalCreature.getNum(), stack->getBattleFormRoundsRemaining(),
+				stack->health.getCreatureHealthAvailable(),
+				currentCreature.toCreature()->getNamePluralTranslated(),
+				originalCreature.toCreature()->getNamePluralTranslated());
+		}
 		result.temporaryCreatures = newHorizonsBattleStatus::makeTemporaryCreatureStatus(
 			stack->health.getResurrected());
 		const auto retributionProtectionBonuses = stack->getBonuses(
@@ -538,10 +548,18 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		statusEntries.insert(statusEntries.begin(), temporaryEntry);
 		statusKinds.insert(statusKinds.begin(), newHorizonsBattleStatus::StackStatusIconKind::TEMPORARY_CREATURES);
 	}
+	const auto battleForm = displayedStatus.battleForm;
+	if(battleForm.active())
+	{
+		const StackStatusEntry battleFormEntry{
+			newHorizonsBattleStatus::StackStatusIconKind::BATTLE_FORM, std::nullopt};
+		statusEntries.insert(statusEntries.begin(), battleFormEntry);
+		statusKinds.insert(statusKinds.begin(), newHorizonsBattleStatus::StackStatusIconKind::BATTLE_FORM);
+	}
 	const auto totalEffectCount = spells.size() - hiddenReanimateSpellEffects - hiddenJudgedSpellEffects
 		+ (temporaryCreatures.active() ? 1 : 0) + (physicalPoison.active() ? 1 : 0)
 		+ (displayedStatus.shadowGift.hasMaximumHealthLoss() ? 1 : 0)
-		+ (retributionJudged.active() ? 1 : 0);
+		+ (retributionJudged.active() ? 1 : 0) + (battleForm.active() ? 1 : 0);
 	const auto displayPlan = newHorizonsBattleStatus::stackStatusDisplayPlan(statusKinds, totalEffectCount);
 	int printed = 0;
 	for(const auto entryIndex : displayPlan.visibleEntryIndices)
@@ -549,6 +567,18 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const auto & entry = statusEntries[entryIndex];
 		const auto slotX = firstPos.x + offset.x * printed;
 		const auto slotY = firstPos.y + offset.y * printed;
+		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::BATTLE_FORM)
+		{
+			const auto originalCreature = stack->battleFormOriginalCreature();
+			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("CPRSMALL"),
+				originalCreature.toCreature()->getIconIndex(), 0, slotX + 8, slotY + 2));
+			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
+				ETextAlignment::BOTTOMRIGHT, Colors::YELLOW, std::to_string(battleForm.remainingRounds)));
+			const auto tooltip = newHorizonsBattleStatus::battleFormTooltip(battleForm);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+			++printed;
+			continue;
+		}
 		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::PHYSICAL_POISON)
 		{
 			// Physical Poison is a saved stack condition, not a magical Poison spell.
@@ -788,7 +818,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	}
 
 	if(spells.size() == hiddenReanimateSpellEffects + hiddenJudgedSpellEffects && !temporaryCreatures.active()
-		&& !physicalPoison.active() && !displayedStatus.shadowGift.hasMaximumHealthLoss()
+		&& !battleForm.active() && !physicalPoison.active() && !displayedStatus.shadowGift.hasMaximumHealthLoss()
 		&& !retributionJudged.active())
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x, firstPos.y, 48, 36), EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[674]));
 	if(displayPlan.ellipsisUsesSlot)

@@ -34,6 +34,19 @@ class FormHealthBonusBearer final : public BonusBearerMock
 {
 public:
 	const CUnitState * state = nullptr;
+	bool timeStopped = false;
+	int32_t treeVersion = 1;
+
+	void setTimeStopped(bool value)
+	{
+		if(timeStopped != value)
+		{
+			timeStopped = value;
+			++treeVersion;
+		}
+	}
+
+	int32_t getTreeVersion() const override { return treeVersion; }
 
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string &) const override
 	{
@@ -46,6 +59,26 @@ public:
 			BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, maximumHealth, BonusSourceID());
 		if(selector && selector(healthBonus.get()))
 			result->push_back(std::move(healthBonus));
+
+		const auto addInitiativeBonus = [&](const CreatureID creature, const int32_t initiative)
+		{
+			auto bonus = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+				BonusType::STACKS_INITIATIVE_BASE, BonusSource::CREATURE_ABILITY,
+				initiative, BonusSourceID(creature));
+			if(selector && isBattleFormNativeBonus(bonus.get(), effectiveCreature) && selector(bonus.get()))
+				result->push_back(std::move(bonus));
+		};
+		addInitiativeBonus(SOURCE_CREATURE, 17);
+		addInitiativeBonus(SMALL_FORM, 9);
+		addInitiativeBonus(LARGE_FORM, 9);
+
+		if(timeStopped)
+		{
+			auto timeStopBonus = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+				BonusType::TIME_STOP, BonusSource::SPELL_EFFECT, 1, BonusSourceID());
+			if(selector && selector(timeStopBonus.get()))
+				result->push_back(std::move(timeStopBonus));
+		}
 		return result;
 	}
 };
@@ -354,4 +387,108 @@ TEST(NewHorizonsBattleFormHealthTest, ImpossibleReversionDoesNotMutateTheStack)
 	field.fill(EAccessibility::OBSTACLE);
 	EXPECT_FALSE(battle::endBattleFormAtNearestLegalPosition(*state, field));
 	EXPECT_EQ(state->save(), before);
+}
+
+TEST(NewHorizonsBattleFormHealthTest, TimeStopPausesBattleFormExpiryUntilStasisEnds)
+{
+	UnitEnvironmentMock environment;
+	UnitInfoMock info;
+	FormHealthBonusBearer bonuses;
+	FormTestUnitState state(&info, &bonuses);
+	configureUnitInfo(info, SOURCE_CREATURE.toCreature());
+	bonuses.state = &state;
+	state.localInit(&environment);
+	state.beginBattleForm(SMALL_FORM, 2);
+	ASSERT_TRUE(state.hasBattleForm());
+	EXPECT_EQ(state.getInitiative(), 17);
+
+	bonuses.setTimeStopped(true);
+	ASSERT_TRUE(state.isTimeStopped());
+	state.afterNewRound();
+	EXPECT_TRUE(state.hasBattleForm());
+	EXPECT_EQ(state.save()["state"]["battleFormRoundsRemaining"].Integer(), 2);
+	EXPECT_EQ(state.getInitiative(), 9);
+
+	bonuses.setTimeStopped(false);
+	ASSERT_FALSE(state.isTimeStopped());
+	state.afterNewRound();
+	EXPECT_TRUE(state.hasBattleForm());
+	EXPECT_EQ(state.save()["state"]["battleFormRoundsRemaining"].Integer(), 1);
+	EXPECT_EQ(state.getInitiative(), 9);
+	state.afterNewRound();
+	EXPECT_FALSE(state.hasBattleForm());
+	EXPECT_EQ(state.getInitiative(), 17);
+	EXPECT_EQ(state.health.getCreatureHealthAvailable(), static_cast<int64_t>(STACK_SIZE) * 100);
+}
+
+TEST(NewHorizonsBattleFormHealthTest, CloneKeepsOneHitDeathAndClearsFormProvenanceBeforeGhosting)
+{
+	UnitEnvironmentMock environment;
+	UnitInfoMock info;
+	FormHealthBonusBearer bonuses;
+	FormTestUnitState clone(&info, &bonuses);
+	configureUnitInfo(info, SOURCE_CREATURE.toCreature());
+	bonuses.state = &clone;
+	clone.localInit(&environment);
+	clone.cloned = true;
+	clone.beginBattleForm(SMALL_FORM, 2);
+	ASSERT_TRUE(clone.isClone());
+	ASSERT_TRUE(clone.hasBattleForm());
+
+	const auto saved = clone.save();
+	UnitInfoMock restoredInfo;
+	FormHealthBonusBearer restoredBonuses;
+	FormTestUnitState restored(&restoredInfo, &restoredBonuses);
+	configureUnitInfo(restoredInfo, SOURCE_CREATURE.toCreature());
+	restoredBonuses.state = &restored;
+	restored.localInit(&environment);
+	restored.load(saved);
+	ASSERT_TRUE(restored.isClone());
+	ASSERT_TRUE(restored.hasBattleForm());
+
+	const int64_t sourceHealth = restored.health.getCreatureHealthAvailable();
+	restored.beginBattleForm(LARGE_FORM, 2);
+	ASSERT_TRUE(restored.hasBattleForm());
+	EXPECT_EQ(restored.battleFormCreature(), LARGE_FORM);
+	const auto recast = restored.save();
+	restored.load(recast);
+	ASSERT_TRUE(restored.isClone());
+	ASSERT_TRUE(restored.hasBattleForm());
+	EXPECT_EQ(restored.battleFormCreature(), LARGE_FORM);
+	restored.endBattleForm();
+	EXPECT_FALSE(restored.hasBattleForm());
+	EXPECT_TRUE(restored.isClone());
+	EXPECT_EQ(restored.battleFormCreature(), SOURCE_CREATURE);
+	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), sourceHealth);
+	restored.beginBattleForm(SMALL_FORM, 2);
+	ASSERT_TRUE(restored.hasBattleForm());
+
+	int64_t damage = 1;
+	restored.damage(damage);
+	EXPECT_EQ(damage, 0);
+	EXPECT_FALSE(restored.alive());
+	EXPECT_TRUE(restored.isClone());
+	EXPECT_FALSE(restored.hasBattleForm());
+	EXPECT_FALSE(restored.health.isBattleFormProvenance());
+	EXPECT_EQ(restored.battleFormCreature(), SOURCE_CREATURE);
+	EXPECT_EQ(restored.getKilled(), STACK_SIZE);
+
+	EXPECT_NO_THROW(restored.endBattleForm());
+	EXPECT_NO_THROW(restored.makeGhost());
+	EXPECT_NO_THROW(restored.onRemoved());
+	EXPECT_TRUE(restored.isGhost());
+	EXPECT_FALSE(restored.hasBattleForm());
+	EXPECT_EQ(restored.getKilled(), STACK_SIZE);
+
+	const auto deadClone = restored.save();
+	UnitInfoMock ghostInfo;
+	FormHealthBonusBearer ghostBonuses;
+	FormTestUnitState ghost(&ghostInfo, &ghostBonuses);
+	configureUnitInfo(ghostInfo, SOURCE_CREATURE.toCreature());
+	ghostBonuses.state = &ghost;
+	ghost.localInit(&environment);
+	EXPECT_NO_THROW(ghost.load(deadClone));
+	EXPECT_TRUE(ghost.isClone());
+	EXPECT_TRUE(ghost.isGhost());
+	EXPECT_FALSE(ghost.hasBattleForm());
 }

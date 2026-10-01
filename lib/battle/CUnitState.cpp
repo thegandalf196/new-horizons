@@ -1355,7 +1355,7 @@ void CUnitState::beginBattleForm(const CreatureID creature, const int32_t rounds
 {
 	if(rounds <= 0 || !creature.hasValue() || creature.toEntity(LIBRARY) == nullptr)
 		throw std::invalid_argument("Invalid battle-form target or duration");
-	if(cloned || phantomInitialIntegrity > 0 || !alive())
+	if(phantomInitialIntegrity > 0 || !alive())
 		throw std::logic_error("This unit cannot receive a battle form");
 
 	const CreatureID previousForm = battleFormCreature();
@@ -1996,6 +1996,10 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 		if(amount > 0)
 		{
 			amount = 0;
+			// A clone still dies to the first positive hit. Restore its source form
+			// before clearing health so a temporary form cannot retain a stale HP
+			// provenance ledger through ghosting, removal, or result processing.
+			endBattleForm();
 			health.reset();
 		}
 	}
@@ -2237,12 +2241,15 @@ void CUnitState::afterNewRound(bool isFirstRound)
 {
 	if(!isFirstRound && hasBattleForm())
 	{
-		if(battleFormRoundsRemaining <= 1)
-			endBattleForm();
-		else
+		// The preserved initiative only represents the remainder of the round
+		// in which the form was cast. Stasis pauses form lifetime, not the round.
+		battleFormInitiativeSnapshotActive = false;
+		if(!isTimeStopped())
 		{
-			--battleFormRoundsRemaining;
-			battleFormInitiativeSnapshotActive = false;
+			if(battleFormRoundsRemaining <= 1)
+				endBattleForm();
+			else
+				--battleFormRoundsRemaining;
 		}
 	}
 
@@ -2333,6 +2340,9 @@ CUnitStateDetached::CUnitStateDetached(const IUnitInfo * unit_, const IBonusBear
 
 TConstBonusListPtr CUnitStateDetached::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {
+	if(!hasBattleFormState())
+		return bonus->getAllBonuses(selector, cachingStr);
+
 	const CreatureID sourceCreature = unit->unitType()->getId();
 	const CreatureID effectiveCreature = battleFormCreature();
 	TConstBonusListPtr originalBonuses = bonus->getAllBonuses(selector, cachingStr);

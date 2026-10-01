@@ -346,6 +346,8 @@ public:
 
 	/// True while a replacement creature form is active.
 	bool hasBattleForm() const;
+	/// Remaining form lifetime; zero after reversion. Time Stop pauses this value.
+	int32_t getBattleFormRoundsRemaining() const { return battleFormRoundsRemaining; }
 	/// Effective battle creature, falling back to the stable source species.
 	CreatureID battleFormCreature() const;
 	/// Original source creature identity, retained after form expiry.

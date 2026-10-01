@@ -778,9 +778,53 @@ struct DefendStatus
 	bool operator==(const DefendStatus &) const = default;
 };
 
+struct BattleFormStatus
+{
+	bool transformed = false;
+	int32_t currentCreature = -1;
+	int32_t originalCreature = -1;
+	int32_t remainingRounds = 0;
+	int64_t aggregateCreatureHealth = 0;
+	std::string currentCreatureName;
+	std::string originalCreatureName;
+
+	bool active() const
+	{
+		return transformed && remainingRounds > 0;
+	}
+
+	bool operator==(const BattleFormStatus &) const = default;
+};
+
+inline BattleFormStatus makeBattleFormStatus(bool transformed, int32_t currentCreature,
+	int32_t originalCreature, int32_t remainingRounds, int64_t aggregateCreatureHealth,
+	std::string currentCreatureName, std::string originalCreatureName)
+{
+	if(!transformed || remainingRounds <= 0)
+		return {};
+
+	return {true, currentCreature, originalCreature, remainingRounds, aggregateCreatureHealth,
+		std::move(currentCreatureName), std::move(originalCreatureName)};
+}
+
+inline std::string battleFormTooltip(const BattleFormStatus & status)
+{
+	if(!status.active())
+		return {};
+
+	std::string result = "Transformed\nCurrent form: " + status.currentCreatureName
+		+ "; original creature: " + status.originalCreatureName + ".";
+	result += "\nCurrent aggregate creature HP: " + std::to_string(status.aggregateCreatureHealth)
+		+ " HP. Form changes preserve this exact surviving creature-HP total.";
+	result += "\nTemporary HP is tracked separately. The stack's owner and battle-side allegiance are unchanged.";
+	result += "\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
+	return result;
+}
+
 struct StackInfoStatusSnapshot
 {
 	DefendStatus defend;
+	BattleFormStatus battleForm;
 	PhysicalPoisonStatus physicalPoison;
 	TemporaryCreatureStatus temporaryCreatures;
 	EntangleStatus entangle;

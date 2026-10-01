@@ -10,20 +10,25 @@
 #include "StdInc.h"
 
 #include "../../server/battles/BattleTestFixture.h"
+#include "../../SpellPointTestUtils.h"
 #include "../../../server/CGameHandler.h"
 
 #include "../../../lib/CCreatureHandler.h"
 #include "../../../lib/CRandomGenerator.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
+#include "../../../lib/battle/BattleAction.h"
 #include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/battle/AccessibilityInfo.h"
 #include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/battle/Unit.h"
 #include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../../../lib/mapping/CMap.h"
+#include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/spells/effects/BattleForm.h"
+#include "../../../server/battles/BattleProcessor.h"
 
 #include "../../mock/mock_spells_Mechanics.h"
 
@@ -85,10 +90,30 @@ JsonNode battleFormEffectConfig(bool includeDuration = false)
 class BattleFormEffectCastTest : public BattleTestFixture
 {
 protected:
-	void prepareBattle()
+	void mapLoaded(CMap * loaded) override
 	{
+		TinyMapGameTest::mapLoaded(loaded);
+		// The test creates an ordinary clone through the real spell action. Clone
+		// is intentionally inactive in the installed New Horizons spell roster.
+		if(allowLegacyCloneSpell)
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+	}
+
+	void prepareBattle(bool prepareCloneCast = false)
+	{
+		allowLegacyCloneSpell = prepareCloneCast;
 		InstalledCategoryOverride rules(battleFormCategoryRules());
 		startGame();
+		if(prepareCloneCast)
+		{
+			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+			attackerSideHero->addSpellToSpellbook(SpellID::CLONE);
+			const auto * cloneSpell = SpellID(SpellID::CLONE).toSpell();
+			ASSERT_NE(cloneSpell, nullptr);
+			attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER,
+				3 * attackerSideHero->getEffectPowerDivisor(cloneSpell), ChangeValueMode::ABSOLUTE);
+			setTestSpellPointTotal(attackerSideHero, 100);
+		}
 		startBattle();
 
 		BattleUnitsChanged remove;
@@ -102,8 +127,12 @@ protected:
 		const auto blockedTail = battle::Unit::occupiedHex(origin, true, BattleSide::DEFENDER);
 		ASSERT_TRUE(blockedTail.isAvailable());
 		blocker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), blockedTail, 1);
+		if(prepareCloneCast)
+			cloneSource = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(3, 3), 4);
 		ASSERT_NE(target, nullptr);
 		ASSERT_NE(blocker, nullptr);
+		if(prepareCloneCast)
+			ASSERT_NE(cloneSource, nullptr);
 		beginCombat();
 	}
 
@@ -122,6 +151,8 @@ protected:
 
 	CStack * target = nullptr;
 	CStack * blocker = nullptr;
+	CStack * cloneSource = nullptr;
+	bool allowLegacyCloneSpell = false;
 };
 }
 
@@ -222,7 +253,7 @@ TEST_F(BattleFormEffectCastTest, UsesUniformCapturedCategoryPoolAndRelocatesWith
 	EXPECT_EQ(transformed->save()["state"]["battleFormRoundsRemaining"].Integer(), 2);
 }
 
-TEST_F(BattleFormEffectCastTest, KeepsUnsupportedProfilesInTargetFlowAndRejectsThemExplicitly)
+TEST_F(BattleFormEffectCastTest, KeepsPhantomArmyInTargetFlowAndRejectsItExplicitly)
 {
 	prepareBattle();
 	ASSERT_NE(target, nullptr);
@@ -239,31 +270,79 @@ TEST_F(BattleFormEffectCastTest, KeepsUnsupportedProfilesInTargetFlowAndRejectsT
 	spells::Target target;
 	target.emplace_back(this->target);
 
-	const auto verifyRejected = [&](const std::string & profileName)
-	{
-		spells::detail::ProblemImpl problem;
-		const auto filtered = effect.filterTarget(&mechanics, target);
-		ASSERT_EQ(filtered.size(), 1u) << profileName << " target must reach applicability for an explicit rejection";
-		EXPECT_FALSE(effect.applicableTarget(problem, &mechanics, filtered)) << profileName;
-		std::vector<std::string> messages;
-		problem.getAll(messages);
-		ASSERT_EQ(messages.size(), 1u);
-		EXPECT_NE(messages.front().find("cannot currently affect Clone or Phantom Army stacks"), std::string::npos);
-	};
-
 	saveState(this->target, [](battle::CUnitState & state)
 	{
-		state.cloned = true;
-	});
-	verifyRejected("Clone");
-
-	saveState(this->target, [](battle::CUnitState & state)
-	{
-		state.cloned = false;
 		state.summoned = true;
 		state.initializePhantomProfile(state.getAvailableHealth(), 2);
 	});
-	verifyRejected("Phantom Army");
+
+	spells::detail::ProblemImpl problem;
+	const auto filtered = effect.filterTarget(&mechanics, target);
+	ASSERT_EQ(filtered.size(), 1u) << "Phantom Army target must reach applicability for an explicit rejection";
+	EXPECT_FALSE(effect.applicableTarget(problem, &mechanics, filtered));
+	std::vector<std::string> messages;
+	problem.getAll(messages);
+	ASSERT_EQ(messages.size(), 1u);
+	EXPECT_NE(messages.front().find("cannot currently affect Phantom Army stacks"), std::string::npos);
+}
+
+TEST_F(BattleFormEffectCastTest, AppliesThroughBattleStatePacketToARealClone)
+{
+	prepareBattle(true);
+	ASSERT_NE(cloneSource, nullptr);
+
+	BattleAction cloneCast;
+	cloneCast.actionType = EActionType::HERO_SPELL;
+	cloneCast.side = BattleSide::ATTACKER;
+	cloneCast.spell = SpellID::CLONE;
+	cloneCast.aimToUnit(cloneSource);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), cloneCast));
+	ASSERT_EQ(server.castsOf(SpellID::CLONE).size(), 1u);
+
+	const CStack * clone = nullptr;
+	for(const auto * unit : battle()->battleGetAllStacks())
+		if(unit->isClone() && unit->unitSide() == BattleSide::ATTACKER)
+			clone = unit;
+	ASSERT_NE(clone, nullptr);
+	ASSERT_TRUE(clone->alive());
+	const auto originalUnitId = clone->unitId();
+	const auto originalOwner = clone->unitOwner();
+	const auto originalSide = clone->unitSide();
+	const auto sourceCreature = clone->creatureId();
+	const auto originalHealth = clone->acquireState()->health.getCreatureHealthAvailable();
+
+	spells::MechanicsMock mechanics;
+	ON_CALL(mechanics, battle()).WillByDefault(Return(battle()));
+	ON_CALL(mechanics, creatures()).WillByDefault(Return(LIBRARY->creatures()));
+	ON_CALL(mechanics, isReceptive(_)).WillByDefault(Return(true));
+	ON_CALL(mechanics, isSmart()).WillByDefault(Return(false));
+	ON_CALL(mechanics, isNegativeSpell()).WillByDefault(Return(true));
+	ON_CALL(mechanics, getBattleID()).WillByDefault(Return(BattleID(0)));
+
+	spells::effects::BattleFormEffect effect;
+	effect.init(battleFormEffectConfig());
+	spells::Target selectedTarget;
+	selectedTarget.emplace_back(clone);
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(effect.applicableTarget(problem, &mechanics, selectedTarget));
+	effect.apply(gameHandler->spellcastEnvironment(), &mechanics, selectedTarget);
+
+	const auto transformed = clone->acquireState();
+	ASSERT_TRUE(transformed->hasBattleForm());
+	EXPECT_TRUE(transformed->isClone());
+	EXPECT_EQ(transformed->unitId(), originalUnitId);
+	EXPECT_EQ(transformed->unitOwner(), originalOwner);
+	EXPECT_EQ(transformed->unitSide(), originalSide);
+	EXPECT_EQ(transformed->battleFormOriginalCreature(), sourceCreature);
+	EXPECT_EQ(transformed->health.getCreatureHealthAvailable(), originalHealth);
+
+	const auto saved = transformed->save();
+	const auto restored = clone->acquireState();
+	restored->load(saved);
+	EXPECT_TRUE(restored->isClone());
+	EXPECT_TRUE(restored->hasBattleForm());
+	EXPECT_EQ(restored->battleFormOriginalCreature(), sourceCreature);
+	EXPECT_EQ(restored->health.getCreatureHealthAvailable(), originalHealth);
 }
 
 TEST(BattleFormEffectConfigTest, RejectsUnknownParametersAndInvalidDurations)

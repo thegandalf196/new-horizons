@@ -2,6 +2,48 @@
 
 ## Purpose
 
+### 2026-09-30 battle-form clone/presentation checkpoint — fixture includes
+
+Both-target compiler probe `95666` fails in the new real-clone fixture:
+`BattleFormTest.cpp` cannot convert `const CSpell*` to its `spells::Spell`
+interface while `CSpell` is incomplete, and cannot call `BattleProcessor` through
+its forward declaration. Preserve `UP066-clone-presentation-build.log`. Add the
+full spell and battle-processor includes in the fixture; do not change production
+interfaces or weaken the real-cast assertions. A successful retry/native result
+is pending. Polymorph activation and playable delivery are not claimed.
+
+Include-repair build `73946` passes; final Initiative-lifetime rebuild `41454`
+also passes both targets. First native run `96469` exits 139 in the existing
+`CloneApplyTest.AddsNewUnit` fixture after its detached unit mock returns a null
+creature type. Preserve `UP066-clone-presentation-focused.log` and the separate
+`UP066-clone-presentation-crash-gdb.log` trace. Binary SHA-256:
+`c7e731110774f8496cb408ea2a692d59688170b13acaa82f94caf158de54e87f`.
+This is a crash, not an unrelated test to skip. Trace the generic no-form state
+path and restore its original no-creature-query contract before retrying; do not
+hide it by weakening or excluding the Clone fixture. Final success is pending.
+
+GDB trace `48533` identifies the production fault in
+`CUnitStateDetached::getAllBonuses`: even an ordinary unit with no form payload
+unconditionally queried its creature identity. Restore immediate delegation to
+its underlying bonus bearer when `!hasBattleFormState()`; retained inactive
+source-form metadata must still use the replacement native-bonus path. Keep
+the original CloneApply fixture unchanged as a regression guard. The same native
+run also exposed two health-fixture assertions: its new explicit tree version
+started at zero, equal to the bonus cache's uninitialized epoch. Initialize it
+at one (the preceding mock contract), keeping HP and 17/9 Initiative assertions
+intact. Repair build/native verification remains pending.
+
+Crash-repair both-target build `57163` passes. Native retry `39543` executes
+51/51 successfully with zero skips in 2.640 seconds, including the unchanged
+Clone/CloneApply regressions, cloned-form cast/JSON/recast/death, Time Stop's
+paused timer with current-round Initiative invalidation, and status readback.
+Reports `UP066-clone-presentation-build-crash-repair.log` and
+`UP066-clone-presentation-focused-retry.log`/`.xml`; binary SHA-256
+`ebd913de4bb8a9f4ff5d7f726876b02910ecf97df6e55180450cbf65869dd164`.
+Independent final repair review finds no blocker; module/diff checks pass.
+This certifies the bounded dependency slice, not full Polymorph, graphical
+rendering, ordinary playable delivery or broad save/lifecycle acceptance.
+
 ### 2026-09-30 battle-form cast/result checkpoint — fixture admission
 
 Both-target build `70446` passes. First focused native run `54234` executes

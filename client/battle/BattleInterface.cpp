@@ -1003,6 +1003,12 @@ void BattleInterface::newRound()
 	// The BattleNextRound state packet has been applied before this callback.
 	// Refresh transient hero indicators so an inclusive expiry cannot linger
 	// until another spell or Order is issued.
+	if(stacksController)
+	{
+		// Battle form rounds can expire as part of BattleNextRound without a
+		// separate BattleUnitsChanged update for the affected stack.
+		stacksController->refreshAllStackCreatureForms();
+	}
 	if(windowObject)
 	{
 		// Round-expiry perks mutate Spell Points as part of BattleNextRound,

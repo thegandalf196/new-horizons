@@ -14,6 +14,23 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-066 clone/presentation slice is source/native verified as a partial dependency.
+Ordinary clones are admitted without losing one-hit destruction; source form is
+restored before death clears their HP ledger. Time Stop pauses form duration.
+Unit-update/round events queue effective-creature sprite refresh, and the existing
+stack panel reads current/original species, exact surviving creature HP and form
+rounds using a native source portrait. Independent frozen-source review reports
+no blocker. Both-target build `57163` passes and isolated native retry `39543`
+passes 51/51, zero skips, including unchanged ordinary CloneApply regressions.
+Reports `UP066-clone-presentation-focused-retry.log`/`.xml`; binary SHA-256
+`ebd913de4bb8a9f4ff5d7f726876b02910ecf97df6e55180450cbf65869dd164`.
+Ordinary detached units now preserve their direct bonus-delegation path without
+an unnecessary creature-type query. Sprite refresh is source/compile evidence,
+not rendered acceptance. Full Polymorph activation still needs Phantom-profile support,
+expiry/Dispel geometry, expected-random-outcome AI and accepted hero casting;
+no spell/perk/rank count or playable-delivery increase is claimed. The per-school
+table below now correctly includes the already-verified Shield of Chaos (6/11).
+
 UP-066 cast/result follow-up is source/native verified, not full Polymorph
 activation. The native `core:battleForm` effect draws from the complete captured
 category and publishes same-ID state with strict nearest-legal relocation and
@@ -796,7 +813,7 @@ from the active identity row.
 | Light | 11 | 11 | No missing identity; Crusade! has focused runtime/native evidence. Rendered/playable and broader interaction evidence remain open. |
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
-| Chaos | 11 | 5 | Confusion; Polymorph; Puppet Master; Reality Warp; Pandemonium; Shield of Chaos |
+| Chaos | 11 | 6 | Confusion; Polymorph; Puppet Master; Reality Warp; Pandemonium |
 | Nature | 11 | 9 | Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 

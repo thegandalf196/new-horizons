@@ -49,9 +49,9 @@ bool isBasicTarget(const Mechanics * mechanics, const battle::Unit * unit)
 	return mechanics->isReceptive(unit);
 }
 
-bool isUnsupportedProfile(const battle::Unit * unit)
+bool isUnsupportedPhantomProfile(const battle::Unit * unit)
 {
-	return unit && (unit->isClone() || unit->getPhantomInitialIntegrity() > 0);
+	return unit && unit->getPhantomInitialIntegrity() > 0;
 }
 
 CreatureForms getForms(const Mechanics * mechanics, const battle::Unit * unit)
@@ -80,7 +80,7 @@ CreatureForms getForms(const Mechanics * mechanics, const battle::Unit * unit)
 void addUnsupportedProfileProblem(Problem & problem)
 {
 	MetaString message;
-	message.appendRawString("Battle-form spells cannot currently affect Clone or Phantom Army stacks.");
+	message.appendRawString("Battle-form spells cannot currently affect Phantom Army stacks.");
 	problem.add(std::move(message), Problem::NORMAL);
 }
 
@@ -168,7 +168,7 @@ bool BattleFormEffect::hasLegalPlacementForEveryForm(const Mechanics * mechanics
 bool BattleFormEffect::isSupportedTarget(const Mechanics * mechanics, const battle::Unit * unit) const
 {
 	return isBasicTarget(mechanics, unit)
-		&& !isUnsupportedProfile(unit)
+		&& !isUnsupportedPhantomProfile(unit)
 		&& hasLegalPlacementForEveryForm(mechanics, unit);
 }
 
@@ -183,7 +183,7 @@ bool BattleFormEffect::applicableGeneral(Problem & problem, const Mechanics * me
 	{
 		if(!isBasicTarget(mechanics, unit))
 			continue;
-		if(isUnsupportedProfile(unit))
+		if(isUnsupportedPhantomProfile(unit))
 		{
 			unsupportedProfile = true;
 			continue;
@@ -217,7 +217,7 @@ bool BattleFormEffect::applicableTarget(Problem & problem, const Mechanics * mec
 		const auto * unit = destination.unitValue;
 		if(!isBasicTarget(mechanics, unit))
 			continue;
-		if(isUnsupportedProfile(unit))
+		if(isUnsupportedPhantomProfile(unit))
 		{
 			unsupportedProfile = true;
 			continue;
@@ -277,11 +277,11 @@ void BattleFormEffect::apply(ServerCallback * server, const Mechanics * mechanic
 		}
 
 		auto state = unit->acquireState();
-		if(!state || state->cloned || state->getPhantomInitialIntegrity() > 0 || !state->alive())
+		if(!state || state->getPhantomInitialIntegrity() > 0 || !state->alive())
 		{
-			// This profile is a temporary implementation gap, reported during applicability;
-			// keep this late guard so an accepted cast can never throw after spending Mana.
-			server->complain("Battle-form effect cannot currently apply to Clone or Phantom Army stacks");
+			// Phantom Army remains a temporary profile gap. Keep a late guard so
+			// an accepted cast cannot throw if its target became unavailable.
+			server->complain("Battle-form effect cannot currently apply to Phantom Army or dead stacks");
 			continue;
 		}
 
