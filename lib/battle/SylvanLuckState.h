@@ -51,8 +51,11 @@ struct DLL_LINKAGE SylvanLuckState
 	bool perfectMomentUsed = false;
 	bool secondChance = false;
 	bool secondChanceUsed = false;
+	bool gambler = false;
+	bool gamblerAttackUsedThisRound = false;
 
-	bool active() const { return serendipity || naturesProvidence || fortunateAim || extendedActive() || perfectMoment || secondChance; }
+	bool active() const { return serendipity || naturesProvidence || fortunateAim || extendedActive() || perfectMoment || secondChance || gambler; }
+	bool gamblerAttackAvailable() const { return gambler && !gamblerAttackUsedThisRound; }
 	bool canIgnoreNegativeLuck(bool secondChanceEligible = true) const
 	{
 		return (naturesProvidence && !negativeLuckIgnored)
@@ -75,7 +78,8 @@ struct DLL_LINKAGE SylvanLuckState
 	int chanceLuck(int baseLuck, uint32_t unitId, bool focusFireShot) const
 	{
 		return baseLuck + (serendipity && !positiveLuckUnits.contains(unitId) ? 1 : 0)
-			+ (fortunateAim && focusFireShot ? 1 : 0) + temporaryLuck(unitId);
+			+ (fortunateAim && focusFireShot ? 1 : 0) + temporaryLuck(unitId)
+			+ (gamblerAttackAvailable() ? 3 : 0);
 	}
 	/// Returns whether a rolled bad-luck result is suppressed. Positive and
 	/// negative outcomes are mutually exclusive and applied once per strike.
@@ -83,6 +87,10 @@ struct DLL_LINKAGE SylvanLuckState
 	{
 		if(!active())
 			return false;
+		// The first executed attack consumes this window even if Luck is zero,
+		// prevented, or has no positive/negative result.
+		if(gamblerAttackAvailable())
+			gamblerAttackUsedThisRound = true;
 		if(positive && positiveLuckUnits.insert(unitId).second && forestsFavor)
 			speedUnits.insert(unitId);
 		bool ignored = false;
@@ -127,12 +135,15 @@ struct DLL_LINKAGE SylvanLuckState
 	void nextRound()
 	{
 		negativeLuckIgnored = false;
+		gamblerAttackUsedThisRound = false;
 		endActivation();
 	}
 	bool operator==(const SylvanLuckState &) const = default;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_GAMBLER) && (gambler || gamblerAttackUsedThisRound))
+			throw std::runtime_error("Cannot downgrade Gambler state");
 		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_SECOND_CHANCE) && (secondChance || secondChanceUsed))
 			throw std::runtime_error("Cannot downgrade Second Chance state");
 		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_PERFECT_MOMENT) && (perfectMoment || perfectMomentUsed))
@@ -176,6 +187,15 @@ struct DLL_LINKAGE SylvanLuckState
 		}
 		else if(!h.saving)
 			secondChance = secondChanceUsed = false;
+		if(h.hasFeature(ESerializationVersion::NEW_HORIZONS_GAMBLER))
+		{
+			h & gambler;
+			h & gamblerAttackUsedThisRound;
+		}
+		else if(!h.saving)
+			gambler = gamblerAttackUsedThisRound = false;
+		if(!h.saving && gamblerAttackUsedThisRound && !gambler)
+			throw std::runtime_error("Gambler expenditure without perk");
 		if(!h.saving && secondChanceUsed && !secondChance)
 			throw std::runtime_error("Second Chance expenditure without perk");
 		if(!h.saving && perfectMomentUsed && !perfectMoment)

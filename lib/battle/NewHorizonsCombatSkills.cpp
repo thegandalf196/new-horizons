@@ -9,6 +9,7 @@
 #include "../mapObjects/CGHeroInstance.h"
 #include "CUnitState.h"
 #include "Unit.h"
+#include "../bonuses/Bonus.h"
 
 namespace
 {
@@ -29,6 +30,24 @@ int rank(const CGHeroInstance * hero, const char * skill)
 
 namespace newHorizonsCombatSkills
 {
+Bonus gamblerLuckPenalty()
+{
+	const auto skill = SecondarySkill(SecondarySkill::decode(std::string(LUCK_SKILL_ID)));
+	Bonus bonus(BonusDuration::STACK_GETS_TURN, BonusType::LUCK,
+		BonusSource::SECONDARY_SKILL, GAMBLER_LUCK_PENALTY, BonusSourceID(skill));
+	bonus.stacking = std::string(GAMBLER_PERK_ID);
+	bonus.description.appendRawString("Gambler: -2 Luck until the next Creature Activation");
+	return bonus;
+}
+
+bool isGamblerLuckPenalty(const Bonus * bonus)
+{
+	return bonus && bonus->duration == BonusDuration::STACK_GETS_TURN
+		&& bonus->type == BonusType::LUCK && bonus->val == GAMBLER_LUCK_PENALTY
+		&& bonus->source == BonusSource::SECONDARY_SKILL
+		&& bonus->stacking == GAMBLER_PERK_ID;
+}
+
 int armorerRank(const CGHeroInstance * hero)
 {
 	return rank(hero, "new-horizons:armorer");

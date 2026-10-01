@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "c39881d1bb9dc6bd9a37650a596ff6939af6bdd548d56133ca37f862cd04d0ec",
+	"sourceSha256": "ab4331d9c0557b9dc69954ada098e9583d29492d62115940ccdc82753903c122",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -2875,7 +2875,7 @@
 					"requires": "advanced",
 					"description": "The first friendly attack each round gains +3 Luck for that attack. If positive Luck does not trigger, the attacking stack suffers -2 Luck until its next activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first friendly attack each round gains +3 Luck for that attack. If positive Luck does not trigger, the attacking stack suffers -2 Luck until its next activation."
 					}
 				},
@@ -2883,10 +2883,10 @@
 					"id": "new-horizons:luck.chainOfFortune",
 					"name": "Chain of Fortune",
 					"requires": "advanced",
-					"description": "Once per round after a friendly positive Luck trigger, the next friendly stack to attack gains +1 Luck for that attack.",
+					"description": "Once per round after a friendly positive Luck trigger, the next different friendly stack to attack gains +1 Luck for that attack.",
 					"effect": {
 						"status": "planned",
-						"description": "Once per round after a friendly positive Luck trigger, the next friendly stack to attack gains +1 Luck for that attack."
+						"description": "Once per round after a friendly positive Luck trigger, the next different friendly stack to attack gains +1 Luck for that attack."
 					}
 				},
 				{

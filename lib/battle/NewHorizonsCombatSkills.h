@@ -9,6 +9,7 @@
 #include <string_view>
 
 class CGHeroInstance;
+struct Bonus;
 namespace battle
 {
 class CUnitState;
@@ -17,6 +18,11 @@ class Unit;
 
 namespace newHorizonsCombatSkills
 {
+constexpr std::string_view LUCK_SKILL_ID = "new-horizons:luck";
+constexpr std::string_view GAMBLER_PERK_ID = "new-horizons:luck.gambler";
+constexpr int GAMBLER_LUCK_PENALTY = -2;
+DLL_LINKAGE Bonus gamblerLuckPenalty();
+DLL_LINKAGE bool isGamblerLuckPenalty(const Bonus * bonus);
 constexpr std::string_view ARMORER_SKILL_ID = "new-horizons:armorer";
 constexpr std::string_view COUNTERCHARGE_PERK_ID = "new-horizons:armorer.countercharge";
 constexpr std::string_view FORMATION_FIGHTING_PERK_ID = "new-horizons:armorer.formationFighting";

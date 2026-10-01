@@ -26,6 +26,16 @@ class HypotheticBattle;
 class CSpell;
 class CStack;
 
+/// Detached projection result captured before one-strike Luck modifiers expire.
+/// UNKNOWN preserves probabilistic damage without inventing a sampled outcome.
+enum class ProjectedLuckOutcome : uint8_t
+{
+	UNKNOWN,
+	POSITIVE,
+	NEGATIVE,
+	NEUTRAL
+};
+
 ///Fake random generator, used by AI to evaluate random server behavior
 class RNGStub final : public vstd::RNG
 {
@@ -280,13 +290,15 @@ public:
 	void endFortuneActivation() { for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER}) fortuneStates.at(side).endActivation(); }
 	LuckRollRules getLuckRollRules() const override { return fortuneRollRules; }
 
-	/// Apply a definitely lucky/unlucky strike to this model.  AI damage
-	/// evaluation is deliberately probabilistic and side-effect free; callers
-	/// invoke this only after committing a selected projected strike.
+	/// Apply Luck history in an isolated or selected branch, never live state.
+	/// Record-only mode expires one-strike modifiers before subsequent blows;
+	/// post-hit aftermath is applied separately once using the captured outcome.
 	bool fortuneStrikeIsCertain(const BattleAttackInfo & attack) const;
+	ProjectedLuckOutcome captureFortuneStrikeOutcome(const BattleAttackInfo & attack) const;
 	void projectFortuneStrike(const BattleAttackInfo & attack,
 		const std::vector<std::pair<uint32_t, int64_t>> & hits,
-		battle::CUnitState * attackerState, bool enemyStackKilled);
+		battle::CUnitState * attackerState, bool enemyStackKilled,
+		std::optional<ProjectedLuckOutcome> resolvedLuck = std::nullopt, bool applyAftermath = true);
 	/// Project only New Horizons Hex of Pain's registered AFTER_ATTACK trigger.
 	/// Other COMBAT_EVENT_TRIGGER effects are intentionally outside this model.
 	int64_t projectHexOfPainStrike(const BattleAttackInfo & attack,

@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleInfo.h"
 #include "NewHorizonsBloodrage.h"
+#include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsPlague.h"
 #include "TimeStopState.h"
@@ -405,6 +406,7 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 		{
 			auto & fortune = currentBattle->sides[i].sylvanLuck;
 			fortune.secondChance = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.secondChance");
+			fortune.gambler = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.gambler");
 			fortune.serendipity = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.serendipity");
 			fortune.naturesProvidence = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.natureSProvidence");
 			fortune.fortunateAim = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.fortunateAim");
@@ -1070,6 +1072,12 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	CStack * st = getStack(activeStack);
 	if(battleBeginsActivation(st, reason))
 	{
+		// Second Wind is a genuine activation too, but must not broaden the
+		// lifetime of unrelated legacy STACK_GETS_TURN bonuses.
+		st->removeBonusesRecursive(CSelector([](const Bonus * bonus)
+		{
+			return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
+		}));
 		const auto owner = playerToSide(battleGetOwner(st));
 		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			sides.at(side).sylvanLuck.beginActivation(unitId, side == owner);
@@ -1120,7 +1128,11 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	{
 		//remove bonuses that last until when stack gets new turn
 		if(!st->isTimeStopped())
-			st->removeBonusesRecursive(Bonus::UntilGetsTurn);
+			st->removeBonusesRecursive(CSelector([](const Bonus * bonus)
+			{
+				return Bonus::UntilGetsTurn(bonus)
+					&& !newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
+			}));
 	}
 
 	st->afterGetsTurn(reason);

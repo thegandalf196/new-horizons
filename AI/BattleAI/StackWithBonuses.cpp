@@ -681,9 +681,36 @@ bool HypotheticBattle::fortuneStrikeIsCertain(const BattleAttackInfo & attack) c
 	return chances[index] >= rules.diceSize;
 }
 
+ProjectedLuckOutcome HypotheticBattle::captureFortuneStrikeOutcome(const BattleAttackInfo & attack) const
+{
+	if(attack.luckyStrike)
+		return ProjectedLuckOutcome::POSITIVE;
+	if(attack.unluckyStrike)
+		return ProjectedLuckOutcome::NEGATIVE;
+
+	const int luck = battleGetAttackLuck(attack.attacker, attack.defender, attack.shooting);
+	if(luck == 0)
+		return ProjectedLuckOutcome::NEUTRAL;
+	const auto rules = getLuckRollRules();
+	if(rules.diceSize > 0)
+	{
+		const auto & chances = luck > 0 ? rules.goodChance : rules.badChance;
+		if(!chances.empty())
+		{
+			const auto index = std::min<size_t>(static_cast<size_t>(std::abs(luck)), chances.size()) - 1;
+			if(chances[index] <= 0)
+				return ProjectedLuckOutcome::NEUTRAL;
+			if(chances[index] >= rules.diceSize)
+				return luck > 0 ? ProjectedLuckOutcome::POSITIVE : ProjectedLuckOutcome::NEGATIVE;
+		}
+	}
+	return ProjectedLuckOutcome::UNKNOWN;
+}
+
 void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	const std::vector<std::pair<uint32_t, int64_t>> & hits,
-	battle::CUnitState * attackerState, bool enemyStackKilled)
+	battle::CUnitState * attackerState, bool enemyStackKilled,
+	std::optional<ProjectedLuckOutcome> resolvedLuck, bool applyAftermath)
 {
 	const auto side = playerToSide(battleGetOwner(attack.attacker));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -693,19 +720,37 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	if(!fortune.active())
 		return;
 
-	const int luck = battleGetAttackLuck(attack.attacker, attack.defender, attack.shooting);
 	const auto rules = getLuckRollRules();
-	const bool positive = attack.luckyStrike || (luck > 0 && fortuneStrikeIsCertain(attack));
-	const bool negative = !positive && (attack.unluckyStrike
-		|| (luck < 0 && fortuneStrikeIsCertain(attack)));
-	if(!positive && !negative)
+	const bool gamblerAttackAvailable = fortune.gamblerAttackAvailable();
+	// Resolve this attack with the pre-consumption Luck snapshot. Candidate
+	// metadata can carry that result through replay after Gambler has expired.
+	const auto outcome = resolvedLuck ? *resolvedLuck : captureFortuneStrikeOutcome(attack);
+	const bool positive = outcome == ProjectedLuckOutcome::POSITIVE;
+	const bool negative = outcome == ProjectedLuckOutcome::NEGATIVE;
+	const bool guaranteedNonPositive = outcome == ProjectedLuckOutcome::NEGATIVE
+		|| outcome == ProjectedLuckOutcome::NEUTRAL;
+	if(!positive && !negative && !gamblerAttackAvailable)
 		return;
 
 	// Negative Providence history is committed as well, but it has no
 	// aftermath to project.  recordStrike returns true when that bad result was
 	// suppressed by Providence, exactly as it does in the authoritative path.
-	if(fortune.recordStrike(attack.attacker->unitId(), positive, negative,
-		newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attack.attacker, attack.physicalDamage)))
+	// Gambler also records an unresolved strike here: candidate and committed
+	// branches consume their one round-long first-attack window without guessing
+	// the stochastic Luck result.
+	const bool ignoredNegative = fortune.recordStrike(attack.attacker->unitId(), positive, negative,
+		newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attack.attacker, attack.physicalDamage));
+	if(gamblerAttackAvailable && guaranteedNonPositive)
+	{
+		static const CSelector gamblerPenaltySelector([](const Bonus * bonus)
+		{
+			return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
+		});
+		auto projectedAttacker = getForUpdate(attack.attacker->unitId());
+		if(!projectedAttacker->hasBonus(gamblerPenaltySelector))
+			addUnitBonus(attack.attacker->unitId(), {newHorizonsCombatSkills::gamblerLuckPenalty()});
+	}
+	if(ignoredNegative || !applyAftermath)
 		return;
 	if(!positive)
 		return;
@@ -1323,6 +1368,14 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		return;
 	if(battleBeginsActivation(unit.get(), reason))
 	{
+		// STACK_GETS_TURN is deliberately not globally broadened for HERO_COMMAND
+		// transitions. Gambler's own penalty ends on every genuine activation,
+		// including Second Wind, without expiring unrelated bonuses early.
+		unit->removeUnitBonus(CSelector([](const Bonus * bonus)
+		{
+			return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
+		}));
+
 		const auto activationSide = playerToSide(battleGetOwner(unit.get()));
 		const auto * veteranHero = activationSide == BattleSide::ATTACKER || activationSide == BattleSide::DEFENDER
 			? battleGetFightingHero(activationSide) : nullptr;
@@ -1392,7 +1445,11 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	}
 
 	if(!unit->isTimeStopped() && reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
-		unit->removeUnitBonus(Bonus::UntilGetsTurn);
+		unit->removeUnitBonus(CSelector([](const Bonus * bonus)
+		{
+			return Bonus::UntilGetsTurn(bonus)
+				&& !newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
+		}));
 
 	unit->afterGetsTurn(reason);
 }

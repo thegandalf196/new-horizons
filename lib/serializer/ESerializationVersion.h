@@ -128,15 +128,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_LEARNING_MENTOR, // replicated weekly Mentor meeting usage
 	NEW_HORIZONS_ARMORER_VETERAN, // replicated physical damage interval for Veteran recovery
 	NEW_HORIZONS_SECOND_CHANCE, // battle-long negative Luck suppression
+	NEW_HORIZONS_GAMBLER, // round-long first attack Luck window
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_SECOND_CHANCE,
+	CURRENT = NEW_HORIZONS_GAMBLER,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_GAMBLER > ESerializationVersion::NEW_HORIZONS_SECOND_CHANCE,
+	"Gambler expenditure must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_SECOND_CHANCE > ESerializationVersion::NEW_HORIZONS_ARMORER_VETERAN,
 	"Second Chance expenditure must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_ARMORER_VETERAN > ESerializationVersion::NEW_HORIZONS_LEARNING_MENTOR,

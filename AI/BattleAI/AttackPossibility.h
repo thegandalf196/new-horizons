@@ -62,6 +62,9 @@ inline BattleAIDamageProjection battleAIProjectDamage(const battle::Unit * targe
 /// multi-strike exchange into one post-hoc transition.
 struct FortuneStrikeProjection
 {
+	/// nullopt retains legacy inference; a captured UNKNOWN must stay unknown
+	/// when a consumed Gambler bonus changes the next strike's Luck value.
+	std::optional<ProjectedLuckOutcome> resolvedLuck;
 	uint32_t attackerId = 0;
 	uint32_t defenderId = 0;
 	bool shooting = false;

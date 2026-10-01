@@ -186,7 +186,8 @@ float BattleExchangeVariant::trackAttack(
 				projectedAttack.luckyStrike = fortune.consumePerfectMoment();
 				hb->setSylvanLuckState(side, fortune);
 			}
-			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled);
+			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
+				strike.resolvedLuck, true);
 			hb->projectRangedMarkStrike(projectedAttack, actualHits);
 			const auto healthBeforeHexOfPain = projectedAttacker->getAvailableHealth();
 			hb->projectHexOfPainStrike(projectedAttack, actualHits, strike.attackIndex);

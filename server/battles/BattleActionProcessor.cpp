@@ -3210,12 +3210,23 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		&& defender && battle.battleMatchOwner(attacker, defender) && battle.battleCanUsePerfectMoment(attacker);
 	const auto luckSide = battle.playerToSide(battle.battleGetOwner(attacker));
 	bool secondChanceWasAvailable = false;
+	bool gamblerAttackWasAvailable = false;
 	if(luckSide == BattleSide::ATTACKER || luckSide == BattleSide::DEFENDER)
 	{
 		const auto fortuneBeforeAttack = battle.getBattle()->getSylvanLuckState(luckSide);
 		secondChanceWasAvailable = fortuneBeforeAttack.secondChance && !fortuneBeforeAttack.secondChanceUsed;
+		gamblerAttackWasAvailable = fortuneBeforeAttack.gamblerAttackAvailable();
 	}
 	rollAttackFlags(battle, attacker, defender, bat, perfectMoment);
+	const bool gamblerAttackWindowUsed = gamblerAttackWasAvailable && bat.fortuneState
+		&& bat.fortuneState->gamblerAttackUsedThisRound;
+	if(gamblerAttackWindowUsed)
+	{
+		MetaString line;
+		line.appendRawString("Gambler offers +3 Luck to %s for its first attack this round; normal Luck limits and immunity apply.");
+		attacker->addNameReplacement(line, attacker->getCount());
+		combatFeedbackLogLines.push_back(std::move(line));
+	}
 	if(secondChanceWasAvailable && bat.fortuneState && bat.fortuneState->secondChanceUsed && !bat.unlucky())
 	{
 		MetaString line;
@@ -3481,6 +3492,26 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		}
 	}
 	gameHandler->sendAndApply(bat);
+	if(gamblerAttackWindowUsed && !bat.lucky() && attacker->alive())
+	{
+		const auto existing = attacker->getAllBonuses(CSelector([](const Bonus * bonus)
+		{
+			return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
+		}));
+		if(!existing || existing->empty())
+		{
+			SetStackEffect penalty;
+			penalty.battleID = battle.getBattle()->getBattleID();
+			penalty.toAdd.emplace_back(attacker->unitId(),
+				std::vector<Bonus>{newHorizonsCombatSkills::gamblerLuckPenalty()});
+			gameHandler->sendAndApply(penalty);
+		}
+
+		MetaString line;
+		line.appendRawString("Gambler's first attack this round did not trigger positive Luck; %s suffers -2 Luck until its next activation.");
+		attacker->addNameReplacement(line, attacker->getCount());
+		combatFeedbackLogLines.push_back(std::move(line));
+	}
 	for(const auto * target : immovableTriggered)
 	{
 		BattleLogMessage message;

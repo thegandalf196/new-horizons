@@ -2,6 +2,52 @@
 
 ## Purpose
 
+### 2026-10-01 Gambler — fixture probability-field visibility
+
+Both-target build49572 exits1 while compiling NewHorizonsGamblerTest.cpp.
+The derived TEST_F cases set goodLuckChance/badLuckChance, but the fixture
+declares both private. Retain `UP086-build.log`; make only the fixture's
+configuration surface protected or provide an appropriate setter. No production
+rule changes are warranted. The succeeding build and native execution must be
+recorded separately before counting Gambler as implemented coverage.
+
+The approved Chain of Fortune recipient clarification also exposed a data
+description drift: the first post-amendment data run passed18/19, failing the
+canonical perk-definition comparison. Align both registry description fields
+to "next different friendly stack", regenerate the module, and rerun the
+same19 checks. The perk remains planned; no runtime behavior was activated.
+
+Repaired both-target build68457 exits0. Native52671 passes15/20 with zero
+skips (`UP086-focused.log`/`.xml`); all five Gambler gameplay cases expose
+the fixture's unneutralized Advanced Luck+2: expected first bonus3 is5,
+expected baseline0 is2, and expected penalty-2 is0. Preserve legal Basic
+Fortune's Favor and Advanced Gambler selection, but establish the fixture's
+intended zero-Luck baseline. Existing14 Luck regressions and the new state/
+packet case pass. Do not change production Luck rank rules to satisfy the
+fixture or count the failed run as completed Gambler evidence.
+
+Fixture baseline repaired with a local ordinary LUCK-2 compensation after
+legal Advanced Luck selection, rather than removing rank/perk requirements.
+Final both-target76677 exits0 (`UP086-baseline-build.log`); native39678
+passes20/20, zero skips in5.324s (`UP086-verified.log`/`.xml`). The same
+selection now exercises the actual first-window, penalty, controller,
+continuation/activation and detached outcome paths; the earlier failures are
+retained. Data/inventory19/19 also pass after the description-drift repair.
+
+### 2026-10-01 Gambler — pre-build lifetime and refresh identity review
+
+Independent review caught two pre-build issues. Selective genuine-activation
+expiry alone did not protect Gambler from the legacy UntilGetsTurn cleanup on
+HERO_SPELLCAST continuations. Exclude only the Gambler marker from legacy
+cleanup in authoritative and detached state, leaving unrelated lifetimes
+unchanged; remove it through battleBeginsActivation, including Second Wind.
+The generic SetStackEffect removal comparison also ignores stacking identity.
+An existing Gambler penalty already has the required next-activation expiry,
+so avoid unnecessary removal/replacement rather than widening a generic
+removal API. Add only when its unique marker is absent. No failing native run
+is claimed for these review findings; continuation/activation assertions must
+verify the repair before completion.
+
 ### 2026-10-01 Second Chance — fixture processor header
 
 Both-target build26224 exits1 at the new fixture's accepted shot submission:

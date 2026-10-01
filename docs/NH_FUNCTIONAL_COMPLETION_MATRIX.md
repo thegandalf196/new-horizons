@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-01
-Canonical source SHA-256: `c39881d1bb9dc6bd9a37650a596ff6939af6bdd548d56133ca37f862cd04d0ec`
+Canonical source SHA-256: `ab4331d9c0557b9dc69954ada098e9583d29492d62115940ccdc82753903c122`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -13,6 +13,25 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP-086 Gambler is source/native verified. The first friendly attack each round
+receives+3 Luck through the shared capped/immunity-aware callback and spends
+the side's window regardless of outcome. A failed positive trigger adds a
+uniquely identified per-unit-2 Luck bonus before subsequent attacks, retained
+through ordinary Hero Spell/Order continuations and removed on genuine
+activation, including Second Wind. Current-controller ownership, side/round
+isolation and detached branch histories are verified. Captured pre-consumption
+outcomes preserve ordered AI replay without inventing stochastic rolls; state
+and strike packets use append-only versioning. Final both-target76677 exits0;
+native39678 passes20/20, zero skips in5.324s (`UP086-verified.log`/`.xml`).
+Binary SHA-256 `3ef29f6941beefed86678fe8ce02a0d383d3330f45d38eeca490b7f6568ab6da`.
+Data/inventory19/19 pass and independent source review has no remaining blocker.
+Coverage139→140 active perks, planned171→170; Luck4/6. Ranks84/93 and combat60/67
+unchanged. Phase2 retains stochastic conditional penalty correlation, broader
+reaction/controller matrices, committed-replay recovery and detached-expiry
+fixture breadth. Purpose-made art Not done; no playable promotion. Chain of
+Fortune's different-stack and carry-until-used decisions are now canonical;
+Opportunist's reaction/own-activation question remains pending.
 
 UP-084 Second Chance is source/native verified. Shared army Luck state tracks
 its independent once-per-combat allowance; Nature's Providence remains
@@ -495,7 +514,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 139/310 | 171 planned; Second Chance is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 140/310 | 170 planned; Gambler is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -522,8 +541,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 139
-active perks, leaving nine ranks and 171 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 140
+active perks, leaving nine ranks and 170 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -648,7 +667,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
 | Estates | 3/0 | 2/8 | Tax Collector and Estate Network supply working Basic/Advanced perks and open ordinary Expert-rank progression. Daily income, weekly Wood/Ore and AI receipt/selection are native verified. |
 | Learning | 3/0 | 2/8 | Mentor and Quick Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
-| Luck | 3/0 | 3/7 | Fortune's Favor, Lucky Aim and Second Chance source/native verified; Advanced progression open |
+| Luck | 3/0 | 4/6 | Fortune's Favor, Lucky Aim, Second Chance and Gambler source/native verified; Advanced progression open |
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
