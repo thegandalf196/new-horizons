@@ -14,6 +14,12 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Next-item audit: UP-100 Field Workshop remains planned. Independent maps identify
+shared Tent target/output admission, a new structural repair update and cached
+wall-sprite refresh as required production seams. Destroyed machine/fortification
+scope is asked before implementation; tower shooter removal means HP-only revival
+would be incomplete. No new implementation or coverage is claimed for this map.
+
 Current verified checkpoint: UP-099 Master Gunner. Saved same-activation
 follow-up state permits an independently selected second Ballista shot at60%
 shared forecast/actual damage, with raw pending action restrictions, explicit
