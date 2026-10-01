@@ -2,6 +2,35 @@
 
 ## Purpose
 
+### 2026-10-01 Master Gunner — callback Unit contract
+
+Both-target76640 exits1 (`UP099-build.log`): two continuation cleanup branches
+access the new CUnitState field through `const battle::Unit *`, whose interface
+does not expose it. Root replaces those reads with the shared raw-pending callback
+instead of an unchecked downcast or permissive compiler flag. Preserve this
+failed log; no native pass or registration activation is claimed. Review callback
+return types when adding state-dependent flow branches.
+Repaired build20641 exits1 (`UP099-repaired-build.log`): production compiles,
+but the new fixture lacks the direct HypotheticBattle declaration include.
+Root adds its owning header without changing assertions or runtime behavior.
+Keep direct dependencies explicit in standalone fixtures; retry/native results
+remain pending.
+Retry14515 exits1 (`UP099-fixture-repaired-build.log`): root initially used a
+nonexistent `HypotheticBattle.h` filename. Symbol lookup locates the declaration
+in `AI/BattleAI/StackWithBonuses.h`; corrected that direct include. Resolve owning
+headers from source, not class-name guesses. No assertions were weakened.
+Corrected both-target89421 exits0 (`UP099-header-repaired-build.log`). Native88930
+passes3/4, zero skips in1.445s (`UP099-principal.log`/`.xml`); the principal
+ratio comparison alone fails. Its ordinary baseline is sampled before advancing
+to the Ballista, while that advancement submits Defend for the prospective
+targets and changes their Defense. The fixture owner is checking same-state
+baseline timing; do not widen tolerance or activate before the repaired gate.
+The fixture moves only its ordinary baseline after accepted Defend advancement;
+the60% assertions/tolerance remain unchanged. Both-target76128 exits0. Repaired
+principal71745 passes4/4, zero skips in1.450s; activated74243 passes16/16, zero
+skips in5.022s. Data/inventory19/19 pass. Registration is active; no full binary
+battle-save or rendered/playable acceptance is claimed.
+
 ### 2026-10-01 Fortification Engineer — fixture registry nesting
 
 Independent source review caught the new fixture's activation helper indexing

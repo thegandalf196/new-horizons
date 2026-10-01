@@ -949,6 +949,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	movedThisRound = other.movedThisRound;
 	pursuitMovementRemaining = other.pursuitMovementRemaining;
 	cleaveUsedThisActivation = other.cleaveUsedThisActivation;
+	rangedFollowUpDamagePercent = other.rangedFollowUpDamagePercent;
 	archeryCounterfireRound = other.archeryCounterfireRound;
 	archeryDeadeyeRound = other.archeryDeadeyeRound;
 	archerySuppressionActivationSerial = other.archerySuppressionActivationSerial;
@@ -1495,6 +1496,13 @@ void CUnitState::setActivationMovementBonus(int32_t value)
 	activationMovementBonus = value;
 }
 
+void CUnitState::setRangedFollowUpDamagePercent(int32_t value)
+{
+	if(value < 0 || value > 100)
+		throw std::runtime_error("Invalid ranged follow-up damage percentage");
+	rangedFollowUpDamagePercent = value;
+}
+
 ui32 CUnitState::getMovementRange() const
 {
 	return getMovementRange(0);
@@ -1715,6 +1723,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	if(pursuitMovementRemaining < 0)
 		throw std::runtime_error("Invalid negative Pursuit movement allowance");
 	handler.serializeBool("cleaveUsedThisActivation", cleaveUsedThisActivation);
+	handler.serializeInt("rangedFollowUpDamagePercent", rangedFollowUpDamagePercent, 0);
+	if(rangedFollowUpDamagePercent < 0 || rangedFollowUpDamagePercent > 100)
+		throw std::runtime_error("Invalid saved ranged follow-up state");
 	handler.serializeInt("archeryCounterfireRound", archeryCounterfireRound, -1);
 	handler.serializeInt("archeryDeadeyeRound", archeryDeadeyeRound, -1);
 	handler.serializeInt("archerySuppressionActivationSerial", archerySuppressionActivationSerial, -1);
@@ -1853,6 +1864,7 @@ void CUnitState::reset()
 	ghostPending = false;
 	movedThisRound = false;
 	timeStopTurnConsumedFlag = false;
+	rangedFollowUpDamagePercent = 0;
 	regenerationRateMillionths = 0;
 	regenerationPendingMicroHealth = 0;
 	noQuarterMoraleActivationsRemaining = 0;
@@ -2071,6 +2083,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 
 	if(!alive())
 	{
+		rangedFollowUpDamagePercent = 0;
 		veteranPhysicalDamageSinceActivation = 0;
 		guardianSpiritHitPoints = 0;
 		guardianSpiritRoundsRemaining = 0;
@@ -2301,6 +2314,7 @@ void CUnitState::afterNewRound(bool isFirstRound)
 	movedThisRound = false;
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
+	rangedFollowUpDamagePercent = 0;
 	archeryCounterfireRound = -1;
 	hadMorale = false;
 	castSpellThisTurn = false;
@@ -2335,6 +2349,7 @@ void CUnitState::makeGhost()
 	activationMovementBonus = 0;
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
+	rangedFollowUpDamagePercent = 0;
 	veteranPhysicalDamageSinceActivation = 0;
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
@@ -2350,6 +2365,7 @@ void CUnitState::onRemoved()
 {
 	endBattleForm();
 	activationMovementBonus = 0;
+	rangedFollowUpDamagePercent = 0;
 	// Keep the remains ledger on a ghost until the battle result is captured.
 	// Ghost stacks can be removed from the battlefield before the final result
 	// is assembled; clearing the ledger here would make those direct-hit

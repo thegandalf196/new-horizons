@@ -52,6 +52,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/StartInfo.h"
 #include "../../lib/battle/BattleInfo.h"
+#include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
@@ -1537,6 +1538,10 @@ void BattleWindow::blockUI(bool on)
 	}
 
 	bool canWait = owner.stacksController->getActiveStack() ? !owner.stacksController->getActiveStack()->waitedThisTurn : false;
+	const auto * activeStack = owner.stacksController->getActiveStack();
+	const auto activeStackState = activeStack ? activeStack->acquireState() : nullptr;
+	const bool rangedFollowUpPending = activeStackState
+		&& activeStackState->rangedFollowUpDamagePercent > 0;
 	bool tacticsMode = owner.isInTacticsMode();
 
 	setShortcutBlocked(EShortcut::GLOBAL_OPTIONS, on);
@@ -1545,7 +1550,7 @@ void BattleWindow::blockUI(bool on)
 	setShortcutBlocked(EShortcut::BATTLE_RETREAT, on || !owner.getBattle()->battleCanFlee());
 	setShortcutBlocked(EShortcut::BATTLE_SURRENDER, on || owner.getBattle()->battleGetSurrenderCost() < 0);
 	setShortcutBlocked(EShortcut::BATTLE_CAST_SPELL, on || tacticsMode || !canCastSpells);
-	setShortcutBlocked(EShortcut::BATTLE_WAIT, on || tacticsMode || !canWait);
+	setShortcutBlocked(EShortcut::BATTLE_WAIT, on || tacticsMode || !canWait || rangedFollowUpPending);
 	setShortcutBlocked(EShortcut::BATTLE_DEFEND, on || tacticsMode);
 	setShortcutBlocked(EShortcut::BATTLE_AUTOCOMBAT, (settings["battle"]["endWithAutocombat"].Bool() && onlyOnePlayerHuman) ? on || tacticsMode || owner.actionsController->heroSpellcastingModeActive() : owner.actionsController->heroSpellcastingModeActive());
 	setShortcutBlocked(EShortcut::BATTLE_END_WITH_AUTOCOMBAT, on || !onlyOnePlayerHuman || owner.actionsController->heroSpellcastingModeActive());
@@ -1580,11 +1585,21 @@ void BattleWindow::updateBattleTargetSelectionControls()
 	const bool soulChainCanConfirm = soulChainActive
 		&& !owner.actionsController->soulChainSelectedTargetIds().empty();
 	const bool soulChainCanUndo = soulChainCanConfirm;
+	const auto * activeStack = owner.stacksController->getActiveStack();
+	const auto activeStackState = activeStack ? activeStack->acquireState() : nullptr;
+	const bool rangedFollowUpPending = activeStackState
+		&& activeStackState->rangedFollowUpDamagePercent > 0;
 	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT,
 		!ready && !vengefulVinesCanConfirm && !stormCanConfirm && !soulChainCanConfirm);
 	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE,
 		!canUndo && !vengefulVinesCanRotate && !stormCanUndo && !soulChainCanUndo);
-	widget<CButton>("wait")->setEnabled(!active && !vengefulVinesActive && !stormActive && !soulChainActive);
+	widget<CButton>("wait")->setEnabled(!rangedFollowUpPending
+		&& !active && !vengefulVinesActive && !stormActive && !soulChainActive);
+	if(rangedFollowUpPending)
+		widget<CButton>("defence")->setHelp(CButton::tooltip(
+			"End activation", "Decline the pending Master Gunner second shot and end this activation."));
+	else
+		widget<CButton>("defence")->setHelp(CButton::tooltipLocalized("core.help.387"));
 	if(battleTargetSelectionPanel)
 		battleTargetSelectionPanel->update();
 }

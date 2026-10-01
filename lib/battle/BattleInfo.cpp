@@ -1087,7 +1087,8 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	activeStack = unitId;
 	if(reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
-		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION)
+		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
+		|| reason == BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION)
 		return;
 
 	CStack * st = getStack(activeStack);
@@ -1142,6 +1143,7 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	{
 		st->pursuitMovementRemaining = 0;
 		st->cleaveUsedThisActivation = false;
+		st->setRangedFollowUpDamagePercent(0);
 		const auto side = playerToSide(battleGetOwner(st));
 		const bool ordinaryCreature = st->alive() && !st->isGhost() && !st->isTurret()
 			&& !st->hasBonusOfType(BonusType::SIEGE_WEAPON)
@@ -1869,6 +1871,19 @@ void BattleInfo::postDeserialize()
 {
 	for (const auto & unit : stacks)
 		unit->postDeserialize(getSideArmy(unit->unitSide()));
+
+	uint32_t pendingFollowUps = 0;
+	for(const auto & unit : stacks)
+	{
+		if(!unit || unit->rangedFollowUpDamagePercent == 0)
+			continue;
+		if(unit->rangedFollowUpDamagePercent < 0 || unit->rangedFollowUpDamagePercent > 100
+			|| !unit->isBallista()
+			|| getActiveStackID() < 0
+			|| unit->unitId() != static_cast<uint32_t>(getActiveStackID())
+			|| ++pendingFollowUps > 1)
+			throw std::runtime_error("Invalid restored ranged follow-up battle state");
+	}
 }
 
 bool BattleInfo::hasBattleFormState() const
@@ -1892,6 +1907,14 @@ bool BattleInfo::hasReserveMovementState() const
 	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
 	{
 		return stack && stack->getActivationMovementBonus() != 0;
+	});
+}
+
+bool BattleInfo::hasRangedFollowUpState() const
+{
+	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
+	{
+		return stack && stack->rangedFollowUpDamagePercent != 0;
 	});
 }
 
@@ -1928,6 +1951,58 @@ void BattleInfo::restoreReserveMovementBonuses(const std::map<uint32_t, int32_t>
 		if(found == stacks.end())
 			throw std::runtime_error("Activation movement bonus references a missing stack");
 		(*found)->setActivationMovementBonus(bonus);
+	}
+}
+
+std::map<uint32_t, int32_t> BattleInfo::collectRangedFollowUps() const
+{
+	std::map<uint32_t, int32_t> followUps;
+	for(const auto & stack : stacks)
+	{
+		if(!stack)
+			continue;
+		const int32_t percent = stack->rangedFollowUpDamagePercent;
+		if(percent < 0 || percent > 100)
+			throw std::runtime_error("Invalid ranged follow-up percentage in battle snapshot");
+		if(percent == 0)
+			continue;
+		if(!stack->isBallista() || getActiveStackID() < 0
+			|| stack->unitId() != static_cast<uint32_t>(getActiveStackID())
+			|| !followUps.emplace(stack->unitId(), percent).second || followUps.size() > 1)
+			throw std::runtime_error("Invalid pending ranged follow-up in battle snapshot");
+	}
+	return followUps;
+}
+
+void BattleInfo::restoreRangedFollowUps(const std::map<uint32_t, int32_t> & followUps)
+{
+	if(followUps.size() > 1)
+		throw std::runtime_error("Multiple pending ranged follow-ups in battle snapshot");
+
+	for(const auto & [unitId, percent] : followUps)
+	{
+		if(percent <= 0 || percent > 100 || getActiveStackID() < 0
+			|| unitId != static_cast<uint32_t>(getActiveStackID()))
+			throw std::runtime_error("Invalid ranged follow-up entry in battle snapshot");
+		const auto found = std::find_if(stacks.begin(), stacks.end(), [unitId](const auto & stack)
+		{
+			return stack && stack->unitId() == unitId;
+		});
+		if(found == stacks.end())
+			throw std::runtime_error("Ranged follow-up references a missing stack");
+	}
+
+	for(auto & stack : stacks)
+		if(stack)
+			stack->setRangedFollowUpDamagePercent(0);
+
+	for(const auto & [unitId, percent] : followUps)
+	{
+		const auto found = std::find_if(stacks.begin(), stacks.end(), [unitId](const auto & stack)
+		{
+			return stack && stack->unitId() == unitId;
+		});
+		(*found)->setRangedFollowUpDamagePercent(percent);
 	}
 }
 

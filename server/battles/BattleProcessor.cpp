@@ -409,14 +409,17 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 	const auto * updatedBattle = gameHandler->gameState().getBattle(battleID);
 	const auto * updatedStack = updatedBattle && effectiveAction.stackNumber >= 0
 		? updatedBattle->battleGetStackByID(effectiveAction.stackNumber, false) : nullptr;
+	const auto * rangedFollowUpStack = updatedBattle ? updatedBattle->battleActiveUnit() : nullptr;
+	const bool rangedAttackContinuation = result && updatedBattle && rangedFollowUpStack
+		&& updatedBattle->battleCanTakeRangedFollowUp(rangedFollowUpStack);
 	const bool pursuitActivationContinuation = result
 		&& effectiveAction.actionType == EActionType::WALK_AND_ATTACK
 		&& updatedStack && updatedStack->pursuitMovementRemaining > 0;
-	if(!masterGateActivationContinuation && !pursuitActivationContinuation)
+	if(!masterGateActivationContinuation && !pursuitActivationContinuation && !rangedAttackContinuation)
 		expireStackActivationBonuses(battleID, effectiveAction);
 	if (gameHandler->gameState().getBattle(battleID) != nullptr && !resultProcessor->battleIsEnding(*battle))
 		flowProcessor->onActionMade(*battle, effectiveAction, masterGateActivationContinuation,
-			pursuitActivationContinuation);
+			pursuitActivationContinuation, rangedAttackContinuation);
 	return result;
 }
 

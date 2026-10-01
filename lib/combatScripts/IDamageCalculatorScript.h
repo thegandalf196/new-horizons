@@ -129,6 +129,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int cleaveFinalDamageMultiplier = 100;
 	/// Independent final multiplier for an explicitly reduced-strength Archery attack.
 	int archeryRangedDamageMultiplierPercent = 100;
+	/// Independent final multiplier for an earned Ballista follow-up shot.
+	int rangedFollowUpDamagePercent = 100;
 
 	/// Which of the bonus types the script declared an interest in each of the two carries
 	std::unordered_map<std::string, bool> attackerBonuses;
@@ -221,6 +223,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Final multiplicative percentage for an automatic Cleave strike; 100 is neutral.");
 		s("archeryRangedDamageMultiplierPercent", archeryRangedDamageMultiplierPercent,
 			"Final multiplicative percentage for reduced-strength Archery shots; 100 is neutral.");
+		s("rangedFollowUpDamagePercent", rangedFollowUpDamagePercent,
+			"Final multiplicative percentage for an earned Ballista follow-up shot; 100 is neutral.");
 		s("luckyStrike", luckyStrike, "Whether luck struck.");
 		s("unluckyStrike", unluckyStrike, "Whether bad luck struck.");
 		s("deathBlow", deathBlow, "Whether a death blow was rolled.");

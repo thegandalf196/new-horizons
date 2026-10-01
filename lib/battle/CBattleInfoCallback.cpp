@@ -141,6 +141,45 @@ bool CBattleInfoCallback::battleCanUseFortificationEngineer(const battle::Unit *
 	return hero->hasActivePerk("new-horizons:warMachines", "new-horizons:warMachines.fortificationEngineer");
 }
 
+bool CBattleInfoCallback::battleHasPendingRangedFollowUp(const battle::Unit * unit) const
+{
+	const auto * battle = getBattle();
+	if(!unit || !battle || !unit->isBallista() || battle->getActiveStackID() < 0
+		|| unit->unitId() != static_cast<uint32_t>(battle->getActiveStackID()))
+		return false;
+
+	const auto * state = dynamic_cast<const battle::CUnitState *>(unit);
+	return state && state->rangedFollowUpDamagePercent > 0 && state->rangedFollowUpDamagePercent <= 100;
+}
+
+bool CBattleInfoCallback::battleCanTakeRangedFollowUp(const battle::Unit * unit) const
+{
+	if(!battleHasPendingRangedFollowUp(unit) || !unit->alive() || unit->isGhost()
+		|| unit->isTimeStopped() || !unit->canMove() || !battleCanShoot(unit))
+		return false;
+
+	for(const auto * target : battleAliveUnits())
+	{
+		if(!target || !target->alive() || target->isGhost() || battleMatchOwner(unit, target, true))
+			continue;
+		for(const auto & hex : target->getHexes())
+			if(hex.isValid() && battleCanShoot(unit, hex))
+				return true;
+	}
+	return false;
+}
+
+int CBattleInfoCallback::battleGetRangedFollowUpDamagePercent(const battle::Unit * unit) const
+{
+	if(!unit || !unit->isBallista())
+		return 100;
+
+	const auto * state = dynamic_cast<const battle::CUnitState *>(unit);
+	if(!state || state->rangedFollowUpDamagePercent < 1 || state->rangedFollowUpDamagePercent > 100)
+		return 100;
+	return state->rangedFollowUpDamagePercent;
+}
+
 static BattleHex lineToWallHex(int line) //returns hex with wall in given line (y coordinate)
 {
 	static const BattleHex lineToHex[] = {12, 29, 45, 62, 78, 96, 112, 130, 147, 165, 182};
@@ -437,6 +476,7 @@ bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, Batt
 	if(!unit || unit->isTimeStopped() || reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
 		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
+		|| reason == BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION
 		|| reason == BattleUnitTurnReason::HERO_SPELLCAST || reason == BattleUnitTurnReason::UNIT_SPELLCAST)
 		return false;
 	if(reason != BattleUnitTurnReason::HERO_COMMAND)
@@ -1189,6 +1229,12 @@ std::vector<PossiblePlayerBattleAction> CBattleInfoCallback::getClientActionsFor
 		{
 			if(stack->canMove())
 				allowedActionList.push_back(PossiblePlayerBattleAction::MOVE_STACK);
+			return allowedActionList;
+		}
+		if(battleHasPendingRangedFollowUp(stack))
+		{
+			if(battleCanTakeRangedFollowUp(stack))
+				allowedActionList.push_back(PossiblePlayerBattleAction::SHOOT);
 			return allowedActionList;
 		}
 		if(stack->canCast()) //TODO: check for battlefield effects that prevent casting?
@@ -2165,6 +2211,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.shooting = info.shooting;
 	payload.physicalDamage = info.physicalDamage;
 	payload.archeryRangedDamageMultiplierPercent = info.archeryRangedDamageMultiplierPercent;
+	if(info.shooting && info.physicalDamage && info.attacker && info.attacker->isBallista())
+		payload.rangedFollowUpDamagePercent = battleGetRangedFollowUpDamagePercent(info.attacker);
 	payload.relentlessAssaultDamagePercent = info.relentlessAssaultDamagePercent;
 	const auto * currentBattle = getBattle();
 	if(currentBattle)

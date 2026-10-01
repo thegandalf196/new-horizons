@@ -135,12 +135,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_RESERVE, // per-stack activation-scoped movement bonus after Waiting
 	NEW_HORIZONS_CREATURE_ACTIVATION_DURATION, // generic bonus expiry when a creature's next activation begins
 	NEW_HORIZONS_PHYSICAL_AFFLICTIONS, // effect-neutral physical-affliction identity and application order markers
+	NEW_HORIZONS_RANGED_FOLLOW_UP, // saved same-activation selectable ranged shot continuation
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_PHYSICAL_AFFLICTIONS,
+	CURRENT = NEW_HORIZONS_RANGED_FOLLOW_UP,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -242,3 +243,5 @@ static_assert(ESerializationVersion::NEW_HORIZONS_CREATURE_ACTIVATION_DURATION >
 	"Creature activation bonus durations must remain absent from older New Horizons snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_PHYSICAL_AFFLICTIONS > ESerializationVersion::NEW_HORIZONS_CREATURE_ACTIVATION_DURATION,
 	"Physical-affliction markers must remain absent from older New Horizons snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_RANGED_FOLLOW_UP > ESerializationVersion::NEW_HORIZONS_PHYSICAL_AFFLICTIONS,
+	"Ranged follow-up state must remain append-only");

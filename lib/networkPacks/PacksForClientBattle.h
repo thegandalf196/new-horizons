@@ -43,6 +43,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP)
+			&& info->hasRangedFollowUpState())
+			throw std::runtime_error("Cannot discard ranged follow-up battle start state");
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE)
 			&& info->hasChainGateState())
 			throw std::runtime_error("Cannot discard Chain Gate battle start state");
@@ -218,6 +221,9 @@ struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 		if(h.saving && reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT))
 			throw std::runtime_error("Can not serialize a Pursuit continuation to an older format");
+		if(h.saving && reason == BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP))
+			throw std::runtime_error("Can not serialize a ranged attack continuation to an older format");
 		h & battleID;
 		h & stack;
 		h & reason;
@@ -352,6 +358,13 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP)
+			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
+			{
+				const auto & percent = change.data["state"]["rangedFollowUpDamagePercent"];
+				return percent.isNumber() && percent.Float() != 0;
+			}))
+			throw std::runtime_error("Cannot discard ranged follow-up unit state update");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER)
 			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
 				{ return change.hasNoQuarterMoraleState(); }))
@@ -404,6 +417,10 @@ struct BattleStackAttacked
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		const auto & followUpPercent = newState.data["state"]["rangedFollowUpDamagePercent"];
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP)
+			&& followUpPercent.isNumber() && followUpPercent.Float() != 0)
+			throw std::runtime_error("Cannot discard ranged follow-up attack state update");
 		h & stackAttacked;
 		h & attackerID;
 		h & newState;

@@ -1571,7 +1571,7 @@ void applyPlagueEndOfActivation(CGameHandler * gameHandler, const CBattleInfoCal
 }
 
 void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const BattleAction &ba,
-	bool masterGateActivationContinuation, bool pursuitActivationContinuation)
+	bool masterGateActivationContinuation, bool pursuitActivationContinuation, bool rangedAttackContinuation)
 {
 	const auto * actedStack = battle.battleGetStackByID(ba.stackNumber, false);
 	const auto * activeStack = battle.battleActiveUnit();
@@ -1591,6 +1591,52 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	// tactics - next stack will be selected by player
 	if(battle.battleGetTacticDist() != 0)
 		return;
+
+	if(rangedAttackContinuation)
+	{
+		if(activeStack && activeStack->alive() && battle.battleCanTakeRangedFollowUp(activeStack))
+			setActiveStack(battle, activeStack, BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION);
+		else
+		{
+			if(battle.battleHasPendingRangedFollowUp(activeStack))
+			{
+				auto state = activeStack->acquireState();
+				state->setRangedFollowUpDamagePercent(0);
+				BattleUnitsChanged update;
+				update.battleID = battle.getBattle()->getBattleID();
+				UnitChanges change(activeStack->unitId(), UnitChanges::EOperation::UPDATE);
+				change.data = state->save();
+				update.changedStacks.push_back(std::move(change));
+				gameHandler->sendAndApply(update);
+			}
+			activateNextStack(battle);
+		}
+		return;
+	}
+
+	// A Hero Action can make an already-earned shot unusable (for example by
+	// applying stasis). Do not leave a stale allowance that blocks every creature
+	// action; discard it and end this activation once.
+	const auto * followUpStack = actedStack ? actedStack : activeStack;
+	if(battle.battleHasPendingRangedFollowUp(followUpStack))
+	{
+		auto state = followUpStack->acquireState();
+		state->setRangedFollowUpDamagePercent(0);
+		BattleUnitsChanged update;
+		update.battleID = battle.getBattle()->getBattleID();
+		UnitChanges change(followUpStack->unitId(), UnitChanges::EOperation::UPDATE);
+		change.data = state->save();
+		update.changedStacks.push_back(std::move(change));
+		gameHandler->sendAndApply(update);
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("The Master Gunner follow-up is no longer usable.");
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+		activateNextStack(battle);
+		return;
+	}
 
 	if(masterGateActivationContinuation)
 	{

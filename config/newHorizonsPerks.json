@@ -571,7 +571,7 @@
 					"requires": "basic",
 					"description": "The Ballista fires twice during each activation. The second shot deals 60% normal damage and may target a different enemy.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The Ballista fires twice during each activation. The second shot deals 60% normal damage and may target a different enemy."
 					}
 				},

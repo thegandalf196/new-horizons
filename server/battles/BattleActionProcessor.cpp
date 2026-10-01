@@ -52,6 +52,61 @@
 
 #include <vstd/RNG.h>
 
+namespace
+{
+constexpr int MASTER_GUNNER_FOLLOW_UP_DAMAGE_PERCENT = 60;
+
+bool hasLegalHostileBallistaShot(const CBattleInfoCallback & battle, const battle::Unit * shooter)
+{
+	if(!shooter || !shooter->alive() || shooter->isGhost() || shooter->isTimeStopped() || !shooter->canMove()
+		|| !shooter->isBallista() || shooter->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+		|| !battle.battleCanShoot(shooter))
+		return false;
+
+	for(const auto * target : battle.battleAliveUnits())
+	{
+		if(!target || !target->alive() || target->isGhost() || battle.battleMatchOwner(shooter, target, true))
+			continue;
+		for(const auto & hex : target->getHexes())
+			if(hex.isValid() && battle.battleCanShoot(shooter, hex))
+				return true;
+	}
+	return false;
+}
+
+void publishRangedFollowUpState(const CBattleInfoCallback & battle, CGameHandler & gameHandler,
+	const battle::Unit * unit, int percent)
+{
+	if(!unit)
+		return;
+	auto state = unit->acquireState();
+	if(!state || state->rangedFollowUpDamagePercent == percent)
+		return;
+	state->setRangedFollowUpDamagePercent(percent);
+
+	BattleUnitsChanged update;
+	update.battleID = battle.getBattle()->getBattleID();
+	UnitChanges change(unit->unitId(), UnitChanges::EOperation::UPDATE);
+	change.data = state->save();
+	update.changedStacks.push_back(std::move(change));
+	gameHandler.sendAndApply(update);
+}
+
+void logRangedFollowUp(const CBattleInfoCallback & battle, CGameHandler & gameHandler,
+	const battle::Unit * unit, std::string text)
+{
+	if(!unit)
+		return;
+	BattleLogMessage message;
+	message.battleID = battle.getBattle()->getBattleID();
+	MetaString line;
+	line.appendRawString(text);
+	unit->addNameReplacement(line, unit->getCount());
+	message.lines.push_back(std::move(line));
+	gameHandler.sendAndApply(message);
+}
+}
+
 /// What a script reacting before an attack learns about a unit that is about to be hit. The damage
 /// is not rolled yet, so only the identity of the unit and the health it has left are known.
 static AttackedTarget unitAboutToBeAttacked(const battle::Unit * unit)
@@ -716,6 +771,16 @@ void BattleActionProcessor::publishHeroOrderState(const CBattleInfoCallback & ba
 
 bool BattleActionProcessor::doEmptyAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
+	if(ba.actionType == EActionType::NO_ACTION)
+	{
+		const auto * stack = battle.battleGetStackByID(ba.stackNumber, false);
+		if(battle.battleHasPendingRangedFollowUp(stack))
+		{
+			publishRangedFollowUpState(battle, *gameHandler, stack, 0);
+			logRangedFollowUp(battle, *gameHandler, stack,
+				"%s declines the Master Gunner follow-up shot.");
+		}
+	}
 	if(const auto * stack = battle.battleGetStackByID(ba.stackNumber, false);
 		stack && stack->pursuitMovementRemaining > 0)
 	{
@@ -1784,6 +1849,7 @@ void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & batt
 bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
+	const bool pendingFollowUp = battle.battleHasPendingRangedFollowUp(stack);
 	const auto perfectMomentSide = ba.perfectMoment ? battle.playerToSide(battle.battleGetOwner(stack)) : BattleSide::NONE;
 	battle::Target target = ba.getTarget(&battle);
 
@@ -1812,6 +1878,49 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 	{
 		gameHandler->complain("No target to shoot!");
 		return false;
+	}
+	if(pendingFollowUp && (!destinationStack || !destinationStack->alive() || destinationStack->isGhost()
+		|| battle.battleMatchOwner(stack, destinationStack, true)))
+	{
+		gameHandler->complain("Master Gunner follow-up must target a living enemy creature.");
+		return false;
+	}
+	if(pendingFollowUp && !battle.battleCanTakeRangedFollowUp(stack))
+	{
+		gameHandler->complain("The Master Gunner follow-up is no longer usable.");
+		return false;
+	}
+
+	if(pendingFollowUp)
+	{
+		// This is its own player-selected attack action: do not route through the
+		// generic multi-attack loop, which would repeat this target automatically.
+		breakSanctuary(battle, stack);
+		auto rainOfArrows = beginRainOfArrows(battle, stack, destinationStack);
+		RelentlessAssaultActionContext relentlessAssault;
+		makeAttack(battle, stack, destinationStack,
+			{.targetHex = destination, .attackIndex = 1, .first = false, .ranged = true,
+				.perfectMomentSide = perfectMomentSide}, nullptr, &relentlessAssault, &rainOfArrows);
+		// The damage callback above observes the earned percentage. Clear only
+		// after that accepted attack has completed its shared damage calculation.
+		publishRangedFollowUpState(battle, *gameHandler, stack, 0);
+		logRangedFollowUp(battle, *gameHandler, stack,
+			"%s fires the Master Gunner follow-up shot.");
+
+		BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);
+		BonusList defenderBonusesToRemove = *destinationStack->getAllBonuses(Bonus::untilAfterAttackSequence);
+		if(destinationStack->alive()
+			&& destinationStack->hasBonusOfType(BonusType::RANGED_RETALIATION)
+			&& !stack->hasBonusOfType(BonusType::BLOCKS_RANGED_RETALIATION)
+			&& destinationStack->ableToRetaliate()
+			&& battle.battleCanShoot(destinationStack, stack->getPosition())
+			&& stack->alive())
+			makeAttack(battle, destinationStack, stack,
+				{.targetHex = stack->getPosition(), .first = true, .ranged = true, .counter = true});
+		removeBonuses(battle, stack, attackerBonusesToRemove);
+		removeBonuses(battle, destinationStack, defenderBonusesToRemove);
+		resolveRainOfArrows(battle, stack, rainOfArrows);
+		return true;
 	}
 	// A ranged attack, including a valid area shot, is an offensive action.
 	breakSanctuary(battle, stack);
@@ -1869,6 +1978,21 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 	removeBonuses(battle, stack, attackerBonusesToRemove);
 	removeBonuses(battle, destinationStack, defenderBonusesToRemove);
 	resolveRainOfArrows(battle, stack, rainOfArrows);
+
+	const auto * masterGunnerHero = battle.battleGetOwnerHero(stack);
+	const auto state = stack->acquireState();
+	if(destinationStack && stack->alive() && !stack->isGhost()
+		&& !battle.battleMatchOwner(stack, destinationStack, true)
+		&& stack->isBallista() && !stack->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+		&& state && state->rangedFollowUpDamagePercent == 0
+		&& masterGunnerHero && masterGunnerHero->hasActivePerk(
+			"new-horizons:warMachines", "new-horizons:warMachines.masterGunner")
+		&& hasLegalHostileBallistaShot(battle, stack))
+	{
+		publishRangedFollowUpState(battle, *gameHandler, stack, MASTER_GUNNER_FOLLOW_UP_DAMAGE_PERCENT);
+		logRangedFollowUp(battle, *gameHandler, stack,
+			"The Master Gunner grants %s one 60% follow-up shot.");
+	}
 
 	return true;
 }
@@ -2654,6 +2778,8 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		const auto * updatedBattle = gameHandler->gs->getBattle(battle.getBattle()->getBattleID());
 		const auto * updatedStack = updatedBattle && effectiveAction.stackNumber >= 0
 			? updatedBattle->battleGetStackByID(effectiveAction.stackNumber, false) : nullptr;
+		const bool rangedFollowUpStillPending = updatedStack && updatedStack->isBallista()
+			&& updatedStack->rangedFollowUpDamagePercent > 0;
 		const bool pursuitContinuation = masterGateActivationContinuationOut && result
 			&& effectiveAction.actionType == EActionType::WALK_AND_ATTACK
 			&& updatedStack && updatedStack->pursuitMovementRemaining > 0;
@@ -2663,6 +2789,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 			&& stack && !stack->isTimeStopped() && !effectiveAction.timeStopHeroActionPass
 			&& !(masterGateActivationContinuationOut && *masterGateActivationContinuationOut)
 			&& !pursuitContinuation
+			&& !rangedFollowUpStillPending
 			&& !(effectiveAction.actionType == EActionType::MONSTER_SPELL && effectiveAction.spell.hasValue()
 				&& effectiveAction.spell.toSpell()->canCastWithoutSkip());
 		gameHandler->sendAndApply(endAction);
@@ -4454,6 +4581,13 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			if(effectiveActionOut)
 				*effectiveActionOut = pass;
 			return makeBattleActionImpl(battle, pass, masterGateActivationContinuationOut);
+		}
+
+		if(battle.battleHasPendingRangedFollowUp(active) && ba.isUnitAction()
+			&& ba.actionType != EActionType::SHOOT && ba.actionType != EActionType::NO_ACTION)
+		{
+			gameHandler->complain("The pending Master Gunner follow-up permits only a shot or ending the creature activation.");
+			return false;
 		}
 
 		const auto * activeStack = battle.battleGetStackByID(active->unitId(), false);

@@ -76,6 +76,12 @@ public:
 	std::optional<newHorizonsCreatures::CreatureCategoryView> battleGetCreatureCategory(CreatureID creature) const;
 	/// Whether a living, actual defensive tower is controlled by the saved Fortification Engineer perk.
 	bool battleCanUseFortificationEngineer(const battle::Unit * turret) const;
+	/// Whether this active Ballista has an earned ranged follow-up allowance.
+	bool battleHasPendingRangedFollowUp(const battle::Unit * unit) const;
+	/// Whether the earned shot can currently be used against at least one legal enemy.
+	bool battleCanTakeRangedFollowUp(const battle::Unit * unit) const;
+	/// Saved final damage multiplier for a pending Ballista shot, or 100 when none applies.
+	int battleGetRangedFollowUpDamagePercent(const battle::Unit * unit) const;
 	std::vector<SpellSchool> battleGetActiveSpellSchools() const;
 	std::vector<SpellSchool> battleGetSpellSchools(SpellID spell) const;
 	int battleGetSpellLevel(SpellID spell) const;

@@ -31,5 +31,8 @@ enum class BattleUnitTurnReason : int8_t
 	MASTER_GATE_CONTINUATION,
 	/// Pursuit continues the same activation for movement only after a lethal
 	/// melee attack. It does not refresh action resources or lifecycle state.
-	PURSUIT_CONTINUATION
+	PURSUIT_CONTINUATION,
+	/// Master Gunner offers the earned second Ballista shot within this activation.
+	/// This does not begin a new activation or expire activation-scoped state.
+	RANGED_ATTACK_CONTINUATION
 };

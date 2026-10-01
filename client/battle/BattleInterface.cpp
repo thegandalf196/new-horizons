@@ -48,6 +48,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/TerrainHandler.h"
 #include "../../lib/UnlockGuard.h"
+#include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/callback/CCallback.h"
@@ -1031,10 +1032,30 @@ void BattleInterface::giveCommand(EActionType action, const BattleHex & tile, Sp
 
 void BattleInterface::giveCommand(EActionType action, const std::vector<BattleHex> & tiles,  SpellID spell)
 {
+	const CStack * activeStack = stacksController->getActiveStack();
+	const auto activeStackState = activeStack ? activeStack->acquireState() : nullptr;
+	if(activeStackState && activeStackState->rangedFollowUpDamagePercent > 0)
+	{
+		// Defend is the existing human-facing close control and safely declines
+		// the continuation as NO_ACTION. Wait is not a decline action, so block it.
+		// No other creature action may replace the selected follow-up shot.
+		if(action == EActionType::WAIT)
+			return;
+		else if(action == EActionType::DEFEND)
+			action = EActionType::NO_ACTION;
+		else if(action != EActionType::SHOOT && action != EActionType::NO_ACTION
+			&& action != EActionType::HERO_SPELL && action != EActionType::HERO_COMMAND
+			&& action != EActionType::RETREAT && action != EActionType::SURRENDER)
+			return;
+		else if(action == EActionType::SHOOT
+			&& !getBattle()->battleHasPendingRangedFollowUp(activeStack))
+			return;
+	}
+
 	const CStack * actor = nullptr;
 	if(action != EActionType::HERO_SPELL && action != EActionType::RETREAT && action != EActionType::SURRENDER)
 	{
-		actor = stacksController->getActiveStack();
+		actor = activeStack;
 	}
 
 	auto side = getBattle()->playerToSide(curInt->playerID);

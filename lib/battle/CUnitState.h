@@ -206,6 +206,9 @@ public:
 	/// Cleave may create at most one automatic follow-up strike in a genuine
 	/// creature activation. Hero actions and same-activation continuations keep it.
 	bool cleaveUsedThisActivation;
+	/// A ranged follow-up damage multiplier, persisted until used or declined.
+	/// Zero means no pending shot; values from 1 to 100 are valid percentages.
+	int32_t rangedFollowUpDamagePercent = 0;
 	/// Round in which this stack last used Archery's once-per-round Counterfire.
 	int32_t archeryCounterfireRound = -1;
 	/// Round in which this stack first spent Deadeye on an ordinary ranged shot.
@@ -240,6 +243,7 @@ public:
 	/// it does not affect initiative or later activations.
 	int32_t getActivationMovementBonus() const { return activationMovementBonus; }
 	void setActivationMovementBonus(int32_t value);
+	void setRangedFollowUpDamagePercent(int32_t value);
 	/// Creature Defense supplied by the authoritative Defend action.  This is
 	/// recorded explicitly because duration alone is not provenance: another
 	/// temporary effect may also use STACK_GETS_TURN.

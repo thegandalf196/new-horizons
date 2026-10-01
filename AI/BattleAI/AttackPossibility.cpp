@@ -34,6 +34,12 @@
 
 namespace
 {
+bool hasPendingRangedFollowUp(const battle::Unit * unit)
+{
+	const auto * state = unit ? dynamic_cast<const battle::CUnitState *>(unit) : nullptr;
+	return unit && unit->isBallista() && state && state->rangedFollowUpDamagePercent > 0;
+}
+
 bool hasRangedMarkEffect(const battle::Unit * unit, const char * source)
 {
 	if(!unit)
@@ -134,6 +140,12 @@ void projectVampirismHealing(battle::CUnitState * attacker, int64_t actualDamage
 
 void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
+	// A continuation allowance is per-action state, not part of the ID-keyed
+	// baseline damage cache. Its shared callback forecast is intentionally
+	// recomputed for the independently selected follow-up target.
+	if(hasPendingRangedFollowUp(attacker))
+		return;
+
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
 		rangedMarkTargets.insert(defender->unitId());
 	auto damage = hb->battleExpectedLuckDamage(BattleAttackInfo(attacker, defender, 0, hb->battleCanShoot(attacker, defender->getPosition())));
@@ -261,6 +273,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		return newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
 	});
 	const bool hasGamblerPenalty = attacker->hasBonus(gamblerPenaltySelector);
+	const bool hasRangedFollowUp = shooting && hasPendingRangedFollowUp(attacker);
 	// IDs alone cannot key a target/controller/round-sensitive premium. Preserve
 	// original-damage snapshots for comparison, but recompute current v2 damage.
 	// Remember marked targets so expiry/Dispel cannot revive a cached premium.
@@ -270,6 +283,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	// after its once-per-round trigger because a pending gift can still be spent.
 	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE)
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
+		|| hasRangedFollowUp
 		|| hasRelentlessAssault
 		|| hasSecondChance
 		|| fortune.gambler
@@ -526,14 +540,15 @@ int64_t AttackPossibility::evaluateBlockedShootersDmg(
 
 int AttackPossibility::getAttackCount(const battle::Unit & attacker, bool shooting, const CBattleInfoCallback & state)
 {
-	int result = attacker.getTotalAttacks(shooting);
+	const bool rangedFollowUp = shooting && hasPendingRangedFollowUp(&attacker);
+	int result = rangedFollowUp ? 1 : attacker.getTotalAttacks(shooting);
 	// BattleAction uses the unit's battle side, including when estimating an
 	// opponent's action. A player-scoped callback must not probe that opponent's
 	// private hero object; use only the attacks already exposed by the unit.
 	const auto perspective = state.battleGetMySide();
 	const bool attackerHeroKnown = perspective == BattleSide::ALL_KNOWING || perspective == attacker.unitSide();
 	const auto * hero = attackerHeroKnown ? state.battleGetFightingHero(attacker.unitSide()) : nullptr;
-	if(hero)
+	if(hero && !rangedFollowUp)
 		result += hero->valOfBonuses(BonusType::HERO_GRANTS_ATTACKS, BonusSubtypeID(attacker.creatureId()));
 	if(shooting)
 		if(const auto * unitState = dynamic_cast<const battle::CUnitState *>(&attacker);
@@ -549,6 +564,7 @@ AttackPossibility AttackPossibility::evaluate(
 	std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)
 {
 	auto attacker = attackInfo.attacker;
+	const bool rangedFollowUp = attackInfo.shooting && hasPendingRangedFollowUp(attacker);
 	const auto * requestedDefender = attackInfo.defender;
 	const auto * redirectedDefender = state->battleResolveHeroOrderTarget(attacker, requestedDefender,
 		attackInfo.shooting);
@@ -576,7 +592,7 @@ AttackPossibility AttackPossibility::evaluate(
 		AttackPossibility ap(hex, defHex, attackInfo);
 		ap.attack.protectIntercepted = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
-		ap.perfectMoment = perfectMoment && state->battleCanUsePerfectMoment(attacker)
+		ap.perfectMoment = !rangedFollowUp && perfectMoment && state->battleCanUsePerfectMoment(attacker)
 			&& !attackInfo.retaliation && state->battleMatchOwner(attacker, defender);
 		const auto * raPrimaryTarget = state->battleResolveHeroOrderTarget(attacker, requestedDefender,
 			attackInfo.shooting);
@@ -927,8 +943,11 @@ AttackPossibility AttackPossibility::evaluate(
 		strike.shooting = attackInfo.shooting;
 		strike.retaliation = attackInfo.retaliation;
 		strike.damageProvenance = battleAIDamageProvenance(ap.attackerState.get(), attackInfo.physicalDamage);
-		strike.perfectMoment = ap.perfectMoment && i == 0;
-		strike.attackIndex = attackInfo.retaliation ? 0 : i;
+		strike.perfectMoment = !rangedFollowUp && ap.perfectMoment && i == 0;
+		// The selectable Master Gunner continuation is a second shot inside the
+		// same activation. Keep per-activation strike histories (e.g. Hex of Pain)
+		// from treating it as a fresh first attack.
+		strike.attackIndex = rangedFollowUp ? 1 : (attackInfo.retaliation ? 0 : i);
 		strike.protectIntercepted = projectsProtect
 				&& strikeDefender->unitId() != requestedDefender->unitId();
 			// The authoritative server consumes immediately after resolving the

@@ -43,6 +43,8 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	void expireSeparatedHeroOrderProtect();
 	std::map<uint32_t, int32_t> collectReserveMovementBonuses() const;
 	void restoreReserveMovementBonuses(const std::map<uint32_t, int32_t> & bonuses);
+	std::map<uint32_t, int32_t> collectRangedFollowUps() const;
+	void restoreRangedFollowUps(const std::map<uint32_t, int32_t> & followUps);
 public:
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
@@ -89,6 +91,7 @@ public:
 			|| sides[BattleSide::DEFENDER].hasChainGateState();
 	}
 	bool hasPursuitState() const;
+	bool hasRangedFollowUpState() const;
 	bool hasBattleFormState() const;
 	bool hasVeteranDamageHistory() const;
 	bool hasReserveMovementState() const;
@@ -171,6 +174,8 @@ public:
 				throw std::runtime_error("Cannot discard Master Gate battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT) && hasPursuitState())
 				throw std::runtime_error("Cannot discard Pursuit battle state");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP) && hasRangedFollowUpState())
+				throw std::runtime_error("Cannot discard pending ranged follow-up battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CLEAVE) && hasCleaveState())
 				throw std::runtime_error("Cannot discard Cleave battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RELENTLESS_ASSAULT) && hasRelentlessAssaultState())
@@ -417,6 +422,20 @@ public:
 		}
 		else if(!h.saving)
 			restoreReserveMovementBonuses({});
+
+		// CStack's binary payload omits CUnitState. Preserve a pending shot using
+		// the same bounded sidecar pattern, without replaying activation entry.
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP))
+		{
+			std::map<uint32_t, int32_t> rangedFollowUps;
+			if(h.saving)
+				rangedFollowUps = collectRangedFollowUps();
+			h & rangedFollowUps;
+			if(!h.saving)
+				restoreRangedFollowUps(rangedFollowUps);
+		}
+		else if(!h.saving)
+			restoreRangedFollowUps({});
 
 		if(!h.saving)
 		{

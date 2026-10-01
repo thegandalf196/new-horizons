@@ -24,7 +24,9 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/battle/BattleAction.h"
+#include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
+#include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/StartInfo.h"
 #include "../../lib/CStack.h" // TODO: remove
@@ -379,6 +381,56 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 
 		if(spelCasted)
 			return;
+	}
+
+	// Master Gunner's saved allowance is a same-activation continuation, not a
+	// new creature turn. Hero Actions above may still be used first; after that,
+	// the only creature action is a fresh, independently selected legal shot.
+	// If the raw allowance is no longer usable (for example, every enemy became
+	// untargetable after a Hero Action), pass it instead of falling through to a
+	// move/wait/defend that the authority must reject.
+	if(const auto unitState = stack->acquireState(); unitState && unitState->rangedFollowUpDamagePercent > 0)
+	{
+		const auto battleCallback = cb->getBattle(battleID);
+		const battle::Unit * bestTarget = nullptr;
+		int64_t bestExpectedDamage = std::numeric_limits<int64_t>::min();
+		if(battleCallback->battleCanTakeRangedFollowUp(stack))
+		{
+			for(const auto * target : battleCallback->battleAliveUnits())
+			{
+				if(!target || !target->alive() || target->isGhost()
+					|| battleCallback->battleMatchOwner(stack, target, true))
+					continue;
+
+				const bool hasLegalHex = std::ranges::any_of(target->getHexes(), [&](const BattleHex & hex)
+				{
+					return hex.isValid() && battleCallback->battleCanShoot(stack, hex);
+				});
+				if(!hasLegalHex)
+					continue;
+
+				const auto expectedDamage = battleCallback->battleExpectedLuckDamage(
+					BattleAttackInfo(stack, target, 0, true));
+				if(!bestTarget || expectedDamage > bestExpectedDamage)
+				{
+					bestTarget = target;
+					bestExpectedDamage = expectedDamage;
+				}
+			}
+		}
+
+		if(bestTarget)
+		{
+			BattleAction followUp = BattleAction::makeShotAttack(stack, bestTarget);
+			followUp.side = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
+			cb->battleMakeUnitAction(battleID, followUp);
+			return;
+		}
+
+		BattleAction pass = BattleAction::makeNoAction(stack);
+		pass.side = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
+		cb->battleMakeUnitAction(battleID, pass);
+		return;
 	}
 
 	logAi->trace("Spellcast attempt completed in %lld", timeElapsed(start));

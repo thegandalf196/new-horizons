@@ -2521,6 +2521,25 @@ std::vector<PossiblePlayerBattleAction> BattleActionsController::getPossibleActi
 	allActions.push_back(PossiblePlayerBattleAction::HERO_INFO);
 	allActions.push_back(PossiblePlayerBattleAction::CREATURE_INFO);
 
+	// A pending ranged continuation cannot be replaced with movement, Wait,
+	// or a creature action. Keep Shoot only when the authority recognizes the
+	// saved allowance; target-specific legality remains in actionIsLegal.
+	// Information actions remain available, and Defend is the existing safe
+	// NO_ACTION close control.
+	const auto battle = owner.getBattle();
+	const auto unitState = stack ? stack->acquireState() : nullptr;
+	if(battle && unitState && unitState->rangedFollowUpDamagePercent > 0)
+	{
+		const bool pendingFollowUp = battle->battleHasPendingRangedFollowUp(stack);
+		vstd::erase_if(allActions, [pendingFollowUp](const PossiblePlayerBattleAction & action)
+			{
+				if(action.get() == PossiblePlayerBattleAction::HERO_INFO
+					|| action.get() == PossiblePlayerBattleAction::CREATURE_INFO)
+					return false;
+				return !pendingFollowUp || action.get() != PossiblePlayerBattleAction::SHOOT;
+			});
+	}
+
 	return std::vector<PossiblePlayerBattleAction>(allActions);
 }
 
@@ -3101,6 +3120,10 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			estimation.kills.min = std::min<int64_t>(estimation.kills.min, targetStack->getCount());
 			auto result = formatRangedAttack(estimation, targetStack->getName(), shooter->shots.available());
 			const auto & battle = *owner.getBattle();
+			if(battle.battleHasPendingRangedFollowUp(shooter))
+				result += "\nMaster Gunner follow-up: "
+					+ std::to_string(battle.battleGetRangedFollowUpDamagePercent(shooter))
+					+ "% damage (the estimate above includes this reduction).";
 			if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 				&& battle.battleGetOwner(shooter) != battle.battleGetOwner(targetStack))
 			{

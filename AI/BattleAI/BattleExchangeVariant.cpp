@@ -268,6 +268,14 @@ float BattleExchangeVariant::trackAttack(
 		unitToUpdate->physicalPoisonSourceStackId = affectedUnit->physicalPoisonSourceStackId;
 		unitToUpdate->guardianSpiritHitPoints = affectedUnit->guardianSpiritHitPoints;
 		unitToUpdate->guardianSpiritRoundsRemaining = affectedUnit->guardianSpiritRoundsRemaining;
+		unitToUpdate->rangedFollowUpDamagePercent = affectedUnit->rangedFollowUpDamagePercent;
+		// The forecasted continuation is one accepted shot. Consume its copied
+		// allowance here so this detached branch cannot price another reduced
+		// shot on the same activation or carry it into the next one.
+		if(unitToUpdate->unitId() == attacker->unitId()
+			&& ap.attack.shooting && ap.attack.physicalDamage
+			&& unitToUpdate->rangedFollowUpDamagePercent > 0)
+			unitToUpdate->rangedFollowUpDamagePercent = 0;
 		// The detached forecast records explicitly classified hits and reactions
 		// even when they are not represented by a Fortune strike. Copy its total
 		// interval rather than guessing that residual HP loss was physical.
@@ -420,6 +428,9 @@ float BattleExchangeVariant::trackAttack(
 			projectRelentlessAssaultAttack(*hb, requestedAttack, relentlessAssaultTargetUnitId);
 	}
 	projectedAttacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
+	if(!evaluateOnly && shooting && projectedAttack.physicalDamage
+		&& attacker->rangedFollowUpDamagePercent > 0)
+		attacker->rangedFollowUpDamagePercent = 0;
 	const auto projectHexOfPain = [&](const battle::Unit * actor, const battle::Unit * target,
 		bool isShooting, bool isCounter, const std::vector<std::pair<uint32_t, int64_t>> & hits)
 	{

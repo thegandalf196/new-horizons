@@ -14,7 +14,25 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-Current verified checkpoint: UP-098 Fortification Engineer. Shared saved-perk/
+Current verified checkpoint: UP-099 Master Gunner. Saved same-activation
+follow-up state permits an independently selected second Ballista shot at60%
+shared forecast/actual damage, with raw pending action restrictions, explicit
+decline and fresh legal AI target selection. Both-target76128 exits0 after the
+recorded compile repairs. Principal71745 passes4/4, zero skips in1.450s;
+activated74243 passes16/16 Master Gunner/Engineer/Piercing/Surgeon cases, zero
+skips in5.022s. Data/inventory19/19 pass. Coverage150→151/310, planned160→159;
+War Machines4active/6planned. Test binary:
+`11b4dc190f413736f8868e88e654fb27276a81f87b8b652ab6b2ac49fbdebecb`.
+No GUI, artwork approval or playable snapshot promotion. Initial-shot AI
+multi-target lookahead remains Phase2. Breachmaker topology awaits user choice.
+Phase2 review finding: issuing Second Wind between the two shots currently
+retains Ballista continuation before the Order's immediate-target activation
+branch. That interleaving requires explicit activation handoff/resumption work;
+ordinary Hero Action permission is not proof that every Order interaction is
+correct. Also retain external extra-attack stacking and full binary battle-save
+coverage behind the pre-existing Veteran history fail-closed boundary.
+
+Previous verified checkpoint: UP-098 Fortification Engineer. Shared saved-perk/
 defended-town eligibility grants deterministic manual tower control and evaluates
 tower damage from floor(125% Siege), not125% total output. Client43691 exits0.
 Production review has no blocker; the fixture's nested-registry lookup was
@@ -734,7 +752,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 150/310 | 160 planned; Fortification Engineer is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 151/310 | 159 planned; Master Gunner is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -761,8 +779,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 150
-active perks, leaving nine ranks and 160 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 151
+active perks, leaving nine ranks and 159 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -870,7 +888,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Armorer | 3/0 | 6/4 | Formation Fighting and Veteran have focused live/detached damage evidence. Four perks missing; Last Stand awaits design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
-| War Machines | 3/0 | 3/7 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence. Seven perks remain planned. Battlefield Medic persistence awaits clarification. |
+| War Machines | 3/0 | 4/6 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence. Six perks remain planned. Battlefield Medic persistence awaits clarification. |
 | Discipline | 3/0 | 5/5 | Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless active with focused authoritative and detached evidence. Five perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |

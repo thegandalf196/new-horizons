@@ -614,6 +614,7 @@ function Script:calculate(battle, info)
 	local heroOrderMultiplier = math.max(0, (info.heroOrderFinalDamageMultiplier or 100) / 100)
 	local cleaveMultiplier = math.max(0, (info.cleaveFinalDamageMultiplier or 100) / 100)
 	local archeryRangedMultiplier = math.max(0, (info.archeryRangedDamageMultiplierPercent or 100) / 100)
+	local rangedFollowUpMultiplier = math.max(0, (info.rangedFollowUpDamagePercent or 100) / 100)
 	local phantomDamageMultiplier = self:getPhantomDamageMultiplier(info)
 	local bulwarkImmovableMultiplier = math.max(0, (info.bulwarkImmovableFinalDamageMultiplier or 100) / 100)
 	local physicalDamageReductionMultiplier = usesPhysicalDamageReductionStage
@@ -648,7 +649,7 @@ function Script:calculate(battle, info)
 	end
 
 	local damageFactor = raising * lowering * physicalDamageReductionMultiplier
-		* heroOrderMultiplier * cleaveMultiplier * archeryRangedMultiplier * phantomDamageMultiplier
+		* heroOrderMultiplier * cleaveMultiplier * archeryRangedMultiplier * rangedFollowUpMultiplier * phantomDamageMultiplier
 		* bulwarkImmovableMultiplier
 	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1
 	local damageMin = apply(baseMin, damageFactor, stabilizePdrRounding)
@@ -661,7 +662,7 @@ function Script:calculate(battle, info)
 		kills = { min = killsMin, max = killsMax },
 		-- what the blow would have been worth had the target no defences at all, which is what an
 		-- ability reflecting a strike works from
-		damageBeforeDefense = { min = apply(baseMin, raising * heroOrderMultiplier * cleaveMultiplier), max = apply(baseMax, raising * heroOrderMultiplier * cleaveMultiplier) }
+		damageBeforeDefense = { min = apply(baseMin, raising * heroOrderMultiplier * cleaveMultiplier * rangedFollowUpMultiplier), max = apply(baseMax, raising * heroOrderMultiplier * cleaveMultiplier * rangedFollowUpMultiplier) }
 	}
 end
 
