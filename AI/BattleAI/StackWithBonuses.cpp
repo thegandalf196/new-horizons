@@ -1856,6 +1856,27 @@ bool HypotheticBattle::HypotheticServerCallback::rollCombatAbility(const IBattle
 	return percentageChance >= 50;
 }
 
+bool HypotheticBattle::HypotheticServerCallback::resolveAdverseCombatRoll(const BattleID & battleID,
+	BattleSide side, bool stochastic, bool adverseOnTrue, const std::function<bool()> & draw)
+{
+	if(battleID != owner->getBattleID())
+		throw std::runtime_error("Adverse combat projection refers to another battle");
+	const bool firstResult = draw();
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return firstResult;
+	auto state = owner->getAdverseCombatRerollState(side);
+	if(!state.consume(stochastic, firstResult == adverseOnTrue))
+		return firstResult;
+
+	BattleAdverseRerollStateChanged packet;
+	packet.battleID = battleID;
+	packet.side = side;
+	packet.state = state;
+	BattleStatePackVisitor visitor(*owner);
+	packet.visit(visitor);
+	return draw();
+}
+
 void HypotheticBattle::HypotheticServerCallback::apply(CPackForClient & pack)
 {
 	logAi->error("Package of type %s is not allowed in battle evaluation", typeid(pack).name());

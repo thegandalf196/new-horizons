@@ -2886,17 +2886,31 @@ void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, 
 		attacker, physicalDamage);
 	const int attackerLuck = battle.battleGetAttackLuck(attacker, defender, bat.shot());
 	ObjectInstanceID ownerArmy = battle.getBattle()->getSideArmy(attacker->unitSide())->id;
+	const auto side = battle.playerToSide(battle.battleGetOwner(attacker));
+	SylvanLuckState fortune;
+	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		fortune = battle.getBattle()->getSylvanLuckState(side);
+	const bool negativeLuckPrevented = fortune.canIgnoreNegativeLuck(physicalCreatureLuckAttack);
 
 	if(perfectMoment || (attackerLuck > 0 && gameHandler->randomizer->rollGoodLuck(ownerArmy, attackerLuck)))
 		bat.flags |= BattleAttack::LUCKY;
 
-	if(!perfectMoment && attackerLuck < 0 && gameHandler->randomizer->rollBadLuck(ownerArmy, -attackerLuck))
-		bat.flags |= BattleAttack::UNLUCKY;
+	if(!perfectMoment && attackerLuck < 0)
+	{
+		const auto drawBadLuck = [this, ownerArmy, attackerLuck]()
+		{
+			return gameHandler->randomizer->rollBadLuck(ownerArmy, -attackerLuck);
+		};
+		const bool badLuck = negativeLuckPrevented
+			? drawBadLuck()
+			: owner->resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), side,
+				gameHandler->randomizer->isBadLuckRollStochastic(-attackerLuck), true, drawBadLuck);
+		if(badLuck)
+			bat.flags |= BattleAttack::UNLUCKY;
+	}
 
-	const auto side = battle.playerToSide(battle.battleGetOwner(attacker));
 	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 	{
-		auto fortune = battle.getBattle()->getSylvanLuckState(side);
 		if(fortune.active())
 		{
 			if(perfectMoment)
@@ -2908,15 +2922,38 @@ void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, 
 		}
 	}
 
-	if (gameHandler->randomizer->rollFavorableCreatureAbility(
-		ownerArmy, *attacker, attacker->valOfBonuses(BonusType::DOUBLE_DAMAGE_CHANCE)))
+	const auto attackerSide = side;
+	const auto defenderSide = defender && defender->alive()
+		? battle.playerToSide(battle.battleGetOwner(defender)) : BattleSide::NONE;
+	const bool hostileTarget = (attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER)
+		&& (defenderSide == BattleSide::ATTACKER || defenderSide == BattleSide::DEFENDER)
+		&& defenderSide != attackerSide;
+	const int deathBlowChance = gameHandler->randomizer->prepareFavorableCreatureAbilityChance(
+		*attacker, attacker->valOfBonuses(BonusType::DOUBLE_DAMAGE_CHANCE));
+	const auto drawDeathBlow = [this, ownerArmy, deathBlowChance]()
+	{
+		return gameHandler->randomizer->rollCombatAbility(ownerArmy, deathBlowChance);
+	};
+	const bool deathBlow = hostileTarget
+		? owner->resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), defenderSide,
+			deathBlowChance > 0 && deathBlowChance < 100, true, drawDeathBlow)
+		: drawDeathBlow();
+	if(deathBlow)
 		bat.flags |= BattleAttack::DEATH_BLOW;
 
 	const auto * ownerHero = battle.battleGetFightingHero(attacker->unitSide());
 	if(ownerHero)
 	{
 		int chance = ownerHero->valOfBonuses(BonusType::BONUS_DAMAGE_CHANCE, BonusSubtypeID(attacker->creatureId()));
-		if (gameHandler->randomizer->rollCombatAbility(ownerArmy, chance))
+		const auto drawBallista = [this, ownerArmy, chance]()
+		{
+			return gameHandler->randomizer->rollCombatAbility(ownerArmy, chance);
+		};
+		const bool ballistaDoubleDamage = hostileTarget
+			? owner->resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), defenderSide,
+				chance > 0 && chance < 100, true, drawBallista)
+			: drawBallista();
+		if(ballistaDoubleDamage)
 			bat.flags |= BattleAttack::BALLISTA_DOUBLE_DMG;
 	}
 }
@@ -3939,8 +3976,28 @@ void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bo
 			if(!m->canBeCastAt(target))
 				continue;
 
-			//check if spell should be cast (probability handling)
-			if (!gameHandler->randomizer->rollFavorableCreatureAbility(ownerArmy, *attacker, chance))
+			const auto attackerSide = battle.playerToSide(battle.battleGetOwner(attacker));
+			const auto defenderSide = battle.playerToSide(battle.battleGetOwner(defender));
+			const bool hostileTarget = (attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER)
+				&& (defenderSide == BattleSide::ATTACKER || defenderSide == BattleSide::DEFENDER)
+				&& defenderSide != attackerSide;
+			bool procSucceeded = false;
+			if(castMe && spell->isNegative() && hostileTarget)
+			{
+				const int effectiveChance = gameHandler->randomizer->prepareFavorableCreatureAbilityChance(*attacker, chance);
+				const auto drawHostileSpell = [this, ownerArmy, effectiveChance]()
+				{
+					return gameHandler->randomizer->rollCombatAbility(ownerArmy, effectiveChance);
+				};
+				procSucceeded = owner->resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), defenderSide,
+					effectiveChance > 0 && effectiveChance < 100, true, drawHostileSpell);
+			}
+			else
+			{
+				// Keep the original draw for positive, neutral, ineligible, or friendly-target spells.
+				procSucceeded = gameHandler->randomizer->rollFavorableCreatureAbility(ownerArmy, *attacker, chance);
+			}
+			if(!procSucceeded)
 				continue;
 
 			//casting

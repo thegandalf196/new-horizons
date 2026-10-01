@@ -101,11 +101,36 @@ bool GameRandomizer::rollBadLuck(ObjectInstanceID actor, int luckValue)
 	return rollMoraleLuck(badLuckSeed, actor, luckValue, EGameSettings::COMBAT_LUCK_BIAS, EGameSettings::COMBAT_LUCK_DICE_SIZE, EGameSettings::COMBAT_BAD_LUCK_CHANCE);
 }
 
-bool GameRandomizer::rollFavorableCreatureAbility(ObjectInstanceID actor, const IBonusBearer & unit, int percentageChance)
+bool GameRandomizer::isMoraleLuckRollStochastic(int magnitude, EGameSettings diceSizeSetting,
+	EGameSettings chanceVectorSetting) const
+{
+	if(magnitude <= 0)
+		return false;
+	const auto chanceVector = gameInfo.getSettings().getVector(chanceVectorSetting);
+	const int diceSize = gameInfo.getSettings().getInteger(diceSizeSetting);
+	if(chanceVector.empty() || diceSize <= 0)
+		return false;
+	const size_t index = std::min<size_t>(chanceVector.size(), magnitude) - 1;
+	return chanceVector[index] > 0 && chanceVector[index] < diceSize;
+}
+
+bool GameRandomizer::isBadLuckRollStochastic(int magnitude) const
+{
+	return isMoraleLuckRollStochastic(magnitude, EGameSettings::COMBAT_LUCK_DICE_SIZE,
+		EGameSettings::COMBAT_BAD_LUCK_CHANCE);
+}
+
+bool GameRandomizer::isBadMoraleRollStochastic(int magnitude) const
+{
+	return isMoraleLuckRollStochastic(magnitude, EGameSettings::COMBAT_MORALE_DICE_SIZE,
+		EGameSettings::COMBAT_BAD_MORALE_CHANCE);
+}
+
+int GameRandomizer::prepareFavorableCreatureAbilityChance(const IBonusBearer & unit, int percentageChance)
 {
 	const int chance = unit.favorableCreatureAbilityChanceBasisPoints(percentageChance);
 	if(chance == std::clamp(percentageChance, 0, 100) * 100)
-		return rollCombatAbility(actor, percentageChance);
+		return percentageChance;
 
 	// Keep the existing percentage-sized biased stream. Changing its dice scale
 	// would reinterpret accumulated bias when this timed modifier expires.
@@ -114,7 +139,12 @@ bool GameRandomizer::rollFavorableCreatureAbility(ObjectInstanceID actor, const 
 	int roundedChance = chance / 100;
 	if(chance % 100 && getDefault().nextInt(0, 99) < chance % 100)
 		++roundedChance;
-	return rollCombatAbility(actor, roundedChance);
+	return roundedChance;
+}
+
+bool GameRandomizer::rollFavorableCreatureAbility(ObjectInstanceID actor, const IBonusBearer & unit, int percentageChance)
+{
+	return rollCombatAbility(actor, prepareFavorableCreatureAbilityChance(unit, percentageChance));
 }
 
 bool GameRandomizer::rollCombatAbility(ObjectInstanceID actor, int percentageChance)

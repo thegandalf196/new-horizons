@@ -30,6 +30,7 @@
 #include "../mapObjects/CGHeroInstance.h"
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../networkPacks/SetStackEffect.h"
+#include "../ScopeGuard.h"
 #include "../CStack.h"
 
 #include <vstd/RNG.h>
@@ -1255,6 +1256,22 @@ std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(const Target
 
 void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {
+	// wouldResist may be called from script target preparation or from a
+	// secondary-hit consumer while an authoritative cast is running. Keep its
+	// callback and RNG access strictly inside this cast, including all early
+	// returns and exceptional exits.
+	const auto clearResistanceContext = vstd::makeScopeGuard([this]()
+	{
+		activeResistanceServer = nullptr;
+		activeResistanceRng = nullptr;
+		resistanceRolls.clear();
+		resistantUnitIds.clear();
+	});
+	resistanceRolls.clear();
+	resistantUnitIds.clear();
+	activeResistanceServer = server;
+	activeResistanceRng = server ? server->getRNG() : nullptr;
+
 	const bool newHorizonsPhysicalPoison = mode == Mode::HERO && getHeroCaster()
 		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
 	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
@@ -1389,7 +1406,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			battleInfo->getWarcastingState(casterSide), battleRound);
 
 	if(!isCounterspellNegated())
-		beforeCast(sc, *server->getRNG(), target);
+		beforeCast(server, sc, *server->getRNG(), target);
 
 	if(logMetamagicFollowup)
 	{
@@ -1456,7 +1473,6 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		for(auto & p : effectsToApply)
 			p.first->apply(&effectRecorder, this, p.second);
 	}
-	resistantUnitIds.clear();
 	if(newHorizonsRegeneration && !isCounterspellNegated())
 	{
 		const auto * hero = getHeroCaster();
@@ -1870,7 +1886,12 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	server->apply(fakeEvent);
 }
 
-void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, const Target & target)
+BattleSide BattleSpellMechanics::effectiveCasterSide() const
+{
+	return mode == Mode::MAGIC_MIRROR ? battle()->otherSide(casterSide) : casterSide;
+}
+
+void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target)
 {
 	affectedUnits.clear();
 	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
@@ -1880,6 +1901,10 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 
 	std::vector <const battle::Unit *> resisted;
 
+	// Keep the original eager draw order for every battlefield unit. Consumers
+	// resolve this cached result lazily when they know the unit is an actual,
+	// eligible recipient (including chain routing and scripted collateral).
+	resistanceRolls.clear();
 	resistantUnitIds.clear();
 	if(isNegativeSpell() && isMagicalEffect())
 	{
@@ -1902,14 +1927,16 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 			if(isNewHorizonsBlinkSpell(owner) && unit->unitSide() == casterSide)
 				continue;
 			const int prob = std::min(unit->magicResistance(), 100); //probability of resistance in %
-			if(rng.nextInt(0, 99) < prob)
+			const bool didResist = rng.nextInt(0, 99) < prob;
+			resistanceRolls.push_back({unit->unitId(), prob, didResist, false});
+			if(didResist)
 				resistantUnitIds.insert(unit->unitId());
 		}
 	}
 
-	auto filterResisted = [&, this](const battle::Unit * unit) -> bool
+	auto filterResisted = [this](const battle::Unit * unit) -> bool
 	{
-		return resistantUnitIds.contains(unit->unitId());
+		return wouldResist(unit);
 	};
 
 	auto filterUnit = [&](const battle::Unit * unit)
@@ -1927,8 +1954,8 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 	if (!target.empty())
 	{
 		const battle::Unit * targetedUnit = battle()->battleGetUnitByPos(target.front().hexValue, true);
-		if ((!isMagicalEffect() || !isSpellLocked(targetedUnit)) && isReflected(targetedUnit, rng)) {
-			reflect(sc, rng, targetedUnit);
+		if ((!isMagicalEffect() || !isSpellLocked(targetedUnit)) && isReflected(server, targetedUnit, rng)) {
+			reflect(server, sc, rng, targetedUnit);
 			return;
 			}
 	}
@@ -1941,7 +1968,9 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 
 	//process them
 	for(const auto * unit : unitTargets)
+	{
 		filterUnit(unit);
+	}
 	for(const auto * unit : spellLockedUnits)
 		if(!vstd::contains(resisted, unit))
 			resisted.push_back(unit);
@@ -2030,7 +2059,7 @@ battle::Units BattleSpellMechanics::filterSpellLockedEffects(const Target & aimP
 	return rejected;
 }
 
-bool BattleSpellMechanics::isReflected(const battle::Unit * unit, vstd::RNG & rng)
+bool BattleSpellMechanics::isReflected(ServerCallback * server, const battle::Unit * unit, vstd::RNG & rng)
 {
 	if (unit == nullptr)
 		return false;
@@ -2039,11 +2068,30 @@ bool BattleSpellMechanics::isReflected(const battle::Unit * unit, vstd::RNG & rn
 	bool spellIsReflectable = isDirectSpell && (mode == Mode::HERO || mode == Mode::MAGIC_MIRROR) && isNegativeSpell();
 	bool targetCanReflectSpell = spellIsReflectable && unit->getAllBonuses(Selector::type()(BonusType::MAGIC_MIRROR))->size()>0;
 	const bool friendlyBlink = isNewHorizonsBlinkSpell(owner) && unit->unitSide() == casterSide;
-	return targetCanReflectSpell && !friendlyBlink
-		&& rng.nextInt(0, 99) < unit->valOfBonuses(BonusType::MAGIC_MIRROR);
+	if(!targetCanReflectSpell || friendlyBlink)
+		return false;
+
+	const int chance = unit->valOfBonuses(BonusType::MAGIC_MIRROR);
+	const auto draw = [&rng, chance]()
+	{
+		return rng.nextInt(0, 99) < chance;
+	};
+	const BattleSide targetControllerSide = battle()->playerToSide(battle()->battleGetOwner(unit));
+	const BattleSide affectedSide = effectiveCasterSide();
+	const bool hostileTarget = (targetControllerSide == BattleSide::ATTACKER || targetControllerSide == BattleSide::DEFENDER)
+		&& (affectedSide == BattleSide::ATTACKER || affectedSide == BattleSide::DEFENDER)
+		&& targetControllerSide != affectedSide;
+	if(!server || !hostileTarget || chance <= 0 || chance >= 100)
+		return draw();
+
+	// A successful redirect harms the army currently casting the spell. A
+	// reflected cast changes the effective side even though casterSide remains
+	// the original hero's side.
+	return server->resolveAdverseCombatRoll(battle()->getBattle()->getBattleID(), affectedSide,
+		true, true, draw);
 }
 
-void BattleSpellMechanics::reflect(BattleSpellCast & sc, vstd::RNG & rng, const battle::Unit * unit)
+void BattleSpellMechanics::reflect(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const battle::Unit * unit)
 {
 	auto otherSide = battle()->otherSide(unit->unitSide());
 	auto newTarget = getRandomUnit(rng, otherSide);
@@ -2058,7 +2106,7 @@ void BattleSpellMechanics::reflect(BattleSpellCast & sc, vstd::RNG & rng, const 
 	if (!isReceptive(newTarget))
 		sc.resistedCres.insert(newTarget->unitId());    //A spell can be reflected to then resisted by an immune unit. Consistent with the original game.
 
-	beforeCast(sc, rng, { Destination(reflectedTo) });
+	beforeCast(server, sc, rng, { Destination(reflectedTo) });
 }
 
 const battle::Unit * BattleSpellMechanics::getRandomUnit(vstd::RNG & rng, const BattleSide & side)
@@ -2073,6 +2121,19 @@ const battle::Unit * BattleSpellMechanics::getRandomUnit(vstd::RNG & rng, const 
 
 void BattleSpellMechanics::castEval(ServerCallback * server, const Target & target)
 {
+	// Evaluation may prepare the same scripted effects as a real cast, but it
+	// must never spend an authoritative adverse-roll allowance or advance the
+	// combat RNG through wouldResist.
+	auto * previousResistanceServer = activeResistanceServer;
+	auto * previousResistanceRng = activeResistanceRng;
+	const auto restoreResistanceContext = vstd::makeScopeGuard([this, previousResistanceServer, previousResistanceRng]()
+	{
+		activeResistanceServer = previousResistanceServer;
+		activeResistanceRng = previousResistanceRng;
+	});
+	activeResistanceServer = nullptr;
+	activeResistanceRng = nullptr;
+
 	affectedUnits.clear();
 	//TODO: evaluate caster updates (mana usage etc.)
 	//TODO: evaluate random values
@@ -2290,7 +2351,52 @@ bool BattleSpellMechanics::isSmart() const
 
 bool BattleSpellMechanics::wouldResist(const battle::Unit * unit) const
 {
-	return resistantUnitIds.contains(unit->unitId());
+	if(!unit)
+		return false;
+
+	const auto unitId = unit->unitId();
+	auto resistance = std::ranges::find(resistanceRolls, unitId, &ResistanceRoll::unitId);
+	if(resistance == resistanceRolls.end())
+		return resistantUnitIds.contains(unitId);
+	if(resistance->resolved || !activeResistanceServer || !activeResistanceRng)
+		return resistance->resisted;
+
+	const BattleSide recipientControllerSide = battle()->playerToSide(battle()->battleGetOwner(unit));
+	const BattleSide spellCasterSide = effectiveCasterSide();
+	const bool validSides = (recipientControllerSide == BattleSide::ATTACKER || recipientControllerSide == BattleSide::DEFENDER)
+		&& (spellCasterSide == BattleSide::ATTACKER || spellCasterSide == BattleSide::DEFENDER);
+	if(!isNegativeSpell() || !isMagicalEffect() || !validSides
+		|| recipientControllerSide == spellCasterSide
+		|| !unit->isValidTarget(false) || !isReceptive(unit)
+		|| resistance->probability <= 0 || resistance->probability >= 100)
+		return resistance->resisted;
+
+	// Chain Lightning and scripted collateral call this method at their actual
+	// resistance-consumer point. Cache the result before entering the server
+	// resolver so repeated queries (including the normal target filter below)
+	// cannot spend the side's one-use reroll twice.
+	const int probability = resistance->probability;
+	const bool firstResult = resistance->resisted;
+	resistance->resolved = true;
+	auto * const server = activeResistanceServer;
+	auto * const rng = activeResistanceRng;
+	const auto draw = [rng, firstResult, probability, firstDraw = true]() mutable
+	{
+		if(firstDraw)
+		{
+			firstDraw = false;
+			return firstResult;
+		}
+		return rng->nextInt(0, 99) < probability;
+	};
+	const bool finalResult = server->resolveAdverseCombatRoll(battle()->getBattle()->getBattleID(),
+		recipientControllerSide, true, false, draw);
+	resistance->resisted = finalResult;
+	if(finalResult)
+		resistantUnitIds.insert(unitId);
+	else
+		resistantUnitIds.erase(unitId);
+	return finalResult;
 }
 
 BattleHexArray BattleSpellMechanics::rangeInHexes(const BattleHex & centralHex) const

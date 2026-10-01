@@ -402,6 +402,8 @@ private:
 
 		vstd::RNG * getRNG() override;
 		bool rollCombatAbility(const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance) override;
+		bool resolveAdverseCombatRoll(const BattleID & battleID, BattleSide side,
+			bool stochastic, bool adverseOnTrue, const std::function<bool()> & draw) override;
 
 		void apply(CPackForClient & pack) override;
 

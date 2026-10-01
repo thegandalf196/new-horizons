@@ -473,7 +473,19 @@ float spellApplicationChance(const Mechanics * spellMechanics, const battle::Uni
 {
 	if(!spellMechanics || !unit || !spellMechanics->isNegativeSpell() || !spellMechanics->isMagicalEffect())
 		return 1.0f;
-	return 1.0f - static_cast<float>(std::clamp(unit->magicResistance(), 0, 100)) / 100.0f;
+	float chance = 1.0f - static_cast<float>(std::clamp(unit->magicResistance(), 0, 100)) / 100.0f;
+	const auto * battle = spellMechanics->battle();
+	if(!battle || !battle->getBattle() || chance <= 0.0f || chance >= 1.0f)
+		return chance;
+	const auto recipientSide = battle->playerToSide(battle->battleGetOwner(unit));
+	const auto casterSide = spellMechanics->isMagicMirror()
+		? battle->otherSide(spellMechanics->getCasterSide()) : spellMechanics->getCasterSide();
+	if((recipientSide == BattleSide::ATTACKER || recipientSide == BattleSide::DEFENDER)
+		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
+		&& recipientSide != casterSide
+		&& battle->getBattle()->getAdverseCombatRerollState(recipientSide).available())
+		chance *= chance;
+	return chance;
 }
 
 bool isSoulChainTargetUnit(const Mechanics * spellMechanics, const battle::Unit * unit)
@@ -983,8 +995,7 @@ std::vector<Target> stormOfDaggersTargets(Mechanics * spellMechanics)
 				static_cast<uint64_t>(std::max<int64_t>(0, enemy->getAvailableHealth())));
 			const auto damageValue = AttackPossibility::calculateDamageReduce(
 				nullptr, enemy, cappedDamage, damageCache, battleState);
-			const int resistance = std::clamp(enemy->magicResistance(), 0, 100);
-			const float expectedHitChance = 1.0f - static_cast<float>(resistance) / 100.0f;
+			const float expectedHitChance = spellApplicationChance(spellMechanics, enemy);
 			rankedEnemies.push_back({enemy, damageValue * expectedHitChance});
 		}
 		if(rankedEnemies.size() < targetCount)
@@ -1929,9 +1940,7 @@ float SpellTargetEvaluator::naturePoisonPlacementValue(const Mechanics * spellMe
 	// resistance roll before applying this physical status. Existing Poison
 	// continues regardless of this cast's outcome, so discount only the
 	// incremental candidate value.
-	float applicationChance = 1.0f;
-	if(spellMechanics->isNegativeSpell() && spellMechanics->isMagicalEffect())
-		applicationChance -= static_cast<float>(std::clamp(liveTarget->magicResistance(), 0, 100)) / 100.0f;
+	const float applicationChance = spellApplicationChance(spellMechanics, liveTarget);
 
 	return incrementalValue * applicationChance;
 }
@@ -2036,9 +2045,7 @@ float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMech
 	// The initial hostile magical application can be resisted. Automatic spread
 	// is a propagation event, so it uses the runtime's receptor filter without a
 	// second probabilistic resistance roll.
-	float applicationChance = 1.0f;
-	if(spellMechanics->isNegativeSpell() && spellMechanics->isMagicalEffect())
-		applicationChance -= static_cast<float>(std::clamp(liveTarget->magicResistance(), 0, 100)) / 100.0f;
+	const float applicationChance = spellApplicationChance(spellMechanics, liveTarget);
 
 	return totalValue * applicationChance;
 }

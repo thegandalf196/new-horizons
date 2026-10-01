@@ -2,6 +2,31 @@
 
 ## Purpose
 
+### 2026-10-01 Twist of Fate — actual-runtime fixture header
+
+Production compile77876 and32 focused regressions pass, but new-fixture
+compile59606 exits1 (`UP089-runtime-fixture-build.log`): the Chain Lightning
+case calls `setTestSpellPointTotal` without its direct SpellPointTestUtils header.
+Add the fixture header only; do not modify Mana rules or weaken the runtime
+assertion. Preserve the failed log and record the succeeding compile/native
+gate separately. The perk remains planned; this is not completed coverage.
+
+Repaired compile16551 exits0. Native64569 passes34/35, zero skips in9.596s
+(`UP089-runtime-focused.log`/`.xml`); the new chain case fails before casting
+because `castOn` rejects its setup. Forecast and detached-branch cases pass.
+Independent review also requires an explicit second chain hop and unchanged
+secondary HP when the primary reroll resists, so the test cannot pass with
+post-preparation resistance. Trace the cast rejection and repair only evidenced
+fixture setup; do not bypass ordinary spell availability or casting legality.
+
+The fixture had not started the combat round after battle setup. Add the normal
+`beginCombat()` transition before resetting the seeded RNG, and an explicit
+secondary enemy plus unchanged-HP assertion. Both-target4456 exits0; native24774
+passes3/3, then final native34416 passes35/35, zero skips in9.458s
+(`UP089-runtime-verified.log`/`.xml`). Independent repair review has no blocker.
+Casting legality is preserved and the chain timing assertion is strengthened.
+This verifies the bounded runtime slice, not missing scripted hostile procs.
+
 ### 2026-10-01 Chain of Fortune — first native gate
 
 Both-target build74505 passes (`UP087-build.log`). Native99946 passes24/26,

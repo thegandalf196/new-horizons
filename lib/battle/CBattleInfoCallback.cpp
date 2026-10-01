@@ -554,7 +554,12 @@ int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & a
 	const auto dice = rules.diceSize;
 	if(chances.empty() || dice <= 0)
 		return normal;
-	const double chance = std::clamp(static_cast<double>(chances[std::min<size_t>(std::abs(luck), chances.size()) - 1]) / dice, 0.0, 1.0);
+	double chance = std::clamp(static_cast<double>(chances[std::min<size_t>(std::abs(luck), chances.size()) - 1]) / dice, 0.0, 1.0);
+	// Forecast this attack's first adverse result. Deterministic outcomes do not
+	// spend an allowance; positive Luck is not an adverse result for this army.
+	if(luck < 0 && chance > 0.0 && chance < 1.0
+		&& getBattle()->getAdverseCombatRerollState(side).available())
+		chance *= chance;
 	auto rolled = attack;
 	rolled.luckyStrike = luck > 0;
 	rolled.unluckyStrike = luck < 0;

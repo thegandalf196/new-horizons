@@ -919,7 +919,14 @@ bool BattleFlowProcessor::tryActivateMoralePenalty(const CBattleInfoCallback & b
 	if(!next->hadMorale && !next->waited() && nextStackMorale < 0)
 	{
 		ObjectInstanceID ownerArmy = battle.getBattle()->getSideArmy(next->unitSide())->id;
-		if (gameHandler->randomizer->rollBadMorale(ownerArmy, -nextStackMorale))
+		const auto affectedSide = battle.playerToSide(battle.battleGetOwner(next));
+		const auto drawBadMorale = [this, ownerArmy, nextStackMorale]()
+		{
+			return gameHandler->randomizer->rollBadMorale(ownerArmy, -nextStackMorale);
+		};
+		const bool badMorale = owner->resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), affectedSide,
+			gameHandler->randomizer->isBadMoraleRollStochastic(-nextStackMorale), true, drawBadMorale);
+		if(badMorale)
 		{
 			//unit loses its turn - empty freeze action
 			BattleAction ba;
@@ -1815,8 +1822,15 @@ void BattleFlowProcessor::stackTurnTrigger(const CBattleInfoCallback & battle, c
 		{
 			int chance = st->valOfBonuses(BonusType::FEARFUL);
 			ObjectInstanceID opponentArmyID = battle.battleGetArmyObject(battle.otherSide(st->unitSide()))->id;
+			const auto affectedSide = battle.playerToSide(battle.battleGetOwner(st));
+			const auto drawFearful = [this, opponentArmyID, chance]()
+			{
+				return gameHandler->randomizer->rollCombatAbility(opponentArmyID, chance);
+			};
+			const bool fearful = owner->resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), affectedSide,
+				chance > 0 && chance < 100, true, drawFearful);
 
-			if (gameHandler->randomizer->rollCombatAbility(opponentArmyID, chance))
+			if(fearful)
 			{
 				bte.effect = BonusType::FEARFUL;
 				gameHandler->sendAndApply(bte);

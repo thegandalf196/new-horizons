@@ -96,6 +96,7 @@ class DLL_LINKAGE GameRandomizer final : public IGameRandomizer
 	std::map<ObjectInstanceID, RandomGeneratorWithBias> combatAbilitySeed;
 
 	bool rollMoraleLuck(std::map<ObjectInstanceID, RandomGeneratorWithBias> & seeds, ObjectInstanceID actor, int moraleLuckValue, EGameSettings biasValue, EGameSettings diceSize, EGameSettings diceWeights);
+	bool isMoraleLuckRollStochastic(int magnitude, EGameSettings diceSize, EGameSettings diceWeights) const;
 
 public:
 	explicit GameRandomizer(const IGameInfoCallback & gameInfo);
@@ -110,8 +111,12 @@ public:
 	bool rollBadMorale(ObjectInstanceID actor, int moraleValue);
 	bool rollGoodLuck(ObjectInstanceID actor, int luckValue);
 	bool rollBadLuck(ObjectInstanceID actor, int luckValue);
+	bool isBadLuckRollStochastic(int magnitude) const;
+	bool isBadMoraleRollStochastic(int magnitude) const;
 
 	bool rollCombatAbility(ObjectInstanceID actor, int percentageChance);
+	/// Freeze fractional favorable-ability rounding once when a roll may be retried.
+	int prepareFavorableCreatureAbilityChance(const IBonusBearer & unit, int percentageChance);
 	bool rollFavorableCreatureAbility(ObjectInstanceID actor, const IBonusBearer & unit, int percentageChance);
 
 	CreatureID rollCreature() override;

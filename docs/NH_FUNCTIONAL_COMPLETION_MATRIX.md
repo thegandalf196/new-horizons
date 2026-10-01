@@ -28,6 +28,34 @@ AI forecasts are wired and verified. Coverage stays141/310,169 planned; Luck5/5.
 Deferred direct assertions: invalid-side resolver fallback and malformed current
 state decoding. No playable promotion or purpose-art approval is implied.
 
+UP-089 runtime source is now frozen for validation: attack/Morale and hostile
+chance abilities use the current harmed controller; suppression precedes the
+reroll, and fractional favorable-proc chance is prepared once. Spell MR uses
+cached first draws and one lazy final decision per actual recipient, covering
+chain preparation and late collateral without untargeted expenditure. Callback
+lifetime is scope-bound; prediction cannot spend authoritative state. Minimum
+AI source has local callback expenditure and first-event Luck/MR forecasts.
+Production compile77876 is running; a bounded actual-runtime fixture is being
+written separately. These are source claims only. Registration/counts remain
+unchanged, and longer conditional forecast sequences await Phase2 evidence.
+
+Production compile77876 exits0; existing focused native59072 passes32/32,
+zero skips in8.445s (`UP089-runtime-regressions.log`/`.xml`). Binary SHA-256
+`e1196ff56aa5e28adc2240fc7598099266a0d654b5a781abac1cec2bd0b2d7c2`.
+This is a regression pass, not evidence for the new fixture or full scope; actual
+runtime cases and independent review are pending. No count change is justified.
+
+Bounded runtime checkpoint is verified: both-target4456 exits0; final native34416
+passes35/35, zero skips in9.458s (`UP089-runtime-verified.log`/`.xml`), including
+actual lazy primary chain MR with unchanged secondary HP, first-event Luck
+forecasts and local AI callback isolation. Binary SHA-256
+`e6bd7c8ccd8ee258a953e1e4103005def3be6210b51ca3d7e56d5a7efba5b852`.
+Independent source/repair reviews have no blocker; earlier fixture failures are
+retained. Scripted Destruction/Transmutation/Death Stare and focused principal
+attack/Morale/proc/collateral callsite evidence remain required Phase1 work.
+Registration stays planned; coverage stays141/310 active,169 planned, Luck5/5.
+No playable delivery or art approval is implied by this dependency checkpoint.
+
 UP-087 Chain of Fortune is source/native verified. A positive friendly strike
 arms one+1 Luck benefit for the next different friendly stack's attack. Same
 source follow-ups retain it; unused benefits carry across rounds. Consumption

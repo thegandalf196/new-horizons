@@ -70,17 +70,29 @@ public:
 	bool counteringSelector(const Bonus * bonus) const;
 
 private:
+	struct ResistanceRoll
+	{
+		uint32_t unitId;
+		int probability;
+		bool resisted;
+		bool resolved = false;
+	};
+
 	std::shared_ptr<effects::Effects> effects;
 	std::shared_ptr<IReceptiveCheck> targetCondition;
 
 	battle::Units affectedUnits;
-	std::set<uint32_t> resistantUnitIds; // ids of units that would resist the spell (used in chain lightning computation)
+	mutable std::set<uint32_t> resistantUnitIds; // ids of units that would resist the spell (used in chain lightning computation)
+	mutable std::vector<ResistanceRoll> resistanceRolls;
+	ServerCallback * activeResistanceServer = nullptr;
+	vstd::RNG * activeResistanceRng = nullptr;
 	effects::Effects::EffectsToApply effectsToApply;
 
-	void beforeCast(BattleSpellCast & sc, vstd::RNG & rng, const Target & target);
+	BattleSide effectiveCasterSide() const;
+	void beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target);
 	battle::Units filterSpellLockedEffects(const Target & aimPoint);
-	bool isReflected(const battle::Unit * unit, vstd::RNG & rng);
-	void reflect(BattleSpellCast & sc, vstd::RNG & rng, const battle::Unit * unit);
+	bool isReflected(ServerCallback * server, const battle::Unit * unit, vstd::RNG & rng);
+	void reflect(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const battle::Unit * unit);
 	const battle::Unit * getRandomUnit(vstd::RNG & rng, const BattleSide & side);
 
 	battle::Units collectTargets() const;
