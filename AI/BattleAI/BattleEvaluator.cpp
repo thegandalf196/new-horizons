@@ -39,6 +39,7 @@
 #include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
@@ -304,6 +305,26 @@ float expectedTargetActivationValue(const battle::Unit * target,
 			nullptr, friendly, static_cast<uint64_t>(attackDamage), damageCache, projectedBattle)));
 	}
 	return bestActionValue;
+}
+
+float holdFastMoraleGrantValue(const CBattleInfoCallback & battle, const battle::Unit * original,
+	const battle::Unit * projected, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!original || !projected || !projectedBattle || !projected->alive()
+		|| original->unaffectedByMorale() || projected->unaffectedByMorale())
+		return 0.0f;
+
+	const float before = expectedMoraleActivationChange(battle, original);
+	if(before >= 0.0f)
+		return 0.0f;
+
+	// The shared floor bonus is already installed in the forecast copy. Value
+	// only the next activation's expected bad-Morale loss; the saved-rules
+	// trigger remains server-authoritative and no battle RNG is consumed here.
+	const float after = expectedMoraleActivationChange(*projectedBattle, projected);
+	const float recoveredActivationChance = std::max(0.0f, after - before);
+	return recoveredActivationChance * expectedTargetActivationValue(projected, damageCache, projectedBattle);
 }
 
 float expectedBerserkActivationValue(const battle::Unit * original, const battle::Unit * projected,
@@ -2835,7 +2856,8 @@ float publicEnemyHeroSpellThreat(const CBattleInfoCallback & battle, BattleSide 
 
 float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide side,
 	HeroCommand command, const std::vector<uint32_t> & targetIds,
-	std::optional<int> focusFireSnapshotPercent = std::nullopt)
+	std::optional<int> focusFireSnapshotPercent, const Environment * environment,
+	DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> realBattle)
 {
 	const auto perspective = battle.battleGetMySide();
 	const bool heroKnown = perspective == BattleSide::ALL_KNOWING || perspective == side;
@@ -2972,19 +2994,40 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 				if(enemy->isMeleeAttacker())
 					incoming = std::max(incoming, meleeDamage(enemy, own));
 		float value = incoming * holdPercent / 100.0f;
-		if(hero && hero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
-			newHorizonsIronDiscipline::PERK))
+		const bool hasIronDiscipline = hero && hero->hasActivePerk(newHorizonsIronDiscipline::SKILL,
+			newHorizonsIronDiscipline::PERK);
+		const bool hasHoldFast = newHorizonsDiscipline::hasHoldFast(hero);
+		const auto prepared = (hasIronDiscipline || hasHoldFast)
+			? battle.battlePrepareHeroOrderState(side, command, {}) : std::optional<HeroOrderState>();
+		if(hasIronDiscipline)
 		{
 			// Use the exact saved reduction that issuing Hold would snapshot.  The
 			// prepare query is read-only.  Threat estimation uses only public basic
 			// enemy-hero presence, visible allied health and visible creature spells.
-			const auto prepared = battle.battlePrepareHeroOrderState(side, command, {});
 			if(prepared && prepared->holdMagicalReductionBasisPoints > 0)
 			{
 				const auto visibleCreatureThreat = visibleCreatureSpellThreat(enemyUnits, true);
 				const auto publicHeroThreat = publicEnemyHeroSpellThreat(battle, side, ownUnits);
 				const auto magicalThreat = std::max(visibleCreatureThreat, publicHeroThreat);
 				value += magicalThreat * static_cast<float>(prepared->holdMagicalReductionBasisPoints) / 10000.0f;
+			}
+		}
+		if(hasHoldFast && prepared && environment && realBattle)
+		{
+			auto holdFastPreview = std::make_shared<HypotheticBattle>(environment, realBattle);
+			for(const auto & anchor : prepared->anchors)
+			{
+				const auto * unit = battle.battleGetUnitByID(anchor.unitId);
+				if(!unit || !unit->alive() || unit->isGhost()
+					|| battle.battleGetOwner(unit) != ownPlayer
+					|| unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+					|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+					|| unit->unaffectedByMorale() || battle.battleGetMorale(unit) >= 0)
+					continue;
+				auto projected = holdFastPreview->getForUpdate(unit->unitId());
+				projected->addUnitBonus(std::vector<Bonus>{
+					newHorizonsDiscipline::holdFastMoraleFloorBonus()});
+				value += holdFastMoraleGrantValue(battle, unit, projected.get(), damageCache, holdFastPreview);
 			}
 		}
 		return value;
@@ -3141,7 +3184,10 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	if(command == secondWindCommand() && targetIds.size() == 1)
 	{
 		const auto * target = battle.battleGetUnitByID(targetIds.front());
-		if(!isEligibleOrderUnit(battle, side, target) || !target->moved(0))
+		const bool canonicalRules = heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules());
+		const bool hasSpentActivation = target
+			&& (target->moved(0) || (canonicalRules && target->defended()));
+		if(!isEligibleOrderUnit(battle, side, target) || !hasSpentActivation)
 			return 0.0f;
 		float extraAttack = 0.0f;
 		for(const auto * enemy : enemyUnits)
@@ -3155,7 +3201,8 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 }
 
 bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
-	const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack)
+	const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack,
+	DamageCache & damageCache)
 {
 	if(!stack || stack->defended()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack))
@@ -3163,7 +3210,8 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	const auto * hero = battle->battleGetOwnerHero(stack);
 	const int bulwarkRank = newHorizonsBulwark::rank(hero);
 	const int paviseReduction = newHorizonsCombatSkills::paviseReductionPercent(hero);
-	if(bulwarkRank == 0 && paviseReduction == 0)
+	const bool hasHoldFast = newHorizonsDiscipline::hasHoldFast(hero);
+	if(bulwarkRank == 0 && paviseReduction == 0 && !hasHoldFast)
 		return false;
 
 	auto defendedPreview = std::make_shared<HypotheticBattle>(environment, battle);
@@ -3171,6 +3219,14 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	if(!projectedTarget)
 		return false;
 	projectedTarget->defending = true;
+	float holdFastMoraleValue = 0.0f;
+	if(hasHoldFast && !stack->unaffectedByMorale() && battle->battleGetMorale(stack) < 0)
+	{
+		projectedTarget->addUnitBonus(std::vector<Bonus>{
+			newHorizonsDiscipline::holdFastMoraleFloorBonus()});
+		holdFastMoraleValue = holdFastMoraleGrantValue(
+			*battle, stack, projectedTarget.get(), damageCache, defendedPreview);
+	}
 	struct IncomingThreat
 	{
 		const battle::Unit * enemy = nullptr;
@@ -3450,7 +3506,7 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 		reflectedDamage += std::min<int64_t>(projectedEnemy->getAvailableHealth(), reflected);
 	}
 
-	const float defendValue = damagePrevented + preemptiveValue + reflectedDamage;
+	const float defendValue = damagePrevented + preemptiveValue + reflectedDamage + holdFastMoraleValue;
 	int64_t swampRenewalValue = 0;
 	if(newHorizonsBulwark::hasSwampRenewal(hero) && remainingHealth > 0 && swampRenewalDamage > 0)
 	{
@@ -3779,7 +3835,7 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
 	if(stack->acquireState()->waitedThisTurn)
 		return BattleAction::makeDefend(stack);
 
-	if(defensiveStanceMakesDefendWorthwhile(env.get(), hb, stack))
+	if(defensiveStanceMakesDefendWorthwhile(env.get(), hb, stack, damageCache))
 		return BattleAction::makeDefend(stack);
 	return BattleAction::makeWait(stack);
 }
@@ -4356,14 +4412,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
 		riposteCommand(), braceCommand()})
 	{
-		if(cb->getBattle(battleID)->battleCanUseHeroCommand(side, command))
+		const auto battleView = cb->getBattle(battleID);
+		if(battleView->battleCanUseHeroCommand(side, command))
 		{
 			PossibleSpellcast candidate;
 			candidate.command = command;
-			if(heroCommands::isCanonicalRules(cb->getBattle(battleID)->getBattle()->getHeroCommandRules()))
+			if(heroCommands::isCanonicalRules(battleView->getBattle()->getHeroCommandRules()))
 			{
 				candidate.commandHeuristicValue = canonicalOrderHeuristic(
-					*cb->getBattle(battleID), side, command, {});
+					*battleView, side, command, {}, std::nullopt, env.get(), damageCache, battleView);
 				if(candidate.commandHeuristicValue <= 0.0f)
 					continue;
 			}
@@ -4376,6 +4433,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		{
 			if(!commandTargetIsLegal(*cb->getBattle(battleID), side, command, targetIds))
 				continue;
+			const auto battleView = cb->getBattle(battleID);
 
 			PossibleSpellcast candidate;
 			candidate.command = command;
@@ -4387,7 +4445,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				candidate.focusFire = cb->getBattle(battleID)->battlePrepareFocusFireState(side, targetIds.front());
 				if(!candidate.focusFire)
 					continue;
-				const auto battleView = cb->getBattle(battleID);
 				const auto & recipients = candidate.focusFire->recipientUnitIds;
 				const bool hasRemainingShooter = std::any_of(recipients.begin(), recipients.end(), [&](uint32_t id)
 				{
@@ -4412,14 +4469,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(!hasRemainingShooter && !hasRemainingCombinedArmsMelee)
 					continue;
 				candidate.commandHeuristicValue = canonicalOrderHeuristic(
-					*battleView, side, command, targetIds, candidate.focusFire->rangedDamagePercent);
+					*battleView, side, command, targetIds, candidate.focusFire->rangedDamagePercent,
+					env.get(), damageCache, battleView);
 				if(candidate.commandHeuristicValue <= 0.0f)
 					continue;
 			}
 			else
 			{
 				candidate.commandHeuristicValue = canonicalOrderHeuristic(
-					*cb->getBattle(battleID), side, command, targetIds);
+					*battleView, side, command, targetIds, std::nullopt, env.get(), damageCache, battleView);
 				if(candidate.commandHeuristicValue <= 0.0f)
 					continue;
 			}

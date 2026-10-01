@@ -2,6 +2,39 @@
 
 ## Purpose
 
+### 2026-10-01 Hold Fast — fixture callback type
+
+Both-target77264 exits1 (`UP092-build.log`). Production compiles; the new fixture
+passes battleActiveUnit's `const battle::Unit *` to an action helper unnecessarily
+restricted to `const CStack *` (line195). Use the callback Unit contract, not a
+downcast or permissive compiler flag. The worker also strengthens Hold Line from
+Wait (which skips bad Morale) to an accepted Move followed by a normal activation.
+Preserve the original failure; no native pass or feature activation is claimed.
+
+Repaired both-target80348 exits0 (`UP092-repaired-build.log`). Native88734 passes
+5/6, zero skips (`UP092-principal.log`/`.xml`): actual Defend/Hold Line Morale
+gates, continuation/round/Time Stop boundaries, serialization and branch isolation
+pass. The accepted Second Wind setup fails its ordinary command-capability check.
+Trace and repair the fixture's rank/action availability without bypassing command
+validation or weakening the genuine-activation assertion. Registration stays planned.
+
+Trace found an existing canonical mismatch, not a missing Skill rank: Second Wind
+requires `moved()`, while accepted Defend sets `defending` but not `movedThisRound`.
+The canonical Order accepts a completed normal Creature Activation, including
+Defend. Root retains the accepted Defend→Second Wind test rather than replacing
+the real grant with an injected test bonus. Repair only canonical target
+validation and its AI heuristic to accept Defended stacks; preserve legacy
+validation and existing queue flags. No global Defend bookkeeping rewrite.
+
+Independent review also found original-side Second Wind lookups that missed a
+hypnotized recipient's controller. Repair shared/live/detached activation, hazard
+and action-end state lookup, and remove the redundant Defend grant comparison
+against original action.side (the request path already authenticates current
+owner). Final both-target2758 exits0. Principal85726 passes7/7; activated69879
+passes28/28, zero skips in8.612s. Independent repaired-source review has no blocker;
+the actual hypnosis case verifies grants, expiry, branch isolation and completion.
+Registration is now active. The earlier failures remain retained above.
+
 ### 2026-10-01 Standard Bearer — configured Morale caps
 
 Both-target68249 exits0 (`UP091-standard-bearer-build.log`). Native17745 passes

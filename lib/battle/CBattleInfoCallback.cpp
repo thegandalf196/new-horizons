@@ -418,7 +418,10 @@ bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, Batt
 		return false;
 	if(reason != BattleUnitTurnReason::HERO_COMMAND)
 		return true;
-	const auto order = battleGetHeroOrderState(unit->unitSide());
+	const auto controllerSide = playerToSide(battleGetOwner(unit));
+	if(controllerSide != BattleSide::ATTACKER && controllerSide != BattleSide::DEFENDER)
+		return false;
+	const auto order = battleGetHeroOrderState(controllerSide);
 	return order && order->command == HeroCommand::SECOND_WIND && order->secondWindActive
 		&& order->primaryTargetUnitId == unit->unitId();
 }
@@ -784,7 +787,10 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 		if(targetUnitIds.size() != 1)
 			return {};
 		const auto * target = battleGetUnitByID(targetUnitIds.front());
-		if(!ownCombatUnit(target) || !target->moved())
+		const bool canonicalRules = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules());
+		const bool hasSpentActivation = target
+			&& (target->moved() || (canonicalRules && target->defended()));
+		if(!ownCombatUnit(target) || !hasSpentActivation)
 			return {};
 		result.primaryTargetUnitId = target->unitId();
 		return result;

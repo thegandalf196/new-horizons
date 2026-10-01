@@ -1092,6 +1092,8 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	CStack * st = getStack(activeStack);
 	if(battleBeginsActivation(st, reason))
 	{
+		st->removeBonusesRecursive(CSelector(Bonus::UntilNextCreatureActivation));
+
 		// Second Wind is a genuine activation too, but must not broaden the
 		// lifetime of unrelated legacy STACK_GETS_TURN bonuses.
 		st->removeBonusesRecursive(CSelector([](const Bonus * bonus)
@@ -1121,11 +1123,19 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		&& reason != BattleUnitTurnReason::UNIT_SPELLCAST;
 	if(reason == BattleUnitTurnReason::HERO_COMMAND)
 	{
-		const auto & orderState = sides.at(st->unitSide()).orderState;
-		newActivation = orderState
-			&& orderState->command == HeroCommand::SECOND_WIND
-			&& orderState->secondWindActive
-			&& orderState->primaryTargetUnitId == unitId;
+		newActivation = false;
+		if(st)
+		{
+			const auto controllerSide = playerToSide(battleGetOwner(st));
+			if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
+			{
+				const auto & orderState = sides.at(controllerSide).orderState;
+				newActivation = orderState
+					&& orderState->command == HeroCommand::SECOND_WIND
+					&& orderState->secondWindActive
+					&& orderState->primaryTargetUnitId == unitId;
+			}
+		}
 	}
 	if(newActivation)
 	{

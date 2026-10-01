@@ -94,6 +94,9 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(h.saving && type == BonusType::PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SHIELD_OF_CHAOS_PHYSICAL_REDUCTION))
 			throw std::runtime_error("Cannot discard New Horizons Shield of Chaos physical reduction state");
+		if(h.saving && (duration & BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION) != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_ACTIVATION_DURATION))
+			throw std::runtime_error("Cannot discard New Horizons creature activation bonus duration");
 		h & duration;
 		h & type;
 		h & subtype;
@@ -172,6 +175,11 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	static bool UntilActivationEnds(const Bonus *hb)
 	{
 		auto set = hb->duration & BonusDuration::STACK_ACTIVATION;
+		return set != 0;
+	}
+	static bool UntilNextCreatureActivation(const Bonus *hb)
+	{
+		auto set = hb->duration & BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION;
 		return set != 0;
 	}
 	static bool UntilAttack(const Bonus *hb)

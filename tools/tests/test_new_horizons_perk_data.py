@@ -31,6 +31,7 @@ ACTIVE_PERKS = {
     "new-horizons:command.combinedArms",
     "new-horizons:battlecraft.reserve",
     "new-horizons:discipline.standardBearer",
+    "new-horizons:discipline.holdFast",
     "new-horizons:command.aggressiveCommander",
     "new-horizons:command.defensiveCommander",
     "new-horizons:command.veteranCommander",

@@ -14,7 +14,26 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-Current verified checkpoint: Discipline Standard Bearer is active and Phase1
+Current verified checkpoint: Discipline Hold Fast is active and Phase1 complete.
+Authoritative Defend and captured Hold the Line recipients receive an isolated
+MINIMUM_MORALE zero floor until the next genuine Creature Activation. The generic
+duration has parser/schema/docs and an append-only save feature with downgrade
+rejection; live and detached expiry preserve continuations and stopped queues.
+Second Wind now recognizes canonical Defend completion and uses the current
+controller throughout activation/start/end bookkeeping. Existing queue flags and
+legacy target eligibility remain unchanged. Combat logs and AI forecasts consume
+the shared grant. Both-target2758 exits0; principal85726 passes7/7; activated
+native69879 passes28/28, zero skips in8.612s (`UP092-verified.log`/`.xml`). Binary:
+`a20a31dee29b913dec0a59c64554e318093c9555858513839ec70aa6700d9bab`.
+Data/inventory19/19 pass; independent duration, production, fixture and controller
+reviews have no remaining blocker. Coverage145→146/310 active, planned165→164;
+Discipline4active/6planned. Purpose-made art Not done; no playable promotion.
+Phase2: future harmful consumers must extend Purify's temporary-duration mask;
+control changes during an activation, cross-perk Morale forecast correlations,
+and full battle-snapshot interactions remain separate integration evidence.
+Next: Fearless source-aware immunity to non-magical fear, mapped read-only.
+
+Previous verified checkpoint: Discipline Standard Bearer is active and Phase1
 complete. Shared contextual Morale adds one+1 before caps/MIN, preserving immune
 and MAX handling. It queries live or candidate occupied footprints/current control
 without cached sibling-dependent bonuses. Both real Morale gates, four AI status
@@ -655,7 +674,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 145/310 | 165 planned; Standard Bearer is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 146/310 | 164 planned; Hold Fast is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -792,7 +811,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
 | War Machines | 3/0 | 0/10 | Progression blocked |
-| Discipline | 3/0 | 3/7 | Inspirational Leader, Rally and Standard Bearer active. Standard Bearer has real positive/negative Morale, current-control and branch-local adjacency evidence. Seven perks remain planned; Hold Fast is next. Esprit de Corps awaits composition-penalty scope clarification. |
+| Discipline | 3/0 | 4/6 | Inspirational Leader, Rally, Standard Bearer and Hold Fast active. Hold Fast has real Defend/Hold Line gates, genuine activation expiry, canonical Defend→Second Wind and current-controller live/detached evidence. Six perks remain planned; Fearless is next. Esprit de Corps awaits composition-penalty scope clarification. |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
 | Light Magic | 3/0 | 7/3 | Benediction, Healer, Guardian, Aegis, Purifier, Retributionist, and Crusader active; Sanctuary Keeper, Litany and Miracle Worker remain planned. Crusader has focused native evidence. |

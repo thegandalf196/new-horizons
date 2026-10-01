@@ -14,6 +14,9 @@ Bonus may have any of these durations. They acts in disjunction.
 - UNTIL_ATTACK:  removed after each attack or counterattack in an exchange between creatures (towers and war machines included)
 - STACK_GETS_TURN: removed when stack gets its turn - used for defensive stance
 - STACK_ACTIVATION: remains active through the stack's next creature activation and is removed after its accepted unit action
+- UNTIL_NEXT_CREATURE_ACTIVATION: removed when the affected stack's next genuine
+  Creature Activation begins, after pre-activation bad Morale is resolved.
+  Hero/creature spell continuations do not expire it; Second Wind does.
 - COMMANDER_KILLED
 - UNTIL_OWN_ATTACK: removed after attack (not counterattack) is performed
 - UNTIL_TAKING_INDIRECT_DAMAGE: removed after unit takes indirect damage (anything except direct meele and range attacks of creatures, towers or war machines)

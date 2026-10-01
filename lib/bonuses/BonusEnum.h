@@ -280,9 +280,9 @@ static_assert(static_cast<int>(BonusType::SPELL_DAMAGE_REDUCTION) == 50 && stati
 
 namespace BonusDuration  //when bonus is automatically removed
 {
-	// We use uint16_t directly because std::bitset<11> eats whole 8 byte word.
+	// We use uint16_t directly because std::bitset<15> eats whole 8 byte word.
 	using Type = uint16_t;
-	constexpr size_t Size = 14;
+	constexpr size_t Size = 15;
 
 	enum BonusDuration : Type {
 		PERMANENT = 1 << 0,
@@ -299,7 +299,8 @@ namespace BonusDuration  //when bonus is automatically removed
 		UNTIL_TAKING_INDIRECT_DAMAGE = 1 << 11 /*removed after unit takes indirect damage (any damage except melee or range creature attacks, tower or ballista damage)*/,
 		UNTIL_AFTER_ATTACK_SEQUENCE = 1 << 12 /*removed on both the attacker and defendant after a full attacks and counterattack sequence is performed
 							(including creature attacks, towers and war machines)*/,
-		STACK_ACTIVATION = 1 << 13 /*active through the stack's next creature activation; removed after its accepted unit action*/
+		STACK_ACTIVATION = 1 << 13 /*active through the stack's next creature activation; removed after its accepted unit action*/,
+		UNTIL_NEXT_CREATURE_ACTIVATION = 1 << 14 /*removed when this stack's next genuine Creature Activation begins*/
 	};
 
 	extern JsonNode toJson(const Type & duration);

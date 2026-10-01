@@ -1670,15 +1670,18 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 			return;
 		}
 
-		if(const auto state = battle.battleGetHeroOrderState(actedStack->unitSide());
-			state && state->command == HeroCommand::SECOND_WIND && state->secondWindActive
-			&& state->primaryTargetUnitId == actedStack->unitId())
+		const auto controllerSide = battle.playerToSide(battle.battleGetOwner(actedStack));
+		if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
 		{
-			if(const auto * stateInfo = dynamic_cast<const BattleInfo *>(battle.getBattle()))
+			if(const auto state = battle.battleGetHeroOrderState(controllerSide);
+				state && state->command == HeroCommand::SECOND_WIND && state->secondWindActive
+				&& state->primaryTargetUnitId == actedStack->unitId())
 			{
-				const auto side = actedStack->unitSide();
-				if(const_cast<BattleInfo *>(stateInfo)->setHeroOrderSecondWindActive(side, false))
-					publishHeroOrderState(battle, side);
+				if(const auto * stateInfo = dynamic_cast<const BattleInfo *>(battle.getBattle()))
+				{
+					if(const_cast<BattleInfo *>(stateInfo)->setHeroOrderSecondWindActive(controllerSide, false))
+						publishHeroOrderState(battle, controllerSide);
+				}
 			}
 		}
 
@@ -1934,11 +1937,15 @@ void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 	bool secondWindActivation = false;
 	if(reason == BattleUnitTurnReason::HERO_COMMAND)
 	{
-		const auto state = battle.battleGetHeroOrderState(stack->unitSide());
-		secondWindActivation = state
-			&& state->command == HeroCommand::SECOND_WIND
-			&& state->secondWindActive
-			&& state->primaryTargetUnitId == stack->unitId();
+		const auto controllerSide = battle.playerToSide(battle.battleGetOwner(stack));
+		if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
+		{
+			const auto state = battle.battleGetHeroOrderState(controllerSide);
+			secondWindActivation = state
+				&& state->command == HeroCommand::SECOND_WIND
+				&& state->secondWindActive
+				&& state->primaryTargetUnitId == stack->unitId();
+		}
 	}
 	if(!stack->isTimeStopped()
 		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::MORALE || secondWindActivation)

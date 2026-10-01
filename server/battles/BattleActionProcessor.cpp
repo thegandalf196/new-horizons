@@ -12,6 +12,7 @@
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
@@ -1269,6 +1270,13 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 	buffer.push_back(tagBonus);
 
 	sse.toUpdate.emplace_back(ba.stackNumber, buffer);
+	const auto * defendingHero = battle.battleGetOwnerHero(stack);
+	const bool holdFastApplies = heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack)
+		&& newHorizonsDiscipline::hasHoldFast(defendingHero);
+	if(holdFastApplies && !stack->hasBonus(newHorizonsDiscipline::holdFastMoraleFloorBonusSelector()))
+		sse.toAdd.emplace_back(ba.stackNumber,
+			std::vector<Bonus>{newHorizonsDiscipline::holdFastMoraleFloorBonus()});
 	gameHandler->sendAndApply(sse);
 
 	// Publish the explicit provenance alongside the bonuses.  This is a state
@@ -1299,6 +1307,13 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 		paviseText.appendRawString("%s braces behind a Pavise, reducing ranged physical creature damage by 25% while Defending.");
 		stack->addNameReplacement(paviseText);
 		message.lines.push_back(std::move(paviseText));
+	}
+	if(holdFastApplies)
+	{
+		MetaString holdFastText;
+		holdFastText.appendRawString("Hold Fast lets %s treat negative Morale as 0 until its next Creature Activation.");
+		stack->addNameReplacement(holdFastText);
+		message.lines.push_back(std::move(holdFastText));
 	}
 
 	gameHandler->sendAndApply(message);
@@ -2277,6 +2292,7 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 		const auto state = battle.battleGetHeroOrderState(ba.side);
 		if(!state || state->command != ba.command)
 			return false;
+		size_t holdFastRecipientCount = 0;
 		if(ba.command == HeroCommand::RIPOSTE)
 		{
 			const auto * hero = battle.battleGetFightingHero(ba.side);
@@ -2299,9 +2315,45 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 					gameHandler->sendAndApply(update);
 			}
 		}
+		if(ba.command == HeroCommand::HOLD_THE_LINE
+			&& newHorizonsDiscipline::hasHoldFast(battle.battleGetFightingHero(ba.side)))
+		{
+			const auto currentOwner = battle.sideToPlayer(ba.side);
+			const auto holdFastSelector = newHorizonsDiscipline::holdFastMoraleFloorBonusSelector();
+			SetStackEffect update;
+			update.battleID = battle.getBattle()->getBattleID();
+			std::set<uint32_t> added;
+			for(const auto & anchor : state->anchors)
+			{
+				if(!added.insert(anchor.unitId).second)
+					continue;
+				const auto * unit = battle.battleGetUnitByID(anchor.unitId);
+				if(!unit || !unit->alive() || unit->isGhost()
+					|| battle.battleGetOwner(unit) != currentOwner
+					|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit))
+					continue;
+				++holdFastRecipientCount;
+				if(unit->hasBonus(holdFastSelector))
+					continue;
+				update.toAdd.emplace_back(unit->unitId(),
+					std::vector<Bonus>{newHorizonsDiscipline::holdFastMoraleFloorBonus()});
+			}
+			if(!update.toAdd.empty())
+				gameHandler->sendAndApply(update);
+		}
 		BattleLogMessage message;
 		message.battleID = battle.getBattle()->getBattleID();
 		message.lines.push_back(heroOrderLogLine(battle, ba.side, *state));
+		if(holdFastRecipientCount > 0)
+		{
+			MetaString holdFastText;
+			holdFastText.appendRawString("Hold Fast lets ");
+			holdFastText.appendNumber(holdFastRecipientCount);
+			holdFastText.appendRawString(holdFastRecipientCount == 1
+				? " friendly stack treat negative Morale as 0 until its next Creature Activation."
+				: " friendly stacks treat negative Morale as 0 until their next Creature Activation.");
+			message.lines.push_back(std::move(holdFastText));
+		}
 		gameHandler->sendAndApply(message);
 		return true;
 	}

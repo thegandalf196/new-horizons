@@ -1394,6 +1394,8 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		return;
 	if(battleBeginsActivation(unit.get(), reason))
 	{
+		unit->removeUnitBonus(CSelector(Bonus::UntilNextCreatureActivation));
+
 		// STACK_GETS_TURN is deliberately not globally broadened for HERO_COMMAND
 		// transitions. Gambler's own penalty ends on every genuine activation,
 		// including Second Wind, without expiring unrelated bonuses early.
@@ -1449,11 +1451,19 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		&& reason != BattleUnitTurnReason::UNIT_SPELLCAST;
 	if(reason == BattleUnitTurnReason::HERO_COMMAND)
 	{
-		const auto orderState = getHeroOrderState(unit->unitSide());
-		newActivation = orderState
-			&& orderState->command == HeroCommand::SECOND_WIND
-			&& orderState->secondWindActive
-			&& orderState->primaryTargetUnitId == unitId;
+		newActivation = false;
+		if(unit)
+		{
+			const auto controllerSide = playerToSide(battleGetOwner(unit.get()));
+			if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
+			{
+				const auto orderState = getHeroOrderState(controllerSide);
+				newActivation = orderState
+					&& orderState->command == HeroCommand::SECOND_WIND
+					&& orderState->secondWindActive
+					&& orderState->primaryTargetUnitId == unitId;
+			}
+		}
 	}
 	if(newActivation)
 	{

@@ -3702,7 +3702,7 @@
 								"requires": "advanced",
 								"description": "Friendly stacks that Defend or are affected by Hold the Line! treat negative Morale as 0 until their next activation.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Friendly stacks that Defend or are affected by Hold the Line! treat negative Morale as 0 until their next activation."
 								}
 							},
