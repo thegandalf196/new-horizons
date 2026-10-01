@@ -14,7 +14,23 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-Current verified checkpoint: Discipline Rally is active and Phase1 complete.
+Current verified checkpoint: Battlecraft Reserve is active and Phase1 complete.
+Only a delayed waited TURN_QUEUE activation grants +2 movement; Initiative is
+unchanged, continuations preserve it and terminal activation cleanup clears it.
+Current-controller selection and detached Wait candidates share the helper.
+An append-only version-gated BattleInfo sidecar and guarded UnitChanges preserve
+the field, while old loads default zero. Both-target34777 exits0; activated
+native69809 passes16/16, zero skips in4.778s (`UP091-activated-verified.log`/`.xml`),
+five Reserve cases plus seven Battlecraft and four Rally regressions. Binary SHA:
+`9fe6ca9152d6e666c651efbea2617ee173a5770b6c8100b571befa07030e6cce`.
+Data/inventory19/19 pass; coverage143→144/310 active, planned167→166;
+Battlecraft2/8. Independent reviewer spawning failed; root production review is
+recorded without claiming independent approval. Phase2: regenerate newly reachable
+attacks in the Wait-choice catalogue, and audit the pre-existing full unit-state
+binary snapshot contract. Purpose-made art Not done; playable delivery unpromoted.
+Next missing item: Standard Bearer dynamic adjacency Morale.
+
+Previous verified checkpoint: Discipline Rally is active and Phase1 complete.
 Independent side-long suppression, save/packet288, current-controller ownership,
 cached first RNG draw, cancellation before Twist, ordinary activation and
 hero-named log feedback are implemented. Detached AI copies/spends only its local
@@ -623,7 +639,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 140/310 | 170 planned; Gambler is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 144/310 | 166 planned; Reserve is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -758,7 +774,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Offense | 3/0 | 10/0 | Evidence audit required |
 | Armorer | 3/0 | 6/4 | Formation Fighting and Veteran have focused live/detached damage evidence. Four perks missing; Last Stand awaits design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
-| Battlecraft | 3/0 | 1/9 | Nine perks missing |
+| Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
 | War Machines | 3/0 | 0/10 | Progression blocked |
 | Discipline | 3/0 | 2/8 | Inspirational Leader and Rally active. Rally cancels the first actual bad-Morale trigger once per combat before Twist, with focused native/state/AI evidence. Eight perks remain planned. Esprit de Corps awaits composition-penalty scope clarification. |
 | Recruitment | 3/0 | 4/6 | Six perks missing |

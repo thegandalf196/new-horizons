@@ -2,6 +2,37 @@
 
 ## Purpose
 
+### 2026-10-01 Reserve — fixture compile and portable sidecar
+
+Both-target build25950 exits1 (`UP091-build.log`). The new fixture used an
+unqualified CUnitState and an invalid const_cast from battle::Unit to CStack.
+Repair the namespace and resolve the authoritative stack by unit ID. Review also
+found incomplete-CStack calls in the BattleInfo serialization template: move
+collection/restoration into compiled helpers rather than depending on permissive
+compiler behavior. Add the Reserve UnitChanges downgrade guard and test a legal
+perk offer with a local active rule before claiming coverage. No native gate or
+feature activation is implied by this failed build.
+
+Repaired both-target64222 exits0. Native66681 passes3/4 (`UP091-principal.log`
+and `.xml`): accepted Wait/delayed extra-reach movement, owner/reason gates and
+immobilization pass. The sidecar itself is present after binary roundtrip, but
+the assertion uses alive-only getStack on a CStack binary format that omits unit
+health. Inspect the saved field through ID lookup with onlyAlive=false; do not
+claim full unit-health snapshot migration. The bounded detached-AI ownership
+case is added before the next gate. Registration remains planned.
+
+Final fixture compile26032 exits0. Native91032 passes4/5; the AI case mistakenly
+uses the opposing player's callback, which correctly hides the controller hero.
+Use the current controller's PlayerColor(1) callback and assert that its hero is
+visible. Preserve the visibility boundary; do not expose enemy perk state to AI.
+
+Controller-view compile34777 exits0. Native55349 and activated native69809 both
+pass16/16 with zero skips; the final XML records4.778s. Five Reserve cases verify
+the real delayed movement, lifecycle gates, guarded state roundtrips, immunity
+and branch-local/controller-aware Wait forecasting. Registration is now active.
+Full binary unit-health/state persistence is not certified by the Reserve sidecar
+test and remains a separate Phase2 audit; wider Wait-choice planning is deferred.
+
 ### 2026-10-01 Twist of Fate — actual-runtime fixture header
 
 Production compile77876 and32 focused regressions pass, but new-fixture

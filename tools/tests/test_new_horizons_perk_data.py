@@ -29,6 +29,7 @@ ACTIVE_PERKS = {
     "new-horizons:wisdom.archmage",
     "new-horizons:wisdom.mysticism",
     "new-horizons:command.combinedArms",
+    "new-horizons:battlecraft.reserve",
     "new-horizons:command.aggressiveCommander",
     "new-horizons:command.defensiveCommander",
     "new-horizons:command.veteranCommander",

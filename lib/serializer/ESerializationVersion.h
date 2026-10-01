@@ -132,12 +132,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_CHAIN_OF_FORTUNE, // pending different-stack Luck gift and round trigger limit
 	NEW_HORIZONS_ADVERSE_COMBAT_REROLL, // side-owned once-per-battle adverse stochastic reroll
 	NEW_HORIZONS_RALLY, // side-owned once-per-battle cancellation of a negative Morale trigger
+	NEW_HORIZONS_RESERVE, // per-stack activation-scoped movement bonus after Waiting
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_RALLY,
+	CURRENT = NEW_HORIZONS_RESERVE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -233,3 +234,5 @@ static_assert(ESerializationVersion::NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS > E
 	"Time Stop Hero Action pass metadata must remain absent from older Time Stop snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_BLOODRAGE > ESerializationVersion::NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS,
 	"Bloodrage battle state must remain absent from older Time Stop snapshots");
+static_assert(ESerializationVersion::NEW_HORIZONS_RESERVE > ESerializationVersion::NEW_HORIZONS_RALLY,
+	"Reserve movement state must remain absent from older New Horizons snapshots");

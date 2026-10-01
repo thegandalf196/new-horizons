@@ -13,6 +13,7 @@
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
@@ -1476,6 +1477,10 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 				&& !newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
 		}));
 
+	if(battleBeginsActivation(unit.get(), reason))
+		unit->setActivationMovementBonus(newHorizonsBattlecraft::delayedActivationMovementBonus(
+			battleGetOwnerHero(unit.get()), unit.get(), reason));
+
 	unit->afterGetsTurn(reason);
 }
 
@@ -1834,6 +1839,8 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 
 	resetActiveUnit();
 	unit->afterWait();
+	unit->setActivationMovementBonus(newHorizonsBattlecraft::delayedActivationMovementBonus(
+		battleGetOwnerHero(unit.get()), unit.get(), BattleUnitTurnReason::TURN_QUEUE));
 }
 
 HypotheticBattle::HypotheticServerCallback::HypotheticServerCallback(HypotheticBattle * owner_)

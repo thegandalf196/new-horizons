@@ -938,6 +938,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	const CreatureID previousOriginalCreature = battleFormOriginalCreature();
 
 	cloned = other.cloned;
+	activationMovementBonus = other.activationMovementBonus;
 	defending = other.defending;
 	drainedMana = other.drainedMana;
 	fear = other.fear;
@@ -1481,8 +1482,17 @@ ui32 CUnitState::getMovementRange(int turn) const
 	if (immobilizedPerTurn.getValue(0) != 0)
 		return 0;
 
-	const int64_t movementRange = stackSpeedPerTurn.getValue(0) + movementRangePerTurn.getValue(0) + (env ? env->unitFortuneSpeed(this) : 0);
+	const int64_t movementRange = stackSpeedPerTurn.getValue(0) + movementRangePerTurn.getValue(0)
+		+ (env ? env->unitFortuneSpeed(this) : 0)
+		+ (turn == 0 ? activationMovementBonus : 0);
 	return static_cast<ui32>(std::max<int64_t>(0, movementRange));
+}
+
+void CUnitState::setActivationMovementBonus(int32_t value)
+{
+	if(value < 0)
+		throw std::runtime_error("Invalid negative activation movement bonus");
+	activationMovementBonus = value;
 }
 
 ui32 CUnitState::getMovementRange() const
@@ -1730,6 +1740,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("waiting", waiting);
 	handler.serializeBool("waitedThisTurn", waitedThisTurn);
 	handler.serializeBool("battlecraftWaitBonusUsed", battlecraftWaitBonusUsed);
+	handler.serializeInt("activationMovementBonus", activationMovementBonus, 0);
+	if(activationMovementBonus < 0)
+		throw std::runtime_error("Invalid negative activation movement bonus");
 	handler.serializeInt("defensiveStanceMeleeBonus", defensiveStanceMeleeBonus, 0);
 	handler.serializeInt("defensiveStanceRangedBonus", defensiveStanceRangedBonus, 0);
 	handler.serializeBool("bulwarkPreemptiveUsed", bulwarkPreemptiveUsed);
@@ -1830,6 +1843,7 @@ void CUnitState::localInit(const IUnitEnvironment * env_)
 void CUnitState::reset()
 {
 	cloned = false;
+	activationMovementBonus = 0;
 	defending = false;
 	drainedMana = false;
 	fear = false;
@@ -2276,6 +2290,7 @@ void CUnitState::afterNewRound(bool isFirstRound)
 	}
 
 	defending = false;
+	activationMovementBonus = 0;
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
 	bulwarkPreemptiveUsed = false;
@@ -2317,6 +2332,7 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 void CUnitState::makeGhost()
 {
 	endBattleForm();
+	activationMovementBonus = 0;
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
 	veteranPhysicalDamageSinceActivation = 0;
@@ -2333,6 +2349,7 @@ void CUnitState::makeGhost()
 void CUnitState::onRemoved()
 {
 	endBattleForm();
+	activationMovementBonus = 0;
 	// Keep the remains ledger on a ghost until the battle result is captured.
 	// Ghost stacks can be removed from the battlefield before the final result
 	// is assembled; clearing the ledger here would make those direct-hit

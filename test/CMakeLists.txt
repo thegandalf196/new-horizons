@@ -297,6 +297,7 @@ set(test_SRCS
 		server/battles/NewHorizonsAdverseCombatRerollTest.cpp
 		server/battles/NewHorizonsTwistRuntimeTest.cpp
 		server/battles/NewHorizonsRallyTest.cpp
+		server/battles/NewHorizonsReserveTest.cpp
 		server/battles/NewHorizonsTwistScriptedTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp
 		server/battles/NewHorizonsQuicksandTest.cpp

@@ -235,6 +235,11 @@ public:
 	/// Whether the one-shot Battlecraft Wait damage bonus has already been spent this round.
 	/// The availability is the conjunction of waitedThisTurn and !battlecraftWaitBonusUsed.
 	bool battlecraftWaitBonusUsed;
+	/// Temporary Speed granted only for this unit's delayed activation after Waiting.
+	/// Cleared when the authoritative Creature Activation ends; unlike a timed bonus,
+	/// it does not affect initiative or later activations.
+	int32_t getActivationMovementBonus() const { return activationMovementBonus; }
+	void setActivationMovementBonus(int32_t value);
 	/// Creature Defense supplied by the authoritative Defend action.  This is
 	/// recorded explicitly because duration alone is not provenance: another
 	/// temporary effect may also use STACK_GETS_TURN.
@@ -450,6 +455,7 @@ private:
 	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
 		DamageProvenance provenance = DamageProvenance::OTHER);
 	const IUnitEnvironment * env;
+	int32_t activationMovementBonus = 0;
 	int64_t phantomInitialIntegrity = 0;
 	int64_t phantomIntegrity = 0;
 	int32_t phantomRoundsRemaining = 0;

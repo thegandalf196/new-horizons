@@ -1886,8 +1886,15 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 void GameStatePackVisitor::visitEndAction(EndAction & pack)
 {
 	if(pack.endsFortuneActivation)
+	{
+		auto * battle = gs.getBattle(pack.battleID);
+		if(!battle)
+			throw std::runtime_error("EndAction references a missing battle");
+		if(auto * activeStack = battle->getStack(battle->activeStack, false))
+			activeStack->setActivationMovementBonus(0);
 		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-			gs.getBattle(pack.battleID)->getSide(side).sylvanLuck.endActivation();
+			battle->getSide(side).sylvanLuck.endActivation();
+	}
 }
 
 void GameStatePackVisitor::visitStartAction(StartAction & pack)

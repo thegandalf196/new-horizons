@@ -6,6 +6,8 @@
 #include "StdInc.h"
 #include "NewHorizonsBattlecraft.h"
 
+#include "CUnitState.h"
+#include "NewHorizonsCombatSkills.h"
 #include "../mapObjects/CGHeroInstance.h"
 
 namespace newHorizonsBattlecraft
@@ -38,5 +40,18 @@ int defendReductionPercent(const CGHeroInstance * hero)
 {
 	const int value = rankPercent(rank(hero));
 	return value > 0 ? value + (hasEntrench(hero) ? 5 : 0) : 0;
+}
+
+int delayedActivationMovementBonus(const CGHeroInstance * hero, const battle::CUnitState * stack,
+	BattleUnitTurnReason reason)
+{
+	if(!hero || !stack || reason != BattleUnitTurnReason::TURN_QUEUE
+		|| !stack->alive() || stack->isGhost()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack)
+		|| stack->unitSlot() == SlotID::WAR_MACHINES_SLOT
+		|| !stack->waiting || !stack->waitedThisTurn)
+		return 0;
+
+	return hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.reserve") ? 2 : 0;
 }
 }

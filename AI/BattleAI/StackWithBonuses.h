@@ -297,7 +297,17 @@ public:
 			throw std::runtime_error("Adverse combat reroll expenditure without an enabled perk");
 		adverseRerollStates.at(side) = state;
 	}
-	void endFortuneActivation() { for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER}) fortuneStates.at(side).endActivation(); }
+	void endFortuneActivation()
+	{
+		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			fortuneStates.at(side).endActivation();
+		if(activeUnitId >= 0)
+		{
+			const auto unitId = static_cast<uint32_t>(activeUnitId);
+			if(stackStates.contains(unitId) || subject->battleGetUnitByID(unitId))
+				getForUpdate(unitId)->setActivationMovementBonus(0);
+		}
+	}
 	MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override
 	{
 		return moraleSuppressionStates.at(side);

@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleInfo.h"
 #include "NewHorizonsBloodrage.h"
+#include "NewHorizonsBattlecraft.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsPlague.h"
@@ -1154,6 +1155,10 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 			}));
 	}
 
+	if(battleBeginsActivation(st, reason))
+		st->setActivationMovementBonus(newHorizonsBattlecraft::delayedActivationMovementBonus(
+			battleGetOwnerHero(st), st, reason));
+
 	st->afterGetsTurn(reason);
 }
 
@@ -1836,6 +1841,50 @@ bool BattleInfo::hasVeteranDamageHistory() const
 	{
 		return stack && stack->veteranPhysicalDamageSinceActivation != 0;
 	});
+}
+
+bool BattleInfo::hasReserveMovementState() const
+{
+	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
+	{
+		return stack && stack->getActivationMovementBonus() != 0;
+	});
+}
+
+std::map<uint32_t, int32_t> BattleInfo::collectReserveMovementBonuses() const
+{
+	std::map<uint32_t, int32_t> bonuses;
+	for(const auto & stack : stacks)
+	{
+		if(!stack)
+			continue;
+		const int32_t bonus = stack->getActivationMovementBonus();
+		if(bonus < 0)
+			throw std::runtime_error("Invalid negative activation movement bonus");
+		if(bonus != 0 && !bonuses.emplace(stack->unitId(), bonus).second)
+			throw std::runtime_error("Duplicate stack identity in activation movement state");
+	}
+	return bonuses;
+}
+
+void BattleInfo::restoreReserveMovementBonuses(const std::map<uint32_t, int32_t> & bonuses)
+{
+	for(auto & stack : stacks)
+		if(stack)
+			stack->setActivationMovementBonus(0);
+
+	for(const auto & [unitId, bonus] : bonuses)
+	{
+		if(bonus < 0)
+			throw std::runtime_error("Invalid negative activation movement bonus in battle snapshot");
+		const auto found = std::find_if(stacks.begin(), stacks.end(), [unitId](const auto & stack)
+		{
+			return stack && stack->unitId() == unitId;
+		});
+		if(found == stacks.end())
+			throw std::runtime_error("Activation movement bonus references a missing stack");
+		(*found)->setActivationMovementBonus(bonus);
+	}
 }
 
 bool CMP_stack::operator()(const battle::Unit * a, const battle::Unit * b) const

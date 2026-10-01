@@ -449,7 +449,7 @@
 					"requires": "basic",
 					"description": "When a stack takes its delayed activation after Waiting, it gains +2 Speed for that activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When a stack takes its delayed activation after Waiting, it gains +2 Speed for that activation."
 					}
 				},

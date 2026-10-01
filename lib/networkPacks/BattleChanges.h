@@ -53,9 +53,13 @@ public:
 	template <typename Handler> void serialize(Handler & h)
 	{
 		const auto & veteranDamage = data["state"]["veteranPhysicalDamageSinceActivation"];
+		const auto & activationMovementBonus = data["state"]["activationMovementBonus"];
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_VETERAN)
 			&& veteranDamage.isNumber() && veteranDamage.Integer() != 0)
 			throw std::runtime_error("Cannot discard Veteran damage history in an older unit update format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RESERVE)
+			&& activationMovementBonus.isNumber() && activationMovementBonus.Integer() != 0)
+			throw std::runtime_error("Cannot discard Battlecraft Reserve movement state in an older unit update format");
 		h & id;
 		h & healthDelta;
 		h & data;

@@ -41,6 +41,8 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 
 	void postDeserialize();
 	void expireSeparatedHeroOrderProtect();
+	std::map<uint32_t, int32_t> collectReserveMovementBonuses() const;
+	void restoreReserveMovementBonuses(const std::map<uint32_t, int32_t> & bonuses);
 public:
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
@@ -89,6 +91,7 @@ public:
 	bool hasPursuitState() const;
 	bool hasBattleFormState() const;
 	bool hasVeteranDamageHistory() const;
+	bool hasReserveMovementState() const;
 	bool hasCleaveState() const;
 	bool hasNoQuarterState() const;
 	bool hasRelentlessAssaultState() const
@@ -153,6 +156,8 @@ public:
 				throw std::runtime_error("Cannot discard battle creature form state in a binary battle snapshot");
 			if(hasVeteranDamageHistory())
 				throw std::runtime_error("Cannot discard Veteran damage history in a binary battle snapshot");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RESERVE) && hasReserveMovementState())
+				throw std::runtime_error("Cannot discard Battlecraft Reserve movement state in an older format");
 			if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE)
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES))
 				throw std::runtime_error("Cannot save typed Hero Action budgets in an older format");
@@ -397,6 +402,21 @@ public:
 		}
 		else if(!h.saving)
 			creatureCategoryRules = newHorizonsCreatures::CreatureCategoryRules();
+
+		// CStack's binary payload omits CUnitState. Keep Reserve's one-activation
+		// Speed bonus in an append-only BattleInfo sidecar until that wider snapshot
+		// contract is migrated; older versions intentionally load with no bonus.
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RESERVE))
+		{
+			std::map<uint32_t, int32_t> activationMovementBonuses;
+			if(h.saving)
+				activationMovementBonuses = collectReserveMovementBonuses();
+			h & activationMovementBonuses;
+			if(!h.saving)
+				restoreReserveMovementBonuses(activationMovementBonuses);
+		}
+		else if(!h.saving)
+			restoreReserveMovementBonuses({});
 
 		if(!h.saving)
 		{
