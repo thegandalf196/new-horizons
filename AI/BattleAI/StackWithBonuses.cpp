@@ -17,6 +17,7 @@
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
+#include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/battle/TimeStopState.h"
 #include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/SiegeInfo.h"
@@ -45,12 +46,25 @@ namespace
 {
 bool projectedEffect(const Bonus * bonus)
 {
-	return bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND;
+	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND);
 }
 
-bool timedProjectionEffect(const Bonus * bonus)
+bool isInPhysicalAfflictionGroup(const Bonus * bonus,
+	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory)
 {
-	return Bonus::NTurns(bonus) && projectedEffect(bonus);
+	return bonus && groupHistory.contains({bonus->source, bonus->sid});
+}
+
+bool isCapturedProjectionEffect(const Bonus * bonus,
+	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory)
+{
+	return projectedEffect(bonus) || isInPhysicalAfflictionGroup(bonus, groupHistory);
+}
+
+bool timedProjectionEffect(const Bonus * bonus,
+	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory)
+{
+	return Bonus::NTurns(bonus) && isCapturedProjectionEffect(bonus, groupHistory);
 }
 
 bool isGuardianSpiritBonus(const Bonus * bonus)
@@ -91,6 +105,26 @@ void applyGuardianSpiritBonuses(StackWithBonuses & unit, const std::vector<Bonus
 {
 	for(const auto & bonus : bonuses)
 		applyGuardianSpiritBonus(unit, bonus);
+}
+
+void replacePhysicalAfflictionMarker(StackWithBonuses & unit, Bonus marker)
+{
+	physicalAfflictions::markerMetadata(marker);
+	const CSelector selector([&marker](const Bonus * bonus)
+	{
+		return bonus && bonus->type == BonusType::PHYSICAL_AFFLICTION
+			&& bonus->source == marker.source && bonus->sid == marker.sid;
+	});
+
+	const auto current = unit.getBonuses(selector);
+	if(current && !current->empty())
+	{
+		for(const auto & existing : *current)
+			if(existing && existing->duration == marker.duration && Bonus::NTurns(existing.get()))
+				marker.turnsRemain = std::max(marker.turnsRemain, existing->turnsRemain);
+		unit.removeUnitBonus(selector);
+	}
+	unit.bonusesToAdd.emplace_back(std::move(marker));
 }
 
 void restoreGuardianSpiritFromExistingBonuses(StackWithBonuses & unit)
@@ -187,6 +221,7 @@ void StackWithBonuses::setOriginalBearer(const IBonusBearer * bearer)
 	const auto * projected = dynamic_cast<const StackWithBonuses *>(bearer);
 	if(!projected)
 		return;
+	capturedPhysicalAfflictionGroups = projected->capturedPhysicalAfflictionGroups;
 
 	projectedBearer = projected->weak_from_this().lock();
 	ownedBearer = projected->ownedBearer;
@@ -318,7 +353,7 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 	vstd::copy_if(*originalList, std::back_inserter(*ret), [this](const std::shared_ptr<Bonus> & b)
 	{
 		return !vstd::contains(bonusesToRemove, b)
-			&& !(projectedEffects && projectedEffect(b.get()));
+			&& !(projectedEffects && isCapturedProjectionEffect(b.get(), capturedPhysicalAfflictionGroups));
 	});
 	if(replaceNativeCreatureBonuses)
 		ret->remove_if(CSelector([this](const Bonus * bonus)
@@ -336,7 +371,10 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 	{
 		if(mergeSelector(&bonus))
 		{
-			if(ret->getFirst(Selector::source(BonusSource::SPELL_EFFECT, bonus.sid).And(Selector::typeSubtypeValueType(bonus.type, bonus.subtype, bonus.valType))))
+			const bool markedAfflictionGroup = isInPhysicalAfflictionGroup(&bonus, capturedPhysicalAfflictionGroups);
+			const bool refreshableSource = bonus.source == BonusSource::SPELL_EFFECT || markedAfflictionGroup;
+			if(refreshableSource && ret->getFirst(Selector::source(bonus.source, bonus.sid)
+				.And(Selector::typeSubtypeValueType(bonus.type, bonus.subtype, bonus.valType))))
 			{
 				actualizeEffect(ret, bonus);
 			}
@@ -389,17 +427,37 @@ void StackWithBonuses::onBattleFormChanged()
 
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 {
-	vstd::concatenate(bonusesToAdd, bonus);
-	applyGuardianSpiritBonuses(*this, bonus);
+	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*this, bonus);
+	for(const auto & stamped : stampedBonuses)
+		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
+			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
+	for(const auto & stamped : stampedBonuses)
+	{
+		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
+			replacePhysicalAfflictionMarker(*this, stamped);
+		else
+			bonusesToAdd.emplace_back(stamped);
+	}
+	applyGuardianSpiritBonuses(*this, stampedBonuses);
 	treeVersionLocal++;
 }
 
 void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 {
+	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*this, bonus);
 	// Preserve operation order: a preceding local ADD must be visible to refresh.
 	captureEffects();
-	vstd::concatenate(bonusesToUpdate, bonus);
-	applyGuardianSpiritBonuses(*this, bonus);
+	for(const auto & stamped : stampedBonuses)
+		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
+			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
+	for(const auto & stamped : stampedBonuses)
+	{
+		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
+			replacePhysicalAfflictionMarker(*this, stamped);
+		else
+			bonusesToUpdate.emplace_back(stamped);
+	}
+	applyGuardianSpiritBonuses(*this, stampedBonuses);
 	treeVersionLocal++;
 }
 
@@ -510,14 +568,28 @@ void StackWithBonuses::clearNoQuarterRoundBlocker()
 
 void StackWithBonuses::captureEffects()
 {
-	// Resolve refreshes before aging or another mutation. Their retained values
-	// and refreshed durations must survive together, not as independent vectors.
-	const auto effects = getAllBonuses(CSelector(projectedEffect));
+	// Resolve refreshes before aging or another mutation. In addition to spell and
+	// command effects, explicitly marked affliction groups may use non-spell
+	// sources; capture only those exact source/sid groups, not unrelated stats.
+	const auto effects = getAllBonuses(Selector::all);
 	projectedEffects.emplace();
 	for(const auto & bonus : *effects)
-		projectedEffects->push_back(*bonus);
-	vstd::erase_if(bonusesToAdd, [](const Bonus & bonus){ return projectedEffect(&bonus); });
-	vstd::erase_if(bonusesToUpdate, [](const Bonus & bonus){ return projectedEffect(&bonus); });
+		if(bonus && bonus->type == BonusType::PHYSICAL_AFFLICTION)
+		{
+			physicalAfflictions::markerMetadata(*bonus);
+			capturedPhysicalAfflictionGroups.emplace(bonus->source, bonus->sid);
+		}
+	for(const auto & bonus : *effects)
+		if(bonus && isCapturedProjectionEffect(bonus.get(), capturedPhysicalAfflictionGroups))
+			projectedEffects->push_back(*bonus);
+	vstd::erase_if(bonusesToAdd, [this](const Bonus & bonus)
+	{
+		return isCapturedProjectionEffect(&bonus, capturedPhysicalAfflictionGroups);
+	});
+	vstd::erase_if(bonusesToUpdate, [this](const Bonus & bonus)
+	{
+		return isCapturedProjectionEffect(&bonus, capturedPhysicalAfflictionGroups);
+	});
 }
 
 void StackWithBonuses::advanceTimedRound()
@@ -531,14 +603,14 @@ void StackWithBonuses::advanceTimedRound()
 		++treeVersionLocal;
 		return;
 	}
-	const auto age = [](std::vector<Bonus> & bonuses)
+	const auto age = [this](std::vector<Bonus> & bonuses)
 	{
 		for(auto & bonus : bonuses)
-			if(timedProjectionEffect(&bonus) && bonus.turnsRemain > 0)
+			if(timedProjectionEffect(&bonus, capturedPhysicalAfflictionGroups) && bonus.turnsRemain > 0)
 				--bonus.turnsRemain;
-		vstd::erase_if(bonuses, [](const Bonus & bonus)
+		vstd::erase_if(bonuses, [this](const Bonus & bonus)
 		{
-			return timedProjectionEffect(&bonus) && bonus.turnsRemain <= 0;
+			return timedProjectionEffect(&bonus, capturedPhysicalAfflictionGroups) && bonus.turnsRemain <= 0;
 		});
 	};
 	age(*projectedEffects);

@@ -16,6 +16,7 @@
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
+#include "../../lib/battle/PhysicalAffliction.h"
 
 #include "BattleProcessor.h"
 
@@ -1994,20 +1995,91 @@ bool BattleActionProcessor::doHealAction(const CBattleInfoCallback & battle, con
 	}
 	else
 	{
+		const auto * tentOwner = stack->isFirstAidTent() ? battle.battleGetOwnerHero(stack) : nullptr;
+		const bool surgeon = tentOwner && tentOwner->hasActivePerk(
+			"new-horizons:warMachines", "new-horizons:warMachines.surgeon");
+		const bool friendlyLivingTentTarget = stack->isFirstAidTent() && destCreatureStack
+			&& destCreatureStack->alive() && destCreatureStack->canBeHealed()
+			&& battle.battleMatchOwner(stack, destStack, true);
+		const auto destinationUnitId = destStack->unitId();
+		const int64_t healthBeforeHealing = destStack->getAvailableHealth();
 		const CSpell * spell = healerAbility->subtype.as<SpellID>().toSpell();
 		spells::BattleCast parameters(&battle, stack, spells::Mode::SPELL_LIKE_ATTACK, spell); //We can heal infinitely by first aid tent
 		if(stack->isFirstAidTent())
 		{
-			const auto * owner = battle.battleGetOwnerHero(stack);
-			if(owner && owner->getCapabilityRules()["rulesetVersion"].Integer() >= 3
+			if(tentOwner && tentOwner->getCapabilityRules()["rulesetVersion"].Integer() >= 3
 				&& battle.battleMatchOwner(stack, destStack, true)
 				&& destCreatureStack && destCreatureStack->canBeHealed())
-				if(const auto siege = owner->getSiegeCapabilities())
+				if(const auto siege = tentOwner->getSiegeCapabilities())
 					parameters.setEffectValue(siege->firstAidHealing);
 		}
 		auto dest = battle::Destination(destStack, target.at(0).hexValue);
 		parameters.setSpellLevel(0);
 		parameters.cast(gameHandler->spellcastEnvironment(), {dest});
+
+		const auto * healedStack = battle.battleGetStackByID(destinationUnitId, false);
+		const auto * healedCreatureStack = dynamic_cast<const CStack *>(healedStack);
+		if(surgeon && friendlyLivingTentTarget && healedCreatureStack && healedCreatureStack->alive()
+			&& battle.battleMatchOwner(stack, healedStack, true)
+			&& healedStack->getAvailableHealth() > healthBeforeHealing)
+		{
+			const auto affliction = physicalAfflictions::first(*healedStack);
+			if(affliction)
+			{
+				bool removed = false;
+				const BattleID battleId = battle.getBattle()->getBattleID();
+				if(affliction->storedPoison)
+				{
+					auto state = healedCreatureStack->acquireState();
+					if(newHorizonsPurify::clearPhysicalPoison(state.get()))
+					{
+						BattleUnitsChanged changed;
+						changed.battleID = battleId;
+						UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+						update.data = state->save();
+						changed.changedStacks.push_back(std::move(update));
+						gameHandler->sendAndApply(changed);
+						removed = true;
+					}
+				}
+				else
+				{
+					auto removal = physicalAfflictions::removalPlan(*healedStack, *affliction);
+					if(!removal.empty())
+					{
+						SetStackEffect removedEffects;
+						removedEffects.battleID = battleId;
+						removedEffects.toRemove.emplace_back(healedStack->unitId(), std::move(removal));
+						gameHandler->sendAndApply(removedEffects);
+						removed = true;
+					}
+				}
+
+				if(removed)
+				{
+					if(const auto * logTarget = battle.battleGetStackByID(destinationUnitId, false))
+					{
+						std::string afflictionName = affliction->kind;
+						if(afflictionName == "poison")
+							afflictionName = "Poison";
+						else if(afflictionName == "disease")
+							afflictionName = "Disease";
+						else if(afflictionName == "bleeding")
+							afflictionName = "Bleeding";
+
+						BattleLogMessage message;
+						message.battleID = battleId;
+						MetaString line = MetaString::createFromTextID(tentOwner->getNameTextID());
+						line.appendRawString("'s Surgeon removes ");
+						line.appendRawString(afflictionName);
+						line.appendRawString(" from %s with the First Aid Tent.");
+						logTarget->addNameReplacement(line, logTarget->getCount());
+						message.lines.push_back(std::move(line));
+						gameHandler->sendAndApply(message);
+					}
+				}
+			}
+		}
 	}
 	return true;
 }

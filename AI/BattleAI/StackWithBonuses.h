@@ -13,6 +13,8 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <set>
+#include <utility>
 
 #include <vcmi/Environment.h>
 #include <vcmi/ServerCallback.h>
@@ -131,8 +133,12 @@ private:
 	void onBattleFormChanged() override;
 
 	// Value snapshots survive nested models whose bonus queries create fresh pointers.
-	// Include all spell/command durations for removal; only N_TURNS are aged.
+	// Include spell/command effects and captured affliction groups; only N_TURNS are aged.
 	std::optional<std::vector<Bonus>> projectedEffects;
+	// Branch-local history: once a marked source/sid group is captured, remember
+	// its identity even if the marker is removed or expires. This is only for
+	// retaining detached projections; it does not make the group an affliction.
+	std::set<std::pair<BonusSource, BonusSourceID>> capturedPhysicalAfflictionGroups;
 	void captureEffects();
 	// New hypothetical units own a detached CStack as their creature/army bonus
 	// provenance. Descendant projections retain the projected bearer that they

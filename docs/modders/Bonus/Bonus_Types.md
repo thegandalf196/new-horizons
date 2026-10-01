@@ -1381,6 +1381,36 @@ Dummy bonus that acts as marker for Dendroid's Bind ability
 
 - addInfo: ID of stack that have bound the unit
 
+### PHYSICAL_AFFLICTION
+
+Effect-neutral marker identifying a bodily affliction on an affected creature.
+It does not deal damage or apply the affliction by itself. The marker belongs to
+the same affliction group as the effect bonus it describes: use the same
+`sourceType`, `sourceID`, and `duration` (and `turns` when timed). A consumer can
+use `sourceType` plus `sourceID` to identify one application, and `duration` to
+ensure the marker follows that application's lifecycle.
+
+- `val`: leave at zero; the marker carries no numeric gameplay effect
+- `addInfo.kind`: required, non-empty string naming an explicit bodily identity
+  such as `poison`, `disease`, or `bleeding`. Other explicitly named physical
+  afflictions may use their own stable identity.
+- `addInfo.applicationOrder`: optional non-negative integer, defaulting to `0`;
+  used to order eligible physical afflictions when a mechanic removes only one
+
+Example metadata:
+
+```json
+"addInfo" : {
+    "kind" : "bleeding",
+    "applicationOrder" : 4
+}
+```
+
+This marker is not a spell-effect classifier. A magical spell effect only counts
+as a physical affliction when its application explicitly supplies this marker;
+general negative effects and all `SPELL_EFFECT` bonuses are not physical by
+default.
+
 ### THIEVES_GUILD_ACCESS
 
 Increases amount of information available in affected thieves guild (in town or in adventure map tavern). Does not affects adventure map object "Den of Thieves". You may want to use PLAYER_PROPAGATOR with this bonus to make its effect player wide.

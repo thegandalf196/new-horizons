@@ -95,6 +95,68 @@ static void loadBonusSubtype(BonusSubtypeID & subtype, BonusType type, const Jso
 	});
 }
 
+static bool preparePhysicalAfflictionParameters(const JsonNode & value, JsonNode & parameters)
+{
+	if (!value.isStruct())
+	{
+		logMod->error("Physical-affliction bonus addInfo must be an object (%s)", value.getModScope());
+		return false;
+	}
+
+	const auto & fields = value.Struct();
+	const auto kind = fields.find("kind");
+	if (kind == fields.end() || !kind->second.isString() || kind->second.String().empty())
+	{
+		logMod->error("Physical-affliction bonus addInfo requires a non-empty string 'kind' (%s)", value.getModScope());
+		return false;
+	}
+
+	const auto applicationOrder = fields.find("applicationOrder");
+	si64 parsedApplicationOrder = 0;
+	if (applicationOrder != fields.end())
+	{
+		const JsonNode & orderNode = applicationOrder->second;
+		if (!orderNode.isNumber())
+		{
+			logMod->error("Physical-affliction bonus 'applicationOrder' must be a non-negative integer (%s)", value.getModScope());
+			return false;
+		}
+
+		if (orderNode.getType() == JsonNode::JsonType::DATA_INTEGER)
+			parsedApplicationOrder = orderNode.Integer();
+		else
+		{
+			const double numericOrder = orderNode.Float();
+			if (!std::isfinite(numericOrder) || numericOrder < 0 || std::floor(numericOrder) != numericOrder
+				|| numericOrder >= 0x1p63)
+			{
+				logMod->error("Physical-affliction bonus 'applicationOrder' must be a non-negative integer (%s)", value.getModScope());
+				return false;
+			}
+			parsedApplicationOrder = static_cast<si64>(numericOrder);
+		}
+
+		if (parsedApplicationOrder < 0)
+		{
+			logMod->error("Physical-affliction bonus 'applicationOrder' must be a non-negative integer (%s)", value.getModScope());
+			return false;
+		}
+	}
+
+	for (const auto & field : fields)
+	{
+		if (field.first != "kind" && field.first != "applicationOrder")
+		{
+			logMod->error("Physical-affliction bonus addInfo does not support field '%s' (%s)", field.first, value.getModScope());
+			return false;
+		}
+	}
+
+	parameters = value;
+	parameters["applicationOrder"].Integer() = parsedApplicationOrder;
+	return true;
+}
+
 static TBonusParametersPtr loadBonusAddInfo(BonusType type, const JsonNode & value)
 {
 	const auto & getFirstValue = [](const JsonNode & jsonNode) -> const JsonNode &
@@ -104,6 +166,14 @@ static TBonusParametersPtr loadBonusAddInfo(BonusType type, const JsonNode & val
 		else
 			return jsonNode;
 	};
+
+	if (type == BonusType::PHYSICAL_AFFLICTION)
+	{
+		JsonNode parameters;
+		if (!preparePhysicalAfflictionParameters(value, parameters))
+			return nullptr;
+		return std::make_shared<BonusParameters>(parameters);
+	}
 
 	if (value.isNull())
 		return nullptr;
@@ -773,12 +843,24 @@ bool JsonUtils::parseBonus(const JsonNode &ability, Bonus *b, const TextIdentifi
 		b->type = static_cast<BonusType>(bonusID);
 		loadBonusSubtype(b->subtype, b->type, subtypeNode);
 		b->parameters = loadBonusAddInfo(b->type, addinfoNode);
+		if (b->type == BonusType::PHYSICAL_AFFLICTION)
+		{
+			if (b->val != 0)
+				logMod->error("Physical-affliction bonus val must be zero");
+			b->val = 0;
+		}
 
 		if (b->type == BonusType::COMBAT_EVENT_TRIGGER)
 			prepareCombatScriptParameters(b, subtypeNode, descriptionID);
 	});
 
 	b->val = static_cast<si32>(ability["val"].Float());
+	if (b->type == BonusType::PHYSICAL_AFFLICTION)
+	{
+		if (b->val != 0)
+			logMod->error("Physical-affliction bonus val must be zero (%s)", ability["type"].getModScope());
+		b->val = 0;
+	}
 
 	value = &ability["valueType"];
 	if (!value->isNull())

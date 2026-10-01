@@ -14,7 +14,23 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-Current verified checkpoint: Discipline Fearless is active and Phase1 complete.
+Current verified checkpoint: UP-095 War Machines Surgeon is active and Phase1
+complete. Actual friendly Tent HP gain removes exactly one shared physical
+affliction: Poison → Disease → Bleeding → other eligible groups by application
+order. Stored physical Poison uses authoritative unit-state updates; marked groups
+use exact source/sid removal. Named combat feedback and current-controller AI
+target selection exist. Generic zero-value metadata is parsed, guarded for save
+downgrade, stamped in effect packets, and preserved in live/detached branches.
+Both-target67115 and final64786 exit0. Principal29476 passes17/17; activated59354
+passes34/34 in6.552s, zero skips (`UP095-activated.log`/`.xml`). Data/inventory19/19
+pass. Binary: `beb89e7e361cdd3f42e9b664a8b3de5d9b816b6d1662410896ca39a76d273e1d`.
+Independent runtime/consumer/fixture review has no blocker. Coverage147→148/310,
+planned163→162; War Machines1/9. Generic Bleeding removal is verified, not a
+production Bleeding damage producer. Phase2: packet-wide rollback of preprocessing
+on a later invalid unit, broader controller-change interactions, status-producer
+duration consistency and localization. Art Not done; no GUI or playable promotion.
+
+Previous verified checkpoint: Discipline Fearless is active and Phase1 complete.
 The current controller's perk filters positive non-magical CREATURE_ABILITY
 FEARFUL contributions, preserving spell/unclassified sources and nonpositive
 caps. Authoritative full prevention bypasses the RNG/Twist resolver and emits a
@@ -689,7 +705,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 147/310 | 163 planned; Fearless is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 148/310 | 162 planned; Surgeon is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -716,8 +732,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 147
-active perks, leaving nine ranks and 163 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 148
+active perks, leaving nine ranks and 162 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -825,7 +841,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Armorer | 3/0 | 6/4 | Formation Fighting and Veteran have focused live/detached damage evidence. Four perks missing; Last Stand awaits design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
-| War Machines | 3/0 | 0/10 | Progression blocked |
+| War Machines | 3/0 | 1/9 | Surgeon active with actual Tent, shared affliction lifecycle and AI evidence. Nine perks remain planned; ordinary Advanced progression opens. |
 | Discipline | 3/0 | 5/5 | Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless active with focused authoritative and detached evidence. Five perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
@@ -854,8 +870,8 @@ interactions, and rendered/playable acceptance remain separate.
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
 Strict progression requires a perk at the preceding rank before the next Skill
-rank. Four Skills therefore cannot normally advance beyond Basic because they
-have no active Basic perk: War Machines, Diplomacy,
+rank. Three Skills therefore cannot normally advance beyond Basic because they
+have no active Basic perk: Diplomacy,
 Divine Mandate, and Elemental Rebirth. Fortune's Favor opens Luck; Tax Collector opens Estates and
 Mentor opens Learning. Backstab now
 opens the Shroud's ordinary Advanced-rank progression; Blinkmaster opens Chaos.

@@ -20,5 +20,8 @@ std::string BonusParameters::toString() const
 
 JsonNode BonusParameters::toJsonNode() const
 {
+	if (const auto * jsonNode = std::get_if<JsonNode>(&data_))
+		return *jsonNode;
+
     return JsonNode(); // TODO
 }

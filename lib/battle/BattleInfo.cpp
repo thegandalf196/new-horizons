@@ -13,6 +13,7 @@
 #include "NewHorizonsBattlecraft.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsOffense.h"
+#include "PhysicalAffliction.h"
 #include "NewHorizonsPlague.h"
 #include "TimeStopState.h"
 
@@ -1434,7 +1435,8 @@ void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 		return;
 	}
 
-	for(const Bonus & b : bonus)
+	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*sta, bonus);
+	for(const Bonus & b : stampedBonuses)
 		addOrUpdateUnitBonus(sta, b, true);
 }
 
@@ -1448,7 +1450,8 @@ void BattleInfo::updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 		return;
 	}
 
-	for(const Bonus & b : bonus)
+	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*sta, bonus);
+	for(const Bonus & b : stampedBonuses)
 		addOrUpdateUnitBonus(sta, b, false);
 }
 
@@ -1596,9 +1599,40 @@ uint32_t BattleInfo::nextUnitId() const
 
 void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool forceAdd)
 {
+	if(value.type == BonusType::PHYSICAL_AFFLICTION)
+		physicalAfflictions::markerMetadata(value);
+
 	if(sta->isTimeStopped() && !timeStopState::isStateBonus(value))
 	{
 		logNetwork->warn("Ignoring new effect on Time Stop unit %d", sta->unitId());
+		return;
+	}
+	if(value.type == BonusType::PHYSICAL_AFFLICTION)
+	{
+		// A source/sid pair owns one marker. Replace duplicate local markers while
+		// retaining the longest same-duration timer, so repeated SetStackEffect
+		// entries cannot leave multiple ordering records for one status group.
+		Bonus marker = value;
+		bool found = false;
+		for(const auto & existing : sta->getExportedBonusList())
+		{
+			if(!existing || existing->type != BonusType::PHYSICAL_AFFLICTION
+				|| existing->source != value.source || existing->sid != value.sid)
+				continue;
+			found = true;
+			if(existing->duration == marker.duration && Bonus::NTurns(existing.get()))
+				marker.turnsRemain = std::max(marker.turnsRemain, existing->turnsRemain);
+		}
+		if(found)
+		{
+			const CSelector markerGroup([&value](const Bonus * bonus)
+			{
+				return bonus && bonus->type == BonusType::PHYSICAL_AFFLICTION
+					&& bonus->source == value.source && bonus->sid == value.sid;
+			});
+			sta->removeBonusesRecursive(markerGroup);
+		}
+		sta->addNewBonus(std::make_shared<Bonus>(marker));
 		return;
 	}
 	if(value.type == BonusType::GUARDIAN_SPIRIT)

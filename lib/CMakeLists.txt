@@ -55,6 +55,7 @@ set(lib_MAIN_SRCS
 	battle/BattleHexArray.cpp
 	battle/HeroCommand.cpp
 	battle/BattleInfo.cpp
+	battle/PhysicalAffliction.cpp
 	battle/TimeStopState.cpp
 	battle/NewHorizonsBloodrage.cpp
 	battle/NewHorizonsBulwark.cpp
@@ -504,6 +505,7 @@ set(lib_MAIN_HEADERS
 	battle/TimeStopState.h
 	battle/NewHorizonsWarcasting.h
 	battle/BattleInfo.h
+	battle/PhysicalAffliction.h
 	battle/NewHorizonsBloodrage.h
 	battle/NewHorizonsBulwark.h
 	battle/NewHorizonsSoulChain.h

@@ -164,6 +164,13 @@
 						"battleLogSingular" : "@core.genrltxt.553",
 						"battleLogPlural" : "@core.genrltxt.554",
 						"bonus" : {
+							"physicalAffliction" : {
+								"type" : "PHYSICAL_AFFLICTION",
+								"val" : 0,
+								"duration" : "N_TURNS",
+								"hidden" : true,
+								"addInfo" : { "kind" : "disease" }
+							},
 							"attack" : {
 								"val" : -2,
 								"type" : "PRIMARY_SKILL",

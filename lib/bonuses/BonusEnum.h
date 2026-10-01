@@ -232,6 +232,7 @@ class JsonNode;
 	BONUS_NAME(MAXIMUM_LUCK) /*maximum final attack Luck; zero suppresses positive Luck without removing negative Luck*/ \
 	BONUS_NAME(FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS) /*multiplier for explicitly classified random creature procs; 10000 is unchanged*/ \
 	BONUS_NAME(PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS) /*New Horizons: independent physical damage reduction in basis points*/ \
+	BONUS_NAME(PHYSICAL_AFFLICTION) /*New Horizons: effect-neutral bodily affliction identity and application order marker*/ \
 
 	/* end of list */
 

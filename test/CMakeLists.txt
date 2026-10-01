@@ -42,6 +42,7 @@ set(test_SRCS
  		battle/CHealthTest.cpp
 		battle/CUnitStateTest.cpp
 		battle/CUnitStateMagicTest.cpp
+		battle/PhysicalAfflictionTest.cpp
 		battle/FocusFireStateTest.cpp
 		battle/RelentlessAssaultStateTest.cpp
 		battle/HeroCommandFocusFireRulesTest.cpp
@@ -301,6 +302,7 @@ set(test_SRCS
 		server/battles/NewHorizonsStandardBearerTest.cpp
 		server/battles/NewHorizonsHoldFastTest.cpp
 		server/battles/NewHorizonsFearlessTest.cpp
+		server/battles/NewHorizonsSurgeonTest.cpp
 		server/battles/NewHorizonsTwistScriptedTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp
 		server/battles/NewHorizonsQuicksandTest.cpp

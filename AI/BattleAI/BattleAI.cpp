@@ -19,6 +19,7 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/callback/IGameInfoCallback.h"
+#include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/ISpellMechanics.h"
@@ -80,18 +81,45 @@ void CBattleAI::initBattleInterface(std::shared_ptr<Environment> ENV, std::share
 
 BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)
 {
-	auto healingTargets = cb->getBattle(battleID)->battleGetStacks(CBattleInfoEssentials::ONLY_MINE);
+	const auto battle = cb->getBattle(battleID);
+	auto healingTargets = battle->battleGetStacks(CBattleInfoEssentials::ONLY_MINE);
+	const auto * tentOwner = battle->battleGetOwnerHero(stack);
+	const bool surgeon = stack->isFirstAidTent() && tentOwner && tentOwner->hasActivePerk(
+		"new-horizons:warMachines", "new-horizons:warMachines.surgeon");
 	std::map<int, const CStack*> woundHpToStack;
-	for(const auto * stack : healingTargets)
+	for(const auto * target : healingTargets)
 	{
-		if(auto woundHp = stack->getMaxHealth() - stack->getFirstHPleft())
-			woundHpToStack[woundHp] = stack;
+		if(auto woundHp = target->getMaxHealth() - target->getFirstHPleft())
+			woundHpToStack[woundHp] = target;
+	}
+
+	if(surgeon)
+	{
+		std::map<int, const CStack*> controllerWoundHpToStack;
+		std::map<int, const CStack*> afflictionWoundHpToStack;
+		for(const auto * target : battle->battleGetStacks(CBattleInfoEssentials::MINE_AND_ENEMY))
+		{
+			if(!target->alive() || !target->canBeHealed() || !battle->battleMatchOwner(stack, target, true))
+				continue;
+
+			if(auto woundHp = target->getMaxHealth() - target->getFirstHPleft())
+			{
+				controllerWoundHpToStack[woundHp] = target;
+				if(physicalAfflictions::first(*target))
+					afflictionWoundHpToStack[woundHp] = target;
+			}
+		}
+
+		if(!afflictionWoundHpToStack.empty())
+			return BattleAction::makeHeal(stack, afflictionWoundHpToStack.rbegin()->second);
+		if(!controllerWoundHpToStack.empty())
+			return BattleAction::makeHeal(stack, controllerWoundHpToStack.rbegin()->second);
+		return BattleAction::makeDefend(stack);
 	}
 
 	if(woundHpToStack.empty())
 		return BattleAction::makeDefend(stack);
-	else
-		return BattleAction::makeHeal(stack, woundHpToStack.rbegin()->second); //last element of the woundHpToStack is the most wounded stack
+	return BattleAction::makeHeal(stack, woundHpToStack.rbegin()->second); //last element of the woundHpToStack is the most wounded stack
 }
 
 void CBattleAI::yourTacticPhase(const BattleID & battleID, int distance)

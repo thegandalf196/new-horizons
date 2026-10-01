@@ -2336,6 +2336,50 @@ both targets; principal13527 passes5/5. Activated30226 passes27/27 with no skips
 in9.008s; data/inventory19/19 pass. The changed branch asserts ownership and that
 the opposing hero remains hidden, rather than requiring a hidden hero pointer.
 
+### UP-095 physical-affliction foundation compile gate
+
+Repaired both-target67115 exits0. Principal native90035 exits139 in the first
+foundation case. GDB74245 traces enumerate → acquireState → detached assignment
+→ battleFormCreature: UnitInfoMock returns a null unitType. Establish a valid
+fixture creature and its lifetime using the existing CUnitStateTest convention;
+do not bypass the production state-copy path or weaken assertions. Retain the
+crash/debug logs and rerun the17-case gate after the fixture-only repair.
+Incremental80241 exits0. Principal retry4916 runs17 cases:13 foundation pass,
+all4 Surgeon cases reject fixture setup because it sets legacy capability v3
+while retaining current warMachineShop data. Repair the fixture to the current
+capability schema without deleting inherited rules or weakening assertions;
+actual Tent acceptance remains unproven until the repaired native gate passes.
+Incremental24147 exits0. Principal retry37773 passes15/17: all13 foundation,
+no-perk healing and actual stored-Poison cleansing pass. Two fixture preconditions
+remain: priority test asks for healing output before wounding its target (0),
+and the negative-target test has no wounded friendly recipient so the Tent is
+automatically skipped. Verify those contracts and repair setup, not production
+validation. Keep four-heal priority and rejected/no-heal/enemy assertions intact.
+Final incremental64786 exits0; principal29476 passes17/17, activated59354 passes
+34/34 with zero skips. The fixture-only repairs preserve all principal/negative
+assertions and were independently reviewed without a blocker. These are the
+first successful actual-healing and activated gates for this slice.
+
+Combined retry72892 exits1 (`UP095-build-retry2.log`): the actual Surgeon fixture
+uses CGameHandler, BattleProcessor and SetStackEffect through forward declarations.
+Add their direct headers in the fixture without changing assertions or gameplay.
+The foundation fixture now compiles; native acceptance remains pending until the
+combined targets build successfully.
+
+Both-target31895 exits1 (`UP095-build.log`): PhysicalAffliction.cpp iterates and
+queries BonusList while its existing Unit/Bonus headers provide only a forward
+declaration. Root adds the direct BonusList.h include; no mechanic or assertion
+is weakened. Retain the failed log and require the repaired target build and
+focused native gate before claiming acceptance. Retry remains pending.
+
+Retry88256 exits1 in the foundation fixture: parseBonus requires JsonBonus.h,
+the marker-only remove overload needs an explicit vector, and STACKS_ATTACK is
+not a registered BonusType. The tester adds the missing declaration, disambiguates
+the call and uses an unrelated valid STACKS_SPEED effect; assertions are unchanged.
+No production failure is inferred from those fixture compile errors. The actual
+Surgeon fixture's callback type and custom-source declaration were independently
+repaired before registration. Both fixtures are frozen for the next combined build.
+
 No credentials, workstation paths, purchaser content or raw research dumps in
 these notes. Keep historical failures even after repair, but label their scope.
 Do not claim the pipeline is future-proof: tests reduce recurrence and catch more

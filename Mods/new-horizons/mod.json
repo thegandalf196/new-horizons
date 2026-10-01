@@ -3520,7 +3520,7 @@
 								"requires": "basic",
 								"description": "First Aid Tent healing also removes one physical affliction. Removal priority is Poison, then Disease, then Bleeding, then other eligible physical afflictions in order of application.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "First Aid Tent healing also removes one physical affliction. Removal priority is Poison, then Disease, then Bleeding, then other eligible physical afflictions in order of application."
 								}
 							},
