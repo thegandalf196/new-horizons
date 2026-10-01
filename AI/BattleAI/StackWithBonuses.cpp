@@ -1856,6 +1856,26 @@ bool HypotheticBattle::HypotheticServerCallback::rollCombatAbility(const IBattle
 	return percentageChance >= 50;
 }
 
+bool HypotheticBattle::HypotheticServerCallback::rollHostileCombatAbility(const IBattleInfoCallback & battle,
+	const battle::Unit & actor, const battle::Unit & recipient, int percentageChance)
+{
+	const int basisPoints = actor.favorableCreatureAbilityChanceBasisPoints(percentageChance);
+	int chance = basisPoints / 100;
+	if(basisPoints % 100 && rngStub.nextInt(0, 99) < basisPoints % 100)
+		++chance;
+	const auto draw = [&]() { return rollCombatAbility(battle, actor, chance); };
+	const auto actorSide = owner->playerToSide(owner->battleGetOwner(&actor));
+	const auto recipientSide = owner->playerToSide(owner->battleGetOwner(&recipient));
+	const bool hostile = (actorSide == BattleSide::ATTACKER || actorSide == BattleSide::DEFENDER)
+		&& (recipientSide == BattleSide::ATTACKER || recipientSide == BattleSide::DEFENDER)
+		&& actorSide != recipientSide && actor.alive() && recipient.alive()
+		&& recipient.isValidTarget(false) && !recipient.isInvincible();
+	if(!hostile)
+		return draw();
+	return resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), recipientSide,
+		chance > 0 && chance < 100, true, draw);
+}
+
 bool HypotheticBattle::HypotheticServerCallback::resolveAdverseCombatRoll(const BattleID & battleID,
 	BattleSide side, bool stochastic, bool adverseOnTrue, const std::function<bool()> & draw)
 {

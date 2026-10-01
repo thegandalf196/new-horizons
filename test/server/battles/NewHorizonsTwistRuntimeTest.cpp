@@ -36,6 +36,7 @@ namespace
 {
 constexpr auto luckSkillId = "new-horizons:luck";
 constexpr auto fortuneFavorId = "new-horizons:luck.fortuneSFavor";
+constexpr auto secondChanceId = "new-horizons:luck.secondChance";
 constexpr auto chainOfFortuneId = "new-horizons:luck.chainOfFortune";
 constexpr auto twistOfFateId = "new-horizons:luck.twistOfFate";
 
@@ -93,6 +94,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 		loaded->overrideGameSetting(EGameSettings::COMBAT_BAD_LUCK_CHANCE, badLuckCurve(35));
 		loaded->overrideGameSetting(EGameSettings::COMBAT_LUCK_DICE_SIZE, JsonNode(100));
+		loaded->overrideGameSetting(EGameSettings::COMBAT_BAD_MORALE_CHANCE, badLuckCurve(35));
+		loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_DICE_SIZE, JsonNode(100));
 	}
 
 	void acceptLuckPerkThroughOffer(CGHeroInstance * hero, const char * perkId)
@@ -122,15 +125,15 @@ protected:
 		FAIL() << perkId << " never appeared in a legal Luck perk offer";
 	}
 
-	void selectTwistOfFate(CGHeroInstance * hero)
+	void selectTwistOfFate(CGHeroInstance * hero, const char * basicPerk = fortuneFavorId)
 	{
 		const int decodedLuck = SecondarySkill::decode(luckSkillId);
 		ASSERT_GE(decodedLuck, 0);
 		const auto luck = SecondarySkill(decodedLuck);
 
 		hero->setSecSkillLevel(luck, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		acceptLuckPerkThroughOffer(hero, fortuneFavorId);
-		ASSERT_TRUE(hero->hasActivePerk(luckSkillId, fortuneFavorId));
+		acceptLuckPerkThroughOffer(hero, basicPerk);
+		ASSERT_TRUE(hero->hasActivePerk(luckSkillId, basicPerk));
 		hero->setSecSkillLevel(luck, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		acceptLuckPerkThroughOffer(hero, chainOfFortuneId);
 		ASSERT_TRUE(hero->hasActivePerk(luckSkillId, chainOfFortuneId));
@@ -282,5 +285,81 @@ TEST_F(NewHorizonsTwistRuntimeTest, HypotheticalAdverseRollSpendsOnlyItsBranchAl
 	EXPECT_TRUE(branch->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
 	EXPECT_TRUE(root->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
 	EXPECT_TRUE(sibling->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+}
+
+TEST_F(NewHorizonsTwistRuntimeTest, ActualNegativeLuckSpendsTheAttackingArmysAllowance)
+{
+	startTwistBattle(true);
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 10000);
+	// This case deliberately excludes retaliation: only the initiating negative
+	// Luck roll is under test, not a possible adverse result from the other army.
+	blockRetaliation(attacker);
+	luck(attacker, -20);
+	ASSERT_LT(battle()->battleGetAttackLuck(attacker, defender, false), 0);
+	ASSERT_TRUE(gameHandler->randomizer->isBadLuckRollStochastic(10));
+	for(int attempt = 0; attempt < 32
+		&& !battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used; ++attempt)
+		ASSERT_TRUE(attack(attacker, defender->getPosition()));
+	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
+}
+
+TEST_F(NewHorizonsTwistRuntimeTest, SecondChanceSuppressesTheFirstBadStrikeBeforeTwistCanSpend)
+{
+	startGame();
+	selectTwistOfFate(attackerSideHero, secondChanceId);
+	startBattle();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 10000);
+	blockRetaliation(attacker);
+	luck(attacker, -20);
+	ASSERT_TRUE(battle()->getSylvanLuckState(BattleSide::ATTACKER).secondChance);
+	for(int attempt = 0; attempt < 32
+		&& !battle()->getSylvanLuckState(BattleSide::ATTACKER).secondChanceUsed; ++attempt)
+	{
+		ASSERT_TRUE(attack(attacker, defender->getPosition()));
+		EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available())
+			<< "A suppressed adverse result cannot consume Twist of Fate";
+	}
+	ASSERT_TRUE(battle()->getSylvanLuckState(BattleSide::ATTACKER).secondChanceUsed);
+	for(int attempt = 0; attempt < 32
+		&& !battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used; ++attempt)
+		ASSERT_TRUE(attack(attacker, defender->getPosition()));
+	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used)
+		<< "A subsequent unsuppressed negative trigger is eligible";
+}
+
+TEST_F(NewHorizonsTwistRuntimeTest, ActualNegativeMoraleSpendsOnlyTheActivatingArmysAllowance)
+{
+	startTwistBattle(true);
+	auto * afflicted = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(leftHex), 10);
+	afflicted->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MORALE, BonusSource::OTHER, -20, BonusSourceID()));
+	ASSERT_LT(afflicted->moraleVal(), 0);
+	ASSERT_TRUE(gameHandler->randomizer->isBadMoraleRollStochastic(10));
+	beginCombat();
+	for(int round = 0; round < 32
+		&& !battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used; ++round)
+		endRound();
+	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).used);
+	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
+}
+
+TEST_F(NewHorizonsTwistRuntimeTest, HostileDeathBlowSpendsTheRecipientsAllowanceNotTheActors)
+{
+	startTwistBattle(true);
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 10000);
+	blockRetaliation(attacker);
+	luck(attacker, -battle()->battleGetAttackLuck(attacker, defender, false));
+	ASSERT_EQ(battle()->battleGetAttackLuck(attacker, defender, false), 0);
+	attacker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::DOUBLE_DAMAGE_CHANCE, BonusSource::OTHER, 35, BonusSourceID()));
+	for(int attempt = 0; attempt < 32
+		&& !battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used; ++attempt)
+		ASSERT_TRUE(attack(attacker, defender->getPosition()));
+	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
 	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
 }

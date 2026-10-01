@@ -56,6 +56,27 @@ attack/Morale/proc/collateral callsite evidence remain required Phase1 work.
 Registration stays planned; coverage stays141/310 active,169 planned, Luck5/5.
 No playable delivery or art approval is implied by this dependency checkpoint.
 
+Scripted hostile-proc source is implemented through an explicit recipient bridge
+and a capped binomial-count bridge. Root repaired callback/Unit API compile
+mismatches after build18304 failed. Both-target23124 exits0; native26641 passes
+39/39, zero skips in10.901s (`UP089-scripted-regressions.log`/`.xml`), adding
+actual negative Luck, negative Morale, suppression precedence and hostile Death
+Blow ownership evidence. Binary SHA-256
+`a19116a05068cdb05e067c624335c5f3deec38f8e232358af3cd82ca076ee9d5`.
+Data/inventory19/19 pass. Principal real Lua scripted-ability fixtures are still
+being written, and late-collateral evidence remains outstanding. Registration
+and completed coverage therefore stay unchanged; no playable promotion.
+
+Scripted checkpoint verified: both-target50122 exits0; final combined native6674
+passes42/42, zero skips in12.110s (`UP089-scripted-verified.log`/`.xml`). Three
+real Lua cases establish Destruction final cancellation, an exact capped Death
+Stare redraw and immune-target non-consumption. Binary SHA-256
+`a18f4d8ed6cc97c933fa9ae37f1b5ab41b0b1be0559f28ac3e07d5416809cdd5`.
+Independent scripted review was service-rejected repeatedly; root reviewed the
+diff without claiming that approval. Full attack-event dispatch/controller
+matrices and conditional AI forecasts remain Phase2. Late collateral remains
+the next principal gate; registration and counts stay unchanged.
+
 UP-087 Chain of Fortune is source/native verified. A positive friendly strike
 arms one+1 Luck benefit for the next different friendly stack's attack. Same
 source follow-ups retain it; unused benefits carry across rounds. Consumption

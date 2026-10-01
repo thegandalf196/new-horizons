@@ -50,6 +50,14 @@ public:
 
 	/// Rolls a chance-based combat ability of the given unit
 	virtual bool rollCombatAbility(const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance) = 0;
+	/// Rolls a chance-based combat ability against a hostile recipient. Older callbacks
+	/// preserve the original single-draw behavior unless they support adverse-result rerolls.
+	virtual bool rollHostileCombatAbility(const IBattleInfoCallback & battle, const battle::Unit & actor,
+		const battle::Unit & recipient, int percentageChance)
+	{
+		(void)recipient;
+		return rollCombatAbility(battle, actor, percentageChance);
+	}
 	/// Resolve a classified adverse result for its affected army. Older callbacks
 	/// keep a single draw; authoritative battle callbacks may spend a reroll.
 	virtual bool resolveAdverseCombatRoll(const BattleID &, BattleSide, bool, bool,

@@ -34,15 +34,22 @@ function Script:onAfterAttack(server, battle, unit, other)
 	if not other or not other:isAlive() or not other:isLiving() then return end
 	if other:getPhantomInitialIntegrity() > 0 then return end
 	if self:isImmune(other) then return end
-	if not server:rollCombatAbility(battle, unit, self.val or 0) then return end
 
 	local creature = self.creature and LIBRARY:getCreatureByName(self.creature) or unit:getCreature()
 
-	if other:getCreature():getJsonKey() == creature:getJsonKey() then return end
+	if other:getCreature():getJsonKey() == creature:getJsonKey() then
+		server:rollCombatAbility(battle, unit, self.val or 0)
+		return
+	end
 
 	local count = self:resultingCount(other, creature)
 
-	if count == nil then return end
+	if count == nil then
+		server:rollCombatAbility(battle, unit, self.val or 0)
+		return
+	end
+
+	if not server:rollHostileCombatAbility(battle, unit, other, self.val or 0) then return end
 
 	-- removal turns the victim into a ghost with no bonuses and no health, so everything the new
 	-- stack inherits is read while it is still a real unit

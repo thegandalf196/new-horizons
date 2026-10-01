@@ -16,6 +16,7 @@
 #include "queries/CQuery.h"
 
 #include "../lib/battle/IBattleInfoCallback.h"
+#include "../lib/battle/CBattleInfoCallback.h"
 #include "../lib/battle/IBattleState.h"
 #include "../lib/battle/Unit.h"
 #include "../lib/callback/GameRandomizer.h"
@@ -50,6 +51,34 @@ bool ServerSpellCastEnvironment::rollCombatAbility(const IBattleInfoCallback & b
 {
 	const auto * army = battle.getBattle()->getSideArmy(actor.unitSide());
 	return gh->randomizer->rollFavorableCreatureAbility(army->id, actor, percentageChance);
+}
+
+bool ServerSpellCastEnvironment::rollHostileCombatAbility(const IBattleInfoCallback & battle,
+	const battle::Unit & actor, const battle::Unit & recipient, int percentageChance)
+{
+	const auto * army = battle.getBattle()->getSideArmy(actor.unitSide());
+	const int effectiveChance = gh->randomizer->prepareFavorableCreatureAbilityChance(actor, percentageChance);
+	const auto draw = [this, army, effectiveChance]()
+	{
+		return gh->randomizer->rollCombatAbility(army->id, effectiveChance);
+	};
+
+	const auto * cb = dynamic_cast<const CBattleInfoCallback *>(&battle);
+	if(!cb)
+		return draw();
+	const BattleSide actorControllerSide = cb->playerToSide(cb->battleGetOwner(&actor));
+	const BattleSide harmedSide = cb->playerToSide(cb->battleGetOwner(&recipient));
+	const auto validBattleSide = [](BattleSide side)
+	{
+		return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER;
+	};
+	const bool hostile = validBattleSide(actorControllerSide) && validBattleSide(harmedSide)
+		&& actorControllerSide != harmedSide;
+	if(!actor.alive() || !recipient.alive() || !recipient.isValidTarget(false) || recipient.isInvincible()
+		|| !hostile || effectiveChance <= 0 || effectiveChance >= 100)
+		return draw();
+
+	return resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), harmedSide, true, true, draw);
 }
 
 std::function<void()> ServerSpellCastEnvironment::prepareAdventureSpellCastCompletion(const spells::Caster * caster, SpellID spell)

@@ -56,6 +56,9 @@ public:
 	static void addObstacle(ServerCallback & object, const IBattleInfoCallback & battle, const SpellObstacleDescriptor & descriptor);
 	static void catapultAttack(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit * attacker, EWallPart attackedPart, int32_t damageDealt);
 	static bool rollCombatAbility(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance);
+	static bool rollHostileCombatAbility(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & actor, const battle::Unit & recipient, int percentageChance);
+	static int rollHostileCombatAbilityCount(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & actor, const battle::Unit & recipient, int trials, double chance, int cap);
+	static bool isSpellTargetReceptive(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & caster, const spells::Spell & spell, const battle::Unit & recipient);
 	static void applySpellEffects(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & caster, const spells::Spell & spell, const std::vector<const battle::Unit *> & target, int spellLevel, int effectDuration, bool ignoreImmunity);
 	static void refreshBattleUnits(ServerCallback & object, const IBattleInfoCallback & battle);
 	static void showBattleAnimation(ServerCallback & object, const IBattleInfoCallback & battle, const std::vector<battle::Destination> & target, const std::string & animation, const std::string & sound, double transparency, std::optional<bool> deferred);

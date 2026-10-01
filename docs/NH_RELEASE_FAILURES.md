@@ -2204,6 +2204,22 @@ Local result / actual target-platform result:
 Remaining gate and next action:
 ```
 
+### UP-089 scripted hostile-proc compile gate
+
+Both-target build18304 fails in `ServerSpellCastEnvironment`: the new bridge
+calls `playerToSide` / `battleGetOwner` on the narrower `IBattleInfoCallback`,
+and uses Lua-facing `isAlive` rather than the C++ Unit's `alive` method.
+Preserve `UP089-scripted-build.log`. The Lua-count bridge has the same callback
+mismatch. Root repairs both with the existing richer callback's checked cast,
+retaining one legacy draw for callbacks without that interface, and aligns the
+AI Unit query. The delegated repair retry was service-rejected. No gameplay
+scope or assertion is weakened; compile and native gates remain pending.
+
+Retry23124 builds both targets successfully (`UP089-scripted-build-retry1.log`).
+Native26641 passes39/39 with no skips (`UP089-scripted-regressions.log`/`.xml`);
+the new scripted test file is not yet part of this candidate. Keep the failed
+attempt as interface-contract evidence rather than attributing it to gameplay.
+
 No credentials, workstation paths, purchaser content or raw research dumps in
 these notes. Keep historical failures even after repair, but label their scope.
 Do not claim the pipeline is future-proof: tests reduce recurrence and catch more

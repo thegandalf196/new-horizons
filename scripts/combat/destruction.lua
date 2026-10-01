@@ -31,11 +31,17 @@ function Script:onAfterAttack(server, battle, unit, other)
 	-- a dead attacker destroys nothing, and it may have been killed by the retaliation to this attack
 	if not unit:isAlive() then return end
 	if not other or not other:isAlive() then return end
-	if not server:rollCombatAbility(battle, unit, self.val or 0) then return end
 
 	local toKill = self:creaturesToKill(other)
 
-	if toKill <= 0 then return end
+	-- Preserve the old draw for inert configurations, but do not classify it as
+	-- harming the opposing army when this attack cannot destroy anything.
+	if toKill <= 0 then
+		server:rollCombatAbility(battle, unit, self.val or 0)
+		return
+	end
+
+	if not server:rollHostileCombatAbility(battle, unit, other, self.val or 0) then return end
 
 	-- deferred so that the spell effect and the death animation start on the same frame
 	server:showBattleAnimation(battle, { { unit = other } }, ANIMATION, SOUND, 1.0, true)

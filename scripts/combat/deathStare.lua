@@ -31,7 +31,7 @@ end
 
 --- Creatures killed by rolling the chance once for every creature of the bearer's stack. At most
 --- the share of the stack that could have rolled it dies, so a lucky roll cannot run away.
-function Script:rolledKills(server, unit)
+function Script:rolledKills(server, battle, unit, other, spell)
 	local chance = self.val or 0
 	local chanceBasisPoints = unit:favorableCreatureAbilityChanceBasisPoints(chance)
 
@@ -39,8 +39,13 @@ function Script:rolledKills(server, unit)
 
 	local count = unit:getCount()
 	local probability = chanceBasisPoints / 10000
-	local killed = server:rngBinomial(count, probability)
 	local cap = math.ceil(count * probability)
+	local killed
+	if server:isSpellTargetReceptive(battle, unit, spell, other) then
+		killed = server:rollHostileCombatAbilityCount(battle, unit, other, count, probability, cap)
+	else
+		killed = server:rngBinomial(count, probability)
+	end
 
 	return math.min(killed, cap)
 end
@@ -50,7 +55,8 @@ end
 function Script:killsIn(server, battle, unit, other, payload)
 	if (self.situation or "melee") ~= situationOf(battle, unit, other, payload) then return nil end
 
-	return self:rolledKills(server, unit)
+	local spell = LIBRARY:getSpellByName(self.spell or SPELL)
+	return self:rolledKills(server, battle, unit, other, spell)
 end
 
 function Script:onAfterAttack(server, battle, unit, other, payload)

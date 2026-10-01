@@ -51,6 +51,9 @@
 
 #include <vstd/RNG.h>
 
+#include <cmath>
+#include <stdexcept>
+
 namespace scripting::api
 {
 
@@ -187,6 +190,38 @@ void ServerCallbackProxy::registerMethods(MethodRegistrar & R)
 		{"True if the ability triggers."},
 		"Rolls a chance-based combat ability. Use this rather than `rngInt` for abilities that "
 		"trigger with a percentage chance - it draws from the per-army biased sequence");
+	R.function<&ServerCallbackProxy::rollHostileCombatAbility>("rollHostileCombatAbility",
+		{
+			{"battle",           "Battle the acting unit fights in."},
+			{"actor",            "Unit whose ability is being rolled."},
+			{"recipient",        "Hostile unit that may be harmed by the ability."},
+			{"percentageChance", "Chance to succeed, in percent."}
+		},
+		{"True if the ability triggers."},
+		"Rolls a hostile chance-based combat ability from the acting army's biased sequence. "
+		"The recipient's currently controlled side may reroll one successful stochastic result.");
+	R.function<&ServerCallbackProxy::rollHostileCombatAbilityCount>("rollHostileCombatAbilityCount",
+		{
+			{"battle",    "Battle the acting unit fights in."},
+			{"actor",     "Unit whose ability is being resolved."},
+			{"recipient", "Hostile unit that may be harmed by the ability."},
+			{"trials",    "Number of independent chances to roll; must be nonnegative."},
+			{"chance",    "Chance of each trial succeeding, from 0 to 1."},
+			{"cap",       "Maximum returned successes; must be nonnegative."}
+		},
+		{"Capped number of successes after any adverse-result reroll."},
+		"Rolls a binomial hostile ability result. A positive stochastic kill count may be rerolled "
+		"once for the recipient's currently controlled side; both draws use the same chance.");
+	R.function<&ServerCallbackProxy::isSpellTargetReceptive>("isSpellTargetReceptive",
+		{
+			{"battle",    "Battle in which the passive spell would be applied."},
+			{"caster",    "Unit acting as the spell caster."},
+			{"spell",     "Spell whose target rules are checked."},
+			{"recipient", "Unit to check against the spell's target rules."}
+		},
+		{"True if the live unit can receive the passive spell."},
+		"Checks whether a unit is a valid, non-invincible, receptive target for a passive spell. "
+		"This query does not roll resistance or mutate battle state.");
 	R.function<&ServerCallbackProxy::castSpell>("castSpell",
 		{
 			{"battle",      "Battle the spell is cast in."},
@@ -242,6 +277,68 @@ bool ServerCallbackProxy::describeChanges(ServerCallback & object)
 bool ServerCallbackProxy::rollCombatAbility(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance)
 {
 	return object.rollCombatAbility(battle, actor, percentageChance);
+}
+
+bool ServerCallbackProxy::rollHostileCombatAbility(ServerCallback & object, const IBattleInfoCallback & battle,
+	const battle::Unit & actor, const battle::Unit & recipient, int percentageChance)
+{
+	return object.rollHostileCombatAbility(battle, actor, recipient, percentageChance);
+}
+
+int ServerCallbackProxy::rollHostileCombatAbilityCount(ServerCallback & object, const IBattleInfoCallback & battle,
+	const battle::Unit & actor, const battle::Unit & recipient, int trials, double chance, int cap)
+{
+	if(trials < 0 || cap < 0 || !std::isfinite(chance) || chance < 0.0 || chance > 1.0)
+		throw std::invalid_argument("Hostile binomial ability requires nonnegative counts and a chance in [0, 1].");
+
+	const auto drawCappedCount = [&]()
+	{
+		return std::min(object.getRNG()->nextBinomialInt(trials, chance), cap);
+	};
+
+	const auto validBattleSide = [](BattleSide side)
+	{
+		return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER;
+	};
+	const auto * cb = dynamic_cast<const CBattleInfoCallback *>(&battle);
+	if(!cb)
+		return drawCappedCount();
+	const BattleSide actorControllerSide = cb->playerToSide(cb->battleGetOwner(&actor));
+	const BattleSide harmedSide = cb->playerToSide(cb->battleGetOwner(&recipient));
+	const bool hostile = validBattleSide(actorControllerSide) && validBattleSide(harmedSide)
+		&& actorControllerSide != harmedSide;
+	const bool stochastic = trials > 0 && cap > 0 && chance > 0.0 && chance < 1.0;
+	if(!actor.alive() || !recipient.alive() || !recipient.isValidTarget(false)
+		|| recipient.isInvincible() || !hostile || !stochastic)
+		return drawCappedCount();
+
+	int finalCount = 0;
+	const auto draw = [&]()
+	{
+		finalCount = drawCappedCount();
+		return finalCount > 0;
+	};
+	object.resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), harmedSide, true, true, draw);
+	return finalCount;
+}
+
+bool ServerCallbackProxy::isSpellTargetReceptive(ServerCallback & object, const IBattleInfoCallback & battle,
+	const battle::Unit & caster, const spells::Spell & spell, const battle::Unit & recipient)
+{
+	(void)object;
+	const auto * cb = dynamic_cast<const CBattleInfoCallback *>(&battle);
+	if(!cb)
+		throw std::runtime_error("Attempt to check spell target receptivity outside of a battle!");
+
+	const CSpell * spellObject = spell.getId().toSpell();
+	if(!spellObject)
+		throw std::runtime_error("Attempt to check receptivity for an unknown spell!");
+
+	spells::AbilityCaster abilityCaster(&caster, 0);
+	spells::BattleCast cast(cb, &abilityCaster, spells::Mode::PASSIVE, spellObject);
+	auto mechanics = spellObject->battleMechanics(&cast);
+	return recipient.isValidTarget(false) && !recipient.isInvincible()
+		&& mechanics && mechanics->isReceptive(&recipient);
 }
 
 void ServerCallbackProxy::applySpellEffects(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & caster, const spells::Spell & spell, const std::vector<const battle::Unit *> & target, int spellLevel, int effectDuration, bool ignoreImmunity)
