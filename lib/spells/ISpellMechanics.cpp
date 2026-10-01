@@ -213,7 +213,7 @@ int32_t Mechanics::getSpellPowerCoefficientBasisPoints() const
 		return 10000;
 
 	return newHorizonsMagic::spellPowerCoefficientBasisPoints(
-		battleState->getMagicRules(), getHeroCaster(), getSpellId(), getArcaneFocusBonusPercent());
+		battleState->getMagicRules(), getHeroCaster(), getSpellId(), getCastSpellPowerComponentBonusPercent());
 }
 
 int32_t Mechanics::getNewHorizonsQuicksandPatchCount() const
@@ -225,7 +225,7 @@ int32_t Mechanics::getNewHorizonsQuicksandPatchCount() const
 
 	const auto patchCount = newHorizonsMagic::quicksandPatchCount(battleState->getMagicRules(),
 		getHeroCaster(), getSpellId(), getEffectPower(), getEffectPowerDivisor(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), getArcaneFocusBonusPercent());
+		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), getCastSpellPowerComponentBonusPercent());
 	return patchCount.value_or(0);
 }
 
@@ -708,6 +708,15 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
 				std::string(newHorizonsMagic::SPELLCRAFT_ARCANE_FOCUS)))
 			arcaneFocusBonusPercent = newHorizonsMagic::SPELLCRAFT_ARCANE_FOCUS_BONUS_PERCENT;
+
+		const int spellLevel = battleInfo && owner ? cb->battleGetSpellLevel(owner->getId()) : 0;
+		if(battleInfo && hero && battleInfo->getSideHero(casterSide) == hero
+			&& (spellLevel == 4 || spellLevel == 5)
+			&& !battleInfo->hasCompletedHeroSpellLevel(casterSide, 4)
+			&& !battleInfo->hasCompletedHeroSpellLevel(casterSide, 5)
+			&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+				std::string(newHorizonsMagic::SPELLCRAFT_GRAND_FORMULA)))
+			grandFormulaMultiplierPercent = newHorizonsMagic::SPELLCRAFT_GRAND_FORMULA_MULTIPLIER_PERCENT;
 	}
 
 	{
@@ -888,7 +897,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		const auto * battle = cb->getBattle();
 		const int spellPowerCoefficientBasisPoints = battle
 			? newHorizonsMagic::spellPowerCoefficientBasisPoints(
-				battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), arcaneFocusBonusPercent)
+				battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), getCastSpellPowerComponentBonusPercent())
 			: 10000;
 		const int damageCoefficientBasisPoints = owner->isDamage() ? spellPowerCoefficientBasisPoints : 10000;
 			const int empowerBonusPercent = battle
@@ -1335,6 +1344,12 @@ int32_t BaseMechanics::getWarcastingBonusPercent() const
 int32_t BaseMechanics::getArcaneFocusBonusPercent() const
 {
 	return arcaneFocusBonusPercent;
+}
+
+int32_t BaseMechanics::getCastSpellPowerComponentBonusPercent() const
+{
+	const int combinedMultiplierPercent = (100 + arcaneFocusBonusPercent) * grandFormulaMultiplierPercent / 100;
+	return combinedMultiplierPercent - 100;
 }
 
 IBattleCast::Value BaseMechanics::getEffectDuration() const

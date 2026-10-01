@@ -416,7 +416,7 @@ public:
 		const auto penalty = newHorizonsMagic::sorrowMoralePenalty(
 			battle->getBattle()->getMagicRules(), hero, mechanics->getSpellId(), mechanics->getEffectPower(),
 			mechanics->getWarcastingBonusPercent(), mechanics->getEmpowerSpellBonusPercent(),
-			mechanics->getArcaneFocusBonusPercent());
+			mechanics->getCastSpellPowerComponentBonusPercent());
 		const auto duration = newHorizonsMagic::sorrowDurationRounds(
 			battle->getBattle()->getMagicRules(), hero, mechanics->getSpellId());
 		if(!penalty || !duration)

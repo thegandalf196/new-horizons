@@ -14,6 +14,22 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-069 Grand Formula and UP-070 Tax Collector are source/native verified.
+Grand Formula snapshots the first accepted Level 4-or-5 hero-cast gate from
+existing serialized history, multiplying only the SP-derived numerical term
+by 150%. School, Spellcraft, Arcane Focus and Empower compose without scaling
+the flat base. Rejected/creature casts and round rollover do not consume/reset
+it; counterspelled accepted casts consume it. Actual Time Stop and detached AI
+use the same factor. Tax Collector adds +50 per owned town (cap500 per active
+holder) through shared daily income before handicap; authoritative payout and
+Nullkiller forecasts agree. Both-target build `68608` and native `45801` pass:
+38/38, zero skips, in 13.664s. Reports `UP069-UP070-focused-repaired.log`/`.xml`.
+Content/inventory checks pass 78/78; independent review has no remaining blocker.
+Perks advance 129→131/310, planned181→179; Spellcraft3/7→4/6, Estates0/10→1/9.
+Ranks remain84/93 and combat identities60/67. Phase 2 retains hero ownership,
+handicap/reload combinations and battle-specific tooltip modifier breakdowns.
+Purpose-made artwork remains Not done; no playable promotion is claimed.
+
 UP-066 expected-outcome AI dependency is source/native verified. Runtime and AI
 share the complete typed uniform form pool and nearest-legal landing positions;
 AI averages signed detached offensive profile changes, not a single RNGStub draw.
@@ -360,7 +376,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 129/310 | 181 planned; Mana Conservation is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 131/310 | 179 planned; Grand Formula and Tax Collector are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -387,9 +403,9 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 129
-active perks, leaving nine ranks and 181 perks planned. These counts were
-rechecked directly from `config/newHorizonsPerks.json` on 2026-09-30; they are
+requirements in total. The current registry has 84 active rank effects and 131
+active perks, leaving nine ranks and 179 perks planned. These counts were
+rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
 `40628d29d92ab0d47282321fd411f5d079f38844` passed Windows build run
@@ -506,12 +522,12 @@ interactions, and rendered/playable acceptance remain separate.
 | Havoc Magic | 3/0 | 3/7 | Seven perks missing |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 3/7 | Blinkmaster, Weaver and Paradox Shield are active with focused evidence recorded above; seven perks remain planned. |
-| Spellcraft | 3/0 | 3/7 | Arcane Focus scales the first accepted hero spell's SP term; Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
+| Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 4/6 | Six perks missing |
 | Logistics | 3/0 | 3/7 | Seven perks missing |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
-| Estates | 3/0 | 0/10 | Progression blocked |
+| Estates | 3/0 | 1/9 | Tax Collector supplies the first working Basic perk; Advanced perks remain missing. Shared daily payout and AI income forecast are native verified. |
 | Learning | 3/0 | 0/10 | Progression blocked |
 | Luck | 3/0 | 0/10 | Progression blocked |
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |

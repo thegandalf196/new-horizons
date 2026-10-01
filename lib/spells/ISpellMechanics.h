@@ -313,6 +313,9 @@ public:
 	/// Arcane Focus percentage snapshotted for this hero-cast context. Non-hero
 	/// casts and casts after a completed hero spell return zero.
 	virtual int32_t getArcaneFocusBonusPercent() const { return 0; }
+	/// Combined cast-specific multiplier above the ordinary School × Spellcraft
+	/// coefficient. Existing Mechanics implementations retain Arcane Focus only.
+	virtual int32_t getCastSpellPowerComponentBonusPercent() const { return getArcaneFocusBonusPercent(); }
 	/// Saved-v3 Quicksand's authoritative patch count, or zero for legacy rules
 	/// and every other spell.
 	int32_t getNewHorizonsQuicksandPatchCount() const;
@@ -452,6 +455,7 @@ public:
 	int32_t getEffectPowerDivisor() const override;
 	int32_t getWarcastingBonusPercent() const override;
 	int32_t getArcaneFocusBonusPercent() const override;
+	int32_t getCastSpellPowerComponentBonusPercent() const override;
 	IBattleCast::Value getEffectDuration() const override;
 	IBattleCast::Value adjustEffectDuration(IBattleCast::Value baseDuration) const override;
 	IBattleCast::Value64 getEffectValue() const override;
@@ -531,6 +535,8 @@ private:
 	int32_t warcastingBonusPercent = 0;
 	/// First-cast Arcane Focus captured before BattleSpellCast marks completion.
 	int32_t arcaneFocusBonusPercent = 0;
+	/// Grand Formula's 150% component multiplier, or 100% when unavailable.
+	int32_t grandFormulaMultiplierPercent = 100;
 	///actual spell-power affecting effect duration
 	IBattleCast::Value effectDuration;
 

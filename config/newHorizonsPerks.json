@@ -1971,7 +1971,7 @@
 					"requires": "expert",
 					"description": "The first Level 4 or Level 5 spell cast in each combat uses 150% of its normal Spell Power-derived numerical component before other multipliers.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first Level 4 or Level 5 spell cast in each combat uses 150% of its normal Spell Power-derived numerical component before other multipliers."
 					}
 				},
@@ -2551,7 +2551,7 @@
 					"requires": "basic",
 					"description": "Gain +50 Gold per day for each owned town, capped at +500 Gold per day from this perk.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Gain +50 Gold per day for each owned town, capped at +500 Gold per day from this perk."
 					}
 				},

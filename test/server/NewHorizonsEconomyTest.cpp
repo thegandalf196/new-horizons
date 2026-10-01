@@ -6,9 +6,11 @@
 #include "StdInc.h"
 
 #include "../../lib/CPlayerState.h"
+#include "../../lib/CSkillHandler.h"
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/IGameSettings.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForClient.h"
@@ -79,6 +81,18 @@ protected:
 			// The module enables New Horizons globally. An explicit null map
 			// override is the saved-world contract for exercising legacy behavior.
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+
+		if(overrideTaxCollectorPerkRules)
+		{
+			JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+			if(taxCollectorIsPlanned)
+			{
+				for(auto & perk : perkRules["skills"]["new-horizons:estates"]["perks"].Vector())
+					if(perk["id"].String() == "new-horizons:estates.taxCollector")
+						perk["effect"]["status"].String() = "planned";
+			}
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
+		}
 	}
 
 	void startRampartGame(bool newHorizons, int townCount)
@@ -115,8 +129,72 @@ protected:
 		EXPECT_TRUE(server.lastNewTurn.has_value());
 	}
 
+	void startTaxCollectorGame(size_t townCount, bool planned = false)
+	{
+		useNewHorizonsRules = true;
+		overrideTaxCollectorPerkRules = true;
+		taxCollectorIsPlanned = planned;
+
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).playerActive(PlayerColor(0));
+		for(size_t index = 0; index < townCount; ++index)
+		{
+			const int x = 4 + static_cast<int>(index % 4) * 7;
+			const int y = 4 + static_cast<int>(index / 4) * 7;
+			builder.town({x, y, 0}, FactionID::RAMPART, PlayerColor(0));
+		}
+		builder.hero({32, 32, 0}, HeroTypeID(0), PlayerColor(0));
+		startWithMap(std::move(builder));
+
+		towns = findAll<CGTownInstance>();
+		hero = findHeroByOwner(PlayerColor(0));
+		ASSERT_EQ(towns.size(), townCount);
+		ASSERT_NE(hero, nullptr);
+	}
+
+	void setEstatesRank(int rank)
+	{
+		const int decoded = SecondarySkill::decode("new-horizons:estates");
+		ASSERT_GE(decoded, 0);
+		hero->setSecSkillLevel(SecondarySkill(decoded), rank, ChangeValueMode::ABSOLUTE);
+	}
+
+	void selectTaxCollector(int rank = MasteryLevel::BASIC)
+	{
+		setEstatesRank(rank);
+		hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
+	}
+
+	int ownedTownIncome() const
+	{
+		int result = 0;
+		for(const auto * town : gameState()->getPlayerState(PlayerColor(0))->getTowns())
+			result += town->dailyIncome()[EGameResID::GOLD];
+		return result;
+	}
+
+	void expectFirstDailyIncomePack(int expectedTaxGold)
+	{
+		const int expectedHeroIncome = 125 + expectedTaxGold;
+		EXPECT_EQ(hero->dailyIncome()[EGameResID::GOLD], expectedHeroIncome);
+		const int expectedIncome = ownedTownIncome() + expectedHeroIncome;
+		const int goldBefore = gameState()->getPlayerState(PlayerColor(0))->resources[EGameResID::GOLD];
+
+		RecordingGameServer server(gameState());
+		CGameHandler handler(server, gameState());
+		handler.onNewTurn(); // Initial turn does not pay daily income.
+		handler.onNewTurn();
+
+		ASSERT_TRUE(server.lastNewTurn);
+		EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::GOLD], expectedIncome);
+		EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources[EGameResID::GOLD], goldBefore + expectedIncome);
+	}
+
 	bool useNewHorizonsRules = false;
+	bool overrideTaxCollectorPerkRules = false;
+	bool taxCollectorIsPlanned = false;
 	std::vector<CGTownInstance *> towns;
+	CGHeroInstance * hero = nullptr;
 };
 
 bool isPrecious(GameResID resource)
@@ -257,4 +335,97 @@ TEST_F(NewHorizonsEconomyTest, LegacyTreasuryAndMysticPondRemainUnchanged)
 	EXPECT_EQ(towns.front()->bonusValue.second, preciousTotal);
 	EXPECT_TRUE(isPrecious(GameResID(towns.front()->bonusValue.first)));
 	EXPECT_TRUE(towns.front()->newHorizonsMysticPondResources.empty());
+}
+
+TEST_F(NewHorizonsEconomyTest, TaxCollectorAddsFiftyGoldPerOwnedTown)
+{
+	startTaxCollectorGame(1);
+	selectTaxCollector();
+
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
+	expectFirstDailyIncomePack(50);
+}
+
+TEST_F(NewHorizonsEconomyTest, TaxCollectorIncomeCapsAtTenOwnedTowns)
+{
+	startTaxCollectorGame(10);
+	selectTaxCollector();
+
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
+	expectFirstDailyIncomePack(500);
+}
+
+TEST_F(NewHorizonsEconomyTest, TaxCollectorIncomeRemainsCappedAboveTenOwnedTowns)
+{
+	startTaxCollectorGame(11);
+	selectTaxCollector();
+
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
+	expectFirstDailyIncomePack(500);
+}
+
+TEST_F(NewHorizonsEconomyTest, TaxCollectorProducesNoGoldWithoutOwnedTowns)
+{
+	startTaxCollectorGame(0);
+	selectTaxCollector();
+
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
+	expectFirstDailyIncomePack(0);
+}
+
+TEST_F(NewHorizonsEconomyTest, TaxCollectorUsesCurrentTownOwnershipForTheNextDailyPack)
+{
+	startTaxCollectorGame(2);
+	selectTaxCollector();
+
+	RecordingGameServer server(gameState());
+	CGameHandler handler(server, gameState());
+	const int goldBefore = gameState()->getPlayerState(PlayerColor(0))->resources[EGameResID::GOLD];
+	const int firstExpectedIncome = ownedTownIncome() + 125 + 100;
+	handler.onNewTurn();
+	handler.onNewTurn();
+	ASSERT_TRUE(server.lastNewTurn);
+	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::GOLD], firstExpectedIncome);
+
+	const int goldAfterFirstPack = gameState()->getPlayerState(PlayerColor(0))->resources[EGameResID::GOLD];
+	handler.setOwner(towns.back(), PlayerColor::NEUTRAL);
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->getTowns().size(), 1u);
+	const int secondExpectedIncome = ownedTownIncome() + 125 + 50;
+	handler.onNewTurn();
+	ASSERT_TRUE(server.lastNewTurn);
+	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::GOLD], secondExpectedIncome);
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources[EGameResID::GOLD], goldAfterFirstPack + secondExpectedIncome);
+	EXPECT_EQ(goldAfterFirstPack, goldBefore + firstExpectedIncome);
+}
+
+TEST_F(NewHorizonsEconomyTest, TaxCollectorRequiresAnActiveSelectedPerkAndBasicRank)
+{
+	startTaxCollectorGame(1);
+	setEstatesRank(MasteryLevel::BASIC);
+	EXPECT_FALSE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
+	EXPECT_EQ(hero->dailyIncome()[EGameResID::GOLD], 125);
+
+	hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
+	EXPECT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
+	setEstatesRank(MasteryLevel::NONE);
+	EXPECT_FALSE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
+	EXPECT_EQ(hero->dailyIncome()[EGameResID::GOLD], 0);
+}
+
+TEST_F(NewHorizonsEconomyTest, PlannedTaxCollectorCannotBeSelectedOrAffectIncome)
+{
+	startTaxCollectorGame(1, true);
+	setEstatesRank(MasteryLevel::BASIC);
+	EXPECT_THROW(hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"}), std::runtime_error);
+	EXPECT_FALSE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
+	EXPECT_EQ(hero->dailyIncome()[EGameResID::GOLD], 125);
+}
+
+TEST_F(NewHorizonsEconomyTest, AdvancedEstatesCanSelectTheBasicTaxCollectorPerk)
+{
+	startTaxCollectorGame(1);
+	selectTaxCollector(MasteryLevel::ADVANCED);
+
+	EXPECT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
+	EXPECT_EQ(hero->dailyIncome()[EGameResID::GOLD], 300);
 }

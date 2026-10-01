@@ -2,6 +2,35 @@
 
 ## Purpose
 
+### 2026-10-01 Grand Formula / Tax Collector — fixture rank type
+
+Native build `65937` fails in NewHorizonsEconomyTest.cpp:155/162 because
+MasteryLevel is a namespace of rank constants, not a type. Preserve
+`UP070-native-build.log`; use int helper parameters matching the skill API.
+Production client build already passes. Reviewer separately caught and worker
+repaired Grand Formula's unmatched final brace and identical-SP radius test
+inputs before those fixtures were registered. Retry and native execution remain
+pending; no verification or playable claim follows from these source repairs.
+
+Both-target retry `57824` fails in the Grand Formula AI fixture's binary
+CGameState snapshot because GameSettings is incomplete at template
+instantiation. Preserve `UP069-UP070-build-retry.log`; include GameSettings.h
+directly, keeping the full live-state invariant assertion. No production change.
+
+Both-target repair build `24828` passes. Native `86706` executes 38 tests with
+zero skips: 35 pass, including all Tax Collector payout/AI cases and Grand
+Formula AI. Three new server cases fail: the armed ward does not negate either
+high-level cast, and the two-hex Archangel marked beyond radius still occupies
+a legal affected hex. Preserve `UP069-UP070-focused.log`/`.xml`; repair the ward
+fixture prerequisites and use a one-hex radius-boundary subject, retaining real
+accepted casting and radius assertions. Grand Formula remains unverified.
+
+Final fixture-repair both-target build `68608` passes. Native retry `45801`
+passes38/38 with zero skips; `UP069-UP070-focused-repaired.log`/`.xml` retain
+the first passing combined result. Tax Collector isolated25581 also passes
+13/13. Review finds no remaining blocker. No production change was needed for
+the failed fixture prerequisites; these are not evidence of a gameplay defect.
+
 ### 2026-10-01 random-form AI / Mana Conservation — fixture include
 
 Client build `53309` succeeds. Test build `71345` fails because the new AI

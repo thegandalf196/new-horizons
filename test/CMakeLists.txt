@@ -258,6 +258,7 @@ set(test_SRCS
 		server/battles/NewHorizonsMisfortuneTest.cpp
 		server/battles/NewHorizonsShieldOfChaosTest.cpp
 		server/battles/NewHorizonsArcaneFocusTest.cpp
+		server/battles/NewHorizonsGrandFormulaTest.cpp
 		server/battles/NewHorizonsHolyArmorTest.cpp
 		server/battles/NewHorizonsHeavenlyGaleTest.cpp
 		server/battles/NewHorizonsDivineRetributionTest.cpp
@@ -391,6 +392,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsCommandEfficiencyAITest.cpp
 		battleAI/NewHorizonsCombinedArmsAITest.cpp
 		battleAI/NewHorizonsPreparedCasterAITest.cpp
+		battleAI/NewHorizonsGrandFormulaAITest.cpp
 		battleAI/NewHorizonsTomeAITest.cpp
 		battleAI/NewHorizonsHeroGrowthAITest.cpp
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp
@@ -430,6 +432,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Helpers/ExplorationHelperTest.cpp
 		nullkiller2/Helpers/NewHorizonsMusterTest.cpp
 		nullkiller2/NewHorizonsAdventureSpellUnlockAITest.cpp
+		nullkiller2/NewHorizonsEstatesIncomeAITest.cpp
 		nullkiller2/Helpers/TinyH3MDimensionDoorExplorationTest.cpp
 		nullkiller2/Pathfinding/AIPathNodePoolTest.cpp
 		nullkiller2/Pathfinding/ArmyLossTest.cpp

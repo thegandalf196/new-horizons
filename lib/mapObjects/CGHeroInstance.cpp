@@ -16,6 +16,7 @@
 #include <vcmi/spells/Spell.h>
 #include <vstd/RNG.h>
 
+#include "../CPlayerState.h"
 #include "../callback/IGameInfoCallback.h"
 #include "../callback/IGameEventCallback.h"
 #include "../callback/IGameRandomizer.h"
@@ -2517,6 +2518,19 @@ ResourceSet CGHeroInstance::dailyIncome() const
 
 	for (GameResID k : LIBRARY->resourceTypeHandler->getAllObjects())
 		income[k] += valOfBonuses(BonusType::GENERATE_RESOURCE, BonusSubtypeID(k));
+
+	if(hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"))
+	{
+		static constexpr int goldPerTown = 50;
+		static constexpr int maximumDailyGold = 500;
+		const auto * ownerState = cb->getPlayerState(getOwner());
+		if(ownerState)
+		{
+			const auto townsForThisPerk = std::min(ownerState->getTowns().size(),
+				static_cast<size_t>(maximumDailyGold / goldPerTown));
+			income[EGameResID::GOLD] += static_cast<int>(townsForThisPerk) * goldPerTown;
+		}
+	}
 
 	const auto & playerSettings = cb->getPlayerSettings(getOwner());
 	income.applyHandicap(playerSettings->handicap.percentIncome);
