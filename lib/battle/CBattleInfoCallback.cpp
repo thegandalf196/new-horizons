@@ -47,6 +47,7 @@
 namespace
 {
 constexpr int ELVEN_PRECISION_DEFENSE_IGNORE_PERCENT = 25;
+constexpr int LUCKY_AIM_DEFENSE_IGNORE_PERCENT = 25;
 constexpr int SHOCK_ASSAULT_DEFENSE_IGNORE_PERCENT = 25;
 constexpr int EXECUTIONER_DAMAGE_PERCENT = 20;
 constexpr int ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT = 20;
@@ -2443,10 +2444,17 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		}
 	}
 	payload.luckyStrike = info.luckyStrike;
-	if(info.shooting && info.luckyStrike)
+	if(info.physicalDamage && info.shooting && info.luckyStrike
+		&& newHorizonsArchery::isOrdinaryPhysicalShooter(info.attacker))
+	{
 		if(const auto * hero = battleGetOwnerHero(info.attacker))
+		{
 			if(hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"))
-				payload.luckyRangedDefenseIgnorePercent = ELVEN_PRECISION_DEFENSE_IGNORE_PERCENT;
+				payload.luckyRangedDefenseIgnorePercent += ELVEN_PRECISION_DEFENSE_IGNORE_PERCENT;
+			if(hero->hasActivePerk("new-horizons:luck", "new-horizons:luck.luckyAim"))
+				payload.luckyRangedDefenseIgnorePercent += LUCKY_AIM_DEFENSE_IGNORE_PERCENT;
+		}
+	}
 	payload.unluckyStrike = info.unluckyStrike;
 	payload.deathBlow = info.deathBlow;
 	payload.doubleDamage = info.doubleDamage;

@@ -491,7 +491,8 @@ TEST_F(SylvanLuckPerkDamageTest, ElvenPrecisionAppliesToLuckyRangedDamage)
 	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"));
 
 	const auto * source = attacker(titan);
-	const auto * target = defender(angel);
+	// Keep this shot outside the adjacent-shot penalty, but inside normal range.
+	const auto * target = defender(angel, stackSize, BattleHex(attackerHex + 3));
 	BattleAttackInfo info(source, target, 0, true);
 	info.luckyStrike = true;
 
@@ -507,7 +508,7 @@ TEST_F(SylvanLuckPerkDamageTest, ElvenPrecisionDoesNotAffectOrdinaryRangedOrLuck
 {
 	setSkill(attackerSideHero, "new-horizons:sylvanLuck", basic);
 	const auto * source = attacker(titan);
-	const auto * target = defender(angel);
+	const auto * target = defender(angel, stackSize, BattleHex(attackerHex + 3));
 
 	BattleAttackInfo ordinaryRanged(source, target, 0, true);
 	BattleAttackInfo luckyMelee(source, target, 0, false);

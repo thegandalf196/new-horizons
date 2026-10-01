@@ -2,6 +2,42 @@
 
 ## Purpose
 
+### 2026-10-01 Lucky Aim — calculator fixture shot geometry
+
+Native65046 passes4/8 and fails the three new Lucky Aim cases plus the older
+Elven Precision positive-shot case (`UP082-focused.log`/`.xml`). Both fixtures
+placed the shot target adjacent to its shooter, triggering New Horizons'50%
+adjacent ranged penalty. Older Elven Precision expected unpenalized damage;
+relocate only its fixture target to three hexes away, within normal range.
+The new fixture also needs independently verified Attack/Defense coefficients
+before setting exact expectations. Do not halve/double expected values blindly
+or change production penalty rules to make a fixture pass. Repair/native gate
+pending; no functional completion claim is made from the failed run.
+
+Geometry build27645 passes; native93424 passes5/8, with both older Elven
+Precision cases now passing. The new assertions establish Attack24, Defense30
+and Defense coefficient0.025. The remaining expectations incorrectly added a
+negative Defense factor to Lucky damage instead of multiplying it:
+4000*2*(1-6*0.025)=6800 (maximum10200). After bypass, positive Attack advantage
+adds to yield8200/12300 mathematically. Lua truncation produces12299 for that
+fractional maximum; retain a tightly bounded one-HP tolerance and defer general
+floating-point rounding stabilization to Phase2 rather than alter production
+damage math for this perk. Final both-target62197 exits0; native69961
+passes8/8, zero skips in2.487s, reports `UP082-final.log`/`.xml`.
+Independent repaired-fixture review agrees with the factor composition and
+the tightly bounded truncation tolerance.
+
+### 2026-10-01 Lucky Aim — ranged Defense fixture API
+
+Both-target build72030 failed in the new fixture because `CStack::getDefense`
+requires the ranged-context argument; unlike an abstract/defaulted interface,
+the concrete override has no zero-argument call. Use `getDefense(true)` for the
+shot target assertion. Log `UP082-build.log` retains the failure; production
+client73900 compiled successfully. Repaired build76508 exits0; final build62197
+and native69961 pass after the separate geometry/formula repairs described above.
+Future concrete-unit tests must use explicit attack context rather than assume
+default arguments are inherited through overridden APIs.
+
 ### 2026-10-01 Fortune's Favor — detached-unit test pointer comparison
 
 UP080 strengthened its AI test to use `HypotheticBattle::getForUpdate` units

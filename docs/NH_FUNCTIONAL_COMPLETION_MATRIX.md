@@ -14,6 +14,23 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-082 Lucky Aim is source/native verified. Shared damage payload adds25%
+target Creature Defense ignore only on positive Lucky physical shots by ordinary
+creature shooters, using selected/active/rank gating and current controller's
+hero. Elven Precision remains25% and combines in the same capped target-side
+calculation. No polling, new state, save format or duplicate AI formula.
+Final both-target62197 exits0; native69961 passes8/8, zero skips in2.487s
+(Lucky Aim3, Fortune's Favor3, existing Elven Precision2), reports
+`UP082-final.log`/`.xml`. Binary SHA-256
+`32995a012bf94c0d134449a402d984ea974d4a500902cb7520787e3a6aec042c`.
+Data/inventory19/19 pass and repaired independent review finds no blocker.
+Coverage137→138 active perks, planned173→172; Luck2/8 active/planned.
+Phase2 retains explicit executed shots, dual-perk/Defense-ignore combinations,
+special reactions and general fractional-damage rounding (one-HP truncation).
+Purpose-made art and playable promotion remain pending. Perfect Fortune and
+Lucky Recovery have narrow design questions pending; other missing coverage
+must continue rather than treating the whole goal as blocked.
+
 UP-080 Fortune's Favor is source/native verified. Accepted Luck selection,
 rank changes and reconstruction derive exactly one permanent +25
 LUCKY_STRIKE_DAMAGE_PERCENTAGE bonus from existing saved perk state; no polling,
@@ -461,7 +478,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 137/310 | 173 planned; Fortune's Favor is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 138/310 | 172 planned; Lucky Aim is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -488,8 +505,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 137
-active perks, leaving nine ranks and 173 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 138
+active perks, leaving nine ranks and 172 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -614,7 +631,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
 | Estates | 3/0 | 2/8 | Tax Collector and Estate Network supply working Basic/Advanced perks and open ordinary Expert-rank progression. Daily income, weekly Wood/Ore and AI receipt/selection are native verified. |
 | Learning | 3/0 | 2/8 | Mentor and Quick Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
-| Luck | 3/0 | 1/9 | Fortune's Favor source/native verified; Advanced progression open |
+| Luck | 3/0 | 2/8 | Fortune's Favor and Lucky Aim source/native verified; Advanced progression open |
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |

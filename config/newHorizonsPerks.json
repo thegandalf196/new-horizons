@@ -2835,7 +2835,7 @@
 					"requires": "basic",
 					"description": "A ranged attack that triggers positive Luck ignores 25% of the target's Creature Defense.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A ranged attack that triggers positive Luck ignores 25% of the target's Creature Defense."
 					}
 				},
